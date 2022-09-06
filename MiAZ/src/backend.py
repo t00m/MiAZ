@@ -7,14 +7,14 @@ import glob
 import json
 
 def load_json(filepath: str) -> {}:
-	"""Load into a dictionary a file in json format"""
-	with open(filepath, 'r') as fin:
-		return json.load(fin)
+    """Load into a dictionary a file in json format"""
+    with open(filepath, 'r') as fin:
+	return json.load(fin)
 
 def save_json(filepath: str, adict: {}) -> {}:
-	"""Save dictionary into a file in json format"""
-	with open(filepath, 'w') as fout:
-		json.dump(adict, fout)	
+    """Save dictionary into a file in json format"""
+    with open(filepath, 'w') as fout:
+	json.dump(adict, fout)	
 
 def get_documents(root_dir: str) -> []:
     """Get documents from a given directory recursively
