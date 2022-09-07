@@ -2,19 +2,53 @@
 # -*- coding: utf-8 -*-
 
 import os
-import sys
 import glob
-import json
 
-def load_json(filepath: str) -> {}:
-    """Load into a dictionary a file in json format"""
-    with open(filepath, 'r') as fin:
-	return json.load(fin)
+from util import load_json
+from util import guess_datetime
 
-def save_json(filepath: str, adict: {}) -> {}:
-    """Save dictionary into a file in json format"""
-    with open(filepath, 'w') as fout:
-	json.dump(adict, fout)	
+
+countries = load_json('../data/myaz-countries.json')
+
+
+def is_country(code: str) -> bool:
+    iscountry = False
+    try:
+        countries[code]
+        iscountry = True
+    except KeyError:
+        iscountry = False
+    return iscountry
+
+
+def valid_filename(filepath: str) -> bool:
+    filename = os.path.basename(filepath)
+
+    # Check filename extension
+    dot = filename.rfind('.')
+    if dot > 0:
+        name = filename[:dot]
+        # ext = filename[dot+1:]
+    else:
+        return False
+
+    # Check fields partitioning
+    fields = name.split('-')
+    if len(fields) != 5:
+        return False
+
+    # Check country
+    code = fields[0]
+    if not is_country(code):
+        return False
+
+    # Check timestamp
+    timestamp = fields[1]
+    if guess_datetime(timestamp) is None:
+        return False
+
+    return True
+
 
 def get_documents(root_dir: str) -> []:
     """Get documents from a given directory recursively
