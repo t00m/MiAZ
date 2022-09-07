@@ -3,7 +3,7 @@
 """
 Environment module.
 
-# File: mod_env.py
+# File: env.py
 # Author: Tomás Vírseda
 # License: GPL v3
 # Description: Environment variables module
@@ -18,47 +18,34 @@ import multiprocessing
 ENV = {}
 
 # Process
-ENV['PS'] = {}
-pid = os.getpid()
-ENV['PS']['PID'] = os.getpid()
-ENV['PS']['NAME'] = open('/proc/%d/comm' % pid, 'r').read().strip()
+# ~ ENV['PS'] = {}
+# ~ pid = os.getpid()
+# ~ ENV['PS']['PID'] = os.getpid()
+# ~ ENV['PS']['NAME'] = open('/proc/%d/comm' % pid, 'r').read().strip()
 
 # Configuration
 ENV['CONF'] = {}
-ENV['CONF']['ROOT'] = abspath(sys.modules[__name__].__file__ + "/../../")
+ENV['CONF']['ROOT'] = abspath(sys.modules[__name__].__file__ + "/../")
 ENV['CONF']['USER_DIR'] = os.path.expanduser('~')
 ENV['CONF']['TMPNAME'] = next(tempfile._get_candidate_names())
 ENV['CONF']['MAX_WORKERS'] = multiprocessing.cpu_count()  # Avoid MemoryError
-ENV['CONF']['EOHMARK'] = "// END-OF-HEADER. DO NOT MODIFY OR DELETE THIS LINE"
-ENV['CONF']['ADOCPROPS'] = {
-    'source-highlighter': 'coderay',
-    'coderay-css': 'class',
-    'coderay-linenums-mode': 'table',
-    'toc': 'left',
-    'toclevels': '2',
-    'icons': 'font',
-    'linkcss': None,
-    'experimental': None,
-}
 
 # App Info
 ENV['APP'] = {}
-ENV['APP']['name'] = "Knowledge Base For IT"
-ENV['APP']['shortname'] = "KB4IT"
-ENV['APP']['description'] = "KB4IT is a static website generator based on \
-                      Asciidoctor sources mainly for technical \
-                      documentation purposes."
+ENV['APP']['name'] = "My AZ Organizer"
+ENV['APP']['shortname'] = "MiAZ"
+ENV['APP']['description'] = "MyAZ is a personal document organizer"
 ENV['APP']['license'] = 'GPL v3'
 ENV['APP']['license_long'] = "The code is licensed under the terms of the  GPL v3\n\
                   so you're free to grab, extend, improve and fork the \
                   code\nas you want"
-ENV['APP']['copyright'] = "Copyright \xa9 2019 Tomás Vírseda"
+ENV['APP']['copyright'] = "Copyright \xa9 2022-2023 Tomás Vírseda"
 ENV['APP']['desc'] = ""
 ENV['APP']['version'] = open('%s' % os.path.join(ENV['CONF']['ROOT'], 'VERSION')).read()
 ENV['APP']['author'] = 'Tomás Vírseda'
 ENV['APP']['author_email'] = 'tomasvirseda@gmail.com'
 ENV['APP']['documenters'] = ["Tomás Vírseda <tomasvirseda@gmail.com>"]
-ENV['APP']['website'] = 'https://github.com/t00m/KB4IT'
+ENV['APP']['website'] = 'https://github.com/t00m/MiAZ'
 
 # Local paths
 ENV['LPATH'] = {}
