@@ -15,10 +15,10 @@ import os
 import glob
 from setuptools import setup
 
-from MiAZ.env import ENV
+from MiAZ.src.env import ENV
 
-#with open('pypi/README.rst', 'r') as f:
-#    LONG_DESCRIPTION = f.read()
+with open('README.adoc', 'r') as f:
+    LONG_DESCRIPTION = f.read()
 
 
 def add_data(root_data):
@@ -31,7 +31,7 @@ def add_data(root_data):
     resdirs.remove(os.path.realpath(root_data))
 
     for directory in resdirs:
-        files = glob.glob(directory+'/*')
+        files = glob.glob(os.path.join(directory, '*'))
         relfiles = []
         for thisfile in files:
             if not os.path.isdir(thisfile):
@@ -43,46 +43,45 @@ def add_data(root_data):
 
     return dir_files
 
-#DATA_FILES =  ['VERSION']
+DATA_FILES =  ['VERSION']
 DATA_FILES += add_data('MiAZ/data')
+print(DATA_FILES)
 
 setup(
     name=ENV['APP']['shortname'],
-    version=ENV['APP']['version'],
+    version=open('VERSION', 'r').read().strip(),
     author=ENV['APP']['author'],
     author_email=ENV['APP']['author_email'],
     url=ENV['APP']['website'],
-    description='A static website generator based on Asciidoctor sources.',
+    description='A personal document organizer',
     long_description=LONG_DESCRIPTION,
-    download_url='https://github.com/t00m/KB4IT/archive/master.zip',
+    download_url='https://github.com/t00m/MiAZ/archive/master.zip',
     license=ENV['APP']['license'],
-    packages=['kb4it', 'kb4it.core', 'kb4it.services'],
+    packages=['MiAZ', 'MiAZ.src'],
     # distutils does not support install_requires, but pip needs it to be
     # able to automatically install dependencies
-    install_requires=['mako==1.1.4'],
+    install_requires=[],
     include_package_data=True,
     data_files=DATA_FILES,
     zip_safe=False,
     platforms='any',
     classifiers=[
-        'Development Status :: 4 - Beta',
-        'Environment :: Console',
-        'Environment :: Web Environment',
-        'Intended Audience :: Developers',
-        'Intended Audience :: Information Technology',
-        'Intended Audience :: System Administrators',
-        'Intended Audience :: Other Audience',
+        'Development Status :: 1 - Planning',
+        'Environment :: X11 Applications :: GTK',
+        'Environment :: X11 Applications :: Gnome',
+        'Intended Audience :: End Users/Desktop',
         'License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)',
         'Natural Language :: English',
         'Operating System :: POSIX :: Linux',
         'Programming Language :: Python :: 3',
         'Topic :: Documentation',
-        'Topic :: Software Development :: Documentation',
-        'Topic :: Utilities'
+        'Topic :: Utilities',
+        'Topic :: Desktop Environment :: Gnome',
+        'Topic :: Office/Business'
     ],
     entry_points={
         'console_scripts': [
-            'kb4it = kb4it.core.main:main',
+            'miaz = MiAZ.src.main:main',
             ],
         },
 )

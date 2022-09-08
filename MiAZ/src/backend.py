@@ -4,12 +4,12 @@
 import os
 import glob
 
-from util import load_json
-from util import guess_datetime
+from MiAZ.src.env import ENV
+from MiAZ.src.util import load_json
+from MiAZ.src.util import guess_datetime
 
-
-countries = load_json('../data/myaz-countries.json')
-
+f_countries = os.path.join(ENV['GPATH']['RESOURCES'], 'myaz-countries.json')
+countries = load_json(f_countries)
 
 def is_country(code: str) -> bool:
     iscountry = False
