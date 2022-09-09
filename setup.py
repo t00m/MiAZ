@@ -55,7 +55,7 @@ setup(
     long_description=LONG_DESCRIPTION,
     download_url='https://github.com/t00m/MiAZ/archive/master.zip',
     license=ENV['APP']['license'],
-    packages=['MiAZ', 'MiAZ.backend'],
+    packages=['MiAZ', 'MiAZ.backend', 'MiAZ.frontend', 'MiAZ.frontend.desktop', 'MiAZ.frontend.console'],
     # distutils does not support install_requires, but pip needs it to be
     # able to automatically install dependencies
     install_requires=[],

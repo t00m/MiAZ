@@ -35,10 +35,3 @@ def guess_datetime(sdate):
             except ValueError:
                 timestamp = None
     return timestamp
-
-def desktop_session() -> str:
-    try:
-        desktop = os.environ['XDG_CURRENT_DESKTOP']
-    except:
-        desktop = None
-    return desktop

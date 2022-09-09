@@ -7,7 +7,8 @@ import glob
 from MiAZ.src.env import ENV
 from MiAZ.src.util import load_json
 from MiAZ.src.util import guess_datetime
-
+from MiAZ.backend.controller import get_documents
+from MiAZ.backend.controller import valid_filename
 
 f_countries = os.path.join(ENV['GPATH']['RESOURCES'], 'miaz-countries.json')
 countries = load_json(f_countries)
@@ -76,6 +77,14 @@ def valid_filename(filepath: str) -> bool:
 
     return valid, reasons
 
+def workflow():
+    docs = get_documents(self.params.SOURCE)
+    for doc in docs:
+        valid, reasons = valid_filename(doc)
+        if not valid:
+            print ("%s needs revision. Reasons" % doc)
+            for reason in reasons:
+                print ("\t => %s" % reason)
 
 def get_documents(root_dir: str) -> []:
     """Get documents from a given directory recursively

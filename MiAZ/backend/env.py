@@ -15,6 +15,10 @@ import sys
 import tempfile
 import multiprocessing
 
+if sys.platform != 'linux':
+    print("Your OS is not supported.")
+    print("Please, use any recent GNU/Linux distribution")
+
 ENV = {}
 
 # Process
@@ -86,4 +90,10 @@ ENV['FILE']['VERSION'] = os.path.join(ENV['GPATH']['DOCS'], 'VERSION')
 
 # App Info
 ENV['APP']['version'] = open(ENV['FILE']['VERSION']).read().strip()
+
+ENV['SYS'] = {}
+try:
+    ENV['SYS']['DESKTOP'] = os.environ['XDG_SESSION_DESKTOP']
+except KeyError:
+    ENV['SYS']['DESKTOP'] = None
 
