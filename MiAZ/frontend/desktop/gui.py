@@ -24,16 +24,32 @@ class GUI(Adw.Application):
         self.connect('activate', self.on_activate)
 
     def on_activate(self, app):
+        GLib.set_application_name(ENV['APP']['name'])
         self.win = MainWindow(application=app)
-        GLib.set_application_name(ENV['APP']['shortname'])
+        self.win.set_default_size(800, 600)
         self.theme = Gtk.IconTheme.get_for_display(self.win.get_display())
         self.theme.add_search_path(ENV['GPATH']['ICONS'])
+
+
+        # Widgets
+        ## HeaderBar [
         self.header = Gtk.HeaderBar()
         self.win.set_titlebar(self.header)
         self.about_button = Gtk.Button(label="About")
         self.about_button.connect('clicked', self.show_about)
         self.header.pack_start(self.about_button)
-        self.win.set_default_size(800, 600)
+        ## ]
+
+        # Central Box [
+        self.mainbox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
+        label = Gtk.Label()
+        label.set_markup("<b>%s</b>" % ENV['APP']['name'])
+        button = Gtk.Button(label="Hola carabola")
+        button.connect("clicked", self.show_about)
+        self.mainbox.append(label)
+        self.mainbox.append(button)
+        self.win.set_child(self.mainbox)
+        ## ]
         self.win.present()
 
 
