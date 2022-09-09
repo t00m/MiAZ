@@ -10,6 +10,9 @@ from gi.repository import Gio
 from gi.repository import GLib
 
 from MiAZ.backend.env import ENV
+from MiAZ.frontend.desktop.widgets import MiAZStack
+from MiAZ.frontend.desktop.widgets import MiAZ_APP_MENU
+from MiAZ.frontend.desktop.widgets import MiAZMenuButton
 
 
 class MainWindow(Gtk.ApplicationWindow):
@@ -32,26 +35,63 @@ class GUI(Adw.Application):
 
 
         # Widgets
-        ## HeaderBar [
+
+        ## Stack & Stack.Switcher
+        self.stack = MiAZStack()
+
+        ## HeaderBar [[
         self.header = Gtk.HeaderBar()
         self.win.set_titlebar(self.header)
-        self.about_button = Gtk.Button(label="About")
-        self.about_button.connect('clicked', self.show_about)
-        self.header.pack_start(self.about_button)
-        ## ]
+        self.header.set_title_widget(self.stack.switcher)
 
-        # Central Box [
+        # Add Menu Button to the titlebar (Right Side)
+        menu = MiAZMenuButton(MiAZ_APP_MENU, 'app-menu')
+        self.header.pack_end(menu)
+        # Create actions to handle menu actions
+        self.create_action('new', self.menu_handler)
+        self.create_action('about', self.menu_handler)
+        self.create_action('quit', self.menu_handler)
+        self.create_action('shortcuts', self.menu_handler)
+
+        # ~ self.about_button = Gtk.Button(label="About")
+        # ~ self.about_button.set_icon_name("open-menu")
+        # ~ self.about_button.connect('clicked', self.show_about)
+        # ~ self.header.pack_end(self.about_button)
+        ## ]]
+
+        ## Central Box [[
         self.mainbox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
-        label = Gtk.Label()
-        label.set_markup("<b>%s</b>" % ENV['APP']['name'])
-        button = Gtk.Button(label="Hola carabola")
-        button.connect("clicked", self.show_about)
-        self.mainbox.append(label)
-        self.mainbox.append(button)
+
+        workspace_label = Gtk.Label()
+        workspace_label.set_text("Workspace")
+        self.stack.add_page('workspace', "Workspace", workspace_label)
+
+        docbrowser_label = Gtk.Label()
+        docbrowser_label.set_text("Document Browser")
+        self.stack.add_page('browser', "Browser", docbrowser_label)
+
+        self.mainbox.append(self.stack)
         self.win.set_child(self.mainbox)
-        ## ]
+        ## ]]
+        # ]
         self.win.present()
 
+    def create_action(self, name, callback):
+        """ Add an Action and connect to a callback """
+        action = Gio.SimpleAction.new(name, None)
+        action.connect("activate", callback)
+        self.add_action(action)
+
+
+    def menu_handler(self, action, state):
+            """ Callback for  menu actions"""
+            name = action.get_name()
+            print(f'active : {name}')
+            if name == 'quit':
+                self.close()
+
+    def close(self):
+        pass
 
     def show_about(self, *args):
         about = Gtk.AboutDialog()
