@@ -1,22 +1,22 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from MiAZ.src.env import ENV
-from MiAZ.src.util import get_version
-from MiAZ.src.util import desktop_session
-from MiAZ.src.config import load_config
-from MiAZ.src.backend import get_documents
-from MiAZ.src.backend import valid_filename
+from MiAZ.backend.env import ENV
+from MiAZ.backend.util import get_version
+from MiAZ.backend.util import desktop_session
+from MiAZ.backend.config import load_config
+from MiAZ.backend.controller import get_documents
+from MiAZ.backend.controller import valid_filename
 
 
-def main() -> None:
+def main(dirpath: str) -> None:
     print("%s v%s" % (ENV['APP']['shortname'], get_version()))
     if desktop_session() is None:
         print("No Desktop Environment available")
     config = load_config()
     if config is None:
         print("Configuration file not found!")
-    docs = get_documents('.')
+    docs = get_documents(dirpath)
     for doc in docs:
         valid, reasons = valid_filename(doc)
         if not valid:
@@ -25,4 +25,5 @@ def main() -> None:
                 print ("\t => %s" % reason)
 
 if __name__ == '__main__':
-    main()
+    import sys
+    main(sys.argv[1])

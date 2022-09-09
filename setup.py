@@ -15,7 +15,7 @@ import os
 import glob
 from setuptools import setup
 
-from MiAZ.src.env import ENV
+from MiAZ.backend.env import ENV
 
 with open('README.adoc', 'r') as f:
     LONG_DESCRIPTION = f.read()
@@ -55,7 +55,7 @@ setup(
     long_description=LONG_DESCRIPTION,
     download_url='https://github.com/t00m/MiAZ/archive/master.zip',
     license=ENV['APP']['license'],
-    packages=['MiAZ', 'MiAZ.src'],
+    packages=['MiAZ', 'MiAZ.backend'],
     # distutils does not support install_requires, but pip needs it to be
     # able to automatically install dependencies
     install_requires=[],
@@ -79,7 +79,7 @@ setup(
     ],
     entry_points={
         'console_scripts': [
-            'miaz = MiAZ.src.main:main',
+            'miaz = MiAZ.main:main',
             ],
         },
 )
