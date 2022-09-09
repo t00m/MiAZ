@@ -74,6 +74,7 @@ ENV['GPATH'] = {}
 ENV['GPATH']['ROOT'] = ENV['CONF']['ROOT']
 ENV['GPATH']['DATA'] = os.path.join(ENV['GPATH']['ROOT'], 'data')
 ENV['GPATH']['DOCS'] = os.path.join(ENV['GPATH']['DATA'], 'docs')
+ENV['GPATH']['ICONS'] = os.path.join(ENV['GPATH']['DATA'], 'icons')
 ENV['GPATH']['RESOURCES'] = os.path.join(ENV['GPATH']['DATA'], 'resources')
 ENV['GPATH']['ONLINE'] = os.path.join(ENV['GPATH']['RESOURCES'], 'online')
 ENV['GPATH']['IMAGES'] = os.path.join(ENV['GPATH']['ONLINE'], 'images')
