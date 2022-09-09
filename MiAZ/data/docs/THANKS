@@ -1,2 +1,7 @@
 iso-3166 Alpha-2 code json adapted from this gist:
 https://gist.github.com/ssskip/5a94bfcd2835bf1dea52?permalink_comment_id=4199253#gistcomment-4199253
+About this gitst, data was downloaded from countrycode.org. The Copyright and Usage Policy from https://countrycode.org/copyright states that:
+"it's okay to use and copy the information for personal, non-commercial use, any other use is prohibited without explicit permission."
+
+List of common file extensions (released into the public domain):
+https://github.com/dyne/file-extension-list/blob/master/pub/extensions.json

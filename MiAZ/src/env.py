@@ -30,17 +30,15 @@ ENV['CONF']['USER_DIR'] = os.path.expanduser('~')
 ENV['CONF']['TMPNAME'] = next(tempfile._get_candidate_names())
 ENV['CONF']['MAX_WORKERS'] = multiprocessing.cpu_count()  # Avoid MemoryError
 
-# App Info
 ENV['APP'] = {}
 ENV['APP']['name'] = "My AZ Organizer"
 ENV['APP']['shortname'] = "MiAZ"
 ENV['APP']['description'] = "MyAZ is a personal document organizer"
 ENV['APP']['license'] = 'GPL v3'
 ENV['APP']['license_long'] = "The code is licensed under the terms of the  GPL v3\n\
-so you're free to grab, extend, improve and fork the \
-code\nas you want"
+        so you're free to grab, extend, improve and fork the \
+        code\nas you want"
 ENV['APP']['copyright'] = "Copyright \xa9 2022-2023 Tomás Vírseda"
-# ~ ENV['APP']['version'] = open('%s' % os.path.join(ENV['CONF']['ROOT'], 'VERSION')).read().strip()
 ENV['APP']['author'] = 'Tomás Vírseda'
 ENV['APP']['author_email'] = 'tomasvirseda@gmail.com'
 ENV['APP']['documenters'] = ["Tomás Vírseda <tomasvirseda@gmail.com>"]
@@ -71,6 +69,7 @@ ENV['LPATH']['TMP_TARGET'] = os.path.join(ENV['LPATH']['TMP'], 'target')
 ENV['GPATH'] = {}
 ENV['GPATH']['ROOT'] = ENV['CONF']['ROOT']
 ENV['GPATH']['DATA'] = os.path.join(ENV['GPATH']['ROOT'], 'data')
+ENV['GPATH']['DOCS'] = os.path.join(ENV['GPATH']['DATA'], 'docs')
 ENV['GPATH']['RESOURCES'] = os.path.join(ENV['GPATH']['DATA'], 'resources')
 ENV['GPATH']['ONLINE'] = os.path.join(ENV['GPATH']['RESOURCES'], 'online')
 ENV['GPATH']['IMAGES'] = os.path.join(ENV['GPATH']['ONLINE'], 'images')
@@ -79,3 +78,12 @@ ENV['GPATH']['TEMPLATES'] = os.path.join(ENV['GPATH']['COMMON'], 'templates')
 ENV['GPATH']['THEMES'] = os.path.join(ENV['GPATH']['RESOURCES'], 'themes')
 ENV['GPATH']['APPDATA'] = os.path.join(ENV['GPATH']['COMMON'], 'appdata')
 ENV['GPATH']['RES'] = os.path.join(ENV['GPATH']['DATA'], 'res')
+
+ENV['FILE'] = {}
+ENV['FILE']['CONF'] = os.path.join(ENV['LPATH']['ETC'], 'MyAZ.conf')
+ENV['FILE']['VERSION'] = os.path.join(ENV['GPATH']['DOCS'], 'VERSION')
+
+
+# App Info
+ENV['APP']['version'] = open(ENV['FILE']['VERSION']).read().strip()
+

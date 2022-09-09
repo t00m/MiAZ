@@ -1,9 +1,14 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+import os
 import json
 from datetime import datetime
 
+from MiAZ.src.env import ENV
+
+def get_version() -> str:
+    return open(ENV['FILE']['VERSION']).read().strip()
 
 def load_json(filepath: str) -> {}:
     """Load into a dictionary a file in json format"""
@@ -30,3 +35,10 @@ def guess_datetime(sdate):
             except ValueError:
                 timestamp = None
     return timestamp
+
+def desktop_session() -> str:
+    try:
+        desktop = os.environ['XDG_CURRENT_DESKTOP']
+    except:
+        desktop = None
+    return desktop

@@ -45,11 +45,10 @@ def add_data(root_data):
 
 DATA_FILES =  ['VERSION']
 DATA_FILES += add_data('MiAZ/data')
-print(DATA_FILES)
 
 setup(
     name=ENV['APP']['shortname'],
-    version=open('VERSION', 'r').read().strip(),
+    version=open('MiAZ/data/docs/VERSION', 'r').read().strip(),
     author=ENV['APP']['author'],
     author_email=ENV['APP']['author_email'],
     url=ENV['APP']['website'],
