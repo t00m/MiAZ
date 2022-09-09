@@ -12,23 +12,24 @@ from MiAZ.backend.controller import get_documents
 from MiAZ.backend.controller import valid_filename
 
 
-def MiAZ(params) -> None:
-    print("%s v%s" % (ENV['APP']['shortname'], get_version()))
-    if desktop_session() is None:
-        print("No Desktop Environment available")
-    config = load_config()
-    if config is None:
-        print("Configuration file not found!")
-    docs = get_documents(params.SOURCE)
-    for doc in docs:
-        valid, reasons = valid_filename(doc)
-        if not valid:
-            print ("%s needs revision. Reasons" % doc)
-            for reason in reasons:
-                print ("\t => %s" % reason)
+class MiAZ:
+    def __init__(self, params) -> None:
+        self.params = params
+    def run(self):
+        print("%s v%s" % (ENV['APP']['shortname'], get_version()))
+        if desktop_session() is None:
+            print("No Desktop Environment available")
+        config = load_config()
+        if config is None:
+            print("Configuration file not found!")
+        docs = get_documents(self.params.SOURCE)
+        for doc in docs:
+            valid, reasons = valid_filename(doc)
+            if not valid:
+                print ("%s needs revision. Reasons" % doc)
+                for reason in reasons:
+                    print ("\t => %s" % reason)
 
-if __name__ == '__main__':
-    main(sys.argv[1])
 
 def main():
     """Set up application arguments and execute."""
@@ -45,4 +46,5 @@ def main():
     miaz_options.add_argument('-v', help='Show current version', action='version', version='%s %s' % (ENV['APP']['shortname'], ENV['APP']['version']))
 
     params = parser.parse_args()
-    MiAZ(params)
+    app = MiAZ(params)
+    app.run()
