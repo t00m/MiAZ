@@ -43,8 +43,7 @@ def add_data(root_data):
 
     return dir_files
 
-DATA_FILES =  ['VERSION']
-DATA_FILES += add_data('MiAZ/data')
+DATA_FILES = add_data('MiAZ/data')
 
 setup(
     name=ENV['APP']['shortname'],
