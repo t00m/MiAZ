@@ -5,7 +5,7 @@ import os
 import json
 from datetime import datetime
 
-from MiAZ.src.env import ENV
+from MiAZ.backend.env import ENV
 
 def get_version() -> str:
     return open(ENV['FILE']['VERSION']).read().strip()

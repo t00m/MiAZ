@@ -3,8 +3,8 @@
 
 import os
 
-from MiAZ.src.env import ENV
-from MiAZ.src.util import load_json, save_json
+from MiAZ.backend.env import ENV
+from MiAZ.backend.util import load_json, save_json
 
 
 def load_config() -> dict:

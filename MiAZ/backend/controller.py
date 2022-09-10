@@ -4,9 +4,9 @@
 import os
 import glob
 
-from MiAZ.src.env import ENV
-from MiAZ.src.util import load_json
-from MiAZ.src.util import guess_datetime
+from MiAZ.backend.env import ENV
+from MiAZ.backend.util import load_json
+from MiAZ.backend.util import guess_datetime
 from MiAZ.backend.controller import get_documents
 from MiAZ.backend.controller import valid_filename
 
