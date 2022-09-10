@@ -7,8 +7,7 @@ import glob
 from MiAZ.backend.env import ENV
 from MiAZ.backend.util import load_json
 from MiAZ.backend.util import guess_datetime
-from MiAZ.backend.controller import get_documents
-from MiAZ.backend.controller import valid_filename
+
 
 f_countries = os.path.join(ENV['GPATH']['RESOURCES'], 'miaz-countries.json')
 countries = load_json(f_countries)
