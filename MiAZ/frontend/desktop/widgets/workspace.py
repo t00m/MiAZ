@@ -93,6 +93,9 @@ class MiAZWorkspace(Gtk.Box):
 
         # Suggested filename
         renderer = Gtk.CellRendererText()
+        renderer.set_property('editable', True)
+        renderer.connect('edited', self.edit_filename)
+
         column = Gtk.TreeViewColumn('Suggest filename', renderer, markup=4)
         column.set_visible(True)
         column.set_sizing(Gtk.TreeViewColumnSizing.AUTOSIZE)
@@ -125,10 +128,10 @@ class MiAZWorkspace(Gtk.Box):
         self.append(self.scrwin)
 
     def double_click(self, treeview, treepath, treecolumn):
-        pass
-        model = self.tree.get_model()
-        treeiter = model.get_iter(treepath)
-        filepath = model[treeiter][5]
+        # ~ pass
+        # ~ model = self.tree.get_model()
+        treeiter = self.sorted_model.get_iter(treepath)
+        filepath = self.sorted_model[treeiter][5]
         if os.path.exists(filepath):
             os.system("xdg-open '%s'" % filepath)
 
@@ -151,6 +154,17 @@ class MiAZWorkspace(Gtk.Box):
                     self.store.insert_with_values(node, -1, (0, 3), (icon_stop, "<i>%s</i>" % reason))
             else:
                 self.store.insert_with_values(VALID, -1, (0, 1, 3, 5), (icon, mimetype, document, filepath))
+
+    def edit_filename(self, widget, path, target):
+        treeiter = self.sorted_model.get_iter(path)
+        filename = self.sorted_model[treeiter][4]
+        print(filename)
+        print(target)
+
+    def edit_filename_finished(self, widget, path, target):
+        treeiter = self.sorted_model.get_iter(path)
+        filename = self.sorted_model[treeiter][4]
+        print(filename)
 
     def __clb_visible_function(self, model, itr, data):
         return True
