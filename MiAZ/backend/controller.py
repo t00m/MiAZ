@@ -45,7 +45,7 @@ def valid_filename(filepath: str) -> bool:
         reasons.append("Filename not valid. Extension missing.")
 
     # Check extension
-    if ext not in extensions:
+    if ext.lower() not in extensions:
         valid &= False
         reasons.append("Extension not allowed")
 

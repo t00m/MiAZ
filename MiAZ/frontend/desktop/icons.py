@@ -80,3 +80,16 @@ class MiAZIconManager(GObject.GObject):
             print("Cached pixbuf for mimetype: %s" % mimetype)
         return pixbuf
 
+    def get_pixbuf_by_name(self, name, width=48, height=48) -> Pixbuf:
+        key = "%s-%d-%d" % (name, width, height)
+        try:
+            pixbuf = self.pixbufdict[key]
+        except:
+            paintable = self.theme.lookup_icon(name, None, width, 1, Gtk.TextDirection.NONE, Gtk.IconLookupFlags.FORCE_REGULAR)
+            gfile = paintable.get_file()
+            path = gfile.get_path()
+            pixbuf = Pixbuf.new_from_file_at_size(path, width, height)
+            self.pixbufdict[key] = pixbuf
+            print("Cached pixbuf for name: %s" % name)
+        return pixbuf
+
