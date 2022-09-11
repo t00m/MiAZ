@@ -28,10 +28,8 @@ class MiAZWorkspace(Gtk.Box):
         self.scrwin = Gtk.ScrolledWindow()
         self.scrwin.set_vexpand(True)
         self.icman = MiAZIconManager(win)
-        # Model: document icon, mimetype, current filename, suggested filename (if needed), accept suggestion
-        self.store = Gtk.TreeStore(Pixbuf, str, bool, str, str)
-        # DOC: https://docs.gtk.org/gtk4/method.TreeStore.insert_with_values.html
-        # ~ insert_with_values (self, parent:Gtk.TreeIter=None, position:int, columns:list, values:list) -> iter:Gtk.TreeIter
+        # Model: document icon, mimetype, current filename, suggested filename (if needed), accept suggestion, filepath
+        self.store = Gtk.TreeStore(Pixbuf, str, bool, str, str, str)
 
         self.tree = Gtk.TreeView.new_with_model(self.store)
         self.tree.set_can_focus(True)
@@ -59,8 +57,6 @@ class MiAZWorkspace(Gtk.Box):
         # Mimetype
         renderer = Gtk.CellRendererText()
         column = Gtk.TreeViewColumn('Mimetype', renderer, text=1)
-        # ~ renderer.set_property('xalign', 1.0)
-        # ~ renderer.set_property('height', 36)
         renderer.set_property('background', '#F0E3E3')
         column.set_visible(False)
         column.set_sizing(Gtk.TreeViewColumnSizing.AUTOSIZE)
@@ -68,7 +64,6 @@ class MiAZWorkspace(Gtk.Box):
         column.set_clickable(False)
         column.set_sort_indicator(False)
         column.set_sort_column_id(1)
-        # ~ column.set_sort_order(Gtk.SortType.ASCENDING)
         self.tree.append_column(column)
 
         # Checkbox
@@ -86,50 +81,57 @@ class MiAZWorkspace(Gtk.Box):
         # Current filename
         renderer = Gtk.CellRendererText()
         column = Gtk.TreeViewColumn('Current filename', renderer, markup=3)
-        # ~ renderer.set_property('xalign', 1.0)
-        # ~ renderer.set_property('height', 36)
-        # ~ renderer.set_property('background', '#F0E3E3')
         column.set_visible(True)
         column.set_sizing(Gtk.TreeViewColumnSizing.AUTOSIZE)
         column.set_expand(True)
         column.set_clickable(True)
         column.set_sort_indicator(True)
         column.set_sort_column_id(3)
-        # ~ column.set_sort_order(Gtk.SortType.ASCENDING)
         self.tree.append_column(column)
 
 
         # Suggested filename
         renderer = Gtk.CellRendererText()
         column = Gtk.TreeViewColumn('Suggest filename', renderer, markup=4)
-        # ~ renderer.set_property('xalign', 1.0)
-        # ~ renderer.set_property('height', 36)
-        # ~ renderer.set_property('background', '#F0E3E3')
         column.set_visible(True)
         column.set_sizing(Gtk.TreeViewColumnSizing.AUTOSIZE)
         column.set_expand(True)
         column.set_clickable(True)
         column.set_sort_indicator(True)
         column.set_sort_column_id(4)
-        # ~ column.set_sort_order(Gtk.SortType.ASCENDING)
         self.tree.append_column(column)
 
-
-        # DOC: In order to have a Gtk.Treeview with sorting and filtering
-        # capabilities, you have to filter the model first, and use this
-        # new model to create the sorted model. Then, attach the sorted
-        # model to the treeview...
+        # Filepath
+        renderer = Gtk.CellRendererText()
+        column = Gtk.TreeViewColumn('Document path', renderer, markup=5)
+        column.set_visible(False)
+        column.set_sizing(Gtk.TreeViewColumnSizing.AUTOSIZE)
+        column.set_expand(False)
+        column.set_clickable(False)
+        column.set_sort_indicator(False)
+        self.tree.append_column(column)
 
         # Treeview filtering
         self.treefilter = self.store.filter_new()
         self.treefilter.set_visible_func(self.__clb_visible_function)
-        # https://stackoverflow.com/questions/23355866/user-search-collapsed-rows-in-a-gtk-treeview
 
         # TreeView sorting
         self.sorted_model = Gtk.TreeModelSort(model=self.treefilter)
 
+        self.tree.connect('row-activated', self.double_click)
+
         self.scrwin.set_child(self.tree)
         self.append(self.scrwin)
+
+    def double_click(self, treeview, treepath, treecolumn):
+        pass
+        # ~ model = self.tree.get_model()
+        # ~ treeiter = model.get_iter(treepath)
+        # ~ pkey = model[treeiter][0]
+        # ~ key = model[treeiter][1]
+        # ~ value = model[treeiter][2]
+        # ~ self.srvuif.copy_text_to_clipboard(value)
+        # ~ self.log.info("Copied content of %s to clipboard", self.srvutl.clean_html(key))
 
     def load_data(self):
         import os
@@ -137,19 +139,19 @@ class MiAZWorkspace(Gtk.Box):
         documents = get_documents('/home/t00m/Documents/drive/Documents')
         icon = Pixbuf.new_from_file(ENV['FILE']['APPICON'])
         icon_stop = self.icman.get_pixbuf_by_name('process-stop', 24)
-        INVALID = self.store.insert_with_values(None, -1, (0, 1, 2, 3, 4), (icon, "", False, "File name not valid", ""))
-        VALID = self.store.insert_with_values(None, -1, (0, 1, 2, 3, 4), (icon, "", False, "File name valid", ""))
+        INVALID = self.store.insert_with_values(None, -1, (0, 1, 2, 3, 4, 5), (icon, "", False, "File name not valid", "", ""))
+        VALID = self.store.insert_with_values(None, -1, (0, 1, 2, 3, 4, 5), (icon, "", False, "File name valid", "", ""))
         for filepath in documents:
             document = os.path.basename(filepath)
             mimetype = get_file_mimetype(filepath)
             icon = self.icman.get_pixbuf_mimetype_from_file(filepath)
             valid, reasons = valid_filename(document)
             if not valid:
-                node = self.store.insert_with_values(INVALID, -1, (0, 1, 2, 3, 4), (icon, mimetype, False, "<b>%s</b>" % document, document))
+                node = self.store.insert_with_values(INVALID, -1, (0, 1, 2, 3, 4, 5), (icon, mimetype, False, "<b>%s</b>" % document, document, filepath))
                 for reason in reasons:
                     self.store.insert_with_values(node, -1, (0, 3), (icon_stop, "<i>%s</i>" % reason))
             else:
-                self.store.insert_with_values(VALID, -1, (0, 1, 3), (icon, mimetype, document))
+                self.store.insert_with_values(VALID, -1, (0, 1, 3, 5), (icon, mimetype, document, filepath))
 
     def __clb_visible_function(self, model, itr, data):
         return True
