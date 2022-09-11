@@ -87,6 +87,7 @@ ENV['GPATH']['RES'] = os.path.join(ENV['GPATH']['DATA'], 'res')
 ENV['FILE'] = {}
 ENV['FILE']['CONF'] = os.path.join(ENV['LPATH']['ETC'], 'MyAZ.conf')
 ENV['FILE']['VERSION'] = os.path.join(ENV['GPATH']['DOCS'], 'VERSION')
+ENV['FILE']['APPICON'] = os.path.join(ENV['GPATH']['ICONS'], 'MiAZ.svg')
 
 
 # App Info

@@ -5,6 +5,9 @@ import os
 import json
 from datetime import datetime
 
+import gi
+from gi.repository import Gio
+
 from MiAZ.backend.env import ENV
 
 def get_version() -> str:
@@ -20,6 +23,10 @@ def save_json(filepath: str, adict: {}) -> {}:
     """Save dictionary into a file in json format"""
     with open(filepath, 'w') as fout:
         json.dump(adict, fout)
+
+def get_file_mimetype(path):
+    mimetype, val = Gio.content_type_guess('filename=%s' % path, data=None)
+    return mimetype
 
 def guess_datetime(sdate):
     """Return (guess) a datetime object for a given string."""

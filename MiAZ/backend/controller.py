@@ -9,6 +9,7 @@ from MiAZ.backend.util import load_json
 from MiAZ.backend.util import guess_datetime
 
 
+
 f_countries = os.path.join(ENV['GPATH']['RESOURCES'], 'miaz-countries.json')
 countries = load_json(f_countries)
 

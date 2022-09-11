@@ -83,7 +83,7 @@ class GUI(Adw.Application):
         self.win.present()
 
     def create_workspace(self):
-        return MiAZWorkspace()
+        return MiAZWorkspace(self.win)
 
 
     def create_action(self, name, callback):
