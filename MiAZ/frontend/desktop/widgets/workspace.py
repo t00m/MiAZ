@@ -16,6 +16,7 @@ from gi.repository.GdkPixbuf import Pixbuf
 from MiAZ.backend.env import ENV
 from MiAZ.frontend.desktop.icons import MiAZIconManager
 
+
 class MiAZWorkspace(Gtk.Box):
     """ Wrapper for Gtk.Stack with  with a StackSwitcher """
 
@@ -62,12 +63,16 @@ class MiAZWorkspace(Gtk.Box):
 
     def load_data(self):
         import os
-        from MiAZ.backend.controller import get_documents
+        from MiAZ.backend.controller import get_documents, valid_filename
         documents = get_documents('/home/t00m/Documents/drive/Documents')
-        self.theme = Gtk.IconTheme.get_for_display(self.win.get_display())
-        icons = {}
-
+        icon = Pixbuf.new_from_file(ENV['FILE']['APPICON'])
+        INVALID = self.store.insert_with_values(None, -1, (0, 1, 2, 3), (icon, False, "File name not valid", ""))
+        VALID = self.store.insert_with_values(None, -1, (0, 1, 2, 3), (icon, False, "File name valid", ""))
         for filepath in documents:
             document = os.path.basename(filepath)
             icon = self.icman.get_pixbuf_mimetype_from_file(filepath)
-            self.store.insert_with_values(None, -1, (0, 1, 2, 3), (icon, False, document, document))
+            valid, reasons = valid_filename(document)
+            if not valid:
+                self.store.insert_with_values(INVALID, -1, (0, 1, 2, 3), (icon, False, document, document))
+            else:
+                self.store.insert_with_values(VALID, -1, (0, 1, 2, 3), (icon, False, document, ""))

@@ -55,19 +55,9 @@ def valid_filename(filepath: str) -> bool:
         valid &= False
         reasons.append("Wrong number of fields in filename")
 
-    # Check country
-    try:
-        code = fields[0]
-        if not is_country(code):
-            valid &= False
-            reasons.append("Country code doesn't exist")
-    except IndexError:
-        valid &= False
-        reasons.append("Country code couldn't be checked")
-
     # Check timestamp
     try:
-        timestamp = fields[1]
+        timestamp = fields[0]
         if guess_datetime(timestamp) is None:
             valid &= False
             reasons.append("Timestamp not valid")
@@ -76,6 +66,16 @@ def valid_filename(filepath: str) -> bool:
         reasons.append("Timestamp couldn't be checked")
 
     return valid, reasons
+
+    # Check country
+    try:
+        code = fields[1]
+        if not is_country(code):
+            valid &= False
+            reasons.append("Country code doesn't exist")
+    except IndexError:
+        valid &= False
+        reasons.append("Country code couldn't be checked")
 
 def workflow():
     docs = get_documents(self.params.SOURCE)
