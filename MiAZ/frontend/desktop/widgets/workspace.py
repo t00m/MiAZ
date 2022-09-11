@@ -42,7 +42,7 @@ class MiAZWorkspace(Gtk.Box):
 
         self.load_data()
 
-        colA = Gtk.TreeViewColumn("", Gtk.CellRendererPixbuf(), gicon=0)
+        colA = Gtk.TreeViewColumn("", Gtk.CellRendererPixbuf(), pixbuf=0)
         colB = Gtk.TreeViewColumn("Accept change", Gtk.CellRendererToggle(), active=1)
         colC = Gtk.TreeViewColumn("Current filename", Gtk.CellRendererText(), text=2)
         colD = Gtk.TreeViewColumn("Suggested filename", Gtk.CellRendererText(), text=3)
@@ -71,18 +71,15 @@ class MiAZWorkspace(Gtk.Box):
 
         for filepath in documents:
             mimetype = get_file_mimetype(filepath)
-            print(mimetype)
             try:
                 gicon = icons[mimetype]
             except:
                 gicon = Gio.content_type_get_icon(mimetype)
-                icons[mimetype] = gicon
+                paintable = self.theme.lookup_by_gicon(gicon, 64, 1, Gtk.TextDirection.NONE, Gtk.IconLookupFlags.FORCE_REGULAR)
+                gfile = paintable.get_file()
+                path = gfile.get_path()
+                icon = Pixbuf.new_from_file_at_size(path, 48, 48)
+                icons[mimetype] = icon
 
             document = os.path.basename(filepath)
-            icon = self.theme.lookup_by_gicon(gicon, 128, 1, Gtk.TextDirection.NONE, Gtk.IconLookupFlags.FORCE_REGULAR)
-            gfile = icon.get_file()
-            path = gfile.get_path()
-
-            print(path)
-            # ~ icon = None
             self.store.insert_with_values(None, -1, (0, 1, 2, 3), (icon, False, document, document))
