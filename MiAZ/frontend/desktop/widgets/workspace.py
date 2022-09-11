@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+import os
 import sys
 from abc import abstractmethod
 
@@ -125,13 +126,11 @@ class MiAZWorkspace(Gtk.Box):
 
     def double_click(self, treeview, treepath, treecolumn):
         pass
-        # ~ model = self.tree.get_model()
-        # ~ treeiter = model.get_iter(treepath)
-        # ~ pkey = model[treeiter][0]
-        # ~ key = model[treeiter][1]
-        # ~ value = model[treeiter][2]
-        # ~ self.srvuif.copy_text_to_clipboard(value)
-        # ~ self.log.info("Copied content of %s to clipboard", self.srvutl.clean_html(key))
+        model = self.tree.get_model()
+        treeiter = model.get_iter(treepath)
+        filepath = model[treeiter][5]
+        if os.path.exists(filepath):
+            os.system("xdg-open '%s'" % filepath)
 
     def load_data(self):
         import os
