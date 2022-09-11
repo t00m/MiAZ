@@ -83,22 +83,37 @@ class MiAZWorkspace(Gtk.Box):
         column.set_property('spacing', 50)
         self.tree.append_column(column)
 
-        # ~ colA = Gtk.TreeViewColumn("", Gtk.CellRendererPixbuf(), pixbuf=0)
-        # ~ colB = Gtk.TreeViewColumn("Accept change", Gtk.CellRendererToggle(), active=2)
-        colC = Gtk.TreeViewColumn("Current filename", Gtk.CellRendererText(), markup=3)
-        colD = Gtk.TreeViewColumn("Suggested filename", Gtk.CellRendererText(), markup=4)
+        # Current filename
+        renderer = Gtk.CellRendererText()
+        column = Gtk.TreeViewColumn('Current filename', renderer, markup=3)
+        # ~ renderer.set_property('xalign', 1.0)
+        # ~ renderer.set_property('height', 36)
+        # ~ renderer.set_property('background', '#F0E3E3')
+        column.set_visible(True)
+        column.set_sizing(Gtk.TreeViewColumnSizing.AUTOSIZE)
+        column.set_expand(True)
+        column.set_clickable(True)
+        column.set_sort_indicator(True)
+        column.set_sort_column_id(3)
+        # ~ column.set_sort_order(Gtk.SortType.ASCENDING)
+        self.tree.append_column(column)
 
-        # ~ colB.set_sizing(Gtk.TreeViewColumnSizing.AUTOSIZE)
-        colC.set_sizing(Gtk.TreeViewColumnSizing.AUTOSIZE)
-        colC.set_visible(True)
-        # ~ colB.set_expand(False)
-        colC.set_expand(False)
-        colC.set_clickable(True)
-        colC.set_sort_indicator(False)
-        # ~ self.tree.append_column(colA)
-        # ~ self.tree.append_column(colB)
-        self.tree.append_column(colC)
-        self.tree.append_column(colD)
+
+        # Suggested filename
+        renderer = Gtk.CellRendererText()
+        column = Gtk.TreeViewColumn('Suggest filename', renderer, markup=4)
+        # ~ renderer.set_property('xalign', 1.0)
+        # ~ renderer.set_property('height', 36)
+        # ~ renderer.set_property('background', '#F0E3E3')
+        column.set_visible(True)
+        column.set_sizing(Gtk.TreeViewColumnSizing.AUTOSIZE)
+        column.set_expand(True)
+        column.set_clickable(True)
+        column.set_sort_indicator(True)
+        column.set_sort_column_id(4)
+        # ~ column.set_sort_order(Gtk.SortType.ASCENDING)
+        self.tree.append_column(column)
+
 
         # DOC: In order to have a Gtk.Treeview with sorting and filtering
         # capabilities, you have to filter the model first, and use this
