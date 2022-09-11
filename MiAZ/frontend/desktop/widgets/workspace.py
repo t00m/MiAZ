@@ -14,7 +14,7 @@ from gi.repository import GLib
 from gi.repository.GdkPixbuf import Pixbuf
 
 from MiAZ.backend.env import ENV
-from MiAZ.backend.util import get_file_mimetype
+from MiAZ.frontend.desktop.icons import MiAZIconManager
 
 class MiAZWorkspace(Gtk.Box):
     """ Wrapper for Gtk.Stack with  with a StackSwitcher """
@@ -25,12 +25,11 @@ class MiAZWorkspace(Gtk.Box):
         self.set_vexpand(True)
         self.scrwin = Gtk.ScrolledWindow()
         self.scrwin.set_vexpand(True)
+        self.icman = MiAZIconManager(win)
         # Model: document icon, current filename, suggested filename (if needed), accept suggestion
         self.store = Gtk.TreeStore(Pixbuf, bool, str, str)
-        # ~ for i in range(0, 1000):
-            # ~ self.store.insert_with_values(None, i, (0, 1, 2, 3), (icon, i, i, False))
-            # DOC: https://docs.gtk.org/gtk4/method.TreeStore.insert_with_values.html
-            # ~ insert_with_values (self, parent:Gtk.TreeIter=None, position:int, columns:list, values:list) -> iter:Gtk.TreeIter
+        # DOC: https://docs.gtk.org/gtk4/method.TreeStore.insert_with_values.html
+        # ~ insert_with_values (self, parent:Gtk.TreeIter=None, position:int, columns:list, values:list) -> iter:Gtk.TreeIter
 
         self.tree = Gtk.TreeView.new_with_model(self.store)
         self.tree.set_can_focus(True)
@@ -66,20 +65,9 @@ class MiAZWorkspace(Gtk.Box):
         from MiAZ.backend.controller import get_documents
         documents = get_documents('/home/t00m/Documents/drive/Documents')
         self.theme = Gtk.IconTheme.get_for_display(self.win.get_display())
-        print(dir(self.theme))
         icons = {}
 
         for filepath in documents:
-            mimetype = get_file_mimetype(filepath)
-            try:
-                gicon = icons[mimetype]
-            except:
-                gicon = Gio.content_type_get_icon(mimetype)
-                paintable = self.theme.lookup_by_gicon(gicon, 64, 1, Gtk.TextDirection.NONE, Gtk.IconLookupFlags.FORCE_REGULAR)
-                gfile = paintable.get_file()
-                path = gfile.get_path()
-                icon = Pixbuf.new_from_file_at_size(path, 48, 48)
-                icons[mimetype] = icon
-
             document = os.path.basename(filepath)
+            icon = self.icman.get_pixbuf_mimetype_from_file(filepath)
             self.store.insert_with_values(None, -1, (0, 1, 2, 3), (icon, False, document, document))
