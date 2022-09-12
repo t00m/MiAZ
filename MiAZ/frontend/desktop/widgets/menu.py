@@ -20,7 +20,7 @@ MiAZ_APP_MENU = """
   <section>
     <item>
       <attribute name='label' translatable='yes'>_New Stuff</attribute>
-      <attribute name='action'>win.new</attribute>
+      <attribute name='action'>new</attribute>
     </item>
     <item>
       <attribute name='label' translatable='yes'>_About</attribute>
@@ -32,7 +32,7 @@ MiAZ_APP_MENU = """
     </item>
     <item>
       <attribute name='label' translatable='yes'>_Quit</attribute>
-      <attribute name='action'>win.quit</attribute>
+      <attribute name='action'>app.quit</attribute>
     </item>
   </section>
 </menu>

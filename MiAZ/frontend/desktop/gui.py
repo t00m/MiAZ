@@ -122,6 +122,7 @@ class GUI(Adw.Application):
 
     def menu_handler(self, action, state):
             """ Callback for  menu actions"""
+            print("%s - %s" % (action, state))
             name = action.get_name()
             print(f'active : {name}')
             if name == 'quit':
