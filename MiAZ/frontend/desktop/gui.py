@@ -98,7 +98,7 @@ class GUI(Adw.Application):
 
     def refresh_workspace(self, *args):
         print("Refresh Workspace view")
-        self.workspace.refrew_view()
+        self.workspace.refresh_view()
 
     def show_settings(self, *args):
         settings = Gtk.Dialog()
