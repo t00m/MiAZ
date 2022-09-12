@@ -19,20 +19,20 @@ MiAZ_APP_MENU = """
 <menu id='app-menu'>
   <section>
     <item>
-      <attribute name='label' translatable='yes'>_New Stuff</attribute>
-      <attribute name='action'>new</attribute>
+      <attribute name='label' translatable='yes'>Preferences</attribute>
+      <attribute name='action'>app.settings</attribute>
+    </item>
+    <item>
+      <attribute name='label' translatable='yes'>Help</attribute>
+      <attribute name='action'>app.help</attribute>
     </item>
     <item>
       <attribute name='label' translatable='yes'>_About</attribute>
-      <attribute name='action'>win.about</attribute>
-    </item>
-    <item>
-      <attribute name='label' translatable='yes'>_Shortcuts</attribute>
-      <attribute name='action'>win.shortcuts</attribute>
+      <attribute name='action'>app.about</attribute>
     </item>
     <item>
       <attribute name='label' translatable='yes'>_Quit</attribute>
-      <attribute name='action'>app.quit</attribute>
+      <attribute name='action'>app.close</attribute>
     </item>
   </section>
 </menu>

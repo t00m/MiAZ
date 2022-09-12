@@ -77,7 +77,7 @@ class MiAZIconManager(GObject.GObject):
             path = gfile.get_path()
             pixbuf = Pixbuf.new_from_file_at_size(path, width, height)
             self.pixbufdict[key] = pixbuf
-            print("Cached pixbuf for mimetype: %s" % mimetype)
+            # ~ print("Cached pixbuf for mimetype: %s" % mimetype)
         return pixbuf
 
     def get_pixbuf_by_name(self, name, width=48, height=48) -> Pixbuf:
@@ -90,6 +90,6 @@ class MiAZIconManager(GObject.GObject):
             path = gfile.get_path()
             pixbuf = Pixbuf.new_from_file_at_size(path, width, height)
             self.pixbufdict[key] = pixbuf
-            print("Cached pixbuf for name: %s" % name)
+            # ~ print("Cached pixbuf for name: %s" % name)
         return pixbuf
 

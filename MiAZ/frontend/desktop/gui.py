@@ -26,19 +26,19 @@ class MainWindow(Gtk.ApplicationWindow):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # Things will go here
-        print("Firing desktop application!")
+        # ~ print("Firing desktop application!")
 
 
 class GUI(Adw.Application):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.connect('activate', self.on_activate)
-        print("GUI.__init__")
+        # ~ print("GUI.__init__")
 
     def on_activate(self, app):
         GLib.set_application_name(ENV['APP']['name'])
         self.win = MainWindow(application=app)
-        self.win.set_default_size(800, 600)
+        self.win.set_default_size(1024, 728)
         self.theme = Gtk.IconTheme.get_for_display(self.win.get_display())
         self.theme.add_search_path(ENV['GPATH']['ICONS'])
         self.icman = MiAZIconManager(self.win)
@@ -55,20 +55,20 @@ class GUI(Adw.Application):
         self.win.set_titlebar(self.header)
         self.header.set_title_widget(self.stack.switcher)
 
-        # Add Set Folder button to the titlebar (Right side)
-        icon_folder = self.icman.get_pixbuf_by_name('process-stop', 24)
-        button = Gtk.Button.new_from_icon_name('folder')
-        self.header.pack_start(button)
-        button.connect('clicked', self.select_folder)
+        # ~ # Add Set Folder button to the titlebar (Right side)
+        # ~ icon_folder = self.icman.get_pixbuf_by_name('process-stop', 24)
+        # ~ button = Gtk.Button.new_from_icon_name('folder')
+        # ~ self.header.pack_start(button)
+        # ~ button.connect('clicked', self.select_folder)
 
         # Add Menu Button to the titlebar (Right Side)
         menu = MiAZMenuButton(MiAZ_APP_MENU, 'app-menu')
         self.header.pack_end(menu)
         # Create actions to handle menu actions
-        self.create_action('new', self.menu_handler)
+        self.create_action('settings', self.menu_handler)
+        self.create_action('help', self.menu_handler)
         self.create_action('about', self.menu_handler)
-        self.create_action('quit', self.menu_handler)
-        self.create_action('shortcuts', self.menu_handler)
+        self.create_action('close', self.menu_handler)
 
         # ~ self.about_button = Gtk.Button(label="About")
         # ~ self.about_button.set_icon_name("open-menu")
@@ -93,21 +93,35 @@ class GUI(Adw.Application):
         ## ]]
         # ]
 
-        self.dialog = Gtk.FileChooserNative.new(title="Choose the folder with the documents", parent=self.win, action=Gtk.FileChooserAction.SELECT_FOLDER)
-        self.dialog.connect("response", self.open_response)
+
 
 
         self.win.present()
-        print("GUI.on_activate")
+        # ~ print("GUI.on_activate")
 
-    def select_folder(self, widget):
-        self.dialog.show()
+    def show_settings(self, *args):
+        settings = Gtk.Dialog()
+        settings.set_transient_for(self.win)
+        settings.add_buttons('Cancel', Gtk.ResponseType.CANCEL, 'Accept', Gtk.ResponseType.ACCEPT)
+        settings.connect("response", self.open_response)
+        contents = settings.get_content_area()
+        self.filechooser = Gtk.FileChooserWidget()
+        self.filechooser.set_action(Gtk.FileChooserAction.SELECT_FOLDER)
+        contents.append(self.filechooser)
+        settings.show()
 
     def open_response(self, dialog, response):
         if response == Gtk.ResponseType.ACCEPT:
-            file = dialog.get_file()
-            filename = file.get_path()
-            print(filename)  # Here you could handle opening or saving the file
+            gfile = self.filechooser.get_file()
+            dirpath = gfile.get_path()
+            if dirpath is not None:
+                print(dirpath)  # Here you could handle opening or saving the file
+                config = load_config()
+                if config is None:
+                    config = {}
+                config['source'] = dirpath
+                save_config(config)
+                dialog.destroy()
 
     def create_workspace(self):
         return MiAZWorkspace(self.win)
@@ -117,19 +131,23 @@ class GUI(Adw.Application):
         """ Add an Action and connect to a callback """
         action = Gio.SimpleAction.new(name, None)
         action.connect("activate", callback)
+        # ~ print("%s > %s > %s" % (action, name, callback))
         self.add_action(action)
 
 
     def menu_handler(self, action, state):
             """ Callback for  menu actions"""
-            print("%s - %s" % (action, state))
             name = action.get_name()
             print(f'active : {name}')
-            if name == 'quit':
+            if name == 'settings':
+                self.show_settings()
+            elif name == 'about':
+                self.show_about()
+            elif name == 'close':
                 self.close()
 
     def close(self):
-        print("Close")
+        self.quit()
 
     def show_about(self, *args):
         about = Gtk.AboutDialog()

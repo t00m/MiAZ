@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+import os
 import sys
 import argparse
 
@@ -13,6 +14,7 @@ class MiAZ:
         self.params = params
     def run(self):
         print("%s v%s" % (ENV['APP']['shortname'], get_version()))
+        self.setup_environment()
         if ENV['SYS']['DESKTOP'] is not None:
             from MiAZ.frontend.desktop.gui import GUI
         else:
@@ -20,6 +22,17 @@ class MiAZ:
         app = GUI(application_id="com.example.MiAZ")
         app.run()
 
+    def setup_environment(self):
+            """
+            Setup MiAZ user environment
+            """
+            # Create local paths if they do not exist
+            # ~ self.log.debug("Checking directories for MiAZ")
+            for entry in ENV['LPATH']:
+                if not os.path.exists(ENV['LPATH'][entry]):
+                    os.makedirs(ENV['LPATH'][entry])
+                    # ~ self.log.debug("Directory %s created", ENV['LPATH'][entry])
+            # ~ self.log.debug("MiAZ directory structure ok")
 
 def main():
     """Set up application arguments and execute."""

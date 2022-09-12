@@ -15,6 +15,8 @@ from gi.repository import GLib
 from gi.repository.GdkPixbuf import Pixbuf
 
 from MiAZ.backend.env import ENV
+from MiAZ.backend.config import load_config
+from MiAZ.backend.config import save_config
 from MiAZ.backend.util import get_file_mimetype
 from MiAZ.frontend.desktop.icons import MiAZIconManager
 
@@ -138,7 +140,16 @@ class MiAZWorkspace(Gtk.Box):
     def load_data(self):
         import os
         from MiAZ.backend.controller import get_documents, valid_filename
-        documents = get_documents('/home/t00m/Documents/drive/Documents')
+        config = load_config()
+        if config is None:
+            return
+
+        try:
+            source_path = config['source']
+        except KeyError:
+            return
+        print("Get documents from %s" % source_path)
+        documents = get_documents(source_path)
         icon = Pixbuf.new_from_file(ENV['FILE']['APPICON'])
         icon_stop = self.icman.get_pixbuf_by_name('process-stop', 24)
         INVALID = self.store.insert_with_values(None, -1, (0, 1, 2, 3, 4, 5), (icon, "", False, "File name not valid", "", ""))
