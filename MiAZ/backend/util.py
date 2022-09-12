@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import os
+import re
 import json
 from datetime import datetime
 
@@ -42,3 +43,7 @@ def guess_datetime(sdate):
             except ValueError:
                 timestamp = None
     return timestamp
+
+def valid_key(key):
+    key = str(key).strip().replace(' ', '_')
+    return re.sub(r'(?u)[^-\w.]', '', key)

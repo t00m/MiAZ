@@ -22,6 +22,7 @@ from gi.repository.GdkPixbuf import Pixbuf
 
 from MiAZ.backend.env import ENV
 from MiAZ.backend.util import get_file_mimetype
+from MiAZ.backend.util import valid_key
 
 # FIXME: Fix caching system for pixbufs
 
@@ -56,7 +57,7 @@ class MiAZIconManager(GObject.GObject):
         return paintable
 
     def get_pixbuf_from_file_at_size(self, filepath, width=48, height=48) -> Pixbuf:
-        key = "%s-%d-%d" % (filepath, width, height)
+        key = valid_key("%s-%d-%d" % (filepath, width, height))
         try:
             pixbuf = self.pixbufdict[key]
         except KeyError:
@@ -67,7 +68,7 @@ class MiAZIconManager(GObject.GObject):
 
     def get_pixbuf_mimetype_from_file(self, filepath, width=48, height=48) -> Pixbuf:
         mimetype = get_file_mimetype(filepath)
-        key = "%s-%d-%d" % (mimetype, width, height)
+        key = valid_key("%s-%d-%d" % (mimetype, width, height))
         try:
             pixbuf = self.pixbufdict[key]
         except KeyError:
@@ -75,13 +76,16 @@ class MiAZIconManager(GObject.GObject):
             paintable = self.get_paintable_from_gicon(gicon)
             gfile = paintable.get_file()
             path = gfile.get_path()
-            pixbuf = Pixbuf.new_from_file_at_size(path, width, height)
+            if path is None:
+                pixbuf = self.get_pixbuf_by_name('text-x-generic-symbolic', width)
+            else:
+                pixbuf = Pixbuf.new_from_file_at_size(path, width, height)
             self.pixbufdict[key] = pixbuf
             # ~ print("Cached pixbuf for mimetype: %s" % mimetype)
         return pixbuf
 
     def get_pixbuf_by_name(self, name, width=48, height=48) -> Pixbuf:
-        key = "%s-%d-%d" % (name, width, height)
+        key = valid_key("%s-%d-%d" % (name, width, height))
         try:
             pixbuf = self.pixbufdict[key]
         except:

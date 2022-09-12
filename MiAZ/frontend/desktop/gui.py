@@ -55,11 +55,11 @@ class GUI(Adw.Application):
         self.win.set_titlebar(self.header)
         self.header.set_title_widget(self.stack.switcher)
 
-        # ~ # Add Set Folder button to the titlebar (Right side)
-        # ~ icon_folder = self.icman.get_pixbuf_by_name('process-stop', 24)
-        # ~ button = Gtk.Button.new_from_icon_name('folder')
-        # ~ self.header.pack_start(button)
-        # ~ button.connect('clicked', self.select_folder)
+        # Add Refresh button to the titlebar (Left side)
+        # ~ icon_refresh = self.icman.get_pixbuf_by_name('refresh-view', 24)
+        button = Gtk.Button.new_from_icon_name('view-refresh')
+        self.header.pack_start(button)
+        button.connect('clicked', self.refresh_workspace)
 
         # Add Menu Button to the titlebar (Right Side)
         menu = MiAZMenuButton(MiAZ_APP_MENU, 'app-menu')
@@ -84,8 +84,8 @@ class GUI(Adw.Application):
         docbrowser_label.set_text("Document Browser")
         self.stack.add_page('browser', "Browser", docbrowser_label)
 
-        workspace = self.create_workspace()
-        self.stack.add_page('workspace', "Workspace", workspace)
+        self.workspace = self.create_workspace()
+        self.stack.add_page('workspace', "Workspace", self.workspace)
 
         self.mainbox.append(self.stack)
         self.mainbox.set_vexpand(True)
@@ -93,11 +93,12 @@ class GUI(Adw.Application):
         ## ]]
         # ]
 
-
-
-
         self.win.present()
         # ~ print("GUI.on_activate")
+
+    def refresh_workspace(self, *args):
+        print("Refresh Workspace view")
+        self.workspace.refrew_view()
 
     def show_settings(self, *args):
         settings = Gtk.Dialog()
@@ -122,6 +123,9 @@ class GUI(Adw.Application):
                 config['source'] = dirpath
                 save_config(config)
                 dialog.destroy()
+                self.workspace.refresh_view()
+        else:
+            dialog.destroy()
 
     def create_workspace(self):
         return MiAZWorkspace(self.win)

@@ -42,7 +42,7 @@ class MiAZWorkspace(Gtk.Box):
         self.tree.set_hover_selection(False)
         self.tree.set_grid_lines(Gtk.TreeViewGridLines.HORIZONTAL)
 
-        self.load_data()
+        self.refresh_view()
 
         # Icon
         renderer = Gtk.CellRendererPixbuf()
@@ -137,9 +137,10 @@ class MiAZWorkspace(Gtk.Box):
         if os.path.exists(filepath):
             os.system("xdg-open '%s'" % filepath)
 
-    def load_data(self):
+    def refresh_view(self):
         import os
         from MiAZ.backend.controller import get_documents, valid_filename
+        self.store.clear()
         config = load_config()
         if config is None:
             return
