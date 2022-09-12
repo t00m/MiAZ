@@ -6,7 +6,6 @@ import argparse
 
 from MiAZ.backend.env import ENV
 from MiAZ.backend.util import get_version
-from MiAZ.backend.config import load_config
 
 
 class MiAZ:
@@ -14,9 +13,6 @@ class MiAZ:
         self.params = params
     def run(self):
         print("%s v%s" % (ENV['APP']['shortname'], get_version()))
-        config = load_config()
-        if config is None:
-            print("Configuration file not found!")
         if ENV['SYS']['DESKTOP'] is not None:
             from MiAZ.frontend.desktop.gui import GUI
         else:

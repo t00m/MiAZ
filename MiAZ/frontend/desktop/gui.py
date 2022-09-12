@@ -12,11 +12,14 @@ from gi.repository import GObject
 from gi.repository import Pango
 
 from MiAZ.backend.env import ENV
+from MiAZ.backend.config import load_config
+from MiAZ.backend.config import save_config
 from MiAZ.backend.controller import get_documents
 from MiAZ.frontend.desktop.widgets.stack import MiAZStack
 from MiAZ.frontend.desktop.widgets.menu import MiAZ_APP_MENU
 from MiAZ.frontend.desktop.widgets.menubutton import MiAZMenuButton
 from MiAZ.frontend.desktop.widgets.workspace import MiAZWorkspace
+from MiAZ.frontend.desktop.icons import MiAZIconManager
 
 
 class MainWindow(Gtk.ApplicationWindow):
@@ -25,10 +28,12 @@ class MainWindow(Gtk.ApplicationWindow):
         # Things will go here
         print("Firing desktop application!")
 
+
 class GUI(Adw.Application):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.connect('activate', self.on_activate)
+        print("GUI.__init__")
 
     def on_activate(self, app):
         GLib.set_application_name(ENV['APP']['name'])
@@ -36,6 +41,7 @@ class GUI(Adw.Application):
         self.win.set_default_size(800, 600)
         self.theme = Gtk.IconTheme.get_for_display(self.win.get_display())
         self.theme.add_search_path(ENV['GPATH']['ICONS'])
+        self.icman = MiAZIconManager(self.win)
 
 
         # Widgets
@@ -48,6 +54,12 @@ class GUI(Adw.Application):
         self.header = Gtk.HeaderBar()
         self.win.set_titlebar(self.header)
         self.header.set_title_widget(self.stack.switcher)
+
+        # Add Set Folder button to the titlebar (Right side)
+        icon_folder = self.icman.get_pixbuf_by_name('process-stop', 24)
+        button = Gtk.Button.new_from_icon_name('folder')
+        self.header.pack_start(button)
+        button.connect('clicked', self.select_folder)
 
         # Add Menu Button to the titlebar (Right Side)
         menu = MiAZMenuButton(MiAZ_APP_MENU, 'app-menu')
@@ -80,7 +92,22 @@ class GUI(Adw.Application):
         self.win.set_child(self.mainbox)
         ## ]]
         # ]
+
+        self.dialog = Gtk.FileChooserNative.new(title="Choose the folder with the documents", parent=self.win, action=Gtk.FileChooserAction.SELECT_FOLDER)
+        self.dialog.connect("response", self.open_response)
+
+
         self.win.present()
+        print("GUI.on_activate")
+
+    def select_folder(self, widget):
+        self.dialog.show()
+
+    def open_response(self, dialog, response):
+        if response == Gtk.ResponseType.ACCEPT:
+            file = dialog.get_file()
+            filename = file.get_path()
+            print(filename)  # Here you could handle opening or saving the file
 
     def create_workspace(self):
         return MiAZWorkspace(self.win)
