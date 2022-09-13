@@ -22,7 +22,8 @@ class MiAZ:
             from MiAZ.frontend.desktop.gui import GUI
         else:
             from MiAZ.frontend.console.gui import GUI
-        app = GUI(application_id="com.example.MiAZ")
+        # ~ app = GUI(application_id="com.example.MiAZ")
+        app = GUI()
         app.run()
         self.log.debug("MiAZ - End")
 

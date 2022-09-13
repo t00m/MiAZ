@@ -17,7 +17,7 @@ from gi.repository.GdkPixbuf import Pixbuf
 from MiAZ.backend.env import ENV
 from MiAZ.backend.config import load_config
 from MiAZ.backend.config import save_config
-from MiAZ.backend.util import get_file_mimetype
+from MiAZ.frontend.desktop.util import get_file_mimetype
 from MiAZ.frontend.desktop.icons import MiAZIconManager
 
 

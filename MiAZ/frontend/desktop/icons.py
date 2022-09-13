@@ -21,7 +21,7 @@ from gi.repository import Gdk
 from gi.repository.GdkPixbuf import Pixbuf
 
 from MiAZ.backend.env import ENV
-from MiAZ.backend.util import get_file_mimetype
+from MiAZ.frontend.desktop.util import get_file_mimetype
 from MiAZ.backend.util import valid_key
 
 # FIXME: Fix caching system for pixbufs
