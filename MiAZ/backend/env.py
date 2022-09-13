@@ -50,24 +50,15 @@ ENV['APP']['website'] = 'https://github.com/t00m/MiAZ'
 
 # Local paths
 ENV['LPATH'] = {}
-ENV['LPATH']['ROOT'] = os.path.join(ENV['CONF']['USER_DIR'], ".%s" % ENV['APP']['shortname'].lower())
+ENV['LPATH']['ROOT'] = os.path.join(ENV['CONF']['USER_DIR'], ".%s" % ENV['APP']['shortname'])
 ENV['LPATH']['ETC'] = os.path.join(ENV['LPATH']['ROOT'], 'etc')
 ENV['LPATH']['VAR'] = os.path.join(ENV['LPATH']['ROOT'], 'var')
-ENV['LPATH']['WORK'] = os.path.join(ENV['LPATH']['VAR'], 'work')
 ENV['LPATH']['DB'] = os.path.join(ENV['LPATH']['VAR'], 'db')
-ENV['LPATH']['PLUGINS'] = os.path.join(ENV['LPATH']['VAR'], 'plugins')
+ENV['LPATH']['CACHE'] = os.path.join(ENV['LPATH']['VAR'], 'cache')
 ENV['LPATH']['LOG'] = os.path.join(ENV['LPATH']['VAR'], 'log')
-ENV['LPATH']['TMP'] = os.path.join(ENV['LPATH']['VAR'], 'log')
+ENV['LPATH']['TMP'] = os.path.join(ENV['LPATH']['VAR'], 'tmp')
 ENV['LPATH']['OPT'] = os.path.join(ENV['LPATH']['ROOT'], 'opt')
-ENV['LPATH']['THEMES'] = os.path.join(ENV['LPATH']['OPT'], 'themes')
-ENV['LPATH']['TMP_SOURCE'] = os.path.join(ENV['LPATH']['TMP'], 'source')
-ENV['LPATH']['TMP_TARGET'] = os.path.join(ENV['LPATH']['TMP'], 'target')
-# ~ ENV['LPATH']['WWW'] = os.path.join(ENV['LPATH']['VAR'], 'www')
-# ~ ENV['LPATH']['EXPORT'] = os.path.join(ENV['LPATH']['VAR'], 'export')
-# ~ ENV['LPATH']['CACHE'] = os.path.join(ENV['LPATH']['VAR'], 'cache')
-# ~ ENV['LPATH']['DISTRIBUTED'] = os.path.join(ENV['LPATH']['CACHE'], TMPNAME, 'distributed')
-# ~ ENV['LPATH']['TMP'] = os.path.join(ENV['LPATH']['VAR'], 'tmp', TMPNAME)
-
+ENV['LPATH']['PLUGINS'] = os.path.join(ENV['LPATH']['OPT'], 'plugins')
 
 # Global paths
 ENV['GPATH'] = {}
@@ -76,14 +67,8 @@ ENV['GPATH']['DATA'] = os.path.join(ENV['GPATH']['ROOT'], 'data')
 ENV['GPATH']['DOCS'] = os.path.join(ENV['GPATH']['DATA'], 'docs')
 ENV['GPATH']['ICONS'] = os.path.join(ENV['GPATH']['DATA'], 'icons')
 ENV['GPATH']['RESOURCES'] = os.path.join(ENV['GPATH']['DATA'], 'resources')
-ENV['GPATH']['ONLINE'] = os.path.join(ENV['GPATH']['RESOURCES'], 'online')
-ENV['GPATH']['IMAGES'] = os.path.join(ENV['GPATH']['ONLINE'], 'images')
-ENV['GPATH']['COMMON'] = os.path.join(ENV['GPATH']['RESOURCES'], 'common')
-ENV['GPATH']['TEMPLATES'] = os.path.join(ENV['GPATH']['COMMON'], 'templates')
-ENV['GPATH']['THEMES'] = os.path.join(ENV['GPATH']['RESOURCES'], 'themes')
-ENV['GPATH']['APPDATA'] = os.path.join(ENV['GPATH']['COMMON'], 'appdata')
-ENV['GPATH']['RES'] = os.path.join(ENV['GPATH']['DATA'], 'res')
 
+# Common file paths
 ENV['FILE'] = {}
 ENV['FILE']['CONF'] = os.path.join(ENV['LPATH']['ETC'], 'MyAZ.conf')
 ENV['FILE']['VERSION'] = os.path.join(ENV['GPATH']['DOCS'], 'VERSION')

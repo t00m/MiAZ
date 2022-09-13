@@ -15,6 +15,7 @@ from MiAZ.backend.env import ENV
 from MiAZ.backend.config import load_config
 from MiAZ.backend.config import save_config
 from MiAZ.backend.controller import get_documents
+from MiAZ.backend.log import get_logger
 from MiAZ.frontend.desktop.widgets.stack import MiAZStack
 from MiAZ.frontend.desktop.widgets.menu import MiAZ_APP_MENU
 from MiAZ.frontend.desktop.widgets.menubutton import MiAZMenuButton
@@ -25,55 +26,36 @@ from MiAZ.frontend.desktop.icons import MiAZIconManager
 class MainWindow(Gtk.ApplicationWindow):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # Things will go here
-        # ~ print("Firing desktop application!")
-
-
-class GUI(Adw.Application):
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        self.connect('activate', self.on_activate)
-        # ~ print("GUI.__init__")
-
-    def on_activate(self, app):
-        GLib.set_application_name(ENV['APP']['name'])
-        self.win = MainWindow(application=app)
-        self.win.set_default_size(1024, 728)
-        self.theme = Gtk.IconTheme.get_for_display(self.win.get_display())
+        self.set_default_size(1024, 728)
+        self.gui = kwargs['application']
+        self.log = self.gui.log
+        self.theme = Gtk.IconTheme.get_for_display(self.get_display())
         self.theme.add_search_path(ENV['GPATH']['ICONS'])
-        self.icman = MiAZIconManager(self.win)
-
 
         # Widgets
-
         ## Stack & Stack.Switcher
         self.stack = MiAZStack()
         self.stack.set_vexpand(True)
 
         ## HeaderBar [[
         self.header = Gtk.HeaderBar()
-        self.win.set_titlebar(self.header)
+        self.set_titlebar(self.header)
         self.header.set_title_widget(self.stack.switcher)
 
         # Add Refresh button to the titlebar (Left side)
-        # ~ icon_refresh = self.icman.get_pixbuf_by_name('refresh-view', 24)
         button = Gtk.Button.new_from_icon_name('view-refresh')
         self.header.pack_start(button)
-        button.connect('clicked', self.refresh_workspace)
+        button.connect('clicked', self.gui.refresh_workspace)
 
         # Add Menu Button to the titlebar (Right Side)
         menu = MiAZMenuButton(MiAZ_APP_MENU, 'app-menu')
         self.header.pack_end(menu)
-        # Create actions to handle menu actions
-        self.create_action('settings', self.menu_handler)
-        self.create_action('help', self.menu_handler)
-        self.create_action('about', self.menu_handler)
-        self.create_action('close', self.menu_handler)
 
-        # ~ self.about_button = Gtk.Button(label="About")
-        # ~ self.about_button.set_icon_name("open-menu")
-        # ~ self.about_button.connect('clicked', self.show_about)
-        # ~ self.header.pack_end(self.about_button)
+        # Create actions to handle menu actions
+        self.gui.create_action('settings', self.gui.menu_handler)
+        self.gui.create_action('help', self.gui.menu_handler)
+        self.gui.create_action('about', self.gui.menu_handler)
+        self.gui.create_action('close', self.gui.menu_handler)
         ## ]]
 
         ## Central Box [[
@@ -89,15 +71,27 @@ class GUI(Adw.Application):
 
         self.mainbox.append(self.stack)
         self.mainbox.set_vexpand(True)
-        self.win.set_child(self.mainbox)
+        self.set_child(self.mainbox)
         ## ]]
         # ]
 
+    def create_workspace(self):
+        return MiAZWorkspace(self)
+
+class GUI(Adw.Application):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.log = get_logger("Desktop.GUI")
+        self.log.debug("Adw.Application: %s", kwargs)
+        self.connect('activate', self.on_activate)
+
+    def on_activate(self, app):
+        GLib.set_application_name(ENV['APP']['name'])
+        self.win = MainWindow(application=app)
+        self.icman = MiAZIconManager(self.win)
         self.win.present()
-        # ~ print("GUI.on_activate")
 
     def refresh_workspace(self, *args):
-        print("Refresh Workspace view")
         self.workspace.refresh_view()
 
     def show_settings(self, *args):
@@ -127,10 +121,6 @@ class GUI(Adw.Application):
         else:
             dialog.destroy()
 
-    def create_workspace(self):
-        return MiAZWorkspace(self.win)
-
-
     def create_action(self, name, callback):
         """ Add an Action and connect to a callback """
         action = Gio.SimpleAction.new(name, None)
@@ -155,8 +145,8 @@ class GUI(Adw.Application):
 
     def show_about(self, *args):
         about = Gtk.AboutDialog()
-        about.set_transient_for(self.win)  # Makes the dialog always appear in from of the parent window
-        about.set_modal(self)  # Makes the parent window unresponsive while dialog is showing
+        about.set_transient_for(self.win)
+        about.set_modal(self)
         about.set_authors([ENV['APP']['author']])
         about.set_copyright(ENV['APP']['copyright'])
         about.set_license_type(Gtk.License.GPL_3_0)
