@@ -27,10 +27,10 @@ from MiAZ.backend.util import valid_key
 # FIXME: Fix caching system for pixbufs
 
 class MiAZIconManager(GObject.GObject):
-    def __init__(self, win):
+    def __init__(self, gui):
         super(MiAZIconManager, self).__init__()
-        self.win = win
-        self.theme = Gtk.IconTheme.get_for_display(self.win.get_display())
+        self.gui = gui
+        self.theme = Gtk.IconTheme.get_for_display(self.gui.win.get_display())
         self.theme.add_search_path(ENV['GPATH']['ICONS'])
         self.paintable = {}
         self.gicondict = {}
@@ -96,4 +96,7 @@ class MiAZIconManager(GObject.GObject):
             self.pixbufdict[key] = pixbuf
             # ~ print("Cached pixbuf for name: %s" % name)
         return pixbuf
+
+    def get_image_by_name(self, name: str) -> Gtk.Image:
+        return Gtk.Image.new_from_icon_name(name)
 

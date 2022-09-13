@@ -12,8 +12,7 @@ from gi.repository import GObject
 from gi.repository import Pango
 
 from MiAZ.backend.env import ENV
-from MiAZ.backend.config import load_config
-from MiAZ.backend.config import save_config
+from MiAZ.backend.config import MiAZConfig
 from MiAZ.backend.controller import get_documents
 from MiAZ.backend.log import get_logger
 from MiAZ.frontend.desktop.widgets.stack import MiAZStack
@@ -67,7 +66,7 @@ class MainWindow(Gtk.ApplicationWindow):
         docbrowser_label.set_text("Document Browser")
         self.stack.add_page('browser', "Browser", docbrowser_label)
 
-        self.workspace = self.create_workspace()
+        self.workspace = self.gui.create_workspace()
         self.stack.add_page('workspace', "Workspace", self.workspace)
 
         # ~ self.settings = self.create_settings()
@@ -79,31 +78,27 @@ class MainWindow(Gtk.ApplicationWindow):
         ## ]]
         # ]
 
-    def create_workspace(self):
-        return MiAZWorkspace(self)
-
-    def create_settings(self):
-        return MiAZSettings(self)
 
 class GUI(Adw.Application):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.log = get_logger("Desktop.GUI")
         self.log.debug("Adw.Application: %s", kwargs)
+        self.config = MiAZConfig()
         self.connect('activate', self.on_activate)
 
     def on_activate(self, app):
         GLib.set_application_name(ENV['APP']['name'])
         self.win = MainWindow(application=app)
-        self.icman = MiAZIconManager(self.win)
+        self.icman = MiAZIconManager(self)
         self.win.present()
 
     def refresh_workspace(self, *args):
         self.workspace.refresh_view()
 
     def show_settings(self, *args):
-        settings = MiAZSettings(self.win)
-        settings.show()
+        self.settings = MiAZSettings(self)
+        self.settings.show()
         # ~ settings = Gtk.Dialog()
         # ~ settings.set_transient_for(self.win)
         # ~ settings.add_buttons('Cancel', Gtk.ResponseType.CANCEL, 'Accept', Gtk.ResponseType.ACCEPT)
@@ -119,16 +114,26 @@ class GUI(Adw.Application):
             gfile = self.filechooser.get_file()
             dirpath = gfile.get_path()
             if dirpath is not None:
-                print(dirpath)  # Here you could handle opening or saving the file
-                config = load_config()
-                if config is None:
-                    config = {}
-                config['source'] = dirpath
-                save_config(config)
+                self.log.info(dirpath)
+                self.config.set('source', dirpath)
                 dialog.destroy()
                 self.workspace.refresh_view()
         else:
             dialog.destroy()
+
+    def create_button(self, icon_name, title, callback):
+        hbox = Gtk.Box(spacing = 3, orientation=Gtk.Orientation.HORIZONTAL)
+        if len(icon_name) != 0:
+            icon = self.icman.get_image_by_name(icon_name)
+            hbox.append(icon)
+        label = Gtk.Label()
+        label.set_markup(title)
+        hbox.append(label)
+        button = Gtk.Button()
+        button.set_child(hbox)
+        button.set_has_frame(True)
+        button.connect('clicked', callback)
+        return button
 
     def create_action(self, name, callback):
         """ Add an Action and connect to a callback """
@@ -137,11 +142,15 @@ class GUI(Adw.Application):
         # ~ print("%s > %s > %s" % (action, name, callback))
         self.add_action(action)
 
+    def create_workspace(self):
+        return MiAZWorkspace(self)
+
+    def create_settings(self):
+        return MiAZSettings(self)
 
     def menu_handler(self, action, state):
             """ Callback for  menu actions"""
             name = action.get_name()
-            print(f'active : {name}')
             if name == 'settings':
                 self.show_settings()
             elif name == 'about':

@@ -15,8 +15,6 @@ from gi.repository import GLib
 from gi.repository.GdkPixbuf import Pixbuf
 
 from MiAZ.backend.env import ENV
-from MiAZ.backend.config import load_config
-from MiAZ.backend.config import save_config
 from MiAZ.frontend.desktop.util import get_file_mimetype
 from MiAZ.frontend.desktop.icons import MiAZIconManager
 
@@ -24,13 +22,14 @@ from MiAZ.frontend.desktop.icons import MiAZIconManager
 class MiAZWorkspace(Gtk.Box):
     """ Wrapper for Gtk.Stack with  with a StackSwitcher """
 
-    def __init__(self, win):
+    def __init__(self, gui):
         super(MiAZWorkspace, self).__init__(orientation=Gtk.Orientation.VERTICAL)
-        self.win = win
+        self.gui = gui
+        self.config = self.gui.config
         self.set_vexpand(True)
         self.scrwin = Gtk.ScrolledWindow()
         self.scrwin.set_vexpand(True)
-        self.icman = MiAZIconManager(win)
+        # ~ self.icman = MiAZIconManager(win)
         # Model: document icon, mimetype, current filename, suggested filename (if needed), accept suggestion, filepath
         self.store = Gtk.TreeStore(Pixbuf, str, bool, str, str, str)
 
@@ -42,7 +41,7 @@ class MiAZWorkspace(Gtk.Box):
         self.tree.set_hover_selection(False)
         self.tree.set_grid_lines(Gtk.TreeViewGridLines.HORIZONTAL)
 
-        self.refresh_view()
+        # ~ self.refresh_view()
 
         # Icon
         renderer = Gtk.CellRendererPixbuf()
@@ -141,24 +140,20 @@ class MiAZWorkspace(Gtk.Box):
         import os
         from MiAZ.backend.controller import get_documents, valid_filename
         self.store.clear()
-        config = load_config()
-        if config is None:
-            return
-
         try:
-            source_path = config['source']
+            source_path = self.config.get('source')
         except KeyError:
             return
         print("Get documents from %s" % source_path)
         documents = get_documents(source_path)
         icon = Pixbuf.new_from_file(ENV['FILE']['APPICON'])
-        icon_stop = self.icman.get_pixbuf_by_name('process-stop', 24)
+        icon_stop = self.gui.icman.get_pixbuf_by_name('process-stop', 24)
         INVALID = self.store.insert_with_values(None, -1, (0, 1, 2, 3, 4, 5), (icon, "", False, "File name not valid", "", ""))
         VALID = self.store.insert_with_values(None, -1, (0, 1, 2, 3, 4, 5), (icon, "", False, "File name valid", "", ""))
         for filepath in documents:
             document = os.path.basename(filepath)
             mimetype = get_file_mimetype(filepath)
-            icon = self.icman.get_pixbuf_mimetype_from_file(filepath)
+            icon = self.gui.icman.get_pixbuf_mimetype_from_file(filepath)
             valid, reasons = valid_filename(filepath)
             if not valid:
                 node = self.store.insert_with_values(INVALID, -1, (0, 1, 2, 3, 4, 5), (icon, mimetype, False, "<b>%s</b>" % document, document, filepath))
