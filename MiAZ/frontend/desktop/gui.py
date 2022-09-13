@@ -20,6 +20,7 @@ from MiAZ.frontend.desktop.widgets.stack import MiAZStack
 from MiAZ.frontend.desktop.widgets.menu import MiAZ_APP_MENU
 from MiAZ.frontend.desktop.widgets.menubutton import MiAZMenuButton
 from MiAZ.frontend.desktop.widgets.workspace import MiAZWorkspace
+from MiAZ.frontend.desktop.widgets.settings import MiAZSettings
 from MiAZ.frontend.desktop.icons import MiAZIconManager
 
 
@@ -69,6 +70,9 @@ class MainWindow(Gtk.ApplicationWindow):
         self.workspace = self.create_workspace()
         self.stack.add_page('workspace', "Workspace", self.workspace)
 
+        # ~ self.settings = self.create_settings()
+        # ~ self.stack.add_page('settings', "", self.settings)
+
         self.mainbox.append(self.stack)
         self.mainbox.set_vexpand(True)
         self.set_child(self.mainbox)
@@ -77,6 +81,9 @@ class MainWindow(Gtk.ApplicationWindow):
 
     def create_workspace(self):
         return MiAZWorkspace(self)
+
+    def create_settings(self):
+        return MiAZSettings(self)
 
 class GUI(Adw.Application):
     def __init__(self, **kwargs):
@@ -95,15 +102,17 @@ class GUI(Adw.Application):
         self.workspace.refresh_view()
 
     def show_settings(self, *args):
-        settings = Gtk.Dialog()
-        settings.set_transient_for(self.win)
-        settings.add_buttons('Cancel', Gtk.ResponseType.CANCEL, 'Accept', Gtk.ResponseType.ACCEPT)
-        settings.connect("response", self.open_response)
-        contents = settings.get_content_area()
-        self.filechooser = Gtk.FileChooserWidget()
-        self.filechooser.set_action(Gtk.FileChooserAction.SELECT_FOLDER)
-        contents.append(self.filechooser)
+        settings = MiAZSettings(self.win)
         settings.show()
+        # ~ settings = Gtk.Dialog()
+        # ~ settings.set_transient_for(self.win)
+        # ~ settings.add_buttons('Cancel', Gtk.ResponseType.CANCEL, 'Accept', Gtk.ResponseType.ACCEPT)
+        # ~ settings.connect("response", self.open_response)
+        # ~ contents = settings.get_content_area()
+        # ~ self.filechooser = Gtk.FileChooserWidget()
+        # ~ self.filechooser.set_action(Gtk.FileChooserAction.SELECT_FOLDER)
+        # ~ contents.append(self.filechooser)
+        # ~ settings.show()
 
     def open_response(self, dialog, response):
         if response == Gtk.ResponseType.ACCEPT:
