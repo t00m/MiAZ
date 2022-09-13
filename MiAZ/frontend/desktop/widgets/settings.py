@@ -68,27 +68,34 @@ class MiAZSettings(Gtk.Dialog):
 
         # Setting buttons
         ## Select source directory
+        self.expander = Gtk.Expander()
+        lblRepository = Gtk.Label()
+        lblRepository.set_markup("<b>Repository</b>: %s" % self.gui.config.get('source'))
+        self.expander.set_label_widget(lblRepository)
         # ~ self.filechooser = Gtk.FileChooserDialog("Select documents directory", self.gui.win, Gtk.FileChooserAction.SELECT_FOLDER, 'Cancel', Gtk.ResponseType.CANCEL, 'Accept', Gtk.ResponseType.ACCEPT)
-        self.filechooser = Gtk.FileChooserDialog(title='Select directory', action=Gtk.FileChooserAction.SELECT_FOLDER, modal=False)
-        self.filechooser.add_buttons('Cancel', Gtk.ResponseType.CANCEL, 'Select', Gtk.ResponseType.ACCEPT)
-        self.filechooser.set_default_size(600, 480)
-        self.set_size_request(600, 480)
-        self.filechooser.connect("response", self.select_source_directory)
-        self.filechooser.set_transient_for(self)
+        self.filechooser = Gtk.FileChooserWidget(action=Gtk.FileChooserAction.SELECT_FOLDER)
+        # ~ self.filechooser.add_buttons('Cancel', Gtk.ResponseType.CANCEL, 'Select', Gtk.ResponseType.ACCEPT)
+        # ~ self.filechooser.set_default_size(400, 300)
+        # ~ self.filechooser.connect("response", self.select_source_directory)
+        # ~ self.filechooser.set_transient_for(self)
+        self.expander.set_child(self.filechooser)
 
         hbox = Gtk.Box(spacing = 3, orientation=Gtk.Orientation.HORIZONTAL)
         # ~ label = Gtk.Label()
         # ~ label.set_markup("<b>Select documents folder</b>")
         # ~ hbox.append(label)
-        button = self.gui.create_button('folder', '<b>Select documents folder</b>', self.show_filechooser)
-        hbox.append(button)
-        try:
-            self.lblsrcdir = Gtk.Label.new(self.config.get('source'))
-        except KeyError:
-            self.lblsrcdir = Gtk.Label.new('Source directory not set!')
-        self.lblsrcdir.set_hexpand(True)
-        hbox.append(self.lblsrcdir)
+        # ~ button = self.gui.create_button('folder', '<b>Select documents folder</b>', self.show_filechooser)
+        # ~ hbox.append(button)
+        # ~ try:
+            # ~ self.lblsrcdir = Gtk.Label.new(self.config.get('source'))
+        # ~ except KeyError:
+            # ~ self.lblsrcdir = Gtk.Label.new('Source directory not set!')
+        # ~ self.lblsrcdir.set_hexpand(True)
+        hbox.append(self.expander)
         flowbox.insert(widget=hbox, position=0)
+        for n in range(1,100):
+            button = Gtk.Button.new_with_label(label=f'Botão {n}')
+            flowbox.insert(widget=button, position=n)
 
 
         # ~ self.filechooser = Gtk.FileChooserWidget()
