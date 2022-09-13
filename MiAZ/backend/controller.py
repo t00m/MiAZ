@@ -3,6 +3,8 @@
 
 import os
 import glob
+from datetime import datetime
+from dateutil import parser as dateparser
 
 from MiAZ.backend.env import ENV
 from MiAZ.backend.util import load_json
@@ -25,6 +27,58 @@ def is_country(code: str) -> bool:
     except KeyError:
         iscountry = False
     return iscountry
+
+
+def suggest_filename(filepath: str) -> str:
+    "{timestamp}-{country}-{collection}-{organization}-{purpose}.{extension}"
+    timestamp = ""
+    country = ""
+    collection = ""
+    organization = ""
+    purpose = ""
+
+    filename = os.path.basename(filepath)
+    dot = filename.rfind('.')
+    if dot > 0:
+        name = filename[:dot]
+        ext = filename[dot+1:].lower()
+    else:
+        name = filename
+        ext = 'NOEXTENSION'
+
+    fields = name.split('-')
+
+    # ~ Find and/or guess date field
+    found_date = False
+    for field in fields:
+        try:
+            adate = dateparser.parse(field[:8])
+            if len(timestamp) == 0:
+                timestamp = adate.strftime("%Y%m%d")
+                found_date = True
+        except Exception as error:
+            pass
+    if not found_date:
+        try:
+            created = os.stat(filepath).st_ctime
+            adate = datetime.fromtimestamp(created)
+            timestamp = adate.strftime("%Y%m%d")
+        except Exception as error:
+            print("%s -> %s" % (filepath, error))
+            timestamp = "NODATE"
+
+    # ~ Find and/or guess country field
+    found_country = False
+    for field in fields:
+        if len(field) == 2:
+            if is_country(field.upper()):
+                country = field.upper()
+                found_country = True
+    if not found_country:
+        country = "DE"
+
+    return "%s-%s-%s-%s-%s.%s" % (timestamp, country, collection, organization, purpose, ext)
+
 
 
 def valid_filename(filepath: str) -> bool:
@@ -65,6 +119,7 @@ def valid_filename(filepath: str) -> bool:
         valid &= False
         reasons.append("Timestamp couldn't be checked")
 
+    print("%s > %s" % (filename, suggest_filename(filepath)))
     return valid, reasons
 
     # Check country

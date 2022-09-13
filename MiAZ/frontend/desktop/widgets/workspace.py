@@ -159,7 +159,7 @@ class MiAZWorkspace(Gtk.Box):
             document = os.path.basename(filepath)
             mimetype = get_file_mimetype(filepath)
             icon = self.icman.get_pixbuf_mimetype_from_file(filepath)
-            valid, reasons = valid_filename(document)
+            valid, reasons = valid_filename(filepath)
             if not valid:
                 node = self.store.insert_with_values(INVALID, -1, (0, 1, 2, 3, 4, 5), (icon, mimetype, False, "<b>%s</b>" % document, document, filepath))
                 for reason in reasons:
