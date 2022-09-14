@@ -12,18 +12,18 @@ from gi.repository.GdkPixbuf import Pixbuf
 
 from MiAZ.backend.env import ENV
 
-class MiAZSettings(Gtk.Dialog):
+class MiAZSettings(Gtk.Box):
     """ Wrapper for Gtk.Stack with  with a StackSwitcher """
 
     def __init__(self, gui):
-        super(MiAZSettings, self).__init__()
-        self.set_default_size(600, 480)
+        super(MiAZSettings, self).__init__(orientation=Gtk.Orientation.VERTICAL)
+        # ~ self.set_default_size(600, 480)
         # ~ self.set_title('Settings')
         self.gui = gui
         self.log = gui.log
         self.config = gui.config
-        self.set_transient_for(self.gui.win)
-        self.set_modal(self)
+        # ~ self.set_transient_for(self.gui.win)
+        # ~ self.set_modal(self)
         self.set_vexpand(True)
         self.set_margin_top(margin=12)
         self.set_margin_end(margin=12)
@@ -32,11 +32,11 @@ class MiAZSettings(Gtk.Dialog):
         self.log.debug("MiAZSettings")
         # ~ self.connect("response", self.open_response)
 
-        self.header = Gtk.HeaderBar()
-        self.set_titlebar(self.header)
-        label = Gtk.Label()
-        label.set_markup('<b>Settings</b>')
-        self.header.set_title_widget(label)
+        # ~ self.header = Gtk.HeaderBar()
+        # ~ self.set_titlebar(self.header)
+        # ~ label = Gtk.Label()
+        # ~ label.set_markup('<b>Settings</b>')
+        # ~ self.header.set_title_widget(label)
 
         # Add Refresh button to the titlebar (Left side)
         # ~ button = Gtk.Button.new_from_icon_name('preferences-system')
@@ -44,12 +44,12 @@ class MiAZSettings(Gtk.Dialog):
         # ~ self.header.pack_start(icon)
 
         # Add Cancel & Accept buttons to the titlebar (right side)
-        button = self.gui.create_button('', 'Accept', self.accept)
-        self.header.pack_end(button)
-        button = self.gui.create_button('', 'Cancel', self.cancel)
-        self.header.pack_start(button)
+        # ~ button = self.gui.create_button('', 'Accept', self.accept)
+        # ~ self.header.pack_end(button)
+        # ~ button = self.gui.create_button('', 'Cancel', self.cancel)
+        # ~ self.header.pack_start(button)
 
-        contents = self.get_content_area()
+        # ~ contents = self.get_content_area()
         box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
         box.set_vexpand(True)
         scrwin = Gtk.ScrolledWindow.new()
@@ -64,23 +64,25 @@ class MiAZSettings(Gtk.Dialog):
         flowbox.set_max_children_per_line(n_children=1)
         flowbox.set_selection_mode(mode=Gtk.SelectionMode.NONE)
         scrwin.set_child(child=flowbox)
-        contents.append(box)
+        self.append(box)
 
         # Setting buttons
         ## Select source directory
-        self.expander = Gtk.Expander()
+        hbox = Gtk.Box(spacing = 3, orientation=Gtk.Orientation.HORIZONTAL)
+        button = self.gui.create_button ('folder', 'Select repository folder', self.show_filechooser)
+        hbox.append(button)
         lblRepository = Gtk.Label()
         lblRepository.set_markup("<b>Repository</b>: %s" % self.gui.config.get('source'))
-        self.expander.set_label_widget(lblRepository)
+        hbox.append(lblRepository)
         # ~ self.filechooser = Gtk.FileChooserDialog("Select documents directory", self.gui.win, Gtk.FileChooserAction.SELECT_FOLDER, 'Cancel', Gtk.ResponseType.CANCEL, 'Accept', Gtk.ResponseType.ACCEPT)
-        self.filechooser = Gtk.FileChooserWidget(action=Gtk.FileChooserAction.SELECT_FOLDER)
+        # ~ self.filechooser = Gtk.FileChooserWidget(action=Gtk.FileChooserAction.SELECT_FOLDER)
         # ~ self.filechooser.add_buttons('Cancel', Gtk.ResponseType.CANCEL, 'Select', Gtk.ResponseType.ACCEPT)
         # ~ self.filechooser.set_default_size(400, 300)
         # ~ self.filechooser.connect("response", self.select_source_directory)
         # ~ self.filechooser.set_transient_for(self)
-        self.expander.set_child(self.filechooser)
+        # ~ self.expander.set_child(self.filechooser)
 
-        hbox = Gtk.Box(spacing = 3, orientation=Gtk.Orientation.HORIZONTAL)
+
         # ~ label = Gtk.Label()
         # ~ label.set_markup("<b>Select documents folder</b>")
         # ~ hbox.append(label)
@@ -91,7 +93,7 @@ class MiAZSettings(Gtk.Dialog):
         # ~ except KeyError:
             # ~ self.lblsrcdir = Gtk.Label.new('Source directory not set!')
         # ~ self.lblsrcdir.set_hexpand(True)
-        hbox.append(self.expander)
+        # ~ hbox.append(self.expander)
         flowbox.insert(widget=hbox, position=0)
         for n in range(1,100):
             button = Gtk.Button.new_with_label(label=f'Botão {n}')

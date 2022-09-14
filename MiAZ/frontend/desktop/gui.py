@@ -69,8 +69,8 @@ class MainWindow(Gtk.ApplicationWindow):
         self.workspace = self.gui.create_workspace()
         self.stack.add_page('workspace', "Workspace", self.workspace)
 
-        # ~ self.settings = self.create_settings()
-        # ~ self.stack.add_page('settings', "", self.settings)
+        self.settings = self.gui.create_settings()
+        self.stack.add_page('settings', "Settings", self.settings)
 
         self.mainbox.append(self.stack)
         self.mainbox.set_vexpand(True)
