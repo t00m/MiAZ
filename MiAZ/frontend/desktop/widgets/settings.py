@@ -74,7 +74,8 @@ class MiAZSettings(Gtk.Box):
         lblRepository = Gtk.Label()
         lblRepository.set_markup("<b>Repository</b>: %s" % self.gui.config.get('source'))
         hbox.append(lblRepository)
-        # ~ self.filechooser = Gtk.FileChooserDialog("Select documents directory", self.gui.win, Gtk.FileChooserAction.SELECT_FOLDER, 'Cancel', Gtk.ResponseType.CANCEL, 'Accept', Gtk.ResponseType.ACCEPT)
+
+        # ~ self.dialog = Gtk.Dialog.new("Select documents directory", self.gui.win, Gtk.FileChooserAction.SELECT_FOLDER, 'Cancel', Gtk.ResponseType.CANCEL, 'Accept', Gtk.ResponseType.ACCEPT)
         # ~ self.filechooser = Gtk.FileChooserWidget(action=Gtk.FileChooserAction.SELECT_FOLDER)
         # ~ self.filechooser.add_buttons('Cancel', Gtk.ResponseType.CANCEL, 'Select', Gtk.ResponseType.ACCEPT)
         # ~ self.filechooser.set_default_size(400, 300)
@@ -105,9 +106,18 @@ class MiAZSettings(Gtk.Box):
         # ~ contents.append(self.filechooser)
 
     def show_filechooser(self, *args):
-        self.filechooser.show()
+        dlgFileChooser = Gtk.Dialog()
+        dlgFileChooser.set_transient_for(self.gui.win)
+        dlgFileChooser.add_buttons('Cancel', Gtk.ResponseType.CANCEL, 'Accept', Gtk.ResponseType.ACCEPT)
+        dlgFileChooser.connect("response", self.open_response)
+        contents = dlgFileChooser.get_content_area()
+        wdgfilechooser = Gtk.FileChooserWidget()
+        wdgfilechooser.set_action(Gtk.FileChooserAction.SELECT_FOLDER)
+        contents.append(wdgfilechooser)
+        dlgFileChooser.show()
 
     def select_source_directory(self, dialog, response):
+        self.log.debug("Hi!")
         if response == Gtk.ResponseType.ACCEPT:
             gdir = dialog.get_file()
             source_directory = gdir.get_path()
@@ -116,10 +126,19 @@ class MiAZSettings(Gtk.Box):
             self.log.info("Source directory: %s", source_directory)
         self.filechooser.destroy()
 
-
-
-    def open_response(self, *args):
-        self.log.debug("Settings Response")
+    def open_response(self, dialog, response):
+        if response == Gtk.ResponseType.ACCEPT:
+            content_area = dialog.get_content_area()
+            filechooser = content_area.get_last_child()
+            gfile = filechooser.get_file()
+            dirpath = gfile.get_path()
+            if dirpath is not None:
+                self.log.info(dirpath)
+                self.config.set('source', dirpath)
+                dialog.destroy()
+                # ~ self.workspace.refresh_view()
+        else:
+            dialog.destroy()
 
     def accept(self, *args):
         self.log.info("Settings updated")

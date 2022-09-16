@@ -29,9 +29,26 @@ class MainWindow(Gtk.ApplicationWindow):
         self.set_default_size(1024, 728)
         self.gui = kwargs['application']
         self.log = self.gui.log
-        self.theme = Gtk.IconTheme.get_for_display(self.get_display())
-        self.theme.add_search_path(ENV['GPATH']['ICONS'])
 
+
+class GUI(Adw.Application):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        GLib.set_application_name(ENV['APP']['name'])
+        self.log = get_logger("Desktop.GUI")
+        self.log.debug("Adw.Application: %s", kwargs)
+        self.config = MiAZConfig()
+        self.connect('activate', self.on_activate)
+        self.icman = MiAZIconManager()
+
+    def on_activate(self, app):
+        # Gtk-CRITICAL **: 13:39:05.824: New application windows must be
+        # added after the GApplication::startup signal has been emitted.
+        self.win = MainWindow(application=self)
+        self.build_gui()
+        self.win.present()
+
+    def build_gui(self):
         # Widgets
         ## Stack & Stack.Switcher
         self.stack = MiAZStack()
@@ -39,23 +56,23 @@ class MainWindow(Gtk.ApplicationWindow):
 
         ## HeaderBar [[
         self.header = Gtk.HeaderBar()
-        self.set_titlebar(self.header)
         self.header.set_title_widget(self.stack.switcher)
+        self.win.set_titlebar(self.header)
 
         # Add Refresh button to the titlebar (Left side)
         button = Gtk.Button.new_from_icon_name('view-refresh')
         self.header.pack_start(button)
-        button.connect('clicked', self.gui.refresh_workspace)
+        button.connect('clicked', self.refresh_workspace)
 
         # Add Menu Button to the titlebar (Right Side)
         menu = MiAZMenuButton(MiAZ_APP_MENU, 'app-menu')
         self.header.pack_end(menu)
 
         # Create actions to handle menu actions
-        self.gui.create_action('settings', self.gui.menu_handler)
-        self.gui.create_action('help', self.gui.menu_handler)
-        self.gui.create_action('about', self.gui.menu_handler)
-        self.gui.create_action('close', self.gui.menu_handler)
+        self.create_action('settings', self.menu_handler)
+        self.create_action('help', self.menu_handler)
+        self.create_action('about', self.menu_handler)
+        self.create_action('close', self.menu_handler)
         ## ]]
 
         ## Central Box [[
@@ -66,32 +83,18 @@ class MainWindow(Gtk.ApplicationWindow):
         docbrowser_label.set_text("Document Browser")
         self.stack.add_page('browser', "Browser", docbrowser_label)
 
-        self.workspace = self.gui.create_workspace()
+        self.workspace = self.create_workspace()
         self.stack.add_page('workspace', "Workspace", self.workspace)
 
-        self.settings = self.gui.create_settings()
+        self.settings = self.create_settings()
         self.stack.add_page('settings', "Settings", self.settings)
 
         self.mainbox.append(self.stack)
         self.mainbox.set_vexpand(True)
-        self.set_child(self.mainbox)
+        self.win.set_child(self.mainbox)
         ## ]]
         # ]
 
-
-class GUI(Adw.Application):
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        self.log = get_logger("Desktop.GUI")
-        self.log.debug("Adw.Application: %s", kwargs)
-        self.config = MiAZConfig()
-        self.connect('activate', self.on_activate)
-
-    def on_activate(self, app):
-        GLib.set_application_name(ENV['APP']['name'])
-        self.win = MainWindow(application=app)
-        self.icman = MiAZIconManager(self)
-        self.win.present()
 
     def refresh_workspace(self, *args):
         self.workspace.refresh_view()
