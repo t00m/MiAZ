@@ -29,7 +29,7 @@ class MiAZWorkspace(Gtk.Box):
         self.set_vexpand(True)
         self.scrwin = Gtk.ScrolledWindow()
         self.scrwin.set_vexpand(True)
-        # ~ self.icman = MiAZIconManager(win)
+
         # Model: document icon, mimetype, current filename, suggested filename (if needed), accept suggestion, filepath
         self.store = Gtk.TreeStore(Pixbuf, str, bool, str, str, str)
 

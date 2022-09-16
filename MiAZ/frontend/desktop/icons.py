@@ -44,7 +44,6 @@ class MiAZIconManager(GObject.GObject):
         except KeyError:
             gicon = Gio.content_type_get_icon(mimetype)
             self.gicondict[mimetype] = gicon
-            # ~ print("Cached gicon for mimetype: %s" % mimetype)
         return gicon
 
     def get_paintable_from_gicon(self, gicon: Gio.Icon) -> Gdk.Paintable:
@@ -53,7 +52,6 @@ class MiAZIconManager(GObject.GObject):
         except KeyError:
             paintable = self.theme.lookup_by_gicon(gicon, 64, 1, Gtk.TextDirection.NONE, Gtk.IconLookupFlags.FORCE_REGULAR)
             self.paintable[gicon] = paintable
-            # ~ print("Cached paintable for gicon: %s" % gicon)
         return paintable
 
     def get_pixbuf_from_file_at_size(self, filepath, width=48, height=48) -> Pixbuf:
@@ -63,7 +61,6 @@ class MiAZIconManager(GObject.GObject):
         except KeyError:
             pixbuf = Pixbuf.new_from_file_at_size(filepath, width, height)
             self.pixbufdict[key] = pixbuf
-            # ~ print("Cached pixbuf: %s" % pixbuf)
         return pixbuf
 
     def get_pixbuf_mimetype_from_file(self, filepath, width=48, height=48) -> Pixbuf:
@@ -81,7 +78,6 @@ class MiAZIconManager(GObject.GObject):
             else:
                 pixbuf = Pixbuf.new_from_file_at_size(path, width, height)
             self.pixbufdict[key] = pixbuf
-            # ~ print("Cached pixbuf for mimetype: %s" % mimetype)
         return pixbuf
 
     def get_pixbuf_by_name(self, name, width=48, height=48) -> Pixbuf:
@@ -94,7 +90,6 @@ class MiAZIconManager(GObject.GObject):
             path = gfile.get_path()
             pixbuf = Pixbuf.new_from_file_at_size(path, width, height)
             self.pixbufdict[key] = pixbuf
-            # ~ print("Cached pixbuf for name: %s" % name)
         return pixbuf
 
     def get_image_by_name(self, name: str) -> Gtk.Image:
