@@ -57,7 +57,12 @@ class GUI(Adw.Application):
 
         ## HeaderBar [[
         self.header = Gtk.HeaderBar()
-        self.header.set_title_widget(self.stack.switcher)
+        box = Gtk.Box(spacing = 3, orientation="horizontal")
+        button = self.create_button('view-grid', '', self.show_browser)
+        box.append(button)
+        button = self.create_button('document-new', '', self.show_workspace)
+        box.append(button)
+        self.header.set_title_widget(box)
         self.win.set_titlebar(self.header)
 
         # Add Refresh button to the titlebar (Left side)
@@ -101,17 +106,13 @@ class GUI(Adw.Application):
         self.workspace.refresh_view()
 
     def show_settings(self, *args):
-        self.settings = MiAZSettings(self)
-        self.settings.show()
-        # ~ settings = Gtk.Dialog()
-        # ~ settings.set_transient_for(self.win)
-        # ~ settings.add_buttons('Cancel', Gtk.ResponseType.CANCEL, 'Accept', Gtk.ResponseType.ACCEPT)
-        # ~ settings.connect("response", self.open_response)
-        # ~ contents = settings.get_content_area()
-        # ~ self.filechooser = Gtk.FileChooserWidget()
-        # ~ self.filechooser.set_action(Gtk.FileChooserAction.SELECT_FOLDER)
-        # ~ contents.append(self.filechooser)
-        # ~ settings.show()
+        self.stack.set_visible_child_name('settings')
+
+    def show_browser(self, *args):
+        self.stack.set_visible_child_name('browser')
+
+    def show_workspace(self, *args):
+        self.stack.set_visible_child_name('workspace')
 
     def open_response(self, dialog, response):
         if response == Gtk.ResponseType.ACCEPT:
@@ -128,6 +129,7 @@ class GUI(Adw.Application):
     def create_button(self, icon_name, title, callback):
         hbox = Gtk.Box(spacing = 3, orientation=Gtk.Orientation.HORIZONTAL)
         if len(icon_name) != 0:
+            # FIXME: icon name might not exist at all
             icon = self.icman.get_image_by_name(icon_name)
             hbox.append(icon)
         label = Gtk.Label()
@@ -135,7 +137,7 @@ class GUI(Adw.Application):
         hbox.append(label)
         button = Gtk.Button()
         button.set_child(hbox)
-        button.set_has_frame(True)
+        button.set_has_frame(False)
         button.connect('clicked', callback)
         return button
 
@@ -143,7 +145,6 @@ class GUI(Adw.Application):
         """ Add an Action and connect to a callback """
         action = Gio.SimpleAction.new(name, None)
         action.connect("activate", callback)
-        # ~ print("%s > %s > %s" % (action, name, callback))
         self.add_action(action)
 
     def create_workspace(self):
