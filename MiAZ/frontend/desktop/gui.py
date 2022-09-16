@@ -44,7 +44,8 @@ class GUI(Adw.Application):
     def on_activate(self, app):
         # Gtk-CRITICAL **: 13:39:05.824: New application windows must be
         # added after the GApplication::startup signal has been emitted.
-        self.win = MainWindow(application=self)
+        # ~ self.win = MainWindow(application=self)
+        self.win = Gtk.ApplicationWindow(application=self)
         self.build_gui()
         self.win.present()
 
