@@ -23,29 +23,22 @@ from MiAZ.frontend.desktop.widgets.settings import MiAZSettings
 from MiAZ.frontend.desktop.icons import MiAZIconManager
 
 
-class MainWindow(Gtk.ApplicationWindow):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.set_default_size(1024, 728)
-        self.gui = kwargs['application']
-        self.log = self.gui.log
-
-
 class GUI(Adw.Application):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         GLib.set_application_name(ENV['APP']['name'])
-        self.log = get_logger("Desktop.GUI")
-        self.log.debug("Adw.Application: %s", kwargs)
+        self.log = get_logger("MiAZ.GUI")
+        self.log.debug("Executing MiAZ Desktop mode")
         self.config = MiAZConfig()
         self.connect('activate', self.on_activate)
         self.icman = MiAZIconManager()
 
     def on_activate(self, app):
-        # Gtk-CRITICAL **: 13:39:05.824: New application windows must be
-        # added after the GApplication::startup signal has been emitted.
-        # ~ self.win = MainWindow(application=self)
         self.win = Gtk.ApplicationWindow(application=self)
+        self.win.set_default_size(1024, 728)
+        self.theme = Gtk.IconTheme.get_for_display(self.win.get_display())
+        self.theme.add_search_path(ENV['GPATH']['ICONS'])
+        self.win.set_icon_name('MiAZ')
         self.build_gui()
         self.win.present()
 

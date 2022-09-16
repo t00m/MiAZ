@@ -13,9 +13,10 @@ from MiAZ.backend.log import get_logger
 class MiAZ:
     def __init__(self, params) -> None:
         self.setup_environment()
-        self.log = get_logger('MiAZ')
+        self.log = get_logger('MiAZ.Main')
         self.log.debug("MiAZ - Start")
         self.params = params
+
     def run(self):
         self.log.info("%s v%s", ENV['APP']['shortname'], get_version())
         if ENV['SYS']['DESKTOP'] is not None:
@@ -27,13 +28,13 @@ class MiAZ:
         self.log.debug("MiAZ - End")
 
     def setup_environment(self):
-            """
-            Setup MiAZ user environment
-            """
-            # Create local paths if they do not exist
-            for entry in ENV['LPATH']:
-                if not os.path.exists(ENV['LPATH'][entry]):
-                    os.makedirs(ENV['LPATH'][entry])
+        """
+        Setup MiAZ user environment
+        """
+        # Create local paths if they do not exist
+        for entry in ENV['LPATH']:
+            if not os.path.exists(ENV['LPATH'][entry]):
+                os.makedirs(ENV['LPATH'][entry])
 
 def main():
     """Set up application arguments and execute."""
