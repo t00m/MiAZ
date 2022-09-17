@@ -67,7 +67,7 @@ class MiAZSettings(Gtk.Box):
         button.connect('state-set', self.darkmode_switched)
         hbox_darkmode.append(button)
         lblFrmTitle = Gtk.Label()
-        lblFrmTitle.set_markup("<b>Dark mode</b>")
+        lblFrmTitle.set_markup("<b>Appearance</b>")
         self.lblDarkMode = Gtk.Label()
         self.lblDarkMode.set_markup("<b>Switch Dark mode</b>")
         hbox_darkmode.append(self.lblDarkMode)
