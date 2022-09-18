@@ -17,6 +17,7 @@ from gi.repository.GdkPixbuf import Pixbuf
 from MiAZ.backend.env import ENV
 from MiAZ.frontend.desktop.util import get_file_mimetype
 from MiAZ.frontend.desktop.icons import MiAZIconManager
+from MiAZ.frontend.desktop.widgets.treeview import MiAZTreeView
 
 
 class MiAZWorkspace(Gtk.Box):
@@ -32,16 +33,10 @@ class MiAZWorkspace(Gtk.Box):
 
         # Model: document icon, mimetype, current filename, suggested filename (if needed), accept suggestion, filepath
         self.store = Gtk.TreeStore(Pixbuf, str, bool, str, str, str)
+        self.tree = MiAZTreeView()
+        self.tree.set_model(self.store)
 
-        self.tree = Gtk.TreeView.new_with_model(self.store)
-        self.tree.set_can_focus(True)
-        self.tree.set_enable_tree_lines(True)
-        self.tree.set_headers_visible(True)
-        self.tree.set_enable_search(True)
-        self.tree.set_hover_selection(False)
-        self.tree.set_grid_lines(Gtk.TreeViewGridLines.HORIZONTAL)
-
-        # ~ self.refresh_view()
+        self.refresh_view()
 
         # Icon
         renderer = Gtk.CellRendererPixbuf()

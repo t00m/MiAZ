@@ -27,15 +27,15 @@ class MiAZSettings(Gtk.Box):
         self.set_margin_bottom(margin=12)
         self.set_margin_start(margin=12)
 
-        box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
+        box = Gtk.Box(spacing=24, orientation=Gtk.Orientation.VERTICAL)
         box.set_vexpand(True)
         scrwin = Gtk.ScrolledWindow.new()
         scrwin.set_vexpand(True)
         box.append(child=scrwin)
         self.flowbox = Gtk.FlowBox.new()
-        self.flowbox.set_margin_top(margin=12)
+        self.flowbox.set_margin_top(margin=24)
         self.flowbox.set_margin_end(margin=12)
-        self.flowbox.set_margin_bottom(margin=12)
+        self.flowbox.set_margin_bottom(margin=24)
         self.flowbox.set_margin_start(margin=12)
         self.flowbox.set_valign(align=Gtk.Align.START)
         self.flowbox.set_max_children_per_line(n_children=1)
@@ -48,9 +48,13 @@ class MiAZSettings(Gtk.Box):
         section_repository = self.create_section_repository()
         self.flowbox.insert(widget=section_repository, position=0)
 
+        ## Repository
+        section_resources = self.create_section_resources()
+        self.flowbox.insert(widget=section_resources, position=1)
+
         ## Appearance
         section_appearance = self.create_section_appearance()
-        self.flowbox.insert(widget=section_appearance, position=1)
+        self.flowbox.insert(widget=section_appearance, position=2)
 
     def create_section_appearance(self):
         frmAppearance = Gtk.Frame()
@@ -85,7 +89,7 @@ class MiAZSettings(Gtk.Box):
         hbox_filechooser.set_margin_end(margin=12)
         hbox_filechooser.set_margin_bottom(margin=12)
         hbox_filechooser.set_margin_start(margin=12)
-        button = self.gui.create_button ('folder', 'Select repository folder', self.filechooser_show)
+        button = self.gui.create_button ('folder', 'Select repository folder', self.show_filechooser)
         button.set_has_frame(True)
         hbox_filechooser.append(button)
         lblFrmTitle = Gtk.Label()
@@ -97,13 +101,60 @@ class MiAZSettings(Gtk.Box):
         frmRepository.set_child(hbox_filechooser)
         return frmRepository
 
+    def create_section_resources(self):
+        frmRepository = Gtk.Frame()
+        hbox_resources = Gtk.Box(spacing = 24, orientation=Gtk.Orientation.HORIZONTAL)
+        hbox_resources.set_margin_top(margin=24)
+        hbox_resources.set_margin_end(margin=12)
+        hbox_resources.set_margin_bottom(margin=12)
+        hbox_resources.set_margin_start(margin=12)
+        hbox_resources.set_homogeneous(True)
+        button = self.gui.create_button ('', 'Collections', self.show_res_collections)
+        button.set_has_frame(True)
+        hbox_resources.append(button)
+        button = self.gui.create_button ('', 'Purposes', self.show_res_collections)
+        button.set_has_frame(True)
+        hbox_resources.append(button)
+        button = self.gui.create_button ('', 'Organizations', self.show_res_collections)
+        button.set_has_frame(True)
+        hbox_resources.append(button)
+        button = self.gui.create_button ('', 'File extensions', self.show_res_collections)
+        button.set_has_frame(True)
+        hbox_resources.append(button)
+        lblFrmTitle = Gtk.Label()
+        lblFrmTitle.set_markup("<b>Manage resources</b>")
+        # ~ self.lblRepository = Gtk.Label()
+        # ~ self.lblRepository.set_markup("<b>Current location</b>: %s" % self.gui.config.get('source'))
+        # ~ hbox_resources.append(self.lblRepository)
+        frmRepository.set_label_widget(lblFrmTitle)
+        frmRepository.set_child(hbox_resources)
+        return frmRepository
+
+    def show_res_collections(self, *args):
+        dlgCollections = Gtk.Dialog()
+        dlgCollections.set_transient_for(self.gui.win)
+        dlgCollections.add_buttons('Cancel', Gtk.ResponseType.CANCEL, 'Accept', Gtk.ResponseType.ACCEPT)
+        dlgCollections.connect("response", self.collections_response)
+        contents = dlgCollections.get_content_area()
+        # ~ wdgcollections = Gtk.CollectionsWidget()
+        # ~ wdgcollections.set_action(Gtk.CollectionsAction.SELECT_FOLDER)
+        # ~ contents.append(wdgcollections)
+        dlgCollections.show()
+
+    def collections_response(self, dialog, response):
+        if response == Gtk.ResponseType.ACCEPT:
+            self.log.debug("Collections updated")
+        else:
+            self.log.debug("Collections not updated")
+        dialog.destroy()
+
     def darkmode_switched(self, switch, state):
         if state is True:
             self.sm.set_color_scheme(Adw.ColorScheme.PREFER_DARK)
         else:
             self.sm.set_color_scheme(Adw.ColorScheme.PREFER_LIGHT)
 
-    def filechooser_show(self, *args):
+    def show_filechooser(self, *args):
         dlgFileChooser = Gtk.Dialog()
         dlgFileChooser.set_transient_for(self.gui.win)
         dlgFileChooser.add_buttons('Cancel', Gtk.ResponseType.CANCEL, 'Accept', Gtk.ResponseType.ACCEPT)

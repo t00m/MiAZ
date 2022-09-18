@@ -1,0 +1,27 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+import sys
+from abc import abstractmethod
+
+import gi
+gi.require_version('Gtk', '4.0')
+gi.require_version('Adw', '1')
+from gi.repository import Gtk, Adw
+from gi.repository import Gio
+from gi.repository import GLib
+
+
+class MiAZTreeView(Gtk.TreeView):
+    """ Wrapper for Gtk.Stack with  with a StackSwitcher """
+    __gtype_name__ = 'MiAZTreeView'
+
+    def __init__(self):
+        super(MiAZTreeView, self).__init__()
+        self.set_can_focus(True)
+        self.set_enable_tree_lines(True)
+        self.set_headers_visible(True)
+        self.set_enable_search(True)
+        self.set_hover_selection(False)
+        self.set_grid_lines(Gtk.TreeViewGridLines.HORIZONTAL)
+
