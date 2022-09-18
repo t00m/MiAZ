@@ -11,13 +11,15 @@ from gi.repository import Gtk, Adw
 from gi.repository import Gio
 from gi.repository import GLib
 
+from MiAZ.frontend.desktop.widgets.widget import MiAZWidget
 
-class MiAZTreeView(Gtk.TreeView):
+class MiAZTreeView(MiAZWidget, Gtk.TreeView):
     """ Wrapper for Gtk.Stack with  with a StackSwitcher """
     __gtype_name__ = 'MiAZTreeView'
 
-    def __init__(self):
-        super(MiAZTreeView, self).__init__()
+    def __init__(self, app):
+        super().__init__(app, __class__.__name__)
+        super(Gtk.TreeView, self).__init__()
         self.set_can_focus(True)
         self.set_enable_tree_lines(True)
         self.set_headers_visible(True)

@@ -33,7 +33,7 @@ class MiAZWorkspace(Gtk.Box):
 
         # Model: document icon, mimetype, current filename, suggested filename (if needed), accept suggestion, filepath
         self.store = Gtk.TreeStore(Pixbuf, str, bool, str, str, str)
-        self.tree = MiAZTreeView()
+        self.tree = MiAZTreeView(self.gui)
         self.tree.set_model(self.store)
 
         self.refresh_view()

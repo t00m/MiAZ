@@ -12,6 +12,7 @@ from gi.repository.GdkPixbuf import Pixbuf
 
 from MiAZ.backend.env import ENV
 from MiAZ.backend.log import get_logger
+from MiAZ.frontend.desktop.widgets.collections import MiAZCollections
 
 class MiAZSettings(Gtk.Box):
     """ Wrapper for Gtk.Stack with  with a StackSwitcher """
@@ -132,13 +133,15 @@ class MiAZSettings(Gtk.Box):
 
     def show_res_collections(self, *args):
         dlgCollections = Gtk.Dialog()
+        dlgCollections.set_modal(True)
+        dlgCollections.set_title('Collections')
+        dlgCollections.set_size_request(200, 600)
         dlgCollections.set_transient_for(self.gui.win)
         dlgCollections.add_buttons('Cancel', Gtk.ResponseType.CANCEL, 'Accept', Gtk.ResponseType.ACCEPT)
         dlgCollections.connect("response", self.collections_response)
         contents = dlgCollections.get_content_area()
-        # ~ wdgcollections = Gtk.CollectionsWidget()
-        # ~ wdgcollections.set_action(Gtk.CollectionsAction.SELECT_FOLDER)
-        # ~ contents.append(wdgcollections)
+        wdgCollections = MiAZCollections(self.gui)
+        contents.append(wdgCollections)
         dlgCollections.show()
 
     def collections_response(self, dialog, response):
