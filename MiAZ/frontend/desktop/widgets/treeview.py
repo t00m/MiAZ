@@ -26,4 +26,9 @@ class MiAZTreeView(MiAZWidget, Gtk.TreeView):
         self.set_enable_search(True)
         self.set_hover_selection(False)
         self.set_grid_lines(Gtk.TreeViewGridLines.HORIZONTAL)
+        self.selection = self.get_selection()
+        # ~ self.selection.connect("changed", self.__row_changed)
+        # ~ self.connect("changed", self.__row_changed)
 
+    def __row_changed(self, treeview):
+        self.log.debug(treeview)

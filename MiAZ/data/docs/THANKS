@@ -8,6 +8,9 @@
 ** License: Released into the public domain
 ** URL:     https://github.com/dyne/file-extension-list/blob/master/pub/extensions.json
 
+* Title:    Languages with ISO 639-1 (alpha 2 / two letter) codes and their English names.
+** License: This material is licensed by its maintainers under the Public Domain Dedication and License (PDDL)
+** URL:     https://github.com/datasets/language-codes/blob/master/data/language-codes.csv
 
 *Title:     Misc classes to build Gtk4 Applications in python
 ** License: GNU General Public License v3.0

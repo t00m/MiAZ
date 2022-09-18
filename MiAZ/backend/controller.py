@@ -119,7 +119,7 @@ def valid_filename(filepath: str) -> bool:
         valid &= False
         reasons.append("Timestamp couldn't be checked")
 
-    print("%s > %s" % (filename, suggest_filename(filepath)))
+    # ~ print("%s > %s" % (filename, suggest_filename(filepath)))
     return valid, reasons
 
     # Check country
@@ -132,14 +132,14 @@ def valid_filename(filepath: str) -> bool:
         valid &= False
         reasons.append("Country code couldn't be checked")
 
-def workflow():
-    docs = get_documents(self.params.SOURCE)
-    for doc in docs:
-        valid, reasons = valid_filename(doc)
-        if not valid:
-            print ("%s needs revision. Reasons" % doc)
-            for reason in reasons:
-                print ("\t => %s" % reason)
+# ~ def workflow():
+    # ~ docs = get_documents(self.params.SOURCE)
+    # ~ for doc in docs:
+        # ~ valid, reasons = valid_filename(doc)
+        # ~ if not valid:
+            # ~ print ("%s needs revision. Reasons" % doc)
+            # ~ for reason in reasons:
+                # ~ print ("\t => %s" % reason)
 
 def get_documents(root_dir: str) -> []:
     """Get documents from a given directory recursively

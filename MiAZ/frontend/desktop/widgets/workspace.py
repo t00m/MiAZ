@@ -124,8 +124,6 @@ class MiAZWorkspace(Gtk.Box):
         self.append(self.scrwin)
 
     def double_click(self, treeview, treepath, treecolumn):
-        # ~ pass
-        # ~ model = self.tree.get_model()
         treeiter = self.sorted_model.get_iter(treepath)
         filepath = self.sorted_model[treeiter][5]
         if os.path.exists(filepath):
@@ -139,7 +137,7 @@ class MiAZWorkspace(Gtk.Box):
             source_path = self.config.get('source')
         except KeyError:
             return
-        print("Get documents from %s" % source_path)
+        # ~ print("Get documents from %s" % source_path)
         documents = get_documents(source_path)
         icon = Pixbuf.new_from_file(ENV['FILE']['APPICON'])
         icon_stop = self.gui.icman.get_pixbuf_by_name('process-stop', 24)

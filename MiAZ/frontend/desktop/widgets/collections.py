@@ -34,20 +34,26 @@ class MiAZCollections(MiAZWidget, Gtk.Box):
         self.scrwin = Gtk.ScrolledWindow()
         self.scrwin.set_hexpand(True)
         self.scrwin.set_vexpand(True)
+        self.scrwin.set_has_frame(True)
         self.treeview = MiAZTreeView(self.app)
         self.store = Gtk.TreeStore(str)
+        # ~ self.store.connect('row-inserted', self.__row_inserted)
         self.treeview.set_model(self.store)
+        self.treeview.connect('row-activated', self.double_click)
 
         # Column: Name
-        renderer = Gtk.CellRendererText()
-        column = Gtk.TreeViewColumn('Name', renderer, text=0)
-        column.set_visible(True)
-        column.set_sizing(Gtk.TreeViewColumnSizing.AUTOSIZE)
-        column.set_expand(False)
-        column.set_clickable(False)
-        column.set_sort_indicator(True)
-        column.set_sort_column_id(0)
-        self.treeview.append_column(column)
+        self.renderer = Gtk.CellRendererText()
+        # ~ self.renderer.set_property('editable', True)
+        # ~ self.renderer.set_property('editable-set', True)
+        # ~ self.renderer.connect('edited', self.edit_name)
+        self.column = Gtk.TreeViewColumn('Name', self.renderer, text=0)
+        self.column.set_visible(True)
+        self.column.set_sizing(Gtk.TreeViewColumnSizing.AUTOSIZE)
+        self.column.set_expand(False)
+        self.column.set_clickable(False)
+        self.column.set_sort_indicator(True)
+        self.column.set_sort_column_id(0)
+        self.treeview.append_column(self.column)
 
         # Treeview filtering
         self.treefilter = self.store.filter_new()
@@ -55,6 +61,7 @@ class MiAZCollections(MiAZWidget, Gtk.Box):
 
         # TreeView sorting
         self.sorted_model = Gtk.TreeModelSort(model=self.treefilter)
+        # ~ self.sorted_model.connect('row-inserted', self.__row_inserted)
 
         # ~ self.tree.connect('row-activated', self.treeview.double_click)
 
@@ -69,9 +76,43 @@ class MiAZCollections(MiAZWidget, Gtk.Box):
         self.check()
         self.update()
 
+    def double_click(self, treeview, treepath, treecolumn):
+        treeiter = self.sorted_model.get_iter(treepath)
+        name = self.sorted_model[treeiter][0]
+        dlgManageCollection = Gtk.Dialog()
+        dlgManageCollection.set_modal(True)
+        dlgManageCollection.set_title('Manage collection %s' % name)
+        dlgManageCollection.set_size_request(300, 500)
+        dlgManageCollection.set_transient_for(self.app.win)
+        # ~ dlgManageCollection.add_buttons('Cancel', Gtk.ResponseType.CANCEL, 'Accept', Gtk.ResponseType.ACCEPT)
+        # ~ dlgManageCollection.connect("response", self.collections_response)
+        contents = dlgManageCollection.get_content_area()
+
+        wdgCollections = Gtk.Label.new("Hello World!")
+        contents.append(wdgCollections)
+        dlgManageCollection.show()
+
+    def edit_name(self, widget, path, target):
+        treeiter = self.sorted_model.get_iter(path)
+        name = self.sorted_model[treeiter][0]
+        print(name)
+        print(target)
+
+    def __row_inserted(self, model, treepath, treeiter):
+        self.treeview.set_cursor_on_cell(treepath, self.column, self.renderer, True)
+        self.treeview.grab_focus()
+
     def add(self, *args):
         self.log.debug(args)
-        node = self.store.insert_with_values(None, -1, (0,), ('',))
+        # ~ node = self.store.insert_with_values(None, -1, (0,), ('',))
+        row = self.store.append(None, ('Type new collection name...',))
+
+
+    # ~ def row_activated
+        # ~ row = widget.get_active()  # the ID of the requested row
+        # ~ print(row)
+        # ~ self.treeview.row_activated(Gtk.TreePath(row), Gtk.TreeViewColumn(None))
+        # ~ self.treeview.set_cursor(Gtk.TreePath(row))
 
     def remove(self, *args):
         self.log.debug(args)
