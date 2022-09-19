@@ -130,7 +130,7 @@ class GUI(Adw.Application):
         hbox.append(label)
         button = Gtk.Button()
         button.set_child(hbox)
-        button.set_has_frame(False)
+        button.set_has_frame(True)
         button.connect('clicked', callback)
         return button
 

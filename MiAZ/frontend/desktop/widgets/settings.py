@@ -133,16 +133,29 @@ class MiAZSettings(Gtk.Box):
 
     def show_res_collections(self, *args):
         dlgCollections = Gtk.Dialog()
+        dlgHeader = Gtk.HeaderBar()
+        # ~ boxHeader = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
+        # ~ btnAccept = self.gui.create_button('miaz-ok', 'Accept', self.collections_accept)
+        # ~ btnCancel = self.gui.create_button('miaz-cancel', 'Cancel', self.collections_accept)
+        # ~ boxHeader.append(btnAccept)
+        # ~ dlgHeader.set_title_widget(boxHeader)
+        # ~ dlgHeader.pack_start(btnAccept)
+        # ~ dlgHeader.pack_end(btnCancel)
+        dlgCollections.set_titlebar(dlgHeader)
+        # ~ dlgCollections.set_header_widget(dlgHeader)
         dlgCollections.set_modal(True)
         dlgCollections.set_title('Collections')
         dlgCollections.set_size_request(400, 500)
         dlgCollections.set_transient_for(self.gui.win)
-        dlgCollections.add_buttons('Cancel', Gtk.ResponseType.CANCEL, 'Accept', Gtk.ResponseType.ACCEPT)
-        dlgCollections.connect("response", self.collections_response)
+        # ~ dlgCollections.add_buttons('Cancel', Gtk.ResponseType.CANCEL, 'Accept', Gtk.ResponseType.ACCEPT)
+        # ~ dlgCollections.connect("response", self.collections_response)
         contents = dlgCollections.get_content_area()
         wdgCollections = MiAZCollections(self.gui)
         contents.append(wdgCollections)
         dlgCollections.show()
+
+    def collections_accept(self, *args):
+        self.log.debug(args)
 
     def collections_response(self, dialog, response):
         if response == Gtk.ResponseType.ACCEPT:
