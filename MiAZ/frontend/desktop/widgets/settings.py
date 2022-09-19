@@ -135,7 +135,7 @@ class MiAZSettings(Gtk.Box):
         dlgCollections = Gtk.Dialog()
         dlgCollections.set_modal(True)
         dlgCollections.set_title('Collections')
-        dlgCollections.set_size_request(300, 500)
+        dlgCollections.set_size_request(400, 500)
         dlgCollections.set_transient_for(self.gui.win)
         dlgCollections.add_buttons('Cancel', Gtk.ResponseType.CANCEL, 'Accept', Gtk.ResponseType.ACCEPT)
         dlgCollections.connect("response", self.collections_response)

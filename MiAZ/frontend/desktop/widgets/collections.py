@@ -20,16 +20,34 @@ from MiAZ.frontend.desktop.widgets.treeview import MiAZTreeView
 class MiAZCollections(MiAZWidget, Gtk.Box):
     """ Wrapper for Gtk.Stack with  with a StackSwitcher """
     __gtype_name__ = 'MiAZCollections'
+    current = None
 
     def __init__(self, app):
         super().__init__(app, __class__.__name__)
-        super(Gtk.Box, self).__init__(spacing=12, orientation=Gtk.Orientation.HORIZONTAL)
+        super(Gtk.Box, self).__init__(spacing=12, orientation=Gtk.Orientation.VERTICAL)
         self.app = app
         self.set_vexpand(True)
         self.set_margin_top(margin=12)
         self.set_margin_end(margin=12)
         self.set_margin_bottom(margin=12)
         self.set_margin_start(margin=12)
+
+        box_oper = Gtk.Box(spacing=3, orientation=Gtk.Orientation.HORIZONTAL)
+        box_entry = Gtk.Box(spacing=3, orientation=Gtk.Orientation.HORIZONTAL)
+        box_entry.set_hexpand(True)
+        self.entry = Gtk.Entry()
+        self.entry.set_hexpand(True)
+        self.entry.set_has_frame(True)
+        box_entry.append(self.entry)
+        box_oper.append(box_entry)
+
+        box_buttons = Gtk.Box(spacing=3, orientation=Gtk.Orientation.HORIZONTAL)
+        box_buttons.append(self.app.create_button('gtk-edit', '', self.rename))
+        box_buttons.append(Gtk.Separator.new(orientation=Gtk.Orientation.VERTICAL))
+        box_buttons.append(self.app.create_button('list-add', '', self.add))
+        box_buttons.append(self.app.create_button('list-remove', '', self.remove))
+        box_oper.append(box_buttons)
+        self.append(box_oper)
 
         self.scrwin = Gtk.ScrolledWindow()
         self.scrwin.set_hexpand(True)
@@ -40,6 +58,8 @@ class MiAZCollections(MiAZWidget, Gtk.Box):
         # ~ self.store.connect('row-inserted', self.__row_inserted)
         self.treeview.set_model(self.store)
         self.treeview.connect('row-activated', self.double_click)
+        self.selection = self.treeview.get_selection()
+        self.sig_selection_changed = self.selection.connect('changed', self.selection_changed)
 
         # Column: Name
         self.renderer = Gtk.CellRendererText()
@@ -61,6 +81,7 @@ class MiAZCollections(MiAZWidget, Gtk.Box):
 
         # TreeView sorting
         self.sorted_model = Gtk.TreeModelSort(model=self.treefilter)
+        self.sorted_model.set_sort_func(0, self.sort_function, None)
         # ~ self.sorted_model.connect('row-inserted', self.__row_inserted)
 
         # ~ self.tree.connect('row-activated', self.treeview.double_click)
@@ -68,13 +89,21 @@ class MiAZCollections(MiAZWidget, Gtk.Box):
         self.scrwin.set_child(self.treeview)
         self.append(self.scrwin)
 
-        box_buttons = Gtk.Box(spacing=3, orientation=Gtk.Orientation.VERTICAL)
-        box_buttons.append(self.app.create_button('list-add', '', self.add))
-        box_buttons.append(self.app.create_button('list-remove', '', self.remove))
-        self.append(box_buttons)
-
         self.check()
         self.update()
+
+    def sort_function(self, model, row1, row2, user_data):
+        sort_column = 0
+
+        value1 = model.get_value(row1, sort_column)
+        value2 = model.get_value(row2, sort_column)
+
+        if value1 < value2:
+            return -1
+        elif value1 == value2:
+            return 0
+        else:
+            return 1
 
     def double_click(self, treeview, treepath, treecolumn):
         treeiter = self.sorted_model.get_iter(treepath)
@@ -92,6 +121,16 @@ class MiAZCollections(MiAZWidget, Gtk.Box):
         contents.append(wdgCollections)
         dlgManageCollection.show()
 
+    def selection_changed(self, selection):
+        try:
+            model, treeiter = selection.get_selected()
+            name = model[treeiter][0]
+            tbuf = self.entry.get_buffer()
+            tbuf.set_text(name, -1)
+            self.current = name
+        except:
+            pass
+
     def edit_name(self, widget, path, target):
         treeiter = self.sorted_model.get_iter(path)
         name = self.sorted_model[treeiter][0]
@@ -107,6 +146,48 @@ class MiAZCollections(MiAZWidget, Gtk.Box):
         # ~ node = self.store.insert_with_values(None, -1, (0,), ('',))
         row = self.store.append(None, ('Type new collection name...',))
 
+    def rename(self, *args):
+        # ~ self.selection.disconnect(self.sig_selection_changed)
+        try:
+            tbuf = self.entry.get_buffer()
+            renamed = tbuf.get_text()
+            model, treeiter = self.selection.get_selected()
+            model.remove(treeiter)
+            self.log.error(dir(model))
+            treeiter = self.store.insert_with_values(None, -1, (0,), (renamed,))
+            self.selection.select_iter(treeiter)
+        except:
+            pass
+
+        items = []
+
+        def row(model, path, itr):
+            name = model.get(itr, 0)[0]
+            self.log.error("%s > %s", name, type(name))
+            items.append(name)
+        model.foreach(row)
+        with open(ENV['FILE']['COLLECTIONS'], 'w') as fj:
+            json.dump(sorted(items), fj)
+
+        self.sorted_model.sort_column_changed()
+        self.update()
+
+        # THIS WORKS. Work with a list instead a treeview
+        # ~ self.selection.disconnect(self.sig_selection_changed)
+        # ~ tbuf = self.entry.get_buffer()
+        # ~ renamed = tbuf.get_text()
+        # ~ if self.current is not None:
+            # ~ try:
+                # ~ self.items.remove(self.current)
+                # ~ self.items.append(renamed.upper())
+            # ~ except ValueError:
+                # ~ self.log.warning("%s was not in the list..." % self.current)
+        # ~ with open(ENV['FILE']['COLLECTIONS'], 'w') as fj:
+            # ~ print(sorted(self.items))
+            # ~ json.dump(sorted(self.items), fj)
+        # ~ self.update()
+
+        self.sig_selection_changed = self.selection.connect('changed', self.selection_changed)
 
     # ~ def row_activated
         # ~ row = widget.get_active()  # the ID of the requested row
@@ -126,13 +207,19 @@ class MiAZCollections(MiAZWidget, Gtk.Box):
             self.log.debug("Collections config file created")
 
         with open(ENV['FILE']['COLLECTIONS'], 'r') as fcol:
-            self.collections = json.load(fcol)
-            self.log.debug(self.collections)
-            self.log.debug(type(self.collections))
+            self.items = json.load(fcol)
+            self.log.debug(self.items)
+            self.log.debug(type(self.items))
 
     def update(self):
-        for collection in self.collections:
-            node = self.store.insert_with_values(None, -1, (0,), (collection,))
+        self.store.clear()
+        with open(ENV['FILE']['COLLECTIONS'], 'r') as fin:
+            items = json.load(fin)
+        pos = 0
+        for item in items:
+            node = self.store.insert_with_values(None, pos, (0,), (item,))
+            pos += 1
+        # ~ self.sorted_model.set_sort_column_id(0, Gtk.SortType.ASCENDING)
 
     def __clb_visible_function(self, model, itr, data):
         return True
