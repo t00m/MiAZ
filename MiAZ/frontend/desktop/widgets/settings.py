@@ -135,24 +135,31 @@ class MiAZSettings(Gtk.Box):
     def show_res_collections(self, *args):
         view = MiAZCollections(self.gui)
         local_config = ENV['FILE']['COLLECTIONS']
-        global_config = os.path.join(ENV['GPATH']['RESOURCES'], 'miaz-purposes.json')
+        global_config = os.path.join(ENV['GPATH']['RESOURCES'], 'miaz-collections.json')
         view.set_config_files(local_config, global_config)
         view.update()
         dialog = self.gui.create_dialog(self.gui.win, 'Collections', view)
         dialog.show()
 
     def show_res_purposes(self, *args):
-        dlgPurposes = Gtk.Dialog()
-        dlgHeader = Gtk.HeaderBar()
-        dlgPurposes.set_titlebar(dlgHeader)
-        dlgPurposes.set_modal(True)
-        dlgPurposes.set_title('Purposes')
-        dlgPurposes.set_size_request(400, 500)
-        dlgPurposes.set_transient_for(self.gui.win)
-        contents = dlgPurposes.get_content_area()
-        wdgPurposes = MiAZPurposes(self.gui)
-        contents.append(wdgPurposes)
-        dlgPurposes.show()
+        view = MiAZPurposes(self.gui)
+        local_config = ENV['FILE']['PURPOSES']
+        global_config = os.path.join(ENV['GPATH']['RESOURCES'], 'miaz-purposes.json')
+        view.set_config_files(local_config, global_config)
+        view.update()
+        dialog = self.gui.create_dialog(self.gui.win, 'Purposes', view)
+        dialog.show()
+        # ~ dlgPurposes = Gtk.Dialog()
+        # ~ dlgHeader = Gtk.HeaderBar()
+        # ~ dlgPurposes.set_titlebar(dlgHeader)
+        # ~ dlgPurposes.set_modal(True)
+        # ~ dlgPurposes.set_title('Purposes')
+        # ~ dlgPurposes.set_size_request(400, 500)
+        # ~ dlgPurposes.set_transient_for(self.gui.win)
+        # ~ contents = dlgPurposes.get_content_area()
+        # ~ wdgPurposes = MiAZPurposes(self.gui)
+        # ~ contents.append(wdgPurposes)
+        # ~ dlgPurposes.show()
 
     def collections_accept(self, *args):
         self.log.debug(args)
