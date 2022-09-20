@@ -97,7 +97,12 @@ class MiAZSettings(Gtk.Box):
         lblFrmTitle = Gtk.Label()
         lblFrmTitle.set_markup("<b>Repository</b>")
         self.lblRepository = Gtk.Label()
-        self.lblRepository.set_markup("<b>Current location</b>: %s" % self.gui.config.get('source'))
+        try:
+            source = self.gui.config.get('source')
+        except:
+            source = ''
+            self.gui.config.set('source', source)
+        self.lblRepository.set_markup("<b>Current location</b>: %s" % source)
         hbox_filechooser.append(self.lblRepository)
         frmRepository.set_label_widget(lblFrmTitle)
         frmRepository.set_child(hbox_filechooser)
@@ -117,10 +122,10 @@ class MiAZSettings(Gtk.Box):
         button = self.gui.create_button ('', 'Purposes', self.show_res_purposes)
         button.set_has_frame(True)
         hbox_resources.append(button)
-        button = self.gui.create_button ('', 'Organizations', self.show_res_collections)
+        button = self.gui.create_button ('', 'Organizations', self.show_res_organizations)
         button.set_has_frame(True)
         hbox_resources.append(button)
-        button = self.gui.create_button ('', 'File extensions', self.show_res_collections)
+        button = self.gui.create_button ('', 'File extensions', self.show_res_extensions)
         button.set_has_frame(True)
         hbox_resources.append(button)
         lblFrmTitle = Gtk.Label()
@@ -136,7 +141,7 @@ class MiAZSettings(Gtk.Box):
         view = MiAZCollections(self.gui)
         local_config = ENV['FILE']['COLLECTIONS']
         global_config = os.path.join(ENV['GPATH']['RESOURCES'], 'miaz-collections.json')
-        view.set_config_files(local_config, global_config)
+        view.set_config_files('Collections', local_config, global_config)
         view.update()
         dialog = self.gui.create_dialog(self.gui.win, 'Collections', view)
         dialog.show()
@@ -145,21 +150,28 @@ class MiAZSettings(Gtk.Box):
         view = MiAZPurposes(self.gui)
         local_config = ENV['FILE']['PURPOSES']
         global_config = os.path.join(ENV['GPATH']['RESOURCES'], 'miaz-purposes.json')
-        view.set_config_files(local_config, global_config)
+        view.set_config_files('Purposes', local_config, global_config)
         view.update()
         dialog = self.gui.create_dialog(self.gui.win, 'Purposes', view)
         dialog.show()
-        # ~ dlgPurposes = Gtk.Dialog()
-        # ~ dlgHeader = Gtk.HeaderBar()
-        # ~ dlgPurposes.set_titlebar(dlgHeader)
-        # ~ dlgPurposes.set_modal(True)
-        # ~ dlgPurposes.set_title('Purposes')
-        # ~ dlgPurposes.set_size_request(400, 500)
-        # ~ dlgPurposes.set_transient_for(self.gui.win)
-        # ~ contents = dlgPurposes.get_content_area()
-        # ~ wdgPurposes = MiAZPurposes(self.gui)
-        # ~ contents.append(wdgPurposes)
-        # ~ dlgPurposes.show()
+
+    def show_res_organizations(self, *args):
+        view = MiAZPurposes(self.gui)
+        local_config = ENV['FILE']['ORGANIZATIONS']
+        global_config = os.path.join(ENV['GPATH']['RESOURCES'], 'miaz-organizations.json')
+        view.set_config_files('Organizations', local_config, global_config)
+        view.update()
+        dialog = self.gui.create_dialog(self.gui.win, 'Organizations', view)
+        dialog.show()
+
+    def show_res_extensions(self, *args):
+        view = MiAZPurposes(self.gui)
+        local_config = ENV['FILE']['EXTENSIONS']
+        global_config = os.path.join(ENV['GPATH']['RESOURCES'], 'miaz-extensions.json')
+        view.set_config_files('Extensions', local_config, global_config)
+        view.update()
+        dialog = self.gui.create_dialog(self.gui.win, 'Extensions', view)
+        dialog.show()
 
     def collections_accept(self, *args):
         self.log.debug(args)

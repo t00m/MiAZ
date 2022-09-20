@@ -30,9 +30,10 @@ def is_country(code: str) -> bool:
 
 
 def suggest_filename(filepath: str) -> str:
-    "{timestamp}-{country}-{collection}-{organization}-{purpose}.{extension}"
+    "{timestamp}-{country}-{lang}-{collection}-{organization}-{purpose}.{extension}"
     timestamp = ""
     country = ""
+    lang = ""
     collection = ""
     organization = ""
     purpose = ""

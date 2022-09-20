@@ -21,7 +21,9 @@ class MiAZConfigView(MiAZWidget, Gtk.Box):
     """Class for managing Collections from Settings"""
     __gtype_name__ = 'MiAZConfigView'
     current = None
-    configfile = None
+    local_config = None
+    global_config = None
+    config_for = None
 
     def __init__(self, app):
         super().__init__(app, __class__.__name__)
@@ -183,9 +185,14 @@ class MiAZConfigView(MiAZWidget, Gtk.Box):
     def check_config_file(self):
         if not os.path.exists(self.local_config):
             import shutil
-            self.log.debug("Local config file doesn't exist.")
-            shutil.copy(self.global_config, self.local_config)
-            self.log.debug("Collections config file created")
+            self.log.debug("Local config file for %s doesn't exist." % self.config_for)
+            try:
+                shutil.copy(self.global_config, self.local_config)
+                self.log.debug("Local config file for %s created from global config" % self.config_for)
+            except FileNotFoundError:
+                self.log.warning("Global config file for %s not found" % self.config_for)
+                self.save_config([])
+                self.log.debug("Local config file for %s created empty" % self.config_for)
 
     def update(self):
         if self.local_config is None:
@@ -215,6 +222,7 @@ class MiAZConfigView(MiAZWidget, Gtk.Box):
     def __clb_visible_function(self, model, itr, data):
         return True
 
-    def set_config_files(self, local_config, global_config):
+    def set_config_files(self, config_for, local_config, global_config):
+        self.config_for = config_for
         self.local_config = local_config
         self.global_config = global_config

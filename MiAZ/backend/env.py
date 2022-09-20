@@ -76,6 +76,8 @@ ENV['FILE']['APPICON'] = os.path.join(ENV['GPATH']['ICONS'], 'MiAZ.svg')
 ENV['FILE']['LOG'] = os.path.join(ENV['LPATH']['LOG'], 'MiAZ.log')
 ENV['FILE']['COLLECTIONS'] = os.path.join(ENV['LPATH']['ETC'], 'miaz-collections.json')
 ENV['FILE']['PURPOSES'] = os.path.join(ENV['LPATH']['ETC'], 'miaz-purposes.json')
+ENV['FILE']['ORGANIZATIONS'] = os.path.join(ENV['LPATH']['ETC'], 'miaz-organizations.json')
+ENV['FILE']['EXTENSIONS'] = os.path.join(ENV['LPATH']['ETC'], 'miaz-extensions.json')
 
 # App Info
 ENV['APP']['version'] = open(ENV['FILE']['VERSION']).read().strip()
