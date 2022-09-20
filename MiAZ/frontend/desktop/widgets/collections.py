@@ -18,7 +18,7 @@ from MiAZ.frontend.desktop.widgets.widget import MiAZWidget
 from MiAZ.frontend.desktop.widgets.treeview import MiAZTreeView
 
 class MiAZCollections(MiAZWidget, Gtk.Box):
-    """ Wrapper for Gtk.Stack with  with a StackSwitcher """
+    """Class for managing Collections from Settings"""
     __gtype_name__ = 'MiAZCollections'
     current = None
 
@@ -29,9 +29,9 @@ class MiAZCollections(MiAZWidget, Gtk.Box):
         self.set_vexpand(True)
         self.set_margin_top(margin=12)
         self.set_margin_end(margin=12)
-        # ~ self.set_margin_bottom(margin=12)
         self.set_margin_start(margin=12)
 
+        # Entry and buttons for collection operations (edit/add/remove)
         box_oper = Gtk.Box(spacing=3, orientation=Gtk.Orientation.HORIZONTAL)
         box_entry = Gtk.Box(spacing=3, orientation=Gtk.Orientation.HORIZONTAL)
         box_entry.set_hexpand(True)
@@ -41,15 +41,15 @@ class MiAZCollections(MiAZWidget, Gtk.Box):
         self.entry.set_has_frame(True)
         box_entry.append(self.entry)
         box_oper.append(box_entry)
-
         box_buttons = Gtk.Box(spacing=3, orientation=Gtk.Orientation.HORIZONTAL)
-        box_buttons.append(self.app.create_button('gtk-edit', '', self.rename))
+        box_buttons.append(self.app.create_button('miaz-edit', '', self.rename))
         box_buttons.append(Gtk.Separator.new(orientation=Gtk.Orientation.VERTICAL))
-        box_buttons.append(self.app.create_button('list-add', '', self.add))
-        box_buttons.append(self.app.create_button('list-remove', '', self.remove))
+        box_buttons.append(self.app.create_button('miaz-add', '', self.add))
+        box_buttons.append(self.app.create_button('miaz-remove', '', self.remove))
         box_oper.append(box_buttons)
         self.append(box_oper)
 
+        # Treeview for displaying
         self.scrwin = Gtk.ScrolledWindow()
         self.scrwin.set_hexpand(True)
         self.scrwin.set_vexpand(True)
@@ -57,7 +57,6 @@ class MiAZCollections(MiAZWidget, Gtk.Box):
         self.treeview = MiAZTreeView(self.app)
         self.store = Gtk.TreeStore(str)
         self.treeview.set_model(self.store)
-        self.treeview.connect('row-activated', self.double_click)
         self.selection = self.treeview.get_selection()
         self.sig_selection_changed = self.selection.connect('changed', self.selection_changed)
 
@@ -82,37 +81,22 @@ class MiAZCollections(MiAZWidget, Gtk.Box):
         self.scrwin.set_child(self.treeview)
         self.append(self.scrwin)
 
-        self.check()
+        # Check config file and create it if doesn't exist
+        self.check_config_file()
+
+        # Update view
         self.update()
 
     def sort_function(self, model, row1, row2, user_data):
         sort_column = 0
-
         value1 = model.get_value(row1, sort_column)
         value2 = model.get_value(row2, sort_column)
-
         if value1 < value2:
             return -1
         elif value1 == value2:
             return 0
         else:
             return 1
-
-    def double_click(self, treeview, treepath, treecolumn):
-        treeiter = self.sorted_model.get_iter(treepath)
-        name = self.sorted_model[treeiter][0]
-        dlgManageCollection = Gtk.Dialog()
-        dlgManageCollection.set_modal(True)
-        dlgManageCollection.set_title('Manage collection %s' % name)
-        dlgManageCollection.set_size_request(300, 500)
-        dlgManageCollection.set_transient_for(self.app.win)
-        # ~ dlgManageCollection.add_buttons('Cancel', Gtk.ResponseType.CANCEL, 'Accept', Gtk.ResponseType.ACCEPT)
-        # ~ dlgManageCollection.connect("response", self.collections_response)
-        contents = dlgManageCollection.get_content_area()
-
-        wdgCollections = Gtk.Label.new("Hello World!")
-        contents.append(wdgCollections)
-        dlgManageCollection.show()
 
     def selection_changed(self, selection):
         if selection is None:
@@ -124,7 +108,7 @@ class MiAZCollections(MiAZWidget, Gtk.Box):
             name = model[treeiter][0]
             tbuf = self.entry.get_buffer()
             tbuf.set_text(name, -1)
-            self.current = name
+            self.current = name.upper()
         except Exception as error:
             self.log.error(error)
 
@@ -139,13 +123,13 @@ class MiAZCollections(MiAZWidget, Gtk.Box):
         self.treeview.grab_focus()
 
     def row(self, model, path, itr):
+        pass
 
     def add(self, *args):
         tbuf = self.entry.get_buffer()
         name = tbuf.get_text()
         if len(name) == 0:
             return
-        # ~ treeiter = self.store.append(None, (name,))
         treeiter = self.store.insert_with_values(None, -1, (0,), (name.upper(),))
         self.current = name.upper()
         items = []
@@ -158,7 +142,6 @@ class MiAZCollections(MiAZWidget, Gtk.Box):
         self.update()
 
     def rename(self, *args):
-        # ~ self.selection.disconnect(self.sig_selection_changed)
         try:
             tbuf = self.entry.get_buffer()
             renamed = tbuf.get_text()
@@ -175,14 +158,13 @@ class MiAZCollections(MiAZWidget, Gtk.Box):
             def row(model, path, itr):
                 name = model.get(itr, 0)[0]
                 items.append(name)
-                self.current = name
+                self.current = name.upper()
             model.foreach(row)
             with open(ENV['FILE']['COLLECTIONS'], 'w') as fj:
                 json.dump(sorted(items), fj)
             self.update()
         except Exception as error:
             self.log.error(error)
-        # ~ self.sig_selection_changed = self.selection.connect('changed', self.selection_changed)
 
     def remove(self, *args):
         model, treeiter = self.selection.get_selected()
@@ -193,22 +175,19 @@ class MiAZCollections(MiAZWidget, Gtk.Box):
         def row(model, path, itr):
             name = model.get(itr, 0)[0]
             items.append(name)
-            self.current = name
+            self.current = name.upper()
         model.foreach(row)
         with open(ENV['FILE']['COLLECTIONS'], 'w') as fj:
             json.dump(sorted(items), fj)
         self.update()
 
-    def check(self):
+    def check_config_file(self):
         if not os.path.exists(ENV['FILE']['COLLECTIONS']):
             import shutil
             self.log.debug("Collections file doesn't exist.")
             default_collections = os.path.join(ENV['GPATH']['RESOURCES'], 'miaz-collections.json')
             shutil.copy(default_collections, ENV['FILE']['COLLECTIONS'])
             self.log.debug("Collections config file created")
-
-        with open(ENV['FILE']['COLLECTIONS'], 'r') as fcol:
-            self.items = json.load(fcol)
 
     def update(self):
         self.store.clear()
@@ -221,7 +200,7 @@ class MiAZCollections(MiAZWidget, Gtk.Box):
 
         def row(model, path, itr):
             name = model.get(itr, 0)[0]
-            if name == self.current:
+            if name.upper() == self.current.upper():
                 self.selection.select_iter(itr)
         self.store.foreach(row)
 
