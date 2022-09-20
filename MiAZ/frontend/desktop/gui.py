@@ -119,6 +119,18 @@ class GUI(Adw.Application):
         else:
             dialog.destroy()
 
+    def create_dialog(self, parent, title, widget):
+        dialog = Gtk.Dialog()
+        dlgHeader = Gtk.HeaderBar()
+        dialog.set_titlebar(dlgHeader)
+        dialog.set_modal(True)
+        dialog.set_title(title)
+        dialog.set_size_request(400, 500)
+        dialog.set_transient_for(parent)
+        contents = dialog.get_content_area()
+        contents.append(widget)
+        return dialog
+
     def create_button(self, icon_name, title, callback):
         hbox = Gtk.Box(spacing = 3, orientation=Gtk.Orientation.HORIZONTAL)
         if len(icon_name) != 0:
