@@ -12,6 +12,10 @@
 ** License: This material is licensed by its maintainers under the Public Domain Dedication and License (PDDL)
 ** URL:     https://github.com/datasets/language-codes/blob/master/data/language-codes.csv
 
-*Title:     Misc classes to build Gtk4 Applications in python
+* Title:     Misc classes to build Gtk4 Applications in python
 ** License: GNU General Public License v3.0
 ** URL:     https://github.com/timlau/gtk4-python
+
+* Title:    Flag icons
+** License: MIT
+** URL:     https://github.com/madebybowtie/FlagKit.git

@@ -66,6 +66,7 @@ ENV['GPATH']['ROOT'] = ENV['CONF']['ROOT']
 ENV['GPATH']['DATA'] = os.path.join(ENV['GPATH']['ROOT'], 'data')
 ENV['GPATH']['DOCS'] = os.path.join(ENV['GPATH']['DATA'], 'docs')
 ENV['GPATH']['ICONS'] = os.path.join(ENV['GPATH']['DATA'], 'icons')
+ENV['GPATH']['FLAGS'] = os.path.join(ENV['GPATH']['ICONS'], 'flags')
 ENV['GPATH']['RESOURCES'] = os.path.join(ENV['GPATH']['DATA'], 'resources')
 
 # Common file paths
@@ -78,6 +79,7 @@ ENV['FILE']['COLLECTIONS'] = os.path.join(ENV['LPATH']['ETC'], 'miaz-collections
 ENV['FILE']['PURPOSES'] = os.path.join(ENV['LPATH']['ETC'], 'miaz-purposes.json')
 ENV['FILE']['ORGANIZATIONS'] = os.path.join(ENV['LPATH']['ETC'], 'miaz-organizations.json')
 ENV['FILE']['EXTENSIONS'] = os.path.join(ENV['LPATH']['ETC'], 'miaz-extensions.json')
+ENV['FILE']['COUNTRIES'] = os.path.join(ENV['GPATH']['RESOURCES'], 'miaz-countries.json')
 
 # App Info
 ENV['APP']['version'] = open(ENV['FILE']['VERSION']).read().strip()

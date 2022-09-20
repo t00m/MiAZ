@@ -3,6 +3,7 @@
 
 import os
 import sys
+import json
 
 import gi
 from gi.repository import Gtk, Adw
@@ -50,13 +51,50 @@ class MiAZSettings(Gtk.Box):
         section_repository = self.create_section_repository()
         self.flowbox.insert(widget=section_repository, position=0)
 
-        ## Repository
+        ## Localization
+        section_localization = self.create_section_localization()
+        self.flowbox.insert(widget=section_localization, position=0)
+
+        ## Resources
         section_resources = self.create_section_resources()
-        self.flowbox.insert(widget=section_resources, position=1)
+        self.flowbox.insert(widget=section_resources, position=2)
 
         ## Appearance
         section_appearance = self.create_section_appearance()
-        self.flowbox.insert(widget=section_appearance, position=2)
+        self.flowbox.insert(widget=section_appearance, position=3)
+
+        self.log.debug("Settings view initialited")
+
+    def create_section_localization(self):
+        frmLocalization = Gtk.Frame()
+        hbox_darkmode = Gtk.Box(spacing = 24, orientation=Gtk.Orientation.HORIZONTAL)
+        hbox_darkmode.set_margin_top(margin=24)
+        hbox_darkmode.set_margin_end(margin=12)
+        hbox_darkmode.set_margin_bottom(margin=12)
+        hbox_darkmode.set_margin_start(margin=12)
+
+        model = Gtk.ListStore(Pixbuf, str, str)
+        with open(ENV['FILE']['COUNTRIES'], 'r') as fin:
+            countries = json.load(fin)
+        for code in countries:
+            icon_flag = os.path.join(ENV['GPATH']['FLAGS'], "%s.svg" % code)
+            flag = os.path.exists(icon_flag)
+            if not flag:
+                self.log.debug("%s > %s > flag? %s (%s)", code, countries[code]["Country Name"], flag, icon_flag)
+        return Gtk.Label.new('Default country')
+
+        # ~ combo = Gtk.Switch()
+        # ~ button.set_active(self.sm.get_dark())
+        # ~ button.connect('state-set', self.darkmode_switched)
+        # ~ hbox_darkmode.append(button)
+        # ~ lblFrmTitle = Gtk.Label()
+        # ~ lblFrmTitle.set_markup("<b>Localization</b>")
+        # ~ self.lblDarkMode = Gtk.Label()
+        # ~ self.lblDarkMode.set_markup("<b>Switch Dark mode</b>")
+        # ~ hbox_darkmode.append(self.lblDarkMode)
+        # ~ frmLocalization.set_label_widget(lblFrmTitle)
+        # ~ frmLocalization.set_child(hbox_darkmode)
+        # ~ return frmLocalization
 
     def create_section_appearance(self):
         frmAppearance = Gtk.Frame()
@@ -82,7 +120,7 @@ class MiAZSettings(Gtk.Box):
         return frmAppearance
 
 
-        self.log.debug("Settings view initialited")
+
 
     def create_section_repository(self):
         frmRepository = Gtk.Frame()
@@ -130,9 +168,6 @@ class MiAZSettings(Gtk.Box):
         hbox_resources.append(button)
         lblFrmTitle = Gtk.Label()
         lblFrmTitle.set_markup("<b>Manage resources</b>")
-        # ~ self.lblRepository = Gtk.Label()
-        # ~ self.lblRepository.set_markup("<b>Current location</b>: %s" % self.gui.config.get('source'))
-        # ~ hbox_resources.append(self.lblRepository)
         frmRepository.set_label_widget(lblFrmTitle)
         frmRepository.set_child(hbox_resources)
         return frmRepository
