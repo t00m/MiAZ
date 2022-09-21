@@ -93,14 +93,6 @@ class MiAZCountries(MiAZConfigView):
     def double_click(self, treeview, treepath, treecolumn):
         model = self.sorted_model.get_model()
         model[treepath][3] = not model[treepath][3]
-        # ~ treeiter = self.sorted_model.get_iter(treepath)
-        # ~ filepath = self.sorted_model[treeiter][5]
-        # ~ if os.path.exists(filepath):
-            # ~ os.system("xdg-open '%s'" % filepath)
-
-        # ~ model = self.sorted_model.get_model()
-        # ~ rpath = self.sorted_model.convert_path_to_child_path(Gtk.TreePath(path))
-        # ~ model[rpath][3] = not model[rpath][3]
         self.save_config()
 
     def check_config_file(self):

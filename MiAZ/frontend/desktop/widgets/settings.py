@@ -53,10 +53,10 @@ class MiAZSettings(Gtk.Box):
         self.flowbox.insert(widget=section_repository, position=0)
 
         ## Localization
-        section_localization = self.create_section_localization()
-        self.flowbox.insert(widget=section_localization, position=1)
+        # ~ section_localization = self.create_section_localization()
+        # ~ self.flowbox.insert(widget=section_localization, position=1)
 
-        ## Resources
+        ## Defaults
         section_resources = self.create_section_resources()
         self.flowbox.insert(widget=section_resources, position=2)
 
@@ -73,7 +73,7 @@ class MiAZSettings(Gtk.Box):
         hbox_loc.set_margin_end(margin=12)
         hbox_loc.set_margin_bottom(margin=12)
         hbox_loc.set_margin_start(margin=12)
-        hbox_loc.set_homogeneous(True)
+        hbox_loc.set_homogeneous(False)
         button = self.gui.create_button ('', 'Countries', self.show_countries)
         button.set_has_frame(True)
         hbox_loc.append(button)
@@ -115,9 +115,6 @@ class MiAZSettings(Gtk.Box):
         frmAppearance.set_child(hbox_darkmode)
         return frmAppearance
 
-
-
-
     def create_section_repository(self):
         frmRepository = Gtk.Frame()
         hbox_filechooser = Gtk.Box(spacing = 24, orientation=Gtk.Orientation.HORIZONTAL)
@@ -150,6 +147,9 @@ class MiAZSettings(Gtk.Box):
         hbox_resources.set_margin_bottom(margin=12)
         hbox_resources.set_margin_start(margin=12)
         hbox_resources.set_homogeneous(True)
+        button = self.gui.create_button ('', 'Countries', self.show_countries)
+        button.set_has_frame(True)
+        hbox_resources.append(button)
         button = self.gui.create_button ('', 'Collections', self.show_res_collections)
         button.set_has_frame(True)
         hbox_resources.append(button)
