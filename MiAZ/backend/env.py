@@ -80,6 +80,7 @@ ENV['FILE']['PURPOSES'] = os.path.join(ENV['LPATH']['ETC'], 'miaz-purposes.json'
 ENV['FILE']['ORGANIZATIONS'] = os.path.join(ENV['LPATH']['ETC'], 'miaz-organizations.json')
 ENV['FILE']['EXTENSIONS'] = os.path.join(ENV['LPATH']['ETC'], 'miaz-extensions.json')
 ENV['FILE']['COUNTRIES'] = os.path.join(ENV['LPATH']['ETC'], 'miaz-countries.json')
+ENV['FILE']['LANGUAGES'] = os.path.join(ENV['LPATH']['ETC'], 'miaz-languages.json')
 
 # App Info
 ENV['APP']['version'] = open(ENV['FILE']['VERSION']).read().strip()

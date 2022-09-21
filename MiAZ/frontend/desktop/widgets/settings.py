@@ -16,6 +16,8 @@ from MiAZ.backend.log import get_logger
 from MiAZ.frontend.desktop.widgets.collections import MiAZCollections
 from MiAZ.frontend.desktop.widgets.purposes import MiAZPurposes
 from MiAZ.frontend.desktop.widgets.countries import MiAZCountries
+from MiAZ.frontend.desktop.widgets.languages import MiAZLanguages
+
 
 class MiAZSettings(Gtk.Box):
     """ Wrapper for Gtk.Stack with  with a StackSwitcher """
@@ -147,7 +149,10 @@ class MiAZSettings(Gtk.Box):
         hbox_resources.set_margin_bottom(margin=12)
         hbox_resources.set_margin_start(margin=12)
         hbox_resources.set_homogeneous(True)
-        button = self.gui.create_button ('', 'Countries', self.show_countries)
+        button = self.gui.create_button ('', 'Countries', self.show_res_countries)
+        button.set_has_frame(True)
+        hbox_resources.append(button)
+        button = self.gui.create_button ('', 'Languages', self.show_res_languages)
         button.set_has_frame(True)
         hbox_resources.append(button)
         button = self.gui.create_button ('', 'Collections', self.show_res_collections)
@@ -168,13 +173,22 @@ class MiAZSettings(Gtk.Box):
         frmResources.set_child(hbox_resources)
         return frmResources
 
-    def show_countries(self, *args):
+    def show_res_countries(self, *args):
         view = MiAZCountries(self.gui)
         local_config = ENV['FILE']['COUNTRIES']
         global_config = os.path.join(ENV['GPATH']['RESOURCES'], 'miaz-countries.json')
         view.set_config_files('Countries', local_config, global_config)
         view.update()
-        dialog = self.gui.create_dialog(self.gui.win, 'Countries', view)
+        dialog = self.gui.create_dialog(self.gui.win, 'Countries', view, 600, 400)
+        dialog.show()
+
+    def show_res_languages(self, *args):
+        view = MiAZLanguages(self.gui)
+        local_config = ENV['FILE']['LANGUAGES']
+        global_config = os.path.join(ENV['GPATH']['RESOURCES'], 'miaz-languages.json')
+        view.set_config_files('Languages', local_config, global_config)
+        view.update()
+        dialog = self.gui.create_dialog(self.gui.win, 'Languages', view, 600, 400)
         dialog.show()
 
     def show_res_collections(self, *args):
