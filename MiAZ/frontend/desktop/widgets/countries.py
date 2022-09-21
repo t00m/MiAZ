@@ -56,7 +56,7 @@ class MiAZCountries(MiAZConfigView):
 
         # Country name
         renderer = Gtk.CellRendererText()
-        column = Gtk.TreeViewColumn('Country Code', renderer, text=2)
+        column = Gtk.TreeViewColumn('Country', renderer, text=2)
         column.set_visible(True)
         column.set_sizing(Gtk.TreeViewColumnSizing.AUTOSIZE)
         column.set_expand(False)
@@ -73,7 +73,8 @@ class MiAZCountries(MiAZConfigView):
         column.set_visible(True)
         column.set_expand(False)
         column.set_clickable(True)
-        column.set_sort_indicator(False)
+        column.set_sort_indicator(True)
+        column.set_sort_column_id(3)
         column.set_property('spacing', 50)
         self.tree.append_column(column)
 
@@ -89,9 +90,21 @@ class MiAZCountries(MiAZConfigView):
         self.scrwin.set_child(self.tree)
         return self.scrwin
 
+    def check_config_file(self):
+        if not os.path.exists(self.local_config):
+            self.save_config()
+            self.log.debug("Local config file for %s created empty" % self.config_for)
+
     def update(self):
-        with open(ENV['FILE']['COUNTRIES'], 'r') as fin:
-            countries = json.load(fin)
+        try:
+            with open(self.global_config, 'r') as fin:
+                countries = json.load(fin)
+        except FileNotFoundError as error:
+            self.log.error(error)
+            return
+
+        checked = self.load_config()
+
         n = 0
         for code in countries:
             icon_flag = os.path.join(ENV['GPATH']['FLAGS'], "%s.svg" % code)
@@ -99,10 +112,22 @@ class MiAZCountries(MiAZConfigView):
                 icon_flag = os.path.join(ENV['GPATH']['FLAGS'], "__.svg")
             icon = self.app.icman.get_pixbuf_from_file_at_size(icon_flag, 32, 32)
             name = "%s (%s)" % (countries[code]["Country Name"], code)
-            self.store.insert_with_values(n, (0, 1, 2, 3), (icon, code, name, False))
+            self.store.insert_with_values(n, (0, 1, 2, 3), (icon, code, name, code in checked))
             n += 1
+
+    def save_config(self):
+        items = []
+        def row(model, path, itr):
+            code = model.get(itr, 1)[0]
+            checked = model.get(itr, 3)[0]
+            if checked:
+                items.append(code)
+        self.store.foreach(row)
+        with open(self.local_config, 'w') as fj:
+            json.dump(sorted(items), fj)
 
     def __clb_row_toggled(self, cell, path):
         model = self.sorted_model.get_model()
         rpath = self.sorted_model.convert_path_to_child_path(Gtk.TreePath(path))
         model[rpath][3] = not model[rpath][3]
+        self.save_config()
