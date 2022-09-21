@@ -15,6 +15,7 @@ from MiAZ.backend.env import ENV
 from MiAZ.backend.log import get_logger
 from MiAZ.frontend.desktop.widgets.collections import MiAZCollections
 from MiAZ.frontend.desktop.widgets.purposes import MiAZPurposes
+from MiAZ.frontend.desktop.widgets.countries import MiAZCountries
 
 class MiAZSettings(Gtk.Box):
     """ Wrapper for Gtk.Stack with  with a StackSwitcher """
@@ -53,7 +54,7 @@ class MiAZSettings(Gtk.Box):
 
         ## Localization
         section_localization = self.create_section_localization()
-        self.flowbox.insert(widget=section_localization, position=0)
+        self.flowbox.insert(widget=section_localization, position=1)
 
         ## Resources
         section_resources = self.create_section_resources()
@@ -67,34 +68,29 @@ class MiAZSettings(Gtk.Box):
 
     def create_section_localization(self):
         frmLocalization = Gtk.Frame()
-        hbox_darkmode = Gtk.Box(spacing = 24, orientation=Gtk.Orientation.HORIZONTAL)
-        hbox_darkmode.set_margin_top(margin=24)
-        hbox_darkmode.set_margin_end(margin=12)
-        hbox_darkmode.set_margin_bottom(margin=12)
-        hbox_darkmode.set_margin_start(margin=12)
-
-        model = Gtk.ListStore(Pixbuf, str, str)
-        with open(ENV['FILE']['COUNTRIES'], 'r') as fin:
-            countries = json.load(fin)
-        for code in countries:
-            icon_flag = os.path.join(ENV['GPATH']['FLAGS'], "%s.svg" % code)
-            flag = os.path.exists(icon_flag)
-            if not flag:
-                self.log.debug("%s > %s > flag? %s (%s)", code, countries[code]["Country Name"], flag, icon_flag)
-        return Gtk.Label.new('Default country')
-
-        # ~ combo = Gtk.Switch()
-        # ~ button.set_active(self.sm.get_dark())
-        # ~ button.connect('state-set', self.darkmode_switched)
-        # ~ hbox_darkmode.append(button)
-        # ~ lblFrmTitle = Gtk.Label()
-        # ~ lblFrmTitle.set_markup("<b>Localization</b>")
-        # ~ self.lblDarkMode = Gtk.Label()
-        # ~ self.lblDarkMode.set_markup("<b>Switch Dark mode</b>")
-        # ~ hbox_darkmode.append(self.lblDarkMode)
-        # ~ frmLocalization.set_label_widget(lblFrmTitle)
-        # ~ frmLocalization.set_child(hbox_darkmode)
-        # ~ return frmLocalization
+        hbox_loc = Gtk.Box(spacing = 24, orientation=Gtk.Orientation.HORIZONTAL)
+        hbox_loc.set_margin_top(margin=24)
+        hbox_loc.set_margin_end(margin=12)
+        hbox_loc.set_margin_bottom(margin=12)
+        hbox_loc.set_margin_start(margin=12)
+        hbox_loc.set_homogeneous(True)
+        button = self.gui.create_button ('', 'Countries', self.show_countries)
+        button.set_has_frame(True)
+        hbox_loc.append(button)
+        # ~ button = self.gui.create_button ('', 'Purposes', self.show_res_purposes)
+        # ~ button.set_has_frame(True)
+        # ~ hbox_loc.append(button)
+        # ~ button = self.gui.create_button ('', 'Organizations', self.show_res_organizations)
+        # ~ button.set_has_frame(True)
+        # ~ hbox_loc.append(button)
+        # ~ button = self.gui.create_button ('', 'File extensions', self.show_res_extensions)
+        # ~ button.set_has_frame(True)
+        # ~ hbox_loc.append(button)
+        lblFrmTitle = Gtk.Label()
+        lblFrmTitle.set_markup("<b>Manage localizations</b>")
+        frmLocalization.set_label_widget(lblFrmTitle)
+        frmLocalization.set_child(hbox_loc)
+        return frmLocalization
 
     def create_section_appearance(self):
         frmAppearance = Gtk.Frame()
@@ -147,7 +143,7 @@ class MiAZSettings(Gtk.Box):
         return frmRepository
 
     def create_section_resources(self):
-        frmRepository = Gtk.Frame()
+        frmResources = Gtk.Frame()
         hbox_resources = Gtk.Box(spacing = 24, orientation=Gtk.Orientation.HORIZONTAL)
         hbox_resources.set_margin_top(margin=24)
         hbox_resources.set_margin_end(margin=12)
@@ -168,9 +164,18 @@ class MiAZSettings(Gtk.Box):
         hbox_resources.append(button)
         lblFrmTitle = Gtk.Label()
         lblFrmTitle.set_markup("<b>Manage resources</b>")
-        frmRepository.set_label_widget(lblFrmTitle)
-        frmRepository.set_child(hbox_resources)
-        return frmRepository
+        frmResources.set_label_widget(lblFrmTitle)
+        frmResources.set_child(hbox_resources)
+        return frmResources
+
+    def show_countries(self, *args):
+        view = MiAZCountries(self.gui)
+        local_config = ENV['FILE']['COUNTRIES']
+        global_config = os.path.join(ENV['GPATH']['RESOURCES'], 'miaz-countries.json')
+        view.set_config_files('Countries', local_config, global_config)
+        view.update()
+        dialog = self.gui.create_dialog(self.gui.win, 'Countries', view)
+        dialog.show()
 
     def show_res_collections(self, *args):
         view = MiAZCollections(self.gui)
