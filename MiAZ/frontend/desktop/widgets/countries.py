@@ -85,10 +85,23 @@ class MiAZCountries(MiAZConfigView):
         # TreeView sorting
         self.sorted_model = Gtk.TreeModelSort(model=self.treefilter)
 
-        # ~ self.tree.connect('row-activated', self.double_click)
+        self.tree.connect('row-activated', self.double_click)
 
         self.scrwin.set_child(self.tree)
         return self.scrwin
+
+    def double_click(self, treeview, treepath, treecolumn):
+        model = self.sorted_model.get_model()
+        model[treepath][3] = not model[treepath][3]
+        # ~ treeiter = self.sorted_model.get_iter(treepath)
+        # ~ filepath = self.sorted_model[treeiter][5]
+        # ~ if os.path.exists(filepath):
+            # ~ os.system("xdg-open '%s'" % filepath)
+
+        # ~ model = self.sorted_model.get_model()
+        # ~ rpath = self.sorted_model.convert_path_to_child_path(Gtk.TreePath(path))
+        # ~ model[rpath][3] = not model[rpath][3]
+        self.save_config()
 
     def check_config_file(self):
         if not os.path.exists(self.local_config):
