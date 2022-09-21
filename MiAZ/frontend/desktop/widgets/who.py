@@ -12,29 +12,28 @@ from MiAZ.frontend.desktop.widgets.treeview import MiAZTreeView
 from MiAZ.frontend.desktop.widgets.configview import MiAZConfigView
 
 
-class MiAZLanguages(MiAZConfigView):
+class MiAZWho(MiAZConfigView):
     """Class for managing Languages from Settings"""
-    __gtype_name__ = 'MiAZLanguages'
+    __gtype_name__ = 'MiAZWho'
     current = None
 
     def __init__(self, app):
         super().__init__(app)
         self.app = app
-        self.box_oper.set_visible(False)
 
     def setup_treeview(self):
         self.scrwin = Gtk.ScrolledWindow()
         self.scrwin.set_vexpand(True)
 
         # Model: flag icon, code, name, checkbox
-        self.store = Gtk.ListStore(str, str, bool)
+        self.store = Gtk.ListStore(str, str)
         self.tree = MiAZTreeView(self.app)
         self.tree.set_model(self.store)
 
-        # Code
+        # Initials
         renderer = Gtk.CellRendererText()
-        column = Gtk.TreeViewColumn('Language Code', renderer, text=0)
-        column.set_visible(False)
+        column = Gtk.TreeViewColumn('Initials', renderer, text=0)
+        column.set_visible(True)
         column.set_sizing(Gtk.TreeViewColumnSizing.AUTOSIZE)
         column.set_expand(False)
         column.set_clickable(False)
@@ -42,29 +41,16 @@ class MiAZLanguages(MiAZConfigView):
         column.set_sort_column_id(0)
         self.tree.append_column(column)
 
-        # Language name
+        # Full name
         renderer = Gtk.CellRendererText()
         renderer.set_property('ellipsize', Pango.EllipsizeMode.MIDDLE)
-        column = Gtk.TreeViewColumn('Language', renderer, text=1)
+        column = Gtk.TreeViewColumn('Full name', renderer, text=1)
         column.set_visible(True)
         column.set_sizing(Gtk.TreeViewColumnSizing.AUTOSIZE)
         column.set_expand(True)
         column.set_clickable(True)
         column.set_sort_indicator(True)
         column.set_sort_column_id(1)
-        self.tree.append_column(column)
-
-        # Checkbox
-        renderer = Gtk.CellRendererToggle()
-        renderer.connect("toggled", self.__clb_row_toggled)
-        column = Gtk.TreeViewColumn('Default?', renderer, active=2)
-        column.set_sizing(Gtk.TreeViewColumnSizing.AUTOSIZE)
-        column.set_visible(True)
-        column.set_expand(False)
-        column.set_clickable(True)
-        column.set_sort_indicator(True)
-        column.set_sort_column_id(2)
-        column.set_property('spacing', 50)
         self.tree.append_column(column)
 
         # Treeview filtering
@@ -79,33 +65,38 @@ class MiAZLanguages(MiAZConfigView):
         self.scrwin.set_child(self.tree)
         return self.scrwin
 
+    def selection_changed(self, selection):
+        if selection is None:
+            return
+        try:
+            model, treeiter = selection.get_selected()
+            code = model[treeiter][0]
+            name = model[treeiter][0]
+            tbuf = self.entry.get_buffer()
+            tbuf.set_text("%s, %s" % (code, name), -1)
+            # ~ self.current = name.upper()
+        except Exception as error:
+            pass
+
     def double_click(self, treeview, treepath, treecolumn):
         model = self.sorted_model.get_model()
         model[treepath][2] = not model[treepath][2]
         self.save_config()
 
-    def check_config_file(self):
-        if not os.path.exists(self.local_config):
-            self.save_config()
-            self.log.debug("Local config file for %s created empty" % self.config_for)
-
     def update(self):
-        try:
-            with open(self.global_config, 'r') as fin:
-                languages = json.load(fin)
-        except FileNotFoundError as error:
-            self.log.error(error)
+        if self.local_config is None:
             return
 
-        try:
-            checked = self.load_config()
-        except FileNotFoundError:
-            checked = []
+        # Check config file and create it if doesn't exist
+        self.check_config_file()
+
+        self.store.clear()
+        items = self.load_config()
 
         n = 0
-        for code in languages:
-            name = "%s (%s)" % (languages[code], code)
-            self.store.insert_with_values(n, (0, 1, 2), (code, name, code in checked))
+        for code in items:
+            fullname = items[code]
+            self.store.insert_with_values(n, (0, 1), (code, fullname))
             n += 1
 
     def save_config(self):

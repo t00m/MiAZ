@@ -59,7 +59,7 @@ class MiAZCountries(MiAZConfigView):
         column = Gtk.TreeViewColumn('Country', renderer, text=2)
         column.set_visible(True)
         column.set_sizing(Gtk.TreeViewColumnSizing.AUTOSIZE)
-        column.set_expand(False)
+        column.set_expand(True)
         column.set_clickable(True)
         column.set_sort_indicator(True)
         column.set_sort_column_id(2)

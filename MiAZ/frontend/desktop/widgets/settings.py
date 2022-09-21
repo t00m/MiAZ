@@ -17,7 +17,7 @@ from MiAZ.frontend.desktop.widgets.collections import MiAZCollections
 from MiAZ.frontend.desktop.widgets.purposes import MiAZPurposes
 from MiAZ.frontend.desktop.widgets.countries import MiAZCountries
 from MiAZ.frontend.desktop.widgets.languages import MiAZLanguages
-
+from MiAZ.frontend.desktop.widgets.who import MiAZWho
 
 class MiAZSettings(Gtk.Box):
     """ Wrapper for Gtk.Stack with  with a StackSwitcher """
@@ -164,6 +164,9 @@ class MiAZSettings(Gtk.Box):
         button = self.gui.create_button ('', 'Organizations', self.show_res_organizations)
         button.set_has_frame(True)
         hbox_resources.append(button)
+        button = self.gui.create_button ('', 'Who', self.show_res_who)
+        button.set_has_frame(True)
+        hbox_resources.append(button)
         button = self.gui.create_button ('', 'File extensions', self.show_res_extensions)
         button.set_has_frame(True)
         hbox_resources.append(button)
@@ -189,6 +192,15 @@ class MiAZSettings(Gtk.Box):
         view.set_config_files('Languages', local_config, global_config)
         view.update()
         dialog = self.gui.create_dialog(self.gui.win, 'Languages', view, 600, 400)
+        dialog.show()
+
+    def show_res_who(self, *args):
+        view = MiAZWho(self.gui)
+        local_config = ENV['FILE']['WHO']
+        global_config = os.path.join(ENV['GPATH']['RESOURCES'], 'miaz-who.json')
+        view.set_config_files("Who's who", local_config, global_config)
+        view.update()
+        dialog = self.gui.create_dialog(self.gui.win, "Who's who", view, 600, 400)
         dialog.show()
 
     def show_res_collections(self, *args):
