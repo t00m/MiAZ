@@ -90,6 +90,11 @@ class MiAZCountries(MiAZConfigView):
         self.scrwin.set_child(self.tree)
         return self.scrwin
 
+    def infobar_message(self):
+        message_label = Gtk.Label()
+        message_label.set_markup('<b>Check those countries you are insterested in.</b>\nThey will appear later in the workspace when you review your documents\nand choose a country for the same field.')
+        self.infobar.add_child(message_label)
+
     def double_click(self, treeview, treepath, treecolumn):
         model = self.sorted_model.get_model()
         model[treepath][3] = not model[treepath][3]

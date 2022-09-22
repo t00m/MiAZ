@@ -55,6 +55,24 @@ class MiAZConfigView(MiAZWidget, Gtk.Box):
         widget = self.setup_treeview()
         self.append(widget)
 
+        # InfoBar
+        self.infobar = Gtk.InfoBar()
+        self.infobar.set_revealed(True)
+        self.infobar.set_show_close_button(True)
+        self.infobar.set_message_type(Gtk.MessageType.INFO)
+        self.infobar.connect('response', self.infobar_response)
+        self.append(self.infobar)
+        self.infobar_message()
+
+    def infobar_message(self):
+        message_label = Gtk.Label()
+        message_label.set_markup('<b>View info here!</b>')
+        self.infobar.add_child(message_label)
+
+    def infobar_response(self, infobar, response):
+        if response == Gtk.ResponseType.CLOSE:
+            infobar.set_revealed(False)
+
     def setup_treeview(self):
         # Treeview for displaying
         self.scrwin = Gtk.ScrolledWindow()
