@@ -129,31 +129,31 @@ class MiAZSettings(Gtk.Box):
         flowbox.set_max_children_per_line(n_children=3)
         flowbox.set_selection_mode(mode=Gtk.SelectionMode.NONE)
 
-        button = self.gui.create_button ('', 'Countries', self.show_res_countries)
+        button = self.gui.create_button ('countries', 'Countries', self.show_res_countries)
         button.set_has_frame(True)
         flowbox.insert(widget=button, position=0)
 
-        button = self.gui.create_button ('', 'Languages', self.show_res_languages)
+        button = self.gui.create_button ('languages', 'Languages', self.show_res_languages)
         button.set_has_frame(True)
         flowbox.insert(widget=button, position=1)
 
-        button = self.gui.create_button ('', 'Collections', self.show_res_collections)
+        button = self.gui.create_button ('collections', 'Collections', self.show_res_collections)
         button.set_has_frame(True)
         flowbox.insert(widget=button, position=2)
 
-        button = self.gui.create_button ('', 'Purposes', self.show_res_purposes)
+        button = self.gui.create_button ('purposes', 'Purposes', self.show_res_purposes)
         button.set_has_frame(True)
         flowbox.insert(widget=button, position=3)
 
-        button = self.gui.create_button ('', 'Organizations', self.show_res_organizations)
+        button = self.gui.create_button ('organizations', 'Organizations', self.show_res_organizations)
         button.set_has_frame(True)
         flowbox.insert(widget=button, position=4)
 
-        button = self.gui.create_button ('', 'Who', self.show_res_who)
+        button = self.gui.create_button ('who', 'Who', self.show_res_who)
         button.set_has_frame(True)
         flowbox.insert(widget=button, position=5)
 
-        button = self.gui.create_button ('', 'File extensions', self.show_res_extensions)
+        button = self.gui.create_button ('extensions', 'File extensions', self.show_res_extensions)
         button.set_has_frame(True)
         flowbox.insert(widget=button, position=6)
 
