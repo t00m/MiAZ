@@ -18,6 +18,7 @@ from MiAZ.backend.log import get_logger
 from MiAZ.frontend.desktop.widgets.stack import MiAZStack
 from MiAZ.frontend.desktop.widgets.menu import MiAZ_APP_MENU
 from MiAZ.frontend.desktop.widgets.menubutton import MiAZMenuButton
+from MiAZ.frontend.desktop.widgets.docbrowser import MiAZDocBrowser
 from MiAZ.frontend.desktop.widgets.workspace import MiAZWorkspace
 from MiAZ.frontend.desktop.widgets.settings import MiAZSettings
 from MiAZ.frontend.desktop.icons import MiAZIconManager
@@ -78,9 +79,8 @@ class GUI(Adw.Application):
         self.mainbox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
         self.mainbox.set_vexpand(True)
 
-        docbrowser_label = Gtk.Label()
-        docbrowser_label.set_text("Document Browser")
-        self.stack.add_page('browser', "Browser", docbrowser_label)
+        self.docbrowser = self.create_docbrowser()
+        self.stack.add_page('browser', "Browser", self.docbrowser)
 
         self.workspace = self.create_workspace()
         self.stack.add_page('workspace', "Workspace", self.workspace)
@@ -152,6 +152,9 @@ class GUI(Adw.Application):
         action = Gio.SimpleAction.new(name, None)
         action.connect("activate", callback)
         self.add_action(action)
+
+    def create_docbrowser(self):
+        return MiAZDocBrowser(self)
 
     def create_workspace(self):
         return MiAZWorkspace(self)
