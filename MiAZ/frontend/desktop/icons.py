@@ -80,6 +80,13 @@ class MiAZIconManager(GObject.GObject):
             self.pixbufdict[key] = pixbuf
         return pixbuf
 
+    def get_pixbuf_by_path(self, name, width=48, height=48) -> Pixbuf:
+        path = os.path.join(ENV['GPATH']['ICONS'], "%s.svg" % name)
+        key = valid_key("%s-%d-%d" % (name, width, height))
+        pixbuf = Pixbuf.new_from_file_at_size(path, width, height)
+        self.pixbufdict[key] = pixbuf
+        return pixbuf
+
     def get_pixbuf_by_name(self, name, width=48, height=48) -> Pixbuf:
         key = valid_key("%s-%d-%d" % (name, width, height))
         try:

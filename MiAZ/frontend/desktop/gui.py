@@ -135,10 +135,8 @@ class GUI(Adw.Application):
         hbox = Gtk.Box(spacing = 3, orientation=Gtk.Orientation.HORIZONTAL)
         if len(icon_name) != 0:
             # FIXME: icon name might not exist at all
-            self.log.debug("%s (%dx%d)", icon_name, width, height)
-            pixbuf = self.icman.get_pixbuf_by_name(icon_name, width, height)
+            pixbuf = self.icman.get_pixbuf_by_path(icon_name, width, height)
             icon = Gtk.Image.new_from_pixbuf(pixbuf)
-            # ~ icon = self.icman.get_image_by_name(icon_name)
             hbox.append(icon)
         label = Gtk.Label()
         label.set_markup(title)
