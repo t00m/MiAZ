@@ -42,20 +42,24 @@ class MiAZConfigView(MiAZWidget, Gtk.Box):
         box_entry = Gtk.Box(spacing=3, orientation=Gtk.Orientation.HORIZONTAL)
         box_entry.set_hexpand(True)
         self.entry = Gtk.Entry()
+        self.entry.set_activates_default(True)
+        self.entry.set_icon_from_icon_name(Gtk.EntryIconPosition.SECONDARY, 'miaz-entry-delete')
+        self.entry.set_icon_activatable(Gtk.EntryIconPosition.SECONDARY, True)
+        self.entry.connect('icon-press', self.on_entrysearch_delete)
         self.entry.connect('changed', self.on_entrysearch_changed)
         self.entry.set_hexpand(True)
         self.entry.set_has_frame(True)
         box_entry.append(self.entry)
         self.box_oper.append(box_entry)
-        box_buttons = Gtk.Box(spacing=3, orientation=Gtk.Orientation.HORIZONTAL)
-        box_buttons.append(self.app.create_button('miaz-edit', '', self.on_item_rename))
-        box_buttons.append(Gtk.Separator.new(orientation=Gtk.Orientation.VERTICAL))
-        box_buttons.append(self.app.create_button('miaz-add', '', self.on_item_add))
-        box_buttons.append(self.app.create_button('miaz-remove', '', self.on_item_remove))
-        self.box_oper.append(box_buttons)
+        self.box_buttons = Gtk.Box(spacing=3, orientation=Gtk.Orientation.HORIZONTAL)
+        self.box_buttons.append(self.app.create_button('miaz-edit', '', self.on_item_rename))
+        self.box_buttons.append(Gtk.Separator.new(orientation=Gtk.Orientation.VERTICAL))
+        self.box_buttons.append(self.app.create_button('miaz-add', '', self.on_item_add))
+        self.box_buttons.append(self.app.create_button('miaz-remove', '', self.on_item_remove))
+        self.box_oper.append(self.box_buttons)
         self.append(self.box_oper)
 
-        widget = self.__setup_treeview()
+        widget = self.setup_treeview()
         self.append(widget)
 
         # InfoBar
@@ -66,6 +70,10 @@ class MiAZConfigView(MiAZWidget, Gtk.Box):
         self.infobar.connect('response', self.infobar_response)
         self.append(self.infobar)
         self.infobar_message()
+
+    def on_entrysearch_delete(self, *args):
+        self.entry.set_text("")
+
 
     def on_entrysearch_changed(self, *args):
         self.search_term = self.entry.get_text()
@@ -83,7 +91,7 @@ class MiAZConfigView(MiAZWidget, Gtk.Box):
         if response == Gtk.ResponseType.CLOSE:
             infobar.set_revealed(False)
 
-    def __setup_treeview(self):
+    def setup_treeview(self):
         # Treeview for displaying
         self.scrwin = Gtk.ScrolledWindow()
         self.scrwin.set_hexpand(True)
@@ -107,19 +115,18 @@ class MiAZConfigView(MiAZWidget, Gtk.Box):
 
         # Treeview filtering
         self.treefilter = self.store.filter_new()
-        self.treefilter.set_visible_func(self.__clb_visible_function)
+        self.treefilter.set_visible_func(self.clb_visible_function)
 
         # TreeView sorting
         self.sorted_model = Gtk.TreeModelSort(model=self.treefilter)
-        self.sorted_model.set_sort_func(0, self.__clb_sort_function, None)
-
+        self.sorted_model.set_sort_func(0, self.clb_sort_function, None)
         self.treeview.set_model(self.sorted_model)
 
         self.scrwin.set_child(self.treeview)
 
         return self.scrwin
 
-    def __clb_sort_function(self, model, row1, row2, user_data):
+    def clb_sort_function(self, model, row1, row2, user_data):
         sort_column = 0
         value1 = model.get_value(row1, sort_column)
         value2 = model.get_value(row2, sort_column)
@@ -155,30 +162,16 @@ class MiAZConfigView(MiAZWidget, Gtk.Box):
 
     def on_item_add(self, *args):
         # Add new item, save config and refresh model
-        item = self.entry.get_text()
+        item = self.entry.get_text().upper()
         items = self.config_load()
         items.add(item.upper())
         self.config_save(list(items))
-        self.log.debug("Added %s to configuration", item)
+        self.log.debug("Added %s to %s", item, self.config_for)
         self.entry.set_text('')
         self.entry.activate()
         self.update()
         self.infobar.set_message_type(Gtk.MessageType.INFO)
         self.infobar_message("Added new entry: %s" % item)
-
-        # ~ tbuf = self.entry.get_buffer()
-        # ~ name = tbuf.get_text()
-        # ~ if len(name) == 0:
-            # ~ return
-        # ~ treeiter = self.store.insert_with_values(None, -1, (0,), (name.upper(),))
-        # ~ self.current = name.upper()
-        # ~ items = []
-        # ~ def row(model, path, itr):
-            # ~ name = model.get(itr, 0)[0]
-            # ~ items.append(name)
-        # ~ self.store.foreach(row)
-        # ~ self.config_save(items)
-        # ~ self.update()
 
     def on_item_rename(self, *args):
         return
@@ -189,7 +182,7 @@ class MiAZConfigView(MiAZWidget, Gtk.Box):
         items = self.config_load()
         try:
             items.remove(item)
-            self.log.debug("Removed %s from %s configuration", item, self.config_for)
+            self.log.debug("Removed %s from %s", item, self.config_for)
             self.config_save(list(items))
             self.update()
             self.entry.set_text('')
@@ -230,7 +223,7 @@ class MiAZConfigView(MiAZWidget, Gtk.Box):
             node = self.store.insert_with_values(None, pos, (0,), (item,))
             pos += 1
 
-    def __clb_visible_function(self, model, itr, data):
+    def clb_visible_function(self, model, itr, data):
         item_name = model.get(itr, 0)[0]
         if item_name is None:
             return True

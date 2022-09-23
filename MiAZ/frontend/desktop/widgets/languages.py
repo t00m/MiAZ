@@ -20,7 +20,7 @@ class MiAZLanguages(MiAZConfigView):
     def __init__(self, app):
         super().__init__(app)
         self.app = app
-        self.box_oper.set_visible(False)
+        self.box_buttons.set_visible(False)
 
     def setup_treeview(self):
         self.scrwin = Gtk.ScrolledWindow()
@@ -69,15 +69,35 @@ class MiAZLanguages(MiAZConfigView):
 
         # Treeview filtering
         self.treefilter = self.store.filter_new()
-        # ~ self.treefilter.set_visible_func(self.__clb_visible_function)
+        self.treefilter.set_visible_func(self.clb_visible_function)
 
         # TreeView sorting
         self.sorted_model = Gtk.TreeModelSort(model=self.treefilter)
+        self.sorted_model.set_sort_func(0, self.clb_sort_function, None)
+        self.treeview.set_model(self.sorted_model)
 
         self.treeview.connect('row-activated', self.double_click)
 
-        self.scrwin.set_child(self.tree)
+        self.scrwin.set_child(self.treeview)
         return self.scrwin
+
+    def clb_visible_function(self, model, itr, data):
+        item_code = model.get(itr, 0)[0]
+        item_name = model.get(itr, 1)[0]
+        item = item_code+item_name
+        if item_code is None and item_name is None:
+            self.log.debug("RETURN!!!")
+            return True
+        if self.search_term is None:
+            self.log.debug("RETURN!!!")
+            return True
+
+        match = self.search_term.upper() in item.upper()
+        # ~ self.log.debug("%s > %s > %s", self.search_term, item_name, match)
+        if match:
+            return True
+        else:
+            return False
 
     def double_click(self, treeview, treepath, treecolumn):
         model = self.sorted_model.get_model()
