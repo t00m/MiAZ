@@ -62,14 +62,15 @@ class MiAZConfigView(MiAZWidget, Gtk.Box):
         widget = self.setup_treeview()
         self.append(widget)
 
-        # InfoBar
-        self.infobar = Gtk.InfoBar()
-        self.infobar.set_revealed(True)
-        self.infobar.set_show_close_button(False)
-        self.infobar.set_message_type(Gtk.MessageType.INFO)
-        self.infobar.connect('response', self.infobar_response)
-        self.append(self.infobar)
-        self.infobar_message()
+        # ~ # InfoBar
+        # FIXME: Low priority. User mesasges
+        # ~ self.infobar = Gtk.InfoBar()
+        # ~ self.infobar.set_revealed(True)
+        # ~ self.infobar.set_show_close_button(False)
+        # ~ self.infobar.set_message_type(Gtk.MessageType.INFO)
+        # ~ self.infobar.connect('response', self.infobar_response)
+        # ~ self.append(self.infobar)
+        # ~ self.infobar_message()
 
     def on_entrysearch_delete(self, *args):
         self.entry.set_text("")

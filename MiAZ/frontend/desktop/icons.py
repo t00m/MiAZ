@@ -99,6 +99,7 @@ class MiAZIconManager(GObject.GObject):
             self.pixbufdict[key] = pixbuf
         return pixbuf
 
-    def get_image_by_name(self, name: str) -> Gtk.Image:
-        return Gtk.Image.new_from_icon_name(name)
+    def get_image_by_name(self, name, width, height) -> Gtk.Image:
+        pixbuf = self.get_pixbuf_by_name(name, width, height)
+        return Gtk.Image.new_from_pixbuf(pixbuf)
 

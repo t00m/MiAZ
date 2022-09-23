@@ -58,9 +58,13 @@ class MiAZSettings(Gtk.Box):
         section_resources = self.create_section_resources()
         self.flowbox.insert(widget=section_resources, position=2)
 
+        ## Backup & Restore
+        section_bckres = self.create_section_bckres()
+        self.flowbox.insert(widget=section_bckres, position=3)
+
         ## Appearance
         section_appearance = self.create_section_appearance()
-        self.flowbox.insert(widget=section_appearance, position=3)
+        self.flowbox.insert(widget=section_appearance, position=4)
 
         # ~ self.log.debug("Settings view initialited")
 
@@ -162,6 +166,39 @@ class MiAZSettings(Gtk.Box):
         frmResources.set_label_widget(lblFrmTitle)
         frmResources.set_child(flowbox)
         return frmResources
+
+    def create_section_bckres(self):
+        frmBckRes = Gtk.Frame()
+        hbox_bckres = Gtk.Box(spacing = 24, orientation=Gtk.Orientation.HORIZONTAL)
+        hbox_bckres.set_margin_top(margin=24)
+        hbox_bckres.set_margin_end(margin=12)
+        hbox_bckres.set_margin_bottom(margin=12)
+        hbox_bckres.set_margin_start(margin=12)
+        hbox_bckres.set_homogeneous(True)
+
+        flowbox = Gtk.FlowBox.new()
+        flowbox.set_margin_top(margin=24)
+        flowbox.set_margin_end(margin=12)
+        flowbox.set_margin_bottom(margin=24)
+        flowbox.set_margin_start(margin=12)
+        flowbox.set_valign(align=Gtk.Align.START)
+        flowbox.set_max_children_per_line(n_children=3)
+        flowbox.set_selection_mode(mode=Gtk.SelectionMode.NONE)
+
+        button = self.gui.create_button('miaz-backup', 'Backup', self.backup)
+        button.set_has_frame(True)
+        icon = self.gui.icman.get_image_by_name('miaz-backup', 128, 128)
+        flowbox.insert(widget=icon, position=0)
+
+        button = self.gui.create_button('miaz-restore', 'Restore', self.restore)
+        button.set_has_frame(True)
+        flowbox.insert(widget=button, position=1)
+
+        lblFrmTitle = Gtk.Label()
+        lblFrmTitle.set_markup("<b>Backup and Restore</b>")
+        frmBckRes.set_label_widget(lblFrmTitle)
+        frmBckRes.set_child(flowbox)
+        return frmBckRes
 
     def show_res_countries(self, *args):
         view = MiAZCountries(self.gui)
@@ -266,3 +303,9 @@ class MiAZSettings(Gtk.Box):
                 self.gui.workspace.refresh_view()
         else:
             dialog.destroy()
+
+    def backup(self, *args):
+        self.log.debug("MiAZ Backup")
+
+    def restore(self, *args):
+        self.log.debug("MiAZ Restore")
