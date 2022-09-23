@@ -18,6 +18,7 @@ class MiAZCountries(MiAZConfigView):
 
     def __init__(self, app):
         super().__init__(app)
+        self.box_buttons.set_visible(False)
 
     def setup_treeview(self):
         self.scrwin = Gtk.ScrolledWindow()
@@ -163,3 +164,6 @@ class MiAZCountries(MiAZConfigView):
         rpath = self.sorted_model.convert_path_to_child_path(Gtk.TreePath(path))
         model[rpath][3] = not model[rpath][3]
         self.config_save()
+
+    def on_item_remove(self, *args):
+        return

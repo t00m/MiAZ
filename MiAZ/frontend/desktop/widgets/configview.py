@@ -158,7 +158,7 @@ class MiAZConfigView(MiAZWidget, Gtk.Box):
 
     def config_save(self, items):
         with open(self.config_local, 'w') as fj:
-            json.dump(sorted(items), fj)
+            json.dump(items, fj)
 
     def on_item_add(self, *args):
         # Add new item, save config and refresh model

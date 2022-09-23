@@ -125,7 +125,8 @@ class GUI(Adw.Application):
         dialog.set_titlebar(dlgHeader)
         dialog.set_modal(True)
         dialog.set_title(title)
-        dialog.set_size_request(width, height)
+        if width != -1 and height != -1:
+            dialog.set_size_request(width, height)
         dialog.set_transient_for(parent)
         contents = dialog.get_content_area()
         contents.append(widget)

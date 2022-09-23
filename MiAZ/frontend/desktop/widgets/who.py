@@ -10,7 +10,7 @@ from gi.repository.GdkPixbuf import Pixbuf
 from MiAZ.backend.env import ENV
 from MiAZ.frontend.desktop.widgets.treeview import MiAZTreeView
 from MiAZ.frontend.desktop.widgets.configview import MiAZConfigView
-
+from MiAZ.frontend.desktop.widgets.dialogs import MiAZDialogAdd
 
 class MiAZWho(MiAZConfigView):
     """Class for managing Languages from Settings"""
@@ -112,7 +112,6 @@ class MiAZWho(MiAZConfigView):
 
         self.store.clear()
         items = self.config_load()
-        self.log.debug("Items is %s", type(items))
 
         n = 0
         for code in items:
@@ -120,19 +119,29 @@ class MiAZWho(MiAZConfigView):
             self.store.insert_with_values(n, (0, 1), (code, fullname))
             n += 1
 
-    def config_save(self):
-        items = []
-        def row(model, path, itr):
-            code = model.get(itr, 0)[0]
-            checked = model.get(itr, 2)[0]
-            if checked:
-                items.append(code)
-        self.store.foreach(row)
+    def config_save(self, items):
         with open(self.config_local, 'w') as fj:
-            json.dump(sorted(items), fj)
+            json.dump(items, fj)
 
     def __clb_row_toggled(self, cell, path):
         model = self.sorted_model.get_model()
         rpath = self.sorted_model.convert_path_to_child_path(Gtk.TreePath(path))
         model[rpath][2] = not model[rpath][2]
         self.config_save()
+
+    def on_item_add(self, *args):
+        dialog = MiAZDialogAdd(self.app, self.get_root(), 'Add new person or entity', 'Initials', 'Full name')
+        dialog.connect('response', self.on_response_item_add)
+        dialog.show()
+
+    def on_response_item_add(self, dialog, response):
+        if response == Gtk.ResponseType.ACCEPT:
+            key = dialog.get_value1()
+            value = dialog.get_value2()
+            if len(key) > 0 and len(value) > 0:
+                items = self.config_load()
+                if not key in items:
+                    items[key] = value
+                    self.config_save(items)
+                    self.update()
+        dialog.destroy()

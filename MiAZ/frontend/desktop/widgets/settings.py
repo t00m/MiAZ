@@ -246,7 +246,7 @@ class MiAZSettings(Gtk.Box):
         dlgFileChooser = Gtk.Dialog()
         dlgFileChooser.set_transient_for(self.gui.win)
         dlgFileChooser.add_buttons('Cancel', Gtk.ResponseType.CANCEL, 'Accept', Gtk.ResponseType.ACCEPT)
-        dlgFileChooser.connect("response", self.filechooser_response)
+        dlgFileChooser.connect('response', self.filechooser_response)
         contents = dlgFileChooser.get_content_area()
         wdgfilechooser = Gtk.FileChooserWidget()
         wdgfilechooser.set_action(Gtk.FileChooserAction.SELECT_FOLDER)
