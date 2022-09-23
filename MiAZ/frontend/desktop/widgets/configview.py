@@ -9,9 +9,11 @@ import json
 import gi
 gi.require_version('Gtk', '4.0')
 gi.require_version('Adw', '1')
-from gi.repository import Gtk, Adw
+from gi.repository import Adw
+from gi.repository import Gdk
 from gi.repository import Gio
 from gi.repository import GLib
+from gi.repository import Gtk
 
 from MiAZ.backend.env import ENV
 from MiAZ.frontend.desktop.widgets.widget import MiAZWidget
@@ -21,9 +23,10 @@ class MiAZConfigView(MiAZWidget, Gtk.Box):
     """Class for managing Collections from Settings"""
     __gtype_name__ = 'MiAZConfigView'
     current = None
-    local_config = None
-    global_config = None
+    config_local = None
+    config_global = None
     config_for = None
+    search_term = ''
 
     def __init__(self, app):
         super().__init__(app, __class__.__name__)
@@ -39,51 +42,57 @@ class MiAZConfigView(MiAZWidget, Gtk.Box):
         box_entry = Gtk.Box(spacing=3, orientation=Gtk.Orientation.HORIZONTAL)
         box_entry.set_hexpand(True)
         self.entry = Gtk.Entry()
-        self.entry.connect('activate', self.rename)
+        self.entry.connect('changed', self.on_entrysearch_changed)
         self.entry.set_hexpand(True)
         self.entry.set_has_frame(True)
         box_entry.append(self.entry)
         self.box_oper.append(box_entry)
         box_buttons = Gtk.Box(spacing=3, orientation=Gtk.Orientation.HORIZONTAL)
-        box_buttons.append(self.app.create_button('miaz-edit', '', self.rename))
+        box_buttons.append(self.app.create_button('miaz-edit', '', self.on_item_rename))
         box_buttons.append(Gtk.Separator.new(orientation=Gtk.Orientation.VERTICAL))
-        box_buttons.append(self.app.create_button('miaz-add', '', self.add))
-        box_buttons.append(self.app.create_button('miaz-remove', '', self.remove))
+        box_buttons.append(self.app.create_button('miaz-add', '', self.on_item_add))
+        box_buttons.append(self.app.create_button('miaz-remove', '', self.on_item_remove))
         self.box_oper.append(box_buttons)
         self.append(self.box_oper)
 
-        widget = self.setup_treeview()
+        widget = self.__setup_treeview()
         self.append(widget)
 
         # InfoBar
         self.infobar = Gtk.InfoBar()
         self.infobar.set_revealed(True)
-        self.infobar.set_show_close_button(True)
+        self.infobar.set_show_close_button(False)
         self.infobar.set_message_type(Gtk.MessageType.INFO)
         self.infobar.connect('response', self.infobar_response)
         self.append(self.infobar)
         self.infobar_message()
 
-    def infobar_message(self):
-        message_label = Gtk.Label()
-        message_label.set_markup('<b>View info here!</b>')
-        self.infobar.add_child(message_label)
+    def on_entrysearch_changed(self, *args):
+        self.search_term = self.entry.get_text()
+        self.treefilter.refilter()
+
+    def infobar_message(self, text=''):
+        return
+        # FIXME: retrieve widget and update it
+        if len(text) > 0:
+            message_label = Gtk.Label()
+            message_label.set_markup(text)
+            self.infobar.add_child(message_label)
 
     def infobar_response(self, infobar, response):
         if response == Gtk.ResponseType.CLOSE:
             infobar.set_revealed(False)
 
-    def setup_treeview(self):
+    def __setup_treeview(self):
         # Treeview for displaying
         self.scrwin = Gtk.ScrolledWindow()
         self.scrwin.set_hexpand(True)
         self.scrwin.set_vexpand(True)
         self.scrwin.set_has_frame(True)
         self.treeview = MiAZTreeView(self.app)
-        self.store = Gtk.TreeStore(str)
-        self.treeview.set_model(self.store)
+        self.store = Gtk.ListStore(str)
         self.selection = self.treeview.get_selection()
-        self.sig_selection_changed = self.selection.connect('changed', self.selection_changed)
+        self.sig_selection_changed = self.selection.connect('changed', self.on_selection_changed)
 
         # Column: Name
         self.renderer = Gtk.CellRendererText()
@@ -102,12 +111,15 @@ class MiAZConfigView(MiAZWidget, Gtk.Box):
 
         # TreeView sorting
         self.sorted_model = Gtk.TreeModelSort(model=self.treefilter)
-        self.sorted_model.set_sort_func(0, self.sort_function, None)
+        self.sorted_model.set_sort_func(0, self.__clb_sort_function, None)
+
+        self.treeview.set_model(self.sorted_model)
+
         self.scrwin.set_child(self.treeview)
 
         return self.scrwin
 
-    def sort_function(self, model, row1, row2, user_data):
+    def __clb_sort_function(self, model, row1, row2, user_data):
         sort_column = 0
         value1 = model.get_value(row1, sort_column)
         value2 = model.get_value(row2, sort_column)
@@ -118,7 +130,7 @@ class MiAZConfigView(MiAZWidget, Gtk.Box):
         else:
             return 1
 
-    def selection_changed(self, selection):
+    def on_selection_changed(self, selection):
         if selection is None:
             return
         try:
@@ -130,12 +142,6 @@ class MiAZConfigView(MiAZWidget, Gtk.Box):
         except Exception as error:
             pass
 
-    def edit_name(self, widget, path, target):
-        treeiter = self.sorted_model.get_iter(path)
-        name = self.sorted_model[treeiter][0]
-        print(name)
-        print(target)
-
     def __row_inserted(self, model, treepath, treeiter):
         self.treeview.set_cursor_on_cell(treepath, self.column, self.renderer, True)
         self.treeview.grab_focus()
@@ -143,108 +149,101 @@ class MiAZConfigView(MiAZWidget, Gtk.Box):
     def row(self, model, path, itr):
         pass
 
-    def save_config(self, items):
-        with open(self.local_config, 'w') as fj:
+    def config_save(self, items):
+        with open(self.config_local, 'w') as fj:
             json.dump(sorted(items), fj)
 
-    def add(self, *args):
-        tbuf = self.entry.get_buffer()
-        name = tbuf.get_text()
-        if len(name) == 0:
-            return
-        treeiter = self.store.insert_with_values(None, -1, (0,), (name.upper(),))
-        self.current = name.upper()
-        items = []
-        def row(model, path, itr):
-            name = model.get(itr, 0)[0]
-            items.append(name)
-        self.store.foreach(row)
-        self.save_config(items)
+    def on_item_add(self, *args):
+        # Add new item, save config and refresh model
+        item = self.entry.get_text()
+        items = self.config_load()
+        items.add(item.upper())
+        self.config_save(list(items))
+        self.log.debug("Added %s to configuration", item)
+        self.entry.set_text('')
+        self.entry.activate()
         self.update()
+        self.infobar.set_message_type(Gtk.MessageType.INFO)
+        self.infobar_message("Added new entry: %s" % item)
 
-    def rename(self, *args):
+        # ~ tbuf = self.entry.get_buffer()
+        # ~ name = tbuf.get_text()
+        # ~ if len(name) == 0:
+            # ~ return
+        # ~ treeiter = self.store.insert_with_values(None, -1, (0,), (name.upper(),))
+        # ~ self.current = name.upper()
+        # ~ items = []
+        # ~ def row(model, path, itr):
+            # ~ name = model.get(itr, 0)[0]
+            # ~ items.append(name)
+        # ~ self.store.foreach(row)
+        # ~ self.config_save(items)
+        # ~ self.update()
+
+    def on_item_rename(self, *args):
+        return
+
+    def on_item_remove(self, *args):
+        # Delete from config and refresh model
+        item = self.entry.get_text()
+        items = self.config_load()
         try:
-            tbuf = self.entry.get_buffer()
-            renamed = tbuf.get_text()
-            if len(renamed) == 0:
-                return
-            tbuf.set_text(renamed.upper(), -1)
-            model, treeiter = self.selection.get_selected()
-            if treeiter is None:
-                return
-            model.remove(treeiter)
-            treeiter = self.store.insert_with_values(None, -1, (0,), (renamed.upper(),))
-            self.selection.select_iter(treeiter)
-            items = []
-            def row(model, path, itr):
-                name = model.get(itr, 0)[0]
-                items.append(name)
-                self.current = name.upper()
-            model.foreach(row)
-            self.save_config(items)
+            items.remove(item)
+            self.log.debug("Removed %s from %s configuration", item, self.config_for)
+            self.config_save(list(items))
             self.update()
-        except Exception as error:
-            self.log.error(error)
-
-    def remove(self, *args):
-        model, treeiter = self.selection.get_selected()
-        if model is None or treeiter is None:
+            self.entry.set_text('')
+            self.entry.activate()
+        except KeyError as error:
+            self.infobar.set_message_type(Gtk.MessageType.ERROR)
+            self.infobar_message("This entry doesn't exist. Nothing deleted.")
             return
-        model.remove(treeiter)
-        items = []
-        def row(model, path, itr):
-            name = model.get(itr, 0)[0]
-            items.append(name)
-            self.current = name.upper()
-        model.foreach(row)
-        self.save_config(items)
-        self.update()
 
-    def check_config_file(self):
-        if not os.path.exists(self.local_config):
+    def config_check(self):
+        if not os.path.exists(self.config_local):
             import shutil
             self.log.debug("Local config file for %s doesn't exist." % self.config_for)
             try:
-                shutil.copy(self.global_config, self.local_config)
+                shutil.copy(self.config_global, self.config_local)
                 self.log.debug("Local config file for %s created from global config" % self.config_for)
             except FileNotFoundError:
                 self.log.warning("Global config file for %s not found" % self.config_for)
-                self.save_config([])
+                self.config_save([])
                 self.log.debug("Local config file for %s created empty" % self.config_for)
 
-    def load_config(self):
-        with open(self.local_config, 'r') as fin:
-            items = json.load(fin)
+    def config_load(self):
+        with open(self.config_local, 'r') as fin:
+            items = set(json.load(fin))
         return items
 
     def update(self):
-        if self.local_config is None:
+        if self.config_local is None:
             return
 
         # Check config file and create it if doesn't exist
-        self.check_config_file()
+        self.config_check()
 
         self.store.clear()
-        items = self.load_config()
+        items = self.config_load()
         pos = 0
         for item in items:
             node = self.store.insert_with_values(None, pos, (0,), (item,))
             pos += 1
 
-        def row(model, path, itr):
-            try:
-                name = model.get(itr, 0)[0]
-                if name.upper() == self.current.upper():
-                    self.selection.select_iter(itr)
-            except:
-                # ~ AttributeError: 'NoneType' object has no attribute 'upper' ????
-                pass
-        self.store.foreach(row)
-
     def __clb_visible_function(self, model, itr, data):
-        return True
+        item_name = model.get(itr, 0)[0]
+        if item_name is None:
+            return True
+        if self.search_term is None:
+            return True
 
-    def set_config_files(self, config_for, local_config, global_config):
+        match = self.search_term.upper() in item_name.upper()
+        if match:
+            return True
+        else:
+            return False
+
+    def config_set(self, config_for, config_local, config_global):
         self.config_for = config_for
-        self.local_config = local_config
-        self.global_config = global_config
+        self.config_local = config_local
+        self.config_global = config_global

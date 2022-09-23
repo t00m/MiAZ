@@ -9,9 +9,11 @@ import gi
 gi.require_version('Gtk', '4.0')
 gi.require_version('Adw', '1')
 gi.require_version('GdkPixbuf', '2.0')
-from gi.repository import Gtk, Adw
+from gi.repository import Adw
 from gi.repository import Gio
 from gi.repository import GLib
+from gi.repository import Gtk
+from gi.repository import Pango
 from gi.repository.GdkPixbuf import Pixbuf
 
 from MiAZ.backend.env import ENV
@@ -77,6 +79,7 @@ class MiAZWorkspace(Gtk.Box):
 
         # Current filename
         renderer = Gtk.CellRendererText()
+        renderer.set_property('ellipsize', Pango.EllipsizeMode.MIDDLE)
         column = Gtk.TreeViewColumn('Current filename', renderer, markup=3)
         column.set_visible(True)
         column.set_sizing(Gtk.TreeViewColumnSizing.AUTOSIZE)
@@ -89,6 +92,7 @@ class MiAZWorkspace(Gtk.Box):
 
         # Suggested filename
         renderer = Gtk.CellRendererText()
+        renderer.set_property('ellipsize', Pango.EllipsizeMode.MIDDLE)
         renderer.set_property('editable', True)
         renderer.connect('edited', self.edit_filename)
 

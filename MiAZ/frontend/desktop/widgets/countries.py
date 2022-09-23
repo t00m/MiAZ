@@ -27,8 +27,8 @@ class MiAZCountries(MiAZConfigView):
 
         # Model: flag icon, code, name, checkbox
         self.store = Gtk.ListStore(Pixbuf, str, str, bool)
-        self.tree = MiAZTreeView(self.app)
-        self.tree.set_model(self.store)
+        self.treeview = MiAZTreeView(self.app)
+        self.treeview.set_model(self.store)
 
         # Flag Icon
         renderer = Gtk.CellRendererPixbuf()
@@ -41,7 +41,7 @@ class MiAZCountries(MiAZConfigView):
         column.set_sort_indicator(True)
         column.set_sort_column_id(2)
         column.set_sort_order(Gtk.SortType.ASCENDING)
-        self.tree.append_column(column)
+        self.treeview.append_column(column)
 
         # Code
         renderer = Gtk.CellRendererText()
@@ -52,7 +52,7 @@ class MiAZCountries(MiAZConfigView):
         column.set_clickable(False)
         column.set_sort_indicator(False)
         column.set_sort_column_id(1)
-        self.tree.append_column(column)
+        self.treeview.append_column(column)
 
         # Country name
         renderer = Gtk.CellRendererText()
@@ -63,7 +63,7 @@ class MiAZCountries(MiAZConfigView):
         column.set_clickable(True)
         column.set_sort_indicator(True)
         column.set_sort_column_id(2)
-        self.tree.append_column(column)
+        self.treeview.append_column(column)
 
         # Checkbox
         renderer = Gtk.CellRendererToggle()
@@ -76,7 +76,7 @@ class MiAZCountries(MiAZConfigView):
         column.set_sort_indicator(True)
         column.set_sort_column_id(3)
         column.set_property('spacing', 50)
-        self.tree.append_column(column)
+        self.treeview.append_column(column)
 
         # Treeview filtering
         self.treefilter = self.store.filter_new()
@@ -85,7 +85,7 @@ class MiAZCountries(MiAZConfigView):
         # TreeView sorting
         self.sorted_model = Gtk.TreeModelSort(model=self.treefilter)
 
-        self.tree.connect('row-activated', self.double_click)
+        self.treeview.connect('row-activated', self.double_click)
 
         self.scrwin.set_child(self.tree)
         return self.scrwin
@@ -98,23 +98,23 @@ class MiAZCountries(MiAZConfigView):
     def double_click(self, treeview, treepath, treecolumn):
         model = self.sorted_model.get_model()
         model[treepath][3] = not model[treepath][3]
-        self.save_config()
+        self.config_save()
 
-    def check_config_file(self):
-        if not os.path.exists(self.local_config):
-            self.save_config()
+    def config_check(self):
+        if not os.path.exists(self.config_local):
+            self.config_save()
             self.log.debug("Local config file for %s created empty" % self.config_for)
 
     def update(self):
         try:
-            with open(self.global_config, 'r') as fin:
+            with open(self.config_global, 'r') as fin:
                 countries = json.load(fin)
         except FileNotFoundError as error:
             self.log.error(error)
             return
 
         try:
-            checked = self.load_config()
+            checked = self.config_load()
         except FileNotFoundError:
             checked = []
 
@@ -125,10 +125,11 @@ class MiAZCountries(MiAZConfigView):
                 icon_flag = os.path.join(ENV['GPATH']['FLAGS'], "__.svg")
             icon = self.app.icman.get_pixbuf_from_file_at_size(icon_flag, 32, 32)
             name = "%s (%s)" % (countries[code]["Country Name"], code)
+            self.log.debug("%s > %s > %s > %s", icon, code, name, code in checked)
             self.store.insert_with_values(n, (0, 1, 2, 3), (icon, code, name, code in checked))
             n += 1
 
-    def save_config(self):
+    def config_save(self):
         items = []
         def row(model, path, itr):
             code = model.get(itr, 1)[0]
@@ -136,11 +137,11 @@ class MiAZCountries(MiAZConfigView):
             if checked:
                 items.append(code)
         self.store.foreach(row)
-        with open(self.local_config, 'w') as fj:
+        with open(self.config_local, 'w') as fj:
             json.dump(sorted(items), fj)
 
     def __clb_row_toggled(self, cell, path):
         model = self.sorted_model.get_model()
         rpath = self.sorted_model.convert_path_to_child_path(Gtk.TreePath(path))
         model[rpath][3] = not model[rpath][3]
-        self.save_config()
+        self.config_save()

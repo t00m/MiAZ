@@ -32,15 +32,13 @@ class MiAZDocBrowser(Gtk.Box):
         self.scrwin.set_vexpand(True)
 
         self.box_header = Gtk.Box(spacing=6, orientation=Gtk.Orientation.HORIZONTAL)
-        # ~ button = self.gui.create_button('countries', 'Countries', self.nop, 48, 48)
-        # ~ self.revealer = Gtk.Revealer()
-        self.ent_sb = Gtk.SearchEntry (placeholder_text = "Type here...")
         # https://gist.github.com/Afacanc38/76ce9b3260307bea64ebf3506b485147
+        self.ent_sb = Gtk.SearchEntry(placeholder_text="Type here")
+        self.ent_sb.connect('changed', self.nop)
         self.searchbar = Gtk.SearchBar(halign = Gtk.Align.FILL, hexpand = True, valign = Gtk.Align.START, show_close_button = True)
         self.searchbar.connect_entry (self.ent_sb)
         self.searchbar.set_child (self.ent_sb)
         self.searchbar.set_key_capture_widget(self.ent_sb)
-        # ~ self.revealer.set_child(self.searchbar)
         self.box_header.append(self.searchbar)
 
         self.controller = Gtk.EventControllerKey()
@@ -58,9 +56,8 @@ class MiAZDocBrowser(Gtk.Box):
         if Gdk.ModifierType.CONTROL_MASK & state and keyname == 'f':
             if self.searchbar.get_search_mode():
                 self.searchbar.set_search_mode(False)
-                # ~ self.revealer.set_reveal_child(True)
             else:
                 self.searchbar.set_search_mode(True)
 
     def nop(self, *args):
-        pass
+        self.log.debug(args)

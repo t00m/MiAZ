@@ -27,8 +27,8 @@ class MiAZWho(MiAZConfigView):
 
         # Model: flag icon, code, name, checkbox
         self.store = Gtk.ListStore(str, str)
-        self.tree = MiAZTreeView(self.app)
-        self.tree.set_model(self.store)
+        self.treeview = MiAZTreeView(self.app)
+        self.treeview.set_model(self.store)
 
         # Initials
         renderer = Gtk.CellRendererText()
@@ -39,7 +39,7 @@ class MiAZWho(MiAZConfigView):
         column.set_clickable(False)
         column.set_sort_indicator(False)
         column.set_sort_column_id(0)
-        self.tree.append_column(column)
+        self.treeview.append_column(column)
 
         # Full name
         renderer = Gtk.CellRendererText()
@@ -51,7 +51,7 @@ class MiAZWho(MiAZConfigView):
         column.set_clickable(True)
         column.set_sort_indicator(True)
         column.set_sort_column_id(1)
-        self.tree.append_column(column)
+        self.treeview.append_column(column)
 
         # Treeview filtering
         self.treefilter = self.store.filter_new()
@@ -60,7 +60,7 @@ class MiAZWho(MiAZConfigView):
         # TreeView sorting
         self.sorted_model = Gtk.TreeModelSort(model=self.treefilter)
 
-        self.tree.connect('row-activated', self.double_click)
+        self.treeview.connect('row-activated', self.double_click)
 
         self.scrwin.set_child(self.tree)
         return self.scrwin
@@ -81,17 +81,17 @@ class MiAZWho(MiAZConfigView):
     def double_click(self, treeview, treepath, treecolumn):
         model = self.sorted_model.get_model()
         model[treepath][2] = not model[treepath][2]
-        self.save_config()
+        self.config_save()
 
     def update(self):
-        if self.local_config is None:
+        if self.config_local is None:
             return
 
         # Check config file and create it if doesn't exist
-        self.check_config_file()
+        self.config_check()
 
         self.store.clear()
-        items = self.load_config()
+        items = self.config_load()
 
         n = 0
         for code in items:
@@ -99,7 +99,7 @@ class MiAZWho(MiAZConfigView):
             self.store.insert_with_values(n, (0, 1), (code, fullname))
             n += 1
 
-    def save_config(self):
+    def config_save(self):
         items = []
         def row(model, path, itr):
             code = model.get(itr, 0)[0]
@@ -107,11 +107,11 @@ class MiAZWho(MiAZConfigView):
             if checked:
                 items.append(code)
         self.store.foreach(row)
-        with open(self.local_config, 'w') as fj:
+        with open(self.config_local, 'w') as fj:
             json.dump(sorted(items), fj)
 
     def __clb_row_toggled(self, cell, path):
         model = self.sorted_model.get_model()
         rpath = self.sorted_model.convert_path_to_child_path(Gtk.TreePath(path))
         model[rpath][2] = not model[rpath][2]
-        self.save_config()
+        self.config_save()

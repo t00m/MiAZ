@@ -19,7 +19,7 @@ class MiAZExtensions(MiAZConfigView):
         self.scrwin.set_vexpand(True)
         self.scrwin.set_has_frame(True)
         self.treeview = MiAZTreeView(self.app)
-        self.store = Gtk.TreeStore(str, str)
+        self.store = Gtk.ListStore(str, str)
         self.treeview.set_model(self.store)
         self.selection = self.treeview.get_selection()
         self.sig_selection_changed = self.selection.connect('changed', self.selection_changed)
