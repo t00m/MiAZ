@@ -162,13 +162,13 @@ class MiAZWorkspace(Gtk.Box):
     def edit_filename(self, widget, path, target):
         treeiter = self.sorted_model.get_iter(path)
         filename = self.sorted_model[treeiter][4]
-        print(filename)
-        print(target)
+        # ~ print(filename)
+        # ~ print(target)
 
     def edit_filename_finished(self, widget, path, target):
         treeiter = self.sorted_model.get_iter(path)
         filename = self.sorted_model[treeiter][4]
-        print(filename)
+        # ~ print(filename)
 
     def __clb_visible_function(self, model, itr, data):
         return True

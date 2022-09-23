@@ -62,7 +62,7 @@ class MiAZSettings(Gtk.Box):
         section_appearance = self.create_section_appearance()
         self.flowbox.insert(widget=section_appearance, position=3)
 
-        self.log.debug("Settings view initialited")
+        # ~ self.log.debug("Settings view initialited")
 
     def create_section_appearance(self):
         frmAppearance = Gtk.Frame()

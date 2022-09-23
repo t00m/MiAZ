@@ -82,7 +82,8 @@ class MiAZCountries(MiAZConfigView):
 
         # TreeView sorting
         self.sorted_model = Gtk.TreeModelSort(model=self.treefilter)
-        self.sorted_model.set_sort_func(0, self.clb_sort_function, None)
+        self.sorted_model.set_sort_func(0, self.clb_sort_function, 3)
+        self.sorted_model.set_sort_column_id(3, Gtk.SortType.DESCENDING)
         self.treeview.set_model(self.sorted_model)
 
         self.treeview.connect('row-activated', self.double_click)

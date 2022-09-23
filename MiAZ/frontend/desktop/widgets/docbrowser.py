@@ -52,7 +52,7 @@ class MiAZDocBrowser(Gtk.Box):
 
     def on_key_released(self, widget, keyval, keycode, state):
         keyname = Gdk.keyval_name(keyval)
-        print(keyname)
+        # ~ self.log.debug("Key: %s" keyname)
         if Gdk.ModifierType.CONTROL_MASK & state and keyname == 'f':
             if self.searchbar.get_search_mode():
                 self.searchbar.set_search_mode(False)

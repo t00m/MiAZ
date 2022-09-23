@@ -55,15 +55,35 @@ class MiAZWho(MiAZConfigView):
 
         # Treeview filtering
         self.treefilter = self.store.filter_new()
-        # ~ self.treefilter.set_visible_func(self.__clb_visible_function)
+        self.treefilter.set_visible_func(self.clb_visible_function)
 
         # TreeView sorting
         self.sorted_model = Gtk.TreeModelSort(model=self.treefilter)
+        self.sorted_model.set_sort_func(0, self.clb_sort_function, 1)
+        self.sorted_model.set_sort_column_id(1, Gtk.SortType.ASCENDING)
+        self.treeview.set_model(self.sorted_model)
 
         self.treeview.connect('row-activated', self.double_click)
 
-        self.scrwin.set_child(self.tree)
+        self.scrwin.set_child(self.treeview)
         return self.scrwin
+
+    def clb_visible_function(self, model, itr, data):
+        item_code = model.get(itr, 0)[0]
+        item_name = model.get(itr, 1)[0]
+        item = item_code+item_name
+        if item_code is None and item_name is None:
+            self.log.debug("RETURN!!!")
+            return True
+        if self.search_term is None:
+            self.log.debug("RETURN!!!")
+            return True
+
+        match = self.search_term.upper() in item.upper()
+        if match:
+            return True
+        else:
+            return False
 
     def selection_changed(self, selection):
         if selection is None:
@@ -92,6 +112,7 @@ class MiAZWho(MiAZConfigView):
 
         self.store.clear()
         items = self.config_load()
+        self.log.debug("Items is %s", type(items))
 
         n = 0
         for code in items:

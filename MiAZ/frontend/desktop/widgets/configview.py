@@ -119,15 +119,15 @@ class MiAZConfigView(MiAZWidget, Gtk.Box):
 
         # TreeView sorting
         self.sorted_model = Gtk.TreeModelSort(model=self.treefilter)
-        self.sorted_model.set_sort_func(0, self.clb_sort_function, None)
+        self.sorted_model.set_sort_func(0, self.clb_sort_function, 0)
+        self.sorted_model.set_sort_column_id(0, Gtk.SortType.ASCENDING)
         self.treeview.set_model(self.sorted_model)
 
         self.scrwin.set_child(self.treeview)
 
         return self.scrwin
 
-    def clb_sort_function(self, model, row1, row2, user_data):
-        sort_column = 0
+    def clb_sort_function(self, model, row1, row2, sort_column=0):
         value1 = model.get_value(row1, sort_column)
         value2 = model.get_value(row2, sort_column)
         if value1 < value2:
@@ -206,7 +206,7 @@ class MiAZConfigView(MiAZWidget, Gtk.Box):
 
     def config_load(self):
         with open(self.config_local, 'r') as fin:
-            items = set(json.load(fin))
+            items = json.load(fin)
         return items
 
     def update(self):
@@ -220,7 +220,7 @@ class MiAZConfigView(MiAZWidget, Gtk.Box):
         items = self.config_load()
         pos = 0
         for item in items:
-            node = self.store.insert_with_values(None, pos, (0,), (item,))
+            node = self.store.insert_with_values(pos, (0,), (item,))
             pos += 1
 
     def clb_visible_function(self, model, itr, data):
