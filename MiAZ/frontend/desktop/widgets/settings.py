@@ -18,6 +18,7 @@ from MiAZ.frontend.desktop.widgets.purposes import MiAZPurposes
 from MiAZ.frontend.desktop.widgets.countries import MiAZCountries
 from MiAZ.frontend.desktop.widgets.languages import MiAZLanguages
 from MiAZ.frontend.desktop.widgets.extensions import MiAZExtensions
+from MiAZ.frontend.desktop.widgets.organizations import MiAZOrganizations
 from MiAZ.frontend.desktop.widgets.who import MiAZWho
 
 class MiAZSettings(Gtk.Box):

@@ -11,6 +11,8 @@ from MiAZ.backend.env import ENV
 from MiAZ.frontend.desktop.widgets.treeview import MiAZTreeView
 from MiAZ.frontend.desktop.widgets.configview import MiAZConfigView
 from MiAZ.frontend.desktop.widgets.dialogs import MiAZDialogAdd
+from MiAZ.backend.config.settings import MiAZConfigSettingsWho
+
 
 class MiAZWho(MiAZConfigView):
     """Class for managing Languages from Settings"""
@@ -20,7 +22,7 @@ class MiAZWho(MiAZConfigView):
     def __init__(self, app):
         super().__init__(app)
         self.app = app
-        self.log.debug(__class__.__name__)
+        self.config = MiAZConfigSettingsWho()
 
     def setup_treeview(self):
         self.scrwin = Gtk.ScrolledWindow()
@@ -105,24 +107,14 @@ class MiAZWho(MiAZConfigView):
         self.config_save()
 
     def update(self):
-        if self.config_local is None:
-            return
-
-        # Check config file and create it if doesn't exist
-        self.config_check()
-
         self.store.clear()
-        items = self.config_load()
-
-        n = 0
+        items = self.config.load()
         for code in items:
             fullname = items[code]
-            self.store.insert_with_values(n, (0, 1), (code, fullname))
-            n += 1
+            self.store.insert_with_values(-1, (0, 1), (code, fullname))
 
     def config_save(self, items):
-        with open(self.config_local, 'w') as fj:
-            json.dump(items, fj)
+        self.config.save(items)
 
     def __clb_row_toggled(self, cell, path):
         model = self.sorted_model.get_model()
@@ -140,9 +132,9 @@ class MiAZWho(MiAZConfigView):
             key = dialog.get_value1()
             value = dialog.get_value2()
             if len(key) > 0 and len(value) > 0:
-                items = self.config_load()
+                items = self.config.load()
                 if not key in items:
                     items[key] = value
-                    self.config_save(items)
+                    self.config.save(items)
                     self.update()
         dialog.destroy()

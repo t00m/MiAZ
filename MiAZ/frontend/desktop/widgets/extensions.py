@@ -14,7 +14,7 @@ class MiAZExtensions(MiAZConfigView):
 
     def update(self):
         try:
-            for extension in self.config.load_global():
+            for extension in self.config.load():
                 self.store.insert_with_values(-1, (0,), (extension,))
         except FileNotFoundError as error:
             self.log.error(error)
