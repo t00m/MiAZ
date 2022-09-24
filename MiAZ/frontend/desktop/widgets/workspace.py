@@ -140,8 +140,8 @@ class MiAZWorkspace(Gtk.Box):
         try:
             source_path = self.config.get('source')
         except KeyError:
-            return
-        # ~ print("Get documents from %s" % source_path)
+            return None
+
         documents = get_documents(source_path)
         icon = Pixbuf.new_from_file(ENV['FILE']['APPICON'])
         icon_stop = self.gui.icman.get_pixbuf_by_name('process-stop', 24)

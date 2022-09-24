@@ -10,6 +10,7 @@ from gi.repository.GdkPixbuf import Pixbuf
 from MiAZ.backend.env import ENV
 from MiAZ.frontend.desktop.widgets.treeview import MiAZTreeView
 from MiAZ.frontend.desktop.widgets.configview import MiAZConfigView
+from MiAZ.backend.config.settings import MiAZConfigSettingsLanguages
 
 
 class MiAZLanguages(MiAZConfigView):
@@ -21,6 +22,7 @@ class MiAZLanguages(MiAZConfigView):
         super().__init__(app)
         self.app = app
         self.box_buttons.set_visible(False)
+        self.config = MiAZConfigSettingsLanguages()
 
     def setup_treeview(self):
         self.scrwin = Gtk.ScrolledWindow()
@@ -111,14 +113,13 @@ class MiAZLanguages(MiAZConfigView):
 
     def update(self):
         try:
-            with open(self.config_global, 'r') as fin:
-                languages = json.load(fin)
+            languages = self.config.load_global()
         except FileNotFoundError as error:
             self.log.error(error)
             return
 
         try:
-            checked = self.config_load()
+            checked = self.config.load()
         except FileNotFoundError:
             checked = []
 
@@ -136,8 +137,7 @@ class MiAZLanguages(MiAZConfigView):
             if checked:
                 items.append(code)
         self.store.foreach(row)
-        with open(self.config_local, 'w') as fj:
-            json.dump(sorted(items), fj)
+        self.config.save(sorted(items))
 
     def __clb_row_toggled(self, cell, path):
         model = self.sorted_model.get_model()

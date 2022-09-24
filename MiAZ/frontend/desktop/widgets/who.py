@@ -20,6 +20,7 @@ class MiAZWho(MiAZConfigView):
     def __init__(self, app):
         super().__init__(app)
         self.app = app
+        self.log.debug(__class__.__name__)
 
     def setup_treeview(self):
         self.scrwin = Gtk.ScrolledWindow()

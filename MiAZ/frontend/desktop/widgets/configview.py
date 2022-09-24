@@ -205,10 +205,10 @@ class MiAZConfigView(MiAZWidget, Gtk.Box):
                 self.config_save([])
                 self.log.debug("Local config file for %s created empty" % self.config_for)
 
-    def config_load(self):
-        with open(self.config_local, 'r') as fin:
-            items = json.load(fin)
-        return items
+    # ~ def config_load(self):
+        # ~ with open(self.config_local, 'r') as fin:
+            # ~ items = json.load(fin)
+        # ~ return items
 
     def update(self):
         if self.config_local is None:

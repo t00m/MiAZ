@@ -14,18 +14,17 @@ class MiAZ:
     def __init__(self, params) -> None:
         self.setup_environment()
         self.log = get_logger('MiAZ.Main')
-        self.log.debug("MiAZ - Start")
+        self.log.info("%s v%s - Start", ENV['APP']['shortname'], get_version())
         self.params = params
 
     def run(self):
-        self.log.info("%s v%s", ENV['APP']['shortname'], get_version())
         if ENV['SYS']['DESKTOP'] is not None:
             from MiAZ.frontend.desktop.gui import GUI
         else:
             from MiAZ.frontend.console.gui import GUI
         app = GUI(application_id="com.example.MiAZ")
         app.run()
-        self.log.debug("MiAZ - End")
+        self.log.info("%s v%s - End", ENV['APP']['shortname'], get_version())
 
     def setup_environment(self):
         """

@@ -12,7 +12,7 @@ from gi.repository import GObject
 from gi.repository import Pango
 
 from MiAZ.backend.env import ENV
-from MiAZ.backend.config import MiAZConfig
+from MiAZ.backend.config.settings import MiAZConfigApp
 from MiAZ.backend.controller import get_documents
 from MiAZ.backend.log import get_logger
 from MiAZ.frontend.desktop.widgets.stack import MiAZStack
@@ -27,10 +27,10 @@ from MiAZ.frontend.desktop.icons import MiAZIconManager
 class GUI(Adw.Application):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        GLib.set_application_name(ENV['APP']['name'])
         self.log = get_logger("MiAZ.GUI")
         self.log.debug("Executing MiAZ Desktop mode")
-        self.config = MiAZConfig()
+        GLib.set_application_name(ENV['APP']['name'])
+        self.config = MiAZConfigApp()
         self.connect('activate', self.on_activate)
         self.icman = MiAZIconManager()
 
