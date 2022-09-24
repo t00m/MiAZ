@@ -71,17 +71,17 @@ ENV['GPATH']['RESOURCES'] = os.path.join(ENV['GPATH']['DATA'], 'resources')
 
 # Common file paths
 ENV['FILE'] = {}
-ENV['FILE']['CONF'] = os.path.join(ENV['LPATH']['ETC'], 'MyAZ.conf')
+ENV['FILE']['CONF'] = os.path.join(ENV['LPATH']['ETC'], 'MyAZ-application.json')
 ENV['FILE']['VERSION'] = os.path.join(ENV['GPATH']['DOCS'], 'VERSION')
 ENV['FILE']['APPICON'] = os.path.join(ENV['GPATH']['ICONS'], 'MiAZ.svg')
 ENV['FILE']['LOG'] = os.path.join(ENV['LPATH']['LOG'], 'MiAZ.log')
-ENV['FILE']['COLLECTIONS'] = os.path.join(ENV['LPATH']['ETC'], 'miaz-collections.json')
-ENV['FILE']['PURPOSES'] = os.path.join(ENV['LPATH']['ETC'], 'miaz-purposes.json')
-ENV['FILE']['ORGANIZATIONS'] = os.path.join(ENV['LPATH']['ETC'], 'miaz-organizations.json')
-ENV['FILE']['EXTENSIONS'] = os.path.join(ENV['LPATH']['ETC'], 'miaz-extensions.json')
-ENV['FILE']['COUNTRIES'] = os.path.join(ENV['LPATH']['ETC'], 'miaz-countries.json')
-ENV['FILE']['LANGUAGES'] = os.path.join(ENV['LPATH']['ETC'], 'miaz-languages.json')
-ENV['FILE']['WHO'] = os.path.join(ENV['LPATH']['ETC'], 'miaz-who.json')
+ENV['FILE']['COLLECTIONS'] = os.path.join(ENV['LPATH']['ETC'], 'MiAZ-collections.json')
+ENV['FILE']['PURPOSES'] = os.path.join(ENV['LPATH']['ETC'], 'MiAZ-purposes.json')
+ENV['FILE']['ORGANIZATIONS'] = os.path.join(ENV['LPATH']['ETC'], 'MiAZ-organizations.json')
+ENV['FILE']['EXTENSIONS'] = os.path.join(ENV['LPATH']['ETC'], 'MiAZ-extensions.json')
+ENV['FILE']['COUNTRIES'] = os.path.join(ENV['LPATH']['ETC'], 'MiAZ-countries.json')
+ENV['FILE']['LANGUAGES'] = os.path.join(ENV['LPATH']['ETC'], 'MiAZ-languages.json')
+ENV['FILE']['WHO'] = os.path.join(ENV['LPATH']['ETC'], 'MiAZ-who.json')
 
 # App Info
 ENV['APP']['version'] = open(ENV['FILE']['VERSION']).read().strip()
