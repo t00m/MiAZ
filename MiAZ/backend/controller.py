@@ -9,14 +9,14 @@ from dateutil import parser as dateparser
 from MiAZ.backend.env import ENV
 from MiAZ.backend.util import load_json
 from MiAZ.backend.util import guess_datetime
+from MiAZ.backend.config.settings import MiAZConfigSettingsCountries
+from MiAZ.backend.config.settings import MiAZConfigSettingsExtensions
 
+# ~ f_countries = os.path.join(ENV['GPATH']['RESOURCES'], 'miaz-countries.json')
+countries = MiAZConfigSettingsCountries().load()
 
-
-f_countries = os.path.join(ENV['GPATH']['RESOURCES'], 'miaz-countries.json')
-countries = load_json(f_countries)
-
-f_extensions = os.path.join(ENV['GPATH']['RESOURCES'], 'miaz-extensions.json')
-extensions = load_json(f_extensions)
+# ~ f_extensions = os.path.join(ENV['GPATH']['RESOURCES'], 'miaz-extensions.json')
+extensions = MiAZConfigSettingsExtensions().load()
 
 
 def is_country(code: str) -> bool:

@@ -50,3 +50,14 @@ class MiAZConfigSettingsCollections(MiAZConfig):
                             'MiAZ-collections.json'),
             must_copy = False
         )
+
+class MiAZConfigSettingsExtensions(MiAZConfig):
+    def __init__(self):
+        super().__init__(
+            log=get_logger('MiAZ.Settings.Extensions'),
+            config_for = 'Extensions',
+            config_local = ENV['FILE']['EXTENSIONS'],
+            config_global = os.path.join(ENV['GPATH']['RESOURCES'],
+                            'MiAZ-extensions.json'),
+            must_copy = False
+        )

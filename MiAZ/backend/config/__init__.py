@@ -21,19 +21,19 @@ class MiAZConfig():
 
     def setup(self):
         if not os.path.exists(self.config_local):
-            # ~ self.log.debug("%s - Local configuration file doesn't exist", self.config_for)
+            self.log.debug("%s - Local configuration file doesn't exist", self.config_for)
             if self.must_copy:
                 try:
                     shutil.copy(self.config_global, self.config_local)
-                    # ~ self.log.debug("%s - Global config: (%s)", self.config_for, self.config_global)
-                    # ~ self.log.debug("%s - Local config: (%s)", self.config_for, self.config_local)
-                    # ~ self.log.debug("%s - Global config copied to local", self.config_for)
+                    self.log.debug("%s - Global config: (%s)", self.config_for, self.config_global)
+                    self.log.debug("%s - Local config: (%s)", self.config_for, self.config_local)
+                    self.log.debug("%s - Global config copied to local", self.config_for)
                 except (FileNotFoundError, IOError) as error:
                     self.log.error(error)
                     return None
             else:
                 # Create an empty config file
-                # ~ self.log.debug("%s - Creating empty config file", self.config_for)
+                self.log.debug("%s - Creating empty config file", self.config_for)
                 self.save({})
 
     def load(self) -> dict:
@@ -55,7 +55,7 @@ class MiAZConfig():
     def save(self, items: dict) -> bool:
         try:
             save_json(self.config_local, items)
-            # ~ self.log.debug("%s - Local config file saved", self.config_for)
+            self.log.debug("%s - Local config file saved", self.config_for)
             saved = True
         except Exception as error:
             self.log.error(error)

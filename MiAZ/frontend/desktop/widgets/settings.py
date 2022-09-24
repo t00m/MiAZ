@@ -17,6 +17,7 @@ from MiAZ.frontend.desktop.widgets.collections import MiAZCollections
 from MiAZ.frontend.desktop.widgets.purposes import MiAZPurposes
 from MiAZ.frontend.desktop.widgets.countries import MiAZCountries
 from MiAZ.frontend.desktop.widgets.languages import MiAZLanguages
+from MiAZ.frontend.desktop.widgets.extensions import MiAZExtensions
 from MiAZ.frontend.desktop.widgets.who import MiAZWho
 
 class MiAZSettings(Gtk.Box):
@@ -240,7 +241,7 @@ class MiAZSettings(Gtk.Box):
         dialog.show()
 
     def show_res_organizations(self, *args):
-        view = MiAZPurposes(self.gui)
+        view = MiAZOrganizations(self.gui)
         # ~ config_local = ENV['FILE']['ORGANIZATIONS']
         # ~ config_global = os.path.join(ENV['GPATH']['RESOURCES'], 'miaz-organizations.json')
         # ~ view.config_set('Organizations', config_local, config_global)
@@ -249,7 +250,7 @@ class MiAZSettings(Gtk.Box):
         dialog.show()
 
     def show_res_extensions(self, *args):
-        view = MiAZPurposes(self.gui)
+        view = MiAZExtensions(self.gui)
         # ~ config_local = ENV['FILE']['EXTENSIONS']
         # ~ config_global = os.path.join(ENV['GPATH']['RESOURCES'], 'miaz-extensions.json')
         # ~ view.config_set('Extensions', config_local, config_global)
