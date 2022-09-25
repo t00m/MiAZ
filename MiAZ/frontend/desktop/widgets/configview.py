@@ -180,6 +180,9 @@ class MiAZConfigView(MiAZWidget, Gtk.Box):
     def on_item_remove(self, *args):
         # Delete from config and refresh model
         item = self.entry.get_text()
+        if len(item) == 0:
+            return
+
         items = self.config.load()
         try:
             items.remove(item)
@@ -192,23 +195,6 @@ class MiAZConfigView(MiAZWidget, Gtk.Box):
             # ~ self.infobar.set_message_type(Gtk.MessageType.ERROR)
             # ~ self.infobar_message("This entry doesn't exist. Nothing deleted.")
             return
-
-    # ~ def config_check(self):
-        # ~ if not os.path.exists(self.config_local):
-            # ~ import shutil
-            # ~ self.log.debug("Local config file for %s doesn't exist." % self.config_for)
-            # ~ try:
-                # ~ shutil.copy(self.config_global, self.config_local)
-                # ~ self.log.debug("Local config file for %s created from global config" % self.config_for)
-            # ~ except FileNotFoundError:
-                # ~ self.log.warning("Global config file for %s not found" % self.config_for)
-                # ~ self.config_save([])
-                # ~ self.log.debug("Local config file for %s created empty" % self.config_for)
-
-    # ~ def config_load(self):
-        # ~ with open(self.config_local, 'r') as fin:
-            # ~ items = json.load(fin)
-        # ~ return items
 
     def update(self):
         if self.config_local is None:
