@@ -178,15 +178,15 @@ class MiAZConfigView(MiAZWidget, Gtk.Box):
     def on_item_add(self, *args):
         # Add new item, save config and refresh model
         item = self.entry.get_text().upper()
-        items = self.config_load()
+        items = self.config.load()
         items.add(item.upper())
-        self.config_save(list(items))
+        self.config.save(items)
         self.log.debug("Added %s to %s", item, self.config_for)
         self.entry.set_text('')
         self.entry.activate()
         self.update()
-        self.infobar.set_message_type(Gtk.MessageType.INFO)
-        self.infobar_message("Added new entry: %s" % item)
+        # ~ self.infobar.set_message_type(Gtk.MessageType.INFO)
+        # ~ self.infobar_message("Added new entry: %s" % item)
 
     def on_item_rename(self, *args):
         return

@@ -10,17 +10,18 @@ from MiAZ.backend.env import ENV
 from MiAZ.backend.util import load_json
 from MiAZ.backend.util import guess_datetime
 from MiAZ.backend.config.settings import MiAZConfigSettingsCountries
+from MiAZ.backend.config.settings import MiAZConfigSettingsLanguages
 from MiAZ.backend.config.settings import MiAZConfigSettingsExtensions
 
-# ~ f_countries = os.path.join(ENV['GPATH']['RESOURCES'], 'miaz-countries.json')
 countries = MiAZConfigSettingsCountries().load()
-
-# ~ f_extensions = os.path.join(ENV['GPATH']['RESOURCES'], 'miaz-extensions.json')
+languages = MiAZConfigSettingsLanguages().load()
 extensions = MiAZConfigSettingsExtensions().load()
 
 
 def is_country(code: str) -> bool:
     iscountry = False
+    if code == 'DE':
+        print(countries[code])
     try:
         countries[code]
         iscountry = True
@@ -29,8 +30,18 @@ def is_country(code: str) -> bool:
     return iscountry
 
 
+def is_lang(code: str) -> bool:
+    islang = False
+    try:
+        languages[code]
+        islang = True
+    except KeyError:
+        islang = False
+    return islang
+
+
 def suggest_filename(filepath: str) -> str:
-    "{timestamp}-{country}-{lang}-{collection}-{organization}-{purpose}.{extension}"
+    "{timestamp}-{country}-{lang}-{collection}-{organization}-{purpose}-{who}.{extension}"
     timestamp = ""
     country = ""
     lang = ""
@@ -87,6 +98,7 @@ def valid_filename(filepath: str) -> bool:
     reasons = "OK"
     valid = True
     reasons = []
+    # ~ print(filepath)
 
     # Check filename
     dot = filename.rfind('.')
@@ -106,11 +118,11 @@ def valid_filename(filepath: str) -> bool:
 
     # Check fields partitioning
     fields = name.split('-')
-    if len(fields) != 5:
+    if len(fields) != 6:
         valid &= False
-        reasons.append("Wrong number of fields in filename")
+        reasons.append("Wrong number of fields in filename (%d/6)" % len(fields))
 
-    # Check timestamp
+    # Check timestamp (1st field)
     try:
         timestamp = fields[0]
         if guess_datetime(timestamp) is None:
@@ -120,27 +132,28 @@ def valid_filename(filepath: str) -> bool:
         valid &= False
         reasons.append("Timestamp couldn't be checked")
 
-    # ~ print("%s > %s" % (filename, suggest_filename(filepath)))
-    return valid, reasons
-
-    # Check country
+    # Check country (2nd field)
     try:
         code = fields[1]
         if not is_country(code):
             valid &= False
-            reasons.append("Country code doesn't exist")
+            reasons.append("Country code '%s' doesn't exist" % code)
     except IndexError:
         valid &= False
         reasons.append("Country code couldn't be checked")
 
-# ~ def workflow():
-    # ~ docs = get_documents(self.params.SOURCE)
-    # ~ for doc in docs:
-        # ~ valid, reasons = valid_filename(doc)
-        # ~ if not valid:
-            # ~ print ("%s needs revision. Reasons" % doc)
-            # ~ for reason in reasons:
-                # ~ print ("\t => %s" % reason)
+    # Check language (3rd field)
+    try:
+        code = fields[2]
+        if not is_lang(code):
+            valid &= False
+            reasons.append("Language code '%s' doesn't correspond" % code)
+    except IndexError:
+        valid &= False
+        reasons.append("Country code couldn't be checked")
+
+    return valid, reasons
+
 
 def get_documents(root_dir: str) -> []:
     """Get documents from a given directory recursively

@@ -17,6 +17,7 @@ from gi.repository import Pango
 from gi.repository.GdkPixbuf import Pixbuf
 
 from MiAZ.backend.env import ENV
+from MiAZ.backend.controller import get_documents, valid_filename
 from MiAZ.frontend.desktop.util import get_file_mimetype
 from MiAZ.frontend.desktop.icons import MiAZIconManager
 from MiAZ.frontend.desktop.widgets.treeview import MiAZTreeView
@@ -134,8 +135,6 @@ class MiAZWorkspace(Gtk.Box):
             os.system("xdg-open '%s'" % filepath)
 
     def refresh_view(self):
-        import os
-        from MiAZ.backend.controller import get_documents, valid_filename
         self.store.clear()
         try:
             source_path = self.config.get('source')
