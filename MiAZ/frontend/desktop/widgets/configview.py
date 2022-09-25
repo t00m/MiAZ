@@ -180,17 +180,17 @@ class MiAZConfigView(MiAZWidget, Gtk.Box):
     def on_item_remove(self, *args):
         # Delete from config and refresh model
         item = self.entry.get_text()
-        items = self.config_load()
+        items = self.config.load()
         try:
             items.remove(item)
             self.log.debug("Removed %s from %s", item, self.config_for)
-            self.config_save(list(items))
+            self.config.save(items)
             self.update()
             self.entry.set_text('')
             self.entry.activate()
         except KeyError as error:
-            self.infobar.set_message_type(Gtk.MessageType.ERROR)
-            self.infobar_message("This entry doesn't exist. Nothing deleted.")
+            # ~ self.infobar.set_message_type(Gtk.MessageType.ERROR)
+            # ~ self.infobar_message("This entry doesn't exist. Nothing deleted.")
             return
 
     # ~ def config_check(self):
