@@ -14,6 +14,7 @@ from gi.repository import GLib
 from gi.repository.GdkPixbuf import Pixbuf
 
 from MiAZ.backend.env import ENV
+from MiAZ.backend.log import get_logger
 from MiAZ.frontend.desktop.util import get_file_mimetype
 from MiAZ.frontend.desktop.icons import MiAZIconManager
 from MiAZ.frontend.desktop.widgets.treeview import MiAZTreeView
@@ -24,6 +25,7 @@ class MiAZDocBrowser(Gtk.Box):
 
     def __init__(self, gui):
         super(MiAZDocBrowser, self).__init__(spacing=6, orientation=Gtk.Orientation.VERTICAL)
+        self.log = get_logger('MiAZDocBrowser')
         self.gui = gui
         self.config = self.gui.config
         self.set_vexpand(True)
@@ -51,8 +53,9 @@ class MiAZDocBrowser(Gtk.Box):
         # Filename format: {timestamp}-{country}-{lang}-{collection}-{organization}-{purpose}-{who}.{extension}
 
     def on_key_released(self, widget, keyval, keycode, state):
+        self.log.debug("Active window: %s", self.gui.get_active_window())
         keyname = Gdk.keyval_name(keyval)
-        # ~ self.log.debug("Key: %s" keyname)
+        self.log.debug("Key: %s", keyname)
         if Gdk.ModifierType.CONTROL_MASK & state and keyname == 'f':
             if self.searchbar.get_search_mode():
                 self.searchbar.set_search_mode(False)

@@ -13,6 +13,7 @@ class MiAZDialogAdd(Gtk.Dialog):
 
     def __init__(self, gui, parent, title, key1, key2, width=-1, height=-1):
         super(MiAZDialogAdd, self).__init__()
+        self.gui = gui
         self.set_transient_for(parent)
         self.set_modal(True)
         self.set_title(title)

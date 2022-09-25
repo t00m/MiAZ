@@ -62,6 +62,10 @@ class MiAZConfigView(MiAZWidget, Gtk.Box):
         widget = self.setup_treeview()
         self.append(widget)
 
+        self.controller = Gtk.EventControllerKey()
+        self.controller.connect('key-released', self.on_key_released)
+        self.add_controller(self.controller)
+
         # ~ # InfoBar
         # FIXME: Low priority. User mesasges
         # ~ self.infobar = Gtk.InfoBar()
@@ -71,6 +75,16 @@ class MiAZConfigView(MiAZWidget, Gtk.Box):
         # ~ self.infobar.connect('response', self.infobar_response)
         # ~ self.append(self.infobar)
         # ~ self.infobar_message()
+
+    def on_key_released(self, widget, keyval, keycode, state):
+        self.log.debug("Active window: %s", self.app.get_active_window())
+        keyname = Gdk.keyval_name(keyval)
+        self.log.debug("Key: %s", keyname)
+        # ~ if Gdk.ModifierType.CONTROL_MASK & state and keyname == 'f':
+            # ~ if self.searchbar.get_search_mode():
+                # ~ self.searchbar.set_search_mode(False)
+            # ~ else:
+                # ~ self.searchbar.set_search_mode(True)
 
     def on_entrysearch_delete(self, *args):
         self.entry.set_text("")
