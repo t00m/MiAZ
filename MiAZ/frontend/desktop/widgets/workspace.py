@@ -17,6 +17,7 @@ from gi.repository import Pango
 from gi.repository.GdkPixbuf import Pixbuf
 
 from MiAZ.backend.env import ENV
+from MiAZ.backend.log import get_logger
 from MiAZ.backend.controller import get_documents, valid_filename
 from MiAZ.frontend.desktop.util import get_file_mimetype
 from MiAZ.frontend.desktop.icons import MiAZIconManager
@@ -28,10 +29,58 @@ class MiAZWorkspace(Gtk.Box):
 
     def __init__(self, gui):
         super(MiAZWorkspace, self).__init__(orientation=Gtk.Orientation.VERTICAL)
+        self.log = get_logger('MiAZWorkspace')
         self.gui = gui
         self.config = self.gui.config
         self.set_vexpand(True)
+        self.set_margin_top(margin=6)
+        self.set_margin_end(margin=6)
+        self.set_margin_bottom(margin=6)
+        self.set_margin_start(margin=6)
+
+        # Toolbar
+        toolbar = Gtk.Box(spacing=3, orientation=Gtk.Orientation.HORIZONTAL)
+        toolbar.set_hexpand(True)
+
+        # ~ frmColumnMime = Gtk.Frame()
+        # ~ frmColumnMime.set_shadow_type(Gtk.ShadowType.NONE)
+        boxColumnMime = Gtk.Box(spacing=6, orientation=Gtk.Orientation.VERTICAL)
+        boxColumnMime.set_hexpand(False)
+        lblFrmTitle = Gtk.Label()
+        lblFrmTitle.set_xalign(0.0)
+        lblFrmTitle.set_markup("<b>Type of document</b>")
+        self.entry_mime = Gtk.Entry()
+        self.entry_mime.set_has_frame(True)
+        boxColumnMime.append(lblFrmTitle)
+        boxColumnMime.append(self.entry_mime)
+        boxColumnMime.set_margin_top(margin=3)
+        boxColumnMime.set_margin_end(margin=3)
+        boxColumnMime.set_margin_bottom(margin=3)
+        boxColumnMime.set_margin_start(margin=3)
+        # ~ frmColumnMime.set_child(boxColumnMime)
+        # ~ frmColumnMime.set_label_widget(lblFrmTitle)
+        toolbar.append(boxColumnMime)
+
+        BoxColumnFilename = Gtk.Box(spacing=6, orientation=Gtk.Orientation.VERTICAL)
+        BoxColumnFilename.set_hexpand(True)
+        lblFrmTitle = Gtk.Label()
+        lblFrmTitle.set_xalign(0.0)
+        lblFrmTitle.set_markup("<b>Filename</b>")
+        self.entry_filename = Gtk.Entry()
+        self.entry_filename.set_has_frame(True)
+        self.entry_filename.connect('changed', self.on_entry_filename_changed)
+        BoxColumnFilename.append(lblFrmTitle)
+        BoxColumnFilename.append(self.entry_filename)
+        BoxColumnFilename.set_margin_top(margin=3)
+        BoxColumnFilename.set_margin_end(margin=3)
+        BoxColumnFilename.set_margin_bottom(margin=3)
+        BoxColumnFilename.set_margin_start(margin=3)
+        # ~ frmColumnMime.set_child(BoxColumnFilename)
+        # ~ frmColumnMime.set_label_widget(lblFrmTitle)
+        toolbar.append(BoxColumnFilename)
+
         self.scrwin = Gtk.ScrolledWindow()
+        self.scrwin.set_has_frame(True)
         self.scrwin.set_vexpand(True)
 
         # Model: document icon, mimetype, current filename, suggested filename (if needed), accept suggestion, filepath
@@ -118,7 +167,7 @@ class MiAZWorkspace(Gtk.Box):
 
         # Treeview filtering
         self.treefilter = self.store.filter_new()
-        self.treefilter.set_visible_func(self.__clb_visible_function)
+        self.treefilter.set_visible_func(self.clb_visible_function)
 
         # TreeView sorting
         self.sorted_model = Gtk.TreeModelSort(model=self.treefilter)
@@ -126,7 +175,12 @@ class MiAZWorkspace(Gtk.Box):
         self.tree.connect('row-activated', self.double_click)
 
         self.scrwin.set_child(self.tree)
+
+        self.append(toolbar)
         self.append(self.scrwin)
+
+    def on_entry_filename_changed(self, *args):
+        self.treefilter.refilter()
 
     def double_click(self, treeview, treepath, treecolumn):
         treeiter = self.sorted_model.get_iter(treepath)
@@ -174,8 +228,20 @@ class MiAZWorkspace(Gtk.Box):
         filename = self.sorted_model[treeiter][4]
         # ~ print(filename)
 
-    def __clb_visible_function(self, model, itr, data):
-        return True
+    def clb_visible_function(self, model, itr, data):
+        item_name = model.get(itr, 3)[0]
+        filter_text = self.entry_filename.get_text()
+        # ~ if item_name is None:
+            # ~ return True
+        # ~ if self.search_term is None:
+            # ~ return True
+
+        match = filter_text.upper() in item_name.upper()
+        # ~ self.log.debug("%s in %s? %s", filter_text, item_name, match)
+        if match:
+            return True
+        else:
+            return False
 
     def __clb_row_toggled(self, cell, path):
         model = self.sorted_model.get_model()
