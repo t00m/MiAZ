@@ -55,7 +55,7 @@ class MiAZConfigSettingsPurposes(MiAZConfig):
     def __init__(self):
         super().__init__(
             log=get_logger('MiAZ.Settings.Purposes'),
-            config_for = 'Collections',
+            config_for = 'Purposes',
             config_local = ENV['FILE']['PURPOSES'],
             config_global = os.path.join(ENV['GPATH']['RESOURCES'],
                             'MiAZ-purposes.json'),
