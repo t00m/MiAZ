@@ -135,33 +135,40 @@ class MiAZSettings(Gtk.Box):
         flowbox.set_max_children_per_line(n_children=3)
         flowbox.set_selection_mode(mode=Gtk.SelectionMode.NONE)
 
+        n = 0
         button = self.gui.create_button ('countries', 'Countries', self.show_res_countries)
         button.set_has_frame(True)
-        flowbox.insert(widget=button, position=0)
+        flowbox.insert(widget=button, position=n)
+        n += 1
 
-        button = self.gui.create_button ('languages', 'Languages', self.show_res_languages)
-        button.set_has_frame(True)
-        flowbox.insert(widget=button, position=1)
+        # ~ button = self.gui.create_button ('languages', 'Languages', self.show_res_languages)
+        # ~ button.set_has_frame(True)
+        # ~ flowbox.insert(widget=button, position=1)
 
         button = self.gui.create_button ('collections', 'Collections', self.show_res_collections)
         button.set_has_frame(True)
-        flowbox.insert(widget=button, position=2)
+        flowbox.insert(widget=button, position=n)
+        n += 1
 
         button = self.gui.create_button ('purposes', 'Purposes', self.show_res_purposes)
         button.set_has_frame(True)
-        flowbox.insert(widget=button, position=3)
+        flowbox.insert(widget=button, position=n)
+        n += 1
 
         button = self.gui.create_button ('organizations', 'Organizations', self.show_res_organizations)
         button.set_has_frame(True)
-        flowbox.insert(widget=button, position=4)
+        flowbox.insert(widget=button, position=n)
+        n += 1
 
         button = self.gui.create_button ('who', 'Who', self.show_res_who)
         button.set_has_frame(True)
         flowbox.insert(widget=button, position=5)
+        n += 1
 
         button = self.gui.create_button ('extensions', 'File extensions', self.show_res_extensions)
         button.set_has_frame(True)
         flowbox.insert(widget=button, position=6)
+        n += 1
 
         lblFrmTitle = Gtk.Label()
         lblFrmTitle.set_markup("<b>Manage resources</b>")

@@ -13,15 +13,13 @@ from MiAZ.backend.config.settings import MiAZConfigSettingsCountries
 from MiAZ.backend.config.settings import MiAZConfigSettingsLanguages
 from MiAZ.backend.config.settings import MiAZConfigSettingsExtensions
 
-countries = MiAZConfigSettingsCountries().load()
-languages = MiAZConfigSettingsLanguages().load()
+countries = MiAZConfigSettingsCountries().load_global()
+# ~ languages = MiAZConfigSettingsLanguages().load()
 extensions = MiAZConfigSettingsExtensions().load()
 
 
 def is_country(code: str) -> bool:
     iscountry = False
-    if code == 'DE':
-        print(countries[code])
     try:
         countries[code]
         iscountry = True
@@ -30,14 +28,14 @@ def is_country(code: str) -> bool:
     return iscountry
 
 
-def is_lang(code: str) -> bool:
-    islang = False
-    try:
-        languages[code]
-        islang = True
-    except KeyError:
-        islang = False
-    return islang
+# ~ def is_lang(code: str) -> bool:
+    # ~ islang = False
+    # ~ try:
+        # ~ languages[code]
+        # ~ islang = True
+    # ~ except KeyError:
+        # ~ islang = False
+    # ~ return islang
 
 
 def suggest_filename(filepath: str) -> str:
@@ -98,7 +96,6 @@ def valid_filename(filepath: str) -> bool:
     reasons = "OK"
     valid = True
     reasons = []
-    # ~ print(filepath)
 
     # Check filename
     dot = filename.rfind('.')
@@ -127,10 +124,10 @@ def valid_filename(filepath: str) -> bool:
         timestamp = fields[0]
         if guess_datetime(timestamp) is None:
             valid &= False
-            reasons.append("Timestamp not valid")
+            reasons.append("Timestamp '%s' not valid" % timestamp)
     except IndexError:
         valid &= False
-        reasons.append("Timestamp couldn't be checked")
+        reasons.append("Timestamp '%s' couldn't be checked" % timestamp)
 
     # Check country (2nd field)
     try:
@@ -140,17 +137,17 @@ def valid_filename(filepath: str) -> bool:
             reasons.append("Country code '%s' doesn't exist" % code)
     except IndexError:
         valid &= False
-        reasons.append("Country code couldn't be checked")
+        reasons.append("Country code couldn't be checked because this field doesn't exist")
 
     # Check language (3rd field)
-    try:
-        code = fields[2]
-        if not is_lang(code):
-            valid &= False
-            reasons.append("Language code '%s' doesn't correspond" % code)
-    except IndexError:
-        valid &= False
-        reasons.append("Country code couldn't be checked")
+    # ~ try:
+        # ~ code = fields[2]
+        # ~ if not is_lang(code):
+            # ~ valid &= False
+            # ~ reasons.append("Language code '%s' doesn't correspond" % code)
+    # ~ except IndexError:
+        # ~ valid &= False
+        # ~ reasons.append("Language couldn't be checked because this field doesn't exist")
 
     return valid, reasons
 
