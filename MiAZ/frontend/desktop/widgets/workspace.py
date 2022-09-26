@@ -143,7 +143,8 @@ class MiAZWorkspace(Gtk.Box):
 
         documents = get_documents(source_path)
         icon = Pixbuf.new_from_file(ENV['FILE']['APPICON'])
-        icon_stop = self.gui.icman.get_pixbuf_by_name('process-stop', 24)
+        icon_ko = self.gui.icman.get_pixbuf_by_name('miaz-cancel', 24)
+        icon_ok = self.gui.icman.get_pixbuf_by_name('miaz-ok', 24)
         INVALID = self.store.insert_with_values(None, -1, (0, 1, 2, 3, 4, 5), (icon, "", False, "File name not valid", "", ""))
         VALID = self.store.insert_with_values(None, -1, (0, 1, 2, 3, 4, 5), (icon, "", False, "File name valid", "", ""))
         for filepath in documents:
@@ -154,7 +155,11 @@ class MiAZWorkspace(Gtk.Box):
             if not valid:
                 node = self.store.insert_with_values(INVALID, -1, (0, 1, 2, 3, 4, 5), (icon, mimetype, False, "<b>%s</b>" % document, document, filepath))
                 for reason in reasons:
-                    self.store.insert_with_values(node, -1, (0, 3), (icon_stop, "<i>%s</i>" % reason))
+                    passed, message = reason
+                    if passed:
+                        self.store.insert_with_values(node, -1, (0, 3), (icon_ok, "<i>%s</i>" % message))
+                    else:
+                        self.store.insert_with_values(node, -1, (0, 3), (icon_ko, "<i>%s</i>" % message))
             else:
                 self.store.insert_with_values(VALID, -1, (0, 1, 3, 5), (icon, mimetype, document, filepath))
 

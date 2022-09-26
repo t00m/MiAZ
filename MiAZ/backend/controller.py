@@ -10,12 +10,18 @@ from MiAZ.backend.env import ENV
 from MiAZ.backend.util import load_json
 from MiAZ.backend.util import guess_datetime
 from MiAZ.backend.config.settings import MiAZConfigSettingsCountries
-from MiAZ.backend.config.settings import MiAZConfigSettingsLanguages
+# ~ from MiAZ.backend.config.settings import MiAZConfigSettingsLanguages
 from MiAZ.backend.config.settings import MiAZConfigSettingsExtensions
+from MiAZ.backend.config.settings import MiAZConfigSettingsCollections
+from MiAZ.backend.config.settings import MiAZConfigSettingsPurposes
+from MiAZ.backend.config.settings import MiAZConfigSettingsWho
 
 countries = MiAZConfigSettingsCountries().load_global()
 # ~ languages = MiAZConfigSettingsLanguages().load()
 extensions = MiAZConfigSettingsExtensions().load()
+collections = MiAZConfigSettingsCollections().load()
+purposes = MiAZConfigSettingsPurposes().load()
+who = organizations = MiAZConfigSettingsWho().load()
 
 
 def is_country(code: str) -> bool:
@@ -39,7 +45,7 @@ def is_country(code: str) -> bool:
 
 
 def suggest_filename(filepath: str) -> str:
-    "{timestamp}-{country}-{lang}-{collection}-{organization}-{purpose}-{who}.{extension}"
+    # "{timestamp}-{country}-{collection}-{organization}-{purpose}-{concept}-{who}.{extension}"
     timestamp = ""
     country = ""
     lang = ""
@@ -102,42 +108,111 @@ def valid_filename(filepath: str) -> bool:
     if dot > 0:
         name = filename[:dot]
         ext = filename[dot+1:]
+        # Check extension
+        if ext.lower() not in extensions:
+            valid &= False
+            reasons.append((False, "Extension '%s' not allowed. Add it up first." % ext))
+        else:
+            reasons.append((True, "Extension '%s' is valid" % ext))
     else:
         name = filename
         ext = ''
         valid &= False
-        reasons.append("Filename not valid. Extension missing.")
-
-    # Check extension
-    if ext.lower() not in extensions:
-        valid &= False
-        reasons.append("Extension not allowed")
+        reasons.append((False, "Filename not valid. Extension missing."))
 
     # Check fields partitioning
     fields = name.split('-')
-    if len(fields) != 6:
+    if len(fields) != 7:
         valid &= False
-        reasons.append("Wrong number of fields in filename (%d/6)" % len(fields))
+        reasons.append((False, "Wrong number of fields in filename (%d/7)" % len(fields)))
+    else:
+        reasons.append((True, "Right number of fields in filename (%d/7)" % len(fields)))
 
     # Check timestamp (1st field)
     try:
         timestamp = fields[0]
         if guess_datetime(timestamp) is None:
             valid &= False
-            reasons.append("Timestamp '%s' not valid" % timestamp)
+            reasons.append((False, "Field 1. Timestamp '%s' not valid" % timestamp))
+        else:
+            reasons.append((True, "Field 1. Timestamp '%s' is valid" % timestamp))
     except IndexError:
         valid &= False
-        reasons.append("Timestamp '%s' couldn't be checked" % timestamp)
+        reasons.append((False, "Field 1. Timestamp '%s' couldn't be checked" % timestamp))
 
     # Check country (2nd field)
     try:
         code = fields[1]
         if not is_country(code):
             valid &= False
-            reasons.append("Country code '%s' doesn't exist" % code)
+            reasons.append((False, "Field 2. Country code '%s' doesn't exist" % code))
+        else:
+            reasons.append((True, "Field 2. Country code '%s' corresponds to %s" % (code, countries[code]['Country Name'])))
     except IndexError:
         valid &= False
-        reasons.append("Country code couldn't be checked because this field doesn't exist")
+        reasons.append((False, "Field 2. Country code couldn't be checked because this field doesn't exist"))
+
+    # Check collection (3nd field)
+    try:
+        collection = fields[2]
+        if collection not in collections:
+            valid &= False
+            reasons.append((False, "Field 3. Collection '%s' is not in your list. Please, add it up first." % collection))
+        else:
+            reasons.append((True, "Field 3. Collection '%s' accepted. It is in your list." % collection))
+    except IndexError:
+        valid &= False
+        reasons.append((False, "Field 3. Collection couldn't be checked because this field doesn't exist"))
+
+    # Check purpose (4th field)
+    try:
+        purpose = fields[3]
+        if purpose not in purposes:
+            valid &= False
+            reasons.append((False, "Field 4. Purpose '%s' is not in your list. Please, add it up first." % purpose))
+        else:
+            reasons.append((True, "Field 4. Purpose '%s' accepted. It is in your list." % purpose))
+    except IndexError:
+        valid &= False
+        reasons.append((False, "Field 4. Purpose couldn't be checked because this field doesn't exist"))
+
+    # Check Organization (5th field)
+    try:
+        organization = fields[4]
+        if organization not in organizations:
+            valid &= False
+            reasons.append((False, "Field 5. Organization '%s' is not in your list. Please, add it up first." % organization))
+        else:
+            reasons.append((True, "Field 5. Organization '%s' accepted. It is in your list." % organization))
+    except IndexError:
+        valid &= False
+        reasons.append((False, "Field 5. Organization couldn't be checked because this field doesn't exist"))
+
+    # Check Concept (5th field)
+    try:
+        concept = fields[5]
+        reasons.append((True, "Field 6. Concept '%s' accepted" % concept))
+        # ~ if organization not in organizations:
+            # ~ valid &= False
+            # ~ reasons.append((False, "Field 5. Organization '%s' is not in your list. Please, add it up first." % organization))
+        # ~ else:
+            # ~ reasons.append((True, "Field 5. Organization '%s' accepted. It is in your list." % organization))
+    except IndexError:
+        valid &= False
+        reasons.append((False, "Field 6. Concept couldn't be checked because this field doesn't exist"))
+
+
+    # Check Who (6th field)
+    try:
+        org = fields[6]
+        if org not in organizations:
+            valid &= False
+            reasons.append((False, "Field 7. '%s' is not in your list. Please, add it up first." % org))
+        else:
+            reasons.append((True, "Field 7. Person/Third party '%s' accepted. It is in your list." % org))
+    except IndexError:
+        valid &= False
+        reasons.append((False, "Field 7. Purpose couldn't be checked because this field doesn't exist"))
 
     # Check language (3rd field)
     # ~ try:
