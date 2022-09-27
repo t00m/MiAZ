@@ -95,6 +95,10 @@ class MiAZConfigView(MiAZWidget, Gtk.Box):
     def on_entrysearch_changed(self, *args):
         self.search_term = self.entry.get_text()
         self.treefilter.refilter()
+        if len(self.search_term) == 0:
+            self.treeview.collapse_all()
+        else:
+            self.treeview.expand_all()
 
     def infobar_message(self, text=''):
         return

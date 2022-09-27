@@ -261,45 +261,30 @@ class MiAZSettings(Gtk.Box):
 
     def show_res_who(self, *args):
         view = MiAZWho(self.gui)
-        # ~ config_local = ENV['FILE']['WHO']
-        # ~ config_global = os.path.join(ENV['GPATH']['RESOURCES'], 'miaz-who.json')
-        # ~ view.config_set("Who's who", config_local, config_global)
         view.update()
         dialog = self.gui.create_dialog(self.gui.win, "Who's who", view, 600, 400)
         dialog.show()
 
     def show_res_collections(self, *args):
         view = MiAZCollections(self.gui)
-        # ~ config_local = ENV['FILE']['COLLECTIONS']
-        # ~ config_global = os.path.join(ENV['GPATH']['RESOURCES'], 'miaz-collections.json')
-        # ~ view.config_set('Collections', config_local, config_global)
         view.update()
         dialog = self.gui.create_dialog(self.gui.win, 'Collections', view)
         dialog.show()
 
     def show_res_purposes(self, *args):
         view = MiAZPurposes(self.gui)
-        # ~ config_local = ENV['FILE']['PURPOSES']
-        # ~ config_global = os.path.join(ENV['GPATH']['RESOURCES'], 'miaz-purposes.json')
-        # ~ view.config_set('Purposes', config_local, config_global)
         view.update()
         dialog = self.gui.create_dialog(self.gui.win, 'Purposes', view)
         dialog.show()
 
     def show_res_organizations(self, *args):
         view = MiAZOrganizations(self.gui)
-        # ~ config_local = ENV['FILE']['ORGANIZATIONS']
-        # ~ config_global = os.path.join(ENV['GPATH']['RESOURCES'], 'miaz-organizations.json')
-        # ~ view.config_set('Organizations', config_local, config_global)
         view.update()
         dialog = self.gui.create_dialog(self.gui.win, 'Organizations', view)
         dialog.show()
 
     def show_res_extensions(self, *args):
         view = MiAZExtensions(self.gui)
-        # ~ config_local = ENV['FILE']['EXTENSIONS']
-        # ~ config_global = os.path.join(ENV['GPATH']['RESOURCES'], 'miaz-extensions.json')
-        # ~ view.config_set('Extensions', config_local, config_global)
         view.update()
         dialog = self.gui.create_dialog(self.gui.win, 'Extensions', view)
         dialog.show()

@@ -92,5 +92,5 @@ class MiAZConfigSettingsExtensions(MiAZConfig):
             config_local = ENV['FILE']['EXTENSIONS'],
             config_global = os.path.join(ENV['GPATH']['RESOURCES'],
                             'MiAZ-extensions.json'),
-            must_copy = True
+            must_copy = False
         )
