@@ -84,9 +84,9 @@ class MiAZWorkspace(Gtk.Box):
         self.scrwin.set_vexpand(True)
 
         # Model: document icon, mimetype, current filename, suggested filename (if needed), accept suggestion, filepath
-        self.store = Gtk.TreeStore(Pixbuf, str, bool, str, str, str)
-        self.tree = MiAZTreeView(self.gui)
-        self.tree.set_model(self.store)
+        self.store = Gtk.TreeStore(Pixbuf, str, bool, str, str, str, str)
+        self.treeview = MiAZTreeView(self.gui)
+        self.treeview.set_model(self.store)
 
         self.refresh_view()
 
@@ -101,7 +101,7 @@ class MiAZWorkspace(Gtk.Box):
         column.set_sort_indicator(True)
         column.set_sort_column_id(1)
         column.set_sort_order(Gtk.SortType.ASCENDING)
-        self.tree.append_column(column)
+        self.treeview.append_column(column)
 
         # Mimetype
         renderer = Gtk.CellRendererText()
@@ -113,7 +113,7 @@ class MiAZWorkspace(Gtk.Box):
         column.set_clickable(False)
         column.set_sort_indicator(False)
         column.set_sort_column_id(1)
-        self.tree.append_column(column)
+        self.treeview.append_column(column)
 
         # Checkbox
         renderer = Gtk.CellRendererToggle()
@@ -125,7 +125,7 @@ class MiAZWorkspace(Gtk.Box):
         column.set_clickable(True)
         column.set_sort_indicator(False)
         column.set_property('spacing', 50)
-        self.tree.append_column(column)
+        self.treeview.append_column(column)
 
         # Current filename
         renderer = Gtk.CellRendererText()
@@ -137,7 +137,7 @@ class MiAZWorkspace(Gtk.Box):
         column.set_clickable(True)
         column.set_sort_indicator(True)
         column.set_sort_column_id(3)
-        self.tree.append_column(column)
+        self.treeview.append_column(column)
 
 
         # Suggested filename
@@ -153,7 +153,7 @@ class MiAZWorkspace(Gtk.Box):
         column.set_clickable(True)
         column.set_sort_indicator(True)
         column.set_sort_column_id(4)
-        self.tree.append_column(column)
+        self.treeview.append_column(column)
 
         # Filepath
         renderer = Gtk.CellRendererText()
@@ -163,7 +163,18 @@ class MiAZWorkspace(Gtk.Box):
         column.set_expand(False)
         column.set_clickable(False)
         column.set_sort_indicator(False)
-        self.tree.append_column(column)
+        self.treeview.append_column(column)
+
+        # Internal Row Type
+        renderer = Gtk.CellRendererText()
+        column = Gtk.TreeViewColumn('Row Type', renderer, text=6)
+        column.set_visible(False)
+        column.set_sizing(Gtk.TreeViewColumnSizing.AUTOSIZE)
+        column.set_expand(False)
+        column.set_clickable(False)
+        column.set_sort_indicator(False)
+        self.treeview.append_column(column)
+
 
         # Treeview filtering
         self.treefilter = self.store.filter_new()
@@ -171,10 +182,13 @@ class MiAZWorkspace(Gtk.Box):
 
         # TreeView sorting
         self.sorted_model = Gtk.TreeModelSort(model=self.treefilter)
+        self.sorted_model.set_sort_func(0, self.clb_sort_function, 1)
+        self.sorted_model.set_sort_column_id(1, Gtk.SortType.DESCENDING)
+        self.treeview.set_model(self.sorted_model)
 
-        self.tree.connect('row-activated', self.double_click)
+        self.treeview.connect('row-activated', self.double_click)
 
-        self.scrwin.set_child(self.tree)
+        self.scrwin.set_child(self.treeview)
 
         self.append(toolbar)
         self.append(self.scrwin)
@@ -199,23 +213,23 @@ class MiAZWorkspace(Gtk.Box):
         icon = Pixbuf.new_from_file(ENV['FILE']['APPICON'])
         icon_ko = self.gui.icman.get_pixbuf_by_name('miaz-cancel', 24)
         icon_ok = self.gui.icman.get_pixbuf_by_name('miaz-ok', 24)
-        INVALID = self.store.insert_with_values(None, -1, (0, 1, 2, 3, 4, 5), (icon, "", False, "File name not valid", "", ""))
-        VALID = self.store.insert_with_values(None, -1, (0, 1, 2, 3, 4, 5), (icon, "", False, "File name valid", "", ""))
+        INVALID = self.store.insert_with_values(None, -1, (0, 1, 2, 3, 4, 5, 6), (icon, "", False, "File name not valid", "", "", "FOLDER"))
+        VALID = self.store.insert_with_values(None, -1, (0, 1, 2, 3, 4, 5, 6), (icon, "", False, "File name valid", "", "", "FOLDER"))
         for filepath in documents:
             document = os.path.basename(filepath)
             mimetype = get_file_mimetype(filepath)
             icon = self.gui.icman.get_pixbuf_mimetype_from_file(filepath)
             valid, reasons = valid_filename(filepath)
             if not valid:
-                node = self.store.insert_with_values(INVALID, -1, (0, 1, 2, 3, 4, 5), (icon, mimetype, False, "<b>%s</b>" % document, document, filepath))
+                node = self.store.insert_with_values(INVALID, -1, (0, 1, 2, 3, 4, 5, 6), (icon, mimetype, False, "<b>%s</b>" % document, document, filepath, "FILE"))
                 for reason in reasons:
                     passed, message = reason
                     if passed:
-                        self.store.insert_with_values(node, -1, (0, 3), (icon_ok, "<i>%s</i>" % message))
+                        self.store.insert_with_values(node, -1, (0, 3, 6), (icon_ok, "<i>%s</i>" % message, "REASON"))
                     else:
-                        self.store.insert_with_values(node, -1, (0, 3), (icon_ko, "<i>%s</i>" % message))
+                        self.store.insert_with_values(node, -1, (0, 3, 6), (icon_ko, "<i>%s</i>" % message, "REASON"))
             else:
-                self.store.insert_with_values(VALID, -1, (0, 1, 3, 5), (icon, mimetype, document, filepath))
+                self.store.insert_with_values(VALID, -1, (0, 1, 3, 5, 6), (icon, mimetype, document, filepath, "REASON"))
 
     def edit_filename(self, widget, path, target):
         treeiter = self.sorted_model.get_iter(path)
@@ -228,13 +242,23 @@ class MiAZWorkspace(Gtk.Box):
         filename = self.sorted_model[treeiter][4]
         # ~ print(filename)
 
+    def clb_sort_function(self, model, row1, row2, sort_column=0):
+        value1 = model.get_value(row1, sort_column)
+        value2 = model.get_value(row2, sort_column)
+        if value1 < value2:
+            return -1
+        elif value1 == value2:
+            return 0
+        else:
+            return 1
+
     def clb_visible_function(self, model, itr, data):
         item_name = model.get(itr, 3)[0]
+        row_type = model.get(itr, 6)[0]
         filter_text = self.entry_filename.get_text()
-        # ~ if item_name is None:
-            # ~ return True
-        # ~ if self.search_term is None:
-            # ~ return True
+
+        if row_type == 'FOLDER' or row_type == 'REASON':
+            return True
 
         match = filter_text.upper() in item_name.upper()
         # ~ self.log.debug("%s in %s? %s", filter_text, item_name, match)
