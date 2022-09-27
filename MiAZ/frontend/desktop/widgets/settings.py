@@ -95,30 +95,71 @@ class MiAZSettings(Gtk.Box):
 
     def create_section_repository(self):
         frmRepository = Gtk.Frame()
-        hbox_filechooser = Gtk.Box(spacing = 24, orientation=Gtk.Orientation.HORIZONTAL)
-        hbox_filechooser.set_margin_top(margin=24)
-        hbox_filechooser.set_margin_end(margin=12)
-        hbox_filechooser.set_margin_bottom(margin=12)
-        hbox_filechooser.set_margin_start(margin=12)
-        button = self.gui.create_button ('folder', 'Select repository folder', self.show_filechooser)
-        button.set_has_frame(True)
-        hbox_filechooser.append(button)
-        lblFrmTitle = Gtk.Label()
-        lblFrmTitle.set_markup("<b>Repository</b>")
-        self.lblRepository = Gtk.Label()
+        lblSectionTitle = Gtk.Label()
+        lblSectionTitle.set_markup("<big><b>Repositories</b></big>")
+        frmRepository.set_label_widget(lblSectionTitle)
+        boxRepository = Gtk.Box(spacing = 24, orientation=Gtk.Orientation.HORIZONTAL)
+        boxRepository.set_hexpand(True)
+        boxRepository.set_margin_top(margin=24)
+        boxRepository.set_margin_end(margin=12)
+        boxRepository.set_margin_bottom(margin=12)
+        boxRepository.set_margin_start(margin=12)
+
+        # Source box
+        boxRepoSource = Gtk.Box(spacing=12, orientation=Gtk.Orientation.VERTICAL)
+        boxRepoSource.set_hexpand(True)
+        lblRepoSourceTitle = Gtk.Label()
+        lblRepoSourceTitle.set_markup("<b>Source</b>")
+        boxRepoSource.append(lblRepoSourceTitle)
+        separator = Gtk.Separator(orientation=Gtk.Orientation.HORIZONTAL)
+        boxRepoSource.append(separator)
+        boxRepoSourceButton = Gtk.Box(spacing=6, orientation=Gtk.Orientation.HORIZONTAL)
+        btnRepoSource = self.gui.create_button ('miaz-folder', '', self.show_filechooser_source)
+        btnRepoSource.set_hexpand(False)
+        btnRepoSource.set_has_frame(True)
         try:
             source = self.gui.config.get('source')
         except:
-            source = ''
-            self.gui.config.set('source', source)
-        self.lblRepository.set_markup("<b>Current location</b>: %s" % source)
-        hbox_filechooser.append(self.lblRepository)
-        frmRepository.set_label_widget(lblFrmTitle)
-        frmRepository.set_child(hbox_filechooser)
+            source = '<i>Folder not set</i>'
+        self.lblRepoSource = Gtk.Label()
+        self.lblRepoSource.set_markup(source)
+        boxRepoSourceButton.append(btnRepoSource)
+        boxRepoSourceButton.append(self.lblRepoSource)
+        boxRepoSource.append(boxRepoSourceButton)
+        boxRepository.append(boxRepoSource)
+
+        # Target box
+        boxRepoTarget = Gtk.Box(spacing=12, orientation=Gtk.Orientation.VERTICAL)
+        boxRepoTarget.set_hexpand(True)
+        lblRepoTargetTitle = Gtk.Label()
+        lblRepoTargetTitle.set_markup("<b>Target</b>")
+        boxRepoTarget.append(lblRepoTargetTitle)
+        separator = Gtk.Separator(orientation=Gtk.Orientation.HORIZONTAL)
+        boxRepoTarget.append(separator)
+        boxRepoTargetButton = Gtk.Box(spacing=6, orientation=Gtk.Orientation.HORIZONTAL)
+        btnRepoTarget = self.gui.create_button ('miaz-folder', '', self.show_filechooser_target)
+        btnRepoTarget.set_hexpand(False)
+        btnRepoTarget.set_has_frame(True)
+        try:
+            target = self.gui.config.get('target')
+        except:
+            target = '<i>Folder not set</i>'
+        self.lblRepoTarget = Gtk.Label()
+        self.lblRepoTarget.set_markup(target)
+        boxRepoTargetButton.append(btnRepoTarget)
+        boxRepoTargetButton.append(self.lblRepoTarget)
+        boxRepoTarget.append(boxRepoTargetButton)
+        boxRepository.append(boxRepoTarget)
+
+        frmRepository.set_child(boxRepository)
+
         return frmRepository
 
     def create_section_resources(self):
         frmResources = Gtk.Frame()
+        lblSectionTitle = Gtk.Label()
+        lblSectionTitle.set_markup("<big><b>Resources</b></big>")
+        frmResources.set_label_widget(lblSectionTitle)
         hbox_resources = Gtk.Box(spacing = 24, orientation=Gtk.Orientation.HORIZONTAL)
         hbox_resources.set_margin_top(margin=24)
         hbox_resources.set_margin_end(margin=12)
@@ -170,9 +211,6 @@ class MiAZSettings(Gtk.Box):
         flowbox.insert(widget=button, position=6)
         n += 1
 
-        lblFrmTitle = Gtk.Label()
-        lblFrmTitle.set_markup("<b>Manage resources</b>")
-        frmResources.set_label_widget(lblFrmTitle)
         frmResources.set_child(flowbox)
         return frmResources
 
@@ -282,26 +320,51 @@ class MiAZSettings(Gtk.Box):
         else:
             self.sm.set_color_scheme(Adw.ColorScheme.PREFER_LIGHT)
 
-    def show_filechooser(self, *args):
+    def show_filechooser_source(self, *args):
         dlgFileChooser = Gtk.Dialog()
         dlgFileChooser.set_transient_for(self.gui.win)
         dlgFileChooser.add_buttons('Cancel', Gtk.ResponseType.CANCEL, 'Accept', Gtk.ResponseType.ACCEPT)
-        dlgFileChooser.connect('response', self.filechooser_response)
+        dlgFileChooser.connect('response', self.filechooser_response_source)
         contents = dlgFileChooser.get_content_area()
         wdgfilechooser = Gtk.FileChooserWidget()
         wdgfilechooser.set_action(Gtk.FileChooserAction.SELECT_FOLDER)
         contents.append(wdgfilechooser)
         dlgFileChooser.show()
 
-    def filechooser_response(self, dialog, response):
+    def show_filechooser_target(self, *args):
+        dlgFileChooser = Gtk.Dialog()
+        dlgFileChooser.set_transient_for(self.gui.win)
+        dlgFileChooser.add_buttons('Cancel', Gtk.ResponseType.CANCEL, 'Accept', Gtk.ResponseType.ACCEPT)
+        dlgFileChooser.connect('response', self.filechooser_response_target)
+        contents = dlgFileChooser.get_content_area()
+        wdgfilechooser = Gtk.FileChooserWidget()
+        wdgfilechooser.set_action(Gtk.FileChooserAction.SELECT_FOLDER)
+        contents.append(wdgfilechooser)
+        dlgFileChooser.show()
+
+    def filechooser_response_source(self, dialog, response):
         if response == Gtk.ResponseType.ACCEPT:
             content_area = dialog.get_content_area()
             filechooser = content_area.get_last_child()
             gfile = filechooser.get_file()
             dirpath = gfile.get_path()
             if dirpath is not None:
-                self.lblRepository.set_markup("<b>Current location</b>: %s" % dirpath)
+                self.lblRepoSource.set_markup(dirpath)
                 self.config.set('source', dirpath)
+                dialog.destroy()
+                self.gui.workspace.refresh_view()
+        else:
+            dialog.destroy()
+
+    def filechooser_response_target(self, dialog, response):
+        if response == Gtk.ResponseType.ACCEPT:
+            content_area = dialog.get_content_area()
+            filechooser = content_area.get_last_child()
+            gfile = filechooser.get_file()
+            dirpath = gfile.get_path()
+            if dirpath is not None:
+                self.lblRepoTarget.set_markup(dirpath)
+                self.config.set('target', dirpath)
                 dialog.destroy()
                 self.gui.workspace.refresh_view()
         else:

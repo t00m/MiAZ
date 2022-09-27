@@ -3,6 +3,7 @@
 
 import os
 import sys
+import shutil
 from abc import abstractmethod
 
 import gi
@@ -18,6 +19,7 @@ from gi.repository.GdkPixbuf import Pixbuf
 
 from MiAZ.backend.env import ENV
 from MiAZ.backend.log import get_logger
+from MiAZ.backend.controller import valid_filename
 from MiAZ.backend.controller import get_documents, valid_filename
 from MiAZ.frontend.desktop.util import get_file_mimetype
 from MiAZ.frontend.desktop.icons import MiAZIconManager
@@ -213,31 +215,39 @@ class MiAZWorkspace(Gtk.Box):
         icon = Pixbuf.new_from_file(ENV['FILE']['APPICON'])
         icon_ko = self.gui.icman.get_pixbuf_by_name('miaz-cancel', 24)
         icon_ok = self.gui.icman.get_pixbuf_by_name('miaz-ok', 24)
-        INVALID = self.store.insert_with_values(None, -1, (0, 1, 2, 3, 4, 5, 6), (icon, "", False, "File name not valid", "", "", "FOLDER"))
-        VALID = self.store.insert_with_values(None, -1, (0, 1, 2, 3, 4, 5, 6), (icon, "", False, "File name valid", "", "", "FOLDER"))
+        # ~ INVALID = self.store.insert_with_values(None, -1, (0, 1, 2, 3, 4, 5, 6), (icon, "", False, "File name not valid", "", "", "FOLDER"))
+        # ~ VALID = self.store.insert_with_values(None, -1, (0, 1, 2, 3, 4, 5, 6), (icon, "", False, "File name valid", "", "", "FOLDER"))
         for filepath in documents:
             document = os.path.basename(filepath)
             mimetype = get_file_mimetype(filepath)
-            icon = self.gui.icman.get_pixbuf_mimetype_from_file(filepath)
+            icon = self.gui.icman.get_pixbuf_mimetype_from_file(filepath, 36, 36)
             valid, reasons = valid_filename(filepath)
             if not valid:
-                node = self.store.insert_with_values(INVALID, -1, (0, 1, 2, 3, 4, 5, 6), (icon, mimetype, False, "<b>%s</b>" % document, document, filepath, "FILE"))
+                node = self.store.insert_with_values(None, -1, (0, 1, 2, 3, 4, 5, 6), (icon, mimetype, False, "<b>%s</b>" % document, document, filepath, "FILE"))
                 for reason in reasons:
                     passed, message = reason
                     if passed:
                         self.store.insert_with_values(node, -1, (0, 3, 6), (icon_ok, "<i>%s</i>" % message, "REASON"))
                     else:
                         self.store.insert_with_values(node, -1, (0, 3, 6), (icon_ko, "<i>%s</i>" % message, "REASON"))
-            else:
-                self.store.insert_with_values(VALID, -1, (0, 1, 3, 5, 6), (icon, mimetype, document, filepath, "REASON"))
+            # ~ else:
+                # ~ self.store.insert_with_values(VALID, -1, (0, 1, 3, 5, 6), (icon, mimetype, document, filepath, "REASON"))
 
     def edit_filename(self, widget, path, target):
         treeiter = self.sorted_model.get_iter(path)
-        filename = self.sorted_model[treeiter][4]
-        # ~ print(filename)
-        # ~ print(target)
+        source = self.sorted_model[treeiter][4]
+        filepath = self.sorted_model[treeiter][5]
+        self.log.debug("Source: %s", source)
+        self.log.debug("Target: %s", target)
+        folder = os.path.dirname(filepath)
+        source_path = os.path.join(folder, source)
+        target_path = os.path.join(folder, target)
+        if not os.path.exists(target_path):
+            shutil.move(source_path, target_path)
+            self.refresh_view()
 
     def edit_filename_finished(self, widget, path, target):
+        print("edit_filename_finished")
         treeiter = self.sorted_model.get_iter(path)
         filename = self.sorted_model[treeiter][4]
         # ~ print(filename)

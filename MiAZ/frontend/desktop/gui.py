@@ -52,9 +52,9 @@ class GUI(Adw.Application):
         ## HeaderBar [[
         self.header = Gtk.HeaderBar()
         box = Gtk.Box(spacing = 3, orientation="horizontal")
-        button = self.create_button('view-grid', '', self.show_browser)
+        button = self.create_button('miaz-ok', '', self.show_browser)
         box.append(button)
-        button = self.create_button('document-new', '', self.show_workspace)
+        button = self.create_button('miaz-remove', '', self.show_workspace)
         box.append(button)
         self.header.set_title_widget(box)
         self.win.set_titlebar(self.header)
@@ -144,6 +144,8 @@ class GUI(Adw.Application):
         hbox.append(label)
         button = Gtk.Button()
         button.set_child(hbox)
+        button.set_hexpand(True)
+        button.set_vexpand(True)
         button.set_has_frame(True)
         button.connect('clicked', callback)
         return button

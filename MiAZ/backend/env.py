@@ -37,7 +37,7 @@ ENV['CONF']['MAX_WORKERS'] = multiprocessing.cpu_count()  # Avoid MemoryError
 ENV['APP'] = {}
 ENV['APP']['name'] = "My AZ Organizer"
 ENV['APP']['shortname'] = "MiAZ"
-ENV['APP']['description'] = "MyAZ is a personal document organizer"
+ENV['APP']['description'] = "MiAZ is a personal document organizer"
 ENV['APP']['license'] = 'GPL v3'
 ENV['APP']['license_long'] = "The code is licensed under the terms of the  GPL v3\n\
         so you're free to grab, extend, improve and fork the \
@@ -71,7 +71,7 @@ ENV['GPATH']['RESOURCES'] = os.path.join(ENV['GPATH']['DATA'], 'resources')
 
 # Common file paths
 ENV['FILE'] = {}
-ENV['FILE']['CONF'] = os.path.join(ENV['LPATH']['ETC'], 'MyAZ-application.json')
+ENV['FILE']['CONF'] = os.path.join(ENV['LPATH']['ETC'], 'MiAZ-application.json')
 ENV['FILE']['VERSION'] = os.path.join(ENV['GPATH']['DOCS'], 'VERSION')
 ENV['FILE']['APPICON'] = os.path.join(ENV['GPATH']['ICONS'], 'MiAZ.svg')
 ENV['FILE']['LOG'] = os.path.join(ENV['LPATH']['LOG'], 'MiAZ.log')
