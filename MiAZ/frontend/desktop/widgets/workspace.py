@@ -44,8 +44,6 @@ class MiAZWorkspace(Gtk.Box):
         toolbar = Gtk.Box(spacing=3, orientation=Gtk.Orientation.HORIZONTAL)
         toolbar.set_hexpand(True)
 
-        # ~ frmColumnMime = Gtk.Frame()
-        # ~ frmColumnMime.set_shadow_type(Gtk.ShadowType.NONE)
         boxColumnMime = Gtk.Box(spacing=6, orientation=Gtk.Orientation.VERTICAL)
         boxColumnMime.set_hexpand(False)
         lblFrmTitle = Gtk.Label()
@@ -215,8 +213,6 @@ class MiAZWorkspace(Gtk.Box):
         icon = Pixbuf.new_from_file(ENV['FILE']['APPICON'])
         icon_ko = self.gui.icman.get_pixbuf_by_name('miaz-cancel', 24)
         icon_ok = self.gui.icman.get_pixbuf_by_name('miaz-ok', 24)
-        # ~ INVALID = self.store.insert_with_values(None, -1, (0, 1, 2, 3, 4, 5, 6), (icon, "", False, "File name not valid", "", "", "FOLDER"))
-        # ~ VALID = self.store.insert_with_values(None, -1, (0, 1, 2, 3, 4, 5, 6), (icon, "", False, "File name valid", "", "", "FOLDER"))
         for filepath in documents:
             document = os.path.basename(filepath)
             mimetype = get_file_mimetype(filepath)
@@ -230,8 +226,8 @@ class MiAZWorkspace(Gtk.Box):
                         self.store.insert_with_values(node, -1, (0, 3, 6), (icon_ok, "<i>%s</i>" % message, "REASON"))
                     else:
                         self.store.insert_with_values(node, -1, (0, 3, 6), (icon_ko, "<i>%s</i>" % message, "REASON"))
-            # ~ else:
-                # ~ self.store.insert_with_values(VALID, -1, (0, 1, 3, 5, 6), (icon, mimetype, document, filepath, "REASON"))
+            else:
+                self.log.debug("Document '%s' is valid", document)
 
     def edit_filename(self, widget, path, target):
         treeiter = self.sorted_model.get_iter(path)

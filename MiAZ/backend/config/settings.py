@@ -94,3 +94,12 @@ class MiAZConfigSettingsExtensions(MiAZConfig):
                             'MiAZ-extensions.json'),
             must_copy = False
         )
+
+    def get_sections(self):
+        sections = set()
+        extensions = self.load_global()
+        for ext in extensions:
+            esections = extensions[ext]
+            for section in esections:
+                sections.add(section)
+        return sections

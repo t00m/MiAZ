@@ -18,6 +18,7 @@ from MiAZ.backend.log import get_logger
 from MiAZ.frontend.desktop.util import get_file_mimetype
 from MiAZ.frontend.desktop.icons import MiAZIconManager
 from MiAZ.frontend.desktop.widgets.treeview import MiAZTreeView
+from MiAZ.backend.config.settings import MiAZConfigSettingsExtensions as Ext
 
 
 class MiAZDocBrowser(Gtk.Box):
@@ -28,6 +29,10 @@ class MiAZDocBrowser(Gtk.Box):
         self.log = get_logger('MiAZDocBrowser')
         self.gui = gui
         self.config = self.gui.config
+        self.set_margin_top(margin=6)
+        self.set_margin_end(margin=6)
+        self.set_margin_bottom(margin=6)
+        self.set_margin_start(margin=6)
         self.set_vexpand(True)
 
         self.scrwin = Gtk.ScrolledWindow()
@@ -35,11 +40,13 @@ class MiAZDocBrowser(Gtk.Box):
 
         self.box_header = Gtk.Box(spacing=6, orientation=Gtk.Orientation.HORIZONTAL)
         # https://gist.github.com/Afacanc38/76ce9b3260307bea64ebf3506b485147
+        boxSearchBar = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
         self.ent_sb = Gtk.SearchEntry(placeholder_text="Type here")
         self.ent_sb.connect('changed', self.nop)
         self.searchbar = Gtk.SearchBar(halign = Gtk.Align.FILL, hexpand = True, valign = Gtk.Align.START, show_close_button = True)
         self.searchbar.connect_entry (self.ent_sb)
-        self.searchbar.set_child (self.ent_sb)
+        boxSearchBar.append(self.ent_sb)
+        self.searchbar.set_child (boxSearchBar)
         self.searchbar.set_key_capture_widget(self.ent_sb)
         self.box_header.append(self.searchbar)
 
@@ -48,6 +55,18 @@ class MiAZDocBrowser(Gtk.Box):
         self.gui.win.add_controller(self.controller)
 
         self.append(self.box_header)
+        # ~ self.append(toolbar)
+
+        self.flowbox = Gtk.FlowBox.new()
+        self.flowbox.set_margin_top(margin=24)
+        self.flowbox.set_margin_end(margin=12)
+        self.flowbox.set_margin_bottom(margin=24)
+        self.flowbox.set_margin_start(margin=12)
+        self.flowbox.set_valign(align=Gtk.Align.START)
+        self.flowbox.set_max_children_per_line(n_children=1)
+        self.flowbox.set_selection_mode(mode=Gtk.SelectionMode.NONE)
+        self.scrwin.set_child(child=self.flowbox)
+
         self.append(self.scrwin)
 
         # Filename format: {timestamp}-{country}-{lang}-{collection}-{organization}-{purpose}-{who}.{extension}
@@ -64,3 +83,6 @@ class MiAZDocBrowser(Gtk.Box):
 
     def nop(self, *args):
         self.log.debug(args)
+
+    def update(self):
+        self.flowbox = Gtk.FlowBox.new()

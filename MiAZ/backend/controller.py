@@ -18,7 +18,7 @@ from MiAZ.backend.config.settings import MiAZConfigSettingsWho
 
 countries = MiAZConfigSettingsCountries().load_global()
 # ~ languages = MiAZConfigSettingsLanguages().load()
-extensions = MiAZConfigSettingsExtensions().load()
+extensions = MiAZConfigSettingsExtensions().load_global()
 collections = MiAZConfigSettingsCollections().load()
 purposes = MiAZConfigSettingsPurposes().load()
 who = organizations = MiAZConfigSettingsWho().load()
@@ -32,17 +32,6 @@ def is_country(code: str) -> bool:
     except KeyError:
         iscountry = False
     return iscountry
-
-
-# ~ def is_lang(code: str) -> bool:
-    # ~ islang = False
-    # ~ try:
-        # ~ languages[code]
-        # ~ islang = True
-    # ~ except KeyError:
-        # ~ islang = False
-    # ~ return islang
-
 
 def suggest_filename(filepath: str) -> str:
     # "{timestamp}-{country}-{collection}-{organization}-{purpose}-{concept}-{who}.{extension}"
@@ -108,10 +97,11 @@ def valid_filename(filepath: str) -> bool:
     if dot > 0:
         name = filename[:dot]
         ext = filename[dot+1:]
+
         # Check extension
         if ext.lower() not in extensions:
             valid &= False
-            reasons.append((False, "Extension '%s' not allowed. Add it up first." % ext))
+            reasons.append((False, "Extension '%s' not allowed. Add it first." % ext))
         else:
             reasons.append((True, "Extension '%s' is valid" % ext))
     else:
@@ -157,7 +147,7 @@ def valid_filename(filepath: str) -> bool:
         collection = fields[2]
         if collection not in collections:
             valid &= False
-            reasons.append((False, "Field 3. Collection '%s' is not in your list. Please, add it up first." % collection))
+            reasons.append((False, "Field 3. Collection '%s' is not in your list. Please, add it first." % collection))
         else:
             reasons.append((True, "Field 3. Collection '%s' accepted. It is in your list." % collection))
     except IndexError:
@@ -169,7 +159,7 @@ def valid_filename(filepath: str) -> bool:
         purpose = fields[3]
         if purpose not in purposes:
             valid &= False
-            reasons.append((False, "Field 4. Purpose '%s' is not in your list. Please, add it up first." % purpose))
+            reasons.append((False, "Field 4. Purpose '%s' is not in your list. Please, add it first." % purpose))
         else:
             reasons.append((True, "Field 4. Purpose '%s' accepted. It is in your list." % purpose))
     except IndexError:
@@ -181,7 +171,7 @@ def valid_filename(filepath: str) -> bool:
         organization = fields[4]
         if organization not in organizations:
             valid &= False
-            reasons.append((False, "Field 5. Organization '%s' is not in your list. Please, add it up first." % organization))
+            reasons.append((False, "Field 5. Organization '%s' is not in your list. Please, add it first." % organization))
         else:
             reasons.append((True, "Field 5. Organization '%s' accepted. It is in your list." % organization))
     except IndexError:
@@ -194,7 +184,7 @@ def valid_filename(filepath: str) -> bool:
         reasons.append((True, "Field 6. Concept '%s' accepted" % concept))
         # ~ if organization not in organizations:
             # ~ valid &= False
-            # ~ reasons.append((False, "Field 5. Organization '%s' is not in your list. Please, add it up first." % organization))
+            # ~ reasons.append((False, "Field 5. Organization '%s' is not in your list. Please, add it first." % organization))
         # ~ else:
             # ~ reasons.append((True, "Field 5. Organization '%s' accepted. It is in your list." % organization))
     except IndexError:
@@ -207,7 +197,7 @@ def valid_filename(filepath: str) -> bool:
         org = fields[6]
         if org not in organizations:
             valid &= False
-            reasons.append((False, "Field 7. '%s' is not in your list. Please, add it up first." % org))
+            reasons.append((False, "Field 7. '%s' is not in your list. Please, add it first." % org))
         else:
             reasons.append((True, "Field 7. Person/Third party '%s' accepted. It is in your list." % org))
     except IndexError:
