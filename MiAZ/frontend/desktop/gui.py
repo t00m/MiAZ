@@ -6,6 +6,7 @@ import gi
 gi.require_version('Gtk', '4.0')
 gi.require_version('Adw', '1')
 from gi.repository import Gtk, Adw
+from gi.repository import Gdk
 from gi.repository import Gio
 from gi.repository import GLib
 from gi.repository import GObject
@@ -88,12 +89,42 @@ class GUI(Adw.Application):
         self.settings = self.create_settings()
         self.stack.add_page('settings', "Settings", self.settings)
 
+        self.box_header = Gtk.Box(spacing=6, orientation=Gtk.Orientation.HORIZONTAL)
+        # https://gist.github.com/Afacanc38/76ce9b3260307bea64ebf3506b485147
+        boxSearchBar = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
+        self.ent_sb = Gtk.SearchEntry(placeholder_text="Type here")
+        self.ent_sb.connect('changed', self.nop)
+        self.searchbar = Gtk.SearchBar(halign = Gtk.Align.FILL, hexpand = True, valign = Gtk.Align.START, show_close_button = True)
+        self.searchbar.connect_entry (self.ent_sb)
+        boxSearchBar.append(self.ent_sb)
+        self.searchbar.set_child (boxSearchBar)
+        self.searchbar.set_key_capture_widget(self.ent_sb)
+        self.box_header.append(self.searchbar)
+
+        self.controller = Gtk.EventControllerKey()
+        self.controller.connect('key-released', self.on_key_released)
+        self.win.add_controller(self.controller)
+
+        self.mainbox.append(self.box_header)
+
         self.mainbox.append(self.stack)
         self.mainbox.set_vexpand(True)
         self.win.set_child(self.mainbox)
         ## ]]
         # ]
 
+    def on_key_released(self, widget, keyval, keycode, state):
+        # ~ self.log.debug("Active window: %s", self.gui.get_active_window())
+        keyname = Gdk.keyval_name(keyval)
+        # ~ self.log.debug("Key: %s", keyname)
+        if Gdk.ModifierType.CONTROL_MASK & state and keyname == 'f':
+            if self.searchbar.get_search_mode():
+                self.searchbar.set_search_mode(False)
+            else:
+                self.searchbar.set_search_mode(True)
+
+    def nop(self, *args):
+        self.log.debug(args)
 
     def refresh_workspace(self, *args):
         self.workspace.refresh_view()
