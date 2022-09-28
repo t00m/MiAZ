@@ -24,6 +24,7 @@ from MiAZ.frontend.desktop.widgets.workspace import MiAZWorkspace
 from MiAZ.frontend.desktop.widgets.settings import MiAZSettings
 from MiAZ.frontend.desktop.icons import MiAZIconManager
 
+Adw.init()
 
 class GUI(Adw.Application):
     def __init__(self, **kwargs):
@@ -51,7 +52,7 @@ class GUI(Adw.Application):
         self.stack.set_vexpand(True)
 
         ## HeaderBar [[
-        self.header = Gtk.HeaderBar()
+        self.header = Adw.HeaderBar()
         box = Gtk.Box(spacing = 3, orientation="horizontal")
         button = self.create_button('miaz-ok', '', self.show_browser)
         box.append(button)
@@ -61,9 +62,14 @@ class GUI(Adw.Application):
         self.win.set_titlebar(self.header)
 
         # Add Refresh button to the titlebar (Left side)
-        button = Gtk.Button.new_from_icon_name('view-refresh')
+        # ~ button = Gtk.Button.new_from_icon_name('view-refresh')
+        # ~ self.header.pack_start(button)
+        # ~ button.connect('clicked', self.refresh_workspace)
+
+        # Add Search button to the titlebar (Left side)
+        button = Gtk.Button.new_from_icon_name('miaz-search')
         self.header.pack_start(button)
-        button.connect('clicked', self.refresh_workspace)
+        button.connect('clicked', self.show_searchbar)
 
         # Add Menu Button to the titlebar (Right Side)
         menu = MiAZMenuButton(MiAZ_APP_MENU, 'app-menu')
@@ -116,15 +122,20 @@ class GUI(Adw.Application):
     def on_key_released(self, widget, keyval, keycode, state):
         # ~ self.log.debug("Active window: %s", self.gui.get_active_window())
         keyname = Gdk.keyval_name(keyval)
-        # ~ self.log.debug("Key: %s", keyname)
+        self.log.debug("Key: %s", keyname)
         if Gdk.ModifierType.CONTROL_MASK & state and keyname == 'f':
             if self.searchbar.get_search_mode():
                 self.searchbar.set_search_mode(False)
             else:
                 self.searchbar.set_search_mode(True)
+        stack = self.stack.get_visible_child_name()
+        if stack == 'workspace':
+            self.workspace.filter_view()
 
     def nop(self, *args):
-        self.log.debug(args)
+        stack = self.stack.get_visible_child_name()
+        if stack == 'workspace':
+            self.workspace.filter_view()
 
     def refresh_workspace(self, *args):
         self.workspace.refresh_view()
@@ -137,6 +148,9 @@ class GUI(Adw.Application):
 
     def show_workspace(self, *args):
         self.stack.set_visible_child_name('workspace')
+
+    def show_searchbar(self, *args):
+        self.searchbar.set_search_mode(True)
 
     def open_response(self, dialog, response):
         if response == Gtk.ResponseType.ACCEPT:

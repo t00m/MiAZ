@@ -88,7 +88,7 @@ class MiAZWorkspace(Gtk.Box):
         self.treeview = MiAZTreeView(self.gui)
         self.treeview.set_model(self.store)
 
-        self.refresh_view()
+        self.update()
 
         # Icon
         renderer = Gtk.CellRendererPixbuf()
@@ -202,7 +202,7 @@ class MiAZWorkspace(Gtk.Box):
         if os.path.exists(filepath):
             os.system("xdg-open '%s'" % filepath)
 
-    def refresh_view(self):
+    def update(self):
         self.store.clear()
         try:
             source_path = self.config.get('source')
@@ -240,7 +240,7 @@ class MiAZWorkspace(Gtk.Box):
         target_path = os.path.join(folder, target)
         if not os.path.exists(target_path):
             shutil.move(source_path, target_path)
-            self.refresh_view()
+            self.update()
 
     def edit_filename_finished(self, widget, path, target):
         print("edit_filename_finished")
@@ -277,3 +277,6 @@ class MiAZWorkspace(Gtk.Box):
         model = self.sorted_model.get_model()
         rpath = self.sorted_model.convert_path_to_child_path(Gtk.TreePath(path))
         model[rpath][2] = not model[rpath][2]
+
+    def filter_view(self):
+        self.treefilter.refilter()
