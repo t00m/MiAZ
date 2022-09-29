@@ -24,6 +24,7 @@ from MiAZ.frontend.desktop.widgets.workspace import MiAZWorkspace
 from MiAZ.frontend.desktop.widgets.settings import MiAZSettings, PreferencesWindow
 from MiAZ.frontend.desktop.icons import MiAZIconManager
 
+Gtk.init()
 Adw.init()
 
 class GUI(Adw.Application):
@@ -141,7 +142,7 @@ class GUI(Adw.Application):
         self.workspace.refresh_view()
 
     def show_settings(self, *args):
-        pw = PreferencesWindow(self.win)
+        pw = PreferencesWindow(self)
         # ~ self.stack.set_visible_child_name('settings')
 
     def show_browser(self, *args):
@@ -201,14 +202,18 @@ class GUI(Adw.Application):
         button.connect('activate', callback)
         return button
 
-    def create_button(self, icon_name, title, callback, width=48, height=48):
-        button = Gtk.Button(
-            # ~ halign=Gtk.Align.CENTER,
-            css_classes=['linked'],
-            child=Adw.ButtonContent(
-                label=title,
-                icon_name=icon_name)
-            )
+    def create_button(self, icon_name, title, callback, width=32, height=32, css_classes=['flat']):
+        if len(icon_name.strip()) == 0:
+            button = Gtk.Button(css_classes=css_classes)
+            button.set_label(title)
+        else:
+            button = Gtk.Button(
+                css_classes=css_classes,
+                child=Adw.ButtonContent(
+                    label=title,
+                    icon_name=icon_name
+                    )
+                )
         button.connect('clicked', callback)
         return button
 
