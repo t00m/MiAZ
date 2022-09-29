@@ -28,12 +28,15 @@ class PreferencesWindow(Adw.PreferencesWindow):
         self.gui = gui
         self.config = gui.config
         self.win = self.gui.win
+        self.sm = self.gui.get_style_manager()
+        self.color_scheme = self.sm.get_color_scheme()
         super().__init__(title='Preferences')
         self.set_transient_for(self.gui.win)
         page = Adw.PreferencesPage.new()
         page.set_title("Preferences")
         page.add(self.get_group_repositories())
         page.add(self.get_group_resources())
+        page.add(self.get_group_appearance())
         self.add(page)
         self.show()
 
@@ -62,6 +65,39 @@ class PreferencesWindow(Adw.PreferencesWindow):
         group.add(row_res_organizations)
         group.add(row_res_extensions)
         return group
+
+    def get_group_appearance(self):
+        row_repo_theme = self.create_action_row_gui_theme()
+        group = Adw.PreferencesGroup()
+        group.set_title("Appearance")
+        group.add(row_repo_theme)
+        return group
+
+    def create_action_row_gui_theme(self):
+        switch = Gtk.Switch.new()
+        switch.set_valign(Gtk.Align.CENTER)
+        switch.connect('notify::active', self.on_theme_switched)
+
+        row = Adw.ActionRow.new()
+        row.set_title("Dark mode theme")
+        row.set_icon_name('miaz-theme')
+        button = self.gui.create_switch_button('', '', self.on_theme_switched)
+        # ~ button = self.gui.create_button('', 'Dark?', self.on_theme_switched)
+        is_dark = self.color_scheme == self.sm.get_dark()
+        button.set_active(is_dark)
+        row.add_suffix(widget=switch)
+        # ~ button.connect('state-set', self.on_theme_switched)
+        # ~ box = row.get_child()
+        # ~ box.set_hexpand(False)
+        # ~ box.set_vexpand(False)
+        # ~ box.append(button)
+        return row
+
+    def on_theme_switched(self, switch, state):
+        if state is True:
+            self.sm.set_color_scheme(Adw.ColorScheme.PREFER_DARK)
+        else:
+            self.sm.set_color_scheme(Adw.ColorScheme.PREFER_LIGHT)
 
     def create_action_row_res_countries(self):
         row = Adw.ActionRow.new()
@@ -146,17 +182,20 @@ class PreferencesWindow(Adw.PreferencesWindow):
             source = self.gui.config.get('source')
         except:
             source = '<i>Folder not set</i>'
+        btnRepoSource = self.gui.create_button ('document-edit-symbolic', '', self.show_filechooser_source, css_classes=['flat'])
+        btnRepoSource.set_valign(Gtk.Align.CENTER)
         row = Adw.ActionRow.new()
         row.set_title("Source")
         row.set_subtitle(source)
         row.set_icon_name('folder-symbolic')
-        boxRepoSourceButton = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
-        boxRepoSourceButton.set_hexpand(False)
-        btnRepoSource = self.gui.create_button ('document-edit-symbolic', '', self.show_filechooser_source, css_classes=['flat'])
-        btnRepoSource.set_hexpand(False)
-        boxRepoSourceButton.append(btnRepoSource)
-        box = row.get_child()
-        box.append(boxRepoSourceButton)
+        row.add_suffix(widget=btnRepoSource)
+
+        # ~ boxRepoSourceButton.set_hexpand(False)
+
+        # ~ btnRepoSource.set_hexpand(False)
+        # ~ boxRepoSourceButton.append(btnRepoSource)
+        # ~ box = row.get_child()
+        # ~ box.append(boxRepoSourceButton)
         return row
 
     def create_action_row_repo_target(self):
