@@ -209,12 +209,14 @@ class MiAZWorkspace(Gtk.Box):
         icon = Pixbuf.new_from_file(ENV['FILE']['APPICON'])
         icon_ko = self.gui.icman.get_pixbuf_by_name('miaz-cancel', 24)
         icon_ok = self.gui.icman.get_pixbuf_by_name('miaz-ok', 24)
+        ndocs = 0
         for filepath in documents:
             document = os.path.basename(filepath)
             mimetype = get_file_mimetype(filepath)
             icon = self.gui.icman.get_pixbuf_mimetype_from_file(filepath, 36, 36)
             valid, reasons = valid_filename(filepath)
             if not valid:
+                ndocs += 1
                 node = self.store.insert_with_values(None, -1, (0, 1, 2, 3, 4, 5, 6), (icon, mimetype, False, "<b>%s</b>" % document, document, filepath, "FILE"))
                 for reason in reasons:
                     passed, message = reason
@@ -224,6 +226,7 @@ class MiAZWorkspace(Gtk.Box):
                         self.store.insert_with_values(node, -1, (0, 3, 6), (icon_ko, "<i>%s</i>" % message, "REASON"))
             else:
                 self.log.debug("Document '%s' is valid", document)
+        self.log.debug("Nº Invalid Documents: %d", ndocs)
 
     def edit_filename(self, widget, path, target):
         treeiter = self.sorted_model.get_iter(path)
@@ -257,15 +260,14 @@ class MiAZWorkspace(Gtk.Box):
     def clb_visible_function(self, model, itr, data):
         item_name = model.get(itr, 3)[0]
         row_type = model.get(itr, 6)[0]
-        # ~ filter_text = self.entry_filename.get_text()
-        filter_text = self.gui.ent_sb.get_text()
-        # ~ entry_filename.get_text()
+        sbentry = self.gui.get_searchbar_entry()
+        filter_text = sbentry.get_text()
 
         if row_type == 'FOLDER' or row_type == 'REASON':
             return True
 
         match = filter_text.upper() in item_name.upper()
-        # ~ self.log.debug("%s in %s? %s", filter_text, item_name, match)
+
         if match:
             return True
         else:

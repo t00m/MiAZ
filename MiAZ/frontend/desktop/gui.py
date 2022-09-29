@@ -16,7 +16,6 @@ from MiAZ.backend.env import ENV
 from MiAZ.backend.config.settings import MiAZConfigApp
 from MiAZ.backend.controller import get_documents
 from MiAZ.backend.log import get_logger
-from MiAZ.frontend.desktop.widgets.stack import MiAZStack
 from MiAZ.frontend.desktop.widgets.menu import MiAZ_APP_MENU
 from MiAZ.frontend.desktop.widgets.menubutton import MiAZMenuButton
 from MiAZ.frontend.desktop.widgets.docbrowser import MiAZDocBrowser
@@ -47,26 +46,36 @@ class GUI(Adw.Application):
         self.win.present()
 
     def build_gui(self):
+        ## Central Box [[
+        self.mainbox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
+        self.mainbox.set_vexpand(True)
+
         # Widgets
+
+        # ~ status_page = Adw.StatusPage.new()
+        # ~ status_page.set_description(description='A personal document organizer')
+        # ~ status_page.set_icon_name(icon_name='MiAZ-extra-big')
+        # ~ status_page.set_title(title='MiAZ')
+        # ~ self.mainbox.append(child=status_page)
+
         ## Stack & Stack.Switcher
-        self.stack = MiAZStack()
+        self.stack = Adw.ViewStack()
+        self.switcher = Adw.ViewSwitcher()
+        self.switcher.set_policy(Adw.ViewSwitcherPolicy.WIDE)
+        self.switcher.set_stack(self.stack)
         self.stack.set_vexpand(True)
+
+        # ~ self.stack.set_transition_type(transition=Gtk.StackTransitionType.SLIDE_LEFT_RIGHT)
+        # ~ self.stack.set_transition_duration(duration=1000)
+        # ~ self.stack.set_visible(False)
 
         ## HeaderBar [[
         self.header = Adw.HeaderBar()
 
-        box = Gtk.Box(spacing = 3, orientation="horizontal")
-        button = self.create_button('miaz-ok', 'Browser', self.show_browser, css_classes=['flat', 'linked'])
-        box.append(button)
-        button = self.create_button('miaz-remove', 'Workspace', self.show_workspace, css_classes=['flat', 'linked'])
-        box.append(button)
-        self.header.set_title_widget(box)
+        # ~ stack_switcher = Gtk.StackSwitcher.new()
+        # ~ stack_switcher.set_stack(stack=self.stack)
+        self.header.set_title_widget(title_widget=self.switcher)
         self.win.set_titlebar(self.header)
-
-        # Add Refresh button to the titlebar (Left side)
-        # ~ button = Gtk.Button.new_from_icon_name('view-refresh')
-        # ~ self.header.pack_start(button)
-        # ~ button.connect('clicked', self.refresh_workspace)
 
         # Add Search button to the titlebar (Left side)
         button = Gtk.Button.new_from_icon_name('miaz-search')
@@ -84,18 +93,7 @@ class GUI(Adw.Application):
         self.create_action('close', self.menu_handler)
         ## ]]
 
-        ## Central Box [[
-        self.mainbox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
-        self.mainbox.set_vexpand(True)
 
-        self.docbrowser = self.create_docbrowser()
-        self.stack.add_page('browser', "Browser", self.docbrowser)
-
-        self.workspace = self.create_workspace()
-        self.stack.add_page('workspace', "Workspace", self.workspace)
-
-        self.settings = self.create_settings()
-        self.stack.add_page('settings', "Settings", self.settings)
 
         self.box_header = Gtk.Box(spacing=6, orientation=Gtk.Orientation.HORIZONTAL)
         # https://gist.github.com/Afacanc38/76ce9b3260307bea64ebf3506b485147
@@ -108,12 +106,22 @@ class GUI(Adw.Application):
         self.searchbar.set_child (boxSearchBar)
         self.searchbar.set_key_capture_widget(self.ent_sb)
         self.box_header.append(self.searchbar)
-
         self.controller = Gtk.EventControllerKey()
         self.controller.connect('key-released', self.on_key_released)
         self.win.add_controller(self.controller)
-
         self.mainbox.append(self.box_header)
+
+        self.docbrowser = self.create_docbrowser()
+        page = self.stack.add_titled(self.docbrowser, 'browser', 'Browser')
+        # ~ page = self.stack.get_page(self.docbrowser)
+        page.set_icon_name('view-grid')
+
+
+        self.workspace = self.create_workspace()
+        page = self.stack.add_titled(self.workspace, 'workspace', 'Workspace')
+        page.set_icon_name('document-properties')
+        page.set_needs_attention(True)
+        page.set_badge_number(1)
 
         self.mainbox.append(self.stack)
         self.mainbox.set_vexpand(True)
@@ -260,3 +268,6 @@ class GUI(Adw.Application):
         about.set_logo_icon_name("MiAZ")
         about.show()
         return about
+
+    def get_searchbar_entry(self):
+        return self.ent_sb

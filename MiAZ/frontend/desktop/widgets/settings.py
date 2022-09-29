@@ -25,6 +25,7 @@ from MiAZ.frontend.desktop.widgets.who import MiAZWho
 
 class PreferencesWindow(Adw.PreferencesWindow):
     def __init__(self, gui):
+        self.log = get_logger('MiAZ.Desktop.Settings')
         self.gui = gui
         self.config = gui.config
         self.win = self.gui.win
@@ -94,6 +95,7 @@ class PreferencesWindow(Adw.PreferencesWindow):
         return row
 
     def on_theme_switched(self, switch, state):
+        print("State: %s" % state)
         if state is True:
             self.sm.set_color_scheme(Adw.ColorScheme.PREFER_DARK)
         else:
@@ -229,7 +231,7 @@ class PreferencesWindow(Adw.PreferencesWindow):
 
     def show_filechooser_target(self, *args):
         dlgFileChooser = Gtk.Dialog()
-        dlgFileChooser.set_transient_for(self.gui.win)
+        dlgFileChooser.set_transient_for(self)
         dlgFileChooser.add_buttons('Cancel', Gtk.ResponseType.CANCEL, 'Accept', Gtk.ResponseType.ACCEPT)
         dlgFileChooser.connect('response', self.filechooser_response_target)
         contents = dlgFileChooser.get_content_area()
