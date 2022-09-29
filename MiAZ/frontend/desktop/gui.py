@@ -21,7 +21,7 @@ from MiAZ.frontend.desktop.widgets.menu import MiAZ_APP_MENU
 from MiAZ.frontend.desktop.widgets.menubutton import MiAZMenuButton
 from MiAZ.frontend.desktop.widgets.docbrowser import MiAZDocBrowser
 from MiAZ.frontend.desktop.widgets.workspace import MiAZWorkspace
-from MiAZ.frontend.desktop.widgets.settings import MiAZSettings
+from MiAZ.frontend.desktop.widgets.settings import MiAZSettings, PreferencesWindow
 from MiAZ.frontend.desktop.icons import MiAZIconManager
 
 Adw.init()
@@ -141,7 +141,8 @@ class GUI(Adw.Application):
         self.workspace.refresh_view()
 
     def show_settings(self, *args):
-        self.stack.set_visible_child_name('settings')
+        pw = PreferencesWindow(self.win)
+        # ~ self.stack.set_visible_child_name('settings')
 
     def show_browser(self, *args):
         self.stack.set_visible_child_name('browser')

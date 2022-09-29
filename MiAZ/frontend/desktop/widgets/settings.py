@@ -6,10 +6,11 @@ import sys
 import json
 
 import gi
-from gi.repository import Gtk, Adw
+from gi.repository import Adw
+from gi.repository.GdkPixbuf import Pixbuf
 from gi.repository import Gio
 from gi.repository import GLib
-from gi.repository.GdkPixbuf import Pixbuf
+from gi.repository import Gtk
 
 from MiAZ.backend.env import ENV
 from MiAZ.backend.log import get_logger
@@ -20,6 +21,45 @@ from MiAZ.frontend.desktop.widgets.languages import MiAZLanguages
 from MiAZ.frontend.desktop.widgets.extensions import MiAZExtensions
 from MiAZ.frontend.desktop.widgets.organizations import MiAZOrganizations
 from MiAZ.frontend.desktop.widgets.who import MiAZWho
+
+
+class PreferencesWindow(Adw.PreferencesWindow):
+    def __init__(self, win):
+        super().__init__(title='Preferences')
+        self.win = win
+        # ~ self.set_size_request(800, 600)
+        page = Adw.PreferencesPage.new()
+        page.set_title("Preferences")
+        page.add(self.get_group_repositories())
+        self.add(page)
+        self.show()
+
+    def get_group_repositories(self):
+        title = "Repositories"
+        subtitle = "Source and Target folders"
+        state = "Not set"
+        callback = self.noop
+        repos_row = self.assemble_action_row(title, subtitle, state, callback)
+
+        group = Adw.PreferencesGroup()
+        group.set_title("General")
+        group.add(repos_row)
+        return group
+
+    def noop(self, *args):
+        print("NOOP")
+
+    @staticmethod
+    def assemble_action_row(title, subtitle, state, callback):
+        row = Adw.ActionRow.new()
+        row.set_title(title)
+        if subtitle:
+            row.set_subtitle(subtitle)
+        label = Gtk.Label()
+        label.set_markup("Hello world!")
+        box = row.get_child()
+        box.append(label)
+        return row
 
 class MiAZSettings(Gtk.Box):
     """ Wrapper for Gtk.Stack with  with a StackSwitcher """
