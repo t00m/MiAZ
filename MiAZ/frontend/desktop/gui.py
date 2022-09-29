@@ -54,10 +54,11 @@ class GUI(Adw.Application):
 
         ## HeaderBar [[
         self.header = Adw.HeaderBar()
+
         box = Gtk.Box(spacing = 3, orientation="horizontal")
-        button = self.create_button('miaz-ok', 'Browser', self.show_browser)
+        button = self.create_button('miaz-ok', 'Browser', self.show_browser, css_classes=['flat', 'linked'])
         box.append(button)
-        button = self.create_button('miaz-remove', 'Workspace', self.show_workspace)
+        button = self.create_button('miaz-remove', 'Workspace', self.show_workspace, css_classes=['flat', 'linked'])
         box.append(button)
         self.header.set_title_widget(box)
         self.win.set_titlebar(self.header)
@@ -149,6 +150,7 @@ class GUI(Adw.Application):
         self.stack.set_visible_child_name('browser')
 
     def show_workspace(self, *args):
+        self.log.debug("Refreshing workspace")
         self.stack.set_visible_child_name('workspace')
 
     def show_searchbar(self, *args):
