@@ -54,9 +54,9 @@ class GUI(Adw.Application):
         ## HeaderBar [[
         self.header = Adw.HeaderBar()
         box = Gtk.Box(spacing = 3, orientation="horizontal")
-        button = self.create_button('miaz-ok', '', self.show_browser)
+        button = self.create_button('miaz-ok', 'Browser', self.show_browser)
         box.append(button)
-        button = self.create_button('miaz-remove', '', self.show_workspace)
+        button = self.create_button('miaz-remove', 'Workspace', self.show_workspace)
         box.append(button)
         self.header.set_title_widget(box)
         self.win.set_titlebar(self.header)
@@ -177,21 +177,37 @@ class GUI(Adw.Application):
         contents.append(widget)
         return dialog
 
+    # ~ def create_button(self, icon_name, title, callback, width=48, height=48):
+        # ~ hbox = Gtk.Box(spacing = 3, orientation=Gtk.Orientation.HORIZONTAL)
+        # ~ if len(icon_name) != 0:
+            # ~ # FIXME: icon name might not exist at all
+            # ~ pixbuf = self.icman.get_pixbuf_by_path(icon_name, width, height)
+            # ~ icon = Gtk.Image.new_from_pixbuf(pixbuf)
+            # ~ hbox.append(icon)
+        # ~ label = Gtk.Label()
+        # ~ label.set_markup(title)
+        # ~ hbox.append(label)
+        # ~ button = Gtk.Button()
+        # ~ button.set_child(hbox)
+        # ~ button.set_hexpand(True)
+        # ~ button.set_vexpand(True)
+        # ~ button.set_has_frame(True)
+        # ~ button.connect('clicked', callback)
+        # ~ return button
+
+    def create_switch_button(self, icon_name, title, callback):
+        button = Gtk.Switch()
+        button.connect('activate', callback)
+        return button
+
     def create_button(self, icon_name, title, callback, width=48, height=48):
-        hbox = Gtk.Box(spacing = 3, orientation=Gtk.Orientation.HORIZONTAL)
-        if len(icon_name) != 0:
-            # FIXME: icon name might not exist at all
-            pixbuf = self.icman.get_pixbuf_by_path(icon_name, width, height)
-            icon = Gtk.Image.new_from_pixbuf(pixbuf)
-            hbox.append(icon)
-        label = Gtk.Label()
-        label.set_markup(title)
-        hbox.append(label)
-        button = Gtk.Button()
-        button.set_child(hbox)
-        button.set_hexpand(True)
-        button.set_vexpand(True)
-        button.set_has_frame(True)
+        button = Gtk.Button(
+            # ~ halign=Gtk.Align.CENTER,
+            css_classes=['linked'],
+            child=Adw.ButtonContent(
+                label=title,
+                icon_name=icon_name)
+            )
         button.connect('clicked', callback)
         return button
 

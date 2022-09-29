@@ -116,7 +116,7 @@ class MiAZSettings(Gtk.Box):
         boxRepoSourceButton = Gtk.Box(spacing=6, orientation=Gtk.Orientation.HORIZONTAL)
         btnRepoSource = self.gui.create_button ('miaz-folder', '', self.show_filechooser_source)
         btnRepoSource.set_hexpand(False)
-        btnRepoSource.set_has_frame(True)
+        # ~ btnRepoSource.set_has_frame(True)
         try:
             source = self.gui.config.get('source')
         except:
@@ -139,7 +139,7 @@ class MiAZSettings(Gtk.Box):
         boxRepoTargetButton = Gtk.Box(spacing=6, orientation=Gtk.Orientation.HORIZONTAL)
         btnRepoTarget = self.gui.create_button ('miaz-folder', '', self.show_filechooser_target)
         btnRepoTarget.set_hexpand(False)
-        btnRepoTarget.set_has_frame(True)
+        # ~ btnRepoTarget.set_has_frame(True)
         try:
             target = self.gui.config.get('target')
         except:
@@ -178,7 +178,7 @@ class MiAZSettings(Gtk.Box):
 
         n = 0
         button = self.gui.create_button ('countries', 'Countries', self.show_res_countries)
-        button.set_has_frame(True)
+        # ~ button.set_has_frame(True)
         flowbox.insert(widget=button, position=n)
         n += 1
 
@@ -187,27 +187,27 @@ class MiAZSettings(Gtk.Box):
         # ~ flowbox.insert(widget=button, position=1)
 
         button = self.gui.create_button ('collections', 'Collections', self.show_res_collections)
-        button.set_has_frame(True)
+        # ~ button.set_has_frame(True)
         flowbox.insert(widget=button, position=n)
         n += 1
 
         button = self.gui.create_button ('purposes', 'Purposes', self.show_res_purposes)
-        button.set_has_frame(True)
+        # ~ button.set_has_frame(True)
         flowbox.insert(widget=button, position=n)
         n += 1
 
         button = self.gui.create_button ('organizations', 'Organizations', self.show_res_organizations)
-        button.set_has_frame(True)
+        # ~ button.set_has_frame(True)
         flowbox.insert(widget=button, position=n)
         n += 1
 
         button = self.gui.create_button ('who', 'Who', self.show_res_who)
-        button.set_has_frame(True)
+        # ~ button.set_has_frame(True)
         flowbox.insert(widget=button, position=5)
         n += 1
 
         button = self.gui.create_button ('extensions', 'File extensions', self.show_res_extensions)
-        button.set_has_frame(True)
+        # ~ button.set_has_frame(True)
         flowbox.insert(widget=button, position=6)
         n += 1
 
@@ -233,12 +233,12 @@ class MiAZSettings(Gtk.Box):
         flowbox.set_selection_mode(mode=Gtk.SelectionMode.NONE)
 
         button = self.gui.create_button('miaz-backup', 'Backup', self.backup)
-        button.set_has_frame(True)
+        # ~ button.set_has_frame(True)
         icon = self.gui.icman.get_image_by_name('miaz-backup', 128, 128)
         flowbox.insert(widget=icon, position=0)
 
         button = self.gui.create_button('miaz-restore', 'Restore', self.restore)
-        button.set_has_frame(True)
+        # ~ button.set_has_frame(True)
         flowbox.insert(widget=button, position=1)
 
         lblFrmTitle = Gtk.Label()
