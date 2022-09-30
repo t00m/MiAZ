@@ -95,21 +95,21 @@ class GUI(Adw.Application):
 
 
 
-        self.box_header = Gtk.Box(spacing=6, orientation=Gtk.Orientation.HORIZONTAL)
-        # https://gist.github.com/Afacanc38/76ce9b3260307bea64ebf3506b485147
-        boxSearchBar = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
-        self.ent_sb = Gtk.SearchEntry(placeholder_text="Type here")
-        self.ent_sb.connect('changed', self.nop)
-        self.searchbar = Gtk.SearchBar(halign = Gtk.Align.FILL, hexpand = True, valign = Gtk.Align.START, show_close_button = True)
-        self.searchbar.connect_entry (self.ent_sb)
-        boxSearchBar.append(self.ent_sb)
-        self.searchbar.set_child (boxSearchBar)
-        self.searchbar.set_key_capture_widget(self.ent_sb)
-        self.box_header.append(self.searchbar)
-        self.controller = Gtk.EventControllerKey()
-        self.controller.connect('key-released', self.on_key_released)
-        self.win.add_controller(self.controller)
-        self.mainbox.append(self.box_header)
+        # ~ self.box_header = Gtk.Box(spacing=6, orientation=Gtk.Orientation.HORIZONTAL)
+        # ~ # https://gist.github.com/Afacanc38/76ce9b3260307bea64ebf3506b485147
+        # ~ boxSearchBar = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
+        # ~ self.ent_sb = Gtk.SearchEntry(placeholder_text="Type here")
+        # ~ self.ent_sb.connect('changed', self.nop)
+        # ~ self.searchbar = Gtk.SearchBar(halign = Gtk.Align.FILL, hexpand = True, valign = Gtk.Align.START, show_close_button = True)
+        # ~ self.searchbar.connect_entry (self.ent_sb)
+        # ~ boxSearchBar.append(self.ent_sb)
+        # ~ self.searchbar.set_child (boxSearchBar)
+        # ~ self.searchbar.set_key_capture_widget(self.ent_sb)
+        # ~ self.box_header.append(self.searchbar)
+        # ~ self.controller = Gtk.EventControllerKey()
+        # ~ self.controller.connect('key-released', self.on_key_released)
+        # ~ self.win.add_controller(self.controller)
+        # ~ self.mainbox.append(self.box_header)
 
         self.docbrowser = self.create_docbrowser()
         page = self.stack.add_titled(self.docbrowser, 'browser', 'Browser')
@@ -141,6 +141,8 @@ class GUI(Adw.Application):
         stack = self.stack.get_visible_child_name()
         if stack == 'workspace':
             self.workspace.filter_view()
+        elif stack == 'browser':
+            self.docbrowser.filter_view()
 
     def nop(self, *args):
         stack = self.stack.get_visible_child_name()

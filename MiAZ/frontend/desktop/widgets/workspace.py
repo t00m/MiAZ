@@ -174,7 +174,7 @@ class MiAZWorkspace(Gtk.Box):
 
         # Treeview filtering
         self.treefilter = self.store.filter_new()
-        self.treefilter.set_visible_func(self.clb_visible_function)
+        # ~ self.treefilter.set_visible_func(self.clb_visible_function)
 
         # TreeView sorting
         self.sorted_model = Gtk.TreeModelSort(model=self.treefilter)
