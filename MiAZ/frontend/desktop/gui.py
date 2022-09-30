@@ -223,6 +223,7 @@ class GUI(Adw.Application):
                     icon_name=icon_name
                     )
                 )
+        # ~ button.get_style_context().add_class(class_name='success')
         button.connect('clicked', callback)
         return button
 

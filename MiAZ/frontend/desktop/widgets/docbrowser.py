@@ -48,10 +48,12 @@ class MiAZDocBrowser(Gtk.Box):
         view_grid = Gtk.Label.new('grid')
         page = self.stack.add_named(view_grid, 'view-grid')
         page.set_icon_name('miaz-view-grid')
+        page.set_visible(False)
 
         view_tree = Gtk.Label.new('tree')
         page = self.stack.add_named(view_tree, 'view-tree')
         page.set_icon_name('miaz-view-tree')
+        page.set_visible(False)
 
     def setup_toolbar(self):
         # https://gist.github.com/Afacanc38/76ce9b3260307bea64ebf3506b485147
@@ -73,12 +75,12 @@ class MiAZDocBrowser(Gtk.Box):
         # Views (right side)
         boxViews = Gtk.Box.new(orientation=Gtk.Orientation.HORIZONTAL, spacing=0)
         boxViews.get_style_context().add_class(class_name='linked')
-        button = self.gui.create_button('miaz-view-list', '', self.show_view_list)
-        boxViews.append(button)
-        button = self.gui.create_button('miaz-view-grid', '', self.show_view_grid)
-        boxViews.append(button)
-        button = self.gui.create_button('miaz-view-tree', '', self.show_view_tree)
-        boxViews.append(button)
+        # ~ button = self.gui.create_button('miaz-view-list', '', self.show_view_list)
+        # ~ boxViews.append(button)
+        # ~ button = self.gui.create_button('miaz-view-grid', '', self.show_view_grid)
+        # ~ boxViews.append(button)
+        # ~ button = self.gui.create_button('miaz-view-tree', '', self.show_view_tree)
+        # ~ boxViews.append(button)
         toolbar.set_end_widget(boxViews)
 
         self.append(toolbar)
@@ -125,12 +127,14 @@ class MiAZDocBrowser(Gtk.Box):
         row.set_icon_name(icon_name='edit-find-symbolic')
         row.set_title(title='<big><b>Libadwaita uno</b></big>')
         row.set_subtitle(subtitle='Subtitle uno')
+        row.get_style_context().add_class(class_name='error')
         self.listbox.append(child=row)
 
         row = Adw.ExpanderRow.new()
         row.set_icon_name(icon_name='edit-find-symbolic')
         row.set_title(title='Libadwaita dos')
         row.set_subtitle(subtitle='Subtitle dos')
+        row.get_style_context().add_class(class_name='success')
         self.listbox.append(child=row)
 
 

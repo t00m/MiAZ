@@ -103,6 +103,7 @@ class PreferencesWindow(Adw.PreferencesWindow):
 
     def create_action_row_res_countries(self):
         row = Adw.ActionRow.new()
+        row.get_style_context().add_class(class_name='error')
         row.set_title("Countries")
         row.set_icon_name('miaz-res-countries')
         button = self.gui.create_button('miaz-search', '', self.show_res_countries)
@@ -187,6 +188,7 @@ class PreferencesWindow(Adw.PreferencesWindow):
         btnRepoSource = self.gui.create_button ('document-edit-symbolic', '', self.show_filechooser_source, css_classes=['flat'])
         btnRepoSource.set_valign(Gtk.Align.CENTER)
         row = Adw.ActionRow.new()
+        row.get_style_context().add_class(class_name='error')
         row.set_title("Source")
         row.set_subtitle(source)
         row.set_icon_name('folder-symbolic')
@@ -206,6 +208,7 @@ class PreferencesWindow(Adw.PreferencesWindow):
         except:
             target = '<i>Folder not set</i>'
         row = Adw.ActionRow.new()
+        row.get_style_context().add_class(class_name='warning')
         row.set_title("Target")
         row.set_subtitle(target)
         row.set_icon_name('folder-symbolic')
