@@ -71,16 +71,13 @@ class GUI(Adw.Application):
 
         ## HeaderBar [[
         self.header = Adw.HeaderBar()
-
-        # ~ stack_switcher = Gtk.StackSwitcher.new()
-        # ~ stack_switcher.set_stack(stack=self.stack)
         self.header.set_title_widget(title_widget=self.switcher)
         self.win.set_titlebar(self.header)
 
         # Add Search button to the titlebar (Left side)
-        button = Gtk.Button.new_from_icon_name('miaz-search')
-        self.header.pack_start(button)
-        button.connect('clicked', self.show_searchbar)
+        # ~ button = Gtk.Button.new_from_icon_name('miaz-search')
+        # ~ self.header.pack_start(button)
+        # ~ button.connect('clicked', self.show_searchbar)
 
         # Add Menu Button to the titlebar (Right Side)
         menu = MiAZMenuButton(MiAZ_APP_MENU, 'app-menu')

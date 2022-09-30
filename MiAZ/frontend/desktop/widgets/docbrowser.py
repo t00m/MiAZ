@@ -29,37 +29,77 @@ class MiAZDocBrowser(Gtk.Box):
         self.log = get_logger('MiAZDocBrowser')
         self.gui = gui
         self.config = self.gui.config
-        # ~ self.set_margin_top(margin=0)
-        # ~ self.set_margin_end(margin=12)
-        # ~ self.set_margin_bottom(margin=12)
-        # ~ self.set_margin_start(margin=12)
         self.set_vexpand(True)
 
         self.setup_toolbar()
-        self.setup_listbox()
+        self.setup_view_listbox()
+        self.setup_stack()
 
 
-        # Filename format: {timestamp}-{country}-{lang}-{collection}-{organization}-{purpose}-{who}.{extension}
+        # Filename format: {timestamp}-{country}-{collection}-{from}-{purpose}-{concept}-{to}.{extension}
 
+    def setup_stack(self):
+        self.stack = Adw.ViewStack()
+        self.append(self.stack)
+
+        page = self.stack.add_named(self.listbox, 'view-list')
+        page.set_icon_name('miaz-view-list')
+
+        view_grid = Gtk.Label.new('grid')
+        page = self.stack.add_named(view_grid, 'view-grid')
+        page.set_icon_name('miaz-view-grid')
+
+        view_tree = Gtk.Label.new('tree')
+        page = self.stack.add_named(view_tree, 'view-tree')
+        page.set_icon_name('miaz-view-tree')
 
     def setup_toolbar(self):
         # https://gist.github.com/Afacanc38/76ce9b3260307bea64ebf3506b485147
-
-        self.ent_sb = Gtk.SearchEntry(placeholder_text="Type here")
+        # Toolbar
         toolbar = Gtk.CenterBox()
         toolbar.set_margin_top(margin=6)
         toolbar.set_margin_end(margin=6)
         toolbar.set_margin_bottom(margin=6)
         toolbar.set_margin_start(margin=6)
-        toolbar.set_start_widget(self.ent_sb)
+
+        ## Filter box (left side)
+        boxFilters = Gtk.Box.new(orientation=Gtk.Orientation.HORIZONTAL, spacing=3)
+        self.ent_sb = Gtk.SearchEntry(placeholder_text="Type here")
+        boxFilters.append(self.ent_sb)
+        self.cmbCountry = Gtk.ComboBox()
+        boxFilters.append(self.cmbCountry)
+        toolbar.set_start_widget(boxFilters)
+
+        # Views (right side)
+        boxViews = Gtk.Box.new(orientation=Gtk.Orientation.HORIZONTAL, spacing=0)
+        boxViews.get_style_context().add_class(class_name='linked')
+        button = self.gui.create_button('miaz-view-list', '', self.show_view_list)
+        boxViews.append(button)
+        button = self.gui.create_button('miaz-view-grid', '', self.show_view_grid)
+        boxViews.append(button)
+        button = self.gui.create_button('miaz-view-tree', '', self.show_view_tree)
+        boxViews.append(button)
+        toolbar.set_end_widget(boxViews)
+
         self.append(toolbar)
 
         self.controller = Gtk.EventControllerKey()
         self.controller.connect('key-released', self.on_key_released)
         self.add_controller(self.controller)
 
+    def nop(self, *args):
+        self.log.debug(args)
 
-    def setup_listbox(self):
+    def show_view_list(self, *args):
+        self.stack.set_visible_child_name('view-list')
+
+    def show_view_grid(self, *args):
+        self.stack.set_visible_child_name('view-grid')
+
+    def show_view_tree(self, *args):
+        self.stack.set_visible_child_name('view-tree')
+
+    def setup_view_listbox(self):
         self.listbox = Gtk.ListBox.new()
         self.listbox.set_show_separators(True)
         self.listbox.set_selection_mode(mode=Gtk.SelectionMode.MULTIPLE)
@@ -70,11 +110,11 @@ class MiAZDocBrowser(Gtk.Box):
         self.listbox.set_margin_start(margin=6)
         self.listbox.get_style_context().add_class(class_name='boxed-list')
         self.listbox.set_filter_func(self.clb_visible_function)
-        self.append(child=self.listbox)
+        # ~ self.append(child=self.listbox)
 
         # Row for displaying when there is no documents available
         self.nodata = Adw.ExpanderRow.new()
-        self.nodata.set_icon_name(icon_name='MiAZ-big')
+        # ~ self.nodata.set_icon_name(icon_name='MiAZ-big')
         self.nodata.set_title(title='<b>No documents found</b>')
         self.nodata.set_enable_expansion(False)
         self.nodata.set_show_enable_switch(False)
@@ -83,7 +123,7 @@ class MiAZDocBrowser(Gtk.Box):
 
         row = Adw.ExpanderRow.new()
         row.set_icon_name(icon_name='edit-find-symbolic')
-        row.set_title(title='Libadwaita uno')
+        row.set_title(title='<big><b>Libadwaita uno</b></big>')
         row.set_subtitle(subtitle='Subtitle uno')
         self.listbox.append(child=row)
 
