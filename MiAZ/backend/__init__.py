@@ -89,7 +89,7 @@ class MiAZBackend:
 
             # Check extension
             ext_allowed = self.conf['extensions'].exists(ext)
-            if ext_allowed:
+            if not ext_allowed:
                 valid &= False
                 reasons.append((False, "Extension '%s' not allowed. Add it first." % ext))
             else:
