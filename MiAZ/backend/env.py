@@ -52,6 +52,7 @@ ENV['APP']['website'] = 'https://github.com/t00m/MiAZ'
 ENV['LPATH'] = {}
 ENV['LPATH']['ROOT'] = os.path.join(ENV['CONF']['USER_DIR'], ".%s" % ENV['APP']['shortname'])
 ENV['LPATH']['ETC'] = os.path.join(ENV['LPATH']['ROOT'], 'etc')
+ENV['LPATH']['REPOS'] = os.path.join(ENV['LPATH']['ETC'], 'repos')
 ENV['LPATH']['VAR'] = os.path.join(ENV['LPATH']['ROOT'], 'var')
 ENV['LPATH']['DB'] = os.path.join(ENV['LPATH']['VAR'], 'db')
 ENV['LPATH']['CACHE'] = os.path.join(ENV['LPATH']['VAR'], 'cache')

@@ -18,6 +18,14 @@ class MiAZConfigApp(MiAZConfig):
             must_copy = False
         )
 
+    def exists(self, key: str) -> bool:
+        config = self.load()
+        if key in config:
+            found = True
+        else:
+            found = False
+        return found
+
 class MiAZConfigSettingsCountries(MiAZConfig):
     def __init__(self):
         super().__init__(
@@ -28,6 +36,15 @@ class MiAZConfigSettingsCountries(MiAZConfig):
                             'MiAZ-countries.json'),
             must_copy = False
         )
+
+    # ~ def exists(self, key: str) -> bool:
+        # ~ config = self.load_global()
+        # ~ try:
+            # ~ config[key]
+            # ~ found = True
+        # ~ except KeyError:
+            # ~ found = False
+        # ~ return found
 
 class MiAZConfigSettingsLanguages(MiAZConfig):
     def __init__(self):
@@ -103,3 +120,12 @@ class MiAZConfigSettingsExtensions(MiAZConfig):
             for section in esections:
                 sections.add(section)
         return sections
+
+    # ~ def exists(self, key: str) -> bool:
+        # ~ config = self.load_global()
+        # ~ try:
+            # ~ config[key]
+            # ~ found = True
+        # ~ except KeyError:
+            # ~ found = False
+        # ~ return found

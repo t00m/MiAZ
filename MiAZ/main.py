@@ -13,6 +13,7 @@ from MiAZ.backend.log import get_logger
 class MiAZ:
     def __init__(self, params) -> None:
         self.setup_environment()
+        # ~ self.backend = MiAZBackend(params)
         self.log = get_logger('MiAZ.Main')
         self.log.info("%s v%s - Start", ENV['APP']['shortname'], get_version())
         self.params = params
@@ -23,6 +24,7 @@ class MiAZ:
         else:
             from MiAZ.frontend.console.gui import GUI
         app = GUI(application_id="com.example.MiAZ")
+        # ~ app.set_backend(self.backend)
         app.run()
         self.log.info("%s v%s - End", ENV['APP']['shortname'], get_version())
 

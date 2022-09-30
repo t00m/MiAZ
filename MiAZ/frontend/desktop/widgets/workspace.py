@@ -19,8 +19,8 @@ from gi.repository.GdkPixbuf import Pixbuf
 
 from MiAZ.backend.env import ENV
 from MiAZ.backend.log import get_logger
-from MiAZ.backend.controller import valid_filename
-from MiAZ.backend.controller import get_documents, valid_filename
+# ~ from MiAZ.backend.controller import valid_filename
+# ~ from MiAZ.backend.controller import get_documents, valid_filename
 from MiAZ.frontend.desktop.util import get_file_mimetype
 from MiAZ.frontend.desktop.icons import MiAZIconManager
 from MiAZ.frontend.desktop.widgets.treeview import MiAZTreeView
@@ -29,11 +29,11 @@ from MiAZ.frontend.desktop.widgets.treeview import MiAZTreeView
 class MiAZWorkspace(Gtk.Box):
     """ Wrapper for Gtk.Stack with  with a StackSwitcher """
 
-    def __init__(self, gui):
+    def __init__(self, app):
         super(MiAZWorkspace, self).__init__(orientation=Gtk.Orientation.VERTICAL)
         self.log = get_logger('MiAZWorkspace')
-        self.gui = gui
-        self.config = self.gui.config
+        self.app = app
+        self.config = self.app.get_config('app')
         self.set_vexpand(True)
         self.set_margin_top(margin=6)
         self.set_margin_end(margin=6)
@@ -81,7 +81,7 @@ class MiAZWorkspace(Gtk.Box):
 
         # Model: document icon, mimetype, current filename, suggested filename (if needed), accept suggestion, filepath
         self.store = Gtk.TreeStore(Pixbuf, str, bool, str, str, str, str)
-        self.treeview = MiAZTreeView(self.gui)
+        self.treeview = MiAZTreeView(self.app)
         self.treeview.set_model(self.store)
 
         self.update()
@@ -200,33 +200,33 @@ class MiAZWorkspace(Gtk.Box):
 
     def update(self):
         self.store.clear()
-        try:
-            source_path = self.config.get('source')
-        except KeyError:
-            return None
+        # ~ try:
+            # ~ source_path = self.config.get('source')
+        # ~ except KeyError:
+            # ~ return None
 
-        documents = get_documents(source_path)
-        icon = Pixbuf.new_from_file(ENV['FILE']['APPICON'])
-        icon_ko = self.gui.icman.get_pixbuf_by_name('miaz-cancel', 24)
-        icon_ok = self.gui.icman.get_pixbuf_by_name('miaz-ok', 24)
-        ndocs = 0
-        for filepath in documents:
-            document = os.path.basename(filepath)
-            mimetype = get_file_mimetype(filepath)
-            icon = self.gui.icman.get_pixbuf_mimetype_from_file(filepath, 36, 36)
-            valid, reasons = valid_filename(filepath)
-            if not valid:
-                ndocs += 1
-                node = self.store.insert_with_values(None, -1, (0, 1, 2, 3, 4, 5, 6), (icon, mimetype, False, "<b>%s</b>" % document, document, filepath, "FILE"))
-                for reason in reasons:
-                    passed, message = reason
-                    if passed:
-                        self.store.insert_with_values(node, -1, (0, 3, 6), (icon_ok, "<i>%s</i>" % message, "REASON"))
-                    else:
-                        self.store.insert_with_values(node, -1, (0, 3, 6), (icon_ko, "<i>%s</i>" % message, "REASON"))
-            else:
-                self.log.debug("Document '%s' is valid", document)
-        self.log.debug("Nº Invalid Documents: %d", ndocs)
+        # ~ documents = get_documents(source_path)
+        # ~ icon = Pixbuf.new_from_file(ENV['FILE']['APPICON'])
+        # ~ icon_ko = self.app.icman.get_pixbuf_by_name('miaz-cancel', 24)
+        # ~ icon_ok = self.app.icman.get_pixbuf_by_name('miaz-ok', 24)
+        # ~ ndocs = 0
+        # ~ for filepath in documents:
+            # ~ document = os.path.basename(filepath)
+            # ~ mimetype = get_file_mimetype(filepath)
+            # ~ icon = self.app.icman.get_pixbuf_mimetype_from_file(filepath, 36, 36)
+            # ~ valid, reasons = valid_filename(filepath)
+            # ~ if not valid:
+                # ~ ndocs += 1
+                # ~ node = self.store.insert_with_values(None, -1, (0, 1, 2, 3, 4, 5, 6), (icon, mimetype, False, "<b>%s</b>" % document, document, filepath, "FILE"))
+                # ~ for reason in reasons:
+                    # ~ passed, message = reason
+                    # ~ if passed:
+                        # ~ self.store.insert_with_values(node, -1, (0, 3, 6), (icon_ok, "<i>%s</i>" % message, "REASON"))
+                    # ~ else:
+                        # ~ self.store.insert_with_values(node, -1, (0, 3, 6), (icon_ko, "<i>%s</i>" % message, "REASON"))
+            # ~ else:
+                # ~ self.log.debug("Document '%s' is valid", document)
+        # ~ self.log.debug("Nº Invalid Documents: %d", ndocs)
 
     def edit_filename(self, widget, path, target):
         treeiter = self.sorted_model.get_iter(path)
@@ -260,7 +260,7 @@ class MiAZWorkspace(Gtk.Box):
     def clb_visible_function(self, model, itr, data):
         item_name = model.get(itr, 3)[0]
         row_type = model.get(itr, 6)[0]
-        sbentry = self.gui.get_searchbar_entry()
+        sbentry = self.app.get_searchbar_entry()
         filter_text = sbentry.get_text()
 
         if row_type == 'FOLDER' or row_type == 'REASON':

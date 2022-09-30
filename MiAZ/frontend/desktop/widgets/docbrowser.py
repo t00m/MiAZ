@@ -24,11 +24,13 @@ from MiAZ.backend.config.settings import MiAZConfigSettingsExtensions as Ext
 class MiAZDocBrowser(Gtk.Box):
     """ MiAZ Doc Browser Widget"""
 
-    def __init__(self, gui):
+    def __init__(self, app):
         super(MiAZDocBrowser, self).__init__(spacing=12, orientation=Gtk.Orientation.VERTICAL)
         self.log = get_logger('MiAZDocBrowser')
-        self.gui = gui
-        self.config = self.gui.config
+        self.app = app
+        self.config = self.app.get_config('app')
+        self.log.debug(self.config)
+        self.log.debug(self.config.exists('target'))
         self.set_vexpand(True)
 
         self.setup_toolbar()
@@ -75,11 +77,11 @@ class MiAZDocBrowser(Gtk.Box):
         # Views (right side)
         boxViews = Gtk.Box.new(orientation=Gtk.Orientation.HORIZONTAL, spacing=0)
         boxViews.get_style_context().add_class(class_name='linked')
-        # ~ button = self.gui.create_button('miaz-view-list', '', self.show_view_list)
+        # ~ button = self.app.create_button('miaz-view-list', '', self.show_view_list)
         # ~ boxViews.append(button)
-        # ~ button = self.gui.create_button('miaz-view-grid', '', self.show_view_grid)
+        # ~ button = self.app.create_button('miaz-view-grid', '', self.show_view_grid)
         # ~ boxViews.append(button)
-        # ~ button = self.gui.create_button('miaz-view-tree', '', self.show_view_tree)
+        # ~ button = self.app.create_button('miaz-view-tree', '', self.show_view_tree)
         # ~ boxViews.append(button)
         toolbar.set_end_widget(boxViews)
 
@@ -141,7 +143,7 @@ class MiAZDocBrowser(Gtk.Box):
 
     def clb_visible_function(self, row):
         title = row.get_title()
-        # ~ sbentry = self.gui.get_searchbar_entry()
+        # ~ sbentry = self.app.get_searchbar_entry()
         filter_text = self.ent_sb.get_text()
         if filter_text.upper() in title.upper():
             return True
@@ -157,7 +159,7 @@ class MiAZDocBrowser(Gtk.Box):
         # ~ self.flowbox = Gtk.FlowBox.new()
 
     def on_key_released(self, widget, keyval, keycode, state):
-        # ~ self.log.debug("Active window: %s", self.gui.get_active_window())
+        # ~ self.log.debug("Active window: %s", self.app.get_active_window())
         keyname = Gdk.keyval_name(keyval)
         # ~ self.log.debug("Key: %s", keyname)
         self.filter_view()

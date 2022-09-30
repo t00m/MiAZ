@@ -24,15 +24,15 @@ from MiAZ.frontend.desktop.widgets.who import MiAZWho
 
 
 class PreferencesWindow(Adw.PreferencesWindow):
-    def __init__(self, gui):
+    def __init__(self, app):
         self.log = get_logger('MiAZ.Desktop.Settings')
-        self.gui = gui
-        self.config = gui.config
-        self.win = self.gui.win
-        self.sm = self.gui.get_style_manager()
+        self.app = app
+        # ~ self.config = gui.config
+        self.win = self.app.win
+        self.sm = self.app.get_style_manager()
         self.color_scheme = self.sm.get_color_scheme()
         super().__init__(title='Preferences')
-        self.set_transient_for(self.gui.win)
+        self.set_transient_for(self.app.win)
         page = Adw.PreferencesPage.new()
         page.set_title("Preferences")
         page.add(self.get_group_repositories())
@@ -82,8 +82,8 @@ class PreferencesWindow(Adw.PreferencesWindow):
         row = Adw.ActionRow.new()
         row.set_title("Dark mode theme")
         row.set_icon_name('miaz-theme')
-        button = self.gui.create_switch_button('', '', self.on_theme_switched)
-        # ~ button = self.gui.create_button('', 'Dark?', self.on_theme_switched)
+        button = self.app.create_switch_button('', '', self.on_theme_switched)
+        # ~ button = self.app.create_button('', 'Dark?', self.on_theme_switched)
         is_dark = self.color_scheme == self.sm.get_dark()
         button.set_active(is_dark)
         row.add_suffix(widget=switch)
@@ -106,7 +106,7 @@ class PreferencesWindow(Adw.PreferencesWindow):
         row.get_style_context().add_class(class_name='error')
         row.set_title("Countries")
         row.set_icon_name('miaz-res-countries')
-        button = self.gui.create_button('miaz-search', '', self.show_res_countries)
+        button = self.app.create_button('miaz-search', '', self.show_res_countries)
         box = row.get_child()
         box.append(button)
         return row
@@ -115,7 +115,7 @@ class PreferencesWindow(Adw.PreferencesWindow):
         row = Adw.ActionRow.new()
         row.set_title("Collections")
         row.set_icon_name('miaz-res-collections')
-        button = self.gui.create_button('document-edit-symbolic', '', self.show_res_collections)
+        button = self.app.create_button('document-edit-symbolic', '', self.show_res_collections)
         box = row.get_child()
         box.append(button)
         return row
@@ -124,7 +124,7 @@ class PreferencesWindow(Adw.PreferencesWindow):
         row = Adw.ActionRow.new()
         row.set_title("Purposes")
         row.set_icon_name('miaz-res-purposes')
-        button = self.gui.create_button('document-edit-symbolic', '', self.show_res_purposes)
+        button = self.app.create_button('document-edit-symbolic', '', self.show_res_purposes)
         box = row.get_child()
         box.append(button)
         return row
@@ -133,7 +133,7 @@ class PreferencesWindow(Adw.PreferencesWindow):
         row = Adw.ActionRow.new()
         row.set_title("Organizations")
         row.set_icon_name('miaz-res-organizations')
-        button = self.gui.create_button('document-edit-symbolic', '', self.show_res_organizations)
+        button = self.app.create_button('document-edit-symbolic', '', self.show_res_organizations)
         box = row.get_child()
         box.append(button)
         return row
@@ -142,50 +142,51 @@ class PreferencesWindow(Adw.PreferencesWindow):
         row = Adw.ActionRow.new()
         row.set_title("Extensions")
         row.set_icon_name('miaz-res-extensions')
-        button = self.gui.create_button('miaz-search', '', self.show_res_extensions)
+        button = self.app.create_button('miaz-search', '', self.show_res_extensions)
         box = row.get_child()
         box.append(button)
         return row
 
     def show_res_countries(self, *args):
-        view = MiAZCountries(self.gui)
+        view = MiAZCountries(self.app)
         view.update()
-        dialog = self.gui.create_dialog(self, 'Countries', view, 600, 400)
+        dialog = self.app.create_dialog(self, 'Countries', view, 600, 400)
         dialog.show()
 
     def show_res_collections(self, *args):
-        view = MiAZCollections(self.gui)
+        view = MiAZCollections(self.app)
         view.update()
-        dialog = self.gui.create_dialog(self.gui.win, 'Collections', view)
+        dialog = self.app.create_dialog(self.app.win, 'Collections', view)
         dialog.show()
 
     def show_res_purposes(self, *args):
-        view = MiAZPurposes(self.gui)
+        view = MiAZPurposes(self.app)
         view.update()
-        dialog = self.gui.create_dialog(self.gui.win, 'Purposes', view)
+        dialog = self.app.create_dialog(self.app.win, 'Purposes', view)
         dialog.show()
 
     def show_res_organizations(self, *args):
-        view = MiAZOrganizations(self.gui)
+        view = MiAZOrganizations(self.app)
         view.update()
-        dialog = self.gui.create_dialog(self.gui.win, 'Organizations', view)
+        dialog = self.app.create_dialog(self.app.win, 'Organizations', view)
         dialog.show()
 
     def show_res_extensions(self, *args):
-        view = MiAZExtensions(self.gui)
+        view = MiAZExtensions(self.app)
         view.update()
-        dialog = self.gui.create_dialog(self.gui.win, 'Extensions', view)
+        dialog = self.app.create_dialog(self.app.win, 'Extensions', view)
         dialog.show()
 
     def noop(self, *args):
         print("NOOP")
 
     def create_action_row_repo_source(self):
+        config = self.app.get_config('app')
         try:
-            source = self.gui.config.get('source')
+            source = config.get('source')
         except:
             source = '<i>Folder not set</i>'
-        btnRepoSource = self.gui.create_button ('document-edit-symbolic', '', self.show_filechooser_source, css_classes=['flat'])
+        btnRepoSource = self.app.create_button ('document-edit-symbolic', '', self.show_filechooser_source, css_classes=['flat'])
         btnRepoSource.set_valign(Gtk.Align.CENTER)
         row = Adw.ActionRow.new()
         row.get_style_context().add_class(class_name='error')
@@ -203,8 +204,9 @@ class PreferencesWindow(Adw.PreferencesWindow):
         return row
 
     def create_action_row_repo_target(self):
+        config = self.app.get_config('app')
         try:
-            target = self.gui.config.get('target')
+            target = config.get('target')
         except:
             target = '<i>Folder not set</i>'
         row = Adw.ActionRow.new()
@@ -213,12 +215,14 @@ class PreferencesWindow(Adw.PreferencesWindow):
         row.set_subtitle(target)
         row.set_icon_name('folder-symbolic')
         boxRepoTargetButton = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
-        boxRepoTargetButton.set_hexpand(False)
-        btnRepoTarget = self.gui.create_button ('document-edit-symbolic', '', self.show_filechooser_target, css_classes=['flat'])
+
+        # ~ boxRepoTargetButton.set_hexpand(False)
+        btnRepoTarget = self.app.create_button ('document-edit-symbolic', '', self.show_filechooser_target, css_classes=['flat'])
+        btnRepoTarget.set_valign(Gtk.Align.CENTER)
         btnRepoTarget.set_hexpand(False)
-        boxRepoTargetButton.append(btnRepoTarget)
+        # ~ boxRepoTargetButton.append(btnRepoTarget)
         box = row.get_child()
-        box.append(boxRepoTargetButton)
+        box.append(btnRepoTarget)
         return row
 
     def show_filechooser_source(self, *args):
@@ -253,7 +257,7 @@ class PreferencesWindow(Adw.PreferencesWindow):
                 self.lblRepoSource.set_markup(dirpath)
                 self.config.set('source', dirpath)
                 dialog.destroy()
-                self.gui.workspace.refresh_view()
+                self.app.workspace.refresh_view()
         else:
             dialog.destroy()
 
@@ -267,7 +271,7 @@ class PreferencesWindow(Adw.PreferencesWindow):
                 self.lblRepoTarget.set_markup(dirpath)
                 self.config.set('target', dirpath)
                 dialog.destroy()
-                self.gui.workspace.refresh_view()
+                self.app.workspace.refresh_view()
         else:
             dialog.destroy()
 
@@ -288,11 +292,11 @@ class PreferencesWindow(Adw.PreferencesWindow):
         # ~ separator = Gtk.Separator(orientation=Gtk.Orientation.HORIZONTAL)
         # ~ boxRepoSource.append(separator)
         boxRepoSourceButton = Gtk.Box(spacing=6, orientation=Gtk.Orientation.HORIZONTAL)
-        btnRepoSource = self.gui.create_button ('miaz-folder', '', self.show_filechooser_source)
+        btnRepoSource = self.app.create_button ('miaz-folder', '', self.show_filechooser_source)
         btnRepoSource.set_hexpand(False)
         # ~ btnRepoSource.set_has_frame(True)
         try:
-            source = self.gui.config.get('source')
+            source = self.app.config.get('source')
         except:
             source = '<i>Folder not set</i>'
         self.lblRepoSource = Gtk.Label()
@@ -311,11 +315,11 @@ class PreferencesWindow(Adw.PreferencesWindow):
         # ~ separator = Gtk.Separator(orientation=Gtk.Orientation.HORIZONTAL)
         # ~ boxRepoTarget.append(separator)
         boxRepoTargetButton = Gtk.Box(spacing=6, orientation=Gtk.Orientation.HORIZONTAL)
-        btnRepoTarget = self.gui.create_button ('miaz-folder', '', self.show_filechooser_target)
+        btnRepoTarget = self.app.create_button ('miaz-folder', '', self.show_filechooser_target)
         btnRepoTarget.set_hexpand(False)
 
         try:
-            target = self.gui.config.get('target')
+            target = self.app.config.get('target')
         except:
             target = '<i>Folder not set</i>'
         self.lblRepoTarget = Gtk.Label()
@@ -330,11 +334,11 @@ class PreferencesWindow(Adw.PreferencesWindow):
 class MiAZSettings(Gtk.Box):
     """ Wrapper for Gtk.Stack with  with a StackSwitcher """
 
-    def __init__(self, gui):
+    def __init__(self, app):
         super(MiAZSettings, self).__init__(orientation=Gtk.Orientation.VERTICAL)
-        self.gui = gui
+        self.app = app
         self.log = get_logger('MiAZ.GUI.Settings')
-        self.config = gui.config
+        # ~ self.config = gui.config
         self.set_vexpand(True)
         self.set_margin_top(margin=12)
         self.set_margin_end(margin=12)
@@ -378,7 +382,7 @@ class MiAZSettings(Gtk.Box):
 
     def create_section_appearance(self):
         frmAppearance = Gtk.Frame()
-        self.sm = self.gui.get_style_manager()
+        self.sm = self.app.get_style_manager()
         self.color_scheme = self.sm.get_color_scheme()
         is_dark = self.color_scheme == self.sm.get_dark()
         hbox_darkmode = Gtk.Box(spacing = 24, orientation=Gtk.Orientation.HORIZONTAL)
@@ -420,11 +424,11 @@ class MiAZSettings(Gtk.Box):
         separator = Gtk.Separator(orientation=Gtk.Orientation.HORIZONTAL)
         boxRepoSource.append(separator)
         boxRepoSourceButton = Gtk.Box(spacing=6, orientation=Gtk.Orientation.HORIZONTAL)
-        btnRepoSource = self.gui.create_button ('miaz-folder', '', self.show_filechooser_source)
+        btnRepoSource = self.app.create_button ('miaz-folder', '', self.show_filechooser_source)
         btnRepoSource.set_hexpand(False)
         # ~ btnRepoSource.set_has_frame(True)
         try:
-            source = self.gui.config.get('source')
+            source = self.app.config.get('source')
         except:
             source = '<i>Folder not set</i>'
         self.lblRepoSource = Gtk.Label()
@@ -443,11 +447,11 @@ class MiAZSettings(Gtk.Box):
         separator = Gtk.Separator(orientation=Gtk.Orientation.HORIZONTAL)
         boxRepoTarget.append(separator)
         boxRepoTargetButton = Gtk.Box(spacing=6, orientation=Gtk.Orientation.HORIZONTAL)
-        btnRepoTarget = self.gui.create_button ('miaz-folder', '', self.show_filechooser_target)
+        btnRepoTarget = self.app.create_button ('miaz-folder', '', self.show_filechooser_target)
         btnRepoTarget.set_hexpand(False)
         # ~ btnRepoTarget.set_has_frame(True)
         try:
-            target = self.gui.config.get('target')
+            target = self.app.config.get('target')
         except:
             target = '<i>Folder not set</i>'
         self.lblRepoTarget = Gtk.Label()
@@ -483,36 +487,36 @@ class MiAZSettings(Gtk.Box):
         flowbox.set_selection_mode(mode=Gtk.SelectionMode.NONE)
 
         n = 0
-        button = self.gui.create_button ('countries', 'Countries', self.show_res_countries)
+        button = self.app.create_button ('countries', 'Countries', self.show_res_countries)
         # ~ button.set_has_frame(True)
         flowbox.insert(widget=button, position=n)
         n += 1
 
-        # ~ button = self.gui.create_button ('languages', 'Languages', self.show_res_languages)
+        # ~ button = self.app.create_button ('languages', 'Languages', self.show_res_languages)
         # ~ button.set_has_frame(True)
         # ~ flowbox.insert(widget=button, position=1)
 
-        button = self.gui.create_button ('collections', 'Collections', self.show_res_collections)
+        button = self.app.create_button ('collections', 'Collections', self.show_res_collections)
         # ~ button.set_has_frame(True)
         flowbox.insert(widget=button, position=n)
         n += 1
 
-        button = self.gui.create_button ('purposes', 'Purposes', self.show_res_purposes)
+        button = self.app.create_button ('purposes', 'Purposes', self.show_res_purposes)
         # ~ button.set_has_frame(True)
         flowbox.insert(widget=button, position=n)
         n += 1
 
-        button = self.gui.create_button ('organizations', 'Organizations', self.show_res_organizations)
+        button = self.app.create_button ('organizations', 'Organizations', self.show_res_organizations)
         # ~ button.set_has_frame(True)
         flowbox.insert(widget=button, position=n)
         n += 1
 
-        button = self.gui.create_button ('who', 'Who', self.show_res_who)
+        button = self.app.create_button ('who', 'Who', self.show_res_who)
         # ~ button.set_has_frame(True)
         flowbox.insert(widget=button, position=5)
         n += 1
 
-        button = self.gui.create_button ('extensions', 'File extensions', self.show_res_extensions)
+        button = self.app.create_button ('extensions', 'File extensions', self.show_res_extensions)
         # ~ button.set_has_frame(True)
         flowbox.insert(widget=button, position=6)
         n += 1
@@ -538,12 +542,12 @@ class MiAZSettings(Gtk.Box):
         flowbox.set_max_children_per_line(n_children=3)
         flowbox.set_selection_mode(mode=Gtk.SelectionMode.NONE)
 
-        button = self.gui.create_button('miaz-backup', 'Backup', self.backup)
+        button = self.app.create_button('miaz-backup', 'Backup', self.backup)
         # ~ button.set_has_frame(True)
-        icon = self.gui.icman.get_image_by_name('miaz-backup', 128, 128)
+        icon = self.app.icman.get_image_by_name('miaz-backup', 128, 128)
         flowbox.insert(widget=icon, position=0)
 
-        button = self.gui.create_button('miaz-restore', 'Restore', self.restore)
+        button = self.app.create_button('miaz-restore', 'Restore', self.restore)
         # ~ button.set_has_frame(True)
         flowbox.insert(widget=button, position=1)
 
@@ -554,45 +558,45 @@ class MiAZSettings(Gtk.Box):
         return frmBckRes
 
     def show_res_countries(self, *args):
-        view = MiAZCountries(self.gui)
+        view = MiAZCountries(self.app)
         view.update()
-        dialog = self.gui.create_dialog(self.gui.win, 'Countries', view, 600, 400)
+        dialog = self.app.create_dialog(self.app.win, 'Countries', view, 600, 400)
         dialog.show()
 
     def show_res_languages(self, *args):
-        view = MiAZLanguages(self.gui)
+        view = MiAZLanguages(self.app)
         view.update()
-        dialog = self.gui.create_dialog(self.gui.win, 'Languages', view, 600, 400)
+        dialog = self.app.create_dialog(self.app.win, 'Languages', view, 600, 400)
         dialog.show()
 
     def show_res_who(self, *args):
-        view = MiAZWho(self.gui)
+        view = MiAZWho(self.app)
         view.update()
-        dialog = self.gui.create_dialog(self.gui.win, "Who's who", view, 600, 400)
+        dialog = self.app.create_dialog(self.app.win, "Who's who", view, 600, 400)
         dialog.show()
 
     def show_res_collections(self, *args):
-        view = MiAZCollections(self.gui)
+        view = MiAZCollections(self.app)
         view.update()
-        dialog = self.gui.create_dialog(self.gui.win, 'Collections', view)
+        dialog = self.app.create_dialog(self.app.win, 'Collections', view)
         dialog.show()
 
     def show_res_purposes(self, *args):
-        view = MiAZPurposes(self.gui)
+        view = MiAZPurposes(self.app)
         view.update()
-        dialog = self.gui.create_dialog(self.gui.win, 'Purposes', view)
+        dialog = self.app.create_dialog(self.app.win, 'Purposes', view)
         dialog.show()
 
     def show_res_organizations(self, *args):
-        view = MiAZOrganizations(self.gui)
+        view = MiAZOrganizations(self.app)
         view.update()
-        dialog = self.gui.create_dialog(self.gui.win, 'Organizations', view)
+        dialog = self.app.create_dialog(self.app.win, 'Organizations', view)
         dialog.show()
 
     def show_res_extensions(self, *args):
-        view = MiAZExtensions(self.gui)
+        view = MiAZExtensions(self.app)
         view.update()
-        dialog = self.gui.create_dialog(self.gui.win, 'Extensions', view)
+        dialog = self.app.create_dialog(self.app.win, 'Extensions', view)
         dialog.show()
 
     def collections_accept(self, *args):
@@ -613,7 +617,7 @@ class MiAZSettings(Gtk.Box):
 
     def show_filechooser_source(self, *args):
         dlgFileChooser = Gtk.Dialog()
-        dlgFileChooser.set_transient_for(self.gui.win)
+        dlgFileChooser.set_transient_for(self.app.win)
         dlgFileChooser.add_buttons('Cancel', Gtk.ResponseType.CANCEL, 'Accept', Gtk.ResponseType.ACCEPT)
         dlgFileChooser.connect('response', self.filechooser_response_source)
         contents = dlgFileChooser.get_content_area()
@@ -624,7 +628,7 @@ class MiAZSettings(Gtk.Box):
 
     def show_filechooser_target(self, *args):
         dlgFileChooser = Gtk.Dialog()
-        dlgFileChooser.set_transient_for(self.gui.win)
+        dlgFileChooser.set_transient_for(self.app.win)
         dlgFileChooser.add_buttons('Cancel', Gtk.ResponseType.CANCEL, 'Accept', Gtk.ResponseType.ACCEPT)
         dlgFileChooser.connect('response', self.filechooser_response_target)
         contents = dlgFileChooser.get_content_area()
@@ -643,7 +647,7 @@ class MiAZSettings(Gtk.Box):
                 self.lblRepoSource.set_markup(dirpath)
                 self.config.set('source', dirpath)
                 dialog.destroy()
-                self.gui.workspace.refresh_view()
+                self.app.workspace.refresh_view()
         else:
             dialog.destroy()
 
@@ -657,7 +661,7 @@ class MiAZSettings(Gtk.Box):
                 self.lblRepoTarget.set_markup(dirpath)
                 self.config.set('target', dirpath)
                 dialog.destroy()
-                self.gui.workspace.refresh_view()
+                self.app.workspace.refresh_view()
         else:
             dialog.destroy()
 

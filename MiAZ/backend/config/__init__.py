@@ -2,7 +2,7 @@ import os
 import shutil
 
 from MiAZ.backend.env import ENV
-from MiAZ.backend.util import load_json, save_json
+from MiAZ.backend.util import json_load, json_save
 
 
 class MiAZConfig():
@@ -36,9 +36,18 @@ class MiAZConfig():
                 self.log.debug("%s - Creating empty config file", self.config_for)
                 self.save({})
 
+    def get_config_for(self):
+        return self.config_for
+
+    def get_config_local(self):
+        return self.config_local
+
+    def get_config_global(self):
+        return self.config_global
+
     def load(self) -> dict:
         try:
-            config = load_json(self.config_local)
+            config = json_load(self.config_local)
         except Exception as error:
             config = None
             self.log.error(error)
@@ -46,7 +55,7 @@ class MiAZConfig():
 
     def load_global(self) -> dict:
         try:
-            items = load_json(self.config_global)
+            items = json_load(self.config_global)
         except Exception as error:
             items = None
             self.log.error(error)
@@ -54,7 +63,7 @@ class MiAZConfig():
 
     def save(self, items: dict) -> bool:
         try:
-            save_json(self.config_local, items)
+            json_save(self.config_local, items)
             self.log.debug("%s - Local config file saved", self.config_for)
             saved = True
         except Exception as error:
@@ -70,3 +79,22 @@ class MiAZConfig():
         config = self.load()
         config[key] = value
         self.save(config)
+
+    def exists(self, key: str) -> bool:
+        if self.must_copy:
+            config = self.load()
+        else:
+            config = self.load_global()
+
+        if isinstance(config, dict):
+            try:
+                config[key]
+                found = True
+            except KeyError:
+                found = False
+        elif isinstance(config, list):
+            if key in config:
+                found = True
+            else:
+                found = False
+        return found

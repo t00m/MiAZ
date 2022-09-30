@@ -13,7 +13,8 @@ from gi.repository import GObject
 from gi.repository import Pango
 
 from MiAZ.backend.env import ENV
-from MiAZ.backend.config.settings import MiAZConfigApp
+
+from MiAZ.backend import MiAZBackend
 from MiAZ.backend.controller import get_documents
 from MiAZ.backend.log import get_logger
 from MiAZ.frontend.desktop.widgets.menu import MiAZ_APP_MENU
@@ -29,21 +30,29 @@ Adw.init()
 class GUI(Adw.Application):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+        self.backend = MiAZBackend()
+        self.config = self.backend.get_conf()
         self.log = get_logger("MiAZ.GUI")
-        self.log.debug("Executing MiAZ Desktop mode")
         GLib.set_application_name(ENV['APP']['name'])
-        self.config = MiAZConfigApp()
         self.connect('activate', self.on_activate)
-        self.icman = MiAZIconManager()
 
     def on_activate(self, app):
         self.win = Gtk.ApplicationWindow(application=self)
         self.win.set_default_size(1024, 728)
+        self.icman = MiAZIconManager()
         self.theme = Gtk.IconTheme.get_for_display(self.win.get_display())
         self.theme.add_search_path(ENV['GPATH']['ICONS'])
         self.win.set_icon_name('MiAZ')
         self.build_gui()
+        self.log.debug("Executing MiAZ Desktop mode")
         self.win.present()
+
+    def get_backend(self):
+        return self.backend
+
+    def get_config(self, name: str):
+        config = self.backend.get_conf()
+        return config[name]
 
     def build_gui(self):
         ## Central Box [[
@@ -127,7 +136,6 @@ class GUI(Adw.Application):
         # ]
 
     def on_key_released(self, widget, keyval, keycode, state):
-        # ~ self.log.debug("Active window: %s", self.gui.get_active_window())
         keyname = Gdk.keyval_name(keyval)
         self.log.debug("Key: %s", keyname)
         if Gdk.ModifierType.CONTROL_MASK & state and keyname == 'f':
