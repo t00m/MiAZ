@@ -9,6 +9,7 @@ from MiAZ.backend.util import json_load, json_save
 from MiAZ.backend.util import valid_key
 from MiAZ.backend.util import guess_datetime
 from MiAZ.backend.util import get_files
+from MiAZ.backend.util import get_file_creation_date
 from MiAZ.backend.config.settings import MiAZConfigApp
 from MiAZ.backend.config.settings import MiAZConfigSettingsCountries
 from MiAZ.backend.config.settings import MiAZConfigSettingsExtensions
@@ -71,11 +72,12 @@ class MiAZBackend:
                 # ~ self.log.debug("Found in config file: %s", doc)
             except:
                 repodct[doc] = {}
-                repodct[doc]['valid'] = self.valid_filename(doc)
+                repodct[doc]['valid'] = self.validate_filename(doc)
+                repodct[doc]['suggested'] = self.suggest_filename(doc)
                 self.log.info("Source repository - Document added: %s", doc)
         json_save(repocnf, repodct)
 
-    def valid_filename(self, filepath: str) -> tuple:
+    def validate_filename(self, filepath: str) -> tuple:
         filename = os.path.basename(filepath)
         reasons = "OK"
         valid = True
@@ -199,4 +201,55 @@ class MiAZBackend:
         return valid, reasons
 
 
+    def suggest_filename(self, filepath: str) -> str:
+        # "{timestamp}-{country}-{collection}-{from}-{purpose}-{concept}-{to}.{extension}"
+        timestamp = ""
+        country = ""
+        lang = ""
+        collection = ""
+        organization = ""
+        purpose = ""
+
+        filename = os.path.basename(filepath)
+        dot = filename.rfind('.')
+        if dot > 0:
+            name = filename[:dot]
+            ext = filename[dot+1:].lower()
+        else:
+            name = filename
+            ext = 'NOEXTENSION'
+
+        fields = name.split('-')
+
+        # ~ Find and/or guess date field
+        found_date = False
+        for field in fields:
+            try:
+                adate = dateparser.parse(field[:8])
+                if len(timestamp) == 0:
+                    timestamp = adate.strftime("%Y%m%d")
+                    found_date = True
+            except Exception as error:
+                pass
+        if not found_date:
+            try:
+                created = get_file_creation_date(filepath)
+                timestamp = created.strftime("%Y%m%d")
+                self.log.debug(timestamp)
+            except Exception as error:
+                print("%s -> %s" % (filepath, error))
+                timestamp = "NODATE"
+
+        # ~ Find and/or guess country field
+        found_country = False
+        for field in fields:
+            if len(field) == 2:
+                is_country = self.conf['countries'].exists(field.upper())
+                if is_country:
+                    country = field.upper()
+                    found_country = True
+        if not found_country:
+            country = "DE"
+
+        return "%s-%s-%s-%s-%s.%s" % (timestamp, country, collection, organization, purpose, ext)
 

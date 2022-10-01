@@ -69,3 +69,8 @@ def get_files(root_dir: str) -> []:
                 if not os.path.basename(thisfile).startswith('.'):
                     documents.add(thisfile)
     return documents
+
+def get_file_creation_date(filepath: str) -> datetime:
+    created = os.stat(filepath).st_ctime
+    adate = datetime.fromtimestamp(created)
+    return adate #.strftime("%Y%m%d")
