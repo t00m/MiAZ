@@ -29,8 +29,6 @@ class MiAZDocBrowser(Gtk.Box):
         self.log = get_logger('MiAZDocBrowser')
         self.app = app
         self.config = self.app.get_config('app')
-        self.log.debug(self.config)
-        self.log.debug(self.config.exists('target'))
         self.set_vexpand(True)
 
         self.setup_toolbar()

@@ -13,7 +13,7 @@ from MiAZ.backend.util import guess_datetime
 
 
 def suggest_filename(filepath: str) -> str:
-    # "{timestamp}-{country}-{collection}-{organization}-{purpose}-{concept}-{who}.{extension}"
+    # "{timestamp}-{country}-{collection}-{from}-{purpose}-{concept}-{to}.{extension}"
     timestamp = ""
     country = ""
     lang = ""

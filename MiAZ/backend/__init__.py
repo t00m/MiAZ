@@ -108,6 +108,7 @@ class MiAZBackend:
         else:
             reasons.append((True, "Right number of fields in filename (%d/7)" % len(fields)))
 
+        # "{timestamp}-{country}-{collection}-{from}-{purpose}-{concept}-{to}.{extension}"
         # Check timestamp (1st field)
         try:
             timestamp = fields[0]
@@ -148,47 +149,41 @@ class MiAZBackend:
             valid &= False
             reasons.append((False, "Field 3. Collection couldn't be checked because this field doesn't exist"))
 
-        # Check purpose (4th field)
+        # Check from (4th field)
         try:
             code = fields[3]
-            is_purpose = self.conf['purposes'].exists(code)
-            if not is_purpose:
-                valid &= False
-                reasons.append((False, "Field 4. Purpose '%s' is not in your list. Please, add it first." % code))
-            else:
-                reasons.append((True, "Field 4. Purpose '%s' accepted. It is in your list." % code))
-        except IndexError:
-            valid &= False
-            reasons.append((False, "Field 4. Purpose couldn't be checked because this field doesn't exist"))
-
-        # Check Organization (5th field)
-        try:
-            code = fields[4]
             is_organization = self.conf['organizations'].exists(code)
             if not is_organization:
                 valid &= False
-                reasons.append((False, "Field 5. Organization '%s' is not in your list. Please, add it first." % code))
+                reasons.append((False, "Field 4. Organization '%s' is not in your list. Please, add it first." % code))
             else:
-                reasons.append((True, "Field 5. Organization '%s' accepted. It is in your list." % code))
+                reasons.append((True, "Field 4. Organization '%s' accepted. It is in your list." % code))
         except IndexError:
             valid &= False
-            reasons.append((False, "Field 5. Organization couldn't be checked because this field doesn't exist"))
+            reasons.append((False, "Field 4. Organization couldn't be checked because this field doesn't exist"))
 
-        # Check Concept (5th field)
+        # Check purpose (5th field)
+        try:
+            code = fields[4]
+            is_purpose = self.conf['purposes'].exists(code)
+            if not is_purpose:
+                valid &= False
+                reasons.append((False, "Field 5. Purpose '%s' is not in your list. Please, add it first." % code))
+            else:
+                reasons.append((True, "Field 5. Purpose '%s' accepted. It is in your list." % code))
+        except IndexError:
+            valid &= False
+            reasons.append((False, "Field 5. Purpose couldn't be checked because this field doesn't exist"))
+
+        # Check Concept (6th field)
         try:
             code = fields[5]
             reasons.append((True, "Field 6. Concept '%s' accepted" % code))
-            # ~ if organization not in organizations:
-                # ~ valid &= False
-                # ~ reasons.append((False, "Field 5. Organization '%s' is not in your list. Please, add it first." % organization))
-            # ~ else:
-                # ~ reasons.append((True, "Field 5. Organization '%s' accepted. It is in your list." % organization))
         except IndexError:
             valid &= False
             reasons.append((False, "Field 6. Concept couldn't be checked because this field doesn't exist"))
 
-
-        # Check Who (6th field)
+        # Check Who (7th field)
         try:
             code = fields[6]
             is_organization = self.conf['organizations'].exists(code)
