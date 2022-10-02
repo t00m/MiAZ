@@ -12,6 +12,7 @@ from MiAZ.backend.util import valid_key
 from MiAZ.backend.util import guess_datetime
 from MiAZ.backend.util import get_files
 from MiAZ.backend.util import get_file_creation_date
+from MiAZ.backend.watcher import MiAZWatcher
 from MiAZ.backend.config.settings import MiAZConfigApp
 from MiAZ.backend.config.settings import MiAZConfigSettingsCountries
 from MiAZ.backend.config.settings import MiAZConfigSettingsExtensions
@@ -36,6 +37,10 @@ class MiAZBackend(GObject.GObject):
         self.conf['collections'] = MiAZConfigSettingsCollections()
         self.conf['purposes'] = MiAZConfigSettingsPurposes()
         self.conf['organizations'] = MiAZConfigSettingsWho()
+        repo_source = self.conf['app'].get('source')
+        repo_target = self.conf['app'].get('target')
+        self.watch_source = MiAZWatcher('Source', repo_source)
+        self.watch_target = MiAZWatcher('Target', repo_target)
 
 
     def get_conf(self) -> dict:
@@ -84,7 +89,7 @@ class MiAZBackend(GObject.GObject):
                 # ~ self.log.debug("Found in config file: %s", doc)
             except:
                 s_repodct[doc] = {}
-                s_repodct[doc]['original'] = doc
+                # ~ s_repodct[doc]['original'] = doc
                 s_repodct[doc]['valid'] = self.validate_filename(doc)
                 s_repodct[doc]['suggested'] = self.suggest_filename(doc)
                 updated |= True

@@ -73,7 +73,10 @@ class MiAZConfig():
 
     def get(self, key: str) -> str:
         config = self.load()
-        return config[key]
+        try:
+            return config[key]
+        except KeyError:
+            return None
 
     def set(self, key: str, value: str) -> None:
         config = self.load()

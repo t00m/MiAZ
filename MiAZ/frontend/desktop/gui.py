@@ -44,7 +44,7 @@ class GUI(Adw.Application):
         self.theme.add_search_path(ENV['GPATH']['ICONS'])
         self.win.set_icon_name('MiAZ')
         self.build_gui()
-        self.backend.check_sources()
+        # ~ self.backend.check_sources()
         self.log.debug("Executing MiAZ Desktop mode")
         self.win.present()
 
