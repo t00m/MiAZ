@@ -105,7 +105,7 @@ class MiAZWorkspace(Gtk.Box):
         renderer = Gtk.CellRendererText()
         renderer.set_property('ellipsize', Pango.EllipsizeMode.MIDDLE)
         renderer.set_property('editable', True)
-        renderer.connect('edited', self.edit_filename)
+        renderer.connect('edited', self.on_edit_filename)
 
         column = Gtk.TreeViewColumn('Suggest filename', renderer, markup=4)
         column.set_visible(True)
@@ -147,7 +147,7 @@ class MiAZWorkspace(Gtk.Box):
         self.sorted_model.set_sort_column_id(1, Gtk.SortType.DESCENDING)
         self.treeview.set_model(self.sorted_model)
 
-        self.treeview.connect('row-activated', self.double_click)
+        self.treeview.connect('row-activated', self.on_double_click)
 
         self.scrwin.set_child(self.treeview)
 
@@ -159,7 +159,7 @@ class MiAZWorkspace(Gtk.Box):
     def on_entry_filename_changed(self, *args):
         self.treefilter.refilter()
 
-    def double_click(self, treeview, treepath, treecolumn):
+    def on_double_click(self, treeview, treepath, treecolumn):
         treeiter = self.sorted_model.get_iter(treepath)
         filepath = self.sorted_model[treeiter][5]
         if os.path.exists(filepath):
@@ -222,7 +222,7 @@ class MiAZWorkspace(Gtk.Box):
                 # ~ self.log.debug("Document '%s' is valid", document)
         # ~ self.log.debug("Nº Invalid Documents: %d", ndocs)
 
-    def edit_filename(self, widget, path, target):
+    def on_edit_filename(self, widget, path, target):
         treeiter = self.sorted_model.get_iter(path)
         source = self.sorted_model[treeiter][4]
         filepath = self.sorted_model[treeiter][5]
@@ -235,8 +235,8 @@ class MiAZWorkspace(Gtk.Box):
             shutil.move(source_path, target_path)
             # ~ self.update()
 
-    def edit_filename_finished(self, widget, path, target):
-        print("edit_filename_finished")
+    def on_edit_filename_finished(self, widget, path, target):
+        print("on_edit_filename_finished")
         treeiter = self.sorted_model.get_iter(path)
         filename = self.sorted_model[treeiter][4]
         # ~ print(filename)

@@ -84,6 +84,7 @@ class MiAZBackend(GObject.GObject):
                 # ~ self.log.debug("Found in config file: %s", doc)
             except:
                 s_repodct[doc] = {}
+                s_repodct[doc]['original'] = doc
                 s_repodct[doc]['valid'] = self.validate_filename(doc)
                 s_repodct[doc]['suggested'] = self.suggest_filename(doc)
                 updated |= True
