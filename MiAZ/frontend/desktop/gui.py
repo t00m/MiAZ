@@ -136,6 +136,10 @@ class GUI(Adw.Application):
         ## ]]
         # ]
 
+    def get_stack_page_by_name(self, name: str) -> Adw.ViewStackPage:
+        widget = self.stack.get_child_by_name(name)
+        return self.stack.get_page(widget)
+
     def on_key_released(self, widget, keyval, keycode, state):
         keyname = Gdk.keyval_name(keyval)
         self.log.debug("Key: %s", keyname)

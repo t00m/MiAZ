@@ -191,6 +191,8 @@ class MiAZWorkspace(Gtk.Box):
                         self.store.insert_with_values(node, -1, (0, 3, 6), (icon_ok, "<i>%s</i>" % message, "REASON"))
                     else:
                         self.store.insert_with_values(node, -1, (0, 3, 6), (icon_ko, "<i>%s</i>" % message, "REASON"))
+        page = self.app.get_stack_page_by_name('workspace')
+        page.set_badge_number(ndocs)
 
 
         # ~ try:
