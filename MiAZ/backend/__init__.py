@@ -42,26 +42,31 @@ class MiAZBackend(GObject.GObject):
         """Return dict with pointers to all config classes"""
         return self.conf
 
-    def get_repo_config_file(self):
+    def get_repo_source_config_file(self):
         repodir = self.conf['app'].get('source')
         repokey = valid_key(repodir)
         return os.path.join(ENV['LPATH']['REPOS'], "source-%s.json" % repokey)
 
+    def get_repo_target_config_file(self):
+        repodir = self.conf['app'].get('target')
+        repokey = valid_key(repodir)
+        return os.path.join(ENV['LPATH']['REPOS'], "target-%s.json" % repokey)
+
     def check_sources(self):
         updated = False
-        repodir = self.conf['app'].get('source')
-        repocnf = self.get_repo_config_file()
-        if os.path.exists(repocnf):
-            repodct = json_load(repocnf)
+        s_repodir = self.conf['app'].get('source')
+        s_repocnf = self.get_repo_source_config_file()
+        if os.path.exists(s_repocnf):
+            s_repodct = json_load(s_repocnf)
         else:
-            repodct = {}
-            json_save(repocnf, repodct)
+            s_repodct = {}
+            json_save(s_repocnf, s_repodct)
 
         # Workflow
         ## 1. Check first docs in repodct and delete inconsistencies if
         ## files do not exist anymore
         to_delete = []
-        for doc in repodct:
+        for doc in s_repodct:
             if not os.path.exists(doc):
                 to_delete.append(doc)
                 self.log.info("Source repository - Document deleted: %s", doc)
@@ -69,21 +74,21 @@ class MiAZBackend(GObject.GObject):
             # Delete inconsistency
             del(repodct[doc])
             updated |= True
-        json_save(repocnf, repodct)
+        json_save(s_repocnf, s_repodct)
 
-        # 2. Check docs in directory and update repodct
-        docs = get_files(repodir)
+        # 2. Check docs in source directory and update repodct
+        docs = get_files(s_repodir)
         for doc in docs:
             try:
                 repodct[doc]['valid']
                 # ~ self.log.debug("Found in config file: %s", doc)
             except:
-                repodct[doc] = {}
-                repodct[doc]['valid'] = self.validate_filename(doc)
-                repodct[doc]['suggested'] = self.suggest_filename(doc)
+                s_repodct[doc] = {}
+                s_repodct[doc]['valid'] = self.validate_filename(doc)
+                s_repodct[doc]['suggested'] = self.suggest_filename(doc)
                 updated |= True
                 self.log.info("Source repository - Document added: %s", doc)
-        json_save(repocnf, repodct)
+        json_save(s_repocnf, s_repodct)
         self.log.debug("Repository updated? %s", updated)
         if updated:
             self.emit('source-updated')
@@ -247,7 +252,7 @@ class MiAZBackend(GObject.GObject):
             try:
                 created = get_file_creation_date(filepath)
                 timestamp = created.strftime("%Y%m%d")
-                self.log.debug(timestamp)
+                # ~ self.log.debug(timestamp)
             except Exception as error:
                 print("%s -> %s" % (filepath, error))
                 timestamp = "NODATE"

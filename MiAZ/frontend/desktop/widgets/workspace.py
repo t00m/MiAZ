@@ -169,7 +169,7 @@ class MiAZWorkspace(Gtk.Box):
         self.log.debug("Got signal 'source-updated'")
         # ~ self.log.debug(args)
         self.store.clear()
-        repocnf = self.backend.get_repo_config_file()
+        repocnf = self.backend.get_repo_source_config_file()
         repodct = json_load(repocnf)
         icon_ko = self.app.icman.get_pixbuf_by_name('miaz-cancel', 24)
         icon_ok = self.app.icman.get_pixbuf_by_name('miaz-ok', 24)
@@ -180,7 +180,6 @@ class MiAZWorkspace(Gtk.Box):
             document = os.path.basename(filepath)
             mimetype = get_file_mimetype(filepath)
             icon = self.app.icman.get_pixbuf_mimetype_from_file(filepath, 36, 36)
-            self.log.debug("Update with: %s", filepath)
             valid, reasons = repodct[filepath]['valid']
             if not valid:
                 ndocs += 1
