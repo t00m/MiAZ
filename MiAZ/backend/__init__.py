@@ -3,6 +3,8 @@
 
 import os
 
+from gi.repository import GObject
+
 from MiAZ.backend.env import ENV
 from MiAZ.backend.log import get_logger
 from MiAZ.backend.util import json_load, json_save
@@ -17,31 +19,31 @@ from MiAZ.backend.config.settings import MiAZConfigSettingsCollections
 from MiAZ.backend.config.settings import MiAZConfigSettingsPurposes
 from MiAZ.backend.config.settings import MiAZConfigSettingsWho
 
-# ~ countries = MiAZConfigSettingsCountries().load_global()
-# ~ extensions = MiAZConfigSettingsExtensions().load_global()
-# ~ collections = MiAZConfigSettingsCollections().load()
-# ~ purposes = MiAZConfigSettingsPurposes().load()
-# ~ who = organizations = MiAZConfigSettingsWho().load()
 
-class MiAZBackend:
+
+class MiAZBackend(GObject.GObject):
     """Backend class"""
+    __gtype_name__ = 'MiAZBackend'
     conf = {}
 
     def __init__(self) -> None:
+        GObject.GObject.__init__(self)
         self.log = get_logger('MiAZBackend')
+        GObject.signal_new('source-updated', MiAZBackend, GObject.SignalFlags.RUN_LAST, None, () )
         self.conf['app'] = MiAZConfigApp()
         self.conf['countries'] = MiAZConfigSettingsCountries()
         self.conf['extensions'] = MiAZConfigSettingsExtensions()
         self.conf['collections'] = MiAZConfigSettingsCollections()
         self.conf['purposes'] = MiAZConfigSettingsPurposes()
         self.conf['organizations'] = MiAZConfigSettingsWho()
-        self.check_sources()
+
 
     def get_conf(self) -> dict:
         """Return dict with pointers to all config classes"""
         return self.conf
 
     def check_sources(self):
+        updated = False
         repodir = self.conf['app'].get('source')
         repokey = valid_key(repodir)
         repocnf = os.path.join(ENV['LPATH']['REPOS'], "source-%s.json" % repokey)
@@ -62,6 +64,7 @@ class MiAZBackend:
         for doc in to_delete:
             # Delete inconsistency
             del(repodct[doc])
+            updated |= True
         json_save(repocnf, repodct)
 
         # 2. Check docs in directory and update repodct
@@ -74,8 +77,13 @@ class MiAZBackend:
                 repodct[doc] = {}
                 repodct[doc]['valid'] = self.validate_filename(doc)
                 repodct[doc]['suggested'] = self.suggest_filename(doc)
+                updated |= True
                 self.log.info("Source repository - Document added: %s", doc)
         json_save(repocnf, repodct)
+        self.log.debug("Repository updated? %s", updated)
+        if updated:
+            self.emit('source-updated')
+            self.log.debug("Signal 'source-updated' emitted")
 
     def validate_filename(self, filepath: str) -> tuple:
         filename = os.path.basename(filepath)

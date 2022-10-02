@@ -33,47 +33,13 @@ class MiAZWorkspace(Gtk.Box):
         super(MiAZWorkspace, self).__init__(orientation=Gtk.Orientation.VERTICAL)
         self.log = get_logger('MiAZWorkspace')
         self.app = app
+        self.backend = self.app.get_backend()
         self.config = self.app.get_config('app')
         self.set_vexpand(True)
         self.set_margin_top(margin=6)
         self.set_margin_end(margin=6)
         self.set_margin_bottom(margin=6)
         self.set_margin_start(margin=6)
-
-        # ~ # Toolbar
-        # ~ toolbar = Gtk.Box(spacing=3, orientation=Gtk.Orientation.HORIZONTAL)
-        # ~ toolbar.set_hexpand(True)
-
-        # ~ boxColumnMime = Gtk.Box(spacing=6, orientation=Gtk.Orientation.VERTICAL)
-        # ~ boxColumnMime.set_hexpand(False)
-        # ~ lblFrmTitle = Gtk.Label()
-        # ~ lblFrmTitle.set_xalign(0.0)
-        # ~ lblFrmTitle.set_markup("<b>Type of document</b>")
-        # ~ self.entry_mime = Gtk.Entry()
-        # ~ self.entry_mime.set_has_frame(True)
-        # ~ boxColumnMime.append(lblFrmTitle)
-        # ~ boxColumnMime.append(self.entry_mime)
-        # ~ boxColumnMime.set_margin_top(margin=3)
-        # ~ boxColumnMime.set_margin_end(margin=3)
-        # ~ boxColumnMime.set_margin_bottom(margin=3)
-        # ~ boxColumnMime.set_margin_start(margin=3)
-        # ~ toolbar.append(boxColumnMime)
-
-        # ~ BoxColumnFilename = Gtk.Box(spacing=6, orientation=Gtk.Orientation.VERTICAL)
-        # ~ BoxColumnFilename.set_hexpand(True)
-        # ~ lblFrmTitle = Gtk.Label()
-        # ~ lblFrmTitle.set_xalign(0.0)
-        # ~ lblFrmTitle.set_markup("<b>Filename</b>")
-        # ~ self.entry_filename = Gtk.Entry()
-        # ~ self.entry_filename.set_has_frame(True)
-        # ~ self.entry_filename.connect('changed', self.on_entry_filename_changed)
-        # ~ BoxColumnFilename.append(lblFrmTitle)
-        # ~ BoxColumnFilename.append(self.entry_filename)
-        # ~ BoxColumnFilename.set_margin_top(margin=3)
-        # ~ BoxColumnFilename.set_margin_end(margin=3)
-        # ~ BoxColumnFilename.set_margin_bottom(margin=3)
-        # ~ BoxColumnFilename.set_margin_start(margin=3)
-        # ~ toolbar.append(BoxColumnFilename)
 
         self.scrwin = Gtk.ScrolledWindow()
         self.scrwin.set_has_frame(True)
@@ -84,7 +50,7 @@ class MiAZWorkspace(Gtk.Box):
         self.treeview = MiAZTreeView(self.app)
         self.treeview.set_model(self.store)
 
-        self.update()
+        # ~ self.update()
 
         # Icon
         renderer = Gtk.CellRendererPixbuf()
@@ -189,6 +155,8 @@ class MiAZWorkspace(Gtk.Box):
         # ~ self.append(toolbar)
         self.append(self.scrwin)
 
+        self.backend.connect('source-updated', self.update)
+
     def on_entry_filename_changed(self, *args):
         self.treefilter.refilter()
 
@@ -198,8 +166,11 @@ class MiAZWorkspace(Gtk.Box):
         if os.path.exists(filepath):
             os.system("xdg-open '%s'" % filepath)
 
-    def update(self):
+    def update(self, *args):
+        self.log.debug("Got signal 'source-updated'")
+        self.log.debug(args)
         self.store.clear()
+
         # ~ try:
             # ~ source_path = self.config.get('source')
         # ~ except KeyError:
@@ -239,7 +210,7 @@ class MiAZWorkspace(Gtk.Box):
         target_path = os.path.join(folder, target)
         if not os.path.exists(target_path):
             shutil.move(source_path, target_path)
-            self.update()
+            # ~ self.update()
 
     def edit_filename_finished(self, widget, path, target):
         print("edit_filename_finished")
