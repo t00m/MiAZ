@@ -42,11 +42,15 @@ class MiAZBackend(GObject.GObject):
         """Return dict with pointers to all config classes"""
         return self.conf
 
+    def get_repo_config_file(self):
+        repodir = self.conf['app'].get('source')
+        repokey = valid_key(repodir)
+        return os.path.join(ENV['LPATH']['REPOS'], "source-%s.json" % repokey)
+
     def check_sources(self):
         updated = False
         repodir = self.conf['app'].get('source')
-        repokey = valid_key(repodir)
-        repocnf = os.path.join(ENV['LPATH']['REPOS'], "source-%s.json" % repokey)
+        repocnf = self.get_repo_config_file()
         if os.path.exists(repocnf):
             repodct = json_load(repocnf)
         else:

@@ -19,8 +19,7 @@ from gi.repository.GdkPixbuf import Pixbuf
 
 from MiAZ.backend.env import ENV
 from MiAZ.backend.log import get_logger
-# ~ from MiAZ.backend.controller import valid_filename
-# ~ from MiAZ.backend.controller import get_documents, valid_filename
+from MiAZ.backend.util import json_load
 from MiAZ.frontend.desktop.util import get_file_mimetype
 from MiAZ.frontend.desktop.icons import MiAZIconManager
 from MiAZ.frontend.desktop.widgets.treeview import MiAZTreeView
@@ -168,8 +167,31 @@ class MiAZWorkspace(Gtk.Box):
 
     def update(self, *args):
         self.log.debug("Got signal 'source-updated'")
-        self.log.debug(args)
+        # ~ self.log.debug(args)
         self.store.clear()
+        repocnf = self.backend.get_repo_config_file()
+        repodct = json_load(repocnf)
+        icon_ko = self.app.icman.get_pixbuf_by_name('miaz-cancel', 24)
+        icon_ok = self.app.icman.get_pixbuf_by_name('miaz-ok', 24)
+        ndocs = 0
+        # ~ self.log.debug(repocnf)
+        for filepath in repodct:
+            # ~ self.log.debug(filepath)
+            document = os.path.basename(filepath)
+            mimetype = get_file_mimetype(filepath)
+            icon = self.app.icman.get_pixbuf_mimetype_from_file(filepath, 36, 36)
+            self.log.debug("Update with: %s", filepath)
+            valid, reasons = repodct[filepath]['valid']
+            if not valid:
+                ndocs += 1
+                node = self.store.insert_with_values(None, -1, (0, 1, 2, 3, 4, 5, 6), (icon, mimetype, False, "<b>%s</b>" % document, document, filepath, "FILE"))
+                for reason in reasons:
+                    passed, message = reason
+                    if passed:
+                        self.store.insert_with_values(node, -1, (0, 3, 6), (icon_ok, "<i>%s</i>" % message, "REASON"))
+                    else:
+                        self.store.insert_with_values(node, -1, (0, 3, 6), (icon_ko, "<i>%s</i>" % message, "REASON"))
+
 
         # ~ try:
             # ~ source_path = self.config.get('source')
