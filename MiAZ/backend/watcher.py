@@ -21,7 +21,7 @@ class MiAZWatcher(GObject.GObject):
         GObject.GObject.__init__(self)
         self.dirpath = dirpath
         self.name = name.lower()
-        GObject.signal_new('directory-%s-updated' % self.name, MiAZWatcher, GObject.SignalFlags.RUN_LAST, None, () )
+        GObject.signal_new('%s-directory-updated' % self.name, MiAZWatcher, GObject.SignalFlags.RUN_LAST, None, () )
         self.log = get_logger('MiAZWatcher')
         self.log.debug("Watcher[%s] installed. Monitoring '%s'", self.name, self.dirpath)
         GLib.timeout_add_seconds(2, self.watch)
@@ -81,7 +81,7 @@ class MiAZWatcher(GObject.GObject):
             updated |= True
 
         if updated:
-            self.emit('directory-%s-updated' % self.name)
+            self.emit('%s-directory-updated' % self.name)
             # ~ self.log.debug("Signal 'directory-%s-updated'  emitted", self.name)
 
         self.before = after

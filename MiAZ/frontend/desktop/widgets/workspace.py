@@ -154,7 +154,7 @@ class MiAZWorkspace(Gtk.Box):
         # ~ self.append(toolbar)
         self.append(self.scrwin)
 
-        self.backend.connect('source-updated', self.update)
+        self.backend.connect('source-configuration-updated', self.update)
 
     def on_entry_filename_changed(self, *args):
         self.treefilter.refilter()
@@ -166,7 +166,7 @@ class MiAZWorkspace(Gtk.Box):
             os.system("xdg-open '%s'" % filepath)
 
     def update(self, *args):
-        self.log.debug("Got signal 'source-updated'")
+        self.log.debug("Got signal 'source-configuration-updated'")
         # ~ self.log.debug(args)
         self.store.clear()
         repocnf = self.backend.get_repo_source_config_file()

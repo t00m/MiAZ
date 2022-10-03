@@ -29,7 +29,8 @@ class MiAZBackend(GObject.GObject):
     def __init__(self) -> None:
         GObject.GObject.__init__(self)
         self.log = get_logger('MiAZBackend')
-        GObject.signal_new('source-updated', MiAZBackend, GObject.SignalFlags.RUN_LAST, None, () )
+        GObject.signal_new('source-configuration-updated', MiAZBackend, GObject.SignalFlags.RUN_LAST, None, () )
+        GObject.signal_new('target-configuration-updated', MiAZBackend, GObject.SignalFlags.RUN_LAST, None, () )
         self.conf['app'] = MiAZConfigApp()
         self.conf['countries'] = MiAZConfigSettingsCountries()
         self.conf['extensions'] = MiAZConfigSettingsExtensions()
@@ -38,8 +39,9 @@ class MiAZBackend(GObject.GObject):
         self.conf['organizations'] = MiAZConfigSettingsWho()
         repo_source = self.conf['app'].get('source')
         repo_target = self.conf['app'].get('target')
-        self.watch_source = MiAZWatcher('Source', repo_source)
-        self.watch_target = MiAZWatcher('Target', repo_target)
+        self.watch_source = MiAZWatcher('source', repo_source)
+        self.watch_source.connect('source-directory-updated', self.check_sources)
+        self.watch_target = MiAZWatcher('target', repo_target)
 
 
     def get_conf(self) -> dict:
@@ -56,7 +58,7 @@ class MiAZBackend(GObject.GObject):
         repokey = valid_key(repodir)
         return os.path.join(ENV['LPATH']['REPOS'], "target-%s.json" % repokey)
 
-    def check_sources(self):
+    def check_sources(self, *args):
         updated = False
         s_repodir = self.conf['app'].get('source')
         s_repocnf = self.get_repo_source_config_file()
@@ -96,8 +98,8 @@ class MiAZBackend(GObject.GObject):
         json_save(s_repocnf, s_repodct)
         self.log.debug("Repository updated? %s", updated)
         if updated:
-            self.emit('source-updated')
-            self.log.debug("Signal 'source-updated' emitted")
+            self.emit('source-configuration-updated')
+            self.log.debug("Signal 'source-configuration-updated' emitted")
 
     def validate_filename(self, filepath: str) -> tuple:
         filename = os.path.basename(filepath)
