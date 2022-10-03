@@ -18,7 +18,7 @@ from MiAZ.backend.config.settings import MiAZConfigSettingsCountries
 from MiAZ.backend.config.settings import MiAZConfigSettingsExtensions
 from MiAZ.backend.config.settings import MiAZConfigSettingsCollections
 from MiAZ.backend.config.settings import MiAZConfigSettingsPurposes
-from MiAZ.backend.config.settings import MiAZConfigSettingsWho
+from MiAZ.backend.config.settings import MiAZConfigSettingsOrganizations
 
 
 class MiAZBackend(GObject.GObject):
@@ -36,7 +36,7 @@ class MiAZBackend(GObject.GObject):
         self.conf['extensions'] = MiAZConfigSettingsExtensions()
         self.conf['collections'] = MiAZConfigSettingsCollections()
         self.conf['purposes'] = MiAZConfigSettingsPurposes()
-        self.conf['organizations'] = MiAZConfigSettingsWho()
+        self.conf['organizations'] = MiAZConfigSettingsOrganizations()
         repo_source = self.conf['app'].get('source')
         repo_target = self.conf['app'].get('target')
         self.watch_source = MiAZWatcher('source', repo_source)

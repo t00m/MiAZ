@@ -87,19 +87,19 @@ class MiAZConfigSettingsOrganizations(MiAZConfig):
             config_local = ENV['FILE']['ORGANIZATIONS'],
             config_global = os.path.join(ENV['GPATH']['RESOURCES'],
                             'MiAZ-organizations.json'),
-            must_copy = False
-        )
-
-class MiAZConfigSettingsWho(MiAZConfig):
-    def __init__(self):
-        super().__init__(
-            log=get_logger('MiAZ.Settings.Who'),
-            config_for = 'Who',
-            config_local = ENV['FILE']['WHO'],
-            config_global = os.path.join(ENV['GPATH']['RESOURCES'],
-                            'MiAZ-who.json'),
             must_copy = True
         )
+
+# ~ class MiAZConfigSettingsWho(MiAZConfig):
+    # ~ def __init__(self):
+        # ~ super().__init__(
+            # ~ log=get_logger('MiAZ.Settings.Who'),
+            # ~ config_for = 'Who',
+            # ~ config_local = ENV['FILE']['WHO'],
+            # ~ config_global = os.path.join(ENV['GPATH']['RESOURCES'],
+                            # ~ 'MiAZ-who.json'),
+            # ~ must_copy = True
+        # ~ )
 
 class MiAZConfigSettingsExtensions(MiAZConfig):
     def __init__(self):

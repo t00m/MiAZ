@@ -146,12 +146,9 @@ class MiAZWorkspace(Gtk.Box):
         self.sorted_model.set_sort_func(0, self.clb_sort_function, 1)
         self.sorted_model.set_sort_column_id(1, Gtk.SortType.DESCENDING)
         self.treeview.set_model(self.sorted_model)
-
         self.treeview.connect('row-activated', self.on_double_click)
 
         self.scrwin.set_child(self.treeview)
-
-        # ~ self.append(toolbar)
         self.append(self.scrwin)
 
         self.backend.connect('source-configuration-updated', self.update)
@@ -167,16 +164,13 @@ class MiAZWorkspace(Gtk.Box):
 
     def update(self, *args):
         self.log.debug("Got signal 'source-configuration-updated'")
-        # ~ self.log.debug(args)
         self.store.clear()
         repocnf = self.backend.get_repo_source_config_file()
         repodct = json_load(repocnf)
         icon_ko = self.app.icman.get_pixbuf_by_name('miaz-cancel', 24)
         icon_ok = self.app.icman.get_pixbuf_by_name('miaz-ok', 24)
         ndocs = 0
-        # ~ self.log.debug(repocnf)
         for filepath in repodct:
-            # ~ self.log.debug(filepath)
             document = os.path.basename(filepath)
             mimetype = get_file_mimetype(filepath)
             icon = self.app.icman.get_pixbuf_mimetype_from_file(filepath, 36, 36)
@@ -193,35 +187,6 @@ class MiAZWorkspace(Gtk.Box):
         page = self.app.get_stack_page_by_name('workspace')
         page.set_badge_number(ndocs)
 
-
-        # ~ try:
-            # ~ source_path = self.config.get('source')
-        # ~ except KeyError:
-            # ~ return None
-
-        # ~ documents = get_documents(source_path)
-        # ~ icon = Pixbuf.new_from_file(ENV['FILE']['APPICON'])
-        # ~ icon_ko = self.app.icman.get_pixbuf_by_name('miaz-cancel', 24)
-        # ~ icon_ok = self.app.icman.get_pixbuf_by_name('miaz-ok', 24)
-        # ~ ndocs = 0
-        # ~ for filepath in documents:
-            # ~ document = os.path.basename(filepath)
-            # ~ mimetype = get_file_mimetype(filepath)
-            # ~ icon = self.app.icman.get_pixbuf_mimetype_from_file(filepath, 36, 36)
-            # ~ valid, reasons = valid_filename(filepath)
-            # ~ if not valid:
-                # ~ ndocs += 1
-                # ~ node = self.store.insert_with_values(None, -1, (0, 1, 2, 3, 4, 5, 6), (icon, mimetype, False, "<b>%s</b>" % document, document, filepath, "FILE"))
-                # ~ for reason in reasons:
-                    # ~ passed, message = reason
-                    # ~ if passed:
-                        # ~ self.store.insert_with_values(node, -1, (0, 3, 6), (icon_ok, "<i>%s</i>" % message, "REASON"))
-                    # ~ else:
-                        # ~ self.store.insert_with_values(node, -1, (0, 3, 6), (icon_ko, "<i>%s</i>" % message, "REASON"))
-            # ~ else:
-                # ~ self.log.debug("Document '%s' is valid", document)
-        # ~ self.log.debug("Nº Invalid Documents: %d", ndocs)
-
     def on_edit_filename(self, widget, path, target):
         treeiter = self.sorted_model.get_iter(path)
         source = self.sorted_model[treeiter][4]
@@ -233,7 +198,6 @@ class MiAZWorkspace(Gtk.Box):
         target_path = os.path.join(folder, target)
         if not os.path.exists(target_path):
             shutil.move(source_path, target_path)
-            # ~ self.update()
 
     def on_edit_filename_finished(self, widget, path, target):
         print("on_edit_filename_finished")
