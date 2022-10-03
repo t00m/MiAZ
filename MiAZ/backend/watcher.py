@@ -39,7 +39,7 @@ class MiAZWatcher(GObject.GObject):
                     filelist.append(os.path.abspath(os.path.relpath(thisfile)))
         return dict([(f, os.path.getmtime(f)) for f in filelist])
 
-    def set_path(dirpath: str):
+    def set_path(self, dirpath: str):
         self.dirpath = dirpath
 
     def set_active(self, active: bool) -> None:

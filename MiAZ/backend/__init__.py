@@ -43,6 +43,11 @@ class MiAZBackend(GObject.GObject):
         self.watch_source.connect('source-directory-updated', self.check_sources)
         self.watch_target = MiAZWatcher('target', repo_target)
 
+    def get_watcher_source(self):
+        return self.watch_source
+
+    def get_watcher_target(self):
+        return self.watch_target
 
     def get_conf(self) -> dict:
         """Return dict with pointers to all config classes"""
@@ -59,7 +64,6 @@ class MiAZBackend(GObject.GObject):
         return os.path.join(ENV['LPATH']['REPOS'], "target-%s.json" % repokey)
 
     def check_sources(self, *args):
-        updated = False
         s_repodir = self.conf['app'].get('source')
         s_repocnf = self.get_repo_source_config_file()
         if os.path.exists(s_repocnf):
@@ -78,28 +82,25 @@ class MiAZBackend(GObject.GObject):
                 self.log.info("Source repository - Document deleted: %s", doc)
         for doc in to_delete:
             # Delete inconsistency
-            del(repodct[doc])
-            updated |= True
+            del(s_repodct[doc])
+
         json_save(s_repocnf, s_repodct)
 
         # 2. Check docs in source directory and update repodct
         docs = get_files(s_repodir)
         for doc in docs:
             try:
-                repodct[doc]['valid']
-                # ~ self.log.debug("Found in config file: %s", doc)
+                s_repodct[doc]['valid']
+                self.log.debug("Found in config file: %s", doc)
             except:
                 s_repodct[doc] = {}
                 # ~ s_repodct[doc]['original'] = doc
                 s_repodct[doc]['valid'] = self.validate_filename(doc)
                 s_repodct[doc]['suggested'] = self.suggest_filename(doc)
-                updated |= True
                 self.log.info("Source repository - Document added: %s", doc)
         json_save(s_repocnf, s_repodct)
-        self.log.debug("Repository updated? %s", updated)
-        if updated:
-            self.emit('source-configuration-updated')
-            self.log.debug("Signal 'source-configuration-updated' emitted")
+        self.emit('source-configuration-updated')
+        self.log.debug("Signal 'source-configuration-updated' emitted")
 
     def validate_filename(self, filepath: str) -> tuple:
         filename = os.path.basename(filepath)
