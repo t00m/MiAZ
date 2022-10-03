@@ -21,7 +21,7 @@ from MiAZ.frontend.desktop.widgets.menu import MiAZ_APP_MENU
 from MiAZ.frontend.desktop.widgets.menubutton import MiAZMenuButton
 from MiAZ.frontend.desktop.widgets.docbrowser import MiAZDocBrowser
 from MiAZ.frontend.desktop.widgets.workspace import MiAZWorkspace
-from MiAZ.frontend.desktop.widgets.settings import PreferencesWindow # MiAZSettings,
+from MiAZ.frontend.desktop.widgets.settings import MiAZPrefsWindow
 from MiAZ.frontend.desktop.icons import MiAZIconManager
 
 Gtk.init()
@@ -31,7 +31,6 @@ class GUI(Adw.Application):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.backend = MiAZBackend()
-        self.config = self.backend.get_conf()
         self.log = get_logger("MiAZ.GUI")
         GLib.set_application_name(ENV['APP']['name'])
         self.connect('activate', self.on_activate)
@@ -44,7 +43,7 @@ class GUI(Adw.Application):
         self.theme.add_search_path(ENV['GPATH']['ICONS'])
         self.win.set_icon_name('MiAZ')
         self.build_gui()
-        # ~ self.backend.check_sources()
+        self.check_basic_settings()
         self.log.debug("Executing MiAZ Desktop mode")
         self.win.present()
 
@@ -62,32 +61,19 @@ class GUI(Adw.Application):
 
         # Widgets
 
-        # ~ status_page = Adw.StatusPage.new()
-        # ~ status_page.set_description(description='A personal document organizer')
-        # ~ status_page.set_icon_name(icon_name='MiAZ-extra-big')
-        # ~ status_page.set_title(title='MiAZ')
-        # ~ self.mainbox.append(child=status_page)
-
         ## Stack & Stack.Switcher
         self.stack = Adw.ViewStack()
+        # ~ self.stack.set_transition_type(transition=Gtk.StackTransitionType.SLIDE_LEFT_RIGHT)
+        # ~ self.stack.set_transition_duration(duration=300)
         self.switcher = Adw.ViewSwitcher()
         self.switcher.set_policy(Adw.ViewSwitcherPolicy.WIDE)
         self.switcher.set_stack(self.stack)
         self.stack.set_vexpand(True)
 
-        # ~ self.stack.set_transition_type(transition=Gtk.StackTransitionType.SLIDE_LEFT_RIGHT)
-        # ~ self.stack.set_transition_duration(duration=1000)
-        # ~ self.stack.set_visible(False)
-
         ## HeaderBar [[
         self.header = Adw.HeaderBar()
         self.header.set_title_widget(title_widget=self.switcher)
         self.win.set_titlebar(self.header)
-
-        # Add Search button to the titlebar (Left side)
-        # ~ button = Gtk.Button.new_from_icon_name('miaz-search')
-        # ~ self.header.pack_start(button)
-        # ~ button.connect('clicked', self.show_searchbar)
 
         # Add Menu Button to the titlebar (Right Side)
         menu = MiAZMenuButton(MiAZ_APP_MENU, 'app-menu')
@@ -100,41 +86,50 @@ class GUI(Adw.Application):
         self.create_action('close', self.menu_handler)
         ## ]]
 
-
-
-        # ~ self.box_header = Gtk.Box(spacing=6, orientation=Gtk.Orientation.HORIZONTAL)
         # ~ # https://gist.github.com/Afacanc38/76ce9b3260307bea64ebf3506b485147
-        # ~ boxSearchBar = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
-        # ~ self.ent_sb = Gtk.SearchEntry(placeholder_text="Type here")
-        # ~ self.ent_sb.connect('changed', self.nop)
-        # ~ self.searchbar = Gtk.SearchBar(halign = Gtk.Align.FILL, hexpand = True, valign = Gtk.Align.START, show_close_button = True)
-        # ~ self.searchbar.connect_entry (self.ent_sb)
-        # ~ boxSearchBar.append(self.ent_sb)
-        # ~ self.searchbar.set_child (boxSearchBar)
-        # ~ self.searchbar.set_key_capture_widget(self.ent_sb)
-        # ~ self.box_header.append(self.searchbar)
-        # ~ self.controller = Gtk.EventControllerKey()
-        # ~ self.controller.connect('key-released', self.on_key_released)
-        # ~ self.win.add_controller(self.controller)
-        # ~ self.mainbox.append(self.box_header)
 
         self.docbrowser = self.create_docbrowser()
-        page = self.stack.add_titled(self.docbrowser, 'browser', 'Browser')
-        # ~ page = self.stack.get_page(self.docbrowser)
-        page.set_icon_name('view-grid')
-
+        self.page_browser = self.stack.add_titled(self.docbrowser, 'browser', 'Browser')
+        self.page_browser.set_icon_name('view-grid')
 
         self.workspace = self.create_workspace()
-        page = self.stack.add_titled(self.workspace, 'workspace', 'Workspace')
-        page.set_icon_name('document-properties')
-        page.set_needs_attention(True)
-        page.set_badge_number(1)
+        self.page_workspace = self.stack.add_titled(self.workspace, 'workspace', 'Workspace')
+        self.page_workspace.set_icon_name('document-properties')
+        self.page_workspace.set_needs_attention(True)
+        self.page_workspace.set_badge_number(1)
+
+        status_page = Adw.StatusPage.new()
+        status_page.set_description(description='A personal document organizer')
+        status_page.set_icon_name(icon_name='MiAZ-extra-big')
+        status_page.set_title(title='MiAZ')
+        button = self.create_button('edit-clear', 'Test', self.nop)
+        status_page.set_child(button)
+        self.page_status = self.stack.add_titled(status_page, 'welcome', 'Welcome')
 
         self.mainbox.append(self.stack)
         self.mainbox.set_vexpand(True)
         self.win.set_child(self.mainbox)
-        ## ]]
-        # ]
+
+
+    def check_basic_settings(self):
+        config = self.get_config('app')
+        source = config.get('source')
+        target = config.get('target')
+
+        if source and target:
+            self.page_browser.set_visible(True)
+            self.page_workspace.set_visible(True)
+            self.page_status.set_visible(False)
+            if self.page_workspace.get_needs_attention():
+                self.show_workspace()
+            else:
+                self.show_browser()
+        else:
+            self.page_browser.set_visible(False)
+            self.page_workspace.set_visible(False)
+            self.page_status.set_visible(True)
+            self.show_welcome()
+
 
     def get_stack_page_by_name(self, name: str) -> Adw.ViewStackPage:
         widget = self.stack.get_child_by_name(name)
@@ -163,8 +158,10 @@ class GUI(Adw.Application):
         self.workspace.refresh_view()
 
     def show_settings(self, *args):
-        pw = PreferencesWindow(self)
-        # ~ self.stack.set_visible_child_name('settings')
+        pw = MiAZPrefsWindow(self)
+
+    def show_welcome(self, *args):
+        self.stack.set_visible_child_name('welcome')
 
     def show_browser(self, *args):
         self.stack.set_visible_child_name('browser')
@@ -175,18 +172,6 @@ class GUI(Adw.Application):
 
     def show_searchbar(self, *args):
         self.searchbar.set_search_mode(True)
-
-    def open_response(self, dialog, response):
-        if response == Gtk.ResponseType.ACCEPT:
-            gfile = self.filechooser.get_file()
-            dirpath = gfile.get_path()
-            if dirpath is not None:
-                self.log.info(dirpath)
-                self.config.set('source', dirpath)
-                dialog.destroy()
-                self.workspace.refresh_view()
-        else:
-            dialog.destroy()
 
     def create_dialog(self, parent, title, widget, width=400, height=500):
         dialog = Gtk.Dialog()
@@ -200,24 +185,6 @@ class GUI(Adw.Application):
         contents = dialog.get_content_area()
         contents.append(widget)
         return dialog
-
-    # ~ def create_button(self, icon_name, title, callback, width=48, height=48):
-        # ~ hbox = Gtk.Box(spacing = 3, orientation=Gtk.Orientation.HORIZONTAL)
-        # ~ if len(icon_name) != 0:
-            # ~ # FIXME: icon name might not exist at all
-            # ~ pixbuf = self.icman.get_pixbuf_by_path(icon_name, width, height)
-            # ~ icon = Gtk.Image.new_from_pixbuf(pixbuf)
-            # ~ hbox.append(icon)
-        # ~ label = Gtk.Label()
-        # ~ label.set_markup(title)
-        # ~ hbox.append(label)
-        # ~ button = Gtk.Button()
-        # ~ button.set_child(hbox)
-        # ~ button.set_hexpand(True)
-        # ~ button.set_vexpand(True)
-        # ~ button.set_has_frame(True)
-        # ~ button.connect('clicked', callback)
-        # ~ return button
 
     def create_switch_button(self, icon_name, title, callback):
         button = Gtk.Switch()

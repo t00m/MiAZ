@@ -198,6 +198,7 @@ class MiAZWorkspace(Gtk.Box):
         target_path = os.path.join(folder, target)
         if not os.path.exists(target_path):
             shutil.move(source_path, target_path)
+            self.log.info("%s renamed to %s", os.path.basename(source), os.path.basename(target))
 
     def on_edit_filename_finished(self, widget, path, target):
         print("on_edit_filename_finished")

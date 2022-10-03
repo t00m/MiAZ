@@ -91,12 +91,12 @@ class MiAZConfig():
 
         if isinstance(config, dict):
             try:
-                config[key]
+                config[key.upper()]
                 found = True
             except KeyError:
                 found = False
         elif isinstance(config, list):
-            if key in config:
+            if key.upper() in [item.upper() for item in config]:
                 found = True
             else:
                 found = False

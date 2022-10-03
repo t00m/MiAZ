@@ -44,6 +44,7 @@ class MiAZWatcher(GObject.GObject):
 
     def set_active(self, active: bool) -> None:
         self.active = active
+        self.watch()
 
     def get_active(self):
         return self.active

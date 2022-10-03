@@ -89,15 +89,17 @@ class MiAZBackend(GObject.GObject):
         # 2. Check docs in source directory and update repodct
         docs = get_files(s_repodir)
         for doc in docs:
-            try:
-                s_repodct[doc]['valid']
-                self.log.debug("Found in config file: %s", doc)
-            except:
-                s_repodct[doc] = {}
-                # ~ s_repodct[doc]['original'] = doc
-                s_repodct[doc]['valid'] = self.validate_filename(doc)
-                s_repodct[doc]['suggested'] = self.suggest_filename(doc)
-                self.log.info("Source repository - Document added: %s", doc)
+            # ~ try:
+                # ~ valid, reasons = s_repodct[doc]['valid']
+                # ~ self.log.debug("Found in config file: %s", doc)
+                # ~ if valid:
+                    # ~ self.log.debug("Valid: %s", doc)
+            # ~ except:
+            s_repodct[doc] = {}
+            # ~ s_repodct[doc]['original'] = doc
+            s_repodct[doc]['valid'] = self.validate_filename(doc)
+            s_repodct[doc]['suggested'] = self.suggest_filename(doc)
+            self.log.info("Source repository - Document added: %s", doc)
         json_save(s_repocnf, s_repodct)
         self.emit('source-configuration-updated')
         self.log.debug("Signal 'source-configuration-updated' emitted")

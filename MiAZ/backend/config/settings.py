@@ -37,15 +37,6 @@ class MiAZConfigSettingsCountries(MiAZConfig):
             must_copy = False
         )
 
-    # ~ def exists(self, key: str) -> bool:
-        # ~ config = self.load_global()
-        # ~ try:
-            # ~ config[key]
-            # ~ found = True
-        # ~ except KeyError:
-            # ~ found = False
-        # ~ return found
-
 class MiAZConfigSettingsLanguages(MiAZConfig):
     def __init__(self):
         super().__init__(
@@ -90,17 +81,6 @@ class MiAZConfigSettingsOrganizations(MiAZConfig):
             must_copy = True
         )
 
-# ~ class MiAZConfigSettingsWho(MiAZConfig):
-    # ~ def __init__(self):
-        # ~ super().__init__(
-            # ~ log=get_logger('MiAZ.Settings.Who'),
-            # ~ config_for = 'Who',
-            # ~ config_local = ENV['FILE']['WHO'],
-            # ~ config_global = os.path.join(ENV['GPATH']['RESOURCES'],
-                            # ~ 'MiAZ-who.json'),
-            # ~ must_copy = True
-        # ~ )
-
 class MiAZConfigSettingsExtensions(MiAZConfig):
     def __init__(self):
         super().__init__(
@@ -120,12 +100,3 @@ class MiAZConfigSettingsExtensions(MiAZConfig):
             for section in esections:
                 sections.add(section)
         return sections
-
-    # ~ def exists(self, key: str) -> bool:
-        # ~ config = self.load_global()
-        # ~ try:
-            # ~ config[key]
-            # ~ found = True
-        # ~ except KeyError:
-            # ~ found = False
-        # ~ return found
