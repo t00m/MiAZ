@@ -183,9 +183,8 @@ class PreferencesWindow(Adw.PreferencesWindow):
 
     def create_action_row_repo_source(self):
         config = self.app.get_config('app')
-        try:
-            source = config.get('source')
-        except:
+        source = config.get('source')
+        if source is None:
             source = '<i>Folder not set</i>'
         btnRepoSource = self.app.create_button ('document-edit-symbolic', '', self.show_filechooser_source, css_classes=['flat'])
         btnRepoSource.set_valign(Gtk.Align.CENTER)
@@ -206,9 +205,8 @@ class PreferencesWindow(Adw.PreferencesWindow):
 
     def create_action_row_repo_target(self):
         config = self.app.get_config('app')
-        try:
-            target = config.get('target')
-        except:
+        target = config.get('target')
+        if target is None:
             target = '<i>Folder not set</i>'
         row = Adw.ActionRow.new()
         row.get_style_context().add_class(class_name='warning')
