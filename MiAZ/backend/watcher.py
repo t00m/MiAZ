@@ -19,12 +19,12 @@ class MiAZWatcher(GObject.GObject):
 
     def __init__(self, name: str, dirpath: str):
         GObject.GObject.__init__(self)
-        GObject.signal_new('directory-updated', MiAZBackend, GObject.SignalFlags.RUN_LAST, None, () )
         self.dirpath = dirpath
-        self.name = name
+        self.name = name.lower()
+        GObject.signal_new('directory-%s-updated' % self.name, MiAZWatcher, GObject.SignalFlags.RUN_LAST, None, () )
         self.log = get_logger('MiAZWatcher')
-        self.log.debug("Watching %s[%s]", name, self.dirpath)
-        GLib.idle_add(self.watch)
+        self.log.debug("Watcher[%s] installed. Monitoring '%s'", self.name, self.dirpath)
+        GLib.timeout_add_seconds(2, self.watch)
 
     def __files_with_timestamp(self, rootdir):
         """Add data files from a given directory."""
@@ -32,10 +32,8 @@ class MiAZWatcher(GObject.GObject):
         resdirs = set()
         for root, dirs, files in os.walk(rootdir):
             resdirs.add(os.path.realpath(root))
-        filelist = []
         for directory in resdirs:
             files = glob.glob(os.path.join(directory, '*'))
-
             for thisfile in files:
                 if not os.path.isdir(thisfile):
                     filelist.append(os.path.abspath(os.path.relpath(thisfile)))
@@ -51,14 +49,15 @@ class MiAZWatcher(GObject.GObject):
         return self.active
 
     def watch(self):
+        # ~ self.log.debug("Watcher[%s] active? %s", self.name, self.active)
         updated = False
         if not self.active:
-            self.log.debug("Watcher [%s] not active", self.name)
-            return
+            self.log.debug("Watcher[%s] not active", self.name)
+            return False
 
         if self.dirpath is None:
-            self.log.debug("Watcher [%s] directory not set", self.name)
-            return
+            self.log.debug("Watcher[%s] directory not set", self.name)
+            return False
 
         after = self.__files_with_timestamp(self.dirpath)
 
@@ -68,18 +67,22 @@ class MiAZWatcher(GObject.GObject):
 
         for f in self.before.keys():
             if not f in removed:
-                if os.path.getmtime(f) != before.get(f):
+                if os.path.getmtime(f) != self.before.get(f):
                     modified.append(f)
 
         if added:
+            self.log.debug("Watcher[%s] > %d files added", self.name, len(added))
             updated |= True
         if removed:
+            self.log.debug("Watcher[%s] > %d files removed", self.name, len(removed))
             updated |= True
         if modified:
+            self.log.debug("Watcher[%s] > %d files modified", self.name, len(modified))
             updated |= True
 
         if updated:
-            self.emit('directory-updated')
-            self.log.debug("Signal 'directory-updated' emitted")
+            self.emit('directory-%s-updated' % self.name)
+            # ~ self.log.debug("Signal 'directory-%s-updated'  emitted", self.name)
 
         self.before = after
+        return True

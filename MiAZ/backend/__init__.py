@@ -21,7 +21,6 @@ from MiAZ.backend.config.settings import MiAZConfigSettingsPurposes
 from MiAZ.backend.config.settings import MiAZConfigSettingsWho
 
 
-
 class MiAZBackend(GObject.GObject):
     """Backend class"""
     __gtype_name__ = 'MiAZBackend'
