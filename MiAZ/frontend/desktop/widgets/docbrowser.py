@@ -163,11 +163,11 @@ class MiAZDocBrowser(Gtk.Box):
 
         # ~ ndocs = 0
         for doc in repodct:
-            row = Adw.ExpanderRow.new()
+            row = Adw.ActionRow.new()
             # ~ row.set_icon_name(icon_name='edit-find-symbolic')
             row.set_title(title='<big><b>%s</b></big>' % doc)
             fields = doc.split('-')
-            flag = self.app.icman.get_flag(fields[1])
+            flag = self.app.icman.get_flag(fields[1], 48, 48)
             row.add_prefix(flag)
             # ~ row.set_subtitle(subtitle='Subtitle uno')
             # ~ row.get_style_context().add_class(class_name='error')

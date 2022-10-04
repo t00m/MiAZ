@@ -11,6 +11,7 @@ gi.require_version('Gtk', '4.0')
 gi.require_version('Adw', '1')
 gi.require_version('GdkPixbuf', '2.0')
 from gi.repository import Adw
+from gi.repository import Gdk
 from gi.repository import Gio
 from gi.repository import GLib
 from gi.repository import Gtk
@@ -39,6 +40,9 @@ class MiAZWorkspace(Gtk.Box):
         self.set_margin_end(margin=6)
         self.set_margin_bottom(margin=6)
         self.set_margin_start(margin=6)
+
+        self.create_actions()
+        self.create_menu()
 
         self.scrwin = Gtk.ScrolledWindow()
         self.scrwin.set_has_frame(True)
@@ -136,7 +140,6 @@ class MiAZWorkspace(Gtk.Box):
         column.set_sort_indicator(False)
         self.treeview.append_column(column)
 
-
         # Treeview filtering
         self.treefilter = self.store.filter_new()
         # ~ self.treefilter.set_visible_func(self.clb_visible_function)
@@ -148,10 +151,30 @@ class MiAZWorkspace(Gtk.Box):
         self.treeview.set_model(self.sorted_model)
         self.treeview.connect('row-activated', self.on_double_click)
 
+        # Selection type
+        selection = self.treeview.get_selection()
+        selection.set_mode(Gtk.SelectionMode.MULTIPLE)
+
+        # Gestures controller / Right click
+        self.evk = Gtk.GestureClick.new()
+        self.evk.set_button(0)  # 0 for all buttons
+        self.evk.connect("pressed", self.on_right_click)
+        self.treeview.add_controller(self.evk)
+
         self.scrwin.set_child(self.treeview)
         self.append(self.scrwin)
 
         self.backend.connect('source-configuration-updated', self.update)
+
+    def create_actions(self):
+        action = Gio.SimpleAction.new("something", None)
+        action.connect("activate", self.noop)
+        self.app.win.add_action(action)
+
+    def create_menu(self):
+        self.menu = Gio.Menu.new()
+        self.menu.append("Do Something", "app.win.something")
+
 
     def on_entry_filename_changed(self, *args):
         self.treefilter.refilter()
@@ -237,3 +260,62 @@ class MiAZWorkspace(Gtk.Box):
 
     def filter_view(self):
         self.treefilter.refilter()
+
+    def on_right_click(self, gesture, n_press, x, y):
+        right_click = self.evk.get_current_button() == 3
+        if right_click:
+            rect = Gdk.Rectangle()
+            rect.x = x = int(x)
+            rect.y = y = int(y)
+            self.popover = Gtk.Popover()
+            self.popover.set_pointing_to(rect)
+            self.popover.set_parent(self.treeview)
+            self.popover.set_has_arrow(True)
+            box = self.build_popover()
+            self.popover.set_child(box)
+            self.popover.popup()
+            return True
+
+    def build_popover(self):
+        listbox = Gtk.ListBox.new()
+        # ~ listbox.set_show_separators(True)
+        listbox.set_selection_mode(mode=Gtk.SelectionMode.SINGLE)
+        listbox.set_activate_on_single_click(True)
+        listbox.set_margin_top(margin=6)
+        listbox.set_margin_end(margin=6)
+        listbox.set_margin_bottom(margin=6)
+        listbox.set_margin_start(margin=6)
+        listbox.get_style_context().add_class(class_name='boxed-list')
+        # ~ listbox.set_filter_func(clb_visible_function)
+        row = Adw.ActionRow.new()
+        row.set_title(title='Change field country')
+        listbox.append(row)
+        row = Adw.ActionRow.new()
+        row.set_title(title='Change field collection')
+        listbox.append(row)
+
+        # ~ box = Gtk.Box(spacing = 3, orientation=Gtk.Orientation.VERTICAL)
+        # ~ button = self.app.create_button('miaz-res-countries', 'Change field country', self.noop)
+        # ~ box.append(button)
+        # ~ button = self.app.create_button('miaz-res-collections', 'Change field collection', self.noop)
+        # ~ box.append(button)
+        # ~ button = self.app.create_button('miaz-res-who', 'Change field <i>From</i>', self.noop)
+        # ~ box.append(button)
+        # ~ button = self.app.create_button('miaz-res-purposes', 'Change field <i>purpose</i>', self.noop)
+        # ~ box.append(button)
+        # ~ button = self.app.create_button('miaz-res-languages', 'Change field <i>concept</i>', self.noop)
+        # ~ box.append(button)
+        # ~ button = self.app.create_button('miaz-res-who', 'Change field <i>to</i>', self.noop)
+        # ~ box.append(button)
+        return listbox
+
+    def noop(self, *args):
+        selection = self.treeview.get_selection()
+        model, rows = selection.get_selected_rows()
+        try:
+            start = rows[0]
+        except:
+            return
+        end = rows[-1]
+        ns = len(rows)
+        self.log.debug("Number of rows selected: %d", ns)

@@ -193,7 +193,7 @@ class MiAZBackend(GObject.GObject):
 
         # Check country (2nd field)
         try:
-            code = fields[1]
+            code = fields[1].upper()
             is_country = self.conf['countries'].exists(code)
             if not is_country:
                 valid &= False

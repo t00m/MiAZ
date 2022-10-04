@@ -90,8 +90,10 @@ class GUI(Adw.Application):
         # ~ # https://gist.github.com/Afacanc38/76ce9b3260307bea64ebf3506b485147
 
         self.docbrowser = self.create_docbrowser()
+        # ~ self.docbrowser.connect('show', self.on_browser_show)
         self.page_browser = self.stack.add_titled(self.docbrowser, 'browser', 'Browser')
         self.page_browser.set_icon_name('view-grid')
+        # ~ self.page_browser.connect('show', self.on_browser_show)
 
         self.workspace = self.create_workspace()
         self.page_workspace = self.stack.add_titled(self.workspace, 'workspace', 'Workspace')
@@ -111,6 +113,8 @@ class GUI(Adw.Application):
         self.mainbox.set_vexpand(True)
         self.win.set_child(self.mainbox)
 
+    def on_browser_show(self, *args):
+        self.log.debug(args)
 
     def check_basic_settings(self):
         config = self.get_config('app')
@@ -214,6 +218,7 @@ class GUI(Adw.Application):
                     )
                 )
         # ~ button.get_style_context().add_class(class_name='success')
+        button.set_has_frame(True)
         button.connect('clicked', callback)
         return button
 

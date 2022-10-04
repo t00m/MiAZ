@@ -103,9 +103,9 @@ class MiAZIconManager(GObject.GObject):
         pixbuf = self.get_pixbuf_by_name(name, width, height)
         return Gtk.Image.new_from_pixbuf(pixbuf)
 
-    def get_flag(self, code: str) -> Gtk.Image:
+    def get_flag(self, code: str, width: int, height: int) -> Gtk.Image:
         icon_flag = os.path.join(ENV['GPATH']['FLAGS'], "%s.svg" % code)
         if not os.path.exists(icon_flag):
             icon_flag = os.path.join(ENV['GPATH']['FLAGS'], "__.svg")
-        pixbuf = self.get_pixbuf_from_file_at_size(icon_flag, 32, 32)
+        pixbuf = self.get_pixbuf_from_file_at_size(icon_flag, width, height)
         return Gtk.Image.new_from_pixbuf(pixbuf)
