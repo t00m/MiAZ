@@ -74,35 +74,28 @@ class MiAZBackend(GObject.GObject):
 
         # Workflow
         ## 1. Check first docs in repodct and delete inconsistencies if
-        ## files do not exist anymore
+        ##    files do not exist anymore => delete inconsistency
         to_delete = []
-        for doc in s_repodct:
+        for doc in s_repodct.copy():
             if not os.path.exists(doc):
-                to_delete.append(doc)
-                self.log.info("Source repository - Document deleted: %s", doc)
-        for doc in to_delete:
-            # Delete inconsistency
-            del(s_repodct[doc])
+                del(s_repodct[doc])
+                self.log.info("Source repository - Document inconsistency deleted: %s", doc)
+
 
         json_save(s_repocnf, s_repodct)
 
-        # 2. Check docs in source directory and update repodct
+        # 2. Then, check docs in source directory and update repodct
         docs = get_files(s_repodir)
         for doc in docs:
-            # ~ try:
-                # ~ valid, reasons = s_repodct[doc]['valid']
-                # ~ self.log.debug("Found in config file: %s", doc)
-                # ~ if valid:
-                    # ~ self.log.debug("Valid: %s", doc)
-            # ~ except:
             s_repodct[doc] = {}
-            # ~ s_repodct[doc]['original'] = doc
             s_repodct[doc]['valid'] = self.validate_filename(doc)
             s_repodct[doc]['suggested'] = self.suggest_filename(doc)
             self.log.info("Source repository - Document added: %s", doc)
+
+        # 3. Save result and emit the proper signal
         json_save(s_repocnf, s_repodct)
+        self.log.debug("Emitting signal 'source-configuration-updated'")
         self.emit('source-configuration-updated')
-        self.log.debug("Signal 'source-configuration-updated' emitted")
 
     def validate_filename(self, filepath: str) -> tuple:
         filename = os.path.basename(filepath)

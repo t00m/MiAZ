@@ -74,3 +74,13 @@ def get_file_creation_date(filepath: str) -> datetime:
     created = os.stat(filepath).st_ctime
     adate = datetime.fromtimestamp(created)
     return adate #.strftime("%Y%m%d")
+
+def dir_writable(dirpath: str) -> bool:
+    try:
+        filename = os.path.join(dirpaht, 'test.txt')
+        with open(filename, 'w'):
+            file.write('test')
+            writable = True
+    except IOError as error:
+        writable = False
+    return writable

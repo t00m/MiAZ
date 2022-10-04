@@ -91,8 +91,12 @@ class MiAZConfig():
 
         if isinstance(config, dict):
             try:
-                config[key.upper()]
-                found = True
+                if self.config_for == 'Extensions':
+                    config[key.lower()]
+                    found = True
+                else:
+                    config[key.upper()]
+                    found = True
             except KeyError:
                 found = False
         elif isinstance(config, list):

@@ -22,6 +22,7 @@ from MiAZ.frontend.desktop.widgets.menubutton import MiAZMenuButton
 from MiAZ.frontend.desktop.widgets.docbrowser import MiAZDocBrowser
 from MiAZ.frontend.desktop.widgets.workspace import MiAZWorkspace
 from MiAZ.frontend.desktop.widgets.settings import MiAZPrefsWindow
+from MiAZ.frontend.desktop.widgets.assistant import MiAZAssistant
 from MiAZ.frontend.desktop.icons import MiAZIconManager
 
 Gtk.init()
@@ -45,7 +46,7 @@ class GUI(Adw.Application):
         self.build_gui()
         self.check_basic_settings()
         self.log.debug("Executing MiAZ Desktop mode")
-        self.win.present()
+        # ~ self.win.present()
 
     def get_backend(self):
         return self.backend
@@ -117,6 +118,7 @@ class GUI(Adw.Application):
         target = config.get('target')
 
         if source and target:
+            self.log.debug("Source and Target exist")
             self.page_browser.set_visible(True)
             self.page_workspace.set_visible(True)
             self.page_status.set_visible(False)
@@ -124,7 +126,15 @@ class GUI(Adw.Application):
                 self.show_workspace()
             else:
                 self.show_browser()
+            self.win.show()
         else:
+            self.log.debug("Launching assistant")
+            # ~ self.hide()
+            # ~ self.win.hide()
+            assistant = MiAZAssistant(self)
+            assistant.set_transient_for(self.win)
+            assistant.set_modal(True)
+            assistant.show()
             self.page_browser.set_visible(False)
             self.page_workspace.set_visible(False)
             self.page_status.set_visible(True)
