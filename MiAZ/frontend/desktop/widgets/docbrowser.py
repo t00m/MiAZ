@@ -15,6 +15,7 @@ from gi.repository.GdkPixbuf import Pixbuf
 
 from MiAZ.backend.env import ENV
 from MiAZ.backend.log import get_logger
+from MiAZ.backend.util import json_load
 from MiAZ.frontend.desktop.util import get_file_mimetype
 from MiAZ.frontend.desktop.icons import MiAZIconManager
 from MiAZ.frontend.desktop.widgets.treeview import MiAZTreeView
@@ -28,6 +29,7 @@ class MiAZDocBrowser(Gtk.Box):
         super(MiAZDocBrowser, self).__init__(spacing=12, orientation=Gtk.Orientation.VERTICAL)
         self.log = get_logger('MiAZDocBrowser')
         self.app = app
+        self.backend = self.app.get_backend()
         self.config = self.app.get_config('app')
         self.set_vexpand(True)
 
@@ -89,6 +91,8 @@ class MiAZDocBrowser(Gtk.Box):
         self.controller.connect('key-released', self.on_key_released)
         self.add_controller(self.controller)
 
+        self.backend.connect('target-configuration-updated', self.update)
+
     def nop(self, *args):
         self.log.debug(args)
 
@@ -123,19 +127,19 @@ class MiAZDocBrowser(Gtk.Box):
         self.listbox.set_placeholder(self.nodata)
 
 
-        row = Adw.ExpanderRow.new()
-        row.set_icon_name(icon_name='edit-find-symbolic')
-        row.set_title(title='<big><b>Libadwaita uno</b></big>')
-        row.set_subtitle(subtitle='Subtitle uno')
-        row.get_style_context().add_class(class_name='error')
-        self.listbox.append(child=row)
+        # ~ row = Adw.ExpanderRow.new()
+        # ~ row.set_icon_name(icon_name='edit-find-symbolic')
+        # ~ row.set_title(title='<big><b>Libadwaita uno</b></big>')
+        # ~ row.set_subtitle(subtitle='Subtitle uno')
+        # ~ row.get_style_context().add_class(class_name='error')
+        # ~ self.listbox.append(child=row)
 
-        row = Adw.ExpanderRow.new()
-        row.set_icon_name(icon_name='edit-find-symbolic')
-        row.set_title(title='Libadwaita dos')
-        row.set_subtitle(subtitle='Subtitle dos')
-        row.get_style_context().add_class(class_name='success')
-        self.listbox.append(child=row)
+        # ~ row = Adw.ExpanderRow.new()
+        # ~ row.set_icon_name(icon_name='edit-find-symbolic')
+        # ~ row.set_title(title='Libadwaita dos')
+        # ~ row.set_subtitle(subtitle='Subtitle dos')
+        # ~ row.get_style_context().add_class(class_name='success')
+        # ~ self.listbox.append(child=row)
 
 
 
@@ -152,9 +156,25 @@ class MiAZDocBrowser(Gtk.Box):
         self.listbox.invalidate_filter()
         # ~ print("Re-filtering")
 
-    def update(self):
-        pass
-        # ~ self.flowbox = Gtk.FlowBox.new()
+    def update(self, *args):
+        self.log.debug("Got signal 'target-configuration-updated'")
+        repocnf = self.backend.get_repo_target_config_file()
+        repodct = json_load(repocnf)
+
+        # ~ ndocs = 0
+        for doc in repodct:
+            row = Adw.ExpanderRow.new()
+            # ~ row.set_icon_name(icon_name='edit-find-symbolic')
+            row.set_title(title='<big><b>%s</b></big>' % doc)
+            fields = doc.split('-')
+            flag = self.app.icman.get_flag(fields[1])
+            row.add_prefix(flag)
+            # ~ row.set_subtitle(subtitle='Subtitle uno')
+            # ~ row.get_style_context().add_class(class_name='error')
+            self.listbox.append(child=row)
+        page = self.app.get_stack_page_by_name('browser')
+        # ~ page.set_badge_number(len(repodct))
+        page.set_needs_attention(True)
 
     def on_key_released(self, widget, keyval, keycode, state):
         # ~ self.log.debug("Active window: %s", self.app.get_active_window())
