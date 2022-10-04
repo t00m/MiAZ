@@ -172,20 +172,18 @@ class MiAZWorkspace(Gtk.Box):
         ndocs = 0
         for filepath in repodct:
             document = os.path.basename(filepath)
+            suggested = repodct[filepath]['suggested']
             mimetype = get_file_mimetype(filepath)
             icon = self.app.icman.get_pixbuf_mimetype_from_file(filepath, 36, 36)
-            valid, reasons = repodct[filepath]['valid']
-            if not valid:
-                ndocs += 1
-                node = self.store.insert_with_values(None, -1, (0, 1, 2, 3, 4, 5, 6), (icon, mimetype, False, "<b>%s</b>" % document, document, filepath, "FILE"))
-                for reason in reasons:
-                    passed, message = reason
-                    if passed:
-                        self.store.insert_with_values(node, -1, (0, 3, 6), (icon_ok, "<i>%s</i>" % message, "REASON"))
-                    else:
-                        self.store.insert_with_values(node, -1, (0, 3, 6), (icon_ko, "<i>%s</i>" % message, "REASON"))
+            node = self.store.insert_with_values(None, -1, (0, 1, 2, 3, 4, 5, 6), (icon, mimetype, False, "<b>%s</b>" % document, suggested, filepath, "FILE"))
+            for reason in repodct[filepath]['reasons']:
+                passed, message = reason
+                if passed:
+                    self.store.insert_with_values(node, -1, (0, 3, 6), (icon_ok, "<i>%s</i>" % message, "REASON"))
+                else:
+                    self.store.insert_with_values(node, -1, (0, 3, 6), (icon_ko, "<i>%s</i>" % message, "REASON"))
         page = self.app.get_stack_page_by_name('workspace')
-        page.set_badge_number(ndocs)
+        page.set_badge_number(len(repodct))
 
     def on_edit_filename(self, widget, path, target):
         treeiter = self.sorted_model.get_iter(path)
