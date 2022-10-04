@@ -31,6 +31,7 @@ class MiAZPrefsWindow(Adw.PreferencesWindow):
         self.sm = self.app.get_style_manager()
         self.color_scheme = self.sm.get_color_scheme()
         super().__init__(title='Preferences')
+        self.connect('close-request', self.on_window_close)
         self.set_transient_for(self.app.win)
         page = Adw.PreferencesPage.new()
         page.set_title("Preferences")
@@ -310,3 +311,9 @@ class MiAZPrefsWindow(Adw.PreferencesWindow):
         boxRepository.append(boxRepoTarget)
 
         return boxRepository
+
+    def on_window_close(self, *args):
+        # ~ self.destroy()
+        self.log.debug("Checking new settings")
+        self.app.check_basic_settings()
+        # ~ self.app.win.present()

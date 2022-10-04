@@ -77,10 +77,13 @@ def get_file_creation_date(filepath: str) -> datetime:
 
 def dir_writable(dirpath: str) -> bool:
     try:
-        filename = os.path.join(dirpaht, 'test.txt')
-        with open(filename, 'w'):
-            file.write('test')
+        filename = os.path.join(dirpath, 'test.txt')
+        with open(filename, 'w') as fout:
+            fout.write('test')
             writable = True
+        os.unlink(filename)
     except IOError as error:
+        writable = False
+    except TypeError:
         writable = False
     return writable

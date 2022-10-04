@@ -15,7 +15,7 @@ from gi.repository import Pango
 from MiAZ.backend.env import ENV
 
 from MiAZ.backend import MiAZBackend
-from MiAZ.backend.controller import get_documents
+from MiAZ.backend.util import dir_writable
 from MiAZ.backend.log import get_logger
 from MiAZ.frontend.desktop.widgets.menu import MiAZ_APP_MENU
 from MiAZ.frontend.desktop.widgets.menubutton import MiAZMenuButton
@@ -114,8 +114,8 @@ class GUI(Adw.Application):
 
     def check_basic_settings(self):
         config = self.get_config('app')
-        source = config.get('source')
-        target = config.get('target')
+        source = dir_writable(config.get('source'))
+        target = dir_writable(config.get('target'))
 
         if source and target:
             self.log.debug("Source and Target exist")
