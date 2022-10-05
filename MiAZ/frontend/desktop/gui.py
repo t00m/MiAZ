@@ -105,7 +105,7 @@ class GUI(Adw.Application):
         status_page.set_description(description='A personal document organizer')
         status_page.set_icon_name(icon_name='MiAZ-extra-big')
         status_page.set_title(title='MiAZ')
-        button = self.create_button('edit-clear', 'Test', self.nop)
+        button = self.create_button('edit-clear', 'Test', self.noop)
         status_page.set_child(button)
         self.page_status = self.stack.add_titled(status_page, 'welcome', 'Welcome')
 
@@ -163,10 +163,11 @@ class GUI(Adw.Application):
         elif stack == 'browser':
             self.docbrowser.filter_view()
 
-    def nop(self, *args):
-        stack = self.stack.get_visible_child_name()
-        if stack == 'workspace':
-            self.workspace.filter_view()
+    def noop(self, *args):
+        self.log.debug(args)
+        # ~ stack = self.stack.get_visible_child_name()
+        # ~ if stack == 'workspace':
+            # ~ self.workspace.filter_view()
 
     def refresh_workspace(self, *args):
         self.workspace.refresh_view()
@@ -205,7 +206,7 @@ class GUI(Adw.Application):
         button.connect('activate', callback)
         return button
 
-    def create_button(self, icon_name, title, callback, width=32, height=32, css_classes=['flat']):
+    def create_button(self, icon_name, title, callback=None, width=32, height=32, css_classes=['flat'], data=None):
         if len(icon_name.strip()) == 0:
             button = Gtk.Button(css_classes=css_classes)
             button.set_label(title)
@@ -219,7 +220,10 @@ class GUI(Adw.Application):
                 )
         # ~ button.get_style_context().add_class(class_name='success')
         button.set_has_frame(True)
-        button.connect('clicked', callback)
+        if callback is None:
+            button.connect('clicked', self.noop, data)
+        else:
+            button.connect('clicked', callback, data)
         return button
 
     def create_action(self, name, callback):

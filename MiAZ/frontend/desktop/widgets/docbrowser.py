@@ -61,6 +61,12 @@ class MiAZDocBrowser(Gtk.Box):
     def setup_toolbar(self):
         # https://gist.github.com/Afacanc38/76ce9b3260307bea64ebf3506b485147
         # Toolbar
+        frame = Gtk.Frame()
+        frame.set_margin_top(margin=6)
+        frame.set_margin_end(margin=6)
+        frame.set_margin_bottom(margin=6)
+        frame.set_margin_start(margin=6)
+
         toolbar = Gtk.CenterBox()
         toolbar.set_margin_top(margin=6)
         toolbar.set_margin_end(margin=6)
@@ -85,8 +91,8 @@ class MiAZDocBrowser(Gtk.Box):
         # ~ button = self.app.create_button('miaz-view-tree', '', self.show_view_tree)
         # ~ boxViews.append(button)
         toolbar.set_end_widget(boxViews)
-
-        self.append(toolbar)
+        frame.set_child(toolbar)
+        self.append(frame)
 
         self.controller = Gtk.EventControllerKey()
         self.controller.connect('key-released', self.on_key_released)
@@ -94,7 +100,7 @@ class MiAZDocBrowser(Gtk.Box):
 
         self.backend.connect('target-configuration-updated', self.update)
 
-    def nop(self, *args):
+    def noop(self, *args):
         self.log.debug(args)
 
     def show_view_list(self, *args):
@@ -120,11 +126,11 @@ class MiAZDocBrowser(Gtk.Box):
         # ~ self.append(child=self.listbox)
 
         # Row for displaying when there is no documents available
-        self.nodata = Adw.ExpanderRow.new()
+        self.nodata = Adw.ActionRow.new()
         # ~ self.nodata.set_icon_name(icon_name='MiAZ-big')
         self.nodata.set_title(title='<b>No documents found</b>')
-        self.nodata.set_enable_expansion(False)
-        self.nodata.set_show_enable_switch(False)
+        # ~ self.nodata.set_enable_expansion(False)
+        # ~ self.nodata.set_show_enable_switch(False)
         self.listbox.set_placeholder(self.nodata)
 
 
@@ -167,17 +173,24 @@ class MiAZDocBrowser(Gtk.Box):
             dot = filename.rfind('.')
             doc = filename[:dot]
             ext = filename[dot+1:]
-            row = Adw.ActionRow.new()
-            # ~ row.set_icon_name(icon_name='edit-find-symbolic')
+            row = Adw.ExpanderRow.new()
+            # ~ row.connect('activated', self.on_row_activated)
+            row.connect('activate', self.on_row_activated)
             fields = doc.split('-')
-            explain = "<span color='blue'>#%s</span> %s from %s about %s to %s" % (fields[2], fields[4].title(), who.get(fields[3]), fields[5], who.get(fields[6]))
+            explain = "<span color='blue'>#%s</span> <b>%s from %s about %s to %s</b>" % (fields[2], fields[4].title(), who.get(fields[3]), fields[5], who.get(fields[6]))
             # ~ row.set_title(title='<b>%-10s %s</b>' % (fields[0], explain))
-            row.set_title(title='%s <b><sup>%s</sup></b>' % (explain, fuzzy_date_from_timestamp(fields[0])))
+            row.set_title(title=explain)
             row.set_subtitle(subtitle=doc)
             flag = self.app.icman.get_flag(fields[1], 48, 48)
             row.add_prefix(flag)
-            # ~ row.set_subtitle(subtitle='Subtitle uno')
+            # ~ row.set_icon_name(icon_name='miaz-res-organizations')
+            fuzzy_date = Gtk.Label()
+            fuzzy_date.set_markup(fuzzy_date_from_timestamp(fields[0]))
+            row.add_action(fuzzy_date)
             # ~ row.get_style_context().add_class(class_name='error')
+
+            subrow = self.app.create_button('miaz-mime-web', 'Link to this resource', None, data=row)
+            row.add_row(subrow)
             self.listbox.append(child=row)
         page = self.app.get_stack_page_by_name('browser')
         # ~ page.set_badge_number(len(repodct))
@@ -198,3 +211,8 @@ class MiAZDocBrowser(Gtk.Box):
             # ~ self.workspace.filter_view()
         # ~ elif stack == 'browser':
             # ~ self.docbrowser.filter_view()
+
+    def on_row_activated(self, *args):
+        self.log.debug(args)
+        page = self.gui.get_stack_page_by_name('browser')
+        page.set_needs_attention(False)

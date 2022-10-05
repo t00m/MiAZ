@@ -108,4 +108,7 @@ class MiAZIconManager(GObject.GObject):
         if not os.path.exists(icon_flag):
             icon_flag = os.path.join(ENV['GPATH']['FLAGS'], "__.svg")
         pixbuf = self.get_pixbuf_from_file_at_size(icon_flag, width, height)
-        return Gtk.Image.new_from_pixbuf(pixbuf)
+        icon = Gtk.Image.new_from_pixbuf(pixbuf)
+        # ~ print("Width: %d" % width)
+        icon.set_icon_size(Gtk.IconSize.LARGE)
+        return icon
