@@ -109,7 +109,7 @@ class MiAZDocBrowser(Gtk.Box):
     def setup_view_listbox(self):
         self.listbox = Gtk.ListBox.new()
         self.listbox.set_show_separators(True)
-        self.listbox.set_selection_mode(mode=Gtk.SelectionMode.MULTIPLE)
+        self.listbox.set_selection_mode(mode=Gtk.SelectionMode.SINGLE)
         self.listbox.set_activate_on_single_click(True)
         self.listbox.set_margin_top(margin=0)
         self.listbox.set_margin_end(margin=6)
@@ -172,7 +172,7 @@ class MiAZDocBrowser(Gtk.Box):
             fields = doc.split('-')
             explain = "<span color='blue'>#%s</span> %s from %s about %s to %s" % (fields[2], fields[4].title(), who.get(fields[3]), fields[5], who.get(fields[6]))
             # ~ row.set_title(title='<b>%-10s %s</b>' % (fields[0], explain))
-            row.set_title(title='<b>%s %s</b>' % (fuzzy_date_from_timestamp(fields[0]), explain))
+            row.set_title(title='%s <b><sup>%s</sup></b>' % (explain, fuzzy_date_from_timestamp(fields[0])))
             row.set_subtitle(subtitle=doc)
             flag = self.app.icman.get_flag(fields[1], 48, 48)
             row.add_prefix(flag)
