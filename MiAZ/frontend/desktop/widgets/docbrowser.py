@@ -157,16 +157,21 @@ class MiAZDocBrowser(Gtk.Box):
         # ~ print("Re-filtering")
 
     def update(self, *args):
+        # Filename format: {timestamp}-{country}-{collection}-{from}-{purpose}-{concept}-{to}.{extension}
         self.log.debug("Got signal 'target-configuration-updated'")
         repocnf = self.backend.get_repo_target_config_file()
         repodct = json_load(repocnf)
-
-        # ~ ndocs = 0
-        for doc in repodct:
+        who = self.app.get_config('organizations')
+        for filename in repodct:
+            dot = filename.rfind('.')
+            doc = filename[:dot]
+            ext = filename[dot+1:]
             row = Adw.ActionRow.new()
             # ~ row.set_icon_name(icon_name='edit-find-symbolic')
-            row.set_title(title='<big><b>%s</b></big>' % doc)
             fields = doc.split('-')
+            explain = "<span color='blue'>#%s</span> %s from %s about %s to %s" % (fields[2], fields[4].title(), who.get(fields[3]), fields[5], who.get(fields[6]))
+            row.set_title(title='<big><b>%-10s %s</b></big>' % (fields[0], explain))
+            row.set_subtitle(subtitle=doc)
             flag = self.app.icman.get_flag(fields[1], 48, 48)
             row.add_prefix(flag)
             # ~ row.set_subtitle(subtitle='Subtitle uno')

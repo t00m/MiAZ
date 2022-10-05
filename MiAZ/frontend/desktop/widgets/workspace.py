@@ -194,17 +194,20 @@ class MiAZWorkspace(Gtk.Box):
         icon_ok = self.app.icman.get_pixbuf_by_name('miaz-ok', 24)
         ndocs = 0
         for filepath in repodct:
-            document = os.path.basename(filepath)
-            suggested = repodct[filepath]['suggested']
-            mimetype = get_file_mimetype(filepath)
-            icon = self.app.icman.get_pixbuf_mimetype_from_file(filepath, 36, 36)
-            node = self.store.insert_with_values(None, -1, (0, 1, 2, 3, 4, 5, 6), (icon, mimetype, False, "<b>%s</b>" % document, suggested, filepath, "FILE"))
-            for reason in repodct[filepath]['reasons']:
-                passed, message = reason
-                if passed:
-                    self.store.insert_with_values(node, -1, (0, 3, 6), (icon_ok, "<i>%s</i>" % message, "REASON"))
-                else:
-                    self.store.insert_with_values(node, -1, (0, 3, 6), (icon_ko, "<i>%s</i>" % message, "REASON"))
+            try:
+                document = os.path.basename(filepath)
+                suggested = repodct[filepath]['suggested']
+                mimetype = get_file_mimetype(filepath)
+                icon = self.app.icman.get_pixbuf_mimetype_from_file(filepath, 36, 36)
+                node = self.store.insert_with_values(None, -1, (0, 1, 2, 3, 4, 5, 6), (icon, mimetype, False, "<b>%s</b>" % document, suggested, filepath, "FILE"))
+                for reason in repodct[filepath]['reasons']:
+                    passed, message = reason
+                    if passed:
+                        self.store.insert_with_values(node, -1, (0, 3, 6), (icon_ok, "<i>%s</i>" % message, "REASON"))
+                    else:
+                        self.store.insert_with_values(node, -1, (0, 3, 6), (icon_ko, "<i>%s</i>" % message, "REASON"))
+            except KeyError:
+                self.log.warning("Perhaps the document '%s' was moved to target folder?")
         page = self.app.get_stack_page_by_name('workspace')
         page.set_badge_number(len(repodct))
 
