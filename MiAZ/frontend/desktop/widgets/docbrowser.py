@@ -16,6 +16,7 @@ from gi.repository.GdkPixbuf import Pixbuf
 from MiAZ.backend.env import ENV
 from MiAZ.backend.log import get_logger
 from MiAZ.backend.util import json_load
+from MiAZ.backend.util import fuzzy_date_from_timestamp
 from MiAZ.frontend.desktop.util import get_file_mimetype
 from MiAZ.frontend.desktop.icons import MiAZIconManager
 from MiAZ.frontend.desktop.widgets.treeview import MiAZTreeView
@@ -170,7 +171,8 @@ class MiAZDocBrowser(Gtk.Box):
             # ~ row.set_icon_name(icon_name='edit-find-symbolic')
             fields = doc.split('-')
             explain = "<span color='blue'>#%s</span> %s from %s about %s to %s" % (fields[2], fields[4].title(), who.get(fields[3]), fields[5], who.get(fields[6]))
-            row.set_title(title='<big><b>%-10s %s</b></big>' % (fields[0], explain))
+            # ~ row.set_title(title='<b>%-10s %s</b>' % (fields[0], explain))
+            row.set_title(title='<b>%s %s</b>' % (fuzzy_date_from_timestamp(fields[0]), explain))
             row.set_subtitle(subtitle=doc)
             flag = self.app.icman.get_flag(fields[1], 48, 48)
             row.add_prefix(flag)
