@@ -24,6 +24,7 @@ from MiAZ.backend.util import json_load
 from MiAZ.frontend.desktop.util import get_file_mimetype
 from MiAZ.frontend.desktop.icons import MiAZIconManager
 from MiAZ.frontend.desktop.widgets.treeview import MiAZTreeView
+from MiAZ.frontend.desktop.widgets.menu import MiAZ_APP_MENU
 
 
 class MiAZWorkspace(Gtk.Box):
@@ -47,6 +48,8 @@ class MiAZWorkspace(Gtk.Box):
         self.scrwin = Gtk.ScrolledWindow()
         self.scrwin.set_has_frame(True)
         self.scrwin.set_vexpand(True)
+
+        self.viewport = Gtk.Viewport()
 
         # Model: document icon, mimetype, current filename, suggested filename (if needed), accept suggestion, filepath
         self.store = Gtk.TreeStore(Pixbuf, str, bool, str, str, str, str)
@@ -161,7 +164,8 @@ class MiAZWorkspace(Gtk.Box):
         self.evk.connect("pressed", self.on_right_click)
         self.treeview.add_controller(self.evk)
 
-        self.scrwin.set_child(self.treeview)
+        self.viewport.set_child(self.treeview)
+        self.scrwin.set_child(self.viewport)
         self.append(self.scrwin)
 
         self.backend.connect('source-configuration-updated', self.update)
@@ -267,50 +271,55 @@ class MiAZWorkspace(Gtk.Box):
     def on_right_click(self, gesture, n_press, x, y):
         right_click = self.evk.get_current_button() == 3
         if right_click:
+            selection = self.treeview.get_selection()
+            model, rows = selection.get_selected_rows()
+            for row in rows:
+                self.log.debug(row)
             rect = Gdk.Rectangle()
             rect.x = x = int(x)
             rect.y = y = int(y)
-            self.popover = Gtk.Popover()
+            self.popover = Gtk.PopoverMenu()
             self.popover.set_pointing_to(rect)
-            self.popover.set_parent(self.treeview)
+            self.popover.set_parent(self.viewport)
             self.popover.set_has_arrow(True)
-            box = self.build_popover()
-            self.popover.set_child(box)
+
+            menu = self.create_menu()
+            self.popover.set_menu_model(menu)
+
+            # ~ box = self.build_popover()
+            # ~ self.popover.set_child(self.app.create_button('miaz-remove', 'Delete document'))
             self.popover.popup()
-            return True
+        return True
 
     def build_popover(self):
-        listbox = Gtk.ListBox.new()
-        # ~ listbox.set_show_separators(True)
-        listbox.set_selection_mode(mode=Gtk.SelectionMode.SINGLE)
-        listbox.set_activate_on_single_click(True)
-        listbox.set_margin_top(margin=6)
-        listbox.set_margin_end(margin=6)
-        listbox.set_margin_bottom(margin=6)
-        listbox.set_margin_start(margin=6)
-        listbox.get_style_context().add_class(class_name='boxed-list')
-        # ~ listbox.set_filter_func(clb_visible_function)
-        row = Adw.ActionRow.new()
-        row.set_title(title='Change field country')
-        listbox.append(row)
-        row = Adw.ActionRow.new()
-        row.set_title(title='Change field collection')
-        listbox.append(row)
+        # ~ listbox.set_selection_mode(mode=Gtk.SelectionMode.SINGLE)
+        # ~ listbox.set_activate_on_single_click(True)
+        # ~ listbox.set_margin_top(margin=6)
+        # ~ listbox.set_margin_end(margin=6)
+        # ~ listbox.set_margin_bottom(margin=6)
+        # ~ listbox.set_margin_start(margin=6)
+        # ~ listbox.get_style_context().add_class(class_name='boxed-list')
+        # ~ row = Adw.ActionRow.new()
+        # ~ row.set_title(title='Change field country')
+        # ~ listbox.append(row)
+        # ~ row = Adw.ActionRow.new()
+        # ~ row.set_title(title='Change field collection')
+        # ~ listbox.append(row)
 
-        # ~ box = Gtk.Box(spacing = 3, orientation=Gtk.Orientation.VERTICAL)
-        # ~ button = self.app.create_button('miaz-res-countries', 'Change field country', self.noop)
-        # ~ box.append(button)
-        # ~ button = self.app.create_button('miaz-res-collections', 'Change field collection', self.noop)
-        # ~ box.append(button)
-        # ~ button = self.app.create_button('miaz-res-who', 'Change field <i>From</i>', self.noop)
-        # ~ box.append(button)
-        # ~ button = self.app.create_button('miaz-res-purposes', 'Change field <i>purpose</i>', self.noop)
-        # ~ box.append(button)
-        # ~ button = self.app.create_button('miaz-res-languages', 'Change field <i>concept</i>', self.noop)
-        # ~ box.append(button)
-        # ~ button = self.app.create_button('miaz-res-who', 'Change field <i>to</i>', self.noop)
-        # ~ box.append(button)
-        return listbox
+        box = Gtk.Box(spacing = 3, orientation=Gtk.Orientation.VERTICAL)
+        button = self.app.create_button('miaz-res-countries', 'Change field country', self.noop)
+        box.append(button)
+        button = self.app.create_button('miaz-res-collections', 'Change field collection', self.noop)
+        box.append(button)
+        button = self.app.create_button('miaz-res-who', 'Change field <i>From</i>', self.noop)
+        box.append(button)
+        button = self.app.create_button('miaz-res-purposes', 'Change field <i>purpose</i>', self.noop)
+        box.append(button)
+        button = self.app.create_button('miaz-res-languages', 'Change field <i>concept</i>', self.noop)
+        box.append(button)
+        button = self.app.create_button('miaz-res-who', 'Change field <i>to</i>', self.noop)
+        box.append(button)
+        return box
 
     def noop(self, *args):
         selection = self.treeview.get_selection()
@@ -322,3 +331,19 @@ class MiAZWorkspace(Gtk.Box):
         end = rows[-1]
         ns = len(rows)
         self.log.debug("Number of rows selected: %d", ns)
+
+    def create_menu(self):
+        gio_menu_workspace = Gio.Menu.new()
+        items = [
+                    ('Rename document', 'app.rename', 'rename'),
+                    ('Delete document', 'app.delete', 'delete')
+                ]
+        for item_label, item_action, simple in items:
+            item = Gio.MenuItem.new()
+            item.set_label(item_label)
+            action = Gio.SimpleAction.new(simple, None)
+            action.connect("activate", self.noop)
+            self.app.add_action(action)
+            item.set_detailed_action(detailed_action=item_action)
+            gio_menu_workspace.append_item(item)
+        return gio_menu_workspace

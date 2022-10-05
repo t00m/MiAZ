@@ -92,6 +92,7 @@ class GUI(Adw.Application):
         self.docbrowser = self.create_docbrowser()
         # ~ self.docbrowser.connect('show', self.on_browser_show)
         self.page_browser = self.stack.add_titled(self.docbrowser, 'browser', 'Browser')
+        # ~ self.page_browser.connect('map', self.noop)
         self.page_browser.set_icon_name('view-grid')
         # ~ self.page_browser.connect('show', self.on_browser_show)
 
