@@ -43,7 +43,8 @@ class MiAZWorkspace(Gtk.Box):
         self.set_margin_start(margin=6)
 
         self.create_actions()
-        self.create_menu()
+        self.create_menu_selection_single()
+        self.create_menu_selection_multiple()
 
         self.scrwin = Gtk.ScrolledWindow()
         self.scrwin.set_has_frame(True)
@@ -177,9 +178,9 @@ class MiAZWorkspace(Gtk.Box):
         action.connect("activate", self.noop)
         self.app.win.add_action(action)
 
-    def create_menu(self):
-        self.menu = Gio.Menu.new()
-        self.menu.append("Do Something", "app.win.something")
+    # ~ def create_menu(self):
+        # ~ self.menu = Gio.Menu.new()
+        # ~ self.menu.append("Do Something", "app.win.something")
 
 
     def on_entry_filename_changed(self, *args):
@@ -273,10 +274,6 @@ class MiAZWorkspace(Gtk.Box):
     def on_right_click(self, gesture, n_press, x, y):
         right_click = self.evk.get_current_button() == 3
         if right_click:
-            # ~ selection = self.treeview.get_selection()
-            # ~ model, rows = selection.get_selected_rows()
-            # ~ for row in rows:
-                # ~ self.log.debug(row)
             rect = Gdk.Rectangle()
             rect.x = x = int(x)
             rect.y = y = int(y)
@@ -285,8 +282,16 @@ class MiAZWorkspace(Gtk.Box):
             self.popover.set_parent(self.scrwin)
             self.popover.set_has_arrow(True)
 
-            menu = self.create_menu()
-            self.popover.set_menu_model(menu)
+            selection = self.treeview.get_selection()
+            model, treepaths = selection.get_selected_rows()
+            self.log.debug("Selected rows: %d", len(treepaths))
+            if len(treepaths) == 1:
+                self.popover.set_menu_model(self.menu_workspace_single)
+            elif len(treepaths) > 1:
+                self.popover.set_menu_model(self.menu_workspace_multiple)
+            else:
+                return
+
 
             # ~ box = self.build_popover()
             # ~ self.popover.set_child(self.app.create_button('miaz-remove', 'Delete document'))
@@ -334,8 +339,8 @@ class MiAZWorkspace(Gtk.Box):
         ns = len(rows)
         self.log.debug("Number of rows selected: %d", ns)
 
-    def create_menu(self):
-        menu_workspace = Gio.Menu.new()
+    def create_menu_selection_single(self):
+        self.menu_workspace_single = Gio.Menu.new()
 
         items = [
                     ('Rename document', 'app.rename', 'rename'),
@@ -349,9 +354,25 @@ class MiAZWorkspace(Gtk.Box):
             action.connect("activate", eval(callback))
             self.app.add_action(action)
             item.set_detailed_action(detailed_action=item_action)
-            menu_workspace.append_item(item)
+            self.menu_workspace_single.append_item(item)
 
-        # Menu que irá conter os itens do submenu.
+    def create_menu_selection_multiple(self):
+        self.menu_workspace_multiple = Gio.Menu.new()
+
+        items = [
+                    ('Rename document', 'app.rename', 'rename'),
+                    ('Delete document', 'app.delete', 'delete')
+                ]
+        for item_label, item_action, simple in items:
+            item = Gio.MenuItem.new()
+            item.set_label(item_label)
+            action = Gio.SimpleAction.new(simple, None)
+            callback = "self.action_%s" % simple
+            action.connect("activate", eval(callback))
+            self.app.add_action(action)
+            item.set_detailed_action(detailed_action=item_action)
+            self.menu_workspace_multiple.append_item(item)
+
         submenu_rename_root = Gio.Menu.new()
 
         # Submenu.
@@ -359,9 +380,8 @@ class MiAZWorkspace(Gtk.Box):
             label='Mass rename of...',
             submenu=submenu_rename_root,
         )
-        menu_workspace.append_item(submenu_rename)
+        self.menu_workspace_multiple.append_item(submenu_rename)
 
-        # Item que será adicionando no submenu.
         rename_collection = Gio.MenuItem.new()
         rename_collection.set_label(label='... collection')
         action = Gio.SimpleAction.new('rename', None)
@@ -377,22 +397,6 @@ class MiAZWorkspace(Gtk.Box):
             detailed_action='app.purpose',
         )
         submenu_rename_root.append_item(rename_purpose)
-
-
-        # ~ items = [
-                    # ~ ('Rename document', 'app.rename', 'rename'),
-                    # ~ ('Delete document', 'app.delete', 'delete')
-                # ~ ]
-        # ~ for item_label, item_action, simple in items:
-            # ~ item = Gio.MenuItem.new()
-            # ~ item.set_label(item_label)
-            # ~ action = Gio.SimpleAction.new(simple, None)
-            # ~ callback = "self.action_%s" % simple
-            # ~ action.connect("activate", eval(callback))
-            # ~ self.app.add_action(action)
-            # ~ item.set_detailed_action(detailed_action=item_action)
-            # ~ menu_workspace.append_item(item)
-        return menu_workspace
 
     def action_rename(self, *args):
         selection = self.treeview.get_selection()
