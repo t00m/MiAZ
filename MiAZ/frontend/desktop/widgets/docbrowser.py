@@ -192,9 +192,7 @@ class MiAZDocBrowser(Gtk.Box):
             subrow = self.app.create_button('miaz-mime-web', 'Link to this resource', None, data=row)
             row.add_row(subrow)
             self.listbox.append(child=row)
-        page = self.app.get_stack_page_by_name('browser')
-        # ~ page.set_badge_number(len(repodct))
-        page.set_needs_attention(True)
+        self.do_needs_attention()
 
     def on_key_released(self, widget, keyval, keycode, state):
         # ~ self.log.debug("Active window: %s", self.app.get_active_window())

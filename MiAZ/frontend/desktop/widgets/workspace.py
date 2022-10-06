@@ -344,8 +344,21 @@ class MiAZWorkspace(Gtk.Box):
             item = Gio.MenuItem.new()
             item.set_label(item_label)
             action = Gio.SimpleAction.new(simple, None)
-            action.connect("activate", self.noop)
+            callback = "self.action_%s" % simple
+            action.connect("activate", eval(callback))
             self.app.add_action(action)
             item.set_detailed_action(detailed_action=item_action)
             gio_menu_workspace.append_item(item)
         return gio_menu_workspace
+
+    def action_rename(self, *args):
+        selection = self.treeview.get_selection()
+        model, treepaths = selection.get_selected_rows()
+        for treepath in treepaths:
+            treeiter = self.sorted_model.get_iter(treepath)
+            filepath = self.sorted_model[treeiter][5]
+            self.log.debug(filepath)
+
+
+    def action_delete(self, *args):
+        self.log.debug(args)
