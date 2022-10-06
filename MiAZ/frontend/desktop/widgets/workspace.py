@@ -274,6 +274,7 @@ class MiAZWorkspace(Gtk.Box):
     def on_right_click(self, gesture, n_press, x, y):
         right_click = self.evk.get_current_button() == 3
         if right_click:
+            # Determine where to place the popover
             rect = Gdk.Rectangle()
             rect.x = x = int(x)
             rect.y = y = int(y)
@@ -282,6 +283,7 @@ class MiAZWorkspace(Gtk.Box):
             self.popover.set_parent(self.scrwin)
             self.popover.set_has_arrow(True)
 
+            # Determine which menu should be displayed
             selection = self.treeview.get_selection()
             model, treepaths = selection.get_selected_rows()
             self.log.debug("Selected rows: %d", len(treepaths))
@@ -292,11 +294,9 @@ class MiAZWorkspace(Gtk.Box):
             else:
                 return
 
-
-            # ~ box = self.build_popover()
-            # ~ self.popover.set_child(self.app.create_button('miaz-remove', 'Delete document'))
+            # Display popover
             self.popover.popup()
-        return True
+
 
     def build_popover(self):
         # ~ listbox.set_selection_mode(mode=Gtk.SelectionMode.SINGLE)
@@ -341,70 +341,109 @@ class MiAZWorkspace(Gtk.Box):
 
     def create_menu_selection_single(self):
         self.menu_workspace_single = Gio.Menu.new()
+        item_fake = Gio.MenuItem.new()
+        item_fake.set_label('Single selection')
+        action = Gio.SimpleAction.new('fake', None)
+        item_fake.set_detailed_action(detailed_action='fake')
+        self.menu_workspace_single.append_item(item_fake)
 
-        items = [
-                    ('Rename document', 'app.rename', 'rename'),
-                    ('Delete document', 'app.delete', 'delete')
-                ]
-        for item_label, item_action, simple in items:
-            item = Gio.MenuItem.new()
-            item.set_label(item_label)
-            action = Gio.SimpleAction.new(simple, None)
-            callback = "self.action_%s" % simple
-            action.connect("activate", eval(callback))
-            self.app.add_action(action)
-            item.set_detailed_action(detailed_action=item_action)
-            self.menu_workspace_single.append_item(item)
+        # ~ items = [
+                    # ~ ('Rename document', 'app.rename', 'rename'),
+                    # ~ ('Delete document', 'app.delete', 'delete')
+                # ~ ]
+        # ~ for item_label, item_action, simple in items:
+            # ~ item = Gio.MenuItem.new()
+            # ~ item.set_label(item_label)
+            # ~ action = Gio.SimpleAction.new(simple, None)
+            # ~ callback = "self.action_%s" % simple
+            # ~ action.connect("activate", eval(callback))
+            # ~ self.app.add_action(action)
+            # ~ item.set_detailed_action(detailed_action=item_action)
+            # ~ self.menu_workspace_single.append_item(item)
 
     def create_menu_selection_multiple(self):
+        fields = ['date', 'country', 'collection', 'purpose']
+
         self.menu_workspace_multiple = Gio.Menu.new()
+        item_fake = Gio.MenuItem.new()
+        item_fake.set_label('Multiple selection')
+        action = Gio.SimpleAction.new('fake', None)
+        item_fake.set_detailed_action(detailed_action='fake')
+        self.menu_workspace_multiple.append_item(item_fake)
 
-        items = [
-                    ('Rename document', 'app.rename', 'rename'),
-                    ('Delete document', 'app.delete', 'delete')
-                ]
-        for item_label, item_action, simple in items:
-            item = Gio.MenuItem.new()
-            item.set_label(item_label)
-            action = Gio.SimpleAction.new(simple, None)
-            callback = "self.action_%s" % simple
-            action.connect("activate", eval(callback))
-            self.app.add_action(action)
-            item.set_detailed_action(detailed_action=item_action)
-            self.menu_workspace_multiple.append_item(item)
-
+        # Submenu for mass renaming
         submenu_rename_root = Gio.Menu.new()
-
-        # Submenu.
         submenu_rename = Gio.MenuItem.new_submenu(
-            label='Mass rename of...',
+            label='Mass renaming of...',
             submenu=submenu_rename_root,
         )
         self.menu_workspace_multiple.append_item(submenu_rename)
 
-        rename_collection = Gio.MenuItem.new()
-        rename_collection.set_label(label='... collection')
-        action = Gio.SimpleAction.new('rename', None)
-        callback = "self.action_%s" % 'rename'
-        action.connect("activate", eval(callback))
-        self.app.add_action(action)
-        rename_collection.set_detailed_action(detailed_action='app.rename')
-        submenu_rename_root.append_item(rename_collection)
+        for item in fields:
+            menuitem = Gio.MenuItem.new()
+            menuitem.set_label(label='... %s' % item)
+            action = Gio.SimpleAction.new('rename_%s' % item, None)
+            callback = 'self.action_rename'
+            action.connect('activate', eval(callback), item)
+            self.app.add_action(action)
+            menuitem.set_detailed_action(detailed_action='app.rename_%s' % item)
+            submenu_rename_root.append_item(menuitem)
 
-        rename_purpose = Gio.MenuItem.new()
-        rename_purpose.set_label(label='... purpose')
-        rename_purpose.set_detailed_action(
-            detailed_action='app.purpose',
+        # Submenu for mass adding
+        submenu_add_root = Gio.Menu.new()
+        submenu_add = Gio.MenuItem.new_submenu(
+            label='Mass adding of...',
+            submenu=submenu_add_root,
         )
-        submenu_rename_root.append_item(rename_purpose)
+        self.menu_workspace_multiple.append_item(submenu_add)
+
+        for item in fields:
+            menuitem = Gio.MenuItem.new()
+            menuitem.set_label(label='... %s' % item)
+            action = Gio.SimpleAction.new('add_%s' % item, None)
+            callback = 'self.action_add'
+            action.connect('activate', eval(callback), item)
+            self.app.add_action(action)
+            menuitem.set_detailed_action(detailed_action='app.add_%s' % item)
+            submenu_add_root.append_item(menuitem)
+
+        item_force_update = Gio.MenuItem.new()
+        item_force_update.set_label(label='Force update')
+        action = Gio.SimpleAction.new('workspace_update', None)
+        action.connect('activate', self.update)
+        self.app.add_action(action)
+        item_force_update.set_detailed_action(detailed_action='app.workspace_update')
+        self.menu_workspace_multiple.append_item(item_force_update)
+
+        item_delete = Gio.MenuItem.new()
+        item_delete.set_label(label='Delete documents')
+        action = Gio.SimpleAction.new('workspace_delete', None)
+        action.connect('activate', self.noop)
+        self.app.add_action(action)
+        item_delete.set_detailed_action(detailed_action='app.workspace_delete')
+        self.menu_workspace_multiple.append_item(item_delete)
+
 
     def action_rename(self, *args):
-        selection = self.treeview.get_selection()
-        model, treepaths = selection.get_selected_rows()
-        for treepath in treepaths:
-            treeiter = self.sorted_model.get_iter(treepath)
-            filepath = self.sorted_model[treeiter][5]
-            self.log.debug(filepath)
+        self.log.debug(args)
+
+    def action_add(self, *args):
+        self.log.debug(args)
+    # ~ def action_rename_collection(self, *args):
+        # ~ selection = self.treeview.get_selection()
+        # ~ model, treepaths = selection.get_selected_rows()
+        # ~ for treepath in treepaths:
+            # ~ treeiter = self.sorted_model.get_iter(treepath)
+            # ~ filepath = self.sorted_model[treeiter][5]
+            # ~ self.log.debug(filepath)
+
+    # ~ def action_rename_purpose(self, *args):
+        # ~ selection = self.treeview.get_selection()
+        # ~ model, treepaths = selection.get_selected_rows()
+        # ~ for treepath in treepaths:
+            # ~ treeiter = self.sorted_model.get_iter(treepath)
+            # ~ filepath = self.sorted_model[treeiter][5]
+            # ~ self.log.debug(filepath)
 
 
     def action_delete(self, *args):
