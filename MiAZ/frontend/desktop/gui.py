@@ -43,6 +43,7 @@ class GUI(Adw.Application):
         self.theme = Gtk.IconTheme.get_for_display(self.win.get_display())
         self.theme.add_search_path(ENV['GPATH']['ICONS'])
         self.win.set_icon_name('MiAZ')
+        Gtk.Window.set_default_icon_name('MiAZ')
         self.build_gui()
         self.check_basic_settings()
         self.log.debug("Executing MiAZ Desktop mode")

@@ -335,8 +335,8 @@ class MiAZWorkspace(Gtk.Box):
     def create_menu(self):
         gio_menu_workspace = Gio.Menu.new()
         items = [
-                    ('Rename document', 'app.rename', 'rename'),
-                    ('Delete document', 'app.delete', 'delete')
+                    ('Rename document', 'workspace.rename', 'rename'),
+                    ('Delete document', 'workspace.delete', 'delete')
                 ]
         for item_label, item_action, simple in items:
             item = Gio.MenuItem.new()
