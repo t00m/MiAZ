@@ -203,6 +203,9 @@
   "el": [
     "code"
   ],
+  "eml": [
+    "Message"
+  ],
   "eot": [
     "font"
   ],

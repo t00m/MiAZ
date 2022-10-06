@@ -216,3 +216,11 @@ class MiAZDocBrowser(Gtk.Box):
         self.log.debug(args)
         page = self.gui.get_stack_page_by_name('browser')
         page.set_needs_attention(False)
+
+    def doesnt_need_attention(self, *args):
+        page = self.app.get_stack_page_by_name('browser')
+        page.set_needs_attention(False)
+
+    def do_needs_attention(self, *args):
+        page = self.app.get_stack_page_by_name('browser')
+        page.set_needs_attention(True)

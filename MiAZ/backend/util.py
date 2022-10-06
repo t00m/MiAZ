@@ -21,7 +21,7 @@ def json_load(filepath: str) -> {}:
 def json_save(filepath: str, adict: {}) -> {}:
     """Save dictionary into a file in json format"""
     with open(filepath, 'w') as fout:
-        json.dump(adict, fout)
+        json.dump(adict, fout, sort_keys=True, indent=4)
 
 def guess_datetime(sdate):
     """Return (guess) a datetime object for a given string."""

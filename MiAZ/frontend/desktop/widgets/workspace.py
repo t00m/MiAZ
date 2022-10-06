@@ -49,7 +49,7 @@ class MiAZWorkspace(Gtk.Box):
         self.scrwin.set_has_frame(True)
         self.scrwin.set_vexpand(True)
 
-        self.viewport = Gtk.Viewport()
+        # ~ self.viewport = Gtk.Viewport()
 
         # Model: document icon, mimetype, current filename, suggested filename (if needed), accept suggestion, filepath
         self.store = Gtk.TreeStore(Pixbuf, str, bool, str, str, str, str)
@@ -164,8 +164,10 @@ class MiAZWorkspace(Gtk.Box):
         self.evk.connect("pressed", self.on_right_click)
         self.treeview.add_controller(self.evk)
 
-        self.viewport.set_child(self.treeview)
-        self.scrwin.set_child(self.viewport)
+        # ~ self.viewport.set_child(self.treeview)
+        # ~ self.scrwin.set_child(self.viewport)
+        # ~ self.viewport.set_child()
+        self.scrwin.set_child(self.treeview)
         self.append(self.scrwin)
 
         self.backend.connect('source-configuration-updated', self.update)
@@ -280,7 +282,7 @@ class MiAZWorkspace(Gtk.Box):
             rect.y = y = int(y)
             self.popover = Gtk.PopoverMenu()
             self.popover.set_pointing_to(rect)
-            self.popover.set_parent(self.viewport)
+            self.popover.set_parent(self.treeview)
             self.popover.set_has_arrow(True)
 
             menu = self.create_menu()
@@ -335,8 +337,8 @@ class MiAZWorkspace(Gtk.Box):
     def create_menu(self):
         gio_menu_workspace = Gio.Menu.new()
         items = [
-                    ('Rename document', 'workspace.rename', 'rename'),
-                    ('Delete document', 'workspace.delete', 'delete')
+                    ('Rename document', 'app.rename', 'rename'),
+                    ('Delete document', 'app.delete', 'delete')
                 ]
         for item_label, item_action, simple in items:
             item = Gio.MenuItem.new()
