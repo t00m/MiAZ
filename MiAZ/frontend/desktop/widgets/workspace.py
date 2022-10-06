@@ -273,16 +273,16 @@ class MiAZWorkspace(Gtk.Box):
     def on_right_click(self, gesture, n_press, x, y):
         right_click = self.evk.get_current_button() == 3
         if right_click:
-            selection = self.treeview.get_selection()
-            model, rows = selection.get_selected_rows()
-            for row in rows:
-                self.log.debug(row)
+            # ~ selection = self.treeview.get_selection()
+            # ~ model, rows = selection.get_selected_rows()
+            # ~ for row in rows:
+                # ~ self.log.debug(row)
             rect = Gdk.Rectangle()
             rect.x = x = int(x)
             rect.y = y = int(y)
             self.popover = Gtk.PopoverMenu()
             self.popover.set_pointing_to(rect)
-            self.popover.set_parent(self.treeview)
+            self.popover.set_parent(self.scrwin)
             self.popover.set_has_arrow(True)
 
             menu = self.create_menu()
@@ -335,7 +335,8 @@ class MiAZWorkspace(Gtk.Box):
         self.log.debug("Number of rows selected: %d", ns)
 
     def create_menu(self):
-        gio_menu_workspace = Gio.Menu.new()
+        menu_workspace = Gio.Menu.new()
+
         items = [
                     ('Rename document', 'app.rename', 'rename'),
                     ('Delete document', 'app.delete', 'delete')
@@ -348,8 +349,50 @@ class MiAZWorkspace(Gtk.Box):
             action.connect("activate", eval(callback))
             self.app.add_action(action)
             item.set_detailed_action(detailed_action=item_action)
-            gio_menu_workspace.append_item(item)
-        return gio_menu_workspace
+            menu_workspace.append_item(item)
+
+        # Menu que irá conter os itens do submenu.
+        submenu_rename_root = Gio.Menu.new()
+
+        # Submenu.
+        submenu_rename = Gio.MenuItem.new_submenu(
+            label='Mass rename of...',
+            submenu=submenu_rename_root,
+        )
+        menu_workspace.append_item(submenu_rename)
+
+        # Item que será adicionando no submenu.
+        rename_collection = Gio.MenuItem.new()
+        rename_collection.set_label(label='... collection')
+        action = Gio.SimpleAction.new('rename', None)
+        callback = "self.action_%s" % 'rename'
+        action.connect("activate", eval(callback))
+        self.app.add_action(action)
+        rename_collection.set_detailed_action(detailed_action='app.rename')
+        submenu_rename_root.append_item(rename_collection)
+
+        rename_purpose = Gio.MenuItem.new()
+        rename_purpose.set_label(label='... purpose')
+        rename_purpose.set_detailed_action(
+            detailed_action='app.purpose',
+        )
+        submenu_rename_root.append_item(rename_purpose)
+
+
+        # ~ items = [
+                    # ~ ('Rename document', 'app.rename', 'rename'),
+                    # ~ ('Delete document', 'app.delete', 'delete')
+                # ~ ]
+        # ~ for item_label, item_action, simple in items:
+            # ~ item = Gio.MenuItem.new()
+            # ~ item.set_label(item_label)
+            # ~ action = Gio.SimpleAction.new(simple, None)
+            # ~ callback = "self.action_%s" % simple
+            # ~ action.connect("activate", eval(callback))
+            # ~ self.app.add_action(action)
+            # ~ item.set_detailed_action(detailed_action=item_action)
+            # ~ menu_workspace.append_item(item)
+        return menu_workspace
 
     def action_rename(self, *args):
         selection = self.treeview.get_selection()
