@@ -42,409 +42,139 @@ class MiAZWorkspace(Gtk.Box):
         self.set_margin_bottom(margin=6)
         self.set_margin_start(margin=6)
 
-        self.create_actions()
-        self.create_menu_selection_single()
-        self.create_menu_selection_multiple()
+        self.setup_toolbar()
+        self.setup_view()
+        self.append(self.scrwin)
 
+    def setup_toolbar(self):
+        # Toolbar
+        frame = Gtk.Frame()
+        frame.set_margin_top(margin=6)
+        frame.set_margin_end(margin=6)
+        frame.set_margin_bottom(margin=6)
+        frame.set_margin_start(margin=6)
+
+        toolbar = Gtk.CenterBox()
+        toolbar.set_margin_top(margin=6)
+        toolbar.set_margin_end(margin=6)
+        toolbar.set_margin_bottom(margin=6)
+        toolbar.set_margin_start(margin=6)
+
+        ## Filter box (left side)
+        boxFilters = Gtk.Box.new(orientation=Gtk.Orientation.HORIZONTAL, spacing=3)
+        self.ent_sb = Gtk.SearchEntry(placeholder_text="Type here")
+        boxFilters.append(self.ent_sb)
+        toolbar.set_start_widget(boxFilters)
+
+        frame.set_child(toolbar)
+        self.append(frame)
+
+        # ~ self.controller = Gtk.EventControllerKey()
+        # ~ self.controller.connect('key-released', self.on_key_released)
+        # ~ self.add_controller(self.controller)
+
+        self.backend.connect('source-configuration-updated', self.update)
+
+    def setup_view(self):
         self.scrwin = Gtk.ScrolledWindow()
-        self.scrwin.set_has_frame(True)
+        self.scrwin.set_has_frame(False)
         self.scrwin.set_vexpand(True)
+        self.listbox = Gtk.ListBox.new()
+        self.listbox.set_show_separators(False)
+        self.listbox.set_selection_mode(mode=Gtk.SelectionMode.SINGLE)
+        self.listbox.set_activate_on_single_click(True)
+        self.listbox.set_margin_top(margin=0)
+        self.listbox.set_margin_end(margin=6)
+        self.listbox.set_margin_bottom(margin=6)
+        self.listbox.set_margin_start(margin=6)
+        self.listbox.get_style_context().add_class(class_name='boxed-list')
+        # ~ self.listbox.set_filter_func(self.clb_visible_function)
 
-        # ~ self.viewport = Gtk.Viewport()
+        # Row for displaying when there is no documents available
+        self.nodata = Adw.ActionRow.new()
+        self.nodata.set_title(title='<b>No documents found for review</b>')
+        self.listbox.set_placeholder(self.nodata)
+        self.scrwin.set_child(self.listbox)
 
-        # Model: document icon, mimetype, current filename, suggested filename (if needed), accept suggestion, filepath
-        self.store = Gtk.TreeStore(Pixbuf, str, bool, str, str, str, str)
-        self.treeview = MiAZTreeView(self.app)
-        self.treeview.set_model(self.store)
+    def update(self, *args):
+        self.log.debug("Got signal 'target-configuration-updated'")
+        repocnf = self.backend.get_repo_source_config_file()
+        repodct = json_load(repocnf)
+        # ~ who = self.app.get_config('organizations')
+        # ~ icon_ko = self.app.icman.get_pixbuf_by_name('miaz-cancel', 24)
+        # ~ icon_ok = self.app.icman.get_pixbuf_by_name('miaz-ok', 24)
+        for filename in repodct:
+            dot = filename.rfind('.')
+            doc = filename[:dot]
+            ext = filename[dot+1:]
+            icon = self.app.icman.get_icon_mimetype_from_file(filename, 96, 96)
+            row = Adw.ActionRow.new()
 
-        # ~ self.update()
+            # ~ row.connect('activated', self.on_row_activated)
+            # ~ row.connect('activate', self.on_row_activated)
+            # ~ explain = "<span color='blue'>%s</span>" % filename
+            explain = filename
+            row.set_title(title=os.path.basename(doc))
+            row.add_prefix(icon)
+            row.set_subtitle(subtitle=filename)
 
-        # Icon
+            self.listbox.append(child=row)
+        page = self.app.get_stack_page_by_name('workspace')
+        page.set_badge_number(len(repodct))
+
+    def clb_visible_function(self, row):
+        title = row.get_title()
+        # ~ sbentry = self.app.get_searchbar_entry()
+        filter_text = self.ent_sb.get_text()
+        if filter_text.upper() in title.upper():
+            return True
+        else:
+            return False
+
+    def on_key_released(self, widget, keyval, keycode, state):
+        self.filter_view()
+        # ~ keyname = Gdk.keyval_name(keyval)
+        # ~ if Gdk.ModifierType.CONTROL_MASK & state and keyname == 'f':
+        #       ....
+
+    def on_row_activated(self, *args):
+        self.log.debug(args)
+
+    def __create_trvreasons(self, *args):
+        scrreasons = Gtk.ScrolledWindow()
+        trvreasons = Gtk.TreeView()
+        trvreasons.set_vexpand(True)
+        trvreasons.set_hexpand(False)
+        trvreasons.set_headers_visible(False)
+        model = Gtk.ListStore(Pixbuf, str)
         renderer = Gtk.CellRendererPixbuf()
         column = Gtk.TreeViewColumn('Type', renderer, pixbuf=0)
         renderer.set_alignment(0.0, 0.5)
         column.set_sizing(Gtk.TreeViewColumnSizing.AUTOSIZE)
         column.set_visible(True)
-        column.set_expand(False)
-        column.set_clickable(True)
-        column.set_sort_indicator(True)
-        column.set_sort_column_id(1)
-        column.set_sort_order(Gtk.SortType.ASCENDING)
-        self.treeview.append_column(column)
+        trvreasons.append_column(column)
 
-        # Mimetype
         renderer = Gtk.CellRendererText()
-        column = Gtk.TreeViewColumn('Mimetype', renderer, text=1)
-        renderer.set_property('background', '#F0E3E3')
-        column.set_visible(False)
+        column = Gtk.TreeViewColumn('Reason', renderer, text=1)
+        column.set_visible(True)
         column.set_sizing(Gtk.TreeViewColumnSizing.AUTOSIZE)
         column.set_expand(False)
         column.set_clickable(False)
         column.set_sort_indicator(False)
-        column.set_sort_column_id(1)
-        self.treeview.append_column(column)
+        trvreasons.append_column(column)
 
-        # Checkbox
-        renderer = Gtk.CellRendererToggle()
-        renderer.connect("toggled", self.__clb_row_toggled)
-        column = Gtk.TreeViewColumn('Accept change', renderer, active=2)
-        column.set_sizing(Gtk.TreeViewColumnSizing.AUTOSIZE)
-        column.set_visible(True)
-        column.set_expand(False)
-        column.set_clickable(True)
-        column.set_sort_indicator(False)
-        column.set_property('spacing', 50)
-        self.treeview.append_column(column)
-
-        # Current filename
-        renderer = Gtk.CellRendererText()
-        renderer.set_property('ellipsize', Pango.EllipsizeMode.MIDDLE)
-        column = Gtk.TreeViewColumn('Current filename', renderer, markup=3)
-        column.set_visible(True)
-        column.set_sizing(Gtk.TreeViewColumnSizing.AUTOSIZE)
-        column.set_expand(True)
-        column.set_clickable(True)
-        column.set_sort_indicator(True)
-        column.set_sort_column_id(3)
-        self.treeview.append_column(column)
-
-
-        # Suggested filename
-        renderer = Gtk.CellRendererText()
-        renderer.set_property('ellipsize', Pango.EllipsizeMode.MIDDLE)
-        renderer.set_property('editable', True)
-        renderer.connect('edited', self.on_edit_filename)
-
-        column = Gtk.TreeViewColumn('Suggest filename', renderer, markup=4)
-        column.set_visible(True)
-        column.set_sizing(Gtk.TreeViewColumnSizing.AUTOSIZE)
-        column.set_expand(True)
-        column.set_clickable(True)
-        column.set_sort_indicator(True)
-        column.set_sort_column_id(4)
-        self.treeview.append_column(column)
-
-        # Filepath
-        renderer = Gtk.CellRendererText()
-        column = Gtk.TreeViewColumn('Document path', renderer, markup=5)
-        column.set_visible(False)
-        column.set_sizing(Gtk.TreeViewColumnSizing.AUTOSIZE)
-        column.set_expand(False)
-        column.set_clickable(False)
-        column.set_sort_indicator(False)
-        self.treeview.append_column(column)
-
-        # Internal Row Type
-        renderer = Gtk.CellRendererText()
-        column = Gtk.TreeViewColumn('Row Type', renderer, text=6)
-        column.set_visible(False)
-        column.set_sizing(Gtk.TreeViewColumnSizing.AUTOSIZE)
-        column.set_expand(False)
-        column.set_clickable(False)
-        column.set_sort_indicator(False)
-        self.treeview.append_column(column)
-
-        # Treeview filtering
-        self.treefilter = self.store.filter_new()
-        # ~ self.treefilter.set_visible_func(self.clb_visible_function)
-
-        # TreeView sorting
-        self.sorted_model = Gtk.TreeModelSort(model=self.treefilter)
-        self.sorted_model.set_sort_func(0, self.clb_sort_function, 1)
-        self.sorted_model.set_sort_column_id(1, Gtk.SortType.DESCENDING)
-        self.treeview.set_model(self.sorted_model)
-        self.treeview.connect('row-activated', self.on_double_click)
-
-        # Selection type
-        selection = self.treeview.get_selection()
-        selection.set_mode(Gtk.SelectionMode.MULTIPLE)
-
-        # Gestures controller / Right click
-        self.evk = Gtk.GestureClick.new()
-        self.evk.set_button(0)  # 0 for all buttons
-        self.evk.connect("pressed", self.on_right_click)
-        self.treeview.add_controller(self.evk)
-
-        # ~ self.viewport.set_child(self.treeview)
-        # ~ self.scrwin.set_child(self.viewport)
-        # ~ self.viewport.set_child()
-        self.scrwin.set_child(self.treeview)
-        self.append(self.scrwin)
-
-        self.backend.connect('source-configuration-updated', self.update)
-
-    def create_actions(self):
-        action = Gio.SimpleAction.new("something", None)
-        action.connect("activate", self.noop)
-        self.app.win.add_action(action)
-
-    # ~ def create_menu(self):
-        # ~ self.menu = Gio.Menu.new()
-        # ~ self.menu.append("Do Something", "app.win.something")
-
-
-    def on_entry_filename_changed(self, *args):
-        self.treefilter.refilter()
-
-    def on_double_click(self, treeview, treepath, treecolumn):
-        treeiter = self.sorted_model.get_iter(treepath)
-        filepath = self.sorted_model[treeiter][5]
-        if os.path.exists(filepath):
-            os.system("xdg-open '%s'" % filepath)
-
-    def update(self, *args):
-        self.log.debug("Got signal 'source-configuration-updated'")
-        self.store.clear()
-        repocnf = self.backend.get_repo_source_config_file()
-        repodct = json_load(repocnf)
-        icon_ko = self.app.icman.get_pixbuf_by_name('miaz-cancel', 24)
-        icon_ok = self.app.icman.get_pixbuf_by_name('miaz-ok', 24)
-        ndocs = 0
-        for filepath in repodct:
-            try:
-                document = os.path.basename(filepath)
-                suggested = repodct[filepath]['suggested']
-                mimetype = get_file_mimetype(filepath)
-                icon = self.app.icman.get_pixbuf_mimetype_from_file(filepath, 36, 36)
-                node = self.store.insert_with_values(None, -1, (0, 1, 2, 3, 4, 5, 6), (icon, mimetype, False, "<b>%s</b>" % document, suggested, filepath, "FILE"))
-                for reason in repodct[filepath]['reasons']:
-                    passed, message = reason
-                    if passed:
-                        self.store.insert_with_values(node, -1, (0, 3, 6), (icon_ok, "<i>%s</i>" % message, "REASON"))
-                    else:
-                        self.store.insert_with_values(node, -1, (0, 3, 6), (icon_ko, "<i>%s</i>" % message, "REASON"))
-            except KeyError:
-                self.log.warning("Perhaps the document '%s' was moved to target folder?")
-        page = self.app.get_stack_page_by_name('workspace')
-        page.set_badge_number(len(repodct))
-
-    def on_edit_filename(self, widget, path, target):
-        treeiter = self.sorted_model.get_iter(path)
-        source = self.sorted_model[treeiter][4]
-        filepath = self.sorted_model[treeiter][5]
-        self.log.debug("Source: %s", source)
-        self.log.debug("Target: %s", target)
-        folder = os.path.dirname(filepath)
-        source_path = os.path.join(folder, source)
-        target_path = os.path.join(folder, target)
-        if not os.path.exists(target_path):
-            shutil.move(source_path, target_path)
-            self.log.info("%s renamed to %s", os.path.basename(source), os.path.basename(target))
-
-    def on_edit_filename_finished(self, widget, path, target):
-        print("on_edit_filename_finished")
-        treeiter = self.sorted_model.get_iter(path)
-        filename = self.sorted_model[treeiter][4]
-        # ~ print(filename)
-
-    def clb_sort_function(self, model, row1, row2, sort_column=0):
-        value1 = model.get_value(row1, sort_column)
-        value2 = model.get_value(row2, sort_column)
-        if value1 < value2:
-            return -1
-        elif value1 == value2:
-            return 0
-        else:
-            return 1
-
-    def clb_visible_function(self, model, itr, data):
-        item_name = model.get(itr, 3)[0]
-        row_type = model.get(itr, 6)[0]
-        sbentry = self.app.get_searchbar_entry()
-        filter_text = sbentry.get_text()
-
-        if row_type == 'FOLDER' or row_type == 'REASON':
-            return True
-
-        match = filter_text.upper() in item_name.upper()
-
-        if match:
-            return True
-        else:
-            return False
-
-    def __clb_row_toggled(self, cell, path):
-        model = self.sorted_model.get_model()
-        rpath = self.sorted_model.convert_path_to_child_path(Gtk.TreePath(path))
-        model[rpath][2] = not model[rpath][2]
-
-    def filter_view(self):
-        self.treefilter.refilter()
-
-    def on_right_click(self, gesture, n_press, x, y):
-        right_click = self.evk.get_current_button() == 3
-        if right_click:
-            # Determine where to place the popover
-            rect = Gdk.Rectangle()
-            rect.x = x = int(x)
-            rect.y = y = int(y)
-            self.popover = Gtk.PopoverMenu()
-            self.popover.set_pointing_to(rect)
-            self.popover.set_parent(self.scrwin)
-            self.popover.set_has_arrow(True)
-
-            # Determine which menu should be displayed
-            selection = self.treeview.get_selection()
-            model, treepaths = selection.get_selected_rows()
-            self.log.debug("Selected rows: %d", len(treepaths))
-            if len(treepaths) == 1:
-                self.popover.set_menu_model(self.menu_workspace_single)
-            elif len(treepaths) > 1:
-                self.popover.set_menu_model(self.menu_workspace_multiple)
+        for reason in repodct[filename]['reasons']:
+            passed, message = reason
+            if passed:
+                model.insert_with_values(-1, (0, 1), (icon_ok, message))
             else:
-                return
-
-            # Display popover
-            self.popover.popup()
-
-
-    def build_popover(self):
-        # ~ listbox.set_selection_mode(mode=Gtk.SelectionMode.SINGLE)
-        # ~ listbox.set_activate_on_single_click(True)
-        # ~ listbox.set_margin_top(margin=6)
-        # ~ listbox.set_margin_end(margin=6)
-        # ~ listbox.set_margin_bottom(margin=6)
-        # ~ listbox.set_margin_start(margin=6)
-        # ~ listbox.get_style_context().add_class(class_name='boxed-list')
-        # ~ row = Adw.ActionRow.new()
-        # ~ row.set_title(title='Change field country')
-        # ~ listbox.append(row)
-        # ~ row = Adw.ActionRow.new()
-        # ~ row.set_title(title='Change field collection')
-        # ~ listbox.append(row)
-
-        box = Gtk.Box(spacing = 3, orientation=Gtk.Orientation.VERTICAL)
-        button = self.app.create_button('miaz-res-countries', 'Change field country', self.noop)
-        box.append(button)
-        button = self.app.create_button('miaz-res-collections', 'Change field collection', self.noop)
-        box.append(button)
-        button = self.app.create_button('miaz-res-who', 'Change field <i>From</i>', self.noop)
-        box.append(button)
-        button = self.app.create_button('miaz-res-purposes', 'Change field <i>purpose</i>', self.noop)
-        box.append(button)
-        button = self.app.create_button('miaz-res-languages', 'Change field <i>concept</i>', self.noop)
-        box.append(button)
-        button = self.app.create_button('miaz-res-who', 'Change field <i>to</i>', self.noop)
-        box.append(button)
-        return box
-
-    def noop(self, *args):
-        selection = self.treeview.get_selection()
-        model, rows = selection.get_selected_rows()
-        try:
-            start = rows[0]
-        except:
-            return
-        end = rows[-1]
-        ns = len(rows)
-        self.log.debug("Number of rows selected: %d", ns)
-
-    def create_menu_selection_single(self):
-        self.menu_workspace_single = Gio.Menu.new()
-        item_fake = Gio.MenuItem.new()
-        item_fake.set_label('Single selection')
-        action = Gio.SimpleAction.new('fake', None)
-        item_fake.set_detailed_action(detailed_action='fake')
-        self.menu_workspace_single.append_item(item_fake)
-
-        # ~ items = [
-                    # ~ ('Rename document', 'app.rename', 'rename'),
-                    # ~ ('Delete document', 'app.delete', 'delete')
-                # ~ ]
-        # ~ for item_label, item_action, simple in items:
-            # ~ item = Gio.MenuItem.new()
-            # ~ item.set_label(item_label)
-            # ~ action = Gio.SimpleAction.new(simple, None)
-            # ~ callback = "self.action_%s" % simple
-            # ~ action.connect("activate", eval(callback))
-            # ~ self.app.add_action(action)
-            # ~ item.set_detailed_action(detailed_action=item_action)
-            # ~ self.menu_workspace_single.append_item(item)
-
-    def create_menu_selection_multiple(self):
-        fields = ['date', 'country', 'collection', 'purpose']
-
-        self.menu_workspace_multiple = Gio.Menu.new()
-        item_fake = Gio.MenuItem.new()
-        item_fake.set_label('Multiple selection')
-        action = Gio.SimpleAction.new('fake', None)
-        item_fake.set_detailed_action(detailed_action='fake')
-        self.menu_workspace_multiple.append_item(item_fake)
-
-        # Submenu for mass renaming
-        submenu_rename_root = Gio.Menu.new()
-        submenu_rename = Gio.MenuItem.new_submenu(
-            label='Mass renaming of...',
-            submenu=submenu_rename_root,
-        )
-        self.menu_workspace_multiple.append_item(submenu_rename)
-
-        for item in fields:
-            menuitem = Gio.MenuItem.new()
-            menuitem.set_label(label='... %s' % item)
-            action = Gio.SimpleAction.new('rename_%s' % item, None)
-            callback = 'self.action_rename'
-            action.connect('activate', eval(callback), item)
-            self.app.add_action(action)
-            menuitem.set_detailed_action(detailed_action='app.rename_%s' % item)
-            submenu_rename_root.append_item(menuitem)
-
-        # Submenu for mass adding
-        submenu_add_root = Gio.Menu.new()
-        submenu_add = Gio.MenuItem.new_submenu(
-            label='Mass adding of...',
-            submenu=submenu_add_root,
-        )
-        self.menu_workspace_multiple.append_item(submenu_add)
-
-        for item in fields:
-            menuitem = Gio.MenuItem.new()
-            menuitem.set_label(label='... %s' % item)
-            action = Gio.SimpleAction.new('add_%s' % item, None)
-            callback = 'self.action_add'
-            action.connect('activate', eval(callback), item)
-            self.app.add_action(action)
-            menuitem.set_detailed_action(detailed_action='app.add_%s' % item)
-            submenu_add_root.append_item(menuitem)
-
-        item_force_update = Gio.MenuItem.new()
-        item_force_update.set_label(label='Force update')
-        action = Gio.SimpleAction.new('workspace_update', None)
-        action.connect('activate', self.update)
-        self.app.add_action(action)
-        item_force_update.set_detailed_action(detailed_action='app.workspace_update')
-        self.menu_workspace_multiple.append_item(item_force_update)
-
-        item_delete = Gio.MenuItem.new()
-        item_delete.set_label(label='Delete documents')
-        action = Gio.SimpleAction.new('workspace_delete', None)
-        action.connect('activate', self.noop)
-        self.app.add_action(action)
-        item_delete.set_detailed_action(detailed_action='app.workspace_delete')
-        self.menu_workspace_multiple.append_item(item_delete)
-
-
-    def action_rename(self, *args):
-        self.log.debug(args)
-
-    def action_add(self, *args):
-        self.log.debug(args)
-    # ~ def action_rename_collection(self, *args):
-        # ~ selection = self.treeview.get_selection()
-        # ~ model, treepaths = selection.get_selected_rows()
-        # ~ for treepath in treepaths:
-            # ~ treeiter = self.sorted_model.get_iter(treepath)
-            # ~ filepath = self.sorted_model[treeiter][5]
-            # ~ self.log.debug(filepath)
-
-    # ~ def action_rename_purpose(self, *args):
-        # ~ selection = self.treeview.get_selection()
-        # ~ model, treepaths = selection.get_selected_rows()
-        # ~ for treepath in treepaths:
-            # ~ treeiter = self.sorted_model.get_iter(treepath)
-            # ~ filepath = self.sorted_model[treeiter][5]
-            # ~ self.log.debug(filepath)
-
-
-    def action_delete(self, *args):
-        self.log.debug(args)
+                model.insert_with_values(-1, (0, 1), (icon_ko, message))
+        trvreasons.set_model(model)
+        height = trvreasons.get_height()
+        scrreasons.set_child(trvreasons)
+        scrreasons.set_min_content_height(240)
+        self.log.debug(height)
+        scrreasons.set_vexpand(True)
+        scrreasons.set_propagate_natural_height(True)
+        row.add_row(scrreasons)
+        row.set_vexpand(True)

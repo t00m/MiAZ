@@ -80,6 +80,19 @@ class MiAZIconManager(GObject.GObject):
             self.pixbufdict[key] = pixbuf
         return pixbuf
 
+    def get_icon_mimetype_from_file(self, filepath, width=96, height=96) -> Pixbuf:
+        # ~ mimetype = get_file_mimetype(filepath)
+        # ~ key = valid_key("%s-%d-%d" % (mimetype, width, height))
+        # ~ try:
+            # ~ icon = self.icondict[key]
+        # ~ except KeyError:
+        pixbuf = self.get_pixbuf_mimetype_from_file(filepath, width, height)
+        icon = Gtk.Image.new_from_pixbuf(pixbuf)
+        if icon is None:
+            icon = Gtk.Image.new_from_icon_name('text-x-generic-symbolic')
+        # ~ self.icondict[key] = icon
+        return icon
+
     def get_pixbuf_by_path(self, name, width=48, height=48) -> Pixbuf:
         path = os.path.join(ENV['GPATH']['ICONS'], "%s.svg" % name)
         key = valid_key("%s-%d-%d" % (name, width, height))
@@ -99,7 +112,7 @@ class MiAZIconManager(GObject.GObject):
             self.pixbufdict[key] = pixbuf
         return pixbuf
 
-    def get_image_by_name(self, name, width, height) -> Gtk.Image:
+    def get_image_by_name(self, name: str, width: int = 32, height: int = 32) -> Gtk.Image:
         pixbuf = self.get_pixbuf_by_name(name, width, height)
         return Gtk.Image.new_from_pixbuf(pixbuf)
 

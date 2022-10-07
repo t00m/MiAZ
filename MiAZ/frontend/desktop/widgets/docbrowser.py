@@ -35,10 +35,8 @@ class MiAZDocBrowser(Gtk.Box):
         self.set_vexpand(True)
 
         self.setup_toolbar()
-        self.setup_view_listbox()
+        self.setup_view()
         self.setup_stack()
-
-
         # Filename format: {timestamp}-{country}-{collection}-{from}-{purpose}-{concept}-{to}.{extension}
 
     def setup_stack(self):
@@ -112,7 +110,7 @@ class MiAZDocBrowser(Gtk.Box):
     def show_view_tree(self, *args):
         self.stack.set_visible_child_name('view-tree')
 
-    def setup_view_listbox(self):
+    def setup_view(self):
         self.listbox = Gtk.ListBox.new()
         self.listbox.set_show_separators(True)
         self.listbox.set_selection_mode(mode=Gtk.SelectionMode.SINGLE)
@@ -123,32 +121,11 @@ class MiAZDocBrowser(Gtk.Box):
         self.listbox.set_margin_start(margin=6)
         self.listbox.get_style_context().add_class(class_name='boxed-list')
         self.listbox.set_filter_func(self.clb_visible_function)
-        # ~ self.append(child=self.listbox)
 
         # Row for displaying when there is no documents available
         self.nodata = Adw.ActionRow.new()
-        # ~ self.nodata.set_icon_name(icon_name='MiAZ-big')
-        self.nodata.set_title(title='<b>No documents found</b>')
-        # ~ self.nodata.set_enable_expansion(False)
-        # ~ self.nodata.set_show_enable_switch(False)
+        self.nodata.set_title(title='<b>No documents found for review</b>')
         self.listbox.set_placeholder(self.nodata)
-
-
-        # ~ row = Adw.ExpanderRow.new()
-        # ~ row.set_icon_name(icon_name='edit-find-symbolic')
-        # ~ row.set_title(title='<big><b>Libadwaita uno</b></big>')
-        # ~ row.set_subtitle(subtitle='Subtitle uno')
-        # ~ row.get_style_context().add_class(class_name='error')
-        # ~ self.listbox.append(child=row)
-
-        # ~ row = Adw.ExpanderRow.new()
-        # ~ row.set_icon_name(icon_name='edit-find-symbolic')
-        # ~ row.set_title(title='Libadwaita dos')
-        # ~ row.set_subtitle(subtitle='Subtitle dos')
-        # ~ row.get_style_context().add_class(class_name='success')
-        # ~ self.listbox.append(child=row)
-
-
 
     def clb_visible_function(self, row):
         title = row.get_title()
@@ -161,7 +138,6 @@ class MiAZDocBrowser(Gtk.Box):
 
     def filter_view(self):
         self.listbox.invalidate_filter()
-        # ~ print("Re-filtering")
 
     def update(self, *args):
         # Filename format: {timestamp}-{country}-{collection}-{from}-{purpose}-{concept}-{to}.{extension}
@@ -178,12 +154,10 @@ class MiAZDocBrowser(Gtk.Box):
             row.connect('activate', self.on_row_activated)
             fields = doc.split('-')
             explain = "<span color='blue'>#%s</span> <b>%s from %s about %s to %s</b>" % (fields[2], fields[4].title(), who.get(fields[3]), fields[5], who.get(fields[6]))
-            # ~ row.set_title(title='<b>%-10s %s</b>' % (fields[0], explain))
             row.set_title(title=explain)
             row.set_subtitle(subtitle=doc)
             flag = self.app.icman.get_flag(fields[1], 48, 48)
             row.add_prefix(flag)
-            # ~ row.set_icon_name(icon_name='miaz-res-organizations')
             fuzzy_date = Gtk.Label()
             fuzzy_date.set_markup(fuzzy_date_from_timestamp(fields[0]))
             row.add_action(fuzzy_date)
@@ -195,25 +169,13 @@ class MiAZDocBrowser(Gtk.Box):
         self.do_needs_attention()
 
     def on_key_released(self, widget, keyval, keycode, state):
-        # ~ self.log.debug("Active window: %s", self.app.get_active_window())
-        keyname = Gdk.keyval_name(keyval)
-        # ~ self.log.debug("Key: %s", keyname)
         self.filter_view()
+        # ~ keyname = Gdk.keyval_name(keyval)
         # ~ if Gdk.ModifierType.CONTROL_MASK & state and keyname == 'f':
-            # ~ if self.searchbar.get_search_mode():
-                # ~ self.searchbar.set_search_mode(False)
-            # ~ else:
-                # ~ self.searchbar.set_search_mode(True)
-        # ~ stack = self.stack.get_visible_child_name()
-        # ~ if stack == 'workspace':
-            # ~ self.workspace.filter_view()
-        # ~ elif stack == 'browser':
-            # ~ self.docbrowser.filter_view()
+        #       ....
 
     def on_row_activated(self, *args):
         self.log.debug(args)
-        page = self.gui.get_stack_page_by_name('browser')
-        page.set_needs_attention(False)
 
     def doesnt_need_attention(self, *args):
         page = self.app.get_stack_page_by_name('browser')
