@@ -66,6 +66,19 @@ class MiAZWorkspace(Gtk.Box):
         boxFilters.append(self.ent_sb)
         toolbar.set_start_widget(boxFilters)
 
+        # Views (right side)
+        boxMassActionsButton = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
+        self.btnMassActions = Gtk.MenuButton()
+        self.btnMassActions.set_label('Mass actions')
+        self.btnMassActions.set_sensitive(False)
+        self.btnMassActions.set_icon_name('miaz-rename')
+        popover = Gtk.PopoverMenu.new_from_model(self.create_menu_selection_multiple())
+        self.btnMassActions.set_popover(popover=popover)
+        self.btnMassActions.set_valign(Gtk.Align.CENTER)
+        self.btnMassActions.set_hexpand(False)
+        boxMassActionsButton.append(self.btnMassActions)
+        toolbar.set_end_widget(boxMassActionsButton)
+        self.log.debug("Hellow?")
         frame.set_child(toolbar)
         self.append(frame)
 
@@ -80,8 +93,9 @@ class MiAZWorkspace(Gtk.Box):
         self.scrwin.set_has_frame(False)
         self.scrwin.set_vexpand(True)
         self.listbox = Gtk.ListBox.new()
+        self.listbox.connect('selected-rows-changed', self.on_selected_rows_changed)
         self.listbox.set_show_separators(False)
-        self.listbox.set_selection_mode(mode=Gtk.SelectionMode.SINGLE)
+        self.listbox.set_selection_mode(mode=Gtk.SelectionMode.MULTIPLE)
         self.listbox.set_activate_on_single_click(True)
         self.listbox.set_margin_top(margin=0)
         self.listbox.set_margin_end(margin=6)
@@ -99,28 +113,66 @@ class MiAZWorkspace(Gtk.Box):
     def update(self, *args):
         self.log.debug("Got signal 'target-configuration-updated'")
         repocnf = self.backend.get_repo_source_config_file()
-        repodct = json_load(repocnf)
-        # ~ who = self.app.get_config('organizations')
-        # ~ icon_ko = self.app.icman.get_pixbuf_by_name('miaz-cancel', 24)
-        # ~ icon_ok = self.app.icman.get_pixbuf_by_name('miaz-ok', 24)
-        for filename in repodct:
-            dot = filename.rfind('.')
-            doc = filename[:dot]
-            ext = filename[dot+1:]
-            icon = self.app.icman.get_icon_mimetype_from_file(filename, 96, 96)
+        self.repodct = json_load(repocnf)
+        for filepath in self.repodct:
+            dot = filepath.rfind('.')
+            doc = filepath[:dot]
+            ext = filepath[dot+1:]
+            icon = self.app.icman.get_icon_mimetype_from_file(filepath, 96, 96)
             row = Adw.ActionRow.new()
+            boxButtons = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, css_classes=['linked'])
 
-            # ~ row.connect('activated', self.on_row_activated)
-            # ~ row.connect('activate', self.on_row_activated)
-            # ~ explain = "<span color='blue'>%s</span>" % filename
-            explain = filename
+            boxFileDisplayButton = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
+            btnFileDisplay = self.app.create_button('miaz-display', '', self.on_display_document, data=filepath)
+            # ~ btnFileDisplay.set_icon_name('miaz-display')
+            # ~ btnFileDisplay.connect('activate', self.noop)
+            btnFileDisplay.set_valign(Gtk.Align.CENTER)
+            btnFileDisplay.set_hexpand(False)
+
+            boxFileInfoButton = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
+            btnFileInfo = Gtk.MenuButton()
+            btnFileInfo.set_icon_name('miaz-reasons-info')
+            popover = self.__create_popover_fileinfo(filepath)
+            btnFileInfo.set_popover(popover)
+            btnFileInfo.set_valign(Gtk.Align.CENTER)
+            btnFileInfo.set_hexpand(False)
+
+            boxFileEditButton = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
+            btnFileEdit = Gtk.MenuButton()
+            btnFileEdit.set_icon_name('miaz-rename')
+            popover = Gtk.PopoverMenu.new_from_model(self.create_menu_selection_single())
+            btnFileEdit.set_popover(popover=popover)
+            btnFileEdit.set_valign(Gtk.Align.CENTER)
+            btnFileEdit.set_hexpand(False)
+
+            boxButtons.append(btnFileDisplay)
+            boxButtons.append(btnFileInfo)
+            boxButtons.append(btnFileEdit)
+            box = row.get_child()
+            box.append(boxButtons)
+
+            explain = filepath
             row.set_title(title=os.path.basename(doc))
             row.add_prefix(icon)
-            row.set_subtitle(subtitle=filename)
+            row.set_subtitle(subtitle=filepath)
 
             self.listbox.append(child=row)
         page = self.app.get_stack_page_by_name('workspace')
-        page.set_badge_number(len(repodct))
+        page.set_badge_number(len(self.repodct))
+
+    def __show_file_info(self, button, filepath):
+        # ~ self.log.debug(args)
+        treeview = self.__create_trvreasons(filepath)
+        popover = Gtk.Popover()
+        popover.set_child(treeview)
+        popover.show()
+
+    def __create_popover_fileinfo(self, filepath):
+        # ~ self.log.debug(args)
+        treeview = self.__create_trvreasons(filepath)
+        popover = Gtk.Popover()
+        popover.set_child(treeview)
+        return popover
 
     def clb_visible_function(self, row):
         title = row.get_title()
@@ -140,8 +192,8 @@ class MiAZWorkspace(Gtk.Box):
     def on_row_activated(self, *args):
         self.log.debug(args)
 
-    def __create_trvreasons(self, *args):
-        scrreasons = Gtk.ScrolledWindow()
+    def __create_trvreasons(self, filepath):
+        # ~ scrreasons = Gtk.ScrolledWindow()
         trvreasons = Gtk.TreeView()
         trvreasons.set_vexpand(True)
         trvreasons.set_hexpand(False)
@@ -162,19 +214,126 @@ class MiAZWorkspace(Gtk.Box):
         column.set_clickable(False)
         column.set_sort_indicator(False)
         trvreasons.append_column(column)
+        icon_ko = self.app.icman.get_pixbuf_by_name('miaz-ko', 32)
+        icon_ok = self.app.icman.get_pixbuf_by_name('miaz-ok', 32)
 
-        for reason in repodct[filename]['reasons']:
+        for reason in self.repodct[filepath]['reasons']:
             passed, message = reason
             if passed:
                 model.insert_with_values(-1, (0, 1), (icon_ok, message))
             else:
                 model.insert_with_values(-1, (0, 1), (icon_ko, message))
         trvreasons.set_model(model)
-        height = trvreasons.get_height()
-        scrreasons.set_child(trvreasons)
-        scrreasons.set_min_content_height(240)
-        self.log.debug(height)
-        scrreasons.set_vexpand(True)
-        scrreasons.set_propagate_natural_height(True)
-        row.add_row(scrreasons)
-        row.set_vexpand(True)
+        return trvreasons
+        # ~ scrreasons.set_child(trvreasons)
+        # ~ scrreasons.set_min_content_height(240)
+        # ~ self.log.debug(height)
+        # ~ scrreasons.set_vexpand(True)
+        # ~ scrreasons.set_propagate_natural_height(True)
+
+
+    def create_menu_selection_single(self):
+        self.menu_workspace_single = Gio.Menu.new()
+        item_fake = Gio.MenuItem.new()
+        item_fake.set_label('Single selection')
+        action = Gio.SimpleAction.new('fake', None)
+        item_fake.set_detailed_action(detailed_action='fake')
+        self.menu_workspace_single.append_item(item_fake)
+        return self.menu_workspace_single
+
+        # ~ items = [
+                    # ~ ('Rename document', 'app.rename', 'rename'),
+                    # ~ ('Delete document', 'app.delete', 'delete')
+                # ~ ]
+        # ~ for item_label, item_action, simple in items:
+            # ~ item = Gio.MenuItem.new()
+            # ~ item.set_label(item_label)
+            # ~ action = Gio.SimpleAction.new(simple, None)
+            # ~ callback = "self.action_%s" % simple
+            # ~ action.connect("activate", eval(callback))
+            # ~ self.app.add_action(action)
+            # ~ item.set_detailed_action(detailed_action=item_action)
+            # ~ self.menu_workspace_single.append_item(item)
+
+    def create_menu_selection_multiple(self):
+        fields = ['date', 'country', 'collection', 'purpose']
+
+        self.menu_workspace_multiple = Gio.Menu.new()
+        item_fake = Gio.MenuItem.new()
+        item_fake.set_label('Multiple selection')
+        action = Gio.SimpleAction.new('fake', None)
+        item_fake.set_detailed_action(detailed_action='fake')
+        self.menu_workspace_multiple.append_item(item_fake)
+
+        # Submenu for mass renaming
+        submenu_rename_root = Gio.Menu.new()
+        submenu_rename = Gio.MenuItem.new_submenu(
+            label='Mass renaming of...',
+            submenu=submenu_rename_root,
+        )
+        self.menu_workspace_multiple.append_item(submenu_rename)
+
+        for item in fields:
+            menuitem = Gio.MenuItem.new()
+            menuitem.set_label(label='... %s' % item)
+            action = Gio.SimpleAction.new('rename_%s' % item, None)
+            callback = 'self.action_rename'
+            action.connect('activate', eval(callback), item)
+            self.app.add_action(action)
+            menuitem.set_detailed_action(detailed_action='app.rename_%s' % item)
+            submenu_rename_root.append_item(menuitem)
+
+        # Submenu for mass adding
+        submenu_add_root = Gio.Menu.new()
+        submenu_add = Gio.MenuItem.new_submenu(
+            label='Mass adding of...',
+            submenu=submenu_add_root,
+        )
+        self.menu_workspace_multiple.append_item(submenu_add)
+
+        for item in fields:
+            menuitem = Gio.MenuItem.new()
+            menuitem.set_label(label='... %s' % item)
+            action = Gio.SimpleAction.new('add_%s' % item, None)
+            callback = 'self.action_add'
+            action.connect('activate', eval(callback), item)
+            self.app.add_action(action)
+            menuitem.set_detailed_action(detailed_action='app.add_%s' % item)
+            submenu_add_root.append_item(menuitem)
+
+        item_force_update = Gio.MenuItem.new()
+        item_force_update.set_label(label='Force update')
+        action = Gio.SimpleAction.new('workspace_update', None)
+        action.connect('activate', self.update)
+        self.app.add_action(action)
+        item_force_update.set_detailed_action(detailed_action='app.workspace_update')
+        self.menu_workspace_multiple.append_item(item_force_update)
+
+        item_delete = Gio.MenuItem.new()
+        item_delete.set_label(label='Delete documents')
+        action = Gio.SimpleAction.new('workspace_delete', None)
+        action.connect('activate', self.noop)
+        self.app.add_action(action)
+        item_delete.set_detailed_action(detailed_action='app.workspace_delete')
+        self.menu_workspace_multiple.append_item(item_delete)
+        return self.menu_workspace_multiple
+
+    def action_rename(self, *args):
+        self.log.debug(args)
+
+    def action_add(self, *args):
+        self.log.debug(args)
+
+    def noop(self, *args):
+        self.log.debug(args)
+
+    def on_selected_rows_changed(self, listbox):
+        rows = listbox.get_selected_rows()
+        self.log.debug(len(rows))
+        if len(rows) > 1:
+            self.btnMassActions.set_sensitive(True)
+        else:
+            self.btnMassActions.set_sensitive(False)
+
+    def on_display_document(self, button, filepath):
+        os.system("xdg-open '%s'" % filepath)

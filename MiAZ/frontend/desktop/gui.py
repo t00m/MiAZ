@@ -212,6 +212,7 @@ class GUI(Adw.Application):
         if len(icon_name.strip()) == 0:
             button = Gtk.Button(css_classes=css_classes)
             button.set_label(title)
+            button.set_valign(Gtk.Align.CENTER)
         else:
             button = Gtk.Button(
                 css_classes=css_classes,
