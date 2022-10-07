@@ -24,7 +24,7 @@ class MiAZWatcher(GObject.GObject):
         GObject.signal_new('%s-directory-updated' % self.name, MiAZWatcher, GObject.SignalFlags.RUN_LAST, None, () )
         self.log = get_logger('MiAZWatcher')
         self.log.debug("Watcher[%s] installed. Monitoring '%s'", self.name, self.dirpath)
-        GLib.timeout_add_seconds(2, self.watch)
+        GLib.timeout_add_seconds(1, self.watch)
 
     def __files_with_timestamp(self, rootdir):
         """Add data files from a given directory."""
