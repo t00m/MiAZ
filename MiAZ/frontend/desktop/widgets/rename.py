@@ -70,24 +70,10 @@ class RenameDialog(Gtk.Dialog):
         box.append(entry)
         self.boxFields.append(box)
 
-        # Field 2. Collection
-        box = Gtk.Box.new(orientation=Gtk.Orientation.VERTICAL, spacing=3)
-        box.set_hexpand(False)
-        label = Gtk.Label()
-        label.set_markup('<b>Collection</b>')
-        label.set_xalign(0.0)
-        box.append(label)
-        model = Gtk.ListStore(str)
-        combobox = Gtk.ComboBox.new_with_model_and_entry(model)
-        combobox.set_entry_text_column(0)
-        # ~ entry.set_icon_from_icon_name(Gtk.EntryIconPosition.PRIMARY, 'miaz-res-collection')
-        treeiter = model.append([self.suggested[2]])
-        combobox.set_active_iter(treeiter)
-        entry = combobox.get_child()
-        entry.set_icon_from_icon_name(Gtk.EntryIconPosition.PRIMARY, 'miaz-res-collection')
-        box.append(combobox)
-        self.boxFields.append(box)
 
+
+        self.__create_field_collection() # Field 2. Collection
+        # ~ self.boxFields.append(box)
 
         # ~ n = 0
         # ~ for item in fields:
@@ -133,3 +119,41 @@ class RenameDialog(Gtk.Dialog):
         btnAccept.get_style_context().add_class(class_name='success')
         btnCancel = self.get_widget_for_response(Gtk.ResponseType.CANCEL)
         btnCancel.get_style_context().add_class(class_name='error')
+
+    def __create_field_collection(self):
+        """Field 2. Collections"""
+        collections = self.app.get_config('collections')
+        box = Gtk.Box.new(orientation=Gtk.Orientation.VERTICAL, spacing=3)
+        box.set_hexpand(False)
+        label = Gtk.Label()
+        label.set_markup('<b>Collection</b>')
+        label.set_xalign(0.0)
+        box.append(label)
+
+        model = Gtk.ListStore(str)
+        for collection in collections.load():
+            model.append([collection])
+        treeiter = model.append([self.suggested[2]])
+        combobox = Gtk.ComboBox.new_with_model_and_entry(model)
+        combobox.set_entry_text_column(0)
+        combobox.set_active_iter(treeiter)
+        entry = combobox.get_child()
+        entry.set_icon_from_icon_name(Gtk.EntryIconPosition.PRIMARY, 'miaz-res-collection')
+        box.append(combobox)
+        self.boxFields.append(box)
+
+        def completion_match_func(completion, key, iter):
+            model = completion.get_model()
+            text = model.get_value(iter, 0)
+            if key.upper() in text.upper():
+                return True
+            return False
+
+        completion = Gtk.EntryCompletion()
+        completion.set_match_func(completion_match_func)
+        completion_model = model
+        completion.set_model(completion_model)
+        completion.set_text_column(0)
+        entry.set_completion(completion)
+
+        return box
