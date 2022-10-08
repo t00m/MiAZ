@@ -145,19 +145,33 @@ class MiAZDocBrowser(Gtk.Box):
         repocnf = self.backend.get_repo_target_config_file()
         repodct = json_load(repocnf)
         who = self.app.get_config('organizations')
-        for filename in repodct:
-            dot = filename.rfind('.')
-            doc = filename[:dot]
-            ext = filename[dot+1:]
+        for filepath in repodct:
+            dot = filepath.rfind('.')
+            doc = filepath[:dot]
+            ext = filepath[dot+1:]
             row = Adw.ExpanderRow.new()
             # ~ row.connect('activated', self.on_row_activated)
             row.connect('activate', self.on_row_activated)
             fields = doc.split('-')
             explain = "<span color='blue'>#%s</span> <b>%s from %s about %s to %s</b>" % (fields[2], fields[4].title(), who.get(fields[3]), fields[5], who.get(fields[6]))
             row.set_title(title=explain)
-            row.set_subtitle(subtitle=doc)
+            row.set_subtitle(subtitle=filepath)
+
+            icon = self.app.icman.get_icon_mimetype_from_file(filepath, 48, 48)
+            icon.set_icon_size(Gtk.IconSize.LARGE)
+            boxPrefix = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
+            # ~ btnFileDisplay = button = Gtk.Button()
+            # ~ btnFileDisplay.set_child(icon)
+            # ~ btnFileDisplay.connect('clicked', self.on_display_document, filepath)
+            # ~ btnFileDisplay.set_valign(Gtk.Align.CENTER)
+            # ~ btnFileDisplay.set_hexpand(False)
             flag = self.app.icman.get_flag(fields[1], 48, 48)
-            row.add_prefix(flag)
+            boxPrefix.append(flag)
+            boxPrefix.append(icon)
+            row.add_prefix(boxPrefix)
+
+
+            # ~ row.add_prefix(flag)
             fuzzy_date = Gtk.Label()
             fuzzy_date.set_markup(fuzzy_date_from_timestamp(fields[0]))
             row.add_action(fuzzy_date)
@@ -167,6 +181,9 @@ class MiAZDocBrowser(Gtk.Box):
             row.add_row(subrow)
             self.listbox.append(child=row)
         self.do_needs_attention()
+
+    def on_display_document(self, button, filepath):
+        os.system("xdg-open '%s'" % filepath)
 
     def on_key_released(self, widget, keyval, keycode, state):
         self.filter_view()

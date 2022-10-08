@@ -42,6 +42,8 @@ class MiAZWorkspace(Gtk.Box):
         self.set_margin_bottom(margin=6)
         self.set_margin_start(margin=6)
 
+        self.create_menu_selection_single()
+        self.create_menu_selection_multiple()
         self.setup_toolbar()
         self.setup_view()
         self.append(self.scrwin)
@@ -66,19 +68,30 @@ class MiAZWorkspace(Gtk.Box):
         boxFilters.append(self.ent_sb)
         toolbar.set_start_widget(boxFilters)
 
+        # Documents selected
+        boxDocsSelected = Gtk.CenterBox()
+        self.lblDocumentsSelected = "No documents selected"
+        self.btnDocsSel = Gtk.MenuButton()
+        self.btnDocsSel.set_label(self.lblDocumentsSelected)
+        self.popDocsSel = Gtk.PopoverMenu.new_from_model(self.create_menu_selection_multiple())
+        self.btnDocsSel.set_popover(popover=self.popDocsSel)
+        self.btnDocsSel.set_valign(Gtk.Align.CENTER)
+        self.btnDocsSel.set_hexpand(False)
+        boxDocsSelected.set_center_widget(self.btnDocsSel)
+        toolbar.set_end_widget(boxDocsSelected)
+
         # Views (right side)
-        boxMassActionsButton = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
-        self.btnMassActions = Gtk.MenuButton()
-        self.btnMassActions.set_label('Mass actions')
-        self.btnMassActions.set_sensitive(False)
-        self.btnMassActions.set_icon_name('miaz-rename')
-        popover = Gtk.PopoverMenu.new_from_model(self.create_menu_selection_multiple())
-        self.btnMassActions.set_popover(popover=popover)
-        self.btnMassActions.set_valign(Gtk.Align.CENTER)
-        self.btnMassActions.set_hexpand(False)
-        boxMassActionsButton.append(self.btnMassActions)
-        toolbar.set_end_widget(boxMassActionsButton)
-        self.log.debug("Hellow?")
+        # ~ boxMassActionsButton = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
+        # ~ self.btnMassActions = Gtk.MenuButton()
+        # ~ self.btnMassActions.set_label('Mass actions')
+        # ~ self.btnMassActions.set_sensitive(False)
+        # ~ self.btnMassActions.set_icon_name('miaz-rename')
+        # ~ popover = Gtk.PopoverMenu.new_from_model(self.create_menu_selection_multiple())
+        # ~ self.btnMassActions.set_popover(popover=popover)
+        # ~ self.btnMassActions.set_valign(Gtk.Align.CENTER)
+        # ~ self.btnMassActions.set_hexpand(False)
+        # ~ boxMassActionsButton.append(self.btnMassActions)
+        # ~ toolbar.set_end_widget(boxMassActionsButton)
         frame.set_child(toolbar)
         self.append(frame)
 
@@ -96,7 +109,7 @@ class MiAZWorkspace(Gtk.Box):
         self.listbox.connect('selected-rows-changed', self.on_selected_rows_changed)
         self.listbox.set_show_separators(False)
         self.listbox.set_selection_mode(mode=Gtk.SelectionMode.MULTIPLE)
-        self.listbox.set_activate_on_single_click(True)
+        self.listbox.set_activate_on_single_click(False)
         self.listbox.set_margin_top(margin=0)
         self.listbox.set_margin_end(margin=6)
         self.listbox.set_margin_bottom(margin=6)
@@ -118,17 +131,19 @@ class MiAZWorkspace(Gtk.Box):
             dot = filepath.rfind('.')
             doc = filepath[:dot]
             ext = filepath[dot+1:]
-            icon = self.app.icman.get_icon_mimetype_from_file(filepath, 96, 96)
+            icon = self.app.icman.get_icon_mimetype_from_file(filepath, 36, 36)
+            icon.set_icon_size(Gtk.IconSize.INHERIT)
             row = Adw.ActionRow.new()
-            boxButtons = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, css_classes=['linked'])
 
             boxFileDisplayButton = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
-            btnFileDisplay = self.app.create_button('miaz-display', '', self.on_display_document, data=filepath)
-            # ~ btnFileDisplay.set_icon_name('miaz-display')
-            # ~ btnFileDisplay.connect('activate', self.noop)
+            btnFileDisplay = button = Gtk.Button()
+            btnFileDisplay.set_child(icon)
+            btnFileDisplay.connect('clicked', self.on_display_document, filepath)
             btnFileDisplay.set_valign(Gtk.Align.CENTER)
             btnFileDisplay.set_hexpand(False)
+            row.add_prefix(btnFileDisplay)
 
+            boxButtons = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, css_classes=['linked'])
             boxFileInfoButton = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
             btnFileInfo = Gtk.MenuButton()
             btnFileInfo.set_icon_name('miaz-reasons-info')
@@ -137,24 +152,31 @@ class MiAZWorkspace(Gtk.Box):
             btnFileInfo.set_valign(Gtk.Align.CENTER)
             btnFileInfo.set_hexpand(False)
 
-            boxFileEditButton = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
-            btnFileEdit = Gtk.MenuButton()
-            btnFileEdit.set_icon_name('miaz-rename')
-            popover = Gtk.PopoverMenu.new_from_model(self.create_menu_selection_single())
-            btnFileEdit.set_popover(popover=popover)
-            btnFileEdit.set_valign(Gtk.Align.CENTER)
-            btnFileEdit.set_hexpand(False)
+            # ~ boxFileSelectButton = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
+            # ~ btnFileSelect = Gtk.ToggleButton()
+            # ~ btnFileSelect.connect('toggled', self.on_selected_rows_changed)
+            # ~ btnFileSelect.set_icon_name('miaz-edit')
+            # ~ btnFileSelect.set_valign(Gtk.Align.CENTER)
+            # ~ btnFileSelect.set_hexpand(False)
 
-            boxButtons.append(btnFileDisplay)
+
+            # ~ boxFileEditButton = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
+            # ~ btnFileEdit = Gtk.MenuButton()
+            # ~ btnFileEdit.set_icon_name('miaz-rename')
+            # ~ popover = Gtk.PopoverMenu.new_from_model(self.create_menu_selection_single(filepath))
+            # ~ btnFileEdit.set_popover(popover=popover)
+            # ~ btnFileEdit.set_valign(Gtk.Align.CENTER)
+            # ~ btnFileEdit.set_hexpand(False)
+
             boxButtons.append(btnFileInfo)
-            boxButtons.append(btnFileEdit)
-            box = row.get_child()
-            box.append(boxButtons)
+            # ~ boxButtons.append(btnFileSelect)
+            # ~ boxButtons.append(btnFileEdit)
+            # ~ boxRow = row.get_child()
+            # ~ boxRow.append(boxButtons)
 
-            explain = filepath
-            row.set_title(title=os.path.basename(doc))
-            row.add_prefix(icon)
+            row.set_title(title="<b>%s</b>" % os.path.basename(doc))
             row.set_subtitle(subtitle=filepath)
+            row.add_suffix(boxButtons)
 
             self.listbox.append(child=row)
         page = self.app.get_stack_page_by_name('workspace')
@@ -232,33 +254,30 @@ class MiAZWorkspace(Gtk.Box):
         # ~ scrreasons.set_propagate_natural_height(True)
 
 
-    def create_menu_selection_single(self):
+    def create_menu_selection_single(self) -> Gio.Menu:
         self.menu_workspace_single = Gio.Menu.new()
+
+        # Fake item for menu title
         item_fake = Gio.MenuItem.new()
         item_fake.set_label('Single selection')
         action = Gio.SimpleAction.new('fake', None)
         item_fake.set_detailed_action(detailed_action='fake')
         self.menu_workspace_single.append_item(item_fake)
+
+        item_rename_manual = Gio.MenuItem.new()
+        item_rename_manual.set_label('Rename manually')
+        action = Gio.SimpleAction.new('rename_manually', None)
+        action.connect('activate', self.action_rename_manually)
+        self.app.add_action(action)
+        item_rename_manual.set_detailed_action(detailed_action='app.rename_manually')
+        self.menu_workspace_single.append_item(item_rename_manual)
+
         return self.menu_workspace_single
 
-        # ~ items = [
-                    # ~ ('Rename document', 'app.rename', 'rename'),
-                    # ~ ('Delete document', 'app.delete', 'delete')
-                # ~ ]
-        # ~ for item_label, item_action, simple in items:
-            # ~ item = Gio.MenuItem.new()
-            # ~ item.set_label(item_label)
-            # ~ action = Gio.SimpleAction.new(simple, None)
-            # ~ callback = "self.action_%s" % simple
-            # ~ action.connect("activate", eval(callback))
-            # ~ self.app.add_action(action)
-            # ~ item.set_detailed_action(detailed_action=item_action)
-            # ~ self.menu_workspace_single.append_item(item)
-
     def create_menu_selection_multiple(self):
-        fields = ['date', 'country', 'collection', 'purpose']
-
         self.menu_workspace_multiple = Gio.Menu.new()
+
+        fields = ['date', 'country', 'collection', 'purpose']
         item_fake = Gio.MenuItem.new()
         item_fake.set_label('Multiple selection')
         action = Gio.SimpleAction.new('fake', None)
@@ -318,6 +337,10 @@ class MiAZWorkspace(Gtk.Box):
         self.menu_workspace_multiple.append_item(item_delete)
         return self.menu_workspace_multiple
 
+
+    def action_rename_manually(self, *args):
+        self.log.debug(args)
+
     def action_rename(self, *args):
         self.log.debug(args)
 
@@ -327,13 +350,28 @@ class MiAZWorkspace(Gtk.Box):
     def noop(self, *args):
         self.log.debug(args)
 
+    def clear(self, *args):
+        rows = []
+        for row in self.listbox:
+            rows.append(row)
+        for row in rows:
+            self.listbox.remove(row)
+
     def on_selected_rows_changed(self, listbox):
-        rows = listbox.get_selected_rows()
-        self.log.debug(len(rows))
-        if len(rows) > 1:
-            self.btnMassActions.set_sensitive(True)
+        selected_rows = listbox.get_selected_rows()
+
+        if len(selected_rows) > 1:
+            self.btnDocsSel.set_label("%d documents selected" % len(selected_rows))
+            self.popDocsSel.set_menu_model(self.menu_workspace_multiple)
+            self.btnDocsSel.set_sensitive(True)
+        elif len(selected_rows) == 1:
+            self.btnDocsSel.set_label("%d documents selected" % len(selected_rows))
+            self.popDocsSel.set_menu_model(self.menu_workspace_single)
+            self.btnDocsSel.set_sensitive(True)
         else:
-            self.btnMassActions.set_sensitive(False)
+            self.btnDocsSel.set_label("No documents selected")
+            self.popDocsSel.set_menu_model(None)
+            self.btnDocsSel.set_sensitive(False)
 
     def on_display_document(self, button, filepath):
         os.system("xdg-open '%s'" % filepath)
