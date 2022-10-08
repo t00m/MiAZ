@@ -124,6 +124,7 @@ class MiAZWorkspace(Gtk.Box):
         self.scrwin.set_child(self.listbox)
 
     def update(self, *args):
+        self.clear()
         self.log.debug("Got signal 'target-configuration-updated'")
         repocnf = self.backend.get_repo_source_config_file()
         self.repodct = json_load(repocnf)
