@@ -98,7 +98,7 @@ class MiAZPrefsWindow(Adw.PreferencesWindow):
         row = Adw.ActionRow.new()
         row.get_style_context().add_class(class_name='error')
         row.set_title("Countries")
-        row.set_icon_name('miaz-res-countries')
+        row.set_icon_name('miaz-res-country')
         button = self.app.create_button('miaz-search', '', self.show_res_countries)
         box = row.get_child()
         box.append(button)
@@ -107,7 +107,7 @@ class MiAZPrefsWindow(Adw.PreferencesWindow):
     def create_action_row_res_collections(self):
         row = Adw.ActionRow.new()
         row.set_title("Collections")
-        row.set_icon_name('miaz-res-collections')
+        row.set_icon_name('miaz-res-collection')
         button = self.app.create_button('document-edit-symbolic', '', self.show_res_collections)
         box = row.get_child()
         box.append(button)
@@ -116,7 +116,7 @@ class MiAZPrefsWindow(Adw.PreferencesWindow):
     def create_action_row_res_purposes(self):
         row = Adw.ActionRow.new()
         row.set_title("Purposes")
-        row.set_icon_name('miaz-res-purposes')
+        row.set_icon_name('miaz-res-purpose')
         button = self.app.create_button('document-edit-symbolic', '', self.show_res_purposes)
         box = row.get_child()
         box.append(button)
@@ -125,7 +125,7 @@ class MiAZPrefsWindow(Adw.PreferencesWindow):
     def create_action_row_res_organizations(self):
         row = Adw.ActionRow.new()
         row.set_title("Organizations")
-        row.set_icon_name('miaz-res-organizations')
+        row.set_icon_name('miaz-res-organization')
         button = self.app.create_button('document-edit-symbolic', '', self.show_res_organizations)
         box = row.get_child()
         box.append(button)
@@ -134,7 +134,7 @@ class MiAZPrefsWindow(Adw.PreferencesWindow):
     def create_action_row_res_extensions(self):
         row = Adw.ActionRow.new()
         row.set_title("Extensions")
-        row.set_icon_name('miaz-res-extensions')
+        row.set_icon_name('miaz-res-extension')
         button = self.app.create_button('miaz-search', '', self.show_res_extensions)
         box = row.get_child()
         box.append(button)

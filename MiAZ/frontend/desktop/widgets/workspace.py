@@ -340,7 +340,42 @@ class MiAZWorkspace(Gtk.Box):
 
 
     def action_rename_manually(self, *args):
-        self.log.debug(args)
+        # Filename format: {timestamp}-{country}-{collection}-{from}-{purpose}-{concept}-{to}.{extension}
+        fields = ['date', 'country', 'collection', 'from', 'purpose', 'concept', 'to']
+
+        row = self.listbox.get_selected_row()
+        filepath = row.get_subtitle()
+        doc = os.path.basename(filepath)
+        suggested = self.repodct[filepath]['suggested'].split('-')
+        self.log.debug(suggested)
+        boxMain = Gtk.Box.new(orientation=Gtk.Orientation.HORIZONTAL, spacing=3)
+        boxMain.set_margin_top(margin=6)
+        boxMain.set_margin_end(margin=6)
+        boxMain.set_margin_bottom(margin=6)
+        boxMain.set_margin_start(margin=6)
+        n = 0
+        for item in fields:
+            box = Gtk.Box.new(orientation=Gtk.Orientation.VERTICAL, spacing=3)
+            label = Gtk.Label()
+            label.set_markup('<b>%s</b>' % item.title())
+            label.set_xalign(0.0)
+            box.append(label)
+            entry = Gtk.Entry()
+            entry.set_has_frame(True)
+            entry.set_icon_from_icon_name(Gtk.EntryIconPosition.PRIMARY, 'miaz-res-%s' % item)
+            entry.set_text(suggested[n])
+            box.append(entry)
+            boxMain.append(box)
+            n += 1
+
+
+        dialog = self.app.create_dialog(self.app.win, 'Renaming %s' % doc, boxMain, -1, -1)
+        dialog.add_buttons('Cancel', Gtk.ResponseType.CANCEL, 'Accept', Gtk.ResponseType.ACCEPT)
+        btnAccept = dialog.get_widget_for_response(Gtk.ResponseType.ACCEPT)
+        btnAccept.get_style_context().add_class(class_name='success')
+        btnCancel = dialog.get_widget_for_response(Gtk.ResponseType.CANCEL)
+        btnCancel.get_style_context().add_class(class_name='error')
+        dialog.show()
 
     def action_rename(self, *args):
         self.log.debug(args)
@@ -376,3 +411,7 @@ class MiAZWorkspace(Gtk.Box):
 
     def on_display_document(self, button, filepath):
         os.system("xdg-open '%s'" % filepath)
+
+    def on_rename_file(self, *args):
+        dialog = self.app.create_dialog(self.app.win, 'Rename file', Gtk.Label())
+        dialog.show()
