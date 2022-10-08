@@ -348,14 +348,17 @@ class MiAZWorkspace(Gtk.Box):
         doc = os.path.basename(filepath)
         suggested = self.repodct[filepath]['suggested'].split('-')
         self.log.debug(suggested)
-        boxMain = Gtk.Box.new(orientation=Gtk.Orientation.HORIZONTAL, spacing=3)
-        boxMain.set_margin_top(margin=6)
-        boxMain.set_margin_end(margin=6)
-        boxMain.set_margin_bottom(margin=6)
-        boxMain.set_margin_start(margin=6)
+
+        boxMain = Gtk.Box.new(orientation=Gtk.Orientation.VERTICAL, spacing=12)
+        boxFields = Gtk.Box.new(orientation=Gtk.Orientation.HORIZONTAL, spacing=3)
+        boxFields.set_margin_top(margin=6)
+        boxFields.set_margin_end(margin=6)
+        boxFields.set_margin_bottom(margin=6)
+        boxFields.set_margin_start(margin=6)
         n = 0
         for item in fields:
             box = Gtk.Box.new(orientation=Gtk.Orientation.VERTICAL, spacing=3)
+            box.set_hexpand(False)
             label = Gtk.Label()
             label.set_markup('<b>%s</b>' % item.title())
             label.set_xalign(0.0)
@@ -365,9 +368,30 @@ class MiAZWorkspace(Gtk.Box):
             entry.set_icon_from_icon_name(Gtk.EntryIconPosition.PRIMARY, 'miaz-res-%s' % item)
             entry.set_text(suggested[n])
             box.append(entry)
-            boxMain.append(box)
+            boxFields.append(box)
             n += 1
 
+        box = Gtk.Box.new(orientation=Gtk.Orientation.VERTICAL, spacing=3)
+        box.set_hexpand(False)
+        label = Gtk.Label()
+        label.set_markup('<b>Extension</b>')
+        label.set_xalign(0.0)
+        box.append(label)
+        ext = filepath[filepath.rfind('.')+1:]
+        lblExt = Gtk.Label()
+        lblExt.set_text('.%s' % ext)
+        lblExt.set_xalign(0.0)
+        lblExt.set_yalign(0.5)
+        lblExt.set_vexpand(True)
+        box.append(lblExt)
+        boxFields.append(box)
+
+        self.lblSuggestedFilename = Gtk.Label()
+        self.lblSuggestedFilename.set_markup("<i>Suggested filename: </i>%s.%s" % ('-'.join(suggested), ext))
+        self.lblSuggestedFilename.set_selectable(True)
+
+        boxMain.append(boxFields)
+        boxMain.append(self.lblSuggestedFilename)
 
         dialog = self.app.create_dialog(self.app.win, 'Renaming %s' % doc, boxMain, -1, -1)
         dialog.add_buttons('Cancel', Gtk.ResponseType.CANCEL, 'Accept', Gtk.ResponseType.ACCEPT)

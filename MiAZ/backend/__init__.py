@@ -289,7 +289,7 @@ class MiAZBackend(GObject.GObject):
 
         fields = name.split('-')
 
-        # ~ Find and/or guess date field
+        # Field 0. Find and/or guess date field
         found_date = False
         for field in fields:
             try:
@@ -308,7 +308,7 @@ class MiAZBackend(GObject.GObject):
                 print("%s -> %s" % (filepath, error))
                 timestamp = "NODATE"
 
-        # ~ Find and/or guess country field
+        # Field 1. Find and/or guess country field
         found_country = False
         for field in fields:
             if len(field) == 2:
@@ -316,8 +316,55 @@ class MiAZBackend(GObject.GObject):
                 if is_country:
                     country = field.upper()
                     found_country = True
+                    break
         if not found_country:
-            country = "DE"
+            country = "__"
 
-        return "%s-%s-%s-%s-%s.%s" % (timestamp, country, collection, organization, purpose, ext)
+        # Field 2. Find and/or guess collection field
+        found_collection = False
+        for field in fields:
+            if self.conf['collections'].exists(field):
+                collection = field.upper()
+                found_collection = True
+                break
+        if not found_collection:
+            collection = 'NO_COLLECTION'
+
+        # Field 3. Find and/or guess From field
+        found_from = False
+        for field in fields:
+            if self.conf['organizations'].exists(field):
+                from_org = field.upper()
+                found_from = True
+                break
+        if not found_from:
+            from_org = 'NO_FROM'
+
+        # Field 4. Find and/or guess purpose field
+        found_purpose = False
+        for field in fields:
+            if self.conf['purposes'].exists(field):
+                purpose = field.upper()
+                found_purpose = True
+                break
+        if not found_purpose:
+            purpose = 'NO_PURPOSE'
+
+        try:
+            concept = fields[5]
+        except:
+            concept = 'NO_CONCEPT'
+
+        # Field 6. Find and/or guess To field
+        found_to = False
+        for field in fields:
+            if self.conf['organizations'].exists(field):
+                found_to = field.upper()
+                to_org = True
+                break
+        if not found_to:
+            to_org = 'NO_TO'
+
+        # "{timestamp}-{country}-{collection}-{from}-{purpose}-{concept}-{to}.{extension}"
+        return "%s-%s-%s-%s-%s-%s-%s" % (timestamp, country, collection, from_org, purpose, concept, to_org)
 
