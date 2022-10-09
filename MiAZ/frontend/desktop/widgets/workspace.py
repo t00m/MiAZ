@@ -25,7 +25,7 @@ from MiAZ.frontend.desktop.util import get_file_mimetype
 from MiAZ.frontend.desktop.icons import MiAZIconManager
 from MiAZ.frontend.desktop.widgets.treeview import MiAZTreeView
 from MiAZ.frontend.desktop.widgets.menu import MiAZ_APP_MENU
-from MiAZ.frontend.desktop.widgets.rename import RenameDialog
+from MiAZ.frontend.desktop.widgets.rename import MiAZRenameDialog
 
 
 class MiAZWorkspace(Gtk.Box):
@@ -223,6 +223,7 @@ class MiAZWorkspace(Gtk.Box):
         trvreasons.set_hexpand(False)
         trvreasons.set_headers_visible(False)
         model = Gtk.ListStore(Pixbuf, str)
+
         renderer = Gtk.CellRendererPixbuf()
         column = Gtk.TreeViewColumn('Type', renderer, pixbuf=0)
         renderer.set_alignment(0.0, 0.5)
@@ -345,7 +346,7 @@ class MiAZWorkspace(Gtk.Box):
         filepath = row.get_subtitle()
         doc = os.path.basename(filepath)
         suggested = self.repodct[filepath]['suggested'].split('-')
-        dialog = RenameDialog(self.app, filepath, suggested)
+        dialog = MiAZRenameDialog(self.app, filepath, suggested)
         dialog.show()
 
     def action_rename(self, *args):
