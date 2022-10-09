@@ -96,6 +96,8 @@ class MiAZRenameDialog(Gtk.Dialog):
 
     def __create_field_country(self):
         countries = self.app.get_config('countries')
+        my_countries = countries.load()
+        all_countries = countries.load_global()
         box = Gtk.Box.new(orientation=Gtk.Orientation.VERTICAL, spacing=3)
         box.set_hexpand(False)
         label = Gtk.Label()
@@ -105,15 +107,15 @@ class MiAZRenameDialog(Gtk.Dialog):
 
         model = Gtk.ListStore(str, str)
         countries = countries.load_global()
-        for code in countries:
-            model.append([code, "<i>%s</i>" % countries[code]['Country Name']])
-        treeiter = model.append([self.suggested[1], "<i>%s</i>" % self.suggested[1]])
+        for code in my_countries:
+            model.append([code, "%s" % all_countries[code]['Country Name']])
+        treeiter = model.append([self.suggested[1], "%s" % self.suggested[1]])
         combobox = Gtk.ComboBox.new_with_model_and_entry(model)
         combobox.set_entry_text_column(0)
 
         renderer = Gtk.CellRendererText()
         combobox.pack_start(renderer, True)
-        combobox.add_attribute(renderer, "markup", 1)
+        combobox.add_attribute(renderer, "text", 1)
 
         combobox.set_entry_text_column(0)
         combobox.set_active_iter(treeiter)
@@ -135,7 +137,7 @@ class MiAZRenameDialog(Gtk.Dialog):
         completion.set_match_func(completion_match_func)
         completion_model = model
         completion.set_model(completion_model)
-        completion.set_text_column(1)
+        completion.set_text_column(0)
         entry.set_completion(completion)
 
         return box
