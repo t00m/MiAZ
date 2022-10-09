@@ -33,44 +33,45 @@ class MiAZRenameDialog(Gtk.Dialog):
         self.boxMain = Gtk.Box.new(orientation=Gtk.Orientation.VERTICAL, spacing=12)
         self.boxMain.set_vexpand(False)
         self.boxMain.set_hexpand(False)
+        self.boxMain.set_margin_top(margin=12)
+        self.boxMain.set_margin_end(margin=12)
+        self.boxMain.set_margin_bottom(margin=12)
+        self.boxMain.set_margin_start(margin=12)
 
         # Fields
-        self.boxFields = Gtk.Box.new(orientation=Gtk.Orientation.HORIZONTAL, spacing=3)
+        self.boxFields = Gtk.Box.new(orientation=Gtk.Orientation.VERTICAL, spacing=3)
         self.boxFields.set_vexpand(False)
         self.boxFields.set_hexpand(False)
-        self.boxFields.set_margin_top(margin=6)
-        self.boxFields.set_margin_end(margin=6)
-        self.boxFields.set_margin_bottom(margin=6)
-        self.boxFields.set_margin_start(margin=6)
+        self.boxFields.set_margin_top(margin=12)
+        self.boxFields.set_margin_end(margin=12)
+        self.boxFields.set_margin_bottom(margin=12)
+        self.boxFields.set_margin_start(margin=12)
 
         # Filename format: {timestamp}-{country}-{collection}-{from}-{purpose}-{concept}-{to}.{extension}
-        self.__create_field_date() # Field 1. Country
-        self.__create_field_country() # Field 3. From
-        self.__create_field_collection() # Field 2. Collection
-        self.__create_field_from() # Field 3. From
-        self.__create_field_to() # Field 6. To
+        self.__create_field_0_date() # Field 1. Country
+        self.__create_field_1_country() # Field 3. From
+        self.__create_field_2_collection() # Field 2. Collection
+        self.__create_field_3_from() # Field 3. From
+        self.__create_field_4_purpose() # Field 3. Purpose
+        self.__create_field_5_concept() # Field 3. Concept
+        self.__create_field_6_to() # Field 6. To
+        self.__create_field_7_extension() # Field 7. Extension
 
-        box = Gtk.Box.new(orientation=Gtk.Orientation.VERTICAL, spacing=3)
-        box.set_hexpand(False)
-        label = Gtk.Label()
-        label.set_markup('<b>Extension</b>')
-        label.set_xalign(0.0)
-        box.append(label)
-        ext = filepath[filepath.rfind('.')+1:]
-        lblExt = Gtk.Label()
-        lblExt.set_text('.%s' % ext)
-        lblExt.set_xalign(0.0)
-        lblExt.set_yalign(0.5)
-        lblExt.set_vexpand(True)
-        box.append(lblExt)
-        self.boxFields.append(box)
+        # Box Suggested Filename
+        # ~ boxSuggested = Gtk.CenterBox()
+        # ~ self.lblSuggestedTitle = Gtk.Label()
+        # ~ self.lblSuggestedTitle.set_markup('<big>Suggested Filename: </big>')
+        # ~ boxSuggested.append(self.lblSuggestedTitle)
 
-        self.lblSuggestedFilename = Gtk.Label()
-        self.lblSuggestedFilename.set_markup("<i>Suggested filename: </i>%s.%s" % ('-'.join(suggested), ext))
-        self.lblSuggestedFilename.set_selectable(True)
+        # ~ self.lblSuggestedFilename = Gtk.Label()
+        # ~ self.lblSuggestedFilename.set_markup("<big><b>%s.%s</b></big>" % ('-'.join(suggested), ext))
+        # ~ self.lblSuggestedFilename.set_selectable(True)
+        # ~ boxSuggested.set_center_widget(self.lblSuggestedFilename)
+        # ~ boxSuggested.set_visible(False)
+        # ~ self.boxFields.append(boxSuggested)
 
         self.boxMain.append(self.boxFields)
-        self.boxMain.append(self.lblSuggestedFilename)
+
 
         self.contents.append(self.boxMain)
         self.add_buttons('Cancel', Gtk.ResponseType.CANCEL, 'Accept', Gtk.ResponseType.ACCEPT)
@@ -79,32 +80,76 @@ class MiAZRenameDialog(Gtk.Dialog):
         btnCancel = self.get_widget_for_response(Gtk.ResponseType.CANCEL)
         btnCancel.get_style_context().add_class(class_name='error')
 
-    def __create_field_date(self):
-        box = Gtk.Box.new(orientation=Gtk.Orientation.VERTICAL, spacing=3)
-        box.set_hexpand(False)
-        label = Gtk.Label()
-        label.set_markup('<b>Date</b>')
-        label.set_xalign(0.0)
-        box.append(label)
-        entry = Gtk.Entry()
-        entry.set_has_frame(True)
-        entry.set_icon_from_icon_name(Gtk.EntryIconPosition.PRIMARY, 'miaz-res-date')
-        entry.set_text(self.suggested[0])
-        box.append(entry)
-        self.boxFields.append(box)
+        self.on_changed_entry()
+
+    def __create_box_field(self) -> Gtk.Box:
+        box = Gtk.Box.new(orientation=Gtk.Orientation.HORIZONTAL, spacing=3)
+        box.set_hexpand(True)
+        box.set_homogeneous(False)
         return box
 
-    def __create_field_country(self):
+    def __create_box_key(self, title: str) -> Gtk.Box:
+        box = Gtk.Box.new(orientation=Gtk.Orientation.HORIZONTAL, spacing=0)
+        box.set_hexpand(True)
+        label = Gtk.Label()
+        label.set_markup('<b>%30s</b>' % title)
+        label.set_xalign(1.0)
+        box.append(label)
+        return box
+
+    def __create_box_value(self) -> Gtk.Box:
+        box = Gtk.Box.new(orientation=Gtk.Orientation.HORIZONTAL, spacing=0)
+        box.set_hexpand(True)
+        return box
+
+    def __create_field_0_date(self):
+        """Field 0. Date"""
+        boxField = self.__create_box_field()
+        boxKey = self.__create_box_key('Date')
+        boxValue = self.__create_box_value()
+        boxField.append(boxKey)
+        boxField.append(boxValue)
+        self.boxFields.append(boxField)
+
+        model = Gtk.ListStore(str)
+        for date in {}:
+            model.append([date])
+        treeiter = model.append([self.suggested[0]])
+        combobox = Gtk.ComboBox.new_with_model_and_entry(model)
+        combobox.set_entry_text_column(0)
+        combobox.set_active_iter(treeiter)
+        self.entry_date = combobox.get_child()
+        self.entry_date.set_icon_from_icon_name(Gtk.EntryIconPosition.PRIMARY, 'miaz-res-date')
+        self.entry_date.connect('changed', self.on_changed_entry)
+        boxValue.append(combobox)
+
+        def completion_match_func(completion, key, iter):
+            model = completion.get_model()
+            text = model.get_value(iter, 0)
+            if key.upper() in text.upper():
+                return True
+            return False
+
+        completion = Gtk.EntryCompletion()
+        completion.set_match_func(completion_match_func)
+        completion_model = model
+        completion.set_model(completion_model)
+        completion.set_text_column(0)
+        self.entry_date.set_completion(completion)
+
+        return boxField
+
+    def __create_field_1_country(self):
+        boxField = self.__create_box_field()
+        boxKey = self.__create_box_key('Country')
+        boxValue = self.__create_box_value()
+        boxField.append(boxKey)
+        boxField.append(boxValue)
+        self.boxFields.append(boxField)
+
         countries = self.app.get_config('countries')
         my_countries = countries.load()
         all_countries = countries.load_global()
-        box = Gtk.Box.new(orientation=Gtk.Orientation.VERTICAL, spacing=3)
-        box.set_hexpand(False)
-        label = Gtk.Label()
-        label.set_markup('<b>Country</b>')
-        label.set_xalign(0.0)
-        box.append(label)
-
         model = Gtk.ListStore(str, str)
         countries = countries.load_global()
         for code in my_countries:
@@ -119,10 +164,11 @@ class MiAZRenameDialog(Gtk.Dialog):
 
         combobox.set_entry_text_column(0)
         combobox.set_active_iter(treeiter)
-        entry = combobox.get_child()
-        entry.set_icon_from_icon_name(Gtk.EntryIconPosition.PRIMARY, 'miaz-res-country')
-        box.append(combobox)
-        self.boxFields.append(box)
+        self.entry_country = combobox.get_child()
+        self.entry_country.set_icon_from_icon_name(Gtk.EntryIconPosition.PRIMARY, 'miaz-res-country')
+        self.entry_country.connect('changed', self.on_changed_entry)
+        boxValue.append(combobox)
+
 
         def completion_match_func(completion, key, iter):
             model = completion.get_model()
@@ -138,21 +184,21 @@ class MiAZRenameDialog(Gtk.Dialog):
         completion_model = model
         completion.set_model(completion_model)
         completion.set_text_column(0)
-        entry.set_completion(completion)
+        self.entry_country.set_completion(completion)
 
-        return box
+        return boxField
 
 
-    def __create_field_collection(self):
+    def __create_field_2_collection(self):
         """Field 2. Collections"""
-        collections = self.app.get_config('collections')
-        box = Gtk.Box.new(orientation=Gtk.Orientation.VERTICAL, spacing=3)
-        box.set_hexpand(False)
-        label = Gtk.Label()
-        label.set_markup('<b>Collection</b>')
-        label.set_xalign(0.0)
-        box.append(label)
+        boxField = self.__create_box_field()
+        boxKey = self.__create_box_key('Collection')
+        boxValue = self.__create_box_value()
+        boxField.append(boxKey)
+        boxField.append(boxValue)
+        self.boxFields.append(boxField)
 
+        collections = self.app.get_config('collections')
         model = Gtk.ListStore(str)
         for collection in collections.load():
             model.append([collection])
@@ -160,10 +206,10 @@ class MiAZRenameDialog(Gtk.Dialog):
         combobox = Gtk.ComboBox.new_with_model_and_entry(model)
         combobox.set_entry_text_column(0)
         combobox.set_active_iter(treeiter)
-        entry = combobox.get_child()
-        entry.set_icon_from_icon_name(Gtk.EntryIconPosition.PRIMARY, 'miaz-res-collection')
-        box.append(combobox)
-        self.boxFields.append(box)
+        self.entry_collection = combobox.get_child()
+        self.entry_collection.set_icon_from_icon_name(Gtk.EntryIconPosition.PRIMARY, 'miaz-res-collection')
+        self.entry_collection.connect('changed', self.on_changed_entry)
+        boxValue.append(combobox)
 
         def completion_match_func(completion, key, iter):
             model = completion.get_model()
@@ -177,20 +223,95 @@ class MiAZRenameDialog(Gtk.Dialog):
         completion_model = model
         completion.set_model(completion_model)
         completion.set_text_column(0)
-        entry.set_completion(completion)
+        self.entry_collection.set_completion(completion)
 
-        return box
+        return boxField
 
-    def __create_field_from(self):
+    def __create_field_4_purpose(self):
+        """Field 2. purposes"""
+        boxField = self.__create_box_field()
+        boxKey = self.__create_box_key('Purpose')
+        boxValue = self.__create_box_value()
+        boxField.append(boxKey)
+        boxField.append(boxValue)
+        self.boxFields.append(boxField)
+
+        purposes = self.app.get_config('purposes')
+        model = Gtk.ListStore(str)
+        for purpose in purposes.load():
+            model.append([purpose])
+        treeiter = model.append([self.suggested[4]])
+        combobox = Gtk.ComboBox.new_with_model_and_entry(model)
+        combobox.set_entry_text_column(0)
+        combobox.set_active_iter(treeiter)
+        self.entry_purpose = combobox.get_child()
+        self.entry_purpose.set_icon_from_icon_name(Gtk.EntryIconPosition.PRIMARY, 'miaz-res-purpose')
+        self.entry_purpose.connect('changed', self.on_changed_entry)
+        boxValue.append(combobox)
+
+        def completion_match_func(completion, key, iter):
+            model = completion.get_model()
+            text = model.get_value(iter, 0)
+            if key.upper() in text.upper():
+                return True
+            return False
+
+        completion = Gtk.EntryCompletion()
+        completion.set_match_func(completion_match_func)
+        completion_model = model
+        completion.set_model(completion_model)
+        completion.set_text_column(0)
+        self.entry_purpose.set_completion(completion)
+
+        return boxField
+
+    def __create_field_5_concept(self):
+        """Field 2. concepts"""
+        boxField = self.__create_box_field()
+        boxKey = self.__create_box_key('Concept')
+        boxValue = self.__create_box_value()
+        boxField.append(boxKey)
+        boxField.append(boxValue)
+        self.boxFields.append(boxField)
+
+        model = Gtk.ListStore(str)
+        for concept in {}:
+            model.append([concept])
+        treeiter = model.append([self.suggested[5]])
+        combobox = Gtk.ComboBox.new_with_model_and_entry(model)
+        combobox.set_entry_text_column(0)
+        combobox.set_active_iter(treeiter)
+        self.entry_concept = combobox.get_child()
+        self.entry_concept.set_icon_from_icon_name(Gtk.EntryIconPosition.PRIMARY, 'miaz-res-concept')
+        self.entry_concept.connect('changed', self.on_changed_entry)
+        boxValue.append(combobox)
+
+        def completion_match_func(completion, key, iter):
+            model = completion.get_model()
+            text = model.get_value(iter, 0)
+            if key.upper() in text.upper():
+                return True
+            return False
+
+        completion = Gtk.EntryCompletion()
+        completion.set_match_func(completion_match_func)
+        completion_model = model
+        completion.set_model(completion_model)
+        completion.set_text_column(0)
+        self.entry_concept.set_completion(completion)
+
+        return boxField
+
+    def __create_field_3_from(self):
         """Field 3. From"""
-        organizations = self.app.get_config('organizations')
-        box = Gtk.Box.new(orientation=Gtk.Orientation.VERTICAL, spacing=3)
-        box.set_hexpand(False)
-        label = Gtk.Label()
-        label.set_markup('<b>From</b>')
-        label.set_xalign(0.0)
-        box.append(label)
+        boxField = self.__create_box_field()
+        boxKey = self.__create_box_key('Purpose')
+        boxValue = self.__create_box_value()
+        boxField.append(boxKey)
+        boxField.append(boxValue)
+        self.boxFields.append(boxField)
 
+        organizations = self.app.get_config('organizations')
         model = Gtk.ListStore(str, str)
         organizations = organizations.load()
         for alias in organizations:
@@ -203,10 +324,10 @@ class MiAZRenameDialog(Gtk.Dialog):
 
         combobox.set_entry_text_column(0)
         combobox.set_active_iter(treeiter)
-        entry = combobox.get_child()
-        entry.set_icon_from_icon_name(Gtk.EntryIconPosition.PRIMARY, 'miaz-res-organization')
-        box.append(combobox)
-        self.boxFields.append(box)
+        self.entry_from = combobox.get_child()
+        self.entry_from.connect('changed', self.on_changed_entry)
+        self.entry_from.set_icon_from_icon_name(Gtk.EntryIconPosition.PRIMARY, 'miaz-res-organization')
+        boxValue.append(combobox)
 
         def completion_match_func(completion, key, iter):
             model = completion.get_model()
@@ -220,24 +341,23 @@ class MiAZRenameDialog(Gtk.Dialog):
         completion_model = model
         completion.set_model(completion_model)
         completion.set_text_column(0)
-        entry.set_completion(completion)
+        self.entry_from.set_completion(completion)
 
-        return box
+        return boxField
 
-    def __create_field_to(self):
+    def __create_field_6_to(self):
         """Field 6. To"""
-        organizations = self.app.get_config('organizations')
-        box = Gtk.Box.new(orientation=Gtk.Orientation.VERTICAL, spacing=3)
-        box.set_hexpand(False)
-        label = Gtk.Label()
-        label.set_markup('<b>To</b>')
-        label.set_xalign(0.0)
-        box.append(label)
+        boxField = self.__create_box_field()
+        boxKey = self.__create_box_key('Purpose')
+        boxValue = self.__create_box_value()
+        boxField.append(boxKey)
+        boxField.append(boxValue)
+        self.boxFields.append(boxField)
 
+        organizations = self.app.get_config('organizations')
         model = Gtk.ListStore(str, str)
         organizations = organizations.load()
         for alias in organizations:
-            self.log.debug("%s (%s)", alias, organizations[alias])
             model.append([alias, "<i>%s</i>" % organizations[alias]])
         treeiter = model.append([self.suggested[6], "<i>%s</i>" % self.suggested[6]])
         combobox = Gtk.ComboBox.new_with_model_and_entry(model)
@@ -248,10 +368,10 @@ class MiAZRenameDialog(Gtk.Dialog):
 
         combobox.set_entry_text_column(0)
         combobox.set_active_iter(treeiter)
-        entry = combobox.get_child()
-        entry.set_icon_from_icon_name(Gtk.EntryIconPosition.PRIMARY, 'miaz-res-organization')
-        box.append(combobox)
-        self.boxFields.append(box)
+        self.entry_to = combobox.get_child()
+        self.entry_to.set_icon_from_icon_name(Gtk.EntryIconPosition.PRIMARY, 'miaz-res-organization')
+        self.entry_to.connect('changed', self.on_changed_entry)
+        boxValue.append(combobox)
 
         def completion_match_func(completion, key, iter):
             model = completion.get_model()
@@ -265,6 +385,58 @@ class MiAZRenameDialog(Gtk.Dialog):
         completion_model = model
         completion.set_model(completion_model)
         completion.set_text_column(0)
-        entry.set_completion(completion)
+        self.entry_to.set_completion(completion)
 
-        return box
+        return boxField
+
+    def __create_field_7_extension(self):
+        """Field 7. extension"""
+        boxField = self.__create_box_field()
+        boxKey = self.__create_box_key('Extension')
+        boxValue = self.__create_box_value()
+        boxField.append(boxKey)
+        boxField.append(boxValue)
+        self.boxFields.append(boxField)
+
+        model = Gtk.ListStore(str)
+        for extension in {}:
+            model.append([extension])
+        # ~ treeiter = model.append([self.suggested[7]])
+        combobox = Gtk.ComboBox.new_with_model_and_entry(model)
+        combobox.set_entry_text_column(0)
+        # ~ combobox.set_active_iter(treeiter)
+        self.entry_extension = combobox.get_child()
+        self.entry_extension.set_icon_from_icon_name(Gtk.EntryIconPosition.PRIMARY, 'miaz-res-extension')
+        self.entry_extension.connect('changed', self.on_changed_entry)
+        boxValue.append(combobox)
+
+        def completion_match_func(completion, key, iter):
+            model = completion.get_model()
+            text = model.get_value(iter, 0)
+            if key.upper() in text.upper():
+                return True
+            return False
+
+        completion = Gtk.EntryCompletion()
+        completion.set_match_func(completion_match_func)
+        completion_model = model
+        completion.set_model(completion_model)
+        completion.set_text_column(0)
+        self.entry_extension.set_completion(completion)
+
+        return boxField
+
+    def on_changed_entry(self, *args):
+        self.lblExt = Gtk.Label() # FIXME!
+        suggested = "%s-%s-%s-%s-%s-%s-%s.%s" % (
+                                      self.entry_date.get_text(),
+                                      self.entry_country.get_text(),
+                                      self.entry_collection.get_text(),
+                                      self.entry_from.get_text(),
+                                      self.entry_purpose.get_text(),
+                                      self.entry_concept.get_text(),
+                                      self.entry_to.get_text(),
+                                      self.lblExt.get_text()
+                                    )
+        self.log.debug(suggested)
+        # ~ self.lblSuggestedFilename.set_markup("<big><b>%s</b></big>" % suggested)
