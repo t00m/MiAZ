@@ -16,13 +16,16 @@ from MiAZ.backend.log import get_logger
 from gi.repository.GdkPixbuf import Pixbuf
 
 class MiAZRenameDialog(Gtk.Dialog):
+    result = ''
+
     def __init__(self, app, filepath, suggested) -> Gtk.Widget:
         super(MiAZRenameDialog, self).__init__()
+        self.set_size_request(800, 600)
         self.log = get_logger('MiazRenameDialog')
         self.app = app
         self.filepath = filepath
         self.suggested = suggested
-        doc = os.path.basename(filepath)
+        self.doc = os.path.basename(filepath)
         self.set_transient_for(self.app.win)
         self.set_modal(True)
         self.dlgHeader = Gtk.HeaderBar()
@@ -405,16 +408,24 @@ class MiAZRenameDialog(Gtk.Dialog):
 
     def __create_field_8_result(self, *args):
         """Field 7. extension"""
-        row = Adw.ActionRow.new()
-        row.set_title("Extension")
-        row.set_icon_name('miaz-res-extension')
-        boxValue = self.__create_box_value()
-        row.add_suffix(boxValue)
-        self.boxMain.append(row)
-        try:
-            row.set_title(self.result)
-        except:
-            row.set_title('')
+        # Current filename
+        self.row_cur_filename = Adw.ActionRow.new()
+        self.row_cur_filename.set_title("Current filename")
+        boxValueCur = self.__create_box_value()
+        lblFilenameCur = Gtk.Label()
+        lblFilenameCur.set_markup(self.doc)
+        self.row_cur_filename.add_suffix(lblFilenameCur)
+        self.boxMain.append(self.row_cur_filename)
+
+        self.row_new_filename = Adw.ActionRow.new()
+        self.row_new_filename.set_title("<b>New filename</b>")
+        boxValueNew = self.__create_box_value()
+        self.lblFilenameNew = Gtk.Label()
+        self.lblFilenameNew.set_markup(self.result)
+        self.lblFilenameNew.set_selectable(True)
+        self.row_new_filename.add_suffix(self.lblFilenameNew)
+        self.boxMain.append(self.row_new_filename)
+
 
     def on_changed_entry(self, *args):
         self.lblExt = Gtk.Label() # FIXME!
@@ -428,5 +439,4 @@ class MiAZRenameDialog(Gtk.Dialog):
                                       self.entry_to.get_text(),
                                       self.lblExt.get_text()
                                     )
-        # ~ self.log.debug(self.suggested)
-        # ~ self.lblSuggestedFilename.set_markup("<big><b>%s</b></big>" % suggested)
+        self.lblFilenameNew.set_markup(self.result)
