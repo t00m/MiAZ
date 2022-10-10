@@ -347,7 +347,12 @@ class MiAZWorkspace(Gtk.Box):
         doc = os.path.basename(filepath)
         suggested = self.repodct[filepath]['suggested'].split('-')
         dialog = MiAZRenameDialog(self.app, filepath, suggested)
+        dialog.connect('response', self.on_response_rename)
         dialog.show()
+
+    def on_response_rename(self, dialog, response):
+        if response == Gtk.ResponseType.ACCEPT:
+            self.log.debug("New name: %s", dialog.get_suggested())
 
     def action_rename(self, *args):
         self.log.debug(args)

@@ -30,9 +30,16 @@ class MiAZRenameDialog(Gtk.Dialog):
         self.set_modal(True)
 
         # Header
+        btnAccept = self.app.create_button('', 'rename', self.on_rename_accept)
+        btnAccept.get_style_context ().add_class ('suggested-action')
+        btnCancel = self.app.create_button('', 'cancel', self.on_rename_cancel)
+        btnCancel.get_style_context ().add_class ('destructive-action')
         lblHeaderTitle = Gtk.Label()
-        lblHeaderTitle.set_text('Rename file')
+        lblHeaderTitle.set_markup('<b>Rename file</b>')
         self.dlgHeader = Adw.HeaderBar()
+        self.dlgHeader.set_show_end_title_buttons(False)
+        self.dlgHeader.pack_start(btnCancel)
+        self.dlgHeader.pack_end(btnAccept)
         self.dlgHeader.set_title_widget(lblHeaderTitle)
         self.set_titlebar(self.dlgHeader)
 
@@ -60,12 +67,6 @@ class MiAZRenameDialog(Gtk.Dialog):
         self.__create_field_8_result() # Result filename
 
         self.contents.append(self.boxMain)
-        self.add_buttons('Cancel', Gtk.ResponseType.CANCEL, 'Accept', Gtk.ResponseType.ACCEPT)
-        btnAccept = self.get_widget_for_response(Gtk.ResponseType.ACCEPT)
-        btnAccept.get_style_context ().add_class ('suggested-action')
-        btnCancel = self.get_widget_for_response(Gtk.ResponseType.CANCEL)
-        btnCancel.get_style_context ().add_class ('destructive-action')
-
         self.on_changed_entry()
 
     def __create_box_value(self) -> Gtk.Box:
@@ -415,3 +416,15 @@ class MiAZRenameDialog(Gtk.Dialog):
                                       self.lblExt.get_text()
                                     )
         self.lblFilenameNew.set_markup(self.result)
+
+    def get_suggested(self) -> str:
+        return self.result
+
+    def on_rename_accept(self, *args):
+        self.response(Gtk.ResponseType.ACCEPT)
+        self.destroy()
+
+    def on_rename_cancel(self, *args):
+        self.response(Gtk.ResponseType.CANCEL)
+        self.destroy()
+
