@@ -352,7 +352,10 @@ class MiAZWorkspace(Gtk.Box):
 
     def on_response_rename(self, dialog, response):
         if response == Gtk.ResponseType.ACCEPT:
-            self.log.debug("New name: %s", dialog.get_suggested())
+            source = dialog.get_original()
+            target = os.path.join(os.path.dirname(source), dialog.get_suggested())
+            shutil.move(source, target)
+            self.log.debug("Rename document from '%s' to '%s'", os.path.basename(source), os.path.basename(target))
 
     def action_rename(self, *args):
         self.log.debug(args)

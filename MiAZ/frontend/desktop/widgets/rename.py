@@ -18,16 +18,20 @@ from gi.repository.GdkPixbuf import Pixbuf
 class MiAZRenameDialog(Gtk.Dialog):
     result = ''
 
-    def __init__(self, app, filepath, suggested) -> Gtk.Widget:
+    def __init__(self, app, filepath: str, suggested: list) -> Gtk.Widget:
         super(MiAZRenameDialog, self).__init__()
-        self.set_size_request(800, 600)
-        self.log = get_logger('MiazRenameDialog')
         self.app = app
-        self.filepath = filepath
-        self.suggested = suggested
-        self.doc = os.path.basename(filepath)
+        self.log = get_logger('MiazRenameDialog')
+        self.set_size_request(800, 600)
         self.set_transient_for(self.app.win)
         self.set_modal(True)
+
+
+        # Basic data
+        self.filepath = filepath
+        self.extension = filepath[filepath.rfind('.')+1:]
+        self.suggested = suggested
+        self.doc = os.path.basename(filepath)
 
         # Header
         btnAccept = self.app.create_button('', 'rename', self.on_rename_accept)
@@ -357,13 +361,15 @@ class MiAZRenameDialog(Gtk.Dialog):
         row.add_suffix(boxValue)
         self.boxMain.append(row)
 
+        extensions = self.app.get_config('extensions')
         model = Gtk.ListStore(str)
-        for extension in {}:
-            model.append([extension])
-        # ~ treeiter = model.append([self.suggested[7]])
+        for extension in extensions.load_global():
+            treeiter = model.append([extension])
+            if extension == self.extension:
+                active = treeiter
         combobox = Gtk.ComboBox.new_with_model_and_entry(model)
         combobox.set_entry_text_column(0)
-        # ~ combobox.set_active_iter(treeiter)
+        combobox.set_active_iter(active)
         self.entry_extension = combobox.get_child()
         self.entry_extension.set_icon_from_icon_name(Gtk.EntryIconPosition.PRIMARY, 'miaz-res-extension')
         self.entry_extension.connect('changed', self.on_changed_entry)
@@ -394,6 +400,16 @@ class MiAZRenameDialog(Gtk.Dialog):
         self.row_cur_filename.add_suffix(lblFilenameCur)
         self.boxMain.append(self.row_cur_filename)
 
+        icon = self.app.icman.get_icon_mimetype_from_file(self.filepath, 36, 36)
+        icon.set_icon_size(Gtk.IconSize.INHERIT)
+        boxFileDisplayButton = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
+        btnFileDisplay = button = Gtk.Button()
+        btnFileDisplay.set_child(icon)
+        btnFileDisplay.connect('clicked', self.on_display_document, self.filepath)
+        btnFileDisplay.set_valign(Gtk.Align.CENTER)
+        btnFileDisplay.set_hexpand(False)
+        self.row_cur_filename.add_suffix(btnFileDisplay)
+
         self.row_new_filename = Adw.ActionRow.new()
         self.row_new_filename.set_title("<b>New filename</b>")
         boxValueNew = self.__create_box_value()
@@ -404,7 +420,6 @@ class MiAZRenameDialog(Gtk.Dialog):
         self.boxMain.append(self.row_new_filename)
 
     def on_changed_entry(self, *args):
-        self.lblExt = Gtk.Label() # FIXME!
         self.result = "%s-%s-%s-%s-%s-%s-%s.%s" % (
                                       self.entry_date.get_text(),
                                       self.entry_country.get_text(),
@@ -413,9 +428,12 @@ class MiAZRenameDialog(Gtk.Dialog):
                                       self.entry_purpose.get_text(),
                                       self.entry_concept.get_text(),
                                       self.entry_to.get_text(),
-                                      self.lblExt.get_text()
+                                      self.entry_extension.get_text()
                                     )
         self.lblFilenameNew.set_markup(self.result)
+
+    def get_original(self) -> str:
+        return self.filepath
 
     def get_suggested(self) -> str:
         return self.result
@@ -428,3 +446,5 @@ class MiAZRenameDialog(Gtk.Dialog):
         self.response(Gtk.ResponseType.CANCEL)
         self.destroy()
 
+    def on_display_document(self, button, filepath):
+        os.system("xdg-open '%s'" % filepath)
