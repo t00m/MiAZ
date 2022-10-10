@@ -28,8 +28,15 @@ class MiAZRenameDialog(Gtk.Dialog):
         self.doc = os.path.basename(filepath)
         self.set_transient_for(self.app.win)
         self.set_modal(True)
-        self.dlgHeader = Gtk.HeaderBar()
+
+        # Header
+        lblHeaderTitle = Gtk.Label()
+        lblHeaderTitle.set_text('Rename file')
+        self.dlgHeader = Adw.HeaderBar()
+        self.dlgHeader.set_title_widget(lblHeaderTitle)
         self.set_titlebar(self.dlgHeader)
+
+        # Contents
         self.contents = self.get_content_area()
 
         # Box to be inserted as contents
@@ -52,45 +59,14 @@ class MiAZRenameDialog(Gtk.Dialog):
         self.__create_field_7_extension() # Field 7. Extension
         self.__create_field_8_result() # Result filename
 
-        # Box Suggested Filename
-        # ~ boxSuggested = Gtk.CenterBox()
-        # ~ self.lblSuggestedTitle = Gtk.Label()
-        # ~ self.lblSuggestedTitle.set_markup('<big>Suggested Filename: </big>')
-        # ~ boxSuggested.append(self.lblSuggestedTitle)
-
-        # ~ self.lblSuggestedFilename = Gtk.Label()
-        # ~ self.lblSuggestedFilename.set_markup("<big><b>%s.%s</b></big>" % ('-'.join(suggested), ext))
-        # ~ self.lblSuggestedFilename.set_selectable(True)
-        # ~ boxSuggested.set_center_widget(self.lblSuggestedFilename)
-        # ~ boxSuggested.set_visible(False)
-        # ~ self.boxFields.append(boxSuggested)
-
-        # ~ self.boxMain.append(self.boxFields)
-
-
         self.contents.append(self.boxMain)
         self.add_buttons('Cancel', Gtk.ResponseType.CANCEL, 'Accept', Gtk.ResponseType.ACCEPT)
         btnAccept = self.get_widget_for_response(Gtk.ResponseType.ACCEPT)
-        btnAccept.get_style_context().add_class(class_name='success')
+        btnAccept.get_style_context ().add_class ('suggested-action')
         btnCancel = self.get_widget_for_response(Gtk.ResponseType.CANCEL)
-        btnCancel.get_style_context().add_class(class_name='error')
+        btnCancel.get_style_context ().add_class ('destructive-action')
 
         self.on_changed_entry()
-
-    # ~ def __create_box_field(self) -> Gtk.Box:
-        # ~ box = Gtk.Box.new(orientation=Gtk.Orientation.HORIZONTAL, spacing=3)
-        # ~ box.set_hexpand(True)
-        # ~ box.set_homogeneous(False)
-        # ~ return box
-
-    # ~ def __create_box_key(self, title: str) -> Gtk.Box:
-        # ~ box = Gtk.Box.new(orientation=Gtk.Orientation.HORIZONTAL, spacing=0)
-        # ~ box.set_hexpand(True)
-        # ~ label = Gtk.Label()
-        # ~ label.set_markup('<b>%30s</b>' % title)
-        # ~ label.set_xalign(1.0)
-        # ~ box.append(label)
-        # ~ return box
 
     def __create_box_value(self) -> Gtk.Box:
         box = Gtk.Box.new(orientation=Gtk.Orientation.HORIZONTAL, spacing=0)
@@ -425,7 +401,6 @@ class MiAZRenameDialog(Gtk.Dialog):
         self.lblFilenameNew.set_selectable(True)
         self.row_new_filename.add_suffix(self.lblFilenameNew)
         self.boxMain.append(self.row_new_filename)
-
 
     def on_changed_entry(self, *args):
         self.lblExt = Gtk.Label() # FIXME!
