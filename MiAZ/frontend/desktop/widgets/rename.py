@@ -439,12 +439,18 @@ class MiAZRenameDialog(Gtk.Dialog):
         return self.result
 
     def on_rename_accept(self, *args):
-        self.response(Gtk.ResponseType.ACCEPT)
-        self.destroy()
+        body = "You are about to rename '%s' to '%s'" % (self.get_original(), self.get_suggested())
+        # ~ question = self.app.message_dialog_question(self, "Are you sure?", body)
+        question = Gtk.MessageDialog.new_with_markup(self, Gtk.DialogFlags.MODAL, Gtk.MessageType.QUESTION, Gtk.ButtonsType.YES_NO, "Are you sure")
+        question.connect('response', self.on_answer_question)
 
     def on_rename_cancel(self, *args):
         self.response(Gtk.ResponseType.CANCEL)
         self.destroy()
+
+    def on_answer_question(self, dialog, response):
+        if response == Gtk.ResponseType.YES:
+            self.destroy()
 
     def on_display_document(self, button, filepath):
         os.system("xdg-open '%s'" % filepath)

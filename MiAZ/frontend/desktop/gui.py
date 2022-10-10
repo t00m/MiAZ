@@ -229,6 +229,11 @@ class GUI(Adw.Application):
             button.connect('clicked', callback, data)
         return button
 
+    def message_dialog_question(self, parent, head, body):
+        dialog = Gtk.MessageDialog(parent, Gtk.DialogFlags.MODAL, Gtk.MessageType.QUESTION, Gtk.ButtonsType.YES_NO, head)
+        dialog.format_secondary_markup("%s" % body)
+        return dialog
+
     def create_action(self, name, callback):
         """ Add an Action and connect to a callback """
         action = Gio.SimpleAction.new(name, None)
