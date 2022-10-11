@@ -70,6 +70,16 @@ class MiAZConfigSettingsPurposes(MiAZConfig):
             must_copy = True
         )
 
+class MiAZConfigSettingsConcepts(MiAZConfig):
+    def __init__(self):
+        super().__init__(
+            log=get_logger('MiAZ.Settings.Concepts'),
+            config_for = 'Concepts',
+            config_local = ENV['FILE']['CONCEPTS'],
+            config_global = None,
+            must_copy = False
+        )
+
 class MiAZConfigSettingsOrganizations(MiAZConfig):
     def __init__(self):
         super().__init__(

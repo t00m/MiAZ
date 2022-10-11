@@ -143,31 +143,31 @@ class MiAZPrefsWindow(Adw.PreferencesWindow):
     def show_res_countries(self, *args):
         view = MiAZCountries(self.app)
         view.update()
-        dialog = self.app.create_dialog(self, 'Countries', view, 600, 400)
+        dialog = self.app.create_dialog(self, 'Countries', view, 600, 480)
         dialog.show()
 
     def show_res_collections(self, *args):
         view = MiAZCollections(self.app)
         view.update()
-        dialog = self.app.create_dialog(self.app.win, 'Collections', view)
+        dialog = self.app.create_dialog(self.app.win, 'Collections', view, 600, 480)
         dialog.show()
 
     def show_res_purposes(self, *args):
         view = MiAZPurposes(self.app)
         view.update()
-        dialog = self.app.create_dialog(self.app.win, 'Purposes', view)
+        dialog = self.app.create_dialog(self.app.win, 'Purposes', view, 600, 480)
         dialog.show()
 
     def show_res_organizations(self, *args):
         view = MiAZOrganizations(self.app)
         view.update()
-        dialog = self.app.create_dialog(self.app.win, 'Organizations', view)
+        dialog = self.app.create_dialog(self.app.win, 'Organizations', view, 600, 480)
         dialog.show()
 
     def show_res_extensions(self, *args):
         view = MiAZExtensions(self.app)
         view.update()
-        dialog = self.app.create_dialog(self.app.win, 'Extensions', view)
+        dialog = self.app.create_dialog(self.app.win, 'Extensions', view, 600, 480)
         dialog.show()
 
     def create_action_row_repo_source(self):

@@ -343,17 +343,17 @@ class MiAZWorkspace(Gtk.Box):
 
     def action_rename_manually(self, *args):
         row = self.listbox.get_selected_row()
-        filepath = row.get_subtitle()
-        doc = os.path.basename(filepath)
-        suggested = self.repodct[filepath]['suggested'].split('-')
-        dialog = MiAZRenameDialog(self.app, filepath, suggested)
+        filepath_source = row.get_subtitle()
+        doc = os.path.basename(filepath_source)
+        filepath_target = self.repodct[filepath_source]['suggested'].split('-')
+        dialog = MiAZRenameDialog(self.app, filepath_source, filepath_target)
         dialog.connect('response', self.on_response_rename)
         dialog.show()
 
     def on_response_rename(self, dialog, response):
         if response == Gtk.ResponseType.ACCEPT:
-            source = dialog.get_original()
-            target = os.path.join(os.path.dirname(source), dialog.get_suggested())
+            source = dialog.get_filepath_source()
+            target = os.path.join(os.path.dirname(source), dialog.get_filepath_target())
             shutil.move(source, target)
             self.log.debug("Rename document from '%s' to '%s'", os.path.basename(source), os.path.basename(target))
 

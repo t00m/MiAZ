@@ -19,6 +19,7 @@ from MiAZ.backend.config.settings import MiAZConfigSettingsCountries
 from MiAZ.backend.config.settings import MiAZConfigSettingsExtensions
 from MiAZ.backend.config.settings import MiAZConfigSettingsCollections
 from MiAZ.backend.config.settings import MiAZConfigSettingsPurposes
+from MiAZ.backend.config.settings import MiAZConfigSettingsConcepts
 from MiAZ.backend.config.settings import MiAZConfigSettingsOrganizations
 
 
@@ -37,6 +38,7 @@ class MiAZBackend(GObject.GObject):
         self.conf['extensions'] = MiAZConfigSettingsExtensions()
         self.conf['collections'] = MiAZConfigSettingsCollections()
         self.conf['purposes'] = MiAZConfigSettingsPurposes()
+        self.conf['concepts'] = MiAZConfigSettingsConcepts()
         self.conf['organizations'] = MiAZConfigSettingsOrganizations()
         self.source = self.conf['app'].get('source')
         self.target = self.conf['app'].get('target')
