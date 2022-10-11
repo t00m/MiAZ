@@ -277,6 +277,8 @@ class MiAZBackend(GObject.GObject):
         collection = ""
         organization = ""
         purpose = ""
+        concept = ""
+        extension = ""
 
         filename = os.path.basename(filepath)
         dot = filename.rfind('.')
@@ -285,7 +287,7 @@ class MiAZBackend(GObject.GObject):
             ext = filename[dot+1:].lower()
         else:
             name = filename
-            ext = 'NOEXTENSION'
+            ext = ''
 
         fields = name.split('-')
 
@@ -293,20 +295,20 @@ class MiAZBackend(GObject.GObject):
         found_date = False
         for field in fields:
             try:
-                adate = dateparser.parse(field[:8])
-                if len(timestamp) == 0:
-                    timestamp = adate.strftime("%Y%m%d")
+                adate = guess_datetime(field[:8])
+                timestamp = adate.strftime("%Y%m%d")
+                if timestamp is not None:
                     found_date = True
+                    break
             except Exception as error:
                 pass
         if not found_date:
             try:
                 created = get_file_creation_date(filepath)
                 timestamp = created.strftime("%Y%m%d")
-                # ~ self.log.debug(timestamp)
             except Exception as error:
                 print("%s -> %s" % (filepath, error))
-                timestamp = "NODATE"
+                timestamp = ""
 
         # Field 1. Find and/or guess country field
         found_country = False
