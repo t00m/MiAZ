@@ -33,11 +33,14 @@ class MiAZRenameDialog(Gtk.Dialog):
         self.suggested = suggested
         self.doc = os.path.basename(filepath)
 
-        # Header
+        # Header & Butons
         btnAccept = self.app.create_button('', 'rename', self.on_rename_accept)
         btnAccept.get_style_context ().add_class ('suggested-action')
+        btnAccept.set_can_focus(True)
+        btnAccept.set_receives_default(True)
         btnCancel = self.app.create_button('', 'cancel', self.on_rename_cancel)
         btnCancel.get_style_context ().add_class ('destructive-action')
+        self.set_default_response(Gtk.ResponseType.ACCEPT)
         lblHeaderTitle = Gtk.Label()
         lblHeaderTitle.set_markup('<b>Rename file</b>')
         self.dlgHeader = Adw.HeaderBar()
@@ -439,10 +442,12 @@ class MiAZRenameDialog(Gtk.Dialog):
         return self.result
 
     def on_rename_accept(self, *args):
-        body = "You are about to rename '%s' to '%s'" % (self.get_original(), self.get_suggested())
-        # ~ question = self.app.message_dialog_question(self, "Are you sure?", body)
-        question = Gtk.MessageDialog.new_with_markup(self, Gtk.DialogFlags.MODAL, Gtk.MessageType.QUESTION, Gtk.ButtonsType.YES_NO, "Are you sure")
+        body = "You are about to rename:\n\n'<b>%s</b>'\n\nto\n\n'<b>%s</b>'" % (self.get_original(), self.get_suggested())
+        widget = Gtk.Label()
+        widget.set_markup(body)
+        question = self.app.create_dialog_question(self, "Are you sure?", widget)
         question.connect('response', self.on_answer_question)
+        question.show()
 
     def on_rename_cancel(self, *args):
         self.response(Gtk.ResponseType.CANCEL)

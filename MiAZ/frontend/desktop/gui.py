@@ -190,7 +190,7 @@ class GUI(Adw.Application):
     def show_searchbar(self, *args):
         self.searchbar.set_search_mode(True)
 
-    def create_dialog(self, parent, title, widget, width=400, height=500):
+    def create_dialog(self, parent, title, widget, width=-1, height=-1):
         dialog = Gtk.Dialog()
         dlgHeader = Gtk.HeaderBar()
         dialog.set_titlebar(dlgHeader)
@@ -200,6 +200,10 @@ class GUI(Adw.Application):
             dialog.set_size_request(width, height)
         dialog.set_transient_for(parent)
         contents = dialog.get_content_area()
+        contents.set_margin_top(margin=12)
+        contents.set_margin_end(margin=12)
+        contents.set_margin_bottom(margin=12)
+        contents.set_margin_start(margin=12)
         contents.append(widget)
         return dialog
 
@@ -229,9 +233,14 @@ class GUI(Adw.Application):
             button.connect('clicked', callback, data)
         return button
 
-    def message_dialog_question(self, parent, head, body):
-        dialog = Gtk.MessageDialog(parent, Gtk.DialogFlags.MODAL, Gtk.MessageType.QUESTION, Gtk.ButtonsType.YES_NO, head)
-        dialog.format_secondary_markup("%s" % body)
+    def create_dialog_question(self, parent, title, body, width=-1, height=-1):
+        dialog = self.create_dialog(parent, title, body, width, height)
+        dialog.add_buttons('No', Gtk.ResponseType.NO, 'Yes', Gtk.ResponseType.YES)
+        dialog.set_default_response(Gtk.ResponseType.YES)
+        btnYes = dialog.get_widget_for_response(Gtk.ResponseType.YES)
+        btnYes.get_style_context().add_class(class_name='suggested-action')
+        btnNo = dialog.get_widget_for_response(Gtk.ResponseType.NO)
+        btnNo.get_style_context().add_class(class_name='destructive-action')
         return dialog
 
     def create_action(self, name, callback):
