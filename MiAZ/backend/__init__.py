@@ -320,7 +320,7 @@ class MiAZBackend(GObject.GObject):
                     found_country = True
                     break
         if not found_country:
-            country = "__"
+            country = ""
 
         # Field 2. Find and/or guess collection field
         found_collection = False
@@ -330,7 +330,7 @@ class MiAZBackend(GObject.GObject):
                 found_collection = True
                 break
         if not found_collection:
-            collection = 'NO_COLLECTION'
+            collection = ''
 
         # Field 3. Find and/or guess From field
         found_from = False
@@ -340,7 +340,7 @@ class MiAZBackend(GObject.GObject):
                 found_from = True
                 break
         if not found_from:
-            from_org = 'NO_FROM'
+            from_org = ''
 
         # Field 4. Find and/or guess purpose field
         found_purpose = False
@@ -350,12 +350,13 @@ class MiAZBackend(GObject.GObject):
                 found_purpose = True
                 break
         if not found_purpose:
-            purpose = 'NO_PURPOSE'
+            purpose = ''
 
+        # Field 4. Do NOT find and/or guess concept field. Free field.
         try:
             concept = fields[5]
         except:
-            concept = 'NO_CONCEPT'
+            concept = ''
 
         # Field 6. Find and/or guess To field
         found_to = False
@@ -365,7 +366,7 @@ class MiAZBackend(GObject.GObject):
                 to_org = True
                 break
         if not found_to:
-            to_org = 'NO_TO'
+            to_org = ''
 
         # "{timestamp}-{country}-{collection}-{from}-{purpose}-{concept}-{to}.{extension}"
         return "%s-%s-%s-%s-%s-%s-%s" % (timestamp, country, collection, from_org, purpose, concept, to_org)

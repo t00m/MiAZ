@@ -17,6 +17,7 @@ from gi.repository.GdkPixbuf import Pixbuf
 
 class MiAZRenameDialog(Gtk.Dialog):
     result = ''
+    new_values = []
 
     def __init__(self, app, filepath: str, suggested: list) -> Gtk.Widget:
         super(MiAZRenameDialog, self).__init__()
@@ -25,7 +26,6 @@ class MiAZRenameDialog(Gtk.Dialog):
         self.set_size_request(800, 600)
         self.set_transient_for(self.app.win)
         self.set_modal(True)
-
 
         # Basic data
         self.filepath = filepath
@@ -202,6 +202,46 @@ class MiAZRenameDialog(Gtk.Dialog):
         completion.set_text_column(0)
         self.entry_collection.set_completion(completion)
 
+    def __create_field_3_from(self):
+        """Field 3. From"""
+        row = Adw.ActionRow.new()
+        row.set_title("From")
+        row.set_icon_name('miaz-res-from')
+        boxValue = self.__create_box_value()
+        row.add_suffix(boxValue)
+        self.boxMain.append(row)
+
+        organizations = self.app.get_config('organizations')
+        model = Gtk.ListStore(str, str)
+        organizations = organizations.load()
+        for alias in organizations:
+            model.append([alias, "<i>%s</i>" % organizations[alias]])
+        treeiter = model.append([self.suggested[3], "<i>%s</i>" % self.suggested[3]])
+        combobox = Gtk.ComboBox.new_with_model_and_entry(model)
+        renderer = Gtk.CellRendererText()
+        combobox.pack_start(renderer, True)
+        combobox.add_attribute(renderer, "markup", 1)
+        combobox.set_entry_text_column(0)
+        combobox.set_active_iter(treeiter)
+        self.entry_from = combobox.get_child()
+        self.entry_from.connect('changed', self.on_changed_entry)
+        self.entry_from.set_icon_from_icon_name(Gtk.EntryIconPosition.PRIMARY, 'miaz-res-organization')
+        boxValue.append(combobox)
+
+        def completion_match_func(completion, key, iter):
+            model = completion.get_model()
+            text = model.get_value(iter, 0)
+            if key.upper() in text.upper():
+                return True
+            return False
+
+        completion = Gtk.EntryCompletion()
+        completion.set_match_func(completion_match_func)
+        completion_model = model
+        completion.set_model(completion_model)
+        completion.set_text_column(0)
+        self.entry_from.set_completion(completion)
+
     def __create_field_4_purpose(self):
         """Field 4. purposes"""
         row = Adw.ActionRow.new()
@@ -272,46 +312,6 @@ class MiAZRenameDialog(Gtk.Dialog):
         completion.set_model(completion_model)
         completion.set_text_column(0)
         self.entry_concept.set_completion(completion)
-
-    def __create_field_3_from(self):
-        """Field 3. From"""
-        row = Adw.ActionRow.new()
-        row.set_title("From")
-        row.set_icon_name('miaz-res-from')
-        boxValue = self.__create_box_value()
-        row.add_suffix(boxValue)
-        self.boxMain.append(row)
-
-        organizations = self.app.get_config('organizations')
-        model = Gtk.ListStore(str, str)
-        organizations = organizations.load()
-        for alias in organizations:
-            model.append([alias, "<i>%s</i>" % organizations[alias]])
-        treeiter = model.append([self.suggested[3], "<i>%s</i>" % self.suggested[3]])
-        combobox = Gtk.ComboBox.new_with_model_and_entry(model)
-        renderer = Gtk.CellRendererText()
-        combobox.pack_start(renderer, True)
-        combobox.add_attribute(renderer, "markup", 1)
-        combobox.set_entry_text_column(0)
-        combobox.set_active_iter(treeiter)
-        self.entry_from = combobox.get_child()
-        self.entry_from.connect('changed', self.on_changed_entry)
-        self.entry_from.set_icon_from_icon_name(Gtk.EntryIconPosition.PRIMARY, 'miaz-res-organization')
-        boxValue.append(combobox)
-
-        def completion_match_func(completion, key, iter):
-            model = completion.get_model()
-            text = model.get_value(iter, 0)
-            if key.upper() in text.upper():
-                return True
-            return False
-
-        completion = Gtk.EntryCompletion()
-        completion.set_match_func(completion_match_func)
-        completion_model = model
-        completion.set_model(completion_model)
-        completion.set_text_column(0)
-        self.entry_from.set_completion(completion)
 
     def __create_field_6_to(self):
         """Field 6. To"""
@@ -423,17 +423,45 @@ class MiAZRenameDialog(Gtk.Dialog):
         self.boxMain.append(self.row_new_filename)
 
     def on_changed_entry(self, *args):
-        self.result = "%s-%s-%s-%s-%s-%s-%s.%s" % (
-                                      self.entry_date.get_text(),
-                                      self.entry_country.get_text(),
-                                      self.entry_collection.get_text(),
-                                      self.entry_from.get_text(),
-                                      self.entry_purpose.get_text(),
-                                      self.entry_concept.get_text(),
-                                      self.entry_to.get_text(),
-                                      self.entry_extension.get_text()
-                                    )
+        fields = []
+        fields.append(self.entry_date.get_text().upper()) # 0. Date
+        fields.append(self.entry_country.get_text().upper()) # 1. Country
+        fields.append(self.entry_collection.get_text().upper()) # 2. Collection
+        fields.append(self.entry_from.get_text().upper()) # 3. From
+        fields.append(self.entry_purpose.get_text().upper()) # 4. Purpose
+        fields.append(self.entry_concept.get_text().upper()) # 5. Concept
+        fields.append(self.entry_to.get_text().upper()) # 6. To
+        extension = self.entry_extension.get_text()
+        self.result = "%s.%s" % ('-'.join(fields), extension)
+        # ~ self.new_values.append(('Renaming', self.get_original(), self.result))
+        # ~ self.validate(fields)
         self.lblFilenameNew.set_markup(self.result)
+
+    def validate(self, fields: list) -> None:
+        # Validate Collection:
+        cnfCollections = self.app.get_config('collections')
+        collections = cnfCollections.load()
+        if not cnfCollections.exists(fields[2]):
+            collections.append(fields[2])
+            cnfCollections.save(collections)
+            self.new_values.append(('collections', '', fields[2]))
+
+        # Validate From:
+        cnfOrgs = self.app.get_config('organizations')
+        orgs = cnfOrgs.load()
+        if not cnfOrgs.exists(fields[3]):
+            cnfOrgs.set(fields[3], '')
+            cnfOrgs.save(cnfOrgs)
+            self.new_values.append(('From', '', fields[3]))
+
+        # Validate To:
+        cnfOrgs = self.app.get_config('organizations')
+        orgs = cnfOrgs.load()
+        if not cnfOrgs.exists(fields[3]):
+            cnfOrgs.set(fields[3], '')
+            cnfOrgs.save(cnfOrgs)
+            self.new_values.append(('From', '', fields[3]))
+
 
     def get_original(self) -> str:
         return self.filepath
@@ -455,6 +483,8 @@ class MiAZRenameDialog(Gtk.Dialog):
 
     def on_answer_question(self, dialog, response):
         if response == Gtk.ResponseType.YES:
+            dialog.destroy()
+            self.response(Gtk.ResponseType.ACCEPT)
             self.destroy()
 
     def on_display_document(self, button, filepath):
