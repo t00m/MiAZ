@@ -3,7 +3,7 @@
 
 import os
 import sys
-from abc import abstractmethod
+import shutil
 
 import gi
 from gi.repository import Adw
@@ -21,6 +21,7 @@ from MiAZ.frontend.desktop.util import get_file_mimetype
 from MiAZ.frontend.desktop.icons import MiAZIconManager
 from MiAZ.frontend.desktop.widgets.treeview import MiAZTreeView
 from MiAZ.backend.config.settings import MiAZConfigSettingsExtensions as Ext
+from MiAZ.frontend.desktop.widgets.rename import MiAZRenameDialog
 
 
 class MiAZDocBrowser(Gtk.Box):
@@ -118,16 +119,12 @@ class MiAZDocBrowser(Gtk.Box):
 
     def action_rename_manually(self, *args):
         row = self.listbox.get_selected_row()
-        subtitle = row.get_subtitle()
-        source = os.path.basename(filepath)
-
-        @#@
-        ¡¡FIXME!!
-        @#@
-
-        suggested = doc[:doc.rfind('.')]
-        # ~ filepath_target = self.repodct[filepath_source]['suggested'].split('-')
-        dialog = MiAZRenameDialog(self.app, filepath_source, target)
+        basename = row.get_subtitle()
+        config = self.app.get_config('app')
+        source = os.path.join(config.get('target'), basename)
+        doc = basename[:basename.rfind('.')]
+        target = doc.split('-')
+        dialog = MiAZRenameDialog(self.app, source, target)
         dialog.connect('response', self.on_response_rename)
         dialog.show()
 
@@ -143,10 +140,10 @@ class MiAZDocBrowser(Gtk.Box):
 
         item_rename_manual = Gio.MenuItem.new()
         item_rename_manual.set_label('Rename manually')
-        action = Gio.SimpleAction.new('rename_manually', None)
+        action = Gio.SimpleAction.new('rename_db_manually', None)
         action.connect('activate', self.action_rename_manually)
         self.app.add_action(action)
-        item_rename_manual.set_detailed_action(detailed_action='app.rename_manually')
+        item_rename_manual.set_detailed_action(detailed_action='app.rename_db_manually')
         self.menu_workspace_single.append_item(item_rename_manual)
 
         return self.menu_workspace_single
@@ -178,6 +175,7 @@ class MiAZDocBrowser(Gtk.Box):
         self.listbox.get_style_context().add_class(class_name='boxed-list')
         self.listbox.set_filter_func(self.clb_visible_function)
         self.listbox.connect('selected-rows-changed', self.on_selected_rows_changed)
+        self.listbox.connect('row-selected', self.on_row_selected)
 
         # Row for displaying when there is no documents available
         self.nodata = Adw.ActionRow.new()
@@ -187,7 +185,7 @@ class MiAZDocBrowser(Gtk.Box):
 
     def on_selected_rows_changed(self, listbox):
         selected_rows = listbox.get_selected_rows()
-        self.log.debug("Selected rows: %d", len(selected_rows))
+        # ~ self.log.debug("Selected rows: %d", len(selected_rows))
         if len(selected_rows) > 1:
             self.btnDocsSel.set_label("%d documents selected" % len(selected_rows))
             self.popDocsSel.set_menu_model(self.menu_workspace_multiple)
@@ -223,9 +221,9 @@ class MiAZDocBrowser(Gtk.Box):
             dot = filepath.rfind('.')
             doc = filepath[:dot]
             ext = filepath[dot+1:]
-            row = Adw.ExpanderRow.new()
-            # ~ row.connect('activated', self.on_row_activated)
-            row.connect('activate', self.on_row_activated)
+            row = Adw.ActionRow.new()
+            # ~ row.connect('activated', self.on_row_activated, filepath)
+            # ~ row.connect('activate', self.on_row_activated, filepath)
             fields = doc.split('-')
             explain = "<span color='blue'>#%s</span> <b>%s from %s about %s to %s</b>" % (fields[2], fields[4].title(), who.get(fields[3]), fields[5], who.get(fields[6]))
             row.set_title(title=explain)
@@ -248,11 +246,11 @@ class MiAZDocBrowser(Gtk.Box):
             # ~ row.add_prefix(flag)
             fuzzy_date = Gtk.Label()
             fuzzy_date.set_markup(fuzzy_date_from_timestamp(fields[0]))
-            row.add_action(fuzzy_date)
+            row.add_suffix(fuzzy_date)
             # ~ row.get_style_context().add_class(class_name='error')
 
-            subrow = self.app.create_button('miaz-mime-web', 'Link to this resource', None, data=row)
-            row.add_row(subrow)
+            # ~ subrow = self.app.create_button('miaz-mime-web', 'Link to this resource', None, data=row)
+            # ~ row.add_row(subrow)
             self.listbox.append(child=row)
         self.do_needs_attention()
 
@@ -265,8 +263,16 @@ class MiAZDocBrowser(Gtk.Box):
         # ~ if Gdk.ModifierType.CONTROL_MASK & state and keyname == 'f':
         #       ....
 
-    def on_row_activated(self, *args):
-        self.log.debug(args)
+    def on_response_rename(self, dialog, response):
+        if response == Gtk.ResponseType.ACCEPT:
+            source = dialog.get_filepath_source()
+            target = os.path.join(os.path.dirname(source), dialog.get_filepath_target())
+            shutil.move(source, target)
+            self.log.debug("Rename document from '%s' to '%s'", os.path.basename(source), os.path.basename(target))
+
+    def on_row_selected(self, listbox, row):
+        self.log.debug("On row selected: %s", row.get_subtitle())
+
 
     def doesnt_need_attention(self, *args):
         page = self.app.get_stack_page_by_name('browser')

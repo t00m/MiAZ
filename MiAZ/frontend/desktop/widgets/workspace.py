@@ -4,7 +4,6 @@
 import os
 import sys
 import shutil
-from abc import abstractmethod
 
 import gi
 gi.require_version('Gtk', '4.0')
@@ -270,10 +269,10 @@ class MiAZWorkspace(Gtk.Box):
 
         item_rename_manual = Gio.MenuItem.new()
         item_rename_manual.set_label('Rename manually')
-        action = Gio.SimpleAction.new('rename_manually', None)
+        action = Gio.SimpleAction.new('rename_ws_manually', None)
         action.connect('activate', self.action_rename_manually)
         self.app.add_action(action)
-        item_rename_manual.set_detailed_action(detailed_action='app.rename_manually')
+        item_rename_manual.set_detailed_action(detailed_action='app.rename_ws_manually')
         self.menu_workspace_single.append_item(item_rename_manual)
 
         return self.menu_workspace_single
