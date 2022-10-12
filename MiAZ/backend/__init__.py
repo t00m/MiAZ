@@ -293,9 +293,11 @@ class MiAZBackend(GObject.GObject):
 
         fields = name.split('-')
 
+        # ~ self.log.debug(filename)
         # Field 0. Find and/or guess date field
         found_date = False
         for field in fields:
+            # ~ self.log.debug(field)
             try:
                 adate = guess_datetime(field[:8])
                 timestamp = adate.strftime("%Y%m%d")
@@ -309,9 +311,9 @@ class MiAZBackend(GObject.GObject):
                 created = get_file_creation_date(filepath)
                 timestamp = created.strftime("%Y%m%d")
             except Exception as error:
-                print("%s -> %s" % (filepath, error))
+                self.log.error("%s -> %s" % (filepath, error))
                 timestamp = ""
-
+        # ~ self.log.debug(timestamp)
         # Field 1. Find and/or guess country field
         found_country = False
         for field in fields:
@@ -364,12 +366,14 @@ class MiAZBackend(GObject.GObject):
         found_to = False
         for field in fields:
             if self.conf['organizations'].exists(field):
-                found_to = field.upper()
-                to_org = True
+                found_to = True
+                to_org = field.upper()
                 break
         if not found_to:
             to_org = ''
 
         # "{timestamp}-{country}-{collection}-{from}-{purpose}-{concept}-{to}.{extension}"
-        return "%s-%s-%s-%s-%s-%s-%s" % (timestamp, country, collection, from_org, purpose, concept, to_org)
+        suggested = "%s-%s-%s-%s-%s-%s-%s" % (timestamp, country, collection, from_org, purpose, concept, to_org)
+        self.log.debug("%s -> %s", filename, suggested)
+        return suggested
 

@@ -43,7 +43,7 @@ class MiAZDocBrowser(Gtk.Box):
         self.stack = Adw.ViewStack()
         self.append(self.stack)
 
-        page = self.stack.add_named(self.listbox, 'view-list')
+        page = self.stack.add_named(self.scrwin, 'view-list')
         page.set_icon_name('miaz-view-list')
 
         view_grid = Gtk.Label.new('grid')
@@ -111,6 +111,9 @@ class MiAZDocBrowser(Gtk.Box):
         self.stack.set_visible_child_name('view-tree')
 
     def setup_view(self):
+        self.scrwin = Gtk.ScrolledWindow()
+        self.scrwin.set_has_frame(False)
+        self.scrwin.set_vexpand(True)
         self.listbox = Gtk.ListBox.new()
         self.listbox.set_show_separators(True)
         self.listbox.set_selection_mode(mode=Gtk.SelectionMode.SINGLE)
@@ -126,6 +129,7 @@ class MiAZDocBrowser(Gtk.Box):
         self.nodata = Adw.ActionRow.new()
         self.nodata.set_title(title='<b>No documents found for review</b>')
         self.listbox.set_placeholder(self.nodata)
+        self.scrwin.set_child(self.listbox)
 
     def clb_visible_function(self, row):
         title = row.get_title()

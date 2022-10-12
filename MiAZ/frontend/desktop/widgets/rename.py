@@ -129,6 +129,9 @@ class MiAZRenameDialog(Gtk.Dialog):
         row, combobox, self.entry_date = self.__create_actionrow('date', model)
         for date in {}:
             model.append([date])
+        if len(self.suggested[0]) > 0:
+            treeiter = model.append([self.suggested[0]])
+            combobox.set_active_iter(treeiter)
 
     def __create_field_1_country(self):
         model = Gtk.ListStore(str, str)
@@ -164,7 +167,7 @@ class MiAZRenameDialog(Gtk.Dialog):
         for alias in organizations:
             model.append([alias, "<i>%s</i>" % organizations[alias]])
         if len(self.suggested[3]) > 0:
-            treeiter = model.append([self.suggested[2], "%s" % self.suggested[3]])
+            treeiter = model.append([self.suggested[3], "%s" % self.suggested[3]])
             combobox.set_active_iter(treeiter)
 
         renderer = Gtk.CellRendererText()
@@ -180,7 +183,7 @@ class MiAZRenameDialog(Gtk.Dialog):
         for purpose in purposes.load():
             model.append([purpose])
         if len(self.suggested[4]) > 0:
-            treeiter = model.append([self.suggested[4], "%s" % self.suggested[4]])
+            treeiter = model.append([self.suggested[4]])
             combobox.set_active_iter(treeiter)
 
     def __create_field_5_concept(self):
@@ -191,7 +194,7 @@ class MiAZRenameDialog(Gtk.Dialog):
         for concept in concepts.load():
             model.append([concept])
         if len(self.suggested[5]) > 0:
-            treeiter = model.append([self.suggested[5], "%s" % self.suggested[5]])
+            treeiter = model.append([self.suggested[5]])
             combobox.set_active_iter(treeiter)
 
     def __create_field_6_to(self):
@@ -202,7 +205,7 @@ class MiAZRenameDialog(Gtk.Dialog):
         organizations = organizations.load()
         for alias in organizations:
             model.append([alias, "<i>%s</i>" % organizations[alias]])
-        if len(self.suggested[2]) > 0:
+        if len(self.suggested[6]) > 0:
             treeiter = model.append([self.suggested[6], "%s" % self.suggested[6]])
             combobox.set_active_iter(treeiter)
 
@@ -305,7 +308,7 @@ class MiAZRenameDialog(Gtk.Dialog):
         return self.result
 
     def on_rename_accept(self, *args):
-        body = "You are about to rename:\n\n'<b>%s</b>'\n\nto\n\n'<b>%s</b>'" % (self.get_filepath_source(), self.get_filepath_target())
+        body = "You are about to rename:\n\n'<b>%s</b>'\n\nto\n\n'<b>%s</b>'" % (os.path.basename(self.get_filepath_source()), self.get_filepath_target())
         widget = Gtk.Label()
         widget.set_markup(body)
         question = self.app.create_dialog_question(self, "Are you sure?", widget)
