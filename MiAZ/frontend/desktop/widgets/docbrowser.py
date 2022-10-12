@@ -88,7 +88,25 @@ class MiAZDocBrowser(Gtk.Box):
         # ~ boxViews.append(button)
         # ~ button = self.app.create_button('miaz-view-tree', '', self.show_view_tree)
         # ~ boxViews.append(button)
+
+        boxDocsSelected = Gtk.CenterBox()
+        self.lblDocumentsSelected = "No documents selected"
+        self.btnDocsSel = Gtk.MenuButton()
+        self.btnDocsSel.set_label(self.lblDocumentsSelected)
+        self.popDocsSel = Gtk.PopoverMenu.new_from_model(self.create_menu_selection_single())
+        self.btnDocsSel.set_popover(popover=self.popDocsSel)
+        self.btnDocsSel.set_valign(Gtk.Align.CENTER)
+        self.btnDocsSel.set_hexpand(False)
+        self.btnDocsSel.set_sensitive(False)
+        boxDocsSelected.set_center_widget(self.btnDocsSel)
+        boxViews.append(boxDocsSelected)
+
         toolbar.set_end_widget(boxViews)
+
+
+        # ~ toolbar.set_end_widget(boxDocsSelected)
+
+
         frame.set_child(toolbar)
         self.append(frame)
 
@@ -97,6 +115,41 @@ class MiAZDocBrowser(Gtk.Box):
         self.add_controller(self.controller)
 
         self.backend.connect('target-configuration-updated', self.update)
+
+    def action_rename_manually(self, *args):
+        row = self.listbox.get_selected_row()
+        subtitle = row.get_subtitle()
+        source = os.path.basename(filepath)
+
+        @#@
+        ¡¡FIXME!!
+        @#@
+
+        suggested = doc[:doc.rfind('.')]
+        # ~ filepath_target = self.repodct[filepath_source]['suggested'].split('-')
+        dialog = MiAZRenameDialog(self.app, filepath_source, target)
+        dialog.connect('response', self.on_response_rename)
+        dialog.show()
+
+    def create_menu_selection_single(self) -> Gio.Menu:
+        self.menu_workspace_single = Gio.Menu.new()
+
+        # Fake item for menu title
+        item_fake = Gio.MenuItem.new()
+        item_fake.set_label('Single selection')
+        action = Gio.SimpleAction.new('fake', None)
+        item_fake.set_detailed_action(detailed_action='fake')
+        self.menu_workspace_single.append_item(item_fake)
+
+        item_rename_manual = Gio.MenuItem.new()
+        item_rename_manual.set_label('Rename manually')
+        action = Gio.SimpleAction.new('rename_manually', None)
+        action.connect('activate', self.action_rename_manually)
+        self.app.add_action(action)
+        item_rename_manual.set_detailed_action(detailed_action='app.rename_manually')
+        self.menu_workspace_single.append_item(item_rename_manual)
+
+        return self.menu_workspace_single
 
     def noop(self, *args):
         self.log.debug(args)
@@ -124,12 +177,29 @@ class MiAZDocBrowser(Gtk.Box):
         self.listbox.set_margin_start(margin=6)
         self.listbox.get_style_context().add_class(class_name='boxed-list')
         self.listbox.set_filter_func(self.clb_visible_function)
+        self.listbox.connect('selected-rows-changed', self.on_selected_rows_changed)
 
         # Row for displaying when there is no documents available
         self.nodata = Adw.ActionRow.new()
         self.nodata.set_title(title='<b>No documents found for review</b>')
         self.listbox.set_placeholder(self.nodata)
         self.scrwin.set_child(self.listbox)
+
+    def on_selected_rows_changed(self, listbox):
+        selected_rows = listbox.get_selected_rows()
+        self.log.debug("Selected rows: %d", len(selected_rows))
+        if len(selected_rows) > 1:
+            self.btnDocsSel.set_label("%d documents selected" % len(selected_rows))
+            self.popDocsSel.set_menu_model(self.menu_workspace_multiple)
+            self.btnDocsSel.set_sensitive(True)
+        elif len(selected_rows) == 1:
+            self.btnDocsSel.set_label("%d documents selected" % len(selected_rows))
+            self.popDocsSel.set_menu_model(self.menu_workspace_single)
+            self.btnDocsSel.set_sensitive(True)
+        else:
+            self.btnDocsSel.set_label("No documents selected")
+            self.popDocsSel.set_menu_model(None)
+            self.btnDocsSel.set_sensitive(False)
 
     def clb_visible_function(self, row):
         title = row.get_title()
