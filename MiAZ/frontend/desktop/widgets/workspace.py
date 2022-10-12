@@ -78,6 +78,7 @@ class MiAZWorkspace(Gtk.Box):
         self.btnDocsSel.set_popover(popover=self.popDocsSel)
         self.btnDocsSel.set_valign(Gtk.Align.CENTER)
         self.btnDocsSel.set_hexpand(False)
+        self.btnDocsSel.set_sensitive(False)
         boxDocsSelected.set_center_widget(self.btnDocsSel)
         toolbar.set_end_widget(boxDocsSelected)
 
@@ -375,7 +376,7 @@ class MiAZWorkspace(Gtk.Box):
 
     def on_selected_rows_changed(self, listbox):
         selected_rows = listbox.get_selected_rows()
-
+        self.log.debug("Selected rows: %d", len(selected_rows))
         if len(selected_rows) > 1:
             self.btnDocsSel.set_label("%d documents selected" % len(selected_rows))
             self.popDocsSel.set_menu_model(self.menu_workspace_multiple)
