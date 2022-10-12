@@ -133,6 +133,19 @@ class MiAZRenameDialog(Gtk.Dialog):
             treeiter = model.append([self.suggested[0]])
             combobox.set_active_iter(treeiter)
 
+    # ~ def __create_field_0_date(self):
+        # ~ row = Adw.ActionRow.new()
+        # ~ row.set_title('Date')
+        # ~ row.set_icon_name('miaz-res-date')
+        # ~ boxValue = self.__create_box_value()
+        # ~ row.add_suffix(boxValue)
+        # ~ self.boxMain.append(row)
+        # ~ calendar = Gtk.Calendar()
+        # ~ self.entry_date = Gtk.Entry()
+        # ~ self.entry_date.set_visible(False)
+        # ~ boxValue.append(self.entry_date)
+        # ~ boxValue.append(calendar)
+
     def __create_field_1_country(self):
         model = Gtk.ListStore(str, str)
         row, combobox, self.entry_country = self.__create_actionrow('country', model)

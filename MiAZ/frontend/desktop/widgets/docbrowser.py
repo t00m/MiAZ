@@ -101,7 +101,6 @@ class MiAZDocBrowser(Gtk.Box):
         self.btnDocsSel.set_sensitive(False)
         boxDocsSelected.set_center_widget(self.btnDocsSel)
         boxViews.append(boxDocsSelected)
-
         toolbar.set_end_widget(boxViews)
 
 
