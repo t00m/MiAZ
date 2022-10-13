@@ -22,6 +22,7 @@ class MiAZRenameDialog(Gtk.Dialog):
     def __init__(self, app, filepath: str, suggested: list) -> Gtk.Widget:
         super(MiAZRenameDialog, self).__init__()
         self.app = app
+        self.factory = self.app.get_factory()
         self.log = get_logger('MiazRenameDialog')
         self.set_size_request(800, 600)
         self.set_transient_for(self.app.win)
@@ -34,11 +35,11 @@ class MiAZRenameDialog(Gtk.Dialog):
         self.doc = os.path.basename(filepath)
 
         # Header & Butons
-        btnAccept = self.app.create_button('', 'rename', self.on_rename_accept)
+        btnAccept = self.factory.create_button('', 'rename', self.on_rename_accept)
         btnAccept.get_style_context ().add_class ('suggested-action')
         btnAccept.set_can_focus(True)
         btnAccept.set_receives_default(True)
-        btnCancel = self.app.create_button('', 'cancel', self.on_rename_cancel)
+        btnCancel = self.factory.create_button('', 'cancel', self.on_rename_cancel)
         btnCancel.get_style_context ().add_class ('destructive-action')
         self.set_default_response(Gtk.ResponseType.ACCEPT)
         lblHeaderTitle = Gtk.Label()
@@ -324,7 +325,7 @@ class MiAZRenameDialog(Gtk.Dialog):
         body = "You are about to rename:\n\n'<b>%s</b>'\n\nto\n\n'<b>%s</b>'" % (os.path.basename(self.get_filepath_source()), self.get_filepath_target())
         widget = Gtk.Label()
         widget.set_markup(body)
-        question = self.app.create_dialog_question(self, "Are you sure?", widget)
+        question = self.factory.create_dialog_question(self, "Are you sure?", widget)
         question.connect('response', self.on_answer_question)
         question.show()
 

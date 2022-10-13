@@ -83,11 +83,11 @@ class MiAZDocBrowser(Gtk.Box):
         # Views (right side)
         boxViews = Gtk.Box.new(orientation=Gtk.Orientation.HORIZONTAL, spacing=0)
         boxViews.get_style_context().add_class(class_name='linked')
-        # ~ button = self.app.create_button('miaz-view-list', '', self.show_view_list)
+        # ~ button = self.factory.create_button('miaz-view-list', '', self.show_view_list)
         # ~ boxViews.append(button)
-        # ~ button = self.app.create_button('miaz-view-grid', '', self.show_view_grid)
+        # ~ button = self.factory.create_button('miaz-view-grid', '', self.show_view_grid)
         # ~ boxViews.append(button)
-        # ~ button = self.app.create_button('miaz-view-tree', '', self.show_view_tree)
+        # ~ button = self.factory.create_button('miaz-view-tree', '', self.show_view_tree)
         # ~ boxViews.append(button)
 
         boxDocsSelected = Gtk.CenterBox()
@@ -248,7 +248,7 @@ class MiAZDocBrowser(Gtk.Box):
             row.add_suffix(fuzzy_date)
             # ~ row.get_style_context().add_class(class_name='error')
 
-            # ~ subrow = self.app.create_button('miaz-mime-web', 'Link to this resource', None, data=row)
+            # ~ subrow = self.factory.create_button('miaz-mime-web', 'Link to this resource', None, data=row)
             # ~ row.add_row(subrow)
             self.listbox.append(child=row)
         self.do_needs_attention()

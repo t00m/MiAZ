@@ -26,6 +26,7 @@ class MiAZPrefsWindow(Adw.PreferencesWindow):
     def __init__(self, app):
         self.log = get_logger('MiAZ.Desktop.Settings')
         self.app = app
+        self.factory = self.app.get_factory()
         self.config = self.app.get_config('app')
         self.win = self.app.win
         self.sm = self.app.get_style_manager()
@@ -81,7 +82,7 @@ class MiAZPrefsWindow(Adw.PreferencesWindow):
         row = Adw.ActionRow.new()
         row.set_title("Dark mode theme")
         row.set_icon_name('miaz-theme')
-        button = self.app.create_switch_button('', '', self.on_theme_switched)
+        button = self.factory.create_switch_button('', '', self.on_theme_switched)
         is_dark = self.color_scheme == self.sm.get_dark()
         button.set_active(is_dark)
         row.add_suffix(widget=switch)
@@ -99,7 +100,7 @@ class MiAZPrefsWindow(Adw.PreferencesWindow):
         row.get_style_context().add_class(class_name='error')
         row.set_title("Countries")
         row.set_icon_name('miaz-res-country')
-        button = self.app.create_button('miaz-search', '', self.show_res_countries)
+        button = self.factory.create_button('miaz-search', '', self.show_res_countries)
         box = row.get_child()
         box.append(button)
         return row
@@ -108,7 +109,7 @@ class MiAZPrefsWindow(Adw.PreferencesWindow):
         row = Adw.ActionRow.new()
         row.set_title("Collections")
         row.set_icon_name('miaz-res-collection')
-        button = self.app.create_button('document-edit-symbolic', '', self.show_res_collections)
+        button = self.factory.create_button('document-edit-symbolic', '', self.show_res_collections)
         box = row.get_child()
         box.append(button)
         return row
@@ -117,7 +118,7 @@ class MiAZPrefsWindow(Adw.PreferencesWindow):
         row = Adw.ActionRow.new()
         row.set_title("Purposes")
         row.set_icon_name('miaz-res-purpose')
-        button = self.app.create_button('document-edit-symbolic', '', self.show_res_purposes)
+        button = self.factory.create_button('document-edit-symbolic', '', self.show_res_purposes)
         box = row.get_child()
         box.append(button)
         return row
@@ -126,7 +127,7 @@ class MiAZPrefsWindow(Adw.PreferencesWindow):
         row = Adw.ActionRow.new()
         row.set_title("Organizations")
         row.set_icon_name('miaz-res-organization')
-        button = self.app.create_button('document-edit-symbolic', '', self.show_res_organizations)
+        button = self.factory.create_button('document-edit-symbolic', '', self.show_res_organizations)
         box = row.get_child()
         box.append(button)
         return row
@@ -135,7 +136,7 @@ class MiAZPrefsWindow(Adw.PreferencesWindow):
         row = Adw.ActionRow.new()
         row.set_title("Extensions")
         row.set_icon_name('miaz-res-extension')
-        button = self.app.create_button('miaz-search', '', self.show_res_extensions)
+        button = self.factory.create_button('miaz-search', '', self.show_res_extensions)
         box = row.get_child()
         box.append(button)
         return row
@@ -143,31 +144,31 @@ class MiAZPrefsWindow(Adw.PreferencesWindow):
     def show_res_countries(self, *args):
         view = MiAZCountries(self.app)
         view.update()
-        dialog = self.app.create_dialog(self, 'Countries', view, 600, 480)
+        dialog = self.factory.create_dialog(self, 'Countries', view, 600, 480)
         dialog.show()
 
     def show_res_collections(self, *args):
         view = MiAZCollections(self.app)
         view.update()
-        dialog = self.app.create_dialog(self.app.win, 'Collections', view, 600, 480)
+        dialog = self.factory.create_dialog(self.app.win, 'Collections', view, 600, 480)
         dialog.show()
 
     def show_res_purposes(self, *args):
         view = MiAZPurposes(self.app)
         view.update()
-        dialog = self.app.create_dialog(self.app.win, 'Purposes', view, 600, 480)
+        dialog = self.factory.create_dialog(self.app.win, 'Purposes', view, 600, 480)
         dialog.show()
 
     def show_res_organizations(self, *args):
         view = MiAZOrganizations(self.app)
         view.update()
-        dialog = self.app.create_dialog(self.app.win, 'Organizations', view, 600, 480)
+        dialog = self.factory.create_dialog(self.app.win, 'Organizations', view, 600, 480)
         dialog.show()
 
     def show_res_extensions(self, *args):
         view = MiAZExtensions(self.app)
         view.update()
-        dialog = self.app.create_dialog(self.app.win, 'Extensions', view, 600, 480)
+        dialog = self.factory.create_dialog(self.app.win, 'Extensions', view, 600, 480)
         dialog.show()
 
     def create_action_row_repo_source(self):
@@ -175,7 +176,7 @@ class MiAZPrefsWindow(Adw.PreferencesWindow):
         source = config.get('source')
         if source is None:
             source = '<i>Folder not set</i>'
-        btnRepoSource = self.app.create_button ('document-edit-symbolic', '', self.show_filechooser_source, css_classes=['flat'])
+        btnRepoSource = self.factory.create_button ('document-edit-symbolic', '', self.show_filechooser_source, css_classes=['flat'])
         btnRepoSource.set_valign(Gtk.Align.CENTER)
         row = Adw.ActionRow.new()
         row.get_style_context().add_class(class_name='error')
@@ -196,7 +197,7 @@ class MiAZPrefsWindow(Adw.PreferencesWindow):
         row.set_subtitle(target)
         row.set_icon_name('folder-symbolic')
         boxRepoTargetButton = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
-        btnRepoTarget = self.app.create_button ('document-edit-symbolic', '', self.show_filechooser_target, css_classes=['flat'])
+        btnRepoTarget = self.factory.create_button ('document-edit-symbolic', '', self.show_filechooser_target, css_classes=['flat'])
         btnRepoTarget.set_valign(Gtk.Align.CENTER)
         btnRepoTarget.set_hexpand(False)
         box = row.get_child()
@@ -276,7 +277,7 @@ class MiAZPrefsWindow(Adw.PreferencesWindow):
         lblRepoSourceTitle.set_markup("<b>Source</b>")
         boxRepoSource.append(lblRepoSourceTitle)
         boxRepoSourceButton = Gtk.Box(spacing=6, orientation=Gtk.Orientation.HORIZONTAL)
-        btnRepoSource = self.app.create_button ('miaz-folder', '', self.show_filechooser_source)
+        btnRepoSource = self.factory.create_button ('miaz-folder', '', self.show_filechooser_source)
         btnRepoSource.set_hexpand(False)
         try:
             source = self.app.config.get('source')
@@ -296,7 +297,7 @@ class MiAZPrefsWindow(Adw.PreferencesWindow):
         lblRepoTargetTitle.set_markup("<b>Target</b>")
         boxRepoTarget.append(lblRepoTargetTitle)
         boxRepoTargetButton = Gtk.Box(spacing=6, orientation=Gtk.Orientation.HORIZONTAL)
-        btnRepoTarget = self.app.create_button ('miaz-folder', '', self.show_filechooser_target)
+        btnRepoTarget = self.factory.create_button ('miaz-folder', '', self.show_filechooser_target)
         btnRepoTarget.set_hexpand(False)
 
         try:

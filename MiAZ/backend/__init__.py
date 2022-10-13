@@ -44,8 +44,8 @@ class MiAZBackend(GObject.GObject):
         self.target = self.conf['app'].get('target')
         self.watch_source = MiAZWatcher('source', self.source)
         self.watch_source.connect('source-directory-updated', self.check_source)
-        self.watch_target = MiAZWatcher('target', self.target)
-        self.watch_target.connect('target-directory-updated', self.check_target)
+        # ~ self.watch_target = MiAZWatcher('target', self.target)
+        # ~ self.watch_target.connect('target-directory-updated', self.check_target)
 
     def get_watcher_source(self):
         return self.watch_source
@@ -77,8 +77,8 @@ class MiAZBackend(GObject.GObject):
             json_save(s_repocnf, s_repodct)
 
         # Workflow
-        ## 1. Firstly, check docuements in repodct and delete inconsistencies if
-        ##    files do not exist anymore, then delete inconsistency
+        # 1. Firstly, check files in repodct and delete inconsistencies.
+        #    If files do not exist anymore, then delete inconsistency.
         i = 0
         for doc in s_repodct.copy():
             if not os.path.exists(doc):
@@ -90,15 +90,16 @@ class MiAZBackend(GObject.GObject):
         docs = get_files(s_repodir)
         for doc in docs:
             valid, reasons = self.validate_filename(doc)
+            s_repodct[doc] = {}
+            s_repodct[doc]['valid'] = False
             if not valid:
-                s_repodct[doc] = {}
                 s_repodct[doc]['reasons'] = reasons
                 s_repodct[doc]['suggested'] = self.suggest_filename(doc)
-            else:
-                doc_target = self.fix_filename(os.path.basename(doc))
-                shutil.move(doc, os.path.join(self.target, doc_target))
-                self.log.debug("Doc[%s] valid. Moved to target folder", os.path.basename(doc))
-        self.log.info("Source repository - %d document added", len(docs))
+            # ~ else:
+                # ~ doc_target = self.fix_filename(os.path.basename(doc))
+                # ~ shutil.move(doc, os.path.join(self.target, doc_target))
+                # ~ self.log.debug("Doc[%s] valid. Moved to target folder", os.path.basename(doc))
+        self.log.info("Repository - %d document analyzed", len(docs))
         json_save(s_repocnf, s_repodct)
 
         # 3. Emit the 'source-configuration-updated' signal
@@ -112,40 +113,40 @@ class MiAZBackend(GObject.GObject):
             ext = filename[dot+1:]
         return "%s.%s" % (name, ext)
 
-    def check_target(self, *args):
-        t_repodir = self.conf['app'].get('target')
-        t_repocnf = self.get_repo_target_config_file()
-        if os.path.exists(t_repocnf):
-            t_repodct = json_load(t_repocnf)
-        else:
-            t_repodct = {}
-            json_save(t_repocnf, t_repodct)
+    # ~ def check_target(self, *args):
+        # ~ t_repodir = self.conf['app'].get('target')
+        # ~ t_repocnf = self.get_repo_target_config_file()
+        # ~ if os.path.exists(t_repocnf):
+            # ~ t_repodct = json_load(t_repocnf)
+        # ~ else:
+            # ~ t_repodct = {}
+            # ~ json_save(t_repocnf, t_repodct)
 
-        # Workflow
-        ## 1. Firstly, check docuements in repodct and delete inconsistencies if
-        ##    files do not exist anymore, then delete inconsistency
-        i = 0
-        for doc in t_repodct.copy():
-            if not os.path.exists(doc):
-                del(t_repodct[doc])
-                i += 1
-        self.log.info("Target repository - %d inconsistencies deleted", i)
+        # ~ # Workflow
+        # ~ ## 1. Firstly, check docuements in repodct and delete inconsistencies if
+        # ~ ##    files do not exist anymore, then delete inconsistency
+        # ~ i = 0
+        # ~ for doc in t_repodct.copy():
+            # ~ if not os.path.exists(doc):
+                # ~ del(t_repodct[doc])
+                # ~ i += 1
+        # ~ self.log.info("Target repository - %d inconsistencies deleted", i)
 
-        # 2. Then, check docs in target directory and update repodct
-        a = 0
-        docs = get_files(t_repodir)
-        for filepath in docs:
-            doc = os.path.basename(filepath)
-            if not doc in t_repodct:
-                # Initialize entry
-                t_repodct[doc] = {}
-                a += 1
-        self.log.info("Target repository - %d document added", a)
-        json_save(t_repocnf, t_repodct)
+        # ~ # 2. Then, check docs in target directory and update repodct
+        # ~ a = 0
+        # ~ docs = get_files(t_repodir)
+        # ~ for filepath in docs:
+            # ~ doc = os.path.basename(filepath)
+            # ~ if not doc in t_repodct:
+                # ~ # Initialize entry
+                # ~ t_repodct[doc] = {}
+                # ~ a += 1
+        # ~ self.log.info("Target repository - %d document added", a)
+        # ~ json_save(t_repocnf, t_repodct)
 
-        # 3. Emit the 'source-configuration-updated' signal
-        self.log.debug("Target repository - Emitting signal 'target-configuration-updated'")
-        self.emit('target-configuration-updated')
+        # ~ # 3. Emit the 'source-configuration-updated' signal
+        # ~ self.log.debug("Target repository - Emitting signal 'target-configuration-updated'")
+        # ~ self.emit('target-configuration-updated')
 
     def validate_filename(self, filepath: str) -> tuple:
         filename = os.path.basename(filepath)

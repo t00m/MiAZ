@@ -54,10 +54,10 @@ class MiAZConfigView(MiAZWidget, Gtk.Box):
         self.box_oper.append(box_entry)
         self.box_buttons = Gtk.Box(spacing=3, orientation=Gtk.Orientation.HORIZONTAL)
         self.box_buttons.set_hexpand(False)
-        # ~ self.box_buttons.append(self.app.create_button('miaz-edit', '', self.on_item_rename))
+        # ~ self.box_buttons.append(self.factory.create_button('miaz-edit', '', self.on_item_rename))
         # ~ self.box_buttons.append(Gtk.Separator.new(orientation=Gtk.Orientation.VERTICAL))
-        self.box_buttons.append(self.app.create_button('miaz-add', '', self.on_item_add))
-        self.box_buttons.append(self.app.create_button('miaz-remove', '', self.on_item_remove))
+        self.box_buttons.append(self.factory.create_button('miaz-add', '', self.on_item_add))
+        self.box_buttons.append(self.factory.create_button('miaz-remove', '', self.on_item_remove))
         self.box_oper.append(self.box_buttons)
         self.append(self.box_oper)
 

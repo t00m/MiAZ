@@ -183,6 +183,7 @@ class MiAZWorkspace(Gtk.Box):
             self.listbox.append(child=row)
         page = self.app.get_stack_page_by_name('workspace')
         page.set_badge_number(len(self.repodct))
+        self.log.debug("Workspace ready!")
 
     def __show_file_info(self, button, filepath):
         # ~ self.log.debug(args)
@@ -393,5 +394,5 @@ class MiAZWorkspace(Gtk.Box):
         os.system("xdg-open '%s'" % filepath)
 
     def on_rename_file(self, *args):
-        dialog = self.app.create_dialog(self.app.win, 'Rename file', Gtk.Label())
+        dialog = self.factory.create_dialog(self.app.win, 'Rename file', Gtk.Label())
         dialog.show()

@@ -314,17 +314,17 @@ class MiAZWorkspace(Gtk.Box):
         # ~ listbox.append(row)
 
         box = Gtk.Box(spacing = 3, orientation=Gtk.Orientation.VERTICAL)
-        button = self.app.create_button('miaz-res-countries', 'Change field country', self.noop)
+        button = self.factory.create_button('miaz-res-countries', 'Change field country', self.noop)
         box.append(button)
-        button = self.app.create_button('miaz-res-collections', 'Change field collection', self.noop)
+        button = self.factory.create_button('miaz-res-collections', 'Change field collection', self.noop)
         box.append(button)
-        button = self.app.create_button('miaz-res-who', 'Change field <i>From</i>', self.noop)
+        button = self.factory.create_button('miaz-res-who', 'Change field <i>From</i>', self.noop)
         box.append(button)
-        button = self.app.create_button('miaz-res-purposes', 'Change field <i>purpose</i>', self.noop)
+        button = self.factory.create_button('miaz-res-purposes', 'Change field <i>purpose</i>', self.noop)
         box.append(button)
-        button = self.app.create_button('miaz-res-languages', 'Change field <i>concept</i>', self.noop)
+        button = self.factory.create_button('miaz-res-languages', 'Change field <i>concept</i>', self.noop)
         box.append(button)
-        button = self.app.create_button('miaz-res-who', 'Change field <i>to</i>', self.noop)
+        button = self.factory.create_button('miaz-res-who', 'Change field <i>to</i>', self.noop)
         box.append(button)
         return box
 
