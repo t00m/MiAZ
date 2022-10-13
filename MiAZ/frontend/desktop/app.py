@@ -29,7 +29,7 @@ from MiAZ.frontend.desktop.widgets.sandbox import MiAZSandBox
 Gtk.init()
 Adw.init()
 
-class GUI(Adw.Application):
+class MiAZApp(Adw.Application):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.backend = MiAZBackend()

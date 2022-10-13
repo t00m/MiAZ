@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-class GUI:
+class MiAZApp:
     def __init__(self, **kwargs):
         pass
 
