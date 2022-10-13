@@ -24,6 +24,7 @@ from MiAZ.frontend.desktop.widgets.workspace import MiAZWorkspace
 from MiAZ.frontend.desktop.widgets.settings import MiAZPrefsWindow
 from MiAZ.frontend.desktop.widgets.assistant import MiAZAssistant
 from MiAZ.frontend.desktop.icons import MiAZIconManager
+from MiAZ.frontend.desktop.widgets.sandbox import MiAZSandBox
 
 Gtk.init()
 Adw.init()
@@ -110,6 +111,9 @@ class GUI(Adw.Application):
         button = self.create_button('edit-clear', 'Test', self.noop)
         status_page.set_child(button)
         self.page_status = self.stack.add_titled(status_page, 'welcome', 'Welcome')
+
+        sandbox = MiAZSandBox(self)
+        self.page_sandbox = self.stack.add_titled(sandbox, 'sandbox', 'SandBox')
 
         self.mainbox.append(self.stack)
         self.mainbox.set_vexpand(True)
