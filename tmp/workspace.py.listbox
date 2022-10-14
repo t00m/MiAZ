@@ -35,7 +35,6 @@ class MiAZWorkspace(Gtk.Box):
         self.log = get_logger('MiAZWorkspace')
         self.app = app
         self.backend = self.app.get_backend()
-        self.factory = self.app.get_factory()
         self.config = self.app.get_config('app')
         self.set_vexpand(True)
         self.set_margin_top(margin=6)
@@ -107,81 +106,83 @@ class MiAZWorkspace(Gtk.Box):
         self.scrwin = Gtk.ScrolledWindow()
         self.scrwin.set_has_frame(False)
         self.scrwin.set_vexpand(True)
-        self.store = Gtk.TreeStore(str, str, Pixbuf, str)
-        self.treeview = MiAZTreeView(self.app)
-        self.treeview.set_model(self.store)
-        self.treeview.connect('row-activated', self.on_double_click)
-        self.scrwin.set_child(self.treeview)
+        self.listbox = Gtk.ListBox.new()
+        self.listbox.connect('selected-rows-changed', self.on_selected_rows_changed)
+        self.listbox.set_show_separators(False)
+        self.listbox.set_selection_mode(mode=Gtk.SelectionMode.MULTIPLE)
+        self.listbox.set_activate_on_single_click(False)
+        self.listbox.set_margin_top(margin=0)
+        self.listbox.set_margin_end(margin=6)
+        self.listbox.set_margin_bottom(margin=6)
+        self.listbox.set_margin_start(margin=6)
+        self.listbox.get_style_context().add_class(class_name='boxed-list')
+        # ~ self.listbox.set_filter_func(self.clb_visible_function)
 
-        # Model: filename, mime, icon, markup
-        column = self.factory.create_treeview_column_text('Filename', 0, False, False, False, False, 0)
-        self.treeview.append_column(column)
-        column = self.factory.create_treeview_column_text('Mime', 1, False, False, False, False, 1)
-        self.treeview.append_column(column)
-        column = self.factory.create_treeview_column_icon('Icon', 2, True, False, True, True, 1)
-        self.treeview.append_column(column)
-        column = self.factory.create_treeview_column_text('Markup', 3, True, True, True, True, 3)
-        self.treeview.append_column(column)
-
-        # Treeview filtering
-        self.treefilter = self.store.filter_new()
-        # ~ self.treefilter.set_visible_func(self.clb_visible_function)
-
-        # TreeView sorting
-        self.sorted_model = Gtk.TreeModelSort(model=self.treefilter)
-        self.sorted_model.set_sort_func(0, self.clb_sort_function, 1)
-        self.sorted_model.set_sort_column_id(0, Gtk.SortType.DESCENDING)
-        self.treeview.set_model(self.sorted_model)
-        # ~ self.treeview.connect('row-activated', self.on_double_click)
-
-        # Selection type
-        selection = self.treeview.get_selection()
-        selection.set_mode(Gtk.SelectionMode.MULTIPLE)
-        selection.connect('changed', self.on_change_selection)
-
-        # Gestures controller / Right click
-        # ~ self.evk = Gtk.GestureClick.new()
-        # ~ self.evk.set_button(0)  # 0 for all buttons
-        # ~ self.evk.connect("pressed", self.on_right_click)
-        # ~ self.treeview.add_controller(self.evk)
-
-        # Key events controller
-        evk = Gtk.EventControllerKey.new()
-        evk.connect("key-pressed", self.on_key_press)
-        self.treeview.add_controller(evk)  # add to Treeview
-
-    def on_key_press(self, event, keyval, keycode, state):
-        self.log.debug("%s > %s > %s > %s", event, keyval, keycode, state)
-        if keyval == Gdk.KEY_q: # and state & Gdk.ModifierType.CONTROL_MASK:   # Add Gdk to your imports. i.e. from gi import Gdk
-            self.app.quit()
-        elif keyval == Gdk.KEY_f:
-            self.ent_sb.grab_focus()
+        # Row for displaying when there is no documents available
+        self.nodata = Adw.ActionRow.new()
+        self.nodata.set_title(title='<b>No documents found for review</b>')
+        self.listbox.set_placeholder(self.nodata)
+        self.scrwin.set_child(self.listbox)
 
     def update(self, *args):
+        self.clear()
         self.log.debug("Got signal 'target-configuration-updated'")
-        self.store.clear()
         repocnf = self.backend.get_repo_source_config_file()
-        repodct = json_load(repocnf)
-        who = self.app.get_config('organizations')
-        for filepath in repodct:
-            filename = os.path.basename(filepath)
+        self.repodct = json_load(repocnf)
+        for filepath in self.repodct:
             dot = filepath.rfind('.')
             doc = filepath[:dot]
             ext = filepath[dot+1:]
-            # ~ icon = self.app.icman.get_icon_mimetype_from_file(filepath, 36, 36)
-            # ~ icon.set_icon_size(Gtk.IconSize.INHERIT)
-            document = os.path.basename(filepath)
-            mimetype = get_file_mimetype(filepath)
-            icon = self.app.icman.get_pixbuf_mimetype_from_file(filepath, 48, 48)
-            if repodct[filepath]['valid']:
-                fields = document.split('-')
-                self.log.debug(fields)
-                explain = "<span color='blue'>#%s</span> <b>%s from %s about %s to %s</b>" % (fields[2], fields[4].title(), who.get(fields[3]), fields[5], who.get(fields[6]))
-            else:
-                explain = ''
-            node = self.store.insert_with_values(None, -1, (0, 1, 2, 3), (filepath, mimetype, icon, "%s\r\n<sub><span color='grey'>%s</span></sub>" % (explain, document)))
+            icon = self.app.icman.get_icon_mimetype_from_file(filepath, 36, 36)
+            icon.set_icon_size(Gtk.IconSize.INHERIT)
+            row = Adw.ActionRow.new()
+
+            boxFileDisplayButton = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
+            btnFileDisplay = button = Gtk.Button()
+            btnFileDisplay.set_child(icon)
+            btnFileDisplay.connect('clicked', self.on_display_document, filepath)
+            btnFileDisplay.set_valign(Gtk.Align.CENTER)
+            btnFileDisplay.set_hexpand(False)
+            row.add_prefix(btnFileDisplay)
+
+            boxButtons = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, css_classes=['linked'])
+            boxFileInfoButton = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
+            btnFileInfo = Gtk.MenuButton()
+            btnFileInfo.set_icon_name('miaz-reasons-info')
+            popover = self.__create_popover_fileinfo(filepath)
+            btnFileInfo.set_popover(popover)
+            btnFileInfo.set_valign(Gtk.Align.CENTER)
+            btnFileInfo.set_hexpand(False)
+
+            # ~ boxFileSelectButton = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
+            # ~ btnFileSelect = Gtk.ToggleButton()
+            # ~ btnFileSelect.connect('toggled', self.on_selected_rows_changed)
+            # ~ btnFileSelect.set_icon_name('miaz-edit')
+            # ~ btnFileSelect.set_valign(Gtk.Align.CENTER)
+            # ~ btnFileSelect.set_hexpand(False)
+
+
+            # ~ boxFileEditButton = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
+            # ~ btnFileEdit = Gtk.MenuButton()
+            # ~ btnFileEdit.set_icon_name('miaz-rename')
+            # ~ popover = Gtk.PopoverMenu.new_from_model(self.create_menu_selection_single(filepath))
+            # ~ btnFileEdit.set_popover(popover=popover)
+            # ~ btnFileEdit.set_valign(Gtk.Align.CENTER)
+            # ~ btnFileEdit.set_hexpand(False)
+
+            boxButtons.append(btnFileInfo)
+            # ~ boxButtons.append(btnFileSelect)
+            # ~ boxButtons.append(btnFileEdit)
+            # ~ boxRow = row.get_child()
+            # ~ boxRow.append(boxButtons)
+
+            row.set_title(title="<b>%s</b>" % os.path.basename(doc))
+            row.set_subtitle(subtitle=filepath)
+            row.add_suffix(boxButtons)
+
+            self.listbox.append(child=row)
         page = self.app.get_stack_page_by_name('workspace')
-        page.set_badge_number(len(repodct))
+        page.set_badge_number(len(self.repodct))
         self.log.debug("Workspace ready!")
 
     def __show_file_info(self, button, filepath):
@@ -206,32 +207,6 @@ class MiAZWorkspace(Gtk.Box):
             return True
         else:
             return False
-
-    def clb_sort_function(self, model, row1, row2, sort_column=0):
-        value1 = model.get_value(row1, sort_column)
-        value2 = model.get_value(row2, sort_column)
-        if value1 < value2:
-            return -1
-        elif value1 == value2:
-            return 0
-        else:
-            return 1
-
-    # ~ def clb_visible_function(self, model, itr, data):
-        # ~ item_name = model.get(itr, 3)[0]
-        # ~ row_type = model.get(itr, 6)[0]
-        # ~ sbentry = self.app.get_searchbar_entry()
-        # ~ filter_text = sbentry.get_text()
-
-        # ~ if row_type == 'FOLDER' or row_type == 'REASON':
-            # ~ return True
-
-        # ~ match = filter_text.upper() in item_name.upper()
-
-        # ~ if match:
-            # ~ return True
-        # ~ else:
-            # ~ return False
 
     def on_key_released(self, widget, keyval, keycode, state):
         self.filter_view()
@@ -368,16 +343,11 @@ class MiAZWorkspace(Gtk.Box):
 
 
     def action_rename_manually(self, *args):
-        selection = self.treeview.get_selection()
-        model, treepaths = selection.get_selected_rows()
-        treepath = treepaths[0]
-        treeiter = self.sorted_model.get_iter(treepath)
-        source = self.sorted_model[treeiter][0]
-        filename = os.path.basename(source)
-        repocnf = self.backend.get_repo_source_config_file()
-        repodct = json_load(repocnf)
-        target = repodct[source]['suggested'].split('-')
-        dialog = MiAZRenameDialog(self.app, source, target)
+        row = self.listbox.get_selected_row()
+        filepath_source = row.get_subtitle()
+        doc = os.path.basename(filepath_source)
+        filepath_target = self.repodct[filepath_source]['suggested'].split('-')
+        dialog = MiAZRenameDialog(self.app, filepath_source, filepath_target)
         dialog.connect('response', self.on_response_rename)
         dialog.show()
 
@@ -388,15 +358,6 @@ class MiAZWorkspace(Gtk.Box):
             shutil.move(source, target)
             self.log.debug("Rename document from '%s' to '%s'", os.path.basename(source), os.path.basename(target))
 
-    def on_double_click(self, treeview, treepath, treecolumn):
-        treeiter = self.sorted_model.get_iter(treepath)
-        filename = self.sorted_model[treeiter][0]
-        repodir = self.app.get_config('app').get('source')
-        filepath = os.path.join(repodir, filename)
-        self.log.debug(filepath)
-        if os.path.exists(filepath):
-            os.system("xdg-open '%s'" % filepath)
-
     def action_rename(self, *args):
         self.log.debug(args)
 
@@ -406,8 +367,16 @@ class MiAZWorkspace(Gtk.Box):
     def noop(self, *args):
         self.log.debug(args)
 
-    def on_change_selection(self, selection):
-        model, selected_rows = selection.get_selected_rows()
+    def clear(self, *args):
+        rows = []
+        for row in self.listbox:
+            rows.append(row)
+        for row in rows:
+            self.listbox.remove(row)
+
+    def on_selected_rows_changed(self, listbox):
+        selected_rows = listbox.get_selected_rows()
+        self.log.debug("Selected rows: %d", len(selected_rows))
         if len(selected_rows) > 1:
             self.btnDocsSel.set_label("%d documents selected" % len(selected_rows))
             self.popDocsSel.set_menu_model(self.menu_workspace_multiple)

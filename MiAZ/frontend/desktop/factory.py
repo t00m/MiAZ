@@ -76,5 +76,30 @@ class MiAZFactory:
         button.connect('activate', callback)
         return button
 
+    def create_treeview_column_icon(self, name: str, col_id: int, visible: bool, expand: bool, clickable: bool, indicator: bool, sort_col: int):
+        renderer = Gtk.CellRendererPixbuf()
+        column = Gtk.TreeViewColumn(name, renderer, pixbuf=col_id)
+        renderer.set_alignment(0.0, 0.5)
+        column.set_sizing(Gtk.TreeViewColumnSizing.AUTOSIZE)
+        column.set_expand(expand)
+        column.set_visible(visible)
+        column.set_clickable(clickable)
+        column.set_sort_indicator(indicator)
+        column.set_sort_column_id(sort_col)
+        column.set_sort_order(Gtk.SortType.ASCENDING)
+        return column
+
+    def create_treeview_column_text(self, name: str, col_id: int, visible: bool, expand: bool, clickable: bool, indicator: bool, sort_col: int):
+        renderer = Gtk.CellRendererText()
+        column = Gtk.TreeViewColumn(name, renderer, markup=col_id)
+        column.set_sizing(Gtk.TreeViewColumnSizing.AUTOSIZE)
+        column.set_expand(expand)
+        column.set_visible(visible)
+        column.set_clickable(clickable)
+        column.set_sort_indicator(indicator)
+        column.set_sort_column_id(sort_col)
+        column.set_sort_order(Gtk.SortType.ASCENDING)
+        return column
+
     def noop(self, *args):
         self.log.debug(args)

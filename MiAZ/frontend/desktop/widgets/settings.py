@@ -240,7 +240,6 @@ class MiAZPrefsWindow(Adw.PreferencesWindow):
                 watcher.set_path(dirpath)
                 watcher.set_active(True)
                 dialog.destroy()
-                self.app.check_basic_settings()
         else:
             dialog.destroy()
 
@@ -314,7 +313,8 @@ class MiAZPrefsWindow(Adw.PreferencesWindow):
         return boxRepository
 
     def on_window_close(self, *args):
+        pass
         # ~ self.destroy()
-        self.log.debug("Checking new settings")
-        self.app.check_basic_settings()
+        # ~ self.log.debug("Checking new settings")
+        # ~ self.app.check_basic_settings()
         # ~ self.app.win.present()

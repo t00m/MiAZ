@@ -140,7 +140,7 @@ class MiAZDocBrowser(Gtk.Box):
         item_rename_manual = Gio.MenuItem.new()
         item_rename_manual.set_label('Rename manually')
         action = Gio.SimpleAction.new('rename_db_manually', None)
-        action.connect('activate', self.action_rename_manually)
+        # ~ action.connect('activate', self.action_rename_manually)
         self.app.add_action(action)
         item_rename_manual.set_detailed_action(detailed_action='app.rename_db_manually')
         self.menu_workspace_single.append_item(item_rename_manual)

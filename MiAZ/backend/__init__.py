@@ -375,6 +375,6 @@ class MiAZBackend(GObject.GObject):
 
         # "{timestamp}-{country}-{collection}-{from}-{purpose}-{concept}-{to}.{extension}"
         suggested = "%s-%s-%s-%s-%s-%s-%s" % (timestamp, country, collection, from_org, purpose, concept, to_org)
-        self.log.debug("%s -> %s", filename, suggested)
+        # ~ self.log.debug("%s -> %s", filename, suggested)
         return suggested
 

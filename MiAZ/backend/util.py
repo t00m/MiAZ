@@ -6,6 +6,7 @@ import re
 import glob
 import json
 from datetime import datetime
+from dateutil.parser import parse as dateparser
 
 from MiAZ.backend.env import ENV
 
@@ -23,19 +24,12 @@ def json_save(filepath: str, adict: {}) -> {}:
     with open(filepath, 'w') as fout:
         json.dump(adict, fout, sort_keys=True, indent=4)
 
-def guess_datetime(sdate):
+def guess_datetime(adate: str) -> datetime:
     """Return (guess) a datetime object for a given string."""
-    found = False
-    patterns = ["%Y", "%Y%m", "%Y%m%d", "%Y%m%d_%H%M", "%Y%m%d_%H%M%S"]
-    for pattern in patterns:
-        if not found:
-            try:
-                td = datetime.strptime(sdate, pattern)
-                ts = td.strftime("%Y-%m-%d %H:%M:%S")
-                timestamp = datetime.strptime(ts, "%Y-%m-%d %H:%M:%S")
-                found = True
-            except ValueError:
-                timestamp = None
+    try:
+        timestamp = dateparser(adate)
+    except Exception as error:
+        timestamp = None
     return timestamp
 
 def valid_key(key):

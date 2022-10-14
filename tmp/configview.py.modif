@@ -48,7 +48,7 @@ class MiAZConfigView(MiAZWidget, Gtk.Box):
         self.entry.set_icon_from_icon_name(Gtk.EntryIconPosition.SECONDARY, 'miaz-entry-delete')
         self.entry.set_icon_activatable(Gtk.EntryIconPosition.SECONDARY, True)
         self.entry.connect('icon-press', self.on_entrysearch_delete)
-        self.entry.connect('changed', self.on_entrysearch_changed)
+        # ~ self.entry.connect('changed', self.on_entrysearch_changed)
         self.entry.set_hexpand(True)
         self.entry.set_has_frame(True)
         box_entry.append(self.entry)
@@ -65,9 +65,9 @@ class MiAZConfigView(MiAZWidget, Gtk.Box):
         widget = self.setup_treeview()
         self.append(widget)
 
-        self.controller = Gtk.EventControllerKey()
-        self.controller.connect('key-released', self.on_key_released)
-        self.add_controller(self.controller)
+        # ~ self.controller = Gtk.EventControllerKey()
+        # ~ self.controller.connect('key-released', self.on_key_released)
+        # ~ self.add_controller(self.controller)
 
         # ~ # InfoBar
         # FIXME: Low priority. User mesasges
@@ -94,12 +94,25 @@ class MiAZConfigView(MiAZWidget, Gtk.Box):
 
 
     def on_entrysearch_changed(self, *args):
-        self.search_term = self.entry.get_text()
         self.treefilter.refilter()
-        if len(self.search_term) == 0:
-            self.treeview.collapse_all()
-        else:
-            self.treeview.expand_all()
+        term = self.entry.get_text()
+        self.log.debug(term)
+
+        def row(model, path, treeiter):
+            selection = self.treeview.get_selection()
+            filepath = model.get(treeiter, 0)[0]
+            if term.upper() in filepath.upper():
+                selection.select_iter(treeiter)
+        self.sorted_model.foreach(row)
+        return True
+
+    # ~ def on_entrysearch_changed(self, *args):
+        # ~ self.search_term = self.entry.get_text()
+        # ~ self.treefilter.refilter()
+        # ~ if len(self.search_term) == 0:
+            # ~ self.treeview.collapse_all()
+        # ~ else:
+            # ~ self.treeview.expand_all()
 
     def infobar_message(self, text=''):
         return
@@ -160,8 +173,7 @@ class MiAZConfigView(MiAZWidget, Gtk.Box):
             return 1
 
     def on_selection_changed(self, selection):
-        pass
-        # selection.select_iter(treeiter)
+        return
         # ~ if selection is None:
             # ~ return
         # ~ try:
@@ -234,18 +246,21 @@ class MiAZConfigView(MiAZWidget, Gtk.Box):
             pos += 1
 
     def clb_visible_function(self, model, itr, data):
-        item_name = model.get(itr, 0)[0]
-        if item_name is None:
-            return True
-        if self.search_term is None:
-            return True
+        try:
+            term = self.entry.get_text()
+            item_name = model.get(itr, 0)[0]
+            # ~ if item_name is None:
+                # ~ return True
+            # ~ if term is None:
+                # ~ return True
 
-        match = self.search_term.upper() in item_name.upper()
-        if match:
-            # ~ selection = self.treeview.get_selection()
-            # ~ selection.select_iter(itr)
-            return True
-        else:
+            match = term.upper() in item_name.upper()
+            self.log.debug("%s in %s? %s", term, item_name, match)
+            if match:
+                return True
+            else:
+                return False
+        except:
             return False
 
     def config_set(self, config_for, config_local, config_global):

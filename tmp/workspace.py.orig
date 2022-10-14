@@ -72,6 +72,8 @@ class MiAZWorkspace(Gtk.Box):
         column.set_sort_order(Gtk.SortType.ASCENDING)
         self.treeview.append_column(column)
 
+        create_treeview_column_icon(self, name: str, expand: bool, visible: bool, clickable: bool, sort_col: int)
+
         # Mimetype
         renderer = Gtk.CellRendererText()
         column = Gtk.TreeViewColumn('Mimetype', renderer, text=1)

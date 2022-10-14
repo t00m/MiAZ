@@ -7,6 +7,7 @@ import gi
 gi.require_version('Adw', '1')
 gi.require_version('Gtk', '4.0')
 from gi.repository import Adw
+from gi.repository import Gdk
 from gi.repository import GLib
 from gi.repository import Gtk
 
@@ -34,13 +35,14 @@ class MiAZApp(Adw.Application):
     def on_activate(self, app):
         self.win = Gtk.ApplicationWindow(application=self)
         self.win.set_default_size(1024, 728)
+        self.win.set_icon_name('MiAZ')
+        self.win.set_default_icon_name('MiAZ')
         self.icman = MiAZIconManager()
         self.theme = Gtk.IconTheme.get_for_display(self.win.get_display())
         self.theme.add_search_path(ENV['GPATH']['ICONS'])
-        self.win.set_icon_name('MiAZ')
         self.factory = MiAZFactory(self)
-        Gtk.Window.set_default_icon_name('MiAZ')
         self.build_gui()
+        # ~ self.listen_to_key_events()
         self.log.debug("Executing MiAZ Desktop mode")
         self.win.present()
 
@@ -48,8 +50,7 @@ class MiAZApp(Adw.Application):
         return self.backend
 
     def get_config(self, name: str):
-        config = self.backend.get_conf()
-        return config[name]
+        return self.backend.get_conf()[name]
 
     def get_factory(self):
         return self.factory
@@ -58,6 +59,7 @@ class MiAZApp(Adw.Application):
         ## Central Box
         self.mainbox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
         self.mainbox.set_vexpand(True)
+        self.win.set_child(self.mainbox)
 
         # Widgets
         ## Stack & Stack.Switcher
@@ -66,6 +68,7 @@ class MiAZApp(Adw.Application):
         self.switcher.set_policy(Adw.ViewSwitcherPolicy.WIDE)
         self.switcher.set_stack(self.stack)
         self.stack.set_vexpand(True)
+        self.mainbox.append(self.stack)
 
         ## HeaderBar
         self.header = Adw.HeaderBar()
@@ -80,6 +83,7 @@ class MiAZApp(Adw.Application):
         for action in ['settings', 'help', 'about', 'close']:
             self.factory.create_action(action, self.menu_handler)
 
+        # Create workspace
         self.workspace = MiAZWorkspace(self)
         self.page_workspace = self.stack.add_titled(self.workspace, 'workspace', 'MiAZ')
         self.page_workspace.set_icon_name('document-properties')
@@ -87,10 +91,6 @@ class MiAZApp(Adw.Application):
         self.page_workspace.set_badge_number(1)
         self.page_workspace.set_visible(True)
         self.show_stack_page_by_name('workspace')
-
-        self.mainbox.append(self.stack)
-        self.mainbox.set_vexpand(True)
-        self.win.set_child(self.mainbox)
 
     def menu_handler(self, action, state):
             """ Callback for  menu actions"""
@@ -114,4 +114,5 @@ class MiAZApp(Adw.Application):
 
     def show_about(self, *args):
         about = MiAZAbaout(self).show()
+
 
