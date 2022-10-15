@@ -11,11 +11,13 @@ from gi.repository import GLib
 from gi.repository import GObject
 from gi.repository import Pango
 
+from MiAZ.backend.log import get_logger
 from MiAZ.frontend.desktop.icons import MiAZIconManager
 
 class MiAZFactory:
     def __init__(self, app):
         self.app = app
+        self.log = get_logger('MiAZFactory')
 
     def create_action(self, name, callback):
         """ Add an Action and connect to a callback """
@@ -70,6 +72,12 @@ class MiAZFactory:
         btnNo = dialog.get_widget_for_response(Gtk.ResponseType.NO)
         btnNo.get_style_context().add_class(class_name='destructive-action')
         return dialog
+
+    def create_label(self, text: str) -> Gtk.Label:
+        label = Gtk.Label()
+        label.set_markup(text)
+        label.set_property('ellipsize', Pango.EllipsizeMode.MIDDLE)
+        return label
 
     def create_switch_button(self, icon_name, title, callback):
         button = Gtk.Switch()

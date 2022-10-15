@@ -107,19 +107,48 @@ class MiAZWorkspace(Gtk.Box):
         self.scrwin = Gtk.ScrolledWindow()
         self.scrwin.set_has_frame(False)
         self.scrwin.set_vexpand(True)
+        self.store = Gtk.TreeStore(str, str, Pixbuf, str)
+        self.treeview = MiAZTreeView(self.app)
+        self.treeview.set_model(self.store)
+        self.treeview.connect('row-activated', self.on_double_click)
+        self.scrwin.set_child(self.treeview)
 
-        self.flowbox = Gtk.FlowBox()
-        self.flowbox.set_valign(Gtk.Align.START)
-        self.flowbox.set_max_children_per_line(5)
-        self.flowbox.set_min_children_per_line(1)
-        self.flowbox.set_selection_mode (Gtk.SelectionMode.NONE)
+        # Model: filename, mime, icon, markup
+        column = self.factory.create_treeview_column_text('Filename', 0, False, False, False, False, 0)
+        self.treeview.append_column(column)
+        column = self.factory.create_treeview_column_text('Mime', 1, False, False, False, False, 1)
+        self.treeview.append_column(column)
+        column = self.factory.create_treeview_column_icon('Icon', 2, True, False, True, True, 1)
+        self.treeview.append_column(column)
+        column = self.factory.create_treeview_column_text('Markup', 3, True, True, True, True, 3)
+        self.treeview.append_column(column)
 
-        self.scrwin.set_child(self.flowbox)
+        # Treeview filtering
+        self.treefilter = self.store.filter_new()
+        # ~ self.treefilter.set_visible_func(self.clb_visible_function)
+
+        # TreeView sorting
+        self.sorted_model = Gtk.TreeModelSort(model=self.treefilter)
+        self.sorted_model.set_sort_func(0, self.clb_sort_function, 1)
+        self.sorted_model.set_sort_column_id(0, Gtk.SortType.DESCENDING)
+        self.treeview.set_model(self.sorted_model)
+        # ~ self.treeview.connect('row-activated', self.on_double_click)
+
+        # Selection type
+        selection = self.treeview.get_selection()
+        selection.set_mode(Gtk.SelectionMode.MULTIPLE)
+        selection.connect('changed', self.on_change_selection)
+
+        # Gestures controller / Right click
+        # ~ self.evk = Gtk.GestureClick.new()
+        # ~ self.evk.set_button(0)  # 0 for all buttons
+        # ~ self.evk.connect("pressed", self.on_right_click)
+        # ~ self.treeview.add_controller(self.evk)
 
         # Key events controller
-        # ~ evk = Gtk.EventControllerKey.new()
-        # ~ evk.connect("key-pressed", self.on_key_press)
-        # ~ self.treeview.add_controller(evk)
+        evk = Gtk.EventControllerKey.new()
+        evk.connect("key-pressed", self.on_key_press)
+        self.treeview.add_controller(evk)  # add to Treeview
 
     def on_key_press(self, event, keyval, keycode, state):
         self.log.debug("%s > %s > %s > %s", event, keyval, keycode, state)
@@ -130,60 +159,27 @@ class MiAZWorkspace(Gtk.Box):
 
     def update(self, *args):
         self.log.debug("Got signal 'target-configuration-updated'")
+        self.store.clear()
         repocnf = self.backend.get_repo_source_config_file()
         repodct = json_load(repocnf)
         who = self.app.get_config('organizations')
         for filepath in repodct:
+            filename = os.path.basename(filepath)
             dot = filepath.rfind('.')
             doc = filepath[:dot]
             ext = filepath[dot+1:]
-            icon = self.app.icman.get_icon_mimetype_from_file(filepath, 36, 36)
-            icon.set_icon_size(Gtk.IconSize.INHERIT)
-            row = Adw.ActionRow.new()
-
-            boxFileDisplayButton = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
-            btnFileDisplay = button = Gtk.Button()
-            btnFileDisplay.set_child(icon)
-            btnFileDisplay.connect('clicked', self.on_display_document, filepath)
-            btnFileDisplay.set_valign(Gtk.Align.CENTER)
-            btnFileDisplay.set_hexpand(False)
-            row.add_prefix(btnFileDisplay)
-
-            boxButtons = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, css_classes=['linked'])
-            boxFileInfoButton = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
-            btnFileInfo = Gtk.MenuButton()
-            btnFileInfo.set_icon_name('miaz-reasons-info')
-            popover = self.__create_popover_fileinfo(filepath)
-            btnFileInfo.set_popover(popover)
-            btnFileInfo.set_valign(Gtk.Align.CENTER)
-            btnFileInfo.set_hexpand(False)
-
-            # ~ boxFileSelectButton = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
-            # ~ btnFileSelect = Gtk.ToggleButton()
-            # ~ btnFileSelect.connect('toggled', self.on_selected_rows_changed)
-            # ~ btnFileSelect.set_icon_name('miaz-edit')
-            # ~ btnFileSelect.set_valign(Gtk.Align.CENTER)
-            # ~ btnFileSelect.set_hexpand(False)
-
-
-            # ~ boxFileEditButton = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
-            # ~ btnFileEdit = Gtk.MenuButton()
-            # ~ btnFileEdit.set_icon_name('miaz-rename')
-            # ~ popover = Gtk.PopoverMenu.new_from_model(self.create_menu_selection_single(filepath))
-            # ~ btnFileEdit.set_popover(popover=popover)
-            # ~ btnFileEdit.set_valign(Gtk.Align.CENTER)
-            # ~ btnFileEdit.set_hexpand(False)
-
-            boxButtons.append(btnFileInfo)
-            # ~ boxButtons.append(btnFileSelect)
-            # ~ boxButtons.append(btnFileEdit)
-            # ~ boxRow = row.get_child()
-            # ~ boxRow.append(boxButtons)
-
-            row.set_title(title="<b>%s</b>" % os.path.basename(doc))
-            row.set_subtitle(subtitle=filepath)
-            row.add_suffix(boxButtons)
-            self.flowbox.append(row)
+            # ~ icon = self.app.icman.get_icon_mimetype_from_file(filepath, 36, 36)
+            # ~ icon.set_icon_size(Gtk.IconSize.INHERIT)
+            document = os.path.basename(filepath)
+            mimetype = get_file_mimetype(filepath)
+            icon = self.app.icman.get_pixbuf_mimetype_from_file(filepath, 48, 48)
+            if repodct[filepath]['valid']:
+                fields = document.split('-')
+                self.log.debug(fields)
+                explain = "<span color='blue'>#%s</span> <b>%s from %s about %s to %s</b>" % (fields[2], fields[4].title(), who.get(fields[3]), fields[5], who.get(fields[6]))
+            else:
+                explain = ''
+            node = self.store.insert_with_values(None, -1, (0, 1, 2, 3), (filepath, mimetype, icon, "%s\r\n<sub><span color='grey'>%s</span></sub>" % (explain, document)))
         page = self.app.get_stack_page_by_name('workspace')
         page.set_badge_number(len(repodct))
         self.log.debug("Workspace ready!")
@@ -272,9 +268,7 @@ class MiAZWorkspace(Gtk.Box):
         icon_ko = self.app.icman.get_pixbuf_by_name('miaz-ko', 32)
         icon_ok = self.app.icman.get_pixbuf_by_name('miaz-ok', 32)
 
-        repocnf = self.backend.get_repo_source_config_file()
-        repodct = json_load(repocnf)
-        for reason in repodct[filepath]['reasons']:
+        for reason in self.repodct[filepath]['reasons']:
             passed, message = reason
             if passed:
                 model.insert_with_values(-1, (0, 1), (icon_ok, message))
