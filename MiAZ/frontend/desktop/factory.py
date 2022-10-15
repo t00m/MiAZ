@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+import os
+
 import gi
 gi.require_version('Gtk', '4.0')
 gi.require_version('Adw', '1')
@@ -78,6 +80,36 @@ class MiAZFactory:
         label.set_markup(text)
         label.set_property('ellipsize', Pango.EllipsizeMode.MIDDLE)
         return label
+
+    def create_row(self, filepath: str, filedict: dict) -> Gtk.Widget:
+        row = Gtk.Frame()
+        row.set_margin_top(margin=3)
+        row.set_margin_end(margin=3)
+        row.set_margin_bottom(margin=3)
+        row.set_margin_start(margin=3)
+        boxCenter = Gtk.CenterBox()
+        boxCenter.set_margin_top(margin=6)
+        boxCenter.set_margin_end(margin=6)
+        boxCenter.set_margin_bottom(margin=6)
+        boxCenter.set_margin_start(margin=6)
+        # ~ boxCenter.set_hexpand(True)
+        # ~ boxCenter.set_vexpand(True)
+        icon_mime = self.app.icman.get_icon_mimetype_from_file(filepath, 32)
+        btnMime = Gtk.Button(css_classes=['flat'])
+        btnMime.set_child(icon_mime)
+        btnMime.connect('clicked', self.noop)
+        icon_flag = self.app.icman.get_flag('ES', 32)
+        label = self.create_label(os.path.basename(filepath))
+        boxLayout = Gtk.Box()
+        boxLayout.set_margin_start(6)
+        boxLayout.set_margin_end(6)
+        boxLayout.append(label)
+        boxCenter.set_start_widget(btnMime)
+        boxCenter.set_center_widget(boxLayout)
+        boxCenter.set_end_widget(icon_flag)
+        row.set_child(boxCenter)
+        return row
+
 
     def create_switch_button(self, icon_name, title, callback):
         button = Gtk.Switch()

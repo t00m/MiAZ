@@ -80,7 +80,7 @@ class MiAZIconManager(GObject.GObject):
             self.pixbufdict[key] = pixbuf
         return pixbuf
 
-    def get_icon_mimetype_from_file(self, filepath, width=96, height=96) -> Pixbuf:
+    def get_icon_mimetype_from_file(self, filepath, width=48, height=48) -> Pixbuf:
         # ~ mimetype = get_file_mimetype(filepath)
         # ~ key = valid_key("%s-%d-%d" % (mimetype, width, height))
         # ~ try:
@@ -91,6 +91,7 @@ class MiAZIconManager(GObject.GObject):
         if icon is None:
             icon = Gtk.Image.new_from_icon_name('text-x-generic-symbolic')
         # ~ self.icondict[key] = icon
+        icon.set_pixel_size(width)
         return icon
 
     def get_pixbuf_by_path(self, name, width=48, height=48) -> Pixbuf:
@@ -123,5 +124,5 @@ class MiAZIconManager(GObject.GObject):
         pixbuf = self.get_pixbuf_from_file_at_size(icon_flag, width, height)
         icon = Gtk.Image.new_from_pixbuf(pixbuf)
         # ~ print("Width: %d" % width)
-        icon.set_icon_size(Gtk.IconSize.LARGE)
+        icon.set_pixel_size(width)
         return icon

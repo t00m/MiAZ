@@ -25,6 +25,7 @@ from MiAZ.frontend.desktop.icons import MiAZIconManager
 from MiAZ.frontend.desktop.widgets.treeview import MiAZTreeView
 from MiAZ.frontend.desktop.widgets.menu import MiAZ_APP_MENU
 from MiAZ.frontend.desktop.widgets.rename import MiAZRenameDialog
+from MiAZ.frontend.desktop.widgets.row import MiAZFlowBoxRow
 
 
 class MiAZWorkspace(Gtk.Box):
@@ -111,8 +112,9 @@ class MiAZWorkspace(Gtk.Box):
         self.flowbox = Gtk.FlowBox()
         self.flowbox.set_valign(Gtk.Align.START)
         self.flowbox.set_max_children_per_line(5)
-        self.flowbox.set_min_children_per_line(1)
+        self.flowbox.set_min_children_per_line(2)
         self.flowbox.set_selection_mode (Gtk.SelectionMode.NONE)
+        self.flowbox.set_filter_func(self.clb_visible_function)
 
         self.scrwin.set_child(self.flowbox)
 
@@ -137,52 +139,7 @@ class MiAZWorkspace(Gtk.Box):
             dot = filepath.rfind('.')
             doc = filepath[:dot]
             ext = filepath[dot+1:]
-            icon = self.app.icman.get_icon_mimetype_from_file(filepath, 36, 36)
-            icon.set_icon_size(Gtk.IconSize.INHERIT)
-            row = Adw.ActionRow.new()
-
-            boxFileDisplayButton = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
-            btnFileDisplay = button = Gtk.Button()
-            btnFileDisplay.set_child(icon)
-            btnFileDisplay.connect('clicked', self.on_display_document, filepath)
-            btnFileDisplay.set_valign(Gtk.Align.CENTER)
-            btnFileDisplay.set_hexpand(False)
-            row.add_prefix(btnFileDisplay)
-
-            boxButtons = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, css_classes=['linked'])
-            boxFileInfoButton = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
-            btnFileInfo = Gtk.MenuButton()
-            btnFileInfo.set_icon_name('miaz-reasons-info')
-            popover = self.__create_popover_fileinfo(filepath)
-            btnFileInfo.set_popover(popover)
-            btnFileInfo.set_valign(Gtk.Align.CENTER)
-            btnFileInfo.set_hexpand(False)
-
-            # ~ boxFileSelectButton = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
-            # ~ btnFileSelect = Gtk.ToggleButton()
-            # ~ btnFileSelect.connect('toggled', self.on_selected_rows_changed)
-            # ~ btnFileSelect.set_icon_name('miaz-edit')
-            # ~ btnFileSelect.set_valign(Gtk.Align.CENTER)
-            # ~ btnFileSelect.set_hexpand(False)
-
-
-            # ~ boxFileEditButton = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
-            # ~ btnFileEdit = Gtk.MenuButton()
-            # ~ btnFileEdit.set_icon_name('miaz-rename')
-            # ~ popover = Gtk.PopoverMenu.new_from_model(self.create_menu_selection_single(filepath))
-            # ~ btnFileEdit.set_popover(popover=popover)
-            # ~ btnFileEdit.set_valign(Gtk.Align.CENTER)
-            # ~ btnFileEdit.set_hexpand(False)
-
-            boxButtons.append(btnFileInfo)
-            # ~ boxButtons.append(btnFileSelect)
-            # ~ boxButtons.append(btnFileEdit)
-            # ~ boxRow = row.get_child()
-            # ~ boxRow.append(boxButtons)
-
-            row.set_title(title="<b>%s</b>" % os.path.basename(doc))
-            row.set_subtitle(subtitle=filepath)
-            row.add_suffix(boxButtons)
+            row = MiAZFlowBoxRow(self.app, filepath, repodct[filepath])
             self.flowbox.append(row)
         page = self.app.get_stack_page_by_name('workspace')
         page.set_badge_number(len(repodct))
@@ -202,14 +159,14 @@ class MiAZWorkspace(Gtk.Box):
         popover.set_child(treeview)
         return popover
 
-    def clb_visible_function(self, row):
-        title = row.get_title()
-        # ~ sbentry = self.app.get_searchbar_entry()
-        filter_text = self.ent_sb.get_text()
-        if filter_text.upper() in title.upper():
-            return True
-        else:
+    def clb_visible_function(self, flowboxchild):
+        row = flowboxchild.get_child()
+        filepath = row.get_filepath()
+        filedict = row.get_filedict()
+        if filedict['valid']:
             return False
+        else:
+            return True
 
     def clb_sort_function(self, model, row1, row2, sort_column=0):
         value1 = model.get_value(row1, sort_column)
