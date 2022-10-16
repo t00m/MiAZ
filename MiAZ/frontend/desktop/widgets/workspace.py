@@ -30,6 +30,7 @@ from MiAZ.frontend.desktop.widgets.row import MiAZFlowBoxRow
 
 class MiAZWorkspace(Gtk.Box):
     """ Wrapper for Gtk.Stack with  with a StackSwitcher """
+    show_dashboard = True
 
     def __init__(self, app):
         super(MiAZWorkspace, self).__init__(orientation=Gtk.Orientation.VERTICAL)
@@ -163,10 +164,23 @@ class MiAZWorkspace(Gtk.Box):
         row = flowboxchild.get_child()
         filepath = row.get_filepath()
         filedict = row.get_filedict()
-        if filedict['valid']:
-            return False
+        doc = os.path.basename(filepath)
+        valid = filedict['valid']
+        display = False
+        if self.show_dashboard:
+            if valid:
+                display = True
         else:
+            if not valid:
+                display = True
+        return display
+
+
+        # ~ self.log.debug("%s - Valid[%s] Dashboard[%s] => Display[%s]", doc, valid, self.show_dashboard, display)
+        if display:
             return True
+        else:
+            return False
 
     def clb_sort_function(self, model, row1, row2, sort_column=0):
         value1 = model.get_value(row1, sort_column)
@@ -390,3 +404,12 @@ class MiAZWorkspace(Gtk.Box):
     def on_rename_file(self, *args):
         dialog = self.factory.create_dialog(self.app.win, 'Rename file', Gtk.Label())
         dialog.show()
+
+    def on_show_dashboard(self, *args):
+        self.show_dashboard = True
+        self.flowbox.invalidate_filter()
+
+    def on_show_review(self, *args):
+        self.show_dashboard = False
+        self.flowbox.invalidate_filter()
+

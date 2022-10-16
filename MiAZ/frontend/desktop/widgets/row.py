@@ -17,6 +17,7 @@ class MiAZFlowBoxRow(Gtk.Frame):
         self.filepath = filepath
         self.filedict = filedict
         self.factory = self.app.get_factory()
+        self.workspace = self.app.get_workspace()
 
         self.set_margin_top(margin=3)
         self.set_margin_end(margin=3)
@@ -30,7 +31,8 @@ class MiAZFlowBoxRow(Gtk.Frame):
         icon_mime = self.app.icman.get_icon_mimetype_from_file(filepath, 32)
         btnMime = Gtk.Button(css_classes=['flat'])
         btnMime.set_child(icon_mime)
-        # ~ btnMime.connect('clicked', self.noop)
+        btnMime.set_valign(Gtk.Align.CENTER)
+        btnMime.connect('clicked', self.workspace.on_display_document, filepath)
         icon_flag = self.app.icman.get_flag('ES', 32)
         label = self.factory.create_label(os.path.basename(filepath))
         label.set_xalign(0.0)

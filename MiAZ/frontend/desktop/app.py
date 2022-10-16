@@ -55,6 +55,9 @@ class MiAZApp(Adw.Application):
     def get_factory(self):
         return self.factory
 
+    def get_workspace(self):
+        return self.workspace
+
     def build_gui(self):
         ## Central Box
         self.mainbox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
@@ -70,9 +73,24 @@ class MiAZApp(Adw.Application):
         self.stack.set_vexpand(True)
         self.mainbox.append(self.stack)
 
+        # Create workspace
+        self.workspace = MiAZWorkspace(self)
+        self.page_workspace = self.stack.add_titled(self.workspace, 'workspace', 'MiAZ')
+        self.page_workspace.set_icon_name('document-properties')
+        self.page_workspace.set_needs_attention(True)
+        self.page_workspace.set_badge_number(1)
+        self.page_workspace.set_visible(True)
+        self.show_stack_page_by_name('workspace')
+
         ## HeaderBar
+        boxDashboardButtons = Gtk.Box(spacing=3, orientation=Gtk.Orientation.HORIZONTAL, homogeneous=True)
+        btnDashboardOK = self.factory.create_button('miaz-dashboard-ok', 'Dashboard', callback=self.workspace.on_show_dashboard, css_classes=['flat', 'linked', 'toolbar'])
+        btnDashboardKO = self.factory.create_button('miaz-dashboard-ko', 'Review', callback=self.workspace.on_show_review, css_classes=['flat', 'linked', 'toolbar'])
+        boxDashboardButtons.append(btnDashboardOK)
+        boxDashboardButtons.append(btnDashboardKO)
         self.header = Adw.HeaderBar()
-        self.header.set_title_widget(title_widget=self.switcher)
+        # ~ self.header.set_title_widget(title_widget=self.switcher)
+        self.header.set_title_widget(title_widget=boxDashboardButtons)
         self.win.set_titlebar(self.header)
 
         # Add Menu Button to the titlebar (Right Side)
@@ -82,15 +100,6 @@ class MiAZApp(Adw.Application):
         # and create actions to handle menu actions
         for action in ['settings', 'help', 'about', 'close']:
             self.factory.create_action(action, self.menu_handler)
-
-        # Create workspace
-        self.workspace = MiAZWorkspace(self)
-        self.page_workspace = self.stack.add_titled(self.workspace, 'workspace', 'MiAZ')
-        self.page_workspace.set_icon_name('document-properties')
-        self.page_workspace.set_needs_attention(True)
-        self.page_workspace.set_badge_number(1)
-        self.page_workspace.set_visible(True)
-        self.show_stack_page_by_name('workspace')
 
     def menu_handler(self, action, state):
             """ Callback for  menu actions"""

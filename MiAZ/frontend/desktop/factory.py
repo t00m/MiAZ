@@ -48,6 +48,33 @@ class MiAZFactory:
             button.connect('clicked', callback, data)
         return button
 
+    def create_button_toggle(self, icon_name: str, title: str, callback=None, css_classes=['circular'], data=None) -> Gtk.ToggleButton:
+        if len(icon_name.strip()) == 0:
+            button = Gtk.ToggleButton(css_classes=css_classes)
+            button.set_label(title)
+            button.set_valign(Gtk.Align.CENTER)
+        else:
+            button = Gtk.ToggleButton(
+                css_classes=css_classes,
+                child=Adw.ButtonContent(
+                    label=title,
+                    icon_name=icon_name
+                    )
+                )
+        button.set_has_frame(True)
+        if callback is None:
+            button.connect('toggled', self.noop, data)
+        else:
+            button.connect('toggled', callback, data)
+        return button
+
+        # ~ button = Gtk.ToggleButton()
+        # ~ btnFileSelect = Gtk.ToggleButton()
+        # ~ btnFileSelect.connect('toggled', self.on_selected_rows_changed)
+        # ~ btnFileSelect.set_icon_name('miaz-edit')
+        # ~ btnFileSelect.set_valign(Gtk.Align.CENTER)
+        # ~ btnFileSelect.set_hexpand(False)
+
     def create_dialog(self, parent, title, widget, width=-1, height=-1):
         dialog = Gtk.Dialog()
         dlgHeader = Gtk.HeaderBar()

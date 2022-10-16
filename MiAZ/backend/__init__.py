@@ -91,10 +91,12 @@ class MiAZBackend(GObject.GObject):
         for doc in docs:
             valid, reasons = self.validate_filename(doc)
             s_repodct[doc] = {}
-            s_repodct[doc]['valid'] = False
+            s_repodct[doc]['valid'] = valid
+            s_repodct[doc]['reasons'] = reasons
             if not valid:
-                s_repodct[doc]['reasons'] = reasons
                 s_repodct[doc]['suggested'] = self.suggest_filename(doc)
+            else:
+                s_repodct[doc]['suggested'] = None
             # ~ else:
                 # ~ doc_target = self.fix_filename(os.path.basename(doc))
                 # ~ shutil.move(doc, os.path.join(self.target, doc_target))
@@ -259,6 +261,7 @@ class MiAZBackend(GObject.GObject):
         # Check Who (7th field)
         try:
             code = fields[6]
+            self.log.debug(code)
             is_organization = self.conf['organizations'].exists(code)
             if not is_organization:
                 valid &= False
