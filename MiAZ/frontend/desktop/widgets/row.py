@@ -7,56 +7,68 @@ from gi.repository import Gtk
 from gi.repository import Pango
 from gi.repository.GdkPixbuf import Pixbuf
 
-class MiAZFlowBoxRow(Gtk.Frame):
+class MiAZFlowBoxRow(Gtk.Box):
     """ MiAZ Doc Browser Widget"""
     __gtype_name__ = 'MiAZFlowBoxRow'
 
     def __init__(self, app, filepath: str, filedict: dict):
-        super(MiAZFlowBoxRow, self).__init__()
+        super(MiAZFlowBoxRow, self).__init__(orientation=Gtk.Orientation.HORIZONTAL, css_classes=['linked'])
+        self.set_margin_top(margin=3)
+        self.set_margin_end(margin=3)
+        self.set_margin_bottom(margin=3)
+        self.set_margin_start(margin=3)
+
         self.app = app
         self.filepath = filepath
         self.filedict = filedict
         self.factory = self.app.get_factory()
         self.workspace = self.app.get_workspace()
 
-        self.set_margin_top(margin=3)
-        self.set_margin_end(margin=3)
-        self.set_margin_bottom(margin=3)
-        self.set_margin_start(margin=3)
-        boxCenter = Gtk.CenterBox()
-        boxCenter.set_margin_top(margin=6)
-        boxCenter.set_margin_end(margin=6)
-        boxCenter.set_margin_bottom(margin=6)
-        boxCenter.set_margin_start(margin=6)
+        boxRow = Gtk.CenterBox()
+        boxRow.set_margin_top(margin=6)
+        boxRow.set_margin_end(margin=6)
+        boxRow.set_margin_bottom(margin=6)
+        boxRow.set_margin_start(margin=6)
 
+        boxStart = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, css_classes=['linked'])
         icon_mime = self.app.icman.get_icon_mimetype_from_file(filepath, 32)
         btnMime = Gtk.Button(css_classes=['flat'])
         btnMime.set_child(icon_mime)
         btnMime.set_valign(Gtk.Align.CENTER)
         btnMime.connect('clicked', self.workspace.on_display_document, filepath)
-        icon_flag = self.app.icman.get_flag('ES', 32)
-        boxLayout = Gtk.Box()
-        boxLayout.set_hexpand(True)
-        boxLayout.set_margin_start(6)
-        boxLayout.set_margin_end(6)
-        label = self.factory.create_label(os.path.basename(filepath))
-        label.set_xalign(0.0)
+        boxStart.append(btnMime)
+
+
+        boxCenter = Gtk.Box()
+        boxCenter.set_hexpand(True)
+        boxCenter.set_margin_start(6)
+        boxCenter.set_margin_end(6)
+
+        boxEnd = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, css_classes=['linked'])
+
         if filedict['valid']:
-            boxLayout.append(label)
-            boxCenter.set_end_widget(icon_flag)
+            wdgCenter = Gtk.Label()
+            boxCenter.append(wdgCenter)
+            icon_flag = self.app.icman.get_flag('ES', 32)
+            boxEnd.append(icon_flag)
         else:
-            expander = Gtk.Expander()
-            expander.set_label_widget(label)
-            wdgReasons = self.__create_trvreasons()
-            expander.set_child(wdgReasons)
-            boxLayout.append(expander)
-        boxCenter.set_start_widget(btnMime)
-        boxCenter.set_center_widget(boxLayout)
-        self.set_child(boxCenter)
+            btnFileInfo = Gtk.MenuButton()
+            btnFileInfo.set_label(os.path.basename(filepath))
+            btnFileInfo.get_style_context().add_class(class_name='flat')
+            # ~ btnFileInfo.set_icon_name('miaz-reasons-info')
+            popover = self.__create_popover_fileinfo()
+            btnFileInfo.set_popover(popover)
+            btnFileInfo.set_valign(Gtk.Align.CENTER)
+            btnFileInfo.set_hexpand(False)
+            boxCenter.append(btnFileInfo)
+            # ~ boxEnd.append()
 
+        boxRow.set_start_widget(boxStart)
+        boxRow.set_center_widget(boxCenter)
+        boxRow.set_end_widget(boxEnd)
+        self.append(boxRow)
 
-    def __create_trvreasons(self):
-        # ~ scrreasons = Gtk.ScrolledWindow()
+    def __create_popover_fileinfo(self):
         trvreasons = Gtk.TreeView()
         trvreasons.set_vexpand(True)
         trvreasons.set_hexpand(False)
@@ -88,12 +100,11 @@ class MiAZFlowBoxRow(Gtk.Frame):
             else:
                 model.insert_with_values(-1, (0, 1), (icon_ko, message))
         trvreasons.set_model(model)
-        return trvreasons
-        # ~ scrreasons.set_child(trvreasons)
-        # ~ scrreasons.set_min_content_height(240)
-        # ~ self.log.debug(height)
-        # ~ scrreasons.set_vexpand(True)
-        # ~ scrreasons.set_propagate_natural_height(True)
+
+        popover = Gtk.Popover()
+        popover.set_child(trvreasons)
+
+        return popover
 
     def get_filepath(self):
         return self.filepath

@@ -261,7 +261,6 @@ class MiAZBackend(GObject.GObject):
         # Check Who (7th field)
         try:
             code = fields[6]
-            self.log.debug(code)
             is_organization = self.conf['organizations'].exists(code)
             if not is_organization:
                 valid &= False
@@ -270,7 +269,7 @@ class MiAZBackend(GObject.GObject):
                 reasons.append((True, "Field 7. Person/Third party '%s' accepted. It is in your list." % code))
         except IndexError:
             valid &= False
-            reasons.append((False, "Field 7. Purpose couldn't be checked because this field doesn't exist"))
+            reasons.append((False, "Field 7. Person/Third party couldn't be checked because this field doesn't exist"))
 
         return valid, reasons
 
