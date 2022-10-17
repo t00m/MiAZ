@@ -17,6 +17,7 @@ class MiAZFlowBoxRow(Gtk.Box):
         self.set_margin_end(margin=3)
         self.set_margin_bottom(margin=3)
         self.set_margin_start(margin=3)
+        self.set_hexpand(True)
 
         self.app = app
         self.filepath = filepath
@@ -29,8 +30,10 @@ class MiAZFlowBoxRow(Gtk.Box):
         boxRow.set_margin_end(margin=6)
         boxRow.set_margin_bottom(margin=6)
         boxRow.set_margin_start(margin=6)
+        boxRow.set_hexpand(True)
 
         boxStart = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, css_classes=['linked'])
+        boxStart.set_hexpand(False)
         icon_mime = self.app.icman.get_icon_mimetype_from_file(filepath, 32)
         btnMime = Gtk.Button(css_classes=['flat'])
         btnMime.set_child(icon_mime)
@@ -45,11 +48,24 @@ class MiAZFlowBoxRow(Gtk.Box):
         boxCenter.set_margin_end(6)
 
         boxEnd = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, css_classes=['linked'])
+        boxEnd.set_hexpand(False)
 
         if filedict['valid']:
+            dot = filepath.rfind('.')
+            doc = filepath[:dot]
+            ext = filepath[dot+1:]
+            who = self.app.get_config('organizations')
+            fields = doc.split('-')
+            btnCol = self.factory.create_button('', fields[2])
+            boxCenter.append(btnCol)
+            explain = "<b>%s from %s about %s to %s</b>" % (fields[4].title(), who.get(fields[3]), fields[5], who.get(fields[6]))
             wdgCenter = Gtk.Label()
+            wdgCenter.set_margin_start(6)
+            wdgCenter.set_xalign(0.0)
+            wdgCenter.set_hexpand(True)
+            wdgCenter.set_markup(explain)
             boxCenter.append(wdgCenter)
-            icon_flag = self.app.icman.get_flag('ES', 32)
+            icon_flag = self.app.icman.get_flag(fields[1], 32)
             boxEnd.append(icon_flag)
         else:
             btnFileInfo = Gtk.MenuButton()
@@ -61,7 +77,11 @@ class MiAZFlowBoxRow(Gtk.Box):
             btnFileInfo.set_valign(Gtk.Align.CENTER)
             btnFileInfo.set_hexpand(False)
             boxCenter.append(btnFileInfo)
-            # ~ boxEnd.append()
+
+            btnFileEdit = self.factory.create_button('miaz-edit', '', self.workspace.action_rename_manually, data=self.filepath)
+            btnFileEdit.set_valign(Gtk.Align.CENTER)
+            btnFileEdit.set_hexpand(False)
+            boxEnd.append(btnFileEdit)
 
         boxRow.set_start_widget(boxStart)
         boxRow.set_center_widget(boxCenter)

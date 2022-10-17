@@ -68,6 +68,7 @@ class MiAZWorkspace(Gtk.Box):
         ## Filter box (left side)
         boxFilters = Gtk.Box.new(orientation=Gtk.Orientation.HORIZONTAL, spacing=3)
         self.ent_sb = Gtk.SearchEntry(placeholder_text="Type here")
+        self.ent_sb.connect('changed', self. on_change_search)
         boxFilters.append(self.ent_sb)
         toolbar.set_start_widget(boxFilters)
 
@@ -113,7 +114,7 @@ class MiAZWorkspace(Gtk.Box):
         self.flowbox = Gtk.FlowBox()
         self.flowbox.set_valign(Gtk.Align.START)
         self.flowbox.set_max_children_per_line(5)
-        self.flowbox.set_min_children_per_line(2)
+        self.flowbox.set_min_children_per_line(1)
         self.flowbox.set_selection_mode (Gtk.SelectionMode.SINGLE)
         self.flowbox.set_filter_func(self.clb_visible_function)
 
@@ -166,13 +167,15 @@ class MiAZWorkspace(Gtk.Box):
         filedict = row.get_filedict()
         doc = os.path.basename(filepath)
         valid = filedict['valid']
+        freefilter = self.ent_sb.get_text().upper() in filepath.upper()
         display = False
         if self.show_dashboard:
             if valid:
                 display = True
         else:
             if not valid:
-                display = True
+                if freefilter:
+                    display = True
         return display
 
 
@@ -303,13 +306,8 @@ class MiAZWorkspace(Gtk.Box):
         return self.menu_workspace_multiple
 
 
-    def action_rename_manually(self, *args):
-        selection = self.treeview.get_selection()
-        model, treepaths = selection.get_selected_rows()
-        treepath = treepaths[0]
-        treeiter = self.sorted_model.get_iter(treepath)
-        source = self.sorted_model[treeiter][0]
-        filename = os.path.basename(source)
+    def action_rename_manually(self, button, data):
+        source = data
         repocnf = self.backend.get_repo_source_config_file()
         repodct = json_load(repocnf)
         target = repodct[source]['suggested'].split('-')
@@ -371,4 +369,8 @@ class MiAZWorkspace(Gtk.Box):
     def on_show_review(self, *args):
         self.show_dashboard = False
         self.flowbox.invalidate_filter()
+
+    def on_change_search(self, *args):
+        self.flowbox.invalidate_filter()
+
 
