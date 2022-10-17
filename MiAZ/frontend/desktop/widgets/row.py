@@ -3,6 +3,8 @@
 
 import os
 import json
+from datetime import datetime
+
 from gi.repository import Gtk
 from gi.repository import Pango
 from gi.repository.GdkPixbuf import Pixbuf
@@ -51,13 +53,15 @@ class MiAZFlowBoxRow(Gtk.Box):
         boxEnd.set_hexpand(False)
 
         if filedict['valid']:
-            dot = filepath.rfind('.')
-            doc = filepath[:dot]
-            ext = filepath[dot+1:]
+            basename = os.path.basename(filepath)
+            dot = basename.rfind('.')
+            doc = basename[:dot]
+            ext = basename[dot+1:]
             who = self.app.get_config('organizations')
             fields = doc.split('-')
-            btnCol = self.factory.create_button('', fields[2])
-            boxCenter.append(btnCol)
+            # ~ btnCol = self.factory.create_button('', fields[2])
+            # ~ btnCol.get_style_context().add_class(class_name='pill')
+            # ~ boxCenter.append(btnCol)
             explain = "<b>%s from %s about %s to %s</b>" % (fields[4].title(), who.get(fields[3]), fields[5], who.get(fields[6]))
             wdgCenter = Gtk.Label()
             wdgCenter.set_margin_start(6)
@@ -65,6 +69,11 @@ class MiAZFlowBoxRow(Gtk.Box):
             wdgCenter.set_hexpand(True)
             wdgCenter.set_markup(explain)
             boxCenter.append(wdgCenter)
+            self.date = fields[0]
+            adate = datetime.strptime(self.date, "%Y%m%d")
+            lblDate = self.factory.create_label(adate.strftime("%Y.%m.%d"))
+            lblDate.set_margin_end(6)
+            boxEnd.append(lblDate)
             icon_flag = self.app.icman.get_flag(fields[1], 32)
             boxEnd.append(icon_flag)
         else:
@@ -77,6 +86,12 @@ class MiAZFlowBoxRow(Gtk.Box):
             btnFileInfo.set_valign(Gtk.Align.CENTER)
             btnFileInfo.set_hexpand(False)
             boxCenter.append(btnFileInfo)
+
+            suggested = filedict['suggested'].split('-')
+            self.date = suggested[0]
+            adate = datetime.strptime(self.date, "%Y%m%d")
+            lblDate = self.factory.create_label(adate.strftime("%Y.%m.%d"))
+            boxEnd.append(lblDate)
 
             btnFileEdit = self.factory.create_button('miaz-edit', '', self.workspace.action_rename_manually, data=self.filepath)
             btnFileEdit.set_valign(Gtk.Align.CENTER)
@@ -131,3 +146,6 @@ class MiAZFlowBoxRow(Gtk.Box):
 
     def get_filedict(self):
         return self.filedict
+
+    def get_date(self):
+        return self.date

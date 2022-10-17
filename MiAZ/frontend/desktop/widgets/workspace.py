@@ -117,6 +117,7 @@ class MiAZWorkspace(Gtk.Box):
         self.flowbox.set_min_children_per_line(1)
         self.flowbox.set_selection_mode (Gtk.SelectionMode.SINGLE)
         self.flowbox.set_filter_func(self.clb_visible_function)
+        self.flowbox.set_sort_func(self.clb_sort_function)
 
         self.scrwin.set_child(self.flowbox)
 
@@ -171,7 +172,8 @@ class MiAZWorkspace(Gtk.Box):
         display = False
         if self.show_dashboard:
             if valid:
-                display = True
+                if freefilter:
+                    display = True
         else:
             if not valid:
                 if freefilter:
@@ -185,15 +187,18 @@ class MiAZWorkspace(Gtk.Box):
         else:
             return False
 
-    def clb_sort_function(self, model, row1, row2, sort_column=0):
-        value1 = model.get_value(row1, sort_column)
-        value2 = model.get_value(row2, sort_column)
+    def clb_sort_function(self, flowboxchild1, flowboxchild2):
+        row1 = flowboxchild1.get_child()
+        row2 = flowboxchild2.get_child()
+        value1 = row1.get_date()
+        value2 = row2.get_date()
+        # ~ self.log.debug("%s > %s", value1, value2)
         if value1 < value2:
-            return -1
+            return 1
         elif value1 == value2:
             return 0
         else:
-            return 1
+            return -1
 
     # ~ def clb_visible_function(self, model, itr, data):
         # ~ item_name = model.get(itr, 3)[0]
