@@ -30,7 +30,9 @@ class MiAZFactory:
     def create_button(self, icon_name, title, callback=None, width=32, height=32, css_classes=['flat'], data=None):
         if len(icon_name.strip()) == 0:
             button = Gtk.Button(css_classes=css_classes)
-            button.set_label(title)
+            label = Gtk.Label()
+            label.set_markup(title)
+            button.set_child(label)
             button.set_valign(Gtk.Align.CENTER)
         else:
             button = Gtk.Button(
