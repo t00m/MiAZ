@@ -4,14 +4,17 @@
 import os
 
 import gi
-gi.require_version('Gtk', '4.0')
 gi.require_version('Adw', '1')
+gi.require_version('GdkPixbuf', '2.0')
+gi.require_version('Gtk', '4.0')
+
 from gi.repository import Gtk, Adw
 from gi.repository import Gdk
 from gi.repository import Gio
 from gi.repository import GLib
 from gi.repository import GObject
 from gi.repository import Pango
+from gi.repository.GdkPixbuf import Pixbuf
 
 from MiAZ.backend.log import get_logger
 from MiAZ.frontend.desktop.icons import MiAZIconManager
@@ -76,6 +79,61 @@ class MiAZFactory:
         # ~ btnFileSelect.set_icon_name('miaz-edit')
         # ~ btnFileSelect.set_valign(Gtk.Align.CENTER)
         # ~ btnFileSelect.set_hexpand(False)
+
+    def create_combobox_countries(self):
+        model = Gtk.ListStore(Pixbuf, str, str)
+        icon = self.app.icman.get_flag_pixbuf('__')
+        first = model.append([icon, '', ' Any'])
+        ucodes = self.app.get_config('countries').load()
+        # ~ gcodes = self.app.get_config('countries').load_global()
+        for code in ucodes:
+            icon = self.app.icman.get_flag_pixbuf(code)
+            # ~ name = gcodes[code]['Country Name']
+            model.append([icon, code, ' %s' % code])
+
+        cmbCountries = Gtk.ComboBox.new_with_model(model)
+        cmbCountries.set_active_iter(first)
+
+        renderer = Gtk.CellRendererPixbuf()
+        cmbCountries.pack_start(renderer, False)
+        cmbCountries.add_attribute(renderer, "pixbuf", 0)
+
+        renderer = Gtk.CellRendererText()
+        renderer.set_visible(False)
+        cmbCountries.pack_start(renderer, True)
+        cmbCountries.add_attribute(renderer, "text", 1)
+
+        renderer = Gtk.CellRendererText()
+        cmbCountries.pack_start(renderer, True)
+        cmbCountries.add_attribute(renderer, "markup", 2)
+
+        return cmbCountries
+
+    def create_combobox_text(self, conf: str) -> Gtk.ComboBox:
+        model = Gtk.ListStore(str, str)
+        combobox = Gtk.ComboBox()
+        combobox.set_model(model)
+        # ~ combobox.set_entry_text_column(0)
+
+        renderer = Gtk.CellRendererText()
+        renderer.set_visible(False)
+        combobox.pack_start(renderer, True)
+        combobox.add_attribute(renderer, "text", 0)
+
+        renderer = Gtk.CellRendererText()
+        combobox.pack_start(renderer, False)
+        combobox.add_attribute(renderer, "markup", 1)
+
+        first = model.append(['', 'Any'])
+        items = self.app.get_config(conf).load()
+        for key in items:
+            if conf == 'organizations':
+                # ~ model.append([key, "%s (%s)" % (key, items[key])])
+                model.append([key, items[key]])
+            else:
+                model.append([key, key.title()])
+        combobox.set_active_iter(first)
+        return combobox
 
     def create_dialog(self, parent, title, widget, width=-1, height=-1):
         dialog = Gtk.Dialog()

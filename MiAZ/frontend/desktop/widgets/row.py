@@ -27,15 +27,15 @@ class MiAZFlowBoxRow(Gtk.Box):
         self.factory = self.app.get_factory()
         self.workspace = self.app.get_workspace()
 
-        boxRow = Gtk.CenterBox()
-        boxRow.set_margin_top(margin=6)
-        boxRow.set_margin_end(margin=6)
-        boxRow.set_margin_bottom(margin=6)
-        boxRow.set_margin_start(margin=6)
+        boxRow = Gtk.Box(spacing=6, orientation=Gtk.Orientation.HORIZONTAL)
+        # ~ boxRow.set_margin_top(margin=6)
+        # ~ boxRow.set_margin_end(margin=6)
+        # ~ boxRow.set_margin_bottom(margin=6)
+        # ~ boxRow.set_margin_start(margin=6)
         boxRow.set_hexpand(True)
 
         boxStart = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
-        boxStart.get_style_context().add_class(class_name='frame')
+        # ~ boxStart.get_style_context().add_class(class_name='frame')
         boxStart.set_hexpand(False)
         # ~ boxStart.set_homogeneous(True)
         icon_mime = self.app.icman.get_icon_mimetype_from_file(filepath, 32)
@@ -48,13 +48,13 @@ class MiAZFlowBoxRow(Gtk.Box):
         boxStart.append(btnMime)
 
 
-        boxCenter = Gtk.Box()
-        boxCenter.get_style_context().add_class(class_name='frame')
+        boxCenter = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
+        # ~ boxCenter.get_style_context().add_class(class_name='frame')
         boxCenter.set_hexpand(True)
-        boxCenter.set_margin_start(6)
-        boxCenter.set_margin_end(6)
+        # ~ boxCenter.set_margin_start(6)
+        # ~ boxCenter.set_margin_end(6)
 
-        boxEnd = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, css_classes=['frame'])
+        boxEnd = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL) #, css_classes=['frame'])
         boxEnd.set_hexpand(False)
 
         if filedict['valid']:
@@ -70,15 +70,26 @@ class MiAZFlowBoxRow(Gtk.Box):
             # ~ btnCol.set_valign(Gtk.Align.CENTER)
             btnCol.set_hexpand(False)
             boxEnd.append(btnCol)
-            explain = "<b>%s from %s about %s to %s</b>" % (fields[4].title(), who.get(fields[3]), fields[5], who.get(fields[6]))
+            self.explain = "<b>%s from %s about %s to %s</b>" % (fields[4].title(), who.get(fields[3]), fields[5], who.get(fields[6]))
             lblExplain = Gtk.Label()
             # ~ lblExplain.set_wrap_mode(Pango.WrapMode.WORD_CHAR)
             # ~ lblExplain.set_single_line_mode(False)
             lblExplain.set_margin_start(6)
             lblExplain.set_xalign(0.0)
             lblExplain.set_hexpand(True)
-            lblExplain.set_markup(explain)
+            lblExplain.set_markup(self.explain)
+
+            # ~ lblFilename = Gtk.Label()
+            # ~ lblFilename.set_wrap_mode(Pango.WrapMode.WORD_CHAR)
+            # ~ lblFilename.set_single_line_mode(False)
+            # ~ lblFilename.set_margin_start(6)
+            # ~ lblFilename.set_xalign(0.0)
+            # ~ lblFilename.set_hexpand(True)
+            # ~ lblFilename.set_markup("<small><sub><span color='gray'>%s</span></sub></small>" % basename)
+
             boxCenter.append(lblExplain)
+            # ~ boxCenter.set_tooltip_markup("<small><span color='gray'>%s</span></small>" % basename)
+            # ~ boxCenter.append(lblFilename)
             self.date = fields[0]
             adate = datetime.strptime(self.date, "%Y%m%d")
             lblDate = self.factory.create_label(adate.strftime("%Y.%m.%d"))
@@ -87,6 +98,7 @@ class MiAZFlowBoxRow(Gtk.Box):
             icon_flag = self.app.icman.get_flag(fields[1], 32)
             boxEnd.append(icon_flag)
         else:
+            self.explain = ''
             btnFileInfo = Gtk.MenuButton()
             btnFileInfo.set_label(os.path.basename(filepath))
             btnFileInfo.get_style_context().add_class(class_name='flat')
@@ -108,9 +120,9 @@ class MiAZFlowBoxRow(Gtk.Box):
             btnFileEdit.set_hexpand(False)
             boxEnd.append(btnFileEdit)
 
-        boxRow.set_start_widget(boxStart)
-        boxRow.set_center_widget(boxCenter)
-        boxRow.set_end_widget(boxEnd)
+        boxRow.append(boxStart)
+        boxRow.append(boxCenter)
+        boxRow.append(boxEnd)
         self.append(boxRow)
 
     def __create_popover_fileinfo(self):
@@ -159,3 +171,6 @@ class MiAZFlowBoxRow(Gtk.Box):
 
     def get_date(self):
         return self.date
+
+    def get_explain(self):
+        return self.explain

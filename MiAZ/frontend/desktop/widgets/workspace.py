@@ -58,32 +58,82 @@ class MiAZWorkspace(Gtk.Box):
         frame.set_margin_end(margin=6)
         frame.set_margin_bottom(margin=6)
         frame.set_margin_start(margin=6)
+        frame.set_hexpand(True)
 
         toolbar = Gtk.CenterBox()
         toolbar.set_margin_top(margin=6)
         toolbar.set_margin_end(margin=6)
         toolbar.set_margin_bottom(margin=6)
         toolbar.set_margin_start(margin=6)
+        toolbar.set_hexpand(True)
 
         ## Filter box (left side)
         boxFilters = Gtk.Box.new(orientation=Gtk.Orientation.HORIZONTAL, spacing=3)
+        boxFilters.set_hexpand(False)
+        boxFilters.set_homogeneous(True)
+
+        vbox = Gtk.Box.new(orientation=Gtk.Orientation.VERTICAL, spacing=3)
+        lblTitle = self.factory.create_label('<small>Free search</small>')
         self.ent_sb = Gtk.SearchEntry(placeholder_text="Type here")
-        self.ent_sb.connect('changed', self. on_change_search)
-        boxFilters.append(self.ent_sb)
+        self.ent_sb.connect('changed', self. on_filter_selected)
+        vbox.append(lblTitle)
+        vbox.append(self.ent_sb)
+        boxFilters.append(vbox)
+
+        vbox = Gtk.Box.new(orientation=Gtk.Orientation.VERTICAL, spacing=3)
+        lblTitle = self.factory.create_label('<small>Country</small>')
+        self.cmbCountries = self.factory.create_combobox_countries()
+        self.cmbCountries.connect('changed', self.on_filter_selected)
+        vbox.append(lblTitle)
+        vbox.append(self.cmbCountries)
+        boxFilters.append(vbox)
+
+        vbox = Gtk.Box.new(orientation=Gtk.Orientation.VERTICAL, spacing=3)
+        lblTitle = self.factory.create_label('<small>Collection</small>')
+        self.cmbCollections = self.factory.create_combobox_text('collections')
+        self.cmbCollections.connect('changed', self.on_filter_selected)
+        vbox.append(lblTitle)
+        vbox.append(self.cmbCollections)
+        boxFilters.append(vbox)
+
+        vbox = Gtk.Box.new(orientation=Gtk.Orientation.VERTICAL, spacing=3)
+        lblTitle = self.factory.create_label('<small>From</small>')
+        self.cmbFrom = self.factory.create_combobox_text('organizations')
+        self.cmbFrom.connect('changed', self.on_filter_selected)
+        vbox.append(lblTitle)
+        vbox.append(self.cmbFrom)
+        boxFilters.append(vbox)
+
+        vbox = Gtk.Box.new(orientation=Gtk.Orientation.VERTICAL, spacing=3)
+        lblTitle = self.factory.create_label('<small>Purpose</small>')
+        self.cmbPurposes = self.factory.create_combobox_text('purposes')
+        self.cmbPurposes.connect('changed', self.on_filter_selected)
+        vbox.append(lblTitle)
+        vbox.append(self.cmbPurposes)
+        boxFilters.append(vbox)
+
+        vbox = Gtk.Box.new(orientation=Gtk.Orientation.VERTICAL, spacing=3)
+        lblTitle = self.factory.create_label('<small>To</small>')
+        self.cmbTo = self.factory.create_combobox_text('organizations')
+        self.cmbTo.connect('changed', self.on_filter_selected)
+        vbox.append(lblTitle)
+        vbox.append(self.cmbTo)
+        boxFilters.append(vbox)
+
         toolbar.set_start_widget(boxFilters)
 
         # Documents selected
-        boxDocsSelected = Gtk.CenterBox()
-        self.lblDocumentsSelected = "No documents selected"
-        self.btnDocsSel = Gtk.MenuButton()
-        self.btnDocsSel.set_label(self.lblDocumentsSelected)
-        self.popDocsSel = Gtk.PopoverMenu.new_from_model(self.create_menu_selection_multiple())
-        self.btnDocsSel.set_popover(popover=self.popDocsSel)
-        self.btnDocsSel.set_valign(Gtk.Align.CENTER)
-        self.btnDocsSel.set_hexpand(False)
-        self.btnDocsSel.set_sensitive(False)
-        boxDocsSelected.set_center_widget(self.btnDocsSel)
-        toolbar.set_end_widget(boxDocsSelected)
+        # ~ boxDocsSelected = Gtk.CenterBox()
+        # ~ self.lblDocumentsSelected = "No documents selected"
+        # ~ self.btnDocsSel = Gtk.MenuButton()
+        # ~ self.btnDocsSel.set_label(self.lblDocumentsSelected)
+        # ~ self.popDocsSel = Gtk.PopoverMenu.new_from_model(self.create_menu_selection_multiple())
+        # ~ self.btnDocsSel.set_popover(popover=self.popDocsSel)
+        # ~ self.btnDocsSel.set_valign(Gtk.Align.CENTER)
+        # ~ self.btnDocsSel.set_hexpand(False)
+        # ~ self.btnDocsSel.set_sensitive(False)
+        # ~ boxDocsSelected.set_center_widget(self.btnDocsSel)
+        # ~ toolbar.set_end_widget(boxDocsSelected)
 
         # Views (right side)
         # ~ boxMassActionsButton = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
@@ -162,30 +212,75 @@ class MiAZWorkspace(Gtk.Box):
         popover.set_child(treeview)
         return popover
 
+    def cond_matches_freetext(self, row):
+        filepath = row.get_filepath()
+        fileanot = row.get_explain()
+        left = self.ent_sb.get_text()
+        right = filepath+fileanot
+        if left.upper() in right.upper():
+            return True
+        return False
+
+    def cond_matches_country(self, code_row):
+        treeiter = self.cmbCountries.get_active_iter()
+        model = self.cmbCountries.get_model()
+        code_chosen = model[treeiter][1]
+        if len(code_chosen) == 0:
+            return True
+        return code_chosen == code_row
+
+    def cond_matches_collection(self, code_row):
+        treeiter = self.cmbCollections.get_active_iter()
+        model = self.cmbCollections.get_model()
+        code_chosen = model[treeiter][0]
+        if len(code_chosen) == 0:
+            return True
+        return code_chosen == code_row
+
+    def cond_matches_from(self, code_row):
+        treeiter = self.cmbFrom.get_active_iter()
+        model = self.cmbFrom.get_model()
+        code_chosen = model[treeiter][0]
+        if len(code_chosen) == 0:
+            return True
+        return code_chosen == code_row
+
+    def cond_matches_purposes(self, code_row):
+        treeiter = self.cmbPurposes.get_active_iter()
+        model = self.cmbPurposes.get_model()
+        code_chosen = model[treeiter][0]
+        if len(code_chosen) == 0:
+            return True
+        return code_chosen == code_row
+
+    def cond_matches_to(self, code_row):
+        treeiter = self.cmbTo.get_active_iter()
+        model = self.cmbTo.get_model()
+        code_chosen = model[treeiter][0]
+        if len(code_chosen) == 0:
+            return True
+        return code_chosen == code_row
+
     def clb_visible_function(self, flowboxchild):
         row = flowboxchild.get_child()
         filepath = row.get_filepath()
         filedict = row.get_filedict()
-        doc = os.path.basename(filepath)
         valid = filedict['valid']
-        freefilter = self.ent_sb.get_text().upper() in filepath.upper()
+
         display = False
         if self.show_dashboard:
             if valid:
-                if freefilter:
-                    display = True
+                c0 = self.cond_matches_freetext(row)
+                c1 = self.cond_matches_country(filedict['fields'][1])
+                c2 = self.cond_matches_collection(filedict['fields'][2])
+                c3 = self.cond_matches_from(filedict['fields'][3])
+                c4 = self.cond_matches_purposes(filedict['fields'][4])
+                c6 = self.cond_matches_to(filedict['fields'][6])
+                display = c0 and c1 and c2 and c3 and c4 and c6
         else:
             if not valid:
-                if freefilter:
-                    display = True
+                display = self.cond_matches_freetext(row)
         return display
-
-
-        # ~ self.log.debug("%s - Valid[%s] Dashboard[%s] => Display[%s]", doc, valid, self.show_dashboard, display)
-        if display:
-            return True
-        else:
-            return False
 
     def clb_sort_function(self, flowboxchild1, flowboxchild2):
         row1 = flowboxchild1.get_child()
@@ -199,22 +294,6 @@ class MiAZWorkspace(Gtk.Box):
             return 0
         else:
             return -1
-
-    # ~ def clb_visible_function(self, model, itr, data):
-        # ~ item_name = model.get(itr, 3)[0]
-        # ~ row_type = model.get(itr, 6)[0]
-        # ~ sbentry = self.app.get_searchbar_entry()
-        # ~ filter_text = sbentry.get_text()
-
-        # ~ if row_type == 'FOLDER' or row_type == 'REASON':
-            # ~ return True
-
-        # ~ match = filter_text.upper() in item_name.upper()
-
-        # ~ if match:
-            # ~ return True
-        # ~ else:
-            # ~ return False
 
     def on_key_released(self, widget, keyval, keycode, state):
         self.filter_view()
@@ -375,7 +454,5 @@ class MiAZWorkspace(Gtk.Box):
         self.show_dashboard = False
         self.flowbox.invalidate_filter()
 
-    def on_change_search(self, *args):
+    def on_filter_selected(self, *args):
         self.flowbox.invalidate_filter()
-
-

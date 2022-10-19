@@ -97,6 +97,7 @@ class MiAZBackend(GObject.GObject):
                 s_repodct[doc]['suggested'] = self.suggest_filename(doc)
             else:
                 s_repodct[doc]['suggested'] = None
+                s_repodct[doc]['fields'] = self.get_fields(doc)
             # ~ else:
                 # ~ doc_target = self.fix_filename(os.path.basename(doc))
                 # ~ shutil.move(doc, os.path.join(self.target, doc_target))
@@ -107,6 +108,13 @@ class MiAZBackend(GObject.GObject):
         # 3. Emit the 'source-configuration-updated' signal
         self.log.debug("Source repository - Emitting signal 'source-configuration-updated'")
         self.emit('source-configuration-updated')
+
+    def get_fields(self, filename: str) -> []:
+        filename = os.path.basename(filename)
+        dot = filename.rfind('.')
+        if dot > 0:
+            filename = filename[:dot]
+        return filename.split('-')
 
     def fix_filename(self, filename):
         dot = filename.rfind('.')

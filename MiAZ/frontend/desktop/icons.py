@@ -126,3 +126,9 @@ class MiAZIconManager(GObject.GObject):
         # ~ print("Width: %d" % width)
         icon.set_pixel_size(width)
         return icon
+
+    def get_flag_pixbuf(self, code: str, width: int = 32, height: int = 32) -> Pixbuf:
+        icon_flag = os.path.join(ENV['GPATH']['FLAGS'], "%s.svg" % code)
+        if not os.path.exists(icon_flag):
+            icon_flag = os.path.join(ENV['GPATH']['FLAGS'], "__.svg")
+        return self.get_pixbuf_from_file_at_size(icon_flag, width, height)
