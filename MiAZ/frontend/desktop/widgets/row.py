@@ -70,7 +70,7 @@ class MiAZFlowBoxRow(Gtk.Box):
             # ~ btnCol.set_valign(Gtk.Align.CENTER)
             btnCol.set_hexpand(False)
             boxEnd.append(btnCol)
-            self.explain = "<b>%s from %s about %s to %s</b>" % (fields[4].title(), who.get(fields[3]), fields[5], who.get(fields[6]))
+            self.explain = "%s from %s about %s to %s" % (fields[4].title(), who.get(fields[3]), fields[5], who.get(fields[6]))
             lblExplain = Gtk.Label()
             # ~ lblExplain.set_wrap_mode(Pango.WrapMode.WORD_CHAR)
             # ~ lblExplain.set_single_line_mode(False)

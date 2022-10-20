@@ -37,6 +37,7 @@ class MiAZApp(Adw.Application):
         self.win.set_default_size(1024, 728)
         self.win.set_icon_name('MiAZ')
         self.win.set_default_icon_name('MiAZ')
+        self.win.get_style_context().add_class(class_name='devel')
         self.icman = MiAZIconManager()
         self.theme = Gtk.IconTheme.get_for_display(self.win.get_display())
         self.theme.add_search_path(ENV['GPATH']['ICONS'])
@@ -83,12 +84,22 @@ class MiAZApp(Adw.Application):
         self.show_stack_page_by_name('workspace')
 
         ## HeaderBar
+        self.header = Adw.HeaderBar()
+
+        # ~ vbox = Gtk.Box.new(orientation=Gtk.Orientation.VERTICAL, spacing=3)
+        # ~ lblTitle = self.factory.create_label('<small>Free search</small>')
+        # ~ self.ent_sb = Gtk.SearchEntry(placeholder_text="Type here")
+        # ~ self.ent_sb.connect('changed', self.on_filter_selected)
+        # ~ vbox.append(lblTitle)
+        # ~ vbox.append(self.ent_sb)
+        # ~ self.header.pack_start(self.ent_sb)
+
         boxDashboardButtons = Gtk.Box(spacing=3, orientation=Gtk.Orientation.HORIZONTAL, homogeneous=True)
         btnDashboardOK = self.factory.create_button('miaz-dashboard-ok', 'Dashboard', callback=self.workspace.on_show_dashboard, css_classes=['flat', 'linked', 'toolbar'])
         btnDashboardKO = self.factory.create_button('miaz-dashboard-ko', 'Review', callback=self.workspace.on_show_review, css_classes=['flat', 'linked', 'toolbar'])
         boxDashboardButtons.append(btnDashboardOK)
         boxDashboardButtons.append(btnDashboardKO)
-        self.header = Adw.HeaderBar()
+
         # ~ self.header.set_title_widget(title_widget=self.switcher)
         self.header.set_title_widget(title_widget=boxDashboardButtons)
         self.win.set_titlebar(self.header)

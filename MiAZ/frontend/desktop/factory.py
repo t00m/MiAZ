@@ -30,6 +30,16 @@ class MiAZFactory:
         action.connect("activate", callback)
         self.app.add_action(action)
 
+    def create_box_filter(self, title: str, widget: Gtk.Widget) -> Gtk.Box:
+        box = Gtk.Box.new(orientation=Gtk.Orientation.VERTICAL, spacing=3)
+        box.set_margin_bottom(margin=12)
+        # ~ vbox.get_style_context().add_class(class_name='frame')
+        lblTitle = self.create_label('<small>%s</small>' % title)
+        lblTitle.set_xalign(0.0)
+        box.append(lblTitle)
+        box.append(widget)
+        return box
+
     def create_button(self, icon_name, title, callback=None, width=32, height=32, css_classes=['flat'], data=None):
         if len(icon_name.strip()) == 0:
             button = Gtk.Button(css_classes=css_classes)
@@ -81,31 +91,33 @@ class MiAZFactory:
         # ~ btnFileSelect.set_hexpand(False)
 
     def create_combobox_countries(self):
-        model = Gtk.ListStore(Pixbuf, str, str)
+        model = Gtk.ListStore(str, str, Pixbuf)
         icon = self.app.icman.get_flag_pixbuf('__')
-        first = model.append([icon, '', ' Any'])
+        first = model.append(['All countries', '', icon])
         ucodes = self.app.get_config('countries').load()
-        # ~ gcodes = self.app.get_config('countries').load_global()
+        gcodes = self.app.get_config('countries').load_global()
         for code in ucodes:
             icon = self.app.icman.get_flag_pixbuf(code)
-            # ~ name = gcodes[code]['Country Name']
-            model.append([icon, code, ' %s' % code])
+            name = gcodes[code]['Country Name']
+            model.append([name, code, icon])
 
         cmbCountries = Gtk.ComboBox.new_with_model(model)
         cmbCountries.set_active_iter(first)
 
-        renderer = Gtk.CellRendererPixbuf()
-        cmbCountries.pack_start(renderer, False)
-        cmbCountries.add_attribute(renderer, "pixbuf", 0)
+        renderer = Gtk.CellRendererText()
+        cmbCountries.pack_start(renderer, True)
+        cmbCountries.add_attribute(renderer, "markup", 0)
 
         renderer = Gtk.CellRendererText()
         renderer.set_visible(False)
         cmbCountries.pack_start(renderer, True)
         cmbCountries.add_attribute(renderer, "text", 1)
 
-        renderer = Gtk.CellRendererText()
-        cmbCountries.pack_start(renderer, True)
-        cmbCountries.add_attribute(renderer, "markup", 2)
+        renderer = Gtk.CellRendererPixbuf()
+        cmbCountries.pack_start(renderer, False)
+        cmbCountries.add_attribute(renderer, "pixbuf", 2)
+
+
 
         return cmbCountries
 
@@ -124,14 +136,52 @@ class MiAZFactory:
         combobox.pack_start(renderer, False)
         combobox.add_attribute(renderer, "markup", 1)
 
-        first = model.append(['', 'Any'])
+        first = model.append(['', 'All %s' % conf])
         items = self.app.get_config(conf).load()
         for key in items:
-            if conf == 'organizations':
-                # ~ model.append([key, "%s (%s)" % (key, items[key])])
-                model.append([key, items[key]])
-            else:
-                model.append([key, key.title()])
+            model.append([key, key.title()])
+        combobox.set_active_iter(first)
+        return combobox
+
+    def create_combobox_text_from(self) -> Gtk.ComboBox:
+        model = Gtk.ListStore(str, str)
+        combobox = Gtk.ComboBox()
+        combobox.set_model(model)
+
+        renderer = Gtk.CellRendererText()
+        renderer.set_visible(False)
+        combobox.pack_start(renderer, True)
+        combobox.add_attribute(renderer, "text", 0)
+
+        renderer = Gtk.CellRendererText()
+        combobox.pack_start(renderer, False)
+        combobox.add_attribute(renderer, "markup", 1)
+
+        first = model.append(['', 'From all'])
+        items = self.app.get_config('organizations').load()
+        for key in items:
+            model.append([key, items[key]])
+        combobox.set_active_iter(first)
+        return combobox
+
+    def create_combobox_text_to(self) -> Gtk.ComboBox:
+        model = Gtk.ListStore(str, str)
+        combobox = Gtk.ComboBox()
+        combobox.set_model(model)
+
+        renderer = Gtk.CellRendererText()
+        renderer.set_visible(False)
+        combobox.pack_start(renderer, True)
+        combobox.add_attribute(renderer, "text", 0)
+
+        renderer = Gtk.CellRendererText()
+        combobox.pack_start(renderer, False)
+        combobox.add_attribute(renderer, "markup", 1)
+
+        first = model.append(['', 'To all'])
+        items = self.app.get_config('organizations').load()
+        for key in items:
+            model.append([key, items[key]])
         combobox.set_active_iter(first)
         return combobox
 
