@@ -167,7 +167,7 @@ class MiAZWorkspace(Gtk.Box):
         self.flowbox.set_valign(Gtk.Align.START)
         self.flowbox.set_max_children_per_line(5)
         self.flowbox.set_min_children_per_line(1)
-        self.flowbox.set_selection_mode (Gtk.SelectionMode.MULTIPLE)
+        self.flowbox.set_selection_mode (Gtk.SelectionMode.SINGLE)
         self.flowbox.set_filter_func(self.clb_visible_function)
         self.flowbox.set_sort_func(self.clb_sort_function)
         scrwin.set_child(self.flowbox)

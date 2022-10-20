@@ -119,7 +119,14 @@ class MiAZFlowBoxRow(Gtk.Box):
             btnFileEdit = self.factory.create_button('miaz-edit', '', self.workspace.action_rename_manually, data=self.filepath)
             btnFileEdit.set_valign(Gtk.Align.CENTER)
             btnFileEdit.set_hexpand(False)
+            btnFileEdit.set_margin_end(6)
+
+            btnFileSelect = self.factory.create_switch_button('', '')
+            btnFileSelect.set_valign(Gtk.Align.CENTER)
+            btnFileSelect.set_hexpand(False)
+
             boxEnd.append(btnFileEdit)
+            boxEnd.append(btnFileSelect)
 
         boxRow.append(boxStart)
         boxRow.append(boxCenter)

@@ -248,9 +248,12 @@ class MiAZFactory:
         return row
 
 
-    def create_switch_button(self, icon_name, title, callback):
+    def create_switch_button(self, icon_name, title, callback=None, data=None):
         button = Gtk.Switch()
-        button.connect('activate', callback)
+        if callback is None:
+            button.connect('notify::active', self.noop, data)
+        else:
+            button.connect('notify::active', callback, data)
         return button
 
     def create_treeview_column_icon(self, name: str, col_id: int, visible: bool, expand: bool, clickable: bool, indicator: bool, sort_col: int):
