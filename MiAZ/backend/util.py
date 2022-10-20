@@ -26,10 +26,14 @@ def json_save(filepath: str, adict: {}) -> {}:
 
 def guess_datetime(adate: str) -> datetime:
     """Return (guess) a datetime object for a given string."""
+    if len(adate) != 8:
+        return None
+
     try:
         timestamp = dateparser(adate)
     except Exception as error:
         timestamp = None
+
     return timestamp
 
 def valid_key(key):

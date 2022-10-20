@@ -314,6 +314,7 @@ class MiAZBackend(GObject.GObject):
                 timestamp = adate.strftime("%Y%m%d")
                 if timestamp is not None:
                     found_date = True
+                    # ~ self.log.debug("Found: %s", timestamp)
                     break
             except Exception as error:
                 pass
@@ -321,10 +322,12 @@ class MiAZBackend(GObject.GObject):
             try:
                 created = get_file_creation_date(filepath)
                 timestamp = created.strftime("%Y%m%d")
+                # ~ self.log.debug("Creation date: %s", timestamp)
             except Exception as error:
-                self.log.error("%s -> %s" % (filepath, error))
+                # ~ self.log.error("%s -> %s" % (filepath, error))
                 timestamp = ""
         # ~ self.log.debug(timestamp)
+
         # Field 1. Find and/or guess country field
         found_country = False
         for field in fields:

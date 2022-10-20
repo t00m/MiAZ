@@ -111,7 +111,11 @@ class MiAZFlowBoxRow(Gtk.Box):
 
             suggested = filedict['suggested'].split('-')
             self.date = suggested[0]
-            adate = datetime.strptime(self.date, "%Y%m%d")
+            try:
+                adate = datetime.strptime(self.date, "%Y%m%d")
+            except:
+                print(self.filepath)
+                raise
             lblDate = self.factory.create_label(adate.strftime("%Y.%m.%d"))
             lblDate.set_margin_end(6)
             boxEnd.append(lblDate)

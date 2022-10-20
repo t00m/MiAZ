@@ -165,7 +165,7 @@ class MiAZWorkspace(Gtk.Box):
         self.flowbox.set_margin_bottom(margin=3)
         self.flowbox.set_margin_start(margin=3)
         self.flowbox.set_valign(Gtk.Align.START)
-        self.flowbox.set_max_children_per_line(5)
+        self.flowbox.set_max_children_per_line(1)
         self.flowbox.set_min_children_per_line(1)
         self.flowbox.set_selection_mode (Gtk.SelectionMode.SINGLE)
         self.flowbox.set_filter_func(self.clb_visible_function)
