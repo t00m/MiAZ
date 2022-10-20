@@ -55,110 +55,110 @@ class MiAZWorkspace(Gtk.Box):
 
     def setup_toolbar(self):
         # Toolbar
-        frame = Gtk.Frame()
-        frame.set_margin_top(margin=3)
-        frame.set_margin_end(margin=3)
-        frame.set_margin_bottom(margin=3)
-        frame.set_margin_start(margin=3)
-        frame.set_hexpand(False)
-        frame.set_vexpand(False)
-        lblFrameTitle = self.factory.create_label('<big><b>Filters</b></big>')
-        frame.set_label_widget(lblFrameTitle)
-        frame.set_label_align(0.5)
-
         toolbar = Gtk.Box.new(orientation=Gtk.Orientation.VERTICAL, spacing=3)
-        # ~ toolbar.get_style_context().add_class(class_name='frame')
-        toolbar.set_margin_top(margin=6)
-        toolbar.set_margin_end(margin=6)
-        toolbar.set_margin_bottom(margin=6)
-        toolbar.set_margin_start(margin=6)
-        toolbar.set_hexpand(False)
-        toolbar.set_vexpand(False)
 
-        ## Filter box (left side)
-        # ~ boxFilters = Gtk.Box.new(orientation=Gtk.Orientation.HORIZONTAL, spacing=3)
-        # ~ boxFilters.set_hexpand(True)
-        # ~ boxFilters.set_homogeneous(False)
+        frmFilters = Gtk.Frame()
+        frmFilters.set_margin_top(margin=3)
+        frmFilters.set_margin_end(margin=3)
+        frmFilters.set_margin_bottom(margin=3)
+        frmFilters.set_margin_start(margin=3)
+        frmFilters.set_hexpand(False)
+        frmFilters.set_vexpand(False)
+        lblFrameTitle = self.factory.create_label('<big><b>Filters</b></big>')
+        frmFilters.set_label_widget(lblFrameTitle)
+        frmFilters.set_label_align(0.5)
 
+        tlbFilters = Gtk.Box.new(orientation=Gtk.Orientation.VERTICAL, spacing=3)
+        tlbFilters.set_margin_top(margin=6)
+        tlbFilters.set_margin_end(margin=6)
+        tlbFilters.set_margin_bottom(margin=6)
+        tlbFilters.set_margin_start(margin=6)
+        tlbFilters.set_hexpand(False)
+        tlbFilters.set_vexpand(False)
 
         self.ent_sb = Gtk.SearchEntry(placeholder_text="Type here")
         self.ent_sb.connect('changed', self. on_filter_selected)
         box = self.factory.create_box_filter('Free search', self.ent_sb)
-        toolbar.append(box)
+        tlbFilters.append(box)
 
         self.cmbCountries = self.factory.create_combobox_countries()
         self.cmbCountries.connect('changed', self.on_filter_selected)
         box = self.factory.create_box_filter('Country', self.cmbCountries)
-        toolbar.append(box)
+        tlbFilters.append(box)
 
         self.cmbCollections = self.factory.create_combobox_text('collections')
         self.cmbCollections.connect('changed', self.on_filter_selected)
         box = self.factory.create_box_filter('Collection', self.cmbCollections)
-        toolbar.append(box)
+        tlbFilters.append(box)
 
         self.cmbFrom = self.factory.create_combobox_text_from()
         self.cmbFrom.connect('changed', self.on_filter_selected)
         box = self.factory.create_box_filter('From', self.cmbFrom)
-        toolbar.append(box)
+        tlbFilters.append(box)
 
         self.cmbPurposes = self.factory.create_combobox_text('purposes')
         self.cmbPurposes.connect('changed', self.on_filter_selected)
         box = self.factory.create_box_filter('Purpose', self.cmbPurposes)
-        toolbar.append(box)
+        tlbFilters.append(box)
 
         self.cmbTo = self.factory.create_combobox_text_to()
         self.cmbTo.connect('changed', self.on_filter_selected)
         box = self.factory.create_box_filter('To', self.cmbTo)
-        toolbar.append(box)
+        tlbFilters.append(box)
 
-        # ~ toolbar.append(boxFilters)
+        frmFilters.set_child(tlbFilters)
+        toolbar.append(frmFilters)
 
-        # Documents selected
-        # ~ boxDocsSelected = Gtk.CenterBox()
-        # ~ self.lblDocumentsSelected = "No documents selected"
-        # ~ self.btnDocsSel = Gtk.MenuButton()
-        # ~ self.btnDocsSel.set_label(self.lblDocumentsSelected)
-        # ~ self.popDocsSel = Gtk.PopoverMenu.new_from_model(self.create_menu_selection_multiple())
-        # ~ self.btnDocsSel.set_popover(popover=self.popDocsSel)
-        # ~ self.btnDocsSel.set_valign(Gtk.Align.CENTER)
-        # ~ self.btnDocsSel.set_hexpand(False)
-        # ~ self.btnDocsSel.set_sensitive(False)
-        # ~ boxDocsSelected.set_center_widget(self.btnDocsSel)
-        # ~ toolbar.set_end_widget(boxDocsSelected)
+        frmReview = Gtk.Frame()
+        frmReview.set_margin_top(margin=3)
+        frmReview.set_margin_end(margin=3)
+        frmReview.set_margin_bottom(margin=3)
+        frmReview.set_margin_start(margin=3)
+        frmReview.set_hexpand(False)
+        frmReview.set_vexpand(True)
+        # ~ lblFrameTitle = self.factory.create_label('<big><b>Filters</b></big>')
+        # ~ frmReview.set_label_widget(lblFrameTitle)
+        # ~ frmReview.set_label_align(0.5)
+        status = Adw.StatusPage()
+        # ~ status.set_icon_name('miaz-mime-exec')
+        status.set_title('Warning!')
+        status.get_style_context().add_class(class_name='error')
+        status.set_description('There are  documents pending of review')
+        btnCheck = self.factory.create_button('miaz-mime-exec', 'Check now!', self.on_show_review)
+        status.set_child(btnCheck)
+        # ~ label = self.factory.create_label('Hola!')
+        # ~ status.set_child(label)
 
-        # Views (right side)
-        # ~ boxMassActionsButton = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
-        # ~ self.btnMassActions = Gtk.MenuButton()
-        # ~ self.btnMassActions.set_label('Mass actions')
-        # ~ self.btnMassActions.set_sensitive(False)
-        # ~ self.btnMassActions.set_icon_name('miaz-rename')
-        # ~ popover = Gtk.PopoverMenu.new_from_model(self.create_menu_selection_multiple())
-        # ~ self.btnMassActions.set_popover(popover=popover)
-        # ~ self.btnMassActions.set_valign(Gtk.Align.CENTER)
-        # ~ self.btnMassActions.set_hexpand(False)
-        # ~ boxMassActionsButton.append(self.btnMassActions)
-        # ~ toolbar.set_end_widget(boxMassActionsButton)
-
-        frame.set_child(toolbar)
-
-        # ~ self.controller = Gtk.EventControllerKey()
-        # ~ self.controller.connect('key-released', self.on_key_released)
-        # ~ self.add_controller(self.controller)
+        frmReview.set_child(status)
+        toolbar.append(frmReview)
 
         self.backend.connect('source-configuration-updated', self.update)
-        return frame
+        return toolbar
 
-    def setup_view(self):
-        frame = Gtk.Frame()
-        frame.set_margin_top(margin=3)
-        frame.set_margin_end(margin=3)
-        frame.set_margin_bottom(margin=3)
-        frame.set_margin_start(margin=3)
+    def setup_view_toolbar(self):
+        boxViewToolbar = Gtk.Box.new(orientation=Gtk.Orientation.HORIZONTAL, spacing=3)
+        frmToolbar = Gtk.Frame()
+        frmToolbar.set_margin_top(margin=3)
+        frmToolbar.set_margin_end(margin=3)
+        frmToolbar.set_margin_bottom(margin=3)
+        frmToolbar.set_margin_start(margin=3)
+        btnBack = self.factory.create_button('miaz-ok', 'Back')
+        boxToolbar = Gtk.Box.new(orientation=Gtk.Orientation.VERTICAL, spacing=0)
+        boxToolbar.append(btnBack)
+        frmToolbar.set_child(boxToolbar)
+        boxViewToolbar.append(frmToolbar)
+        return boxViewToolbar
 
-        self.scrwin = Gtk.ScrolledWindow()
-        # ~ self.scrwin.set_has_frame(False)
-        self.scrwin.set_vexpand(True)
-
+    def setup_view_body(self):
+        boxViewBody = Gtk.Box.new(orientation=Gtk.Orientation.HORIZONTAL, spacing=3)
+        frmViewBody = Gtk.Frame()
+        frmViewBody.set_margin_top(margin=3)
+        frmViewBody.set_margin_end(margin=3)
+        frmViewBody.set_margin_bottom(margin=3)
+        frmViewBody.set_margin_start(margin=3)
+        boxViewBody.append(frmViewBody)
+        scrwin = Gtk.ScrolledWindow()
+        scrwin.set_vexpand(True)
         self.flowbox = Gtk.FlowBox()
         self.flowbox.set_margin_top(margin=3)
         self.flowbox.set_margin_end(margin=3)
@@ -167,13 +167,22 @@ class MiAZWorkspace(Gtk.Box):
         self.flowbox.set_valign(Gtk.Align.START)
         self.flowbox.set_max_children_per_line(5)
         self.flowbox.set_min_children_per_line(1)
-        self.flowbox.set_selection_mode (Gtk.SelectionMode.SINGLE)
+        self.flowbox.set_selection_mode (Gtk.SelectionMode.MULTIPLE)
         self.flowbox.set_filter_func(self.clb_visible_function)
         self.flowbox.set_sort_func(self.clb_sort_function)
+        scrwin.set_child(self.flowbox)
+        frmViewBody.set_child(scrwin)
+        return boxViewBody
 
-        self.scrwin.set_child(self.flowbox)
-        frame.set_child(self.scrwin)
-        return frame
+    def setup_view(self):
+        boxView = Gtk.Box.new(orientation=Gtk.Orientation.VERTICAL, spacing=0)
+        boxViewToolbar = self.setup_view_toolbar()
+        boxViewBody = self.setup_view_body()
+
+        boxView.append(boxViewToolbar)
+        boxView.append(boxViewBody)
+
+        return boxView
 
 
         # Key events controller
@@ -301,6 +310,7 @@ class MiAZWorkspace(Gtk.Box):
 
         if display:
             self.displayed += 1
+
         return display
 
     def clb_sort_function(self, flowboxchild1, flowboxchild2):
@@ -308,7 +318,6 @@ class MiAZWorkspace(Gtk.Box):
         row2 = flowboxchild2.get_child()
         value1 = row1.get_date()
         value2 = row2.get_date()
-        # ~ self.log.debug("%s > %s", value1, value2)
         if value1 < value2:
             return 1
         elif value1 == value2:
@@ -468,12 +477,16 @@ class MiAZWorkspace(Gtk.Box):
         dialog.show()
 
     def on_show_dashboard(self, *args):
+        self.displayed = 0
         self.show_dashboard = True
         self.flowbox.invalidate_filter()
+        self.update_title()
 
     def on_show_review(self, *args):
+        self.displayed = 0
         self.show_dashboard = False
         self.flowbox.invalidate_filter()
+        self.update_title()
 
     def on_filter_selected(self, *args):
         self.displayed = 0
