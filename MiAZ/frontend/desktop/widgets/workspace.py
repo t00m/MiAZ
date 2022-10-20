@@ -31,6 +31,7 @@ from MiAZ.frontend.desktop.widgets.row import MiAZFlowBoxRow
 class MiAZWorkspace(Gtk.Box):
     """ Wrapper for Gtk.Stack with  with a StackSwitcher """
     show_dashboard = True
+    displayed = 0
 
     def __init__(self, app):
         super(MiAZWorkspace, self).__init__(orientation=Gtk.Orientation.HORIZONTAL)
@@ -47,18 +48,23 @@ class MiAZWorkspace(Gtk.Box):
 
         self.create_menu_selection_single()
         self.create_menu_selection_multiple()
-        self.setup_toolbar()
-        self.setup_view()
-        self.append(self.scrwin)
+        toolbar = self.setup_toolbar()
+        view = self.setup_view()
+        self.append(toolbar)
+        self.append(view)
 
     def setup_toolbar(self):
         # Toolbar
         frame = Gtk.Frame()
-        frame.set_margin_top(margin=6)
-        frame.set_margin_end(margin=6)
-        frame.set_margin_bottom(margin=6)
-        frame.set_margin_start(margin=6)
+        frame.set_margin_top(margin=3)
+        frame.set_margin_end(margin=3)
+        frame.set_margin_bottom(margin=3)
+        frame.set_margin_start(margin=3)
         frame.set_hexpand(False)
+        frame.set_vexpand(False)
+        lblFrameTitle = self.factory.create_label('<big><b>Filters</b></big>')
+        frame.set_label_widget(lblFrameTitle)
+        frame.set_label_align(0.5)
 
         toolbar = Gtk.Box.new(orientation=Gtk.Orientation.VERTICAL, spacing=3)
         # ~ toolbar.get_style_context().add_class(class_name='frame')
@@ -67,6 +73,7 @@ class MiAZWorkspace(Gtk.Box):
         toolbar.set_margin_bottom(margin=6)
         toolbar.set_margin_start(margin=6)
         toolbar.set_hexpand(False)
+        toolbar.set_vexpand(False)
 
         ## Filter box (left side)
         # ~ boxFilters = Gtk.Box.new(orientation=Gtk.Orientation.HORIZONTAL, spacing=3)
@@ -132,21 +139,31 @@ class MiAZWorkspace(Gtk.Box):
         # ~ boxMassActionsButton.append(self.btnMassActions)
         # ~ toolbar.set_end_widget(boxMassActionsButton)
 
-        # ~ frame.set_child(toolbar)
-        self.append(toolbar)
+        frame.set_child(toolbar)
 
         # ~ self.controller = Gtk.EventControllerKey()
         # ~ self.controller.connect('key-released', self.on_key_released)
         # ~ self.add_controller(self.controller)
 
         self.backend.connect('source-configuration-updated', self.update)
+        return frame
 
     def setup_view(self):
+        frame = Gtk.Frame()
+        frame.set_margin_top(margin=3)
+        frame.set_margin_end(margin=3)
+        frame.set_margin_bottom(margin=3)
+        frame.set_margin_start(margin=3)
+
         self.scrwin = Gtk.ScrolledWindow()
-        self.scrwin.set_has_frame(False)
+        # ~ self.scrwin.set_has_frame(False)
         self.scrwin.set_vexpand(True)
 
         self.flowbox = Gtk.FlowBox()
+        self.flowbox.set_margin_top(margin=3)
+        self.flowbox.set_margin_end(margin=3)
+        self.flowbox.set_margin_bottom(margin=3)
+        self.flowbox.set_margin_start(margin=3)
         self.flowbox.set_valign(Gtk.Align.START)
         self.flowbox.set_max_children_per_line(5)
         self.flowbox.set_min_children_per_line(1)
@@ -155,6 +172,9 @@ class MiAZWorkspace(Gtk.Box):
         self.flowbox.set_sort_func(self.clb_sort_function)
 
         self.scrwin.set_child(self.flowbox)
+        frame.set_child(self.scrwin)
+        return frame
+
 
         # Key events controller
         # ~ evk = Gtk.EventControllerKey.new()
@@ -179,9 +199,22 @@ class MiAZWorkspace(Gtk.Box):
             ext = filepath[dot+1:]
             row = MiAZFlowBoxRow(self.app, filepath, repodct[filepath])
             self.flowbox.append(row)
-        page = self.app.get_stack_page_by_name('workspace')
-        page.set_badge_number(len(repodct))
+        self.update_title()
+        # ~ page = self.app.get_stack_page_by_name('workspace')
+        # ~ page.set_badge_number(len(repodct))
         self.log.debug("Workspace ready!")
+
+    def update_title(self):
+        repocnf = self.backend.get_repo_source_config_file()
+        repodct = json_load(repocnf)
+        header = self.app.get_header()
+        title = header.get_title_widget()
+        if title is not None:
+            header.remove(title)
+        wdgTitle = Adw.WindowTitle()
+        wdgTitle.set_title('MiAZ')
+        wdgTitle.set_subtitle("Displaying %d of %d documents" % (self.displayed, len(repodct)))
+        header.set_title_widget(wdgTitle)
 
     def __show_file_info(self, button, filepath):
         # ~ self.log.debug(args)
@@ -265,6 +298,9 @@ class MiAZWorkspace(Gtk.Box):
         else:
             if not valid:
                 display = self.cond_matches_freetext(row)
+
+        if display:
+            self.displayed += 1
         return display
 
     def clb_sort_function(self, flowboxchild1, flowboxchild2):
@@ -440,4 +476,6 @@ class MiAZWorkspace(Gtk.Box):
         self.flowbox.invalidate_filter()
 
     def on_filter_selected(self, *args):
+        self.displayed = 0
         self.flowbox.invalidate_filter()
+        self.update_title()

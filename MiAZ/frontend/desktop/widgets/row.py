@@ -100,7 +100,8 @@ class MiAZFlowBoxRow(Gtk.Box):
         else:
             self.explain = ''
             btnFileInfo = Gtk.MenuButton()
-            btnFileInfo.set_label(os.path.basename(filepath))
+            lblFileInfo = self.factory.create_label(os.path.basename(filepath))
+            btnFileInfo.set_child(lblFileInfo)
             btnFileInfo.get_style_context().add_class(class_name='flat')
             popover = self.__create_popover_fileinfo()
             btnFileInfo.set_popover(popover)
