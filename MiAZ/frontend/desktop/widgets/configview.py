@@ -18,6 +18,7 @@ from gi.repository import Gtk
 from MiAZ.backend.env import ENV
 from MiAZ.frontend.desktop.widgets.widget import MiAZWidget
 from MiAZ.frontend.desktop.widgets.treeview import MiAZTreeView
+from MiAZ.frontend.desktop.widgets.dialogs import MiAZDialogAdd
 
 class MiAZConfigView(MiAZWidget, Gtk.Box):
     """Class for managing Collections from Settings"""
@@ -28,10 +29,13 @@ class MiAZConfigView(MiAZWidget, Gtk.Box):
     config_for = None
     search_term = ''
 
-    def __init__(self, app):
+    def __init__(self, app, config_for):
+        print(config_for)
         super().__init__(app, __class__.__name__)
         super(Gtk.Box, self).__init__(spacing=12, orientation=Gtk.Orientation.VERTICAL)
         self.app = app
+        self.backend = app.get_backend()
+        self.config_for = config_for
         self.factory = self.app.get_factory()
         self.set_vexpand(True)
         self.set_margin_top(margin=12)
@@ -45,7 +49,7 @@ class MiAZConfigView(MiAZWidget, Gtk.Box):
         box_entry.set_hexpand(True)
         self.entry = Gtk.Entry()
         self.entry.set_activates_default(True)
-        self.entry.set_icon_from_icon_name(Gtk.EntryIconPosition.SECONDARY, 'miaz-entry-delete')
+        self.entry.set_icon_from_icon_name(Gtk.EntryIconPosition.SECONDARY, 'miaz-entry-clear')
         self.entry.set_icon_activatable(Gtk.EntryIconPosition.SECONDARY, True)
         self.entry.connect('icon-press', self.on_entrysearch_delete)
         self.entry.connect('changed', self.on_entrysearch_changed)
@@ -57,41 +61,23 @@ class MiAZConfigView(MiAZWidget, Gtk.Box):
         self.box_buttons.set_hexpand(False)
         # ~ self.box_buttons.append(self.factory.create_button('miaz-edit', '', self.on_item_rename))
         # ~ self.box_buttons.append(Gtk.Separator.new(orientation=Gtk.Orientation.VERTICAL))
-        self.box_buttons.append(self.factory.create_button('miaz-add', '', self.on_item_add))
-        self.box_buttons.append(self.factory.create_button('miaz-remove', '', self.on_item_remove))
+        self.box_buttons.append(self.factory.create_button('miaz-list-add', '', self.on_item_add, self.config_for))
+        self.box_buttons.append(self.factory.create_button('miaz-list-remove', '', self.on_item_remove))
         self.box_oper.append(self.box_buttons)
         self.append(self.box_oper)
 
         widget = self.setup_treeview()
         self.append(widget)
 
-        self.controller = Gtk.EventControllerKey()
-        self.controller.connect('key-released', self.on_key_released)
-        self.add_controller(self.controller)
-
-        # ~ # InfoBar
-        # FIXME: Low priority. User mesasges
-        # ~ self.infobar = Gtk.InfoBar()
-        # ~ self.infobar.set_revealed(True)
-        # ~ self.infobar.set_show_close_button(False)
-        # ~ self.infobar.set_message_type(Gtk.MessageType.INFO)
-        # ~ self.infobar.connect('response', self.infobar_response)
-        # ~ self.append(self.infobar)
-        # ~ self.infobar_message()
+        self.log.debug("Initialized")
 
     def on_key_released(self, widget, keyval, keycode, state):
         self.log.debug("Active window: %s", self.app.get_active_window())
         keyname = Gdk.keyval_name(keyval)
         self.log.debug("Key: %s", keyname)
-        # ~ if Gdk.ModifierType.CONTROL_MASK & state and keyname == 'f':
-            # ~ if self.searchbar.get_search_mode():
-                # ~ self.searchbar.set_search_mode(False)
-            # ~ else:
-                # ~ self.searchbar.set_search_mode(True)
 
     def on_entrysearch_delete(self, *args):
         self.entry.set_text("")
-
 
     def on_entrysearch_changed(self, *args):
         self.search_term = self.entry.get_text()
@@ -100,18 +86,6 @@ class MiAZConfigView(MiAZWidget, Gtk.Box):
             self.treeview.collapse_all()
         else:
             self.treeview.expand_all()
-
-    def infobar_message(self, text=''):
-        return
-        # FIXME: retrieve widget and update it
-        if len(text) > 0:
-            message_label = Gtk.Label()
-            message_label.set_markup(text)
-            self.infobar.add_child(message_label)
-
-    def infobar_response(self, infobar, response):
-        if response == Gtk.ResponseType.CLOSE:
-            infobar.set_revealed(False)
 
     def setup_treeview(self):
         # Treeview for displaying
@@ -122,7 +96,7 @@ class MiAZConfigView(MiAZWidget, Gtk.Box):
         self.treeview = MiAZTreeView(self.app)
         self.store = Gtk.ListStore(str)
         self.selection = self.treeview.get_selection()
-        self.sig_selection_changed = self.selection.connect('changed', self.on_selection_changed)
+        self.selection.connect('changed', self.on_selection_changed)
 
         # Column: Name
         self.renderer = Gtk.CellRendererText()
@@ -161,62 +135,72 @@ class MiAZConfigView(MiAZWidget, Gtk.Box):
 
     def on_selection_changed(self, selection):
         pass
-        # selection.select_iter(treeiter)
-        # ~ if selection is None:
-            # ~ return
-        # ~ try:
-            # ~ model, treeiter = selection.get_selected()
-            # ~ name = model[treeiter][0]
-            # ~ tbuf = self.entry.get_buffer()
-            # ~ tbuf.set_text(name, -1)
-            # ~ self.current = name.upper()
-        # ~ except Exception as error:
-            # ~ pass
 
     def __row_inserted(self, model, treepath, treeiter):
         self.treeview.set_cursor_on_cell(treepath, self.column, self.renderer, True)
         self.treeview.grab_focus()
 
-    def row(self, model, path, itr):
-        pass
-
     def config_save(self, items):
         with open(self.config_local, 'w') as fj:
             json.dump(items, fj)
 
+    # ~ def on_item_add(self, *args):
+        # ~ # Add new item, save config and refresh model
+        # ~ item = self.entry.get_text().upper()
+        # ~ items = self.config.load()
+        # ~ items.add(item.upper())
+        # ~ self.config.save(items)
+        # ~ self.log.debug("%s - Added: %s", self.config_for, item)
+        # ~ self.entry.set_text('')
+        # ~ self.entry.activate()
+        # ~ self.update()
+
     def on_item_add(self, *args):
-        # Add new item, save config and refresh model
-        item = self.entry.get_text().upper()
-        items = self.config.load()
-        items.add(item.upper())
-        self.config.save(items)
-        self.log.debug("Added %s to %s", item, self.config_for)
-        self.entry.set_text('')
-        self.entry.activate()
-        self.update()
-        # ~ self.infobar.set_message_type(Gtk.MessageType.INFO)
-        # ~ self.infobar_message("Added new entry: %s" % item)
+        dialog = MiAZDialogAdd(self.app, self.get_root(), 'New %s' % self.config_for, '%s name' % self.config_for.title(), '')
+        boxkey2 = dialog.get_boxKey2()
+        boxkey2.set_visible(False)
+        etyValue1 = dialog.get_value1_widget()
+        search_term = self.entry.get_text()
+        etyValue1.set_text(search_term)
+        dialog.connect('response', self.on_response_item_add)
+        dialog.show()
+
+    def on_response_item_add(self, dialog, response):
+        if response == Gtk.ResponseType.ACCEPT:
+            value = dialog.get_value1()
+            if len(value) > 0:
+                items = self.config.load()
+                if not value in items:
+                    items.append(value.upper())
+                    self.config.save(items)
+                    self.log.debug("Added: %s", value.upper())
+                    self.update()
+        dialog.destroy()
 
     def on_item_rename(self, *args):
         return
 
     def on_item_remove(self, *args):
         # Delete from config and refresh model
-        item = self.entry.get_text()
+        selection = self.treeview.get_selection()
+        model, treeiter = selection.get_selected()
+        item = model[treeiter][0]
+
+        if item is None:
+            return
         if len(item) == 0:
             return
 
         items = self.config.load()
         try:
             items.remove(item)
-            self.log.debug("Removed %s from %s", item, self.config_for)
+            self.log.debug("%s - Removed: %s", self.config_for, item)
             self.config.save(items)
             self.update()
             self.entry.set_text('')
             self.entry.activate()
         except KeyError as error:
-            # ~ self.infobar.set_message_type(Gtk.MessageType.ERROR)
-            # ~ self.infobar_message("This entry doesn't exist. Nothing deleted.")
+            self.log.error("%s - Error while removing item '%s': %s", self.config_for, value.upper(), error)
             return
 
     def update(self):
@@ -225,7 +209,6 @@ class MiAZConfigView(MiAZWidget, Gtk.Box):
 
         # Check config file and create it if doesn't exist
         self.config_check()
-
         self.store.clear()
         items = self.config_load()
         pos = 0
@@ -240,13 +223,7 @@ class MiAZConfigView(MiAZWidget, Gtk.Box):
         if self.search_term is None:
             return True
 
-        match = self.search_term.upper() in item_name.upper()
-        if match:
-            # ~ selection = self.treeview.get_selection()
-            # ~ selection.select_iter(itr)
-            return True
-        else:
-            return False
+        return self.search_term.upper() in item_name.upper()
 
     def config_set(self, config_for, config_local, config_global):
         self.config_for = config_for

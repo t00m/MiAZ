@@ -10,12 +10,13 @@ class MiAZConfig():
     config_local = None
     config_global = None
 
-    def __init__(self, log, config_for, config_local=None, config_global=None, must_copy=True):
+    def __init__(self, log, config_for, config_local=None, config_global=None, config_is=dict, must_copy=True):
         super().__init__()
         self.log = log
         self.config_for = config_for
         self.config_local = config_local
         self.config_global = config_global
+        self.config_is = config_is
         self.must_copy = must_copy
         self.setup()
 
@@ -34,7 +35,10 @@ class MiAZConfig():
             else:
                 # Create an empty config file
                 self.log.debug("%s - Creating empty config file", self.config_for)
-                self.save({})
+                if self.config_is is dict:
+                    self.save({})
+                else:
+                    self.save([])
 
     def get_config_for(self):
         return self.config_for
@@ -84,6 +88,8 @@ class MiAZConfig():
         self.save(config)
 
     def exists(self, key: str) -> bool:
+        found = False
+
         if self.must_copy:
             config = self.load()
         else:
@@ -105,3 +111,17 @@ class MiAZConfig():
             else:
                 found = False
         return found
+
+    def list_add(self, item):
+        config = self.load()
+        if not item in config:
+            config.append(item.upper())
+            self.save(config)
+            self.log.info("%s - Add: %s", self.config_for, item)
+
+    def dict_add(self, key, value):
+        config = self.load()
+        if not key in config:
+            config[key] = value.upper()
+            self.save(config)
+            self.log.info("%s - Add: %s[%s]", self.config_for, key, value)

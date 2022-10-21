@@ -70,6 +70,8 @@ class MiAZBackend(GObject.GObject):
     def check_source(self, *args):
         s_repodir = self.conf['app'].get('source')
         s_repocnf = self.get_repo_source_config_file()
+
+        # Load repo conf. It it doesn't exist, create an empty one
         if os.path.exists(s_repocnf):
             s_repodct = json_load(s_repocnf)
         else:
@@ -89,6 +91,14 @@ class MiAZBackend(GObject.GObject):
         # 2. Then, check docs in source directory and update repodct
         docs = get_files(s_repodir)
         for doc in docs:
+            try:
+                valid = s_repodct[doc]['valid']
+                if valid:
+                    self.log.debug("Doc[%s] valid. Skipped", os.path.basename(doc))
+                    continue
+            except Exception as error:
+                self.log.debug("Doc[%s] error: %s", os.path.basename(doc), error)
+            # ~ self.log.debug("Doc[%s]: processing", os.path.basename(doc))
             valid, reasons = self.validate_filename(doc)
             s_repodct[doc] = {}
             s_repodct[doc]['valid'] = valid

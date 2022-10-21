@@ -433,6 +433,38 @@ class MiAZWorkspace(Gtk.Box):
         if response == Gtk.ResponseType.ACCEPT:
             source = dialog.get_filepath_source()
             target = os.path.join(os.path.dirname(source), dialog.get_filepath_target())
+            # Before renaming, check all fields and add values to
+            # configuration files if they are missing
+            basename = os.path.basename(target)
+            doc = basename[:basename.rfind('.')]
+            fields = doc.split('-')
+            collection = fields[2]
+            org_from = fields[3]
+            purpose = fields[4]
+            concept = fields[5]
+            org_to = fields[6]
+
+            cnf_col = self.app.get_config('collections')
+            cnf_who = self.app.get_config('organizations')
+            cnf_pur = self.app.get_config('purposes')
+            cnf_cpt = self.app.get_config('concepts')
+
+            if not cnf_col.exists(collection):
+                cnf_col.list_add(collection)
+
+            if not cnf_pur.exists(purpose):
+                cnf_pur.list_add(purpose)
+
+            if not cnf_cpt.exists(concept):
+                cnf_cpt.list_add(concept)
+
+            if not cnf_who.exists(org_from):
+                cnf_who.dict_add(org_from, '')
+
+            if not cnf_who.exists(org_to):
+                cnf_who.dict_add(org_to, '')
+
+            # Then, rename it:
             shutil.move(source, target)
             self.log.debug("Rename document from '%s' to '%s'", os.path.basename(source), os.path.basename(target))
 
