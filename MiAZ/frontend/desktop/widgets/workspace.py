@@ -199,6 +199,7 @@ class MiAZWorkspace(Gtk.Box):
 
     def update(self, *args):
         self.log.debug("Got signal 'target-configuration-updated'")
+        self.flowbox.invalidate_filter()
         repocnf = self.backend.get_repo_source_config_file()
         repodct = json_load(repocnf)
         who = self.app.get_config('organizations')
