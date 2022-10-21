@@ -20,6 +20,7 @@ from gi.repository.GdkPixbuf import Pixbuf
 from MiAZ.backend.env import ENV
 from MiAZ.backend.log import get_logger
 from MiAZ.backend.util import json_load
+from MiAZ.backend.util import json_load, json_save
 from MiAZ.frontend.desktop.util import get_file_mimetype
 from MiAZ.frontend.desktop.icons import MiAZIconManager
 from MiAZ.frontend.desktop.widgets.treeview import MiAZTreeView
@@ -430,7 +431,6 @@ class MiAZWorkspace(Gtk.Box):
 
     def action_rename_manually(self, button, data):
         row = data
-        self.log.debug("Renaming row: %s", row)
         source = row.get_filepath()
         repocnf = self.backend.get_repo_source_config_file()
         repodct = json_load(repocnf)
@@ -460,28 +460,40 @@ class MiAZWorkspace(Gtk.Box):
             cnf_pur = self.app.get_config('purposes')
             cnf_cpt = self.app.get_config('concepts')
 
-            if not cnf_col.exists(collection):
+            if not cnf_col.exists(collection) and len(collection) > 0:
                 cnf_col.list_add(collection)
 
-            if not cnf_pur.exists(purpose):
+            if not cnf_pur.exists(purpose) and len(purpose) > 0:
                 cnf_pur.list_add(purpose)
 
-            if not cnf_cpt.exists(concept):
+            if not cnf_cpt.exists(concept) and len(concept) > 0:
                 cnf_cpt.list_add(concept)
 
-            if not cnf_who.exists(org_from):
+            if not cnf_who.exists(org_from) and len(org_from) > 0:
                 cnf_who.dict_add(org_from, '')
 
-            if not cnf_who.exists(org_to):
+            if not cnf_who.exists(org_to) and len(org_to) > 0:
                 cnf_who.dict_add(org_to, '')
 
             # Then, rename it:
             shutil.move(source, target)
             self.log.debug("Rename document from '%s' to '%s'", os.path.basename(source), os.path.basename(target))
-            self.log.debug("Removed row (wdg): %s", row)
-            self.log.debug("Removed row (idr): %s", self.idr[source])
             self.flowbox.remove(row)
             del(self.idr[source])
+            s_repocnf = self.backend.get_repo_source_config_file()
+            s_repodct = json_load(s_repocnf)
+            valid, reasons = self.backend.validate_filename(target)
+            s_repodct[target] = {}
+            s_repodct[target]['valid'] = valid
+            s_repodct[target]['reasons'] = reasons
+            if not valid:
+                s_repodct[target]['suggested'] = self.backend.suggest_filename(target)
+            else:
+                s_repodct[target]['suggested'] = None
+                s_repodct[target]['fields'] = self.backend.get_fields(target)
+            json_save(s_repocnf, s_repodct)
+            self.log.debug("Source repository - Emitting signal 'source-configuration-updated'")
+            self.backend.emit('source-configuration-updated')
 
 
     def on_double_click(self, treeview, treepath, treecolumn):

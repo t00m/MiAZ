@@ -35,7 +35,6 @@ class MiAZRenameDialog(Gtk.Dialog):
         self.extension = filepath[filepath.rfind('.')+1:]
         self.suggested = suggested
         self.doc = os.path.basename(filepath)
-        self.log.debug("MiAZRenameDialog row: %s", row)
 
         # Header & Butons
         btnAccept = self.factory.create_button('', 'rename', self.on_rename_accept)
@@ -44,12 +43,14 @@ class MiAZRenameDialog(Gtk.Dialog):
         btnAccept.set_receives_default(True)
         btnCancel = self.factory.create_button('', 'cancel', self.on_rename_cancel)
         btnCancel.get_style_context ().add_class ('destructive-action')
+        btnDelete = self.factory.create_button('miaz-document-delete', '', self.on_document_delete, data=self.filepath)
         self.set_default_response(Gtk.ResponseType.ACCEPT)
         lblHeaderTitle = Gtk.Label()
         lblHeaderTitle.set_markup('<b>Rename file</b>')
         self.dlgHeader = Adw.HeaderBar()
         self.dlgHeader.set_show_end_title_buttons(False)
-        self.dlgHeader.pack_start(btnCancel)
+        self.dlgHeader.pack_start(btnDelete)
+        self.dlgHeader.pack_end(btnCancel)
         self.dlgHeader.pack_end(btnAccept)
         self.dlgHeader.set_title_widget(lblHeaderTitle)
         self.set_titlebar(self.dlgHeader)
@@ -259,7 +260,7 @@ class MiAZRenameDialog(Gtk.Dialog):
         boxFileDisplayButton = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
         btnFileDisplay = button = Gtk.Button()
         btnFileDisplay.set_child(icon)
-        btnFileDisplay.connect('clicked', self.on_display_document, self.filepath)
+        btnFileDisplay.connect('clicked', self.on_document_display, self.filepath)
         btnFileDisplay.set_valign(Gtk.Align.CENTER)
         btnFileDisplay.set_hexpand(False)
         self.row_cur_filename.add_suffix(btnFileDisplay)
@@ -315,7 +316,7 @@ class MiAZRenameDialog(Gtk.Dialog):
         if not cnfOrgs.exists(fields[3]):
             cnfOrgs.set(fields[3], '')
             cnfOrgs.save(cnfOrgs)
-            self.new_values.append(('From', '', fields[3]))
+            self.new_values.append(('To', '', fields[6]))
 
 
     def get_filepath_source(self) -> str:
@@ -332,18 +333,44 @@ class MiAZRenameDialog(Gtk.Dialog):
         widget = Gtk.Label()
         widget.set_markup(body)
         question = self.factory.create_dialog_question(self, "Are you sure?", widget)
-        question.connect('response', self.on_answer_question)
+        question.connect('response', self.on_answer_question_rename)
         question.show()
+
+    def on_answer_question_rename(self, dialog, response):
+        if response == Gtk.ResponseType.YES:
+            self.response(Gtk.ResponseType.ACCEPT)
+            dialog.destroy()
+            self.destroy()
+        else:
+            dialog.destroy()
+            self.response(Gtk.ResponseType.CANCEL)
 
     def on_rename_cancel(self, *args):
         self.response(Gtk.ResponseType.CANCEL)
         self.destroy()
 
-    def on_answer_question(self, dialog, response):
-        if response == Gtk.ResponseType.YES:
-            dialog.destroy()
-            self.response(Gtk.ResponseType.ACCEPT)
-            self.destroy()
-
-    def on_display_document(self, button, filepath):
+    def on_document_display(self, button, filepath):
         os.system("xdg-open '%s'" % filepath)
+
+    def on_document_delete(self, button, filepath):
+        body = "You are about to <b>delete</b>:\n\n<b>%s</b>" % os.path.basename(filepath)
+        widget = Gtk.Label()
+        widget.set_markup(body)
+        question = self.factory.create_dialog_question(self, "Are you sure?", widget)
+        question.connect('response', self.on_answer_question_delete)
+        question.show()
+
+    def on_answer_question_delete(self, dialog, response):
+        filepath = self.get_filepath_source()
+        if response == Gtk.ResponseType.YES:
+            try:
+                os.unlink(filepath)
+                self.response(Gtk.ResponseType.ACCEPT)
+                dialog.destroy()
+                self.destroy()
+            except FileNotFoundError as error:
+                self.log.error("Something went wrong: %s", error)
+                self.log.error("Doesn't it exist? Really?")
+        else:
+            dialog.destroy()
+            self.response(Gtk.ResponseType.CANCEL)

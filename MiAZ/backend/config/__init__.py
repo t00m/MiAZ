@@ -62,7 +62,6 @@ class MiAZConfig():
             items = json_load(self.config_global)
         except Exception as error:
             items = None
-            self.log.error(error)
         return items
 
     def save(self, items: dict) -> bool:
@@ -112,12 +111,31 @@ class MiAZConfig():
                 found = False
         return found
 
-    def list_add(self, item):
+    def add(self, key, value=None):
+        if self.config_is is dict:
+            self.dict_add(key, value)
+        else:
+            self.list_add(key)
+
+    def remove(self, key):
+        if self.config_is is dict:
+            self.dict_remove(key)
+        else:
+            self.list_remove(key)
+
+    def list_add(self, key):
         config = self.load()
-        if not item in config:
-            config.append(item.upper())
+        if not key in config:
+            config.append(key.upper())
             self.save(config)
-            self.log.info("%s - Add: %s", self.config_for, item)
+            self.log.info("%s - Add: %s", self.config_for, key)
+
+    def list_remove(self, key):
+        config = self.load()
+        if item in config:
+            config.remove(key)
+            self.save(config)
+            self.log.info("%s - Remove: %s", self.config_for, key)
 
     def dict_add(self, key, value):
         config = self.load()
@@ -125,3 +143,10 @@ class MiAZConfig():
             config[key] = value.upper()
             self.save(config)
             self.log.info("%s - Add: %s[%s]", self.config_for, key, value)
+
+    def dict_remove(self, key):
+        config = self.load()
+        if key in config:
+            del(config[key])
+            self.save(config)
+            self.log.info("%s - Remove: %s", self.config_for, key)

@@ -191,17 +191,10 @@ class MiAZConfigView(MiAZWidget, Gtk.Box):
         if len(item) == 0:
             return
 
-        items = self.config.load()
-        try:
-            items.remove(item)
-            self.log.debug("%s - Removed: %s", self.config_for, item)
-            self.config.save(items)
-            self.update()
-            self.entry.set_text('')
-            self.entry.activate()
-        except KeyError as error:
-            self.log.error("%s - Error while removing item '%s': %s", self.config_for, value.upper(), error)
-            return
+        self.config.remove(item)
+        self.update()
+        self.entry.set_text('')
+        self.entry.activate()
 
     def update(self):
         if self.config_local is None:
