@@ -18,9 +18,10 @@ class MiAZCountries(MiAZConfigView):
     current = None
 
     def __init__(self, app):
-        super().__init__(app)
-        self.box_buttons.set_visible(False)
         self.config = MiAZConfigSettingsCountries()
+        config_for = self.config.get_config_for()
+        super().__init__(app, config_for)
+        self.box_buttons.set_visible(False)
 
     def setup_treeview(self):
         self.scrwin = Gtk.ScrolledWindow()

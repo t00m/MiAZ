@@ -32,6 +32,8 @@ class MiAZWorkspace(Gtk.Box):
     """ Wrapper for Gtk.Stack with  with a StackSwitcher """
     show_dashboard = True
     displayed = 0
+    idr = {} # Internal Dictionary of rows
+    update_mode = False
 
     def __init__(self, app):
         super(MiAZWorkspace, self).__init__(orientation=Gtk.Orientation.HORIZONTAL)
@@ -204,12 +206,17 @@ class MiAZWorkspace(Gtk.Box):
         repodct = json_load(repocnf)
         who = self.app.get_config('organizations')
         for filepath in repodct:
-            dot = filepath.rfind('.')
-            doc = filepath[:dot]
-            ext = filepath[dot+1:]
-            row = MiAZFlowBoxRow(self.app, filepath, repodct[filepath])
-            self.flowbox.append(row)
-        self.update_title()
+            try:
+                row = self.idr[filepath]
+            except Exception as error:
+                dot = filepath.rfind('.')
+                doc = filepath[:dot]
+                ext = filepath[dot+1:]
+                row = MiAZFlowBoxRow(self.app, filepath, repodct[filepath])
+                self.flowbox.append(row)
+                self.idr[filepath] = row
+                self.update_title()
+                # ~ self.log.debug("F[%s] <<===| R[%s]", filepath, row)
         # ~ page = self.app.get_stack_page_by_name('workspace')
         # ~ page.set_badge_number(len(repodct))
         self.log.debug("Workspace ready!")
@@ -422,16 +429,19 @@ class MiAZWorkspace(Gtk.Box):
 
 
     def action_rename_manually(self, button, data):
-        source = data
+        row = data
+        self.log.debug("Renaming row: %s", row)
+        source = row.get_filepath()
         repocnf = self.backend.get_repo_source_config_file()
         repodct = json_load(repocnf)
         target = repodct[source]['suggested'].split('-')
-        dialog = MiAZRenameDialog(self.app, source, target)
+        dialog = MiAZRenameDialog(self.app, row, source, target)
         dialog.connect('response', self.on_response_rename)
         dialog.show()
 
     def on_response_rename(self, dialog, response):
         if response == Gtk.ResponseType.ACCEPT:
+            row = dialog.get_row()
             source = dialog.get_filepath_source()
             target = os.path.join(os.path.dirname(source), dialog.get_filepath_target())
             # Before renaming, check all fields and add values to
@@ -468,6 +478,11 @@ class MiAZWorkspace(Gtk.Box):
             # Then, rename it:
             shutil.move(source, target)
             self.log.debug("Rename document from '%s' to '%s'", os.path.basename(source), os.path.basename(target))
+            self.log.debug("Removed row (wdg): %s", row)
+            self.log.debug("Removed row (idr): %s", self.idr[source])
+            self.flowbox.remove(row)
+            del(self.idr[source])
+
 
     def on_double_click(self, treeview, treepath, treecolumn):
         treeiter = self.sorted_model.get_iter(treepath)
@@ -505,9 +520,9 @@ class MiAZWorkspace(Gtk.Box):
     def on_display_document(self, button, filepath):
         os.system("xdg-open '%s'" % filepath)
 
-    def on_rename_file(self, *args):
-        dialog = self.factory.create_dialog(self.app.win, 'Rename file', Gtk.Label())
-        dialog.show()
+    # ~ def on_rename_file(self, *args):
+        # ~ dialog = self.factory.create_dialog(self.app.win, 'Rename file', Gtk.Label())
+        # ~ dialog.show()
 
     def on_show_dashboard(self, *args):
         self.displayed = 0

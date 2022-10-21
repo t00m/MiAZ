@@ -13,8 +13,10 @@ class MiAZPurposes(MiAZConfigView):
     __gtype_name__ = 'MiAZPurposes'
 
     def __init__(self, app):
-        super().__init__(app)
         self.config = MiAZConfigSettingsPurposes()
+        config_for = self.config.get_config_for()
+        super().__init__(app, config_for)
+
 
     def update(self):
         self.store.clear()

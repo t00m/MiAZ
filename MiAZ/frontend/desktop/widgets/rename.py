@@ -11,15 +11,16 @@ gi.require_version('Adw', '1')
 from gi.repository import Gtk, Adw
 from gi.repository import Gio
 from gi.repository import GLib
+from gi.repository.GdkPixbuf import Pixbuf
 
 from MiAZ.backend.log import get_logger
-from gi.repository.GdkPixbuf import Pixbuf
+from MiAZ.frontend.desktop.widgets.row import MiAZFlowBoxRow
 
 class MiAZRenameDialog(Gtk.Dialog):
     result = ''
     new_values = []
 
-    def __init__(self, app, filepath: str, suggested: list) -> Gtk.Widget:
+    def __init__(self, app, row: MiAZFlowBoxRow, filepath: str, suggested: list) -> Gtk.Widget:
         super(MiAZRenameDialog, self).__init__()
         self.app = app
         self.factory = self.app.get_factory()
@@ -29,10 +30,12 @@ class MiAZRenameDialog(Gtk.Dialog):
         self.set_modal(True)
 
         # Basic data
+        self.row = row
         self.filepath = filepath
         self.extension = filepath[filepath.rfind('.')+1:]
         self.suggested = suggested
         self.doc = os.path.basename(filepath)
+        self.log.debug("MiAZRenameDialog row: %s", row)
 
         # Header & Butons
         btnAccept = self.factory.create_button('', 'rename', self.on_rename_accept)
@@ -321,8 +324,11 @@ class MiAZRenameDialog(Gtk.Dialog):
     def get_filepath_target(self) -> str:
         return self.result
 
+    def get_row(self):
+        return self.row
+
     def on_rename_accept(self, *args):
-        body = "You are about to rename:\n\n'<b>%s</b>'\n\nto\n\n'<b>%s</b>'" % (os.path.basename(self.get_filepath_source()), self.get_filepath_target())
+        body = "You are about to rename:\n\n<b>%s</b>\n\nto\n\n<b>%s</b>" % (os.path.basename(self.get_filepath_source()), self.get_filepath_target())
         widget = Gtk.Label()
         widget.set_markup(body)
         question = self.factory.create_dialog_question(self, "Are you sure?", widget)

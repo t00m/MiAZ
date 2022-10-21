@@ -18,8 +18,9 @@ class MiAZOrganizations(MiAZConfigView):
     __gtype_name__ = 'MiAZOrganizations'
 
     def __init__(self, app):
-        super().__init__(app)
         self.config = MiAZConfigSettingsOrganizations()
+        config_for = self.config.get_config_for()
+        super().__init__(app, config_for)
 
     # ~ def update(self):
         # ~ try:

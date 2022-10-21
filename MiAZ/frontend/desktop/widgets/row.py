@@ -120,7 +120,7 @@ class MiAZFlowBoxRow(Gtk.Box):
             lblDate.set_margin_end(6)
             boxEnd.append(lblDate)
 
-            btnFileEdit = self.factory.create_button('miaz-edit', '', self.workspace.action_rename_manually, data=self.filepath)
+            btnFileEdit = self.factory.create_button('miaz-edit', '', self.workspace.action_rename_manually, data=self)
             btnFileEdit.set_valign(Gtk.Align.CENTER)
             btnFileEdit.set_hexpand(False)
             btnFileEdit.set_margin_end(6)

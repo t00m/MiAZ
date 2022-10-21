@@ -97,8 +97,7 @@ class MiAZBackend(GObject.GObject):
                     self.log.debug("Doc[%s] valid. Skipped", os.path.basename(doc))
                     continue
             except Exception as error:
-                self.log.debug("Doc[%s] error: %s", os.path.basename(doc), error)
-            # ~ self.log.debug("Doc[%s]: processing", os.path.basename(doc))
+                self.log.debug("Doc[%s] is new. Processing it ", os.path.basename(doc))
             valid, reasons = self.validate_filename(doc)
             s_repodct[doc] = {}
             s_repodct[doc]['valid'] = valid

@@ -13,8 +13,9 @@ class MiAZExtensions(MiAZConfigView):
     __gtype_name__ = 'MiAZExtensions'
 
     def __init__(self, app):
-        super().__init__(app)
         self.config = MiAZConfigSettingsExtensions()
+        config_for = self.config.get_config_for()
+        super().__init__(app, config_for)
         self.box_buttons.set_visible(False)
 
     def setup_treeview(self):
