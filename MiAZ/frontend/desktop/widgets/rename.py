@@ -37,10 +37,10 @@ class MiAZRenameDialog(Gtk.Dialog):
         self.doc = os.path.basename(filepath)
 
         # Header & Butons
-        btnAccept = self.factory.create_button('', 'rename', self.on_rename_accept)
-        btnAccept.get_style_context ().add_class ('suggested-action')
-        btnAccept.set_can_focus(True)
-        btnAccept.set_receives_default(True)
+        self.btnAccept = self.factory.create_button('', 'rename', self.on_rename_accept)
+        self.btnAccept.get_style_context ().add_class ('suggested-action')
+        self.btnAccept.set_can_focus(True)
+        self.btnAccept.set_receives_default(True)
         btnCancel = self.factory.create_button('', 'cancel', self.on_rename_cancel)
         btnCancel.get_style_context ().add_class ('destructive-action')
         btnDelete = self.factory.create_button('miaz-document-delete', '', self.on_document_delete, data=self.filepath)
@@ -51,7 +51,7 @@ class MiAZRenameDialog(Gtk.Dialog):
         self.dlgHeader.set_show_end_title_buttons(False)
         self.dlgHeader.pack_start(btnDelete)
         self.dlgHeader.pack_end(btnCancel)
-        self.dlgHeader.pack_end(btnAccept)
+        self.dlgHeader.pack_end(self.btnAccept)
         self.dlgHeader.set_title_widget(lblHeaderTitle)
         self.set_titlebar(self.dlgHeader)
 
@@ -91,7 +91,7 @@ class MiAZRenameDialog(Gtk.Dialog):
         self.on_changed_entry()
 
     def __create_box_value(self) -> Gtk.Box:
-        box = Gtk.Box.new(orientation=Gtk.Orientation.HORIZONTAL, spacing=0)
+        box = Gtk.Box.new(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
         box.set_hexpand(False)
         box.set_valign(Gtk.Align.CENTER)
         return box
@@ -118,20 +118,23 @@ class MiAZRenameDialog(Gtk.Dialog):
         boxValue = self.__create_box_value()
         row.add_suffix(boxValue)
         self.boxMain.append(row)
+        button = self.factory.create_button('miaz-list-add', '')
         combobox = Gtk.ComboBox.new_with_model_and_entry(model)
         combobox.set_entry_text_column(0)
         entry = combobox.get_child()
         entry.set_icon_from_icon_name(Gtk.EntryIconPosition.PRIMARY, 'miaz-res-%s' % item)
+        boxValue.append(button)
         boxValue.append(combobox)
         completion = self.__create_completion(model)
         entry.set_completion(completion)
-        return row, combobox, entry
+        return row, button, combobox, entry
 
 
     def __create_field_0_date(self):
         """Field 0. Date"""
         model = Gtk.ListStore(str)
-        row, combobox, self.entry_date = self.__create_actionrow('date', model)
+        row, button, combobox, self.entry_date = self.__create_actionrow('date', model)
+        button.set_visible(False)
         for date in {}:
             model.append([date])
         if len(self.suggested[0]) > 0:
@@ -153,7 +156,8 @@ class MiAZRenameDialog(Gtk.Dialog):
 
     def __create_field_1_country(self):
         model = Gtk.ListStore(str, str)
-        row, combobox, self.entry_country = self.__create_actionrow('country', model)
+        row, button, combobox, self.entry_country = self.__create_actionrow('country', model)
+        button.set_visible(False)
         countries = self.app.get_config('countries')
         my_countries = countries.load()
         all_countries = countries.load_global()
@@ -167,7 +171,8 @@ class MiAZRenameDialog(Gtk.Dialog):
     def __create_field_2_collection(self):
         """Field 2. Collections"""
         model = Gtk.ListStore(str)
-        row, combobox, self.entry_collection = self.__create_actionrow('collection', model)
+        row, button, combobox, self.entry_collection = self.__create_actionrow('collection', model)
+        button.set_visible(False)
         collections = self.app.get_config('collections')
         for collection in collections.load():
             model.append([collection])
@@ -179,9 +184,9 @@ class MiAZRenameDialog(Gtk.Dialog):
     def __create_field_3_from(self):
         """Field 3. From"""
         model = Gtk.ListStore(str, str)
-        row, combobox, self.entry_from = self.__create_actionrow('from', model)
-        organizations = self.app.get_config('organizations')
-        organizations = organizations.load()
+        row, button, combobox, self.entry_from = self.__create_actionrow('from', model)
+        config = self.app.get_config('organizations')
+        organizations = config.load()
         for alias in organizations:
             model.append([alias, "<i>%s</i>" % organizations[alias]])
         if len(self.suggested[3]) > 0:
@@ -196,7 +201,8 @@ class MiAZRenameDialog(Gtk.Dialog):
     def __create_field_4_purpose(self):
         """Field 4. purposes"""
         model = Gtk.ListStore(str)
-        row, combobox, self.entry_purpose = self.__create_actionrow('purpose', model)
+        row, button, combobox, self.entry_purpose = self.__create_actionrow('purpose', model)
+        button.set_visible(False)
         purposes = self.app.get_config('purposes')
         for purpose in purposes.load():
             model.append([purpose])
@@ -207,7 +213,8 @@ class MiAZRenameDialog(Gtk.Dialog):
     def __create_field_5_concept(self):
         """Field 5. concepts"""
         model = Gtk.ListStore(str)
-        row, combobox, self.entry_concept = self.__create_actionrow('concept', model)
+        row, button, combobox, self.entry_concept = self.__create_actionrow('concept', model)
+        button.set_visible(False)
         concepts = self.app.get_config('concepts')
         for concept in concepts.load():
             model.append([concept])
@@ -218,7 +225,7 @@ class MiAZRenameDialog(Gtk.Dialog):
     def __create_field_6_to(self):
         """Field 6. To"""
         model = Gtk.ListStore(str, str)
-        row, combobox, self.entry_to = self.__create_actionrow('to', model)
+        row, button, combobox, self.entry_to = self.__create_actionrow('to', model)
         organizations = self.app.get_config('organizations')
         organizations = organizations.load()
         for alias in organizations:
@@ -235,13 +242,15 @@ class MiAZRenameDialog(Gtk.Dialog):
     def __create_field_7_extension(self):
         """Field 7. extension"""
         model = Gtk.ListStore(str)
-        row, combobox, self.entry_extension = self.__create_actionrow('extension', model)
+        row, button, combobox, self.entry_extension = self.__create_actionrow('extension', model)
+        button.set_visible(False)
         extensions = self.app.get_config('extensions')
         for extension in extensions.load_global():
             treeiter = model.append([extension])
             if extension == self.extension:
                 active = treeiter
         combobox.set_active_iter(active)
+        combobox.set_sensitive(False)
 
     def __create_field_8_result(self, *args):
         """Field 7. extension"""
@@ -277,16 +286,32 @@ class MiAZRenameDialog(Gtk.Dialog):
     def on_changed_entry(self, *args):
         try:
             fields = []
-            fields.append(self.entry_date.get_text().upper()) # 0. Date
-            fields.append(self.entry_country.get_text().upper()) # 1. Country
-            fields.append(self.entry_collection.get_text().upper()) # 2. Collection
-            fields.append(self.entry_from.get_text().upper()) # 3. From
-            fields.append(self.entry_purpose.get_text().upper()) # 4. Purpose
-            fields.append(self.entry_concept.get_text().upper()) # 5. Concept
-            fields.append(self.entry_to.get_text().upper()) # 6. To
-            extension = self.entry_extension.get_text()
-            self.result = "%s.%s" % ('-'.join(fields), extension)
+            adate = self.entry_date.get_text().upper()
+            acountry = self.entry_country.get_text().upper()
+            acollection = self.entry_collection.get_text().upper()
+            afrom = self.entry_from.get_text().upper()
+            apurpose = self.entry_purpose.get_text().upper()
+            aconcept = self.entry_concept.get_text().upper()
+            ato = self.entry_to.get_text().upper()
+            aextension = self.entry_extension.get_text()
+            fields.append(adate) # 0. Date
+            fields.append(acountry) # 1. Country
+            fields.append(acollection) # 2. Collection
+            fields.append(afrom) # 3. From
+            fields.append(apurpose) # 4. Purpose
+            fields.append(aconcept) # 5. Concept
+            fields.append(ato) # 6. To
+            self.result = "%s.%s" % ('-'.join(fields), aextension)
             self.lblFilenameNew.set_markup(self.result)
+
+            organizations = self.app.get_config('organizations')
+            v_from = organizations.get(afrom)
+            v_to = organizations.get(ato)
+            self.log.debug("%s > %s", v_from, v_to)
+            if len(v_from) == 0 and len(v_to) == 0:
+                self.btnAccept.set_sensitive(False)
+            else:
+                self.btnAccept.set_sensitive(True)
         except:
             self.result = ''
 
@@ -350,6 +375,7 @@ class MiAZRenameDialog(Gtk.Dialog):
         self.destroy()
 
     def on_document_display(self, button, filepath):
+        self.log.debug("Displaying %s", filepath)
         os.system("xdg-open '%s'" % filepath)
 
     def on_document_delete(self, button, filepath):

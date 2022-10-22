@@ -530,6 +530,7 @@ class MiAZWorkspace(Gtk.Box):
             self.btnDocsSel.set_sensitive(False)
 
     def on_display_document(self, button, filepath):
+        self.log.debug("Displaying %s", filepath)
         os.system("xdg-open '%s'" % filepath)
 
     # ~ def on_rename_file(self, *args):
