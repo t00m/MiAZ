@@ -1,0 +1,9 @@
+Find the file manager for displaying a file inside a folder
+grep -i exec /usr/share/applications/$(xdg-mime query default inode/directory) | head -1 | cut -d= -f2- | cut -d% -f1
+
+if sys.platform.startswith('linux'):
+    # Any linux
+    subprocess.call(["xdg-open", file])
+else:
+    # Windows
+    os.startfile(file)
