@@ -78,11 +78,13 @@ class MiAZFlowBoxRow(Gtk.Box):
             btnCol.set_hexpand(False)
             boxEnd.append(btnCol)
             who_from = who.get(fields[3])
-            if len(who_from) == 0:
-                who_from = fields[3]
+            if who_from is not None:
+                if len(who_from) == 0:
+                    who_from = fields[3]
             who_to = who.get(fields[6])
-            if len(who_from) == 0:
-                who_to = fields[6]
+            if who_to is not None:
+                if len(who_from) == 0:
+                    who_to = fields[6]
             self.explain = "%s from %s about %s to %s" % (fields[4].title(), who_from, fields[5], who_to)
             lblExplain = self.factory.create_label(self.explain)
             # ~ lblExplain.set_wrap_mode(Pango.WrapMode.WORD_CHAR)
