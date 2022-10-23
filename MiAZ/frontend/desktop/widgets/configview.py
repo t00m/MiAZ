@@ -30,7 +30,6 @@ class MiAZConfigView(MiAZWidget, Gtk.Box):
     search_term = ''
 
     def __init__(self, app, config_for):
-        print(config_for)
         super().__init__(app, __class__.__name__)
         super(Gtk.Box, self).__init__(spacing=12, orientation=Gtk.Orientation.VERTICAL)
         self.app = app

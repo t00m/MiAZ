@@ -3,6 +3,7 @@
 
 import os
 import json
+from gi.repository import GObject
 from gi.repository import Gtk
 from gi.repository import Pango
 from gi.repository.GdkPixbuf import Pixbuf
@@ -21,14 +22,6 @@ class MiAZOrganizations(MiAZConfigView):
         self.config = MiAZConfigSettingsOrganizations()
         config_for = self.config.get_config_for()
         super().__init__(app, config_for)
-
-    # ~ def update(self):
-        # ~ try:
-            # ~ for organization in self.config.load():
-                # ~ self.store.insert_with_values(-1, (0,), (organization,))
-        # ~ except FileNotFoundError as error:
-            # ~ self.log.error(error)
-            # ~ return
 
     def setup_treeview(self):
         self.scrwin = Gtk.ScrolledWindow()
@@ -69,7 +62,7 @@ class MiAZOrganizations(MiAZConfigView):
         # TreeView sorting
         self.sorted_model = Gtk.TreeModelSort(model=self.treefilter)
         self.sorted_model.set_sort_func(0, self.clb_sort_function, 1)
-        self.sorted_model.set_sort_column_id(1, Gtk.SortType.ASCENDING)
+        self.sorted_model.set_sort_column_id(0, Gtk.SortType.ASCENDING)
         self.treeview.set_model(self.sorted_model)
 
         self.treeview.connect('row-activated', self.double_click)
@@ -103,14 +96,18 @@ class MiAZOrganizations(MiAZConfigView):
             name = model[treeiter][0]
             tbuf = self.entry.get_buffer()
             tbuf.set_text("%s, %s" % (code, name), -1)
-            # ~ self.current = name.upper()
         except Exception as error:
             pass
 
     def double_click(self, treeview, treepath, treecolumn):
-        model = self.sorted_model.get_model()
-        model[treepath][2] = not model[treepath][2]
-        self.config_save()
+        treeiter = self.sorted_model.get_iter(treepath)
+        key = self.sorted_model[treeiter][0]
+        value = self.sorted_model[treeiter][1]
+        dialog = MiAZDialogAdd(self.app, self.get_root(), 'Modify person or entity', 'Initials', 'Full name')
+        dialog.set_value1(key.upper())
+        dialog.set_value2(value)
+        dialog.connect('response', self.on_response_item_add)
+        dialog.show()
 
     def update(self):
         self.store.clear()
@@ -118,15 +115,6 @@ class MiAZOrganizations(MiAZConfigView):
         for code in items:
             fullname = items[code]
             self.store.insert_with_values(-1, (0, 1), (code, fullname))
-
-    def config_save(self, items):
-        self.config.save(items)
-
-    def __clb_row_toggled(self, cell, path):
-        model = self.sorted_model.get_model()
-        rpath = self.sorted_model.convert_path_to_child_path(Gtk.TreePath(path))
-        model[rpath][2] = not model[rpath][2]
-        self.config_save()
 
     def on_item_add(self, *args):
         dialog = MiAZDialogAdd(self.app, self.get_root(), 'Add new person or entity', 'Initials', 'Full name')
@@ -139,8 +127,8 @@ class MiAZOrganizations(MiAZConfigView):
             value = dialog.get_value2()
             if len(key) > 0 and len(value) > 0:
                 items = self.config.load()
-                if not key in items:
-                    items[key] = value
-                    self.config.save(items)
-                    self.update()
+                items[key.upper()] = value
+                self.config.save(items)
+                self.update()
+                # ~ self.emit('updated')
         dialog.destroy()

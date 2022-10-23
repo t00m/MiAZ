@@ -18,7 +18,7 @@ class MiAZTreeView(MiAZWidget, Gtk.TreeView):
     __gtype_name__ = 'MiAZTreeView'
 
     def __init__(self, app):
-        super().__init__(app, __class__.__name__)
+        # ~ super().__init__(app, __class__.__name__)
         super(Gtk.TreeView, self).__init__()
         self.set_can_focus(True)
         self.set_enable_tree_lines(True)

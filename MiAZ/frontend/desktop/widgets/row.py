@@ -58,6 +58,13 @@ class MiAZFlowBoxRow(Gtk.Box):
         boxEnd.set_hexpand(False)
 
         if filedict['valid']:
+            btnFileEdit = self.factory.create_button('miaz-edit', '', self.workspace.action_rename_manually, data=self)
+            btnFileEdit.get_style_context().add_class(class_name='flat')
+            btnFileEdit.set_valign(Gtk.Align.CENTER)
+            btnFileEdit.set_hexpand(False)
+            btnFileEdit.set_margin_end(6)
+            boxStart.append(btnFileEdit)
+
             basename = os.path.basename(filepath)
             dot = basename.rfind('.')
             doc = basename[:dot]
@@ -77,13 +84,13 @@ class MiAZFlowBoxRow(Gtk.Box):
             if len(who_from) == 0:
                 who_to = fields[6]
             self.explain = "%s from %s about %s to %s" % (fields[4].title(), who_from, fields[5], who_to)
-            lblExplain = Gtk.Label()
+            lblExplain = self.factory.create_label(self.explain)
             # ~ lblExplain.set_wrap_mode(Pango.WrapMode.WORD_CHAR)
             # ~ lblExplain.set_single_line_mode(False)
             lblExplain.set_margin_start(6)
             lblExplain.set_xalign(0.0)
             lblExplain.set_hexpand(True)
-            lblExplain.set_markup(self.explain)
+            # ~ lblExplain.set_markup(self.explain)
 
             # ~ lblFilename = Gtk.Label()
             # ~ lblFilename.set_wrap_mode(Pango.WrapMode.WORD_CHAR)

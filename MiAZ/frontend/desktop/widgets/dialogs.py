@@ -90,8 +90,14 @@ class MiAZDialogAdd(Gtk.Dialog):
     def get_value1_widget(self):
         return self.etyValue1
 
+    def set_value1(self, value):
+        self.etyValue1.set_text(value)
+
     def get_value2(self):
         return self.etyValue2.get_text()
+
+    def set_value2(self, value):
+        self.etyValue2.set_text(value)
 
     def get_value2_widget(self):
         return self.etyValue2

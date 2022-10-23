@@ -159,10 +159,14 @@ class MiAZWorkspace(Gtk.Box):
         frmViewBody.set_margin_end(margin=3)
         frmViewBody.set_margin_bottom(margin=3)
         frmViewBody.set_margin_start(margin=3)
+        frmViewBody.set_hexpand(True)
+        frmViewBody.set_vexpand(True)
         boxViewBody.append(frmViewBody)
         scrwin = Gtk.ScrolledWindow()
+        scrwin.set_hexpand(True)
         scrwin.set_vexpand(True)
         self.flowbox = Gtk.FlowBox()
+        # ~ self.flowbox.
         self.flowbox.set_margin_top(margin=3)
         self.flowbox.set_margin_end(margin=3)
         self.flowbox.set_margin_bottom(margin=3)
@@ -434,7 +438,12 @@ class MiAZWorkspace(Gtk.Box):
         source = row.get_filepath()
         repocnf = self.backend.get_repo_source_config_file()
         repodct = json_load(repocnf)
-        target = repodct[source]['suggested'].split('-')
+        if repodct[source]['valid']:
+            basename = os.path.basename(source)
+            filename = basename[:basename.rfind('.')]
+            target = filename.split('-')
+        else:
+            target = repodct[source]['suggested'].split('-')
         dialog = MiAZRenameDialog(self.app, row, source, target)
         dialog.connect('response', self.on_response_rename)
         dialog.show()
