@@ -248,6 +248,7 @@ class MiAZRenameDialog(Gtk.Dialog):
 
     def __create_field_7_extension(self):
         """Field 7. extension"""
+        active = False
         model = Gtk.ListStore(str)
         row, button, combobox, self.entry_extension = self.__create_actionrow('extension', model)
         button.set_visible(False)
@@ -256,7 +257,11 @@ class MiAZRenameDialog(Gtk.Dialog):
             treeiter = model.append([extension])
             if extension == self.extension:
                 active = treeiter
+        if not active:
+            self.log.warning("Extension '%s' doesn't exist. Report it please", self.extension)
+            active = model.append([self.extension])
         combobox.set_active_iter(active)
+        combobox.set_model(model)
         combobox.set_sensitive(False)
 
     def __create_field_8_result(self, *args):
@@ -453,7 +458,8 @@ class MiAZRenameDialog(Gtk.Dialog):
         if response == Gtk.ResponseType.YES:
             try:
                 os.unlink(filepath)
-                self.response(Gtk.ResponseType.ACCEPT)
+                self.log.debug("Document deleted: %s", filepath)
+                # ~ self.response(Gtk.ResponseType.ACCEPT)
                 dialog.destroy()
                 self.destroy()
             except FileNotFoundError as error:
