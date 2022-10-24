@@ -10,7 +10,7 @@ from gi.repository.GdkPixbuf import Pixbuf
 from MiAZ.backend.env import ENV
 from MiAZ.frontend.desktop.widgets.treeview import MiAZTreeView
 from MiAZ.frontend.desktop.widgets.configview import MiAZConfigView
-from MiAZ.backend.config.settings import MiAZConfigSettingsLanguages
+from MiAZ.backend.config import MiAZConfigSettingsLanguages
 
 
 class MiAZLanguages(MiAZConfigView):

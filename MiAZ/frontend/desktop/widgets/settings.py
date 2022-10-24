@@ -14,12 +14,11 @@ from gi.repository import Gtk
 
 from MiAZ.backend.env import ENV
 from MiAZ.backend.log import get_logger
-from MiAZ.frontend.desktop.widgets.collections import MiAZCollections
-from MiAZ.frontend.desktop.widgets.purposes import MiAZPurposes
-from MiAZ.frontend.desktop.widgets.countries import MiAZCountries
-from MiAZ.frontend.desktop.widgets.languages import MiAZLanguages
-from MiAZ.frontend.desktop.widgets.extensions import MiAZExtensions
-from MiAZ.frontend.desktop.widgets.organizations import MiAZOrganizations
+from MiAZ.frontend.desktop.widgets.configview import MiAZCollections
+from MiAZ.frontend.desktop.widgets.configview import MiAZPurposes
+from MiAZ.frontend.desktop.widgets.configview import MiAZCountries
+from MiAZ.frontend.desktop.widgets.configview import MiAZExtensions
+from MiAZ.frontend.desktop.widgets.configview import MiAZOrganizations
 
 
 class MiAZPrefsWindow(Adw.PreferencesWindow):

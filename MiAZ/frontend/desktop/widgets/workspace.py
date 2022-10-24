@@ -490,21 +490,6 @@ class MiAZWorkspace(Gtk.Box):
             self.flowbox.remove(row)
             del(self.idr[source])
             self.backend.check_source()
-            # ~ s_repocnf = self.backend.get_repo_source_config_file()
-            # ~ s_repodct = json_load(s_repocnf)
-            # ~ valid, reasons = self.backend.validate_filename(target)
-            # ~ s_repodct[target] = {}
-            # ~ s_repodct[target]['valid'] = valid
-            # ~ s_repodct[target]['reasons'] = reasons
-            # ~ if not valid:
-                # ~ s_repodct[target]['suggested'] = self.backend.suggest_filename(target)
-            # ~ else:
-                # ~ s_repodct[target]['suggested'] = None
-                # ~ s_repodct[target]['fields'] = self.backend.get_fields(target)
-            # ~ json_save(s_repocnf, s_repodct)
-            # ~ self.log.debug("Source repository - Emitting signal 'source-configuration-updated'")
-            # ~ self.backend.emit('source-configuration-updated')
-
 
     def on_double_click(self, treeview, treepath, treecolumn):
         treeiter = self.sorted_model.get_iter(treepath)

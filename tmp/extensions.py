@@ -6,7 +6,7 @@ from gi.repository.GdkPixbuf import Pixbuf
 
 from MiAZ.frontend.desktop.widgets.configview import MiAZConfigView
 from MiAZ.frontend.desktop.widgets.treeview import MiAZTreeView
-from MiAZ.backend.config.settings import MiAZConfigSettingsExtensions
+from MiAZ.backend.config import MiAZConfigSettingsExtensions
 
 class MiAZExtensions(MiAZConfigView):
     """Class for managing Collections from Settings"""

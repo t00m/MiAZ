@@ -12,7 +12,7 @@ from MiAZ.backend.env import ENV
 from MiAZ.frontend.desktop.widgets.dialogs import MiAZDialogAdd
 from MiAZ.frontend.desktop.widgets.treeview import MiAZTreeView
 from MiAZ.frontend.desktop.widgets.configview import MiAZConfigView
-from MiAZ.backend.config.settings import MiAZConfigSettingsOrganizations
+from MiAZ.backend.config import MiAZConfigSettingsOrganizations
 
 class MiAZOrganizations(MiAZConfigView):
     """Class for managing Organizations from Settings"""

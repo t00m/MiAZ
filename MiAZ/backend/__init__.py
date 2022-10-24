@@ -14,13 +14,13 @@ from MiAZ.backend.util import guess_datetime
 from MiAZ.backend.util import get_files
 from MiAZ.backend.util import get_file_creation_date
 from MiAZ.backend.watcher import MiAZWatcher
-from MiAZ.backend.config.settings import MiAZConfigApp
-from MiAZ.backend.config.settings import MiAZConfigSettingsCountries
-from MiAZ.backend.config.settings import MiAZConfigSettingsExtensions
-from MiAZ.backend.config.settings import MiAZConfigSettingsCollections
-from MiAZ.backend.config.settings import MiAZConfigSettingsPurposes
-from MiAZ.backend.config.settings import MiAZConfigSettingsConcepts
-from MiAZ.backend.config.settings import MiAZConfigSettingsOrganizations
+from MiAZ.backend.config import MiAZConfigApp
+from MiAZ.backend.config import MiAZConfigSettingsCountries
+from MiAZ.backend.config import MiAZConfigSettingsExtensions
+from MiAZ.backend.config import MiAZConfigSettingsCollections
+from MiAZ.backend.config import MiAZConfigSettingsPurposes
+from MiAZ.backend.config import MiAZConfigSettingsConcepts
+from MiAZ.backend.config import MiAZConfigSettingsOrganizations
 
 
 class MiAZBackend(GObject.GObject):

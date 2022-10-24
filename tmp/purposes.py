@@ -4,9 +4,8 @@
 from gi.repository import Gtk
 
 from MiAZ.frontend.desktop.widgets.configview import MiAZConfigView
-from MiAZ.backend.config.settings import MiAZConfigSettingsPurposes
 from MiAZ.frontend.desktop.widgets.dialogs import MiAZDialogAdd
-
+from MiAZ.backend.config import MiAZConfigSettingsPurposes
 
 class MiAZPurposes(MiAZConfigView):
     """Class for managing Purposes from Settings"""
