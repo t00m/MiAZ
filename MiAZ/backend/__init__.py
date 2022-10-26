@@ -222,7 +222,7 @@ class MiAZBackend(GObject.GObject):
                 reasons.append((False, "Field 2. Country code '%s' doesn't exist" % code))
             else:
                 country = self.conf['countries'].load_global()
-                name = country[code]['Country Name']
+                name = country[code]
                 reasons.append((True, "Field 2. Country code '%s' corresponds to %s" % (code, name)))
         except IndexError:
             valid &= False

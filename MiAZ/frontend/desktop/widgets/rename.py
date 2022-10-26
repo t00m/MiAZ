@@ -168,7 +168,7 @@ class MiAZRenameDialog(Gtk.Dialog):
         all_countries = countries.load_global()
         countries = countries.load_global()
         for code in my_countries:
-            model.append([code, "%s" % all_countries[code]['Country Name']])
+            model.append([code, "%s" % all_countries[code]])
         if len(self.suggested[1]) > 0:
             treeiter = model.append([self.suggested[1], "%s" % self.suggested[1]])
             combobox.set_active_iter(treeiter)

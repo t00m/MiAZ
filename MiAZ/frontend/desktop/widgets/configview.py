@@ -505,7 +505,7 @@ class MiAZCountries(MiAZConfigView):
             if not os.path.exists(icon_flag):
                 icon_flag = os.path.join(ENV['GPATH']['FLAGS'], "__.svg")
             icon = self.app.icman.get_pixbuf_from_file_at_size(icon_flag, 32, 32)
-            name = "%s (%s)" % (countries[code]["Country Name"], code)
+            name = "%s (%s)" % (countries[code], code)
             self.store.insert_with_values(n, (0, 1, 2, 3), (icon, code, name, code in checked))
             n += 1
 

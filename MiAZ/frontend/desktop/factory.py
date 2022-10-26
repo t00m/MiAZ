@@ -98,7 +98,7 @@ class MiAZFactory:
         gcodes = self.app.get_config('countries').load_global()
         for code in ucodes:
             icon = self.app.icman.get_flag_pixbuf(code)
-            name = gcodes[code]['Country Name']
+            name = gcodes[code]
             model.append([name, code, icon])
 
         cmbCountries = Gtk.ComboBox.new_with_model(model)
