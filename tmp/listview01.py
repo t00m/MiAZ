@@ -90,7 +90,6 @@ class ExampleWindow(Gtk.ApplicationWindow):
         country = list_item.get_item()
         label.set_text(country.country_name)
         country_flag = os.path.join('flags', '%s.svg' % country.country_id.upper())
-        print(country_flag)
         image.set_from_file(country_flag)
 
 
