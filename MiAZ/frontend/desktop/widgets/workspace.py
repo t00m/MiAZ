@@ -4,6 +4,8 @@
 import os
 import sys
 import shutil
+# ~ from datetime import datetime
+
 
 import gi
 gi.require_version('Gtk', '4.0')
@@ -36,6 +38,7 @@ class MiAZWorkspace(Gtk.Box):
     displayed = 0
     idr = {} # Internal Dictionary of rows
     update_mode = False
+    # ~ dd = datetime.timedelta(seconds=0)
 
     def __init__(self, app):
         super(MiAZWorkspace, self).__init__(orientation=Gtk.Orientation.HORIZONTAL)
@@ -262,26 +265,26 @@ class MiAZWorkspace(Gtk.Box):
     def update(self, *args):
         # ~ self.log.debug("Got signal 'target-configuration-updated'")
         repocnf = self.backend.get_repo_source_config_file()
-        repodct = json_load(repocnf)
+        self.repodct = json_load(repocnf)
         who = self.app.get_config('organizations')
         selection = self.view.get_model()
         model = selection.get_model()
         self.model.remove_all()
-        for path in repodct:
+        for path in self.repodct:
             self.model.append(File(path=path))
         # ~ page = self.app.get_stack_page_by_name('workspace')
         # ~ page.set_badge_number(len(repodct))
 
     def update_title(self):
-        repocnf = self.backend.get_repo_source_config_file()
-        repodct = json_load(repocnf)
+        # ~ repocnf = self.backend.get_repo_source_config_file()
+        # ~ repodct = json_load(repocnf)
         header = self.app.get_header()
         title = header.get_title_widget()
         if title is not None:
             header.remove(title)
         wdgTitle = Adw.WindowTitle()
         wdgTitle.set_title('MiAZ')
-        wdgTitle.set_subtitle("Displaying %d of %d documents" % (self.displayed, len(repodct)))
+        wdgTitle.set_subtitle("Displaying %d of %d documents" % (self.displayed, len(self.repodct)))
         header.set_title_widget(wdgTitle)
 
     def __show_file_info(self, button, filepath):
@@ -346,12 +349,13 @@ class MiAZWorkspace(Gtk.Box):
         return code_chosen == code_row
 
     def clb_visible_function(self, item, filter_list_model):
-        repocnf = self.backend.get_repo_source_config_file()
+        # ~ ds = datetime.now()
+        # ~ repocnf = self.backend.get_repo_source_config_file()
         # ~ self.log.debug(repocnf)
-        repodct = json_load(repocnf)
+        # ~ repodct = json_load(repocnf)
         # ~ self.log.debug(repodct[item.path])
-        valid = repodct[item.path]['valid']
-        fields = repodct[item.path]['fields']
+        valid = self.repodct[item.path]['valid']
+        fields = self.repodct[item.path]['fields']
         # ~ self.log.debug("%s > %s", item.path, valid)
         # ~ return valid
         # ~ self.log.debug(self.show_dashboard)
@@ -372,6 +376,9 @@ class MiAZWorkspace(Gtk.Box):
         if display:
             self.displayed += 1
         # ~ self.log.debug("File '%s' valid? %s and displayed? %s, Dashboard? %s", os.path.basename(item.path), valid, display, self.show_dashboard)
+        # ~ de = datetime.now()
+        # ~ dt = de - ds
+        # ~ self.dd += dt
         return display
 
     def clb_sort_function(self, flowboxchild1, flowboxchild2):
@@ -484,14 +491,14 @@ class MiAZWorkspace(Gtk.Box):
     def action_rename_manually(self, button, data):
         row = data
         source = row.get_filepath()
-        repocnf = self.backend.get_repo_source_config_file()
-        repodct = json_load(repocnf)
-        if repodct[source]['valid']:
+        # ~ repocnf = self.backend.get_repo_source_config_file()
+        # ~ repodct = json_load(repocnf)
+        if self.repodct[source]['valid']:
             basename = os.path.basename(source)
             filename = basename[:basename.rfind('.')]
             target = filename.split('-')
         else:
-            target = repodct[source]['suggested'].split('-')
+            target = self.repodct[source]['suggested'].split('-')
         dialog = MiAZRenameDialog(self.app, row, source, target)
         dialog.connect('response', self.on_response_rename)
         dialog.show()
@@ -581,18 +588,22 @@ class MiAZWorkspace(Gtk.Box):
         # ~ dialog.show()
 
     def on_show_dashboard(self, *args):
+        # ~ self.dd = datetime.timedelta(seconds=0)
         self.displayed = 0
         self.show_dashboard = True
-        self.update()
+        self.filter.emit('changed', Gtk.FilterChange.DIFFERENT)
         self.update_title()
 
     def on_show_review(self, *args):
+        # ~ self.dd = datetime.timedelta(seconds=0)
         self.displayed = 0
         self.show_dashboard = False
-        self.update()
+        self.filter.emit('changed', Gtk.FilterChange.DIFFERENT)
+        # ~ self.update()
         self.update_title()
 
     def on_filter_selected(self, *args):
+        # ~ self.dd = datetime.timedelta(seconds=0)
         self.displayed = 0
-        self.update()
-        self.update_title()
+        self.filter.emit('changed', Gtk.FilterChange.DIFFERENT)
+        # ~ self.log.debug(self.dd)
