@@ -260,27 +260,17 @@ class MiAZWorkspace(Gtk.Box):
             self.ent_sb.grab_focus()
 
     def update(self, *args):
-        self.log.debug("Got signal 'target-configuration-updated'")
-        # ~ self.flowbox.invalidate_filter()
+        # ~ self.log.debug("Got signal 'target-configuration-updated'")
         repocnf = self.backend.get_repo_source_config_file()
         repodct = json_load(repocnf)
         who = self.app.get_config('organizations')
-        # ~ self.model.remove_all() # works!!
-        self.log.debug(type(self.model))
         selection = self.view.get_model()
-        self.log.debug(type(selection))
         model = selection.get_model()
-        self.log.debug(type(model))
-
         self.model.remove_all()
-        # ~ model = selection.get_model()
-        # ~ model.remove_all()
         for path in repodct:
             self.model.append(File(path=path))
-                # ~ self.log.debug("F[%s] <<===| R[%s]", filepath, row)
         # ~ page = self.app.get_stack_page_by_name('workspace')
         # ~ page.set_badge_number(len(repodct))
-        self.log.debug("Workspace ready!")
 
     def update_title(self):
         repocnf = self.backend.get_repo_source_config_file()
@@ -377,7 +367,7 @@ class MiAZWorkspace(Gtk.Box):
                 display = c0 and c1 and c2 and c3 and c4 and c6
         else:
             if not valid:
-                display = self.cond_matches_freetext(row)
+                display = self.cond_matches_freetext(item.path)
 
         if display:
             self.displayed += 1
