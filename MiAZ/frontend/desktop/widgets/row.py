@@ -13,6 +13,22 @@ class MiAZFlowBoxRow(Gtk.Box):
     """ MiAZ Doc Browser Widget"""
     __gtype_name__ = 'MiAZFlowBoxRow'
 
+    def __init__(self):
+        super(MiAZFlowBoxRow, self).__init__(orientation=Gtk.Orientation.HORIZONTAL, css_classes=['linked'])
+        self.set_margin_top(margin=3)
+        self.set_margin_end(margin=3)
+        self.set_margin_bottom(margin=3)
+        self.set_margin_start(margin=3)
+        self.set_hexpand(True)
+        icon = Gtk.Image()
+        label = Gtk.Label()
+        self.append(icon)
+        self.append(label)
+
+class MiAZFlowBoxRowOld(Gtk.Box):
+    """ MiAZ Doc Browser Widget"""
+    __gtype_name__ = 'MiAZFlowBoxRowOld'
+
     def __init__(self, app, filepath: str, filedict: dict):
         super(MiAZFlowBoxRow, self).__init__(orientation=Gtk.Orientation.HORIZONTAL, css_classes=['linked'])
         self.set_margin_top(margin=3)

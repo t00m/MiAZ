@@ -36,7 +36,8 @@ class MiAZWatcher(GObject.GObject):
             files = glob.glob(os.path.join(directory, '*'))
             for thisfile in files:
                 if not os.path.isdir(thisfile):
-                    filelist.append(os.path.abspath(os.path.relpath(thisfile)))
+                    if os.path.exists(thisfile):
+                        filelist.append(os.path.abspath(os.path.relpath(thisfile)))
         return dict([(f, os.path.getmtime(f)) for f in filelist])
 
     def set_path(self, dirpath: str):

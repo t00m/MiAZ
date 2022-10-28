@@ -94,10 +94,11 @@ class MiAZBackend(GObject.GObject):
             try:
                 valid = s_repodct[doc]['valid']
                 if valid:
-                    self.log.debug("Doc[%s] valid. Skipped", os.path.basename(doc))
+                    # ~ self.log.debug("Doc[%s] valid. Skipped", os.path.basename(doc))
                     continue
             except Exception as error:
-                self.log.debug("Doc[%s] is new. Processing it ", os.path.basename(doc))
+                # ~ self.log.debug("Doc[%s] is new. Processing it ", os.path.basename(doc))
+                pass
             valid, reasons = self.validate_filename(doc)
             s_repodct[doc] = {}
             s_repodct[doc]['valid'] = valid

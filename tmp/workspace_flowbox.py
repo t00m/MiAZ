@@ -21,7 +21,6 @@ from MiAZ.backend.env import ENV
 from MiAZ.backend.log import get_logger
 from MiAZ.backend.util import json_load
 from MiAZ.backend.util import json_load, json_save
-from MiAZ.backend.models.file import File
 from MiAZ.frontend.desktop.util import get_file_mimetype
 from MiAZ.frontend.desktop.icons import MiAZIconManager
 from MiAZ.frontend.desktop.widgets.treeview import MiAZTreeView
@@ -166,24 +165,19 @@ class MiAZWorkspace(Gtk.Box):
         scrwin = Gtk.ScrolledWindow()
         scrwin.set_hexpand(True)
         scrwin.set_vexpand(True)
-
-        # Setup the model
-        self.model = Gio.ListStore(item_type=File)
-        selection = Gtk.SingleSelection.new(self.model)
-
-        # Set up the factory
-        factory = Gtk.SignalListItemFactory()
-        factory.connect("setup", self._on_factory_setup)
-        factory.connect("bind", self._on_factory_bind)
-
-        # Setup the view widget
-        self.view = Gtk.ListView(model=Gtk.SingleSelection.new(selection), factory=factory, hexpand=True)
-        self.view.set_single_click_activate(True)
-        self.view.connect('activate', self._on_activated_item)
-        self.view.connect("notify::selected-item", self._on_selected_item_notify)
-
-
-        scrwin.set_child(self.view)
+        self.flowbox = Gtk.FlowBox()
+        # ~ self.flowbox.
+        self.flowbox.set_margin_top(margin=3)
+        self.flowbox.set_margin_end(margin=3)
+        self.flowbox.set_margin_bottom(margin=3)
+        self.flowbox.set_margin_start(margin=3)
+        self.flowbox.set_valign(Gtk.Align.START)
+        self.flowbox.set_max_children_per_line(1)
+        self.flowbox.set_min_children_per_line(1)
+        self.flowbox.set_selection_mode (Gtk.SelectionMode.SINGLE)
+        self.flowbox.set_filter_func(self.clb_visible_function)
+        self.flowbox.set_sort_func(self.clb_sort_function)
+        scrwin.set_child(self.flowbox)
         frmViewBody.set_child(scrwin)
         return boxViewBody
 
@@ -203,41 +197,6 @@ class MiAZWorkspace(Gtk.Box):
         # ~ evk.connect("key-pressed", self.on_key_press)
         # ~ self.treeview.add_controller(evk)
 
-    # Set up the child of the list item; this can be an arbitrarily
-    # complex widget but we use a simple label now
-    def _on_factory_setup(self, factory, list_item):
-        box = MiAZFlowBoxRow()
-        list_item.set_child(box)
-
-    # Bind the item in the model to the row widget; again, since
-    # the object in the model can contain multiple properties, and
-    # the list item can contain any arbitrarily complex widget, we
-    # can have very complex rows instead of the simple cell renderer
-    # layouts in GtkComboBox
-    def _on_factory_bind(self, factory, list_item):
-        # ~ label = list_item.get_child()
-        # ~ country = list_item.get_item()
-        # ~ label.set_text(country.country_name)
-        box = list_item.get_child()
-        wdgIcon = box.get_first_child()
-        wdgLabel = box.get_last_child()
-
-        row = list_item.get_item()
-        mimetype = get_file_mimetype(row.path)
-        gicon = self.app.icman.get_gicon_from_file_mimetype(mimetype)
-        wdgLabel.set_text(os.path.basename(row.path))
-        wdgIcon.set_from_gicon(gicon)
-        wdgIcon.set_pixel_size(36)
-
-    # The notify signal is fired when the selection changes
-    def _on_selected_item_notify(self, listview, _):
-        path = listview.get_selected_item()
-        self.log.debug(path)
-
-    def _on_activated_item(self, listview, position):
-        item = self.model.get_item(position)
-        self.log.debug(item.path)
-
     def on_key_press(self, event, keyval, keycode, state):
         self.log.debug("%s > %s > %s > %s", event, keyval, keycode, state)
         if keyval == Gdk.KEY_q: # and state & Gdk.ModifierType.CONTROL_MASK:   # Add Gdk to your imports. i.e. from gi import Gdk
@@ -247,22 +206,21 @@ class MiAZWorkspace(Gtk.Box):
 
     def update(self, *args):
         self.log.debug("Got signal 'target-configuration-updated'")
-        # ~ self.flowbox.invalidate_filter()
+        self.flowbox.invalidate_filter()
         repocnf = self.backend.get_repo_source_config_file()
         repodct = json_load(repocnf)
         who = self.app.get_config('organizations')
-        # ~ self.model.remove_all() # works!!
-        self.log.debug(type(self.model))
-        selection = self.view.get_model()
-        self.log.debug(type(selection))
-        model = selection.get_model()
-        self.log.debug(type(model))
-
-        self.model.remove_all()
-        # ~ model = selection.get_model()
-        # ~ model.remove_all()
-        for path in repodct:
-            self.model.append(File(path=path))
+        for filepath in repodct:
+            try:
+                row = self.idr[filepath]
+            except Exception as error:
+                dot = filepath.rfind('.')
+                doc = filepath[:dot]
+                ext = filepath[dot+1:]
+                row = MiAZFlowBoxRow(self.app, filepath, repodct[filepath])
+                self.flowbox.append(row)
+                self.idr[filepath] = row
+                self.update_title()
                 # ~ self.log.debug("F[%s] <<===| R[%s]", filepath, row)
         # ~ page = self.app.get_stack_page_by_name('workspace')
         # ~ page.set_badge_number(len(repodct))
