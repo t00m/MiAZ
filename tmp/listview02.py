@@ -95,10 +95,12 @@ class ExampleWindow(Gtk.ApplicationWindow):
         box.props.margin_top = 6
         box.props.margin_bottom = 6
         box.append(Gtk.Label(label="Documents:"))
-        box.append(self.dd)
+        # ~ box.append(self.dd)
         scrwin = Gtk.ScrolledWindow()
-        scrwin.set_child(box)
-        self.set_child(scrwin)
+        scrwin.set_vexpand(True)
+        scrwin.set_child(self.dd)
+        box.append(scrwin)
+        self.set_child(box)
 
     # Set up the child of the list item; this can be an arbitrarily
     # complex widget but we use a simple label now

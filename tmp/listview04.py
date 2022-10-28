@@ -61,13 +61,15 @@ class MyCustomRow(Gtk.Box):
     __gtype_name__ = 'MyCustomRow'
 
     def __init__(self):
-        super(MyCustomRow, self).__init__(orientation=Gtk.Orientation.HORIZONTAL, css_classes=['linked'])
+        super(MyCustomRow, self).__init__(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
         self.set_margin_top(margin=3)
         self.set_margin_end(margin=3)
         self.set_margin_bottom(margin=3)
         self.set_margin_start(margin=3)
         self.set_hexpand(True)
+        icon = Gtk.Label()
         label = Gtk.Label()
+        self.append(icon)
         self.append(label)
 
 class ExampleWindow(Gtk.ApplicationWindow):
@@ -77,20 +79,22 @@ class ExampleWindow(Gtk.ApplicationWindow):
         documents = get_files(sys.argv[1])
 
         # Populate the model
-        self.model = Gio.ListStore(item_type=Row)
+        model = Gio.ListStore(item_type=Row)
         for filepath in documents:
-            self.model.append(Row(filepath=filepath))
+            model.append(Row(filepath=filepath))
 
         # Set up the factory
         factory = Gtk.SignalListItemFactory()
         factory.connect("setup", self._on_factory_setup)
         factory.connect("bind", self._on_factory_bind)
 
-        selection = Gtk.SingleSelection.new(self.model)
+        # Setup ColumnView Widget
+        selection = Gtk.SingleSelection.new(model)
         selection.set_autoselect(True)
         self.cv = Gtk.ColumnView(model=selection)
         self.cv.set_show_column_separators(True)
         self.cv.set_show_row_separators(True)
+
         column = Gtk.ColumnViewColumn.new("File path", factory)
         self.cv.append_column(column)
         self.cv.sort_by_column(column, Gtk.SortType.ASCENDING)
@@ -123,14 +127,17 @@ class ExampleWindow(Gtk.ApplicationWindow):
     # can have very complex rows instead of the simple cell renderer
     # layouts in GtkComboBox
     def _on_factory_bind(self, factory, list_item):
-        # ~ label = list_item.get_child()
-        # ~ country = list_item.get_item()
-        # ~ label.set_text(country.country_name)
         box = list_item.get_child()
-        label = box.get_first_child()
+        icon = box.get_first_child()
+        label = box.get_last_child()
 
         row = list_item.get_item()
+        mimetype, val = Gio.content_type_guess('filename=%s' % row.filepath)
+        gicon = Gio.content_type_get_icon(mimetype)
+        # ~ icon = Gtk.Image.new_from_gicon(gicon)
+        icon.set_text(str(datetime.now()))
         label.set_text(row.filepath)
+        print("%s > %s > %s" % (datetime.now(), icon, label))
 
 
     # The notify signal is fired when the selection changes
@@ -147,7 +154,7 @@ class ExampleApp(Adw.Application):
     def do_activate(self):
         if self.window is None:
             self.window = ExampleWindow(self)
-            # ~ self.window.set_default_size(1024, 728)
+            self.window.set_default_size(600, 480)
         self.window.present()
 
 
