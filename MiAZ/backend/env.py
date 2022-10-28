@@ -15,9 +15,9 @@ import sys
 import tempfile
 import multiprocessing
 
-if sys.platform != 'linux':
-    print("Your OS is not supported.")
-    print("Please, use any recent GNU/Linux distribution")
+#if sys.platform != 'linux':
+#    print("Your OS is not supported.")
+#    print("Please, use any recent GNU/Linux distribution")
 
 ENV = {}
 

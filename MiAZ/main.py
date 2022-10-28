@@ -11,11 +11,10 @@ from MiAZ.backend.log import get_logger
 
 
 class MiAZ:
-    def __init__(self, params) -> None:
+    def __init__(self) -> None:
         self.setup_environment()
         self.log = get_logger('MiAZ.Main')
         self.log.info("%s v%s - Start", ENV['APP']['shortname'], get_version())
-        self.params = params
 
     def setup_environment(self):
         """Setup MiAZ user environment
@@ -51,5 +50,5 @@ def main():
     miaz_options.add_argument('-v', '--version', help='Show current version', action='version', version='%s %s' % (ENV['APP']['shortname'], ENV['APP']['version']))
 
     params = parser.parse_args()
-    app = MiAZ(params)
+    app = MiAZ()
     app.run()

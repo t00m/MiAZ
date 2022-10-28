@@ -72,6 +72,8 @@ class MiAZIconManager(GObject.GObject):
             gicon = self.get_gicon_from_file_mimetype(mimetype)
             paintable = self.get_paintable_from_gicon(gicon)
             gfile = paintable.get_file()
+            if gfile is None:
+                return None
             path = gfile.get_path()
             if path is None:
                 pixbuf = self.get_pixbuf_by_name('text-x-generic-symbolic', width)
