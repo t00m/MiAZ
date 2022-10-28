@@ -169,7 +169,17 @@ class MiAZWorkspace(Gtk.Box):
 
         # Setup the model
         self.model = Gio.ListStore(item_type=File)
-        selection = Gtk.SingleSelection.new(self.model)
+
+        # Filtering
+        self.model_filter = Gtk.FilterListModel.new(self.model)
+        self.filter = Gtk.CustomFilter.new(self.clb_visible_function, self.model_filter)
+        self.model_filter.set_filter(self.filter)
+
+        # Sorting
+        self.model_sort = Gtk.SortListModel(model=self.model_filter)
+
+        # Selection
+        selection = Gtk.SingleSelection.new(self.model_sort)
 
         # Set up the factory
         factory = Gtk.SignalListItemFactory()
@@ -186,6 +196,10 @@ class MiAZWorkspace(Gtk.Box):
         scrwin.set_child(self.view)
         frmViewBody.set_child(scrwin)
         return boxViewBody
+
+    def filter_by_sth(self, item, filter_list_model):
+        self.log.debug(item.path)
+        return False
 
     def setup_view(self):
         boxView = Gtk.Box.new(orientation=Gtk.Orientation.VERTICAL, spacing=0)
@@ -294,11 +308,9 @@ class MiAZWorkspace(Gtk.Box):
         popover.set_child(treeview)
         return popover
 
-    def cond_matches_freetext(self, row):
-        filepath = row.get_filepath()
-        fileanot = row.get_explain()
+    def cond_matches_freetext(self, path):
         left = self.ent_sb.get_text()
-        right = filepath+fileanot
+        right = path
         if left.upper() in right.upper():
             return True
         return False
@@ -343,21 +355,25 @@ class MiAZWorkspace(Gtk.Box):
             return True
         return code_chosen == code_row
 
-    def clb_visible_function(self, flowboxchild):
-        row = flowboxchild.get_child()
-        filepath = row.get_filepath()
-        filedict = row.get_filedict()
-        valid = filedict['valid']
-
+    def clb_visible_function(self, item, filter_list_model):
+        repocnf = self.backend.get_repo_source_config_file()
+        # ~ self.log.debug(repocnf)
+        repodct = json_load(repocnf)
+        # ~ self.log.debug(repodct[item.path])
+        valid = repodct[item.path]['valid']
+        fields = repodct[item.path]['fields']
+        # ~ self.log.debug("%s > %s", item.path, valid)
+        # ~ return valid
+        # ~ self.log.debug(self.show_dashboard)
         display = False
         if self.show_dashboard:
             if valid:
-                c0 = self.cond_matches_freetext(row)
-                c1 = self.cond_matches_country(filedict['fields'][1])
-                c2 = self.cond_matches_collection(filedict['fields'][2])
-                c3 = self.cond_matches_from(filedict['fields'][3])
-                c4 = self.cond_matches_purposes(filedict['fields'][4])
-                c6 = self.cond_matches_to(filedict['fields'][6])
+                c0 = self.cond_matches_freetext(item.path)
+                c1 = self.cond_matches_country(fields[1])
+                c2 = self.cond_matches_collection(fields[2])
+                c3 = self.cond_matches_from(fields[3])
+                c4 = self.cond_matches_purposes(fields[4])
+                c6 = self.cond_matches_to(fields[6])
                 display = c0 and c1 and c2 and c3 and c4 and c6
         else:
             if not valid:
@@ -365,7 +381,7 @@ class MiAZWorkspace(Gtk.Box):
 
         if display:
             self.displayed += 1
-
+        # ~ self.log.debug("File '%s' valid? %s and displayed? %s, Dashboard? %s", os.path.basename(item.path), valid, display, self.show_dashboard)
         return display
 
     def clb_sort_function(self, flowboxchild1, flowboxchild2):
@@ -577,16 +593,16 @@ class MiAZWorkspace(Gtk.Box):
     def on_show_dashboard(self, *args):
         self.displayed = 0
         self.show_dashboard = True
-        self.flowbox.invalidate_filter()
+        self.update()
         self.update_title()
 
     def on_show_review(self, *args):
         self.displayed = 0
         self.show_dashboard = False
-        self.flowbox.invalidate_filter()
+        self.update()
         self.update_title()
 
     def on_filter_selected(self, *args):
         self.displayed = 0
-        self.flowbox.invalidate_filter()
+        self.update()
         self.update_title()
