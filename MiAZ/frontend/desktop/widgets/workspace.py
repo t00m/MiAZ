@@ -81,30 +81,18 @@ class MiAZWorkspace(Gtk.Box):
         box = self.factory.create_box_filter('Free search', self.ent_sb)
         tlbFilters.append(box)
 
-        self.dpdCountries = self.factory.create_dropdown_countries()
-        self.dpdCountries.connect("notify::selected-item", self._on_filter_selected)
-        box = self.factory.create_box_filter('Country', self.dpdCountries)
-        tlbFilters.append(box)
-
-        self.dpdCollections = self.factory.create_dropdown_generic(Collection, 'collections')
-        self.dpdCollections.connect("notify::selected-item", self._on_filter_selected)
-        box = self.factory.create_box_filter('Collection', self.dpdCollections)
-        tlbFilters.append(box)
-
-        self.dpdFrom = self.factory.create_dropdown_generic(Person, 'organizations')
-        self.dpdFrom.connect("notify::selected-item", self._on_filter_selected)
-        box = self.factory.create_box_filter('From', self.dpdFrom)
-        tlbFilters.append(box)
-
-        self.dpdPurposes = self.factory.create_dropdown_generic(Purpose, 'purposes')
-        self.dpdPurposes.connect("notify::selected-item", self._on_filter_selected)
-        box = self.factory.create_box_filter('Purpose', self.dpdPurposes)
-        tlbFilters.append(box)
-
-        self.dpdTo = self.factory.create_dropdown_generic(Person, 'organizations')
-        self.dpdTo.connect("notify::selected-item", self._on_filter_selected)
-        box = self.factory.create_box_filter('To', self.dpdTo)
-        tlbFilters.append(box)
+        self.dropdown = {}
+        for title, model, item in [('Country', Country, 'countries'),
+                                   ('Collection', Collection, 'collections'),
+                                   ('From', Person, 'organizations'),
+                                   ('Purpose', Purpose, 'purposes'),
+                                   ('To', Person, 'organizations'),
+                            ]:
+            dropdown = self.factory.create_dropdown_generic(model, item)
+            dropdown.connect("notify::selected-item", self._on_filter_selected)
+            box = self.factory.create_box_filter(title, dropdown)
+            tlbFilters.append(box)
+            self.dropdown[title] = dropdown
 
         frmFilters.set_child(tlbFilters)
         toolbar.append(frmFilters)
@@ -187,7 +175,6 @@ class MiAZWorkspace(Gtk.Box):
         self.view.connect('activate', self._on_activated_item)
         self.view.connect("notify::selected-item", self._on_selected_item_notify)
 
-
         scrwin.set_child(self.view)
         frmViewBody.set_child(scrwin)
         return boxViewBody
@@ -223,7 +210,7 @@ class MiAZWorkspace(Gtk.Box):
         pass # keep?
 
     def _on_activated_item(self, listview, position):
-        item = self.model.get_item(position)
+        item = self.model_filter.get_item(position)
         self.log.debug(item.id)
 
     def update(self, *args):
@@ -263,35 +250,11 @@ class MiAZWorkspace(Gtk.Box):
             return True
         return False
 
-    def _do_eval_cond_matches_country(self, id):
-        item = self.dpdCountries.get_selected_item()
-        if item.id == '__':
+    def _do_eval_cond_matches(self, dropdown, id):
+        item = dropdown.get_selected_item()
+        if item.id == 'Any':
             return True
         return item.id == id
-
-    def _do_eval_cond_matches_collection(self, name):
-        item = self.dpdCollections.get_selected_item()
-        if item.id == 'Any':
-            return True
-        return item.name == name
-
-    def _do_eval_cond_matches_from(self, name):
-        item = self.dpdFrom.get_selected_item()
-        if item.id == 'Any':
-            return True
-        return item.name == name
-
-    def _do_eval_cond_matches_purpose(self, name):
-        item = self.dpdPurposes.get_selected_item()
-        if item.id == 'Any':
-            return True
-        return item.name == name
-
-    def _do_eval_cond_matches_to(self, name):
-        item = self.dpdTo.get_selected_item()
-        if item.id == 'Any':
-            return True
-        return item.name == name
 
     def _do_filter_listview(self, item, filter_list_model):
         valid = self.repodct[item.id]['valid']
@@ -300,11 +263,11 @@ class MiAZWorkspace(Gtk.Box):
         if self.show_dashboard:
             if valid:
                 c0 = self._do_eval_cond_matches_freetext(item.id)
-                c1 = self._do_eval_cond_matches_country(fields[1])
-                c2 = self._do_eval_cond_matches_collection(fields[2])
-                c3 = self._do_eval_cond_matches_from(fields[3])
-                c4 = self._do_eval_cond_matches_purpose(fields[4])
-                c6 = self._do_eval_cond_matches_to(fields[6])
+                c1 = self._do_eval_cond_matches(self.dropdown['Country'], fields[1])
+                c2 = self._do_eval_cond_matches(self.dropdown['Collection'], fields[2])
+                c3 = self._do_eval_cond_matches(self.dropdown['From'], fields[3])
+                c4 = self._do_eval_cond_matches(self.dropdown['Purpose'], fields[4])
+                c6 = self._do_eval_cond_matches(self.dropdown['To'], fields[6])
                 display = c0 and c1 and c2 and c3 and c4 and c6
         else:
             if not valid:
@@ -408,6 +371,5 @@ class MiAZWorkspace(Gtk.Box):
         self.update_title()
 
     def _on_filter_selected(self, *args):
-        self.log.debug(args)
         self.displayed = 0
         self.filter.emit('changed', Gtk.FilterChange.DIFFERENT)

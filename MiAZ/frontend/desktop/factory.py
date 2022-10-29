@@ -91,69 +91,6 @@ class MiAZFactory:
         # ~ btnFileSelect.set_valign(Gtk.Align.CENTER)
         # ~ btnFileSelect.set_hexpand(False)
 
-    def create_combobox_countries(self):
-        model = Gtk.ListStore(str, str, Pixbuf)
-        icon = self.app.icman.get_flag_pixbuf('__')
-        first = model.append(['All countries', '', icon])
-        ucodes = self.app.get_config('countries').load()
-        gcodes = self.app.get_config('countries').load_global()
-        for code in ucodes:
-            icon = self.app.icman.get_flag_pixbuf(code)
-            name = gcodes[code]
-            model.append([name, code, icon])
-
-        cmbCountries = Gtk.ComboBox.new_with_model(model)
-        cmbCountries.set_active_iter(first)
-
-        renderer = Gtk.CellRendererText()
-        cmbCountries.pack_start(renderer, True)
-        cmbCountries.add_attribute(renderer, "markup", 0)
-
-        renderer = Gtk.CellRendererText()
-        renderer.set_visible(False)
-        cmbCountries.pack_start(renderer, True)
-        cmbCountries.add_attribute(renderer, "text", 1)
-
-        renderer = Gtk.CellRendererPixbuf()
-        cmbCountries.pack_start(renderer, False)
-        cmbCountries.add_attribute(renderer, "pixbuf", 2)
-
-        return cmbCountries
-
-    def create_dropdown_countries(self):
-        def _on_factory_setup(factory, list_item):
-            box = Gtk.Box(spacing=6, orientation=Gtk.Orientation.HORIZONTAL)
-            image = Gtk.Image()
-            label = Gtk.Label()
-            box.append(image)
-            box.append(label)
-            list_item.set_child(box)
-
-        def _on_factory_bind(factory, list_item):
-            box = list_item.get_child()
-            image = box.get_first_child()
-            label = box.get_last_child()
-            country = list_item.get_item()
-            label.set_text(country.name)
-            flag = self.app.icman.get_flag_pixbuf(country.id)
-            image.set_from_pixbuf(flag)
-            image.set_pixel_size(28)
-
-        # Populate the model
-        self.model = Gio.ListStore(item_type=Country)
-        lcountries = self.app.get_config('countries').load()
-        gcountries = self.app.get_config('countries').load_global()
-        self.model.append(Country(id='__', name='Any'))
-        for code in lcountries:
-            self.model.append(Country(id=code, name=gcountries[code]))
-
-        # Set up the factory
-        factory = Gtk.SignalListItemFactory()
-        factory.connect("setup", _on_factory_setup)
-        factory.connect("bind", _on_factory_bind)
-
-        return Gtk.DropDown(model=self.model, factory=factory, hexpand=True)
-
     def create_dropdown_generic(self, item_type, conf):
 
         def _on_factory_setup(factory, list_item):
@@ -170,10 +107,26 @@ class MiAZFactory:
 
         # Populate the model
         self.model = Gio.ListStore(item_type=item_type)
-        values = self.app.get_config(conf).load()
+        config = self.app.get_config(conf)
+        items = config.load()
+        config_is = config.get_config_is()
+
+        # foreign key is used when the local configuration is saved as a
+        # list, but it gets the name from global dictionary (eg.: Countries)
+        foreign = config.get_config_foreign()
+        if foreign:
+            gitems = config.load_global()
+
+        items = config.load()
         self.model.append(item_type(id='Any', name='Any'))
-        for value in values:
-            self.model.append(item_type(id=value, name=value))
+        for key in items:
+            if config_is is dict:
+                if foreign:
+                    self.model.append(item_type(id=key, name=gitems[key]))
+                else:
+                    self.model.append(item_type(id=key, name=items[key]))
+            else:
+                self.model.append(item_type(id=key, name=key))
 
         # Set up the factory
         factory = Gtk.SignalListItemFactory()
@@ -181,70 +134,6 @@ class MiAZFactory:
         factory.connect("bind", _on_factory_bind)
 
         return Gtk.DropDown(model=self.model, factory=factory, hexpand=True)
-
-    def create_combobox_text(self, conf: str) -> Gtk.ComboBox:
-        model = Gtk.ListStore(str, str)
-        combobox = Gtk.ComboBox()
-        combobox.set_model(model)
-        # ~ combobox.set_entry_text_column(0)
-
-        renderer = Gtk.CellRendererText()
-        renderer.set_visible(False)
-        combobox.pack_start(renderer, True)
-        combobox.add_attribute(renderer, "text", 0)
-
-        renderer = Gtk.CellRendererText()
-        combobox.pack_start(renderer, False)
-        combobox.add_attribute(renderer, "markup", 1)
-
-        first = model.append(['', 'All %s' % conf])
-        items = self.app.get_config(conf).load()
-        for key in items:
-            model.append([key, key.title()])
-        combobox.set_active_iter(first)
-        return combobox
-
-    def create_combobox_text_from(self) -> Gtk.ComboBox:
-        model = Gtk.ListStore(str, str)
-        combobox = Gtk.ComboBox()
-        combobox.set_model(model)
-
-        renderer = Gtk.CellRendererText()
-        renderer.set_visible(False)
-        combobox.pack_start(renderer, True)
-        combobox.add_attribute(renderer, "text", 0)
-
-        renderer = Gtk.CellRendererText()
-        combobox.pack_start(renderer, False)
-        combobox.add_attribute(renderer, "markup", 1)
-
-        first = model.append(['', 'From all'])
-        items = self.app.get_config('organizations').load()
-        for key in items:
-            model.append([key, items[key]])
-        combobox.set_active_iter(first)
-        return combobox
-
-    def create_combobox_text_to(self) -> Gtk.ComboBox:
-        model = Gtk.ListStore(str, str)
-        combobox = Gtk.ComboBox()
-        combobox.set_model(model)
-
-        renderer = Gtk.CellRendererText()
-        renderer.set_visible(False)
-        combobox.pack_start(renderer, True)
-        combobox.add_attribute(renderer, "text", 0)
-
-        renderer = Gtk.CellRendererText()
-        combobox.pack_start(renderer, False)
-        combobox.add_attribute(renderer, "markup", 1)
-
-        first = model.append(['', 'To all'])
-        items = self.app.get_config('organizations').load()
-        for key in items:
-            model.append([key, items[key]])
-        combobox.set_active_iter(first)
-        return combobox
 
     def create_dialog(self, parent, title, widget, width=-1, height=-1):
         dialog = Gtk.Dialog()
@@ -308,7 +197,6 @@ class MiAZFactory:
         row.set_child(boxCenter)
         return row
 
-
     def create_switch_button(self, icon_name, title, callback=None, data=None):
         button = Gtk.Switch()
         if callback is None:
@@ -316,31 +204,6 @@ class MiAZFactory:
         else:
             button.connect('notify::active', callback, data)
         return button
-
-    def create_treeview_column_icon(self, name: str, col_id: int, visible: bool, expand: bool, clickable: bool, indicator: bool, sort_col: int):
-        renderer = Gtk.CellRendererPixbuf()
-        column = Gtk.TreeViewColumn(name, renderer, pixbuf=col_id)
-        renderer.set_alignment(0.0, 0.5)
-        column.set_sizing(Gtk.TreeViewColumnSizing.AUTOSIZE)
-        column.set_expand(expand)
-        column.set_visible(visible)
-        column.set_clickable(clickable)
-        column.set_sort_indicator(indicator)
-        column.set_sort_column_id(sort_col)
-        column.set_sort_order(Gtk.SortType.ASCENDING)
-        return column
-
-    def create_treeview_column_text(self, name: str, col_id: int, visible: bool, expand: bool, clickable: bool, indicator: bool, sort_col: int):
-        renderer = Gtk.CellRendererText()
-        column = Gtk.TreeViewColumn(name, renderer, markup=col_id)
-        column.set_sizing(Gtk.TreeViewColumnSizing.AUTOSIZE)
-        column.set_expand(expand)
-        column.set_visible(visible)
-        column.set_clickable(clickable)
-        column.set_sort_indicator(indicator)
-        column.set_sort_column_id(sort_col)
-        column.set_sort_order(Gtk.SortType.ASCENDING)
-        return column
 
     def noop(self, *args):
         self.log.debug(args)

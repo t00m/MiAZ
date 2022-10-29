@@ -11,7 +11,7 @@ class MiAZConfig():
     config_local = None
     config_global = None
 
-    def __init__(self, log, config_for, config_local=None, config_global=None, config_is=dict, must_copy=True):
+    def __init__(self, log, config_for, config_local=None, config_global=None, config_is=dict, must_copy=True, foreign=False):
         super().__init__()
         self.log = log
         self.config_for = config_for
@@ -19,6 +19,7 @@ class MiAZConfig():
         self.config_global = config_global
         self.config_is = config_is
         self.must_copy = must_copy
+        self.foreign = foreign
         self.setup()
 
     def setup(self):
@@ -49,6 +50,12 @@ class MiAZConfig():
 
     def get_config_global(self):
         return self.config_global
+
+    def get_config_is(self):
+        return self.config_is
+
+    def get_config_foreign(self):
+        return self.foreign
 
     def load(self) -> dict:
         try:
@@ -181,7 +188,8 @@ class MiAZConfigSettingsCountries(MiAZConfig):
             config_global = os.path.join(ENV['GPATH']['RESOURCES'],
                             'MiAZ-countries.json'),
             config_is = dict,
-            must_copy = False
+            must_copy = False,
+            foreign = True
         )
 
 class MiAZConfigSettingsLanguages(MiAZConfig):
