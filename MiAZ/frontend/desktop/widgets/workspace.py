@@ -22,7 +22,7 @@ from gi.repository.GdkPixbuf import Pixbuf
 from MiAZ.backend.env import ENV
 from MiAZ.backend.log import get_logger
 from MiAZ.backend.util import json_load, json_save
-from MiAZ.backend.models import File
+from MiAZ.backend.models import File, Collection
 from MiAZ.frontend.desktop.util import get_file_mimetype
 from MiAZ.frontend.desktop.icons import MiAZIconManager
 from MiAZ.frontend.desktop.widgets.treeview import MiAZTreeView
@@ -81,14 +81,14 @@ class MiAZWorkspace(Gtk.Box):
         box = self.factory.create_box_filter('Free search', self.ent_sb)
         tlbFilters.append(box)
 
-        self.cmbCountries = self.factory.create_dropdown_countries()
-        # ~ self.cmbCountries.connect('changed', self._on_filter_selected)
-        box = self.factory.create_box_filter('Country', self.cmbCountries)
+        self.dpdCountries = self.factory.create_dropdown_countries()
+        self.dpdCountries.connect("notify::selected-item", self._on_filter_selected)
+        box = self.factory.create_box_filter('Country', self.dpdCountries)
         tlbFilters.append(box)
 
-        self.cmbCollections = self.factory.create_combobox_text('collections')
-        self.cmbCollections.connect('changed', self._on_filter_selected)
-        box = self.factory.create_box_filter('Collection', self.cmbCollections)
+        self.dpdCollections = self.factory.create_dropdown_generic(Collection, 'collections')
+        self.dpdCountries.connect("notify::selected-item", self._on_filter_selected)
+        box = self.factory.create_box_filter('Collection', self.dpdCollections)
         tlbFilters.append(box)
 
         self.cmbFrom = self.factory.create_combobox_text_from()
@@ -263,21 +263,19 @@ class MiAZWorkspace(Gtk.Box):
             return True
         return False
 
-    def _do_eval_cond_matches_(self, code_row):
-        treeiter = self.cmbCountries.get_active_iter()
-        model = self.cmbCountries.get_model()
-        code_chosen = model[treeiter][1]
-        if len(code_chosen) == 0:
+    def _do_eval_cond_matches_country(self, code_row):
+        country = self.dpdCountries.get_selected_item()
+        self.log.debug("%s == %s? %s", country.country_id, code_row, country.country_id == code_row)
+        if country.country_id == '__':
             return True
-        return code_chosen == code_row
+        return country.country_id == code_row
 
-    def _do_eval_cond_matches_collection(self, code_row):
-        treeiter = self.cmbCollections.get_active_iter()
-        model = self.cmbCollections.get_model()
-        code_chosen = model[treeiter][0]
-        if len(code_chosen) == 0:
+    def _do_eval_cond_matches_collection(self, col_row):
+        return True
+        col = self.dpdCollections.get_selected_item()
+        if col.name == '':
             return True
-        return code_chosen == code_row
+        return col.name == col_row
 
     def _do_eval_cond_matches_from(self, code_row):
         treeiter = self.cmbFrom.get_active_iter()
@@ -310,7 +308,7 @@ class MiAZWorkspace(Gtk.Box):
         if self.show_dashboard:
             if valid:
                 c0 = self._do_eval_cond_matches_freetext(item.path)
-                c1 = self._do_eval_cond_matches_(fields[1])
+                c1 = self._do_eval_cond_matches_country(fields[1])
                 c2 = self._do_eval_cond_matches_collection(fields[2])
                 c3 = self._do_eval_cond_matches_from(fields[3])
                 c4 = self._do_eval_cond_matches_purposes(fields[4])
@@ -418,5 +416,6 @@ class MiAZWorkspace(Gtk.Box):
         self.update_title()
 
     def _on_filter_selected(self, *args):
+        self.log.debug(args)
         self.displayed = 0
         self.filter.emit('changed', Gtk.FilterChange.DIFFERENT)

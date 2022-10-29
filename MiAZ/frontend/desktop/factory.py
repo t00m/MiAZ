@@ -141,19 +141,45 @@ class MiAZFactory:
 
         # Populate the model
         self.model = Gio.ListStore(item_type=Country)
-        countries = self.app.get_config('countries').load_global()
-        for code in countries:
-            self.model.append(Country(country_id=code, country_name=countries[code]))
+        lcountries = self.app.get_config('countries').load()
+        gcountries = self.app.get_config('countries').load_global()
+        self.model.append(Country(country_id='__', country_name='All countries'))
+        for code in lcountries:
+            self.model.append(Country(country_id=code, country_name=gcountries[code]))
 
         # Set up the factory
         factory = Gtk.SignalListItemFactory()
         factory.connect("setup", _on_factory_setup)
         factory.connect("bind", _on_factory_bind)
 
-        dropdown = Gtk.DropDown(model=self.model, factory=factory, hexpand=True)
-        # ~ dropdown.connect("notify::selected-item", self._on_selected_item_notify)
+        return Gtk.DropDown(model=self.model, factory=factory, hexpand=True)
 
-        return dropdown
+    def create_dropdown_generic(self, item_type, conf):
+
+        def _on_factory_setup(factory, list_item):
+            box = Gtk.Box(spacing=6, orientation=Gtk.Orientation.HORIZONTAL)
+            label = Gtk.Label()
+            box.append(label)
+            list_item.set_child(box)
+
+        def _on_factory_bind(factory, list_item):
+            box = list_item.get_child()
+            label = box.get_last_child()
+            item = list_item.get_item()
+            label.set_text(item.name)
+
+        # Populate the model
+        self.model = Gio.ListStore(item_type=item_type)
+        values = self.app.get_config(conf).load()
+        for value in values:
+            self.model.append(item_type(name=value))
+
+        # Set up the factory
+        factory = Gtk.SignalListItemFactory()
+        factory.connect("setup", _on_factory_setup)
+        factory.connect("bind", _on_factory_bind)
+
+        return Gtk.DropDown(model=self.model, factory=factory, hexpand=True)
 
     def create_combobox_text(self, conf: str) -> Gtk.ComboBox:
         model = Gtk.ListStore(str, str)
