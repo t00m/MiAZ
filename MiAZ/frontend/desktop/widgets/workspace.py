@@ -21,9 +21,8 @@ from gi.repository.GdkPixbuf import Pixbuf
 
 from MiAZ.backend.env import ENV
 from MiAZ.backend.log import get_logger
-from MiAZ.backend.util import json_load
 from MiAZ.backend.util import json_load, json_save
-from MiAZ.backend.models.file import File
+from MiAZ.backend.models import File
 from MiAZ.frontend.desktop.util import get_file_mimetype
 from MiAZ.frontend.desktop.icons import MiAZIconManager
 from MiAZ.frontend.desktop.widgets.treeview import MiAZTreeView
@@ -36,9 +35,6 @@ class MiAZWorkspace(Gtk.Box):
     """ Wrapper for Gtk.Stack with  with a StackSwitcher """
     show_dashboard = True
     displayed = 0
-    idr = {} # Internal Dictionary of rows
-    update_mode = False
-    # ~ dd = datetime.timedelta(seconds=0)
 
     def __init__(self, app):
         super(MiAZWorkspace, self).__init__(orientation=Gtk.Orientation.HORIZONTAL)
@@ -52,15 +48,12 @@ class MiAZWorkspace(Gtk.Box):
         self.set_margin_end(margin=6)
         self.set_margin_bottom(margin=6)
         self.set_margin_start(margin=6)
-
-        self.create_menu_selection_single()
-        self.create_menu_selection_multiple()
-        toolbar = self.setup_toolbar()
-        view = self.setup_view()
+        toolbar = self._setup_toolbar()
+        view = self._setup_view()
         self.append(toolbar)
         self.append(view)
 
-    def setup_toolbar(self):
+    def _setup_toolbar(self):
         # Toolbar
         toolbar = Gtk.Box.new(orientation=Gtk.Orientation.VERTICAL, spacing=3)
 
@@ -84,32 +77,32 @@ class MiAZWorkspace(Gtk.Box):
         tlbFilters.set_vexpand(False)
 
         self.ent_sb = Gtk.SearchEntry(placeholder_text="Type here")
-        self.ent_sb.connect('changed', self. on_filter_selected)
+        self.ent_sb.connect('changed', self._on_filter_selected)
         box = self.factory.create_box_filter('Free search', self.ent_sb)
         tlbFilters.append(box)
 
-        self.cmbCountries = self.factory.create_combobox_countries()
-        self.cmbCountries.connect('changed', self.on_filter_selected)
+        self.cmbCountries = self.factory.create_dropdown_countries()
+        # ~ self.cmbCountries.connect('changed', self._on_filter_selected)
         box = self.factory.create_box_filter('Country', self.cmbCountries)
         tlbFilters.append(box)
 
         self.cmbCollections = self.factory.create_combobox_text('collections')
-        self.cmbCollections.connect('changed', self.on_filter_selected)
+        self.cmbCollections.connect('changed', self._on_filter_selected)
         box = self.factory.create_box_filter('Collection', self.cmbCollections)
         tlbFilters.append(box)
 
         self.cmbFrom = self.factory.create_combobox_text_from()
-        self.cmbFrom.connect('changed', self.on_filter_selected)
+        self.cmbFrom.connect('changed', self._on_filter_selected)
         box = self.factory.create_box_filter('From', self.cmbFrom)
         tlbFilters.append(box)
 
         self.cmbPurposes = self.factory.create_combobox_text('purposes')
-        self.cmbPurposes.connect('changed', self.on_filter_selected)
+        self.cmbPurposes.connect('changed', self._on_filter_selected)
         box = self.factory.create_box_filter('Purpose', self.cmbPurposes)
         tlbFilters.append(box)
 
         self.cmbTo = self.factory.create_combobox_text_to()
-        self.cmbTo.connect('changed', self.on_filter_selected)
+        self.cmbTo.connect('changed', self._on_filter_selected)
         box = self.factory.create_box_filter('To', self.cmbTo)
         tlbFilters.append(box)
 
@@ -123,9 +116,7 @@ class MiAZWorkspace(Gtk.Box):
         frmReview.set_margin_start(margin=3)
         frmReview.set_hexpand(False)
         frmReview.set_vexpand(True)
-        # ~ lblFrameTitle = self.factory.create_label('<big><b>Filters</b></big>')
-        # ~ frmReview.set_label_widget(lblFrameTitle)
-        # ~ frmReview.set_label_align(0.5)
+
         status = Adw.StatusPage()
         # ~ status.set_icon_name('miaz-mime-exec')
         status.set_title('Warning!')
@@ -142,7 +133,7 @@ class MiAZWorkspace(Gtk.Box):
         self.backend.connect('source-configuration-updated', self.update)
         return toolbar
 
-    def setup_view_toolbar(self):
+    def _setup_view_toolbar(self):
         boxViewToolbar = Gtk.Box.new(orientation=Gtk.Orientation.HORIZONTAL, spacing=3)
         frmToolbar = Gtk.Frame()
         frmToolbar.set_margin_top(margin=3)
@@ -156,7 +147,7 @@ class MiAZWorkspace(Gtk.Box):
         boxViewToolbar.append(frmToolbar)
         return boxViewToolbar
 
-    def setup_view_body(self):
+    def _setup_view_body(self):
         boxViewBody = Gtk.Box.new(orientation=Gtk.Orientation.HORIZONTAL, spacing=3)
         frmViewBody = Gtk.Frame()
         frmViewBody.set_margin_top(margin=3)
@@ -175,7 +166,8 @@ class MiAZWorkspace(Gtk.Box):
 
         # Filtering
         self.model_filter = Gtk.FilterListModel.new(self.model)
-        self.filter = Gtk.CustomFilter.new(self.clb_visible_function, self.model_filter)
+        self.model_filter.connect('items-changed', self._on_items_changed)
+        self.filter = Gtk.CustomFilter.new(self._do_filter_listview, self.model_filter)
         self.model_filter.set_filter(self.filter)
 
         # Sorting
@@ -200,45 +192,22 @@ class MiAZWorkspace(Gtk.Box):
         frmViewBody.set_child(scrwin)
         return boxViewBody
 
-    def filter_by_sth(self, item, filter_list_model):
-        self.log.debug(item.path)
-        return False
-
-    def setup_view(self):
+    def _setup_view(self):
         boxView = Gtk.Box.new(orientation=Gtk.Orientation.VERTICAL, spacing=0)
-        boxViewToolbar = self.setup_view_toolbar()
-        boxViewBody = self.setup_view_body()
-
+        boxViewToolbar = self._setup_view_toolbar()
+        boxViewBody = self._setup_view_body()
         boxView.append(boxViewToolbar)
         boxView.append(boxViewBody)
-
         return boxView
 
-
-        # Key events controller
-        # ~ evk = Gtk.EventControllerKey.new()
-        # ~ evk.connect("key-pressed", self.on_key_press)
-        # ~ self.treeview.add_controller(evk)
-
-    # Set up the child of the list item; this can be an arbitrarily
-    # complex widget but we use a simple label now
     def _on_factory_setup(self, factory, list_item):
         box = MiAZFlowBoxRow()
         list_item.set_child(box)
 
-    # Bind the item in the model to the row widget; again, since
-    # the object in the model can contain multiple properties, and
-    # the list item can contain any arbitrarily complex widget, we
-    # can have very complex rows instead of the simple cell renderer
-    # layouts in GtkComboBox
     def _on_factory_bind(self, factory, list_item):
-        # ~ label = list_item.get_child()
-        # ~ country = list_item.get_item()
-        # ~ label.set_text(country.country_name)
         box = list_item.get_child()
         wdgIcon = box.get_first_child()
         wdgLabel = box.get_last_child()
-
         row = list_item.get_item()
         mimetype = get_file_mimetype(row.path)
         gicon = self.app.icman.get_gicon_from_file_mimetype(mimetype)
@@ -246,38 +215,26 @@ class MiAZWorkspace(Gtk.Box):
         wdgIcon.set_from_gicon(gicon)
         wdgIcon.set_pixel_size(36)
 
-    # The notify signal is fired when the selection changes
     def _on_selected_item_notify(self, listview, _):
         path = listview.get_selected_item()
         self.log.debug(path)
+
+    def _on_items_changed(self, model_filter, position, removed, added):
+        pass # keep?
 
     def _on_activated_item(self, listview, position):
         item = self.model.get_item(position)
         self.log.debug(item.path)
 
-    def on_key_press(self, event, keyval, keycode, state):
-        self.log.debug("%s > %s > %s > %s", event, keyval, keycode, state)
-        if keyval == Gdk.KEY_q: # and state & Gdk.ModifierType.CONTROL_MASK:   # Add Gdk to your imports. i.e. from gi import Gdk
-            self.app.quit()
-        elif keyval == Gdk.KEY_f:
-            self.ent_sb.grab_focus()
-
     def update(self, *args):
-        # ~ self.log.debug("Got signal 'target-configuration-updated'")
+        # FIXME: Get dict from backend
         repocnf = self.backend.get_repo_source_config_file()
         self.repodct = json_load(repocnf)
-        who = self.app.get_config('organizations')
-        selection = self.view.get_model()
-        model = selection.get_model()
         self.model.remove_all()
         for path in self.repodct:
             self.model.append(File(path=path))
-        # ~ page = self.app.get_stack_page_by_name('workspace')
-        # ~ page.set_badge_number(len(repodct))
 
     def update_title(self):
-        # ~ repocnf = self.backend.get_repo_source_config_file()
-        # ~ repodct = json_load(repocnf)
         header = self.app.get_header()
         title = header.get_title_widget()
         if title is not None:
@@ -287,28 +244,26 @@ class MiAZWorkspace(Gtk.Box):
         wdgTitle.set_subtitle("Displaying %d of %d documents" % (self.displayed, len(self.repodct)))
         header.set_title_widget(wdgTitle)
 
-    def __show_file_info(self, button, filepath):
-        # ~ self.log.debug(args)
+    def _on_show_file_info(self, button, filepath):
         treeview = self.__create_trvreasons(filepath)
         popover = Gtk.Popover()
         popover.set_child(treeview)
         popover.show()
 
-    def __create_popover_fileinfo(self, filepath):
-        # ~ self.log.debug(args)
+    def _on_create_popover_fileinfo(self, filepath):
         treeview = self.__create_trvreasons(filepath)
         popover = Gtk.Popover()
         popover.set_child(treeview)
         return popover
 
-    def cond_matches_freetext(self, path):
+    def _do_eval_cond_matches_freetext(self, path):
         left = self.ent_sb.get_text()
         right = path
         if left.upper() in right.upper():
             return True
         return False
 
-    def cond_matches_country(self, code_row):
+    def _do_eval_cond_matches_(self, code_row):
         treeiter = self.cmbCountries.get_active_iter()
         model = self.cmbCountries.get_model()
         code_chosen = model[treeiter][1]
@@ -316,7 +271,7 @@ class MiAZWorkspace(Gtk.Box):
             return True
         return code_chosen == code_row
 
-    def cond_matches_collection(self, code_row):
+    def _do_eval_cond_matches_collection(self, code_row):
         treeiter = self.cmbCollections.get_active_iter()
         model = self.cmbCollections.get_model()
         code_chosen = model[treeiter][0]
@@ -324,7 +279,7 @@ class MiAZWorkspace(Gtk.Box):
             return True
         return code_chosen == code_row
 
-    def cond_matches_from(self, code_row):
+    def _do_eval_cond_matches_from(self, code_row):
         treeiter = self.cmbFrom.get_active_iter()
         model = self.cmbFrom.get_model()
         code_chosen = model[treeiter][0]
@@ -332,7 +287,7 @@ class MiAZWorkspace(Gtk.Box):
             return True
         return code_chosen == code_row
 
-    def cond_matches_purposes(self, code_row):
+    def _do_eval_cond_matches_purposes(self, code_row):
         treeiter = self.cmbPurposes.get_active_iter()
         model = self.cmbPurposes.get_model()
         code_chosen = model[treeiter][0]
@@ -340,7 +295,7 @@ class MiAZWorkspace(Gtk.Box):
             return True
         return code_chosen == code_row
 
-    def cond_matches_to(self, code_row):
+    def _do_eval_cond_matches_to(self, code_row):
         treeiter = self.cmbTo.get_active_iter()
         model = self.cmbTo.get_model()
         code_chosen = model[treeiter][0]
@@ -348,37 +303,26 @@ class MiAZWorkspace(Gtk.Box):
             return True
         return code_chosen == code_row
 
-    def clb_visible_function(self, item, filter_list_model):
-        # ~ ds = datetime.now()
-        # ~ repocnf = self.backend.get_repo_source_config_file()
-        # ~ self.log.debug(repocnf)
-        # ~ repodct = json_load(repocnf)
-        # ~ self.log.debug(repodct[item.path])
+    def _do_filter_listview(self, item, filter_list_model):
         valid = self.repodct[item.path]['valid']
         fields = self.repodct[item.path]['fields']
-        # ~ self.log.debug("%s > %s", item.path, valid)
-        # ~ return valid
-        # ~ self.log.debug(self.show_dashboard)
         display = False
         if self.show_dashboard:
             if valid:
-                c0 = self.cond_matches_freetext(item.path)
-                c1 = self.cond_matches_country(fields[1])
-                c2 = self.cond_matches_collection(fields[2])
-                c3 = self.cond_matches_from(fields[3])
-                c4 = self.cond_matches_purposes(fields[4])
-                c6 = self.cond_matches_to(fields[6])
+                c0 = self._do_eval_cond_matches_freetext(item.path)
+                c1 = self._do_eval_cond_matches_(fields[1])
+                c2 = self._do_eval_cond_matches_collection(fields[2])
+                c3 = self._do_eval_cond_matches_from(fields[3])
+                c4 = self._do_eval_cond_matches_purposes(fields[4])
+                c6 = self._do_eval_cond_matches_to(fields[6])
                 display = c0 and c1 and c2 and c3 and c4 and c6
         else:
             if not valid:
-                display = self.cond_matches_freetext(item.path)
+                display = self._do_eval_cond_matches_freetext(item.path)
 
         if display:
             self.displayed += 1
-        # ~ self.log.debug("File '%s' valid? %s and displayed? %s, Dashboard? %s", os.path.basename(item.path), valid, display, self.show_dashboard)
-        # ~ de = datetime.now()
-        # ~ dt = de - ds
-        # ~ self.dd += dt
+
         return display
 
     def clb_sort_function(self, flowboxchild1, flowboxchild2):
@@ -393,106 +337,9 @@ class MiAZWorkspace(Gtk.Box):
         else:
             return -1
 
-    def on_key_released(self, widget, keyval, keycode, state):
-        self.filter_view()
-        # ~ keyname = Gdk.keyval_name(keyval)
-        # ~ if Gdk.ModifierType.CONTROL_MASK & state and keyname == 'f':
-        #       ....
-
-    def on_row_activated(self, *args):
-        self.log.debug(args)
-
-
-
-    def create_menu_selection_single(self) -> Gio.Menu:
-        self.menu_workspace_single = Gio.Menu.new()
-
-        # Fake item for menu title
-        item_fake = Gio.MenuItem.new()
-        item_fake.set_label('Single selection')
-        action = Gio.SimpleAction.new('fake', None)
-        item_fake.set_detailed_action(detailed_action='fake')
-        self.menu_workspace_single.append_item(item_fake)
-
-        item_rename_manual = Gio.MenuItem.new()
-        item_rename_manual.set_label('Rename manually')
-        action = Gio.SimpleAction.new('rename_ws_manually', None)
-        action.connect('activate', self.action_rename_manually)
-        self.app.add_action(action)
-        item_rename_manual.set_detailed_action(detailed_action='app.rename_ws_manually')
-        self.menu_workspace_single.append_item(item_rename_manual)
-
-        return self.menu_workspace_single
-
-    def create_menu_selection_multiple(self):
-        self.menu_workspace_multiple = Gio.Menu.new()
-
-        fields = ['date', 'country', 'collection', 'purpose']
-        item_fake = Gio.MenuItem.new()
-        item_fake.set_label('Multiple selection')
-        action = Gio.SimpleAction.new('fake', None)
-        item_fake.set_detailed_action(detailed_action='fake')
-        self.menu_workspace_multiple.append_item(item_fake)
-
-        # Submenu for mass renaming
-        submenu_rename_root = Gio.Menu.new()
-        submenu_rename = Gio.MenuItem.new_submenu(
-            label='Mass renaming of...',
-            submenu=submenu_rename_root,
-        )
-        self.menu_workspace_multiple.append_item(submenu_rename)
-
-        for item in fields:
-            menuitem = Gio.MenuItem.new()
-            menuitem.set_label(label='... %s' % item)
-            action = Gio.SimpleAction.new('rename_%s' % item, None)
-            callback = 'self.action_rename'
-            action.connect('activate', eval(callback), item)
-            self.app.add_action(action)
-            menuitem.set_detailed_action(detailed_action='app.rename_%s' % item)
-            submenu_rename_root.append_item(menuitem)
-
-        # Submenu for mass adding
-        submenu_add_root = Gio.Menu.new()
-        submenu_add = Gio.MenuItem.new_submenu(
-            label='Mass adding of...',
-            submenu=submenu_add_root,
-        )
-        self.menu_workspace_multiple.append_item(submenu_add)
-
-        for item in fields:
-            menuitem = Gio.MenuItem.new()
-            menuitem.set_label(label='... %s' % item)
-            action = Gio.SimpleAction.new('add_%s' % item, None)
-            callback = 'self.action_add'
-            action.connect('activate', eval(callback), item)
-            self.app.add_action(action)
-            menuitem.set_detailed_action(detailed_action='app.add_%s' % item)
-            submenu_add_root.append_item(menuitem)
-
-        item_force_update = Gio.MenuItem.new()
-        item_force_update.set_label(label='Force update')
-        action = Gio.SimpleAction.new('workspace_update', None)
-        action.connect('activate', self.update)
-        self.app.add_action(action)
-        item_force_update.set_detailed_action(detailed_action='app.workspace_update')
-        self.menu_workspace_multiple.append_item(item_force_update)
-
-        item_delete = Gio.MenuItem.new()
-        item_delete.set_label(label='Delete documents')
-        action = Gio.SimpleAction.new('workspace_delete', None)
-        action.connect('activate', self.noop)
-        self.app.add_action(action)
-        item_delete.set_detailed_action(detailed_action='app.workspace_delete')
-        self.menu_workspace_multiple.append_item(item_delete)
-        return self.menu_workspace_multiple
-
-
     def action_rename_manually(self, button, data):
         row = data
         source = row.get_filepath()
-        # ~ repocnf = self.backend.get_repo_source_config_file()
-        # ~ repodct = json_load(repocnf)
         if self.repodct[source]['valid']:
             basename = os.path.basename(source)
             filename = basename[:basename.rfind('.')]
@@ -500,10 +347,10 @@ class MiAZWorkspace(Gtk.Box):
         else:
             target = self.repodct[source]['suggested'].split('-')
         dialog = MiAZRenameDialog(self.app, row, source, target)
-        dialog.connect('response', self.on_response_rename)
+        dialog.connect('response', self._on_response_rename)
         dialog.show()
 
-    def on_response_rename(self, dialog, response):
+    def _on_response_rename(self, dialog, response):
         if response == Gtk.ResponseType.ACCEPT:
             row = dialog.get_row()
             source = dialog.get_filepath_source()
@@ -542,18 +389,7 @@ class MiAZWorkspace(Gtk.Box):
             # Then, rename it:
             shutil.move(source, target)
             self.log.debug("Rename document from '%s' to '%s'", os.path.basename(source), os.path.basename(target))
-            self.flowbox.remove(row)
-            del(self.idr[source])
             self.backend.check_source()
-
-    def on_double_click(self, treeview, treepath, treecolumn):
-        treeiter = self.sorted_model.get_iter(treepath)
-        filename = self.sorted_model[treeiter][0]
-        repodir = self.app.get_config('app').get('source')
-        filepath = os.path.join(repodir, filename)
-        self.log.debug(filepath)
-        if os.path.exists(filepath):
-            os.system("xdg-open '%s'" % filepath)
 
     def action_rename(self, *args):
         self.log.debug(args)
@@ -564,46 +400,23 @@ class MiAZWorkspace(Gtk.Box):
     def noop(self, *args):
         self.log.debug(args)
 
-    def on_change_selection(self, selection):
-        model, selected_rows = selection.get_selected_rows()
-        if len(selected_rows) > 1:
-            self.btnDocsSel.set_label("%d documents selected" % len(selected_rows))
-            self.popDocsSel.set_menu_model(self.menu_workspace_multiple)
-            self.btnDocsSel.set_sensitive(True)
-        elif len(selected_rows) == 1:
-            self.btnDocsSel.set_label("%d documents selected" % len(selected_rows))
-            self.popDocsSel.set_menu_model(self.menu_workspace_single)
-            self.btnDocsSel.set_sensitive(True)
-        else:
-            self.btnDocsSel.set_label("No documents selected")
-            self.popDocsSel.set_menu_model(None)
-            self.btnDocsSel.set_sensitive(False)
 
-    def on_display_document(self, button, filepath):
+    def document_display(self, button, filepath):
         self.log.debug("Displaying %s", filepath)
         os.system("xdg-open '%s'" % filepath)
 
-    # ~ def on_rename_file(self, *args):
-        # ~ dialog = self.factory.create_dialog(self.app.win, 'Rename file', Gtk.Label())
-        # ~ dialog.show()
-
     def on_show_dashboard(self, *args):
-        # ~ self.dd = datetime.timedelta(seconds=0)
         self.displayed = 0
         self.show_dashboard = True
         self.filter.emit('changed', Gtk.FilterChange.DIFFERENT)
         self.update_title()
 
     def on_show_review(self, *args):
-        # ~ self.dd = datetime.timedelta(seconds=0)
         self.displayed = 0
         self.show_dashboard = False
         self.filter.emit('changed', Gtk.FilterChange.DIFFERENT)
-        # ~ self.update()
         self.update_title()
 
-    def on_filter_selected(self, *args):
-        # ~ self.dd = datetime.timedelta(seconds=0)
+    def _on_filter_selected(self, *args):
         self.displayed = 0
         self.filter.emit('changed', Gtk.FilterChange.DIFFERENT)
-        # ~ self.log.debug(self.dd)

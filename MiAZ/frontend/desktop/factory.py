@@ -17,6 +17,7 @@ from gi.repository import Pango
 from gi.repository.GdkPixbuf import Pixbuf
 
 from MiAZ.backend.log import get_logger
+from MiAZ.backend.models import Country
 from MiAZ.frontend.desktop.icons import MiAZIconManager
 
 class MiAZFactory:
@@ -117,9 +118,42 @@ class MiAZFactory:
         cmbCountries.pack_start(renderer, False)
         cmbCountries.add_attribute(renderer, "pixbuf", 2)
 
-
-
         return cmbCountries
+
+    def create_dropdown_countries(self):
+        def _on_factory_setup(factory, list_item):
+            box = Gtk.Box(spacing=6, orientation=Gtk.Orientation.HORIZONTAL)
+            image = Gtk.Image()
+            label = Gtk.Label()
+            box.append(image)
+            box.append(label)
+            list_item.set_child(box)
+
+        def _on_factory_bind(factory, list_item):
+            box = list_item.get_child()
+            image = box.get_first_child()
+            label = box.get_last_child()
+            country = list_item.get_item()
+            label.set_text(country.country_name)
+            country_flag = self.app.icman.get_flag_pixbuf(country.country_id)
+            image.set_from_pixbuf(country_flag)
+            image.set_pixel_size(28)
+
+        # Populate the model
+        self.model = Gio.ListStore(item_type=Country)
+        countries = self.app.get_config('countries').load_global()
+        for code in countries:
+            self.model.append(Country(country_id=code, country_name=countries[code]))
+
+        # Set up the factory
+        factory = Gtk.SignalListItemFactory()
+        factory.connect("setup", _on_factory_setup)
+        factory.connect("bind", _on_factory_bind)
+
+        dropdown = Gtk.DropDown(model=self.model, factory=factory, hexpand=True)
+        # ~ dropdown.connect("notify::selected-item", self._on_selected_item_notify)
+
+        return dropdown
 
     def create_combobox_text(self, conf: str) -> Gtk.ComboBox:
         model = Gtk.ListStore(str, str)
@@ -283,3 +317,86 @@ class MiAZFactory:
 
     def noop(self, *args):
         self.log.debug(args)
+
+    def create_menu_selection_single(self) -> Gio.Menu:
+        self.menu_workspace_single = Gio.Menu.new()
+
+        # Fake item for menu title
+        item_fake = Gio.MenuItem.new()
+        item_fake.set_label('Single selection')
+        action = Gio.SimpleAction.new('fake', None)
+        item_fake.set_detailed_action(detailed_action='fake')
+        self.menu_workspace_single.append_item(item_fake)
+
+        item_rename_manual = Gio.MenuItem.new()
+        item_rename_manual.set_label('Rename manually')
+        action = Gio.SimpleAction.new('rename_ws_manually', None)
+        # ~ action.connect('activate', self.action_rename_manually)
+        self.app.add_action(action)
+        item_rename_manual.set_detailed_action(detailed_action='app.rename_ws_manually')
+        self.menu_workspace_single.append_item(item_rename_manual)
+
+        return self.menu_workspace_single
+
+    def create_menu_selection_multiple(self):
+        self.menu_workspace_multiple = Gio.Menu.new()
+
+        fields = ['date', 'country', 'collection', 'purpose']
+        item_fake = Gio.MenuItem.new()
+        item_fake.set_label('Multiple selection')
+        action = Gio.SimpleAction.new('fake', None)
+        item_fake.set_detailed_action(detailed_action='fake')
+        self.menu_workspace_multiple.append_item(item_fake)
+
+        # Submenu for mass renaming
+        submenu_rename_root = Gio.Menu.new()
+        submenu_rename = Gio.MenuItem.new_submenu(
+            label='Mass renaming of...',
+            submenu=submenu_rename_root,
+        )
+        self.menu_workspace_multiple.append_item(submenu_rename)
+
+        for item in fields:
+            menuitem = Gio.MenuItem.new()
+            menuitem.set_label(label='... %s' % item)
+            action = Gio.SimpleAction.new('rename_%s' % item, None)
+            callback = 'self.action_rename'
+            action.connect('activate', eval(callback), item)
+            self.app.add_action(action)
+            menuitem.set_detailed_action(detailed_action='app.rename_%s' % item)
+            submenu_rename_root.append_item(menuitem)
+
+        # Submenu for mass adding
+        submenu_add_root = Gio.Menu.new()
+        submenu_add = Gio.MenuItem.new_submenu(
+            label='Mass adding of...',
+            submenu=submenu_add_root,
+        )
+        self.menu_workspace_multiple.append_item(submenu_add)
+
+        for item in fields:
+            menuitem = Gio.MenuItem.new()
+            menuitem.set_label(label='... %s' % item)
+            action = Gio.SimpleAction.new('add_%s' % item, None)
+            callback = 'self.action_add'
+            action.connect('activate', eval(callback), item)
+            self.app.add_action(action)
+            menuitem.set_detailed_action(detailed_action='app.add_%s' % item)
+            submenu_add_root.append_item(menuitem)
+
+        item_force_update = Gio.MenuItem.new()
+        item_force_update.set_label(label='Force update')
+        action = Gio.SimpleAction.new('workspace_update', None)
+        action.connect('activate', self.update)
+        self.app.add_action(action)
+        item_force_update.set_detailed_action(detailed_action='app.workspace_update')
+        self.menu_workspace_multiple.append_item(item_force_update)
+
+        item_delete = Gio.MenuItem.new()
+        item_delete.set_label(label='Delete documents')
+        action = Gio.SimpleAction.new('workspace_delete', None)
+        action.connect('activate', self.noop)
+        self.app.add_action(action)
+        item_delete.set_detailed_action(detailed_action='app.workspace_delete')
+        self.menu_workspace_multiple.append_item(item_delete)
+        return self.menu_workspace_multiple
