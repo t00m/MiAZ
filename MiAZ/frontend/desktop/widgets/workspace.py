@@ -22,7 +22,7 @@ from gi.repository.GdkPixbuf import Pixbuf
 from MiAZ.backend.env import ENV
 from MiAZ.backend.log import get_logger
 from MiAZ.backend.util import json_load, json_save
-from MiAZ.backend.models import File, Collection
+from MiAZ.backend.models import File, Collection, Person, Country, Purpose, Concept
 from MiAZ.frontend.desktop.util import get_file_mimetype
 from MiAZ.frontend.desktop.icons import MiAZIconManager
 from MiAZ.frontend.desktop.widgets.treeview import MiAZTreeView
@@ -87,23 +87,23 @@ class MiAZWorkspace(Gtk.Box):
         tlbFilters.append(box)
 
         self.dpdCollections = self.factory.create_dropdown_generic(Collection, 'collections')
-        self.dpdCountries.connect("notify::selected-item", self._on_filter_selected)
+        self.dpdCollections.connect("notify::selected-item", self._on_filter_selected)
         box = self.factory.create_box_filter('Collection', self.dpdCollections)
         tlbFilters.append(box)
 
-        self.cmbFrom = self.factory.create_combobox_text_from()
-        self.cmbFrom.connect('changed', self._on_filter_selected)
-        box = self.factory.create_box_filter('From', self.cmbFrom)
+        self.dpdFrom = self.factory.create_dropdown_generic(Person, 'organizations')
+        self.dpdFrom.connect("notify::selected-item", self._on_filter_selected)
+        box = self.factory.create_box_filter('From', self.dpdFrom)
         tlbFilters.append(box)
 
-        self.cmbPurposes = self.factory.create_combobox_text('purposes')
-        self.cmbPurposes.connect('changed', self._on_filter_selected)
-        box = self.factory.create_box_filter('Purpose', self.cmbPurposes)
+        self.dpdPurposes = self.factory.create_dropdown_generic(Purpose, 'purposes')
+        self.dpdPurposes.connect("notify::selected-item", self._on_filter_selected)
+        box = self.factory.create_box_filter('Purpose', self.dpdPurposes)
         tlbFilters.append(box)
 
-        self.cmbTo = self.factory.create_combobox_text_to()
-        self.cmbTo.connect('changed', self._on_filter_selected)
-        box = self.factory.create_box_filter('To', self.cmbTo)
+        self.dpdTo = self.factory.create_dropdown_generic(Person, 'organizations')
+        self.dpdTo.connect("notify::selected-item", self._on_filter_selected)
+        box = self.factory.create_box_filter('To', self.dpdTo)
         tlbFilters.append(box)
 
         frmFilters.set_child(tlbFilters)
@@ -209,9 +209,9 @@ class MiAZWorkspace(Gtk.Box):
         wdgIcon = box.get_first_child()
         wdgLabel = box.get_last_child()
         row = list_item.get_item()
-        mimetype = get_file_mimetype(row.path)
+        mimetype = get_file_mimetype(row.id)
         gicon = self.app.icman.get_gicon_from_file_mimetype(mimetype)
-        wdgLabel.set_text(os.path.basename(row.path))
+        wdgLabel.set_text(os.path.basename(row.id))
         wdgIcon.set_from_gicon(gicon)
         wdgIcon.set_pixel_size(36)
 
@@ -224,7 +224,7 @@ class MiAZWorkspace(Gtk.Box):
 
     def _on_activated_item(self, listview, position):
         item = self.model.get_item(position)
-        self.log.debug(item.path)
+        self.log.debug(item.id)
 
     def update(self, *args):
         # FIXME: Get dict from backend
@@ -232,7 +232,7 @@ class MiAZWorkspace(Gtk.Box):
         self.repodct = json_load(repocnf)
         self.model.remove_all()
         for path in self.repodct:
-            self.model.append(File(path=path))
+            self.model.append(File(id=path, name=os.path.basename(path)))
 
     def update_title(self):
         header = self.app.get_header()
@@ -263,60 +263,52 @@ class MiAZWorkspace(Gtk.Box):
             return True
         return False
 
-    def _do_eval_cond_matches_country(self, code_row):
-        country = self.dpdCountries.get_selected_item()
-        self.log.debug("%s == %s? %s", country.country_id, code_row, country.country_id == code_row)
-        if country.country_id == '__':
+    def _do_eval_cond_matches_country(self, id):
+        item = self.dpdCountries.get_selected_item()
+        if item.id == '__':
             return True
-        return country.country_id == code_row
+        return item.id == id
 
-    def _do_eval_cond_matches_collection(self, col_row):
-        return True
-        col = self.dpdCollections.get_selected_item()
-        if col.name == '':
+    def _do_eval_cond_matches_collection(self, name):
+        item = self.dpdCollections.get_selected_item()
+        if item.id == 'Any':
             return True
-        return col.name == col_row
+        return item.name == name
 
-    def _do_eval_cond_matches_from(self, code_row):
-        treeiter = self.cmbFrom.get_active_iter()
-        model = self.cmbFrom.get_model()
-        code_chosen = model[treeiter][0]
-        if len(code_chosen) == 0:
+    def _do_eval_cond_matches_from(self, name):
+        item = self.dpdFrom.get_selected_item()
+        if item.id == 'Any':
             return True
-        return code_chosen == code_row
+        return item.name == name
 
-    def _do_eval_cond_matches_purposes(self, code_row):
-        treeiter = self.cmbPurposes.get_active_iter()
-        model = self.cmbPurposes.get_model()
-        code_chosen = model[treeiter][0]
-        if len(code_chosen) == 0:
+    def _do_eval_cond_matches_purpose(self, name):
+        item = self.dpdPurposes.get_selected_item()
+        if item.id == 'Any':
             return True
-        return code_chosen == code_row
+        return item.name == name
 
-    def _do_eval_cond_matches_to(self, code_row):
-        treeiter = self.cmbTo.get_active_iter()
-        model = self.cmbTo.get_model()
-        code_chosen = model[treeiter][0]
-        if len(code_chosen) == 0:
+    def _do_eval_cond_matches_to(self, name):
+        item = self.dpdTo.get_selected_item()
+        if item.id == 'Any':
             return True
-        return code_chosen == code_row
+        return item.name == name
 
     def _do_filter_listview(self, item, filter_list_model):
-        valid = self.repodct[item.path]['valid']
-        fields = self.repodct[item.path]['fields']
+        valid = self.repodct[item.id]['valid']
+        fields = self.repodct[item.id]['fields']
         display = False
         if self.show_dashboard:
             if valid:
-                c0 = self._do_eval_cond_matches_freetext(item.path)
+                c0 = self._do_eval_cond_matches_freetext(item.id)
                 c1 = self._do_eval_cond_matches_country(fields[1])
                 c2 = self._do_eval_cond_matches_collection(fields[2])
                 c3 = self._do_eval_cond_matches_from(fields[3])
-                c4 = self._do_eval_cond_matches_purposes(fields[4])
+                c4 = self._do_eval_cond_matches_purpose(fields[4])
                 c6 = self._do_eval_cond_matches_to(fields[6])
                 display = c0 and c1 and c2 and c3 and c4 and c6
         else:
             if not valid:
-                display = self._do_eval_cond_matches_freetext(item.path)
+                display = self._do_eval_cond_matches_freetext(item.id)
 
         if display:
             self.displayed += 1

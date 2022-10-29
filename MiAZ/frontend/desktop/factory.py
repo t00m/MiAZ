@@ -134,18 +134,18 @@ class MiAZFactory:
             image = box.get_first_child()
             label = box.get_last_child()
             country = list_item.get_item()
-            label.set_text(country.country_name)
-            country_flag = self.app.icman.get_flag_pixbuf(country.country_id)
-            image.set_from_pixbuf(country_flag)
+            label.set_text(country.name)
+            flag = self.app.icman.get_flag_pixbuf(country.id)
+            image.set_from_pixbuf(flag)
             image.set_pixel_size(28)
 
         # Populate the model
         self.model = Gio.ListStore(item_type=Country)
         lcountries = self.app.get_config('countries').load()
         gcountries = self.app.get_config('countries').load_global()
-        self.model.append(Country(country_id='__', country_name='All countries'))
+        self.model.append(Country(id='__', name='Any'))
         for code in lcountries:
-            self.model.append(Country(country_id=code, country_name=gcountries[code]))
+            self.model.append(Country(id=code, name=gcountries[code]))
 
         # Set up the factory
         factory = Gtk.SignalListItemFactory()
@@ -171,8 +171,9 @@ class MiAZFactory:
         # Populate the model
         self.model = Gio.ListStore(item_type=item_type)
         values = self.app.get_config(conf).load()
+        self.model.append(item_type(id='Any', name='Any'))
         for value in values:
-            self.model.append(item_type(name=value))
+            self.model.append(item_type(id=value, name=value))
 
         # Set up the factory
         factory = Gtk.SignalListItemFactory()
