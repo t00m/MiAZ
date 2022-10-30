@@ -56,7 +56,6 @@ class MiAZWorkspace(Gtk.Box):
     def _setup_toolbar(self):
         # Toolbar
         toolbar = self.factory.create_box_vertical(spacing=0, margin=0, vexpand=True)
-        # ~ toolbar = Gtk.Box.new(orientation=Gtk.Orientation.VERTICAL, spacing=3, vexpand=True)
         frmFilters = self.factory.create_frame(title='<big><b>Filters</b></big>', hexpand=False, vexpand=True)
         tlbFilters = self.factory.create_box_vertical()
         self.ent_sb = Gtk.SearchEntry(placeholder_text="Type here")
@@ -93,7 +92,6 @@ class MiAZWorkspace(Gtk.Box):
 
         # Filtering
         self.model_filter = Gtk.FilterListModel.new(self.model)
-        self.model_filter.connect('items-changed', self._on_items_changed)
         self.filter = Gtk.CustomFilter.new(self._do_filter_listview, self.model_filter)
         self.model_filter.set_filter(self.filter)
 
@@ -109,8 +107,9 @@ class MiAZWorkspace(Gtk.Box):
         factory.connect("bind", self._on_factory_bind)
 
         # Setup the view widget
-        self.view = Gtk.ListView(model=Gtk.SingleSelection.new(selection), factory=factory, hexpand=True)
+        self.view = Gtk.ListView(model=selection, factory=factory, hexpand=True)
         self.view.set_single_click_activate(True)
+        self.view.set_show_separators(True)
         self.view.connect('activate', self._on_activated_item)
         self.view.connect("notify::selected-item", self._on_selected_item_notify)
 
@@ -143,9 +142,6 @@ class MiAZWorkspace(Gtk.Box):
         path = listview.get_selected_item()
         self.log.debug(path)
 
-    def _on_items_changed(self, model_filter, position, removed, added):
-        pass # keep?
-
     def _on_activated_item(self, listview, position):
         item = self.model_filter.get_item(position)
         self.log.debug(item.id)
@@ -161,6 +157,11 @@ class MiAZWorkspace(Gtk.Box):
 
     def update_title(self):
         self.app.update_title(self.displayed, len(self.repodct))
+
+        last = self.model_sort.get_n_items()
+        for pos in range(0, last):
+            item = self.model_sort.get_item(pos)
+            self.log.debug("%d > %s (%s)", pos, item.name, type(item))
 
     def _do_eval_cond_matches_freetext(self, path):
         left = self.ent_sb.get_text()
@@ -207,26 +208,7 @@ class MiAZWorkspace(Gtk.Box):
         else:
             target = self.repodct[source]['suggested'].split('-')
         dialog = MiAZRenameDialog(self.app, row, source, target)
-        dialog.connect('response', self._on_response_rename)
         dialog.show()
-
-    def _on_response_rename(self, dialog, response):
-        if response == Gtk.ResponseType.ACCEPT:
-            row = dialog.get_row()
-            source = dialog.get_filepath_source()
-            target = os.path.join(os.path.dirname(source), dialog.get_filepath_target())
-            shutil.move(source, target)
-            self.log.debug("Rename document from '%s' to '%s'", os.path.basename(source), os.path.basename(target))
-            self.backend.check_source()
-
-    def action_rename(self, *args):
-        self.log.debug(args)
-
-    def action_add(self, *args):
-        self.log.debug(args)
-
-    def noop(self, *args):
-        self.log.debug(args)
 
     def document_display(self, button, filepath):
         self.log.debug("Displaying %s", filepath)

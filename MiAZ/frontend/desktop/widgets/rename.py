@@ -24,6 +24,7 @@ class MiAZRenameDialog(Gtk.Dialog):
     def __init__(self, app, row: MiAZFlowBoxRow, filepath: str, suggested: list) -> Gtk.Widget:
         super(MiAZRenameDialog, self).__init__()
         self.app = app
+        self.backend = self.app.get_backend()
         self.factory = self.app.get_factory()
         self.log = get_logger('MiazRenameDialog')
         self.set_size_request(800, 600)
@@ -91,6 +92,7 @@ class MiAZRenameDialog(Gtk.Dialog):
         self.entry_concept.connect('changed', self.on_changed_entry)
         self.entry_to.connect('changed', self.on_changed_entry)
         self.on_changed_entry()
+        self.connect('response', self._on_response_rename)
 
     def __create_box_value(self) -> Gtk.Box:
         box = Gtk.Box.new(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
@@ -294,6 +296,14 @@ class MiAZRenameDialog(Gtk.Dialog):
         self.lblFilenameNew.set_selectable(True)
         self.row_new_filename.add_suffix(self.lblFilenameNew)
         self.boxMain.append(self.row_new_filename)
+
+    def _on_response_rename(self, dialog, response):
+        if response == Gtk.ResponseType.ACCEPT:
+            source = self.get_filepath_source()
+            target = os.path.join(os.path.dirname(source), self.get_filepath_target())
+            shutil.move(source, target)
+            self.log.debug("Rename document from '%s' to '%s'", os.path.basename(source), os.path.basename(target))
+            self.backend.check_source()
 
     def on_changed_entry(self, *args):
         def success_or_error(widget, valid):
