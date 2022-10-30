@@ -133,3 +133,12 @@ class MiAZApp(Adw.Application):
         about = MiAZAbaout(self).show()
 
 
+    def update_title(self, displayed: int = 0, total:int = 0):
+        header = self.get_header()
+        title = header.get_title_widget()
+        if title is not None:
+            header.remove(title)
+        wdgTitle = Adw.WindowTitle()
+        wdgTitle.set_title('MiAZ')
+        wdgTitle.set_subtitle("Displaying %d of %d documents" % (displayed, total))
+        header.set_title_widget(wdgTitle)

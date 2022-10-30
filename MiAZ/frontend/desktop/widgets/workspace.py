@@ -55,8 +55,9 @@ class MiAZWorkspace(Gtk.Box):
 
     def _setup_toolbar(self):
         # Toolbar
-        toolbar = Gtk.Box.new(orientation=Gtk.Orientation.VERTICAL, spacing=3)
-        frmFilters = self.factory.create_frame(title='<big><b>Filters</b></big>', hexpand=False, vexpand=False)
+        toolbar = self.factory.create_box_vertical(spacing=0, margin=0, vexpand=True)
+        # ~ toolbar = Gtk.Box.new(orientation=Gtk.Orientation.VERTICAL, spacing=3, vexpand=True)
+        frmFilters = self.factory.create_frame(title='<big><b>Filters</b></big>', hexpand=False, vexpand=True)
         tlbFilters = self.factory.create_box_vertical()
         self.ent_sb = Gtk.SearchEntry(placeholder_text="Type here")
         self.ent_sb.connect('changed', self._on_filter_selected)
@@ -81,19 +82,9 @@ class MiAZWorkspace(Gtk.Box):
         self.backend.connect('source-configuration-updated', self.update)
         return toolbar
 
-    def _setup_view_toolbar(self):
-        boxViewToolbar = self.factory.create_box_horizontal(spacing=3)
-        frmToolbar = self.factory.create_frame()
-        btnBack = self.factory.create_button('miaz-ok', 'Back')
-        boxToolbar = self.factory.create_box_vertical(spacing=0)
-        boxToolbar.append(btnBack)
-        frmToolbar.set_child(boxToolbar)
-        boxViewToolbar.append(frmToolbar)
-        return boxViewToolbar
-
     def _setup_view_body(self):
         boxViewBody = self.factory.create_box_vertical(spacing=0, margin=0, hexpand=True, vexpand=True)
-        frmViewBody = self.factory.create_frame(hexpand=True, vexpand=True)
+        frmViewBody = self.factory.create_frame(title='<big><b>Documents</b></big>', hexpand=True, vexpand=True)
         boxViewBody.append(frmViewBody)
         scrwin = self.factory.create_scrolledwindow()
 
@@ -129,9 +120,7 @@ class MiAZWorkspace(Gtk.Box):
 
     def _setup_view(self):
         boxView = self.factory.create_box_vertical(spacing=0, margin=0, hexpand=True, vexpand=True)
-        boxViewToolbar = self._setup_view_toolbar()
         boxViewBody = self._setup_view_body()
-        boxView.append(boxViewToolbar)
         boxView.append(boxViewBody)
         return boxView
 
@@ -168,16 +157,10 @@ class MiAZWorkspace(Gtk.Box):
         self.model.remove_all()
         for path in self.repodct:
             self.model.append(File(id=path, name=os.path.basename(path)))
+        self.update_title()
 
     def update_title(self):
-        header = self.app.get_header()
-        title = header.get_title_widget()
-        if title is not None:
-            header.remove(title)
-        wdgTitle = Adw.WindowTitle()
-        wdgTitle.set_title('MiAZ')
-        wdgTitle.set_subtitle("Displaying %d of %d documents" % (self.displayed, len(self.repodct)))
-        header.set_title_widget(wdgTitle)
+        self.app.update_title(self.displayed, len(self.repodct))
 
     def _do_eval_cond_matches_freetext(self, path):
         left = self.ent_sb.get_text()
@@ -232,38 +215,6 @@ class MiAZWorkspace(Gtk.Box):
             row = dialog.get_row()
             source = dialog.get_filepath_source()
             target = os.path.join(os.path.dirname(source), dialog.get_filepath_target())
-            # Before renaming, check all fields and add values to
-            # configuration files if they are missing
-            basename = os.path.basename(target)
-            doc = basename[:basename.rfind('.')]
-            fields = doc.split('-')
-            collection = fields[2]
-            org_from = fields[3]
-            purpose = fields[4]
-            concept = fields[5]
-            org_to = fields[6]
-
-            cnf_col = self.app.get_config('collections')
-            cnf_who = self.app.get_config('organizations')
-            cnf_pur = self.app.get_config('purposes')
-            cnf_cpt = self.app.get_config('concepts')
-
-            if not cnf_col.exists(collection) and len(collection) > 0:
-                cnf_col.list_add(collection)
-
-            if not cnf_pur.exists(purpose) and len(purpose) > 0:
-                cnf_pur.list_add(purpose)
-
-            if not cnf_cpt.exists(concept) and len(concept) > 0:
-                cnf_cpt.list_add(concept)
-
-            if not cnf_who.exists(org_from) and len(org_from) > 0:
-                cnf_who.dict_add(org_from, '')
-
-            if not cnf_who.exists(org_to) and len(org_to) > 0:
-                cnf_who.dict_add(org_to, '')
-
-            # Then, rename it:
             shutil.move(source, target)
             self.log.debug("Rename document from '%s' to '%s'", os.path.basename(source), os.path.basename(target))
             self.backend.check_source()
@@ -296,3 +247,4 @@ class MiAZWorkspace(Gtk.Box):
     def _on_filter_selected(self, *args):
         self.displayed = 0
         self.filter.emit('changed', Gtk.FilterChange.DIFFERENT)
+        self.update_title()
