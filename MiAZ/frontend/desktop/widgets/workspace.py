@@ -56,26 +56,8 @@ class MiAZWorkspace(Gtk.Box):
     def _setup_toolbar(self):
         # Toolbar
         toolbar = Gtk.Box.new(orientation=Gtk.Orientation.VERTICAL, spacing=3)
-
-        frmFilters = Gtk.Frame()
-        frmFilters.set_margin_top(margin=3)
-        frmFilters.set_margin_end(margin=3)
-        frmFilters.set_margin_bottom(margin=3)
-        frmFilters.set_margin_start(margin=3)
-        frmFilters.set_hexpand(False)
-        frmFilters.set_vexpand(False)
-        lblFrameTitle = self.factory.create_label('<big><b>Filters</b></big>')
-        frmFilters.set_label_widget(lblFrameTitle)
-        frmFilters.set_label_align(0.5)
-
-        tlbFilters = Gtk.Box.new(orientation=Gtk.Orientation.VERTICAL, spacing=3)
-        tlbFilters.set_margin_top(margin=6)
-        tlbFilters.set_margin_end(margin=6)
-        tlbFilters.set_margin_bottom(margin=6)
-        tlbFilters.set_margin_start(margin=6)
-        tlbFilters.set_hexpand(False)
-        tlbFilters.set_vexpand(False)
-
+        frmFilters = self.factory.create_frame(title='<big><b>Filters</b></big>', hexpand=False, vexpand=False)
+        tlbFilters = self.factory.create_box_vertical()
         self.ent_sb = Gtk.SearchEntry(placeholder_text="Type here")
         self.ent_sb.connect('changed', self._on_filter_selected)
         box = self.factory.create_box_filter('Free search', self.ent_sb)
@@ -96,58 +78,24 @@ class MiAZWorkspace(Gtk.Box):
 
         frmFilters.set_child(tlbFilters)
         toolbar.append(frmFilters)
-
-        frmReview = Gtk.Frame()
-        frmReview.set_margin_top(margin=3)
-        frmReview.set_margin_end(margin=3)
-        frmReview.set_margin_bottom(margin=3)
-        frmReview.set_margin_start(margin=3)
-        frmReview.set_hexpand(False)
-        frmReview.set_vexpand(True)
-
-        status = Adw.StatusPage()
-        # ~ status.set_icon_name('miaz-mime-exec')
-        status.set_title('Warning!')
-        status.get_style_context().add_class(class_name='error')
-        status.set_description('There are  documents pending of review')
-        btnCheck = self.factory.create_button('miaz-mime-exec', 'Check now!', self.on_show_review)
-        status.set_child(btnCheck)
-        # ~ label = self.factory.create_label('Hola!')
-        # ~ status.set_child(label)
-
-        frmReview.set_child(status)
-        toolbar.append(frmReview)
-
         self.backend.connect('source-configuration-updated', self.update)
         return toolbar
 
     def _setup_view_toolbar(self):
-        boxViewToolbar = Gtk.Box.new(orientation=Gtk.Orientation.HORIZONTAL, spacing=3)
-        frmToolbar = Gtk.Frame()
-        frmToolbar.set_margin_top(margin=3)
-        frmToolbar.set_margin_end(margin=3)
-        frmToolbar.set_margin_bottom(margin=3)
-        frmToolbar.set_margin_start(margin=3)
+        boxViewToolbar = self.factory.create_box_horizontal(spacing=3)
+        frmToolbar = self.factory.create_frame()
         btnBack = self.factory.create_button('miaz-ok', 'Back')
-        boxToolbar = Gtk.Box.new(orientation=Gtk.Orientation.VERTICAL, spacing=0)
+        boxToolbar = self.factory.create_box_vertical(spacing=0)
         boxToolbar.append(btnBack)
         frmToolbar.set_child(boxToolbar)
         boxViewToolbar.append(frmToolbar)
         return boxViewToolbar
 
     def _setup_view_body(self):
-        boxViewBody = Gtk.Box.new(orientation=Gtk.Orientation.HORIZONTAL, spacing=3)
-        frmViewBody = Gtk.Frame()
-        frmViewBody.set_margin_top(margin=3)
-        frmViewBody.set_margin_end(margin=3)
-        frmViewBody.set_margin_bottom(margin=3)
-        frmViewBody.set_margin_start(margin=3)
-        frmViewBody.set_hexpand(True)
-        frmViewBody.set_vexpand(True)
+        boxViewBody = self.factory.create_box_vertical(spacing=0, margin=0, hexpand=True, vexpand=True)
+        frmViewBody = self.factory.create_frame(hexpand=True, vexpand=True)
         boxViewBody.append(frmViewBody)
-        scrwin = Gtk.ScrolledWindow()
-        scrwin.set_hexpand(True)
-        scrwin.set_vexpand(True)
+        scrwin = self.factory.create_scrolledwindow()
 
         # Setup the model
         self.model = Gio.ListStore(item_type=File)
@@ -180,7 +128,7 @@ class MiAZWorkspace(Gtk.Box):
         return boxViewBody
 
     def _setup_view(self):
-        boxView = Gtk.Box.new(orientation=Gtk.Orientation.VERTICAL, spacing=0)
+        boxView = self.factory.create_box_vertical(spacing=0, margin=0, hexpand=True, vexpand=True)
         boxViewToolbar = self._setup_view_toolbar()
         boxViewBody = self._setup_view_body()
         boxView.append(boxViewToolbar)
@@ -231,18 +179,6 @@ class MiAZWorkspace(Gtk.Box):
         wdgTitle.set_subtitle("Displaying %d of %d documents" % (self.displayed, len(self.repodct)))
         header.set_title_widget(wdgTitle)
 
-    def _on_show_file_info(self, button, filepath):
-        treeview = self.__create_trvreasons(filepath)
-        popover = Gtk.Popover()
-        popover.set_child(treeview)
-        popover.show()
-
-    def _on_create_popover_fileinfo(self, filepath):
-        treeview = self.__create_trvreasons(filepath)
-        popover = Gtk.Popover()
-        popover.set_child(treeview)
-        return popover
-
     def _do_eval_cond_matches_freetext(self, path):
         left = self.ent_sb.get_text()
         right = path
@@ -277,18 +213,6 @@ class MiAZWorkspace(Gtk.Box):
             self.displayed += 1
 
         return display
-
-    def clb_sort_function(self, flowboxchild1, flowboxchild2):
-        row1 = flowboxchild1.get_child()
-        row2 = flowboxchild2.get_child()
-        value1 = row1.get_date()
-        value2 = row2.get_date()
-        if value1 < value2:
-            return 1
-        elif value1 == value2:
-            return 0
-        else:
-            return -1
 
     def action_rename_manually(self, button, data):
         row = data
@@ -352,7 +276,6 @@ class MiAZWorkspace(Gtk.Box):
 
     def noop(self, *args):
         self.log.debug(args)
-
 
     def document_display(self, button, filepath):
         self.log.debug("Displaying %s", filepath)

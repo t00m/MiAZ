@@ -11,7 +11,6 @@ class MiAZModel(GObject.Object):
 
         self._id = id
         self._name = name
-        self._detail = detail
 
     @GObject.Property
     def id(self):
@@ -20,10 +19,6 @@ class MiAZModel(GObject.Object):
     @GObject.Property
     def name(self):
         return self._name
-
-    @GObject.Property
-    def detail(self):
-        return self._detail
 
 
 class File(MiAZModel):
@@ -49,3 +44,6 @@ class Person(MiAZModel):
 class Purpose(MiAZModel):
     __gtype_name__ = 'Purpose'
 
+
+class Repository(MiAZModel):
+    __gtype_name__ = 'Repository'

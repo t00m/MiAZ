@@ -41,6 +41,26 @@ class MiAZFactory:
         box.append(widget)
         return box
 
+    def create_box_horizontal(self, margin:int = 3, spacing:int = 3, hexpand: bool = False, vexpand: bool = False):
+        box = Gtk.Box.new(orientation=Gtk.Orientation.HORIZONTAL, spacing=spacing)
+        box.set_margin_top(margin=margin)
+        box.set_margin_end(margin=margin)
+        box.set_margin_bottom(margin=margin)
+        box.set_margin_start(margin=margin)
+        box.set_hexpand(hexpand)
+        box.set_vexpand(vexpand)
+        return box
+
+    def create_box_vertical(self, margin:int = 3, spacing:int = 3, hexpand: bool = False, vexpand: bool = False):
+        box = Gtk.Box.new(orientation=Gtk.Orientation.VERTICAL, spacing=spacing)
+        box.set_margin_top(margin=margin)
+        box.set_margin_end(margin=margin)
+        box.set_margin_bottom(margin=margin)
+        box.set_margin_start(margin=margin)
+        box.set_hexpand(hexpand)
+        box.set_vexpand(vexpand)
+        return box
+
     def create_button(self, icon_name, title, callback=None, width=32, height=32, css_classes=['flat'], data=None):
         if len(icon_name.strip()) == 0:
             button = Gtk.Button(css_classes=css_classes)
@@ -162,6 +182,20 @@ class MiAZFactory:
         btnNo.get_style_context().add_class(class_name='destructive-action')
         return dialog
 
+    def create_frame(self, title:str = None, margin: int = 3, hexpand: bool = False, vexpand: bool = False) -> Gtk.Frame:
+        frame = Gtk.Frame()
+        frame.set_margin_top(margin)
+        frame.set_margin_end(margin)
+        frame.set_margin_bottom(margin)
+        frame.set_margin_start(margin)
+        frame.set_hexpand(hexpand)
+        frame.set_vexpand(vexpand)
+        if title is not None:
+            label = self.create_label(title)
+            frame.set_label_widget(label)
+            frame.set_label_align(0.5)
+        return frame
+
     def create_label(self, text: str) -> Gtk.Label:
         label = Gtk.Label()
         label.set_markup(text)
@@ -196,6 +230,12 @@ class MiAZFactory:
         boxCenter.set_end_widget(icon_flag)
         row.set_child(boxCenter)
         return row
+
+    def create_scrolledwindow(self):
+        scrwin = Gtk.ScrolledWindow()
+        scrwin.set_hexpand(True)
+        scrwin.set_vexpand(True)
+        return scrwin
 
     def create_switch_button(self, icon_name, title, callback=None, data=None):
         button = Gtk.Switch()
