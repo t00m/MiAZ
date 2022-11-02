@@ -9,12 +9,12 @@ from gi.repository import Gtk
 from gi.repository import Pango
 from gi.repository.GdkPixbuf import Pixbuf
 
-class MiAZFlowBoxRow(Gtk.Box):
+class MiAZListViewRow(Gtk.Box):
     """ MiAZ Doc Browser Widget"""
-    __gtype_name__ = 'MiAZFlowBoxRow'
+    __gtype_name__ = 'MiAZListViewRow'
 
     def __init__(self, app):
-        super(MiAZFlowBoxRow, self).__init__(orientation=Gtk.Orientation.HORIZONTAL, css_classes=['linked'])
+        super(MiAZListViewRow, self).__init__(orientation=Gtk.Orientation.HORIZONTAL, css_classes=['linked'])
         self.set_margin_top(margin=3)
         self.set_margin_end(margin=3)
         self.set_margin_bottom(margin=3)
@@ -23,6 +23,7 @@ class MiAZFlowBoxRow(Gtk.Box):
         self.app = app
         self.factory = self.app.get_factory()
         self.workspace = self.app.get_workspace()
+        self.actions = self.app.get_actions()
 
         boxRow = Gtk.Box(spacing=6, orientation=Gtk.Orientation.HORIZONTAL)
         boxRow.set_hexpand(True)
@@ -34,7 +35,7 @@ class MiAZFlowBoxRow(Gtk.Box):
         btnMime.get_style_context().add_class(class_name='flat')
         btnMime.set_child(icon_mime)
         btnMime.set_hexpand(False)
-        btnMime.connect('clicked', self.workspace.document_display)
+        btnMime.connect('clicked', self.actions.document_display)
         boxStart.append(btnMime)
 
         boxCenter = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
@@ -45,7 +46,7 @@ class MiAZFlowBoxRow(Gtk.Box):
         boxEnd = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL) #, css_classes=['frame'])
         switch = Gtk.Switch()
         switch.set_valign(Gtk.Align.CENTER)
-        switch.connect('state-set', self.workspace.document_switch)
+        switch.connect('state-set', self.actions.document_switch)
         boxEnd.append(switch)
         boxEnd.set_hexpand(False)
 

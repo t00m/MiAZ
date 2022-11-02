@@ -5,26 +5,14 @@ import os
 
 import gi
 gi.require_version('Gtk', '4.0')
-gi.require_version('Adw', '1')
-gi.require_version('GdkPixbuf', '2.0')
-from gi.repository import Adw
-from gi.repository import Gdk
 from gi.repository import Gio
-from gi.repository import GLib
 from gi.repository import Gtk
-from gi.repository import Pango
-from gi.repository.GdkPixbuf import Pixbuf
 
-from MiAZ.backend.env import ENV
 from MiAZ.backend.log import get_logger
-from MiAZ.backend.util import json_load, json_save
+from MiAZ.backend.util import json_load
 from MiAZ.backend.models import File, Collection, Person, Country, Purpose, Concept
 from MiAZ.frontend.desktop.util import get_file_mimetype
-from MiAZ.frontend.desktop.icons import MiAZIconManager
-from MiAZ.frontend.desktop.widgets.treeview import MiAZTreeView
-from MiAZ.frontend.desktop.widgets.menu import MiAZ_APP_MENU
-from MiAZ.frontend.desktop.widgets.rename import MiAZRenameDialog
-from MiAZ.frontend.desktop.widgets.row import MiAZFlowBoxRow
+from MiAZ.frontend.desktop.widgets.row import MiAZListViewRow
 
 
 class MiAZWorkspace(Gtk.Box):
@@ -51,7 +39,6 @@ class MiAZWorkspace(Gtk.Box):
         self.append(view)
 
     def _setup_toolbar(self):
-        # Toolbar
         toolbar = self.factory.create_box_vertical(spacing=0, margin=0, vexpand=True)
         frmFilters = self.factory.create_frame(title='<big><b>Filters</b></big>', hexpand=False, vexpand=True)
         tlbFilters = self.factory.create_box_vertical()
@@ -106,7 +93,6 @@ class MiAZWorkspace(Gtk.Box):
         # Setup the view widget
         self.view = Gtk.ListView(model=self.selection, factory=factory, hexpand=True)
         self.view.set_single_click_activate(True)
-        # ~ self.view.set_show_separators(True)
         self.view.connect('activate', self._on_activated_item)
         self.view.connect("notify::selected-item", self._on_selected_item_notify)
 
@@ -121,7 +107,7 @@ class MiAZWorkspace(Gtk.Box):
         return boxView
 
     def _on_factory_setup(self, factory, list_item):
-        box = MiAZFlowBoxRow(self.app)
+        box = MiAZListViewRow(self.app)
         list_item.set_child(box)
 
     def _on_factory_bind(self, factory, list_item):
@@ -147,13 +133,6 @@ class MiAZWorkspace(Gtk.Box):
         # Box End
         boxEnd = boxCenter.get_next_sibling()
         switch = boxEnd.get_first_child()
-        # ~ wdgLabel.set_text(os.path.basename(row.id))
-        # ~ valid = self.repodct[row.id]['valid']
-        # ~ wdgLabel.get_style_context().add_class(class_name='monospace')
-        # ~ if not valid:
-            # ~ wdgLabel.get_style_context().add_class(class_name='error')
-        # ~ wdgIcon.set_from_gicon(gicon)
-        # ~ wdgIcon.set_pixel_size(36)
 
     def _on_selected_item_notify(self, listview, _):
         self.log.debug("%s > %s", listview, type(listview))
@@ -163,6 +142,15 @@ class MiAZWorkspace(Gtk.Box):
     def _on_activated_item(self, listview, position):
         item = self.model_filter.get_item(position)
         self.log.debug(item.id)
+
+    def get_model_filter(self):
+        return self.model_filter
+
+    def get_selection(self):
+        return self.selection
+
+    def get_switched(self):
+        return self.switched
 
     def update(self, *args):
         # FIXME: Get dict from backend
@@ -175,10 +163,6 @@ class MiAZWorkspace(Gtk.Box):
 
     def update_title(self):
         self.app.update_title(self.displayed, len(self.repodct))
-
-        last = self.model_sort.get_n_items()
-        for pos in range(0, last):
-            item = self.model_sort.get_item(pos)
         self.switched = set()
 
     def _do_eval_cond_matches_freetext(self, path):
@@ -216,50 +200,25 @@ class MiAZWorkspace(Gtk.Box):
 
         return display
 
-    def action_rename_manually(self, button, data):
-        row = data
-        source = row.get_filepath()
-        if self.repodct[source]['valid']:
-            basename = os.path.basename(source)
-            filename = basename[:basename.rfind('.')]
-            target = filename.split('-')
-        else:
-            target = self.repodct[source]['suggested'].split('-')
-        dialog = MiAZRenameDialog(self.app, row, source, target)
-        dialog.show()
+    def _on_filter_selected(self, *args):
+        self.displayed = 0
+        self.filter.emit('changed', Gtk.FilterChange.DIFFERENT)
+        self.update_title()
 
-    def document_display(self, *args):
-        selected = self.selection.get_selection()
-        pos = selected.get_nth(0)
-        item = self.model_filter.get_item(pos)
-        filepath = item.id
-        # ~ filepath = self.view.get_selected_item()
-        # ~ self.log.debug("Displaying %s", filepath)
-        os.system("xdg-open '%s'" % filepath)
-
-    def document_switch(self, switch, activated):
-        selected = self.selection.get_selection()
-        pos = selected.get_nth(0)
-        item = self.model_filter.get_item(pos)
-        if activated:
-            self.switched.add(item.id)
-        else:
-            self.switched.remove(item.id)
-        self.log.debug(self.switched)
-
-    def on_show_dashboard(self, *args):
+    def show_dashboard(self, *args):
         self.displayed = 0
         self.show_dashboard = True
         self.filter.emit('changed', Gtk.FilterChange.DIFFERENT)
         self.update_title()
 
-    def on_show_review(self, *args):
+    def show_review(self, *args):
         self.displayed = 0
         self.show_dashboard = False
         self.filter.emit('changed', Gtk.FilterChange.DIFFERENT)
         self.update_title()
 
-    def _on_filter_selected(self, *args):
-        self.displayed = 0
-        self.filter.emit('changed', Gtk.FilterChange.DIFFERENT)
-        self.update_title()
+    def foreach(self):
+        last = self.model_filter.get_n_items()
+        for pos in range(0, last):
+            item = self.model_filter.get_item(pos)
+            self.log.debug(item.id)

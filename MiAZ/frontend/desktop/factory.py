@@ -20,6 +20,7 @@ from MiAZ.backend.log import get_logger
 from MiAZ.backend.models import Country
 from MiAZ.frontend.desktop.icons import MiAZIconManager
 
+
 class MiAZFactory:
     def __init__(self, app):
         self.app = app

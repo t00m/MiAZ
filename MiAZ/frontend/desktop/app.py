@@ -22,6 +22,7 @@ from MiAZ.frontend.desktop.widgets.settings import MiAZPrefsWindow
 from MiAZ.frontend.desktop.widgets.about import MiAZAbaout
 from MiAZ.frontend.desktop.icons import MiAZIconManager
 from MiAZ.frontend.desktop.factory import MiAZFactory
+from MiAZ.frontend.desktop.actions import MiAZActions
 
 
 class MiAZApp(Adw.Application):
@@ -43,9 +44,13 @@ class MiAZApp(Adw.Application):
         self.theme.add_search_path(ENV['GPATH']['ICONS'])
         self.factory = MiAZFactory(self)
         self.build_gui()
+        self.actions = MiAZActions(self)
         # ~ self.listen_to_key_events()
         self.log.debug("Executing MiAZ Desktop mode")
         self.win.present()
+
+    def get_actions(self):
+        return self.actions
 
     def get_backend(self):
         return self.backend
@@ -90,8 +95,8 @@ class MiAZApp(Adw.Application):
         self.header = Adw.HeaderBar()
 
         boxDashboardButtons = Gtk.Box(spacing=3, orientation=Gtk.Orientation.HORIZONTAL, homogeneous=True)
-        btnDashboard = self.factory.create_button('miaz-dashboard-ok', 'Dashboard', callback=self.workspace.on_show_dashboard, css_classes=['flat', 'linked', 'toolbar'])
-        btnReview = self.factory.create_button('miaz-dashboard-ko', 'Review', callback=self.workspace.on_show_review, css_classes=['flat', 'linked', 'toolbar'])
+        btnDashboard = self.factory.create_button('miaz-dashboard-ok', 'Dashboard', callback=self.workspace.show_dashboard, css_classes=['flat', 'linked', 'toolbar'])
+        btnReview = self.factory.create_button('miaz-dashboard-ko', 'Review', callback=self.workspace.show_review, css_classes=['flat', 'linked', 'toolbar'])
         boxDashboardButtons.append(btnDashboard)
         boxDashboardButtons.append(btnReview)
         self.header.pack_start(boxDashboardButtons)
