@@ -45,9 +45,23 @@ class MiAZApp(Adw.Application):
         self.factory = MiAZFactory(self)
         self.build_gui()
         self.actions = MiAZActions(self)
-        # ~ self.listen_to_key_events()
+        self.listen_to_key_events()
         self.log.debug("Executing MiAZ Desktop mode")
         self.win.present()
+
+    def listen_to_key_events(self):
+        evk = Gtk.EventControllerKey.new()
+        evk.connect("key-pressed", self.key_press)
+        self.win.add_controller(evk)
+
+    def key_press(self, event, keyval, keycode, state):
+        # ~ self.log.debug("%s > %s > %s > %s", event, keyval, keycode, state)
+        keyname = Gdk.keyval_name(keyval)
+        self.log.debug(keyname)
+
+
+    def create_menu_actions(self):
+        self.factory.create_action('quit', self.exit_app, ['Control_L', 'q'])
 
     def get_actions(self):
         return self.actions
@@ -111,8 +125,14 @@ class MiAZApp(Adw.Application):
         self.header.pack_end(menu)
 
         # and create actions to handle menu actions
-        for action in ['settings', 'help', 'about', 'close']:
-            self.factory.create_action(action, self.menu_handler)
+        for action, shortcut in [('settings', ['<Ctrl>s']),
+                                 ('help', 'F1'),
+                                 ('about', ['<Ctrl>b']),
+                                 ('close', ['<Ctrl>q']),
+                                 ('view', ['<Ctrl>v']),
+                                 ('rename', ['<Ctrl>r'])
+                                ]:
+            self.factory.create_menu_action(action, self.menu_handler, shortcut)
 
     def menu_handler(self, action, state):
             """ Callback for  menu actions"""
@@ -123,6 +143,10 @@ class MiAZApp(Adw.Application):
                 self.show_about()
             elif name == 'close':
                 self.quit()
+            elif name == 'view':
+                self.actions.document_display()
+            elif name == 'rename':
+                self.actions.document_rename()
 
     def get_stack_page_by_name(self, name: str) -> Adw.ViewStackPage:
         widget = self.stack.get_child_by_name(name)
@@ -147,3 +171,7 @@ class MiAZApp(Adw.Application):
         wdgTitle.set_title('MiAZ')
         wdgTitle.set_subtitle("Displaying %d of %d documents" % (displayed, total))
         header.set_title_widget(wdgTitle)
+
+    def exit_app(self, action, param):
+        self.quit()
+

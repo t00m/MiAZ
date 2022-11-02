@@ -26,11 +26,11 @@ class MiAZFactory:
         self.app = app
         self.log = get_logger('MiAZFactory')
 
-    def create_action(self, name, callback):
-        """ Add an Action and connect to a callback """
-        action = Gio.SimpleAction.new(name, None)
-        action.connect("activate", callback)
-        self.app.add_action(action)
+    # ~ def create_action(self, name, callback):
+        # ~ """ Add an Action and connect to a callback """
+        # ~ action = Gio.SimpleAction.new(name, None)
+        # ~ action.connect("activate", callback)
+        # ~ self.app.add_action(action)
 
     def create_box_filter(self, title: str, widget: Gtk.Widget) -> Gtk.Box:
         box = Gtk.Box.new(orientation=Gtk.Orientation.VERTICAL, spacing=3)
@@ -203,6 +203,13 @@ class MiAZFactory:
         if text is not None:
             label.set_markup(text)
         return label
+
+    def create_menu_action(self, name, callback, shortcuts=None):
+        action = Gio.SimpleAction.new(name, None)
+        action.connect('activate', callback)
+        self.app.add_action(action)
+        if shortcuts:
+            self.app.set_accels_for_action(f'app.{name}', shortcuts)
 
     def create_row(self, filepath: str, filedict: dict) -> Gtk.Widget:
         row = Gtk.Frame()
