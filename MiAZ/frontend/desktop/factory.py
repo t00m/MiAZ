@@ -196,10 +196,11 @@ class MiAZFactory:
             frame.set_label_align(0.5)
         return frame
 
-    def create_label(self, text: str) -> Gtk.Label:
+    def create_label(self, text: str = None) -> Gtk.Label:
         label = Gtk.Label()
-        label.set_markup(text)
         label.set_property('ellipsize', Pango.EllipsizeMode.MIDDLE)
+        if text is not None:
+            label.set_markup(text)
         return label
 
     def create_row(self, filepath: str, filedict: dict) -> Gtk.Widget:

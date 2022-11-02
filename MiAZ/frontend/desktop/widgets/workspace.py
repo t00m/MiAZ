@@ -2,10 +2,6 @@
 # -*- coding: utf-8 -*-
 
 import os
-import sys
-import shutil
-# ~ from datetime import datetime
-
 
 import gi
 gi.require_version('Gtk', '4.0')
@@ -99,7 +95,7 @@ class MiAZWorkspace(Gtk.Box):
         self.model_sort = Gtk.SortListModel(model=self.model_filter)
 
         # Selection
-        selection = Gtk.SingleSelection.new(self.model_sort)
+        self.selection = Gtk.SingleSelection.new(self.model_sort)
 
         # Set up the factory
         factory = Gtk.SignalListItemFactory()
@@ -107,9 +103,9 @@ class MiAZWorkspace(Gtk.Box):
         factory.connect("bind", self._on_factory_bind)
 
         # Setup the view widget
-        self.view = Gtk.ListView(model=selection, factory=factory, hexpand=True)
+        self.view = Gtk.ListView(model=self.selection, factory=factory, hexpand=True)
         self.view.set_single_click_activate(True)
-        self.view.set_show_separators(True)
+        # ~ self.view.set_show_separators(True)
         self.view.connect('activate', self._on_activated_item)
         self.view.connect("notify::selected-item", self._on_selected_item_notify)
 
@@ -124,21 +120,44 @@ class MiAZWorkspace(Gtk.Box):
         return boxView
 
     def _on_factory_setup(self, factory, list_item):
-        box = MiAZFlowBoxRow()
+        box = MiAZFlowBoxRow(self.app)
         list_item.set_child(box)
 
     def _on_factory_bind(self, factory, list_item):
-        box = list_item.get_child()
-        wdgIcon = box.get_first_child()
-        wdgLabel = box.get_last_child()
-        row = list_item.get_item()
-        mimetype = get_file_mimetype(row.id)
+        miazboxrow = list_item.get_child()
+        item = list_item.get_item()
+
+        boxRow = miazboxrow.get_first_child()
+
+        # Box Start
+        boxStart = boxRow.get_first_child()
+        btnMime = boxStart.get_first_child()
+        imgMime = btnMime.get_first_child()
+        mimetype = get_file_mimetype(item.id)
         gicon = self.app.icman.get_gicon_from_file_mimetype(mimetype)
-        wdgLabel.set_text(os.path.basename(row.id))
-        wdgIcon.set_from_gicon(gicon)
-        wdgIcon.set_pixel_size(36)
+        imgMime.set_from_gicon(gicon)
+        imgMime.set_pixel_size(36)
+
+        # Box Center
+        boxCenter = boxStart.get_next_sibling()
+        label = boxCenter.get_first_child()
+        label.set_markup("%s" % os.path.basename(item.id))
+
+        # Box End
+        boxEnd = boxCenter.get_next_sibling()
+        icon = boxEnd.get_first_child()
+        icon.set_from_gicon(gicon)
+        icon.set_pixel_size(36)
+        # ~ wdgLabel.set_text(os.path.basename(row.id))
+        # ~ valid = self.repodct[row.id]['valid']
+        # ~ wdgLabel.get_style_context().add_class(class_name='monospace')
+        # ~ if not valid:
+            # ~ wdgLabel.get_style_context().add_class(class_name='error')
+        # ~ wdgIcon.set_from_gicon(gicon)
+        # ~ wdgIcon.set_pixel_size(36)
 
     def _on_selected_item_notify(self, listview, _):
+        self.log.debug("%s > %s", listview, type(listview))
         path = listview.get_selected_item()
         self.log.debug(path)
 
@@ -161,7 +180,7 @@ class MiAZWorkspace(Gtk.Box):
         last = self.model_sort.get_n_items()
         for pos in range(0, last):
             item = self.model_sort.get_item(pos)
-            self.log.debug("%d > %s (%s)", pos, item.name, type(item))
+            # ~ self.log.debug("%d > %s (%s)", pos, item.name, type(item))
 
     def _do_eval_cond_matches_freetext(self, path):
         left = self.ent_sb.get_text()
@@ -210,8 +229,13 @@ class MiAZWorkspace(Gtk.Box):
         dialog = MiAZRenameDialog(self.app, row, source, target)
         dialog.show()
 
-    def document_display(self, button, filepath):
-        self.log.debug("Displaying %s", filepath)
+    def document_display(self, *args):
+        selected = self.selection.get_selection()
+        pos = selected.get_nth(0)
+        item = self.model_filter.get_item(pos)
+        filepath = item.id
+        # ~ filepath = self.view.get_selected_item()
+        # ~ self.log.debug("Displaying %s", filepath)
         os.system("xdg-open '%s'" % filepath)
 
     def on_show_dashboard(self, *args):
