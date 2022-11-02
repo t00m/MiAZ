@@ -140,7 +140,7 @@ class MiAZConfig():
 
     def list_remove(self, key):
         config = self.load()
-        if item in config:
+        if key in config:
             config.remove(key)
             self.save(config)
             self.log.info("%s - Remove: %s", self.config_for, key)

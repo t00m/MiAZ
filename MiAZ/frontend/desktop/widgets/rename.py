@@ -3,6 +3,7 @@
 
 import os
 import sys
+import shutil
 from abc import abstractmethod
 
 import gi
@@ -14,14 +15,13 @@ from gi.repository import GLib
 from gi.repository.GdkPixbuf import Pixbuf
 
 from MiAZ.backend.log import get_logger
-from MiAZ.frontend.desktop.widgets.row import MiAZFlowBoxRow
 from MiAZ.frontend.desktop.widgets.dialogs import MiAZDialogAdd
 
 class MiAZRenameDialog(Gtk.Dialog):
     result = ''
     new_values = []
 
-    def __init__(self, app, row: MiAZFlowBoxRow, filepath: str, suggested: list) -> Gtk.Widget:
+    def __init__(self, app, filepath: str, suggested: list) -> Gtk.Widget:
         super(MiAZRenameDialog, self).__init__()
         self.app = app
         self.backend = self.app.get_backend()
@@ -32,7 +32,7 @@ class MiAZRenameDialog(Gtk.Dialog):
         self.set_modal(True)
 
         # Basic data
-        self.row = row
+        # ~ self.row = row
         self.filepath = filepath
         self.extension = filepath[filepath.rfind('.')+1:]
         self.suggested = suggested
@@ -304,6 +304,7 @@ class MiAZRenameDialog(Gtk.Dialog):
             shutil.move(source, target)
             self.log.debug("Rename document from '%s' to '%s'", os.path.basename(source), os.path.basename(target))
             self.backend.check_source()
+        self.destroy()
 
     def on_changed_entry(self, *args):
         def success_or_error(widget, valid):
@@ -413,8 +414,8 @@ class MiAZRenameDialog(Gtk.Dialog):
     def get_filepath_target(self) -> str:
         return self.result
 
-    def get_row(self):
-        return self.row
+    # ~ def get_row(self):
+        # ~ return self.row
 
     def on_rename_accept(self, *args):
         body = "You are about to rename:\n\n<b>%s</b>\n\nto\n\n<b>%s</b>" % (os.path.basename(self.get_filepath_source()), self.get_filepath_target())

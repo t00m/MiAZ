@@ -6,12 +6,14 @@ import os
 from gi.repository import GObject
 
 from MiAZ.backend.log import get_logger
+from MiAZ.frontend.desktop.widgets.rename import MiAZRenameDialog
 
 class MiAZActions(GObject.GObject):
     def __init__(self, app):
         self.log = get_logger('MiAZActions')
         self.app = app
         self.workspace = self.app.get_workspace()
+        self.backend = self.app.get_backend()
 
     def document_display(self, *args):
         selection = self.workspace.get_selection()
@@ -35,14 +37,15 @@ class MiAZActions(GObject.GObject):
             switched.remove(item.id)
         self.log.debug(switched)
 
-    def document_rename(self, button, data):
-        row = data
-        source = row.get_filepath()
-        if self.repodct[source]['valid']:
+    def document_rename(self, *args):
+        item = self.workspace.get_item()
+        source = item.id
+        repodct = self.backend.get_repo_dict()
+        if repodct[source]['valid']:
             basename = os.path.basename(source)
             filename = basename[:basename.rfind('.')]
             target = filename.split('-')
         else:
-            target = self.repodct[source]['suggested'].split('-')
-        dialog = MiAZRenameDialog(self.app, row, source, target)
+            target = repodct[source]['suggested'].split('-')
+        dialog = MiAZRenameDialog(self.app, source, target)
         dialog.show()

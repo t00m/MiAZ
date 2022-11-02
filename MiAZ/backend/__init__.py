@@ -67,6 +67,19 @@ class MiAZBackend(GObject.GObject):
         repokey = valid_key(repodir)
         return os.path.join(ENV['LPATH']['REPOS'], "target-%s.json" % repokey)
 
+    def get_repo_dict(self):
+        s_repodir = self.conf['app'].get('source')
+        s_repocnf = self.get_repo_source_config_file()
+
+        # Load repo conf. It it doesn't exist, create an empty one
+        if os.path.exists(s_repocnf):
+            s_repodct = json_load(s_repocnf)
+        else:
+            s_repodct = {}
+            json_save(s_repocnf, s_repodct)
+        return s_repodct
+
+
     def check_source(self, *args):
         s_repodir = self.conf['app'].get('source')
         s_repocnf = self.get_repo_source_config_file()

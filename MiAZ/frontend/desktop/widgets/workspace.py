@@ -123,7 +123,12 @@ class MiAZWorkspace(Gtk.Box):
         mimetype = get_file_mimetype(item.id)
         gicon = self.app.icman.get_gicon_from_file_mimetype(mimetype)
         imgMime.set_from_gicon(gicon)
-        imgMime.set_pixel_size(36)
+        # ~ imgMime.set_pixel_size(36)
+
+        btnEdit = boxStart.get_last_child()
+        imgEdit = btnEdit.get_first_child()
+        imgEdit.set_from_icon_name('miaz-edit')
+        # ~ imgEdit.set_pixel_size(36)
 
         # Box Center
         boxCenter = boxStart.get_next_sibling()
@@ -151,6 +156,13 @@ class MiAZWorkspace(Gtk.Box):
 
     def get_switched(self):
         return self.switched
+
+    def get_item(self):
+        selection = self.get_selection()
+        selected = selection.get_selection()
+        model = self.get_model_filter()
+        pos = selected.get_nth(0)
+        return model.get_item(pos)
 
     def update(self, *args):
         # FIXME: Get dict from backend
