@@ -23,6 +23,7 @@ from MiAZ.frontend.desktop.widgets.about import MiAZAbaout
 from MiAZ.frontend.desktop.icons import MiAZIconManager
 from MiAZ.frontend.desktop.factory import MiAZFactory
 from MiAZ.frontend.desktop.actions import MiAZActions
+from MiAZ.frontend.desktop.help import show_shortcuts
 
 
 class MiAZApp(Adw.Application):
@@ -126,7 +127,7 @@ class MiAZApp(Adw.Application):
 
         # and create actions to handle menu actions
         for action, shortcut in [('settings', ['<Ctrl>s']),
-                                 ('help', 'F1'),
+                                 ('help', ['<Ctrl>h']),
                                  ('about', ['<Ctrl>b']),
                                  ('close', ['<Ctrl>q']),
                                  ('view', ['<Ctrl>v']),
@@ -147,6 +148,9 @@ class MiAZApp(Adw.Application):
                 self.actions.document_display()
             elif name == 'rename':
                 self.actions.document_rename()
+            elif name == 'help':
+                self.log.debug('Help!')
+                show_shortcuts(self.win)
 
     def get_stack_page_by_name(self, name: str) -> Adw.ViewStackPage:
         widget = self.stack.get_child_by_name(name)
