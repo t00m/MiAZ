@@ -43,8 +43,10 @@ class MiAZFlowBoxRow(Gtk.Box):
         boxCenter.append(label)
 
         boxEnd = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL) #, css_classes=['frame'])
-        icon = Gtk.Image()
-        boxEnd.append(icon)
+        switch = Gtk.Switch()
+        switch.set_valign(Gtk.Align.CENTER)
+        switch.connect('state-set', self.workspace.document_switch)
+        boxEnd.append(switch)
         boxEnd.set_hexpand(False)
 
         boxRow.append(boxStart)

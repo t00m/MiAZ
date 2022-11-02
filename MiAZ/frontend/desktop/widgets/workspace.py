@@ -31,6 +31,7 @@ class MiAZWorkspace(Gtk.Box):
     """ Wrapper for Gtk.Stack with  with a StackSwitcher """
     show_dashboard = True
     displayed = 0
+    switched = set()
 
     def __init__(self, app):
         super(MiAZWorkspace, self).__init__(orientation=Gtk.Orientation.HORIZONTAL)
@@ -145,9 +146,7 @@ class MiAZWorkspace(Gtk.Box):
 
         # Box End
         boxEnd = boxCenter.get_next_sibling()
-        icon = boxEnd.get_first_child()
-        icon.set_from_gicon(gicon)
-        icon.set_pixel_size(36)
+        switch = boxEnd.get_first_child()
         # ~ wdgLabel.set_text(os.path.basename(row.id))
         # ~ valid = self.repodct[row.id]['valid']
         # ~ wdgLabel.get_style_context().add_class(class_name='monospace')
@@ -180,7 +179,7 @@ class MiAZWorkspace(Gtk.Box):
         last = self.model_sort.get_n_items()
         for pos in range(0, last):
             item = self.model_sort.get_item(pos)
-            # ~ self.log.debug("%d > %s (%s)", pos, item.name, type(item))
+        self.switched = set()
 
     def _do_eval_cond_matches_freetext(self, path):
         left = self.ent_sb.get_text()
@@ -237,6 +236,16 @@ class MiAZWorkspace(Gtk.Box):
         # ~ filepath = self.view.get_selected_item()
         # ~ self.log.debug("Displaying %s", filepath)
         os.system("xdg-open '%s'" % filepath)
+
+    def document_switch(self, switch, activated):
+        selected = self.selection.get_selection()
+        pos = selected.get_nth(0)
+        item = self.model_filter.get_item(pos)
+        if activated:
+            self.switched.add(item.id)
+        else:
+            self.switched.remove(item.id)
+        self.log.debug(self.switched)
 
     def on_show_dashboard(self, *args):
         self.displayed = 0
