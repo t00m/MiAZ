@@ -16,7 +16,7 @@ from gi.repository.GdkPixbuf import Pixbuf
 
 from MiAZ.backend.log import get_logger
 from MiAZ.frontend.desktop.widgets.dialogs import MiAZDialogAdd
-from MiAZ.backend.models import File, Collection, Person, Country, Purpose, Concept, Date
+from MiAZ.backend.models import File, Collection, Person, Country, Purpose, Concept
 
 class MiAZRenameDialog(Gtk.Dialog):
     result = ''
@@ -72,28 +72,28 @@ class MiAZRenameDialog(Gtk.Dialog):
         self.boxMain.set_margin_start(margin=12)
 
         # Filename format: {timestamp}-{country}-{collection}-{from}-{purpose}-{concept}-{to}.{extension}
-        self.__create_field_0_date() # Field 1. Country
-        self.__create_field_1_country() # Field 3. From
-        self.__create_field_2_collection() # Field 2. Collection
-        self.__create_field_3_from() # Field 3. From
-        self.__create_field_4_purpose() # Field 3. Purpose
-        self.__create_field_5_concept() # Field 3. Concept
-        self.__create_field_6_to() # Field 6. To
+        self.__create_field_0_date() # Field 1. Date
+        self.rowCountry, self.btnCountry, self.dpdCountry = self.__create_actionrow('Country', Country, 'countries')
+        self.rowCollection, self.btnCollection, self.dpdCollection = self.__create_actionrow('Collection', Collection, 'collections')
+        self.rowFrom, self.btnFrom, self.dpdFrom = self.__create_actionrow('From', Person, 'organizations')
+        self.rowPurpose, self.btnPurpose, self.dpdPurpose = self.__create_actionrow('Purpose', Purpose, 'purposes')
+        self.__create_field_5_concept() # Field 5. Concept
+        self.rowTo, self.btnTo, self.dpdTo = self.__create_actionrow('To', Person, 'organizations')
         self.__create_field_7_extension() # Field 7. Extension
         self.__create_field_8_result() # Result filename
 
         self.contents.append(self.boxMain)
 
         # Connect signals and verify
-        self.entry_date.connect('changed', self.on_changed_entry)
-        self.entry_country.connect('changed', self.on_changed_entry)
-        self.entry_collection.connect('changed', self.on_changed_entry)
-        self.entry_from.connect('changed', self.on_changed_entry)
-        self.entry_purpose.connect('changed', self.on_changed_entry)
-        self.entry_concept.connect('changed', self.on_changed_entry)
-        self.entry_to.connect('changed', self.on_changed_entry)
-        self.on_changed_entry()
-        self.connect('response', self._on_response_rename)
+        # ~ self.entry_date.connect('changed', self.on_changed_entry)
+        # ~ self.entry_country.connect('changed', self.on_changed_entry)
+        # ~ self.entry_collection.connect('changed', self.on_changed_entry)
+        # ~ self.entry_from.connect('changed', self.on_changed_entry)
+        # ~ self.entry_purpose.connect('changed', self.on_changed_entry)
+        # ~ self.entry_concept.connect('changed', self.on_changed_entry)
+        # ~ self.entry_to.connect('changed', self.on_changed_entry)
+        # ~ self.on_changed_entry()
+        # ~ self.connect('response', self._on_response_rename)
 
     def __create_box_value(self) -> Gtk.Box:
         box = Gtk.Box.new(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
@@ -101,173 +101,61 @@ class MiAZRenameDialog(Gtk.Dialog):
         box.set_valign(Gtk.Align.CENTER)
         return box
 
-    def __create_completion(self, model: Gtk.ListStore) -> Gtk.EntryCompletion:
-        def completion_match_func(completion, key, iter):
-            model = completion.get_model()
-            text = model.get_value(iter, 0)
-            if model.get_n_columns() > 1:
-                comp = model.get_value(iter, 1)
-                text += comp
-            if key.upper() in text.upper():
-                return True
-            return False
-
-        completion = Gtk.EntryCompletion()
-        completion.set_match_func(completion_match_func)
-        completion_model = model
-        completion.set_model(completion_model)
-        completion.set_text_column(0)
-        return completion
-
-    def __create_actionrow(self, item: str, model: Gtk.ListStore) -> Adw.ActionRow:
+    def __create_actionrow(self, title, model, item) -> Adw.ActionRow:
         row = Adw.ActionRow.new()
-        row.set_title(item.title())
-        row.set_icon_name('miaz-res-%s' % item)
+        row.set_title(title)
+        row.set_icon_name('miaz-res-%s' % title.lower())
         boxValue = self.__create_box_value()
         row.add_suffix(boxValue)
         self.boxMain.append(row)
         button = self.factory.create_button('miaz-list-add', '')
-        combobox = Gtk.ComboBox.new_with_model_and_entry(model)
-        combobox.set_entry_text_column(0)
-        entry = combobox.get_child()
-        entry.set_icon_from_icon_name(Gtk.EntryIconPosition.PRIMARY, 'miaz-res-%s' % item)
+        dropdown = self.factory.create_dropdown_generic(model, item)
+        dropdown.connect("notify::selected-item", self.on_changed_entry)
+        boxValue.append(dropdown)
         boxValue.append(button)
-        boxValue.append(combobox)
-        completion = self.__create_completion(model)
-        entry.set_completion(completion)
-        return row, button, combobox, entry
-
+        return row, button, dropdown
 
     def __create_field_0_date(self):
         """Field 0. Date"""
-        model = Gtk.ListStore(str)
-        self.row_date, button, combobox, self.entry_date = self.__create_actionrow('date', model)
-        button.set_visible(False)
-        for date in {}:
-            model.append([date])
-        if len(self.suggested[0]) > 0:
-            treeiter = model.append([self.suggested[0]])
-            combobox.set_active_iter(treeiter)
-
-    # ~ def __create_field_0_date(self):
-        # ~ row = Adw.ActionRow.new()
-        # ~ row.set_title('Date')
-        # ~ row.set_icon_name('miaz-res-date')
-        # ~ boxValue = self.__create_box_value()
-        # ~ row.add_suffix(boxValue)
-        # ~ self.boxMain.append(row)
-        # ~ calendar = Gtk.Calendar()
-        # ~ self.entry_date = Gtk.Entry()
-        # ~ self.entry_date.set_visible(False)
-        # ~ boxValue.append(self.entry_date)
-        # ~ boxValue.append(calendar)
-
-    def __create_field_1_country(self):
-        dropdown = self.factory.create_dropdown_generic('Country', 'countries')
-
-        model = Gtk.ListStore(str, str)
-        self.row_country, button, combobox, self.entry_country = self.__create_actionrow('country', model)
-        button.set_visible(False)
-        countries = self.app.get_config('countries')
-        my_countries = countries.load()
-        all_countries = countries.load_global()
-        countries = countries.load_global()
-        for code in my_countries:
-            model.append([code, "%s" % all_countries[code]])
-        if len(self.suggested[1]) > 0:
-            treeiter = model.append([self.suggested[1], "%s" % self.suggested[1]])
-            combobox.set_active_iter(treeiter)
-
-    def __create_field_2_collection(self):
-        """Field 2. Collections"""
-        model = Gtk.ListStore(str)
-        self.row_collection, button, combobox, self.entry_collection = self.__create_actionrow('collection', model)
-        button.set_visible(False)
-        collections = self.app.get_config('collections')
-        for collection in collections.load():
-            model.append([collection])
-        if len(self.suggested[2]) > 0:
-            treeiter = model.append([self.suggested[2]])
-            combobox.set_active_iter(treeiter)
-
-
-    def __create_field_3_from(self):
-        """Field 3. From"""
-        model = Gtk.ListStore(str, str)
-        self.row_from, button, self.combobox_from, self.entry_from = self.__create_actionrow('from', model)
-        button.connect('clicked', self.on_organization_from_add)
-        config = self.app.get_config('organizations')
-        organizations = config.load()
-        for alias in organizations:
-            model.append([alias, "<i>%s</i>" % organizations[alias]])
-        if len(self.suggested[3]) > 0:
-            treeiter = model.append([self.suggested[3], "%s" % self.suggested[3]])
-            self.combobox_from.set_active_iter(treeiter)
-
-        renderer = Gtk.CellRendererText()
-        self.combobox_from.pack_start(renderer, True)
-        self.combobox_from.add_attribute(renderer, "markup", 1)
-        self.combobox_from.set_entry_text_column(0)
-
-    def __create_field_4_purpose(self):
-        """Field 4. purposes"""
-        model = Gtk.ListStore(str)
-        self.row_purpose, button, combobox, self.entry_purpose = self.__create_actionrow('purpose', model)
-        button.set_visible(False)
-        purposes = self.app.get_config('purposes')
-        for purpose in purposes.load():
-            model.append([purpose])
-        if len(self.suggested[4]) > 0:
-            treeiter = model.append([self.suggested[4]])
-            combobox.set_active_iter(treeiter)
+        row = Adw.ActionRow.new()
+        row.set_title('Date')
+        row.set_icon_name('miaz-res-date')
+        boxValue = self.__create_box_value()
+        row.add_suffix(boxValue)
+        self.boxMain.append(row)
+        button = self.factory.create_button('miaz-res-date', '')
+        self.entry_date = Gtk.Entry()
+        boxValue.append(self.entry_date)
+        boxValue.append(button)
 
     def __create_field_5_concept(self):
-        """Field 5. concepts"""
-        model = Gtk.ListStore(str)
-        self.row_concept, button, combobox, self.entry_concept = self.__create_actionrow('concept', model)
-        button.set_visible(False)
-        concepts = self.app.get_config('concepts')
-        for concept in concepts.load():
-            model.append([concept])
-        if len(self.suggested[5]) > 0:
-            treeiter = model.append([self.suggested[5]])
-            combobox.set_active_iter(treeiter)
-
-    def __create_field_6_to(self):
-        """Field 6. To"""
-        model = Gtk.ListStore(str, str)
-        self.row_to, button, self.combobox_to, self.entry_to = self.__create_actionrow('to', model)
-        button.connect('clicked', self.on_organization_to_add)
-        organizations = self.app.get_config('organizations')
-        organizations = organizations.load()
-        for alias in organizations:
-            model.append([alias, "<i>%s</i>" % organizations[alias]])
-        if len(self.suggested[6]) > 0:
-            treeiter = model.append([self.suggested[6], "%s" % self.suggested[6]])
-            self.combobox_to.set_active_iter(treeiter)
-
-        renderer = Gtk.CellRendererText()
-        self.combobox_to.pack_start(renderer, True)
-        self.combobox_to.add_attribute(renderer, "markup", 1)
-        self.combobox_to.set_entry_text_column(0)
+        """Field 0. Date"""
+        row = Adw.ActionRow.new()
+        row.set_title('Concept')
+        row.set_icon_name('miaz-res-concept')
+        boxValue = self.__create_box_value()
+        row.add_suffix(boxValue)
+        self.boxMain.append(row)
+        button = self.factory.create_button('miaz-res-concept', '')
+        self.entry_concept = Gtk.Entry()
+        boxValue.append(self.entry_concept)
+        boxValue.append(button)
 
     def __create_field_7_extension(self):
         """Field 7. extension"""
-        active = False
-        model = Gtk.ListStore(str)
-        row, button, combobox, self.entry_extension = self.__create_actionrow('extension', model)
-        button.set_visible(False)
-        extensions = self.app.get_config('extensions')
-        for extension in extensions.load_global():
-            treeiter = model.append([extension])
-            if extension == self.extension:
-                active = treeiter
-        if not active:
-            self.log.warning("Extension '%s' doesn't exist. Report it please", self.extension)
-            active = model.append([self.extension])
-        combobox.set_active_iter(active)
-        combobox.set_model(model)
-        combobox.set_sensitive(False)
+        row = Adw.ActionRow.new()
+        row.set_title('Extension')
+        row.set_icon_name('miaz-res-extension')
+        boxValue = self.__create_box_value()
+        row.add_suffix(boxValue)
+        self.boxMain.append(row)
+        button = self.factory.create_button('', '', css_classes=['flat'])
+        button.set_sensitive(False)
+        button.set_has_frame(False)
+        self.lblExt = Gtk.Label()
+        boxValue.append(self.lblExt)
+        boxValue.append(button)
+        self.lblExt.set_text('.pdf')
 
     def __create_field_8_result(self, *args):
         """Field 7. extension"""
@@ -310,6 +198,7 @@ class MiAZRenameDialog(Gtk.Dialog):
         self.destroy()
 
     def on_changed_entry(self, *args):
+        self.log.debug("Hello!")
         def success_or_error(widget, valid):
             if valid:
                 widget.get_style_context().remove_class(class_name='warning')
@@ -333,14 +222,13 @@ class MiAZRenameDialog(Gtk.Dialog):
         try:
             fields = []
             adate = self.entry_date.get_text().upper()
-            acountry = self.entry_country.get_text().upper()
-            acollection = self.entry_collection.get_text().upper()
-            afrom = self.entry_from.get_text().upper()
-            apurpose = self.entry_purpose.get_text().upper()
-            aconcept = self.entry_concept.get_text().upper()
-            ato = self.entry_to.get_text().upper()
-            aextension = self.entry_extension.get_text()
-            self.log.debug("%s > %s", afrom, ato)
+            acountry = self.dpdCountry.get_selected_item().id
+            acollection = self.dpdCollection.get_selected_item().id
+            afrom = self.dpdFrom.get_selected_item().id
+            apurpose = self.dpdPurpose.get_selected_item().id
+            aconcept = self.entry_concept.get_text().upper().replace(' ', '_')
+            ato = self.dpdTo.get_selected_item().id
+            aextension = self.lblExt.get_text()
             fields.append(adate) # 0. Date
             fields.append(acountry) # 1. Country
             fields.append(acollection) # 2. Collection
@@ -362,9 +250,9 @@ class MiAZRenameDialog(Gtk.Dialog):
             v_to = organizations.exists(ato)
 
             if v_col:
-                success_or_warning(self.row_collection, collections.exists(acollection))
+                success_or_warning(self.rowCollection, collections.exists(acollection))
             else:
-                success_or_error(self.row_collection, v_col)
+                success_or_error(self.rowCollection, v_col)
 
             if v_purp:
                 success_or_warning(self.row_purpose, purposes.exists(apurpose))
@@ -379,7 +267,8 @@ class MiAZRenameDialog(Gtk.Dialog):
                 self.btnAccept.set_sensitive(True)
             else:
                 self.btnAccept.set_sensitive(False)
-        except:
+        except Exception as error:
+            self.log.error(error)
             self.result = ''
 
 
