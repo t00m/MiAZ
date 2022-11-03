@@ -16,7 +16,6 @@ from gi.repository.GdkPixbuf import Pixbuf
 
 from MiAZ.backend.log import get_logger
 from MiAZ.frontend.desktop.widgets.dialogs import MiAZDialogAdd
-from MiAZ.backend.models import File, Collection, Person, Country, Purpose, Concept, Date
 
 class MiAZRenameDialog(Gtk.Dialog):
     result = ''
@@ -163,8 +162,6 @@ class MiAZRenameDialog(Gtk.Dialog):
         # ~ boxValue.append(calendar)
 
     def __create_field_1_country(self):
-        dropdown = self.factory.create_dropdown_generic('Country', 'countries')
-
         model = Gtk.ListStore(str, str)
         self.row_country, button, combobox, self.entry_country = self.__create_actionrow('country', model)
         button.set_visible(False)

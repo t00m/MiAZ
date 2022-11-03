@@ -24,6 +24,8 @@ class MiAZModel(GObject.Object):
 class File(MiAZModel):
     __gtype_name__ = 'File'
 
+class Collection(MiAZModel):
+    __gtype_name__ = 'Date'
 
 class Collection(MiAZModel):
     __gtype_name__ = 'Collection'
