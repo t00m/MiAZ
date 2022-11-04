@@ -27,6 +27,7 @@ class MiAZWorkspace(Gtk.Box):
         self.app = app
         self.backend = self.app.get_backend()
         self.factory = self.app.get_factory()
+        self.actions = self.app.get_actions()
         self.config = self.app.get_config('app')
         self.set_vexpand(False)
         self.set_margin_top(margin=6)
@@ -48,13 +49,14 @@ class MiAZWorkspace(Gtk.Box):
         tlbFilters.append(box)
 
         self.dropdown = {}
-        for title, model, item in [('Country', Country, 'countries'),
+        for title, item_type, conf in [('Country', Country, 'countries'),
                                    ('Collection', Collection, 'collections'),
                                    ('From', Person, 'organizations'),
                                    ('Purpose', Purpose, 'purposes'),
                                    ('To', Person, 'organizations'),
                             ]:
-            dropdown = self.factory.create_dropdown_generic(model, item)
+            dropdown = self.factory.create_dropdown_generic(item_type)
+            self.actions.dropdown_populate(dropdown, item_type, conf)
             dropdown.connect("notify::selected-item", self._on_filter_selected)
             box = self.factory.create_box_filter(title, dropdown)
             tlbFilters.append(box)
@@ -234,3 +236,32 @@ class MiAZWorkspace(Gtk.Box):
         for pos in range(0, last):
             item = self.model_filter.get_item(pos)
             self.log.debug(item.id)
+
+    def document_display(self, *args):
+        item = self.get_selected()
+        self.actions.document_display(item.id)
+
+    def document_switch(self, switch, activated):
+        selection = self.get_selection()
+        selected = selection.get_selection()
+        model = self.get_model_filter()
+        switched = self.get_switched()
+        pos = selected.get_nth(0)
+        item = model.get_item(pos)
+        if activated:
+            switched.add(item.id)
+        else:
+            switched.remove(item.id)
+        self.log.debug(switched)
+
+    def document_rename(self, *args):
+        source = self.get_item().id
+        self.actions.document_rename(source)
+
+    def get_selected(self, *args):
+        selection = self.get_selection()
+        model = self.get_model_filter()
+        selected = selection.get_selection()
+        pos = selected.get_nth(0)
+        item = model.get_item(pos)
+        return item

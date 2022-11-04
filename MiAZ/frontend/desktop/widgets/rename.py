@@ -28,6 +28,7 @@ class MiAZRenameDialog(Gtk.Dialog):
         self.app = app
         self.backend = self.app.get_backend()
         self.factory = self.app.get_factory()
+        self.actions = self.app.get_actions()
         self.log = get_logger('MiazRenameDialog')
         self.set_size_request(800, 600)
         self.set_transient_for(self.app.win)
@@ -48,6 +49,13 @@ class MiAZRenameDialog(Gtk.Dialog):
         self.btnAccept.set_receives_default(True)
         btnCancel = self.factory.create_button('', 'cancel', self.on_rename_cancel)
         btnCancel.get_style_context ().add_class ('destructive-action')
+
+        btnPreview = self.factory.create_button('', 'preview', self.on_document_display, data=self.filepath)
+        # ~ btnFileDisplay.set_child(icon)
+        # ~ btnFileDisplay.connect('clicked', self.on_document_display, self.filepath)
+        # ~ btnFileDisplay.set_valign(Gtk.Align.CENTER)
+        # ~ btnFileDisplay.set_hexpand(False)
+
         btnDelete = self.factory.create_button('', 'delete', self.on_document_delete, data=self.filepath)
         self.set_default_response(Gtk.ResponseType.ACCEPT)
         lblHeaderTitle = Gtk.Label()
@@ -57,6 +65,7 @@ class MiAZRenameDialog(Gtk.Dialog):
         self.dlgHeader.pack_start(btnDelete)
         self.dlgHeader.pack_end(self.btnAccept)
         self.dlgHeader.pack_end(btnCancel)
+        self.dlgHeader.pack_end(btnPreview)
         self.dlgHeader.set_title_widget(lblHeaderTitle)
         self.set_titlebar(self.dlgHeader)
 
@@ -103,7 +112,7 @@ class MiAZRenameDialog(Gtk.Dialog):
         box.set_valign(Gtk.Align.CENTER)
         return box
 
-    def __create_actionrow(self, title, model, item) -> Adw.ActionRow:
+    def __create_actionrow(self, title, item_type, conf) -> Adw.ActionRow:
         row = Adw.ActionRow.new()
         row.set_title(title)
         row.set_icon_name('miaz-res-%s' % title.lower())
@@ -111,10 +120,26 @@ class MiAZRenameDialog(Gtk.Dialog):
         row.add_suffix(boxValue)
         self.boxMain.append(row)
         button = self.factory.create_button('miaz-list-add', '')
-        dropdown = self.factory.create_dropdown_generic(model, item)
+        dropdown = self.factory.create_dropdown_generic(item_type) #, item)
+        self.actions.dropdown_populate(dropdown, item_type, conf)
         boxValue.append(dropdown)
         boxValue.append(button)
         return row, button, dropdown
+
+    def _set_suggestion(self, dropdown, suggestion):
+        found = False
+        if len(suggestion) > 0:
+            model = dropdown.get_model()
+            n = 0
+            for item in model:
+                # ~ self.log.debug("%s == %s? %s", item.id, suggestion, item.id == suggestion)
+                if item.id == suggestion:
+                    dropdown.set_selected(n)
+                    found = True
+                n += 1
+
+        if not found:
+            dropdown.set_selected(0)
 
     def __create_field_0_date(self):
         """Field 0. Date"""
@@ -141,33 +166,23 @@ class MiAZRenameDialog(Gtk.Dialog):
 
         self.entry_date.connect('changed', self.on_changed_entry)
 
-    def _set_suggestion(self, dropdown, suggestion):
-        found = False
-        if len(suggestion) > 0:
-            model = dropdown.get_model()
-            n = 0
-            for item in model:
-                # ~ self.log.debug("%s == %s? %s", item.id, suggestion, item.id == suggestion)
-                if item.id == suggestion:
-                    dropdown.set_selected(n)
-                    found = True
-                n += 1
-
-        if not found:
-            dropdown.set_selected(0)
-
     def __create_field_1_country(self):
         self.rowCountry, self.btnCountry, self.dpdCountry = self.__create_actionrow('Country', Country, 'countries')
+        self.btnCountry.set_sensitive(False)
+        self.btnCountry.set_has_frame(False)
+        self.btnCountry.set_child(None)
         self._set_suggestion(self.dpdCountry, self.suggested[1])
         self.dpdCountry.connect("notify::selected-item", self.on_changed_entry)
 
     def __create_field_2_collection(self):
         self.rowCollection, self.btnCollection, self.dpdCollection = self.__create_actionrow('Collection', Collection, 'collections')
         self._set_suggestion(self.dpdCollection, self.suggested[2])
+        self.btnCollection.connect('clicked', self.on_collection_add)
         self.dpdCollection.connect("notify::selected-item", self.on_changed_entry)
 
     def __create_field_3_from(self):
         self.rowFrom, self.btnFrom, self.dpdFrom = self.__create_actionrow('From', Person, 'organizations')
+        self.btnFrom.connect('clicked', self.on_organization_from_add)
         self._set_suggestion(self.dpdFrom, self.suggested[3])
         self.dpdFrom.connect("notify::selected-item", self.on_changed_entry)
 
@@ -184,8 +199,11 @@ class MiAZRenameDialog(Gtk.Dialog):
         boxValue = self.__create_box_value()
         self.rowConcept.add_suffix(boxValue)
         self.boxMain.append(self.rowConcept)
-        button = self.factory.create_button('miaz-res-concept', '')
+        button = self.factory.create_button('', '', css_classes=['flat'])
+        button.set_sensitive(False)
+        button.set_has_frame(False)
         self.entry_concept = Gtk.Entry()
+        self.entry_concept.set_alignment(1.0)
         self.entry_concept.set_placeholder_text('Type anything here...')
         boxValue.append(self.entry_concept)
         boxValue.append(button)
@@ -214,7 +232,7 @@ class MiAZRenameDialog(Gtk.Dialog):
         self.lblExt = Gtk.Label()
         boxValue.append(self.lblExt)
         boxValue.append(button)
-        # ~ self.lblExt.set_text('.pdf')
+        self.lblExt.set_text(self.extension)
 
     def __create_field_8_result(self, *args):
         """Field 7. extension"""
@@ -228,15 +246,15 @@ class MiAZRenameDialog(Gtk.Dialog):
         self.row_cur_filename.add_suffix(lblFilenameCur)
         self.boxMain.append(self.row_cur_filename)
 
-        icon = self.app.icman.get_icon_mimetype_from_file(self.filepath, 36, 36)
-        icon.set_icon_size(Gtk.IconSize.INHERIT)
-        boxFileDisplayButton = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
-        btnFileDisplay = button = Gtk.Button()
-        btnFileDisplay.set_child(icon)
-        btnFileDisplay.connect('clicked', self.on_document_display, self.filepath)
-        btnFileDisplay.set_valign(Gtk.Align.CENTER)
-        btnFileDisplay.set_hexpand(False)
-        self.row_cur_filename.add_suffix(btnFileDisplay)
+        # ~ icon = self.app.icman.get_icon_mimetype_from_file(self.filepath, 36, 36)
+        # ~ icon.set_icon_size(Gtk.IconSize.INHERIT)
+        # ~ boxFileDisplayButton = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
+        # ~ btnFileDisplay = button = Gtk.Button()
+        # ~ btnFileDisplay.set_child(icon)
+        # ~ btnFileDisplay.connect('clicked', self.on_document_display, self.filepath)
+        # ~ btnFileDisplay.set_valign(Gtk.Align.CENTER)
+        # ~ btnFileDisplay.set_hexpand(False)
+        # ~ self.row_cur_filename.add_suffix(btnFileDisplay)
 
         self.row_new_filename = Adw.ActionRow.new()
         self.row_new_filename.set_title("<b>New filename</b>")
@@ -330,8 +348,6 @@ class MiAZRenameDialog(Gtk.Dialog):
             else:
                 self.btnAccept.set_sensitive(False)
         except Exception as error:
-            self.log.error(error)
-            raise
             self.result = ''
 
     def validate_date(self, adate: str) -> bool:
@@ -388,12 +404,14 @@ class MiAZRenameDialog(Gtk.Dialog):
 
     def on_answer_question_rename(self, dialog, response):
         if response == Gtk.ResponseType.YES:
-            self.response(Gtk.ResponseType.ACCEPT)
-            dialog.destroy()
-            self.destroy()
+            source = self.get_filepath_source()
+            target = os.path.join(os.path.dirname(source), self.get_filepath_target())
+            if source != target and not os.path.exists(target):
+                shutil.move(source, target)
+                dialog.destroy()
+                self.destroy()
         else:
             dialog.destroy()
-            self.response(Gtk.ResponseType.CANCEL)
 
     def on_rename_cancel(self, *args):
         self.response(Gtk.ResponseType.CANCEL)
@@ -404,7 +422,7 @@ class MiAZRenameDialog(Gtk.Dialog):
         os.system("xdg-open '%s'" % filepath)
 
     def on_document_delete(self, button, filepath):
-        body = "You are about to <b>delete</b>:\n\n<b>%s</b>" % os.path.basename(filepath)
+        body = "<big>You are about to delete the following document:\n\n<b>%s</b>\n\nConfirm, please.</big>" % os.path.basename(filepath)
         widget = Gtk.Label()
         widget.set_markup(body)
         question = self.factory.create_dialog_question(self, "Are you sure?", widget)
@@ -443,15 +461,18 @@ class MiAZRenameDialog(Gtk.Dialog):
 
     def on_organization_from_add(self, *args):
         dialog = MiAZDialogAdd(self.app, self.get_root(), 'Add new person or entity', 'Initials', 'Full name')
-        key = self.entry_from.get_text()
-        dialog.set_value1(key)
         dialog.connect('response', self.on_response_organization_from_add)
+        dialog.show()
+
+    def on_collection_add(self, *args):
+        dialog = MiAZDialogAdd(self.app, self.get_root(), 'Add new collection', 'Collection', '')
+        boxKey2 = dialog.get_boxKey2()
+        boxKey2.set_visible(False)
+        dialog.connect('response', self.on_response_collection_add)
         dialog.show()
 
     def on_organization_to_add(self, *args):
         dialog = MiAZDialogAdd(self.app, self.get_root(), 'Add new person or entity', 'Initials', 'Full name')
-        key = self.entry_to.get_text()
-        dialog.set_value1(key)
         dialog.connect('response', self.on_response_organization_to_add)
         dialog.show()
 
@@ -465,10 +486,34 @@ class MiAZRenameDialog(Gtk.Dialog):
                 items[key.upper()] = value
                 config.save(items)
 
-                # Update combobox from
-                model = self.combobox_from.get_model()
-                treeiter = model.append([key.upper(), "<i>%s</i>" % value])
-                self.combobox_from.set_active_iter(treeiter)
+                # Update dropdown
+                self.actions.dropdown_populate(self.dpdFrom, Person, 'organizations')
+                self.select_dropdown_item(self.dpdFrom, key)
+        dialog.destroy()
+
+    def select_dropdown_item(self, dropdown, key):
+        found = False
+        model = dropdown.get_model()
+        n = 0
+        for item in model:
+            if item.id.upper() == key.upper():
+                dropdown.set_selected(n)
+                found = True
+            n += 1
+        if not found:
+            dropdown.set_selected(0)
+
+    def on_response_collection_add(self, dialog, response):
+        if response == Gtk.ResponseType.ACCEPT:
+            key = dialog.get_value1()
+            if len(key) > 0:
+                config = self.app.get_config('collections')
+                config.add(key)
+
+                # ~ # Update combobox from
+                # ~ model = self.combobox_from.get_model()
+                # ~ treeiter = model.append([key.upper(), "<i>%s</i>" % value])
+                # ~ self.combobox_from.set_active_iter(treeiter)
         dialog.destroy()
 
     def on_response_organization_to_add(self, dialog, response):

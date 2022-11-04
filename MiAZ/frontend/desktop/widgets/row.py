@@ -36,7 +36,7 @@ class MiAZListViewRow(Gtk.Box):
         btnMime.get_style_context().add_class(class_name='flat')
         btnMime.set_child(icon_mime)
         btnMime.set_hexpand(False)
-        btnMime.connect('clicked', self.actions.document_display)
+        btnMime.connect('clicked', self.workspace.document_display)
         boxStart.append(btnMime)
 
         icon_edit = Gtk.Image()
@@ -45,7 +45,7 @@ class MiAZListViewRow(Gtk.Box):
         btnEdit.get_style_context().add_class(class_name='flat')
         btnEdit.set_child(icon_edit)
         btnEdit.set_hexpand(False)
-        btnEdit.connect('clicked', self.actions.document_rename)
+        btnEdit.connect('clicked', self.workspace.document_rename)
         boxStart.append(btnEdit)
 
         boxCenter = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
@@ -56,7 +56,7 @@ class MiAZListViewRow(Gtk.Box):
         boxEnd = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL) #, css_classes=['frame'])
         switch = Gtk.Switch()
         switch.set_valign(Gtk.Align.CENTER)
-        switch.connect('state-set', self.actions.document_switch)
+        switch.connect('state-set', self.workspace.document_switch)
         boxEnd.append(switch)
         boxEnd.set_hexpand(False)
 

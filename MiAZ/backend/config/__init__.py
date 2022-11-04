@@ -135,7 +135,7 @@ class MiAZConfig():
         config = self.load()
         if not key in config:
             config.append(key.upper())
-            self.save(config)
+            self.save(sorted(config))
             self.log.info("%s - Add: %s", self.config_for, key)
 
     def list_remove(self, key):

@@ -112,7 +112,7 @@ class MiAZFactory:
         # ~ btnFileSelect.set_valign(Gtk.Align.CENTER)
         # ~ btnFileSelect.set_hexpand(False)
 
-    def create_dropdown_generic(self, item_type, conf):
+    def create_dropdown_generic(self, item_type):
 
         def _on_factory_setup(factory, list_item):
             box = Gtk.Box(spacing=6, orientation=Gtk.Orientation.HORIZONTAL)
@@ -126,35 +126,15 @@ class MiAZFactory:
             item = list_item.get_item()
             label.set_text(item.name)
 
-        # Populate the model
-        self.model = Gio.ListStore(item_type=item_type)
-        config = self.app.get_config(conf)
-        items = config.load()
-        config_is = config.get_config_is()
-
-        # foreign key is used when the local configuration is saved as a
-        # list, but it gets the name from global dictionary (eg.: Countries)
-        foreign = config.get_config_foreign()
-        if foreign:
-            gitems = config.load_global()
-
-        items = config.load()
-        self.model.append(item_type(id='Any', name='Any'))
-        for key in items:
-            if config_is is dict:
-                if foreign:
-                    self.model.append(item_type(id=key, name=gitems[key]))
-                else:
-                    self.model.append(item_type(id=key, name=items[key]))
-            else:
-                self.model.append(item_type(id=key, name=key))
+        # Create the model
+        model = Gio.ListStore(item_type=item_type)
 
         # Set up the factory
         factory = Gtk.SignalListItemFactory()
         factory.connect("setup", _on_factory_setup)
         factory.connect("bind", _on_factory_bind)
 
-        dropdown = Gtk.DropDown(model=self.model, factory=factory, hexpand=True)
+        dropdown = Gtk.DropDown(model=model, factory=factory, hexpand=True)
         dropdown.set_show_arrow(True)
         return dropdown
 
