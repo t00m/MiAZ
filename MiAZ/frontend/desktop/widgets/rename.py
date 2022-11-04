@@ -4,6 +4,7 @@
 import os
 import sys
 import shutil
+from datetime import datetime
 from abc import abstractmethod
 
 import gi
@@ -72,13 +73,13 @@ class MiAZRenameDialog(Gtk.Dialog):
         self.boxMain.set_margin_start(margin=12)
 
         # Filename format: {timestamp}-{country}-{collection}-{from}-{purpose}-{concept}-{to}.{extension}
-        self.__create_field_0_date() # Field 1. Date
-        self.rowCountry, self.btnCountry, self.dpdCountry = self.__create_actionrow('Country', Country, 'countries')
-        self.rowCollection, self.btnCollection, self.dpdCollection = self.__create_actionrow('Collection', Collection, 'collections')
-        self.rowFrom, self.btnFrom, self.dpdFrom = self.__create_actionrow('From', Person, 'organizations')
-        self.rowPurpose, self.btnPurpose, self.dpdPurpose = self.__create_actionrow('Purpose', Purpose, 'purposes')
-        self.__create_field_5_concept() # Field 5. Concept
-        self.rowTo, self.btnTo, self.dpdTo = self.__create_actionrow('To', Person, 'organizations')
+        self.__create_field_0_date() # Field 1. Country
+        self.__create_field_1_country() # Field 3. From
+        self.__create_field_2_collection() # Field 2. Collection
+        self.__create_field_3_from() # Field 3. From
+        self.__create_field_4_purpose() # Field 3. Purpose
+        self.__create_field_5_concept() # Field 3. Concept
+        self.__create_field_6_to() # Field 6. To
         self.__create_field_7_extension() # Field 7. Extension
         self.__create_field_8_result() # Result filename
 
@@ -94,6 +95,7 @@ class MiAZRenameDialog(Gtk.Dialog):
         # ~ self.entry_to.connect('changed', self.on_changed_entry)
         # ~ self.on_changed_entry()
         # ~ self.connect('response', self._on_response_rename)
+        self.on_changed_entry()
 
     def __create_box_value(self) -> Gtk.Box:
         box = Gtk.Box.new(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
@@ -110,52 +112,109 @@ class MiAZRenameDialog(Gtk.Dialog):
         self.boxMain.append(row)
         button = self.factory.create_button('miaz-list-add', '')
         dropdown = self.factory.create_dropdown_generic(model, item)
-        dropdown.connect("notify::selected-item", self.on_changed_entry)
         boxValue.append(dropdown)
         boxValue.append(button)
         return row, button, dropdown
 
     def __create_field_0_date(self):
         """Field 0. Date"""
-        row = Adw.ActionRow.new()
-        row.set_title('Date')
-        row.set_icon_name('miaz-res-date')
+        self.rowDate = Adw.ActionRow.new()
+        self.rowDate.set_title('Date')
+        self.rowDate.set_icon_name('miaz-res-date')
         boxValue = self.__create_box_value()
-        row.add_suffix(boxValue)
-        self.boxMain.append(row)
+        boxValue.set_hexpand(False)
+        boxValue.set_valign(Gtk.Align.CENTER)
+        self.rowDate.add_suffix(boxValue)
+        self.boxMain.append(self.rowDate)
         button = self.factory.create_button('miaz-res-date', '')
         self.entry_date = Gtk.Entry()
+        self.entry_date.set_max_length(8)
+        self.entry_date.set_max_width_chars(8)
+        self.entry_date.set_width_chars(8)
+        self.entry_date.set_placeholder_text('YYYYmmdd')
+        self.entry_date.set_alignment(1.0)
         boxValue.append(self.entry_date)
         boxValue.append(button)
 
+        if len(self.suggested[0]) > 0:
+            self.entry_date.set_text(self.suggested[0])
+
+        self.entry_date.connect('changed', self.on_changed_entry)
+
+    def _set_suggestion(self, dropdown, suggestion):
+        found = False
+        if len(suggestion) > 0:
+            model = dropdown.get_model()
+            n = 0
+            for item in model:
+                # ~ self.log.debug("%s == %s? %s", item.id, suggestion, item.id == suggestion)
+                if item.id == suggestion:
+                    dropdown.set_selected(n)
+                    found = True
+                n += 1
+
+        if not found:
+            dropdown.set_selected(0)
+
+    def __create_field_1_country(self):
+        self.rowCountry, self.btnCountry, self.dpdCountry = self.__create_actionrow('Country', Country, 'countries')
+        self._set_suggestion(self.dpdCountry, self.suggested[1])
+        self.dpdCountry.connect("notify::selected-item", self.on_changed_entry)
+
+    def __create_field_2_collection(self):
+        self.rowCollection, self.btnCollection, self.dpdCollection = self.__create_actionrow('Collection', Collection, 'collections')
+        self._set_suggestion(self.dpdCollection, self.suggested[2])
+        self.dpdCollection.connect("notify::selected-item", self.on_changed_entry)
+
+    def __create_field_3_from(self):
+        self.rowFrom, self.btnFrom, self.dpdFrom = self.__create_actionrow('From', Person, 'organizations')
+        self._set_suggestion(self.dpdFrom, self.suggested[3])
+        self.dpdFrom.connect("notify::selected-item", self.on_changed_entry)
+
+    def __create_field_4_purpose(self):
+        self.rowPurpose, self.btnPurpose, self.dpdPurpose = self.__create_actionrow('Purpose', Purpose, 'purposes')
+        self._set_suggestion(self.dpdPurpose, self.suggested[4])
+        self.dpdPurpose.connect("notify::selected-item", self.on_changed_entry)
+
     def __create_field_5_concept(self):
         """Field 0. Date"""
-        row = Adw.ActionRow.new()
-        row.set_title('Concept')
-        row.set_icon_name('miaz-res-concept')
+        self.rowConcept = Adw.ActionRow.new()
+        self.rowConcept.set_title('Concept')
+        self.rowConcept.set_icon_name('miaz-res-concept')
         boxValue = self.__create_box_value()
-        row.add_suffix(boxValue)
-        self.boxMain.append(row)
+        self.rowConcept.add_suffix(boxValue)
+        self.boxMain.append(self.rowConcept)
         button = self.factory.create_button('miaz-res-concept', '')
         self.entry_concept = Gtk.Entry()
+        self.entry_concept.set_placeholder_text('Type anything here...')
         boxValue.append(self.entry_concept)
         boxValue.append(button)
 
+        if len(self.suggested[5]) > 0:
+            self.entry_concept.set_text(self.suggested[5])
+
+        self.entry_concept.connect('changed', self.on_changed_entry)
+
+    def __create_field_6_to(self):
+        self.rowTo, self.btnTo, self.dpdTo = self.__create_actionrow('To', Person, 'organizations')
+        self._set_suggestion(self.dpdTo, self.suggested[6])
+        self.dpdTo.connect("notify::selected-item", self.on_changed_entry)
+
     def __create_field_7_extension(self):
         """Field 7. extension"""
-        row = Adw.ActionRow.new()
-        row.set_title('Extension')
-        row.set_icon_name('miaz-res-extension')
+        self.rowExt = Adw.ActionRow.new()
+        self.rowExt.set_title('Extension')
+        self.rowExt.set_icon_name('miaz-res-extension')
         boxValue = self.__create_box_value()
-        row.add_suffix(boxValue)
-        self.boxMain.append(row)
+        self.rowExt.add_suffix(boxValue)
+        self.boxMain.append(self.rowExt)
         button = self.factory.create_button('', '', css_classes=['flat'])
         button.set_sensitive(False)
         button.set_has_frame(False)
         self.lblExt = Gtk.Label()
         boxValue.append(self.lblExt)
         boxValue.append(button)
-        self.lblExt.set_text('.pdf')
+        # ~ self.lblExt.set_text('.pdf')
 
     def __create_field_8_result(self, *args):
         """Field 7. extension"""
@@ -198,7 +257,6 @@ class MiAZRenameDialog(Gtk.Dialog):
         self.destroy()
 
     def on_changed_entry(self, *args):
-        self.log.debug("Hello!")
         def success_or_error(widget, valid):
             if valid:
                 widget.get_style_context().remove_class(class_name='warning')
@@ -221,7 +279,7 @@ class MiAZRenameDialog(Gtk.Dialog):
 
         try:
             fields = []
-            adate = self.entry_date.get_text().upper()
+            adate = self.entry_date.get_text()
             acountry = self.dpdCountry.get_selected_item().id
             acollection = self.dpdCollection.get_selected_item().id
             afrom = self.dpdFrom.get_selected_item().id
@@ -243,10 +301,12 @@ class MiAZRenameDialog(Gtk.Dialog):
             countries = self.app.get_config('countries')
             collections = self.app.get_config('collections')
             purposes = self.app.get_config('purposes')
+            v_date = self.validate_date(adate)
             v_col = len(acollection) > 0
             v_cty = countries.exists(acountry)
             v_from = organizations.exists(afrom)
             v_purp = len(apurpose) > 0
+            v_cnpt = len(aconcept) > 0
             v_to = organizations.exists(ato)
 
             if v_col:
@@ -255,22 +315,31 @@ class MiAZRenameDialog(Gtk.Dialog):
                 success_or_error(self.rowCollection, v_col)
 
             if v_purp:
-                success_or_warning(self.row_purpose, purposes.exists(apurpose))
+                success_or_warning(self.rowPurpose, purposes.exists(apurpose))
             else:
-                success_or_error(self.row_purpose, v_purp)
+                success_or_error(self.rowPurpose, v_purp)
 
-            success_or_error(self.row_country, v_cty)
-            success_or_error(self.row_from, v_from)
-            success_or_error(self.row_to, v_to)
+            success_or_error(self.rowDate, v_date)
+            success_or_error(self.rowCountry, v_cty)
+            success_or_error(self.rowFrom, v_from)
+            success_or_error(self.rowConcept, v_cnpt)
+            success_or_error(self.rowTo, v_to)
 
-            if v_from and v_to and v_cty and v_col and v_purp:
+            if v_date and v_from and v_to and v_cty and v_col and v_purp and v_cnpt:
                 self.btnAccept.set_sensitive(True)
             else:
                 self.btnAccept.set_sensitive(False)
         except Exception as error:
             self.log.error(error)
+            raise
             self.result = ''
 
+    def validate_date(self, adate: str) -> bool:
+        try:
+            datetime.strptime(adate, '%Y%m%d')
+            return True
+        except:
+            return False
 
     def validate(self, fields: list) -> None:
         valid_filename = False

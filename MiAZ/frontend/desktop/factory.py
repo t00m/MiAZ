@@ -154,7 +154,9 @@ class MiAZFactory:
         factory.connect("setup", _on_factory_setup)
         factory.connect("bind", _on_factory_bind)
 
-        return Gtk.DropDown(model=self.model, factory=factory, hexpand=True)
+        dropdown = Gtk.DropDown(model=self.model, factory=factory, hexpand=True)
+        dropdown.set_show_arrow(True)
+        return dropdown
 
     def create_dialog(self, parent, title, widget, width=-1, height=-1):
         dialog = Gtk.Dialog()
