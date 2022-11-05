@@ -395,7 +395,7 @@ class MiAZRenameDialog(Gtk.Dialog):
         # ~ return self.row
 
     def on_rename_accept(self, *args):
-        body = "You are about to rename:\n\n<b>%s</b>\n\nto\n\n<b>%s</b>" % (os.path.basename(self.get_filepath_source()), self.get_filepath_target())
+        body = "<big>You are about to rename:\n\n<b>%s</b>\n\nto\n\n<b>%s</b></big>" % (os.path.basename(self.get_filepath_source()), self.get_filepath_target())
         widget = Gtk.Label()
         widget.set_markup(body)
         question = self.factory.create_dialog_question(self, "Are you sure?", widget)
