@@ -91,9 +91,16 @@ class ExampleWindow(Gtk.ApplicationWindow):
         documents = get_files(sys.argv[1])
 
         # Populate the model
-        model = Gio.ListStore(item_type=Row)
+        store = Gio.ListStore(item_type=Row)
+        self.sort_model  = Gtk.SortListModel(model=store)
+        self.sorter = Gtk.CustomSorter.new(sort_func=self.sort_func)
+        self.sorter.set_ignore_case(True)
+        self.sort_model.set_sorter(self.sorter)
+        filter_model = Gtk.FilterListModel(model=self.sort_model)
+        self.model = filter_model
+
         for filepath in documents:
-            model.append(Row(filepath=filepath))
+            store.append(Row(filepath=filepath))
 
         # Set up the factories
         factory_icon = Gtk.SignalListItemFactory()
@@ -105,17 +112,19 @@ class ExampleWindow(Gtk.ApplicationWindow):
         factory_label.connect("bind", self._on_factory_bind_label)
 
         # Setup ColumnView Widget
-        selection = Gtk.SingleSelection.new(model)
+        selection = Gtk.SingleSelection.new(self.model)
         selection.set_autoselect(True)
         self.cv = Gtk.ColumnView(model=selection)
         self.cv.set_show_column_separators(True)
         self.cv.set_show_row_separators(True)
+        self.cv.set_single_click_activate(True)
 
         column_icon = Gtk.ColumnViewColumn.new("Icon", factory_icon)
         column_label = Gtk.ColumnViewColumn.new("File path", factory_label)
+        column_label.set_sorter(self.sorter)
+        column_label.set_expand(True)
         self.cv.append_column(column_icon)
         self.cv.append_column(column_label)
-
         self.cv.sort_by_column(column_label, Gtk.SortType.ASCENDING)
         self.cv.connect("activate", self._on_selected_item_notify)
 
@@ -133,22 +142,27 @@ class ExampleWindow(Gtk.ApplicationWindow):
         box.append(scrwin)
         self.set_child(box)
 
+    def sort_func(self, item1, item2, data):
+        if item1.filepath > item2.filepath:
+            return Gtk.Ordering.LARGER
+        elif item1.filepath < item2.filepath:
+            return Gtk.Ordering.SMALLER
+        else:
+            return Gtk.Ordering.EQUAL
+
     def _on_factory_setup_icon(self, factory, list_item):
         box = MyCustomRowIcon()
         list_item.set_child(box)
 
     def _on_factory_bind_icon(self, factory, list_item):
         box = list_item.get_child()
-        icon = box.get_first_child()
+        item = list_item.get_item()
 
-        row = list_item.get_item()
-        mimetype, val = Gio.content_type_guess('filename=%s' % row.filepath)
+        icon = box.get_first_child()
+        mimetype, val = Gio.content_type_guess('filename=%s' % item.filepath)
         gicon = Gio.content_type_get_icon(mimetype)
         icon.set_from_gicon(gicon)
         icon.set_pixel_size(48)
-        # ~ icon.set_text(str(datetime.now()))
-        # ~ label.set_text(row.filepath)
-        # ~ print(row.filepath)
 
     def _on_factory_setup_label(self, factory, list_item):
         box = MyCustomRowLabel()
@@ -156,18 +170,14 @@ class ExampleWindow(Gtk.ApplicationWindow):
 
     def _on_factory_bind_label(self, factory, list_item):
         box = list_item.get_child()
+        item = list_item.get_item()
         label = box.get_last_child()
+        label.set_text(item.filepath)
 
-        row = list_item.get_item()
-        label.set_text(row.filepath)
-        print(row.filepath)
-
-
-    # The notify signal is fired when the selection changes
-    def _on_selected_item_notify(self, *args):
-        # ~ row = view.get_selected_item()
-        # ~ print(args)
-        pass
+    def _on_selected_item_notify(self, colview, pos):
+        model = colview.get_model()
+        item = model.get_item(pos)
+        print(item.filepath)
 
 
 class ExampleApp(Adw.Application):
