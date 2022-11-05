@@ -45,15 +45,23 @@ def get_files(root_dir: str) -> []:
 class Row(GObject.Object):
     __gtype_name__ = 'Row'
 
-    def __init__(self, filepath):
+    def __init__(self, filepath, active=False):
         super().__init__()
 
         self._filepath = filepath
-
+        self._active = active
 
     @GObject.Property
     def filepath(self):
         return self._filepath
+
+    @GObject.Property(type=bool, default=False)
+    def active(self):
+        return self._active
+
+    @active.setter
+    def active(self, active):
+        self._active = active
 
 
 class RowLabel(Gtk.Box):
@@ -74,20 +82,32 @@ class RowIcon(Gtk.Box):
         icon = Gtk.Image()
         self.append(icon)
 
+class RowCheck(Gtk.Box):
+    """ MiAZ Doc Browser Widget"""
+    __gtype_name__ = 'RowCheck'
+
+    def __init__(self):
+        super(RowCheck, self).__init__()
+        button = Gtk.CheckButton()
+        self.append(button)
+
 class ExampleWindow(Gtk.ApplicationWindow):
     def __init__(self, app):
         super().__init__(application=app, title="GTK4 Listview/ColumnView")
 
         documents = get_files(sys.argv[1])
+        self.total = len(documents)
+        self.toggled = set()
 
         # Populate the model
         store = Gio.ListStore(item_type=Row)
         self.sort_model  = Gtk.SortListModel(model=store)
         self.sorter = Gtk.CustomSorter.new(sort_func=self.sort_func)
-        # ~ self.sorter.set_ignore_case(True)
         self.sort_model.set_sorter(self.sorter)
-        filter_model = Gtk.FilterListModel(model=self.sort_model)
-        self.model = filter_model
+        self.filter_model = Gtk.FilterListModel(model=self.sort_model)
+        self.filter = Gtk.CustomFilter.new(self._do_filter_view, self.filter_model)
+        self.model = self.filter_model
+        self.displayed = 0
 
         for filepath in documents:
             store.append(Row(filepath=filepath))
@@ -100,6 +120,11 @@ class ExampleWindow(Gtk.ApplicationWindow):
         factory_label = Gtk.SignalListItemFactory()
         factory_label.connect("setup", self._on_factory_setup_label)
         factory_label.connect("bind", self._on_factory_bind_label)
+
+        factory_check = Gtk.SignalListItemFactory()
+        factory_check.connect("setup", self._on_factory_setup_check)
+        factory_check.connect("bind", self._on_factory_bind_check)
+
 
         # Setup ColumnView Widget
         selection = Gtk.SingleSelection.new(self.model)
@@ -114,24 +139,41 @@ class ExampleWindow(Gtk.ApplicationWindow):
         column_label = Gtk.ColumnViewColumn.new("File path", factory_label)
         column_label.set_sorter(self.sorter)
         column_label.set_expand(True)
+        column_check = Gtk.ColumnViewColumn.new("check", factory_check)
         self.cv.append_column(column_icon)
         self.cv.append_column(column_label)
+        self.cv.append_column(column_check)
         self.cv.sort_by_column(column_label, Gtk.SortType.ASCENDING)
         self.cv.connect("activate", self._on_selected_item_notify)
 
-        box = Gtk.Box(spacing=12, orientation=Gtk.Orientation.VERTICAL, hexpand=True, vexpand=True)
-        box.props.margin_start = 12
-        box.props.margin_end = 12
-        box.props.margin_top = 6
-        box.props.margin_bottom = 6
-        box.append(Gtk.Label(label="Documents: %d" % len(documents)))
-        # ~ box.append(self.cv)
         scrwin = Gtk.ScrolledWindow()
         scrwin.set_hexpand(True)
         scrwin.set_vexpand(True)
         scrwin.set_child(self.cv)
+
+        box = Gtk.Box(spacing=12, orientation=Gtk.Orientation.VERTICAL, hexpand=True, vexpand=True)
+        self.lblDocs = Gtk.Label()
+        self.etyFilter = Gtk.Entry(placeholder_text="Type something to filter the view")
+        self.etyFilter.connect('changed', self._on_filter_selected)
+        box.append(self.lblDocs)
+        box.append(self.etyFilter)
         box.append(scrwin)
         self.set_child(box)
+
+        self.filter_model.set_filter(self.filter)
+
+    def _on_filter_selected(self, *args):
+        self.displayed = 0
+        self.filter.emit('changed', Gtk.FilterChange.DIFFERENT)
+        self.lblDocs.set_text("Documents: %d/%d" % (self.displayed, self.total))
+
+    def _do_filter_view(self, item, filter_list_model):
+        must_filter = False
+        text = self.etyFilter.get_text().upper()
+        if text in item.filepath.upper():
+            self.displayed += 1
+            must_filter = True
+        return must_filter
 
     def sort_func(self, item1, item2, data):
         if item1.filepath.upper() > item2.filepath.upper():
@@ -165,10 +207,34 @@ class ExampleWindow(Gtk.ApplicationWindow):
         label = box.get_last_child()
         label.set_text(item.filepath)
 
+    def _on_factory_setup_check(self, factory, list_item):
+        box = RowCheck()
+        list_item.set_child(box)
+        button = box.get_first_child()
+        button.connect('toggled', self._on_button_toggled)
+
+    def _on_factory_bind_check(self, factory, list_item):
+        box = list_item.get_child()
+        item = list_item.get_item()
+        button = box.get_last_child()
+        button.set_active(item.active)
+
     def _on_selected_item_notify(self, colview, pos):
         model = colview.get_model()
         item = model.get_item(pos)
-        print(item.filepath)
+        # ~ print(item.filepath)
+
+    def _on_button_toggled(self, button):
+        model = self.cv.get_model()
+        selected = model.get_selection()
+        pos = selected.get_nth(0)
+        item = model.get_item(pos)
+        active = button.get_active()
+        item.active = active
+        print("Item %s set to: %s" % (item.filepath, item.active))
+        for item in model:
+            if item.active:
+                print("Active: %s" % item.filepath)
 
 
 class ExampleApp(Adw.Application):
@@ -179,7 +245,7 @@ class ExampleApp(Adw.Application):
     def do_activate(self):
         if self.window is None:
             self.window = ExampleWindow(self)
-            self.window.set_default_size(600, 480)
+            self.window.set_default_size(1024, 728)
         self.window.present()
 
 
