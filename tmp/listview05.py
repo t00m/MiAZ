@@ -56,31 +56,21 @@ class Row(GObject.Object):
         return self._filepath
 
 
-class MyCustomRowLabel(Gtk.Box):
+class RowLabel(Gtk.Box):
     """ MiAZ Doc Browser Widget"""
-    __gtype_name__ = 'MyCustomRowLabel'
+    __gtype_name__ = 'RowLabel'
 
     def __init__(self):
-        super(MyCustomRowLabel, self).__init__(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
-        self.set_margin_top(margin=3)
-        self.set_margin_end(margin=3)
-        self.set_margin_bottom(margin=3)
-        self.set_margin_start(margin=3)
-        self.set_hexpand(True)
+        super(RowLabel, self).__init__()
         label = Gtk.Label()
         self.append(label)
 
-class MyCustomRowIcon(Gtk.Box):
+class RowIcon(Gtk.Box):
     """ MiAZ Doc Browser Widget"""
-    __gtype_name__ = 'MyCustomRowIcon'
+    __gtype_name__ = 'RowIcon'
 
     def __init__(self):
-        super(MyCustomRowIcon, self).__init__(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
-        self.set_margin_top(margin=3)
-        self.set_margin_end(margin=3)
-        self.set_margin_bottom(margin=3)
-        self.set_margin_start(margin=3)
-        self.set_hexpand(True)
+        super(RowIcon, self).__init__()
         icon = Gtk.Image()
         self.append(icon)
 
@@ -94,7 +84,7 @@ class ExampleWindow(Gtk.ApplicationWindow):
         store = Gio.ListStore(item_type=Row)
         self.sort_model  = Gtk.SortListModel(model=store)
         self.sorter = Gtk.CustomSorter.new(sort_func=self.sort_func)
-        self.sorter.set_ignore_case(True)
+        # ~ self.sorter.set_ignore_case(True)
         self.sort_model.set_sorter(self.sorter)
         filter_model = Gtk.FilterListModel(model=self.sort_model)
         self.model = filter_model
@@ -113,13 +103,14 @@ class ExampleWindow(Gtk.ApplicationWindow):
 
         # Setup ColumnView Widget
         selection = Gtk.SingleSelection.new(self.model)
-        selection.set_autoselect(True)
+        # ~ selection.set_autoselect(True)
         self.cv = Gtk.ColumnView(model=selection)
         self.cv.set_show_column_separators(True)
         self.cv.set_show_row_separators(True)
         self.cv.set_single_click_activate(True)
 
         column_icon = Gtk.ColumnViewColumn.new("Icon", factory_icon)
+        column_icon.set_sorter(self.sorter)
         column_label = Gtk.ColumnViewColumn.new("File path", factory_label)
         column_label.set_sorter(self.sorter)
         column_label.set_expand(True)
@@ -143,15 +134,15 @@ class ExampleWindow(Gtk.ApplicationWindow):
         self.set_child(box)
 
     def sort_func(self, item1, item2, data):
-        if item1.filepath > item2.filepath:
+        if item1.filepath.upper() > item2.filepath.upper():
             return Gtk.Ordering.LARGER
-        elif item1.filepath < item2.filepath:
+        elif item1.filepath.upper() < item2.filepath.upper():
             return Gtk.Ordering.SMALLER
         else:
             return Gtk.Ordering.EQUAL
 
     def _on_factory_setup_icon(self, factory, list_item):
-        box = MyCustomRowIcon()
+        box = RowIcon()
         list_item.set_child(box)
 
     def _on_factory_bind_icon(self, factory, list_item):
@@ -165,7 +156,7 @@ class ExampleWindow(Gtk.ApplicationWindow):
         icon.set_pixel_size(48)
 
     def _on_factory_setup_label(self, factory, list_item):
-        box = MyCustomRowLabel()
+        box = RowLabel()
         list_item.set_child(box)
 
     def _on_factory_bind_label(self, factory, list_item):
