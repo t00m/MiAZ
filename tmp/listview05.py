@@ -55,6 +55,10 @@ class Row(GObject.Object):
     def filepath(self):
         return self._filepath
 
+    @GObject.Property
+    def basename(self):
+        return os.path.basename(self._filepath)
+
     @GObject.Property(type=bool, default=False)
     def active(self):
         return self._active
@@ -100,8 +104,8 @@ class ExampleWindow(Gtk.ApplicationWindow):
         self.toggled = set()
 
         # Populate the model
-        store = Gio.ListStore(item_type=Row)
-        self.sort_model  = Gtk.SortListModel(model=store)
+        self.store = Gio.ListStore(item_type=Row)
+        self.sort_model  = Gtk.SortListModel(model=self.store)
         self.sorter = Gtk.CustomSorter.new(sort_func=self.sort_func)
         self.sort_model.set_sorter(self.sorter)
         self.filter_model = Gtk.FilterListModel(model=self.sort_model)
@@ -110,7 +114,7 @@ class ExampleWindow(Gtk.ApplicationWindow):
         self.displayed = 0
 
         for filepath in documents:
-            store.append(Row(filepath=filepath))
+            self.store.append(Row(filepath=filepath))
 
         # Set up the factories
         factory_icon = Gtk.SignalListItemFactory()
@@ -152,6 +156,10 @@ class ExampleWindow(Gtk.ApplicationWindow):
         scrwin.set_child(self.cv)
 
         box = Gtk.Box(spacing=12, orientation=Gtk.Orientation.VERTICAL, hexpand=True, vexpand=True)
+        box.props.margin_start = 12
+        box.props.margin_end = 12
+        box.props.margin_top = 6
+        box.props.margin_bottom = 6
         self.lblDocs = Gtk.Label()
         self.etyFilter = Gtk.Entry(placeholder_text="Type something to filter the view")
         self.etyFilter.connect('changed', self._on_filter_selected)
@@ -205,7 +213,7 @@ class ExampleWindow(Gtk.ApplicationWindow):
         box = list_item.get_child()
         item = list_item.get_item()
         label = box.get_last_child()
-        label.set_text(item.filepath)
+        label.set_text(item.basename)
 
     def _on_factory_setup_check(self, factory, list_item):
         box = RowCheck()
@@ -228,13 +236,18 @@ class ExampleWindow(Gtk.ApplicationWindow):
         model = self.cv.get_model()
         selected = model.get_selection()
         pos = selected.get_nth(0)
-        item = model.get_item(pos)
+        cvitem = model.get_item(pos)
+        filepath = cvitem.filepath
         active = button.get_active()
-        item.active = active
-        print("Item %s set to: %s" % (item.filepath, item.active))
-        for item in model:
-            if item.active:
-                print("Active: %s" % item.filepath)
+
+        for item in self.filter_model:
+            if item.filepath == filepath:
+                item.active = active
+
+        # ~ print("Item %s set to: %s" % (item.filepath, item.active))
+        # ~ for item in model:
+            # ~ if item.active:
+                # ~ print("Active: %s" % item.filepath)
 
 
 class ExampleApp(Adw.Application):
