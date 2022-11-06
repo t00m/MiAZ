@@ -14,33 +14,6 @@ gi.require_version('Gtk', '4.0')
 from gi.repository import Adw, Gio, GObject, Gtk, Pango
 from gi.repository.GdkPixbuf import Pixbuf
 
-def get_files(root_dir: str) -> []:
-    """Get documents from a given directory recursively
-    Avoid hidden documents and documents from hidden directories.
-    """
-    documents = set()
-    hidden = set()
-    subdirs = set()
-
-    subdirs.add(os.path.abspath(root_dir))
-    for root, dirs, files in os.walk(os.path.abspath(root_dir)):
-        thisdir = os.path.abspath(root)
-        if os.path.basename(thisdir).startswith('.'):
-            hidden.add(thisdir)
-        else:
-            found = False
-            for hidden_dir in hidden:
-                if hidden_dir in thisdir:
-                    found = True
-            if not found:
-                subdirs.add(thisdir)
-    for directory in subdirs:
-        files = glob.glob(os.path.join(directory, '*'))
-        for thisfile in files:
-            if not os.path.isdir(thisfile):
-                if not os.path.basename(thisfile).startswith('.'):
-                    documents.add(thisfile)
-    return documents
 
 class Row(GObject.Object):
     __gtype_name__ = 'Row'
@@ -95,15 +68,12 @@ class RowCheck(Gtk.Box):
         button = Gtk.CheckButton()
         self.append(button)
 
-class ExampleWindow(Gtk.ApplicationWindow):
-    def __init__(self, app):
-        super().__init__(application=app, title="GTK4 Listview/ColumnView")
+class MyColumnView(Gtk.Box):
+    __gtype_name__ = 'MyColumnView'
+    def __init__(self):
+        super(Gtk.Box, self).__init__(spacing=12, orientation=Gtk.Orientation.VERTICAL)
 
-        documents = get_files(sys.argv[1])
-        self.total = len(documents)
-        self.toggled = set()
-
-        # Populate the model
+        # model
         self.store = Gio.ListStore(item_type=Row)
         self.sort_model  = Gtk.SortListModel(model=self.store)
         self.sorter = Gtk.CustomSorter.new(sort_func=self.sort_func)
@@ -111,40 +81,32 @@ class ExampleWindow(Gtk.ApplicationWindow):
         self.filter_model = Gtk.FilterListModel(model=self.sort_model)
         self.filter = Gtk.CustomFilter.new(self._do_filter_view, self.filter_model)
         self.model = self.filter_model
-        self.displayed = 0
-
-        for filepath in documents:
-            self.store.append(Row(filepath=filepath))
+        selection = Gtk.SingleSelection.new(self.model)
 
         # Set up the factories
-        self.factory_icon = Gtk.SignalListItemFactory()
-        self.factory_icon.connect("setup", self._on_factory_setup_icon)
-        self.factory_icon.connect("bind", self._on_factory_bind_icon)
+        factory_icon = Gtk.SignalListItemFactory()
+        factory_icon.connect("setup", self._on_factory_setup_icon)
+        factory_icon.connect("bind", self._on_factory_bind_icon)
 
-        self.factory_label = Gtk.SignalListItemFactory()
-        self.factory_label.connect("setup", self._on_factory_setup_label)
-        self.factory_label.connect("bind", self._on_factory_bind_label)
+        factory_label = Gtk.SignalListItemFactory()
+        factory_label.connect("setup", self._on_factory_setup_label)
+        factory_label.connect("bind", self._on_factory_bind_label)
 
-        self.factory_check = Gtk.SignalListItemFactory()
-        self.factory_check.connect("setup", self._on_factory_setup_check)
-        self.factory_check.connect("bind", self._on_factory_bind_check)
-
+        factory_check = Gtk.SignalListItemFactory()
+        factory_check.connect("setup", self._on_factory_setup_check)
+        factory_check.connect("bind", self._on_factory_bind_check)
 
         # Setup ColumnView Widget
-        selection = Gtk.SingleSelection.new(self.model)
-        # ~ selection.set_autoselect(True)
         self.cv = Gtk.ColumnView(model=selection)
         self.cv.set_show_column_separators(True)
         self.cv.set_show_row_separators(True)
         self.cv.set_single_click_activate(True)
-
-        self.column_icon = Gtk.ColumnViewColumn.new("Icon", self.factory_icon)
-        self.column_icon.set_sorter(self.sorter)
-        self.column_label = Gtk.ColumnViewColumn.new("File path", self.factory_label)
-        self.column_label.set_sorter(self.sorter)
-        self.column_label.set_expand(True)
-        self.column_check = Gtk.ColumnViewColumn.new("check", self.factory_check)
-        self.column_check.set_visible(False)
+        column_icon = Gtk.ColumnViewColumn.new("Icon", factory_icon)
+        column_icon.set_sorter(self.sorter)
+        column_label = Gtk.ColumnViewColumn.new("File path", factory_label)
+        column_label.set_sorter(self.sorter)
+        column_label.set_expand(True)
+        column_check = Gtk.ColumnViewColumn.new("check", factory_check)
         self.cv.append_column(column_icon)
         self.cv.append_column(column_label)
         self.cv.append_column(column_check)
@@ -170,6 +132,27 @@ class ExampleWindow(Gtk.ApplicationWindow):
         self.set_child(box)
 
         self.filter_model.set_filter(self.filter)
+
+
+class ExampleWindow(Gtk.ApplicationWindow):
+    def __init__(self, app):
+        super().__init__(application=app, title="GTK4 Listview/ColumnView")
+
+        documents = get_files(sys.argv[1])
+        self.total = len(documents)
+        self.toggled = set()
+
+        # Populate the model
+
+        self.displayed = 0
+
+        for filepath in documents:
+            self.store.append(Row(filepath=filepath))
+
+
+
+
+
 
     def _on_filter_selected(self, *args):
         self.displayed = 0
