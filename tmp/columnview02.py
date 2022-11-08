@@ -121,14 +121,9 @@ class MyColumnView(Gtk.Box):
         selection = Gtk.SingleSelection.new(self.model)
 
         # Set up the factories
-        factory_icon = Gtk.SignalListItemFactory()
-        factory_icon.connect("setup", self._on_factory_setup_icon)
-        factory_icon.connect("bind", self._on_factory_bind_icon)
-
         factory_label = Gtk.SignalListItemFactory()
         factory_label.connect("setup", self._on_factory_setup_label)
         factory_label.connect("bind", self._on_factory_bind_label)
-
         factory_check = Gtk.SignalListItemFactory()
         factory_check.connect("setup", self._on_factory_setup_check)
         factory_check.connect("bind", self._on_factory_bind_check)
@@ -141,13 +136,10 @@ class MyColumnView(Gtk.Box):
         scrwin.set_child(self.cv)
 
         # Setup columnview columns
-        column_icon = Gtk.ColumnViewColumn.new("Icon", factory_icon)
-        column_icon.set_visible(False)
         column_label = Gtk.ColumnViewColumn.new("File path", factory_label)
         column_label.set_sorter(self.sorter)
         column_label.set_expand(True)
         column_check = Gtk.ColumnViewColumn.new("check", factory_check)
-        self.cv.append_column(column_icon)
         self.cv.append_column(column_label)
         self.cv.append_column(column_check)
         self.cv.sort_by_column(column_label, Gtk.SortType.ASCENDING)
@@ -189,20 +181,6 @@ class MyColumnView(Gtk.Box):
         else:
             return Gtk.Ordering.EQUAL
 
-    def _on_factory_setup_icon(self, factory, list_item):
-        box = RowIcon()
-        list_item.set_child(box)
-
-    def _on_factory_bind_icon(self, factory, list_item):
-        box = list_item.get_child()
-        item = list_item.get_item()
-
-        icon = box.get_first_child()
-        mimetype, val = Gio.content_type_guess('filename=%s' % item.filepath)
-        gicon = Gio.content_type_get_icon(mimetype)
-        icon.set_from_gicon(gicon)
-        icon.set_pixel_size(48)
-
     def _on_factory_setup_label(self, factory, list_item):
         box = RowLabel()
         list_item.set_child(box)
@@ -217,13 +195,13 @@ class MyColumnView(Gtk.Box):
         box = RowCheck()
         list_item.set_child(box)
         button = box.get_first_child()
-        button.connect('toggled', self._on_button_toggled)
 
     def _on_factory_bind_check(self, factory, list_item):
         box = list_item.get_child()
         item = list_item.get_item()
-        button = box.get_last_child()
+        button = box.get_first_child()
         button.set_active(item.active)
+        button.connect('toggled', self._on_button_toggled)
 
     def _on_selected_item_notify(self, colview, pos):
         model = colview.get_model()
@@ -237,10 +215,7 @@ class MyColumnView(Gtk.Box):
         cvitem = selection.get_item(pos)
         filepath = cvitem.filepath
         active = button.get_active()
-
-        for item in self.filter_model:
-            if item.filepath == filepath:
-                item.active = active
+        cvitem.active = active
 
     def update(self, documents):
         self.store.remove_all()
