@@ -13,6 +13,12 @@ from MiAZ.backend.util import json_load
 from MiAZ.backend.models import File, Collection, Person, Country, Purpose, Concept
 from MiAZ.frontend.desktop.util import get_file_mimetype
 from MiAZ.frontend.desktop.widgets.row import MiAZListViewRow
+from MiAZ.frontend.desktop.widgets.columnview import MiAZColumnView
+
+
+# ~ class MiAZWSColumnView(MiAZColumnView):
+    # ~ __gtype_name__ = 'MiAZWSColumnView'
+
 
 
 class MiAZWorkspace(Gtk.Box):
@@ -34,10 +40,10 @@ class MiAZWorkspace(Gtk.Box):
         self.set_margin_end(margin=6)
         self.set_margin_bottom(margin=6)
         self.set_margin_start(margin=6)
-        toolbar = self._setup_toolbar()
-        view = self._setup_view()
-        self.append(toolbar)
-        self.append(view)
+        frmToolbar = self._setup_toolbar()
+        frmView = self._setup_view()
+        self.append(frmToolbar)
+        self.append(frmView)
 
     def _setup_toolbar(self):
         toolbar = self.factory.create_box_vertical(spacing=0, margin=0, vexpand=True)
@@ -67,79 +73,19 @@ class MiAZWorkspace(Gtk.Box):
         self.backend.connect('source-configuration-updated', self.update)
         return toolbar
 
-    def _setup_view_body(self):
-        boxViewBody = self.factory.create_box_vertical(spacing=0, margin=0, hexpand=True, vexpand=True)
-        frmViewBody = self.factory.create_frame(title='<big><b>Documents</b></big>', hexpand=True, vexpand=True)
-        boxViewBody.append(frmViewBody)
-        scrwin = self.factory.create_scrolledwindow()
-
-        # Setup the model
-        self.model = Gio.ListStore(item_type=File)
-
-        # Filtering
-        self.model_filter = Gtk.FilterListModel.new(self.model)
-        self.filter = Gtk.CustomFilter.new(self._do_filter_listview, self.model_filter)
-        self.model_filter.set_filter(self.filter)
-
-        # Sorting
-        self.model_sort = Gtk.SortListModel(model=self.model_filter)
-
-        # Selection
-        self.selection = Gtk.SingleSelection.new(self.model_sort)
-
-        # Set up the factory
-        factory = Gtk.SignalListItemFactory()
-        factory.connect("setup", self._on_factory_setup)
-        factory.connect("bind", self._on_factory_bind)
-
-        # Setup the view widget
-        self.view = Gtk.ListView(model=self.selection, factory=factory, hexpand=True)
-        self.view.set_single_click_activate(True)
-        self.view.connect('activate', self._on_activated_item)
-        self.view.connect("notify::selected-item", self._on_selected_item_notify)
-
-        scrwin.set_child(self.view)
-        frmViewBody.set_child(scrwin)
-        return boxViewBody
-
     def _setup_view(self):
-        boxView = self.factory.create_box_vertical(spacing=0, margin=0, hexpand=True, vexpand=True)
-        boxViewBody = self._setup_view_body()
-        boxView.append(boxViewBody)
-        return boxView
+        frmView = self.factory.create_frame(title='<big><b>Documents</b></big>', hexpand=True, vexpand=True)
+        self.view = MiAZColumnView(self.app)
+        self.view.cv.append_column(self.view.column_icon)
+        self.view.cv.append_column(self.view.column_title)
+        # ~ view.cv.append_column(view.column_active)
+        self.view.column_title.set_expand(True)
+        self.view.cv.sort_by_column(self.view.column_title, Gtk.SortType.DESCENDING)
+        self.view.set_filter(self._do_filter_listview)
+        self.view.select_first_item()
+        frmView.set_child(self.view)
 
-    def _on_factory_setup(self, factory, list_item):
-        box = MiAZListViewRow(self.app)
-        list_item.set_child(box)
-
-    def _on_factory_bind(self, factory, list_item):
-        miazboxrow = list_item.get_child()
-        item = list_item.get_item()
-
-        boxRow = miazboxrow.get_first_child()
-
-        # Box Start
-        boxStart = boxRow.get_first_child()
-        btnMime = boxStart.get_first_child()
-        imgMime = btnMime.get_first_child()
-        mimetype = get_file_mimetype(item.id)
-        gicon = self.app.icman.get_gicon_from_file_mimetype(mimetype)
-        imgMime.set_from_gicon(gicon)
-        # ~ imgMime.set_pixel_size(36)
-
-        btnEdit = boxStart.get_last_child()
-        imgEdit = btnEdit.get_first_child()
-        imgEdit.set_from_icon_name('miaz-edit')
-        # ~ imgEdit.set_pixel_size(36)
-
-        # Box Center
-        boxCenter = boxStart.get_next_sibling()
-        label = boxCenter.get_first_child()
-        label.set_markup("%s" % os.path.basename(item.id))
-
-        # Box End
-        boxEnd = boxCenter.get_next_sibling()
-        switch = boxEnd.get_first_child()
+        return frmView
 
     def _on_selected_item_notify(self, listview, _):
         self.log.debug("%s > %s", listview, type(listview))
@@ -160,9 +106,9 @@ class MiAZWorkspace(Gtk.Box):
         return self.switched
 
     def get_item(self):
-        selection = self.get_selection()
+        selection = self.view.get_selection()
         selected = selection.get_selection()
-        model = self.get_model_filter()
+        model = self.view.get_model_filter()
         pos = selected.get_nth(0)
         return model.get_item(pos)
 
@@ -170,9 +116,10 @@ class MiAZWorkspace(Gtk.Box):
         # FIXME: Get dict from backend
         repocnf = self.backend.get_repo_source_config_file()
         self.repodct = json_load(repocnf)
-        self.model.remove_all()
+        items = []
         for path in self.repodct:
-            self.model.append(File(id=path, name=os.path.basename(path)))
+            items.append(File(id=path, title=os.path.basename(path)))
+        self.view.update(items)
         self.update_title()
 
     def update_title(self):
@@ -216,19 +163,22 @@ class MiAZWorkspace(Gtk.Box):
 
     def _on_filter_selected(self, *args):
         self.displayed = 0
-        self.filter.emit('changed', Gtk.FilterChange.DIFFERENT)
+        self.view.refilter()
+        # ~ self.filter.emit('changed', Gtk.FilterChange.DIFFERENT)
         self.update_title()
 
     def show_dashboard(self, *args):
         self.displayed = 0
         self.show_dashboard = True
-        self.filter.emit('changed', Gtk.FilterChange.DIFFERENT)
+        # ~ self.filter.emit('changed', Gtk.FilterChange.DIFFERENT)
+        self.view.refilter()
         self.update_title()
 
     def show_review(self, *args):
         self.displayed = 0
         self.show_dashboard = False
-        self.filter.emit('changed', Gtk.FilterChange.DIFFERENT)
+        # ~ self.filter.emit('changed', Gtk.FilterChange.DIFFERENT)
+        self.view.refilter()
         self.update_title()
 
     def foreach(self):
@@ -238,7 +188,7 @@ class MiAZWorkspace(Gtk.Box):
             self.log.debug(item.id)
 
     def document_display(self, *args):
-        item = self.get_selected()
+        item = self.get_item()
         self.actions.document_display(item.id)
 
     def document_switch(self, switch, activated):

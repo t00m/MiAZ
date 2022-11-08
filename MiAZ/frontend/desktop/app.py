@@ -58,7 +58,7 @@ class MiAZApp(Adw.Application):
     def key_press(self, event, keyval, keycode, state):
         # ~ self.log.debug("%s > %s > %s > %s", event, keyval, keycode, state)
         keyname = Gdk.keyval_name(keyval)
-        self.log.debug(keyname)
+        # ~ self.log.debug(keyname)
 
 
     def create_menu_actions(self):
@@ -145,9 +145,9 @@ class MiAZApp(Adw.Application):
             elif name == 'close':
                 self.quit()
             elif name == 'view':
-                self.actions.document_display()
+                self.workspace.document_display()
             elif name == 'rename':
-                self.actions.document_rename()
+                self.workspace.document_rename()
             elif name == 'help':
                 self.log.debug('Help!')
                 show_shortcuts(self.win)

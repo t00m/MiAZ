@@ -218,7 +218,6 @@ class MyColumnView(Gtk.Box):
     def _on_selected_item_notify(self, colview, pos):
         model = colview.get_model()
         item = model.get_item(pos)
-        # ~ print(item.filepath)
 
     def _on_button_toggled(self, button):
         selection = self.cv.get_model()
