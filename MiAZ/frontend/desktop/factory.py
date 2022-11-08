@@ -124,7 +124,7 @@ class MiAZFactory:
             box = list_item.get_child()
             label = box.get_last_child()
             item = list_item.get_item()
-            label.set_text(item.name)
+            label.set_text(item.title)
 
         # Create the model
         model = Gio.ListStore(item_type=item_type)

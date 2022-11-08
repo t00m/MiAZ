@@ -48,12 +48,12 @@ class MiAZActions(GObject.GObject):
         self.log.debug("%s > %s", conf, type(items))
 
         model.remove_all()
-        model.append(item_type(id='Any', name='Any'))
+        model.append(item_type(id='Any', title='Any'))
         for key in items:
             if config_is is dict:
                 if foreign:
-                    model.append(item_type(id=key, name="%s (%s)" % (gitems[key], key)))
+                    model.append(item_type(id=key, title="%s (%s)" % (gitems[key], key)))
                 else:
-                    model.append(item_type(id=key, name="%s (%s)" % (items[key], key)))
+                    model.append(item_type(id=key, title="%s (%s)" % (items[key], key)))
             else:
-                model.append(item_type(id=key, name=key))
+                model.append(item_type(id=key, title=key))

@@ -1,7 +1,5 @@
-#!/usr/bin/env python
-
+import gi
 from gi.repository import GObject
-
 
 class MiAZModel(GObject.Object):
     """Custom data model for MiAZ use cases"""
@@ -40,27 +38,6 @@ class MiAZModel(GObject.Object):
     def icon(self):
         return self._icon
 
-
-class File(MiAZModel):
-    __gtype_name__ = 'File'
-
-class Collection(MiAZModel):
-    __gtype_name__ = 'Date'
-
-class Collection(MiAZModel):
-    __gtype_name__ = 'Collection'
-
-class Concept(GObject.Object):
-    __gtype_name__ = 'Concept'
-
-class Country(MiAZModel):
-    __gtype_name__ = 'Country'
-
-class Person(MiAZModel):
-    __gtype_name__ = 'Person'
-
-class Purpose(MiAZModel):
-    __gtype_name__ = 'Purpose'
-
-class Repository(MiAZModel):
-    __gtype_name__ = 'Repository'
+row = MiAZModel(id='uno')
+for prop in row.list_properties():
+    print("%s > %s > %s > %s" % (prop, type(prop), prop.name, prop.flags))

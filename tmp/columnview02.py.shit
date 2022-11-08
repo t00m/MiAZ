@@ -106,11 +106,25 @@ class MyColumnView(Gtk.Box):
         scrwin = Gtk.ScrolledWindow()
         scrwin.set_hexpand(True)
         scrwin.set_vexpand(True)
-
         self.displayed = 0
         self.total = 0
 
+        # sorter
+        self.sorter = Gtk.CustomSorter.new(sort_func=self._sort_func)
+
+        # model
+        self.store = Gio.ListStore(item_type=Row)
+        self.sort_model  = Gtk.SortListModel(model=self.store)
+        self.sort_model.set_sorter(self.sorter)
+        self.filter_model = Gtk.FilterListModel(model=self.sort_model)
+        self.filter = Gtk.CustomFilter.new(self._do_filter_view, self.filter_model)
+        self.model = self.filter_model
+        selection = Gtk.SingleSelection.new(self.model)
+
         # Set up the factories
+        factory_icon = Gtk.SignalListItemFactory()
+        factory_icon.connect("setup", self._on_factory_setup_icon)
+        factory_icon.connect("bind", self._on_factory_bind_icon)
         factory_label = Gtk.SignalListItemFactory()
         factory_label.connect("setup", self._on_factory_setup_label)
         factory_label.connect("bind", self._on_factory_bind_label)
@@ -119,36 +133,23 @@ class MyColumnView(Gtk.Box):
         factory_check.connect("bind", self._on_factory_bind_check)
 
         # Setup ColumnView Widget
-        self.cv = Gtk.ColumnView()
+        self.cv = Gtk.ColumnView(model=selection)
         self.cv.set_show_column_separators(True)
         self.cv.set_show_row_separators(True)
         self.cv.set_single_click_activate(True)
         scrwin.set_child(self.cv)
 
-        # Sorters
-        self.filepath_sorter = Gtk.CustomSorter.new(sort_func=self._sort_filepath_func)
-        self.check_sorter = Gtk.CustomSorter.new(sort_func=self._sort_check_func)
-
         # Setup columnview columns
+        column_icon = Gtk.ColumnViewColumn.new("Icon", factory_icon)
         column_label = Gtk.ColumnViewColumn.new("File path", factory_label)
-        column_label.set_sorter(self.filepath_sorter)
+        column_label.set_sorter(self.sorter)
         column_label.set_expand(True)
         column_check = Gtk.ColumnViewColumn.new("check", factory_check)
-        column_check.set_sorter(self.check_sorter)
+        self.cv.append_column(column_icon)
         self.cv.append_column(column_label)
         self.cv.append_column(column_check)
         self.cv.sort_by_column(column_label, Gtk.SortType.ASCENDING)
         self.cv.connect("activate", self._on_selected_item_notify)
-
-        # Setup model following instructions from example in:
-        # https://docs.gtk.org/gtk4/method.ColumnView.get_sorter.html
-        cv_sorter = self.cv.get_sorter()
-        self.store = Gio.ListStore(item_type=Row)
-        self.sort_model  = Gtk.SortListModel(model=self.store, sorter=cv_sorter)
-        self.filter_model = Gtk.FilterListModel(model=self.sort_model)
-        self.filter = Gtk.CustomFilter.new(self._do_filter_view, self.filter_model)
-        selection = Gtk.SingleSelection.new(self.filter_model)
-        self.cv.set_model(selection)
 
         box = Gtk.Box(spacing=12, orientation=Gtk.Orientation.VERTICAL, hexpand=True, vexpand=True)
         box.props.margin_start = 12
@@ -163,7 +164,6 @@ class MyColumnView(Gtk.Box):
         box.append(scrwin)
         self.append(box)
 
-        # Activate filter
         self.filter_model.set_filter(self.filter)
 
     def _on_filter_selected(self, *args):
@@ -179,7 +179,8 @@ class MyColumnView(Gtk.Box):
             must_filter = True
         return must_filter
 
-    def _sort_filepath_func(self, item1, item2, data):
+    def _sort_func(self, item1, item2, data):
+        # ~ print("%s ? %s" % (item1, item2))
         if item1.filepath.upper() > item2.filepath.upper():
             return Gtk.Ordering.LARGER
         elif item1.filepath.upper() < item2.filepath.upper():
@@ -187,11 +188,18 @@ class MyColumnView(Gtk.Box):
         else:
             return Gtk.Ordering.EQUAL
 
-    def _sort_check_func(self, item1, item2, data):
-        if item1.active == item2.active:
-            return Gtk.Ordering.EQUAL
-        else:
-            return Gtk.Ordering.SMALLER
+    def _on_factory_setup_icon(self, factory, list_item):
+        box = RowIcon()
+        list_item.set_child(box)
+
+    def _on_factory_bind_icon(self, factory, list_item):
+        box = list_item.get_child()
+        item = list_item.get_item()
+        icon = box.get_first_child()
+        mimetype, val = Gio.content_type_guess('filename=%s' % item.filepath)
+        gicon = Gio.content_type_get_icon(mimetype)
+        icon.set_from_gicon(gicon)
+        icon.set_pixel_size(32)
 
     def _on_factory_setup_label(self, factory, list_item):
         box = RowLabel()
@@ -201,24 +209,27 @@ class MyColumnView(Gtk.Box):
         box = list_item.get_child()
         item = list_item.get_item()
         label = box.get_last_child()
-        label.set_text(item.filepath)
+        label.set_text(item.basename)
 
     def _on_factory_setup_check(self, factory, list_item):
         box = RowCheck()
         list_item.set_child(box)
-        button = box.get_first_child()
+
+        # THIS DOESN'T WORK
+        # ~ button = box.get_first_child()
+        # ~ button.connect('toggled', self._on_button_toggled)
 
     def _on_factory_bind_check(self, factory, list_item):
         box = list_item.get_child()
         item = list_item.get_item()
         button = box.get_first_child()
         button.set_active(item.active)
+        # IT WORKS
         button.connect('toggled', self._on_button_toggled)
 
     def _on_selected_item_notify(self, colview, pos):
         model = colview.get_model()
         item = model.get_item(pos)
-        # ~ print(item.filepath)
 
     def _on_button_toggled(self, button):
         selection = self.cv.get_model()
