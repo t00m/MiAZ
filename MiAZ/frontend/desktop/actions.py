@@ -45,7 +45,7 @@ class MiAZActions(GObject.GObject):
         items = config.load()
         if isinstance(items, list):
             items = sorted(items)
-        self.log.debug("%s > %s", conf, type(items))
+        # ~ self.log.debug("%s > %s", conf, type(items))
 
         model.remove_all()
         model.append(item_type(id='Any', title='Any'))

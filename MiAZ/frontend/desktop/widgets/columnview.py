@@ -92,9 +92,10 @@ class MiAZColumnView(Gtk.Box):
 
         # Setup ColumnView Widget
         self.cv = Gtk.ColumnView()
+        # ~ self.cv.get_style_context().add_class(class_name='monospace')
         # ~ self.cv.set_show_column_separators(True)
         # ~ self.cv.set_show_row_separators(True)
-        self.cv.set_single_click_activate(True)
+        self.cv.set_single_click_activate(False)
         scrwin.set_child(self.cv)
 
         # Sorters
@@ -135,6 +136,13 @@ class MiAZColumnView(Gtk.Box):
 
     def get_selection(self):
         return self.selection
+
+    def get_item(self):
+        selection = self.get_selection()
+        selected = selection.get_selection()
+        model = self.get_model_filter()
+        pos = selected.get_nth(0)
+        return model.get_item(pos)
 
     def select_first_item(self):
         self.selection.set_selected(0)

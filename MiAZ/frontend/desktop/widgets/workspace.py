@@ -26,6 +26,7 @@ class MiAZWorkspace(Gtk.Box):
     show_dashboard = True
     displayed = 0
     switched = set()
+    dfilter = {}
 
     def __init__(self, app):
         super(MiAZWorkspace, self).__init__(orientation=Gtk.Orientation.HORIZONTAL)
@@ -45,6 +46,7 @@ class MiAZWorkspace(Gtk.Box):
         self.append(frmToolbar)
         self.append(frmView)
 
+
     def _setup_toolbar(self):
         toolbar = self.factory.create_box_vertical(spacing=0, margin=0, vexpand=True)
         frmFilters = self.factory.create_frame(title='<big><b>Filters</b></big>', hexpand=False, vexpand=True)
@@ -54,6 +56,7 @@ class MiAZWorkspace(Gtk.Box):
         box = self.factory.create_box_filter('Free search', self.ent_sb)
         tlbFilters.append(box)
 
+        # FIXME: Do NOT fill dropdowns here.
         self.dropdown = {}
         for title, item_type, conf in [('Country', Country, 'countries'),
                                    ('Collection', Collection, 'collections'),
@@ -81,7 +84,7 @@ class MiAZWorkspace(Gtk.Box):
         # ~ view.cv.append_column(view.column_active)
         self.view.column_title.set_expand(True)
         self.view.cv.sort_by_column(self.view.column_title, Gtk.SortType.DESCENDING)
-        self.view.set_filter(self._do_filter_listview)
+        self.view.set_filter(self._do_filter_view)
         self.view.select_first_item()
         frmView.set_child(self.view)
 
@@ -120,7 +123,20 @@ class MiAZWorkspace(Gtk.Box):
         for path in self.repodct:
             items.append(File(id=path, title=os.path.basename(path)))
         self.view.update(items)
+        self._on_filter_selected()
         self.update_title()
+
+    def update_filters(self, item, ival):
+        n = 0
+        for field in ['date', 'country', 'collection', 'from', 'purpose', 'concept', 'to']:
+            try:
+                values = self.dfilter[field]
+                values.add(ival[n])
+            except Exception as error:
+                values = set()
+                values.add(ival[n])
+                self.dfilter[field] = values
+            n += 1
 
     def update_title(self):
         self.app.update_title(self.displayed, len(self.repodct))
@@ -139,7 +155,7 @@ class MiAZWorkspace(Gtk.Box):
             return True
         return item.id == id
 
-    def _do_filter_listview(self, item, filter_list_model):
+    def _do_filter_view(self, item, filter_list_model):
         valid = self.repodct[item.id]['valid']
         fields = self.repodct[item.id]['fields']
         display = False
@@ -157,27 +173,28 @@ class MiAZWorkspace(Gtk.Box):
                 display = self._do_eval_cond_matches_freetext(item.id)
 
         if display:
+            self.update_filters(item, fields)
             self.displayed += 1
 
         return display
 
     def _on_filter_selected(self, *args):
         self.displayed = 0
+        self.dfilter = {}
         self.view.refilter()
-        # ~ self.filter.emit('changed', Gtk.FilterChange.DIFFERENT)
         self.update_title()
 
     def show_dashboard(self, *args):
         self.displayed = 0
+        self.dfilter = {}
         self.show_dashboard = True
-        # ~ self.filter.emit('changed', Gtk.FilterChange.DIFFERENT)
         self.view.refilter()
         self.update_title()
 
     def show_review(self, *args):
         self.displayed = 0
+        self.dfilter = {}
         self.show_dashboard = False
-        # ~ self.filter.emit('changed', Gtk.FilterChange.DIFFERENT)
         self.view.refilter()
         self.update_title()
 

@@ -17,7 +17,6 @@ from MiAZ.backend.log import get_logger
 from MiAZ.frontend.desktop.widgets.configview import MiAZCollections
 from MiAZ.frontend.desktop.widgets.configview import MiAZPurposes
 from MiAZ.frontend.desktop.widgets.configview import MiAZCountries
-from MiAZ.frontend.desktop.widgets.configview import MiAZExtensions
 from MiAZ.frontend.desktop.widgets.configview import MiAZOrganizations
 
 
@@ -37,18 +36,18 @@ class MiAZPrefsWindow(Adw.PreferencesWindow):
         page.set_title("Preferences")
         page.add(self.get_group_repositories())
         page.add(self.get_group_resources())
-        page.add(self.get_group_appearance())
+        # ~ page.add(self.get_group_appearance())
         self.add(page)
         self.show()
 
     def get_group_repositories(self):
         self.row_repo_source = self.create_action_row_repo_source()
-        self.row_repo_target = self.create_action_row_repo_target()
+        # ~ self.row_repo_target = self.create_action_row_repo_target()
 
         group = Adw.PreferencesGroup()
         group.set_title("Repositories")
         group.add(self.row_repo_source)
-        group.add(self.row_repo_target)
+        # ~ group.add(self.row_repo_target)
         return group
 
     def get_group_resources(self):
@@ -56,7 +55,6 @@ class MiAZPrefsWindow(Adw.PreferencesWindow):
         row_res_collections = self.create_action_row_res_collections()
         row_res_purposes = self.create_action_row_res_purposes()
         row_res_organizations = self.create_action_row_res_organizations()
-        row_res_extensions = self.create_action_row_res_extensions()
 
         group = Adw.PreferencesGroup()
         group.set_title("Resources")
@@ -64,7 +62,6 @@ class MiAZPrefsWindow(Adw.PreferencesWindow):
         group.add(row_res_collections)
         group.add(row_res_purposes)
         group.add(row_res_organizations)
-        group.add(row_res_extensions)
         return group
 
     def get_group_appearance(self):
@@ -131,15 +128,6 @@ class MiAZPrefsWindow(Adw.PreferencesWindow):
         box.append(button)
         return row
 
-    def create_action_row_res_extensions(self):
-        row = Adw.ActionRow.new()
-        row.set_title("Extensions")
-        row.set_icon_name('miaz-res-extension')
-        button = self.factory.create_button('miaz-search', '', self.show_res_extensions)
-        box = row.get_child()
-        box.append(button)
-        return row
-
     def show_res_countries(self, *args):
         view = MiAZCountries(self.app)
         view.update()
@@ -162,12 +150,6 @@ class MiAZPrefsWindow(Adw.PreferencesWindow):
         view = MiAZOrganizations(self.app)
         view.update()
         dialog = self.factory.create_dialog(self.app.win, 'Organizations', view, 600, 480)
-        dialog.show()
-
-    def show_res_extensions(self, *args):
-        view = MiAZExtensions(self.app)
-        view.update()
-        dialog = self.factory.create_dialog(self.app.win, 'Extensions', view, 600, 480)
         dialog.show()
 
     def create_action_row_repo_source(self):
