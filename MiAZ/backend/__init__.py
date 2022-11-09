@@ -16,7 +16,6 @@ from MiAZ.backend.util import get_file_creation_date
 from MiAZ.backend.watcher import MiAZWatcher
 from MiAZ.backend.config import MiAZConfigApp
 from MiAZ.backend.config import MiAZConfigSettingsCountries
-from MiAZ.backend.config import MiAZConfigSettingsExtensions
 from MiAZ.backend.config import MiAZConfigSettingsCollections
 from MiAZ.backend.config import MiAZConfigSettingsPurposes
 from MiAZ.backend.config import MiAZConfigSettingsConcepts
@@ -35,7 +34,6 @@ class MiAZBackend(GObject.GObject):
         GObject.signal_new('target-configuration-updated', MiAZBackend, GObject.SignalFlags.RUN_LAST, None, () )
         self.conf['app'] = MiAZConfigApp()
         self.conf['countries'] = MiAZConfigSettingsCountries()
-        self.conf['extensions'] = MiAZConfigSettingsExtensions()
         self.conf['collections'] = MiAZConfigSettingsCollections()
         self.conf['purposes'] = MiAZConfigSettingsPurposes()
         self.conf['concepts'] = MiAZConfigSettingsConcepts()
@@ -195,12 +193,8 @@ class MiAZBackend(GObject.GObject):
             ext = filename[dot+1:]
 
             # Check extension
-            ext_allowed = self.conf['extensions'].exists(ext)
-            if not ext_allowed:
-                valid &= False
-                reasons.append((False, "Extension '%s' not allowed. Add it first." % ext))
-            else:
-                reasons.append((True, "Extension '%s' is valid" % ext))
+            valid &= True
+            reasons.append((True, "Extension '%s' is valid" % ext))
         else:
             name = filename
             ext = ''

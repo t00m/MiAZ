@@ -4,20 +4,21 @@ import shutil
 from MiAZ.backend.env import ENV
 from MiAZ.backend.log import get_logger
 from MiAZ.backend.util import json_load, json_save
-
+from MiAZ.backend.models import MiAZModel, File, Collection, Person, Country, Purpose, Concept
 
 class MiAZConfig():
     """ MiAZ Config class"""
     config_local = None
     config_global = None
 
-    def __init__(self, log, config_for, config_local=None, config_global=None, config_is=dict, must_copy=True, foreign=False):
+    def __init__(self, log, config_for, config_local=None, config_global=None, config_is=dict, config_model=MiAZModel, must_copy=True, foreign=False):
         super().__init__()
         self.log = log
         self.config_for = config_for
         self.config_local = config_local
         self.config_global = config_global
         self.config_is = config_is
+        self.config_model = config_model
         self.must_copy = must_copy
         self.foreign = foreign
         self.setup()
@@ -188,20 +189,9 @@ class MiAZConfigSettingsCountries(MiAZConfig):
             config_global = os.path.join(ENV['GPATH']['RESOURCES'],
                             'MiAZ-countries.json'),
             config_is = dict,
+            config_model = Country,
             must_copy = False,
             foreign = True
-        )
-
-class MiAZConfigSettingsLanguages(MiAZConfig):
-    def __init__(self):
-        super().__init__(
-            log=get_logger('MiAZ.Settings.Languages'),
-            config_for = 'Languages',
-            config_local = ENV['FILE']['LANGUAGES'],
-            config_global = os.path.join(ENV['GPATH']['RESOURCES'],
-                            'MiAZ-languages.json'),
-            config_is = dict,
-            must_copy = False
         )
 
 class MiAZConfigSettingsCollections(MiAZConfig):
@@ -213,6 +203,7 @@ class MiAZConfigSettingsCollections(MiAZConfig):
             config_global = os.path.join(ENV['GPATH']['RESOURCES'],
                             'MiAZ-collections.json'),
             config_is = list,
+            config_model = Collection,
             must_copy = True
         )
 
@@ -225,6 +216,7 @@ class MiAZConfigSettingsPurposes(MiAZConfig):
             config_global = os.path.join(ENV['GPATH']['RESOURCES'],
                             'MiAZ-purposes.json'),
             config_is = list,
+            config_model = Purpose,
             must_copy = True
         )
 
@@ -236,6 +228,7 @@ class MiAZConfigSettingsConcepts(MiAZConfig):
             config_local = ENV['FILE']['CONCEPTS'],
             config_global = None,
             config_is = list,
+            config_model = Concept,
             must_copy = False
         )
 
@@ -248,26 +241,6 @@ class MiAZConfigSettingsOrganizations(MiAZConfig):
             config_global = os.path.join(ENV['GPATH']['RESOURCES'],
                             'MiAZ-organizations.json'),
             config_is = dict,
+            config_model = Person,
             must_copy = True
         )
-
-class MiAZConfigSettingsExtensions(MiAZConfig):
-    def __init__(self):
-        super().__init__(
-            log=get_logger('MiAZ.Settings.Extensions'),
-            config_for = 'Extensions',
-            config_local = ENV['FILE']['EXTENSIONS'],
-            config_global = os.path.join(ENV['GPATH']['RESOURCES'],
-                            'MiAZ-extensions.json'),
-            config_is = dict,
-            must_copy = False
-        )
-
-    def get_sections(self):
-        sections = set()
-        extensions = self.load_global()
-        for ext in extensions:
-            esections = extensions[ext]
-            for section in esections:
-                sections.add(section)
-        return sections

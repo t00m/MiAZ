@@ -23,11 +23,10 @@ from MiAZ.backend.models import File, Collection, Person, Country, Purpose, Conc
 from MiAZ.backend.config import MiAZConfigSettingsCollections
 from MiAZ.backend.config import MiAZConfigSettingsOrganizations
 from MiAZ.backend.config import MiAZConfigSettingsCountries
-from MiAZ.backend.config import MiAZConfigSettingsExtensions
 from MiAZ.backend.config import MiAZConfigSettingsPurposes
 from MiAZ.frontend.desktop.widgets.widget import MiAZWidget
 # ~ from MiAZ.frontend.desktop.widgets.treeview import MiAZTreeView
-from MiAZ.frontend.desktop.widgets.columnview import MiAZColumnView
+from MiAZ.frontend.desktop.widgets.columnview import MiAZColumnView, RowIcon
 from MiAZ.frontend.desktop.widgets.dialogs import MiAZDialogAdd
 
 
@@ -95,7 +94,7 @@ class MiAZConfigView(MiAZWidget, Gtk.Box):
     def _do_filter_view(self, item, filter_list_model):
         chunk = self.entry.get_text().upper()
         string = "%s%s%s" % (item.id, item.title, item.subtitle)
-        if chunk in string:
+        if chunk in string.upper():
             return True
         return False
 
@@ -107,14 +106,6 @@ class MiAZConfigView(MiAZWidget, Gtk.Box):
 
     def on_entrysearch_delete(self, *args):
         self.entry.set_text("")
-
-    def on_entrysearch_changed(self, *args):
-        self.search_term = self.entry.get_text()
-        self.treefilter.refilter()
-        if len(self.search_term) == 0:
-            self.treeview.collapse_all()
-        else:
-            self.treeview.expand_all()
 
     def _setup_view(self):
         frmView = Gtk.Frame()
@@ -171,11 +162,21 @@ class MiAZConfigView(MiAZWidget, Gtk.Box):
         self.config_local = config_local
         self.config_global = config_global
 
-    def update(self):
-        items = []
-        database = self.config.load()
-        for row in database:
-            items.append(File(id=row, title=row))
+    def update(self, items=None):
+        if items is None:
+            items = []
+            item_type = self.config.config_model
+            database = self.config.load()
+            if self.config.config_is is list:
+                for key in database:
+                    items.append(item_type(id=key, title=key))
+            elif self.config.config_is is dict:
+                gitems = self.config.load_global()
+                for key in database:
+                    try:
+                        items.append(item_type(id=key, title=gitems[key]))
+                    except KeyError:
+                        items.append(item_type(id=key, title=''))
         self.view.update(items)
 
 
@@ -218,6 +219,14 @@ class MiAZOrganizations(MiAZConfigView):
                 # ~ self.emit('updated')
         dialog.destroy()
 
+    def _setup_view_finish(self):
+        self.view.column_id.set_title("Code")
+        self.view.column_title.set_title(self.config_for.title())
+        self.view.cv.append_column(self.view.column_id)
+        self.view.cv.append_column(self.view.column_title)
+        self.view.column_title.set_expand(True)
+        self.view.cv.sort_by_column(self.view.column_title, Gtk.SortType.ASCENDING)
+
 
 class MiAZCountries(MiAZConfigView):
     """Class for managing Collections from Settings"""
@@ -229,6 +238,7 @@ class MiAZCountries(MiAZConfigView):
         config_for = self.config.get_config_for()
         super().__init__(app, config_for)
         self.box_buttons.set_visible(False)
+        self.icman = self.app.get_icman()
 
     def config_check(self):
         if not os.path.exists(self.config_local):
@@ -247,6 +257,45 @@ class MiAZCountries(MiAZConfigView):
 
     def on_item_remove(self, *args):
         return
+
+    def _setup_view_finish(self):
+        factory_icon = Gtk.SignalListItemFactory()
+        factory_icon.connect("setup", self._on_factory_setup_icon)
+        factory_icon.connect("bind", self._on_factory_bind_icon)
+        self.view.column_id.set_title("Code")
+        self.view.column_title.set_title(self.config_for.title())
+        self.view.column_icon.set_title("Flag")
+        self.view.column_icon.set_factory(factory_icon)
+        self.view.column_active.set_title("Use")
+        self.view.cv.append_column(self.view.column_icon)
+        self.view.cv.append_column(self.view.column_id)
+        self.view.cv.append_column(self.view.column_title)
+        self.view.cv.append_column(self.view.column_active)
+        self.view.column_title.set_expand(True)
+        self.view.cv.sort_by_column(self.view.column_title, Gtk.SortType.ASCENDING)
+
+    def _on_factory_setup_icon(self, factory, list_item):
+        box = RowIcon()
+        list_item.set_child(box)
+
+    def _on_factory_bind_icon(self, factory, list_item):
+        """To be subclassed"""
+        box = list_item.get_child()
+        item = list_item.get_item()
+        icon = box.get_first_child()
+        pixbuf = self.icman.get_flag_pixbuf(item.id)
+        icon.set_from_pixbuf(pixbuf)
+        icon.set_pixel_size(32)
+
+    def update(self, items=None):
+        if items is None:
+            items = []
+            item_type = self.config.config_model
+            database = self.config.load()
+            countries = self.config.load_global()
+            for code in countries:
+                items.append(item_type(id=code, title=countries[code], active=False, icon=code))
+        self.view.update(items)
 
 class MiAZPurposes(MiAZConfigView):
     """Class for managing Purposes from Settings"""

@@ -68,6 +68,7 @@ class MiAZColumnView(Gtk.Box):
         self.app = app
         self.factory = self.app.get_factory()
         self.actions = self.app.get_actions()
+        self.icman = self.app.get_icman()
 
         scrwin = Gtk.ScrolledWindow()
         scrwin.set_hexpand(True)

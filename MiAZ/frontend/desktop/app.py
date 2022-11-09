@@ -76,6 +76,9 @@ class MiAZApp(Adw.Application):
     def get_factory(self):
         return self.factory
 
+    def get_icman(self):
+        return self.icman
+
     def get_workspace(self):
         return self.workspace
 
