@@ -2,20 +2,11 @@
 # -*- coding: utf-8 -*-
 
 import os
-import sys
-from abc import abstractmethod
-import json
 
 import gi
-gi.require_version('Gtk', '4.0')
-gi.require_version('Adw', '1')
 from gi.repository import Adw
 from gi.repository import Gdk
-from gi.repository import Gio
-from gi.repository import GLib
 from gi.repository import Gtk
-from gi.repository import Pango
-from gi.repository.GdkPixbuf import Pixbuf
 
 from MiAZ.backend.env import ENV
 from MiAZ.backend.log import get_logger
@@ -24,14 +15,11 @@ from MiAZ.backend.config import MiAZConfigSettingsCollections
 from MiAZ.backend.config import MiAZConfigSettingsOrganizations
 from MiAZ.backend.config import MiAZConfigSettingsCountries
 from MiAZ.backend.config import MiAZConfigSettingsPurposes
-from MiAZ.frontend.desktop.widgets.widget import MiAZWidget
-# ~ from MiAZ.frontend.desktop.widgets.treeview import MiAZTreeView
 from MiAZ.frontend.desktop.widgets.columnview import MiAZColumnView, RowIcon
 from MiAZ.frontend.desktop.widgets.dialogs import MiAZDialogAdd
 
 
-
-class MiAZConfigView(MiAZWidget, Gtk.Box):
+class MiAZConfigView(Gtk.Box):
     """Class for managing Collections from Settings"""
     __gtype_name__ = 'MiAZConfigView'
     current = None
@@ -41,9 +29,9 @@ class MiAZConfigView(MiAZWidget, Gtk.Box):
     search_term = ''
 
     def __init__(self, app, config_for):
-        super().__init__(app, __class__.__name__)
         super(Gtk.Box, self).__init__(spacing=12, orientation=Gtk.Orientation.VERTICAL)
         self.app = app
+        self.log = get_logger('MiAZConfigView')
         self.backend = app.get_backend()
         self.config_for = config_for
         self.factory = self.app.get_factory()
@@ -75,12 +63,9 @@ class MiAZConfigView(MiAZWidget, Gtk.Box):
         self.box_buttons.append(self.factory.create_button('miaz-list-remove', '', self.on_item_remove))
         self.box_oper.append(self.box_buttons)
         self.append(self.box_oper)
-
         widget = self._setup_view()
         self._setup_view_finish()
         self.append(widget)
-
-        self.log.debug("Initialized")
 
     def _setup_view_finish(self):
         self.view.column_title.set_title(self.config_for.title())
@@ -98,7 +83,6 @@ class MiAZConfigView(MiAZWidget, Gtk.Box):
             return True
         return False
 
-
     def on_key_released(self, widget, keyval, keycode, state):
         self.log.debug("Active window: %s", self.app.get_active_window())
         keyname = Gdk.keyval_name(keyval)
@@ -113,14 +97,6 @@ class MiAZConfigView(MiAZWidget, Gtk.Box):
         self.view.set_filter(self._do_filter_view)
         frmView.set_child(self.view)
         return frmView
-
-    def __row_inserted(self, model, treepath, treeiter):
-        self.treeview.set_cursor_on_cell(treepath, self.column, self.renderer, True)
-        self.treeview.grab_focus()
-
-    def config_save(self, items):
-        with open(self.config_local, 'w') as fj:
-            json.dump(items, fj)
 
     def on_item_add(self, *args):
         dialog = MiAZDialogAdd(self.app, self.get_root(), 'New %s' % self.config_for, '%s name' % self.config_for.title(), '')
@@ -148,7 +124,6 @@ class MiAZConfigView(MiAZWidget, Gtk.Box):
         return
 
     def on_item_remove(self, *args):
-        # Delete from config and refresh model
         item = self.view.get_item()
         if item is None:
             return
@@ -163,6 +138,7 @@ class MiAZConfigView(MiAZWidget, Gtk.Box):
         self.config_global = config_global
 
     def update(self, items=None):
+        # FIXME: this is awful
         if items is None:
             items = []
             item_type = self.config.config_model
@@ -171,12 +147,16 @@ class MiAZConfigView(MiAZWidget, Gtk.Box):
                 for key in database:
                     items.append(item_type(id=key, title=key))
             elif self.config.config_is is dict:
-                gitems = self.config.load_global()
-                for key in database:
-                    try:
-                        items.append(item_type(id=key, title=gitems[key]))
-                    except KeyError:
-                        items.append(item_type(id=key, title=''))
+                if self.config.foreign:
+                    gitems = self.config.load_global()
+                    for key in database:
+                        try:
+                            items.append(item_type(id=key, title=gitems[key]))
+                        except KeyError:
+                            items.append(item_type(id=key, title=''))
+                else:
+                    for key in database:
+                        items.append(item_type(id=key, title=database[key]))
         self.view.update(items)
 
 
@@ -198,12 +178,13 @@ class MiAZOrganizations(MiAZConfigView):
 
     def __init__(self, app):
         self.config = MiAZConfigSettingsOrganizations()
-        config_for = self.config.get_config_for()
-        super().__init__(app, config_for)
-
+        super().__init__(app, self.config.config_for)
 
     def on_item_add(self, *args):
-        dialog = MiAZDialogAdd(self.app, self.get_root(), 'Add new person or entity', 'Initials', 'Full name')
+        dialog = MiAZDialogAdd(self.app, self.get_root(), 'Add new %s' % self.config.config_for, 'Initials', 'Full name')
+        etyValue1 = dialog.get_value1_widget()
+        search_term = self.entry.get_text()
+        etyValue1.set_text(search_term)
         dialog.connect('response', self.on_response_item_add)
         dialog.show()
 
@@ -214,9 +195,9 @@ class MiAZOrganizations(MiAZConfigView):
             if len(key) > 0 and len(value) > 0:
                 items = self.config.load()
                 items[key.upper()] = value
+                self.log.info("New organization: %s (%s)", key.upper(), value)
                 self.config.save(items)
                 self.update()
-                # ~ self.emit('updated')
         dialog.destroy()
 
     def _setup_view_finish(self):
@@ -235,25 +216,9 @@ class MiAZCountries(MiAZConfigView):
 
     def __init__(self, app):
         self.config = MiAZConfigSettingsCountries()
-        config_for = self.config.get_config_for()
-        super().__init__(app, config_for)
+        super().__init__(app, self.config.config_for)
         self.box_buttons.set_visible(False)
         self.icman = self.app.get_icman()
-
-    def config_check(self):
-        if not os.path.exists(self.config_local):
-            self.config_save()
-            self.log.debug("Local config file for %s created empty" % self.config_for)
-
-    def config_save(self):
-        items = []
-        def row(model, path, itr):
-            code = model.get(itr, 1)[0]
-            checked = model.get(itr, 3)[0]
-            if checked:
-                items.append(code)
-        self.store.foreach(row)
-        self.config.save(sorted(items))
 
     def on_item_remove(self, *args):
         return
@@ -299,29 +264,12 @@ class MiAZCountries(MiAZConfigView):
                 items.append(item_type(id=code, title=countries[code], active=False))
         self.view.update(items)
 
+
 class MiAZPurposes(MiAZConfigView):
     """Class for managing Purposes from Settings"""
     __gtype_name__ = 'MiAZPurposes'
 
     def __init__(self, app):
         self.config = MiAZConfigSettingsPurposes()
-        config_for = self.config.get_config_for()
-        super().__init__(app, config_for)
+        super().__init__(app, self.config.config_for)
 
-    def on_item_add(self, *args):
-        dialog = MiAZDialogAdd(self.app, self.get_root(), 'Add a new purpose', 'Purpose name', '')
-        boxkey2 = dialog.get_boxKey2()
-        boxkey2.set_visible(False)
-        dialog.connect('response', self.on_response_item_add)
-        dialog.show()
-
-    def on_response_item_add(self, dialog, response):
-        if response == Gtk.ResponseType.ACCEPT:
-            value = dialog.get_value1()
-            if len(value) > 0:
-                items = self.config.load()
-                if not value in items:
-                    items.append(value.upper())
-                    self.config.save(items)
-                    self.update()
-        dialog.destroy()
