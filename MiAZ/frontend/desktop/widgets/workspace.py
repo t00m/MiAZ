@@ -12,13 +12,7 @@ from MiAZ.backend.log import get_logger
 from MiAZ.backend.util import json_load
 from MiAZ.backend.models import File, Collection, Person, Country, Purpose, Concept
 from MiAZ.frontend.desktop.util import get_file_mimetype
-from MiAZ.frontend.desktop.widgets.row import MiAZListViewRow
 from MiAZ.frontend.desktop.widgets.columnview import MiAZColumnView
-
-
-# ~ class MiAZWSColumnView(MiAZColumnView):
-    # ~ __gtype_name__ = 'MiAZWSColumnView'
-
 
 
 class MiAZWorkspace(Gtk.Box):
@@ -81,6 +75,7 @@ class MiAZWorkspace(Gtk.Box):
         self.view = MiAZColumnView(self.app)
         self.view.cv.append_column(self.view.column_icon)
         self.view.cv.append_column(self.view.column_title)
+        self.view.cv.set_single_click_activate(False)
         # ~ view.cv.append_column(view.column_active)
         self.view.column_title.set_expand(True)
         self.view.cv.sort_by_column(self.view.column_title, Gtk.SortType.DESCENDING)
@@ -89,15 +84,6 @@ class MiAZWorkspace(Gtk.Box):
         frmView.set_child(self.view)
 
         return frmView
-
-    def _on_selected_item_notify(self, listview, _):
-        self.log.debug("%s > %s", listview, type(listview))
-        path = listview.get_selected_item()
-        self.log.debug(path)
-
-    def _on_activated_item(self, listview, position):
-        item = self.model_filter.get_item(position)
-        self.log.debug(item.id)
 
     def get_model_filter(self):
         return self.model_filter

@@ -119,12 +119,13 @@ class MiAZColumnView(Gtk.Box):
         self.store = Gio.ListStore(item_type=MiAZModel)
         self.sort_model  = Gtk.SortListModel(model=self.store, sorter=cv_sorter)
         self.filter_model = Gtk.FilterListModel(model=self.sort_model)
-        self.selection = Gtk.SingleSelection.new(self.filter_model)
+        self.selection = Gtk.MultiSelection.new(self.filter_model)
         self.cv.set_model(self.selection)
         self.append(scrwin)
 
         # Connect signals
         self.cv.connect("activate", self._on_selected_item_notify)
+        self.selection.connect('selection-changed', self._on_selection_changed)
 
     def get_columnview(self):
         return self.cv
@@ -145,8 +146,22 @@ class MiAZColumnView(Gtk.Box):
         pos = selected.get_nth(0)
         return model.get_item(pos)
 
+    def get_items(self):
+        items = []
+        selection = self.get_selection()
+        bitset = selection.get_selection()
+        model = self.get_model_filter()
+        bititer = Gtk.BitsetIter()
+        bititer.init_first(bitset)
+        while bititer.is_valid():
+            pos = bititer.get_value()
+            item = model.get_item(pos)
+            print(item.id)
+            bititer.next()
+
     def select_first_item(self):
-        self.selection.set_selected(0)
+        pass
+        # ~ self.selection.set_selected(0)
 
     def set_filter(self, filter_func):
         self.filter = Gtk.CustomFilter.new(filter_func, self.filter_model)
@@ -161,6 +176,24 @@ class MiAZColumnView(Gtk.Box):
         for item in items:
             # item =~ Subclass of MiAZModel(id='xxx', title='xxx', ...)
             self.store.append(item)
+
+    def _on_selection_changed(self, selection, position, n_items):
+        print ("%s > Pos(%d) N_Items(%d)" % (selection, position, n_items))
+        bitset = selection.get_selection()
+        model = selection.get_model()
+        print(model.get_item(position).id)
+        bitsetiter = Gtk.BitsetIter(bitset)
+        len(bitsetiter)
+        bitsetiter.init_first(bitset)
+        len(bitsetiter)
+        print('is valid', bitsetiter.is_valid())
+        print('private', bitsetiter.private_data)
+        print('value', bitsetiter.get_value())
+        while bitsetiter.is_valid():
+            pos = bitsetiter.get_value()
+            item = model.get_item(pos)
+            print(item.id)
+            bitsetiter.next()
 
     def _on_factory_setup_id(self, factory, list_item):
         box = RowId()
@@ -237,6 +270,7 @@ class MiAZColumnView(Gtk.Box):
     def _on_selected_item_notify(self, colview, pos):
         model = colview.get_model()
         item = model.get_item(pos)
+        print(item.id)
 
     def _on_sort_string_func(self, item1, item2, prop):
         if eval("item1.%s.upper()" % prop) > eval("item2.%s.upper()" % prop):

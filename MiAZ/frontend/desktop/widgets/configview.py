@@ -49,7 +49,7 @@ class MiAZConfigView(Gtk.Box):
         self.entry.set_activates_default(True)
         self.entry.set_icon_from_icon_name(Gtk.EntryIconPosition.SECONDARY, 'miaz-entry-clear')
         self.entry.set_icon_activatable(Gtk.EntryIconPosition.SECONDARY, True)
-        self.entry.connect('icon-press', self.on_entrysearch_delete)
+        self.entry.connect('icon-press', self._on_entrysearch_delete)
         self.entry.connect('changed', self._on_filter_selected)
         self.entry.set_hexpand(True)
         self.entry.set_has_frame(True)
@@ -57,10 +57,10 @@ class MiAZConfigView(Gtk.Box):
         self.box_oper.append(box_entry)
         self.box_buttons = Gtk.Box(spacing=3, orientation=Gtk.Orientation.HORIZONTAL)
         self.box_buttons.set_hexpand(False)
-        # ~ self.box_buttons.append(self.factory.create_button('miaz-edit', '', self.on_item_rename))
+        # ~ self.box_buttons.append(self.factory.create_button('miaz-edit', '', self._on_item_rename))
         # ~ self.box_buttons.append(Gtk.Separator.new(orientation=Gtk.Orientation.VERTICAL))
-        self.box_buttons.append(self.factory.create_button('miaz-list-add', '', self.on_item_add, self.config_for))
-        self.box_buttons.append(self.factory.create_button('miaz-list-remove', '', self.on_item_remove))
+        self.box_buttons.append(self.factory.create_button('miaz-list-add', '', self._on_item_add, self.config_for))
+        self.box_buttons.append(self.factory.create_button('miaz-list-remove', '', self._on_item_remove))
         self.box_oper.append(self.box_buttons)
         self.append(self.box_oper)
         widget = self._setup_view()
@@ -88,7 +88,7 @@ class MiAZConfigView(Gtk.Box):
         keyname = Gdk.keyval_name(keyval)
         self.log.debug("Key: %s", keyname)
 
-    def on_entrysearch_delete(self, *args):
+    def _on_entrysearch_delete(self, *args):
         self.entry.set_text("")
 
     def _setup_view(self):
@@ -98,17 +98,17 @@ class MiAZConfigView(Gtk.Box):
         frmView.set_child(self.view)
         return frmView
 
-    def on_item_add(self, *args):
+    def _on_item_add(self, *args):
         dialog = MiAZDialogAdd(self.app, self.get_root(), 'New %s' % self.config_for, '%s name' % self.config_for.title(), '')
         boxkey2 = dialog.get_boxKey2()
         boxkey2.set_visible(False)
         etyValue1 = dialog.get_value1_widget()
         search_term = self.entry.get_text()
         etyValue1.set_text(search_term)
-        dialog.connect('response', self.on_response_item_add)
+        dialog.connect('response', self._on_response_item_add)
         dialog.show()
 
-    def on_response_item_add(self, dialog, response):
+    def _on_response_item_add(self, dialog, response):
         if response == Gtk.ResponseType.ACCEPT:
             value = dialog.get_value1()
             if len(value) > 0:
@@ -120,10 +120,10 @@ class MiAZConfigView(Gtk.Box):
                     self.update()
         dialog.destroy()
 
-    def on_item_rename(self, *args):
+    def _on_item_rename(self, *args):
         return
 
-    def on_item_remove(self, *args):
+    def _on_item_remove(self, *args):
         item = self.view.get_item()
         if item is None:
             return
@@ -180,15 +180,15 @@ class MiAZOrganizations(MiAZConfigView):
         self.config = MiAZConfigSettingsOrganizations()
         super().__init__(app, self.config.config_for)
 
-    def on_item_add(self, *args):
+    def _on_item_add(self, *args):
         dialog = MiAZDialogAdd(self.app, self.get_root(), 'Add new %s' % self.config.config_for, 'Initials', 'Full name')
         etyValue1 = dialog.get_value1_widget()
         search_term = self.entry.get_text()
         etyValue1.set_text(search_term)
-        dialog.connect('response', self.on_response_item_add)
+        dialog.connect('response', self._on_response_item_add)
         dialog.show()
 
-    def on_response_item_add(self, dialog, response):
+    def _on_response_item_add(self, dialog, response):
         if response == Gtk.ResponseType.ACCEPT:
             key = dialog.get_value1()
             value = dialog.get_value2()
@@ -220,7 +220,7 @@ class MiAZCountries(MiAZConfigView):
         self.box_buttons.set_visible(False)
         self.icman = self.app.get_icman()
 
-    def on_item_remove(self, *args):
+    def _on_item_remove(self, *args):
         return
 
     def _setup_view_finish(self):
