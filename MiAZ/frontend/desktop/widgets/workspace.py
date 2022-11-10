@@ -12,7 +12,7 @@ from MiAZ.backend.log import get_logger
 from MiAZ.backend.util import json_load
 from MiAZ.backend.models import File, Collection, Person, Country, Purpose, Concept
 from MiAZ.frontend.desktop.util import get_file_mimetype
-from MiAZ.frontend.desktop.widgets.columnview import MiAZColumnView
+from MiAZ.frontend.desktop.widgets.columnview import MiAZColumnView, RowIcon
 
 
 class MiAZWorkspace(Gtk.Box):
@@ -44,6 +44,7 @@ class MiAZWorkspace(Gtk.Box):
     def _setup_toolbar(self):
         toolbar = self.factory.create_box_vertical(spacing=0, margin=0, vexpand=True)
         frmFilters = self.factory.create_frame(title='<big><b>Filters</b></big>', hexpand=False, vexpand=True)
+        frmFilters.set_label_align(0.0)
         tlbFilters = self.factory.create_box_vertical()
         self.ent_sb = Gtk.SearchEntry(placeholder_text="Type here")
         self.ent_sb.connect('changed', self._on_filter_selected)
@@ -70,9 +71,58 @@ class MiAZWorkspace(Gtk.Box):
         self.backend.connect('source-configuration-updated', self.update)
         return toolbar
 
+    def _on_factory_setup_icon(self, factory, list_item):
+        box = RowIcon()
+        list_item.set_child(box)
+
+    def _on_factory_bind_icon(self, factory, list_item):
+        """To be subclassed"""
+        box = list_item.get_child()
+        item = list_item.get_item()
+        icon = box.get_first_child()
+        mimetype, val = Gio.content_type_guess('filename=%s' % item.id)
+        gicon = Gio.content_type_get_icon(mimetype)
+        icon.set_from_gicon(gicon)
+        icon.set_pixel_size(32)
+
+    def _on_selection_changed(self, selection, position, n_items):
+        self.selected_items = []
+        model = selection.get_model()
+        bitset = selection.get_selection()
+        for index in range(bitset.get_size()):
+            pos = bitset.get_nth(index)
+            item = model.get_item(pos)
+            self.selected_items.append(item)
+        self.btnDocsSel.set_label("%d documents selected" % len(self.selected_items))
+
     def _setup_view(self):
-        frmView = self.factory.create_frame(title='<big><b>Documents</b></big>', hexpand=True, vexpand=True)
+        mnuSelMulti = self.create_menu_selection_multiple()
+        # Documents selected
+        boxDocsSelected = Gtk.CenterBox()
+        self.lblDocumentsSelected = "No documents selected"
+        self.btnDocsSel = Gtk.MenuButton()
+        self.btnDocsSel.set_label(self.lblDocumentsSelected)
+        self.popDocsSel = Gtk.PopoverMenu.new_from_model(mnuSelMulti)
+        self.btnDocsSel.set_popover(popover=self.popDocsSel)
+        self.btnDocsSel.set_valign(Gtk.Align.CENTER)
+        self.btnDocsSel.set_hexpand(False)
+        self.btnDocsSel.set_sensitive(True)
+        boxDocsSelected.set_center_widget(self.btnDocsSel)
+        lblFrmView = self.factory.create_label('<big><b>Documents</b></big>')
+        # ~ lblFrmView.set_extra_menu(mnuSelMulti)
+        lblFrmView.set_xalign(0.0)
+        frmView = self.factory.create_frame(hexpand=True, vexpand=True)
+        frmView.set_label_widget(boxDocsSelected)
+
+        # ColumnView
         self.view = MiAZColumnView(self.app)
+
+        # Custom factory for ColumViewColumn icon
+        factory_icon = Gtk.SignalListItemFactory()
+        factory_icon.connect("setup", self._on_factory_setup_icon)
+        factory_icon.connect("bind", self._on_factory_bind_icon)
+        self.view.column_icon.set_factory(factory_icon)
+        self.view.column_icon.set_title("Type")
         self.view.cv.append_column(self.view.column_icon)
         self.view.cv.append_column(self.view.column_title)
         self.view.cv.set_single_click_activate(False)
@@ -83,7 +133,74 @@ class MiAZWorkspace(Gtk.Box):
         self.view.select_first_item()
         frmView.set_child(self.view)
 
+        # Connect signals
+        selection = self.view.get_selection()
+        selection.connect('selection-changed', self._on_selection_changed)
+
         return frmView
+
+    def create_menu_selection_multiple(self):
+        self.menu_workspace_multiple = Gio.Menu.new()
+
+        fields = ['date', 'country', 'collection', 'purpose']
+        item_fake = Gio.MenuItem.new()
+        item_fake.set_label('Multiple selection')
+        action = Gio.SimpleAction.new('fake', None)
+        item_fake.set_detailed_action(detailed_action='fake')
+        self.menu_workspace_multiple.append_item(item_fake)
+
+        # Submenu for mass renaming
+        submenu_rename_root = Gio.Menu.new()
+        submenu_rename = Gio.MenuItem.new_submenu(
+            label='Mass renaming of...',
+            submenu=submenu_rename_root,
+        )
+        self.menu_workspace_multiple.append_item(submenu_rename)
+
+        for item in fields:
+            menuitem = Gio.MenuItem.new()
+            menuitem.set_label(label='... %s' % item)
+            action = Gio.SimpleAction.new('rename_%s' % item, None)
+            callback = 'self.action_rename'
+            # ~ action.connect('activate', eval(callback), item)
+            self.app.add_action(action)
+            menuitem.set_detailed_action(detailed_action='app.rename_%s' % item)
+            submenu_rename_root.append_item(menuitem)
+
+        # Submenu for mass adding
+        submenu_add_root = Gio.Menu.new()
+        submenu_add = Gio.MenuItem.new_submenu(
+            label='Mass adding of...',
+            submenu=submenu_add_root,
+        )
+        self.menu_workspace_multiple.append_item(submenu_add)
+
+        for item in fields:
+            menuitem = Gio.MenuItem.new()
+            menuitem.set_label(label='... %s' % item)
+            action = Gio.SimpleAction.new('add_%s' % item, None)
+            callback = 'self.action_add'
+            # ~ action.connect('activate', eval(callback), item)
+            self.app.add_action(action)
+            menuitem.set_detailed_action(detailed_action='app.add_%s' % item)
+            submenu_add_root.append_item(menuitem)
+
+        item_force_update = Gio.MenuItem.new()
+        item_force_update.set_label(label='Force update')
+        action = Gio.SimpleAction.new('workspace_update', None)
+        # ~ action.connect('activate', self.update)
+        self.app.add_action(action)
+        item_force_update.set_detailed_action(detailed_action='app.workspace_update')
+        self.menu_workspace_multiple.append_item(item_force_update)
+
+        item_delete = Gio.MenuItem.new()
+        item_delete.set_label(label='Delete documents')
+        action = Gio.SimpleAction.new('workspace_delete', None)
+        # ~ action.connect('activate', self.noop)
+        self.app.add_action(action)
+        item_delete.set_detailed_action(detailed_action='app.workspace_delete')
+        self.menu_workspace_multiple.append_item(item_delete)
+        return self.menu_workspace_multiple
 
     def get_model_filter(self):
         return self.model_filter

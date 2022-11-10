@@ -69,6 +69,7 @@ class MiAZColumnView(Gtk.Box):
         self.factory = self.app.get_factory()
         self.actions = self.app.get_actions()
         self.icman = self.app.get_icman()
+        selected_items = []
 
         scrwin = Gtk.ScrolledWindow()
         scrwin.set_hexpand(True)
@@ -146,18 +147,9 @@ class MiAZColumnView(Gtk.Box):
         pos = selected.get_nth(0)
         return model.get_item(pos)
 
-    def get_items(self):
+    def get_selected_items(self):
         items = []
-        selection = self.get_selection()
-        bitset = selection.get_selection()
-        model = self.get_model_filter()
-        bititer = Gtk.BitsetIter()
-        bititer.init_first(bitset)
-        while bititer.is_valid():
-            pos = bititer.get_value()
-            item = model.get_item(pos)
-            print(item.id)
-            bititer.next()
+        return self.selected_items
 
     def select_first_item(self):
         pass
@@ -178,22 +170,13 @@ class MiAZColumnView(Gtk.Box):
             self.store.append(item)
 
     def _on_selection_changed(self, selection, position, n_items):
-        print ("%s > Pos(%d) N_Items(%d)" % (selection, position, n_items))
-        bitset = selection.get_selection()
+        self.selected_items = []
         model = selection.get_model()
-        print(model.get_item(position).id)
-        bitsetiter = Gtk.BitsetIter(bitset)
-        len(bitsetiter)
-        bitsetiter.init_first(bitset)
-        len(bitsetiter)
-        print('is valid', bitsetiter.is_valid())
-        print('private', bitsetiter.private_data)
-        print('value', bitsetiter.get_value())
-        while bitsetiter.is_valid():
-            pos = bitsetiter.get_value()
+        bitset = selection.get_selection()
+        for index in range(bitset.get_size()):
+            pos = bitset.get_nth(index)
             item = model.get_item(pos)
-            print(item.id)
-            bitsetiter.next()
+            self.selected_items.append(item)
 
     def _on_factory_setup_id(self, factory, list_item):
         box = RowId()
@@ -246,10 +229,8 @@ class MiAZColumnView(Gtk.Box):
         box = list_item.get_child()
         item = list_item.get_item()
         icon = box.get_first_child()
-        mimetype, val = Gio.content_type_guess('filename=%s' % item.id)
-        gicon = Gio.content_type_get_icon(mimetype)
-        icon.set_from_gicon(gicon)
-        icon.set_pixel_size(48)
+        # ~ icon.set_from_something(...)
+        # ~ icon.set_pixel_size(size)
 
     def _on_button_toggled(self, button):
         selection = self.cv.get_model()
