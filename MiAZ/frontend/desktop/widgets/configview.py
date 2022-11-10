@@ -283,8 +283,10 @@ class MiAZCountries(MiAZConfigView):
         box = list_item.get_child()
         item = list_item.get_item()
         icon = box.get_first_child()
-        pixbuf = self.icman.get_flag_pixbuf(item.id)
-        icon.set_from_pixbuf(pixbuf)
+        flag = os.path.join(ENV['GPATH']['FLAGS'], "%s.svg" % item.id)
+        if not os.path.exists(flag):
+            flag = os.path.join(ENV['GPATH']['FLAGS'], "__.svg")
+        icon.set_from_file(flag)
         icon.set_pixel_size(32)
 
     def update(self, items=None):
@@ -294,7 +296,7 @@ class MiAZCountries(MiAZConfigView):
             database = self.config.load()
             countries = self.config.load_global()
             for code in countries:
-                items.append(item_type(id=code, title=countries[code], active=False, icon=code))
+                items.append(item_type(id=code, title=countries[code], active=False))
         self.view.update(items)
 
 class MiAZPurposes(MiAZConfigView):
