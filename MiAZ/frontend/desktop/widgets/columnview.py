@@ -96,8 +96,8 @@ class MiAZColumnView(Gtk.Box):
         self.cv = Gtk.ColumnView()
         # ~ self.cv.get_style_context().add_class(class_name='monospace')
         # ~ self.cv.set_show_column_separators(True)
-        # ~ self.cv.set_show_row_separators(True)
-        self.cv.set_single_click_activate(False)
+        self.cv.set_show_row_separators(True)
+        self.cv.set_single_click_activate(True)
         scrwin.set_child(self.cv)
 
         # Sorters

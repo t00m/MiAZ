@@ -7,6 +7,7 @@ import gi
 gi.require_version('Gtk', '4.0')
 from gi.repository import Gio
 from gi.repository import Gtk
+from gi.repository import GObject
 
 from MiAZ.backend.log import get_logger
 from MiAZ.backend.util import json_load
@@ -21,6 +22,7 @@ class MiAZWorkspace(Gtk.Box):
     displayed = 0
     switched = set()
     dfilter = {}
+    signals = set()
 
     def __init__(self, app):
         super(MiAZWorkspace, self).__init__(orientation=Gtk.Orientation.HORIZONTAL)
@@ -42,14 +44,34 @@ class MiAZWorkspace(Gtk.Box):
 
 
     def _setup_toolbar(self):
-        toolbar = self.factory.create_box_vertical(spacing=0, margin=0, vexpand=True)
-        frmFilters = self.factory.create_frame(title='<big><b>Filters</b></big>', hexpand=False, vexpand=True)
-        frmFilters.set_label_align(0.0)
-        tlbFilters = self.factory.create_box_vertical()
+        widget = self.factory.create_box_vertical(hexpand=False, vexpand=True)
+        head = self.factory.create_box_horizontal(margin=0, spacing=0, hexpand=True)
+        body = self.factory.create_box_vertical(margin=0, spacing=0, hexpand=True, vexpand=True)
+        widget.append(head)
+        widget.append(body)
+
+        actionbar = Gtk.ActionBar.new()
+        actionbar.set_hexpand(True)
+        actionbar.set_vexpand(True)
+        lblToolbar = self.factory.create_label('<big><b>Filters</b></big>')
+        boxEmpty = self.factory.create_box_horizontal(hexpand=True)
+        btnClear = self.factory.create_button('miaz-entry-clear')
+        actionbar.pack_start(lblToolbar)
+        actionbar.pack_start(boxEmpty)
+        actionbar.pack_end(btnClear)
+        head.append(actionbar)
+
+
+
+        # ~ toolbar = self.factory.create_box_vertical(spacing=0, margin=0, vexpand=True)
+        # ~ frmFilters = self.factory.create_frame(title=, hexpand=False, vexpand=True)
+        # ~ frmFilters.set_label_align(0.0)
+        # ~ tlbFilters = self.factory.create_box_vertical()
         self.ent_sb = Gtk.SearchEntry(placeholder_text="Type here")
         self.ent_sb.connect('changed', self._on_filter_selected)
-        box = self.factory.create_box_filter('Free search', self.ent_sb)
-        tlbFilters.append(box)
+        boxEntry = self.factory.create_box_filter('Free search', self.ent_sb)
+        body.append(boxEntry)
+        # ~ tlbFilters.append(box)
 
         # FIXME: Do NOT fill dropdowns here.
         self.dropdown = {}
@@ -61,15 +83,17 @@ class MiAZWorkspace(Gtk.Box):
                             ]:
             dropdown = self.factory.create_dropdown_generic(item_type)
             self.actions.dropdown_populate(dropdown, item_type, conf)
-            dropdown.connect("notify::selected-item", self._on_filter_selected)
-            box = self.factory.create_box_filter(title, dropdown)
-            tlbFilters.append(box)
-            self.dropdown[title] = dropdown
+            sigid = dropdown.connect("notify::selected-item", self._on_filter_selected)
+            # ~ self.signals.add ((dropdown, sigid))
+            boxDropdown = self.factory.create_box_filter(title, dropdown)
+            body.append(boxDropdown)
+            self.dropdown[title.lower()] = dropdown
+            self.log.debug(title)
 
-        frmFilters.set_child(tlbFilters)
-        toolbar.append(frmFilters)
+        # ~ frmFilters.set_child(tlbFilters)
+        # ~ toolbar.append(frmFilters)
         self.backend.connect('source-configuration-updated', self.update)
-        return toolbar
+        return widget
 
     def _on_factory_setup_icon(self, factory, list_item):
         box = RowIcon()
@@ -96,6 +120,12 @@ class MiAZWorkspace(Gtk.Box):
         self.btnDocsSel.set_label("%d documents selected" % len(self.selected_items))
 
     def _setup_view(self):
+        widget = self.factory.create_box_vertical(hexpand=True, vexpand=True)
+        head = self.factory.create_box_horizontal(margin=0, spacing=0, hexpand=True)
+        body = self.factory.create_box_vertical(margin=0, spacing=0, hexpand=True, vexpand=True)
+        widget.append(head)
+        widget.append(body)
+
         mnuSelMulti = self.create_menu_selection_multiple()
         # Documents selected
         boxDocsSelected = Gtk.CenterBox()
@@ -109,11 +139,30 @@ class MiAZWorkspace(Gtk.Box):
         self.btnDocsSel.set_sensitive(True)
         boxDocsSelected.set_center_widget(self.btnDocsSel)
         lblFrmView = self.factory.create_label('<big><b>Documents</b></big>')
-        lblFrmView.set_extra_menu(mnuSelMulti)
+        # ~ lblFrmView.set_extra_menu(mnuSelMulti)
+        # ~ hbox =
         lblFrmView.set_xalign(0.0)
-        frmView = self.factory.create_frame(hexpand=True, vexpand=True)
-        frmView.set_label_widget(lblFrmView)
-        self.app.update_title(boxDocsSelected)
+        lblFrmView.set_hexpand(True)
+        lblFrmView.set_vexpand(True)
+        actionbar = Gtk.ActionBar.new()
+        actionbar.set_hexpand(True)
+        actionbar.set_vexpand(True)
+        boxEmpty = self.factory.create_box_horizontal(hexpand=True)
+        btnSelectAll = self.factory.create_button('miaz-select-all')
+        btnSelectNone = self.factory.create_button('miaz-select-none')
+        actionbar.pack_start(child=boxDocsSelected) #lblFrmView)
+        actionbar.pack_start(child=boxEmpty)
+        actionbar.pack_end(child=btnSelectAll)
+        actionbar.pack_end(child=btnSelectNone)
+        head.append(actionbar)
+        # ~ frmView = self.factory.create_frame(hexpand=True, vexpand=True)
+        # ~ frmView.set_label_widget(hbox)
+        # ~ label_widget = frmView.get_label_widget()
+        # ~ label_widget.set_hexpand(True)
+        # ~ label_widget.set_vexpand(True)
+        # ~ self.app.update_title(boxDocsSelected)
+
+
 
         # ColumnView
         self.view = MiAZColumnView(self.app)
@@ -132,13 +181,14 @@ class MiAZWorkspace(Gtk.Box):
         self.view.cv.sort_by_column(self.view.column_title, Gtk.SortType.DESCENDING)
         self.view.set_filter(self._do_filter_view)
         self.view.select_first_item()
-        frmView.set_child(self.view)
+        # ~ frmView.set_child(self.view)
+        body.append(self.view)
 
         # Connect signals
         selection = self.view.get_selection()
-        selection.connect('selection-changed', self._on_selection_changed)
+        self._on_signal_filter_connect()
 
-        return frmView
+        return widget
 
     def create_menu_selection_multiple(self):
         self.menu_workspace_multiple = Gio.Menu.new()
@@ -221,6 +271,7 @@ class MiAZWorkspace(Gtk.Box):
 
     def update(self, *args):
         # FIXME: Get dict from backend
+        # ~ self._on_signal_filter_disconnect()
         repocnf = self.backend.get_repo_source_config_file()
         self.repodct = json_load(repocnf)
         items = []
@@ -229,6 +280,8 @@ class MiAZWorkspace(Gtk.Box):
         self.view.update(items)
         self._on_filter_selected()
         self.update_title()
+        # ~ self.actions.dropdown_populate(self.dropdown['country'], Country, 'countries', True, self.dfilter['country'])
+        # ~ self._on_signal_filter_connect()
 
     def update_filters(self, item, ival):
         n = 0
@@ -267,11 +320,11 @@ class MiAZWorkspace(Gtk.Box):
         if self.show_dashboard:
             if valid:
                 c0 = self._do_eval_cond_matches_freetext(item.id)
-                c1 = self._do_eval_cond_matches(self.dropdown['Country'], fields[1])
-                c2 = self._do_eval_cond_matches(self.dropdown['Collection'], fields[2])
-                c3 = self._do_eval_cond_matches(self.dropdown['From'], fields[3])
-                c4 = self._do_eval_cond_matches(self.dropdown['Purpose'], fields[4])
-                c6 = self._do_eval_cond_matches(self.dropdown['To'], fields[6])
+                c1 = self._do_eval_cond_matches(self.dropdown['country'], fields[1])
+                c2 = self._do_eval_cond_matches(self.dropdown['collection'], fields[2])
+                c3 = self._do_eval_cond_matches(self.dropdown['from'], fields[3])
+                c4 = self._do_eval_cond_matches(self.dropdown['purpose'], fields[4])
+                c6 = self._do_eval_cond_matches(self.dropdown['to'], fields[6])
                 display = c0 and c1 and c2 and c3 and c4 and c6
         else:
             if not valid:
@@ -283,12 +336,39 @@ class MiAZWorkspace(Gtk.Box):
 
         return display
 
+    def _on_signal_filter_disconnect(self):
+        disconnected = self.signals.copy()
+        for widget, sigid in self.signals:
+            widget.disconnect(sigid)
+        self.signals -= disconnected
+
+    def _on_signal_filter_connect(self):
+        self.signals = set()
+        sigid = self.ent_sb.connect('changed', self._on_filter_selected)
+        self.signals.add((self.ent_sb, sigid))
+        for dropdown in self.dropdown:
+            sigid = self.dropdown[dropdown].connect("notify::selected-item", self._on_filter_selected)
+            self.signals.add((self.dropdown[dropdown], sigid))
+        selection = self.view.get_selection()
+        sigid = selection.connect('selection-changed', self._on_selection_changed)
+        self.signals.add((selection, sigid))
+
+
     def _on_filter_selected(self, *args):
         self.displayed = 0
         self.dfilter = {}
         self.view.refilter()
         self.update_title()
-        self.log.debug(self.dfilter)
+        # FIXME:
+        # ~ self.log.debug(self.dfilter)
+        # ~
+                                   # ~ ('Collection', Collection, 'collections'),
+                                   # ~ ('From', Person, 'organizations'),
+                                   # ~ ('Purpose', Purpose, 'purposes'),
+                                   # ~ ('To', Person, 'organizations'),
+                            # ~ ]:
+            # ~ self.actions.dropdown_populate(self.dropdown[title], item_type, conf)
+        # ~ self._on_signal_filter_connect()
 
     def show_dashboard(self, *args):
         self.displayed = 0

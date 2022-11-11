@@ -29,7 +29,7 @@ class MiAZActions(GObject.GObject):
         dialog = MiAZRenameDialog(self.app, source, target)
         dialog.show()
 
-    def dropdown_populate(self, dropdown, item_type, conf):
+    def dropdown_populate(self, dropdown, item_type, conf, keyfilter = False, intkeys=[]):
         # Populate the model
         model = dropdown.get_model()
         config = self.app.get_config(conf)
@@ -45,15 +45,31 @@ class MiAZActions(GObject.GObject):
         items = config.load()
         if isinstance(items, list):
             items = sorted(items)
-        # ~ self.log.debug("%s > %s", conf, type(items))
 
         model.remove_all()
         model.append(item_type(id='Any', title='Any'))
         for key in items:
             if config_is is dict:
                 if foreign:
-                    model.append(item_type(id=key, title="%s (%s)" % (gitems[key], key)))
+                    if keyfilter:
+                        if key in intkeys:
+                            model.append(item_type(id=key, title="%s (%s)" % (gitems[key], key)))
+                    else:
+                        model.append(item_type(id=key, title="%s (%s)" % (gitems[key], key)))
                 else:
-                    model.append(item_type(id=key, title="%s (%s)" % (items[key], key)))
+                    if keyfilter:
+                        if key in intkeys:
+                            model.append(item_type(id=key, title="%s (%s)" % (items[key], key)))
+                    else:
+                        if keyfilter:
+                            if key in intkeys:
+                                model.append(item_type(id=key, title="%s (%s)" % (items[key], key)))
+                        else:
+                            model.append(item_type(id=key, title="%s (%s)" % (items[key], key)))
             else:
-                model.append(item_type(id=key, title=key))
+                if keyfilter:
+                    if key in intkeys:
+                        model.append(item_type(id=key, title=key))
+                else:
+                    model.append(item_type(id=key, title=key))
+

@@ -35,6 +35,7 @@ class MiAZFactory:
     def create_box_filter(self, title: str, widget: Gtk.Widget) -> Gtk.Box:
         box = Gtk.Box.new(orientation=Gtk.Orientation.VERTICAL, spacing=3)
         box.set_margin_bottom(margin=12)
+        # ~ box.set_homogeneous(True)
         # ~ vbox.get_style_context().add_class(class_name='frame')
         lblTitle = self.create_label('<small>%s</small>' % title)
         lblTitle.set_xalign(0.0)
@@ -62,7 +63,7 @@ class MiAZFactory:
         box.set_vexpand(vexpand)
         return box
 
-    def create_button(self, icon_name, title, callback=None, width=32, height=32, css_classes=['flat'], data=None):
+    def create_button(self, icon_name='', title='', callback=None, width=32, height=32, css_classes=['flat'], data=None):
         if len(icon_name.strip()) == 0:
             button = Gtk.Button(css_classes=css_classes)
             label = Gtk.Label()
