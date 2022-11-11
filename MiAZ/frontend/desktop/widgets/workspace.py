@@ -109,10 +109,11 @@ class MiAZWorkspace(Gtk.Box):
         self.btnDocsSel.set_sensitive(True)
         boxDocsSelected.set_center_widget(self.btnDocsSel)
         lblFrmView = self.factory.create_label('<big><b>Documents</b></big>')
-        # ~ lblFrmView.set_extra_menu(mnuSelMulti)
+        lblFrmView.set_extra_menu(mnuSelMulti)
         lblFrmView.set_xalign(0.0)
         frmView = self.factory.create_frame(hexpand=True, vexpand=True)
-        frmView.set_label_widget(boxDocsSelected)
+        frmView.set_label_widget(lblFrmView)
+        self.app.update_title(boxDocsSelected)
 
         # ColumnView
         self.view = MiAZColumnView(self.app)
@@ -242,7 +243,8 @@ class MiAZWorkspace(Gtk.Box):
             n += 1
 
     def update_title(self):
-        self.app.update_title(self.displayed, len(self.repodct))
+        # ~ label = self.factory.create_label(text= "Displaying %d of %d documents" % (self.displayed, len(self.repodct)))
+        # ~ self.app.update_title(label)
         self.switched = set()
 
     def _do_eval_cond_matches_freetext(self, path):
@@ -286,6 +288,7 @@ class MiAZWorkspace(Gtk.Box):
         self.dfilter = {}
         self.view.refilter()
         self.update_title()
+        self.log.debug(self.dfilter)
 
     def show_dashboard(self, *args):
         self.displayed = 0

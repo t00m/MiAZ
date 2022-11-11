@@ -105,13 +105,6 @@ class MiAZFactory:
             button.connect('toggled', callback, data)
         return button
 
-        # ~ button = Gtk.ToggleButton()
-        # ~ btnFileSelect = Gtk.ToggleButton()
-        # ~ btnFileSelect.connect('toggled', self.on_selected_rows_changed)
-        # ~ btnFileSelect.set_icon_name('miaz-edit')
-        # ~ btnFileSelect.set_valign(Gtk.Align.CENTER)
-        # ~ btnFileSelect.set_hexpand(False)
-
     def create_dropdown_generic(self, item_type):
 
         def _on_factory_setup(factory, list_item):
@@ -204,8 +197,6 @@ class MiAZFactory:
         boxCenter.set_margin_end(margin=6)
         boxCenter.set_margin_bottom(margin=6)
         boxCenter.set_margin_start(margin=6)
-        # ~ boxCenter.set_hexpand(True)
-        # ~ boxCenter.set_vexpand(True)
         icon_mime = self.app.icman.get_icon_mimetype_from_file(filepath, 32)
         btnMime = Gtk.Button(css_classes=['flat'])
         btnMime.set_child(icon_mime)

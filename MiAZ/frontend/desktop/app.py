@@ -86,6 +86,9 @@ class MiAZApp(Adw.Application):
         return self.header
 
     def build_gui(self):
+        ## HeaderBar
+        self.header = Adw.HeaderBar()
+
         ## Central Box
         self.mainbox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
         self.mainbox.set_vexpand(True)
@@ -109,8 +112,7 @@ class MiAZApp(Adw.Application):
         self.page_workspace.set_visible(True)
         self.show_stack_page_by_name('workspace')
 
-        ## HeaderBar
-        self.header = Adw.HeaderBar()
+
 
         boxDashboardButtons = Gtk.Box(spacing=3, orientation=Gtk.Orientation.HORIZONTAL, homogeneous=True)
         btnDashboard = self.factory.create_button('miaz-dashboard-ok', 'Dashboard', callback=self.workspace.show_dashboard, css_classes=['flat', 'linked', 'toolbar'])
@@ -169,15 +171,15 @@ class MiAZApp(Adw.Application):
         about = MiAZAbaout(self).show()
 
 
-    def update_title(self, displayed: int = 0, total:int = 0):
+    def update_title(self, widget=None):
         header = self.get_header()
         title = header.get_title_widget()
         if title is not None:
             header.remove(title)
-        wdgTitle = Adw.WindowTitle()
-        wdgTitle.set_title('MiAZ')
-        wdgTitle.set_subtitle("Displaying %d of %d documents" % (displayed, total))
-        header.set_title_widget(wdgTitle)
+        if widget is None:
+            widget = self.factory.create_label('MiAZ')
+        header.set_title_widget(widget)
+
 
     def exit_app(self, action, param):
         self.quit()
