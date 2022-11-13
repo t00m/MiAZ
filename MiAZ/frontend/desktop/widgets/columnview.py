@@ -110,7 +110,7 @@ class MiAZColumnView(Gtk.Box):
         self.column_id.set_sorter(self.prop_id_sorter)
         self.column_title = Gtk.ColumnViewColumn.new("Title", factory_title)
         self.column_title.set_sorter(self.prop_title_sorter)
-        self.column_subtitle = Gtk.ColumnViewColumn.new("Sutitle", factory_subtitle)
+        self.column_subtitle = Gtk.ColumnViewColumn.new("Title", factory_subtitle)
         self.column_subtitle.set_sorter(self.prop_subtitle_sorter)
         self.column_active = Gtk.ColumnViewColumn.new("Active", factory_active)
         self.column_icon = Gtk.ColumnViewColumn.new("Icon", factory_icon)
@@ -196,7 +196,7 @@ class MiAZColumnView(Gtk.Box):
         box = list_item.get_child()
         item = list_item.get_item()
         label = box.get_first_child()
-        label.set_text(item.title)
+        label.set_markup(item.title)
 
     def _on_factory_setup_subtitle(self, factory, list_item):
         box = RowSubtitle()
@@ -206,7 +206,8 @@ class MiAZColumnView(Gtk.Box):
         box = list_item.get_child()
         item = list_item.get_item()
         label = box.get_first_child()
-        label.set_text(item.subtitle)
+        label.set_markup(item.subtitle)
+        label.set_ellipsize(True)
 
     def _on_factory_setup_active(self, factory, list_item):
         box = RowActive()

@@ -9,11 +9,12 @@ from gi.repository import Gio
 from gi.repository import Gtk
 from gi.repository import GObject
 
+from MiAZ.backend.env import ENV
 from MiAZ.backend.log import get_logger
 from MiAZ.backend.util import json_load
 from MiAZ.backend.models import File, Collection, Person, Country, Purpose, Concept
 from MiAZ.frontend.desktop.util import get_file_mimetype
-from MiAZ.frontend.desktop.widgets.columnview import MiAZColumnView, RowIcon
+from MiAZ.frontend.desktop.widgets.columnview import MiAZColumnView, RowIcon, RowTitle
 
 
 class MiAZWorkspace(Gtk.Box):
@@ -37,9 +38,9 @@ class MiAZWorkspace(Gtk.Box):
         self.set_margin_end(margin=6)
         self.set_margin_bottom(margin=6)
         self.set_margin_start(margin=6)
-        frmToolbar = self._setup_toolbar()
+        self.sidebar = self._setup_toolbar()
         frmView = self._setup_view()
-        self.append(frmToolbar)
+        self.append(self.sidebar)
         self.append(frmView)
 
 
@@ -61,16 +62,10 @@ class MiAZWorkspace(Gtk.Box):
         actionbar.pack_end(btnClear)
         head.append(actionbar)
 
-
-
-        # ~ toolbar = self.factory.create_box_vertical(spacing=0, margin=0, vexpand=True)
-        # ~ frmFilters = self.factory.create_frame(title=, hexpand=False, vexpand=True)
-        # ~ frmFilters.set_label_align(0.0)
-        # ~ tlbFilters = self.factory.create_box_vertical()
-        self.ent_sb = Gtk.SearchEntry(placeholder_text="Type here")
-        self.ent_sb.connect('changed', self._on_filter_selected)
-        boxEntry = self.factory.create_box_filter('Free search', self.ent_sb)
-        body.append(boxEntry)
+        # ~ self.ent_sb = Gtk.SearchEntry(placeholder_text="Type here")
+        # ~ self.ent_sb.connect('changed', self._on_filter_selected)
+        # ~ boxEntry = self.factory.create_box_filter('Free search', self.ent_sb)
+        # ~ body.append(boxEntry)
         # ~ tlbFilters.append(box)
 
         # FIXME: Do NOT fill dropdowns here.
@@ -88,12 +83,45 @@ class MiAZWorkspace(Gtk.Box):
             boxDropdown = self.factory.create_box_filter(title, dropdown)
             body.append(boxDropdown)
             self.dropdown[title.lower()] = dropdown
-            self.log.debug(title)
-
-        # ~ frmFilters.set_child(tlbFilters)
-        # ~ toolbar.append(frmFilters)
         self.backend.connect('source-configuration-updated', self.update)
         return widget
+
+    def _on_factory_setup_collection(self, factory, list_item):
+        box = RowTitle()
+        list_item.set_child(box)
+
+    def _on_factory_bind_collection(self, factory, list_item):
+        box = list_item.get_child()
+        item = list_item.get_item()
+        label = box.get_first_child()
+        collection = self.repodct[item.id]['fields'][2]
+        label.set_markup(collection)
+
+    def _on_factory_setup_purpose(self, factory, list_item):
+        box = RowTitle()
+        list_item.set_child(box)
+
+    def _on_factory_bind_purpose(self, factory, list_item):
+        box = list_item.get_child()
+        item = list_item.get_item()
+        label = box.get_first_child()
+        purpose = self.repodct[item.id]['fields'][4]
+        label.set_markup(purpose)
+
+    def _on_factory_setup_flag(self, factory, list_item):
+        box = RowIcon()
+        list_item.set_child(box)
+
+    def _on_factory_bind_flag(self, factory, list_item):
+        box = list_item.get_child()
+        item = list_item.get_item()
+        icon = box.get_first_child()
+        code = self.repodct[item.id]['fields'][1]
+        flag = os.path.join(ENV['GPATH']['FLAGS'], "%s.svg" % code)
+        if not os.path.exists(flag):
+            flag = os.path.join(ENV['GPATH']['FLAGS'], "__.svg")
+        icon.set_from_file(flag)
+        icon.set_pixel_size(32)
 
     def _on_factory_setup_icon(self, factory, list_item):
         box = RowIcon()
@@ -109,6 +137,18 @@ class MiAZWorkspace(Gtk.Box):
         icon.set_from_gicon(gicon)
         icon.set_pixel_size(32)
 
+    def _on_explain_toggled(self, button, data=None):
+        active = button.get_active()
+        self.view.column_title.set_visible(not active)
+        self.view.column_subtitle.set_visible(active)
+        self.column_collection.set_visible(active)
+        self.column_purpose.set_visible(active)
+        self.column_flag.set_visible(active)
+
+    def _on_sidebar_toggled(self, button, data=None):
+        active = button.get_active()
+        self.sidebar.set_visible(active)
+
     def _on_selection_changed(self, selection, position, n_items):
         self.selected_items = []
         model = selection.get_model()
@@ -120,6 +160,7 @@ class MiAZWorkspace(Gtk.Box):
         self.btnDocsSel.set_label("%d documents selected" % len(self.selected_items))
 
     def _setup_view(self):
+        # ~ frmView = self.factory.create_frame(hexpand=True, vexpand=True)
         widget = self.factory.create_box_vertical(hexpand=True, vexpand=True)
         head = self.factory.create_box_horizontal(margin=0, spacing=0, hexpand=True)
         body = self.factory.create_box_vertical(margin=0, spacing=0, hexpand=True, vexpand=True)
@@ -147,13 +188,30 @@ class MiAZWorkspace(Gtk.Box):
         actionbar = Gtk.ActionBar.new()
         actionbar.set_hexpand(True)
         actionbar.set_vexpand(True)
-        boxEmpty = self.factory.create_box_horizontal(hexpand=True)
-        btnSelectAll = self.factory.create_button('miaz-select-all')
-        btnSelectNone = self.factory.create_button('miaz-select-none')
+
+        self.ent_sb = Gtk.SearchEntry(placeholder_text="Type here")
+        self.ent_sb.connect('changed', self._on_filter_selected)
+        self.ent_sb.set_hexpand(True)
+        # ~ boxEntry = self.factory.create_box_filter('Free search', self.ent_sb)
+
+        # ~ tgbSidebar = self.factory.create_button_toggle('miaz-sidebar', callback=self._on_sidebar_toggled)
+        btnDashboard = self.factory.create_button('MiAZ', '', callback=self.show_dashboard)
+        btnReview = self.factory.create_button('miaz-rename', '', callback=self.show_review)
+        boxEmpty = self.factory.create_box_horizontal(hexpand=False)
+        btnSelectAll = self.factory.create_button('miaz-select-all', callback=self._on_select_all)
+        btnSelectNone = self.factory.create_button('miaz-select-none', callback=self._on_select_none)
+        sep = Gtk.Separator.new(orientation=Gtk.Orientation.VERTICAL)
+        self.tgbExplain = self.factory.create_button_toggle('miaz-magic', callback=self._on_explain_toggled)
+        # ~ actionbar.pack_start(child=tgbSidebar)
+        # ~ actionbar.pack_start(child=btnDashboard)
+        # ~ actionbar.pack_start(child=btnReview)
         actionbar.pack_start(child=boxDocsSelected) #lblFrmView)
-        actionbar.pack_start(child=boxEmpty)
+        actionbar.pack_start(child=self.ent_sb)
+        # ~ actionbar.pack_start(child=boxEmpty)
         actionbar.pack_end(child=btnSelectAll)
         actionbar.pack_end(child=btnSelectNone)
+        actionbar.pack_end(child=sep)
+        actionbar.pack_end(child=self.tgbExplain)
         head.append(actionbar)
         # ~ frmView = self.factory.create_frame(hexpand=True, vexpand=True)
         # ~ frmView.set_label_widget(hbox)
@@ -173,11 +231,35 @@ class MiAZWorkspace(Gtk.Box):
         factory_icon.connect("bind", self._on_factory_bind_icon)
         self.view.column_icon.set_factory(factory_icon)
         self.view.column_icon.set_title("Type")
+
+        # Custom factory for ColumViewColumn collection
+        factory_collection = Gtk.SignalListItemFactory()
+        factory_collection.connect("setup", self._on_factory_setup_collection)
+        factory_collection.connect("bind", self._on_factory_bind_collection)
+        self.column_collection = Gtk.ColumnViewColumn.new("Collection", factory_collection)
+
+        # Custom factory for ColumViewColumn purpose
+        factory_purpose = Gtk.SignalListItemFactory()
+        factory_purpose.connect("setup", self._on_factory_setup_purpose)
+        factory_purpose.connect("bind", self._on_factory_bind_purpose)
+        self.column_purpose = Gtk.ColumnViewColumn.new("Purpose", factory_purpose)
+
+        # Custom factory for ColumViewColumn flag
+        factory_flag = Gtk.SignalListItemFactory()
+        factory_flag.connect("setup", self._on_factory_setup_flag)
+        factory_flag.connect("bind", self._on_factory_bind_flag)
+        self.column_flag = Gtk.ColumnViewColumn.new("Flag", factory_flag)
+
         self.view.cv.append_column(self.view.column_icon)
+        self.view.cv.append_column(self.column_purpose)
         self.view.cv.append_column(self.view.column_title)
+        self.view.cv.append_column(self.view.column_subtitle)
+        self.view.cv.append_column(self.column_collection)
+        self.view.cv.append_column(self.column_flag)
         self.view.cv.set_single_click_activate(False)
         # ~ view.cv.append_column(view.column_active)
         self.view.column_title.set_expand(True)
+        self.view.column_subtitle.set_expand(True)
         self.view.cv.sort_by_column(self.view.column_title, Gtk.SortType.DESCENDING)
         self.view.set_filter(self._do_filter_view)
         self.view.select_first_item()
@@ -188,6 +270,8 @@ class MiAZWorkspace(Gtk.Box):
         selection = self.view.get_selection()
         self._on_signal_filter_connect()
 
+        # ~ frmView.set_child(widget)
+        # ~ return frmView
         return widget
 
     def create_menu_selection_multiple(self):
@@ -272,11 +356,16 @@ class MiAZWorkspace(Gtk.Box):
     def update(self, *args):
         # FIXME: Get dict from backend
         # ~ self._on_signal_filter_disconnect()
+        self._on_explain_toggled(self.tgbExplain)
         repocnf = self.backend.get_repo_source_config_file()
         self.repodct = json_load(repocnf)
+        who = self.app.get_config('organizations')
         items = []
         for path in self.repodct:
-            items.append(File(id=path, title=os.path.basename(path)))
+            # ~ self.log.debug(self.repodct[])
+            fields = self.repodct[path]['fields']
+            explain = "From <b>%s</b> about <b>%s</b> to <b>%s</b>" % (who.get(fields[3]), fields[5], who.get(fields[6]))
+            items.append(File(id=path, title=os.path.basename(path), subtitle=explain))
         self.view.update(items)
         self._on_filter_selected()
         self.update_title()
@@ -369,6 +458,14 @@ class MiAZWorkspace(Gtk.Box):
                             # ~ ]:
             # ~ self.actions.dropdown_populate(self.dropdown[title], item_type, conf)
         # ~ self._on_signal_filter_connect()
+
+    def _on_select_all(self, *args):
+        selection = self.view.get_selection()
+        selection.select_all()
+
+    def _on_select_none(self, *args):
+        selection = self.view.get_selection()
+        selection.unselect_all()
 
     def show_dashboard(self, *args):
         self.displayed = 0

@@ -86,7 +86,7 @@ class MiAZFactory:
             button.connect('clicked', callback, data)
         return button
 
-    def create_button_toggle(self, icon_name: str, title: str, callback=None, css_classes=['circular'], data=None) -> Gtk.ToggleButton:
+    def create_button_toggle(self, icon_name: str = '', title: str = '', callback=None, css_classes=['circular'], data=None) -> Gtk.ToggleButton:
         if len(icon_name.strip()) == 0:
             button = Gtk.ToggleButton(css_classes=css_classes)
             button.set_label(title)
