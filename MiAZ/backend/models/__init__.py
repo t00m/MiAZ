@@ -7,13 +7,14 @@ class MiAZModel(GObject.Object):
     """Custom data model for MiAZ use cases"""
     __gtype_name__ = 'MiAZModel'
 
-    def __init__(self, id: str, title: str = '', subtitle:str = '', active: bool = False, icon: str = ''):
+    def __init__(self, id: str, title: str = '', subtitle:str = '', active: bool = False, valid: bool = False, icon: str = ''):
         super().__init__()
 
         self._id = id
         self._title = title
         self._subtitle = subtitle
         self._active = active
+        self._valid = valid
         self._icon = icon
 
     @GObject.Property
@@ -35,6 +36,14 @@ class MiAZModel(GObject.Object):
     @active.setter
     def active(self, active):
         self._active = active
+
+    @GObject.Property(type=bool, default=False)
+    def valid(self):
+        return self._active
+
+    @valid.setter
+    def valid(self, valid):
+        self._valid = valid
 
     @GObject.Property
     def icon(self):

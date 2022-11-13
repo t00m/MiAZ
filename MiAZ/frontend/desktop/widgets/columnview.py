@@ -5,11 +5,12 @@ import sys
 from abc import abstractmethod
 
 import gi
-gi.require_version('Gtk', '4.0')
 gi.require_version('Adw', '1')
-from gi.repository import Gtk, Adw
+gi.require_version('Gtk', '4.0')
+from gi.repository import Adw
 from gi.repository import Gio
-from gi.repository import GLib
+from gi.repository import Gtk
+from gi.repository import Pango
 
 from MiAZ.backend.models import MiAZModel
 
@@ -197,6 +198,7 @@ class MiAZColumnView(Gtk.Box):
         item = list_item.get_item()
         label = box.get_first_child()
         label.set_markup(item.title)
+        label.get_style_context().add_class(class_name='destructive-action')
 
     def _on_factory_setup_subtitle(self, factory, list_item):
         box = RowSubtitle()
@@ -208,6 +210,8 @@ class MiAZColumnView(Gtk.Box):
         label = box.get_first_child()
         label.set_markup(item.subtitle)
         label.set_ellipsize(True)
+        label.set_property('ellipsize', Pango.EllipsizeMode.MIDDLE)
+        label.get_style_context().add_class(class_name='destructive-action')
 
     def _on_factory_setup_active(self, factory, list_item):
         box = RowActive()

@@ -38,30 +38,31 @@ class MiAZWorkspace(Gtk.Box):
         self.set_margin_end(margin=6)
         self.set_margin_bottom(margin=6)
         self.set_margin_start(margin=6)
-        self.sidebar = self._setup_toolbar()
+        self.toolbar_filters = self._setup_toolbar_filters()
         frmView = self._setup_view()
-        self.append(self.sidebar)
+        # ~ self.append(self.toolbar_filters)
         self.append(frmView)
 
 
-    def _setup_toolbar(self):
-        widget = self.factory.create_box_vertical(hexpand=False, vexpand=True)
-        head = self.factory.create_box_horizontal(margin=0, spacing=0, hexpand=True)
-        body = self.factory.create_box_vertical(margin=0, spacing=0, hexpand=True, vexpand=True)
+    def _setup_toolbar_filters(self):
+        widget = self.factory.create_box_horizontal(hexpand=True, vexpand=False)
+        # ~ head = self.factory.create_box_horizontal(margin=0, spacing=0, hexpand=True)
+        body = self.factory.create_box_horizontal(margin=3, spacing=6, hexpand=True, vexpand=True)
+        body.set_homogeneous(True)
         body.set_margin_top(margin=6)
-        widget.append(head)
+        # ~ widget.append(head)
         widget.append(body)
 
-        actionbar = Gtk.ActionBar.new()
-        actionbar.set_hexpand(True)
-        actionbar.set_vexpand(True)
-        lblToolbar = self.factory.create_label('<big><b>Filters</b></big>')
-        boxEmpty = self.factory.create_box_horizontal(hexpand=True)
-        btnClear = self.factory.create_button('miaz-entry-clear')
-        actionbar.pack_start(lblToolbar)
-        actionbar.pack_start(boxEmpty)
-        actionbar.pack_end(btnClear)
-        head.append(actionbar)
+        # ~ actionbar = Gtk.ActionBar.new()
+        # ~ actionbar.set_hexpand(True)
+        # ~ actionbar.set_vexpand(True)
+        # ~ lblToolbar = self.factory.create_label('<big><b>Filters</b></big>')
+        # ~ boxEmpty = self.factory.create_box_horizontal(hexpand=True)
+        # ~ btnClear = self.factory.create_button('miaz-entry-clear')
+        # ~ actionbar.pack_start(lblToolbar)
+        # ~ actionbar.pack_start(boxEmpty)
+        # ~ actionbar.pack_end(btnClear)
+        # ~ head.append(actionbar)
 
         # ~ self.ent_sb = Gtk.SearchEntry(placeholder_text="Type here")
         # ~ self.ent_sb.connect('changed', self._on_filter_selected)
@@ -146,9 +147,9 @@ class MiAZWorkspace(Gtk.Box):
         self.column_purpose.set_visible(active)
         self.column_flag.set_visible(active)
 
-    def _on_sidebar_toggled(self, button, data=None):
+    def _on_filters_toggled(self, button, data=None):
         active = button.get_active()
-        self.sidebar.set_visible(active)
+        self.toolbar_filters.set_visible(active)
 
     def _on_selection_changed(self, selection, position, n_items):
         self.selected_items = []
@@ -163,7 +164,7 @@ class MiAZWorkspace(Gtk.Box):
     def _setup_view(self):
         # ~ frmView = self.factory.create_frame(hexpand=True, vexpand=True)
         widget = self.factory.create_box_vertical(hexpand=True, vexpand=True)
-        head = self.factory.create_box_horizontal(margin=0, spacing=0, hexpand=True)
+        head = self.factory.create_box_vertical(margin=0, spacing=0, hexpand=True)
         body = self.factory.create_box_vertical(margin=0, spacing=0, hexpand=True, vexpand=True)
         widget.append(head)
         widget.append(body)
@@ -203,17 +204,21 @@ class MiAZWorkspace(Gtk.Box):
         btnSelectNone = self.factory.create_button('miaz-select-none', callback=self._on_select_none)
         sep = Gtk.Separator.new(orientation=Gtk.Orientation.VERTICAL)
         self.tgbExplain = self.factory.create_button_toggle('miaz-magic', callback=self._on_explain_toggled)
+        tgbFilters = self.factory.create_button_toggle('miaz-filters', callback=self._on_filters_toggled)
+        tgbFilters.set_active(True)
         # ~ actionbar.pack_start(child=tgbSidebar)
         # ~ actionbar.pack_start(child=btnDashboard)
         # ~ actionbar.pack_start(child=btnReview)
         actionbar.pack_start(child=boxDocsSelected) #lblFrmView)
         actionbar.pack_start(child=self.ent_sb)
         # ~ actionbar.pack_start(child=boxEmpty)
-        actionbar.pack_end(child=btnSelectAll)
+        actionbar.pack_end(child=tgbFilters)
         actionbar.pack_end(child=btnSelectNone)
+        actionbar.pack_end(child=btnSelectAll)
         actionbar.pack_end(child=sep)
         actionbar.pack_end(child=self.tgbExplain)
         head.append(actionbar)
+        head.append(self.toolbar_filters)
         # ~ frmView = self.factory.create_frame(hexpand=True, vexpand=True)
         # ~ frmView.set_label_widget(hbox)
         # ~ label_widget = frmView.get_label_widget()
@@ -364,9 +369,10 @@ class MiAZWorkspace(Gtk.Box):
         items = []
         for path in self.repodct:
             # ~ self.log.debug(self.repodct[])
+            valid = self.repodct[path]['valid']
             fields = self.repodct[path]['fields']
             explain = "From <b>%s</b> about <b>%s</b> to <b>%s</b>" % (who.get(fields[3]), fields[5], who.get(fields[6]))
-            items.append(File(id=path, title=os.path.basename(path), subtitle=explain))
+            items.append(File(id=path, title=os.path.basename(path), subtitle=explain, valid=valid))
         self.view.update(items)
         self._on_filter_selected()
         self.update_title()

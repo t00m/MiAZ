@@ -111,6 +111,7 @@ class MiAZFactory:
         def _on_factory_setup(factory, list_item):
             box = Gtk.Box(spacing=6, orientation=Gtk.Orientation.HORIZONTAL)
             label = Gtk.Label()
+            label.set_property('ellipsize', Pango.EllipsizeMode.MIDDLE)
             box.append(label)
             list_item.set_child(box)
 
