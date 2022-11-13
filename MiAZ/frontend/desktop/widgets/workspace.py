@@ -48,6 +48,7 @@ class MiAZWorkspace(Gtk.Box):
         widget = self.factory.create_box_vertical(hexpand=False, vexpand=True)
         head = self.factory.create_box_horizontal(margin=0, spacing=0, hexpand=True)
         body = self.factory.create_box_vertical(margin=0, spacing=0, hexpand=True, vexpand=True)
+        body.set_margin_top(margin=6)
         widget.append(head)
         widget.append(body)
 
