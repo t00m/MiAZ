@@ -99,6 +99,17 @@ class MiAZWorkspace(Gtk.Box):
         collection = self.repodct[item.id]['fields'][2]
         label.set_markup(collection)
 
+    def _on_factory_setup_from(self, factory, list_item):
+        box = RowTitle()
+        list_item.set_child(box)
+
+    def _on_factory_bind_from(self, factory, list_item):
+        box = list_item.get_child()
+        item = list_item.get_item()
+        label = box.get_first_child()
+        # ~ ffrom = self.repodct[item.id]['fields'][3]
+        label.set_markup(item.from_dsc)
+
     def _on_factory_setup_purpose(self, factory, list_item):
         box = RowTitle()
         list_item.set_child(box)
@@ -146,6 +157,7 @@ class MiAZWorkspace(Gtk.Box):
         self.column_collection.set_visible(active)
         self.column_purpose.set_visible(active)
         self.column_flag.set_visible(active)
+        self.column_from.set_visible(active)
 
     def _on_filters_toggled(self, button, data=None):
         active = button.get_active()
@@ -207,8 +219,8 @@ class MiAZWorkspace(Gtk.Box):
         tgbFilters = self.factory.create_button_toggle('miaz-filters', callback=self._on_filters_toggled)
         tgbFilters.set_active(True)
         # ~ actionbar.pack_start(child=tgbSidebar)
-        # ~ actionbar.pack_start(child=btnDashboard)
-        # ~ actionbar.pack_start(child=btnReview)
+        actionbar.pack_start(child=btnDashboard)
+        actionbar.pack_start(child=btnReview)
         actionbar.pack_start(child=boxDocsSelected) #lblFrmView)
         actionbar.pack_start(child=self.ent_sb)
         # ~ actionbar.pack_start(child=boxEmpty)
@@ -243,21 +255,32 @@ class MiAZWorkspace(Gtk.Box):
         factory_collection.connect("setup", self._on_factory_setup_collection)
         factory_collection.connect("bind", self._on_factory_bind_collection)
         self.column_collection = Gtk.ColumnViewColumn.new("Collection", factory_collection)
+        self.column_collection.set_sorter(self.view.prop_collection_sorter)
+
+        # Custom factory for ColumViewColumn from
+        factory_from = Gtk.SignalListItemFactory()
+        factory_from.connect("setup", self._on_factory_setup_from)
+        factory_from.connect("bind", self._on_factory_bind_from)
+        self.column_from = Gtk.ColumnViewColumn.new("From", factory_from)
+        # ~ self.column_from.set_sorter(self.view.prop_from_sorter)
 
         # Custom factory for ColumViewColumn purpose
         factory_purpose = Gtk.SignalListItemFactory()
         factory_purpose.connect("setup", self._on_factory_setup_purpose)
         factory_purpose.connect("bind", self._on_factory_bind_purpose)
         self.column_purpose = Gtk.ColumnViewColumn.new("Purpose", factory_purpose)
+        self.column_purpose.set_sorter(self.view.prop_purpose_sorter)
 
         # Custom factory for ColumViewColumn flag
         factory_flag = Gtk.SignalListItemFactory()
         factory_flag.connect("setup", self._on_factory_setup_flag)
         factory_flag.connect("bind", self._on_factory_bind_flag)
         self.column_flag = Gtk.ColumnViewColumn.new("Flag", factory_flag)
+        self.column_flag.set_sorter(self.view.prop_country_sorter)
 
         self.view.cv.append_column(self.view.column_icon)
         self.view.cv.append_column(self.column_purpose)
+        self.view.cv.append_column(self.column_from)
         self.view.cv.append_column(self.view.column_title)
         self.view.cv.append_column(self.view.column_subtitle)
         self.view.cv.append_column(self.column_collection)
@@ -371,8 +394,15 @@ class MiAZWorkspace(Gtk.Box):
             # ~ self.log.debug(self.repodct[])
             valid = self.repodct[path]['valid']
             fields = self.repodct[path]['fields']
-            explain = "From <b>%s</b> about <b>%s</b> to <b>%s</b>" % (who.get(fields[3]), fields[5], who.get(fields[6]))
-            items.append(File(id=path, title=os.path.basename(path), subtitle=explain, valid=valid))
+            explain = "<b>%s</b> to <b>%s</b>" % (fields[5], who.get(fields[6]))
+            items.append(File(  id=path,
+                                country=fields[1],
+                                purpose=fields[4],
+                                from_id=fields[3],
+                                from_dsc=who.get(fields[3]),
+                                title=os.path.basename(path),
+                                subtitle=explain,
+                                valid=valid))
         self.view.update(items)
         self._on_filter_selected()
         self.update_title()

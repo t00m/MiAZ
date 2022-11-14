@@ -106,12 +106,13 @@ class MiAZFactory:
             button.connect('toggled', callback, data)
         return button
 
-    def create_dropdown_generic(self, item_type):
+    def create_dropdown_generic(self, item_type, ellipsize=True):
 
-        def _on_factory_setup(factory, list_item):
+        def _on_factory_setup(factory, list_item, ellipsize):
             box = Gtk.Box(spacing=6, orientation=Gtk.Orientation.HORIZONTAL)
             label = Gtk.Label()
-            label.set_property('ellipsize', Pango.EllipsizeMode.MIDDLE)
+            if ellipsize:
+                label.set_property('ellipsize', Pango.EllipsizeMode.MIDDLE)
             box.append(label)
             list_item.set_child(box)
 
@@ -126,7 +127,7 @@ class MiAZFactory:
 
         # Set up the factory
         factory = Gtk.SignalListItemFactory()
-        factory.connect("setup", _on_factory_setup)
+        factory.connect("setup", _on_factory_setup, ellipsize)
         factory.connect("bind", _on_factory_bind)
 
         dropdown = Gtk.DropDown(model=model, factory=factory, hexpand=True)

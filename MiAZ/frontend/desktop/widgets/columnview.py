@@ -96,13 +96,16 @@ class MiAZColumnView(Gtk.Box):
         # Setup ColumnView Widget
         self.cv = Gtk.ColumnView()
         # ~ self.cv.get_style_context().add_class(class_name='monospace')
-        # ~ self.cv.set_show_column_separators(True)
+        self.cv.set_show_column_separators(True)
         self.cv.set_show_row_separators(True)
         self.cv.set_single_click_activate(True)
         scrwin.set_child(self.cv)
 
         # Sorters
         self.prop_id_sorter = Gtk.CustomSorter.new(sort_func=self._on_sort_string_func, user_data='id')
+        self.prop_collection_sorter = Gtk.CustomSorter.new(sort_func=self._on_sort_string_func, user_data='collection')
+        self.prop_country_sorter = Gtk.CustomSorter.new(sort_func=self._on_sort_string_func, user_data='country')
+        self.prop_purpose_sorter = Gtk.CustomSorter.new(sort_func=self._on_sort_string_func, user_data='purpose')
         self.prop_title_sorter = Gtk.CustomSorter.new(sort_func=self._on_sort_string_func, user_data='title')
         self.prop_subtitle_sorter = Gtk.CustomSorter.new(sort_func=self._on_sort_string_func, user_data='subtitle')
 
@@ -259,6 +262,7 @@ class MiAZColumnView(Gtk.Box):
         print(item.id)
 
     def _on_sort_string_func(self, item1, item2, prop):
+        print("%s %s %s" % (prop, item1, item2))
         if eval("item1.%s.upper()" % prop) > eval("item2.%s.upper()" % prop):
             return Gtk.Ordering.LARGER
         elif eval("item1.%s.upper()" % prop) < eval("item2.%s.upper()" % prop):
