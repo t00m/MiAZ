@@ -2,6 +2,9 @@
 # -*- coding: utf-8 -*-
 
 import os
+from datetime import datetime
+
+import humanize
 
 import gi
 gi.require_version('Gtk', '4.0')
@@ -99,6 +102,17 @@ class MiAZWorkspace(Gtk.Box):
         collection = self.repodct[item.id]['fields'][2]
         label.set_markup(collection)
 
+    def _on_factory_setup_date(self, factory, list_item):
+        box = RowTitle()
+        list_item.set_child(box)
+
+    def _on_factory_bind_date(self, factory, list_item):
+        box = list_item.get_child()
+        item = list_item.get_item()
+        label = box.get_first_child()
+        date = item.date_dsc
+        label.set_markup(date)
+
     def _on_factory_setup_from(self, factory, list_item):
         box = RowTitle()
         list_item.set_child(box)
@@ -168,6 +182,7 @@ class MiAZWorkspace(Gtk.Box):
         self.column_flag.set_visible(active)
         self.column_from.set_visible(active)
         self.column_to.set_visible(active)
+        self.column_date.set_visible(active)
 
     def _on_filters_toggled(self, button, data=None):
         active = button.get_active()
@@ -191,13 +206,13 @@ class MiAZWorkspace(Gtk.Box):
         widget.append(head)
         widget.append(body)
 
-        mnuSelMulti = self.create_menu_selection_multiple()
+        self.mnuSelMulti = self.create_menu_selection_multiple()
         # Documents selected
         boxDocsSelected = Gtk.CenterBox()
         self.lblDocumentsSelected = "No documents selected"
         self.btnDocsSel = Gtk.MenuButton()
         self.btnDocsSel.set_label(self.lblDocumentsSelected)
-        self.popDocsSel = Gtk.PopoverMenu.new_from_model(mnuSelMulti)
+        self.popDocsSel = Gtk.PopoverMenu.new_from_model(self.mnuSelMulti)
         self.btnDocsSel.set_popover(popover=self.popDocsSel)
         self.btnDocsSel.set_valign(Gtk.Align.CENTER)
         self.btnDocsSel.set_hexpand(False)
@@ -288,6 +303,13 @@ class MiAZWorkspace(Gtk.Box):
         self.column_to = Gtk.ColumnViewColumn.new("To", factory_to)
         # ~ self.column_to.set_sorter(self.view.prop_to_sorter)
 
+         # Custom factory for ColumViewColumn to
+        factory_date = Gtk.SignalListItemFactory()
+        factory_date.connect("setup", self._on_factory_setup_date)
+        factory_date.connect("bind", self._on_factory_bind_date)
+        self.column_date = Gtk.ColumnViewColumn.new("Date", factory_date)
+        # ~ self.column_date.set_sorter(self.view.prop_date_sorter)
+
         # Custom factory for ColumViewColumn flag
         factory_flag = Gtk.SignalListItemFactory()
         factory_flag.connect("setup", self._on_factory_setup_flag)
@@ -299,8 +321,11 @@ class MiAZWorkspace(Gtk.Box):
         self.view.cv.append_column(self.column_purpose)
         self.view.cv.append_column(self.column_from)
         self.view.cv.append_column(self.view.column_title)
+        self.view.column_title.set_header_menu(self.mnuSelMulti)
         self.view.cv.append_column(self.view.column_subtitle)
+        self.view.column_subtitle.set_header_menu(self.mnuSelMulti)
         self.view.cv.append_column(self.column_to)
+        self.view.cv.append_column(self.column_date)
         self.view.cv.append_column(self.column_collection)
         self.view.cv.append_column(self.column_flag)
         self.view.cv.set_single_click_activate(False)
@@ -412,8 +437,14 @@ class MiAZWorkspace(Gtk.Box):
             # ~ self.log.debug(self.repodct[])
             valid = self.repodct[path]['valid']
             fields = self.repodct[path]['fields']
-            # ~ self.log.debug("%s > %s", path, fields)
+            try:
+                adate = datetime.strptime(fields[0], "%Y%m%d")
+                date_dsc = humanize.naturaldate(adate)
+            except:
+                date_dsc = ''
             items.append(File(  id=path,
+                                date=fields[0],
+                                date_dsc = date_dsc,
                                 country=fields[1],
                                 purpose=fields[4],
                                 from_id=fields[3],

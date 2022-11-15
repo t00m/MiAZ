@@ -8,6 +8,8 @@ class MiAZModel(GObject.Object):
     __gtype_name__ = 'MiAZModel'
 
     def __init__(self,  id: str,
+                        date: str = '',
+                        date_dsc: str = '',
                         collection: str = '',
                         country: str = '',
                         purpose: str = '',
@@ -23,6 +25,8 @@ class MiAZModel(GObject.Object):
         super().__init__()
 
         self._id = id
+        self._date = date
+        self._date_dsc = date_dsc
         self._collection = collection
         self._country = country
         self._purpose = purpose
@@ -39,6 +43,14 @@ class MiAZModel(GObject.Object):
     @GObject.Property
     def id(self):
         return self._id
+
+    @GObject.Property
+    def date(self):
+        return self._date
+
+    @GObject.Property
+    def date_dsc(self):
+        return self._date_dsc
 
     @GObject.Property
     def collection(self):
