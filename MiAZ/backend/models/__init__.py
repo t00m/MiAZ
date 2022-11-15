@@ -15,6 +15,8 @@ class MiAZModel(GObject.Object):
                         from_dsc: str = '',
                         title: str = '',
                         subtitle:str = '',
+                        to_id: str = '',
+                        to_dsc: str = '',
                         active: bool = False,
                         valid: bool = False,
                         icon: str = ''):
@@ -28,6 +30,8 @@ class MiAZModel(GObject.Object):
         self._from_dsc = from_dsc
         self._title = title
         self._subtitle = subtitle
+        self._to_id = to_id
+        self._to_dsc = to_dsc
         self._active = active
         self._valid = valid
         self._icon = icon
@@ -53,8 +57,16 @@ class MiAZModel(GObject.Object):
         return self._from_id
 
     @GObject.Property
+    def to_id(self):
+        return self._to_id
+
+    @GObject.Property
     def from_dsc(self):
         return self._from_dsc
+
+    @GObject.Property
+    def to_dsc(self):
+        return self._to_dsc
 
     @GObject.Property
     def title(self):

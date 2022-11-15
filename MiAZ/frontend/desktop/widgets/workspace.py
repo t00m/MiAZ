@@ -107,8 +107,17 @@ class MiAZWorkspace(Gtk.Box):
         box = list_item.get_child()
         item = list_item.get_item()
         label = box.get_first_child()
-        # ~ ffrom = self.repodct[item.id]['fields'][3]
         label.set_markup(item.from_dsc)
+
+    def _on_factory_setup_to(self, factory, list_item):
+        box = RowTitle()
+        list_item.set_child(box)
+
+    def _on_factory_bind_to(self, factory, list_item):
+        box = list_item.get_child()
+        item = list_item.get_item()
+        label = box.get_first_child()
+        label.set_markup(item.to_dsc)
 
     def _on_factory_setup_purpose(self, factory, list_item):
         box = RowTitle()
@@ -158,6 +167,7 @@ class MiAZWorkspace(Gtk.Box):
         self.column_purpose.set_visible(active)
         self.column_flag.set_visible(active)
         self.column_from.set_visible(active)
+        self.column_to.set_visible(active)
 
     def _on_filters_toggled(self, button, data=None):
         active = button.get_active()
@@ -271,6 +281,13 @@ class MiAZWorkspace(Gtk.Box):
         self.column_purpose = Gtk.ColumnViewColumn.new("Purpose", factory_purpose)
         self.column_purpose.set_sorter(self.view.prop_purpose_sorter)
 
+        # Custom factory for ColumViewColumn to
+        factory_to = Gtk.SignalListItemFactory()
+        factory_to.connect("setup", self._on_factory_setup_to)
+        factory_to.connect("bind", self._on_factory_bind_to)
+        self.column_to = Gtk.ColumnViewColumn.new("To", factory_to)
+        # ~ self.column_to.set_sorter(self.view.prop_to_sorter)
+
         # Custom factory for ColumViewColumn flag
         factory_flag = Gtk.SignalListItemFactory()
         factory_flag.connect("setup", self._on_factory_setup_flag)
@@ -283,6 +300,7 @@ class MiAZWorkspace(Gtk.Box):
         self.view.cv.append_column(self.column_from)
         self.view.cv.append_column(self.view.column_title)
         self.view.cv.append_column(self.view.column_subtitle)
+        self.view.cv.append_column(self.column_to)
         self.view.cv.append_column(self.column_collection)
         self.view.cv.append_column(self.column_flag)
         self.view.cv.set_single_click_activate(False)
@@ -394,14 +412,16 @@ class MiAZWorkspace(Gtk.Box):
             # ~ self.log.debug(self.repodct[])
             valid = self.repodct[path]['valid']
             fields = self.repodct[path]['fields']
-            explain = "<b>%s</b> to <b>%s</b>" % (fields[5], who.get(fields[6]))
+            # ~ self.log.debug("%s > %s", path, fields)
             items.append(File(  id=path,
                                 country=fields[1],
                                 purpose=fields[4],
                                 from_id=fields[3],
                                 from_dsc=who.get(fields[3]),
                                 title=os.path.basename(path),
-                                subtitle=explain,
+                                subtitle=fields[5],
+                                to_id=fields[6],
+                                to_dsc=who.get(fields[6]),
                                 valid=valid))
         self.view.update(items)
         self._on_filter_selected()

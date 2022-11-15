@@ -88,7 +88,7 @@ class MiAZConfig():
         try:
             return config[key]
         except KeyError:
-            return None
+            return ''
 
     def set(self, key: str, value: str) -> None:
         config = self.load()

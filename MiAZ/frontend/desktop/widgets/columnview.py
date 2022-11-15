@@ -262,7 +262,7 @@ class MiAZColumnView(Gtk.Box):
         print(item.id)
 
     def _on_sort_string_func(self, item1, item2, prop):
-        print("%s %s %s" % (prop, item1, item2))
+        # ~ print("%s %s %s" % (prop, eval("item1.%s.upper()" % prop), eval("item2.%s.upper()" % prop)))
         if eval("item1.%s.upper()" % prop) > eval("item2.%s.upper()" % prop):
             return Gtk.Ordering.LARGER
         elif eval("item1.%s.upper()" % prop) < eval("item2.%s.upper()" % prop):
