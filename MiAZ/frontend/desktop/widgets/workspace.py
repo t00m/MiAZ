@@ -14,7 +14,7 @@ from gi.repository import GObject
 
 from MiAZ.backend.env import ENV
 from MiAZ.backend.log import get_logger
-from MiAZ.backend.util import json_load
+from MiAZ.backend.util import json_load, timerfunc
 from MiAZ.backend.models import File, Collection, Person, Country, Purpose, Concept
 from MiAZ.frontend.desktop.util import get_file_mimetype
 from MiAZ.frontend.desktop.widgets.columnview import MiAZColumnView, RowIcon, RowTitle
@@ -27,6 +27,7 @@ class MiAZWorkspace(Gtk.Box):
     switched = set()
     dfilter = {}
     signals = set()
+    num_review = 0
 
     def __init__(self, app):
         super(MiAZWorkspace, self).__init__(orientation=Gtk.Orientation.HORIZONTAL)
@@ -196,7 +197,7 @@ class MiAZWorkspace(Gtk.Box):
             pos = bitset.get_nth(index)
             item = model.get_item(pos)
             self.selected_items.append(item)
-        self.btnDocsSel.set_label("%d documents selected" % len(self.selected_items))
+        self.btnDocsSel.set_label("%d of %d documents selected" % (len(self.selected_items), len(self.repodct)))
 
     def _setup_view(self):
         # ~ frmView = self.factory.create_frame(hexpand=True, vexpand=True)
@@ -234,22 +235,23 @@ class MiAZWorkspace(Gtk.Box):
         # ~ boxEntry = self.factory.create_box_filter('Free search', self.ent_sb)
 
         # ~ tgbSidebar = self.factory.create_button_toggle('miaz-sidebar', callback=self._on_sidebar_toggled)
-        btnDashboard = self.factory.create_button('MiAZ', '', callback=self.show_dashboard)
-        btnReview = self.factory.create_button('miaz-rename', '', callback=self.show_review)
+        # ~ btnDashboard = self.factory.create_button('MiAZ', '', callback=self.show_dashboard)
+        # ~ btnReview = self.factory.create_button('miaz-rename', '', callback=self.show_review)
         boxEmpty = self.factory.create_box_horizontal(hexpand=False)
         btnSelectAll = self.factory.create_button('miaz-select-all', callback=self._on_select_all)
         btnSelectNone = self.factory.create_button('miaz-select-none', callback=self._on_select_none)
         sep = Gtk.Separator.new(orientation=Gtk.Orientation.VERTICAL)
         self.tgbExplain = self.factory.create_button_toggle('miaz-magic', callback=self._on_explain_toggled)
-        tgbFilters = self.factory.create_button_toggle('miaz-filters', callback=self._on_filters_toggled)
-        tgbFilters.set_active(True)
+        self.tgbFilters = self.factory.create_button_toggle('miaz-filters', callback=self._on_filters_toggled)
+        self.tgbFilters.set_active(False)
+        self._on_filters_toggled(self.tgbFilters)
         # ~ actionbar.pack_start(child=tgbSidebar)
-        actionbar.pack_start(child=btnDashboard)
-        actionbar.pack_start(child=btnReview)
+        # ~ actionbar.pack_start(child=btnDashboard)
+        # ~ actionbar.pack_start(child=btnReview)
         actionbar.pack_start(child=boxDocsSelected) #lblFrmView)
         actionbar.pack_start(child=self.ent_sb)
         # ~ actionbar.pack_start(child=boxEmpty)
-        actionbar.pack_end(child=tgbFilters)
+        actionbar.pack_end(child=self.tgbFilters)
         actionbar.pack_end(child=btnSelectNone)
         actionbar.pack_end(child=btnSelectAll)
         actionbar.pack_end(child=sep)
@@ -458,8 +460,9 @@ class MiAZWorkspace(Gtk.Box):
         self.view.update(items)
         self._on_filter_selected()
         self.update_title()
-        # ~ self.actions.dropdown_populate(self.dropdown['country'], Country, 'countries', True, self.dfilter['country'])
-        # ~ self._on_signal_filter_connect()
+        if self.show_dashboard:
+            self.tgbExplain.set_active(True)
+        self.lblDocumentsSelected = "0 of %d documents selected" % len(self.repodct)
 
     # ~ def update_filters(self, item, ival):
         # ~ n = 0
@@ -492,12 +495,15 @@ class MiAZWorkspace(Gtk.Box):
         return item.id == id
 
     def _do_filter_view(self, item, filter_list_model):
-        return True
+        # ~ return True
         # ~ self.log.debug(item.id)
         # ~ valid = self.repodct[item.id]['valid']
         # ~ self.log.debug("%s > %s > %s", item.id, valid, item.valid)
 
         # ~ fields = self.repodct[item.id]['fields']
+        if not item.valid:
+            self.num_review += 1
+
         display = False
         if self.show_dashboard:
             if item.valid:
@@ -535,12 +541,17 @@ class MiAZWorkspace(Gtk.Box):
         sigid = selection.connect('selection-changed', self._on_selection_changed)
         self.signals.add((selection, sigid))
 
-
     def _on_filter_selected(self, *args):
         self.displayed = 0
+        self.num_review = 0
         self.dfilter = {}
         self.view.refilter()
         self.update_title()
+        if self.num_review > 0:
+            btnDashboard = self.app.get_button_dashboard()
+            btnReview = self.app.get_button_review()
+            btnReview.set_visible(True)
+            btnDashboard.set_visible(False)
         # FIXME:
         # ~ self.log.debug(self.dfilter)
         # ~
@@ -562,10 +573,21 @@ class MiAZWorkspace(Gtk.Box):
 
     def show_dashboard(self, *args):
         self.displayed = 0
+        self.num_review = 0
         self.dfilter = {}
         self.show_dashboard = True
         self.view.refilter()
         self.update_title()
+        self.tgbExplain.set_active(True)
+        self.tgbExplain.set_visible(True)
+        self.tgbFilters.set_visible(True)
+        btnDashboard = self.app.get_button_dashboard()
+        btnReview = self.app.get_button_review()
+        if self.num_review > 0:
+            btnDashboard = self.app.get_button_dashboard()
+            btnReview = self.app.get_button_review()
+            btnReview.set_visible(True)
+            btnDashboard.set_visible(False)
 
     def show_review(self, *args):
         self.displayed = 0
@@ -573,6 +595,13 @@ class MiAZWorkspace(Gtk.Box):
         self.show_dashboard = False
         self.view.refilter()
         self.update_title()
+        btnDashboard = self.app.get_button_dashboard()
+        btnReview = self.app.get_button_review()
+        btnDashboard.set_visible(True)
+        btnReview.set_visible(False)
+        self.tgbExplain.set_active(False)
+        self.tgbExplain.set_visible(False)
+        self.tgbFilters.set_visible(False)
 
     def foreach(self):
         last = self.model_filter.get_n_items()

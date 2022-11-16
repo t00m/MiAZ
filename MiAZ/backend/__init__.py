@@ -13,6 +13,7 @@ from MiAZ.backend.util import valid_key
 from MiAZ.backend.util import guess_datetime
 from MiAZ.backend.util import get_files
 from MiAZ.backend.util import get_file_creation_date
+from MiAZ.backend.util import timerfunc
 from MiAZ.backend.watcher import MiAZWatcher
 from MiAZ.backend.config import MiAZConfigApp
 from MiAZ.backend.config import MiAZConfigSettingsCountries
@@ -76,7 +77,6 @@ class MiAZBackend(GObject.GObject):
             s_repodct = {}
             json_save(s_repocnf, s_repodct)
         return s_repodct
-
 
     def check_source(self, *args):
         s_repodir = self.conf['app'].get('source')

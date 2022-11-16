@@ -141,6 +141,12 @@ class MiAZApp(Adw.Application):
                                 ]:
             self.factory.create_menu_action(action, self.menu_handler, shortcut)
 
+    def get_button_dashboard(self):
+        return self.btnDashboard
+
+    def get_button_review(self):
+        return self.btnReview
+
     def menu_handler(self, action, state):
             """ Callback for  menu actions"""
             name = action.get_name()
