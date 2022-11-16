@@ -446,6 +446,7 @@ class MiAZWorkspace(Gtk.Box):
                                 date=fields[0],
                                 date_dsc = date_dsc,
                                 country=fields[1],
+                                collection=fields[2],
                                 purpose=fields[4],
                                 from_id=fields[3],
                                 from_dsc=who.get(fields[3]),
@@ -460,17 +461,17 @@ class MiAZWorkspace(Gtk.Box):
         # ~ self.actions.dropdown_populate(self.dropdown['country'], Country, 'countries', True, self.dfilter['country'])
         # ~ self._on_signal_filter_connect()
 
-    def update_filters(self, item, ival):
-        n = 0
-        for field in ['date', 'country', 'collection', 'from', 'purpose', 'concept', 'to']:
-            try:
-                values = self.dfilter[field]
-                values.add(ival[n])
-            except Exception as error:
-                values = set()
-                values.add(ival[n])
-                self.dfilter[field] = values
-            n += 1
+    # ~ def update_filters(self, item, ival):
+        # ~ n = 0
+        # ~ for field in ['date', 'country', 'collection', 'from', 'purpose', 'concept', 'to']:
+            # ~ try:
+                # ~ values = self.dfilter[field]
+                # ~ values.add(ival[n])
+            # ~ except Exception as error:
+                # ~ values = set()
+                # ~ values.add(ival[n])
+                # ~ self.dfilter[field] = values
+            # ~ n += 1
 
     def update_title(self):
         # ~ label = self.factory.create_label(text= "Displaying %d of %d documents" % (self.displayed, len(self.repodct)))
@@ -491,24 +492,28 @@ class MiAZWorkspace(Gtk.Box):
         return item.id == id
 
     def _do_filter_view(self, item, filter_list_model):
-        valid = self.repodct[item.id]['valid']
-        fields = self.repodct[item.id]['fields']
+        return True
+        # ~ self.log.debug(item.id)
+        # ~ valid = self.repodct[item.id]['valid']
+        # ~ self.log.debug("%s > %s > %s", item.id, valid, item.valid)
+
+        # ~ fields = self.repodct[item.id]['fields']
         display = False
         if self.show_dashboard:
-            if valid:
+            if item.valid:
                 c0 = self._do_eval_cond_matches_freetext(item.id)
-                c1 = self._do_eval_cond_matches(self.dropdown['country'], fields[1])
-                c2 = self._do_eval_cond_matches(self.dropdown['collection'], fields[2])
-                c3 = self._do_eval_cond_matches(self.dropdown['from'], fields[3])
-                c4 = self._do_eval_cond_matches(self.dropdown['purpose'], fields[4])
-                c6 = self._do_eval_cond_matches(self.dropdown['to'], fields[6])
+                c1 = self._do_eval_cond_matches(self.dropdown['country'], item.country)
+                c2 = self._do_eval_cond_matches(self.dropdown['collection'], item.collection)
+                c3 = self._do_eval_cond_matches(self.dropdown['from'], item.from_id)
+                c4 = self._do_eval_cond_matches(self.dropdown['purpose'], item.purpose)
+                c6 = self._do_eval_cond_matches(self.dropdown['to'], item.to_id)
                 display = c0 and c1 and c2 and c3 and c4 and c6
         else:
-            if not valid:
+            if not item.valid:
                 display = self._do_eval_cond_matches_freetext(item.id)
 
         if display:
-            self.update_filters(item, fields)
+            # ~ self.update_filters(item, fields)
             self.displayed += 1
 
         return display

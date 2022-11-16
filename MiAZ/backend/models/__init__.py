@@ -98,7 +98,7 @@ class MiAZModel(GObject.Object):
 
     @GObject.Property(type=bool, default=False)
     def valid(self):
-        return self._active
+        return self._valid
 
     @valid.setter
     def valid(self, valid):

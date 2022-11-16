@@ -112,14 +112,15 @@ class MiAZApp(Adw.Application):
         self.page_workspace.set_visible(True)
         self.show_stack_page_by_name('workspace')
 
-
-
-        # ~ boxDashboardButtons = Gtk.Box(spacing=3, orientation=Gtk.Orientation.HORIZONTAL, homogeneous=True)
-        # ~ btnDashboard = self.factory.create_button('miaz-dashboard-ok', 'Dashboard', callback=self.workspace.show_dashboard, css_classes=['flat', 'linked', 'toolbar'])
-        # ~ btnReview = self.factory.create_button('miaz-dashboard-ko', 'Review', callback=self.workspace.show_review, css_classes=['flat', 'linked', 'toolbar'])
-        # ~ boxDashboardButtons.append(btnDashboard)
-        # ~ boxDashboardButtons.append(btnReview)
-        # ~ self.header.pack_start(tgbSidebar)
+        # Headerbar: Left side
+        boxDashboardButtons = Gtk.Box(spacing=3, orientation=Gtk.Orientation.HORIZONTAL, homogeneous=True)
+        self.btnDashboard = self.factory.create_button('MiAZ', 'Back to AZ', callback=self.workspace.show_dashboard, css_classes=['flat', 'linked', 'toolbar'])
+        self.btnDashboard.set_visible(False)
+        self.btnReview = self.factory.create_button('miaz-rename', 'Review', callback=self.workspace.show_review, css_classes=['flat', 'linked', 'toolbar'])
+        self.btnReview.set_visible(False)
+        boxDashboardButtons.append(self.btnDashboard)
+        boxDashboardButtons.append(self.btnReview)
+        self.header.pack_start(boxDashboardButtons)
 
         # ~ self.header.set_title_widget(title_widget=self.switcher)
         # ~ self.header.set_title_widget(title_widget=boxDashboardButtons)
