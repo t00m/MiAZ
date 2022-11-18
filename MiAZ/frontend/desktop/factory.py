@@ -20,6 +20,11 @@ from MiAZ.backend.log import get_logger
 from MiAZ.backend.models import Country
 from MiAZ.frontend.desktop.icons import MiAZIconManager
 
+class HeaderType:
+    DEFAULT = 1
+    ARTIST = 2
+    ALBUM = 3
+    ROUNDED = 4
 
 class MiAZFactory:
     def __init__(self, app):
@@ -153,12 +158,12 @@ class MiAZFactory:
 
     def create_dialog_question(self, parent, title, body, width=-1, height=-1):
         dialog = self.create_dialog(parent, title, body, width, height)
-        dialog.add_buttons('No', Gtk.ResponseType.NO, 'Yes', Gtk.ResponseType.YES)
-        dialog.set_default_response(Gtk.ResponseType.YES)
-        btnYes = dialog.get_widget_for_response(Gtk.ResponseType.YES)
-        btnYes.get_style_context().add_class(class_name='suggested-action')
-        btnNo = dialog.get_widget_for_response(Gtk.ResponseType.NO)
-        btnNo.get_style_context().add_class(class_name='destructive-action')
+        dialog.add_buttons('Cancel', Gtk.ResponseType.CANCEL, 'Accept', Gtk.ResponseType.ACCEPT)
+        dialog.set_default_response(Gtk.ResponseType.CANCEL)
+        btnCancel = dialog.get_widget_for_response(Gtk.ResponseType.CANCEL)
+        btnCancel.get_style_context().add_class(class_name='destructive-action')
+        btnAccept = dialog.get_widget_for_response(Gtk.ResponseType.ACCEPT)
+        btnAccept.get_style_context().add_class(class_name='suggested-action')
         return dialog
 
     def create_frame(self, title:str = None, margin: int = 3, hexpand: bool = False, vexpand: bool = False) -> Gtk.Frame:
@@ -315,3 +320,22 @@ class MiAZFactory:
         item_delete.set_detailed_action(detailed_action='app.workspace_delete')
         self.menu_workspace_multiple.append_item(item_delete)
         return self.menu_workspace_multiple
+
+
+class MenuHeader(Gio.MenuItem):
+    """
+        A simple menu header with label and icon
+    """
+
+    def __init__(self, label, icon_name):
+        """
+            Init menu
+            @param label as str
+            @param icon_name as str
+        """
+        Gio.MenuItem.__init__(self)
+        header_type = GLib.Variant("i", HeaderType.DEFAULT)
+        vlabel = GLib.Variant("s", label)
+        vicon_name = GLib.Variant("s", icon_name)
+        header = [header_type, vlabel, vicon_name]
+        self.set_attribute_value("header", GLib.Variant("av", header))

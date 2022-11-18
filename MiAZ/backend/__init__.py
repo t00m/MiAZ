@@ -145,41 +145,6 @@ class MiAZBackend(GObject.GObject):
             ext = filename[dot+1:]
         return "%s.%s" % (name, ext)
 
-    # ~ def check_target(self, *args):
-        # ~ t_repodir = self.conf['app'].get('target')
-        # ~ t_repocnf = self.get_repo_target_config_file()
-        # ~ if os.path.exists(t_repocnf):
-            # ~ t_repodct = json_load(t_repocnf)
-        # ~ else:
-            # ~ t_repodct = {}
-            # ~ json_save(t_repocnf, t_repodct)
-
-        # ~ # Workflow
-        # ~ ## 1. Firstly, check docuements in repodct and delete inconsistencies if
-        # ~ ##    files do not exist anymore, then delete inconsistency
-        # ~ i = 0
-        # ~ for doc in t_repodct.copy():
-            # ~ if not os.path.exists(doc):
-                # ~ del(t_repodct[doc])
-                # ~ i += 1
-        # ~ self.log.info("Target repository - %d inconsistencies deleted", i)
-
-        # ~ # 2. Then, check docs in target directory and update repodct
-        # ~ a = 0
-        # ~ docs = get_files(t_repodir)
-        # ~ for filepath in docs:
-            # ~ doc = os.path.basename(filepath)
-            # ~ if not doc in t_repodct:
-                # ~ # Initialize entry
-                # ~ t_repodct[doc] = {}
-                # ~ a += 1
-        # ~ self.log.info("Target repository - %d document added", a)
-        # ~ json_save(t_repocnf, t_repodct)
-
-        # ~ # 3. Emit the 'source-configuration-updated' signal
-        # ~ self.log.debug("Target repository - Emitting signal 'target-configuration-updated'")
-        # ~ self.emit('target-configuration-updated')
-
     def validate_filename(self, filepath: str) -> tuple:
         filename = os.path.basename(filepath)
         reasons = "OK"

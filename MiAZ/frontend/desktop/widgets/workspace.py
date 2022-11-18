@@ -10,6 +10,7 @@ import gi
 gi.require_version('Gtk', '4.0')
 from gi.repository import Gio
 from gi.repository import Gtk
+from gi.repository import GLib
 from gi.repository import GObject
 
 from MiAZ.backend.env import ENV
@@ -18,6 +19,7 @@ from MiAZ.backend.util import json_load, timerfunc
 from MiAZ.backend.models import File, Collection, Person, Country, Purpose, Concept
 from MiAZ.frontend.desktop.util import get_file_mimetype
 from MiAZ.frontend.desktop.widgets.columnview import MiAZColumnView, RowIcon, RowTitle
+from MiAZ.frontend.desktop.factory import MenuHeader
 
 
 class MiAZWorkspace(Gtk.Box):
@@ -173,6 +175,21 @@ class MiAZWorkspace(Gtk.Box):
         gicon = Gio.content_type_get_icon(mimetype)
         icon.set_from_gicon(gicon)
         icon.set_pixel_size(32)
+
+    def _on_action_rename(self, action, data, item_type):
+        self.log.debug("Rename %s for:", item_type)
+        box = self.factory.create_box_vertical()
+        label = self.factory.create_label('Rename %d files by setting\r\nthe field <b>%s</b> to:\n' % (len(self.selected_items), item_type))
+        dropdown = self.factory.create_dropdown_generic(item_type)
+        # ~ self.actions.dropdown_populate(dropdown, item_type, conf)
+        box.append(label)
+        box.append(dropdown)
+        dialog = self.factory.create_dialog_question(self.app.win, 'Mass renaming', box)
+        dialog.show()
+        # ~ for item in self.selected_items:
+            # ~ self.log.debug("\t%s", item.id)
+
+
 
     def _on_explain_toggled(self, button, data=None):
         active = button.get_active()
@@ -350,13 +367,17 @@ class MiAZWorkspace(Gtk.Box):
 
     def create_menu_selection_multiple(self):
         self.menu_workspace_multiple = Gio.Menu.new()
-
-        fields = ['date', 'country', 'collection', 'purpose']
-        item_fake = Gio.MenuItem.new()
-        item_fake.set_label('Multiple selection')
-        action = Gio.SimpleAction.new('fake', None)
-        item_fake.set_detailed_action(detailed_action='fake')
-        self.menu_workspace_multiple.append_item(item_fake)
+        # ~ {timestamp}-{country}-{collection}-{from}-{purpose}-{concept}-{to}.{extension}
+        fields = ['Country', 'Collection', 'From', 'Purpose', 'Concept', 'To']
+        # ~ item_fake = Gio.MenuItem.new()
+        # ~ item_fake.set_attribute_value('use-markup', GLib.Variant.new_boolean(True))
+        # ~ icon = Gio.ThemedIcon.new('MiAZ')
+        # ~ item_fake.set_icon(icon)
+        # ~ item_fake.set_label('&lt;b&gt;Multiple selection&lt;/b&gt;')
+        # ~ action = Gio.SimpleAction.new('fake', None)
+        # ~ item_fake.set_detailed_action(detailed_action='fake')
+        # ~ self.menu_workspace_multiple.append_item(item_fake)
+        # ~ self.menu_workspace_multiple.append_item(MenuHeader("Multiple selection", 'MiAZ'))
 
         # Submenu for mass renaming
         submenu_rename_root = Gio.Menu.new()
@@ -370,8 +391,8 @@ class MiAZWorkspace(Gtk.Box):
             menuitem = Gio.MenuItem.new()
             menuitem.set_label(label='... %s' % item)
             action = Gio.SimpleAction.new('rename_%s' % item, None)
-            callback = 'self.action_rename'
-            # ~ action.connect('activate', eval(callback), item)
+            callback = 'self._on_action_rename'
+            action.connect('activate', eval(callback), item)
             self.app.add_action(action)
             menuitem.set_detailed_action(detailed_action='app.rename_%s' % item)
             submenu_rename_root.append_item(menuitem)
@@ -495,12 +516,6 @@ class MiAZWorkspace(Gtk.Box):
         return item.id == id
 
     def _do_filter_view(self, item, filter_list_model):
-        # ~ return True
-        # ~ self.log.debug(item.id)
-        # ~ valid = self.repodct[item.id]['valid']
-        # ~ self.log.debug("%s > %s > %s", item.id, valid, item.valid)
-
-        # ~ fields = self.repodct[item.id]['fields']
         if not item.valid:
             self.num_review += 1
 
@@ -519,7 +534,6 @@ class MiAZWorkspace(Gtk.Box):
                 display = self._do_eval_cond_matches_freetext(item.id)
 
         if display:
-            # ~ self.update_filters(item, fields)
             self.displayed += 1
 
         return display
@@ -552,16 +566,6 @@ class MiAZWorkspace(Gtk.Box):
             btnReview = self.app.get_button_review()
             btnReview.set_visible(True)
             btnDashboard.set_visible(False)
-        # FIXME:
-        # ~ self.log.debug(self.dfilter)
-        # ~
-                                   # ~ ('Collection', Collection, 'collections'),
-                                   # ~ ('From', Person, 'organizations'),
-                                   # ~ ('Purpose', Purpose, 'purposes'),
-                                   # ~ ('To', Person, 'organizations'),
-                            # ~ ]:
-            # ~ self.actions.dropdown_populate(self.dropdown[title], item_type, conf)
-        # ~ self._on_signal_filter_connect()
 
     def _on_select_all(self, *args):
         selection = self.view.get_selection()
