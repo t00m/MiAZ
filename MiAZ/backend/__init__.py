@@ -20,7 +20,7 @@ from MiAZ.backend.config import MiAZConfigSettingsCountries
 from MiAZ.backend.config import MiAZConfigSettingsCollections
 from MiAZ.backend.config import MiAZConfigSettingsPurposes
 from MiAZ.backend.config import MiAZConfigSettingsConcepts
-from MiAZ.backend.config import MiAZConfigSettingsOrganizations
+from MiAZ.backend.config import MiAZConfigSettingsPerson
 
 
 class MiAZBackend(GObject.GObject):
@@ -32,15 +32,17 @@ class MiAZBackend(GObject.GObject):
         GObject.GObject.__init__(self)
         self.log = get_logger('MiAZBackend')
         GObject.signal_new('source-configuration-updated', MiAZBackend, GObject.SignalFlags.RUN_LAST, None, () )
-        GObject.signal_new('target-configuration-updated', MiAZBackend, GObject.SignalFlags.RUN_LAST, None, () )
-        self.conf['app'] = MiAZConfigApp()
-        self.conf['countries'] = MiAZConfigSettingsCountries()
-        self.conf['collections'] = MiAZConfigSettingsCollections()
-        self.conf['purposes'] = MiAZConfigSettingsPurposes()
-        self.conf['concepts'] = MiAZConfigSettingsConcepts()
-        self.conf['organizations'] = MiAZConfigSettingsOrganizations()
-        self.source = self.conf['app'].get('source')
-        self.target = self.conf['app'].get('target')
+        # ~ GObject.signal_new('target-configuration-updated', MiAZBackend, GObject.SignalFlags.RUN_LAST, None, () )
+        self.conf['App'] = MiAZConfigApp()
+        self.conf['Country'] = MiAZConfigSettingsCountries()
+        self.conf['Collection'] = MiAZConfigSettingsCollections()
+        self.conf['Purpose'] = MiAZConfigSettingsPurposes()
+        self.conf['Concept'] = MiAZConfigSettingsConcepts()
+        self.conf['PersonFrom'] = MiAZConfigSettingsPerson()
+        self.conf['PersonTo'] = MiAZConfigSettingsPerson()
+        self.conf['Person'] = MiAZConfigSettingsPerson()
+        self.source = self.conf['App'].get('source')
+        self.target = self.conf['App'].get('target')
         self.watch_source = MiAZWatcher('source', self.source)
         self.watch_source.connect('source-directory-updated', self.check_source)
         # ~ self.watch_target = MiAZWatcher('target', self.target)
@@ -57,17 +59,17 @@ class MiAZBackend(GObject.GObject):
         return self.conf
 
     def get_repo_source_config_file(self):
-        repodir = self.conf['app'].get('source')
+        repodir = self.conf['App'].get('source')
         repokey = valid_key(repodir)
         return os.path.join(ENV['LPATH']['REPOS'], "source-%s.json" % repokey)
 
     def get_repo_target_config_file(self):
-        repodir = self.conf['app'].get('target')
+        repodir = self.conf['App'].get('target')
         repokey = valid_key(repodir)
         return os.path.join(ENV['LPATH']['REPOS'], "target-%s.json" % repokey)
 
     def get_repo_dict(self):
-        s_repodir = self.conf['app'].get('source')
+        s_repodir = self.conf['App'].get('source')
         s_repocnf = self.get_repo_source_config_file()
 
         # Load repo conf. It it doesn't exist, create an empty one
@@ -79,7 +81,7 @@ class MiAZBackend(GObject.GObject):
         return s_repodct
 
     def check_source(self, *args):
-        s_repodir = self.conf['app'].get('source')
+        s_repodir = self.conf['App'].get('source')
         s_repocnf = self.get_repo_source_config_file()
 
         # Load repo conf. It it doesn't exist, create an empty one
@@ -190,12 +192,12 @@ class MiAZBackend(GObject.GObject):
         # Check country (2nd field)
         try:
             code = fields[1].upper()
-            is_country = self.conf['countries'].exists(code)
+            is_country = self.conf['Country'].exists(code)
             if not is_country:
                 valid &= False
                 reasons.append((False, "Field 2. Country code '%s' doesn't exist" % code))
             else:
-                country = self.conf['countries'].load_global()
+                country = self.conf['Country'].load_global()
                 name = country[code]
                 reasons.append((True, "Field 2. Country code '%s' corresponds to %s" % (code, name)))
         except IndexError:
@@ -205,7 +207,7 @@ class MiAZBackend(GObject.GObject):
         # Check collection (3nd field)
         try:
             code = fields[2]
-            is_collection = self.conf['collections'].exists(code)
+            is_collection = self.conf['Collection'].exists(code)
             if not is_collection:
                 valid &= False
                 reasons.append((False, "Field 3. Collection '%s' is not in your list. Please, add it first." % code))
@@ -218,7 +220,7 @@ class MiAZBackend(GObject.GObject):
         # Check from (4th field)
         try:
             code = fields[3]
-            is_organization = self.conf['organizations'].exists(code)
+            is_organization = self.conf['Person'].exists(code)
             if not is_organization:
                 valid &= False
                 reasons.append((False, "Field 4. Organization '%s' is not in your list. Please, add it first." % code))
@@ -231,7 +233,7 @@ class MiAZBackend(GObject.GObject):
         # Check purpose (5th field)
         try:
             code = fields[4]
-            is_purpose = self.conf['purposes'].exists(code)
+            is_purpose = self.conf['Purpose'].exists(code)
             if not is_purpose:
                 valid &= False
                 reasons.append((False, "Field 5. Purpose '%s' is not in your list. Please, add it first." % code))
@@ -252,7 +254,7 @@ class MiAZBackend(GObject.GObject):
         # Check Who (7th field)
         try:
             code = fields[6]
-            is_organization = self.conf['organizations'].exists(code)
+            is_organization = self.conf['Person'].exists(code)
             if not is_organization:
                 valid &= False
                 reasons.append((False, "Field 7. '%s' is not in your list. Please, add it first." % code))
@@ -315,7 +317,7 @@ class MiAZBackend(GObject.GObject):
         found_country = False
         for field in fields:
             if len(field) == 2:
-                is_country = self.conf['countries'].exists(field.upper())
+                is_country = self.conf['Country'].exists(field.upper())
                 if is_country:
                     country = field.upper()
                     found_country = True
@@ -326,7 +328,7 @@ class MiAZBackend(GObject.GObject):
         # Field 2. Find and/or guess collection field
         found_collection = False
         for field in fields:
-            if self.conf['collections'].exists(field):
+            if self.conf['Collection'].exists(field):
                 collection = field.upper()
                 found_collection = True
                 break
@@ -336,7 +338,7 @@ class MiAZBackend(GObject.GObject):
         # Field 3. Find and/or guess From field
         found_from = False
         for field in fields:
-            if self.conf['organizations'].exists(field):
+            if self.conf['Person'].exists(field):
                 from_org = field.upper()
                 found_from = True
                 break
@@ -346,7 +348,7 @@ class MiAZBackend(GObject.GObject):
         # Field 4. Find and/or guess purpose field
         found_purpose = False
         for field in fields:
-            if self.conf['purposes'].exists(field):
+            if self.conf['Purpose'].exists(field):
                 purpose = field.upper()
                 found_purpose = True
                 break
@@ -362,7 +364,7 @@ class MiAZBackend(GObject.GObject):
         # Field 6. Find and/or guess To field
         found_to = False
         for field in fields:
-            if self.conf['organizations'].exists(field):
+            if self.conf['Person'].exists(field):
                 found_to = True
                 to_org = field.upper()
                 break

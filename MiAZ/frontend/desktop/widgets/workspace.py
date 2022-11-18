@@ -16,7 +16,7 @@ from gi.repository import GObject
 from MiAZ.backend.env import ENV
 from MiAZ.backend.log import get_logger
 from MiAZ.backend.util import json_load, timerfunc
-from MiAZ.backend.models import File, Collection, Person, Country, Purpose, Concept
+from MiAZ.backend.models import File, Collection, Person, Country, Purpose, Concept, From, To
 from MiAZ.frontend.desktop.util import get_file_mimetype
 from MiAZ.frontend.desktop.widgets.columnview import MiAZColumnView, RowIcon, RowTitle
 from MiAZ.frontend.desktop.factory import MenuHeader
@@ -38,7 +38,7 @@ class MiAZWorkspace(Gtk.Box):
         self.backend = self.app.get_backend()
         self.factory = self.app.get_factory()
         self.actions = self.app.get_actions()
-        self.config = self.app.get_config('app')
+        self.config = self.app.get_config('App')
         self.set_vexpand(False)
         self.set_margin_top(margin=6)
         self.set_margin_end(margin=6)
@@ -78,19 +78,15 @@ class MiAZWorkspace(Gtk.Box):
 
         # FIXME: Do NOT fill dropdowns here.
         self.dropdown = {}
-        for title, item_type, conf in [('Country', Country, 'countries'),
-                                   ('Collection', Collection, 'collections'),
-                                   ('From', Person, 'organizations'),
-                                   ('Purpose', Purpose, 'purposes'),
-                                   ('To', Person, 'organizations'),
-                            ]:
+        for item_type in [Country, Collection, From, Purpose, To]:
+            title = item_type.__gtype_name__
             dropdown = self.factory.create_dropdown_generic(item_type)
-            self.actions.dropdown_populate(dropdown, item_type, conf)
+            self.actions.dropdown_populate(dropdown, item_type)
             sigid = dropdown.connect("notify::selected-item", self._on_filter_selected)
             # ~ self.signals.add ((dropdown, sigid))
             boxDropdown = self.factory.create_box_filter(title, dropdown)
             body.append(boxDropdown)
-            self.dropdown[title.lower()] = dropdown
+            self.dropdown[title] = dropdown
         self.backend.connect('source-configuration-updated', self.update)
         return widget
 
@@ -178,6 +174,7 @@ class MiAZWorkspace(Gtk.Box):
 
     def _on_action_rename(self, action, data, item_type):
         self.log.debug("Rename %s for:", item_type)
+        return
         box = self.factory.create_box_vertical()
         label = self.factory.create_label('Rename %d files by setting\r\nthe field <b>%s</b> to:\n' % (len(self.selected_items), item_type))
         dropdown = self.factory.create_dropdown_generic(item_type)
@@ -454,7 +451,7 @@ class MiAZWorkspace(Gtk.Box):
         self._on_explain_toggled(self.tgbExplain)
         repocnf = self.backend.get_repo_source_config_file()
         self.repodct = json_load(repocnf)
-        who = self.app.get_config('organizations')
+        who = self.app.get_config('Person')
         items = []
         for path in self.repodct:
             # ~ self.log.debug(self.repodct[])
@@ -523,11 +520,11 @@ class MiAZWorkspace(Gtk.Box):
         if self.show_dashboard:
             if item.valid:
                 c0 = self._do_eval_cond_matches_freetext(item.id)
-                c1 = self._do_eval_cond_matches(self.dropdown['country'], item.country)
-                c2 = self._do_eval_cond_matches(self.dropdown['collection'], item.collection)
-                c3 = self._do_eval_cond_matches(self.dropdown['from'], item.from_id)
-                c4 = self._do_eval_cond_matches(self.dropdown['purpose'], item.purpose)
-                c6 = self._do_eval_cond_matches(self.dropdown['to'], item.to_id)
+                c1 = self._do_eval_cond_matches(self.dropdown['Country'], item.country)
+                c2 = self._do_eval_cond_matches(self.dropdown['Collection'], item.collection)
+                c3 = self._do_eval_cond_matches(self.dropdown['PersonFrom'], item.from_id)
+                c4 = self._do_eval_cond_matches(self.dropdown['Purpose'], item.purpose)
+                c6 = self._do_eval_cond_matches(self.dropdown['PersonTo'], item.to_id)
                 display = c0 and c1 and c2 and c3 and c4 and c6
         else:
             if not item.valid:

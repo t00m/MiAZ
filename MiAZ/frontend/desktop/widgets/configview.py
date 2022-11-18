@@ -12,7 +12,7 @@ from MiAZ.backend.env import ENV
 from MiAZ.backend.log import get_logger
 from MiAZ.backend.models import File, Collection, Person, Country, Purpose, Concept
 from MiAZ.backend.config import MiAZConfigSettingsCollections
-from MiAZ.backend.config import MiAZConfigSettingsOrganizations
+from MiAZ.backend.config import MiAZConfigSettingsPerson
 from MiAZ.backend.config import MiAZConfigSettingsCountries
 from MiAZ.backend.config import MiAZConfigSettingsPurposes
 from MiAZ.frontend.desktop.widgets.columnview import MiAZColumnView, RowIcon
@@ -177,7 +177,7 @@ class MiAZOrganizations(MiAZConfigView):
     __gtype_name__ = 'MiAZOrganizations'
 
     def __init__(self, app):
-        self.config = MiAZConfigSettingsOrganizations()
+        self.config = MiAZConfigSettingsPerson()
         super().__init__(app, self.config.config_for)
 
     def _on_item_add(self, *args):

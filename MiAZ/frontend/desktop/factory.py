@@ -37,7 +37,7 @@ class MiAZFactory:
         # ~ action.connect("activate", callback)
         # ~ self.app.add_action(action)
 
-    def create_box_filter(self, title: str, widget: Gtk.Widget) -> Gtk.Box:
+    def create_box_filter(self, title, widget: Gtk.Widget) -> Gtk.Box:
         box = Gtk.Box.new(orientation=Gtk.Orientation.VERTICAL, spacing=3)
         box.set_margin_bottom(margin=12)
         # ~ box.set_homogeneous(True)
@@ -112,7 +112,6 @@ class MiAZFactory:
         return button
 
     def create_dropdown_generic(self, item_type, ellipsize=True):
-
         def _on_factory_setup(factory, list_item, ellipsize):
             box = Gtk.Box(spacing=6, orientation=Gtk.Orientation.HORIZONTAL)
             label = Gtk.Label()

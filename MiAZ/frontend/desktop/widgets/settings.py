@@ -25,7 +25,7 @@ class MiAZPrefsWindow(Adw.PreferencesWindow):
         self.log = get_logger('MiAZ.Desktop.Settings')
         self.app = app
         self.factory = self.app.get_factory()
-        self.config = self.app.get_config('app')
+        self.config = self.app.get_config('App')
         self.win = self.app.win
         self.sm = self.app.get_style_manager()
         self.color_scheme = self.sm.get_color_scheme()
@@ -153,7 +153,7 @@ class MiAZPrefsWindow(Adw.PreferencesWindow):
         dialog.show()
 
     def create_action_row_repo_source(self):
-        config = self.app.get_config('app')
+        config = self.app.get_config('App')
         source = config.get('source')
         if source is None:
             source = '<i>Folder not set</i>'
@@ -168,7 +168,7 @@ class MiAZPrefsWindow(Adw.PreferencesWindow):
         return row
 
     def create_action_row_repo_target(self):
-        config = self.app.get_config('app')
+        config = self.app.get_config('App')
         target = config.get('target')
         if target is None:
             target = '<i>Folder not set</i>'

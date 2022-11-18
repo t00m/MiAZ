@@ -29,10 +29,10 @@ class MiAZActions(GObject.GObject):
         dialog = MiAZRenameDialog(self.app, source, target)
         dialog.show()
 
-    def dropdown_populate(self, dropdown, item_type, conf, keyfilter = False, intkeys=[]):
+    def dropdown_populate(self, dropdown, item_type, keyfilter = False, intkeys=[]):
         # Populate the model
         model = dropdown.get_model()
-        config = self.app.get_config(conf)
+        config = self.app.get_config(item_type.__gtype_name__)
         items = config.load()
         config_is = config.get_config_is()
 

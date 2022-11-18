@@ -23,6 +23,9 @@ class MiAZConfig():
         self.foreign = foreign
         self.setup()
 
+    def __repr__(self):
+        return __class__.__name__
+
     def setup(self):
         if not os.path.exists(self.config_local):
             self.log.debug("%s - Local configuration file doesn't exist", self.config_for)
@@ -207,6 +210,9 @@ class MiAZConfigSettingsCollections(MiAZConfig):
             must_copy = True
         )
 
+    def __repr__(self):
+        return 'Collection'
+
 class MiAZConfigSettingsPurposes(MiAZConfig):
     def __init__(self):
         super().__init__(
@@ -220,6 +226,9 @@ class MiAZConfigSettingsPurposes(MiAZConfig):
             must_copy = True
         )
 
+    def __repr__(self):
+        return 'Purpose'
+
 class MiAZConfigSettingsConcepts(MiAZConfig):
     def __init__(self):
         super().__init__(
@@ -232,15 +241,21 @@ class MiAZConfigSettingsConcepts(MiAZConfig):
             must_copy = False
         )
 
-class MiAZConfigSettingsOrganizations(MiAZConfig):
+    def __repr__(self):
+        return 'Concept'
+
+class MiAZConfigSettingsPerson(MiAZConfig):
     def __init__(self):
         super().__init__(
             log=get_logger('MiAZ.Settings.Organizations'),
-            config_for = 'Organizations',
-            config_local = ENV['FILE']['ORGANIZATIONS'],
+            config_for = 'Person',
+            config_local = ENV['FILE']['PERSONS'],
             config_global = os.path.join(ENV['GPATH']['RESOURCES'],
-                            'MiAZ-organizations.json'),
+                            'MiAZ-persons.json'),
             config_is = dict,
             config_model = Person,
             must_copy = True
         )
+
+    def __repr__(self):
+        return 'Person'

@@ -108,7 +108,6 @@ class MiAZModel(GObject.Object):
     def icon(self):
         return self._icon
 
-
 class File(MiAZModel):
     __gtype_name__ = 'File'
 
@@ -126,6 +125,12 @@ class Country(MiAZModel):
 
 class Person(MiAZModel):
     __gtype_name__ = 'Person'
+
+class From(Person):
+    __gtype_name__ = 'PersonFrom'
+
+class To(Person):
+    __gtype_name__ = 'PersonTo'
 
 class Purpose(MiAZModel):
     __gtype_name__ = 'Purpose'
