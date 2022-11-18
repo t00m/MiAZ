@@ -173,11 +173,12 @@ class MiAZWorkspace(Gtk.Box):
         icon.set_pixel_size(32)
 
     def _on_action_rename(self, action, data, item_type):
-        self.log.debug("Rename %s for:", item_type)
-        return
+        title = item_type.__gtype_name__
+        self.log.debug("Rename %s for:", title)
         box = self.factory.create_box_vertical()
-        label = self.factory.create_label('Rename %d files by setting\r\nthe field <b>%s</b> to:\n' % (len(self.selected_items), item_type))
+        label = self.factory.create_label('Rename %d files by setting\r\nthe field <b>%s</b> to:\n' % (len(self.selected_items), title))
         dropdown = self.factory.create_dropdown_generic(item_type)
+        self.actions.dropdown_populate(dropdown, item_type, any_value=False)
         # ~ self.actions.dropdown_populate(dropdown, item_type, conf)
         box.append(label)
         box.append(dropdown)
@@ -365,7 +366,7 @@ class MiAZWorkspace(Gtk.Box):
     def create_menu_selection_multiple(self):
         self.menu_workspace_multiple = Gio.Menu.new()
         # ~ {timestamp}-{country}-{collection}-{from}-{purpose}-{concept}-{to}.{extension}
-        fields = ['Country', 'Collection', 'From', 'Purpose', 'Concept', 'To']
+        fields = [Country, Collection, From, Purpose, Concept, To]
         # ~ item_fake = Gio.MenuItem.new()
         # ~ item_fake.set_attribute_value('use-markup', GLib.Variant.new_boolean(True))
         # ~ icon = Gio.ThemedIcon.new('MiAZ')
@@ -384,33 +385,34 @@ class MiAZWorkspace(Gtk.Box):
         )
         self.menu_workspace_multiple.append_item(submenu_rename)
 
-        for item in fields:
+        for item_type in fields:
+            title = item_type.__gtype_name__
             menuitem = Gio.MenuItem.new()
-            menuitem.set_label(label='... %s' % item)
-            action = Gio.SimpleAction.new('rename_%s' % item, None)
+            menuitem.set_label(label='... %s' % title.lower())
+            action = Gio.SimpleAction.new('rename_%s' % title.lower(), None)
             callback = 'self._on_action_rename'
-            action.connect('activate', eval(callback), item)
+            action.connect('activate', eval(callback), item_type)
             self.app.add_action(action)
-            menuitem.set_detailed_action(detailed_action='app.rename_%s' % item)
+            menuitem.set_detailed_action(detailed_action='app.rename_%s' % title.lower())
             submenu_rename_root.append_item(menuitem)
 
         # Submenu for mass adding
-        submenu_add_root = Gio.Menu.new()
-        submenu_add = Gio.MenuItem.new_submenu(
-            label='Mass adding of...',
-            submenu=submenu_add_root,
-        )
-        self.menu_workspace_multiple.append_item(submenu_add)
+        # ~ submenu_add_root = Gio.Menu.new()
+        # ~ submenu_add = Gio.MenuItem.new_submenu(
+            # ~ label='Mass adding of...',
+            # ~ submenu=submenu_add_root,
+        # ~ )
+        # ~ self.menu_workspace_multiple.append_item(submenu_add)
 
-        for item in fields:
-            menuitem = Gio.MenuItem.new()
-            menuitem.set_label(label='... %s' % item)
-            action = Gio.SimpleAction.new('add_%s' % item, None)
-            callback = 'self.action_add'
+        # ~ for item in fields:
+            # ~ menuitem = Gio.MenuItem.new()
+            # ~ menuitem.set_label(label='... %s' % item)
+            # ~ action = Gio.SimpleAction.new('add_%s' % item, None)
+            # ~ callback = 'self.action_add'
             # ~ action.connect('activate', eval(callback), item)
-            self.app.add_action(action)
-            menuitem.set_detailed_action(detailed_action='app.add_%s' % item)
-            submenu_add_root.append_item(menuitem)
+            # ~ self.app.add_action(action)
+            # ~ menuitem.set_detailed_action(detailed_action='app.add_%s' % item)
+            # ~ submenu_add_root.append_item(menuitem)
 
         item_force_update = Gio.MenuItem.new()
         item_force_update.set_label(label='Force update')

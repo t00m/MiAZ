@@ -54,7 +54,7 @@ class MiAZModel(GObject.Object):
 
     @GObject.Property
     def collection(self):
-        return self._country
+        return self._collection
 
     @GObject.Property
     def country(self):
@@ -62,7 +62,7 @@ class MiAZModel(GObject.Object):
 
     @GObject.Property
     def purpose(self):
-        return self._country
+        return self._purpose
 
     @GObject.Property
     def from_id(self):
@@ -111,13 +111,13 @@ class MiAZModel(GObject.Object):
 class File(MiAZModel):
     __gtype_name__ = 'File'
 
-class Collection(MiAZModel):
+class Date(MiAZModel):
     __gtype_name__ = 'Date'
 
 class Collection(MiAZModel):
     __gtype_name__ = 'Collection'
 
-class Concept(GObject.Object):
+class Concept(MiAZModel):
     __gtype_name__ = 'Concept'
 
 class Country(MiAZModel):

@@ -29,7 +29,7 @@ class MiAZActions(GObject.GObject):
         dialog = MiAZRenameDialog(self.app, source, target)
         dialog.show()
 
-    def dropdown_populate(self, dropdown, item_type, keyfilter = False, intkeys=[]):
+    def dropdown_populate(self, dropdown, item_type, keyfilter = False, intkeys=[], any_value=True):
         # Populate the model
         model = dropdown.get_model()
         config = self.app.get_config(item_type.__gtype_name__)
@@ -47,7 +47,10 @@ class MiAZActions(GObject.GObject):
             items = sorted(items)
 
         model.remove_all()
-        model.append(item_type(id='Any', title='Any'))
+
+        if any_value:
+            model.append(item_type(id='Any', title='Any'))
+
         for key in items:
             if config_is is dict:
                 if foreign:
