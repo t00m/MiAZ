@@ -1,2 +1,69 @@
-# MiAZ
-Personal Document Organizer
+= MiAZ, a Personal Document Organizer
+
+== Use case
+
+The main goal is to organize family documentation.
+
+This project is based solely in my own experience and for my own necesities which can fit yours, or not.
+
+In any case, it tries to help organizing the day to day paperwork such as invoices, letters, and any document from/to any person (legal entity or natural)
+
+With this in mind, MiAZ uses its own filename convention in order to manage the repository of documents.
+
+
+== File name convention
+
+All documents managed by MiAZ are renamed following this name convention consisting on 7 fields:
+
+`{timestamp}-{country}-{collection}-{from}-{purpose}-{concept}-{to}.{extension}`
+
+* _Timestamp_: with format: %Y%m%d (eg.: 20221119)
+* _Country_: ISO-3166 Alpha-2 code (eg.: ES)
+* _Collection_: a single name for grouping files (eg.: EDU, BANKS, WORK, ADM)
+* _From_: the (legal or natural) person sending the document
+* _Purpose_: reason (eg.: INFO, REQUEST, INVOICE, STATEMENT, etc...)
+* _Concept_: the details (eg.: invoice number, flight number, etc...)
+* _To_: the (legal or natural) person receiving the document
+* _Extension_: the extension/media format of the document
+
+[NOTES]
+====
+* Each field is separated by a hyphen (`-`). Only 6 hyphens are allowed. Extra hyphens found in a field are automatically converted to underscores (`_`)
+* Country code is important in case that the family has ties with others countries apart from the one where they reside)
+* The timestamp format helps to sort documents easily in a file browser
+* From/To fields are stored as a key/value where key is a identifier (eg.: person initials) and value is the full name (eg.: Company or person name)
+====
+
+
+== Directory Structure
+
+The user has to choose an empty _root_ directory (eg.: MiAZ) where the application can deploy the rest of files and directories.
+
+At present, it uses 4 directories:
+
+* _conf_: each field saves the information given by the user
+* _meta_: not used yet but might be important to store information that can't be saved in the filename. Eg.: total paid for a given invoice, notes, etc...
+* _proj_: sometimes, it is important to group files beloging to different collections (eg.: to prepare taxes). This directory will hold a project subdirectory with links to those relevant documents.
+* _repo_: the most important directory, as it will store all files. As it could be thousands of them from several years, each document will be stored in the proper year subdirectory.
+* _tags_: each subdirectory in this directory represent a tag. Unlike Collections, a tag can represent a state (eg.: pending, done, archived)
+
+.Example:
+----
+$HOME/Documents/MiAZ
+├── conf
+├── meta
+├── proj
+│   └── project1
+├── repo
+│   └── 2022
+│   └── 2021
+└── tags
+    └── tagname1
+    └── tagname2
+----
+
+== Current status
+
+This project is an early stage of development. Working with the most important feature: repository documentation an file renaming.
+
+
