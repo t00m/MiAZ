@@ -18,7 +18,7 @@ from MiAZ.backend.log import get_logger
 from MiAZ.frontend.desktop.widgets.menu import MiAZ_APP_MENU
 from MiAZ.frontend.desktop.widgets.menubutton import MiAZMenuButton
 from MiAZ.frontend.desktop.widgets.workspace import MiAZWorkspace
-from MiAZ.frontend.desktop.widgets.settings import MiAZPrefsWindow
+from MiAZ.frontend.desktop.settings import MiAZPrefsWindow
 from MiAZ.frontend.desktop.widgets.about import MiAZAbaout
 from MiAZ.frontend.desktop.icons import MiAZIconManager
 from MiAZ.frontend.desktop.factory import MiAZFactory
