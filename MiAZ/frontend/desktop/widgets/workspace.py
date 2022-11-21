@@ -45,7 +45,7 @@ class MiAZWorkspace(Gtk.Box):
         self.set_margin_bottom(margin=6)
         self.set_margin_start(margin=6)
         self.toolbar_filters = self._setup_toolbar_filters()
-        frmView = self._setup_view()
+        frmView = self._setup_workspace()
         # ~ self.append(self.toolbar_filters)
         self.append(frmView)
 
@@ -195,17 +195,10 @@ class MiAZWorkspace(Gtk.Box):
             self.selected_items.append(item)
         self.btnDocsSel.set_label("%d of %d documents selected" % (len(self.selected_items), len(self.repodct)))
 
-    def _setup_view(self):
-        widget = self.factory.create_box_vertical(margin=0, spacing=6, hexpand=True, vexpand=True)
-        head = self.factory.create_box_vertical(margin=0, spacing=0, hexpand=True)
-        body = self.factory.create_box_vertical(margin=0, spacing=0, hexpand=True, vexpand=True)
-        widget.append(head)
-        widget.append(body)
-
-
-        actionbar = Gtk.CenterBox()
-        actionbar.set_hexpand(True)
-        actionbar.set_vexpand(True)
+    def _setup_toolbar_top(self):
+        toolbar_top = Gtk.CenterBox()
+        toolbar_top.set_hexpand(True)
+        toolbar_top.set_vexpand(True)
 
         # Centerbox Start Wiget
         cbws = self.factory.create_box_horizontal(margin=0, spacing=3)
@@ -222,7 +215,6 @@ class MiAZWorkspace(Gtk.Box):
         self.btnDocsSel.set_hexpand(False)
         self.btnDocsSel.set_sensitive(True)
         boxDocsSelected.set_center_widget(self.btnDocsSel)
-
 
         self.ent_sb = Gtk.SearchEntry(placeholder_text="Type here")
         self.ent_sb.set_width_chars(41)
@@ -249,17 +241,22 @@ class MiAZWorkspace(Gtk.Box):
         cbwe.append(btnSelectNone)
         cbwe.append(btnSelectAll)
 
+        toolbar_top.set_start_widget(cbws)
+        toolbar_top.set_end_widget(cbwe)
+        return toolbar_top
 
-        actionbar.set_start_widget(cbws)
-        actionbar.set_end_widget(cbwe)
-        head.append(actionbar)
+    def _setup_workspace(self):
+        widget = self.factory.create_box_vertical(margin=0, spacing=6, hexpand=True, vexpand=True)
+        head = self.factory.create_box_vertical(margin=0, spacing=0, hexpand=True)
+        body = self.factory.create_box_vertical(margin=0, spacing=0, hexpand=True, vexpand=True)
+        foot = self.factory.create_box_vertical(margin=0, spacing=0, hexpand=True)
+        widget.append(head)
+        widget.append(body)
+        widget.append(foot)
+
+        toolbar_top = self._setup_toolbar_top()
+        head.append(toolbar_top)
         head.append(self.toolbar_filters)
-        # ~ frmView = self.factory.create_frame(hexpand=True, vexpand=True)
-        # ~ frmView.set_label_widget(hbox)
-        # ~ label_widget = frmView.get_label_widget()
-        # ~ label_widget.set_hexpand(True)
-        # ~ label_widget.set_vexpand(True)
-        # ~ self.app.update_title(boxDocsSelected)
 
 
 
