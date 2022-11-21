@@ -84,7 +84,7 @@ class MiAZFactory:
                     )
                 )
         # ~ button.get_style_context().add_class(class_name='success')
-        button.set_has_frame(True)
+        button.set_has_frame(False)
         if callback is None:
             button.connect('clicked', self.noop, data)
         else:
@@ -104,7 +104,7 @@ class MiAZFactory:
                     icon_name=icon_name
                     )
                 )
-        button.set_has_frame(True)
+        button.set_has_frame(False)
         if callback is None:
             button.connect('toggled', self.noop, data)
         else:

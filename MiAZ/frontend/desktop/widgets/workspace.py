@@ -52,29 +52,10 @@ class MiAZWorkspace(Gtk.Box):
 
     def _setup_toolbar_filters(self):
         widget = self.factory.create_box_horizontal(hexpand=True, vexpand=False)
-        # ~ head = self.factory.create_box_horizontal(margin=0, spacing=0, hexpand=True)
         body = self.factory.create_box_horizontal(margin=3, spacing=6, hexpand=True, vexpand=True)
         body.set_homogeneous(True)
         body.set_margin_top(margin=6)
-        # ~ widget.append(head)
         widget.append(body)
-
-        # ~ actionbar = Gtk.ActionBar.new()
-        # ~ actionbar.set_hexpand(True)
-        # ~ actionbar.set_vexpand(True)
-        # ~ lblToolbar = self.factory.create_label('<big><b>Filters</b></big>')
-        # ~ boxEmpty = self.factory.create_box_horizontal(hexpand=True)
-        # ~ btnClear = self.factory.create_button('miaz-entry-clear')
-        # ~ actionbar.pack_start(lblToolbar)
-        # ~ actionbar.pack_start(boxEmpty)
-        # ~ actionbar.pack_end(btnClear)
-        # ~ head.append(actionbar)
-
-        # ~ self.ent_sb = Gtk.SearchEntry(placeholder_text="Type here")
-        # ~ self.ent_sb.connect('changed', self._on_filter_selected)
-        # ~ boxEntry = self.factory.create_box_filter('Free search', self.ent_sb)
-        # ~ body.append(boxEntry)
-        # ~ tlbFilters.append(box)
 
         # FIXME: Do NOT fill dropdowns here.
         self.dropdown = {}
@@ -215,18 +196,25 @@ class MiAZWorkspace(Gtk.Box):
         self.btnDocsSel.set_label("%d of %d documents selected" % (len(self.selected_items), len(self.repodct)))
 
     def _setup_view(self):
-        # ~ frmView = self.factory.create_frame(hexpand=True, vexpand=True)
-        widget = self.factory.create_box_vertical(hexpand=True, vexpand=True)
+        widget = self.factory.create_box_vertical(margin=0, spacing=6, hexpand=True, vexpand=True)
         head = self.factory.create_box_vertical(margin=0, spacing=0, hexpand=True)
         body = self.factory.create_box_vertical(margin=0, spacing=0, hexpand=True, vexpand=True)
         widget.append(head)
         widget.append(body)
 
+
+        actionbar = Gtk.CenterBox()
+        actionbar.set_hexpand(True)
+        actionbar.set_vexpand(True)
+
+        # Centerbox Start Wiget
+        cbws = self.factory.create_box_horizontal(margin=0, spacing=3)
+
         self.mnuSelMulti = self.create_menu_selection_multiple()
         # Documents selected
         boxDocsSelected = Gtk.CenterBox()
         self.lblDocumentsSelected = "No documents selected"
-        self.btnDocsSel = Gtk.MenuButton()
+        self.btnDocsSel = Gtk.MenuButton(css_classes=['flat'])
         self.btnDocsSel.set_label(self.lblDocumentsSelected)
         self.popDocsSel = Gtk.PopoverMenu.new_from_model(self.mnuSelMulti)
         self.btnDocsSel.set_popover(popover=self.popDocsSel)
@@ -234,44 +222,36 @@ class MiAZWorkspace(Gtk.Box):
         self.btnDocsSel.set_hexpand(False)
         self.btnDocsSel.set_sensitive(True)
         boxDocsSelected.set_center_widget(self.btnDocsSel)
-        lblFrmView = self.factory.create_label('<big><b>Documents</b></big>')
-        # ~ lblFrmView.set_extra_menu(mnuSelMulti)
-        # ~ hbox =
-        lblFrmView.set_xalign(0.0)
-        lblFrmView.set_hexpand(True)
-        lblFrmView.set_vexpand(True)
-        actionbar = Gtk.ActionBar.new()
-        actionbar.set_hexpand(True)
-        actionbar.set_vexpand(True)
+
 
         self.ent_sb = Gtk.SearchEntry(placeholder_text="Type here")
         self.ent_sb.set_width_chars(41)
         self.ent_sb.connect('changed', self._on_filter_selected)
         self.ent_sb.set_hexpand(True)
-        # ~ boxEntry = self.factory.create_box_filter('Free search', self.ent_sb)
 
-        # ~ tgbSidebar = self.factory.create_button_toggle('miaz-sidebar', callback=self._on_sidebar_toggled)
-        # ~ btnDashboard = self.factory.create_button('MiAZ', '', callback=self.show_dashboard)
-        # ~ btnReview = self.factory.create_button('miaz-rename', '', callback=self.show_review)
+        cbws.append(boxDocsSelected)
+        cbws.append(self.ent_sb)
+
+        cbwe = self.factory.create_box_horizontal(margin=0, spacing=3)
+
         boxEmpty = self.factory.create_box_horizontal(hexpand=False)
         btnSelectAll = self.factory.create_button('miaz-select-all', callback=self._on_select_all)
-        btnSelectNone = self.factory.create_button('miaz-select-none', callback=self._on_select_none)
+        btnSelectNone = self.factory.create_button('miaz-select-none', callback=self._on_select_none, css_classes=['flat'])
         sep = Gtk.Separator.new(orientation=Gtk.Orientation.VERTICAL)
-        self.tgbExplain = self.factory.create_button_toggle('miaz-magic', callback=self._on_explain_toggled)
-        self.tgbFilters = self.factory.create_button_toggle('miaz-filters', callback=self._on_filters_toggled)
+        self.tgbExplain = self.factory.create_button_toggle('miaz-magic', callback=self._on_explain_toggled, css_classes=['flat'])
+        self.tgbFilters = self.factory.create_button_toggle('miaz-filters', callback=self._on_filters_toggled, css_classes=['flat'])
         self.tgbFilters.set_active(False)
         self._on_filters_toggled(self.tgbFilters)
-        # ~ actionbar.pack_start(child=tgbSidebar)
-        # ~ actionbar.pack_start(child=btnDashboard)
-        # ~ actionbar.pack_start(child=btnReview)
-        actionbar.pack_start(child=boxDocsSelected) #lblFrmView)
-        actionbar.pack_start(child=self.ent_sb)
-        # ~ actionbar.pack_start(child=boxEmpty)
-        actionbar.pack_end(child=self.tgbFilters)
-        actionbar.pack_end(child=btnSelectNone)
-        actionbar.pack_end(child=btnSelectAll)
-        actionbar.pack_end(child=sep)
-        actionbar.pack_end(child=self.tgbExplain)
+
+        cbwe.append(self.tgbExplain)
+        cbwe.append(self.tgbFilters)
+        cbwe.append(sep)
+        cbwe.append(btnSelectNone)
+        cbwe.append(btnSelectAll)
+
+
+        actionbar.set_start_widget(cbws)
+        actionbar.set_end_widget(cbwe)
         head.append(actionbar)
         head.append(self.toolbar_filters)
         # ~ frmView = self.factory.create_frame(hexpand=True, vexpand=True)
@@ -353,14 +333,15 @@ class MiAZWorkspace(Gtk.Box):
         self.view.cv.sort_by_column(self.view.column_title, Gtk.SortType.DESCENDING)
         self.view.set_filter(self._do_filter_view)
         self.view.select_first_item()
-        # ~ frmView.set_child(self.view)
-        body.append(self.view)
+        frmView = self.factory.create_frame(hexpand=True, vexpand=True)
+        frmView.set_child(self.view)
+        body.append(frmView)
 
         # Connect signals
         selection = self.view.get_selection()
         self._on_signal_filter_connect()
 
-        # ~ frmView.set_child(widget)
+        # ~ frmView.set_child(self.view)
         # ~ return frmView
         return widget
 
