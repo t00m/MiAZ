@@ -176,7 +176,7 @@ class MiAZWorkspace(Gtk.Box):
         title = item_type.__gtype_name__
         self.log.debug("Rename %s for:", title)
         box = self.factory.create_box_vertical()
-        label = self.factory.create_label('Rename %d files by setting\r\nthe field <b>%s</b> to:\n' % (len(self.selected_items), title))
+        label = self.factory.create_label('Rename %d files by setting the field <b>%s</b> to:\n' % (len(self.selected_items), title))
         dropdown = self.factory.create_dropdown_generic(item_type)
         self.actions.dropdown_populate(dropdown, item_type, any_value=False)
         # ~ self.actions.dropdown_populate(dropdown, item_type, conf)
@@ -245,6 +245,7 @@ class MiAZWorkspace(Gtk.Box):
         actionbar.set_vexpand(True)
 
         self.ent_sb = Gtk.SearchEntry(placeholder_text="Type here")
+        self.ent_sb.set_width_chars(41)
         self.ent_sb.connect('changed', self._on_filter_selected)
         self.ent_sb.set_hexpand(True)
         # ~ boxEntry = self.factory.create_box_filter('Free search', self.ent_sb)
@@ -630,8 +631,8 @@ class MiAZWorkspace(Gtk.Box):
         self.log.debug(switched)
 
     def document_rename(self, *args):
-        source = self.get_item().id
-        self.actions.document_rename(source)
+        item = self.get_item()
+        self.actions.document_rename(item)
 
     def get_selected(self, *args):
         selection = self.get_selection()

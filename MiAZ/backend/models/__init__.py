@@ -4,7 +4,9 @@ from gi.repository import GObject
 
 
 class MiAZModel(GObject.Object):
-    """Custom data model for MiAZ use cases"""
+    """Custom data model for MiAZ use cases
+    {timestamp}-{country}-{collection}-{from}-{purpose}-{concept}-{to}.{extension}
+    """
     __gtype_name__ = 'MiAZModel'
 
     def __init__(self,  id: str,

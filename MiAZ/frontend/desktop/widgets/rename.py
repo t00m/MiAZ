@@ -121,7 +121,7 @@ class MiAZRenameDialog(Gtk.Dialog):
         self.boxMain.append(row)
         button = self.factory.create_button('miaz-list-add', '')
         dropdown = self.factory.create_dropdown_generic(item_type, ellipsize=False) #, item)
-        self.actions.dropdown_populate(dropdown, item_type, conf)
+        self.actions.dropdown_populate(dropdown, item_type)
         boxValue.append(dropdown)
         boxValue.append(button)
         return row, button, dropdown
@@ -130,16 +130,18 @@ class MiAZRenameDialog(Gtk.Dialog):
         found = False
         if len(suggestion) > 0:
             model = dropdown.get_model()
+            # ~ self.log.debug("%s > %s", dropdown, model)
             n = 0
             for item in model:
-                # ~ self.log.debug("%s == %s? %s", item.id, suggestion, item.id == suggestion)
+                # ~ self.log.debug(item)
+                # ~ self.log.debug("%s == %s? %s (n=%d)", item.id, suggestion, item.id == suggestion, n)
                 if item.id == suggestion:
                     dropdown.set_selected(n)
                     found = True
                 n += 1
 
-        if not found:
-            dropdown.set_selected(0)
+        # ~ if not found:
+            # ~ dropdown.set_selected(0)
 
     def __create_field_0_date(self):
         """Field 0. Date"""
@@ -203,6 +205,7 @@ class MiAZRenameDialog(Gtk.Dialog):
         button.set_sensitive(False)
         button.set_has_frame(False)
         self.entry_concept = Gtk.Entry()
+        self.entry_concept.set_width_chars(41)
         self.entry_concept.set_alignment(1.0)
         self.entry_concept.set_placeholder_text('Type anything here...')
         boxValue.append(self.entry_concept)
@@ -315,17 +318,17 @@ class MiAZRenameDialog(Gtk.Dialog):
             self.result = "%s.%s" % ('-'.join(fields), aextension)
             self.lblFilenameNew.set_markup(self.result)
 
-            organizations = self.app.get_config('organizations')
-            countries = self.app.get_config('countries')
-            collections = self.app.get_config('collections')
-            purposes = self.app.get_config('purposes')
+            person = self.app.get_config('Person')
+            countries = self.app.get_config('Country')
+            collections = self.app.get_config('Collection')
+            purposes = self.app.get_config('Purpose')
             v_date = self.validate_date(adate)
             v_col = len(acollection) > 0
             v_cty = countries.exists(acountry)
-            v_from = organizations.exists(afrom)
+            v_from = person.exists(afrom)
             v_purp = len(apurpose) > 0
             v_cnpt = len(aconcept) > 0
-            v_to = organizations.exists(ato)
+            v_to = person.exists(ato)
 
             if v_col:
                 success_or_warning(self.rowCollection, collections.exists(acollection))
@@ -348,6 +351,7 @@ class MiAZRenameDialog(Gtk.Dialog):
             else:
                 self.btnAccept.set_sensitive(False)
         except Exception as error:
+            self.log.error(error)
             self.result = ''
 
     def validate_date(self, adate: str) -> bool:
@@ -361,7 +365,7 @@ class MiAZRenameDialog(Gtk.Dialog):
         valid_filename = False
 
         # Validate Collection:
-        cnfCollections = self.app.get_config('collections')
+        cnfCollections = self.app.get_config('Collection')
         collections = cnfCollections.load()
         if not cnfCollections.exists(fields[2]):
             collections.append(fields[2])
@@ -369,7 +373,7 @@ class MiAZRenameDialog(Gtk.Dialog):
             self.new_values.append(('collections', '', fields[2]))
 
         # Validate From:
-        cnfOrgs = self.app.get_config('organizations')
+        cnfOrgs = self.app.get_config('Person')
         orgs = cnfOrgs.load()
         if not cnfOrgs.exists(fields[3]):
             cnfOrgs.set(fields[3], '')
@@ -377,7 +381,7 @@ class MiAZRenameDialog(Gtk.Dialog):
             self.new_values.append(('From', '', fields[3]))
 
         # Validate To:
-        cnfOrgs = self.app.get_config('organizations')
+        cnfOrgs = self.app.get_config('Person')
         orgs = cnfOrgs.load()
         if not cnfOrgs.exists(fields[3]):
             cnfOrgs.set(fields[3], '')
@@ -430,7 +434,7 @@ class MiAZRenameDialog(Gtk.Dialog):
         question.show()
 
     def on_organizations_refresh(self, *args):
-        config = self.app.get_config('organizations')
+        config = self.app.get_config('Person')
         organizations = config.load()
         model = self.combobox_from.get_model()
         model.clear()
@@ -481,13 +485,13 @@ class MiAZRenameDialog(Gtk.Dialog):
             key = dialog.get_value1()
             value = dialog.get_value2()
             if len(key) > 0 and len(value) > 0:
-                config = self.app.get_config('organizations')
+                config = self.app.get_config('Person')
                 items = config.load()
                 items[key.upper()] = value
                 config.save(items)
 
                 # Update dropdown
-                self.actions.dropdown_populate(self.dpdFrom, Person, 'organizations')
+                self.actions.dropdown_populate(self.dpdFrom, Person)
                 self.select_dropdown_item(self.dpdFrom, key)
         dialog.destroy()
 
@@ -521,7 +525,7 @@ class MiAZRenameDialog(Gtk.Dialog):
             key = dialog.get_value1()
             value = dialog.get_value2()
             if len(key) > 0 and len(value) > 0:
-                config = self.app.get_config('organizations')
+                config = self.app.get_config('Person')
                 items = config.load()
                 items[key.upper()] = value
                 config.save(items)
