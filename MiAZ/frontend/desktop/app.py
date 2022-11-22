@@ -62,8 +62,8 @@ class MiAZApp(Adw.Application):
         # ~ self.log.debug(keyname)
 
 
-    def create_menu_actions(self):
-        self.factory.create_action('quit', self.exit_app, ['Control_L', 'q'])
+    # ~ def create_menu_actions(self):
+        # ~ self.factory.create_action('quit', self.exit_app, ['Control_L', 'q'])
 
     def get_actions(self):
         return self.actions
@@ -86,25 +86,15 @@ class MiAZApp(Adw.Application):
     def get_header(self):
         return self.header
 
-    def build_gui(self):
-        ## HeaderBar
-        self.header = Adw.HeaderBar()
-
-        ## Central Box
-        self.mainbox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
-        self.mainbox.set_vexpand(True)
-        self.win.set_child(self.mainbox)
-
-        # Widgets
-        ## Stack & Stack.Switcher
+    def _setup_stack(self):
         self.stack = Adw.ViewStack()
         self.switcher = Adw.ViewSwitcher()
         self.switcher.set_policy(Adw.ViewSwitcherPolicy.WIDE)
         self.switcher.set_stack(self.stack)
         self.stack.set_vexpand(True)
-        self.mainbox.append(self.stack)
+        return self.stack
 
-        # Create workspace
+    def _setup_workspace_page(self):
         self.workspace = MiAZWorkspace(self)
         self.page_workspace = self.stack.add_titled(self.workspace, 'workspace', 'MiAZ')
         self.page_workspace.set_icon_name('document-properties')
@@ -113,25 +103,33 @@ class MiAZApp(Adw.Application):
         self.page_workspace.set_visible(True)
         self.show_stack_page_by_name('workspace')
 
-        # Headerbar: Left side
+    def _setup_headerbar_left(self):
         listbox = Gtk.ListBox.new()
+        listbox.set_activate_on_single_click(False)
+        listbox.unselect_all()
+        listbox.set_selection_mode(Gtk.SelectionMode.SINGLE)
         vbox = self.factory.create_box_vertical()
         vbox.append(child=listbox)
-        rowImportDoc = self.factory.create_actionrow('miaz-import-document', 'Import document', 'Import a single document into your AZ', prefix=None, suffix=None)
+
+        btnImportFiles = self.factory.create_button('miaz-import-document')
+        rowImportDoc = self.factory.create_actionrow(title='Import document', subtitle='Import one or more documents', suffix=btnImportFiles)
         listbox.append(child=rowImportDoc)
+
+        btnImportDir = self.factory.create_button('miaz-import-folder')
+        rowImportDir = self.factory.create_actionrow(title='Import directory', subtitle='Import all documents from a directory', suffix=btnImportDir)
+        listbox.append(child=rowImportDir)
+
         popover = Gtk.Popover()
         popover.set_child(vbox)
-        btnImport = self.factory.create_button('miaz-import')
+        popover.present()
+
+        btnImport = Gtk.MenuButton(icon_name='miaz-import')
+        btnImport.set_popover(popover)
         self.header.pack_start(btnImport)
 
-        # ~ self.header.set_title_widget(title_widget=self.switcher)
-        # ~ self.header.set_title_widget(title_widget=boxDashboardButtons)
-        # ~ self.header.set_title_widget(Gtk.Label.new().set_markup('<i>Loading...</i>'))
-        self.win.set_titlebar(self.header)
-
-        # Add Menu Button to the titlebar (Right Side)
+    def _setup_headerbar_right(self):
+       # Add Menu Button to the titlebar (Right Side)
         menu = MiAZMenuButton(MiAZ_APP_MENU, 'app-menu')
-        self.header.pack_end(menu)
 
         # and create actions to handle menu actions
         for action, shortcut in [('settings', ['<Ctrl>s']),
@@ -142,12 +140,33 @@ class MiAZApp(Adw.Application):
                                  ('rename', ['<Ctrl>r'])
                                 ]:
             self.factory.create_menu_action(action, self.menu_handler, shortcut)
+        self.header.pack_end(menu)
 
-    def get_button_dashboard(self):
-        return self.btnDashboard
+    def _setup_headerbar_center(self):
+        # ~ self.header.set_title_widget(title_widget=self.switcher)
+        pass
 
-    def get_button_review(self):
-        return self.btnReview
+    def build_gui(self):
+        ## HeaderBar
+        self.header = Adw.HeaderBar()
+
+        ## Central Box
+        self.mainbox = self.factory.create_box_vertical(vexpand=True)
+        self.win.set_child(self.mainbox)
+
+        # Widgets
+        ## Stack & Stack.Switcher
+        stack = self._setup_stack()
+        self.mainbox.append(stack)
+
+        # Create workspace
+        self._setup_workspace_page()
+
+        # Setup headerbar
+        self._setup_headerbar_left()
+        self._setup_headerbar_center()
+        self._setup_headerbar_right()
+        self.win.set_titlebar(self.header)
 
     def menu_handler(self, action, state):
             """ Callback for  menu actions"""

@@ -37,15 +37,24 @@ class MiAZFactory:
         # ~ action.connect("activate", callback)
         # ~ self.app.add_action(action)
 
-    def create_actionrow(self, icon_name, title, subtitle, prefix, suffix):
+    def create_actionrow(self, icon_name:str = '', title:str = '', subtitle:str = '', prefix: Gtk.Widget = None, suffix: Gtk.Widget = None):
         row = Adw.ActionRow.new()
-        row.set_icon_name(icon_name)
+        if len(icon_name) > 0:
+            row.set_icon_name(icon_name)
+
         row.set_title(title)
-        row.set_subtitle(subtitle)
+
+        if len(subtitle) > 0:
+            row.set_subtitle(subtitle)
+
         if prefix is not None:
+            prefix.set_valign(Gtk.Align.CENTER)
             row.add_prefix(prefix)
+
         if suffix is not None:
+            suffix.set_valign(Gtk.Align.CENTER)
             row.add_suffix(suffix)
+
         return row
 
     def create_box_filter(self, title, widget: Gtk.Widget) -> Gtk.Box:

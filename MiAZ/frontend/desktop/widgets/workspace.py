@@ -44,11 +44,18 @@ class MiAZWorkspace(Gtk.Box):
         self.set_margin_end(margin=6)
         self.set_margin_bottom(margin=6)
         self.set_margin_start(margin=6)
-
         frmView = self._setup_workspace()
-        # ~ self.append(self.toolbar_filters)
         self.append(frmView)
 
+    def spinner_start(self, *args):
+        self.spinner.start()
+        self.spinner.set_spinning(True)
+        self.log.debug("Spinner started")
+
+    def spinner_stop(self, *args):
+        self.spinner.stop()
+        self.spinner.set_spinning(False)
+        self.log.debug("Spinner stopped")
 
     def _setup_toolbar_filters(self):
         widget = self.factory.create_box_horizontal(hexpand=True, vexpand=False)
@@ -217,12 +224,12 @@ class MiAZWorkspace(Gtk.Box):
         boxDocsSelected.set_center_widget(self.btnDocsSel)
 
         self.ent_sb = Gtk.SearchEntry(placeholder_text="Type here")
-        self.ent_sb.set_width_chars(41)
+        # ~ self.ent_sb.set_width_chars(41)
         self.ent_sb.connect('changed', self._on_filter_selected)
-        self.ent_sb.set_hexpand(True)
+        self.ent_sb.set_hexpand(False)
 
         cbws.append(boxDocsSelected)
-        cbws.append(self.ent_sb)
+        # ~ cbws.append(self.ent_sb)
 
         cbwe = self.factory.create_box_horizontal(margin=0, spacing=3)
 
@@ -241,6 +248,7 @@ class MiAZWorkspace(Gtk.Box):
         cbwe.append(btnSelectAll)
 
         toolbar_top.set_start_widget(cbws)
+        toolbar_top.set_center_widget(self.ent_sb)
         toolbar_top.set_end_widget(cbwe)
         return toolbar_top
 
@@ -324,12 +332,35 @@ class MiAZWorkspace(Gtk.Box):
         # ~ self.sbcid = statusbar.get_context_id('MiAZ')
         # ~ return statusbar
 
-    def _setup_actionbar(self):
-        self.statusbar = Gtk.Statusbar()
-        self.sbcid = self.statusbar.get_context_id('MiAZ')
-        actionbar = Gtk.ActionBar()
-        actionbar.pack_start(self.statusbar)
-        return actionbar
+    def _setup_statusbar(self):
+        hbox = self.factory.create_box_horizontal(margin=0, hexpand=True)
+        frm = self.factory.create_frame(margin=0, hexpand=True)
+        self.infobar = Gtk.InfoBar()
+        self.infobar.set_revealed(True)
+        self.infobar.set_hexpand(True)
+        self.infobar.set_show_close_button(False)
+        self.infobar.set_message_type(Gtk.MessageType.ERROR)
+        message_label = Gtk.Label()
+        message_label.set_markup('Number of documents pending of review')
+        boxEmpty = self.factory.create_box_horizontal(hexpand=True)
+        hbox.append(message_label)
+        hbox.append(boxEmpty)
+        hbox.append(self.factory.create_button('miaz-rename'))
+        self.infobar.add_child(hbox)
+        frm.set_child(self.infobar)
+        # ~ self.infobar.connect('response', self.infobar_response)
+        # ~ self.append(self.infobar)
+        # ~ self.infobar_message()
+        # ~ self.statusbar = Gtk.Statusbar()
+        # ~ self.sbcid = self.statusbar.get_context_id('MiAZ')
+
+        # ~
+        self.spinner = Gtk.Spinner()
+        # ~ self.spinner.set_spinning(True)
+        # ~ hbox.append(self.infobar)
+        # ~ hbox.append(boxEmpty)
+
+        return frm
 
     def _setup_workspace(self):
         widget = self.factory.create_box_vertical(margin=0, spacing=6, hexpand=True, vexpand=True)
@@ -343,11 +374,11 @@ class MiAZWorkspace(Gtk.Box):
         toolbar_top = self._setup_toolbar_top()
         self.toolbar_filters = self._setup_toolbar_filters()
         frmView = self._setup_columnview()
-        self.actionbar = self._setup_actionbar()
+        statusbar = self._setup_statusbar()
         head.append(toolbar_top)
         head.append(self.toolbar_filters)
         body.append(frmView)
-        foot.append(self.actionbar)
+        foot.append(statusbar)
 
         # Connect signals
         selection = self.view.get_selection()
@@ -355,7 +386,7 @@ class MiAZWorkspace(Gtk.Box):
         # Trigger events
         self._on_signal_filter_connect()
         self._on_filters_toggled(self.tgbFilters)
-        self.statusbar.push(self.sbcid, 'MiAZ')
+        # ~ self.statusbar.push(self.sbcid, 'MiAZ')
 
         # ~ frmView.set_child(self.view)
         # ~ return frmView
@@ -448,6 +479,7 @@ class MiAZWorkspace(Gtk.Box):
     def update(self, *args):
         # FIXME: Get dict from backend
         # ~ self._on_signal_filter_disconnect()
+        self.spinner_start()
         self._on_explain_toggled(self.tgbExplain)
         repocnf = self.backend.get_repo_source_config_file()
         self.repodct = json_load(repocnf)
@@ -481,6 +513,7 @@ class MiAZWorkspace(Gtk.Box):
         if self.show_dashboard:
             self.tgbExplain.set_active(True)
         self.lblDocumentsSelected = "0 of %d documents selected" % len(self.repodct)
+        self.spinner_stop()
 
     # ~ def update_filters(self, item, ival):
         # ~ n = 0
