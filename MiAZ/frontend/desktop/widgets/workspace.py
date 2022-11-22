@@ -44,7 +44,7 @@ class MiAZWorkspace(Gtk.Box):
         self.set_margin_end(margin=6)
         self.set_margin_bottom(margin=6)
         self.set_margin_start(margin=6)
-        self.toolbar_filters = self._setup_toolbar_filters()
+
         frmView = self._setup_workspace()
         # ~ self.append(self.toolbar_filters)
         self.append(frmView)
@@ -233,7 +233,6 @@ class MiAZWorkspace(Gtk.Box):
         self.tgbExplain = self.factory.create_button_toggle('miaz-magic', callback=self._on_explain_toggled, css_classes=['flat'])
         self.tgbFilters = self.factory.create_button_toggle('miaz-filters', callback=self._on_filters_toggled, css_classes=['flat'])
         self.tgbFilters.set_active(False)
-        self._on_filters_toggled(self.tgbFilters)
 
         cbwe.append(self.tgbExplain)
         cbwe.append(self.tgbFilters)
@@ -245,21 +244,7 @@ class MiAZWorkspace(Gtk.Box):
         toolbar_top.set_end_widget(cbwe)
         return toolbar_top
 
-    def _setup_workspace(self):
-        widget = self.factory.create_box_vertical(margin=0, spacing=6, hexpand=True, vexpand=True)
-        head = self.factory.create_box_vertical(margin=0, spacing=0, hexpand=True)
-        body = self.factory.create_box_vertical(margin=0, spacing=0, hexpand=True, vexpand=True)
-        foot = self.factory.create_box_vertical(margin=0, spacing=0, hexpand=True)
-        widget.append(head)
-        widget.append(body)
-        widget.append(foot)
-
-        toolbar_top = self._setup_toolbar_top()
-        head.append(toolbar_top)
-        head.append(self.toolbar_filters)
-
-
-
+    def _setup_columnview(self):
         # ColumnView
         self.view = MiAZColumnView(self.app)
 
@@ -332,11 +317,45 @@ class MiAZWorkspace(Gtk.Box):
         self.view.select_first_item()
         frmView = self.factory.create_frame(hexpand=True, vexpand=True)
         frmView.set_child(self.view)
+        return frmView
+
+    # ~ def _setup_statusbar(self):
+        # ~ statusbar = Gtk.Statusbar()
+        # ~ self.sbcid = statusbar.get_context_id('MiAZ')
+        # ~ return statusbar
+
+    def _setup_actionbar(self):
+        self.statusbar = Gtk.Statusbar()
+        self.sbcid = self.statusbar.get_context_id('MiAZ')
+        actionbar = Gtk.ActionBar()
+        actionbar.pack_start(self.statusbar)
+        return actionbar
+
+    def _setup_workspace(self):
+        widget = self.factory.create_box_vertical(margin=0, spacing=6, hexpand=True, vexpand=True)
+        head = self.factory.create_box_vertical(margin=0, spacing=0, hexpand=True)
+        body = self.factory.create_box_vertical(margin=0, spacing=0, hexpand=True, vexpand=True)
+        foot = self.factory.create_box_vertical(margin=0, spacing=0, hexpand=True)
+        widget.append(head)
+        widget.append(body)
+        widget.append(foot)
+
+        toolbar_top = self._setup_toolbar_top()
+        self.toolbar_filters = self._setup_toolbar_filters()
+        frmView = self._setup_columnview()
+        self.actionbar = self._setup_actionbar()
+        head.append(toolbar_top)
+        head.append(self.toolbar_filters)
         body.append(frmView)
+        foot.append(self.actionbar)
 
         # Connect signals
         selection = self.view.get_selection()
+
+        # Trigger events
         self._on_signal_filter_connect()
+        self._on_filters_toggled(self.tgbFilters)
+        self.statusbar.push(self.sbcid, 'MiAZ')
 
         # ~ frmView.set_child(self.view)
         # ~ return frmView
