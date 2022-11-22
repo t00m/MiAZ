@@ -558,11 +558,11 @@ class MiAZWorkspace(Gtk.Box):
         self.dfilter = {}
         self.view.refilter()
         self.update_title()
-        if self.num_review > 0:
-            btnDashboard = self.app.get_button_dashboard()
-            btnReview = self.app.get_button_review()
-            btnReview.set_visible(True)
-            btnDashboard.set_visible(False)
+        # ~ if self.num_review > 0:
+            # ~ btnDashboard = self.app.get_button_dashboard()
+            # ~ btnReview = self.app.get_button_review()
+            # ~ btnReview.set_visible(True)
+            # ~ btnDashboard.set_visible(False)
 
     def _on_select_all(self, *args):
         selection = self.view.get_selection()

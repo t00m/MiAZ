@@ -8,6 +8,7 @@ gi.require_version('Adw', '1')
 gi.require_version('Gtk', '4.0')
 from gi.repository import Adw
 from gi.repository import Gdk
+from gi.repository import Gio
 from gi.repository import GLib
 from gi.repository import Gtk
 
@@ -113,14 +114,15 @@ class MiAZApp(Adw.Application):
         self.show_stack_page_by_name('workspace')
 
         # Headerbar: Left side
-        boxDashboardButtons = Gtk.Box(spacing=3, orientation=Gtk.Orientation.HORIZONTAL, homogeneous=True)
-        self.btnDashboard = self.factory.create_button('MiAZ', 'Back to AZ', callback=self.workspace.show_dashboard, css_classes=['flat', 'linked', 'toolbar'])
-        self.btnDashboard.set_visible(False)
-        self.btnReview = self.factory.create_button('miaz-rename', 'Review', callback=self.workspace.show_review, css_classes=['flat', 'linked', 'toolbar'])
-        self.btnReview.set_visible(False)
-        boxDashboardButtons.append(self.btnDashboard)
-        boxDashboardButtons.append(self.btnReview)
-        self.header.pack_start(boxDashboardButtons)
+        listbox = Gtk.ListBox.new()
+        vbox = self.factory.create_box_vertical()
+        vbox.append(child=listbox)
+        rowImportDoc = self.factory.create_actionrow('miaz-import-document', 'Import document', 'Import a single document into your AZ', prefix=None, suffix=None)
+        listbox.append(child=rowImportDoc)
+        popover = Gtk.Popover()
+        popover.set_child(vbox)
+        btnImport = self.factory.create_button('miaz-import')
+        self.header.pack_start(btnImport)
 
         # ~ self.header.set_title_widget(title_widget=self.switcher)
         # ~ self.header.set_title_widget(title_widget=boxDashboardButtons)
