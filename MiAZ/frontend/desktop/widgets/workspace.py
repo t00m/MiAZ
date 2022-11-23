@@ -340,12 +340,16 @@ class MiAZWorkspace(Gtk.Box):
         self.infobar.set_hexpand(True)
         self.infobar.set_show_close_button(False)
         self.infobar.set_message_type(Gtk.MessageType.ERROR)
-        message_label = Gtk.Label()
-        message_label.set_markup('Number of documents pending of review')
+        self.message_label = Gtk.Label()
+        self.message_label.set_markup('There are still documents pending of review')
         boxEmpty = self.factory.create_box_horizontal(hexpand=True)
-        hbox.append(message_label)
+        hbox.append(self.message_label)
         hbox.append(boxEmpty)
-        hbox.append(self.factory.create_button('miaz-rename'))
+        self.btnReview = self.factory.create_button('miaz-rename', callback=self.display_review)
+        self.btnDashboard = self.factory.create_button('miaz-dashboard-ok', title='Back to the AZ', callback=self.display_dashboard)
+        self.btnDashboard.set_visible(False)
+        hbox.append(self.btnReview)
+        hbox.append(self.btnDashboard)
         self.infobar.add_child(hbox)
         frm.set_child(self.infobar)
         # ~ self.infobar.connect('response', self.infobar_response)
@@ -374,11 +378,15 @@ class MiAZWorkspace(Gtk.Box):
         toolbar_top = self._setup_toolbar_top()
         self.toolbar_filters = self._setup_toolbar_filters()
         frmView = self._setup_columnview()
-        statusbar = self._setup_statusbar()
+        self.statusbar = self._setup_statusbar()
         head.append(toolbar_top)
         head.append(self.toolbar_filters)
         body.append(frmView)
-        foot.append(statusbar)
+        foot.append(self.statusbar)
+
+        self.log.debug("Review? %d", self.num_review)
+        if self.num_review == 0:
+            self.statusbar.set_visible(False)
 
         # Connect signals
         selection = self.view.get_selection()
@@ -591,11 +599,11 @@ class MiAZWorkspace(Gtk.Box):
         self.dfilter = {}
         self.view.refilter()
         self.update_title()
-        # ~ if self.num_review > 0:
-            # ~ btnDashboard = self.app.get_button_dashboard()
-            # ~ btnReview = self.app.get_button_review()
-            # ~ btnReview.set_visible(True)
-            # ~ btnDashboard.set_visible(False)
+        if self.num_review > 0:
+            self.statusbar.set_visible(True)
+        else:
+            self.display_dashboard()
+            self.statusbar.set_visible(False)
 
     def _on_select_all(self, *args):
         selection = self.view.get_selection()
@@ -605,7 +613,8 @@ class MiAZWorkspace(Gtk.Box):
         selection = self.view.get_selection()
         selection.unselect_all()
 
-    def show_dashboard(self, *args):
+    def display_dashboard(self, *args):
+        self.log.debug("Dashboard")
         self.displayed = 0
         self.num_review = 0
         self.dfilter = {}
@@ -615,27 +624,32 @@ class MiAZWorkspace(Gtk.Box):
         self.tgbExplain.set_active(True)
         self.tgbExplain.set_visible(True)
         self.tgbFilters.set_visible(True)
-        btnDashboard = self.app.get_button_dashboard()
-        btnReview = self.app.get_button_review()
         if self.num_review > 0:
-            btnDashboard = self.app.get_button_dashboard()
-            btnReview = self.app.get_button_review()
-            btnReview.set_visible(True)
-            btnDashboard.set_visible(False)
+            self.statusbar.set_visible(True)
+            self.message_label.set_markup('There are new documents pending of review')
+            self.infobar.set_message_type(Gtk.MessageType.ERROR)
+            self.btnReview.set_visible(True)
+            self.btnDashboard.set_visible(False)
+        else:
+            self.statusbar.set_visible(True)
 
-    def show_review(self, *args):
+    def display_review(self, *args):
+        self.log.debug("Review documents")
         self.displayed = 0
         self.dfilter = {}
         self.show_dashboard = False
         self.view.refilter()
         self.update_title()
-        btnDashboard = self.app.get_button_dashboard()
-        btnReview = self.app.get_button_review()
-        btnDashboard.set_visible(True)
-        btnReview.set_visible(False)
+        self.btnDashboard.set_visible(True)
+        self.btnReview.set_visible(False)
         self.tgbExplain.set_active(False)
         self.tgbExplain.set_visible(False)
         self.tgbFilters.set_visible(False)
+        self.statusbar.set_visible(True)
+        self.message_label.set_markup('<b>Review finished?</b>')
+        self.infobar.set_message_type(Gtk.MessageType.INFO)
+        # ~ btnBack = self.infobar.add_button('Back to AZ', Gtk.ResponseType.CANCEL)
+
 
     def foreach(self):
         last = self.model_filter.get_n_items()

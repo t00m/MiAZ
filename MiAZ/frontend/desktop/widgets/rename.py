@@ -407,13 +407,21 @@ class MiAZRenameDialog(Gtk.Dialog):
         question.show()
 
     def on_answer_question_rename(self, dialog, response):
-        if response == Gtk.ResponseType.YES:
+        self.log.debug(response)
+        if response == Gtk.ResponseType.ACCEPT:
             source = self.get_filepath_source()
             target = os.path.join(os.path.dirname(source), self.get_filepath_target())
-            if source != target and not os.path.exists(target):
-                shutil.move(source, target)
-                dialog.destroy()
-                self.destroy()
+            self.log.debug("%s => %s", source, target)
+            if source != target:
+                if not os.path.exists(target):
+                    shutil.move(source, target)
+                    self.log.info("%s renamed to %s", source, target)
+                else:
+                    self.log.error("Target already exist. Skip rename")
+            else:
+                self.log.error("Source and Target are the same. Skip rename")
+            dialog.destroy()
+            self.destroy()
         else:
             dialog.destroy()
 
