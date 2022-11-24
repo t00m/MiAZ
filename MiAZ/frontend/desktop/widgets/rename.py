@@ -82,13 +82,13 @@ class MiAZRenameDialog(Gtk.Dialog):
         self.boxMain.set_margin_start(margin=12)
 
         # Filename format: {timestamp}-{country}-{collection}-{from}-{purpose}-{concept}-{to}.{extension}
-        self.__create_field_0_date() # Field 1. Country
-        self.__create_field_1_country() # Field 3. From
+        self.__create_field_0_date() # Field 1. Date
+        self.__create_field_1_country() # Field 1. Country
         self.__create_field_2_collection() # Field 2. Collection
-        self.__create_field_3_from() # Field 3. From
+        self.__create_field_3_sentby() # Field 3. Sent by
         self.__create_field_4_purpose() # Field 3. Purpose
         self.__create_field_5_concept() # Field 3. Concept
-        self.__create_field_6_to() # Field 6. To
+        self.__create_field_6_sentto() # Field 6. Sent to
         self.__create_field_7_extension() # Field 7. Extension
         self.__create_field_8_result() # Result filename
 
@@ -182,11 +182,11 @@ class MiAZRenameDialog(Gtk.Dialog):
         self.btnCollection.connect('clicked', self.on_collection_add)
         self.dpdCollection.connect("notify::selected-item", self.on_changed_entry)
 
-    def __create_field_3_from(self):
-        self.rowFrom, self.btnFrom, self.dpdFrom = self.__create_actionrow('From', Person, 'organizations')
-        self.btnFrom.connect('clicked', self.on_organization_from_add)
-        self._set_suggestion(self.dpdFrom, self.suggested[3])
-        self.dpdFrom.connect("notify::selected-item", self.on_changed_entry)
+    def __create_field_3_sentby(self):
+        self.rowSentBy, self.btnSentBy, self.dpdSentBy = self.__create_actionrow('Sent by', Person, 'organizations')
+        self.btnSentBy.connect('clicked', self.on_person_sentby_add)
+        self._set_suggestion(self.dpdSentBy, self.suggested[3])
+        self.dpdSentBy.connect("notify::selected-item", self.on_changed_entry)
 
     def __create_field_4_purpose(self):
         self.rowPurpose, self.btnPurpose, self.dpdPurpose = self.__create_actionrow('Purpose', Purpose, 'purposes')
@@ -216,8 +216,9 @@ class MiAZRenameDialog(Gtk.Dialog):
 
         self.entry_concept.connect('changed', self.on_changed_entry)
 
-    def __create_field_6_to(self):
+    def __create_field_6_sentto(self):
         self.rowTo, self.btnTo, self.dpdTo = self.__create_actionrow('To', Person, 'organizations')
+        self.btnSentTo.connect('clicked', self.on_person_sentto_add)
         self._set_suggestion(self.dpdTo, self.suggested[6])
         self.dpdTo.connect("notify::selected-item", self.on_changed_entry)
 
@@ -303,7 +304,7 @@ class MiAZRenameDialog(Gtk.Dialog):
             adate = self.entry_date.get_text()
             acountry = self.dpdCountry.get_selected_item().id
             acollection = self.dpdCollection.get_selected_item().id
-            afrom = self.dpdFrom.get_selected_item().id
+            sentby = self.dpdSentBy.get_selected_item().id
             apurpose = self.dpdPurpose.get_selected_item().id
             aconcept = self.entry_concept.get_text().upper().replace(' ', '_')
             ato = self.dpdTo.get_selected_item().id
@@ -311,7 +312,7 @@ class MiAZRenameDialog(Gtk.Dialog):
             fields.append(adate) # 0. Date
             fields.append(acountry) # 1. Country
             fields.append(acollection) # 2. Collection
-            fields.append(afrom) # 3. From
+            fields.append(sentby) # 3. SentBy
             fields.append(apurpose) # 4. Purpose
             fields.append(aconcept) # 5. Concept
             fields.append(ato) # 6. To
@@ -325,10 +326,10 @@ class MiAZRenameDialog(Gtk.Dialog):
             v_date = self.validate_date(adate)
             v_col = len(acollection) > 0
             v_cty = countries.exists(acountry)
-            v_from = person.exists(afrom)
+            v_sentby = person.exists(sentby)
             v_purp = len(apurpose) > 0
             v_cnpt = len(aconcept) > 0
-            v_to = person.exists(ato)
+            v_sentto = person.exists(ato)
 
             if v_col:
                 success_or_warning(self.rowCollection, collections.exists(acollection))
@@ -342,11 +343,11 @@ class MiAZRenameDialog(Gtk.Dialog):
 
             success_or_error(self.rowDate, v_date)
             success_or_error(self.rowCountry, v_cty)
-            success_or_error(self.rowFrom, v_from)
+            success_or_error(self.rowSentBy, v_sentby)
             success_or_error(self.rowConcept, v_cnpt)
-            success_or_error(self.rowTo, v_to)
+            success_or_error(self.rowTo, v_sentto)
 
-            if v_date and v_from and v_to and v_cty and v_col and v_purp and v_cnpt:
+            if v_date and v_sentby and v_sentto and v_cty and v_col and v_purp and v_cnpt:
                 self.btnAccept.set_sensitive(True)
             else:
                 self.btnAccept.set_sensitive(False)
@@ -372,13 +373,13 @@ class MiAZRenameDialog(Gtk.Dialog):
             cnfCollections.save(collections)
             self.new_values.append(('collections', '', fields[2]))
 
-        # Validate From:
+        # Validate SentBy:
         cnfOrgs = self.app.get_config('Person')
         orgs = cnfOrgs.load()
         if not cnfOrgs.exists(fields[3]):
             cnfOrgs.set(fields[3], '')
             cnfOrgs.save(cnfOrgs)
-            self.new_values.append(('From', '', fields[3]))
+            self.new_values.append(('Sent by', '', fields[3]))
 
         # Validate To:
         cnfOrgs = self.app.get_config('Person')
@@ -471,9 +472,9 @@ class MiAZRenameDialog(Gtk.Dialog):
             dialog.destroy()
             self.response(Gtk.ResponseType.CANCEL)
 
-    def on_organization_from_add(self, *args):
+    def on_person_sentby_add(self, *args):
         dialog = MiAZDialogAdd(self.app, self.get_root(), 'Add new person or entity', 'Initials', 'Full name')
-        dialog.connect('response', self.on_response_organization_from_add)
+        dialog.connect('response', self.on_response_person_sentby_add)
         dialog.show()
 
     def on_collection_add(self, *args):
@@ -483,12 +484,12 @@ class MiAZRenameDialog(Gtk.Dialog):
         dialog.connect('response', self.on_response_collection_add)
         dialog.show()
 
-    def on_organization_to_add(self, *args):
+    def on_person_sentto_add(self, *args):
         dialog = MiAZDialogAdd(self.app, self.get_root(), 'Add new person or entity', 'Initials', 'Full name')
-        dialog.connect('response', self.on_response_organization_to_add)
+        dialog.connect('response', self.on_response_person_sentto_add)
         dialog.show()
 
-    def on_response_organization_from_add(self, dialog, response):
+    def on_response_person_sentby_add(self, dialog, response):
         if response == Gtk.ResponseType.ACCEPT:
             key = dialog.get_value1()
             value = dialog.get_value2()
@@ -499,8 +500,8 @@ class MiAZRenameDialog(Gtk.Dialog):
                 config.save(items)
 
                 # Update dropdown
-                self.actions.dropdown_populate(self.dpdFrom, Person)
-                self.select_dropdown_item(self.dpdFrom, key)
+                self.actions.dropdown_populate(self.dpdSentBy, Person)
+                self.select_dropdown_item(self.dpdSentBy, key)
         dialog.destroy()
 
     def select_dropdown_item(self, dropdown, key):
@@ -528,7 +529,7 @@ class MiAZRenameDialog(Gtk.Dialog):
                 # ~ self.combobox_from.set_active_iter(treeiter)
         dialog.destroy()
 
-    def on_response_organization_to_add(self, dialog, response):
+    def on_response_person_sentto_add(self, dialog, response):
         if response == Gtk.ResponseType.ACCEPT:
             key = dialog.get_value1()
             value = dialog.get_value2()

@@ -15,12 +15,12 @@ class MiAZModel(GObject.Object):
                         collection: str = '',
                         country: str = '',
                         purpose: str = '',
-                        from_id: str = '',
-                        from_dsc: str = '',
+                        sentby_id: str = '',
+                        sentby_dsc: str = '',
                         title: str = '',
                         subtitle:str = '',
-                        to_id: str = '',
-                        to_dsc: str = '',
+                        sentto_id: str = '',
+                        sentto_dsc: str = '',
                         active: bool = False,
                         valid: bool = False,
                         icon: str = ''):
@@ -32,12 +32,12 @@ class MiAZModel(GObject.Object):
         self._collection = collection
         self._country = country
         self._purpose = purpose
-        self._from_id = from_id
-        self._from_dsc = from_dsc
+        self._sentby_id = sentby_id
+        self._sentby_dsc = sentby_dsc
         self._title = title
         self._subtitle = subtitle
-        self._to_id = to_id
-        self._to_dsc = to_dsc
+        self._sentto_id = sentto_id
+        self._sentto_dsc = sentto_dsc
         self._active = active
         self._valid = valid
         self._icon = icon
@@ -67,20 +67,20 @@ class MiAZModel(GObject.Object):
         return self._purpose
 
     @GObject.Property
-    def from_id(self):
-        return self._from_id
+    def sentby_id(self):
+        return self._sentby_id
 
     @GObject.Property
-    def to_id(self):
-        return self._to_id
+    def sentto_id(self):
+        return self._sentto_id
 
     @GObject.Property
-    def from_dsc(self):
-        return self._from_dsc
+    def sentby_dsc(self):
+        return self._sentby_dsc
 
     @GObject.Property
-    def to_dsc(self):
-        return self._to_dsc
+    def sentto_dsc(self):
+        return self._sentto_dsc
 
     @GObject.Property
     def title(self):
@@ -128,11 +128,11 @@ class Country(MiAZModel):
 class Person(MiAZModel):
     __gtype_name__ = 'Person'
 
-class From(Person):
-    __gtype_name__ = 'PersonFrom'
+class SentBy(Person):
+    __gtype_name__ = 'SentBy'
 
-class To(Person):
-    __gtype_name__ = 'PersonTo'
+class SentTo(Person):
+    __gtype_name__ = 'SentTo'
 
 class Purpose(MiAZModel):
     __gtype_name__ = 'Purpose'

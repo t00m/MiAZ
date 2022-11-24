@@ -31,22 +31,22 @@ class MiAZBackend(GObject.GObject):
     def __init__(self) -> None:
         GObject.GObject.__init__(self)
         self.log = get_logger('MiAZBackend')
-        GObject.signal_new('source-configuration-updated', MiAZBackend, GObject.SignalFlags.RUN_LAST, None, () )
-        # ~ GObject.signal_new('target-configuration-updated', MiAZBackend, GObject.SignalFlags.RUN_LAST, None, () )
+        GObject.signal_new('source-configuration-updated',
+                            MiAZBackend,
+                            GObject.SignalFlags.RUN_LAST, None, () )
         self.conf['App'] = MiAZConfigApp()
         self.conf['Country'] = MiAZConfigSettingsCountries()
         self.conf['Collection'] = MiAZConfigSettingsCollections()
         self.conf['Purpose'] = MiAZConfigSettingsPurposes()
         self.conf['Concept'] = MiAZConfigSettingsConcepts()
-        self.conf['PersonFrom'] = MiAZConfigSettingsPerson()
-        self.conf['PersonTo'] = MiAZConfigSettingsPerson()
+        self.conf['SentBy'] = MiAZConfigSettingsPerson()
+        self.conf['SentTo'] = MiAZConfigSettingsPerson()
         self.conf['Person'] = MiAZConfigSettingsPerson()
         self.source = self.conf['App'].get('source')
         self.target = self.conf['App'].get('target')
         self.watch_source = MiAZWatcher('source', self.source)
-        self.watch_source.connect('source-directory-updated', self.check_source)
-        # ~ self.watch_target = MiAZWatcher('target', self.target)
-        # ~ self.watch_target.connect('target-directory-updated', self.check_target)
+        self.watch_source.connect('source-directory-updated',
+                                                    self.check_source)
 
     def get_watcher_source(self):
         return self.watch_source
@@ -61,12 +61,14 @@ class MiAZBackend(GObject.GObject):
     def get_repo_source_config_file(self):
         repodir = self.conf['App'].get('source')
         repokey = valid_key(repodir)
-        return os.path.join(ENV['LPATH']['REPOS'], "source-%s.json" % repokey)
+        return os.path.join(ENV['LPATH']['REPOS'], "source-%s.json" %
+                                                                repokey)
 
     def get_repo_target_config_file(self):
         repodir = self.conf['App'].get('target')
         repokey = valid_key(repodir)
-        return os.path.join(ENV['LPATH']['REPOS'], "target-%s.json" % repokey)
+        return os.path.join(ENV['LPATH']['REPOS'], "target-%s.json" %
+                                                                repokey)
 
     def get_repo_dict(self):
         s_repodir = self.conf['App'].get('source')
@@ -274,7 +276,6 @@ class MiAZBackend(GObject.GObject):
 
 
     def suggest_filename(self, filepath: str) -> str:
-        # "{timestamp}-{country}-{collection}-{from}-{purpose}-{concept}-{to}.{extension}"
         timestamp = ""
         country = ""
         lang = ""
@@ -341,15 +342,15 @@ class MiAZBackend(GObject.GObject):
         if not found_collection:
             collection = ''
 
-        # Field 3. Find and/or guess From field
-        found_from = False
+        # Field 3. Find and/or guess SentBy field
+        found_person = False
         for field in fields:
             if self.conf['Person'].exists(field):
-                from_org = field.upper()
-                found_from = True
+                sentby = field.upper()
+                found_person = True
                 break
-        if not found_from:
-            from_org = ''
+        if not found_person:
+            sentby = ''
 
         # Field 4. Find and/or guess purpose field
         found_purpose = False
@@ -367,18 +368,23 @@ class MiAZBackend(GObject.GObject):
         except:
             concept = ''
 
-        # Field 6. Find and/or guess To field
-        found_to = False
+        # Field 6. Find and/or guess SentTo field
+        found_person = False
         for field in fields:
             if self.conf['Person'].exists(field):
-                found_to = True
-                to_org = field.upper()
+                found_person = True
+                sentto = field.upper()
                 break
-        if not found_to:
-            to_org = ''
+        if not found_person:
+            sentto = ''
 
-        # "{timestamp}-{country}-{collection}-{from}-{purpose}-{concept}-{to}.{extension}"
-        suggested = "%s-%s-%s-%s-%s-%s-%s" % (timestamp, country, collection, from_org, purpose, concept, to_org)
+        suggested = "%s-%s-%s-%s-%s-%s-%s" % (  timestamp,
+                                                country,
+                                                collection,
+                                                sentby,
+                                                purpose,
+                                                concept,
+                                                sentto)
         # ~ self.log.debug("%s -> %s", filename, suggested)
         return suggested
 
