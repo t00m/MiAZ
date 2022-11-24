@@ -99,19 +99,11 @@ class MiAZBackend(GObject.GObject):
             if not os.path.exists(doc):
                 del(s_repodct[doc])
                 i += 1
-        self.log.info("Source repository - %d inconsistencies deleted", i)
+        self.log.info("Source repo - %d inconsistencies deleted", i)
 
         # 2. Then, check docs in source directory and update repodct
         docs = get_files(s_repodir)
         for doc in docs:
-            try:
-                valid = s_repodct[doc]['valid']
-                if valid:
-                    # ~ self.log.debug("Doc[%s] valid. Skipped", os.path.basename(doc))
-                    continue
-            except Exception as error:
-                # ~ self.log.debug("Doc[%s] is new. Processing it ", os.path.basename(doc))
-                pass
             valid, reasons = self.validate_filename(doc)
             s_repodct[doc] = {}
             s_repodct[doc]['valid'] = valid
@@ -122,15 +114,11 @@ class MiAZBackend(GObject.GObject):
             else:
                 s_repodct[doc]['suggested'] = None
                 s_repodct[doc]['fields'] = self.get_fields(doc)
-            # ~ else:
-                # ~ doc_target = self.fix_filename(os.path.basename(doc))
-                # ~ shutil.move(doc, os.path.join(self.target, doc_target))
-                # ~ self.log.debug("Doc[%s] valid. Moved to target folder", os.path.basename(doc))
         self.log.info("Repository - %d document analyzed", len(docs))
         json_save(s_repocnf, s_repodct)
 
         # 3. Emit the 'source-configuration-updated' signal
-        self.log.debug("Source repository - Emitting signal 'source-configuration-updated'")
+        self.log.debug("Source repository updated")
         self.emit('source-configuration-updated')
 
     def get_fields(self, filename: str) -> []:
@@ -161,33 +149,37 @@ class MiAZBackend(GObject.GObject):
 
             # Check extension
             valid &= True
-            reasons.append((True, "Extension '%s' is valid" % ext))
+            reasons.append((True, "File extension '%s' is valid" % ext))
         else:
             name = filename
             ext = ''
             valid &= False
-            reasons.append((False, "Filename not valid. Extension missing."))
+            reasons.append((False, "File extension missing."))
 
         # Check fields partitioning
         fields = name.split('-')
         if len(fields) != 7:
             valid &= False
-            reasons.append((False, "Wrong number of fields in filename (%d/7)" % len(fields)))
+            reasons.append((False, "Wrong number of fields (%d/7)" %
+                                                        len(fields)))
         else:
-            reasons.append((True, "Right number of fields in filename (%d/7)" % len(fields)))
+            reasons.append((True, "Right number of fields (%d/7)" %
+                                                        len(fields)))
 
-        # "{timestamp}-{country}-{collection}-{from}-{purpose}-{concept}-{to}.{extension}"
+        # Validate fields
         # Check timestamp (1st field)
         try:
             timestamp = fields[0]
             if guess_datetime(timestamp) is None:
                 valid &= False
-                reasons.append((False, "Field 1. Timestamp '%s' not valid" % timestamp))
+                reasons.append((False, "Timestamp '%s' not valid" %
+                                                            timestamp))
             else:
-                reasons.append((True, "Field 1. Timestamp '%s' is valid" % timestamp))
+                reasons.append((True, "Timestamp '%s' is valid" %
+                                                            timestamp))
         except IndexError:
             valid &= False
-            reasons.append((False, "Field 1. Timestamp '%s' couldn't be checked" % timestamp))
+            reasons.append((False, "Timestamp couldn't be checked"))
 
         # Check country (2nd field)
         try:
@@ -195,14 +187,19 @@ class MiAZBackend(GObject.GObject):
             is_country = self.conf['Country'].exists(code)
             if not is_country:
                 valid &= False
-                reasons.append((False, "Field 2. Country code '%s' doesn't exist" % code))
+                reasons.append((False,
+                                "Country code '%s' doesn't exist" %
+                                                                code))
             else:
                 country = self.conf['Country'].load_global()
                 name = country[code]
-                reasons.append((True, "Field 2. Country code '%s' corresponds to %s" % (code, name)))
+                reasons.append((True,
+                                "Country code '%s' corresponds to %s" %
+                                                        (code, name)))
         except IndexError:
             valid &= False
-            reasons.append((False, "Field 2. Country code couldn't be checked because this field doesn't exist"))
+            reasons.append((False,
+                            "Country code couldn't be checked"))
 
         # Check collection (3nd field)
         try:
@@ -210,25 +207,30 @@ class MiAZBackend(GObject.GObject):
             is_collection = self.conf['Collection'].exists(code)
             if not is_collection:
                 valid &= False
-                reasons.append((False, "Field 3. Collection '%s' is not in your list. Please, add it first." % code))
+                reasons.append((False,
+                                "Collection '%s' is not in your list. \
+                                Please, add it first." % code))
             else:
-                reasons.append((True, "Field 3. Collection '%s' accepted. It is in your list." % code))
+                reasons.append((True,
+                                "Collection '%s' accepted" % code))
         except IndexError:
             valid &= False
-            reasons.append((False, "Field 3. Collection couldn't be checked because this field doesn't exist"))
+            reasons.append((False, "Collection couldn't be checked"))
 
-        # Check from (4th field)
+        # Check SentBy (4th field)
         try:
             code = fields[3]
             is_organization = self.conf['Person'].exists(code)
             if not is_organization:
                 valid &= False
-                reasons.append((False, "Field 4. Organization '%s' is not in your list. Please, add it first." % code))
+                reasons.append((False,
+                                "Person '%s' is not in your list. \
+                                Please, add it first." % code))
             else:
-                reasons.append((True, "Field 4. Organization '%s' accepted. It is in your list." % code))
+                reasons.append((True, "Person '%s' accepted" % code))
         except IndexError:
             valid &= False
-            reasons.append((False, "Field 4. Organization couldn't be checked because this field doesn't exist"))
+            reasons.append((False, "Person couldn't be checked"))
 
         # Check purpose (5th field)
         try:
@@ -236,33 +238,37 @@ class MiAZBackend(GObject.GObject):
             is_purpose = self.conf['Purpose'].exists(code)
             if not is_purpose:
                 valid &= False
-                reasons.append((False, "Field 5. Purpose '%s' is not in your list. Please, add it first." % code))
+                reasons.append((False,
+                                "Purpose '%s' is not in your list. \
+                                Please, add it first." % code))
             else:
-                reasons.append((True, "Field 5. Purpose '%s' accepted. It is in your list." % code))
+                reasons.append((True, "Purpose '%s' accepted" % code))
         except IndexError:
             valid &= False
-            reasons.append((False, "Field 5. Purpose couldn't be checked because this field doesn't exist"))
+            reasons.append((False, "Purpose couldn't be checked"))
 
         # Check Concept (6th field)
         try:
             code = fields[5]
-            reasons.append((True, "Field 6. Concept '%s' accepted" % code))
+            reasons.append((True, "Concept '%s' accepted" % code))
         except IndexError:
             valid &= False
-            reasons.append((False, "Field 6. Concept couldn't be checked because this field doesn't exist"))
+            reasons.append((False, "Concept couldn't be checked"))
 
-        # Check Who (7th field)
+        # Check SentTo (7th field)
         try:
             code = fields[6]
             is_organization = self.conf['Person'].exists(code)
             if not is_organization:
                 valid &= False
-                reasons.append((False, "Field 7. '%s' is not in your list. Please, add it first." % code))
+                reasons.append((False,
+                                "Person '%s' is not in your list. \
+                                Please, add it first." % code))
             else:
-                reasons.append((True, "Field 7. Person/Third party '%s' accepted. It is in your list." % code))
+                reasons.append((True, "Person '%s' accepted" % code))
         except IndexError:
             valid &= False
-            reasons.append((False, "Field 7. Person/Third party couldn't be checked because this field doesn't exist"))
+            reasons.append((False, "Person couldn't be checked"))
 
         return valid, reasons
 
