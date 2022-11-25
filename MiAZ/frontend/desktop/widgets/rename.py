@@ -217,10 +217,10 @@ class MiAZRenameDialog(Gtk.Dialog):
         self.entry_concept.connect('changed', self.on_changed_entry)
 
     def __create_field_6_sentto(self):
-        self.rowTo, self.btnTo, self.dpdTo = self.__create_actionrow('To', Person, 'organizations')
+        self.rowSentTo, self.btnSentTo, self.dpdSentTo = self.__create_actionrow('Sent to', Person, 'organizations')
         self.btnSentTo.connect('clicked', self.on_person_sentto_add)
-        self._set_suggestion(self.dpdTo, self.suggested[6])
-        self.dpdTo.connect("notify::selected-item", self.on_changed_entry)
+        self._set_suggestion(self.dpdSentTo, self.suggested[6])
+        self.dpdSentTo.connect("notify::selected-item", self.on_changed_entry)
 
     def __create_field_7_extension(self):
         """Field 7. extension"""
@@ -307,7 +307,7 @@ class MiAZRenameDialog(Gtk.Dialog):
             sentby = self.dpdSentBy.get_selected_item().id
             apurpose = self.dpdPurpose.get_selected_item().id
             aconcept = self.entry_concept.get_text().upper().replace(' ', '_')
-            ato = self.dpdTo.get_selected_item().id
+            sentto = self.dpdSentTo.get_selected_item().id
             aextension = self.lblExt.get_text()
             fields.append(adate) # 0. Date
             fields.append(acountry) # 1. Country
@@ -315,7 +315,7 @@ class MiAZRenameDialog(Gtk.Dialog):
             fields.append(sentby) # 3. SentBy
             fields.append(apurpose) # 4. Purpose
             fields.append(aconcept) # 5. Concept
-            fields.append(ato) # 6. To
+            fields.append(sentto) # 6. To
             self.result = "%s.%s" % ('-'.join(fields), aextension)
             self.lblFilenameNew.set_markup(self.result)
 
@@ -329,7 +329,7 @@ class MiAZRenameDialog(Gtk.Dialog):
             v_sentby = person.exists(sentby)
             v_purp = len(apurpose) > 0
             v_cnpt = len(aconcept) > 0
-            v_sentto = person.exists(ato)
+            v_sentto = person.exists(sentto)
 
             if v_col:
                 success_or_warning(self.rowCollection, collections.exists(acollection))
@@ -345,7 +345,7 @@ class MiAZRenameDialog(Gtk.Dialog):
             success_or_error(self.rowCountry, v_cty)
             success_or_error(self.rowSentBy, v_sentby)
             success_or_error(self.rowConcept, v_cnpt)
-            success_or_error(self.rowTo, v_sentto)
+            success_or_error(self.rowSentTo, v_sentto)
 
             if v_date and v_sentby and v_sentto and v_cty and v_col and v_purp and v_cnpt:
                 self.btnAccept.set_sensitive(True)

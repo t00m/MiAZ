@@ -384,7 +384,6 @@ class MiAZWorkspace(Gtk.Box):
         body.append(frmView)
         foot.append(self.statusbar)
 
-        self.log.debug("Review? %d", self.num_review)
         if self.num_review == 0:
             self.statusbar.set_visible(False)
 
