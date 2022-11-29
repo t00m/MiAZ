@@ -11,9 +11,9 @@ from datetime import datetime
 from dateutil.parser import parse as dateparser
 
 from MiAZ.backend.env import ENV
-from MiAZ.backend.log import get_logger
+# ~ from MiAZ.backend.log import get_logger
 
-log = get_logger('Util')
+# ~ log = get_logger('Util')
 
 def get_version() -> str:
     return open(ENV['FILE']['VERSION']).read().strip()
@@ -123,33 +123,33 @@ def fuzzy_date_from_timestamp(timestamp):
         return "Right now"
 
 
-def timerfunc(func):
-    """
-    A timer decorator
-    """
-    def function_timer(*args, **kwargs):
-        """
-        A nested function for timing other functions
-        """
-        start = time.time()
-        value = func(*args, **kwargs)
-        end = time.time()
-        runtime = end - start
-        msg = "The runtime for '{func}' took {time} seconds to complete"
-        log.debug(msg.format(func=func.__name__, time=runtime))
-        return value
-    return function_timer
+# ~ def timerfunc(func):
+    # ~ """
+    # ~ A timer decorator
+    # ~ """
+    # ~ def function_timer(*args, **kwargs):
+        # ~ """
+        # ~ A nested function for timing other functions
+        # ~ """
+        # ~ start = time.time()
+        # ~ value = func(*args, **kwargs)
+        # ~ end = time.time()
+        # ~ runtime = end - start
+        # ~ msg = "The runtime for '{func}' took {time} seconds to complete"
+        # ~ log.debug(msg.format(func=func.__name__, time=runtime))
+        # ~ return value
+    # ~ return function_timer
 
 
-class MyTimer():
-    def __init__(self):
-        self.start = time.time()
+# ~ class MyTimer():
+    # ~ def __init__(self):
+        # ~ self.start = time.time()
 
-    def __enter__(self):
-        return self
+    # ~ def __enter__(self):
+        # ~ return self
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        end = time.time()
-        runtime = end - self.start
-        msg = 'The function took {time} seconds to complete'
-        log.debug(msg.format(time=runtime))
+    # ~ def __exit__(self, exc_type, exc_val, exc_tb):
+        # ~ end = time.time()
+        # ~ runtime = end - self.start
+        # ~ msg = 'The function took {time} seconds to complete'
+        # ~ log.debug(msg.format(time=runtime))

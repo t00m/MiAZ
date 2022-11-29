@@ -15,7 +15,7 @@ from gi.repository import GObject
 
 from MiAZ.backend.env import ENV
 from MiAZ.backend.log import get_logger
-from MiAZ.backend.util import json_load, timerfunc
+from MiAZ.backend.util import json_load
 from MiAZ.backend.models import File, Collection, Person, Country, Purpose, Concept, SentBy, SentTo
 from MiAZ.frontend.desktop.util import get_file_mimetype
 from MiAZ.frontend.desktop.widgets.columnview import MiAZColumnView, RowIcon, RowTitle
