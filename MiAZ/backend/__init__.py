@@ -42,38 +42,29 @@ class MiAZBackend(GObject.GObject):
         self.conf['SentTo'] = MiAZConfigSettingsPerson()
         self.conf['Person'] = MiAZConfigSettingsPerson()
         self.source = self.conf['App'].get('source')
-        self.target = self.conf['App'].get('target')
         self.watch_source = MiAZWatcher('source', self.source)
         self.watch_source.connect('source-directory-updated',
                                                     self.check_source)
 
     def get_watcher_source(self):
+        """Get watcher object for source directory"""
         return self.watch_source
-
-    def get_watcher_target(self):
-        return self.watch_target
 
     def get_conf(self) -> dict:
         """Return dict with pointers to all config classes"""
         return self.conf
 
     def get_repo_source_config_file(self):
+        """Get config file for current source repository"""
         repodir = self.conf['App'].get('source')
         repokey = valid_key(repodir)
         return os.path.join(ENV['LPATH']['REPOS'], "source-%s.json" %
                                                                 repokey)
-
-    def get_repo_target_config_file(self):
-        repodir = self.conf['App'].get('target')
-        repokey = valid_key(repodir)
-        return os.path.join(ENV['LPATH']['REPOS'], "target-%s.json" %
-                                                                repokey)
-
     def get_repo_dict(self):
+        """Load/Create dictionary for current repository"""
         s_repodir = self.conf['App'].get('source')
         s_repocnf = self.get_repo_source_config_file()
 
-        # Load repo conf. It it doesn't exist, create an empty one
         if os.path.exists(s_repocnf):
             s_repodct = json_load(s_repocnf)
         else:
@@ -84,25 +75,17 @@ class MiAZBackend(GObject.GObject):
     def check_source(self, *args):
         s_repodir = self.conf['App'].get('source')
         s_repocnf = self.get_repo_source_config_file()
-
-        # Load repo conf. It it doesn't exist, create an empty one
-        if os.path.exists(s_repocnf):
-            s_repodct = json_load(s_repocnf)
-        else:
-            s_repodct = {}
-            json_save(s_repocnf, s_repodct)
+        s_repodct = self.get_repo_dict()
 
         # Workflow
-        # 1. Firstly, check files in repodct and delete inconsistencies.
-        #    If files do not exist anymore, then delete inconsistency.
-        i = 0
+        # 1. Check and delete inconsistencies.
         for doc in s_repodct.copy():
             if not os.path.exists(doc):
                 del(s_repodct[doc])
-                i += 1
-        self.log.info("Source repo - %d inconsistencies deleted", i)
+                self.log.debug("File[%s] - Inconistency found. Deleted"
+                                                        % basename(doc))
 
-        # 2. Then, check docs in source directory and update repodct
+        # 2. Rebuild repository dictionary
         docs = get_files(s_repodir)
         for doc in docs:
             valid, reasons = self.validate_filename(doc)
