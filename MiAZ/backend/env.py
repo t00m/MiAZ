@@ -15,17 +15,7 @@ import sys
 import tempfile
 import multiprocessing
 
-#if sys.platform != 'linux':
-#    print("Your OS is not supported.")
-#    print("Please, use any recent GNU/Linux distribution")
-
 ENV = {}
-
-# Process
-# ~ ENV['PS'] = {}
-# ~ pid = os.getpid()
-# ~ ENV['PS']['PID'] = os.getpid()
-# ~ ENV['PS']['NAME'] = open('/proc/%d/comm' % pid, 'r').read().strip()
 
 # Configuration
 ENV['CONF'] = {}
@@ -82,7 +72,6 @@ ENV['FILE']['CONCEPTS'] = os.path.join(ENV['LPATH']['ETC'], 'MiAZ-concepts.json'
 ENV['FILE']['PERSONS'] = os.path.join(ENV['LPATH']['ETC'], 'MiAZ-organizations.json')
 ENV['FILE']['EXTENSIONS'] = os.path.join(ENV['LPATH']['ETC'], 'MiAZ-extensions.json')
 ENV['FILE']['COUNTRIES'] = os.path.join(ENV['LPATH']['ETC'], 'MiAZ-countries.json')
-ENV['FILE']['LANGUAGES'] = os.path.join(ENV['LPATH']['ETC'], 'MiAZ-languages.json')
 ENV['FILE']['WHO'] = os.path.join(ENV['LPATH']['ETC'], 'MiAZ-who.json')
 
 # App Info
@@ -93,4 +82,3 @@ try:
     ENV['SYS']['DESKTOP'] = os.environ['XDG_SESSION_DESKTOP']
 except KeyError:
     ENV['SYS']['DESKTOP'] = None
-
