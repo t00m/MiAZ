@@ -95,6 +95,7 @@ class MiAZBackend(GObject.GObject):
             if not valid:
                 s_repodct[doc]['suggested'] = self.suggest_filename(doc)
                 s_repodct[doc]['fields'] = ['', '', '', '', '', '', '']
+                self.log.debug(reasons)
             else:
                 s_repodct[doc]['suggested'] = None
                 s_repodct[doc]['fields'] = self.get_fields(doc)

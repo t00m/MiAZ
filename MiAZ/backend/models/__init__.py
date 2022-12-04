@@ -12,6 +12,8 @@ class MiAZModel(GObject.Object):
     def __init__(self,  id: str,
                         date: str = '',
                         date_dsc: str = '',
+                        group: str = '',
+                        subgroup: str = '',
                         collection: str = '',
                         country: str = '',
                         purpose: str = '',
@@ -29,6 +31,8 @@ class MiAZModel(GObject.Object):
         self._id = id
         self._date = date
         self._date_dsc = date_dsc
+        self._group = group
+        self._subgroup = subgroup
         self._collection = collection
         self._country = country
         self._purpose = purpose
@@ -53,6 +57,14 @@ class MiAZModel(GObject.Object):
     @GObject.Property
     def date_dsc(self):
         return self._date_dsc
+
+    @GObject.Property
+    def group(self):
+        return self._group
+
+    @GObject.Property
+    def subgroup(self):
+        return self._subgroup
 
     @GObject.Property
     def collection(self):

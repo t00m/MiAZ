@@ -126,6 +126,7 @@ class MiAZApp(Adw.Application):
         btnImport = Gtk.MenuButton(icon_name='miaz-import')
         btnImport.set_popover(popover)
         self.header.pack_start(btnImport)
+        self.log.debug("❌ ✅")
 
     def _setup_headerbar_right(self):
        # Add Menu Button to the titlebar (Right Side)
