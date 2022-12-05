@@ -146,19 +146,7 @@ class MiAZWorkspace(Gtk.Box):
         icon.set_from_file(flag)
         icon.set_pixel_size(32)
 
-    def _on_factory_setup_icon(self, factory, list_item):
-        box = RowIcon()
-        list_item.set_child(box)
 
-    def _on_factory_bind_icon(self, factory, list_item):
-        """To be subclassed"""
-        box = list_item.get_child()
-        item = list_item.get_item()
-        icon = box.get_first_child()
-        mimetype, val = Gio.content_type_guess('filename=%s' % item.id)
-        gicon = Gio.content_type_get_icon(mimetype)
-        icon.set_from_gicon(gicon)
-        icon.set_pixel_size(32)
 
     def _on_action_rename(self, action, data, item_type):
         title = item_type.__gtype_name__
@@ -256,66 +244,59 @@ class MiAZWorkspace(Gtk.Box):
         # ColumnView
         self.view = MiAZColumnView(self.app)
 
-        # Custom factory for ColumViewColumn icon
-        factory_icon = Gtk.SignalListItemFactory()
-        factory_icon.connect("setup", self._on_factory_setup_icon)
-        factory_icon.connect("bind", self._on_factory_bind_icon)
-        self.view.column_icon.set_factory(factory_icon)
-        self.view.column_icon.set_title("Type")
+        # ~ # Custom factory for ColumViewColumn collection
+        # ~ factory_collection = Gtk.SignalListItemFactory()
+        # ~ factory_collection.connect("setup", self._on_factory_setup_collection)
+        # ~ factory_collection.connect("bind", self._on_factory_bind_collection)
+        # ~ self.column_collection = Gtk.ColumnViewColumn.new("Collection", factory_collection)
+        # ~ self.column_collection.set_sorter(self.view.prop_collection_sorter)
 
-        # Custom factory for ColumViewColumn collection
-        factory_collection = Gtk.SignalListItemFactory()
-        factory_collection.connect("setup", self._on_factory_setup_collection)
-        factory_collection.connect("bind", self._on_factory_bind_collection)
-        self.column_collection = Gtk.ColumnViewColumn.new("Collection", factory_collection)
-        self.column_collection.set_sorter(self.view.prop_collection_sorter)
+        # ~ # Custom factory for ColumViewColumn SentBy
+        # ~ factory_sentby = Gtk.SignalListItemFactory()
+        # ~ factory_sentby.connect("setup", self._on_factory_setup_sentby)
+        # ~ factory_sentby.connect("bind", self._on_factory_bind_sentby)
+        # ~ self.column_sentby = Gtk.ColumnViewColumn.new("Sent by", factory_sentby)
+        #self.column_sentby.set_sorter(self.view.prop_from_sorter)
 
-        # Custom factory for ColumViewColumn SentBy
-        factory_sentby = Gtk.SignalListItemFactory()
-        factory_sentby.connect("setup", self._on_factory_setup_sentby)
-        factory_sentby.connect("bind", self._on_factory_bind_sentby)
-        self.column_sentby = Gtk.ColumnViewColumn.new("Sent by", factory_sentby)
-        # ~ self.column_sentby.set_sorter(self.view.prop_from_sorter)
+        # ~ # Custom factory for ColumViewColumn purpose
+        # ~ factory_purpose = Gtk.SignalListItemFactory()
+        # ~ factory_purpose.connect("setup", self._on_factory_setup_purpose)
+        # ~ factory_purpose.connect("bind", self._on_factory_bind_purpose)
+        # ~ self.column_purpose = Gtk.ColumnViewColumn.new("Purpose", factory_purpose)
+        # ~ self.column_purpose.set_sorter(self.view.prop_purpose_sorter)
 
-        # Custom factory for ColumViewColumn purpose
-        factory_purpose = Gtk.SignalListItemFactory()
-        factory_purpose.connect("setup", self._on_factory_setup_purpose)
-        factory_purpose.connect("bind", self._on_factory_bind_purpose)
-        self.column_purpose = Gtk.ColumnViewColumn.new("Purpose", factory_purpose)
-        self.column_purpose.set_sorter(self.view.prop_purpose_sorter)
+        # ~ # Custom factory for ColumViewColumn SentTo
+        # ~ factory_sentto = Gtk.SignalListItemFactory()
+        # ~ factory_sentto.connect("setup", self._on_factory_setup_sentto)
+        # ~ factory_sentto.connect("bind", self._on_factory_bind_sentto)
+        # ~ self.column_sentto = Gtk.ColumnViewColumn.new("Sent to", factory_sentto)
+        #self.column_sentto.set_sorter(self.view.prop_to_sorter)
 
-        # Custom factory for ColumViewColumn SentTo
-        factory_sentto = Gtk.SignalListItemFactory()
-        factory_sentto.connect("setup", self._on_factory_setup_sentto)
-        factory_sentto.connect("bind", self._on_factory_bind_sentto)
-        self.column_sentto = Gtk.ColumnViewColumn.new("Sent to", factory_sentto)
-        # ~ self.column_sentto.set_sorter(self.view.prop_to_sorter)
+         # ~ # Custom factory for ColumViewColumn to
+        # ~ factory_date = Gtk.SignalListItemFactory()
+        # ~ factory_date.connect("setup", self._on_factory_setup_date)
+        # ~ factory_date.connect("bind", self._on_factory_bind_date)
+        # ~ self.column_date = Gtk.ColumnViewColumn.new("Date", factory_date)
+        #self.column_date.set_sorter(self.view.prop_date_sorter)
 
-         # Custom factory for ColumViewColumn to
-        factory_date = Gtk.SignalListItemFactory()
-        factory_date.connect("setup", self._on_factory_setup_date)
-        factory_date.connect("bind", self._on_factory_bind_date)
-        self.column_date = Gtk.ColumnViewColumn.new("Date", factory_date)
-        # ~ self.column_date.set_sorter(self.view.prop_date_sorter)
+        # ~ # Custom factory for ColumViewColumn flag
+        # ~ factory_flag = Gtk.SignalListItemFactory()
+        # ~ factory_flag.connect("setup", self._on_factory_setup_flag)
+        # ~ factory_flag.connect("bind", self._on_factory_bind_flag)
+        # ~ self.column_flag = Gtk.ColumnViewColumn.new("Flag", factory_flag)
+        # ~ self.column_flag.set_sorter(self.view.prop_country_sorter)
 
-        # Custom factory for ColumViewColumn flag
-        factory_flag = Gtk.SignalListItemFactory()
-        factory_flag.connect("setup", self._on_factory_setup_flag)
-        factory_flag.connect("bind", self._on_factory_bind_flag)
-        self.column_flag = Gtk.ColumnViewColumn.new("Flag", factory_flag)
-        self.column_flag.set_sorter(self.view.prop_country_sorter)
-
-        self.view.cv.append_column(self.view.column_icon)
-        self.view.cv.append_column(self.column_purpose)
-        self.view.cv.append_column(self.column_sentby)
+        self.view.cv.append_column(self.view.column_icon_type)
+        self.view.cv.append_column(self.view.column_purpose)
+        self.view.cv.append_column(self.view.column_sentby)
         self.view.cv.append_column(self.view.column_title)
         self.view.column_title.set_header_menu(self.mnuSelMulti)
         self.view.cv.append_column(self.view.column_subtitle)
         self.view.column_subtitle.set_header_menu(self.mnuSelMulti)
-        self.view.cv.append_column(self.column_sentto)
-        self.view.cv.append_column(self.column_date)
+        self.view.cv.append_column(self.view.column_sentto)
+        self.view.cv.append_column(self.view.column_date)
         self.view.cv.append_column(self.column_collection)
-        self.view.cv.append_column(self.column_flag)
+        self.view.cv.append_column(self.view.column_flag)
         self.view.cv.set_single_click_activate(False)
         # ~ view.cv.append_column(view.column_active)
         self.view.column_title.set_expand(True)

@@ -17,6 +17,8 @@ from MiAZ.backend.watcher import MiAZWatcher
 from MiAZ.backend.config import MiAZConfigApp
 from MiAZ.backend.config import MiAZConfigSettingsCountries
 from MiAZ.backend.config import MiAZConfigSettingsCollections
+from MiAZ.backend.config import MiAZConfigSettingsGroups
+from MiAZ.backend.config import MiAZConfigSettingsSubgroups
 from MiAZ.backend.config import MiAZConfigSettingsPurposes
 from MiAZ.backend.config import MiAZConfigSettingsConcepts
 from MiAZ.backend.config import MiAZConfigSettingsPerson
@@ -36,6 +38,8 @@ class MiAZBackend(GObject.GObject):
         self.conf['App'] = MiAZConfigApp()
         self.conf['Country'] = MiAZConfigSettingsCountries()
         self.conf['Collection'] = MiAZConfigSettingsCollections()
+        self.conf['Group'] = MiAZConfigSettingsGroups()
+        self.conf['Subgroup'] = MiAZConfigSettingsSubgroups()
         self.conf['Purpose'] = MiAZConfigSettingsPurposes()
         self.conf['Concept'] = MiAZConfigSettingsConcepts()
         self.conf['SentBy'] = MiAZConfigSettingsPerson()

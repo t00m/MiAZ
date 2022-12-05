@@ -213,6 +213,38 @@ class MiAZConfigSettingsCollections(MiAZConfig):
     def __repr__(self):
         return 'Collection'
 
+class MiAZConfigSettingsGroups(MiAZConfig):
+    def __init__(self):
+        super().__init__(
+            log=get_logger('MiAZ.Settings.Groups'),
+            config_for = 'Groups',
+            config_local = ENV['FILE']['GROUPS'],
+            config_global = os.path.join(ENV['GPATH']['RESOURCES'],
+                            'MiAZ-groups.json'),
+            config_is = list,
+            config_model = Collection,
+            must_copy = True
+        )
+
+    def __repr__(self):
+        return 'Group'
+
+class MiAZConfigSettingsSubgroups(MiAZConfig):
+    def __init__(self):
+        super().__init__(
+            log=get_logger('MiAZ.Settings.Subgroups'),
+            config_for = 'Subgroups',
+            config_local = ENV['FILE']['SUBGROUPS'],
+            config_global = os.path.join(ENV['GPATH']['RESOURCES'],
+                            'MiAZ-subgroups.json'),
+            config_is = list,
+            config_model = Collection,
+            must_copy = True
+        )
+
+    def __repr__(self):
+        return 'Subgroup'
+
 class MiAZConfigSettingsPurposes(MiAZConfig):
     def __init__(self):
         super().__init__(
