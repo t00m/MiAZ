@@ -5,7 +5,7 @@ from gi.repository import GObject
 
 class MiAZModel(GObject.Object):
     """Custom data model for MiAZ use cases
-    {timestamp}-{country}-{collection}-{from}-{purpose}-{concept}-{to}.{extension}
+    {timestamp}-{country}-{group}-{subgroup}-{from}-{purpose}-{concept}-{to}.{extension}
     """
     __gtype_name__ = 'MiAZModel'
 
@@ -14,7 +14,6 @@ class MiAZModel(GObject.Object):
                         date_dsc: str = '',
                         group: str = '',
                         subgroup: str = '',
-                        collection: str = '',
                         country: str = '',
                         purpose: str = '',
                         sentby_id: str = '',
@@ -33,7 +32,6 @@ class MiAZModel(GObject.Object):
         self._date_dsc = date_dsc
         self._group = group
         self._subgroup = subgroup
-        self._collection = collection
         self._country = country
         self._purpose = purpose
         self._sentby_id = sentby_id
@@ -65,10 +63,6 @@ class MiAZModel(GObject.Object):
     @GObject.Property
     def subgroup(self):
         return self._subgroup
-
-    @GObject.Property
-    def collection(self):
-        return self._collection
 
     @GObject.Property
     def country(self):
@@ -128,8 +122,11 @@ class File(MiAZModel):
 class Date(MiAZModel):
     __gtype_name__ = 'Date'
 
-class Collection(MiAZModel):
-    __gtype_name__ = 'Collection'
+class Group(MiAZModel):
+    __gtype_name__ = 'Group'
+
+class Subgroup(MiAZModel):
+    __gtype_name__ = 'Subgroup'
 
 class Concept(MiAZModel):
     __gtype_name__ = 'Concept'

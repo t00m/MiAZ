@@ -280,7 +280,7 @@ class MiAZFactory:
     def create_menu_selection_multiple(self):
         self.menu_workspace_multiple = Gio.Menu.new()
 
-        fields = ['date', 'country', 'collection', 'purpose']
+        fields = ['date', 'country', 'group', 'subgroup', 'purpose']
         item_fake = Gio.MenuItem.new()
         item_fake.set_label('Multiple selection')
         action = Gio.SimpleAction.new('fake', None)

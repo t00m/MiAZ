@@ -10,8 +10,9 @@ from gi.repository import Gtk
 
 from MiAZ.backend.env import ENV
 from MiAZ.backend.log import get_logger
-from MiAZ.backend.models import File, Collection, Person, Country, Purpose, Concept
-from MiAZ.backend.config import MiAZConfigSettingsCollections
+from MiAZ.backend.models import File, Group, Subgroup, Person, Country, Purpose, Concept
+from MiAZ.backend.config import MiAZConfigSettingsGroups
+from MiAZ.backend.config import MiAZConfigSettingsSubgroups
 from MiAZ.backend.config import MiAZConfigSettingsPerson
 from MiAZ.backend.config import MiAZConfigSettingsCountries
 from MiAZ.backend.config import MiAZConfigSettingsPurposes
@@ -20,7 +21,7 @@ from MiAZ.frontend.desktop.widgets.dialogs import MiAZDialogAdd
 
 
 class MiAZConfigView(Gtk.Box):
-    """Class for managing Collections from Settings"""
+    """"""
     __gtype_name__ = 'MiAZConfigView'
     current = None
     config_local = None
@@ -40,7 +41,7 @@ class MiAZConfigView(Gtk.Box):
         self.set_margin_end(margin=12)
         self.set_margin_start(margin=12)
 
-        # Entry and buttons for collection operations (edit/add/remove)
+        # Entry and buttons for operations (edit/add/remove)
         self.box_oper = Gtk.Box(spacing=3, orientation=Gtk.Orientation.HORIZONTAL)
         self.box_oper.set_vexpand(False)
         box_entry = Gtk.Box(spacing=3, orientation=Gtk.Orientation.HORIZONTAL)
@@ -160,17 +161,27 @@ class MiAZConfigView(Gtk.Box):
         self.view.update(items)
 
 
-class MiAZCollections(MiAZConfigView):
-    """Class for managing Collections from Settings"""
-    __gtype_name__ = 'MiAZCollections'
+class MiAZGroups(MiAZConfigView):
+    """"""
+    __gtype_name__ = 'MiAZGroups'
     current = None
 
     def __init__(self, app):
-        self.config = MiAZConfigSettingsCollections()
+        self.config = MiAZConfigSettingsGroups()
         self.config_for = self.config.get_config_for()
         super().__init__(app, self.config_for)
         self.log = get_logger('MiAZSettings-%s' % self.config_for)
 
+class MiAZSubgroups(MiAZConfigView):
+    """"""
+    __gtype_name__ = 'MiAZSubgroups'
+    current = None
+
+    def __init__(self, app):
+        self.config = MiAZConfigSettingsSubgroups()
+        self.config_for = self.config.get_config_for()
+        super().__init__(app, self.config_for)
+        self.log = get_logger('MiAZSettings-%s' % self.config_for)
 
 class MiAZOrganizations(MiAZConfigView):
     """Class for managing Organizations from Settings"""
@@ -210,7 +221,7 @@ class MiAZOrganizations(MiAZConfigView):
 
 
 class MiAZCountries(MiAZConfigView):
-    """Class for managing Collections from Settings"""
+    """"""
     __gtype_name__ = 'MiAZCountries'
     current = None
 

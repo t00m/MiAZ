@@ -4,7 +4,7 @@ import shutil
 from MiAZ.backend.env import ENV
 from MiAZ.backend.log import get_logger
 from MiAZ.backend.util import json_load, json_save
-from MiAZ.backend.models import MiAZModel, File, Collection, Person, Country, Purpose, Concept
+from MiAZ.backend.models import MiAZModel, File, Group, Subgroup, Person, Country, Purpose, Concept
 
 class MiAZConfig():
     """ MiAZ Config class"""
@@ -197,22 +197,6 @@ class MiAZConfigSettingsCountries(MiAZConfig):
             foreign = True
         )
 
-class MiAZConfigSettingsCollections(MiAZConfig):
-    def __init__(self):
-        super().__init__(
-            log=get_logger('MiAZ.Settings.Collections'),
-            config_for = 'Collections',
-            config_local = ENV['FILE']['COLLECTIONS'],
-            config_global = os.path.join(ENV['GPATH']['RESOURCES'],
-                            'MiAZ-collections.json'),
-            config_is = list,
-            config_model = Collection,
-            must_copy = True
-        )
-
-    def __repr__(self):
-        return 'Collection'
-
 class MiAZConfigSettingsGroups(MiAZConfig):
     def __init__(self):
         super().__init__(
@@ -222,7 +206,7 @@ class MiAZConfigSettingsGroups(MiAZConfig):
             config_global = os.path.join(ENV['GPATH']['RESOURCES'],
                             'MiAZ-groups.json'),
             config_is = list,
-            config_model = Collection,
+            config_model = Group,
             must_copy = True
         )
 
@@ -238,7 +222,7 @@ class MiAZConfigSettingsSubgroups(MiAZConfig):
             config_global = os.path.join(ENV['GPATH']['RESOURCES'],
                             'MiAZ-subgroups.json'),
             config_is = list,
-            config_model = Collection,
+            config_model = Subgroup,
             must_copy = True
         )
 

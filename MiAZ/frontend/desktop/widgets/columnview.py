@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+import os
 import sys
 from abc import abstractmethod
 
@@ -12,6 +13,7 @@ from gi.repository import Gio
 from gi.repository import Gtk
 from gi.repository import Pango
 
+from MiAZ.backend.env import ENV
 from MiAZ.backend.models import MiAZModel
 
 class RowId(Gtk.Box):
@@ -125,12 +127,6 @@ class MiAZColumnView(Gtk.Box):
         factory_flag.connect("setup", self._on_factory_setup_flag)
         factory_flag.connect("bind", self._on_factory_bind_flag)
 
-        # ~ self.column_collection = Gtk.ColumnViewColumn.new("Collection", factory_group)
-        # ~ self.column_collection.set_sorter(self.view.prop_collection_sorter)
-
-        # ~ self.view.column_icon.set_factory(factory_icon_type)
-        # ~ self.view.column_icon.set_title("Type")
-
         # Setup ColumnView Widget
         self.cv = Gtk.ColumnView()
         self.cv.get_style_context().add_class(class_name='monospace')
@@ -141,7 +137,6 @@ class MiAZColumnView(Gtk.Box):
 
         # Sorters
         self.prop_id_sorter = Gtk.CustomSorter.new(sort_func=self._on_sort_string_func, user_data='id')
-        self.prop_collection_sorter = Gtk.CustomSorter.new(sort_func=self._on_sort_string_func, user_data='collection')
         self.prop_country_sorter = Gtk.CustomSorter.new(sort_func=self._on_sort_string_func, user_data='country')
         self.prop_purpose_sorter = Gtk.CustomSorter.new(sort_func=self._on_sort_string_func, user_data='purpose')
         self.prop_title_sorter = Gtk.CustomSorter.new(sort_func=self._on_sort_string_func, user_data='title')
@@ -214,7 +209,8 @@ class MiAZColumnView(Gtk.Box):
     def refilter(self):
         self.filter.emit('changed', Gtk.FilterChange.DIFFERENT)
 
-    def update(self, items):
+    def update(self, items, repodct):
+        self.repodct = repodct
         self.store.remove_all()
         for item in items:
             # item =~ Subclass of MiAZModel(id='xxx', title='xxx', ...)
@@ -309,8 +305,8 @@ class MiAZColumnView(Gtk.Box):
         box = list_item.get_child()
         item = list_item.get_item()
         label = box.get_first_child()
-        # ~ group = self.repodct[item.id]['fields'][2]
-        # ~ label.set_markup(group)
+        group = self.repodct[item.id]['fields'][2]
+        label.set_markup(group)
 
     def _on_factory_setup_subgroup(self, factory, list_item):
         box = RowTitle()
@@ -320,8 +316,8 @@ class MiAZColumnView(Gtk.Box):
         box = list_item.get_child()
         item = list_item.get_item()
         label = box.get_first_child()
-        # ~ subgroup = self.repodct[item.id]['fields'][3]
-        # ~ label.set_markup(subgroup)
+        subgroup = self.repodct[item.id]['fields'][3]
+        label.set_markup(subgroup)
 
     def _on_factory_setup_date(self, factory, list_item):
         box = RowTitle()
@@ -362,7 +358,7 @@ class MiAZColumnView(Gtk.Box):
         box = list_item.get_child()
         item = list_item.get_item()
         label = box.get_first_child()
-        purpose = self.repodct[item.id]['fields'][4]
+        purpose = self.repodct[item.id]['fields'][5]
         label.set_markup(purpose)
 
     def _on_factory_setup_flag(self, factory, list_item):

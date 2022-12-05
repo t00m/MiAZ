@@ -16,7 +16,7 @@ from gi.repository import GObject
 from MiAZ.backend.env import ENV
 from MiAZ.backend.log import get_logger
 from MiAZ.backend.util import json_load
-from MiAZ.backend.models import File, Collection, Person, Country, Purpose, Concept, SentBy, SentTo
+from MiAZ.backend.models import File, Group, Subgroup, Person, Country, Purpose, Concept, SentBy, SentTo
 from MiAZ.frontend.desktop.util import get_file_mimetype
 from MiAZ.frontend.desktop.widgets.columnview import MiAZColumnView, RowIcon, RowTitle
 from MiAZ.frontend.desktop.factory import MenuHeader
@@ -66,7 +66,7 @@ class MiAZWorkspace(Gtk.Box):
 
         # FIXME: Do NOT fill dropdowns here.
         self.dropdown = {}
-        for item_type in [Country, Collection, SentBy, Purpose, SentTo]:
+        for item_type in [Country, Group, Subgroup, SentBy, Purpose, SentTo]:
             title = item_type.__gtype_name__
             dropdown = self.factory.create_dropdown_generic(item_type)
             self.actions.dropdown_populate(dropdown, item_type)
@@ -77,76 +77,6 @@ class MiAZWorkspace(Gtk.Box):
             self.dropdown[title] = dropdown
         self.backend.connect('source-configuration-updated', self.update)
         return widget
-
-    def _on_factory_setup_collection(self, factory, list_item):
-        box = RowTitle()
-        list_item.set_child(box)
-
-    def _on_factory_bind_collection(self, factory, list_item):
-        box = list_item.get_child()
-        item = list_item.get_item()
-        label = box.get_first_child()
-        collection = self.repodct[item.id]['fields'][2]
-        label.set_markup(collection)
-
-    def _on_factory_setup_date(self, factory, list_item):
-        box = RowTitle()
-        list_item.set_child(box)
-
-    def _on_factory_bind_date(self, factory, list_item):
-        box = list_item.get_child()
-        item = list_item.get_item()
-        label = box.get_first_child()
-        date = item.date_dsc
-        label.set_markup(date)
-
-    def _on_factory_setup_sentby(self, factory, list_item):
-        box = RowTitle()
-        list_item.set_child(box)
-
-    def _on_factory_bind_sentby(self, factory, list_item):
-        box = list_item.get_child()
-        item = list_item.get_item()
-        label = box.get_first_child()
-        label.set_markup(item.sentby_dsc)
-
-    def _on_factory_setup_sentto(self, factory, list_item):
-        box = RowTitle()
-        list_item.set_child(box)
-
-    def _on_factory_bind_sentto(self, factory, list_item):
-        box = list_item.get_child()
-        item = list_item.get_item()
-        label = box.get_first_child()
-        label.set_markup(item.sentto_dsc)
-
-    def _on_factory_setup_purpose(self, factory, list_item):
-        box = RowTitle()
-        list_item.set_child(box)
-
-    def _on_factory_bind_purpose(self, factory, list_item):
-        box = list_item.get_child()
-        item = list_item.get_item()
-        label = box.get_first_child()
-        purpose = self.repodct[item.id]['fields'][4]
-        label.set_markup(purpose)
-
-    def _on_factory_setup_flag(self, factory, list_item):
-        box = RowIcon()
-        list_item.set_child(box)
-
-    def _on_factory_bind_flag(self, factory, list_item):
-        box = list_item.get_child()
-        item = list_item.get_item()
-        icon = box.get_first_child()
-        code = self.repodct[item.id]['fields'][1]
-        flag = os.path.join(ENV['GPATH']['FLAGS'], "%s.svg" % code)
-        if not os.path.exists(flag):
-            flag = os.path.join(ENV['GPATH']['FLAGS'], "__.svg")
-        icon.set_from_file(flag)
-        icon.set_pixel_size(32)
-
-
 
     def _on_action_rename(self, action, data, item_type):
         title = item_type.__gtype_name__
@@ -163,18 +93,17 @@ class MiAZWorkspace(Gtk.Box):
         # ~ for item in self.selected_items:
             # ~ self.log.debug("\t%s", item.id)
 
-
-
     def _on_explain_toggled(self, button, data=None):
         active = button.get_active()
         self.view.column_title.set_visible(not active)
         self.view.column_subtitle.set_visible(active)
-        self.column_collection.set_visible(active)
-        self.column_purpose.set_visible(active)
-        self.column_flag.set_visible(active)
-        self.column_sentby.set_visible(active)
-        self.column_sentto.set_visible(active)
-        self.column_date.set_visible(active)
+        self.view.column_group.set_visible(active)
+        self.view.column_subgroup.set_visible(active)
+        self.view.column_purpose.set_visible(active)
+        self.view.column_flag.set_visible(active)
+        self.view.column_sentby.set_visible(active)
+        self.view.column_sentto.set_visible(active)
+        self.view.column_date.set_visible(active)
 
     def _on_filters_toggled(self, button, data=None):
         active = button.get_active()
@@ -243,60 +172,17 @@ class MiAZWorkspace(Gtk.Box):
     def _setup_columnview(self):
         # ColumnView
         self.view = MiAZColumnView(self.app)
-
-        # ~ # Custom factory for ColumViewColumn collection
-        # ~ factory_collection = Gtk.SignalListItemFactory()
-        # ~ factory_collection.connect("setup", self._on_factory_setup_collection)
-        # ~ factory_collection.connect("bind", self._on_factory_bind_collection)
-        # ~ self.column_collection = Gtk.ColumnViewColumn.new("Collection", factory_collection)
-        # ~ self.column_collection.set_sorter(self.view.prop_collection_sorter)
-
-        # ~ # Custom factory for ColumViewColumn SentBy
-        # ~ factory_sentby = Gtk.SignalListItemFactory()
-        # ~ factory_sentby.connect("setup", self._on_factory_setup_sentby)
-        # ~ factory_sentby.connect("bind", self._on_factory_bind_sentby)
-        # ~ self.column_sentby = Gtk.ColumnViewColumn.new("Sent by", factory_sentby)
-        #self.column_sentby.set_sorter(self.view.prop_from_sorter)
-
-        # ~ # Custom factory for ColumViewColumn purpose
-        # ~ factory_purpose = Gtk.SignalListItemFactory()
-        # ~ factory_purpose.connect("setup", self._on_factory_setup_purpose)
-        # ~ factory_purpose.connect("bind", self._on_factory_bind_purpose)
-        # ~ self.column_purpose = Gtk.ColumnViewColumn.new("Purpose", factory_purpose)
-        # ~ self.column_purpose.set_sorter(self.view.prop_purpose_sorter)
-
-        # ~ # Custom factory for ColumViewColumn SentTo
-        # ~ factory_sentto = Gtk.SignalListItemFactory()
-        # ~ factory_sentto.connect("setup", self._on_factory_setup_sentto)
-        # ~ factory_sentto.connect("bind", self._on_factory_bind_sentto)
-        # ~ self.column_sentto = Gtk.ColumnViewColumn.new("Sent to", factory_sentto)
-        #self.column_sentto.set_sorter(self.view.prop_to_sorter)
-
-         # ~ # Custom factory for ColumViewColumn to
-        # ~ factory_date = Gtk.SignalListItemFactory()
-        # ~ factory_date.connect("setup", self._on_factory_setup_date)
-        # ~ factory_date.connect("bind", self._on_factory_bind_date)
-        # ~ self.column_date = Gtk.ColumnViewColumn.new("Date", factory_date)
-        #self.column_date.set_sorter(self.view.prop_date_sorter)
-
-        # ~ # Custom factory for ColumViewColumn flag
-        # ~ factory_flag = Gtk.SignalListItemFactory()
-        # ~ factory_flag.connect("setup", self._on_factory_setup_flag)
-        # ~ factory_flag.connect("bind", self._on_factory_bind_flag)
-        # ~ self.column_flag = Gtk.ColumnViewColumn.new("Flag", factory_flag)
-        # ~ self.column_flag.set_sorter(self.view.prop_country_sorter)
-
         self.view.cv.append_column(self.view.column_icon_type)
+        self.view.cv.append_column(self.view.column_group)
+        self.view.cv.append_column(self.view.column_subgroup)
         self.view.cv.append_column(self.view.column_purpose)
         self.view.cv.append_column(self.view.column_sentby)
         self.view.cv.append_column(self.view.column_title)
-        self.view.column_title.set_header_menu(self.mnuSelMulti)
         self.view.cv.append_column(self.view.column_subtitle)
-        self.view.column_subtitle.set_header_menu(self.mnuSelMulti)
         self.view.cv.append_column(self.view.column_sentto)
         self.view.cv.append_column(self.view.column_date)
-        self.view.cv.append_column(self.column_collection)
         self.view.cv.append_column(self.view.column_flag)
+        self.view.column_title.set_header_menu(self.mnuSelMulti)
         self.view.cv.set_single_click_activate(False)
         # ~ view.cv.append_column(view.column_active)
         self.view.column_title.set_expand(True)
@@ -382,8 +268,8 @@ class MiAZWorkspace(Gtk.Box):
 
     def create_menu_selection_multiple(self):
         self.menu_workspace_multiple = Gio.Menu.new()
-        # ~ {timestamp}-{country}-{collection}-{from}-{purpose}-{concept}-{to}.{extension}
-        fields = [Country, Collection, SentBy, Purpose, Concept, SentTo]
+        # ~ {timestamp}-{country}-{group}-{subgroup}-{from}-{purpose}-{concept}-{to}.{extension}
+        fields = [Country, Group, Subgroup, SentBy, Purpose, Concept, SentTo]
         # ~ item_fake = Gio.MenuItem.new()
         # ~ item_fake.set_attribute_value('use-markup', GLib.Variant.new_boolean(True))
         # ~ icon = Gio.ThemedIcon.new('MiAZ')
@@ -477,6 +363,7 @@ class MiAZWorkspace(Gtk.Box):
             # ~ self.log.debug(self.repodct[])
             valid = self.repodct[path]['valid']
             fields = self.repodct[path]['fields']
+            self.log.debug(fields)
             try:
                 adate = datetime.strptime(fields[0], "%Y%m%d")
                 date_dsc = humanize.naturaldate(adate)
@@ -486,16 +373,17 @@ class MiAZWorkspace(Gtk.Box):
                                 date=fields[0],
                                 date_dsc = date_dsc,
                                 country=fields[1],
-                                collection=fields[2],
-                                purpose=fields[4],
-                                sentby_id=fields[3],
-                                sentby_dsc=who.get(fields[3]),
+                                group=fields[2],
+                                subgroup=fields[3],
+                                purpose=fields[5],
+                                sentby_id=fields[4],
+                                sentby_dsc=who.get(fields[4]),
                                 title=os.path.basename(path),
-                                subtitle=fields[5],
-                                sentto_id=fields[6],
-                                sentto_dsc=who.get(fields[6]),
+                                subtitle=fields[6],
+                                sentto_id=fields[7],
+                                sentto_dsc=who.get(fields[7]),
                                 valid=valid))
-        self.view.update(items)
+        self.view.update(items, self.repodct)
         self._on_filter_selected()
         self.update_title()
         if self.show_dashboard:
@@ -542,11 +430,12 @@ class MiAZWorkspace(Gtk.Box):
             if item.valid:
                 c0 = self._do_eval_cond_matches_freetext(item.id)
                 c1 = self._do_eval_cond_matches(self.dropdown['Country'], item.country)
-                c2 = self._do_eval_cond_matches(self.dropdown['Collection'], item.collection)
-                c3 = self._do_eval_cond_matches(self.dropdown['SentBy'], item.sentby_id)
-                c4 = self._do_eval_cond_matches(self.dropdown['Purpose'], item.purpose)
+                c2 = self._do_eval_cond_matches(self.dropdown['Group'], item.group)
+                c3 = self._do_eval_cond_matches(self.dropdown['Subgroup'], item.subgroup)
+                c4 = self._do_eval_cond_matches(self.dropdown['SentBy'], item.sentby_id)
+                c5 = self._do_eval_cond_matches(self.dropdown['Purpose'], item.purpose)
                 c6 = self._do_eval_cond_matches(self.dropdown['SentTo'], item.sentto_id)
-                display = c0 and c1 and c2 and c3 and c4 and c6
+                display = c0 and c1 and c2 and c3 and c4 and c5 and c6
         else:
             if not item.valid:
                 display = self._do_eval_cond_matches_freetext(item.id)

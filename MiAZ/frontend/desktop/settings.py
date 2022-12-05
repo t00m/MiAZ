@@ -14,7 +14,8 @@ from gi.repository import Gtk
 
 from MiAZ.backend.env import ENV
 from MiAZ.backend.log import get_logger
-from MiAZ.frontend.desktop.widgets.configview import MiAZCollections
+from MiAZ.frontend.desktop.widgets.configview import MiAZGroups
+from MiAZ.frontend.desktop.widgets.configview import MiAZSubgroups
 from MiAZ.frontend.desktop.widgets.configview import MiAZPurposes
 from MiAZ.frontend.desktop.widgets.configview import MiAZCountries
 from MiAZ.frontend.desktop.widgets.configview import MiAZOrganizations
@@ -52,14 +53,16 @@ class MiAZPrefsWindow(Adw.PreferencesWindow):
 
     def get_group_resources(self):
         row_res_countries = self.create_action_row_res_countries()
-        row_res_collections = self.create_action_row_res_collections()
+        row_res_groups = self.create_action_row_res_groups()
+        row_res_subgroups = self.create_action_row_res_subgroups()
         row_res_purposes = self.create_action_row_res_purposes()
         row_res_organizations = self.create_action_row_res_organizations()
 
         group = Adw.PreferencesGroup()
         group.set_title("Resources")
         group.add(row_res_countries)
-        group.add(row_res_collections)
+        group.add(row_res_groups)
+        group.add(row_res_subgroups)
         group.add(row_res_purposes)
         group.add(row_res_organizations)
         return group
@@ -101,11 +104,20 @@ class MiAZPrefsWindow(Adw.PreferencesWindow):
         box.append(button)
         return row
 
-    def create_action_row_res_collections(self):
+    def create_action_row_res_groups(self):
         row = Adw.ActionRow.new()
-        row.set_title("Collections")
-        row.set_icon_name('miaz-res-collection')
-        button = self.factory.create_button('document-edit-symbolic', '', self.show_res_collections)
+        row.set_title("Groups")
+        row.set_icon_name('miaz-res-group')
+        button = self.factory.create_button('document-edit-symbolic', '', self.show_res_groups)
+        box = row.get_child()
+        box.append(button)
+        return row
+
+    def create_action_row_res_subgroups(self):
+        row = Adw.ActionRow.new()
+        row.set_title("Subgroups")
+        row.set_icon_name('miaz-res-subgroup')
+        button = self.factory.create_button('document-edit-symbolic', '', self.show_res_subgroups)
         box = row.get_child()
         box.append(button)
         return row
@@ -134,10 +146,16 @@ class MiAZPrefsWindow(Adw.PreferencesWindow):
         dialog = self.factory.create_dialog(self, 'Countries', view, 600, 480)
         dialog.show()
 
-    def show_res_collections(self, *args):
-        view = MiAZCollections(self.app)
+    def show_res_groups(self, *args):
+        view = MiAZGroups(self.app)
         view.update()
-        dialog = self.factory.create_dialog(self.app.win, 'Collections', view, 600, 480)
+        dialog = self.factory.create_dialog(self.app.win, 'Groups', view, 600, 480)
+        dialog.show()
+
+    def show_res_subgroups(self, *args):
+        view = MiAZSubgroups(self.app)
+        view.update()
+        dialog = self.factory.create_dialog(self.app.win, 'Subgroups', view, 600, 480)
         dialog.show()
 
     def show_res_purposes(self, *args):

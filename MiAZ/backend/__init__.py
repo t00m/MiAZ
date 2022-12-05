@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import os
+from os.path import basename
 import shutil
 
 from gi.repository import GObject
@@ -16,7 +17,6 @@ from MiAZ.backend.util import get_file_creation_date
 from MiAZ.backend.watcher import MiAZWatcher
 from MiAZ.backend.config import MiAZConfigApp
 from MiAZ.backend.config import MiAZConfigSettingsCountries
-from MiAZ.backend.config import MiAZConfigSettingsCollections
 from MiAZ.backend.config import MiAZConfigSettingsGroups
 from MiAZ.backend.config import MiAZConfigSettingsSubgroups
 from MiAZ.backend.config import MiAZConfigSettingsPurposes
@@ -37,7 +37,6 @@ class MiAZBackend(GObject.GObject):
                             GObject.SignalFlags.RUN_LAST, None, () )
         self.conf['App'] = MiAZConfigApp()
         self.conf['Country'] = MiAZConfigSettingsCountries()
-        self.conf['Collection'] = MiAZConfigSettingsCollections()
         self.conf['Group'] = MiAZConfigSettingsGroups()
         self.conf['Subgroup'] = MiAZConfigSettingsSubgroups()
         self.conf['Purpose'] = MiAZConfigSettingsPurposes()
@@ -98,7 +97,7 @@ class MiAZBackend(GObject.GObject):
             s_repodct[doc]['reasons'] = reasons
             if not valid:
                 s_repodct[doc]['suggested'] = self.suggest_filename(doc)
-                s_repodct[doc]['fields'] = ['' for fields in range(7)]
+                s_repodct[doc]['fields'] = ['' for fields in range(8)]
                 self.log.debug(reasons)
             else:
                 s_repodct[doc]['suggested'] = None
@@ -147,12 +146,12 @@ class MiAZBackend(GObject.GObject):
 
         # Check fields partitioning
         fields = name.split('-')
-        if len(fields) != 7:
+        if len(fields) != 8:
             valid &= False
-            reasons.append((False, "Wrong number of fields (%d/7)" %
+            reasons.append((False, "Wrong number of fields (%d/8)" %
                                                         len(fields)))
         else:
-            reasons.append((True, "Right number of fields (%d/7)" %
+            reasons.append((True, "Right number of fields (%d/8)" %
                                                         len(fields)))
 
         # Validate fields
@@ -190,25 +189,41 @@ class MiAZBackend(GObject.GObject):
             reasons.append((False,
                             "Country code couldn't be checked"))
 
-        # Check collection (3nd field)
+        # Check group (3th field)
         try:
             code = fields[2]
-            is_collection = self.conf['Collection'].exists(code)
-            if not is_collection:
+            is_group = self.conf['Group'].exists(code)
+            if not is_group:
                 valid &= False
                 reasons.append((False,
-                                "Collection '%s' is not in your list." \
+                                "Group '%s' is not in your list." \
                                 " Please, add it first." % code))
             else:
                 reasons.append((True,
-                                "Collection '%s' accepted" % code))
+                                "Group '%s' accepted" % code))
         except IndexError:
             valid &= False
-            reasons.append((False, "Collection couldn't be checked"))
+            reasons.append((False, "Group couldn't be checked"))
 
-        # Check SentBy (4th field)
+        # Check group (4th field)
         try:
             code = fields[3]
+            is_subgroup = self.conf['Subgroup'].exists(code)
+            if not is_subgroup:
+                valid &= False
+                reasons.append((False,
+                                "Subgroup '%s' is not in your list." \
+                                " Please, add it first." % code))
+            else:
+                reasons.append((True,
+                                "Subgroup '%s' accepted" % code))
+        except IndexError:
+            valid &= False
+            reasons.append((False, "Subgroup couldn't be checked"))
+
+        # Check SentBy (5th field)
+        try:
+            code = fields[4]
             is_organization = self.conf['Person'].exists(code)
             if not is_organization:
                 valid &= False
@@ -221,9 +236,9 @@ class MiAZBackend(GObject.GObject):
             valid &= False
             reasons.append((False, "Person couldn't be checked"))
 
-        # Check purpose (5th field)
+        # Check purpose (6th field)
         try:
-            code = fields[4]
+            code = fields[5]
             is_purpose = self.conf['Purpose'].exists(code)
             if not is_purpose:
                 valid &= False
@@ -236,17 +251,17 @@ class MiAZBackend(GObject.GObject):
             valid &= False
             reasons.append((False, "Purpose couldn't be checked"))
 
-        # Check Concept (6th field)
+        # Check Concept (7th field)
         try:
-            code = fields[5]
+            code = fields[6]
             reasons.append((True, "Concept '%s' accepted" % code))
         except IndexError:
             valid &= False
             reasons.append((False, "Concept couldn't be checked"))
 
-        # Check SentTo (7th field)
+        # Check SentTo (8th field)
         try:
-            code = fields[6]
+            code = fields[7]
             is_organization = self.conf['Person'].exists(code)
             if not is_organization:
                 valid &= False
@@ -265,8 +280,8 @@ class MiAZBackend(GObject.GObject):
     def suggest_filename(self, filepath: str) -> str:
         timestamp = ""
         country = ""
-        lang = ""
-        collection = ""
+        group = ""
+        subgroup = ""
         organization = ""
         purpose = ""
         concept = ""
@@ -319,17 +334,27 @@ class MiAZBackend(GObject.GObject):
         if not found_country:
             country = ""
 
-        # Field 2. Find and/or guess collection field
-        found_collection = False
+        # Field 2. Find and/or guess group field
+        found_group = False
         for field in fields:
-            if self.conf['Collection'].exists(field):
-                collection = field.upper()
-                found_collection = True
+            if self.conf['Group'].exists(field):
+                group = field.upper()
+                found_group = True
                 break
-        if not found_collection:
-            collection = ''
+        if not found_group:
+            group = ''
 
-        # Field 3. Find and/or guess SentBy field
+        # Field 3. Find and/or guess subgroup field
+        found_subgroup = False
+        for field in fields:
+            if self.conf['Subgroup'].exists(field):
+                subgroup = field.upper()
+                found_subgroup = True
+                break
+        if not found_subgroup:
+            subgroup = ''
+
+        # Field 4. Find and/or guess SentBy field
         found_person = False
         for field in fields:
             if self.conf['Person'].exists(field):
@@ -339,7 +364,7 @@ class MiAZBackend(GObject.GObject):
         if not found_person:
             sentby = ''
 
-        # Field 4. Find and/or guess purpose field
+        # Field 5. Find and/or guess purpose field
         found_purpose = False
         for field in fields:
             if self.conf['Purpose'].exists(field):
@@ -349,13 +374,13 @@ class MiAZBackend(GObject.GObject):
         if not found_purpose:
             purpose = ''
 
-        # Field 4. Do NOT find and/or guess concept field. Free field.
+        # Field 6. Do NOT find and/or guess concept field. Free field.
         try:
             concept = fields[5]
         except:
             concept = ''
 
-        # Field 6. Find and/or guess SentTo field
+        # Field 7. Find and/or guess SentTo field
         found_person = False
         for field in fields:
             if self.conf['Person'].exists(field):
@@ -365,9 +390,10 @@ class MiAZBackend(GObject.GObject):
         if not found_person:
             sentto = ''
 
-        suggested = "%s-%s-%s-%s-%s-%s-%s" % (  timestamp,
+        suggested = "%s-%s-%s-%s-%s-%s-%s-%s" % (timestamp,
                                                 country,
-                                                collection,
+                                                group,
+                                                subgroup,
                                                 sentby,
                                                 purpose,
                                                 concept,
