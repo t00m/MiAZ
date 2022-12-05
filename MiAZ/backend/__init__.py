@@ -94,7 +94,7 @@ class MiAZBackend(GObject.GObject):
             s_repodct[doc]['reasons'] = reasons
             if not valid:
                 s_repodct[doc]['suggested'] = self.suggest_filename(doc)
-                s_repodct[doc]['fields'] = ['', '', '', '', '', '', '']
+                s_repodct[doc]['fields'] = ['' for fields in range(7)]
                 self.log.debug(reasons)
             else:
                 s_repodct[doc]['suggested'] = None
@@ -193,8 +193,8 @@ class MiAZBackend(GObject.GObject):
             if not is_collection:
                 valid &= False
                 reasons.append((False,
-                                "Collection '%s' is not in your list. \
-                                Please, add it first." % code))
+                                "Collection '%s' is not in your list." \
+                                " Please, add it first." % code))
             else:
                 reasons.append((True,
                                 "Collection '%s' accepted" % code))
@@ -209,8 +209,8 @@ class MiAZBackend(GObject.GObject):
             if not is_organization:
                 valid &= False
                 reasons.append((False,
-                                "Person '%s' is not in your list. \
-                                Please, add it first." % code))
+                                "Person '%s' is not in your list. " \
+                                "Please, add it first." % code))
             else:
                 reasons.append((True, "Person '%s' accepted" % code))
         except IndexError:
@@ -224,8 +224,8 @@ class MiAZBackend(GObject.GObject):
             if not is_purpose:
                 valid &= False
                 reasons.append((False,
-                                "Purpose '%s' is not in your list. \
-                                Please, add it first." % code))
+                                "Purpose '%s' is not in your list. " \
+                                "Please, add it first." % code))
             else:
                 reasons.append((True, "Purpose '%s' accepted" % code))
         except IndexError:
@@ -247,8 +247,8 @@ class MiAZBackend(GObject.GObject):
             if not is_organization:
                 valid &= False
                 reasons.append((False,
-                                "Person '%s' is not in your list. \
-                                Please, add it first." % code))
+                                "Person '%s' is not in your list. " \
+                                "Please, add it first." % code))
             else:
                 reasons.append((True, "Person '%s' accepted" % code))
         except IndexError:
