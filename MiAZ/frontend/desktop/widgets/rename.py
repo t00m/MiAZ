@@ -542,6 +542,8 @@ class MiAZRenameDialog(Gtk.Dialog):
             if len(key) > 0:
                 config = self.app.get_config('Group')
                 config.add(key)
+                self.actions.dropdown_populate(self.dpdGroup, Group)
+                self.select_dropdown_item(self.dpdGroup, key)
         dialog.destroy()
 
     def on_response_subgroup_add(self, dialog, response):
@@ -550,6 +552,8 @@ class MiAZRenameDialog(Gtk.Dialog):
             if len(key) > 0:
                 config = self.app.get_config('Subgroup')
                 config.add(key)
+                self.actions.dropdown_populate(self.dpdSubgroup, Subgroup)
+                self.select_dropdown_item(self.dpdSubgroup, key)
         dialog.destroy()
 
     def on_response_person_sentto_add(self, dialog, response):
