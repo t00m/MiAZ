@@ -488,6 +488,7 @@ class MiAZWorkspace(Gtk.Box):
         self.num_review = 0
         self.dfilter = {}
         self.show_dashboard = True
+        self.view.column_subtitle.set_title('Concept')
         self.view.refilter()
         self.update_title()
         self.tgbExplain.set_active(True)
@@ -517,6 +518,7 @@ class MiAZWorkspace(Gtk.Box):
         self.statusbar.set_visible(True)
         self.message_label.set_markup('<b>Review finished?</b>')
         self.infobar.set_message_type(Gtk.MessageType.INFO)
+        self.view.column_title.set_title('Filename')
         # ~ btnBack = self.infobar.add_button('Back to AZ', Gtk.ResponseType.CANCEL)
 
 
