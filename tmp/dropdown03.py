@@ -42,8 +42,15 @@ class ExampleWindow(Gtk.ApplicationWindow):
             "us": "United States",
         }
 
+        self.search_text = '' # Initial search text
+
         # Populate the model
         self.model = Gio.ListStore(item_type=Country)
+        self.sort_model  = Gtk.SortListModel(model=self.model) #, sorter=cv_sorter)
+        self.filter_model = Gtk.FilterListModel(model=self.sort_model)
+        self.filter = Gtk.CustomFilter.new(self._do_filter_view, self.filter_model)
+        self.filter_model.set_filter(self.filter)
+
         for n in nodes.keys():
             self.model.append(Country(country_id=n, country_name=nodes[n]))
 
@@ -52,8 +59,25 @@ class ExampleWindow(Gtk.ApplicationWindow):
         factory.connect("setup", self._on_factory_setup)
         factory.connect("bind", self._on_factory_bind)
 
-        self.dd = Gtk.DropDown(model=self.model, factory=factory, hexpand=True)
+
+        self.dd = Gtk.DropDown(model=self.filter_model, factory=factory, hexpand=True)
+        self.dd.set_enable_search(True)
+        # ~ self.dd.connect("notify", self._on_selected_item_notify)
+        # ~ expression = self.dd.get_expression()
+        # ~ print(type(expression))
+        # ~ print(expression)
         self.dd.connect("notify::selected-item", self._on_selected_item_notify)
+        popover = self.dd.get_last_child()
+        box = popover.get_child()
+        box2 = box.get_first_child()
+        search_entry = box2.get_first_child() # Gtk.SearchEntry
+        search_entry.connect('search-changed', self._on_search_changed)
+        search_entry.connect('activate', self._on_search_activated)
+
+        # ~ cv_sorter = self.dd.get_sorter()
+
+
+        # ~ self.dd.set_filter(self._do_filter_view)
 
         box = Gtk.Box(spacing=12, hexpand=True, vexpand=True)
         box.props.margin_start = 12
@@ -89,15 +113,35 @@ class ExampleWindow(Gtk.ApplicationWindow):
         country = list_item.get_item()
         label.set_text(country.country_name)
         country_flag = os.path.join('flags', '%s.svg' % country.country_id.upper())
-        print(country_flag)
         image.set_from_file(country_flag)
 
 
     # The notify signal is fired when the selection changes
     def _on_selected_item_notify(self, dropdown, _):
         country = dropdown.get_selected_item()
-        print(country)
+        try:
+            print(country.country_name)
+        except AttributeError:
+            print("No country")
 
+
+    def _on_search_changed(self, search_entry):
+        self.search_text = search_entry.get_text()
+        self.filter.changed(Gtk.FilterChange.DIFFERENT)
+
+    def _on_search_activated(self, *args):
+        print(args)
+
+    def _do_filter_view(self, item, filter_list_model):
+        if self.search_text.upper() in item.country_name.upper():
+            display = True
+        else:
+            display = False
+        print("Searching '%s' in '%s'. Display? %s" % (self.search_text,
+                                                    item.country_name,
+                                                    display))
+        # ~ print("Display %s? %s" % (item.country_name, display))
+        return display
 
 class ExampleApp(Adw.Application):
     def __init__(self):
