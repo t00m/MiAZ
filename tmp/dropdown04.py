@@ -22,19 +22,6 @@ class Widget(GObject.Object):
 class ExampleWindow(Gtk.ApplicationWindow):
     def __init__(self, app):
         super().__init__(application=app, title="DropDown")
-
-        nodes = []
-        for item in dir(Gtk):
-            try:
-                aclass = type(eval('Gtk.%s' % item))
-                if 'gi.types.GObjectMeta' in str(aclass):
-                    if item[0].isupper():
-                        # ~ print("%s > %s" % (item, aclass))
-                        # USE this~ obj = eval('Gtk.%s' % item)
-                        nodes.append('Gtk.%s' % item)
-            except Exception as error:
-                pass
-
         self.search_text = '' # Initial search text
 
         # Populate the model
@@ -44,8 +31,11 @@ class ExampleWindow(Gtk.ApplicationWindow):
         self.filter = Gtk.CustomFilter.new(self._do_filter_view, self.filter_model)
         self.filter_model.set_filter(self.filter)
 
-        for node in nodes:
-            self.model.append(Widget(name=node))
+        for item in dir(Gtk):
+            aclass = type(eval('Gtk.%s' % item))
+            if 'gi.types.GObjectMeta' in str(aclass):
+                if item[0].isupper() and item != 'Widget':
+                    self.model.append(Widget(name='Gtk.%s' % item))
 
         # Set up the factory
         factory = Gtk.SignalListItemFactory()
@@ -110,9 +100,9 @@ class ExampleWindow(Gtk.ApplicationWindow):
             display = True
         else:
             display = False
-        print("Searching '%s' in '%s'. Display? %s" % (self.search_text,
-                                                    item.name,
-                                                    display))
+        # ~ print("Searching '%s' in '%s'. Display? %s" % (self.search_text,
+                                                    # ~ item.name,
+                                                    # ~ display))
         return display
 
 class ExampleApp(Adw.Application):
