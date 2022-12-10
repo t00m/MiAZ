@@ -383,7 +383,7 @@ class MiAZWorkspace(Gtk.Box):
                                 sentto_id=fields[7],
                                 sentto_dsc=who.get(fields[7]),
                                 valid=valid))
-        self.view.update(items, self.repodct)
+        self.view.update(items)
         self._on_filter_selected()
         self.update_title()
         if self.show_dashboard:

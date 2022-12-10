@@ -15,6 +15,7 @@ from gi.repository import Pango
 
 from MiAZ.backend.env import ENV
 from MiAZ.backend.models import MiAZModel
+from MiAZ.backend.util import json_load
 
 class RowId(Gtk.Box):
     """Row Id Widget"""
@@ -69,6 +70,7 @@ class MiAZColumnView(Gtk.Box):
     def __init__(self, app):
         super(MiAZColumnView, self).__init__(orientation=Gtk.Orientation.VERTICAL, spacing=3, hexpand=True, vexpand=True)
         self.app = app
+        self.backend = self.app.get_backend()
         self.factory = self.app.get_factory()
         self.actions = self.app.get_actions()
         self.icman = self.app.get_icman()
@@ -209,8 +211,10 @@ class MiAZColumnView(Gtk.Box):
     def refilter(self):
         self.filter.emit('changed', Gtk.FilterChange.DIFFERENT)
 
-    def update(self, items, repodct):
-        self.repodct = repodct
+    def update(self, items):
+        repocnf = self.backend.get_repo_source_config_file()
+        self.repodct = json_load(repocnf)
+        # ~ self.repodct = repodct
         self.store.remove_all()
         for item in items:
             # item =~ Subclass of MiAZModel(id='xxx', title='xxx', ...)
