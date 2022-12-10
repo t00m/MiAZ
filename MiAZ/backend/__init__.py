@@ -22,7 +22,6 @@ from MiAZ.backend.config import MiAZConfigSettingsSubgroups
 from MiAZ.backend.config import MiAZConfigSettingsPurposes
 from MiAZ.backend.config import MiAZConfigSettingsConcepts
 from MiAZ.backend.config import MiAZConfigSettingsPerson
-from MiAZ.backend.repo import Repository
 
 
 class MiAZBackend(GObject.GObject):
@@ -49,7 +48,6 @@ class MiAZBackend(GObject.GObject):
         self.watch_source = MiAZWatcher('source', self.source)
         self.watch_source.connect('source-directory-updated',
                                                     self.check_source)
-        self.repo = Repository(self)
 
     def get_repo(self):
         return self.repo
