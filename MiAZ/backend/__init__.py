@@ -49,8 +49,30 @@ class MiAZBackend(GObject.GObject):
         self.watch_source.connect('source-directory-updated',
                                                     self.check_source)
 
-    def get_repo(self):
-        return self.repo
+    def is_repo(self, path: str) -> bool:
+        conf_dir = os.path.join(path, 'conf')
+        conf_file = os.path.join(conf_dir, 'miaz.conf')
+        if os.path.exists(conf_file):
+            repo = json_load(conf_file)
+            self.log.debug("MiAZ Repository format: %s", repo['FORMAT'])
+            return True
+        else:
+            return False
+
+    def init_repo(self, path):
+        conf = {}
+        conf['FORMAT'] = 1
+        dir_conf = os.path.join(path, 'conf')
+        dir_repo = os.path.join(path, 'repo')
+        os.makedirs(dir_conf)
+        os.makedirs(dir_repo)
+        conf_file = os.path.join(dir_conf, 'miaz.conf')
+        json_save(conf_file, conf)
+
+
+
+
+
 
     def get_watcher_source(self):
         """Get watcher object for source directory"""

@@ -146,7 +146,7 @@ class MiAZPrefsWindow(Adw.PreferencesWindow):
             subtitle = repo
         else:
             title = '<i>Folder not set</i>'
-            subtitle = ''
+            subtitle = 'Choose an empty folder'
         row.set_title(title)
         row.set_subtitle(subtitle)
         btnRepoSource = self.factory.create_button ('document-edit-symbolic', '', self.show_filechooser_source, css_classes=['flat'])
@@ -167,21 +167,36 @@ class MiAZPrefsWindow(Adw.PreferencesWindow):
         dlgFileChooser.show()
 
     def filechooser_response_source(self, dialog, response):
+        use_repo = False
         if response == Gtk.ResponseType.ACCEPT:
             content_area = dialog.get_content_area()
             filechooser = content_area.get_last_child()
             gfile = filechooser.get_file()
             dirpath = gfile.get_path()
             if dirpath is not None:
+                backend = self.app.get_backend()
+                if backend.is_repo(dirpath):
+                    self.log.debug("Directory '%s' is a MiAZ Repository", dirpath)
+                    watcher = backend.get_watcher_source()
+                    watcher.set_path(dirpath)
+                    watcher.set_active(True)
+                    self.config.set('source', dirpath)
+                    use_repo = True
+                else:
+                    self.log.debug("Directory '%s' is not a MiAZ repository", dirpath)
+                    import glob
+                    normal_files = glob.glob(os.path.join(dirpath, '*'))
+                    hidden_files = glob.glob(os.path.join(dirpath, '.*'))
+                    if len(normal_files) == 0 and len(hidden_files) == 0:
+                        self.log.debug("Initializing repository for directory '%s'", dirpath)
+                        backend.init_repo(dirpath)
+                        use_repo = True
+                    else:
+                        self.log.warning("Directory '%s' can't be used as repository. It is not empty", dirpath)
+            if use_repo:
                 self.row_repo_source.set_title(os.path.basename(dirpath))
                 self.row_repo_source.set_subtitle(dirpath)
-                self.config.set('source', dirpath)
-                backend = self.app.get_backend()
-                watcher = backend.get_watcher_source()
-                watcher.set_path(dirpath)
-                watcher.set_active(True)
-                dialog.destroy()
-        else:
-            dialog.destroy()
+
+        dialog.destroy()
 
 

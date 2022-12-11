@@ -41,27 +41,16 @@ All documents managed by MiAZ are renamed following this name convention consist
 
 The user has to choose an empty _root_ directory (eg.: $HOME/Documents/MiAZ) where the application can deploy the rest of files and directories.
 
-At present, it uses 4 directories:
+At present, it uses 2 directories:
 
-* _conf_: each field saves the information given by the user
-* _meta_: not used yet but might be important to store information that can't be saved in the filename. Eg.: total paid for a given invoice, notes, etc...
-* _proj_: sometimes, it is important to group files beloging to different collections (eg.: to prepare taxes). This directory will hold a project subdirectory with links to those relevant documents.
+* _conf_: this directory holds the repository configuration
 * _repo_: the most important directory, as it will store all files. As it could be thousands of them from several years, each document will be stored in the proper year subdirectory.
-* _tags_: each subdirectory in this directory represent a tag. Unlike Collections, a tag can represent a state (eg.: pending, done, archived)
 
 .Example:
 ----
 $HOME/Documents/MiAZ
 ├── conf
-├── meta
-├── proj
-│   └── project1
 ├── repo
-│   └── 2022
-│   └── 2021
-└── tags
-    └── tagname1
-    └── tagname2
 ----
 
 == Current status
