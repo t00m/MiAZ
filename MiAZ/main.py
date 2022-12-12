@@ -32,7 +32,11 @@ class MiAZ:
         else:
             from MiAZ.frontend.console.app import MiAZApp
         app = MiAZApp(application_id="com.example.MiAZ")
-        app.run()
+        try:
+            app.run()
+        except KeyboardInterrupt:
+            self.log.error("Application killed by user")
+            exit(0)
         self.log.info("%s v%s - End", ENV['APP']['shortname'], get_version())
 
 

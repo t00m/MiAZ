@@ -184,11 +184,11 @@ class MiAZConfigApp(MiAZConfig):
         return found
 
 class MiAZConfigSettingsCountries(MiAZConfig):
-    def __init__(self):
+    def __init__(self, dir_repo):
         super().__init__(
             log=get_logger('MiAZ.Settings.Countries'),
             config_for = 'Countries',
-            config_local = ENV['FILE']['COUNTRIES'],
+            config_local = os.path.join(dir_repo, 'countries.json'),
             config_global = os.path.join(ENV['GPATH']['RESOURCES'],
                             'MiAZ-countries.json'),
             config_is = dict,
@@ -198,11 +198,11 @@ class MiAZConfigSettingsCountries(MiAZConfig):
         )
 
 class MiAZConfigSettingsGroups(MiAZConfig):
-    def __init__(self):
+    def __init__(self, dir_repo):
         super().__init__(
             log=get_logger('MiAZ.Settings.Groups'),
             config_for = 'Groups',
-            config_local = ENV['FILE']['GROUPS'],
+            config_local = os.path.join(dir_repo, 'groups.json'),
             config_global = os.path.join(ENV['GPATH']['RESOURCES'],
                             'MiAZ-groups.json'),
             config_is = list,
@@ -214,11 +214,11 @@ class MiAZConfigSettingsGroups(MiAZConfig):
         return 'Group'
 
 class MiAZConfigSettingsSubgroups(MiAZConfig):
-    def __init__(self):
+    def __init__(self, dir_repo):
         super().__init__(
             log=get_logger('MiAZ.Settings.Subgroups'),
             config_for = 'Subgroups',
-            config_local = ENV['FILE']['SUBGROUPS'],
+            config_local = os.path.join(dir_repo, 'subgroups.json'),
             config_global = os.path.join(ENV['GPATH']['RESOURCES'],
                             'MiAZ-subgroups.json'),
             config_is = list,
@@ -230,11 +230,11 @@ class MiAZConfigSettingsSubgroups(MiAZConfig):
         return 'Subgroup'
 
 class MiAZConfigSettingsPurposes(MiAZConfig):
-    def __init__(self):
+    def __init__(self, dir_repo):
         super().__init__(
             log=get_logger('MiAZ.Settings.Purposes'),
             config_for = 'Purposes',
-            config_local = ENV['FILE']['PURPOSES'],
+            config_local = os.path.join(dir_repo, 'purposes.json'),
             config_global = os.path.join(ENV['GPATH']['RESOURCES'],
                             'MiAZ-purposes.json'),
             config_is = list,
@@ -246,11 +246,11 @@ class MiAZConfigSettingsPurposes(MiAZConfig):
         return 'Purpose'
 
 class MiAZConfigSettingsConcepts(MiAZConfig):
-    def __init__(self):
+    def __init__(self, dir_repo):
         super().__init__(
             log=get_logger('MiAZ.Settings.Concepts'),
             config_for = 'Concepts',
-            config_local = ENV['FILE']['CONCEPTS'],
+            config_local = os.path.join(dir_repo, 'concepts.json'),
             config_global = None,
             config_is = list,
             config_model = Concept,
@@ -261,11 +261,11 @@ class MiAZConfigSettingsConcepts(MiAZConfig):
         return 'Concept'
 
 class MiAZConfigSettingsPerson(MiAZConfig):
-    def __init__(self):
+    def __init__(self, dir_repo):
         super().__init__(
             log=get_logger('MiAZ.Settings.Organizations'),
             config_for = 'Person',
-            config_local = ENV['FILE']['PERSONS'],
+            config_local = os.path.join(dir_repo, 'persons.json'),
             config_global = os.path.join(ENV['GPATH']['RESOURCES'],
                             'MiAZ-persons.json'),
             config_is = dict,

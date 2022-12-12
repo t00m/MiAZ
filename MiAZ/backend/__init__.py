@@ -36,22 +36,10 @@ class MiAZBackend(GObject.GObject):
                             MiAZBackend,
                             GObject.SignalFlags.RUN_LAST, None, () )
         self.conf['App'] = MiAZConfigApp()
-        self.conf['Country'] = MiAZConfigSettingsCountries()
-        self.conf['Group'] = MiAZConfigSettingsGroups()
-        self.conf['Subgroup'] = MiAZConfigSettingsSubgroups()
-        self.conf['Purpose'] = MiAZConfigSettingsPurposes()
-        self.conf['Concept'] = MiAZConfigSettingsConcepts()
-        self.conf['SentBy'] = MiAZConfigSettingsPerson()
-        self.conf['SentTo'] = MiAZConfigSettingsPerson()
-        self.conf['Person'] = MiAZConfigSettingsPerson()
-        self.source = self.conf['App'].get('source')
-        self.watch_source = MiAZWatcher('source', self.source)
-        self.watch_source.connect('source-directory-updated',
-                                                    self.check_source)
 
     def is_repo(self, path: str) -> bool:
         conf_dir = os.path.join(path, 'conf')
-        conf_file = os.path.join(conf_dir, 'miaz.conf')
+        conf_file = os.path.join(conf_dir, 'repo.json')
         if os.path.exists(conf_file):
             repo = json_load(conf_file)
             self.log.debug("MiAZ Repository format: %s", repo['FORMAT'])
@@ -66,13 +54,20 @@ class MiAZBackend(GObject.GObject):
         dir_repo = os.path.join(path, 'repo')
         os.makedirs(dir_conf)
         os.makedirs(dir_repo)
-        conf_file = os.path.join(dir_conf, 'miaz.conf')
+        conf_file = os.path.join(dir_conf, 'repo.json')
         json_save(conf_file, conf)
-
-
-
-
-
+        self.watch_source = MiAZWatcher('source', dir_repo)
+        self.watch_source.connect('source-directory-updated',
+                                                    self.check_source)
+        self.conf['Country'] = MiAZConfigSettingsCountries(dir_conf)
+        self.conf['Group'] = MiAZConfigSettingsGroups(dir_conf)
+        self.conf['Subgroup'] = MiAZConfigSettingsSubgroups(dir_conf)
+        self.conf['Purpose'] = MiAZConfigSettingsPurposes(dir_conf)
+        self.conf['Concept'] = MiAZConfigSettingsConcepts(dir_conf)
+        self.conf['SentBy'] = MiAZConfigSettingsPerson(dir_conf)
+        self.conf['SentTo'] = MiAZConfigSettingsPerson(dir_conf)
+        self.conf['Person'] = MiAZConfigSettingsPerson(dir_conf)
+        self.conf['App'].set('source', path)
 
     def get_watcher_source(self):
         """Get watcher object for source directory"""
@@ -84,13 +79,15 @@ class MiAZBackend(GObject.GObject):
 
     def get_repo_source_config_file(self):
         """Get config file for current source repository"""
-        repodir = self.conf['App'].get('source')
-        repokey = valid_key(repodir)
-        return os.path.join(ENV['LPATH']['REPOS'], "source-%s.json" %
-                                                                repokey)
+        dir_repo = self.conf['App'].get('source')
+        dir_conf = os.path.join(dir_repo, 'conf')
+        repokey = valid_key(dir_repo)
+        return os.path.join(dir_conf, "source-%s.json" % repokey)
+
     def get_repo_dict(self):
         """Load/Create dictionary for current repository"""
-        s_repodir = self.conf['App'].get('source')
+        dir_repo = self.conf['App'].get('source')
+        s_repodir = os.path.join(dir_repo, 'repo')
         s_repocnf = self.get_repo_source_config_file()
 
         if os.path.exists(s_repocnf):
@@ -101,7 +98,8 @@ class MiAZBackend(GObject.GObject):
         return s_repodct
 
     def check_source(self, *args):
-        s_repodir = self.conf['App'].get('source')
+        dir_repo = self.conf['App'].get('source')
+        s_repodir = os.path.join(dir_repo, 'repo')
         s_repocnf = self.get_repo_source_config_file()
         s_repodct = self.get_repo_dict()
 
@@ -116,6 +114,7 @@ class MiAZBackend(GObject.GObject):
         # 2. Rebuild repository dictionary
         docs = get_files(s_repodir)
         for doc in docs:
+            self.log.debug(doc)
             valid, reasons = self.validate_filename(doc)
             s_repodct[doc] = {}
             s_repodct[doc]['valid'] = valid

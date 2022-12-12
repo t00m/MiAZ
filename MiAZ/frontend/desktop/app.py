@@ -15,6 +15,7 @@ from gi.repository import Gtk
 from MiAZ.backend.env import ENV
 from MiAZ.backend import MiAZBackend
 from MiAZ.backend.util import dir_writable
+from MiAZ.backend.util import get_version
 from MiAZ.backend.log import get_logger
 from MiAZ.frontend.desktop.widgets.menu import MiAZ_APP_MENU
 from MiAZ.frontend.desktop.widgets.menubutton import MiAZMenuButton
@@ -31,6 +32,7 @@ class MiAZApp(Adw.Application):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.backend = MiAZBackend()
+        self.conf = self.backend.get_conf()
         self.log = get_logger("MiAZ.GUI")
         GLib.set_application_name(ENV['APP']['name'])
         self.connect('activate', self.on_activate)
@@ -93,6 +95,23 @@ class MiAZApp(Adw.Application):
         self.switcher.set_stack(self.stack)
         self.stack.set_vexpand(True)
         return self.stack
+
+    def _setup_status_page(self):
+        pw = MiAZPrefsWindow(self)
+        status_page = Adw.StatusPage.new()
+        status_page.set_description(description="<big>Please, create a new repository in order to start working in your AZ repository</big>")
+        status_page.set_icon_name(icon_name='MiAZ-big')
+        status_page.set_title(title="%s %s" % (ENV['APP']['shortname'], get_version()))
+        boxChild = Gtk.CenterBox()
+        btnAddRepo = self.factory.create_button('list-add', 'Add repository', callback=pw.show_filechooser_source)
+        btnAddRepo.set_valign(Gtk.Align.CENTER)
+        boxChild.set_center_widget(btnAddRepo)
+        status_page.set_child(boxChild)
+
+        self.page_status = self.stack.add_titled(status_page, 'status', 'MiAZ')
+        self.page_status.set_icon_name('list-add')
+        self.page_status.set_visible(True)
+        self.show_stack_page_by_name('status')
 
     def _setup_workspace_page(self):
         self.workspace = MiAZWorkspace(self)
@@ -161,7 +180,11 @@ class MiAZApp(Adw.Application):
         self.mainbox.append(stack)
 
         # Create workspace
-        self._setup_workspace_page()
+        dir_repo = self.conf['App'].get('source')
+        if self.backend.is_repo(dir_repo):
+            self._setup_workspace_page()
+        else:
+            self._setup_status_page()
 
         # Setup headerbar
         self._setup_headerbar_left()
@@ -195,6 +218,7 @@ class MiAZApp(Adw.Application):
 
     def show_settings(self, *args):
         pw = MiAZPrefsWindow(self)
+        pw.show()
 
     def show_about(self, *args):
         about = MiAZAbaout(self).show()

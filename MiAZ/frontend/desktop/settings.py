@@ -37,7 +37,7 @@ class MiAZPrefsWindow(Adw.PreferencesWindow):
         page.add(self.get_group_repositories())
         page.add(self.get_group_resources())
         self.add(page)
-        self.show()
+        # ~ self.show()
 
     def get_group_repositories(self):
         self.row_repo_source = self.create_action_row_repo_source()
