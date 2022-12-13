@@ -42,6 +42,7 @@ class MiAZBackend(GObject.GObject):
         conf_file = os.path.join(conf_dir, 'repo.json')
         if os.path.exists(conf_file):
             repo = json_load(conf_file)
+            self.log.debug("Current repository: %s", path)
             self.log.debug("MiAZ Repository format: %s", repo['FORMAT'])
             return True
         else:
@@ -56,9 +57,11 @@ class MiAZBackend(GObject.GObject):
         os.makedirs(dir_repo)
         conf_file = os.path.join(dir_conf, 'repo.json')
         json_save(conf_file, conf)
-        self.watch_source = MiAZWatcher('source', dir_repo)
-        self.watch_source.connect('source-directory-updated',
-                                                    self.check_source)
+        self.conf['App'].set('source', path)
+
+    def load_repo(self, path):
+        dir_conf = os.path.join(path, 'conf')
+        dir_repo = os.path.join(path, 'repo')
         self.conf['Country'] = MiAZConfigSettingsCountries(dir_conf)
         self.conf['Group'] = MiAZConfigSettingsGroups(dir_conf)
         self.conf['Subgroup'] = MiAZConfigSettingsSubgroups(dir_conf)
@@ -67,7 +70,9 @@ class MiAZBackend(GObject.GObject):
         self.conf['SentBy'] = MiAZConfigSettingsPerson(dir_conf)
         self.conf['SentTo'] = MiAZConfigSettingsPerson(dir_conf)
         self.conf['Person'] = MiAZConfigSettingsPerson(dir_conf)
-        self.conf['App'].set('source', path)
+        self.watch_source = MiAZWatcher('source', dir_repo)
+        self.watch_source.connect('source-directory-updated',
+                                                    self.check_source)
 
     def get_watcher_source(self):
         """Get watcher object for source directory"""

@@ -96,7 +96,8 @@ class MiAZApp(Adw.Application):
         self.stack.set_vexpand(True)
         return self.stack
 
-    def _setup_status_page(self):
+    def setup_status_page(self):
+        self.btnImport.hide()
         pw = MiAZPrefsWindow(self)
         status_page = Adw.StatusPage.new()
         status_page.set_description(description="<big>Please, create a new repository in order to start working in your AZ repository</big>")
@@ -113,7 +114,8 @@ class MiAZApp(Adw.Application):
         self.page_status.set_visible(True)
         self.show_stack_page_by_name('status')
 
-    def _setup_workspace_page(self):
+    def setup_workspace_page(self):
+        self.btnImport.show()
         self.workspace = MiAZWorkspace(self)
         self.page_workspace = self.stack.add_titled(self.workspace, 'workspace', 'MiAZ')
         self.page_workspace.set_icon_name('document-properties')
@@ -142,9 +144,9 @@ class MiAZApp(Adw.Application):
         popover.set_child(vbox)
         popover.present()
 
-        btnImport = Gtk.MenuButton(icon_name='miaz-import')
-        btnImport.set_popover(popover)
-        self.header.pack_start(btnImport)
+        self.btnImport = Gtk.MenuButton(icon_name='miaz-import')
+        self.btnImport.set_popover(popover)
+        self.header.pack_start(self.btnImport)
         self.log.debug("❌ ✅")
 
     def _setup_headerbar_right(self):
@@ -179,18 +181,19 @@ class MiAZApp(Adw.Application):
         stack = self._setup_stack()
         self.mainbox.append(stack)
 
-        # Create workspace
-        dir_repo = self.conf['App'].get('source')
-        if self.backend.is_repo(dir_repo):
-            self._setup_workspace_page()
-        else:
-            self._setup_status_page()
-
         # Setup headerbar
         self._setup_headerbar_left()
         self._setup_headerbar_center()
         self._setup_headerbar_right()
         self.win.set_titlebar(self.header)
+
+        # Create workspace
+        dir_repo = self.conf['App'].get('source')
+        if self.backend.is_repo(dir_repo):
+            self.backend.load_repo(dir_repo)
+            self.setup_workspace_page()
+        else:
+            self.setup_status_page()
 
     def menu_handler(self, action, state):
             """ Callback for  menu actions"""

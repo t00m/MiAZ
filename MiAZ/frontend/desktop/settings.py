@@ -34,24 +34,24 @@ class MiAZPrefsWindow(Adw.PreferencesWindow):
         self.set_transient_for(self.app.win)
         page = Adw.PreferencesPage.new()
         page.set_title("Preferences")
-        page.add(self.get_group_repositories())
-        page.add(self.get_group_resources())
+        page.add(self._get_group_repositories())
+        page.add(self._get_group_resources())
         self.add(page)
         # ~ self.show()
 
-    def get_group_repositories(self):
-        self.row_repo_source = self.create_action_row_repo_source()
+    def _get_group_repositories(self):
+        self.row_repo_source = self._create_action_row_repo_source()
         group = Adw.PreferencesGroup()
         group.set_title("Documents repository")
         group.add(self.row_repo_source)
         return group
 
-    def get_group_resources(self):
-        row_res_countries = self.create_action_row_res_countries()
-        row_res_groups = self.create_action_row_res_groups()
-        row_res_subgroups = self.create_action_row_res_subgroups()
-        row_res_purposes = self.create_action_row_res_purposes()
-        row_res_organizations = self.create_action_row_res_organizations()
+    def _get_group_resources(self):
+        row_res_countries = self._create_action_row_res_countries()
+        row_res_groups = self._create_action_row_res_groups()
+        row_res_subgroups = self._create_action_row_res_subgroups()
+        row_res_purposes = self._create_action_row_res_purposes()
+        row_res_organizations = self._create_action_row_res_organizations()
 
         group = Adw.PreferencesGroup()
         group.set_title("Resources")
@@ -62,7 +62,7 @@ class MiAZPrefsWindow(Adw.PreferencesWindow):
         group.add(row_res_organizations)
         return group
 
-    def create_action_row_res_countries(self):
+    def _create_action_row_res_countries(self):
         row = Adw.ActionRow.new()
         row.set_title("Countries")
         row.set_icon_name('miaz-res-country')
@@ -71,7 +71,7 @@ class MiAZPrefsWindow(Adw.PreferencesWindow):
         box.append(button)
         return row
 
-    def create_action_row_res_groups(self):
+    def _create_action_row_res_groups(self):
         row = Adw.ActionRow.new()
         row.set_title("Groups")
         row.set_icon_name('miaz-res-group')
@@ -80,7 +80,7 @@ class MiAZPrefsWindow(Adw.PreferencesWindow):
         box.append(button)
         return row
 
-    def create_action_row_res_subgroups(self):
+    def _create_action_row_res_subgroups(self):
         row = Adw.ActionRow.new()
         row.set_title("Subgroups")
         row.set_icon_name('miaz-res-subgroup')
@@ -89,7 +89,7 @@ class MiAZPrefsWindow(Adw.PreferencesWindow):
         box.append(button)
         return row
 
-    def create_action_row_res_purposes(self):
+    def _create_action_row_res_purposes(self):
         row = Adw.ActionRow.new()
         row.set_title("Purposes")
         row.set_icon_name('miaz-res-purpose')
@@ -98,7 +98,7 @@ class MiAZPrefsWindow(Adw.PreferencesWindow):
         box.append(button)
         return row
 
-    def create_action_row_res_organizations(self):
+    def _create_action_row_res_organizations(self):
         row = Adw.ActionRow.new()
         row.set_title("Organizations")
         row.set_icon_name('miaz-res-organization')
@@ -137,7 +137,7 @@ class MiAZPrefsWindow(Adw.PreferencesWindow):
         dialog = self.factory.create_dialog(self.app.win, 'Organizations', view, 600, 480)
         dialog.show()
 
-    def create_action_row_repo_source(self):
+    def _create_action_row_repo_source(self):
         row = Adw.ActionRow.new()
         config = self.app.get_config('App')
         repo = config.get('source')
@@ -159,14 +159,15 @@ class MiAZPrefsWindow(Adw.PreferencesWindow):
         dlgFileChooser = Gtk.Dialog()
         dlgFileChooser.set_transient_for(self)
         dlgFileChooser.add_buttons('Cancel', Gtk.ResponseType.CANCEL, 'Accept', Gtk.ResponseType.ACCEPT)
-        dlgFileChooser.connect('response', self.filechooser_response_source)
+        dlgFileChooser.connect('response', self._on_filechooser_response_source)
         contents = dlgFileChooser.get_content_area()
         wdgfilechooser = Gtk.FileChooserWidget()
         wdgfilechooser.set_action(Gtk.FileChooserAction.SELECT_FOLDER)
         contents.append(wdgfilechooser)
         dlgFileChooser.show()
 
-    def filechooser_response_source(self, dialog, response):
+    def _on_filechooser_response_source(self, dialog, response):
+        backend = self.app.get_backend()
         use_repo = False
         if response == Gtk.ResponseType.ACCEPT:
             content_area = dialog.get_content_area()
@@ -174,7 +175,6 @@ class MiAZPrefsWindow(Adw.PreferencesWindow):
             gfile = filechooser.get_file()
             dirpath = gfile.get_path()
             if dirpath is not None:
-                backend = self.app.get_backend()
                 if backend.is_repo(dirpath):
                     self.log.debug("Directory '%s' is a MiAZ Repository", dirpath)
                     watcher = backend.get_watcher_source()
@@ -196,6 +196,8 @@ class MiAZPrefsWindow(Adw.PreferencesWindow):
             if use_repo:
                 self.row_repo_source.set_title(os.path.basename(dirpath))
                 self.row_repo_source.set_subtitle(dirpath)
+                backend.load_repo(dirpath)
+                self.app.setup_workspace_page()
 
         dialog.destroy()
 
