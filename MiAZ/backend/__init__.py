@@ -52,20 +52,25 @@ class MiAZBackend(GObject.GObject):
         conf = {}
         conf['FORMAT'] = 1
         dir_conf = os.path.join(path, 'conf')
-        dir_repo = os.path.join(path, 'repo')
+        dir_repo = os.path.join(path, 'docs')
         os.makedirs(dir_conf)
         os.makedirs(dir_repo)
         conf_file = os.path.join(dir_conf, 'repo.json')
         json_save(conf_file, conf)
         self.conf['App'].set('source', path)
 
-    def get_repo_target(self):
+
+    def get_repo_docs_dir(self):
         dir_repo = self.conf['App'].get('source')
-        return os.path.join(dir_repo, 'repo')
+        return os.path.join(dir_repo, 'docs')
+
+    def get_repo_conf_dir(self):
+        dir_repo = self.conf['App'].get('source')
+        return os.path.join(dir_repo, 'conf')
 
     def load_repo(self, path):
         dir_conf = os.path.join(path, 'conf')
-        dir_repo = os.path.join(path, 'repo')
+        dir_repo = os.path.join(path, 'docs')
         self.conf['Country'] = MiAZConfigSettingsCountries(dir_conf)
         self.conf['Group'] = MiAZConfigSettingsGroups(dir_conf)
         self.conf['Subgroup'] = MiAZConfigSettingsSubgroups(dir_conf)
@@ -96,7 +101,7 @@ class MiAZBackend(GObject.GObject):
     def get_repo_dict(self):
         """Load/Create dictionary for current repository"""
         dir_repo = self.conf['App'].get('source')
-        s_repodir = os.path.join(dir_repo, 'repo')
+        s_repodir = os.path.join(dir_repo, 'docs')
         s_repocnf = self.get_repo_source_config_file()
 
         if os.path.exists(s_repocnf):
@@ -108,7 +113,7 @@ class MiAZBackend(GObject.GObject):
 
     def check_source(self, *args):
         dir_repo = self.conf['App'].get('source')
-        s_repodir = os.path.join(dir_repo, 'repo')
+        s_repodir = os.path.join(dir_repo, 'docs')
         s_repocnf = self.get_repo_source_config_file()
         s_repodct = self.get_repo_dict()
 

@@ -19,7 +19,7 @@ class MiAZActions(GObject.GObject):
         self.backend = self.app.get_backend()
 
     def add_directory_to_repo(self, dialog, response):
-        target = self.backend.get_repo_target()
+        target = self.backend.get_repo_docs_dir()
         if response == Gtk.ResponseType.ACCEPT:
             content_area = dialog.get_content_area()
             filechooser = content_area.get_last_child()

@@ -32,8 +32,10 @@ class MiAZConfigView(Gtk.Box):
     def __init__(self, app, config_for):
         super(Gtk.Box, self).__init__(spacing=12, orientation=Gtk.Orientation.VERTICAL)
         self.app = app
+        # ~ self.conf = self.app.get_conf()
         self.log = get_logger('MiAZConfigView')
         self.backend = app.get_backend()
+        # ~ self.dir_repo = self.conf['App'].get('source')
         self.config_for = config_for
         self.factory = self.app.get_factory()
         self.set_vexpand(True)
@@ -167,7 +169,9 @@ class MiAZGroups(MiAZConfigView):
     current = None
 
     def __init__(self, app):
-        self.config = MiAZConfigSettingsGroups()
+        backend = app.get_backend()
+        dir_conf = backend.get_repo_conf_dir()
+        self.config = MiAZConfigSettingsGroups(dir_conf)
         self.config_for = self.config.get_config_for()
         super().__init__(app, self.config_for)
         self.log = get_logger('MiAZSettings-%s' % self.config_for)
@@ -178,7 +182,9 @@ class MiAZSubgroups(MiAZConfigView):
     current = None
 
     def __init__(self, app):
-        self.config = MiAZConfigSettingsSubgroups()
+        backend = app.get_backend()
+        dir_conf = backend.get_repo_conf_dir()
+        self.config = MiAZConfigSettingsSubgroups(dir_conf)
         self.config_for = self.config.get_config_for()
         super().__init__(app, self.config_for)
         self.log = get_logger('MiAZSettings-%s' % self.config_for)
@@ -188,7 +194,9 @@ class MiAZOrganizations(MiAZConfigView):
     __gtype_name__ = 'MiAZOrganizations'
 
     def __init__(self, app):
-        self.config = MiAZConfigSettingsPerson()
+        backend = app.get_backend()
+        dir_conf = backend.get_repo_conf_dir()
+        self.config = MiAZConfigSettingsPerson(dir_conf)
         super().__init__(app, self.config.config_for)
 
     def _on_item_add(self, *args):
@@ -226,8 +234,11 @@ class MiAZCountries(MiAZConfigView):
     current = None
 
     def __init__(self, app):
-        self.config = MiAZConfigSettingsCountries()
+        backend = app.get_backend()
+        dir_conf = backend.get_repo_conf_dir()
+        self.config = MiAZConfigSettingsCountries(dir_conf)
         super().__init__(app, self.config.config_for)
+        dir_conf = self.backend.get_repo_conf_dir()
         self.box_buttons.set_visible(False)
         self.icman = self.app.get_icman()
 
@@ -281,6 +292,8 @@ class MiAZPurposes(MiAZConfigView):
     __gtype_name__ = 'MiAZPurposes'
 
     def __init__(self, app):
-        self.config = MiAZConfigSettingsPurposes()
+        backend = app.get_backend()
+        dir_conf = backend.get_repo_conf_dir()
+        self.config = MiAZConfigSettingsPurposes(dir_conf)
         super().__init__(app, self.config.config_for)
 
