@@ -2,8 +2,11 @@
 # -*- coding: utf-8 -*-
 
 import os
+import glob
+import shutil
 
 from gi.repository import GObject
+from gi.repository import Gtk
 
 from MiAZ.backend.log import get_logger
 from MiAZ.frontend.desktop.widgets.rename import MiAZRenameDialog
@@ -14,6 +17,36 @@ class MiAZActions(GObject.GObject):
         self.app = app
         # ~ self.workspace = self.app.get_workspace()
         self.backend = self.app.get_backend()
+
+    def add_directory_to_repo(self, dialog, response):
+        target = self.backend.get_repo_target()
+        if response == Gtk.ResponseType.ACCEPT:
+            content_area = dialog.get_content_area()
+            filechooser = content_area.get_last_child()
+            gfile = filechooser.get_file()
+            if gfile is not None:
+                dirpath = gfile.get_path()
+                files = glob.glob(os.path.join(dirpath, '*.*'))
+                for filepath in files:
+                    shutil.copy(filepath, target)
+                    self.log.debug("Copied '%s' to target: %s",
+                                        os.path.basename(filepath),
+                                        target)
+        dialog.destroy()
+
+    def add_file_to_repo(self, dialog, response):
+        target = self.backend.get_repo_target()
+        if response == Gtk.ResponseType.ACCEPT:
+            content_area = dialog.get_content_area()
+            filechooser = content_area.get_last_child()
+            gfile = filechooser.get_file()
+            if gfile is not None:
+                filepath = gfile.get_path()
+                shutil.copy(filepath, target)
+                self.log.debug("Copied '%s' to target: %s",
+                                        os.path.basename(filepath),
+                                        target)
+        dialog.destroy()
 
     def document_display(self, filepath):
         os.system("xdg-open '%s'" % filepath)

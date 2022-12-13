@@ -185,6 +185,24 @@ class MiAZFactory:
         btnAccept.get_style_context().add_class(class_name='suggested-action')
         return dialog
 
+    def create_filechooser(self, parent, title, target, callback):
+        d_filechooser = Gtk.Dialog()
+        d_filechooser.set_title(title)
+        d_filechooser.set_transient_for(parent)
+        d_filechooser.set_modal(True)
+        d_filechooser.add_buttons('Cancel', Gtk.ResponseType.CANCEL, 'Accept', Gtk.ResponseType.ACCEPT)
+        d_filechooser.connect('response', callback)
+        contents = d_filechooser.get_content_area()
+        w_filechooser = Gtk.FileChooserWidget()
+        if target == 'FOLDER':
+            w_filechooser.set_action(Gtk.FileChooserAction.SELECT_FOLDER)
+        elif target == 'FILE':
+            w_filechooser.set_action(Gtk.FileChooserAction.OPEN)
+        elif target == 'SAVE':
+            w_filechooser.set_action(Gtk.FileChooserAction.SAVE)
+        contents.append(w_filechooser)
+        return d_filechooser
+
     def create_frame(self, title:str = None, margin: int = 3, hexpand: bool = False, vexpand: bool = False) -> Gtk.Frame:
         frame = Gtk.Frame()
         frame.set_margin_top(margin)

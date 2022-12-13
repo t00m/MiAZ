@@ -98,13 +98,12 @@ class MiAZApp(Adw.Application):
 
     def setup_status_page(self):
         self.btnImport.hide()
-        pw = MiAZPrefsWindow(self)
         status_page = Adw.StatusPage.new()
         status_page.set_description(description="<big>Please, create a new repository in order to start working in your AZ repository</big>")
         status_page.set_icon_name(icon_name='MiAZ-big')
         status_page.set_title(title="%s %s" % (ENV['APP']['shortname'], get_version()))
         boxChild = Gtk.CenterBox()
-        btnAddRepo = self.factory.create_button('list-add', 'Add repository', callback=pw.show_filechooser_source)
+        btnAddRepo = self.factory.create_button('list-add', 'Add repository', callback=self._on_add_new_repo)
         btnAddRepo.set_valign(Gtk.Align.CENTER)
         boxChild.set_center_widget(btnAddRepo)
         status_page.set_child(boxChild)
@@ -113,6 +112,36 @@ class MiAZApp(Adw.Application):
         self.page_status.set_icon_name('list-add')
         self.page_status.set_visible(True)
         self.show_stack_page_by_name('status')
+
+    def _on_import_directory(self, *args):
+        pw = MiAZPrefsWindow(self)
+        filechooser = self.factory.create_filechooser(
+                    parent=self.win,
+                    title='Import a directory',
+                    target = 'FOLDER',
+                    callback = self.actions.add_directory_to_repo
+                    )
+        filechooser.show()
+
+    def _on_import_file(self, *args):
+        pw = MiAZPrefsWindow(self)
+        filechooser = self.factory.create_filechooser(
+                    parent=self.win,
+                    title='Import a single file',
+                    target = 'FILE',
+                    callback = self.actions.add_file_to_repo
+                    )
+        filechooser.show()
+
+    def _on_add_new_repo(self, *args):
+        pw = MiAZPrefsWindow(self)
+        filechooser = self.factory.create_filechooser(
+                    parent=self.win,
+                    title='Choose target directory',
+                    target = 'FOLDER',
+                    callback = pw.on_filechooser_response_source
+                    )
+        filechooser.show()
 
     def setup_workspace_page(self):
         self.btnImport.show()
@@ -132,11 +161,11 @@ class MiAZApp(Adw.Application):
         vbox = self.factory.create_box_vertical()
         vbox.append(child=listbox)
 
-        btnImportFiles = self.factory.create_button('miaz-import-document')
+        btnImportFiles = self.factory.create_button('miaz-import-document', callback=self._on_import_file)
         rowImportDoc = self.factory.create_actionrow(title='Import document', subtitle='Import one or more documents', suffix=btnImportFiles)
         listbox.append(child=rowImportDoc)
 
-        btnImportDir = self.factory.create_button('miaz-import-folder')
+        btnImportDir = self.factory.create_button('miaz-import-folder', callback=self._on_import_directory)
         rowImportDir = self.factory.create_actionrow(title='Import directory', subtitle='Import all documents from a directory', suffix=btnImportDir)
         listbox.append(child=rowImportDir)
 

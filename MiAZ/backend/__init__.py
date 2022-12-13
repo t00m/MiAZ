@@ -59,6 +59,10 @@ class MiAZBackend(GObject.GObject):
         json_save(conf_file, conf)
         self.conf['App'].set('source', path)
 
+    def get_repo_target(self):
+        dir_repo = self.conf['App'].get('source')
+        return os.path.join(dir_repo, 'repo')
+
     def load_repo(self, path):
         dir_conf = os.path.join(path, 'conf')
         dir_repo = os.path.join(path, 'repo')

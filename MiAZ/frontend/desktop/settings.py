@@ -156,17 +156,15 @@ class MiAZPrefsWindow(Adw.PreferencesWindow):
         return row
 
     def show_filechooser_source(self, *args):
-        dlgFileChooser = Gtk.Dialog()
-        dlgFileChooser.set_transient_for(self)
-        dlgFileChooser.add_buttons('Cancel', Gtk.ResponseType.CANCEL, 'Accept', Gtk.ResponseType.ACCEPT)
-        dlgFileChooser.connect('response', self._on_filechooser_response_source)
-        contents = dlgFileChooser.get_content_area()
-        wdgfilechooser = Gtk.FileChooserWidget()
-        wdgfilechooser.set_action(Gtk.FileChooserAction.SELECT_FOLDER)
-        contents.append(wdgfilechooser)
-        dlgFileChooser.show()
+        filechooser = self.factory.create_filechooser(
+                    parent=self,
+                    title='Choose target directory',
+                    target = 'FOLDER',
+                    callback = self.on_filechooser_response_source
+                    )
+        filechooser.show()
 
-    def _on_filechooser_response_source(self, dialog, response):
+    def on_filechooser_response_source(self, dialog, response):
         backend = self.app.get_backend()
         use_repo = False
         if response == Gtk.ResponseType.ACCEPT:
