@@ -18,10 +18,9 @@ class MiAZMenuButton(Gtk.MenuButton):
     in a Gtk.Builder xml string
     """
 
-    def __init__(self, xml, name, icon_name='open-menu-symbolic'):
-        super(MiAZMenuButton, self).__init__()
+    def __init__(self, xml, name, child, css_classes=[]):
+        super(MiAZMenuButton, self).__init__(child=child, css_classes=css_classes)
         builder = Gtk.Builder()
         builder.add_from_string(xml)
         menu = builder.get_object(name)
         self.set_menu_model(menu)
-        self.set_icon_name(icon_name)

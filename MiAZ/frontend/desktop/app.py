@@ -17,11 +17,11 @@ from MiAZ.backend import MiAZBackend
 from MiAZ.backend.util import dir_writable
 from MiAZ.backend.util import get_version
 from MiAZ.backend.log import get_logger
-from MiAZ.frontend.desktop.widgets.menu import MiAZ_APP_MENU
+from MiAZ.frontend.desktop.widgets.menu import MiAZ_MENU_APP
 from MiAZ.frontend.desktop.widgets.menubutton import MiAZMenuButton
 from MiAZ.frontend.desktop.widgets.workspace import MiAZWorkspace
 from MiAZ.frontend.desktop.settings import MiAZPrefsWindow
-from MiAZ.frontend.desktop.widgets.about import MiAZAbaout
+from MiAZ.frontend.desktop.widgets.about import MiAZAbout
 from MiAZ.frontend.desktop.icons import MiAZIconManager
 from MiAZ.frontend.desktop.factory import MiAZFactory
 from MiAZ.frontend.desktop.actions import MiAZActions
@@ -42,7 +42,7 @@ class MiAZApp(Adw.Application):
         self.win.set_default_size(1024, 728)
         self.win.set_icon_name('MiAZ')
         self.win.set_default_icon_name('MiAZ')
-        self.win.get_style_context().add_class(class_name='devel')
+        # ~ self.win.get_style_context().add_class(class_name='devel')
         self.icman = MiAZIconManager()
         self.theme = Gtk.IconTheme.get_for_display(self.win.get_display())
         self.theme.add_search_path(ENV['GPATH']['ICONS'])
@@ -61,6 +61,9 @@ class MiAZApp(Adw.Application):
     def key_press(self, event, keyval, keycode, state):
         # ~ self.log.debug("%s > %s > %s > %s", event, keyval, keycode, state)
         keyname = Gdk.keyval_name(keyval)
+        if keyname == 'Escape':
+            self.show_stack_page_by_name('workspace')
+            self.workspace.display_dashboard()
         # ~ self.log.debug(keyname)
 
 
@@ -97,7 +100,7 @@ class MiAZApp(Adw.Application):
         return self.stack
 
     def setup_status_page(self):
-        self.btnImport.hide()
+        # ~ self.btnImport.hide()
         status_page = Adw.StatusPage.new()
         status_page.set_description(description="<big>Please, create a new repository in order to start working in your AZ repository</big>")
         status_page.set_icon_name(icon_name='MiAZ-big')
@@ -113,26 +116,6 @@ class MiAZApp(Adw.Application):
         self.page_status.set_visible(True)
         self.show_stack_page_by_name('status')
 
-    def _on_import_directory(self, *args):
-        pw = MiAZPrefsWindow(self)
-        filechooser = self.factory.create_filechooser(
-                    parent=self.win,
-                    title='Import a directory',
-                    target = 'FOLDER',
-                    callback = self.actions.add_directory_to_repo
-                    )
-        filechooser.show()
-
-    def _on_import_file(self, *args):
-        pw = MiAZPrefsWindow(self)
-        filechooser = self.factory.create_filechooser(
-                    parent=self.win,
-                    title='Import a single file',
-                    target = 'FILE',
-                    callback = self.actions.add_file_to_repo
-                    )
-        filechooser.show()
-
     def _on_add_new_repo(self, *args):
         pw = MiAZPrefsWindow(self)
         filechooser = self.factory.create_filechooser(
@@ -142,6 +125,16 @@ class MiAZApp(Adw.Application):
                     callback = pw.on_filechooser_response_source
                     )
         filechooser.show()
+
+    def setup_about_page(self):
+        about = MiAZAbout(self)
+        # ~ widget = about.get_first_child()
+        self.page_about = self.stack.add_titled(about, 'about', 'MiAZ')
+        self.page_about.set_icon_name('document-properties')
+        # ~ self.page_about.set_needs_attention(True)
+        # ~ self.page_about.set_badge_number(1)
+        # ~ self.page_about.set_visible(True)
+        # ~ self.show_stack_page_by_name('about')
 
     def setup_settings_page(self):
         self.settings = MiAZPrefsWindow(self)
@@ -153,7 +146,7 @@ class MiAZApp(Adw.Application):
         self.show_stack_page_by_name('settings')
 
     def setup_workspace_page(self):
-        self.btnImport.show()
+        # ~ self.btnImport.show()
         self.workspace = MiAZWorkspace(self)
         self.page_workspace = self.stack.add_titled(self.workspace, 'workspace', 'MiAZ')
         self.page_workspace.set_icon_name('document-properties')
@@ -163,33 +156,19 @@ class MiAZApp(Adw.Application):
         self.show_stack_page_by_name('workspace')
 
     def _setup_headerbar_left(self):
-        listbox = Gtk.ListBox.new()
-        listbox.set_activate_on_single_click(False)
-        listbox.unselect_all()
-        listbox.set_selection_mode(Gtk.SelectionMode.SINGLE)
-        vbox = self.factory.create_box_vertical()
-        vbox.append(child=listbox)
+        def show_workspace(*args):
+            self.show_stack_page_by_name(name='workspace')
+            self.btnGoBack.hide()
 
-        btnImportFiles = self.factory.create_button('miaz-import-document', callback=self._on_import_file)
-        rowImportDoc = self.factory.create_actionrow(title='Import document', subtitle='Import one or more documents', suffix=btnImportFiles)
-        listbox.append(child=rowImportDoc)
-
-        btnImportDir = self.factory.create_button('miaz-import-folder', callback=self._on_import_directory)
-        rowImportDir = self.factory.create_actionrow(title='Import directory', subtitle='Import all documents from a directory', suffix=btnImportDir)
-        listbox.append(child=rowImportDir)
-
-        popover = Gtk.Popover()
-        popover.set_child(vbox)
-        popover.present()
-
-        self.btnImport = Gtk.MenuButton(icon_name='miaz-import')
-        self.btnImport.set_popover(popover)
-        self.header.pack_start(self.btnImport)
+        self.btnGoBack = self.factory.create_button('miaz-go-back', 'Back', show_workspace)
+        self.header.pack_start(self.btnGoBack)
+        self.btnGoBack.hide()
         self.log.debug("❌ ✅")
 
     def _setup_headerbar_right(self):
-       # Add Menu Button to the titlebar (Right Side)
-        menu = MiAZMenuButton(MiAZ_APP_MENU, 'app-menu')
+        # Add Menu Button to the titlebar (Right Side)
+        menu = MiAZMenuButton(MiAZ_MENU_APP, 'app-menu', css_classes=['flat'], child=Adw.ButtonContent(icon_name='miaz-system-menu'))
+        # ~ menu = MiAZMenuButton(MiAZ_MENU_APP, 'app-menu')
 
         # and create actions to handle menu actions
         for action, shortcut in [('settings', ['<Ctrl>s']),
@@ -203,8 +182,9 @@ class MiAZApp(Adw.Application):
         self.header.pack_end(menu)
 
     def _setup_headerbar_center(self):
-        # ~ self.header.set_title_widget(title_widget=self.switcher)
-        pass
+        title_widget = Gtk.Label()
+        title_widget.set_markup(ENV['APP']['name'])
+        self.header.set_title_widget(title_widget=title_widget)
 
     def build_gui(self):
         ## HeaderBar
@@ -224,6 +204,9 @@ class MiAZApp(Adw.Application):
         self._setup_headerbar_center()
         self._setup_headerbar_right()
         self.win.set_titlebar(self.header)
+
+        # Create settings
+        self.setup_about_page()
 
         # Create settings
         self.setup_settings_page()
@@ -259,15 +242,17 @@ class MiAZApp(Adw.Application):
 
     def show_stack_page_by_name(self, name: str = 'workspace'):
         self.stack.set_visible_child_name(name)
+        title_widget = Gtk.Label()
+        title_widget.set_markup('<b>MiAZ - %s</b>' % name.title())
+        self.header.set_title_widget(title_widget=title_widget)
 
     def show_settings(self, *args):
-        self.stack.set_visible_child_name('settings')
-        # ~ pw = MiAZPrefsWindow(self)
-        # ~ pw.show()
+        self.show_stack_page_by_name('settings')
+        self.btnGoBack.show()
 
     def show_about(self, *args):
-        about = MiAZAbaout(self).show()
-
+        self.show_stack_page_by_name('about')
+        self.btnGoBack.show()
 
     def update_title(self, widget=None):
         header = self.get_header()

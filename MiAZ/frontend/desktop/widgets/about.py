@@ -1,28 +1,62 @@
-#!/usr/bin/env python
+#!/usr/bin/python
 # -*- coding: utf-8 -*-
 
+from html import escape
+
 import gi
-gi.require_version('Gtk', '4.0')
-gi.require_version('Adw', '1')
-from gi.repository import Gtk, Adw
-from gi.repository import Gdk
-from gi.repository import Gio
-from gi.repository import GLib
-from gi.repository import GObject
-from gi.repository import Pango
+from gi.repository import Adw
+from gi.repository import Gtk
 
 from MiAZ.backend.env import ENV
 
-class MiAZAbaout(Gtk.AboutDialog):
+class MiAZAbout(Gtk.Box):
+    """
+    About class
+    """
     def __init__(self, app):
-        super(MiAZAbaout, self).__init__()
-        self.app = app
-        self.set_transient_for(self.app.win)
-        self.set_modal(self)
-        self.set_authors([ENV['APP']['author']])
-        self.set_copyright(ENV['APP']['copyright'])
-        self.set_license_type(Gtk.License.GPL_3_0)
-        self.set_website(ENV['APP']['website'])
-        self.set_website_label(ENV['APP']['name'])
-        self.set_version(ENV['APP']['version'])
-        self.set_logo_icon_name("MiAZ")
+        super(Gtk.Box, self).__init__(spacing=12, orientation=Gtk.Orientation.VERTICAL)
+        widget = Adw.StatusPage.new()
+        widget.set_title(title="%s %s" % (ENV['APP']['shortname'].capitalize(), ENV['APP']['version']))
+        widget.set_icon_name(icon_name='MiAZ-big')
+        # ~ widget.set_hexpand(True)
+        # ~ widget.set_vexpand(True)
+
+        # ~ # Set logo
+        # ~ label = Gtk.Label()
+        # ~ widget.append(label)
+
+        # ~ # Set App name
+        # ~ label = Gtk.Label()
+        # ~ label.set_markup("<big><b>%s %s</b></big>" % (ENV['APP']['shortname'].capitalize(), ENV['APP']['version']))
+        # ~ widget.append(label)
+
+        # ~ # Set App desc
+        # ~ label = Gtk.Label()
+        # ~ label.set_markup("%s" % ENV['APP']['description'])
+        # ~ widget.append(label)
+
+        # ~ # Set App license
+        # ~ label = Gtk.Label()
+        # ~ label.set_markup("<i>\n\n%s\n%s\n\n</i>" % (ENV['APP']['license'], ENV['APP']['license_long']))
+        # ~ label.set_justify(Gtk.Justification.CENTER)
+        # ~ widget.append(label)
+
+        # ~ # Set Link button
+        # ~ linkbutton = Gtk.LinkButton(uri="https://github.com/t00m/Basico", label="https://github.com/t00m/Basico")
+        # ~ widget.append(linkbutton)
+
+        # ~ # Set Copyright holders
+        # ~ label = Gtk.Label()
+        # ~ label.set_markup(ENV['APP']['copyright'])
+        # ~ label.set_justify(Gtk.Justification.CENTER)
+        # ~ widget.append(label)
+
+        # ~ # Authors
+        # ~ label = Gtk.Label()
+        # ~ label.set_markup("\n%s" % escape(ENV['APP']['author']))
+        # ~ label.set_justify(Gtk.Justification.CENTER)
+        # ~ label.set_selectable(True)
+        # ~ widget.append(label)
+
+        self.append(widget)
+

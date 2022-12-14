@@ -28,16 +28,11 @@ class MiAZPrefsWindow(Gtk.Box):
         self.app = app
         self.factory = self.app.get_factory()
         self.config = self.app.get_config('App')
-        # ~ self.win = self.app.win
-        # ~ self.sm = self.app.get_style_manager()
-        # ~ self.color_scheme = self.sm.get_color_scheme()
-        # ~ self.set_transient_for(self.app.win)
         page = Adw.PreferencesPage.new()
-        page.set_title("Preferences")
+        page.set_title("Settings")
         page.add(self._get_group_repositories())
         page.add(self._get_group_resources())
         self.append(page)
-        # ~ self.show()
 
     def _get_group_repositories(self):
         self.row_repo_source = self._create_action_row_repo_source()

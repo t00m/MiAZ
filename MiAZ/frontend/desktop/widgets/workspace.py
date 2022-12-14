@@ -8,6 +8,7 @@ import humanize
 
 import gi
 gi.require_version('Gtk', '4.0')
+from gi.repository import Adw
 from gi.repository import Gio
 from gi.repository import Gtk
 from gi.repository import GLib
@@ -20,6 +21,9 @@ from MiAZ.backend.models import File, Group, Subgroup, Person, Country, Purpose,
 from MiAZ.frontend.desktop.util import get_file_mimetype
 from MiAZ.frontend.desktop.widgets.columnview import MiAZColumnView, RowIcon, RowTitle
 from MiAZ.frontend.desktop.factory import MenuHeader
+from MiAZ.frontend.desktop.settings import MiAZPrefsWindow
+from MiAZ.frontend.desktop.widgets.menubutton import MiAZMenuButton
+from MiAZ.frontend.desktop.widgets.menu import MiAZ_MENU_WORKSPACE_REPO
 
 
 class MiAZWorkspace(Gtk.Box):
@@ -46,6 +50,27 @@ class MiAZWorkspace(Gtk.Box):
         self.set_margin_start(margin=6)
         frmView = self._setup_workspace()
         self.append(frmView)
+
+
+    def _on_import_directory(self, *args):
+        pw = MiAZPrefsWindow(self.app)
+        filechooser = self.factory.create_filechooser(
+                    parent=self.app.win,
+                    title='Import a directory',
+                    target = 'FOLDER',
+                    callback = self.actions.add_directory_to_repo
+                    )
+        filechooser.show()
+
+    def _on_import_file(self, *args):
+        pw = MiAZPrefsWindow(self.app)
+        filechooser = self.factory.create_filechooser(
+                    parent=self.app.win,
+                    title='Import a single file',
+                    target = 'FILE',
+                    callback = self.actions.add_file_to_repo
+                    )
+        filechooser.show()
 
     def spinner_start(self, *args):
         self.spinner.start()
@@ -127,8 +152,28 @@ class MiAZWorkspace(Gtk.Box):
         # Centerbox Start Wiget
         cbws = self.factory.create_box_horizontal(margin=0, spacing=3)
 
+        ## Import buttons
+        listbox = Gtk.ListBox.new()
+        listbox.set_activate_on_single_click(False)
+        listbox.unselect_all()
+        listbox.set_selection_mode(Gtk.SelectionMode.SINGLE)
+        vbox = self.factory.create_box_vertical()
+        vbox.append(child=listbox)
+        btnImportFiles = self.factory.create_button('miaz-import-document', callback=self._on_import_file)
+        rowImportDoc = self.factory.create_actionrow(title='Import document', subtitle='Import one or more documents', suffix=btnImportFiles)
+        listbox.append(child=rowImportDoc)
+        btnImportDir = self.factory.create_button('miaz-import-folder', callback=self._on_import_directory)
+        rowImportDir = self.factory.create_actionrow(title='Import directory', subtitle='Import all documents from a directory', suffix=btnImportDir)
+        listbox.append(child=rowImportDir)
+        popover = Gtk.Popover()
+        popover.set_child(vbox)
+        popover.present()
+        btnImport = Gtk.MenuButton(child=Adw.ButtonContent(label='Import...', icon_name='miaz-import'), css_classes=['flat'])
+        btnImport.set_popover(popover)
+        cbws.append(btnImport)
+
+        ## Documents selected
         self.mnuSelMulti = self.create_menu_selection_multiple()
-        # Documents selected
         boxDocsSelected = Gtk.CenterBox()
         self.lblDocumentsSelected = "No documents selected"
         self.btnDocsSel = Gtk.MenuButton(css_classes=['flat'])
@@ -139,30 +184,43 @@ class MiAZWorkspace(Gtk.Box):
         self.btnDocsSel.set_hexpand(False)
         self.btnDocsSel.set_sensitive(True)
         boxDocsSelected.set_center_widget(self.btnDocsSel)
+        sep = Gtk.Separator.new(orientation=Gtk.Orientation.VERTICAL)
+        btnSelectAll = self.factory.create_button('miaz-select-all', callback=self._on_select_all, css_classes=['flat'])
+        btnSelectNone = self.factory.create_button('miaz-select-none', callback=self._on_select_none, css_classes=['flat'])
+        cbws.append(boxDocsSelected)
+        cbws.append(sep)
+        cbws.append(btnSelectNone)
+        cbws.append(btnSelectAll)
 
         self.ent_sb = Gtk.SearchEntry(placeholder_text="Type here")
         # ~ self.ent_sb.set_width_chars(41)
         self.ent_sb.connect('changed', self._on_filter_selected)
         self.ent_sb.set_hexpand(False)
 
-        cbws.append(boxDocsSelected)
+
         # ~ cbws.append(self.ent_sb)
 
         cbwe = self.factory.create_box_horizontal(margin=0, spacing=3)
 
-        boxEmpty = self.factory.create_box_horizontal(hexpand=False)
-        btnSelectAll = self.factory.create_button('miaz-select-all', callback=self._on_select_all)
-        btnSelectNone = self.factory.create_button('miaz-select-none', callback=self._on_select_none, css_classes=['flat'])
+        # ~ boxEmpty = self.factory.create_box_horizontal(hexpand=False)
+
         sep = Gtk.Separator.new(orientation=Gtk.Orientation.VERTICAL)
         self.tgbExplain = self.factory.create_button_toggle('miaz-magic', callback=self._on_explain_toggled, css_classes=['flat'])
         self.tgbFilters = self.factory.create_button_toggle('miaz-filters', callback=self._on_filters_toggled, css_classes=['flat'])
         self.tgbFilters.set_active(False)
 
+        btnRepoSettings = MiAZMenuButton(MiAZ_MENU_WORKSPACE_REPO, 'repo-menu', css_classes=['flat'], child=Adw.ButtonContent(icon_name='document-properties'))
+        # ~ btnRepoSettings = Gtk.MenuButton(css_classes=['flat'], child=Adw.ButtonContent(icon_name='document-properties'))
+        # ~ popRepoSettings = Gtk.PopoverMenu.new_from_model(self.mnuSelMulti)
+        # ~ btnRepoSettings.set_popover(popover=popRepoSettings)
+        btnRepoSettings.set_valign(Gtk.Align.CENTER)
+
+
         cbwe.append(self.tgbExplain)
         cbwe.append(self.tgbFilters)
         cbwe.append(sep)
-        cbwe.append(btnSelectNone)
-        cbwe.append(btnSelectAll)
+        cbwe.append(btnRepoSettings)
+        # ~ cbwe.append(btnSelectAll)
 
         toolbar_top.set_start_widget(cbws)
         toolbar_top.set_center_widget(self.ent_sb)
