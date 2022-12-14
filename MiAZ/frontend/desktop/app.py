@@ -143,6 +143,15 @@ class MiAZApp(Adw.Application):
                     )
         filechooser.show()
 
+    def setup_settings_page(self):
+        self.settings = MiAZPrefsWindow(self)
+        self.page_settings = self.stack.add_titled(self.settings, 'settings', 'MiAZ')
+        self.page_settings.set_icon_name('document-properties')
+        self.page_settings.set_needs_attention(True)
+        self.page_settings.set_badge_number(1)
+        self.page_settings.set_visible(True)
+        self.show_stack_page_by_name('settings')
+
     def setup_workspace_page(self):
         self.btnImport.show()
         self.workspace = MiAZWorkspace(self)
@@ -216,6 +225,9 @@ class MiAZApp(Adw.Application):
         self._setup_headerbar_right()
         self.win.set_titlebar(self.header)
 
+        # Create settings
+        self.setup_settings_page()
+
         # Create workspace
         dir_repo = self.conf['App'].get('source')
         if self.backend.is_repo(dir_repo):
@@ -249,8 +261,9 @@ class MiAZApp(Adw.Application):
         self.stack.set_visible_child_name(name)
 
     def show_settings(self, *args):
-        pw = MiAZPrefsWindow(self)
-        pw.show()
+        self.stack.set_visible_child_name('settings')
+        # ~ pw = MiAZPrefsWindow(self)
+        # ~ pw.show()
 
     def show_about(self, *args):
         about = MiAZAbaout(self).show()

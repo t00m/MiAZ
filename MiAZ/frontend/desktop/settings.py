@@ -21,22 +21,22 @@ from MiAZ.frontend.desktop.widgets.configview import MiAZCountries
 from MiAZ.frontend.desktop.widgets.configview import MiAZOrganizations
 
 
-class MiAZPrefsWindow(Adw.PreferencesWindow):
+class MiAZPrefsWindow(Gtk.Box):
     def __init__(self, app):
+        super(Gtk.Box, self).__init__(spacing=12, orientation=Gtk.Orientation.VERTICAL)
         self.log = get_logger('MiAZ.Desktop.Settings')
         self.app = app
         self.factory = self.app.get_factory()
         self.config = self.app.get_config('App')
-        self.win = self.app.win
-        self.sm = self.app.get_style_manager()
-        self.color_scheme = self.sm.get_color_scheme()
-        super().__init__(title='Preferences')
-        self.set_transient_for(self.app.win)
+        # ~ self.win = self.app.win
+        # ~ self.sm = self.app.get_style_manager()
+        # ~ self.color_scheme = self.sm.get_color_scheme()
+        # ~ self.set_transient_for(self.app.win)
         page = Adw.PreferencesPage.new()
         page.set_title("Preferences")
         page.add(self._get_group_repositories())
         page.add(self._get_group_resources())
-        self.add(page)
+        self.append(page)
         # ~ self.show()
 
     def _get_group_repositories(self):
@@ -110,7 +110,7 @@ class MiAZPrefsWindow(Adw.PreferencesWindow):
     def show_res_countries(self, *args):
         view = MiAZCountries(self.app)
         view.update()
-        dialog = self.factory.create_dialog(self, 'Countries', view, 600, 480)
+        dialog = self.factory.create_dialog(self.app.win, 'Countries', view, 600, 480)
         dialog.show()
 
     def show_res_groups(self, *args):
@@ -157,7 +157,7 @@ class MiAZPrefsWindow(Adw.PreferencesWindow):
 
     def show_filechooser_source(self, *args):
         filechooser = self.factory.create_filechooser(
-                    parent=self,
+                    parent=self.app.win,
                     title='Choose target directory',
                     target = 'FOLDER',
                     callback = self.on_filechooser_response_source
