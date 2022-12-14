@@ -18,9 +18,10 @@ from MiAZ.backend.config import MiAZConfigSettingsCountries
 from MiAZ.backend.config import MiAZConfigSettingsPurposes
 from MiAZ.frontend.desktop.widgets.columnview import MiAZColumnView, RowIcon
 from MiAZ.frontend.desktop.widgets.dialogs import MiAZDialogAdd
+from MiAZ.frontend.desktop.widgets.selector import MiAZSelector
 
 
-class MiAZConfigView(Gtk.Box):
+class MiAZConfigView(MiAZSelector):
     """"""
     __gtype_name__ = 'MiAZConfigView'
     current = None
@@ -30,11 +31,11 @@ class MiAZConfigView(Gtk.Box):
     search_term = ''
 
     def __init__(self, app, config_for):
-        super(Gtk.Box, self).__init__(spacing=12, orientation=Gtk.Orientation.VERTICAL)
+        super(MiAZSelector, self).__init__(spacing=12, orientation=Gtk.Orientation.VERTICAL)
         self.app = app
         # ~ self.conf = self.app.get_conf()
         self.log = get_logger('MiAZConfigView')
-        self.backend = app.get_backend()
+        self.backend = self.app.get_backend()
         # ~ self.dir_repo = self.conf['App'].get('source')
         self.config_for = config_for
         self.factory = self.app.get_factory()
@@ -43,32 +44,30 @@ class MiAZConfigView(Gtk.Box):
         self.set_margin_end(margin=12)
         self.set_margin_start(margin=12)
 
-        # Entry and buttons for operations (edit/add/remove)
-        self.box_oper = Gtk.Box(spacing=3, orientation=Gtk.Orientation.HORIZONTAL)
-        self.box_oper.set_vexpand(False)
-        box_entry = Gtk.Box(spacing=3, orientation=Gtk.Orientation.HORIZONTAL)
-        box_entry.set_hexpand(True)
-        self.entry = Gtk.Entry()
-        self.entry.set_activates_default(True)
-        self.entry.set_icon_from_icon_name(Gtk.EntryIconPosition.SECONDARY, 'miaz-entry-clear')
-        self.entry.set_icon_activatable(Gtk.EntryIconPosition.SECONDARY, True)
-        self.entry.connect('icon-press', self._on_entrysearch_delete)
-        self.entry.connect('changed', self._on_filter_selected)
-        self.entry.set_hexpand(True)
-        self.entry.set_has_frame(True)
-        box_entry.append(self.entry)
-        self.box_oper.append(box_entry)
-        self.box_buttons = Gtk.Box(spacing=3, orientation=Gtk.Orientation.HORIZONTAL)
-        self.box_buttons.set_hexpand(False)
-        # ~ self.box_buttons.append(self.factory.create_button('miaz-edit', '', self._on_item_rename))
-        # ~ self.box_buttons.append(Gtk.Separator.new(orientation=Gtk.Orientation.VERTICAL))
-        self.box_buttons.append(self.factory.create_button('miaz-list-add', '', self._on_item_add, self.config_for))
-        self.box_buttons.append(self.factory.create_button('miaz-list-remove', '', self._on_item_remove))
-        self.box_oper.append(self.box_buttons)
-        self.append(self.box_oper)
-        widget = self._setup_view()
-        self._setup_view_finish()
-        self.append(widget)
+        # ~ # Entry and buttons for operations (edit/add/remove)
+        # ~ self.box_oper = Gtk.Box(spacing=3, orientation=Gtk.Orientation.HORIZONTAL)
+        # ~ self.box_oper.set_vexpand(False)
+        # ~ box_entry = Gtk.Box(spacing=3, orientation=Gtk.Orientation.HORIZONTAL)
+        # ~ box_entry.set_hexpand(True)
+        # ~ self.entry = Gtk.Entry()
+        # ~ self.entry.set_activates_default(True)
+        # ~ self.entry.set_icon_from_icon_name(Gtk.EntryIconPosition.SECONDARY, 'miaz-entry-clear')
+        # ~ self.entry.set_icon_activatable(Gtk.EntryIconPosition.SECONDARY, True)
+        # ~ self.entry.connect('icon-press', self._on_entrysearch_delete)
+        # ~ self.entry.connect('changed', self._on_filter_selected)
+        # ~ self.entry.set_hexpand(True)
+        # ~ self.entry.set_has_frame(True)
+        # ~ box_entry.append(self.entry)
+        # ~ self.box_oper.append(box_entry)
+        # ~ self.boxButtons = Gtk.Box(spacing=3, orientation=Gtk.Orientation.HORIZONTAL)
+        # ~ self.boxButtons.set_hexpand(False)
+        # ~ self.boxButtons.append(self.factory.create_button('miaz-list-add', '', self._on_item_add, self.config_for))
+        # ~ self.boxButtons.append(self.factory.create_button('miaz-list-remove', '', self._on_item_remove))
+        # ~ self.box_oper.append(self.boxButtons)
+        # ~ self.append(self.box_oper)
+        # ~ widget = self._setup_view()
+        # ~ self._setup_view_finish()
+        # ~ self.append(widget)
 
     def _setup_view_finish(self):
         self.view.column_title.set_title(self.config_for.title())
@@ -95,11 +94,12 @@ class MiAZConfigView(Gtk.Box):
         self.entry.set_text("")
 
     def _setup_view(self):
+        selector = MiAZSelector(self.app)
         frmView = Gtk.Frame()
         self.view = MiAZColumnView(self.app)
         self.view.set_filter(self._do_filter_view)
         frmView.set_child(self.view)
-        return frmView
+        return selector
 
     def _on_item_add(self, *args):
         dialog = MiAZDialogAdd(self.app, self.get_root(), 'New %s' % self.config_for, '%s name' % self.config_for.title(), '')
@@ -141,6 +141,7 @@ class MiAZConfigView(Gtk.Box):
         self.config_global = config_global
 
     def update(self, items=None):
+        return
         # FIXME: this is awful
         if items is None:
             items = []
@@ -173,7 +174,8 @@ class MiAZGroups(MiAZConfigView):
         dir_conf = backend.get_repo_conf_dir()
         self.config = MiAZConfigSettingsGroups(dir_conf)
         self.config_for = self.config.get_config_for()
-        super().__init__(app, self.config_for)
+        super(MiAZConfigView, self).__init__(app)
+        super().__init__(app, self.config.config_for)
         self.log = get_logger('MiAZSettings-%s' % self.config_for)
 
 class MiAZSubgroups(MiAZConfigView):
@@ -186,7 +188,8 @@ class MiAZSubgroups(MiAZConfigView):
         dir_conf = backend.get_repo_conf_dir()
         self.config = MiAZConfigSettingsSubgroups(dir_conf)
         self.config_for = self.config.get_config_for()
-        super().__init__(app, self.config_for)
+        super(MiAZConfigView, self).__init__(app)
+        super().__init__(app, self.config.config_for)
         self.log = get_logger('MiAZSettings-%s' % self.config_for)
 
 class MiAZOrganizations(MiAZConfigView):
@@ -197,6 +200,7 @@ class MiAZOrganizations(MiAZConfigView):
         backend = app.get_backend()
         dir_conf = backend.get_repo_conf_dir()
         self.config = MiAZConfigSettingsPerson(dir_conf)
+        super(MiAZConfigView, self).__init__(app)
         super().__init__(app, self.config.config_for)
 
     def _on_item_add(self, *args):
@@ -237,9 +241,10 @@ class MiAZCountries(MiAZConfigView):
         backend = app.get_backend()
         dir_conf = backend.get_repo_conf_dir()
         self.config = MiAZConfigSettingsCountries(dir_conf)
+
+        super(MiAZConfigView, self).__init__(app, edit=False)
         super().__init__(app, self.config.config_for)
         dir_conf = self.backend.get_repo_conf_dir()
-        self.box_buttons.set_visible(False)
         self.icman = self.app.get_icman()
 
     def _on_item_remove(self, *args):
@@ -277,6 +282,7 @@ class MiAZCountries(MiAZConfigView):
         icon.set_pixel_size(32)
 
     def update(self, items=None):
+        return
         if items is None:
             items = []
             item_type = self.config.config_model
@@ -295,5 +301,6 @@ class MiAZPurposes(MiAZConfigView):
         backend = app.get_backend()
         dir_conf = backend.get_repo_conf_dir()
         self.config = MiAZConfigSettingsPurposes(dir_conf)
+        super(MiAZConfigView, self).__init__(app)
         super().__init__(app, self.config.config_for)
 

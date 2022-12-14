@@ -168,7 +168,8 @@ class MiAZWorkspace(Gtk.Box):
         popover = Gtk.Popover()
         popover.set_child(vbox)
         popover.present()
-        btnImport = Gtk.MenuButton(child=Adw.ButtonContent(label='Import...', icon_name='miaz-import'), css_classes=['flat'])
+        btnImport = Gtk.MenuButton(child=Adw.ButtonContent(label='Import...', icon_name='miaz-import'), css_classes=['success'])
+        # ~ button.get_style_context().add_class(class_name='success')
         btnImport.set_popover(popover)
         cbws.append(btnImport)
 
