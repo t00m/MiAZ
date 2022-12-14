@@ -253,11 +253,11 @@ class MiAZCountries(MiAZConfigView):
         self.view.column_title.set_title(self.config_for.title())
         self.view.column_icon.set_title("Flag")
         self.view.column_icon.set_factory(factory_icon)
-        self.view.column_active.set_title("Use")
+        # ~ self.view.column_active.set_title("Use")
         self.view.cv.append_column(self.view.column_icon)
         self.view.cv.append_column(self.view.column_id)
         self.view.cv.append_column(self.view.column_title)
-        self.view.cv.append_column(self.view.column_active)
+        # ~ self.view.cv.append_column(self.view.column_active)
         self.view.column_title.set_expand(True)
         self.view.cv.sort_by_column(self.view.column_title, Gtk.SortType.ASCENDING)
 
