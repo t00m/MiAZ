@@ -4,7 +4,7 @@ import shutil
 from MiAZ.backend.env import ENV
 from MiAZ.backend.log import get_logger
 from MiAZ.backend.util import json_load, json_save
-from MiAZ.backend.models import MiAZModel, File, Group, Subgroup, Person, Country, Purpose, Concept
+from MiAZ.backend.models import MiAZModel, MiAZItem, File, Group, Subgroup, Person, Country, Purpose, Concept
 
 class MiAZConfig():
     """ MiAZ Config class"""

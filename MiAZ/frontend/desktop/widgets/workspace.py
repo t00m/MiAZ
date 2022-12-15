@@ -17,7 +17,7 @@ from gi.repository import GObject
 from MiAZ.backend.env import ENV
 from MiAZ.backend.log import get_logger
 from MiAZ.backend.util import json_load
-from MiAZ.backend.models import File, Group, Subgroup, Person, Country, Purpose, Concept, SentBy, SentTo
+from MiAZ.backend.models import MiAZItem, File, Group, Subgroup, Person, Country, Purpose, Concept, SentBy, SentTo
 from MiAZ.frontend.desktop.util import get_file_mimetype
 from MiAZ.frontend.desktop.widgets.columnview import MiAZColumnView, RowIcon, RowTitle
 from MiAZ.frontend.desktop.factory import MenuHeader
@@ -121,14 +121,17 @@ class MiAZWorkspace(Gtk.Box):
     def _on_explain_toggled(self, button, data=None):
         active = button.get_active()
         self.view.column_title.set_visible(not active)
-        self.view.column_subtitle.set_visible(active)
-        self.view.column_group.set_visible(active)
-        self.view.column_subgroup.set_visible(active)
-        self.view.column_purpose.set_visible(active)
-        self.view.column_flag.set_visible(active)
-        self.view.column_sentby.set_visible(active)
-        self.view.column_sentto.set_visible(active)
-        self.view.column_date.set_visible(active)
+        try:
+            self.view.column_subtitle.set_visible(active)
+            self.view.column_group.set_visible(active)
+            self.view.column_subgroup.set_visible(active)
+            self.view.column_purpose.set_visible(active)
+            self.view.column_flag.set_visible(active)
+            self.view.column_sentby.set_visible(active)
+            self.view.column_sentto.set_visible(active)
+            self.view.column_date.set_visible(active)
+        except:
+            pass
 
     def _on_filters_toggled(self, button, data=None):
         active = button.get_active()
@@ -231,24 +234,23 @@ class MiAZWorkspace(Gtk.Box):
     def _setup_columnview(self):
         # ColumnView
         self.view = MiAZColumnView(self.app)
-        self.view.cv.append_column(self.view.column_icon_type)
-        self.view.cv.append_column(self.view.column_group)
-        self.view.cv.append_column(self.view.column_subgroup)
-        self.view.cv.append_column(self.view.column_purpose)
-        self.view.cv.append_column(self.view.column_sentby)
-        self.view.cv.append_column(self.view.column_title)
-        self.view.cv.append_column(self.view.column_subtitle)
-        self.view.cv.append_column(self.view.column_sentto)
-        self.view.cv.append_column(self.view.column_date)
-        self.view.cv.append_column(self.view.column_flag)
-        self.view.column_title.set_header_menu(self.mnuSelMulti)
-        self.view.cv.set_single_click_activate(False)
-        # ~ view.cv.append_column(view.column_active)
-        self.view.column_title.set_expand(True)
-        self.view.column_subtitle.set_expand(True)
-        self.view.cv.sort_by_column(self.view.column_title, Gtk.SortType.DESCENDING)
+        # ~ self.view.cv.append_column(self.view.column_icon_type)
+        # ~ self.view.cv.append_column(self.view.column_group)
+        # ~ self.view.cv.append_column(self.view.column_subgroup)
+        # ~ self.view.cv.append_column(self.view.column_purpose)
+        # ~ self.view.cv.append_column(self.view.column_sentby)
+        # ~ self.view.cv.append_column(self.view.column_title)
+        # ~ self.view.cv.append_column(self.view.column_subtitle)
+        # ~ self.view.cv.append_column(self.view.column_sentto)
+        # ~ self.view.cv.append_column(self.view.column_date)
+        # ~ self.view.cv.append_column(self.view.column_flag)
+        # ~ self.view.column_title.set_header_menu(self.mnuSelMulti)
+        # ~ self.view.cv.set_single_click_activate(False)
+        # ~ self.view.column_title.set_expand(True)
+        # ~ self.view.column_subtitle.set_expand(True)
+        # ~ self.view.cv.sort_by_column(self.view.column_title, Gtk.SortType.DESCENDING)
+        # ~ self.view.select_first_item()
         self.view.set_filter(self._do_filter_view)
-        self.view.select_first_item()
         frmView = self.factory.create_frame(hexpand=True, vexpand=True)
         frmView.set_child(self.view)
         return frmView
@@ -428,7 +430,7 @@ class MiAZWorkspace(Gtk.Box):
                 date_dsc = humanize.naturaldate(adate)
             except:
                 date_dsc = ''
-            items.append(File(  id=path,
+            items.append(MiAZItem(  id=path,
                                 date=fields[0],
                                 date_dsc = date_dsc,
                                 country=fields[1],

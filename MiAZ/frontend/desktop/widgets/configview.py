@@ -19,6 +19,8 @@ from MiAZ.backend.config import MiAZConfigSettingsPurposes
 from MiAZ.frontend.desktop.widgets.columnview import MiAZColumnView, RowIcon
 from MiAZ.frontend.desktop.widgets.dialogs import MiAZDialogAdd
 from MiAZ.frontend.desktop.widgets.selector import MiAZSelector
+from MiAZ.frontend.desktop.widgets.columnview import MiAZColumnView
+from MiAZ.frontend.desktop.widgets.columnviews import MiAZColumnViewCountry
 
 
 class MiAZConfigView(MiAZSelector):
@@ -43,31 +45,6 @@ class MiAZConfigView(MiAZSelector):
         self.set_margin_top(margin=12)
         self.set_margin_end(margin=12)
         self.set_margin_start(margin=12)
-
-        # ~ # Entry and buttons for operations (edit/add/remove)
-        # ~ self.box_oper = Gtk.Box(spacing=3, orientation=Gtk.Orientation.HORIZONTAL)
-        # ~ self.box_oper.set_vexpand(False)
-        # ~ box_entry = Gtk.Box(spacing=3, orientation=Gtk.Orientation.HORIZONTAL)
-        # ~ box_entry.set_hexpand(True)
-        # ~ self.entry = Gtk.Entry()
-        # ~ self.entry.set_activates_default(True)
-        # ~ self.entry.set_icon_from_icon_name(Gtk.EntryIconPosition.SECONDARY, 'miaz-entry-clear')
-        # ~ self.entry.set_icon_activatable(Gtk.EntryIconPosition.SECONDARY, True)
-        # ~ self.entry.connect('icon-press', self._on_entrysearch_delete)
-        # ~ self.entry.connect('changed', self._on_filter_selected)
-        # ~ self.entry.set_hexpand(True)
-        # ~ self.entry.set_has_frame(True)
-        # ~ box_entry.append(self.entry)
-        # ~ self.box_oper.append(box_entry)
-        # ~ self.boxButtons = Gtk.Box(spacing=3, orientation=Gtk.Orientation.HORIZONTAL)
-        # ~ self.boxButtons.set_hexpand(False)
-        # ~ self.boxButtons.append(self.factory.create_button('miaz-list-add', '', self._on_item_add, self.config_for))
-        # ~ self.boxButtons.append(self.factory.create_button('miaz-list-remove', '', self._on_item_remove))
-        # ~ self.box_oper.append(self.boxButtons)
-        # ~ self.append(self.box_oper)
-        # ~ widget = self._setup_view()
-        # ~ self._setup_view_finish()
-        # ~ self.append(widget)
 
     def _setup_view_finish(self):
         self.view.column_title.set_title(self.config_for.title())
@@ -251,45 +228,28 @@ class MiAZCountries(MiAZConfigView):
         return
 
     def _setup_view_finish(self):
-        factory_icon = Gtk.SignalListItemFactory()
-        factory_icon.connect("setup", self._on_factory_setup_icon)
-        factory_icon.connect("bind", self._on_factory_bind_icon)
-        self.view.column_id.set_title("Code")
-        self.view.column_title.set_title(self.config_for.title())
-        self.view.column_icon.set_title("Flag")
-        self.view.column_icon.set_factory(factory_icon)
-        # ~ self.view.column_active.set_title("Use")
-        self.view.cv.append_column(self.view.column_icon)
-        self.view.cv.append_column(self.view.column_id)
-        self.view.cv.append_column(self.view.column_title)
-        # ~ self.view.cv.append_column(self.view.column_active)
-        self.view.column_title.set_expand(True)
-        self.view.cv.sort_by_column(self.view.column_title, Gtk.SortType.ASCENDING)
-
-    def _on_factory_setup_icon(self, factory, list_item):
-        box = RowIcon()
-        list_item.set_child(box)
-
-    def _on_factory_bind_icon(self, factory, list_item):
-        """To be subclassed"""
-        box = list_item.get_child()
-        item = list_item.get_item()
-        icon = box.get_first_child()
-        flag = os.path.join(ENV['GPATH']['FLAGS'], "%s.svg" % item.id)
-        if not os.path.exists(flag):
-            flag = os.path.join(ENV['GPATH']['FLAGS'], "__.svg")
-        icon.set_from_file(flag)
-        icon.set_pixel_size(32)
+        self.view = MiAZColumnViewCountry(self.app)
+        self.frmViewAv.set_child(self.view)
+        # ~ self.viewAv.cv.append_column(self.viewAv.column_flag)
+        # ~ self.viewAv.column_flag.set_title("Flag")
+        # ~ self.viewAv.cv.append_column(self.viewAv.column_id)
+        # ~ self.viewAv.column_id.set_title("Code")
+        # ~ self.viewAv.cv.append_column(self.viewAv.column_title)
+        # ~ self.viewAv.column_title.set_title("Country")
+        # ~ self.viewAv.column_title.set_expand(True)
+        # ~ self.viewAv.cv.sort_by_column(self.viewAv.column_title, Gtk.SortType.ASCENDING)
+        self.update()
 
     def update(self, items=None):
-        return
+        # ~ return
         if items is None:
             items = []
             item_type = self.config.config_model
-            database = self.config.load()
             countries = self.config.load_global()
             for code in countries:
-                items.append(item_type(id=code, title=countries[code], active=False))
+                item = item_type(id=code, title=countries[code], icon='%s.svg' % code)
+                # ~ print("%s > %s (%s)" % (item.id, item.title, item.icon))
+                items.append(item)
         self.view.update(items)
 
 

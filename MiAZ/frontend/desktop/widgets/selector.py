@@ -56,13 +56,13 @@ class MiAZSelector(Gtk.Box):
         self.append(boxViews)
 
         # Available
-        frmView = Gtk.Frame()
+        self.frmViewAv = Gtk.Frame()
         title = Gtk.Label()
         title.set_markup("Available")
         self.viewAv = MiAZColumnView(self.app)
-        frmView.set_child(self.viewAv)
+        # ~ self.frmViewAv.set_child(self.viewAv)
         boxLeft.append(title)
-        boxLeft.append(frmView)
+        boxLeft.append(self.frmViewAv)
 
         # Controls
         box = self.factory.create_box_vertical()
@@ -84,6 +84,17 @@ class MiAZSelector(Gtk.Box):
         frmView.set_child(self.viewSl)
         boxRight.append(title)
         boxRight.append(frmView)
+
+        self._setup_view_finish()
+
+    def _setup_view_finish(self, *args):
+        pass
+
+    def update_available(self):
+        pass
+
+    def update_selected(self):
+        pass
 
     def action_add(self, *args):
         pass

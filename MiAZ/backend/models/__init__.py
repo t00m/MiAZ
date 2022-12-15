@@ -2,12 +2,28 @@
 
 from gi.repository import GObject
 
-
 class MiAZModel(GObject.Object):
+    """Custom MiAZ data model to be subclassed"""
+    __gtype_name__ = 'MiAZModel'
+
+    def __init__(self, id: str, title: str = ''):
+        super().__init__()
+        self._id = id
+        self._title = title
+
+    @GObject.Property
+    def id(self):
+        return self._id
+
+    @GObject.Property
+    def title(self):
+        return self._title
+
+class MiAZItem(MiAZModel):
     """Custom data model for MiAZ use cases
     {timestamp}-{country}-{group}-{subgroup}-{from}-{purpose}-{concept}-{to}.{extension}
     """
-    __gtype_name__ = 'MiAZModel'
+    __gtype_name__ = 'MiAZItem'
 
     def __init__(self,  id: str,
                         date: str = '',
@@ -25,9 +41,9 @@ class MiAZModel(GObject.Object):
                         active: bool = False,
                         valid: bool = False,
                         icon: str = ''):
-        super().__init__()
+        super().__init__(id)
 
-        self._id = id
+        # ~ self._id = id
         self._date = date
         self._date_dsc = date_dsc
         self._group = group
@@ -44,9 +60,9 @@ class MiAZModel(GObject.Object):
         self._valid = valid
         self._icon = icon
 
-    @GObject.Property
-    def id(self):
-        return self._id
+    # ~ @GObject.Property
+    # ~ def id(self):
+        # ~ return self._id
 
     @GObject.Property
     def date(self):
@@ -88,9 +104,9 @@ class MiAZModel(GObject.Object):
     def sentto_dsc(self):
         return self._sentto_dsc
 
-    @GObject.Property
-    def title(self):
-        return self._title
+    # ~ @GObject.Property
+    # ~ def title(self):
+        # ~ return self._title
 
     @GObject.Property
     def subtitle(self):
@@ -133,6 +149,14 @@ class Concept(MiAZModel):
 
 class Country(MiAZModel):
     __gtype_name__ = 'Country'
+
+    def __init__(self,  id: str, title: str = '', icon: str = ''):
+        super().__init__(id)
+        self._icon = icon
+
+    @GObject.Property
+    def icon(self):
+        return self._icon
 
 class Person(MiAZModel):
     __gtype_name__ = 'Person'
