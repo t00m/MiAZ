@@ -414,6 +414,7 @@ class MiAZWorkspace(Gtk.Box):
     def update(self, *args):
         # FIXME: Get dict from backend
         # ~ self._on_signal_filter_disconnect()
+        return
         self.spinner_start()
         self._on_explain_toggled(self.tgbExplain)
         repocnf = self.backend.get_repo_source_config_file()

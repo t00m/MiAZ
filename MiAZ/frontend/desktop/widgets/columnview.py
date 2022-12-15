@@ -91,8 +91,8 @@ class MiAZColumnView(Gtk.Box):
         # Setup ColumnView Widget
         self.cv = Gtk.ColumnView()
         self.cv.get_style_context().add_class(class_name='monospace')
-        # ~ self.cv.set_show_column_separators(True)
-        # ~ self.cv.set_show_row_separators(True)
+        self.cv.set_show_column_separators(True)
+        self.cv.set_show_row_separators(True)
         # ~ self.cv.set_single_click_activate(True)
         scrwin.set_child(self.cv)
 
@@ -191,7 +191,6 @@ class MiAZColumnView(Gtk.Box):
         item = list_item.get_item()
         label = box.get_first_child()
         label.set_markup(item.title)
-        label.get_style_context().add_class(class_name='destructive-action')
 
     def _on_button_toggled(self, button):
         selection = self.cv.get_model()

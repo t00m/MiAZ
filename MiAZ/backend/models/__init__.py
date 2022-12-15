@@ -6,7 +6,7 @@ class MiAZModel(GObject.Object):
     """Custom MiAZ data model to be subclassed"""
     __gtype_name__ = 'MiAZModel'
 
-    def __init__(self, id: str, title: str = ''):
+    def __init__(self, id: str, title: str):
         super().__init__()
         self._id = id
         self._title = title
@@ -151,7 +151,7 @@ class Country(MiAZModel):
     __gtype_name__ = 'Country'
 
     def __init__(self,  id: str, title: str = '', icon: str = ''):
-        super().__init__(id)
+        super().__init__(id, title)
         self._icon = icon
 
     @GObject.Property

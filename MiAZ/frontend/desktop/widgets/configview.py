@@ -46,18 +46,18 @@ class MiAZConfigView(MiAZSelector):
         self.set_margin_end(margin=12)
         self.set_margin_start(margin=12)
 
-    def _setup_view_finish(self):
-        self.view.column_title.set_title(self.config_for.title())
-        self.view.cv.append_column(self.view.column_title)
-        self.view.column_title.set_expand(True)
-        self.view.cv.sort_by_column(self.view.column_title, Gtk.SortType.ASCENDING)
+    # ~ def _setup_view_finish(self):
+        # ~ self.view.column_title.set_title(self.config_for.title())
+        # ~ self.view.cv.append_column(self.view.column_title)
+        # ~ self.view.column_title.set_expand(True)
+        # ~ self.view.cv.sort_by_column(self.view.column_title, Gtk.SortType.ASCENDING)
 
     def _on_filter_selected(self, *args):
-        self.view.refilter()
+        self.viewAv.refilter()
 
     def _do_filter_view(self, item, filter_list_model):
         chunk = self.entry.get_text().upper()
-        string = "%s%s%s" % (item.id, item.title, item.subtitle)
+        string = "%s%s" % (item.id, item.title)
         if chunk in string.upper():
             return True
         return False
@@ -228,29 +228,23 @@ class MiAZCountries(MiAZConfigView):
         return
 
     def _setup_view_finish(self):
-        self.view = MiAZColumnViewCountry(self.app)
-        self.frmViewAv.set_child(self.view)
-        # ~ self.viewAv.cv.append_column(self.viewAv.column_flag)
-        # ~ self.viewAv.column_flag.set_title("Flag")
-        # ~ self.viewAv.cv.append_column(self.viewAv.column_id)
-        # ~ self.viewAv.column_id.set_title("Code")
-        # ~ self.viewAv.cv.append_column(self.viewAv.column_title)
-        # ~ self.viewAv.column_title.set_title("Country")
-        # ~ self.viewAv.column_title.set_expand(True)
-        # ~ self.viewAv.cv.sort_by_column(self.viewAv.column_title, Gtk.SortType.ASCENDING)
-        self.update()
+        self.viewAv = MiAZColumnViewCountry(self.app)
+        self.viewAv.set_filter(self._do_filter_view)
+        self.viewAv.column_title.set_expand(True)
+        self.scrWindowAv.set_child(self.viewAv)
+        self.viewAv.cv.sort_by_column(self.viewAv.column_title, Gtk.SortType.ASCENDING)
 
     def update(self, items=None):
-        # ~ return
         if items is None:
             items = []
             item_type = self.config.config_model
             countries = self.config.load_global()
+            # ~ print(countries)
             for code in countries:
                 item = item_type(id=code, title=countries[code], icon='%s.svg' % code)
                 # ~ print("%s > %s (%s)" % (item.id, item.title, item.icon))
                 items.append(item)
-        self.view.update(items)
+        self.viewAv.update(items)
 
 
 class MiAZPurposes(MiAZConfigView):

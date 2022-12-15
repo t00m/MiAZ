@@ -25,13 +25,12 @@ class MiAZColumnViewCountry(MiAZColumnView):
     __gtype_name__ = 'MiAZColumnViewCountry'
 
     def __init__(self, app):
-        super(MiAZColumnViewCountry, self).__init__(app)
         super().__init__(app, item_type=Country)
         factory_flag = Gtk.SignalListItemFactory()
         factory_flag.connect("setup", self._on_factory_setup_flag)
         factory_flag.connect("bind", self._on_factory_bind_flag)
-        column_flag = Gtk.ColumnViewColumn.new("Flag", factory_flag)
-        self.cv.append_column(column_flag)
+        self.column_flag = Gtk.ColumnViewColumn.new("Flag", factory_flag)
+        self.cv.append_column(self.column_flag)
         self.cv.append_column(self.column_id)
         self.cv.append_column(self.column_title)
 
