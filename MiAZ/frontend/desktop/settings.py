@@ -18,7 +18,7 @@ from MiAZ.frontend.desktop.widgets.configview import MiAZGroups
 from MiAZ.frontend.desktop.widgets.configview import MiAZSubgroups
 from MiAZ.frontend.desktop.widgets.configview import MiAZPurposes
 from MiAZ.frontend.desktop.widgets.configview import MiAZCountries
-from MiAZ.frontend.desktop.widgets.configview import MiAZOrganizations
+from MiAZ.frontend.desktop.widgets.configview import MiAZPeople
 
 
 class MiAZPrefsWindow(Gtk.Box):
@@ -46,7 +46,7 @@ class MiAZPrefsWindow(Gtk.Box):
         row_res_groups = self._create_action_row_res_groups()
         row_res_subgroups = self._create_action_row_res_subgroups()
         row_res_purposes = self._create_action_row_res_purposes()
-        row_res_organizations = self._create_action_row_res_organizations()
+        row_res_people = self._create_action_row_res_people()
 
         group = Adw.PreferencesGroup()
         group.set_title("Resources")
@@ -54,7 +54,7 @@ class MiAZPrefsWindow(Gtk.Box):
         group.add(row_res_groups)
         group.add(row_res_subgroups)
         group.add(row_res_purposes)
-        group.add(row_res_organizations)
+        group.add(row_res_people)
         return group
 
     def _create_action_row_res_countries(self):
@@ -93,11 +93,11 @@ class MiAZPrefsWindow(Gtk.Box):
         box.append(button)
         return row
 
-    def _create_action_row_res_organizations(self):
+    def _create_action_row_res_people(self):
         row = Adw.ActionRow.new()
-        row.set_title("Organizations")
-        row.set_icon_name('miaz-res-organization')
-        button = self.factory.create_button('document-edit-symbolic', '', self.show_res_organizations)
+        row.set_title("People")
+        row.set_icon_name('miaz-res-people')
+        button = self.factory.create_button('document-edit-symbolic', '', self.show_res_people)
         box = row.get_child()
         box.append(button)
         return row
@@ -126,10 +126,10 @@ class MiAZPrefsWindow(Gtk.Box):
         dialog = self.factory.create_dialog(self.app.win, 'Purposes', view, 600, 480)
         dialog.show()
 
-    def show_res_organizations(self, *args):
-        view = MiAZOrganizations(self.app)
+    def show_res_people(self, *args):
+        view = MiAZPeople(self.app)
         view.update()
-        dialog = self.factory.create_dialog(self.app.win, 'Organizations', view, 600, 480)
+        dialog = self.factory.create_dialog(self.app.win, 'People', view, 600, 480)
         dialog.show()
 
     def _create_action_row_repo_source(self):

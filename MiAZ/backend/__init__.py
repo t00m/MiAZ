@@ -21,7 +21,7 @@ from MiAZ.backend.config import MiAZConfigSettingsGroups
 from MiAZ.backend.config import MiAZConfigSettingsSubgroups
 from MiAZ.backend.config import MiAZConfigSettingsPurposes
 from MiAZ.backend.config import MiAZConfigSettingsConcepts
-from MiAZ.backend.config import MiAZConfigSettingsPerson
+from MiAZ.backend.config import MiAZConfigSettingsPeople
 
 
 class MiAZBackend(GObject.GObject):
@@ -76,9 +76,9 @@ class MiAZBackend(GObject.GObject):
         self.conf['Subgroup'] = MiAZConfigSettingsSubgroups(dir_conf)
         self.conf['Purpose'] = MiAZConfigSettingsPurposes(dir_conf)
         self.conf['Concept'] = MiAZConfigSettingsConcepts(dir_conf)
-        self.conf['SentBy'] = MiAZConfigSettingsPerson(dir_conf)
-        self.conf['SentTo'] = MiAZConfigSettingsPerson(dir_conf)
-        self.conf['Person'] = MiAZConfigSettingsPerson(dir_conf)
+        self.conf['SentBy'] = MiAZConfigSettingsPeople(dir_conf)
+        self.conf['SentTo'] = MiAZConfigSettingsPeople(dir_conf)
+        self.conf['Person'] = MiAZConfigSettingsPeople(dir_conf)
         self.watch_source = MiAZWatcher('source', dir_repo)
         self.watch_source.connect('source-directory-updated',
                                                     self.check_source)
@@ -217,7 +217,8 @@ class MiAZBackend(GObject.GObject):
                                 "Country code '%s' doesn't exist" %
                                                                 code))
             else:
-                country = self.conf['Country'].load_global()
+                config_global = self.conf['Country'].config_global
+                country = self.conf['Country'].load(config_global)
                 name = country[code]
                 reasons.append((True,
                                 "Country code '%s' corresponds to %s" %
@@ -262,8 +263,8 @@ class MiAZBackend(GObject.GObject):
         # Check SentBy (5th field)
         try:
             code = fields[4]
-            is_organization = self.conf['Person'].exists(code)
-            if not is_organization:
+            is_people = self.conf['Person'].exists(code)
+            if not is_people:
                 valid &= False
                 reasons.append((False,
                                 "Person '%s' is not in your list. " \
@@ -300,8 +301,8 @@ class MiAZBackend(GObject.GObject):
         # Check SentTo (8th field)
         try:
             code = fields[7]
-            is_organization = self.conf['Person'].exists(code)
-            if not is_organization:
+            is_people = self.conf['Person'].exists(code)
+            if not is_people:
                 valid &= False
                 reasons.append((False,
                                 "Person '%s' is not in your list. " \
@@ -320,7 +321,7 @@ class MiAZBackend(GObject.GObject):
         country = ""
         group = ""
         subgroup = ""
-        organization = ""
+        person = ""
         purpose = ""
         concept = ""
         extension = ""

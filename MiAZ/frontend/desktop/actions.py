@@ -67,16 +67,16 @@ class MiAZActions(GObject.GObject):
         # Populate the model
         model = dropdown.get_model()
         config = self.app.get_config(item_type.__gtype_name__)
-        items = config.load()
+        items = config.load(config.config_local)
         config_is = config.get_config_is()
 
         # foreign key is used when the local configuration is saved as a
         # list, but it gets the name from global dictionary (eg.: Countries)
         foreign = config.get_config_foreign()
         if foreign:
-            gitems = config.load_global()
+            gitems = config.load(config.config_global)
 
-        items = config.load()
+        items = config.load(config.config_local)
         if isinstance(items, list):
             items = sorted(items)
 

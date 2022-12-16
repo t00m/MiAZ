@@ -13,7 +13,7 @@ from MiAZ.backend.log import get_logger
 from MiAZ.backend.models import File, Group, Subgroup, Person, Country, Purpose, Concept
 from MiAZ.backend.config import MiAZConfigSettingsGroups
 from MiAZ.backend.config import MiAZConfigSettingsSubgroups
-from MiAZ.backend.config import MiAZConfigSettingsPerson
+from MiAZ.backend.config import MiAZConfigSettingsPeople
 from MiAZ.backend.config import MiAZConfigSettingsCountries
 from MiAZ.backend.config import MiAZConfigSettingsPurposes
 from MiAZ.frontend.desktop.widgets.columnview import MiAZColumnView, RowIcon
@@ -21,6 +21,10 @@ from MiAZ.frontend.desktop.widgets.dialogs import MiAZDialogAdd
 from MiAZ.frontend.desktop.widgets.selector import MiAZSelector
 from MiAZ.frontend.desktop.widgets.columnview import MiAZColumnView
 from MiAZ.frontend.desktop.widgets.columnviews import MiAZColumnViewCountry
+from MiAZ.frontend.desktop.widgets.columnviews import MiAZColumnViewGroup
+from MiAZ.frontend.desktop.widgets.columnviews import MiAZColumnViewSubgroup
+from MiAZ.frontend.desktop.widgets.columnviews import MiAZColumnViewPurpose
+from MiAZ.frontend.desktop.widgets.columnviews import MiAZColumnViewPerson
 
 
 class MiAZConfigView(MiAZSelector):
@@ -33,18 +37,17 @@ class MiAZConfigView(MiAZSelector):
     search_term = ''
 
     def __init__(self, app, config_for):
-        super(MiAZSelector, self).__init__(spacing=12, orientation=Gtk.Orientation.VERTICAL)
+        super(MiAZSelector, self).__init__(spacing=3, orientation=Gtk.Orientation.VERTICAL)
         self.app = app
         # ~ self.conf = self.app.get_conf()
         self.log = get_logger('MiAZConfigView')
         self.backend = self.app.get_backend()
-        # ~ self.dir_repo = self.conf['App'].get('source')
         self.config_for = config_for
         self.factory = self.app.get_factory()
         self.set_vexpand(True)
-        self.set_margin_top(margin=12)
-        self.set_margin_end(margin=12)
-        self.set_margin_start(margin=12)
+        self.set_margin_top(margin=6)
+        self.set_margin_end(margin=6)
+        self.set_margin_start(margin=6)
 
     # ~ def _setup_view_finish(self):
         # ~ self.view.column_title.set_title(self.config_for.title())
@@ -63,7 +66,7 @@ class MiAZConfigView(MiAZSelector):
         return False
 
     def on_key_released(self, widget, keyval, keycode, state):
-        self.log.debug("Active window: %s", self.app.get_active_window())
+        # ~ self.log.debug("Active window: %s", self.app.get_active_window())
         keyname = Gdk.keyval_name(keyval)
         self.log.debug("Key: %s", keyname)
 
@@ -92,11 +95,10 @@ class MiAZConfigView(MiAZSelector):
         if response == Gtk.ResponseType.ACCEPT:
             value = dialog.get_value1()
             if len(value) > 0:
-                items = self.config.load()
+                items = self.config.load(self.config.config_local)
                 if not value.upper() in items:
                     items.append(value.upper())
-                    self.config.save(items)
-                    self.log.debug("Added: %s", value.upper())
+                    self.config.save(items=items)
                     self.update()
         dialog.destroy()
 
@@ -117,29 +119,49 @@ class MiAZConfigView(MiAZSelector):
         self.config_local = config_local
         self.config_global = config_global
 
-    def update(self, items=None):
-        return
-        # FIXME: this is awful
-        if items is None:
-            items = []
-            item_type = self.config.config_model
-            database = self.config.load()
-            if self.config.config_is is list:
-                for key in database:
-                    items.append(item_type(id=key, title=key))
-            elif self.config.config_is is dict:
-                if self.config.foreign:
-                    gitems = self.config.load_global()
-                    for key in database:
-                        try:
-                            items.append(item_type(id=key, title=gitems[key]))
-                        except KeyError:
-                            items.append(item_type(id=key, title=''))
-                else:
-                    for key in database:
-                        items.append(item_type(id=key, title=database[key]))
-        self.view.update(items)
 
+class MiAZCountries(MiAZConfigView):
+    """"""
+    __gtype_name__ = 'MiAZCountries'
+    current = None
+
+    def __init__(self, app):
+        super(MiAZConfigView, self).__init__(app, edit=False)
+        self.config = MiAZConfigSettingsCountries(self.dir_conf)
+        super().__init__(app, self.config.config_for)
+        self.set_config_file_available(self.config.config_global)
+        self.set_config_file_selected(self.config.config_local)
+
+    def _setup_view_finish(self):
+        # Setup Available Column View
+        self.viewAv = MiAZColumnViewCountry(self.app)
+        self.viewAv.set_filter(self._do_filter_view)
+        self.viewAv.column_title.set_expand(True)
+        self.scrWindowAv.set_child(self.viewAv)
+        self.viewAv.cv.sort_by_column(self.viewAv.column_title, Gtk.SortType.ASCENDING)
+
+        # Setup Selected Column View
+        self.viewSl = MiAZColumnViewCountry(self.app)
+        self.viewSl.set_filter(self._do_filter_view)
+        self.viewSl.column_title.set_expand(True)
+        self.scrWindowSl.set_child(self.viewSl)
+        self.viewSl.cv.sort_by_column(self.viewSl.column_title, Gtk.SortType.ASCENDING)
+
+    def update_available(self):
+        items = []
+        item_type = self.config.config_model
+        countries = self.config.load(self.dir_conf_available)
+        for code in countries:
+            items.append(item_type(id=code, title=countries[code], icon='%s.svg' % code))
+        self.viewAv.update(items)
+
+    def update_selected(self):
+        items = []
+        item_type = self.config.config_model
+        countries = self.config.load(self.dir_conf_selected)
+        for code in countries:
+            items.append(item_type(id=code, title=countries[code], icon='%s.svg' % code))
+        self.viewSl.update(items)
 
 class MiAZGroups(MiAZConfigView):
     """"""
@@ -147,13 +169,42 @@ class MiAZGroups(MiAZConfigView):
     current = None
 
     def __init__(self, app):
-        backend = app.get_backend()
-        dir_conf = backend.get_repo_conf_dir()
-        self.config = MiAZConfigSettingsGroups(dir_conf)
-        self.config_for = self.config.get_config_for()
-        super(MiAZConfigView, self).__init__(app)
+        super(MiAZConfigView, self).__init__(app, edit=False)
+        self.config = MiAZConfigSettingsGroups(self.dir_conf)
         super().__init__(app, self.config.config_for)
-        self.log = get_logger('MiAZSettings-%s' % self.config_for)
+        self.set_config_file_available(self.config.config_global)
+        self.set_config_file_selected(self.config.config_local)
+
+    def _setup_view_finish(self):
+        # Setup Available Column View
+        self.viewAv = MiAZColumnViewGroup(self.app)
+        self.viewAv.set_filter(self._do_filter_view)
+        self.viewAv.column_title.set_expand(True)
+        self.scrWindowAv.set_child(self.viewAv)
+        self.viewAv.cv.sort_by_column(self.viewAv.column_title, Gtk.SortType.ASCENDING)
+
+        # Setup Selected Column View
+        self.viewSl = MiAZColumnViewGroup(self.app)
+        self.viewSl.set_filter(self._do_filter_view)
+        self.viewSl.column_title.set_expand(True)
+        self.scrWindowSl.set_child(self.viewSl)
+        self.viewSl.cv.sort_by_column(self.viewSl.column_title, Gtk.SortType.ASCENDING)
+
+    def update_available(self):
+        items = []
+        item_type = self.config.config_model
+        groups = self.config.load(self.dir_conf_available)
+        for group in groups:
+            items.append(item_type(id=group, title=group))
+        self.viewAv.update(items)
+
+    def update_selected(self):
+        items = []
+        item_type = self.config.config_model
+        groups = self.config.load(self.dir_conf_selected)
+        for group in groups:
+            items.append(item_type(id=group, title=group))
+        self.viewSl.update(items)
 
 class MiAZSubgroups(MiAZConfigView):
     """"""
@@ -161,24 +212,84 @@ class MiAZSubgroups(MiAZConfigView):
     current = None
 
     def __init__(self, app):
-        backend = app.get_backend()
-        dir_conf = backend.get_repo_conf_dir()
-        self.config = MiAZConfigSettingsSubgroups(dir_conf)
-        self.config_for = self.config.get_config_for()
-        super(MiAZConfigView, self).__init__(app)
+        super(MiAZConfigView, self).__init__(app, edit=False)
+        self.config = MiAZConfigSettingsSubgroups(self.dir_conf)
         super().__init__(app, self.config.config_for)
-        self.log = get_logger('MiAZSettings-%s' % self.config_for)
+        self.set_config_file_available(self.config.config_global)
+        self.set_config_file_selected(self.config.config_local)
 
-class MiAZOrganizations(MiAZConfigView):
-    """Class for managing Organizations from Settings"""
-    __gtype_name__ = 'MiAZOrganizations'
+    def _setup_view_finish(self):
+        # Setup Available Column View
+        self.viewAv = MiAZColumnViewSubgroup(self.app)
+        self.viewAv.set_filter(self._do_filter_view)
+        self.viewAv.column_title.set_expand(True)
+        self.scrWindowAv.set_child(self.viewAv)
+        self.viewAv.cv.sort_by_column(self.viewAv.column_title, Gtk.SortType.ASCENDING)
+
+        # Setup Selected Column View
+        self.viewSl = MiAZColumnViewSubgroup(self.app)
+        self.viewSl.set_filter(self._do_filter_view)
+        self.viewSl.column_title.set_expand(True)
+        self.scrWindowSl.set_child(self.viewSl)
+        self.viewSl.cv.sort_by_column(self.viewSl.column_title, Gtk.SortType.ASCENDING)
+
+    def update_available(self):
+        items = []
+        item_type = self.config.config_model
+        subgroups = self.config.load(self.dir_conf_available)
+        for subgroup in subgroups:
+            items.append(item_type(id=subgroup, title=subgroup))
+        self.viewAv.update(items)
+
+    def update_selected(self):
+        items = []
+        item_type = self.config.config_model
+        subgroups = self.config.load(self.dir_conf_selected)
+        for subgroup in subgroups:
+            items.append(item_type(id=subgroup, title=subgroup))
+        self.viewSl.update(items)
+
+class MiAZPeople(MiAZConfigView):
+    """Class for managing People from Settings"""
+    __gtype_name__ = 'MiAZPeople'
 
     def __init__(self, app):
-        backend = app.get_backend()
-        dir_conf = backend.get_repo_conf_dir()
-        self.config = MiAZConfigSettingsPerson(dir_conf)
-        super(MiAZConfigView, self).__init__(app)
+        super(MiAZConfigView, self).__init__(app, edit=False)
+        self.config = MiAZConfigSettingsPeople(self.dir_conf)
         super().__init__(app, self.config.config_for)
+        self.set_config_file_available(self.config.config_global)
+        self.set_config_file_selected(self.config.config_local)
+
+    def _setup_view_finish(self):
+        # Setup Available Column View
+        self.viewAv = MiAZColumnViewPerson(self.app)
+        self.viewAv.set_filter(self._do_filter_view)
+        self.viewAv.column_title.set_expand(True)
+        self.scrWindowAv.set_child(self.viewAv)
+        self.viewAv.cv.sort_by_column(self.viewAv.column_title, Gtk.SortType.ASCENDING)
+
+        # Setup Selected Column View
+        self.viewSl = MiAZColumnViewPerson(self.app)
+        self.viewSl.set_filter(self._do_filter_view)
+        self.viewSl.column_title.set_expand(True)
+        self.scrWindowSl.set_child(self.viewSl)
+        self.viewSl.cv.sort_by_column(self.viewSl.column_title, Gtk.SortType.ASCENDING)
+
+    def update_available(self):
+        items = []
+        item_type = self.config.config_model
+        people = self.config.load(self.dir_conf_available)
+        for pid in people:
+            items.append(item_type(id=pid, title=people[pid]))
+        self.viewAv.update(items)
+
+    def update_selected(self):
+        items = []
+        item_type = self.config.config_model
+        people = self.config.load(self.dir_conf_selected)
+        for pid in people:
+            items.append(item_type(id=pid, title=people[pid]))
+        self.viewSl.update(items)
 
     def _on_item_add(self, *args):
         dialog = MiAZDialogAdd(self.app, self.get_root(), 'Add new %s' % self.config.config_for, 'Initials', 'Full name')
@@ -193,58 +304,12 @@ class MiAZOrganizations(MiAZConfigView):
             key = dialog.get_value1()
             value = dialog.get_value2()
             if len(key) > 0 and len(value) > 0:
-                items = self.config.load()
+                items = self.config.load(self.config.config_local)
                 items[key.upper()] = value
-                self.log.info("New organization: %s (%s)", key.upper(), value)
-                self.config.save(items)
+                self.log.info("New person: %s (%s)", key.upper(), value)
+                self.config.save(items=items)
                 self.update()
         dialog.destroy()
-
-    def _setup_view_finish(self):
-        self.view.column_id.set_title("Code")
-        self.view.column_title.set_title(self.config_for.title())
-        self.view.cv.append_column(self.view.column_id)
-        self.view.cv.append_column(self.view.column_title)
-        self.view.column_title.set_expand(True)
-        self.view.cv.sort_by_column(self.view.column_title, Gtk.SortType.ASCENDING)
-
-
-class MiAZCountries(MiAZConfigView):
-    """"""
-    __gtype_name__ = 'MiAZCountries'
-    current = None
-
-    def __init__(self, app):
-        backend = app.get_backend()
-        dir_conf = backend.get_repo_conf_dir()
-        self.config = MiAZConfigSettingsCountries(dir_conf)
-
-        super(MiAZConfigView, self).__init__(app, edit=False)
-        super().__init__(app, self.config.config_for)
-        dir_conf = self.backend.get_repo_conf_dir()
-        self.icman = self.app.get_icman()
-
-    def _on_item_remove(self, *args):
-        return
-
-    def _setup_view_finish(self):
-        self.viewAv = MiAZColumnViewCountry(self.app)
-        self.viewAv.set_filter(self._do_filter_view)
-        self.viewAv.column_title.set_expand(True)
-        self.scrWindowAv.set_child(self.viewAv)
-        self.viewAv.cv.sort_by_column(self.viewAv.column_title, Gtk.SortType.ASCENDING)
-
-    def update(self, items=None):
-        if items is None:
-            items = []
-            item_type = self.config.config_model
-            countries = self.config.load_global()
-            # ~ print(countries)
-            for code in countries:
-                item = item_type(id=code, title=countries[code], icon='%s.svg' % code)
-                # ~ print("%s > %s (%s)" % (item.id, item.title, item.icon))
-                items.append(item)
-        self.viewAv.update(items)
 
 
 class MiAZPurposes(MiAZConfigView):
@@ -252,9 +317,39 @@ class MiAZPurposes(MiAZConfigView):
     __gtype_name__ = 'MiAZPurposes'
 
     def __init__(self, app):
-        backend = app.get_backend()
-        dir_conf = backend.get_repo_conf_dir()
-        self.config = MiAZConfigSettingsPurposes(dir_conf)
-        super(MiAZConfigView, self).__init__(app)
+        super(MiAZConfigView, self).__init__(app, edit=False)
+        self.config = MiAZConfigSettingsPurposes(self.dir_conf)
         super().__init__(app, self.config.config_for)
+        self.set_config_file_available(self.config.config_global)
+        self.set_config_file_selected(self.config.config_local)
 
+    def _setup_view_finish(self):
+        # Setup Available Column View
+        self.viewAv = MiAZColumnViewPurpose(self.app)
+        self.viewAv.set_filter(self._do_filter_view)
+        self.viewAv.column_title.set_expand(True)
+        self.scrWindowAv.set_child(self.viewAv)
+        self.viewAv.cv.sort_by_column(self.viewAv.column_title, Gtk.SortType.ASCENDING)
+
+        # Setup Selected Column View
+        self.viewSl = MiAZColumnViewPurpose(self.app)
+        self.viewSl.set_filter(self._do_filter_view)
+        self.viewSl.column_title.set_expand(True)
+        self.scrWindowSl.set_child(self.viewSl)
+        self.viewSl.cv.sort_by_column(self.viewSl.column_title, Gtk.SortType.ASCENDING)
+
+    def update_available(self):
+        items = []
+        item_type = self.config.config_model
+        purposes = self.config.load(self.dir_conf_available)
+        for purpose in purposes:
+            items.append(item_type(id=purpose, title=purpose))
+        self.viewAv.update(items)
+
+    def update_selected(self):
+        items = []
+        item_type = self.config.config_model
+        purposes = self.config.load(self.dir_conf_selected)
+        for purpose in purposes:
+            items.append(item_type(id=purpose, title=purpose))
+        self.viewSl.update(items)

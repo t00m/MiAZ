@@ -18,7 +18,7 @@ from MiAZ.backend.models import MiAZItem
 from MiAZ.backend.util import json_load
 from MiAZ.frontend.desktop.widgets.columnview import MiAZColumnView
 from MiAZ.frontend.desktop.widgets.columnview import RowIcon
-from MiAZ.backend.models import Country
+from MiAZ.backend.models import Country, Group, Subgroup, Person, People, Purpose
 
 class MiAZColumnViewCountry(MiAZColumnView):
     """ Custom ColumnView widget for MiAZ """
@@ -47,3 +47,41 @@ class MiAZColumnViewCountry(MiAZColumnView):
             flag = os.path.join(ENV['GPATH']['FLAGS'], "__.svg")
         icon.set_from_file(flag)
         icon.set_pixel_size(32)
+
+class MiAZColumnViewGroup(MiAZColumnView):
+    """ Custom ColumnView widget for MiAZ """
+    __gtype_name__ = 'MiAZColumnViewGroup'
+
+    def __init__(self, app):
+        super().__init__(app, item_type=Group)
+        self.cv.append_column(self.column_title)
+        self.column_title.set_title("Group")
+
+class MiAZColumnViewSubgroup(MiAZColumnView):
+    """ Custom ColumnView widget for MiAZ """
+    __gtype_name__ = 'MiAZColumnViewSubgroup'
+
+    def __init__(self, app):
+        super().__init__(app, item_type=Subgroup)
+        self.cv.append_column(self.column_title)
+        self.column_title.set_title("Subgroup")
+
+class MiAZColumnViewPurpose(MiAZColumnView):
+    """ Custom ColumnView widget for MiAZ """
+    __gtype_name__ = 'MiAZColumnViewPurpose'
+
+    def __init__(self, app):
+        super().__init__(app, item_type=Purpose)
+        self.cv.append_column(self.column_title)
+        self.column_title.set_title("Purpose")
+
+class MiAZColumnViewPerson(MiAZColumnView):
+    """ Custom ColumnView widget for MiAZ """
+    __gtype_name__ = 'MiAZColumnViewPerson'
+
+    def __init__(self, app):
+        super().__init__(app, item_type=Person)
+        self.cv.append_column(self.column_id)
+        self.cv.append_column(self.column_title)
+        self.column_id.set_title("Initials")
+        self.column_title.set_title("Full name")

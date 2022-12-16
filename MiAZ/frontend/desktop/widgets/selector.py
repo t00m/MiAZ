@@ -14,12 +14,16 @@ from gi.repository import Gtk
 from gi.repository import GLib
 from gi.repository import GObject
 
+from MiAZ.backend.log import get_logger
 from MiAZ.frontend.desktop.widgets.columnview import MiAZColumnView
 
 class MiAZSelector(Gtk.Box):
     def __init__(self, app, edit=True):
-        super(MiAZSelector, self).__init__(orientation=Gtk.Orientation.VERTICAL, hexpand=True, vexpand=True)
         self.app = app
+        self.backend = self.app.get_backend()
+        self.log = get_logger('MiAZSelector')
+        self.dir_conf = self.backend.get_repo_conf_dir()
+        super(MiAZSelector, self).__init__(orientation=Gtk.Orientation.VERTICAL, hexpand=True, vexpand=True)
         self.factory = self.app.get_factory()
 
         # Entry and buttons for operations (edit/add/remove)
@@ -63,36 +67,51 @@ class MiAZSelector(Gtk.Box):
         frmViewAv.set_hexpand(True)
         frmViewAv.set_vexpand(True)
         title = Gtk.Label()
-        title.set_markup("Available")
+        title.set_markup("<b>Available</b>")
         frmViewAv.set_child(self.scrWindowAv)
         boxLeft.append(title)
         boxLeft.append(frmViewAv)
 
         # Controls
-        box = self.factory.create_box_vertical()
+        boxSel = self.factory.create_box_vertical()
+        boxAll = self.factory.create_box_vertical()
         btnAddSelected = self.factory.create_button('miaz-selector-add', callback=self.action_add)
         btnRemoveSelected = self.factory.create_button('miaz-selector-remove', callback=self.action_remove)
         btnAddAll = self.factory.create_button('miaz-selector-add-all', callback=self.action_add_all)
         btnRemoveAll = self.factory.create_button('miaz-selector-remove-all', callback=self.action_remove_all)
-        box.append(btnAddSelected)
-        box.append(btnRemoveSelected)
-        box.append(btnAddAll)
-        box.append(btnRemoveAll)
-        boxControls.set_center_widget(box)
+        boxSel.append(btnAddSelected)
+        boxSel.append(btnRemoveSelected)
+        boxAll.append(btnAddAll)
+        boxAll.append(btnRemoveAll)
+        boxControls.set_center_widget(boxSel)
+        # ~ boxControls.set_end_widget(boxAll)
 
         # Selected
-        frmView = Gtk.Frame()
+        self.scrWindowSl = Gtk.ScrolledWindow()
+        self.scrWindowSl.set_hexpand(True)
+        self.scrWindowSl.set_vexpand(True)
+        frmViewSl = Gtk.Frame()
         title = Gtk.Label()
         title.set_markup("<b>Selected</b>")
-        self.viewSl = MiAZColumnView(self.app)
-        frmView.set_child(self.viewSl)
+        frmViewSl.set_child(self.scrWindowSl)
         boxRight.append(title)
-        boxRight.append(frmView)
-
+        boxRight.append(frmViewSl)
         self._setup_view_finish()
 
     def _setup_view_finish(self, *args):
         pass
+
+    def set_config_file_available(self, path:str):
+        self.dir_conf_available = path
+        self.log.debug("%s > Available config path: %s", self.config.config_for, path)
+
+    def set_config_file_selected(self, path:str):
+        self.dir_conf_selected = path
+        self.log.debug("%s > Selected config path: %s", self.config.config_for, path)
+
+    def update(self):
+        self.update_available()
+        self.update_selected()
 
     def update_available(self):
         pass
@@ -101,16 +120,54 @@ class MiAZSelector(Gtk.Box):
         pass
 
     def action_add(self, *args):
-        pass
+        changed = False
+        if self.config.config_is is dict:
+            items = self.config.load(self.dir_conf_selected)
+            for item in self.viewAv.get_selected_items():
+                items[item.id] = item.title
+                changed = True
+        else:
+            items = self.config.load(self.dir_conf_selected)
+            for item in self.viewAv.get_selected_items():
+                if item.id not in items:
+                    items.append(item.id)
+                changed = True
+        if changed:
+            self.config.save(items=items)
+            self.update_selected()
+
 
     def action_remove(self, *args):
-        pass
+        changed = False
+        if self.config.config_is is dict:
+            items = self.config.load(self.dir_conf_selected)
+            for item in self.viewSl.get_selected_items():
+                del(items[item.id])
+                changed = True
+        else:
+            items = self.config.load(self.dir_conf_selected)
+            print("ITEM LIST? %s" % items)
+            for item in self.viewSl.get_selected_items():
+                items.remove(item.id)
+                changed = True
+        if changed:
+            self.config.save(items=items)
+            self.update_selected()
 
     def action_add_all(self, *args):
-        pass
+        changed = False
+        items_available = self.config.load(self.config.config_global)
+        items_selected = items_available.copy()
+        self.config.save(items_selected)
+        self.update_selected()
 
     def action_remove_all(self, *args):
-        pass
+        if self.config.config_is is dict:
+            items = {}
+        else:
+            items = []
+        self.config.save(items=items)
+        self.update_selected()
 
     def set_title(self, label:str = 'Selector'):
         self.title.set_markup(label)

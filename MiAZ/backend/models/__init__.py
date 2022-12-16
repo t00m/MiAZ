@@ -161,6 +161,9 @@ class Country(MiAZModel):
 class Person(MiAZModel):
     __gtype_name__ = 'Person'
 
+class People(Person):
+    __gtype_name__ = 'People'
+
 class SentBy(Person):
     __gtype_name__ = 'SentBy'
 

@@ -74,7 +74,7 @@ class MiAZColumnView(Gtk.Box):
         self.factory = self.app.get_factory()
         self.actions = self.app.get_actions()
         self.icman = self.app.get_icman()
-        selected_items = []
+        self.selected_items = []
 
         scrwin = Gtk.ScrolledWindow()
         scrwin.set_hexpand(True)
@@ -139,7 +139,6 @@ class MiAZColumnView(Gtk.Box):
         return model.get_item(pos)
 
     def get_selected_items(self):
-        items = []
         return self.selected_items
 
     def select_first_item(self):
@@ -155,11 +154,11 @@ class MiAZColumnView(Gtk.Box):
         self.filter.emit('changed', Gtk.FilterChange.DIFFERENT)
 
     def update(self, items):
-        repocnf = self.backend.get_repo_source_config_file()
-        self.repodct = json_load(repocnf)
-        # ~ self.repodct = repodct
+        self.selected_items = []
         self.store.remove_all()
+        # ~ print(self.store.get_model())
         for item in items:
+            # ~ print(item)
             # item =~ Subclass of MiAZModel(id='xxx', title='xxx', ...)
             self.store.append(item)
 

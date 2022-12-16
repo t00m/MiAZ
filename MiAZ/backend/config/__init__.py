@@ -42,9 +42,9 @@ class MiAZConfig():
                 # Create an empty config file
                 self.log.debug("%s - Creating empty config file", self.config_for)
                 if self.config_is is dict:
-                    self.save({})
+                    self.save(items={})
                 else:
-                    self.save([])
+                    self.save(items=[])
 
     def get_config_for(self):
         return self.config_for
@@ -61,25 +61,26 @@ class MiAZConfig():
     def get_config_foreign(self):
         return self.foreign
 
-    def load(self) -> dict:
+    def load(self, filepath:str) -> dict:
         try:
-            config = json_load(self.config_local)
+            adict = json_load(filepath)
         except Exception as error:
-            config = None
-            self.log.error(error)
-        return config
+            adict = None
+        return adict
 
-    def load_global(self) -> dict:
-        try:
-            items = json_load(self.config_global)
-        except Exception as error:
-            items = None
-        return items
+    # ~ def load_global(self) -> dict:
+        # ~ try:
+            # ~ items = json_load(self.config_global)
+        # ~ except Exception as error:
+            # ~ items = None
+        # ~ return items
 
-    def save(self, items: dict) -> bool:
+    def save(self, filepath: str = '', items: dict = {}) -> bool:
+        if filepath == '':
+            filepath = self.config_local
         try:
-            json_save(self.config_local, items)
-            self.log.debug("%s - Local config file saved", self.config_for)
+            json_save(filepath, items)
+            self.log.debug("%s - config file saved", filepath)
             saved = True
         except Exception as error:
             self.log.error(error)
@@ -87,24 +88,24 @@ class MiAZConfig():
         return saved
 
     def get(self, key: str) -> str:
-        config = self.load()
+        config = self.load(self.config_local)
         try:
             return config[key]
         except KeyError:
             return ''
 
     def set(self, key: str, value: str) -> None:
-        config = self.load()
-        config[key] = value
-        self.save(config)
+        items = self.load(self.config_local)
+        items[key] = value
+        self.save(items=items)
 
     def exists(self, key: str) -> bool:
         found = False
 
         if self.must_copy:
-            config = self.load()
+            config = self.load(self.config_local)
         else:
-            config = self.load_global()
+            config = self.load(self.config_global)
 
         if isinstance(config, dict):
             try:
@@ -136,31 +137,31 @@ class MiAZConfig():
             self.list_remove(key)
 
     def list_add(self, key):
-        config = self.load()
-        if not key in config:
-            config.append(key.upper())
-            self.save(sorted(config))
+        items = self.load(self.config_local)
+        if not key in items:
+            items.append(key.upper())
+            self.save(sorted(items))
             self.log.info("%s - Add: %s", self.config_for, key)
 
     def list_remove(self, key):
-        config = self.load()
-        if key in config:
-            config.remove(key)
-            self.save(config)
+        items = self.load(self.config_local)
+        if key in items:
+            items.remove(key)
+            self.save(items)
             self.log.info("%s - Remove: %s", self.config_for, key)
 
     def dict_add(self, key, value):
-        config = self.load()
-        if not key in config:
-            config[key] = value.upper()
-            self.save(config)
+        items = self.load(self.config_local)
+        if not key in items:
+            items[key] = value.upper()
+            self.save(items)
             self.log.info("%s - Add: %s[%s]", self.config_for, key, value)
 
     def dict_remove(self, key):
-        config = self.load()
-        if key in config:
-            del(config[key])
-            self.save(config)
+        items = self.load(self.config_local)
+        if key in items:
+            del(items[key])
+            self.save(items)
             self.log.info("%s - Remove: %s", self.config_for, key)
 
 
@@ -176,7 +177,7 @@ class MiAZConfigApp(MiAZConfig):
         )
 
     def exists(self, key: str) -> bool:
-        config = self.load()
+        config = self.load(self.config_local)
         if key in config:
             found = True
         else:
@@ -260,14 +261,14 @@ class MiAZConfigSettingsConcepts(MiAZConfig):
     def __repr__(self):
         return 'Concept'
 
-class MiAZConfigSettingsPerson(MiAZConfig):
+class MiAZConfigSettingsPeople(MiAZConfig):
     def __init__(self, dir_repo):
         super().__init__(
-            log=get_logger('MiAZ.Settings.Organizations'),
+            log=get_logger('MiAZ.Settings.People'),
             config_for = 'Person',
-            config_local = os.path.join(dir_repo, 'persons.json'),
+            config_local = os.path.join(dir_repo, 'people.json'),
             config_global = os.path.join(ENV['GPATH']['RESOURCES'],
-                            'MiAZ-persons.json'),
+                            'MiAZ-people.json'),
             config_is = dict,
             config_model = Person,
             must_copy = True

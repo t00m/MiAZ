@@ -179,7 +179,7 @@ class MiAZRenameDialog(Gtk.Dialog):
         self.dpdSubgroup.connect("notify::selected-item", self.on_changed_entry)
 
     def __create_field_4_sentby(self):
-        self.rowSentBy, self.btnSentBy, self.dpdSentBy = self.__create_actionrow('Sent by', Person, 'organizations')
+        self.rowSentBy, self.btnSentBy, self.dpdSentBy = self.__create_actionrow('Sent by', Person, 'People')
         self.btnSentBy.connect('clicked', self.on_person_sentby_add)
         self._set_suggestion(self.dpdSentBy, self.suggested[4])
         self.dpdSentBy.connect("notify::selected-item", self.on_changed_entry)
@@ -213,7 +213,7 @@ class MiAZRenameDialog(Gtk.Dialog):
         self.entry_concept.connect('changed', self.on_changed_entry)
 
     def __create_field_7_sentto(self):
-        self.rowSentTo, self.btnSentTo, self.dpdSentTo = self.__create_actionrow('Sent to', Person, 'organizations')
+        self.rowSentTo, self.btnSentTo, self.dpdSentTo = self.__create_actionrow('Sent to', Person, 'People')
         self.btnSentTo.connect('clicked', self.on_person_sentto_add)
         self._set_suggestion(self.dpdSentTo, self.suggested[7])
         self.dpdSentTo.connect("notify::selected-item", self.on_changed_entry)
@@ -455,18 +455,18 @@ class MiAZRenameDialog(Gtk.Dialog):
         question.connect('response', self.on_answer_question_delete)
         question.show()
 
-    def on_organizations_refresh(self, *args):
+    def on_people_refresh(self, *args):
         config = self.app.get_config('Person')
-        organizations = config.load()
+        people = config.load()
         model = self.combobox_from.get_model()
         model.clear()
-        for alias in organizations:
-            model.append([alias, "<i>%s</i>" % organizations[alias]])
+        for alias in people:
+            model.append([alias, "<i>%s</i>" % people[alias]])
 
         model = self.combobox_to.get_model()
         model.clear()
-        for alias in organizations:
-            model.append([alias, "<i>%s</i>" % organizations[alias]])
+        for alias in people:
+            model.append([alias, "<i>%s</i>" % people[alias]])
 
 
     def on_answer_question_delete(self, dialog, response):
