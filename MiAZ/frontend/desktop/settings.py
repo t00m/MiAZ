@@ -170,10 +170,6 @@ class MiAZPrefsWindow(Gtk.Box):
             if dirpath is not None:
                 if backend.is_repo(dirpath):
                     self.log.debug("Directory '%s' is a MiAZ Repository", dirpath)
-                    watcher = backend.get_watcher_source()
-                    watcher.set_path(dirpath)
-                    watcher.set_active(True)
-                    self.config.set('source', dirpath)
                     use_repo = True
                 else:
                     self.log.debug("Directory '%s' is not a MiAZ repository", dirpath)
@@ -187,10 +183,14 @@ class MiAZPrefsWindow(Gtk.Box):
                     else:
                         self.log.warning("Directory '%s' can't be used as repository. It is not empty", dirpath)
             if use_repo:
+                self.config.set('source', dirpath)
                 self.row_repo_source.set_title(os.path.basename(dirpath))
                 self.row_repo_source.set_subtitle(dirpath)
                 backend.load_repo(dirpath)
                 self.app.setup_workspace_page()
+                watcher = backend.get_watcher_source()
+                watcher.set_path(dirpath)
+                watcher.set_active(False)
 
         dialog.destroy()
 
