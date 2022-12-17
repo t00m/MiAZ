@@ -102,7 +102,7 @@ class MiAZApp(Adw.Application):
     def setup_status_page(self):
         # ~ self.btnImport.hide()
         status_page = Adw.StatusPage.new()
-        status_page.set_description(description="<big>Please, create a new repository in order to start working in your AZ repository</big>")
+        status_page.set_description(description="<big>Please, create a new repository in order to start working in your AZ</big>")
         status_page.set_icon_name(icon_name='MiAZ-big')
         status_page.set_title(title="%s %s" % (ENV['APP']['shortname'], get_version()))
         boxChild = Gtk.CenterBox()
