@@ -49,14 +49,9 @@ class MiAZConfigView(MiAZSelector):
         self.set_margin_end(margin=6)
         self.set_margin_start(margin=6)
 
-    # ~ def _setup_view_finish(self):
-        # ~ self.view.column_title.set_title(self.config_for.title())
-        # ~ self.view.cv.append_column(self.view.column_title)
-        # ~ self.view.column_title.set_expand(True)
-        # ~ self.view.cv.sort_by_column(self.view.column_title, Gtk.SortType.ASCENDING)
-
     def _on_filter_selected(self, *args):
         self.viewAv.refilter()
+        self.viewSl.refilter()
 
     def _do_filter_view(self, item, filter_list_model):
         chunk = self.entry.get_text().upper()
@@ -161,6 +156,7 @@ class MiAZCountries(MiAZConfigView):
         countries = self.config.load(self.dir_conf_selected)
         for code in countries:
             items.append(item_type(id=code, title=countries[code], icon='%s.svg' % code))
+            self.log.debug("UPDATE: Adding %s = %s", code, countries[code])
         self.viewSl.update(items)
 
 class MiAZGroups(MiAZConfigView):

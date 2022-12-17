@@ -123,8 +123,10 @@ class MiAZSelector(Gtk.Box):
         changed = False
         if self.config.config_is is dict:
             items = self.config.load(self.dir_conf_selected)
+            self.log.debug("BEFORE: %s", items)
             for item in self.viewAv.get_selected_items():
                 items[item.id] = item.title
+                self.log.debug("DURING: Adding %s = %s", item.id, item.title)
                 changed = True
         else:
             items = self.config.load(self.dir_conf_selected)
@@ -133,6 +135,7 @@ class MiAZSelector(Gtk.Box):
                     items.append(item.id)
                 changed = True
         if changed:
+            self.log.debug("AFTER: %s", items)
             self.config.save(items=items)
             self.update_selected()
 
