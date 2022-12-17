@@ -16,7 +16,7 @@ from MiAZ.backend.config import MiAZConfigSettingsSubgroups
 from MiAZ.backend.config import MiAZConfigSettingsPeople
 from MiAZ.backend.config import MiAZConfigSettingsCountries
 from MiAZ.backend.config import MiAZConfigSettingsPurposes
-from MiAZ.frontend.desktop.widgets.columnview import MiAZColumnView, RowIcon
+from MiAZ.frontend.desktop.widgets.columnview import MiAZColumnView, ColIcon
 from MiAZ.frontend.desktop.widgets.dialogs import MiAZDialogAdd
 from MiAZ.frontend.desktop.widgets.selector import MiAZSelector
 from MiAZ.frontend.desktop.widgets.columnview import MiAZColumnView
@@ -130,17 +130,11 @@ class MiAZCountries(MiAZConfigView):
     def _setup_view_finish(self):
         # Setup Available Column View
         self.viewAv = MiAZColumnViewCountry(self.app)
-        self.viewAv.set_filter(self._do_filter_view)
-        self.viewAv.column_title.set_expand(True)
-        self.scrWindowAv.set_child(self.viewAv)
-        self.viewAv.cv.sort_by_column(self.viewAv.column_title, Gtk.SortType.ASCENDING)
+        self.add_columnview_available(self.viewAv)
 
         # Setup Selected Column View
         self.viewSl = MiAZColumnViewCountry(self.app)
-        self.viewSl.set_filter(self._do_filter_view)
-        self.viewSl.column_title.set_expand(True)
-        self.scrWindowSl.set_child(self.viewSl)
-        self.viewSl.cv.sort_by_column(self.viewSl.column_title, Gtk.SortType.ASCENDING)
+        self.add_columnview_selected(self.viewSl)
 
     def update_available(self):
         items = []
@@ -156,7 +150,6 @@ class MiAZCountries(MiAZConfigView):
         countries = self.config.load(self.dir_conf_selected)
         for code in countries:
             items.append(item_type(id=code, title=countries[code], icon='%s.svg' % code))
-            self.log.debug("UPDATE: Adding %s = %s", code, countries[code])
         self.viewSl.update(items)
 
 class MiAZGroups(MiAZConfigView):
@@ -174,17 +167,11 @@ class MiAZGroups(MiAZConfigView):
     def _setup_view_finish(self):
         # Setup Available Column View
         self.viewAv = MiAZColumnViewGroup(self.app)
-        self.viewAv.set_filter(self._do_filter_view)
-        self.viewAv.column_title.set_expand(True)
-        self.scrWindowAv.set_child(self.viewAv)
-        self.viewAv.cv.sort_by_column(self.viewAv.column_title, Gtk.SortType.ASCENDING)
+        self.add_columnview_available(self.viewAv)
 
         # Setup Selected Column View
         self.viewSl = MiAZColumnViewGroup(self.app)
-        self.viewSl.set_filter(self._do_filter_view)
-        self.viewSl.column_title.set_expand(True)
-        self.scrWindowSl.set_child(self.viewSl)
-        self.viewSl.cv.sort_by_column(self.viewSl.column_title, Gtk.SortType.ASCENDING)
+        self.add_columnview_selected(self.viewSl)
 
     def update_available(self):
         items = []
@@ -217,17 +204,11 @@ class MiAZSubgroups(MiAZConfigView):
     def _setup_view_finish(self):
         # Setup Available Column View
         self.viewAv = MiAZColumnViewSubgroup(self.app)
-        self.viewAv.set_filter(self._do_filter_view)
-        self.viewAv.column_title.set_expand(True)
-        self.scrWindowAv.set_child(self.viewAv)
-        self.viewAv.cv.sort_by_column(self.viewAv.column_title, Gtk.SortType.ASCENDING)
+        self.add_columnview_available(self.viewAv)
 
         # Setup Selected Column View
         self.viewSl = MiAZColumnViewSubgroup(self.app)
-        self.viewSl.set_filter(self._do_filter_view)
-        self.viewSl.column_title.set_expand(True)
-        self.scrWindowSl.set_child(self.viewSl)
-        self.viewSl.cv.sort_by_column(self.viewSl.column_title, Gtk.SortType.ASCENDING)
+        self.add_columnview_selected(self.viewSl)
 
     def update_available(self):
         items = []
@@ -259,17 +240,11 @@ class MiAZPeople(MiAZConfigView):
     def _setup_view_finish(self):
         # Setup Available Column View
         self.viewAv = MiAZColumnViewPerson(self.app)
-        self.viewAv.set_filter(self._do_filter_view)
-        self.viewAv.column_title.set_expand(True)
-        self.scrWindowAv.set_child(self.viewAv)
-        self.viewAv.cv.sort_by_column(self.viewAv.column_title, Gtk.SortType.ASCENDING)
+        self.add_columnview_available(self.viewAv)
 
         # Setup Selected Column View
         self.viewSl = MiAZColumnViewPerson(self.app)
-        self.viewSl.set_filter(self._do_filter_view)
-        self.viewSl.column_title.set_expand(True)
-        self.scrWindowSl.set_child(self.viewSl)
-        self.viewSl.cv.sort_by_column(self.viewSl.column_title, Gtk.SortType.ASCENDING)
+        self.add_columnview_selected(self.viewSl)
 
     def update_available(self):
         items = []
@@ -320,19 +295,13 @@ class MiAZPurposes(MiAZConfigView):
         self.set_config_file_selected(self.config.config_local)
 
     def _setup_view_finish(self):
-        # Setup Available Column View
+       # Setup Available Column View
         self.viewAv = MiAZColumnViewPurpose(self.app)
-        self.viewAv.set_filter(self._do_filter_view)
-        self.viewAv.column_title.set_expand(True)
-        self.scrWindowAv.set_child(self.viewAv)
-        self.viewAv.cv.sort_by_column(self.viewAv.column_title, Gtk.SortType.ASCENDING)
+        self.add_columnview_available(self.viewAv)
 
         # Setup Selected Column View
         self.viewSl = MiAZColumnViewPurpose(self.app)
-        self.viewSl.set_filter(self._do_filter_view)
-        self.viewSl.column_title.set_expand(True)
-        self.scrWindowSl.set_child(self.viewSl)
-        self.viewSl.cv.sort_by_column(self.viewSl.column_title, Gtk.SortType.ASCENDING)
+        self.add_columnview_selected(self.viewSl)
 
     def update_available(self):
         items = []

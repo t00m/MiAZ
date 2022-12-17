@@ -60,17 +60,11 @@ class MiAZSelector(Gtk.Box):
         self.append(boxViews)
 
         # Available
-        self.scrWindowAv = Gtk.ScrolledWindow()
-        self.scrWindowAv.set_hexpand(True)
-        self.scrWindowAv.set_vexpand(True)
-        frmViewAv = Gtk.Frame()
-        frmViewAv.set_hexpand(True)
-        frmViewAv.set_vexpand(True)
+        self.frmViewAv = Gtk.Frame()
         title = Gtk.Label()
         title.set_markup("<b>Available</b>")
-        frmViewAv.set_child(self.scrWindowAv)
         boxLeft.append(title)
-        boxLeft.append(frmViewAv)
+        boxLeft.append(self.frmViewAv)
 
         # Controls
         boxSel = self.factory.create_box_vertical()
@@ -87,16 +81,24 @@ class MiAZSelector(Gtk.Box):
         # ~ boxControls.set_end_widget(boxAll)
 
         # Selected
-        self.scrWindowSl = Gtk.ScrolledWindow()
-        self.scrWindowSl.set_hexpand(True)
-        self.scrWindowSl.set_vexpand(True)
-        frmViewSl = Gtk.Frame()
+        self.frmViewSl = Gtk.Frame()
         title = Gtk.Label()
         title.set_markup("<b>Selected</b>")
-        frmViewSl.set_child(self.scrWindowSl)
         boxRight.append(title)
-        boxRight.append(frmViewSl)
+        boxRight.append(self.frmViewSl)
         self._setup_view_finish()
+
+    def add_columnview_available(self, columnview):
+        columnview.set_filter(self._do_filter_view)
+        columnview.column_title.set_expand(True)
+        self.frmViewAv.set_child(columnview)
+        columnview.cv.sort_by_column(columnview.column_title, Gtk.SortType.ASCENDING)
+
+    def add_columnview_selected(self, columnview):
+        columnview.set_filter(self._do_filter_view)
+        columnview.column_title.set_expand(True)
+        self.frmViewSl.set_child(columnview)
+        columnview.cv.sort_by_column(columnview.column_title, Gtk.SortType.ASCENDING)
 
     def _setup_view_finish(self, *args):
         pass
@@ -123,10 +125,8 @@ class MiAZSelector(Gtk.Box):
         changed = False
         if self.config.config_is is dict:
             items = self.config.load(self.dir_conf_selected)
-            self.log.debug("BEFORE: %s", items)
             for item in self.viewAv.get_selected_items():
                 items[item.id] = item.title
-                self.log.debug("DURING: Adding %s = %s", item.id, item.title)
                 changed = True
         else:
             items = self.config.load(self.dir_conf_selected)
@@ -135,7 +135,6 @@ class MiAZSelector(Gtk.Box):
                     items.append(item.id)
                 changed = True
         if changed:
-            self.log.debug("AFTER: %s", items)
             self.config.save(items=items)
             self.update_selected()
 
@@ -149,7 +148,6 @@ class MiAZSelector(Gtk.Box):
                 changed = True
         else:
             items = self.config.load(self.dir_conf_selected)
-            print("ITEM LIST? %s" % items)
             for item in self.viewSl.get_selected_items():
                 items.remove(item.id)
                 changed = True

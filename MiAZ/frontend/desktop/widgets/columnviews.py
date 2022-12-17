@@ -17,8 +17,8 @@ from MiAZ.backend.env import ENV
 from MiAZ.backend.models import MiAZItem
 from MiAZ.backend.util import json_load
 from MiAZ.frontend.desktop.widgets.columnview import MiAZColumnView
-from MiAZ.frontend.desktop.widgets.columnview import RowIcon
-from MiAZ.backend.models import Country, Group, Subgroup, Person, People, Purpose
+from MiAZ.frontend.desktop.widgets.columnview import ColIcon
+from MiAZ.backend.models import Country, Group, Subgroup, Person, Purpose
 
 class MiAZColumnViewCountry(MiAZColumnView):
     """ Custom ColumnView widget for MiAZ """
@@ -35,7 +35,7 @@ class MiAZColumnViewCountry(MiAZColumnView):
         self.cv.append_column(self.column_title)
 
     def _on_factory_setup_flag(self, factory, list_item):
-        box = RowIcon()
+        box = ColIcon()
         list_item.set_child(box)
 
     def _on_factory_bind_flag(self, factory, list_item):

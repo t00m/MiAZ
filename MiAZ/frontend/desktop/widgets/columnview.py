@@ -17,50 +17,23 @@ from MiAZ.backend.env import ENV
 from MiAZ.backend.models import MiAZItem
 from MiAZ.backend.util import json_load
 
-class RowId(Gtk.Box):
+class ColLabel(Gtk.Box):
     """Row Id Widget"""
-    __gtype_name__ = 'RowId'
+    __gtype_name__ = 'ColLabel'
 
     def __init__(self):
-        super(RowId, self).__init__()
+        super(ColLabel, self).__init__()
         label = Gtk.Label()
         self.append(label)
 
-class RowTitle(Gtk.Box):
-    """Row Title Widget"""
-    __gtype_name__ = 'RowTitle'
-
-    def __init__(self):
-        super(RowTitle, self).__init__()
-        label = Gtk.Label()
-        self.append(label)
-
-class RowSubtitle(Gtk.Box):
-    """Row Subtitle Widget"""
-    __gtype_name__ = 'RowSubtitle'
-
-    def __init__(self):
-        super(RowSubtitle, self).__init__()
-        label = Gtk.Label()
-        self.append(label)
-
-class RowIcon(Gtk.Box):
+class ColIcon(Gtk.Box):
     """Row Icon Widget"""
-    __gtype_name__ = 'RowIcon'
+    __gtype_name__ = 'ColIcon'
 
     def __init__(self):
-        super(RowIcon, self).__init__()
+        super(ColIcon, self).__init__()
         icon = Gtk.Image()
         self.append(icon)
-
-class RowActive(Gtk.Box):
-    """Row Active Widget"""
-    __gtype_name__ = 'RowActive'
-
-    def __init__(self):
-        super(RowActive, self).__init__()
-        button = Gtk.CheckButton()
-        self.append(button)
 
 
 class MiAZColumnView(Gtk.Box):
@@ -73,7 +46,6 @@ class MiAZColumnView(Gtk.Box):
         self.backend = self.app.get_backend()
         self.factory = self.app.get_factory()
         self.actions = self.app.get_actions()
-        self.icman = self.app.get_icman()
         self.selected_items = []
 
         scrwin = Gtk.ScrolledWindow()
@@ -90,7 +62,7 @@ class MiAZColumnView(Gtk.Box):
 
         # Setup ColumnView Widget
         self.cv = Gtk.ColumnView()
-        self.cv.get_style_context().add_class(class_name='monospace')
+        # ~ self.cv.get_style_context().add_class(class_name='monospace')
         self.cv.set_show_column_separators(True)
         self.cv.set_show_row_separators(True)
         # ~ self.cv.set_single_click_activate(True)
@@ -156,9 +128,7 @@ class MiAZColumnView(Gtk.Box):
     def update(self, items):
         self.selected_items = []
         self.store.remove_all()
-        # ~ print(self.store.get_model())
         for item in items:
-            # ~ print(item)
             # item =~ Subclass of MiAZModel(id='xxx', title='xxx', ...)
             self.store.append(item)
 
@@ -172,7 +142,7 @@ class MiAZColumnView(Gtk.Box):
             self.selected_items.append(item)
 
     def _on_factory_setup_id(self, factory, list_item):
-        box = RowId()
+        box = ColLabel()
         list_item.set_child(box)
 
     def _on_factory_bind_id(self, factory, list_item):
@@ -182,7 +152,7 @@ class MiAZColumnView(Gtk.Box):
         label.set_text(item.id)
 
     def _on_factory_setup_title(self, factory, list_item):
-        box = RowId()
+        box = ColLabel()
         list_item.set_child(box)
 
     def _on_factory_bind_title(self, factory, list_item):

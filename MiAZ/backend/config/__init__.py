@@ -80,7 +80,6 @@ class MiAZConfig():
             filepath = self.config_local
         try:
             json_save(filepath, items)
-            self.log.debug("%s - config file saved", filepath)
             saved = True
         except Exception as error:
             self.log.error(error)

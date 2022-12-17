@@ -19,7 +19,7 @@ from MiAZ.backend.log import get_logger
 from MiAZ.backend.util import json_load
 from MiAZ.backend.models import MiAZItem, File, Group, Subgroup, Person, Country, Purpose, Concept, SentBy, SentTo
 from MiAZ.frontend.desktop.util import get_file_mimetype
-from MiAZ.frontend.desktop.widgets.columnview import MiAZColumnView, RowIcon, RowTitle
+from MiAZ.frontend.desktop.widgets.columnview import MiAZColumnView, ColIcon, ColLabel
 from MiAZ.frontend.desktop.factory import MenuHeader
 from MiAZ.frontend.desktop.settings import MiAZPrefsWindow
 from MiAZ.frontend.desktop.widgets.menubutton import MiAZMenuButton
