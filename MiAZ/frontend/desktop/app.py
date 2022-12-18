@@ -20,7 +20,7 @@ from MiAZ.backend.log import get_logger
 from MiAZ.frontend.desktop.widgets.menu import MiAZ_MENU_APP
 from MiAZ.frontend.desktop.widgets.menubutton import MiAZMenuButton
 from MiAZ.frontend.desktop.widgets.workspace import MiAZWorkspace
-from MiAZ.frontend.desktop.settings import MiAZPrefsWindow
+from MiAZ.frontend.desktop.settings import MiAZSettings
 from MiAZ.frontend.desktop.widgets.about import MiAZAbout
 from MiAZ.frontend.desktop.icons import MiAZIconManager
 from MiAZ.frontend.desktop.factory import MiAZFactory
@@ -117,7 +117,7 @@ class MiAZApp(Adw.Application):
         self.show_stack_page_by_name('status')
 
     def _on_add_new_repo(self, *args):
-        pw = MiAZPrefsWindow(self)
+        pw = MiAZSettings(self)
         filechooser = self.factory.create_filechooser(
                     parent=self.win,
                     title='Choose target directory',
@@ -137,7 +137,7 @@ class MiAZApp(Adw.Application):
         # ~ self.show_stack_page_by_name('about')
 
     def setup_settings_page(self):
-        self.settings = MiAZPrefsWindow(self)
+        self.settings = MiAZSettings(self)
         self.page_settings = self.stack.add_titled(self.settings, 'settings', 'MiAZ')
         self.page_settings.set_icon_name('document-properties')
         self.page_settings.set_needs_attention(True)

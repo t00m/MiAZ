@@ -21,7 +21,7 @@ from MiAZ.backend.models import MiAZItem, File, Group, Subgroup, Person, Country
 from MiAZ.frontend.desktop.util import get_file_mimetype
 from MiAZ.frontend.desktop.widgets.columnview import MiAZColumnView, ColIcon, ColLabel
 from MiAZ.frontend.desktop.factory import MenuHeader
-from MiAZ.frontend.desktop.settings import MiAZPrefsWindow
+from MiAZ.frontend.desktop.settings import MiAZSettings
 from MiAZ.frontend.desktop.widgets.menubutton import MiAZMenuButton
 from MiAZ.frontend.desktop.widgets.menu import MiAZ_MENU_WORKSPACE_REPO
 
@@ -53,7 +53,7 @@ class MiAZWorkspace(Gtk.Box):
 
 
     def _on_import_directory(self, *args):
-        pw = MiAZPrefsWindow(self.app)
+        pw = MiAZSettings(self.app)
         filechooser = self.factory.create_filechooser(
                     parent=self.app.win,
                     title='Import a directory',
@@ -63,7 +63,7 @@ class MiAZWorkspace(Gtk.Box):
         filechooser.show()
 
     def _on_import_file(self, *args):
-        pw = MiAZPrefsWindow(self.app)
+        pw = MiAZSettings(self.app)
         filechooser = self.factory.create_filechooser(
                     parent=self.app.win,
                     title='Import a single file',
