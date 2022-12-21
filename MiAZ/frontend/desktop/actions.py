@@ -60,8 +60,10 @@ class MiAZActions(GObject.GObject):
             target = filename.split('-')
         else:
             target = repodct[source]['suggested'].split('-')
-        dialog = MiAZRenameDialog(self.app, source, target)
-        dialog.show()
+        # ~ dialog = MiAZRenameDialog(self.app, source, target)
+        rename = self.app.get_rename_widget()
+        rename.set_data(source, target)
+        self.app.show_stack_page_by_name('rename')
 
     def dropdown_populate(self, dropdown, item_type, keyfilter = False, intkeys=[], any_value=True):
         # Populate the model

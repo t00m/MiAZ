@@ -88,7 +88,7 @@ class MiAZFactory:
         box.set_vexpand(vexpand)
         return box
 
-    def create_button(self, icon_name='', title='', callback=None, width=32, height=32, css_classes=['flat'], data=None):
+    def create_button(self, icon_name='', title='', callback=None, width=32, height=32, css_classes=['linked'], data=None):
         if len(icon_name.strip()) == 0:
             button = Gtk.Button(css_classes=css_classes)
             label = Gtk.Label()

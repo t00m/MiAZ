@@ -13,6 +13,7 @@ from gi.repository import Gio
 from gi.repository import Gtk
 from gi.repository import Pango
 
+from MiAZ.backend.log import get_logger
 from MiAZ.backend.env import ENV
 from MiAZ.backend.models import MiAZItem
 from MiAZ.backend.util import json_load
@@ -35,6 +36,14 @@ class ColIcon(Gtk.Box):
         icon = Gtk.Image()
         self.append(icon)
 
+class ColCheck(Gtk.Box):
+    """Row Id Widget"""
+    __gtype_name__ = 'ColCheck'
+
+    def __init__(self):
+        super(ColLabel, self).__init__()
+        check = Gtk.CheckButton()
+        self.append(check)
 
 class MiAZColumnView(Gtk.Box):
     """ Custom ColumnView widget for MiAZ """
@@ -43,14 +52,15 @@ class MiAZColumnView(Gtk.Box):
     def __init__(self, app, item_type=MiAZItem):
         super(MiAZColumnView, self).__init__(orientation=Gtk.Orientation.VERTICAL, spacing=3, hexpand=True, vexpand=True)
         self.app = app
+        self.log = get_logger('MiAZColumnView')
         self.backend = self.app.get_backend()
         self.factory = self.app.get_factory()
         self.actions = self.app.get_actions()
         self.selected_items = []
 
-        scrwin = Gtk.ScrolledWindow()
-        scrwin.set_hexpand(True)
-        scrwin.set_vexpand(True)
+        self.scrwin = Gtk.ScrolledWindow()
+        self.scrwin.set_hexpand(True)
+        self.scrwin.set_vexpand(True)
 
         # Set up the factories
         factory_id = Gtk.SignalListItemFactory()
@@ -66,7 +76,7 @@ class MiAZColumnView(Gtk.Box):
         self.cv.set_show_column_separators(True)
         self.cv.set_show_row_separators(True)
         # ~ self.cv.set_single_click_activate(True)
-        scrwin.set_child(self.cv)
+        self.scrwin.set_child(self.cv)
 
         # Sorters
         self.prop_id_sorter = Gtk.CustomSorter.new(sort_func=self._on_sort_string_func, user_data='id')
@@ -85,7 +95,7 @@ class MiAZColumnView(Gtk.Box):
         self.filter_model = Gtk.FilterListModel(model=self.sort_model)
         self.selection = Gtk.MultiSelection.new(self.filter_model)
         self.cv.set_model(self.selection)
-        self.append(scrwin)
+        self.append(self.scrwin)
 
         # Connect signals
         self.cv.connect("activate", self._on_selected_item_notify)
@@ -114,8 +124,21 @@ class MiAZColumnView(Gtk.Box):
         return self.selected_items
 
     def select_first_item(self):
+        # FIXME: code works (it selects the item) but not as expected
+        # it is not displayed (Grabbing focus? How?)
+        # ~ selection = self.get_selection()
+        # ~ model = selection.get_model()
+        # ~ pos = len(model)
+        # ~ selection.select_item(pos - 1, True) # Last item
+        # ~ selection.select_item(0, True) # First item
+        # In any case, the scrollbar doesn't move
         pass
-        # ~ self.selection.set_selected(0)
+
+
+
+    def scroll_begin(self, *args):
+        self.log.debug(args)
+
 
     def set_filter(self, filter_func):
         self.filter = Gtk.CustomFilter.new(filter_func, self.filter_model)
@@ -129,8 +152,10 @@ class MiAZColumnView(Gtk.Box):
         self.selected_items = []
         self.store.remove_all()
         for item in items:
+            print(item.title)
             # item =~ Subclass of MiAZModel(id='xxx', title='xxx', ...)
             self.store.append(item)
+        self.select_first_item()
 
     def _on_selection_changed(self, selection, position, n_items):
         self.selected_items = []
@@ -161,14 +186,6 @@ class MiAZColumnView(Gtk.Box):
         label = box.get_first_child()
         label.set_markup(item.title)
 
-    def _on_button_toggled(self, button):
-        selection = self.cv.get_model()
-        selected = selection.get_selection()
-        pos = selected.get_nth(0)
-        item = selection.get_item(pos)
-        active = button.get_active()
-        item.active = active
-
     def _on_filter_view(self, item, filter_list_model):
         must_filter = False
         text = self.etyFilter.get_text().upper()
@@ -180,7 +197,7 @@ class MiAZColumnView(Gtk.Box):
     def _on_selected_item_notify(self, colview, pos):
         model = colview.get_model()
         item = model.get_item(pos)
-        print(item.id)
+        self.log.debug(item.id)
 
     def _on_sort_string_func(self, item1, item2, prop):
         # ~ print("%s %s %s" % (prop, eval("item1.%s.upper()" % prop), eval("item2.%s.upper()" % prop)))

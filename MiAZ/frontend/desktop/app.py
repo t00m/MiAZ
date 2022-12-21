@@ -20,12 +20,14 @@ from MiAZ.backend.log import get_logger
 from MiAZ.frontend.desktop.widgets.menu import MiAZ_MENU_APP
 from MiAZ.frontend.desktop.widgets.menubutton import MiAZMenuButton
 from MiAZ.frontend.desktop.widgets.workspace import MiAZWorkspace
+from MiAZ.frontend.desktop.widgets.rename import MiAZRenameDialog
 from MiAZ.frontend.desktop.settings import MiAZSettings
 from MiAZ.frontend.desktop.widgets.about import MiAZAbout
 from MiAZ.frontend.desktop.icons import MiAZIconManager
 from MiAZ.frontend.desktop.factory import MiAZFactory
 from MiAZ.frontend.desktop.actions import MiAZActions
 from MiAZ.frontend.desktop.help import show_shortcuts
+
 
 
 class MiAZApp(Adw.Application):
@@ -59,7 +61,7 @@ class MiAZApp(Adw.Application):
         self.win.add_controller(evk)
 
     def key_press(self, event, keyval, keycode, state):
-        # ~ self.log.debug("%s > %s > %s > %s", event, keyval, keycode, state)
+        self.log.debug("Event[%s] > Keyval[%s] > Keycode[%s] > State[%s]", event, keyval, keycode, state)
         keyname = Gdk.keyval_name(keyval)
         if keyname == 'Escape':
             self.show_stack_page_by_name('workspace')
@@ -155,6 +157,17 @@ class MiAZApp(Adw.Application):
         self.page_workspace.set_visible(True)
         self.show_stack_page_by_name('workspace')
 
+    def setup_rename_page(self):
+        # ~ self.btnImport.show()
+        self.rename = MiAZRenameDialog(self)
+        self.page_rename = self.stack.add_titled(self.rename, 'rename', 'MiAZ')
+        self.page_rename.set_icon_name('document-properties')
+        self.page_rename.set_visible(False)
+        # ~ self.show_stack_page_by_name('rename')
+
+    def get_rename_widget(self):
+        return self.rename
+
     def _setup_headerbar_left(self):
         def show_workspace(*args):
             self.show_stack_page_by_name(name='workspace')
@@ -218,6 +231,9 @@ class MiAZApp(Adw.Application):
             self.setup_workspace_page()
         else:
             self.setup_status_page()
+
+        # Create rename page
+        self.setup_rename_page()
 
     def menu_handler(self, action, state):
             """ Callback for  menu actions"""

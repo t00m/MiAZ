@@ -41,9 +41,8 @@ class MiAZItem(MiAZModel):
                         active: bool = False,
                         valid: bool = False,
                         icon: str = ''):
-        super().__init__(id)
+        super().__init__(id, title)
 
-        # ~ self._id = id
         self._date = date
         self._date_dsc = date_dsc
         self._group = group
@@ -52,17 +51,12 @@ class MiAZItem(MiAZModel):
         self._purpose = purpose
         self._sentby_id = sentby_id
         self._sentby_dsc = sentby_dsc
-        self._title = title
         self._subtitle = subtitle
         self._sentto_id = sentto_id
         self._sentto_dsc = sentto_dsc
         self._active = active
         self._valid = valid
         self._icon = icon
-
-    # ~ @GObject.Property
-    # ~ def id(self):
-        # ~ return self._id
 
     @GObject.Property
     def date(self):
@@ -103,10 +97,6 @@ class MiAZItem(MiAZModel):
     @GObject.Property
     def sentto_dsc(self):
         return self._sentto_dsc
-
-    # ~ @GObject.Property
-    # ~ def title(self):
-        # ~ return self._title
 
     @GObject.Property
     def subtitle(self):
@@ -160,9 +150,6 @@ class Country(MiAZModel):
 
 class Person(MiAZModel):
     __gtype_name__ = 'Person'
-
-# ~ class People(Person):
-    # ~ __gtype_name__ = 'People'
 
 class SentBy(Person):
     __gtype_name__ = 'SentBy'

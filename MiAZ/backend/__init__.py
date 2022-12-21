@@ -82,6 +82,7 @@ class MiAZBackend(GObject.GObject):
         self.watch_source = MiAZWatcher('source', dir_repo)
         self.watch_source.connect('source-directory-updated',
                                                     self.check_source)
+        self.log.debug("Configuration loaded")
 
     def get_watcher_source(self):
         """Get watcher object for source directory"""

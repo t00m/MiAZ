@@ -24,6 +24,7 @@ from MiAZ.frontend.desktop.factory import MenuHeader
 from MiAZ.frontend.desktop.settings import MiAZSettings
 from MiAZ.frontend.desktop.widgets.menubutton import MiAZMenuButton
 from MiAZ.frontend.desktop.widgets.menu import MiAZ_MENU_WORKSPACE_REPO
+from MiAZ.frontend.desktop.widgets.columnviews import MiAZColumnViewWorkspace
 
 
 class MiAZWorkspace(Gtk.Box):
@@ -233,7 +234,7 @@ class MiAZWorkspace(Gtk.Box):
 
     def _setup_columnview(self):
         # ColumnView
-        self.view = MiAZColumnView(self.app)
+        self.view = MiAZColumnViewWorkspace(self.app)
         # ~ self.view.cv.append_column(self.view.column_icon_type)
         # ~ self.view.cv.append_column(self.view.column_group)
         # ~ self.view.cv.append_column(self.view.column_subgroup)
@@ -414,8 +415,6 @@ class MiAZWorkspace(Gtk.Box):
     def update(self, *args):
         # FIXME: Get dict from backend
         # ~ self._on_signal_filter_disconnect()
-        return
-        self.spinner_start()
         self._on_explain_toggled(self.tgbExplain)
         repocnf = self.backend.get_repo_source_config_file()
         self.repodct = json_load(repocnf)
@@ -451,7 +450,6 @@ class MiAZWorkspace(Gtk.Box):
         if self.show_dashboard:
             self.tgbExplain.set_active(True)
         self.lblDocumentsSelected = "0 of %d documents selected" % len(self.repodct)
-        self.spinner_stop()
 
     # ~ def update_filters(self, item, ival):
         # ~ n = 0
@@ -500,6 +498,7 @@ class MiAZWorkspace(Gtk.Box):
                 display = c0 and c1 and c2 and c3 and c4 and c5 and c6
         else:
             if not item.valid:
+                self.log.debug("")
                 display = self._do_eval_cond_matches_freetext(item.id)
 
         if display:
@@ -581,6 +580,7 @@ class MiAZWorkspace(Gtk.Box):
         self.message_label.set_markup('<b>Review finished?</b>')
         self.infobar.set_message_type(Gtk.MessageType.INFO)
         self.view.column_title.set_title('Filename')
+        self.view.column_title.set_expand(True)
         # ~ btnBack = self.infobar.add_button('Back to AZ', Gtk.ResponseType.CANCEL)
 
 

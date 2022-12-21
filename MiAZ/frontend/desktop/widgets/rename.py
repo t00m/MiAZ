@@ -19,67 +19,48 @@ from MiAZ.backend.log import get_logger
 from MiAZ.frontend.desktop.widgets.dialogs import MiAZDialogAdd
 from MiAZ.backend.models import File, Group, Subgroup, Person, Country, Purpose, Concept
 
-class MiAZRenameDialog(Gtk.Dialog):
+class MiAZRenameDialog(Gtk.Box):
     result = ''
     new_values = []
 
-    def __init__(self, app, filepath: str, suggested: list) -> Gtk.Widget:
-        super(MiAZRenameDialog, self).__init__()
+    def __init__(self, app) -> Gtk.Widget:
+        super(MiAZRenameDialog, self).__init__(orientation=Gtk.Orientation.VERTICAL, spacing=3, hexpand=True, vexpand=True)
         self.app = app
         self.backend = self.app.get_backend()
         self.factory = self.app.get_factory()
         self.actions = self.app.get_actions()
         self.log = get_logger('MiazRenameDialog')
-        self.set_size_request(800, 600)
-        self.set_transient_for(self.app.win)
-        self.set_modal(True)
+        # ~ self.set_size_request(800, 600)
+        # ~ self.set_transient_for(self.app.win)
+        # ~ self.set_modal(True)
 
         # Basic data
         # ~ self.row = row
-        self.filepath = filepath
-        self.extension = filepath[filepath.rfind('.')+1:]
-        self.suggested = suggested
-        self.doc = os.path.basename(filepath)
+
 
         # Header & Butons
-        self.btnAccept = self.factory.create_button('', 'rename', self.on_rename_accept)
-        self.btnAccept.set_sensitive(False)
-        self.btnAccept.get_style_context ().add_class ('suggested-action')
-        self.btnAccept.set_can_focus(True)
-        self.btnAccept.set_receives_default(True)
-        btnCancel = self.factory.create_button('', 'cancel', self.on_rename_cancel)
-        btnCancel.get_style_context ().add_class ('destructive-action')
 
-        btnPreview = self.factory.create_button('', 'preview', self.on_document_display, data=self.filepath)
-        # ~ btnFileDisplay.set_child(icon)
-        # ~ btnFileDisplay.connect('clicked', self.on_document_display, self.filepath)
-        # ~ btnFileDisplay.set_valign(Gtk.Align.CENTER)
-        # ~ btnFileDisplay.set_hexpand(False)
 
-        btnDelete = self.factory.create_button('', 'delete', self.on_document_delete, data=self.filepath)
-        self.set_default_response(Gtk.ResponseType.ACCEPT)
-        lblHeaderTitle = Gtk.Label()
-        lblHeaderTitle.set_markup('<b>Rename file</b>')
-        self.dlgHeader = Adw.HeaderBar()
-        self.dlgHeader.set_show_end_title_buttons(False)
-        self.dlgHeader.pack_start(btnDelete)
-        self.dlgHeader.pack_end(self.btnAccept)
-        self.dlgHeader.pack_end(btnCancel)
-        self.dlgHeader.pack_end(btnPreview)
-        self.dlgHeader.set_title_widget(lblHeaderTitle)
-        self.set_titlebar(self.dlgHeader)
+        # ~ self.btnDelete = self.factory.create_button('', 'delete', self.on_document_delete, data=self.filepath)
+        # ~ self.set_default_response(Gtk.ResponseType.ACCEPT)
+        # ~ lblHeaderTitle = Gtk.Label()
+        # ~ lblHeaderTitle.set_markup('<b>Rename file</b>')
+        # ~ self.dlgHeader = Adw.HeaderBar()
+        # ~ self.dlgHeader.set_show_end_title_buttons(False)
+        # ~ self.dlgHeader.pack_start(self.btnDelete)
+        # ~ self.dlgHeader.pack_end(self.btnAccept)
+        # ~ self.dlgHeader.pack_end(self.btnCancel)
+        # ~ self.dlgHeader.pack_end(self.btnPreview)
+        # ~ self.dlgHeader.set_title_widget(lblHeaderTitle)
+        # ~ self.set_titlebar(self.dlgHeader)
 
         # Contents
-        self.contents = self.get_content_area()
+        # ~ self.contents = self.get_content_area()
 
         # Box to be inserted as contents
         self.boxMain = Gtk.ListBox.new() #orientation=Gtk.Orientation.VERTICAL, spacing=12)
         self.boxMain.set_vexpand(False)
         self.boxMain.set_hexpand(False)
-        self.boxMain.set_margin_top(margin=12)
-        self.boxMain.set_margin_end(margin=12)
-        self.boxMain.set_margin_bottom(margin=12)
-        self.boxMain.set_margin_start(margin=12)
 
         # Filename format: {timestamp}-{country}-{group}-{subgroup}-{from}-{purpose}-{concept}-{to}.{extension}
         self.__create_field_0_date() # Field 0. Date
@@ -93,7 +74,53 @@ class MiAZRenameDialog(Gtk.Dialog):
         self.__create_field_8_extension() # Field 8. Extension
         self.__create_field_9_result() # Result filename
 
-        self.contents.append(self.boxMain)
+        frmMain = Gtk.Frame()
+        frmMain.set_margin_top(margin=12)
+        frmMain.set_margin_end(margin=12)
+        frmMain.set_margin_bottom(margin=12)
+        frmMain.set_margin_start(margin=12)
+        frmMain.set_child(self.boxMain)
+        self.append(frmMain)
+
+        self.btnAccept = self.factory.create_button('', 'rename', self.on_rename_accept, css_classes=['opaque'])
+        # ~ self.btnAccept.set_sensitive(False)
+        # ~ self.btnAccept.get_style_context ().add_class('suggested-action')
+        self.btnAccept.set_can_focus(True)
+        self.btnAccept.set_receives_default(True)
+        self.btnCancel = self.factory.create_button('', 'cancel', self.on_rename_cancel)
+        # ~ self.btnCancel.get_style_context ().add_class ('destructive-action')
+        self.btnPreview = self.factory.create_button('', 'preview')
+        boxButtons = Gtk.CenterBox(hexpand=True)
+        boxButtons.set_start_widget(self.btnCancel)
+        boxButtons.set_center_widget(self.btnPreview)
+        boxButtons.set_end_widget(self.btnAccept)
+        self.append(boxButtons)
+
+
+    def set_data(self, filepath: str, suggested: list):
+        self.filepath = filepath
+        self.extension = filepath[filepath.rfind('.')+1:]
+        self.suggested = suggested
+        self.doc = os.path.basename(filepath)
+
+        if len(self.suggested[0]) > 0:
+            self.entry_date.set_text(self.suggested[0])
+        self._set_suggestion(self.dpdCountry, self.suggested[1])
+        self._set_suggestion(self.dpdGroup, self.suggested[2])
+        self._set_suggestion(self.dpdSubgroup, self.suggested[3])
+        self._set_suggestion(self.dpdSentBy, self.suggested[4])
+        self._set_suggestion(self.dpdPurpose, self.suggested[5])
+        if len(self.suggested[6]) > 0:
+            self.entry_concept.set_text(self.suggested[6])
+        self._set_suggestion(self.dpdSentTo, self.suggested[7])
+        self.lblExt.set_text(self.extension)
+        self.lblFilenameCur.set_markup(self.doc)
+        self.lblFilenameCur.set_selectable(True)
+        self.lblFilenameNew.set_markup(self.result)
+        self.lblFilenameNew.set_selectable(True)
+        self.btnPreview.connect('clicked', self.on_document_display, self.filepath)
+
+
         self.on_changed_entry()
 
     def __create_box_value(self) -> Gtk.Box:
@@ -153,8 +180,7 @@ class MiAZRenameDialog(Gtk.Dialog):
         boxValue.append(self.entry_date)
         boxValue.append(button)
 
-        if len(self.suggested[0]) > 0:
-            self.entry_date.set_text(self.suggested[0])
+
 
         self.entry_date.connect('changed', self.on_changed_entry)
 
@@ -163,30 +189,25 @@ class MiAZRenameDialog(Gtk.Dialog):
         self.btnCountry.set_sensitive(False)
         self.btnCountry.set_has_frame(False)
         self.btnCountry.set_child(None)
-        self._set_suggestion(self.dpdCountry, self.suggested[1])
         self.dpdCountry.connect("notify::selected-item", self.on_changed_entry)
 
     def __create_field_2_group(self):
         self.rowGroup, self.btnGroup, self.dpdGroup = self.__create_actionrow('Group', Group, 'groups')
-        self._set_suggestion(self.dpdGroup, self.suggested[2])
         self.btnGroup.connect('clicked', self.on_group_add)
         self.dpdGroup.connect("notify::selected-item", self.on_changed_entry)
 
     def __create_field_3_subgroup(self):
         self.rowSubgroup, self.btnSubgroup, self.dpdSubgroup = self.__create_actionrow('Subgroup', Subgroup, 'subgroups')
-        self._set_suggestion(self.dpdSubgroup, self.suggested[3])
         self.btnSubgroup.connect('clicked', self.on_subgroup_add)
         self.dpdSubgroup.connect("notify::selected-item", self.on_changed_entry)
 
     def __create_field_4_sentby(self):
         self.rowSentBy, self.btnSentBy, self.dpdSentBy = self.__create_actionrow('Sent by', Person, 'People')
         self.btnSentBy.connect('clicked', self.on_person_sentby_add)
-        self._set_suggestion(self.dpdSentBy, self.suggested[4])
         self.dpdSentBy.connect("notify::selected-item", self.on_changed_entry)
 
     def __create_field_5_purpose(self):
         self.rowPurpose, self.btnPurpose, self.dpdPurpose = self.__create_actionrow('Purpose', Purpose, 'purposes')
-        self._set_suggestion(self.dpdPurpose, self.suggested[5])
         self.dpdPurpose.connect("notify::selected-item", self.on_changed_entry)
 
     def __create_field_6_concept(self):
@@ -206,16 +227,11 @@ class MiAZRenameDialog(Gtk.Dialog):
         self.entry_concept.set_placeholder_text('Type anything here...')
         boxValue.append(self.entry_concept)
         boxValue.append(button)
-
-        if len(self.suggested[6]) > 0:
-            self.entry_concept.set_text(self.suggested[6])
-
         self.entry_concept.connect('changed', self.on_changed_entry)
 
     def __create_field_7_sentto(self):
         self.rowSentTo, self.btnSentTo, self.dpdSentTo = self.__create_actionrow('Sent to', Person, 'People')
         self.btnSentTo.connect('clicked', self.on_person_sentto_add)
-        self._set_suggestion(self.dpdSentTo, self.suggested[7])
         self.dpdSentTo.connect("notify::selected-item", self.on_changed_entry)
 
     def __create_field_8_extension(self):
@@ -232,7 +248,6 @@ class MiAZRenameDialog(Gtk.Dialog):
         self.lblExt = Gtk.Label()
         boxValue.append(self.lblExt)
         boxValue.append(button)
-        self.lblExt.set_text(self.extension)
 
     def __create_field_9_result(self, *args):
         """Field 7. extension"""
@@ -240,10 +255,8 @@ class MiAZRenameDialog(Gtk.Dialog):
         self.row_cur_filename = Adw.ActionRow.new()
         self.row_cur_filename.set_title("Current filename")
         boxValueCur = self.__create_box_value()
-        lblFilenameCur = Gtk.Label()
-        lblFilenameCur.set_markup(self.doc)
-        lblFilenameCur.set_selectable(True)
-        self.row_cur_filename.add_suffix(lblFilenameCur)
+        self.lblFilenameCur = Gtk.Label()
+        self.row_cur_filename.add_suffix(self.lblFilenameCur)
         self.boxMain.append(self.row_cur_filename)
 
         # ~ icon = self.app.icman.get_icon_mimetype_from_file(self.filepath, 36, 36)
@@ -260,8 +273,6 @@ class MiAZRenameDialog(Gtk.Dialog):
         self.row_new_filename.set_title("<b>New filename</b>")
         boxValueNew = self.__create_box_value()
         self.lblFilenameNew = Gtk.Label()
-        self.lblFilenameNew.set_markup(self.result)
-        self.lblFilenameNew.set_selectable(True)
         self.row_new_filename.add_suffix(self.lblFilenameNew)
         self.boxMain.append(self.row_new_filename)
 
@@ -355,7 +366,8 @@ class MiAZRenameDialog(Gtk.Dialog):
             if v_date and v_sentby and v_sentto and v_cty and v_group and v_subgroup and v_purp and v_cnpt:
                 self.btnAccept.set_sensitive(True)
             else:
-                self.btnAccept.set_sensitive(False)
+                # ~ self.btnAccept.set_sensitive(False)
+                pass
         except Exception as error:
             self.log.error(error)
             self.result = ''
