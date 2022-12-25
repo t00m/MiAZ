@@ -58,6 +58,7 @@ class MiAZColumnView(Gtk.Box):
         self.actions = self.app.get_actions()
         self.selected_items = []
 
+        self.viewport = Gtk.Viewport()
         self.scrwin = Gtk.ScrolledWindow()
         self.scrwin.set_hexpand(True)
         self.scrwin.set_vexpand(True)
@@ -95,7 +96,8 @@ class MiAZColumnView(Gtk.Box):
         self.filter_model = Gtk.FilterListModel(model=self.sort_model)
         self.selection = Gtk.MultiSelection.new(self.filter_model)
         self.cv.set_model(self.selection)
-        self.append(self.scrwin)
+        self.viewport.set_child(self.scrwin)
+        self.append(self.viewport)
 
         # Connect signals
         self.cv.connect("activate", self._on_selected_item_notify)
@@ -124,6 +126,7 @@ class MiAZColumnView(Gtk.Box):
         return self.selected_items
 
     def select_first_item(self):
+        self.viewport.set_scroll_to_focus(False)
         # FIXME: code works (it selects the item) but not as expected
         # it is not displayed (Grabbing focus? How?)
         # ~ selection = self.get_selection()
@@ -152,7 +155,6 @@ class MiAZColumnView(Gtk.Box):
         self.selected_items = []
         self.store.remove_all()
         for item in items:
-            print(item.title)
             # item =~ Subclass of MiAZModel(id='xxx', title='xxx', ...)
             self.store.append(item)
         self.select_first_item()

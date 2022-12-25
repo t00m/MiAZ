@@ -82,18 +82,22 @@ class MiAZRenameDialog(Gtk.Box):
         frmMain.set_child(self.boxMain)
         self.append(frmMain)
 
-        self.btnAccept = self.factory.create_button('', 'rename', self.on_rename_accept, css_classes=['opaque'])
-        # ~ self.btnAccept.set_sensitive(False)
+        self.btnAccept = self.factory.create_button('miaz-ok', 'rename', self.on_rename_accept, css_classes=['opaque'])
+        self.btnAccept.set_sensitive(False)
         # ~ self.btnAccept.get_style_context ().add_class('suggested-action')
         self.btnAccept.set_can_focus(True)
         self.btnAccept.set_receives_default(True)
-        self.btnCancel = self.factory.create_button('', 'cancel', self.on_rename_cancel)
+        self.btnCancel = self.factory.create_button('miaz-cancel', 'cancel', self.on_rename_cancel)
         # ~ self.btnCancel.get_style_context ().add_class ('destructive-action')
-        self.btnPreview = self.factory.create_button('', 'preview')
+        self.btnPreview = self.factory.create_button('miaz-preview', 'preview')
         boxButtons = Gtk.CenterBox(hexpand=True)
         boxButtons.set_start_widget(self.btnCancel)
         boxButtons.set_center_widget(self.btnPreview)
         boxButtons.set_end_widget(self.btnAccept)
+        boxButtons.set_margin_top(margin=12)
+        boxButtons.set_margin_end(margin=12)
+        boxButtons.set_margin_bottom(margin=12)
+        boxButtons.set_margin_start(margin=12)
         self.append(boxButtons)
 
 
@@ -366,7 +370,7 @@ class MiAZRenameDialog(Gtk.Box):
             if v_date and v_sentby and v_sentto and v_cty and v_group and v_subgroup and v_purp and v_cnpt:
                 self.btnAccept.set_sensitive(True)
             else:
-                # ~ self.btnAccept.set_sensitive(False)
+                self.btnAccept.set_sensitive(False)
                 pass
         except Exception as error:
             self.log.error(error)
