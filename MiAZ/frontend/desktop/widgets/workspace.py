@@ -4,8 +4,6 @@
 import os
 from datetime import datetime
 
-import humanize
-
 import gi
 gi.require_version('Gtk', '4.0')
 from gi.repository import Adw
@@ -427,7 +425,7 @@ class MiAZWorkspace(Gtk.Box):
             self.log.debug(fields)
             try:
                 adate = datetime.strptime(fields[0], "%Y%m%d")
-                date_dsc = humanize.naturaldate(adate)
+                date_dsc = adate.strftime("%Y.%m.%d")
             except:
                 date_dsc = ''
             items.append(MiAZItem(  id=path,

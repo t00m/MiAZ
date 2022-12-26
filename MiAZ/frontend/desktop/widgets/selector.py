@@ -4,8 +4,6 @@
 import os
 from datetime import datetime
 
-import humanize
-
 import gi
 gi.require_version('Gtk', '4.0')
 from gi.repository import Adw

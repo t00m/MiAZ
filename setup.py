@@ -58,9 +58,7 @@ setup(
     packages=['MiAZ', 'MiAZ.backend', 'MiAZ.backend.config', 'MiAZ.backend.models', 'MiAZ.frontend', 'MiAZ.frontend.desktop', 'MiAZ.frontend.desktop.widgets', 'MiAZ.frontend.console'],
     # distutils does not support install_requires, but pip needs it to be
     # able to automatically install dependencies
-    install_requires=[
-        "humanize >= 4.0.0",
-        ],
+    install_requires=[],
     include_package_data=True,
     data_files=DATA_FILES,
     zip_safe=False,
