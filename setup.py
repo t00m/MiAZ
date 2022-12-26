@@ -44,6 +44,7 @@ def add_data(root_data):
     return dir_files
 
 DATA_FILES = add_data('MiAZ/data')
+DATA_FILES += ['README.adoc']
 
 setup(
     name=ENV['APP']['shortname'],
