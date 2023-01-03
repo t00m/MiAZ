@@ -37,6 +37,11 @@ class MiAZBackend(GObject.GObject):
                             GObject.SignalFlags.RUN_LAST, None, () )
         self.conf['App'] = MiAZConfigApp()
 
+    def create_repo_config(self, config_file):
+        self.repodct = {}
+        json_save(config_file, '{}')
+        self.log.debug("Repo configuration not found. Creating a new one")
+
     def is_repo(self, path: str) -> bool:
         conf_dir = os.path.join(path, 'conf')
         conf_file = os.path.join(conf_dir, 'repo.json')
@@ -52,9 +57,9 @@ class MiAZBackend(GObject.GObject):
         conf = {}
         conf['FORMAT'] = 1
         dir_conf = os.path.join(path, 'conf')
-        dir_repo = os.path.join(path, 'docs')
+        dir_docs = os.path.join(path, 'docs')
         os.makedirs(dir_conf)
-        os.makedirs(dir_repo)
+        os.makedirs(dir_docs)
         conf_file = os.path.join(dir_conf, 'repo.json')
         json_save(conf_file, conf)
         self.conf['App'].set('source', path)
@@ -70,7 +75,10 @@ class MiAZBackend(GObject.GObject):
 
     def load_repo(self, path):
         dir_conf = os.path.join(path, 'conf')
-        dir_repo = os.path.join(path, 'docs')
+        dir_docs = os.path.join(path, 'docs')
+        if not os.path.exists(dir_docs):
+            os.makedirs(dir_docs)
+            self.log.debug("Docs directory not found. Directory created")
         self.conf['Country'] = MiAZConfigSettingsCountries(dir_conf)
         self.conf['Group'] = MiAZConfigSettingsGroups(dir_conf)
         self.conf['Subgroup'] = MiAZConfigSettingsSubgroups(dir_conf)
@@ -79,7 +87,7 @@ class MiAZBackend(GObject.GObject):
         self.conf['SentBy'] = MiAZConfigSettingsPeople(dir_conf)
         self.conf['SentTo'] = MiAZConfigSettingsPeople(dir_conf)
         self.conf['Person'] = MiAZConfigSettingsPeople(dir_conf)
-        self.watch_source = MiAZWatcher('source', dir_repo)
+        self.watch_source = MiAZWatcher('source', dir_docs)
         self.watch_source.connect('source-directory-updated',
                                                     self.check_source)
         self.log.debug("Configuration loaded")

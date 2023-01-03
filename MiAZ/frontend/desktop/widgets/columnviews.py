@@ -13,7 +13,8 @@ from gi.repository import Gio
 from gi.repository import Gtk
 from gi.repository import Pango
 
-from MiAZ.backend.util import json_load
+from MiAZ.backend.log import get_logger
+from MiAZ.backend.util import json_load, json_save
 from MiAZ.backend.env import ENV
 from MiAZ.backend.util import json_load
 from MiAZ.frontend.desktop.widgets.columnview import MiAZColumnView
@@ -27,9 +28,14 @@ class MiAZColumnViewWorkspace(MiAZColumnView):
 
     def __init__(self, app):
         super().__init__(app, item_type=MiAZItem)
+        self.log = get_logger('MiAZColumnViewWorkspace')
         self.backend = self.app.get_backend()
         repocnf = self.backend.get_repo_source_config_file()
-        self.repodct = json_load(repocnf)
+        try:
+            self.repodct = json_load(repocnf)
+        except FileNotFoundError as error:
+            self.repodct = self.backend.create_repo_config(repocnf)
+
         factory_subtitle = Gtk.SignalListItemFactory()
         factory_subtitle.connect("setup", self._on_factory_setup_subtitle)
         factory_subtitle.connect("bind", self._on_factory_bind_subtitle)

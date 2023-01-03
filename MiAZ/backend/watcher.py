@@ -19,11 +19,10 @@ class MiAZWatcher(GObject.GObject):
 
     def __init__(self, name: str, dirpath: str):
         GObject.GObject.__init__(self)
-        self.dirpath = dirpath
+        self.log = get_logger('MiAZWatcher')
         self.name = name.lower()
         GObject.signal_new('%s-directory-updated' % self.name, MiAZWatcher, GObject.SignalFlags.RUN_LAST, None, () )
-        self.log = get_logger('MiAZWatcher')
-        self.log.debug("Watcher[%s] installed. Monitoring '%s'", self.name, self.dirpath)
+        self.set_path(dirpath)
         GLib.timeout_add_seconds(2, self.watch)
 
     def __files_with_timestamp(self, rootdir):
@@ -42,10 +41,13 @@ class MiAZWatcher(GObject.GObject):
 
     def set_path(self, dirpath: str):
         self.dirpath = dirpath
+        self.log.debug("Watcher[%s] installed. Monitoring '%s'", self.name, self.dirpath)
 
-    def set_active(self, active: bool) -> None:
+    def set_active(self, active: bool = True) -> None:
+        self.log.debug("%s = %s", self.name, self.dirpath)
+        self.log.debug("Current watcher status? %s", self.active)
         self.active = active
-        self.watch()
+        self.log.debug("New watcher status? %s", self.active)
 
     def get_active(self):
         return self.active
@@ -74,6 +76,7 @@ class MiAZWatcher(GObject.GObject):
 
         if added:
             self.log.debug("Watcher[%s] > %d files added", self.name, len(added))
+            self.log.debug(added)
             updated |= True
         if removed:
             self.log.debug("Watcher[%s] > %d files removed", self.name, len(removed))

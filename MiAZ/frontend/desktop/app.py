@@ -93,6 +93,9 @@ class MiAZApp(Adw.Application):
     def get_header(self):
         return self.header
 
+    def get_settings(self):
+        return self.settings
+
     def _setup_stack(self):
         self.stack = Adw.ViewStack()
         self.switcher = Adw.ViewSwitcher()
@@ -104,9 +107,9 @@ class MiAZApp(Adw.Application):
     def setup_status_page(self):
         # ~ self.btnImport.hide()
         status_page = Adw.StatusPage.new()
-        status_page.set_description(description="<big>Please, create a new repository in order to start working in your AZ</big>")
+        status_page.set_description(description="<big>It seems it is the first time using this application.\n\nPlease, create a new repository in order to start working in your AZ</big>")
         status_page.set_icon_name(icon_name='MiAZ-big')
-        status_page.set_title(title="%s %s" % (ENV['APP']['shortname'], get_version()))
+        status_page.set_title(title="%s" % (ENV['APP']['shortname']))
         boxChild = Gtk.CenterBox()
         btnAddRepo = self.factory.create_button('list-add', 'Add repository', callback=self._on_add_new_repo)
         btnAddRepo.set_valign(Gtk.Align.CENTER)
@@ -119,13 +122,17 @@ class MiAZApp(Adw.Application):
         self.show_stack_page_by_name('status')
 
     def _on_add_new_repo(self, *args):
-        pw = MiAZSettings(self)
+        pw = self.get_settings()
         filechooser = self.factory.create_filechooser(
                     parent=self.win,
                     title='Choose target directory',
                     target = 'FOLDER',
                     callback = pw.on_filechooser_response_source
                     )
+        ca = filechooser.get_content_area()
+        lblDialogInfo = Gtk.Label()
+        lblDialogInfo.set_markup('Please, choose an empty directory')
+        ca.append(lblDialogInfo)
         filechooser.show()
 
     def setup_about_page(self):

@@ -142,7 +142,7 @@ class MiAZRenameDialog(Gtk.Box):
         self.boxMain.append(row)
         button = self.factory.create_button('miaz-list-add', '')
         dropdown = self.factory.create_dropdown_generic(item_type, ellipsize=False) #, item)
-        self.actions.dropdown_populate(dropdown, item_type)
+        # ~ self.actions.dropdown_populate(dropdown, item_type)
         boxValue.append(dropdown)
         boxValue.append(button)
         return row, button, dropdown
