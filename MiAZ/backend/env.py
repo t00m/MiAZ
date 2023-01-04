@@ -26,7 +26,7 @@ ENV['CONF']['MAX_WORKERS'] = multiprocessing.cpu_count()  # Avoid MemoryError
 
 ENV['APP'] = {}
 ENV['APP']['name'] = "AZ Organizer"
-ENV['APP']['shortname'] = "Mi AZ"
+ENV['APP']['shortname'] = "MiAZ"
 ENV['APP']['description'] = "Personal Document Organizer"
 ENV['APP']['license'] = 'GPL v3'
 ENV['APP']['license_long'] = "The code is licensed under the terms of the  GPL v3 so you're free to grab, extend, improve and fork the code as you want"

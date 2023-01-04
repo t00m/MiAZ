@@ -39,7 +39,7 @@ class MiAZBackend(GObject.GObject):
 
     def create_repo_config(self, config_file):
         self.repodct = {}
-        json_save(config_file, '{}')
+        json_save(config_file, {})
         self.log.debug("Repo configuration not found. Creating a new one")
 
     def is_repo(self, path: str) -> bool:
@@ -115,9 +115,11 @@ class MiAZBackend(GObject.GObject):
 
         if os.path.exists(s_repocnf):
             s_repodct = json_load(s_repocnf)
+            self.log.debug("Loading configuration from: %s" % s_repocnf)
         else:
             s_repodct = {}
             json_save(s_repocnf, s_repodct)
+            self.log.debug("Creating an empty configuration file in: %s" % s_repocnf)
         return s_repodct
 
     def check_source(self, *args):
