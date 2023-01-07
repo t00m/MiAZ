@@ -30,11 +30,6 @@ class MiAZColumnViewWorkspace(MiAZColumnView):
         super().__init__(app, item_type=MiAZItem)
         self.log = get_logger('MiAZColumnViewWorkspace')
         self.backend = self.app.get_backend()
-        repocnf = self.backend.get_repo_source_config_file()
-        try:
-            self.repodct = json_load(repocnf)
-        except FileNotFoundError as error:
-            self.repodct = self.backend.create_repo_config(repocnf)
 
         factory_subtitle = Gtk.SignalListItemFactory()
         factory_subtitle.connect("setup", self._on_factory_setup_subtitle)
@@ -157,10 +152,11 @@ class MiAZColumnViewWorkspace(MiAZColumnView):
         list_item.set_child(box)
 
     def _on_factory_bind_group(self, factory, list_item):
+        repodct = self.backend.get_repo_dict()
         box = list_item.get_child()
         item = list_item.get_item()
         label = box.get_first_child()
-        group = self.repodct[item.id]['fields'][2]
+        group = repodct[item.id]['fields'][2]
         label.set_markup(group)
 
     def _on_factory_setup_subgroup(self, factory, list_item):
@@ -168,10 +164,11 @@ class MiAZColumnViewWorkspace(MiAZColumnView):
         list_item.set_child(box)
 
     def _on_factory_bind_subgroup(self, factory, list_item):
+        repodct = self.backend.get_repo_dict()
         box = list_item.get_child()
         item = list_item.get_item()
         label = box.get_first_child()
-        subgroup = self.repodct[item.id]['fields'][3]
+        subgroup = repodct[item.id]['fields'][3]
         label.set_markup(subgroup)
 
     def _on_factory_setup_date(self, factory, list_item):
@@ -210,10 +207,11 @@ class MiAZColumnViewWorkspace(MiAZColumnView):
         list_item.set_child(box)
 
     def _on_factory_bind_purpose(self, factory, list_item):
+        repodct = self.backend.get_repo_dict()
         box = list_item.get_child()
         item = list_item.get_item()
         label = box.get_first_child()
-        purpose = self.repodct[item.id]['fields'][5]
+        purpose = repodct[item.id]['fields'][5]
         label.set_markup(purpose)
 
     def _on_factory_setup_flag(self, factory, list_item):
@@ -221,11 +219,11 @@ class MiAZColumnViewWorkspace(MiAZColumnView):
         list_item.set_child(box)
 
     def _on_factory_bind_flag(self, factory, list_item):
+        repodct = self.backend.get_repo_dict()
         box = list_item.get_child()
         item = list_item.get_item()
-        print("Code: %s" % item.id)
         icon = box.get_first_child()
-        code = self.repodct[item.id]['fields'][1]
+        code = repodct[item.id]['fields'][1]
         flag = os.path.join(ENV['GPATH']['FLAGS'], "%s.svg" % code)
         if not os.path.exists(flag):
             flag = os.path.join(ENV['GPATH']['FLAGS'], "__.svg")

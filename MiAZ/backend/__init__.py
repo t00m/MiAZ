@@ -105,34 +105,46 @@ class MiAZBackend(GObject.GObject):
         dir_repo = self.conf['App'].get('source')
         dir_conf = os.path.join(dir_repo, 'conf')
         repokey = valid_key(dir_repo)
-        return os.path.join(dir_conf, "source-%s.json" % repokey)
+        file_conf = os.path.join(dir_conf, "source-%s.json" % repokey)
+        self.log.debug("Repo config file: %s", file_conf)
+        return file_conf
 
     def get_repo_dict(self):
-        """Load/Create dictionary for current repository"""
-        dir_repo = self.conf['App'].get('source')
-        s_repodir = os.path.join(dir_repo, 'docs')
-        s_repocnf = self.get_repo_source_config_file()
+        """Load dictionary for current repository"""
+        return self.s_repodct
 
-        if os.path.exists(s_repocnf):
-            s_repodct = json_load(s_repocnf)
-            self.log.debug("Loading configuration from: %s" % s_repocnf)
-        else:
-            s_repodct = {}
-            json_save(s_repocnf, s_repodct)
-            self.log.debug("Creating an empty configuration file in: %s" % s_repocnf)
-        return s_repodct
+    # ~ def get_repo_dict(self):
+        # ~ """Load/Create dictionary for current repository"""
+        # ~ dir_repo = self.conf['App'].get('source')
+        # ~ s_repodir = os.path.join(dir_repo, 'docs')
+        # ~ s_repocnf = self.get_repo_source_config_file()
+
+        # ~ if os.path.exists(s_repocnf):
+            # ~ s_repodct = json_load(s_repocnf)
+            # ~ self.log.debug("Loading configuration from: %s" % s_repocnf)
+        # ~ else:
+            # ~ s_repodct = {}
+            # ~ json_save(s_repocnf, s_repodct)
+            # ~ self.log.debug("Creating an empty configuration file in: %s" % s_repocnf)
+        # ~ return s_repodct
 
     def check_source(self, *args):
         dir_repo = self.conf['App'].get('source')
         s_repodir = os.path.join(dir_repo, 'docs')
         s_repocnf = self.get_repo_source_config_file()
-        s_repodct = self.get_repo_dict()
+        if os.path.exists(s_repocnf):
+            self.s_repodct = json_load(s_repocnf)
+            self.log.debug("Loading configuration from: %s" % s_repocnf)
+        else:
+            self.s_repodct = {}
+            json_save(s_repocnf, self.s_repodct)
+            self.log.debug("Created an empty configuration file in: %s" % s_repocnf)
 
         # Workflow
         # 1. Check and delete inconsistencies.
-        for doc in s_repodct.copy():
+        for doc in self.s_repodct.copy():
             if not os.path.exists(doc):
-                del(s_repodct[doc])
+                del(self.s_repodct[doc])
                 self.log.debug("File[%s] - Inconistency found. Deleted"
                                                         % basename(doc))
 
@@ -141,18 +153,18 @@ class MiAZBackend(GObject.GObject):
         for doc in docs:
             self.log.debug(doc)
             valid, reasons = self.validate_filename(doc)
-            s_repodct[doc] = {}
-            s_repodct[doc]['valid'] = valid
-            s_repodct[doc]['reasons'] = reasons
+            self.s_repodct[doc] = {}
+            self.s_repodct[doc]['valid'] = valid
+            self.s_repodct[doc]['reasons'] = reasons
             if not valid:
-                s_repodct[doc]['suggested'] = self.suggest_filename(doc)
-                s_repodct[doc]['fields'] = ['' for fields in range(8)]
+                self.s_repodct[doc]['suggested'] = self.suggest_filename(doc)
+                self.s_repodct[doc]['fields'] = ['' for fields in range(8)]
                 self.log.debug(reasons)
             else:
-                s_repodct[doc]['suggested'] = None
-                s_repodct[doc]['fields'] = self.get_fields(doc)
+                self.s_repodct[doc]['suggested'] = None
+                self.s_repodct[doc]['fields'] = self.get_fields(doc)
         self.log.info("Repository - %d document analyzed", len(docs))
-        json_save(s_repocnf, s_repodct)
+        json_save(s_repocnf, self.s_repodct)
 
         # 3. Emit the 'source-configuration-updated' signal
         self.log.debug("Source repository updated")
