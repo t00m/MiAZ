@@ -17,6 +17,7 @@ from MiAZ.backend import MiAZBackend
 from MiAZ.backend.util import dir_writable
 from MiAZ.backend.util import get_version
 from MiAZ.backend.log import get_logger
+from MiAZ.frontend.desktop.widgets.assistant import MiAZAssistantRepo
 from MiAZ.frontend.desktop.widgets.menu import MiAZ_MENU_APP
 from MiAZ.frontend.desktop.widgets.menubutton import MiAZMenuButton
 from MiAZ.frontend.desktop.widgets.workspace import MiAZWorkspace
@@ -27,7 +28,6 @@ from MiAZ.frontend.desktop.icons import MiAZIconManager
 from MiAZ.frontend.desktop.factory import MiAZFactory
 from MiAZ.frontend.desktop.actions import MiAZActions
 from MiAZ.frontend.desktop.help import show_shortcuts
-
 
 
 class MiAZApp(Adw.Application):
@@ -53,7 +53,7 @@ class MiAZApp(Adw.Application):
         self.build_gui()
         self.listen_to_key_events()
         self.log.debug("Executing MiAZ Desktop mode")
-        self.win.present()
+        # ~ self.win.present()
 
     def listen_to_key_events(self):
         evk = Gtk.EventControllerKey.new()
@@ -229,18 +229,37 @@ class MiAZApp(Adw.Application):
         self.setup_about_page()
 
         # Create settings
-        self.setup_settings_page()
+        # ~ self.setup_settings_page()
 
-        # Create workspace
-        dir_repo = self.conf['App'].get('source')
-        if self.backend.is_repo(dir_repo):
-            self.backend.load_repo(dir_repo)
-            self.setup_workspace_page()
-        else:
-            self.setup_status_page()
+        self.check_repository()
+        # ~ self.check_settings()
+
+            # ~ self.setup_status_page()
 
         # Create rename page
         self.setup_rename_page()
+
+    def check_repository(self):
+        # Create workspace
+        dir_repo = self.conf['App'].get('source')
+        self.log.debug("Repo? '%s'", dir_repo)
+        if self.backend.is_repo(dir_repo):
+            self.backend.load_repo(dir_repo)
+            self.setup_workspace_page()
+            self.win.present()
+        else:
+            self.log.debug("No repo detected in the configuration. Executing asssitant")
+            assistant = MiAZAssistantRepo(self)
+            assistant.set_transient_for(self.win)
+            assistant.set_modal(True)
+            assistant.present()
+
+    # ~ def check_settings(self):
+        # ~ conf = self.conf['Country']
+        # ~ countries = conf.load(conf.config_local)
+        # ~ if len(countries) == 0:
+            # ~ self.log.debug("Execute Country Selector Assistant")
+            # ~ self.exit_app()
 
     def menu_handler(self, action, state):
             """ Callback for  menu actions"""
@@ -287,6 +306,6 @@ class MiAZApp(Adw.Application):
         header.set_title_widget(widget)
 
 
-    def exit_app(self, action, param):
+    def exit_app(self, *args):
         self.quit()
 

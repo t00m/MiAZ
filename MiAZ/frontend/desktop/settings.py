@@ -148,12 +148,14 @@ class MiAZSettings(Gtk.Box):
         else:
             title = '<i>Folder not set</i>'
             subtitle = 'Choose an empty folder'
-        row.set_title(title)
-        row.set_subtitle(subtitle)
-        btnRepoSource = self.factory.create_button ('document-edit-symbolic', '', self.show_filechooser_source, css_classes=['flat'])
-        btnRepoSource.set_valign(Gtk.Align.CENTER)
-        row.set_icon_name('folder-symbolic')
-        row.add_suffix(widget=btnRepoSource)
+        btnRepoSource = self.factory.create_button('document-edit-symbolic', '', self.show_filechooser_source, css_classes=['flat'])
+        row = self.factory.create_actionrow(title=title, subtitle=subtitle, suffix=btnRepoSource)
+        # ~ row.set_title(title)
+        # ~ row.set_subtitle(subtitle)
+
+        # ~ btnRepoSource.set_valign(Gtk.Align.CENTER)
+        # ~ row.set_icon_name('folder-symbolic')
+        # ~ row.add_suffix(widget=btnRepoSource)
         return row
 
     def _update_action_row_repo_source(self, name, dirpath):

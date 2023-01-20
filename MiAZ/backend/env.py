@@ -46,6 +46,7 @@ ENV['LPATH']['DB'] = os.path.join(ENV['LPATH']['VAR'], 'db')
 ENV['LPATH']['CACHE'] = os.path.join(ENV['LPATH']['VAR'], 'cache')
 ENV['LPATH']['LOG'] = os.path.join(ENV['LPATH']['VAR'], 'log')
 ENV['LPATH']['TMP'] = os.path.join(ENV['LPATH']['VAR'], 'tmp')
+ENV['LPATH']['REPO'] = os.path.join(ENV['LPATH']['TMP'], 'repo')
 ENV['LPATH']['OPT'] = os.path.join(ENV['LPATH']['ROOT'], 'opt')
 ENV['LPATH']['PLUGINS'] = os.path.join(ENV['LPATH']['OPT'], 'plugins')
 

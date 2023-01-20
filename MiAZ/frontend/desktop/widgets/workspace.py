@@ -19,7 +19,7 @@ from MiAZ.backend.models import MiAZItem, File, Group, Subgroup, Person, Country
 from MiAZ.frontend.desktop.util import get_file_mimetype
 from MiAZ.frontend.desktop.widgets.columnview import MiAZColumnView, ColIcon, ColLabel
 from MiAZ.frontend.desktop.factory import MenuHeader
-# ~ from MiAZ.frontend.desktop.settings import MiAZSettings
+from MiAZ.frontend.desktop.widgets.assistant import MiAZAssistantRepoSettings
 from MiAZ.frontend.desktop.widgets.menubutton import MiAZMenuButton
 from MiAZ.frontend.desktop.widgets.menu import MiAZ_MENU_WORKSPACE_REPO
 from MiAZ.frontend.desktop.widgets.columnviews import MiAZColumnViewWorkspace
@@ -41,7 +41,7 @@ class MiAZWorkspace(Gtk.Box):
         self.backend = self.app.get_backend()
         self.factory = self.app.get_factory()
         self.actions = self.app.get_actions()
-        self.config = self.app.get_config('App')
+        self.config = self.backend.get_conf()
         self.set_vexpand(False)
         self.set_margin_top(margin=6)
         self.set_margin_end(margin=6)
@@ -49,6 +49,15 @@ class MiAZWorkspace(Gtk.Box):
         self.set_margin_start(margin=6)
         frmView = self._setup_workspace()
         self.append(frmView)
+
+        conf = self.config['Country']
+        countries = conf.load(conf.config_local)
+        if len(countries) == 0:
+            self.log.debug("Execute Country Selector Assistant")
+            assistant = MiAZAssistantRepoSettings(self.app)
+            assistant.set_transient_for(self.app.win)
+            assistant.set_modal(True)
+            assistant.present()
 
     def _on_import_directory(self, *args):
         pw = self.app.get_settings()

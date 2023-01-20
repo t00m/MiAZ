@@ -42,6 +42,7 @@ class MiAZConfigView(MiAZSelector):
         # ~ self.conf = self.app.get_conf()
         self.log = get_logger('MiAZConfigView')
         self.backend = self.app.get_backend()
+        self.dir_conf = self.backend.get_repo_conf_dir()
         self.config_for = config_for
         self.factory = self.app.get_factory()
         self.set_vexpand(True)

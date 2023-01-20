@@ -456,8 +456,9 @@ class MiAZRenameDialog(Gtk.Box):
             dialog.destroy()
 
     def on_rename_cancel(self, *args):
-        self.response(Gtk.ResponseType.CANCEL)
-        self.destroy()
+        self.app.show_workspace()
+        # ~ self.response(Gtk.ResponseType.CANCEL)
+        # ~ self.destroy()
 
     def on_document_display(self, button, filepath):
         self.log.debug("Displaying %s", filepath)
@@ -498,8 +499,9 @@ class MiAZRenameDialog(Gtk.Box):
                 self.log.error("Something went wrong: %s", error)
                 self.log.error("Doesn't it exist? Really?")
         else:
-            dialog.destroy()
-            self.response(Gtk.ResponseType.CANCEL)
+            self.app.show_workspace()
+            # ~ dialog.destroy()
+            # ~ self.response(Gtk.ResponseType.CANCEL)
 
     def on_person_sentby_add(self, *args):
         dialog = MiAZDialogAdd(self.app, self.get_root(), 'Add new person or entity', 'Initials', 'Full name')
