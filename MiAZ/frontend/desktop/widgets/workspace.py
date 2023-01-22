@@ -60,7 +60,6 @@ class MiAZWorkspace(Gtk.Box):
             assistant.present()
 
     def _on_import_directory(self, *args):
-        pw = self.app.get_settings()
         filechooser = self.factory.create_filechooser(
                     parent=self.app.win,
                     title='Import a directory',
@@ -70,7 +69,6 @@ class MiAZWorkspace(Gtk.Box):
         filechooser.show()
 
     def _on_import_file(self, *args):
-        pw = self.app.get_settings()
         filechooser = self.factory.create_filechooser(
                     parent=self.app.win,
                     title='Import a single file',

@@ -87,8 +87,9 @@ class MiAZBackend(GObject.GObject):
         self.conf['SentBy'] = MiAZConfigSettingsPeople(dir_conf)
         self.conf['SentTo'] = MiAZConfigSettingsPeople(dir_conf)
         self.conf['Person'] = MiAZConfigSettingsPeople(dir_conf)
-        # ~ self.watch_source = MiAZWatcher('source', path)
-        # ~ self.watch_source.connect('source-directory-updated', self.check_source)
+        self.watcher = MiAZWatcher('source', path)
+        self.watcher.set_active(active=True)
+        self.watcher.connect('source-directory-updated', self.check_source)
         self.log.debug("Configuration loaded")
 
     def get_watcher_source(self):

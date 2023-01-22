@@ -15,7 +15,7 @@ from MiAZ.backend.log import get_logger
 
 class MiAZWatcher(GObject.GObject):
     before = {}
-    active = True
+    active = False
 
     def __init__(self, name: str, dirpath: str):
         GObject.GObject.__init__(self)
@@ -25,19 +25,31 @@ class MiAZWatcher(GObject.GObject):
         self.set_path(dirpath)
         GLib.timeout_add_seconds(2, self.watch)
 
+    # PLAIN
     def __files_with_timestamp(self, rootdir):
         """Add data files from a given directory."""
         filelist = []
-        resdirs = set()
-        for root, dirs, files in os.walk(rootdir):
-            resdirs.add(os.path.realpath(root))
-        for directory in resdirs:
-            files = glob.glob(os.path.join(directory, '*'))
-            for thisfile in files:
-                if not os.path.isdir(thisfile):
-                    if os.path.exists(thisfile):
-                        filelist.append(os.path.abspath(os.path.relpath(thisfile)))
+        files = glob.glob(os.path.join(rootdir, '*'))
+        for thisfile in files:
+            if not os.path.isdir(thisfile):
+                if os.path.exists(thisfile):
+                    filelist.append(os.path.abspath(os.path.relpath(thisfile)))
         return dict([(f, os.path.getmtime(f)) for f in filelist])
+
+    # RECURSIVE
+    # ~ def __files_with_timestamp(self, rootdir):
+        # ~ """Add data files from a given directory."""
+        # ~ filelist = []
+        # ~ resdirs = set()
+        # ~ for root, dirs, files in os.walk(rootdir):
+            # ~ resdirs.add(os.path.realpath(root))
+        # ~ for directory in resdirs:
+            # ~ files = glob.glob(os.path.join(directory, '*'))
+            # ~ for thisfile in files:
+                # ~ if not os.path.isdir(thisfile):
+                    # ~ if os.path.exists(thisfile):
+                        # ~ filelist.append(os.path.abspath(os.path.relpath(thisfile)))
+        # ~ return dict([(f, os.path.getmtime(f)) for f in filelist])
 
     def set_path(self, dirpath: str):
         self.dirpath = dirpath
