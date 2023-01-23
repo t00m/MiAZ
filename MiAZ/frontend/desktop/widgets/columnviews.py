@@ -234,15 +234,15 @@ class MiAZColumnViewWorkspace(MiAZColumnView):
         box = ColIcon()
         list_item.set_child(box)
 
-    def _on_factory_bind_flag(self, factory, list_item):
-        box = list_item.get_child()
-        country = list_item.get_item()
-        icon = box.get_first_child()
-        flag = os.path.join(ENV['GPATH']['FLAGS'], "%s.svg" % country.id)
-        if not os.path.exists(flag):
-            flag = os.path.join(ENV['GPATH']['FLAGS'], "__.svg")
-        icon.set_from_file(flag)
-        icon.set_pixel_size(32)
+    # ~ def _on_factory_bind_flag(self, factory, list_item):
+        # ~ box = list_item.get_child()
+        # ~ country = list_item.get_item()
+        # ~ icon = box.get_first_child()
+        # ~ flag = os.path.join(ENV['GPATH']['FLAGS'], "%s.svg" % country.id)
+        # ~ if not os.path.exists(flag):
+            # ~ flag = os.path.join(ENV['GPATH']['FLAGS'], "__.svg")
+        # ~ icon.set_from_file(flag)
+        # ~ icon.set_pixel_size(32)
 
 class MiAZColumnViewCountry(MiAZColumnView):
     """ Custom ColumnView widget for MiAZ """

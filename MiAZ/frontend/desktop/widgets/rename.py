@@ -59,8 +59,8 @@ class MiAZRenameDialog(Gtk.Box):
 
         # Box to be inserted as contents
         self.boxMain = Gtk.ListBox.new() #orientation=Gtk.Orientation.VERTICAL, spacing=12)
-        self.boxMain.set_vexpand(False)
-        self.boxMain.set_hexpand(False)
+        self.boxMain.set_vexpand(True)
+        self.boxMain.set_hexpand(True)
 
         # Filename format: {timestamp}-{country}-{group}-{subgroup}-{from}-{purpose}-{concept}-{to}.{extension}
         self.__create_field_0_date() # Field 0. Date
@@ -287,7 +287,9 @@ class MiAZRenameDialog(Gtk.Box):
             shutil.move(source, target)
             self.log.debug("Rename document from '%s' to '%s'", os.path.basename(source), os.path.basename(target))
             self.backend.check_source()
-        self.destroy()
+        # ~ self.destroy()
+        self.app.show_stack_page_by_name('workspace')
+
 
     def on_changed_entry(self, *args):
         def success_or_error(widget, valid):
@@ -438,7 +440,6 @@ class MiAZRenameDialog(Gtk.Box):
         question.show()
 
     def on_answer_question_rename(self, dialog, response):
-        self.log.debug(response)
         if response == Gtk.ResponseType.ACCEPT:
             source = self.get_filepath_source()
             target = os.path.join(os.path.dirname(source), self.get_filepath_target())
@@ -454,6 +455,7 @@ class MiAZRenameDialog(Gtk.Box):
             dialog.destroy()
         else:
             dialog.destroy()
+        self.app.show_stack_page_by_name('workspace')
 
     def on_rename_cancel(self, *args):
         self.app.show_stack_page_by_name('workspace')

@@ -128,6 +128,7 @@ class MiAZWorkspace(Gtk.Box):
         self.view.column_title.set_visible(not active)
         try:
             self.view.column_subtitle.set_visible(active)
+            self.view.column_subtitle.set_expand(True)
             self.view.column_group.set_visible(active)
             self.view.column_subgroup.set_visible(active)
             self.view.column_purpose.set_visible(active)
@@ -552,6 +553,7 @@ class MiAZWorkspace(Gtk.Box):
         self.dfilter = {}
         self.show_dashboard = True
         self.view.column_subtitle.set_title('Concept')
+        self.view.column_subtitle.set_expand(True)
         self.view.refilter()
         self.update_title()
         self.tgbExplain.set_active(True)
