@@ -106,7 +106,7 @@ class MiAZBackend(GObject.GObject):
         dir_conf = self.get_repo_conf_dir()
         repokey = valid_key(dir_repo)
         file_conf = os.path.join(dir_conf, "source-%s.json" % repokey)
-        self.log.debug("Repo config file: %s", file_conf)
+        # ~ self.log.debug("Repo config file: %s", file_conf)
         return file_conf
 
     def get_repo_dict(self):
@@ -151,7 +151,6 @@ class MiAZBackend(GObject.GObject):
         # 2. Rebuild repository dictionary
         docs = get_files(s_repodir)
         for doc in docs:
-            self.log.debug(doc)
             valid, reasons = self.validate_filename(doc)
             self.s_repodct[doc] = {}
             self.s_repodct[doc]['valid'] = valid

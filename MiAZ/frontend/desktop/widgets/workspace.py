@@ -428,7 +428,6 @@ class MiAZWorkspace(Gtk.Box):
             # ~ self.log.debug(self.repodct[])
             valid = self.repodct[path]['valid']
             fields = self.repodct[path]['fields']
-            self.log.debug(fields)
             try:
                 adate = datetime.strptime(fields[0], "%Y%m%d")
                 date_dsc = adate.strftime("%Y.%m.%d")
@@ -548,7 +547,6 @@ class MiAZWorkspace(Gtk.Box):
         selection.unselect_all()
 
     def display_dashboard(self, *args):
-        self.log.debug("Dashboard")
         self.displayed = 0
         self.num_review = 0
         self.dfilter = {}

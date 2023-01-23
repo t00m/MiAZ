@@ -77,14 +77,17 @@ class MiAZConfig():
         # ~ return items
 
     def save(self, filepath: str = '', items: dict = {}) -> bool:
+        self.log.debug("Saving to filepath 1: %s", filepath)
         if filepath == '':
             filepath = self.config_local
+        self.log.debug("Saving to filepath 2: %s", filepath)
         try:
             json_save(filepath, items)
             saved = True
         except Exception as error:
             self.log.error(error)
             saved = False
+        self.log.debug("Saved %s with %d items? %s", filepath, len(items), saved)
         return saved
 
     def get(self, key: str) -> str:
@@ -127,8 +130,10 @@ class MiAZConfig():
     def add(self, key, value=None):
         if self.config_is is dict:
             self.dict_add(key, value)
+            self.log.debug("Added %s[%s]", key, value)
         else:
             self.list_add(key)
+            self.log.debug("Added %s", key)
 
     def remove(self, key):
         if self.config_is is dict:
@@ -140,28 +145,28 @@ class MiAZConfig():
         items = self.load(self.config_local)
         if not key in items:
             items.append(key.upper())
-            self.save(sorted(items))
+            self.save(items=sorted(items))
             self.log.info("%s - Add: %s", self.config_for, key)
 
     def list_remove(self, key):
         items = self.load(self.config_local)
         if key in items:
             items.remove(key)
-            self.save(items)
+            self.save(items=items)
             self.log.info("%s - Remove: %s", self.config_for, key)
 
     def dict_add(self, key, value):
         items = self.load(self.config_local)
         if not key in items:
             items[key] = value.upper()
-            self.save(items)
+            self.save(items=items)
             self.log.info("%s - Add: %s[%s]", self.config_for, key, value)
 
     def dict_remove(self, key):
         items = self.load(self.config_local)
         if key in items:
             del(items[key])
-            self.save(items)
+            self.save(items=items)
             self.log.info("%s - Remove: %s", self.config_for, key)
 
 

@@ -142,7 +142,7 @@ class MiAZRenameDialog(Gtk.Box):
         self.boxMain.append(row)
         button = self.factory.create_button('miaz-list-add', '')
         dropdown = self.factory.create_dropdown_generic(item_type, ellipsize=False) #, item)
-        # ~ self.actions.dropdown_populate(dropdown, item_type)
+        self.actions.dropdown_populate(dropdown, item_type)
         boxValue.append(dropdown)
         boxValue.append(button)
         return row, button, dropdown
@@ -375,6 +375,7 @@ class MiAZRenameDialog(Gtk.Box):
         except Exception as error:
             self.log.error(error)
             self.result = ''
+            raise
 
     def validate_date(self, adate: str) -> bool:
         try:
@@ -432,7 +433,7 @@ class MiAZRenameDialog(Gtk.Box):
         body = "<big>You are about to rename:\n\n<b>%s</b>\n\nto\n\n<b>%s</b></big>" % (os.path.basename(self.get_filepath_source()), self.get_filepath_target())
         widget = Gtk.Label()
         widget.set_markup(body)
-        question = self.factory.create_dialog_question(self, "Are you sure?", widget)
+        question = self.factory.create_dialog_question(self.app.win, "Are you sure?", widget)
         question.connect('response', self.on_answer_question_rename)
         question.show()
 
@@ -451,12 +452,11 @@ class MiAZRenameDialog(Gtk.Box):
             else:
                 self.log.error("Source and Target are the same. Skip rename")
             dialog.destroy()
-            self.destroy()
         else:
             dialog.destroy()
 
     def on_rename_cancel(self, *args):
-        self.app.show_workspace()
+        self.app.show_stack_page_by_name('workspace')
         # ~ self.response(Gtk.ResponseType.CANCEL)
         # ~ self.destroy()
 
@@ -474,7 +474,7 @@ class MiAZRenameDialog(Gtk.Box):
 
     def on_people_refresh(self, *args):
         config = self.app.get_config('Person')
-        people = config.load()
+        people = config.load(config.config_local)
         model = self.combobox_from.get_model()
         model.clear()
         for alias in people:
@@ -533,9 +533,10 @@ class MiAZRenameDialog(Gtk.Box):
             value = dialog.get_value2()
             if len(key) > 0 and len(value) > 0:
                 config = self.app.get_config('Person')
-                items = config.load()
-                items[key.upper()] = value
-                config.save(items)
+                config.add(key=key.upper(), value=value)
+                # ~ items = config.load(config.config_local)
+                # ~ items[key.upper()] = value
+                # ~ config.save(items)
 
                 # Update dropdown
                 self.actions.dropdown_populate(self.dpdSentBy, Person)
@@ -580,9 +581,10 @@ class MiAZRenameDialog(Gtk.Box):
             value = dialog.get_value2()
             if len(key) > 0 and len(value) > 0:
                 config = self.app.get_config('Person')
-                items = config.load()
-                items[key.upper()] = value
-                config.save(items)
+                config.add(key=key.upper(), value=value)
+                # ~ items = config.load(config.config_local)
+                # ~ items[key.upper()] = value
+                # ~ config.save(items)
 
                 # Update combobox from
                 model = self.combobox_to.get_model()

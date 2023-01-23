@@ -61,7 +61,7 @@ class MiAZApp(Adw.Application):
         self.win.add_controller(evk)
 
     def key_press(self, event, keyval, keycode, state):
-        self.log.debug("Event[%s] > Keyval[%s] > Keycode[%s] > State[%s]", event, keyval, keycode, state)
+        # ~ self.log.debug("Event[%s] > Keyval[%s] > Keycode[%s] > State[%s]", event, keyval, keycode, state)
         keyname = Gdk.keyval_name(keyval)
         if keyname == 'Escape':
             self.show_stack_page_by_name('workspace')
