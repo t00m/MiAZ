@@ -16,6 +16,8 @@ from MiAZ.backend.log import get_logger
 from MiAZ.frontend.desktop.widgets.columnview import MiAZColumnView
 
 class MiAZSelector(Gtk.Box):
+    conf_available = None
+
     def __init__(self, app, edit=True):
         self.app = app
         self.backend = self.app.get_backend()
@@ -102,7 +104,7 @@ class MiAZSelector(Gtk.Box):
         pass
 
     def set_config_file_available(self, path:str):
-        self.dir_conf_available = path
+        self.conf_available = path
         self.log.debug("%s > Available config path: %s", self.config.config_for, path)
 
     def set_config_file_selected(self, path:str):
@@ -121,34 +123,22 @@ class MiAZSelector(Gtk.Box):
 
     def action_add(self, *args):
         changed = False
-        if self.config.config_is is dict:
-            items = self.config.load(self.dir_conf_selected)
-            for item in self.viewAv.get_selected_items():
-                items[item.id] = item.title
-                changed = True
-        else:
-            items = self.config.load(self.dir_conf_selected)
-            for item in self.viewAv.get_selected_items():
-                if item.id not in items:
-                    items.append(item.id)
-                changed = True
+        items = self.config.load(self.dir_conf_selected)
+        for item in self.viewAv.get_selected_items():
+            items[item.id] = item.title
+            changed = True
+
         if changed:
             self.config.save(items=items)
             self.update_selected()
 
-
     def action_remove(self, *args):
         changed = False
-        if self.config.config_is is dict:
-            items = self.config.load(self.dir_conf_selected)
-            for item in self.viewSl.get_selected_items():
-                del(items[item.id])
-                changed = True
-        else:
-            items = self.config.load(self.dir_conf_selected)
-            for item in self.viewSl.get_selected_items():
-                items.remove(item.id)
-                changed = True
+        items = self.config.load(self.dir_conf_selected)
+        for item in self.viewSl.get_selected_items():
+            del(items[item.id])
+            changed = True
+
         if changed:
             self.config.save(items=items)
             self.update_selected()
@@ -161,10 +151,7 @@ class MiAZSelector(Gtk.Box):
         self.update_selected()
 
     def action_remove_all(self, *args):
-        if self.config.config_is is dict:
-            items = {}
-        else:
-            items = []
+        items = {}
         self.config.save(items=items)
         self.update_selected()
 

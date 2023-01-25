@@ -18,10 +18,13 @@ from gi.repository.GdkPixbuf import Pixbuf
 from MiAZ.backend.log import get_logger
 from MiAZ.frontend.desktop.widgets.dialogs import MiAZDialogAdd
 from MiAZ.backend.models import File, Group, Subgroup, Person, Country, Purpose, Concept
+from MiAZ.frontend.desktop.widgets.configview import MiAZCountries, MiAZGroups, MiAZPeople, MiAZPurposes, MiAZSubgroups
+
 
 class MiAZRenameDialog(Gtk.Box):
     result = ''
     new_values = []
+    dropdowns = []
 
     def __init__(self, app) -> Gtk.Widget:
         super(MiAZRenameDialog, self).__init__(orientation=Gtk.Orientation.VERTICAL, spacing=3, hexpand=True, vexpand=True)
@@ -100,6 +103,9 @@ class MiAZRenameDialog(Gtk.Box):
         boxButtons.set_margin_start(margin=12)
         self.append(boxButtons)
 
+    def update_dropdowns(self):
+        for dropdown, item_type in self.dropdowns:
+            self.actions.dropdown_populate(dropdown, item_type)
 
     def set_data(self, filepath: str, suggested: list):
         self.filepath = filepath
@@ -183,35 +189,35 @@ class MiAZRenameDialog(Gtk.Box):
         self.entry_date.set_alignment(1.0)
         boxValue.append(self.entry_date)
         boxValue.append(button)
-
-
-
         self.entry_date.connect('changed', self.on_changed_entry)
 
     def __create_field_1_country(self):
         self.rowCountry, self.btnCountry, self.dpdCountry = self.__create_actionrow('Country', Country, 'countries')
-        self.btnCountry.set_sensitive(False)
-        self.btnCountry.set_has_frame(False)
-        self.btnCountry.set_child(None)
+        self.dropdowns.append((self.dpdCountry, Country))
+        self.btnCountry.connect('clicked', self.on_country_manage)
         self.dpdCountry.connect("notify::selected-item", self.on_changed_entry)
 
     def __create_field_2_group(self):
         self.rowGroup, self.btnGroup, self.dpdGroup = self.__create_actionrow('Group', Group, 'groups')
-        self.btnGroup.connect('clicked', self.on_group_add)
+        self.dropdowns.append((self.dpdGroup, Group))
+        self.btnGroup.connect('clicked', self.on_group_manage)
         self.dpdGroup.connect("notify::selected-item", self.on_changed_entry)
 
     def __create_field_3_subgroup(self):
         self.rowSubgroup, self.btnSubgroup, self.dpdSubgroup = self.__create_actionrow('Subgroup', Subgroup, 'subgroups')
+        self.dropdowns.append((self.dpdSubgroup, Subgroup))
         self.btnSubgroup.connect('clicked', self.on_subgroup_add)
         self.dpdSubgroup.connect("notify::selected-item", self.on_changed_entry)
 
     def __create_field_4_sentby(self):
         self.rowSentBy, self.btnSentBy, self.dpdSentBy = self.__create_actionrow('Sent by', Person, 'People')
+        self.dropdowns.append((self.dpdSentBy, Person))
         self.btnSentBy.connect('clicked', self.on_person_sentby_add)
         self.dpdSentBy.connect("notify::selected-item", self.on_changed_entry)
 
     def __create_field_5_purpose(self):
         self.rowPurpose, self.btnPurpose, self.dpdPurpose = self.__create_actionrow('Purpose', Purpose, 'purposes')
+        self.dropdowns.append((self.dpdPurpose, Purpose))
         self.dpdPurpose.connect("notify::selected-item", self.on_changed_entry)
 
     def __create_field_6_concept(self):
@@ -235,6 +241,7 @@ class MiAZRenameDialog(Gtk.Box):
 
     def __create_field_7_sentto(self):
         self.rowSentTo, self.btnSentTo, self.dpdSentTo = self.__create_actionrow('Sent to', Person, 'People')
+        self.dropdowns.append((self.dpdSentTo, Person))
         self.btnSentTo.connect('clicked', self.on_person_sentto_add)
         self.dpdSentTo.connect("notify::selected-item", self.on_changed_entry)
 
@@ -509,6 +516,28 @@ class MiAZRenameDialog(Gtk.Box):
         dialog = MiAZDialogAdd(self.app, self.get_root(), 'Add new person or entity', 'Initials', 'Full name')
         dialog.connect('response', self.on_response_person_sentby_add)
         dialog.show()
+
+    def on_country_manage(self, *args):
+        box = self.factory.create_box_vertical(spacing=12, vexpand=True, hexpand=True)
+        selector = MiAZCountries(self.app)
+        selector.set_vexpand(True)
+        selector.update()
+        box.append(selector)
+        dialog = self.factory.create_dialog(self.app.win, 'Manage countries', box, 800, 600)
+        dialog.show()
+
+    def on_group_manage(self, *args):
+        box = self.factory.create_box_vertical(spacing=12, vexpand=True, hexpand=True)
+        selector = MiAZGroups(self.app)
+        selector.set_vexpand(True)
+        selector.update()
+        box.append(selector)
+        dialog = self.factory.create_dialog(self.app.win, 'Manage groups', box, 800, 600)
+        dialog.show()
+
+    def on_country_close(self, *args):
+        self.actions.dropdown_populate(self.dpdCountry, Country)
+        self.dpdCountry.set_selected(0)
 
     def on_group_add(self, *args):
         dialog = MiAZDialogAdd(self.app, self.get_root(), 'Add new group', 'Group', '')

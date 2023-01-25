@@ -91,7 +91,7 @@ class MiAZConfigView(MiAZSelector):
         if response == Gtk.ResponseType.ACCEPT:
             value = dialog.get_value1()
             if len(value) > 0:
-                items = self.config.load(self.config.config_local)
+                items = self.config.load(self.config.config_available)
                 if not value.upper() in items:
                     items.append(value.upper())
                     self.config.save(items=items)
@@ -102,7 +102,7 @@ class MiAZConfigView(MiAZSelector):
         return
 
     def _on_item_remove(self, *args):
-        item = self.view.get_item()
+        item = self.viewAv.get_item()
         if item is None:
             return
         self.config.remove(item.id)
@@ -140,7 +140,7 @@ class MiAZCountries(MiAZConfigView):
     def update_available(self):
         items = []
         item_type = self.config.config_model
-        countries = self.config.load(self.dir_conf_available)
+        countries = self.config.load(self.conf_available)
         for code in countries:
             items.append(item_type(id=code, title=countries[code], icon='%s.svg' % code))
         self.viewAv.update(items)
@@ -159,10 +159,10 @@ class MiAZGroups(MiAZConfigView):
     current = None
 
     def __init__(self, app):
-        super(MiAZConfigView, self).__init__(app, edit=False)
+        super(MiAZConfigView, self).__init__(app, edit=True)
         self.config = MiAZConfigSettingsGroups(self.dir_conf)
         super().__init__(app, self.config.config_for)
-        self.set_config_file_available(self.config.config_global)
+        self.set_config_file_available(self.config.config_available)
         self.set_config_file_selected(self.config.config_local)
 
     def _setup_view_finish(self):
@@ -177,7 +177,7 @@ class MiAZGroups(MiAZConfigView):
     def update_available(self):
         items = []
         item_type = self.config.config_model
-        groups = self.config.load(self.dir_conf_available)
+        groups = self.config.load(self.conf_available)
         for group in groups:
             items.append(item_type(id=group, title=group))
         self.viewAv.update(items)
@@ -214,7 +214,7 @@ class MiAZSubgroups(MiAZConfigView):
     def update_available(self):
         items = []
         item_type = self.config.config_model
-        subgroups = self.config.load(self.dir_conf_available)
+        subgroups = self.config.load(self.conf_available)
         for subgroup in subgroups:
             items.append(item_type(id=subgroup, title=subgroup))
         self.viewAv.update(items)
@@ -250,7 +250,7 @@ class MiAZPeople(MiAZConfigView):
     def update_available(self):
         items = []
         item_type = self.config.config_model
-        people = self.config.load(self.dir_conf_available)
+        people = self.config.load(self.conf_available)
         for pid in people:
             items.append(item_type(id=pid, title=people[pid]))
         self.viewAv.update(items)
@@ -307,7 +307,7 @@ class MiAZPurposes(MiAZConfigView):
     def update_available(self):
         items = []
         item_type = self.config.config_model
-        purposes = self.config.load(self.dir_conf_available)
+        purposes = self.config.load(self.conf_available)
         for purpose in purposes:
             items.append(item_type(id=purpose, title=purpose))
         self.viewAv.update(items)

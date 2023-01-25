@@ -236,9 +236,6 @@ class MiAZApp(Adw.Application):
 
             # ~ self.setup_status_page()
 
-        # Create rename page
-        self.setup_rename_page()
-
     def check_repository(self):
         # Create workspace
         dir_repo = self.conf['App'].get('source')
@@ -246,6 +243,7 @@ class MiAZApp(Adw.Application):
         if self.backend.is_repo(dir_repo):
             self.backend.load_repo(dir_repo)
             self.setup_workspace_page()
+            self.setup_rename_page()
             self.win.present()
         else:
             self.log.debug("No repo detected in the configuration. Executing asssitant")

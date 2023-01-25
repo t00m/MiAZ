@@ -66,11 +66,11 @@ class MiAZActions(GObject.GObject):
         self.app.show_stack_page_by_name('rename')
 
     def dropdown_populate(self, dropdown, item_type, keyfilter = False, intkeys=[], any_value=True):
-        # Populate the model
+        self.log.debug("Populating dropdown for %s", item_type)
         model = dropdown.get_model()
         config = self.app.get_config(item_type.__gtype_name__)
         items = config.load(config.config_local)
-        config_is = config.get_config_is()
+        self.log.debug(items)
 
         # foreign key is used when the local configuration is saved as a
         # list, but it gets the name from global dictionary (eg.: Countries)
@@ -79,8 +79,6 @@ class MiAZActions(GObject.GObject):
             gitems = config.load(config.config_global)
 
         items = config.load(config.config_local)
-        if isinstance(items, list):
-            items = sorted(items)
 
         model.remove_all()
 
@@ -88,27 +86,20 @@ class MiAZActions(GObject.GObject):
             model.append(item_type(id='Any', title='Any'))
 
         for key in items:
-            if config_is is dict:
-                if foreign:
-                    if keyfilter:
-                        if key in intkeys:
-                            model.append(item_type(id=key, title="%s (%s)" % (gitems[key], key)))
-                    else:
+            if foreign:
+                if keyfilter:
+                    if key in intkeys:
                         model.append(item_type(id=key, title="%s (%s)" % (gitems[key], key)))
                 else:
-                    if keyfilter:
-                        if key in intkeys:
-                            model.append(item_type(id=key, title="%s (%s)" % (items[key], key)))
-                    else:
-                        if keyfilter:
-                            if key in intkeys:
-                                model.append(item_type(id=key, title="%s (%s)" % (items[key], key)))
-                        else:
-                            model.append(item_type(id=key, title="%s (%s)" % (items[key], key)))
+                    model.append(item_type(id=key, title="%s (%s)" % (gitems[key], key)))
             else:
                 if keyfilter:
                     if key in intkeys:
-                        model.append(item_type(id=key, title=key))
+                        model.append(item_type(id=key, title="%s (%s)" % (items[key], key)))
                 else:
-                    model.append(item_type(id=key, title=key))
+                    if keyfilter:
+                        if key in intkeys:
+                            model.append(item_type(id=key, title="%s (%s)" % (items[key], key)))
+                    else:
+                        model.append(item_type(id=key, title="%s (%s)" % (items[key], key)))
 
