@@ -325,16 +325,23 @@ class MiAZRenameDialog(Gtk.Box):
                 widget.get_style_context().remove_class(class_name='success')
                 widget.get_style_context().add_class(class_name='warning')
 
+        def dropdown_get_selected_item(dropdown):
+            try:
+                item = dropdown.get_selected_item().id
+            except AttributeError:
+                item = 'Any'
+            return item
+
         try:
             fields = []
             adate = self.entry_date.get_text()
-            acountry = self.dpdCountry.get_selected_item().id
-            agroup = self.dpdGroup.get_selected_item().id
-            asubgroup = self.dpdSubgroup.get_selected_item().id
-            sentby = self.dpdSentBy.get_selected_item().id
-            apurpose = self.dpdPurpose.get_selected_item().id
+            acountry = dropdown_get_selected_item(self.dpdCountry)
+            agroup = dropdown_get_selected_item(self.dpdGroup)
+            asubgroup = dropdown_get_selected_item(self.dpdSubgroup)
+            sentby = dropdown_get_selected_item(self.dpdSentBy)
+            apurpose = dropdown_get_selected_item(self.dpdPurpose)
             aconcept = self.entry_concept.get_text().upper().replace(' ', '_')
-            sentto = self.dpdSentTo.get_selected_item().id
+            sentto = dropdown_get_selected_item(self.dpdSentTo)
             aextension = self.lblExt.get_text()
             fields.append(adate)        # 0. Date
             fields.append(acountry)     # 1. Country
