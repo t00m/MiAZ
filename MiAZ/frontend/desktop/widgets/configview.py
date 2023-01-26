@@ -77,7 +77,7 @@ class MiAZConfigView(MiAZSelector):
         return selector
 
     def _on_item_add(self, *args):
-        dialog = MiAZDialogAdd(self.app, self.get_root(), 'New %s' % self.config_for, '%s name' % self.config_for.title(), '')
+        dialog = MiAZDialogAdd(self.app, self.get_root(), 'New %s' % self.config_for, '%s name' % self.config.config_for.title(), '')
         boxkey2 = dialog.get_boxKey2()
         boxkey2.set_visible(False)
         etyValue1 = dialog.get_value1_widget()
@@ -92,8 +92,8 @@ class MiAZConfigView(MiAZSelector):
             if len(value) > 0:
                 items = self.config.load(self.config.config_available)
                 if not value.upper() in items:
-                    items.append(value.upper())
-                    self.config.save(items=items)
+                    items[value.upper()] = ""
+                    self.config.save(filepath=self.config.config_available, items=items)
                     self.update()
         dialog.destroy()
 
