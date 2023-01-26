@@ -105,8 +105,30 @@ class MiAZWorkspace(Gtk.Box):
             boxDropdown = self.factory.create_box_filter(title, dropdown)
             body.append(boxDropdown)
             self.dropdown[title] = dropdown
+            # ~ name = item_type.__gtype_name__
+            # ~ config = self.config[name].connect('repo-settings-updated-countries', self.update_countries)
         self.backend.connect('source-configuration-updated', self.update)
+        self.config['Country'].connect('repo-settings-updated-countries', self.update_dropdown, Country)
+        self.config['Group'].connect('repo-settings-updated-groups', self.update_dropdown, Group)
+        self.config['Subgroup'].connect('repo-settings-updated-subgroups', self.update_dropdown, Subgroup)
+        self.config['SentBy'].connect('repo-settings-updated-people', self.update_dropdown, Person)
+        self.config['Purpose'].connect('repo-settings-updated-purposes', self.update_dropdown, Purpose)
+        self.config['SentTo'].connect('repo-settings-updated-people', self.update_dropdown, Person)
         return widget
+
+    def enable_filtering(self, enable=True):
+        if enable:
+            self.view.set_filter(self._do_filter_view)
+        else:
+            self.view.set_filter(None)
+
+    def update_dropdown(self, config, item_type):
+        title = item_type.__gtype_name__
+        self.enable_filtering(False)
+        self.actions.dropdown_populate(self.dropdown[title], item_type)
+        self.log.debug("Updating dropdown for %s", title)
+        self.enable_filtering(True)
+
 
     def _on_action_rename(self, action, data, item_type):
         title = item_type.__gtype_name__
