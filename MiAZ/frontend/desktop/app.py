@@ -251,6 +251,7 @@ class MiAZApp(Adw.Application):
             assistant.set_transient_for(self.win)
             assistant.set_modal(True)
             assistant.present()
+            self.log.debug("Repository assistant displayed")
 
     # ~ def check_settings(self):
         # ~ conf = self.conf['Country']

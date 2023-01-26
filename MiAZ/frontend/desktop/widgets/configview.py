@@ -36,14 +36,13 @@ class MiAZConfigView(MiAZSelector):
     config_for = None
     search_term = ''
 
-    def __init__(self, app, config_for):
+    def __init__(self, app):
         super(MiAZSelector, self).__init__(spacing=3, orientation=Gtk.Orientation.VERTICAL)
         self.app = app
-        # ~ self.conf = self.app.get_conf()
         self.log = get_logger('MiAZConfigView')
         self.backend = self.app.get_backend()
+        self.conf = self.backend.get_conf()
         self.dir_conf = self.backend.get_repo_conf_dir()
-        self.config_for = config_for
         self.factory = self.app.get_factory()
         self.set_vexpand(True)
         self.set_margin_top(margin=6)
@@ -123,8 +122,10 @@ class MiAZCountries(MiAZConfigView):
 
     def __init__(self, app):
         super(MiAZConfigView, self).__init__(app, edit=False)
-        self.config = MiAZConfigSettingsCountries(self.dir_conf)
-        super().__init__(app, self.config.config_for)
+        super().__init__(app)
+        self.config = self.conf['Country']
+        # ~ self.config = MiAZConfigSettingsCountries(self.dir_conf)
+         #, self.config.config_for)
         self.set_config_file_available(self.config.config_global)
         self.set_config_file_selected(self.config.config_local)
 
@@ -160,8 +161,8 @@ class MiAZGroups(MiAZConfigView):
 
     def __init__(self, app):
         super(MiAZConfigView, self).__init__(app, edit=True)
-        self.config = MiAZConfigSettingsGroups(self.dir_conf)
-        super().__init__(app, self.config.config_for)
+        super().__init__(app)
+        self.config = self.conf['Group']
         self.set_config_file_available(self.config.config_available)
         self.set_config_file_selected(self.config.config_local)
 
@@ -197,8 +198,8 @@ class MiAZSubgroups(MiAZConfigView):
 
     def __init__(self, app):
         super(MiAZConfigView, self).__init__(app, edit=False)
-        self.config = MiAZConfigSettingsSubgroups(self.dir_conf)
-        super().__init__(app, self.config.config_for)
+        super().__init__(app)
+        self.config = self.conf['Subgroup']
         self.set_config_file_available(self.config.config_global)
         self.set_config_file_selected(self.config.config_local)
 
@@ -233,8 +234,8 @@ class MiAZPeople(MiAZConfigView):
 
     def __init__(self, app):
         super(MiAZConfigView, self).__init__(app, edit=False)
-        self.config = MiAZConfigSettingsPeople(self.dir_conf)
-        super().__init__(app, self.config.config_for)
+        super().__init__(app)
+        self.config = self.conf['Person']
         self.set_config_file_available(self.config.config_global)
         self.set_config_file_selected(self.config.config_local)
 
@@ -290,8 +291,8 @@ class MiAZPurposes(MiAZConfigView):
 
     def __init__(self, app):
         super(MiAZConfigView, self).__init__(app, edit=False)
-        self.config = MiAZConfigSettingsPurposes(self.dir_conf)
-        super().__init__(app, self.config.config_for)
+        super().__init__(app)
+        self.config = self.conf['Purpose']
         self.set_config_file_available(self.config.config_global)
         self.set_config_file_selected(self.config.config_local)
 

@@ -43,26 +43,33 @@ class MiAZBackend(GObject.GObject):
         self.log.debug("Repo configuration not found. Creating a new one")
 
     def is_repo(self, path: str) -> bool:
+        self.log.debug("Checking conf dir: %s", path)
         conf_dir = os.path.join(path, '.conf')
         conf_file = os.path.join(conf_dir, 'repo.json')
-        if os.path.exists(conf_file):
-            repo = json_load(conf_file)
-            self.log.debug("Current repository: %s", path)
-            self.log.debug("MiAZ Repository format: %s", repo['FORMAT'])
-            return True
+        if os.path.exists(conf_dir):
+            self.log.debug("Config path '%s' exists", conf_dir)
+            if os.path.exists(conf_file):
+                repo = json_load(conf_file)
+                self.log.debug("Current repository: %s", path)
+                self.log.debug("MiAZ Repository format: %s", repo['FORMAT'])
+                return True
+            else:
+                self.log.debug("Repo config file '%s' doesn't exist", conf_file)
+                # ~ self.init_repo(conf_dir)
+                return True
         else:
+            self.log.debug("Config dir '%s' doesn't exist", conf_dir)
             return False
 
     def init_repo(self, path):
         conf = {}
         conf['FORMAT'] = 1
         dir_conf = os.path.join(path, '.conf')
-        # ~ dir_docs = os.path.join(path, 'docs')
         os.makedirs(dir_conf, exist_ok = True)
-        # ~ os.makedirs(dir_docs)
         conf_file = os.path.join(dir_conf, 'repo.json')
         json_save(conf_file, conf)
         self.conf['App'].set('source', path)
+        self.log.debug("Repo configuration initialized")
 
 
     def get_repo_docs_dir(self):
@@ -90,7 +97,11 @@ class MiAZBackend(GObject.GObject):
         self.watcher = MiAZWatcher('source', path)
         self.watcher.set_active(active=True)
         self.watcher.connect('source-directory-updated', self.check_source)
+        self.conf['App'].connect('repo-settings-updated-app', self.foo)
         self.log.debug("Configuration loaded")
+
+    def foo(self, *args):
+        self.log.debug(args)
 
     def get_watcher_source(self):
         """Get watcher object for source directory"""

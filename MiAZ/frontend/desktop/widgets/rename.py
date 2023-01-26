@@ -32,6 +32,7 @@ class MiAZRenameDialog(Gtk.Box):
         self.backend = self.app.get_backend()
         self.factory = self.app.get_factory()
         self.actions = self.app.get_actions()
+        self.config = self.backend.get_conf()
         self.log = get_logger('MiazRenameDialog')
         # ~ self.set_size_request(800, 600)
         # ~ self.set_transient_for(self.app.win)
@@ -196,6 +197,7 @@ class MiAZRenameDialog(Gtk.Box):
         self.dropdowns.append((self.dpdCountry, Country))
         self.btnCountry.connect('clicked', self.on_country_manage)
         self.dpdCountry.connect("notify::selected-item", self.on_changed_entry)
+        config = self.config['Country'].connect('repo-settings-updated-countries', self.update_countries)
 
     def __create_field_2_group(self):
         self.rowGroup, self.btnGroup, self.dpdGroup = self.__create_actionrow('Group', Group, 'groups')
@@ -286,6 +288,10 @@ class MiAZRenameDialog(Gtk.Box):
         self.lblFilenameNew = Gtk.Label()
         self.row_new_filename.add_suffix(self.lblFilenameNew)
         self.boxMain.append(self.row_new_filename)
+
+    def update_countries(self, *args):
+        self.actions.dropdown_populate(self.dpdCountry, Country)
+        self.log.debug("Country dropdown updated")
 
     def _on_response_rename(self, dialog, response):
         if response == Gtk.ResponseType.ACCEPT:

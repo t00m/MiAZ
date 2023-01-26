@@ -66,11 +66,10 @@ class MiAZActions(GObject.GObject):
         self.app.show_stack_page_by_name('rename')
 
     def dropdown_populate(self, dropdown, item_type, keyfilter = False, intkeys=[], any_value=True):
-        self.log.debug("Populating dropdown for %s", item_type)
         model = dropdown.get_model()
         config = self.app.get_config(item_type.__gtype_name__)
         items = config.load(config.config_local)
-        self.log.debug(items)
+        self.log.debug("Populating dropdown for %s with %d items", item_type, len(items))
 
         # foreign key is used when the local configuration is saved as a
         # list, but it gets the name from global dictionary (eg.: Countries)

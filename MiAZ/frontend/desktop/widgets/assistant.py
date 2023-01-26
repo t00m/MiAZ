@@ -97,6 +97,7 @@ class MiAZAssistantRepo(MiAZAssistant):
         self.set_page_type(page, Gtk.AssistantPageType.SUMMARY)
         self.connect('cancel', self.on_assistant_cancel)
         self.connect('close', self.on_assistant_close)
+        self.log.debug("Repository Assistant ready")
 
     def validate_repo(self, *args):
         self.log.debug(args)
@@ -164,8 +165,8 @@ class MiAZAssistantRepo(MiAZAssistant):
             self.log.debug("Directory '%s' is not a MiAZ repository", dirpath)
             backend.init_repo(dirpath)
 
-        conf_app = self.app.get_config('App')
-        conf_app.set('source', dirpath)
+        # ~ conf_app = self.app.get_config('App')
+        # ~ conf_app.set('source', dirpath)
         self.destroy()
         self.app.check_repository()
 
