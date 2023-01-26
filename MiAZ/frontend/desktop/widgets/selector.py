@@ -129,7 +129,7 @@ class MiAZSelector(Gtk.Box):
             changed = True
 
         if changed:
-            self.config.save(items=items)
+            self.config.save(filepath=self.config.config_local, items=items)
             self.update_selected()
 
     def action_remove(self, *args):
