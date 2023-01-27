@@ -252,8 +252,9 @@ class MiAZAssistantRepoSettings(MiAZAssistant):
             self.destroy()
             self.app.win.present()
         else:
-            self.log.debug("Configuration incomplete. MiAZ app will exit now")
-            self.app.quit()
+            self.log.debug("Settings assistant canceled by user")
+            self.destroy()
+            self.app.win.present()
 
     def on_assistant_close(self, *args):
         conf_country = self.app.get_config('Country')
