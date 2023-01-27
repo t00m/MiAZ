@@ -46,11 +46,11 @@ MiAZ_MENU_WORKSPACE_REPO = """
   <section>
     <item>
       <attribute name='label' translatable='yes'>Stats</attribute>
-      <attribute name='action'>repo.stats</attribute>
+      <attribute name='action'>app.stats</attribute>
     </item>
     <item>
       <attribute name='label' translatable='yes'>Backup</attribute>
-      <attribute name='action'>repo.backup</attribute>
+      <attribute name='action'>app.backup</attribute>
     </item>
     <item>
       <attribute name='label' translatable='no'>--</attribute>
@@ -58,7 +58,7 @@ MiAZ_MENU_WORKSPACE_REPO = """
     </item>
     <item>
       <attribute name='label' translatable='yes'>Delete</attribute>
-      <attribute name='action'>repo.delete</attribute>
+      <attribute name='action'>app.delete</attribute>
     </item>
   </section>
 </menu>

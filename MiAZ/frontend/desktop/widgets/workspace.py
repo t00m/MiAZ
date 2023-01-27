@@ -247,6 +247,9 @@ class MiAZWorkspace(Gtk.Box):
         # ~ btnRepoSettings.set_popover(popover=popRepoSettings)
         btnRepoSettings.set_valign(Gtk.Align.CENTER)
 
+        # and create actions to handle menu actions
+        for action, shortcut in [('stats', [''])]:
+            self.factory.create_menu_action(action, self.menu_repo_handler, shortcut)
 
         cbwe.append(self.tgbExplain)
         cbwe.append(self.tgbFilters)
@@ -258,6 +261,11 @@ class MiAZWorkspace(Gtk.Box):
         toolbar_top.set_center_widget(self.ent_sb)
         toolbar_top.set_end_widget(cbwe)
         return toolbar_top
+
+    def menu_repo_handler(self, action, state):
+        name = action.get_name()
+        if name == 'stats':
+            self.log.debug(name)
 
     def _setup_columnview(self):
         # ColumnView
