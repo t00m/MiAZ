@@ -45,8 +45,8 @@ MiAZ_MENU_WORKSPACE_REPO = """
 <menu id='repo-menu'>
   <section>
     <item>
-      <attribute name='label' translatable='yes'>Stats</attribute>
-      <attribute name='action'>app.stats</attribute>
+      <attribute name='label' translatable='yes'>Repo settings</attribute>
+      <attribute name='action'>app.repo_settings</attribute>
     </item>
     <item>
       <attribute name='label' translatable='yes'>Backup</attribute>

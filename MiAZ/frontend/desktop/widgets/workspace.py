@@ -248,7 +248,7 @@ class MiAZWorkspace(Gtk.Box):
         btnRepoSettings.set_valign(Gtk.Align.CENTER)
 
         # and create actions to handle menu actions
-        for action, shortcut in [('stats', [''])]:
+        for action, shortcut in [('repo_settings', [''])]:
             self.factory.create_menu_action(action, self.menu_repo_handler, shortcut)
 
         cbwe.append(self.tgbExplain)
@@ -264,8 +264,12 @@ class MiAZWorkspace(Gtk.Box):
 
     def menu_repo_handler(self, action, state):
         name = action.get_name()
-        if name == 'stats':
-            self.log.debug(name)
+        if name == 'repo_settings':
+            self.log.debug("Execute Settings Assistant")
+            assistant = MiAZAssistantRepoSettings(self.app)
+            assistant.set_transient_for(self.app.win)
+            assistant.set_modal(True)
+            assistant.present()
 
     def _setup_columnview(self):
         # ColumnView
