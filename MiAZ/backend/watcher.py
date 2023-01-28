@@ -14,16 +14,22 @@ from gi.repository import GObject
 from MiAZ.backend.log import get_logger
 
 class MiAZWatcher(GObject.GObject):
+    __gtype_name__ = 'MiAZWatcher'
     before = {}
     active = False
 
     def __init__(self, name: str, dirpath: str):
-        GObject.GObject.__init__(self)
+        super(MiAZWatcher, self).__init__()
         self.log = get_logger('MiAZWatcher')
         self.name = name.lower()
-        GObject.signal_new('%s-directory-updated' % self.name, MiAZWatcher, GObject.SignalFlags.RUN_LAST, None, () )
-        self.set_path(dirpath)
-        GLib.timeout_add_seconds(2, self.watch)
+        self.dirpath = dirpath
+        sid = GObject.signal_lookup('repository-updated', MiAZWatcher)
+        self.log.debug("Watcher SID: %d", sid)
+        if sid == 0:
+            GObject.GObject.__init__(self)
+            GObject.signal_new('repository-updated', MiAZWatcher, GObject.SignalFlags.RUN_LAST, None, () )
+            self.set_path(dirpath)
+            GLib.timeout_add_seconds(2, self.watch)
 
     # PLAIN
     def __files_with_timestamp(self, rootdir):
@@ -97,8 +103,8 @@ class MiAZWatcher(GObject.GObject):
             updated |= True
 
         if updated:
-            self.emit('%s-directory-updated' % self.name)
-            # ~ self.log.debug("Signal 'directory-%s-updated'  emitted", self.name)
+            self.emit('repository-updated')
+            # ~ self.log.debug("Signal 'repository-updated'  emitted", self.name)
 
         self.before = after
         return True

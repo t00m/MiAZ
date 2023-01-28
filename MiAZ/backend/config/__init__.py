@@ -32,7 +32,7 @@ class MiAZConfig(GObject.GObject):
     def setup(self):
         self.log.debug("Setup configuration for %s", self.config_for)
         if not os.path.exists(self.config_available):
-            self.log.debug("\t%s - Available configuration file doesn't exist", self.config_for)
+            self.log.debug("\t%s - Available configuration file (%s) doesn't exist", self.config_for, self.config_available)
             if self.config_global is not None:
                 shutil.copy(self.config_global, self.config_available)
                 self.log.debug("\t%s - Available config created: %s", self.config_for, os.path.basename(self.config_available))
@@ -177,10 +177,12 @@ class MiAZConfigApp(MiAZConfig):
 
 class MiAZConfigSettingsCountries(MiAZConfig):
     def __init__(self, dir_conf):
-        GObject.GObject.__init__(self)
-        GObject.signal_new('repo-settings-updated-countries',
-                            MiAZConfigSettingsCountries,
-                            GObject.SignalFlags.RUN_LAST, None, () )
+        sid = GObject.signal_lookup('repo-settings-updated-countries', MiAZConfigSettingsCountries)
+        if sid == 0:
+            GObject.GObject.__init__(self)
+            GObject.signal_new('repo-settings-updated-countries',
+                                MiAZConfigSettingsCountries,
+                                GObject.SignalFlags.RUN_LAST, None, () )
         super().__init__(
             log=get_logger('MiAZ.Settings.Countries'),
             config_for = 'Countries',
@@ -199,10 +201,12 @@ class MiAZConfigSettingsCountries(MiAZConfig):
 
 class MiAZConfigSettingsGroups(MiAZConfig):
     def __init__(self, dir_conf):
-        GObject.GObject.__init__(self)
-        GObject.signal_new('repo-settings-updated-groups',
-                            MiAZConfigSettingsGroups,
-                            GObject.SignalFlags.RUN_LAST, None, () )
+        sid = GObject.signal_lookup('repo-settings-updated-groups', MiAZConfigSettingsGroups)
+        if sid == 0:
+            GObject.GObject.__init__(self)
+            GObject.signal_new('repo-settings-updated-groups',
+                                MiAZConfigSettingsGroups,
+                                GObject.SignalFlags.RUN_LAST, None, () )
         super().__init__(
             log=get_logger('MiAZ.Settings.Groups'),
             config_for = 'Groups',
@@ -223,10 +227,12 @@ class MiAZConfigSettingsGroups(MiAZConfig):
 
 class MiAZConfigSettingsSubgroups(MiAZConfig):
     def __init__(self, dir_conf):
-        GObject.GObject.__init__(self)
-        GObject.signal_new('repo-settings-updated-subgroups',
-                            MiAZConfigSettingsSubgroups,
-                            GObject.SignalFlags.RUN_LAST, None, () )
+        sid = GObject.signal_lookup('repo-settings-updated-subgroups', MiAZConfigSettingsSubgroups)
+        if sid == 0:
+            GObject.GObject.__init__(self)
+            GObject.signal_new('repo-settings-updated-subgroups',
+                                MiAZConfigSettingsSubgroups,
+                                GObject.SignalFlags.RUN_LAST, None, () )
         super().__init__(
             log=get_logger('MiAZ.Settings.Subgroups'),
             config_for = 'Subgroups',
@@ -247,10 +253,12 @@ class MiAZConfigSettingsSubgroups(MiAZConfig):
 
 class MiAZConfigSettingsPurposes(MiAZConfig):
     def __init__(self, dir_conf):
-        GObject.GObject.__init__(self)
-        GObject.signal_new('repo-settings-updated-purposes',
-                            MiAZConfigSettingsPurposes,
-                            GObject.SignalFlags.RUN_LAST, None, () )
+        sid = GObject.signal_lookup('repo-settings-updated-purposes', MiAZConfigSettingsPurposes)
+        if sid == 0:
+            GObject.GObject.__init__(self)
+            GObject.signal_new('repo-settings-updated-purposes',
+                                MiAZConfigSettingsPurposes,
+                                GObject.SignalFlags.RUN_LAST, None, () )
         super().__init__(
             log=get_logger('MiAZ.Settings.Purposes'),
             config_for = 'Purposes',
@@ -271,10 +279,12 @@ class MiAZConfigSettingsPurposes(MiAZConfig):
 
 class MiAZConfigSettingsConcepts(MiAZConfig):
     def __init__(self, dir_conf):
-        GObject.GObject.__init__(self)
-        GObject.signal_new('repo-settings-updated-concepts',
-                            MiAZConfigSettingsConcepts,
-                            GObject.SignalFlags.RUN_LAST, None, () )
+        sid = GObject.signal_lookup('repo-settings-updated-concepts', MiAZConfigSettingsConcepts)
+        if sid == 0:
+            GObject.GObject.__init__(self)
+            GObject.signal_new('repo-settings-updated-concepts',
+                                MiAZConfigSettingsConcepts,
+                                GObject.SignalFlags.RUN_LAST, None, () )
         super().__init__(
             log=get_logger('MiAZ.Settings.Concepts'),
             config_for = 'Concepts',

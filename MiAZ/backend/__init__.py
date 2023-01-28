@@ -96,8 +96,8 @@ class MiAZBackend(GObject.GObject):
         self.conf['Person'] = MiAZConfigSettingsPeople(dir_conf)
         self.watcher = MiAZWatcher('source', path)
         self.watcher.set_active(active=True)
-        self.watcher.connect('source-directory-updated', self.check_source)
-        self.conf['App'].connect('repo-settings-updated-app', self.foo)
+        self.watcher.connect('repository-updated', self.check_source)
+        # ~ self.conf['App'].connect('repo-settings-updated-app', self.foo)
         self.log.debug("Configuration loaded")
 
     def foo(self, *args):

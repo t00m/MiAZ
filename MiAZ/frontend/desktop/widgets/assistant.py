@@ -82,7 +82,7 @@ class MiAZAssistantRepo(MiAZAssistant):
         self.row_repo_source = self.factory.create_actionrow(title='Directory not set', suffix=btnRepoSource)
         listbox.append(self.row_repo_source)
         box.append(listbox)
-        page.set_start_widget(box)
+        page.set_center_widget(box)
         self.set_page_type(page, Gtk.AssistantPageType.CONTENT)
         self.set_page_complete(page, False)
 
@@ -157,9 +157,12 @@ class MiAZAssistantRepo(MiAZAssistant):
 
     def on_assistant_close(self, *args):
         backend = self.app.get_backend()
+        conf_app = self.app.get_config('App')
         dirpath = self.repopath
         if backend.is_repo(dirpath):
             self.log.debug("Directory '%s' is a MiAZ Repository", dirpath)
+            if len(conf_app.get('source')) == 0:
+                conf_app.set('source', dirpath)
             backend.load_repo(dirpath)
         else:
             self.log.debug("Directory '%s' is not a MiAZ repository", dirpath)
