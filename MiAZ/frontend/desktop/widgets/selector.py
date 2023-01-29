@@ -71,14 +71,9 @@ class MiAZSelector(Gtk.Box):
         boxAll = self.factory.create_box_vertical()
         btnAddSelected = self.factory.create_button('miaz-selector-add', callback=self.action_add)
         btnRemoveSelected = self.factory.create_button('miaz-selector-remove', callback=self.action_remove)
-        btnAddAll = self.factory.create_button('miaz-selector-add-all', callback=self.action_add_all)
-        btnRemoveAll = self.factory.create_button('miaz-selector-remove-all', callback=self.action_remove_all)
         boxSel.append(btnAddSelected)
         boxSel.append(btnRemoveSelected)
-        boxAll.append(btnAddAll)
-        boxAll.append(btnRemoveAll)
         boxControls.set_center_widget(boxSel)
-        # ~ boxControls.set_end_widget(boxAll)
 
         # Selected
         self.frmViewSl = Gtk.Frame()
@@ -95,7 +90,8 @@ class MiAZSelector(Gtk.Box):
         columnview.cv.sort_by_column(columnview.column_title, Gtk.SortType.ASCENDING)
 
     def add_columnview_selected(self, columnview):
-        columnview.set_filter(self._do_filter_view)
+        # ~ columnview.set_filter(self._do_filter_view)
+        columnview.set_filter(None)
         columnview.column_title.set_expand(True)
         self.frmViewSl.set_child(columnview)
         columnview.cv.sort_by_column(columnview.column_title, Gtk.SortType.ASCENDING)
@@ -127,7 +123,6 @@ class MiAZSelector(Gtk.Box):
         for item in self.viewAv.get_selected_items():
             items[item.id] = item.title
             changed = True
-
         if changed:
             self.config.save(filepath=self.config.config_local, items=items)
             self.update_selected()
@@ -142,18 +137,6 @@ class MiAZSelector(Gtk.Box):
         if changed:
             self.config.save(items=items)
             self.update_selected()
-
-    def action_add_all(self, *args):
-        changed = False
-        items_available = self.config.load(self.config.config_global)
-        items_selected = items_available.copy()
-        self.config.save(items_selected)
-        self.update_selected()
-
-    def action_remove_all(self, *args):
-        items = {}
-        self.config.save(items=items)
-        self.update_selected()
 
     def set_title(self, label:str = 'Selector'):
         self.title.set_markup(label)
