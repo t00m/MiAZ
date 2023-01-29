@@ -4,6 +4,7 @@
 import os
 import sys
 import shutil
+from enum import IntEnum
 from abc import abstractmethod
 
 import gi
@@ -21,6 +22,21 @@ from MiAZ.backend.log import get_logger
 
 # ~ from MiAZ.frontend.desktop.settings import MiAZSettings
 from MiAZ.frontend.desktop.widgets.configview import MiAZCountries
+from MiAZ.frontend.desktop.widgets.configview import MiAZGroups
+from MiAZ.frontend.desktop.widgets.configview import MiAZSubgroups
+from MiAZ.frontend.desktop.widgets.configview import MiAZPurposes
+from MiAZ.frontend.desktop.widgets.configview import MiAZPeople
+
+
+class PAGE(IntEnum):
+    WELCOME = 0
+    COUNTRIES = 1
+    GROUPS = 2
+    SUBGROUPS = 3
+    PURPOSES = 4
+    PEOPLE = 5
+    STATS = 6
+    SUMMARY = 7
 
 class MiAZAssistant(Gtk.Assistant):
     """ Start up Assistant"""
@@ -183,8 +199,12 @@ class MiAZAssistantRepoSettings(MiAZAssistant):
         super(MiAZAssistant, self).__init__()
         super().__init__(app)
 
+        self.connect('cancel', self.on_assistant_cancel)
+        # ~ self.connect('close', self.on_assistant_close)
+        self.connect('apply', self.on_assistant_close)
+
         # Pages
-        for title in ['Welcome', 'Country', 'Summary']:
+        for title in ['Welcome', 'Countries', 'Groups', 'Subgroups', 'Purposes', 'People', 'Stats']: #, 'Summary']:
             vbox = Gtk.CenterBox(orientation=Gtk.Orientation.VERTICAL)
             vbox.set_margin_top(margin=12)
             vbox.set_margin_end(margin=12)
@@ -194,8 +214,8 @@ class MiAZAssistantRepoSettings(MiAZAssistant):
             self.set_page_title(vbox, title)
 
 
-        # Page 0 - Welcome
-        page = self.get_nth_page(0)
+        # Page Welcome
+        page = self.get_nth_page(PAGE.WELCOME)
         lblWelcome = Gtk.Label.new(str='%s repository settings assistant' % (ENV['APP']['shortname']))
         lblWelcome.get_style_context().add_class(class_name='title-1')
         lblWelcome.set_margin_top(24)
@@ -208,46 +228,137 @@ class MiAZAssistantRepoSettings(MiAZAssistant):
         self.set_page_type(page, Gtk.AssistantPageType.INTRO)
         self.set_page_complete(page, True)
 
-        # Page 1 - Country settings
-        page = self.get_nth_page(1)
+        # Page Countries
+        page = self.get_nth_page(PAGE.COUNTRIES)
         box = self.factory.create_box_vertical(spacing=12, vexpand=True, hexpand=True)
         lblTitle = Gtk.Label()
-        lblTitle.set_markup('Select countries')
+        lblTitle.set_markup('Manage countries')
         lblTitle.get_style_context().add_class(class_name='title-2')
         box.append(lblTitle)
         lblDesc = Gtk.Label()
         lblDesc.set_markup('')
         lblDesc.set_xalign(0.0)
         box.append(lblDesc)
-        self.vcountries = MiAZCountries(self.app)
-        self.vcountries.set_vexpand(True)
-        self.vcountries.update()
-        box.append(self.vcountries)
+        selector = MiAZCountries(self.app)
+        selector.set_vexpand(True)
+        selector.update()
+        box.append(selector)
         page.set_start_widget(box)
-        self.lblInfo = Gtk.Label()
-        self.lblInfo.set_markup("Choose one or more countries")
-        self.ifb_country = Gtk.InfoBar()
-        self.ifb_country.set_revealed(True)
-        self.ifb_country.set_hexpand(True)
-        self.ifb_country.set_message_type(Gtk.MessageType.WARNING)
-        self.ifb_country.set_show_close_button(False)
-        self.ifb_country.add_child(self.lblInfo)
-        page.set_end_widget(self.ifb_country)
+        lblInfo = Gtk.Label()
+        lblInfo.set_markup("Manage countries")
+        page.set_end_widget(lblInfo)
         self.set_page_type(page, Gtk.AssistantPageType.CONTENT)
         self.set_page_complete(page, True)
 
-
-        # ~ # Page 2 - Confirm
-        page = self.get_nth_page(2)
+        # Page Groups
+        page = self.get_nth_page(PAGE.GROUPS)
         box = self.factory.create_box_vertical(spacing=12, vexpand=True, hexpand=True)
         lblTitle = Gtk.Label()
-        lblTitle.set_markup('Summary')
+        lblTitle.set_markup('Manage groups')
+        lblTitle.get_style_context().add_class(class_name='title-2')
+        box.append(lblTitle)
+        lblDesc = Gtk.Label()
+        lblDesc.set_markup('')
+        lblDesc.set_xalign(0.0)
+        box.append(lblDesc)
+        selector = MiAZGroups(self.app)
+        selector.set_vexpand(True)
+        selector.update()
+        box.append(selector)
+        page.set_start_widget(box)
+        lblInfo = Gtk.Label()
+        lblInfo.set_markup("Manage groups")
+        page.set_end_widget(lblInfo)
+        self.set_page_type(page, Gtk.AssistantPageType.CONTENT)
+        self.set_page_complete(page, True)
+
+        # Page Subgroups
+        page = self.get_nth_page(PAGE.SUBGROUPS)
+        box = self.factory.create_box_vertical(spacing=12, vexpand=True, hexpand=True)
+        lblTitle = Gtk.Label()
+        lblTitle.set_markup('Manage subgroups')
+        lblTitle.get_style_context().add_class(class_name='title-2')
+        box.append(lblTitle)
+        lblDesc = Gtk.Label()
+        lblDesc.set_markup('')
+        lblDesc.set_xalign(0.0)
+        box.append(lblDesc)
+        selector = MiAZSubgroups(self.app)
+        selector.set_vexpand(True)
+        selector.update()
+        box.append(selector)
+        page.set_start_widget(box)
+        lblInfo = Gtk.Label()
+        lblInfo.set_markup("Manage subgroups")
+        page.set_end_widget(lblInfo)
+        self.set_page_type(page, Gtk.AssistantPageType.CONTENT)
+        self.set_page_complete(page, True)
+
+        # Page Purposes
+        page = self.get_nth_page(PAGE.PURPOSES)
+        box = self.factory.create_box_vertical(spacing=12, vexpand=True, hexpand=True)
+        lblTitle = Gtk.Label()
+        lblTitle.set_markup('Manage purposes')
+        lblTitle.get_style_context().add_class(class_name='title-2')
+        box.append(lblTitle)
+        lblDesc = Gtk.Label()
+        lblDesc.set_markup('')
+        lblDesc.set_xalign(0.0)
+        box.append(lblDesc)
+        selector = MiAZPurposes(self.app)
+        selector.set_vexpand(True)
+        selector.update()
+        box.append(selector)
+        page.set_start_widget(box)
+        lblInfo = Gtk.Label()
+        lblInfo.set_markup("Manage purposes")
+        page.set_end_widget(lblInfo)
+        self.set_page_type(page, Gtk.AssistantPageType.CONTENT)
+        self.set_page_complete(page, True)
+
+        # Page People
+        page = self.get_nth_page(PAGE.PEOPLE)
+        box = self.factory.create_box_vertical(spacing=12, vexpand=True, hexpand=True)
+        lblTitle = Gtk.Label()
+        lblTitle.set_markup('Manage people')
+        lblTitle.get_style_context().add_class(class_name='title-2')
+        box.append(lblTitle)
+        lblDesc = Gtk.Label()
+        lblDesc.set_markup('')
+        lblDesc.set_xalign(0.0)
+        box.append(lblDesc)
+        selector = MiAZPeople(self.app)
+        selector.set_vexpand(True)
+        selector.update()
+        box.append(selector)
+        page.set_start_widget(box)
+        lblInfo = Gtk.Label()
+        lblInfo.set_markup("Manage people")
+        page.set_end_widget(lblInfo)
+        self.set_page_type(page, Gtk.AssistantPageType.CONTENT)
+        self.set_page_complete(page, True)
+
+        # Page Stats/Confirm
+        page = self.get_nth_page(PAGE.STATS)
+        box = self.factory.create_box_vertical(spacing=12, vexpand=True, hexpand=True)
+        lblTitle = Gtk.Label()
+        lblTitle.set_markup('Stats')
         lblTitle.get_style_context().add_class(class_name='title-2')
         box.append(lblTitle)
         page.set_start_widget(box)
-        self.set_page_type(page, Gtk.AssistantPageType.SUMMARY)
-        self.connect('cancel', self.on_assistant_cancel)
-        self.connect('close', self.on_assistant_close)
+        self.set_page_type(page, Gtk.AssistantPageType.CONFIRM)
+        self.set_page_complete(page, True)
+
+        # Page Summary
+        # ~ page = self.get_nth_page(PAGE.SUMMARY)
+        # ~ box = self.factory.create_box_vertical(spacing=12, vexpand=True, hexpand=True)
+        # ~ lblTitle = Gtk.Label()
+        # ~ lblTitle.set_markup('Summary')
+        # ~ lblTitle.get_style_context().add_class(class_name='title-2')
+        # ~ box.append(lblTitle)
+        # ~ page.set_start_widget(box)
+        # ~ self.set_page_type(page, Gtk.AssistantPageType.SUMMARY)
+
 
     def on_assistant_cancel(self, *args):
         if self.completed:
