@@ -49,6 +49,9 @@ class MiAZConfigView(MiAZSelector):
         self.set_margin_end(margin=6)
         self.set_margin_start(margin=6)
 
+    def set_config(self, config):
+        self.config = config
+
     def _on_filter_selected(self, *args):
         self.viewAv.refilter()
         self.viewSl.refilter()
@@ -77,9 +80,7 @@ class MiAZConfigView(MiAZSelector):
         return selector
 
     def _on_item_add(self, *args):
-        dialog = MiAZDialogAdd(self.app, self.get_root(), 'New %s' % self.config_for, '%s name' % self.config.config_for.title(), '')
-        boxkey2 = dialog.get_boxKey2()
-        boxkey2.set_visible(False)
+        dialog = MiAZDialogAdd(self.app, self.get_root(), 'New %s' % self.config.config_for, '%s name' % self.config.config_for.title(), '')
         etyValue1 = dialog.get_value1_widget()
         search_term = self.entry.get_text()
         etyValue1.set_text(search_term)
@@ -88,11 +89,12 @@ class MiAZConfigView(MiAZSelector):
 
     def _on_response_item_add(self, dialog, response):
         if response == Gtk.ResponseType.ACCEPT:
-            value = dialog.get_value1()
+            key = dialog.get_value1()
+            value = dialog.get_value2()
             if len(value) > 0:
                 items = self.config.load(self.config.config_available)
                 if not value.upper() in items:
-                    items[value.upper()] = ""
+                    items[key.upper()] = value
                     self.config.save(filepath=self.config.config_available, items=items)
                     self.update()
         dialog.destroy()
@@ -102,6 +104,7 @@ class MiAZConfigView(MiAZSelector):
 
     def _on_item_remove(self, *args):
         item = self.viewAv.get_item()
+        self.log.debug("%s > %s > %s", item, item.id, item.title)
         if item is None:
             return
         self.config.remove(item.id)
@@ -165,6 +168,7 @@ class MiAZGroups(MiAZConfigView):
         self.config = self.conf['Group']
         self.set_config_file_available(self.config.config_available)
         self.set_config_file_selected(self.config.config_local)
+        # ~ self.set_config(self.config)
 
     def _setup_view_finish(self):
         # Setup Available Column View
