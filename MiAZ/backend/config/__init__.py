@@ -139,11 +139,15 @@ class MiAZConfig(GObject.GObject):
             self.save(items=items)
             self.log.info("%s - Add: %s[%s]", self.config_for, key, value)
 
-    def remove(self, key):
-        items = self.load(self.config_local)
+    def remove(self, key: str = None, filepath: str = None):
+        if key is None:
+            return
+        if filepath is None:
+            filepath = self.config_available
+        items = self.load(filepath)
         if key in items:
             del(items[key])
-            self.save(items=items)
+            self.save(filepath=filepath, items=items)
             self.log.info("%s - Remove: %s", self.config_for, key)
 
 
