@@ -68,7 +68,6 @@ class MiAZSelector(Gtk.Box):
 
         # Controls
         boxSel = self.factory.create_box_vertical()
-        boxAll = self.factory.create_box_vertical()
         btnAddSelected = self.factory.create_button('miaz-selector-add', callback=self.action_add)
         btnRemoveSelected = self.factory.create_button('miaz-selector-remove', callback=self.action_remove)
         boxSel.append(btnAddSelected)
@@ -90,7 +89,6 @@ class MiAZSelector(Gtk.Box):
         columnview.cv.sort_by_column(columnview.column_title, Gtk.SortType.ASCENDING)
 
     def add_columnview_selected(self, columnview):
-        # ~ columnview.set_filter(self._do_filter_view)
         columnview.set_filter(None)
         columnview.column_title.set_expand(True)
         self.frmViewSl.set_child(columnview)
