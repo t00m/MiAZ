@@ -126,7 +126,7 @@ class MiAZWorkspace(Gtk.Box):
         title = item_type.__gtype_name__
         self.enable_filtering(False)
         self.actions.dropdown_populate(self.dropdown[title], item_type)
-        self.log.debug("Updating dropdown for %s", title)
+        # ~ self.log.debug("Updating dropdown for %s", title)
         self.enable_filtering(True)
 
 

@@ -97,13 +97,13 @@ class MiAZSelector(Gtk.Box):
     def _setup_view_finish(self, *args):
         pass
 
-    def set_config_file_available(self, path:str):
-        self.conf_available = path
-        self.log.debug("%s > Available config path: %s", self.config.config_for, path)
+    # ~ def set_config_file_available(self, path:str):
+        # ~ self.conf_available = path
+        # ~ self.log.debug("%s > Available config path: %s", self.config.config_for, path)
 
-    def set_config_file_selected(self, path:str):
-        self.dir_conf_selected = path
-        self.log.debug("%s > Selected config path: %s", self.config.config_for, path)
+    # ~ def set_config_file_selected(self, path:str):
+        # ~ self.dir_conf_selected = path
+        # ~ self.log.debug("%s > Selected config path: %s", self.config.config_for, path)
 
     def update(self):
         self.update_available()
@@ -117,24 +117,30 @@ class MiAZSelector(Gtk.Box):
 
     def action_add(self, *args):
         changed = False
-        items = self.config.load(self.dir_conf_selected)
-        for item in self.viewAv.get_selected_items():
-            items[item.id] = item.title
+        items_local = self.config.load(self.config.config_local)
+        for item_available in self.viewAv.get_selected_items():
+            self.log.debug("Using %s (%s)", item_available.id, item_available.title)
+            items_local[item_available.id] = item_available.title
             changed = True
         if changed:
-            self.config.save(filepath=self.config.config_local, items=items)
+            self.config.save(filepath=self.config.config_local, items=items_local)
             self.update_selected()
 
     def action_remove(self, *args):
         changed = False
-        items = self.config.load(self.dir_conf_selected)
+        items_local = self.config.load(self.config.config_local)
+        items_available = self.config.load(self.config.config_available)
         for item in self.viewSl.get_selected_items():
-            del(items[item.id])
+            if item.id not in items_available:
+                items_available[item.id] = item.title
+            del(items_local[item.id])
             changed = True
 
         if changed:
-            self.config.save(items=items)
+            self.config.save(filepath=self.config.config_local, items=items_local)
+            self.config.save(filepath=self.config.config_available, items=items_available)
             self.update_selected()
+            self.update_available()
 
     def set_title(self, label:str = 'Selector'):
         self.title.set_markup(label)

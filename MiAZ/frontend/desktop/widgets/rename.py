@@ -291,7 +291,7 @@ class MiAZRenameDialog(Gtk.Box):
 
     def update_countries(self, *args):
         self.actions.dropdown_populate(self.dpdCountry, Country)
-        self.log.debug("Rename Country dropdown updated")
+        # ~ self.log.debug("Rename Country dropdown updated")
 
     def _on_response_rename(self, dialog, response):
         if response == Gtk.ResponseType.ACCEPT:

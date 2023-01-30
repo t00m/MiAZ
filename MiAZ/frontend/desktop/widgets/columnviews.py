@@ -278,8 +278,10 @@ class MiAZColumnViewGroup(MiAZColumnView):
 
     def __init__(self, app):
         super().__init__(app, item_type=Group)
+        self.cv.append_column(self.column_id)
+        self.column_title.set_title("Group Id")
         self.cv.append_column(self.column_title)
-        self.column_title.set_title("Group")
+        self.column_title.set_title("Description")
 
 class MiAZColumnViewSubgroup(MiAZColumnView):
     """ Custom ColumnView widget for MiAZ """
@@ -287,8 +289,10 @@ class MiAZColumnViewSubgroup(MiAZColumnView):
 
     def __init__(self, app):
         super().__init__(app, item_type=Subgroup)
+        self.cv.append_column(self.column_id)
+        self.column_title.set_title("Subgroup Id")
         self.cv.append_column(self.column_title)
-        self.column_title.set_title("Subgroup")
+        self.column_title.set_title("Description")
 
 class MiAZColumnViewPurpose(MiAZColumnView):
     """ Custom ColumnView widget for MiAZ """
@@ -296,8 +300,10 @@ class MiAZColumnViewPurpose(MiAZColumnView):
 
     def __init__(self, app):
         super().__init__(app, item_type=Purpose)
+        self.cv.append_column(self.column_id)
+        self.column_title.set_title("Purpose Id")
         self.cv.append_column(self.column_title)
-        self.column_title.set_title("Purpose")
+        self.column_title.set_title("Description")
 
 class MiAZColumnViewPerson(MiAZColumnView):
     """ Custom ColumnView widget for MiAZ """
@@ -306,6 +312,6 @@ class MiAZColumnViewPerson(MiAZColumnView):
     def __init__(self, app):
         super().__init__(app, item_type=Person)
         self.cv.append_column(self.column_id)
-        self.cv.append_column(self.column_title)
         self.column_id.set_title("Initials")
+        self.cv.append_column(self.column_title)
         self.column_title.set_title("Full name")

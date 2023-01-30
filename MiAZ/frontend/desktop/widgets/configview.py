@@ -30,11 +30,11 @@ from MiAZ.frontend.desktop.widgets.columnviews import MiAZColumnViewPerson
 class MiAZConfigView(MiAZSelector):
     """"""
     __gtype_name__ = 'MiAZConfigView'
-    current = None
-    config_local = None
-    config_global = None
+    # ~ current = None
+    # ~ config_local = None
+    # ~ config_global = None
     config_for = None
-    search_term = ''
+    # ~ search_term = ''
 
     def __init__(self, app):
         super(MiAZSelector, self).__init__(spacing=3, orientation=Gtk.Orientation.VERTICAL)
@@ -91,10 +91,11 @@ class MiAZConfigView(MiAZSelector):
         if response == Gtk.ResponseType.ACCEPT:
             key = dialog.get_value1()
             value = dialog.get_value2()
-            if len(value) > 0:
+            if len(key) > 0:
                 items = self.config.load(self.config.config_available)
-                if not value.upper() in items:
+                if not key.upper() in items:
                     items[key.upper()] = value
+                    self.log.debug("%s (%s) added to list of available items", key.upper(), value)
                     self.config.save(filepath=self.config.config_available, items=items)
                     self.update()
         dialog.destroy()
@@ -112,10 +113,21 @@ class MiAZConfigView(MiAZSelector):
         self.entry.set_text('')
         self.entry.activate()
 
-    def config_set(self, config_for, config_local, config_global):
-        self.config_for = config_for
-        self.config_local = config_local
-        self.config_global = config_global
+    def update_available(self):
+        items_available = []
+        item_type = self.config.config_model
+        items = self.config.load(self.config.config_available)
+        for key in items:
+            items_available.append(item_type(id=key, title=items[key]))
+        self.viewAv.update(items_available)
+
+    def update_selected(self):
+        items_selected = []
+        item_type = self.config.config_model
+        items = self.config.load(self.config.config_local)
+        for key in items:
+            items_selected.append(item_type(id=key, title=items[key]))
+        self.viewSl.update(items_selected)
 
 
 class MiAZCountries(MiAZConfigView):
@@ -127,10 +139,6 @@ class MiAZCountries(MiAZConfigView):
         super(MiAZConfigView, self).__init__(app, edit=False)
         super().__init__(app)
         self.config = self.conf['Country']
-        # ~ self.config = MiAZConfigSettingsCountries(self.dir_conf)
-         #, self.config.config_for)
-        self.set_config_file_available(self.config.config_global)
-        self.set_config_file_selected(self.config.config_local)
 
     def _setup_view_finish(self):
         # Setup Available Column View
@@ -144,7 +152,7 @@ class MiAZCountries(MiAZConfigView):
     def update_available(self):
         items = []
         item_type = self.config.config_model
-        countries = self.config.load(self.conf_available)
+        countries = self.config.load(self.config.config_available)
         for code in countries:
             items.append(item_type(id=code, title=countries[code], icon='%s.svg' % code))
         self.viewAv.update(items)
@@ -152,7 +160,7 @@ class MiAZCountries(MiAZConfigView):
     def update_selected(self):
         items = []
         item_type = self.config.config_model
-        countries = self.config.load(self.dir_conf_selected)
+        countries = self.config.load(self.config.config_local)
         for code in countries:
             items.append(item_type(id=code, title=countries[code], icon='%s.svg' % code))
         self.viewSl.update(items)
@@ -160,15 +168,12 @@ class MiAZCountries(MiAZConfigView):
 class MiAZGroups(MiAZConfigView):
     """"""
     __gtype_name__ = 'MiAZGroups'
-    current = None
+    # ~ current = None
 
     def __init__(self, app):
         super(MiAZConfigView, self).__init__(app, edit=True)
         super().__init__(app)
         self.config = self.conf['Group']
-        self.set_config_file_available(self.config.config_available)
-        self.set_config_file_selected(self.config.config_local)
-        # ~ self.set_config(self.config)
 
     def _setup_view_finish(self):
         # Setup Available Column View
@@ -179,33 +184,16 @@ class MiAZGroups(MiAZConfigView):
         self.viewSl = MiAZColumnViewGroup(self.app)
         self.add_columnview_selected(self.viewSl)
 
-    def update_available(self):
-        items = []
-        item_type = self.config.config_model
-        groups = self.config.load(self.conf_available)
-        for group in groups:
-            items.append(item_type(id=group, title=group))
-        self.viewAv.update(items)
-
-    def update_selected(self):
-        items = []
-        item_type = self.config.config_model
-        groups = self.config.load(self.dir_conf_selected)
-        for group in groups:
-            items.append(item_type(id=group, title=group))
-        self.viewSl.update(items)
 
 class MiAZSubgroups(MiAZConfigView):
     """"""
     __gtype_name__ = 'MiAZSubgroups'
-    current = None
+
 
     def __init__(self, app):
         super(MiAZConfigView, self).__init__(app, edit=False)
         super().__init__(app)
         self.config = self.conf['Subgroup']
-        self.set_config_file_available(self.config.config_global)
-        self.set_config_file_selected(self.config.config_local)
 
     def _setup_view_finish(self):
         # Setup Available Column View
@@ -216,21 +204,6 @@ class MiAZSubgroups(MiAZConfigView):
         self.viewSl = MiAZColumnViewSubgroup(self.app)
         self.add_columnview_selected(self.viewSl)
 
-    def update_available(self):
-        items = []
-        item_type = self.config.config_model
-        subgroups = self.config.load(self.conf_available)
-        for subgroup in subgroups:
-            items.append(item_type(id=subgroup, title=subgroup))
-        self.viewAv.update(items)
-
-    def update_selected(self):
-        items = []
-        item_type = self.config.config_model
-        subgroups = self.config.load(self.dir_conf_selected)
-        for subgroup in subgroups:
-            items.append(item_type(id=subgroup, title=subgroup))
-        self.viewSl.update(items)
 
 class MiAZPeople(MiAZConfigView):
     """Class for managing People from Settings"""
@@ -240,8 +213,6 @@ class MiAZPeople(MiAZConfigView):
         super(MiAZConfigView, self).__init__(app, edit=False)
         super().__init__(app)
         self.config = self.conf['Person']
-        self.set_config_file_available(self.config.config_global)
-        self.set_config_file_selected(self.config.config_local)
 
     def _setup_view_finish(self):
         # Setup Available Column View
@@ -251,22 +222,6 @@ class MiAZPeople(MiAZConfigView):
         # Setup Selected Column View
         self.viewSl = MiAZColumnViewPerson(self.app)
         self.add_columnview_selected(self.viewSl)
-
-    def update_available(self):
-        items = []
-        item_type = self.config.config_model
-        people = self.config.load(self.conf_available)
-        for pid in people:
-            items.append(item_type(id=pid, title=people[pid]))
-        self.viewAv.update(items)
-
-    def update_selected(self):
-        items = []
-        item_type = self.config.config_model
-        people = self.config.load(self.dir_conf_selected)
-        for pid in people:
-            items.append(item_type(id=pid, title=people[pid]))
-        self.viewSl.update(items)
 
     def _on_item_add(self, *args):
         dialog = MiAZDialogAdd(self.app, self.get_root(), 'Add new %s' % self.config.config_for, 'Initials', 'Full name')
@@ -284,7 +239,7 @@ class MiAZPeople(MiAZConfigView):
                 items = self.config.load(self.config.config_local)
                 items[key.upper()] = value
                 self.log.info("New person: %s (%s)", key.upper(), value)
-                self.config.save(items=items)
+                self.config.save(filepath=self.config.config_available, items=items)
                 self.update()
         dialog.destroy()
 
@@ -297,8 +252,6 @@ class MiAZPurposes(MiAZConfigView):
         super(MiAZConfigView, self).__init__(app, edit=False)
         super().__init__(app)
         self.config = self.conf['Purpose']
-        self.set_config_file_available(self.config.config_global)
-        self.set_config_file_selected(self.config.config_local)
 
     def _setup_view_finish(self):
        # Setup Available Column View
@@ -309,18 +262,4 @@ class MiAZPurposes(MiAZConfigView):
         self.viewSl = MiAZColumnViewPurpose(self.app)
         self.add_columnview_selected(self.viewSl)
 
-    def update_available(self):
-        items = []
-        item_type = self.config.config_model
-        purposes = self.config.load(self.conf_available)
-        for purpose in purposes:
-            items.append(item_type(id=purpose, title=purpose))
-        self.viewAv.update(items)
 
-    def update_selected(self):
-        items = []
-        item_type = self.config.config_model
-        purposes = self.config.load(self.dir_conf_selected)
-        for purpose in purposes:
-            items.append(item_type(id=purpose, title=purpose))
-        self.viewSl.update(items)

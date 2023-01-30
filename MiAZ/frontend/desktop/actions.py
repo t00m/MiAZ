@@ -70,7 +70,7 @@ class MiAZActions(GObject.GObject):
         config = self.app.get_config(item_type.__gtype_name__)
         items = config.load(config.config_local)
         title = item_type.__gtype_name__
-        self.log.debug("Populating dropdown for %s with %d items", title, len(items))
+        # ~ self.log.debug("Populating dropdown for %s with %d items", title, len(items))
 
         # foreign key is used when the local configuration is saved as a
         # list, but it gets the name from global dictionary (eg.: Countries)
