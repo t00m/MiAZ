@@ -202,7 +202,7 @@ class MiAZRenameDialog(Gtk.Box):
     def __create_field_2_group(self):
         self.rowGroup, self.btnGroup, self.dpdGroup = self.__create_actionrow('Group', Group, 'groups')
         self.dropdowns.append((self.dpdGroup, Group))
-        self.btnGroup.connect('clicked', self.on_group_manage)
+        self.btnGroup.connect('clicked', self.on_resource_manage, MiAZGroups(self.app))
         self.dpdGroup.connect("notify::selected-item", self.on_changed_entry)
 
     def __create_field_3_subgroup(self):
@@ -494,20 +494,6 @@ class MiAZRenameDialog(Gtk.Box):
         question.connect('response', self.on_answer_question_delete)
         question.show()
 
-    def on_people_refresh(self, *args):
-        config = self.app.get_config('Person')
-        people = config.load(config.used)
-        model = self.combobox_from.get_model()
-        model.clear()
-        for alias in people:
-            model.append([alias, "<i>%s</i>" % people[alias]])
-
-        model = self.combobox_to.get_model()
-        model.clear()
-        for alias in people:
-            model.append([alias, "<i>%s</i>" % people[alias]])
-
-
     def on_answer_question_delete(self, dialog, response):
         filepath = self.get_filepath_source()
         if response == Gtk.ResponseType.YES:
@@ -539,13 +525,14 @@ class MiAZRenameDialog(Gtk.Box):
         dialog = self.factory.create_dialog(self.app.win, 'Manage countries', box, 800, 600)
         dialog.show()
 
-    def on_group_manage(self, *args):
+    def on_resource_manage(self, button, selector):
         box = self.factory.create_box_vertical(spacing=12, vexpand=True, hexpand=True)
-        selector = MiAZGroups(self.app)
+        config_for = selector.get_config_for()
+        # ~ selector = configview(self.app)
         selector.set_vexpand(True)
         selector.update()
         box.append(selector)
-        dialog = self.factory.create_dialog(self.app.win, 'Manage groups', box, 800, 600)
+        dialog = self.factory.create_dialog(self.app.win, 'Manage %s' % config_for, box, 800, 600)
         dialog.show()
 
     def on_country_close(self, *args):
@@ -615,7 +602,7 @@ class MiAZRenameDialog(Gtk.Box):
             value = dialog.get_value2()
             if len(key) > 0:
                 config = self.app.get_config('Subgroup')
-                config.add(key, value)
+                config.add(key=key.upper(), value=value)
                 self.actions.dropdown_populate(self.dpdSubgroup, Subgroup)
                 self.select_dropdown_item(self.dpdSubgroup, key)
         dialog.destroy()
@@ -627,12 +614,4 @@ class MiAZRenameDialog(Gtk.Box):
             if len(key) > 0 and len(value) > 0:
                 config = self.app.get_config('Person')
                 config.add(key=key.upper(), value=value)
-                # ~ items = config.load(config.used)
-                # ~ items[key.upper()] = value
-                # ~ config.save(items)
-
-                # Update combobox from
-                model = self.combobox_to.get_model()
-                treeiter = model.append([key.upper(), "<i>%s</i>" % value])
-                self.combobox_to.set_active_iter(treeiter)
         dialog.destroy()

@@ -49,6 +49,9 @@ class MiAZConfigView(MiAZSelector):
         self.set_margin_end(margin=6)
         self.set_margin_start(margin=6)
 
+    def get_config_for(self):
+        return self.config.config_for
+
     def set_config(self, config):
         self.config = config
 
