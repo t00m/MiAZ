@@ -496,7 +496,7 @@ class MiAZRenameDialog(Gtk.Box):
 
     def on_people_refresh(self, *args):
         config = self.app.get_config('Person')
-        people = config.load(config.config_local)
+        people = config.load(config.used)
         model = self.combobox_from.get_model()
         model.clear()
         for alias in people:
@@ -578,7 +578,7 @@ class MiAZRenameDialog(Gtk.Box):
             if len(key) > 0 and len(value) > 0:
                 config = self.app.get_config('Person')
                 config.add(key=key.upper(), value=value)
-                # ~ items = config.load(config.config_local)
+                # ~ items = config.load(config.used)
                 # ~ items[key.upper()] = value
                 # ~ config.save(items)
 
@@ -626,7 +626,7 @@ class MiAZRenameDialog(Gtk.Box):
             if len(key) > 0 and len(value) > 0:
                 config = self.app.get_config('Person')
                 config.add(key=key.upper(), value=value)
-                # ~ items = config.load(config.config_local)
+                # ~ items = config.load(config.used)
                 # ~ items[key.upper()] = value
                 # ~ config.save(items)
 

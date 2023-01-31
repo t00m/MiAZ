@@ -68,16 +68,16 @@ class MiAZSelector(Gtk.Box):
 
         # Controls
         boxSel = self.factory.create_box_vertical()
-        btnAddSelected = self.factory.create_button('miaz-selector-add', callback=self.action_add)
-        btnRemoveSelected = self.factory.create_button('miaz-selector-remove', callback=self.action_remove)
-        boxSel.append(btnAddSelected)
-        boxSel.append(btnRemoveSelected)
+        btnAddToUsed = self.factory.create_button('miaz-selector-add', callback=self.action_add)
+        btnRemoveFromUsed = self.factory.create_button('miaz-selector-remove', callback=self.action_remove)
+        boxSel.append(btnAddToUsed)
+        boxSel.append(btnRemoveFromUsed)
         boxControls.set_center_widget(boxSel)
 
-        # Selected
+        # Used
         self.frmViewSl = Gtk.Frame()
         title = Gtk.Label()
-        title.set_markup("<b>Selected</b>")
+        title.set_markup("<b>Used</b>")
         boxRight.append(title)
         boxRight.append(self.frmViewSl)
         self._setup_view_finish()
@@ -88,7 +88,7 @@ class MiAZSelector(Gtk.Box):
         self.frmViewAv.set_child(columnview)
         columnview.cv.sort_by_column(columnview.column_title, Gtk.SortType.ASCENDING)
 
-    def add_columnview_selected(self, columnview):
+    def add_columnview_used(self, columnview):
         columnview.set_filter(None)
         columnview.column_title.set_expand(True)
         self.frmViewSl.set_child(columnview)
@@ -97,49 +97,41 @@ class MiAZSelector(Gtk.Box):
     def _setup_view_finish(self, *args):
         pass
 
-    # ~ def set_config_file_available(self, path:str):
-        # ~ self.conf_available = path
-        # ~ self.log.debug("%s > Available config path: %s", self.config.config_for, path)
-
-    # ~ def set_config_file_selected(self, path:str):
-        # ~ self.dir_conf_selected = path
-        # ~ self.log.debug("%s > Selected config path: %s", self.config.config_for, path)
-
     def update(self):
         self.update_available()
-        self.update_selected()
+        self.update_used()
 
     def update_available(self):
         pass
 
-    def update_selected(self):
+    def update_used(self):
         pass
 
     def action_add(self, *args):
         changed = False
-        items_local = self.config.load(self.config.config_local)
+        items_used = self.config.load(self.config.used)
         for item_available in self.viewAv.get_selected_items():
             self.log.debug("Using %s (%s)", item_available.id, item_available.title)
-            items_local[item_available.id] = item_available.title
+            items_used[item_available.id] = item_available.title
             changed = True
         if changed:
-            self.config.save(filepath=self.config.config_local, items=items_local)
-            self.update_selected()
+            self.config.save(filepath=self.config.used, items=items_used)
+            self.update_used()
 
     def action_remove(self, *args):
         changed = False
-        items_local = self.config.load(self.config.config_local)
-        items_available = self.config.load(self.config.config_available)
+        items_used = self.config.load(self.config.used)
+        items_available = self.config.load(self.config.available)
         for item in self.viewSl.get_selected_items():
             if item.id not in items_available:
                 items_available[item.id] = item.title
-            del(items_local[item.id])
+            del(items_used[item.id])
             changed = True
 
         if changed:
-            self.config.save(filepath=self.config.config_local, items=items_local)
-            self.config.save(filepath=self.config.config_available, items=items_available)
-            self.update_selected()
+            self.config.save(filepath=self.config.used, items=items_used)
+            self.config.save(filepath=self.config.available, items=items_available)
+            self.update_used()
             self.update_available()
 
     def set_title(self, label:str = 'Selector'):

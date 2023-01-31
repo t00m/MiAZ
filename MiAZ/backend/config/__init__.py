@@ -10,18 +10,17 @@ from MiAZ.backend.models import MiAZModel, MiAZItem, File, Group, Subgroup, Pers
 
 class MiAZConfig(GObject.GObject):
     """ MiAZ Config class"""
-    config_local = None
-    config_global = None
+    used = None
+    default = None
 
-    def __init__(self, log, config_for, config_local=None, config_available=None, config_global=None, config_model=MiAZModel, must_copy=True, foreign=False):
+    def __init__(self, log, config_for, used=None, available=None, default=None, model=MiAZModel, must_copy=True, foreign=False):
         super().__init__()
         self.log = log
-        # ~ self.log.debug("Config dir: %s", config_local)
         self.config_for = config_for
-        self.config_local = config_local
-        self.config_available = config_available
-        self.config_global = config_global
-        self.config_model = config_model
+        self.used = used
+        self.available = available
+        self.default = default
+        self.model = model
         self.must_copy = must_copy
         self.foreign = foreign
         self.setup()
@@ -31,47 +30,26 @@ class MiAZConfig(GObject.GObject):
 
     def setup(self):
         self.log.debug("Setup configuration for %s", self.config_for)
-        if not os.path.exists(self.config_available):
-            self.log.debug("\t%s - Available configuration file (%s) doesn't exist", self.config_for, self.config_available)
-            if self.config_global is not None:
-                shutil.copy(self.config_global, self.config_available)
-                self.log.debug("\t%s - Available config created: %s", self.config_for, os.path.basename(self.config_available))
+        if not os.path.exists(self.available):
+            self.log.debug("\t%s - Available configuration file (%s) doesn't exist", self.config_for, self.available)
+            if self.default is not None:
+                shutil.copy(self.default, self.available)
+                self.log.debug("\t%s - Available config created: %s", self.config_for, os.path.basename(self.available))
             else:
                 self.log.debug("\t%s - No global config available.", self.config_for)
 
-            # ~ # Create empty local configuration
-            # ~ self.save(items={})
-            # ~ if self.must_copy:
-                # ~ try:
-                    # ~ self.log.debug("\t%s - Global config: (%s)", self.config_for, os.path.basename(self.config_global))
-                    # ~ self.log.debug("\t%s - Available config: (%s)", self.config_for, os.path.basename(self.config_available))
-                    # ~ self.log.debug("\t%s - Local config: (%s)", self.config_for, os.path.basename(self.config_local))
-                    # ~ self.log.debug("\t%s - Global config copied to available", self.config_for)
-                # ~ except (FileNotFoundError, IOError) as error:
-                    # ~ self.log.error(error)
-                    # ~ return None
-            # ~ else:
-                # ~ # Create an empty config file
-                # ~ self.log.debug("\t%s - Creating empty config file", self.config_for)
-                # ~ self.save(items={})
-
-        # ~ if self.config_available is not None:
-            # ~ if not os.path.exists(self.config_available):
-                # ~ self.log.debug("\t%s - Creating empty available config file", self.config_for)
-                # ~ self.save(filepath=self.config_available, items={})
-
-        if not os.path.exists(self.config_local):
+        if not os.path.exists(self.used):
             self.log.debug("\t%s - Creating empty local config file", self.config_for)
-            self.save(filepath=self.config_local, items={})
+            self.save(filepath=self.used, items={})
 
     def get_config_for(self):
         return self.config_for
 
-    def get_config_local(self):
-        return self.config_local
+    def get_used(self):
+        return self.used
 
-    def get_config_global(self):
-        return self.config_global
+    def get_default(self):
+        return self.default
 
     def get_config_foreign(self):
         return self.foreign
@@ -85,7 +63,7 @@ class MiAZConfig(GObject.GObject):
 
     def save_data(self, filepath: str = '', items: dict = {}) -> bool:
         if filepath == '':
-            filepath = self.config_local
+            filepath = self.used
         try:
             json_save(filepath, items)
             saved = True
@@ -96,14 +74,14 @@ class MiAZConfig(GObject.GObject):
         return saved
 
     def get(self, key: str) -> str:
-        config = self.load(self.config_local)
+        config = self.load(self.used)
         try:
             return config[key]
         except KeyError:
             return ''
 
     def set(self, key: str, value: str) -> None:
-        items = self.load(self.config_local)
+        items = self.load(self.used)
         items[key] = value
         self.save(items=items)
 
@@ -111,9 +89,9 @@ class MiAZConfig(GObject.GObject):
         found = False
 
         if self.must_copy:
-            config = self.load(self.config_local)
+            config = self.load(self.used)
         else:
-            config = self.load(self.config_global)
+            config = self.load(self.default)
 
         if isinstance(config, dict):
             try:
@@ -133,7 +111,7 @@ class MiAZConfig(GObject.GObject):
         return found
 
     def add(self, key, value=None):
-        items = self.load(self.config_local)
+        items = self.load(self.used)
         if not key in items:
             items[key] = value.upper()
             self.save(items=items)
@@ -143,7 +121,7 @@ class MiAZConfig(GObject.GObject):
         if key is None:
             return
         if filepath is None:
-            filepath = self.config_available
+            filepath = self.available
         items = self.load(filepath)
         if key in items:
             del(items[key])
@@ -160,14 +138,14 @@ class MiAZConfigApp(MiAZConfig):
         super().__init__(
             log=get_logger('MiAZ.Config.App'),
             config_for = 'Miaz-application',
-            config_available = ENV['FILE']['CONF'],
-            config_local = ENV['FILE']['CONF'],
-            config_global = None,
+            available = ENV['FILE']['CONF'],
+            used = ENV['FILE']['CONF'],
+            default = None,
             must_copy = False
         )
 
     def exists(self, key: str) -> bool:
-        config = self.load(self.config_local)
+        config = self.load(self.used)
         if key in config:
             found = True
         else:
@@ -190,11 +168,11 @@ class MiAZConfigSettingsCountries(MiAZConfig):
         super().__init__(
             log=get_logger('MiAZ.Settings.Countries'),
             config_for = 'Countries',
-            config_available = os.path.join(dir_conf, 'countries_all.json'),
-            config_local = os.path.join(dir_conf, 'countries.json'),
-            config_global = os.path.join(ENV['GPATH']['RESOURCES'],
+            available = os.path.join(dir_conf, 'countries_all.json'),
+            used = os.path.join(dir_conf, 'countries.json'),
+            default = os.path.join(ENV['GPATH']['RESOURCES'],
                             'MiAZ-countries.json'),
-            config_model = Country,
+            model = Country,
             must_copy = False,
             foreign = True
         )
@@ -214,11 +192,11 @@ class MiAZConfigSettingsGroups(MiAZConfig):
         super().__init__(
             log=get_logger('MiAZ.Settings.Groups'),
             config_for = 'Groups',
-            config_local = os.path.join(dir_conf, 'groups.json'),
-            config_available = os.path.join(dir_conf, 'groups_all.json'),
-            config_global = os.path.join(ENV['GPATH']['RESOURCES'],
+            used = os.path.join(dir_conf, 'groups.json'),
+            available = os.path.join(dir_conf, 'groups_all.json'),
+            default = os.path.join(ENV['GPATH']['RESOURCES'],
                             'MiAZ-groups.json'),
-            config_model = Group,
+            model = Group,
             must_copy = True
         )
 
@@ -240,11 +218,11 @@ class MiAZConfigSettingsSubgroups(MiAZConfig):
         super().__init__(
             log=get_logger('MiAZ.Settings.Subgroups'),
             config_for = 'Subgroups',
-            config_local = os.path.join(dir_conf, 'subgroups.json'),
-            config_available = os.path.join(dir_conf, 'subgroups_all.json'),
-            config_global = os.path.join(ENV['GPATH']['RESOURCES'],
+            used = os.path.join(dir_conf, 'subgroups.json'),
+            available = os.path.join(dir_conf, 'subgroups_all.json'),
+            default = os.path.join(ENV['GPATH']['RESOURCES'],
                             'MiAZ-subgroups.json'),
-            config_model = Subgroup,
+            model = Subgroup,
             must_copy = True
         )
 
@@ -266,11 +244,11 @@ class MiAZConfigSettingsPurposes(MiAZConfig):
         super().__init__(
             log=get_logger('MiAZ.Settings.Purposes'),
             config_for = 'Purposes',
-            config_local = os.path.join(dir_conf, 'purposes.json'),
-            config_available = os.path.join(dir_conf, 'purposes_all.json'),
-            config_global = os.path.join(ENV['GPATH']['RESOURCES'],
+            used = os.path.join(dir_conf, 'purposes.json'),
+            available = os.path.join(dir_conf, 'purposes_all.json'),
+            default = os.path.join(ENV['GPATH']['RESOURCES'],
                             'MiAZ-purposes.json'),
-            config_model = Purpose,
+            model = Purpose,
             must_copy = True
         )
 
@@ -292,10 +270,10 @@ class MiAZConfigSettingsConcepts(MiAZConfig):
         super().__init__(
             log=get_logger('MiAZ.Settings.Concepts'),
             config_for = 'Concepts',
-            config_local = os.path.join(dir_conf, 'concepts.json'),
-            config_available = os.path.join(dir_conf, 'concepts_all.json'),
-            config_global = None,
-            config_model = Concept,
+            used = os.path.join(dir_conf, 'concepts.json'),
+            available = os.path.join(dir_conf, 'concepts_all.json'),
+            default = None,
+            model = Concept,
             must_copy = False
         )
 
@@ -317,11 +295,11 @@ class MiAZConfigSettingsPeople(MiAZConfig):
         super().__init__(
             log=get_logger('MiAZ.Settings.People'),
             config_for = 'Person',
-            config_local = os.path.join(dir_conf, 'people.json'),
-            config_available = os.path.join(dir_conf, 'people_all.json'),
-            config_global = os.path.join(ENV['GPATH']['RESOURCES'],
+            used = os.path.join(dir_conf, 'people.json'),
+            available = os.path.join(dir_conf, 'people_all.json'),
+            default = os.path.join(ENV['GPATH']['RESOURCES'],
                             'MiAZ-people.json'),
-            config_model = Person,
+            model = Person,
             must_copy = True
         )
         self.log.error("Signal ID: %d", sid)

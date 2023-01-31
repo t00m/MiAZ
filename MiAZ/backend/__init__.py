@@ -250,8 +250,8 @@ class MiAZBackend(GObject.GObject):
                                 "Country code '%s' doesn't exist" %
                                                                 code))
             else:
-                config_global = self.conf['Country'].config_global
-                country = self.conf['Country'].load(config_global)
+                default = self.conf['Country'].default
+                country = self.conf['Country'].load(default)
                 name = country[code]
                 reasons.append((True,
                                 "Country code '%s' corresponds to %s" %

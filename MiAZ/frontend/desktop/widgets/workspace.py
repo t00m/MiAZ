@@ -51,7 +51,7 @@ class MiAZWorkspace(Gtk.Box):
         self.append(frmView)
 
         conf = self.config['Country']
-        countries = conf.load(conf.config_local)
+        countries = conf.load(conf.used)
         if len(countries) == 0:
             self.log.debug("Execute Country Selector Assistant")
             assistant = MiAZAssistantRepoSettings(self.app)

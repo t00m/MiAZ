@@ -68,7 +68,7 @@ class MiAZActions(GObject.GObject):
     def dropdown_populate(self, dropdown, item_type, keyfilter = False, intkeys=[], any_value=True):
         model = dropdown.get_model()
         config = self.app.get_config(item_type.__gtype_name__)
-        items = config.load(config.config_local)
+        items = config.load(config.used)
         title = item_type.__gtype_name__
         # ~ self.log.debug("Populating dropdown for %s with %d items", title, len(items))
 
@@ -76,9 +76,9 @@ class MiAZActions(GObject.GObject):
         # list, but it gets the name from global dictionary (eg.: Countries)
         foreign = config.get_config_foreign()
         if foreign:
-            gitems = config.load(config.config_global)
+            gitems = config.load(config.default)
 
-        items = config.load(config.config_local)
+        items = config.load(config.used)
 
         model.remove_all()
 

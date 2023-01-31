@@ -372,7 +372,7 @@ class MiAZAssistantRepoSettings(MiAZAssistant):
 
     def on_assistant_close(self, *args):
         conf_country = self.app.get_config('Country')
-        countries = conf_country.load(conf_country.config_local)
+        countries = conf_country.load(conf_country.used)
         if len(countries) > 0:
             rename = self.app.get_rename_widget()
             rename.update_dropdowns()

@@ -255,7 +255,7 @@ class MiAZApp(Adw.Application):
 
     # ~ def check_settings(self):
         # ~ conf = self.conf['Country']
-        # ~ countries = conf.load(conf.config_local)
+        # ~ countries = conf.load(conf.used)
         # ~ if len(countries) == 0:
             # ~ self.log.debug("Execute Country Selector Assistant")
             # ~ self.exit_app()
