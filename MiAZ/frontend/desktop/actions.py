@@ -60,7 +60,6 @@ class MiAZActions(GObject.GObject):
             target = filename.split('-')
         else:
             target = repodct[source]['suggested'].split('-')
-        # ~ dialog = MiAZRenameDialog(self.app, source, target)
         rename = self.app.get_rename_widget()
         rename.set_data(source, target)
         self.app.show_stack_page_by_name('rename')
@@ -70,13 +69,6 @@ class MiAZActions(GObject.GObject):
         config = self.app.get_config(item_type.__gtype_name__)
         items = config.load(config.used)
         title = item_type.__gtype_name__
-        # ~ self.log.debug("Populating dropdown for %s with %d items", title, len(items))
-
-        # foreign key is used when the local configuration is saved as a
-        # list, but it gets the name from global dictionary (eg.: Countries)
-        foreign = config.get_config_foreign()
-        if foreign:
-            gitems = config.load(config.default)
 
         items = config.load(config.used)
 
@@ -86,20 +78,8 @@ class MiAZActions(GObject.GObject):
             model.append(item_type(id='Any', title='Any'))
 
         for key in items:
-            if foreign:
-                if keyfilter:
-                    if key in intkeys:
-                        model.append(item_type(id=key, title="%s (%s)" % (gitems[key], key)))
-                else:
-                    model.append(item_type(id=key, title="%s (%s)" % (gitems[key], key)))
-            else:
-                if keyfilter:
-                    if key in intkeys:
-                        model.append(item_type(id=key, title="%s (%s)" % (items[key], key)))
-                else:
-                    if keyfilter:
-                        if key in intkeys:
-                            model.append(item_type(id=key, title="%s (%s)" % (items[key], key)))
-                    else:
-                        model.append(item_type(id=key, title="%s (%s)" % (items[key], key)))
+            title = items[key]
+            if len(title) == 0:
+                title = key
+            model.append(item_type(id=key, title=title))
 
