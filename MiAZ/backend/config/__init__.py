@@ -168,8 +168,8 @@ class MiAZConfigSettingsCountries(MiAZConfig):
         super().__init__(
             log=get_logger('MiAZ.Settings.Countries'),
             config_for = 'Countries',
-            available = os.path.join(dir_conf, 'countries_all.json'),
-            used = os.path.join(dir_conf, 'countries.json'),
+            available = os.path.join(dir_conf, 'countries-available.json'),
+            used = os.path.join(dir_conf, 'countries-used.json'),
             default = os.path.join(ENV['GPATH']['RESOURCES'],
                             'MiAZ-countries.json'),
             model = Country,
@@ -192,8 +192,8 @@ class MiAZConfigSettingsGroups(MiAZConfig):
         super().__init__(
             log=get_logger('MiAZ.Settings.Groups'),
             config_for = 'Groups',
-            used = os.path.join(dir_conf, 'groups.json'),
-            available = os.path.join(dir_conf, 'groups_all.json'),
+            used = os.path.join(dir_conf, 'groups-used.json'),
+            available = os.path.join(dir_conf, 'groups-available.json'),
             default = os.path.join(ENV['GPATH']['RESOURCES'],
                             'MiAZ-groups.json'),
             model = Group,
@@ -218,8 +218,8 @@ class MiAZConfigSettingsSubgroups(MiAZConfig):
         super().__init__(
             log=get_logger('MiAZ.Settings.Subgroups'),
             config_for = 'Subgroups',
-            used = os.path.join(dir_conf, 'subgroups.json'),
-            available = os.path.join(dir_conf, 'subgroups_all.json'),
+            used = os.path.join(dir_conf, 'subgroups-used.json'),
+            available = os.path.join(dir_conf, 'subgroups-available.json'),
             default = os.path.join(ENV['GPATH']['RESOURCES'],
                             'MiAZ-subgroups.json'),
             model = Subgroup,
@@ -244,8 +244,8 @@ class MiAZConfigSettingsPurposes(MiAZConfig):
         super().__init__(
             log=get_logger('MiAZ.Settings.Purposes'),
             config_for = 'Purposes',
-            used = os.path.join(dir_conf, 'purposes.json'),
-            available = os.path.join(dir_conf, 'purposes_all.json'),
+            used = os.path.join(dir_conf, 'purposes-used.json'),
+            available = os.path.join(dir_conf, 'purposes-available.json'),
             default = os.path.join(ENV['GPATH']['RESOURCES'],
                             'MiAZ-purposes.json'),
             model = Purpose,
@@ -270,8 +270,8 @@ class MiAZConfigSettingsConcepts(MiAZConfig):
         super().__init__(
             log=get_logger('MiAZ.Settings.Concepts'),
             config_for = 'Concepts',
-            used = os.path.join(dir_conf, 'concepts.json'),
-            available = os.path.join(dir_conf, 'concepts_all.json'),
+            used = os.path.join(dir_conf, 'concepts-used.json'),
+            available = os.path.join(dir_conf, 'concepts-available.json'),
             default = None,
             model = Concept,
             must_copy = False
@@ -295,8 +295,8 @@ class MiAZConfigSettingsPeople(MiAZConfig):
         super().__init__(
             log=get_logger('MiAZ.Settings.People'),
             config_for = 'Person',
-            used = os.path.join(dir_conf, 'people.json'),
-            available = os.path.join(dir_conf, 'people_all.json'),
+            used = os.path.join(dir_conf, 'people-used.json'),
+            available = os.path.join(dir_conf, 'people-available.json'),
             default = os.path.join(ENV['GPATH']['RESOURCES'],
                             'MiAZ-people.json'),
             model = Person,
