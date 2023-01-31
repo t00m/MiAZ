@@ -30,14 +30,10 @@ from MiAZ.frontend.desktop.widgets.columnviews import MiAZColumnViewPerson
 class MiAZConfigView(MiAZSelector):
     """"""
     __gtype_name__ = 'MiAZConfigView'
-    # ~ current = None
-    # ~ used = None
-    # ~ default = None
     config_for = None
-    # ~ search_term = ''
 
     def __init__(self, app):
-        super(MiAZSelector, self).__init__(spacing=3, orientation=Gtk.Orientation.VERTICAL)
+        super(MiAZSelector, self).__init__(spacing=0, orientation=Gtk.Orientation.VERTICAL)
         self.app = app
         self.log = get_logger('MiAZConfigView')
         self.backend = self.app.get_backend()
@@ -45,15 +41,9 @@ class MiAZConfigView(MiAZSelector):
         self.dir_conf = self.backend.get_repo_conf_dir()
         self.factory = self.app.get_factory()
         self.set_vexpand(True)
-        self.set_margin_top(margin=6)
-        self.set_margin_end(margin=6)
-        self.set_margin_start(margin=6)
 
     def get_config_for(self):
         return self.config.config_for
-
-    def set_config(self, config):
-        self.config = config
 
     def _on_filter_selected(self, *args):
         self.viewAv.refilter()
@@ -67,7 +57,6 @@ class MiAZConfigView(MiAZSelector):
         return False
 
     def on_key_released(self, widget, keyval, keycode, state):
-        # ~ self.log.debug("Active window: %s", self.app.get_active_window())
         keyname = Gdk.keyval_name(keyval)
         self.log.debug("Key: %s", keyname)
 
@@ -194,7 +183,7 @@ class MiAZSubgroups(MiAZConfigView):
 
 
     def __init__(self, app):
-        super(MiAZConfigView, self).__init__(app, edit=False)
+        super(MiAZConfigView, self).__init__(app, edit=True)
         super().__init__(app)
         self.config = self.conf['Subgroup']
 
@@ -213,7 +202,7 @@ class MiAZPeople(MiAZConfigView):
     __gtype_name__ = 'MiAZPeople'
 
     def __init__(self, app):
-        super(MiAZConfigView, self).__init__(app, edit=False)
+        super(MiAZConfigView, self).__init__(app, edit=True)
         super().__init__(app)
         self.config = self.conf['Person']
 
@@ -252,7 +241,7 @@ class MiAZPurposes(MiAZConfigView):
     __gtype_name__ = 'MiAZPurposes'
 
     def __init__(self, app):
-        super(MiAZConfigView, self).__init__(app, edit=False)
+        super(MiAZConfigView, self).__init__(app, edit=True)
         super().__init__(app)
         self.config = self.conf['Purpose']
 

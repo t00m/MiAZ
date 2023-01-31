@@ -105,9 +105,7 @@ class MiAZFactory:
                 )
         # ~ button.get_style_context().add_class(class_name='success')
         button.set_has_frame(False)
-        if callback is None:
-            button.connect('clicked', self.noop, data)
-        else:
+        if callback is not None:
             button.connect('clicked', callback, data)
         return button
 

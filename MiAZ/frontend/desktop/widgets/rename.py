@@ -79,10 +79,10 @@ class MiAZRenameDialog(Gtk.Box):
         self.__create_field_9_result() # Result filename
 
         frmMain = Gtk.Frame()
-        frmMain.set_margin_top(margin=12)
-        frmMain.set_margin_end(margin=12)
-        frmMain.set_margin_bottom(margin=12)
-        frmMain.set_margin_start(margin=12)
+        frmMain.set_margin_top(margin=6)
+        frmMain.set_margin_end(margin=6)
+        frmMain.set_margin_bottom(margin=6)
+        frmMain.set_margin_start(margin=6)
         frmMain.set_child(self.boxMain)
         self.append(frmMain)
 
@@ -161,15 +161,10 @@ class MiAZRenameDialog(Gtk.Box):
             # ~ self.log.debug("%s > %s", dropdown, model)
             n = 0
             for item in model:
-                # ~ self.log.debug(item)
-                # ~ self.log.debug("%s == %s? %s (n=%d)", item.id, suggestion, item.id == suggestion, n)
                 if item.id == suggestion:
                     dropdown.set_selected(n)
                     found = True
                 n += 1
-
-        # ~ if not found:
-            # ~ dropdown.set_selected(0)
 
     def __create_field_0_date(self):
         """Field 0. Date"""
@@ -195,7 +190,7 @@ class MiAZRenameDialog(Gtk.Box):
     def __create_field_1_country(self):
         self.rowCountry, self.btnCountry, self.dpdCountry = self.__create_actionrow('Country', Country, 'countries')
         self.dropdowns.append((self.dpdCountry, Country))
-        self.btnCountry.connect('clicked', self.on_country_manage)
+        self.btnCountry.connect('clicked', self.on_resource_manage, MiAZCountries(self.app))
         self.dpdCountry.connect("notify::selected-item", self.on_changed_entry)
         config = self.config['Country'].connect('repo-settings-updated-countries', self.update_countries)
 
@@ -208,17 +203,18 @@ class MiAZRenameDialog(Gtk.Box):
     def __create_field_3_subgroup(self):
         self.rowSubgroup, self.btnSubgroup, self.dpdSubgroup = self.__create_actionrow('Subgroup', Subgroup, 'subgroups')
         self.dropdowns.append((self.dpdSubgroup, Subgroup))
-        self.btnSubgroup.connect('clicked', self.on_subgroup_add)
+        self.btnSubgroup.connect('clicked', self.on_resource_manage, MiAZSubgroups(self.app))
         self.dpdSubgroup.connect("notify::selected-item", self.on_changed_entry)
 
     def __create_field_4_sentby(self):
         self.rowSentBy, self.btnSentBy, self.dpdSentBy = self.__create_actionrow('Sent by', Person, 'People')
         self.dropdowns.append((self.dpdSentBy, Person))
-        self.btnSentBy.connect('clicked', self.on_person_sentby_add)
+        self.btnSentBy.connect('clicked', self.on_resource_manage, MiAZPeople(self.app))
         self.dpdSentBy.connect("notify::selected-item", self.on_changed_entry)
 
     def __create_field_5_purpose(self):
         self.rowPurpose, self.btnPurpose, self.dpdPurpose = self.__create_actionrow('Purpose', Purpose, 'purposes')
+        self.btnPurpose.connect('clicked', self.on_resource_manage, MiAZPurposes(self.app))
         self.dropdowns.append((self.dpdPurpose, Purpose))
         self.dpdPurpose.connect("notify::selected-item", self.on_changed_entry)
 
@@ -244,7 +240,7 @@ class MiAZRenameDialog(Gtk.Box):
     def __create_field_7_sentto(self):
         self.rowSentTo, self.btnSentTo, self.dpdSentTo = self.__create_actionrow('Sent to', Person, 'People')
         self.dropdowns.append((self.dpdSentTo, Person))
-        self.btnSentTo.connect('clicked', self.on_person_sentto_add)
+        self.btnSentTo.connect('clicked', self.on_resource_manage, MiAZPeople(self.app))
         self.dpdSentTo.connect("notify::selected-item", self.on_changed_entry)
 
     def __create_field_8_extension(self):
@@ -300,9 +296,7 @@ class MiAZRenameDialog(Gtk.Box):
             shutil.move(source, target)
             self.log.debug("Rename document from '%s' to '%s'", os.path.basename(source), os.path.basename(target))
             self.backend.check_source()
-        # ~ self.destroy()
         self.app.show_stack_page_by_name('workspace')
-
 
     def on_changed_entry(self, *args):
         def success_or_error(widget, valid):
@@ -441,15 +435,11 @@ class MiAZRenameDialog(Gtk.Box):
             cnfOrgs.save(cnfOrgs)
             self.new_values.append(('To', '', fields[7]))
 
-
     def get_filepath_source(self) -> str:
         return self.filepath
 
     def get_filepath_target(self) -> str:
         return self.result
-
-    # ~ def get_row(self):
-        # ~ return self.row
 
     def on_rename_accept(self, *args):
         body = "<big>You are about to rename:\n\n<b>%s</b>\n\nto\n\n<b>%s</b></big>" % (os.path.basename(self.get_filepath_source()), self.get_filepath_target())
@@ -479,8 +469,6 @@ class MiAZRenameDialog(Gtk.Box):
 
     def on_rename_cancel(self, *args):
         self.app.show_stack_page_by_name('workspace')
-        # ~ self.response(Gtk.ResponseType.CANCEL)
-        # ~ self.destroy()
 
     def on_document_display(self, button, filepath):
         self.log.debug("Displaying %s", filepath)
@@ -500,7 +488,6 @@ class MiAZRenameDialog(Gtk.Box):
             try:
                 os.unlink(filepath)
                 self.log.debug("Document deleted: %s", filepath)
-                # ~ self.response(Gtk.ResponseType.ACCEPT)
                 dialog.destroy()
                 self.destroy()
             except FileNotFoundError as error:
@@ -508,71 +495,15 @@ class MiAZRenameDialog(Gtk.Box):
                 self.log.error("Doesn't it exist? Really?")
         else:
             self.app.show_workspace()
-            # ~ dialog.destroy()
-            # ~ self.response(Gtk.ResponseType.CANCEL)
 
-    def on_person_sentby_add(self, *args):
-        dialog = MiAZDialogAdd(self.app, self.get_root(), 'Add new person or entity', 'Initials', 'Full name')
-        dialog.connect('response', self.on_response_person_sentby_add)
-        dialog.show()
-
-    def on_country_manage(self, *args):
-        box = self.factory.create_box_vertical(spacing=12, vexpand=True, hexpand=True)
-        selector = MiAZCountries(self.app)
-        selector.set_vexpand(True)
-        selector.update()
+    def on_resource_manage(self, widget: Gtk.Widget, selector: Gtk.Widget):
+        box = self.factory.create_box_vertical(spacing=0, vexpand=True, hexpand=True)
         box.append(selector)
-        dialog = self.factory.create_dialog(self.app.win, 'Manage countries', box, 800, 600)
-        dialog.show()
-
-    def on_resource_manage(self, button, selector):
-        box = self.factory.create_box_vertical(spacing=12, vexpand=True, hexpand=True)
         config_for = selector.get_config_for()
-        # ~ selector = configview(self.app)
         selector.set_vexpand(True)
         selector.update()
-        box.append(selector)
         dialog = self.factory.create_dialog(self.app.win, 'Manage %s' % config_for, box, 800, 600)
         dialog.show()
-
-    def on_country_close(self, *args):
-        self.actions.dropdown_populate(self.dpdCountry, Country)
-        self.dpdCountry.set_selected(0)
-
-    def on_group_add(self, *args):
-        dialog = MiAZDialogAdd(self.app, self.get_root(), 'Add new group', 'Group', '')
-        boxKey2 = dialog.get_boxKey2()
-        boxKey2.set_visible(False)
-        dialog.connect('response', self.on_response_group_add)
-        dialog.show()
-
-    def on_subgroup_add(self, *args):
-        dialog = MiAZDialogAdd(self.app, self.get_root(), 'Add new subgroup', 'Subgroup', '')
-        boxKey2 = dialog.get_boxKey2()
-        boxKey2.set_visible(False)
-        dialog.connect('response', self.on_response_subgroup_add)
-        dialog.show()
-
-    def on_person_sentto_add(self, *args):
-        dialog = MiAZDialogAdd(self.app, self.get_root(), 'Add new person or entity', 'Initials', 'Full name')
-        dialog.connect('response', self.on_response_person_sentto_add)
-        dialog.show()
-
-    def on_response_person_sentby_add(self, dialog, response):
-        if response == Gtk.ResponseType.ACCEPT:
-            key = dialog.get_value1()
-            value = dialog.get_value2()
-            if len(key) > 0 and len(value) > 0:
-                config = self.app.get_config('Person')
-                config.add(key=key.upper(), value=value)
-                # ~ items = config.load(config.used)
-                # ~ items[key.upper()] = value
-                # ~ config.save(items)
-
-                # Update dropdown
-                self.actions.dropdown_populate(self.dpdSentBy, Person)
-                self.select_dropdown_item(self.dpdSentBy, key)
-        dialog.destroy()
 
     def select_dropdown_item(self, dropdown, key):
         found = False
@@ -585,33 +516,3 @@ class MiAZRenameDialog(Gtk.Box):
             n += 1
         if not found:
             dropdown.set_selected(0)
-
-    def on_response_group_add(self, dialog, response):
-        if response == Gtk.ResponseType.ACCEPT:
-            key = dialog.get_value1()
-            if len(key) > 0:
-                config = self.app.get_config('Group')
-                config.add(key)
-                # ~ self.actions.dropdown_populate(self.dpdGroup, Group)
-                # ~ self.select_dropdown_item(self.dpdGroup, key)
-        dialog.destroy()
-
-    def on_response_subgroup_add(self, dialog, response):
-        if response == Gtk.ResponseType.ACCEPT:
-            key = dialog.get_value1()
-            value = dialog.get_value2()
-            if len(key) > 0:
-                config = self.app.get_config('Subgroup')
-                config.add(key=key.upper(), value=value)
-                self.actions.dropdown_populate(self.dpdSubgroup, Subgroup)
-                self.select_dropdown_item(self.dpdSubgroup, key)
-        dialog.destroy()
-
-    def on_response_person_sentto_add(self, dialog, response):
-        if response == Gtk.ResponseType.ACCEPT:
-            key = dialog.get_value1()
-            value = dialog.get_value2()
-            if len(key) > 0 and len(value) > 0:
-                config = self.app.get_config('Person')
-                config.add(key=key.upper(), value=value)
-        dialog.destroy()

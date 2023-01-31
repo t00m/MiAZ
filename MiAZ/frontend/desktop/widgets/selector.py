@@ -23,7 +23,7 @@ class MiAZSelector(Gtk.Box):
         self.backend = self.app.get_backend()
         self.log = get_logger('MiAZSelector')
         self.dir_conf = self.backend.get_repo_conf_dir()
-        super(MiAZSelector, self).__init__(orientation=Gtk.Orientation.VERTICAL, hexpand=True, vexpand=True)
+        super(MiAZSelector, self).__init__(orientation=Gtk.Orientation.VERTICAL, hexpand=True, vexpand=True, spacing=0)
         self.factory = self.app.get_factory()
 
         # Entry and buttons for operations (edit/add/remove)
@@ -49,11 +49,11 @@ class MiAZSelector(Gtk.Box):
             self.boxOper.append(self.boxButtons)
         self.append(self.boxOper)
 
-        boxViews = self.factory.create_box_horizontal(hexpand=True, vexpand=True)
-        boxLeft = self.factory.create_box_vertical(hexpand=True, vexpand=True)
+        boxViews = self.factory.create_box_horizontal(spacing=0, hexpand=True, vexpand=True)
+        boxLeft = self.factory.create_box_vertical(spacing=0, hexpand=True, vexpand=True)
         boxControls = Gtk.CenterBox()
         boxControls.set_orientation(Gtk.Orientation.VERTICAL)
-        boxRight = self.factory.create_box_vertical(hexpand=True, vexpand=True)
+        boxRight = self.factory.create_box_vertical(spacing=0, hexpand=True, vexpand=True)
         boxViews.append(boxLeft)
         boxViews.append(boxControls)
         boxViews.append(boxRight)
