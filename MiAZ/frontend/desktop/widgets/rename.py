@@ -612,9 +612,10 @@ class MiAZRenameDialog(Gtk.Box):
     def on_response_subgroup_add(self, dialog, response):
         if response == Gtk.ResponseType.ACCEPT:
             key = dialog.get_value1()
+            value = dialog.get_value2()
             if len(key) > 0:
                 config = self.app.get_config('Subgroup')
-                config.add(key)
+                config.add(key, value)
                 self.actions.dropdown_populate(self.dpdSubgroup, Subgroup)
                 self.select_dropdown_item(self.dpdSubgroup, key)
         dialog.destroy()
