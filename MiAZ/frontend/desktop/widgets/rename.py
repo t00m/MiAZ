@@ -17,14 +17,14 @@ from gi.repository.GdkPixbuf import Pixbuf
 
 from MiAZ.backend.log import get_logger
 from MiAZ.frontend.desktop.widgets.dialogs import MiAZDialogAdd
-from MiAZ.backend.models import File, Group, Subgroup, Person, Country, Purpose, Concept
-from MiAZ.frontend.desktop.widgets.configview import MiAZCountries, MiAZGroups, MiAZPeople, MiAZPurposes, MiAZSubgroups
+from MiAZ.backend.models import File, Group, Subgroup, Person, Country, Purpose, Concept, SentBy, SentTo
+from MiAZ.frontend.desktop.widgets.configview import MiAZCountries, MiAZGroups, MiAZPeople, MiAZPurposes, MiAZSubgroups, MiAZSentBy
 
 
 class MiAZRenameDialog(Gtk.Box):
     result = ''
     new_values = []
-    dropdowns = []
+    dropdown = {}
 
     def __init__(self, app) -> Gtk.Widget:
         super(MiAZRenameDialog, self).__init__(orientation=Gtk.Orientation.VERTICAL, spacing=3, hexpand=True, vexpand=True)
@@ -78,11 +78,28 @@ class MiAZRenameDialog(Gtk.Box):
         boxButtons.set_margin_start(margin=12)
         self.append(boxButtons)
 
-    def update_dropdowns(self):
-        for dropdown, item_type in self.dropdowns:
-            self.actions.dropdown_populate(dropdown, item_type)
+        self.config['Country'].connect('repo-settings-updated-countries', self.update_dropdown, Country)
+        self.config['Group'].connect('repo-settings-updated-groups', self.update_dropdown, Group)
+        self.config['Subgroup'].connect('repo-settings-updated-subgroups', self.update_dropdown, Subgroup)
+        self.config['SentBy'].connect('repo-settings-updated-sentby', self.update_dropdown, SentBy)
+        self.config['Purpose'].connect('repo-settings-updated-purposes', self.update_dropdown, Purpose)
+        self.config['SentTo'].connect('repo-settings-updated-people', self.update_dropdown, SentTo)
+
+    def update_dropdown(self, config, item_type):
+        title = item_type.__gtype_name__
+        # ~ self.log.debug("Config: %s", config)
+        # ~ self.log.debug("Item Type: %s", item_type)
+        # ~ self.log.debug("Title: %s", title)
+        # ~ self.log.debug(self.dropdown[title])
+        # ~ self.log.debug(type(self.dropdown[title]))
+        self.actions.dropdown_populate(self.dropdown[title], item_type)
+
+    # ~ def update_dropdowns(self):
+        # ~ for dropdown, item_type in self.dropdowns:
+            # ~ self.actions.dropdown_populate(dropdown, item_type)
 
     def set_data(self, filepath: str, suggested: list):
+        # ~ self.log.debug("F[%s] - S[%s]", filepath, suggested)
         self.filepath = filepath
         self.extension = filepath[filepath.rfind('.')+1:]
         self.suggested = suggested
@@ -115,6 +132,7 @@ class MiAZRenameDialog(Gtk.Box):
         return box
 
     def __create_actionrow(self, title, item_type, conf) -> Adw.ActionRow:
+        self.log.debug("%s > %s > %s", title, item_type, conf)
         row = Adw.ActionRow.new()
         row.set_title(title)
         icon = 'miaz-res-%s' % title.lower().replace(' ', '')
@@ -164,33 +182,33 @@ class MiAZRenameDialog(Gtk.Box):
 
     def __create_field_1_country(self):
         self.rowCountry, self.btnCountry, self.dpdCountry = self.__create_actionrow('Country', Country, 'countries')
-        self.dropdowns.append((self.dpdCountry, Country))
+        self.dropdown['Country'] = self.dpdCountry
         self.btnCountry.connect('clicked', self.on_resource_manage, MiAZCountries(self.app))
         self.dpdCountry.connect("notify::selected-item", self.on_changed_entry)
         # ~ config = self.config['Country'].connect('repo-settings-updated-countries', self.update_countries)
 
     def __create_field_2_group(self):
         self.rowGroup, self.btnGroup, self.dpdGroup = self.__create_actionrow('Group', Group, 'groups')
-        self.dropdowns.append((self.dpdGroup, Group))
+        self.dropdown['Group'] = self.dpdGroup
         self.btnGroup.connect('clicked', self.on_resource_manage, MiAZGroups(self.app))
         self.dpdGroup.connect("notify::selected-item", self.on_changed_entry)
 
     def __create_field_3_subgroup(self):
         self.rowSubgroup, self.btnSubgroup, self.dpdSubgroup = self.__create_actionrow('Subgroup', Subgroup, 'subgroups')
-        self.dropdowns.append((self.dpdSubgroup, Subgroup))
+        self.dropdown['Subgroup'] = self.dpdSubgroup
         self.btnSubgroup.connect('clicked', self.on_resource_manage, MiAZSubgroups(self.app))
         self.dpdSubgroup.connect("notify::selected-item", self.on_changed_entry)
 
     def __create_field_4_sentby(self):
-        self.rowSentBy, self.btnSentBy, self.dpdSentBy = self.__create_actionrow('Sent by', Person, 'People')
-        self.dropdowns.append((self.dpdSentBy, Person))
-        self.btnSentBy.connect('clicked', self.on_resource_manage, MiAZPeople(self.app))
+        self.rowSentBy, self.btnSentBy, self.dpdSentBy = self.__create_actionrow('Sent by', SentBy, 'Sentby')
+        self.dropdown['SentBy'] = self.dpdSentBy
+        self.btnSentBy.connect('clicked', self.on_resource_manage, MiAZSentBy(self.app))
         self.dpdSentBy.connect("notify::selected-item", self.on_changed_entry)
 
     def __create_field_5_purpose(self):
         self.rowPurpose, self.btnPurpose, self.dpdPurpose = self.__create_actionrow('Purpose', Purpose, 'purposes')
         self.btnPurpose.connect('clicked', self.on_resource_manage, MiAZPurposes(self.app))
-        self.dropdowns.append((self.dpdPurpose, Purpose))
+        self.dropdown['Purpose'] = self.dpdPurpose
         self.dpdPurpose.connect("notify::selected-item", self.on_changed_entry)
 
     def __create_field_6_concept(self):
@@ -213,8 +231,8 @@ class MiAZRenameDialog(Gtk.Box):
         self.entry_concept.connect('changed', self.on_changed_entry)
 
     def __create_field_7_sentto(self):
-        self.rowSentTo, self.btnSentTo, self.dpdSentTo = self.__create_actionrow('Sent to', Person, 'People')
-        self.dropdowns.append((self.dpdSentTo, Person))
+        self.rowSentTo, self.btnSentTo, self.dpdSentTo = self.__create_actionrow('Sent to', SentTo, 'People')
+        self.dropdown['SentTo'] = self.dpdSentTo
         self.btnSentTo.connect('clicked', self.on_resource_manage, MiAZPeople(self.app))
         self.dpdSentTo.connect("notify::selected-item", self.on_changed_entry)
 
@@ -363,10 +381,16 @@ class MiAZRenameDialog(Gtk.Box):
             else:
                 self.btnAccept.set_sensitive(False)
 
-            source = os.path.basename(self.get_filepath_source())
-            target = os.path.basename(self.get_filepath_target())
-            if source == target:
-                self.btnAccept.set_sensitive(False)
+            try:
+                source = os.path.basename(self.get_filepath_source())
+                target = os.path.basename(self.get_filepath_target())
+                if source == target:
+                    self.btnAccept.set_sensitive(False)
+            except AttributeError:
+                # Rename hasn't been called yet for a file. Skip
+                # This happens when sth is modified from Repo Assistant
+                pass
+
 
         except Exception as error:
             self.log.error(error)

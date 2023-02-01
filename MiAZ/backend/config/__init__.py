@@ -6,7 +6,7 @@ from gi.repository import GObject
 from MiAZ.backend.env import ENV
 from MiAZ.backend.log import get_logger
 from MiAZ.backend.util import json_load, json_save
-from MiAZ.backend.models import MiAZModel, MiAZItem, File, Group, Subgroup, Person, Country, Purpose, Concept
+from MiAZ.backend.models import MiAZModel, MiAZItem, File, Group, Subgroup, Person, Country, Purpose, Concept, SentBy, SentTo
 
 class MiAZConfig(GObject.GObject):
     """ MiAZ Config class"""
@@ -310,3 +310,30 @@ class MiAZConfigSettingsPeople(MiAZConfig):
     def save(self, filepath: str = '', items: dict = {}) -> bool:
         if self.save_data(filepath, items):
             self.emit('repo-settings-updated-people')
+
+class MiAZConfigSettingsSentBy(MiAZConfig):
+    def __init__(self, dir_conf):
+        sid = GObject.signal_lookup('repo-settings-updated-sentby', MiAZConfigSettingsSentBy)
+        if sid == 0:
+            GObject.GObject.__init__(self)
+            GObject.signal_new('repo-settings-updated-sentby',
+                                MiAZConfigSettingsSentBy,
+                                GObject.SignalFlags.RUN_LAST, None, () )
+        super().__init__(
+            log=get_logger('MiAZ.Settings.SentBy'),
+            config_for = 'SentBy',
+            used = os.path.join(dir_conf, 'people-used.json'),
+            available = os.path.join(dir_conf, 'people-available.json'),
+            default = os.path.join(ENV['GPATH']['RESOURCES'],
+                            'MiAZ-people.json'),
+            model = SentBy,
+            must_copy = False
+        )
+        self.log.error("Signal SentBy ID: %d", sid)
+
+    def __repr__(self):
+        return 'SentBy'
+
+    def save(self, filepath: str = '', items: dict = {}) -> bool:
+        if self.save_data(filepath, items):
+            self.emit('repo-settings-updated-sentby')

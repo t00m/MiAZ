@@ -22,6 +22,7 @@ from MiAZ.backend.config import MiAZConfigSettingsSubgroups
 from MiAZ.backend.config import MiAZConfigSettingsPurposes
 from MiAZ.backend.config import MiAZConfigSettingsConcepts
 from MiAZ.backend.config import MiAZConfigSettingsPeople
+from MiAZ.backend.config import MiAZConfigSettingsSentBy
 
 
 class MiAZBackend(GObject.GObject):
@@ -91,7 +92,7 @@ class MiAZBackend(GObject.GObject):
         self.conf['Subgroup'] = MiAZConfigSettingsSubgroups(dir_conf)
         self.conf['Purpose'] = MiAZConfigSettingsPurposes(dir_conf)
         self.conf['Concept'] = MiAZConfigSettingsConcepts(dir_conf)
-        self.conf['SentBy'] = MiAZConfigSettingsPeople(dir_conf)
+        self.conf['SentBy'] = MiAZConfigSettingsSentBy(dir_conf)
         self.conf['SentTo'] = MiAZConfigSettingsPeople(dir_conf)
         self.conf['Person'] = MiAZConfigSettingsPeople(dir_conf)
         self.watcher = MiAZWatcher('source', path)
@@ -124,21 +125,6 @@ class MiAZBackend(GObject.GObject):
         """Load dictionary for current repository"""
         return self.s_repodct
 
-    # ~ def get_repo_dict(self):
-        # ~ """Load/Create dictionary for current repository"""
-        # ~ dir_repo = self.conf['App'].get('source')
-        # ~ s_repodir = os.path.join(dir_repo, 'docs')
-        # ~ s_repocnf = self.get_repo_source_config_file()
-
-        # ~ if os.path.exists(s_repocnf):
-            # ~ s_repodct = json_load(s_repocnf)
-            # ~ self.log.debug("Loading configuration from: %s" % s_repocnf)
-        # ~ else:
-            # ~ s_repodct = {}
-            # ~ json_save(s_repocnf, s_repodct)
-            # ~ self.log.debug("Creating an empty configuration file in: %s" % s_repocnf)
-        # ~ return s_repodct
-
     def check_source(self, *args):
         dir_repo = self.conf['App'].get('source')
         s_repodir = self.get_repo_docs_dir()
@@ -162,17 +148,19 @@ class MiAZBackend(GObject.GObject):
         # 2. Rebuild repository dictionary
         docs = get_files(s_repodir)
         for doc in docs:
-            valid, reasons = self.validate_filename(doc)
-            self.s_repodct[doc] = {}
-            self.s_repodct[doc]['valid'] = valid
-            self.s_repodct[doc]['reasons'] = reasons
-            if not valid:
-                self.s_repodct[doc]['suggested'] = self.suggest_filename(doc)
-                self.s_repodct[doc]['fields'] = ['' for fields in range(8)]
-                # ~ self.log.debug(reasons)
-            else:
-                self.s_repodct[doc]['suggested'] = None
-                self.s_repodct[doc]['fields'] = self.get_fields(doc)
+            if doc not in self.s_repodct:
+                self.log.debug("Doc[%s] must be analyzed", doc)
+                valid, reasons = self.validate_filename(doc)
+                self.s_repodct[doc] = {}
+                self.s_repodct[doc]['valid'] = valid
+                self.s_repodct[doc]['reasons'] = reasons
+                if not valid:
+                    self.s_repodct[doc]['suggested'] = "-------" # self.suggest_filename(doc)
+                    self.s_repodct[doc]['fields'] = ['' for fields in range(8)]
+                    # ~ self.log.debug(reasons)
+                else:
+                    self.s_repodct[doc]['suggested'] = None
+                    self.s_repodct[doc]['fields'] = self.get_fields(doc)
         self.log.info("Repository - %d documents analyzed", len(docs))
         json_save(s_repocnf, self.s_repodct)
 
