@@ -536,7 +536,6 @@ class MiAZWorkspace(Gtk.Box):
                 display = c0 and c1 and c2 and c3 and c4 and c5 and c6
         else:
             if not item.valid:
-                self.log.debug("Item '%s' not valid", item.id)
                 display = self._do_eval_cond_matches_freetext(item.id)
 
         if display:

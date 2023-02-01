@@ -34,35 +34,9 @@ class MiAZRenameDialog(Gtk.Box):
         self.actions = self.app.get_actions()
         self.config = self.backend.get_conf()
         self.log = get_logger('MiazRenameDialog')
-        # ~ self.set_size_request(800, 600)
-        # ~ self.set_transient_for(self.app.win)
-        # ~ self.set_modal(True)
-
-        # Basic data
-        # ~ self.row = row
-
-
-        # Header & Butons
-
-
-        # ~ self.btnDelete = self.factory.create_button('', 'delete', self.on_document_delete, data=self.filepath)
-        # ~ self.set_default_response(Gtk.ResponseType.ACCEPT)
-        # ~ lblHeaderTitle = Gtk.Label()
-        # ~ lblHeaderTitle.set_markup('<b>Rename file</b>')
-        # ~ self.dlgHeader = Adw.HeaderBar()
-        # ~ self.dlgHeader.set_show_end_title_buttons(False)
-        # ~ self.dlgHeader.pack_start(self.btnDelete)
-        # ~ self.dlgHeader.pack_end(self.btnAccept)
-        # ~ self.dlgHeader.pack_end(self.btnCancel)
-        # ~ self.dlgHeader.pack_end(self.btnPreview)
-        # ~ self.dlgHeader.set_title_widget(lblHeaderTitle)
-        # ~ self.set_titlebar(self.dlgHeader)
-
-        # Contents
-        # ~ self.contents = self.get_content_area()
 
         # Box to be inserted as contents
-        self.boxMain = Gtk.ListBox.new() #orientation=Gtk.Orientation.VERTICAL, spacing=12)
+        self.boxMain = Gtk.ListBox.new()
         self.boxMain.set_vexpand(True)
         self.boxMain.set_hexpand(True)
 
@@ -143,11 +117,12 @@ class MiAZRenameDialog(Gtk.Box):
     def __create_actionrow(self, title, item_type, conf) -> Adw.ActionRow:
         row = Adw.ActionRow.new()
         row.set_title(title)
-        row.set_icon_name('miaz-res-%s' % title.lower())
+        icon = 'miaz-res-%s' % title.lower().replace(' ', '')
+        row.set_icon_name(icon)
         boxValue = self.__create_box_value()
         row.add_suffix(boxValue)
         self.boxMain.append(row)
-        button = self.factory.create_button('miaz-list-add', '')
+        button = self.factory.create_button('miaz-res-manage', '')
         dropdown = self.factory.create_dropdown_generic(item_type, ellipsize=False) #, item)
         self.actions.dropdown_populate(dropdown, item_type)
         boxValue.append(dropdown)
@@ -192,7 +167,7 @@ class MiAZRenameDialog(Gtk.Box):
         self.dropdowns.append((self.dpdCountry, Country))
         self.btnCountry.connect('clicked', self.on_resource_manage, MiAZCountries(self.app))
         self.dpdCountry.connect("notify::selected-item", self.on_changed_entry)
-        config = self.config['Country'].connect('repo-settings-updated-countries', self.update_countries)
+        # ~ config = self.config['Country'].connect('repo-settings-updated-countries', self.update_countries)
 
     def __create_field_2_group(self):
         self.rowGroup, self.btnGroup, self.dpdGroup = self.__create_actionrow('Group', Group, 'groups')
@@ -285,18 +260,18 @@ class MiAZRenameDialog(Gtk.Box):
         self.row_new_filename.add_suffix(self.lblFilenameNew)
         self.boxMain.append(self.row_new_filename)
 
-    def update_countries(self, *args):
-        self.actions.dropdown_populate(self.dpdCountry, Country)
+    # ~ def update_countries(self, *args):
+        # ~ self.actions.dropdown_populate(self.dpdCountry, Country)
         # ~ self.log.debug("Rename Country dropdown updated")
 
-    def _on_response_rename(self, dialog, response):
-        if response == Gtk.ResponseType.ACCEPT:
-            source = self.get_filepath_source()
-            target = os.path.join(os.path.dirname(source), self.get_filepath_target())
-            shutil.move(source, target)
-            self.log.debug("Rename document from '%s' to '%s'", os.path.basename(source), os.path.basename(target))
-            self.backend.check_source()
-        self.app.show_stack_page_by_name('workspace')
+    # ~ def _on_response_rename(self, dialog, response):
+        # ~ if response == Gtk.ResponseType.ACCEPT:
+            # ~ source = self.get_filepath_source()
+            # ~ target = os.path.join(os.path.dirname(source), self.get_filepath_target())
+            # ~ shutil.move(source, target)
+            # ~ self.log.debug("Rename document from '%s' to '%s'", os.path.basename(source), os.path.basename(target))
+            # ~ self.backend.check_source()
+        # ~ self.app.show_stack_page_by_name('workspace')
 
     def on_changed_entry(self, *args):
         def success_or_error(widget, valid):
@@ -387,7 +362,12 @@ class MiAZRenameDialog(Gtk.Box):
                 self.btnAccept.set_sensitive(True)
             else:
                 self.btnAccept.set_sensitive(False)
-                pass
+
+            source = os.path.basename(self.get_filepath_source())
+            target = os.path.basename(self.get_filepath_target())
+            if source == target:
+                self.btnAccept.set_sensitive(False)
+
         except Exception as error:
             self.log.error(error)
             self.result = ''

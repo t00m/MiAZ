@@ -169,11 +169,11 @@ class MiAZBackend(GObject.GObject):
             if not valid:
                 self.s_repodct[doc]['suggested'] = self.suggest_filename(doc)
                 self.s_repodct[doc]['fields'] = ['' for fields in range(8)]
-                self.log.debug(reasons)
+                # ~ self.log.debug(reasons)
             else:
                 self.s_repodct[doc]['suggested'] = None
                 self.s_repodct[doc]['fields'] = self.get_fields(doc)
-        self.log.info("Repository - %d document analyzed", len(docs))
+        self.log.info("Repository - %d documents analyzed", len(docs))
         json_save(s_repocnf, self.s_repodct)
 
         # 3. Emit the 'source-configuration-updated' signal
