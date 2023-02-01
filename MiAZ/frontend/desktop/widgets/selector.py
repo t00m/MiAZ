@@ -14,17 +14,16 @@ from gi.repository import GObject
 
 from MiAZ.backend.log import get_logger
 from MiAZ.frontend.desktop.widgets.columnview import MiAZColumnView
+from MiAZ.frontend.desktop.widgets.dialogs import MiAZDialogAdd
 
 class MiAZSelector(Gtk.Box):
-    conf_available = None
-
     def __init__(self, app, edit=True):
         self.app = app
         self.backend = self.app.get_backend()
-        self.log = get_logger('MiAZSelector')
-        self.dir_conf = self.backend.get_repo_conf_dir()
-        super(MiAZSelector, self).__init__(orientation=Gtk.Orientation.VERTICAL, hexpand=True, vexpand=True, spacing=0)
         self.factory = self.app.get_factory()
+        self.log = get_logger('MiAZSelector')
+        super(MiAZSelector, self).__init__(orientation=Gtk.Orientation.VERTICAL, hexpand=True, vexpand=True, spacing=0)
+
 
         # Entry and buttons for operations (edit/add/remove)
         self.boxOper = Gtk.Box(spacing=3, orientation=Gtk.Orientation.HORIZONTAL)
@@ -134,6 +133,73 @@ class MiAZSelector(Gtk.Box):
             self.update_used()
             self.update_available()
 
-    def set_title(self, label:str = 'Selector'):
-        self.title.set_markup(label)
+    # ~ def set_title(self, label:str = 'Selector'):
+        # ~ self.title.set_markup(label)
 
+    def _on_item_add(self, *args):
+        dialog = MiAZDialogAdd(self.app, self.get_root(), '%s: add a new item' % self.config.config_for, 'Name', 'Description')
+        etyValue1 = dialog.get_value1_widget()
+        search_term = self.entry.get_text()
+        etyValue1.set_text(search_term)
+        dialog.connect('response', self._on_response_item_add)
+        dialog.show()
+
+    def _on_response_item_add(self, dialog, response):
+        if response == Gtk.ResponseType.ACCEPT:
+            key = dialog.get_value1()
+            value = dialog.get_value2()
+            if len(key) > 0:
+                items = self.config.load(self.config.available)
+                if not key.upper() in items:
+                    items[key.upper()] = value
+                    self.log.debug("%s (%s) added to list of available items", key.upper(), value)
+                    self.config.save(filepath=self.config.available, items=items)
+                    self.update()
+        dialog.destroy()
+
+    def _on_item_rename(self, *args):
+        return
+
+    def _on_item_remove(self, *args):
+        item = self.viewAv.get_item()
+        self.log.debug("%s > %s > %s", item, item.id, item.title)
+        if item is None:
+            return
+        self.config.remove(item.id)
+        self.update()
+        self.entry.set_text('')
+        self.entry.activate()
+
+    def update_available(self):
+        items_available = []
+        item_type = self.config.model
+        items = self.config.load(self.config.available)
+        for key in items:
+            items_available.append(item_type(id=key, title=items[key]))
+        self.viewAv.update(items_available)
+
+    def update_used(self):
+        items_used = []
+        item_type = self.config.model
+        items = self.config.load(self.config.used)
+        for key in items:
+            items_used.append(item_type(id=key, title=items[key]))
+        self.viewSl.update(items_used)
+
+    def _on_filter_selected(self, *args):
+        self.viewAv.refilter()
+        self.viewSl.refilter()
+
+    def _do_filter_view(self, item, filter_list_model):
+        chunk = self.entry.get_text().upper()
+        string = "%s%s" % (item.id, item.title)
+        if chunk in string.upper():
+            return True
+        return False
+
+    def on_key_released(self, widget, keyval, keycode, state):
+        keyname = Gdk.keyval_name(keyval)
+        self.log.debug("Key: %s", keyname)
+
+    def _on_entrysearch_delete(self, *args):
+        self.entry.set_text("")

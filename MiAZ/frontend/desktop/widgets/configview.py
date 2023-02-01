@@ -38,30 +38,10 @@ class MiAZConfigView(MiAZSelector):
         self.log = get_logger('MiAZConfigView')
         self.backend = self.app.get_backend()
         self.conf = self.backend.get_conf()
-        self.dir_conf = self.backend.get_repo_conf_dir()
-        self.factory = self.app.get_factory()
         self.set_vexpand(True)
 
     def get_config_for(self):
         return self.config.config_for
-
-    def _on_filter_selected(self, *args):
-        self.viewAv.refilter()
-        self.viewSl.refilter()
-
-    def _do_filter_view(self, item, filter_list_model):
-        chunk = self.entry.get_text().upper()
-        string = "%s%s" % (item.id, item.title)
-        if chunk in string.upper():
-            return True
-        return False
-
-    def on_key_released(self, widget, keyval, keycode, state):
-        keyname = Gdk.keyval_name(keyval)
-        self.log.debug("Key: %s", keyname)
-
-    def _on_entrysearch_delete(self, *args):
-        self.entry.set_text("")
 
     def _setup_view(self):
         selector = MiAZSelector(self.app)
@@ -71,59 +51,9 @@ class MiAZConfigView(MiAZSelector):
         frmView.set_child(self.view)
         return selector
 
-    def _on_item_add(self, *args):
-        dialog = MiAZDialogAdd(self.app, self.get_root(), 'New %s' % self.config.config_for, '%s name' % self.config.config_for.title(), '')
-        etyValue1 = dialog.get_value1_widget()
-        search_term = self.entry.get_text()
-        etyValue1.set_text(search_term)
-        dialog.connect('response', self._on_response_item_add)
-        dialog.show()
-
-    def _on_response_item_add(self, dialog, response):
-        if response == Gtk.ResponseType.ACCEPT:
-            key = dialog.get_value1()
-            value = dialog.get_value2()
-            if len(key) > 0:
-                items = self.config.load(self.config.available)
-                if not key.upper() in items:
-                    items[key.upper()] = value
-                    self.log.debug("%s (%s) added to list of available items", key.upper(), value)
-                    self.config.save(filepath=self.config.available, items=items)
-                    self.update()
-        dialog.destroy()
-
-    def _on_item_rename(self, *args):
-        return
-
-    def _on_item_remove(self, *args):
-        item = self.viewAv.get_item()
-        self.log.debug("%s > %s > %s", item, item.id, item.title)
-        if item is None:
-            return
-        self.config.remove(item.id)
-        self.update()
-        self.entry.set_text('')
-        self.entry.activate()
-
-    def update_available(self):
-        items_available = []
-        item_type = self.config.model
-        items = self.config.load(self.config.available)
-        for key in items:
-            items_available.append(item_type(id=key, title=items[key]))
-        self.viewAv.update(items_available)
-
-    def update_used(self):
-        items_used = []
-        item_type = self.config.model
-        items = self.config.load(self.config.used)
-        for key in items:
-            items_used.append(item_type(id=key, title=items[key]))
-        self.viewSl.update(items_used)
-
 
 class MiAZCountries(MiAZConfigView):
-    """"""
+    """Manage countries from Repo Settings. Edit disabled"""
     __gtype_name__ = 'MiAZCountries'
     current = None
 
@@ -157,10 +87,10 @@ class MiAZCountries(MiAZConfigView):
             items.append(item_type(id=code, title=countries[code], icon='%s.svg' % code))
         self.viewSl.update(items)
 
+
 class MiAZGroups(MiAZConfigView):
-    """"""
+    """Manage groups from Repo Settings"""
     __gtype_name__ = 'MiAZGroups'
-    # ~ current = None
 
     def __init__(self, app):
         super(MiAZConfigView, self).__init__(app, edit=True)
@@ -168,19 +98,16 @@ class MiAZGroups(MiAZConfigView):
         self.config = self.conf['Group']
 
     def _setup_view_finish(self):
-        # Setup Available Column View
+        # Setup Available and Used Columns Views
         self.viewAv = MiAZColumnViewGroup(self.app)
         self.add_columnview_available(self.viewAv)
-
-        # Setup Used Column View
         self.viewSl = MiAZColumnViewGroup(self.app)
         self.add_columnview_used(self.viewSl)
 
 
 class MiAZSubgroups(MiAZConfigView):
-    """"""
+    """Manage subgroups from Repo Settings"""
     __gtype_name__ = 'MiAZSubgroups'
-
 
     def __init__(self, app):
         super(MiAZConfigView, self).__init__(app, edit=True)
@@ -188,11 +115,9 @@ class MiAZSubgroups(MiAZConfigView):
         self.config = self.conf['Subgroup']
 
     def _setup_view_finish(self):
-        # Setup Available Column View
+        # Setup Available and Used Columns Views
         self.viewAv = MiAZColumnViewSubgroup(self.app)
         self.add_columnview_available(self.viewAv)
-
-        # Setup Used Column View
         self.viewSl = MiAZColumnViewSubgroup(self.app)
         self.add_columnview_used(self.viewSl)
 
@@ -207,37 +132,15 @@ class MiAZPeople(MiAZConfigView):
         self.config = self.conf['Person']
 
     def _setup_view_finish(self):
-        # Setup Available Column View
+        # Setup Available and Used Columns Views
         self.viewAv = MiAZColumnViewPerson(self.app)
         self.add_columnview_available(self.viewAv)
-
-        # Setup Used Column View
         self.viewSl = MiAZColumnViewPerson(self.app)
         self.add_columnview_used(self.viewSl)
 
-    def _on_item_add(self, *args):
-        dialog = MiAZDialogAdd(self.app, self.get_root(), 'Add new %s' % self.config.config_for, 'Initials', 'Full name')
-        etyValue1 = dialog.get_value1_widget()
-        search_term = self.entry.get_text()
-        etyValue1.set_text(search_term)
-        dialog.connect('response', self._on_response_item_add)
-        dialog.show()
-
-    def _on_response_item_add(self, dialog, response):
-        if response == Gtk.ResponseType.ACCEPT:
-            key = dialog.get_value1()
-            value = dialog.get_value2()
-            if len(key) > 0 and len(value) > 0:
-                items = self.config.load(self.config.used)
-                items[key.upper()] = value
-                self.log.info("New person: %s (%s)", key.upper(), value)
-                self.config.save(filepath=self.config.available, items=items)
-                self.update()
-        dialog.destroy()
-
 
 class MiAZPurposes(MiAZConfigView):
-    """Class for managing Purposes from Settings"""
+    """Manage purposes from Repo Settings"""
     __gtype_name__ = 'MiAZPurposes'
 
     def __init__(self, app):
@@ -246,12 +149,8 @@ class MiAZPurposes(MiAZConfigView):
         self.config = self.conf['Purpose']
 
     def _setup_view_finish(self):
-       # Setup Available Column View
+        # Setup Available and Used Columns Views
         self.viewAv = MiAZColumnViewPurpose(self.app)
         self.add_columnview_available(self.viewAv)
-
-        # Setup Used Column View
         self.viewSl = MiAZColumnViewPurpose(self.app)
         self.add_columnview_used(self.viewSl)
-
-
