@@ -100,12 +100,6 @@ class MiAZSelector(Gtk.Box):
         self.update_available()
         self.update_used()
 
-    def update_available(self):
-        pass
-
-    def update_used(self):
-        pass
-
     def action_add(self, *args):
         changed = False
         items_used = self.config.load(self.config.used)

@@ -19,7 +19,7 @@ from MiAZ.backend.env import ENV
 from MiAZ.backend.util import json_load
 from MiAZ.frontend.desktop.widgets.columnview import MiAZColumnView
 from MiAZ.frontend.desktop.widgets.columnview import ColIcon, ColLabel, ColCheck
-from MiAZ.backend.models import MiAZItem, Country, Group, Subgroup, Person, Purpose
+from MiAZ.backend.models import MiAZItem, Country, Group, Subgroup, Person, Purpose, File
 
 
 class MiAZColumnViewWorkspace(MiAZColumnView):
@@ -315,3 +315,16 @@ class MiAZColumnViewPerson(MiAZColumnView):
         self.column_id.set_title("Initials")
         self.cv.append_column(self.column_title)
         self.column_title.set_title("Full name")
+
+class MiAZColumnViewMassRename(MiAZColumnView):
+    """ Custom ColumnView widget for MiAZ """
+    __gtype_name__ = 'MiAZColumnViewMassRename'
+
+    def __init__(self, app):
+        super().__init__(app, item_type=File)
+        self.cv.append_column(self.column_id)
+        self.column_id.set_title("Source")
+        self.column_id.set_expand(True)
+        self.cv.append_column(self.column_title)
+        self.column_title.set_title("Target")
+        self.column_title.set_expand(True)

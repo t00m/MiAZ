@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import os
+import shutil
 from datetime import datetime
 
 import gi
@@ -23,7 +24,7 @@ from MiAZ.frontend.desktop.factory import MenuHeader
 from MiAZ.frontend.desktop.widgets.assistant import MiAZAssistantRepoSettings
 from MiAZ.frontend.desktop.widgets.menubutton import MiAZMenuButton
 from MiAZ.frontend.desktop.widgets.menu import MiAZ_MENU_WORKSPACE_REPO
-from MiAZ.frontend.desktop.widgets.columnviews import MiAZColumnViewWorkspace
+from MiAZ.frontend.desktop.widgets.columnviews import MiAZColumnViewWorkspace, MiAZColumnViewMassRename
 
 # Conversion Item type to Field Number
 Field = {}
@@ -143,32 +144,66 @@ class MiAZWorkspace(Gtk.Box):
     def _on_action_rename(self, action, data, item_type):
         title = item_type.__gtype_name__
         self.log.debug("Rename %s for:", title)
-        box = self.factory.create_box_vertical()
+        box = self.factory.create_box_vertical(spacing=6, vexpand=True, hexpand=True)
         label = self.factory.create_label('Rename %d files by setting the field <b>%s</b> to:\n' % (len(self.selected_items), title))
         dropdown = self.factory.create_dropdown_generic(item_type)
+        cv = MiAZColumnViewMassRename(self.app)
+        cv.set_hexpand(True)
+        cv.set_vexpand(True)
+        # ~ widgets = {}
+        # ~ widgets['dropdown'] = dropdown
+        # ~ widgets['columnview'] = cv
+        dropdown.connect("notify::selected-item", self._on_mass_renaming_change, cv, item_type)
         self.actions.dropdown_populate(dropdown, item_type, any_value=False)
         box.append(label)
         box.append(dropdown)
+        box.append(cv)
         dialog = self.factory.create_dialog_question(self.app.win, 'Mass renaming', box)
         dialog.connect('response', self._on_mass_renaming, dropdown, item_type)
         dialog.show()
 
+    def _on_mass_renaming_change(self, dropdown, item, columnview, item_type):
+        title = item_type.__gtype_name__
+        citems = []
+        for item in self.selected_items:
+            source = item.id
+            # ~ valid, reasons = self.backend.validate_filename(source)
+            filename = self.backend.suggest_filename(source)
+            # ~ if not valid:
+                # ~ filename = self.backend.suggest_filename(source)
+            # ~ else:
+                # ~ fullfname = os.path.basename(source)
+                # ~ filename = fullfname[:fullfname.rfind('.')]
+            name, ext = get_filename_details(source)
+            n = Field[item_type]
+            tmpfile = filename.split('-')
+            tmpfile[n] = dropdown.get_selected_item().id
+            filename = "%s.%s" % ('-'.join(tmpfile), ext)
+            target = os.path.join(os.path.dirname(source), filename)
+            citems.append(File(id=os.path.basename(source), title=os.path.basename(target)))
+            self.log.debug("Mass %s renaming: %s > %s", title, os.path.basename(source) , os.path.basename(target))
+        columnview.update(citems)
+
+
     def _on_mass_renaming(self, dialog, response, dropdown, item_type):
+        title = item_type.__gtype_name__
         if response == Gtk.ResponseType.ACCEPT:
             for item in self.selected_items:
-                filepath = item.id
-                valid, reasons = self.backend.validate_filename(filepath)
+                source = item.id
+                valid, reasons = self.backend.validate_filename(source)
                 if not valid:
-                    filename = self.backend.suggest_filename(filepath)
+                    filename = self.backend.suggest_filename(source)
                 else:
-                    fullfname = os.path.basename(filepath)
+                    fullfname = os.path.basename(source)
                     filename = fullfname[:fullfname.rfind('.')]
-                name, ext = get_filename_details(filepath)
+                name, ext = get_filename_details(source)
                 n = Field[item_type]
                 tmpfile = filename.split('-')
                 tmpfile[n] = dropdown.get_selected_item().id
                 filename = "%s.%s" % ('-'.join(tmpfile), ext)
-                self.log.debug(filename)
+                target = os.path.join(os.path.dirname(source), filename)
+                # ~ shutil.move(source, target)
+                self.log.debug("Mass %s renaming: %s > %s", title, os.path.basename(source) , os.path.basename(target))
         dialog.destroy()
 
 

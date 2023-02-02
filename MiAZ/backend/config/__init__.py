@@ -302,7 +302,6 @@ class MiAZConfigSettingsPeople(MiAZConfig):
             model = Person,
             must_copy = True
         )
-        self.log.error("Signal ID: %d", sid)
 
     def __repr__(self):
         return 'Person'
@@ -329,7 +328,6 @@ class MiAZConfigSettingsSentBy(MiAZConfig):
             model = SentBy,
             must_copy = False
         )
-        self.log.error("Signal SentBy ID: %d", sid)
 
     def __repr__(self):
         return 'SentBy'
@@ -356,7 +354,6 @@ class MiAZConfigSettingsSentTo(MiAZConfig):
             model = SentTo,
             must_copy = False
         )
-        self.log.error("Signal SentTo ID: %d", sid)
 
     def __repr__(self):
         return 'SentTo'
