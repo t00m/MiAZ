@@ -15,6 +15,7 @@ from gi.repository import GObject
 from MiAZ.backend.env import ENV
 from MiAZ.backend.log import get_logger
 from MiAZ.backend.util import json_load
+from MiAZ.backend.util import get_filename_details
 from MiAZ.backend.models import MiAZItem, File, Group, Subgroup, Person, Country, Purpose, Concept, SentBy, SentTo
 from MiAZ.frontend.desktop.util import get_file_mimetype
 from MiAZ.frontend.desktop.widgets.columnview import MiAZColumnView, ColIcon, ColLabel
@@ -23,6 +24,15 @@ from MiAZ.frontend.desktop.widgets.assistant import MiAZAssistantRepoSettings
 from MiAZ.frontend.desktop.widgets.menubutton import MiAZMenuButton
 from MiAZ.frontend.desktop.widgets.menu import MiAZ_MENU_WORKSPACE_REPO
 from MiAZ.frontend.desktop.widgets.columnviews import MiAZColumnViewWorkspace
+
+# Conversion Item type to Field Number
+Field = {}
+Field[Country] = 1
+Field[Group] = 2
+Field[Subgroup] = 3
+Field[SentBy] = 4
+Field[Purpose] = 5
+Field[SentTo] = 7
 
 
 class MiAZWorkspace(Gtk.Box):
@@ -33,6 +43,7 @@ class MiAZWorkspace(Gtk.Box):
     dfilter = {}
     signals = set()
     num_review = 0
+    selected_items = []
 
     def __init__(self, app):
         super(MiAZWorkspace, self).__init__(orientation=Gtk.Orientation.HORIZONTAL)
@@ -136,13 +147,30 @@ class MiAZWorkspace(Gtk.Box):
         label = self.factory.create_label('Rename %d files by setting the field <b>%s</b> to:\n' % (len(self.selected_items), title))
         dropdown = self.factory.create_dropdown_generic(item_type)
         self.actions.dropdown_populate(dropdown, item_type, any_value=False)
-        # ~ self.actions.dropdown_populate(dropdown, item_type, conf)
         box.append(label)
         box.append(dropdown)
         dialog = self.factory.create_dialog_question(self.app.win, 'Mass renaming', box)
+        dialog.connect('response', self._on_mass_renaming, dropdown, item_type)
         dialog.show()
-        # ~ for item in self.selected_items:
-            # ~ self.log.debug("\t%s", item.id)
+
+    def _on_mass_renaming(self, dialog, response, dropdown, item_type):
+        if response == Gtk.ResponseType.ACCEPT:
+            for item in self.selected_items:
+                filepath = item.id
+                valid, reasons = self.backend.validate_filename(filepath)
+                if not valid:
+                    filename = self.backend.suggest_filename(filepath)
+                else:
+                    fullfname = os.path.basename(filepath)
+                    filename = fullfname[:fullfname.rfind('.')]
+                name, ext = get_filename_details(filepath)
+                n = Field[item_type]
+                tmpfile = filename.split('-')
+                tmpfile[n] = dropdown.get_selected_item().id
+                filename = "%s.%s" % ('-'.join(tmpfile), ext)
+                self.log.debug(filename)
+        dialog.destroy()
+
 
     def _on_explain_toggled(self, button, data=None):
         active = button.get_active()
@@ -467,20 +495,23 @@ class MiAZWorkspace(Gtk.Box):
                 date_dsc = adate.strftime("%Y.%m.%d")
             except:
                 date_dsc = ''
-            items.append(MiAZItem(  id=path,
-                                date=fields[0],
-                                date_dsc = date_dsc,
-                                country=fields[1],
-                                group=fields[2],
-                                subgroup=fields[3],
-                                purpose=fields[5],
-                                sentby_id=fields[4],
-                                sentby_dsc=who.get(fields[4]),
-                                title=os.path.basename(path),
-                                subtitle=fields[6],
-                                sentto_id=fields[7],
-                                sentto_dsc=who.get(fields[7]),
-                                valid=valid))
+            items.append(MiAZItem
+                                (
+                                    id=path,
+                                    date=fields[0],
+                                    date_dsc = date_dsc,
+                                    country=fields[1],
+                                    group=fields[2],
+                                    subgroup=fields[3],
+                                    purpose=fields[5],
+                                    sentby_id=fields[4],
+                                    sentby_dsc=who.get(fields[4]),
+                                    title=os.path.basename(path),
+                                    subtitle=fields[6],
+                                    sentto_id=fields[7],
+                                    sentto_dsc=who.get(fields[7]),
+                                    valid=valid)
+                                )
         self.view.update(items)
         self._on_filter_selected()
         self.update_title()

@@ -29,6 +29,17 @@ def json_save(filepath: str, adict: {}) -> {}:
     with open(filepath, 'w') as fout:
         json.dump(adict, fout, sort_keys=True, indent=4)
 
+def get_filename_details(filepath: str):
+    basename = os.path.basename(filepath)
+    dot = basename.rfind('.')
+    if dot > 0:
+        name = basename[:dot]
+        ext = basename[dot+1:].lower()
+    else:
+        name = basename
+        ext = ''
+    return name, ext
+
 def guess_datetime(adate: str) -> datetime:
     """Return (guess) a datetime object for a given string."""
     if len(adate) != 8:
