@@ -84,6 +84,8 @@ class MiAZSelector(Gtk.Box):
     def add_columnview_available(self, columnview):
         columnview.set_filter(self._do_filter_view)
         columnview.column_title.set_expand(True)
+        columnview.cv.connect("activate", self._on_selected_item_notify)
+        self.log.debug(type(columnview))
         self.frmViewAv.set_child(columnview)
         columnview.cv.sort_by_column(columnview.column_title, Gtk.SortType.ASCENDING)
 
@@ -151,8 +153,29 @@ class MiAZSelector(Gtk.Box):
                     self.update()
         dialog.destroy()
 
-    def _on_item_rename(self, *args):
-        return
+    def _on_item_rename(self, item):
+        dialog = MiAZDialogAdd(self.app, self.get_root(), '%s: rename item' % self.config.config_for, 'Name', 'Description')
+        etyValue1 = dialog.get_value1_widget()
+        etyValue2 = dialog.get_value2_widget()
+        etyValue1.set_text(item.id)
+        etyValue2.set_text(item.title)
+        dialog.connect('response', self._on_response_item_rename)
+        dialog.show()
+
+    def _on_response_item_rename(self, dialog, response):
+        if response == Gtk.ResponseType.ACCEPT:
+            key = dialog.get_value1()
+            value = dialog.get_value2()
+            self.log.debug("Item renamed to: %s[%s]", key, value)
+            # ~ if len(key) > 0:
+                # ~ items = self.config.load(self.config.available)
+                # ~ if not key.upper() in items:
+                    # ~ items[key.upper()] = value
+                    # ~ self.log.debug("%s (%s) added to list of available items", key.upper(), value)
+                    # ~ self.config.save(filepath=self.config.available, items=items)
+                    # ~ self.update()
+        dialog.destroy()
+
 
     def _on_item_remove(self, *args):
         item = self.viewAv.get_item()
@@ -163,6 +186,11 @@ class MiAZSelector(Gtk.Box):
         self.update()
         self.entry.set_text('')
         self.entry.activate()
+
+    def _on_selected_item_notify(self, colview, pos):
+        model = colview.get_model()
+        item = model.get_item(pos)
+        self._on_item_rename(item)
 
     def update_available(self):
         items_available = []
