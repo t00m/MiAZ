@@ -150,15 +150,12 @@ class MiAZWorkspace(Gtk.Box):
         cv = MiAZColumnViewMassRename(self.app)
         cv.set_hexpand(True)
         cv.set_vexpand(True)
-        # ~ widgets = {}
-        # ~ widgets['dropdown'] = dropdown
-        # ~ widgets['columnview'] = cv
         dropdown.connect("notify::selected-item", self._on_mass_renaming_change, cv, item_type)
         self.actions.dropdown_populate(dropdown, item_type, any_value=False)
         box.append(label)
         box.append(dropdown)
         box.append(cv)
-        dialog = self.factory.create_dialog_question(self.app.win, 'Mass renaming', box)
+        dialog = self.factory.create_dialog_question(self.app.win, 'Mass renaming', box, width=800, height=600)
         dialog.connect('response', self._on_mass_renaming, dropdown, item_type)
         dialog.show()
 
@@ -167,13 +164,13 @@ class MiAZWorkspace(Gtk.Box):
         citems = []
         for item in self.selected_items:
             source = item.id
-            # ~ valid, reasons = self.backend.validate_filename(source)
-            filename = self.backend.suggest_filename(source)
-            # ~ if not valid:
-                # ~ filename = self.backend.suggest_filename(source)
-            # ~ else:
-                # ~ fullfname = os.path.basename(source)
-                # ~ filename = fullfname[:fullfname.rfind('.')]
+            valid, reasons = self.backend.validate_filename(source)
+            # ~ filename = self.backend.suggest_filename(source, valid)
+            if not valid:
+                filename = self.backend.suggest_filename(source, False)
+            else:
+                fullfname = os.path.basename(source)
+                filename = fullfname[:fullfname.rfind('.')]
             name, ext = get_filename_details(source)
             n = Field[item_type]
             tmpfile = filename.split('-')
@@ -181,7 +178,7 @@ class MiAZWorkspace(Gtk.Box):
             filename = "%s.%s" % ('-'.join(tmpfile), ext)
             target = os.path.join(os.path.dirname(source), filename)
             citems.append(File(id=os.path.basename(source), title=os.path.basename(target)))
-            self.log.debug("Mass %s renaming: %s > %s", title, os.path.basename(source) , os.path.basename(target))
+            self.log.debug("Mass %s renaming: %s > %s > %s", title, os.path.basename(source) , valid, os.path.basename(target))
         columnview.update(citems)
 
 
@@ -192,7 +189,7 @@ class MiAZWorkspace(Gtk.Box):
                 source = item.id
                 valid, reasons = self.backend.validate_filename(source)
                 if not valid:
-                    filename = self.backend.suggest_filename(source)
+                    filename = self.backend.suggest_filename(source, False)
                 else:
                     fullfname = os.path.basename(source)
                     filename = fullfname[:fullfname.rfind('.')]
@@ -202,7 +199,7 @@ class MiAZWorkspace(Gtk.Box):
                 tmpfile[n] = dropdown.get_selected_item().id
                 filename = "%s.%s" % ('-'.join(tmpfile), ext)
                 target = os.path.join(os.path.dirname(source), filename)
-                # ~ shutil.move(source, target)
+                shutil.move(source, target)
                 self.log.debug("Mass %s renaming: %s > %s", title, os.path.basename(source) , os.path.basename(target))
         dialog.destroy()
 

@@ -156,7 +156,7 @@ class MiAZBackend(GObject.GObject):
                 self.s_repodct[doc]['valid'] = valid
                 self.s_repodct[doc]['reasons'] = reasons
                 if not valid:
-                    self.s_repodct[doc]['suggested'] = "-------" # self.suggest_filename(doc)
+                    self.s_repodct[doc]['suggested'] = "-------" # DISABLED: improve peformance # self.suggest_filename(doc)
                     self.s_repodct[doc]['fields'] = ['' for fields in range(8)]
                     # ~ self.log.debug(reasons)
                 else:
@@ -188,6 +188,7 @@ class MiAZBackend(GObject.GObject):
         reasons = "OK"
         valid = True
         reasons = []
+        partitioning = False
 
         # Check filename
         dot = filename.rfind('.')
@@ -213,6 +214,7 @@ class MiAZBackend(GObject.GObject):
         else:
             reasons.append((True, "Right number of fields (%d/8)" %
                                                         len(fields)))
+            partitioning = True
 
         # Validate fields
         # Check timestamp (1st field)
@@ -266,7 +268,7 @@ class MiAZBackend(GObject.GObject):
             valid &= False
             reasons.append((False, "Group couldn't be checked"))
 
-        # Check group (4th field)
+        # Check subgroup (4th field)
         try:
             code = fields[3]
             is_subgroup = self.conf['Subgroup'].exists(code)
@@ -335,10 +337,17 @@ class MiAZBackend(GObject.GObject):
             valid &= False
             reasons.append((False, "Person couldn't be checked"))
 
+        if partitioning is True:
+            self.conf['Group'].add(fields[2].upper())
+            self.conf['Subgroup'].add(fields[3].upper())
+            self.conf['SentBy'].add(fields[4].upper())
+            self.conf['Purpose'].add(fields[5].upper())
+            self.conf['SentTo'].add(fields[7].upper())
+
         return valid, reasons
 
 
-    def suggest_filename(self, filepath: str) -> str:
+    def suggest_filename(self, filepath: str, valid: bool = False) -> str:
         timestamp = ""
         country = ""
         group = ""
@@ -436,10 +445,10 @@ class MiAZBackend(GObject.GObject):
             purpose = ''
 
         # Field 6. Do NOT find and/or guess concept field. Free field.
-        try:
-            concept = fields[5]
-        except:
+        if not valid:
             concept = name.replace('-', '_')
+        else:
+            concept = fields[5]
 
         # Field 7. Find and/or guess SentTo field
         found_person = False
