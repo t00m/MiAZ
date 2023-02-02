@@ -113,7 +113,7 @@ class MiAZWorkspace(Gtk.Box):
         self.config['Subgroup'].connect('repo-settings-updated-subgroups', self.update_dropdown, Subgroup)
         self.config['SentBy'].connect('repo-settings-updated-sentby', self.update_dropdown, SentBy)
         self.config['Purpose'].connect('repo-settings-updated-purposes', self.update_dropdown, Purpose)
-        self.config['SentTo'].connect('repo-settings-updated-people', self.update_dropdown, Person)
+        self.config['SentTo'].connect('repo-settings-updated-sentto', self.update_dropdown, SentTo)
         return widget
 
     def enable_filtering(self, enable=True):
@@ -124,7 +124,6 @@ class MiAZWorkspace(Gtk.Box):
 
     def update_dropdown(self, config, item_type):
         title = item_type.__gtype_name__
-        self.log.debug("Updating dropdown for %s", title)
         self.enable_filtering(False)
         self.actions.dropdown_populate(self.dropdown[title], item_type)
         self.enable_filtering(True)

@@ -18,7 +18,7 @@ from gi.repository.GdkPixbuf import Pixbuf
 from MiAZ.backend.log import get_logger
 from MiAZ.frontend.desktop.widgets.dialogs import MiAZDialogAdd
 from MiAZ.backend.models import File, Group, Subgroup, Person, Country, Purpose, Concept, SentBy, SentTo
-from MiAZ.frontend.desktop.widgets.configview import MiAZCountries, MiAZGroups, MiAZPeople, MiAZPurposes, MiAZSubgroups, MiAZSentBy
+from MiAZ.frontend.desktop.widgets.configview import MiAZCountries, MiAZGroups, MiAZPeople, MiAZPurposes, MiAZSubgroups, MiAZSentBy, MiAZSentTo
 
 
 class MiAZRenameDialog(Gtk.Box):
@@ -83,7 +83,7 @@ class MiAZRenameDialog(Gtk.Box):
         self.config['Subgroup'].connect('repo-settings-updated-subgroups', self.update_dropdown, Subgroup)
         self.config['SentBy'].connect('repo-settings-updated-sentby', self.update_dropdown, SentBy)
         self.config['Purpose'].connect('repo-settings-updated-purposes', self.update_dropdown, Purpose)
-        self.config['SentTo'].connect('repo-settings-updated-people', self.update_dropdown, SentTo)
+        self.config['SentTo'].connect('repo-settings-updated-sentto', self.update_dropdown, SentTo)
 
     def update_dropdown(self, config, item_type):
         title = item_type.__gtype_name__
@@ -121,8 +121,6 @@ class MiAZRenameDialog(Gtk.Box):
         self.lblFilenameNew.set_markup(self.result)
         self.lblFilenameNew.set_selectable(True)
         self.btnPreview.connect('clicked', self.on_document_display, self.filepath)
-
-
         self.on_changed_entry()
 
     def __create_box_value(self) -> Gtk.Box:
@@ -132,7 +130,6 @@ class MiAZRenameDialog(Gtk.Box):
         return box
 
     def __create_actionrow(self, title, item_type, conf) -> Adw.ActionRow:
-        self.log.debug("%s > %s > %s", title, item_type, conf)
         row = Adw.ActionRow.new()
         row.set_title(title)
         icon = 'miaz-res-%s' % title.lower().replace(' ', '')
@@ -231,9 +228,9 @@ class MiAZRenameDialog(Gtk.Box):
         self.entry_concept.connect('changed', self.on_changed_entry)
 
     def __create_field_7_sentto(self):
-        self.rowSentTo, self.btnSentTo, self.dpdSentTo = self.__create_actionrow('Sent to', SentTo, 'People')
+        self.rowSentTo, self.btnSentTo, self.dpdSentTo = self.__create_actionrow('Sent to', SentTo, 'SentTo')
         self.dropdown['SentTo'] = self.dpdSentTo
-        self.btnSentTo.connect('clicked', self.on_resource_manage, MiAZPeople(self.app))
+        self.btnSentTo.connect('clicked', self.on_resource_manage, MiAZSentTo(self.app))
         self.dpdSentTo.connect("notify::selected-item", self.on_changed_entry)
 
     def __create_field_8_extension(self):

@@ -23,6 +23,7 @@ from MiAZ.backend.config import MiAZConfigSettingsPurposes
 from MiAZ.backend.config import MiAZConfigSettingsConcepts
 from MiAZ.backend.config import MiAZConfigSettingsPeople
 from MiAZ.backend.config import MiAZConfigSettingsSentBy
+from MiAZ.backend.config import MiAZConfigSettingsSentTo
 
 
 class MiAZBackend(GObject.GObject):
@@ -93,7 +94,7 @@ class MiAZBackend(GObject.GObject):
         self.conf['Purpose'] = MiAZConfigSettingsPurposes(dir_conf)
         self.conf['Concept'] = MiAZConfigSettingsConcepts(dir_conf)
         self.conf['SentBy'] = MiAZConfigSettingsSentBy(dir_conf)
-        self.conf['SentTo'] = MiAZConfigSettingsPeople(dir_conf)
+        self.conf['SentTo'] = MiAZConfigSettingsSentTo(dir_conf)
         self.conf['Person'] = MiAZConfigSettingsPeople(dir_conf)
         self.watcher = MiAZWatcher('source', path)
         self.watcher.set_active(active=True)

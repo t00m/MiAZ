@@ -337,3 +337,30 @@ class MiAZConfigSettingsSentBy(MiAZConfig):
     def save(self, filepath: str = '', items: dict = {}) -> bool:
         if self.save_data(filepath, items):
             self.emit('repo-settings-updated-sentby')
+
+class MiAZConfigSettingsSentTo(MiAZConfig):
+    def __init__(self, dir_conf):
+        sid = GObject.signal_lookup('repo-settings-updated-sentto', MiAZConfigSettingsSentTo)
+        if sid == 0:
+            GObject.GObject.__init__(self)
+            GObject.signal_new('repo-settings-updated-sentto',
+                                MiAZConfigSettingsSentTo,
+                                GObject.SignalFlags.RUN_LAST, None, () )
+        super().__init__(
+            log=get_logger('MiAZ.Settings.SentTo'),
+            config_for = 'SentTo',
+            used = os.path.join(dir_conf, 'people-used.json'),
+            available = os.path.join(dir_conf, 'people-available.json'),
+            default = os.path.join(ENV['GPATH']['RESOURCES'],
+                            'MiAZ-people.json'),
+            model = SentTo,
+            must_copy = False
+        )
+        self.log.error("Signal SentTo ID: %d", sid)
+
+    def __repr__(self):
+        return 'SentTo'
+
+    def save(self, filepath: str = '', items: dict = {}) -> bool:
+        if self.save_data(filepath, items):
+            self.emit('repo-settings-updated-sentto')

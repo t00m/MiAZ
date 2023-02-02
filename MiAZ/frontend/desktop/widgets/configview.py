@@ -15,6 +15,7 @@ from MiAZ.backend.config import MiAZConfigSettingsGroups
 from MiAZ.backend.config import MiAZConfigSettingsSubgroups
 from MiAZ.backend.config import MiAZConfigSettingsPeople
 from MiAZ.backend.config import MiAZConfigSettingsSentBy
+from MiAZ.backend.config import MiAZConfigSettingsSentTo
 from MiAZ.backend.config import MiAZConfigSettingsCountries
 from MiAZ.backend.config import MiAZConfigSettingsPurposes
 from MiAZ.frontend.desktop.widgets.columnview import MiAZColumnView, ColIcon
@@ -147,6 +148,22 @@ class MiAZSentBy(MiAZConfigView):
         super(MiAZConfigView, self).__init__(app, edit=True)
         super().__init__(app)
         self.config = self.conf['SentBy']
+
+    def _setup_view_finish(self):
+        # Setup Available and Used Columns Views
+        self.viewAv = MiAZColumnViewPerson(self.app)
+        self.add_columnview_available(self.viewAv)
+        self.viewSl = MiAZColumnViewPerson(self.app)
+        self.add_columnview_used(self.viewSl)
+
+class MiAZSentTo(MiAZConfigView):
+    """Class for managing People from Settings"""
+    __gtype_name__ = 'MiAZSentTo'
+
+    def __init__(self, app):
+        super(MiAZConfigView, self).__init__(app, edit=True)
+        super().__init__(app)
+        self.config = self.conf['SentTo']
 
     def _setup_view_finish(self):
         # Setup Available and Used Columns Views
