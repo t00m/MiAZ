@@ -439,7 +439,7 @@ class MiAZBackend(GObject.GObject):
         try:
             concept = fields[5]
         except:
-            concept = ''
+            concept = name
 
         # Field 7. Find and/or guess SentTo field
         found_person = False
