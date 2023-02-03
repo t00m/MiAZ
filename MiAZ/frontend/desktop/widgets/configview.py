@@ -73,7 +73,7 @@ class MiAZCountries(MiAZConfigView):
         self.viewSl = MiAZColumnViewCountry(self.app)
         self.add_columnview_used(self.viewSl)
 
-    def update_available(self):
+    def _update_view_available(self):
         items = []
         item_type = self.config.model
         countries = self.config.load(self.config.available)
@@ -81,7 +81,7 @@ class MiAZCountries(MiAZConfigView):
             items.append(item_type(id=code, title=countries[code], icon='%s.svg' % code))
         self.viewAv.update(items)
 
-    def update_used(self):
+    def _update_view_used(self):
         items = []
         item_type = self.config.model
         countries = self.config.load(self.config.used)
