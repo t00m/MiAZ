@@ -110,7 +110,9 @@ class MiAZConfig(GObject.GObject):
                 found = False
         return found
 
-    def add(self, key, value=None):
+    def add(self, key, value=''):
+        if len(key.strip()) == 0:
+            return
         items = self.load(self.used)
         if not key in items:
             items[key] = value.upper()
