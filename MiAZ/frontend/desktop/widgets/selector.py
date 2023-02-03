@@ -159,21 +159,22 @@ class MiAZSelector(Gtk.Box):
         etyValue2 = dialog.get_value2_widget()
         etyValue1.set_text(item.id)
         etyValue2.set_text(item.title)
-        dialog.connect('response', self._on_response_item_rename)
+        dialog.connect('response', self._on_response_item_rename, item)
         dialog.show()
 
-    def _on_response_item_rename(self, dialog, response):
+    def _on_response_item_rename(self, dialog, response, item):
         if response == Gtk.ResponseType.ACCEPT:
-            key = dialog.get_value1()
-            value = dialog.get_value2()
-            self.log.debug("Item renamed to: %s[%s]", key, value)
-            # ~ if len(key) > 0:
-                # ~ items = self.config.load(self.config.available)
-                # ~ if not key.upper() in items:
-                    # ~ items[key.upper()] = value
-                    # ~ self.log.debug("%s (%s) added to list of available items", key.upper(), value)
-                    # ~ self.config.save(filepath=self.config.available, items=items)
-                    # ~ self.update()
+            oldkey = item.id
+            newkey = dialog.get_value1()
+            newval = dialog.get_value2()
+            if len(newkey) > 0:
+                items = self.config.load(self.config.available)
+                if not newkey.upper() in items:
+                    items[newkey.upper()] = newval
+                    del(items[oldkey])
+                    self.log.debug("%s renamed to %s (%s) in the list of available items", oldkey, newkey.upper(), newval)
+                    self.config.save(filepath=self.config.available, items=items)
+                    self.update()
         dialog.destroy()
 
 
