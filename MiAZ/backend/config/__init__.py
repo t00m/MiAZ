@@ -29,18 +29,17 @@ class MiAZConfig(GObject.GObject):
         return __class__.__name__
 
     def setup(self):
-        self.log.debug("Setup configuration for %s", self.config_for)
         if not os.path.exists(self.available):
-            self.log.debug("\t%s - Available configuration file (%s) doesn't exist", self.config_for, self.available)
             if self.default is not None:
                 shutil.copy(self.default, self.available)
-                self.log.debug("\t%s - Available config created: %s", self.config_for, os.path.basename(self.available))
+                self.log.debug("%s - Available configuration created from default", self.config_for)
             else:
-                self.log.debug("\t%s - No global config available.", self.config_for)
+                self.save(filepath=self.available, items={})
+                self.log.debug("%s - Available configuration file created (empty)", self.config_for)
 
         if not os.path.exists(self.used):
-            self.log.debug("\t%s - Creating empty local config file", self.config_for)
             self.save(filepath=self.used, items={})
+            self.log.debug("%s - Used configuration file created (empty)", self.config_for)
 
     def get_config_for(self):
         return self.config_for
@@ -70,7 +69,7 @@ class MiAZConfig(GObject.GObject):
         except Exception as error:
             self.log.error(error)
             saved = False
-        self.log.debug("Saved %s with %d items? %s", filepath, len(items), saved)
+        # ~ self.log.debug("Saved %s with %d items? %s", filepath, len(items), saved)
         return saved
 
     def get(self, key: str) -> str:

@@ -122,18 +122,6 @@ class MiAZItem(MiAZModel):
     def icon(self):
         return self._icon
 
-class File(MiAZModel):
-    __gtype_name__ = 'File'
-
-class Date(MiAZModel):
-    __gtype_name__ = 'Date'
-
-class Group(MiAZModel):
-    __gtype_name__ = 'Group'
-
-class Subgroup(MiAZModel):
-    __gtype_name__ = 'Subgroup'
-
 class Concept(MiAZModel):
     __gtype_name__ = 'Concept'
 
@@ -148,8 +136,26 @@ class Country(MiAZModel):
     def icon(self):
         return self._icon
 
+class Date(MiAZModel):
+    __gtype_name__ = 'Date'
+
+class Extension(MiAZModel):
+    __gtype_name__ = 'Extension'
+
+class File(MiAZModel):
+    __gtype_name__ = 'File'
+
+class Group(MiAZModel):
+    __gtype_name__ = 'Group'
+
 class Person(MiAZModel):
     __gtype_name__ = 'Person'
+
+class Purpose(MiAZModel):
+    __gtype_name__ = 'Purpose'
+
+class Repository(MiAZModel):
+    __gtype_name__ = 'Repository'
 
 class SentBy(Person):
     __gtype_name__ = 'SentBy'
@@ -157,8 +163,5 @@ class SentBy(Person):
 class SentTo(Person):
     __gtype_name__ = 'SentTo'
 
-class Purpose(MiAZModel):
-    __gtype_name__ = 'Purpose'
-
-class Repository(MiAZModel):
-    __gtype_name__ = 'Repository'
+class Subgroup(MiAZModel):
+    __gtype_name__ = 'Subgroup'
