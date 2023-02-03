@@ -24,7 +24,6 @@ class MiAZSelector(Gtk.Box):
         self.log = get_logger('MiAZSelector')
         super(MiAZSelector, self).__init__(orientation=Gtk.Orientation.VERTICAL, hexpand=True, vexpand=True, spacing=0)
 
-
         # Entry and buttons for operations (edit/add/remove)
         self.boxOper = Gtk.Box(spacing=3, orientation=Gtk.Orientation.HORIZONTAL)
         self.boxOper.set_vexpand(False)
@@ -43,11 +42,10 @@ class MiAZSelector(Gtk.Box):
         if edit:
             self.boxButtons = Gtk.Box(spacing=3, orientation=Gtk.Orientation.HORIZONTAL)
             self.boxButtons.set_hexpand(False)
-            self.boxButtons.append(self.factory.create_button('miaz-list-add', '', self._on_item_add, self.config_for))
-            self.boxButtons.append(self.factory.create_button('miaz-list-remove', '', self._on_item_remove))
+            self.boxButtons.append(self.factory.create_button('miaz-list-add', '', self._on_item_available_add, self.config_for))
+            self.boxButtons.append(self.factory.create_button('miaz-list-remove', '', self._on_item_available_remove))
             self.boxOper.append(self.boxButtons)
         self.append(self.boxOper)
-
         boxViews = self.factory.create_box_horizontal(spacing=0, hexpand=True, vexpand=True)
         boxLeft = self.factory.create_box_vertical(spacing=0, hexpand=True, vexpand=True)
         boxControls = Gtk.CenterBox()
@@ -67,8 +65,8 @@ class MiAZSelector(Gtk.Box):
 
         # Controls
         boxSel = self.factory.create_box_vertical()
-        btnAddToUsed = self.factory.create_button('miaz-selector-add', callback=self.action_add)
-        btnRemoveFromUsed = self.factory.create_button('miaz-selector-remove', callback=self.action_remove)
+        btnAddToUsed = self.factory.create_button('miaz-selector-add', callback=self._on_item_used_add)
+        btnRemoveFromUsed = self.factory.create_button('miaz-selector-remove', callback=self._on_item_used_remove)
         boxSel.append(btnAddToUsed)
         boxSel.append(btnRemoveFromUsed)
         boxControls.set_center_widget(boxSel)
@@ -84,8 +82,7 @@ class MiAZSelector(Gtk.Box):
     def add_columnview_available(self, columnview):
         columnview.set_filter(self._do_filter_view)
         columnview.column_title.set_expand(True)
-        columnview.cv.connect("activate", self._on_selected_item_notify)
-        self.log.debug(type(columnview))
+        columnview.cv.connect("activate", self._on_selected_item_available_notify)
         self.frmViewAv.set_child(columnview)
         columnview.cv.sort_by_column(columnview.column_title, Gtk.SortType.ASCENDING)
 
@@ -99,10 +96,10 @@ class MiAZSelector(Gtk.Box):
         pass
 
     def update(self):
-        self.update_available()
-        self.update_used()
+        self._update_view_available()
+        self._update_view_used()
 
-    def action_add(self, *args):
+    def _on_item_used_add(self, *args):
         changed = False
         items_used = self.config.load(self.config.used)
         for item_available in self.viewAv.get_selected_items():
@@ -111,9 +108,9 @@ class MiAZSelector(Gtk.Box):
             changed = True
         if changed:
             self.config.save(filepath=self.config.used, items=items_used)
-            self.update_used()
+            self._update_view_used()
 
-    def action_remove(self, *args):
+    def _on_item_used_remove(self, *args):
         changed = False
         items_used = self.config.load(self.config.used)
         items_available = self.config.load(self.config.available)
@@ -126,21 +123,18 @@ class MiAZSelector(Gtk.Box):
         if changed:
             self.config.save(filepath=self.config.used, items=items_used)
             self.config.save(filepath=self.config.available, items=items_available)
-            self.update_used()
-            self.update_available()
+            self._update_view_used()
+            self._update_view_available()
 
-    # ~ def set_title(self, label:str = 'Selector'):
-        # ~ self.title.set_markup(label)
-
-    def _on_item_add(self, *args):
+    def _on_item_available_add(self, *args):
         dialog = MiAZDialogAdd(self.app, self.get_root(), '%s: add a new item' % self.config.config_for, 'Name', 'Description')
         etyValue1 = dialog.get_value1_widget()
         search_term = self.entry.get_text()
         etyValue1.set_text(search_term)
-        dialog.connect('response', self._on_response_item_add)
+        dialog.connect('response', self._on_response_item_available_add)
         dialog.show()
 
-    def _on_response_item_add(self, dialog, response):
+    def _on_response_item_available_add(self, dialog, response):
         if response == Gtk.ResponseType.ACCEPT:
             key = dialog.get_value1()
             value = dialog.get_value2()
@@ -153,16 +147,16 @@ class MiAZSelector(Gtk.Box):
                     self.update()
         dialog.destroy()
 
-    def _on_item_rename(self, item):
+    def _on_item_available_rename(self, item):
         dialog = MiAZDialogAdd(self.app, self.get_root(), '%s: rename item' % self.config.config_for, 'Name', 'Description')
         etyValue1 = dialog.get_value1_widget()
         etyValue2 = dialog.get_value2_widget()
         etyValue1.set_text(item.id)
         etyValue2.set_text(item.title)
-        dialog.connect('response', self._on_response_item_rename, item)
+        dialog.connect('response', self._on_response_item_available_rename, item)
         dialog.show()
 
-    def _on_response_item_rename(self, dialog, response, item):
+    def _on_response_item_available_rename(self, dialog, response, item):
         if response == Gtk.ResponseType.ACCEPT:
             oldkey = item.id
             newkey = dialog.get_value1()
@@ -177,8 +171,7 @@ class MiAZSelector(Gtk.Box):
                     self.update()
         dialog.destroy()
 
-
-    def _on_item_remove(self, *args):
+    def _on_item_available_remove(self, *args):
         item = self.viewAv.get_item()
         self.log.debug("%s > %s > %s", item, item.id, item.title)
         if item is None:
@@ -188,12 +181,12 @@ class MiAZSelector(Gtk.Box):
         self.entry.set_text('')
         self.entry.activate()
 
-    def _on_selected_item_notify(self, colview, pos):
+    def _on_selected_item_available_notify(self, colview, pos):
         model = colview.get_model()
         item = model.get_item(pos)
-        self._on_item_rename(item)
+        self._on_item_available_rename(item)
 
-    def update_available(self):
+    def _update_view_available(self):
         items_available = []
         item_type = self.config.model
         items = self.config.load(self.config.available)
@@ -201,7 +194,7 @@ class MiAZSelector(Gtk.Box):
             items_available.append(item_type(id=key, title=items[key]))
         self.viewAv.update(items_available)
 
-    def update_used(self):
+    def _update_view_used(self):
         items_used = []
         item_type = self.config.model
         items = self.config.load(self.config.used)
@@ -219,10 +212,6 @@ class MiAZSelector(Gtk.Box):
         if chunk in string.upper():
             return True
         return False
-
-    def on_key_released(self, widget, keyval, keycode, state):
-        keyname = Gdk.keyval_name(keyval)
-        self.log.debug("Key: %s", keyname)
 
     def _on_entrysearch_delete(self, *args):
         self.entry.set_text("")
