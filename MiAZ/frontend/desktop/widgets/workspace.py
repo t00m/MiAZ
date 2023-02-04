@@ -513,10 +513,9 @@ class MiAZWorkspace(Gtk.Box):
         return model.get_item(pos)
 
     def update(self, *args):
-        # FIXME: Get dict from backend
-        # ~ self._on_signal_filter_disconnect()
+        repo = self.backend.repo_conf_get()
         self._on_explain_toggled(self.tgbExplain)
-        repocnf = self.backend.get_repo_source_config_file()
+        repocnf = repo['cnf_file']
         self.repodct = json_load(repocnf)
         who = self.app.get_config('Person')
         items = []

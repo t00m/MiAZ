@@ -56,6 +56,13 @@ def valid_key(key):
     key = str(key).strip().replace(' ', '_')
     return re.sub(r'(?u)[^-\w.]', '', key)
 
+def get_fields(self, filename: str) -> []:
+        filename = os.path.basename(filename)
+        dot = filename.rfind('.')
+        if dot > 0:
+            filename = filename[:dot]
+        return filename.split('-')
+
 def get_files(root_dir: str) -> []:
     """Get documents from a given directory recursively
     Avoid hidden documents and documents from hidden directories.

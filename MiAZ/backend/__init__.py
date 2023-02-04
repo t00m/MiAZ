@@ -13,6 +13,7 @@ from MiAZ.backend.util import json_load, json_save
 from MiAZ.backend.util import valid_key
 from MiAZ.backend.util import guess_datetime
 from MiAZ.backend.util import get_files
+from MiAZ.backend.util import get_fields
 from MiAZ.backend.util import get_file_creation_date
 from MiAZ.backend.watcher import MiAZWatcher
 from MiAZ.backend.config import MiAZConfigApp
@@ -40,12 +41,7 @@ class MiAZBackend(GObject.GObject):
                             GObject.SignalFlags.RUN_LAST, None, () )
         self.conf['App'] = MiAZConfigApp()
 
-    def create_repo_config(self, config_file):
-        self.repodct = {}
-        json_save(config_file, {})
-        self.log.debug("Repo configuration not found. Creating a new one")
-
-    def is_repo(self, path: str) -> bool:
+    def repo_is_valid(self, path: str) -> bool:
         self.log.debug("Checking conf dir: %s", path)
         conf_dir = os.path.join(path, '.conf')
         conf_file = os.path.join(conf_dir, 'repo.json')
@@ -58,13 +54,12 @@ class MiAZBackend(GObject.GObject):
                 return True
             else:
                 self.log.debug("Repo config file '%s' doesn't exist", conf_file)
-                # ~ self.init_repo(conf_dir)
                 return True
         else:
             self.log.debug("Config dir '%s' doesn't exist", conf_dir)
             return False
 
-    def init_repo(self, path):
+    def repo_init(self, path):
         conf = {}
         conf['FORMAT'] = 1
         dir_conf = os.path.join(path, '.conf')
@@ -74,21 +69,16 @@ class MiAZBackend(GObject.GObject):
         self.conf['App'].set('source', path)
         self.log.debug("Repo configuration initialized")
 
+    def repo_conf_get(self):
+        conf = {}
+        conf['dir_docs'] = self.conf['App'].get('source')
+        conf['dir_conf'] = os.path.join(conf['dir_docs'], '.conf')
+        conf['cnf_file'] = os.path.join(conf['dir_conf'], "source-%s.json" % valid_key(conf['dir_docs']))
+        return conf
 
-    def get_repo_docs_dir(self):
-        return self.conf['App'].get('source')
-        # ~ return os.path.join(dir_repo, 'docs')
-
-    def get_repo_conf_dir(self):
-        dir_repo = self.conf['App'].get('source')
-        return os.path.join(dir_repo, '.conf')
-
-    def load_repo(self, path):
-        dir_conf = self.get_repo_conf_dir()
-        # ~ dir_docs = os.path.join(path, 'docs')
-        # ~ if not os.path.exists(dir_docs):
-            # ~ os.makedirs(dir_docs)
-            # ~ self.log.debug("Docs directory not found. Directory created")
+    def repo_load(self, path):
+        conf = self.repo_conf_get()
+        dir_conf = conf['dir_conf']
         self.conf['Country'] = MiAZConfigSettingsCountries(dir_conf)
         self.conf['Group'] = MiAZConfigSettingsGroups(dir_conf)
         self.conf['Subgroup'] = MiAZConfigSettingsSubgroups(dir_conf)
@@ -99,12 +89,9 @@ class MiAZBackend(GObject.GObject):
         self.conf['Person'] = MiAZConfigSettingsPeople(dir_conf)
         self.watcher = MiAZWatcher('source', path)
         self.watcher.set_active(active=True)
-        self.watcher.connect('repository-updated', self.check_source)
+        self.watcher.connect('repository-updated', self.repo_check)
         # ~ self.conf['App'].connect('repo-settings-updated-app', self.foo)
         self.log.debug("Configuration loaded")
-
-    def foo(self, *args):
-        self.log.debug(args)
 
     def get_watcher_source(self):
         """Get watcher object for source directory"""
@@ -114,23 +101,14 @@ class MiAZBackend(GObject.GObject):
         """Return dict with pointers to all config classes"""
         return self.conf
 
-    def get_repo_source_config_file(self):
-        """Get config file for current source repository"""
-        dir_repo = self.conf['App'].get('source')
-        dir_conf = self.get_repo_conf_dir()
-        repokey = valid_key(dir_repo)
-        file_conf = os.path.join(dir_conf, "source-%s.json" % repokey)
-        # ~ self.log.debug("Repo config file: %s", file_conf)
-        return file_conf
-
     def get_repo_dict(self):
         """Load dictionary for current repository"""
         return self.s_repodct
 
-    def check_source(self, *args):
-        dir_repo = self.conf['App'].get('source')
-        s_repodir = self.get_repo_docs_dir()
-        s_repocnf = self.get_repo_source_config_file()
+    def repo_check(self, *args):
+        repo = self.repo_conf_get()
+        s_repodir = repo['dir_docs']
+        s_repocnf = repo['cnf_file']
         if os.path.exists(s_repocnf):
             self.s_repodct = json_load(s_repocnf)
             self.log.debug("Loading configuration from: %s" % s_repocnf)
@@ -169,20 +147,6 @@ class MiAZBackend(GObject.GObject):
         # 3. Emit the 'source-configuration-updated' signal
         self.log.debug("Source repository updated")
         self.emit('source-configuration-updated')
-
-    def get_fields(self, filename: str) -> []:
-        filename = os.path.basename(filename)
-        dot = filename.rfind('.')
-        if dot > 0:
-            filename = filename[:dot]
-        return filename.split('-')
-
-    def fix_filename(self, filename):
-        dot = filename.rfind('.')
-        if dot > 0:
-            name = filename[:dot].upper()
-            ext = filename[dot+1:]
-        return "%s.%s" % (name, ext)
 
     def validate_filename(self, filepath: str) -> tuple:
         filename = os.path.basename(filepath)
@@ -347,7 +311,6 @@ class MiAZBackend(GObject.GObject):
 
         return valid, reasons
 
-
     def suggest_filename(self, filepath: str, valid: bool = False) -> str:
         timestamp = ""
         country = ""
@@ -471,4 +434,3 @@ class MiAZBackend(GObject.GObject):
                                                 sentto)
         # ~ self.log.debug("%s -> %s", filename, suggested)
         return suggested
-

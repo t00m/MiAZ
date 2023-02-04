@@ -202,7 +202,7 @@ class MiAZSettings(Gtk.Box):
                     hidden_files = glob.glob(os.path.join(dirpath, '.*'))
                     if len(normal_files) == 0 and len(hidden_files) == 0:
                         self.log.debug("Initializing repository for directory '%s'", dirpath)
-                        backend.init_repo(dirpath)
+                        backend.repo_init(dirpath)
                         use_repo = True
                     else:
                         self.log.warning("Directory '%s' can't be used as repository. It is not empty", dirpath)

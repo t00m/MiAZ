@@ -237,11 +237,11 @@ class MiAZApp(Adw.Application):
             # ~ self.setup_status_page()
 
     def check_repository(self):
-        # Create workspace
-        dir_repo = self.conf['App'].get('source')
+        repo = self.backend.repo_conf_get()
+        dir_repo = repo['dir_docs']
         self.log.debug("Repo? '%s'", dir_repo)
-        if self.backend.is_repo(dir_repo):
-            self.backend.load_repo(dir_repo)
+        if self.backend.repo_is_valid(dir_repo):
+            self.backend.repo_load(dir_repo)
             self.setup_workspace_page()
             self.setup_rename_page()
             self.win.present()
