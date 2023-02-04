@@ -175,11 +175,11 @@ class MiAZAssistantRepo(MiAZAssistant):
         backend = self.app.get_backend()
         conf_app = self.app.get_config('App')
         dirpath = self.repopath
-        if backend.is_repo(dirpath):
+        if backend.repo_validate(dirpath):
             self.log.debug("Directory '%s' is a MiAZ Repository", dirpath)
             if len(conf_app.get('source')) == 0:
                 conf_app.set('source', dirpath)
-            backend.load_repo(dirpath)
+            backend.repo_load(dirpath)
         else:
             self.log.debug("Directory '%s' is not a MiAZ repository", dirpath)
             backend.repo_init(dirpath)

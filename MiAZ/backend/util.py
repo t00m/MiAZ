@@ -56,7 +56,7 @@ def valid_key(key):
     key = str(key).strip().replace(' ', '_')
     return re.sub(r'(?u)[^-\w.]', '', key)
 
-def get_fields(self, filename: str) -> []:
+def get_fields(filename: str) -> []:
         filename = os.path.basename(filename)
         dot = filename.rfind('.')
         if dot > 0:

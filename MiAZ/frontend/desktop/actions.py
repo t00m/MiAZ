@@ -52,7 +52,8 @@ class MiAZActions(GObject.GObject):
         os.system("xdg-open '%s'" % filepath)
 
     def document_rename(self, item):
-        repodct = self.backend.get_repo_dict()
+        config = self.backend.repo_config()
+        repodct = config['dct_repo']
         source = item.id
         if repodct[source]['valid']:
             basename = os.path.basename(source)

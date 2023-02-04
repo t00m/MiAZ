@@ -152,7 +152,8 @@ class MiAZColumnViewWorkspace(MiAZColumnView):
         list_item.set_child(box)
 
     def _on_factory_bind_group(self, factory, list_item):
-        repodct = self.backend.get_repo_dict()
+        config = self.backend.repo_config()
+        repodct = config['dct_repo']
         box = list_item.get_child()
         item = list_item.get_item()
         label = box.get_first_child()
@@ -164,7 +165,8 @@ class MiAZColumnViewWorkspace(MiAZColumnView):
         list_item.set_child(box)
 
     def _on_factory_bind_subgroup(self, factory, list_item):
-        repodct = self.backend.get_repo_dict()
+        config = self.backend.repo_config()
+        repodct = config['dct_repo']
         box = list_item.get_child()
         item = list_item.get_item()
         label = box.get_first_child()
@@ -207,7 +209,8 @@ class MiAZColumnViewWorkspace(MiAZColumnView):
         list_item.set_child(box)
 
     def _on_factory_bind_purpose(self, factory, list_item):
-        repodct = self.backend.get_repo_dict()
+        config = self.backend.repo_config()
+        repodct = config['dct_repo']
         box = list_item.get_child()
         item = list_item.get_item()
         label = box.get_first_child()
@@ -219,7 +222,8 @@ class MiAZColumnViewWorkspace(MiAZColumnView):
         list_item.set_child(box)
 
     def _on_factory_bind_flag(self, factory, list_item):
-        repodct = self.backend.get_repo_dict()
+        config = self.backend.repo_config()
+        repodct = config['dct_repo']
         box = list_item.get_child()
         item = list_item.get_item()
         icon = box.get_first_child()

@@ -513,7 +513,7 @@ class MiAZWorkspace(Gtk.Box):
         return model.get_item(pos)
 
     def update(self, *args):
-        repo = self.backend.repo_conf_get()
+        repo = self.backend.repo_config()
         self._on_explain_toggled(self.tgbExplain)
         repocnf = repo['cnf_file']
         self.repodct = json_load(repocnf)

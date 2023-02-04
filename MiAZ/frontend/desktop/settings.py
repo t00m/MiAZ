@@ -210,13 +210,10 @@ class MiAZSettings(Gtk.Box):
                 self.config.set('source', dirpath)
                 # ~ self.row_repo_source.set_title(os.path.basename(dirpath))
                 # ~ self.row_repo_source.set_subtitle(dirpath)
-                backend.load_repo(dirpath)
+                backend.repo_load(dirpath)
                 self.app.setup_workspace_page()
-                watcher = backend.get_watcher_source()
-                watcher.set_active(True)
                 self._update_action_row_repo_source(os.path.basename(dirpath), dirpath)
                 self.log.debug("Repo correctly setup")
-
         dialog.destroy()
 
 

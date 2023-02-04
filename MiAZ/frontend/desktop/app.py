@@ -237,10 +237,10 @@ class MiAZApp(Adw.Application):
             # ~ self.setup_status_page()
 
     def check_repository(self):
-        repo = self.backend.repo_conf_get()
+        repo = self.backend.repo_config()
         dir_repo = repo['dir_docs']
         self.log.debug("Repo? '%s'", dir_repo)
-        if self.backend.repo_is_valid(dir_repo):
+        if self.backend.repo_validate(dir_repo):
             self.backend.repo_load(dir_repo)
             self.setup_workspace_page()
             self.setup_rename_page()
@@ -252,13 +252,6 @@ class MiAZApp(Adw.Application):
             assistant.set_modal(True)
             assistant.present()
             self.log.debug("Repository assistant displayed")
-
-    # ~ def check_settings(self):
-        # ~ conf = self.conf['Country']
-        # ~ countries = conf.load(conf.used)
-        # ~ if len(countries) == 0:
-            # ~ self.log.debug("Execute Country Selector Assistant")
-            # ~ self.exit_app()
 
     def menu_handler(self, action, state):
             """ Callback for  menu actions"""
