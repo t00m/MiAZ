@@ -324,7 +324,7 @@ class MiAZRenameDialog(Gtk.Box):
             asubgroup = dropdown_get_selected_item(self.dpdSubgroup)
             sentby = dropdown_get_selected_item(self.dpdSentBy)
             apurpose = dropdown_get_selected_item(self.dpdPurpose)
-            aconcept = self.entry_concept.get_text().upper().replace(' ', '_')
+            aconcept = self.entry_concept.get_text().replace(' ', '_')
             sentto = dropdown_get_selected_item(self.dpdSentTo)
             aextension = self.lblExt.get_text()
             fields.append(adate)        # 0. Date

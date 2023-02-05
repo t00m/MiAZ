@@ -308,11 +308,11 @@ class MiAZBackend(GObject.GObject):
             reasons.append((False, "Person couldn't be checked"))
 
         if partitioning is True:
-            self.conf['Group'].add(fields[2].upper())
-            self.conf['Subgroup'].add(fields[3].upper())
-            self.conf['SentBy'].add(fields[4].upper())
-            self.conf['Purpose'].add(fields[5].upper())
-            self.conf['SentTo'].add(fields[7].upper())
+            self.conf['Group'].add(fields[2])
+            self.conf['Subgroup'].add(fields[3])
+            self.conf['SentBy'].add(fields[4])
+            self.conf['Purpose'].add(fields[5])
+            self.conf['SentTo'].add(fields[7])
 
         return valid, reasons
 
@@ -377,7 +377,7 @@ class MiAZBackend(GObject.GObject):
         found_group = False
         for field in fields:
             if self.conf['Group'].exists(field):
-                group = field.upper()
+                group = field
                 found_group = True
                 break
         if not found_group:
@@ -387,7 +387,7 @@ class MiAZBackend(GObject.GObject):
         found_subgroup = False
         for field in fields:
             if self.conf['Subgroup'].exists(field):
-                subgroup = field.upper()
+                subgroup = field
                 found_subgroup = True
                 break
         if not found_subgroup:
@@ -397,7 +397,7 @@ class MiAZBackend(GObject.GObject):
         found_person = False
         for field in fields:
             if self.conf['Person'].exists(field):
-                sentby = field.upper()
+                sentby = field
                 found_person = True
                 break
         if not found_person:
@@ -407,7 +407,7 @@ class MiAZBackend(GObject.GObject):
         found_purpose = False
         for field in fields:
             if self.conf['Purpose'].exists(field):
-                purpose = field.upper()
+                purpose = field
                 found_purpose = True
                 break
         if not found_purpose:
@@ -424,7 +424,7 @@ class MiAZBackend(GObject.GObject):
         for field in fields:
             if self.conf['Person'].exists(field):
                 found_person = True
-                sentto = field.upper()
+                sentto = field
                 break
         if not found_person:
             sentto = ''

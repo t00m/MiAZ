@@ -103,8 +103,8 @@ class MiAZSelector(Gtk.Box):
         changed = False
         items_used = self.config.load(self.config.used)
         for item_available in self.viewAv.get_selected_items():
-            self.log.debug("Using %s (%s)", item_available.id, item_available.title)
             items_used[item_available.id] = item_available.title
+            self.log.debug("Using %s (%s)", item_available.id, item_available.title)
             changed = True
         if changed:
             self.config.save(filepath=self.config.used, items=items_used)
@@ -114,12 +114,12 @@ class MiAZSelector(Gtk.Box):
         changed = False
         items_used = self.config.load(self.config.used)
         items_available = self.config.load(self.config.available)
-        for item in self.viewSl.get_selected_items():
-            if item.id not in items_available:
-                items_available[item.id] = item.title
-            del(items_used[item.id])
+        for item_used in self.viewSl.get_selected_items():
+            if item_used.id not in items_available:
+                items_available[item_used.id] = item_used.title
+            del(items_used[item_used.id])
             changed = True
-
+            self.log.debug("Removing %s (%s) from used", item_used.id, item_used.title)
         if changed:
             self.config.save(filepath=self.config.used, items=items_used)
             self.config.save(filepath=self.config.available, items=items_available)
@@ -139,12 +139,9 @@ class MiAZSelector(Gtk.Box):
             key = dialog.get_value1()
             value = dialog.get_value2()
             if len(key) > 0:
-                items = self.config.load(self.config.available)
-                if not key.upper() in items:
-                    items[key.upper()] = value
-                    self.log.debug("%s (%s) added to list of available items", key.upper(), value)
-                    self.config.save(filepath=self.config.available, items=items)
-                    self.update()
+                self.config.add(self.config.available, key, value)
+                self.log.debug("%s (%s) added to list of available items", key, value)
+                self.update()
         dialog.destroy()
 
     def _on_item_available_rename(self, item):
@@ -161,22 +158,28 @@ class MiAZSelector(Gtk.Box):
             oldkey = item.id
             newkey = dialog.get_value1()
             newval = dialog.get_value2()
+            self.log.debug("Renaming %s by %s (%s)", oldkey, newkey, newval)
             if len(newkey) > 0:
-                items = self.config.load(self.config.available)
-                if not newkey.upper() in items:
-                    items[newkey.upper()] = newval
-                    del(items[oldkey])
-                    self.log.debug("%s renamed to %s (%s) in the list of available items", oldkey, newkey.upper(), newval)
-                    self.config.save(filepath=self.config.available, items=items)
-                    self.update()
+                # Rename items used
+                items_used = self.config.load(self.config.used)
+                if oldkey in items_used:
+                    self.config.remove(self.config.used, oldkey)
+                    self.config.add(self.config.used, newkey, newval)
+                    self.log.debug("Renamed items_used")
+                # Rename items available
+                items_available = self.config.load(self.config.available)
+                self.config.remove(self.config.available, oldkey)
+                self.config.add(self.config.available, newkey, newval)
+                self.log.debug("%s renamed to %s (%s) in the list of available items", oldkey, newkey, newval)
+                self.update()
         dialog.destroy()
 
     def _on_item_available_remove(self, *args):
         item = self.viewAv.get_item()
-        self.log.debug("%s > %s > %s", item, item.id, item.title)
         if item is None:
             return
-        self.config.remove(item.id)
+        self.config.remove(self.config.available, item.id)
+        self.config.remove(self.config.used, item.id)
         self.update()
         self.entry.set_text('')
         self.entry.activate()

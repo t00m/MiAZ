@@ -60,17 +60,13 @@ class MiAZConfig(GObject.GObject):
             adict = None
         return adict
 
-    def save_data(self, filepath: str = '', items: dict = {}) -> bool:
-        if filepath == '':
-            filepath = self.used
+    def save_data(self, filepath: str, items: dict) -> bool:
         try:
             json_save(filepath, items)
-            saved = True
+            self.log.debug("%s - Saved %d items in %s", self.config_for, len(items), filepath)
         except Exception as error:
             self.log.error(error)
-            saved = False
-        # ~ self.log.debug("Saved %s with %d items? %s", filepath, len(items), saved)
-        return saved
+            raise
 
     def get(self, key: str) -> str:
         config = self.load(self.used)
@@ -92,42 +88,43 @@ class MiAZConfig(GObject.GObject):
         else:
             config = self.load(self.default)
 
-        if isinstance(config, dict):
-            try:
-                if self.config_for == 'Extensions':
-                    config[key.lower()]
-                    found = True
-                else:
-                    config[key.upper()]
-                    found = True
-            except KeyError:
-                found = False
-        elif isinstance(config, list):
-            if key.upper() in [item.upper() for item in config]:
-                found = True
-            else:
-                found = False
+        try:
+            config[key]
+            found = True
+        except KeyError:
+            found = False
+
         return found
 
-    def add(self, key, value=''):
+    def add(self, filepath: str, key: str, value: str):
         if len(key.strip()) == 0:
             return
-        items = self.load(self.used)
-        if not key in items:
-            items[key] = value.upper()
-            self.save(items=items)
-            self.log.info("%s - Add: %s[%s]", self.config_for, key, value)
+        if len(filepath) == 0:
+            filepath = self.available
 
-    def remove(self, key: str = None, filepath: str = None):
+        items = self.load(filepath)
+        if not key in items:
+            key = key.replace('-', '_')
+            items[key] = value
+            self.save(filepath=filepath, items=items)
+            self.log.info("%s - Add: %s[%s] to %s", self.config_for, key, value, filepath)
+
+    def remove(self, filepath: str, key: str):
         if key is None:
             return
+        if len(key) == 0:
+            return
+
         if filepath is None:
+            return
+        if len(filepath) == 0:
             filepath = self.available
+
         items = self.load(filepath)
         if key in items:
             del(items[key])
             self.save(filepath=filepath, items=items)
-            self.log.info("%s - Remove: %s", self.config_for, key)
+            self.log.info("%s - Remove: %s from: %s", self.config_for, key, filepath)
 
 
 class MiAZConfigApp(MiAZConfig):
@@ -153,7 +150,7 @@ class MiAZConfigApp(MiAZConfig):
             found = False
         return found
 
-    def save(self, filepath: str = '', items: dict = {}) -> bool:
+    def save(self, filepath: str, items: dict) -> bool:
         if self.save_data(filepath, items):
             self.emit('repo-settings-updated-app')
 
@@ -178,7 +175,7 @@ class MiAZConfigSettingsCountries(MiAZConfig):
             foreign = True
         )
 
-    def save(self, filepath: str = '', items: dict = {}) -> bool:
+    def save(self, filepath: str, items: dict) -> bool:
         if self.save_data(filepath, items):
             self.emit('repo-settings-updated-countries')
 
@@ -201,7 +198,7 @@ class MiAZConfigSettingsGroups(MiAZConfig):
             must_copy = True
         )
 
-    def save(self, filepath: str = '', items: dict = {}) -> bool:
+    def save(self, filepath: str, items: dict) -> bool:
         if self.save_data(filepath, items):
             self.emit('repo-settings-updated-groups')
 
@@ -230,7 +227,7 @@ class MiAZConfigSettingsSubgroups(MiAZConfig):
     def __repr__(self):
         return 'Subgroup'
 
-    def save(self, filepath: str = '', items: dict = {}) -> bool:
+    def save(self, filepath: str, items: dict) -> bool:
         if self.save_data(filepath, items):
             self.emit('repo-settings-updated-subgroups')
 
@@ -256,7 +253,7 @@ class MiAZConfigSettingsPurposes(MiAZConfig):
     def __repr__(self):
         return 'Purpose'
 
-    def save(self, filepath: str = '', items: dict = {}) -> bool:
+    def save(self, filepath: str, items: dict) -> bool:
         if self.save_data(filepath, items):
             self.emit('repo-settings-updated-purposes')
 
@@ -281,7 +278,7 @@ class MiAZConfigSettingsConcepts(MiAZConfig):
     def __repr__(self):
         return 'Concept'
 
-    def save(self, filepath: str = '', items: dict = {}) -> bool:
+    def save(self, filepath: str, items: dict) -> bool:
         if self.save_data(filepath, items):
             self.emit('repo-settings-updated-concepts')
 
@@ -307,7 +304,7 @@ class MiAZConfigSettingsPeople(MiAZConfig):
     def __repr__(self):
         return 'Person'
 
-    def save(self, filepath: str = '', items: dict = {}) -> bool:
+    def save(self, filepath: str, items: dict) -> bool:
         if self.save_data(filepath, items):
             self.emit('repo-settings-updated-people')
 
@@ -333,7 +330,7 @@ class MiAZConfigSettingsSentBy(MiAZConfig):
     def __repr__(self):
         return 'SentBy'
 
-    def save(self, filepath: str = '', items: dict = {}) -> bool:
+    def save(self, filepath: str, items: dict) -> bool:
         if self.save_data(filepath, items):
             self.emit('repo-settings-updated-sentby')
 
@@ -359,6 +356,6 @@ class MiAZConfigSettingsSentTo(MiAZConfig):
     def __repr__(self):
         return 'SentTo'
 
-    def save(self, filepath: str = '', items: dict = {}) -> bool:
+    def save(self, filepath: str, items: dict) -> bool:
         if self.save_data(filepath, items):
             self.emit('repo-settings-updated-sentto')
