@@ -32,7 +32,7 @@ class MiAZBackend(GObject.GObject):
     """Backend class"""
     __gtype_name__ = 'MiAZBackend'
     conf = {}
-    s_repodct = {}
+    checking = False
 
     def __init__(self) -> None:
         GObject.GObject.__init__(self)
@@ -42,7 +42,7 @@ class MiAZBackend(GObject.GObject):
                             GObject.SignalFlags.RUN_LAST, None, () )
         self.conf['App'] = MiAZConfigApp()
 
-    def repo_validate(self, path: str) -> bool:
+    def repo_is_valid(self, path: str) -> bool:
         self.log.debug("Checking conf dir: %s", path)
         conf_dir = os.path.join(path, '.conf')
         conf_file = os.path.join(conf_dir, 'repo.json')
@@ -70,19 +70,20 @@ class MiAZBackend(GObject.GObject):
         self.conf['App'].set('source', path)
         self.log.debug("Repo configuration initialized")
 
-    def repo_config(self):
+    def repo_conf_get(self):
         conf = {}
         conf['dir_docs'] = self.conf['App'].get('source')
         conf['dir_conf'] = os.path.join(conf['dir_docs'], '.conf')
         conf['cnf_file'] = os.path.join(conf['dir_conf'], "source-%s.json" % valid_key(conf['dir_docs']))
-        conf['dct_repo'] = self.s_repodct
         return conf
 
     def repo_load(self, path):
-        conf = self.repo_config()
+        conf = self.repo_conf_get()
         dir_conf = conf['dir_conf']
         self.conf['Country'] = MiAZConfigSettingsCountries(dir_conf)
+        self.conf['Country'].connect('repo-settings-updated-countries-used', self.repo_check)
         self.conf['Group'] = MiAZConfigSettingsGroups(dir_conf)
+        self.conf['Group'].connect('repo-settings-updated-groups', self.repo_check)
         self.conf['Subgroup'] = MiAZConfigSettingsSubgroups(dir_conf)
         self.conf['Purpose'] = MiAZConfigSettingsPurposes(dir_conf)
         self.conf['Concept'] = MiAZConfigSettingsConcepts(dir_conf)
@@ -95,12 +96,27 @@ class MiAZBackend(GObject.GObject):
         # ~ self.conf['App'].connect('repo-settings-updated-app', self.foo)
         self.log.debug("Configuration loaded")
 
+    def get_watcher_source(self):
+        """Get watcher object for source directory"""
+        return self.watch_source
+
     def get_conf(self) -> dict:
         """Return dict with pointers to all config classes"""
         return self.conf
 
+    def get_repo_dict(self):
+        """Load dictionary for current repository"""
+        return self.s_repodct
+
     def repo_check(self, *args):
-        repo = self.repo_config()
+        if self.checking:
+            self.log.debug("Repository check already in progress")
+            return
+        else:
+            self.log.debug("Repository check started")
+            self.checking = True
+
+        repo = self.repo_conf_get()
         s_repodir = repo['dir_docs']
         s_repocnf = repo['cnf_file']
         if os.path.exists(s_repocnf):
@@ -122,31 +138,20 @@ class MiAZBackend(GObject.GObject):
         # 2. Rebuild repository dictionary
         docs = get_files(s_repodir)
         for doc in docs:
-            if doc not in self.s_repodct:
-                self.log.debug("Doc[%s] must be analyzed", doc)
-                valid, reasons = self.validate_filename(doc)
-                self.s_repodct[doc] = {}
-                self.s_repodct[doc]['valid'] = valid
-                self.s_repodct[doc]['reasons'] = reasons
-                if not valid:
-                    self.s_repodct[doc]['suggested'] = "-------" # DISABLED: improve peformance # self.suggest_filename(doc)
-                    self.s_repodct[doc]['fields'] = ['' for fields in range(8)]
-                    # ~ self.log.debug(reasons)
-                else:
-                    self.s_repodct[doc]['suggested'] = None
-                    self.s_repodct[doc]['fields'] = get_fields(doc)
+            # ~ if doc not in self.s_repodct:
+            # ~ self.log.debug("Doc[%s] must be analyzed", doc)
+            valid, reasons = self.validate_filename(doc)
+            self.s_repodct[doc] = {}
+            self.s_repodct[doc]['valid'] = valid
+            self.s_repodct[doc]['reasons'] = reasons
+            if not valid:
+                self.s_repodct[doc]['suggested'] = "-------" # DISABLED: improve peformance # self.suggest_filename(doc)
+                self.s_repodct[doc]['fields'] = ['' for fields in range(8)]
+                # ~ self.log.debug(reasons)
             else:
-                if not self.s_repodct[doc]['valid']:
-                    valid, reasons = self.validate_filename(doc)
-                    self.s_repodct[doc]['valid'] = valid
-                    self.s_repodct[doc]['reasons'] = reasons
-                    self.s_repodct[doc]['suggested'] = "-------" # DISABLED: improve peformance # self.suggest_filename(doc)
-                    self.s_repodct[doc]['fields'] = ['' for fields in range(8)]
-                    if valid:
-                        self.log.debug("Doc[%s] is valid now", doc)
-                        self.s_repodct[doc]['suggested'] = None
-                        self.s_repodct[doc]['fields'] = get_fields(doc)
-        self.log.info("Repository - %d documents analyzed", len(docs))
+                self.s_repodct[doc]['suggested'] = None
+                self.s_repodct[doc]['fields'] = get_fields(doc)
+        self.log.info("Repository check finished: %d documents analyzed", len(docs))
         json_save(s_repocnf, self.s_repodct)
 
         # 3. Emit the 'source-configuration-updated' signal
@@ -308,11 +313,11 @@ class MiAZBackend(GObject.GObject):
             reasons.append((False, "Person couldn't be checked"))
 
         if partitioning is True:
-            self.conf['Group'].add(fields[2])
-            self.conf['Subgroup'].add(fields[3])
-            self.conf['SentBy'].add(fields[4])
-            self.conf['Purpose'].add(fields[5])
-            self.conf['SentTo'].add(fields[7])
+            self.conf['Group'].add(fields[2].upper())
+            self.conf['Subgroup'].add(fields[3].upper())
+            self.conf['SentBy'].add(fields[4].upper())
+            self.conf['Purpose'].add(fields[5].upper())
+            self.conf['SentTo'].add(fields[7].upper())
 
         return valid, reasons
 
@@ -377,7 +382,7 @@ class MiAZBackend(GObject.GObject):
         found_group = False
         for field in fields:
             if self.conf['Group'].exists(field):
-                group = field
+                group = field.upper()
                 found_group = True
                 break
         if not found_group:
@@ -387,7 +392,7 @@ class MiAZBackend(GObject.GObject):
         found_subgroup = False
         for field in fields:
             if self.conf['Subgroup'].exists(field):
-                subgroup = field
+                subgroup = field.upper()
                 found_subgroup = True
                 break
         if not found_subgroup:
@@ -397,7 +402,7 @@ class MiAZBackend(GObject.GObject):
         found_person = False
         for field in fields:
             if self.conf['Person'].exists(field):
-                sentby = field
+                sentby = field.upper()
                 found_person = True
                 break
         if not found_person:
@@ -407,7 +412,7 @@ class MiAZBackend(GObject.GObject):
         found_purpose = False
         for field in fields:
             if self.conf['Purpose'].exists(field):
-                purpose = field
+                purpose = field.upper()
                 found_purpose = True
                 break
         if not found_purpose:
@@ -424,7 +429,7 @@ class MiAZBackend(GObject.GObject):
         for field in fields:
             if self.conf['Person'].exists(field):
                 found_person = True
-                sentto = field
+                sentto = field.upper()
                 break
         if not found_person:
             sentto = ''

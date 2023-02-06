@@ -60,13 +60,17 @@ class MiAZConfig(GObject.GObject):
             adict = None
         return adict
 
-    def save_data(self, filepath: str, items: dict) -> bool:
+    def save_data(self, filepath: str = '', items: dict = {}) -> bool:
+        if filepath == '':
+            filepath = self.used
         try:
             json_save(filepath, items)
-            self.log.debug("%s - Saved %d items in %s", self.config_for, len(items), filepath)
+            saved = True
         except Exception as error:
             self.log.error(error)
-            raise
+            saved = False
+        # ~ self.log.debug("Saved %s with %d items? %s", filepath, len(items), saved)
+        return saved
 
     def get(self, key: str) -> str:
         config = self.load(self.used)
@@ -88,43 +92,42 @@ class MiAZConfig(GObject.GObject):
         else:
             config = self.load(self.default)
 
-        try:
-            config[key]
-            found = True
-        except KeyError:
-            found = False
-
+        if isinstance(config, dict):
+            try:
+                if self.config_for == 'Extensions':
+                    config[key.lower()]
+                    found = True
+                else:
+                    config[key.upper()]
+                    found = True
+            except KeyError:
+                found = False
+        elif isinstance(config, list):
+            if key.upper() in [item.upper() for item in config]:
+                found = True
+            else:
+                found = False
         return found
 
-    def add(self, filepath: str, key: str, value: str):
+    def add(self, key, value=''):
         if len(key.strip()) == 0:
             return
-        if len(filepath) == 0:
-            filepath = self.available
-
-        items = self.load(filepath)
+        items = self.load(self.used)
         if not key in items:
-            key = key.replace('-', '_')
-            items[key] = value
-            self.save(filepath=filepath, items=items)
-            self.log.info("%s - Add: %s[%s] to %s", self.config_for, key, value, filepath)
+            items[key] = value.upper()
+            self.save(items=items)
+            self.log.info("%s - Add: %s[%s]", self.config_for, key, value)
 
-    def remove(self, filepath: str, key: str):
+    def remove(self, key: str = None, filepath: str = None):
         if key is None:
             return
-        if len(key) == 0:
-            return
-
         if filepath is None:
-            return
-        if len(filepath) == 0:
             filepath = self.available
-
         items = self.load(filepath)
         if key in items:
             del(items[key])
             self.save(filepath=filepath, items=items)
-            self.log.info("%s - Remove: %s from: %s", self.config_for, key, filepath)
+            self.log.info("%s - Remove: %s", self.config_for, key)
 
 
 class MiAZConfigApp(MiAZConfig):
@@ -150,17 +153,23 @@ class MiAZConfigApp(MiAZConfig):
             found = False
         return found
 
-    def save(self, filepath: str, items: dict) -> bool:
+    def save(self, filepath: str = '', items: dict = {}) -> bool:
         if self.save_data(filepath, items):
             self.emit('repo-settings-updated-app')
 
 
 class MiAZConfigSettingsCountries(MiAZConfig):
     def __init__(self, dir_conf):
-        sid = GObject.signal_lookup('repo-settings-updated-countries', MiAZConfigSettingsCountries)
-        if sid == 0:
+        sid_a = GObject.signal_lookup('repo-settings-updated-countries', MiAZConfigSettingsCountries)
+        sid_u = GObject.signal_lookup('repo-settings-updated-countries-used', MiAZConfigSettingsCountries)
+        if sid_a == 0:
             GObject.GObject.__init__(self)
             GObject.signal_new('repo-settings-updated-countries',
+                                MiAZConfigSettingsCountries,
+                                GObject.SignalFlags.RUN_LAST, None, () )
+        if sid_u == 0:
+            GObject.GObject.__init__(self)
+            GObject.signal_new('repo-settings-updated-countries-used',
                                 MiAZConfigSettingsCountries,
                                 GObject.SignalFlags.RUN_LAST, None, () )
         super().__init__(
@@ -175,9 +184,12 @@ class MiAZConfigSettingsCountries(MiAZConfig):
             foreign = True
         )
 
-    def save(self, filepath: str, items: dict) -> bool:
+    def save(self, filepath: str = '', items: dict = {}) -> bool:
         if self.save_data(filepath, items):
-            self.emit('repo-settings-updated-countries')
+            if filepath == self.available:
+                self.emit('repo-settings-updated-countries')
+            elif filepath == self.used:
+                self.emit('repo-settings-updated-countries-used')
 
 class MiAZConfigSettingsGroups(MiAZConfig):
     def __init__(self, dir_conf):
@@ -198,7 +210,7 @@ class MiAZConfigSettingsGroups(MiAZConfig):
             must_copy = True
         )
 
-    def save(self, filepath: str, items: dict) -> bool:
+    def save(self, filepath: str = '', items: dict = {}) -> bool:
         if self.save_data(filepath, items):
             self.emit('repo-settings-updated-groups')
 
@@ -227,7 +239,7 @@ class MiAZConfigSettingsSubgroups(MiAZConfig):
     def __repr__(self):
         return 'Subgroup'
 
-    def save(self, filepath: str, items: dict) -> bool:
+    def save(self, filepath: str = '', items: dict = {}) -> bool:
         if self.save_data(filepath, items):
             self.emit('repo-settings-updated-subgroups')
 
@@ -253,7 +265,7 @@ class MiAZConfigSettingsPurposes(MiAZConfig):
     def __repr__(self):
         return 'Purpose'
 
-    def save(self, filepath: str, items: dict) -> bool:
+    def save(self, filepath: str = '', items: dict = {}) -> bool:
         if self.save_data(filepath, items):
             self.emit('repo-settings-updated-purposes')
 
@@ -278,16 +290,22 @@ class MiAZConfigSettingsConcepts(MiAZConfig):
     def __repr__(self):
         return 'Concept'
 
-    def save(self, filepath: str, items: dict) -> bool:
+    def save(self, filepath: str = '', items: dict = {}) -> bool:
         if self.save_data(filepath, items):
             self.emit('repo-settings-updated-concepts')
 
 class MiAZConfigSettingsPeople(MiAZConfig):
     def __init__(self, dir_conf):
-        sid = GObject.signal_lookup('repo-settings-updated-people', MiAZConfigSettingsPeople)
-        if sid == 0:
+        sid_a = GObject.signal_lookup('repo-settings-updated-people', MiAZConfigSettingsPeople)
+        sid_u = GObject.signal_lookup('repo-settings-updated-people-used', MiAZConfigSettingsPeople)
+        if sid_a == 0:
             GObject.GObject.__init__(self)
             GObject.signal_new('repo-settings-updated-people',
+                                MiAZConfigSettingsPeople,
+                                GObject.SignalFlags.RUN_LAST, None, () )
+        if sid_u == 0:
+            GObject.GObject.__init__(self)
+            GObject.signal_new('repo-settings-updated-people-used',
                                 MiAZConfigSettingsPeople,
                                 GObject.SignalFlags.RUN_LAST, None, () )
         super().__init__(
@@ -304,9 +322,12 @@ class MiAZConfigSettingsPeople(MiAZConfig):
     def __repr__(self):
         return 'Person'
 
-    def save(self, filepath: str, items: dict) -> bool:
+    def save(self, filepath: str = '', items: dict = {}) -> bool:
         if self.save_data(filepath, items):
-            self.emit('repo-settings-updated-people')
+            if filepath == self.available:
+                self.emit('repo-settings-updated-people')
+            elif filepath == self.used:
+                self.emit('repo-settings-updated-people-used')
 
 class MiAZConfigSettingsSentBy(MiAZConfig):
     def __init__(self, dir_conf):
@@ -330,7 +351,7 @@ class MiAZConfigSettingsSentBy(MiAZConfig):
     def __repr__(self):
         return 'SentBy'
 
-    def save(self, filepath: str, items: dict) -> bool:
+    def save(self, filepath: str = '', items: dict = {}) -> bool:
         if self.save_data(filepath, items):
             self.emit('repo-settings-updated-sentby')
 
@@ -356,6 +377,6 @@ class MiAZConfigSettingsSentTo(MiAZConfig):
     def __repr__(self):
         return 'SentTo'
 
-    def save(self, filepath: str, items: dict) -> bool:
+    def save(self, filepath: str = '', items: dict = {}) -> bool:
         if self.save_data(filepath, items):
             self.emit('repo-settings-updated-sentto')
