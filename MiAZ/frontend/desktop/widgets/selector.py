@@ -101,19 +101,19 @@ class MiAZSelector(Gtk.Box):
 
     def _on_item_used_add(self, *args):
         changed = False
-        items_used = self.config.load(self.config.used)
+        items_used = self.config.load_used()
         for item_available in self.viewAv.get_selected_items():
             items_used[item_available.id] = item_available.title
             self.log.debug("Using %s (%s)", item_available.id, item_available.title)
             changed = True
         if changed:
-            self.config.save(filepath=self.config.used, items=items_used)
+            self.config.save_used(items=items_used)
             self._update_view_used()
 
     def _on_item_used_remove(self, *args):
         changed = False
-        items_used = self.config.load(self.config.used)
-        items_available = self.config.load(self.config.available)
+        items_used = self.config.load_used()
+        items_available = self.config.load_available()
         for item_used in self.viewSl.get_selected_items():
             if item_used.id not in items_available:
                 items_available[item_used.id] = item_used.title
@@ -121,8 +121,8 @@ class MiAZSelector(Gtk.Box):
             changed = True
             self.log.debug("Removing %s (%s) from used", item_used.id, item_used.title)
         if changed:
-            self.config.save(filepath=self.config.used, items=items_used)
-            self.config.save(filepath=self.config.available, items=items_available)
+            self.config.save_used(items=items_used)
+            self.config.save_available( items=items_available)
             self._update_view_used()
             self._update_view_available()
 
@@ -139,7 +139,7 @@ class MiAZSelector(Gtk.Box):
             key = dialog.get_value1()
             value = dialog.get_value2()
             if len(key) > 0:
-                self.config.add(self.config.available, key, value)
+                self.config.add_available(key, value)
                 self.log.debug("%s (%s) added to list of available items", key, value)
                 self.update()
         dialog.destroy()
@@ -161,15 +161,15 @@ class MiAZSelector(Gtk.Box):
             self.log.debug("Renaming %s by %s (%s)", oldkey, newkey, newval)
             if len(newkey) > 0:
                 # Rename items used
-                items_used = self.config.load(self.config.used)
+                items_used = self.config.load_used()
                 if oldkey in items_used:
-                    self.config.remove(self.config.used, oldkey)
-                    self.config.add(self.config.used, newkey, newval)
+                    self.config.remove_used(oldkey)
+                    self.config.add_used(newkey, newval)
                     self.log.debug("Renamed items_used")
                 # Rename items available
-                items_available = self.config.load(self.config.available)
-                self.config.remove(self.config.available, oldkey)
-                self.config.add(self.config.available, newkey, newval)
+                items_available = self.config.load_available()
+                self.config.remove_available(oldkey)
+                self.config.add_available(newkey, newval)
                 self.log.debug("%s renamed to %s (%s) in the list of available items", oldkey, newkey, newval)
                 self.update()
         dialog.destroy()
@@ -178,8 +178,8 @@ class MiAZSelector(Gtk.Box):
         item = self.viewAv.get_item()
         if item is None:
             return
-        self.config.remove(self.config.available, item.id)
-        self.config.remove(self.config.used, item.id)
+        self.config.remove_available(item.id)
+        self.config.remove_used(item.id)
         self.update()
         self.entry.set_text('')
         self.entry.activate()
@@ -192,7 +192,7 @@ class MiAZSelector(Gtk.Box):
     def _update_view_available(self):
         items_available = []
         item_type = self.config.model
-        items = self.config.load(self.config.available)
+        items = self.config.load_available()
         for key in items:
             items_available.append(item_type(id=key, title=items[key]))
         self.viewAv.update(items_available)
@@ -200,7 +200,7 @@ class MiAZSelector(Gtk.Box):
     def _update_view_used(self):
         items_used = []
         item_type = self.config.model
-        items = self.config.load(self.config.used)
+        items = self.config.load_used()
         for key in items:
             items_used.append(item_type(id=key, title=items[key]))
         self.viewSl.update(items_used)

@@ -32,6 +32,7 @@ class MiAZBackend(GObject.GObject):
     """Backend class"""
     __gtype_name__ = 'MiAZBackend'
     conf = {}
+    s_repodct = {}
     checking = False
 
     def __init__(self) -> None:
@@ -75,6 +76,7 @@ class MiAZBackend(GObject.GObject):
         conf['dir_docs'] = self.conf['App'].get('source')
         conf['dir_conf'] = os.path.join(conf['dir_docs'], '.conf')
         conf['cnf_file'] = os.path.join(conf['dir_conf'], "source-%s.json" % valid_key(conf['dir_docs']))
+        conf['dct_repo'] = self.s_repodct
         return conf
 
     def repo_load(self, path):
@@ -157,6 +159,7 @@ class MiAZBackend(GObject.GObject):
         # 3. Emit the 'source-configuration-updated' signal
         self.log.debug("Source repository updated")
         self.emit('source-configuration-updated')
+        self.checking = False
 
     def validate_filename(self, filepath: str) -> tuple:
         filename = os.path.basename(filepath)
@@ -208,7 +211,7 @@ class MiAZBackend(GObject.GObject):
 
         # Check country (2nd field)
         try:
-            code = fields[1].upper()
+            code = fields[1]
             is_country = self.conf['Country'].exists(code)
             if not is_country:
                 valid &= False
@@ -313,11 +316,11 @@ class MiAZBackend(GObject.GObject):
             reasons.append((False, "Person couldn't be checked"))
 
         if partitioning is True:
-            self.conf['Group'].add(fields[2].upper())
-            self.conf['Subgroup'].add(fields[3].upper())
-            self.conf['SentBy'].add(fields[4].upper())
-            self.conf['Purpose'].add(fields[5].upper())
-            self.conf['SentTo'].add(fields[7].upper())
+            self.conf['Group'].add_available(fields[2])
+            self.conf['Subgroup'].add_available(fields[3])
+            self.conf['SentBy'].add_available(fields[4])
+            self.conf['Purpose'].add_available(fields[5])
+            self.conf['SentTo'].add_available(fields[7])
 
         return valid, reasons
 
@@ -370,9 +373,9 @@ class MiAZBackend(GObject.GObject):
         found_country = False
         for field in fields:
             if len(field) == 2:
-                is_country = self.conf['Country'].exists(field.upper())
+                is_country = self.conf['Country'].exists(field)
                 if is_country:
-                    country = field.upper()
+                    country = field
                     found_country = True
                     break
         if not found_country:
@@ -382,7 +385,7 @@ class MiAZBackend(GObject.GObject):
         found_group = False
         for field in fields:
             if self.conf['Group'].exists(field):
-                group = field.upper()
+                group = field
                 found_group = True
                 break
         if not found_group:
@@ -392,7 +395,7 @@ class MiAZBackend(GObject.GObject):
         found_subgroup = False
         for field in fields:
             if self.conf['Subgroup'].exists(field):
-                subgroup = field.upper()
+                subgroup = field
                 found_subgroup = True
                 break
         if not found_subgroup:
@@ -402,7 +405,7 @@ class MiAZBackend(GObject.GObject):
         found_person = False
         for field in fields:
             if self.conf['Person'].exists(field):
-                sentby = field.upper()
+                sentby = field
                 found_person = True
                 break
         if not found_person:
@@ -412,7 +415,7 @@ class MiAZBackend(GObject.GObject):
         found_purpose = False
         for field in fields:
             if self.conf['Purpose'].exists(field):
-                purpose = field.upper()
+                purpose = field
                 found_purpose = True
                 break
         if not found_purpose:
@@ -429,7 +432,7 @@ class MiAZBackend(GObject.GObject):
         for field in fields:
             if self.conf['Person'].exists(field):
                 found_person = True
-                sentto = field.upper()
+                sentto = field
                 break
         if not found_person:
             sentto = ''

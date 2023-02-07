@@ -76,7 +76,7 @@ class MiAZCountries(MiAZConfigView):
     def _update_view_available(self):
         items = []
         item_type = self.config.model
-        countries = self.config.load(self.config.available)
+        countries = self.config.load_available()
         for code in countries:
             items.append(item_type(id=code, title=countries[code], icon='%s.svg' % code))
         self.viewAv.update(items)
@@ -84,7 +84,7 @@ class MiAZCountries(MiAZConfigView):
     def _update_view_used(self):
         items = []
         item_type = self.config.model
-        countries = self.config.load(self.config.used)
+        countries = self.config.load_used()
         for code in countries:
             items.append(item_type(id=code, title=countries[code], icon='%s.svg' % code))
         self.viewSl.update(items)
