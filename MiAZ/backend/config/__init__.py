@@ -121,6 +121,10 @@ class MiAZConfig(GObject.GObject):
                 found = False
         return found
 
+    def add_available_batch(self, keysvalues: list):
+        for key, value in keysvalues:
+            self.add(self.available, key, value)
+
     def add_available(self, key: str, value: str = ''):
         self.add(self.available, key, value)
 
@@ -136,11 +140,23 @@ class MiAZConfig(GObject.GObject):
             self.save(filepath, items=items)
             self.log.info("%s - Add: %s[%s] to %s", self.config_for, key, value, filepath)
 
-    def remove_available(self, key:str):
-        self.remove(self.available, key)
+    def remove_available_batch(self, key:str):
+        self.remove_batch(self.available, key)
+
+    def remove_available(self, keys:list):
+        for key in keys:
+            self.remove(self.available, key)
 
     def remove_used(self, key:str):
         self.remove(self.used, key)
+
+    def remove_batch(self, filepath: str, keys: list):
+        items = self.load(filepath)
+        for key in keys:
+            if key in items:
+                del(items[key])
+                self.log.info("%s - Remove: %s from %s", self.config_for, key, filepath)
+        self.save(filepath=filepath, items=items)
 
     def remove(self, filepath: str, key: str):
         if key is None or key.strip() == '':
@@ -326,7 +342,7 @@ class MiAZConfigSettingsConcepts(MiAZConfig):
     def save(self, filepath: str = '', items: dict = {}) -> bool:
         saved = self.save_data(filepath, items)
         if saved:
-            elf.emit('repo-settings-updated-concepts')
+            self.emit('repo-settings-updated-concepts')
         return saved
 
 class MiAZConfigSettingsPeople(MiAZConfig):

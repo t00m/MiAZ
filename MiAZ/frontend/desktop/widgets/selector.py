@@ -175,11 +175,11 @@ class MiAZSelector(Gtk.Box):
         dialog.destroy()
 
     def _on_item_available_remove(self, *args):
-        item = self.viewAv.get_item()
-        if item is None:
-            return
-        self.config.remove_available(item.id)
-        self.config.remove_used(item.id)
+        keys = []
+        for item_available in self.viewAv.get_selected_items():
+            keys.append(item_available.id)
+        self.config.remove_available_batch(keys)
+        # ~ # FIXME: self.config.remove_used(item.id)
         self.update()
         self.entry.set_text('')
         self.entry.activate()
