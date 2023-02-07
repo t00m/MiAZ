@@ -9,6 +9,7 @@ from gi.repository import GObject
 from gi.repository import Gtk
 
 from MiAZ.backend.log import get_logger
+from MiAZ.backend.util import normalize_filename
 from MiAZ.frontend.desktop.widgets.rename import MiAZRenameDialog
 
 class MiAZActions(GObject.GObject):
@@ -19,7 +20,8 @@ class MiAZActions(GObject.GObject):
         self.backend = self.app.get_backend()
 
     def add_directory_to_repo(self, dialog, response):
-        target = self.backend.get_repo_docs_dir()
+        config = self.backend.repo_config()
+        target_dir = config['dir_docs']
         if response == Gtk.ResponseType.ACCEPT:
             content_area = dialog.get_content_area()
             filechooser = content_area.get_last_child()
@@ -28,24 +30,38 @@ class MiAZActions(GObject.GObject):
                 dirpath = gfile.get_path()
                 files = glob.glob(os.path.join(dirpath, '*.*'))
                 for filepath in files:
-                    shutil.copy(filepath, target)
-                    self.log.debug("Copied '%s' to target: %s",
-                                        os.path.basename(filepath),
-                                        target)
+                    target_name = normalize_filename(filepath)
+                    target = os.path.join(target_dir, target_name)
+                    try:
+                        shutil.copy(filepath, target)
+                    except shutil.SameFileError as error:
+                        self.log.error("Source: %s", filepath)
+                        self.log.error("Target Name: %s", target_name)
+                        self.log.error("Target: %s", target)
+                        self.log.warning(error)
+                    # ~ self.log.debug("Copied '%s' to target: %s",
+                                        # ~ os.path.basename(filepath),
+                                        # ~ target)
         dialog.destroy()
 
     def add_file_to_repo(self, dialog, response):
-        target = self.backend.get_repo_docs_dir()
+        config = self.backend.repo_config()
+        target_dir = config['dir_docs']
         if response == Gtk.ResponseType.ACCEPT:
             content_area = dialog.get_content_area()
             filechooser = content_area.get_last_child()
             gfile = filechooser.get_file()
             if gfile is not None:
                 filepath = gfile.get_path()
-                shutil.copy(filepath, target)
-                self.log.debug("Copied '%s' to target: %s",
-                                        os.path.basename(filepath),
-                                        target)
+                target_name = normalize_filename(filepath)
+                target = os.path.join(target_dir, target_name)
+                try:
+                    shutil.copy(filepath, target)
+                except shutil.SameFileError as error:
+                    self.log.warning(error)
+                # ~ self.log.debug("Copied '%s' to target: %s",
+                                        # ~ os.path.basename(filepath),
+                                        # ~ target)
         dialog.destroy()
 
     def document_display(self, filepath):

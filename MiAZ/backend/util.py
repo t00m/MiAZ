@@ -140,6 +140,28 @@ def fuzzy_date_from_timestamp(timestamp):
     if int(rdate.seconds) == 0:
         return "Right now"
 
+def normalize_filename(filename: str) -> str:
+    name, ext = get_filename_details(filename)
+    if not is_normalized(name):
+        fields = ['' for fields in range(8)]
+        fields[6] = name.replace('-', '_')
+        filename = "%s.%s" % ('-'.join(fields), ext)
+    else:
+        filename = "%s.%s" % (name, ext)
+    return filename
+
+def is_normalized(name: str) -> bool:
+    try:
+        if len(name.split('-')) == 8:
+            normalized = True
+        else:
+            normalized = False
+    except:
+        normalized = False
+    return normalized
+
+
+
 
 # ~ def timerfunc(func):
     # ~ """
