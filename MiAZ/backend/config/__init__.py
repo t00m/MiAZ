@@ -55,10 +55,22 @@ class MiAZConfig(GObject.GObject):
 
     def load(self, filepath:str) -> dict:
         try:
-            adict = json_load(filepath)
+            items = json_load(filepath)
         except Exception as error:
-            adict = None
-        return adict
+            items = None
+        return items
+
+    def load_from_available(self) -> dict:
+        return self.load(self.available)
+
+    def load_from_used(self) -> dict:
+        return self.load(self.used)
+
+    def save_to_available(items: dict = {}) -> bool:
+        return save_data(self.available, items)
+
+    def save_to_used(items: dict = {}) -> bool:
+        return save_data(self.used, items)
 
     def save_data(self, filepath: str = '', items: dict = {}) -> bool:
         if filepath == '':
@@ -193,10 +205,16 @@ class MiAZConfigSettingsCountries(MiAZConfig):
 
 class MiAZConfigSettingsGroups(MiAZConfig):
     def __init__(self, dir_conf):
-        sid = GObject.signal_lookup('repo-settings-updated-groups', MiAZConfigSettingsGroups)
-        if sid == 0:
+        sid_a = GObject.signal_lookup('repo-settings-updated-groups-available', MiAZConfigSettingsGroups)
+        sid_u = GObject.signal_lookup('repo-settings-updated-groups-used', MiAZConfigSettingsGroups)
+        if sid_a == 0:
             GObject.GObject.__init__(self)
-            GObject.signal_new('repo-settings-updated-groups',
+            GObject.signal_new('repo-settings-updated-groups-available',
+                                MiAZConfigSettingsGroups,
+                                GObject.SignalFlags.RUN_LAST, None, () )
+        if sid_u == 0:
+            GObject.GObject.__init__(self)
+            GObject.signal_new('repo-settings-updated-groups-used',
                                 MiAZConfigSettingsGroups,
                                 GObject.SignalFlags.RUN_LAST, None, () )
         super().__init__(
@@ -212,7 +230,10 @@ class MiAZConfigSettingsGroups(MiAZConfig):
 
     def save(self, filepath: str = '', items: dict = {}) -> bool:
         if self.save_data(filepath, items):
-            self.emit('repo-settings-updated-groups')
+            if filepath == self.available:
+                self.emit('repo-settings-updated-groups-available')
+            elif filepath == self.used:
+                self.emit('repo-settings-updated-groups-used')
 
     def __repr__(self):
         return 'Group'

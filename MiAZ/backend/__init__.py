@@ -42,7 +42,7 @@ class MiAZBackend(GObject.GObject):
                             GObject.SignalFlags.RUN_LAST, None, () )
         self.conf['App'] = MiAZConfigApp()
 
-    def repo_is_valid(self, path: str) -> bool:
+    def repo_validate(self, path: str) -> bool:
         self.log.debug("Checking conf dir: %s", path)
         conf_dir = os.path.join(path, '.conf')
         conf_file = os.path.join(conf_dir, 'repo.json')
@@ -70,7 +70,7 @@ class MiAZBackend(GObject.GObject):
         self.conf['App'].set('source', path)
         self.log.debug("Repo configuration initialized")
 
-    def repo_conf_get(self):
+    def repo_config(self):
         conf = {}
         conf['dir_docs'] = self.conf['App'].get('source')
         conf['dir_conf'] = os.path.join(conf['dir_docs'], '.conf')
@@ -78,12 +78,12 @@ class MiAZBackend(GObject.GObject):
         return conf
 
     def repo_load(self, path):
-        conf = self.repo_conf_get()
+        conf = self.repo_config()
         dir_conf = conf['dir_conf']
         self.conf['Country'] = MiAZConfigSettingsCountries(dir_conf)
         self.conf['Country'].connect('repo-settings-updated-countries-used', self.repo_check)
         self.conf['Group'] = MiAZConfigSettingsGroups(dir_conf)
-        self.conf['Group'].connect('repo-settings-updated-groups', self.repo_check)
+        self.conf['Group'].connect('repo-settings-updated-groups-used', self.repo_check)
         self.conf['Subgroup'] = MiAZConfigSettingsSubgroups(dir_conf)
         self.conf['Purpose'] = MiAZConfigSettingsPurposes(dir_conf)
         self.conf['Concept'] = MiAZConfigSettingsConcepts(dir_conf)
@@ -116,7 +116,7 @@ class MiAZBackend(GObject.GObject):
             self.log.debug("Repository check started")
             self.checking = True
 
-        repo = self.repo_conf_get()
+        repo = self.repo_config()
         s_repodir = repo['dir_docs']
         s_repocnf = repo['cnf_file']
         if os.path.exists(s_repocnf):
