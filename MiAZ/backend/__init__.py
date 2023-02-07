@@ -166,7 +166,6 @@ class MiAZBackend(GObject.GObject):
         reasons = "OK"
         valid = True
         reasons = []
-        partitioning = False
 
         # Check filename
         dot = filename.rfind('.')
@@ -184,6 +183,7 @@ class MiAZBackend(GObject.GObject):
             reasons.append((False, "File extension missing."))
 
         # Check fields partitioning
+        partitioning = False
         fields = name.split('-')
         if len(fields) != 8:
             valid &= False
@@ -315,12 +315,12 @@ class MiAZBackend(GObject.GObject):
             valid &= False
             reasons.append((False, "Person couldn't be checked"))
 
-        if partitioning is True:
-            self.conf['Group'].add_available(fields[2])
-            self.conf['Subgroup'].add_available(fields[3])
-            self.conf['SentBy'].add_available(fields[4])
-            self.conf['Purpose'].add_available(fields[5])
-            self.conf['SentTo'].add_available(fields[7])
+        # ~ if partitioning is True:
+            # ~ self.conf['Group'].add_available(fields[2])
+            # ~ self.conf['Subgroup'].add_available(fields[3])
+            # ~ self.conf['SentBy'].add_available(fields[4])
+            # ~ self.conf['Purpose'].add_available(fields[5])
+            # ~ self.conf['SentTo'].add_available(fields[7])
 
         return valid, reasons
 

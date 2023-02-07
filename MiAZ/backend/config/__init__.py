@@ -140,12 +140,14 @@ class MiAZConfig(GObject.GObject):
             self.save(filepath, items=items)
             self.log.info("%s - Add: %s[%s] to %s", self.config_for, key, value, filepath)
 
-    def remove_available_batch(self, key:str):
-        self.remove_batch(self.available, key)
+    def remove_available_batch(self, keys:list):
+        self.remove_batch(self.available, keys)
 
-    def remove_available(self, keys:list):
-        for key in keys:
-            self.remove(self.available, key)
+    def remove_used_batch(self, keys:list):
+        self.remove_batch(self.used, keys)
+
+    def remove_available(self, key:str):
+        self.remove(self.available, key)
 
     def remove_used(self, key:str):
         self.remove(self.used, key)
