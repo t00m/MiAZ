@@ -10,9 +10,7 @@ from gi.repository import GObject
 from MiAZ.backend.env import ENV
 from MiAZ.backend.log import get_logger
 from MiAZ.backend.util import MiAZUtil
-from MiAZ.backend.util import json_load, json_save
-from MiAZ.backend.util import get_files
-from MiAZ.backend.util import get_fields
+# ~ from MiAZ.backend.util import json_load, json_save
 from MiAZ.backend.watcher import MiAZWatcher
 from MiAZ.backend.config import MiAZConfigApp
 from MiAZ.backend.config import MiAZConfigSettingsCountries
@@ -41,7 +39,7 @@ class MiAZBackend(GObject.GObject):
                             MiAZBackend,
                             GObject.SignalFlags.RUN_LAST, None, () )
         self.util = MiAZUtil(self)
-        self.conf['App'] = MiAZConfigApp()
+        self.conf['App'] = MiAZConfigApp(self)
 
     def repo_validate(self, path: str) -> bool:
         self.log.debug("Checking conf dir: %s", path)
@@ -50,7 +48,7 @@ class MiAZBackend(GObject.GObject):
         if os.path.exists(conf_dir):
             self.log.debug("Config path '%s' exists", conf_dir)
             if os.path.exists(conf_file):
-                repo = json_load(conf_file)
+                repo = self.util.json_load(conf_file)
                 self.log.debug("Current repository: %s", path)
                 self.log.debug("MiAZ Repository format: %s", repo['FORMAT'])
                 return True
@@ -67,7 +65,7 @@ class MiAZBackend(GObject.GObject):
         dir_conf = os.path.join(path, '.conf')
         os.makedirs(dir_conf, exist_ok = True)
         conf_file = os.path.join(dir_conf, 'repo.json')
-        json_save(conf_file, conf)
+        self.util.json_save(conf_file, conf)
         self.conf['App'].set('source', path)
         self.log.debug("Repo configuration initialized")
 
@@ -82,16 +80,16 @@ class MiAZBackend(GObject.GObject):
     def repo_load(self, path):
         conf = self.repo_config()
         dir_conf = conf['dir_conf']
-        self.conf['Country'] = MiAZConfigSettingsCountries(dir_conf)
+        self.conf['Country'] = MiAZConfigSettingsCountries(self, dir_conf)
         self.conf['Country'].connect('repo-settings-updated-countries-used', self.repo_check)
-        self.conf['Group'] = MiAZConfigSettingsGroups(dir_conf)
+        self.conf['Group'] = MiAZConfigSettingsGroups(self, dir_conf)
         self.conf['Group'].connect('repo-settings-updated-groups-used', self.repo_check)
-        self.conf['Subgroup'] = MiAZConfigSettingsSubgroups(dir_conf)
-        self.conf['Purpose'] = MiAZConfigSettingsPurposes(dir_conf)
-        self.conf['Concept'] = MiAZConfigSettingsConcepts(dir_conf)
-        self.conf['SentBy'] = MiAZConfigSettingsSentBy(dir_conf)
-        self.conf['SentTo'] = MiAZConfigSettingsSentTo(dir_conf)
-        self.conf['Person'] = MiAZConfigSettingsPeople(dir_conf)
+        self.conf['Subgroup'] = MiAZConfigSettingsSubgroups(self, dir_conf)
+        self.conf['Purpose'] = MiAZConfigSettingsPurposes(self, dir_conf)
+        self.conf['Concept'] = MiAZConfigSettingsConcepts(self, dir_conf)
+        self.conf['SentBy'] = MiAZConfigSettingsSentBy(self, dir_conf)
+        self.conf['SentTo'] = MiAZConfigSettingsSentTo(self, dir_conf)
+        self.conf['Person'] = MiAZConfigSettingsPeople(self, dir_conf)
         self.watcher = MiAZWatcher('source', path)
         self.watcher.set_active(active=True)
         self.watcher.connect('repository-updated', self.repo_check)
@@ -110,11 +108,11 @@ class MiAZBackend(GObject.GObject):
         s_repodir = repo['dir_docs']
         s_repocnf = repo['cnf_file']
         try:
-            self.s_repodct = json_load(s_repocnf)
+            self.s_repodct = self.util.json_load(s_repocnf)
             self.log.debug("Loaded configuration from: %s" % s_repocnf)
         except FileNotFoundError:
             self.s_repodct = {}
-            json_save(s_repocnf, self.s_repodct)
+            self.util.json_save(s_repocnf, self.s_repodct)
             self.log.debug("Created an empty configuration file in: %s" % s_repocnf)
 
         # Workflow
@@ -126,7 +124,7 @@ class MiAZBackend(GObject.GObject):
                                                         % basename(doc))
 
         # 2. Rebuild repository dictionary
-        docs = get_files(s_repodir)
+        docs = self.util.get_files(s_repodir)
         for doc in docs:
             # ~ if doc not in self.s_repodct:
             # ~ self.log.debug("Doc[%s] must be analyzed", doc)
@@ -140,9 +138,9 @@ class MiAZBackend(GObject.GObject):
                 # ~ self.log.debug(reasons)
             else:
                 self.s_repodct[doc]['suggested'] = None
-                self.s_repodct[doc]['fields'] = get_fields(doc)
+                self.s_repodct[doc]['fields'] = self.util.get_fields(doc)
         self.log.info("Repository check finished: %d documents analyzed", len(docs))
-        json_save(s_repocnf, self.s_repodct)
+        self.util.json_save(s_repocnf, self.s_repodct)
 
         # 3. Emit the 'source-configuration-updated' signal
         self.log.debug("Source repository updated")

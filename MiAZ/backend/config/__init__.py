@@ -5,7 +5,7 @@ from gi.repository import GObject
 
 from MiAZ.backend.env import ENV
 from MiAZ.backend.log import get_logger
-from MiAZ.backend.util import json_load, json_save
+# ~ from MiAZ.backend.util import json_load, json_save
 from MiAZ.backend.models import MiAZModel, MiAZItem, File, Group, Subgroup, Person, Country, Purpose, Concept, SentBy, SentTo
 
 class MiAZConfig(GObject.GObject):
@@ -13,8 +13,10 @@ class MiAZConfig(GObject.GObject):
     used = None
     default = None
 
-    def __init__(self, log, config_for, used=None, available=None, default=None, model=MiAZModel, must_copy=True, foreign=False):
+    def __init__(self, backend, log, config_for, used=None, available=None, default=None, model=MiAZModel, must_copy=True, foreign=False):
         super().__init__()
+        self.backend = backend
+        self.util = self.backend.util
         self.log = log
         self.config_for = config_for
         self.used = used
@@ -55,7 +57,7 @@ class MiAZConfig(GObject.GObject):
 
     def load(self, filepath:str) -> dict:
         try:
-            items = json_load(filepath)
+            items = self.util.json_load(filepath)
         except Exception as error:
             items = None
         return items
@@ -76,7 +78,7 @@ class MiAZConfig(GObject.GObject):
         if filepath == '':
             filepath = self.used
         try:
-            json_save(filepath, items)
+            self.util.json_save(filepath, items)
             saved = True
         except Exception as error:
             self.log.error(error)
@@ -171,12 +173,15 @@ class MiAZConfig(GObject.GObject):
 
 
 class MiAZConfigApp(MiAZConfig):
-    def __init__(self):
+    def __init__(self, backend):
+        self.backend = backend
+        self.util = self.backend.util
         GObject.GObject.__init__(self)
         GObject.signal_new('repo-settings-updated-app',
                             MiAZConfigApp,
                             GObject.SignalFlags.RUN_LAST, None, () )
         super().__init__(
+            backend = backend,
             log=get_logger('MiAZ.Config.App'),
             config_for = 'Miaz-application',
             available = ENV['FILE']['CONF'],
@@ -199,7 +204,7 @@ class MiAZConfigApp(MiAZConfig):
 
 
 class MiAZConfigSettingsCountries(MiAZConfig):
-    def __init__(self, dir_conf):
+    def __init__(self, backend, dir_conf):
         sid_a = GObject.signal_lookup('repo-settings-updated-countries', MiAZConfigSettingsCountries)
         sid_u = GObject.signal_lookup('repo-settings-updated-countries-used', MiAZConfigSettingsCountries)
         if sid_a == 0:
@@ -213,6 +218,7 @@ class MiAZConfigSettingsCountries(MiAZConfig):
                                 MiAZConfigSettingsCountries,
                                 GObject.SignalFlags.RUN_LAST, None, () )
         super().__init__(
+            backend = backend,
             log=get_logger('MiAZ.Settings.Countries'),
             config_for = 'Countries',
             available = os.path.join(dir_conf, 'countries-available.json'),
@@ -234,7 +240,7 @@ class MiAZConfigSettingsCountries(MiAZConfig):
         return saved
 
 class MiAZConfigSettingsGroups(MiAZConfig):
-    def __init__(self, dir_conf):
+    def __init__(self, backend, dir_conf):
         sid_a = GObject.signal_lookup('repo-settings-updated-groups-available', MiAZConfigSettingsGroups)
         sid_u = GObject.signal_lookup('repo-settings-updated-groups-used', MiAZConfigSettingsGroups)
         if sid_a == 0:
@@ -248,6 +254,7 @@ class MiAZConfigSettingsGroups(MiAZConfig):
                                 MiAZConfigSettingsGroups,
                                 GObject.SignalFlags.RUN_LAST, None, () )
         super().__init__(
+            backend = backend,
             log=get_logger('MiAZ.Settings.Groups'),
             config_for = 'Groups',
             used = os.path.join(dir_conf, 'groups-used.json'),
@@ -269,7 +276,7 @@ class MiAZConfigSettingsGroups(MiAZConfig):
         return 'Group'
 
 class MiAZConfigSettingsSubgroups(MiAZConfig):
-    def __init__(self, dir_conf):
+    def __init__(self, backend, dir_conf):
         sid = GObject.signal_lookup('repo-settings-updated-subgroups', MiAZConfigSettingsSubgroups)
         if sid == 0:
             GObject.GObject.__init__(self)
@@ -277,6 +284,7 @@ class MiAZConfigSettingsSubgroups(MiAZConfig):
                                 MiAZConfigSettingsSubgroups,
                                 GObject.SignalFlags.RUN_LAST, None, () )
         super().__init__(
+            backend = backend,
             log=get_logger('MiAZ.Settings.Subgroups'),
             config_for = 'Subgroups',
             used = os.path.join(dir_conf, 'subgroups-used.json'),
@@ -295,7 +303,7 @@ class MiAZConfigSettingsSubgroups(MiAZConfig):
             self.emit('repo-settings-updated-subgroups')
 
 class MiAZConfigSettingsPurposes(MiAZConfig):
-    def __init__(self, dir_conf):
+    def __init__(self, backend, dir_conf):
         sid = GObject.signal_lookup('repo-settings-updated-purposes', MiAZConfigSettingsPurposes)
         if sid == 0:
             GObject.GObject.__init__(self)
@@ -303,6 +311,7 @@ class MiAZConfigSettingsPurposes(MiAZConfig):
                                 MiAZConfigSettingsPurposes,
                                 GObject.SignalFlags.RUN_LAST, None, () )
         super().__init__(
+            backend = backend,
             log=get_logger('MiAZ.Settings.Purposes'),
             config_for = 'Purposes',
             used = os.path.join(dir_conf, 'purposes-used.json'),
@@ -321,7 +330,7 @@ class MiAZConfigSettingsPurposes(MiAZConfig):
             self.emit('repo-settings-updated-purposes')
 
 class MiAZConfigSettingsConcepts(MiAZConfig):
-    def __init__(self, dir_conf):
+    def __init__(self, backend, dir_conf):
         sid = GObject.signal_lookup('repo-settings-updated-concepts', MiAZConfigSettingsConcepts)
         if sid == 0:
             GObject.GObject.__init__(self)
@@ -329,6 +338,7 @@ class MiAZConfigSettingsConcepts(MiAZConfig):
                                 MiAZConfigSettingsConcepts,
                                 GObject.SignalFlags.RUN_LAST, None, () )
         super().__init__(
+            backend = backend,
             log=get_logger('MiAZ.Settings.Concepts'),
             config_for = 'Concepts',
             used = os.path.join(dir_conf, 'concepts-used.json'),
@@ -348,7 +358,7 @@ class MiAZConfigSettingsConcepts(MiAZConfig):
         return saved
 
 class MiAZConfigSettingsPeople(MiAZConfig):
-    def __init__(self, dir_conf):
+    def __init__(self, backend, dir_conf):
         sid_a = GObject.signal_lookup('repo-settings-updated-people', MiAZConfigSettingsPeople)
         sid_u = GObject.signal_lookup('repo-settings-updated-people-used', MiAZConfigSettingsPeople)
         if sid_a == 0:
@@ -362,6 +372,7 @@ class MiAZConfigSettingsPeople(MiAZConfig):
                                 MiAZConfigSettingsPeople,
                                 GObject.SignalFlags.RUN_LAST, None, () )
         super().__init__(
+            backend = backend,
             log=get_logger('MiAZ.Settings.People'),
             config_for = 'Person',
             used = os.path.join(dir_conf, 'people-used.json'),
@@ -385,7 +396,7 @@ class MiAZConfigSettingsPeople(MiAZConfig):
         return saved
 
 class MiAZConfigSettingsSentBy(MiAZConfig):
-    def __init__(self, dir_conf):
+    def __init__(self, backend, dir_conf):
         sid = GObject.signal_lookup('repo-settings-updated-sentby', MiAZConfigSettingsSentBy)
         if sid == 0:
             GObject.GObject.__init__(self)
@@ -393,6 +404,7 @@ class MiAZConfigSettingsSentBy(MiAZConfig):
                                 MiAZConfigSettingsSentBy,
                                 GObject.SignalFlags.RUN_LAST, None, () )
         super().__init__(
+            backend = backend,
             log=get_logger('MiAZ.Settings.SentBy'),
             config_for = 'SentBy',
             used = os.path.join(dir_conf, 'people-used.json'),
@@ -411,7 +423,9 @@ class MiAZConfigSettingsSentBy(MiAZConfig):
             self.emit('repo-settings-updated-sentby')
 
 class MiAZConfigSettingsSentTo(MiAZConfig):
-    def __init__(self, dir_conf):
+    def __init__(self, backend, dir_conf):
+        self.backend = backend
+        self.util = self.backend.util
         sid = GObject.signal_lookup('repo-settings-updated-sentto', MiAZConfigSettingsSentTo)
         if sid == 0:
             GObject.GObject.__init__(self)
@@ -419,6 +433,7 @@ class MiAZConfigSettingsSentTo(MiAZConfig):
                                 MiAZConfigSettingsSentTo,
                                 GObject.SignalFlags.RUN_LAST, None, () )
         super().__init__(
+            backend = backend,
             log=get_logger('MiAZ.Settings.SentTo'),
             config_for = 'SentTo',
             used = os.path.join(dir_conf, 'people-used.json'),

@@ -16,7 +16,7 @@ from gi.repository import Pango
 from MiAZ.backend.log import get_logger
 from MiAZ.backend.env import ENV
 from MiAZ.backend.models import MiAZItem
-from MiAZ.backend.util import json_load
+# ~ from MiAZ.backend.util import json_load
 
 class ColLabel(Gtk.Box):
     """Row Id Widget"""

@@ -9,7 +9,7 @@ from gi.repository import GObject
 from gi.repository import Gtk
 
 from MiAZ.backend.log import get_logger
-from MiAZ.backend.util import normalize_filename
+# ~ from MiAZ.backend.util import normalize_filename
 from MiAZ.frontend.desktop.widgets.rename import MiAZRenameDialog
 
 class MiAZActions(GObject.GObject):
@@ -18,6 +18,7 @@ class MiAZActions(GObject.GObject):
         self.app = app
         # ~ self.workspace = self.app.get_workspace()
         self.backend = self.app.get_backend()
+        self.util = self.backend.util
 
     def add_directory_to_repo(self, dialog, response):
         config = self.backend.repo_config()
@@ -30,7 +31,7 @@ class MiAZActions(GObject.GObject):
                 dirpath = gfile.get_path()
                 files = glob.glob(os.path.join(dirpath, '*.*'))
                 for filepath in files:
-                    target_name = normalize_filename(filepath)
+                    target_name = self.util.normalize_filename(filepath)
                     target = os.path.join(target_dir, target_name)
                     try:
                         shutil.copy(filepath, target)
@@ -53,7 +54,7 @@ class MiAZActions(GObject.GObject):
             gfile = filechooser.get_file()
             if gfile is not None:
                 filepath = gfile.get_path()
-                target_name = normalize_filename(filepath)
+                target_name = self.util.normalize_filename(filepath)
                 target = os.path.join(target_dir, target_name)
                 try:
                     shutil.copy(filepath, target)

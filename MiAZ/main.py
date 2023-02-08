@@ -6,15 +6,16 @@ import sys
 import argparse
 
 from MiAZ.backend.env import ENV
-from MiAZ.backend.util import get_version
 from MiAZ.backend.log import get_logger
 
+app_version = open(ENV['FILE']['VERSION']).read().strip()
+app_shortname = ENV['APP']['shortname']
 
 class MiAZ:
     def __init__(self) -> None:
         self.setup_environment()
         self.log = get_logger('MiAZ.Main')
-        self.log.info("%s v%s - Start", ENV['APP']['shortname'], get_version())
+        self.log.info("%s v%s - Start", app_shortname, app_version)
 
     def setup_environment(self):
         """Setup MiAZ user environment
@@ -37,7 +38,7 @@ class MiAZ:
         except KeyboardInterrupt:
             self.log.error("Application killed by user")
             exit(0)
-        self.log.info("%s v%s - End", ENV['APP']['shortname'], get_version())
+        self.log.info("%s v%s - End", app_shortname, app_version)
 
 
 def main():

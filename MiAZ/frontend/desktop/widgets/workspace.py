@@ -15,8 +15,8 @@ from gi.repository import GObject
 
 from MiAZ.backend.env import ENV
 from MiAZ.backend.log import get_logger
-from MiAZ.backend.util import json_load
-from MiAZ.backend.util import get_filename_details
+# ~ from MiAZ.backend.util import json_load
+# ~ from MiAZ.backend.util import get_filename_details
 from MiAZ.backend.models import MiAZItem, File, Group, Subgroup, Person, Country, Purpose, Concept, SentBy, SentTo
 from MiAZ.frontend.desktop.util import get_file_mimetype
 from MiAZ.frontend.desktop.widgets.columnview import MiAZColumnView, ColIcon, ColLabel
@@ -54,6 +54,7 @@ class MiAZWorkspace(Gtk.Box):
         self.factory = self.app.get_factory()
         self.actions = self.app.get_actions()
         self.config = self.backend.conf
+        self.util = self.backend.util
         self.set_vexpand(False)
         self.set_margin_top(margin=6)
         self.set_margin_end(margin=6)
@@ -174,7 +175,7 @@ class MiAZWorkspace(Gtk.Box):
             else:
                 fullfname = os.path.basename(source)
                 filename = fullfname[:fullfname.rfind('.')]
-            name, ext = get_filename_details(source)
+            name, ext = self.util.get_filename_details(source)
             n = Field[item_type]
             tmpfile = filename.split('-')
             tmpfile[n] = dropdown.get_selected_item().id
@@ -197,7 +198,7 @@ class MiAZWorkspace(Gtk.Box):
                 else:
                     fullfname = os.path.basename(source)
                     filename = fullfname[:fullfname.rfind('.')]
-                name, ext = get_filename_details(source)
+                name, ext = self.util.get_filename_details(source)
                 n = Field[item_type]
                 tmpfile = filename.split('-')
                 tmpfile[n] = dropdown.get_selected_item().id
@@ -518,7 +519,7 @@ class MiAZWorkspace(Gtk.Box):
         repo = self.backend.repo_config()
         self._on_explain_toggled(self.tgbExplain)
         repocnf = repo['cnf_file']
-        self.repodct = json_load(repocnf)
+        self.repodct = self.util.json_load(repocnf)
         who = self.app.get_config('Person')
         items = []
         for path in self.repodct:

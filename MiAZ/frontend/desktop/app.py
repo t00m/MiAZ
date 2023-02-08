@@ -14,8 +14,6 @@ from gi.repository import Gtk
 
 from MiAZ.backend.env import ENV
 from MiAZ.backend import MiAZBackend
-from MiAZ.backend.util import dir_writable
-# ~ from MiAZ.backend.util import get_version
 from MiAZ.backend.log import get_logger
 from MiAZ.frontend.desktop.widgets.assistant import MiAZAssistantRepo
 from MiAZ.frontend.desktop.widgets.menu import MiAZ_MENU_APP
@@ -45,7 +43,7 @@ class MiAZApp(Adw.Application):
         self.win.set_icon_name('MiAZ')
         self.win.set_default_icon_name('MiAZ')
         # ~ self.win.get_style_context().add_class(class_name='devel')
-        self.icman = MiAZIconManager()
+        self.icman = MiAZIconManager(self)
         self.theme = Gtk.IconTheme.get_for_display(self.win.get_display())
         self.theme.add_search_path(ENV['GPATH']['ICONS'])
         self.actions = MiAZActions(self)

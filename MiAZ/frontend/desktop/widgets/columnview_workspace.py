@@ -15,7 +15,7 @@ from gi.repository import Pango
 
 from MiAZ.backend.env import ENV
 from MiAZ.backend.models import MiAZItem
-from MiAZ.backend.util import json_load
+# ~ from MiAZ.backend.util import json_load
 
 class RowId(Gtk.Box):
     """Row Id Widget"""
@@ -213,7 +213,7 @@ class MiAZColumnView(Gtk.Box):
 
     def update(self, items):
         repocnf = self.backend.get_repo_source_config_file()
-        self.repodct = json_load(repocnf)
+        self.repodct = self.util.json_load(repocnf)
         # ~ self.repodct = repodct
         self.store.remove_all()
         for item in items:

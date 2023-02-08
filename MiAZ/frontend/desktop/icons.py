@@ -22,13 +22,15 @@ from gi.repository.GdkPixbuf import Pixbuf
 
 from MiAZ.backend.env import ENV
 from MiAZ.frontend.desktop.util import get_file_mimetype
-from MiAZ.backend.util import valid_key
+# ~ from MiAZ.backend.util import valid_key
 
 # FIXME: Fix caching system for pixbufs
 
 class MiAZIconManager(GObject.GObject):
-    def __init__(self):
+    def __init__(self, app):
         super(MiAZIconManager, self).__init__()
+        self.app = app
+        self.util = self.app.backend.util
         win = Gtk.Window()
         self.theme = Gtk.IconTheme.get_for_display(win.get_display())
         self.theme.add_search_path(ENV['GPATH']['ICONS'])
@@ -55,7 +57,7 @@ class MiAZIconManager(GObject.GObject):
         return paintable
 
     def get_pixbuf_from_file_at_size(self, filepath, width=48, height=48) -> Pixbuf:
-        key = valid_key("%s-%d-%d" % (filepath, width, height))
+        key = self.util.valid_key("%s-%d-%d" % (filepath, width, height))
         try:
             pixbuf = self.pixbufdict[key]
         except KeyError:
@@ -65,7 +67,7 @@ class MiAZIconManager(GObject.GObject):
 
     def get_pixbuf_mimetype_from_file(self, filepath, width=48, height=48) -> Pixbuf:
         mimetype = get_file_mimetype(filepath)
-        key = valid_key("%s-%d-%d" % (mimetype, width, height))
+        key = self.util.valid_key("%s-%d-%d" % (mimetype, width, height))
         try:
             pixbuf = self.pixbufdict[key]
         except KeyError:
@@ -98,13 +100,13 @@ class MiAZIconManager(GObject.GObject):
 
     def get_pixbuf_by_path(self, name, width=48, height=48) -> Pixbuf:
         path = os.path.join(ENV['GPATH']['ICONS'], "%s.svg" % name)
-        key = valid_key("%s-%d-%d" % (name, width, height))
+        key = self.util.valid_key("%s-%d-%d" % (name, width, height))
         pixbuf = Pixbuf.new_from_file_at_size(path, width, height)
         self.pixbufdict[key] = pixbuf
         return pixbuf
 
     def get_pixbuf_by_name(self, name, width=48, height=48) -> Pixbuf:
-        key = valid_key("%s-%d-%d" % (name, width, height))
+        key = self.util.valid_key("%s-%d-%d" % (name, width, height))
         try:
             pixbuf = self.pixbufdict[key]
         except:
