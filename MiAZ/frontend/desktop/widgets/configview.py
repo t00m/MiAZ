@@ -140,7 +140,7 @@ class MiAZPeople(MiAZConfigView):
         self.viewSl = MiAZColumnViewPerson(self.app)
         self.add_columnview_used(self.viewSl)
 
-class MiAZSentBy(MiAZConfigView):
+class MiAZPeopleSentBy(MiAZConfigView):
     """Class for managing People from Settings"""
     __gtype_name__ = 'MiAZSentBy'
 
@@ -156,7 +156,7 @@ class MiAZSentBy(MiAZConfigView):
         self.viewSl = MiAZColumnViewPerson(self.app)
         self.add_columnview_used(self.viewSl)
 
-class MiAZSentTo(MiAZConfigView):
+class MiAZPeopleSentTo(MiAZConfigView):
     """Class for managing People from Settings"""
     __gtype_name__ = 'MiAZSentTo'
 

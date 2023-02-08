@@ -18,7 +18,7 @@ from gi.repository.GdkPixbuf import Pixbuf
 from MiAZ.backend.log import get_logger
 from MiAZ.frontend.desktop.widgets.dialogs import MiAZDialogAdd
 from MiAZ.backend.models import File, Group, Subgroup, Person, Country, Purpose, Concept, SentBy, SentTo
-from MiAZ.frontend.desktop.widgets.configview import MiAZCountries, MiAZGroups, MiAZPeople, MiAZPurposes, MiAZSubgroups, MiAZSentBy, MiAZSentTo
+from MiAZ.frontend.desktop.widgets.configview import MiAZCountries, MiAZGroups, MiAZPeople, MiAZPurposes, MiAZSubgroups, MiAZPeopleSentBy, MiAZPeopleSentTo
 
 
 class MiAZRenameDialog(Gtk.Box):
@@ -199,7 +199,7 @@ class MiAZRenameDialog(Gtk.Box):
     def __create_field_4_sentby(self):
         self.rowSentBy, self.btnSentBy, self.dpdSentBy = self.__create_actionrow('Sent by', SentBy, 'Sentby')
         self.dropdown['SentBy'] = self.dpdSentBy
-        self.btnSentBy.connect('clicked', self.on_resource_manage, MiAZSentBy(self.app))
+        self.btnSentBy.connect('clicked', self.on_resource_manage, MiAZPeopleSentBy(self.app))
         self.dpdSentBy.connect("notify::selected-item", self.on_changed_entry)
 
     def __create_field_5_purpose(self):
@@ -230,7 +230,7 @@ class MiAZRenameDialog(Gtk.Box):
     def __create_field_7_sentto(self):
         self.rowSentTo, self.btnSentTo, self.dpdSentTo = self.__create_actionrow('Sent to', SentTo, 'SentTo')
         self.dropdown['SentTo'] = self.dpdSentTo
-        self.btnSentTo.connect('clicked', self.on_resource_manage, MiAZSentTo(self.app))
+        self.btnSentTo.connect('clicked', self.on_resource_manage, MiAZPeopleSentTo(self.app))
         self.dpdSentTo.connect("notify::selected-item", self.on_changed_entry)
 
     def __create_field_8_extension(self):

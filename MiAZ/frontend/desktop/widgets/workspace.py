@@ -582,28 +582,14 @@ class MiAZWorkspace(Gtk.Box):
         return item.id == id
 
     def _do_filter_view(self, item, filter_list_model):
-        if not item.valid:
-            self.num_review += 1
-
-        display = False
-        if self.show_dashboard:
-            if item.valid:
-                c0 = self._do_eval_cond_matches_freetext(item.id)
-                c1 = self._do_eval_cond_matches(self.dropdown['Country'], item.country)
-                c2 = self._do_eval_cond_matches(self.dropdown['Group'], item.group)
-                c3 = self._do_eval_cond_matches(self.dropdown['Subgroup'], item.subgroup)
-                c4 = self._do_eval_cond_matches(self.dropdown['SentBy'], item.sentby_id)
-                c5 = self._do_eval_cond_matches(self.dropdown['Purpose'], item.purpose)
-                c6 = self._do_eval_cond_matches(self.dropdown['SentTo'], item.sentto_id)
-                display = c0 and c1 and c2 and c3 and c4 and c5 and c6
-            else:
-                # ~ if not item.valid:
-                display = self._do_eval_cond_matches_freetext(item.id)
-
-        if display:
-            self.displayed += 1
-
-        return display
+        c0 = self._do_eval_cond_matches_freetext(item.id)
+        c1 = self._do_eval_cond_matches(self.dropdown['Country'], item.country)
+        c2 = self._do_eval_cond_matches(self.dropdown['Group'], item.group)
+        c3 = self._do_eval_cond_matches(self.dropdown['Subgroup'], item.subgroup)
+        c4 = self._do_eval_cond_matches(self.dropdown['SentBy'], item.sentby_id)
+        c5 = self._do_eval_cond_matches(self.dropdown['Purpose'], item.purpose)
+        c6 = self._do_eval_cond_matches(self.dropdown['SentTo'], item.sentto_id)
+        return c0 and c1 and c2 and c3 and c4 and c5 and c6
 
     def _on_signal_filter_disconnect(self):
         disconnected = self.signals.copy()
