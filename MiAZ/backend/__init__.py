@@ -126,19 +126,12 @@ class MiAZBackend(GObject.GObject):
         # 2. Rebuild repository dictionary
         docs = self.util.get_files(s_repodir)
         for doc in docs:
-            # ~ if doc not in self.s_repodct:
-            # ~ self.log.debug("Doc[%s] must be analyzed", doc)
             valid, reasons = self.util.validate_filename(doc)
             self.s_repodct[doc] = {}
             self.s_repodct[doc]['valid'] = valid
             self.s_repodct[doc]['reasons'] = reasons
-            if not valid:
-                self.s_repodct[doc]['suggested'] = "-------" # DISABLED: improve peformance # self.suggest_filename(doc)
-                self.s_repodct[doc]['fields'] = ['' for fields in range(8)]
-                # ~ self.log.debug(reasons)
-            else:
-                self.s_repodct[doc]['suggested'] = None
-                self.s_repodct[doc]['fields'] = self.util.get_fields(doc)
+            self.s_repodct[doc]['suggested'] = None
+            self.s_repodct[doc]['fields'] = self.util.get_fields(doc)
         self.log.info("Repository check finished: %d documents analyzed", len(docs))
         self.util.json_save(s_repocnf, self.s_repodct)
 

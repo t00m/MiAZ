@@ -16,7 +16,7 @@ from gi.repository import Pango
 from MiAZ.backend.log import get_logger
 from MiAZ.backend.env import ENV
 from MiAZ.backend.models import MiAZItem
-# ~ from MiAZ.backend.util import json_load
+
 
 class ColLabel(Gtk.Box):
     """Row Id Widget"""
@@ -176,7 +176,7 @@ class MiAZColumnView(Gtk.Box):
         box = list_item.get_child()
         item = list_item.get_item()
         label = box.get_first_child()
-        label.set_text(item.id)
+        label.set_markup(item.id)
 
     def _on_factory_setup_title(self, factory, list_item):
         box = ColLabel()

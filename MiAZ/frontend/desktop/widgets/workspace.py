@@ -150,6 +150,7 @@ class MiAZWorkspace(Gtk.Box):
         dropdown = self.factory.create_dropdown_generic(item_type)
         frame = Gtk.Frame()
         cv = MiAZColumnViewMassRename(self.app)
+        cv.get_style_context().add_class(class_name='monospace')
         cv.set_hexpand(True)
         cv.set_vexpand(True)
         dropdown.connect("notify::selected-item", self._on_mass_renaming_change, cv, item_type)
@@ -165,24 +166,24 @@ class MiAZWorkspace(Gtk.Box):
     def _on_mass_renaming_change(self, dropdown, item, columnview, item_type):
         title = item_type.__gtype_name__
         citems = []
-        # ~ util = self.backend.get_util()
         for item in self.selected_items:
             source = item.id
-            valid, reasons = self.backend.util.validate_filename(source)
-            # ~ filename = util.suggest_filename(source, valid)
-            if not valid:
-                filename = self.backend.util.suggest_filename(source, False)
-            else:
-                fullfname = os.path.basename(source)
-                filename = fullfname[:fullfname.rfind('.')]
+            self.log.debug("Renaming: %s", source)
             name, ext = self.util.get_filename_details(source)
+            self.log.debug("N[%s] E[%s]", name, ext)
             n = Field[item_type]
-            tmpfile = filename.split('-')
+            self.log.debug("Field to change: %d (%s)", n, title)
+            tmpfile = name.split('-')
             tmpfile[n] = dropdown.get_selected_item().id
+            self.log.debug("Built raw name: %s", tmpfile)
             filename = "%s.%s" % ('-'.join(tmpfile), ext)
+            self.log.debug("Target name: %s", filename)
             target = os.path.join(os.path.dirname(source), filename)
-            citems.append(File(id=os.path.basename(source), title=os.path.basename(target)))
-            self.log.debug("Mass %s renaming: %s > %s > %s", title, os.path.basename(source) , valid, os.path.basename(target))
+            self.log.debug("Target filepath: %s", target)
+            txtId = "<small>%s</small>" % os.path.basename(source)
+            txtTitle = "<small>%s</small>" % os.path.basename(target)
+            citems.append(File(id=txtId, title=txtTitle))
+            self.log.debug("Mass %s renaming: %s > %s", title, os.path.basename(source) , os.path.basename(target))
         columnview.update(citems)
 
 
@@ -192,15 +193,9 @@ class MiAZWorkspace(Gtk.Box):
         if response == Gtk.ResponseType.ACCEPT:
             for item in self.selected_items:
                 source = item.id
-                valid, reasons = self.backend.util.validate_filename(source)
-                if not valid:
-                    filename = self.backend.util.suggest_filename(source, False)
-                else:
-                    fullfname = os.path.basename(source)
-                    filename = fullfname[:fullfname.rfind('.')]
                 name, ext = self.util.get_filename_details(source)
                 n = Field[item_type]
-                tmpfile = filename.split('-')
+                tmpfile = name.split('-')
                 tmpfile[n] = dropdown.get_selected_item().id
                 filename = "%s.%s" % ('-'.join(tmpfile), ext)
                 target = os.path.join(os.path.dirname(source), filename)
@@ -338,6 +333,7 @@ class MiAZWorkspace(Gtk.Box):
     def _setup_columnview(self):
         # ColumnView
         self.view = MiAZColumnViewWorkspace(self.app)
+        # ~ self.view.get_style_context().add_class(class_name='monospace 10')
         # ~ self.view.cv.append_column(self.view.column_icon_type)
         # ~ self.view.cv.append_column(self.view.column_group)
         # ~ self.view.cv.append_column(self.view.column_subgroup)
@@ -410,14 +406,14 @@ class MiAZWorkspace(Gtk.Box):
         toolbar_top = self._setup_toolbar_top()
         self.toolbar_filters = self._setup_toolbar_filters()
         frmView = self._setup_columnview()
-        self.statusbar = self._setup_statusbar()
+        # ~ self.statusbar = self._setup_statusbar()
         head.append(toolbar_top)
         head.append(self.toolbar_filters)
         body.append(frmView)
-        foot.append(self.statusbar)
+        # ~ foot.append(self.statusbar)
 
-        if self.num_review == 0:
-            self.statusbar.set_visible(False)
+        # ~ if self.num_review == 0:
+            # ~ self.statusbar.set_visible(False)
 
         # Connect signals
         selection = self.view.get_selection()
@@ -600,8 +596,8 @@ class MiAZWorkspace(Gtk.Box):
                 c5 = self._do_eval_cond_matches(self.dropdown['Purpose'], item.purpose)
                 c6 = self._do_eval_cond_matches(self.dropdown['SentTo'], item.sentto_id)
                 display = c0 and c1 and c2 and c3 and c4 and c5 and c6
-        else:
-            if not item.valid:
+            else:
+                # ~ if not item.valid:
                 display = self._do_eval_cond_matches_freetext(item.id)
 
         if display:
@@ -632,11 +628,12 @@ class MiAZWorkspace(Gtk.Box):
         self.dfilter = {}
         self.view.refilter()
         self.update_title()
-        if self.num_review > 0:
-            self.statusbar.set_visible(True)
-        else:
-            self.display_dashboard()
-            self.statusbar.set_visible(False)
+        self.display_dashboard()
+        # ~ if self.num_review > 0:
+            # ~ self.statusbar.set_visible(True)
+        # ~ else:
+            # ~ self.display_dashboard()
+            # ~ self.statusbar.set_visible(False)
 
     def _on_select_all(self, *args):
         selection = self.view.get_selection()
@@ -658,32 +655,32 @@ class MiAZWorkspace(Gtk.Box):
         self.tgbExplain.set_active(True)
         self.tgbExplain.set_visible(True)
         self.tgbFilters.set_visible(True)
-        if self.num_review > 0:
-            self.statusbar.set_visible(True)
-            self.message_label.set_markup('There are new documents pending of review')
-            self.infobar.set_message_type(Gtk.MessageType.ERROR)
-            self.btnReview.set_visible(True)
-            self.btnDashboard.set_visible(False)
-        else:
-            self.statusbar.set_visible(True)
+        # ~ if self.num_review > 0:
+            # ~ self.statusbar.set_visible(True)
+            # ~ self.message_label.set_markup('There are new documents pending of review')
+            # ~ self.infobar.set_message_type(Gtk.MessageType.ERROR)
+            # ~ self.btnReview.set_visible(True)
+            # ~ self.btnDashboard.set_visible(False)
+        # ~ else:
+            # ~ self.statusbar.set_visible(True)
 
-    def display_review(self, *args):
-        self.log.debug("Review documents")
-        self.displayed = 0
-        self.dfilter = {}
-        self.show_dashboard = False
-        self.view.refilter()
-        self.update_title()
-        self.btnDashboard.set_visible(True)
-        self.btnReview.set_visible(False)
-        self.tgbExplain.set_active(False)
-        self.tgbExplain.set_visible(False)
-        self.tgbFilters.set_visible(False)
-        self.statusbar.set_visible(True)
-        self.message_label.set_markup('<b>Review finished?</b>')
-        self.infobar.set_message_type(Gtk.MessageType.INFO)
-        self.view.column_title.set_title('Filename')
-        self.view.column_title.set_expand(True)
+    # ~ def display_review(self, *args):
+        # ~ self.log.debug("Review documents")
+        # ~ self.displayed = 0
+        # ~ self.dfilter = {}
+        # ~ self.show_dashboard = False
+        # ~ self.view.refilter()
+        # ~ self.update_title()
+        # ~ self.btnDashboard.set_visible(True)
+        # ~ self.btnReview.set_visible(False)
+        # ~ self.tgbExplain.set_active(False)
+        # ~ self.tgbExplain.set_visible(False)
+        # ~ self.tgbFilters.set_visible(False)
+        # ~ self.statusbar.set_visible(True)
+        # ~ self.message_label.set_markup('<b>Review finished?</b>')
+        # ~ self.infobar.set_message_type(Gtk.MessageType.INFO)
+        # ~ self.view.column_title.set_title('Filename')
+        # ~ self.view.column_title.set_expand(True)
         # ~ btnBack = self.infobar.add_button('Back to AZ', Gtk.ResponseType.CANCEL)
 
 

@@ -35,14 +35,12 @@ class MiAZActions(GObject.GObject):
                     target = os.path.join(target_dir, target_name)
                     try:
                         shutil.copy(filepath, target)
-                    except shutil.SameFileError as error:
-                        self.log.error("Source: %s", filepath)
-                        self.log.error("Target Name: %s", target_name)
-                        self.log.error("Target: %s", target)
-                        self.log.warning(error)
-                    # ~ self.log.debug("Copied '%s' to target: %s",
+                        # ~ self.log.debug("Copied '%s' to target: %s",
                                         # ~ os.path.basename(filepath),
                                         # ~ target)
+                    except shutil.SameFileError as error:
+                        self.log.error(error)
+
         dialog.destroy()
 
     def add_file_to_repo(self, dialog, response):
@@ -58,11 +56,11 @@ class MiAZActions(GObject.GObject):
                 target = os.path.join(target_dir, target_name)
                 try:
                     shutil.copy(filepath, target)
-                except shutil.SameFileError as error:
-                    self.log.warning(error)
-                # ~ self.log.debug("Copied '%s' to target: %s",
+                    # ~ self.log.debug("Copied '%s' to target: %s",
                                         # ~ os.path.basename(filepath),
                                         # ~ target)
+                except shutil.SameFileError as error:
+                    self.log.error(error)
         dialog.destroy()
 
     def document_display(self, filepath):
