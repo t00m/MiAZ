@@ -32,7 +32,7 @@ class MiAZRenameDialog(Gtk.Box):
         self.backend = self.app.get_backend()
         self.factory = self.app.get_factory()
         self.actions = self.app.get_actions()
-        self.config = self.backend.get_conf()
+        self.config = self.backend.conf
         self.log = get_logger('MiazRenameDialog')
 
         # Box to be inserted as contents

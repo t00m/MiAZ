@@ -39,7 +39,7 @@ class MiAZConfigView(MiAZSelector):
         self.app = app
         self.log = get_logger('MiAZConfigView')
         self.backend = self.app.get_backend()
-        self.conf = self.backend.get_conf()
+        self.conf = self.backend.conf
         self.set_vexpand(True)
 
     def get_config_for(self):

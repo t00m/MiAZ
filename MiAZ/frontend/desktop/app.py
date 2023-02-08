@@ -34,7 +34,7 @@ class MiAZApp(Adw.Application):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.backend = MiAZBackend()
-        self.conf = self.backend.get_conf()
+        self.conf = self.backend.conf
         self.log = get_logger("MiAZ.GUI")
         GLib.set_application_name(ENV['APP']['name'])
         self.connect('activate', self.on_activate)
@@ -79,7 +79,7 @@ class MiAZApp(Adw.Application):
         return self.backend
 
     def get_config(self, name: str):
-        return self.backend.get_conf()[name]
+        return self.backend.conf[name]
 
     def get_factory(self):
         return self.factory

@@ -22,7 +22,7 @@ class MiAZUtil(GObject.GObject):
     def __init__(self, backend):
         self.log = get_logger('MiAZ.Backend.Util')
         self.backend = backend
-        self.conf = self.backend.get_conf()
+        self.conf = self.backend.conf
         self.log.debug("Utils initialized")
 
     def suggest_filename(self, filepath: str, valid: bool = False) -> str:

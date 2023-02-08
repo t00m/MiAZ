@@ -53,7 +53,7 @@ class MiAZWorkspace(Gtk.Box):
         self.backend = self.app.get_backend()
         self.factory = self.app.get_factory()
         self.actions = self.app.get_actions()
-        self.config = self.backend.get_conf()
+        self.config = self.backend.conf
         self.set_vexpand(False)
         self.set_margin_top(margin=6)
         self.set_margin_end(margin=6)
@@ -170,7 +170,7 @@ class MiAZWorkspace(Gtk.Box):
             valid, reasons = self.backend.util.validate_filename(source)
             # ~ filename = util.suggest_filename(source, valid)
             if not valid:
-                filename = util.suggest_filename(source, False)
+                filename = self.backend.util.suggest_filename(source, False)
             else:
                 fullfname = os.path.basename(source)
                 filename = fullfname[:fullfname.rfind('.')]
@@ -193,7 +193,7 @@ class MiAZWorkspace(Gtk.Box):
                 source = item.id
                 valid, reasons = self.backend.util.validate_filename(source)
                 if not valid:
-                    filename = util.suggest_filename(source, False)
+                    filename = self.backend.util.suggest_filename(source, False)
                 else:
                     fullfname = os.path.basename(source)
                     filename = fullfname[:fullfname.rfind('.')]

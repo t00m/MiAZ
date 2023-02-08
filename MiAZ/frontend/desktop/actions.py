@@ -76,7 +76,7 @@ class MiAZActions(GObject.GObject):
             filename = basename[:basename.rfind('.')]
             target = filename.split('-')
         else:
-            repodct[source]['suggested'] = self.backend.suggest_filename(source)
+            repodct[source]['suggested'] = self.backend.util.suggest_filename(source)
             target = repodct[source]['suggested'].split('-')
         rename = self.app.get_rename_widget()
         rename.set_data(source, target)

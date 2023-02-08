@@ -98,13 +98,6 @@ class MiAZBackend(GObject.GObject):
         # ~ self.conf['App'].connect('repo-settings-updated-app', self.foo)
         self.log.debug("Configuration loaded")
 
-    def get_util(self):
-        return self.util
-
-    def get_conf(self) -> dict:
-        """Return dict with pointers to all config classes"""
-        return self.conf
-
     def repo_check(self, *args):
         if self.checking:
             self.log.debug("Repository check already in progress")
