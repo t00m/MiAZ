@@ -9,12 +9,10 @@ from gi.repository import GObject
 
 from MiAZ.backend.env import ENV
 from MiAZ.backend.log import get_logger
+from MiAZ.backend.util import MiAZUtil
 from MiAZ.backend.util import json_load, json_save
-from MiAZ.backend.util import valid_key
-from MiAZ.backend.util import guess_datetime
 from MiAZ.backend.util import get_files
 from MiAZ.backend.util import get_fields
-from MiAZ.backend.util import get_file_creation_date
 from MiAZ.backend.watcher import MiAZWatcher
 from MiAZ.backend.config import MiAZConfigApp
 from MiAZ.backend.config import MiAZConfigSettingsCountries
@@ -33,6 +31,7 @@ class MiAZBackend(GObject.GObject):
     __gtype_name__ = 'MiAZBackend'
     conf = {}
     s_repodct = {}
+    util = None
     checking = False
 
     def __init__(self) -> None:
@@ -41,6 +40,7 @@ class MiAZBackend(GObject.GObject):
         GObject.signal_new('source-configuration-updated',
                             MiAZBackend,
                             GObject.SignalFlags.RUN_LAST, None, () )
+        self.util = MiAZUtil(self)
         self.conf['App'] = MiAZConfigApp()
 
     def repo_validate(self, path: str) -> bool:
@@ -75,7 +75,7 @@ class MiAZBackend(GObject.GObject):
         conf = {}
         conf['dir_docs'] = self.conf['App'].get('source')
         conf['dir_conf'] = os.path.join(conf['dir_docs'], '.conf')
-        conf['cnf_file'] = os.path.join(conf['dir_conf'], "source-%s.json" % valid_key(conf['dir_docs']))
+        conf['cnf_file'] = os.path.join(conf['dir_conf'], "docs.json" )
         conf['dct_repo'] = self.s_repodct
         return conf
 
@@ -98,17 +98,12 @@ class MiAZBackend(GObject.GObject):
         # ~ self.conf['App'].connect('repo-settings-updated-app', self.foo)
         self.log.debug("Configuration loaded")
 
-    def get_watcher_source(self):
-        """Get watcher object for source directory"""
-        return self.watch_source
+    def get_util(self):
+        return self.util
 
     def get_conf(self) -> dict:
         """Return dict with pointers to all config classes"""
         return self.conf
-
-    def get_repo_dict(self):
-        """Load dictionary for current repository"""
-        return self.s_repodct
 
     def repo_check(self, *args):
         if self.checking:
@@ -121,10 +116,10 @@ class MiAZBackend(GObject.GObject):
         repo = self.repo_config()
         s_repodir = repo['dir_docs']
         s_repocnf = repo['cnf_file']
-        if os.path.exists(s_repocnf):
+        try:
             self.s_repodct = json_load(s_repocnf)
-            self.log.debug("Loading configuration from: %s" % s_repocnf)
-        else:
+            self.log.debug("Loaded configuration from: %s" % s_repocnf)
+        except FileNotFoundError:
             self.s_repodct = {}
             json_save(s_repocnf, self.s_repodct)
             self.log.debug("Created an empty configuration file in: %s" % s_repocnf)
@@ -142,7 +137,7 @@ class MiAZBackend(GObject.GObject):
         for doc in docs:
             # ~ if doc not in self.s_repodct:
             # ~ self.log.debug("Doc[%s] must be analyzed", doc)
-            valid, reasons = self.validate_filename(doc)
+            valid, reasons = self.util.validate_filename(doc)
             self.s_repodct[doc] = {}
             self.s_repodct[doc]['valid'] = valid
             self.s_repodct[doc]['reasons'] = reasons
@@ -160,290 +155,3 @@ class MiAZBackend(GObject.GObject):
         self.log.debug("Source repository updated")
         self.emit('source-configuration-updated')
         self.checking = False
-
-    def validate_filename(self, filepath: str) -> tuple:
-        filename = os.path.basename(filepath)
-        reasons = "OK"
-        valid = True
-        reasons = []
-
-        # Check filename
-        dot = filename.rfind('.')
-        if dot > 0:
-            name = filename[:dot]
-            ext = filename[dot+1:]
-
-            # Check extension
-            valid &= True
-            reasons.append((True, "File extension '%s' is valid" % ext))
-        else:
-            name = filename
-            ext = ''
-            valid &= False
-            reasons.append((False, "File extension missing."))
-
-        # Check fields partitioning
-        partitioning = False
-        fields = name.split('-')
-        if len(fields) != 8:
-            valid &= False
-            reasons.append((False, "Wrong number of fields (%d/8)" %
-                                                        len(fields)))
-        else:
-            reasons.append((True, "Right number of fields (%d/8)" %
-                                                        len(fields)))
-            partitioning = True
-
-        # Validate fields
-        # Check timestamp (1st field)
-        try:
-            timestamp = fields[0]
-            if guess_datetime(timestamp) is None:
-                valid &= False
-                reasons.append((False, "Timestamp '%s' not valid" %
-                                                            timestamp))
-            else:
-                reasons.append((True, "Timestamp '%s' is valid" %
-                                                            timestamp))
-        except IndexError:
-            valid &= False
-            reasons.append((False, "Timestamp couldn't be checked"))
-
-        # Check country (2nd field)
-        try:
-            code = fields[1]
-            is_country = self.conf['Country'].exists(code)
-            if not is_country:
-                valid &= False
-                reasons.append((False,
-                                "Country code '%s' doesn't exist" %
-                                                                code))
-            else:
-                default = self.conf['Country'].default
-                country = self.conf['Country'].load(default)
-                name = country[code]
-                reasons.append((True,
-                                "Country code '%s' corresponds to %s" %
-                                                        (code, name)))
-        except IndexError:
-            valid &= False
-            reasons.append((False,
-                            "Country code couldn't be checked"))
-
-        # Check group (3th field)
-        try:
-            code = fields[2]
-            is_group = self.conf['Group'].exists(code)
-            if not is_group:
-                valid &= False
-                reasons.append((False,
-                                "Group '%s' is not in your list." \
-                                " Please, add it first." % code))
-            else:
-                reasons.append((True,
-                                "Group '%s' accepted" % code))
-        except IndexError:
-            valid &= False
-            reasons.append((False, "Group couldn't be checked"))
-
-        # Check subgroup (4th field)
-        try:
-            code = fields[3]
-            is_subgroup = self.conf['Subgroup'].exists(code)
-            if not is_subgroup:
-                valid &= False
-                reasons.append((False,
-                                "Subgroup '%s' is not in your list." \
-                                " Please, add it first." % code))
-            else:
-                reasons.append((True,
-                                "Subgroup '%s' accepted" % code))
-        except IndexError:
-            valid &= False
-            reasons.append((False, "Subgroup couldn't be checked"))
-
-        # Check SentBy (5th field)
-        try:
-            code = fields[4]
-            is_people = self.conf['Person'].exists(code)
-            if not is_people:
-                valid &= False
-                reasons.append((False,
-                                "Person '%s' is not in your list. " \
-                                "Please, add it first." % code))
-            else:
-                reasons.append((True, "Person '%s' accepted" % code))
-        except IndexError:
-            valid &= False
-            reasons.append((False, "Person couldn't be checked"))
-
-        # Check purpose (6th field)
-        try:
-            code = fields[5]
-            is_purpose = self.conf['Purpose'].exists(code)
-            if not is_purpose:
-                valid &= False
-                reasons.append((False,
-                                "Purpose '%s' is not in your list. " \
-                                "Please, add it first." % code))
-            else:
-                reasons.append((True, "Purpose '%s' accepted" % code))
-        except IndexError:
-            valid &= False
-            reasons.append((False, "Purpose couldn't be checked"))
-
-        # Check Concept (7th field)
-        try:
-            code = fields[6]
-            reasons.append((True, "Concept '%s' accepted" % code))
-        except IndexError:
-            valid &= False
-            reasons.append((False, "Concept couldn't be checked"))
-
-        # Check SentTo (8th field)
-        try:
-            code = fields[7]
-            is_people = self.conf['Person'].exists(code)
-            if not is_people:
-                valid &= False
-                reasons.append((False,
-                                "Person '%s' is not in your list. " \
-                                "Please, add it first." % code))
-            else:
-                reasons.append((True, "Person '%s' accepted" % code))
-        except IndexError:
-            valid &= False
-            reasons.append((False, "Person couldn't be checked"))
-
-        # ~ if partitioning is True:
-            # ~ self.conf['Group'].add_available(fields[2])
-            # ~ self.conf['Subgroup'].add_available(fields[3])
-            # ~ self.conf['SentBy'].add_available(fields[4])
-            # ~ self.conf['Purpose'].add_available(fields[5])
-            # ~ self.conf['SentTo'].add_available(fields[7])
-
-        return valid, reasons
-
-    def suggest_filename(self, filepath: str, valid: bool = False) -> str:
-        timestamp = ""
-        country = ""
-        group = ""
-        subgroup = ""
-        person = ""
-        purpose = ""
-        concept = ""
-        extension = ""
-
-        filename = os.path.basename(filepath)
-        dot = filename.rfind('.')
-        if dot > 0:
-            name = filename[:dot]
-            ext = filename[dot+1:].lower()
-        else:
-            name = filename
-            ext = ''
-
-        fields = name.split('-')
-
-        # ~ self.log.debug(filename)
-        # Field 0. Find and/or guess date field
-        found_date = False
-        for field in fields:
-            # ~ self.log.debug(field)
-            try:
-                adate = guess_datetime(field[:8])
-                timestamp = adate.strftime("%Y%m%d")
-                if timestamp is not None:
-                    found_date = True
-                    # ~ self.log.debug("Found: %s", timestamp)
-                    break
-            except Exception as error:
-                pass
-        if not found_date:
-            try:
-                created = get_file_creation_date(filepath)
-                timestamp = created.strftime("%Y%m%d")
-                # ~ self.log.debug("Creation date: %s", timestamp)
-            except Exception as error:
-                # ~ self.log.error("%s -> %s" % (filepath, error))
-                timestamp = ""
-        # ~ self.log.debug(timestamp)
-
-        # Field 1. Find and/or guess country field
-        found_country = False
-        for field in fields:
-            if len(field) == 2:
-                is_country = self.conf['Country'].exists(field)
-                if is_country:
-                    country = field
-                    found_country = True
-                    break
-        if not found_country:
-            country = ""
-
-        # Field 2. Find and/or guess group field
-        found_group = False
-        for field in fields:
-            if self.conf['Group'].exists(field):
-                group = field
-                found_group = True
-                break
-        if not found_group:
-            group = ''
-
-        # Field 3. Find and/or guess subgroup field
-        found_subgroup = False
-        for field in fields:
-            if self.conf['Subgroup'].exists(field):
-                subgroup = field
-                found_subgroup = True
-                break
-        if not found_subgroup:
-            subgroup = ''
-
-        # Field 4. Find and/or guess SentBy field
-        found_person = False
-        for field in fields:
-            if self.conf['Person'].exists(field):
-                sentby = field
-                found_person = True
-                break
-        if not found_person:
-            sentby = ''
-
-        # Field 5. Find and/or guess purpose field
-        found_purpose = False
-        for field in fields:
-            if self.conf['Purpose'].exists(field):
-                purpose = field
-                found_purpose = True
-                break
-        if not found_purpose:
-            purpose = ''
-
-        # Field 6. Do NOT find and/or guess concept field. Free field.
-        if not valid:
-            concept = name.replace('-', '_')
-        else:
-            concept = fields[5]
-
-        # Field 7. Find and/or guess SentTo field
-        found_person = False
-        for field in fields:
-            if self.conf['Person'].exists(field):
-                found_person = True
-                sentto = field
-                break
-        if not found_person:
-            sentto = ''
-
-        suggested = "%s-%s-%s-%s-%s-%s-%s-%s" % (timestamp,
-                                                country,
-                                                group,
-                                                subgroup,
-                                                sentby,
-                                                purpose,
-                                                concept,
-                                                sentto)
-        # ~ self.log.debug("%s -> %s", filename, suggested)
-        return suggested

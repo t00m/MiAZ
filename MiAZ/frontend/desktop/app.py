@@ -15,7 +15,7 @@ from gi.repository import Gtk
 from MiAZ.backend.env import ENV
 from MiAZ.backend import MiAZBackend
 from MiAZ.backend.util import dir_writable
-from MiAZ.backend.util import get_version
+# ~ from MiAZ.backend.util import get_version
 from MiAZ.backend.log import get_logger
 from MiAZ.frontend.desktop.widgets.assistant import MiAZAssistantRepo
 from MiAZ.frontend.desktop.widgets.menu import MiAZ_MENU_APP

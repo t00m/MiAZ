@@ -164,12 +164,13 @@ class MiAZWorkspace(Gtk.Box):
     def _on_mass_renaming_change(self, dropdown, item, columnview, item_type):
         title = item_type.__gtype_name__
         citems = []
+        # ~ util = self.backend.get_util()
         for item in self.selected_items:
             source = item.id
-            valid, reasons = self.backend.validate_filename(source)
-            # ~ filename = self.backend.suggest_filename(source, valid)
+            valid, reasons = self.backend.util.validate_filename(source)
+            # ~ filename = util.suggest_filename(source, valid)
             if not valid:
-                filename = self.backend.suggest_filename(source, False)
+                filename = util.suggest_filename(source, False)
             else:
                 fullfname = os.path.basename(source)
                 filename = fullfname[:fullfname.rfind('.')]
@@ -185,13 +186,14 @@ class MiAZWorkspace(Gtk.Box):
 
 
     def _on_mass_renaming(self, dialog, response, dropdown, item_type):
+        # ~ util = self.backend.get_util()
         title = item_type.__gtype_name__
         if response == Gtk.ResponseType.ACCEPT:
             for item in self.selected_items:
                 source = item.id
-                valid, reasons = self.backend.validate_filename(source)
+                valid, reasons = self.backend.util.validate_filename(source)
                 if not valid:
-                    filename = self.backend.suggest_filename(source, False)
+                    filename = util.suggest_filename(source, False)
                 else:
                     fullfname = os.path.basename(source)
                     filename = fullfname[:fullfname.rfind('.')]
