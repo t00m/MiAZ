@@ -333,6 +333,11 @@ class MiAZWorkspace(Gtk.Box):
     def _setup_columnview(self):
         # ColumnView
         self.view = MiAZColumnViewWorkspace(self.app)
+        self.view.factory_icon_type.connect("bind", self._on_factory_bind_icon_type)
+        # ~ factory_icon_type = Gtk.SignalListItemFactory()
+        # ~ factory_icon_type.connect("setup", self.view._on_factory_setup_icon_type)
+        # ~ factory_icon_type.connect("bind", self._on_factory_bind_icon_type)
+        # ~ self.view.column_icon_type = Gtk.ColumnViewColumn.new("Type", factory_icon_type)
         # ~ self.view.get_style_context().add_class(class_name='monospace 10')
         # ~ self.view.cv.append_column(self.view.column_icon_type)
         # ~ self.view.cv.append_column(self.view.column_group)
@@ -354,6 +359,9 @@ class MiAZWorkspace(Gtk.Box):
         frmView = self.factory.create_frame(hexpand=True, vexpand=True)
         frmView.set_child(self.view)
         return frmView
+
+    def _on_factory_bind_icon_type(self, factory, list_item):
+        self.log.debug("bind icon type here!!")
 
     # ~ def _setup_statusbar(self):
         # ~ statusbar = Gtk.Statusbar()
