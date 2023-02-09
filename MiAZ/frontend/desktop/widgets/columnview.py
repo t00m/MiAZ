@@ -36,6 +36,17 @@ class ColIcon(Gtk.Box):
         icon = Gtk.Image()
         self.append(icon)
 
+class ColMenuButton(Gtk.Box):
+    """Row Icon Widget"""
+    __gtype_name__ = 'ColMenuButton'
+
+    def __init__(self):
+        super(ColMenuButton, self).__init__()
+        popover = Gtk.Popover()
+        button = Gtk.MenuButton()
+        button.set_popover(popover)
+        self.append(button)
+
 class ColCheck(Gtk.Box):
     """Row Id Widget"""
     __gtype_name__ = 'ColCheck'

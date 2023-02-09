@@ -17,7 +17,7 @@ from MiAZ.backend.log import get_logger
 # ~ from MiAZ.backend.util import json_load, json_save
 from MiAZ.backend.env import ENV
 from MiAZ.frontend.desktop.widgets.columnview import MiAZColumnView
-from MiAZ.frontend.desktop.widgets.columnview import ColIcon, ColLabel, ColCheck
+from MiAZ.frontend.desktop.widgets.columnview import ColIcon, ColLabel, ColMenuButton, ColCheck
 from MiAZ.backend.models import MiAZItem, Country, Group, Subgroup, Person, Purpose, File
 
 
@@ -132,21 +132,43 @@ class MiAZColumnViewWorkspace(MiAZColumnView):
         # ~ icon.set_pixel_size(size)
 
     def _on_factory_setup_icon_type(self, factory, list_item):
-        box = ColIcon()
+        box = ColMenuButton()
         list_item.set_child(box)
 
     def _on_factory_bind_icon_type(self, factory, list_item):
         """To be subclassed"""
         box = list_item.get_child()
+        button = box.get_first_child()
+        self.log.debug(button)
+        # ~ popover = button.get_popover()
         item = list_item.get_item()
-        icon = box.get_first_child()
+        # ~ icon = box.get_first_child()
         if item.valid:
             mimetype, val = Gio.content_type_guess('filename=%s' % item.id)
-            gicon = Gio.content_type_get_icon(mimetype)
-            icon.set_from_gicon(gicon)
+            self.log.debug(mimetype)
+            child=Adw.ButtonContent(label='', icon_name='x-office-document')
+            button.set_child(child)
+            # ~ >>> import gi
+            # ~ >>> mimetype = 'application/pdf'
+            # ~ >>> from gi.repository import Gio
+            # ~ >>> gicon = Gio.content_type_get_icon(mimetype)
+            # ~ >>> gicon.get_names()
+            # ~ ['application-pdf', 'x-office-document', 'application-pdf-symbolic', 'x-office-document-symbolic']
+            # ~ >>> gi.require_version('Gtk', '4.0')
+            # ~ >>> from gi.repository import Gtk
+            # ~ >>> Gtk.Image.new_from_
+            # ~ Gtk.Image.new_from_file(       Gtk.Image.new_from_gicon(      Gtk.Image.new_from_icon_name(  Gtk.Image.new_from_paintable(  Gtk.Image.new_from_pixbuf(     Gtk.Image.new_from_resource(
+            # ~ >>> Gtk.Image.new_from_icon_name('application-pdf')
+            # ~ <Gtk.Image object at 0x7fc6172851c0 (GtkImage at 0x55efd97a4160)>
+            # ~ >>> Gtk.Image.new_from_icon_name('x-office-document')
+            # ~ <Gtk.Image object at 0x7fc617286c80 (GtkImage at 0x55efd97a42f0)>
+
+            # ~ gicon = Gio.content_type_get_icon(mimetype)
+            # ~ icon.set_from_gicon(gicon)
         else:
-            icon.set_from_icon_name('miaz-rename')
-        icon.set_pixel_size(32)
+            child=Adw.ButtonContent(label='', icon_name='miaz-rename')
+            button.set_child(child)
+        # ~ icon.set_pixel_size(32)
 
     def _on_factory_setup_group(self, factory, list_item):
         box = ColLabel()

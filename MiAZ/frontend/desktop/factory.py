@@ -356,6 +356,40 @@ class MiAZFactory:
         self.menu_workspace_multiple.append_item(item_delete)
         return self.menu_workspace_multiple
 
+    def __create_trvreasons(self, filepath):
+        # ~ scrreasons = Gtk.ScrolledWindow()
+        trvreasons = Gtk.TreeView()
+        trvreasons.set_vexpand(True)
+        trvreasons.set_hexpand(False)
+        trvreasons.set_headers_visible(False)
+        model = Gtk.ListStore(Pixbuf, str)
+
+        renderer = Gtk.CellRendererPixbuf()
+        column = Gtk.TreeViewColumn('Type', renderer, pixbuf=0)
+        renderer.set_alignment(0.0, 0.5)
+        column.set_sizing(Gtk.TreeViewColumnSizing.AUTOSIZE)
+        column.set_visible(True)
+        trvreasons.append_column(column)
+
+        renderer = Gtk.CellRendererText()
+        column = Gtk.TreeViewColumn('Reason', renderer, text=1)
+        column.set_visible(True)
+        column.set_sizing(Gtk.TreeViewColumnSizing.AUTOSIZE)
+        column.set_expand(False)
+        column.set_clickable(False)
+        column.set_sort_indicator(False)
+        trvreasons.append_column(column)
+        icon_ko = self.app.icman.get_pixbuf_by_name('miaz-ko', 32)
+        icon_ok = self.app.icman.get_pixbuf_by_name('miaz-ok', 32)
+
+        for reason in self.repodct[filepath]['reasons']:
+            passed, message = reason
+            if passed:
+                model.insert_with_values(-1, (0, 1), (icon_ok, message))
+            else:
+                model.insert_with_values(-1, (0, 1), (icon_ko, message))
+        trvreasons.set_model(model)
+        return trvreasons
 
 class MenuHeader(Gio.MenuItem):
     """
