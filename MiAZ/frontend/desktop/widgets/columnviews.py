@@ -29,7 +29,6 @@ class MiAZColumnViewWorkspace(MiAZColumnView):
         super().__init__(app, item_type=MiAZItem)
         self.log = get_logger('MiAZColumnViewWorkspace')
         self.backend = self.app.get_backend()
-
         factory_subtitle = Gtk.SignalListItemFactory()
         factory_subtitle.connect("setup", self._on_factory_setup_subtitle)
         factory_subtitle.connect("bind", self._on_factory_bind_subtitle)
@@ -141,9 +140,12 @@ class MiAZColumnViewWorkspace(MiAZColumnView):
         box = list_item.get_child()
         item = list_item.get_item()
         icon = box.get_first_child()
-        mimetype, val = Gio.content_type_guess('filename=%s' % item.id)
-        gicon = Gio.content_type_get_icon(mimetype)
-        icon.set_from_gicon(gicon)
+        if item.valid:
+            mimetype, val = Gio.content_type_guess('filename=%s' % item.id)
+            gicon = Gio.content_type_get_icon(mimetype)
+            icon.set_from_gicon(gicon)
+        else:
+            icon.set_from_icon_name('miaz-rename')
         icon.set_pixel_size(32)
 
     def _on_factory_setup_group(self, factory, list_item):
