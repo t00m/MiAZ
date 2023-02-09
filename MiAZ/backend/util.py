@@ -351,7 +351,7 @@ class MiAZUtil(GObject.GObject):
         # Check SentBy (5th field)
         try:
             code = fields[4]
-            is_people = self.conf['Person'].exists(code)
+            is_people = self.conf['SentBy'].exists(code)
             if not is_people:
                 valid &= False
                 reasons.append((False,
@@ -388,8 +388,8 @@ class MiAZUtil(GObject.GObject):
 
         # Check SentTo (8th field)
         try:
-            code = fields[7]
-            is_people = self.conf['Person'].exists(code)
+            code = fields[4]
+            is_people = self.conf['SentTo'].exists(code)
             if not is_people:
                 valid &= False
                 reasons.append((False,

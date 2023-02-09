@@ -56,10 +56,10 @@ class MiAZWorkspace(Gtk.Box):
         self.config = self.backend.conf
         self.util = self.backend.util
         self.set_vexpand(False)
-        self.set_margin_top(margin=6)
-        self.set_margin_end(margin=6)
-        self.set_margin_bottom(margin=6)
-        self.set_margin_start(margin=6)
+        self.set_margin_top(margin=3)
+        self.set_margin_end(margin=3)
+        self.set_margin_bottom(margin=3)
+        self.set_margin_start(margin=3)
         frmView = self._setup_workspace()
         self.append(frmView)
 
@@ -183,7 +183,7 @@ class MiAZWorkspace(Gtk.Box):
             txtId = "<small>%s</small>" % os.path.basename(source)
             txtTitle = "<small>%s</small>" % os.path.basename(target)
             citems.append(File(id=txtId, title=txtTitle))
-            self.log.debug("Mass %s renaming: %s > %s", title, os.path.basename(source) , os.path.basename(target))
+            # ~ self.log.debug("Mass %s renaming: %s > %s", title, os.path.basename(source) , os.path.basename(target))
         columnview.update(citems)
 
 
@@ -331,42 +331,59 @@ class MiAZWorkspace(Gtk.Box):
             assistant.present()
 
     def _setup_columnview(self):
-        # ColumnView
         self.view = MiAZColumnViewWorkspace(self.app)
         self.view.factory_icon_type.connect("bind", self._on_factory_bind_icon_type)
-        # ~ factory_icon_type = Gtk.SignalListItemFactory()
-        # ~ factory_icon_type.connect("setup", self.view._on_factory_setup_icon_type)
-        # ~ factory_icon_type.connect("bind", self._on_factory_bind_icon_type)
-        # ~ self.view.column_icon_type = Gtk.ColumnViewColumn.new("Type", factory_icon_type)
-        # ~ self.view.get_style_context().add_class(class_name='monospace 10')
-        # ~ self.view.cv.append_column(self.view.column_icon_type)
-        # ~ self.view.cv.append_column(self.view.column_group)
-        # ~ self.view.cv.append_column(self.view.column_subgroup)
-        # ~ self.view.cv.append_column(self.view.column_purpose)
-        # ~ self.view.cv.append_column(self.view.column_sentby)
-        # ~ self.view.cv.append_column(self.view.column_title)
-        # ~ self.view.cv.append_column(self.view.column_subtitle)
-        # ~ self.view.cv.append_column(self.view.column_sentto)
-        # ~ self.view.cv.append_column(self.view.column_date)
-        # ~ self.view.cv.append_column(self.view.column_flag)
-        # ~ self.view.column_title.set_header_menu(self.mnuSelMulti)
-        # ~ self.view.cv.set_single_click_activate(False)
-        # ~ self.view.column_title.set_expand(True)
-        # ~ self.view.column_subtitle.set_expand(True)
-        # ~ self.view.cv.sort_by_column(self.view.column_title, Gtk.SortType.DESCENDING)
-        # ~ self.view.select_first_item()
+        self.view.get_style_context().add_class(class_name='caption')
         self.view.set_filter(self._do_filter_view)
         frmView = self.factory.create_frame(hexpand=True, vexpand=True)
         frmView.set_child(self.view)
         return frmView
 
     def _on_factory_bind_icon_type(self, factory, list_item):
-        self.log.debug("bind icon type here!!")
+        box = list_item.get_child()
+        button = box.get_first_child()
+        popover = button.get_popover()
+        item = list_item.get_item()
+        if item.valid:
+            mimetype, val = Gio.content_type_guess('filename=%s' % item.id)
+            gicon = Gio.content_type_get_icon(mimetype)
+            icon_name = gicon.get_names()[0]
+            child=Adw.ButtonContent(label='', icon_name=icon_name)
+        else:
+            child=Adw.ButtonContent(label='', icon_name='miaz-rename')
+        widget = self._setup_item_valid_popover(item)
+        popover.set_child(widget)
+        popover.present()
+        button.set_child(child)
 
     # ~ def _setup_statusbar(self):
         # ~ statusbar = Gtk.Statusbar()
         # ~ self.sbcid = statusbar.get_context_id('MiAZ')
         # ~ return statusbar
+
+    def _setup_item_valid_popover(self, item):
+        listbox = Gtk.ListBox.new()
+        listbox.set_activate_on_single_click(False)
+        listbox.unselect_all()
+        listbox.set_selection_mode(Gtk.SelectionMode.SINGLE)
+        vbox = self.factory.create_box_vertical()
+        vbox.append(child=listbox)
+        doc = item.id
+        valid = self.repodct[doc]['valid']
+        reasons = self.repodct[doc]['reasons']
+        items = []
+        for rc, reason in reasons:
+            if rc:
+                icon_name = 'miaz-ok'
+            else:
+                icon_name = 'miaz-ko'
+            row = self.factory.create_box_horizontal()
+            button = self.factory.create_button(icon_name=icon_name)
+            label = Gtk.Label.new(reason)
+            row.append(button)
+            row.append(label)
+            listbox.append(child=row)
+        return vbox
 
     def _setup_statusbar(self):
         hbox = self.factory.create_box_horizontal(margin=0, hexpand=True)
@@ -406,10 +423,10 @@ class MiAZWorkspace(Gtk.Box):
         widget = self.factory.create_box_vertical(margin=0, spacing=6, hexpand=True, vexpand=True)
         head = self.factory.create_box_vertical(margin=0, spacing=0, hexpand=True)
         body = self.factory.create_box_vertical(margin=0, spacing=0, hexpand=True, vexpand=True)
-        foot = self.factory.create_box_vertical(margin=0, spacing=0, hexpand=True)
+        # ~ foot = self.factory.create_box_vertical(margin=0, spacing=0, hexpand=False, vexpand=False)
         widget.append(head)
         widget.append(body)
-        widget.append(foot)
+        # ~ widget.append(foot)
 
         toolbar_top = self._setup_toolbar_top()
         self.toolbar_filters = self._setup_toolbar_filters()
@@ -439,15 +456,6 @@ class MiAZWorkspace(Gtk.Box):
         self.menu_workspace_multiple = Gio.Menu.new()
         # ~ {timestamp}-{country}-{group}-{subgroup}-{from}-{purpose}-{concept}-{to}.{extension}
         fields = [Country, Group, Subgroup, SentBy, Purpose, Concept, SentTo]
-        # ~ item_fake = Gio.MenuItem.new()
-        # ~ item_fake.set_attribute_value('use-markup', GLib.Variant.new_boolean(True))
-        # ~ icon = Gio.ThemedIcon.new('MiAZ')
-        # ~ item_fake.set_icon(icon)
-        # ~ item_fake.set_label('&lt;b&gt;Multiple selection&lt;/b&gt;')
-        # ~ action = Gio.SimpleAction.new('fake', None)
-        # ~ item_fake.set_detailed_action(detailed_action='fake')
-        # ~ self.menu_workspace_multiple.append_item(item_fake)
-        # ~ self.menu_workspace_multiple.append_item(MenuHeader("Multiple selection", 'MiAZ'))
 
         # Submenu for mass renaming
         submenu_rename_root = Gio.Menu.new()
@@ -456,7 +464,6 @@ class MiAZWorkspace(Gtk.Box):
             submenu=submenu_rename_root,
         )
         self.menu_workspace_multiple.append_item(submenu_rename)
-
         for item_type in fields:
             title = item_type.__gtype_name__
             menuitem = Gio.MenuItem.new()
@@ -467,24 +474,6 @@ class MiAZWorkspace(Gtk.Box):
             self.app.add_action(action)
             menuitem.set_detailed_action(detailed_action='app.rename_%s' % title.lower())
             submenu_rename_root.append_item(menuitem)
-
-        # Submenu for mass adding
-        # ~ submenu_add_root = Gio.Menu.new()
-        # ~ submenu_add = Gio.MenuItem.new_submenu(
-            # ~ label='Mass adding of...',
-            # ~ submenu=submenu_add_root,
-        # ~ )
-        # ~ self.menu_workspace_multiple.append_item(submenu_add)
-
-        # ~ for item in fields:
-            # ~ menuitem = Gio.MenuItem.new()
-            # ~ menuitem.set_label(label='... %s' % item)
-            # ~ action = Gio.SimpleAction.new('add_%s' % item, None)
-            # ~ callback = 'self.action_add'
-            # ~ action.connect('activate', eval(callback), item)
-            # ~ self.app.add_action(action)
-            # ~ menuitem.set_detailed_action(detailed_action='app.add_%s' % item)
-            # ~ submenu_add_root.append_item(menuitem)
 
         item_force_update = Gio.MenuItem.new()
         item_force_update.set_label(label='Force update')
@@ -520,14 +509,14 @@ class MiAZWorkspace(Gtk.Box):
         return model.get_item(pos)
 
     def update(self, *args):
-        repo = self.backend.repo_config()
         self._on_explain_toggled(self.tgbExplain)
+        repo = self.backend.repo_config()
         repocnf = repo['cnf_file']
         self.repodct = self.util.json_load(repocnf)
-        who = self.app.get_config('Person')
+        sentby = self.app.get_config('SentBy')
+        sentto = self.app.get_config('SentTo')
         items = []
         for path in self.repodct:
-            # ~ self.log.debug(self.repodct[])
             valid = self.repodct[path]['valid']
             fields = self.repodct[path]['fields']
             try:
@@ -545,11 +534,11 @@ class MiAZWorkspace(Gtk.Box):
                                     subgroup=fields[3],
                                     purpose=fields[5],
                                     sentby_id=fields[4],
-                                    sentby_dsc=who.get(fields[4]),
+                                    sentby_dsc=sentby.get(fields[4]),
                                     title=os.path.basename(path),
                                     subtitle=fields[6],
                                     sentto_id=fields[7],
-                                    sentto_dsc=who.get(fields[7]),
+                                    sentto_dsc=sentto.get(fields[7]),
                                     valid=valid)
                                 )
         self.view.update(items)
@@ -558,18 +547,6 @@ class MiAZWorkspace(Gtk.Box):
         if self.show_dashboard:
             self.tgbExplain.set_active(True)
         self.lblDocumentsSelected = "0 of %d documents selected" % len(self.repodct)
-
-    # ~ def update_filters(self, item, ival):
-        # ~ n = 0
-        # ~ for field in ['date', 'country', 'collection', 'from', 'purpose', 'concept', 'to']:
-            # ~ try:
-                # ~ values = self.dfilter[field]
-                # ~ values.add(ival[n])
-            # ~ except Exception as error:
-                # ~ values = set()
-                # ~ values.add(ival[n])
-                # ~ self.dfilter[field] = values
-            # ~ n += 1
 
     def update_title(self):
         # ~ label = self.factory.create_label(text= "Displaying %d of %d documents" % (self.displayed, len(self.repodct)))
@@ -623,11 +600,6 @@ class MiAZWorkspace(Gtk.Box):
         self.view.refilter()
         self.update_title()
         self.display_dashboard()
-        # ~ if self.num_review > 0:
-            # ~ self.statusbar.set_visible(True)
-        # ~ else:
-            # ~ self.display_dashboard()
-            # ~ self.statusbar.set_visible(False)
 
     def _on_select_all(self, *args):
         selection = self.view.get_selection()
@@ -649,34 +621,6 @@ class MiAZWorkspace(Gtk.Box):
         self.tgbExplain.set_active(True)
         self.tgbExplain.set_visible(True)
         self.tgbFilters.set_visible(True)
-        # ~ if self.num_review > 0:
-            # ~ self.statusbar.set_visible(True)
-            # ~ self.message_label.set_markup('There are new documents pending of review')
-            # ~ self.infobar.set_message_type(Gtk.MessageType.ERROR)
-            # ~ self.btnReview.set_visible(True)
-            # ~ self.btnDashboard.set_visible(False)
-        # ~ else:
-            # ~ self.statusbar.set_visible(True)
-
-    # ~ def display_review(self, *args):
-        # ~ self.log.debug("Review documents")
-        # ~ self.displayed = 0
-        # ~ self.dfilter = {}
-        # ~ self.show_dashboard = False
-        # ~ self.view.refilter()
-        # ~ self.update_title()
-        # ~ self.btnDashboard.set_visible(True)
-        # ~ self.btnReview.set_visible(False)
-        # ~ self.tgbExplain.set_active(False)
-        # ~ self.tgbExplain.set_visible(False)
-        # ~ self.tgbFilters.set_visible(False)
-        # ~ self.statusbar.set_visible(True)
-        # ~ self.message_label.set_markup('<b>Review finished?</b>')
-        # ~ self.infobar.set_message_type(Gtk.MessageType.INFO)
-        # ~ self.view.column_title.set_title('Filename')
-        # ~ self.view.column_title.set_expand(True)
-        # ~ btnBack = self.infobar.add_button('Back to AZ', Gtk.ResponseType.CANCEL)
-
 
     def foreach(self):
         last = self.model_filter.get_n_items()
