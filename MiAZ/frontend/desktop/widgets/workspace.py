@@ -379,7 +379,9 @@ class MiAZWorkspace(Gtk.Box):
                 icon_name = 'miaz-ko'
             row = self.factory.create_box_horizontal()
             button = self.factory.create_button(icon_name=icon_name)
-            label = Gtk.Label.new(reason)
+            label = Gtk.Label()
+            label.set_markup(reason)
+            label.get_style_context().add_class(class_name='caption')
             row.append(button)
             row.append(label)
             listbox.append(child=row)

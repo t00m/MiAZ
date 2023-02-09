@@ -98,6 +98,21 @@ class MiAZConfig(GObject.GObject):
         items[key] = value
         self.save(items=items)
 
+    def exists_used(self, key: str) -> bool:
+        config = self.load(self.used)
+        if key in config:
+            return True
+        else:
+            return False
+
+    def exists_available(self, key: str) -> bool:
+        config = self.load(self.available)
+        if key in config:
+            return True
+        else:
+            return False
+
+
     def exists(self, key: str) -> bool:
         found = False
 

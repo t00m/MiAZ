@@ -351,17 +351,17 @@ class MiAZUtil(GObject.GObject):
         # Check SentBy (5th field)
         try:
             code = fields[4]
-            is_people = self.conf['SentBy'].exists(code)
-            if not is_people:
+            used = self.conf['SentBy'].exists_available(code)
+            available = self.conf['SentBy'].exists_used(code)
+            if not used and not available:
                 valid &= False
-                reasons.append((False,
-                                "Person '%s' is not in your list. " \
-                                "Please, add it first." % code))
+                message = "Sender '%s' available? %s. And is it used? %s" % (code, available, used)
+                reasons.append((False, message))
             else:
-                reasons.append((True, "Person '%s' accepted" % code))
+                reasons.append((True, "Sender '%s' accepted" % code))
         except IndexError:
             valid &= False
-            reasons.append((False, "Person couldn't be checked"))
+            reasons.append((False, "Sender '%s' couldn't be checked" % code))
 
         # Check purpose (6th field)
         try:
@@ -388,18 +388,18 @@ class MiAZUtil(GObject.GObject):
 
         # Check SentTo (8th field)
         try:
-            code = fields[4]
-            is_people = self.conf['SentTo'].exists(code)
-            if not is_people:
+            code = fields[7]
+            used = self.conf['SentTo'].exists_available(code)
+            available = self.conf['SentTo'].exists_used(code)
+            if not used and not available:
                 valid &= False
-                reasons.append((False,
-                                "Person '%s' is not in your list. " \
-                                "Please, add it first." % code))
+                message = "Receiver '%s' available? %s. And is it used? %s" % (code, available, used)
+                reasons.append((False, message))
             else:
-                reasons.append((True, "Person '%s' accepted" % code))
+                reasons.append((True, "Receiver '%s' accepted" % code))
         except IndexError:
             valid &= False
-            reasons.append((False, "Person couldn't be checked"))
+            reasons.append((False, "Receiver '%s' couldn't be checked" % code))
 
         # ~ if partitioning is True:
             # ~ self.conf['Group'].add_available(fields[2])

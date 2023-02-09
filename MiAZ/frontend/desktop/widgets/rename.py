@@ -61,7 +61,7 @@ class MiAZRenameDialog(Gtk.Box):
         self.append(frmMain)
 
         self.btnAccept = self.factory.create_button('miaz-ok', 'rename', self.on_rename_accept, css_classes=['opaque'])
-        self.btnAccept.set_sensitive(False)
+        self.btnAccept.set_sensitive(True)
         # ~ self.btnAccept.get_style_context ().add_class('suggested-action')
         self.btnAccept.set_can_focus(True)
         self.btnAccept.set_receives_default(True)
@@ -322,23 +322,24 @@ class MiAZRenameDialog(Gtk.Box):
             acountry = dropdown_get_selected_item(self.dpdCountry)
             agroup = dropdown_get_selected_item(self.dpdGroup)
             asubgroup = dropdown_get_selected_item(self.dpdSubgroup)
-            sentby = dropdown_get_selected_item(self.dpdSentBy)
+            asentby = dropdown_get_selected_item(self.dpdSentBy)
             apurpose = dropdown_get_selected_item(self.dpdPurpose)
             aconcept = self.entry_concept.get_text().replace(' ', '_')
-            sentto = dropdown_get_selected_item(self.dpdSentTo)
+            asentto = dropdown_get_selected_item(self.dpdSentTo)
             aextension = self.lblExt.get_text()
             fields.append(adate)        # 0. Date
             fields.append(acountry)     # 1. Country
             fields.append(agroup)       # 2. Group
             fields.append(asubgroup)    # 3. Subgroup
-            fields.append(sentby)       # 4. SentBy
+            fields.append(asentby)       # 4. SentBy
             fields.append(apurpose)     # 5. Purpose
             fields.append(aconcept)     # 6. Concept
-            fields.append(sentto)       # 7. SentTo
+            fields.append(asentto)       # 7. SentTo
             self.result = "%s.%s" % ('-'.join(fields), aextension)
             self.lblFilenameNew.set_markup(self.result)
 
-            person = self.app.get_config('Person')
+            sentby = self.app.get_config('SentBy')
+            sentto = self.app.get_config('SentTo')
             countries = self.app.get_config('Country')
             groups = self.app.get_config('Group')
             subgroups = self.app.get_config('Subgroup')
@@ -347,10 +348,10 @@ class MiAZRenameDialog(Gtk.Box):
             v_group = len(agroup) > 0
             v_subgroup = len(asubgroup) > 0
             v_cty = countries.exists(acountry)
-            v_sentby = person.exists(sentby)
+            v_sentby = sentby.exists_used(asentby)
             v_purp = len(apurpose) > 0
             v_cnpt = len(aconcept) > 0
-            v_sentto = person.exists(sentto)
+            v_sentto = sentto.exists_used(asentto)
 
             if v_group:
                 success_or_warning(self.rowGroup, groups.exists(agroup))
@@ -376,13 +377,13 @@ class MiAZRenameDialog(Gtk.Box):
             if v_date and v_sentby and v_sentto and v_cty and v_group and v_subgroup and v_purp and v_cnpt:
                 self.btnAccept.set_sensitive(True)
             else:
-                self.btnAccept.set_sensitive(False)
+                self.btnAccept.set_sensitive(True)
 
             try:
                 source = os.path.basename(self.get_filepath_source())
                 target = os.path.basename(self.get_filepath_target())
                 if source == target:
-                    self.btnAccept.set_sensitive(False)
+                    self.btnAccept.set_sensitive(True)
             except AttributeError:
                 # Rename hasn't been called yet for a file. Skip
                 # This happens when sth is modified from Repo Assistant
