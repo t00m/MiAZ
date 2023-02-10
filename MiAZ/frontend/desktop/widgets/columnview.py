@@ -45,6 +45,7 @@ class ColMenuButton(Gtk.Box):
         popover = Gtk.Popover()
         button = Gtk.MenuButton()
         button.set_popover(popover)
+        button.get_style_context().add_class(class_name='flat')
         self.append(button)
 
 class ColCheck(Gtk.Box):

@@ -59,7 +59,7 @@ class MiAZColumnViewWorkspace(MiAZColumnView):
         self.factory_flag = Gtk.SignalListItemFactory()
         self.factory_flag.connect("setup", self._on_factory_setup_flag)
         self.factory_flag.connect("bind", self._on_factory_bind_flag)
-        self.column_flag = Gtk.ColumnViewColumn.new("Flag", self.factory_flag)
+        # ~ self.column_flag = Gtk.ColumnViewColumn.new("Country", self.factory_flag)
 
         # Setup columnview columns
         # ~ self.column_id = Gtk.ColumnViewColumn.new("Id", self.factory_id)
@@ -76,7 +76,7 @@ class MiAZColumnViewWorkspace(MiAZColumnView):
         self.column_sentto = Gtk.ColumnViewColumn.new("Sent to", self.factory_sentto)
         self.column_purpose = Gtk.ColumnViewColumn.new("Purpose", self.factory_purpose)
         self.column_date = Gtk.ColumnViewColumn.new("Date", self.factory_date)
-        self.column_flag = Gtk.ColumnViewColumn.new("Flag", self.factory_flag)
+        self.column_flag = Gtk.ColumnViewColumn.new("Country", self.factory_flag)
 
         self.cv.append_column(self.column_icon_type)
         self.cv.append_column(self.column_group)
@@ -140,8 +140,10 @@ class MiAZColumnViewWorkspace(MiAZColumnView):
         # ~ icon = box.get_first_child()
         if item.valid:
             mimetype, val = Gio.content_type_guess('filename=%s' % item.id)
-            self.log.debug(mimetype)
-            child=Adw.ButtonContent(label='', icon_name='x-office-document')
+            gicon = Gio.content_type_get_icon(mimetype)
+            icon_name = self.app.icman.choose_icon(gicon.get_names())
+            self.log.debug(icon_name)
+            child=Adw.ButtonContent(label='', icon_name=icon_name)
             button.set_child(child)
             # ~ >>> import gi
             # ~ >>> mimetype = 'application/pdf'
@@ -262,7 +264,7 @@ class MiAZColumnViewCountry(MiAZColumnView):
         factory_flag = Gtk.SignalListItemFactory()
         factory_flag.connect("setup", self._on_factory_setup_flag)
         factory_flag.connect("bind", self._on_factory_bind_flag)
-        self.column_flag = Gtk.ColumnViewColumn.new("Flag", factory_flag)
+        self.column_flag = Gtk.ColumnViewColumn.new("Country", factory_flag)
         self.cv.append_column(self.column_flag)
         self.cv.append_column(self.column_id)
         self.cv.append_column(self.column_title)
