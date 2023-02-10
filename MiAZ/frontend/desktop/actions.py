@@ -70,13 +70,16 @@ class MiAZActions(GObject.GObject):
         config = self.backend.repo_config()
         repodct = config['dct_repo']
         source = item.id
-        if repodct[source]['valid']:
-            basename = os.path.basename(source)
-            filename = basename[:basename.rfind('.')]
-            target = filename.split('-')
-        else:
-            repodct[source]['suggested'] = self.backend.util.suggest_filename(source)
-            target = repodct[source]['suggested'].split('-')
+        basename = os.path.basename(source)
+        filename = basename[:basename.rfind('.')]
+        target = filename.split('-')
+        # ~ if repodct[source]['valid']:
+            # ~ basename = os.path.basename(source)
+            # ~ filename = basename[:basename.rfind('.')]
+            # ~ target = filename.split('-')
+        # ~ else:
+            # ~ repodct[source]['suggested'] = self.backend.util.suggest_filename(source)
+            # ~ target = repodct[source]['suggested'].split('-')
         rename = self.app.get_rename_widget()
         rename.set_data(source, target)
         self.app.show_stack_page_by_name('rename')
