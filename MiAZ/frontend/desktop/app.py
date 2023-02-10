@@ -193,7 +193,7 @@ class MiAZApp(Adw.Application):
                                  ('help', ['<Ctrl>h']),
                                  ('about', ['<Ctrl>b']),
                                  ('close', ['<Ctrl>q']),
-                                 ('view', ['<Ctrl>v']),
+                                 ('view', ['<Ctrl>d']),
                                  ('rename', ['<Ctrl>r'])
                                 ]:
             self.factory.create_menu_action(action, self.menu_handler, shortcut)
