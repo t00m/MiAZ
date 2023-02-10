@@ -100,8 +100,8 @@ class MiAZRenameDialog(Gtk.Box):
         # ~ self.log.debug("F[%s] - S[%s]", filepath, suggested)
         self.filepath = filepath
         self.extension = filepath[filepath.rfind('.')+1:]
-        self.suggested = suggested
         self.doc = os.path.basename(filepath)
+        self.suggested = self.util.get_fields(self.doc)
 
         if len(self.suggested[0]) > 0:
             self.entry_date.set_text(self.suggested[0])
@@ -309,20 +309,20 @@ class MiAZRenameDialog(Gtk.Box):
             groups = self.app.get_config('Group')
             purposes = self.app.get_config('Purpose')
             v_date = self.validate_date(adate)
-            v_group = len(agroup) > 0
-            v_cty = countries.exists(acountry)
+            v_group = groups.exists_used(agroup)
+            v_cty = countries.exists_used(acountry)
             v_sentby = sentby.exists_used(asentby)
-            v_purp = len(apurpose) > 0
+            v_purp = purposes.exists_used(apurpose)
             v_cnpt = len(aconcept) > 0
             v_sentto = sentto.exists_used(asentto)
 
             if v_group:
-                success_or_warning(self.rowGroup, groups.exists(agroup))
+                success_or_warning(self.rowGroup, groups.exists_used(agroup))
             else:
                 success_or_error(self.rowGroup, v_group)
 
             if v_purp:
-                success_or_warning(self.rowPurpose, purposes.exists(apurpose))
+                success_or_warning(self.rowPurpose, purposes.exists_used(apurpose))
             else:
                 success_or_error(self.rowPurpose, v_purp)
 
@@ -332,20 +332,20 @@ class MiAZRenameDialog(Gtk.Box):
             success_or_error(self.rowConcept, v_cnpt)
             success_or_error(self.rowSentTo, v_sentto)
 
-            if v_date and v_sentby and v_sentto and v_cty and v_group and v_purp and v_cnpt:
-                self.btnAccept.set_sensitive(True)
-            else:
-                self.btnAccept.set_sensitive(True)
+            # ~ if v_date and v_sentby and v_sentto and v_cty and v_group and v_purp and v_cnpt:
+                # ~ self.btnAccept.set_sensitive(True)
+            # ~ else:
+                # ~ self.btnAccept.set_sensitive(True)
 
-            try:
-                source = os.path.basename(self.get_filepath_source())
-                target = os.path.basename(self.get_filepath_target())
-                if source == target:
-                    self.btnAccept.set_sensitive(True)
-            except AttributeError:
+            # ~ try:
+                # ~ source = os.path.basename(self.get_filepath_source())
+                # ~ target = os.path.basename(self.get_filepath_target())
+                # ~ if source == target:
+                    # ~ self.btnAccept.set_sensitive(True)
+            # ~ except AttributeError:
                 # Rename hasn't been called yet for a file. Skip
                 # This happens when sth is modified from Repo Assistant
-                pass
+                # ~ pass
 
 
         except Exception as error:
@@ -360,33 +360,6 @@ class MiAZRenameDialog(Gtk.Box):
         except:
             return False
 
-    def validate(self, fields: list) -> None:
-        valid_filename = False
-
-        # Validate Group:
-        cnfGroups = self.app.get_config('Group')
-        groups = cnfGroups.load()
-        if not cnfGroups.exists(fields[2]):
-            groups.append(fields[2])
-            cnfGroups.save(groups)
-            self.new_values.append(('groups', '', fields[2]))
-
-        # Validate SentBy:
-        cnfOrgs = self.app.get_config('Person')
-        orgs = cnfOrgs.load()
-        if not cnfOrgs.exists(fields[4]):
-            cnfOrgs.set(fields[4], '')
-            cnfOrgs.save(cnfOrgs)
-            self.new_values.append(('Sent by', '', fields[3]))
-
-        # Validate SentTo:
-        cnfOrgs = self.app.get_config('Person')
-        orgs = cnfOrgs.load()
-        if not cnfOrgs.exists(fields[7]):
-            cnfOrgs.set(fields[7], '')
-            cnfOrgs.save(cnfOrgs)
-            self.new_values.append(('To', '', fields[6]))
-
     def get_filepath_source(self) -> str:
         return self.filepath
 
@@ -394,7 +367,8 @@ class MiAZRenameDialog(Gtk.Box):
         return self.result
 
     def on_rename_accept(self, *args):
-        body = "<big>You are about to rename:\n\n<b>%s</b>\n\nto\n\n<b>%s</b></big>" % (os.path.basename(self.get_filepath_source()), self.get_filepath_target())
+        # ~ body = "<big>You are about to rename:\n\n<b>%s</b>\n\nto\n\n<b>%s</b></big>" % (os.path.basename(self.get_filepath_source()), self.get_filepath_target())
+        body = "New name: %s" % self.get_filepath_target()
         widget = Gtk.Label()
         widget.set_markup(body)
         question = self.factory.create_dialog_question(self.app.win, "Are you sure?", widget)
