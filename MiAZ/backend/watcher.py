@@ -24,7 +24,6 @@ class MiAZWatcher(GObject.GObject):
         self.name = name.lower()
         self.dirpath = dirpath
         sid = GObject.signal_lookup('repository-updated', MiAZWatcher)
-        self.log.debug("Watcher SID: %d", sid)
         if sid == 0:
             GObject.GObject.__init__(self)
             GObject.signal_new('repository-updated', MiAZWatcher, GObject.SignalFlags.RUN_LAST, None, () )
@@ -62,23 +61,17 @@ class MiAZWatcher(GObject.GObject):
         self.log.debug("Watcher[%s] installed. Monitoring '%s'", self.name, self.dirpath)
 
     def set_active(self, active: bool = True) -> None:
-        self.log.debug("%s = %s", self.name, self.dirpath)
-        self.log.debug("Current watcher status? %s", self.active)
         self.active = active
-        self.log.debug("New watcher status? %s", self.active)
 
     def get_active(self):
         return self.active
 
     def watch(self):
-        # ~ self.log.debug("Watcher[%s] active? %s", self.name, self.active)
         updated = False
         if not self.active:
-            self.log.debug("Watcher[%s] not active", self.name)
             return False
 
         if self.dirpath is None:
-            self.log.debug("Watcher[%s] directory not set", self.name)
             return False
 
         after = self.__files_with_timestamp(self.dirpath)

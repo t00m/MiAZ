@@ -5,6 +5,7 @@ from gi.repository import GObject
 class MiAZModel(GObject.Object):
     """Custom MiAZ data model to be subclassed"""
     __gtype_name__ = 'MiAZModel'
+    __title__ = 'MiAZModel'
 
     def __init__(self, id: str, title: str):
         super().__init__()
@@ -24,6 +25,7 @@ class MiAZItem(MiAZModel):
     {timestamp}-{country}-{group}-{sentby}-{purpose}-{concept}-{sentto}.{extension}
     """
     __gtype_name__ = 'MiAZItem'
+    __title__ = 'MiAZItem'
 
     def __init__(self,  id: str,
                         date: str = '',
@@ -118,9 +120,11 @@ class MiAZItem(MiAZModel):
 
 class Concept(MiAZModel):
     __gtype_name__ = 'Concept'
+    __title__ = 'Concept'
 
 class Country(MiAZModel):
     __gtype_name__ = 'Country'
+    __title__ = 'Country'
 
     def __init__(self,  id: str, title: str = '', icon: str = ''):
         super().__init__(id, title)
@@ -132,27 +136,36 @@ class Country(MiAZModel):
 
 class Date(MiAZModel):
     __gtype_name__ = 'Date'
+    __title__ = 'Date'
 
 class Extension(MiAZModel):
     __gtype_name__ = 'Extension'
+    __title__ = 'Extension'
 
 class File(MiAZModel):
     __gtype_name__ = 'File'
+    __title__ = 'File'
 
 class Group(MiAZModel):
     __gtype_name__ = 'Group'
+    __title__ = 'Group'
 
 class Person(MiAZModel):
     __gtype_name__ = 'Person'
+    __title__ = 'Person'
 
 class Purpose(MiAZModel):
     __gtype_name__ = 'Purpose'
+    __title__ = 'Purpose'
 
 class Repository(MiAZModel):
     __gtype_name__ = 'Repository'
+    __title__ = 'Repository'
 
 class SentBy(Person):
     __gtype_name__ = 'SentBy'
+    __title__ = 'Sender'
 
 class SentTo(Person):
     __gtype_name__ = 'SentTo'
+    __title__ = 'Receiver'

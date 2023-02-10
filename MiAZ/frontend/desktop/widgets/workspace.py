@@ -15,8 +15,6 @@ from gi.repository import GObject
 
 from MiAZ.backend.env import ENV
 from MiAZ.backend.log import get_logger
-# ~ from MiAZ.backend.util import json_load
-# ~ from MiAZ.backend.util import get_filename_details
 from MiAZ.backend.models import MiAZItem, File, Group, Person, Country, Purpose, Concept, SentBy, SentTo
 from MiAZ.frontend.desktop.util import get_file_mimetype
 from MiAZ.frontend.desktop.widgets.columnview import MiAZColumnView, ColIcon, ColLabel
@@ -166,32 +164,24 @@ class MiAZWorkspace(Gtk.Box):
         citems = []
         for item in self.selected_items:
             source = item.id
-            self.log.debug("Renaming: %s", source)
-            name, ext = self.util.get_filename_details(source)
-            self.log.debug("N[%s] E[%s]", name, ext)
+            name, ext = self.util.filename_details(source)
             n = Field[item_type]
-            self.log.debug("Field to change: %d (%s)", n, title)
             tmpfile = name.split('-')
             tmpfile[n] = dropdown.get_selected_item().id
-            self.log.debug("Built raw name: %s", tmpfile)
             filename = "%s.%s" % ('-'.join(tmpfile), ext)
-            self.log.debug("Target name: %s", filename)
             target = os.path.join(os.path.dirname(source), filename)
-            self.log.debug("Target filepath: %s", target)
             txtId = "<small>%s</small>" % os.path.basename(source)
             txtTitle = "<small>%s</small>" % os.path.basename(target)
             citems.append(File(id=txtId, title=txtTitle))
-            # ~ self.log.debug("Mass %s renaming: %s > %s", title, os.path.basename(source) , os.path.basename(target))
         columnview.update(citems)
 
 
     def _on_mass_renaming(self, dialog, response, dropdown, item_type):
-        # ~ util = self.backend.get_util()
-        title = item_type.__gtype_name__
+        title = item_type.__title__
         if response == Gtk.ResponseType.ACCEPT:
             for item in self.selected_items:
                 source = item.id
-                name, ext = self.util.get_filename_details(source)
+                name, ext = self.util.filename_details(source)
                 n = Field[item_type]
                 tmpfile = name.split('-')
                 tmpfile[n] = dropdown.get_selected_item().id
@@ -454,7 +444,7 @@ class MiAZWorkspace(Gtk.Box):
     def create_menu_selection_multiple(self):
         self.menu_workspace_multiple = Gio.Menu.new()
         # ~ {timestamp}-{country}-{group}-{sentby}-{purpose}-{concept}-{sentto}.{extension}
-        fields = [Country, Group, SentBy, Purpose, Concept, SentTo]
+        fields = [Country, Group, SentBy, Purpose, SentTo] # , Concept
 
         # Submenu for mass renaming
         submenu_rename_root = Gio.Menu.new()
@@ -464,31 +454,32 @@ class MiAZWorkspace(Gtk.Box):
         )
         self.menu_workspace_multiple.append_item(submenu_rename)
         for item_type in fields:
-            title = item_type.__gtype_name__
+            i_type = item_type.__gtype_name__
+            i_title = item_type.__title__
             menuitem = Gio.MenuItem.new()
-            menuitem.set_label(label='... %s' % title.lower())
-            action = Gio.SimpleAction.new('rename_%s' % title.lower(), None)
+            menuitem.set_label(label='... %s' % i_title.lower())
+            action = Gio.SimpleAction.new('rename_%s' % i_type.lower(), None)
             callback = 'self._on_action_rename'
             action.connect('activate', eval(callback), item_type)
             self.app.add_action(action)
-            menuitem.set_detailed_action(detailed_action='app.rename_%s' % title.lower())
+            menuitem.set_detailed_action(detailed_action='app.rename_%s' % i_type.lower())
             submenu_rename_root.append_item(menuitem)
 
-        item_force_update = Gio.MenuItem.new()
-        item_force_update.set_label(label='Force update')
-        action = Gio.SimpleAction.new('workspace_update', None)
+        # ~ item_force_update = Gio.MenuItem.new()
+        # ~ item_force_update.set_label(label='Force update')
+        # ~ action = Gio.SimpleAction.new('workspace_update', None)
         # ~ action.connect('activate', self.update)
-        self.app.add_action(action)
-        item_force_update.set_detailed_action(detailed_action='app.workspace_update')
-        self.menu_workspace_multiple.append_item(item_force_update)
+        # ~ self.app.add_action(action)
+        # ~ item_force_update.set_detailed_action(detailed_action='app.workspace_update')
+        # ~ self.menu_workspace_multiple.append_item(item_force_update)
 
-        item_delete = Gio.MenuItem.new()
-        item_delete.set_label(label='Delete documents')
-        action = Gio.SimpleAction.new('workspace_delete', None)
+        # ~ item_delete = Gio.MenuItem.new()
+        # ~ item_delete.set_label(label='Delete documents')
+        # ~ action = Gio.SimpleAction.new('workspace_delete', None)
         # ~ action.connect('activate', self.noop)
-        self.app.add_action(action)
-        item_delete.set_detailed_action(detailed_action='app.workspace_delete')
-        self.menu_workspace_multiple.append_item(item_delete)
+        # ~ self.app.add_action(action)
+        # ~ item_delete.set_detailed_action(detailed_action='app.workspace_delete')
+        # ~ self.menu_workspace_multiple.append_item(item_delete)
         return self.menu_workspace_multiple
 
     def get_model_filter(self):

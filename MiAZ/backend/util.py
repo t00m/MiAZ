@@ -93,12 +93,12 @@ class MiAZUtil(GObject.GObject):
                         documents.add(thisfile)
         return documents
 
-    def get_file_creation_date(self, filepath: str) -> datetime:
-        created = os.stat(filepath).st_ctime
-        adate = datetime.fromtimestamp(created)
-        return adate #.strftime("%Y%m%d")
+    # ~ def get_file_creation_date(self, filepath: str) -> datetime:
+        # ~ created = os.stat(filepath).st_ctime
+        # ~ adate = datetime.fromtimestamp(created)
+        # ~ return adate #.strftime("%Y%m%d")
 
-    def get_filename_details(self, filepath: str):
+    def filename_details(self, filepath: str):
         basename = os.path.basename(filepath)
         dot = basename.rfind('.')
         if dot > 0:
@@ -109,7 +109,7 @@ class MiAZUtil(GObject.GObject):
             ext = ''
         return name, ext
 
-    def is_normalized(self, name: str) -> bool:
+    def filename_is_normalized(self, name: str) -> bool:
         try:
             if len(name.split('-')) == 8:
                 normalized = True
@@ -120,8 +120,8 @@ class MiAZUtil(GObject.GObject):
         return normalized
 
     def filename_normalize(self, filename: str) -> str:
-        name, ext = self.get_filename_details(filename)
-        if not self.is_normalized(name):
+        name, ext = self.filename_details(filename)
+        if not self.filename_is_normalized(name):
             fields = ['' for fields in range(7)]
             fields[5] = name.replace('-', '_')
             filename = "%s.%s" % ('-'.join(fields), ext)
@@ -132,6 +132,15 @@ class MiAZUtil(GObject.GObject):
     def valid_key(self, key: str) -> str:
         key = str(key).strip().replace(' ', '_')
         return re.sub(r'(?u)[^-\w.]', '', key)
+
+    def filename_rename(self, source, target):
+        pass
+
+    def filename_copy(self, source, target):
+        pass
+
+    def filename_delete(self, doc):
+        pass
 
     def filename_display(self, doc):
         filepath = self.filename_path(doc)
@@ -156,7 +165,7 @@ class MiAZUtil(GObject.GObject):
             target = os.path.join(os.path.dirname(filepath), filename)
             shutil.move(filepath, target)
             self.log.debug("%s renamed to %s", filepath, filename)
-        name, ext = self.get_filename_details(filename)
+        name, ext = self.filename_details(filename)
         fields = name.split('-')
 
         # Check extension
