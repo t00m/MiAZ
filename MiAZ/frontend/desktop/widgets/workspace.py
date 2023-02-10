@@ -177,16 +177,18 @@ class MiAZWorkspace(Gtk.Box):
 
 
     def _on_mass_renaming(self, dialog, response, dropdown, item_type):
-        title = item_type.__title__
         if response == Gtk.ResponseType.ACCEPT:
+            repo = self.backend.repo_config()
+            repo_dir = repo['dir_docs']
+            title = item_type.__title__
             for item in self.selected_items:
-                source = item.id
+                source = os.path.join(repo_dir, item.id)
                 name, ext = self.util.filename_details(source)
                 n = Field[item_type]
                 tmpfile = name.split('-')
                 tmpfile[n] = dropdown.get_selected_item().id
                 filename = "%s.%s" % ('-'.join(tmpfile), ext)
-                target = os.path.join(os.path.dirname(source), filename)
+                target = os.path.join(repo_dir, filename)
                 shutil.move(source, target)
                 self.log.debug("Mass %s renaming: %s > %s", title, os.path.basename(source) , os.path.basename(target))
         dialog.destroy()
