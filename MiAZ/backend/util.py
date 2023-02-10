@@ -211,13 +211,10 @@ class MiAZUtil(GObject.GObject):
                 rc = False
                 message = "%s field is empty" % fname
             else:
-                used = self.conf[fname].exists_available(key)
-                available = self.conf[fname].exists_used(key)
-                if not used and not available:
-                    valid &= False
-                    rc = False
-                    message = "%s %s available? %s. Used? %s" % (fname, key, available, used)
-                else:
+                available = self.conf[fname].exists_available(key)
+                used = self.conf[fname].exists_used(key)
+                self.log.debug("%s[%s] A[%s] U[%s]", fname, key, available, used)
+                if available and used:
                     rc = True
                     items = self.conf[fname].load_used()
                     value = self.conf[fname].get(key)
@@ -225,5 +222,9 @@ class MiAZUtil(GObject.GObject):
                         message = "%s %s (%s) is available and ready to use" % (fname, key, value)
                     else:
                         message = "%s %s is available and ready to use" % (fname, key)
+                else:
+                    valid &= False
+                    rc = False
+                    message = "%s %s available? %s. Used? %s" % (fname, key, available, used)
             reasons.append((rc, message))
         return valid, reasons

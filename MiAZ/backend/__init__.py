@@ -27,7 +27,7 @@ class MiAZBackend(GObject.GObject):
     __gtype_name__ = 'MiAZBackend'
     conf = {}
     s_repodct = {}
-    util = None
+    # ~ util = None
     checking = False
 
     def __init__(self) -> None:
