@@ -17,8 +17,8 @@ from gi.repository.GdkPixbuf import Pixbuf
 
 from MiAZ.backend.log import get_logger
 from MiAZ.frontend.desktop.widgets.dialogs import MiAZDialogAdd
-from MiAZ.backend.models import File, Group, Subgroup, Person, Country, Purpose, Concept, SentBy, SentTo
-from MiAZ.frontend.desktop.widgets.configview import MiAZCountries, MiAZGroups, MiAZPeople, MiAZPurposes, MiAZSubgroups, MiAZPeopleSentBy, MiAZPeopleSentTo
+from MiAZ.backend.models import File, Group, Person, Country, Purpose, Concept, SentBy, SentTo
+from MiAZ.frontend.desktop.widgets.configview import MiAZCountries, MiAZGroups, MiAZPeople, MiAZPurposes, MiAZPeopleSentBy, MiAZPeopleSentTo
 
 
 class MiAZRenameDialog(Gtk.Box):
@@ -33,6 +33,7 @@ class MiAZRenameDialog(Gtk.Box):
         self.factory = self.app.get_factory()
         self.actions = self.app.get_actions()
         self.config = self.backend.conf
+        self.util = self.backend.util
         self.log = get_logger('MiazRenameDialog')
 
         # Box to be inserted as contents
@@ -40,11 +41,10 @@ class MiAZRenameDialog(Gtk.Box):
         self.boxMain.set_vexpand(True)
         self.boxMain.set_hexpand(True)
 
-        # Filename format: {timestamp}-{country}-{group}-{subgroup}-{from}-{purpose}-{concept}-{to}.{extension}
+        # Filename format: {timestamp}-{country}-{group}-{sentby}-{purpose}-{concept}-{sentto}.{extension}
         self.__create_field_0_date() # Field 0. Date
         self.__create_field_1_country() # Field 1. Country
         self.__create_field_2_group() # Field 2. Group
-        self.__create_field_3_subgroup() # Field 2. Subgroup
         self.__create_field_4_sentby() # Field 4. Sent by
         self.__create_field_5_purpose() # Field 5. Purpose
         self.__create_field_6_concept() # Field 6. Concept
@@ -80,7 +80,6 @@ class MiAZRenameDialog(Gtk.Box):
 
         self.config['Country'].connect('repo-settings-updated-countries-used', self.update_dropdown, Country)
         self.config['Group'].connect('repo-settings-updated-groups-used', self.update_dropdown, Group)
-        self.config['Subgroup'].connect('repo-settings-updated-subgroups', self.update_dropdown, Subgroup)
         self.config['SentBy'].connect('repo-settings-updated-sentby', self.update_dropdown, SentBy)
         self.config['Purpose'].connect('repo-settings-updated-purposes', self.update_dropdown, Purpose)
         self.config['SentTo'].connect('repo-settings-updated-sentto', self.update_dropdown, SentTo)
@@ -109,12 +108,11 @@ class MiAZRenameDialog(Gtk.Box):
             self.entry_date.set_text(self.suggested[0])
         self._set_suggestion(self.dpdCountry, self.suggested[1])
         self._set_suggestion(self.dpdGroup, self.suggested[2])
-        self._set_suggestion(self.dpdSubgroup, self.suggested[3])
-        self._set_suggestion(self.dpdSentBy, self.suggested[4])
-        self._set_suggestion(self.dpdPurpose, self.suggested[5])
-        if len(self.suggested[6]) > 0:
-            self.entry_concept.set_text(self.suggested[6])
-        self._set_suggestion(self.dpdSentTo, self.suggested[7])
+        self._set_suggestion(self.dpdSentBy, self.suggested[3])
+        self._set_suggestion(self.dpdPurpose, self.suggested[4])
+        if len(self.suggested[5]) > 0:
+            self.entry_concept.set_text(self.suggested[5])
+        self._set_suggestion(self.dpdSentTo, self.suggested[6])
         self.lblExt.set_text(self.extension)
         self.lblFilenameCur.set_markup(self.doc)
         self.lblFilenameCur.set_selectable(True)
@@ -189,12 +187,6 @@ class MiAZRenameDialog(Gtk.Box):
         self.dropdown['Group'] = self.dpdGroup
         self.btnGroup.connect('clicked', self.on_resource_manage, MiAZGroups(self.app))
         self.dpdGroup.connect("notify::selected-item", self.on_changed_entry)
-
-    def __create_field_3_subgroup(self):
-        self.rowSubgroup, self.btnSubgroup, self.dpdSubgroup = self.__create_actionrow('Subgroup', Subgroup, 'subgroups')
-        self.dropdown['Subgroup'] = self.dpdSubgroup
-        self.btnSubgroup.connect('clicked', self.on_resource_manage, MiAZSubgroups(self.app))
-        self.dpdSubgroup.connect("notify::selected-item", self.on_changed_entry)
 
     def __create_field_4_sentby(self):
         self.rowSentBy, self.btnSentBy, self.dpdSentBy = self.__create_actionrow('Sent by', SentBy, 'Sentby')
@@ -321,7 +313,6 @@ class MiAZRenameDialog(Gtk.Box):
             adate = self.entry_date.get_text()
             acountry = dropdown_get_selected_item(self.dpdCountry)
             agroup = dropdown_get_selected_item(self.dpdGroup)
-            asubgroup = dropdown_get_selected_item(self.dpdSubgroup)
             asentby = dropdown_get_selected_item(self.dpdSentBy)
             apurpose = dropdown_get_selected_item(self.dpdPurpose)
             aconcept = self.entry_concept.get_text().replace(' ', '_')
@@ -330,7 +321,6 @@ class MiAZRenameDialog(Gtk.Box):
             fields.append(adate)        # 0. Date
             fields.append(acountry)     # 1. Country
             fields.append(agroup)       # 2. Group
-            fields.append(asubgroup)    # 3. Subgroup
             fields.append(asentby)       # 4. SentBy
             fields.append(apurpose)     # 5. Purpose
             fields.append(aconcept)     # 6. Concept
@@ -342,11 +332,9 @@ class MiAZRenameDialog(Gtk.Box):
             sentto = self.app.get_config('SentTo')
             countries = self.app.get_config('Country')
             groups = self.app.get_config('Group')
-            subgroups = self.app.get_config('Subgroup')
             purposes = self.app.get_config('Purpose')
             v_date = self.validate_date(adate)
             v_group = len(agroup) > 0
-            v_subgroup = len(asubgroup) > 0
             v_cty = countries.exists(acountry)
             v_sentby = sentby.exists_used(asentby)
             v_purp = len(apurpose) > 0
@@ -357,11 +345,6 @@ class MiAZRenameDialog(Gtk.Box):
                 success_or_warning(self.rowGroup, groups.exists(agroup))
             else:
                 success_or_error(self.rowGroup, v_group)
-
-            if v_subgroup:
-                success_or_warning(self.rowSubgroup, subgroups.exists(asubgroup))
-            else:
-                success_or_error(self.rowSubgroup, v_subgroup)
 
             if v_purp:
                 success_or_warning(self.rowPurpose, purposes.exists(apurpose))
@@ -374,7 +357,7 @@ class MiAZRenameDialog(Gtk.Box):
             success_or_error(self.rowConcept, v_cnpt)
             success_or_error(self.rowSentTo, v_sentto)
 
-            if v_date and v_sentby and v_sentto and v_cty and v_group and v_subgroup and v_purp and v_cnpt:
+            if v_date and v_sentby and v_sentto and v_cty and v_group and v_purp and v_cnpt:
                 self.btnAccept.set_sensitive(True)
             else:
                 self.btnAccept.set_sensitive(True)
@@ -413,21 +396,13 @@ class MiAZRenameDialog(Gtk.Box):
             cnfGroups.save(groups)
             self.new_values.append(('groups', '', fields[2]))
 
-        # Validate Subgroup:
-        cnfSubgroups = self.app.get_config('Subgroup')
-        subgroups = cnfSubgroups.load()
-        if not cnfSubgroups.exists(fields[3]):
-            subgroups.append(fields[3])
-            cnfSubgroups.save(subgroups)
-            self.new_values.append(('subgroups', '', fields[3]))
-
         # Validate SentBy:
         cnfOrgs = self.app.get_config('Person')
         orgs = cnfOrgs.load()
         if not cnfOrgs.exists(fields[4]):
             cnfOrgs.set(fields[4], '')
             cnfOrgs.save(cnfOrgs)
-            self.new_values.append(('Sent by', '', fields[4]))
+            self.new_values.append(('Sent by', '', fields[3]))
 
         # Validate SentTo:
         cnfOrgs = self.app.get_config('Person')
@@ -435,7 +410,7 @@ class MiAZRenameDialog(Gtk.Box):
         if not cnfOrgs.exists(fields[7]):
             cnfOrgs.set(fields[7], '')
             cnfOrgs.save(cnfOrgs)
-            self.new_values.append(('To', '', fields[7]))
+            self.new_values.append(('To', '', fields[6]))
 
     def get_filepath_source(self) -> str:
         return self.filepath
@@ -455,7 +430,6 @@ class MiAZRenameDialog(Gtk.Box):
         if response == Gtk.ResponseType.ACCEPT:
             source = self.get_filepath_source()
             target = os.path.join(os.path.dirname(source), self.get_filepath_target())
-            self.log.debug("%s => %s", source, target)
             if source != target:
                 if not os.path.exists(target):
                     shutil.move(source, target)
@@ -472,9 +446,10 @@ class MiAZRenameDialog(Gtk.Box):
     def on_rename_cancel(self, *args):
         self.app.show_stack_page_by_name('workspace')
 
-    def on_document_display(self, button, filepath):
-        self.log.debug("Displaying %s", filepath)
-        os.system("xdg-open '%s'" % filepath)
+    def on_document_display(self, button, doc):
+        self.log.debug("Displaying %s", doc)
+        self.util.filename_display(doc)
+
 
     def on_document_delete(self, button, filepath):
         body = "<big>You are about to delete the following document:\n\n<b>%s</b>\n\nConfirm, please.</big>" % os.path.basename(filepath)

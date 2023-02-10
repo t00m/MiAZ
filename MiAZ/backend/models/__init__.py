@@ -21,7 +21,7 @@ class MiAZModel(GObject.Object):
 
 class MiAZItem(MiAZModel):
     """Custom data model for MiAZ use cases
-    {timestamp}-{country}-{group}-{subgroup}-{from}-{purpose}-{concept}-{to}.{extension}
+    {timestamp}-{country}-{group}-{sentby}-{purpose}-{concept}-{sentto}.{extension}
     """
     __gtype_name__ = 'MiAZItem'
 
@@ -29,7 +29,6 @@ class MiAZItem(MiAZModel):
                         date: str = '',
                         date_dsc: str = '',
                         group: str = '',
-                        subgroup: str = '',
                         country: str = '',
                         purpose: str = '',
                         sentby_id: str = '',
@@ -46,7 +45,6 @@ class MiAZItem(MiAZModel):
         self._date = date
         self._date_dsc = date_dsc
         self._group = group
-        self._subgroup = subgroup
         self._country = country
         self._purpose = purpose
         self._sentby_id = sentby_id
@@ -69,10 +67,6 @@ class MiAZItem(MiAZModel):
     @GObject.Property
     def group(self):
         return self._group
-
-    @GObject.Property
-    def subgroup(self):
-        return self._subgroup
 
     @GObject.Property
     def country(self):
@@ -162,6 +156,3 @@ class SentBy(Person):
 
 class SentTo(Person):
     __gtype_name__ = 'SentTo'
-
-class Subgroup(MiAZModel):
-    __gtype_name__ = 'Subgroup'

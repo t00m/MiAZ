@@ -19,11 +19,8 @@ from gi.repository import Pango
 from gi.repository.GdkPixbuf import Pixbuf
 from MiAZ.backend.env import ENV
 from MiAZ.backend.log import get_logger
-
-# ~ from MiAZ.frontend.desktop.settings import MiAZSettings
 from MiAZ.frontend.desktop.widgets.configview import MiAZCountries
 from MiAZ.frontend.desktop.widgets.configview import MiAZGroups
-from MiAZ.frontend.desktop.widgets.configview import MiAZSubgroups
 from MiAZ.frontend.desktop.widgets.configview import MiAZPurposes
 from MiAZ.frontend.desktop.widgets.configview import MiAZPeopleSentBy
 from MiAZ.frontend.desktop.widgets.configview import MiAZPeopleSentTo
@@ -33,12 +30,11 @@ class PAGE(IntEnum):
     WELCOME = 0
     COUNTRIES = 1
     GROUPS = 2
-    SUBGROUPS = 3
+    SENTBY = 3
     PURPOSES = 4
-    SENTBY = 5
-    SENTTO = 6
-    STATS = 7
-    SUMMARY = 8
+    SENTTO = 5
+    STATS = 6
+    SUMMARY = 7
 
 class MiAZAssistant(Gtk.Assistant):
     """ Start up Assistant"""
@@ -206,7 +202,7 @@ class MiAZAssistantRepoSettings(MiAZAssistant):
         self.connect('apply', self.on_assistant_close)
 
         # Pages
-        for title in ['Welcome', 'Countries', 'Groups', 'Subgroups', 'Purposes', 'Sent by', 'Sent to', 'Stats']: #, 'Summary']:
+        for title in ['Welcome', 'Countries', 'Groups', 'Purposes', 'Sent by', 'Sent to', 'Stats']: #, 'Summary']:
             vbox = Gtk.CenterBox(orientation=Gtk.Orientation.VERTICAL)
             vbox.set_margin_top(margin=12)
             vbox.set_margin_end(margin=12)
@@ -214,7 +210,6 @@ class MiAZAssistantRepoSettings(MiAZAssistant):
             vbox.set_margin_start(margin=12)
             self.append_page(vbox)
             self.set_page_title(vbox, title)
-
 
         # Page Welcome
         page = self.get_nth_page(PAGE.WELCOME)
@@ -270,28 +265,6 @@ class MiAZAssistantRepoSettings(MiAZAssistant):
         page.set_start_widget(box)
         lblInfo = Gtk.Label()
         lblInfo.set_markup("Manage groups")
-        page.set_end_widget(lblInfo)
-        self.set_page_type(page, Gtk.AssistantPageType.CONTENT)
-        self.set_page_complete(page, True)
-
-        # Page Subgroups
-        page = self.get_nth_page(PAGE.SUBGROUPS)
-        box = self.factory.create_box_vertical(spacing=12, vexpand=True, hexpand=True)
-        # ~ lblTitle = Gtk.Label()
-        # ~ lblTitle.set_markup('Manage subgroups')
-        # ~ lblTitle.get_style_context().add_class(class_name='title-2')
-        # ~ box.append(lblTitle)
-        lblDesc = Gtk.Label()
-        lblDesc.set_markup('')
-        lblDesc.set_xalign(0.0)
-        box.append(lblDesc)
-        selector = MiAZSubgroups(self.app)
-        selector.set_vexpand(True)
-        selector.update()
-        box.append(selector)
-        page.set_start_widget(box)
-        lblInfo = Gtk.Label()
-        lblInfo.set_markup("Manage subgroups")
         page.set_end_widget(lblInfo)
         self.set_page_type(page, Gtk.AssistantPageType.CONTENT)
         self.set_page_complete(page, True)

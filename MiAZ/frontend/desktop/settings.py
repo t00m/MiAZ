@@ -15,7 +15,6 @@ from gi.repository import Gtk
 from MiAZ.backend.env import ENV
 from MiAZ.backend.log import get_logger
 from MiAZ.frontend.desktop.widgets.configview import MiAZGroups
-from MiAZ.frontend.desktop.widgets.configview import MiAZSubgroups
 from MiAZ.frontend.desktop.widgets.configview import MiAZPurposes
 from MiAZ.frontend.desktop.widgets.configview import MiAZCountries
 from MiAZ.frontend.desktop.widgets.configview import MiAZPeople
@@ -45,7 +44,6 @@ class MiAZSettings(Gtk.Box):
     def _get_group_resources(self):
         self.row_res_countries = self._create_action_row_res_countries()
         self.row_res_groups = self._create_action_row_res_groups()
-        self.row_res_subgroups = self._create_action_row_res_subgroups()
         self.row_res_purposes = self._create_action_row_res_purposes()
         self.row_res_people = self._create_action_row_res_people()
 
@@ -53,7 +51,6 @@ class MiAZSettings(Gtk.Box):
         group.set_title("Resources")
         group.add(self.row_res_countries)
         group.add(self.row_res_groups)
-        group.add(self.row_res_subgroups)
         group.add(self.row_res_purposes)
         group.add(self.row_res_people)
         return group
@@ -72,15 +69,6 @@ class MiAZSettings(Gtk.Box):
         row.set_title("Groups")
         row.set_icon_name('miaz-res-group')
         button = self.factory.create_button('document-edit-symbolic', '', self.show_res_groups)
-        box = row.get_child()
-        box.append(button)
-        return row
-
-    def _create_action_row_res_subgroups(self):
-        row = Adw.ActionRow.new()
-        row.set_title("Subgroups")
-        row.set_icon_name('miaz-res-subgroup')
-        button = self.factory.create_button('document-edit-symbolic', '', self.show_res_subgroups)
         box = row.get_child()
         box.append(button)
         return row
@@ -115,13 +103,6 @@ class MiAZSettings(Gtk.Box):
             view = MiAZGroups(self.app)
             view.update()
             dialog = self.factory.create_dialog(self.app.win, 'Groups', view, 600, 480)
-            dialog.show()
-
-    def show_res_subgroups(self, *args):
-        if self.is_repo_set():
-            view = MiAZSubgroups(self.app)
-            view.update()
-            dialog = self.factory.create_dialog(self.app.win, 'Subgroups', view, 600, 480)
             dialog.show()
 
     def show_res_purposes(self, *args):

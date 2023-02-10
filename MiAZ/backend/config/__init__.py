@@ -6,7 +6,7 @@ from gi.repository import GObject
 from MiAZ.backend.env import ENV
 from MiAZ.backend.log import get_logger
 # ~ from MiAZ.backend.util import json_load, json_save
-from MiAZ.backend.models import MiAZModel, MiAZItem, File, Group, Subgroup, Person, Country, Purpose, Concept, SentBy, SentTo
+from MiAZ.backend.models import MiAZModel, MiAZItem, File, Group, Person, Country, Purpose, Concept, SentBy, SentTo
 
 class MiAZConfig(GObject.GObject):
     """ MiAZ Config class"""
@@ -289,33 +289,6 @@ class MiAZConfigSettingsGroups(MiAZConfig):
 
     def __repr__(self):
         return 'Group'
-
-class MiAZConfigSettingsSubgroups(MiAZConfig):
-    def __init__(self, backend, dir_conf):
-        sid = GObject.signal_lookup('repo-settings-updated-subgroups', MiAZConfigSettingsSubgroups)
-        if sid == 0:
-            GObject.GObject.__init__(self)
-            GObject.signal_new('repo-settings-updated-subgroups',
-                                MiAZConfigSettingsSubgroups,
-                                GObject.SignalFlags.RUN_LAST, None, () )
-        super().__init__(
-            backend = backend,
-            log=get_logger('MiAZ.Settings.Subgroups'),
-            config_for = 'Subgroups',
-            used = os.path.join(dir_conf, 'subgroups-used.json'),
-            available = os.path.join(dir_conf, 'subgroups-available.json'),
-            default = os.path.join(ENV['GPATH']['RESOURCES'],
-                            'MiAZ-subgroups.json'),
-            model = Subgroup,
-            must_copy = True
-        )
-
-    def __repr__(self):
-        return 'Subgroup'
-
-    def save(self, filepath: str = '', items: dict = {}) -> bool:
-        if self.save_data(filepath, items):
-            self.emit('repo-settings-updated-subgroups')
 
 class MiAZConfigSettingsPurposes(MiAZConfig):
     def __init__(self, backend, dir_conf):

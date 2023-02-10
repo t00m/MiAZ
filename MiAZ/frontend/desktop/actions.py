@@ -9,14 +9,12 @@ from gi.repository import GObject
 from gi.repository import Gtk
 
 from MiAZ.backend.log import get_logger
-# ~ from MiAZ.backend.util import normalize_filename
 from MiAZ.frontend.desktop.widgets.rename import MiAZRenameDialog
 
 class MiAZActions(GObject.GObject):
     def __init__(self, app):
         self.log = get_logger('MiAZActions')
         self.app = app
-        # ~ self.workspace = self.app.get_workspace()
         self.backend = self.app.get_backend()
         self.util = self.backend.util
 
@@ -31,7 +29,7 @@ class MiAZActions(GObject.GObject):
                 dirpath = gfile.get_path()
                 files = glob.glob(os.path.join(dirpath, '*.*'))
                 for filepath in files:
-                    target_name = self.util.normalize_filename(filepath)
+                    target_name = self.util.filename_normalize(filepath)
                     target = os.path.join(target_dir, target_name)
                     try:
                         shutil.copy(filepath, target)
@@ -52,7 +50,7 @@ class MiAZActions(GObject.GObject):
             gfile = filechooser.get_file()
             if gfile is not None:
                 filepath = gfile.get_path()
-                target_name = self.util.normalize_filename(filepath)
+                target_name = self.util.filename_normalize(filepath)
                 target = os.path.join(target_dir, target_name)
                 try:
                     shutil.copy(filepath, target)
@@ -63,8 +61,9 @@ class MiAZActions(GObject.GObject):
                     self.log.error(error)
         dialog.destroy()
 
-    def document_display(self, filepath):
-        os.system("xdg-open '%s'" % filepath)
+    def document_display(self, doc):
+        self.log.debug("Displaying %s", doc)
+        self.util.filename_display(doc)
 
     def document_rename(self, item):
         config = self.backend.repo_config()
@@ -73,13 +72,6 @@ class MiAZActions(GObject.GObject):
         basename = os.path.basename(source)
         filename = basename[:basename.rfind('.')]
         target = filename.split('-')
-        # ~ if repodct[source]['valid']:
-            # ~ basename = os.path.basename(source)
-            # ~ filename = basename[:basename.rfind('.')]
-            # ~ target = filename.split('-')
-        # ~ else:
-            # ~ repodct[source]['suggested'] = self.backend.util.suggest_filename(source)
-            # ~ target = repodct[source]['suggested'].split('-')
         rename = self.app.get_rename_widget()
         rename.set_data(source, target)
         self.app.show_stack_page_by_name('rename')

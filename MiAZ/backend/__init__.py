@@ -10,18 +10,16 @@ from gi.repository import GObject
 from MiAZ.backend.env import ENV
 from MiAZ.backend.log import get_logger
 from MiAZ.backend.util import MiAZUtil
-# ~ from MiAZ.backend.util import json_load, json_save
 from MiAZ.backend.watcher import MiAZWatcher
 from MiAZ.backend.config import MiAZConfigApp
 from MiAZ.backend.config import MiAZConfigSettingsCountries
 from MiAZ.backend.config import MiAZConfigSettingsGroups
-from MiAZ.backend.config import MiAZConfigSettingsSubgroups
 from MiAZ.backend.config import MiAZConfigSettingsPurposes
 from MiAZ.backend.config import MiAZConfigSettingsConcepts
 from MiAZ.backend.config import MiAZConfigSettingsPeople
 from MiAZ.backend.config import MiAZConfigSettingsSentBy
 from MiAZ.backend.config import MiAZConfigSettingsSentTo
-from MiAZ.backend.models import File, Group, Subgroup, Person, Country, Purpose, Concept
+from MiAZ.backend.models import File, Group, Person, Country, Purpose, Concept
 
 
 class MiAZBackend(GObject.GObject):
@@ -84,7 +82,6 @@ class MiAZBackend(GObject.GObject):
         self.conf['Country'].connect('repo-settings-updated-countries-used', self.repo_check)
         self.conf['Group'] = MiAZConfigSettingsGroups(self, dir_conf)
         self.conf['Group'].connect('repo-settings-updated-groups-used', self.repo_check)
-        self.conf['Subgroup'] = MiAZConfigSettingsSubgroups(self, dir_conf)
         self.conf['Purpose'] = MiAZConfigSettingsPurposes(self, dir_conf)
         self.conf['Concept'] = MiAZConfigSettingsConcepts(self, dir_conf)
         self.conf['SentBy'] = MiAZConfigSettingsSentBy(self, dir_conf)
@@ -118,21 +115,23 @@ class MiAZBackend(GObject.GObject):
         # Workflow
         # 1. Check and delete inconsistencies.
         for doc in self.s_repodct.copy():
-            if not os.path.exists(doc):
+            filepath = os.path.join(s_repodir, doc)
+            if not os.path.exists(filepath):
                 del(self.s_repodct[doc])
                 self.log.debug("File[%s] - Inconistency found. Deleted"
-                                                        % basename(doc))
+                                                        % doc)
 
         # 2. Rebuild repository dictionary
-        docs = self.util.get_files(s_repodir)
-        for doc in docs:
-            valid, reasons = self.util.validate_filename(doc)
+        filepaths = self.util.get_files(s_repodir)
+        for filepath in filepaths:
+            doc = os.path.basename(filepath)
+            valid, reasons = self.util.filename_validate(doc)
             self.s_repodct[doc] = {}
             self.s_repodct[doc]['valid'] = valid
             self.s_repodct[doc]['reasons'] = reasons
             self.s_repodct[doc]['suggested'] = None
             self.s_repodct[doc]['fields'] = self.util.get_fields(doc)
-        self.log.info("Repository check finished: %d documents analyzed", len(docs))
+        self.log.debug("Repository check finished: %d documents analyzed", len(filepaths))
         self.util.json_save(s_repocnf, self.s_repodct)
 
         # 3. Emit the 'source-configuration-updated' signal

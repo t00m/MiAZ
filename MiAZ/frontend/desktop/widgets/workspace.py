@@ -17,7 +17,7 @@ from MiAZ.backend.env import ENV
 from MiAZ.backend.log import get_logger
 # ~ from MiAZ.backend.util import json_load
 # ~ from MiAZ.backend.util import get_filename_details
-from MiAZ.backend.models import MiAZItem, File, Group, Subgroup, Person, Country, Purpose, Concept, SentBy, SentTo
+from MiAZ.backend.models import MiAZItem, File, Group, Person, Country, Purpose, Concept, SentBy, SentTo
 from MiAZ.frontend.desktop.util import get_file_mimetype
 from MiAZ.frontend.desktop.widgets.columnview import MiAZColumnView, ColIcon, ColLabel
 from MiAZ.frontend.desktop.factory import MenuHeader
@@ -30,10 +30,9 @@ from MiAZ.frontend.desktop.widgets.columnviews import MiAZColumnViewWorkspace, M
 Field = {}
 Field[Country] = 1
 Field[Group] = 2
-Field[Subgroup] = 3
-Field[SentBy] = 4
-Field[Purpose] = 5
-Field[SentTo] = 7
+Field[SentBy] = 3
+Field[Purpose] = 4
+Field[SentTo] = 6
 
 
 class MiAZWorkspace(Gtk.Box):
@@ -109,7 +108,7 @@ class MiAZWorkspace(Gtk.Box):
 
         # FIXME: Do NOT fill dropdowns here.
         self.dropdown = {}
-        for item_type in [Country, Group, Subgroup, SentBy, Purpose, SentTo]:
+        for item_type in [Country, Group, SentBy, Purpose, SentTo]:
             title = item_type.__gtype_name__
             dropdown = self.factory.create_dropdown_generic(item_type)
             self.actions.dropdown_populate(dropdown, item_type)
@@ -123,7 +122,6 @@ class MiAZWorkspace(Gtk.Box):
         self.backend.connect('source-configuration-updated', self.update)
         self.config['Country'].connect('repo-settings-updated-countries-used', self.update_dropdown, Country)
         self.config['Group'].connect('repo-settings-updated-groups-used', self.update_dropdown, Group)
-        self.config['Subgroup'].connect('repo-settings-updated-subgroups', self.update_dropdown, Subgroup)
         self.config['SentBy'].connect('repo-settings-updated-sentby', self.update_dropdown, SentBy)
         self.config['Purpose'].connect('repo-settings-updated-purposes', self.update_dropdown, Purpose)
         self.config['SentTo'].connect('repo-settings-updated-sentto', self.update_dropdown, SentTo)
@@ -211,7 +209,6 @@ class MiAZWorkspace(Gtk.Box):
             self.view.column_subtitle.set_visible(active)
             self.view.column_subtitle.set_expand(True)
             self.view.column_group.set_visible(active)
-            self.view.column_subgroup.set_visible(active)
             self.view.column_purpose.set_visible(active)
             self.view.column_flag.set_visible(active)
             self.view.column_sentby.set_visible(active)
@@ -456,8 +453,8 @@ class MiAZWorkspace(Gtk.Box):
 
     def create_menu_selection_multiple(self):
         self.menu_workspace_multiple = Gio.Menu.new()
-        # ~ {timestamp}-{country}-{group}-{subgroup}-{from}-{purpose}-{concept}-{to}.{extension}
-        fields = [Country, Group, Subgroup, SentBy, Purpose, Concept, SentTo]
+        # ~ {timestamp}-{country}-{group}-{sentby}-{purpose}-{concept}-{sentto}.{extension}
+        fields = [Country, Group, SentBy, Purpose, Concept, SentTo]
 
         # Submenu for mass renaming
         submenu_rename_root = Gio.Menu.new()
@@ -533,14 +530,13 @@ class MiAZWorkspace(Gtk.Box):
                                     date_dsc = date_dsc,
                                     country=fields[1],
                                     group=fields[2],
-                                    subgroup=fields[3],
-                                    purpose=fields[5],
-                                    sentby_id=fields[4],
-                                    sentby_dsc=sentby.get(fields[4]),
+                                    sentby_id=fields[3],
+                                    sentby_dsc=sentby.get(fields[3]),
+                                    purpose=fields[4],
                                     title=os.path.basename(path),
-                                    subtitle=fields[6],
-                                    sentto_id=fields[7],
-                                    sentto_dsc=sentto.get(fields[7]),
+                                    subtitle=fields[5].replace('_', ' '),
+                                    sentto_id=fields[6],
+                                    sentto_dsc=sentto.get(fields[6]),
                                     valid=valid)
                                 )
         self.view.update(items)
@@ -572,11 +568,10 @@ class MiAZWorkspace(Gtk.Box):
         c0 = self._do_eval_cond_matches_freetext(item.id)
         c1 = self._do_eval_cond_matches(self.dropdown['Country'], item.country)
         c2 = self._do_eval_cond_matches(self.dropdown['Group'], item.group)
-        c3 = self._do_eval_cond_matches(self.dropdown['Subgroup'], item.subgroup)
         c4 = self._do_eval_cond_matches(self.dropdown['SentBy'], item.sentby_id)
         c5 = self._do_eval_cond_matches(self.dropdown['Purpose'], item.purpose)
         c6 = self._do_eval_cond_matches(self.dropdown['SentTo'], item.sentto_id)
-        return c0 and c1 and c2 and c3 and c4 and c5 and c6
+        return c0 and c1 and c2 and c4 and c5 and c6
 
     def _on_signal_filter_disconnect(self):
         disconnected = self.signals.copy()

@@ -10,9 +10,8 @@ from gi.repository import Gtk
 
 from MiAZ.backend.env import ENV
 from MiAZ.backend.log import get_logger
-from MiAZ.backend.models import File, Group, Subgroup, Person, Country, Purpose, Concept
+from MiAZ.backend.models import File, Group, Person, Country, Purpose, Concept
 from MiAZ.backend.config import MiAZConfigSettingsGroups
-from MiAZ.backend.config import MiAZConfigSettingsSubgroups
 from MiAZ.backend.config import MiAZConfigSettingsPeople
 from MiAZ.backend.config import MiAZConfigSettingsSentBy
 from MiAZ.backend.config import MiAZConfigSettingsSentTo
@@ -24,7 +23,6 @@ from MiAZ.frontend.desktop.widgets.selector import MiAZSelector
 from MiAZ.frontend.desktop.widgets.columnview import MiAZColumnView
 from MiAZ.frontend.desktop.widgets.columnviews import MiAZColumnViewCountry
 from MiAZ.frontend.desktop.widgets.columnviews import MiAZColumnViewGroup
-from MiAZ.frontend.desktop.widgets.columnviews import MiAZColumnViewSubgroup
 from MiAZ.frontend.desktop.widgets.columnviews import MiAZColumnViewPurpose
 from MiAZ.frontend.desktop.widgets.columnviews import MiAZColumnViewPerson
 
@@ -105,24 +103,6 @@ class MiAZGroups(MiAZConfigView):
         self.add_columnview_available(self.viewAv)
         self.viewSl = MiAZColumnViewGroup(self.app)
         self.add_columnview_used(self.viewSl)
-
-
-class MiAZSubgroups(MiAZConfigView):
-    """Manage subgroups from Repo Settings"""
-    __gtype_name__ = 'MiAZSubgroups'
-
-    def __init__(self, app):
-        super(MiAZConfigView, self).__init__(app, edit=True)
-        super().__init__(app)
-        self.config = self.conf['Subgroup']
-
-    def _setup_view_finish(self):
-        # Setup Available and Used Columns Views
-        self.viewAv = MiAZColumnViewSubgroup(self.app)
-        self.add_columnview_available(self.viewAv)
-        self.viewSl = MiAZColumnViewSubgroup(self.app)
-        self.add_columnview_used(self.viewSl)
-
 
 class MiAZPeople(MiAZConfigView):
     """Class for managing People from Settings"""

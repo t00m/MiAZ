@@ -93,13 +93,13 @@ class MiAZWatcher(GObject.GObject):
                     modified.append(f)
 
         if added:
-            self.log.debug("Watcher[%s] > %d files added", self.name, len(added))
+            # ~ self.log.debug("Watcher[%s] > %d files added", self.name, len(added))
             updated |= True
         if removed:
-            self.log.debug("Watcher[%s] > %d files removed", self.name, len(removed))
+            # ~ self.log.debug("Watcher[%s] > %d files removed", self.name, len(removed))
             updated |= True
         if modified:
-            self.log.debug("Watcher[%s] > %d files modified", self.name, len(modified))
+            # ~ self.log.debug("Watcher[%s] > %d files modified", self.name, len(modified))
             updated |= True
 
         if updated:

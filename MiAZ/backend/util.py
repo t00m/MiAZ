@@ -14,16 +14,15 @@ from gi.repository import GObject
 
 from MiAZ.backend.env import ENV
 from MiAZ.backend.log import get_logger
-from MiAZ.backend.models import Group, Subgroup, Person, Country
+from MiAZ.backend.models import Group, Person, Country
 from MiAZ.backend.models import Purpose, Concept, SentBy, SentTo
 
 Field = {}
 Field[Country] = 1
 Field[Group] = 2
-Field[Subgroup] = 3
-Field[SentBy] = 4
-Field[Purpose] = 5
-Field[SentTo] = 7
+Field[SentBy] = 3
+Field[Purpose] = 4
+Field[SentTo] = 6
 
 
 class MiAZUtil(GObject.GObject):
@@ -37,7 +36,7 @@ class MiAZUtil(GObject.GObject):
 
     def guess_datetime(self, adate: str) -> datetime:
         """Return (guess) a datetime object for a given string."""
-        if len(adate) != 8:
+        if len(adate) != 7:
             return None
 
         try:
@@ -120,11 +119,11 @@ class MiAZUtil(GObject.GObject):
             normalized = False
         return normalized
 
-    def normalize_filename(self, filename: str) -> str:
+    def filename_normalize(self, filename: str) -> str:
         name, ext = self.get_filename_details(filename)
         if not self.is_normalized(name):
-            fields = ['' for fields in range(8)]
-            fields[6] = name.replace('-', '_')
+            fields = ['' for fields in range(7)]
+            fields[5] = name.replace('-', '_')
             filename = "%s.%s" % ('-'.join(fields), ext)
         else:
             filename = "%s.%s" % (name, ext)
@@ -134,7 +133,16 @@ class MiAZUtil(GObject.GObject):
         key = str(key).strip().replace(' ', '_')
         return re.sub(r'(?u)[^-\w.]', '', key)
 
-    def validate_filename(self, filepath: str) -> tuple:
+    def filename_display(self, doc):
+        filepath = self.filename_path(doc)
+        os.system("xdg-open '%s'" % filepath)
+
+    def filename_path(self, doc):
+        repo = self.backend.repo_config()
+        dirpath = repo['dir_docs']
+        return os.path.join(dirpath, doc)
+
+    def filename_validate(self, filepath: str) -> tuple:
         filename = os.path.basename(filepath)
         reasons = "OK"
         valid = True
@@ -143,12 +151,13 @@ class MiAZUtil(GObject.GObject):
         # Check fields partitioning
         partitioning = False
         fields = filename.split('-')
-        if len(fields) != 8:
-            filename = self.normalize_filename(filename)
+        if len(fields) != 7:
+            filename = self.filename_normalize(filename)
             target = os.path.join(os.path.dirname(filepath), filename)
             shutil.move(filepath, target)
             self.log.debug("%s renamed to %s", filepath, filename)
-        fields = filename.split('-')
+        name, ext = self.get_filename_details(filename)
+        fields = name.split('-')
 
         # Check extension
         item_type = None

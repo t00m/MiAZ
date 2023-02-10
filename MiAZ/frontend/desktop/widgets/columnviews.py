@@ -18,7 +18,7 @@ from MiAZ.backend.log import get_logger
 from MiAZ.backend.env import ENV
 from MiAZ.frontend.desktop.widgets.columnview import MiAZColumnView
 from MiAZ.frontend.desktop.widgets.columnview import ColIcon, ColLabel, ColMenuButton, ColCheck
-from MiAZ.backend.models import MiAZItem, Country, Group, Subgroup, Person, Purpose, File
+from MiAZ.backend.models import MiAZItem, Country, Group, Person, Purpose, File
 
 
 class MiAZColumnViewWorkspace(MiAZColumnView):
@@ -44,9 +44,6 @@ class MiAZColumnViewWorkspace(MiAZColumnView):
         self.factory_group = Gtk.SignalListItemFactory()
         self.factory_group.connect("setup", self._on_factory_setup_group)
         self.factory_group.connect("bind", self._on_factory_bind_group)
-        self.factory_subgroup = Gtk.SignalListItemFactory()
-        self.factory_subgroup.connect("setup", self._on_factory_setup_subgroup)
-        self.factory_subgroup.connect("bind", self._on_factory_bind_subgroup)
         self.factory_sentby = Gtk.SignalListItemFactory()
         self.factory_sentby.connect("setup", self._on_factory_setup_sentby)
         self.factory_sentby.connect("bind", self._on_factory_bind_sentby)
@@ -75,7 +72,6 @@ class MiAZColumnViewWorkspace(MiAZColumnView):
         self.column_icon = Gtk.ColumnViewColumn.new("Icon", self.factory_icon)
         self.column_icon_type = Gtk.ColumnViewColumn.new("Type", self.factory_icon_type)
         self.column_group = Gtk.ColumnViewColumn.new("Group", self.factory_group)
-        self.column_subgroup = Gtk.ColumnViewColumn.new("Subgroup", self.factory_subgroup)
         self.column_sentby = Gtk.ColumnViewColumn.new("Sent by", self.factory_sentby)
         self.column_sentto = Gtk.ColumnViewColumn.new("Sent to", self.factory_sentto)
         self.column_purpose = Gtk.ColumnViewColumn.new("Purpose", self.factory_purpose)
@@ -84,7 +80,6 @@ class MiAZColumnViewWorkspace(MiAZColumnView):
 
         self.cv.append_column(self.column_icon_type)
         self.cv.append_column(self.column_group)
-        self.cv.append_column(self.column_subgroup)
         self.cv.append_column(self.column_purpose)
         self.cv.append_column(self.column_sentby)
         self.cv.append_column(self.column_title)
@@ -175,26 +170,13 @@ class MiAZColumnViewWorkspace(MiAZColumnView):
         list_item.set_child(box)
 
     def _on_factory_bind_group(self, factory, list_item):
-        config = self.backend.repo_config()
-        repodct = config['dct_repo']
+        # ~ config = self.backend.repo_config()
+        # ~ repodct = config['dct_repo']
         box = list_item.get_child()
         item = list_item.get_item()
         label = box.get_first_child()
-        group = repodct[item.id]['fields'][2]
+        group = item.group
         label.set_markup(group)
-
-    def _on_factory_setup_subgroup(self, factory, list_item):
-        box = ColLabel()
-        list_item.set_child(box)
-
-    def _on_factory_bind_subgroup(self, factory, list_item):
-        config = self.backend.repo_config()
-        repodct = config['dct_repo']
-        box = list_item.get_child()
-        item = list_item.get_item()
-        label = box.get_first_child()
-        subgroup = repodct[item.id]['fields'][3]
-        label.set_markup(subgroup)
 
     def _on_factory_setup_date(self, factory, list_item):
         box = ColLabel()
@@ -232,12 +214,12 @@ class MiAZColumnViewWorkspace(MiAZColumnView):
         list_item.set_child(box)
 
     def _on_factory_bind_purpose(self, factory, list_item):
-        config = self.backend.repo_config()
-        repodct = config['dct_repo']
+        # ~ config = self.backend.repo_config()
+        # ~ repodct = config['dct_repo']
         box = list_item.get_child()
         item = list_item.get_item()
         label = box.get_first_child()
-        purpose = repodct[item.id]['fields'][5]
+        purpose = item.purpose
         label.set_markup(purpose)
 
     def _on_factory_setup_flag(self, factory, list_item):
@@ -245,12 +227,12 @@ class MiAZColumnViewWorkspace(MiAZColumnView):
         list_item.set_child(box)
 
     def _on_factory_bind_flag(self, factory, list_item):
-        config = self.backend.repo_config()
-        repodct = config['dct_repo']
+        # ~ config = self.backend.repo_config()
+        # ~ repodct = config['dct_repo']
         box = list_item.get_child()
         item = list_item.get_item()
         icon = box.get_first_child()
-        code = repodct[item.id]['fields'][1]
+        code = item.country
         flag = os.path.join(ENV['GPATH']['FLAGS'], "%s.svg" % code)
         if not os.path.exists(flag):
             flag = os.path.join(ENV['GPATH']['FLAGS'], "__.svg")
@@ -307,17 +289,6 @@ class MiAZColumnViewGroup(MiAZColumnView):
         super().__init__(app, item_type=Group)
         self.cv.append_column(self.column_id)
         self.column_title.set_title("Group Id")
-        self.cv.append_column(self.column_title)
-        self.column_title.set_title("Description")
-
-class MiAZColumnViewSubgroup(MiAZColumnView):
-    """ Custom ColumnView widget for MiAZ """
-    __gtype_name__ = 'MiAZColumnViewSubgroup'
-
-    def __init__(self, app):
-        super().__init__(app, item_type=Subgroup)
-        self.cv.append_column(self.column_id)
-        self.column_title.set_title("Subgroup Id")
         self.cv.append_column(self.column_title)
         self.column_title.set_title("Description")
 
