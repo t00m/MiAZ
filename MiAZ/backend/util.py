@@ -111,7 +111,7 @@ class MiAZUtil(GObject.GObject):
 
     def filename_is_normalized(self, name: str) -> bool:
         try:
-            if len(name.split('-')) == 8:
+            if len(name.split('-')) == 7:
                 normalized = True
             else:
                 normalized = False
@@ -133,8 +133,19 @@ class MiAZUtil(GObject.GObject):
         key = str(key).strip().replace(' ', '_')
         return re.sub(r'(?u)[^-\w.]', '', key)
 
-    def filename_rename(self, source, target):
-        pass
+    def filename_rename(self, doc_source, doc_target):
+        repo = self.backend.repo_config()
+        dir_repo = repo['dir_docs']
+        source = os.path.join(dir_repo, doc_source)
+        target = os.path.join(dir_repo, doc_target)
+        if source != target:
+            if not os.path.exists(target):
+                shutil.move(source, target)
+                self.log.info("%s renamed to %s", source, target)
+            else:
+                self.log.error("Target '%s' already exist. Skip rename", doc_target)
+        else:
+            self.log.error("Source and Target are the same. Skip rename")
 
     def filename_copy(self, source, target):
         pass
@@ -152,6 +163,8 @@ class MiAZUtil(GObject.GObject):
         return os.path.join(dirpath, doc)
 
     def filename_validate(self, filepath: str) -> tuple:
+        repo = self.backend.repo_config()
+        dir_repo = repo['dir_docs']
         filename = os.path.basename(filepath)
         reasons = "OK"
         valid = True
@@ -161,10 +174,14 @@ class MiAZUtil(GObject.GObject):
         partitioning = False
         fields = filename.split('-')
         if len(fields) != 7:
+            source = os.path.join(dir_repo, filename)
             filename = self.filename_normalize(filename)
-            target = os.path.join(os.path.dirname(filepath), filename)
-            shutil.move(filepath, target)
-            self.log.debug("%s renamed to %s", filepath, filename)
+            target = os.path.join(dir_repo, filename)
+            if source != target:
+                shutil.move(source, target)
+                self.log.debug("%s renamed to %s", filepath, filename)
+            else:
+                self.log.debug("Target normalized filename is the same than source")
         name, ext = self.filename_details(filename)
         fields = name.split('-')
 
@@ -199,14 +216,14 @@ class MiAZUtil(GObject.GObject):
                 if not used and not available:
                     valid &= False
                     rc = False
-                    message = "%s '%s' available? %s. Used? %s" % (fname, key, available, used)
+                    message = "%s %s available? %s. Used? %s" % (fname, key, available, used)
                 else:
                     rc = True
                     items = self.conf[fname].load_used()
                     value = self.conf[fname].get(key)
                     if len(value) > 0:
-                        message = "%s key '%s (%s)' is available and ready to use" % (fname, key, value)
+                        message = "%s %s (%s) is available and ready to use" % (fname, key, value)
                     else:
-                        message = "%s key '%s' is available and ready to use" % (fname, key)
+                        message = "%s %s is available and ready to use" % (fname, key)
             reasons.append((rc, message))
         return valid, reasons
