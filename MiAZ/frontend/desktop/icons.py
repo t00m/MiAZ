@@ -40,6 +40,14 @@ class MiAZIconManager(GObject.GObject):
         self.pixbufdict = {}
         self.imgdict = {}
 
+    def choose_icon(self, icon_list: list) -> str:
+        found = 'unknown'
+        for icon_name in icon_list:
+            if self.theme.has_icon(icon_name):
+                found = icon_name;
+                break
+        return found
+
     def get_gicon_from_file_mimetype(self, mimetype: str) -> Gio.Icon:
         try:
             gicon = self.gicondict[mimetype]
