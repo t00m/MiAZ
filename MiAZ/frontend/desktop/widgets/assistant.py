@@ -30,8 +30,8 @@ class PAGE(IntEnum):
     WELCOME = 0
     COUNTRIES = 1
     GROUPS = 2
-    SENTBY = 3
-    PURPOSES = 4
+    PURPOSES = 3
+    SENTBY = 4
     SENTTO = 5
     STATS = 6
     SUMMARY = 7
@@ -291,7 +291,7 @@ class MiAZAssistantRepoSettings(MiAZAssistant):
         self.set_page_type(page, Gtk.AssistantPageType.CONTENT)
         self.set_page_complete(page, True)
 
-        # Page People Sent By
+        # Page People Sent To
         page = self.get_nth_page(PAGE.SENTTO)
         box = self.factory.create_box_vertical(spacing=12, vexpand=True, hexpand=True)
         lblDesc = Gtk.Label()
@@ -309,7 +309,7 @@ class MiAZAssistantRepoSettings(MiAZAssistant):
         self.set_page_type(page, Gtk.AssistantPageType.CONTENT)
         self.set_page_complete(page, True)
 
-        # Page People Sent To
+        # Page People Sent By
         page = self.get_nth_page(PAGE.SENTBY)
         box = self.factory.create_box_vertical(spacing=12, vexpand=True, hexpand=True)
         lblDesc = Gtk.Label()
