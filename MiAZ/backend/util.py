@@ -6,7 +6,7 @@ import re
 import glob
 import json
 import time
-
+import shutil
 from datetime import datetime
 from dateutil.parser import parse as dateparser
 
@@ -14,6 +14,17 @@ from gi.repository import GObject
 
 from MiAZ.backend.env import ENV
 from MiAZ.backend.log import get_logger
+from MiAZ.backend.models import Group, Subgroup, Person, Country
+from MiAZ.backend.models import Purpose, Concept, SentBy, SentTo
+
+Field = {}
+Field[Country] = 1
+Field[Group] = 2
+Field[Subgroup] = 3
+Field[SentBy] = 4
+Field[Purpose] = 5
+Field[SentTo] = 7
+
 
 class MiAZUtil(GObject.GObject):
     """Backend class"""
@@ -253,159 +264,55 @@ class MiAZUtil(GObject.GObject):
         valid = True
         reasons = []
 
-        # Check filename
+        # Check fields partitioning
+        partitioning = False
+        fields = filename.split('-')
+        if len(fields) != 8:
+            filename = self.normalize_filename(filename)
+            target = os.path.join(os.path.dirname(filepath), filename)
+            shutil.move(filepath, target)
+            self.log.debug("%s renamed to %s", filepath, filename)
+        fields = filename.split('-')
+
+        # Check extension
+        item_type = None
         dot = filename.rfind('.')
         if dot > 0:
             name = filename[:dot]
             ext = filename[dot+1:]
-
-            # Check extension
-            valid &= True
-            reasons.append((True, "File extension '%s' is valid" % ext))
+            message = "File extension '%s' is valid" % ext
+            rc = True
         else:
             name = filename
             ext = ''
+            rc = False
             valid &= False
-            reasons.append((False, "File extension missing."))
-
-        # Check fields partitioning
-        partitioning = False
-        fields = name.split('-')
-        if len(fields) != 8:
-            valid &= False
-            reasons.append((False, "Wrong number of fields (%d/8)" %
-                                                        len(fields)))
-        else:
-            reasons.append((True, "Right number of fields (%d/8)" %
-                                                        len(fields)))
-            partitioning = True
+            message = "File extension missing. Please, check this document!"
+        reasons.append((rc, message))
 
         # Validate fields
-        # Check timestamp (1st field)
-        try:
-            timestamp = fields[0]
-            if self.guess_datetime(timestamp) is None:
+        for item_type in [Country, Group, SentBy, Purpose, SentTo]:
+            fn = Field[item_type] # Field number
+            fname = item_type.__gtype_name__
+            key = fields[fn]
+            if len(key) == 0:
                 valid &= False
-                reasons.append((False, "Timestamp '%s' not valid" %
-                                                            timestamp))
+                rc = False
+                message = "%s field is empty" % fname
             else:
-                reasons.append((True, "Timestamp '%s' is valid" %
-                                                            timestamp))
-        except IndexError:
-            valid &= False
-            reasons.append((False, "Timestamp couldn't be checked"))
-
-        # Check country (2nd field)
-        try:
-            code = fields[1]
-            is_country = self.conf['Country'].exists(code)
-            if not is_country:
-                valid &= False
-                reasons.append((False,
-                                "Country code '%s' doesn't exist" %
-                                                                code))
-            else:
-                default = self.conf['Country'].default
-                country = self.conf['Country'].load(default)
-                name = country[code]
-                reasons.append((True,
-                                "Country code '%s' corresponds to %s" %
-                                                        (code, name)))
-        except IndexError:
-            valid &= False
-            reasons.append((False,
-                            "Country code couldn't be checked"))
-
-        # Check group (3th field)
-        try:
-            code = fields[2]
-            is_group = self.conf['Group'].exists(code)
-            if not is_group:
-                valid &= False
-                reasons.append((False,
-                                "Group '%s' is not in your list." \
-                                " Please, add it first." % code))
-            else:
-                reasons.append((True,
-                                "Group '%s' accepted" % code))
-        except IndexError:
-            valid &= False
-            reasons.append((False, "Group couldn't be checked"))
-
-        # Check subgroup (4th field)
-        try:
-            code = fields[3]
-            is_subgroup = self.conf['Subgroup'].exists(code)
-            if not is_subgroup:
-                valid &= False
-                reasons.append((False,
-                                "Subgroup '%s' is not in your list." \
-                                " Please, add it first." % code))
-            else:
-                reasons.append((True,
-                                "Subgroup '%s' accepted" % code))
-        except IndexError:
-            valid &= False
-            reasons.append((False, "Subgroup couldn't be checked"))
-
-        # Check SentBy (5th field)
-        try:
-            code = fields[4]
-            used = self.conf['SentBy'].exists_available(code)
-            available = self.conf['SentBy'].exists_used(code)
-            if not used and not available:
-                valid &= False
-                message = "Sender '%s' available? %s. And is it used? %s" % (code, available, used)
-                reasons.append((False, message))
-            else:
-                reasons.append((True, "Sender '%s' accepted" % code))
-        except IndexError:
-            valid &= False
-            reasons.append((False, "Sender '%s' couldn't be checked" % code))
-
-        # Check purpose (6th field)
-        try:
-            code = fields[5]
-            is_purpose = self.conf['Purpose'].exists(code)
-            if not is_purpose:
-                valid &= False
-                reasons.append((False,
-                                "Purpose '%s' is not in your list. " \
-                                "Please, add it first." % code))
-            else:
-                reasons.append((True, "Purpose '%s' accepted" % code))
-        except IndexError:
-            valid &= False
-            reasons.append((False, "Purpose couldn't be checked"))
-
-        # Check Concept (7th field)
-        try:
-            code = fields[6]
-            reasons.append((True, "Concept '%s' accepted" % code))
-        except IndexError:
-            valid &= False
-            reasons.append((False, "Concept couldn't be checked"))
-
-        # Check SentTo (8th field)
-        try:
-            code = fields[7]
-            used = self.conf['SentTo'].exists_available(code)
-            available = self.conf['SentTo'].exists_used(code)
-            if not used and not available:
-                valid &= False
-                message = "Receiver '%s' available? %s. And is it used? %s" % (code, available, used)
-                reasons.append((False, message))
-            else:
-                reasons.append((True, "Receiver '%s' accepted" % code))
-        except IndexError:
-            valid &= False
-            reasons.append((False, "Receiver '%s' couldn't be checked" % code))
-
-        # ~ if partitioning is True:
-            # ~ self.conf['Group'].add_available(fields[2])
-            # ~ self.conf['Subgroup'].add_available(fields[3])
-            # ~ self.conf['SentBy'].add_available(fields[4])
-            # ~ self.conf['Purpose'].add_available(fields[5])
-            # ~ self.conf['SentTo'].add_available(fields[7])
-
+                used = self.conf[fname].exists_available(key)
+                available = self.conf[fname].exists_used(key)
+                if not used and not available:
+                    valid &= False
+                    rc = False
+                    message = "%s '%s' available? %s. Used? %s" % (fname, key, available, used)
+                else:
+                    rc = True
+                    items = self.conf[fname].load_used()
+                    value = self.conf[fname].get(key)
+                    if len(value) > 0:
+                        message = "%s key '%s (%s)' is available and ready to use" % (fname, key, value)
+                    else:
+                        message = "%s key '%s' is available and ready to use" % (fname, key)
+            reasons.append((rc, message))
         return valid, reasons
