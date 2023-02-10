@@ -336,7 +336,7 @@ class MiAZWorkspace(Gtk.Box):
         if item.valid:
             mimetype, val = Gio.content_type_guess('filename=%s' % item.id)
             gicon = Gio.content_type_get_icon(mimetype)
-            icon_name = gicon.get_names()[0]
+            icon_name = self.app.icman.choose_icon(gicon.get_names())
             child=Adw.ButtonContent(label='', icon_name=icon_name)
         else:
             child=Adw.ButtonContent(label='', icon_name='miaz-rename')
