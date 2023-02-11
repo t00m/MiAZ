@@ -107,14 +107,15 @@ class MiAZWorkspace(Gtk.Box):
         # FIXME: Do NOT fill dropdowns here.
         self.dropdown = {}
         for item_type in [Country, Group, SentBy, Purpose, SentTo]:
-            title = item_type.__gtype_name__
+            i_type = item_type.__gtype_name__
+            i_title = item_type.__title__
             dropdown = self.factory.create_dropdown_generic(item_type)
             self.actions.dropdown_populate(dropdown, item_type, none_value=True)
             sigid = dropdown.connect("notify::selected-item", self._on_filter_selected)
             # ~ self.signals.add ((dropdown, sigid))
-            boxDropdown = self.factory.create_box_filter(title, dropdown)
+            boxDropdown = self.factory.create_box_filter(i_title, dropdown)
             body.append(boxDropdown)
-            self.dropdown[title] = dropdown
+            self.dropdown[i_type] = dropdown
             # ~ name = item_type.__gtype_name__
             # ~ config = self.config[name].connect('repo-settings-updated-countries', self.update_countries)
         self.backend.connect('source-configuration-updated', self.update)
@@ -139,10 +140,11 @@ class MiAZWorkspace(Gtk.Box):
 
 
     def _on_action_rename(self, action, data, item_type):
-        title = item_type.__gtype_name__
-        self.log.debug("Rename %s for:", title)
+        i_type = item_type.__gtype_name__
+        i_title = item_type.__title__
+        self.log.debug("Rename %s for:", i_title)
         box = self.factory.create_box_vertical(spacing=6, vexpand=True, hexpand=True)
-        label = self.factory.create_label('Rename %d files by setting the field <b>%s</b> to:\n' % (len(self.selected_items), title))
+        label = self.factory.create_label('Rename %d files by setting the field <b>%s</b> to:\n' % (len(self.selected_items), i_title))
         dropdown = self.factory.create_dropdown_generic(item_type)
         frame = Gtk.Frame()
         cv = MiAZColumnViewMassRename(self.app)
@@ -160,7 +162,8 @@ class MiAZWorkspace(Gtk.Box):
         dialog.show()
 
     def _on_mass_renaming_change(self, dropdown, item, columnview, item_type):
-        title = item_type.__gtype_name__
+        i_type = item_type.__gtype_name__
+        i_title = item_type.__title__
         citems = []
         for item in self.selected_items:
             source = item.id
