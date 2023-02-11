@@ -109,7 +109,7 @@ class MiAZWorkspace(Gtk.Box):
         for item_type in [Country, Group, SentBy, Purpose, SentTo]:
             title = item_type.__gtype_name__
             dropdown = self.factory.create_dropdown_generic(item_type)
-            self.actions.dropdown_populate(dropdown, item_type)
+            self.actions.dropdown_populate(dropdown, item_type, none_value=True)
             sigid = dropdown.connect("notify::selected-item", self._on_filter_selected)
             # ~ self.signals.add ((dropdown, sigid))
             boxDropdown = self.factory.create_box_filter(title, dropdown)
@@ -555,7 +555,11 @@ class MiAZWorkspace(Gtk.Box):
         item = dropdown.get_selected_item()
         if item.id == 'Any':
             return True
-        return item.id == id
+        elif item.id == 'None':
+            if len(id) == 0:
+                return True
+        else:
+            return item.id == id
 
     def _do_filter_view(self, item, filter_list_model):
         c0 = self._do_eval_cond_matches_freetext(item.id)
