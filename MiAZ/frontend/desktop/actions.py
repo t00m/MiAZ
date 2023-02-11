@@ -60,6 +60,18 @@ class MiAZActions(GObject.GObject):
         rename.set_data(source, target)
         self.app.show_stack_page_by_name('rename')
 
+    def select_dropdown_item(self, dropdown, key):
+        found = False
+        model = dropdown.get_model()
+        n = 0
+        for item in model:
+            if item.id.upper() == key.upper():
+                dropdown.set_selected(n)
+                found = True
+            n += 1
+        if not found:
+            dropdown.set_selected(0)
+
     def dropdown_populate(self, dropdown, item_type, keyfilter = False, intkeys=[], any_value=True, none_value=False):
         model = dropdown.get_model()
         config = self.app.get_config(item_type.__gtype_name__)

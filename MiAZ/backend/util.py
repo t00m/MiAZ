@@ -93,7 +93,7 @@ class MiAZUtil(GObject.GObject):
                         documents.add(thisfile)
         return documents
 
-    # ~ def get_file_creation_date(self, filepath: str) -> datetime:
+    # ~ def filename_get_creation_date(self, filepath: str) -> datetime:
         # ~ created = os.stat(filepath).st_ctime
         # ~ adate = datetime.fromtimestamp(created)
         # ~ return adate #.strftime("%Y%m%d")
@@ -198,7 +198,6 @@ class MiAZUtil(GObject.GObject):
                 self.log.debug("Target normalized filename is the same than source")
         name, ext = self.filename_details(filename)
         fields = name.split('-')
-        self.log.debug("%s > %s (%d)", name, fields, len(fields))
 
         # Check extension
         item_type = None

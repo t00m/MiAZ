@@ -85,19 +85,9 @@ class MiAZRenameDialog(Gtk.Box):
 
     def update_dropdown(self, config, item_type):
         title = item_type.__gtype_name__
-        # ~ self.log.debug("Config: %s", config)
-        # ~ self.log.debug("Item Type: %s", item_type)
-        # ~ self.log.debug("Title: %s", title)
-        # ~ self.log.debug(self.dropdown[title])
-        # ~ self.log.debug(type(self.dropdown[title]))
         self.actions.dropdown_populate(self.dropdown[title], item_type)
 
-    # ~ def update_dropdowns(self):
-        # ~ for dropdown, item_type in self.dropdowns:
-            # ~ self.actions.dropdown_populate(dropdown, item_type)
-
     def set_data(self, filepath: str, suggested: list):
-        # ~ self.log.debug("F[%s] - S[%s]", filepath, suggested)
         self.filepath = filepath
         self.extension = filepath[filepath.rfind('.')+1:]
         self.doc = os.path.basename(filepath)
@@ -143,7 +133,6 @@ class MiAZRenameDialog(Gtk.Box):
         found = False
         if len(suggestion) > 0:
             model = dropdown.get_model()
-            # ~ self.log.debug("%s > %s", dropdown, model)
             n = 0
             for item in model:
                 if item.id == suggestion:
@@ -179,7 +168,6 @@ class MiAZRenameDialog(Gtk.Box):
         self.dropdown['Country'] = self.dpdCountry
         self.btnCountry.connect('clicked', self.on_resource_manage, MiAZCountries(self.app))
         self.dpdCountry.connect("notify::selected-item", self.on_changed_entry)
-        # ~ config = self.config['Country'].connect('repo-settings-updated-countries', self.update_countries)
 
     def __create_field_2_group(self):
         self.rowGroup, self.btnGroup, self.dpdGroup = self.__create_actionrow('Group', Group, 'groups')
@@ -188,7 +176,7 @@ class MiAZRenameDialog(Gtk.Box):
         self.dpdGroup.connect("notify::selected-item", self.on_changed_entry)
 
     def __create_field_4_sentby(self):
-        self.rowSentBy, self.btnSentBy, self.dpdSentBy = self.__create_actionrow('Sent by', SentBy, 'Sentby')
+        self.rowSentBy, self.btnSentBy, self.dpdSentBy = self.__create_actionrow(SentBy.__title__, SentBy, 'Sentby')
         self.dropdown['SentBy'] = self.dpdSentBy
         self.btnSentBy.connect('clicked', self.on_resource_manage, MiAZPeopleSentBy(self.app))
         self.dpdSentBy.connect("notify::selected-item", self.on_changed_entry)
@@ -219,7 +207,7 @@ class MiAZRenameDialog(Gtk.Box):
         self.entry_concept.connect('changed', self.on_changed_entry)
 
     def __create_field_7_sentto(self):
-        self.rowSentTo, self.btnSentTo, self.dpdSentTo = self.__create_actionrow('Sent to', SentTo, 'SentTo')
+        self.rowSentTo, self.btnSentTo, self.dpdSentTo = self.__create_actionrow(SentTo.__title__, SentTo, 'SentTo')
         self.dropdown['SentTo'] = self.dpdSentTo
         self.btnSentTo.connect('clicked', self.on_resource_manage, MiAZPeopleSentTo(self.app))
         self.dpdSentTo.connect("notify::selected-item", self.on_changed_entry)
@@ -331,23 +319,6 @@ class MiAZRenameDialog(Gtk.Box):
             success_or_error(self.rowSentBy, v_sentby)
             success_or_error(self.rowConcept, v_cnpt)
             success_or_error(self.rowSentTo, v_sentto)
-
-            # ~ if v_date and v_sentby and v_sentto and v_cty and v_group and v_purp and v_cnpt:
-                # ~ self.btnAccept.set_sensitive(True)
-            # ~ else:
-                # ~ self.btnAccept.set_sensitive(True)
-
-            # ~ try:
-                # ~ source = os.path.basename(self.get_filepath_source())
-                # ~ target = os.path.basename(self.get_filepath_target())
-                # ~ if source == target:
-                    # ~ self.btnAccept.set_sensitive(True)
-            # ~ except AttributeError:
-                # Rename hasn't been called yet for a file. Skip
-                # This happens when sth is modified from Repo Assistant
-                # ~ pass
-
-
         except Exception as error:
             self.log.error(error)
             self.result = ''
@@ -367,7 +338,6 @@ class MiAZRenameDialog(Gtk.Box):
         return self.result
 
     def on_rename_accept(self, *args):
-        # ~ body = "<big>You are about to rename:\n\n<b>%s</b>\n\nto\n\n<b>%s</b></big>" % (os.path.basename(self.get_filepath_source()), self.get_filepath_target())
         body = "New name: %s" % self.get_filepath_target()
         widget = Gtk.Label()
         widget.set_markup(body)
@@ -423,15 +393,3 @@ class MiAZRenameDialog(Gtk.Box):
         selector.update()
         dialog = self.factory.create_dialog(self.app.win, 'Manage %s' % config_for, box, 800, 600)
         dialog.show()
-
-    def select_dropdown_item(self, dropdown, key):
-        found = False
-        model = dropdown.get_model()
-        n = 0
-        for item in model:
-            if item.id.upper() == key.upper():
-                dropdown.set_selected(n)
-                found = True
-            n += 1
-        if not found:
-            dropdown.set_selected(0)
