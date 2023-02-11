@@ -3,7 +3,6 @@
 
 import os
 import glob
-import shutil
 
 from gi.repository import GObject
 from gi.repository import Gtk
@@ -28,17 +27,9 @@ class MiAZActions(GObject.GObject):
             if gfile is not None:
                 dirpath = gfile.get_path()
                 files = glob.glob(os.path.join(dirpath, '*.*'))
-                for filepath in files:
-                    target_name = self.util.filename_normalize(filepath)
-                    target = os.path.join(target_dir, target_name)
-                    try:
-                        shutil.copy(filepath, target)
-                        # ~ self.log.debug("Copied '%s' to target: %s",
-                                        # ~ os.path.basename(filepath),
-                                        # ~ target)
-                    except shutil.SameFileError as error:
-                        self.log.error(error)
-
+                for source in files:
+                    target = self.util.filename_normalize(source)
+                    self.util.filename_copy(source, target)
         dialog.destroy()
 
     def add_file_to_repo(self, dialog, response):
@@ -49,16 +40,9 @@ class MiAZActions(GObject.GObject):
             filechooser = content_area.get_last_child()
             gfile = filechooser.get_file()
             if gfile is not None:
-                filepath = gfile.get_path()
-                target_name = self.util.filename_normalize(filepath)
-                target = os.path.join(target_dir, target_name)
-                try:
-                    shutil.copy(filepath, target)
-                    # ~ self.log.debug("Copied '%s' to target: %s",
-                                        # ~ os.path.basename(filepath),
-                                        # ~ target)
-                except shutil.SameFileError as error:
-                    self.log.error(error)
+                source = gfile.get_path()
+                target = self.util.filename_normalize(source)
+                self.util.filename_copy(source, target)
         dialog.destroy()
 
     def document_display(self, doc):

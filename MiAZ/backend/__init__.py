@@ -3,7 +3,6 @@
 
 import os
 from os.path import basename
-import shutil
 
 from gi.repository import GObject
 
@@ -124,12 +123,15 @@ class MiAZBackend(GObject.GObject):
         filepaths = self.util.get_files(s_repodir)
         for filepath in filepaths:
             doc = os.path.basename(filepath)
-            valid, reasons = self.util.filename_validate(doc)
-            self.s_repodct[doc] = {}
-            self.s_repodct[doc]['valid'] = valid
-            self.s_repodct[doc]['reasons'] = reasons
-            self.s_repodct[doc]['suggested'] = None
-            self.s_repodct[doc]['fields'] = self.util.get_fields(doc)
+            try:
+                valid, reasons = self.util.filename_validate(doc)
+                self.s_repodct[doc] = {}
+                self.s_repodct[doc]['valid'] = valid
+                self.s_repodct[doc]['reasons'] = reasons
+                self.s_repodct[doc]['suggested'] = None
+                self.s_repodct[doc]['fields'] = self.util.get_fields(doc)
+            except:
+                self.log.warning("Issues detected with file %s. Check manually" % doc)
         self.log.debug("Repository check finished: %d documents analyzed", len(filepaths))
         self.util.json_save(s_repocnf, self.s_repodct)
 

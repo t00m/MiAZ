@@ -140,15 +140,31 @@ class MiAZUtil(GObject.GObject):
         target = os.path.join(dir_repo, doc_target)
         if source != target:
             if not os.path.exists(target):
-                shutil.move(source, target)
-                self.log.info("%s renamed to %s", source, target)
+                try:
+                    shutil.move(source, target)
+                    self.log.info("%s renamed to %s", source, target)
+                except Exception as error:
+                    self.log.error(error)
             else:
                 self.log.error("Target '%s' already exist. Skip rename", doc_target)
         else:
             self.log.error("Source and Target are the same. Skip rename")
 
-    def filename_copy(self, source, target):
-        pass
+    def filename_copy(self, source, doc_target):
+        repo = self.backend.repo_config()
+        dir_repo = repo['dir_docs']
+        target = os.path.join(dir_repo, doc_target)
+        if source != target:
+            if not os.path.exists(target):
+                try:
+                    shutil.copy(source, target)
+                    self.log.info("%s renamed to %s", source, target)
+                except Exception as error:
+                    self.log.error(error)
+            else:
+                self.log.error("Target '%s' already exist. Skip rename", doc_target)
+        else:
+            self.log.error("Source and Target are the same. Skip rename")
 
     def filename_delete(self, doc):
         pass
@@ -174,16 +190,15 @@ class MiAZUtil(GObject.GObject):
         partitioning = False
         fields = filename.split('-')
         if len(fields) != 7:
-            source = os.path.join(dir_repo, filename)
-            filename = self.filename_normalize(filename)
-            target = os.path.join(dir_repo, filename)
+            source = filename
+            target = self.filename_normalize(filename)
             if source != target:
-                shutil.move(source, target)
-                self.log.debug("%s renamed to %s", filepath, filename)
+                self.filename_rename(source, target)
             else:
                 self.log.debug("Target normalized filename is the same than source")
         name, ext = self.filename_details(filename)
         fields = name.split('-')
+        self.log.debug("%s > %s (%d)", name, fields, len(fields))
 
         # Check extension
         item_type = None

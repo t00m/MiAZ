@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 
 import os
-import shutil
 from datetime import datetime
 
 import gi
@@ -181,19 +180,15 @@ class MiAZWorkspace(Gtk.Box):
 
     def _on_mass_renaming(self, dialog, response, dropdown, item_type):
         if response == Gtk.ResponseType.ACCEPT:
-            repo = self.backend.repo_config()
-            repo_dir = repo['dir_docs']
             title = item_type.__title__
             for item in self.selected_items:
-                source = os.path.join(repo_dir, item.id)
+                source = item.id
                 name, ext = self.util.filename_details(source)
                 n = Field[item_type]
                 tmpfile = name.split('-')
                 tmpfile[n] = dropdown.get_selected_item().id
-                filename = "%s.%s" % ('-'.join(tmpfile), ext)
-                target = os.path.join(repo_dir, filename)
-                shutil.move(source, target)
-                self.log.debug("Mass %s renaming: %s > %s", title, os.path.basename(source) , os.path.basename(target))
+                target = "%s.%s" % ('-'.join(tmpfile), ext)
+                self.util.filename_rename(source, target)
         dialog.destroy()
 
 
@@ -234,7 +229,7 @@ class MiAZWorkspace(Gtk.Box):
         # Centerbox Start Wiget
         cbws = self.factory.create_box_horizontal(margin=0, spacing=3)
 
-        ## Import buttons
+        ## Import button
         listbox = Gtk.ListBox.new()
         listbox.set_activate_on_single_click(False)
         listbox.unselect_all()
@@ -250,7 +245,7 @@ class MiAZWorkspace(Gtk.Box):
         popover = Gtk.Popover()
         popover.set_child(vbox)
         popover.present()
-        btnImport = Gtk.MenuButton(child=Adw.ButtonContent(label='Import...', icon_name='miaz-import'), css_classes=['success'])
+        btnImport = Gtk.MenuButton(child=Adw.ButtonContent(icon_name='miaz-import', css_classes=['flat']))
         # ~ button.get_style_context().add_class(class_name='success')
         btnImport.set_popover(popover)
         cbws.append(btnImport)
