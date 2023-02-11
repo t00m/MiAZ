@@ -213,7 +213,6 @@ class MiAZUtil(GObject.GObject):
             else:
                 available = self.conf[fname].exists_available(key)
                 used = self.conf[fname].exists_used(key)
-                self.log.debug("%s[%s] A[%s] U[%s]", fname, key, available, used)
                 if available and used:
                     rc = True
                     items = self.conf[fname].load_used()

@@ -19,7 +19,6 @@ from MiAZ.backend.config import MiAZConfigSettingsConcepts
 from MiAZ.backend.config import MiAZConfigSettingsPeople
 from MiAZ.backend.config import MiAZConfigSettingsSentBy
 from MiAZ.backend.config import MiAZConfigSettingsSentTo
-from MiAZ.backend.models import File, Group, Person, Country, Purpose, Concept
 
 
 class MiAZBackend(GObject.GObject):
