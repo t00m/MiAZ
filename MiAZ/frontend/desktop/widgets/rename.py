@@ -102,9 +102,7 @@ class MiAZRenameDialog(Gtk.Box):
         self.extension = filepath[filepath.rfind('.')+1:]
         self.doc = os.path.basename(filepath)
         self.suggested = self.util.get_fields(self.doc)
-
-        if len(self.suggested[0]) > 0:
-            self.entry_date.set_text(self.suggested[0])
+        self.entry_date.set_text(self.suggested[0])
         self._set_suggestion(self.dpdCountry, self.suggested[1])
         self._set_suggestion(self.dpdGroup, self.suggested[2])
         self._set_suggestion(self.dpdSentBy, self.suggested[3])
@@ -152,6 +150,8 @@ class MiAZRenameDialog(Gtk.Box):
                     dropdown.set_selected(n)
                     found = True
                 n += 1
+        if not found:
+            dropdown.set_selected(0)
 
     def __create_field_0_date(self):
         """Field 0. Date"""
