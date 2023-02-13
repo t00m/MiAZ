@@ -513,7 +513,7 @@ class MiAZWorkspace(Gtk.Box):
                                 )
         self.view.update(items)
         self._on_filter_selected()
-        self.update_title()
+        # ~ self.update_title()
         if self.show_dashboard:
             self.tgbExplain.set_active(True)
         self.lblDocumentsSelected = "0 of %d documents selected" % len(self.repodct)
@@ -571,7 +571,7 @@ class MiAZWorkspace(Gtk.Box):
         self.num_review = 0
         self.dfilter = {}
         self.view.refilter()
-        self.update_title()
+        # ~ self.update_title()
         self.display_dashboard()
 
     def _on_select_all(self, *args):
@@ -590,7 +590,7 @@ class MiAZWorkspace(Gtk.Box):
         self.view.column_subtitle.set_title('Concept')
         self.view.column_subtitle.set_expand(True)
         self.view.refilter()
-        self.update_title()
+        # ~ self.update_title()
         self.tgbExplain.set_active(True)
         self.tgbExplain.set_visible(True)
         self.tgbFilters.set_visible(True)

@@ -102,68 +102,35 @@ class MiAZApp(Adw.Application):
         self.stack.set_vexpand(True)
         return self.stack
 
-    def setup_status_page(self):
-        # ~ self.btnImport.hide()
-        status_page = Adw.StatusPage.new()
-        status_page.set_description(description="<big>It seems it is the first time using this application.\n\nPlease, create a new repository in order to start working in your AZ</big>")
-        status_page.set_icon_name(icon_name='MiAZ-big')
-        status_page.set_title(title="%s" % (ENV['APP']['shortname']))
-        boxChild = Gtk.CenterBox()
-        btnAddRepo = self.factory.create_button('list-add', 'Add repository', callback=self._on_add_new_repo)
-        btnAddRepo.set_valign(Gtk.Align.CENTER)
-        boxChild.set_center_widget(btnAddRepo)
-        status_page.set_child(boxChild)
-
-        self.page_status = self.stack.add_titled(status_page, 'status', 'MiAZ')
-        self.page_status.set_icon_name('list-add')
-        self.page_status.set_visible(True)
-        self.show_stack_page_by_name('status')
-
-    def _on_add_new_repo(self, *args):
-        pw = self.get_settings()
-        filechooser = self.factory.create_filechooser(
-                    parent=self.win,
-                    title='Choose target directory',
-                    target = 'FOLDER',
-                    callback = pw.on_filechooser_response_source
-                    )
-        ca = filechooser.get_content_area()
-        lblDialogInfo = Gtk.Label()
-        lblDialogInfo.set_markup('Please, choose an empty directory')
-        ca.append(lblDialogInfo)
-        filechooser.show()
-
     def setup_about_page(self):
         about = MiAZAbout(self)
         self.page_about = self.stack.add_titled(about, 'about', 'MiAZ')
         self.page_about.set_icon_name('document-properties')
-        # ~ self.page_about.set_needs_attention(True)
-        # ~ self.page_about.set_badge_number(1)
-        # ~ self.page_about.set_visible(True)
-        # ~ self.show_stack_page_by_name('about')
 
     def setup_help_page(self):
         help_page = MiAZHelp(self)
         self.page_about = self.stack.add_titled(help_page, 'help', 'MiAZ')
         self.page_about.set_icon_name('document-properties')
+        self.page_about.set_visible(False)
 
     def setup_settings_page(self):
         self.settings = MiAZSettings(self)
         self.page_settings = self.stack.add_titled(self.settings, 'settings', 'MiAZ')
         self.page_settings.set_icon_name('document-properties')
-        self.page_settings.set_needs_attention(True)
-        self.page_settings.set_badge_number(1)
-        self.page_settings.set_visible(True)
-        self.show_stack_page_by_name('settings')
+        self.page_settings.set_visible(False)
+        # ~ self.page_settings.set_needs_attention(True)
+        # ~ self.page_settings.set_badge_number(1)
+        # ~ self.page_settings.set_visible(True)
+        # ~ self.show_stack_page_by_name('settings')
 
     def setup_workspace_page(self):
         # ~ self.btnImport.show()
         self.workspace = MiAZWorkspace(self)
         self.page_workspace = self.stack.add_titled(self.workspace, 'workspace', 'MiAZ')
         self.page_workspace.set_icon_name('document-properties')
-        self.page_workspace.set_needs_attention(True)
-        self.page_workspace.set_badge_number(1)
         self.page_workspace.set_visible(True)
+        # ~ self.page_workspace.set_needs_attention(True)
+        # ~ self.page_workspace.set_badge_number(1)
         self.show_stack_page_by_name('workspace')
 
     def setup_rename_page(self):
@@ -301,22 +268,22 @@ class MiAZApp(Adw.Application):
         title_widget.set_markup('<b>MiAZ - %s</b>' % name.title())
         self.header.set_title_widget(title_widget=title_widget)
 
-    def show_settings(self, *args):
-        self.show_stack_page_by_name('settings')
-        self.btnGoBack.show()
+    # ~ def show_settings(self, *args):
+        # ~ self.show_stack_page_by_name('settings')
+        # ~ self.btnGoBack.show()
 
-    def show_about(self, *args):
-        self.show_stack_page_by_name('about')
-        self.btnGoBack.show()
+    # ~ def show_about(self, *args):
+        # ~ self.show_stack_page_by_name('about')
+        # ~ self.btnGoBack.show()
 
-    def update_title(self, widget=None):
-        header = self.get_header()
-        title = header.get_title_widget()
-        if title is not None:
-            header.remove(title)
-        if widget is None:
-            widget = self.factory.create_label('MiAZ')
-        header.set_title_widget(widget)
+    # ~ def update_title(self, widget=None):
+        # ~ header = self.get_header()
+        # ~ title = header.get_title_widget()
+        # ~ if title is not None:
+            # ~ header.remove(title)
+        # ~ if widget is None:
+            # ~ widget = self.factory.create_label('MiAZ')
+        # ~ header.set_title_widget(widget)
 
 
     def exit_app(self, *args):
