@@ -191,9 +191,13 @@ class MiAZApp(Adw.Application):
         self.header.pack_end(menu)
 
     def _setup_headerbar_center(self):
-        title_widget = Gtk.Label()
-        title_widget.set_markup(ENV['APP']['name'])
-        self.header.set_title_widget(title_widget=title_widget)
+        ent_sb = Gtk.SearchEntry(placeholder_text="Type here")
+        # ~ ent_sb.connect('changed', self._on_filter_selected)
+        ent_sb.set_hexpand(False)
+        self.header.set_title_widget(title_widget=ent_sb)
+        # ~ title_widget = Gtk.Label()
+        # ~ title_widget.set_markup(ENV['APP']['name'])
+        # ~ self.header.set_title_widget(title_widget=title_widget)
 
     def build_gui(self):
         ## HeaderBar
@@ -264,12 +268,12 @@ class MiAZApp(Adw.Application):
 
     def show_stack_page_by_name(self, name: str = 'workspace'):
         self.stack.set_visible_child_name(name)
-        title_widget = Gtk.Label()
-        if name != 'workspace':
-            title_widget.set_markup('<b>MiAZ - %s</b>' % name.title())
-        else:
-            title_widget.set_markup('<b>MiAZ</b>')
-        self.header.set_title_widget(title_widget=title_widget)
+        # ~ title_widget = Gtk.Label()
+        # ~ if name != 'workspace':
+            # ~ title_widget.set_markup('<b>MiAZ - %s</b>' % name.title())
+        # ~ else:
+            # ~ title_widget.set_markup('<b>MiAZ</b>')
+        # ~ self.header.set_title_widget(title_widget=title_widget)
 
     def exit_app(self, *args):
         self.quit()

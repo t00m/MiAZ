@@ -217,9 +217,9 @@ class MiAZWorkspace(Gtk.Box):
         # ~ cbws.append(btnSelectNone)
         # ~ cbws.append(btnSelectAll)
 
-        self.ent_sb = Gtk.SearchEntry(placeholder_text="Type here")
-        self.ent_sb.connect('changed', self._on_filter_selected)
-        self.ent_sb.set_hexpand(False)
+        # ~ self.ent_sb = Gtk.SearchEntry(placeholder_text="Type here")
+        # ~ self.ent_sb.connect('changed', self._on_filter_selected)
+        # ~ self.ent_sb.set_hexpand(False)
         sep = Gtk.Separator.new(orientation=Gtk.Orientation.VERTICAL)
         self.tgbExplain = self.factory.create_button_toggle('miaz-magic', callback=self._on_explain_toggled, css_classes=['flat'])
         self.tgbFilters = self.factory.create_button_toggle('miaz-filters', callback=self._on_filters_toggled, css_classes=['flat'])
@@ -234,7 +234,7 @@ class MiAZWorkspace(Gtk.Box):
         self.app.header.pack_end(self.tgbFilters)
         self.app.header.pack_end(sep)
         self.app.header.pack_end(btnRepoSettings)
-        toolbar_top.set_center_widget(self.ent_sb)
+        # ~ toolbar_top.set_center_widget(self.ent_sb)
         return toolbar_top
 
     def menu_repo_handler(self, action, state):
@@ -272,11 +272,6 @@ class MiAZWorkspace(Gtk.Box):
         popover.present()
         button.set_child(child)
 
-    # ~ def _setup_statusbar(self):
-        # ~ statusbar = Gtk.Statusbar()
-        # ~ self.sbcid = statusbar.get_context_id('MiAZ')
-        # ~ return statusbar
-
     def _setup_item_valid_popover(self, item):
         listbox = Gtk.ListBox.new()
         listbox.set_activate_on_single_click(False)
@@ -303,30 +298,8 @@ class MiAZWorkspace(Gtk.Box):
             listbox.append(child=row)
         return vbox
 
-    def _setup_statusbar(self):
-        hbox = self.factory.create_box_horizontal(margin=0, hexpand=True)
-        frm = self.factory.create_frame(margin=0, hexpand=True)
-        self.infobar = Gtk.InfoBar()
-        self.infobar.set_revealed(True)
-        self.infobar.set_hexpand(True)
-        self.infobar.set_show_close_button(False)
-        self.infobar.set_message_type(Gtk.MessageType.ERROR)
-        self.message_label = Gtk.Label()
-        self.message_label.set_markup('There are still documents pending of review')
-        boxEmpty = self.factory.create_box_horizontal(hexpand=True)
-        hbox.append(self.message_label)
-        hbox.append(boxEmpty)
-        self.btnReview = self.factory.create_button('miaz-rename', callback=self.display_review)
-        self.btnDashboard = self.factory.create_button('miaz-dashboard-ok', title='Back to the AZ', callback=self.display_dashboard)
-        self.btnDashboard.set_visible(False)
-        hbox.append(self.btnReview)
-        hbox.append(self.btnDashboard)
-        self.infobar.add_child(hbox)
-        frm.set_child(self.infobar)
-        return frm
-
     def _setup_workspace(self):
-        widget = self.factory.create_box_vertical(margin=0, spacing=6, hexpand=True, vexpand=True)
+        widget = self.factory.create_box_vertical(margin=0, spacing=0, hexpand=True, vexpand=True)
         head = self.factory.create_box_vertical(margin=0, spacing=0, hexpand=True)
         body = self.factory.create_box_vertical(margin=0, spacing=0, hexpand=True, vexpand=True)
         # ~ foot = self.factory.create_box_vertical(margin=0, spacing=0, hexpand=False, vexpand=False)
@@ -441,13 +414,9 @@ class MiAZWorkspace(Gtk.Box):
             self.tgbExplain.set_active(True)
         self.lblDocumentsSelected = "0 of %d documents selected" % len(self.repodct)
 
-    # ~ def update_title(self):
-        # ~ label = self.factory.create_label(text= "Displaying %d of %d documents" % (self.displayed, len(self.repodct)))
-        # ~ self.app.update_title(label)
-        # ~ self.switched = set()
-
     def _do_eval_cond_matches_freetext(self, path):
-        left = self.ent_sb.get_text()
+        ent_sb = self.app.header.get_title_widget()
+        left = ent_sb.get_text()
         right = path
         if left.upper() in right.upper():
             return True
@@ -472,16 +441,11 @@ class MiAZWorkspace(Gtk.Box):
         c6 = self._do_eval_cond_matches(self.dropdown['SentTo'], item.sentto_id)
         return c0 and c1 and c2 and c4 and c5 and c6
 
-    # ~ def _on_signal_filter_disconnect(self):
-        # ~ disconnected = self.signals.copy()
-        # ~ for widget, sigid in self.signals:
-            # ~ widget.disconnect(sigid)
-        # ~ self.signals -= disconnected
-
     def _on_signal_filter_connect(self):
+        ent_sb = self.app.header.get_title_widget()
         self.signals = set()
-        sigid = self.ent_sb.connect('changed', self._on_filter_selected)
-        self.signals.add((self.ent_sb, sigid))
+        sigid = ent_sb.connect('changed', self._on_filter_selected)
+        self.signals.add((ent_sb, sigid))
         for dropdown in self.dropdown:
             sigid = self.dropdown[dropdown].connect("notify::selected-item", self._on_filter_selected)
             self.signals.add((self.dropdown[dropdown], sigid))
@@ -525,11 +489,3 @@ class MiAZWorkspace(Gtk.Box):
     def document_rename(self, *args):
         item = self.get_item()
         self.actions.document_rename(item)
-
-    # ~ def get_selected(self, *args):
-        # ~ selection = self.get_selection()
-        # ~ model = self.get_model_filter()
-        # ~ selected = selection.get_selection()
-        # ~ pos = selected.get_nth(0)
-        # ~ item = model.get_item(pos)
-        # ~ return item
