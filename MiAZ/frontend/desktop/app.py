@@ -178,14 +178,34 @@ class MiAZApp(Adw.Application):
         return self.rename
 
     def _setup_headerbar_left(self):
-        def show_workspace(*args):
-            self.show_stack_page_by_name(name='workspace')
-            self.btnGoBack.hide()
+        ## Import button
+        listbox = Gtk.ListBox.new()
+        listbox.set_activate_on_single_click(False)
+        listbox.unselect_all()
+        listbox.set_selection_mode(Gtk.SelectionMode.BROWSE)
+        vbox = self.factory.create_box_vertical()
+        vbox.append(child=listbox)
+        btnImportFiles = self.factory.create_button('miaz-import-document', callback=self.actions.on_import_file)
+        rowImportDoc = self.factory.create_actionrow(title='Import document', subtitle='Import one or more documents', suffix=btnImportFiles)
+        listbox.append(child=rowImportDoc)
+        btnImportDir = self.factory.create_button('miaz-import-folder', callback=self.actions.on_import_directory)
+        rowImportDir = self.factory.create_actionrow(title='Import directory', subtitle='Import all documents from a directory', suffix=btnImportDir)
+        listbox.append(child=rowImportDir)
+        popover = Gtk.Popover()
+        popover.set_child(vbox)
+        popover.present()
+        btnImport = Gtk.MenuButton(child=Adw.ButtonContent(icon_name='miaz-import', css_classes=['flat']))
+        # ~ button.get_style_context().add_class(class_name='success')
+        btnImport.set_popover(popover)
+        self.header.pack_start(btnImport)
+        # ~ def show_workspace(*args):
+            # ~ self.show_stack_page_by_name(name='workspace')
+            # ~ self.btnGoBack.hide()
 
-        self.btnGoBack = self.factory.create_button('miaz-go-back', 'Back', show_workspace)
-        self.header.pack_start(self.btnGoBack)
-        self.btnGoBack.hide()
-        self.log.debug("❌ ✅")
+        # ~ self.btnGoBack = self.factory.create_button('miaz-go-back', 'Back', show_workspace)
+        # ~ self.header.pack_start(self.btnGoBack)
+        # ~ self.btnGoBack.hide()
+        # ~ self.log.debug("❌ ✅")
 
     def _setup_headerbar_right(self):
         # Add Menu Button to the titlebar (Right Side)
@@ -234,12 +254,9 @@ class MiAZApp(Adw.Application):
         self.setup_help_page()
 
         # Create settings
-        # ~ self.setup_settings_page()
+        self.setup_settings_page()
 
         self.check_repository()
-        # ~ self.check_settings()
-
-            # ~ self.setup_status_page()
 
     def check_repository(self):
         repo = self.backend.repo_config()
@@ -262,9 +279,9 @@ class MiAZApp(Adw.Application):
             """ Callback for  menu actions"""
             name = action.get_name()
             if name == 'settings':
-                self.show_settings()
+                self.show_stack_page_by_name('settings')
             elif name == 'about':
-                self.show_about()
+                self.show_stack_page_by_name('about')
             elif name == 'close':
                 self.quit()
             elif name == 'view':

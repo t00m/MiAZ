@@ -68,24 +68,6 @@ class MiAZWorkspace(Gtk.Box):
             assistant.set_modal(True)
             assistant.present()
 
-    def _on_import_directory(self, *args):
-        filechooser = self.factory.create_filechooser(
-                    parent=self.app.win,
-                    title='Import a directory',
-                    target = 'FOLDER',
-                    callback = self.actions.add_directory_to_repo
-                    )
-        filechooser.show()
-
-    def _on_import_file(self, *args):
-        filechooser = self.factory.create_filechooser(
-                    parent=self.app.win,
-                    title='Import a single file',
-                    target = 'FILE',
-                    callback = self.actions.add_file_to_repo
-                    )
-        filechooser.show()
-
     def spinner_start(self, *args):
         self.spinner.start()
         self.spinner.set_spinning(True)
@@ -230,25 +212,24 @@ class MiAZWorkspace(Gtk.Box):
         cbws = self.factory.create_box_horizontal(margin=0, spacing=3)
 
         ## Import button
-        listbox = Gtk.ListBox.new()
-        listbox.set_activate_on_single_click(False)
-        listbox.unselect_all()
-        listbox.set_selection_mode(Gtk.SelectionMode.SINGLE)
-        vbox = self.factory.create_box_vertical()
-        vbox.append(child=listbox)
-        btnImportFiles = self.factory.create_button('miaz-import-document', callback=self._on_import_file)
-        rowImportDoc = self.factory.create_actionrow(title='Import document', subtitle='Import one or more documents', suffix=btnImportFiles)
-        listbox.append(child=rowImportDoc)
-        btnImportDir = self.factory.create_button('miaz-import-folder', callback=self._on_import_directory)
-        rowImportDir = self.factory.create_actionrow(title='Import directory', subtitle='Import all documents from a directory', suffix=btnImportDir)
-        listbox.append(child=rowImportDir)
-        popover = Gtk.Popover()
-        popover.set_child(vbox)
-        popover.present()
-        btnImport = Gtk.MenuButton(child=Adw.ButtonContent(icon_name='miaz-import', css_classes=['flat']))
-        # ~ button.get_style_context().add_class(class_name='success')
-        btnImport.set_popover(popover)
-        cbws.append(btnImport)
+        # ~ listbox = Gtk.ListBox.new()
+        # ~ listbox.set_activate_on_single_click(False)
+        # ~ listbox.unselect_all()
+        # ~ listbox.set_selection_mode(Gtk.SelectionMode.SINGLE)
+        # ~ vbox = self.factory.create_box_vertical()
+        # ~ vbox.append(child=listbox)
+        # ~ btnImportFiles = self.factory.create_button('miaz-import-document', callback=self._on_import_file)
+        # ~ rowImportDoc = self.factory.create_actionrow(title='Import document', subtitle='Import one or more documents', suffix=btnImportFiles)
+        # ~ listbox.append(child=rowImportDoc)
+        # ~ btnImportDir = self.factory.create_button('miaz-import-folder', callback=self._on_import_directory)
+        # ~ rowImportDir = self.factory.create_actionrow(title='Import directory', subtitle='Import all documents from a directory', suffix=btnImportDir)
+        # ~ listbox.append(child=rowImportDir)
+        # ~ popover = Gtk.Popover()
+        # ~ popover.set_child(vbox)
+        # ~ popover.present()
+        # ~ btnImport = Gtk.MenuButton(child=Adw.ButtonContent(icon_name='miaz-import', css_classes=['flat']))
+        # ~ btnImport.set_popover(popover)
+        # ~ cbws.append(btnImport)
 
         ## Documents selected
         self.mnuSelMulti = self.create_menu_selection_multiple()

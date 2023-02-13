@@ -94,3 +94,23 @@ class MiAZActions(GObject.GObject):
                 title = key
             model.append(item_type(id=key, title=title))
 
+
+    def on_import_directory(self, *args):
+        self.factory = self.app.get_factory()
+        filechooser = self.factory.create_filechooser(
+                    parent=self.app.win,
+                    title='Import a directory',
+                    target = 'FOLDER',
+                    callback = self.add_directory_to_repo
+                    )
+        filechooser.show()
+
+    def on_import_file(self, *args):
+        self.factory = self.app.get_factory()
+        filechooser = self.factory.create_filechooser(
+                    parent=self.app.win,
+                    title='Import a single file',
+                    target = 'FILE',
+                    callback = self.add_file_to_repo
+                    )
+        filechooser.show()
