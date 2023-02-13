@@ -108,7 +108,7 @@ class MiAZColumnViewWorkspace(MiAZColumnView):
         box = list_item.get_child()
         item = list_item.get_item()
         label = box.get_first_child()
-        label.set_markup(item.subtitle)
+        label.set_markup("<b>%s</b>" % item.subtitle)
         label.set_ellipsize(True)
         label.set_property('ellipsize', Pango.EllipsizeMode.MIDDLE)
         label.get_style_context().add_class(class_name='destructive-action')
