@@ -265,26 +265,11 @@ class MiAZApp(Adw.Application):
     def show_stack_page_by_name(self, name: str = 'workspace'):
         self.stack.set_visible_child_name(name)
         title_widget = Gtk.Label()
-        title_widget.set_markup('<b>MiAZ - %s</b>' % name.title())
+        if name != 'workspace':
+            title_widget.set_markup('<b>MiAZ - %s</b>' % name.title())
+        else:
+            title_widget.set_markup('<b>MiAZ</b>')
         self.header.set_title_widget(title_widget=title_widget)
-
-    # ~ def show_settings(self, *args):
-        # ~ self.show_stack_page_by_name('settings')
-        # ~ self.btnGoBack.show()
-
-    # ~ def show_about(self, *args):
-        # ~ self.show_stack_page_by_name('about')
-        # ~ self.btnGoBack.show()
-
-    # ~ def update_title(self, widget=None):
-        # ~ header = self.get_header()
-        # ~ title = header.get_title_widget()
-        # ~ if title is not None:
-            # ~ header.remove(title)
-        # ~ if widget is None:
-            # ~ widget = self.factory.create_label('MiAZ')
-        # ~ header.set_title_widget(widget)
-
 
     def exit_app(self, *args):
         self.quit()

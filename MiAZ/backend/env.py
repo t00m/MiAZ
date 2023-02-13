@@ -25,7 +25,7 @@ ENV['CONF']['TMPNAME'] = next(tempfile._get_candidate_names())
 ENV['CONF']['MAX_WORKERS'] = multiprocessing.cpu_count()  # Avoid MemoryError
 
 ENV['APP'] = {}
-ENV['APP']['name'] = "AZ Organizer"
+ENV['APP']['name'] = "Family AZ Organizer"
 ENV['APP']['shortname'] = "MiAZ"
 ENV['APP']['description'] = "Personal Document Organizer"
 ENV['APP']['license'] = 'GPL v3'

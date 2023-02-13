@@ -36,10 +36,7 @@ class MiAZWorkspace(Gtk.Box):
     """ Wrapper for Gtk.Stack with  with a StackSwitcher """
     show_dashboard = True
     displayed = 0
-    switched = set()
-    dfilter = {}
     signals = set()
-    num_review = 0
     selected_items = []
 
     def __init__(self, app):
@@ -67,16 +64,6 @@ class MiAZWorkspace(Gtk.Box):
             assistant.set_transient_for(self.app.win)
             assistant.set_modal(True)
             assistant.present()
-
-    def spinner_start(self, *args):
-        self.spinner.start()
-        self.spinner.set_spinning(True)
-        self.log.debug("Spinner started")
-
-    def spinner_stop(self, *args):
-        self.spinner.stop()
-        self.spinner.set_spinning(False)
-        self.log.debug("Spinner stopped")
 
     def _setup_toolbar_filters(self):
         widget = self.factory.create_box_horizontal(hexpand=True, vexpand=False)
@@ -208,29 +195,6 @@ class MiAZWorkspace(Gtk.Box):
         toolbar_top.set_hexpand(True)
         toolbar_top.set_vexpand(True)
 
-        # Centerbox Start Wiget
-        cbws = self.factory.create_box_horizontal(margin=0, spacing=3)
-
-        ## Import button
-        # ~ listbox = Gtk.ListBox.new()
-        # ~ listbox.set_activate_on_single_click(False)
-        # ~ listbox.unselect_all()
-        # ~ listbox.set_selection_mode(Gtk.SelectionMode.SINGLE)
-        # ~ vbox = self.factory.create_box_vertical()
-        # ~ vbox.append(child=listbox)
-        # ~ btnImportFiles = self.factory.create_button('miaz-import-document', callback=self._on_import_file)
-        # ~ rowImportDoc = self.factory.create_actionrow(title='Import document', subtitle='Import one or more documents', suffix=btnImportFiles)
-        # ~ listbox.append(child=rowImportDoc)
-        # ~ btnImportDir = self.factory.create_button('miaz-import-folder', callback=self._on_import_directory)
-        # ~ rowImportDir = self.factory.create_actionrow(title='Import directory', subtitle='Import all documents from a directory', suffix=btnImportDir)
-        # ~ listbox.append(child=rowImportDir)
-        # ~ popover = Gtk.Popover()
-        # ~ popover.set_child(vbox)
-        # ~ popover.present()
-        # ~ btnImport = Gtk.MenuButton(child=Adw.ButtonContent(icon_name='miaz-import', css_classes=['flat']))
-        # ~ btnImport.set_popover(popover)
-        # ~ cbws.append(btnImport)
-
         ## Documents selected
         self.mnuSelMulti = self.create_menu_selection_multiple()
         boxDocsSelected = Gtk.CenterBox()
@@ -243,50 +207,34 @@ class MiAZWorkspace(Gtk.Box):
         self.btnDocsSel.set_hexpand(False)
         self.btnDocsSel.set_sensitive(True)
         boxDocsSelected.set_center_widget(self.btnDocsSel)
-        sep = Gtk.Separator.new(orientation=Gtk.Orientation.VERTICAL)
-        btnSelectAll = self.factory.create_button('miaz-select-all', callback=self._on_select_all, css_classes=['flat'])
-        btnSelectNone = self.factory.create_button('miaz-select-none', callback=self._on_select_none, css_classes=['flat'])
-        cbws.append(boxDocsSelected)
-        cbws.append(sep)
-        cbws.append(btnSelectNone)
-        cbws.append(btnSelectAll)
+        self.app.header.pack_start(boxDocsSelected)
+
+        # ~ cbws = self.factory.create_box_horizontal(margin=0, spacing=3)
+        # ~ sep = Gtk.Separator.new(orientation=Gtk.Orientation.VERTICAL)
+        # ~ btnSelectAll = self.factory.create_button('miaz-select-all', callback=self._on_select_all, css_classes=['flat'])
+        # ~ btnSelectNone = self.factory.create_button('miaz-select-none', callback=self._on_select_none, css_classes=['flat'])
+        # ~ cbws.append(sep)
+        # ~ cbws.append(btnSelectNone)
+        # ~ cbws.append(btnSelectAll)
 
         self.ent_sb = Gtk.SearchEntry(placeholder_text="Type here")
-        # ~ self.ent_sb.set_width_chars(41)
         self.ent_sb.connect('changed', self._on_filter_selected)
         self.ent_sb.set_hexpand(False)
-
-
-        # ~ cbws.append(self.ent_sb)
-
-        cbwe = self.factory.create_box_horizontal(margin=0, spacing=3)
-
-        # ~ boxEmpty = self.factory.create_box_horizontal(hexpand=False)
-
         sep = Gtk.Separator.new(orientation=Gtk.Orientation.VERTICAL)
         self.tgbExplain = self.factory.create_button_toggle('miaz-magic', callback=self._on_explain_toggled, css_classes=['flat'])
         self.tgbFilters = self.factory.create_button_toggle('miaz-filters', callback=self._on_filters_toggled, css_classes=['flat'])
         self.tgbFilters.set_active(False)
-
         btnRepoSettings = MiAZMenuButton(MiAZ_MENU_WORKSPACE_REPO, 'repo-menu', css_classes=['flat'], child=Adw.ButtonContent(icon_name='document-properties'))
-        # ~ btnRepoSettings = Gtk.MenuButton(css_classes=['flat'], child=Adw.ButtonContent(icon_name='document-properties'))
-        # ~ popRepoSettings = Gtk.PopoverMenu.new_from_model(self.mnuSelMulti)
-        # ~ btnRepoSettings.set_popover(popover=popRepoSettings)
         btnRepoSettings.set_valign(Gtk.Align.CENTER)
 
         # and create actions to handle menu actions
         for action, shortcut in [('repo_settings', [''])]:
             self.factory.create_menu_action(action, self.menu_repo_handler, shortcut)
-
-        cbwe.append(self.tgbExplain)
-        cbwe.append(self.tgbFilters)
-        cbwe.append(sep)
-        cbwe.append(btnRepoSettings)
-        # ~ cbwe.append(btnSelectAll)
-
-        toolbar_top.set_start_widget(cbws)
+        self.app.header.pack_end(self.tgbExplain)
+        self.app.header.pack_end(self.tgbFilters)
+        self.app.header.pack_end(sep)
+        self.app.header.pack_end(btnRepoSettings)
         toolbar_top.set_center_widget(self.ent_sb)
-        toolbar_top.set_end_widget(cbwe)
         return toolbar_top
 
     def menu_repo_handler(self, action, state):
@@ -375,18 +323,6 @@ class MiAZWorkspace(Gtk.Box):
         hbox.append(self.btnDashboard)
         self.infobar.add_child(hbox)
         frm.set_child(self.infobar)
-        # ~ self.infobar.connect('response', self.infobar_response)
-        # ~ self.append(self.infobar)
-        # ~ self.infobar_message()
-        # ~ self.statusbar = Gtk.Statusbar()
-        # ~ self.sbcid = self.statusbar.get_context_id('MiAZ')
-
-        # ~
-        self.spinner = Gtk.Spinner()
-        # ~ self.spinner.set_spinning(True)
-        # ~ hbox.append(self.infobar)
-        # ~ hbox.append(boxEmpty)
-
         return frm
 
     def _setup_workspace(self):
@@ -401,14 +337,9 @@ class MiAZWorkspace(Gtk.Box):
         toolbar_top = self._setup_toolbar_top()
         self.toolbar_filters = self._setup_toolbar_filters()
         frmView = self._setup_columnview()
-        # ~ self.statusbar = self._setup_statusbar()
         head.append(toolbar_top)
         head.append(self.toolbar_filters)
         body.append(frmView)
-        # ~ foot.append(self.statusbar)
-
-        # ~ if self.num_review == 0:
-            # ~ self.statusbar.set_visible(False)
 
         # Connect signals
         selection = self.view.get_selection()
@@ -416,10 +347,6 @@ class MiAZWorkspace(Gtk.Box):
         # Trigger events
         self._on_signal_filter_connect()
         self._on_filters_toggled(self.tgbFilters)
-        # ~ self.statusbar.push(self.sbcid, 'MiAZ')
-
-        # ~ frmView.set_child(self.view)
-        # ~ return frmView
         return widget
 
     def create_menu_selection_multiple(self):
@@ -469,9 +396,6 @@ class MiAZWorkspace(Gtk.Box):
     def get_selection(self):
         return self.selection
 
-    def get_switched(self):
-        return self.switched
-
     def get_item(self):
         selection = self.view.get_selection()
         selected = selection.get_selection()
@@ -513,15 +437,14 @@ class MiAZWorkspace(Gtk.Box):
                                 )
         self.view.update(items)
         self._on_filter_selected()
-        # ~ self.update_title()
         if self.show_dashboard:
             self.tgbExplain.set_active(True)
         self.lblDocumentsSelected = "0 of %d documents selected" % len(self.repodct)
 
-    def update_title(self):
+    # ~ def update_title(self):
         # ~ label = self.factory.create_label(text= "Displaying %d of %d documents" % (self.displayed, len(self.repodct)))
         # ~ self.app.update_title(label)
-        self.switched = set()
+        # ~ self.switched = set()
 
     def _do_eval_cond_matches_freetext(self, path):
         left = self.ent_sb.get_text()
@@ -549,11 +472,11 @@ class MiAZWorkspace(Gtk.Box):
         c6 = self._do_eval_cond_matches(self.dropdown['SentTo'], item.sentto_id)
         return c0 and c1 and c2 and c4 and c5 and c6
 
-    def _on_signal_filter_disconnect(self):
-        disconnected = self.signals.copy()
-        for widget, sigid in self.signals:
-            widget.disconnect(sigid)
-        self.signals -= disconnected
+    # ~ def _on_signal_filter_disconnect(self):
+        # ~ disconnected = self.signals.copy()
+        # ~ for widget, sigid in self.signals:
+            # ~ widget.disconnect(sigid)
+        # ~ self.signals -= disconnected
 
     def _on_signal_filter_connect(self):
         self.signals = set()
@@ -568,11 +491,8 @@ class MiAZWorkspace(Gtk.Box):
 
     def _on_filter_selected(self, *args):
         self.displayed = 0
-        self.num_review = 0
-        self.dfilter = {}
         self.view.refilter()
-        # ~ self.update_title()
-        self.display_dashboard()
+        # ~ self.display_dashboard()
 
     def _on_select_all(self, *args):
         selection = self.view.get_selection()
@@ -584,13 +504,10 @@ class MiAZWorkspace(Gtk.Box):
 
     def display_dashboard(self, *args):
         self.displayed = 0
-        self.num_review = 0
-        self.dfilter = {}
         self.show_dashboard = True
         self.view.column_subtitle.set_title('Concept')
         self.view.column_subtitle.set_expand(True)
         self.view.refilter()
-        # ~ self.update_title()
         self.tgbExplain.set_active(True)
         self.tgbExplain.set_visible(True)
         self.tgbFilters.set_visible(True)
@@ -605,27 +522,14 @@ class MiAZWorkspace(Gtk.Box):
         item = self.get_item()
         self.actions.document_display(item.id)
 
-    def document_switch(self, switch, activated):
-        selection = self.get_selection()
-        selected = selection.get_selection()
-        model = self.get_model_filter()
-        switched = self.get_switched()
-        pos = selected.get_nth(0)
-        item = model.get_item(pos)
-        if activated:
-            switched.add(item.id)
-        else:
-            switched.remove(item.id)
-        self.log.debug(switched)
-
     def document_rename(self, *args):
         item = self.get_item()
         self.actions.document_rename(item)
 
-    def get_selected(self, *args):
-        selection = self.get_selection()
-        model = self.get_model_filter()
-        selected = selection.get_selection()
-        pos = selected.get_nth(0)
-        item = model.get_item(pos)
-        return item
+    # ~ def get_selected(self, *args):
+        # ~ selection = self.get_selection()
+        # ~ model = self.get_model_filter()
+        # ~ selected = selection.get_selection()
+        # ~ pos = selected.get_nth(0)
+        # ~ item = model.get_item(pos)
+        # ~ return item
