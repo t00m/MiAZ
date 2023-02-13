@@ -2,12 +2,14 @@
 # -*- coding: utf-8 -*-
 
 from html import escape
+from gettext import gettext as _
 
 import gi
 from gi.repository import Adw
 from gi.repository import Gtk
 
 from MiAZ.backend.env import ENV
+
 
 class MiAZAbout(Gtk.Box):
     """

@@ -25,7 +25,7 @@ from MiAZ.frontend.desktop.widgets.about import MiAZAbout
 from MiAZ.frontend.desktop.icons import MiAZIconManager
 from MiAZ.frontend.desktop.factory import MiAZFactory
 from MiAZ.frontend.desktop.actions import MiAZActions
-from MiAZ.frontend.desktop.help import show_shortcuts
+from MiAZ.frontend.desktop.help import MiAZHelp
 
 
 class MiAZApp(Adw.Application):
@@ -135,13 +135,17 @@ class MiAZApp(Adw.Application):
 
     def setup_about_page(self):
         about = MiAZAbout(self)
-        # ~ widget = about.get_first_child()
         self.page_about = self.stack.add_titled(about, 'about', 'MiAZ')
         self.page_about.set_icon_name('document-properties')
         # ~ self.page_about.set_needs_attention(True)
         # ~ self.page_about.set_badge_number(1)
         # ~ self.page_about.set_visible(True)
         # ~ self.show_stack_page_by_name('about')
+
+    def setup_help_page(self):
+        help_page = MiAZHelp(self)
+        self.page_about = self.stack.add_titled(help_page, 'help', 'MiAZ')
+        self.page_about.set_icon_name('document-properties')
 
     def setup_settings_page(self):
         self.settings = MiAZSettings(self)
@@ -223,8 +227,11 @@ class MiAZApp(Adw.Application):
         self._setup_headerbar_right()
         self.win.set_titlebar(self.header)
 
-        # Create settings
+        # Create About page
         self.setup_about_page()
+
+        # Create Help page
+        self.setup_help_page()
 
         # Create settings
         # ~ self.setup_settings_page()
@@ -265,8 +272,7 @@ class MiAZApp(Adw.Application):
             elif name == 'rename':
                 self.workspace.document_rename()
             elif name == 'help':
-                self.log.debug('Help!')
-                show_shortcuts(self.win)
+                self.show_stack_page_by_name('help')
 
     def get_stack_page_by_name(self, name: str) -> Adw.ViewStackPage:
         widget = self.stack.get_child_by_name(name)
