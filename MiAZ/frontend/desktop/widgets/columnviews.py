@@ -13,9 +13,8 @@ from gi.repository import Gio
 from gi.repository import Gtk
 from gi.repository import Pango
 
-from MiAZ.backend.log import get_logger
-# ~ from MiAZ.backend.util import json_load, json_save
 from MiAZ.backend.env import ENV
+from MiAZ.backend.log import get_logger
 from MiAZ.frontend.desktop.widgets.columnview import MiAZColumnView
 from MiAZ.frontend.desktop.widgets.columnview import ColIcon, ColLabel, ColMenuButton, ColCheck
 from MiAZ.backend.models import MiAZItem, Country, Group, Person, Purpose, File
@@ -58,15 +57,9 @@ class MiAZColumnViewWorkspace(MiAZColumnView):
         self.factory_flag = Gtk.SignalListItemFactory()
         self.factory_flag.connect("setup", self._on_factory_setup_flag)
         self.factory_flag.connect("bind", self._on_factory_bind_flag)
-        # ~ self.column_flag = Gtk.ColumnViewColumn.new("Country", self.factory_flag)
 
         # Setup columnview columns
-        # ~ self.column_id = Gtk.ColumnViewColumn.new("Id", self.factory_id)
-        # ~ self.column_id.set_sorter(self.prop_id_sorter)
-        # ~ self.column_title = Gtk.ColumnViewColumn.new("Title", self.factory_title)
-        # ~ self.column_title.set_sorter(self.prop_title_sorter)
         self.column_subtitle = Gtk.ColumnViewColumn.new("Concept", self.factory_subtitle)
-        # ~ self.column_subtitle.set_sorter(self.prop_subtitle_sorter)
         self.column_active = Gtk.ColumnViewColumn.new("Active", self.factory_active)
         self.column_icon = Gtk.ColumnViewColumn.new("Icon", self.factory_icon)
         self.column_icon_type = Gtk.ColumnViewColumn.new("Type", self.factory_icon_type)
@@ -103,6 +96,7 @@ class MiAZColumnViewWorkspace(MiAZColumnView):
         self.column_sentto.set_sorter(self.prop_sentto_sorter)
         self.column_date.set_sorter(self.prop_date_sorter)
         self.column_flag.set_sorter(self.prop_country_sorter)
+
         # Default sorting by date
         self.cv.sort_by_column(self.column_date, Gtk.SortType.DESCENDING)
 
@@ -140,8 +134,6 @@ class MiAZColumnViewWorkspace(MiAZColumnView):
         box = list_item.get_child()
         item = list_item.get_item()
         icon = box.get_first_child()
-        # ~ icon.set_from_something(...)
-        # ~ icon.set_pixel_size(size)
 
     def _on_factory_setup_icon_type(self, factory, list_item):
         box = ColMenuButton()
@@ -152,9 +144,7 @@ class MiAZColumnViewWorkspace(MiAZColumnView):
         box = list_item.get_child()
         button = box.get_first_child()
         self.log.debug(button)
-        # ~ popover = button.get_popover()
         item = list_item.get_item()
-        # ~ icon = box.get_first_child()
         if item.valid:
             mimetype, val = Gio.content_type_guess('filename=%s' % item.id)
             gicon = Gio.content_type_get_icon(mimetype)
@@ -162,35 +152,15 @@ class MiAZColumnViewWorkspace(MiAZColumnView):
             self.log.debug(icon_name)
             child=Adw.ButtonContent(label='', icon_name=icon_name)
             button.set_child(child)
-            # ~ >>> import gi
-            # ~ >>> mimetype = 'application/pdf'
-            # ~ >>> from gi.repository import Gio
-            # ~ >>> gicon = Gio.content_type_get_icon(mimetype)
-            # ~ >>> gicon.get_names()
-            # ~ ['application-pdf', 'x-office-document', 'application-pdf-symbolic', 'x-office-document-symbolic']
-            # ~ >>> gi.require_version('Gtk', '4.0')
-            # ~ >>> from gi.repository import Gtk
-            # ~ >>> Gtk.Image.new_from_
-            # ~ Gtk.Image.new_from_file(       Gtk.Image.new_from_gicon(      Gtk.Image.new_from_icon_name(  Gtk.Image.new_from_paintable(  Gtk.Image.new_from_pixbuf(     Gtk.Image.new_from_resource(
-            # ~ >>> Gtk.Image.new_from_icon_name('application-pdf')
-            # ~ <Gtk.Image object at 0x7fc6172851c0 (GtkImage at 0x55efd97a4160)>
-            # ~ >>> Gtk.Image.new_from_icon_name('x-office-document')
-            # ~ <Gtk.Image object at 0x7fc617286c80 (GtkImage at 0x55efd97a42f0)>
-
-            # ~ gicon = Gio.content_type_get_icon(mimetype)
-            # ~ icon.set_from_gicon(gicon)
         else:
             child=Adw.ButtonContent(label='', icon_name='miaz-rename')
             button.set_child(child)
-        # ~ icon.set_pixel_size(32)
 
     def _on_factory_setup_group(self, factory, list_item):
         box = ColLabel()
         list_item.set_child(box)
 
     def _on_factory_bind_group(self, factory, list_item):
-        # ~ config = self.backend.repo_config()
-        # ~ repodct = config['dct_repo']
         box = list_item.get_child()
         item = list_item.get_item()
         label = box.get_first_child()
@@ -233,8 +203,6 @@ class MiAZColumnViewWorkspace(MiAZColumnView):
         list_item.set_child(box)
 
     def _on_factory_bind_purpose(self, factory, list_item):
-        # ~ config = self.backend.repo_config()
-        # ~ repodct = config['dct_repo']
         box = list_item.get_child()
         item = list_item.get_item()
         label = box.get_first_child()
@@ -246,8 +214,6 @@ class MiAZColumnViewWorkspace(MiAZColumnView):
         list_item.set_child(box)
 
     def _on_factory_bind_flag(self, factory, list_item):
-        # ~ config = self.backend.repo_config()
-        # ~ repodct = config['dct_repo']
         box = list_item.get_child()
         item = list_item.get_item()
         icon = box.get_first_child()
@@ -261,16 +227,6 @@ class MiAZColumnViewWorkspace(MiAZColumnView):
     def _on_factory_setup_flag(self, factory, list_item):
         box = ColIcon()
         list_item.set_child(box)
-
-    # ~ def _on_factory_bind_flag(self, factory, list_item):
-        # ~ box = list_item.get_child()
-        # ~ country = list_item.get_item()
-        # ~ icon = box.get_first_child()
-        # ~ flag = os.path.join(ENV['GPATH']['FLAGS'], "%s.svg" % country.id)
-        # ~ if not os.path.exists(flag):
-            # ~ flag = os.path.join(ENV['GPATH']['FLAGS'], "__.svg")
-        # ~ icon.set_from_file(flag)
-        # ~ icon.set_pixel_size(32)
 
 class MiAZColumnViewCountry(MiAZColumnView):
     """ Custom ColumnView widget for MiAZ """
