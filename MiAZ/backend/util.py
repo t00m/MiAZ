@@ -93,10 +93,13 @@ class MiAZUtil(GObject.GObject):
                         documents.add(thisfile)
         return documents
 
-    # ~ def filename_get_creation_date(self, filepath: str) -> datetime:
-        # ~ created = os.stat(filepath).st_ctime
-        # ~ adate = datetime.fromtimestamp(created)
-        # ~ return adate #.strftime("%Y%m%d")
+    def filename_get_creation_date(self, doc: str) -> datetime:
+        repo = self.backend.repo_config()
+        dir_repo = repo['dir_docs']
+        filepath = os.path.join(dir_repo, doc)
+        created = os.stat(filepath).st_ctime
+        adate = datetime.fromtimestamp(created)
+        return adate #.strftime("%Y%m%d")
 
     def filename_details(self, filepath: str):
         basename = os.path.basename(filepath)

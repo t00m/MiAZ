@@ -92,7 +92,11 @@ class MiAZRenameDialog(Gtk.Box):
         self.extension = filepath[filepath.rfind('.')+1:]
         self.doc = os.path.basename(filepath)
         self.suggested = self.util.get_fields(self.doc)
-        self.entry_date.set_text(self.suggested[0])
+        if len(self.suggested[0]) == 0:
+            adate = self.util.filename_get_creation_date(filepath)
+            self.entry_date.set_text(adate.strftime("%Y%m%d"))
+        else:
+            self.entry_date.set_text(self.suggested[0])
         self._set_suggestion(self.dpdCountry, self.suggested[1])
         self._set_suggestion(self.dpdGroup, self.suggested[2])
         self._set_suggestion(self.dpdSentBy, self.suggested[3])
@@ -152,7 +156,15 @@ class MiAZRenameDialog(Gtk.Box):
         boxValue.set_valign(Gtk.Align.CENTER)
         self.rowDate.add_suffix(boxValue)
         self.boxMain.append(self.rowDate)
-        button = self.factory.create_button('miaz-res-date', '')
+        # ~ vbox = self.factory.create_box_vertical()
+        # ~ vbox.append(child=Gtk.Calendar())
+        self.calendar = Gtk.Calendar()
+        self.calendar.connect('day-selected', self.calendar_day_selected)
+        button = Gtk.MenuButton(child=Adw.ButtonContent(icon_name='miaz-res-date', css_classes=['flat']))
+        popover = Gtk.Popover()
+        popover.set_child(self.calendar)
+        popover.present()
+        button.set_popover(popover)
         self.entry_date = Gtk.Entry()
         self.entry_date.set_max_length(8)
         self.entry_date.set_max_width_chars(8)
@@ -162,6 +174,13 @@ class MiAZRenameDialog(Gtk.Box):
         boxValue.append(self.entry_date)
         boxValue.append(button)
         self.entry_date.connect('changed', self.on_changed_entry)
+
+    def calendar_day_selected(self, calendar):
+        adate = calendar.get_date()
+        y = "%04d" % adate.get_year()
+        m = "%02d" % adate.get_month()
+        d = "%02d" % adate.get_day_of_month()
+        self.entry_date.set_text("%s%s%s" % (y, m, d))
 
     def __create_field_1_country(self):
         self.rowCountry, self.btnCountry, self.dpdCountry = self.__create_actionrow('Country', Country, 'countries')
@@ -327,8 +346,10 @@ class MiAZRenameDialog(Gtk.Box):
     def validate_date(self, adate: str) -> bool:
         try:
             datetime.strptime(adate, '%Y%m%d')
+            iso8601 = "%sT00:00:00Z" % adate
+            self.calendar.select_day(GLib.DateTime.new_from_iso8601(iso8601))
             return True
-        except:
+        except Exception as error:
             return False
 
     def get_filepath_source(self) -> str:
