@@ -129,7 +129,17 @@ class MiAZFactory:
             button.connect('toggled', callback, data)
         return button
 
-    def create_dropdown_generic(self, item_type, ellipsize=True):
+    def create_dropdown_generic(self, item_type, ellipsize=True, dropdown_search_function=None):
+        def _get_search_entry_widget(dropdown):
+            popover = dropdown.get_last_child()
+            box = popover.get_child()
+            box2 = box.get_first_child()
+            search_entry = box2.get_first_child() # Gtk.SearchEntry
+            return search_entry
+
+        def _on_search_widget_changed(search_entry):
+            pass
+
         def _on_factory_setup(factory, list_item, ellipsize):
             box = Gtk.Box(spacing=6, orientation=Gtk.Orientation.HORIZONTAL)
             label = Gtk.Label()
@@ -154,6 +164,13 @@ class MiAZFactory:
 
         dropdown = Gtk.DropDown(model=model, factory=factory, hexpand=True)
         dropdown.set_show_arrow(True)
+
+        if dropdown_search_function is not None:
+            # Enable search
+            dropdown.set_enable_search(True)
+            search_entry_widget = _get_search_entry_widget(dropdown)
+            search_entry_widget.connect('search-changed', dropdown_search_function)
+
         return dropdown
 
     def create_dialog(self, parent, title, widget, width=-1, height=-1):

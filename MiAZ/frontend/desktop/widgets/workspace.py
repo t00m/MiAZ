@@ -77,15 +77,12 @@ class MiAZWorkspace(Gtk.Box):
         for item_type in [Country, Group, SentBy, Purpose, SentTo]:
             i_type = item_type.__gtype_name__
             i_title = item_type.__title__
-            dropdown = self.factory.create_dropdown_generic(item_type)
+            dropdown = self.factory.create_dropdown_generic(item_type=item_type, dropdown_search_function=None)
             self.actions.dropdown_populate(dropdown, item_type, none_value=True)
             sigid = dropdown.connect("notify::selected-item", self._on_filter_selected)
-            # ~ self.signals.add ((dropdown, sigid))
             boxDropdown = self.factory.create_box_filter(i_title, dropdown)
             body.append(boxDropdown)
             self.dropdown[i_type] = dropdown
-            # ~ name = item_type.__gtype_name__
-            # ~ config = self.config[name].connect('repo-settings-updated-countries', self.update_countries)
         self.backend.connect('source-configuration-updated', self.update)
         self.config['Country'].connect('repo-settings-updated-countries-used', self.update_dropdown, Country)
         self.config['Group'].connect('repo-settings-updated-groups-used', self.update_dropdown, Group)
@@ -93,6 +90,10 @@ class MiAZWorkspace(Gtk.Box):
         self.config['Purpose'].connect('repo-settings-updated-purposes', self.update_dropdown, Purpose)
         self.config['SentTo'].connect('repo-settings-updated-sentto', self.update_dropdown, SentTo)
         return widget
+
+    def _on_search_dropdown_changed(self, search_entry):
+        # FIXME
+        self.search_text_widget = search_entry.get_text()
 
     def enable_filtering(self, enable=True):
         if enable:
@@ -249,7 +250,7 @@ class MiAZWorkspace(Gtk.Box):
     def _setup_columnview(self):
         self.view = MiAZColumnViewWorkspace(self.app)
         self.view.factory_icon_type.connect("bind", self._on_factory_bind_icon_type)
-        self.view.get_style_context().add_class(class_name='caption')
+        # ~ self.view.get_style_context().add_class(class_name='caption')
         self.view.set_filter(self._do_filter_view)
         frmView = self.factory.create_frame(hexpand=True, vexpand=True)
         frmView.set_child(self.view)
