@@ -97,9 +97,8 @@ class MiAZUtil(GObject.GObject):
         repo = self.backend.repo_config()
         dir_repo = repo['dir_docs']
         filepath = os.path.join(dir_repo, doc)
-        created = os.stat(filepath).st_ctime
-        adate = datetime.fromtimestamp(created)
-        return adate #.strftime("%Y%m%d")
+        lastmod = os.stat(filepath).st_mtime
+        return datetime.fromtimestamp(lastmod)
 
     def filename_details(self, filepath: str):
         basename = os.path.basename(filepath)
@@ -160,7 +159,8 @@ class MiAZUtil(GObject.GObject):
         if source != target:
             if not os.path.exists(target):
                 try:
-                    shutil.copy(source, target)
+                    # preserve metadata
+                    shutil.copy2(source, target)
                     self.log.info("%s renamed to %s", source, target)
                 except Exception as error:
                     self.log.error(error)
