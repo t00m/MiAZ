@@ -165,12 +165,15 @@ class MiAZRenameDialog(Gtk.Box):
         popover.set_child(self.calendar)
         popover.present()
         button.set_popover(popover)
+        self.label_date = Gtk.Label()
+        self.label_date.get_style_context().add_class(class_name='caption')
         self.entry_date = Gtk.Entry()
         self.entry_date.set_max_length(8)
         self.entry_date.set_max_width_chars(8)
         self.entry_date.set_width_chars(8)
         self.entry_date.set_placeholder_text('YYYYmmdd')
         self.entry_date.set_alignment(1.0)
+        boxValue.append(self.label_date)
         boxValue.append(self.entry_date)
         boxValue.append(button)
         self.entry_date.connect('changed', self.on_changed_entry)
@@ -343,11 +346,12 @@ class MiAZRenameDialog(Gtk.Box):
             self.result = ''
             raise
 
-    def validate_date(self, adate: str) -> bool:
+    def validate_date(self, sdate: str) -> bool:
         try:
-            datetime.strptime(adate, '%Y%m%d')
-            iso8601 = "%sT00:00:00Z" % adate
+            adate = datetime.strptime(sdate, '%Y%m%d')
+            iso8601 = "%sT00:00:00Z" % sdate
             self.calendar.select_day(GLib.DateTime.new_from_iso8601(iso8601))
+            self.label_date.set_markup(adate.strftime("%A, %B %d %Y"))
             return True
         except Exception as error:
             return False
