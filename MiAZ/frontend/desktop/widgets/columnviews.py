@@ -40,7 +40,6 @@ class MiAZColumnViewWorkspace(MiAZColumnView):
         self.factory_icon.connect("bind", self._on_factory_bind_icon)
         self.factory_icon_type = Gtk.SignalListItemFactory()
         self.factory_icon_type.connect("setup", self._on_factory_setup_icon_type)
-        # ~ self.factory_icon_type.connect("bind", self._on_factory_bind_icon_type)
         self.factory_group = Gtk.SignalListItemFactory()
         self.factory_group.connect("setup", self._on_factory_setup_group)
         self.factory_group.connect("bind", self._on_factory_bind_group)
@@ -88,6 +87,24 @@ class MiAZColumnViewWorkspace(MiAZColumnView):
         self.cv.append_column(self.column_date)
         self.cv.append_column(self.column_flag)
         self.column_title.set_expand(True)
+
+        # Sorting
+        self.prop_group_sorter = Gtk.CustomSorter.new(sort_func=self._on_sort_string_func, user_data='group')
+        self.prop_purpose_sorter = Gtk.CustomSorter.new(sort_func=self._on_sort_string_func, user_data='purpose')
+        self.prop_sentby_sorter = Gtk.CustomSorter.new(sort_func=self._on_sort_string_func, user_data='sentby_dsc')
+        self.prop_concept_sorter = Gtk.CustomSorter.new(sort_func=self._on_sort_string_func, user_data='subtitle')
+        self.prop_sentto_sorter = Gtk.CustomSorter.new(sort_func=self._on_sort_string_func, user_data='sentto_dsc')
+        self.prop_date_sorter = Gtk.CustomSorter.new(sort_func=self._on_sort_string_func, user_data='date')
+        self.prop_country_sorter = Gtk.CustomSorter.new(sort_func=self._on_sort_string_func, user_data='country')
+        self.column_group.set_sorter(self.prop_group_sorter)
+        self.column_purpose.set_sorter(self.prop_purpose_sorter)
+        self.column_sentby.set_sorter(self.prop_sentby_sorter)
+        self.column_subtitle.set_sorter(self.prop_concept_sorter)
+        self.column_sentto.set_sorter(self.prop_sentto_sorter)
+        self.column_date.set_sorter(self.prop_date_sorter)
+        self.column_flag.set_sorter(self.prop_country_sorter)
+        # Default sorting by date
+        self.cv.sort_by_column(self.column_date, Gtk.SortType.DESCENDING)
 
     def _on_factory_setup_subtitle(self, factory, list_item):
         box = ColLabel()
