@@ -83,8 +83,8 @@ class MiAZWorkspace(Gtk.Box):
             body.append(boxDropdown)
             self.dropdown[i_type] = dropdown
         self.backend.connect('source-configuration-updated', self.update)
-        self.config['Country'].connect('repo-settings-updated-countries-used', self.update_dropdown, Country)
-        self.config['Group'].connect('repo-settings-updated-groups-used', self.update_dropdown, Group)
+        self.config['Country'].connect('countries-used', self.update_dropdown, Country)
+        self.config['Group'].connect('groups-used', self.update_dropdown, Group)
         self.config['SentBy'].connect('repo-settings-updated-sentby', self.update_dropdown, SentBy)
         self.config['Purpose'].connect('repo-settings-updated-purposes', self.update_dropdown, Purpose)
         self.config['SentTo'].connect('repo-settings-updated-sentto', self.update_dropdown, SentTo)

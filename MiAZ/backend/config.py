@@ -218,19 +218,19 @@ class MiAZConfigApp(MiAZConfig):
             self.emit('repo-settings-updated-app')
 
 
-class MiAZConfigSettingsCountries(MiAZConfig):
+class MiAZConfigCountries(MiAZConfig):
     def __init__(self, backend, dir_conf):
-        sid_a = GObject.signal_lookup('repo-settings-updated-countries', MiAZConfigSettingsCountries)
-        sid_u = GObject.signal_lookup('repo-settings-updated-countries-used', MiAZConfigSettingsCountries)
+        sid_a = GObject.signal_lookup('repo-settings-updated-countries', MiAZConfigCountries)
+        sid_u = GObject.signal_lookup('countries-used', MiAZConfigCountries)
         if sid_a == 0:
             GObject.GObject.__init__(self)
             GObject.signal_new('repo-settings-updated-countries',
-                                MiAZConfigSettingsCountries,
+                                MiAZConfigCountries,
                                 GObject.SignalFlags.RUN_LAST, None, () )
         if sid_u == 0:
             GObject.GObject.__init__(self)
-            GObject.signal_new('repo-settings-updated-countries-used',
-                                MiAZConfigSettingsCountries,
+            GObject.signal_new('countries-used',
+                                MiAZConfigCountries,
                                 GObject.SignalFlags.RUN_LAST, None, () )
         super().__init__(
             backend = backend,
@@ -251,22 +251,22 @@ class MiAZConfigSettingsCountries(MiAZConfig):
             if filepath == self.available:
                 self.emit('repo-settings-updated-countries')
             elif filepath == self.used:
-                self.emit('repo-settings-updated-countries-used')
+                self.emit('countries-used')
         return saved
 
-class MiAZConfigSettingsGroups(MiAZConfig):
+class MiAZConfigGroups(MiAZConfig):
     def __init__(self, backend, dir_conf):
-        sid_a = GObject.signal_lookup('repo-settings-updated-groups-available', MiAZConfigSettingsGroups)
-        sid_u = GObject.signal_lookup('repo-settings-updated-groups-used', MiAZConfigSettingsGroups)
+        sid_a = GObject.signal_lookup('repo-settings-updated-groups-available', MiAZConfigGroups)
+        sid_u = GObject.signal_lookup('groups-used', MiAZConfigGroups)
         if sid_a == 0:
             GObject.GObject.__init__(self)
             GObject.signal_new('repo-settings-updated-groups-available',
-                                MiAZConfigSettingsGroups,
+                                MiAZConfigGroups,
                                 GObject.SignalFlags.RUN_LAST, None, () )
         if sid_u == 0:
             GObject.GObject.__init__(self)
-            GObject.signal_new('repo-settings-updated-groups-used',
-                                MiAZConfigSettingsGroups,
+            GObject.signal_new('groups-used',
+                                MiAZConfigGroups,
                                 GObject.SignalFlags.RUN_LAST, None, () )
         super().__init__(
             backend = backend,
@@ -285,18 +285,18 @@ class MiAZConfigSettingsGroups(MiAZConfig):
             if filepath == self.available:
                 self.emit('repo-settings-updated-groups-available')
             elif filepath == self.used:
-                self.emit('repo-settings-updated-groups-used')
+                self.emit('groups-used')
 
     def __repr__(self):
         return 'Group'
 
-class MiAZConfigSettingsPurposes(MiAZConfig):
+class MiAZConfigPurposes(MiAZConfig):
     def __init__(self, backend, dir_conf):
-        sid = GObject.signal_lookup('repo-settings-updated-purposes', MiAZConfigSettingsPurposes)
+        sid = GObject.signal_lookup('repo-settings-updated-purposes', MiAZConfigPurposes)
         if sid == 0:
             GObject.GObject.__init__(self)
             GObject.signal_new('repo-settings-updated-purposes',
-                                MiAZConfigSettingsPurposes,
+                                MiAZConfigPurposes,
                                 GObject.SignalFlags.RUN_LAST, None, () )
         super().__init__(
             backend = backend,
@@ -317,13 +317,13 @@ class MiAZConfigSettingsPurposes(MiAZConfig):
         if self.save_data(filepath, items):
             self.emit('repo-settings-updated-purposes')
 
-class MiAZConfigSettingsConcepts(MiAZConfig):
+class MiAZConfigConcepts(MiAZConfig):
     def __init__(self, backend, dir_conf):
-        sid = GObject.signal_lookup('repo-settings-updated-concepts', MiAZConfigSettingsConcepts)
+        sid = GObject.signal_lookup('repo-settings-updated-concepts', MiAZConfigConcepts)
         if sid == 0:
             GObject.GObject.__init__(self)
             GObject.signal_new('repo-settings-updated-concepts',
-                                MiAZConfigSettingsConcepts,
+                                MiAZConfigConcepts,
                                 GObject.SignalFlags.RUN_LAST, None, () )
         super().__init__(
             backend = backend,
@@ -345,19 +345,19 @@ class MiAZConfigSettingsConcepts(MiAZConfig):
             self.emit('repo-settings-updated-concepts')
         return saved
 
-class MiAZConfigSettingsPeople(MiAZConfig):
+class MiAZConfigPeople(MiAZConfig):
     def __init__(self, backend, dir_conf):
-        sid_a = GObject.signal_lookup('repo-settings-updated-people', MiAZConfigSettingsPeople)
-        sid_u = GObject.signal_lookup('repo-settings-updated-people-used', MiAZConfigSettingsPeople)
+        sid_a = GObject.signal_lookup('repo-settings-updated-people', MiAZConfigPeople)
+        sid_u = GObject.signal_lookup('repo-settings-updated-people-used', MiAZConfigPeople)
         if sid_a == 0:
             GObject.GObject.__init__(self)
             GObject.signal_new('repo-settings-updated-people',
-                                MiAZConfigSettingsPeople,
+                                MiAZConfigPeople,
                                 GObject.SignalFlags.RUN_LAST, None, () )
         if sid_u == 0:
             GObject.GObject.__init__(self)
             GObject.signal_new('repo-settings-updated-people-used',
-                                MiAZConfigSettingsPeople,
+                                MiAZConfigPeople,
                                 GObject.SignalFlags.RUN_LAST, None, () )
         super().__init__(
             backend = backend,
@@ -383,13 +383,13 @@ class MiAZConfigSettingsPeople(MiAZConfig):
                 self.emit('repo-settings-updated-people-used')
         return saved
 
-class MiAZConfigSettingsSentBy(MiAZConfig):
+class MiAZConfigSentBy(MiAZConfig):
     def __init__(self, backend, dir_conf):
-        sid = GObject.signal_lookup('repo-settings-updated-sentby', MiAZConfigSettingsSentBy)
+        sid = GObject.signal_lookup('repo-settings-updated-sentby', MiAZConfigSentBy)
         if sid == 0:
             GObject.GObject.__init__(self)
             GObject.signal_new('repo-settings-updated-sentby',
-                                MiAZConfigSettingsSentBy,
+                                MiAZConfigSentBy,
                                 GObject.SignalFlags.RUN_LAST, None, () )
         super().__init__(
             backend = backend,
@@ -410,15 +410,15 @@ class MiAZConfigSettingsSentBy(MiAZConfig):
         if self.save_data(filepath, items):
             self.emit('repo-settings-updated-sentby')
 
-class MiAZConfigSettingsSentTo(MiAZConfig):
+class MiAZConfigSentTo(MiAZConfig):
     def __init__(self, backend, dir_conf):
         self.backend = backend
         self.util = self.backend.util
-        sid = GObject.signal_lookup('repo-settings-updated-sentto', MiAZConfigSettingsSentTo)
+        sid = GObject.signal_lookup('repo-settings-updated-sentto', MiAZConfigSentTo)
         if sid == 0:
             GObject.GObject.__init__(self)
             GObject.signal_new('repo-settings-updated-sentto',
-                                MiAZConfigSettingsSentTo,
+                                MiAZConfigSentTo,
                                 GObject.SignalFlags.RUN_LAST, None, () )
         super().__init__(
             backend = backend,

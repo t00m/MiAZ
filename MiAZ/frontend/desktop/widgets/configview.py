@@ -11,12 +11,12 @@ from gi.repository import Gtk
 from MiAZ.backend.env import ENV
 from MiAZ.backend.log import get_logger
 from MiAZ.backend.models import File, Group, Person, Country, Purpose, Concept
-from MiAZ.backend.config import MiAZConfigSettingsGroups
-from MiAZ.backend.config import MiAZConfigSettingsPeople
-from MiAZ.backend.config import MiAZConfigSettingsSentBy
-from MiAZ.backend.config import MiAZConfigSettingsSentTo
-from MiAZ.backend.config import MiAZConfigSettingsCountries
-from MiAZ.backend.config import MiAZConfigSettingsPurposes
+from MiAZ.backend.config import MiAZConfigGroups
+from MiAZ.backend.config import MiAZConfigPeople
+from MiAZ.backend.config import MiAZConfigSentBy
+from MiAZ.backend.config import MiAZConfigSentTo
+from MiAZ.backend.config import MiAZConfigCountries
+from MiAZ.backend.config import MiAZConfigPurposes
 from MiAZ.frontend.desktop.widgets.columnview import MiAZColumnView, ColIcon
 from MiAZ.frontend.desktop.widgets.dialogs import MiAZDialogAdd
 from MiAZ.frontend.desktop.widgets.selector import MiAZSelector

@@ -11,13 +11,13 @@ from MiAZ.backend.log import get_logger
 from MiAZ.backend.util import MiAZUtil
 from MiAZ.backend.watcher import MiAZWatcher
 from MiAZ.backend.config import MiAZConfigApp
-from MiAZ.backend.config import MiAZConfigSettingsCountries
-from MiAZ.backend.config import MiAZConfigSettingsGroups
-from MiAZ.backend.config import MiAZConfigSettingsPurposes
-from MiAZ.backend.config import MiAZConfigSettingsConcepts
-from MiAZ.backend.config import MiAZConfigSettingsPeople
-from MiAZ.backend.config import MiAZConfigSettingsSentBy
-from MiAZ.backend.config import MiAZConfigSettingsSentTo
+from MiAZ.backend.config import MiAZConfigCountries
+from MiAZ.backend.config import MiAZConfigGroups
+from MiAZ.backend.config import MiAZConfigPurposes
+from MiAZ.backend.config import MiAZConfigConcepts
+from MiAZ.backend.config import MiAZConfigPeople
+from MiAZ.backend.config import MiAZConfigSentBy
+from MiAZ.backend.config import MiAZConfigSentTo
 
 
 class MiAZBackend(GObject.GObject):
@@ -76,15 +76,15 @@ class MiAZBackend(GObject.GObject):
     def repo_load(self, path):
         conf = self.repo_config()
         dir_conf = conf['dir_conf']
-        self.conf['Country'] = MiAZConfigSettingsCountries(self, dir_conf)
-        self.conf['Country'].connect('repo-settings-updated-countries-used', self.repo_check)
-        self.conf['Group'] = MiAZConfigSettingsGroups(self, dir_conf)
-        self.conf['Group'].connect('repo-settings-updated-groups-used', self.repo_check)
-        self.conf['Purpose'] = MiAZConfigSettingsPurposes(self, dir_conf)
-        self.conf['Concept'] = MiAZConfigSettingsConcepts(self, dir_conf)
-        self.conf['SentBy'] = MiAZConfigSettingsSentBy(self, dir_conf)
-        self.conf['SentTo'] = MiAZConfigSettingsSentTo(self, dir_conf)
-        self.conf['Person'] = MiAZConfigSettingsPeople(self, dir_conf)
+        self.conf['Country'] = MiAZConfigCountries(self, dir_conf)
+        self.conf['Country'].connect('countries-used', self.repo_check)
+        self.conf['Group'] = MiAZConfigGroups(self, dir_conf)
+        self.conf['Group'].connect('groups-used', self.repo_check)
+        self.conf['Purpose'] = MiAZConfigPurposes(self, dir_conf)
+        self.conf['Concept'] = MiAZConfigConcepts(self, dir_conf)
+        self.conf['SentBy'] = MiAZConfigSentBy(self, dir_conf)
+        self.conf['SentTo'] = MiAZConfigSentTo(self, dir_conf)
+        self.conf['Person'] = MiAZConfigPeople(self, dir_conf)
         self.watcher = MiAZWatcher('source', path)
         self.watcher.set_active(active=True)
         self.watcher.connect('repository-updated', self.repo_check)
