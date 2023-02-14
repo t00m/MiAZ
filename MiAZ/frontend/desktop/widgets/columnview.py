@@ -10,6 +10,7 @@ gi.require_version('Adw', '1')
 gi.require_version('Gtk', '4.0')
 from gi.repository import Adw
 from gi.repository import Gio
+from gi.repository import Gdk
 from gi.repository import Gtk
 from gi.repository import Pango
 
@@ -138,22 +139,28 @@ class MiAZColumnView(Gtk.Box):
         return self.selected_items
 
     def select_first_item(self):
-        self.viewport.set_scroll_to_focus(False)
+        # ~ self.viewport.set_scroll_to_focus(False)
         # FIXME: code works (it selects the item) but not as expected
         # it is not displayed (Grabbing focus? How?)
-        # ~ selection = self.get_selection()
-        # ~ model = selection.get_model()
-        # ~ pos = len(model)
-        # ~ selection.select_item(pos - 1, True) # Last item
-        # ~ selection.select_item(0, True) # First item
+        selection = self.get_selection()
+        model = selection.get_model()
+        pos = len(model)
+        selection.select_item(pos - 1, True) # Last item
+        selection.select_item(0, True) # First item
+        # ~ self.viewport.set_scroll_to_focus(True)
         # In any case, the scrollbar doesn't move
-        pass
 
+        # ChatGTP solution :)
+        # Create a key event for the Home key
+        key_event = Gdk.Event()
+        key_event.keyval = Gdk.KEY_Home
 
+        # Get the event controller for the entry widget and handle the event
+        controller = self.cv.get_event_controller(Gtk.EventControllerKey)
+        controller.handle_event(key_event)
 
     def scroll_begin(self, *args):
         self.log.debug(args)
-
 
     def set_filter(self, filter_func):
         self.filter = Gtk.CustomFilter.new(filter_func, self.filter_model)

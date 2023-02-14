@@ -34,7 +34,6 @@ Field[SentTo] = 6
 class MiAZWorkspace(Gtk.Box):
     """ Wrapper for Gtk.Stack with  with a StackSwitcher """
     show_dashboard = True
-    displayed = 0
     signals = set()
     selected_items = []
 
@@ -94,18 +93,9 @@ class MiAZWorkspace(Gtk.Box):
         # FIXME
         self.search_text_widget = search_entry.get_text()
 
-    def enable_filtering(self, enable=True):
-        if enable:
-            self.view.set_filter(self._do_filter_view)
-        else:
-            self.view.set_filter(None)
-
     def update_dropdown(self, config, item_type):
         title = item_type.__gtype_name__
-        self.enable_filtering(False)
         self.actions.dropdown_populate(self.dropdown[title], item_type)
-        self.enable_filtering(True)
-
 
     def _on_action_rename(self, action, data, item_type):
         i_type = item_type.__gtype_name__
@@ -229,7 +219,7 @@ class MiAZWorkspace(Gtk.Box):
 
         # and create actions to handle menu actions
         for action, shortcut in [('repo_settings', [''])]:
-            self.factory.create_menu_action(action, self.menu_repo_handler, shortcut)
+            self.factory.create_menu_action(action, self._on_handle_menu_repo, shortcut)
         self.app.header.pack_end(self.tgbExplain)
         self.app.header.pack_end(self.tgbFilters)
         self.app.header.pack_end(sep)
@@ -237,7 +227,7 @@ class MiAZWorkspace(Gtk.Box):
         # ~ toolbar_top.set_center_widget(self.ent_sb)
         return toolbar_top
 
-    def menu_repo_handler(self, action, state):
+    def _on_handle_menu_repo(self, action, state):
         name = action.get_name()
         if name == 'repo_settings':
             self.log.debug("Execute Settings Assistant")
@@ -416,6 +406,7 @@ class MiAZWorkspace(Gtk.Box):
         if self.show_dashboard:
             self.tgbExplain.set_active(True)
         self.lblDocumentsSelected = "0 of %d documents selected" % len(self.repodct)
+        self.view.select_first_item()
 
     def _do_eval_cond_matches_freetext(self, path):
         ent_sb = self.app.header.get_title_widget()
@@ -457,9 +448,7 @@ class MiAZWorkspace(Gtk.Box):
         self.signals.add((selection, sigid))
 
     def _on_filter_selected(self, *args):
-        self.displayed = 0
         self.view.refilter()
-        # ~ self.display_dashboard()
 
     def _on_select_all(self, *args):
         selection = self.view.get_selection()
@@ -470,7 +459,6 @@ class MiAZWorkspace(Gtk.Box):
         selection.unselect_all()
 
     def display_dashboard(self, *args):
-        self.displayed = 0
         self.show_dashboard = True
         self.view.column_subtitle.set_title('Concept')
         self.view.column_subtitle.set_expand(True)
@@ -478,12 +466,6 @@ class MiAZWorkspace(Gtk.Box):
         self.tgbExplain.set_active(True)
         self.tgbExplain.set_visible(True)
         self.tgbFilters.set_visible(True)
-
-    def foreach(self):
-        last = self.model_filter.get_n_items()
-        for pos in range(0, last):
-            item = self.model_filter.get_item(pos)
-            self.log.debug(item.id)
 
     def document_display(self, *args):
         item = self.get_item()
