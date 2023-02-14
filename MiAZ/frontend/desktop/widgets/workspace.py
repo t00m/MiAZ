@@ -265,9 +265,12 @@ class MiAZWorkspace(Gtk.Box):
             gicon = Gio.content_type_get_icon(mimetype)
             icon_name = self.app.icman.choose_icon(gicon.get_names())
             child=Adw.ButtonContent(label='', icon_name=icon_name)
+            widget = Gtk.Label()
+            widget.set_markup("Work in progress")
         else:
+            widget = self._setup_item_valid_popover(item)
             child=Adw.ButtonContent(label='', icon_name='miaz-rename')
-        widget = self._setup_item_valid_popover(item)
+
         popover.set_child(widget)
         popover.present()
         button.set_child(child)

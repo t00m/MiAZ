@@ -140,6 +140,21 @@ class MiAZFactory:
         button.set_menu_model(menu)
         return button
 
+    def create_button_popover(self, icon_name: str = '', css_classes: list = [], widgets: list = []) -> Gtk.MenuButton:
+        listbox = Gtk.ListBox.new()
+        listbox.set_activate_on_single_click(False)
+        listbox.set_selection_mode(Gtk.SelectionMode.BROWSE)
+        for widget in widgets:
+            listbox.append(child=widget)
+        vbox = self.create_box_vertical()
+        vbox.append(child=listbox)
+        popover = Gtk.Popover()
+        popover.set_child(vbox)
+        popover.present()
+        button = Gtk.MenuButton(child=Adw.ButtonContent(icon_name=icon_name, css_classes=css_classes))
+        button.set_popover(popover)
+        return button
+
 
     def create_dropdown_generic(self, item_type, ellipsize=True, dropdown_search_function=None):
         def _get_search_entry_widget(dropdown):

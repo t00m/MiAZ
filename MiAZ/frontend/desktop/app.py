@@ -34,9 +34,9 @@ class MiAZApp(Adw.Application):
         self.conf = self.backend.conf
         self.log = get_logger("MiAZ.GUI")
         GLib.set_application_name(ENV['APP']['name'])
-        self.connect('activate', self.on_activate)
+        self.connect('activate', self._on_activate)
 
-    def on_activate(self, app):
+    def _on_activate(self, app):
         self.win = Gtk.ApplicationWindow(application=self)
         self.win.set_default_size(1024, 728)
         self.win.set_icon_name('MiAZ')
@@ -46,17 +46,17 @@ class MiAZApp(Adw.Application):
         self.theme.add_search_path(ENV['GPATH']['ICONS'])
         self.actions = MiAZActions(self)
         self.factory = MiAZFactory(self)
-        self.build_gui()
+        self._setup_gui()
         self.check_repository()
-        self.listen_to_key_events()
+        self._setup_event_listener()
         self.log.debug("Executing MiAZ Desktop mode")
 
-    def listen_to_key_events(self):
+    def _setup_event_listener(self):
         evk = Gtk.EventControllerKey.new()
-        evk.connect("key-pressed", self.key_press)
+        evk.connect("key-pressed", self._on_key_press)
         self.win.add_controller(evk)
 
-    def key_press(self, event, keyval, keycode, state):
+    def _on_key_press(self, event, keyval, keycode, state):
         keyname = Gdk.keyval_name(keyval)
         if keyname == 'Escape':
             self.show_stack_page_by_name('workspace')
@@ -94,31 +94,31 @@ class MiAZApp(Adw.Application):
         self.stack.set_vexpand(True)
         return self.stack
 
-    def setup_about_page(self):
+    def _setup_page_about(self):
         about = MiAZAbout(self)
         self.page_about = self.stack.add_titled(about, 'about', 'MiAZ')
         self.page_about.set_icon_name('document-properties')
 
-    def setup_help_page(self):
+    def _setup_page_help(self):
         help_page = MiAZHelp(self)
         self.page_about = self.stack.add_titled(help_page, 'help', 'MiAZ')
         self.page_about.set_icon_name('document-properties')
         self.page_about.set_visible(False)
 
-    def setup_settings_page(self):
+    def _setup_page_settings(self):
         self.settings = MiAZSettings(self)
         self.page_settings = self.stack.add_titled(self.settings, 'settings', 'MiAZ')
         self.page_settings.set_icon_name('document-properties')
         self.page_settings.set_visible(False)
 
-    def setup_workspace_page(self):
+    def _setup_page_workspace(self):
         self.workspace = MiAZWorkspace(self)
         self.page_workspace = self.stack.add_titled(self.workspace, 'workspace', 'MiAZ')
         self.page_workspace.set_icon_name('document-properties')
         self.page_workspace.set_visible(True)
         self.show_stack_page_by_name('workspace')
 
-    def setup_rename_page(self):
+    def _setup_page_rename(self):
         self.rename = MiAZRenameDialog(self)
         self.page_rename = self.stack.add_titled(self.rename, 'rename', 'MiAZ')
         self.page_rename.set_icon_name('document-properties')
@@ -129,23 +129,15 @@ class MiAZApp(Adw.Application):
 
     def _setup_headerbar_left(self):
         ## Import button
+        widgets = []
         btnImportFiles = self.factory.create_button('miaz-import-document', callback=self.actions.on_import_file)
         rowImportDoc = self.factory.create_actionrow(title='Import document', subtitle='Import one or more documents', suffix=btnImportFiles)
+        widgets.append(rowImportDoc)
         btnImportDir = self.factory.create_button('miaz-import-folder', callback=self.actions.on_import_directory)
         rowImportDir = self.factory.create_actionrow(title='Import directory', subtitle='Import all documents from a directory', suffix=btnImportDir)
-        listbox = Gtk.ListBox.new()
-        listbox.set_activate_on_single_click(False)
-        listbox.set_selection_mode(Gtk.SelectionMode.BROWSE)
-        listbox.append(child=rowImportDoc)
-        listbox.append(child=rowImportDir)
-        vbox = self.factory.create_box_vertical()
-        vbox.append(child=listbox)
-        popover = Gtk.Popover()
-        popover.set_child(vbox)
-        popover.present()
-        btnImport = Gtk.MenuButton(child=Adw.ButtonContent(icon_name='miaz-import', css_classes=['flat']))
-        btnImport.set_popover(popover)
-        self.header.pack_start(btnImport)
+        widgets.append(rowImportDir)
+        button = self.factory.create_button_popover(icon_name='miaz-import', css_classes=['flat'], widgets=widgets)
+        self.header.pack_start(button)
 
     def _setup_headerbar_right(self):
         # Add Menu Button to the titlebar (Right Side)
@@ -159,7 +151,7 @@ class MiAZApp(Adw.Application):
                                  ('view', ['<Ctrl>d']),
                                  ('rename', ['<Ctrl>r'])
                                 ]:
-            self.factory.create_menu_action(action, self.menu_handler, shortcut)
+            self.factory.create_menu_action(action, self._handle_menu, shortcut)
         self.header.pack_end(menu)
 
     def _setup_headerbar_center(self):
@@ -167,7 +159,7 @@ class MiAZApp(Adw.Application):
         ent_sb.set_hexpand(False)
         self.header.set_title_widget(title_widget=ent_sb)
 
-    def build_gui(self):
+    def _setup_gui(self):
         # Widgets
         ## HeaderBar
         self.header = Adw.HeaderBar()
@@ -187,9 +179,9 @@ class MiAZApp(Adw.Application):
         self.win.set_titlebar(self.header)
 
         # Create system pages
-        self.setup_about_page()
-        self.setup_help_page()
-        self.setup_settings_page()
+        self._setup_page_about()
+        self._setup_page_help()
+        self._setup_page_settings()
 
     def check_repository(self):
         repo = self.backend.repo_config()
@@ -197,8 +189,8 @@ class MiAZApp(Adw.Application):
         self.log.debug("Repo? '%s'", dir_repo)
         if self.backend.repo_validate(dir_repo):
             self.backend.repo_load(dir_repo)
-            self.setup_workspace_page()
-            self.setup_rename_page()
+            self._setup_page_workspace()
+            self._setup_page_rename()
             self.win.present()
         else:
             self.log.debug("No repo detected in the configuration. Executing asssitant")
@@ -208,7 +200,7 @@ class MiAZApp(Adw.Application):
             assistant.present()
             self.log.debug("Repository assistant displayed")
 
-    def menu_handler(self, action, state):
+    def _handle_menu(self, action, state):
             """ Callback for  menu actions"""
             name = action.get_name()
             if name == 'settings':
