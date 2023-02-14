@@ -32,7 +32,7 @@ class MiAZ:
             from MiAZ.frontend.desktop.app import MiAZApp
         else:
             from MiAZ.frontend.console.app import MiAZApp
-        app = MiAZApp(application_id="com.example.MiAZ")
+        app = MiAZApp(application_id="com.github.t00m.MiAZ")
         try:
             app.run()
         except KeyboardInterrupt:
