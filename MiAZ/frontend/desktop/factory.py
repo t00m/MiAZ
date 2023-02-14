@@ -129,6 +129,18 @@ class MiAZFactory:
             button.connect('toggled', callback, data)
         return button
 
+    def create_button_menu(self, xml, name, child, css_classes=[]):
+        """
+        Gtk.Menubutton with a menu defined in a Gtk.Builder xml string
+        """
+        button = Gtk.MenuButton(child=child, css_classes=css_classes)
+        builder = Gtk.Builder()
+        builder.add_from_string(xml)
+        menu = builder.get_object(name)
+        button.set_menu_model(menu)
+        return button
+
+
     def create_dropdown_generic(self, item_type, ellipsize=True, dropdown_search_function=None):
         def _get_search_entry_widget(dropdown):
             popover = dropdown.get_last_child()

@@ -19,7 +19,6 @@ from MiAZ.frontend.desktop.util import get_file_mimetype
 from MiAZ.frontend.desktop.widgets.columnview import MiAZColumnView, ColIcon, ColLabel
 from MiAZ.frontend.desktop.factory import MenuHeader
 from MiAZ.frontend.desktop.widgets.assistant import MiAZAssistantRepoSettings
-from MiAZ.frontend.desktop.widgets.menubutton import MiAZMenuButton
 from MiAZ.frontend.desktop.widgets.menu import MiAZ_MENU_WORKSPACE_REPO
 from MiAZ.frontend.desktop.widgets.columnviews import MiAZColumnViewWorkspace, MiAZColumnViewMassRename
 
@@ -225,7 +224,7 @@ class MiAZWorkspace(Gtk.Box):
         self.tgbExplain = self.factory.create_button_toggle('miaz-magic', callback=self._on_explain_toggled, css_classes=['flat'])
         self.tgbFilters = self.factory.create_button_toggle('miaz-filters', callback=self._on_filters_toggled, css_classes=['flat'])
         self.tgbFilters.set_active(False)
-        btnRepoSettings = MiAZMenuButton(MiAZ_MENU_WORKSPACE_REPO, 'repo-menu', css_classes=['flat'], child=Adw.ButtonContent(icon_name='document-properties'))
+        btnRepoSettings = self.factory.create_button_menu(MiAZ_MENU_WORKSPACE_REPO, 'repo-menu', css_classes=['flat'], child=Adw.ButtonContent(icon_name='document-properties'))
         btnRepoSettings.set_valign(Gtk.Align.CENTER)
 
         # and create actions to handle menu actions
