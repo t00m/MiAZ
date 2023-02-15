@@ -150,15 +150,6 @@ class MiAZColumnView(Gtk.Box):
         # ~ self.viewport.set_scroll_to_focus(True)
         # In any case, the scrollbar doesn't move
 
-        # ChatGTP solution :)
-        # Create a key event for the Home key
-        key_event = Gdk.Event()
-        key_event.keyval = Gdk.KEY_Home
-
-        # Get the event controller for the entry widget and handle the event
-        controller = self.cv.get_event_controller(Gtk.EventControllerKey)
-        controller.handle_event(key_event)
-
     def scroll_begin(self, *args):
         self.log.debug(args)
 
