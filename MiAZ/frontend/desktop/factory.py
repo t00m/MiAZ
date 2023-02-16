@@ -89,21 +89,17 @@ class MiAZFactory:
         return box
 
     def create_button(self, icon_name='', title='', callback=None, width=32, height=32, css_classes=['linked'], data=None):
-        if len(icon_name.strip()) == 0:
-            button = Gtk.Button(css_classes=css_classes)
+        button = Gtk.Button(css_classes=css_classes)
+        hbox = self.create_box_horizontal(spacing=6)
+        if len(icon_name.strip()) > 0:
+            image = self.app.icman.get_image_by_name(icon_name)
+            hbox.append(image)
+        if len(title.strip()) > 0:
             label = Gtk.Label()
+            label.set_xalign(0.0)
             label.set_markup(title)
-            button.set_child(label)
-            button.set_valign(Gtk.Align.CENTER)
-        else:
-            button = Gtk.Button(
-                css_classes=css_classes,
-                child=Adw.ButtonContent(
-                    label=title,
-                    icon_name=icon_name
-                    )
-                )
-        # ~ button.get_style_context().add_class(class_name='success')
+            hbox.append(label)
+        button.set_child(hbox)
         button.set_has_frame(False)
         if callback is not None:
             button.connect('clicked', callback, data)
@@ -399,41 +395,6 @@ class MiAZFactory:
         item_delete.set_detailed_action(detailed_action='app.workspace_delete')
         self.menu_workspace_multiple.append_item(item_delete)
         return self.menu_workspace_multiple
-
-    def __create_trvreasons(self, filepath):
-        # ~ scrreasons = Gtk.ScrolledWindow()
-        trvreasons = Gtk.TreeView()
-        trvreasons.set_vexpand(True)
-        trvreasons.set_hexpand(False)
-        trvreasons.set_headers_visible(False)
-        model = Gtk.ListStore(Pixbuf, str)
-
-        renderer = Gtk.CellRendererPixbuf()
-        column = Gtk.TreeViewColumn('Type', renderer, pixbuf=0)
-        renderer.set_alignment(0.0, 0.5)
-        column.set_sizing(Gtk.TreeViewColumnSizing.AUTOSIZE)
-        column.set_visible(True)
-        trvreasons.append_column(column)
-
-        renderer = Gtk.CellRendererText()
-        column = Gtk.TreeViewColumn('Reason', renderer, text=1)
-        column.set_visible(True)
-        column.set_sizing(Gtk.TreeViewColumnSizing.AUTOSIZE)
-        column.set_expand(False)
-        column.set_clickable(False)
-        column.set_sort_indicator(False)
-        trvreasons.append_column(column)
-        icon_ko = self.app.icman.get_pixbuf_by_name('miaz-ko', 32)
-        icon_ok = self.app.icman.get_pixbuf_by_name('miaz-ok', 32)
-
-        for reason in self.repodct[filepath]['reasons']:
-            passed, message = reason
-            if passed:
-                model.insert_with_values(-1, (0, 1), (icon_ok, message))
-            else:
-                model.insert_with_values(-1, (0, 1), (icon_ko, message))
-        trvreasons.set_model(model)
-        return trvreasons
 
 class MenuHeader(Gio.MenuItem):
     """

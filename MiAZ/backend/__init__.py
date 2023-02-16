@@ -130,8 +130,11 @@ class MiAZBackend(GObject.GObject):
                 self.s_repodct[doc]['reasons'] = reasons
                 self.s_repodct[doc]['suggested'] = None
                 self.s_repodct[doc]['fields'] = self.util.get_fields(doc)
-            except:
+            except Exception as error:
                 self.log.warning("Issues detected with file %s. Check manually" % doc)
+                self.log.warning(error)
+                raise
+
         self.log.debug("Repository check finished: %d documents analyzed", len(filepaths))
         self.util.json_save(s_repocnf, self.s_repodct)
 

@@ -15,14 +15,17 @@ from gi.repository import GObject
 from MiAZ.backend.env import ENV
 from MiAZ.backend.log import get_logger
 from MiAZ.backend.models import Group, Person, Country
-from MiAZ.backend.models import Purpose, Concept, SentBy, SentTo
+from MiAZ.backend.models import Purpose, Concept, SentBy
+from MiAZ.backend.models import SentTo, Date, Extension
 
 Field = {}
+Field[Date] = 0
 Field[Country] = 1
 Field[Group] = 2
 Field[SentBy] = 3
 Field[Purpose] = 4
 Field[SentTo] = 6
+
 
 
 class MiAZUtil(GObject.GObject):
@@ -169,12 +172,14 @@ class MiAZUtil(GObject.GObject):
         else:
             self.log.error("Source and Target are the same. Skip rename")
 
-    def filename_delete(self, doc):
-        pass
-
     def filename_display(self, doc):
         filepath = self.filename_path(doc)
         os.system("xdg-open '%s'" % filepath)
+
+    def filename_delete(self, doc):
+        filepath = self.filename_path(doc)
+        self.log.debug("Document deleted: %s", filepath)
+        # ~ os.unlink(filepath)
 
     def filename_path(self, doc):
         repo = self.backend.repo_config()
@@ -203,7 +208,8 @@ class MiAZUtil(GObject.GObject):
         fields = name.split('-')
 
         # Check extension
-        item_type = None
+        item_type = Extension
+        gtype = Date.__gtype_name__
         dot = filename.rfind('.')
         if dot > 0:
             name = filename[:dot]
@@ -216,31 +222,35 @@ class MiAZUtil(GObject.GObject):
             rc = False
             valid &= False
             message = "File extension missing. Please, check this document!"
-        reasons.append((rc, message))
+        reasons.append((rc, gtype, ext, message))
 
         # Validate fields
-        for item_type in [Country, Group, SentBy, Purpose, SentTo]:
+        for item_type in [Date, Country, Group, SentBy, Purpose, SentTo]:
+            gtype = item_type.__gtype_name__
             fn = Field[item_type] # Field number
             fname = item_type.__gtype_name__
+            title = item_type.__title__
             key = fields[fn]
+            value = None
             if len(key) == 0:
                 valid &= False
                 rc = False
-                message = "%s field is empty" % fname
+                message = "<i>%s</i> field is empty" % title
             else:
-                available = self.conf[fname].exists_available(key)
-                used = self.conf[fname].exists_used(key)
-                if available and used:
-                    rc = True
-                    items = self.conf[fname].load_used()
-                    value = self.conf[fname].get(key)
-                    if len(value) > 0:
-                        message = "%s %s (%s) is available and ready to use" % (fname, key, value)
+                if item_type != Date:
+                    available = self.conf[fname].exists_available(key)
+                    used = self.conf[fname].exists_used(key)
+                    if available and used:
+                        rc = True
+                        items = self.conf[fname].load_used()
+                        value = self.conf[fname].get(key)
+                        if len(value) > 0:
+                            message = "%s %s (%s) is available and ready to use" % (fname, key, value)
+                        else:
+                            message = "%s %s is available and ready to use" % (fname, key)
                     else:
-                        message = "%s %s is available and ready to use" % (fname, key)
-                else:
-                    valid &= False
-                    rc = False
-                    message = "%s %s available? %s. Used? %s" % (fname, key, available, used)
-            reasons.append((rc, message))
+                        valid &= False
+                        rc = False
+                        message = "%s %s available? %s. Used? %s" % (title, key, available, used)
+            reasons.append((rc, gtype, value, message))
         return valid, reasons

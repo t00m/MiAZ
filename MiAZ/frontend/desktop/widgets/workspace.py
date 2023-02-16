@@ -14,13 +14,14 @@ from gi.repository import GObject
 
 from MiAZ.backend.env import ENV
 from MiAZ.backend.log import get_logger
-from MiAZ.backend.models import MiAZItem, File, Group, Person, Country, Purpose, Concept, SentBy, SentTo
+from MiAZ.backend.models import MiAZItem, File, Group, Person, Country, Purpose, Concept, SentBy, SentTo, Date, Extension
 from MiAZ.frontend.desktop.util import get_file_mimetype
 from MiAZ.frontend.desktop.widgets.columnview import MiAZColumnView, ColIcon, ColLabel
 from MiAZ.frontend.desktop.factory import MenuHeader
 from MiAZ.frontend.desktop.widgets.assistant import MiAZAssistantRepoSettings
 from MiAZ.frontend.desktop.widgets.menu import MiAZ_MENU_WORKSPACE_REPO
 from MiAZ.frontend.desktop.widgets.columnviews import MiAZColumnViewWorkspace, MiAZColumnViewMassRename
+from MiAZ.frontend.desktop.widgets.configview import MiAZCountries, MiAZGroups, MiAZPeople, MiAZPurposes, MiAZPeopleSentBy, MiAZPeopleSentTo
 
 # Conversion Item type to Field Number
 Field = {}
@@ -29,6 +30,14 @@ Field[Group] = 2
 Field[SentBy] = 3
 Field[Purpose] = 4
 Field[SentTo] = 6
+
+Configview = {}
+Configview['Country'] = MiAZCountries
+Configview['Group'] = MiAZGroups
+Configview['Purpose'] = MiAZPurposes
+Configview['SentBy'] = MiAZPeopleSentBy
+Configview['SentTo'] = MiAZPeopleSentTo
+Configview['Date'] = Gtk.Calendar()
 
 
 class MiAZWorkspace(Gtk.Box):
@@ -255,10 +264,9 @@ class MiAZWorkspace(Gtk.Box):
             gicon = Gio.content_type_get_icon(mimetype)
             icon_name = self.app.icman.choose_icon(gicon.get_names())
             child=Adw.ButtonContent(label='', icon_name=icon_name)
-            widget = Gtk.Label()
-            widget.set_markup("Work in progress")
-        else:
             widget = self._setup_item_valid_popover(item)
+        else:
+            widget = self._setup_item_invalid_popover(item)
             child=Adw.ButtonContent(label='', icon_name='miaz-rename')
 
         popover.set_child(widget)
@@ -266,29 +274,43 @@ class MiAZWorkspace(Gtk.Box):
         button.set_child(child)
 
     def _setup_item_valid_popover(self, item):
+        vbox = self.factory.create_box_vertical()
+        doc = item.id
+
+        # ~ row = self.factory.create_actionrow(icon_name = 'miaz-res-manage', title='Rename document')
+
+        separator = Gtk.Separator.new(Gtk.Orientation.HORIZONTAL)
+        btnDel = self.factory.create_button(icon_name='miaz-entry-delete', title="Delete this document", css_classes=['flat'])
+        btnDel.connect('clicked', self.document_delete, item.id)
+        vbox.append(separator)
+        vbox.append(btnDel)
+        return vbox
+
+    def _setup_item_invalid_popover(self, item):
         listbox = Gtk.ListBox.new()
         listbox.set_activate_on_single_click(False)
-        listbox.unselect_all()
-        listbox.set_selection_mode(Gtk.SelectionMode.SINGLE)
+        listbox.set_selection_mode(Gtk.SelectionMode.NONE)
         vbox = self.factory.create_box_vertical()
-        vbox.append(child=listbox)
         doc = item.id
         valid = self.repodct[doc]['valid']
         reasons = self.repodct[doc]['reasons']
         items = []
-        for rc, reason in reasons:
+        for rc, gtype, value, reason in reasons:
+            item_type = eval(gtype)
+            item_title = item_type.__title__
+            icon_name = "miaz-res-%s" % gtype.lower()
             if rc:
                 icon_name = 'miaz-ok'
             else:
                 icon_name = 'miaz-ko'
-            row = self.factory.create_box_horizontal()
-            button = self.factory.create_button(icon_name=icon_name)
-            label = Gtk.Label()
-            label.set_markup(reason)
-            label.get_style_context().add_class(class_name='caption')
-            row.append(button)
-            row.append(label)
+            row = self.factory.create_actionrow(icon_name=icon_name, subtitle=reason)
             listbox.append(child=row)
+        vbox.append(listbox)
+        separator = Gtk.Separator.new(Gtk.Orientation.HORIZONTAL)
+        btnDel = self.factory.create_button(icon_name='miaz-entry-delete', title="Delete this document", css_classes=['flat'])
+        btnDel.connect('clicked', self.document_delete, item.id)
+        vbox.append(child=separator)
+        vbox.append(child=btnDel)
         return vbox
 
     def _setup_workspace(self):
@@ -471,6 +493,15 @@ class MiAZWorkspace(Gtk.Box):
         item = self.get_item()
         self.actions.document_display(item.id)
 
+    def document_delete(self, button, filepath):
+        # ~ item = self.get_item()
+        self.actions.document_delete(filepath)
+
     def document_rename(self, *args):
+        # Get item from selected row in Columnview
         item = self.get_item()
+        self.actions.document_rename(item)
+
+    def document_rename_bis(self, button, item):
+        # Get item from actionrow in helper popover
         self.actions.document_rename(item)

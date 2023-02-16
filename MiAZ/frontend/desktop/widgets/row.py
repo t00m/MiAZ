@@ -225,7 +225,7 @@ class MiAZListViewRow(Gtk.Box):
         icon_ok = self.app.icman.get_pixbuf_by_name('miaz-ok', 32)
 
         for reason in self.filedict['reasons']:
-            passed, message = reason
+            passed, gtype, message = reason
             if passed:
                 model.insert_with_values(-1, (0, 1), (icon_ok, message))
             else:

@@ -49,6 +49,10 @@ class MiAZActions(GObject.GObject):
         self.log.debug("Displaying %s", doc)
         self.util.filename_display(doc)
 
+    def document_delete(self, doc):
+        self.log.debug("Deleting %s", doc)
+        self.util.filename_delete(doc)
+
     def document_rename(self, item):
         config = self.backend.repo_config()
         repodct = config['dct_repo']
@@ -114,3 +118,13 @@ class MiAZActions(GObject.GObject):
                     callback = self.add_file_to_repo
                     )
         filechooser.show()
+
+    def on_resource_manage(self, widget: Gtk.Widget, selector: Gtk.Widget):
+        factory = self.app.get_factory()
+        box = factory.create_box_vertical(spacing=0, vexpand=True, hexpand=True)
+        box.append(selector)
+        config_for = selector.get_config_for()
+        selector.set_vexpand(True)
+        selector.update()
+        dialog = factory.create_dialog(self.app.win, 'Manage %s' % config_for, box, 800, 600)
+        dialog.show()

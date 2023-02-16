@@ -42,7 +42,7 @@ class MiAZSelector(Gtk.Box):
         if edit:
             self.boxButtons = Gtk.Box(spacing=3, orientation=Gtk.Orientation.HORIZONTAL)
             self.boxButtons.set_hexpand(False)
-            self.boxButtons.append(self.factory.create_button('miaz-list-add', '', self._on_item_available_add, self.config_for))
+            self.boxButtons.append(self.factory.create_button('miaz-list-add', '', self.on_item_available_add, self.config_for))
             self.boxButtons.append(self.factory.create_button('miaz-list-remove', '', self._on_item_available_remove))
             self.boxOper.append(self.boxButtons)
         self.append(self.boxOper)
@@ -126,7 +126,7 @@ class MiAZSelector(Gtk.Box):
             self._update_view_used()
             self._update_view_available()
 
-    def _on_item_available_add(self, *args):
+    def on_item_available_add(self, *args):
         dialog = MiAZDialogAdd(self.app, self.get_root(), '%s: add a new item' % self.config.config_for, 'Name', 'Description')
         etyValue1 = dialog.get_value1_widget()
         search_term = self.entry.get_text()
@@ -218,3 +218,6 @@ class MiAZSelector(Gtk.Box):
 
     def _on_entrysearch_delete(self, *args):
         self.entry.set_text("")
+
+    def get_search_entry(self):
+        return self.entry
