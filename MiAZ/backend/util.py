@@ -68,7 +68,10 @@ class MiAZUtil(GObject.GObject):
                 filename = filename[:dot]
             return filename.split('-')
 
-    def get_files(self, root_dir: str) -> []:
+    def get_files(self, root_dir: str = '') -> []:
+        if len(root_dir) == 0:
+            repo = self.backend.repo_config()
+            root_dir = repo['dir_docs']
         return glob.glob(os.path.join(root_dir, '*'))
 
     def get_files_recursively(self, root_dir: str) -> []:
@@ -189,7 +192,13 @@ class MiAZUtil(GObject.GObject):
         dirpath = repo['dir_docs']
         return os.path.join(dirpath, doc)
 
-    def filename_validate(self, filepath: str) -> tuple:
+    def filename_validate(self, doc:str) -> bool:
+        if len(doc.split('-')) == 7:
+            return True
+        return False
+
+
+    def filename_validate_complex(self, filepath: str) -> tuple:
         repo = self.backend.repo_config()
         dir_repo = repo['dir_docs']
         filename = os.path.basename(filepath)

@@ -87,13 +87,15 @@ class MiAZRenameDialog(Gtk.Box):
         title = item_type.__gtype_name__
         self.actions.dropdown_populate(self.dropdown[title], item_type)
 
-    def set_data(self, filepath: str, suggested: list):
-        self.filepath = filepath
-        self.extension = filepath[filepath.rfind('.')+1:]
-        self.doc = os.path.basename(filepath)
+    def set_data(self, doc):
+        self.doc = doc
+        self.filepath = doc
+        name, self.extension = self.util.filename_details(doc)
+        # ~ self.extension = filepath[filepath.rfind('.')+1:]
+        # ~ self.doc = os.path.basename(filepath)
         self.suggested = self.util.get_fields(self.doc)
         if len(self.suggested[0]) == 0:
-            adate = self.util.filename_get_creation_date(filepath)
+            adate = self.util.filename_get_creation_date(doc)
             self.entry_date.set_text(adate.strftime("%Y%m%d"))
         else:
             self.entry_date.set_text(self.suggested[0])

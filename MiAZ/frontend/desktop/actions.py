@@ -54,14 +54,15 @@ class MiAZActions(GObject.GObject):
         self.util.filename_delete(doc)
 
     def document_rename(self, item):
-        config = self.backend.repo_config()
-        repodct = config['dct_repo']
-        source = item.id
-        basename = os.path.basename(source)
-        filename = basename[:basename.rfind('.')]
-        target = filename.split('-')
+        # ~ config = self.backend.repo_config()
+        # ~ repodct = config['dct_repo']
+        # ~ source = item.id
+        # ~ basename = os.path.basename(source)
+        # ~ filename = basename[:basename.rfind('.')]
+        # ~ target = filename.split('-')
+        self.log.debug("Rename %s", item.id)
         rename = self.app.get_rename_widget()
-        rename.set_data(source, target)
+        rename.set_data(item.id)
         self.app.show_stack_page_by_name('rename')
 
     def select_dropdown_item(self, dropdown, key):

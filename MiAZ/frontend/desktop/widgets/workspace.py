@@ -92,13 +92,16 @@ class MiAZWorkspace(Gtk.Box):
             boxDropdown = self.factory.create_box_filter(i_title, dropdown)
             body.append(boxDropdown)
             self.dropdown[i_type] = dropdown
-        self.backend.connect('source-configuration-updated', self.update)
+        self.backend.connect('source-configuration-updated', self._on_workspace_update)
         self.config['Country'].connect('countries-used', self.update_dropdown, Country)
         self.config['Group'].connect('groups-used', self.update_dropdown, Group)
         self.config['SentBy'].connect('repo-settings-updated-sentby', self.update_dropdown, SentBy)
         self.config['Purpose'].connect('repo-settings-updated-purposes', self.update_dropdown, Purpose)
         self.config['SentTo'].connect('repo-settings-updated-sentto', self.update_dropdown, SentTo)
         return widget
+
+    def _on_workspace_update(self, *args):
+        GLib.idle_add(self.update)
 
     def _on_search_dropdown_changed(self, search_entry):
         # FIXME
@@ -190,7 +193,8 @@ class MiAZWorkspace(Gtk.Box):
             item = model.get_item(pos)
             self.selected_items.append(item)
         label = self.btnDocsSel.get_child()
-        label.set_markup("<small>%d</small> / %d / <big>%d</big>" % (len(self.selected_items), len(model), len(self.repodct)))
+        docs = self.util.get_files()
+        label.set_markup("<small>%d</small> / %d / <big>%d</big>" % (len(self.selected_items), len(model), len(docs)))
 
     def _setup_toolbar_top(self):
         toolbar_top = Gtk.CenterBox()
@@ -452,23 +456,22 @@ class MiAZWorkspace(Gtk.Box):
 
     def update(self, *args):
         self._on_explain_toggled(self.tgbExplain)
-        repo = self.backend.repo_config()
-        repocnf = repo['cnf_file']
-        self.repodct = self.util.json_load(repocnf)
+        docs = self.util.get_files()
         sentby = self.app.get_config('SentBy')
         sentto = self.app.get_config('SentTo')
         items = []
-        for path in self.repodct:
-            valid = self.repodct[path]['valid']
-            fields = self.repodct[path]['fields']
-            try:
-                adate = datetime.strptime(fields[0], "%Y%m%d")
-                date_dsc = adate.strftime("%Y.%m.%d")
-            except:
-                date_dsc = ''
+        for filename in docs:
+            doc, ext = self.util.filename_details(filename)
+            fields = doc.split('-')
+            date_dsc = fields[0]
+            # ~ try:
+                # ~ adate = datetime.strptime(fields[0], "%Y%m%d")
+                # ~ date_dsc = adate.strftime("%Y.%m.%d")
+            # ~ except:
+                # ~ date_dsc = ''
             items.append(MiAZItem
                                 (
-                                    id=path,
+                                    id=filename,
                                     date=fields[0],
                                     date_dsc = date_dsc,
                                     country=fields[1],
@@ -476,18 +479,19 @@ class MiAZWorkspace(Gtk.Box):
                                     sentby_id=fields[3],
                                     sentby_dsc=sentby.get(fields[3]),
                                     purpose=fields[4],
-                                    title=os.path.basename(path),
+                                    title=doc,
                                     subtitle=fields[5].replace('_', ' '),
                                     sentto_id=fields[6],
-                                    sentto_dsc=sentto.get(fields[6]),
-                                    valid=valid)
+                                    sentto_dsc=sentto.get(fields[6])
                                 )
+                        )
         self.view.update(items)
         self._on_filter_selected()
         if self.show_dashboard:
             self.tgbExplain.set_active(True)
         label = self.btnDocsSel.get_child()
         self.view.select_first_item()
+        self.log.debug("Workspace updated")
 
     def _do_eval_cond_matches_freetext(self, path):
         left = self.ent_sb.get_text()
@@ -556,7 +560,8 @@ class MiAZWorkspace(Gtk.Box):
         self.view.refilter()
         model = self.view.cv.get_model()
         label = self.btnDocsSel.get_child()
-        label.set_markup("<small>%d</small> / %d / <big>%d</big>" % (len(self.selected_items), len(model), len(self.repodct)))
+        docs = self.util.get_files()
+        label.set_markup("<small>%d</small> / %d / <big>%d</big>" % (len(self.selected_items), len(model), len(docs)))
 
     def _on_select_all(self, *args):
         selection = self.view.get_selection()

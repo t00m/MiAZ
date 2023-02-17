@@ -2,11 +2,9 @@
 # -*- coding: utf-8 -*-
 
 import os
-from os.path import basename
 
 from gi.repository import GObject
 
-from MiAZ.backend.env import ENV
 from MiAZ.backend.log import get_logger
 from MiAZ.backend.util import MiAZUtil
 from MiAZ.backend.watcher import MiAZWatcher
@@ -24,9 +22,6 @@ class MiAZBackend(GObject.GObject):
     """Backend class"""
     __gtype_name__ = 'MiAZBackend'
     conf = {}
-    s_repodct = {}
-    # ~ util = None
-    checking = False
 
     def __init__(self) -> None:
         GObject.GObject.__init__(self)
@@ -69,17 +64,13 @@ class MiAZBackend(GObject.GObject):
         conf = {}
         conf['dir_docs'] = self.conf['App'].get('source')
         conf['dir_conf'] = os.path.join(conf['dir_docs'], '.conf')
-        conf['cnf_file'] = os.path.join(conf['dir_conf'], "docs.json" )
-        conf['dct_repo'] = self.s_repodct
         return conf
 
     def repo_load(self, path):
         conf = self.repo_config()
         dir_conf = conf['dir_conf']
         self.conf['Country'] = MiAZConfigCountries(self, dir_conf)
-        self.conf['Country'].connect('countries-used', self.repo_check)
         self.conf['Group'] = MiAZConfigGroups(self, dir_conf)
-        self.conf['Group'].connect('groups-used', self.repo_check)
         self.conf['Purpose'] = MiAZConfigPurposes(self, dir_conf)
         self.conf['Concept'] = MiAZConfigConcepts(self, dir_conf)
         self.conf['SentBy'] = MiAZConfigSentBy(self, dir_conf)
@@ -92,53 +83,5 @@ class MiAZBackend(GObject.GObject):
         self.log.debug("Configuration loaded")
 
     def repo_check(self, *args):
-        if self.checking:
-            self.log.debug("Repository check already in progress")
-            return
-        else:
-            self.log.debug("Repository check started")
-            self.checking = True
-
-        repo = self.repo_config()
-        s_repodir = repo['dir_docs']
-        s_repocnf = repo['cnf_file']
-        try:
-            self.s_repodct = self.util.json_load(s_repocnf)
-            self.log.debug("Loaded configuration from: %s" % s_repocnf)
-        except FileNotFoundError:
-            self.s_repodct = {}
-            self.util.json_save(s_repocnf, self.s_repodct)
-            self.log.debug("Created an empty configuration file in: %s" % s_repocnf)
-
-        # Workflow
-        # 1. Check and delete inconsistencies.
-        for doc in self.s_repodct.copy():
-            filepath = os.path.join(s_repodir, doc)
-            if not os.path.exists(filepath):
-                del(self.s_repodct[doc])
-                self.log.debug("File[%s] - Inconistency found. Deleted"
-                                                        % doc)
-
-        # 2. Rebuild repository dictionary
-        filepaths = self.util.get_files(s_repodir)
-        for filepath in filepaths:
-            doc = os.path.basename(filepath)
-            try:
-                valid, reasons = self.util.filename_validate(doc)
-                self.s_repodct[doc] = {}
-                self.s_repodct[doc]['valid'] = valid
-                self.s_repodct[doc]['reasons'] = reasons
-                self.s_repodct[doc]['suggested'] = None
-                self.s_repodct[doc]['fields'] = self.util.get_fields(doc)
-            except Exception as error:
-                self.log.warning("Issues detected with file %s. Check manually" % doc)
-                self.log.warning(error)
-                raise
-
-        self.log.debug("Repository check finished: %d documents analyzed", len(filepaths))
-        self.util.json_save(s_repocnf, self.s_repodct)
-
-        # 3. Emit the 'source-configuration-updated' signal
         self.log.debug("Source repository updated")
         self.emit('source-configuration-updated')
-        self.checking = False
