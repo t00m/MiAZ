@@ -17,7 +17,7 @@ from MiAZ.backend.env import ENV
 from MiAZ.backend.log import get_logger
 from MiAZ.backend.models import MiAZItem, File, Group, Person, Country, Purpose, Concept, SentBy, SentTo, Date, Extension
 from MiAZ.frontend.desktop.util import get_file_mimetype
-from MiAZ.frontend.desktop.widgets.columnview import MiAZColumnView, ColIcon, ColLabel
+from MiAZ.frontend.desktop.widgets.columnview import MiAZColumnView, ColIcon, ColLabel, ColButton
 from MiAZ.frontend.desktop.factory import MenuHeader
 from MiAZ.frontend.desktop.widgets.assistant import MiAZAssistantRepoSettings
 from MiAZ.frontend.desktop.widgets.menu import MiAZ_MENU_WORKSPACE_REPO
@@ -306,20 +306,21 @@ class MiAZWorkspace(Gtk.Box):
     def _on_factory_bind_icon_type(self, factory, list_item):
         box = list_item.get_child()
         button = box.get_first_child()
-        popover = button.get_popover()
+        # ~ popover = button.get_popover()
         item = list_item.get_item()
         if item.valid:
             mimetype, val = Gio.content_type_guess('filename=%s' % item.id)
             gicon = Gio.content_type_get_icon(mimetype)
             icon_name = self.app.icman.choose_icon(gicon.get_names())
-            child=Adw.ButtonContent(label='', icon_name=icon_name)
-            widget = self._setup_item_valid_popover(item)
+            # ~ child=Adw.ButtonContent(label='', icon_name=icon_name)
+            # ~ widget = self._setup_item_valid_popover(item)
         else:
-            widget = self._setup_item_invalid_popover(item)
-            child=Adw.ButtonContent(label='', icon_name='miaz-rename')
-
-        popover.set_child(widget)
-        popover.present()
+            icon_name='miaz-rename'
+            # ~ widget = self._setup_item_invalid_popover(item)
+            # ~ child=Adw.ButtonContent(label='', icon_name='miaz-rename')
+        child=Adw.ButtonContent(label='', icon_name=icon_name)
+        # ~ popover.set_child(widget)
+        # ~ popover.present()
         button.set_child(child)
 
     def _setup_item_valid_popover(self, item):

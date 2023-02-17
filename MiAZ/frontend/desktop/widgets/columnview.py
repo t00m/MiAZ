@@ -37,6 +37,16 @@ class ColIcon(Gtk.Box):
         icon = Gtk.Image()
         self.append(icon)
 
+class ColButton(Gtk.Box):
+    """Row Icon Widget"""
+    __gtype_name__ = 'ColButton'
+
+    def __init__(self):
+        super(ColButton, self).__init__()
+        button = Gtk.Button()
+        button.get_style_context().add_class(class_name='flat')
+        self.append(button)
+
 class ColMenuButton(Gtk.Box):
     """Row Icon Widget"""
     __gtype_name__ = 'ColMenuButton'

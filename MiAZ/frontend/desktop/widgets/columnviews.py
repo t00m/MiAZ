@@ -16,7 +16,7 @@ from gi.repository import Pango
 from MiAZ.backend.env import ENV
 from MiAZ.backend.log import get_logger
 from MiAZ.frontend.desktop.widgets.columnview import MiAZColumnView
-from MiAZ.frontend.desktop.widgets.columnview import ColIcon, ColLabel, ColMenuButton, ColCheck
+from MiAZ.frontend.desktop.widgets.columnview import ColIcon, ColLabel, ColMenuButton, ColCheck, ColButton
 from MiAZ.backend.models import MiAZItem, Country, Group, Person, Purpose, File
 
 
@@ -136,7 +136,7 @@ class MiAZColumnViewWorkspace(MiAZColumnView):
         icon = box.get_first_child()
 
     def _on_factory_setup_icon_type(self, factory, list_item):
-        box = ColMenuButton()
+        box = ColButton()
         list_item.set_child(box)
 
     def _on_factory_bind_icon_type(self, factory, list_item):
