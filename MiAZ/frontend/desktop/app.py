@@ -128,16 +128,7 @@ class MiAZApp(Adw.Application):
         return self.rename
 
     def _setup_headerbar_left(self):
-        ## Import button
-        widgets = []
-        btnImportFiles = self.factory.create_button('miaz-import-document', callback=self.actions.on_import_file)
-        rowImportDoc = self.factory.create_actionrow(title='Import document', subtitle='Import one or more documents', suffix=btnImportFiles)
-        widgets.append(rowImportDoc)
-        btnImportDir = self.factory.create_button('miaz-import-folder', callback=self.actions.on_import_directory)
-        rowImportDir = self.factory.create_actionrow(title='Import directory', subtitle='Import all documents from a directory', suffix=btnImportDir)
-        widgets.append(rowImportDir)
-        button = self.factory.create_button_popover(icon_name='miaz-import', css_classes=['flat'], widgets=widgets)
-        self.header.pack_start(button)
+        pass
 
     def _setup_headerbar_right(self):
         # Add Menu Button to the titlebar (Right Side)
@@ -155,9 +146,10 @@ class MiAZApp(Adw.Application):
         self.header.pack_end(menu)
 
     def _setup_headerbar_center(self):
-        ent_sb = Gtk.SearchEntry(placeholder_text="Type here")
-        ent_sb.set_hexpand(False)
-        self.header.set_title_widget(title_widget=ent_sb)
+        pass
+        # ~ ent_sb = Gtk.SearchEntry(placeholder_text="Type here")
+        # ~ ent_sb.set_hexpand(False)
+        # ~ self.header.set_title_widget(title_widget=ent_sb)
 
     def _setup_gui(self):
         # Widgets

@@ -139,7 +139,7 @@ class MiAZFactory:
     def create_button_popover(self, icon_name: str = '', css_classes: list = [], widgets: list = []) -> Gtk.MenuButton:
         listbox = Gtk.ListBox.new()
         listbox.set_activate_on_single_click(False)
-        listbox.set_selection_mode(Gtk.SelectionMode.BROWSE)
+        listbox.set_selection_mode(Gtk.SelectionMode.NONE)
         for widget in widgets:
             listbox.append(child=widget)
         vbox = self.create_box_vertical()

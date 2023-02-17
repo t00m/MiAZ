@@ -3,6 +3,7 @@
 
 import os
 from datetime import datetime
+from datetime import timedelta
 
 import gi
 gi.require_version('Gtk', '4.0')
@@ -45,6 +46,7 @@ class MiAZWorkspace(Gtk.Box):
     show_dashboard = True
     signals = set()
     selected_items = []
+    dates = {}
 
     def __init__(self, app):
         super(MiAZWorkspace, self).__init__(orientation=Gtk.Orientation.HORIZONTAL)
@@ -187,38 +189,85 @@ class MiAZWorkspace(Gtk.Box):
             pos = bitset.get_nth(index)
             item = model.get_item(pos)
             self.selected_items.append(item)
-        self.btnDocsSel.set_label("%d of %d documents selected" % (len(self.selected_items), len(self.repodct)))
+        label = self.btnDocsSel.get_child()
+        label.set_markup("<small>%d</small> / %d / <big>%d</big>" % (len(self.selected_items), len(model), len(self.repodct)))
 
     def _setup_toolbar_top(self):
         toolbar_top = Gtk.CenterBox()
         toolbar_top.set_hexpand(True)
-        toolbar_top.set_vexpand(True)
+        toolbar_top.set_vexpand(False)
+
+        # Left widget
+        hbox = self.factory.create_box_horizontal()
+
+        ## Import button
+        widgets = []
+        btnImportFiles = self.factory.create_button('miaz-import-document', callback=self.actions.on_import_file)
+        rowImportDoc = self.factory.create_actionrow(title='Import document', subtitle='Import one or more documents', suffix=btnImportFiles)
+        widgets.append(rowImportDoc)
+        btnImportDir = self.factory.create_button('miaz-import-folder', callback=self.actions.on_import_directory)
+        rowImportDir = self.factory.create_actionrow(title='Import directory', subtitle='Import all documents from a directory', suffix=btnImportDir)
+        widgets.append(rowImportDir)
+        button = self.factory.create_button_popover(icon_name='miaz-import', css_classes=[''], widgets=widgets)
+        hbox.append(button)
 
         ## Documents selected
         self.mnuSelMulti = self.create_menu_selection_multiple()
-        boxDocsSelected = Gtk.CenterBox()
-        self.lblDocumentsSelected = "No documents selected"
-        self.btnDocsSel = Gtk.MenuButton(css_classes=['flat'])
-        self.btnDocsSel.set_label(self.lblDocumentsSelected)
+        label = Gtk.Label()
+        label.get_style_context().add_class(class_name='caption')
+        self.btnDocsSel = Gtk.MenuButton(css_classes=[''])
+        self.btnDocsSel.set_child(label)
         self.popDocsSel = Gtk.PopoverMenu.new_from_model(self.mnuSelMulti)
         self.btnDocsSel.set_popover(popover=self.popDocsSel)
         self.btnDocsSel.set_valign(Gtk.Align.CENTER)
         self.btnDocsSel.set_hexpand(False)
         self.btnDocsSel.set_sensitive(True)
-        boxDocsSelected.set_center_widget(self.btnDocsSel)
-        self.app.header.pack_start(boxDocsSelected)
+        hbox.append(self.btnDocsSel)
+        toolbar_top.set_start_widget(hbox)
 
-        # ~ cbws = self.factory.create_box_horizontal(margin=0, spacing=3)
-        # ~ sep = Gtk.Separator.new(orientation=Gtk.Orientation.VERTICAL)
-        # ~ btnSelectAll = self.factory.create_button('miaz-select-all', callback=self._on_select_all, css_classes=['flat'])
-        # ~ btnSelectNone = self.factory.create_button('miaz-select-none', callback=self._on_select_none, css_classes=['flat'])
-        # ~ cbws.append(sep)
-        # ~ cbws.append(btnSelectNone)
-        # ~ cbws.append(btnSelectAll)
+        # Center
+        hbox = self.factory.create_box_horizontal()
+        toolbar_top.set_center_widget(hbox)
 
-        # ~ self.ent_sb = Gtk.SearchEntry(placeholder_text="Type here")
-        # ~ self.ent_sb.connect('changed', self._on_filter_selected)
-        # ~ self.ent_sb.set_hexpand(False)
+        ## Searchbox
+        self.ent_sb = Gtk.SearchEntry(placeholder_text="Type here")
+        self.ent_sb.set_hexpand(False)
+        hbox.append(self.ent_sb)
+
+        ## Date dropdown
+        self.dd_date = self.factory.create_dropdown_generic(item_type=Date, ellipsize=False)
+        model = self.dd_date.get_model()
+        model.remove_all()
+        items = []
+        model.append(Date(id='0', title='This month'))
+        model.append(Date(id='1', title='Last six months'))
+        model.append(Date(id='2', title='This year'))
+        model.append(Date(id='3', title='Last two years'))
+        model.append(Date(id='4', title='Last five years'))
+        model.append(Date(id='5', title='All documents'))
+        self.dd_date.set_selected(2)
+        self.dd_date.connect("notify::selected-item", self._on_filter_selected)
+        hbox.append(self.dd_date)
+
+        now = datetime.now()
+        this_month = now-timedelta(days=30)
+        six_months = now-timedelta(days=180)
+        this_year = datetime.strptime("%d0101" % now.year, "%Y%m%d")
+        two_years = datetime.strptime("%d0101" % (now.year - 1), "%Y%m%d")
+        five_years = datetime.strptime("%d0101" % (now.year - 5), "%Y%m%d")
+        alltimes = datetime.strptime("00010101", "%Y%m%d")
+        self.dates['0'] = this_month
+        self.dates['1'] = six_months
+        self.dates['2'] = this_year
+        self.dates['3'] = two_years
+        self.dates['4'] = five_years
+        self.dates['5'] = alltimes
+
+        # Right
+        hbox = self.factory.create_box_horizontal()
+        toolbar_top.set_end_widget(hbox)
+
+        ## More stuff
         sep = Gtk.Separator.new(orientation=Gtk.Orientation.VERTICAL)
         self.tgbExplain = self.factory.create_button_toggle('miaz-magic', callback=self._on_explain_toggled, css_classes=['flat'])
         self.tgbFilters = self.factory.create_button_toggle('miaz-filters', callback=self._on_filters_toggled, css_classes=['flat'])
@@ -229,11 +278,11 @@ class MiAZWorkspace(Gtk.Box):
         # and create actions to handle menu actions
         for action, shortcut in [('repo_settings', [''])]:
             self.factory.create_menu_action(action, self._on_handle_menu_repo, shortcut)
-        self.app.header.pack_end(self.tgbExplain)
-        self.app.header.pack_end(self.tgbFilters)
-        self.app.header.pack_end(sep)
-        self.app.header.pack_end(btnRepoSettings)
-        # ~ toolbar_top.set_center_widget(self.ent_sb)
+        hbox.append(self.tgbExplain)
+        hbox.append(self.tgbFilters)
+        hbox.append(sep)
+        hbox.append(btnRepoSettings)
+
         return toolbar_top
 
     def _on_handle_menu_repo(self, action, state):
@@ -427,12 +476,11 @@ class MiAZWorkspace(Gtk.Box):
         self._on_filter_selected()
         if self.show_dashboard:
             self.tgbExplain.set_active(True)
-        self.lblDocumentsSelected = "0 of %d documents selected" % len(self.repodct)
+        label = self.btnDocsSel.get_child()
         self.view.select_first_item()
 
     def _do_eval_cond_matches_freetext(self, path):
-        ent_sb = self.app.header.get_title_widget()
-        left = ent_sb.get_text()
+        left = self.ent_sb.get_text()
         right = path
         if left.upper() in right.upper():
             return True
@@ -448,20 +496,42 @@ class MiAZWorkspace(Gtk.Box):
         else:
             return item.id == id
 
+    def _do_eval_cond_matches_date(self, item):
+        try:
+            if item.date is None:
+                return True
+
+            period = self.dd_date.get_selected_item().id
+            try:
+                item_date = self.dates[item.date]
+            except KeyError:
+                item_date = datetime.strptime(item.date, "%Y%m%d")
+                self.dates[item.date] = item_date
+
+            if item_date > self.dates[period]:
+                return True
+
+            return False
+        except Exception as error:
+            # time data '' does not match format '%Y%m%d'
+            # Display documents without date
+            return True
+
     def _do_filter_view(self, item, filter_list_model):
         c0 = self._do_eval_cond_matches_freetext(item.id)
+        cd = self._do_eval_cond_matches_date(item)
         c1 = self._do_eval_cond_matches(self.dropdown['Country'], item.country)
         c2 = self._do_eval_cond_matches(self.dropdown['Group'], item.group)
         c4 = self._do_eval_cond_matches(self.dropdown['SentBy'], item.sentby_id)
         c5 = self._do_eval_cond_matches(self.dropdown['Purpose'], item.purpose)
         c6 = self._do_eval_cond_matches(self.dropdown['SentTo'], item.sentto_id)
-        return c0 and c1 and c2 and c4 and c5 and c6
+        return c0 and c1 and c2 and c4 and c5 and c6 and cd
 
     def _on_signal_filter_connect(self):
-        ent_sb = self.app.header.get_title_widget()
+        # ~ ent_sb = self.app.header.get_title_widget()
         self.signals = set()
-        sigid = ent_sb.connect('changed', self._on_filter_selected)
-        self.signals.add((ent_sb, sigid))
+        sigid = self.ent_sb.connect('changed', self._on_filter_selected)
+        self.signals.add((self.ent_sb, sigid))
         for dropdown in self.dropdown:
             sigid = self.dropdown[dropdown].connect("notify::selected-item", self._on_filter_selected)
             self.signals.add((self.dropdown[dropdown], sigid))
@@ -471,6 +541,9 @@ class MiAZWorkspace(Gtk.Box):
 
     def _on_filter_selected(self, *args):
         self.view.refilter()
+        model = self.view.cv.get_model()
+        label = self.btnDocsSel.get_child()
+        label.set_markup("<small>%d</small> / %d / <big>%d</big>" % (len(self.selected_items), len(model), len(self.repodct)))
 
     def _on_select_all(self, *args):
         selection = self.view.get_selection()
