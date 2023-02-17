@@ -69,6 +69,9 @@ class MiAZUtil(GObject.GObject):
             return filename.split('-')
 
     def get_files(self, root_dir: str) -> []:
+        return glob.glob(os.path.join(root_dir, '*'))
+
+    def get_files_recursively(self, root_dir: str) -> []:
         """Get documents from a given directory recursively
         Avoid hidden documents and documents from hidden directories.
         """
