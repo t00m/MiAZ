@@ -229,6 +229,10 @@ class MiAZWorkspace(Gtk.Box):
         hbox = self.factory.create_box_horizontal()
         toolbar_top.set_center_widget(hbox)
 
+        ## Filters
+        self.tgbFilters = self.factory.create_button_toggle('miaz-filters', callback=self._on_filters_toggled, css_classes=['flat'])
+        self.tgbFilters.set_active(False)
+        hbox.append(self.tgbFilters)
         ## Searchbox
         self.ent_sb = Gtk.SearchEntry(placeholder_text="Type here")
         self.ent_sb.set_hexpand(False)
@@ -268,18 +272,23 @@ class MiAZWorkspace(Gtk.Box):
         toolbar_top.set_end_widget(hbox)
 
         ## More stuff
+        btnItemInfo = self.factory.create_button(icon_name='miaz-info')
+        btnItemEdit = self.factory.create_button(icon_name='miaz-res-manage')
+        btnItemDelete = self.factory.create_button(icon_name='miaz-entry-delete')
         sep = Gtk.Separator.new(orientation=Gtk.Orientation.VERTICAL)
         self.tgbExplain = self.factory.create_button_toggle('miaz-magic', callback=self._on_explain_toggled, css_classes=['flat'])
-        self.tgbFilters = self.factory.create_button_toggle('miaz-filters', callback=self._on_filters_toggled, css_classes=['flat'])
-        self.tgbFilters.set_active(False)
+
         btnRepoSettings = self.factory.create_button_menu(MiAZ_MENU_WORKSPACE_REPO, 'repo-menu', css_classes=['flat'], child=Adw.ButtonContent(icon_name='document-properties'))
         btnRepoSettings.set_valign(Gtk.Align.CENTER)
 
         # and create actions to handle menu actions
         for action, shortcut in [('repo_settings', [''])]:
             self.factory.create_menu_action(action, self._on_handle_menu_repo, shortcut)
-        hbox.append(self.tgbExplain)
-        hbox.append(self.tgbFilters)
+        # ~ hbox.append(btnItemInfo)
+        hbox.append(btnItemEdit)
+        hbox.append(btnItemDelete)
+        # ~ hbox.append(self.tgbExplain)
+        # ~ hbox.append(self.tgbFilters)
         hbox.append(sep)
         hbox.append(btnRepoSettings)
 

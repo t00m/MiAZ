@@ -90,6 +90,7 @@ class MiAZFactory:
 
     def create_button(self, icon_name='', title='', callback=None, width=32, height=32, css_classes=['linked'], data=None):
         button = Gtk.Button(css_classes=css_classes)
+        button.set_valign(Gtk.Align.CENTER)
         hbox = self.create_box_horizontal(spacing=6)
         if len(icon_name.strip()) > 0:
             image = self.app.icman.get_image_by_name(icon_name)

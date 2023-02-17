@@ -128,10 +128,7 @@ class MiAZApp(Adw.Application):
         return self.rename
 
     def _setup_headerbar_left(self):
-        pass
-
-    def _setup_headerbar_right(self):
-        # Add Menu Button to the titlebar (Right Side)
+        # Add Menu Button to the titlebar (Left Side)
         menu = self.factory.create_button_menu(MiAZ_MENU_APP, 'app-menu', css_classes=['flat'], child=Adw.ButtonContent(icon_name='miaz-system-menu'))
 
         # and create actions to handle menu actions
@@ -143,7 +140,10 @@ class MiAZApp(Adw.Application):
                                  ('rename', ['<Ctrl>r'])
                                 ]:
             self.factory.create_menu_action(action, self._handle_menu, shortcut)
-        self.header.pack_end(menu)
+        self.header.pack_start(menu)
+
+    def _setup_headerbar_right(self):
+        pass
 
     def _setup_headerbar_center(self):
         pass
