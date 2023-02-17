@@ -498,6 +498,9 @@ class MiAZWorkspace(Gtk.Box):
 
     def _do_eval_cond_matches(self, dropdown, id):
         item = dropdown.get_selected_item()
+        if item is None:
+            return True
+
         if item.id == 'Any':
             return True
         elif item.id == 'None':
