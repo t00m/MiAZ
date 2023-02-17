@@ -155,8 +155,9 @@ class MiAZColumnView(Gtk.Box):
         selection = self.get_selection()
         model = selection.get_model()
         pos = len(model)
-        selection.select_item(pos - 1, True) # Last item
-        selection.select_item(0, True) # First item
+        if pos > 0:
+            selection.select_item(pos - 1, True) # Last item
+            selection.select_item(0, True) # First item
         # ~ self.viewport.set_scroll_to_focus(True)
         # In any case, the scrollbar doesn't move
 
