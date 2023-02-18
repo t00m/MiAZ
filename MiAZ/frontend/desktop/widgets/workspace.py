@@ -169,6 +169,7 @@ class MiAZWorkspace(Gtk.Box):
         active = button.get_active()
         self.view.column_title.set_visible(not active)
         try:
+            self.view.column_title.set_visible(False)
             self.view.column_subtitle.set_visible(active)
             self.view.column_subtitle.set_expand(True)
             self.view.column_group.set_visible(active)
@@ -195,14 +196,22 @@ class MiAZWorkspace(Gtk.Box):
         label = self.btnDocsSel.get_child()
         docs = self.util.get_files()
         label.set_markup("<small>%d</small> / %d / <big>%d</big>" % (len(self.selected_items), len(model), len(docs)))
+        if len(self.selected_items) == 1:
+            self.btnItemEdit.set_sensitive(True)
+            self.btnItemDelete.set_sensitive(True)
+        else:
+            self.btnItemEdit.set_sensitive(False)
+            self.btnItemDelete.set_sensitive(False)
 
     def _setup_toolbar_top(self):
         toolbar_top = Gtk.CenterBox()
+        toolbar_top.get_style_context().add_class(class_name='flat')
         toolbar_top.set_hexpand(True)
         toolbar_top.set_vexpand(False)
 
         # Left widget
         hbox = self.factory.create_box_horizontal()
+        toolbar_top.set_start_widget(hbox)
 
         ## Import button
         widgets = []
@@ -215,28 +224,17 @@ class MiAZWorkspace(Gtk.Box):
         button = self.factory.create_button_popover(icon_name='miaz-import', css_classes=[''], widgets=widgets)
         hbox.append(button)
 
-        ## Documents selected
-        self.mnuSelMulti = self.create_menu_selection_multiple()
-        label = Gtk.Label()
-        label.get_style_context().add_class(class_name='caption')
-        self.btnDocsSel = Gtk.MenuButton(css_classes=[''])
-        self.btnDocsSel.set_child(label)
-        self.popDocsSel = Gtk.PopoverMenu.new_from_model(self.mnuSelMulti)
-        self.btnDocsSel.set_popover(popover=self.popDocsSel)
-        self.btnDocsSel.set_valign(Gtk.Align.CENTER)
-        self.btnDocsSel.set_hexpand(False)
-        self.btnDocsSel.set_sensitive(True)
-        hbox.append(self.btnDocsSel)
-        toolbar_top.set_start_widget(hbox)
 
         # Center
-        hbox = self.factory.create_box_horizontal()
+        hbox = self.factory.create_box_horizontal(spacing=0)
+        hbox.get_style_context().add_class(class_name='linked')
         toolbar_top.set_center_widget(hbox)
 
         ## Filters
-        self.tgbFilters = self.factory.create_button_toggle('miaz-filters', callback=self._on_filters_toggled, css_classes=['flat'])
+        self.tgbFilters = self.factory.create_button_toggle('miaz-filters', callback=self._on_filters_toggled)
         self.tgbFilters.set_active(False)
         hbox.append(self.tgbFilters)
+
         ## Searchbox
         self.ent_sb = Gtk.SearchEntry(placeholder_text="Type here")
         self.ent_sb.set_hexpand(False)
@@ -272,28 +270,37 @@ class MiAZWorkspace(Gtk.Box):
         self.dates['5'] = alltimes
 
         # Right
-        hbox = self.factory.create_box_horizontal()
+        hbox = self.factory.create_box_horizontal(spacing=0)
+        hbox.get_style_context().add_class(class_name='linked')
         toolbar_top.set_end_widget(hbox)
 
         ## More stuff
-        btnItemInfo = self.factory.create_button(icon_name='miaz-info')
-        btnItemEdit = self.factory.create_button(icon_name='miaz-res-manage')
-        btnItemDelete = self.factory.create_button(icon_name='miaz-entry-delete')
-        sep = Gtk.Separator.new(orientation=Gtk.Orientation.VERTICAL)
-        self.tgbExplain = self.factory.create_button_toggle('miaz-magic', callback=self._on_explain_toggled, css_classes=['flat'])
+        # ~ self.btnItemInfo = self.factory.create_button(icon_name='miaz-info')
+        self.btnItemEdit = self.factory.create_button(icon_name='miaz-res-manage')
+        self.btnItemEdit.connect('clicked', self.document_rename)
+        self.btnItemDelete = self.factory.create_button(icon_name='miaz-entry-delete')
+        self.btnItemDelete.connect('clicked', self.document_delete)
+        hbox.append(self.btnItemEdit)
+        hbox.append(self.btnItemDelete)
 
-        btnRepoSettings = self.factory.create_button_menu(MiAZ_MENU_WORKSPACE_REPO, 'repo-menu', css_classes=['flat'], child=Adw.ButtonContent(icon_name='document-properties'))
+        ## Documents selected
+        self.mnuSelMulti = self.create_menu_selection_multiple()
+        label = Gtk.Label()
+        label.get_style_context().add_class(class_name='caption')
+        self.btnDocsSel = Gtk.MenuButton()
+        self.btnDocsSel.set_child(label)
+        self.popDocsSel = Gtk.PopoverMenu.new_from_model(self.mnuSelMulti)
+        self.btnDocsSel.set_popover(popover=self.popDocsSel)
+        self.btnDocsSel.set_valign(Gtk.Align.CENTER)
+        self.btnDocsSel.set_hexpand(False)
+        self.btnDocsSel.set_sensitive(True)
+        hbox.append(self.btnDocsSel)
+
+        # Repo settings button
+        btnRepoSettings = self.factory.create_button_menu(MiAZ_MENU_WORKSPACE_REPO, 'repo-menu', child=Adw.ButtonContent(icon_name='document-properties'))
         btnRepoSettings.set_valign(Gtk.Align.CENTER)
-
-        # and create actions to handle menu actions
         for action, shortcut in [('repo_settings', [''])]:
             self.factory.create_menu_action(action, self._on_handle_menu_repo, shortcut)
-        # ~ hbox.append(btnItemInfo)
-        hbox.append(btnItemEdit)
-        hbox.append(btnItemDelete)
-        # ~ hbox.append(self.tgbExplain)
-        # ~ hbox.append(self.tgbFilters)
-        hbox.append(sep)
         hbox.append(btnRepoSettings)
 
         return toolbar_top
@@ -310,7 +317,7 @@ class MiAZWorkspace(Gtk.Box):
     def _setup_columnview(self):
         self.view = MiAZColumnViewWorkspace(self.app)
         self.view.factory_icon_type.connect("bind", self._on_factory_bind_icon_type)
-        # ~ self.view.get_style_context().add_class(class_name='caption')
+        self.view.get_style_context().add_class(class_name='caption')
         self.view.set_filter(self._do_filter_view)
         frmView = self.factory.create_frame(hexpand=True, vexpand=True)
         frmView.set_child(self.view)
@@ -392,6 +399,16 @@ class MiAZWorkspace(Gtk.Box):
         head.append(self.toolbar_filters)
         body.append(frmView)
 
+        self.view.column_title.set_visible(False)
+        self.view.column_subtitle.set_visible(True)
+        self.view.column_subtitle.set_expand(True)
+        self.view.column_group.set_visible(True)
+        self.view.column_purpose.set_visible(True)
+        self.view.column_flag.set_visible(True)
+        self.view.column_sentby.set_visible(True)
+        self.view.column_sentto.set_visible(True)
+        self.view.column_date.set_visible(True)
+
         # Connect signals
         selection = self.view.get_selection()
 
@@ -455,7 +472,7 @@ class MiAZWorkspace(Gtk.Box):
         return model.get_item(pos)
 
     def update(self, *args):
-        self._on_explain_toggled(self.tgbExplain)
+        # ~ self._on_explain_toggled(self.tgbExplain)
         docs = self.util.get_files()
         sentby = self.app.get_config('SentBy')
         sentto = self.app.get_config('SentTo')
@@ -487,8 +504,8 @@ class MiAZWorkspace(Gtk.Box):
                         )
         self.view.update(items)
         self._on_filter_selected()
-        if self.show_dashboard:
-            self.tgbExplain.set_active(True)
+        # ~ if self.show_dashboard:
+            # ~ self.tgbExplain.set_active(True)
         label = self.btnDocsSel.get_child()
         self.view.select_first_item()
         self.log.debug("Workspace updated")
@@ -576,17 +593,17 @@ class MiAZWorkspace(Gtk.Box):
         self.view.column_subtitle.set_title('Concept')
         self.view.column_subtitle.set_expand(True)
         self.view.refilter()
-        self.tgbExplain.set_active(True)
-        self.tgbExplain.set_visible(True)
+        # ~ self.tgbExplain.set_active(True)
+        # ~ self.tgbExplain.set_visible(True)
         self.tgbFilters.set_visible(True)
 
     def document_display(self, *args):
         item = self.get_item()
         self.actions.document_display(item.id)
 
-    def document_delete(self, button, filepath):
-        # ~ item = self.get_item()
-        self.actions.document_delete(filepath)
+    def document_delete(self, *args):
+        item = self.get_item()
+        self.actions.document_delete(item.id)
 
     def document_rename(self, *args):
         # Get item from selected row in Columnview

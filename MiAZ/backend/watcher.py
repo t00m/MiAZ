@@ -28,7 +28,7 @@ class MiAZWatcher(GObject.GObject):
             GObject.GObject.__init__(self)
             GObject.signal_new('repository-updated', MiAZWatcher, GObject.SignalFlags.RUN_LAST, None, () )
             self.set_path(dirpath)
-            GLib.timeout_add_seconds(2, self.watch)
+            GLib.timeout_add_seconds(1, self.watch)
 
     # PLAIN
     def __files_with_timestamp(self, rootdir):

@@ -88,25 +88,27 @@ class MiAZFactory:
         box.set_vexpand(vexpand)
         return box
 
-    def create_button(self, icon_name='', title='', callback=None, width=32, height=32, css_classes=['linked'], data=None):
-        button = Gtk.Button(css_classes=css_classes)
-        button.set_valign(Gtk.Align.CENTER)
-        hbox = self.create_box_horizontal(spacing=6)
-        if len(icon_name.strip()) > 0:
-            image = self.app.icman.get_image_by_name(icon_name)
-            hbox.append(image)
-        if len(title.strip()) > 0:
+    def create_button(self, icon_name='', title='', callback=None, width=32, height=32, css_classes=[], data=None):
+        if len(icon_name.strip()) == 0:
+            button = Gtk.Button(css_classes=css_classes)
             label = Gtk.Label()
-            label.set_xalign(0.0)
             label.set_markup(title)
-            hbox.append(label)
-        button.set_child(hbox)
-        button.set_has_frame(False)
+            button.set_child(label)
+            button.set_valign(Gtk.Align.CENTER)
+        else:
+            button = Gtk.Button(
+                css_classes=css_classes,
+                child=Adw.ButtonContent(
+                    label=title,
+                    icon_name=icon_name
+                    )
+                )
+        # ~ button.set_has_frame(False)
         if callback is not None:
             button.connect('clicked', callback, data)
         return button
 
-    def create_button_toggle(self, icon_name: str = '', title: str = '', callback=None, css_classes=['circular'], data=None) -> Gtk.ToggleButton:
+    def create_button_toggle(self, icon_name: str = '', title: str = '', callback=None, css_classes=[], data=None) -> Gtk.ToggleButton:
         if len(icon_name.strip()) == 0:
             button = Gtk.ToggleButton(css_classes=css_classes)
             button.set_label(title)
@@ -126,7 +128,7 @@ class MiAZFactory:
             button.connect('toggled', callback, data)
         return button
 
-    def create_button_menu(self, xml, name, child, css_classes=[]):
+    def create_button_menu(self, xml: str = '', name:str = '', child: Gtk.Widget = None, css_classes: list = []):
         """
         Gtk.Menubutton with a menu defined in a Gtk.Builder xml string
         """

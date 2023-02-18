@@ -185,7 +185,7 @@ class MiAZUtil(GObject.GObject):
     def filename_delete(self, doc):
         filepath = self.filename_path(doc)
         self.log.debug("Document deleted: %s", filepath)
-        # ~ os.unlink(filepath)
+        os.unlink(filepath)
 
     def filename_path(self, doc):
         repo = self.backend.repo_config()
