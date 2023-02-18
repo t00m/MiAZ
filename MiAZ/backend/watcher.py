@@ -32,6 +32,7 @@ class MiAZWatcher(GObject.GObject):
 
     # PLAIN
     def __files_with_timestamp(self, rootdir):
+        # FIXME: FileNotFoundError
         """Add data files from a given directory."""
         filelist = []
         files = glob.glob(os.path.join(rootdir, '*'))
