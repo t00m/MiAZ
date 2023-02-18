@@ -21,10 +21,10 @@ from MiAZ.frontend.desktop.widgets.columnview import MiAZColumnView, ColIcon
 from MiAZ.frontend.desktop.widgets.dialogs import MiAZDialogAdd
 from MiAZ.frontend.desktop.widgets.selector import MiAZSelector
 from MiAZ.frontend.desktop.widgets.columnview import MiAZColumnView
-from MiAZ.frontend.desktop.widgets.columnviews import MiAZColumnViewCountry
-from MiAZ.frontend.desktop.widgets.columnviews import MiAZColumnViewGroup
-from MiAZ.frontend.desktop.widgets.columnviews import MiAZColumnViewPurpose
-from MiAZ.frontend.desktop.widgets.columnviews import MiAZColumnViewPerson
+from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewCountry
+from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewGroup
+from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewPurpose
+from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewPerson
 
 
 class MiAZConfigView(MiAZSelector):
