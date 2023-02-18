@@ -502,38 +502,43 @@ class MiAZWorkspace(Gtk.Box):
         sentby = self.app.get_config('SentBy')
         sentto = self.app.get_config('SentTo')
         items = []
+        invalid = []
         for filename in docs:
             doc, ext = self.util.filename_details(filename)
             fields = doc.split('-')
-            date_dsc = fields[0]
-            # ~ try:
-                # ~ adate = datetime.strptime(fields[0], "%Y%m%d")
-                # ~ date_dsc = adate.strftime("%Y.%m.%d")
-            # ~ except:
-                # ~ date_dsc = ''
-            items.append(MiAZItem
-                                (
-                                    id=filename,
-                                    date=fields[0],
-                                    date_dsc = date_dsc,
-                                    country=fields[1],
-                                    group=fields[2],
-                                    sentby_id=fields[3],
-                                    sentby_dsc=sentby.get(fields[3]),
-                                    purpose=fields[4],
-                                    title=doc,
-                                    subtitle=fields[5].replace('_', ' '),
-                                    sentto_id=fields[6],
-                                    sentto_dsc=sentto.get(fields[6])
-                                )
-                        )
+            if self.util.filename_validate(doc):
+                date_dsc = fields[0]
+                # ~ try:
+                    # ~ adate = datetime.strptime(fields[0], "%Y%m%d")
+                    # ~ date_dsc = adate.strftime("%Y.%m.%d")
+                # ~ except:
+                    # ~ date_dsc = ''
+                items.append(MiAZItem
+                                    (
+                                        id=filename,
+                                        date=fields[0],
+                                        date_dsc = date_dsc,
+                                        country=fields[1],
+                                        group=fields[2],
+                                        sentby_id=fields[3],
+                                        sentby_dsc=sentby.get(fields[3]),
+                                        purpose=fields[4],
+                                        title=doc,
+                                        subtitle=fields[5].replace('_', ' '),
+                                        sentto_id=fields[6],
+                                        sentto_dsc=sentto.get(fields[6])
+                                    )
+                            )
+            else:
+                invalid.append(filename)
         self.view.update(items)
         self._on_filter_selected()
-        # ~ if self.show_dashboard:
-            # ~ self.tgbExplain.set_active(True)
         label = self.btnDocsSel.get_child()
         self.view.select_first_item()
         self.log.debug("Workspace updated")
+        for filename in invalid:
+            target = self.util.filename_normalize(filename)
+            self.util.filename_rename(filename, target)
 
     def _do_eval_cond_matches_freetext(self, path):
         left = self.ent_sb.get_text()
