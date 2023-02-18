@@ -220,11 +220,11 @@ class MiAZConfigApp(MiAZConfig):
 
 class MiAZConfigCountries(MiAZConfig):
     def __init__(self, backend, dir_conf):
-        sid_a = GObject.signal_lookup('repo-settings-updated-countries', MiAZConfigCountries)
+        sid_a = GObject.signal_lookup('country-available', MiAZConfigCountries)
         sid_u = GObject.signal_lookup('country-used', MiAZConfigCountries)
         if sid_a == 0:
             GObject.GObject.__init__(self)
-            GObject.signal_new('repo-settings-updated-countries',
+            GObject.signal_new('country-available',
                                 MiAZConfigCountries,
                                 GObject.SignalFlags.RUN_LAST, None, () )
         if sid_u == 0:
@@ -249,18 +249,18 @@ class MiAZConfigCountries(MiAZConfig):
         saved = self.save_data(filepath, items)
         if saved:
             if filepath == self.available:
-                self.emit('repo-settings-updated-countries')
+                self.emit('country-available')
             elif filepath == self.used:
                 self.emit('country-used')
         return saved
 
 class MiAZConfigGroups(MiAZConfig):
     def __init__(self, backend, dir_conf):
-        sid_a = GObject.signal_lookup('repo-settings-updated-groups-available', MiAZConfigGroups)
+        sid_a = GObject.signal_lookup('group-available', MiAZConfigGroups)
         sid_u = GObject.signal_lookup('group-used', MiAZConfigGroups)
         if sid_a == 0:
             GObject.GObject.__init__(self)
-            GObject.signal_new('repo-settings-updated-groups-available',
+            GObject.signal_new('group-available',
                                 MiAZConfigGroups,
                                 GObject.SignalFlags.RUN_LAST, None, () )
         if sid_u == 0:
@@ -283,7 +283,7 @@ class MiAZConfigGroups(MiAZConfig):
     def save(self, filepath: str = '', items: dict = {}) -> bool:
         if self.save_data(filepath, items):
             if filepath == self.available:
-                self.emit('repo-settings-updated-groups-available')
+                self.emit('group-available')
             elif filepath == self.used:
                 self.emit('group-used')
 
@@ -292,10 +292,16 @@ class MiAZConfigGroups(MiAZConfig):
 
 class MiAZConfigPurposes(MiAZConfig):
     def __init__(self, backend, dir_conf):
-        sid = GObject.signal_lookup('repo-settings-updated-purposes', MiAZConfigPurposes)
-        if sid == 0:
+        sid_a = GObject.signal_lookup('purpose-available', MiAZConfigGroups)
+        sid_u = GObject.signal_lookup('purpose-used', MiAZConfigGroups)
+        if sid_a == 0:
             GObject.GObject.__init__(self)
-            GObject.signal_new('repo-settings-updated-purposes',
+            GObject.signal_new('purpose-available',
+                                MiAZConfigPurposes,
+                                GObject.SignalFlags.RUN_LAST, None, () )
+        if sid_u == 0:
+            GObject.GObject.__init__(self)
+            GObject.signal_new('purpose-used',
                                 MiAZConfigPurposes,
                                 GObject.SignalFlags.RUN_LAST, None, () )
         super().__init__(
@@ -315,7 +321,10 @@ class MiAZConfigPurposes(MiAZConfig):
 
     def save(self, filepath: str = '', items: dict = {}) -> bool:
         if self.save_data(filepath, items):
-            self.emit('repo-settings-updated-purposes')
+            if filepath == self.available:
+                self.emit('purpose-available')
+            elif filepath == self.used:
+                self.emit('purpose-used')
 
 class MiAZConfigConcepts(MiAZConfig):
     def __init__(self, backend, dir_conf):
@@ -385,10 +394,16 @@ class MiAZConfigPeople(MiAZConfig):
 
 class MiAZConfigSentBy(MiAZConfig):
     def __init__(self, backend, dir_conf):
-        sid = GObject.signal_lookup('repo-settings-updated-sentby', MiAZConfigSentBy)
-        if sid == 0:
+        sid_a = GObject.signal_lookup('sentby-available', MiAZConfigGroups)
+        sid_u = GObject.signal_lookup('sentby-used', MiAZConfigGroups)
+        if sid_a == 0:
             GObject.GObject.__init__(self)
-            GObject.signal_new('repo-settings-updated-sentby',
+            GObject.signal_new('sentby-available',
+                                MiAZConfigSentBy,
+                                GObject.SignalFlags.RUN_LAST, None, () )
+        if sid_u == 0:
+            GObject.GObject.__init__(self)
+            GObject.signal_new('sentby-used',
                                 MiAZConfigSentBy,
                                 GObject.SignalFlags.RUN_LAST, None, () )
         super().__init__(
@@ -408,16 +423,23 @@ class MiAZConfigSentBy(MiAZConfig):
 
     def save(self, filepath: str = '', items: dict = {}) -> bool:
         if self.save_data(filepath, items):
-            self.emit('repo-settings-updated-sentby')
+            if filepath == self.available:
+                self.emit('sentby-available')
+            elif filepath == self.used:
+                self.emit('sentby-used')
 
 class MiAZConfigSentTo(MiAZConfig):
     def __init__(self, backend, dir_conf):
-        self.backend = backend
-        self.util = self.backend.util
-        sid = GObject.signal_lookup('repo-settings-updated-sentto', MiAZConfigSentTo)
-        if sid == 0:
+        sid_a = GObject.signal_lookup('sentto-available', MiAZConfigGroups)
+        sid_u = GObject.signal_lookup('sentto-used', MiAZConfigGroups)
+        if sid_a == 0:
             GObject.GObject.__init__(self)
-            GObject.signal_new('repo-settings-updated-sentto',
+            GObject.signal_new('sentto-available',
+                                MiAZConfigSentTo,
+                                GObject.SignalFlags.RUN_LAST, None, () )
+        if sid_u == 0:
+            GObject.GObject.__init__(self)
+            GObject.signal_new('sentto-used',
                                 MiAZConfigSentTo,
                                 GObject.SignalFlags.RUN_LAST, None, () )
         super().__init__(
@@ -437,4 +459,7 @@ class MiAZConfigSentTo(MiAZConfig):
 
     def save(self, filepath: str = '', items: dict = {}) -> bool:
         if self.save_data(filepath, items):
-            self.emit('repo-settings-updated-sentto')
+            if filepath == self.available:
+                self.emit('sentto-available')
+            elif filepath == self.used:
+                self.emit('sentto-used')

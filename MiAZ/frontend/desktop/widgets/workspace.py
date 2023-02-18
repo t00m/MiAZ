@@ -21,7 +21,7 @@ from MiAZ.frontend.desktop.widgets.columnview import MiAZColumnView, ColIcon, Co
 from MiAZ.frontend.desktop.factory import MenuHeader
 from MiAZ.frontend.desktop.widgets.assistant import MiAZAssistantRepoSettings
 from MiAZ.frontend.desktop.widgets.menu import MiAZ_MENU_WORKSPACE_REPO
-from MiAZ.frontend.desktop.widgets.columnviews import MiAZColumnViewWorkspace, MiAZColumnViewMassRename
+from MiAZ.frontend.desktop.widgets.columnviews import MiAZColumnViewWorkspace, MiAZColumnViewMassRename, MiAZColumnViewMassDelete
 from MiAZ.frontend.desktop.widgets.configview import MiAZCountries, MiAZGroups, MiAZPeople, MiAZPurposes, MiAZPeopleSentBy, MiAZPeopleSentTo
 
 # Conversion Item type to Field Number
@@ -95,9 +95,9 @@ class MiAZWorkspace(Gtk.Box):
         self.backend.connect('source-configuration-updated', self._on_workspace_update)
         self.config['Country'].connect('country-used', self.update_dropdown, Country)
         self.config['Group'].connect('group-used', self.update_dropdown, Group)
-        self.config['SentBy'].connect('repo-settings-updated-sentby', self.update_dropdown, SentBy)
-        self.config['Purpose'].connect('repo-settings-updated-purposes', self.update_dropdown, Purpose)
-        self.config['SentTo'].connect('repo-settings-updated-sentto', self.update_dropdown, SentTo)
+        self.config['SentBy'].connect('sentby-used', self.update_dropdown, SentBy)
+        self.config['Purpose'].connect('purpose-used', self.update_dropdown, Purpose)
+        self.config['SentTo'].connect('sentto-used', self.update_dropdown, SentTo)
         return widget
 
     def _on_workspace_update(self, *args):
@@ -111,7 +111,7 @@ class MiAZWorkspace(Gtk.Box):
         title = item_type.__gtype_name__
         self.actions.dropdown_populate(self.dropdown[title], item_type)
 
-    def _on_action_rename(self, action, data, item_type):
+    def _on_mass_action_rename(self, action, data, item_type):
         def update_dropdown(config, dropdown, item_type, any_value):
             title = item_type.__gtype_name__
             self.actions.dropdown_populate(dropdown, item_type, any_value=any_value)
@@ -170,11 +170,36 @@ class MiAZWorkspace(Gtk.Box):
                 txtTitle = "<small>%s</small>" % os.path.basename(target)
                 citems.append(File(id=txtId, title=txtTitle))
             except:
-                # FIXME: tributeError: 'NoneType' object has no attribute 'id'
+                # FIXME: AtributeError: 'NoneType' object has no attribute 'id'
                 # It happens when managing resources from inside the dialog
                 pass
         columnview.update(citems)
 
+    def _on_mass_action_delete(self, *args):
+        self.log.debug("Mass deletion")
+        box = self.factory.create_box_vertical(spacing=6, vexpand=True, hexpand=True)
+        label = self.factory.create_label('Delete the following documents')
+        frame = Gtk.Frame()
+        cv = MiAZColumnViewMassDelete(self.app)
+        cv.get_style_context().add_class(class_name='monospace')
+        cv.set_hexpand(True)
+        cv.set_vexpand(True)
+        citems = []
+        for item in self.selected_items:
+            citems.append(File(id=item.id, title=os.path.basename(item.id)))
+        cv.update(citems)
+        frame.set_child(cv)
+        box.append(label)
+        box.append(frame)
+        dialog = self.factory.create_dialog_question(self.app.win, 'Mass deletion', box, width=1024, height=600)
+        dialog.connect('response', self._on_mass_delete)
+        dialog.show()
+
+    def _on_mass_delete(self, dialog, response):
+        if response == Gtk.ResponseType.ACCEPT:
+            for item in self.selected_items:
+                self.util.filename_delete(item.id)
+        dialog.destroy()
 
     def _on_mass_renaming(self, dialog, response, dropdown, item_type):
         if response == Gtk.ResponseType.ACCEPT:
@@ -460,7 +485,7 @@ class MiAZWorkspace(Gtk.Box):
             menuitem = Gio.MenuItem.new()
             menuitem.set_label(label='... %s' % i_title.lower())
             action = Gio.SimpleAction.new('rename_%s' % i_type.lower(), None)
-            callback = 'self._on_action_rename'
+            callback = 'self._on_mass_action_rename'
             action.connect('activate', eval(callback), item_type)
             self.app.add_action(action)
             menuitem.set_detailed_action(detailed_action='app.rename_%s' % i_type.lower())
@@ -474,13 +499,13 @@ class MiAZWorkspace(Gtk.Box):
         # ~ item_force_update.set_detailed_action(detailed_action='app.workspace_update')
         # ~ self.menu_workspace_multiple.append_item(item_force_update)
 
-        # ~ item_delete = Gio.MenuItem.new()
-        # ~ item_delete.set_label(label='Delete documents')
-        # ~ action = Gio.SimpleAction.new('workspace_delete', None)
-        # ~ action.connect('activate', self.noop)
-        # ~ self.app.add_action(action)
-        # ~ item_delete.set_detailed_action(detailed_action='app.workspace_delete')
-        # ~ self.menu_workspace_multiple.append_item(item_delete)
+        item_delete = Gio.MenuItem.new()
+        item_delete.set_label(label='Mass deletion')
+        action = Gio.SimpleAction.new('workspace_delete', None)
+        action.connect('activate', self._on_mass_action_delete)
+        self.app.add_action(action)
+        item_delete.set_detailed_action(detailed_action='app.workspace_delete')
+        self.menu_workspace_multiple.append_item(item_delete)
         return self.menu_workspace_multiple
 
     def get_model_filter(self):

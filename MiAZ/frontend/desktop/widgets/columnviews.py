@@ -301,3 +301,17 @@ class MiAZColumnViewMassRename(MiAZColumnView):
         self.cv.append_column(self.column_title)
         self.column_title.set_title("Target")
         self.column_title.set_expand(True)
+
+class MiAZColumnViewMassDelete(MiAZColumnView):
+    """ Custom ColumnView widget for MiAZ """
+    __gtype_name__ = 'MiAZColumnViewMassDelete'
+
+    def __init__(self, app):
+        super().__init__(app, item_type=File)
+        self.cv.append_column(self.column_id)
+        self.column_id.set_title("Filename")
+        self.column_id.set_expand(False)
+        self.column_id.set_visible(False)
+        self.cv.append_column(self.column_title)
+        self.column_title.set_title("Document")
+        self.column_title.set_expand(True)
