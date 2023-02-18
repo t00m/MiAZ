@@ -77,8 +77,8 @@ class MiAZRenameDialog(Gtk.Box):
         boxButtons.set_margin_start(margin=12)
         self.append(boxButtons)
 
-        self.config['Country'].connect('countries-used', self.update_dropdown, Country)
-        self.config['Group'].connect('groups-used', self.update_dropdown, Group)
+        self.config['Country'].connect('country-used', self.update_dropdown, Country)
+        self.config['Group'].connect('group-used', self.update_dropdown, Group)
         self.config['SentBy'].connect('repo-settings-updated-sentby', self.update_dropdown, SentBy)
         self.config['Purpose'].connect('repo-settings-updated-purposes', self.update_dropdown, Purpose)
         self.config['SentTo'].connect('repo-settings-updated-sentto', self.update_dropdown, SentTo)

@@ -221,7 +221,7 @@ class MiAZConfigApp(MiAZConfig):
 class MiAZConfigCountries(MiAZConfig):
     def __init__(self, backend, dir_conf):
         sid_a = GObject.signal_lookup('repo-settings-updated-countries', MiAZConfigCountries)
-        sid_u = GObject.signal_lookup('countries-used', MiAZConfigCountries)
+        sid_u = GObject.signal_lookup('country-used', MiAZConfigCountries)
         if sid_a == 0:
             GObject.GObject.__init__(self)
             GObject.signal_new('repo-settings-updated-countries',
@@ -229,7 +229,7 @@ class MiAZConfigCountries(MiAZConfig):
                                 GObject.SignalFlags.RUN_LAST, None, () )
         if sid_u == 0:
             GObject.GObject.__init__(self)
-            GObject.signal_new('countries-used',
+            GObject.signal_new('country-used',
                                 MiAZConfigCountries,
                                 GObject.SignalFlags.RUN_LAST, None, () )
         super().__init__(
@@ -251,13 +251,13 @@ class MiAZConfigCountries(MiAZConfig):
             if filepath == self.available:
                 self.emit('repo-settings-updated-countries')
             elif filepath == self.used:
-                self.emit('countries-used')
+                self.emit('country-used')
         return saved
 
 class MiAZConfigGroups(MiAZConfig):
     def __init__(self, backend, dir_conf):
         sid_a = GObject.signal_lookup('repo-settings-updated-groups-available', MiAZConfigGroups)
-        sid_u = GObject.signal_lookup('groups-used', MiAZConfigGroups)
+        sid_u = GObject.signal_lookup('group-used', MiAZConfigGroups)
         if sid_a == 0:
             GObject.GObject.__init__(self)
             GObject.signal_new('repo-settings-updated-groups-available',
@@ -265,7 +265,7 @@ class MiAZConfigGroups(MiAZConfig):
                                 GObject.SignalFlags.RUN_LAST, None, () )
         if sid_u == 0:
             GObject.GObject.__init__(self)
-            GObject.signal_new('groups-used',
+            GObject.signal_new('group-used',
                                 MiAZConfigGroups,
                                 GObject.SignalFlags.RUN_LAST, None, () )
         super().__init__(
@@ -285,7 +285,7 @@ class MiAZConfigGroups(MiAZConfig):
             if filepath == self.available:
                 self.emit('repo-settings-updated-groups-available')
             elif filepath == self.used:
-                self.emit('groups-used')
+                self.emit('group-used')
 
     def __repr__(self):
         return 'Group'
