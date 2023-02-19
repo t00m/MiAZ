@@ -43,7 +43,6 @@ Configview['Date'] = Gtk.Calendar
 
 class MiAZWorkspace(Gtk.Box):
     """ Wrapper for Gtk.Stack with  with a StackSwitcher """
-    show_dashboard = True
     signals = set()
     selected_items = []
     dates = {}
@@ -111,6 +110,23 @@ class MiAZWorkspace(Gtk.Box):
         title = item_type.__gtype_name__
         self.actions.dropdown_populate(self.dropdown[title], item_type)
 
+    def _on_mass_action_rename_dialog_date(self, *args):
+        box = self.factory.create_box_vertical(spacing=6, vexpand=True, hexpand=True)
+        entry = Gtk.Entry()
+        calendar = Gtk.Calendar()
+        label = Gtk.Label()
+        box.append(entry)
+        box.append(calendar)
+        box.append(label)
+        dialog = self.factory.create_dialog_question(self.app.win, 'Mass renaming', box)#, width=640, height=480)
+        dialog.connect('response', self._on_mass_action_rename_date_response)
+        dialog.show()
+
+    def _on_mass_action_rename_date_response(self, dialog, response):
+        if response == Gtk.ResponseType.ACCEPT:
+            pass
+        dialog.destroy()
+
     def _on_mass_action_rename_dialog(self, action, data, item_type):
         def update_dropdown(config, dropdown, item_type, any_value):
             title = item_type.__gtype_name__
@@ -169,7 +185,7 @@ class MiAZWorkspace(Gtk.Box):
                 txtId = "<small>%s</small>" % os.path.basename(source)
                 txtTitle = "<small>%s</small>" % os.path.basename(target)
                 citems.append(File(id=txtId, title=txtTitle))
-            except:
+            except AttributeError:
                 # FIXME: AtributeError: 'NoneType' object has no attribute 'id'
                 # It happens when managing resources from inside the dialog
                 pass
@@ -334,7 +350,7 @@ class MiAZWorkspace(Gtk.Box):
         hbox.append(self.btnItemDelete)
 
         ## Documents selected
-        self.mnuSelMulti = self.create_menu_selection_multiple()
+        self.mnuSelMulti = self._setup_menu_selection_multiple()
         label = Gtk.Label()
         label.get_style_context().add_class(class_name='caption')
         self.btnDocsSel = Gtk.MenuButton()
@@ -467,7 +483,7 @@ class MiAZWorkspace(Gtk.Box):
         self._on_filters_toggled(self.tgbFilters)
         return widget
 
-    def create_menu_selection_multiple(self):
+    def _setup_menu_selection_multiple(self):
         self.menu_workspace_multiple = Gio.Menu.new()
         # ~ {timestamp}-{country}-{group}-{sentby}-{purpose}-{concept}-{sentto}.{extension}
         fields = [Country, Group, SentBy, Purpose, SentTo] # , Concept
@@ -479,6 +495,15 @@ class MiAZWorkspace(Gtk.Box):
             submenu=submenu_rename_root,
         )
         self.menu_workspace_multiple.append_item(submenu_rename)
+        # First date
+        menuitem = Gio.MenuItem.new()
+        menuitem.set_label(label='... date')
+        action = Gio.SimpleAction.new('rename_date', None)
+        callback = 'self._on_mass_action_rename_dialog_date'
+        action.connect('activate', eval(callback))
+        self.app.add_action(action)
+        menuitem.set_detailed_action(detailed_action='app.rename_date')
+        submenu_rename_root.append_item(menuitem)
         for item_type in fields:
             i_type = item_type.__gtype_name__
             i_title = item_type.__title__
@@ -508,11 +533,11 @@ class MiAZWorkspace(Gtk.Box):
         self.menu_workspace_multiple.append_item(item_delete)
         return self.menu_workspace_multiple
 
-    def get_model_filter(self):
-        return self.model_filter
+    # ~ def get_model_filter(self):
+        # ~ return self.model_filter
 
-    def get_selection(self):
-        return self.selection
+    # ~ def get_selection(self):
+        # ~ return self.selection
 
     def get_item(self):
         selection = self.view.get_selection()
@@ -644,7 +669,6 @@ class MiAZWorkspace(Gtk.Box):
         selection.unselect_all()
 
     def display_dashboard(self, *args):
-        self.show_dashboard = True
         self.view.column_subtitle.set_title('Concept')
         self.view.column_subtitle.set_expand(True)
         self.view.refilter()
