@@ -111,22 +111,28 @@ class MiAZWorkspace(Gtk.Box):
         self.actions.dropdown_populate(self.dropdown[title], item_type)
 
     def _on_mass_action_rename_dialog_date(self, *args):
-        def calendar_day_selected(calendar, label):
+        def calendar_day_selected(calendar, label, columnview, items):
             adate = calendar.get_date()
             y = "%04d" % adate.get_year()
             m = "%02d" % adate.get_month()
             d = "%02d" % adate.get_day_of_month()
-            label.set_text("%s%s%s" % (y, m, d))
+            sdate = "%s%s%s" % (y, m, d)
+            ddate = datetime.strptime(sdate, '%Y%m%d')
+            label.set_text(ddate.strftime('%A, %B %d %Y'))
+            citems = []
+            for item in items:
+                source = os.path.basename(item.id)
+                name, ext = self.util.filename_details(source)
+                lname = name.split('-')
+                lname[0] = sdate
+                target = "%s.%s" % ('-'.join(lname), ext)
+                citems.append(File(id=source, title=target))
+            columnview.update(citems)
         box = self.factory.create_box_vertical(spacing=6, vexpand=True, hexpand=True)
+        hbox = self.factory.create_box_horizontal()
         label = Gtk.Label()
         calendar = Gtk.Calendar()
-        calendar.connect('day-selected', calendar_day_selected, label)
-        sdate = datetime.strftime(datetime.now(), '%Y%m%d')
-        iso8601 = "%sT00:00:00Z" % sdate
-        calendar.select_day(GLib.DateTime.new_from_iso8601(iso8601))
-        hbox = self.factory.create_box_horizontal()
         btnDate = self.factory.create_button_popover(icon_name='miaz-res-date', widgets=[calendar])
-
         hbox.append(btnDate)
         hbox.append(label)
         frame = Gtk.Frame()
@@ -137,13 +143,29 @@ class MiAZWorkspace(Gtk.Box):
         frame.set_child(cv)
         box.append(hbox)
         box.append(frame)
+        sdate = datetime.strftime(datetime.now(), '%Y%m%d')
+        iso8601 = "%sT00:00:00Z" % sdate
+        calendar.connect('day-selected', calendar_day_selected, label, cv, self.selected_items)
+        calendar.select_day(GLib.DateTime.new_from_iso8601(iso8601))
+        calendar.emit('day-selected')
         dialog = self.factory.create_dialog_question(self.app.win, 'Mass renaming', box, width=640, height=480)
-        dialog.connect('response', self._on_mass_action_rename_date_response)
+        dialog.connect('response', self._on_mass_action_rename_date_response, calendar)
         dialog.show()
 
-    def _on_mass_action_rename_date_response(self, dialog, response):
+    def _on_mass_action_rename_date_response(self, dialog, response, calendar):
         if response == Gtk.ResponseType.ACCEPT:
-            pass
+            adate = calendar.get_date()
+            y = "%04d" % adate.get_year()
+            m = "%02d" % adate.get_month()
+            d = "%02d" % adate.get_day_of_month()
+            sdate = "%s%s%s" % (y, m, d)
+            for item in self.selected_items:
+                source = os.path.basename(item.id)
+                name, ext = self.util.filename_details(source)
+                lname = name.split('-')
+                lname[0] = sdate
+                target = "%s.%s" % ('-'.join(lname), ext)
+                self.util.filename_rename(source, target)
         dialog.destroy()
 
     def _on_mass_action_rename_dialog(self, action, data, item_type):
