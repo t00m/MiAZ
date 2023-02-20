@@ -111,11 +111,22 @@ class MiAZWorkspace(Gtk.Box):
         self.actions.dropdown_populate(self.dropdown[title], item_type)
 
     def _on_mass_action_rename_dialog_date(self, *args):
+        def calendar_day_selected(calendar, label):
+            adate = calendar.get_date()
+            y = "%04d" % adate.get_year()
+            m = "%02d" % adate.get_month()
+            d = "%02d" % adate.get_day_of_month()
+            label.set_text("%s%s%s" % (y, m, d))
         box = self.factory.create_box_vertical(spacing=6, vexpand=True, hexpand=True)
+        label = Gtk.Label()
         calendar = Gtk.Calendar()
+        calendar.connect('day-selected', calendar_day_selected, label)
+        sdate = datetime.strftime(datetime.now(), '%Y%m%d')
+        iso8601 = "%sT00:00:00Z" % sdate
+        calendar.select_day(GLib.DateTime.new_from_iso8601(iso8601))
         hbox = self.factory.create_box_horizontal()
         btnDate = self.factory.create_button_popover(icon_name='miaz-res-date', widgets=[calendar])
-        label = Gtk.Label()
+
         hbox.append(btnDate)
         hbox.append(label)
         frame = Gtk.Frame()
