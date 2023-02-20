@@ -599,11 +599,11 @@ class MiAZWorkspace(Gtk.Box):
             fields = doc.split('-')
             if self.util.filename_validate(doc):
                 date_dsc = fields[0]
-                # ~ try:
-                    # ~ adate = datetime.strptime(fields[0], "%Y%m%d")
-                    # ~ date_dsc = adate.strftime("%Y.%m.%d")
-                # ~ except:
-                    # ~ date_dsc = ''
+                try:
+                    adate = datetime.strptime(fields[0], "%Y%m%d")
+                    date_dsc = adate.strftime("%A, %B %d %Y")
+                except:
+                    date_dsc = ''
                 items.append(MiAZItem
                                     (
                                         id=filename,
