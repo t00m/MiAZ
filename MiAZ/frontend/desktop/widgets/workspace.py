@@ -15,14 +15,14 @@ from gi.repository import GObject
 
 from MiAZ.backend.env import ENV
 from MiAZ.backend.log import get_logger
-from MiAZ.backend.models import MiAZItem, File, Group, Person, Country, Purpose, Concept, SentBy, SentTo, Date, Extension
+from MiAZ.backend.models import MiAZItem, File, Group, Person, Country, Purpose, Concept, SentBy, SentTo, Date, Extension, Project
 from MiAZ.frontend.desktop.util import get_file_mimetype
 from MiAZ.frontend.desktop.widgets.columnview import MiAZColumnView, ColIcon, ColLabel, ColButton
 from MiAZ.frontend.desktop.factory import MenuHeader
 from MiAZ.frontend.desktop.widgets.assistant import MiAZAssistantRepoSettings
 from MiAZ.frontend.desktop.widgets.menu import MiAZ_MENU_WORKSPACE_REPO
-from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewWorkspace, MiAZColumnViewMassRename, MiAZColumnViewMassDelete
-from MiAZ.frontend.desktop.widgets.configview import MiAZCountries, MiAZGroups, MiAZPeople, MiAZPurposes, MiAZPeopleSentBy, MiAZPeopleSentTo
+from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewWorkspace, MiAZColumnViewMassRename, MiAZColumnViewMassDelete, MiAZColumnViewMassProject
+from MiAZ.frontend.desktop.widgets.configview import MiAZCountries, MiAZGroups, MiAZPeople, MiAZPurposes, MiAZPeopleSentBy, MiAZPeopleSentTo, MiAZProjects
 
 # Conversion Item type to Field Number
 Field = {}
@@ -38,6 +38,7 @@ Configview['Group'] = MiAZGroups
 Configview['Purpose'] = MiAZPurposes
 Configview['SentBy'] = MiAZPeopleSentBy
 Configview['SentTo'] = MiAZPeopleSentTo
+Configview['Project'] = MiAZProjects
 Configview['Date'] = Gtk.Calendar
 
 
@@ -232,6 +233,37 @@ class MiAZWorkspace(Gtk.Box):
                 pass
         columnview.update(citems)
 
+    def _on_mass_action_project_dialog(self, *args):
+        def update_dropdown(config, dropdown, item_type, any_value):
+            title = item_type.__gtype_name__
+            self.actions.dropdown_populate(dropdown, item_type, any_value=any_value)
+            dropdown.set_selected(0)
+        self.log.debug("Assign to Project")
+        box = self.factory.create_box_vertical(spacing=6, vexpand=True, hexpand=True)
+        dropdown = self.factory.create_dropdown_generic(Project)
+        btnManage = self.factory.create_button('miaz-res-manage', '')
+        btnManage.connect('clicked', self.on_resource_manage, Configview['Project'](self.app))
+        label = self.factory.create_label('Assign the following documents to a project')
+        frame = Gtk.Frame()
+        cv = MiAZColumnViewMassProject(self.app)
+        cv.get_style_context().add_class(class_name='monospace')
+        cv.set_hexpand(True)
+        cv.set_vexpand(True)
+        citems = []
+        for item in self.selected_items:
+            citems.append(File(id=item.id, title=os.path.basename(item.id)))
+        cv.update(citems)
+        frame.set_child(cv)
+        hbox = self.factory.create_box_horizontal(hexpand=False, vexpand=False)
+        hbox.append(label)
+        hbox.append(dropdown)
+        hbox.append(btnManage)
+        box.append(hbox)
+        box.append(frame)
+        dialog = self.factory.create_dialog_question(self.app.win, 'Assign to a project', box, width=1024, height=600)
+        dialog.connect('response', self._on_mass_action_project_response)
+        dialog.show()
+
     def _on_mass_action_delete_dialog(self, *args):
         self.log.debug("Mass deletion")
         box = self.factory.create_box_vertical(spacing=6, vexpand=True, hexpand=True)
@@ -256,6 +288,12 @@ class MiAZWorkspace(Gtk.Box):
         if response == Gtk.ResponseType.ACCEPT:
             for item in self.selected_items:
                 self.util.filename_delete(item.id)
+        dialog.destroy()
+
+    def _on_mass_action_project_response(self, dialog, response):
+        if response == Gtk.ResponseType.ACCEPT:
+            for item in self.selected_items:
+                self.log.debug(item.id)
         dialog.destroy()
 
     def _on_mass_action_rename_response(self, dialog, response, dropdown, item_type):
@@ -564,6 +602,14 @@ class MiAZWorkspace(Gtk.Box):
         # ~ self.app.add_action(action)
         # ~ item_force_update.set_detailed_action(detailed_action='app.workspace_update')
         # ~ self.menu_workspace_multiple.append_item(item_force_update)
+
+        item_project = Gio.MenuItem.new()
+        item_project.set_label(label='Assign to project')
+        action = Gio.SimpleAction.new('workspace_project', None)
+        action.connect('activate', self._on_mass_action_project_dialog)
+        self.app.add_action(action)
+        item_project.set_detailed_action(detailed_action='app.workspace_project')
+        self.menu_workspace_multiple.append_item(item_project)
 
         item_delete = Gio.MenuItem.new()
         item_delete.set_label(label='Mass deletion')

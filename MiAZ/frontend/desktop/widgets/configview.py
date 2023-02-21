@@ -25,6 +25,7 @@ from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewCountry
 from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewGroup
 from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewPurpose
 from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewPerson
+from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewProject
 
 
 class MiAZConfigView(MiAZSelector):
@@ -152,7 +153,6 @@ class MiAZPeopleSentTo(MiAZConfigView):
         self.viewSl = MiAZColumnViewPerson(self.app)
         self.add_columnview_used(self.viewSl)
 
-
 class MiAZPurposes(MiAZConfigView):
     """Manage purposes from Repo Settings"""
     __gtype_name__ = 'MiAZPurposes'
@@ -167,4 +167,20 @@ class MiAZPurposes(MiAZConfigView):
         self.viewAv = MiAZColumnViewPurpose(self.app)
         self.add_columnview_available(self.viewAv)
         self.viewSl = MiAZColumnViewPurpose(self.app)
+        self.add_columnview_used(self.viewSl)
+
+class MiAZProjects(MiAZConfigView):
+    """Manage projects from Repo Settings"""
+    __gtype_name__ = 'MiAZProjects'
+
+    def __init__(self, app):
+        super(MiAZConfigView, self).__init__(app, edit=True)
+        super().__init__(app)
+        self.config = self.conf['Project']
+
+    def _setup_view_finish(self):
+        # Setup Available and Used Columns Views
+        self.viewAv = MiAZColumnViewProject(self.app)
+        self.add_columnview_available(self.viewAv)
+        self.viewSl = MiAZColumnViewProject(self.app)
         self.add_columnview_used(self.viewSl)

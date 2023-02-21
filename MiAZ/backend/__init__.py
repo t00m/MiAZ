@@ -11,6 +11,7 @@ from MiAZ.backend.watcher import MiAZWatcher
 from MiAZ.backend.config import MiAZConfigApp
 from MiAZ.backend.config import MiAZConfigCountries
 from MiAZ.backend.config import MiAZConfigGroups
+from MiAZ.backend.config import MiAZConfigProjects
 from MiAZ.backend.config import MiAZConfigPurposes
 from MiAZ.backend.config import MiAZConfigConcepts
 from MiAZ.backend.config import MiAZConfigPeople
@@ -76,6 +77,7 @@ class MiAZBackend(GObject.GObject):
         self.conf['SentBy'] = MiAZConfigSentBy(self, dir_conf)
         self.conf['SentTo'] = MiAZConfigSentTo(self, dir_conf)
         self.conf['Person'] = MiAZConfigPeople(self, dir_conf)
+        self.conf['Project'] = MiAZConfigProjects(self, dir_conf)
         self.watcher = MiAZWatcher('source', path)
         self.watcher.set_active(active=True)
         self.watcher.connect('repository-updated', self.repo_check)

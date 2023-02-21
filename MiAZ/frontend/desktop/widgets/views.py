@@ -17,7 +17,7 @@ from MiAZ.backend.env import ENV
 from MiAZ.backend.log import get_logger
 from MiAZ.frontend.desktop.widgets.columnview import MiAZColumnView
 from MiAZ.frontend.desktop.widgets.columnview import ColIcon, ColLabel, ColMenuButton, ColCheck, ColButton
-from MiAZ.backend.models import MiAZItem, Country, Group, Person, Purpose, File
+from MiAZ.backend.models import MiAZItem, Country, Group, Person, Purpose, File, Project
 
 
 class MiAZColumnViewWorkspace(MiAZColumnView):
@@ -267,6 +267,17 @@ class MiAZColumnViewGroup(MiAZColumnView):
         self.cv.append_column(self.column_title)
         self.column_title.set_title("Description")
 
+class MiAZColumnViewProject(MiAZColumnView):
+    """ Custom ColumnView widget for MiAZ """
+    __gtype_name__ = 'MiAZColumnViewProject'
+
+    def __init__(self, app):
+        super().__init__(app, item_type=Project)
+        self.cv.append_column(self.column_id)
+        self.column_title.set_title("Project Id")
+        self.cv.append_column(self.column_title)
+        self.column_title.set_title("Description")
+
 class MiAZColumnViewPurpose(MiAZColumnView):
     """ Custom ColumnView widget for MiAZ """
     __gtype_name__ = 'MiAZColumnViewPurpose'
@@ -305,6 +316,20 @@ class MiAZColumnViewMassRename(MiAZColumnView):
 class MiAZColumnViewMassDelete(MiAZColumnView):
     """ Custom ColumnView widget for MiAZ """
     __gtype_name__ = 'MiAZColumnViewMassDelete'
+
+    def __init__(self, app):
+        super().__init__(app, item_type=File)
+        self.cv.append_column(self.column_id)
+        self.column_id.set_title("Filename")
+        self.column_id.set_expand(False)
+        self.column_id.set_visible(False)
+        self.cv.append_column(self.column_title)
+        self.column_title.set_title("Document")
+        self.column_title.set_expand(True)
+
+class MiAZColumnViewMassProject(MiAZColumnView):
+    """ Custom ColumnView widget for MiAZ """
+    __gtype_name__ = 'MiAZColumnViewMassProject'
 
     def __init__(self, app):
         super().__init__(app, item_type=File)

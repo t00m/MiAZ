@@ -6,7 +6,7 @@ from gi.repository import GObject
 from MiAZ.backend.env import ENV
 from MiAZ.backend.log import get_logger
 # ~ from MiAZ.backend.util import json_load, json_save
-from MiAZ.backend.models import MiAZModel, MiAZItem, File, Group, Person, Country, Purpose, Concept, SentBy, SentTo
+from MiAZ.backend.models import MiAZModel, MiAZItem, File, Group, Person, Country, Purpose, Concept, SentBy, SentTo, Project
 
 class MiAZConfig(GObject.GObject):
     """ MiAZ Config class"""
@@ -292,8 +292,8 @@ class MiAZConfigGroups(MiAZConfig):
 
 class MiAZConfigPurposes(MiAZConfig):
     def __init__(self, backend, dir_conf):
-        sid_a = GObject.signal_lookup('purpose-available', MiAZConfigGroups)
-        sid_u = GObject.signal_lookup('purpose-used', MiAZConfigGroups)
+        sid_a = GObject.signal_lookup('purpose-available', MiAZConfigPurposes)
+        sid_u = GObject.signal_lookup('purpose-used', MiAZConfigPurposes)
         if sid_a == 0:
             GObject.GObject.__init__(self)
             GObject.signal_new('purpose-available',
@@ -394,8 +394,8 @@ class MiAZConfigPeople(MiAZConfig):
 
 class MiAZConfigSentBy(MiAZConfig):
     def __init__(self, backend, dir_conf):
-        sid_a = GObject.signal_lookup('sentby-available', MiAZConfigGroups)
-        sid_u = GObject.signal_lookup('sentby-used', MiAZConfigGroups)
+        sid_a = GObject.signal_lookup('sentby-available', MiAZConfigSentBy)
+        sid_u = GObject.signal_lookup('sentby-used', MiAZConfigSentBy)
         if sid_a == 0:
             GObject.GObject.__init__(self)
             GObject.signal_new('sentby-available',
@@ -430,8 +430,8 @@ class MiAZConfigSentBy(MiAZConfig):
 
 class MiAZConfigSentTo(MiAZConfig):
     def __init__(self, backend, dir_conf):
-        sid_a = GObject.signal_lookup('sentto-available', MiAZConfigGroups)
-        sid_u = GObject.signal_lookup('sentto-used', MiAZConfigGroups)
+        sid_a = GObject.signal_lookup('sentto-available', MiAZConfigSentTo)
+        sid_u = GObject.signal_lookup('sentto-used', MiAZConfigSentTo)
         if sid_a == 0:
             GObject.GObject.__init__(self)
             GObject.signal_new('sentto-available',
@@ -463,3 +463,38 @@ class MiAZConfigSentTo(MiAZConfig):
                 self.emit('sentto-available')
             elif filepath == self.used:
                 self.emit('sentto-used')
+
+class MiAZConfigProjects(MiAZConfig):
+    def __init__(self, backend, dir_conf):
+        sid_a = GObject.signal_lookup('project-available', MiAZConfigProjects)
+        sid_u = GObject.signal_lookup('project-used', MiAZConfigProjects)
+        if sid_a == 0:
+            GObject.GObject.__init__(self)
+            GObject.signal_new('project-available',
+                                MiAZConfigProjects,
+                                GObject.SignalFlags.RUN_LAST, None, () )
+        if sid_u == 0:
+            GObject.GObject.__init__(self)
+            GObject.signal_new('project-used',
+                                MiAZConfigProjects,
+                                GObject.SignalFlags.RUN_LAST, None, () )
+        super().__init__(
+            backend = backend,
+            log=get_logger('MiAZ.Settings.Project'),
+            config_for = 'Project',
+            used = os.path.join(dir_conf, 'project-used.json'),
+            available = os.path.join(dir_conf, 'project-available.json'),
+            default = None,
+            model = Project,
+            must_copy = False
+        )
+
+    def __repr__(self):
+        return 'Project'
+
+    def save(self, filepath: str = '', items: dict = {}) -> bool:
+        if self.save_data(filepath, items):
+            if filepath == self.available:
+                self.emit('project-available')
+            elif filepath == self.used:
+                self.emit('project-used')

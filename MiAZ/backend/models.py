@@ -154,6 +154,10 @@ class Person(MiAZModel):
     __gtype_name__ = 'Person'
     __title__ = 'Person'
 
+class Project(MiAZModel):
+    __gtype_name__ = 'Project'
+    __title__ = 'Project'
+
 class Purpose(MiAZModel):
     __gtype_name__ = 'Purpose'
     __title__ = 'Purpose'
