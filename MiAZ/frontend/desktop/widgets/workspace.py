@@ -83,7 +83,7 @@ class MiAZWorkspace(Gtk.Box):
 
         # FIXME: Do NOT fill dropdowns here.
         self.dropdown = {}
-        for item_type in [Country, Group, SentBy, Purpose, SentTo]:
+        for item_type in [Project, Country, Group, SentBy, Purpose, SentTo]:
             i_type = item_type.__gtype_name__
             i_title = item_type.__title__
             dropdown = self.factory.create_dropdown_generic(item_type=item_type, dropdown_search_function=None)
@@ -93,12 +93,20 @@ class MiAZWorkspace(Gtk.Box):
             body.append(boxDropdown)
             self.dropdown[i_type] = dropdown
         self.backend.connect('source-configuration-updated', self._on_workspace_update)
+        self.config['Project'].connect('project-used', self.update_dropdown, Project)
         self.config['Country'].connect('country-used', self.update_dropdown, Country)
         self.config['Group'].connect('group-used', self.update_dropdown, Group)
         self.config['SentBy'].connect('sentby-used', self.update_dropdown, SentBy)
         self.config['Purpose'].connect('purpose-used', self.update_dropdown, Purpose)
         self.config['SentTo'].connect('sentto-used', self.update_dropdown, SentTo)
         return widget
+
+        ## Projects
+        # ~ self.dd_prj = self.factory.create_dropdown_generic(item_type=Project, ellipsize=False)
+        # ~ self.actions.dropdown_populate(self.dd_prj, Project, any_value=True)
+        # ~ self.dd_prj.set_selected(0)
+        # ~ self.dd_prj.connect("notify::selected-item", self._on_filter_selected)
+        # ~ hbox.append(self.dd_prj)
 
     def _on_workspace_update(self, *args):
         GLib.idle_add(self.update)
@@ -725,6 +733,25 @@ class MiAZWorkspace(Gtk.Box):
             # Display documents without date
             return True
 
+    def _do_eval_cond_matches_project(self, doc):
+        matches = False
+        try:
+            project = self.dropdown['Project'].get_selected_item().id
+        except AttributeError:
+            # Raised when managing projects from selector
+            # Workaround: do not filter
+            return True
+
+        if project is 'Any':
+            matches = True
+        elif project is 'None':
+            projects = self.backend.projects.assigned_to(doc)
+            if len(projects) == 0:
+                matches = True
+        else:
+            matches = self.backend.projects.exists(project, doc)
+        return matches
+
     def _do_filter_view(self, item, filter_list_model):
         c0 = self._do_eval_cond_matches_freetext(item.id)
         cd = self._do_eval_cond_matches_date(item)
@@ -733,7 +760,8 @@ class MiAZWorkspace(Gtk.Box):
         c4 = self._do_eval_cond_matches(self.dropdown['SentBy'], item.sentby_id)
         c5 = self._do_eval_cond_matches(self.dropdown['Purpose'], item.purpose)
         c6 = self._do_eval_cond_matches(self.dropdown['SentTo'], item.sentto_id)
-        return c0 and c1 and c2 and c4 and c5 and c6 and cd
+        cp = self._do_eval_cond_matches_project(item.id)
+        return c0 and c1 and c2 and c4 and c5 and c6 and cd and cp
 
     def _on_signal_filter_connect(self):
         # ~ ent_sb = self.app.header.get_title_widget()
