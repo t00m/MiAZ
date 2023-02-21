@@ -51,7 +51,12 @@ class MiAZProject(GObject.GObject):
         self.save()
 
     def exists(self, project, doc):
-        return doc in self.projects[project]
+        try:
+            return doc in self.projects[project]
+        except KeyError:
+            # Project {project} not present in projects.json
+            # Config file projects.json deleted and then recreated emtpy?
+            return False
 
     def assigned_to(self, doc):
         projects = []
