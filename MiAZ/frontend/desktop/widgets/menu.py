@@ -20,7 +20,7 @@ MiAZ_MENU_APP = """
   <section>
     <item>
       <attribute name='label' translatable='yes'>Settings</attribute>
-      <attribute name='action'>app.settings</attribute>
+      <attribute name='action'>app.settings_app</attribute>
     </item>
     <item>
       <attribute name='label' translatable='yes'>Help</attribute>

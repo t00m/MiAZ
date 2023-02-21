@@ -20,6 +20,7 @@ from MiAZ.frontend.desktop.widgets.menu import MiAZ_MENU_APP
 from MiAZ.frontend.desktop.widgets.workspace import MiAZWorkspace
 from MiAZ.frontend.desktop.widgets.rename import MiAZRenameDialog
 from MiAZ.frontend.desktop.settings import MiAZAppSettings
+from MiAZ.frontend.desktop.settings import MiAZRepoSettings
 from MiAZ.frontend.desktop.widgets.about import MiAZAbout
 from MiAZ.frontend.desktop.icons import MiAZIconManager
 from MiAZ.frontend.desktop.factory import MiAZFactory
@@ -83,8 +84,8 @@ class MiAZApp(Adw.Application):
     def get_header(self):
         return self.header
 
-    def get_settings(self):
-        return self.settings
+    def get_app_settings(self):
+        return self.settings_app
 
     def _setup_stack(self):
         self.stack = Adw.ViewStack()
@@ -105,11 +106,17 @@ class MiAZApp(Adw.Application):
         self.page_about.set_icon_name('document-properties')
         self.page_about.set_visible(False)
 
-    def _setup_page_settings(self):
-        self.settings = MiAZAppSettings(self)
-        self.page_settings = self.stack.add_titled(self.settings, 'settings', 'MiAZ')
-        self.page_settings.set_icon_name('document-properties')
-        self.page_settings.set_visible(False)
+    def _setup_page_app_settings(self):
+        self.settings_app = MiAZAppSettings(self)
+        self.page_settings_app = self.stack.add_titled(self.settings_app, 'settings_app', 'MiAZ')
+        self.page_settings_app.set_icon_name('document-properties')
+        self.page_settings_app.set_visible(False)
+
+    def _setup_page_repo_settings(self):
+        self.settings_repo = MiAZRepoSettings(self)
+        self.page_settings_repo = self.stack.add_titled(self.settings_repo, 'settings_repo', 'MiAZ')
+        self.page_settings_repo.set_icon_name('document-properties')
+        self.page_settings_repo.set_visible(False)
 
     def _setup_page_workspace(self):
         self.workspace = MiAZWorkspace(self)
@@ -132,7 +139,7 @@ class MiAZApp(Adw.Application):
         menu = self.factory.create_button_menu(MiAZ_MENU_APP, 'app-menu', css_classes=['flat'], child=Adw.ButtonContent(icon_name='miaz-system-menu'))
 
         # and create actions to handle menu actions
-        for action, shortcut in [('settings', ['<Ctrl>s']),
+        for action, shortcut in [('settings_app', ['<Ctrl>s']),
                                  ('help', ['<Ctrl>h']),
                                  ('about', ['<Ctrl>b']),
                                  ('close', ['<Ctrl>q']),
@@ -173,7 +180,8 @@ class MiAZApp(Adw.Application):
         # Create system pages
         self._setup_page_about()
         self._setup_page_help()
-        self._setup_page_settings()
+        self._setup_page_app_settings()
+        self._setup_page_repo_settings()
 
     def check_repository(self):
         repo = self.backend.repo_config()
@@ -195,8 +203,8 @@ class MiAZApp(Adw.Application):
     def _handle_menu(self, action, state):
             """ Callback for  menu actions"""
             name = action.get_name()
-            if name == 'settings':
-                self.show_stack_page_by_name('settings')
+            if name == 'settings_app':
+                self.show_stack_page_by_name('settings_app')
             elif name == 'about':
                 self.show_stack_page_by_name('about')
             elif name == 'close':

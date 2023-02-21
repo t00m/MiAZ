@@ -23,7 +23,7 @@ from MiAZ.frontend.desktop.widgets.configview import MiAZPeople
 class MiAZAppSettings(Gtk.Box):
     def __init__(self, app):
         super(Gtk.Box, self).__init__(spacing=12, orientation=Gtk.Orientation.VERTICAL)
-        self.log = get_logger('MiAZ.Desktop.Settings')
+        self.log = get_logger('MiAZAppSettings')
         self.app = app
         self.factory = self.app.get_factory()
         self.config = self.app.get_config('App')
@@ -74,3 +74,14 @@ class MiAZAppSettings(Gtk.Box):
     def on_filechooser_response_source(self, dialog, response):
         dialog.destroy()
         return
+
+
+class MiAZRepoSettings(Gtk.Box):
+    def __init__(self, app):
+        super(Gtk.Box, self).__init__(spacing=12, orientation=Gtk.Orientation.VERTICAL)
+        self.log = get_logger('MiAZRepoSettings')
+        self.app = app
+        self.factory = self.app.get_factory()
+        self.config = self.app.get_config('App')
+        self.notebook = Gtk.Notebook()
+        self.append(self.notebook)

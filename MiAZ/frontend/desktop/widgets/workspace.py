@@ -469,10 +469,11 @@ class MiAZWorkspace(Gtk.Box):
         name = action.get_name()
         if name == 'repo_settings':
             self.log.debug("Execute Settings Assistant")
-            assistant = MiAZAssistantRepoSettings(self.app)
-            assistant.set_transient_for(self.app.win)
-            assistant.set_modal(True)
-            assistant.present()
+            self.app.show_stack_page_by_name('settings_repo')
+            # ~ assistant = MiAZAssistantRepoSettings(self.app)
+            # ~ assistant.set_transient_for(self.app.win)
+            # ~ assistant.set_modal(True)
+            # ~ assistant.present()
 
     def _setup_columnview(self):
         self.view = MiAZColumnViewWorkspace(self.app)
