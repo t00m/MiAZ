@@ -112,32 +112,6 @@ class MiAZConfig(GObject.GObject):
         else:
             return False
 
-
-    # ~ def exists(self, key: str) -> bool:
-        # ~ found = False
-
-        # ~ if self.must_copy:
-            # ~ config = self.load(self.used)
-        # ~ else:
-            # ~ config = self.load(self.default)
-
-        # ~ if isinstance(config, dict):
-            # ~ try:
-                # ~ if self.config_for == 'Extensions':
-                    # ~ config[key.lower()]
-                    # ~ found = True
-                # ~ else:
-                    # ~ config[key]
-                    # ~ found = True
-            # ~ except KeyError:
-                # ~ found = False
-        # ~ elif isinstance(config, list):
-            # ~ if key.upper() in [item.upper() for item in config]:
-                # ~ found = True
-            # ~ else:
-                # ~ found = False
-        # ~ return found
-
     def add_available_batch(self, keysvalues: list):
         for key, value in keysvalues:
             self.add(self.available, key, value)

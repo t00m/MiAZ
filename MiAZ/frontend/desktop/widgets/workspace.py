@@ -238,9 +238,12 @@ class MiAZWorkspace(Gtk.Box):
             title = item_type.__gtype_name__
             self.actions.dropdown_populate(dropdown, item_type, any_value=any_value)
             dropdown.set_selected(0)
+
         self.log.debug("Assign to Project")
         box = self.factory.create_box_vertical(spacing=6, vexpand=True, hexpand=True)
         dropdown = self.factory.create_dropdown_generic(Project)
+        # ~ dropdown.connect("notify::selected-item", selected_item)
+        self.actions.dropdown_populate(dropdown, Project, any_value=False)
         btnManage = self.factory.create_button('miaz-res-manage', '')
         btnManage.connect('clicked', self.on_resource_manage, Configview['Project'](self.app))
         label = self.factory.create_label('Assign the following documents to a project')
@@ -261,7 +264,7 @@ class MiAZWorkspace(Gtk.Box):
         box.append(hbox)
         box.append(frame)
         dialog = self.factory.create_dialog_question(self.app.win, 'Assign to a project', box, width=1024, height=600)
-        dialog.connect('response', self._on_mass_action_project_response)
+        dialog.connect('response', self._on_mass_action_project_response, dropdown)
         dialog.show()
 
     def _on_mass_action_delete_dialog(self, *args):
@@ -290,10 +293,14 @@ class MiAZWorkspace(Gtk.Box):
                 self.util.filename_delete(item.id)
         dialog.destroy()
 
-    def _on_mass_action_project_response(self, dialog, response):
+    def _on_mass_action_project_response(self, dialog, response, dropdown):
         if response == Gtk.ResponseType.ACCEPT:
+            self.projects = self.backend.projects
+            pid = dropdown.get_selected_item().id
+            docs = []
             for item in self.selected_items:
-                self.log.debug(item.id)
+                docs.append(item.id)
+            self.projects.add_batch(pid, docs)
         dialog.destroy()
 
     def _on_mass_action_rename_response(self, dialog, response, dropdown, item_type):
