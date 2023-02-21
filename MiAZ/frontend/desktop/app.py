@@ -19,7 +19,7 @@ from MiAZ.frontend.desktop.widgets.assistant import MiAZAssistantRepo
 from MiAZ.frontend.desktop.widgets.menu import MiAZ_MENU_APP
 from MiAZ.frontend.desktop.widgets.workspace import MiAZWorkspace
 from MiAZ.frontend.desktop.widgets.rename import MiAZRenameDialog
-from MiAZ.frontend.desktop.settings import MiAZSettings
+from MiAZ.frontend.desktop.settings import MiAZAppSettings
 from MiAZ.frontend.desktop.widgets.about import MiAZAbout
 from MiAZ.frontend.desktop.icons import MiAZIconManager
 from MiAZ.frontend.desktop.factory import MiAZFactory
@@ -106,7 +106,7 @@ class MiAZApp(Adw.Application):
         self.page_about.set_visible(False)
 
     def _setup_page_settings(self):
-        self.settings = MiAZSettings(self)
+        self.settings = MiAZAppSettings(self)
         self.page_settings = self.stack.add_titled(self.settings, 'settings', 'MiAZ')
         self.page_settings.set_icon_name('document-properties')
         self.page_settings.set_visible(False)

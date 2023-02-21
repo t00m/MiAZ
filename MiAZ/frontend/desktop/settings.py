@@ -20,7 +20,7 @@ from MiAZ.frontend.desktop.widgets.configview import MiAZCountries
 from MiAZ.frontend.desktop.widgets.configview import MiAZPeople
 
 
-class MiAZSettings(Gtk.Box):
+class MiAZAppSettings(Gtk.Box):
     def __init__(self, app):
         super(Gtk.Box, self).__init__(spacing=12, orientation=Gtk.Orientation.VERTICAL)
         self.log = get_logger('MiAZ.Desktop.Settings')
@@ -74,42 +74,3 @@ class MiAZSettings(Gtk.Box):
     def on_filechooser_response_source(self, dialog, response):
         dialog.destroy()
         return
-
-        # ~ backend = self.app.get_backend()
-        # ~ use_repo = False
-        # ~ if response == Gtk.ResponseType.ACCEPT:
-            # ~ content_area = dialog.get_content_area()
-            # ~ filechooser = content_area.get_first_child()
-            # ~ try:
-                # ~ gfile = filechooser.get_file()
-            # ~ except AttributeError as error:
-                # ~ self.log.error(error)
-                # ~ raise
-            # ~ if gfile is None:
-                # ~ self.log.debug("No directory set. Do nothing.")
-                # ~ # FIXME: Show warning message. Priority: low
-                # ~ return
-            # ~ dirpath = gfile.get_path()
-            # ~ if dirpath is not None:
-                # ~ if backend.repo_validate(dirpath):
-                    # ~ self.log.debug("Directory '%s' is a MiAZ Repository", dirpath)
-                    # ~ use_repo = True
-                # ~ else:
-                    # ~ self.log.debug("Directory '%s' is not a MiAZ repository", dirpath)
-                    # ~ import glob
-                    # ~ normal_files = glob.glob(os.path.join(dirpath, '*'))
-                    # ~ hidden_files = glob.glob(os.path.join(dirpath, '.*'))
-                    # ~ if len(normal_files) == 0 and len(hidden_files) == 0:
-                        # ~ self.log.debug("Initializing repository for directory '%s'", dirpath)
-                        # ~ backend.repo_init(dirpath)
-                        # ~ use_repo = True
-                    # ~ else:
-                        # ~ self.log.warning("Directory '%s' can't be used as repository. It is not empty", dirpath)
-            # ~ if use_repo:
-                # ~ self.config.set('source', dirpath)
-                # ~ backend.repo_load(dirpath)
-                # ~ self.app.setup_workspace_page()
-                # ~ self._update_action_row_repo_source(os.path.basename(dirpath), dirpath)
-                # ~ self.log.debug("Repo correctly setup")
-
-
