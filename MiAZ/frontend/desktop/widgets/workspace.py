@@ -20,7 +20,7 @@ from MiAZ.frontend.desktop.util import get_file_mimetype
 from MiAZ.frontend.desktop.widgets.columnview import MiAZColumnView, ColIcon, ColLabel, ColButton
 from MiAZ.frontend.desktop.factory import MenuHeader
 from MiAZ.frontend.desktop.widgets.assistant import MiAZAssistantRepoSettings
-from MiAZ.frontend.desktop.widgets.menu import MiAZ_MENU_WORKSPACE_REPO
+from MiAZ.frontend.desktop.widgets.menu import MiAZ_MENU_REPO
 from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewWorkspace, MiAZColumnViewMassRename, MiAZColumnViewMassDelete, MiAZColumnViewMassProject
 from MiAZ.frontend.desktop.widgets.configview import MiAZCountries, MiAZGroups, MiAZPeople, MiAZPurposes, MiAZPeopleSentBy, MiAZPeopleSentTo, MiAZProjects
 
@@ -448,6 +448,8 @@ class MiAZWorkspace(Gtk.Box):
         label = Gtk.Label()
         label.get_style_context().add_class(class_name='caption')
         self.btnDocsSel = Gtk.MenuButton()
+        self.btnDocsSel.set_has_frame(True)
+        self.btnDocsSel.set_always_show_arrow(True)
         self.btnDocsSel.set_child(label)
         self.popDocsSel = Gtk.PopoverMenu.new_from_model(self.mnuSelMulti)
         self.btnDocsSel.set_popover(popover=self.popDocsSel)
@@ -457,7 +459,7 @@ class MiAZWorkspace(Gtk.Box):
         hbox.append(self.btnDocsSel)
 
         # Repo settings button
-        btnRepoSettings = self.factory.create_button_menu(MiAZ_MENU_WORKSPACE_REPO, 'repo-menu', child=Adw.ButtonContent(icon_name='document-properties'))
+        btnRepoSettings = self.factory.create_button_menu(MiAZ_MENU_REPO, 'repo-menu', child=Adw.ButtonContent(icon_name='document-properties'))
         btnRepoSettings.set_valign(Gtk.Align.CENTER)
         for action, shortcut in [('repo_settings', [''])]:
             self.factory.create_menu_action(action, self._on_handle_menu_repo, shortcut)
@@ -593,6 +595,8 @@ class MiAZWorkspace(Gtk.Box):
         # First date
         menuitem = Gio.MenuItem.new()
         menuitem.set_label(label='... date')
+        icon = Gio.ThemedIcon.new('miaz-res-date')
+        menuitem.set_icon(icon)
         action = Gio.SimpleAction.new('rename_date', None)
         callback = 'self._on_mass_action_rename_dialog_date'
         action.connect('activate', eval(callback))

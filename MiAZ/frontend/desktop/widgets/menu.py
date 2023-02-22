@@ -39,7 +39,7 @@ MiAZ_MENU_APP = """
 </interface>
 """
 
-MiAZ_MENU_WORKSPACE_REPO = """
+MiAZ_MENU_REPO = """
 <?xml version="1.0" encoding="UTF-8"?>
 <interface>
 <menu id='repo-menu'>
@@ -47,6 +47,31 @@ MiAZ_MENU_WORKSPACE_REPO = """
     <item>
       <attribute name='label' translatable='yes'>Repo settings</attribute>
       <attribute name='action'>app.repo_settings</attribute>
+      <attribute name="verb-icon">document-properties</attribute>
+    </item>
+    <item>
+      <attribute name='label' translatable='yes'>Backup</attribute>
+      <attribute name='action'>app.backup</attribute>
+    </item>
+  </section>
+  <section>
+    <item>
+      <attribute name='label' translatable='yes'>Delete</attribute>
+      <attribute name='action'>app.delete</attribute>
+    </item>
+  </section>
+</menu>
+</interface>
+"""
+
+MiAZ_MENU_DOCUMENT = """
+<?xml version="1.0" encoding="UTF-8"?>
+<interface>
+<menu id='repo-menu'>
+  <section>
+    <item>
+      <attribute name='label' translatable='yes'>Rename</attribute>
+      <attribute name='action'>app.doc_rename</attribute>
     </item>
     <item>
       <attribute name='label' translatable='yes'>Backup</attribute>

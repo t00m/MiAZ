@@ -100,12 +100,14 @@ class MiAZRepoSettings(Gtk.Box):
         self.factory = self.app.get_factory()
         self.config = self.app.get_config('Country')
         self.notebook = Gtk.Notebook()
+        self.notebook.set_show_border(False)
+        self.notebook.set_tab_pos(Gtk.PositionType.LEFT)
         self.append(self.notebook)
 
         def create_tab(name):
             page = Gtk.CenterBox(orientation=Gtk.Orientation.VERTICAL)
-            page.set_vexpand(True)
-            page.set_hexpand(True)
+            # ~ page.set_vexpand(True)
+            # ~ page.set_hexpand(True)
             selector = Configview[name](self.app)
             selector.set_vexpand(True)
             selector.update()
@@ -115,9 +117,12 @@ class MiAZRepoSettings(Gtk.Box):
             wdgLabel = self.factory.create_box_horizontal()
             icon = self.app.icman.get_image_by_name('miaz-res-%s' % name.lower())
             label = self.factory.create_label(name)
+            label.set_hexpand(True)
+            # ~ label.set_vexpand(True)
             wdgLabel.append(icon)
             wdgLabel.append(label)
             wdgLabel.set_hexpand(True)
+            # ~ wdgLabel.set_vexpand(True)
             return page, wdgLabel
 
         for item in ['Country', 'Group', 'Purpose', 'Project', 'SentBy', 'SentTo']:
