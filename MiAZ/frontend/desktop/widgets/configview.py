@@ -3,22 +3,10 @@
 
 import os
 
-import gi
-from gi.repository import Adw
-from gi.repository import Gdk
 from gi.repository import Gtk
 
 from MiAZ.backend.env import ENV
 from MiAZ.backend.log import get_logger
-from MiAZ.backend.models import File, Group, Person, Country, Purpose, Concept
-from MiAZ.backend.config import MiAZConfigGroups
-from MiAZ.backend.config import MiAZConfigPeople
-from MiAZ.backend.config import MiAZConfigSentBy
-from MiAZ.backend.config import MiAZConfigSentTo
-from MiAZ.backend.config import MiAZConfigCountries
-from MiAZ.backend.config import MiAZConfigPurposes
-from MiAZ.frontend.desktop.widgets.columnview import MiAZColumnView, ColIcon
-from MiAZ.frontend.desktop.widgets.dialogs import MiAZDialogAdd
 from MiAZ.frontend.desktop.widgets.selector import MiAZSelector
 from MiAZ.frontend.desktop.widgets.columnview import MiAZColumnView
 from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewCountry
@@ -33,12 +21,15 @@ class MiAZConfigView(MiAZSelector):
     __gtype_name__ = 'MiAZConfigView'
     config_for = None
 
-    def __init__(self, app):
+    def __init__(self, app, config=None):
         super(MiAZSelector, self).__init__(spacing=0, orientation=Gtk.Orientation.VERTICAL)
         self.app = app
         self.log = get_logger('MiAZConfigView')
         self.backend = self.app.get_backend()
         self.conf = self.backend.conf
+        self.config = self.conf[config]
+        self.config.connect('used-updated', self.update)
+        self.config.connect('available-updated', self.update)
         self.set_vexpand(True)
 
     def get_config_for(self):
@@ -60,23 +51,12 @@ class MiAZCountries(MiAZConfigView):
 
     def __init__(self, app):
         super(MiAZConfigView, self).__init__(app, edit=False)
-        super().__init__(app)
-        self.config = self.conf['Country']
-
-        # React to config changes
-        # ~ self.config['Project'].connect('project-used', self.update)
-        # ~ self.config.connect('country-used', self.update)
-        # ~ self.config['Group'].connect('group-used', self.update)
-        # ~ self.config['SentBy'].connect('sentby-used', self.update)
-        # ~ self.config['SentTo'].connect('sentto-used', self.update)
-        # ~ self.config['Purpose'].connect('purpose-used', self.update)
+        super().__init__(app, 'Country')
 
     def _setup_view_finish(self):
-        # Setup Available Column View
+        # Setup Available and Used Column Views
         self.viewAv = MiAZColumnViewCountry(self.app)
         self.add_columnview_available(self.viewAv)
-
-        # Setup Used Column View
         self.viewSl = MiAZColumnViewCountry(self.app)
         self.add_columnview_used(self.viewSl)
 
@@ -103,8 +83,7 @@ class MiAZGroups(MiAZConfigView):
 
     def __init__(self, app):
         super(MiAZConfigView, self).__init__(app, edit=True)
-        super().__init__(app)
-        self.config = self.conf['Group']
+        super().__init__(app, 'Group')
 
     def _setup_view_finish(self):
         # Setup Available and Used Columns Views
@@ -119,8 +98,7 @@ class MiAZPeople(MiAZConfigView):
 
     def __init__(self, app):
         super(MiAZConfigView, self).__init__(app, edit=True)
-        super().__init__(app)
-        self.config = self.conf['Person']
+        super().__init__(app, 'People')
 
     def _setup_view_finish(self):
         # Setup Available and Used Columns Views
@@ -135,10 +113,10 @@ class MiAZPeopleSentBy(MiAZConfigView):
 
     def __init__(self, app):
         super(MiAZConfigView, self).__init__(app, edit=True)
-        super().__init__(app)
-        self.config = self.conf['SentBy']
-        # ~ self.config.connect('sentby-used', self.update)
-        # ~ self.config['SentTo'].connect('sentto-used', self.update)
+        super().__init__(app, 'SentBy')
+        # Trick to keep People sync for SentBy/SentTo
+        self.config_paired = self.conf['SentTo']
+        self.config_paired.connect('available-updated', self.update)
 
     def _setup_view_finish(self):
         # Setup Available and Used Columns Views
@@ -153,8 +131,10 @@ class MiAZPeopleSentTo(MiAZConfigView):
 
     def __init__(self, app):
         super(MiAZConfigView, self).__init__(app, edit=True)
-        super().__init__(app)
-        self.config = self.conf['SentTo']
+        super().__init__(app, 'SentTo')
+        # Trick to keep People sync for SentBy/SentTo
+        self.config_paired = self.conf['SentBy']
+        self.config_paired.connect('available-updated', self.update)
 
     def _setup_view_finish(self):
         # Setup Available and Used Columns Views
@@ -169,8 +149,7 @@ class MiAZPurposes(MiAZConfigView):
 
     def __init__(self, app):
         super(MiAZConfigView, self).__init__(app, edit=True)
-        super().__init__(app)
-        self.config = self.conf['Purpose']
+        super().__init__(app, 'Purpose')
 
     def _setup_view_finish(self):
         # Setup Available and Used Columns Views
@@ -185,8 +164,7 @@ class MiAZProjects(MiAZConfigView):
 
     def __init__(self, app):
         super(MiAZConfigView, self).__init__(app, edit=True)
-        super().__init__(app)
-        self.config = self.conf['Project']
+        super().__init__(app, 'Project')
 
     def _setup_view_finish(self):
         # Setup Available and Used Columns Views
