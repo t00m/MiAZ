@@ -181,7 +181,6 @@ class MiAZApp(Adw.Application):
         self._setup_page_about()
         self._setup_page_help()
         self._setup_page_app_settings()
-        self._setup_page_repo_settings()
 
     def check_repository(self):
         repo = self.backend.repo_config()
@@ -191,6 +190,7 @@ class MiAZApp(Adw.Application):
             self.backend.repo_load(dir_repo)
             self._setup_page_workspace()
             self._setup_page_rename()
+            self._setup_page_repo_settings()
             self.win.present()
         else:
             self.log.debug("No repo detected in the configuration. Executing asssitant")

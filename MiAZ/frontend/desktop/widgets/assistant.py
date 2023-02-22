@@ -227,10 +227,6 @@ class MiAZAssistantRepoSettings(MiAZAssistant):
         # Page Countries
         page = self.get_nth_page(PAGE.COUNTRIES)
         box = self.factory.create_box_vertical(spacing=12, vexpand=True, hexpand=True)
-        # ~ lblTitle = Gtk.Label()
-        # ~ lblTitle.set_markup('Manage countries')
-        # ~ lblTitle.get_style_context().add_class(class_name='title-2')
-        # ~ box.append(lblTitle)
         lblDesc = Gtk.Label()
         lblDesc.set_markup('')
         lblDesc.set_xalign(0.0)
@@ -249,10 +245,6 @@ class MiAZAssistantRepoSettings(MiAZAssistant):
         # Page Groups
         page = self.get_nth_page(PAGE.GROUPS)
         box = self.factory.create_box_vertical(spacing=12, vexpand=True, hexpand=True)
-        # ~ lblTitle = Gtk.Label()
-        # ~ lblTitle.set_markup('Manage groups')
-        # ~ lblTitle.get_style_context().add_class(class_name='title-2')
-        # ~ box.append(lblTitle)
         lblDesc = Gtk.Label()
         lblDesc.set_markup('')
         lblDesc.set_xalign(0.0)

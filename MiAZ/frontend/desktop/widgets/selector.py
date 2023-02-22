@@ -95,7 +95,7 @@ class MiAZSelector(Gtk.Box):
     def _setup_view_finish(self, *args):
         pass
 
-    def update(self):
+    def update(self, *args):
         self._update_view_available()
         self._update_view_used()
 

@@ -63,6 +63,14 @@ class MiAZCountries(MiAZConfigView):
         super().__init__(app)
         self.config = self.conf['Country']
 
+        # React to config changes
+        # ~ self.config['Project'].connect('project-used', self.update)
+        # ~ self.config.connect('country-used', self.update)
+        # ~ self.config['Group'].connect('group-used', self.update)
+        # ~ self.config['SentBy'].connect('sentby-used', self.update)
+        # ~ self.config['SentTo'].connect('sentto-used', self.update)
+        # ~ self.config['Purpose'].connect('purpose-used', self.update)
+
     def _setup_view_finish(self):
         # Setup Available Column View
         self.viewAv = MiAZColumnViewCountry(self.app)
@@ -129,6 +137,8 @@ class MiAZPeopleSentBy(MiAZConfigView):
         super(MiAZConfigView, self).__init__(app, edit=True)
         super().__init__(app)
         self.config = self.conf['SentBy']
+        # ~ self.config.connect('sentby-used', self.update)
+        # ~ self.config['SentTo'].connect('sentto-used', self.update)
 
     def _setup_view_finish(self):
         # Setup Available and Used Columns Views

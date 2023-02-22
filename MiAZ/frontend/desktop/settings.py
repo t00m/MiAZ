@@ -2,12 +2,12 @@
 # -*- coding: utf-8 -*-
 
 import os
-import sys
-import json
+# ~ import sys
+# ~ import json
 
 import gi
 from gi.repository import Adw
-from gi.repository.GdkPixbuf import Pixbuf
+# ~ from gi.repository.GdkPixbuf import Pixbuf
 from gi.repository import Gio
 from gi.repository import GLib
 from gi.repository import Gtk
@@ -17,10 +17,25 @@ from MiAZ.backend.log import get_logger
 from MiAZ.frontend.desktop.widgets.configview import MiAZGroups
 from MiAZ.frontend.desktop.widgets.configview import MiAZPurposes
 from MiAZ.frontend.desktop.widgets.configview import MiAZCountries
-from MiAZ.frontend.desktop.widgets.configview import MiAZPeople
+from MiAZ.frontend.desktop.widgets.configview import MiAZPeopleSentBy
+from MiAZ.frontend.desktop.widgets.configview import MiAZPeopleSentTo
+from MiAZ.frontend.desktop.widgets.configview import MiAZProjects
 
+from MiAZ.backend.models import MiAZItem, File, Group, Person, Country
+from MiAZ.backend.models import Purpose, Concept, SentBy, SentTo, Date
+from MiAZ.backend.models import Extension, Project
+
+Configview = {}
+Configview['Country'] = MiAZCountries
+Configview['Group'] = MiAZGroups
+Configview['Purpose'] = MiAZPurposes
+Configview['SentBy'] = MiAZPeopleSentBy
+Configview['SentTo'] = MiAZPeopleSentTo
+Configview['Project'] = MiAZProjects
+# ~ Configview['Date'] = Gtk.Calendar
 
 class MiAZAppSettings(Gtk.Box):
+    __gtype_name__ = 'MiAZAppSettings'
     def __init__(self, app):
         super(Gtk.Box, self).__init__(spacing=12, orientation=Gtk.Orientation.VERTICAL)
         self.log = get_logger('MiAZAppSettings')
@@ -77,11 +92,36 @@ class MiAZAppSettings(Gtk.Box):
 
 
 class MiAZRepoSettings(Gtk.Box):
+    __gtype_name__ = 'MiAZRepoSettings'
     def __init__(self, app):
-        super(Gtk.Box, self).__init__(spacing=12, orientation=Gtk.Orientation.VERTICAL)
+        super(Gtk.Box, self).__init__(spacing=6, orientation=Gtk.Orientation.VERTICAL)
         self.log = get_logger('MiAZRepoSettings')
         self.app = app
         self.factory = self.app.get_factory()
-        self.config = self.app.get_config('App')
+        self.config = self.app.get_config('Country')
         self.notebook = Gtk.Notebook()
         self.append(self.notebook)
+
+        def create_tab(name):
+            page = Gtk.CenterBox(orientation=Gtk.Orientation.VERTICAL)
+            page.set_vexpand(True)
+            page.set_hexpand(True)
+            selector = Configview[name](self.app)
+            selector.set_vexpand(True)
+            selector.update()
+            box = self.factory.create_box_vertical(spacing=12, vexpand=True, hexpand=True)
+            box.append(selector)
+            page.set_start_widget(box)
+            wdgLabel = self.factory.create_box_horizontal()
+            icon = self.app.icman.get_image_by_name('miaz-res-%s' % name.lower())
+            label = self.factory.create_label(name)
+            wdgLabel.append(icon)
+            wdgLabel.append(label)
+            wdgLabel.set_hexpand(True)
+            return page, wdgLabel
+
+        for item in ['Country', 'Group', 'Purpose', 'Project', 'SentBy', 'SentTo']:
+            page, label = create_tab(item)
+            self.notebook.append_page(page, label)
+
+
