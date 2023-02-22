@@ -27,6 +27,19 @@ class MiAZConfig(GObject.GObject):
         self.foreign = foreign
         self.setup()
 
+        sid_a = GObject.signal_lookup('available-updated', MiAZConfig)
+        sid_u = GObject.signal_lookup('used-updated', MiAZConfig)
+        if sid_a == 0:
+            GObject.GObject.__init__(self)
+            GObject.signal_new('available-updated',
+                                MiAZConfig,
+                                GObject.SignalFlags.RUN_LAST, None, () )
+        if sid_u == 0:
+            GObject.GObject.__init__(self)
+            GObject.signal_new('used-updated',
+                                MiAZConfig,
+                                GObject.SignalFlags.RUN_LAST, None, () )
+
     def __repr__(self):
         return __class__.__name__
 
@@ -67,6 +80,15 @@ class MiAZConfig(GObject.GObject):
 
     def load_used(self) -> dict:
         return self.load(self.used)
+
+    def save(self, filepath: str = '', items: dict = {}) -> bool:
+        saved = self.save_data(filepath, items)
+        if saved:
+            if filepath == self.available:
+                self.emit('available-updated')
+            elif filepath == self.used:
+                self.emit('used-updated')
+        return saved
 
     def save_available(self, items: dict = {}) -> bool:
         return self.save(self.available, items)
@@ -194,18 +216,6 @@ class MiAZConfigApp(MiAZConfig):
 
 class MiAZConfigCountries(MiAZConfig):
     def __init__(self, backend, dir_conf):
-        sid_a = GObject.signal_lookup('country-available', MiAZConfigCountries)
-        sid_u = GObject.signal_lookup('country-used', MiAZConfigCountries)
-        if sid_a == 0:
-            GObject.GObject.__init__(self)
-            GObject.signal_new('country-available',
-                                MiAZConfigCountries,
-                                GObject.SignalFlags.RUN_LAST, None, () )
-        if sid_u == 0:
-            GObject.GObject.__init__(self)
-            GObject.signal_new('country-used',
-                                MiAZConfigCountries,
-                                GObject.SignalFlags.RUN_LAST, None, () )
         super().__init__(
             backend = backend,
             log=get_logger('MiAZ.Settings.Countries'),
@@ -218,15 +228,6 @@ class MiAZConfigCountries(MiAZConfig):
             must_copy = False,
             foreign = True
         )
-
-    def save(self, filepath: str = '', items: dict = {}) -> bool:
-        saved = self.save_data(filepath, items)
-        if saved:
-            if filepath == self.available:
-                self.emit('country-available')
-            elif filepath == self.used:
-                self.emit('country-used')
-        return saved
 
 class MiAZConfigGroups(MiAZConfig):
     def __init__(self, backend, dir_conf):
@@ -302,12 +303,6 @@ class MiAZConfigPurposes(MiAZConfig):
 
 class MiAZConfigConcepts(MiAZConfig):
     def __init__(self, backend, dir_conf):
-        sid = GObject.signal_lookup('repo-settings-updated-concepts', MiAZConfigConcepts)
-        if sid == 0:
-            GObject.GObject.__init__(self)
-            GObject.signal_new('repo-settings-updated-concepts',
-                                MiAZConfigConcepts,
-                                GObject.SignalFlags.RUN_LAST, None, () )
         super().__init__(
             backend = backend,
             log=get_logger('MiAZ.Settings.Concepts'),
@@ -319,29 +314,8 @@ class MiAZConfigConcepts(MiAZConfig):
             must_copy = False
         )
 
-    def __repr__(self):
-        return 'Concept'
-
-    def save(self, filepath: str = '', items: dict = {}) -> bool:
-        saved = self.save_data(filepath, items)
-        if saved:
-            self.emit('repo-settings-updated-concepts')
-        return saved
-
 class MiAZConfigPeople(MiAZConfig):
     def __init__(self, backend, dir_conf):
-        sid_a = GObject.signal_lookup('repo-settings-updated-people', MiAZConfigPeople)
-        sid_u = GObject.signal_lookup('repo-settings-updated-people-used', MiAZConfigPeople)
-        if sid_a == 0:
-            GObject.GObject.__init__(self)
-            GObject.signal_new('repo-settings-updated-people',
-                                MiAZConfigPeople,
-                                GObject.SignalFlags.RUN_LAST, None, () )
-        if sid_u == 0:
-            GObject.GObject.__init__(self)
-            GObject.signal_new('repo-settings-updated-people-used',
-                                MiAZConfigPeople,
-                                GObject.SignalFlags.RUN_LAST, None, () )
         super().__init__(
             backend = backend,
             log=get_logger('MiAZ.Settings.People'),
@@ -354,32 +328,8 @@ class MiAZConfigPeople(MiAZConfig):
             must_copy = True
         )
 
-    def __repr__(self):
-        return 'Person'
-
-    def save(self, filepath: str = '', items: dict = {}) -> bool:
-        saved = self.save_data(filepath, items)
-        if saved:
-            if filepath == self.available:
-                self.emit('repo-settings-updated-people')
-            elif filepath == self.used:
-                self.emit('repo-settings-updated-people-used')
-        return saved
-
 class MiAZConfigSentBy(MiAZConfig):
     def __init__(self, backend, dir_conf):
-        sid_a = GObject.signal_lookup('sentby-available', MiAZConfigSentBy)
-        sid_u = GObject.signal_lookup('sentby-used', MiAZConfigSentBy)
-        if sid_a == 0:
-            GObject.GObject.__init__(self)
-            GObject.signal_new('sentby-available',
-                                MiAZConfigSentBy,
-                                GObject.SignalFlags.RUN_LAST, None, () )
-        if sid_u == 0:
-            GObject.GObject.__init__(self)
-            GObject.signal_new('sentby-used',
-                                MiAZConfigSentBy,
-                                GObject.SignalFlags.RUN_LAST, None, () )
         super().__init__(
             backend = backend,
             log=get_logger('MiAZ.Settings.SentBy'),
@@ -392,30 +342,8 @@ class MiAZConfigSentBy(MiAZConfig):
             must_copy = False
         )
 
-    def __repr__(self):
-        return 'SentBy'
-
-    def save(self, filepath: str = '', items: dict = {}) -> bool:
-        if self.save_data(filepath, items):
-            if filepath == self.available:
-                self.emit('sentby-available')
-            elif filepath == self.used:
-                self.emit('sentby-used')
-
 class MiAZConfigSentTo(MiAZConfig):
     def __init__(self, backend, dir_conf):
-        sid_a = GObject.signal_lookup('sentto-available', MiAZConfigSentTo)
-        sid_u = GObject.signal_lookup('sentto-used', MiAZConfigSentTo)
-        if sid_a == 0:
-            GObject.GObject.__init__(self)
-            GObject.signal_new('sentto-available',
-                                MiAZConfigSentTo,
-                                GObject.SignalFlags.RUN_LAST, None, () )
-        if sid_u == 0:
-            GObject.GObject.__init__(self)
-            GObject.signal_new('sentto-used',
-                                MiAZConfigSentTo,
-                                GObject.SignalFlags.RUN_LAST, None, () )
         super().__init__(
             backend = backend,
             log=get_logger('MiAZ.Settings.SentTo'),
@@ -428,30 +356,8 @@ class MiAZConfigSentTo(MiAZConfig):
             must_copy = False
         )
 
-    def __repr__(self):
-        return 'SentTo'
-
-    def save(self, filepath: str = '', items: dict = {}) -> bool:
-        if self.save_data(filepath, items):
-            if filepath == self.available:
-                self.emit('sentto-available')
-            elif filepath == self.used:
-                self.emit('sentto-used')
-
 class MiAZConfigProjects(MiAZConfig):
     def __init__(self, backend, dir_conf):
-        sid_a = GObject.signal_lookup('project-available', MiAZConfigProjects)
-        sid_u = GObject.signal_lookup('project-used', MiAZConfigProjects)
-        if sid_a == 0:
-            GObject.GObject.__init__(self)
-            GObject.signal_new('project-available',
-                                MiAZConfigProjects,
-                                GObject.SignalFlags.RUN_LAST, None, () )
-        if sid_u == 0:
-            GObject.GObject.__init__(self)
-            GObject.signal_new('project-used',
-                                MiAZConfigProjects,
-                                GObject.SignalFlags.RUN_LAST, None, () )
         super().__init__(
             backend = backend,
             log=get_logger('MiAZ.Settings.Project'),
@@ -462,13 +368,3 @@ class MiAZConfigProjects(MiAZConfig):
             model = Project,
             must_copy = False
         )
-
-    def __repr__(self):
-        return 'Project'
-
-    def save(self, filepath: str = '', items: dict = {}) -> bool:
-        if self.save_data(filepath, items):
-            if filepath == self.available:
-                self.emit('project-available')
-            elif filepath == self.used:
-                self.emit('project-used')

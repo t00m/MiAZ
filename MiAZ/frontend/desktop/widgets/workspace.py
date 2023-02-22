@@ -93,12 +93,12 @@ class MiAZWorkspace(Gtk.Box):
             body.append(boxDropdown)
             self.dropdown[i_type] = dropdown
         self.backend.connect('source-configuration-updated', self._on_workspace_update)
-        self.config['Project'].connect('project-used', self.update_dropdown, Project)
-        self.config['Country'].connect('country-used', self.update_dropdown, Country)
-        self.config['Group'].connect('group-used', self.update_dropdown, Group)
-        self.config['SentBy'].connect('sentby-used', self.update_dropdown, SentBy)
-        self.config['Purpose'].connect('purpose-used', self.update_dropdown, Purpose)
-        self.config['SentTo'].connect('sentto-used', self.update_dropdown, SentTo)
+        self.config['Project'].connect('used-updated', self.update_dropdown, Project)
+        self.config['Country'].connect('used-updated', self.update_dropdown, Country)
+        self.config['Group'].connect('used-updated', self.update_dropdown, Group)
+        self.config['SentBy'].connect('used-updated', self.update_dropdown, SentBy)
+        self.config['Purpose'].connect('used-updated', self.update_dropdown, Purpose)
+        self.config['SentTo'].connect('used-updated', self.update_dropdown, SentTo)
         return widget
 
         ## Projects

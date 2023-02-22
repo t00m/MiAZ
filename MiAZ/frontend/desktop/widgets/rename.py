@@ -77,11 +77,11 @@ class MiAZRenameDialog(Gtk.Box):
         boxButtons.set_margin_start(margin=12)
         self.append(boxButtons)
 
-        self.config['Country'].connect('country-used', self.update_dropdown, Country)
-        self.config['Group'].connect('group-used', self.update_dropdown, Group)
-        self.config['SentBy'].connect('sentby-used', self.update_dropdown, SentBy)
-        self.config['Purpose'].connect('purpose-used', self.update_dropdown, Purpose)
-        self.config['SentTo'].connect('sentto-used', self.update_dropdown, SentTo)
+        self.config['Country'].connect('used-updated', self.update_dropdown, Country)
+        self.config['Group'].connect('used-updated', self.update_dropdown, Group)
+        self.config['SentBy'].connect('used-updated', self.update_dropdown, SentBy)
+        self.config['Purpose'].connect('used-updated', self.update_dropdown, Purpose)
+        self.config['SentTo'].connect('used-updated', self.update_dropdown, SentTo)
 
     def update_dropdown(self, config, item_type):
         title = item_type.__gtype_name__
