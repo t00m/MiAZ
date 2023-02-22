@@ -573,16 +573,28 @@ class MiAZWorkspace(Gtk.Box):
 
     def _setup_menu_selection_single(self):
         menu_workspace_single = Gio.Menu.new()
-        section_common = Gio.Menu.new()
+        section_common_in = Gio.Menu.new()
+        section_common_out = Gio.Menu.new()
         section_danger = Gio.Menu.new()
-        menu_workspace_single.append_section(None, section_common)
+        menu_workspace_single.append_section(None, section_common_in)
+        menu_workspace_single.append_section(None, section_common_out)
         menu_workspace_single.append_section(None, section_danger)
 
-        # Typical actions
-        menuitem = self.factory.create_menuitem('rename_doc', 'Rename document', self.document_rename, ["<Control>r", "<Control>R"])
-        section_common.append_item(menuitem)
+        # Actions in
         menuitem = self.factory.create_menuitem('view_doc', 'View document', self.document_display, ["<Control>d", "<Control>D"])
-        section_common.append_item(menuitem)
+        section_common_in.append_item(menuitem)
+        menuitem = self.factory.create_menuitem('rename_doc', 'Rename document', self.document_rename, ["<Control>r", "<Control>R"])
+        section_common_in.append_item(menuitem)
+        menuitem = self.factory.create_menuitem('manage_projects', 'Manage projects', self.projects_assigned, [])
+        section_common_in.append_item(menuitem)
+        # ~ menuitem = self.factory.create_menuitem('annotate_doc', 'Make annotation', self.annotate_doc, [])
+        # ~ section_common_in.append_item(menuitem)
+
+        # Actions out
+        menuitem = self.factory.create_menuitem('copy_filename', 'Copy filename to clipboard', self.copy_filename_to_clipboard, [])
+        section_common_out.append_item(menuitem)
+        menuitem = self.factory.create_menuitem('export_document', 'Export document', self.export_document, [])
+        section_common_out.append_item(menuitem)
 
         # Dangerous actions
         menuitem = self.factory.create_menuitem('delete_doc', 'Delete document', self.document_delete, [])
@@ -803,8 +815,6 @@ class MiAZWorkspace(Gtk.Box):
         self.view.column_subtitle.set_title('Concept')
         self.view.column_subtitle.set_expand(True)
         self.view.refilter()
-        # ~ self.tgbExplain.set_active(True)
-        # ~ self.tgbExplain.set_visible(True)
         self.tgbFilters.set_visible(True)
 
     def document_display(self, *args):
@@ -820,6 +830,17 @@ class MiAZWorkspace(Gtk.Box):
         item = self.get_item()
         self.actions.document_rename(item)
 
-    def document_rename_bis(self, button, item):
-        # Get item from actionrow in helper popover
-        self.actions.document_rename(item)
+    def projects_assigned(self, *args):
+        item = self.get_item()
+        projects = self.backend.projects.assigned_to(item.id)
+        self.log.debug(projects)
+
+    def copy_filename_to_clipboard(self, *args):
+        item = self.get_item()
+
+    def export_document(self, *args):
+        item = self.get_item()
+        clipboard = Gdk.Display.get_default().get_clipboard()
+        clipboard.set_text(item.id, -1)
+        clipboard.store()
+
