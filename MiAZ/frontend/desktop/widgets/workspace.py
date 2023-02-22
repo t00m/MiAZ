@@ -357,11 +357,9 @@ class MiAZWorkspace(Gtk.Box):
         docs = self.util.get_files()
         label.set_markup("<small>%d</small> / %d / <big>%d</big>" % (len(self.selected_items), len(model), len(docs)))
         if len(self.selected_items) == 1:
-            self.btnItemEdit.set_sensitive(True)
-            self.btnItemDelete.set_sensitive(True)
+            self.popDocsSel.set_menu_model(self.mnuSelSingle)
         else:
-            self.btnItemEdit.set_sensitive(False)
-            self.btnItemDelete.set_sensitive(False)
+            self.popDocsSel.set_menu_model(self.mnuSelMulti)
 
     def _setup_toolbar_top(self):
         toolbar_top = Gtk.CenterBox()
@@ -434,24 +432,17 @@ class MiAZWorkspace(Gtk.Box):
         hbox.get_style_context().add_class(class_name='linked')
         toolbar_top.set_end_widget(hbox)
 
-        ## More stuff
-        # ~ self.btnItemInfo = self.factory.create_button(icon_name='miaz-info')
-        self.btnItemEdit = self.factory.create_button(icon_name='miaz-res-manage')
-        self.btnItemEdit.connect('clicked', self.document_rename)
-        self.btnItemDelete = self.factory.create_button(icon_name='miaz-entry-delete')
-        self.btnItemDelete.connect('clicked', self.document_delete)
-        hbox.append(self.btnItemEdit)
-        hbox.append(self.btnItemDelete)
-
-        ## Documents selected
+        # Menu Single and Multiple
+        self.mnuSelSingle = self._setup_menu_selection_single()
         self.mnuSelMulti = self._setup_menu_selection_multiple()
+
         label = Gtk.Label()
         label.get_style_context().add_class(class_name='caption')
         self.btnDocsSel = Gtk.MenuButton()
         self.btnDocsSel.set_has_frame(True)
         self.btnDocsSel.set_always_show_arrow(True)
         self.btnDocsSel.set_child(label)
-        self.popDocsSel = Gtk.PopoverMenu.new_from_model(self.mnuSelMulti)
+        self.popDocsSel = Gtk.PopoverMenu.new_from_model(self.mnuSelSingle)
         self.btnDocsSel.set_popover(popover=self.popDocsSel)
         self.btnDocsSel.set_valign(Gtk.Align.CENTER)
         self.btnDocsSel.set_hexpand(False)
@@ -580,6 +571,24 @@ class MiAZWorkspace(Gtk.Box):
         self._on_filters_toggled(self.tgbFilters)
         return widget
 
+    def _setup_menu_selection_single(self):
+        menu_workspace_single = Gio.Menu.new()
+        section_common = Gio.Menu.new()
+        section_danger = Gio.Menu.new()
+        menu_workspace_single.append_section(None, section_common)
+        menu_workspace_single.append_section(None, section_danger)
+
+        # Typical actions
+        menuitem = self.factory.create_menuitem('rename_doc', 'Rename document', self.document_rename, ["<Control>r", "<Control>R"])
+        section_common.append_item(menuitem)
+        menuitem = self.factory.create_menuitem('view_doc', 'View document', self.document_display, ["<Control>d", "<Control>D"])
+        section_common.append_item(menuitem)
+
+        # Dangerous actions
+        menuitem = self.factory.create_menuitem('delete_doc', 'Delete document', self.document_delete, [])
+        section_danger.append_item(menuitem)
+        return menu_workspace_single
+
     def _setup_menu_selection_multiple(self):
         self.menu_workspace_multiple = Gio.Menu.new()
         # ~ {timestamp}-{country}-{group}-{sentby}-{purpose}-{concept}-{sentto}.{extension}
@@ -640,11 +649,6 @@ class MiAZWorkspace(Gtk.Box):
         self.menu_workspace_multiple.append_item(item_delete)
         return self.menu_workspace_multiple
 
-    # ~ def get_model_filter(self):
-        # ~ return self.model_filter
-
-    # ~ def get_selection(self):
-        # ~ return self.selection
 
     def get_item(self):
         selection = self.view.get_selection()

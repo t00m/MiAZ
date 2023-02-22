@@ -272,6 +272,15 @@ class MiAZFactory:
         if shortcuts:
             self.app.set_accels_for_action(f'app.{name}', shortcuts)
 
+    def create_menuitem(self, name, label, callback, shortcuts):
+        menuitem = Gio.MenuItem.new()
+        menuitem.set_label(label=label)
+        action = Gio.SimpleAction.new(name, None)
+        action.connect('activate', callback)
+        self.app.add_action(action)
+        menuitem.set_detailed_action(detailed_action='app.%s' % name)
+        return menuitem
+
     def create_row(self, filepath: str, filedict: dict) -> Gtk.Widget:
         row = Gtk.Frame()
         row.set_margin_top(margin=3)
