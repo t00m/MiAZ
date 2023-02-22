@@ -22,11 +22,18 @@ class MiAZActions(GObject.GObject):
         target_dir = config['dir_docs']
         if response == Gtk.ResponseType.ACCEPT:
             content_area = dialog.get_content_area()
-            filechooser = content_area.get_last_child()
+            box = content_area.get_first_child()
+            filechooser = box.get_first_child()
+            toggle = box.get_last_child()
+            recursive = toggle.get_active()
             gfile = filechooser.get_file()
             if gfile is not None:
                 dirpath = gfile.get_path()
-                files = glob.glob(os.path.join(dirpath, '*.*'))
+                self.log.debug("Walk directory %s recursively? %s", dirpath, recursive)
+                if recursive:
+                    files = self.util.get_files_recursively(dirpath)
+                else:
+                    files = glob.glob(os.path.join(dirpath, '*.*'))
                 for source in files:
                     target = self.util.filename_normalize(source)
                     self.util.filename_copy(source, target)

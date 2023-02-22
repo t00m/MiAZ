@@ -128,6 +128,13 @@ class MiAZFactory:
             button.connect('toggled', callback, data)
         return button
 
+    def create_button_check(self, title: str = '', active: bool = False, callback=None) -> Gtk.CheckButton:
+        button = Gtk.CheckButton.new_with_label(title)
+        button.set_active(active)
+        if callback is not None:
+            button.connect('toggled', callback)
+        return button
+
     def create_button_menu(self, xml: str = '', name:str = '', child: Gtk.Widget = None, css_classes: list = []):
         """
         Gtk.Menubutton with a menu defined in a Gtk.Builder xml string
@@ -234,14 +241,18 @@ class MiAZFactory:
         d_filechooser.add_buttons('Cancel', Gtk.ResponseType.CANCEL, 'Accept', Gtk.ResponseType.ACCEPT)
         d_filechooser.connect('response', callback)
         contents = d_filechooser.get_content_area()
+        box = self.create_box_vertical()
         w_filechooser = Gtk.FileChooserWidget()
+        box.append(w_filechooser)
         if target == 'FOLDER':
             w_filechooser.set_action(Gtk.FileChooserAction.SELECT_FOLDER)
+            toggle = self.create_button_check(title='Walk recursively', callback=None)
+            box.append(toggle)
         elif target == 'FILE':
             w_filechooser.set_action(Gtk.FileChooserAction.OPEN)
         elif target == 'SAVE':
             w_filechooser.set_action(Gtk.FileChooserAction.SAVE)
-        contents.append(w_filechooser)
+        contents.append(box)
         return d_filechooser
 
     def create_frame(self, title:str = None, margin: int = 3, hexpand: bool = False, vexpand: bool = False) -> Gtk.Frame:
