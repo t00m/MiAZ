@@ -361,25 +361,13 @@ class MiAZWorkspace(Gtk.Box):
             menuitem = self.factory.create_menuitem('rename_%s' % i_type.lower(), '...%s' % i_title.lower(), self._on_handle_menu_multiple, item_type, [])
             submenu_rename.append_item(menuitem)
 
-        # Assign to Project
+        ## Assign to Project
         menuitem = self.factory.create_menuitem('project', 'Assign project', self._on_handle_menu_multiple, Project, [])
         section_common_in.append_item(menuitem)
 
-        # ~ item_force_update = Gio.MenuItem.new()
-        # ~ item_force_update.set_label(label='Force update')
-        # ~ action = Gio.SimpleAction.new('workspace_update', None)
-        # ~ action.connect('activate', self.update)
-        # ~ self.app.add_action(action)
-        # ~ item_force_update.set_detailed_action(detailed_action='app.workspace_update')
-        # ~ menu_workspace_multiple.append_item(item_force_update)
-
-        # ~ item_project = Gio.MenuItem.new()
-        # ~ item_project.set_label(label='Assign to project')
-        # ~ action = Gio.SimpleAction.new('workspace_project', None)
-        # ~ action.connect('activate', self._on_mass_action_project_dialog)
-        # ~ self.app.add_action(action)
-        # ~ item_project.set_detailed_action(detailed_action='app.workspace_project')
-        # ~ section_common_in.append_item(item_project)
+        # Danger section
+        menuitem = self.factory.create_menuitem('delete', 'Delete documents', self._on_handle_menu_multiple, None, [])
+        section_danger.append_item(menuitem)
 
         # ~ item_delete = Gio.MenuItem.new()
         # ~ item_delete.set_label(label='Mass deletion')
@@ -543,9 +531,6 @@ class MiAZWorkspace(Gtk.Box):
             self.actions.document_rename_single(item.id)
         elif name == 'project':
             self.actions.project_assignment(Project, [item.id])
-            # ~ self.log.debug("FIXME: manage projects for document")
-            # ~ projects = self.backend.projects.assigned_to(item.id)
-            # ~ self.log.debug(projects)
         elif name == 'annotate':
             self.log.debug("FIXME: annotate document")
         elif name == 'clipboard':
@@ -553,7 +538,7 @@ class MiAZWorkspace(Gtk.Box):
         elif name == 'export':
             self.log.debug("FIXME: export document")
         elif name == 'delete':
-            self.actions.document_delete(item.id)
+            self.actions.document_delete([item])
 
     def _on_handle_menu_multiple(self, action, data, item_type):
         name = action.props.name
@@ -562,6 +547,8 @@ class MiAZWorkspace(Gtk.Box):
             self.actions.document_rename_multiple(item_type, items)
         elif name == 'project':
             self.actions.project_assignment(item_type, items)
+        elif name == 'delete':
+            self.actions.document_delete(items)
 
     def display_dashboard(self, *args):
         self.view.column_subtitle.set_title('Concept')

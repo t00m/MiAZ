@@ -69,7 +69,8 @@ class MiAZActions(GObject.GObject):
         target_dir = config['dir_docs']
         if response == Gtk.ResponseType.ACCEPT:
             content_area = dialog.get_content_area()
-            filechooser = content_area.get_last_child()
+            box = content_area.get_first_child()
+            filechooser = box.get_first_child()
             gfile = filechooser.get_file()
             if gfile is not None:
                 source = gfile.get_path()
@@ -81,9 +82,33 @@ class MiAZActions(GObject.GObject):
         self.log.debug("Displaying %s", doc)
         self.util.filename_display(doc)
 
-    def document_delete(self, doc):
-        self.log.debug("Deleting %s", doc)
-        self.util.filename_delete(doc)
+    def document_delete(self, items):
+        def dialog_response(dialog, response, items):
+            if response == Gtk.ResponseType.ACCEPT:
+                for item in items:
+                    self.util.filename_delete(item.id)
+            dialog.destroy()
+
+        self.log.debug("Mass deletion")
+        self.factory = self.app.get_factory()
+        self.config = self.backend.conf
+        box = self.factory.create_box_vertical(spacing=6, vexpand=True, hexpand=True)
+        label = self.factory.create_label('Delete the following documents')
+        frame = Gtk.Frame()
+        cv = MiAZColumnViewMassDelete(self.app)
+        cv.get_style_context().add_class(class_name='monospace')
+        cv.set_hexpand(True)
+        cv.set_vexpand(True)
+        citems = []
+        for item in items:
+            citems.append(File(id=item.id, title=os.path.basename(item.id)))
+        cv.update(citems)
+        frame.set_child(cv)
+        box.append(label)
+        box.append(frame)
+        dialog = self.factory.create_dialog_question(self.app.win, 'Mass deletion', box, width=1024, height=600)
+        dialog.connect('response', dialog_response, items)
+        dialog.show()
 
     def document_rename_single(self, doc):
         self.log.debug("Rename %s", doc)
@@ -322,29 +347,3 @@ class MiAZActions(GObject.GObject):
         dialog = self.factory.create_dialog_question(self.app.win, 'Assign to a project', box, width=1024, height=600)
         dialog.connect('response', dialog_response, dropdown, items)
         dialog.show()
-
-    def _on_mass_action_delete_dialog(self, *args):
-        self.log.debug("Mass deletion")
-        box = self.factory.create_box_vertical(spacing=6, vexpand=True, hexpand=True)
-        label = self.factory.create_label('Delete the following documents')
-        frame = Gtk.Frame()
-        cv = MiAZColumnViewMassDelete(self.app)
-        cv.get_style_context().add_class(class_name='monospace')
-        cv.set_hexpand(True)
-        cv.set_vexpand(True)
-        citems = []
-        for item in self.selected_items:
-            citems.append(File(id=item.id, title=os.path.basename(item.id)))
-        cv.update(citems)
-        frame.set_child(cv)
-        box.append(label)
-        box.append(frame)
-        dialog = self.factory.create_dialog_question(self.app.win, 'Mass deletion', box, width=1024, height=600)
-        dialog.connect('response', self._on_mass_action_delete_response)
-        dialog.show()
-
-    def _on_mass_action_delete_response(self, dialog, response):
-        if response == Gtk.ResponseType.ACCEPT:
-            for item in self.selected_items:
-                self.util.filename_delete(item.id)
-        dialog.destroy()
