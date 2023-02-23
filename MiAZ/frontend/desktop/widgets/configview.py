@@ -172,3 +172,67 @@ class MiAZProjects(MiAZConfigView):
         self.add_columnview_available(self.viewAv)
         self.viewSl = MiAZColumnViewProject(self.app)
         self.add_columnview_used(self.viewSl)
+
+class MiAZDates(Gtk.Box):
+    """"""
+    __gtype_name__ = 'MiAZDates'
+
+    def __init__(self, app):
+        super(MiAZDates, self).__init__(orientation=Gtk.Orientation.VERTICAL)
+        hbox = self.factory.create_box_horizontal()
+        label = Gtk.Label()
+        calendar = Gtk.Calendar()
+        btnDate = self.factory.create_button_popover(icon_name='miaz-res-date', widgets=[calendar])
+        hbox.append(btnDate)
+        hbox.append(label)
+        frame = Gtk.Frame()
+        cv = MiAZColumnViewMassRename(self.app)
+        cv.get_style_context().add_class(class_name='monospace')
+        cv.set_hexpand(True)
+        cv.set_vexpand(True)
+        frame.set_child(cv)
+        self.append(hbox)
+        self.append(frame)
+        sdate = datetime.strftime(datetime.now(), '%Y%m%d')
+        iso8601 = "%sT00:00:00Z" % sdate
+        calendar.connect('day-selected', calendar_day_selected, label, cv, self.selected_items)
+        calendar.select_day(GLib.DateTime.new_from_iso8601(iso8601))
+        calendar.emit('day-selected')
+        dialog = self.factory.create_dialog_question(self.app.win, 'Mass renaming', box, width=640, height=480)
+        dialog.connect('response', self._on_mass_action_rename_date_response, calendar)
+        dialog.show()
+
+    def calendar_day_selected(calendar, label, columnview, items):
+        adate = calendar.get_date()
+        y = "%04d" % adate.get_year()
+        m = "%02d" % adate.get_month()
+        d = "%02d" % adate.get_day_of_month()
+        sdate = "%s%s%s" % (y, m, d)
+        ddate = datetime.strptime(sdate, '%Y%m%d')
+        label.set_text(ddate.strftime('%A, %B %d %Y'))
+        citems = []
+        for item in items:
+            source = os.path.basename(item.id)
+            name, ext = self.util.filename_details(source)
+            lname = name.split('-')
+            lname[0] = sdate
+            target = "%s.%s" % ('-'.join(lname), ext)
+            citems.append(File(id=source, title=target))
+        columnview.update(citems)
+
+
+    def _on_mass_action_rename_date_response(self, dialog, response, calendar):
+        if response == Gtk.ResponseType.ACCEPT:
+            adate = calendar.get_date()
+            y = "%04d" % adate.get_year()
+            m = "%02d" % adate.get_month()
+            d = "%02d" % adate.get_day_of_month()
+            sdate = "%s%s%s" % (y, m, d)
+            for item in self.selected_items:
+                source = os.path.basename(item.id)
+                name, ext = self.util.filename_details(source)
+                lname = name.split('-')
+                lname[0] = sdate
+                target = "%s.%s" % ('-'.join(lname), ext)
+                self.util.filename_rename(source, target)
+        dialog.destroy()
