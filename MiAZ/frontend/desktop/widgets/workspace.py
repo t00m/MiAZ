@@ -320,7 +320,7 @@ class MiAZWorkspace(Gtk.Box):
         section_common_in.append_item(menuitem)
         menuitem = self.factory.create_menuitem('rename', 'Rename document', self._on_handle_menu_single, None, ["<Control>r", "<Control>R"])
         section_common_in.append_item(menuitem)
-        menuitem = self.factory.create_menuitem('projects', 'Manage projects', self._on_handle_menu_single, None, [])
+        menuitem = self.factory.create_menuitem('project', 'Assign project', self._on_handle_menu_single, None, [])
         section_common_in.append_item(menuitem)
         menuitem = self.factory.create_menuitem('annotate', 'Annotate document', self._on_handle_menu_single, None, [])
         section_common_in.append_item(menuitem)
@@ -362,7 +362,7 @@ class MiAZWorkspace(Gtk.Box):
             submenu_rename.append_item(menuitem)
 
         # Assign to Project
-        menuitem = self.factory.create_menuitem('assign_project', 'Assign to project', self._on_handle_menu_multiple, item_type, [])
+        menuitem = self.factory.create_menuitem('project', 'Assign project', self._on_handle_menu_multiple, Project, [])
         section_common_in.append_item(menuitem)
 
         # ~ item_force_update = Gio.MenuItem.new()
@@ -541,10 +541,11 @@ class MiAZWorkspace(Gtk.Box):
             self.actions.document_display(item.id)
         elif name == 'rename':
             self.actions.document_rename_single(item.id)
-        elif name == 'projects':
-            self.log.debug("FIXME: manage projects for document")
-            projects = self.backend.projects.assigned_to(item.id)
-            self.log.debug(projects)
+        elif name == 'project':
+            self.actions.project_assignment(Project, [item.id])
+            # ~ self.log.debug("FIXME: manage projects for document")
+            # ~ projects = self.backend.projects.assigned_to(item.id)
+            # ~ self.log.debug(projects)
         elif name == 'annotate':
             self.log.debug("FIXME: annotate document")
         elif name == 'clipboard':
@@ -559,6 +560,8 @@ class MiAZWorkspace(Gtk.Box):
         items = self.selected_items
         if name.startswith('rename_'):
             self.actions.document_rename_multiple(item_type, items)
+        elif name == 'project':
+            self.actions.project_assignment(item_type, items)
 
     def display_dashboard(self, *args):
         self.view.column_subtitle.set_title('Concept')

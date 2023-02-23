@@ -115,11 +115,6 @@ class MiAZActions(GObject.GObject):
                     pass
             columnview.update(citems)
 
-        def update_dropdown(config, dropdown, item_type, any_value):
-            title = item_type.__gtype_name__
-            self.dropdown_populate(dropdown, item_type, any_value=any_value)
-            dropdown.set_selected(0)
-
         def calendar_day_selected(calendar, label, columnview, items):
             adate = calendar.get_date()
             y = "%04d" % adate.get_year()
@@ -173,7 +168,6 @@ class MiAZActions(GObject.GObject):
         if item_type != Date:
             i_type = item_type.__gtype_name__
             i_title = item_type.__title__
-            self.log.debug("Rename %s for:", i_title)
             box = self.factory.create_box_vertical(spacing=6, vexpand=True, hexpand=True)
             label = self.factory.create_label('Rename %d files by setting the field <b>%s</b> to:\n' % (len(items), i_title))
             dropdown = self.factory.create_dropdown_generic(item_type)
@@ -185,7 +179,7 @@ class MiAZActions(GObject.GObject):
             cv.set_hexpand(True)
             cv.set_vexpand(True)
             dropdown.connect("notify::selected-item", update_columnview, cv, item_type, items)
-            self.config[i_type].connect('used-updated', update_dropdown, dropdown, item_type, False)
+            self.config[i_type].connect('used-updated', self.dropdown_populate, dropdown, item_type, False)
             self.dropdown_populate(dropdown, item_type, any_value=False)
             frame.set_child(cv)
             box.append(label)
@@ -198,7 +192,6 @@ class MiAZActions(GObject.GObject):
             dialog.connect('response', dialog_response, dropdown, item_type, items)
             dialog.show()
         else:
-            self.log.debug("FIXME! Not implemented")
             box = self.factory.create_box_vertical(spacing=6, vexpand=True, hexpand=True)
             hbox = self.factory.create_box_horizontal()
             label = Gtk.Label()
@@ -235,7 +228,7 @@ class MiAZActions(GObject.GObject):
         if not found:
             dropdown.set_selected(0)
 
-    def dropdown_populate(self, dropdown, item_type, keyfilter = False, intkeys=[], any_value=True, none_value=False):
+    def dropdown_populate(self, dropdown, item_type, any_value=True, none_value=False):
         model = dropdown.get_model()
         config = self.app.get_config(item_type.__gtype_name__)
         items = config.load(config.used)
@@ -289,27 +282,34 @@ class MiAZActions(GObject.GObject):
         dialog.show()
 
 
-    def _on_mass_action_project_dialog(self, *args):
-        def update_dropdown(config, dropdown, item_type, any_value):
-            title = item_type.__gtype_name__
-            self.actions.dropdown_populate(dropdown, item_type, any_value=any_value)
-            dropdown.set_selected(0)
+    def project_assignment(self, item_type, items):
+        def dialog_response(dialog, response, dropdown, items):
+            if response == Gtk.ResponseType.ACCEPT:
+                self.projects = self.backend.projects
+                pid = dropdown.get_selected_item().id
+                docs = []
+                for item in items:
+                    docs.append(os.path.basename(item.id))
+                self.projects.add_batch(pid, docs)
+            dialog.destroy()
 
-        self.log.debug("Assign to Project")
+        self.factory = self.app.get_factory()
+        self.config = self.backend.conf
+
         box = self.factory.create_box_vertical(spacing=6, vexpand=True, hexpand=True)
         dropdown = self.factory.create_dropdown_generic(Project)
-        dropdown.connect("notify::selected-item", selected_item)
-        self.actions.dropdown_populate(dropdown, Project, any_value=False)
+        # ~ dropdown.connect("notify::selected-item", selected_item)
+        self.dropdown_populate(dropdown, Project, any_value=False)
         btnManage = self.factory.create_button('miaz-res-manage', '')
         btnManage.connect('clicked', self.on_resource_manage, Configview['Project'](self.app))
-        label = self.factory.create_label('Assign the following documents to a project')
+        label = self.factory.create_label('Assign the following documents to this project: ')
         frame = Gtk.Frame()
         cv = MiAZColumnViewMassProject(self.app)
         cv.get_style_context().add_class(class_name='monospace')
         cv.set_hexpand(True)
         cv.set_vexpand(True)
         citems = []
-        for item in self.selected_items:
+        for item in items:
             citems.append(File(id=item.id, title=os.path.basename(item.id)))
         cv.update(citems)
         frame.set_child(cv)
@@ -320,7 +320,7 @@ class MiAZActions(GObject.GObject):
         box.append(hbox)
         box.append(frame)
         dialog = self.factory.create_dialog_question(self.app.win, 'Assign to a project', box, width=1024, height=600)
-        dialog.connect('response', self._on_mass_action_project_response, dropdown)
+        dialog.connect('response', dialog_response, dropdown, items)
         dialog.show()
 
     def _on_mass_action_delete_dialog(self, *args):
@@ -347,14 +347,4 @@ class MiAZActions(GObject.GObject):
         if response == Gtk.ResponseType.ACCEPT:
             for item in self.selected_items:
                 self.util.filename_delete(item.id)
-        dialog.destroy()
-
-    def _on_mass_action_project_response(self, dialog, response, dropdown):
-        if response == Gtk.ResponseType.ACCEPT:
-            self.projects = self.backend.projects
-            pid = dropdown.get_selected_item().id
-            docs = []
-            for item in self.selected_items:
-                docs.append(item.id)
-            self.projects.add_batch(pid, docs)
         dialog.destroy()
