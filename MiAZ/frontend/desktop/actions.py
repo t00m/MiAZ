@@ -8,7 +8,30 @@ from gi.repository import GObject
 from gi.repository import Gtk
 
 from MiAZ.backend.log import get_logger
+from MiAZ.backend.models import MiAZItem, File, Group, Person, Country, Purpose, Concept, SentBy, SentTo, Date, Extension, Project
+from MiAZ.frontend.desktop.widgets.configview import MiAZCountries, MiAZGroups, MiAZPeople, MiAZPurposes, MiAZPeopleSentBy, MiAZPeopleSentTo, MiAZProjects
 from MiAZ.frontend.desktop.widgets.rename import MiAZRenameDialog
+from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewWorkspace
+from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewMassRename
+from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewMassDelete
+from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewMassProject
+
+# Conversion Item type to Field Number
+Field = {}
+Field[Country] = 1
+Field[Group] = 2
+Field[SentBy] = 3
+Field[Purpose] = 4
+Field[SentTo] = 6
+
+Configview = {}
+Configview['Country'] = MiAZCountries
+Configview['Group'] = MiAZGroups
+Configview['Purpose'] = MiAZPurposes
+Configview['SentBy'] = MiAZPeopleSentBy
+Configview['SentTo'] = MiAZPeopleSentTo
+Configview['Project'] = MiAZProjects
+Configview['Date'] = Gtk.Calendar
 
 class MiAZActions(GObject.GObject):
     def __init__(self, app):
@@ -60,17 +83,71 @@ class MiAZActions(GObject.GObject):
         self.log.debug("Deleting %s", doc)
         self.util.filename_delete(doc)
 
-    def document_rename(self, item):
-        # ~ config = self.backend.repo_config()
-        # ~ repodct = config['dct_repo']
-        # ~ source = item.id
-        # ~ basename = os.path.basename(source)
-        # ~ filename = basename[:basename.rfind('.')]
-        # ~ target = filename.split('-')
-        self.log.debug("Rename %s", item.id)
+    def document_rename_single(self, doc):
+        self.log.debug("Rename %s", doc)
         rename = self.app.get_rename_widget()
-        rename.set_data(item.id)
+        rename.set_data(doc)
         self.app.show_stack_page_by_name('rename')
+
+    def document_rename_multiple(self, item_type, items):
+        def update_dropdown(config, dropdown, item_type, any_value):
+            title = item_type.__gtype_name__
+            self.dropdown_populate(dropdown, item_type, any_value=any_value)
+            dropdown.set_selected(0)
+
+        self.factory = self.app.get_factory()
+        self.config = self.backend.conf
+
+        i_type = item_type.__gtype_name__
+        i_title = item_type.__title__
+        self.log.debug("Rename %s for:", i_title)
+        box = self.factory.create_box_vertical(spacing=6, vexpand=True, hexpand=True)
+        label = self.factory.create_label('Rename %d files by setting the field <b>%s</b> to:\n' % (len(items), i_title))
+        dropdown = self.factory.create_dropdown_generic(item_type)
+        btnManage = self.factory.create_button('miaz-res-manage', '')
+        btnManage.connect('clicked', self.on_resource_manage, Configview[i_type](self.app))
+        frame = Gtk.Frame()
+        cv = MiAZColumnViewMassRename(self.app)
+        cv.get_style_context().add_class(class_name='monospace')
+        cv.set_hexpand(True)
+        cv.set_vexpand(True)
+        dropdown.connect("notify::selected-item", self.update_columnview, cv, item_type, items)
+        self.config[i_type].connect('used-updated', update_dropdown, dropdown, item_type, False)
+        self.dropdown_populate(dropdown, item_type, any_value=False)
+        frame.set_child(cv)
+        box.append(label)
+        hbox = self.factory.create_box_horizontal()
+        hbox.append(dropdown)
+        hbox.append(btnManage)
+        box.append(hbox)
+        box.append(frame)
+        dialog = self.factory.create_dialog_question(self.app.win, 'Mass renaming', box, width=1024, height=600)
+        # ~ dialog.connect('response', self._on_mass_action_rename_response, dropdown, item_type)
+        dialog.show()
+
+    def update_columnview(self, dropdown, gparamobj, columnview, item_type, items):
+        i_type = item_type.__gtype_name__
+        i_title = item_type.__title__
+        citems = []
+        for item in items:
+            try:
+                source = item.id
+                name, ext = self.util.filename_details(source)
+                n = Field[item_type]
+                tmpfile = name.split('-')
+                tmpfile[n] = dropdown.get_selected_item().id
+                filename = "%s.%s" % ('-'.join(tmpfile), ext)
+                target = os.path.join(os.path.dirname(source), filename)
+                txtId = "<small>%s</small>" % os.path.basename(source)
+                txtTitle = "<small>%s</small>" % os.path.basename(target)
+                citems.append(File(id=txtId, title=txtTitle))
+            except Exception as error:
+                # FIXME: AtributeError: 'NoneType' object has no attribute 'id'
+                # It happens when managing resources from inside the dialog
+                self.log.error(error)
+        columnview.update(citems)
+
+    # ~ self.log.debug("%s > %s", item_type, items)
 
     def select_dropdown_item(self, dropdown, key):
         found = False

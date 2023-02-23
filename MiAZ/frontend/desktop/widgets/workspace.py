@@ -8,6 +8,7 @@ from datetime import timedelta
 import gi
 gi.require_version('Gtk', '4.0')
 from gi.repository import Adw
+from gi.repository import Gdk
 from gi.repository import Gio
 from gi.repository import Gtk
 from gi.repository import GLib
@@ -177,38 +178,38 @@ class MiAZWorkspace(Gtk.Box):
                 self.util.filename_rename(source, target)
         dialog.destroy()
 
-    def _on_mass_action_rename_dialog(self, action, data, item_type):
-        def update_dropdown(config, dropdown, item_type, any_value):
-            title = item_type.__gtype_name__
-            self.actions.dropdown_populate(dropdown, item_type, any_value=any_value)
-            dropdown.set_selected(0)
+    # ~ def _on_mass_action_rename_dialog(self, action, data, item_type):
+        # ~ def update_dropdown(config, dropdown, item_type, any_value):
+            # ~ title = item_type.__gtype_name__
+            # ~ self.actions.dropdown_populate(dropdown, item_type, any_value=any_value)
+            # ~ dropdown.set_selected(0)
 
-        i_type = item_type.__gtype_name__
-        i_title = item_type.__title__
-        self.log.debug("Rename %s for:", i_title)
-        box = self.factory.create_box_vertical(spacing=6, vexpand=True, hexpand=True)
-        label = self.factory.create_label('Rename %d files by setting the field <b>%s</b> to:\n' % (len(self.selected_items), i_title))
-        dropdown = self.factory.create_dropdown_generic(item_type)
-        btnManage = self.factory.create_button('miaz-res-manage', '')
-        btnManage.connect('clicked', self.on_resource_manage, Configview[i_type](self.app))
-        frame = Gtk.Frame()
-        cv = MiAZColumnViewMassRename(self.app)
-        cv.get_style_context().add_class(class_name='monospace')
-        cv.set_hexpand(True)
-        cv.set_vexpand(True)
-        dropdown.connect("notify::selected-item", self._on_mass_action_rename_update_dropdown, cv, item_type)
-        self.config[i_type].connect('%s-used' % i_type.lower(), update_dropdown, dropdown, item_type, False)
-        self.actions.dropdown_populate(dropdown, item_type, any_value=False)
-        frame.set_child(cv)
-        box.append(label)
-        hbox = self.factory.create_box_horizontal()
-        hbox.append(dropdown)
-        hbox.append(btnManage)
-        box.append(hbox)
-        box.append(frame)
-        dialog = self.factory.create_dialog_question(self.app.win, 'Mass renaming', box, width=1024, height=600)
-        dialog.connect('response', self._on_mass_action_rename_response, dropdown, item_type)
-        dialog.show()
+        # ~ i_type = item_type.__gtype_name__
+        # ~ i_title = item_type.__title__
+        # ~ self.log.debug("Rename %s for:", i_title)
+        # ~ box = self.factory.create_box_vertical(spacing=6, vexpand=True, hexpand=True)
+        # ~ label = self.factory.create_label('Rename %d files by setting the field <b>%s</b> to:\n' % (len(self.selected_items), i_title))
+        # ~ dropdown = self.factory.create_dropdown_generic(item_type)
+        # ~ btnManage = self.factory.create_button('miaz-res-manage', '')
+        # ~ btnManage.connect('clicked', self.on_resource_manage, Configview[i_type](self.app))
+        # ~ frame = Gtk.Frame()
+        # ~ cv = MiAZColumnViewMassRename(self.app)
+        # ~ cv.get_style_context().add_class(class_name='monospace')
+        # ~ cv.set_hexpand(True)
+        # ~ cv.set_vexpand(True)
+        # ~ dropdown.connect("notify::selected-item", self._on_mass_action_rename_update_dropdown, cv, item_type)
+        # ~ self.config[i_type].connect('%s-used' % i_type.lower(), update_dropdown, dropdown, item_type, False)
+        # ~ self.actions.dropdown_populate(dropdown, item_type, any_value=False)
+        # ~ frame.set_child(cv)
+        # ~ box.append(label)
+        # ~ hbox = self.factory.create_box_horizontal()
+        # ~ hbox.append(dropdown)
+        # ~ hbox.append(btnManage)
+        # ~ box.append(hbox)
+        # ~ box.append(frame)
+        # ~ dialog = self.factory.create_dialog_question(self.app.win, 'Mass renaming', box, width=1024, height=600)
+        # ~ dialog.connect('response', self._on_mass_action_rename_response, dropdown, item_type)
+        # ~ dialog.show()
 
     def on_resource_manage(self, widget: Gtk.Widget, selector: Gtk.Widget):
         box = self.factory.create_box_vertical(spacing=0, vexpand=True, hexpand=True)
@@ -219,27 +220,27 @@ class MiAZWorkspace(Gtk.Box):
         dialog = self.factory.create_dialog(self.app.win, 'Manage %s' % config_for, box, 800, 600)
         dialog.show()
 
-    def _on_mass_action_rename_update_dropdown(self, dropdown, item, columnview, item_type):
-        i_type = item_type.__gtype_name__
-        i_title = item_type.__title__
-        citems = []
-        for item in self.selected_items:
-            try:
-                source = item.id
-                name, ext = self.util.filename_details(source)
-                n = Field[item_type]
-                tmpfile = name.split('-')
-                tmpfile[n] = dropdown.get_selected_item().id
-                filename = "%s.%s" % ('-'.join(tmpfile), ext)
-                target = os.path.join(os.path.dirname(source), filename)
-                txtId = "<small>%s</small>" % os.path.basename(source)
-                txtTitle = "<small>%s</small>" % os.path.basename(target)
-                citems.append(File(id=txtId, title=txtTitle))
-            except AttributeError:
-                # FIXME: AtributeError: 'NoneType' object has no attribute 'id'
-                # It happens when managing resources from inside the dialog
-                pass
-        columnview.update(citems)
+    # ~ def _on_mass_action_rename_update_dropdown(self, dropdown, item, columnview, item_type):
+        # ~ i_type = item_type.__gtype_name__
+        # ~ i_title = item_type.__title__
+        # ~ citems = []
+        # ~ for item in self.selected_items:
+            # ~ try:
+                # ~ source = item.id
+                # ~ name, ext = self.util.filename_details(source)
+                # ~ n = Field[item_type]
+                # ~ tmpfile = name.split('-')
+                # ~ tmpfile[n] = dropdown.get_selected_item().id
+                # ~ filename = "%s.%s" % ('-'.join(tmpfile), ext)
+                # ~ target = os.path.join(os.path.dirname(source), filename)
+                # ~ txtId = "<small>%s</small>" % os.path.basename(source)
+                # ~ txtTitle = "<small>%s</small>" % os.path.basename(target)
+                # ~ citems.append(File(id=txtId, title=txtTitle))
+            # ~ except AttributeError:
+                # ~ # FIXME: AtributeError: 'NoneType' object has no attribute 'id'
+                # ~ # It happens when managing resources from inside the dialog
+                # ~ pass
+        # ~ columnview.update(citems)
 
     def _on_mass_action_project_dialog(self, *args):
         def update_dropdown(config, dropdown, item_type, any_value):
@@ -323,23 +324,6 @@ class MiAZWorkspace(Gtk.Box):
                 target = "%s.%s" % ('-'.join(tmpfile), ext)
                 self.util.filename_rename(source, target)
         dialog.destroy()
-
-
-    def _on_explain_toggled(self, button, data=None):
-        active = button.get_active()
-        self.view.column_title.set_visible(not active)
-        try:
-            self.view.column_title.set_visible(False)
-            self.view.column_subtitle.set_visible(active)
-            self.view.column_subtitle.set_expand(True)
-            self.view.column_group.set_visible(active)
-            self.view.column_purpose.set_visible(active)
-            self.view.column_flag.set_visible(active)
-            self.view.column_sentby.set_visible(active)
-            self.view.column_sentto.set_visible(active)
-            self.view.column_date.set_visible(active)
-        except:
-            pass
 
     def _on_filters_toggled(self, button, data=None):
         active = button.get_active()
@@ -463,10 +447,6 @@ class MiAZWorkspace(Gtk.Box):
         if name == 'repo_settings':
             self.log.debug("Execute Settings Assistant")
             self.app.show_stack_page_by_name('settings_repo')
-            # ~ assistant = MiAZAssistantRepoSettings(self.app)
-            # ~ assistant.set_transient_for(self.app.win)
-            # ~ assistant.set_modal(True)
-            # ~ assistant.present()
 
     def _setup_columnview(self):
         self.view = MiAZColumnViewWorkspace(self.app)
@@ -480,62 +460,12 @@ class MiAZWorkspace(Gtk.Box):
     def _on_factory_bind_icon_type(self, factory, list_item):
         box = list_item.get_child()
         button = box.get_first_child()
-        # ~ popover = button.get_popover()
         item = list_item.get_item()
-        if item.valid:
-            mimetype, val = Gio.content_type_guess('filename=%s' % item.id)
-            gicon = Gio.content_type_get_icon(mimetype)
-            icon_name = self.app.icman.choose_icon(gicon.get_names())
-            # ~ child=Adw.ButtonContent(label='', icon_name=icon_name)
-            # ~ widget = self._setup_item_valid_popover(item)
-        else:
-            icon_name='miaz-rename'
-            # ~ widget = self._setup_item_invalid_popover(item)
-            # ~ child=Adw.ButtonContent(label='', icon_name='miaz-rename')
+        mimetype, val = Gio.content_type_guess('filename=%s' % item.id)
+        gicon = Gio.content_type_get_icon(mimetype)
+        icon_name = self.app.icman.choose_icon(gicon.get_names())
         child=Adw.ButtonContent(label='', icon_name=icon_name)
-        # ~ popover.set_child(widget)
-        # ~ popover.present()
         button.set_child(child)
-
-    def _setup_item_valid_popover(self, item):
-        vbox = self.factory.create_box_vertical()
-        doc = item.id
-
-        # ~ row = self.factory.create_actionrow(icon_name = 'miaz-res-manage', title='Rename document')
-
-        separator = Gtk.Separator.new(Gtk.Orientation.HORIZONTAL)
-        btnDel = self.factory.create_button(icon_name='miaz-entry-delete', title="Delete this document", css_classes=['flat'])
-        btnDel.connect('clicked', self.document_delete, item.id)
-        vbox.append(separator)
-        vbox.append(btnDel)
-        return vbox
-
-    def _setup_item_invalid_popover(self, item):
-        listbox = Gtk.ListBox.new()
-        listbox.set_activate_on_single_click(False)
-        listbox.set_selection_mode(Gtk.SelectionMode.NONE)
-        vbox = self.factory.create_box_vertical()
-        doc = item.id
-        valid = self.repodct[doc]['valid']
-        reasons = self.repodct[doc]['reasons']
-        items = []
-        for rc, gtype, value, reason in reasons:
-            item_type = eval(gtype)
-            item_title = item_type.__title__
-            icon_name = "miaz-res-%s" % gtype.lower()
-            if rc:
-                icon_name = 'miaz-ok'
-            else:
-                icon_name = 'miaz-ko'
-            row = self.factory.create_actionrow(icon_name=icon_name, subtitle=reason)
-            listbox.append(child=row)
-        vbox.append(listbox)
-        separator = Gtk.Separator.new(Gtk.Orientation.HORIZONTAL)
-        btnDel = self.factory.create_button(icon_name='miaz-entry-delete', title="Delete this document", css_classes=['flat'])
-        btnDel.connect('clicked', self.document_delete, item.id)
-        vbox.append(child=separator)
-        vbox.append(child=btnDel)
-        return vbox
 
     def _setup_workspace(self):
         widget = self.factory.create_box_vertical(margin=0, spacing=0, hexpand=True, vexpand=True)
@@ -567,11 +497,12 @@ class MiAZWorkspace(Gtk.Box):
         selection = self.view.get_selection()
 
         # Trigger events
-        self._on_signal_filter_connect()
+        self._do_connect_filter_signals()
         self._on_filters_toggled(self.tgbFilters)
         return widget
 
     def _setup_menu_selection_single(self):
+        # Setup main menu and sections
         menu_workspace_single = Gio.Menu.new()
         section_common_in = Gio.Menu.new()
         section_common_out = Gio.Menu.new()
@@ -581,60 +512,54 @@ class MiAZWorkspace(Gtk.Box):
         menu_workspace_single.append_section(None, section_danger)
 
         # Actions in
-        menuitem = self.factory.create_menuitem('view_doc', 'View document', self.document_display, ["<Control>d", "<Control>D"])
+        menuitem = self.factory.create_menuitem('view', 'View document', self._on_handle_menu_single, None, ["<Control>d", "<Control>D"])
         section_common_in.append_item(menuitem)
-        menuitem = self.factory.create_menuitem('rename_doc', 'Rename document', self.document_rename, ["<Control>r", "<Control>R"])
+        menuitem = self.factory.create_menuitem('rename', 'Rename document', self._on_handle_menu_single, None, ["<Control>r", "<Control>R"])
         section_common_in.append_item(menuitem)
-        menuitem = self.factory.create_menuitem('manage_projects', 'Manage projects', self.projects_assigned, [])
+        menuitem = self.factory.create_menuitem('projects', 'Manage projects', self._on_handle_menu_single, None, [])
         section_common_in.append_item(menuitem)
-        # ~ menuitem = self.factory.create_menuitem('annotate_doc', 'Make annotation', self.annotate_doc, [])
-        # ~ section_common_in.append_item(menuitem)
+        menuitem = self.factory.create_menuitem('annotate', 'Annotate document', self._on_handle_menu_single, None, [])
+        section_common_in.append_item(menuitem)
 
         # Actions out
-        menuitem = self.factory.create_menuitem('copy_filename', 'Copy filename to clipboard', self.copy_filename_to_clipboard, [])
+        menuitem = self.factory.create_menuitem('clipboard', 'Copy filename', self._on_handle_menu_single, None, [])
         section_common_out.append_item(menuitem)
-        menuitem = self.factory.create_menuitem('export_document', 'Export document', self.export_document, [])
+        menuitem = self.factory.create_menuitem('export', 'Export document', self._on_handle_menu_single, None, [])
         section_common_out.append_item(menuitem)
 
         # Dangerous actions
-        menuitem = self.factory.create_menuitem('delete_doc', 'Delete document', self.document_delete, [])
+        menuitem = self.factory.create_menuitem('delete', 'Delete document', self._on_handle_menu_single, None, [])
         section_danger.append_item(menuitem)
         return menu_workspace_single
 
     def _setup_menu_selection_multiple(self):
-        self.menu_workspace_multiple = Gio.Menu.new()
-        # ~ {timestamp}-{country}-{group}-{sentby}-{purpose}-{concept}-{sentto}.{extension}
-        fields = [Country, Group, SentBy, Purpose, SentTo] # , Concept
+        # Setup main menu and sections
+        menu_workspace_multiple = Gio.Menu.new()
+        section_common_in = Gio.Menu.new()
+        section_common_out = Gio.Menu.new()
+        section_danger = Gio.Menu.new()
+        menu_workspace_multiple.append_section(None, section_common_in)
+        menu_workspace_multiple.append_section(None, section_common_out)
+        menu_workspace_multiple.append_section(None, section_danger)
 
-        # Submenu for mass renaming
-        submenu_rename_root = Gio.Menu.new()
-        submenu_rename = Gio.MenuItem.new_submenu(
+        # Section -in
+        ## Submenu for mass renaming
+        submenu_rename = Gio.Menu.new()
+        menu_rename = Gio.MenuItem.new_submenu(
             label='Mass renaming of...',
-            submenu=submenu_rename_root,
+            submenu=submenu_rename,
         )
-        self.menu_workspace_multiple.append_item(submenu_rename)
+        section_common_in.append_item(menu_rename)
+
         # First date
-        menuitem = Gio.MenuItem.new()
-        menuitem.set_label(label='... date')
-        icon = Gio.ThemedIcon.new('miaz-res-date')
-        menuitem.set_icon(icon)
-        action = Gio.SimpleAction.new('rename_date', None)
-        callback = 'self._on_mass_action_rename_dialog_date'
-        action.connect('activate', eval(callback))
-        self.app.add_action(action)
-        menuitem.set_detailed_action(detailed_action='app.rename_date')
-        submenu_rename_root.append_item(menuitem)
+        menuitem = self.factory.create_menuitem('rename_date', '...date', self._on_handle_menu_multiple, Date, [])
+        submenu_rename.append_item(menuitem)
+        fields = [Country, Group, SentBy, Purpose, SentTo]
         for item_type in fields:
             i_type = item_type.__gtype_name__
             i_title = item_type.__title__
-            menuitem = Gio.MenuItem.new()
-            menuitem.set_label(label='... %s' % i_title.lower())
-            action = Gio.SimpleAction.new('rename_%s' % i_type.lower(), None)
-            callback = 'self._on_mass_action_rename_dialog'
-            action.connect('activate', eval(callback), item_type)
-            self.app.add_action(action)
-            menuitem.set_detailed_action(detailed_action='app.rename_%s' % i_type.lower())
-            submenu_rename_root.append_item(menuitem)
+            menuitem = self.factory.create_menuitem('rename_%s' % i_type.lower(), '...%s' % i_title.lower(), self._on_handle_menu_multiple, item_type, [])
+            submenu_rename.append_item(menuitem)
 
         # ~ item_force_update = Gio.MenuItem.new()
         # ~ item_force_update.set_label(label='Force update')
@@ -642,7 +567,7 @@ class MiAZWorkspace(Gtk.Box):
         # ~ action.connect('activate', self.update)
         # ~ self.app.add_action(action)
         # ~ item_force_update.set_detailed_action(detailed_action='app.workspace_update')
-        # ~ self.menu_workspace_multiple.append_item(item_force_update)
+        # ~ menu_workspace_multiple.append_item(item_force_update)
 
         item_project = Gio.MenuItem.new()
         item_project.set_label(label='Assign to project')
@@ -650,7 +575,7 @@ class MiAZWorkspace(Gtk.Box):
         action.connect('activate', self._on_mass_action_project_dialog)
         self.app.add_action(action)
         item_project.set_detailed_action(detailed_action='app.workspace_project')
-        self.menu_workspace_multiple.append_item(item_project)
+        section_common_in.append_item(item_project)
 
         item_delete = Gio.MenuItem.new()
         item_delete.set_label(label='Mass deletion')
@@ -658,8 +583,8 @@ class MiAZWorkspace(Gtk.Box):
         action.connect('activate', self._on_mass_action_delete_dialog)
         self.app.add_action(action)
         item_delete.set_detailed_action(detailed_action='app.workspace_delete')
-        self.menu_workspace_multiple.append_item(item_delete)
-        return self.menu_workspace_multiple
+        section_danger.append_item(item_delete)
+        return menu_workspace_multiple
 
 
     def get_item(self):
@@ -670,7 +595,6 @@ class MiAZWorkspace(Gtk.Box):
         return model.get_item(pos)
 
     def update(self, *args):
-        # ~ self._on_explain_toggled(self.tgbExplain)
         docs = self.util.get_files()
         sentby = self.app.get_config('SentBy')
         sentto = self.app.get_config('SentTo')
@@ -784,17 +708,12 @@ class MiAZWorkspace(Gtk.Box):
         cp = self._do_eval_cond_matches_project(item.id)
         return c0 and c1 and c2 and c4 and c5 and c6 and cd and cp
 
-    def _on_signal_filter_connect(self):
-        # ~ ent_sb = self.app.header.get_title_widget()
-        self.signals = set()
-        sigid = self.ent_sb.connect('changed', self._on_filter_selected)
-        self.signals.add((self.ent_sb, sigid))
+    def _do_connect_filter_signals(self):
+        self.ent_sb.connect('changed', self._on_filter_selected)
         for dropdown in self.dropdown:
-            sigid = self.dropdown[dropdown].connect("notify::selected-item", self._on_filter_selected)
-            self.signals.add((self.dropdown[dropdown], sigid))
+            self.dropdown[dropdown].connect("notify::selected-item", self._on_filter_selected)
         selection = self.view.get_selection()
-        sigid = selection.connect('selection-changed', self._on_selection_changed)
-        self.signals.add((selection, sigid))
+        selection.connect('selection-changed', self._on_selection_changed)
 
     def _on_filter_selected(self, *args):
         self.view.refilter()
@@ -811,36 +730,37 @@ class MiAZWorkspace(Gtk.Box):
         selection = self.view.get_selection()
         selection.unselect_all()
 
+    def _on_handle_menu_single(self, action, data):
+        name = action.props.name
+        item = self.get_item()
+        if name == 'view':
+            self.actions.document_display(item.id)
+        elif name == 'rename':
+            self.actions.document_rename_single(item.id)
+        elif name == 'projects':
+            self.log.debug("FIXME: manage projects for document")
+            projects = self.backend.projects.assigned_to(item.id)
+            self.log.debug(projects)
+        elif name == 'annotate':
+            self.log.debug("FIXME: annotate document")
+        elif name == 'clipboard':
+            self.log.debug("FIXME: copy filename to clipboard")
+        elif name == 'export':
+            self.log.debug("FIXME: export document")
+        elif name == 'delete':
+            self.actions.document_delete(item.id)
+
+    def _on_handle_menu_multiple(self, action, data, item_type):
+        name = action.props.name
+        items = self.selected_items
+        if name.startswith('rename_'):
+            self.actions.document_rename_multiple(item_type, items)
+
     def display_dashboard(self, *args):
         self.view.column_subtitle.set_title('Concept')
         self.view.column_subtitle.set_expand(True)
         self.view.refilter()
         self.tgbFilters.set_visible(True)
 
-    def document_display(self, *args):
-        item = self.get_item()
-        self.actions.document_display(item.id)
 
-    def document_delete(self, *args):
-        item = self.get_item()
-        self.actions.document_delete(item.id)
-
-    def document_rename(self, *args):
-        # Get item from selected row in Columnview
-        item = self.get_item()
-        self.actions.document_rename(item)
-
-    def projects_assigned(self, *args):
-        item = self.get_item()
-        projects = self.backend.projects.assigned_to(item.id)
-        self.log.debug(projects)
-
-    def copy_filename_to_clipboard(self, *args):
-        item = self.get_item()
-
-    def export_document(self, *args):
-        item = self.get_item()
-        clipboard = Gdk.Display.get_default().get_clipboard()
-        clipboard.set_text(item.id, -1)
-        clipboard.store()
 

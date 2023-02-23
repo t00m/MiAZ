@@ -114,6 +114,9 @@ class MiAZRenameDialog(Gtk.Box):
         self.btnPreview.connect('clicked', self.on_document_display, self.filepath)
         self.on_changed_entry()
 
+    def get_filename_widget(self):
+        return self.lblFilenameCur
+
     def __create_box_value(self) -> Gtk.Box:
         box = Gtk.Box.new(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
         box.set_hexpand(False)

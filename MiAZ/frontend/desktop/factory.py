@@ -283,11 +283,11 @@ class MiAZFactory:
         if shortcuts:
             self.app.set_accels_for_action(f'app.{name}', shortcuts)
 
-    def create_menuitem(self, name, label, callback, shortcuts):
+    def create_menuitem(self, name, label, callback, data, shortcuts):
         menuitem = Gio.MenuItem.new()
         menuitem.set_label(label=label)
         action = Gio.SimpleAction.new(name, None)
-        action.connect('activate', callback)
+        action.connect('activate', callback, data)
         self.app.add_action(action)
         menuitem.set_detailed_action(detailed_action='app.%s' % name)
         return menuitem
