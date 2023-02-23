@@ -287,3 +287,74 @@ class MiAZActions(GObject.GObject):
         selector.update()
         dialog = factory.create_dialog(self.app.win, 'Manage %s' % config_for, box, 800, 600)
         dialog.show()
+
+
+    def _on_mass_action_project_dialog(self, *args):
+        def update_dropdown(config, dropdown, item_type, any_value):
+            title = item_type.__gtype_name__
+            self.actions.dropdown_populate(dropdown, item_type, any_value=any_value)
+            dropdown.set_selected(0)
+
+        self.log.debug("Assign to Project")
+        box = self.factory.create_box_vertical(spacing=6, vexpand=True, hexpand=True)
+        dropdown = self.factory.create_dropdown_generic(Project)
+        dropdown.connect("notify::selected-item", selected_item)
+        self.actions.dropdown_populate(dropdown, Project, any_value=False)
+        btnManage = self.factory.create_button('miaz-res-manage', '')
+        btnManage.connect('clicked', self.on_resource_manage, Configview['Project'](self.app))
+        label = self.factory.create_label('Assign the following documents to a project')
+        frame = Gtk.Frame()
+        cv = MiAZColumnViewMassProject(self.app)
+        cv.get_style_context().add_class(class_name='monospace')
+        cv.set_hexpand(True)
+        cv.set_vexpand(True)
+        citems = []
+        for item in self.selected_items:
+            citems.append(File(id=item.id, title=os.path.basename(item.id)))
+        cv.update(citems)
+        frame.set_child(cv)
+        hbox = self.factory.create_box_horizontal(hexpand=False, vexpand=False)
+        hbox.append(label)
+        hbox.append(dropdown)
+        hbox.append(btnManage)
+        box.append(hbox)
+        box.append(frame)
+        dialog = self.factory.create_dialog_question(self.app.win, 'Assign to a project', box, width=1024, height=600)
+        dialog.connect('response', self._on_mass_action_project_response, dropdown)
+        dialog.show()
+
+    def _on_mass_action_delete_dialog(self, *args):
+        self.log.debug("Mass deletion")
+        box = self.factory.create_box_vertical(spacing=6, vexpand=True, hexpand=True)
+        label = self.factory.create_label('Delete the following documents')
+        frame = Gtk.Frame()
+        cv = MiAZColumnViewMassDelete(self.app)
+        cv.get_style_context().add_class(class_name='monospace')
+        cv.set_hexpand(True)
+        cv.set_vexpand(True)
+        citems = []
+        for item in self.selected_items:
+            citems.append(File(id=item.id, title=os.path.basename(item.id)))
+        cv.update(citems)
+        frame.set_child(cv)
+        box.append(label)
+        box.append(frame)
+        dialog = self.factory.create_dialog_question(self.app.win, 'Mass deletion', box, width=1024, height=600)
+        dialog.connect('response', self._on_mass_action_delete_response)
+        dialog.show()
+
+    def _on_mass_action_delete_response(self, dialog, response):
+        if response == Gtk.ResponseType.ACCEPT:
+            for item in self.selected_items:
+                self.util.filename_delete(item.id)
+        dialog.destroy()
+
+    def _on_mass_action_project_response(self, dialog, response, dropdown):
+        if response == Gtk.ResponseType.ACCEPT:
+            self.projects = self.backend.projects
+            pid = dropdown.get_selected_item().id
+            docs = []
+            for item in self.selected_items:
+                docs.append(item.id)
+            self.projects.add_batch(pid, docs)
+        dialog.destroy()
