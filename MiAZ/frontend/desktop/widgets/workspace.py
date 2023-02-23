@@ -354,16 +354,16 @@ class MiAZWorkspace(Gtk.Box):
             submenu=submenu_rename,
         )
         section_common_in.append_item(menu_rename)
-
-        # First date
-        menuitem = self.factory.create_menuitem('rename_date', '...date', self._on_handle_menu_multiple, Date, [])
-        submenu_rename.append_item(menuitem)
-        fields = [Country, Group, SentBy, Purpose, SentTo]
+        fields = [Date, Country, Group, SentBy, Purpose, SentTo]
         for item_type in fields:
             i_type = item_type.__gtype_name__
             i_title = item_type.__title__
             menuitem = self.factory.create_menuitem('rename_%s' % i_type.lower(), '...%s' % i_title.lower(), self._on_handle_menu_multiple, item_type, [])
             submenu_rename.append_item(menuitem)
+
+        # Assign to Project
+        menuitem = self.factory.create_menuitem('assign_project', 'Assign to project', self._on_handle_menu_multiple, item_type, [])
+        section_common_in.append_item(menuitem)
 
         # ~ item_force_update = Gio.MenuItem.new()
         # ~ item_force_update.set_label(label='Force update')
@@ -534,7 +534,7 @@ class MiAZWorkspace(Gtk.Box):
         selection = self.view.get_selection()
         selection.unselect_all()
 
-    def _on_handle_menu_single(self, action, data):
+    def _on_handle_menu_single(self, action, *args):
         name = action.props.name
         item = self.get_item()
         if name == 'view':
