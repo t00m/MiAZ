@@ -37,6 +37,9 @@ class MiAZUtil(GObject.GObject):
         self.backend = backend
         self.conf = self.backend.conf
 
+    def directory_open(self, dirpath):
+        os.system("xdg-open '%s'" % dirpath)
+
     def guess_datetime(self, adate: str) -> datetime:
         """Return (guess) a datetime object for a given string."""
         if len(adate) != 7:

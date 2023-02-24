@@ -356,6 +356,7 @@ class MiAZActions(GObject.GObject):
                     for item in items:
                         target = os.path.join(dirpath, os.path.basename(item.id))
                         self.util.filename_copy(item.id, target)
+                    self.util.directory_open(dirpath)
             dialog.destroy()
 
         self.factory = self.app.get_factory()
