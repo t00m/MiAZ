@@ -320,6 +320,10 @@ class MiAZWorkspace(Gtk.Box):
         menu_workspace_multiple.append_section(None, section_danger)
 
         # Section -in
+        # New mass renaming
+        menuitem = self.factory.create_menuitem('rename', 'Mass rename', self._on_handle_menu_multiple, None, [])
+        section_common_in.append_item(menuitem)
+
         ## Submenu for mass renaming
         submenu_rename = Gio.Menu.new()
         menu_rename = Gio.MenuItem.new_submenu(
@@ -515,6 +519,8 @@ class MiAZWorkspace(Gtk.Box):
         items = self.selected_items
         if name.startswith('rename_'):
             self.actions.document_rename_multiple(item_type, items)
+        elif name == 'rename':
+            self.actions.document_rename(items)
         elif name == 'project':
             self.actions.project_assignment(item_type, items)
         elif name == 'export':
