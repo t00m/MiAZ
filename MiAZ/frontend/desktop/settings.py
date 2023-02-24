@@ -101,13 +101,13 @@ class MiAZRepoSettings(Gtk.Box):
         self.config = self.app.get_config('Country')
         self.notebook = Gtk.Notebook()
         self.notebook.set_show_border(False)
-        self.notebook.set_tab_pos(Gtk.PositionType.LEFT)
+        self.notebook.set_tab_pos(Gtk.PositionType.TOP)
         self.append(self.notebook)
 
         def create_tab(name):
             page = Gtk.CenterBox(orientation=Gtk.Orientation.VERTICAL)
-            # ~ page.set_vexpand(True)
-            # ~ page.set_hexpand(True)
+            page.set_vexpand(True)
+            page.set_hexpand(True)
             selector = Configview[name](self.app)
             selector.set_vexpand(True)
             selector.update()

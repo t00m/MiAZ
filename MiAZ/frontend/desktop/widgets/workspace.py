@@ -82,52 +82,27 @@ class MiAZWorkspace(Gtk.Box):
         body.set_margin_top(margin=6)
         widget.append(body)
 
-        # FIXME: Do NOT fill dropdowns here.
         self.dropdown = {}
         for item_type in [Project, Country, Group, SentBy, Purpose, SentTo]:
             i_type = item_type.__gtype_name__
             i_title = item_type.__title__
             dropdown = self.factory.create_dropdown_generic(item_type=item_type, dropdown_search_function=None)
-            self.actions.dropdown_populate(dropdown, item_type, none_value=True)
+            self.actions.dropdown_populate(self.config[i_type], dropdown, item_type, none_value=True)
             sigid = dropdown.connect("notify::selected-item", self._on_filter_selected)
             boxDropdown = self.factory.create_box_filter(i_title, dropdown)
             body.append(boxDropdown)
             self.dropdown[i_type] = dropdown
+            self.config[i_type].connect('used-updated', self.update_dropdown_filter, item_type)
         self.backend.connect('source-configuration-updated', self._on_workspace_update)
-        self.config['Project'].connect('used-updated', self.update_dropdown, Project)
-        self.config['Country'].connect('used-updated', self.update_dropdown, Country)
-        self.config['Group'].connect('used-updated', self.update_dropdown, Group)
-        self.config['SentBy'].connect('used-updated', self.update_dropdown, SentBy)
-        self.config['Purpose'].connect('used-updated', self.update_dropdown, Purpose)
-        self.config['SentTo'].connect('used-updated', self.update_dropdown, SentTo)
-        return widget
 
-        ## Projects
-        # ~ self.dd_prj = self.factory.create_dropdown_generic(item_type=Project, ellipsize=False)
-        # ~ self.actions.dropdown_populate(self.dd_prj, Project, any_value=True)
-        # ~ self.dd_prj.set_selected(0)
-        # ~ self.dd_prj.connect("notify::selected-item", self._on_filter_selected)
-        # ~ hbox.append(self.dd_prj)
+        return widget
 
     def _on_workspace_update(self, *args):
         GLib.idle_add(self.update)
 
-    def _on_search_dropdown_changed(self, search_entry):
-        # FIXME
-        self.search_text_widget = search_entry.get_text()
-
-    def update_dropdown(self, config, item_type):
+    def update_dropdown_filter(self, config, item_type):
         title = item_type.__gtype_name__
-        self.actions.dropdown_populate(self.dropdown[title], item_type)
-
-    def on_resource_manage(self, widget: Gtk.Widget, selector: Gtk.Widget):
-        box = self.factory.create_box_vertical(spacing=0, vexpand=True, hexpand=True)
-        box.append(selector)
-        config_for = selector.get_config_for()
-        selector.set_vexpand(True)
-        selector.update()
-        dialog = self.factory.create_dialog(self.app.win, 'Manage %s' % config_for, box, 800, 600)
-        dialog.show()
+        self.actions.dropdown_populate(config, self.dropdown[title], item_type)
 
     def _on_filters_toggled(self, button, data=None):
         active = button.get_active()
@@ -161,15 +136,14 @@ class MiAZWorkspace(Gtk.Box):
 
         ## Import button
         widgets = []
-        btnImportFiles = self.factory.create_button('miaz-import-document', callback=self.actions.on_import_file)
+        btnImportFiles = self.factory.create_button('miaz-import-document', callback=self.actions.import_file)
         rowImportDoc = self.factory.create_actionrow(title='Import document', subtitle='Import one or more documents', suffix=btnImportFiles)
         widgets.append(rowImportDoc)
-        btnImportDir = self.factory.create_button('miaz-import-folder', callback=self.actions.on_import_directory)
+        btnImportDir = self.factory.create_button('miaz-import-folder', callback=self.actions.import_directory)
         rowImportDir = self.factory.create_actionrow(title='Import directory', subtitle='Import all documents from a directory', suffix=btnImportDir)
         widgets.append(rowImportDir)
         button = self.factory.create_button_popover(icon_name='miaz-import', css_classes=[''], widgets=widgets)
         hbox.append(button)
-
 
         # Center
         hbox = self.factory.create_box_horizontal(spacing=0)
@@ -303,6 +277,7 @@ class MiAZWorkspace(Gtk.Box):
         # Trigger events
         self._do_connect_filter_signals()
         self._on_filters_toggled(self.tgbFilters)
+
         return widget
 
     def _setup_menu_selection_single(self):
@@ -369,15 +344,7 @@ class MiAZWorkspace(Gtk.Box):
         menuitem = self.factory.create_menuitem('delete', 'Delete documents', self._on_handle_menu_multiple, None, [])
         section_danger.append_item(menuitem)
 
-        # ~ item_delete = Gio.MenuItem.new()
-        # ~ item_delete.set_label(label='Mass deletion')
-        # ~ action = Gio.SimpleAction.new('workspace_delete', None)
-        # ~ action.connect('activate', self._on_mass_action_delete_dialog)
-        # ~ self.app.add_action(action)
-        # ~ item_delete.set_detailed_action(detailed_action='app.workspace_delete')
-        # ~ section_danger.append_item(item_delete)
         return menu_workspace_multiple
-
 
     def get_item(self):
         selection = self.view.get_selection()
@@ -509,9 +476,9 @@ class MiAZWorkspace(Gtk.Box):
 
     def _on_filter_selected(self, *args):
         self.view.refilter()
-        model = self.view.cv.get_model()
+        model = self.view.cv.get_model() # nº items in current view
         label = self.btnDocsSel.get_child()
-        docs = self.util.get_files()
+        docs = self.util.get_files() # nº total items
         label.set_markup("<small>%d</small> / %d / <big>%d</big>" % (len(self.selected_items), len(model), len(docs)))
 
     def _on_select_all(self, *args):

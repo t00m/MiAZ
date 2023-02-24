@@ -5,7 +5,6 @@ from gi.repository import GObject
 
 from MiAZ.backend.env import ENV
 from MiAZ.backend.log import get_logger
-# ~ from MiAZ.backend.util import json_load, json_save
 from MiAZ.backend.models import MiAZModel, MiAZItem, File, Group, Person, Country, Purpose, Concept, SentBy, SentTo, Project
 
 class MiAZConfig(GObject.GObject):
@@ -105,7 +104,6 @@ class MiAZConfig(GObject.GObject):
         except Exception as error:
             self.log.error(error)
             saved = False
-        # ~ self.log.debug("Saved %s with %d items? %s", filepath, len(items), saved)
         return saved
 
     def get(self, key: str) -> str:
@@ -182,7 +180,6 @@ class MiAZConfig(GObject.GObject):
             self.save(filepath=filepath, items=items)
             self.log.info("%s - Remove: %s from %s", self.config_for, key, filepath)
 
-
 class MiAZConfigApp(MiAZConfig):
     def __init__(self, backend):
         self.backend = backend
@@ -213,7 +210,6 @@ class MiAZConfigApp(MiAZConfig):
         if self.save_data(filepath, items):
             self.emit('repo-settings-updated-app')
 
-
 class MiAZConfigCountries(MiAZConfig):
     def __init__(self, backend, dir_conf):
         super().__init__(
@@ -231,18 +227,6 @@ class MiAZConfigCountries(MiAZConfig):
 
 class MiAZConfigGroups(MiAZConfig):
     def __init__(self, backend, dir_conf):
-        sid_a = GObject.signal_lookup('group-available', MiAZConfigGroups)
-        sid_u = GObject.signal_lookup('group-used', MiAZConfigGroups)
-        if sid_a == 0:
-            GObject.GObject.__init__(self)
-            GObject.signal_new('group-available',
-                                MiAZConfigGroups,
-                                GObject.SignalFlags.RUN_LAST, None, () )
-        if sid_u == 0:
-            GObject.GObject.__init__(self)
-            GObject.signal_new('group-used',
-                                MiAZConfigGroups,
-                                GObject.SignalFlags.RUN_LAST, None, () )
         super().__init__(
             backend = backend,
             log=get_logger('MiAZ.Settings.Groups'),
@@ -255,30 +239,8 @@ class MiAZConfigGroups(MiAZConfig):
             must_copy = True
         )
 
-    def save(self, filepath: str = '', items: dict = {}) -> bool:
-        if self.save_data(filepath, items):
-            if filepath == self.available:
-                self.emit('group-available')
-            elif filepath == self.used:
-                self.emit('group-used')
-
-    def __repr__(self):
-        return 'Group'
-
 class MiAZConfigPurposes(MiAZConfig):
     def __init__(self, backend, dir_conf):
-        sid_a = GObject.signal_lookup('purpose-available', MiAZConfigPurposes)
-        sid_u = GObject.signal_lookup('purpose-used', MiAZConfigPurposes)
-        if sid_a == 0:
-            GObject.GObject.__init__(self)
-            GObject.signal_new('purpose-available',
-                                MiAZConfigPurposes,
-                                GObject.SignalFlags.RUN_LAST, None, () )
-        if sid_u == 0:
-            GObject.GObject.__init__(self)
-            GObject.signal_new('purpose-used',
-                                MiAZConfigPurposes,
-                                GObject.SignalFlags.RUN_LAST, None, () )
         super().__init__(
             backend = backend,
             log=get_logger('MiAZ.Settings.Purposes'),
@@ -290,16 +252,6 @@ class MiAZConfigPurposes(MiAZConfig):
             model = Purpose,
             must_copy = True
         )
-
-    def __repr__(self):
-        return 'Purpose'
-
-    def save(self, filepath: str = '', items: dict = {}) -> bool:
-        if self.save_data(filepath, items):
-            if filepath == self.available:
-                self.emit('purpose-available')
-            elif filepath == self.used:
-                self.emit('purpose-used')
 
 class MiAZConfigConcepts(MiAZConfig):
     def __init__(self, backend, dir_conf):

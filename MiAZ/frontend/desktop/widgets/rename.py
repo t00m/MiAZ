@@ -85,7 +85,7 @@ class MiAZRenameDialog(Gtk.Box):
 
     def update_dropdown(self, config, item_type):
         title = item_type.__gtype_name__
-        self.actions.dropdown_populate(self.dropdown[title], item_type)
+        self.actions.dropdown_populate(config, self.dropdown[title], item_type)
 
     def set_data(self, doc):
         self.doc = doc
@@ -133,7 +133,7 @@ class MiAZRenameDialog(Gtk.Box):
         self.boxMain.append(row)
         button = self.factory.create_button('miaz-res-manage', '')
         dropdown = self.factory.create_dropdown_generic(item_type, ellipsize=False) #, item)
-        self.actions.dropdown_populate(dropdown, item_type)
+        self.actions.dropdown_populate(conf, dropdown, item_type)
         boxValue.append(dropdown)
         boxValue.append(button)
         return row, button, dropdown
@@ -193,24 +193,24 @@ class MiAZRenameDialog(Gtk.Box):
     def __create_field_1_country(self):
         self.rowCountry, self.btnCountry, self.dpdCountry = self.__create_actionrow('Country', Country, 'countries')
         self.dropdown['Country'] = self.dpdCountry
-        self.btnCountry.connect('clicked', self.on_resource_manage, MiAZCountries(self.app))
+        self.btnCountry.connect('clicked', self.actions.manage_resource, MiAZCountries(self.app))
         self.dpdCountry.connect("notify::selected-item", self.on_changed_entry)
 
     def __create_field_2_group(self):
         self.rowGroup, self.btnGroup, self.dpdGroup = self.__create_actionrow('Group', Group, 'groups')
         self.dropdown['Group'] = self.dpdGroup
-        self.btnGroup.connect('clicked', self.on_resource_manage, MiAZGroups(self.app))
+        self.btnGroup.connect('clicked', self.actions.manage_resource, MiAZGroups(self.app))
         self.dpdGroup.connect("notify::selected-item", self.on_changed_entry)
 
     def __create_field_4_sentby(self):
         self.rowSentBy, self.btnSentBy, self.dpdSentBy = self.__create_actionrow(SentBy.__title__, SentBy, 'Sentby')
         self.dropdown['SentBy'] = self.dpdSentBy
-        self.btnSentBy.connect('clicked', self.on_resource_manage, MiAZPeopleSentBy(self.app))
+        self.btnSentBy.connect('clicked', self.actions.manage_resource, MiAZPeopleSentBy(self.app))
         self.dpdSentBy.connect("notify::selected-item", self.on_changed_entry)
 
     def __create_field_5_purpose(self):
         self.rowPurpose, self.btnPurpose, self.dpdPurpose = self.__create_actionrow('Purpose', Purpose, 'purposes')
-        self.btnPurpose.connect('clicked', self.on_resource_manage, MiAZPurposes(self.app))
+        self.btnPurpose.connect('clicked', self.actions.manage_resource, MiAZPurposes(self.app))
         self.dropdown['Purpose'] = self.dpdPurpose
         self.dpdPurpose.connect("notify::selected-item", self.on_changed_entry)
 
@@ -236,7 +236,7 @@ class MiAZRenameDialog(Gtk.Box):
     def __create_field_7_sentto(self):
         self.rowSentTo, self.btnSentTo, self.dpdSentTo = self.__create_actionrow(SentTo.__title__, SentTo, 'SentTo')
         self.dropdown['SentTo'] = self.dpdSentTo
-        self.btnSentTo.connect('clicked', self.on_resource_manage, MiAZPeopleSentTo(self.app))
+        self.btnSentTo.connect('clicked', self.actions.manage_resource, MiAZPeopleSentTo(self.app))
         self.dpdSentTo.connect("notify::selected-item", self.on_changed_entry)
 
     def __create_field_8_extension(self):
@@ -417,11 +417,11 @@ class MiAZRenameDialog(Gtk.Box):
         else:
             self.app.show_workspace()
 
-    def on_resource_manage(self, widget: Gtk.Widget, selector: Gtk.Widget):
-        box = self.factory.create_box_vertical(spacing=0, vexpand=True, hexpand=True)
-        box.append(selector)
-        config_for = selector.get_config_for()
-        selector.set_vexpand(True)
-        selector.update()
-        dialog = self.factory.create_dialog(self.app.win, 'Manage %s' % config_for, box, 800, 600)
-        dialog.show()
+    # ~ def on_resource_manage(self, widget: Gtk.Widget, selector: Gtk.Widget):
+        # ~ box = self.factory.create_box_vertical(spacing=0, vexpand=True, hexpand=True)
+        # ~ box.append(selector)
+        # ~ config_for = selector.get_config_for()
+        # ~ selector.set_vexpand(True)
+        # ~ selector.update()
+        # ~ dialog = self.factory.create_dialog(self.app.win, 'Manage %s' % config_for, box, 800, 600)
+        # ~ dialog.show()

@@ -42,42 +42,6 @@ class MiAZActions(GObject.GObject):
         self.backend = self.app.get_backend()
         self.util = self.backend.util
 
-    def add_directory_to_repo(self, dialog, response):
-        config = self.backend.repo_config()
-        target_dir = config['dir_docs']
-        if response == Gtk.ResponseType.ACCEPT:
-            content_area = dialog.get_content_area()
-            box = content_area.get_first_child()
-            filechooser = box.get_first_child()
-            toggle = box.get_last_child()
-            recursive = toggle.get_active()
-            gfile = filechooser.get_file()
-            if gfile is not None:
-                dirpath = gfile.get_path()
-                self.log.debug("Walk directory %s recursively? %s", dirpath, recursive)
-                if recursive:
-                    files = self.util.get_files_recursively(dirpath)
-                else:
-                    files = glob.glob(os.path.join(dirpath, '*.*'))
-                for source in files:
-                    target = self.util.filename_normalize(source)
-                    self.util.filename_copy(source, target)
-        dialog.destroy()
-
-    def add_file_to_repo(self, dialog, response):
-        config = self.backend.repo_config()
-        target_dir = config['dir_docs']
-        if response == Gtk.ResponseType.ACCEPT:
-            content_area = dialog.get_content_area()
-            box = content_area.get_first_child()
-            filechooser = box.get_first_child()
-            gfile = filechooser.get_file()
-            if gfile is not None:
-                source = gfile.get_path()
-                target = self.util.filename_normalize(source)
-                self.util.filename_copy(source, target)
-        dialog.destroy()
-
     def document_display(self, doc):
         self.log.debug("Displaying %s", doc)
         self.util.filename_display(doc)
@@ -197,7 +161,7 @@ class MiAZActions(GObject.GObject):
             label = self.factory.create_label('Rename %d files by setting the field <b>%s</b> to:\n' % (len(items), i_title))
             dropdown = self.factory.create_dropdown_generic(item_type)
             btnManage = self.factory.create_button('miaz-res-manage', '')
-            btnManage.connect('clicked', self.on_resource_manage, Configview[i_type](self.app))
+            btnManage.connect('clicked', self.manage_resource, Configview[i_type](self.app))
             frame = Gtk.Frame()
             cv = MiAZColumnViewMassRename(self.app)
             cv.get_style_context().add_class(class_name='monospace')
@@ -205,7 +169,7 @@ class MiAZActions(GObject.GObject):
             cv.set_vexpand(True)
             dropdown.connect("notify::selected-item", update_columnview, cv, item_type, items)
             self.config[i_type].connect('used-updated', self.dropdown_populate, dropdown, item_type, False)
-            self.dropdown_populate(dropdown, item_type, any_value=False)
+            self.dropdown_populate(self.config[i_type], dropdown, item_type, any_value=False)
             frame.set_child(cv)
             box.append(label)
             hbox = self.factory.create_box_horizontal()
@@ -241,62 +205,86 @@ class MiAZActions(GObject.GObject):
             dialog.connect('response', dialog_response_date, calendar, items)
             dialog.show()
 
-    def select_dropdown_item(self, dropdown, key):
-        found = False
-        model = dropdown.get_model()
-        n = 0
-        for item in model:
-            if item.id.upper() == key.upper():
-                dropdown.set_selected(n)
-                found = True
-            n += 1
-        if not found:
-            dropdown.set_selected(0)
-
-    def dropdown_populate(self, dropdown, item_type, any_value=True, none_value=False):
+    def dropdown_populate(self, config, dropdown, item_type, any_value=True, none_value=False):
+        # FIXME? This method can be called as a reaction to the signal
+        # 'used-updated' or directly. When reacting to a signal, config
+        # parameter is set in first place. When the method is called
+        # directly, config parameter must be passed.
+        # In any case, config parameter is not used. Config is got from
+        # item_type
         model = dropdown.get_model()
         config = self.app.get_config(item_type.__gtype_name__)
         items = config.load(config.used)
         title = item_type.__gtype_name__
 
-        items = config.load(config.used)
-
         model.remove_all()
-
         if any_value:
             model.append(item_type(id='Any', title='Any'))
-
         if none_value:
             model.append(item_type(id='None', title='None'))
-
         for key in items:
             title = items[key]
             if len(title) == 0:
                 title = key
             model.append(item_type(id=key, title=title))
 
+    def import_directory(self, *args):
+        def filechooser_response(dialog, response):
+            config = self.backend.repo_config()
+            target_dir = config['dir_docs']
+            if response == Gtk.ResponseType.ACCEPT:
+                content_area = dialog.get_content_area()
+                box = content_area.get_first_child()
+                filechooser = box.get_first_child()
+                toggle = box.get_last_child()
+                recursive = toggle.get_active()
+                gfile = filechooser.get_file()
+                if gfile is not None:
+                    dirpath = gfile.get_path()
+                    self.log.debug("Walk directory %s recursively? %s", dirpath, recursive)
+                    if recursive:
+                        files = self.util.get_files_recursively(dirpath)
+                    else:
+                        files = glob.glob(os.path.join(dirpath, '*.*'))
+                    for source in files:
+                        target = self.util.filename_normalize(source)
+                        self.util.filename_copy(source, target)
+            dialog.destroy()
 
-    def on_import_directory(self, *args):
         self.factory = self.app.get_factory()
         filechooser = self.factory.create_filechooser(
                     parent=self.app.win,
                     title='Import a directory',
                     target = 'FOLDER',
-                    callback = self.add_directory_to_repo
+                    callback = filechooser_response
                     )
         filechooser.show()
 
-    def on_import_file(self, *args):
+    def import_file(self, *args):
+        def filechooser_response(dialog, response):
+            config = self.backend.repo_config()
+            target_dir = config['dir_docs']
+            if response == Gtk.ResponseType.ACCEPT:
+                content_area = dialog.get_content_area()
+                box = content_area.get_first_child()
+                filechooser = box.get_first_child()
+                gfile = filechooser.get_file()
+                if gfile is not None:
+                    source = gfile.get_path()
+                    target = self.util.filename_normalize(source)
+                    self.util.filename_copy(source, target)
+            dialog.destroy()
+
         self.factory = self.app.get_factory()
         filechooser = self.factory.create_filechooser(
                     parent=self.app.win,
                     title='Import a single file',
                     target = 'FILE',
-                    callback = self.add_file_to_repo
+                    callback = filechooser_response
                     )
         filechooser.show()
 
-    def on_resource_manage(self, widget: Gtk.Widget, selector: Gtk.Widget):
+    def manage_resource(self, widget: Gtk.Widget, selector: Gtk.Widget):
         factory = self.app.get_factory()
         box = factory.create_box_vertical(spacing=0, vexpand=True, hexpand=True)
         box.append(selector)
@@ -324,9 +312,9 @@ class MiAZActions(GObject.GObject):
         box = self.factory.create_box_vertical(spacing=6, vexpand=True, hexpand=True)
         dropdown = self.factory.create_dropdown_generic(Project)
         # ~ dropdown.connect("notify::selected-item", selected_item)
-        self.dropdown_populate(dropdown, Project, any_value=False)
+        self.dropdown_populate(self.config[i_type], dropdown, Project, any_value=False)
         btnManage = self.factory.create_button('miaz-res-manage', '')
-        btnManage.connect('clicked', self.on_resource_manage, Configview['Project'](self.app))
+        btnManage.connect('clicked', self.manage_resource, Configview['Project'](self.app))
         label = self.factory.create_label('Assign the following documents to this project: ')
         frame = Gtk.Frame()
         cv = MiAZColumnViewMassProject(self.app)
