@@ -40,9 +40,6 @@ class MiAZDialogAdd(Gtk.Dialog):
         boxButtons = Gtk.CenterBox()
         boxButtons.set_start_widget(btnCancel)
         boxButtons.set_end_widget(btnSave)
-        # ~ header.pack_end(btnSave)
-        # ~ header.pack_start(btnCancel)
-
         fields = Gtk.Box(spacing=6, orientation=Gtk.Orientation.HORIZONTAL)
         fields.set_margin_bottom(margin=12)
         self.boxKey1 = Gtk.Box(spacing=6, orientation=Gtk.Orientation.VERTICAL)
@@ -73,7 +70,6 @@ class MiAZDialogAdd(Gtk.Dialog):
         widget.append(boxButtons)
         contents = self.get_content_area()
         contents.append(widget)
-
 
     def on_dialog_save(self, *args):
         self.emit('response', Gtk.ResponseType.ACCEPT)

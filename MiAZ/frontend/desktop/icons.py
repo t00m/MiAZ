@@ -21,9 +21,6 @@ from gi.repository import Gdk
 from gi.repository.GdkPixbuf import Pixbuf
 
 from MiAZ.backend.env import ENV
-from MiAZ.frontend.desktop.util import get_file_mimetype
-# ~ from MiAZ.backend.util import valid_key
-
 # FIXME: Fix caching system for pixbufs
 
 class MiAZIconManager(GObject.GObject):
@@ -74,7 +71,7 @@ class MiAZIconManager(GObject.GObject):
         return pixbuf
 
     def get_pixbuf_mimetype_from_file(self, filepath, width=48, height=48) -> Pixbuf:
-        mimetype = get_file_mimetype(filepath)
+        mimetype = self.util.filename_get_mimetype(filepath)
         key = self.util.valid_key("%s-%d-%d" % (mimetype, width, height))
         try:
             pixbuf = self.pixbufdict[key]
@@ -93,7 +90,7 @@ class MiAZIconManager(GObject.GObject):
         return pixbuf
 
     def get_icon_mimetype_from_file(self, filepath, width=48, height=48) -> Pixbuf:
-        # ~ mimetype = get_file_mimetype(filepath)
+        # ~ mimetype = self.util.filename_get_mimetype(filepath)
         # ~ key = valid_key("%s-%d-%d" % (mimetype, width, height))
         # ~ try:
             # ~ icon = self.icondict[key]

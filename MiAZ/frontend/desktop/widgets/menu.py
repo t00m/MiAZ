@@ -63,29 +63,3 @@ MiAZ_MENU_REPO = """
 </menu>
 </interface>
 """
-
-MiAZ_MENU_DOCUMENT = """
-<?xml version="1.0" encoding="UTF-8"?>
-<interface>
-<menu id='repo-menu'>
-  <section>
-    <item>
-      <attribute name='label' translatable='yes'>Rename</attribute>
-      <attribute name='action'>app.doc_rename</attribute>
-    </item>
-    <item>
-      <attribute name='label' translatable='yes'>Backup</attribute>
-      <attribute name='action'>app.backup</attribute>
-    </item>
-    <item>
-      <attribute name='label' translatable='no'>--</attribute>
-      <attribute name='action'></attribute>
-    </item>
-    <item>
-      <attribute name='label' translatable='yes'>Delete</attribute>
-      <attribute name='action'>app.delete</attribute>
-    </item>
-  </section>
-</menu>
-</interface>
-"""

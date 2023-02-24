@@ -10,6 +10,7 @@ import shutil
 from datetime import datetime
 from dateutil.parser import parse as dateparser
 
+from gi.repository import Gio
 from gi.repository import GObject
 
 from MiAZ.backend.env import ENV
@@ -25,7 +26,6 @@ Field[Group] = 2
 Field[SentBy] = 3
 Field[Purpose] = 4
 Field[SentTo] = 6
-
 
 
 class MiAZUtil(GObject.GObject):
@@ -108,6 +108,10 @@ class MiAZUtil(GObject.GObject):
         filepath = os.path.join(dir_repo, doc)
         lastmod = os.stat(filepath).st_mtime
         return datetime.fromtimestamp(lastmod)
+
+    def filename_get_mimetype(self, filepath: str) -> str:
+        mimetype, val = Gio.content_type_guess('filename=%s' % filepath, data=None)
+        return mimetype
 
     def filename_details(self, filepath: str):
         basename = os.path.basename(filepath)

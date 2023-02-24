@@ -20,22 +20,16 @@ from MiAZ.backend.log import get_logger
 from MiAZ.backend.models import Country
 from MiAZ.frontend.desktop.icons import MiAZIconManager
 
-class HeaderType:
-    DEFAULT = 1
-    ARTIST = 2
-    ALBUM = 3
-    ROUNDED = 4
+# ~ class HeaderType:
+    # ~ DEFAULT = 1
+    # ~ ARTIST = 2
+    # ~ ALBUM = 3
+    # ~ ROUNDED = 4
 
 class MiAZFactory:
     def __init__(self, app):
         self.app = app
         self.log = get_logger('MiAZFactory')
-
-    # ~ def create_action(self, name, callback):
-        # ~ """ Add an Action and connect to a callback """
-        # ~ action = Gio.SimpleAction.new(name, None)
-        # ~ action.connect("activate", callback)
-        # ~ self.app.add_action(action)
 
     def create_actionrow(self, icon_name:str = '', title:str = '', subtitle:str = '', prefix: Gtk.Widget = None, suffix: Gtk.Widget = None):
         row = Adw.ActionRow.new()
@@ -417,20 +411,20 @@ class MiAZFactory:
         self.menu_workspace_multiple.append_item(item_delete)
         return self.menu_workspace_multiple
 
-class MenuHeader(Gio.MenuItem):
-    """
-        A simple menu header with label and icon
-    """
+# ~ class MenuHeader(Gio.MenuItem):
+    # ~ """
+        # ~ A simple menu header with label and icon
+    # ~ """
 
-    def __init__(self, label, icon_name):
-        """
-            Init menu
-            @param label as str
-            @param icon_name as str
-        """
-        Gio.MenuItem.__init__(self)
-        header_type = GLib.Variant("i", HeaderType.DEFAULT)
-        vlabel = GLib.Variant("s", label)
-        vicon_name = GLib.Variant("s", icon_name)
-        header = [header_type, vlabel, vicon_name]
-        self.set_attribute_value("header", GLib.Variant("av", header))
+    # ~ def __init__(self, label, icon_name):
+        # ~ """
+            # ~ Init menu
+            # ~ @param label as str
+            # ~ @param icon_name as str
+        # ~ """
+        # ~ Gio.MenuItem.__init__(self)
+        # ~ header_type = GLib.Variant("i", HeaderType.DEFAULT)
+        # ~ vlabel = GLib.Variant("s", label)
+        # ~ vicon_name = GLib.Variant("s", icon_name)
+        # ~ header = [header_type, vlabel, vicon_name]
+        # ~ self.set_attribute_value("header", GLib.Variant("av", header))
