@@ -230,7 +230,7 @@ class MiAZActions(GObject.GObject):
             model.append(item_type(id=key, title=title))
 
     def import_directory(self, *args):
-        def filechooser_response(dialog, response):
+        def filechooser_response(dialog, response, data):
             config = self.backend.repo_config()
             target_dir = config['dir_docs']
             if response == Gtk.ResponseType.ACCEPT:
@@ -258,6 +258,7 @@ class MiAZActions(GObject.GObject):
                     title='Import a directory',
                     target = 'FOLDER',
                     callback = filechooser_response,
+                    data = None
                     )
         contents = filechooser.get_content_area()
         box = contents.get_first_child()
@@ -266,7 +267,7 @@ class MiAZActions(GObject.GObject):
         filechooser.show()
 
     def import_file(self, *args):
-        def filechooser_response(dialog, response):
+        def filechooser_response(dialog, response, data):
             config = self.backend.repo_config()
             target_dir = config['dir_docs']
             if response == Gtk.ResponseType.ACCEPT:
@@ -285,7 +286,8 @@ class MiAZActions(GObject.GObject):
                     parent=self.app.win,
                     title='Import a single file',
                     target = 'FILE',
-                    callback = filechooser_response
+                    callback = filechooser_response,
+                    data = None
                     )
         filechooser.show()
 

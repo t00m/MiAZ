@@ -82,11 +82,12 @@ class MiAZAppSettings(Gtk.Box):
                     parent=self.app.win,
                     title='Choose target directory',
                     target = 'FOLDER',
-                    callback = self.on_filechooser_response_source
+                    callback = self.on_filechooser_response_source,
+                    data = None
                     )
         filechooser.show()
 
-    def on_filechooser_response_source(self, dialog, response):
+    def on_filechooser_response_source(self, dialog, response, data):
         dialog.destroy()
         return
 
