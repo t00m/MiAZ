@@ -20,6 +20,7 @@ from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewMassProject
 
 # Conversion Item type to Field Number
 Field = {}
+Field[Date] = 0
 Field[Country] = 1
 Field[Group] = 2
 Field[SentBy] = 3
@@ -341,33 +342,87 @@ class MiAZActions(GObject.GObject):
         dialog.show()
 
     def document_export(self, items):
-        def filechooser_response(dialog, response):
+        def get_pattern_paths(item):
+            fields = self.util.get_fields(item.id)
+            paths = {}
+            paths['Y'] = '%04d' % datetime.strptime(fields[0], '%Y%m%d').year
+            paths['m'] = "%02d" % datetime.strptime(fields[0], '%Y%m%d').month
+            paths['d'] = "%02d" % datetime.strptime(fields[0], '%Y%m%d').day
+            paths['C'] = fields[Field[Country]]
+            paths['G'] = fields[Field[Group]]
+            paths['P'] = fields[Field[Purpose]]
+            paths['B'] = fields[Field[SentBy]]
+            paths['T'] = fields[Field[SentTo]]
+            return paths
+
+        def filechooser_response(dialog, response, patterns):
             config = self.backend.repo_config()
             target_dir = config['dir_docs']
             if response == Gtk.ResponseType.ACCEPT:
                 content_area = dialog.get_content_area()
                 box = content_area.get_first_child()
                 filechooser = box.get_first_child()
-                toggle = box.get_last_child()
-                # ~ recursive = toggle.get_active()
+                hbox = box.get_last_child()
+                toggle_pattern = hbox.get_first_child()
                 gfile = filechooser.get_file()
                 if gfile is not None:
                     dirpath = gfile.get_path()
-                    for item in items:
-                        target = os.path.join(dirpath, os.path.basename(item.id))
-                        self.util.filename_copy(item.id, target)
+                    if toggle_pattern.get_active():
+                        entry = toggle_pattern.get_next_sibling()
+                        keys = [key for key in entry.get_text()]
+                        for item in items:
+                            basename = os.path.basename(item.id)
+                            self.log.debug(basename)
+                            thispath = []
+                            thispath.append(dirpath)
+                            paths = get_pattern_paths(item)
+                            for key in keys:
+                                thispath.append(paths[key])
+                            target = os.path.join(*thispath)
+                            os.makedirs(target, exist_ok = True)
+                            self.util.filename_copy(item.id, target)
+                    else:
+                        for item in items:
+                            target = os.path.join(dirpath, os.path.basename(item.id))
+                            self.util.filename_copy(item.id, target)
                     self.util.directory_open(dirpath)
             dialog.destroy()
 
         self.factory = self.app.get_factory()
+        patterns = {
+            'Y': 'Year',
+            'm': 'Month',
+            'd': 'Day',
+            'C': 'Country',
+            'G': 'Group',
+            'P': 'Purpose',
+            'B': 'Sent by',
+            'T': 'Sent to',
+        }
         filechooser = self.factory.create_filechooser(
                     parent=self.app.win,
                     title='Export to directory',
                     target = 'FOLDER',
-                    callback = filechooser_response
+                    callback = filechooser_response,
+                    data = patterns
                     )
-        # ~ contents = filechooser.get_content_area()
-        # ~ box = contents.get_first_child()
-        # ~ toggle = self.factory.create_button_check(title='Walk recursively', callback=None)
-        # ~ box.append(toggle)
+
+        # Export with pattern
+        contents = filechooser.get_content_area()
+        box = contents.get_first_child()
+        hbox = self.factory.create_box_horizontal()
+        chkPattern = self.factory.create_button_check(title='Export with pattern (create subdirs)', callback=None)
+        etyPattern = Gtk.Entry()
+        etyPattern.set_text('CYmGP') #/{target}/{Country}/{Year}/{month}/{Group}/{Purpose}
+        widgets = []
+        for key in patterns:
+            label = Gtk.Label()
+            label.set_markup('<b>%s</b> = %s' % (key, patterns[key]))
+            label.set_xalign(0.0)
+            widgets.append(label)
+        btpPattern = self.factory.create_button_popover(icon_name='miaz-info', widgets=widgets)
+        hbox.append(chkPattern)
+        hbox.append(etyPattern)
+        hbox.append(btpPattern)
+        box.append(hbox)
         filechooser.show()

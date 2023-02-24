@@ -227,13 +227,13 @@ class MiAZFactory:
         btnAccept.get_style_context().add_class(class_name='suggested-action')
         return dialog
 
-    def create_filechooser(self, parent, title, target, callback):
+    def create_filechooser(self, parent, title, target, callback, data=None):
         d_filechooser = Gtk.Dialog()
         d_filechooser.set_title(title)
         d_filechooser.set_transient_for(parent)
         d_filechooser.set_modal(True)
         d_filechooser.add_buttons('Cancel', Gtk.ResponseType.CANCEL, 'Accept', Gtk.ResponseType.ACCEPT)
-        d_filechooser.connect('response', callback)
+        d_filechooser.connect('response', callback, data)
         contents = d_filechooser.get_content_area()
         box = self.create_box_vertical()
         w_filechooser = Gtk.FileChooserWidget()
