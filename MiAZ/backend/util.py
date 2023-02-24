@@ -161,20 +161,20 @@ class MiAZUtil(GObject.GObject):
         else:
             self.log.error("Source and Target are the same. Skip rename")
 
-    def filename_copy(self, source, doc_target):
+    def filename_copy(self, source, doc_target, overwrite=True):
         repo = self.backend.repo_config()
         dir_repo = repo['dir_docs']
         target = os.path.join(dir_repo, doc_target)
         if source != target:
-            if not os.path.exists(target):
+            if overwrite:
                 try:
                     # preserve metadata
                     shutil.copy2(source, target)
-                    self.log.info("%s renamed to %s", source, target)
+                    self.log.info("%s copied to %s", source, target)
                 except Exception as error:
                     self.log.error(error)
             else:
-                self.log.error("Target '%s' already exist. Skip rename", doc_target)
+                self.log.debug("Target file %s exists. Copy operation skipped", target)
         else:
             self.log.error("Source and Target are the same. Skip rename")
 

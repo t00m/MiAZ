@@ -246,8 +246,6 @@ class MiAZFactory:
         box.append(w_filechooser)
         if target == 'FOLDER':
             w_filechooser.set_action(Gtk.FileChooserAction.SELECT_FOLDER)
-            toggle = self.create_button_check(title='Walk recursively', callback=None)
-            box.append(toggle)
         elif target == 'FILE':
             w_filechooser.set_action(Gtk.FileChooserAction.OPEN)
         elif target == 'SAVE':

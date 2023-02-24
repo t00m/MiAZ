@@ -256,8 +256,12 @@ class MiAZActions(GObject.GObject):
                     parent=self.app.win,
                     title='Import a directory',
                     target = 'FOLDER',
-                    callback = filechooser_response
+                    callback = filechooser_response,
                     )
+        contents = filechooser.get_content_area()
+        box = contents.get_first_child()
+        toggle = self.factory.create_button_check(title='Walk recursively', callback=None)
+        box.append(toggle)
         filechooser.show()
 
     def import_file(self, *args):
@@ -335,3 +339,34 @@ class MiAZActions(GObject.GObject):
         dialog = self.factory.create_dialog_question(self.app.win, 'Assign to a project', box, width=1024, height=600)
         dialog.connect('response', dialog_response, dropdown, items)
         dialog.show()
+
+    def document_export(self, items):
+        def filechooser_response(dialog, response):
+            config = self.backend.repo_config()
+            target_dir = config['dir_docs']
+            if response == Gtk.ResponseType.ACCEPT:
+                content_area = dialog.get_content_area()
+                box = content_area.get_first_child()
+                filechooser = box.get_first_child()
+                toggle = box.get_last_child()
+                # ~ recursive = toggle.get_active()
+                gfile = filechooser.get_file()
+                if gfile is not None:
+                    dirpath = gfile.get_path()
+                    for item in items:
+                        target = os.path.join(dirpath, os.path.basename(item.id))
+                        self.util.filename_copy(item.id, target)
+            dialog.destroy()
+
+        self.factory = self.app.get_factory()
+        filechooser = self.factory.create_filechooser(
+                    parent=self.app.win,
+                    title='Export to directory',
+                    target = 'FOLDER',
+                    callback = filechooser_response
+                    )
+        # ~ contents = filechooser.get_content_area()
+        # ~ box = contents.get_first_child()
+        # ~ toggle = self.factory.create_button_check(title='Walk recursively', callback=None)
+        # ~ box.append(toggle)
+        filechooser.show()

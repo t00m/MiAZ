@@ -340,6 +340,10 @@ class MiAZWorkspace(Gtk.Box):
         menuitem = self.factory.create_menuitem('project', 'Assign project', self._on_handle_menu_multiple, Project, [])
         section_common_in.append_item(menuitem)
 
+        # Section -out
+        menuitem = self.factory.create_menuitem('export', 'Export documents', self._on_handle_menu_multiple, None, [])
+        section_common_out.append_item(menuitem)
+
         # Danger section
         menuitem = self.factory.create_menuitem('delete', 'Delete documents', self._on_handle_menu_multiple, None, [])
         section_danger.append_item(menuitem)
@@ -503,7 +507,7 @@ class MiAZWorkspace(Gtk.Box):
         elif name == 'clipboard':
             self.log.debug("FIXME: copy filename to clipboard")
         elif name == 'export':
-            self.log.debug("FIXME: export document")
+            self.actions.document_export([item])
         elif name == 'delete':
             self.actions.document_delete([item])
 
@@ -514,6 +518,8 @@ class MiAZWorkspace(Gtk.Box):
             self.actions.document_rename_multiple(item_type, items)
         elif name == 'project':
             self.actions.project_assignment(item_type, items)
+        elif name == 'export':
+            self.actions.document_export(items)
         elif name == 'delete':
             self.actions.document_delete(items)
 
