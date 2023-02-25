@@ -141,13 +141,14 @@ class MiAZUtil(GObject.GObject):
         name, ext = self.filename_details(filename)
         if not self.filename_is_normalized(name):
             fields = ['' for fields in range(7)]
-            fields[5] = name.replace('-', '_')
+            fields[5] = self.valid_key(name)
             filename = "%s.%s" % ('-'.join(fields), ext)
         else:
             filename = "%s.%s" % (name, ext)
         return filename
 
     def valid_key(self, key: str) -> str:
+        key = str(key).strip().replace('-', '_')
         key = str(key).strip().replace(' ', '_')
         return re.sub(r'(?u)[^-\w.]', '', key)
 

@@ -147,6 +147,8 @@ class MiAZConfig(GObject.GObject):
             return
         items = self.load(filepath)
         if not key in items:
+            key = self.util.valid_key(key)
+            value = self.util.valid_key(value)
             items[key] = value
             self.save(filepath, items=items)
             self.log.info("%s - Add: %s[%s] to %s", self.config_for, key, value, filepath)
