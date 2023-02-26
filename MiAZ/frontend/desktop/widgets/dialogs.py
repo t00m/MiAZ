@@ -102,3 +102,136 @@ class MiAZDialogAdd(Gtk.Dialog):
 
     def get_value2_widget(self):
         return self.etyValue2
+
+
+class MiAZDialogAddRepo(Gtk.Dialog):
+    """ MiAZ Doc Browser Widget"""
+    __gtype_name__ = 'MiAZDialogAddRepo'
+
+    def __init__(self, app, parent, title, key1, key2, width=-1, height=-1):
+        super(MiAZDialogAddRepo, self).__init__()
+        self.app = app
+        self.factory = self.app.get_factory()
+        self.set_transient_for(parent)
+        self.set_size_request(width, height)
+        self.set_modal(True)
+        self.set_title(title)
+        widget = Gtk.Box(spacing=6, orientation=Gtk.Orientation.VERTICAL)
+        widget.set_margin_top(margin=12)
+        widget.set_margin_end(margin=12)
+        widget.set_margin_start(margin=12)
+
+        header = Adw.HeaderBar()
+        header.set_show_end_title_buttons(False)
+        header.set_show_start_title_buttons(False)
+        lblTitle = self.factory.create_label(title)
+        header.set_title_widget(lblTitle)
+        self.set_titlebar(header)
+        btnSave = self.factory.create_button('', 'Save', self.on_dialog_save)
+        # ~ btnSave.get_style_context().add_class(class_name='suggested-action')
+        btnCancel = self.factory.create_button('', 'Cancel', self.on_dialog_cancel)
+        # ~ btnCancel.get_style_context().add_class(class_name='destructive-action')
+        boxButtons = Gtk.CenterBox()
+        boxButtons.set_start_widget(btnCancel)
+        boxButtons.set_end_widget(btnSave)
+        fields = Gtk.Box(spacing=6, orientation=Gtk.Orientation.HORIZONTAL)
+        fields.set_margin_bottom(margin=12)
+        self.boxKey1 = Gtk.Box(spacing=6, orientation=Gtk.Orientation.VERTICAL)
+        self.boxKey1.set_hexpand(False)
+        self.lblKey1 = Gtk.Label()
+        self.lblKey1.set_xalign(0.0)
+        self.lblKey1.set_hexpand(False)
+        self.lblKey1.set_markup("<b>%s</b>" % key1)
+        self.etyValue1 = Gtk.Entry()
+        self.etyValue1.set_hexpand(False)
+        self.etyValue1.connect('activate', self.on_dialog_save)
+        self.boxKey1.append(self.lblKey1)
+        self.boxKey1.append(self.etyValue1)
+        self.boxKey2 = Gtk.Box(spacing=6, orientation=Gtk.Orientation.VERTICAL)
+        self.boxKey2.set_hexpand(True)
+        self.lblKey2 = Gtk.Label()
+        self.lblKey2.set_xalign(0.0)
+        self.lblKey2.set_markup("<b>%s</b>" % key2)
+        self.etyValue2 = Gtk.Entry()
+        self.etyValue2.connect('activate', self.on_dialog_save)
+        btnRepoSource = self.factory.create_button('document-edit-symbolic', '', self.show_filechooser_source, css_classes=['flat'])
+        self.boxKey2.append(self.lblKey2)
+        hboxValue2 = self.factory.create_box_horizontal()
+        hboxValue2.append(self.etyValue2)
+        hboxValue2.append(btnRepoSource)
+        self.boxKey2.append(hboxValue2)
+        separator = Gtk.Separator.new(Gtk.Orientation.HORIZONTAL)
+        fields.append(self.boxKey1)
+        fields.append(self.boxKey2)
+        widget.append(fields)
+        widget.append(separator)
+        widget.append(boxButtons)
+        contents = self.get_content_area()
+        contents.append(widget)
+
+    def on_dialog_save(self, *args):
+        self.emit('response', Gtk.ResponseType.ACCEPT)
+        self.destroy()
+
+    def on_dialog_cancel(self, *args):
+        self.emit('response', Gtk.ResponseType.CANCEL)
+        self.destroy()
+
+    def get_boxKey1(self):
+        return self.boxKey1
+
+    def get_boxKey2(self):
+        return self.boxKey2
+
+    def get_value1(self):
+        return self.etyValue1.get_text()
+
+    def get_value1_widget(self):
+        return self.etyValue1
+
+    def set_value1(self, value):
+        self.etyValue1.set_text(value)
+
+    def get_value2(self):
+        return self.etyValue2.get_text()
+
+    def set_value2(self, value):
+        self.etyValue2.set_text(value)
+
+    def get_value2_widget(self):
+        return self.etyValue2
+
+    def show_filechooser_source(self, *args):
+            filechooser = self.factory.create_filechooser(
+                        parent=self,
+                        title='Choose target directory',
+                        target = 'FOLDER',
+                        callback = self.on_filechooser_response_source
+                        )
+            filechooser.show()
+
+    def on_filechooser_response_source(self, dialog, response):
+        use_repo = False
+        if response == Gtk.ResponseType.ACCEPT:
+            content_area = dialog.get_content_area()
+            filechooser = content_area.get_first_child()
+            try:
+                gfile = filechooser.get_file()
+            except AttributeError as error:
+                self.log.error(error)
+                raise
+            if gfile is None:
+                self.log.debug("No directory set. Do nothing.")
+                # FIXME: Show warning message. Priority: low
+                return
+            self.repopath = gfile.get_path()
+            page = self.get_nth_page(1)
+            if self.repopath is not None:
+                self.row_repo_source.set_title(os.path.basename(self.repopath))
+                self.row_repo_source.set_subtitle(self.repopath)
+                self.set_page_complete(page, True)
+            else:
+                self.row_repo_source.set_title('Directory not set')
+                self.row_repo_source.set_subtitle('')
+                self.set_page_complete(page, False)
+        dialog.destroy()

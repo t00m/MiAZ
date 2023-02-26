@@ -18,6 +18,7 @@ from MiAZ.backend.config import MiAZConfigConcepts
 from MiAZ.backend.config import MiAZConfigPeople
 from MiAZ.backend.config import MiAZConfigSentBy
 from MiAZ.backend.config import MiAZConfigSentTo
+from MiAZ.backend.config import MiAZConfigRepositories
 
 
 class MiAZBackend(GObject.GObject):
@@ -33,6 +34,7 @@ class MiAZBackend(GObject.GObject):
                             GObject.SignalFlags.RUN_LAST, None, () )
         self.util = MiAZUtil(self)
         self.conf['App'] = MiAZConfigApp(self)
+        self.conf['Repository'] = MiAZConfigRepositories(self)
 
     def repo_validate(self, path: str) -> bool:
         self.log.debug("Checking conf dir: %s", path)

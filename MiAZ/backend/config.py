@@ -5,7 +5,7 @@ from gi.repository import GObject
 
 from MiAZ.backend.env import ENV
 from MiAZ.backend.log import get_logger
-from MiAZ.backend.models import MiAZModel, MiAZItem, File, Group, Person, Country, Purpose, Concept, SentBy, SentTo, Project
+from MiAZ.backend.models import MiAZModel, MiAZItem, File, Group, Person, Country, Purpose, Concept, SentBy, SentTo, Project, Repository
 
 class MiAZConfig(GObject.GObject):
     """ MiAZ Config class"""
@@ -210,6 +210,21 @@ class MiAZConfigApp(MiAZConfig):
     def save(self, filepath: str = '', items: dict = {}) -> bool:
         if self.save_data(filepath, items):
             self.emit('repo-settings-updated-app')
+
+class MiAZConfigRepositories(MiAZConfig):
+    def __init__(self, backend):
+        dir_conf = ENV['LPATH']['ETC']
+        super().__init__(
+            backend = backend,
+            log=get_logger('MiAZ.Settings.Repositories'),
+            config_for = 'Repositories',
+            available = os.path.join(dir_conf, 'repos-available.json'),
+            used = os.path.join(dir_conf, 'repos-used.json'),
+            default = None,
+            model = Repository,
+            must_copy = False,
+            foreign = True
+        )
 
 class MiAZConfigCountries(MiAZConfig):
     def __init__(self, backend, dir_conf):

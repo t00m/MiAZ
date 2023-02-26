@@ -17,7 +17,7 @@ from MiAZ.backend.env import ENV
 from MiAZ.backend.log import get_logger
 from MiAZ.frontend.desktop.widgets.columnview import MiAZColumnView
 from MiAZ.frontend.desktop.widgets.columnview import ColIcon, ColLabel, ColMenuButton, ColCheck, ColButton
-from MiAZ.backend.models import MiAZItem, Country, Group, Person, Purpose, File, Project
+from MiAZ.backend.models import MiAZItem, Country, Group, Person, Purpose, File, Project, Repository
 
 
 class MiAZColumnViewWorkspace(MiAZColumnView):
@@ -255,6 +255,17 @@ class MiAZColumnViewCountry(MiAZColumnView):
             flag = os.path.join(ENV['GPATH']['FLAGS'], "__.svg")
         icon.set_from_file(flag)
         icon.set_pixel_size(32)
+
+class MiAZColumnViewRepo(MiAZColumnView):
+    """ Custom ColumnView widget for MiAZ """
+    __gtype_name__ = 'MiAZColumnViewRepo'
+
+    def __init__(self, app):
+        super().__init__(app, item_type=Repository)
+        self.cv.append_column(self.column_id)
+        self.column_title.set_title("Repo Id")
+        self.cv.append_column(self.column_title)
+        self.column_title.set_title("Directory")
 
 class MiAZColumnViewGroup(MiAZColumnView):
     """ Custom ColumnView widget for MiAZ """

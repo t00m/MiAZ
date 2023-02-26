@@ -14,6 +14,8 @@ from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewGroup
 from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewPurpose
 from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewPerson
 from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewProject
+from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewRepo
+from MiAZ.frontend.desktop.widgets.dialogs import MiAZDialogAddRepo
 
 
 class MiAZConfigView(MiAZSelector):
@@ -43,6 +45,30 @@ class MiAZConfigView(MiAZSelector):
         frmView.set_child(self.view)
         return selector
 
+
+class MiAZRepositories(MiAZConfigView):
+    """Manage Repositories"""
+    __gtype_name__ = 'MiAZRepositories'
+    current = None
+
+    def __init__(self, app):
+        super(MiAZConfigView, self).__init__(app, edit=True)
+        super().__init__(app, 'Repository')
+
+    def _setup_view_finish(self):
+        # Setup Available and Used Columns Views
+        self.viewAv = MiAZColumnViewRepo(self.app)
+        self.add_columnview_available(self.viewAv)
+        self.viewSl = MiAZColumnViewRepo(self.app)
+        self.add_columnview_used(self.viewSl)
+
+    def on_item_available_add(self, *args):
+            dialog = MiAZDialogAddRepo(self.app, self.get_root(), '%s: add a new item' % self.config.config_for, 'Repo Id', 'Folder')
+            etyValue1 = dialog.get_value1_widget()
+            search_term = self.entry.get_text()
+            etyValue1.set_text(search_term)
+            dialog.connect('response', self._on_response_item_available_add)
+            dialog.show()
 
 class MiAZCountries(MiAZConfigView):
     """Manage countries from Repo Settings. Edit disabled"""

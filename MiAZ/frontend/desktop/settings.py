@@ -20,10 +20,11 @@ from MiAZ.frontend.desktop.widgets.configview import MiAZCountries
 from MiAZ.frontend.desktop.widgets.configview import MiAZPeopleSentBy
 from MiAZ.frontend.desktop.widgets.configview import MiAZPeopleSentTo
 from MiAZ.frontend.desktop.widgets.configview import MiAZProjects
+from MiAZ.frontend.desktop.widgets.configview import MiAZRepositories
 
 from MiAZ.backend.models import MiAZItem, File, Group, Person, Country
 from MiAZ.backend.models import Purpose, Concept, SentBy, SentTo, Date
-from MiAZ.backend.models import Extension, Project
+from MiAZ.backend.models import Extension, Project, Repository
 
 Configview = {}
 Configview['Country'] = MiAZCountries
@@ -41,6 +42,7 @@ class MiAZAppSettings(Gtk.Box):
         self.log = get_logger('MiAZAppSettings')
         self.app = app
         self.factory = self.app.get_factory()
+        self.actions = self.app.get_actions()
         self.config = self.app.get_config('App')
         page = Adw.PreferencesPage.new()
         page.set_title("Settings")
@@ -65,7 +67,8 @@ class MiAZAppSettings(Gtk.Box):
         else:
             title = '<i>Folder not set</i>'
             subtitle = 'Choose an empty folder'
-        btnRepoSource = self.factory.create_button('document-edit-symbolic', '', self.show_filechooser_source, css_classes=['flat'])
+        # ~ btnRepoSource = self.factory.create_button('document-edit-symbolic', '', self.show_filechooser_source, css_classes=['flat'])
+        btnRepoSource = self.factory.create_button('document-edit-symbolic', '', self.actions.manage_resource, css_classes=['flat'], data=MiAZRepositories(self.app))
         row = self.factory.create_actionrow(title=title, subtitle=subtitle, suffix=btnRepoSource)
         return row
 
