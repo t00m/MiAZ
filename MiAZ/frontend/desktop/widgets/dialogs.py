@@ -120,27 +120,19 @@ class MiAZDialogAddRepo(MiAZDialogAdd):
     def __init__(self, app, parent, title, key1, key2, width=-1, height=-1):
         super(MiAZDialogAdd, self).__init__()
         super().__init__(app, parent, title, key1, key2)
+        self.title = title
+        self.key1 = key1
 
     def _setup_widget(self):
-        btnRepoSource = self.factory.create_button('document-edit-symbolic', '', self.show_filechooser_source, css_classes=['flat'])
         self.lblKey1 = Gtk.Label()
         self.lblKey1.set_xalign(0.0)
         self.lblKey1.set_hexpand(False)
-        self.lblKey1.set_markup("<b>%s</b>" % key1)
-        self.etyValue1 = Gtk.Entry()
-        self.etyValue1.set_hexpand(False)
-        self.etyValue1.connect('activate', self.on_dialog_save)
+        self.lblKey1.set_text(self.key1)
         self.boxKey1.append(self.lblKey1)
-        self.boxKey1.append(self.etyValue1)
         self.boxKey2 = Gtk.Box(spacing=6, orientation=Gtk.Orientation.VERTICAL)
-        self.boxKey2.set_hexpand(True)
-        self.lblKey2 = Gtk.Label()
-        self.lblKey2.set_xalign(0.0)
-        self.lblKey2.set_markup("<b>%s</b>" % self.key2)
-        self.etyValue2 = Gtk.Entry()
-        self.etyValue2.connect('activate', self.on_dialog_save)
-        self.boxKey2.append(self.lblKey2)
-        self.boxKey2.append(self.etyValue2)
+        self.boxKey2.set_hexpand(False)
+        btnRepoSource = self.factory.create_button('document-edit-symbolic', '', self.show_filechooser_source, css_classes=['flat'])
+        self.boxKey2.append(btnRepoSource)
         separator = Gtk.Separator.new(Gtk.Orientation.HORIZONTAL)
         self.fields.append(self.boxKey1)
         self.fields.append(self.boxKey2)
@@ -150,28 +142,11 @@ class MiAZDialogAddRepo(MiAZDialogAdd):
         contents = self.get_content_area()
         contents.append(self.widget)
 
-    def _setup_widget(self):
-        self.boxKey2 = Gtk.Box(spacing=6, orientation=Gtk.Orientation.VERTICAL)
-        self.boxKey2.set_hexpand(True)
-        self.lblKey2 = Gtk.Label()
-        self.lblKey2.set_xalign(0.0)
-        self.lblKey2.set_markup("<b>%s</b>" % self.key2)
-        self.etyValue2 = Gtk.Entry()
-        self.etyValue2.connect('activate', self.on_dialog_save)
-        btnRepoSource = self.factory.create_button('document-edit-symbolic', '', self.show_filechooser_source, css_classes=['flat'])
-        self.boxKey2.append(self.lblKey2)
-        hboxValue2 = self.factory.create_box_horizontal()
-        hboxValue2.append(self.etyValue2)
-        hboxValue2.append(btnRepoSource)
-        self.boxKey2.append(hboxValue2)
-        separator = Gtk.Separator.new(Gtk.Orientation.HORIZONTAL)
-        self.fields.append(self.boxKey1)
-        self.fields.append(self.boxKey2)
-        self.widget.append(self.fields)
-        self.widget.append(separator)
-        self.widget.append(self.boxButtons)
-        contents = self.get_content_area()
-        contents.append(self.widget)
+    def get_value1(self):
+        return self.lblKey1.get_text()
+
+    def set_value1(self, value):
+        self.lblKey1.set_text(value)
 
     def show_filechooser_source(self, *args):
             filechooser = self.factory.create_filechooser(
@@ -198,5 +173,5 @@ class MiAZDialogAddRepo(MiAZDialogAdd):
                 self.log.debug("No directory set. Do nothing.")
                 # FIXME: Show warning message. Priority: low
                 return
-            self.set_value2(gfile.get_path())
+            self.set_value1(gfile.get_path())
         dialog.destroy()

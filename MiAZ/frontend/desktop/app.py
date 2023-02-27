@@ -62,7 +62,6 @@ class MiAZApp(Adw.Application):
         keyname = Gdk.keyval_name(keyval)
         if keyname == 'Escape':
             self.show_stack_page_by_name('workspace')
-            self.check_repository()
             self.workspace.display_dashboard()
 
     def get_actions(self):
@@ -134,7 +133,7 @@ class MiAZApp(Adw.Application):
         self.page_rename.set_visible(False)
 
     def get_rename_widget(self):
-        return self.rename
+        return self.get_stack_page_widget_by_name('rename')
 
     def _setup_headerbar_left(self):
         # Add Menu Button to the titlebar (Left Side)
@@ -195,11 +194,11 @@ class MiAZApp(Adw.Application):
             self._setup_page_repo_settings()
         else:
             self.log.debug("No repo detected in the configuration. Executing asssitant")
-            self.show_stack_page_by_name('settings_app')
-            # ~ assistant = MiAZAssistantRepo(self)
-            # ~ assistant.set_transient_for(self.win)
-            # ~ assistant.set_modal(True)
-            # ~ assistant.present()
+            # ~ self.show_stack_page_by_name('settings_app')
+            assistant = MiAZAssistantRepo(self)
+            assistant.set_transient_for(self.win)
+            assistant.set_modal(True)
+            assistant.present()
             self.log.debug("Repository assistant displayed")
         self.win.present()
 
@@ -222,6 +221,9 @@ class MiAZApp(Adw.Application):
     def get_stack_page_by_name(self, name: str) -> Adw.ViewStackPage:
         widget = self.stack.get_child_by_name(name)
         return self.stack.get_page(widget)
+
+    def get_stack_page_widget_by_name(self, name:str) -> Gtk.Widget:
+        return self.stack.get_child_by_name(name)
 
     def show_stack_page_by_name(self, name: str = 'workspace'):
         self.stack.set_visible_child_name(name)

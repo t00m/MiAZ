@@ -132,16 +132,13 @@ class MiAZAssistantRepo(MiAZAssistant):
                     )
         filechooser.show()
 
-    def on_filechooser_response_source(self, dialog, response):
+    def on_filechooser_response_source(self, dialog, response, data=None):
         use_repo = False
         if response == Gtk.ResponseType.ACCEPT:
             content_area = dialog.get_content_area()
-            filechooser = content_area.get_first_child()
-            try:
-                gfile = filechooser.get_file()
-            except AttributeError as error:
-                self.log.error(error)
-                raise
+            box = content_area.get_first_child()
+            filechooser = box.get_first_child()
+            gfile = filechooser.get_file()
             if gfile is None:
                 self.log.debug("No directory set. Do nothing.")
                 # FIXME: Show warning message. Priority: low

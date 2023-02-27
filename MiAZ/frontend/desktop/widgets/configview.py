@@ -64,11 +64,17 @@ class MiAZRepositories(MiAZConfigView):
 
     def on_item_available_add(self, *args):
             dialog = MiAZDialogAddRepo(self.app, self.get_root(), '%s: add a new item' % self.config.config_for, 'Repo Id', 'Folder')
-            etyValue1 = dialog.get_value1_widget()
-            search_term = self.entry.get_text()
-            etyValue1.set_text(search_term)
             dialog.connect('response', self._on_response_item_available_add)
             dialog.show()
+
+    def _on_response_item_available_add(self, dialog, response):
+        if response == Gtk.ResponseType.ACCEPT:
+            key = dialog.get_value1()
+            if len(key) > 0:
+                self.config.add_available(key, '')
+                self.log.debug("Repo '%s' added to list of available repositories", key)
+                self.update()
+        dialog.destroy()
 
 class MiAZCountries(MiAZConfigView):
     """Manage countries from Repo Settings. Edit disabled"""

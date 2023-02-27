@@ -67,6 +67,7 @@ class MiAZRenameDialog(Gtk.Box):
         self.btnCancel = self.factory.create_button('miaz-cancel', 'cancel', self.on_rename_cancel)
         # ~ self.btnCancel.get_style_context ().add_class ('destructive-action')
         self.btnPreview = self.factory.create_button('miaz-preview', 'preview')
+        self.btnPreview.connect('clicked', self._on_document_display)
         boxButtons = Gtk.CenterBox(hexpand=True)
         boxButtons.set_start_widget(self.btnCancel)
         boxButtons.set_center_widget(self.btnPreview)
@@ -111,7 +112,6 @@ class MiAZRenameDialog(Gtk.Box):
         self.lblFilenameCur.set_selectable(True)
         self.lblFilenameNew.set_markup(self.result)
         self.lblFilenameNew.set_selectable(True)
-        self.btnPreview.connect('clicked', self.on_document_display, self.filepath)
         self.on_changed_entry()
 
     def get_filename_widget(self):
@@ -383,17 +383,16 @@ class MiAZRenameDialog(Gtk.Box):
             target = self.get_filepath_target()
             self.util.filename_rename(source, target)
             dialog.destroy()
+            self.app.show_stack_page_by_name('workspace')
         else:
             dialog.destroy()
-        self.app.show_stack_page_by_name('workspace')
 
     def on_rename_cancel(self, *args):
         self.app.show_stack_page_by_name('workspace')
 
-    def on_document_display(self, button, doc):
-        self.log.debug("Displaying %s", doc)
-        self.util.filename_display(doc)
-
+    def _on_document_display(self, *args):
+        doc = self.get_filepath_source()
+        self.actions.document_display(doc)
 
     def on_document_delete(self, button, filepath):
         body = "<big>You are about to delete the following document:\n\n<b>%s</b>\n\nConfirm, please.</big>" % os.path.basename(filepath)
