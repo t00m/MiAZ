@@ -111,6 +111,7 @@ class MiAZDialogAddRepo(Gtk.Dialog):
     def __init__(self, app, parent, title, key1, key2, width=-1, height=-1):
         super(MiAZDialogAddRepo, self).__init__()
         self.app = app
+        # ~ self.config for adding repos
         self.factory = self.app.get_factory()
         self.set_transient_for(parent)
         self.set_size_request(width, height)
@@ -210,7 +211,7 @@ class MiAZDialogAddRepo(Gtk.Dialog):
                         )
             filechooser.show()
 
-    def on_filechooser_response_source(self, dialog, response):
+    def on_filechooser_response_source(self, dialog, response, data=None):
         use_repo = False
         if response == Gtk.ResponseType.ACCEPT:
             content_area = dialog.get_content_area()
