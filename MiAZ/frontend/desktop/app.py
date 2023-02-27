@@ -15,6 +15,7 @@ from gi.repository import Gtk
 from MiAZ.backend.env import ENV
 from MiAZ.backend import MiAZBackend
 from MiAZ.backend.log import get_logger
+from MiAZ.frontend.desktop.widgets.configview import MiAZRepositories
 from MiAZ.frontend.desktop.widgets.assistant import MiAZAssistantRepo
 from MiAZ.frontend.desktop.widgets.menu import MiAZ_MENU_APP
 from MiAZ.frontend.desktop.widgets.workspace import MiAZWorkspace
@@ -61,6 +62,7 @@ class MiAZApp(Adw.Application):
         keyname = Gdk.keyval_name(keyval)
         if keyname == 'Escape':
             self.show_stack_page_by_name('workspace')
+            self.check_repository()
             self.workspace.display_dashboard()
 
     def get_actions(self):
@@ -191,14 +193,15 @@ class MiAZApp(Adw.Application):
             self._setup_page_workspace()
             self._setup_page_rename()
             self._setup_page_repo_settings()
-            self.win.present()
         else:
             self.log.debug("No repo detected in the configuration. Executing asssitant")
-            assistant = MiAZAssistantRepo(self)
-            assistant.set_transient_for(self.win)
-            assistant.set_modal(True)
-            assistant.present()
+            self.show_stack_page_by_name('settings_app')
+            # ~ assistant = MiAZAssistantRepo(self)
+            # ~ assistant.set_transient_for(self.win)
+            # ~ assistant.set_modal(True)
+            # ~ assistant.present()
             self.log.debug("Repository assistant displayed")
+        self.win.present()
 
     def _handle_menu(self, action, state):
             """ Callback for  menu actions"""

@@ -216,7 +216,7 @@ class MiAZConfigRepositories(MiAZConfig):
         dir_conf = ENV['LPATH']['ETC']
         super().__init__(
             backend = backend,
-            log=get_logger('MiAZ.Settings.Repositories'),
+            log=get_logger('MiAZ.Settings.Repos'),
             config_for = 'Repositories',
             available = os.path.join(dir_conf, 'repos-available.json'),
             used = os.path.join(dir_conf, 'repos-used.json'),

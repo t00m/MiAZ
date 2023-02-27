@@ -58,19 +58,31 @@ class MiAZAppSettings(Gtk.Box):
         return group
 
     def _create_action_row_repo_source(self):
-        row = Adw.ActionRow.new()
         config = self.app.get_config('App')
         repo = config.get('source')
         if os.path.isdir(repo):
-            title = os.path.basename(repo)
-            subtitle = repo
+            subtitle = os.path.basename("Current repository")
+            title = repo
         else:
             title = '<i>Folder not set</i>'
             subtitle = 'Choose an empty folder'
-        # ~ btnRepoSource = self.factory.create_button('document-edit-symbolic', '', self.show_filechooser_source, css_classes=['flat'])
+        config = self.app.get_config('Repository')
+        ddrepos = self.factory.create_dropdown_generic(Repository, ellipsize=False)
+        ddrepos.connect("notify::selected-item", self._on_selected_repo)
+        config.connect('used-updated', self.actions.dropdown_populate, ddrepos, Repository, False)
+        self.actions.dropdown_populate(config, ddrepos, Repository, any_value=False, none_value=False)
         btnRepoSource = self.factory.create_button('document-edit-symbolic', '', self.actions.manage_resource, css_classes=['flat'], data=MiAZRepositories(self.app))
-        row = self.factory.create_actionrow(title=title, subtitle=subtitle, suffix=btnRepoSource)
-        return row
+        hbox = self.factory.create_box_horizontal()
+        hbox.append(ddrepos)
+        hbox.append(btnRepoSource)
+        self.row = self.factory.create_actionrow(title=title, subtitle=subtitle, suffix=hbox)
+        return self.row
+
+    def _on_selected_repo(self, dropdown, gparamobj):
+        repo_id = dropdown.get_selected_item().id
+        repo_title = dropdown.get_selected_item().title
+        self.row.set_title(repo_id.replace('_', ' '))
+        self.app.check_repository()
 
     def _update_action_row_repo_source(self, name, dirpath):
         self.row_repo_source.set_title(name)
