@@ -67,7 +67,7 @@ class MiAZAppSettings(Gtk.Box):
             title = '<i>Folder not set</i>'
             subtitle = 'Choose an empty folder'
         btnRepoSource = self.factory.create_button('document-edit-symbolic', '', self.actions.manage_resource, css_classes=['flat'], data=MiAZRepositories(self.app))
-        self.row = self.factory.create_actionrow(title=title, subtitle=subtitle, suffix=btnRepoSource)
+        self.row = self.factory.create_actionrow(title=title, subtitle=subtitle)#, suffix=btnRepoSource)
         return self.row
 
     def _on_selected_repo(self, dropdown, gparamobj):
