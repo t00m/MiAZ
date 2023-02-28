@@ -364,6 +364,7 @@ class MiAZWorkspace(Gtk.Box):
         docs = self.util.get_files()
         sentby = self.app.get_config('SentBy')
         sentto = self.app.get_config('SentTo')
+        countries = self.app.get_config('Country')
         items = []
         invalid = []
         for filename in docs:
@@ -382,6 +383,7 @@ class MiAZWorkspace(Gtk.Box):
                                         date=fields[0],
                                         date_dsc = date_dsc,
                                         country=fields[1],
+                                        country_dsc=countries.get(fields[1]),
                                         group=fields[2],
                                         sentby_id=fields[3],
                                         sentby_dsc=sentby.get(fields[3]),

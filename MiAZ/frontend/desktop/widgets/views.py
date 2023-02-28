@@ -57,6 +57,9 @@ class MiAZColumnViewWorkspace(MiAZColumnView):
         self.factory_flag = Gtk.SignalListItemFactory()
         self.factory_flag.connect("setup", self._on_factory_setup_flag)
         self.factory_flag.connect("bind", self._on_factory_bind_flag)
+        self.factory_country = Gtk.SignalListItemFactory()
+        self.factory_country.connect("setup", self._on_factory_setup_country)
+        self.factory_country.connect("bind", self._on_factory_bind_country)
 
         # Setup columnview columns
         self.column_subtitle = Gtk.ColumnViewColumn.new("Concept", self.factory_subtitle)
@@ -69,6 +72,7 @@ class MiAZColumnViewWorkspace(MiAZColumnView):
         self.column_purpose = Gtk.ColumnViewColumn.new("Purpose", self.factory_purpose)
         self.column_date = Gtk.ColumnViewColumn.new("Date", self.factory_date)
         self.column_flag = Gtk.ColumnViewColumn.new("Country", self.factory_flag)
+        self.column_country = Gtk.ColumnViewColumn.new("Country", self.factory_country)
 
         # ~ self.cv.append_column(self.column_icon_type)
         self.cv.append_column(self.column_group)
@@ -78,7 +82,8 @@ class MiAZColumnViewWorkspace(MiAZColumnView):
         self.cv.append_column(self.column_sentby)
         self.cv.append_column(self.column_sentto)
         self.cv.append_column(self.column_date)
-        self.cv.append_column(self.column_flag)
+        # ~ self.cv.append_column(self.column_flag)
+        self.cv.append_column(self.column_country)
         self.column_title.set_expand(True)
 
         # Sorting
@@ -88,6 +93,7 @@ class MiAZColumnViewWorkspace(MiAZColumnView):
         self.prop_concept_sorter = Gtk.CustomSorter.new(sort_func=self._on_sort_string_func, user_data='subtitle')
         self.prop_sentto_sorter = Gtk.CustomSorter.new(sort_func=self._on_sort_string_func, user_data='sentto_dsc')
         self.prop_date_sorter = Gtk.CustomSorter.new(sort_func=self._on_sort_string_func, user_data='date')
+        self.prop_flag_sorter = Gtk.CustomSorter.new(sort_func=self._on_sort_string_func, user_data='country')
         self.prop_country_sorter = Gtk.CustomSorter.new(sort_func=self._on_sort_string_func, user_data='country')
         self.column_group.set_sorter(self.prop_group_sorter)
         self.column_purpose.set_sorter(self.prop_purpose_sorter)
@@ -95,7 +101,8 @@ class MiAZColumnViewWorkspace(MiAZColumnView):
         self.column_subtitle.set_sorter(self.prop_concept_sorter)
         self.column_sentto.set_sorter(self.prop_sentto_sorter)
         self.column_date.set_sorter(self.prop_date_sorter)
-        self.column_flag.set_sorter(self.prop_country_sorter)
+        self.column_flag.set_sorter(self.prop_flag_sorter)
+        self.column_country.set_sorter(self.prop_country_sorter)
 
         # Default sorting by date
         self.cv.sort_by_column(self.column_date, Gtk.SortType.DESCENDING)
@@ -155,6 +162,17 @@ class MiAZColumnViewWorkspace(MiAZColumnView):
         else:
             child=Adw.ButtonContent(label='', icon_name='miaz-rename')
             button.set_child(child)
+
+    def _on_factory_setup_country(self, factory, list_item):
+        box = ColLabel()
+        list_item.set_child(box)
+
+    def _on_factory_bind_country(self, factory, list_item):
+        box = list_item.get_child()
+        item = list_item.get_item()
+        label = box.get_first_child()
+        country = item.country_dsc
+        label.set_markup(country)
 
     def _on_factory_setup_group(self, factory, list_item):
         box = ColLabel()
