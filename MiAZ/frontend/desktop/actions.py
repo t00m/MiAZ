@@ -173,7 +173,7 @@ class MiAZActions(GObject.GObject):
             i_title = item_type.__title__
             label = self.factory.create_label('Rename %d files by setting the field <b>%s</b> to:\n' % (len(items), i_title))
             label.set_yalign(0.5)
-            dropdown = self.factory.create_dropdown_generic(item_type=item_type, dropdown_search_function=None)
+            dropdown = self.factory.create_dropdown_generic(item_type=item_type)
             dropdowns[item_type] = dropdown
             btnManage = self.factory.create_button('miaz-res-manage', '')
             btnManage.connect('clicked', self.manage_resource, Configview[i_type](self.app))
@@ -347,10 +347,15 @@ class MiAZActions(GObject.GObject):
         # directly, config parameter must be passed.
         # In any case, config parameter is not used. Config is got from
         # item_type
-        model = dropdown.get_model()
+        # ~ model = dropdown.get_model()
         config = self.app.get_config(item_type.__gtype_name__)
         items = config.load(config.used)
         title = item_type.__gtype_name__
+
+        model_filter = dropdown.get_model()
+        model_sort = model_filter.get_model()
+        model = model_sort.get_model()
+        model.remove_all()
 
         model.remove_all()
         if any_value:

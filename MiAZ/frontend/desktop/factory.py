@@ -156,7 +156,7 @@ class MiAZFactory:
         return button
 
 
-    def create_dropdown_generic(self, item_type, ellipsize=True, dropdown_search_function=None):
+    def create_dropdown_generic(self, item_type, ellipsize=True):
         def _get_search_entry_widget(dropdown):
             popover = dropdown.get_last_child()
             box = popover.get_child()
@@ -181,22 +181,42 @@ class MiAZFactory:
             item = list_item.get_item()
             label.set_text(item.title)
 
-        # Create the model
-        model = Gio.ListStore(item_type=item_type)
+        def _on_search_changed(search_entry, item_filter):
+            text = search_entry.get_text()
+            item_filter.changed(Gtk.FilterChange.DIFFERENT)
+
+        def _do_filter(item, filter_list_model, search_entry):
+            text = search_entry.get_text()
+            name = '%s %s' % (item.id, item.title)
+            return text.upper() in name.upper()
+
+        def _get_search_entry_widget(dropdown):
+            popover = dropdown.get_last_child()
+            box = popover.get_child()
+            box2 = box.get_first_child()
+            search_entry = box2.get_first_child() # Gtk.SearchEntry
+            return search_entry
 
         # Set up the factory
         factory = Gtk.SignalListItemFactory()
         factory.connect("setup", _on_factory_setup, ellipsize)
         factory.connect("bind", _on_factory_bind)
 
-        dropdown = Gtk.DropDown(model=model, factory=factory, hexpand=True)
+        # Create the model
+        model = Gio.ListStore(item_type=item_type)
+        sort_model  = Gtk.SortListModel(model=model) # FIXME: Gtk.Sorter?
+        filter_model = Gtk.FilterListModel(model=sort_model)
+
+        # Create dropdown
+        dropdown = Gtk.DropDown(model=filter_model, factory=factory, hexpand=True)
         dropdown.set_show_arrow(True)
 
-        if dropdown_search_function is not None:
-            # Enable search
-            dropdown.set_enable_search(True)
-            search_entry_widget = _get_search_entry_widget(dropdown)
-            search_entry_widget.connect('search-changed', dropdown_search_function)
+        # Enable search
+        dropdown.set_enable_search(True)
+        search_entry = _get_search_entry_widget(dropdown)
+        item_filter = Gtk.CustomFilter.new(_do_filter, filter_model, search_entry)
+        filter_model.set_filter(item_filter)
+        search_entry.connect('search-changed', _on_search_changed, item_filter)
 
         return dropdown
 

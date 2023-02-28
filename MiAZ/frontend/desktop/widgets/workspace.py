@@ -84,7 +84,7 @@ class MiAZWorkspace(Gtk.Box):
         for item_type in [Project, Country, Group, SentBy, Purpose, SentTo]:
             i_type = item_type.__gtype_name__
             i_title = item_type.__title__
-            dropdown = self.factory.create_dropdown_generic(item_type=item_type, dropdown_search_function=None)
+            dropdown = self.factory.create_dropdown_generic(item_type=item_type)
             self.actions.dropdown_populate(self.config[i_type], dropdown, item_type, none_value=True)
             sigid = dropdown.connect("notify::selected-item", self._on_filter_selected)
             boxDropdown = self.factory.create_box_filter(i_title, dropdown)
@@ -160,7 +160,9 @@ class MiAZWorkspace(Gtk.Box):
 
         ## Date dropdown
         self.dd_date = self.factory.create_dropdown_generic(item_type=Date, ellipsize=False)
-        model = self.dd_date.get_model()
+        model_filter = self.dd_date.get_model()
+        model_sort = model_filter.get_model()
+        model = model_sort.get_model()
         model.remove_all()
         items = []
         model.append(Date(id='0', title='This month'))
