@@ -305,6 +305,8 @@ class MiAZWorkspace(Gtk.Box):
         section_common_out.append_item(menuitem)
         menuitem = self.factory.create_menuitem('export', 'Export document', self._on_handle_menu_single, None, [])
         section_common_out.append_item(menuitem)
+        menuitem = self.factory.create_menuitem('directory', 'Open file location', self._on_handle_menu_single, None, [])
+        section_common_out.append_item(menuitem)
 
         # Dangerous actions
         menuitem = self.factory.create_menuitem('delete', 'Delete document', self._on_handle_menu_single, None, [])
@@ -527,6 +529,8 @@ class MiAZWorkspace(Gtk.Box):
             self.log.debug("FIXME: copy filename to clipboard")
         elif name == 'export':
             self.actions.document_export([item])
+        elif name == 'directory':
+            self.actions.document_open_location(item)
         elif name == 'delete':
             self.actions.document_delete([item])
 

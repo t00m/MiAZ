@@ -47,6 +47,10 @@ class MiAZActions(GObject.GObject):
         self.log.debug("Displaying %s", doc)
         self.util.filename_display(doc)
 
+    def document_open_location(self, item):
+        self.log.debug("Open file location for %s", item.id)
+        self.util.filename_open_location(item.id)
+
     def document_delete(self, items):
         def dialog_response(dialog, response, items):
             if response == Gtk.ResponseType.ACCEPT:

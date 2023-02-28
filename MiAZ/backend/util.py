@@ -195,6 +195,10 @@ class MiAZUtil(GObject.GObject):
         self.log.debug("Document deleted: %s", filepath)
         os.unlink(filepath)
 
+    def filename_open_location(self, filepath):
+        # FIXME: only works if nautilus is present
+        os.system("nautilus '%s'" % filepath)
+
     def filename_path(self, doc):
         repo = self.backend.repo_config()
         dirpath = repo['dir_docs']

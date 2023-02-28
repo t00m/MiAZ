@@ -56,7 +56,7 @@ class MiAZDialogAdd(Gtk.Dialog):
         self.lblKey1 = Gtk.Label()
         self.lblKey1.set_xalign(0.0)
         self.lblKey1.set_hexpand(False)
-        self.lblKey1.set_markup("<b>%s</b>" % key1)
+        self.lblKey1.set_markup("<b>%s</b>" % self.key1)
         self.etyValue1 = Gtk.Entry()
         self.etyValue1.set_hexpand(False)
         self.etyValue1.connect('activate', self.on_dialog_save)
