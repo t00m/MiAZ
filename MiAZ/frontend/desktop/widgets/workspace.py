@@ -329,8 +329,8 @@ class MiAZWorkspace(Gtk.Box):
         ## Submenu for mass renaming
         submenu_rename = Gio.Menu.new()
         menu_rename = Gio.MenuItem.new_submenu(
-            label='Mass renaming of...',
-            submenu=submenu_rename,
+            label = 'Mass renaming of...',
+            submenu = submenu_rename,
         )
         section_common_in.append_item(menu_rename)
         fields = [Date, Country, Group, SentBy, Purpose, SentTo]
@@ -345,8 +345,20 @@ class MiAZWorkspace(Gtk.Box):
         section_common_in.append_item(menuitem)
 
         # Section -out
-        menuitem = self.factory.create_menuitem('export', 'Export documents', self._on_handle_menu_multiple, None, [])
+        menuitem = self.factory.create_menuitem('export', 'Export', self._on_handle_menu_multiple, None, [])
         section_common_out.append_item(menuitem)
+        # ~ submenu_export = Gio.Menu.new()
+        # ~ menu_export = Gio.MenuItem.new_submenu(
+            # ~ label = 'Export...',
+            # ~ submenu = submenu_export
+        # ~ )
+        # ~ section_common_out.append_item(menu_export)
+        # ~ menuitem = self.factory.create_menuitem('export-all', 'Export repository', self._on_handle_menu_multiple, None, [])
+        # ~ submenu_export.append_item(menuitem)
+        # ~ menuitem = self.factory.create_menuitem('export-selected', 'Export selected files', self._on_handle_menu_multiple, None, [])
+        # ~ submenu_export.append_item(menuitem)
+        # ~ menuitem = self.factory.create_menuitem('export-config', 'Export configuration', self._on_handle_menu_multiple, None, [])
+        # ~ submenu_export.append_item(menuitem)
 
         # Danger section
         menuitem = self.factory.create_menuitem('delete', 'Delete documents', self._on_handle_menu_multiple, None, [])

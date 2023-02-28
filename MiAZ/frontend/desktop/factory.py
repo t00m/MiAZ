@@ -337,6 +337,21 @@ class MiAZFactory:
         scrwin.set_vexpand(True)
         return scrwin
 
+    def create_view(self, customview, title):
+        box = self.create_box_vertical(spacing=6, vexpand=True, hexpand=True)
+        label = self.create_label(title)
+        # ~ frame = Gtk.Frame()
+        view = customview(self.app)
+        view.get_style_context().add_class(class_name='monospace')
+        view.get_style_context().add_class(class_name='caption')
+        view.set_hexpand(True)
+        view.set_vexpand(True)
+        # ~ frame.set_child(view)
+        box.append(label)
+        # ~ box.append(frame)
+        return box, view
+
+
     def create_switch_button(self, icon_name, title, callback=None, data=None):
         button = Gtk.Switch()
         if callback is None:
