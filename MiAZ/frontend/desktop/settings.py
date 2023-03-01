@@ -21,6 +21,7 @@ from MiAZ.frontend.desktop.widgets.configview import MiAZPeopleSentBy
 from MiAZ.frontend.desktop.widgets.configview import MiAZPeopleSentTo
 from MiAZ.frontend.desktop.widgets.configview import MiAZProjects
 from MiAZ.frontend.desktop.widgets.configview import MiAZRepositories
+from MiAZ.frontend.desktop.widgets.dialogs import CustomDialog
 
 from MiAZ.backend.models import MiAZItem, File, Group, Person, Country
 from MiAZ.backend.models import Purpose, Concept, SentBy, SentTo, Date
@@ -67,7 +68,7 @@ class MiAZAppSettings(Gtk.Box):
             title = '<i>Folder not set</i>'
             subtitle = 'Choose an empty folder'
         btnRepoSource = self.factory.create_button('document-edit-symbolic', '', self.actions.manage_resource, css_classes=['flat'], data=MiAZRepositories(self.app))
-        self.row = self.factory.create_actionrow(title=title, subtitle=subtitle)#, suffix=btnRepoSource)
+        self.row = self.factory.create_actionrow(title=title, subtitle=subtitle) #, suffix=button)
         return self.row
 
     def _on_selected_repo(self, dropdown, gparamobj):

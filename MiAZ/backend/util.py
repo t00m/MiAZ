@@ -63,6 +63,16 @@ class MiAZUtil(GObject.GObject):
         with open(filepath, 'w') as fout:
             json.dump(adict, fout, sort_keys=True, indent=4)
 
+    def field_used(self, item_type, value):
+        used = False
+        for doc in self.get_files():
+            fields = self.get_fields(doc)
+            fn = Field[item_type]
+            if fields[fn] == value:
+                used = True
+                self.log.warning("Value %s of type %s is still being used in %s", value, item_type.__title__, doc)
+                break
+        return used
 
     def get_fields(self, filename: str) -> []:
             filename = os.path.basename(filename)

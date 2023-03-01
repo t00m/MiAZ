@@ -16,11 +16,13 @@ from MiAZ.backend.log import get_logger
 from MiAZ.frontend.desktop.widgets.columnview import MiAZColumnView
 from MiAZ.frontend.desktop.widgets.dialogs import MiAZDialogAdd
 
+
 class MiAZSelector(Gtk.Box):
     def __init__(self, app, edit=True):
         self.app = app
         self.edit = edit
         self.backend = self.app.get_backend()
+        self.util = self.backend.util
         self.factory = self.app.get_factory()
         self.log = get_logger('MiAZSelector')
         super(MiAZSelector, self).__init__(orientation=Gtk.Orientation.VERTICAL, hexpand=True, vexpand=True, spacing=0)
@@ -62,6 +64,16 @@ class MiAZSelector(Gtk.Box):
         boxViews.append(boxRight)
         self.append(boxViews)
 
+        # Status bar...
+        statusbar = self.factory.create_box_horizontal(spacing=12, hexpand=True)
+        self.sbicon = Gtk.Image() #.new_from_icon_name('info')
+        self.sbicon.set_pixel_size(32)
+        self.sbtext = Gtk.Label()
+        statusbar.append(self.sbicon)
+        statusbar.append(self.sbtext)
+        self.append(statusbar)
+        self.statusbar_message('', '')
+
         # Available
         self.frmViewAv = Gtk.Frame()
         title = Gtk.Label()
@@ -85,6 +97,16 @@ class MiAZSelector(Gtk.Box):
         boxRight.append(self.frmViewSl)
         self._setup_view_finish()
 
+    def statusbar_message(self, dtype: str = 'warning', message: str = ''):
+        icon_name = {}
+        icon_name["info"] = "dialog-information-symbolic"
+        icon_name["warning"] = "dialog-warning-symbolic"
+        icon_name["error"] = "dialog-error-symbolic"
+        icon_name["question"] = "dialog-question-symbolic"
+        icon_name[""] = None
+        self.sbicon.set_from_icon_name(icon_name[dtype])
+        self.sbtext.set_markup(message)
+
     def add_columnview_available(self, columnview):
         columnview.set_filter(self._do_filter_view)
         columnview.column_title.set_expand(True)
@@ -104,6 +126,7 @@ class MiAZSelector(Gtk.Box):
     def update(self, *args):
         self._update_view_available()
         self._update_view_used()
+        # ~ self.statusbar_message('', '')
 
     def _on_item_used_add(self, *args):
         changed = False
@@ -123,12 +146,21 @@ class MiAZSelector(Gtk.Box):
         for item_used in self.viewSl.get_selected_items():
             if item_used.id not in items_available:
                 items_available[item_used.id] = item_used.title
-            del(items_used[item_used.id])
-            changed = True
-            self.log.debug("Removing %s (%s) from used", item_used.id, item_used.title)
+            value_used = self.util.field_used(self.config.model, item_used.id)
+            if not value_used:
+                del(items_used[item_used.id])
+                changed = True
+                text = "Removed %s (%s) from used" % (item_used.id, item_used.title)
+                self.log.debug(text)
+                # ~ self.statusbar_message('info', text)
+            else:
+                # ~ title = "%s %s not removed" % (self.config.model.__title__, item_used.id)
+                dtype = "warning"
+                text = "%s %s is still being used by some docs" % (self.config.model.__title__, item_used.id)
+                self.statusbar_message(dtype, text)
         if changed:
             self.config.save_used(items=items_used)
-            self.config.save_available( items=items_available)
+            self.config.save_available(items=items_available)
             self._update_view_used()
             self._update_view_available()
 

@@ -205,6 +205,7 @@ class MiAZWorkspace(Gtk.Box):
         self.btnDocsSel.set_always_show_arrow(True)
         self.btnDocsSel.set_child(label)
         self.popDocsSel = Gtk.PopoverMenu.new_from_model(self.mnuSelSingle)
+        self.popDocsSel.get_style_context().add_class(class_name='menu')
         self.btnDocsSel.set_popover(popover=self.popDocsSel)
         self.btnDocsSel.set_valign(Gtk.Align.CENTER)
         self.btnDocsSel.set_hexpand(False)

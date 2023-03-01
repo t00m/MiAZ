@@ -12,6 +12,88 @@ from gi.repository.GdkPixbuf import Pixbuf
 
 from MiAZ.backend.log import get_logger
 
+import gi
+
+gi.require_version(namespace='Gtk', version='4.0')
+gi.require_version(namespace='Adw', version='1')
+
+from gi.repository import Adw, Gio, Gtk
+
+icon_name = {}
+icon_name["info"] = "dialog-information-symbolic"
+icon_name["warning"] = "dialog-warning-symbolic"
+icon_name["error"] = "dialog-error-symbolic"
+icon_name["question"] = "dialog-question-symbolic"
+
+
+class CustomDialog(Gtk.Dialog):
+    def __init__(self,
+                    parent: Gtk.Window,
+                    use_header_bar: bool = True,
+                    dtype: str = 'info', # [info|warning|error|question]
+                    title: str = '',
+                    text: str = '',
+                    callback = None
+                ):
+        super().__init__()
+        self.set_transient_for(parent)
+        self.set_title(title=title)
+        self.use_header_bar = True
+
+        if callback is not None:
+            self.connect('response', callback)
+        else:
+            self.connect('response', self.dialog_response)
+
+        # Buttons
+        if dtype in ['info', 'warning', 'error']:
+            self.add_buttons(
+            '_OK', Gtk.ResponseType.OK,
+            )
+            btn_ok = self.get_widget_for_response(response_id=Gtk.ResponseType.OK)
+            btn_ok.get_style_context().add_class(class_name='suggested-action')
+        else:
+            self.add_buttons(
+                '_Cancelar', Gtk.ResponseType.CANCEL,
+                '_OK', Gtk.ResponseType.OK,
+            )
+            btn_ok = self.get_widget_for_response(response_id=Gtk.ResponseType.OK)
+            btn_ok.get_style_context().add_class(class_name='suggested-action')
+            btn_cancel = self.get_widget_for_response(response_id=Gtk.ResponseType.CANCEL)
+            btn_cancel.get_style_context().add_class(class_name='destructive-action')
+
+        # Content area
+        content_area = self.get_content_area()
+        content_area.set_orientation(orientation=Gtk.Orientation.VERTICAL)
+        content_area.set_spacing(spacing=24)
+        content_area.set_margin_top(margin=12)
+        content_area.set_margin_end(margin=12)
+        content_area.set_margin_bottom(margin=12)
+        content_area.set_margin_start(margin=12)
+        vbox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6, hexpand=True, vexpand=True)
+        hbox_title = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6, hexpand=True, vexpand=True)
+        icon = Gtk.Image.new_from_icon_name(icon_name[dtype])
+        icon.set_pixel_size(32)
+        label = Gtk.Label.new(dtype.title())
+        label.get_style_context().add_class(class_name='title-1')
+        hbox_title.append(icon)
+        hbox_title.append(label)
+        vbox.append(hbox_title)
+        lblDesc = Gtk.Label()
+        lblDesc.set_text(text)
+        vbox.append(lblDesc)
+        content_area.append(child=vbox)
+
+    def dialog_response(self, dialog, response):
+        # ~ if response == Gtk.ResponseType.OK:
+            # ~ return True
+        # ~ elif response == Gtk.ResponseType.CANCEL:
+            # ~ return False
+        dialog.destroy()
+
+    def get_entry_text(self):
+        return self.entry.get_text()
+
 class MiAZDialogAdd(Gtk.Dialog):
     """ MiAZ Doc Browser Widget"""
     __gtype_name__ = 'MiAZDialogAdd'

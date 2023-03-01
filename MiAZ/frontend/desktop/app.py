@@ -28,6 +28,7 @@ from MiAZ.frontend.desktop.factory import MiAZFactory
 from MiAZ.frontend.desktop.actions import MiAZActions
 from MiAZ.frontend.desktop.help import MiAZHelp
 
+Adw.init()
 
 class MiAZApp(Adw.Application):
     def __init__(self, **kwargs):
