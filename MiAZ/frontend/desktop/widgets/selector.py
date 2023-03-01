@@ -19,6 +19,7 @@ from MiAZ.frontend.desktop.widgets.dialogs import MiAZDialogAdd
 class MiAZSelector(Gtk.Box):
     def __init__(self, app, edit=True):
         self.app = app
+        self.edit = edit
         self.backend = self.app.get_backend()
         self.factory = self.app.get_factory()
         self.log = get_logger('MiAZSelector')
@@ -39,6 +40,7 @@ class MiAZSelector(Gtk.Box):
         self.entry.set_icon_activatable(Gtk.EntryIconPosition.SECONDARY, True)
         self.entry.connect('icon-press', self._on_entrysearch_delete)
         self.entry.connect('changed', self._on_filter_selected)
+        self.entry.connect('activate', self.on_item_available_add, self.config_for)
         self.entry.set_hexpand(True)
         self.entry.set_has_frame(True)
         boxEntry.append(self.entry)
@@ -131,12 +133,13 @@ class MiAZSelector(Gtk.Box):
             self._update_view_available()
 
     def on_item_available_add(self, *args):
-        dialog = MiAZDialogAdd(self.app, self.get_root(), '%s: add a new item' % self.config.config_for, 'Name', 'Description')
-        etyValue1 = dialog.get_value1_widget()
-        search_term = self.entry.get_text()
-        etyValue1.set_text(search_term)
-        dialog.connect('response', self._on_response_item_available_add)
-        dialog.show()
+        if self.edit:
+            dialog = MiAZDialogAdd(self.app, self.get_root(), '%s: add a new item' % self.config.config_for, 'Name', 'Description')
+            etyValue1 = dialog.get_value1_widget()
+            search_term = self.entry.get_text()
+            etyValue1.set_text(search_term)
+            dialog.connect('response', self._on_response_item_available_add)
+            dialog.show()
 
     def _on_response_item_available_add(self, dialog, response):
         if response == Gtk.ResponseType.ACCEPT:
