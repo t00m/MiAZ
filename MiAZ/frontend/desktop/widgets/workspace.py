@@ -377,6 +377,7 @@ class MiAZWorkspace(Gtk.Box):
         return model.get_item(pos)
 
     def update(self, *args):
+        ds = datetime.now()
         self.selected_items = []
         docs = self.util.get_files()
         sentby = self.app.get_config('SentBy')
@@ -417,7 +418,9 @@ class MiAZWorkspace(Gtk.Box):
         self._on_filter_selected()
         label = self.btnDocsSel.get_child()
         self.view.select_first_item()
-        self.log.debug("Workspace updated")
+        de = datetime.now()
+        dt = de - ds
+        self.log.debug("Workspace updated (%s)" % dt)
         for filename in invalid:
             target = self.util.filename_normalize(filename)
             self.util.filename_rename(filename, target)
