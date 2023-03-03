@@ -13,6 +13,7 @@ from gi.repository import GLib
 from gi.repository import GObject
 
 from MiAZ.backend.log import get_logger
+from MiAZ.backend.models import Project
 from MiAZ.frontend.desktop.widgets.columnview import MiAZColumnView
 from MiAZ.frontend.desktop.widgets.dialogs import MiAZDialogAdd
 
@@ -140,13 +141,19 @@ class MiAZSelector(Gtk.Box):
             self._update_view_used()
 
     def _on_item_used_remove(self, *args):
+        value_used = False
         changed = False
         items_used = self.config.load_used()
         items_available = self.config.load_available()
         for item_used in self.viewSl.get_selected_items():
             if item_used.id not in items_available:
                 items_available[item_used.id] = item_used.title
-            value_used = self.util.field_used(self.config.model, item_used.id)
+            if self.config.model != Project:
+                value_used = self.util.field_used(self.config.model, item_used.id)
+            else:
+                self.projects = self.backend.projects
+                docs = self.projects.docs_in_project(item_used.id)
+                value_used = len(docs) > 0
             if not value_used:
                 del(items_used[item_used.id])
                 changed = True

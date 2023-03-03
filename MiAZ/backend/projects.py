@@ -65,6 +65,12 @@ class MiAZProject(GObject.GObject):
                 projects.append(project)
         return projects
 
+    def docs_in_project(self, project):
+        try:
+            return self.projects[project]
+        except:
+            return []
+
     def list_all(self):
         for project in self.projects:
             self.log.debug("Project: %s", project)
