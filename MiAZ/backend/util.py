@@ -179,10 +179,25 @@ class MiAZUtil(GObject.GObject):
         else:
             self.log.error("Source and Target are the same. Skip rename")
 
-    def filename_copy(self, source, doc_target, overwrite=True):
+    def filename_import(self, source: str, target: str):
+        """Import file into repository
+
+        Normally, only the source filename would be necessary, but
+        as it is renamed according MiAZ rules, target is also needed.
+        """
         repo = self.backend.repo_config()
-        dir_repo = repo['dir_docs']
-        target = os.path.join(dir_repo, doc_target)
+        target = repo['dir_docs']
+        self.filename_copy(source, target)
+
+    def filename_export(self, doc: str, target: str):
+        repo = self.backend.repo_config()
+        source = os.path.join(repo['dir_docs'], doc)
+        self.filename_copy(source, target)
+
+    def filename_copy(self, source, target, overwrite=True):
+        # ~ repo = self.backend.repo_config()
+        # ~ dir_repo = repo['dir_docs']
+        # ~ target = os.path.join(dir_repo, doc_target)
         if source != target:
             if overwrite:
                 try:

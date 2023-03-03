@@ -407,7 +407,7 @@ class MiAZActions(GObject.GObject):
                         files = glob.glob(os.path.join(dirpath, '*.*'))
                     for source in files:
                         target = self.util.filename_normalize(source)
-                        self.util.filename_copy(source, target)
+                        self.util.filename_import(source, target)
             dialog.destroy()
 
         self.factory = self.app.get_factory()
@@ -436,7 +436,7 @@ class MiAZActions(GObject.GObject):
                 if gfile is not None:
                     source = gfile.get_path()
                     target = self.util.filename_normalize(source)
-                    self.util.filename_copy(source, target)
+                    self.util.filename_import(source, target)
             dialog.destroy()
 
         self.factory = self.app.get_factory()
@@ -592,11 +592,11 @@ class MiAZActions(GObject.GObject):
                                 thispath.append(paths[key])
                             target = os.path.join(*thispath)
                             os.makedirs(target, exist_ok = True)
-                            self.util.filename_copy(item.id, target)
+                            self.util.filename_export(item.id, target)
                     else:
                         for item in items:
                             target = os.path.join(dirpath, os.path.basename(item.id))
-                            self.util.filename_copy(item.id, target)
+                            self.util.filename_export(item.id, target)
                     self.util.directory_open(dirpath)
             dialog.destroy()
 
