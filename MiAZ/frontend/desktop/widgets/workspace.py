@@ -296,10 +296,21 @@ class MiAZWorkspace(Gtk.Box):
         section_common_in.append_item(menuitem)
         menuitem = self.factory.create_menuitem('rename', 'Rename document', self._on_handle_menu_single, None, ["<Control>r", "<Control>R"])
         section_common_in.append_item(menuitem)
-        menuitem = self.factory.create_menuitem('project', 'Assign project', self._on_handle_menu_single, None, [])
-        section_common_in.append_item(menuitem)
-        menuitem = self.factory.create_menuitem('annotate', 'Annotate document', self._on_handle_menu_single, None, [])
-        section_common_in.append_item(menuitem)
+
+        ## Project management
+        submenu_project = Gio.Menu.new()
+        menu_project = Gio.MenuItem.new_submenu(
+            label = 'Project management...',
+            submenu = submenu_project,
+        )
+        section_common_in.append_item(menu_project)
+        menuitem = self.factory.create_menuitem('project-assign', '...assign project', self._on_handle_menu_single, None, [])
+        submenu_project.append_item(menuitem)
+        menuitem = self.factory.create_menuitem('project-withdraw', '...withdraw project', self._on_handle_menu_single, None, [])
+        submenu_project.append_item(menuitem)
+
+        # ~ menuitem = self.factory.create_menuitem('annotate', 'Annotate document', self._on_handle_menu_single, None, [])
+        # ~ section_common_in.append_item(menuitem)
 
         # Actions out
         menuitem = self.factory.create_menuitem('clipboard', 'Copy filename', self._on_handle_menu_single, None, [])
@@ -343,9 +354,17 @@ class MiAZWorkspace(Gtk.Box):
             menuitem = self.factory.create_menuitem('rename_%s' % i_type.lower(), '...%s' % i_title.lower(), self._on_handle_menu_multiple, item_type, [])
             submenu_rename.append_item(menuitem)
 
-        ## Assign to Project
-        menuitem = self.factory.create_menuitem('project', 'Assign project', self._on_handle_menu_multiple, Project, [])
-        section_common_in.append_item(menuitem)
+        ## Project management
+        submenu_project = Gio.Menu.new()
+        menu_project = Gio.MenuItem.new_submenu(
+            label = 'Project management...',
+            submenu = submenu_project,
+        )
+        section_common_in.append_item(menu_project)
+        menuitem = self.factory.create_menuitem('project-assign', '...assign project', self._on_handle_menu_multiple, None, [])
+        submenu_project.append_item(menuitem)
+        menuitem = self.factory.create_menuitem('project-withdraw', '...withdraw project', self._on_handle_menu_multiple, None, [])
+        submenu_project.append_item(menuitem)
 
         # Section -out
         menuitem = self.factory.create_menuitem('export', 'Export', self._on_handle_menu_multiple, None, [])
@@ -397,7 +416,7 @@ class MiAZWorkspace(Gtk.Box):
                     date_dsc = ''
                 items.append(MiAZItem
                                     (
-                                        id=filename,
+                                        id=os.path.basename(filename),
                                         date=fields[0],
                                         date_dsc = date_dsc,
                                         country=fields[1],
@@ -525,8 +544,10 @@ class MiAZWorkspace(Gtk.Box):
             self.actions.document_display(item.id)
         elif name == 'rename':
             self.actions.document_rename_single(item.id)
-        elif name == 'project':
-            self.actions.project_assignment(Project, [item.id])
+        elif name == 'project-assign':
+            self.actions.project_assign(Project, [item])
+        elif name == 'project-withdraw':
+            self.actions.project_withdraw(Project, [item])
         elif name == 'annotate':
             self.log.debug("FIXME: annotate document")
         elif name == 'clipboard':
@@ -543,10 +564,10 @@ class MiAZWorkspace(Gtk.Box):
         items = self.selected_items
         if name.startswith('rename_'):
             self.actions.document_rename_multiple(item_type, items)
-        # ~ elif name == 'rename':
-            # ~ self.actions.document_rename(items)
-        elif name == 'project':
-            self.actions.project_assignment(item_type, items)
+        elif name == 'project-assign':
+            self.actions.project_assign(Project, items)
+        elif name == 'project-withdraw':
+            self.actions.project_withdraw(Project, items)
         elif name == 'export':
             self.actions.document_export(items)
         elif name == 'delete':

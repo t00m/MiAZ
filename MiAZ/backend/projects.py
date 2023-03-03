@@ -41,6 +41,7 @@ class MiAZProject(GObject.GObject):
             docs = self.projects[project]
             if doc in docs:
                 docs.remove(doc)
+                self.log.debug("Remove %s from Project %s", doc, project)
             self.projects[project] = docs
         except KeyError:
             pass

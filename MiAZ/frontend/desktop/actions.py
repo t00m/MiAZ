@@ -346,7 +346,7 @@ class MiAZActions(GObject.GObject):
             dialog.connect('response', dialog_response_date, calendar, items)
             dialog.show()
 
-    def dropdown_populate(self, config, dropdown, item_type, any_value=True, none_value=False):
+    def dropdown_populate(self, config, dropdown, item_type, any_value=True, none_value=False, only_include: list = [], only_exclude: list = []):
         # FIXME? This method can be called as a reaction to the signal
         # 'used-updated' or directly. When reacting to a signal, config
         # parameter is set in first place. When the method is called
@@ -368,11 +368,24 @@ class MiAZActions(GObject.GObject):
             model.append(item_type(id='Any', title='Any'))
         if none_value:
             model.append(item_type(id='None', title='None'))
+
         for key in items:
-            title = items[key]
-            if len(title) == 0:
-                title = key
-            model.append(item_type(id=key, title=title))
+            accepted = True
+            if len(only_include) > 0 and key in only_include:
+                accepted = True
+            else:
+                accepted = False
+
+            if len(only_exclude) > 0 and key in only_exclude:
+                accepted = False
+            else:
+                accepted = True
+
+            if accepted:
+                title = items[key]
+                if len(title) == 0:
+                    title = key
+                model.append(item_type(id=key, title=title))
 
     def import_directory(self, *args):
         def filechooser_response(dialog, response, data):
@@ -447,7 +460,7 @@ class MiAZActions(GObject.GObject):
         dialog.show()
 
 
-    def project_assignment(self, item_type, items):
+    def project_assign(self, item_type, items):
         def dialog_response(dialog, response, dropdown, items):
             if response == Gtk.ResponseType.ACCEPT:
                 self.projects = self.backend.projects
@@ -456,6 +469,8 @@ class MiAZActions(GObject.GObject):
                 for item in items:
                     docs.append(os.path.basename(item.id))
                 self.projects.add_batch(pid, docs)
+                workspace = self.app.get_workspace()
+                workspace.update()
             dialog.destroy()
 
         self.factory = self.app.get_factory()
@@ -468,6 +483,56 @@ class MiAZActions(GObject.GObject):
         btnManage = self.factory.create_button('miaz-res-manage', '')
         btnManage.connect('clicked', self.manage_resource, Configview['Project'](self.app))
         label = self.factory.create_label('Assign the following documents to this project: ')
+        frame = Gtk.Frame()
+        cv = MiAZColumnViewMassProject(self.app)
+        cv.get_style_context().add_class(class_name='monospace')
+        cv.set_hexpand(True)
+        cv.set_vexpand(True)
+        citems = []
+        for item in items:
+            citems.append(File(id=item.id, title=os.path.basename(item.id)))
+        cv.update(citems)
+        frame.set_child(cv)
+        hbox = self.factory.create_box_horizontal(hexpand=False, vexpand=False)
+        hbox.append(label)
+        hbox.append(dropdown)
+        hbox.append(btnManage)
+        box.append(hbox)
+        box.append(frame)
+        dialog = self.factory.create_dialog_question(self.app.win, 'Assign to a project', box, width=1024, height=600)
+        dialog.connect('response', dialog_response, dropdown, items)
+        dialog.show()
+
+    def project_withdraw(self, item_type, items):
+        def dialog_response(dialog, response, dropdown, items):
+            if response == Gtk.ResponseType.ACCEPT:
+                self.projects = self.backend.projects
+                pid = dropdown.get_selected_item().id
+                docs = []
+                for item in items:
+                    docs.append(os.path.basename(item.id))
+                self.projects.remove_batch(pid, docs)
+                workspace = self.app.get_workspace()
+                workspace.update()
+            dialog.destroy()
+
+        self.factory = self.app.get_factory()
+        self.config = self.backend.conf
+        i_type = item_type.__gtype_name__
+        box = self.factory.create_box_vertical(spacing=6, vexpand=True, hexpand=True)
+        dropdown = self.factory.create_dropdown_generic(Project)
+        self.config[i_type].connect('used-updated', self.dropdown_populate, dropdown, item_type, False)
+
+        # Get projects
+        projects = set()
+        for item in items:
+            for project in self.backend.projects.assigned_to(item.id):
+                projects.add(project)
+
+        self.dropdown_populate(self.config[i_type], dropdown, Project, any_value=False, only_include=list(projects))
+        btnManage = self.factory.create_button('miaz-res-manage', '')
+        btnManage.connect('clicked', self.manage_resource, Configview['Project'](self.app))
+        label = self.factory.create_label('Withdraw the following documents from this project: ')
         frame = Gtk.Frame()
         cv = MiAZColumnViewMassProject(self.app)
         cv.get_style_context().add_class(class_name='monospace')
