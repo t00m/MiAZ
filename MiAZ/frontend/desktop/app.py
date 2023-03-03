@@ -1,5 +1,12 @@
-#!/usr/bin/env python
+#!/usr/bin/python3
 # -*- coding: utf-8 -*-
+
+"""
+# File: app.py
+# Author: Tomás Vírseda
+# License: GPL v3
+# Description: Frontent/Desktop entry point
+"""
 
 import sys
 

@@ -1,5 +1,12 @@
-#!/usr/bin/env python
+#!/usr/bin/python3
 # -*- coding: utf-8 -*-
+
+"""
+# File: columnview.py
+# Author: Tomás Vírseda
+# License: GPL v3
+# Description: Custom Gtk.Columnview widget for displaying info
+"""
 
 import os
 import sys

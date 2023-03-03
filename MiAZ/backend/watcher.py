@@ -1,4 +1,12 @@
-#!/usr/bin/env python
+#!/usr/bin/python3
+# -*- coding: utf-8 -*-
+
+"""
+# File: watcher.py
+# Author: Tomás Vírseda
+# License: GPL v3
+# Description: It notifies the app when files are added/renamed/deleted
+"""
 
 # A modified version found on StackOverflow:
 # https://stackoverflow.com/questions/182197/how-do-i-watch-a-file-for-changes

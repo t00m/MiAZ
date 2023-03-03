@@ -1,4 +1,13 @@
-#!/usr/bin/env python
+#!/usr/bin/python3
+# -*- coding: utf-8 -*-
+
+"""
+# File: projects.py
+# Author: Tomás Vírseda
+# License: GPL v3
+# Description: Allow (un)assign documentos from/to projects
+"""
+
 import os
 
 from gi.repository import GObject

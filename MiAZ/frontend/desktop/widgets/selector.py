@@ -1,5 +1,12 @@
-#!/usr/bin/env python
+#!/usr/bin/python3
 # -*- coding: utf-8 -*-
+
+"""
+# File: selector.py
+# Author: Tomás Vírseda
+# License: GPL v3
+# Description: Custom widget to manage available/used config items
+"""
 
 import os
 from datetime import datetime

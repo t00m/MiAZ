@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 """
-# File: mod_log.py
+# File: log.py
 # Author: Tomás Vírseda
 # License: GPL v3
 # Description: log module

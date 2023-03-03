@@ -1,5 +1,13 @@
-#!/usr/bin/env python
+#!/usr/bin/python3
 # -*- coding: utf-8 -*-
+
+"""
+Setup MiAZ project.
+# File: main.py.
+# Author: Tomás Vírseda
+# License: GPL v3
+# Description: main entry point
+"""
 
 import os
 import sys

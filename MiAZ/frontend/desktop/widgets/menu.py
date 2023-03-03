@@ -1,5 +1,12 @@
-#!/usr/bin/env python
+#!/usr/bin/python3
 # -*- coding: utf-8 -*-
+
+"""
+# File: menu.py
+# Author: Tomás Vírseda
+# License: GPL v3
+# Description: Helper to build menus
+"""
 
 import sys
 from abc import abstractmethod
@@ -10,6 +17,8 @@ gi.require_version('Adw', '1')
 from gi.repository import Gtk, Adw
 from gi.repository import Gio
 from gi.repository import GLib
+
+# FIXME: Deprecated
 
 
 # Gtk.Builder xml for the application menu

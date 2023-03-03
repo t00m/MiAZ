@@ -1,5 +1,12 @@
-#!/usr/bin/env python
+#!/usr/bin/python3
 # -*- coding: utf-8 -*-
+
+"""
+# File: util.py
+# Author: Tomás Vírseda
+# License: GPL v3
+# Description: useful often low-level methods for this app
+"""
 
 import os
 import re

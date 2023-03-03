@@ -1,5 +1,12 @@
-#!/usr/bin/env python
+#!/usr/bin/python3
 # -*- coding: utf-8 -*-
+
+"""
+# File: workspace.py
+# Author: Tomás Vírseda
+# License: GPL v3
+# Description: The central place to manage the AZ
+"""
 
 import os
 from datetime import datetime

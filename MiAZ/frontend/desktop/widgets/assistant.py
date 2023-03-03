@@ -1,5 +1,12 @@
-#!/usr/bin/env python
+#!/usr/bin/python3
 # -*- coding: utf-8 -*-
+
+"""
+# File: assistant.py
+# Author: Tomás Vírseda
+# License: GPL v3
+# Description: Repository creation assistant
+"""
 
 import os
 import sys

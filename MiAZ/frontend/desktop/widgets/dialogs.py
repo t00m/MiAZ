@@ -1,23 +1,28 @@
-#!/usr/bin/env python
+#!/usr/bin/python3
 # -*- coding: utf-8 -*-
+
+"""
+# File: dialogs.py
+# Author: Tomás Vírseda
+# License: GPL v3
+# Description: Custom dialogs
+"""
 
 import os
 import json
+
 import gi
-gi.require_version('Adw', '1')
+gi.require_version(namespace='Gtk', version='4.0')
+gi.require_version(namespace='Adw', version='1')
 from gi.repository import Adw
+from gi.repository import Gio
 from gi.repository import Gtk
 from gi.repository import Pango
 from gi.repository.GdkPixbuf import Pixbuf
 
 from MiAZ.backend.log import get_logger
 
-import gi
-
-gi.require_version(namespace='Gtk', version='4.0')
-gi.require_version(namespace='Adw', version='1')
-
-from gi.repository import Adw, Gio, Gtk
+# FIXME: move to factory?
 
 icon_name = {}
 icon_name["info"] = "dialog-information-symbolic"

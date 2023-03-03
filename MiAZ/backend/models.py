@@ -1,5 +1,12 @@
-#!/usr/bin/env python
+#!/usr/bin/python3
+# -*- coding: utf-8 -*-
 
+"""
+# File: watcher.py
+# Author: Tomás Vírseda
+# License: GPL v3
+# Description: Custom models for working with Columnviews
+"""
 from gi.repository import GObject
 
 class MiAZModel(GObject.Object):

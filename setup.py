@@ -2,13 +2,10 @@
 # -*- coding: utf-8 -*-
 
 """
-Setup MiAZ project.
 # File: setup.py.
 # Author: Tomás Vírseda
 # License: GPL v3
-# Description: setup.py tells you that the module/package you are about
-# to install has been packaged and distributed with Distutils, which is
-# the standard for distributing Python Modules.
+# Description: Setup MiAZ project
 """
 
 import os

@@ -1,3 +1,13 @@
+#!/usr/bin/python3
+# -*- coding: utf-8 -*-
+
+"""
+# File: config.py
+# Author: Tomás Vírseda
+# License: GPL v3
+# Description: App configuration
+"""
+
 import os
 import shutil
 

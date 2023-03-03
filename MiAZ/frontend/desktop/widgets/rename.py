@@ -1,5 +1,12 @@
-#!/usr/bin/env python
+#!/usr/bin/python3
 # -*- coding: utf-8 -*-
+
+"""
+# File: rename.py
+# Author: Tomás Vírseda
+# License: GPL v3
+# Description: Rename widget for single items
+"""
 
 import os
 import sys

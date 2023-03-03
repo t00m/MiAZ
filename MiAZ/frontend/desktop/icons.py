@@ -1,10 +1,10 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 """
-# File: srv_iconmgt.py
+# File: icons.py
 # Author: Tomás Vírseda
 # License: GPL v3
-# Description: Icon manager service
+# Description: Icon manager
 """
 
 import os
@@ -21,7 +21,7 @@ from gi.repository import Gdk
 from gi.repository.GdkPixbuf import Pixbuf
 
 from MiAZ.backend.env import ENV
-# FIXME: Fix caching system for pixbufs
+# FIXME: Review this module
 
 class MiAZIconManager(GObject.GObject):
     def __init__(self, app):

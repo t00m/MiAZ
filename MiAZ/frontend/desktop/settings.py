@@ -1,13 +1,17 @@
-#!/usr/bin/env python
+#!/usr/bin/python3
 # -*- coding: utf-8 -*-
 
+"""
+# File: settings.py
+# Author: Tomás Vírseda
+# License: GPL v3
+# Description: Manage App and Repository settings
+"""
+
 import os
-# ~ import sys
-# ~ import json
 
 import gi
 from gi.repository import Adw
-# ~ from gi.repository.GdkPixbuf import Pixbuf
 from gi.repository import Gio
 from gi.repository import GLib
 from gi.repository import Gtk
@@ -22,7 +26,6 @@ from MiAZ.frontend.desktop.widgets.configview import MiAZPeopleSentTo
 from MiAZ.frontend.desktop.widgets.configview import MiAZProjects
 from MiAZ.frontend.desktop.widgets.configview import MiAZRepositories
 from MiAZ.frontend.desktop.widgets.dialogs import CustomDialog
-
 from MiAZ.backend.models import MiAZItem, File, Group, Person, Country
 from MiAZ.backend.models import Purpose, Concept, SentBy, SentTo, Date
 from MiAZ.backend.models import Extension, Project, Repository
@@ -127,11 +130,9 @@ class MiAZRepoSettings(Gtk.Box):
             icon = self.app.icman.get_image_by_name('miaz-res-%s' % name.lower())
             label = self.factory.create_label(name)
             label.set_hexpand(True)
-            # ~ label.set_vexpand(True)
             wdgLabel.append(icon)
             wdgLabel.append(label)
             wdgLabel.set_hexpand(True)
-            # ~ wdgLabel.set_vexpand(True)
             return page, wdgLabel
 
         for item in ['Country', 'Group', 'Purpose', 'Project', 'SentBy', 'SentTo']:

@@ -1,5 +1,12 @@
-#!/usr/bin/env python
+#!/usr/bin/python3
 # -*- coding: utf-8 -*-
+
+"""
+# File: views.py
+# Author: Tomás Vírseda
+# License: GPL v3
+# Description: Different views based on ColumnView widget
+"""
 
 import os
 import sys

@@ -1,5 +1,12 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 # -*- coding: utf-8 -*-
+
+"""
+# File: about.py
+# Author: Tomás Vírseda
+# License: GPL v3
+# Description: About widget
+"""
 
 from html import escape
 from gettext import gettext as _
