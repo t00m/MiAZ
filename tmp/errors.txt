@@ -1,4 +1,0 @@
-Rename dialog - Do not allow save valid files if fields have missing values
-Rename dialog - Automatically add missing fields into config files
-Rename dialog - Are you sure? -> Horrible dialog
-Miaz Dashboard - ellipsize
