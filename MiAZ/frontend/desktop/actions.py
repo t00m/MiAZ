@@ -486,7 +486,7 @@ class MiAZActions(GObject.GObject):
         i_type = item_type.__gtype_name__
         box = self.factory.create_box_vertical(spacing=6, vexpand=True, hexpand=True)
         dropdown = self.factory.create_dropdown_generic(Project)
-        self.config[i_type].connect('used-updated', self.dropdown_populate, dropdown, item_type, False)
+        self.config[i_type].connect('used-updated', self.dropdown_populate, dropdown, item_type, False, False)
         self.dropdown_populate(self.config[i_type], dropdown, Project, any_value=False)
         btnManage = self.factory.create_button('miaz-res-manage', '')
         btnManage.connect('clicked', self.manage_resource, Configview['Project'](self.app))
@@ -529,7 +529,7 @@ class MiAZActions(GObject.GObject):
         i_type = item_type.__gtype_name__
         box = self.factory.create_box_vertical(spacing=6, vexpand=True, hexpand=True)
         dropdown = self.factory.create_dropdown_generic(Project)
-        self.config[i_type].connect('used-updated', self.dropdown_populate, dropdown, item_type, False)
+        self.config[i_type].connect('used-updated', self.dropdown_populate, dropdown, item_type, False, False)
 
         # Get projects
         projects = set()
