@@ -125,7 +125,7 @@ class MiAZColumnViewWorkspace(MiAZColumnView):
         label.set_markup("<b>%s</b>" % item.subtitle)
         label.set_ellipsize(True)
         label.set_property('ellipsize', Pango.EllipsizeMode.MIDDLE)
-        label.get_style_context().add_class(class_name='destructive-action')
+        # ~ label.get_style_context().add_class(class_name='destructive-action')
 
     def _on_factory_setup_active(self, factory, list_item):
         box = ColCheck()
