@@ -1,1 +1,24 @@
-{"BANKS": "", "EDU": "", "TRANSPORT": "", "HOME": "", "HEALTH": "", "INSURANCES": "", "SERVICES": "", "SHOPPING": "", "ADM": "", "LEISURE": "", "MISC": "", "TAXES": "", "UTILITIES": ""}
+{
+    "ADM": "Public Administration",
+    "BANKS": "Banks",
+    "EDU": "Education",
+    "ELECTRICITY": "Electricity",
+    "ENERGY": "Energy",
+    "HEALTH": "Health",
+    "HEATING": "Heating",
+    "HOME": "Home",
+    "INS": "Insurances",
+    "LEGAL": "Legal",
+    "FUN": "Leisure",
+    "LIFE": "Life",
+    "LOAN": "Loan",
+    "MISC": "Miscelanea",
+    "PLUMB": "Plumbing",
+    "SERV": "Services",
+    "SHOP": "Shopping",
+    "TAX": "Taxes",
+    "TRANS": "Transport",
+    "WASTE": "Waste",
+    "WATER": "Water",
+    "WORK": "Work"
+}
