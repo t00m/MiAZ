@@ -361,9 +361,10 @@ class MiAZActions(GObject.GObject):
         # In any case, config parameter is not used. Config is got from
         # item_type
         # ~ model = dropdown.get_model()
-        config = self.app.get_config(item_type.__gtype_name__)
+        i_type = item_type.__gtype_name__
+        config = self.app.get_config(i_type)
         items = config.load(config.used)
-        title = item_type.__gtype_name__
+        i_title = item_type.__title__
 
         model_filter = dropdown.get_model()
         model_sort = model_filter.get_model()
@@ -372,9 +373,9 @@ class MiAZActions(GObject.GObject):
 
         model.remove_all()
         if any_value:
-            model.append(item_type(id='Any', title='Any'))
+            model.append(item_type(id='Any', title='Any %s' % i_title.lower()))
         if none_value:
-            model.append(item_type(id='None', title='None'))
+            model.append(item_type(id='None', title='No %s' % i_title.lower()))
 
         for key in items:
             accepted = True
@@ -485,7 +486,7 @@ class MiAZActions(GObject.GObject):
         i_type = item_type.__gtype_name__
         box = self.factory.create_box_vertical(spacing=6, vexpand=True, hexpand=True)
         dropdown = self.factory.create_dropdown_generic(Project)
-        self.config[i_type].connect('used-updated', self.dropdown_populate, dropdown, item_type, False)
+        self.config[i_type].connect('used-updated', self.dropdown_populate, dropdown, item_type, False, False)
         self.dropdown_populate(self.config[i_type], dropdown, Project, any_value=False)
         btnManage = self.factory.create_button('miaz-res-manage', '')
         btnManage.connect('clicked', self.manage_resource, Configview['Project'](self.app))
@@ -528,7 +529,7 @@ class MiAZActions(GObject.GObject):
         i_type = item_type.__gtype_name__
         box = self.factory.create_box_vertical(spacing=6, vexpand=True, hexpand=True)
         dropdown = self.factory.create_dropdown_generic(Project)
-        self.config[i_type].connect('used-updated', self.dropdown_populate, dropdown, item_type, False)
+        self.config[i_type].connect('used-updated', self.dropdown_populate, dropdown, item_type, False, False)
 
         # Get projects
         projects = set()

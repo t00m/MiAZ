@@ -182,8 +182,8 @@ class Repository(MiAZModel):
 
 class SentBy(Person):
     __gtype_name__ = 'SentBy'
-    __title__ = 'Sent by'
+    __title__ = 'Sender'
 
 class SentTo(Person):
     __gtype_name__ = 'SentTo'
-    __title__ = 'Sent to'
+    __title__ = 'Recipient'

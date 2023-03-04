@@ -116,27 +116,31 @@ class MiAZRepoSettings(Gtk.Box):
         self.notebook.set_tab_pos(Gtk.PositionType.TOP)
         self.append(self.notebook)
 
-        def create_tab(name):
+        def create_tab(item_type):
+            i_type = item_type.__gtype_name__
+            i_title = item_type.__title__
             page = Gtk.CenterBox(orientation=Gtk.Orientation.VERTICAL)
             page.set_vexpand(True)
             page.set_hexpand(True)
-            selector = Configview[name](self.app)
+            selector = Configview[i_type](self.app)
             selector.set_vexpand(True)
             selector.update()
             box = self.factory.create_box_vertical(spacing=12, vexpand=True, hexpand=True)
             box.append(selector)
             page.set_start_widget(box)
             wdgLabel = self.factory.create_box_horizontal()
-            icon = self.app.icman.get_image_by_name('miaz-res-%s' % name.lower())
-            label = self.factory.create_label(name)
+            icon = self.app.icman.get_image_by_name('miaz-res-%s' % i_type.lower())
+            icon.set_hexpand(False)
+            label = self.factory.create_label("<b>%s</b>" % i_title)
+            label.set_xalign(0.0)
             label.set_hexpand(True)
             wdgLabel.append(icon)
             wdgLabel.append(label)
             wdgLabel.set_hexpand(True)
             return page, wdgLabel
 
-        for item in ['Country', 'Group', 'Purpose', 'Project', 'SentBy', 'SentTo']:
-            page, label = create_tab(item)
+        for item_type in [Country, Group, Purpose, Project, SentBy, SentTo]:
+            page, label = create_tab(item_type)
             self.notebook.append_page(page, label)
 
 

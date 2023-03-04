@@ -88,8 +88,6 @@ class MiAZBackend(GObject.GObject):
         self.conf['SentTo'] = MiAZConfigSentTo(self, dir_conf)
         self.conf['Person'] = MiAZConfigPeople(self, dir_conf)
         self.conf['Project'] = MiAZConfigProjects(self, dir_conf)
-        self.conf['Project'].add_available('None', 'No project')
-        self.conf['Project'].add_used('None', 'No project')
         self.watcher = MiAZWatcher('source', path)
         self.watcher.set_active(active=True)
         self.watcher.connect('repository-updated', self.repo_check)

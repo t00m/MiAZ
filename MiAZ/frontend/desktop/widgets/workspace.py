@@ -53,6 +53,7 @@ class MiAZWorkspace(Gtk.Box):
     signals = set()
     selected_items = []
     dates = {}
+    dropdown = {}
 
     def __init__(self, app):
         super(MiAZWorkspace, self).__init__(orientation=Gtk.Orientation.HORIZONTAL)
@@ -87,8 +88,7 @@ class MiAZWorkspace(Gtk.Box):
         body.set_margin_top(margin=6)
         widget.append(body)
 
-        self.dropdown = {}
-        for item_type in [Project, Country, Group, SentBy, Purpose, SentTo]:
+        for item_type in [Country, Group, SentBy, Purpose, SentTo]:
             i_type = item_type.__gtype_name__
             i_title = item_type.__title__
             dropdown = self.factory.create_dropdown_generic(item_type=item_type)
@@ -157,7 +157,7 @@ class MiAZWorkspace(Gtk.Box):
 
         ## Filters
         self.tgbFilters = self.factory.create_button_toggle('miaz-filters', callback=self._on_filters_toggled)
-        self.tgbFilters.set_active(False)
+        self.tgbFilters.set_active(True)
         hbox.append(self.tgbFilters)
 
         ## Searchbox
@@ -177,7 +177,7 @@ class MiAZWorkspace(Gtk.Box):
         model.append(Date(id='2', title='This year'))
         model.append(Date(id='3', title='Last two years'))
         model.append(Date(id='4', title='Last five years'))
-        model.append(Date(id='5', title='All documents'))
+        model.append(Date(id='5', title='Any time'))
         self.dd_date.set_selected(2)
         self.dd_date.connect("notify::selected-item", self._on_filter_selected)
         hbox.append(self.dd_date)
@@ -195,6 +195,16 @@ class MiAZWorkspace(Gtk.Box):
         self.dates['3'] = two_years
         self.dates['4'] = five_years
         self.dates['5'] = alltimes
+
+        ## Projects dropdown
+        i_type = Project.__gtype_name__
+        self.dd_prj = self.factory.create_dropdown_generic(item_type=Project)
+        self.actions.dropdown_populate(self.config[i_type], self.dd_prj, Project, any_value=True, none_value=True)
+        self.dd_prj.connect("notify::selected-item", self._on_filter_selected)
+        self.dropdown[i_type] = self.dd_prj
+        self.config[i_type].connect('used-updated', self.update_dropdown_filter, Project)
+        hbox.append(self.dd_prj)
+
 
         # Right
         hbox = self.factory.create_box_horizontal(spacing=0)
@@ -262,8 +272,8 @@ class MiAZWorkspace(Gtk.Box):
         widget.append(body)
         # ~ widget.append(foot)
 
-        toolbar_top = self._setup_toolbar_top()
         self.toolbar_filters = self._setup_toolbar_filters()
+        toolbar_top = self._setup_toolbar_top()
         frmView = self._setup_columnview()
         head.append(toolbar_top)
         head.append(self.toolbar_filters)
@@ -500,10 +510,9 @@ class MiAZWorkspace(Gtk.Box):
             # Raised when managing projects from selector
             # Workaround: do not filter
             return True
-
-        if project is 'Any':
+        if project == 'Any':
             matches = True
-        elif project is 'None':
+        elif project == 'None':
             projects = self.backend.projects.assigned_to(doc)
             if len(projects) == 0:
                 matches = True
