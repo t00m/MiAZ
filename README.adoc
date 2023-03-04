@@ -26,17 +26,15 @@ With this in mind, MiAZ uses its own filename convention in order to manage the 
 
 All documents managed by MiAZ are renamed following this name convention consisting on 7 fields:
 
-`{timestamp}-{country}-{group}-{subgroup}-{sentby}-{purpose}-{concept}-{sentto}.{extension}`
+`{timestamp}-{country}-{group}-{sentby}-{purpose}-{concept}-{sentto}.{extension}`
 
 * _Timestamp_: with format: %Y%m%d (eg.: 20221119)
 * _Country_: ISO-3166 Alpha-2 code (eg.: ES)
 * _Group_: root category to which many documents belong to with a similar purpose. (eg.: HOUSE, EDU, BANKS, WORK, ADM)
-* _Subgroup_: a distinct group within a group (Eg. for HOUSE: HEATING, WATER, INSURANCE, ELECTRICITY, etc...)
 * _Purpose_: reason (eg.: INFO, REQUEST, INVOICE, STATEMENT, etc...)
 * _SentBy_: the (legal or natural) person sending the document
 * _Concept_: the details (eg.: invoice number, flight number, etc...)
 * _SentTo_: the (legal or natural) person receiving the document
-* _Extension_: the extension/media format of the document
 
 
 [NOTES]
@@ -54,15 +52,22 @@ The user has to choose an empty _root_ directory (eg.: $HOME/Documents/MiAZ) whe
 
 At present, it uses 2 directories:
 
-* _conf_: this directory holds the repository configuration
-* _repo_: the most important directory, as it will store all files. As it could be thousands of them from several years, each document will be stored in the proper year subdirectory.
+* _root directory_: where the files are stored
+* _.conf_: hidden directory containing the repository configuration
 
 .Example:
 ----
 $HOME/Documents/MiAZ
-├── conf
-├── repo
+├── .conf
+├── File 1
+├── File 2
+├── File n
 ----
+
+Additionally, the following directory will be created with some configuration files to let the application knows which is the current repository used and which ones are available for using:
+
+`$HOME/.MiAZ
+
 
 == Current status
 
