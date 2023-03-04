@@ -1,2 +1,0 @@
-# MiAZ
-Personal Document Organizer

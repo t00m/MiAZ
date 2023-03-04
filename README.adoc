@@ -1,0 +1,86 @@
+= MiAZ, a Personal Document Organizer
+
+The main goal is to organize family documentation.
+
+== DISCLAIMER
+
+[CAUTION]
+====
+This software application is currently in development and is not yet ready for production use. The application may contain bugs, errors, or other issues that could cause your computer or device to malfunction or experience other unexpected behaviors. By using this application, you acknowledge and agree that you do so at your own risk, and that the developer and any other parties involved in the development, distribution, or support of this application are not responsible for any damages or losses that may result from its use.
+
+Please note that this application is based on the GPL v3 license, and is provided free of charge. There is no guarantee of any kind, either express or implied, regarding its functionality, reliability, or suitability for any particular purpose. The developer reserves the right to modify, update, or discontinue this application at any time, and may not provide support or assistance in resolving any issues or problems that arise from its use.
+
+By using this application, you acknowledge and agree to the terms of the GPL v3 license and this disclaimer, and waive any and all claims, actions, or damages that you may have against the developer or any other parties involved in the development, distribution, or support of this application. If you do not agree to these terms, you should not use this application.
+====
+
+== Use case
+
+This project is based solely in my own experience and for my own necesities.
+
+It helps to organize the day to day paperwork such as invoices, letters, and any document sent by/to any person (legal entity or natural)
+
+With this in mind, MiAZ uses its own filename convention in order to manage the repository of documents.
+
+
+== File name convention
+
+All documents managed by MiAZ are renamed following this name convention consisting on 7 fields:
+
+`{timestamp}-{country}-{group}-{sentby}-{purpose}-{concept}-{sentto}.{extension}`
+
+* _Timestamp_: with format: %Y%m%d (eg.: 20221119)
+* _Country_: ISO-3166 Alpha-2 code (eg.: ES)
+* _Group_: root category to which many documents belong to with a similar purpose. (eg.: HOUSE, EDU, BANKS, WORK, ADM)
+* _Purpose_: reason (eg.: INFO, REQUEST, INVOICE, STATEMENT, etc...)
+* _SentBy_: the (legal or natural) person sending the document
+* _Concept_: the details (eg.: invoice number, flight number, etc...)
+* _SentTo_: the (legal or natural) person receiving the document
+
+
+[NOTES]
+====
+* Each field is separated by a hyphen (`-`). Only 6 hyphens are allowed. Extra hyphens found in a field are automatically converted to underscores (`_`)
+* Country code is important in case that the family has ties with others countries apart from the one where they reside)
+* The timestamp format helps to sort documents easily in a file browser
+* SentBy/SentTo fields are stored as a key/value where key is a identifier (eg.: person initials) and value is the full name (eg.: Company or person name)
+====
+
+
+== Directory Structure
+
+The user has to choose an empty _root_ directory (eg.: $HOME/Documents/MiAZ) where the application can deploy the rest of files and directories.
+
+At present, it uses 2 directories:
+
+* _root directory_: where the files are stored
+* _.conf_: hidden directory containing the repository configuration
+
+.Example:
+----
+$HOME/Documents/MiAZ
+├── .conf
+├── File 1
+├── File 2
+├── File n
+----
+
+Additionally, the following directory will be created with some configuration files to let the application knows which is the current repository used and which ones are available for using:
+
+`$HOME/.MiAZ
+
+
+== Current status
+
+This project is an early stage of development. Working with the most important feature: repository documentation an file renaming.
+
+
+== Installation
+
+Currently, it is only possible to install from command line:
+
+`/usr/bin/env python3 -m pip install . --user`
+
+It should install the following binary: `$HOME/.local/bin/miaz
+
+It has been tested in _Ubuntu 22.04.2 LTS_ and _RedHat Fedora 37_.
+
