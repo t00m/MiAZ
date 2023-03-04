@@ -1,12 +1,23 @@
 = MiAZ, a Personal Document Organizer
 
-== Use case
-
 The main goal is to organize family documentation.
 
-This project is based solely in my own experience and for my own necesities which can fit yours, or not.
+== DISCLAIMER
 
-In any case, it tries to help organizing the day to day paperwork such as invoices, letters, and any document sent by/sent to any person (legal entity or natural)
+[CAUTION]
+====
+This software application is currently in development and is not yet ready for production use. The application may contain bugs, errors, or other issues that could cause your computer or device to malfunction or experience other unexpected behaviors. By using this application, you acknowledge and agree that you do so at your own risk, and that the developer and any other parties involved in the development, distribution, or support of this application are not responsible for any damages or losses that may result from its use.
+
+Please note that this application is based on the GPL v3 license, and is provided free of charge. There is no guarantee of any kind, either express or implied, regarding its functionality, reliability, or suitability for any particular purpose. The developer reserves the right to modify, update, or discontinue this application at any time, and may not provide support or assistance in resolving any issues or problems that arise from its use.
+
+By using this application, you acknowledge and agree to the terms of the GPL v3 license and this disclaimer, and waive any and all claims, actions, or damages that you may have against the developer or any other parties involved in the development, distribution, or support of this application. If you do not agree to these terms, you should not use this application.
+====
+
+== Use case
+
+This project is based solely in my own experience and for my own necesities.
+
+It helps to organize the day to day paperwork such as invoices, letters, and any document sent by/to any person (legal entity or natural)
 
 With this in mind, MiAZ uses its own filename convention in order to manage the repository of documents.
 
@@ -57,4 +68,14 @@ $HOME/Documents/MiAZ
 
 This project is an early stage of development. Working with the most important feature: repository documentation an file renaming.
 
+
+== Installation
+
+Currently, it is only possible to install from command line:
+
+`/usr/bin/env python3 -m pip install . --user`
+
+It should install the following binary: `$HOME/.local/bin/miaz
+
+It has been tested in _Ubuntu 22.04.2 LTS_ and _RedHat Fedora 37_.
 
