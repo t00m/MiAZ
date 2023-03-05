@@ -54,6 +54,7 @@ class MiAZWorkspace(Gtk.Box):
     selected_items = []
     dates = {}
     dropdown = {}
+    cache = {}
 
     def __init__(self, app):
         super(MiAZWorkspace, self).__init__(orientation=Gtk.Orientation.HORIZONTAL)
@@ -71,6 +72,10 @@ class MiAZWorkspace(Gtk.Box):
         self.set_margin_start(margin=3)
         frmView = self._setup_workspace()
         self.append(frmView)
+
+        # Initialize caches
+        for cache in ['date', 'country', 'group', 'people', 'purpose', 'flag']:
+            self.cache[cache] = {}
 
         conf = self.config['Country']
         countries = conf.load(conf.used)
@@ -419,18 +424,56 @@ class MiAZWorkspace(Gtk.Box):
         sentby = self.app.get_config('SentBy')
         sentto = self.app.get_config('SentTo')
         countries = self.app.get_config('Country')
+        groups = self.app.get_config('Group')
+        purpose = self.app.get_config('Purpose')
         items = []
         invalid = []
         for filename in docs:
             doc, ext = self.util.filename_details(filename)
             fields = doc.split('-')
             if self.util.filename_validate(doc):
-                date_dsc = fields[0]
+                # Get field descriptions
+                ## Dates
                 try:
-                    adate = datetime.strptime(fields[0], "%Y%m%d")
-                    date_dsc = adate.strftime("%A, %B %d %Y")
+                    date_dsc = self.cache['date'][fields[0]]
                 except:
-                    date_dsc = ''
+                    date_dsc = self.util.filename_date_human(fields[0])
+                    self.cache['date'][fields[0]] = date_dsc
+
+                ## Countries
+                try:
+                    country_dsc = self.cache['country'][fields[1]]
+                except:
+                    country_dsc = countries.get(fields[1])
+                    self.cache['country'][fields[1]] = country_dsc
+
+                # ~ ## Groups
+                # ~ try:
+                    # ~ group_dsc = self.cache['group'][fields[2]]
+                # ~ except:
+                    # ~ group_dsc = groups.get(fields[2])
+                    # ~ self.cache['group'][fields[2]] = group_dsc
+
+                # ~ ## Purpose
+                # ~ try:
+                    # ~ purpose_dsc = self.cache['purpose'][fields[4]]
+                # ~ except:
+                    # ~ purpose_dsc = purpose.get(fields[4])
+                    # ~ self.cache['purpose'][fields[4]] = purpose_dsc
+
+                ## People
+                try:
+                    sentby_dsc = self.cache['people'][fields[3]]
+                except:
+                    sentby_dsc = sentby.get(fields[3])
+                    self.cache['people'][fields[3]] = sentby_dsc
+
+                try:
+                    sentto_dsc = self.cache['people'][fields[6]]
+                except:
+                    sentto_dsc = sentto.get(fields[6])
+                    self.cache['people'][fields[6]] = sentto_dsc
+
                 items.append(MiAZItem
                                     (
                                         id=os.path.basename(filename),
@@ -450,6 +493,7 @@ class MiAZWorkspace(Gtk.Box):
                             )
             else:
                 invalid.append(filename)
+        # ~ self.log.debug(self.cache)
         self.view.update(items)
         self._on_filter_selected()
         label = self.btnDocsSel.get_child()

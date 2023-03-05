@@ -218,6 +218,14 @@ class MiAZUtil(GObject.GObject):
         else:
             self.log.error("Source and Target are the same. Skip rename")
 
+    def filename_date_human(self, value: str = '') -> str:
+        try:
+            adate = datetime.strptime(value, "%Y%m%d")
+            date_dsc = adate.strftime("%A, %B %d %Y")
+        except ValueError:
+            date_dsc = ''
+        return date_dsc
+
     def filename_display(self, doc):
         filepath = self.filename_path(doc)
         os.system("xdg-open '%s'" % filepath)
@@ -240,7 +248,6 @@ class MiAZUtil(GObject.GObject):
         if len(doc.split('-')) == 7:
             return True
         return False
-
 
     def filename_validate_complex(self, filepath: str) -> tuple:
         repo = self.backend.repo_config()
