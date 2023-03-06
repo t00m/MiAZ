@@ -73,6 +73,25 @@ class MiAZWorkspace(Gtk.Box):
         frmView = self._setup_workspace()
         self.append(frmView)
 
+        # Initialize caches
+        # Runtime cache for datetime objects to avoid errors such as:
+        # 'TypeError: Object of type date is not JSON serializable'
+        self.datetimes = {}
+
+        # Rest of caches
+        repo = self.backend.repo_config()
+        dir_conf = repo['dir_conf']
+        self.fcache = os.path.join(dir_conf, 'cache.json')
+        try:
+            self.cache = self.util.json_load(self.fcache)
+            self.log.debug("Loading cache from %s", self.fcache)
+        except:
+            self.cache = {}
+            for cache in ['date', 'country', 'group', 'people', 'purpose']:
+                self.cache[cache] = {}
+            self.util.json_save(self.fcache, self.cache)
+            self.log.debug("Saving new cache to %s", self.fcache)
+
         conf = self.config['Country']
         countries = conf.load(conf.used)
         if len(countries) == 0:
@@ -167,37 +186,26 @@ class MiAZWorkspace(Gtk.Box):
         hbox.append(self.ent_sb)
 
         ## Date dropdown
-        self.dd_date = self.factory.create_dropdown_generic(item_type=Date, ellipsize=False)
-        model_filter = self.dd_date.get_model()
-        model_sort = model_filter.get_model()
-        model = model_sort.get_model()
-        self.update_dropdown_date()
-        model.remove_all()
-        items = []
-        model.append(Date(id='0', title='This month'))
-        model.append(Date(id='1', title='Last six months'))
-        model.append(Date(id='2', title='This year'))
-        model.append(Date(id='3', title='Last two years'))
-        model.append(Date(id='4', title='Last five years'))
-        model.append(Date(id='5', title='Any time'))
+        self.dd_date = self.factory.create_dropdown_generic(item_type=Date, ellipsize=False, enable_search=False)
+        self._update_dropdown_date()
         self.dd_date.set_selected(2)
         # ~ self.dd_date.connect("notify::selected-item", self._on_filter_selected)
         self.dd_date.connect("notify::selected-item", self.update)
         hbox.append(self.dd_date)
 
-        now = datetime.now()
-        this_month = now-timedelta(days=30)
-        six_months = now-timedelta(days=180)
-        this_year = datetime.strptime("%d0101" % now.year, "%Y%m%d")
-        two_years = datetime.strptime("%d0101" % (now.year - 1), "%Y%m%d")
-        five_years = datetime.strptime("%d0101" % (now.year - 5), "%Y%m%d")
-        alltimes = datetime.strptime("00010101", "%Y%m%d")
-        self.dates['0'] = this_month
-        self.dates['1'] = six_months
-        self.dates['2'] = this_year
-        self.dates['3'] = two_years
-        self.dates['4'] = five_years
-        self.dates['5'] = alltimes
+        # ~ now = datetime.now()
+        # ~ this_month = now-timedelta(days=30)
+        # ~ six_months = now-timedelta(days=180)
+        # ~ this_year = datetime.strptime("%d0101" % now.year, "%Y%m%d")
+        # ~ two_years = datetime.strptime("%d0101" % (now.year - 1), "%Y%m%d")
+        # ~ five_years = datetime.strptime("%d0101" % (now.year - 5), "%Y%m%d")
+        # ~ alltimes = datetime.strptime("00010101", "%Y%m%d")
+        # ~ self.dates['0'] = this_month
+        # ~ self.dates['1'] = six_months
+        # ~ self.dates['2'] = this_year
+        # ~ self.dates['3'] = two_years
+        # ~ self.dates['4'] = five_years
+        # ~ self.dates['5'] = alltimes
 
         ## Projects dropdown
         i_type = Project.__gtype_name__
@@ -240,6 +248,39 @@ class MiAZWorkspace(Gtk.Box):
         hbox.append(btnRepoSettings)
 
         return toolbar_top
+
+    def _update_dropdown_date(self):
+        dt2str = self.util.datetime_to_string
+        now = datetime.now().date()
+        model_filter = self.dd_date.get_model()
+        model_sort = model_filter.get_model()
+        model = model_sort.get_model()
+        model.remove_all()
+
+        # Since...
+        ul = now                                  # upper limit
+        ## this month
+        ll = self.util.since_date_this_month(now) # lower limit
+        key = "%s-%s" % (dt2str(ll), dt2str(ul))
+        model.append(Date(id=key, title='This month'))
+
+        ## Last 3 months
+        ll = self.util.since_date_last_n_months(now, 3) # lower limit
+        key = "%s-%s" % (dt2str(ll), dt2str(ul))
+        model.append(Date(id=key, title='Last 3 months'))
+
+        ## Last six months
+        ll = self.util.since_date_last_n_months(now, 6) # lower limit
+        key = "%s-%s" % (dt2str(ll), dt2str(ul))
+        model.append(Date(id=key, title='Last 6 months'))
+
+        ## All documents
+        key = "All-All"
+        model.append(Date(id=key, title='All documents'))
+
+        ## No date
+        key = "None-None"
+        model.append(Date(id=key, title='Without date'))
 
     def _on_handle_menu_repo(self, action, state):
         name = action.get_name()
@@ -425,25 +466,14 @@ class MiAZWorkspace(Gtk.Box):
         groups = self.app.get_config('Group')
         purpose = self.app.get_config('Purpose')
 
-        period = period = self.dd_date.get_selected_item().title
+        try:
+            period = self.dd_date.get_selected_item().title
+        except AttributeError:
+            return
         project = self.dropdown['Project'].get_selected_item().id
         self.log.debug("Period: %s - Project: %s", period, project)
         if project == 'Any' or project == 'None':
             pass
-
-        # Initialize caches
-        repo = self.backend.repo_config()
-        dir_conf = repo['dir_conf']
-        fcache = os.path.join(dir_conf, 'cache.json')
-        try:
-            self.cache = self.util.json_load(fcache)
-            self.log.debug("Loading cache from %s", fcache)
-        except:
-            self.cache = {}
-            for cache in ['date', 'country', 'group', 'people', 'purpose']:
-                self.cache[cache] = {}
-            self.util.json_save(fcache, self.cache)
-            self.log.debug("Saving new cache to %s", fcache)
 
         items = []
         invalid = []
@@ -466,20 +496,6 @@ class MiAZWorkspace(Gtk.Box):
                 except:
                     country_dsc = countries.get(fields[1])
                     self.cache['country'][fields[1]] = country_dsc
-
-                # ~ ## Groups
-                # ~ try:
-                    # ~ group_dsc = self.cache['group'][fields[2]]
-                # ~ except:
-                    # ~ group_dsc = groups.get(fields[2])
-                    # ~ self.cache['group'][fields[2]] = group_dsc
-
-                # ~ ## Purpose
-                # ~ try:
-                    # ~ purpose_dsc = self.cache['purpose'][fields[4]]
-                # ~ except:
-                    # ~ purpose_dsc = purpose.get(fields[4])
-                    # ~ self.cache['purpose'][fields[4]] = purpose_dsc
 
                 ## People
                 try:
@@ -516,9 +532,9 @@ class MiAZWorkspace(Gtk.Box):
         de = datetime.now()
         dt = de - ds
         self.log.debug("Workspace updated (%s)" % dt)
-        self.util.json_save(fcache, self.cache)
-        self.log.debug("Saving cache to %s", fcache)
-        self.view.update(items)
+        self.util.json_save(self.fcache, self.cache)
+        # ~ self.log.debug("Saving cache to %s", self.fcache)
+        GLib.idle_add(self.view.update, items)
         self._on_filter_selected()
         label = self.btnDocsSel.get_child()
         self.view.select_first_item()
@@ -547,25 +563,37 @@ class MiAZWorkspace(Gtk.Box):
             return item.id == id
 
     def _do_eval_cond_matches_date(self, item):
+        # Convert timestamp to timedate object and cache it
         try:
-            if item.date is None:
-                return True
+            item_dt = self.datetimes[item.date]
+        except:
+            item_dt = self.util.string_to_datetime(item.date)
+            self.datetimes[item.date] = item_dt
 
-            period = self.dd_date.get_selected_item().id
-            try:
-                item_date = self.dates[item.date]
-            except KeyError:
-                item_date = datetime.strptime(item.date, "%Y%m%d")
-                self.dates[item.date] = item_date
+        # Check if the date belongs to the lower/upper limit
+        period = self.dd_date.get_selected_item().id
+        ll, ul = period.split('-')
 
-            if item_date > self.dates[period]:
-                return True
-
-            return False
-        except Exception as error:
-            # time data '' does not match format '%Y%m%d'
-            # Display documents without date
+        if ll == 'All' and ul == 'All':
             return True
+        elif ll == 'None' and ul == 'None':
+            if item_dt is None:
+                matches = True
+            else:
+                matches = False
+        else:
+            if item_dt is None:
+                matches = False
+
+            start = self.util.string_to_datetime(ll)
+            end = self.util.string_to_datetime(ul)
+            if item_dt >= start and item_dt <= end:
+                matches = True
+            else:
+                matches = False
+
+        # ~ self.log.debug("%s >= Item[%s] Datetime[%s] <= %s? %s", ll, item.date, item_dt, ul, matches)
+        return matches
 
     def _do_eval_cond_matches_project(self, doc):
         matches = False

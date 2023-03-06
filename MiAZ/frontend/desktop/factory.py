@@ -163,7 +163,7 @@ class MiAZFactory:
         return button
 
 
-    def create_dropdown_generic(self, item_type, ellipsize=True):
+    def create_dropdown_generic(self, item_type, ellipsize=True, enable_search=True):
         def _get_search_entry_widget(dropdown):
             popover = dropdown.get_last_child()
             box = popover.get_child()
@@ -219,7 +219,7 @@ class MiAZFactory:
         dropdown.set_show_arrow(True)
 
         # Enable search
-        dropdown.set_enable_search(True)
+        dropdown.set_enable_search(enable_search)
         search_entry = _get_search_entry_widget(dropdown)
         item_filter = Gtk.CustomFilter.new(_do_filter, filter_model, search_entry)
         filter_model.set_filter(item_filter)

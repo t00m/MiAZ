@@ -14,7 +14,7 @@ import glob
 import json
 import time
 import shutil
-from datetime import datetime
+from datetime import datetime, timedelta
 from dateutil.parser import parse as dateparser
 
 from gi.repository import Gio
@@ -318,23 +318,30 @@ class MiAZUtil(GObject.GObject):
             reasons.append((rc, gtype, value, message))
         return valid, reasons
 
-        def since_date_this_year(self, adate: datetime) -> datetime:
-            year = adate.year
-            return datetime.strptime("%4d0101" % year, "%Y%m%d")
+    def since_date_this_year(self, adate: datetime) -> datetime:
+        year = adate.year
+        return datetime.strptime("%4d0101" % year, "%Y%m%d")
 
-        def since_date_this_month(self, adate: datetime) -> datetime:
-            year = adate.year
-            month = adate.month
-            return datetime.strptime("%4d%02d01" % (year, month), "%Y%m%d")
+    def since_date_this_month(self, adate: datetime) -> datetime:
+        year = adate.year
+        month = adate.month
+        return datetime.strptime("%4d%02d01" % (year, month), "%Y%m%d")
 
-        def since_date_this_month(self, adate: datetime) -> datetime:
-            return datetime.strptime("%4d%02d%02d" % (adate.year, adate.month, adate.day), "%Y%m%d")
+    def since_date_this_day(self, adate: datetime) -> datetime:
+        return datetime.strptime("%4d%02d%02d" % (adate.year, adate.month, adate.day), "%Y%m%d")
 
-        def since_date_last_n_months(self, adate: datetime, nm: int) -> datetime:
-            return (adate - timedelta(days=30*nm)) \
-                    .replace(day=1) \
-                    .date()
+    def since_date_last_n_months(self, adate: datetime, nm: int) -> datetime:
+        return (adate - timedelta(days=30*nm)).replace(day=1)
 
-        def since_date_last_six_months(self, adate: datetime) -> datetime:
-            return (adate - timedelta(days=30*6)).replace(day=1).date()
+    def since_date_last_six_months(self, adate: datetime) -> datetime:
+        return (adate - timedelta(days=30*6)).replace(day=1).date()
+
+    def datetime_to_string(self, adate: datetime) -> str:
+        return adate.strftime("%Y%m%d")
+
+    def string_to_datetime(self, adate: str) -> datetime:
+        try:
+            return datetime.strptime(adate, "%Y%m%d").date()
+        except ValueError:
+            return None
 
