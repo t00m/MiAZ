@@ -73,10 +73,6 @@ class MiAZWorkspace(Gtk.Box):
         frmView = self._setup_workspace()
         self.append(frmView)
 
-        # Initialize caches
-        for cache in ['date', 'country', 'group', 'people', 'purpose', 'flag']:
-            self.cache[cache] = {}
-
         conf = self.config['Country']
         countries = conf.load(conf.used)
         if len(countries) == 0:
@@ -418,6 +414,7 @@ class MiAZWorkspace(Gtk.Box):
         return model.get_item(pos)
 
     def update(self, *args):
+        # With less than thousand documents, loading is ok
         ds = datetime.now()
         self.selected_items = []
         docs = self.util.get_files()
@@ -426,6 +423,21 @@ class MiAZWorkspace(Gtk.Box):
         countries = self.app.get_config('Country')
         groups = self.app.get_config('Group')
         purpose = self.app.get_config('Purpose')
+
+        # Initialize caches
+        repo = self.backend.repo_config()
+        dir_conf = repo['dir_conf']
+        fcache = os.path.join(dir_conf, 'cache.json')
+        try:
+            self.cache = self.util.json_load(fcache)
+            self.log.debug("Loading cache from %s", fcache)
+        except:
+            self.cache = {}
+            for cache in ['date', 'country', 'group', 'people', 'purpose', 'flag']:
+                self.cache[cache] = {}
+            self.util.json_save(fcache, self.cache)
+            self.log.debug("Saving new cache to %s", fcache)
+
         items = []
         invalid = []
         for filename in docs:
@@ -493,7 +505,9 @@ class MiAZWorkspace(Gtk.Box):
                             )
             else:
                 invalid.append(filename)
-        # ~ self.log.debug(self.cache)
+
+        self.util.json_save(fcache, self.cache)
+        self.log.debug("Saving cache to %s", fcache)
         self.view.update(items)
         self._on_filter_selected()
         label = self.btnDocsSel.get_child()

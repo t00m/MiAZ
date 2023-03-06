@@ -317,3 +317,24 @@ class MiAZUtil(GObject.GObject):
                         message = "%s %s available? %s. Used? %s" % (title, key, available, used)
             reasons.append((rc, gtype, value, message))
         return valid, reasons
+
+        def since_date_this_year(self, adate: datetime) -> datetime:
+            year = adate.year
+            return datetime.strptime("%4d0101" % year, "%Y%m%d")
+
+        def since_date_this_month(self, adate: datetime) -> datetime:
+            year = adate.year
+            month = adate.month
+            return datetime.strptime("%4d%02d01" % (year, month), "%Y%m%d")
+
+        def since_date_this_month(self, adate: datetime) -> datetime:
+            return datetime.strptime("%4d%02d%02d" % (adate.year, adate.month, adate.day), "%Y%m%d")
+
+        def since_date_last_n_months(self, adate: datetime, nm: int) -> datetime:
+            return (adate - timedelta(days=30*nm)) \
+                    .replace(day=1) \
+                    .date()
+
+        def since_date_last_six_months(self, adate: datetime) -> datetime:
+            return (adate - timedelta(days=30*6)).replace(day=1).date()
+
