@@ -171,6 +171,7 @@ class MiAZWorkspace(Gtk.Box):
         model_filter = self.dd_date.get_model()
         model_sort = model_filter.get_model()
         model = model_sort.get_model()
+        self.update_dropdown_date()
         model.remove_all()
         items = []
         model.append(Date(id='0', title='This month'))
@@ -180,7 +181,8 @@ class MiAZWorkspace(Gtk.Box):
         model.append(Date(id='4', title='Last five years'))
         model.append(Date(id='5', title='Any time'))
         self.dd_date.set_selected(2)
-        self.dd_date.connect("notify::selected-item", self._on_filter_selected)
+        # ~ self.dd_date.connect("notify::selected-item", self._on_filter_selected)
+        self.dd_date.connect("notify::selected-item", self.update)
         hbox.append(self.dd_date)
 
         now = datetime.now()
@@ -247,7 +249,7 @@ class MiAZWorkspace(Gtk.Box):
 
     def _setup_columnview(self):
         self.view = MiAZColumnViewWorkspace(self.app)
-        self.view.factory_icon_type.connect("bind", self._on_factory_bind_icon_type)
+        # ~ self.view.factory_icon_type.connect("bind", self._on_factory_bind_icon_type)
         self.view.get_style_context().add_class(class_name='caption')
         self.view.set_filter(self._do_filter_view)
         frmView = self.factory.create_frame(hexpand=True, vexpand=True)
@@ -285,7 +287,7 @@ class MiAZWorkspace(Gtk.Box):
         self.view.column_subtitle.set_expand(True)
         self.view.column_group.set_visible(True)
         self.view.column_purpose.set_visible(True)
-        self.view.column_flag.set_visible(True)
+        # ~ self.view.column_flag.set_visible(True)
         self.view.column_sentby.set_visible(True)
         self.view.column_sentto.set_visible(True)
         self.view.column_date.set_visible(True)
@@ -415,7 +417,6 @@ class MiAZWorkspace(Gtk.Box):
 
     def update(self, *args):
         # With less than thousand documents, loading is ok
-        ds = datetime.now()
         self.selected_items = []
         docs = self.util.get_files()
         sentby = self.app.get_config('SentBy')
@@ -423,6 +424,12 @@ class MiAZWorkspace(Gtk.Box):
         countries = self.app.get_config('Country')
         groups = self.app.get_config('Group')
         purpose = self.app.get_config('Purpose')
+
+        period = period = self.dd_date.get_selected_item().title
+        project = self.dropdown['Project'].get_selected_item().id
+        self.log.debug("Period: %s - Project: %s", period, project)
+        if project == 'Any' or project == 'None':
+            pass
 
         # Initialize caches
         repo = self.backend.repo_config()
@@ -433,13 +440,14 @@ class MiAZWorkspace(Gtk.Box):
             self.log.debug("Loading cache from %s", fcache)
         except:
             self.cache = {}
-            for cache in ['date', 'country', 'group', 'people', 'purpose', 'flag']:
+            for cache in ['date', 'country', 'group', 'people', 'purpose']:
                 self.cache[cache] = {}
             self.util.json_save(fcache, self.cache)
             self.log.debug("Saving new cache to %s", fcache)
 
         items = []
         invalid = []
+        ds = datetime.now()
         for filename in docs:
             doc, ext = self.util.filename_details(filename)
             fields = doc.split('-')
@@ -505,16 +513,15 @@ class MiAZWorkspace(Gtk.Box):
                             )
             else:
                 invalid.append(filename)
-
+        de = datetime.now()
+        dt = de - ds
+        self.log.debug("Workspace updated (%s)" % dt)
         self.util.json_save(fcache, self.cache)
         self.log.debug("Saving cache to %s", fcache)
         self.view.update(items)
         self._on_filter_selected()
         label = self.btnDocsSel.get_child()
         self.view.select_first_item()
-        de = datetime.now()
-        dt = de - ds
-        self.log.debug("Workspace updated (%s)" % dt)
         for filename in invalid:
             target = self.util.filename_normalize(filename)
             self.util.filename_rename(filename, target)
