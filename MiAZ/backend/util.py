@@ -10,6 +10,7 @@
 
 import os
 import re
+import sys
 import glob
 import json
 import time
@@ -228,16 +229,27 @@ class MiAZUtil(GObject.GObject):
 
     def filename_display(self, doc):
         filepath = self.filename_path(doc)
-        os.system("xdg-open '%s'" % filepath)
+        if sys.platform in ['linux', 'linux2']:
+            os.system("xdg-open \"%s\"" % filepath)
+        elif sys.platform in ['win32', 'cygwin', 'msys']:
+            os.startfile(filepath)
 
     def filename_delete(self, doc):
         filepath = self.filename_path(doc)
         self.log.debug("Document deleted: %s", filepath)
         os.unlink(filepath)
 
-    def filename_open_location(self, filepath):
+    def filename_open_location(self, doc):
+        repo = self.backend.repo_config()
+        dir_docs = repo['dir_docs']
+        filepath = os.path.join(dir_docs, doc)
         # FIXME: only works if nautilus is present
-        os.system("nautilus '%s'" % filepath)
+        if sys.platform in ['linux', 'linux2']:
+            CMD = "nautilus \"%s\"" % filepath
+        elif sys.platform in['win32', 'cygwin', 'msys']:
+            CMD = r"""explorer /select,%s""" % filepath
+        self.log.debug(CMD)
+        os.system(CMD)
 
     def filename_path(self, doc):
         repo = self.backend.repo_config()
