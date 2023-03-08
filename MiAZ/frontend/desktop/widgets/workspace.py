@@ -166,6 +166,10 @@ class MiAZWorkspace(Gtk.Box):
         btnImportDir = self.factory.create_button('miaz-import-folder', callback=self.actions.import_directory)
         rowImportDir = self.factory.create_actionrow(title='Import directory', subtitle='Import all documents from a directory', suffix=btnImportDir)
         widgets.append(rowImportDir)
+        # FIXME: Not implemented yet
+        # ~ btnImportConf = self.factory.create_button('miaz-import-config', callback=self.actions.import_config)
+        # ~ rowImportConf = self.factory.create_actionrow(title='Import config', subtitle='Import configuration', suffix=btnImportConf)
+        # ~ widgets.append(rowImportConf)
         button = self.factory.create_button_popover(icon_name='miaz-import', css_classes=[''], widgets=widgets)
         hbox.append(button)
 
@@ -351,7 +355,7 @@ class MiAZWorkspace(Gtk.Box):
         return widget
 
     def _setup_menu_selection_single(self):
-        # Setup main menu and sections
+        # Setup single menu and sections
         menu_workspace_single = Gio.Menu.new()
         section_common_in = Gio.Menu.new()
         section_common_out = Gio.Menu.new()
@@ -395,7 +399,7 @@ class MiAZWorkspace(Gtk.Box):
         return menu_workspace_single
 
     def _setup_menu_selection_multiple(self):
-        # Setup main menu and sections
+        # Setup multiple menu and sections
         menu_workspace_multiple = Gio.Menu.new()
         section_common_in = Gio.Menu.new()
         section_common_out = Gio.Menu.new()
@@ -443,9 +447,16 @@ class MiAZWorkspace(Gtk.Box):
         submenu_export.append_item(menuitem)
         menuitem = self.factory.create_menuitem('export-to-zip', '...to zip', self._on_handle_menu_multiple, None, [])
         submenu_export.append_item(menuitem)
-        # ~ menuitem = self.factory.create_menuitem('export', 'Export', self._on_handle_menu_multiple, None, [])
-        # ~ section_common_out.append_item(menuitem)
-
+        menuitem = self.factory.create_menuitem('export-to-text', '...to text file', self._on_handle_menu_multiple, None, [])
+        submenu_export.append_item(menuitem)
+        menuitem = self.factory.create_menuitem('export-to-csv', '...to CSV', self._on_handle_menu_multiple, None, [])
+        submenu_export.append_item(menuitem)
+        menuitem = self.factory.create_menuitem('export-to-json', '...to JSON', self._on_handle_menu_multiple, None, [])
+        submenu_export.append_item(menuitem)
+        menuitem = self.factory.create_menuitem('export-to-html', '...to HTML', self._on_handle_menu_multiple, None, [])
+        submenu_export.append_item(menuitem)
+        menuitem = self.factory.create_menuitem('export-to-timeline', '...to timeline', self._on_handle_menu_multiple, None, [])
+        submenu_export.append_item(menuitem)
 
         # Danger section
         menuitem = self.factory.create_menuitem('delete', 'Delete documents', self._on_handle_menu_multiple, None, [])

@@ -432,6 +432,30 @@ class MiAZActions(GObject.GObject):
         box.append(toggle)
         filechooser.show()
 
+    def import_config(self, *args):
+        def filechooser_response(dialog, response, data):
+            config = self.backend.repo_config()
+            target_dir = config['dir_docs']
+            if response == Gtk.ResponseType.ACCEPT:
+                content_area = dialog.get_content_area()
+                box = content_area.get_first_child()
+                filechooser = box.get_first_child()
+                gfile = filechooser.get_file()
+                if gfile is not None:
+                    source = gfile.get_path()
+                    self.log.debug(source)
+            dialog.destroy()
+
+        self.factory = self.app.get_factory()
+        filechooser = self.factory.create_filechooser(
+                    parent=self.app.win,
+                    title='Import a configuration file',
+                    target = 'FILE',
+                    callback = filechooser_response,
+                    data = None
+                    )
+        filechooser.show()
+
     def import_file(self, *args):
         def filechooser_response(dialog, response, data):
             config = self.backend.repo_config()
