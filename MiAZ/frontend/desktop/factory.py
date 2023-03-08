@@ -136,15 +136,33 @@ class MiAZFactory:
             button.connect('toggled', callback)
         return button
 
-    def create_button_menu(self, xml: str = '', name:str = '', child: Gtk.Widget = None, css_classes: list = []):
-        """
-        Gtk.Menubutton with a menu defined in a Gtk.Builder xml string
-        """
-        button = Gtk.MenuButton(child=child, css_classes=css_classes)
-        builder = Gtk.Builder()
-        builder.add_from_string(xml)
-        menu = builder.get_object(name)
-        button.set_menu_model(menu)
+    # ~ def create_button_menu(self, xml: str = '', name:str = '', child: Gtk.Widget = None, css_classes: list = []):
+        # ~ """
+        # ~ Gtk.Menubutton with a menu defined in a Gtk.Builder xml string
+        # ~ """
+        # ~ button = Gtk.MenuButton(child=child, css_classes=css_classes)
+        # ~ builder = Gtk.Builder()
+        # ~ builder.add_from_string(xml)
+        # ~ menu = builder.get_object(name)
+        # ~ button.set_menu_model(menu)
+        # ~ return button
+
+    def create_button_menu(self, icon_name: str = '', title:str = '', menu: Gio.Menu = None)-> Gtk.MenuButton:
+        """Gtk.Menubutton with a menu"""
+        label = Gtk.Label()
+        label.get_style_context().add_class(class_name='caption')
+        label.set_markup(title)
+        child=Adw.ButtonContent(icon_name=icon_name, label=title, css_classes=['flat'])
+        button = Gtk.MenuButton()
+        button.set_has_frame(True)
+        button.set_always_show_arrow(True)
+        button.set_child(child)
+        popover = Gtk.PopoverMenu.new_from_model(menu)
+        popover.get_style_context().add_class(class_name='menu')
+        button.set_popover(popover=popover)
+        button.set_valign(Gtk.Align.CENTER)
+        button.set_hexpand(False)
+        button.set_sensitive(True)
         return button
 
     def create_button_popover(self, icon_name: str = '', css_classes: list = [], widgets: list = []) -> Gtk.MenuButton:

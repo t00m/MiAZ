@@ -24,7 +24,6 @@ from MiAZ.backend import MiAZBackend
 from MiAZ.backend.log import get_logger
 from MiAZ.frontend.desktop.widgets.configview import MiAZRepositories
 from MiAZ.frontend.desktop.widgets.assistant import MiAZAssistantRepo
-from MiAZ.frontend.desktop.widgets.menu import MiAZ_MENU_APP
 from MiAZ.frontend.desktop.widgets.workspace import MiAZWorkspace
 from MiAZ.frontend.desktop.widgets.rename import MiAZRenameDialog
 from MiAZ.frontend.desktop.settings import MiAZAppSettings
@@ -145,18 +144,21 @@ class MiAZApp(Adw.Application):
 
     def _setup_headerbar_left(self):
         # Add Menu Button to the titlebar (Left Side)
-        menu = self.factory.create_button_menu(MiAZ_MENU_APP, 'app-menu', css_classes=['flat'], child=Adw.ButtonContent(icon_name='miaz-system-menu'))
+        menu_headerbar = Gio.Menu.new()
+        section_common_in = Gio.Menu.new()
+        section_common_out = Gio.Menu.new()
+        section_danger = Gio.Menu.new()
+        menu_headerbar.append_section(None, section_common_in)
+        menu_headerbar.append_section(None, section_common_out)
+        menu_headerbar.append_section(None, section_danger)
 
-        # and create actions to handle menu actions
-        for action, shortcut in [('settings_app', ['<Ctrl>s']),
-                                 ('help', ['<Ctrl>h']),
-                                 ('about', ['<Ctrl>b']),
-                                 ('close', ['<Ctrl>q']),
-                                 ('view', ['<Ctrl>d']),
-                                 ('rename', ['<Ctrl>r'])
-                                ]:
-            self.factory.create_menu_action(action, self._handle_menu, shortcut)
-        self.header.pack_start(menu)
+        # Actions in
+        menuitem = self.factory.create_menuitem('settings_app', 'Application settings', self._handle_menu, None, [])
+        section_common_in.append_item(menuitem)
+
+        menubutton = self.factory.create_button_menu(icon_name='miaz-system-menu', menu=menu_headerbar)
+        menubutton.set_always_show_arrow(False)
+        self.header.pack_start(menubutton)
 
     def _setup_headerbar_right(self):
         pass
@@ -210,21 +212,20 @@ class MiAZApp(Adw.Application):
             self.log.debug("Repository assistant displayed")
         self.win.present()
 
-    def _handle_menu(self, action, state):
-            """ Callback for  menu actions"""
-            name = action.get_name()
-            if name == 'settings_app':
-                self.show_stack_page_by_name('settings_app')
-            elif name == 'about':
-                self.show_stack_page_by_name('about')
-            elif name == 'close':
-                self.quit()
-            elif name == 'view':
-                self.workspace.document_display()
-            elif name == 'rename':
-                self.workspace.document_rename()
-            elif name == 'help':
-                self.show_stack_page_by_name('help')
+    def _handle_menu(self, action, *args):
+        name = action.props.name
+        if name == 'settings_app':
+            self.show_stack_page_by_name('settings_app')
+        elif name == 'about':
+            self.show_stack_page_by_name('about')
+        elif name == 'close':
+            self.quit()
+        elif name == 'view':
+            self.workspace.document_display()
+        elif name == 'rename':
+            self.workspace.document_rename()
+        elif name == 'help':
+            self.show_stack_page_by_name('help')
 
     def get_stack_page_by_name(self, name: str) -> Adw.ViewStackPage:
         widget = self.stack.get_child_by_name(name)

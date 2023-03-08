@@ -561,7 +561,7 @@ class MiAZActions(GObject.GObject):
         dialog.connect('response', dialog_response, dropdown, items)
         dialog.show()
 
-    def document_export(self, items):
+    def document_export_to_directory(self, items):
         def get_pattern_paths(item):
             fields = self.util.get_fields(item.id)
             paths = {}
@@ -621,7 +621,7 @@ class MiAZActions(GObject.GObject):
         }
         filechooser = self.factory.create_filechooser(
                     parent=self.app.win,
-                    title='Export to directory',
+                    title='Export selected items to this directory',
                     target = 'FOLDER',
                     callback = filechooser_response,
                     data = patterns
@@ -631,7 +631,7 @@ class MiAZActions(GObject.GObject):
         contents = filechooser.get_content_area()
         box = contents.get_first_child()
         hbox = self.factory.create_box_horizontal()
-        chkPattern = self.factory.create_button_check(title='Export with pattern (create subdirs)', callback=None)
+        chkPattern = self.factory.create_button_check(title='Export with pattern', callback=None)
         etyPattern = Gtk.Entry()
         etyPattern.set_text('CYmGP') #/{target}/{Country}/{Year}/{month}/{Group}/{Purpose}
         widgets = []
@@ -645,4 +645,34 @@ class MiAZActions(GObject.GObject):
         hbox.append(etyPattern)
         hbox.append(btpPattern)
         box.append(hbox)
+        filechooser.show()
+
+    def document_export_to_zip(self, items):
+        self.log.debug("Not implemented yet")
+        return
+        def filechooser_response(dialog, response, patterns):
+            config = self.backend.repo_config()
+            target_dir = config['dir_docs']
+            if response == Gtk.ResponseType.ACCEPT:
+                content_area = dialog.get_content_area()
+                box = content_area.get_first_child()
+                filechooser = box.get_first_child()
+                hbox = box.get_last_child()
+                toggle_pattern = hbox.get_first_child()
+                gfile = filechooser.get_file()
+                if gfile is not None:
+                    dirpath = gfile.get_path()
+                    self.util.zip('miaz-export.zip', dirpath)
+            dialog.destroy()
+
+        self.factory = self.app.get_factory()
+        filechooser = self.factory.create_filechooser(
+                    parent=self.app.win,
+                    title='Export selected documents to a ZIP file',
+                    target = 'FOLDER',
+                    callback = filechooser_response,
+                    data = None
+                    )
+
+        # Export with pattern
         filechooser.show()

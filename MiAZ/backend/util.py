@@ -15,6 +15,7 @@ import glob
 import json
 import time
 import shutil
+import zipfile
 from datetime import datetime, timedelta
 from dateutil.parser import parse as dateparser
 
@@ -357,3 +358,26 @@ class MiAZUtil(GObject.GObject):
         except ValueError:
             return None
 
+    def zip(self, filename: str, directory: str):
+        """ Zip directory into a file """
+        self.log.debug("Target: %s", filename)
+        sourcename = os.path.basename(filename)
+        dot = sourcename.find('.')
+        if dot == -1:
+            basename = sourcename
+        else:
+            basename = sourcename[:dot]
+        sourcedir = os.path.dirname(filename)
+        source = os.path.join(sourcedir, basename)
+        zipfile = shutil.make_archive(source, 'zip', directory)
+        target = source + '.zip'
+        shutil.move(zipfile, target)
+        return target
+
+    def unzip(self, target: str, install_dir):
+        """
+        Unzip file to a given dir
+        """
+        zip_archive = zipfile.ZipFile(target, "r")
+        zip_archive.extractall(path=install_dir)
+        zip_archive.close()

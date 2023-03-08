@@ -200,7 +200,7 @@ class MiAZColumnView(Gtk.Box):
         self.store.splice(0, 0, items)
         de = datetime.now()
         dt = de - ds
-        self.log.debug("Columnview for %s updated with %d items in %s", self.item_type.__title__, len(items), dt)
+        # ~ self.log.debug("Columnview for %s updated with %d items in %s", self.item_type.__title__, len(items), dt)
 
     def _on_selection_changed(self, selection, position, n_items):
         self.selected_items = []

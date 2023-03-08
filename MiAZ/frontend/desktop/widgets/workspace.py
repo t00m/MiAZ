@@ -26,7 +26,6 @@ from MiAZ.backend.log import get_logger
 from MiAZ.backend.models import MiAZItem, File, Group, Person, Country, Purpose, Concept, SentBy, SentTo, Date, Extension, Project
 from MiAZ.frontend.desktop.widgets.columnview import MiAZColumnView, ColIcon, ColLabel, ColButton
 from MiAZ.frontend.desktop.widgets.assistant import MiAZAssistantRepoSettings
-from MiAZ.frontend.desktop.widgets.menu import MiAZ_MENU_REPO
 from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewWorkspace, MiAZColumnViewMassRename, MiAZColumnViewMassDelete, MiAZColumnViewMassProject
 from MiAZ.frontend.desktop.widgets.configview import MiAZCountries, MiAZGroups, MiAZPeople, MiAZPurposes, MiAZPeopleSentBy, MiAZPeopleSentTo, MiAZProjects
 
@@ -193,20 +192,6 @@ class MiAZWorkspace(Gtk.Box):
         self.dd_date.connect("notify::selected-item", self.update)
         hbox.append(self.dd_date)
 
-        # ~ now = datetime.now()
-        # ~ this_month = now-timedelta(days=30)
-        # ~ six_months = now-timedelta(days=180)
-        # ~ this_year = datetime.strptime("%d0101" % now.year, "%Y%m%d")
-        # ~ two_years = datetime.strptime("%d0101" % (now.year - 1), "%Y%m%d")
-        # ~ five_years = datetime.strptime("%d0101" % (now.year - 5), "%Y%m%d")
-        # ~ alltimes = datetime.strptime("00010101", "%Y%m%d")
-        # ~ self.dates['0'] = this_month
-        # ~ self.dates['1'] = six_months
-        # ~ self.dates['2'] = this_year
-        # ~ self.dates['3'] = two_years
-        # ~ self.dates['4'] = five_years
-        # ~ self.dates['5'] = alltimes
-
         ## Projects dropdown
         i_type = Project.__gtype_name__
         self.dd_prj = self.factory.create_dropdown_generic(item_type=Project)
@@ -215,7 +200,6 @@ class MiAZWorkspace(Gtk.Box):
         self.dropdown[i_type] = self.dd_prj
         self.config[i_type].connect('used-updated', self.update_dropdown_filter, Project)
         hbox.append(self.dd_prj)
-
 
         # Right
         hbox = self.factory.create_box_horizontal(spacing=0)
@@ -241,10 +225,34 @@ class MiAZWorkspace(Gtk.Box):
         hbox.append(self.btnDocsSel)
 
         # Repo settings button
-        btnRepoSettings = self.factory.create_button_menu(MiAZ_MENU_REPO, 'repo-menu', child=Adw.ButtonContent(icon_name='document-properties'))
-        btnRepoSettings.set_valign(Gtk.Align.CENTER)
-        for action, shortcut in [('repo_settings', [''])]:
-            self.factory.create_menu_action(action, self._on_handle_menu_repo, shortcut)
+        menu_repo = Gio.Menu.new()
+        section_common_in = Gio.Menu.new()
+        section_common_out = Gio.Menu.new()
+        section_danger = Gio.Menu.new()
+        menu_repo.append_section(None, section_common_in)
+        menu_repo.append_section(None, section_common_out)
+        menu_repo.append_section(None, section_danger)
+
+        ## Actions in
+        menuitem = self.factory.create_menuitem(name='repo_settings', label='Repository settings', callback=self._on_handle_menu_repo, data=None, shortcuts=[])
+        section_common_in.append_item(menuitem)
+
+        ## Actions out
+        submenu_backup = Gio.Menu.new()
+        menu_backup = Gio.MenuItem.new_submenu(
+            label = 'Backup...',
+            submenu = submenu_backup,
+        )
+        section_common_out.append_item(menu_backup)
+        menuitem = self.factory.create_menuitem('backup-config', '...only config', self._on_handle_menu_repo, None, [])
+        submenu_backup.append_item(menuitem)
+        menuitem = self.factory.create_menuitem('backup-data', '...only data', self._on_handle_menu_repo, None, [])
+        submenu_backup.append_item(menuitem)
+        menuitem = self.factory.create_menuitem('backup-all', '...config and data', self._on_handle_menu_repo, None, [])
+        submenu_backup.append_item(menuitem)
+
+        btnRepoSettings = self.factory.create_button_menu(icon_name='document-properties', title='', menu=menu_repo)
+        btnRepoSettings.set_always_show_arrow(False)
         hbox.append(btnRepoSettings)
 
         return toolbar_top
@@ -282,8 +290,8 @@ class MiAZWorkspace(Gtk.Box):
         key = "None-None"
         model.append(Date(id=key, title='Without date'))
 
-    def _on_handle_menu_repo(self, action, state):
-        name = action.get_name()
+    def _on_handle_menu_repo(self, action, *args):
+        name = action.props.name
         if name == 'repo_settings':
             self.log.debug("Execute Settings Assistant")
             self.app.show_stack_page_by_name('settings_repo')
@@ -397,10 +405,6 @@ class MiAZWorkspace(Gtk.Box):
         menu_workspace_multiple.append_section(None, section_danger)
 
         # Section -in
-        # ~ # New mass renaming
-        # ~ menuitem = self.factory.create_menuitem('rename', 'Mass rename', self._on_handle_menu_multiple, None, [])
-        # ~ section_common_in.append_item(menuitem)
-
         ## Submenu for mass renaming
         submenu_rename = Gio.Menu.new()
         menu_rename = Gio.MenuItem.new_submenu(
@@ -428,20 +432,20 @@ class MiAZWorkspace(Gtk.Box):
         submenu_project.append_item(menuitem)
 
         # Section -out
-        menuitem = self.factory.create_menuitem('export', 'Export', self._on_handle_menu_multiple, None, [])
-        section_common_out.append_item(menuitem)
-        # ~ submenu_export = Gio.Menu.new()
-        # ~ menu_export = Gio.MenuItem.new_submenu(
-            # ~ label = 'Export...',
-            # ~ submenu = submenu_export
-        # ~ )
-        # ~ section_common_out.append_item(menu_export)
-        # ~ menuitem = self.factory.create_menuitem('export-all', 'Export repository', self._on_handle_menu_multiple, None, [])
-        # ~ submenu_export.append_item(menuitem)
-        # ~ menuitem = self.factory.create_menuitem('export-selected', 'Export selected files', self._on_handle_menu_multiple, None, [])
-        # ~ submenu_export.append_item(menuitem)
-        # ~ menuitem = self.factory.create_menuitem('export-config', 'Export configuration', self._on_handle_menu_multiple, None, [])
-        # ~ submenu_export.append_item(menuitem)
+        ## Export
+        submenu_export = Gio.Menu.new()
+        menu_export = Gio.MenuItem.new_submenu(
+            label = 'Export...',
+            submenu = submenu_export,
+        )
+        section_common_out.append_item(menu_export)
+        menuitem = self.factory.create_menuitem('export-to-directory', '...to directory', self._on_handle_menu_multiple, None, [])
+        submenu_export.append_item(menuitem)
+        menuitem = self.factory.create_menuitem('export-to-zip', '...to zip', self._on_handle_menu_multiple, None, [])
+        submenu_export.append_item(menuitem)
+        # ~ menuitem = self.factory.create_menuitem('export', 'Export', self._on_handle_menu_multiple, None, [])
+        # ~ section_common_out.append_item(menuitem)
+
 
         # Danger section
         menuitem = self.factory.create_menuitem('delete', 'Delete documents', self._on_handle_menu_multiple, None, [])
@@ -677,8 +681,10 @@ class MiAZWorkspace(Gtk.Box):
             self.actions.project_assign(Project, items)
         elif name == 'project-withdraw':
             self.actions.project_withdraw(Project, items)
-        elif name == 'export':
-            self.actions.document_export(items)
+        elif name == 'export-to-directory':
+            self.actions.document_export_to_directory(items)
+        elif name == 'export-to-zip':
+            self.actions.document_export_to_zip(items)
         elif name == 'delete':
             self.actions.document_delete(items)
 
