@@ -46,8 +46,17 @@ class MiAZUtil(GObject.GObject):
         self.backend = backend
         self.conf = self.backend.conf
 
-    def directory_open(self, dirpath):
+    def directory_open(self, dirpath: str):
         os.system("xdg-open '%s'" % dirpath)
+        self.log.debug("Directory %s opened in file browser" % dirpath)
+
+    def directory_remove(self, dirpath: str):
+        shutil.rmtree(dirpath)
+        self.log.debug("Directory %s deleted" % dirpath)
+
+    def directory_create(self, dirpath: str):
+        os.makedirs(dirpath, exist_ok = True)
+        self.log.debug("Directory %s created" % dirpath)
 
     def guess_datetime(self, adate: str) -> datetime:
         """Return (guess) a datetime object for a given string."""
@@ -82,6 +91,13 @@ class MiAZUtil(GObject.GObject):
                 self.log.warning("Value %s of type %s is still being used in %s", value, item_type.__title__, doc)
                 break
         return used
+
+    def get_temp_dir(self):
+        repo = self.backend.repo_config()
+        ts = datetime.now().strftime('%Y%m%d_%H%M%S')
+        name = self.valid_key(repo['dir_docs'])
+        return os.path.join(ENV['LPATH']['TMP'], "%s_%s" % (ts, name))
+
 
     def get_fields(self, filename: str) -> []:
             filename = os.path.basename(filename)
@@ -187,6 +203,10 @@ class MiAZUtil(GObject.GObject):
                 self.log.error("Target '%s' already exist. Skip rename", doc_target)
         else:
             self.log.error("Source and Target are the same. Skip rename")
+
+    def filename_delete(self, filepath):
+        os.unlink(filepath)
+        self.log.debug("File %s deleted", filepath)
 
     def filename_import(self, source: str, target: str):
         """Import file into repository

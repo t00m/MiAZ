@@ -10,12 +10,14 @@
 
 import os
 import glob
+import tempfile
 from datetime import datetime
 
 from gi.repository import GLib
 from gi.repository import GObject
 from gi.repository import Gtk
 
+from MiAZ.backend.env import ENV
 from MiAZ.backend.log import get_logger
 from MiAZ.backend.models import MiAZItem, File, Group, Person, Country, Purpose, Concept, SentBy, SentTo, Date, Extension, Project
 from MiAZ.frontend.desktop.widgets.configview import MiAZCountries, MiAZGroups, MiAZPeople, MiAZPurposes, MiAZPeopleSentBy, MiAZPeopleSentTo, MiAZProjects
@@ -672,8 +674,6 @@ class MiAZActions(GObject.GObject):
         filechooser.show()
 
     def document_export_to_zip(self, items):
-        self.log.debug("Not implemented yet")
-        return
         def filechooser_response(dialog, response, patterns):
             config = self.backend.repo_config()
             target_dir = config['dir_docs']
@@ -684,9 +684,24 @@ class MiAZActions(GObject.GObject):
                 hbox = box.get_last_child()
                 toggle_pattern = hbox.get_first_child()
                 gfile = filechooser.get_file()
+                dirpath = gfile.get_path()
                 if gfile is not None:
-                    dirpath = gfile.get_path()
-                    self.util.zip('miaz-export.zip', dirpath)
+                    repo = self.backend.repo_config()
+                    dir_doc = repo['dir_docs']
+                    dir_zip = self.util.get_temp_dir()
+                    self.util.directory_create(dir_zip)
+                    for item in items:
+                        source = os.path.join(dir_doc, item.id)
+                        target = dir_zip
+                        self.util.filename_copy(source, target)
+                    zip_file = "%s.zip" % os.path.basename(dir_zip)
+                    target = os.path.join(ENV['LPATH']['TMP'], zip_file)
+                    self.util.zip(target, dir_zip)
+                    self.util.filename_rename(target, os.path.join(dirpath, zip_file))
+                    self.util.directory_remove(dir_zip)
+                    self.util.directory_open(dirpath)
+                    self.log.debug(target)
+
             dialog.destroy()
 
         self.factory = self.app.get_factory()
