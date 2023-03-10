@@ -29,6 +29,7 @@ from MiAZ.frontend.desktop.widgets.dialogs import CustomDialog
 from MiAZ.backend.models import MiAZItem, File, Group, Person, Country
 from MiAZ.backend.models import Purpose, Concept, SentBy, SentTo, Date
 from MiAZ.backend.models import Extension, Project, Repository
+from MiAZ.backend.config import MiAZConfigRepositories
 
 Configview = {}
 Configview['Country'] = MiAZCountries
@@ -49,30 +50,38 @@ class MiAZAppSettings(Gtk.Box):
         self.actions = self.app.get_actions()
         self.config = self.app.get_config('App')
         page = Adw.PreferencesPage.new()
-        page.set_title("Settings")
+        page.set_title("Settings - Repositories")
         page.add(self._get_group_repositories())
-        self.repo_is_set = False
         self.append(page)
+        self.repo_is_set = False
 
     def _get_group_repositories(self):
         self.row_repo_source = self._create_action_row_repo_source()
         group = Adw.PreferencesGroup()
         group.set_title("Document repositories")
+        label = Gtk.Label.new("Hola")
         group.add(self.row_repo_source)
         return group
 
     def _create_action_row_repo_source(self):
-        config = self.app.get_config('App')
-        repo = config.get('source')
-        if os.path.isdir(repo):
-            subtitle = os.path.basename("Current repository")
-            title = repo
-        else:
-            title = '<i>Folder not set</i>'
-            subtitle = 'Choose an empty folder'
-        btnRepoSource = self.factory.create_button('document-edit-symbolic', '', self.actions.manage_resource, css_classes=['flat'], data=MiAZRepositories(self.app))
-        self.row = self.factory.create_actionrow(title=title, subtitle=subtitle) #, suffix=button)
-        return self.row
+        row = self.factory.create_box_vertical(hexpand=True, vexpand=True)
+        self.dd_repo = self.factory.create_dropdown_generic(item_type=Repository, ellipsize=False, enable_search=False)
+        self.actions.dropdown_populate(MiAZConfigRepositories, self.dd_repo, Repository, any_value=False, none_value=False)
+        row.append(self.dd_repo)
+        # ~ config = self.app.get_config('App')
+        # ~ repo = config.get('source')
+        # ~ if os.path.isdir(repo):
+            # ~ subtitle = os.path.basename("Current repository")
+            # ~ title = repo
+        # ~ else:
+            # ~ title = '<b>No repositories have been found.</b>'
+            # ~ subtitle = 'Please, create at least one\n\nMiAZ will detect if the folder contains a former MiAZ repository. Otherwise, it will be initialited'
+        # ~ btnRepoSource = self.factory.create_button('document-edit-symbolic', '', self.actions.manage_resource, css_classes=['flat'], data=MiAZRepositories(self.app))
+        # ~ self.row = self.factory.create_actionrow(title=title, subtitle=subtitle, suffix=btnRepoSource)
+        configview = MiAZRepositories(self.app)
+        configview.update()
+        row.append(configview)
+        return row
 
     def _on_selected_repo(self, dropdown, gparamobj):
         repo_id = dropdown.get_selected_item().id
