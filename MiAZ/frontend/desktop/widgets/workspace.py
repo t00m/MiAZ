@@ -596,17 +596,15 @@ class MiAZWorkspace(Gtk.Box):
                 matches = True
             else:
                 matches = False
-        else:
-            if item_dt is None:
+        elif item_dt is None:
                 matches = False
-
+        else:
             start = self.util.string_to_datetime(ll)
             end = self.util.string_to_datetime(ul)
             if item_dt >= start and item_dt <= end:
                 matches = True
             else:
                 matches = False
-
         # ~ self.log.debug("%s >= Item[%s] Datetime[%s] <= %s? %s", ll, item.date, item_dt, ul, matches)
         return matches
 
