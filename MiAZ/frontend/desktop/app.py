@@ -29,6 +29,7 @@ from MiAZ.frontend.desktop.widgets.rename import MiAZRenameDialog
 from MiAZ.frontend.desktop.settings import MiAZAppSettings
 from MiAZ.frontend.desktop.settings import MiAZRepoSettings
 from MiAZ.frontend.desktop.widgets.about import MiAZAbout
+from MiAZ.frontend.desktop.widgets.welcome import MiAZWelcome
 from MiAZ.frontend.desktop.icons import MiAZIconManager
 from MiAZ.frontend.desktop.factory import MiAZFactory
 from MiAZ.frontend.desktop.actions import MiAZActions
@@ -68,8 +69,9 @@ class MiAZApp(Adw.Application):
     def _on_key_press(self, event, keyval, keycode, state):
         keyname = Gdk.keyval_name(keyval)
         if keyname == 'Escape':
-            self.show_stack_page_by_name('workspace')
-            self.workspace.display_dashboard()
+            self.check_repository()
+            # ~ self.show_stack_page_by_name('workspace')
+            # ~ self.workspace.display_dashboard()
 
     def get_actions(self):
         return self.actions
@@ -113,6 +115,12 @@ class MiAZApp(Adw.Application):
         self.page_about = self.stack.add_titled(help_page, 'help', 'MiAZ')
         self.page_about.set_icon_name('document-properties')
         self.page_about.set_visible(False)
+
+    def _setup_page_welcome(self):
+        self.welcome = MiAZWelcome(self)
+        self.page_welcome = self.stack.add_titled(self.welcome, 'welcome', 'MiAZ')
+        self.page_welcome.set_icon_name('MiAZ')
+        self.page_welcome.set_visible(True)
 
     def _setup_page_app_settings(self):
         self.settings_app = MiAZAppSettings(self)
@@ -190,6 +198,7 @@ class MiAZApp(Adw.Application):
 
         # Create system pages
         self._setup_page_about()
+        self._setup_page_welcome()
         self._setup_page_help()
         self._setup_page_app_settings()
 
@@ -204,12 +213,12 @@ class MiAZApp(Adw.Application):
             self._setup_page_repo_settings()
         else:
             self.log.debug("No repo detected in the configuration. Executing asssitant")
-            # ~ self.show_stack_page_by_name('settings_app')
-            assistant = MiAZAssistantRepo(self)
-            assistant.set_transient_for(self.win)
-            assistant.set_modal(True)
-            assistant.present()
-            self.log.debug("Repository assistant displayed")
+            self.show_stack_page_by_name('welcome')
+            # ~ assistant = MiAZAssistantRepo(self)
+            # ~ assistant.set_transient_for(self.win)
+            # ~ assistant.set_modal(True)
+            # ~ assistant.present()
+            # ~ self.log.debug("Repository assistant displayed")
         self.win.present()
 
     def _handle_menu(self, action, *args):
