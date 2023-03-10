@@ -327,6 +327,8 @@ class MiAZFactory:
         action.connect('activate', callback, data)
         self.app.add_action(action)
         menuitem.set_detailed_action(detailed_action='app.%s' % name)
+        if shortcuts:
+            self.app.set_accels_for_action(f'app.{name}', shortcuts)
         return menuitem
 
     def create_row(self, filepath: str, filedict: dict) -> Gtk.Widget:
