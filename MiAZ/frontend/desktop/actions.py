@@ -397,6 +397,9 @@ class MiAZActions(GObject.GObject):
                     title = key
                 model.append(item_type(id=key, title=title))
 
+        if len(model) == 0:
+            model.append(item_type(id='None', title='No data'))
+
     def import_directory(self, *args):
         def filechooser_response(dialog, response, data):
             config = self.backend.repo_config()
