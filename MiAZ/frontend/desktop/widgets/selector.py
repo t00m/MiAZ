@@ -20,7 +20,7 @@ from gi.repository import GLib
 from gi.repository import GObject
 
 from MiAZ.backend.log import get_logger
-from MiAZ.backend.models import Project
+from MiAZ.backend.models import Project, Repository
 from MiAZ.frontend.desktop.widgets.columnview import MiAZColumnView
 from MiAZ.frontend.desktop.widgets.dialogs import MiAZDialogAdd
 
@@ -155,12 +155,15 @@ class MiAZSelector(Gtk.Box):
         for item_used in self.viewSl.get_selected_items():
             if item_used.id not in items_available:
                 items_available[item_used.id] = item_used.title
-            if self.config.model != Project:
-                value_used = self.util.field_used(self.config.model, item_used.id)
-            else:
+            if self.config.model == Repository:
+                value_used = False
+            elif self.config.model == Project:
                 self.projects = self.backend.projects
                 docs = self.projects.docs_in_project(item_used.id)
                 value_used = len(docs) > 0
+            else:
+                value_used = self.util.field_used(self.config.model, item_used.id)
+
             if not value_used:
                 del(items_used[item_used.id])
                 changed = True
