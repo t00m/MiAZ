@@ -123,8 +123,8 @@ class MiAZColumnViewWorkspace(MiAZColumnView):
         item = list_item.get_item()
         label = box.get_first_child()
         label.set_markup("<b>%s</b>" % item.subtitle)
-        label.set_ellipsize(True)
-        label.set_property('ellipsize', Pango.EllipsizeMode.MIDDLE)
+        # ~ label.set_ellipsize(True)
+        # ~ label.set_property('ellipsize', Pango.EllipsizeMode.MIDDLE)
         # ~ label.get_style_context().add_class(class_name='destructive-action')
 
     def _on_factory_setup_active(self, factory, list_item):
@@ -212,6 +212,8 @@ class MiAZColumnViewWorkspace(MiAZColumnView):
         item = list_item.get_item()
         label = box.get_first_child()
         label.set_markup(item.sentby_dsc)
+        label.set_ellipsize(True)
+        label.set_property('ellipsize', Pango.EllipsizeMode.MIDDLE)
 
     def _on_factory_setup_sentto(self, factory, list_item):
         box = ColLabel()
@@ -222,6 +224,8 @@ class MiAZColumnViewWorkspace(MiAZColumnView):
         item = list_item.get_item()
         label = box.get_first_child()
         label.set_markup(item.sentto_dsc)
+        label.set_ellipsize(True)
+        label.set_property('ellipsize', Pango.EllipsizeMode.MIDDLE)
 
     def _on_factory_setup_purpose(self, factory, list_item):
         box = ColLabel()
