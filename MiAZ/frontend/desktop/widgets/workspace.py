@@ -486,7 +486,7 @@ class MiAZWorkspace(Gtk.Box):
         except AttributeError:
             return
         project = self.dropdown['Project'].get_selected_item().id
-        self.log.debug("Period: %s - Project: %s", period, project)
+        # ~ self.log.debug("Period: %s - Project: %s", period, project)
         if project == 'Any' or project == 'None':
             pass
 
@@ -502,7 +502,8 @@ class MiAZWorkspace(Gtk.Box):
                 try:
                     date_dsc = self.cache['date'][fields[0]]
                 except:
-                    date_dsc = self.util.filename_date_human(fields[0])
+                    # ~ date_dsc = self.util.filename_date_human(fields[0])
+                    date_dsc = self.util.filename_date_human_simple(fields[0])
                     self.cache['date'][fields[0]] = date_dsc
 
                 ## Countries
@@ -546,7 +547,7 @@ class MiAZWorkspace(Gtk.Box):
                 invalid.append(filename)
         de = datetime.now()
         dt = de - ds
-        self.log.debug("Workspace updated (%s)" % dt)
+        # ~ self.log.debug("Workspace updated (%s)" % dt)
         self.util.json_save(self.fcache, self.cache)
         # ~ self.log.debug("Saving cache to %s", self.fcache)
         GLib.idle_add(self.view.update, items)

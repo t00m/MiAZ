@@ -248,6 +248,14 @@ class MiAZUtil(GObject.GObject):
             date_dsc = ''
         return date_dsc
 
+    def filename_date_human_simple(self, value: str = '') -> str:
+        try:
+            adate = datetime.strptime(value, "%Y%m%d")
+            date_dsc = adate.strftime("%d/%m/%Y")
+        except ValueError:
+            date_dsc = ''
+        return date_dsc
+
     def filename_display(self, doc):
         filepath = self.filename_path(doc)
         if sys.platform in ['linux', 'linux2']:
