@@ -246,6 +246,6 @@ class MiAZDialogAddRepo(MiAZDialogAdd):
         gfile = self.filechooser.get_file()
         return gfile.get_path()
 
-    def set_value1(self, value):
+    def set_value2(self, value):
         gfile = Gio.File.new_for_path(value)
         self.filechooser.set_file(gfile)

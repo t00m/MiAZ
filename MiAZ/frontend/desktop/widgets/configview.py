@@ -71,7 +71,7 @@ class MiAZRepositories(MiAZConfigView):
         self.add_columnview_used(self.viewSl)
 
     def on_item_available_add(self, *args):
-        dialog = MiAZDialogAddRepo(self.app, self.app.win, 'Add/Edit a Repository', 'Repository name', 'Folder')
+        dialog = MiAZDialogAddRepo(self.app, self.app.win, 'Add a new repository', 'Repository name', 'Folder')
         dialog.connect('response', self._on_response_item_available_add)
         dialog.show()
 
@@ -84,6 +84,15 @@ class MiAZRepositories(MiAZConfigView):
                 self.log.debug("Repo '%s' added to list of available repositories", repo_name)
                 self.update()
         dialog.destroy()
+
+    def _on_item_available_rename(self, item):
+        dialog = MiAZDialogAddRepo(self.app, self.app.win, 'Edit repository', 'Repository name', 'Folder')
+        repo_name = item.id
+        dialog.set_value1(repo_name.replace('_', ' '))
+        dialog.set_value2(item.title)
+        dialog.connect('response', self._on_response_item_available_rename, item)
+        dialog.show()
+
 
 class MiAZCountries(MiAZConfigView):
     """Manage countries from Repo Settings. Edit disabled"""
