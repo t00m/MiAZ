@@ -37,12 +37,12 @@ class MiAZSelector(Gtk.Box):
 
         # Entry and buttons for operations (edit/add/remove)
         self.boxOper = Gtk.Box(spacing=3, orientation=Gtk.Orientation.HORIZONTAL)
-        self.boxOper.set_margin_top(6)
+        self.boxOper.set_margin_top(24)
         self.boxOper.set_margin_bottom(6)
-        self.boxOper.set_margin_start(6)
-        self.boxOper.set_margin_end(6)
+        self.boxOper.set_margin_start(0)
+        self.boxOper.set_margin_end(0)
         self.boxOper.set_vexpand(False)
-        boxEntry = Gtk.Box(spacing=3, orientation=Gtk.Orientation.HORIZONTAL)
+        boxEntry = Gtk.Box(spacing=0, orientation=Gtk.Orientation.HORIZONTAL)
         boxEntry.set_hexpand(False)
         self.entry = Gtk.Entry()
         self.entry.set_activates_default(True)
@@ -121,12 +121,14 @@ class MiAZSelector(Gtk.Box):
         columnview.cv.connect("activate", self._on_selected_item_available_notify)
         self.frmViewAv.set_child(columnview)
         columnview.cv.sort_by_column(columnview.column_title, Gtk.SortType.ASCENDING)
+        columnview.cv.get_style_context().add_class(class_name='caption')
 
     def add_columnview_used(self, columnview):
         columnview.set_filter(None)
         columnview.column_title.set_expand(True)
         self.frmViewSl.set_child(columnview)
         columnview.cv.sort_by_column(columnview.column_title, Gtk.SortType.ASCENDING)
+        columnview.cv.get_style_context().add_class(class_name='caption')
 
     def _setup_view_finish(self, *args):
         pass

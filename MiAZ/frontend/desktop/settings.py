@@ -46,9 +46,10 @@ class MiAZAppSettings(Gtk.Box):
         super(Gtk.Box, self).__init__(spacing=12, orientation=Gtk.Orientation.VERTICAL)
         self.log = get_logger('MiAZAppSettings')
         self.app = app
+        self.backend = self.app.get_backend()
         self.factory = self.app.get_factory()
         self.actions = self.app.get_actions()
-        self.config = self.app.get_config('App')
+        self.config = self.backend.conf
         page = Adw.PreferencesPage.new()
         page.set_title("Settings - Repositories")
         page.add(self._get_group_repositories())
@@ -58,36 +59,58 @@ class MiAZAppSettings(Gtk.Box):
     def _get_group_repositories(self):
         self.row_repo_source = self._create_action_row_repo_source()
         group = Adw.PreferencesGroup()
-        group.set_title("Document repositories")
-        label = Gtk.Label.new("Hola")
+        group.set_title("Repositories")
         group.add(self.row_repo_source)
         return group
 
     def _create_action_row_repo_source(self):
         row = self.factory.create_box_vertical(hexpand=True, vexpand=True)
+        hbox = self.factory.create_box_horizontal()
+        lblActive = Gtk.Label()
+        lblActive.set_markup("Current active")
         self.dd_repo = self.factory.create_dropdown_generic(item_type=Repository, ellipsize=False, enable_search=False)
+        btnUseRepo = self.factory.create_button(icon_name='MiAZ', callback=self._on_use_repo)
+        hbox.append(lblActive)
+        hbox.append(self.dd_repo)
+        hbox.append(btnUseRepo)
         self.actions.dropdown_populate(MiAZConfigRepositories, self.dd_repo, Repository, any_value=False, none_value=False)
-        row.append(self.dd_repo)
-        # ~ config = self.app.get_config('App')
-        # ~ repo = config.get('source')
-        # ~ if os.path.isdir(repo):
-            # ~ subtitle = os.path.basename("Current repository")
-            # ~ title = repo
-        # ~ else:
-            # ~ title = '<b>No repositories have been found.</b>'
-            # ~ subtitle = 'Please, create at least one\n\nMiAZ will detect if the folder contains a former MiAZ repository. Otherwise, it will be initialited'
-        # ~ btnRepoSource = self.factory.create_button('document-edit-symbolic', '', self.actions.manage_resource, css_classes=['flat'], data=MiAZRepositories(self.app))
-        # ~ self.row = self.factory.create_actionrow(title=title, subtitle=subtitle, suffix=btnRepoSource)
+        self.dd_repo.connect("notify::selected-item", self._on_selected_repo)
+        self.config['Repository'].connect('used-updated', self.actions.dropdown_populate, self.dd_repo, Repository, False, False)
+
+        # Load last active repo
+        repos_used = self.config['Repository'].load_used()
+        self.log.debug("Repositories in use: %s", ','.join(repos_used.keys()))
+        repo_active = self.config['App'].get('current')
+        self.log.debug("Current active: %s", repo_active)
+        if repo_active in repos_used:
+            model = self.dd_repo.get_model()
+            n = 0
+            for item in model:
+                if item.id == repo_active:
+                    self.dd_repo.set_selected(n)
+                n += 1
+        row.append(hbox)
         configview = MiAZRepositories(self.app)
         configview.update()
         row.append(configview)
         return row
 
+    def _on_use_repo(self, *args):
+        self.log.debug(args)
+        workspace = self.app.get_workspace()
+        workspace.update()
+        self.app.show_stack_page_by_name('workspace')
+
     def _on_selected_repo(self, dropdown, gparamobj):
-        repo_id = dropdown.get_selected_item().id
-        repo_title = dropdown.get_selected_item().title
-        self.row.set_title(repo_id.replace('_', ' '))
-        self.app.check_repository()
+        try:
+            repo_id = dropdown.get_selected_item().id
+            repo_dir = dropdown.get_selected_item().title
+            self.log.debug("Repository selected: %s[%s]", repo_id, repo_dir)
+            self.config['App'].set('current', repo_id)
+            self.app.check_repository()
+        except AttributeError:
+            # Probably the repository was removed from used view
+            pass
 
     def _update_action_row_repo_source(self, name, dirpath):
         self.row_repo_source.set_title(name)

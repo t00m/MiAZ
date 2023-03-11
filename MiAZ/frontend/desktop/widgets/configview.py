@@ -59,6 +59,7 @@ class MiAZRepositories(MiAZConfigView):
     current = None
 
     def __init__(self, app):
+        self.app = app
         super(MiAZConfigView, self).__init__(app, edit=True)
         super().__init__(app, 'Repository')
 
@@ -70,16 +71,17 @@ class MiAZRepositories(MiAZConfigView):
         self.add_columnview_used(self.viewSl)
 
     def on_item_available_add(self, *args):
-            dialog = MiAZDialogAddRepo(self.app, self.get_root(), '%s: add a new item' % self.config.config_for, 'Repo Id', 'Folder')
-            dialog.connect('response', self._on_response_item_available_add)
-            dialog.show()
+        dialog = MiAZDialogAddRepo(self.app, self.app.win, 'Add/Edit a Repository', 'Repository name', 'Folder')
+        dialog.connect('response', self._on_response_item_available_add)
+        dialog.show()
 
     def _on_response_item_available_add(self, dialog, response):
         if response == Gtk.ResponseType.ACCEPT:
-            key = dialog.get_value1()
-            if len(key) > 0:
-                self.config.add_available(key, '')
-                self.log.debug("Repo '%s' added to list of available repositories", key)
+            repo_name = dialog.get_value1()
+            repo_path = dialog.get_value2()
+            if len(repo_name) > 0 and os.path.exists(repo_path):
+                self.config.add_available(repo_name, repo_path)
+                self.log.debug("Repo '%s' added to list of available repositories", repo_name)
                 self.update()
         dialog.destroy()
 

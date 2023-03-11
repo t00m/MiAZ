@@ -38,6 +38,14 @@ from MiAZ.frontend.desktop.help import MiAZHelp
 Adw.init()
 
 class MiAZApp(Adw.Application):
+    widget_about = None
+    widget_help = None
+    widget_welcome = None
+    widget_settings_app = None
+    widget_settings_repo = None
+    widget_rename = None
+    widget_workspace = None
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.backend = MiAZBackend()
@@ -69,9 +77,13 @@ class MiAZApp(Adw.Application):
     def _on_key_press(self, event, keyval, keycode, state):
         keyname = Gdk.keyval_name(keyval)
         if keyname == 'Escape':
-            self.check_repository()
-            # ~ self.show_stack_page_by_name('workspace')
-            # ~ self.workspace.display_dashboard()
+            page_name = self.stack.get_visible_child_name()
+            valid = self.check_repository()
+            if valid:
+                workspace = self.get_workspace()
+                workspace.update()
+                self.show_stack_page_by_name('workspace')
+
 
     def get_actions(self):
         return self.actions
@@ -89,7 +101,7 @@ class MiAZApp(Adw.Application):
         return self.icman
 
     def get_workspace(self):
-        return self.workspace
+        return self.widget_workspace
 
     def get_header(self):
         return self.header
@@ -106,46 +118,53 @@ class MiAZApp(Adw.Application):
         return self.stack
 
     def _setup_page_about(self):
-        about = MiAZAbout(self)
-        self.page_about = self.stack.add_titled(about, 'about', 'MiAZ')
-        self.page_about.set_icon_name('document-properties')
+        if self.widget_about is None:
+            self.widget_about = MiAZAbout(self)
+            self.page_about = self.stack.add_titled(self.widget_about, 'about', 'MiAZ')
+            self.page_about.set_icon_name('document-properties')
 
     def _setup_page_help(self):
-        help_page = MiAZHelp(self)
-        self.page_about = self.stack.add_titled(help_page, 'help', 'MiAZ')
-        self.page_about.set_icon_name('document-properties')
-        self.page_about.set_visible(False)
+        if self.widget_help is None:
+            self.widget_help = MiAZHelp(self)
+            self.page_about = self.stack.add_titled(self.widget_help, 'help', 'MiAZ')
+            self.page_about.set_icon_name('document-properties')
+            self.page_about.set_visible(False)
 
     def _setup_page_welcome(self):
-        self.welcome = MiAZWelcome(self)
-        self.page_welcome = self.stack.add_titled(self.welcome, 'welcome', 'MiAZ')
-        self.page_welcome.set_icon_name('MiAZ')
-        self.page_welcome.set_visible(True)
+        if self.widget_welcome is None:
+            self.widget_welcome = MiAZWelcome(self)
+            self.page_welcome = self.stack.add_titled(self.widget_welcome, 'welcome', 'MiAZ')
+            self.page_welcome.set_icon_name('MiAZ')
+            self.page_welcome.set_visible(True)
 
     def _setup_page_app_settings(self):
-        self.settings_app = MiAZAppSettings(self)
-        self.page_settings_app = self.stack.add_titled(self.settings_app, 'settings_app', 'MiAZ')
-        self.page_settings_app.set_icon_name('document-properties')
-        self.page_settings_app.set_visible(False)
+        if self.widget_settings_app is None:
+            self.widget_settings_app = MiAZAppSettings(self)
+            self.page_settings_app = self.stack.add_titled(self.widget_settings_app, 'settings_app', 'MiAZ')
+            self.page_settings_app.set_icon_name('document-properties')
+            self.page_settings_app.set_visible(False)
 
     def _setup_page_repo_settings(self):
-        self.settings_repo = MiAZRepoSettings(self)
-        self.page_settings_repo = self.stack.add_titled(self.settings_repo, 'settings_repo', 'MiAZ')
-        self.page_settings_repo.set_icon_name('document-properties')
-        self.page_settings_repo.set_visible(False)
+        if self.widget_settings_repo is None:
+            self.widget_settings_repo = MiAZRepoSettings(self)
+            self.page_settings_repo = self.stack.add_titled(self.widget_settings_repo, 'settings_repo', 'MiAZ')
+            self.page_settings_repo.set_icon_name('document-properties')
+            self.page_settings_repo.set_visible(False)
 
     def _setup_page_workspace(self):
-        self.workspace = MiAZWorkspace(self)
-        self.page_workspace = self.stack.add_titled(self.workspace, 'workspace', 'MiAZ')
-        self.page_workspace.set_icon_name('document-properties')
-        self.page_workspace.set_visible(True)
-        self.show_stack_page_by_name('workspace')
+        if self.widget_workspace is None:
+            self.widget_workspace = MiAZWorkspace(self)
+            self.page_workspace = self.stack.add_titled(self.widget_workspace, 'workspace', 'MiAZ')
+            self.page_workspace.set_icon_name('document-properties')
+            self.page_workspace.set_visible(True)
+            self.show_stack_page_by_name('workspace')
 
     def _setup_page_rename(self):
-        self.rename = MiAZRenameDialog(self)
-        self.page_rename = self.stack.add_titled(self.rename, 'rename', 'MiAZ')
-        self.page_rename.set_icon_name('document-properties')
-        self.page_rename.set_visible(False)
+        if self.widget_rename is None:
+            self.widget_rename = MiAZRenameDialog(self)
+            self.page_rename = self.stack.add_titled(self.widget_rename, 'rename', 'MiAZ')
+            self.page_rename.set_icon_name('document-properties')
+            self.page_rename.set_visible(False)
 
     def get_rename_widget(self):
         return self.get_stack_page_widget_by_name('rename')
@@ -204,22 +223,23 @@ class MiAZApp(Adw.Application):
 
     def check_repository(self):
         repo = self.backend.repo_config()
-        dir_repo = repo['dir_docs']
-        self.log.debug("Repo? '%s'", dir_repo)
-        if self.backend.repo_validate(dir_repo):
-            self.backend.repo_load(dir_repo)
-            self._setup_page_workspace()
-            self._setup_page_rename()
-            self._setup_page_repo_settings()
-        else:
-            self.log.debug("No repo detected in the configuration. Executing asssitant")
+        try:
+            dir_repo = repo['dir_docs']
+            self.log.debug("Repo? '%s'", dir_repo)
+            if self.backend.repo_validate(dir_repo):
+                self.backend.repo_load(dir_repo)
+                self._setup_page_workspace()
+                self._setup_page_rename()
+                self._setup_page_repo_settings()
+                valid = True
+            else:
+                valid = False
+        except KeyError as error:
+            self.log.debug("No repository active in the configuration")
             self.show_stack_page_by_name('welcome')
-            # ~ assistant = MiAZAssistantRepo(self)
-            # ~ assistant.set_transient_for(self.win)
-            # ~ assistant.set_modal(True)
-            # ~ assistant.present()
-            # ~ self.log.debug("Repository assistant displayed")
+            valid = False
         self.win.present()
+        return valid
 
     def _handle_menu(self, action, *args):
         name = action.props.name

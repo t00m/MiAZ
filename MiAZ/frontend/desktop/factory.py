@@ -273,6 +273,8 @@ class MiAZFactory:
         return dialog
 
     def create_filechooser(self, parent, title, target, callback, data=None):
+        #FIXME: Gtk.FileChooser is deprecated. Use Gtk.FileDialog
+        # Available since Gtk 4.10: https://docs.gtk.org/gtk4/class.FileDialog.html
         d_filechooser = Gtk.Dialog()
         d_filechooser.set_title(title)
         d_filechooser.set_transient_for(parent)
@@ -283,6 +285,28 @@ class MiAZFactory:
         box = self.create_box_vertical()
         w_filechooser = Gtk.FileChooserWidget()
         box.append(w_filechooser)
+        if target == 'FOLDER':
+            w_filechooser.set_action(Gtk.FileChooserAction.SELECT_FOLDER)
+        elif target == 'FILE':
+            w_filechooser.set_action(Gtk.FileChooserAction.OPEN)
+        elif target == 'SAVE':
+            w_filechooser.set_action(Gtk.FileChooserAction.SAVE)
+        contents.append(box)
+        return d_filechooser
+
+    # ~ def create_filechooser_widget(self, title, target, callback, data=None):
+        # ~ #FIXME: Gtk.FileChooser is deprecated. Use Gtk.FileDialog
+        # ~ # Available since Gtk 4.10: https://docs.gtk.org/gtk4/class.FileDialog.html
+        # ~ d_filechooser = Gtk.Dialog()
+        # ~ d_filechooser.set_title(title)
+        # ~ d_filechooser.set_transient_for(parent)
+        # ~ d_filechooser.set_modal(True)
+        # ~ d_filechooser.add_buttons('Cancel', Gtk.ResponseType.CANCEL, 'Accept', Gtk.ResponseType.ACCEPT)
+        # ~ d_filechooser.connect('response', callback, data)
+        # ~ contents = d_filechooser.get_content_area()
+        # ~ box = self.create_box_vertical()
+        # ~ w_filechooser = Gtk.FileChooserWidget()
+        # ~ box.append(w_filechooser)
         if target == 'FOLDER':
             w_filechooser.set_action(Gtk.FileChooserAction.SELECT_FOLDER)
         elif target == 'FILE':

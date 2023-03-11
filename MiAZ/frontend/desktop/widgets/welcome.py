@@ -28,14 +28,19 @@ class MiAZWelcome(Gtk.Box):
         centerbox.set_hexpand(True)
         self.append(centerbox)
 
-        vbox = self.factory.create_box_vertical(hexpand=True, vexpand=False)
+        vbox = self.factory.create_box_vertical(spacing=24, hexpand=True, vexpand=False)
         centerbox.set_center_widget(vbox)
 
-        label = Gtk.Label.new('Welcome')
+        label = Gtk.Label.new('Welcome!')
         label.get_style_context().add_class(class_name='title-1')
         vbox.append(label)
         label = Gtk.Label()
-        label.set_markup("No repository has been found.\nPlease, open the <i>Application Settings</i> to create a new one.")
+        label.get_style_context().add_class(class_name='title-3')
+        label.set_markup("No active repositories has been found.\n")
+        vbox.append(label)
+        label = Gtk.Label()
+        label.get_style_context().add_class(class_name='title-4')
+        label.set_markup("Please, open the <i>Application Settings</i> to manage your repositories.")
         vbox.append(label)
 
 

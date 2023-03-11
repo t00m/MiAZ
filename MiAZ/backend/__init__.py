@@ -72,10 +72,19 @@ class MiAZBackend(GObject.GObject):
         self.log.debug("Repo configuration initialized")
 
     def repo_config(self):
-        conf = {}
-        conf['dir_docs'] = self.conf['App'].get('source')
-        conf['dir_conf'] = os.path.join(conf['dir_docs'], '.conf')
-        return conf
+        repo_id = self.conf['App'].get('current')
+        repos_used = self.conf['Repository'].load_used()
+        try:
+            repo_path = repos_used[repo_id]
+            conf = {}
+            conf['dir_docs'] = repo_path
+            conf['dir_conf'] = os.path.join(conf['dir_docs'], '.conf')
+            if not os.path.exists(conf['dir_conf']):
+                self.repo_init(conf['dir_docs'])
+        except KeyError:
+            conf = {}
+        finally:
+            return conf
 
     def repo_load(self, path):
         conf = self.repo_config()

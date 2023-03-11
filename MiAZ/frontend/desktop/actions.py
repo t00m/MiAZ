@@ -19,7 +19,7 @@ from gi.repository import Gtk
 
 from MiAZ.backend.env import ENV
 from MiAZ.backend.log import get_logger
-from MiAZ.backend.models import MiAZItem, File, Group, Person, Country, Purpose, Concept, SentBy, SentTo, Date, Extension, Project
+from MiAZ.backend.models import MiAZItem, File, Group, Person, Country, Purpose, Concept, SentBy, SentTo, Date, Extension, Project, Repository
 from MiAZ.frontend.desktop.widgets.configview import MiAZCountries, MiAZGroups, MiAZPeople, MiAZPurposes, MiAZPeopleSentBy, MiAZPeopleSentTo, MiAZProjects
 from MiAZ.frontend.desktop.widgets.rename import MiAZRenameDialog
 from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewWorkspace
@@ -395,10 +395,15 @@ class MiAZActions(GObject.GObject):
                 title = items[key]
                 if len(title) == 0:
                     title = key
+                if item_type == Repository:
+                    title = key.replace('_', ' ')
                 model.append(item_type(id=key, title=title))
 
         if len(model) == 0:
-            model.append(item_type(id='None', title='No data'))
+            if item_type != Repository:
+                model.append(item_type(id='None', title='No data'))
+            else:
+                model.append(item_type(id='None', title='No repositories found'))
 
     def import_directory(self, *args):
         def filechooser_response(dialog, response, data):
