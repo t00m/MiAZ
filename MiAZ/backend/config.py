@@ -346,8 +346,3 @@ class MiAZConfigProjects(MiAZConfig):
             model = Project,
             must_copy = False
         )
-        self.connect('used-updated', self.used_updated)
-
-    def used_updated(self, *args):
-        self.add_available('None', 'No project')
-        self.add_used('None', 'No project')

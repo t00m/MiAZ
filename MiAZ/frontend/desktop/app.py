@@ -24,12 +24,12 @@ from MiAZ.backend import MiAZBackend
 from MiAZ.backend.log import get_logger
 from MiAZ.frontend.desktop.widgets.configview import MiAZRepositories
 from MiAZ.frontend.desktop.widgets.assistant import MiAZAssistantRepo
-from MiAZ.frontend.desktop.widgets.menu import MiAZ_MENU_APP
 from MiAZ.frontend.desktop.widgets.workspace import MiAZWorkspace
 from MiAZ.frontend.desktop.widgets.rename import MiAZRenameDialog
 from MiAZ.frontend.desktop.settings import MiAZAppSettings
 from MiAZ.frontend.desktop.settings import MiAZRepoSettings
 from MiAZ.frontend.desktop.widgets.about import MiAZAbout
+from MiAZ.frontend.desktop.widgets.welcome import MiAZWelcome
 from MiAZ.frontend.desktop.icons import MiAZIconManager
 from MiAZ.frontend.desktop.factory import MiAZFactory
 from MiAZ.frontend.desktop.actions import MiAZActions
@@ -38,6 +38,14 @@ from MiAZ.frontend.desktop.help import MiAZHelp
 Adw.init()
 
 class MiAZApp(Adw.Application):
+    widget_about = None
+    widget_help = None
+    widget_welcome = None
+    widget_settings_app = None
+    widget_settings_repo = None
+    widget_rename = None
+    widget_workspace = None
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.backend = MiAZBackend()
@@ -69,8 +77,13 @@ class MiAZApp(Adw.Application):
     def _on_key_press(self, event, keyval, keycode, state):
         keyname = Gdk.keyval_name(keyval)
         if keyname == 'Escape':
-            self.show_stack_page_by_name('workspace')
-            self.workspace.display_dashboard()
+            page_name = self.stack.get_visible_child_name()
+            valid = self.check_repository()
+            if valid:
+                workspace = self.get_workspace()
+                workspace.update()
+                self.show_stack_page_by_name('workspace')
+
 
     def get_actions(self):
         return self.actions
@@ -88,7 +101,7 @@ class MiAZApp(Adw.Application):
         return self.icman
 
     def get_workspace(self):
-        return self.workspace
+        return self.widget_workspace
 
     def get_header(self):
         return self.header
@@ -105,58 +118,74 @@ class MiAZApp(Adw.Application):
         return self.stack
 
     def _setup_page_about(self):
-        about = MiAZAbout(self)
-        self.page_about = self.stack.add_titled(about, 'about', 'MiAZ')
-        self.page_about.set_icon_name('document-properties')
+        if self.widget_about is None:
+            self.widget_about = MiAZAbout(self)
+            self.page_about = self.stack.add_titled(self.widget_about, 'about', 'MiAZ')
+            self.page_about.set_icon_name('document-properties')
 
     def _setup_page_help(self):
-        help_page = MiAZHelp(self)
-        self.page_about = self.stack.add_titled(help_page, 'help', 'MiAZ')
-        self.page_about.set_icon_name('document-properties')
-        self.page_about.set_visible(False)
+        if self.widget_help is None:
+            self.widget_help = MiAZHelp(self)
+            self.page_about = self.stack.add_titled(self.widget_help, 'help', 'MiAZ')
+            self.page_about.set_icon_name('document-properties')
+            self.page_about.set_visible(False)
+
+    def _setup_page_welcome(self):
+        if self.widget_welcome is None:
+            self.widget_welcome = MiAZWelcome(self)
+            self.page_welcome = self.stack.add_titled(self.widget_welcome, 'welcome', 'MiAZ')
+            self.page_welcome.set_icon_name('MiAZ')
+            self.page_welcome.set_visible(True)
 
     def _setup_page_app_settings(self):
-        self.settings_app = MiAZAppSettings(self)
-        self.page_settings_app = self.stack.add_titled(self.settings_app, 'settings_app', 'MiAZ')
-        self.page_settings_app.set_icon_name('document-properties')
-        self.page_settings_app.set_visible(False)
+        if self.widget_settings_app is None:
+            self.widget_settings_app = MiAZAppSettings(self)
+            self.page_settings_app = self.stack.add_titled(self.widget_settings_app, 'settings_app', 'MiAZ')
+            self.page_settings_app.set_icon_name('document-properties')
+            self.page_settings_app.set_visible(False)
 
     def _setup_page_repo_settings(self):
-        self.settings_repo = MiAZRepoSettings(self)
-        self.page_settings_repo = self.stack.add_titled(self.settings_repo, 'settings_repo', 'MiAZ')
-        self.page_settings_repo.set_icon_name('document-properties')
-        self.page_settings_repo.set_visible(False)
+        if self.widget_settings_repo is None:
+            self.widget_settings_repo = MiAZRepoSettings(self)
+            self.page_settings_repo = self.stack.add_titled(self.widget_settings_repo, 'settings_repo', 'MiAZ')
+            self.page_settings_repo.set_icon_name('document-properties')
+            self.page_settings_repo.set_visible(False)
 
     def _setup_page_workspace(self):
-        self.workspace = MiAZWorkspace(self)
-        self.page_workspace = self.stack.add_titled(self.workspace, 'workspace', 'MiAZ')
-        self.page_workspace.set_icon_name('document-properties')
-        self.page_workspace.set_visible(True)
-        self.show_stack_page_by_name('workspace')
+        if self.widget_workspace is None:
+            self.widget_workspace = MiAZWorkspace(self)
+            self.page_workspace = self.stack.add_titled(self.widget_workspace, 'workspace', 'MiAZ')
+            self.page_workspace.set_icon_name('document-properties')
+            self.page_workspace.set_visible(True)
+            self.show_stack_page_by_name('workspace')
 
     def _setup_page_rename(self):
-        self.rename = MiAZRenameDialog(self)
-        self.page_rename = self.stack.add_titled(self.rename, 'rename', 'MiAZ')
-        self.page_rename.set_icon_name('document-properties')
-        self.page_rename.set_visible(False)
+        if self.widget_rename is None:
+            self.widget_rename = MiAZRenameDialog(self)
+            self.page_rename = self.stack.add_titled(self.widget_rename, 'rename', 'MiAZ')
+            self.page_rename.set_icon_name('document-properties')
+            self.page_rename.set_visible(False)
 
     def get_rename_widget(self):
         return self.get_stack_page_widget_by_name('rename')
 
     def _setup_headerbar_left(self):
         # Add Menu Button to the titlebar (Left Side)
-        menu = self.factory.create_button_menu(MiAZ_MENU_APP, 'app-menu', css_classes=['flat'], child=Adw.ButtonContent(icon_name='miaz-system-menu'))
+        menu_headerbar = Gio.Menu.new()
+        section_common_in = Gio.Menu.new()
+        section_common_out = Gio.Menu.new()
+        section_danger = Gio.Menu.new()
+        menu_headerbar.append_section(None, section_common_in)
+        menu_headerbar.append_section(None, section_common_out)
+        menu_headerbar.append_section(None, section_danger)
 
-        # and create actions to handle menu actions
-        for action, shortcut in [('settings_app', ['<Ctrl>s']),
-                                 ('help', ['<Ctrl>h']),
-                                 ('about', ['<Ctrl>b']),
-                                 ('close', ['<Ctrl>q']),
-                                 ('view', ['<Ctrl>d']),
-                                 ('rename', ['<Ctrl>r'])
-                                ]:
-            self.factory.create_menu_action(action, self._handle_menu, shortcut)
-        self.header.pack_start(menu)
+        # Actions in
+        menuitem = self.factory.create_menuitem('settings_app', 'Application settings', self._handle_menu, None, [])
+        section_common_in.append_item(menuitem)
+
+        menubutton = self.factory.create_button_menu(icon_name='miaz-system-menu', menu=menu_headerbar)
+        menubutton.set_always_show_arrow(False)
+        self.header.pack_start(menubutton)
 
     def _setup_headerbar_right(self):
         pass
@@ -188,43 +217,44 @@ class MiAZApp(Adw.Application):
 
         # Create system pages
         self._setup_page_about()
+        self._setup_page_welcome()
         self._setup_page_help()
         self._setup_page_app_settings()
 
     def check_repository(self):
         repo = self.backend.repo_config()
-        dir_repo = repo['dir_docs']
-        self.log.debug("Repo? '%s'", dir_repo)
-        if self.backend.repo_validate(dir_repo):
-            self.backend.repo_load(dir_repo)
-            self._setup_page_workspace()
-            self._setup_page_rename()
-            self._setup_page_repo_settings()
-        else:
-            self.log.debug("No repo detected in the configuration. Executing asssitant")
-            # ~ self.show_stack_page_by_name('settings_app')
-            assistant = MiAZAssistantRepo(self)
-            assistant.set_transient_for(self.win)
-            assistant.set_modal(True)
-            assistant.present()
-            self.log.debug("Repository assistant displayed")
+        try:
+            dir_repo = repo['dir_docs']
+            self.log.debug("Repo? '%s'", dir_repo)
+            if self.backend.repo_validate(dir_repo):
+                self.backend.repo_load(dir_repo)
+                self._setup_page_workspace()
+                self._setup_page_rename()
+                self._setup_page_repo_settings()
+                valid = True
+            else:
+                valid = False
+        except KeyError as error:
+            self.log.debug("No repository active in the configuration")
+            self.show_stack_page_by_name('welcome')
+            valid = False
         self.win.present()
+        return valid
 
-    def _handle_menu(self, action, state):
-            """ Callback for  menu actions"""
-            name = action.get_name()
-            if name == 'settings_app':
-                self.show_stack_page_by_name('settings_app')
-            elif name == 'about':
-                self.show_stack_page_by_name('about')
-            elif name == 'close':
-                self.quit()
-            elif name == 'view':
-                self.workspace.document_display()
-            elif name == 'rename':
-                self.workspace.document_rename()
-            elif name == 'help':
-                self.show_stack_page_by_name('help')
+    def _handle_menu(self, action, *args):
+        name = action.props.name
+        if name == 'settings_app':
+            self.show_stack_page_by_name('settings_app')
+        elif name == 'about':
+            self.show_stack_page_by_name('about')
+        elif name == 'close':
+            self.quit()
+        elif name == 'view':
+            self.workspace.document_display()
+        elif name == 'rename':
+            self.workspace.document_rename()
+        elif name == 'help':
+            self.show_stack_page_by_name('help')
 
     def get_stack_page_by_name(self, name: str) -> Adw.ViewStackPage:
         widget = self.stack.get_child_by_name(name)

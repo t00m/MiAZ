@@ -211,18 +211,25 @@ class MiAZDialogAddRepo(MiAZDialogAdd):
         self.key1 = key1
 
     def _setup_widget(self):
+        vbox = self.factory.create_box_vertical(spacing=12)
+        self.boxKey1.append(vbox)
+        hbox = self.factory.create_box_horizontal()
         self.lblKey1 = Gtk.Label()
         self.lblKey1.set_xalign(0.0)
         self.lblKey1.set_hexpand(False)
-        self.lblKey1.set_text(self.key1)
-        self.boxKey1.append(self.lblKey1)
-        self.boxKey2 = Gtk.Box(spacing=6, orientation=Gtk.Orientation.VERTICAL)
-        self.boxKey2.set_hexpand(False)
-        btnRepoSource = self.factory.create_button('document-edit-symbolic', '', self.show_filechooser_source, css_classes=['flat'])
-        self.boxKey2.append(btnRepoSource)
+        self.lblKey1.set_markup("<b>%s</b>" % self.key1)
+        self.etyValue1 = Gtk.Entry()
+        self.etyValue1.set_hexpand(False)
+        hbox.append(self.lblKey1)
+        hbox.append(self.etyValue1)
+        vbox.append(hbox)
+        frame = Gtk.Frame()
+        self.filechooser = Gtk.FileChooserWidget()
+        self.filechooser.set_action(Gtk.FileChooserAction.SELECT_FOLDER)
+        frame.set_child(self.filechooser)
+        vbox.append(frame)
         separator = Gtk.Separator.new(Gtk.Orientation.HORIZONTAL)
         self.fields.append(self.boxKey1)
-        self.fields.append(self.boxKey2)
         self.widget.append(self.fields)
         self.widget.append(separator)
         self.widget.append(self.boxButtons)
@@ -230,35 +237,15 @@ class MiAZDialogAddRepo(MiAZDialogAdd):
         contents.append(self.widget)
 
     def get_value1(self):
-        return self.lblKey1.get_text()
+        return self.etyValue1.get_text()
 
     def set_value1(self, value):
-        self.lblKey1.set_text(value)
+        self.etyValue1.set_text(value)
 
-    def show_filechooser_source(self, *args):
-            filechooser = self.factory.create_filechooser(
-                        parent=self,
-                        title='Choose target directory',
-                        target = 'FOLDER',
-                        callback = self.on_filechooser_response_source
-                        )
-            filechooser.show()
+    def get_value2(self):
+        gfile = self.filechooser.get_file()
+        return gfile.get_path()
 
-    def on_filechooser_response_source(self, dialog, response, data=None):
-        use_repo = False
-        if response == Gtk.ResponseType.ACCEPT:
-            content_area = dialog.get_content_area()
-            box = content_area.get_first_child()
-            filechooser = box.get_first_child()
-            gfile = filechooser.get_file()
-            try:
-                gfile = filechooser.get_file()
-            except AttributeError as error:
-                self.log.error(error)
-                raise
-            if gfile is None:
-                self.log.debug("No directory set. Do nothing.")
-                # FIXME: Show warning message. Priority: low
-                return
-            self.set_value1(gfile.get_path())
-        dialog.destroy()
+    def set_value1(self, value):
+        gfile = Gio.File.new_for_path(value)
+        self.filechooser.set_file(gfile)

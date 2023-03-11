@@ -10,14 +10,16 @@
 
 import os
 import glob
+import tempfile
 from datetime import datetime
 
 from gi.repository import GLib
 from gi.repository import GObject
 from gi.repository import Gtk
 
+from MiAZ.backend.env import ENV
 from MiAZ.backend.log import get_logger
-from MiAZ.backend.models import MiAZItem, File, Group, Person, Country, Purpose, Concept, SentBy, SentTo, Date, Extension, Project
+from MiAZ.backend.models import MiAZItem, File, Group, Person, Country, Purpose, Concept, SentBy, SentTo, Date, Extension, Project, Repository
 from MiAZ.frontend.desktop.widgets.configview import MiAZCountries, MiAZGroups, MiAZPeople, MiAZPurposes, MiAZPeopleSentBy, MiAZPeopleSentTo, MiAZProjects
 from MiAZ.frontend.desktop.widgets.rename import MiAZRenameDialog
 from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewWorkspace
@@ -361,9 +363,10 @@ class MiAZActions(GObject.GObject):
         # In any case, config parameter is not used. Config is got from
         # item_type
         # ~ model = dropdown.get_model()
-        config = self.app.get_config(item_type.__gtype_name__)
+        i_type = item_type.__gtype_name__
+        config = self.app.get_config(i_type)
         items = config.load(config.used)
-        title = item_type.__gtype_name__
+        i_title = item_type.__title__
 
         model_filter = dropdown.get_model()
         model_sort = model_filter.get_model()
@@ -372,9 +375,9 @@ class MiAZActions(GObject.GObject):
 
         model.remove_all()
         if any_value:
-            model.append(item_type(id='Any', title='Any'))
+            model.append(item_type(id='Any', title='Any %s' % i_title.lower()))
         if none_value:
-            model.append(item_type(id='None', title='None'))
+            model.append(item_type(id='None', title='No %s' % i_title.lower()))
 
         for key in items:
             accepted = True
@@ -392,7 +395,15 @@ class MiAZActions(GObject.GObject):
                 title = items[key]
                 if len(title) == 0:
                     title = key
+                if item_type == Repository:
+                    title = key.replace('_', ' ')
                 model.append(item_type(id=key, title=title))
+
+        if len(model) == 0:
+            if item_type != Repository:
+                model.append(item_type(id='None', title='No data'))
+            else:
+                model.append(item_type(id='None', title='No repositories found'))
 
     def import_directory(self, *args):
         def filechooser_response(dialog, response, data):
@@ -429,6 +440,30 @@ class MiAZActions(GObject.GObject):
         box = contents.get_first_child()
         toggle = self.factory.create_button_check(title='Walk recursively', callback=None)
         box.append(toggle)
+        filechooser.show()
+
+    def import_config(self, *args):
+        def filechooser_response(dialog, response, data):
+            config = self.backend.repo_config()
+            target_dir = config['dir_docs']
+            if response == Gtk.ResponseType.ACCEPT:
+                content_area = dialog.get_content_area()
+                box = content_area.get_first_child()
+                filechooser = box.get_first_child()
+                gfile = filechooser.get_file()
+                if gfile is not None:
+                    source = gfile.get_path()
+                    self.log.debug(source)
+            dialog.destroy()
+
+        self.factory = self.app.get_factory()
+        filechooser = self.factory.create_filechooser(
+                    parent=self.app.win,
+                    title='Import a configuration file',
+                    target = 'FILE',
+                    callback = filechooser_response,
+                    data = None
+                    )
         filechooser.show()
 
     def import_file(self, *args):
@@ -485,7 +520,7 @@ class MiAZActions(GObject.GObject):
         i_type = item_type.__gtype_name__
         box = self.factory.create_box_vertical(spacing=6, vexpand=True, hexpand=True)
         dropdown = self.factory.create_dropdown_generic(Project)
-        self.config[i_type].connect('used-updated', self.dropdown_populate, dropdown, item_type, False)
+        self.config[i_type].connect('used-updated', self.dropdown_populate, dropdown, item_type, False, False)
         self.dropdown_populate(self.config[i_type], dropdown, Project, any_value=False)
         btnManage = self.factory.create_button('miaz-res-manage', '')
         btnManage.connect('clicked', self.manage_resource, Configview['Project'](self.app))
@@ -528,7 +563,7 @@ class MiAZActions(GObject.GObject):
         i_type = item_type.__gtype_name__
         box = self.factory.create_box_vertical(spacing=6, vexpand=True, hexpand=True)
         dropdown = self.factory.create_dropdown_generic(Project)
-        self.config[i_type].connect('used-updated', self.dropdown_populate, dropdown, item_type, False)
+        self.config[i_type].connect('used-updated', self.dropdown_populate, dropdown, item_type, False, False)
 
         # Get projects
         projects = set()
@@ -560,7 +595,7 @@ class MiAZActions(GObject.GObject):
         dialog.connect('response', dialog_response, dropdown, items)
         dialog.show()
 
-    def document_export(self, items):
+    def document_export_to_directory(self, items):
         def get_pattern_paths(item):
             fields = self.util.get_fields(item.id)
             paths = {}
@@ -620,7 +655,7 @@ class MiAZActions(GObject.GObject):
         }
         filechooser = self.factory.create_filechooser(
                     parent=self.app.win,
-                    title='Export to directory',
+                    title='Export selected items to this directory',
                     target = 'FOLDER',
                     callback = filechooser_response,
                     data = patterns
@@ -630,7 +665,7 @@ class MiAZActions(GObject.GObject):
         contents = filechooser.get_content_area()
         box = contents.get_first_child()
         hbox = self.factory.create_box_horizontal()
-        chkPattern = self.factory.create_button_check(title='Export with pattern (create subdirs)', callback=None)
+        chkPattern = self.factory.create_button_check(title='Export with pattern', callback=None)
         etyPattern = Gtk.Entry()
         etyPattern.set_text('CYmGP') #/{target}/{Country}/{Year}/{month}/{Group}/{Purpose}
         widgets = []
@@ -644,4 +679,47 @@ class MiAZActions(GObject.GObject):
         hbox.append(etyPattern)
         hbox.append(btpPattern)
         box.append(hbox)
+        filechooser.show()
+
+    def document_export_to_zip(self, items):
+        def filechooser_response(dialog, response, patterns):
+            config = self.backend.repo_config()
+            target_dir = config['dir_docs']
+            if response == Gtk.ResponseType.ACCEPT:
+                content_area = dialog.get_content_area()
+                box = content_area.get_first_child()
+                filechooser = box.get_first_child()
+                hbox = box.get_last_child()
+                toggle_pattern = hbox.get_first_child()
+                gfile = filechooser.get_file()
+                dirpath = gfile.get_path()
+                if gfile is not None:
+                    repo = self.backend.repo_config()
+                    dir_doc = repo['dir_docs']
+                    dir_zip = self.util.get_temp_dir()
+                    self.util.directory_create(dir_zip)
+                    for item in items:
+                        source = os.path.join(dir_doc, item.id)
+                        target = dir_zip
+                        self.util.filename_copy(source, target)
+                    zip_file = "%s.zip" % os.path.basename(dir_zip)
+                    target = os.path.join(ENV['LPATH']['TMP'], zip_file)
+                    self.util.zip(target, dir_zip)
+                    self.util.filename_rename(target, os.path.join(dirpath, zip_file))
+                    self.util.directory_remove(dir_zip)
+                    self.util.directory_open(dirpath)
+                    self.log.debug(target)
+
+            dialog.destroy()
+
+        self.factory = self.app.get_factory()
+        filechooser = self.factory.create_filechooser(
+                    parent=self.app.win,
+                    title='Export selected documents to a ZIP file',
+                    target = 'FOLDER',
+                    callback = filechooser_response,
+                    data = None
+                    )
+
+        # Export with pattern
         filechooser.show()

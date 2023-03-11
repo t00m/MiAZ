@@ -26,7 +26,6 @@ from MiAZ.backend.log import get_logger
 from MiAZ.backend.models import MiAZItem, File, Group, Person, Country, Purpose, Concept, SentBy, SentTo, Date, Extension, Project
 from MiAZ.frontend.desktop.widgets.columnview import MiAZColumnView, ColIcon, ColLabel, ColButton
 from MiAZ.frontend.desktop.widgets.assistant import MiAZAssistantRepoSettings
-from MiAZ.frontend.desktop.widgets.menu import MiAZ_MENU_REPO
 from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewWorkspace, MiAZColumnViewMassRename, MiAZColumnViewMassDelete, MiAZColumnViewMassProject
 from MiAZ.frontend.desktop.widgets.configview import MiAZCountries, MiAZGroups, MiAZPeople, MiAZPurposes, MiAZPeopleSentBy, MiAZPeopleSentTo, MiAZProjects
 
@@ -53,6 +52,8 @@ class MiAZWorkspace(Gtk.Box):
     signals = set()
     selected_items = []
     dates = {}
+    dropdown = {}
+    cache = {}
 
     def __init__(self, app):
         super(MiAZWorkspace, self).__init__(orientation=Gtk.Orientation.HORIZONTAL)
@@ -71,6 +72,25 @@ class MiAZWorkspace(Gtk.Box):
         frmView = self._setup_workspace()
         self.append(frmView)
 
+        # Initialize caches
+        # Runtime cache for datetime objects to avoid errors such as:
+        # 'TypeError: Object of type date is not JSON serializable'
+        self.datetimes = {}
+
+        # Rest of caches
+        repo = self.backend.repo_config()
+        dir_conf = repo['dir_conf']
+        self.fcache = os.path.join(dir_conf, 'cache.json')
+        try:
+            self.cache = self.util.json_load(self.fcache)
+            self.log.debug("Loading cache from %s", self.fcache)
+        except:
+            self.cache = {}
+            for cache in ['date', 'country', 'group', 'people', 'purpose']:
+                self.cache[cache] = {}
+            self.util.json_save(self.fcache, self.cache)
+            self.log.debug("Saving new cache to %s", self.fcache)
+
         conf = self.config['Country']
         countries = conf.load(conf.used)
         if len(countries) == 0:
@@ -87,8 +107,7 @@ class MiAZWorkspace(Gtk.Box):
         body.set_margin_top(margin=6)
         widget.append(body)
 
-        self.dropdown = {}
-        for item_type in [Project, Country, Group, SentBy, Purpose, SentTo]:
+        for item_type in [Country, Group, SentBy, Purpose, SentTo]:
             i_type = item_type.__gtype_name__
             i_title = item_type.__title__
             dropdown = self.factory.create_dropdown_generic(item_type=item_type)
@@ -147,6 +166,10 @@ class MiAZWorkspace(Gtk.Box):
         btnImportDir = self.factory.create_button('miaz-import-folder', callback=self.actions.import_directory)
         rowImportDir = self.factory.create_actionrow(title='Import directory', subtitle='Import all documents from a directory', suffix=btnImportDir)
         widgets.append(rowImportDir)
+        # FIXME: Not implemented yet
+        # ~ btnImportConf = self.factory.create_button('miaz-import-config', callback=self.actions.import_config)
+        # ~ rowImportConf = self.factory.create_actionrow(title='Import config', subtitle='Import configuration', suffix=btnImportConf)
+        # ~ widgets.append(rowImportConf)
         button = self.factory.create_button_popover(icon_name='miaz-import', css_classes=[''], widgets=widgets)
         hbox.append(button)
 
@@ -157,7 +180,7 @@ class MiAZWorkspace(Gtk.Box):
 
         ## Filters
         self.tgbFilters = self.factory.create_button_toggle('miaz-filters', callback=self._on_filters_toggled)
-        self.tgbFilters.set_active(False)
+        self.tgbFilters.set_active(True)
         hbox.append(self.tgbFilters)
 
         ## Searchbox
@@ -166,35 +189,21 @@ class MiAZWorkspace(Gtk.Box):
         hbox.append(self.ent_sb)
 
         ## Date dropdown
-        self.dd_date = self.factory.create_dropdown_generic(item_type=Date, ellipsize=False)
-        model_filter = self.dd_date.get_model()
-        model_sort = model_filter.get_model()
-        model = model_sort.get_model()
-        model.remove_all()
-        items = []
-        model.append(Date(id='0', title='This month'))
-        model.append(Date(id='1', title='Last six months'))
-        model.append(Date(id='2', title='This year'))
-        model.append(Date(id='3', title='Last two years'))
-        model.append(Date(id='4', title='Last five years'))
-        model.append(Date(id='5', title='All documents'))
+        self.dd_date = self.factory.create_dropdown_generic(item_type=Date, ellipsize=False, enable_search=False)
+        self._update_dropdown_date()
         self.dd_date.set_selected(2)
-        self.dd_date.connect("notify::selected-item", self._on_filter_selected)
+        # ~ self.dd_date.connect("notify::selected-item", self._on_filter_selected)
+        self.dd_date.connect("notify::selected-item", self.update)
         hbox.append(self.dd_date)
 
-        now = datetime.now()
-        this_month = now-timedelta(days=30)
-        six_months = now-timedelta(days=180)
-        this_year = datetime.strptime("%d0101" % now.year, "%Y%m%d")
-        two_years = datetime.strptime("%d0101" % (now.year - 1), "%Y%m%d")
-        five_years = datetime.strptime("%d0101" % (now.year - 5), "%Y%m%d")
-        alltimes = datetime.strptime("00010101", "%Y%m%d")
-        self.dates['0'] = this_month
-        self.dates['1'] = six_months
-        self.dates['2'] = this_year
-        self.dates['3'] = two_years
-        self.dates['4'] = five_years
-        self.dates['5'] = alltimes
+        ## Projects dropdown
+        i_type = Project.__gtype_name__
+        self.dd_prj = self.factory.create_dropdown_generic(item_type=Project)
+        self.actions.dropdown_populate(self.config[i_type], self.dd_prj, Project, any_value=True, none_value=True)
+        self.dd_prj.connect("notify::selected-item", self._on_filter_selected)
+        self.dropdown[i_type] = self.dd_prj
+        self.config[i_type].connect('used-updated', self.update_dropdown_filter, Project)
+        hbox.append(self.dd_prj)
 
         # Right
         hbox = self.factory.create_box_horizontal(spacing=0)
@@ -220,23 +229,80 @@ class MiAZWorkspace(Gtk.Box):
         hbox.append(self.btnDocsSel)
 
         # Repo settings button
-        btnRepoSettings = self.factory.create_button_menu(MiAZ_MENU_REPO, 'repo-menu', child=Adw.ButtonContent(icon_name='document-properties'))
-        btnRepoSettings.set_valign(Gtk.Align.CENTER)
-        for action, shortcut in [('repo_settings', [''])]:
-            self.factory.create_menu_action(action, self._on_handle_menu_repo, shortcut)
+        menu_repo = Gio.Menu.new()
+        section_common_in = Gio.Menu.new()
+        section_common_out = Gio.Menu.new()
+        section_danger = Gio.Menu.new()
+        menu_repo.append_section(None, section_common_in)
+        menu_repo.append_section(None, section_common_out)
+        menu_repo.append_section(None, section_danger)
+
+        ## Actions in
+        menuitem = self.factory.create_menuitem(name='repo_settings', label='Repository settings', callback=self._on_handle_menu_repo, data=None, shortcuts=[])
+        section_common_in.append_item(menuitem)
+
+        ## Actions out
+        submenu_backup = Gio.Menu.new()
+        menu_backup = Gio.MenuItem.new_submenu(
+            label = 'Backup...',
+            submenu = submenu_backup,
+        )
+        section_common_out.append_item(menu_backup)
+        menuitem = self.factory.create_menuitem('backup-config', '...only config', self._on_handle_menu_repo, None, [])
+        submenu_backup.append_item(menuitem)
+        menuitem = self.factory.create_menuitem('backup-data', '...only data', self._on_handle_menu_repo, None, [])
+        submenu_backup.append_item(menuitem)
+        menuitem = self.factory.create_menuitem('backup-all', '...config and data', self._on_handle_menu_repo, None, [])
+        submenu_backup.append_item(menuitem)
+
+        btnRepoSettings = self.factory.create_button_menu(icon_name='document-properties', title='', menu=menu_repo)
+        btnRepoSettings.set_always_show_arrow(False)
         hbox.append(btnRepoSettings)
 
         return toolbar_top
 
-    def _on_handle_menu_repo(self, action, state):
-        name = action.get_name()
+    def _update_dropdown_date(self):
+        dt2str = self.util.datetime_to_string
+        now = datetime.now().date()
+        model_filter = self.dd_date.get_model()
+        model_sort = model_filter.get_model()
+        model = model_sort.get_model()
+        model.remove_all()
+
+        # Since...
+        ul = now                                  # upper limit
+        ## this month
+        ll = self.util.since_date_this_month(now) # lower limit
+        key = "%s-%s" % (dt2str(ll), dt2str(ul))
+        model.append(Date(id=key, title='This month'))
+
+        ## Last 3 months
+        ll = self.util.since_date_last_n_months(now, 3) # lower limit
+        key = "%s-%s" % (dt2str(ll), dt2str(ul))
+        model.append(Date(id=key, title='Last 3 months'))
+
+        ## Last six months
+        ll = self.util.since_date_last_n_months(now, 6) # lower limit
+        key = "%s-%s" % (dt2str(ll), dt2str(ul))
+        model.append(Date(id=key, title='Last 6 months'))
+
+        ## All documents
+        key = "All-All"
+        model.append(Date(id=key, title='All documents'))
+
+        ## No date
+        key = "None-None"
+        model.append(Date(id=key, title='Without date'))
+
+    def _on_handle_menu_repo(self, action, *args):
+        name = action.props.name
         if name == 'repo_settings':
             self.log.debug("Execute Settings Assistant")
             self.app.show_stack_page_by_name('settings_repo')
 
     def _setup_columnview(self):
         self.view = MiAZColumnViewWorkspace(self.app)
-        self.view.factory_icon_type.connect("bind", self._on_factory_bind_icon_type)
+        # ~ self.view.factory_icon_type.connect("bind", self._on_factory_bind_icon_type)
         self.view.get_style_context().add_class(class_name='caption')
         self.view.set_filter(self._do_filter_view)
         frmView = self.factory.create_frame(hexpand=True, vexpand=True)
@@ -262,8 +328,8 @@ class MiAZWorkspace(Gtk.Box):
         widget.append(body)
         # ~ widget.append(foot)
 
-        toolbar_top = self._setup_toolbar_top()
         self.toolbar_filters = self._setup_toolbar_filters()
+        toolbar_top = self._setup_toolbar_top()
         frmView = self._setup_columnview()
         head.append(toolbar_top)
         head.append(self.toolbar_filters)
@@ -274,7 +340,7 @@ class MiAZWorkspace(Gtk.Box):
         self.view.column_subtitle.set_expand(True)
         self.view.column_group.set_visible(True)
         self.view.column_purpose.set_visible(True)
-        self.view.column_flag.set_visible(True)
+        # ~ self.view.column_flag.set_visible(True)
         self.view.column_sentby.set_visible(True)
         self.view.column_sentto.set_visible(True)
         self.view.column_date.set_visible(True)
@@ -289,7 +355,7 @@ class MiAZWorkspace(Gtk.Box):
         return widget
 
     def _setup_menu_selection_single(self):
-        # Setup main menu and sections
+        # Setup single menu and sections
         menu_workspace_single = Gio.Menu.new()
         section_common_in = Gio.Menu.new()
         section_common_out = Gio.Menu.new()
@@ -333,7 +399,7 @@ class MiAZWorkspace(Gtk.Box):
         return menu_workspace_single
 
     def _setup_menu_selection_multiple(self):
-        # Setup main menu and sections
+        # Setup multiple menu and sections
         menu_workspace_multiple = Gio.Menu.new()
         section_common_in = Gio.Menu.new()
         section_common_out = Gio.Menu.new()
@@ -343,10 +409,6 @@ class MiAZWorkspace(Gtk.Box):
         menu_workspace_multiple.append_section(None, section_danger)
 
         # Section -in
-        # ~ # New mass renaming
-        # ~ menuitem = self.factory.create_menuitem('rename', 'Mass rename', self._on_handle_menu_multiple, None, [])
-        # ~ section_common_in.append_item(menuitem)
-
         ## Submenu for mass renaming
         submenu_rename = Gio.Menu.new()
         menu_rename = Gio.MenuItem.new_submenu(
@@ -374,20 +436,27 @@ class MiAZWorkspace(Gtk.Box):
         submenu_project.append_item(menuitem)
 
         # Section -out
-        menuitem = self.factory.create_menuitem('export', 'Export', self._on_handle_menu_multiple, None, [])
-        section_common_out.append_item(menuitem)
-        # ~ submenu_export = Gio.Menu.new()
-        # ~ menu_export = Gio.MenuItem.new_submenu(
-            # ~ label = 'Export...',
-            # ~ submenu = submenu_export
-        # ~ )
-        # ~ section_common_out.append_item(menu_export)
-        # ~ menuitem = self.factory.create_menuitem('export-all', 'Export repository', self._on_handle_menu_multiple, None, [])
-        # ~ submenu_export.append_item(menuitem)
-        # ~ menuitem = self.factory.create_menuitem('export-selected', 'Export selected files', self._on_handle_menu_multiple, None, [])
-        # ~ submenu_export.append_item(menuitem)
-        # ~ menuitem = self.factory.create_menuitem('export-config', 'Export configuration', self._on_handle_menu_multiple, None, [])
-        # ~ submenu_export.append_item(menuitem)
+        ## Export
+        submenu_export = Gio.Menu.new()
+        menu_export = Gio.MenuItem.new_submenu(
+            label = 'Export...',
+            submenu = submenu_export,
+        )
+        section_common_out.append_item(menu_export)
+        menuitem = self.factory.create_menuitem('export-to-directory', '...to directory', self._on_handle_menu_multiple, None, [])
+        submenu_export.append_item(menuitem)
+        menuitem = self.factory.create_menuitem('export-to-zip', '...to zip', self._on_handle_menu_multiple, None, [])
+        submenu_export.append_item(menuitem)
+        menuitem = self.factory.create_menuitem('export-to-text', '...to text file', self._on_handle_menu_multiple, None, [])
+        submenu_export.append_item(menuitem)
+        menuitem = self.factory.create_menuitem('export-to-csv', '...to CSV', self._on_handle_menu_multiple, None, [])
+        submenu_export.append_item(menuitem)
+        menuitem = self.factory.create_menuitem('export-to-json', '...to JSON', self._on_handle_menu_multiple, None, [])
+        submenu_export.append_item(menuitem)
+        menuitem = self.factory.create_menuitem('export-to-html', '...to HTML', self._on_handle_menu_multiple, None, [])
+        submenu_export.append_item(menuitem)
+        menuitem = self.factory.create_menuitem('export-to-timeline', '...to timeline', self._on_handle_menu_multiple, None, [])
+        submenu_export.append_item(menuitem)
 
         # Danger section
         menuitem = self.factory.create_menuitem('delete', 'Delete documents', self._on_handle_menu_multiple, None, [])
@@ -403,24 +472,60 @@ class MiAZWorkspace(Gtk.Box):
         return model.get_item(pos)
 
     def update(self, *args):
-        ds = datetime.now()
+        # With less than thousand documents, loading is ok
         self.selected_items = []
         docs = self.util.get_files()
         sentby = self.app.get_config('SentBy')
         sentto = self.app.get_config('SentTo')
         countries = self.app.get_config('Country')
+        groups = self.app.get_config('Group')
+        purpose = self.app.get_config('Purpose')
+
+        try:
+            period = self.dd_date.get_selected_item().title
+        except AttributeError:
+            return
+        project = self.dropdown['Project'].get_selected_item().id
+        # ~ self.log.debug("Period: %s - Project: %s", period, project)
+        if project == 'Any' or project == 'None':
+            pass
+
         items = []
         invalid = []
+        ds = datetime.now()
         for filename in docs:
             doc, ext = self.util.filename_details(filename)
             fields = doc.split('-')
             if self.util.filename_validate(doc):
-                date_dsc = fields[0]
+                # Get field descriptions
+                ## Dates
                 try:
-                    adate = datetime.strptime(fields[0], "%Y%m%d")
-                    date_dsc = adate.strftime("%A, %B %d %Y")
+                    date_dsc = self.cache['date'][fields[0]]
                 except:
-                    date_dsc = ''
+                    # ~ date_dsc = self.util.filename_date_human(fields[0])
+                    date_dsc = self.util.filename_date_human_simple(fields[0])
+                    self.cache['date'][fields[0]] = date_dsc
+
+                ## Countries
+                try:
+                    country_dsc = self.cache['country'][fields[1]]
+                except:
+                    country_dsc = countries.get(fields[1])
+                    self.cache['country'][fields[1]] = country_dsc
+
+                ## People
+                try:
+                    sentby_dsc = self.cache['people'][fields[3]]
+                except:
+                    sentby_dsc = sentby.get(fields[3])
+                    self.cache['people'][fields[3]] = sentby_dsc
+
+                try:
+                    sentto_dsc = self.cache['people'][fields[6]]
+                except:
+                    sentto_dsc = sentto.get(fields[6])
+                    self.cache['people'][fields[6]] = sentto_dsc
+
                 items.append(MiAZItem
                                     (
                                         id=os.path.basename(filename),
@@ -440,13 +545,15 @@ class MiAZWorkspace(Gtk.Box):
                             )
             else:
                 invalid.append(filename)
-        self.view.update(items)
+        de = datetime.now()
+        dt = de - ds
+        # ~ self.log.debug("Workspace updated (%s)" % dt)
+        self.util.json_save(self.fcache, self.cache)
+        # ~ self.log.debug("Saving cache to %s", self.fcache)
+        GLib.idle_add(self.view.update, items)
         self._on_filter_selected()
         label = self.btnDocsSel.get_child()
         self.view.select_first_item()
-        de = datetime.now()
-        dt = de - ds
-        self.log.debug("Workspace updated (%s)" % dt)
         for filename in invalid:
             target = self.util.filename_normalize(filename)
             self.util.filename_rename(filename, target)
@@ -472,25 +579,35 @@ class MiAZWorkspace(Gtk.Box):
             return item.id == id
 
     def _do_eval_cond_matches_date(self, item):
+        # Convert timestamp to timedate object and cache it
         try:
-            if item.date is None:
-                return True
+            item_dt = self.datetimes[item.date]
+        except:
+            item_dt = self.util.string_to_datetime(item.date)
+            self.datetimes[item.date] = item_dt
 
-            period = self.dd_date.get_selected_item().id
-            try:
-                item_date = self.dates[item.date]
-            except KeyError:
-                item_date = datetime.strptime(item.date, "%Y%m%d")
-                self.dates[item.date] = item_date
+        # Check if the date belongs to the lower/upper limit
+        period = self.dd_date.get_selected_item().id
+        ll, ul = period.split('-')
 
-            if item_date > self.dates[period]:
-                return True
-
-            return False
-        except Exception as error:
-            # time data '' does not match format '%Y%m%d'
-            # Display documents without date
+        if ll == 'All' and ul == 'All':
             return True
+        elif ll == 'None' and ul == 'None':
+            if item_dt is None:
+                matches = True
+            else:
+                matches = False
+        elif item_dt is None:
+                matches = False
+        else:
+            start = self.util.string_to_datetime(ll)
+            end = self.util.string_to_datetime(ul)
+            if item_dt >= start and item_dt <= end:
+                matches = True
+            else:
+                matches = False
+        # ~ self.log.debug("%s >= Item[%s] Datetime[%s] <= %s? %s", ll, item.date, item_dt, ul, matches)
+        return matches
 
     def _do_eval_cond_matches_project(self, doc):
         matches = False
@@ -500,10 +617,9 @@ class MiAZWorkspace(Gtk.Box):
             # Raised when managing projects from selector
             # Workaround: do not filter
             return True
-
-        if project is 'Any':
+        if project == 'Any':
             matches = True
-        elif project is 'None':
+        elif project == 'None':
             projects = self.backend.projects.assigned_to(doc)
             if len(projects) == 0:
                 matches = True
@@ -575,8 +691,10 @@ class MiAZWorkspace(Gtk.Box):
             self.actions.project_assign(Project, items)
         elif name == 'project-withdraw':
             self.actions.project_withdraw(Project, items)
-        elif name == 'export':
-            self.actions.document_export(items)
+        elif name == 'export-to-directory':
+            self.actions.document_export_to_directory(items)
+        elif name == 'export-to-zip':
+            self.actions.document_export_to_zip(items)
         elif name == 'delete':
             self.actions.document_delete(items)
 

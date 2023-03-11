@@ -20,7 +20,7 @@ from gi.repository import GLib
 from gi.repository import GObject
 
 from MiAZ.backend.log import get_logger
-from MiAZ.backend.models import Project
+from MiAZ.backend.models import Project, Repository
 from MiAZ.frontend.desktop.widgets.columnview import MiAZColumnView
 from MiAZ.frontend.desktop.widgets.dialogs import MiAZDialogAdd
 
@@ -37,12 +37,12 @@ class MiAZSelector(Gtk.Box):
 
         # Entry and buttons for operations (edit/add/remove)
         self.boxOper = Gtk.Box(spacing=3, orientation=Gtk.Orientation.HORIZONTAL)
-        self.boxOper.set_margin_top(6)
+        self.boxOper.set_margin_top(24)
         self.boxOper.set_margin_bottom(6)
-        self.boxOper.set_margin_start(6)
-        self.boxOper.set_margin_end(6)
+        self.boxOper.set_margin_start(0)
+        self.boxOper.set_margin_end(0)
         self.boxOper.set_vexpand(False)
-        boxEntry = Gtk.Box(spacing=3, orientation=Gtk.Orientation.HORIZONTAL)
+        boxEntry = Gtk.Box(spacing=0, orientation=Gtk.Orientation.HORIZONTAL)
         boxEntry.set_hexpand(False)
         self.entry = Gtk.Entry()
         self.entry.set_activates_default(True)
@@ -121,12 +121,14 @@ class MiAZSelector(Gtk.Box):
         columnview.cv.connect("activate", self._on_selected_item_available_notify)
         self.frmViewAv.set_child(columnview)
         columnview.cv.sort_by_column(columnview.column_title, Gtk.SortType.ASCENDING)
+        columnview.cv.get_style_context().add_class(class_name='caption')
 
     def add_columnview_used(self, columnview):
         columnview.set_filter(None)
         columnview.column_title.set_expand(True)
         self.frmViewSl.set_child(columnview)
         columnview.cv.sort_by_column(columnview.column_title, Gtk.SortType.ASCENDING)
+        columnview.cv.get_style_context().add_class(class_name='caption')
 
     def _setup_view_finish(self, *args):
         pass
@@ -155,12 +157,15 @@ class MiAZSelector(Gtk.Box):
         for item_used in self.viewSl.get_selected_items():
             if item_used.id not in items_available:
                 items_available[item_used.id] = item_used.title
-            if self.config.model != Project:
-                value_used = self.util.field_used(self.config.model, item_used.id)
-            else:
+            if self.config.model == Repository:
+                value_used = False
+            elif self.config.model == Project:
                 self.projects = self.backend.projects
                 docs = self.projects.docs_in_project(item_used.id)
                 value_used = len(docs) > 0
+            else:
+                value_used = self.util.field_used(self.config.model, item_used.id)
+
             if not value_used:
                 del(items_used[item_used.id])
                 changed = True

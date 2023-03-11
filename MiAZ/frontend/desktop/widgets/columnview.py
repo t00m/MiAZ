@@ -11,6 +11,7 @@
 import os
 import sys
 from abc import abstractmethod
+from datetime import datetime
 
 import gi
 gi.require_version('Adw', '1')
@@ -82,6 +83,7 @@ class MiAZColumnView(Gtk.Box):
     def __init__(self, app, item_type=MiAZItem):
         super(MiAZColumnView, self).__init__(orientation=Gtk.Orientation.VERTICAL, spacing=3, hexpand=True, vexpand=True)
         self.app = app
+        self.item_type = item_type
         self.log = get_logger('MiAZColumnView')
         self.backend = self.app.get_backend()
         self.factory = self.app.get_factory()
@@ -179,13 +181,26 @@ class MiAZColumnView(Gtk.Box):
     def refilter(self):
         self.filter.emit('changed', Gtk.FilterChange.DIFFERENT)
 
+    # ~ def update(self, items):
+        # ~ self.selected_items = []
+        # ~ self.store.remove_all()
+        # ~ ds = datetime.now()
+        # ~ for item in items:
+            # ~ # item =~ Subclass of MiAZModel(id='xxx', title='xxx', ...)
+            # ~ self.store.append(item)
+        # ~ self.select_first_item()
+        # ~ de = datetime.now()
+        # ~ dt = de - ds
+        # ~ self.log.debug("Columnview for %s updated (%s)", self.item_type.__title__, dt)
+
     def update(self, items):
         self.selected_items = []
+        ds = datetime.now()
         self.store.remove_all()
-        for item in items:
-            # item =~ Subclass of MiAZModel(id='xxx', title='xxx', ...)
-            self.store.append(item)
-        self.select_first_item()
+        self.store.splice(0, 0, items)
+        de = datetime.now()
+        dt = de - ds
+        # ~ self.log.debug("Columnview for %s updated with %d items in %s", self.item_type.__title__, len(items), dt)
 
     def _on_selection_changed(self, selection, position, n_items):
         self.selected_items = []

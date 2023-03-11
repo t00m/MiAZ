@@ -10,11 +10,13 @@
 
 import os
 import re
+import sys
 import glob
 import json
 import time
 import shutil
-from datetime import datetime
+import zipfile
+from datetime import datetime, timedelta
 from dateutil.parser import parse as dateparser
 
 from gi.repository import Gio
@@ -44,8 +46,17 @@ class MiAZUtil(GObject.GObject):
         self.backend = backend
         self.conf = self.backend.conf
 
-    def directory_open(self, dirpath):
+    def directory_open(self, dirpath: str):
         os.system("xdg-open '%s'" % dirpath)
+        self.log.debug("Directory %s opened in file browser" % dirpath)
+
+    def directory_remove(self, dirpath: str):
+        shutil.rmtree(dirpath)
+        self.log.debug("Directory %s deleted" % dirpath)
+
+    def directory_create(self, dirpath: str):
+        os.makedirs(dirpath, exist_ok = True)
+        self.log.debug("Directory %s created" % dirpath)
 
     def guess_datetime(self, adate: str) -> datetime:
         """Return (guess) a datetime object for a given string."""
@@ -80,6 +91,13 @@ class MiAZUtil(GObject.GObject):
                 self.log.warning("Value %s of type %s is still being used in %s", value, item_type.__title__, doc)
                 break
         return used
+
+    def get_temp_dir(self):
+        repo = self.backend.repo_config()
+        ts = datetime.now().strftime('%Y%m%d_%H%M%S')
+        name = self.valid_key(repo['dir_docs'])
+        return os.path.join(ENV['LPATH']['TMP'], "%s_%s" % (ts, name))
+
 
     def get_fields(self, filename: str) -> []:
             filename = os.path.basename(filename)
@@ -186,6 +204,10 @@ class MiAZUtil(GObject.GObject):
         else:
             self.log.error("Source and Target are the same. Skip rename")
 
+    def filename_delete(self, filepath):
+        os.unlink(filepath)
+        self.log.debug("File %s deleted", filepath)
+
     def filename_import(self, source: str, target: str):
         """Import file into repository
 
@@ -218,18 +240,45 @@ class MiAZUtil(GObject.GObject):
         else:
             self.log.error("Source and Target are the same. Skip rename")
 
+    def filename_date_human(self, value: str = '') -> str:
+        try:
+            adate = datetime.strptime(value, "%Y%m%d")
+            date_dsc = adate.strftime("%A, %B %d %Y")
+        except ValueError:
+            date_dsc = ''
+        return date_dsc
+
+    def filename_date_human_simple(self, value: str = '') -> str:
+        try:
+            adate = datetime.strptime(value, "%Y%m%d")
+            date_dsc = adate.strftime("%d/%m/%Y")
+        except ValueError:
+            date_dsc = ''
+        return date_dsc
+
     def filename_display(self, doc):
         filepath = self.filename_path(doc)
-        os.system("xdg-open '%s'" % filepath)
+        if sys.platform in ['linux', 'linux2']:
+            os.system("xdg-open \"%s\"" % filepath)
+        elif sys.platform in ['win32', 'cygwin', 'msys']:
+            os.startfile(filepath)
 
     def filename_delete(self, doc):
         filepath = self.filename_path(doc)
         self.log.debug("Document deleted: %s", filepath)
         os.unlink(filepath)
 
-    def filename_open_location(self, filepath):
+    def filename_open_location(self, doc):
+        repo = self.backend.repo_config()
+        dir_docs = repo['dir_docs']
+        filepath = os.path.join(dir_docs, doc)
         # FIXME: only works if nautilus is present
-        os.system("nautilus '%s'" % filepath)
+        if sys.platform in ['linux', 'linux2']:
+            CMD = "nautilus \"%s\"" % filepath
+        elif sys.platform in['win32', 'cygwin', 'msys']:
+            CMD = r"""explorer /select,%s""" % filepath
+        self.log.debug(CMD)
+        os.system(CMD)
 
     def filename_path(self, doc):
         repo = self.backend.repo_config()
@@ -240,7 +289,6 @@ class MiAZUtil(GObject.GObject):
         if len(doc.split('-')) == 7:
             return True
         return False
-
 
     def filename_validate_complex(self, filepath: str) -> tuple:
         repo = self.backend.repo_config()
@@ -310,3 +358,54 @@ class MiAZUtil(GObject.GObject):
                         message = "%s %s available? %s. Used? %s" % (title, key, available, used)
             reasons.append((rc, gtype, value, message))
         return valid, reasons
+
+    def since_date_this_year(self, adate: datetime) -> datetime:
+        year = adate.year
+        return datetime.strptime("%4d0101" % year, "%Y%m%d")
+
+    def since_date_this_month(self, adate: datetime) -> datetime:
+        year = adate.year
+        month = adate.month
+        return datetime.strptime("%4d%02d01" % (year, month), "%Y%m%d")
+
+    def since_date_this_day(self, adate: datetime) -> datetime:
+        return datetime.strptime("%4d%02d%02d" % (adate.year, adate.month, adate.day), "%Y%m%d")
+
+    def since_date_last_n_months(self, adate: datetime, nm: int) -> datetime:
+        return (adate - timedelta(days=30*nm)).replace(day=1)
+
+    def since_date_last_six_months(self, adate: datetime) -> datetime:
+        return (adate - timedelta(days=30*6)).replace(day=1).date()
+
+    def datetime_to_string(self, adate: datetime) -> str:
+        return adate.strftime("%Y%m%d")
+
+    def string_to_datetime(self, adate: str) -> datetime:
+        try:
+            return datetime.strptime(adate, "%Y%m%d").date()
+        except ValueError:
+            return None
+
+    def zip(self, filename: str, directory: str):
+        """ Zip directory into a file """
+        self.log.debug("Target: %s", filename)
+        sourcename = os.path.basename(filename)
+        dot = sourcename.find('.')
+        if dot == -1:
+            basename = sourcename
+        else:
+            basename = sourcename[:dot]
+        sourcedir = os.path.dirname(filename)
+        source = os.path.join(sourcedir, basename)
+        zipfile = shutil.make_archive(source, 'zip', directory)
+        target = source + '.zip'
+        shutil.move(zipfile, target)
+        return target
+
+    def unzip(self, target: str, install_dir):
+        """
+        Unzip file to a given dir
+        """
+        zip_archive = zipfile.ZipFile(target, "r")
+        zip_archive.extractall(path=install_dir)
+        zip_archive.close()
