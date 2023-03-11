@@ -186,9 +186,8 @@ class MiAZSelector(Gtk.Box):
     def on_item_available_add(self, *args):
         if self.edit:
             dialog = MiAZDialogAdd(self.app, self.get_root(), '%s: add a new item' % self.config.config_for, 'Name', 'Description')
-            etyValue1 = dialog.get_value1_widget()
             search_term = self.entry.get_text()
-            etyValue1.set_text(search_term)
+            dialog.set_value1(search_term)
             dialog.connect('response', self._on_response_item_available_add)
             dialog.show()
 
@@ -204,10 +203,8 @@ class MiAZSelector(Gtk.Box):
 
     def _on_item_available_rename(self, item):
         dialog = MiAZDialogAdd(self.app, self.get_root(), '%s: rename item' % self.config.config_for, 'Name', 'Description')
-        etyValue1 = dialog.get_value1_widget()
-        etyValue2 = dialog.get_value2_widget()
-        etyValue1.set_text(item.id)
-        etyValue2.set_text(item.title)
+        dialog.set_value1(item.id)
+        dialog.set_value2(item.title)
         dialog.connect('response', self._on_response_item_available_rename, item)
         dialog.show()
 
