@@ -1,0 +1,68 @@
+name: miaz
+base: core22
+grade: stable
+confinement: strict
+adopt-info: miaz
+
+# this is not used or needed for anything other than to trigger automatic
+# installation of the cups snap via "default-provider: cups"
+plugs:
+  foo-install-cups:
+    interface: content
+    content: foo
+    default-provider: cups
+    target: $SNAP_DATA/foo
+
+slots:
+  # for GtkApplication registration
+  miaz:
+    interface: dbus
+    bus: session
+    name: org.gnome.TextEditor
+
+layout:
+  /usr/share/miaz:
+    bind: $SNAP/usr/share/miaz
+
+apps:
+  miaz:
+    extensions: [gnome]
+    command: usr/bin/miaz
+    desktop: usr/share/applications/org.gnome.TextEditor.desktop
+    common-id: org.gnome.TextEditor.desktop
+    plugs:
+      - gsettings
+      - mount-observe
+      - cups
+      - home
+
+parts:
+  miaz:
+    source: https://github.com/t00m/MiAZ
+    source-tag: '0.0.4'
+    source-type: git
+    plugin: meson
+    meson-parameters:
+      - --prefix=/usr
+      - --buildtype=release
+      - -Dbugreport_url=https://github.com/t00m/MiAZ/issues
+    parse-info: [usr/share/metainfo/com.github.t00m.MiAZ.appdata.xml]
+    override-pull: |
+      craftctl default
+      craftctl set version=$(git describe --tags --abbrev=10)
+      sed -i.bak -e 's|Icon=@app_id@$|Icon=snap.miaz.icon|g' data/com.github.t00m.MiAZ.desktop.in.in
+    override-build: |
+      craftctl default
+      mkdir -p ${CRAFT_PART_INSTALL}/meta/gui/icons/hicolor/scalable/apps
+      cp ../src/data/icons/org.gnome.TextEditor.svg ${CRAFT_PART_INSTALL}/meta/gui/icons/hicolor/scalable/apps/snap.miaz.icon.svg
+    override-prime: |
+      craftctl default
+      for i in $CRAFT_PRIME/usr/share/icons/*;
+      do
+        if [ -f $i/index.theme ];
+        then
+          echo Updating cache at $i
+          gtk-update-icon-cache $i
+        fi
+      done
+
