@@ -183,6 +183,16 @@ class MiAZApp(Adw.Application):
         menuitem = self.factory.create_menuitem('settings_app', 'Application settings', self._handle_menu, None, [])
         section_common_in.append_item(menuitem)
 
+        # Actions out
+        menuitem = self.factory.create_menuitem('help', 'Help', self._handle_menu, None, ["<Control>h", "<Control>H"])
+        section_common_out.append_item(menuitem)
+        menuitem = self.factory.create_menuitem('about', 'About', self._handle_menu, None, ["<Control>a", "<Control>A"])
+        section_common_out.append_item(menuitem)
+
+        # Actions danger
+        menuitem = self.factory.create_menuitem('quit', 'Quit', self._handle_menu, None, ["<Control>q", "<Control>Q"])
+        section_danger.append_item(menuitem)
+
         menubutton = self.factory.create_button_menu(icon_name='miaz-system-menu', menu=menu_headerbar)
         menubutton.set_always_show_arrow(False)
         self.header.pack_start(menubutton)
@@ -255,6 +265,8 @@ class MiAZApp(Adw.Application):
             self.workspace.document_rename()
         elif name == 'help':
             self.show_stack_page_by_name('help')
+        elif name == 'quit':
+            self.exit_app()
 
     def get_stack_page_by_name(self, name: str) -> Adw.ViewStackPage:
         widget = self.stack.get_child_by_name(name)
