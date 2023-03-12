@@ -267,7 +267,6 @@ class MiAZUtil(GObject.GObject):
             os.startfile(filepath)
 
     def filename_open_location(self, doc):
-    def filename_open_location(self, doc):
         repo = self.backend.repo_config()
         dir_docs = repo['dir_docs']
         filepath = os.path.join(dir_docs, doc)
