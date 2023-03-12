@@ -205,8 +205,11 @@ class MiAZUtil(GObject.GObject):
             self.log.error("Source and Target are the same. Skip rename")
 
     def filename_delete(self, filepath):
-        os.unlink(filepath)
-        self.log.debug("File %s deleted", filepath)
+        try:
+            os.unlink(filepath)
+            self.log.debug("File %s deleted", filepath)
+        except IsADirectoryError as error:
+            self.log.error(error)
 
     def filename_import(self, source: str, target: str):
         """Import file into repository
