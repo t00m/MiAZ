@@ -266,11 +266,7 @@ class MiAZUtil(GObject.GObject):
         elif sys.platform in ['win32', 'cygwin', 'msys']:
             os.startfile(filepath)
 
-    def filename_delete(self, doc):
-        filepath = self.filename_path(doc)
-        self.log.debug("Document deleted: %s", filepath)
-        os.unlink(filepath)
-
+    def filename_open_location(self, doc):
     def filename_open_location(self, doc):
         repo = self.backend.repo_config()
         dir_docs = repo['dir_docs']
