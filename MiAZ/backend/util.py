@@ -16,7 +16,6 @@ import json
 import time
 import shutil
 import zipfile
-import subprocess
 from datetime import datetime, timedelta
 from dateutil.parser import parse as dateparser
 
@@ -48,9 +47,8 @@ class MiAZUtil(GObject.GObject):
         self.conf = self.backend.conf
 
     def directory_open(self, dirpath: str):
-        output, error = self.exec_cmd("xdg-open '%s'" % dirpath)
-        if error is None:
-            self.log.debug("Directory %s opened in file browser" % dirpath)
+        os.system("xdg-open '%s'" % dirpath)
+        self.log.debug("Directory %s opened in file browser" % dirpath)
 
     def directory_remove(self, dirpath: str):
         shutil.rmtree(dirpath)
@@ -59,15 +57,6 @@ class MiAZUtil(GObject.GObject):
     def directory_create(self, dirpath: str):
         os.makedirs(dirpath, exist_ok = True)
         self.log.debug("Directory %s created" % dirpath)
-
-    def exec_cmd(self, cmd):
-        """Execute an operating system command
-        Returns (output, error)"""
-        process = subprocess.Popen([cmd], shell=True, stdout=subprocess.PIPE)
-        output, error = process.communicate()
-        if error is not None:
-            self.log.error(error)
-        return output, error
 
     def guess_datetime(self, adate: str) -> datetime:
         """Return (guess) a datetime object for a given string."""
@@ -270,9 +259,7 @@ class MiAZUtil(GObject.GObject):
     def filename_display(self, doc):
         filepath = self.filename_path(doc)
         if sys.platform in ['linux', 'linux2']:
-            output, error = self.exec_cmd("xdg-open \"%s\"" % filepath)
-            if error is None:
-                self.log.debug("Displaying %s", filepath)
+            os.system("xdg-open \"%s\"" % filepath)
         elif sys.platform in ['win32', 'cygwin', 'msys']:
             os.startfile(filepath)
 
@@ -287,12 +274,11 @@ class MiAZUtil(GObject.GObject):
         filepath = os.path.join(dir_docs, doc)
         # FIXME: only works if nautilus is present
         if sys.platform in ['linux', 'linux2']:
-            cmd = "nautilus \"%s\"" % filepath
+            CMD = "nautilus \"%s\"" % filepath
         elif sys.platform in['win32', 'cygwin', 'msys']:
-            cmd = r"""explorer /select,%s""" % filepath
-        output, error = self.exec_cmd(cmd)
-        if error is None:
-            self.log.debug("Open location for %s", filepath)
+            CMD = r"""explorer /select,%s""" % filepath
+        self.log.debug(CMD)
+        os.system(CMD)
 
     def filename_path(self, doc):
         repo = self.backend.repo_config()
