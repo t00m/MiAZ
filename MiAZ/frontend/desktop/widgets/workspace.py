@@ -447,10 +447,10 @@ class MiAZWorkspace(Gtk.Box):
         submenu_export.append_item(menuitem)
         menuitem = self.factory.create_menuitem('export-to-zip', '...to zip', self._on_handle_menu_multiple, None, [])
         submenu_export.append_item(menuitem)
-        # ~ menuitem = self.factory.create_menuitem('export-to-text', '...to text file', self._on_handle_menu_multiple, None, [])
-        # ~ submenu_export.append_item(menuitem)
-        # ~ menuitem = self.factory.create_menuitem('export-to-csv', '...to CSV', self._on_handle_menu_multiple, None, [])
-        # ~ submenu_export.append_item(menuitem)
+        menuitem = self.factory.create_menuitem('export-to-text', '...to text file', self._on_handle_menu_multiple, None, [])
+        submenu_export.append_item(menuitem)
+        menuitem = self.factory.create_menuitem('export-to-csv', '...to CSV', self._on_handle_menu_multiple, None, [])
+        submenu_export.append_item(menuitem)
         # ~ menuitem = self.factory.create_menuitem('export-to-json', '...to JSON', self._on_handle_menu_multiple, None, [])
         # ~ submenu_export.append_item(menuitem)
         # ~ menuitem = self.factory.create_menuitem('export-to-html', '...to HTML', self._on_handle_menu_multiple, None, [])
@@ -695,6 +695,10 @@ class MiAZWorkspace(Gtk.Box):
             self.actions.document_export_to_directory(items)
         elif name == 'export-to-zip':
             self.actions.document_export_to_zip(items)
+        elif name == 'export-to-text':
+            self.actions.document_export_to_text(items)
+        elif name == 'export-to-csv':
+            self.actions.document_export_to_csv(items)
         elif name == 'delete':
             self.actions.document_delete(items)
 

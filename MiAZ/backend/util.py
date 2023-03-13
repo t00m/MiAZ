@@ -98,6 +98,9 @@ class MiAZUtil(GObject.GObject):
         name = self.valid_key(repo['dir_docs'])
         return os.path.join(ENV['LPATH']['TMP'], "%s_%s" % (ts, name))
 
+    def get_temp_file(self, dir_tmp, suffix='.txt'):
+        return tempfile.mkstemp(dir=dir_tmp, suffix=suffix)
+
 
     def get_fields(self, filename: str) -> []:
             filename = os.path.basename(filename)

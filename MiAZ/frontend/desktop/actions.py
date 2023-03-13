@@ -72,19 +72,11 @@ class MiAZActions(GObject.GObject):
         self.config = self.backend.conf
         frame = Gtk.Frame()
         box, view = self.factory.create_view(MiAZColumnViewMassDelete, "Mass deletion")
-        # ~ box = self.factory.create_box_vertical(spacing=6, vexpand=True, hexpand=True)
-        # ~ label = self.factory.create_label('Delete the following documents')
-        # ~ frame = Gtk.Frame()
-        # ~ cv = MiAZColumnViewMassDelete(self.app)
-        # ~ cv.get_style_context().add_class(class_name='monospace')
-        # ~ cv.set_hexpand(True)
-        # ~ cv.set_vexpand(True)
         citems = []
         for item in items:
             citems.append(File(id=item.id, title=os.path.basename(item.id)))
         view.update(citems)
         frame.set_child(view)
-        # ~ box.append(label)
         box.append(frame)
         dialog = self.factory.create_dialog_question(self.app.win, 'Mass deletion', box, width=1024, height=600)
         dialog.connect('response', dialog_response, items)
@@ -205,33 +197,7 @@ class MiAZActions(GObject.GObject):
         dialog.connect('response', dialog_response, dropdown, dropdowns, items)
         dialog.show()
 
-        # ~ else:
-            # ~ box = self.factory.create_box_vertical(spacing=6, vexpand=True, hexpand=True)
-            # ~ hbox = self.factory.create_box_horizontal()
-            # ~ label = Gtk.Label()
-            # ~ calendar = Gtk.Calendar()
-            # ~ btnDate = self.factory.create_button_popover(icon_name='miaz-res-date', widgets=[calendar])
-            # ~ hbox.append(btnDate)
-            # ~ hbox.append(label)
-            # ~ frame = Gtk.Frame()
-            # ~ cv = MiAZColumnViewMassRename(self.app)
-            # ~ cv.get_style_context().add_class(class_name='monospace')
-            # ~ cv.set_hexpand(True)
-            # ~ cv.set_vexpand(True)
-            # ~ frame.set_child(cv)
-            # ~ box.append(hbox)
-            # ~ box.append(frame)
-            # ~ sdate = datetime.strftime(datetime.now(), '%Y%m%d')
-            # ~ iso8601 = "%sT00:00:00Z" % sdate
-            # ~ calendar.connect('day-selected', calendar_day_selected, label, cv, items)
-            # ~ calendar.select_day(GLib.DateTime.new_from_iso8601(iso8601))
-            # ~ calendar.emit('day-selected')
-            # ~ dialog = self.factory.create_dialog_question(self.app.win, 'Mass renaming', box, width=640, height=480)
-            # ~ dialog.connect('response', dialog_response_date, calendar, items)
-            # ~ dialog.show()
-
     def document_rename_multiple(self, item_type, items):
-
         def update_columnview(dropdown, gparamobj, columnview, item_type, items):
             i_type = item_type.__gtype_name__
             i_title = item_type.__title__
@@ -362,7 +328,6 @@ class MiAZActions(GObject.GObject):
         # directly, config parameter must be passed.
         # In any case, config parameter is not used. Config is got from
         # item_type
-        # ~ model = dropdown.get_model()
         i_type = item_type.__gtype_name__
         config = self.app.get_config(i_type)
         items = config.load(config.used)
@@ -723,3 +688,29 @@ class MiAZActions(GObject.GObject):
 
         # Export with pattern
         filechooser.show()
+
+    def document_export_to_text(self, items):
+        text = ""
+        for item in items:
+            text += "%s\n" % item.id
+        fp, filepath = tempfile.mkstemp(dir=ENV['LPATH']['TMP'], suffix='.txt')
+        with open(filepath, 'w') as temp:
+            temp.write(text)
+        temp.close()
+        self.util.filename_display(filepath)
+
+    def document_export_to_csv(self, items):
+        import csv
+        fields = ['Date', 'Country', 'Group', 'Send by', 'Purpose', 'Concept', 'Send to', 'Extension']
+        rows = []
+        for item in items:
+            name, ext = self.util.filename_details(item.id)
+            row = name.split('-')
+            row.append(ext)
+            rows.append(row)
+        fp, filepath = tempfile.mkstemp(dir=ENV['LPATH']['TMP'], suffix='.csv')
+        with open(filepath, 'w') as csvfile:
+            csvwriter = csv.writer(csvfile)
+            csvwriter.writerow(fields)
+            csvwriter.writerows(rows)
+        self.util.filename_display(filepath)
