@@ -186,7 +186,7 @@ class MiAZApp(Adw.Application):
         # Actions out
         menuitem = self.factory.create_menuitem('help', 'Help', self._handle_menu, None, ["<Control>h", "<Control>H"])
         section_common_out.append_item(menuitem)
-        menuitem = self.factory.create_menuitem('about', 'About', self._handle_menu, None, ["<Control>a", "<Control>A"])
+        menuitem = self.factory.create_menuitem('about', 'About', self._handle_menu, None, [])
         section_common_out.append_item(menuitem)
 
         # Actions danger
