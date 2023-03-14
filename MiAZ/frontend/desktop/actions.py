@@ -211,8 +211,8 @@ class MiAZActions(GObject.GObject):
                     tmpfile[n] = dropdown.get_selected_item().id
                     filename = "%s.%s" % ('-'.join(tmpfile), ext)
                     target = os.path.join(os.path.dirname(source), filename)
-                    txtId = "<small>%s</small>" % os.path.basename(source)
-                    txtTitle = "<small>%s</small>" % os.path.basename(target)
+                    txtId = os.path.basename(source)
+                    txtTitle = os.path.basename(target)
                     citems.append(File(id=txtId, title=txtTitle))
                 except Exception as error:
                     # FIXME: AtributeError: 'NoneType' object has no attribute 'id'
