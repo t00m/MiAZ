@@ -21,6 +21,7 @@ class MiAZProject(GObject.GObject):
     def __init__(self, backend):
         super(MiAZProject, self).__init__()
         self.backend = backend
+        self.config = self.backend.conf['Project']
         self.log = get_logger('MiAZProject')
         repo = self.backend.repo_config()
         self.cnfprj = os.path.join(repo['dir_conf'], 'projects.json')
@@ -93,4 +94,12 @@ class MiAZProject(GObject.GObject):
     def load(self) -> dict:
         return self.backend.util.json_load(self.cnfprj)
 
+    def description(self, pid):
+        try:
+            description = self.config.get(pid)
+            if len(description) == 0:
+                description = pid
+        except KeyError as error:
+            description = error
+        return description
 
