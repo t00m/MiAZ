@@ -17,7 +17,7 @@ import time
 import shutil
 import zipfile
 from datetime import datetime, timedelta
-from dateutil.parser import parse as dateparser
+# ~ from dateutil.parser import parse as dateparser
 
 from gi.repository import Gio
 from gi.repository import GObject
@@ -58,17 +58,17 @@ class MiAZUtil(GObject.GObject):
         os.makedirs(dirpath, exist_ok = True)
         self.log.debug("Directory %s created" % dirpath)
 
-    def guess_datetime(self, adate: str) -> datetime:
-        """Return (guess) a datetime object for a given string."""
-        if len(adate) != 7:
-            return None
+    # ~ def guess_datetime(self, adate: str) -> datetime:
+        # ~ """Return (guess) a datetime object for a given string."""
+        # ~ if len(adate) != 7:
+            # ~ return None
 
-        try:
-            timestamp = dateparser(adate)
-        except Exception as error:
-            timestamp = None
+        # ~ try:
+            # ~ timestamp = dateparser(adate)
+        # ~ except Exception as error:
+            # ~ timestamp = None
 
-        return timestamp
+        # ~ return timestamp
 
     def json_load(self, filepath: str) -> {}:
         """Load into a dictionary a file in json format"""
