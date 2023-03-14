@@ -1,0 +1,57 @@
+{
+    "app-id": "com.github.t00m.MiAZ.json",
+    "branch": "develop",
+    "runtime": "org.gnome.Platform",
+    "runtime-version": "43",
+    "sdk": "org.gnome.Sdk",
+    "copy-icon": true,
+    "sdk-extensions": [],
+    "finish-args": [
+        "--share=ipc",
+        "--share=network",
+        "--socket=fallback-x11",
+        "--socket=wayland",
+        "--filesystem=host",
+        "--persist=.python-eggs",
+        "--talk-name=org.freedesktop.Notifications",
+        "--talk-name=org.freedesktop.FileManager1",
+        "--talk-name=org.gtk.vfs.*",
+        "--filesystem=xdg-run/gvfsd",
+        "--own-name=com.github.t00m.MiAZ.json",
+        "--env=LIBO_FLATPAK=1"
+    ],
+    "modules": [
+        {
+            "name": "miaz",
+            "sources": [
+                {
+                    "type": "git",
+                    "url": "https://github.com/t00m/MiAZ.git",
+                    "branch": "main"
+                }
+            ],
+            "buildsystem": "simple",
+            "build-commands": [
+                "python3 setup.py install --prefix=/tmp"
+            ],
+            "command": "miaz"
+        },
+        {
+            "name": "python-dateutil",
+            "no-autogen": true,
+            "ensure-writable": ["/lib/python*/site-packages/easy-install.pth","/lib/python*/site-packages/setuptools.pth"],
+            "sources": [
+                {
+                    "type": "archive",
+                    "url": "https://files.pythonhosted.org/packages/ad/99/5b2e99737edeb28c71bcbec5b5dda19d0d9ef3ca3e92e3e925e7c0bb364c/python-dateutil-2.8.0.tar.gz",
+                    "sha256": "c89805f6f4d64db21ed966fda138f8a5ed7a4fdbc1a8ee329ce1b74e3c74da9e"
+                },
+                {
+                    "type": "file",
+                    "path": "flatpak/pip-Makefile",
+                    "dest-filename": "Makefile"
+                }
+            ]
+        }
+    ]
+}
