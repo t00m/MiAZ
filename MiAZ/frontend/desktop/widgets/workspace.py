@@ -286,6 +286,26 @@ class MiAZWorkspace(Gtk.Box):
         key = "%s-%s" % (dt2str(ll), dt2str(ul))
         model.append(Date(id=key, title='Last 6 months'))
 
+        ## This year
+        ll = self.util.since_date_this_year(now) # lower limit
+        key = "%s-%s" % (dt2str(ll), dt2str(ul))
+        model.append(Date(id=key, title='This year'))
+
+        ## Two years ago
+        ll = self.util.since_date_past_year(now) # lower limit
+        key = "%s-%s" % (dt2str(ll), dt2str(ul))
+        model.append(Date(id=key, title='Since two years ago'))
+
+        ## Three years ago
+        ll = self.util.since_date_three_years(now) # lower limit
+        key = "%s-%s" % (dt2str(ll), dt2str(ul))
+        model.append(Date(id=key, title='Since three years ago'))
+
+        ## Five years ago
+        ll = self.util.since_date_five_years(now) # lower limit
+        key = "%s-%s" % (dt2str(ll), dt2str(ul))
+        model.append(Date(id=key, title='Since five years ago'))
+
         ## All documents
         key = "All-All"
         model.append(Date(id=key, title='All documents'))
