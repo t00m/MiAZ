@@ -368,7 +368,7 @@ class MiAZFactory:
         boxCenter.set_margin_start(margin=6)
         icon_mime = self.app.icman.get_icon_mimetype_from_file(filepath, 32)
         btnMime = Gtk.Button(css_classes=['flat'])
-        btnMime.set_child(icon_mime)
+        # ~ btnMime.set_child(icon_mime)
         btnMime.connect('clicked', self.noop)
         icon_flag = self.app.icman.get_flag('ES', 32)
         label = self.create_label(os.path.basename(filepath))

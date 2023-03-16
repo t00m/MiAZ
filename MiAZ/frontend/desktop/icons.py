@@ -20,6 +20,7 @@ from gi.repository import GObject
 from gi.repository import Gdk
 from gi.repository.GdkPixbuf import Pixbuf
 
+from MiAZ.backend.log import get_logger
 from MiAZ.backend.env import ENV
 # FIXME: Review this module
 
@@ -27,10 +28,12 @@ class MiAZIconManager(GObject.GObject):
     def __init__(self, app):
         super(MiAZIconManager, self).__init__()
         self.app = app
+        self.log = get_logger('MiAZ.IconManager')
         self.util = self.app.backend.util
         win = Gtk.Window()
         self.theme = Gtk.IconTheme.get_for_display(win.get_display())
         self.theme.add_search_path(ENV['GPATH']['ICONS'])
+        self.log.debug("Custom Icon Theme Path: %s", ENV['GPATH']['ICONS'])
         self.paintable = {}
         self.gicondict = {}
         self.icondict = {}
