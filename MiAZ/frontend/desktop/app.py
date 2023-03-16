@@ -13,6 +13,7 @@ import sys
 import gi
 gi.require_version('Adw', '1')
 gi.require_version('Gtk', '4.0')
+from gi.repository import GObject
 from gi.repository import Adw
 from gi.repository import Gdk
 from gi.repository import Gio
@@ -34,10 +35,16 @@ from MiAZ.frontend.desktop.icons import MiAZIconManager
 from MiAZ.frontend.desktop.factory import MiAZFactory
 from MiAZ.frontend.desktop.actions import MiAZActions
 from MiAZ.frontend.desktop.help import MiAZHelp
+from MiAZ.backend.pluginsystem import MiAZPluginManager
 
 Adw.init()
 
 class MiAZApp(Adw.Application):
+    # basic signals
+    __gsignals__ = {
+        "start-application-completed":  (GObject.SignalFlags.RUN_LAST, None, ()),
+        "stop-application-completed":  (GObject.SignalFlags.RUN_LAST, None, ()),
+    }
     widget_about = None
     widget_help = None
     widget_welcome = None
@@ -67,7 +74,14 @@ class MiAZApp(Adw.Application):
         self._setup_gui()
         self.check_repository()
         self._setup_event_listener()
+        self._setup_plugin_manager()
         self.log.debug("Executing MiAZ Desktop mode")
+        self.emit('start-application-completed')
+        workspace = self.get_workspace()
+        workspace.emit('extend-menu-export', 'Hola')
+
+    def _setup_plugin_manager(self):
+        self.plugin_manager = MiAZPluginManager(self)
 
     def _setup_event_listener(self):
         evk = Gtk.EventControllerKey.new()

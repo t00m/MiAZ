@@ -29,7 +29,6 @@ from MiAZ.backend.config import MiAZConfigPeople
 from MiAZ.backend.config import MiAZConfigSentBy
 from MiAZ.backend.config import MiAZConfigSentTo
 from MiAZ.backend.config import MiAZConfigRepositories
-from MiAZ.backend.pluginsystem import PluginManager
 
 
 class MiAZBackend(GObject.GObject):
@@ -44,8 +43,6 @@ class MiAZBackend(GObject.GObject):
                             MiAZBackend,
                             GObject.SignalFlags.RUN_LAST, None, () )
         self.util = MiAZUtil(self)
-        self.pm = PluginManager(self)
-
         self.conf['App'] = MiAZConfigApp(self)
         self.conf['Repository'] = MiAZConfigRepositories(self)
 

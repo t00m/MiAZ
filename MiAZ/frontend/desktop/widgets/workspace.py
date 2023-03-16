@@ -48,8 +48,17 @@ Configview['Date'] = Gtk.Calendar
 
 
 class MiAZWorkspace(Gtk.Box):
-    """ Wrapper for Gtk.Stack with  with a StackSwitcher """
-    signals = set()
+    __gtype_name__ = 'MiAZWorkspace'
+    """Workspace"""
+    # ~ "extend-menu-export":  (GObject.SignalFlags.RUN_FIRST, GObject.TYPE_PYOBJECT, (GObject.TYPE_PYOBJECT,) ),
+    # ~ __gsignals__ = {
+        # ~ "extend-menu-export":  (GObject.SignalFlags.RUN_LAST, None, ()),
+    # ~ }
+    # ~ __gsignals__ = {
+        # ~ "start-workspace-completed":  (GObject.SignalFlags.RUN_LAST, None, ()),
+        # ~ "stop-application-completed":  (GObject.SignalFlags.RUN_LAST, None, ()),
+    # ~ }
+    # ~ signals = set()
     selected_items = []
     dates = {}
     dropdown = {}
@@ -57,6 +66,8 @@ class MiAZWorkspace(Gtk.Box):
 
     def __init__(self, app):
         super(MiAZWorkspace, self).__init__(orientation=Gtk.Orientation.HORIZONTAL)
+        GObject.signal_new('start-workspace-completed', MiAZWorkspace, GObject.SignalFlags.RUN_LAST, None, () )
+        GObject.signal_new('extend-menu-export', MiAZWorkspace, GObject.SignalFlags.RUN_LAST, GObject.TYPE_PYOBJECT, (GObject.TYPE_PYOBJECT,) )
         self.log = get_logger('MiAZWorkspace')
         self.app = app
         self.backend = self.app.get_backend()
@@ -99,6 +110,7 @@ class MiAZWorkspace(Gtk.Box):
             assistant.set_transient_for(self.app.win)
             assistant.set_modal(True)
             assistant.present()
+        # ~ self.emit("extend-menu-export")
 
     def _setup_toolbar_filters(self):
         widget = self.factory.create_box_horizontal(hexpand=True, vexpand=False)
@@ -463,14 +475,15 @@ class MiAZWorkspace(Gtk.Box):
             submenu = submenu_export,
         )
         section_common_out.append_item(menu_export)
-        menuitem = self.factory.create_menuitem('export-to-directory', '...to directory', self._on_handle_menu_multiple, None, [])
-        submenu_export.append_item(menuitem)
-        menuitem = self.factory.create_menuitem('export-to-zip', '...to zip', self._on_handle_menu_multiple, None, [])
-        submenu_export.append_item(menuitem)
-        menuitem = self.factory.create_menuitem('export-to-text', '...to text file', self._on_handle_menu_multiple, None, [])
-        submenu_export.append_item(menuitem)
-        menuitem = self.factory.create_menuitem('export-to-csv', '...to CSV', self._on_handle_menu_multiple, None, [])
-        submenu_export.append_item(menuitem)
+        self.emit("start-workspace-completed")
+        # ~ menuitem = self.factory.create_menuitem('export-to-directory', '...to directory', self._on_handle_menu_multiple, None, [])
+        # ~ submenu_export.append_item(menuitem)
+        # ~ menuitem = self.factory.create_menuitem('export-to-zip', '...to zip', self._on_handle_menu_multiple, None, [])
+        # ~ submenu_export.append_item(menuitem)
+        # ~ menuitem = self.factory.create_menuitem('export-to-text', '...to text file', self._on_handle_menu_multiple, None, [])
+        # ~ submenu_export.append_item(menuitem)
+        # ~ menuitem = self.factory.create_menuitem('export-to-csv', '...to CSV', self._on_handle_menu_multiple, None, [])
+        # ~ submenu_export.append_item(menuitem)
         # ~ menuitem = self.factory.create_menuitem('export-to-json', '...to JSON', self._on_handle_menu_multiple, None, [])
         # ~ submenu_export.append_item(menuitem)
         # ~ menuitem = self.factory.create_menuitem('export-to-html', '...to HTML', self._on_handle_menu_multiple, None, [])
