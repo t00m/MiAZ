@@ -564,45 +564,4 @@ class MiAZActions(GObject.GObject):
         dialog.connect('response', dialog_response, dropdown, items)
         dialog.show()
 
-    def document_export_to_zip(self, items):
-        def filechooser_response(dialog, response, patterns):
-            config = self.backend.repo_config()
-            target_dir = config['dir_docs']
-            if response == Gtk.ResponseType.ACCEPT:
-                content_area = dialog.get_content_area()
-                box = content_area.get_first_child()
-                filechooser = box.get_first_child()
-                hbox = box.get_last_child()
-                toggle_pattern = hbox.get_first_child()
-                gfile = filechooser.get_file()
-                dirpath = gfile.get_path()
-                if gfile is not None:
-                    repo = self.backend.repo_config()
-                    dir_doc = repo['dir_docs']
-                    dir_zip = self.util.get_temp_dir()
-                    self.util.directory_create(dir_zip)
-                    for item in items:
-                        source = os.path.join(dir_doc, item.id)
-                        target = dir_zip
-                        self.util.filename_copy(source, target)
-                    zip_file = "%s.zip" % os.path.basename(dir_zip)
-                    target = os.path.join(ENV['LPATH']['TMP'], zip_file)
-                    self.util.zip(target, dir_zip)
-                    self.util.filename_rename(target, os.path.join(dirpath, zip_file))
-                    self.util.directory_remove(dir_zip)
-                    self.util.directory_open(dirpath)
-                    self.log.debug(target)
 
-            dialog.destroy()
-
-        self.factory = self.app.get_factory()
-        filechooser = self.factory.create_filechooser(
-                    parent=self.app.win,
-                    title='Export selected documents to a ZIP file',
-                    target = 'FOLDER',
-                    callback = filechooser_response,
-                    data = None
-                    )
-
-        # Export with pattern
-        filechooser.show()
