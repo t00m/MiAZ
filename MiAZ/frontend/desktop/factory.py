@@ -348,6 +348,8 @@ class MiAZFactory:
         menuitem = Gio.MenuItem.new()
         menuitem.set_label(label=label)
         action = Gio.SimpleAction.new(name, None)
+        self.app.add_widget('action-%s' % name, action)
+        self.log.debug('action-%s' % name)
         action.connect('activate', callback, data)
         self.app.add_action(action)
         menuitem.set_detailed_action(detailed_action='app.%s' % name)

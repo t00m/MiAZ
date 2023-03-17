@@ -50,9 +50,9 @@ Configview['Date'] = Gtk.Calendar
 class MiAZWorkspace(Gtk.Box):
     __gtype_name__ = 'MiAZWorkspace'
     """Workspace"""
-    # ~ "extend-menu-export":  (GObject.SignalFlags.RUN_FIRST, GObject.TYPE_PYOBJECT, (GObject.TYPE_PYOBJECT,) ),
     __gsignals__ = {
         "extend-menu-export":  (GObject.SignalFlags.RUN_LAST, None, ()),
+        "extend-menu-project":  (GObject.SignalFlags.RUN_LAST, None, ()),
     }
     selected_items = []
     dates = {}
@@ -105,11 +105,13 @@ class MiAZWorkspace(Gtk.Box):
             assistant.set_transient_for(self.app.win)
             assistant.set_modal(True)
             assistant.present()
-        # ~ self.emit("extend-menu-export")
+
+        # Allow plug-ins to make their job
         self.app.connect('start-application-completed', self._finish_configuration)
 
     def _finish_configuration(self, *args):
         self.emit('extend-menu-export')
+        self.emit('extend-menu-project')
 
     def _setup_toolbar_filters(self):
         widget = self.factory.create_box_horizontal(hexpand=True, vexpand=False)
@@ -333,6 +335,7 @@ class MiAZWorkspace(Gtk.Box):
 
     def _setup_columnview(self):
         self.view = MiAZColumnViewWorkspace(self.app)
+        self.app.add_widget('workspace-view', self.view)
         # ~ self.view.factory_icon_type.connect("bind", self._on_factory_bind_icon_type)
         self.view.get_style_context().add_class(class_name='caption')
         self.view.set_filter(self._do_filter_view)
@@ -360,7 +363,9 @@ class MiAZWorkspace(Gtk.Box):
         # ~ widget.append(foot)
 
         self.toolbar_filters = self._setup_toolbar_filters()
+        self.app.add_widget('workspace-toolbar-filters', self.toolbar_filters)
         toolbar_top = self._setup_toolbar_top()
+        self.app.add_widget('workspace-toolbar-top', toolbar_top)
         frmView = self._setup_columnview()
         head.append(toolbar_top)
         head.append(self.toolbar_filters)
@@ -407,6 +412,8 @@ class MiAZWorkspace(Gtk.Box):
             label = 'Project management...',
             submenu = submenu_project,
         )
+        self.app.add_widget('workspace-menu-single-menu-project', menu_project)
+        self.app.add_widget('workspace-menu-single-submenu-project', submenu_project)
         section_common_in.append_item(menu_project)
         menuitem = self.factory.create_menuitem('project-assign', '...assign project', self._on_handle_menu_single, None, [])
         submenu_project.append_item(menuitem)
@@ -431,10 +438,10 @@ class MiAZWorkspace(Gtk.Box):
 
     def _setup_menu_selection_multiple(self):
         # Setup multiple menu and sections
-        menu_workspace_multiple = Gio.Menu.new()
-        section_common_in = Gio.Menu.new()
-        section_common_out = Gio.Menu.new()
-        section_danger = Gio.Menu.new()
+        menu_workspace_multiple = self.app.add_widget('workspace-menu-multiple', Gio.Menu.new())
+        section_common_in = self.app.add_widget('workspace-menu-multiple-section-common-in', Gio.Menu.new())
+        section_common_out = self.app.add_widget('workspace-menu-multiple-section-common-out', Gio.Menu.new())
+        section_danger = section_common_out = self.app.add_widget('workspace-menu-multiple-section-danger', Gio.Menu.new())
         menu_workspace_multiple.append_section(None, section_common_in)
         menu_workspace_multiple.append_section(None, section_common_out)
         menu_workspace_multiple.append_section(None, section_danger)
@@ -461,6 +468,8 @@ class MiAZWorkspace(Gtk.Box):
             submenu = submenu_project,
         )
         section_common_in.append_item(menu_project)
+        self.app.add_widget('workspace-menu-multiple-menu-project', menu_project)
+        self.app.add_widget('workspace-menu-multiple-submenu-project', submenu_project)
         menuitem = self.factory.create_menuitem('project-assign', '...assign project', self._on_handle_menu_multiple, None, [])
         submenu_project.append_item(menuitem)
         menuitem = self.factory.create_menuitem('project-withdraw', '...withdraw project', self._on_handle_menu_multiple, None, [])
@@ -473,22 +482,9 @@ class MiAZWorkspace(Gtk.Box):
             label = 'Export...',
             submenu = submenu_export,
         )
-        self.app.add_widget('workspace-submenu-export', submenu_export)
+        self.app.add_widget('workspace-menu-multiple-menu-export', menu_export)
+        self.app.add_widget('workspace-menu-multiple-submenu-export', submenu_export)
         section_common_out.append_item(menu_export)
-        # ~ menuitem = self.factory.create_menuitem('export-to-directory', '...to directory', self._on_handle_menu_multiple, None, [])
-        # ~ submenu_export.append_item(menuitem)
-        # ~ menuitem = self.factory.create_menuitem('export-to-zip', '...to zip', self._on_handle_menu_multiple, None, [])
-        # ~ submenu_export.append_item(menuitem)
-        # ~ menuitem = self.factory.create_menuitem('export-to-text', '...to text file', self._on_handle_menu_multiple, None, [])
-        # ~ submenu_export.append_item(menuitem)
-        # ~ menuitem = self.factory.create_menuitem('export-to-csv', '...to CSV', self._on_handle_menu_multiple, None, [])
-        # ~ submenu_export.append_item(menuitem)
-        # ~ menuitem = self.factory.create_menuitem('export-to-json', '...to JSON', self._on_handle_menu_multiple, None, [])
-        # ~ submenu_export.append_item(menuitem)
-        # ~ menuitem = self.factory.create_menuitem('export-to-html', '...to HTML', self._on_handle_menu_multiple, None, [])
-        # ~ submenu_export.append_item(menuitem)
-        # ~ menuitem = self.factory.create_menuitem('export-to-timeline', '...to timeline', self._on_handle_menu_multiple, None, [])
-        # ~ submenu_export.append_item(menuitem)
 
         # Danger section
         menuitem = self.factory.create_menuitem('delete', 'Delete documents', self._on_handle_menu_multiple, None, [])

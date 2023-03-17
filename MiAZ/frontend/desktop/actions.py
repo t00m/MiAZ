@@ -476,7 +476,7 @@ class MiAZActions(GObject.GObject):
                 for item in items:
                     docs.append(os.path.basename(item.id))
                 self.projects.add_batch(pid, docs)
-                workspace = self.app.get_workspace()
+                workspace = self.app.get_widget('workspace')
                 workspace.update()
             dialog.destroy()
 
@@ -521,7 +521,7 @@ class MiAZActions(GObject.GObject):
                 for item in items:
                     docs.append(os.path.basename(item.id))
                 self.projects.remove_batch(pid, docs)
-                workspace = self.app.get_workspace()
+                workspace = self.app.get_widget('workspace')
                 workspace.update()
             dialog.destroy()
 

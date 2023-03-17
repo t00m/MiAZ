@@ -66,8 +66,9 @@ class MiAZPluginManager:
         # Load plugins.
         for plugin in self.plugins:
             self.engine.load_plugin(plugin)
-            # ~ if plugin.is_loaded():
-                # ~ self.log.debug("\tPlugin %s %s (%s)",  plugin.get_name(), plugin.get_version(), plugin.get_description())
+            if plugin.is_loaded():
+                self.log.debug("\tPlugin %s %s (%s)",  plugin.get_name(), plugin.get_version(), plugin.get_description())
+                self.engine.unload_plugin(plugin)
                 # ~ self.log.debug("\t\tModule name: %s", plugin.get_module_name())
                 # ~ self.log.debug("\t\tModule directory: %s", plugin.get_module_dir())
                 # ~ self.log.debug("\t\tModule version: %s", plugin.get_version())

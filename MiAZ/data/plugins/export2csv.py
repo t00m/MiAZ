@@ -30,17 +30,19 @@ class Export2CSV(GObject.GObject, Peas.Activatable):
         self.backend = self.app.get_backend()
         self.factory = self.app.get_factory()
         self.util = self.backend.util
-        self.workspace = API.app.get_workspace()
+        self.workspace = API.app.get_widget('workspace')
         self.workspace.connect("extend-menu-export", self.add_menuitem)
 
     def do_deactivate(self):
         print("do_deactivate")
         API = self.object
-        # ~ API.app.disconnect_by_func(self.processInputCb)
+        action = self.app.get_widget('action-export-to-csv')
+        self.log.debug(dir(action))
 
     def add_menuitem(self, *args):
-        submenu_export = self.app.get_widget('workspace-submenu-export')
+        submenu_export = self.app.get_widget('workspace-menu-multiple-submenu-export')
         menuitem = self.factory.create_menuitem('export-to-csv', '...to CSV', self.export, None, [])
+        self.app.add_widget('workspace-menu-multiple-menu-export-item-export2csv', menuitem)
         submenu_export.append_item(menuitem)
         self.log.debug("Added menu item to submenu export for exporting to CSV")
 
