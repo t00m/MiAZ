@@ -692,29 +692,3 @@ class MiAZActions(GObject.GObject):
 
         # Export with pattern
         filechooser.show()
-
-    def document_export_to_text(self, items):
-        text = ""
-        for item in items:
-            text += "%s\n" % item.id
-        fp, filepath = tempfile.mkstemp(dir=ENV['LPATH']['TMP'], suffix='.txt')
-        with open(filepath, 'w') as temp:
-            temp.write(text)
-        temp.close()
-        self.util.filename_display(filepath)
-
-    def document_export_to_csv(self, items):
-        import csv
-        fields = ['Date', 'Country', 'Group', 'Send by', 'Purpose', 'Concept', 'Send to', 'Extension']
-        rows = []
-        for item in items:
-            name, ext = self.util.filename_details(item.id)
-            row = name.split('-')
-            row.append(ext)
-            rows.append(row)
-        fp, filepath = tempfile.mkstemp(dir=ENV['LPATH']['TMP'], suffix='.csv')
-        with open(filepath, 'w') as csvfile:
-            csvwriter = csv.writer(csvfile)
-            csvwriter.writerow(fields)
-            csvwriter.writerows(rows)
-        self.util.filename_display(filepath)
