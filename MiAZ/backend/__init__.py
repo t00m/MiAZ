@@ -10,7 +10,10 @@
 
 import os
 
+import gi
+gi.require_version('Peas', '1.0')
 from gi.repository import GObject
+from gi.repository import Peas
 
 from MiAZ.backend.log import get_logger
 from MiAZ.backend.util import MiAZUtil

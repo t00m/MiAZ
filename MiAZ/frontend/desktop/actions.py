@@ -476,7 +476,7 @@ class MiAZActions(GObject.GObject):
                 for item in items:
                     docs.append(os.path.basename(item.id))
                 self.projects.add_batch(pid, docs)
-                workspace = self.app.get_workspace()
+                workspace = self.app.get_widget('workspace')
                 workspace.update()
             dialog.destroy()
 
@@ -521,7 +521,7 @@ class MiAZActions(GObject.GObject):
                 for item in items:
                     docs.append(os.path.basename(item.id))
                 self.projects.remove_batch(pid, docs)
-                workspace = self.app.get_workspace()
+                workspace = self.app.get_widget('workspace')
                 workspace.update()
             dialog.destroy()
 
@@ -564,157 +564,4 @@ class MiAZActions(GObject.GObject):
         dialog.connect('response', dialog_response, dropdown, items)
         dialog.show()
 
-    def document_export_to_directory(self, items):
-        def get_pattern_paths(item):
-            fields = self.util.get_fields(item.id)
-            paths = {}
-            paths['Y'] = '%04d' % datetime.strptime(fields[0], '%Y%m%d').year
-            paths['m'] = "%02d" % datetime.strptime(fields[0], '%Y%m%d').month
-            paths['d'] = "%02d" % datetime.strptime(fields[0], '%Y%m%d').day
-            paths['C'] = fields[Field[Country]]
-            paths['G'] = fields[Field[Group]]
-            paths['P'] = fields[Field[Purpose]]
-            paths['B'] = fields[Field[SentBy]]
-            paths['T'] = fields[Field[SentTo]]
-            return paths
 
-        def filechooser_response(dialog, response, patterns):
-            config = self.backend.repo_config()
-            target_dir = config['dir_docs']
-            if response == Gtk.ResponseType.ACCEPT:
-                content_area = dialog.get_content_area()
-                box = content_area.get_first_child()
-                filechooser = box.get_first_child()
-                hbox = box.get_last_child()
-                toggle_pattern = hbox.get_first_child()
-                gfile = filechooser.get_file()
-                if gfile is not None:
-                    dirpath = gfile.get_path()
-                    if toggle_pattern.get_active():
-                        entry = toggle_pattern.get_next_sibling()
-                        keys = [key for key in entry.get_text()]
-                        for item in items:
-                            basename = os.path.basename(item.id)
-                            self.log.debug(basename)
-                            thispath = []
-                            thispath.append(dirpath)
-                            paths = get_pattern_paths(item)
-                            for key in keys:
-                                thispath.append(paths[key])
-                            target = os.path.join(*thispath)
-                            os.makedirs(target, exist_ok = True)
-                            self.util.filename_export(item.id, target)
-                    else:
-                        for item in items:
-                            target = os.path.join(dirpath, os.path.basename(item.id))
-                            self.util.filename_export(item.id, target)
-                    self.util.directory_open(dirpath)
-            dialog.destroy()
-
-        self.factory = self.app.get_factory()
-        patterns = {
-            'Y': 'Year',
-            'm': 'Month',
-            'd': 'Day',
-            'C': 'Country',
-            'G': 'Group',
-            'P': 'Purpose',
-            'B': 'Sent by',
-            'T': 'Sent to',
-        }
-        filechooser = self.factory.create_filechooser(
-                    parent=self.app.win,
-                    title='Export selected items to this directory',
-                    target = 'FOLDER',
-                    callback = filechooser_response,
-                    data = patterns
-                    )
-
-        # Export with pattern
-        contents = filechooser.get_content_area()
-        box = contents.get_first_child()
-        hbox = self.factory.create_box_horizontal()
-        chkPattern = self.factory.create_button_check(title='Export with pattern', callback=None)
-        etyPattern = Gtk.Entry()
-        etyPattern.set_text('CYmGP') #/{target}/{Country}/{Year}/{month}/{Group}/{Purpose}
-        widgets = []
-        for key in patterns:
-            label = Gtk.Label()
-            label.set_markup('<b>%s</b> = %s' % (key, patterns[key]))
-            label.set_xalign(0.0)
-            widgets.append(label)
-        btpPattern = self.factory.create_button_popover(icon_name='miaz-info', widgets=widgets)
-        hbox.append(chkPattern)
-        hbox.append(etyPattern)
-        hbox.append(btpPattern)
-        box.append(hbox)
-        filechooser.show()
-
-    def document_export_to_zip(self, items):
-        def filechooser_response(dialog, response, patterns):
-            config = self.backend.repo_config()
-            target_dir = config['dir_docs']
-            if response == Gtk.ResponseType.ACCEPT:
-                content_area = dialog.get_content_area()
-                box = content_area.get_first_child()
-                filechooser = box.get_first_child()
-                hbox = box.get_last_child()
-                toggle_pattern = hbox.get_first_child()
-                gfile = filechooser.get_file()
-                dirpath = gfile.get_path()
-                if gfile is not None:
-                    repo = self.backend.repo_config()
-                    dir_doc = repo['dir_docs']
-                    dir_zip = self.util.get_temp_dir()
-                    self.util.directory_create(dir_zip)
-                    for item in items:
-                        source = os.path.join(dir_doc, item.id)
-                        target = dir_zip
-                        self.util.filename_copy(source, target)
-                    zip_file = "%s.zip" % os.path.basename(dir_zip)
-                    target = os.path.join(ENV['LPATH']['TMP'], zip_file)
-                    self.util.zip(target, dir_zip)
-                    self.util.filename_rename(target, os.path.join(dirpath, zip_file))
-                    self.util.directory_remove(dir_zip)
-                    self.util.directory_open(dirpath)
-                    self.log.debug(target)
-
-            dialog.destroy()
-
-        self.factory = self.app.get_factory()
-        filechooser = self.factory.create_filechooser(
-                    parent=self.app.win,
-                    title='Export selected documents to a ZIP file',
-                    target = 'FOLDER',
-                    callback = filechooser_response,
-                    data = None
-                    )
-
-        # Export with pattern
-        filechooser.show()
-
-    def document_export_to_text(self, items):
-        text = ""
-        for item in items:
-            text += "%s\n" % item.id
-        fp, filepath = tempfile.mkstemp(dir=ENV['LPATH']['TMP'], suffix='.txt')
-        with open(filepath, 'w') as temp:
-            temp.write(text)
-        temp.close()
-        self.util.filename_display(filepath)
-
-    def document_export_to_csv(self, items):
-        import csv
-        fields = ['Date', 'Country', 'Group', 'Send by', 'Purpose', 'Concept', 'Send to', 'Extension']
-        rows = []
-        for item in items:
-            name, ext = self.util.filename_details(item.id)
-            row = name.split('-')
-            row.append(ext)
-            rows.append(row)
-        fp, filepath = tempfile.mkstemp(dir=ENV['LPATH']['TMP'], suffix='.csv')
-        with open(filepath, 'w') as csvfile:
-            csvwriter = csv.writer(csvfile)
-            csvwriter.writerow(fields)
-            csvwriter.writerows(rows)
-        self.util.filename_display(filepath)

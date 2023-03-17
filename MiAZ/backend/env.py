@@ -58,6 +58,7 @@ ENV['GPATH']['DOCS'] = os.path.join(ENV['GPATH']['DATA'], 'docs')
 ENV['GPATH']['ICONS'] = os.path.join(ENV['GPATH']['DATA'], 'icons')
 ENV['GPATH']['FLAGS'] = os.path.join(ENV['GPATH']['ICONS'], 'flags')
 ENV['GPATH']['RESOURCES'] = os.path.join(ENV['GPATH']['DATA'], 'resources')
+ENV['GPATH']['PLUGINS'] = os.path.join(ENV['GPATH']['DATA'], 'plugins')
 
 # Common file paths
 ENV['FILE'] = {}

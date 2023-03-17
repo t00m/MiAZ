@@ -13,6 +13,7 @@ import sys
 import gi
 gi.require_version('Adw', '1')
 gi.require_version('Gtk', '4.0')
+from gi.repository import GObject
 from gi.repository import Adw
 from gi.repository import Gdk
 from gi.repository import Gio
@@ -34,10 +35,16 @@ from MiAZ.frontend.desktop.icons import MiAZIconManager
 from MiAZ.frontend.desktop.factory import MiAZFactory
 from MiAZ.frontend.desktop.actions import MiAZActions
 from MiAZ.frontend.desktop.help import MiAZHelp
+from MiAZ.backend.pluginsystem import MiAZPluginManager
 
 Adw.init()
 
 class MiAZApp(Adw.Application):
+    # basic signals
+    __gsignals__ = {
+        "start-application-completed":  (GObject.SignalFlags.RUN_LAST, None, ()),
+        "stop-application-completed":  (GObject.SignalFlags.RUN_LAST, None, ()),
+    }
     widget_about = None
     widget_help = None
     widget_welcome = None
@@ -48,6 +55,7 @@ class MiAZApp(Adw.Application):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+        self._widget =  {}
         self.backend = MiAZBackend()
         self.conf = self.backend.conf
         self.log = get_logger("MiAZ.GUI")
@@ -55,22 +63,32 @@ class MiAZApp(Adw.Application):
         self.connect('activate', self._on_activate)
 
     def _on_activate(self, app):
-        self.win = Gtk.ApplicationWindow(application=self)
+        self.win = self.add_widget('window', Gtk.ApplicationWindow(application=self))
         self.win.set_default_size(1024, 728)
         self.win.set_icon_name('MiAZ')
         self.win.set_default_icon_name('MiAZ')
         self.icman = MiAZIconManager(self)
-        self.theme = Gtk.IconTheme.get_for_display(self.win.get_display())
+        self.theme = self.add_widget('theme', Gtk.IconTheme.get_for_display(self.win.get_display()))
         self.theme.add_search_path(ENV['GPATH']['ICONS'])
         self.actions = MiAZActions(self)
         self.factory = MiAZFactory(self)
         self._setup_gui()
         self.check_repository()
         self._setup_event_listener()
+        self._setup_plugin_manager()
+        self.log.debug("Plugins loaded:")
+        for plugin in self.plugin_manager.plugins:
+            if plugin.is_loaded():
+                self.log.debug("\t[%s] %s %s (%s)",  self.plugin_manager.get_plugin_type(plugin), plugin.get_name(), plugin.get_version(), plugin.get_description())
         self.log.debug("Executing MiAZ Desktop mode")
+        self.emit('start-application-completed')
+
+    def _setup_plugin_manager(self):
+        self.plugin_manager = self.add_widget('plugin-manager', MiAZPluginManager(self))
 
     def _setup_event_listener(self):
         evk = Gtk.EventControllerKey.new()
+        self.add_widget('window-event-controller', evk)
         evk.connect("key-pressed", self._on_key_press)
         self.win.add_controller(evk)
 
@@ -80,7 +98,7 @@ class MiAZApp(Adw.Application):
             page_name = self.stack.get_visible_child_name()
             valid = self.check_repository()
             if valid:
-                workspace = self.get_workspace()
+                workspace = self.get_widget('workspace')
                 workspace.update()
                 self.show_stack_page_by_name('workspace')
 
@@ -153,8 +171,9 @@ class MiAZApp(Adw.Application):
 
     def _setup_page_workspace(self):
         if self.widget_workspace is None:
-            self.widget_workspace = MiAZWorkspace(self)
+            self.widget_workspace = self.add_widget('workspace', MiAZWorkspace(self))
             self.page_workspace = self.stack.add_titled(self.widget_workspace, 'workspace', 'MiAZ')
+            self.add_widget('page-workspace', self.page_workspace)
             self.page_workspace.set_icon_name('document-properties')
             self.page_workspace.set_visible(True)
             self.show_stack_page_by_name('workspace')
@@ -171,13 +190,16 @@ class MiAZApp(Adw.Application):
 
     def _setup_headerbar_left(self):
         # Add Menu Button to the titlebar (Left Side)
-        menu_headerbar = Gio.Menu.new()
+        menu_headerbar = self.add_widget('menu-headerbar', Gio.Menu.new())
         section_common_in = Gio.Menu.new()
         section_common_out = Gio.Menu.new()
         section_danger = Gio.Menu.new()
         menu_headerbar.append_section(None, section_common_in)
         menu_headerbar.append_section(None, section_common_out)
         menu_headerbar.append_section(None, section_danger)
+        self.add_widget('menu-headerbar-section-common-in', section_common_in)
+        self.add_widget('menu-headerbar-section-common-out', section_common_out)
+        self.add_widget('menu-headerbar-section-common-danger', section_danger)
 
         # Actions in
         menuitem = self.factory.create_menuitem('settings_app', 'Application settings', self._handle_menu, None, [])
@@ -195,6 +217,7 @@ class MiAZApp(Adw.Application):
 
         menubutton = self.factory.create_button_menu(icon_name='miaz-system-menu', menu=menu_headerbar)
         menubutton.set_always_show_arrow(False)
+        self.add_widget('headerbar-menubutton-app', menubutton)
         self.header.pack_start(menubutton)
 
     def _setup_headerbar_right(self):
@@ -202,21 +225,18 @@ class MiAZApp(Adw.Application):
 
     def _setup_headerbar_center(self):
         pass
-        # ~ ent_sb = Gtk.SearchEntry(placeholder_text="Type here")
-        # ~ ent_sb.set_hexpand(False)
-        # ~ self.header.set_title_widget(title_widget=ent_sb)
 
     def _setup_gui(self):
         # Widgets
         ## HeaderBar
-        self.header = Adw.HeaderBar()
+        self.header = self.add_widget('headerbar', Adw.HeaderBar())
 
         ## Central Box
         self.mainbox = self.factory.create_box_vertical(vexpand=True)
         self.win.set_child(self.mainbox)
 
         ## Stack & Stack.Switcher
-        stack = self._setup_stack()
+        stack = self.add_widget('stack', self._setup_stack())
         self.mainbox.append(stack)
 
         # Setup headerbar
@@ -280,4 +300,18 @@ class MiAZApp(Adw.Application):
 
     def exit_app(self, *args):
         self.quit()
+
+    def add_widget(self, name: str, widget: Gtk.Widget) -> Gtk.Widget:
+        if name not in self._widget:
+            self._widget[name] = widget
+            return widget
+        else:
+            self.log.error("A widget with name '%s' already exists", name)
+
+    def get_widget(self, name):
+        return self._widget[name]
+
+    def get_widgets(self):
+        return self._widget
+
 
