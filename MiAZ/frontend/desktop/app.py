@@ -55,6 +55,7 @@ class MiAZApp(Adw.Application):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+        self._widget =  {}
         self.backend = MiAZBackend()
         self.conf = self.backend.conf
         self.log = get_logger("MiAZ.GUI")
@@ -75,10 +76,12 @@ class MiAZApp(Adw.Application):
         self.check_repository()
         self._setup_event_listener()
         self._setup_plugin_manager()
+        self.log.debug("Plugins loaded:")
+        for plugin in self.plugin_manager.plugins:
+            if plugin.is_loaded():
+                self.log.debug("\t[%s] %s %s (%s)",  self.plugin_manager.get_plugin_type(plugin), plugin.get_name(), plugin.get_version(), plugin.get_description())
         self.log.debug("Executing MiAZ Desktop mode")
         self.emit('start-application-completed')
-        workspace = self.get_workspace()
-        workspace.emit('extend-menu-export', 'Hola')
 
     def _setup_plugin_manager(self):
         self.plugin_manager = MiAZPluginManager(self)
@@ -294,4 +297,12 @@ class MiAZApp(Adw.Application):
 
     def exit_app(self, *args):
         self.quit()
+
+    def add_widget(self, name: str, widget: Gtk.Widget) -> Gtk.Widget:
+        self._widget[name] = widget
+        return widget
+
+    def get_widget(self, name):
+        return self._widget[name]
+
 

@@ -51,14 +51,9 @@ class MiAZWorkspace(Gtk.Box):
     __gtype_name__ = 'MiAZWorkspace'
     """Workspace"""
     # ~ "extend-menu-export":  (GObject.SignalFlags.RUN_FIRST, GObject.TYPE_PYOBJECT, (GObject.TYPE_PYOBJECT,) ),
-    # ~ __gsignals__ = {
-        # ~ "extend-menu-export":  (GObject.SignalFlags.RUN_LAST, None, ()),
-    # ~ }
-    # ~ __gsignals__ = {
-        # ~ "start-workspace-completed":  (GObject.SignalFlags.RUN_LAST, None, ()),
-        # ~ "stop-application-completed":  (GObject.SignalFlags.RUN_LAST, None, ()),
-    # ~ }
-    # ~ signals = set()
+    __gsignals__ = {
+        "extend-menu-export":  (GObject.SignalFlags.RUN_LAST, None, ()),
+    }
     selected_items = []
     dates = {}
     dropdown = {}
@@ -66,8 +61,8 @@ class MiAZWorkspace(Gtk.Box):
 
     def __init__(self, app):
         super(MiAZWorkspace, self).__init__(orientation=Gtk.Orientation.HORIZONTAL)
-        GObject.signal_new('start-workspace-completed', MiAZWorkspace, GObject.SignalFlags.RUN_LAST, None, () )
-        GObject.signal_new('extend-menu-export', MiAZWorkspace, GObject.SignalFlags.RUN_LAST, GObject.TYPE_PYOBJECT, (GObject.TYPE_PYOBJECT,) )
+        # ~ GObject.signal_new('start-workspace-completed', MiAZWorkspace, GObject.SignalFlags.RUN_LAST, None, () )
+        # ~ GObject.signal_new('extend-menu-export', MiAZWorkspace, GObject.SignalFlags.RUN_LAST, GObject.TYPE_PYOBJECT, (GObject.TYPE_PYOBJECT,) )
         self.log = get_logger('MiAZWorkspace')
         self.app = app
         self.backend = self.app.get_backend()
@@ -111,6 +106,10 @@ class MiAZWorkspace(Gtk.Box):
             assistant.set_modal(True)
             assistant.present()
         # ~ self.emit("extend-menu-export")
+        self.app.connect('start-application-completed', self._finish_configuration)
+
+    def _finish_configuration(self, *args):
+        self.emit('extend-menu-export')
 
     def _setup_toolbar_filters(self):
         widget = self.factory.create_box_horizontal(hexpand=True, vexpand=False)
@@ -474,8 +473,8 @@ class MiAZWorkspace(Gtk.Box):
             label = 'Export...',
             submenu = submenu_export,
         )
+        self.app.add_widget('workspace-submenu-export', submenu_export)
         section_common_out.append_item(menu_export)
-        self.emit("start-workspace-completed")
         # ~ menuitem = self.factory.create_menuitem('export-to-directory', '...to directory', self._on_handle_menu_multiple, None, [])
         # ~ submenu_export.append_item(menuitem)
         # ~ menuitem = self.factory.create_menuitem('export-to-zip', '...to zip', self._on_handle_menu_multiple, None, [])
@@ -503,6 +502,9 @@ class MiAZWorkspace(Gtk.Box):
         model = self.view.get_model_filter()
         pos = selected.get_nth(0)
         return model.get_item(pos)
+
+    def get_selected_items(self):
+        return self.selected_items
 
     def update(self, *args):
         # With less than thousand documents, loading is ok

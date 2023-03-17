@@ -36,9 +36,9 @@ class MiAZPluginType(IntEnum):
 
     def __str__(self):
         if self.value == MiAZPluginType.USER:
-            return _("User plugins")
+            return _("User Plugin")
         elif self.value == MiAZPluginType.SYSTEM:
-            return _("System plugins")
+            return _("System Plugin")
 
     def get_dir(self):
         """Returns the directory where this type of plugins can be found."""
