@@ -84,7 +84,7 @@ class MiAZApp(Adw.Application):
         self.emit('start-application-completed')
 
     def _setup_plugin_manager(self):
-        self.plugin_manager = MiAZPluginManager(self)
+        self.plugin_manager = self.add_widget('plugin-manager', MiAZPluginManager(self))
 
     def _setup_event_listener(self):
         evk = Gtk.EventControllerKey.new()
@@ -302,8 +302,11 @@ class MiAZApp(Adw.Application):
         self.quit()
 
     def add_widget(self, name: str, widget: Gtk.Widget) -> Gtk.Widget:
-        self._widget[name] = widget
-        return widget
+        if name not in self._widget:
+            self._widget[name] = widget
+            return widget
+        else:
+            self.log.error("A widget with name '%s' already exists", name)
 
     def get_widget(self, name):
         return self._widget[name]
