@@ -20,7 +20,7 @@ from gi.repository import Peas
 
 from MiAZ.backend.log import get_logger
 from MiAZ.backend.models import Concept, Country, Date, Group
-from MiAZ.backend.models import Person, Purpose, , SentBy, SentTo
+from MiAZ.backend.models import Person, Purpose, SentBy, SentTo
 
 Field = {}
 Field[Date] = 0
