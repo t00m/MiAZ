@@ -34,6 +34,7 @@ class MiAZToolbarViewItemPlugin(GObject.GObject, Peas.Activatable):
         self.workspace = API.app.get_widget('workspace')
         self.workspace.connect("extend-toolbar-top", self.add_toolbar_button)
         view = self.app.get_widget('workspace-view')
+        view.cv.connect("activate", self.callback)
         selection = view.get_selection()
         selection.connect('selection-changed', self._on_selection_changed)
 
