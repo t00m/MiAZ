@@ -457,18 +457,18 @@ class MiAZWorkspace(Gtk.Box):
 
         # Section -in
         ## Submenu for mass renaming
-        submenu_rename = Gio.Menu.new()
-        menu_rename = Gio.MenuItem.new_submenu(
-            label = 'Mass renaming of...',
-            submenu = submenu_rename,
-        )
-        section_common_in.append_item(menu_rename)
-        fields = [Date, Country, Group, SentBy, Purpose, SentTo]
-        for item_type in fields:
-            i_type = item_type.__gtype_name__
-            i_title = item_type.__title__
-            menuitem = self.factory.create_menuitem('rename_%s' % i_type.lower(), '...%s' % i_title.lower(), self._on_handle_menu_multiple, item_type, [])
-            submenu_rename.append_item(menuitem)
+        # ~ submenu_rename = Gio.Menu.new()
+        # ~ menu_rename = Gio.MenuItem.new_submenu(
+            # ~ label = 'Mass renaming of...',
+            # ~ submenu = submenu_rename,
+        # ~ )
+        # ~ section_common_in.append_item(menu_rename)
+        # ~ fields = [Date, Country, Group, SentBy, Purpose, SentTo]
+        # ~ for item_type in fields:
+            # ~ i_type = item_type.__gtype_name__
+            # ~ i_title = item_type.__title__
+            # ~ menuitem = self.factory.create_menuitem('rename_%s' % i_type.lower(), '...%s' % i_title.lower(), self._on_handle_menu_multiple, item_type, [])
+            # ~ submenu_rename.append_item(menuitem)
 
         ## Project management
         # ~ submenu_project = Gio.Menu.new()
