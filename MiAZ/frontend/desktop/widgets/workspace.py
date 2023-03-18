@@ -391,60 +391,60 @@ class MiAZWorkspace(Gtk.Box):
 
         return widget
 
-    def _setup_menu_selection_single(self):
-        # Setup single menu and sections
-        menu_workspace_single = self.app.add_widget('workspace-menu-single', Gio.Menu.new())
-        section_common_in = self.app.add_widget('workspace-menu-single-section-common-in', Gio.Menu.new())
-        section_common_out = self.app.add_widget('workspace-menu-single-section-common-out', Gio.Menu.new())
-        section_danger = section_common_out = self.app.add_widget('workspace-menu-single-section-danger', Gio.Menu.new())
-        menu_workspace_single.append_section(None, section_common_in)
-        menu_workspace_single.append_section(None, section_common_out)
-        menu_workspace_single.append_section(None, section_danger)
+    # ~ def _setup_menu_selection_single(self):
+        # ~ # Setup single menu and sections
+        # ~ menu_workspace_single = self.app.add_widget('workspace-menu-single', Gio.Menu.new())
+        # ~ section_common_in = self.app.add_widget('workspace-menu-single-section-common-in', Gio.Menu.new())
+        # ~ section_common_out = self.app.add_widget('workspace-menu-single-section-common-out', Gio.Menu.new())
+        # ~ section_danger = section_common_out = self.app.add_widget('workspace-menu-single-section-danger', Gio.Menu.new())
+        # ~ menu_workspace_single.append_section(None, section_common_in)
+        # ~ menu_workspace_single.append_section(None, section_common_out)
+        # ~ menu_workspace_single.append_section(None, section_danger)
 
-        # Actions in
-        menuitem = self.factory.create_menuitem('view', 'View document', self._on_handle_menu_single, None, ["<Control>d", "<Control>D"])
-        section_common_in.append_item(menuitem)
-        menuitem = self.factory.create_menuitem('rename', 'Rename document', self._on_handle_menu_single, None, ["<Control>r", "<Control>R"])
-        section_common_in.append_item(menuitem)
+        # ~ # Actions in
+        # ~ menuitem = self.factory.create_menuitem('view', 'View document', self._on_handle_menu_single, None, ["<Control>d", "<Control>D"])
+        # ~ section_common_in.append_item(menuitem)
+        # ~ menuitem = self.factory.create_menuitem('rename', 'Rename document', self._on_handle_menu_single, None, ["<Control>r", "<Control>R"])
+        # ~ section_common_in.append_item(menuitem)
 
-        ## Project management
-        submenu_project = Gio.Menu.new()
-        menu_project = Gio.MenuItem.new_submenu(
-            label = 'Project management...',
-            submenu = submenu_project,
-        )
-        self.app.add_widget('workspace-menu-single-menu-project', menu_project)
-        self.app.add_widget('workspace-menu-single-submenu-project', submenu_project)
-        section_common_in.append_item(menu_project)
-        menuitem = self.factory.create_menuitem('project-assign', '...assign project', self._on_handle_menu_single, None, [])
-        submenu_project.append_item(menuitem)
-        menuitem = self.factory.create_menuitem('project-withdraw', '...withdraw project', self._on_handle_menu_single, None, [])
-        submenu_project.append_item(menuitem)
+        # ~ ## Project management
+        # ~ submenu_project = Gio.Menu.new()
+        # ~ menu_project = Gio.MenuItem.new_submenu(
+            # ~ label = 'Project management...',
+            # ~ submenu = submenu_project,
+        # ~ )
+        # ~ self.app.add_widget('workspace-menu-single-menu-project', menu_project)
+        # ~ self.app.add_widget('workspace-menu-single-submenu-project', submenu_project)
+        # ~ section_common_in.append_item(menu_project)
+        # ~ menuitem = self.factory.create_menuitem('project-assign', '...assign project', self._on_handle_menu_single, None, [])
+        # ~ submenu_project.append_item(menuitem)
+        # ~ menuitem = self.factory.create_menuitem('project-withdraw', '...withdraw project', self._on_handle_menu_single, None, [])
+        # ~ submenu_project.append_item(menuitem)
 
         # ~ menuitem = self.factory.create_menuitem('annotate', 'Annotate document', self._on_handle_menu_single, None, [])
         # ~ section_common_in.append_item(menuitem)
 
-        # Actions out
-        ## Export
-        submenu_export = Gio.Menu.new()
-        menu_export = Gio.MenuItem.new_submenu(
-            label = 'Export...',
-            submenu = submenu_export,
-        )
-        section_common_out.append_item(menu_export)
-        self.app.add_widget('workspace-menu-single-menu-export', menu_export)
-        self.app.add_widget('workspace-menu-single-submenu-export', submenu_export)
+        # ~ # Actions out
+        # ~ ## Export
+        # ~ submenu_export = Gio.Menu.new()
+        # ~ menu_export = Gio.MenuItem.new_submenu(
+            # ~ label = 'Export...',
+            # ~ submenu = submenu_export,
+        # ~ )
+        # ~ section_common_out.append_item(menu_export)
+        # ~ self.app.add_widget('workspace-menu-single-menu-export', menu_export)
+        # ~ self.app.add_widget('workspace-menu-single-submenu-export', submenu_export)
 
-        menuitem = self.factory.create_menuitem('clipboard', 'Copy filename', self._on_handle_menu_single, None, [])
-        section_common_out.append_item(menuitem)
+        # ~ menuitem = self.factory.create_menuitem('clipboard', 'Copy filename', self._on_handle_menu_single, None, [])
+        # ~ section_common_out.append_item(menuitem)
         # ~ menuitem = self.factory.create_menuitem('export', 'Export document', self._on_handle_menu_single, None, [])
         # ~ section_common_out.append_item(menuitem)
-        menuitem = self.factory.create_menuitem('directory', 'Open file location', self._on_handle_menu_single, None, [])
-        section_common_out.append_item(menuitem)
+        # ~ menuitem = self.factory.create_menuitem('directory', 'Open file location', self._on_handle_menu_single, None, [])
+        # ~ section_common_out.append_item(menuitem)
 
-        # Dangerous actions
-        menuitem = self.factory.create_menuitem('delete', 'Delete document', self._on_handle_menu_single, None, [])
-        section_danger.append_item(menuitem)
+        # ~ # Dangerous actions
+        # ~ menuitem = self.factory.create_menuitem('delete', 'Delete document', self._on_handle_menu_single, None, [])
+        # ~ section_danger.append_item(menuitem)
 
     def _setup_menu_selection(self):
         menu_selection = self.app.add_widget('workspace-menu-selection', Gio.Menu.new())
@@ -455,36 +455,6 @@ class MiAZWorkspace(Gtk.Box):
         menu_selection.append_section(None, section_common_out)
         menu_selection.append_section(None, section_danger)
 
-        # Section -in
-        ## Submenu for mass renaming
-        # ~ submenu_rename = Gio.Menu.new()
-        # ~ menu_rename = Gio.MenuItem.new_submenu(
-            # ~ label = 'Mass renaming of...',
-            # ~ submenu = submenu_rename,
-        # ~ )
-        # ~ section_common_in.append_item(menu_rename)
-        # ~ fields = [Date, Country, Group, SentBy, Purpose, SentTo]
-        # ~ for item_type in fields:
-            # ~ i_type = item_type.__gtype_name__
-            # ~ i_title = item_type.__title__
-            # ~ menuitem = self.factory.create_menuitem('rename_%s' % i_type.lower(), '...%s' % i_title.lower(), self._on_handle_menu_multiple, item_type, [])
-            # ~ submenu_rename.append_item(menuitem)
-
-        ## Project management
-        # ~ submenu_project = Gio.Menu.new()
-        # ~ menu_project = Gio.MenuItem.new_submenu(
-            # ~ label = 'Project management...',
-            # ~ submenu = submenu_project,
-        # ~ )
-        # ~ section_common_in.append_item(menu_project)
-        # ~ self.app.add_widget('workspace-menu-selection-menu-project', menu_project)
-        # ~ self.app.add_widget('workspace-menu-selection-submenu-project', submenu_project)
-        # ~ menuitem = self.factory.create_menuitem('project-assign', '...assign project', self._on_handle_menu_multiple, None, [])
-        # ~ submenu_project.append_item(menuitem)
-        # ~ menuitem = self.factory.create_menuitem('project-withdraw', '...withdraw project', self._on_handle_menu_multiple, None, [])
-        # ~ submenu_project.append_item(menuitem)
-
-        # Section -out
         ## Export
         submenu_export = Gio.Menu.new()
         menu_export = Gio.MenuItem.new_submenu(
@@ -495,9 +465,6 @@ class MiAZWorkspace(Gtk.Box):
         self.app.add_widget('workspace-menu-selection-menu-export', menu_export)
         self.app.add_widget('workspace-menu-selection-submenu-export', submenu_export)
 
-        # Danger section
-        menuitem = self.factory.create_menuitem('delete', 'Delete documents', self._on_handle_menu_multiple, None, [])
-        section_danger.append_item(menuitem)
         return menu_selection
 
     def get_item(self):
@@ -698,48 +665,6 @@ class MiAZWorkspace(Gtk.Box):
     def _on_select_none(self, *args):
         selection = self.view.get_selection()
         selection.unselect_all()
-
-    # ~ def _on_handle_menu_single(self, action, *args):
-        # ~ name = action.props.name
-        # ~ item = self.get_item()
-        # ~ if name == 'view':
-            # ~ self.actions.document_display(item.id)
-        # ~ elif name == 'rename':
-            # ~ self.actions.document_rename_single(item.id)
-        # ~ elif name == 'project-assign':
-            # ~ self.actions.project_assign(Project, [item])
-        # ~ elif name == 'project-withdraw':
-            # ~ self.actions.project_withdraw(Project, [item])
-        # ~ elif name == 'annotate':
-            # ~ self.log.debug("FIXME: annotate document")
-        # ~ elif name == 'clipboard':
-            # ~ self.log.debug("FIXME: copy filename to clipboard")
-        # ~ elif name == 'export':
-            # ~ self.actions.document_export([item])
-        # ~ elif name == 'directory':
-            # ~ self.actions.document_open_location(item)
-        # ~ elif name == 'delete':
-            # ~ self.actions.document_delete([item])
-
-    def _on_handle_menu_multiple(self, action, data, item_type):
-        name = action.props.name
-        items = self.selected_items
-        if name.startswith('rename_'):
-            self.actions.document_rename_multiple(item_type, items)
-        elif name == 'project-assign':
-            self.actions.project_assign(Project, items)
-        elif name == 'project-withdraw':
-            self.actions.project_withdraw(Project, items)
-        elif name == 'export-to-directory':
-            self.actions.document_export_to_directory(items)
-        elif name == 'export-to-zip':
-            self.actions.document_export_to_zip(items)
-        elif name == 'export-to-text':
-            self.actions.document_export_to_text(items)
-        elif name == 'export-to-csv':
-            self.actions.document_export_to_csv(items)
-        elif name == 'delete':
-            self.actions.document_delete(items)
 
     def display_dashboard(self, *args):
         self.view.column_subtitle.set_title('Concept')

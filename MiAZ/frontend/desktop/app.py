@@ -136,24 +136,27 @@ class MiAZApp(Adw.Application):
         return self.stack
 
     def _setup_page_about(self):
-        if self.widget_about is None:
-            self.widget_about = MiAZAbout(self)
-            self.page_about = self.stack.add_titled(self.widget_about, 'about', 'MiAZ')
-            self.page_about.set_icon_name('document-properties')
+        widget_about = self.get_widget('about')
+        if widget_about is None:
+            widget_about = self.add_widget('about', MiAZAbout(self))
+            page_about = self.stack.add_titled(widget_about, 'about', 'MiAZ')
+            page_about.set_icon_name('document-properties')
 
     def _setup_page_help(self):
-        if self.widget_help is None:
-            self.widget_help = MiAZHelp(self)
-            self.page_about = self.stack.add_titled(self.widget_help, 'help', 'MiAZ')
-            self.page_about.set_icon_name('document-properties')
-            self.page_about.set_visible(False)
+        widget_help = self.get_widget('help')
+        if widget_help is None:
+            widget_help = self.add_widget('help', MiAZHelp(self))
+            page_help = self.stack.add_titled(widget_help, 'help', 'MiAZ')
+            page_help.set_icon_name('document-properties')
+            page_help.set_visible(False)
 
     def _setup_page_welcome(self):
-        if self.widget_welcome is None:
-            self.widget_welcome = MiAZWelcome(self)
-            self.page_welcome = self.stack.add_titled(self.widget_welcome, 'welcome', 'MiAZ')
-            self.page_welcome.set_icon_name('MiAZ')
-            self.page_welcome.set_visible(True)
+        widget_welcome = self.get_widget('welcome')
+        if widget_welcome is None:
+            widget_welcome = self.add_widget('welcome', MiAZWelcome(self))
+            page_welcome = self.stack.add_titled(widget_welcome, 'welcome', 'MiAZ')
+            page_welcome.set_icon_name('MiAZ')
+            page_welcome.set_visible(True)
 
     def _setup_page_app_settings(self):
         if self.widget_settings_app is None:
@@ -170,12 +173,12 @@ class MiAZApp(Adw.Application):
             self.page_settings_repo.set_visible(False)
 
     def _setup_page_workspace(self):
-        if self.widget_workspace is None:
-            self.widget_workspace = self.add_widget('workspace', MiAZWorkspace(self))
-            self.page_workspace = self.stack.add_titled(self.widget_workspace, 'workspace', 'MiAZ')
-            self.add_widget('page-workspace', self.page_workspace)
-            self.page_workspace.set_icon_name('document-properties')
-            self.page_workspace.set_visible(True)
+        widget_workspace = self.get_widget('workspace')
+        if widget_workspace is None:
+            widget_workspace = self.add_widget('workspace', MiAZWorkspace(self))
+            page_workspace = self.stack.add_titled(widget_workspace, 'workspace', 'MiAZ')
+            page_workspace.set_icon_name('document-properties')
+            page_workspace.set_visible(True)
             self.show_stack_page_by_name('workspace')
 
     def _setup_page_rename(self):
@@ -309,7 +312,10 @@ class MiAZApp(Adw.Application):
             self.log.error("A widget with name '%s' already exists", name)
 
     def get_widget(self, name):
-        return self._widget[name]
+        try:
+            return self._widget[name]
+        except KeyError:
+            return None
 
     def get_widgets(self):
         return self._widget
