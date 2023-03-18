@@ -471,18 +471,18 @@ class MiAZWorkspace(Gtk.Box):
             submenu_rename.append_item(menuitem)
 
         ## Project management
-        submenu_project = Gio.Menu.new()
-        menu_project = Gio.MenuItem.new_submenu(
-            label = 'Project management...',
-            submenu = submenu_project,
-        )
-        section_common_in.append_item(menu_project)
-        self.app.add_widget('workspace-menu-selection-menu-project', menu_project)
-        self.app.add_widget('workspace-menu-selection-submenu-project', submenu_project)
-        menuitem = self.factory.create_menuitem('project-assign', '...assign project', self._on_handle_menu_multiple, None, [])
-        submenu_project.append_item(menuitem)
-        menuitem = self.factory.create_menuitem('project-withdraw', '...withdraw project', self._on_handle_menu_multiple, None, [])
-        submenu_project.append_item(menuitem)
+        # ~ submenu_project = Gio.Menu.new()
+        # ~ menu_project = Gio.MenuItem.new_submenu(
+            # ~ label = 'Project management...',
+            # ~ submenu = submenu_project,
+        # ~ )
+        # ~ section_common_in.append_item(menu_project)
+        # ~ self.app.add_widget('workspace-menu-selection-menu-project', menu_project)
+        # ~ self.app.add_widget('workspace-menu-selection-submenu-project', submenu_project)
+        # ~ menuitem = self.factory.create_menuitem('project-assign', '...assign project', self._on_handle_menu_multiple, None, [])
+        # ~ submenu_project.append_item(menuitem)
+        # ~ menuitem = self.factory.create_menuitem('project-withdraw', '...withdraw project', self._on_handle_menu_multiple, None, [])
+        # ~ submenu_project.append_item(menuitem)
 
         # Section -out
         ## Export
