@@ -232,7 +232,7 @@ class MiAZApp(Adw.Application):
         self.win.set_child(self.mainbox)
 
         ## Stack & Stack.Switcher
-        stack = self.add_widget('stack', self._setup_stack())
+        stack = self._setup_stack()
         self.mainbox.append(stack)
 
         # Setup headerbar
