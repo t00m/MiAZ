@@ -40,15 +40,15 @@ def add_data(root_data):
 
     return dir_files
 
-DATA_FILES = add_data('MiAZ/data')
+DATA_FILES = add_data('data')
 DATA_FILES += ['README.adoc']
-DATA_FILES +=[('share/applications', ['MiAZ/data/resources/com.github.t00m.MiAZ.desktop'])]
-DATA_FILES +=[('share/icons/hicolor/48x48/apps/', ['MiAZ/data/icons/com.github.t00m.MiAZ.svg'])]
+DATA_FILES +=[('share/applications', ['data/resources/com.github.t00m.MiAZ.desktop'])]
+DATA_FILES +=[('share/icons/hicolor/48x48/apps/', ['data/icons/hicolor/scalable/apps/com.github.t00m.MiAZ.svg'])]
 
 
 setup(
     name=ENV['APP']['shortname'],
-    version=open('MiAZ/data/docs/VERSION', 'r').read().strip(),
+    version=open('data/docs/VERSION', 'r').read().strip(),
     author=ENV['APP']['author'],
     author_email=ENV['APP']['author_email'],
     url=ENV['APP']['website'],
@@ -57,12 +57,12 @@ setup(
     download_url='https://github.com/t00m/MiAZ/archive/master.zip',
     license=ENV['APP']['license'],
     packages=[
-                'MiAZ',
-                'MiAZ.backend',
-                'MiAZ.frontend',
-                'MiAZ.frontend.console',
-                'MiAZ.frontend.desktop',
-                'MiAZ.frontend.desktop.widgets'
+                'src',
+                'src.backend',
+                'src.frontend',
+                'src.frontend.console',
+                'src.frontend.desktop',
+                'src.frontend.desktop.widgets'
             ],
     # distutils does not support install_requires, but pip needs it to be
     # able to automatically install dependencies
