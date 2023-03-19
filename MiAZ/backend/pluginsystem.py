@@ -6,7 +6,7 @@
 # Author: Tomás Vírseda
 # License: GPL v3
 # Description: a Plugin System based on LibPeas
-# Code borrowed from Orca project:
+# Code borrowed and adapted from from Orca project:
 # https://github.com/chrys87/orca-plugin/blob/plugin_system/src/orca/plugin_system_manager.py
 # Adapted for MiAZ
 """

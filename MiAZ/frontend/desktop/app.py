@@ -45,13 +45,6 @@ class MiAZApp(Adw.Application):
         "start-application-completed":  (GObject.SignalFlags.RUN_LAST, None, ()),
         "stop-application-completed":  (GObject.SignalFlags.RUN_LAST, None, ()),
     }
-    widget_about = None
-    widget_help = None
-    widget_welcome = None
-    widget_settings_app = None
-    widget_settings_repo = None
-    widget_rename = None
-    widget_workspace = None
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -128,8 +121,8 @@ class MiAZApp(Adw.Application):
         return self.settings_app
 
     def _setup_stack(self):
-        self.stack = Adw.ViewStack()
-        self.switcher = Adw.ViewSwitcher()
+        self.stack = self.add_widget('stack', Adw.ViewStack())
+        self.switcher = self.add_widget('switcher', Adw.ViewSwitcher())
         self.switcher.set_policy(Adw.ViewSwitcherPolicy.WIDE)
         self.switcher.set_stack(self.stack)
         self.stack.set_vexpand(True)
@@ -159,18 +152,20 @@ class MiAZApp(Adw.Application):
             page_welcome.set_visible(True)
 
     def _setup_page_app_settings(self):
-        if self.widget_settings_app is None:
-            self.widget_settings_app = MiAZAppSettings(self)
-            self.page_settings_app = self.stack.add_titled(self.widget_settings_app, 'settings_app', 'MiAZ')
-            self.page_settings_app.set_icon_name('document-properties')
-            self.page_settings_app.set_visible(False)
+        widget_settings_app = self.get_widget('settings-app')
+        if widget_settings_app is None:
+            widget_settings_app = self.add_widget('settings-app', MiAZAppSettings(self))
+            page_settings_app = self.stack.add_titled(widget_settings_app, 'settings_app', 'MiAZ')
+            page_settings_app.set_icon_name('document-properties')
+            page_settings_app.set_visible(False)
 
     def _setup_page_repo_settings(self):
-        if self.widget_settings_repo is None:
-            self.widget_settings_repo = MiAZRepoSettings(self)
-            self.page_settings_repo = self.stack.add_titled(self.widget_settings_repo, 'settings_repo', 'MiAZ')
-            self.page_settings_repo.set_icon_name('document-properties')
-            self.page_settings_repo.set_visible(False)
+        widget_settings_repo = self.get_widget('settings-repo')
+        if widget_settings_repo is None:
+            widget_settings_repo = self.add_widget('settings-repo', MiAZAppSettings(self))
+            page_settings_repo = self.stack.add_titled(widget_settings_repo, 'settings_repo', 'MiAZ')
+            page_settings_repo.set_icon_name('document-properties')
+            page_settings_repo.set_visible(False)
 
     def _setup_page_workspace(self):
         widget_workspace = self.get_widget('workspace')
@@ -182,14 +177,12 @@ class MiAZApp(Adw.Application):
             self.show_stack_page_by_name('workspace')
 
     def _setup_page_rename(self):
-        if self.widget_rename is None:
-            self.widget_rename = MiAZRenameDialog(self)
-            self.page_rename = self.stack.add_titled(self.widget_rename, 'rename', 'MiAZ')
-            self.page_rename.set_icon_name('document-properties')
-            self.page_rename.set_visible(False)
-
-    def get_rename_widget(self):
-        return self.get_stack_page_widget_by_name('rename')
+        widget_rename = self.get_widget('rename')
+        if widget_rename is None:
+            widget_rename = self.add_widget('rename', MiAZRenameDialog(self))
+            page_rename = self.stack.add_titled(widget_rename, 'rename', 'MiAZ')
+            page_rename.set_icon_name('document-properties')
+            page_rename.set_visible(False)
 
     def _setup_headerbar_left(self):
         # Add Menu Button to the titlebar (Left Side)
@@ -302,6 +295,7 @@ class MiAZApp(Adw.Application):
         self.stack.set_visible_child_name(name)
 
     def exit_app(self, *args):
+        self.emit("stop-application-completed")
         self.quit()
 
     def add_widget(self, name: str, widget: Gtk.Widget) -> Gtk.Widget:

@@ -72,7 +72,7 @@ class MiAZToolbarRenameItemPlugin(GObject.GObject, Peas.Activatable):
 
     def document_rename_single(self, doc):
         self.log.debug("Rename %s", doc)
-        rename = self.app.get_rename_widget()
+        rename = self.app.get_widget('rename')
         rename.set_data(doc)
         self.app.show_stack_page_by_name('rename')
 
