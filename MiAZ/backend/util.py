@@ -17,7 +17,7 @@ import time
 import shutil
 import zipfile
 from datetime import datetime, timedelta
-from dateutil.parser import parse as dateparser
+# ~ from dateutil.parser import parse as dateparser
 
 from gi.repository import Gio
 from gi.repository import GObject
@@ -58,17 +58,17 @@ class MiAZUtil(GObject.GObject):
         os.makedirs(dirpath, exist_ok = True)
         self.log.debug("Directory %s created" % dirpath)
 
-    def guess_datetime(self, adate: str) -> datetime:
-        """Return (guess) a datetime object for a given string."""
-        if len(adate) != 7:
-            return None
+    # ~ def guess_datetime(self, adate: str) -> datetime:
+        # ~ """Return (guess) a datetime object for a given string."""
+        # ~ if len(adate) != 7:
+            # ~ return None
 
-        try:
-            timestamp = dateparser(adate)
-        except Exception as error:
-            timestamp = None
+        # ~ try:
+            # ~ timestamp = dateparser(adate)
+        # ~ except Exception as error:
+            # ~ timestamp = None
 
-        return timestamp
+        # ~ return timestamp
 
     def json_load(self, filepath: str) -> {}:
         """Load into a dictionary a file in json format"""
@@ -97,6 +97,9 @@ class MiAZUtil(GObject.GObject):
         ts = datetime.now().strftime('%Y%m%d_%H%M%S')
         name = self.valid_key(repo['dir_docs'])
         return os.path.join(ENV['LPATH']['TMP'], "%s_%s" % (ts, name))
+
+    def get_temp_file(self, dir_tmp, suffix='.txt'):
+        return tempfile.mkstemp(dir=dir_tmp, suffix=suffix)
 
 
     def get_fields(self, filename: str) -> []:
@@ -205,8 +208,11 @@ class MiAZUtil(GObject.GObject):
             self.log.error("Source and Target are the same. Skip rename")
 
     def filename_delete(self, filepath):
-        os.unlink(filepath)
-        self.log.debug("File %s deleted", filepath)
+        try:
+            os.unlink(filepath)
+            self.log.debug("File %s deleted", filepath)
+        except IsADirectoryError as error:
+            self.log.error(error)
 
     def filename_import(self, source: str, target: str):
         """Import file into repository
@@ -262,11 +268,6 @@ class MiAZUtil(GObject.GObject):
             os.system("xdg-open \"%s\"" % filepath)
         elif sys.platform in ['win32', 'cygwin', 'msys']:
             os.startfile(filepath)
-
-    def filename_delete(self, doc):
-        filepath = self.filename_path(doc)
-        self.log.debug("Document deleted: %s", filepath)
-        os.unlink(filepath)
 
     def filename_open_location(self, doc):
         repo = self.backend.repo_config()
@@ -361,6 +362,18 @@ class MiAZUtil(GObject.GObject):
 
     def since_date_this_year(self, adate: datetime) -> datetime:
         year = adate.year
+        return datetime.strptime("%4d0101" % year, "%Y%m%d")
+
+    def since_date_past_year(self, adate: datetime) -> datetime:
+        year = adate.year - 1
+        return datetime.strptime("%4d0101" % year, "%Y%m%d")
+
+    def since_date_three_years(self, adate: datetime) -> datetime:
+        year = adate.year - 2
+        return datetime.strptime("%4d0101" % year, "%Y%m%d")
+
+    def since_date_five_years(self, adate: datetime) -> datetime:
+        year = adate.year - 4
         return datetime.strptime("%4d0101" % year, "%Y%m%d")
 
     def since_date_this_month(self, adate: datetime) -> datetime:

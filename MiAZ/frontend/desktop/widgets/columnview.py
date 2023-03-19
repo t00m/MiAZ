@@ -220,6 +220,8 @@ class MiAZColumnView(Gtk.Box):
         item = list_item.get_item()
         label = box.get_first_child()
         label.set_markup(item.id)
+        label.set_ellipsize(True)
+        label.set_property('ellipsize', Pango.EllipsizeMode.MIDDLE)
 
     def _on_factory_setup_title(self, factory, list_item):
         box = ColLabel()
@@ -230,6 +232,8 @@ class MiAZColumnView(Gtk.Box):
         item = list_item.get_item()
         label = box.get_first_child()
         label.set_markup(item.title)
+        label.set_ellipsize(True)
+        label.set_property('ellipsize', Pango.EllipsizeMode.MIDDLE)
 
     def _on_filter_view(self, item, filter_list_model):
         must_filter = False

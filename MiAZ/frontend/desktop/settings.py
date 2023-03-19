@@ -97,7 +97,7 @@ class MiAZAppSettings(Gtk.Box):
 
     def _on_use_repo(self, *args):
         self.log.debug(args)
-        workspace = self.app.get_workspace()
+        workspace = self.app.get_widget('workspace')
         workspace.update()
         self.app.show_stack_page_by_name('workspace')
 
