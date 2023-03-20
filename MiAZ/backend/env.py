@@ -19,7 +19,7 @@ ENV = {}
 
 # Configuration
 ENV['CONF'] = {}
-ENV['CONF']['ROOT'] = abspath(sys.modules[__name__].__file__ + "/../..")
+ENV['CONF']['ROOT'] = abspath(sys.modules[__name__].__file__ + "/../../..")
 ENV['CONF']['USER_DIR'] = os.path.expanduser('~')
 # ~ ENV['CONF']['TMPNAME'] = next(tempfile._get_candidate_names())
 # ~ ENV['CONF']['MAX_WORKERS'] = multiprocessing.cpu_count()  # Avoid MemoryError

@@ -5,22 +5,24 @@ gnome = import('gnome')
 python = import('python')
 
 conf = configuration_data()
-conf.set('PYTHON', python.find_installation('python3').path())
+conf.set('PYTHON', python.find_installation('python3').full_path())
 conf.set('VERSION', meson.project_version())
 conf.set('localedir', join_paths(get_option('prefix'), get_option('localedir')))
 conf.set('pkgdatadir', pkgdatadir)
 
-configure_file(
-  input: 'miaz.in',
-  output: 'miaz',
-  configuration: conf,
-  install: true,
-  install_dir: get_option('bindir')
-)
-
 miaz_sources = [
   '__init__.py',
-  'main.py',
+  'configview.py',
+  'views.py',
+  'rename.py',
+  'assistant.py',
+  'dialogs.py',
+  'columnview.py',
+  'widget.py',
+  'about.py',
+  'selector.py',
+  'workspace.py',
+  'welcome.py',
 ]
 
 install_data(miaz_sources, install_dir: moduledir)
