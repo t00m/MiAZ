@@ -1,0 +1,199 @@
+# appimage-builder recipe see https://appimage-builder.readthedocs.io for details
+version: 1
+AppDir:
+  path: /home/t00m/Documents/devel/github/MiAZ/AppDir
+  app_info:
+    id: com.github.t00m.MiAZ
+    name: MiAZ
+    icon: com.github.t00m.MiAZ
+    version: 0.0.5
+    exec: usr/bin/miaz
+    exec_args: $@
+  apt:
+    arch:
+    - amd64
+    allow_unauthenticated: true
+    sources:
+    - sourceline: deb http://lu.archive.ubuntu.com/ubuntu/ jammy main restricted
+    - sourceline: deb http://lu.archive.ubuntu.com/ubuntu/ jammy-updates main restricted
+    - sourceline: deb http://lu.archive.ubuntu.com/ubuntu/ jammy universe
+    - sourceline: deb http://lu.archive.ubuntu.com/ubuntu/ jammy-updates universe
+    - sourceline: deb http://lu.archive.ubuntu.com/ubuntu/ jammy multiverse
+    - sourceline: deb http://lu.archive.ubuntu.com/ubuntu/ jammy-updates multiverse
+    - sourceline: deb http://lu.archive.ubuntu.com/ubuntu/ jammy-backports main restricted
+        universe multiverse
+    - sourceline: deb http://security.ubuntu.com/ubuntu jammy-security main restricted
+    - sourceline: deb http://security.ubuntu.com/ubuntu jammy-security universe
+    - sourceline: deb http://security.ubuntu.com/ubuntu jammy-security multiverse
+    include:
+    - libbz2-1.0:amd64
+    - libexpat1:amd64
+    - libgpg-error0:amd64
+    - libpython3.10-stdlib:amd64
+    - openssl
+    - python3-apt
+    - python3-matplotlib
+    - python3-pytest-cov
+    - zlib1g:amd64
+  files:
+    include:
+    - /home/t00m/.local/lib/python3.10/site-packages/ruamel.yaml-0.17.21-py3.9-nspkg.pth
+    - /lib/x86_64-linux-gnu/libapt-pkg.so.6.0
+    - /lib/x86_64-linux-gnu/libssl.so.3
+    - /usr/lib/locale/locale-archive
+    - /usr/lib/python3.10/__pycache__/__future__.cpython-310.pyc
+    - /usr/lib/python3.10/__pycache__/_collections_abc.cpython-310.pyc
+    - /usr/lib/python3.10/__pycache__/_compat_pickle.cpython-310.pyc
+    - /usr/lib/python3.10/__pycache__/_compression.cpython-310.pyc
+    - /usr/lib/python3.10/__pycache__/_sitebuiltins.cpython-310.pyc
+    - /usr/lib/python3.10/__pycache__/_weakrefset.cpython-310.pyc
+    - /usr/lib/python3.10/__pycache__/abc.cpython-310.pyc
+    - /usr/lib/python3.10/__pycache__/base64.cpython-310.pyc
+    - /usr/lib/python3.10/__pycache__/bisect.cpython-310.pyc
+    - /usr/lib/python3.10/__pycache__/bz2.cpython-310.pyc
+    - /usr/lib/python3.10/__pycache__/calendar.cpython-310.pyc
+    - /usr/lib/python3.10/__pycache__/codecs.cpython-310.pyc
+    - /usr/lib/python3.10/__pycache__/configparser.cpython-310.pyc
+    - /usr/lib/python3.10/__pycache__/contextlib.cpython-310.pyc
+    - /usr/lib/python3.10/__pycache__/copy.cpython-310.pyc
+    - /usr/lib/python3.10/__pycache__/copyreg.cpython-310.pyc
+    - /usr/lib/python3.10/__pycache__/datetime.cpython-310.pyc
+    - /usr/lib/python3.10/__pycache__/enum.cpython-310.pyc
+    - /usr/lib/python3.10/__pycache__/fnmatch.cpython-310.pyc
+    - /usr/lib/python3.10/__pycache__/functools.cpython-310.pyc
+    - /usr/lib/python3.10/__pycache__/genericpath.cpython-310.pyc
+    - /usr/lib/python3.10/__pycache__/gettext.cpython-310.pyc
+    - /usr/lib/python3.10/__pycache__/glob.cpython-310.pyc
+    - /usr/lib/python3.10/__pycache__/gzip.cpython-310.pyc
+    - /usr/lib/python3.10/__pycache__/hashlib.cpython-310.pyc
+    - /usr/lib/python3.10/__pycache__/io.cpython-310.pyc
+    - /usr/lib/python3.10/__pycache__/keyword.cpython-310.pyc
+    - /usr/lib/python3.10/__pycache__/linecache.cpython-310.pyc
+    - /usr/lib/python3.10/__pycache__/locale.cpython-310.pyc
+    - /usr/lib/python3.10/__pycache__/lzma.cpython-310.pyc
+    - /usr/lib/python3.10/__pycache__/operator.cpython-310.pyc
+    - /usr/lib/python3.10/__pycache__/os.cpython-310.pyc
+    - /usr/lib/python3.10/__pycache__/pickle.cpython-310.pyc
+    - /usr/lib/python3.10/__pycache__/posixpath.cpython-310.pyc
+    - /usr/lib/python3.10/__pycache__/quopri.cpython-310.pyc
+    - /usr/lib/python3.10/__pycache__/random.cpython-310.pyc
+    - /usr/lib/python3.10/__pycache__/re.cpython-310.pyc
+    - /usr/lib/python3.10/__pycache__/reprlib.cpython-310.pyc
+    - /usr/lib/python3.10/__pycache__/selectors.cpython-310.pyc
+    - /usr/lib/python3.10/__pycache__/shutil.cpython-310.pyc
+    - /usr/lib/python3.10/__pycache__/signal.cpython-310.pyc
+    - /usr/lib/python3.10/__pycache__/site.cpython-310.pyc
+    - /usr/lib/python3.10/__pycache__/sitecustomize.cpython-310.pyc
+    - /usr/lib/python3.10/__pycache__/socket.cpython-310.pyc
+    - /usr/lib/python3.10/__pycache__/sre_compile.cpython-310.pyc
+    - /usr/lib/python3.10/__pycache__/sre_constants.cpython-310.pyc
+    - /usr/lib/python3.10/__pycache__/sre_parse.cpython-310.pyc
+    - /usr/lib/python3.10/__pycache__/ssl.cpython-310.pyc
+    - /usr/lib/python3.10/__pycache__/stat.cpython-310.pyc
+    - /usr/lib/python3.10/__pycache__/string.cpython-310.pyc
+    - /usr/lib/python3.10/__pycache__/struct.cpython-310.pyc
+    - /usr/lib/python3.10/__pycache__/subprocess.cpython-310.pyc
+    - /usr/lib/python3.10/__pycache__/tempfile.cpython-310.pyc
+    - /usr/lib/python3.10/__pycache__/threading.cpython-310.pyc
+    - /usr/lib/python3.10/__pycache__/token.cpython-310.pyc
+    - /usr/lib/python3.10/__pycache__/tokenize.cpython-310.pyc
+    - /usr/lib/python3.10/__pycache__/traceback.cpython-310.pyc
+    - /usr/lib/python3.10/__pycache__/types.cpython-310.pyc
+    - /usr/lib/python3.10/__pycache__/typing.cpython-310.pyc
+    - /usr/lib/python3.10/__pycache__/uu.cpython-310.pyc
+    - /usr/lib/python3.10/__pycache__/warnings.cpython-310.pyc
+    - /usr/lib/python3.10/__pycache__/weakref.cpython-310.pyc
+    - /usr/lib/python3.10/collections/__pycache__/__init__.cpython-310.pyc
+    - /usr/lib/python3.10/collections/__pycache__/abc.cpython-310.pyc
+    - /usr/lib/python3.10/email/__pycache__/__init__.cpython-310.pyc
+    - /usr/lib/python3.10/email/__pycache__/_encoded_words.cpython-310.pyc
+    - /usr/lib/python3.10/email/__pycache__/_header_value_parser.cpython-310.pyc
+    - /usr/lib/python3.10/email/__pycache__/_parseaddr.cpython-310.pyc
+    - /usr/lib/python3.10/email/__pycache__/_policybase.cpython-310.pyc
+    - /usr/lib/python3.10/email/__pycache__/base64mime.cpython-310.pyc
+    - /usr/lib/python3.10/email/__pycache__/charset.cpython-310.pyc
+    - /usr/lib/python3.10/email/__pycache__/contentmanager.cpython-310.pyc
+    - /usr/lib/python3.10/email/__pycache__/encoders.cpython-310.pyc
+    - /usr/lib/python3.10/email/__pycache__/errors.cpython-310.pyc
+    - /usr/lib/python3.10/email/__pycache__/feedparser.cpython-310.pyc
+    - /usr/lib/python3.10/email/__pycache__/header.cpython-310.pyc
+    - /usr/lib/python3.10/email/__pycache__/headerregistry.cpython-310.pyc
+    - /usr/lib/python3.10/email/__pycache__/iterators.cpython-310.pyc
+    - /usr/lib/python3.10/email/__pycache__/message.cpython-310.pyc
+    - /usr/lib/python3.10/email/__pycache__/parser.cpython-310.pyc
+    - /usr/lib/python3.10/email/__pycache__/policy.cpython-310.pyc
+    - /usr/lib/python3.10/email/__pycache__/quoprimime.cpython-310.pyc
+    - /usr/lib/python3.10/email/__pycache__/utils.cpython-310.pyc
+    - /usr/lib/python3.10/email/mime/__pycache__/__init__.cpython-310.pyc
+    - /usr/lib/python3.10/email/mime/__pycache__/base.cpython-310.pyc
+    - /usr/lib/python3.10/email/mime/__pycache__/multipart.cpython-310.pyc
+    - /usr/lib/python3.10/email/mime/__pycache__/nonmultipart.cpython-310.pyc
+    - /usr/lib/python3.10/email/mime/__pycache__/text.cpython-310.pyc
+    - /usr/lib/python3.10/encodings/__pycache__/__init__.cpython-310.pyc
+    - /usr/lib/python3.10/encodings/__pycache__/aliases.cpython-310.pyc
+    - /usr/lib/python3.10/encodings/__pycache__/utf_8.cpython-310.pyc
+    - /usr/lib/python3.10/http/__pycache__/__init__.cpython-310.pyc
+    - /usr/lib/python3.10/http/__pycache__/client.cpython-310.pyc
+    - /usr/lib/python3.10/importlib/__pycache__/__init__.cpython-310.pyc
+    - /usr/lib/python3.10/importlib/__pycache__/_abc.cpython-310.pyc
+    - /usr/lib/python3.10/importlib/__pycache__/machinery.cpython-310.pyc
+    - /usr/lib/python3.10/importlib/__pycache__/util.cpython-310.pyc
+    - /usr/lib/python3.10/json/__pycache__/__init__.cpython-310.pyc
+    - /usr/lib/python3.10/json/__pycache__/decoder.cpython-310.pyc
+    - /usr/lib/python3.10/json/__pycache__/encoder.cpython-310.pyc
+    - /usr/lib/python3.10/json/__pycache__/scanner.cpython-310.pyc
+    - /usr/lib/python3.10/logging/__pycache__/__init__.cpython-310.pyc
+    - /usr/lib/python3.10/urllib/__pycache__/__init__.cpython-310.pyc
+    - /usr/lib/python3.10/urllib/__pycache__/error.cpython-310.pyc
+    - /usr/lib/python3.10/urllib/__pycache__/parse.cpython-310.pyc
+    - /usr/lib/python3.10/urllib/__pycache__/request.cpython-310.pyc
+    - /usr/lib/python3.10/urllib/__pycache__/response.cpython-310.pyc
+    - /usr/lib/python3.10/xml/__pycache__/__init__.cpython-310.pyc
+    - /usr/lib/python3.10/xml/dom/__pycache__/NodeFilter.cpython-310.pyc
+    - /usr/lib/python3.10/xml/dom/__pycache__/__init__.cpython-310.pyc
+    - /usr/lib/python3.10/xml/dom/__pycache__/domreg.cpython-310.pyc
+    - /usr/lib/python3.10/xml/dom/__pycache__/minicompat.cpython-310.pyc
+    - /usr/lib/python3.10/xml/dom/__pycache__/minidom.cpython-310.pyc
+    - /usr/lib/python3.10/xml/dom/__pycache__/xmlbuilder.cpython-310.pyc
+    - /usr/lib/python3.10/xml/parsers/__pycache__/__init__.cpython-310.pyc
+    - /usr/lib/python3.10/xml/parsers/__pycache__/expat.cpython-310.pyc
+    - /usr/lib/python3/dist-packages/__pycache__/apport_python_hook.cpython-310.pyc
+    - /usr/lib/python3/dist-packages/__pycache__/problem_report.cpython-310.pyc
+    - /usr/lib/python3/dist-packages/apport/__pycache__/__init__.cpython-310.pyc
+    - /usr/lib/python3/dist-packages/apport/__pycache__/fileutils.cpython-310.pyc
+    - /usr/lib/python3/dist-packages/apport/__pycache__/hookutils.cpython-310.pyc
+    - /usr/lib/python3/dist-packages/apport/__pycache__/packaging.cpython-310.pyc
+    - /usr/lib/python3/dist-packages/apport/__pycache__/packaging_impl.cpython-310.pyc
+    - /usr/lib/python3/dist-packages/apport/__pycache__/report.cpython-310.pyc
+    - /usr/lib/python3/dist-packages/apt/__pycache__/__init__.cpython-310.pyc
+    - /usr/lib/python3/dist-packages/apt/__pycache__/cache.cpython-310.pyc
+    - /usr/lib/python3/dist-packages/apt/__pycache__/cdrom.cpython-310.pyc
+    - /usr/lib/python3/dist-packages/apt/__pycache__/package.cpython-310.pyc
+    - /usr/lib/python3/dist-packages/apt/progress/__pycache__/__init__.cpython-310.pyc
+    - /usr/lib/python3/dist-packages/apt/progress/__pycache__/base.cpython-310.pyc
+    - /usr/lib/python3/dist-packages/apt/progress/__pycache__/text.cpython-310.pyc
+    exclude:
+    - usr/share/man
+    - usr/share/doc/*/README.*
+    - usr/share/doc/*/changelog.*
+    - usr/share/doc/*/NEWS.*
+    - usr/share/doc/*/TODO.*
+  test:
+    fedora-30:
+      image: appimagecrafters/tests-env:fedora-30
+      command: ./AppRun
+    debian-stable:
+      image: appimagecrafters/tests-env:debian-stable
+      command: ./AppRun
+    archlinux-latest:
+      image: appimagecrafters/tests-env:archlinux-latest
+      command: ./AppRun
+    centos-7:
+      image: appimagecrafters/tests-env:centos-7
+      command: ./AppRun
+    ubuntu-xenial:
+      image: appimagecrafters/tests-env:ubuntu-xenial
+      command: ./AppRun
+AppImage:
+  arch: x86_64
+  update-information: guess
