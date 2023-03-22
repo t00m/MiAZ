@@ -67,19 +67,21 @@ class MiAZToolbarProjectMgtPlugin(GObject.GObject, Peas.Activatable):
         API = self.object
 
     def add_menuitem(self, *args):
-        section_common_in = self.app.get_widget('workspace-menu-selection-section-common-in')
-        submenu_rename = Gio.Menu.new()
-        menu_rename = Gio.MenuItem.new_submenu(
-            label = 'Mass renaming of...',
-            submenu = submenu_rename,
-        )
-        section_common_in.append_item(menu_rename)
-        fields = [Date, Country, Group, SentBy, Purpose, SentTo]
-        for item_type in fields:
-            i_type = item_type.__gtype_name__
-            i_title = item_type.__title__
-            menuitem = self.factory.create_menuitem('rename_%s' % i_type.lower(), '...%s' % i_title.lower(), self.document_rename_multiple, item_type, [])
-            submenu_rename.append_item(menuitem)
+        if self.app.get_widget('workspace-menu-selection-menu-massrename') is None:
+            section_common_in = self.app.get_widget('workspace-menu-selection-section-common-in')
+            submenu_massrename = Gio.Menu.new()
+            menu_massrename = Gio.MenuItem.new_submenu(
+                label = 'Mass renaming of...',
+                submenu = submenu_massrename,
+            )
+            section_common_in.append_item(menu_massrename)
+            fields = [Date, Country, Group, SentBy, Purpose, SentTo]
+            for item_type in fields:
+                i_type = item_type.__gtype_name__
+                i_title = item_type.__title__
+                menuitem = self.factory.create_menuitem('rename_%s' % i_type.lower(), '...%s' % i_title.lower(), self.document_rename_multiple, item_type, [])
+                submenu_massrename.append_item(menuitem)
+            self.app.add_widget('workspace-menu-selection-menu-massrename', menu_massrename)
 
     def document_rename_multiple(self, action, data, item_type):
         def update_columnview(dropdown, gparamobj, columnview, item_type, items):

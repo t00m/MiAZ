@@ -57,11 +57,12 @@ class MiAZToolbarRenameItemPlugin(GObject.GObject, Peas.Activatable):
         button.set_visible(visible)
 
     def add_toolbar_button(self, *args):
-        toolbar_top_right = self.app.get_widget('workspace-toolbar-top-right')
-        button = self.factory.create_button(icon_name='miaz-res-manage', callback=self.callback)
-        button.set_visible(False)
-        self.app.add_widget('toolbar-top-button-rename', button)
-        toolbar_top_right.prepend(button)
+        if self.app.get_widget('toolbar-top-button-rename') is None:
+            toolbar_top_right = self.app.get_widget('workspace-toolbar-top-right')
+            button = self.factory.create_button(icon_name='miaz-res-manage', callback=self.callback)
+            button.set_visible(False)
+            self.app.add_widget('toolbar-top-button-rename', button)
+            toolbar_top_right.prepend(button)
 
     def callback(self, *args):
         try:

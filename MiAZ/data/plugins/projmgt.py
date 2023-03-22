@@ -59,25 +59,25 @@ class MiAZToolbarProjectMgtPlugin(GObject.GObject, Peas.Activatable):
         self.workspace = API.app.get_widget('workspace')
         self.workspace.connect("extend-menu", self.add_menuitem)
 
-
     def do_deactivate(self):
         self.log.debug("Plugin deactivation not implemented")
         API = self.object
 
     def add_menuitem(self, *args):
         section_common_in = self.app.get_widget('workspace-menu-selection-section-common-in')
-        submenu_project = Gio.Menu.new()
-        menu_project = Gio.MenuItem.new_submenu(
-            label = 'Project management...',
-            submenu = submenu_project,
-        )
-        section_common_in.append_item(menu_project)
-        self.app.add_widget('workspace-menu-selection-menu-project', menu_project)
-        self.app.add_widget('workspace-menu-selection-submenu-project', submenu_project)
-        menuitem = self.factory.create_menuitem('project-assign', '...assign project', self.project_assign, None, [])
-        submenu_project.append_item(menuitem)
-        menuitem = self.factory.create_menuitem('project-withdraw', '...withdraw project', self.project_withdraw, None, [])
-        submenu_project.append_item(menuitem)
+        if self.app.get_widget('workspace-menu-selection-menu-project') is None:
+            submenu_project = Gio.Menu.new()
+            menu_project = Gio.MenuItem.new_submenu(
+                label = 'Project management...',
+                submenu = submenu_project,
+            )
+            section_common_in.append_item(menu_project)
+            self.app.add_widget('workspace-menu-selection-menu-project', menu_project)
+            self.app.add_widget('workspace-menu-selection-submenu-project', submenu_project)
+            menuitem = self.factory.create_menuitem('project-assign', '...assign project', self.project_assign, None, [])
+            submenu_project.append_item(menuitem)
+            menuitem = self.factory.create_menuitem('project-withdraw', '...withdraw project', self.project_withdraw, None, [])
+            submenu_project.append_item(menuitem)
 
 
     def project_assign(self, *args):
