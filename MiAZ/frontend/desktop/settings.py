@@ -69,12 +69,13 @@ class MiAZAppSettings(Gtk.Box):
         lblActive = Gtk.Label()
         lblActive.set_markup("Current active")
         self.dd_repo = self.factory.create_dropdown_generic(item_type=Repository, ellipsize=False, enable_search=False)
-        btnUseRepo = self.factory.create_button(icon_name='MiAZ', callback=self._on_use_repo)
+        btnUseRepo = self.factory.create_button(icon_name='MiAZ', title='Load repo', callback=self._on_use_repo)
         hbox.append(lblActive)
         hbox.append(self.dd_repo)
         hbox.append(btnUseRepo)
         self.actions.dropdown_populate(MiAZConfigRepositories, self.dd_repo, Repository, any_value=False, none_value=False)
-        self.dd_repo.connect("notify::selected-item", self._on_selected_repo)
+        # DOC: By enabling this signal, repos are loaded automatically without pressing the button:
+        # ~ self.dd_repo.connect("notify::selected-item", self._on_selected_repo)
         self.config['Repository'].connect('used-updated', self.actions.dropdown_populate, self.dd_repo, Repository, False, False)
 
         # Load last active repo
@@ -96,10 +97,10 @@ class MiAZAppSettings(Gtk.Box):
         return row
 
     def _on_use_repo(self, *args):
-        self.log.debug(args)
-        workspace = self.app.get_widget('workspace')
-        workspace.update()
-        self.app.show_stack_page_by_name('workspace')
+        repo_id = self.dd_repo.get_selected_item().id
+        repo_dir = self.dd_repo.get_selected_item().title
+        self.config['App'].set('current', repo_id)
+        self.app.check_repository()
 
     def _on_selected_repo(self, dropdown, gparamobj):
         try:

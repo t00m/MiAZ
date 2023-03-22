@@ -63,9 +63,14 @@ class MiAZPluginManager:
         self._setup_plugins_dir()
         self._setup_extension_set()
 
-        # Load plugins
-        for plugin in self.plugins:
-            self.engine.load_plugin(plugin)
+    def load_plugin(self, plugin: Peas.PluginInfo):
+        self.engine.load_plugin(plugin)
+        if plugin.is_loaded():
+            self.log.debug("Plugin %s loaded", plugin.get_name())
+
+    def unload_plugin(self, plugin: Peas.PluginInfo):
+        self.engine.unload_plugin(plugin)
+
 
     def get_engine(self):
         return self.engine

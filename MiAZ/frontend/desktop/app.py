@@ -45,6 +45,7 @@ class MiAZApp(Adw.Application):
         "start-application-completed":  (GObject.SignalFlags.RUN_LAST, None, ()),
         "stop-application-completed":  (GObject.SignalFlags.RUN_LAST, None, ()),
     }
+    plugins_loaded = False
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -56,6 +57,7 @@ class MiAZApp(Adw.Application):
         self.connect('activate', self._on_activate)
 
     def _on_activate(self, app):
+        # ~ self.connect('start-application-completed', self._finish_configuration)
         self.win = self.add_widget('window', Gtk.ApplicationWindow(application=self))
         self.win.set_default_size(1024, 728)
         self.win.set_icon_name('MiAZ')
@@ -66,15 +68,32 @@ class MiAZApp(Adw.Application):
         self.actions = MiAZActions(self)
         self.factory = MiAZFactory(self)
         self._setup_gui()
-        self.check_repository()
         self._setup_event_listener()
         self._setup_plugin_manager()
-        self.log.debug("Plugins loaded:")
-        for plugin in self.plugin_manager.plugins:
-            if plugin.is_loaded():
-                self.log.debug("\t[%s] %s %s (%s)",  self.plugin_manager.get_plugin_type(plugin), plugin.get_name(), plugin.get_version(), plugin.get_description())
         self.log.debug("Executing MiAZ Desktop mode")
-        self.emit('start-application-completed')
+        # ~ self.emit('start-application-completed')
+        self.check_repository()
+
+    def _finish_configuration(self, *args):
+        self.log.debug("Finish loading app")
+
+    def load_plugins(self):
+        workspace = self.get_widget('workspace')
+        workspace_loaded = workspace is not None
+        if workspace_loaded and not self.plugins_loaded:
+            self.log.debug("Loading plugins...")
+            plugin_manager = self.get_widget('plugin-manager')
+            n = 0
+            a = 0
+            for plugin in self.plugin_manager.plugins:
+                try:
+                    plugin_manager.load_plugin(plugin)
+                    a += 1
+                except Exception as error:
+                    self.log.error(error)
+                n += 1
+            self.plugins_loaded = True
+            self.log.debug("Plugins loaded: %d/%d", a, n)
 
     def _setup_plugin_manager(self):
         self.plugin_manager = self.add_widget('plugin-manager', MiAZPluginManager(self))
@@ -117,8 +136,8 @@ class MiAZApp(Adw.Application):
     def get_header(self):
         return self.header
 
-    def get_app_settings(self):
-        return self.settings_app
+    # ~ def get_app_settings(self):
+        # ~ return self.settings_app
 
     def _setup_stack(self):
         self.stack = self.add_widget('stack', Adw.ViewStack())
@@ -254,10 +273,19 @@ class MiAZApp(Adw.Application):
             self.log.debug("Repo? '%s'", dir_repo)
             if self.backend.repo_validate(dir_repo):
                 self.backend.repo_load(dir_repo)
-                self._setup_page_workspace()
-                self._setup_page_rename()
-                self._setup_page_repo_settings()
+                if self.get_widget('workspace') is None:
+                    self._setup_page_workspace()
+                    if not self.plugins_loaded:
+                        self.load_plugins()
+                if self.get_widget('rename') is None:
+                    self._setup_page_rename()
+                if self.get_widget('settings-repo') is None:
+                    self._setup_page_repo_settings()
+                workspace = self.get_widget('workspace')
+                workspace.update()
+                self.show_stack_page_by_name('workspace')
                 valid = True
+                self.emit('start-application-completed')
             else:
                 valid = False
         except KeyError as error:
