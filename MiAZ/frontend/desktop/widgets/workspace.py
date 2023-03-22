@@ -110,6 +110,8 @@ class MiAZWorkspace(Gtk.Box):
         self.app.connect('start-application-completed', self._finish_configuration)
 
     def _finish_configuration(self, *args):
+        self.log.debug("Finish loading workspace")
+        # ~ self.app.load_plugins()
         self.emit('extend-menu')
         self.emit('extend-toolbar-top')
 

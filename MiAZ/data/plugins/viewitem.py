@@ -49,11 +49,12 @@ class MiAZToolbarViewItemPlugin(GObject.GObject, Peas.Activatable):
         button.set_visible(visible)
 
     def add_toolbar_button(self, *args):
-        toolbar_top_right = self.app.get_widget('workspace-toolbar-top-right')
-        button = self.factory.create_button(icon_name='miaz-display', callback=self.callback)
-        button.set_visible(False)
-        self.app.add_widget('toolbar-top-button-view', button)
-        toolbar_top_right.prepend(button)
+        if self.app.get_widget('toolbar-top-button-view') is None:
+            toolbar_top_right = self.app.get_widget('workspace-toolbar-top-right')
+            button = self.factory.create_button(icon_name='miaz-display', callback=self.callback)
+            button.set_visible(False)
+            self.app.add_widget('toolbar-top-button-view', button)
+            toolbar_top_right.prepend(button)
 
     def callback(self, *args):
         try:

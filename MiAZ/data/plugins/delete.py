@@ -45,9 +45,11 @@ class MiAZDeleteItemPlugin(GObject.GObject, Peas.Activatable):
         API = self.object
 
     def add_menuitem(self, *args):
-        section_danger = self.app.get_widget('workspace-menu-selection-section-danger')
-        menuitem = self.factory.create_menuitem('delete', 'Delete documents', self.document_delete, None, [])
-        section_danger.append_item(menuitem)
+        if self.app.get_widget('workspace-menu-selection-section-danger-menuitem-delete') is None:
+            section_danger = self.app.get_widget('workspace-menu-selection-section-danger')
+            menuitem = self.factory.create_menuitem('delete', 'Delete documents', self.document_delete, None, [])
+            self.app.add_widget('workspace-menu-selection-section-danger-menuitem-delete', menuitem)
+            section_danger.append_item(menuitem)
 
     def document_delete(self, *args):
         def dialog_response(dialog, response, items):
