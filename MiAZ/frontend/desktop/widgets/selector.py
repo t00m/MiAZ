@@ -196,7 +196,7 @@ class MiAZSelector(Gtk.Box):
             key = dialog.get_value1()
             value = dialog.get_value2()
             if len(key) > 0:
-                self.config.add_available(key, value)
+                self.config.add_available(key.upper(), value)
                 self.log.debug("%s (%s) added to list of available items", key, value)
                 self.update()
         dialog.destroy()
