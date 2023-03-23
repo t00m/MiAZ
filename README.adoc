@@ -1,19 +1,6 @@
 = MiAZ, a Personal Document Organizer
 
-The main goal is to organize family documentation.
-
-== DISCLAIMER
-
-[CAUTION]
-====
-*This software application is currently in development and is not yet ready for production use. The application may contain bugs, errors, or other issues that could cause your computer or device to malfunction or experience other unexpected behaviors. By using this application, you acknowledge and agree that you do so at your own risk, and that the developer and any other parties involved in the development, distribution, or support of this application are not responsible for any damages or losses that may result from its use.*
-
-*This software application performs typical file operations (such as copy, rename, delete) at Operating System level. Make sure you have a backup of those files*.
-
-Please note that *this application is based on the GPL v3 license*, and is provided free of charge. There is *no guarantee of any kind*, either express or implied, regarding its functionality, reliability, or suitability for any particular purpose. The developer reserves the right to modify, update, or discontinue this application at any time, and may not provide support or assistance in resolving any issues or problems that arise from its use.
-
-By using this application, you acknowledge and agree to the terms of the GPL v3 license and this disclaimer, and waive any and all claims, actions, or damages that you may have against the developer or any other parties involved in the development, distribution, or support of this application. If you do not agree to these terms, you should not use this application.
-====
+image::MiAZ/data/icons/MiAZ.svg[]
 
 == Features
 
@@ -92,4 +79,17 @@ Currently, it is only possible to install from command line:
 It should install the following binary: `$HOME/.local/bin/miaz
 
 It has been tested in _Ubuntu 22.04.2 LTS_ and _RedHat Fedora 37_.
+
+== DISCLAIMER
+
+[CAUTION]
+====
+*This software application is currently in development and is not yet ready for production use. The application may contain bugs, errors, or other issues that could cause your computer or device to malfunction or experience other unexpected behaviors. By using this application, you acknowledge and agree that you do so at your own risk, and that the developer and any other parties involved in the development, distribution, or support of this application are not responsible for any damages or losses that may result from its use.*
+
+*This software application performs typical file operations (such as copy, rename, delete) at Operating System level. Make sure you have a backup of those files*.
+
+Please note that *this application is based on the GPL v3 license*, and is provided free of charge. There is *no guarantee of any kind*, either express or implied, regarding its functionality, reliability, or suitability for any particular purpose. The developer reserves the right to modify, update, or discontinue this application at any time, and may not provide support or assistance in resolving any issues or problems that arise from its use.
+
+By using this application, you acknowledge and agree to the terms of the GPL v3 license and this disclaimer, and waive any and all claims, actions, or damages that you may have against the developer or any other parties involved in the development, distribution, or support of this application. If you do not agree to these terms, you should not use this application.
+====
 
