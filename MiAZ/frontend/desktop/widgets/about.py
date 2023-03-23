@@ -22,7 +22,7 @@ class MiAZAbout(Gtk.Box):
     def __init__(self, app):
         super(Gtk.Box, self).__init__(spacing=12, orientation=Gtk.Orientation.VERTICAL)
         widget = Adw.StatusPage.new()
-        widget.set_title(title="%s %s" % (ENV['APP']['shortname'].capitalize(), ENV['APP']['version']))
+        widget.set_title(title="%s %s" % (ENV['APP']['shortname'], ENV['APP']['version']))
         widget.set_icon_name(icon_name='MiAZ-big')
         self.append(widget)
 
