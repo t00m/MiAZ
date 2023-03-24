@@ -73,7 +73,7 @@ class MiAZProject(GObject.GObject):
         if found:
             self.save()
         else:
-            self.log.debug("Document '%s' wasn't deleted for any project '%s'", project)
+            self.log.debug("Document '%s' wasn't deleted for any project", doc)
 
     def remove_batch(self, project:str, docs: list) -> None:
         for doc in docs:
