@@ -67,7 +67,7 @@ class MiAZWatcher(GObject.GObject):
 
     def set_path(self, dirpath: str):
         self.dirpath = dirpath
-        self.log.debug("Watcher[%s] installed. Monitoring '%s'", self.name, self.dirpath)
+        self.log.debug("Monitoring '%s'", self.dirpath)
 
     def set_active(self, active: bool = True) -> None:
         self.active = active
@@ -95,13 +95,13 @@ class MiAZWatcher(GObject.GObject):
                     modified.append(f)
 
         if added:
-            # ~ self.log.debug("Watcher[%s] > %d files added", self.name, len(added))
+            self.log.debug("Watcher[%s] > %d files added", self.name, len(added))
             updated |= True
         if removed:
-            # ~ self.log.debug("Watcher[%s] > %d files removed", self.name, len(removed))
+            self.log.debug("Watcher[%s] > %d files removed", self.name, len(removed))
             updated |= True
         if modified:
-            # ~ self.log.debug("Watcher[%s] > %d files modified", self.name, len(modified))
+            self.log.debug("Watcher[%s] > %d files modified", self.name, len(modified))
             updated |= True
 
         if updated:
