@@ -81,6 +81,9 @@ class MiAZApp(Adw.Application):
         self.stack.remove(widget_settings_repo)
         self.remove_widget('settings-repo')
         self._setup_page_repo_settings()
+        label_repo = self.get_widget('label_repo')
+        repo_active = self.conf['App'].get('current')
+        label_repo.set_markup(' [<b>%s</b>] ' % repo_active)
 
     def _finish_configuration(self, *args):
         self.log.debug("Finish loading app")
@@ -242,6 +245,12 @@ class MiAZApp(Adw.Application):
         menubutton.set_always_show_arrow(False)
         self.add_widget('headerbar-menubutton-app', menubutton)
         self.header.pack_start(menubutton)
+
+        label_repo = self.add_widget('label_repo', Gtk.Label())
+        repo_active = self.conf['App'].get('current')
+        label_repo.set_markup(' [<b>%s</b>] ' % repo_active)
+        self.header.pack_start(label_repo)
+
 
     def _setup_headerbar_right(self):
         pass
