@@ -70,6 +70,8 @@ class MiAZWorkspace(Gtk.Box):
         self.actions = self.app.get_actions()
         self.config = self.backend.conf
         self.util = self.backend.util
+        self.util.connect('filename-renamed', self._on_filename_renamed)
+        self.util.connect('filename-deleted', self._on_filename_deleted)
         self.set_vexpand(False)
         self.set_margin_top(margin=3)
         self.set_margin_end(margin=3)
@@ -108,6 +110,12 @@ class MiAZWorkspace(Gtk.Box):
 
         # Allow plug-ins to make their job
         self.app.connect('start-application-completed', self._finish_configuration)
+
+    def _on_filename_renamed(self, util, source, target):
+        self.log.debug("File rename from '%s' to '%s'", source, target)
+
+    def _on_filename_deleted(self, util, target):
+        self.backend.projects.remove(project='', doc=os.path.basename(target))
 
     def _finish_configuration(self, *args):
         self.log.debug("Finish loading workspace")

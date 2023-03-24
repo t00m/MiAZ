@@ -39,7 +39,7 @@ class MiAZProject(GObject.GObject):
                 self.projects[project] = docs
         except:
             self.projects[project] = [doc]
-        self.log.debug("Added %s to Project %s", doc, project)
+        self.log.debug("Added '%s' to Project '%s'", doc, project)
 
     def add_batch(self, project: str, docs: list) -> None:
         for doc in docs:
@@ -47,14 +47,33 @@ class MiAZProject(GObject.GObject):
         self.save()
 
     def remove(self, project: str, doc: str) -> None:
-        try:
-            docs = self.projects[project]
-            if doc in docs:
-                docs.remove(doc)
-                self.log.debug("Remove %s from Project %s", doc, project)
-            self.projects[project] = docs
-        except KeyError:
-            pass
+        found = False
+        if len(project) == 0:
+            # Document was deleted, therefore delete all references in
+            # any project
+            for prj in self.projects:
+                docs = self.projects[prj]
+                if doc in docs:
+                    found = True
+                    docs.remove(doc)
+                    self.log.debug("Remove '%s' from Project '%s'", doc, prj)
+                    self.projects[prj] = docs
+        else:
+            # Delete document for a given project
+            try:
+                docs = self.projects[project]
+                if doc in docs:
+                    found = True
+                    docs.remove(doc)
+                    self.log.debug("Remove '%s' from Project '%s'", doc, project)
+                    self.projects[project] = docs
+            except KeyError:
+                self.log.warning("Project '%s' doesn't exist", project)
+                pass
+        if found:
+            self.save()
+        else:
+            self.log.debug("Document '%s' wasn't deleted for any project '%s'", project)
 
     def remove_batch(self, project:str, docs: list) -> None:
         for doc in docs:
