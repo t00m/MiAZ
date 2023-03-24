@@ -41,6 +41,9 @@ class MiAZConfigView(MiAZSelector):
         self.config.connect('available-updated', self.update)
         self.set_vexpand(True)
 
+    def update_config(self):
+        self.config = self.conf[config]
+
     def get_config_for(self):
         return self.config.config_for
 

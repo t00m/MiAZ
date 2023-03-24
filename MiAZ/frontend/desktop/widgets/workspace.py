@@ -70,6 +70,8 @@ class MiAZWorkspace(Gtk.Box):
         self.actions = self.app.get_actions()
         self.config = self.backend.conf
         self.util = self.backend.util
+        self.util.connect('filename-renamed', self._on_filename_renamed)
+        self.util.connect('filename-deleted', self._on_filename_deleted)
         self.set_vexpand(False)
         self.set_margin_top(margin=3)
         self.set_margin_end(margin=3)
@@ -109,6 +111,12 @@ class MiAZWorkspace(Gtk.Box):
         # Allow plug-ins to make their job
         self.app.connect('start-application-completed', self._finish_configuration)
 
+    def _on_filename_renamed(self, util, source, target):
+        self.log.debug("File rename from '%s' to '%s'", source, target)
+
+    def _on_filename_deleted(self, util, target):
+        self.backend.projects.remove(project='', doc=os.path.basename(target))
+
     def _finish_configuration(self, *args):
         self.log.debug("Finish loading workspace")
         # ~ self.app.load_plugins()
@@ -132,9 +140,18 @@ class MiAZWorkspace(Gtk.Box):
             body.append(boxDropdown)
             self.dropdown[i_type] = dropdown
             self.config[i_type].connect('used-updated', self.update_dropdown_filter, item_type)
-        self.backend.connect('source-configuration-updated', self._on_workspace_update)
+        self.backend.connect('repository-updated', self._on_workspace_update)
+        self.backend.connect('repository-switched', self._update_dropdowns)
 
         return widget
+
+    def _update_dropdowns(self, *args):
+        for item_type in [Country, Group, SentBy, Purpose, SentTo]:
+            i_type = item_type.__gtype_name__
+            i_title = item_type.__title__
+            config = self.config[i_type]
+            self.actions.dropdown_populate(config, self.dropdown[i_type], item_type, True, True)
+
 
     def _on_workspace_update(self, *args):
         GLib.idle_add(self.update)
@@ -142,6 +159,7 @@ class MiAZWorkspace(Gtk.Box):
     def update_dropdown_filter(self, config, item_type):
         title = item_type.__gtype_name__
         self.actions.dropdown_populate(config, self.dropdown[title], item_type)
+        self.log.debug("Dropdown %s updated", title)
 
     def _on_filters_toggled(self, button, data=None):
         active = button.get_active()
@@ -246,31 +264,31 @@ class MiAZWorkspace(Gtk.Box):
         hbox.append(self.btnDocsSel)
 
         # Repo settings button
-        menu_repo = Gio.Menu.new()
-        section_common_in = Gio.Menu.new()
-        section_common_out = Gio.Menu.new()
-        section_danger = Gio.Menu.new()
+        menu_repo = self.app.add_widget('workspace-menu-repo', Gio.Menu.new())
+        section_common_in = self.app.add_widget('workspace-menu-repo-section-in', Gio.Menu.new())
+        section_common_out = self.app.add_widget('workspace-menu-repo-section-out', Gio.Menu.new())
+        section_danger = self.app.add_widget('workspace-menu-repo-section-danger', Gio.Menu.new())
         menu_repo.append_section(None, section_common_in)
         menu_repo.append_section(None, section_common_out)
         menu_repo.append_section(None, section_danger)
 
-        ## Actions in
-        menuitem = self.factory.create_menuitem(name='repo_settings', label='Repository settings', callback=self._on_handle_menu_repo, data=None, shortcuts=[])
-        section_common_in.append_item(menuitem)
+        # ~ ## Actions in
+        # ~ menuitem = self.factory.create_menuitem(name='repo_settings', label='Repository settings', callback=self._on_handle_menu_repo, data=None, shortcuts=[])
+        # ~ section_common_in.append_item(menuitem)
 
-        ## Actions out
-        submenu_backup = Gio.Menu.new()
-        menu_backup = Gio.MenuItem.new_submenu(
-            label = 'Backup...',
-            submenu = submenu_backup,
-        )
-        section_common_out.append_item(menu_backup)
-        menuitem = self.factory.create_menuitem('backup-config', '...only config', self._on_handle_menu_repo, None, [])
-        submenu_backup.append_item(menuitem)
-        menuitem = self.factory.create_menuitem('backup-data', '...only data', self._on_handle_menu_repo, None, [])
-        submenu_backup.append_item(menuitem)
-        menuitem = self.factory.create_menuitem('backup-all', '...config and data', self._on_handle_menu_repo, None, [])
-        submenu_backup.append_item(menuitem)
+        # ~ ## Actions out
+        # ~ submenu_backup = Gio.Menu.new()
+        # ~ menu_backup = Gio.MenuItem.new_submenu(
+            # ~ label = 'Backup...',
+            # ~ submenu = submenu_backup,
+        # ~ )
+        # ~ section_common_out.append_item(menu_backup)
+        # ~ menuitem = self.factory.create_menuitem('backup-config', '...only config', self._on_handle_menu_repo, None, [])
+        # ~ submenu_backup.append_item(menuitem)
+        # ~ menuitem = self.factory.create_menuitem('backup-data', '...only data', self._on_handle_menu_repo, None, [])
+        # ~ submenu_backup.append_item(menuitem)
+        # ~ menuitem = self.factory.create_menuitem('backup-all', '...config and data', self._on_handle_menu_repo, None, [])
+        # ~ submenu_backup.append_item(menuitem)
 
         btnRepoSettings = self.factory.create_button_menu(icon_name='document-properties', title='', menu=menu_repo)
         btnRepoSettings.set_always_show_arrow(False)
@@ -330,12 +348,6 @@ class MiAZWorkspace(Gtk.Box):
         ## No date
         key = "None-None"
         model.append(Date(id=key, title='Without date'))
-
-    def _on_handle_menu_repo(self, action, *args):
-        name = action.props.name
-        if name == 'repo_settings':
-            self.log.debug("Execute Settings Assistant")
-            self.app.show_stack_page_by_name('settings_repo')
 
     def _setup_columnview(self):
         self.view = MiAZColumnViewWorkspace(self.app)

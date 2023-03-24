@@ -73,6 +73,17 @@ class MiAZApp(Adw.Application):
         self.log.debug("Executing MiAZ Desktop mode")
         # ~ self.emit('start-application-completed')
         self.check_repository()
+        self.backend.connect('repository-switched', self._update_repo_settings)
+
+    def _update_repo_settings(self, *args):
+        self.log.debug("Repo switched. Configuration switched")
+        widget_settings_repo = self.get_widget('settings-repo')
+        self.stack.remove(widget_settings_repo)
+        self.remove_widget('settings-repo')
+        self._setup_page_repo_settings()
+        label_repo = self.get_widget('label_repo')
+        repo_active = self.conf['App'].get('current')
+        label_repo.set_markup(' [<b>%s</b>] ' % repo_active)
 
     def _finish_configuration(self, *args):
         self.log.debug("Finish loading app")
@@ -181,7 +192,7 @@ class MiAZApp(Adw.Application):
     def _setup_page_repo_settings(self):
         widget_settings_repo = self.get_widget('settings-repo')
         if widget_settings_repo is None:
-            widget_settings_repo = self.add_widget('settings-repo', MiAZAppSettings(self))
+            widget_settings_repo = self.add_widget('settings-repo', MiAZRepoSettings(self))
             page_settings_repo = self.stack.add_titled(widget_settings_repo, 'settings_repo', 'MiAZ')
             page_settings_repo.set_icon_name('document-properties')
             page_settings_repo.set_visible(False)
@@ -234,6 +245,12 @@ class MiAZApp(Adw.Application):
         menubutton.set_always_show_arrow(False)
         self.add_widget('headerbar-menubutton-app', menubutton)
         self.header.pack_start(menubutton)
+
+        label_repo = self.add_widget('label_repo', Gtk.Label())
+        repo_active = self.conf['App'].get('current')
+        label_repo.set_markup(' [<b>%s</b>] ' % repo_active)
+        self.header.pack_start(label_repo)
+
 
     def _setup_headerbar_right(self):
         pass
@@ -342,4 +359,12 @@ class MiAZApp(Adw.Application):
     def get_widgets(self):
         return self._widget
 
+    def remove_widget(self, name: str):
+        deleted = False
+        try:
+            del(self._widget[name])
+            deleted = True
+        except KeyError:
+            self.log.error("Widget '%s' doesn't exists", name)
+        return deleted
 

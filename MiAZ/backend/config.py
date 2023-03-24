@@ -78,6 +78,7 @@ class MiAZConfig(GObject.GObject):
         return self.foreign
 
     def load(self, filepath:str) -> dict:
+        # ~ self.log.debug("Loading from %s", filepath)
         try:
             items = self.util.json_load(filepath)
         except Exception as error:

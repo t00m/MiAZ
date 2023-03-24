@@ -39,15 +39,18 @@ class MiAZBackend(GObject.GObject):
     def __init__(self) -> None:
         GObject.GObject.__init__(self)
         self.log = get_logger('MiAZBackend')
-        GObject.signal_new('source-configuration-updated',
+        GObject.signal_new('repository-updated',
                             MiAZBackend,
                             GObject.SignalFlags.RUN_LAST, None, () )
+        GObject.signal_new('repository-switched',
+                            MiAZBackend,
+                            GObject.SignalFlags.RUN_LAST, None, () )
+
         self.util = MiAZUtil(self)
         self.conf['App'] = MiAZConfigApp(self)
         self.conf['Repository'] = MiAZConfigRepositories(self)
 
     def repo_validate(self, path: str) -> bool:
-        self.log.debug("Checking conf dir: %s", path)
         conf_dir = os.path.join(path, '.conf')
         conf_file = os.path.join(conf_dir, 'repo.json')
         if os.path.exists(conf_dir):
@@ -55,7 +58,7 @@ class MiAZBackend(GObject.GObject):
             if os.path.exists(conf_file):
                 repo = self.util.json_load(conf_file)
                 self.log.debug("Current repository: %s", path)
-                self.log.debug("MiAZ Repository format: %s", repo['FORMAT'])
+                # ~ self.log.debug("MiAZ Repository format: %s", repo['FORMAT'])
                 return True
             else:
                 self.log.debug("Repo config file '%s' doesn't exist", conf_file)
@@ -104,9 +107,10 @@ class MiAZBackend(GObject.GObject):
         self.watcher.set_active(active=True)
         self.watcher.connect('repository-updated', self.repo_check)
         self.projects = MiAZProject(self)
-        # ~ self.conf['App'].connect('repo-settings-updated-app', self.foo)
         self.log.debug("Configuration loaded")
+        self.emit('repository-switched')
+
 
     def repo_check(self, *args):
         self.log.debug("Source repository updated")
-        self.emit('source-configuration-updated')
+        self.emit('repository-updated')

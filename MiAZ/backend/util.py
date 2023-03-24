@@ -42,6 +42,19 @@ class MiAZUtil(GObject.GObject):
     __gtype_name__ = 'MiAZUtil'
 
     def __init__(self, backend):
+        GObject.GObject.__init__(self)
+        GObject.signal_new('filename-added',
+                            MiAZUtil,
+                            GObject.SignalFlags.RUN_LAST,
+                            GObject.TYPE_PYOBJECT, (GObject.TYPE_PYOBJECT,))
+        GObject.signal_new('filename-deleted',
+                            MiAZUtil,
+                            GObject.SignalFlags.RUN_LAST,
+                            GObject.TYPE_PYOBJECT, (GObject.TYPE_PYOBJECT,))
+        GObject.signal_new('filename-renamed',
+                            MiAZUtil,
+                            GObject.SignalFlags.RUN_LAST,
+                            GObject.TYPE_PYOBJECT, (GObject.TYPE_PYOBJECT, GObject.TYPE_PYOBJECT,))
         self.log = get_logger('MiAZ.Backend.Util')
         self.backend = backend
         self.conf = self.backend.conf
@@ -198,6 +211,7 @@ class MiAZUtil(GObject.GObject):
         if source != target:
             if not os.path.exists(target):
                 try:
+                    self.emit('filename-renamed', source, target)
                     shutil.move(source, target)
                     self.log.info("%s renamed to %s", source, target)
                 except Exception as error:
@@ -210,6 +224,7 @@ class MiAZUtil(GObject.GObject):
     def filename_delete(self, filepath):
         try:
             os.unlink(filepath)
+            self.emit('filename-deleted', filepath)
             self.log.debug("File %s deleted", filepath)
         except IsADirectoryError as error:
             self.log.error(error)
@@ -223,6 +238,7 @@ class MiAZUtil(GObject.GObject):
         repo = self.backend.repo_config()
         target = repo['dir_docs']
         self.filename_copy(source, target)
+        self.emit('filename-added', target)
 
     def filename_export(self, doc: str, target: str):
         repo = self.backend.repo_config()
