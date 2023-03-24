@@ -81,11 +81,6 @@ class MiAZApp(Adw.Application):
         self.stack.remove(widget_settings_repo)
         self.remove_widget('settings-repo')
         self._setup_page_repo_settings()
-        for prop in self.conf:
-            config = self.conf[prop]
-            config.emit('available-updated')
-            config.emit('used-updated')
-            self.log.debug("Emiting signal for updating from %s", self.conf[prop].config_for)
 
     def _finish_configuration(self, *args):
         self.log.debug("Finish loading app")

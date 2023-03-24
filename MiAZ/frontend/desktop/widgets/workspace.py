@@ -141,8 +141,20 @@ class MiAZWorkspace(Gtk.Box):
             self.dropdown[i_type] = dropdown
             self.config[i_type].connect('used-updated', self.update_dropdown_filter, item_type)
         self.backend.connect('repository-updated', self._on_workspace_update)
+        self.backend.connect('repository-switched', self._update_dropdowns)
 
         return widget
+
+    def _update_dropdowns(self, *args):
+        for item_type in [Country, Group, SentBy, Purpose, SentTo]:
+            i_type = item_type.__gtype_name__
+            i_title = item_type.__title__
+            config = self.config[i_type]
+            # ~ self.update_dropdown_filter(config, item_type)
+            self.actions.dropdown_populate(config, self.dropdown[i_type], item_type, True, True)
+            # ~ config.emit('available-updated')
+            # ~ config.emit('used-updated')
+            # ~ self.log.debug("Emiting signal for updating from %s", config.config_for)
 
     def _on_workspace_update(self, *args):
         GLib.idle_add(self.update)
