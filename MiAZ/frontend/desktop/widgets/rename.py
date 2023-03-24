@@ -121,7 +121,7 @@ class MiAZRenameDialog(Gtk.Box):
         self.lblFilenameCur.set_selectable(True)
         self.lblFilenameNew.set_markup(self.result)
         self.lblFilenameNew.set_selectable(True)
-        self.on_changed_entry()
+        self._on_changed_entry()
 
     def get_filename_widget(self):
         return self.lblFilenameCur
@@ -190,7 +190,7 @@ class MiAZRenameDialog(Gtk.Box):
         boxValue.append(self.label_date)
         boxValue.append(self.entry_date)
         boxValue.append(button)
-        self.entry_date.connect('changed', self.on_changed_entry)
+        self.entry_date.connect('changed', self._on_changed_entry)
 
     def calendar_day_selected(self, calendar):
         adate = calendar.get_date()
@@ -203,25 +203,25 @@ class MiAZRenameDialog(Gtk.Box):
         self.rowCountry, self.btnCountry, self.dpdCountry = self.__create_actionrow('Country', Country, 'countries')
         self.dropdown['Country'] = self.dpdCountry
         self.btnCountry.connect('clicked', self.actions.manage_resource, MiAZCountries(self.app))
-        self.dpdCountry.connect("notify::selected-item", self.on_changed_entry)
+        self.dpdCountry.connect("notify::selected-item", self._on_changed_entry)
 
     def __create_field_2_group(self):
         self.rowGroup, self.btnGroup, self.dpdGroup = self.__create_actionrow('Group', Group, 'groups')
         self.dropdown['Group'] = self.dpdGroup
         self.btnGroup.connect('clicked', self.actions.manage_resource, MiAZGroups(self.app))
-        self.dpdGroup.connect("notify::selected-item", self.on_changed_entry)
+        self.dpdGroup.connect("notify::selected-item", self._on_changed_entry)
 
     def __create_field_4_sentby(self):
         self.rowSentBy, self.btnSentBy, self.dpdSentBy = self.__create_actionrow(SentBy.__title__, SentBy, 'Sentby')
         self.dropdown['SentBy'] = self.dpdSentBy
         self.btnSentBy.connect('clicked', self.actions.manage_resource, MiAZPeopleSentBy(self.app))
-        self.dpdSentBy.connect("notify::selected-item", self.on_changed_entry)
+        self.dpdSentBy.connect("notify::selected-item", self._on_changed_entry)
 
     def __create_field_5_purpose(self):
         self.rowPurpose, self.btnPurpose, self.dpdPurpose = self.__create_actionrow('Purpose', Purpose, 'purposes')
         self.btnPurpose.connect('clicked', self.actions.manage_resource, MiAZPurposes(self.app))
         self.dropdown['Purpose'] = self.dpdPurpose
-        self.dpdPurpose.connect("notify::selected-item", self.on_changed_entry)
+        self.dpdPurpose.connect("notify::selected-item", self._on_changed_entry)
 
     def __create_field_6_concept(self):
         """Field 0. Date"""
@@ -240,13 +240,13 @@ class MiAZRenameDialog(Gtk.Box):
         self.entry_concept.set_placeholder_text('Type anything here...')
         boxValue.append(self.entry_concept)
         boxValue.append(button)
-        self.entry_concept.connect('changed', self.on_changed_entry)
+        self.entry_concept.connect('changed', self._on_changed_entry)
 
     def __create_field_7_sentto(self):
         self.rowSentTo, self.btnSentTo, self.dpdSentTo = self.__create_actionrow(SentTo.__title__, SentTo, 'SentTo')
         self.dropdown['SentTo'] = self.dpdSentTo
         self.btnSentTo.connect('clicked', self.actions.manage_resource, MiAZPeopleSentTo(self.app))
-        self.dpdSentTo.connect("notify::selected-item", self.on_changed_entry)
+        self.dpdSentTo.connect("notify::selected-item", self._on_changed_entry)
 
     def __create_field_8_extension(self):
         """Field 7. extension"""
@@ -281,7 +281,7 @@ class MiAZRenameDialog(Gtk.Box):
         self.row_new_filename.add_suffix(self.lblFilenameNew)
         self.boxMain.append(self.row_new_filename)
 
-    def on_changed_entry(self, *args):
+    def _on_changed_entry(self, *args):
         def success_or_error(widget, valid):
             if valid:
                 widget.get_style_context().remove_class(class_name='warning')
@@ -316,7 +316,7 @@ class MiAZRenameDialog(Gtk.Box):
             agroup = dropdown_get_selected_item(self.dpdGroup)
             asentby = dropdown_get_selected_item(self.dpdSentBy)
             apurpose = dropdown_get_selected_item(self.dpdPurpose)
-            aconcept = self.util.valid_key(self.entry_concept.get_text())
+            aconcept = self.util.valid_key(self.entry_concept.get_text().upper())
             asentto = dropdown_get_selected_item(self.dpdSentTo)
             aextension = self.lblExt.get_text()
             fields.append(adate)        # 0. Date
