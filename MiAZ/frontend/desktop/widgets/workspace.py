@@ -150,11 +150,8 @@ class MiAZWorkspace(Gtk.Box):
             i_type = item_type.__gtype_name__
             i_title = item_type.__title__
             config = self.config[i_type]
-            # ~ self.update_dropdown_filter(config, item_type)
             self.actions.dropdown_populate(config, self.dropdown[i_type], item_type, True, True)
-            # ~ config.emit('available-updated')
-            # ~ config.emit('used-updated')
-            # ~ self.log.debug("Emiting signal for updating from %s", config.config_for)
+
 
     def _on_workspace_update(self, *args):
         GLib.idle_add(self.update)

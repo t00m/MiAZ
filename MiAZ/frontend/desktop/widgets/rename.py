@@ -92,6 +92,14 @@ class MiAZRenameDialog(Gtk.Box):
         self.config['SentBy'].connect('used-updated', self.update_dropdown, SentBy)
         self.config['Purpose'].connect('used-updated', self.update_dropdown, Purpose)
         self.config['SentTo'].connect('used-updated', self.update_dropdown, SentTo)
+        self.backend.connect('repository-switched', self._update_dropdowns)
+
+    def _update_dropdowns(self, *args):
+        for item_type in [Country, Group, SentBy, Purpose, SentTo]:
+            i_type = item_type.__gtype_name__
+            i_title = item_type.__title__
+            config = self.config[i_type]
+            self.actions.dropdown_populate(config, self.dropdown[i_type], item_type, False, False)
 
     def update_dropdown(self, config, item_type):
         title = item_type.__gtype_name__
