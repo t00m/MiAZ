@@ -78,12 +78,13 @@ class MiAZApp(Adw.Application):
     def _update_repo_settings(self, *args):
         self.log.debug("Repo switched. Configuration switched")
         widget_settings_repo = self.get_widget('settings-repo')
-        self.stack.remove(widget_settings_repo)
-        self.remove_widget('settings-repo')
-        self._setup_page_repo_settings()
         label_repo = self.get_widget('label_repo')
+        if widget_settings_repo is not None:
+            self.stack.remove(widget_settings_repo)
+            self.remove_widget('settings-repo')
+            self._setup_page_repo_settings()
         repo_active = self.conf['App'].get('current')
-        label_repo.set_markup(' [<b>%s</b>] ' % repo_active)
+        label_repo.set_markup(' [<b>%s</b>] ' % repo_active.replace('_', ' '))
 
     def _finish_configuration(self, *args):
         self.log.debug("Finish loading app")
