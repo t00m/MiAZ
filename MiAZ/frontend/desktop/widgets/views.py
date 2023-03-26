@@ -46,6 +46,7 @@ class MiAZColumnViewWorkspace(MiAZColumnView):
         # ~ self.factory_icon.connect("bind", self._on_factory_bind_icon)
         self.factory_icon_type = Gtk.SignalListItemFactory()
         self.factory_icon_type.connect("setup", self._on_factory_setup_icon_type)
+        self.factory_icon_type.connect("bind", self._on_factory_bind_icon_type)
         self.factory_group = Gtk.SignalListItemFactory()
         self.factory_group.connect("setup", self._on_factory_setup_group)
         self.factory_group.connect("bind", self._on_factory_bind_group)
@@ -81,7 +82,7 @@ class MiAZColumnViewWorkspace(MiAZColumnView):
         self.column_flag = Gtk.ColumnViewColumn.new("Country", self.factory_flag)
         # ~ self.column_country = Gtk.ColumnViewColumn.new("Country", self.factory_country)
 
-        # ~ self.cv.append_column(self.column_icon_type)
+        self.cv.append_column(self.column_icon_type)
         self.cv.append_column(self.column_group)
         self.cv.append_column(self.column_purpose)
         self.cv.append_column(self.column_title)
@@ -150,25 +151,18 @@ class MiAZColumnViewWorkspace(MiAZColumnView):
         icon = box.get_first_child()
 
     def _on_factory_setup_icon_type(self, factory, list_item):
-        box = ColButton()
+        box = ColIcon()
         list_item.set_child(box)
 
     def _on_factory_bind_icon_type(self, factory, list_item):
         """To be subclassed"""
         box = list_item.get_child()
-        button = box.get_first_child()
-        self.log.debug(button)
+        icon = box.get_first_child()
         item = list_item.get_item()
-        if item.valid:
-            mimetype, val = Gio.content_type_guess('filename=%s' % item.id)
-            gicon = Gio.content_type_get_icon(mimetype)
-            icon_name = self.app.icman.choose_icon(gicon.get_names())
-            self.log.debug(icon_name)
-            child=Adw.ButtonContent(label='', icon_name=icon_name)
-            button.set_child(child)
-        else:
-            child=Adw.ButtonContent(label='', icon_name='miaz-rename')
-            button.set_child(child)
+        mimetype, val = Gio.content_type_guess('filename=%s' % item.id)
+        gicon = Gio.content_type_get_icon(mimetype)
+        icon.set_from_gicon(gicon)
+        icon.set_pixel_size(36)
 
     def _on_factory_setup_country(self, factory, list_item):
         box = ColLabel()
