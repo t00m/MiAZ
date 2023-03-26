@@ -126,7 +126,6 @@ class MiAZApp(Adw.Application):
                 workspace.update()
                 self.show_stack_page_by_name('workspace')
 
-
     def get_actions(self):
         return self.actions
 
@@ -139,17 +138,8 @@ class MiAZApp(Adw.Application):
     def get_factory(self):
         return self.factory
 
-    def get_icman(self):
-        return self.icman
-
-    def get_workspace(self):
-        return self.widget_workspace
-
     def get_header(self):
         return self.header
-
-    # ~ def get_app_settings(self):
-        # ~ return self.settings_app
 
     def _setup_stack(self):
         self.stack = self.add_widget('stack', Adw.ViewStack())
