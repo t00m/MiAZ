@@ -33,6 +33,14 @@ from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewMassRename
 from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewMassDelete
 from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewMassProject
 
+Field = {}
+Field[Date] = 0
+Field[Country] = 1
+Field[Group] = 2
+Field[SentBy] = 3
+Field[Purpose] = 4
+Field[SentTo] = 6
+
 Configview = {}
 Configview['Country'] = MiAZCountries
 Configview['Group'] = MiAZGroups
@@ -103,6 +111,7 @@ class MiAZToolbarProjectMgtPlugin(GObject.GObject, Peas.Activatable):
                 except Exception as error:
                     # FIXME: AtributeError: 'NoneType' object has no attribute 'id'
                     # It happens when managing resources from inside the dialog
+                    self.log.error(error)
                     pass
             columnview.update(citems)
 
@@ -161,15 +170,15 @@ class MiAZToolbarProjectMgtPlugin(GObject.GObject, Peas.Activatable):
             label = self.factory.create_label('Rename %d files by setting the field <b>%s</b> to:\n' % (len(items), i_title))
             dropdown = self.factory.create_dropdown_generic(item_type)
             btnManage = self.factory.create_button('miaz-res-manage', '')
-            btnManage.connect('clicked', self.manage_resource, Configview[i_type](self.app))
+            btnManage.connect('clicked', self.actions.manage_resource, Configview[i_type](self.app))
             frame = Gtk.Frame()
             cv = MiAZColumnViewMassRename(self.app)
             cv.get_style_context().add_class(class_name='caption')
             cv.set_hexpand(True)
             cv.set_vexpand(True)
             dropdown.connect("notify::selected-item", update_columnview, cv, item_type, items)
-            self.config[i_type].connect('used-updated', self.dropdown_populate, dropdown, item_type, False)
-            self.dropdown_populate(self.config[i_type], dropdown, item_type, any_value=False)
+            self.config[i_type].connect('used-updated', self.actions.dropdown_populate, dropdown, item_type, False)
+            self.actions.dropdown_populate(self.config[i_type], dropdown, item_type, any_value=False)
             frame.set_child(cv)
             box.append(label)
             hbox = self.factory.create_box_horizontal()
