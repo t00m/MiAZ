@@ -35,7 +35,7 @@ class MiAZRenameDialog(Gtk.Box):
     def __init__(self, app) -> Gtk.Widget:
         super(MiAZRenameDialog, self).__init__(orientation=Gtk.Orientation.VERTICAL, spacing=3, hexpand=True, vexpand=True)
         self.app = app
-        self.backend = self.app.get_backend()
+        self.backend = self.app.get_service('backend')
         self.factory = self.app.get_factory()
         self.actions = self.app.get_actions()
         self.config = self.backend.conf

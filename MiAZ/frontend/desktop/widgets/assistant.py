@@ -50,7 +50,7 @@ class MiAZAssistant(Gtk.Assistant):
         self.log = get_logger('MiAZAssistant')
         self.app = app
         self.factory = self.app.get_factory()
-        self.backend = self.app.get_backend()
+        self.backend = self.app.get_service('backend')
         self.config = self.backend.conf
         self.set_size_request(1024, 728)
         self.set_title("MiAZ Assistant")
@@ -173,7 +173,7 @@ class MiAZAssistantRepo(MiAZAssistant):
             self.app.quit()
 
     def on_assistant_close(self, *args):
-        backend = self.app.get_backend()
+        backend = self.app.get_service('backend')
         conf_app = self.app.get_config('App')
         dirpath = self.repopath
         if backend.repo_validate(dirpath):

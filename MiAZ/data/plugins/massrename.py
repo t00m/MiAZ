@@ -62,7 +62,7 @@ class MiAZToolbarProjectMgtPlugin(GObject.GObject, Peas.Activatable):
         API = self.object
         self.app = API.app
         self.actions = self.app.get_actions()
-        self.backend = self.app.get_backend()
+        self.backend = self.app.get_service('backend')
         self.factory = self.app.get_factory()
         self.config = self.backend.conf
         self.util = self.backend.util

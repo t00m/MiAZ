@@ -29,7 +29,7 @@ class MiAZSelector(Gtk.Box):
     def __init__(self, app, edit=True):
         self.app = app
         self.edit = edit
-        self.backend = self.app.get_backend()
+        self.backend = self.app.get_service('backend')
         self.util = self.backend.util
         self.factory = self.app.get_factory()
         self.log = get_logger('MiAZSelector')

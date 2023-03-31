@@ -65,7 +65,7 @@ class MiAZWorkspace(Gtk.Box):
         # ~ GObject.signal_new('extend-menu-export', MiAZWorkspace, GObject.SignalFlags.RUN_LAST, GObject.TYPE_PYOBJECT, (GObject.TYPE_PYOBJECT,) )
         self.log = get_logger('MiAZWorkspace')
         self.app = app
-        self.backend = self.app.get_backend()
+        self.backend = self.app.get_service('backend')
         self.factory = self.app.get_factory()
         self.actions = self.app.get_actions()
         self.config = self.backend.conf

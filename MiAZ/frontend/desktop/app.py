@@ -46,11 +46,14 @@ class MiAZApp(Adw.Application):
         "stop-application-completed":  (GObject.SignalFlags.RUN_LAST, None, ()),
     }
     plugins_loaded = False
+    _miazobjs = {} # MiAZ Objects
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self._widget =  {}
-        self.backend = MiAZBackend()
+        self._miazobjs['widgets'] = {}
+        self._miazobjs['services'] = {}
+        self._miazobjs['config'] = {}
+        self.backend = self.add_service('backend', MiAZBackend())
         self.conf = self.backend.conf
         self.log = get_logger("MiAZ.GUI")
         GLib.set_application_name(ENV['APP']['name'])
@@ -58,6 +61,7 @@ class MiAZApp(Adw.Application):
 
     def _on_activate(self, app):
         # ~ self.connect('start-application-completed', self._finish_configuration)
+
         self.win = self.add_widget('window', Gtk.ApplicationWindow(application=self))
         self.win.set_default_size(1024, 728)
         self.win.set_icon_name('MiAZ')
@@ -129,8 +133,8 @@ class MiAZApp(Adw.Application):
     def get_actions(self):
         return self.actions
 
-    def get_backend(self):
-        return self.backend
+    # ~ def get_backend(self):
+        # ~ return self.backend
 
     def get_config(self, name: str):
         return self.backend.conf[name]
@@ -334,16 +338,29 @@ class MiAZApp(Adw.Application):
         self.emit("stop-application-completed")
         self.quit()
 
+    def add_service(self, name: str, service) -> Gtk.Widget:
+        if name not in self._miazobjs['services']:
+            self._miazobjs['services'][name] = service
+            return service
+        else:
+            self.log.error("A service with name '%s' already exists", name)
+
     def add_widget(self, name: str, widget: Gtk.Widget) -> Gtk.Widget:
-        if name not in self._widget:
-            self._widget[name] = widget
+        if name not in self._miazobjs['widgets']:
+            self._miazobjs['widgets'][name] = widget
             return widget
         else:
             self.log.error("A widget with name '%s' already exists", name)
 
     def get_widget(self, name):
         try:
-            return self._widget[name]
+            return self._miazobjs['widgets'][name]
+        except KeyError:
+            return None
+
+    def get_service(self, name):
+        try:
+            return self._miazobjs['services'][name]
         except KeyError:
             return None
 

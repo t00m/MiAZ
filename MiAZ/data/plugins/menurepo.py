@@ -27,7 +27,7 @@ class MiAZMenuRepo(GObject.GObject, Peas.Activatable):
     def do_activate(self):
         API = self.object
         self.app = API.app
-        self.backend = self.app.get_backend()
+        self.backend = self.app.get_service('backend')
         self.factory = self.app.get_factory()
         self.util = self.backend.util
         self.workspace = API.app.get_widget('workspace')
