@@ -86,8 +86,8 @@ class MiAZColumnView(Gtk.Box):
         self.item_type = item_type
         self.log = get_logger('MiAZColumnView')
         self.backend = self.app.get_service('backend')
-        self.factory = self.app.get_factory()
-        self.actions = self.app.get_actions()
+        self.factory = self.app.get_service('factory')
+        self.actions = self.app.get_service('actions')
         self.selected_items = []
 
         self.viewport = Gtk.Viewport()

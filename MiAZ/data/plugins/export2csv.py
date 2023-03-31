@@ -28,8 +28,8 @@ class Export2CSV(GObject.GObject, Peas.Activatable):
         API = self.object
         self.app = API.app
         self.backend = self.app.get_service('backend')
-        self.factory = self.app.get_factory()
-        self.util = self.backend.util
+        self.factory = self.app.get_service('factory')
+        self.util = self.app.get_service('util')
         self.workspace = API.app.get_widget('workspace')
         self.workspace.connect("extend-menu", self.add_menuitem)
 

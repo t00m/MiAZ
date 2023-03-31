@@ -66,10 +66,10 @@ class MiAZWorkspace(Gtk.Box):
         self.log = get_logger('MiAZWorkspace')
         self.app = app
         self.backend = self.app.get_service('backend')
-        self.factory = self.app.get_factory()
-        self.actions = self.app.get_actions()
+        self.factory = self.app.get_service('factory')
+        self.actions = self.app.get_service('actions')
         self.config = self.backend.conf
-        self.util = self.backend.util
+        self.util = self.app.get_service('util')
         self.util.connect('filename-renamed', self._on_filename_renamed)
         self.util.connect('filename-deleted', self._on_filename_deleted)
         self.set_vexpand(False)

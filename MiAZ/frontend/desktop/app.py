@@ -40,7 +40,6 @@ from MiAZ.backend.pluginsystem import MiAZPluginManager
 Adw.init()
 
 class MiAZApp(Adw.Application):
-    # basic signals
     __gsignals__ = {
         "start-application-completed":  (GObject.SignalFlags.RUN_LAST, None, ()),
         "stop-application-completed":  (GObject.SignalFlags.RUN_LAST, None, ()),
@@ -52,30 +51,27 @@ class MiAZApp(Adw.Application):
         super().__init__(**kwargs)
         self._miazobjs['widgets'] = {}
         self._miazobjs['services'] = {}
-        self._miazobjs['config'] = {}
         self.backend = self.add_service('backend', MiAZBackend())
+        self.add_service('util', self.backend.util)
         self.conf = self.backend.conf
         self.log = get_logger("MiAZ.GUI")
         GLib.set_application_name(ENV['APP']['name'])
         self.connect('activate', self._on_activate)
 
     def _on_activate(self, app):
-        # ~ self.connect('start-application-completed', self._finish_configuration)
-
         self.win = self.add_widget('window', Gtk.ApplicationWindow(application=self))
         self.win.set_default_size(1024, 728)
         self.win.set_icon_name('MiAZ')
         self.win.set_default_icon_name('MiAZ')
-        self.icman = MiAZIconManager(self)
-        self.theme = self.add_widget('theme', Gtk.IconTheme.get_for_display(self.win.get_display()))
+        self.icman = self.add_service('icman', MiAZIconManager(self))
+        self.theme = self.add_service('theme', Gtk.IconTheme.get_for_display(self.win.get_display()))
         self.theme.add_search_path(ENV['GPATH']['ICONS'])
-        self.actions = MiAZActions(self)
-        self.factory = MiAZFactory(self)
+        self.actions = self.add_service('actions', MiAZActions(self))
+        self.factory = self.add_service('factory', MiAZFactory(self))
         self._setup_gui()
         self._setup_event_listener()
         self._setup_plugin_manager()
         self.log.debug("Executing MiAZ Desktop mode")
-        # ~ self.emit('start-application-completed')
         self.check_repository()
         self.backend.connect('repository-switched', self._update_repo_settings)
 
@@ -130,20 +126,8 @@ class MiAZApp(Adw.Application):
                 workspace.update()
                 self.show_stack_page_by_name('workspace')
 
-    def get_actions(self):
-        return self.actions
-
-    # ~ def get_backend(self):
-        # ~ return self.backend
-
     def get_config(self, name: str):
         return self.backend.conf[name]
-
-    def get_factory(self):
-        return self.factory
-
-    def get_header(self):
-        return self.header
 
     def _setup_stack(self):
         self.stack = self.add_widget('stack', Adw.ViewStack())

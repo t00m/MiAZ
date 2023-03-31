@@ -49,7 +49,7 @@ class MiAZAssistant(Gtk.Assistant):
         super(MiAZAssistant, self).__init__()
         self.log = get_logger('MiAZAssistant')
         self.app = app
-        self.factory = self.app.get_factory()
+        self.factory = self.app.get_service('factory')
         self.backend = self.app.get_service('backend')
         self.config = self.backend.conf
         self.set_size_request(1024, 728)

@@ -61,11 +61,11 @@ class MiAZToolbarProjectMgtPlugin(GObject.GObject, Peas.Activatable):
     def do_activate(self):
         API = self.object
         self.app = API.app
-        self.actions = self.app.get_actions()
+        self.actions = self.app.get_service('actions')
         self.backend = self.app.get_service('backend')
-        self.factory = self.app.get_factory()
+        self.factory = self.app.get_service('factory')
         self.config = self.backend.conf
-        self.util = self.backend.util
+        self.util = self.app.get_service('util')
         self.workspace = API.app.get_widget('workspace')
         self.workspace.connect("extend-menu", self.add_menuitem)
 

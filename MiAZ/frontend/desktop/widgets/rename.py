@@ -36,10 +36,10 @@ class MiAZRenameDialog(Gtk.Box):
         super(MiAZRenameDialog, self).__init__(orientation=Gtk.Orientation.VERTICAL, spacing=3, hexpand=True, vexpand=True)
         self.app = app
         self.backend = self.app.get_service('backend')
-        self.factory = self.app.get_factory()
-        self.actions = self.app.get_actions()
+        self.factory = self.app.get_service('factory')
+        self.actions = self.app.get_service('actions')
         self.config = self.backend.conf
-        self.util = self.backend.util
+        self.util = self.app.get_service('util')
         self.log = get_logger('MiazRenameDialog')
 
         # Box to be inserted as contents

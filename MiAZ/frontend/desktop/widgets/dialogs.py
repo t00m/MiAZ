@@ -110,7 +110,7 @@ class MiAZDialogAdd(Gtk.Dialog):
         self.title = title
         self.key1 = key1
         self.key2 = key2
-        self.factory = self.app.get_factory()
+        self.factory = self.app.get_service('factory')
         self.set_transient_for(parent)
         self.set_size_request(width, height)
         self.set_modal(True)
