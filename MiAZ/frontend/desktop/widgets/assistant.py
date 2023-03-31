@@ -39,7 +39,7 @@ class PAGE(IntEnum):
     PURPOSES = 3
     SENTBY = 4
     SENTTO = 5
-    STATS = 6
+    CONFIRMATION = 6
     SUMMARY = 7
 
 class MiAZAssistant(Gtk.Assistant):
@@ -49,8 +49,8 @@ class MiAZAssistant(Gtk.Assistant):
         super(MiAZAssistant, self).__init__()
         self.log = get_logger('MiAZAssistant')
         self.app = app
-        self.factory = self.app.get_factory()
-        self.backend = self.app.get_backend()
+        self.factory = self.app.get_service('factory')
+        self.backend = self.app.get_service('backend')
         self.config = self.backend.conf
         self.set_size_request(1024, 728)
         self.set_title("MiAZ Assistant")
@@ -173,7 +173,7 @@ class MiAZAssistantRepo(MiAZAssistant):
             self.app.quit()
 
     def on_assistant_close(self, *args):
-        backend = self.app.get_backend()
+        backend = self.app.get_service('backend')
         conf_app = self.app.get_config('App')
         dirpath = self.repopath
         if backend.repo_validate(dirpath):
@@ -190,7 +190,6 @@ class MiAZAssistantRepo(MiAZAssistant):
         self.destroy()
         self.app.check_repository()
 
-
 class MiAZAssistantRepoSettings(MiAZAssistant):
     """"""
     __gtype_name__ = 'MiAZAssistantRepoSettings'
@@ -205,7 +204,7 @@ class MiAZAssistantRepoSettings(MiAZAssistant):
         self.connect('apply', self.on_assistant_close)
 
         # Pages
-        for title in ['Welcome', 'Countries', 'Groups', 'Purposes', 'Sent by', 'Sent to', 'Stats']: #, 'Summary']:
+        for title in ['Welcome', 'Countries', 'Groups', 'Purposes', 'Sent by', 'Sent to', 'Summary']:
             vbox = Gtk.CenterBox(orientation=Gtk.Orientation.VERTICAL)
             vbox.set_margin_top(margin=12)
             vbox.set_margin_end(margin=12)
@@ -322,14 +321,17 @@ class MiAZAssistantRepoSettings(MiAZAssistant):
         self.set_page_type(page, Gtk.AssistantPageType.CONTENT)
         self.set_page_complete(page, True)
 
-        # Page Stats/Confirm
-        page = self.get_nth_page(PAGE.STATS)
+        # Page Confirm
+        page = self.get_nth_page(PAGE.CONFIRMATION)
         box = self.factory.create_box_vertical(spacing=12, vexpand=True, hexpand=True)
         lblTitle = Gtk.Label()
-        lblTitle.set_markup('Stats')
+        lblTitle.set_markup('You are set!')
         lblTitle.get_style_context().add_class(class_name='title-2')
         box.append(lblTitle)
         page.set_start_widget(box)
+        text = "You can continue using the application now"
+        label = self.factory.create_label(text=text)
+        page.set_center_widget(label)
         self.set_page_type(page, Gtk.AssistantPageType.CONFIRM)
         self.set_page_complete(page, True)
 

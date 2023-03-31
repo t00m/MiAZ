@@ -46,9 +46,9 @@ class MiAZAppSettings(Gtk.Box):
         super(Gtk.Box, self).__init__(spacing=12, orientation=Gtk.Orientation.VERTICAL)
         self.log = get_logger('MiAZAppSettings')
         self.app = app
-        self.backend = self.app.get_backend()
-        self.factory = self.app.get_factory()
-        self.actions = self.app.get_actions()
+        self.backend = self.app.get_service('backend')
+        self.factory = self.app.get_service('factory')
+        self.actions = self.app.get_service('actions')
         self.config = self.backend.conf
         page = Adw.PreferencesPage.new()
         page.set_title("Settings - Repositories")
@@ -142,7 +142,7 @@ class MiAZRepoSettings(Gtk.Box):
         super(Gtk.Box, self).__init__(spacing=6, orientation=Gtk.Orientation.VERTICAL)
         self.log = get_logger('MiAZRepoSettings')
         self.app = app
-        self.factory = self.app.get_factory()
+        self.factory = self.app.get_service('factory')
         self.config = self.app.get_config('Country')
         self.notebook = Gtk.Notebook()
         self.notebook.set_show_border(False)

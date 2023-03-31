@@ -29,9 +29,9 @@ class MiAZSelector(Gtk.Box):
     def __init__(self, app, edit=True):
         self.app = app
         self.edit = edit
-        self.backend = self.app.get_backend()
-        self.util = self.backend.util
-        self.factory = self.app.get_factory()
+        self.backend = self.app.get_service('backend')
+        self.util = self.app.get_service('util')
+        self.factory = self.app.get_service('factory')
         self.log = get_logger('MiAZSelector')
         super(MiAZSelector, self).__init__(orientation=Gtk.Orientation.VERTICAL, hexpand=True, vexpand=True, spacing=0)
 

@@ -52,10 +52,11 @@ class MiAZToolbarProjectMgtPlugin(GObject.GObject, Peas.Activatable):
     def do_activate(self):
         API = self.object
         self.app = API.app
-        self.actions = self.app.get_actions()
-        self.backend = self.app.get_backend()
-        self.factory = self.app.get_factory()
-        self.util = self.backend.util
+        self.actions = self.app.get_service('actions')
+        self.backend = self.app.get_service('backend')
+        self.factory = self.app.get_service('factory')
+        self.util = self.app.get_service('util')
+        self.projects = self.backend.projects
         self.workspace = API.app.get_widget('workspace')
         self.workspace.connect("extend-menu", self.add_menuitem)
 
@@ -86,7 +87,6 @@ class MiAZToolbarProjectMgtPlugin(GObject.GObject, Peas.Activatable):
 
         def dialog_response(dialog, response, dropdown, items):
             if response == Gtk.ResponseType.ACCEPT:
-                self.projects = self.backend.projects
                 pid = dropdown.get_selected_item().id
                 docs = []
                 for item in items:
@@ -96,7 +96,6 @@ class MiAZToolbarProjectMgtPlugin(GObject.GObject, Peas.Activatable):
                 workspace.update()
             dialog.destroy()
 
-        self.factory = self.app.get_factory()
         self.config = self.backend.conf
         i_type = item_type.__gtype_name__
         box = self.factory.create_box_vertical(spacing=6, vexpand=True, hexpand=True)
@@ -112,7 +111,6 @@ class MiAZToolbarProjectMgtPlugin(GObject.GObject, Peas.Activatable):
         cv.set_hexpand(True)
         cv.set_vexpand(True)
         citems = []
-        self.projects = self.backend.projects
         for item in items:
             projects = ', '.join([self.projects.description(pid) for pid in self.projects.assigned_to(item.id)])
             citems.append(File(id=item.id, title="<b>%s</b>" % projects))
@@ -134,7 +132,6 @@ class MiAZToolbarProjectMgtPlugin(GObject.GObject, Peas.Activatable):
 
         def dialog_response(dialog, response, dropdown, items):
             if response == Gtk.ResponseType.ACCEPT:
-                self.projects = self.backend.projects
                 pid = dropdown.get_selected_item().id
                 docs = []
                 for item in items:
@@ -144,7 +141,6 @@ class MiAZToolbarProjectMgtPlugin(GObject.GObject, Peas.Activatable):
                 workspace.update()
             dialog.destroy()
 
-        self.factory = self.app.get_factory()
         self.config = self.backend.conf
         i_type = item_type.__gtype_name__
         box = self.factory.create_box_vertical(spacing=6, vexpand=True, hexpand=True)
@@ -167,7 +163,6 @@ class MiAZToolbarProjectMgtPlugin(GObject.GObject, Peas.Activatable):
         cv.set_hexpand(True)
         cv.set_vexpand(True)
         citems = []
-        self.projects = self.backend.projects
         for item in items:
             projects = ', '.join([self.projects.description(pid) for pid in self.projects.assigned_to(item.id)])
             citems.append(File(id=item.id, title="<b>%s</b>" % projects))

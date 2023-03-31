@@ -40,38 +40,38 @@ from MiAZ.backend.pluginsystem import MiAZPluginManager
 Adw.init()
 
 class MiAZApp(Adw.Application):
-    # basic signals
     __gsignals__ = {
         "start-application-completed":  (GObject.SignalFlags.RUN_LAST, None, ()),
         "stop-application-completed":  (GObject.SignalFlags.RUN_LAST, None, ()),
     }
     plugins_loaded = False
+    _miazobjs = {} # MiAZ Objects
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self._widget =  {}
-        self.backend = MiAZBackend()
+        self._miazobjs['widgets'] = {}
+        self._miazobjs['services'] = {}
+        self.backend = self.add_service('backend', MiAZBackend())
+        self.add_service('util', self.backend.util)
         self.conf = self.backend.conf
         self.log = get_logger("MiAZ.GUI")
         GLib.set_application_name(ENV['APP']['name'])
         self.connect('activate', self._on_activate)
 
     def _on_activate(self, app):
-        # ~ self.connect('start-application-completed', self._finish_configuration)
         self.win = self.add_widget('window', Gtk.ApplicationWindow(application=self))
         self.win.set_default_size(1024, 728)
         self.win.set_icon_name('MiAZ')
         self.win.set_default_icon_name('MiAZ')
-        self.icman = MiAZIconManager(self)
-        self.theme = self.add_widget('theme', Gtk.IconTheme.get_for_display(self.win.get_display()))
+        self.icman = self.add_service('icman', MiAZIconManager(self))
+        self.theme = self.add_service('theme', Gtk.IconTheme.get_for_display(self.win.get_display()))
         self.theme.add_search_path(ENV['GPATH']['ICONS'])
-        self.actions = MiAZActions(self)
-        self.factory = MiAZFactory(self)
+        self.factory = self.add_service('factory', MiAZFactory(self))
+        self.actions = self.add_service('actions', MiAZActions(self))
         self._setup_gui()
         self._setup_event_listener()
         self._setup_plugin_manager()
         self.log.debug("Executing MiAZ Desktop mode")
-        # ~ self.emit('start-application-completed')
         self.check_repository()
         self.backend.connect('repository-switched', self._update_repo_settings)
 
@@ -119,27 +119,10 @@ class MiAZApp(Adw.Application):
     def _on_key_press(self, event, keyval, keycode, state):
         keyname = Gdk.keyval_name(keyval)
         if keyname == 'Escape':
-            page_name = self.stack.get_visible_child_name()
-            valid = self.check_repository()
-            if valid:
-                workspace = self.get_widget('workspace')
-                workspace.update()
-                self.show_stack_page_by_name('workspace')
-
-    def get_actions(self):
-        return self.actions
-
-    def get_backend(self):
-        return self.backend
+            self.show_workspace()
 
     def get_config(self, name: str):
         return self.backend.conf[name]
-
-    def get_factory(self):
-        return self.factory
-
-    def get_header(self):
-        return self.header
 
     def _setup_stack(self):
         self.stack = self.add_widget('stack', Adw.ViewStack())
@@ -205,7 +188,7 @@ class MiAZApp(Adw.Application):
             page_rename.set_icon_name('document-properties')
             page_rename.set_visible(False)
 
-    def _setup_headerbar_left(self):
+    def _setup_menu_app(self):
         # Add Menu Button to the titlebar (Left Side)
         menu_headerbar = self.add_widget('menu-headerbar', Gio.Menu.new())
         section_common_in = Gio.Menu.new()
@@ -237,14 +220,24 @@ class MiAZApp(Adw.Application):
         self.add_widget('headerbar-menubutton-app', menubutton)
         self.header.pack_start(menubutton)
 
-        label_repo = self.add_widget('label_repo', Gtk.Label())
-        repo_active = self.conf['App'].get('current')
-        label_repo.set_markup(' [<b>%s</b>] ' % repo_active)
-        self.header.pack_start(label_repo)
+    def _setup_headerbar_left(self):
+        self._setup_menu_app()
+        btnBack = self.factory.create_button(icon_name='miaz-go-back', title='Back', callback=self.show_workspace, css_classes=['flat'])
+        btnBack.set_visible(False)
+        self.add_widget('app-header-button-back', btnBack)
+        self.header.pack_start(btnBack)
+
+    def show_workspace(self, *args):
+        self.show_stack_page_by_name('workspace')
+        button = self.get_widget('app-header-button-back')
+        button.set_visible(False)
 
 
     def _setup_headerbar_right(self):
-        pass
+        label_repo = self.add_widget('label_repo', Gtk.Label())
+        repo_active = self.conf['App'].get('current')
+        label_repo.set_markup(' [<b>%s</b>] ' % repo_active.replace('_', ' '))
+        self.header.pack_end(label_repo)
 
     def _setup_headerbar_center(self):
         pass
@@ -329,21 +322,37 @@ class MiAZApp(Adw.Application):
 
     def show_stack_page_by_name(self, name: str = 'workspace'):
         self.stack.set_visible_child_name(name)
+        if name not in ['welcome', 'workspace']:
+            button = self.get_widget('app-header-button-back')
+            button.set_visible(True)
 
     def exit_app(self, *args):
         self.emit("stop-application-completed")
         self.quit()
 
+    def add_service(self, name: str, service) -> Gtk.Widget:
+        if name not in self._miazobjs['services']:
+            self._miazobjs['services'][name] = service
+            return service
+        else:
+            self.log.error("A service with name '%s' already exists", name)
+
     def add_widget(self, name: str, widget: Gtk.Widget) -> Gtk.Widget:
-        if name not in self._widget:
-            self._widget[name] = widget
+        if name not in self._miazobjs['widgets']:
+            self._miazobjs['widgets'][name] = widget
             return widget
         else:
             self.log.error("A widget with name '%s' already exists", name)
 
     def get_widget(self, name):
         try:
-            return self._widget[name]
+            return self._miazobjs['widgets'][name]
+        except KeyError:
+            return None
+
+    def get_service(self, name):
+        try:
+            return self._miazobjs['services'][name]
         except KeyError:
             return None
 

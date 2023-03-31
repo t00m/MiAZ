@@ -49,8 +49,9 @@ class MiAZActions(GObject.GObject):
     def __init__(self, app):
         self.log = get_logger('MiAZActions')
         self.app = app
-        self.backend = self.app.get_backend()
-        self.util = self.backend.util
+        self.backend = self.app.get_service('backend')
+        self.util = self.app.get_service('util')
+        self.factory = self.app.get_service('factory')
 
     def document_display(self, doc):
         self.log.debug("Displaying %s", doc)
@@ -68,7 +69,6 @@ class MiAZActions(GObject.GObject):
             dialog.destroy()
 
         self.log.debug("Mass deletion")
-        self.factory = self.app.get_factory()
         self.config = self.backend.conf
         frame = Gtk.Frame()
         box, view = self.factory.create_view(MiAZColumnViewMassDelete, "Mass deletion")
@@ -154,7 +154,6 @@ class MiAZActions(GObject.GObject):
                         self.util.filename_import(source, target)
             dialog.destroy()
 
-        self.factory = self.app.get_factory()
         filechooser = self.factory.create_filechooser(
                     parent=self.app.win,
                     title='Import a directory',
@@ -182,7 +181,6 @@ class MiAZActions(GObject.GObject):
                     self.log.debug(source)
             dialog.destroy()
 
-        self.factory = self.app.get_factory()
         filechooser = self.factory.create_filechooser(
                     parent=self.app.win,
                     title='Import a configuration file',
@@ -207,7 +205,6 @@ class MiAZActions(GObject.GObject):
                     self.util.filename_import(source, target)
             dialog.destroy()
 
-        self.factory = self.app.get_factory()
         filechooser = self.factory.create_filechooser(
                     parent=self.app.win,
                     title='Import a single file',
@@ -218,8 +215,7 @@ class MiAZActions(GObject.GObject):
         filechooser.show()
 
     def manage_resource(self, widget: Gtk.Widget, selector: Gtk.Widget):
-        factory = self.app.get_factory()
-        box = factory.create_box_vertical(spacing=0, vexpand=True, hexpand=True)
+        box = self.factory.create_box_vertical(spacing=0, vexpand=True, hexpand=True)
         box.append(selector)
         config_for = selector.get_config_for()
         selector.set_vexpand(True)

@@ -65,11 +65,11 @@ class MiAZWorkspace(Gtk.Box):
         # ~ GObject.signal_new('extend-menu-export', MiAZWorkspace, GObject.SignalFlags.RUN_LAST, GObject.TYPE_PYOBJECT, (GObject.TYPE_PYOBJECT,) )
         self.log = get_logger('MiAZWorkspace')
         self.app = app
-        self.backend = self.app.get_backend()
-        self.factory = self.app.get_factory()
-        self.actions = self.app.get_actions()
+        self.backend = self.app.get_service('backend')
+        self.factory = self.app.get_service('factory')
+        self.actions = self.app.get_service('actions')
         self.config = self.backend.conf
-        self.util = self.backend.util
+        self.util = self.app.get_service('util')
         self.util.connect('filename-renamed', self._on_filename_renamed)
         self.util.connect('filename-deleted', self._on_filename_deleted)
         self.set_vexpand(False)
@@ -99,6 +99,12 @@ class MiAZWorkspace(Gtk.Box):
             self.util.json_save(self.fcache, self.cache)
             self.log.debug("Saving new cache to %s", self.fcache)
 
+        self.check_first_time()
+
+        # Allow plug-ins to make their job
+        self.app.connect('start-application-completed', self._finish_configuration)
+
+    def check_first_time(self):
         conf = self.config['Country']
         countries = conf.load(conf.used)
         if len(countries) == 0:
@@ -107,9 +113,6 @@ class MiAZWorkspace(Gtk.Box):
             assistant.set_transient_for(self.app.win)
             assistant.set_modal(True)
             assistant.present()
-
-        # Allow plug-ins to make their job
-        self.app.connect('start-application-completed', self._finish_configuration)
 
     def _on_filename_renamed(self, util, source, target):
         self.log.debug("File rename from '%s' to '%s'", source, target)
@@ -205,7 +208,7 @@ class MiAZWorkspace(Gtk.Box):
         # ~ btnImportConf = self.factory.create_button('miaz-import-config', callback=self.actions.import_config)
         # ~ rowImportConf = self.factory.create_actionrow(title='Import config', subtitle='Import configuration', suffix=btnImportConf)
         # ~ widgets.append(rowImportConf)
-        button = self.factory.create_button_popover(icon_name='miaz-import', css_classes=[''], widgets=widgets)
+        button = self.factory.create_button_popover(icon_name='miaz-import', title='Import...', widgets=widgets)
         hbox.append(button)
 
         # Center
@@ -441,7 +444,6 @@ class MiAZWorkspace(Gtk.Box):
         return self.selected_items
 
     def update(self, *args):
-        # With less than thousand documents, loading is ok
         self.selected_items = []
         docs = self.util.get_files()
         sentby = self.app.get_config('SentBy')

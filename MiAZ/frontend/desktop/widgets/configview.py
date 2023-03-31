@@ -34,7 +34,7 @@ class MiAZConfigView(MiAZSelector):
         super(MiAZSelector, self).__init__(spacing=0, orientation=Gtk.Orientation.VERTICAL)
         self.app = app
         self.log = get_logger('MiAZConfigView')
-        self.backend = self.app.get_backend()
+        self.backend = self.app.get_service('backend')
         self.conf = self.backend.conf
         self.config = self.conf[config]
         self.config.connect('used-updated', self.update)
