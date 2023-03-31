@@ -66,8 +66,8 @@ class MiAZApp(Adw.Application):
         self.icman = self.add_service('icman', MiAZIconManager(self))
         self.theme = self.add_service('theme', Gtk.IconTheme.get_for_display(self.win.get_display()))
         self.theme.add_search_path(ENV['GPATH']['ICONS'])
-        self.actions = self.add_service('actions', MiAZActions(self))
         self.factory = self.add_service('factory', MiAZFactory(self))
+        self.actions = self.add_service('actions', MiAZActions(self))
         self._setup_gui()
         self._setup_event_listener()
         self._setup_plugin_manager()
@@ -322,7 +322,7 @@ class MiAZApp(Adw.Application):
 
     def show_stack_page_by_name(self, name: str = 'workspace'):
         self.stack.set_visible_child_name(name)
-        if name != 'workspace':
+        if name not in ['welcome', 'workspace']:
             button = self.get_widget('app-header-button-back')
             button.set_visible(True)
 
