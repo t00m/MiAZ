@@ -119,12 +119,7 @@ class MiAZApp(Adw.Application):
     def _on_key_press(self, event, keyval, keycode, state):
         keyname = Gdk.keyval_name(keyval)
         if keyname == 'Escape':
-            page_name = self.stack.get_visible_child_name()
-            valid = self.check_repository()
-            if valid:
-                workspace = self.get_widget('workspace')
-                workspace.update()
-                self.show_stack_page_by_name('workspace')
+            self.show_stack_page_by_name('workspace')
 
     def get_config(self, name: str):
         return self.backend.conf[name]
