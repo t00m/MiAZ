@@ -83,7 +83,7 @@ class MiAZToolbarProjectMgtPlugin(GObject.GObject, Peas.Activatable):
 
     def project_assign(self, *args):
         item_type = Project
-        items = items = self.workspace.get_selected_items()
+        items = self.workspace.get_selected_items()
 
         def dialog_response(dialog, response, dropdown, items):
             if response == Gtk.ResponseType.ACCEPT:
@@ -128,7 +128,7 @@ class MiAZToolbarProjectMgtPlugin(GObject.GObject, Peas.Activatable):
 
     def project_withdraw(self, *args):
         item_type = Project
-        items = items = self.workspace.get_selected_items()
+        items = self.workspace.get_selected_items()
 
         def dialog_response(dialog, response, dropdown, items):
             if response == Gtk.ResponseType.ACCEPT:
