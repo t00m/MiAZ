@@ -220,7 +220,7 @@ class MiAZActions(GObject.GObject):
         config_for = selector.get_config_for()
         selector.set_vexpand(True)
         selector.update()
-        dialog = factory.create_dialog(self.app.win, 'Manage %s' % config_for, box, 800, 600)
+        dialog = self.factory.create_dialog(self.app.win, 'Manage %s' % config_for, box, 800, 600)
         dialog.show()
 
 
