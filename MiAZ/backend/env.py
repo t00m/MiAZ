@@ -21,9 +21,8 @@ ENV = {}
 ENV['CONF'] = {}
 ENV['CONF']['ROOT'] = abspath(sys.modules[__name__].__file__ + "/../..")
 ENV['CONF']['USER_DIR'] = os.path.expanduser('~')
-# ~ ENV['CONF']['TMPNAME'] = next(tempfile._get_candidate_names())
-# ~ ENV['CONF']['MAX_WORKERS'] = multiprocessing.cpu_count()  # Avoid MemoryError
 
+# Application
 ENV['APP'] = {}
 ENV['APP']['name'] = "AZ Organizer"
 ENV['APP']['shortname'] = "MiAZ"
@@ -35,6 +34,7 @@ ENV['APP']['author'] = 'Tomás Vírseda'
 ENV['APP']['author_email'] = 'tomasvirseda@gmail.com'
 ENV['APP']['documenters'] = ["Tomás Vírseda <tomasvirseda@gmail.com>"]
 ENV['APP']['website'] = 'https://github.com/t00m/MiAZ'
+ENV['APP']['ID'] = "com.github.t00m.MiAZ"
 
 # Local paths
 ENV['LPATH'] = {}
@@ -57,8 +57,9 @@ ENV['GPATH']['DATA'] = os.path.join(ENV['GPATH']['ROOT'], 'data')
 ENV['GPATH']['DOCS'] = os.path.join(ENV['GPATH']['DATA'], 'docs')
 ENV['GPATH']['ICONS'] = os.path.join(ENV['GPATH']['DATA'], 'icons')
 ENV['GPATH']['FLAGS'] = os.path.join(ENV['GPATH']['ICONS'], 'flags')
-ENV['GPATH']['RESOURCES'] = os.path.join(ENV['GPATH']['DATA'], 'resources')
+ENV['GPATH']['LOCALE'] = os.path.join(ENV['GPATH']['DATA'], 'po')
 ENV['GPATH']['PLUGINS'] = os.path.join(ENV['GPATH']['DATA'], 'plugins')
+ENV['GPATH']['RESOURCES'] = os.path.join(ENV['GPATH']['DATA'], 'resources')
 
 # Common file paths
 ENV['FILE'] = {}

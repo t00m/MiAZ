@@ -9,6 +9,7 @@
 """
 
 import sys
+from gettext import gettext as _
 
 import gi
 gi.require_version('Adw', '1')
@@ -19,6 +20,7 @@ from gi.repository import Gdk
 from gi.repository import Gio
 from gi.repository import GLib
 from gi.repository import Gtk
+
 
 from MiAZ.backend.env import ENV
 from MiAZ.backend import MiAZBackend
@@ -49,12 +51,12 @@ class MiAZApp(Adw.Application):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+        self.log = get_logger("MiAZ.GUI")
         self._miazobjs['widgets'] = {}
         self._miazobjs['services'] = {}
         self.backend = self.add_service('backend', MiAZBackend())
         self.add_service('util', self.backend.util)
         self.conf = self.backend.conf
-        self.log = get_logger("MiAZ.GUI")
         GLib.set_application_name(ENV['APP']['name'])
         self.connect('activate', self._on_activate)
 
@@ -222,7 +224,7 @@ class MiAZApp(Adw.Application):
 
     def _setup_headerbar_left(self):
         self._setup_menu_app()
-        btnBack = self.factory.create_button(icon_name='miaz-go-back', title='Back', callback=self.show_workspace, css_classes=['flat'])
+        btnBack = self.factory.create_button(icon_name='miaz-go-back', title=_('Back'), callback=self.show_workspace, css_classes=['flat'])
         btnBack.set_visible(False)
         self.add_widget('app-header-button-back', btnBack)
         self.header.pack_start(btnBack)
