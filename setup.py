@@ -44,7 +44,7 @@ DATA_FILES = add_data('MiAZ/data')
 DATA_FILES += ['README.adoc']
 DATA_FILES +=[('share/applications', ['MiAZ/data/resources/com.github.t00m.MiAZ.desktop'])]
 DATA_FILES +=[('share/icons/hicolor/48x48/apps/', ['MiAZ/data/icons/com.github.t00m.MiAZ.svg'])]
-
+print(DATA_FILES)
 
 setup(
     name=ENV['APP']['shortname'],

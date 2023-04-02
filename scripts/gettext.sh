@@ -1,0 +1,1 @@
+xgettext -d miaz -o MiAZ/data/po/miaz.pot $(find . -name "*.py")
