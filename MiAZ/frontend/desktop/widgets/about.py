@@ -8,6 +8,8 @@
 # Description: About widget
 """
 
+from gettext import gettext as _
+
 import gi
 from gi.repository import Adw
 from gi.repository import Gtk

@@ -9,6 +9,7 @@
 """
 
 import os
+from gettext import gettext as _
 
 from gi.repository import Gtk
 
@@ -89,7 +90,7 @@ class MiAZRepositories(MiAZConfigView):
         dialog.destroy()
 
     def _on_item_available_rename(self, item):
-        dialog = MiAZDialogAddRepo(self.app, self.app.win, 'Edit repository', 'Repository name', 'Folder')
+        dialog = MiAZDialogAddRepo(self.app, self.app.win, _('Edit repository'), _('Repository name'), _('Folder'))
         repo_name = item.id
         dialog.set_value1(repo_name.replace('_', ' '))
         dialog.set_value2(item.title)
@@ -251,7 +252,7 @@ class MiAZDates(Gtk.Box):
         calendar.connect('day-selected', calendar_day_selected, label, cv, self.selected_items)
         calendar.select_day(GLib.DateTime.new_from_iso8601(iso8601))
         calendar.emit('day-selected')
-        dialog = self.factory.create_dialog_question(self.app.win, 'Mass renaming', box, width=640, height=480)
+        dialog = self.factory.create_dialog_question(self.app.win, _('Mass renaming'), box, width=640, height=480)
         dialog.connect('response', self._on_mass_action_rename_date_response, calendar)
         dialog.show()
 

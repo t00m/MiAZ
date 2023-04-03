@@ -68,7 +68,7 @@ class MiAZAssistantRepo(MiAZAssistant):
         super().__init__(app)
 
         # Pages
-        for title in ['Welcome', 'Repository', 'Summary']:
+        for title in [_('Welcome'), _('Repository'), _('Summary')]:
             vbox = Gtk.CenterBox(orientation=Gtk.Orientation.VERTICAL)
             vbox.set_margin_top(margin=12)
             vbox.set_margin_end(margin=12)
@@ -79,7 +79,7 @@ class MiAZAssistantRepo(MiAZAssistant):
 
         # Page 0 - Welcome
         page = self.get_nth_page(0)
-        lblWelcome = Gtk.Label.new(str='%s repository assistant' % (ENV['APP']['shortname']))
+        lblWelcome = Gtk.Label.new(str=_('%s repository assistant') % (ENV['APP']['shortname']))
         lblWelcome.get_style_context().add_class(class_name='title-1')
         lblWelcome.set_margin_top(24)
         imgWelcome = Gtk.Image.new_from_icon_name('MiAZ-big')
@@ -95,7 +95,7 @@ class MiAZAssistantRepo(MiAZAssistant):
         page = self.get_nth_page(1)
         box = self.factory.create_box_vertical(spacing=12)
         lblTitle = Gtk.Label()
-        lblTitle.set_markup('Select a directory')
+        lblTitle.set_markup(_('Select a directory'))
         lblTitle.get_style_context().add_class(class_name='title-2')
         box.append(lblTitle)
         listbox = Gtk.ListBox()
@@ -134,7 +134,7 @@ class MiAZAssistantRepo(MiAZAssistant):
     def show_filechooser_source(self, *args):
         filechooser = self.factory.create_filechooser(
                     parent=self,
-                    title='Choose target directory',
+                    title=_('Choose target directory'),
                     target = 'FOLDER',
                     callback = self.on_filechooser_response_source
                     )
@@ -205,7 +205,7 @@ class MiAZAssistantRepoSettings(MiAZAssistant):
         self.connect('apply', self.on_assistant_close)
 
         # Pages
-        for title in ['Welcome', 'Countries', 'Groups', 'Purposes', 'Sent by', 'Sent to', 'Summary']:
+        for title in [_('Welcome'), _('Countries'), _('Groups'), _('Purposes'), _('Sent by'), _('Sent to'), _('Summary')]:
             vbox = Gtk.CenterBox(orientation=Gtk.Orientation.VERTICAL)
             vbox.set_margin_top(margin=12)
             vbox.set_margin_end(margin=12)

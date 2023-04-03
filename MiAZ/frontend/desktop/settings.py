@@ -9,6 +9,7 @@
 """
 
 import os
+from gettext import gettext as _
 
 import gi
 from gi.repository import Adw
@@ -51,7 +52,7 @@ class MiAZAppSettings(Gtk.Box):
         self.actions = self.app.get_service('actions')
         self.config = self.backend.conf
         page = Adw.PreferencesPage.new()
-        page.set_title("Settings - Repositories")
+        page.set_title(_("Settings - Repositories"))
         page.add(self._get_group_repositories())
         self.append(page)
         self.repo_is_set = False
@@ -59,7 +60,7 @@ class MiAZAppSettings(Gtk.Box):
     def _get_group_repositories(self):
         self.row_repo_source = self._create_action_row_repo_source()
         group = Adw.PreferencesGroup()
-        group.set_title("Repositories")
+        group.set_title(_("Repositories"))
         group.add(self.row_repo_source)
         return group
 
@@ -67,9 +68,9 @@ class MiAZAppSettings(Gtk.Box):
         row = self.factory.create_box_vertical(hexpand=True, vexpand=True)
         hbox = self.factory.create_box_horizontal()
         lblActive = Gtk.Label()
-        lblActive.set_markup("Current active")
+        lblActive.set_markup(_("Current active"))
         self.dd_repo = self.factory.create_dropdown_generic(item_type=Repository, ellipsize=False, enable_search=False)
-        btnUseRepo = self.factory.create_button(icon_name='MiAZ', title='Load repo', callback=self._on_use_repo)
+        btnUseRepo = self.factory.create_button(icon_name='MiAZ', title=_('Load repo'), callback=self._on_use_repo)
         hbox.append(lblActive)
         hbox.append(self.dd_repo)
         hbox.append(btnUseRepo)
@@ -124,7 +125,7 @@ class MiAZAppSettings(Gtk.Box):
     def show_filechooser_source(self, *args):
         filechooser = self.factory.create_filechooser(
                     parent=self.app.win,
-                    title='Choose target directory',
+                    title=_('Choose target directory'),
                     target = 'FOLDER',
                     callback = self.on_filechooser_response_source,
                     data = None

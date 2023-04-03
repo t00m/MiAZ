@@ -11,6 +11,7 @@
 import os
 from datetime import datetime
 from datetime import timedelta
+from gettext import gettext as _
 
 import gi
 gi.require_version('Gtk', '4.0')
@@ -61,8 +62,6 @@ class MiAZWorkspace(Gtk.Box):
 
     def __init__(self, app):
         super(MiAZWorkspace, self).__init__(orientation=Gtk.Orientation.HORIZONTAL)
-        # ~ GObject.signal_new('start-workspace-completed', MiAZWorkspace, GObject.SignalFlags.RUN_LAST, None, () )
-        # ~ GObject.signal_new('extend-menu-export', MiAZWorkspace, GObject.SignalFlags.RUN_LAST, GObject.TYPE_PYOBJECT, (GObject.TYPE_PYOBJECT,) )
         self.log = get_logger('MiAZWorkspace')
         self.app = app
         self.backend = self.app.get_service('backend')
@@ -199,16 +198,16 @@ class MiAZWorkspace(Gtk.Box):
         ## Import button
         widgets = []
         btnImportFiles = self.factory.create_button('miaz-import-document', callback=self.actions.import_file)
-        rowImportDoc = self.factory.create_actionrow(title='Import document', subtitle='Import one or more documents', suffix=btnImportFiles)
+        rowImportDoc = self.factory.create_actionrow(title='Import document', subtitle=_('Import one or more documents'), suffix=btnImportFiles)
         widgets.append(rowImportDoc)
         btnImportDir = self.factory.create_button('miaz-import-folder', callback=self.actions.import_directory)
-        rowImportDir = self.factory.create_actionrow(title='Import directory', subtitle='Import all documents from a directory', suffix=btnImportDir)
+        rowImportDir = self.factory.create_actionrow(title='Import directory', subtitle=_('Import all documents from a directory'), suffix=btnImportDir)
         widgets.append(rowImportDir)
         # FIXME: Not implemented yet
         # ~ btnImportConf = self.factory.create_button('miaz-import-config', callback=self.actions.import_config)
         # ~ rowImportConf = self.factory.create_actionrow(title='Import config', subtitle='Import configuration', suffix=btnImportConf)
         # ~ widgets.append(rowImportConf)
-        button = self.factory.create_button_popover(icon_name='miaz-import', title='Import...', widgets=widgets)
+        button = self.factory.create_button_popover(icon_name='miaz-import', title=_('Import...'), widgets=widgets)
         hbox.append(button)
 
         # Center
@@ -222,7 +221,7 @@ class MiAZWorkspace(Gtk.Box):
         hbox.append(self.tgbFilters)
 
         ## Searchbox
-        self.ent_sb = Gtk.SearchEntry(placeholder_text="Type here")
+        self.ent_sb = Gtk.SearchEntry(placeholder_text=_('Type here'))
         self.ent_sb.set_hexpand(False)
         hbox.append(self.ent_sb)
 
@@ -312,50 +311,49 @@ class MiAZWorkspace(Gtk.Box):
         ## this month
         ll = self.util.since_date_this_month(now) # lower limit
         key = "%s-%s" % (dt2str(ll), dt2str(ul))
-        model.append(Date(id=key, title='This month'))
+        model.append(Date(id=key, title=_('This month')))
 
         ## Last 3 months
         ll = self.util.since_date_last_n_months(now, 3) # lower limit
         key = "%s-%s" % (dt2str(ll), dt2str(ul))
-        model.append(Date(id=key, title='Last 3 months'))
+        model.append(Date(id=key, title=_('Last 3 months')))
 
         ## Last six months
         ll = self.util.since_date_last_n_months(now, 6) # lower limit
         key = "%s-%s" % (dt2str(ll), dt2str(ul))
-        model.append(Date(id=key, title='Last 6 months'))
+        model.append(Date(id=key, title=_('Last 6 months')))
 
         ## This year
         ll = self.util.since_date_this_year(now) # lower limit
         key = "%s-%s" % (dt2str(ll), dt2str(ul))
-        model.append(Date(id=key, title='This year'))
+        model.append(Date(id=key, title=_('This year')))
 
         ## Two years ago
         ll = self.util.since_date_past_year(now) # lower limit
         key = "%s-%s" % (dt2str(ll), dt2str(ul))
-        model.append(Date(id=key, title='Since two years ago'))
+        model.append(Date(id=key, title=_('Since two years ago')))
 
         ## Three years ago
         ll = self.util.since_date_three_years(now) # lower limit
         key = "%s-%s" % (dt2str(ll), dt2str(ul))
-        model.append(Date(id=key, title='Since three years ago'))
+        model.append(Date(id=key, title=_('Since three years ago')))
 
         ## Five years ago
         ll = self.util.since_date_five_years(now) # lower limit
         key = "%s-%s" % (dt2str(ll), dt2str(ul))
-        model.append(Date(id=key, title='Since five years ago'))
+        model.append(Date(id=key, title=_('Since five years ago')))
 
         ## All documents
         key = "All-All"
-        model.append(Date(id=key, title='All documents'))
+        model.append(Date(id=key, title=_('All documents')))
 
         ## No date
         key = "None-None"
-        model.append(Date(id=key, title='Without date'))
+        model.append(Date(id=key, title=_('Without date')))
 
     def _setup_columnview(self):
         self.view = MiAZColumnViewWorkspace(self.app)
         self.app.add_widget('workspace-view', self.view)
-        # ~ self.view.factory_icon_type.connect("bind", self._on_factory_bind_icon_type)
         self.view.get_style_context().add_class(class_name='caption')
         self.view.set_filter(self._do_filter_view)
         frmView = self.factory.create_frame(hexpand=True, vexpand=True)
@@ -424,7 +422,7 @@ class MiAZWorkspace(Gtk.Box):
         ## Export
         submenu_export = Gio.Menu.new()
         menu_export = Gio.MenuItem.new_submenu(
-            label = 'Export...',
+            label = _('Export...'),
             submenu = submenu_export,
         )
         section_common_out.append_item(menu_export)
@@ -632,7 +630,7 @@ class MiAZWorkspace(Gtk.Box):
         selection.unselect_all()
 
     def display_dashboard(self, *args):
-        self.view.column_subtitle.set_title('Concept')
+        self.view.column_subtitle.set_title(_('Concept'))
         self.view.column_subtitle.set_expand(True)
         self.view.refilter()
         self.tgbFilters.set_visible(True)

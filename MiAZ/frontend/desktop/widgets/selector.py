@@ -10,6 +10,7 @@
 
 import os
 from datetime import datetime
+from gettext import gettext as _
 
 import gi
 gi.require_version('Gtk', '4.0')
@@ -85,7 +86,7 @@ class MiAZSelector(Gtk.Box):
         # Available
         self.frmViewAv = Gtk.Frame()
         title = Gtk.Label()
-        title.set_markup("<b>Available</b>")
+        title.set_markup(_('<b>Available</b>'))
         boxLeft.append(title)
         boxLeft.append(self.frmViewAv)
 
@@ -100,7 +101,7 @@ class MiAZSelector(Gtk.Box):
         # Used
         self.frmViewSl = Gtk.Frame()
         title = Gtk.Label()
-        title.set_markup("<b>Used</b>")
+        title.set_markup(_('<b>Used</b>'))
         boxRight.append(title)
         boxRight.append(self.frmViewSl)
         self._setup_view_finish()
@@ -169,13 +170,13 @@ class MiAZSelector(Gtk.Box):
             if not value_used:
                 del(items_used[item_used.id])
                 changed = True
-                text = "Removed %s (%s) from used" % (item_used.id, item_used.title)
+                text = _('Removed %s (%s) from used') % (item_used.id, item_used.title)
                 self.log.debug(text)
                 # ~ self.statusbar_message('info', text)
             else:
                 # ~ title = "%s %s not removed" % (self.config.model.__title__, item_used.id)
                 dtype = "warning"
-                text = "%s %s is still being used by some docs" % (self.config.model.__title__, item_used.id)
+                text = _('%s %s is still being used by some docs') % (self.config.model.__title__, item_used.id)
                 self.statusbar_message(dtype, text)
         if changed:
             self.config.save_used(items=items_used)
@@ -185,7 +186,7 @@ class MiAZSelector(Gtk.Box):
 
     def on_item_available_add(self, *args):
         if self.edit:
-            dialog = MiAZDialogAdd(self.app, self.get_root(), '%s: add a new item' % self.config.config_for, 'Name', 'Description')
+            dialog = MiAZDialogAdd(self.app, self.get_root(), _('%s: add a new item') % self.config.config_for, _('Name'), _('Description'))
             search_term = self.entry.get_text()
             dialog.set_value1(search_term)
             dialog.connect('response', self._on_response_item_available_add)
@@ -202,7 +203,7 @@ class MiAZSelector(Gtk.Box):
         dialog.destroy()
 
     def _on_item_available_rename(self, item):
-        dialog = MiAZDialogAdd(self.app, self.get_root(), '%s: rename item' % self.config.config_for, 'Name', 'Description')
+        dialog = MiAZDialogAdd(self.app, self.get_root(), _('%s: rename item') % self.config.config_for, _('Name'), _('Description'))
         dialog.set_value1(item.id)
         dialog.set_value2(item.title)
         dialog.connect('response', self._on_response_item_available_rename, item)

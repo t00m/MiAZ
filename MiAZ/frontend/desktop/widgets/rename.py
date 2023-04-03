@@ -67,16 +67,16 @@ class MiAZRenameDialog(Gtk.Box):
         frmMain.set_child(self.boxMain)
         self.append(frmMain)
 
-        self.btnAccept = self.factory.create_button('miaz-ok', 'rename', self.on_rename_accept, css_classes=['opaque'])
+        self.btnAccept = self.factory.create_button('miaz-ok', _('Rename'), self.on_rename_accept, css_classes=['opaque'])
         self.btnAccept.set_sensitive(True)
         # ~ self.btnAccept.get_style_context ().add_class('suggested-action')
 
         self.btnAccept.set_can_focus(True)
         self.btnAccept.set_focusable(True)
         self.btnAccept.set_receives_default(True)
-        self.btnCancel = self.factory.create_button('miaz-cancel', 'cancel', self.on_rename_cancel)
+        self.btnCancel = self.factory.create_button('miaz-cancel', _('Cancel'), self.on_rename_cancel)
         # ~ self.btnCancel.get_style_context ().add_class ('destructive-action')
-        self.btnPreview = self.factory.create_button('miaz-preview', 'preview')
+        self.btnPreview = self.factory.create_button('miaz-preview', _('Preview'))
         self.btnPreview.connect('clicked', self._on_document_display)
         boxButtons = Gtk.CenterBox(hexpand=True)
         boxButtons.set_start_widget(self.btnCancel)
@@ -207,13 +207,13 @@ class MiAZRenameDialog(Gtk.Box):
         self.entry_date.set_text("%s%s%s" % (y, m, d))
 
     def __create_field_1_country(self):
-        self.rowCountry, self.btnCountry, self.dpdCountry = self.__create_actionrow('Country', Country, 'countries')
+        self.rowCountry, self.btnCountry, self.dpdCountry = self.__create_actionrow(Country.__title__, Country, 'countries')
         self.dropdown['Country'] = self.dpdCountry
         self.btnCountry.connect('clicked', self.actions.manage_resource, MiAZCountries(self.app))
         self.dpdCountry.connect("notify::selected-item", self._on_changed_entry)
 
     def __create_field_2_group(self):
-        self.rowGroup, self.btnGroup, self.dpdGroup = self.__create_actionrow('Group', Group, 'groups')
+        self.rowGroup, self.btnGroup, self.dpdGroup = self.__create_actionrow(Group.__title__, Group, 'groups')
         self.dropdown['Group'] = self.dpdGroup
         self.btnGroup.connect('clicked', self.actions.manage_resource, MiAZGroups(self.app))
         self.dpdGroup.connect("notify::selected-item", self._on_changed_entry)
@@ -225,7 +225,7 @@ class MiAZRenameDialog(Gtk.Box):
         self.dpdSentBy.connect("notify::selected-item", self._on_changed_entry)
 
     def __create_field_5_purpose(self):
-        self.rowPurpose, self.btnPurpose, self.dpdPurpose = self.__create_actionrow('Purpose', Purpose, 'purposes')
+        self.rowPurpose, self.btnPurpose, self.dpdPurpose = self.__create_actionrow(Purpose.__title__, Purpose, 'purposes')
         self.btnPurpose.connect('clicked', self.actions.manage_resource, MiAZPurposes(self.app))
         self.dropdown['Purpose'] = self.dpdPurpose
         self.dpdPurpose.connect("notify::selected-item", self._on_changed_entry)
@@ -233,7 +233,7 @@ class MiAZRenameDialog(Gtk.Box):
     def __create_field_6_concept(self):
         """Field 0. Date"""
         self.rowConcept = Adw.ActionRow.new()
-        self.rowConcept.set_title(_('Concept'))
+        self.rowConcept.set_title(Concept.__title__)
         self.rowConcept.set_icon_name('miaz-res-concept')
         boxValue = self.__create_box_value()
         self.rowConcept.add_suffix(boxValue)
@@ -244,7 +244,7 @@ class MiAZRenameDialog(Gtk.Box):
         self.entry_concept = Gtk.Entry()
         self.entry_concept.set_width_chars(41)
         self.entry_concept.set_alignment(1.0)
-        self.entry_concept.set_placeholder_text('Type anything here...')
+        self.entry_concept.set_placeholder_text(_('Type anything here...'))
         boxValue.append(self.entry_concept)
         boxValue.append(button)
         self.entry_concept.connect('changed', self._on_changed_entry)
