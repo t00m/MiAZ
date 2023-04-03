@@ -95,7 +95,7 @@ class MiAZToolbarProjectMgtPlugin(GObject.GObject, Peas.Activatable):
     def document_rename_multiple(self, action, data, item_type):
         def update_columnview(dropdown, gparamobj, columnview, item_type, items):
             i_type = item_type.__gtype_name__
-            i_title = item_type.__title__
+            i_title = _(item_type.__title__)
             citems = []
             for item in items:
                 try:
@@ -136,7 +136,7 @@ class MiAZToolbarProjectMgtPlugin(GObject.GObject, Peas.Activatable):
 
         def dialog_response(dialog, response, dropdown, item_type, items):
             if response == Gtk.ResponseType.ACCEPT:
-                title = item_type.__title__
+                title = _(item_type.__title__)
                 for item in items:
                     source = item.id
                     name, ext = self.util.filename_details(source)
@@ -166,7 +166,7 @@ class MiAZToolbarProjectMgtPlugin(GObject.GObject, Peas.Activatable):
         items = self.workspace.get_selected_items()
         if item_type != Date:
             i_type = item_type.__gtype_name__
-            i_title = item_type.__title__
+            i_title = _(item_type.__title__)
             box = self.factory.create_box_vertical(spacing=6, vexpand=True, hexpand=True)
             label = self.factory.create_label(_('Rename %d files by setting the field <b>%s</b> to:\n') % (len(items), i_title))
             dropdown = self.factory.create_dropdown_generic(item_type)

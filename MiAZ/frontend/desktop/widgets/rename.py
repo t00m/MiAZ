@@ -98,7 +98,7 @@ class MiAZRenameDialog(Gtk.Box):
     def _update_dropdowns(self, *args):
         for item_type in [Country, Group, SentBy, Purpose, SentTo]:
             i_type = item_type.__gtype_name__
-            i_title = item_type.__title__
+            i_title = _(item_type.__title__)
             config = self.config[i_type]
             self.actions.dropdown_populate(config, self.dropdown[i_type], item_type, False, False)
 

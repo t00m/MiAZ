@@ -152,7 +152,7 @@ class MiAZRepoSettings(Gtk.Box):
 
         def create_tab(item_type):
             i_type = item_type.__gtype_name__
-            i_title = item_type.__title__
+            i_title = _(item_type.__title__)
             page = Gtk.CenterBox(orientation=Gtk.Orientation.VERTICAL)
             page.set_vexpand(True)
             page.set_hexpand(True)

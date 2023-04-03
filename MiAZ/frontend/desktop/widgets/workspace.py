@@ -150,7 +150,7 @@ class MiAZWorkspace(Gtk.Box):
     def _update_dropdowns(self, *args):
         for item_type in [Country, Group, SentBy, Purpose, SentTo]:
             i_type = item_type.__gtype_name__
-            i_title = item_type.__title__
+            i_title = _(item_type.__title__)
             config = self.config[i_type]
             self.actions.dropdown_populate(config, self.dropdown[i_type], item_type, True, True)
 
@@ -198,10 +198,10 @@ class MiAZWorkspace(Gtk.Box):
         ## Import button
         widgets = []
         btnImportFiles = self.factory.create_button('miaz-import-document', callback=self.actions.import_file)
-        rowImportDoc = self.factory.create_actionrow(title='Import document', subtitle=_('Import one or more documents'), suffix=btnImportFiles)
+        rowImportDoc = self.factory.create_actionrow(title=_('Import document'), subtitle=_('Import one or more documents'), suffix=btnImportFiles)
         widgets.append(rowImportDoc)
         btnImportDir = self.factory.create_button('miaz-import-folder', callback=self.actions.import_directory)
-        rowImportDir = self.factory.create_actionrow(title='Import directory', subtitle=_('Import all documents from a directory'), suffix=btnImportDir)
+        rowImportDir = self.factory.create_actionrow(title=_('Import directory'), subtitle=_('Import all documents from a directory'), suffix=btnImportDir)
         widgets.append(rowImportDir)
         # FIXME: Not implemented yet
         # ~ btnImportConf = self.factory.create_button('miaz-import-config', callback=self.actions.import_config)

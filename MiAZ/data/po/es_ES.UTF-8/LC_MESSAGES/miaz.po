@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 0.1\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-04-03 22:29+0200\n"
-"PO-Revision-Date: 2023-04-03 22:36+0200\n"
+"POT-Creation-Date: 2023-04-03 23:01+0200\n"
+"PO-Revision-Date: 2023-04-03 23:04+0200\n"
 "Last-Translator: Tomás Vírseda <tomasvirseda@gmail.com>\n"
 "Language-Team: es_ES.UTF-8 <tomasvirseda@gmail.com>\n"
 "Language: es\n"
@@ -149,8 +149,16 @@ msgid "Mass renaming"
 msgstr "Renombrado masivo"
 
 #: MiAZ/frontend/desktop/widgets/workspace.py:201
+msgid "Import document"
+msgstr "Importar documento"
+
+#: MiAZ/frontend/desktop/widgets/workspace.py:201
 msgid "Import one or more documents"
 msgstr "Importar uno o más documentos"
+
+#: MiAZ/frontend/desktop/widgets/workspace.py:204
+msgid "Import directory"
+msgstr "Importar un directorio"
 
 #: MiAZ/frontend/desktop/widgets/workspace.py:204
 msgid "Import all documents from a directory"
@@ -582,6 +590,26 @@ msgstr "Retirar los siguientes documentos de este proyecto:"
 #: MiAZ/data/plugins/delete.py:51
 msgid "Delete documents"
 msgstr "Borrar documentos"
+
+#: MiAZ/backend/util.py:359
+#, python-format
+msgid "<i>%s</i> field is empty"
+msgstr "El campo <i>%s</i> está vacío"
+
+#: MiAZ/backend/util.py:369
+#, python-format
+msgid "%s %s (%s) is available and ready to use"
+msgstr "%s %s (%s) está disponible y listo para ser usado"
+
+#: MiAZ/backend/util.py:371
+#, python-format
+msgid "%s %s is available and ready to use"
+msgstr "%s %s está disponible y listo para ser usado"
+
+#: MiAZ/backend/util.py:375
+#, python-format
+msgid "%s %s available? %s. Used? %s"
+msgstr "Está %s %s disponible? %s. ¿Está siendo usado? %s"
 
 #: MiAZ/backend/models.py:165
 msgid "File"

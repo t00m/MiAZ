@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-04-03 22:29+0200\n"
+"POT-Creation-Date: 2023-04-03 23:01+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -149,7 +149,15 @@ msgid "Mass renaming"
 msgstr ""
 
 #: MiAZ/frontend/desktop/widgets/workspace.py:201
+msgid "Import document"
+msgstr ""
+
+#: MiAZ/frontend/desktop/widgets/workspace.py:201
 msgid "Import one or more documents"
+msgstr ""
+
+#: MiAZ/frontend/desktop/widgets/workspace.py:204
+msgid "Import directory"
 msgstr ""
 
 #: MiAZ/frontend/desktop/widgets/workspace.py:204
@@ -571,6 +579,26 @@ msgstr ""
 
 #: MiAZ/data/plugins/delete.py:51
 msgid "Delete documents"
+msgstr ""
+
+#: MiAZ/backend/util.py:359
+#, python-format
+msgid "<i>%s</i> field is empty"
+msgstr ""
+
+#: MiAZ/backend/util.py:369
+#, python-format
+msgid "%s %s (%s) is available and ready to use"
+msgstr ""
+
+#: MiAZ/backend/util.py:371
+#, python-format
+msgid "%s %s is available and ready to use"
+msgstr ""
+
+#: MiAZ/backend/util.py:375
+#, python-format
+msgid "%s %s available? %s. Used? %s"
 msgstr ""
 
 #: MiAZ/backend/models.py:165
