@@ -10,6 +10,7 @@
 
 import os
 import tempfile
+from gettext import gettext as _
 
 from gi.repository import Gtk
 from gi.repository import GObject
@@ -47,7 +48,7 @@ class MiAZDeleteItemPlugin(GObject.GObject, Peas.Activatable):
     def add_menuitem(self, *args):
         if self.app.get_widget('workspace-menu-selection-section-danger-menuitem-delete') is None:
             section_danger = self.app.get_widget('workspace-menu-selection-section-danger')
-            menuitem = self.factory.create_menuitem('delete', 'Delete documents', self.document_delete, None, [])
+            menuitem = self.factory.create_menuitem('delete', _('Delete documents'), self.document_delete, None, [])
             self.app.add_widget('workspace-menu-selection-section-danger-menuitem-delete', menuitem)
             section_danger.append_item(menuitem)
 
@@ -63,13 +64,13 @@ class MiAZDeleteItemPlugin(GObject.GObject, Peas.Activatable):
         self.log.debug("Mass deletion")
         items = self.workspace.get_selected_items()
         frame = Gtk.Frame()
-        box, view = self.factory.create_view(MiAZColumnViewMassDelete, "Mass deletion")
+        box, view = self.factory.create_view(MiAZColumnViewMassDelete, _("Mass deletion"))
         citems = []
         for item in items:
             citems.append(File(id=item.id, title=os.path.basename(item.id)))
         view.update(citems)
         frame.set_child(view)
         box.append(frame)
-        dialog = self.factory.create_dialog_question(self.app.win, 'Mass deletion', box, width=1024, height=600)
+        dialog = self.factory.create_dialog_question(self.app.win, _('Mass deletion'), box, width=1024, height=600)
         dialog.connect('response', dialog_response, items)
         dialog.show()

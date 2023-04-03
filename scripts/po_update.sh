@@ -1,0 +1,1 @@
+msgmerge --update MiAZ/data/po/es_ES/LC_MESSAGES/miaz.po MiAZ/data/po/miaz.pot

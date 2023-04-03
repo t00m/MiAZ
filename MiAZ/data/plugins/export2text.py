@@ -9,6 +9,7 @@
 """
 
 import tempfile
+from gettext import gettext as _
 
 from gi.repository import GObject
 from gi.repository import Peas
@@ -40,7 +41,7 @@ class Export2Text(GObject.GObject, Peas.Activatable):
 
     def add_menuitem(self, *args):
         submenu_export = self.app.get_widget('workspace-menu-selection-submenu-export')
-        menuitem = self.factory.create_menuitem('export-to-text', '...to plain text', self.export, None, [])
+        menuitem = self.factory.create_menuitem('export-to-text', _('...to plain text'), self.export, None, [])
         submenu_export.append_item(menuitem)
 
     def export(self, *args):

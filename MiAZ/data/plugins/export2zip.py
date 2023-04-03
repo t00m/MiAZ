@@ -11,6 +11,7 @@
 import os
 import tempfile
 from datetime import datetime
+from gettext import gettext as _
 
 import gi
 gi.require_version('Gtk', '4.0')
@@ -54,7 +55,7 @@ class Export2Zip(GObject.GObject, Peas.Activatable):
 
     def add_menuitem(self, *args):
         submenu_export = self.app.get_widget('workspace-menu-selection-submenu-export')
-        menuitem = self.factory.create_menuitem('export-to-zip', '...to Zip', self.export, None, [])
+        menuitem = self.factory.create_menuitem('export-to-zip', _('...to Zip'), self.export, None, [])
         submenu_export.append_item(menuitem)
 
     def export(self, *args):
@@ -93,7 +94,7 @@ class Export2Zip(GObject.GObject, Peas.Activatable):
         self.factory = self.app.get_service('factory')
         filechooser = self.factory.create_filechooser(
                     parent=self.app.win,
-                    title='Export selected documents to a ZIP file',
+                    title=_('Export selected documents to a ZIP file'),
                     target = 'FOLDER',
                     callback = filechooser_response,
                     data = None

@@ -11,6 +11,7 @@
 import os
 import tempfile
 from datetime import datetime
+from gettext import gettext as _
 
 import gi
 gi.require_version('Gtk', '4.0')
@@ -53,7 +54,7 @@ class Export2Dir(GObject.GObject, Peas.Activatable):
 
     def add_menuitem(self, *args):
         submenu_export = self.app.get_widget('workspace-menu-selection-submenu-export')
-        menuitem = self.factory.create_menuitem('export-to-dir', '...to directory', self.export, None, [])
+        menuitem = self.factory.create_menuitem('export-to-dir', _('...to directory'), self.export, None, [])
         submenu_export.append_item(menuitem)
 
     def export(self, *args):
@@ -105,18 +106,18 @@ class Export2Dir(GObject.GObject, Peas.Activatable):
             dialog.destroy()
 
         patterns = {
-            'Y': 'Year',
-            'm': 'Month',
-            'd': 'Day',
-            'C': 'Country',
-            'G': 'Group',
-            'P': 'Purpose',
-            'B': 'Sent by',
-            'T': 'Sent to',
+            'Y': _('Year'),
+            'm': _('Month'),
+            'd': _('Day'),
+            'C': _('Country'),
+            'G': _('Group'),
+            'P': _('Purpose'),
+            'B': _('Sent by'),
+            'T': _('Sent to'),
         }
         filechooser = self.factory.create_filechooser(
                     parent=self.app.win,
-                    title='Export selected items to this directory',
+                    title=_('Export selected items to this directory'),
                     target = 'FOLDER',
                     callback = filechooser_response,
                     data = patterns
@@ -126,7 +127,7 @@ class Export2Dir(GObject.GObject, Peas.Activatable):
         contents = filechooser.get_content_area()
         box = contents.get_first_child()
         hbox = self.factory.create_box_horizontal()
-        chkPattern = self.factory.create_button_check(title='Export with pattern', callback=None)
+        chkPattern = self.factory.create_button_check(title=_('Export with pattern'), callback=None)
         etyPattern = Gtk.Entry()
         etyPattern.set_text('CYmGP') #/{target}/{Country}/{Year}/{month}/{Group}/{Purpose}
         widgets = []

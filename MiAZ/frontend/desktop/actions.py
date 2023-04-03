@@ -93,7 +93,7 @@ class MiAZActions(GObject.GObject):
         i_type = item_type.__gtype_name__
         config = self.app.get_config(i_type)
         items = config.load(config.used)
-        i_title = item_type.__title__
+        i_title = _(item_type.__title__)
 
         model_filter = dropdown.get_model()
         model_sort = model_filter.get_model()

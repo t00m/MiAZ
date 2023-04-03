@@ -134,7 +134,7 @@ class MiAZWorkspace(Gtk.Box):
 
         for item_type in [Country, Group, SentBy, Purpose, SentTo]:
             i_type = item_type.__gtype_name__
-            i_title = item_type.__title__
+            i_title = _(item_type.__title__)
             dropdown = self.factory.create_dropdown_generic(item_type=item_type)
             self.actions.dropdown_populate(self.config[i_type], dropdown, item_type, none_value=True)
             sigid = dropdown.connect("notify::selected-item", self._on_filter_selected)

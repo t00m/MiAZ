@@ -9,6 +9,7 @@
 """
 
 import tempfile
+from gettext import gettext as _
 
 from gi.repository import GObject
 from gi.repository import Peas
@@ -41,7 +42,7 @@ class MiAZMenuRepo(GObject.GObject, Peas.Activatable):
         # Add menutitem to menu for single items
         if self.app.get_widget('workspace-menu-repo-section-in-menuitem-settings') is None:
             section_common_in = self.app.get_widget('workspace-menu-repo-section-in')
-            menuitem = self.factory.create_menuitem(name='repo_settings', label='Repository settings', callback=self.show_repo_settings, data=None, shortcuts=[])
+            menuitem = self.factory.create_menuitem(name='repo_settings', label=_('Repository settings'), callback=self.show_repo_settings, data=None, shortcuts=[])
             self.app.add_widget('workspace-menu-repo-section-in-menuitem-settings', menuitem)
             section_common_in.append_item(menuitem)
 

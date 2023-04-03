@@ -11,6 +11,7 @@
 import os
 import tempfile
 from datetime import datetime
+from gettext import gettext as _
 
 from gi.repository import Gio
 from gi.repository import GLib
@@ -79,14 +80,14 @@ class MiAZToolbarProjectMgtPlugin(GObject.GObject, Peas.Activatable):
             section_common_in = self.app.get_widget('workspace-menu-selection-section-common-in')
             submenu_massrename = Gio.Menu.new()
             menu_massrename = Gio.MenuItem.new_submenu(
-                label = 'Mass renaming of...',
+                label = _('Mass renaming of...'),
                 submenu = submenu_massrename,
             )
             section_common_in.append_item(menu_massrename)
             fields = [Date, Country, Group, SentBy, Purpose, SentTo]
             for item_type in fields:
                 i_type = item_type.__gtype_name__
-                i_title = item_type.__title__
+                i_title = _(item_type.__title__)
                 menuitem = self.factory.create_menuitem('rename_%s' % i_type.lower(), '...%s' % i_title.lower(), self.document_rename_multiple, item_type, [])
                 submenu_massrename.append_item(menuitem)
             self.app.add_widget('workspace-menu-selection-menu-massrename', menu_massrename)
@@ -167,7 +168,7 @@ class MiAZToolbarProjectMgtPlugin(GObject.GObject, Peas.Activatable):
             i_type = item_type.__gtype_name__
             i_title = item_type.__title__
             box = self.factory.create_box_vertical(spacing=6, vexpand=True, hexpand=True)
-            label = self.factory.create_label('Rename %d files by setting the field <b>%s</b> to:\n' % (len(items), i_title))
+            label = self.factory.create_label(_('Rename %d files by setting the field <b>%s</b> to:\n') % (len(items), i_title))
             dropdown = self.factory.create_dropdown_generic(item_type)
             btnManage = self.factory.create_button('miaz-res-manage', '')
             btnManage.connect('clicked', self.actions.manage_resource, Configview[i_type](self.app))
@@ -186,7 +187,7 @@ class MiAZToolbarProjectMgtPlugin(GObject.GObject, Peas.Activatable):
             hbox.append(btnManage)
             box.append(hbox)
             box.append(frame)
-            dialog = self.factory.create_dialog_question(self.app.win, 'Mass renaming', box, width=1024, height=600)
+            dialog = self.factory.create_dialog_question(self.app.win, _('Mass renaming'), box, width=1024, height=600)
             dialog.connect('response', dialog_response, dropdown, item_type, items)
             dialog.show()
         else:
@@ -210,7 +211,7 @@ class MiAZToolbarProjectMgtPlugin(GObject.GObject, Peas.Activatable):
             calendar.connect('day-selected', calendar_day_selected, label, cv, items)
             calendar.select_day(GLib.DateTime.new_from_iso8601(iso8601))
             calendar.emit('day-selected')
-            dialog = self.factory.create_dialog_question(self.app.win, 'Mass renaming', box, width=640, height=480)
+            dialog = self.factory.create_dialog_question(self.app.win, _('Mass renaming'), box, width=640, height=480)
             dialog.connect('response', dialog_response_date, calendar, items)
             dialog.show()
 

@@ -10,6 +10,7 @@
 
 import os
 import tempfile
+from gettext import gettext as _
 
 from gi.repository import Gio
 from gi.repository import GObject
@@ -69,15 +70,15 @@ class MiAZToolbarProjectMgtPlugin(GObject.GObject, Peas.Activatable):
         if self.app.get_widget('workspace-menu-selection-menu-project') is None:
             submenu_project = Gio.Menu.new()
             menu_project = Gio.MenuItem.new_submenu(
-                label = 'Project management...',
+                label = _('Project management...'),
                 submenu = submenu_project,
             )
             section_common_in.append_item(menu_project)
             self.app.add_widget('workspace-menu-selection-menu-project', menu_project)
             self.app.add_widget('workspace-menu-selection-submenu-project', submenu_project)
-            menuitem = self.factory.create_menuitem('project-assign', '...assign project', self.project_assign, None, [])
+            menuitem = self.factory.create_menuitem('project-assign', _('...assign project'), self.project_assign, None, [])
             submenu_project.append_item(menuitem)
-            menuitem = self.factory.create_menuitem('project-withdraw', '...withdraw project', self.project_withdraw, None, [])
+            menuitem = self.factory.create_menuitem('project-withdraw', _('...withdraw project'), self.project_withdraw, None, [])
             submenu_project.append_item(menuitem)
 
 
@@ -104,7 +105,7 @@ class MiAZToolbarProjectMgtPlugin(GObject.GObject, Peas.Activatable):
         self.actions.dropdown_populate(self.config[i_type], dropdown, Project, any_value=False)
         btnManage = self.factory.create_button('miaz-res-manage', '')
         btnManage.connect('clicked', self.actions.manage_resource, Configview['Project'](self.app))
-        label = self.factory.create_label('Assign the following documents to this project: ')
+        label = self.factory.create_label(_('Assign the following documents to this project: '))
         frame = Gtk.Frame()
         cv = MiAZColumnViewMassProject(self.app)
         cv.get_style_context().add_class(class_name='caption')
@@ -122,7 +123,7 @@ class MiAZToolbarProjectMgtPlugin(GObject.GObject, Peas.Activatable):
         hbox.append(btnManage)
         box.append(hbox)
         box.append(frame)
-        dialog = self.factory.create_dialog_question(self.app.win, 'Assign to a project', box, width=1024, height=600)
+        dialog = self.factory.create_dialog_question(self.app.win, _('Assign to a project'), box, width=1024, height=600)
         dialog.connect('response', dialog_response, dropdown, items)
         dialog.show()
 
@@ -156,7 +157,7 @@ class MiAZToolbarProjectMgtPlugin(GObject.GObject, Peas.Activatable):
         self.actions.dropdown_populate(self.config[i_type], dropdown, Project, any_value=False, only_include=list(projects))
         btnManage = self.factory.create_button('miaz-res-manage', '')
         btnManage.connect('clicked', self.actions.manage_resource, Configview['Project'](self.app))
-        label = self.factory.create_label('Withdraw the following documents from this project: ')
+        label = self.factory.create_label(_('Withdraw the following documents from this project: '))
         frame = Gtk.Frame()
         cv = MiAZColumnViewMassProject(self.app)
         cv.get_style_context().add_class(class_name='caption')
@@ -174,7 +175,7 @@ class MiAZToolbarProjectMgtPlugin(GObject.GObject, Peas.Activatable):
         hbox.append(btnManage)
         box.append(hbox)
         box.append(frame)
-        dialog = self.factory.create_dialog_question(self.app.win, 'Assign to a project', box, width=1024, height=600)
+        dialog = self.factory.create_dialog_question(self.app.win, _('Assign to a project'), box, width=1024, height=600)
         dialog.connect('response', dialog_response, dropdown, items)
         dialog.show()
 
