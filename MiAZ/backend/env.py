@@ -12,8 +12,7 @@ Environment module.
 import os
 from os.path import abspath
 import sys
-import tempfile
-import multiprocessing
+from gettext import gettext as _
 
 ENV = {}
 
