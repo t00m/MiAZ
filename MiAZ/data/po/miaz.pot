@@ -8,14 +8,117 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-04-02 19:39+0200\n"
+"POT-Creation-Date: 2023-04-02 23:26+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "Language: \n"
 "MIME-Version: 1.0\n"
-"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Type: text/plain; charset=CHARSET\n"
 "Content-Transfer-Encoding: 8bit\n"
+
+#: MiAZ/backend/pluginsystem.py:39
+msgid "User Plugin"
+msgstr ""
+
+#: MiAZ/backend/pluginsystem.py:41
+msgid "System Plugin"
+msgstr ""
+
+#: MiAZ/frontend/desktop/widgets/assistant.py:57
+msgid "MiAZ Assistant"
+msgstr ""
+
+#: MiAZ/frontend/desktop/widgets/assistant.py:114
+msgid "Summary"
+msgstr ""
+
+#: MiAZ/frontend/desktop/widgets/assistant.py:161
+msgid "Directory not set"
+msgstr ""
+
+#: MiAZ/frontend/desktop/widgets/assistant.py:219
+msgid "Repository settings assistant"
+msgstr ""
+
+#: MiAZ/frontend/desktop/widgets/assistant.py:244
+msgid "Manage countries"
+msgstr ""
+
+#: MiAZ/frontend/desktop/widgets/assistant.py:262
+msgid "Manage groups"
+msgstr ""
+
+#: MiAZ/frontend/desktop/widgets/assistant.py:280
+msgid "Manage purposes"
+msgstr ""
+
+#: MiAZ/frontend/desktop/widgets/assistant.py:298
+msgid "Manage people receiving documents"
+msgstr ""
+
+#: MiAZ/frontend/desktop/widgets/assistant.py:316
+msgid "Manage people sending documents"
+msgstr ""
+
+#: MiAZ/frontend/desktop/widgets/assistant.py:325
+msgid "You are set!"
+msgstr ""
+
+#: MiAZ/frontend/desktop/widgets/assistant.py:329
+msgid "You can continue using the application now"
+msgstr ""
+
+#: MiAZ/frontend/desktop/widgets/rename.py:175
+msgid "Date"
+msgstr ""
+
+#: MiAZ/frontend/desktop/widgets/rename.py:195
+msgid "YYYYmmdd"
+msgstr ""
+
+#: MiAZ/frontend/desktop/widgets/rename.py:236
+msgid "Concept"
+msgstr ""
+
+#: MiAZ/frontend/desktop/widgets/rename.py:261
+msgid "Extension"
+msgstr ""
+
+#: MiAZ/frontend/desktop/widgets/rename.py:277
+msgid "Current filename"
+msgstr ""
+
+#: MiAZ/frontend/desktop/widgets/rename.py:284
+msgid "<b>New filename</b>"
+msgstr ""
+
+#: MiAZ/frontend/desktop/widgets/rename.py:389
+#, python-format
+msgid ""
+"<big>You are about to set this new filename:</big>\n"
+"\n"
+"<b>%s</b>"
+msgstr ""
+
+#: MiAZ/frontend/desktop/widgets/rename.py:392
+#: MiAZ/frontend/desktop/widgets/rename.py:417
+msgid "Are you sure?"
+msgstr ""
+
+#: MiAZ/frontend/desktop/widgets/rename.py:414
+#, python-format
+msgid ""
+"<big>You are about to delete the following document:\n"
+"\n"
+"<b>%s</b>\n"
+"\n"
+"Confirm, please.</big>"
+msgstr ""
+
+#: MiAZ/frontend/desktop/app.py:227
+msgid "Back"
+msgstr ""
 
 #: MiAZ/frontend/desktop/help.py:15
 msgid "Main Window"
@@ -26,33 +129,17 @@ msgid "Help"
 msgstr ""
 
 #: MiAZ/frontend/desktop/help.py:17
-msgid "About this application"
-msgstr ""
-
-#: MiAZ/frontend/desktop/help.py:18
 msgid "Quit application"
 msgstr ""
 
-#: MiAZ/frontend/desktop/help.py:20
+#: MiAZ/frontend/desktop/help.py:19
 msgid "Workspace"
 msgstr ""
 
-#: MiAZ/frontend/desktop/help.py:21
+#: MiAZ/frontend/desktop/help.py:20
 msgid "Display document"
 msgstr ""
 
-#: MiAZ/frontend/desktop/help.py:22
+#: MiAZ/frontend/desktop/help.py:21
 msgid "Rename document"
-msgstr ""
-
-#: MiAZ/frontend/desktop/app.py:227
-msgid "Back"
-msgstr ""
-
-#: MiAZ/backend/pluginsystem.py:39
-msgid "User Plugin"
-msgstr ""
-
-#: MiAZ/backend/pluginsystem.py:41
-msgid "System Plugin"
 msgstr ""

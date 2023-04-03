@@ -12,6 +12,7 @@ import os
 import sys
 from datetime import datetime
 from abc import abstractmethod
+from gettext import gettext as _
 
 import gi
 gi.require_version('Gtk', '4.0')
@@ -171,15 +172,13 @@ class MiAZRenameDialog(Gtk.Box):
     def __create_field_0_date(self):
         """Field 0. Date"""
         self.rowDate = Adw.ActionRow.new()
-        self.rowDate.set_title('Date')
+        self.rowDate.set_title(_('Date'))
         self.rowDate.set_icon_name('miaz-res-date')
         boxValue = self.__create_box_value()
         boxValue.set_hexpand(False)
         boxValue.set_valign(Gtk.Align.CENTER)
         self.rowDate.add_suffix(boxValue)
         self.boxMain.append(self.rowDate)
-        # ~ vbox = self.factory.create_box_vertical()
-        # ~ vbox.append(child=Gtk.Calendar())
         self.calendar = Gtk.Calendar()
         self.calendar.connect('day-selected', self.calendar_day_selected)
         button = Gtk.MenuButton(child=Adw.ButtonContent(icon_name='miaz-res-date', css_classes=['flat']))
@@ -193,7 +192,7 @@ class MiAZRenameDialog(Gtk.Box):
         self.entry_date.set_max_length(8)
         self.entry_date.set_max_width_chars(8)
         self.entry_date.set_width_chars(8)
-        self.entry_date.set_placeholder_text('YYYYmmdd')
+        self.entry_date.set_placeholder_text(_('YYYYmmdd'))
         self.entry_date.set_alignment(1.0)
         boxValue.append(self.label_date)
         boxValue.append(self.entry_date)
@@ -234,7 +233,7 @@ class MiAZRenameDialog(Gtk.Box):
     def __create_field_6_concept(self):
         """Field 0. Date"""
         self.rowConcept = Adw.ActionRow.new()
-        self.rowConcept.set_title('Concept')
+        self.rowConcept.set_title(_('Concept'))
         self.rowConcept.set_icon_name('miaz-res-concept')
         boxValue = self.__create_box_value()
         self.rowConcept.add_suffix(boxValue)
@@ -259,7 +258,7 @@ class MiAZRenameDialog(Gtk.Box):
     def __create_field_8_extension(self):
         """Field 7. extension"""
         self.rowExt = Adw.ActionRow.new()
-        self.rowExt.set_title('Extension')
+        self.rowExt.set_title(_('Extension'))
         self.rowExt.set_icon_name('miaz-res-extension')
         boxValue = self.__create_box_value()
         self.rowExt.add_suffix(boxValue)
@@ -275,14 +274,14 @@ class MiAZRenameDialog(Gtk.Box):
         """Field 7. extension"""
         # Current filename
         self.row_cur_filename = Adw.ActionRow.new()
-        self.row_cur_filename.set_title("Current filename")
+        self.row_cur_filename.set_title(_('Current filename'))
         boxValueCur = self.__create_box_value()
         self.lblFilenameCur = Gtk.Label()
         self.lblFilenameCur.get_style_context().add_class(class_name='monospace')
         self.row_cur_filename.add_suffix(self.lblFilenameCur)
         self.boxMain.append(self.row_cur_filename)
         self.row_new_filename = Adw.ActionRow.new()
-        self.row_new_filename.set_title("<b>New filename</b>")
+        self.row_new_filename.set_title(_('<b>New filename</b>'))
         boxValueNew = self.__create_box_value()
         self.lblFilenameNew = Gtk.Label()
         self.lblFilenameNew.get_style_context().add_class(class_name='monospace')
@@ -387,10 +386,10 @@ class MiAZRenameDialog(Gtk.Box):
         return self.result
 
     def on_rename_accept(self, *args):
-        body = "New name: %s" % self.get_filepath_target()
+        body = _('<big>You are about to set this new filename:</big>\n\n<b>%s</b>') % self.get_filepath_target()
         widget = Gtk.Label()
         widget.set_markup(body)
-        question = self.factory.create_dialog_question(self.app.win, "Are you sure?", widget)
+        question = self.factory.create_dialog_question(self.app.win, _('Are you sure?'), widget)
         question.connect('response', self.on_answer_question_rename)
         question.show()
 
@@ -412,10 +411,10 @@ class MiAZRenameDialog(Gtk.Box):
         self.actions.document_display(doc)
 
     def on_document_delete(self, button, filepath):
-        body = "<big>You are about to delete the following document:\n\n<b>%s</b>\n\nConfirm, please.</big>" % os.path.basename(filepath)
+        body = _('<big>You are about to delete the following document:\n\n<b>%s</b>\n\nConfirm, please.</big>') % os.path.basename(filepath)
         widget = Gtk.Label()
         widget.set_markup(body)
-        question = self.factory.create_dialog_question(self, "Are you sure?", widget)
+        question = self.factory.create_dialog_question(self, _('Are you sure?'), widget)
         question.connect('response', self.on_answer_question_delete)
         question.show()
 
@@ -432,12 +431,3 @@ class MiAZRenameDialog(Gtk.Box):
                 self.log.error("Doesn't it exist? Really?")
         else:
             self.app.show_workspace()
-
-    # ~ def on_resource_manage(self, widget: Gtk.Widget, selector: Gtk.Widget):
-        # ~ box = self.factory.create_box_vertical(spacing=0, vexpand=True, hexpand=True)
-        # ~ box.append(selector)
-        # ~ config_for = selector.get_config_for()
-        # ~ selector.set_vexpand(True)
-        # ~ selector.update()
-        # ~ dialog = self.factory.create_dialog(self.app.win, 'Manage %s' % config_for, box, 800, 600)
-        # ~ dialog.show()
