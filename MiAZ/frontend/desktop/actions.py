@@ -12,6 +12,7 @@ import os
 import glob
 import tempfile
 from datetime import datetime
+from gettext import gettext as _
 
 from gi.repository import GLib
 from gi.repository import GObject
@@ -71,14 +72,14 @@ class MiAZActions(GObject.GObject):
         self.log.debug("Mass deletion")
         self.config = self.backend.conf
         frame = Gtk.Frame()
-        box, view = self.factory.create_view(MiAZColumnViewMassDelete, "Mass deletion")
+        box, view = self.factory.create_view(MiAZColumnViewMassDelete, _('Mass deletion'))
         citems = []
         for item in items:
             citems.append(File(id=item.id, title=os.path.basename(item.id)))
         view.update(citems)
         frame.set_child(view)
         box.append(frame)
-        dialog = self.factory.create_dialog_question(self.app.win, 'Mass deletion', box, width=1024, height=600)
+        dialog = self.factory.create_dialog_question(self.app.win, _('Mass deletion'), box, width=1024, height=600)
         dialog.connect('response', dialog_response, items)
         dialog.show()
 
@@ -92,7 +93,7 @@ class MiAZActions(GObject.GObject):
         i_type = item_type.__gtype_name__
         config = self.app.get_config(i_type)
         items = config.load(config.used)
-        i_title = item_type.__title__
+        i_title = _(item_type.__title__)
 
         model_filter = dropdown.get_model()
         model_sort = model_filter.get_model()
@@ -101,9 +102,9 @@ class MiAZActions(GObject.GObject):
 
         model.remove_all()
         if any_value:
-            model.append(item_type(id='Any', title='Any %s' % i_title.lower()))
+            model.append(item_type(id='Any', title=_('Any %s') % i_title.lower()))
         if none_value:
-            model.append(item_type(id='None', title='No %s' % i_title.lower()))
+            model.append(item_type(id='None', title=_('No %s') % i_title.lower()))
 
         for key in items:
             accepted = True
@@ -127,9 +128,9 @@ class MiAZActions(GObject.GObject):
 
         if len(model) == 0:
             if item_type != Repository:
-                model.append(item_type(id='None', title='No data'))
+                model.append(item_type(id='None', title=_('No data')))
             else:
-                model.append(item_type(id='None', title='No repositories found'))
+                model.append(item_type(id='None', title=_('No repositories found')))
 
     def import_directory(self, *args):
         def filechooser_response(dialog, response, data):
@@ -156,14 +157,14 @@ class MiAZActions(GObject.GObject):
 
         filechooser = self.factory.create_filechooser(
                     parent=self.app.win,
-                    title='Import a directory',
+                    title=_('Import a directory'),
                     target = 'FOLDER',
                     callback = filechooser_response,
                     data = None
                     )
         contents = filechooser.get_content_area()
         box = contents.get_first_child()
-        toggle = self.factory.create_button_check(title='Walk recursively', callback=None)
+        toggle = self.factory.create_button_check(title=_('Walk recursively'), callback=None)
         box.append(toggle)
         filechooser.show()
 
@@ -183,7 +184,7 @@ class MiAZActions(GObject.GObject):
 
         filechooser = self.factory.create_filechooser(
                     parent=self.app.win,
-                    title='Import a configuration file',
+                    title=_('Import a configuration file'),
                     target = 'FILE',
                     callback = filechooser_response,
                     data = None
@@ -207,7 +208,7 @@ class MiAZActions(GObject.GObject):
 
         filechooser = self.factory.create_filechooser(
                     parent=self.app.win,
-                    title='Import a single file',
+                    title=_('Import a single file'),
                     target = 'FILE',
                     callback = filechooser_response,
                     data = None
@@ -220,10 +221,5 @@ class MiAZActions(GObject.GObject):
         config_for = selector.get_config_for()
         selector.set_vexpand(True)
         selector.update()
-        dialog = self.factory.create_dialog(self.app.win, 'Manage %s' % config_for, box, 800, 600)
+        dialog = self.factory.create_dialog(self.app.win, _('Manage %s') % config_for, box, 800, 600)
         dialog.show()
-
-
-
-
-

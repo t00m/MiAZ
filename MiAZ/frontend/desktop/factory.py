@@ -258,7 +258,7 @@ class MiAZFactory:
         d_filechooser.set_title(title)
         d_filechooser.set_transient_for(parent)
         d_filechooser.set_modal(True)
-        d_filechooser.add_buttons('Cancel', Gtk.ResponseType.CANCEL, 'Accept', Gtk.ResponseType.ACCEPT)
+        d_filechooser.add_buttons(_('Cancel'), Gtk.ResponseType.CANCEL, _('Accept'), Gtk.ResponseType.ACCEPT)
         d_filechooser.connect('response', callback, data)
         contents = d_filechooser.get_content_area()
         box = self.create_box_vertical()

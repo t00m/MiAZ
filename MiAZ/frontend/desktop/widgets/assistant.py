@@ -12,6 +12,7 @@ import os
 import sys
 from enum import IntEnum
 from abc import abstractmethod
+from gettext import gettext as _
 
 import gi
 gi.require_version('Gtk', '4.0')
@@ -53,7 +54,7 @@ class MiAZAssistant(Gtk.Assistant):
         self.backend = self.app.get_service('backend')
         self.config = self.backend.conf
         self.set_size_request(1024, 728)
-        self.set_title("MiAZ Assistant")
+        self.set_title(_('MiAZ Assistant'))
         self.completed = False
 
 
@@ -67,7 +68,7 @@ class MiAZAssistantRepo(MiAZAssistant):
         super().__init__(app)
 
         # Pages
-        for title in ['Welcome', 'Repository', 'Summary']:
+        for title in [_('Welcome'), _('Repository'), _('Summary')]:
             vbox = Gtk.CenterBox(orientation=Gtk.Orientation.VERTICAL)
             vbox.set_margin_top(margin=12)
             vbox.set_margin_end(margin=12)
@@ -78,7 +79,7 @@ class MiAZAssistantRepo(MiAZAssistant):
 
         # Page 0 - Welcome
         page = self.get_nth_page(0)
-        lblWelcome = Gtk.Label.new(str='%s repository assistant' % (ENV['APP']['shortname']))
+        lblWelcome = Gtk.Label.new(str=_('%s repository assistant') % (ENV['APP']['shortname']))
         lblWelcome.get_style_context().add_class(class_name='title-1')
         lblWelcome.set_margin_top(24)
         imgWelcome = Gtk.Image.new_from_icon_name('MiAZ-big')
@@ -94,7 +95,7 @@ class MiAZAssistantRepo(MiAZAssistant):
         page = self.get_nth_page(1)
         box = self.factory.create_box_vertical(spacing=12)
         lblTitle = Gtk.Label()
-        lblTitle.set_markup('Select a directory')
+        lblTitle.set_markup(_('Select a directory'))
         lblTitle.get_style_context().add_class(class_name='title-2')
         box.append(lblTitle)
         listbox = Gtk.ListBox()
@@ -110,14 +111,14 @@ class MiAZAssistantRepo(MiAZAssistant):
         page = self.get_nth_page(2)
         box = self.factory.create_box_vertical(spacing=12, vexpand=True, hexpand=True)
         lblTitle = Gtk.Label()
-        lblTitle.set_markup('Summary')
+        lblTitle.set_markup(_('Summary'))
         lblTitle.get_style_context().add_class(class_name='title-2')
         box.append(lblTitle)
         page.set_start_widget(box)
         self.set_page_type(page, Gtk.AssistantPageType.SUMMARY)
         self.connect('cancel', self.on_assistant_cancel)
         self.connect('close', self.on_assistant_close)
-        self.log.debug("Repository Assistant ready")
+        self.log.debug('Repository Assistant ready')
 
     def validate_repo(self, *args):
         self.log.debug(args)
@@ -133,7 +134,7 @@ class MiAZAssistantRepo(MiAZAssistant):
     def show_filechooser_source(self, *args):
         filechooser = self.factory.create_filechooser(
                     parent=self,
-                    title='Choose target directory',
+                    title=_('Choose target directory'),
                     target = 'FOLDER',
                     callback = self.on_filechooser_response_source
                     )
@@ -147,7 +148,7 @@ class MiAZAssistantRepo(MiAZAssistant):
             filechooser = box.get_first_child()
             gfile = filechooser.get_file()
             if gfile is None:
-                self.log.debug("No directory set. Do nothing.")
+                self.log.debug('No directory set. Do nothing.')
                 # FIXME: Show warning message. Priority: low
                 return
             self.repopath = gfile.get_path()
@@ -157,7 +158,7 @@ class MiAZAssistantRepo(MiAZAssistant):
                 self.row_repo_source.set_subtitle(self.repopath)
                 self.set_page_complete(page, True)
             else:
-                self.row_repo_source.set_title('Directory not set')
+                self.row_repo_source.set_title(_('Directory not set'))
                 self.row_repo_source.set_subtitle('')
                 self.set_page_complete(page, False)
 
@@ -165,11 +166,11 @@ class MiAZAssistantRepo(MiAZAssistant):
 
     def on_assistant_cancel(self, *args):
         if self.completed:
-            self.log.debug("Configuration finished sucessfully")
+            self.log.debug('Configuration finished sucessfully')
             self.destroy()
             self.app.win.present()
         else:
-            self.log.debug("Configuration incomplete. MiAZ app will exit now")
+            self.log.debug('Configuration incomplete. MiAZ app will exit now')
             self.app.quit()
 
     def on_assistant_close(self, *args):
@@ -204,7 +205,7 @@ class MiAZAssistantRepoSettings(MiAZAssistant):
         self.connect('apply', self.on_assistant_close)
 
         # Pages
-        for title in ['Welcome', 'Countries', 'Groups', 'Purposes', 'Sent by', 'Sent to', 'Summary']:
+        for title in [_('Welcome'), _('Countries'), _('Groups'), _('Purposes'), _('Sent by'), _('Sent to'), _('Summary')]:
             vbox = Gtk.CenterBox(orientation=Gtk.Orientation.VERTICAL)
             vbox.set_margin_top(margin=12)
             vbox.set_margin_end(margin=12)
@@ -215,7 +216,7 @@ class MiAZAssistantRepoSettings(MiAZAssistant):
 
         # Page Welcome
         page = self.get_nth_page(PAGE.WELCOME)
-        lblWelcome = Gtk.Label.new(str='%s repository settings assistant' % (ENV['APP']['shortname']))
+        lblWelcome = Gtk.Label.new(_('Repository settings assistant'))
         lblWelcome.get_style_context().add_class(class_name='title-1')
         lblWelcome.set_margin_top(24)
         imgWelcome = Gtk.Image.new_from_icon_name('MiAZ-big')
@@ -240,7 +241,7 @@ class MiAZAssistantRepoSettings(MiAZAssistant):
         box.append(selector)
         page.set_start_widget(box)
         lblInfo = Gtk.Label()
-        lblInfo.set_markup("Manage countries")
+        lblInfo.set_markup(_('Manage countries'))
         page.set_end_widget(lblInfo)
         self.set_page_type(page, Gtk.AssistantPageType.CONTENT)
         self.set_page_complete(page, True)
@@ -258,7 +259,7 @@ class MiAZAssistantRepoSettings(MiAZAssistant):
         box.append(selector)
         page.set_start_widget(box)
         lblInfo = Gtk.Label()
-        lblInfo.set_markup("Manage groups")
+        lblInfo.set_markup(_('Manage groups'))
         page.set_end_widget(lblInfo)
         self.set_page_type(page, Gtk.AssistantPageType.CONTENT)
         self.set_page_complete(page, True)
@@ -266,10 +267,6 @@ class MiAZAssistantRepoSettings(MiAZAssistant):
         # Page Purposes
         page = self.get_nth_page(PAGE.PURPOSES)
         box = self.factory.create_box_vertical(spacing=12, vexpand=True, hexpand=True)
-        # ~ lblTitle = Gtk.Label()
-        # ~ lblTitle.set_markup('Manage purposes')
-        # ~ lblTitle.get_style_context().add_class(class_name='title-2')
-        # ~ box.append(lblTitle)
         lblDesc = Gtk.Label()
         lblDesc.set_markup('')
         lblDesc.set_xalign(0.0)
@@ -280,7 +277,7 @@ class MiAZAssistantRepoSettings(MiAZAssistant):
         box.append(selector)
         page.set_start_widget(box)
         lblInfo = Gtk.Label()
-        lblInfo.set_markup("Manage purposes")
+        lblInfo.set_markup(_('Manage purposes'))
         page.set_end_widget(lblInfo)
         self.set_page_type(page, Gtk.AssistantPageType.CONTENT)
         self.set_page_complete(page, True)
@@ -298,7 +295,7 @@ class MiAZAssistantRepoSettings(MiAZAssistant):
         box.append(selector)
         page.set_start_widget(box)
         lblInfo = Gtk.Label()
-        lblInfo.set_markup("Manage people receiving documents")
+        lblInfo.set_markup(_('Manage people receiving documents'))
         page.set_end_widget(lblInfo)
         self.set_page_type(page, Gtk.AssistantPageType.CONTENT)
         self.set_page_complete(page, True)
@@ -316,7 +313,7 @@ class MiAZAssistantRepoSettings(MiAZAssistant):
         box.append(selector)
         page.set_start_widget(box)
         lblInfo = Gtk.Label()
-        lblInfo.set_markup("Manage people sending documents")
+        lblInfo.set_markup(_('Manage people sending documents'))
         page.set_end_widget(lblInfo)
         self.set_page_type(page, Gtk.AssistantPageType.CONTENT)
         self.set_page_complete(page, True)
@@ -325,34 +322,23 @@ class MiAZAssistantRepoSettings(MiAZAssistant):
         page = self.get_nth_page(PAGE.CONFIRMATION)
         box = self.factory.create_box_vertical(spacing=12, vexpand=True, hexpand=True)
         lblTitle = Gtk.Label()
-        lblTitle.set_markup('You are set!')
+        lblTitle.set_markup(_('You are set!'))
         lblTitle.get_style_context().add_class(class_name='title-2')
         box.append(lblTitle)
         page.set_start_widget(box)
-        text = "You can continue using the application now"
+        text = _('You can continue using the application now')
         label = self.factory.create_label(text=text)
         page.set_center_widget(label)
         self.set_page_type(page, Gtk.AssistantPageType.CONFIRM)
         self.set_page_complete(page, True)
 
-        # Page Summary
-        # ~ page = self.get_nth_page(PAGE.SUMMARY)
-        # ~ box = self.factory.create_box_vertical(spacing=12, vexpand=True, hexpand=True)
-        # ~ lblTitle = Gtk.Label()
-        # ~ lblTitle.set_markup('Summary')
-        # ~ lblTitle.get_style_context().add_class(class_name='title-2')
-        # ~ box.append(lblTitle)
-        # ~ page.set_start_widget(box)
-        # ~ self.set_page_type(page, Gtk.AssistantPageType.SUMMARY)
-
-
     def on_assistant_cancel(self, *args):
         if self.completed:
-            self.log.debug("Configuration finished sucessfully")
+            self.log.debug('Configuration finished sucessfully')
             self.destroy()
             self.app.win.present()
         else:
-            self.log.debug("Settings assistant canceled by user")
+            self.log.debug('Settings assistant canceled by user')
             self.destroy()
             self.app.win.present()
 
@@ -360,8 +346,6 @@ class MiAZAssistantRepoSettings(MiAZAssistant):
         conf_country = self.app.get_config('Country')
         countries = conf_country.load(conf_country.used)
         if len(countries) > 0:
-            # ~ rename = self.app.get_rename_widget()
-            # ~ rename.update_dropdowns()
             self.destroy()
         else:
             self.previous_page()

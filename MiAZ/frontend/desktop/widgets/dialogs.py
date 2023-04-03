@@ -10,6 +10,7 @@
 
 import os
 import json
+from gettext import gettext as _
 
 import gi
 gi.require_version(namespace='Gtk', version='4.0')

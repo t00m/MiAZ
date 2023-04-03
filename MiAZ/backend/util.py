@@ -101,7 +101,7 @@ class MiAZUtil(GObject.GObject):
             fn = Field[item_type]
             if fields[fn] == value:
                 used = True
-                self.log.warning("Value %s of type %s is still being used in %s", value, item_type.__title__, doc)
+                self.log.warning("Value %s of type %s is still being used in %s", value, _(item_type.__title__), doc)
                 break
         return used
 
@@ -350,13 +350,13 @@ class MiAZUtil(GObject.GObject):
             gtype = item_type.__gtype_name__
             fn = Field[item_type] # Field number
             fname = item_type.__gtype_name__
-            title = item_type.__title__
+            title = _(item_type.__title__)
             key = fields[fn]
             value = None
             if len(key) == 0:
                 valid &= False
                 rc = False
-                message = "<i>%s</i> field is empty" % title
+                message = _('<i>%s</i> field is empty') % title
             else:
                 if item_type != Date:
                     available = self.conf[fname].exists_available(key)
@@ -366,13 +366,13 @@ class MiAZUtil(GObject.GObject):
                         items = self.conf[fname].load_used()
                         value = self.conf[fname].get(key)
                         if len(value) > 0:
-                            message = "%s %s (%s) is available and ready to use" % (fname, key, value)
+                            message = _('%s %s (%s) is available and ready to use') % (fname, key, value)
                         else:
-                            message = "%s %s is available and ready to use" % (fname, key)
+                            message = _('%s %s is available and ready to use') % (fname, key)
                     else:
                         valid &= False
                         rc = False
-                        message = "%s %s available? %s. Used? %s" % (title, key, available, used)
+                        message = _('%s %s available? %s. Used? %s') % (title, key, available, used)
             reasons.append((rc, gtype, value, message))
         return valid, reasons
 

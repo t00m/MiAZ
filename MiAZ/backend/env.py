@@ -12,8 +12,7 @@ Environment module.
 import os
 from os.path import abspath
 import sys
-import tempfile
-import multiprocessing
+from gettext import gettext as _
 
 ENV = {}
 
@@ -24,17 +23,17 @@ ENV['CONF']['USER_DIR'] = os.path.expanduser('~')
 
 # Application
 ENV['APP'] = {}
-ENV['APP']['name'] = "AZ Organizer"
-ENV['APP']['shortname'] = "MiAZ"
-ENV['APP']['description'] = "Personal Document Organizer"
+ENV['APP']['name'] = _('AZ Organizer')
+ENV['APP']['shortname'] = 'MiAZ'
+ENV['APP']['description'] = _('Personal Document Organizer')
 ENV['APP']['license'] = 'GPL v3'
-ENV['APP']['license_long'] = "The code is licensed under the terms of the  GPL v3\nso you're free to grab, extend, improve and fork the code as you want"
-ENV['APP']['copyright'] = "Copyright \xa9 2022-2023 Tomás Vírseda"
+ENV['APP']['license_long'] = _("The code is licensed under the terms of the  GPL v3\nso you're free to grab, extend, improve and fork the code as you want")
+ENV['APP']['copyright'] = 'Copyright \xa9 2022-2023 Tomás Vírseda'
 ENV['APP']['author'] = 'Tomás Vírseda'
 ENV['APP']['author_email'] = 'tomasvirseda@gmail.com'
 ENV['APP']['documenters'] = ["Tomás Vírseda <tomasvirseda@gmail.com>"]
 ENV['APP']['website'] = 'https://github.com/t00m/MiAZ'
-ENV['APP']['ID'] = "com.github.t00m.MiAZ"
+ENV['APP']['ID'] = 'com.github.t00m.MiAZ'
 
 # Local paths
 ENV['LPATH'] = {}

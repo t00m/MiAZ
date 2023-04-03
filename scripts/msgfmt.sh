@@ -1,1 +1,0 @@
-msgfmt -o MiAZ/data/po/es_ES/LC_MESSAGES/miaz.mo MiAZ/data/po/es_ES/LC_MESSAGES/miaz.po

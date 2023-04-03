@@ -204,17 +204,17 @@ class MiAZApp(Adw.Application):
         self.add_widget('menu-headerbar-section-common-danger', section_danger)
 
         # Actions in
-        menuitem = self.factory.create_menuitem('settings_app', 'Application settings', self._handle_menu, None, [])
+        menuitem = self.factory.create_menuitem('settings_app', _('Application settings'), self._handle_menu, None, [])
         section_common_in.append_item(menuitem)
 
         # Actions out
-        menuitem = self.factory.create_menuitem('help', 'Help', self._handle_menu, None, ["<Control>h", "<Control>H"])
+        menuitem = self.factory.create_menuitem('help', _('Help'), self._handle_menu, None, ["<Control>h", "<Control>H"])
         section_common_out.append_item(menuitem)
-        menuitem = self.factory.create_menuitem('about', 'About', self._handle_menu, None, [])
+        menuitem = self.factory.create_menuitem('about', _('About'), self._handle_menu, None, [])
         section_common_out.append_item(menuitem)
 
         # Actions danger
-        menuitem = self.factory.create_menuitem('quit', 'Quit', self._handle_menu, None, ["<Control>q", "<Control>Q"])
+        menuitem = self.factory.create_menuitem('quit', _('Quit'), self._handle_menu, None, ["<Control>q", "<Control>Q"])
         section_danger.append_item(menuitem)
 
         menubutton = self.factory.create_button_menu(icon_name='miaz-system-menu', menu=menu_headerbar)
