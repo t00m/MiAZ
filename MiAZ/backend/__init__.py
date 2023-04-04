@@ -16,6 +16,7 @@ from gi.repository import GObject
 from MiAZ.backend.log import get_logger
 from MiAZ.backend.util import MiAZUtil
 from MiAZ.backend.watcher import MiAZWatcher
+from MiAZ.backend.stats import MiAZStats
 from MiAZ.backend.projects import MiAZProject
 from MiAZ.backend.config import MiAZConfigApp
 from MiAZ.backend.config import MiAZConfigCountries
@@ -105,6 +106,7 @@ class MiAZBackend(GObject.GObject):
         self.watcher.set_active(active=True)
         self.watcher.connect('repository-updated', self.repo_check)
         self.projects = MiAZProject(self)
+        self.stats = MiAZStats(self)
         self.log.debug("Configuration loaded")
         self.emit('repository-switched')
 

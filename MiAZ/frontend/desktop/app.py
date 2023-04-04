@@ -87,6 +87,7 @@ class MiAZApp(Adw.Application):
             self._setup_page_repo_settings()
         repo_active = self.conf['App'].get('current')
         label_repo.set_markup(' [<b>%s</b>] ' % repo_active.replace('_', ' '))
+        self.add_service('stats', self.backend.stats)
 
     def _finish_configuration(self, *args):
         self.log.debug("Finish loading app")
@@ -359,12 +360,12 @@ class MiAZApp(Adw.Application):
             return None
 
     def get_widgets(self):
-        return self._widget
+        return self._miazobjs['widgets']
 
     def remove_widget(self, name: str):
         deleted = False
         try:
-            del(self._widget[name])
+            del(self._miazobjs['widgets'][name])
             deleted = True
         except KeyError:
             self.log.error("Widget '%s' doesn't exists", name)
