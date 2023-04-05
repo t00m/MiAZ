@@ -19,6 +19,16 @@ from MiAZ.backend.models import Group, Person, Country
 from MiAZ.backend.models import Purpose, Concept, SentBy
 from MiAZ.backend.models import SentTo, Date, Extension
 
+Fields = {}
+Fields[Date] = 0
+Fields[Country] = 1
+Fields[Group] = 2
+Fields[SentBy] = 3
+Fields[Purpose] = 4
+Fields[Concept] = 5
+Fields[SentTo] = 6
+
+
 
 class MiAZStats(GObject.GObject):
     __gtype_name__ = 'MiAZStats'
@@ -78,40 +88,14 @@ class MiAZStats(GObject.GObject):
             except KeyError:
                 self.stats[_(Date.__title__)][_('day')][day] = 1
 
-            # Country
-            country = fields[1]
-            try:
-                self.stats[_(Country.__title__)][country] += 1
-            except KeyError:
-                self.stats[_(Country.__title__)][country] = 1
+            # Rest of metadata
+            for prop in [Country, Group, SentBy, Purpose, SentTo]:
+                item = fields[Fields[prop]]
+                try:
+                    self.stats[_(prop.__title__)][item] += 1
+                except KeyError:
+                    self.stats[_(prop.__title__)][item] = 1
 
-            # Group
-            group = fields[2]
-            try:
-                self.stats[_(Group.__title__)][group] += 1
-            except KeyError:
-                self.stats[_(Group.__title__)][group] = 1
-
-            # SentBy
-            sentby = fields[3]
-            try:
-                self.stats[_(SentBy.__title__)][sentby] += 1
-            except KeyError:
-                self.stats[_(SentBy.__title__)][sentby] = 1
-
-            # Purpose
-            purpose = fields[4]
-            try:
-                self.stats[_(Purpose.__title__)][purpose] += 1
-            except KeyError:
-                self.stats[_(Purpose.__title__)][purpose] = 1
-
-            # SentTo
-            sentto = fields[6]
-            try:
-                self.stats[_(SentTo.__title__)][sentto] += 1
-            except KeyError:
-                self.stats[_(SentTo.__title__)][sentto] = 1
         self.log.debug("Stats updated")
         self.emit('stats-updated')
 
