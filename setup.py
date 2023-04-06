@@ -66,7 +66,9 @@ setup(
             ],
     # distutils does not support install_requires, but pip needs it to be
     # able to automatically install dependencies
-    install_requires=[],
+    install_requires=[
+        'pygal'
+    ],
     include_package_data=True,
     data_files=DATA_FILES,
     zip_safe=False,
