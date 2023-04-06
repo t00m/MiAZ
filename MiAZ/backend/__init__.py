@@ -46,6 +46,7 @@ class MiAZBackend(GObject.GObject):
                             GObject.SignalFlags.RUN_LAST, None, () )
 
         self.util = MiAZUtil(self)
+        self.stats = MiAZStats(self)
         self.conf['App'] = MiAZConfigApp(self)
         self.conf['Repository'] = MiAZConfigRepositories(self)
 
@@ -106,7 +107,6 @@ class MiAZBackend(GObject.GObject):
         self.watcher.set_active(active=True)
         self.watcher.connect('repository-updated', self.repo_check)
         self.projects = MiAZProject(self)
-        self.stats = MiAZStats(self)
         self.log.debug("Configuration loaded")
         self.emit('repository-switched')
 
