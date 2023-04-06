@@ -56,6 +56,7 @@ class MiAZApp(Adw.Application):
         self._miazobjs['services'] = {}
         self.backend = self.add_service('backend', MiAZBackend())
         self.add_service('util', self.backend.util)
+        self.add_service('stats', self.backend.stats)
         self.conf = self.backend.conf
         GLib.set_application_name(ENV['APP']['name'])
         self.connect('activate', self._on_activate)
@@ -87,7 +88,6 @@ class MiAZApp(Adw.Application):
             self._setup_page_repo_settings()
         repo_active = self.conf['App'].get('current')
         label_repo.set_markup(' [<b>%s</b>] ' % repo_active.replace('_', ' '))
-        self.add_service('stats', self.backend.stats)
 
     def _finish_configuration(self, *args):
         self.log.debug("Finish loading app")
@@ -285,8 +285,6 @@ class MiAZApp(Adw.Application):
                     self._setup_page_rename()
                 if self.get_widget('settings-repo') is None:
                     self._setup_page_repo_settings()
-                workspace = self.get_widget('workspace')
-                workspace.update()
                 self.show_stack_page_by_name('workspace')
                 valid = True
                 self.emit('start-application-completed')
