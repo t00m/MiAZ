@@ -10,7 +10,6 @@
 
 from gettext import gettext as _
 
-from gi.repository import GLib
 from gi.repository import GObject
 
 from MiAZ.backend.env import ENV
@@ -29,7 +28,6 @@ Fields[Concept] = 5
 Fields[SentTo] = 6
 
 
-
 class MiAZStats(GObject.GObject):
     __gtype_name__ = 'MiAZStats'
     __gsignals__ = {
@@ -42,15 +40,6 @@ class MiAZStats(GObject.GObject):
         self.backend = backend
         self.log = get_logger('MiAZStats')
         self.util = self.backend.util
-        self.config = self.backend.conf
-        for node in self.config:
-            config = self.config[node]
-            config.connect('available-updated', self.config_updated)
-            config.connect('used-updated', self.config_updated)
-        self.log.debug("Stats initialized")
-
-    def config_updated(self, config):
-        GLib.idle_add(self.build)
 
     def build(self, *args):
         self.stats = {}
