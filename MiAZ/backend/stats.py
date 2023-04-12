@@ -41,7 +41,7 @@ class MiAZStats(GObject.GObject):
         self.log = get_logger('MiAZStats')
         self.util = self.backend.util
 
-    def build(self, *args):
+    def _build(self, *args):
         self.stats = {}
         self.stats[_(Date.__title__)] = {}
         self.stats[_(Date.__title__)][_('year')] = {}
@@ -89,5 +89,6 @@ class MiAZStats(GObject.GObject):
         self.emit('stats-updated')
 
     def get(self):
+        self._build()
         return self.stats
 

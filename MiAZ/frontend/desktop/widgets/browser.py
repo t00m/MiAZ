@@ -8,9 +8,9 @@
 """
 
 import gi
-gi.require_version('Gtk', '3.0')
-gi.require_version('Soup', '2.4')
-gi.require_version('WebKit2', '4.0')
+gi.require_version('Gtk', '4.0')
+gi.require_version('Soup', '3.0')
+gi.require_version('WebKit2', '4.1')
 from gi.repository import Gio
 from gi.repository import GLib
 from gi.repository import Gtk
@@ -20,7 +20,7 @@ from gi.repository import WebKit2 as WebKit
 from MiAZ.backend.log import get_logger
 
 
-class BasicoBrowser(WebKit.WebView):
+class MiAZBrowser(WebKit.WebView):
     def __init__(self):
         super().__init__()
 
