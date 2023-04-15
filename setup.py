@@ -44,7 +44,6 @@ DATA_FILES = add_data('MiAZ/data')
 DATA_FILES += ['README.adoc']
 DATA_FILES +=[('share/applications', ['MiAZ/data/resources/com.github.t00m.MiAZ.desktop'])]
 DATA_FILES +=[('share/icons/hicolor/48x48/apps/', ['MiAZ/data/icons/com.github.t00m.MiAZ.svg'])]
-print(DATA_FILES)
 
 setup(
     name=ENV['APP']['shortname'],
@@ -66,9 +65,7 @@ setup(
             ],
     # distutils does not support install_requires, but pip needs it to be
     # able to automatically install dependencies
-    install_requires=[
-        'pygal'
-    ],
+    install_requires=[],
     include_package_data=True,
     data_files=DATA_FILES,
     zip_safe=False,

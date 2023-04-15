@@ -257,8 +257,6 @@ class MiAZApp(Adw.Application):
         ## Stack & Stack.Switcher
         stack = self._setup_stack()
         self.mainbox.append(stack)
-        switcher = self.get_widget('switcher')
-        self.mainbox.append(switcher)
 
         # Setup headerbar
         self._setup_headerbar_left()
