@@ -442,6 +442,8 @@ class MiAZWorkspace(Gtk.Box):
         return self.selected_items
 
     def update(self, *args):
+        # FIXME: come up w/ a solution to display only available values
+        filters = {}
         self.selected_items = []
         docs = self.util.get_files()
         sentby = self.app.get_config('SentBy')

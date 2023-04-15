@@ -16,6 +16,7 @@ from gi.repository import GObject
 from MiAZ.backend.log import get_logger
 from MiAZ.backend.util import MiAZUtil
 from MiAZ.backend.watcher import MiAZWatcher
+from MiAZ.backend.stats import MiAZStats
 from MiAZ.backend.projects import MiAZProject
 from MiAZ.backend.config import MiAZConfigApp
 from MiAZ.backend.config import MiAZConfigCountries
@@ -45,6 +46,7 @@ class MiAZBackend(GObject.GObject):
                             GObject.SignalFlags.RUN_LAST, None, () )
 
         self.util = MiAZUtil(self)
+        self.stats = MiAZStats(self)
         self.conf['App'] = MiAZConfigApp(self)
         self.conf['Repository'] = MiAZConfigRepositories(self)
 

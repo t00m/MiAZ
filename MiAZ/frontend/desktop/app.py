@@ -56,6 +56,7 @@ class MiAZApp(Adw.Application):
         self._miazobjs['services'] = {}
         self.backend = self.add_service('backend', MiAZBackend())
         self.add_service('util', self.backend.util)
+        self.add_service('stats', self.backend.stats)
         self.conf = self.backend.conf
         GLib.set_application_name(ENV['APP']['name'])
         self.connect('activate', self._on_activate)
@@ -284,8 +285,6 @@ class MiAZApp(Adw.Application):
                     self._setup_page_rename()
                 if self.get_widget('settings-repo') is None:
                     self._setup_page_repo_settings()
-                workspace = self.get_widget('workspace')
-                workspace.update()
                 self.show_stack_page_by_name('workspace')
                 valid = True
                 self.emit('start-application-completed')
@@ -359,12 +358,12 @@ class MiAZApp(Adw.Application):
             return None
 
     def get_widgets(self):
-        return self._widget
+        return self._miazobjs['widgets']
 
     def remove_widget(self, name: str):
         deleted = False
         try:
-            del(self._widget[name])
+            del(self._miazobjs['widgets'][name])
             deleted = True
         except KeyError:
             self.log.error("Widget '%s' doesn't exists", name)
