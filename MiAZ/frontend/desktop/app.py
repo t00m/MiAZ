@@ -33,6 +33,7 @@ from MiAZ.frontend.desktop.settings import MiAZAppSettings
 from MiAZ.frontend.desktop.settings import MiAZRepoSettings
 from MiAZ.frontend.desktop.widgets.about import MiAZAbout
 from MiAZ.frontend.desktop.widgets.welcome import MiAZWelcome
+from MiAZ.frontend.desktop.widgets.statusbar import MiAZStatusbar
 from MiAZ.frontend.desktop.icons import MiAZIconManager
 from MiAZ.frontend.desktop.factory import MiAZFactory
 from MiAZ.frontend.desktop.actions import MiAZActions
@@ -237,10 +238,11 @@ class MiAZApp(Adw.Application):
 
 
     def _setup_headerbar_right(self):
-        label_repo = self.add_widget('label_repo', Gtk.Label())
-        repo_active = self.conf['App'].get('current')
-        label_repo.set_markup(' [<b>%s</b>] ' % repo_active.replace('_', ' '))
-        self.header.pack_end(label_repo)
+        pass
+        # ~ label_repo = self.add_widget('label_repo', Gtk.Label())
+        # ~ repo_active = self.conf['App'].get('current')
+        # ~ label_repo.set_markup(' [<b>%s</b>] ' % repo_active.replace('_', ' '))
+        # ~ self.header.pack_end(label_repo)
 
     def _setup_headerbar_center(self):
         pass
@@ -270,6 +272,10 @@ class MiAZApp(Adw.Application):
         self._setup_page_help()
         self._setup_page_app_settings()
 
+        # Statusbar
+        statusbar = self.add_widget('statusbar', MiAZStatusbar(self))
+        self.mainbox.append(statusbar)
+
     def check_repository(self):
         repo = self.backend.repo_config()
         try:
@@ -287,6 +293,10 @@ class MiAZApp(Adw.Application):
                     self._setup_page_repo_settings()
                 self.show_stack_page_by_name('workspace')
                 valid = True
+                statusbar = self.get_widget('statusbar')
+                name = self.conf['App'].get('current')
+                statusbar.repo(name)
+                statusbar.message("Repository loaded")
                 self.emit('start-application-completed')
             else:
                 valid = False
@@ -323,9 +333,12 @@ class MiAZApp(Adw.Application):
 
     def show_stack_page_by_name(self, name: str = 'workspace'):
         self.stack.set_visible_child_name(name)
+        button = self.get_widget('app-header-button-back')
         if name not in ['welcome', 'workspace']:
-            button = self.get_widget('app-header-button-back')
             button.set_visible(True)
+        else:
+            button.set_visible(False)
+
 
     def exit_app(self, *args):
         self.emit("stop-application-completed")
