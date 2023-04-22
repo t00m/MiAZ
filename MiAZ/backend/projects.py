@@ -20,9 +20,10 @@ class MiAZProject(GObject.GObject):
 
     def __init__(self, backend):
         super(MiAZProject, self).__init__()
+        self.log = get_logger('MiAZProject')
         self.backend = backend
         self.config = self.backend.conf['Project']
-        self.log = get_logger('MiAZProject')
+        self.util = self.backend.util
         repo = self.backend.repo_config()
         self.cnfprj = os.path.join(repo['dir_conf'], 'projects.json')
         self.projects = {}
@@ -30,6 +31,7 @@ class MiAZProject(GObject.GObject):
             self.save()
             self.log.debug("Created new config file for projects")
         self.projects = self.load()
+        self.util.connect('filename-renamed', self._on_filename_renamed)
 
     def add(self, project: str, doc: str):
         try:
@@ -122,3 +124,12 @@ class MiAZProject(GObject.GObject):
             description = error
         return description
 
+    def _on_filename_renamed(self, util, source, target):
+        source = os.path.basename(source)
+        target = os.path.basename(target)
+        projects = self.assigned_to(source)
+        self.log.debug("%s found in these projects: %s", source, ', '.join(projects))
+        for project in projects:
+            self.remove(project, source)
+            self.add(project, target)
+            self.log.debug("P[%s]: %s -> %s", project, source, target)
