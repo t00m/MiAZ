@@ -83,6 +83,7 @@ class MiAZColumnViewWorkspace(MiAZColumnView):
         self.column_flag = Gtk.ColumnViewColumn.new(_('Country'), self.factory_flag)
         # ~ self.column_country = Gtk.ColumnViewColumn.new("Country", self.factory_country)
 
+        self.cv.append_column(self.column_flag)
         self.cv.append_column(self.column_icon_type)
         self.cv.append_column(self.column_group)
         self.cv.append_column(self.column_purpose)
@@ -91,7 +92,6 @@ class MiAZColumnViewWorkspace(MiAZColumnView):
         self.cv.append_column(self.column_sentby)
         self.cv.append_column(self.column_sentto)
         self.cv.append_column(self.column_date)
-        self.cv.append_column(self.column_flag)
         # ~ self.cv.append_column(self.column_country)
         self.column_title.set_expand(True)
 

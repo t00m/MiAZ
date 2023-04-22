@@ -129,9 +129,9 @@ class MiAZFactory:
 
     def create_button_menu(self, icon_name: str = '', title:str = '', menu: Gio.Menu = None)-> Gtk.MenuButton:
         """Gtk.Menubutton with a menu"""
-        label = Gtk.Label()
-        label.get_style_context().add_class(class_name='caption')
-        label.set_markup(title)
+        # ~ label = Gtk.Label()
+        # ~ label.get_style_context().add_class(class_name='caption')
+        # ~ label.set_markup(title)
         child=Adw.ButtonContent(icon_name=icon_name, label=title, css_classes=['flat'])
         button = Gtk.MenuButton()
         button.set_has_frame(True)

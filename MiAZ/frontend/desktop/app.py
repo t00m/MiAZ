@@ -33,6 +33,7 @@ from MiAZ.frontend.desktop.settings import MiAZAppSettings
 from MiAZ.frontend.desktop.settings import MiAZRepoSettings
 from MiAZ.frontend.desktop.widgets.about import MiAZAbout
 from MiAZ.frontend.desktop.widgets.welcome import MiAZWelcome
+from MiAZ.frontend.desktop.widgets.statusbar import MiAZStatusbar
 from MiAZ.frontend.desktop.icons import MiAZIconManager
 from MiAZ.frontend.desktop.factory import MiAZFactory
 from MiAZ.frontend.desktop.actions import MiAZActions
@@ -81,13 +82,14 @@ class MiAZApp(Adw.Application):
     def _update_repo_settings(self, *args):
         self.log.debug("Repo switched. Configuration switched")
         widget_settings_repo = self.get_widget('settings-repo')
-        label_repo = self.get_widget('label_repo')
+        # ~ label_repo = self.get_widget('label_repo')
         if widget_settings_repo is not None:
             self.stack.remove(widget_settings_repo)
             self.remove_widget('settings-repo')
             self._setup_page_repo_settings()
         repo_active = self.conf['App'].get('current')
-        label_repo.set_markup(' [<b>%s</b>] ' % repo_active.replace('_', ' '))
+
+        # ~ label_repo.set_markup(' [<b>%s</b>] ' % repo_active.replace('_', ' '))
 
     def _finish_configuration(self, *args):
         self.log.debug("Finish loading app")
@@ -220,27 +222,25 @@ class MiAZApp(Adw.Application):
 
         menubutton = self.factory.create_button_menu(icon_name='miaz-system-menu', menu=menu_headerbar)
         menubutton.set_always_show_arrow(False)
-        self.add_widget('headerbar-menubutton-app', menubutton)
-        self.header.pack_start(menubutton)
-
-    def _setup_headerbar_left(self):
-        self._setup_menu_app()
-        btnBack = self.factory.create_button(icon_name='miaz-go-back', title=_('Back'), callback=self.show_workspace, css_classes=['flat'])
-        btnBack.set_visible(False)
-        self.add_widget('app-header-button-back', btnBack)
-        self.header.pack_start(btnBack)
+        self.add_widget('app-menu-system', menubutton)
+        # ~ self.header.pack_start(menubutton)
 
     def show_workspace(self, *args):
         self.show_stack_page_by_name('workspace')
         button = self.get_widget('app-header-button-back')
         button.set_visible(False)
 
+    def _setup_headerbar_left(self):
+        headerbar = self.get_widget('headerbar')
+        btnmenu = self.get_widget('app-menu-system')
+        headerbar.pack_start(btnmenu)
 
     def _setup_headerbar_right(self):
-        label_repo = self.add_widget('label_repo', Gtk.Label())
-        repo_active = self.conf['App'].get('current')
-        label_repo.set_markup(' [<b>%s</b>] ' % repo_active.replace('_', ' '))
-        self.header.pack_end(label_repo)
+        pass
+        # ~ label_repo = self.add_widget('label_repo', Gtk.Label())
+        # ~ repo_active = self.conf['App'].get('current')
+        # ~ label_repo.set_markup(' [<b>%s</b>] ' % repo_active.replace('_', ' '))
+        # ~ self.header.pack_end(label_repo)
 
     def _setup_headerbar_center(self):
         pass
@@ -248,7 +248,8 @@ class MiAZApp(Adw.Application):
     def _setup_gui(self):
         # Widgets
         ## HeaderBar
-        self.header = self.add_widget('headerbar', Adw.HeaderBar())
+        headerbar = self.add_widget('headerbar', Adw.HeaderBar())
+        self.win.set_titlebar(headerbar)
 
         ## Central Box
         self.mainbox = self.factory.create_box_vertical(vexpand=True)
@@ -258,17 +259,23 @@ class MiAZApp(Adw.Application):
         stack = self._setup_stack()
         self.mainbox.append(stack)
 
+        # Setup system menu
+        self._setup_menu_app()
+
         # Setup headerbar
         self._setup_headerbar_left()
         self._setup_headerbar_center()
         self._setup_headerbar_right()
-        self.win.set_titlebar(self.header)
 
         # Create system pages
         self._setup_page_about()
         self._setup_page_welcome()
         self._setup_page_help()
         self._setup_page_app_settings()
+
+        # Statusbar
+        statusbar = self.add_widget('statusbar', MiAZStatusbar(self))
+        self.mainbox.append(statusbar)
 
     def check_repository(self):
         repo = self.backend.repo_config()
@@ -287,6 +294,10 @@ class MiAZApp(Adw.Application):
                     self._setup_page_repo_settings()
                 self.show_stack_page_by_name('workspace')
                 valid = True
+                statusbar = self.get_widget('statusbar')
+                name = self.conf['App'].get('current')
+                statusbar.repo(name)
+                statusbar.message("Repository loaded")
                 self.emit('start-application-completed')
             else:
                 valid = False
@@ -323,9 +334,12 @@ class MiAZApp(Adw.Application):
 
     def show_stack_page_by_name(self, name: str = 'workspace'):
         self.stack.set_visible_child_name(name)
+        button = self.get_widget('app-header-button-back')
         if name not in ['welcome', 'workspace']:
-            button = self.get_widget('app-header-button-back')
             button.set_visible(True)
+        else:
+            button.set_visible(False)
+
 
     def exit_app(self, *args):
         self.emit("stop-application-completed")
@@ -338,12 +352,21 @@ class MiAZApp(Adw.Application):
         else:
             self.log.error("A service with name '%s' already exists", name)
 
-    def add_widget(self, name: str, widget: Gtk.Widget) -> Gtk.Widget:
+    def add_widget(self, name: str, widget):
+        # Add widget, but do not overwrite
         if name not in self._miazobjs['widgets']:
             self._miazobjs['widgets'][name] = widget
             return widget
         else:
             self.log.error("A widget with name '%s' already exists", name)
+
+    def set_widget(self, name: str, widget):
+        # Overwrite existing widget
+        if name in self._miazobjs['widgets']:
+            self._miazobjs['widgets'][name] = widget
+            return widget
+        else:
+            self.log.error("A widget with name '%s' doesn't exists", name)
 
     def get_widget(self, name):
         try:
