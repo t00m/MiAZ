@@ -200,20 +200,10 @@ class MiAZWorkspace(Gtk.Box):
         hbox = self.app.add_widget('workspace-toolbar-top-left', self.factory.create_box_horizontal())
         toolbar_top.set_start_widget(hbox)
 
-        ## Import button
-        widgets = []
-        btnImportFiles = self.factory.create_button('miaz-import-document', callback=self.actions.import_file)
-        rowImportDoc = self.factory.create_actionrow(title=_('Import document'), subtitle=_('Import one or more documents'), suffix=btnImportFiles)
-        widgets.append(rowImportDoc)
-        btnImportDir = self.factory.create_button('miaz-import-folder', callback=self.actions.import_directory)
-        rowImportDir = self.factory.create_actionrow(title=_('Import directory'), subtitle=_('Import all documents from a directory'), suffix=btnImportDir)
-        widgets.append(rowImportDir)
-        # FIXME: Not implemented yet
-        # ~ btnImportConf = self.factory.create_button('miaz-import-config', callback=self.actions.import_config)
-        # ~ rowImportConf = self.factory.create_actionrow(title='Import config', subtitle='Import configuration', suffix=btnImportConf)
-        # ~ widgets.append(rowImportConf)
-        button = self.factory.create_button_popover(icon_name='miaz-import', title=_('Import...'), widgets=widgets)
-        hbox.append(button)
+        btnBack = self.factory.create_button(icon_name='miaz-go-back', title=_('Back'), callback=self.app.show_workspace, css_classes=['flat'])
+        btnBack.set_visible(False)
+        self.app.add_widget('app-header-button-back', btnBack)
+        hbox.append(btnBack)
 
         # Center
         hbox = self.app.add_widget('workspace-toolbar-top-center', self.factory.create_box_horizontal(spacing=0))
@@ -256,6 +246,21 @@ class MiAZWorkspace(Gtk.Box):
         hbox = self.app.add_widget('workspace-toolbar-top-right', self.factory.create_box_horizontal(spacing=0))
         hbox.get_style_context().add_class(class_name='linked')
         toolbar_top.set_end_widget(hbox)
+
+        ## Import button
+        widgets = []
+        btnImportFiles = self.factory.create_button('miaz-import-document', callback=self.actions.import_file)
+        rowImportDoc = self.factory.create_actionrow(title=_('Import document'), subtitle=_('Import one or more documents'), suffix=btnImportFiles)
+        widgets.append(rowImportDoc)
+        btnImportDir = self.factory.create_button('miaz-import-folder', callback=self.actions.import_directory)
+        rowImportDir = self.factory.create_actionrow(title=_('Import directory'), subtitle=_('Import all documents from a directory'), suffix=btnImportDir)
+        widgets.append(rowImportDir)
+        # FIXME: Not implemented yet
+        # ~ btnImportConf = self.factory.create_button('miaz-import-config', callback=self.actions.import_config)
+        # ~ rowImportConf = self.factory.create_actionrow(title='Import config', subtitle='Import configuration', suffix=btnImportConf)
+        # ~ widgets.append(rowImportConf)
+        button = self.factory.create_button_popover(icon_name='miaz-import', title='', widgets=widgets)
+        hbox.append(button)
 
         # Menu Single and Multiple
         # ~ self._setup_menu_selection_single()
@@ -394,8 +399,10 @@ class MiAZWorkspace(Gtk.Box):
         self.toolbar_filters = self._setup_toolbar_filters()
         self.app.add_widget('workspace-toolbar-filters', self.toolbar_filters)
         toolbar_top = self.app.add_widget('workspace-toolbar-top', self._setup_toolbar_top())
+        headerbar = self.app.get_widget('headerbar')
+        headerbar.set_title_widget(toolbar_top)
         frmView = self._setup_columnview()
-        head.append(toolbar_top)
+        # ~ head.append(toolbar_top)
         head.append(self.toolbar_filters)
         body.append(frmView)
 
