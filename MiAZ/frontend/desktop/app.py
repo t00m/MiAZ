@@ -351,12 +351,21 @@ class MiAZApp(Adw.Application):
         else:
             self.log.error("A service with name '%s' already exists", name)
 
-    def add_widget(self, name: str, widget: Gtk.Widget) -> Gtk.Widget:
+    def add_widget(self, name: str, widget):
+        # Add widget, but do not overwrite
         if name not in self._miazobjs['widgets']:
             self._miazobjs['widgets'][name] = widget
             return widget
         else:
             self.log.error("A widget with name '%s' already exists", name)
+
+    def set_widget(self, name: str, widget):
+        # Overwrite existing widget
+        if name in self._miazobjs['widgets']:
+            self._miazobjs['widgets'][name] = widget
+            return widget
+        else:
+            self.log.error("A widget with name '%s' doesn't exists", name)
 
     def get_widget(self, name):
         try:

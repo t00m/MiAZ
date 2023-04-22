@@ -57,7 +57,7 @@ class MiAZWorkspace(Gtk.Box):
     }
     selected_items = []
     dates = {}
-    dropdown = {}
+    # ~ dropdown = {}
     cache = {}
 
     def __init__(self, app):
@@ -76,6 +76,7 @@ class MiAZWorkspace(Gtk.Box):
         self.set_margin_end(margin=3)
         self.set_margin_bottom(margin=3)
         self.set_margin_start(margin=3)
+        self.app.add_widget('ws-dropdowns', {})
         frmView = self._setup_workspace()
         self.append(frmView)
 
@@ -132,6 +133,7 @@ class MiAZWorkspace(Gtk.Box):
         body.set_margin_top(margin=6)
         widget.append(body)
 
+        dropdowns = self.app.get_widget('ws-dropdowns')
         for item_type in [Country, Group, SentBy, Purpose, SentTo]:
             i_type = item_type.__gtype_name__
             i_title = _(item_type.__title__)
@@ -140,28 +142,31 @@ class MiAZWorkspace(Gtk.Box):
             sigid = dropdown.connect("notify::selected-item", self._on_filter_selected)
             boxDropdown = self.factory.create_box_filter(i_title, dropdown)
             body.append(boxDropdown)
-            self.dropdown[i_type] = dropdown
+            dropdowns[i_type] = dropdown
             self.config[i_type].connect('used-updated', self.update_dropdown_filter, item_type)
+        self.app.set_widget('ws-dropdowns', dropdowns)
         self.backend.connect('repository-updated', self._on_workspace_update)
         self.backend.connect('repository-switched', self._update_dropdowns)
 
         return widget
 
     def _update_dropdowns(self, *args):
+        dropdowns = self.app.get_widget('ws-dropdowns')
         for item_type in [Country, Group, SentBy, Purpose, SentTo]:
             i_type = item_type.__gtype_name__
             i_title = _(item_type.__title__)
             config = self.config[i_type]
-            self.actions.dropdown_populate(config, self.dropdown[i_type], item_type, True, True)
+            self.actions.dropdown_populate(config, dropdowns[i_type], item_type, True, True)
 
 
     def _on_workspace_update(self, *args):
         GLib.idle_add(self.update)
 
     def update_dropdown_filter(self, config, item_type):
-        title = item_type.__gtype_name__
-        self.actions.dropdown_populate(config, self.dropdown[title], item_type)
-        self.log.debug("Dropdown %s updated", title)
+        dropdowns = self.app.get_widget('ws-dropdowns')
+        i_type = item_type.__gtype_name__
+        self.actions.dropdown_populate(config, dropdowns[i_type], item_type)
+        self.log.debug("Dropdown %s updated", i_type)
 
     def _on_filters_toggled(self, button, data=None):
         active = button.get_active()
@@ -225,22 +230,27 @@ class MiAZWorkspace(Gtk.Box):
         self.ent_sb.set_hexpand(False)
         hbox.append(self.ent_sb)
 
+        dropdowns = self.app.get_widget('ws-dropdowns')
         ## Date dropdown
-        self.dd_date = self.factory.create_dropdown_generic(item_type=Date, ellipsize=False, enable_search=False)
+        i_type = Date.__gtype_name__
+        dd_date = self.factory.create_dropdown_generic(item_type=Date, ellipsize=False, enable_search=False)
+        dropdowns[i_type] = dd_date
         self._update_dropdown_date()
-        self.dd_date.set_selected(2)
+        dd_date.set_selected(2)
         # ~ self.dd_date.connect("notify::selected-item", self._on_filter_selected)
-        self.dd_date.connect("notify::selected-item", self.update)
-        hbox.append(self.dd_date)
+        dd_date.connect("notify::selected-item", self.update)
+        hbox.append(dd_date)
 
         ## Projects dropdown
         i_type = Project.__gtype_name__
-        self.dd_prj = self.factory.create_dropdown_generic(item_type=Project)
-        self.actions.dropdown_populate(self.config[i_type], self.dd_prj, Project, any_value=True, none_value=True)
-        self.dd_prj.connect("notify::selected-item", self._on_filter_selected)
-        self.dropdown[i_type] = self.dd_prj
+        dd_prj = self.factory.create_dropdown_generic(item_type=Project)
+        dropdowns[i_type] = dd_prj
+        self.actions.dropdown_populate(self.config[i_type], dd_prj, Project, any_value=True, none_value=True)
+        dd_prj.connect("notify::selected-item", self._on_filter_selected)
         self.config[i_type].connect('used-updated', self.update_dropdown_filter, Project)
-        hbox.append(self.dd_prj)
+        hbox.append(dd_prj)
+
+        self.app.set_widget('ws-dropdowns', dropdowns)
 
         # Right
         hbox = self.app.add_widget('workspace-toolbar-top-right', self.factory.create_box_horizontal(spacing=0))
@@ -299,9 +309,11 @@ class MiAZWorkspace(Gtk.Box):
         return toolbar_top
 
     def _update_dropdown_date(self):
+        dropdowns = self.app.get_widget('ws-dropdowns')
+        dd_date = dropdowns[Date.__gtype_name__]
         dt2str = self.util.datetime_to_string
         now = datetime.now().date()
-        model_filter = self.dd_date.get_model()
+        model_filter = dd_date.get_model()
         model_sort = model_filter.get_model()
         model = model_sort.get_model()
         model.remove_all()
@@ -443,6 +455,9 @@ class MiAZWorkspace(Gtk.Box):
 
     def update(self, *args):
         # FIXME: come up w/ a solution to display only available values
+        dropdowns = self.app.get_widget('ws-dropdowns')
+        dd_date = dropdowns[Date.__gtype_name__]
+        dd_prj = dropdowns[Project.__gtype_name__]
         filters = {}
         self.selected_items = []
         docs = self.util.get_files()
@@ -453,10 +468,10 @@ class MiAZWorkspace(Gtk.Box):
         purpose = self.app.get_config('Purpose')
 
         try:
-            period = self.dd_date.get_selected_item().title
+            period = dd_date.get_selected_item().title
         except AttributeError:
             return
-        project = self.dropdown['Project'].get_selected_item().id
+        project = dd_prj.get_selected_item().id
         # ~ self.log.debug("Period: %s - Project: %s", period, project)
         if project == 'Any' or project == 'None':
             pass
@@ -558,7 +573,9 @@ class MiAZWorkspace(Gtk.Box):
             self.datetimes[item.date] = item_dt
 
         # Check if the date belongs to the lower/upper limit
-        period = self.dd_date.get_selected_item().id
+        dropdowns = self.app.get_widget('ws-dropdowns')
+        dd_date = dropdowns[Date.__gtype_name__]
+        period = dd_date.get_selected_item().id
         ll, ul = period.split('-')
 
         if ll == 'All' and ul == 'All':
@@ -581,9 +598,11 @@ class MiAZWorkspace(Gtk.Box):
         return matches
 
     def _do_eval_cond_matches_project(self, doc):
+        dropdowns = self.app.get_widget('ws-dropdowns')
+        dd_prj = dropdowns[Project.__gtype_name__]
         matches = False
         try:
-            project = self.dropdown['Project'].get_selected_item().id
+            project = dd_prj.get_selected_item().id
         except AttributeError:
             # Raised when managing projects from selector
             # Workaround: do not filter
@@ -599,20 +618,22 @@ class MiAZWorkspace(Gtk.Box):
         return matches
 
     def _do_filter_view(self, item, filter_list_model):
+        dropdowns = self.app.get_widget('ws-dropdowns')
         c0 = self._do_eval_cond_matches_freetext(item.id)
         cd = self._do_eval_cond_matches_date(item)
-        c1 = self._do_eval_cond_matches(self.dropdown['Country'], item.country)
-        c2 = self._do_eval_cond_matches(self.dropdown['Group'], item.group)
-        c4 = self._do_eval_cond_matches(self.dropdown['SentBy'], item.sentby_id)
-        c5 = self._do_eval_cond_matches(self.dropdown['Purpose'], item.purpose)
-        c6 = self._do_eval_cond_matches(self.dropdown['SentTo'], item.sentto_id)
+        c1 = self._do_eval_cond_matches(dropdowns['Country'], item.country)
+        c2 = self._do_eval_cond_matches(dropdowns['Group'], item.group)
+        c4 = self._do_eval_cond_matches(dropdowns['SentBy'], item.sentby_id)
+        c5 = self._do_eval_cond_matches(dropdowns['Purpose'], item.purpose)
+        c6 = self._do_eval_cond_matches(dropdowns['SentTo'], item.sentto_id)
         cp = self._do_eval_cond_matches_project(item.id)
         return c0 and c1 and c2 and c4 and c5 and c6 and cd and cp
 
     def _do_connect_filter_signals(self):
         self.ent_sb.connect('changed', self._on_filter_selected)
-        for dropdown in self.dropdown:
-            self.dropdown[dropdown].connect("notify::selected-item", self._on_filter_selected)
+        dropdowns = self.app.get_widget('ws-dropdowns')
+        for dropdown in dropdowns:
+            dropdowns[dropdown].connect("notify::selected-item", self._on_filter_selected)
         selection = self.view.get_selection()
         selection.connect('selection-changed', self._on_selection_changed)
 
