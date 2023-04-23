@@ -58,6 +58,7 @@ class MiAZApp(Adw.Application):
         self.backend = self.add_service('backend', MiAZBackend())
         self.add_service('util', self.backend.util)
         self.add_service('stats', self.backend.stats)
+        self.add_service('icons', MiAZIconManager(self))
         self.conf = self.backend.conf
         GLib.set_application_name(ENV['APP']['name'])
         self.connect('activate', self._on_activate)
