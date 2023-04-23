@@ -306,7 +306,9 @@ class MiAZApp(Adw.Application):
             self.log.debug("No repository active in the configuration")
             self.show_stack_page_by_name('welcome')
             valid = False
-        self.win.present()
+        window = self.get_widget('window')
+        if window is not None:
+            window.present()
         return valid
 
     def _handle_menu(self, action, *args):
