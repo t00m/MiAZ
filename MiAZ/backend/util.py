@@ -211,9 +211,9 @@ class MiAZUtil(GObject.GObject):
         if source != target:
             if not os.path.exists(target):
                 try:
-                    self.emit('filename-renamed', source, target)
                     shutil.move(source, target)
                     self.log.info("%s renamed to %s", source, target)
+                    self.emit('filename-renamed', source, target)
                 except Exception as error:
                     self.log.error(error)
             else:
@@ -224,8 +224,8 @@ class MiAZUtil(GObject.GObject):
     def filename_delete(self, filepath):
         try:
             os.unlink(filepath)
-            self.emit('filename-deleted', filepath)
             self.log.debug("File %s deleted", filepath)
+            self.emit('filename-deleted', filepath)
         except IsADirectoryError as error:
             self.log.error(error)
 

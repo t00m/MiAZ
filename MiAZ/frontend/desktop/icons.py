@@ -62,3 +62,24 @@ class MiAZIconManager(GObject.GObject):
     def get_image_by_name(self, name: str, width: int = 32, height: int = 32) -> Gtk.Image:
         pixbuf = self.get_pixbuf_by_name(name, width, height)
         return Gtk.Image.new_from_pixbuf(pixbuf)
+
+    def get_mimetype_icon(self, mimetype: str) -> Gtk.Image:
+        try:
+            gicon = self.gicondict[mimetype]
+        except:
+            gicon = Gio.content_type_get_icon(mimetype)
+            self.gicondict[mimetype] = gicon
+        return gicon
+
+    def get_flag_icon(self, code: str) -> Gtk.Image:
+        try:
+            paintable = self.paintable[code]
+        except:
+            iconpath = os.path.join(ENV['GPATH']['FLAGS'], "%s.svg" % code)
+            if not os.path.exists(iconpath):
+                iconpath = os.path.join(ENV['GPATH']['FLAGS'], "__.svg")
+            image = Gtk.Image()
+            image.set_from_file(iconpath)
+            paintable = image.get_paintable()
+            self.paintable[code] = paintable
+        return paintable

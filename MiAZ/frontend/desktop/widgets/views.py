@@ -36,6 +36,7 @@ class MiAZColumnViewWorkspace(MiAZColumnView):
         super().__init__(app, item_type=MiAZItem)
         self.log = get_logger('MiAZColumnViewWorkspace')
         self.backend = self.app.get_service('backend')
+        self.srvicm = self.app.get_service('icons')
         self.factory_subtitle = Gtk.SignalListItemFactory()
         self.factory_subtitle.connect("setup", self._on_factory_setup_subtitle)
         self.factory_subtitle.connect("bind", self._on_factory_bind_subtitle)
@@ -161,7 +162,7 @@ class MiAZColumnViewWorkspace(MiAZColumnView):
         icon = box.get_first_child()
         item = list_item.get_item()
         mimetype, val = Gio.content_type_guess('filename=%s' % item.id)
-        gicon = Gio.content_type_get_icon(mimetype)
+        gicon = self.srvicm.get_mimetype_icon(mimetype)
         icon.set_from_gicon(gicon)
         icon.set_pixel_size(36)
 
@@ -242,11 +243,9 @@ class MiAZColumnViewWorkspace(MiAZColumnView):
         item = list_item.get_item()
         icon = box.get_first_child()
         code = item.country
-        flag = os.path.join(ENV['GPATH']['FLAGS'], "%s.svg" % code)
-        if not os.path.exists(flag):
-            flag = os.path.join(ENV['GPATH']['FLAGS'], "__.svg")
-        icon.set_from_file(flag)
-        icon.set_pixel_size(32)
+        paintable = self.srvicm.get_flag_icon(code)
+        icon.set_from_paintable(paintable)
+        icon.set_pixel_size(36)
 
     def _on_factory_setup_flag(self, factory, list_item):
         box = ColIcon()

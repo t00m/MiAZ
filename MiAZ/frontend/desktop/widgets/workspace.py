@@ -115,7 +115,15 @@ class MiAZWorkspace(Gtk.Box):
             assistant.present()
 
     def _on_filename_renamed(self, util, source, target):
-        self.log.debug("File rename from '%s' to '%s'", source, target)
+        srvprj = self.backend.projects
+        source = os.path.basename(source)
+        target = os.path.basename(target)
+        projects = srvprj.assigned_to(source)
+        self.log.debug("%s found in these projects: %s", source, ', '.join(projects))
+        for project in projects:
+            srvprj.remove(project, source)
+            srvprj.add(project, target)
+            self.log.debug("P[%s]: %s -> %s", project, source, target)
 
     def _on_filename_deleted(self, util, target):
         self.backend.projects.remove(project='', doc=os.path.basename(target))

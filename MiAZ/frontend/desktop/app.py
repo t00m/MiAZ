@@ -58,6 +58,7 @@ class MiAZApp(Adw.Application):
         self.backend = self.add_service('backend', MiAZBackend())
         self.add_service('util', self.backend.util)
         self.add_service('stats', self.backend.stats)
+        self.add_service('icons', MiAZIconManager(self))
         self.conf = self.backend.conf
         GLib.set_application_name(ENV['APP']['name'])
         self.connect('activate', self._on_activate)
@@ -305,7 +306,9 @@ class MiAZApp(Adw.Application):
             self.log.debug("No repository active in the configuration")
             self.show_stack_page_by_name('welcome')
             valid = False
-        self.win.present()
+        window = self.get_widget('window')
+        if window is not None:
+            window.present()
         return valid
 
     def _handle_menu(self, action, *args):
