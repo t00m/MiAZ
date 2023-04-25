@@ -208,11 +208,6 @@ class MiAZWorkspace(Gtk.Box):
         hbox = self.app.add_widget('workspace-toolbar-top-left', self.factory.create_box_horizontal())
         toolbar_top.set_start_widget(hbox)
 
-        btnBack = self.factory.create_button(icon_name='miaz-go-back', title=_('Back'), callback=self.app.show_workspace, css_classes=['flat'])
-        btnBack.set_visible(False)
-        self.app.add_widget('app-header-button-back', btnBack)
-        hbox.append(btnBack)
-
         # Center
         hbox = self.app.add_widget('workspace-toolbar-top-center', self.factory.create_box_horizontal(spacing=0))
         hbox.get_style_context().add_class(class_name='linked')
