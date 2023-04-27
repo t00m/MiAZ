@@ -237,6 +237,7 @@ class MiAZWorkspace(Gtk.Box):
         ## Projects dropdown
         i_type = Project.__gtype_name__
         dd_prj = self.factory.create_dropdown_generic(item_type=Project)
+        dd_prj.set_size_request(300, -1)
         dropdowns[i_type] = dd_prj
         self.actions.dropdown_populate(self.config[i_type], dd_prj, Project, any_value=True, none_value=True)
         dd_prj.connect("notify::selected-item", self._on_filter_selected)
