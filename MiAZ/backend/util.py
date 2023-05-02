@@ -275,7 +275,7 @@ class MiAZUtil(GObject.GObject):
             adate = datetime.strptime(value, "%Y%m%d")
             date_dsc = adate.strftime("%d/%m/%Y")
         except ValueError:
-            date_dsc = ''
+            date_dsc = None
         return date_dsc
 
     def filename_display(self, doc):
