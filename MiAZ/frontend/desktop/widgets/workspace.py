@@ -213,6 +213,12 @@ class MiAZWorkspace(Gtk.Box):
         hbox.get_style_context().add_class(class_name='linked')
         toolbar_top.set_center_widget(hbox)
 
+        # Items not categorized yet
+        button = self.factory.create_button(icon_name='miaz-warning')
+        self.app.add_widget('workspace-toolbar-button-warning', button)
+        button.set_visible(False)
+        hbox.append(button)
+
         ## Filters
         self.tgbFilters = self.factory.create_button_toggle('miaz-filters', callback=self._on_filters_toggled)
         self.tgbFilters.set_active(True)
@@ -477,6 +483,7 @@ class MiAZWorkspace(Gtk.Box):
         countries = self.app.get_config('Country')
         groups = self.app.get_config('Group')
         purposes = self.app.get_config('Purpose')
+        warning = False
 
         try:
             period = dd_date.get_selected_item().title
@@ -553,6 +560,9 @@ class MiAZWorkspace(Gtk.Box):
                     else:
                         self.cache['people'][fields[6]] = sentto_dsc
 
+                if not active:
+                    invalid.append(os.path.basename(filename))
+
                 items.append(MiAZItem
                                     (
                                         id=os.path.basename(filename),
@@ -585,6 +595,12 @@ class MiAZWorkspace(Gtk.Box):
         for filename in invalid:
             target = self.util.filename_normalize(filename)
             self.util.filename_rename(filename, target)
+
+        button = self.app.get_widget('workspace-toolbar-button-warning')
+        if len(invalid) > 0:
+            button.set_visible(True)
+        else:
+            button.set_visible(False)
 
     def _do_eval_cond_matches_freetext(self, path):
         left = self.ent_sb.get_text()
