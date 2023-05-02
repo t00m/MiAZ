@@ -125,10 +125,14 @@ class MiAZColumnViewWorkspace(MiAZColumnView):
         box = list_item.get_child()
         item = list_item.get_item()
         label = box.get_first_child()
-        label.set_markup("<b>%s</b>" % item.subtitle)
+        # ~ label.set_markup("<b>%s</b>" % item.subtitle)
         # ~ label.set_ellipsize(True)
         # ~ label.set_property('ellipsize', Pango.EllipsizeMode.MIDDLE)
-        # ~ label.get_style_context().add_class(class_name='destructive-action')
+        if item.active:
+            label.set_markup("<b>%s</b>" % item.subtitle)
+        else:
+            label.set_markup("<span color='red'><b>%s</b></span>" % item.subtitle)
+            label.get_style_context().add_class(class_name='destructive-action')
 
     def _on_factory_setup_active(self, factory, list_item):
         box = ColCheck()
@@ -161,6 +165,7 @@ class MiAZColumnViewWorkspace(MiAZColumnView):
         box = list_item.get_child()
         icon = box.get_first_child()
         item = list_item.get_item()
+        # ~ self.log.debug("%s is active? %s", item.id, item.active)
         mimetype, val = Gio.content_type_guess('filename=%s' % item.id)
         gicon = self.srvicm.get_mimetype_icon(mimetype)
         icon.set_from_gicon(gicon)

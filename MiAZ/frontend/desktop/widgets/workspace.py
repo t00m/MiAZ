@@ -476,7 +476,7 @@ class MiAZWorkspace(Gtk.Box):
         sentto = self.app.get_config('SentTo')
         countries = self.app.get_config('Country')
         groups = self.app.get_config('Group')
-        purpose = self.app.get_config('Purpose')
+        purposes = self.app.get_config('Purpose')
 
         try:
             period = dd_date.get_selected_item().title
@@ -491,6 +491,7 @@ class MiAZWorkspace(Gtk.Box):
         invalid = []
         ds = datetime.now()
         for filename in docs:
+            active = True
             doc, ext = self.util.filename_details(filename)
             fields = doc.split('-')
             if self.util.filename_validate(doc):
@@ -501,27 +502,56 @@ class MiAZWorkspace(Gtk.Box):
                 except:
                     # ~ date_dsc = self.util.filename_date_human(fields[0])
                     date_dsc = self.util.filename_date_human_simple(fields[0])
-                    self.cache['date'][fields[0]] = date_dsc
+                    if date_dsc is None:
+                        active = False
+                        date_dsc = ''
+                    else:
+                        self.cache['date'][fields[0]] = date_dsc
 
                 ## Countries
                 try:
                     country_dsc = self.cache['country'][fields[1]]
                 except:
                     country_dsc = countries.get(fields[1])
-                    self.cache['country'][fields[1]] = country_dsc
+                    if country_dsc is None:
+                        active = False
+                        country_dsc = ''
+                    else:
+                        self.cache['country'][fields[1]] = country_dsc
+
+                ## Purposes
+                try:
+                    purpose_dsc = self.cache['purpose'][fields[4]]
+                except:
+                    purpose_dsc = purposes.get(fields[4])
+                    if purpose_dsc is None:
+                        active = False
+                        purpose_dsc = ''
+                    else:
+                        if len(purpose_dsc) == 0:
+                            purpose_dsc = fields[4]
+                        self.cache['purpose'][fields[4]] = purpose_dsc
 
                 ## People
                 try:
                     sentby_dsc = self.cache['people'][fields[3]]
                 except:
                     sentby_dsc = sentby.get(fields[3])
-                    self.cache['people'][fields[3]] = sentby_dsc
+                    if sentby_dsc is None:
+                        active = False
+                        sentby_dsc = ''
+                    else:
+                        self.cache['people'][fields[3]] = sentby_dsc
 
                 try:
                     sentto_dsc = self.cache['people'][fields[6]]
                 except:
                     sentto_dsc = sentto.get(fields[6])
-                    self.cache['people'][fields[6]] = sentto_dsc
+                    if sentto_dsc is None:
+                        active = False
+                        sentto_dsc = ''
+                    else:
+                        self.cache['people'][fields[6]] = sentto_dsc
 
                 items.append(MiAZItem
                                     (
@@ -529,15 +559,16 @@ class MiAZWorkspace(Gtk.Box):
                                         date=fields[0],
                                         date_dsc = date_dsc,
                                         country=fields[1],
-                                        country_dsc=countries.get(fields[1]),
+                                        country_dsc=country_dsc,
                                         group=fields[2],
                                         sentby_id=fields[3],
-                                        sentby_dsc=sentby.get(fields[3]),
-                                        purpose=fields[4],
+                                        sentby_dsc=sentby_dsc,
+                                        purpose=purpose_dsc,
                                         title=doc,
                                         subtitle=fields[5].replace('_', ' '),
                                         sentto_id=fields[6],
-                                        sentto_dsc=sentto.get(fields[6])
+                                        sentto_dsc=sentto_dsc,
+                                        active=active
                                     )
                             )
             else:
