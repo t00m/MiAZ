@@ -215,6 +215,7 @@ class MiAZWorkspace(Gtk.Box):
 
         # Items not categorized yet
         button = self.factory.create_button(icon_name='miaz-warning')
+        button.connect('clicked', self._
         self.app.add_widget('workspace-toolbar-button-warning', button)
         button.set_visible(False)
         hbox.append(button)
