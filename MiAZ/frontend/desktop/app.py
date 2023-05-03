@@ -65,7 +65,7 @@ class MiAZApp(Adw.Application):
 
     def _on_activate(self, app):
         self.win = self.add_widget('window', Gtk.ApplicationWindow(application=self))
-        self.win.set_default_size(1024, 728)
+        self.win.set_default_size(1280, 800)
         self.win.set_icon_name('MiAZ')
         self.win.set_default_icon_name('MiAZ')
         self.icman = self.add_service('icman', MiAZIconManager(self))
