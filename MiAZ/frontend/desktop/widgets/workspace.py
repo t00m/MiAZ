@@ -59,6 +59,7 @@ class MiAZWorkspace(Gtk.Box):
     dates = {}
     # ~ dropdown = {}
     cache = {}
+    uncategorized = False
 
     def __init__(self, app):
         super(MiAZWorkspace, self).__init__(orientation=Gtk.Orientation.HORIZONTAL)
@@ -208,17 +209,16 @@ class MiAZWorkspace(Gtk.Box):
         hbox = self.app.add_widget('workspace-toolbar-top-left', self.factory.create_box_horizontal())
         toolbar_top.set_start_widget(hbox)
 
+        button = self.factory.create_button(title='Documents pending', css_classes=['destructive-action'])
+        self.app.add_widget('workspace-button-uncategorized', button)
+        button.connect('clicked', self.display_uncategorized)
+        button.set_visible(False)
+        hbox.append(button)
+
         # Center
         hbox = self.app.add_widget('workspace-toolbar-top-center', self.factory.create_box_horizontal(spacing=0))
         hbox.get_style_context().add_class(class_name='linked')
         toolbar_top.set_center_widget(hbox)
-
-        # Items not categorized yet
-        button = self.factory.create_button(icon_name='miaz-warning')
-        button.connect('clicked', self._
-        self.app.add_widget('workspace-toolbar-button-warning', button)
-        button.set_visible(False)
-        hbox.append(button)
 
         ## Filters
         self.tgbFilters = self.factory.create_button_toggle('miaz-filters', callback=self._on_filters_toggled)
@@ -597,7 +597,7 @@ class MiAZWorkspace(Gtk.Box):
             target = self.util.filename_normalize(filename)
             self.util.filename_rename(filename, target)
 
-        button = self.app.get_widget('workspace-toolbar-button-warning')
+        button = self.app.get_widget('workspace-button-uncategorized')
         if len(invalid) > 0:
             button.set_visible(True)
         else:
@@ -677,16 +677,19 @@ class MiAZWorkspace(Gtk.Box):
         return matches
 
     def _do_filter_view(self, item, filter_list_model):
-        dropdowns = self.app.get_widget('ws-dropdowns')
-        c0 = self._do_eval_cond_matches_freetext(item.id)
-        cd = self._do_eval_cond_matches_date(item)
-        c1 = self._do_eval_cond_matches(dropdowns['Country'], item.country)
-        c2 = self._do_eval_cond_matches(dropdowns['Group'], item.group)
-        c4 = self._do_eval_cond_matches(dropdowns['SentBy'], item.sentby_id)
-        c5 = self._do_eval_cond_matches(dropdowns['Purpose'], item.purpose)
-        c6 = self._do_eval_cond_matches(dropdowns['SentTo'], item.sentto_id)
-        cp = self._do_eval_cond_matches_project(item.id)
-        return c0 and c1 and c2 and c4 and c5 and c6 and cd and cp
+        if self.uncategorized:
+            return item.active == False
+        else:
+            dropdowns = self.app.get_widget('ws-dropdowns')
+            c0 = self._do_eval_cond_matches_freetext(item.id)
+            cd = self._do_eval_cond_matches_date(item)
+            c1 = self._do_eval_cond_matches(dropdowns['Country'], item.country)
+            c2 = self._do_eval_cond_matches(dropdowns['Group'], item.group)
+            c4 = self._do_eval_cond_matches(dropdowns['SentBy'], item.sentby_id)
+            c5 = self._do_eval_cond_matches(dropdowns['Purpose'], item.purpose)
+            c6 = self._do_eval_cond_matches(dropdowns['SentTo'], item.sentto_id)
+            cp = self._do_eval_cond_matches_project(item.id)
+            return c0 and c1 and c2 and c4 and c5 and c6 and cd and cp
 
     def _do_connect_filter_signals(self):
         self.ent_sb.connect('changed', self._on_filter_selected)
@@ -695,6 +698,11 @@ class MiAZWorkspace(Gtk.Box):
             dropdowns[dropdown].connect("notify::selected-item", self._on_filter_selected)
         selection = self.view.get_selection()
         selection.connect('selection-changed', self._on_selection_changed)
+
+    def display_uncategorized(self, *args):
+        self.uncategorized = True
+        self._on_filter_selected()
+        self.uncategorized = False
 
     def _on_filter_selected(self, *args):
         self.view.refilter()

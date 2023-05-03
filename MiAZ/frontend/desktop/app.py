@@ -223,7 +223,7 @@ class MiAZApp(Adw.Application):
 
         menubutton = self.factory.create_button_menu(icon_name='miaz-system-menu', menu=menu_headerbar)
         menubutton.set_always_show_arrow(False)
-        self.add_widget('app-menu-system', menubutton)
+        self.add_widget('headerbar-button-menu-system', menubutton)
         # ~ self.header.pack_start(menubutton)
 
     def show_workspace(self, *args):
@@ -231,7 +231,9 @@ class MiAZApp(Adw.Application):
 
     def _setup_headerbar_left(self):
         headerbar = self.get_widget('headerbar')
-        btnmenu = self.get_widget('app-menu-system')
+
+        # System menu
+        btnmenu = self.get_widget('headerbar-button-menu-system')
         headerbar.pack_start(btnmenu)
 
     def _setup_headerbar_right(self):
