@@ -430,4 +430,4 @@ class MiAZRenameDialog(Gtk.Box):
                 self.log.error("Something went wrong: %s", error)
                 self.log.error("Doesn't it exist? Really?")
         else:
-            self.app.show_workspace()
+            self.app.show_stack_page_by_name('workspace')

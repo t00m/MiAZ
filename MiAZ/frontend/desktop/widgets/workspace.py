@@ -59,6 +59,7 @@ class MiAZWorkspace(Gtk.Box):
     dates = {}
     # ~ dropdown = {}
     cache = {}
+    uncategorized = False
 
     def __init__(self, app):
         super(MiAZWorkspace, self).__init__(orientation=Gtk.Orientation.HORIZONTAL)
@@ -71,6 +72,8 @@ class MiAZWorkspace(Gtk.Box):
         self.util = self.app.get_service('util')
         self.util.connect('filename-renamed', self._on_filename_renamed)
         self.util.connect('filename-deleted', self._on_filename_deleted)
+        for node in self.config:
+            self.config[node].connect('used-updated', self._on_config_used_updated)
         self.set_vexpand(False)
         self.set_margin_top(margin=3)
         self.set_margin_end(margin=3)
@@ -93,16 +96,19 @@ class MiAZWorkspace(Gtk.Box):
             self.cache = self.util.json_load(self.fcache)
             self.log.debug("Loading cache from %s", self.fcache)
         except:
-            self.cache = {}
-            for cache in ['date', 'country', 'group', 'people', 'purpose']:
-                self.cache[cache] = {}
-            self.util.json_save(self.fcache, self.cache)
-            self.log.debug("Saving new cache to %s", self.fcache)
+            self._initialize_caches()
 
         self.check_first_time()
 
         # Allow plug-ins to make their job
         self.app.connect('start-application-completed', self._finish_configuration)
+
+    def _initialize_caches(self):
+        self.cache = {}
+        for cache in ['date', 'country', 'group', 'people', 'purpose']:
+            self.cache[cache] = {}
+        self.util.json_save(self.fcache, self.cache)
+        self.log.debug("Caches initialized (%s)", self.fcache)
 
     def check_first_time(self):
         conf = self.config['Country']
@@ -113,6 +119,13 @@ class MiAZWorkspace(Gtk.Box):
             assistant.set_transient_for(self.app.win)
             assistant.set_modal(True)
             assistant.present()
+
+    def _on_config_used_updated(self, *args):
+        # FIXME
+        # Right now, there is no way to know which config item has been
+        # updated, therefore, the whole cache must be invalidated :/
+        self._initialize_caches()
+        self.log.debug("Config changed")
 
     def _on_filename_renamed(self, util, source, target):
         srvprj = self.backend.projects
@@ -208,10 +221,11 @@ class MiAZWorkspace(Gtk.Box):
         hbox = self.app.add_widget('workspace-toolbar-top-left', self.factory.create_box_horizontal())
         toolbar_top.set_start_widget(hbox)
 
-        btnBack = self.factory.create_button(icon_name='miaz-go-back', title=_('Back'), callback=self.app.show_workspace, css_classes=['flat'])
-        btnBack.set_visible(False)
-        self.app.add_widget('app-header-button-back', btnBack)
-        hbox.append(btnBack)
+        button = self.factory.create_button(title='Documents pending', css_classes=['destructive-action'])
+        self.app.add_widget('workspace-button-uncategorized', button)
+        button.connect('clicked', self.display_uncategorized)
+        button.set_visible(False)
+        hbox.append(button)
 
         # Center
         hbox = self.app.add_widget('workspace-toolbar-top-center', self.factory.create_box_horizontal(spacing=0))
@@ -242,6 +256,7 @@ class MiAZWorkspace(Gtk.Box):
         ## Projects dropdown
         i_type = Project.__gtype_name__
         dd_prj = self.factory.create_dropdown_generic(item_type=Project)
+        dd_prj.set_size_request(300, -1)
         dropdowns[i_type] = dd_prj
         self.actions.dropdown_populate(self.config[i_type], dd_prj, Project, any_value=True, none_value=True)
         dd_prj.connect("notify::selected-item", self._on_filter_selected)
@@ -480,7 +495,8 @@ class MiAZWorkspace(Gtk.Box):
         sentto = self.app.get_config('SentTo')
         countries = self.app.get_config('Country')
         groups = self.app.get_config('Group')
-        purpose = self.app.get_config('Purpose')
+        purposes = self.app.get_config('Purpose')
+        warning = False
 
         try:
             period = dd_date.get_selected_item().title
@@ -495,6 +511,7 @@ class MiAZWorkspace(Gtk.Box):
         invalid = []
         ds = datetime.now()
         for filename in docs:
+            active = True
             doc, ext = self.util.filename_details(filename)
             fields = doc.split('-')
             if self.util.filename_validate(doc):
@@ -505,27 +522,59 @@ class MiAZWorkspace(Gtk.Box):
                 except:
                     # ~ date_dsc = self.util.filename_date_human(fields[0])
                     date_dsc = self.util.filename_date_human_simple(fields[0])
-                    self.cache['date'][fields[0]] = date_dsc
+                    if date_dsc is None:
+                        active = False
+                        date_dsc = ''
+                    else:
+                        self.cache['date'][fields[0]] = date_dsc
 
                 ## Countries
                 try:
                     country_dsc = self.cache['country'][fields[1]]
                 except:
                     country_dsc = countries.get(fields[1])
-                    self.cache['country'][fields[1]] = country_dsc
+                    if country_dsc is None:
+                        active = False
+                        country_dsc = ''
+                    else:
+                        self.cache['country'][fields[1]] = country_dsc
+
+                ## Purposes
+                try:
+                    purpose_dsc = self.cache['purpose'][fields[4]]
+                except:
+                    purpose_dsc = purposes.get(fields[4])
+                    if purpose_dsc is None:
+                        active = False
+                        purpose_dsc = ''
+                    else:
+                        if len(purpose_dsc) == 0:
+                            purpose_dsc = fields[4]
+                        self.cache['purpose'][fields[4]] = purpose_dsc
 
                 ## People
                 try:
                     sentby_dsc = self.cache['people'][fields[3]]
                 except:
                     sentby_dsc = sentby.get(fields[3])
-                    self.cache['people'][fields[3]] = sentby_dsc
+                    if sentby_dsc is None:
+                        active = False
+                        sentby_dsc = ''
+                    else:
+                        self.cache['people'][fields[3]] = sentby_dsc
 
                 try:
                     sentto_dsc = self.cache['people'][fields[6]]
                 except:
                     sentto_dsc = sentto.get(fields[6])
-                    self.cache['people'][fields[6]] = sentto_dsc
+                    if sentto_dsc is None:
+                        active = False
+                        sentto_dsc = ''
+                    else:
+                        self.cache['people'][fields[6]] = sentto_dsc
+
+                if not active:
+                    invalid.append(os.path.basename(filename))
 
                 items.append(MiAZItem
                                     (
@@ -533,15 +582,16 @@ class MiAZWorkspace(Gtk.Box):
                                         date=fields[0],
                                         date_dsc = date_dsc,
                                         country=fields[1],
-                                        country_dsc=countries.get(fields[1]),
+                                        country_dsc=country_dsc,
                                         group=fields[2],
                                         sentby_id=fields[3],
-                                        sentby_dsc=sentby.get(fields[3]),
-                                        purpose=fields[4],
+                                        sentby_dsc=sentby_dsc,
+                                        purpose=purpose_dsc,
                                         title=doc,
                                         subtitle=fields[5].replace('_', ' '),
                                         sentto_id=fields[6],
-                                        sentto_dsc=sentto.get(fields[6])
+                                        sentto_dsc=sentto_dsc,
+                                        active=active
                                     )
                             )
             else:
@@ -558,6 +608,12 @@ class MiAZWorkspace(Gtk.Box):
         for filename in invalid:
             target = self.util.filename_normalize(filename)
             self.util.filename_rename(filename, target)
+
+        button = self.app.get_widget('workspace-button-uncategorized')
+        if len(invalid) > 0:
+            button.set_visible(True)
+        else:
+            button.set_visible(False)
 
     def _do_eval_cond_matches_freetext(self, path):
         left = self.ent_sb.get_text()
@@ -633,16 +689,19 @@ class MiAZWorkspace(Gtk.Box):
         return matches
 
     def _do_filter_view(self, item, filter_list_model):
-        dropdowns = self.app.get_widget('ws-dropdowns')
-        c0 = self._do_eval_cond_matches_freetext(item.id)
-        cd = self._do_eval_cond_matches_date(item)
-        c1 = self._do_eval_cond_matches(dropdowns['Country'], item.country)
-        c2 = self._do_eval_cond_matches(dropdowns['Group'], item.group)
-        c4 = self._do_eval_cond_matches(dropdowns['SentBy'], item.sentby_id)
-        c5 = self._do_eval_cond_matches(dropdowns['Purpose'], item.purpose)
-        c6 = self._do_eval_cond_matches(dropdowns['SentTo'], item.sentto_id)
-        cp = self._do_eval_cond_matches_project(item.id)
-        return c0 and c1 and c2 and c4 and c5 and c6 and cd and cp
+        if self.uncategorized:
+            return item.active == False
+        else:
+            dropdowns = self.app.get_widget('ws-dropdowns')
+            c0 = self._do_eval_cond_matches_freetext(item.id)
+            cd = self._do_eval_cond_matches_date(item)
+            c1 = self._do_eval_cond_matches(dropdowns['Country'], item.country)
+            c2 = self._do_eval_cond_matches(dropdowns['Group'], item.group)
+            c4 = self._do_eval_cond_matches(dropdowns['SentBy'], item.sentby_id)
+            c5 = self._do_eval_cond_matches(dropdowns['Purpose'], item.purpose)
+            c6 = self._do_eval_cond_matches(dropdowns['SentTo'], item.sentto_id)
+            cp = self._do_eval_cond_matches_project(item.id)
+            return c0 and c1 and c2 and c4 and c5 and c6 and cd and cp
 
     def _do_connect_filter_signals(self):
         self.ent_sb.connect('changed', self._on_filter_selected)
@@ -651,6 +710,11 @@ class MiAZWorkspace(Gtk.Box):
             dropdowns[dropdown].connect("notify::selected-item", self._on_filter_selected)
         selection = self.view.get_selection()
         selection.connect('selection-changed', self._on_selection_changed)
+
+    def display_uncategorized(self, *args):
+        self.uncategorized = True
+        self._on_filter_selected()
+        self.uncategorized = False
 
     def _on_filter_selected(self, *args):
         self.view.refilter()

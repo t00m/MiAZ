@@ -65,7 +65,7 @@ class MiAZApp(Adw.Application):
 
     def _on_activate(self, app):
         self.win = self.add_widget('window', Gtk.ApplicationWindow(application=self))
-        self.win.set_default_size(1024, 728)
+        self.win.set_default_size(1280, 800)
         self.win.set_icon_name('MiAZ')
         self.win.set_default_icon_name('MiAZ')
         self.icman = self.add_service('icman', MiAZIconManager(self))
@@ -125,7 +125,7 @@ class MiAZApp(Adw.Application):
     def _on_key_press(self, event, keyval, keycode, state):
         keyname = Gdk.keyval_name(keyval)
         if keyname == 'Escape':
-            self.show_workspace()
+            self.show_stack_page_by_name('workspace')
 
     def get_config(self, name: str):
         return self.backend.conf[name]
@@ -223,25 +223,25 @@ class MiAZApp(Adw.Application):
 
         menubutton = self.factory.create_button_menu(icon_name='miaz-system-menu', menu=menu_headerbar)
         menubutton.set_always_show_arrow(False)
-        self.add_widget('app-menu-system', menubutton)
+        self.add_widget('headerbar-button-menu-system', menubutton)
         # ~ self.header.pack_start(menubutton)
 
     def show_workspace(self, *args):
         self.show_stack_page_by_name('workspace')
-        button = self.get_widget('app-header-button-back')
-        button.set_visible(False)
 
     def _setup_headerbar_left(self):
         headerbar = self.get_widget('headerbar')
-        btnmenu = self.get_widget('app-menu-system')
+
+        # System menu
+        btnmenu = self.get_widget('headerbar-button-menu-system')
         headerbar.pack_start(btnmenu)
 
     def _setup_headerbar_right(self):
-        pass
-        # ~ label_repo = self.add_widget('label_repo', Gtk.Label())
-        # ~ repo_active = self.conf['App'].get('current')
-        # ~ label_repo.set_markup(' [<b>%s</b>] ' % repo_active.replace('_', ' '))
-        # ~ self.header.pack_end(label_repo)
+        headerbar = self.get_widget('headerbar')
+        btnBack = self.factory.create_button(icon_name='miaz-go-back', title=_('Back'), callback=self.show_workspace, css_classes=['flat'])
+        btnBack.set_visible(False)
+        self.add_widget('app-header-button-back', btnBack)
+        headerbar.pack_end(btnBack)
 
     def _setup_headerbar_center(self):
         pass
@@ -336,13 +336,18 @@ class MiAZApp(Adw.Application):
         return self.stack.get_child_by_name(name)
 
     def show_stack_page_by_name(self, name: str = 'workspace'):
-        self.stack.set_visible_child_name(name)
         button = self.get_widget('app-header-button-back')
-        if name not in ['welcome', 'workspace']:
-            button.set_visible(True)
-        else:
+        toolbar_top = self.get_widget('workspace-toolbar-top')
+        if name == 'workspace':
             button.set_visible(False)
-
+            toolbar_top.set_visible(True)
+        elif name == 'welcome':
+            button.set_visible(False)
+            toolbar_top.set_visible(False)
+        else:
+            button.set_visible(True)
+            toolbar_top.set_visible(False)
+        self.stack.set_visible_child_name(name)
 
     def exit_app(self, *args):
         self.emit("stop-application-completed")
