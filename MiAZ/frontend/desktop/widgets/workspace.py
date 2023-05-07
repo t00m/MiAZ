@@ -72,6 +72,8 @@ class MiAZWorkspace(Gtk.Box):
         self.util = self.app.get_service('util')
         self.util.connect('filename-renamed', self._on_filename_renamed)
         self.util.connect('filename-deleted', self._on_filename_deleted)
+        for node in self.config:
+            self.config[node].connect('used-updated', self._on_config_used_updated)
         self.set_vexpand(False)
         self.set_margin_top(margin=3)
         self.set_margin_end(margin=3)
@@ -94,16 +96,19 @@ class MiAZWorkspace(Gtk.Box):
             self.cache = self.util.json_load(self.fcache)
             self.log.debug("Loading cache from %s", self.fcache)
         except:
-            self.cache = {}
-            for cache in ['date', 'country', 'group', 'people', 'purpose']:
-                self.cache[cache] = {}
-            self.util.json_save(self.fcache, self.cache)
-            self.log.debug("Saving new cache to %s", self.fcache)
+            self._initialize_caches()
 
         self.check_first_time()
 
         # Allow plug-ins to make their job
         self.app.connect('start-application-completed', self._finish_configuration)
+
+    def _initialize_caches(self):
+        self.cache = {}
+        for cache in ['date', 'country', 'group', 'people', 'purpose']:
+            self.cache[cache] = {}
+        self.util.json_save(self.fcache, self.cache)
+        self.log.debug("Caches initialized (%s)", self.fcache)
 
     def check_first_time(self):
         conf = self.config['Country']
@@ -114,6 +119,13 @@ class MiAZWorkspace(Gtk.Box):
             assistant.set_transient_for(self.app.win)
             assistant.set_modal(True)
             assistant.present()
+
+    def _on_config_used_updated(self, *args):
+        # FIXME
+        # Right now, there is no way to know which config item has been
+        # updated, therefore, the whole cache must be invalidated :/
+        self._initialize_caches()
+        self.log.debug("Config changed")
 
     def _on_filename_renamed(self, util, source, target):
         srvprj = self.backend.projects
