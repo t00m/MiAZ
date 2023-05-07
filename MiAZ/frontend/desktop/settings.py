@@ -165,6 +165,7 @@ class MiAZRepoSettings(Gtk.Box):
             wdgLabel = self.factory.create_box_horizontal()
             icon = self.app.icman.get_image_by_name('miaz-res-%s' % i_type.lower())
             icon.set_hexpand(False)
+            icon.set_pixel_size(32)
             label = self.factory.create_label("<b>%s</b>" % i_title)
             label.set_xalign(0.0)
             label.set_hexpand(True)
