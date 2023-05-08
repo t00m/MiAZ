@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   width="16px"
+   height="16px"
+   viewBox="0 0 16 16"
+   version="1.1"
+   id="svg16"
+   sodipodi:docname="miaz-view-tree.svg"
+   inkscape:version="1.1.2 (0a00cf5339, 2022-02-04)"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <defs
+     id="defs20" />
+  <sodipodi:namedview
+     id="namedview18"
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1.0"
+     inkscape:pageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     showgrid="false"
+     inkscape:zoom="35"
+     inkscape:cx="8.4428571"
+     inkscape:cy="7.9857143"
+     inkscape:window-width="1440"
+     inkscape:window-height="836"
+     inkscape:window-x="0"
+     inkscape:window-y="0"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="g14" />
+  <g
+     fill="#2e3436"
+     id="g14">
+    <path
+       d="M 5.7710632,2 H 15 V 4 H 5.7710632 Z"
+       id="path2"
+       style="stroke-width:1.07407" />
+    <path
+       d="M 4.1280483,5.9761492 4.1000643,15.346219 2.1000765,15.33802 2.1280605,5.9679515 Z"
+       id="path2-3"
+       style="stroke-width:1.08225" />
+    <path
+       d="M 10.478151,7 H 15 v 2 h -4.521849 z"
+       id="path4"
+       style="stroke-width:0.751818" />
+    <path
+       d="m2 1h2c0.55078 0 1 0.44922 1 1v2c0 0.55078-0.44922 1-1 1h-2c-0.55078 0-1-0.44922-1-1v-2c0-0.55078 0.44922-1 1-1z"
+       id="path6" />
+    <path
+       d="m 6.6285708,6.0156 h 2 c 0.55078,0 1,0.44922 1,1 v 1.9805 c 0,0.55078 -0.44922,1 -1,1 h -2 c -0.55078,0 -1,-0.44922 -1,-1 V 7.0156 c 0,-0.55078 0.44922,-1 1,-1 z"
+       id="path8" />
+    <path
+       d="M 12.637355,11.984 H 15 v 2 h -2.362645 z"
+       id="path10"
+       style="stroke-width:0.543443" />
+    <path
+       d="m 8.9428562,11 h 1.9999868 c 0.55078,0 1,0.44922 1,1 v 1.9805 c 0,0.55078 -0.44922,1 -1,1 H 8.9428562 c -0.55078,0 -1,-0.44922 -1,-1 V 12 c 0,-0.55078 0.44922,-1 1,-1 z"
+       id="path12" />
+  </g>
+</svg>

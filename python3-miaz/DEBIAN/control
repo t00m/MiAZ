@@ -1,0 +1,29 @@
+Package: python3-miaz
+Source: miaz
+Version: 0.0.14+build.69-2
+Architecture: all
+Maintainer: Tomás Vírseda <tomasvirseda@gmail.com>
+Installed-Size: 4423
+Depends: python3:any
+Section: python
+Priority: optional
+Homepage: https://github.com/t00m/MiAZ
+Description: A personal document organizer
+ = MiAZ, a Personal Document Organizer
+ .
+ image::MiAZ/data/icons/MiAZ-big.svg[align="center"]
+ .
+ == Features
+ .
+ * Possibility of using one or more document repositories. One at time. But it can be switched at any time.
+ * No database. The directory holding the documents is the database. Properties are extracted from the own filenames. It uses some supporting configurations files to enable a proper identification of those properties (e.g..: FAM means family)
+ * Workspace:
+ ** MiAZ allows to import documents or directories (even in a  recursive way)
+ ** It is fast. The Workspace view can deal with hundred or thousand of files.
+ ** Filtering and search: The Workspace view have built-in drop-downs to help find documents easily.
+ ** Support for projects: those documents related between them can be (un)assigned to projects (eg.: all those documents related to the same tax stament). A document can belong to none, one or several projects).
+ ** Single renaming: a useful feature to rename a single document easily.
+ * Plug-in system: in order to avoid large modifications in the code base, MiAZ uses a plug-in system to enable and extend the functionality and the UI.
+ ** Current 'system' plugins:
+ *** Mass renaming: when importing several documents, sometimes is useful to assign the same property to all of them (e.g.: same country). This functionality allows MiAZ to do mass renaming for countries, groups, purposes, senders, receivers, etc...)
+ *** Export plugins: enable to export document names to CSV, plain text. But it also allows to export document to another directory or even zip them.
