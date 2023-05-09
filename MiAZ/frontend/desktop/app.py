@@ -45,7 +45,6 @@ Adw.init()
 class MiAZApp(Adw.Application):
     __gsignals__ = {
         "start-application-completed":  (GObject.SignalFlags.RUN_LAST, None, ()),
-        "stop-application-completed":  (GObject.SignalFlags.RUN_LAST, None, ()),
         "exit-application":  (GObject.SignalFlags.RUN_LAST, None, ()),
     }
     plugins_loaded = False
@@ -202,36 +201,74 @@ class MiAZApp(Adw.Application):
             page_rename.set_visible(False)
 
     def _setup_menu_app(self):
-        # Add Menu Button to the titlebar (Left Side)
-        menu_headerbar = self.add_widget('menu-headerbar', Gio.Menu.new())
-        section_common_in = Gio.Menu.new()
-        section_common_out = Gio.Menu.new()
-        section_danger = Gio.Menu.new()
-        menu_headerbar.append_section(None, section_common_in)
-        menu_headerbar.append_section(None, section_common_out)
-        menu_headerbar.append_section(None, section_danger)
-        self.add_widget('menu-headerbar-section-common-in', section_common_in)
-        self.add_widget('menu-headerbar-section-common-out', section_common_out)
-        self.add_widget('menu-headerbar-section-common-danger', section_danger)
+        # Add system menu button to the titlebar (left Side)
+        widgets = []
 
-        # Actions in
-        menuitem = self.factory.create_menuitem('settings_app', _('Application settings'), self._handle_menu, None, [])
-        section_common_in.append_item(menuitem)
+        ## Application Settings
+        button = self.factory.create_button('miaz-app-settings', callback=self.show_app_settings)
+        row = self.factory.create_actionrow(title=_('Application settings'), subtitle=_('Manage MiAZ configuration'), prefix=button)
+        widgets.append(row)
 
-        # Actions out
-        menuitem = self.factory.create_menuitem('help', _('Help'), self._handle_menu, None, ["<Control>h", "<Control>H"])
-        section_common_out.append_item(menuitem)
-        menuitem = self.factory.create_menuitem('about', _('About'), self._handle_menu, None, [])
-        section_common_out.append_item(menuitem)
+        ## Help
+        button = self.factory.create_button('miaz-app-help')
+        row = self.factory.create_actionrow(title=_('Help'), subtitle=_('Get help and tips'), prefix=button)
+        widgets.append(row)
 
-        # Actions danger
-        menuitem = self.factory.create_menuitem('quit', _('Quit'), self._handle_menu, None, ["<Control>q", "<Control>Q"])
-        section_danger.append_item(menuitem)
+        ## About
+        # ~ Everything you always wanted to know about this application but didn't dare to ask :)
+        button = self.factory.create_button('miaz-app-about', callback=self.show_app_about)
+        row = self.factory.create_actionrow(title=_('About'), subtitle=_("About this application"), prefix=button)
+        widgets.append(row)
 
-        menubutton = self.factory.create_button_menu(icon_name='miaz-system-menu', menu=menu_headerbar)
-        menubutton.set_always_show_arrow(False)
+
+        ## Quit
+        button = self.factory.create_button('miaz-app-quit', callback=self.exit_app)
+        row = self.factory.create_actionrow(title=_('Quit'), subtitle=_('Terminate this application'), prefix=button)
+        widgets.append(row)
+
+        menubutton = self.factory.create_button_popover(icon_name='miaz-system-menu', title='', widgets=widgets)
         self.add_widget('headerbar-button-menu-system', menubutton)
+
+
+        # ~ menu_headerbar = self.add_widget('menu-headerbar', Gio.Menu.new())
+        # ~ section_common_in = Gio.Menu.new()
+        # ~ section_common_out = Gio.Menu.new()
+        # ~ section_danger = Gio.Menu.new()
+        # ~ menu_headerbar.append_section(None, section_common_in)
+        # ~ menu_headerbar.append_section(None, section_common_out)
+        # ~ menu_headerbar.append_section(None, section_danger)
+        # ~ self.add_widget('menu-headerbar-section-common-in', section_common_in)
+        # ~ self.add_widget('menu-headerbar-section-common-out', section_common_out)
+        # ~ self.add_widget('menu-headerbar-section-common-danger', section_danger)
+
+        # ~ # Actions in
+        # ~ menuitem = self.factory.create_menuitem('settings_app', _('Application settings'), self._handle_menu, None, [])
+        # ~ section_common_in.append_item(menuitem)
+
+        # ~ # Actions out
+        # ~ menuitem = self.factory.create_menuitem('help', _('Help'), self._handle_menu, None, ["<Control>h", "<Control>H"])
+        # ~ section_common_out.append_item(menuitem)
+        # ~ menuitem = self.factory.create_menuitem('about', _('About'), self._handle_menu, None, [])
+        # ~ section_common_out.append_item(menuitem)
+
+        # ~ # Actions danger
+        # ~ menuitem = self.factory.create_menuitem('quit', _('Quit'), self._handle_menu, None, ["<Control>q", "<Control>Q"])
+        # ~ section_danger.append_item(menuitem)
+
+        # ~ menubutton = self.factory.create_button_menu(icon_name='miaz-system-menu', menu=menu_headerbar)
+        # ~ menubutton.set_always_show_arrow(False)
+        # ~ self.add_widget('headerbar-button-menu-system', menubutton)
         # ~ self.header.pack_start(menubutton)
+
+    def show_app_settings(self, *args):
+        self._setup_page_app_settings()
+        window = self.get_widget('settings-app')
+        window.set_transient_for(self.win)
+        window.set_modal(True)
+        window.present()
+
+    def show_app_about(self, *args):
+        self.show_stack_page_by_name('about')
 
     def show_workspace(self, *args):
         self.show_stack_page_by_name('workspace')
@@ -360,7 +397,7 @@ class MiAZApp(Adw.Application):
         self.stack.set_visible_child_name(name)
 
     def exit_app(self, *args):
-        self.emit("stop-application-completed")
+        self.emit("exit-application")
         self.quit()
 
     def add_service(self, name: str, service) -> Gtk.Widget:

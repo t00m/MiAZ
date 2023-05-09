@@ -282,7 +282,7 @@ class MiAZWorkspace(Gtk.Box):
         # ~ btnImportConf = self.factory.create_button('miaz-import-config', callback=self.actions.import_config)
         # ~ rowImportConf = self.factory.create_actionrow(title='Import config', subtitle='Import configuration', suffix=btnImportConf)
         # ~ widgets.append(rowImportConf)
-        button = self.factory.create_button_popover(icon_name='miaz-import', title='', widgets=widgets)
+        button = self.factory.create_button_popover(icon_name='miaz-list-add', title='', widgets=widgets)
         hbox.append(button)
 
         # Menu Single and Multiple
