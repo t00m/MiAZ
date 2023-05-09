@@ -52,6 +52,7 @@ class MiAZPluginType(IntEnum):
 class MiAZPluginManager:
     def __init__(self, app):
         self.app = app
+        self.backend = self.app.get_service('backend')
         self.log = get_logger('MiAZ.PluginManager')
         self.log.debug("Initializing Plugin Manager")
         self.plugin_info_list = []
@@ -132,10 +133,24 @@ class MiAZPluginManager:
             self.engine.add_search_path(ENV['GPATH']['PLUGINS'])
             self.log.debug("Added System plugin dir: %s", ENV['GPATH']['PLUGINS'])
 
-        # User plugins
-        if os.path.exists(ENV['LPATH']['PLUGINS']):
-            self.engine.add_search_path(ENV['LPATH']['PLUGINS'])
-            self.log.debug("Added User plugin dir: %s", ENV['LPATH']['PLUGINS'])
+        # User plugins for a specific repo
+        self.add_repo_plugins_dir()
+
+    def add_repo_plugins_dir(self):
+        try:
+            repo = self.backend.repo_config()
+            dir_conf = repo['dir_conf']
+            dir_plugins = os.path.join(dir_conf, 'plugins')
+            dir_plugins_available = os.path.join(dir_plugins, 'available')
+            dir_plugins_used = os.path.join(dir_plugins, 'used')
+            os.makedirs(dir_plugins, exist_ok=True)
+            os.makedirs(dir_plugins_available, exist_ok=True)
+            os.makedirs(dir_plugins_used, exist_ok=True)
+            self.engine.add_search_path(dir_plugins_used)
+            self.log.debug("Added User plugin dir: %s", dir_plugins_used)
+        except KeyError:
+            self.log.warning("There isn't any repo loaded right now!")
+
 
     @staticmethod
     def __extension_removed_cb(unused_set, unused_plugin_info, extension):
