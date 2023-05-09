@@ -46,6 +46,7 @@ class MiAZApp(Adw.Application):
     __gsignals__ = {
         "start-application-completed":  (GObject.SignalFlags.RUN_LAST, None, ()),
         "stop-application-completed":  (GObject.SignalFlags.RUN_LAST, None, ()),
+        "exit-application":  (GObject.SignalFlags.RUN_LAST, None, ()),
     }
     plugins_loaded = False
     _miazobjs = {} # MiAZ Objects
@@ -67,6 +68,7 @@ class MiAZApp(Adw.Application):
         self.win = self.add_widget('window', Gtk.ApplicationWindow(application=self))
         self.win.set_default_size(1280, 800)
         self.win.set_icon_name('MiAZ')
+        self.win.connect('close-request', self._on_window_close_request)
         self.win.set_default_icon_name('MiAZ')
         self.icman = self.add_service('icman', MiAZIconManager(self))
         self.theme = self.add_service('theme', Gtk.IconTheme.get_for_display(self.win.get_display()))
@@ -79,6 +81,11 @@ class MiAZApp(Adw.Application):
         self.log.debug("Executing MiAZ Desktop mode")
         self.check_repository()
         self.backend.connect('repository-switched', self._update_repo_settings)
+
+    def _on_window_close_request(self, window):
+        self.log.debug("Close window requested")
+        self.emit("exit-application")
+        self.exit_app()
 
     def _update_repo_settings(self, *args):
         self.log.debug("Repo switched. Configuration switched")
@@ -165,9 +172,9 @@ class MiAZApp(Adw.Application):
         widget_settings_app = self.get_widget('settings-app')
         if widget_settings_app is None:
             widget_settings_app = self.add_widget('settings-app', MiAZAppSettings(self))
-            page_settings_app = self.stack.add_titled(widget_settings_app, 'settings_app', 'MiAZ')
-            page_settings_app.set_icon_name('document-properties')
-            page_settings_app.set_visible(False)
+            # ~ page_settings_app = self.stack.add_titled(widget_settings_app, 'settings_app', 'MiAZ')
+            # ~ page_settings_app.set_icon_name('document-properties')
+            # ~ page_settings_app.set_visible(False)
 
     def _setup_page_repo_settings(self):
         widget_settings_repo = self.get_widget('settings-repo')
@@ -272,7 +279,6 @@ class MiAZApp(Adw.Application):
         self._setup_page_about()
         self._setup_page_welcome()
         self._setup_page_help()
-        self._setup_page_app_settings()
 
         # Statusbar
         statusbar = self.add_widget('statusbar', MiAZStatusbar(self))
@@ -314,7 +320,11 @@ class MiAZApp(Adw.Application):
     def _handle_menu(self, action, *args):
         name = action.props.name
         if name == 'settings_app':
-            self.show_stack_page_by_name('settings_app')
+            self._setup_page_app_settings()
+            window = self.get_widget('settings-app')
+            window.set_transient_for(self.win)
+            window.set_modal(True)
+            window.present()
         elif name == 'about':
             self.show_stack_page_by_name('about')
         elif name == 'close':
@@ -343,7 +353,7 @@ class MiAZApp(Adw.Application):
             toolbar_top.set_visible(True)
         elif name == 'welcome':
             button.set_visible(False)
-            toolbar_top.set_visible(False)
+            # ~ toolbar_top.set_visible(False)
         else:
             button.set_visible(True)
             toolbar_top.set_visible(False)
