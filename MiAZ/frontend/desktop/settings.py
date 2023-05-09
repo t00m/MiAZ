@@ -31,7 +31,6 @@ from MiAZ.backend.models import MiAZItem, File, Group, Person, Country
 from MiAZ.backend.models import Purpose, Concept, SentBy, SentTo, Date
 from MiAZ.backend.models import Extension, Project, Repository
 from MiAZ.backend.config import MiAZConfigRepositories
-from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewPlugins
 
 Configview = {}
 Configview['Country'] = MiAZCountries
