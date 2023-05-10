@@ -183,7 +183,7 @@ class MiAZFactory:
             box = list_item.get_child()
             label = box.get_last_child()
             item = list_item.get_item()
-            label.set_text(item.title)
+            label.set_markup('<small>%s</small>' % item.title)
 
         def _on_search_changed(search_entry, item_filter):
             text = search_entry.get_text()
@@ -200,6 +200,12 @@ class MiAZFactory:
             box2 = box.get_first_child()
             search_entry = box2.get_first_child() # Gtk.SearchEntry
             return search_entry
+
+        # ~ def _clear_dropdown(self, nothing, dropdown):
+            # ~ model = dropdown.get_model()
+            # ~ print(len(model))
+            # ~ dropdown.set_selected(0)
+            # ~ print(dropdown)
 
         # Set up the factory
         factory = Gtk.SignalListItemFactory()
@@ -221,6 +227,17 @@ class MiAZFactory:
         item_filter = Gtk.CustomFilter.new(_do_filter, filter_model, search_entry)
         filter_model.set_filter(item_filter)
         search_entry.connect('search-changed', _on_search_changed, item_filter)
+
+        # Enable context menu
+        # FIXME: This code insert a new entry in the context menu
+        # Apparently, it works. But it doesn't. It always chooses
+        # the last dropdown created ¿?
+        # ~ image = search_entry.get_first_child()
+        # ~ text_widget = image.get_next_sibling()
+        # ~ menu_dropdown = Gio.Menu.new()
+        # ~ text_widget.set_extra_menu(menu_dropdown)
+        # ~ menuitem = self.create_menuitem(name='clear', label='Clear dropdown', callback=_clear_dropdown, data=dropdown, shortcuts=[])
+        # ~ menu_dropdown.append_item(menuitem)
 
         return dropdown
 
