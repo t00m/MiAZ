@@ -34,7 +34,7 @@ try:
     from gi.repository import Adw
     ENV['DESKTOP']['ADW_ENABLED'] = True
     ENV['DESKTOP']['ADW_VERSION'] = (Adw.MAJOR_VERSION, Adw.MINOR_VERSION, Adw.MICRO_VERSION)
-    ENV['DESKTOP']['ADW_SUPPORT'] = Adw.MAJOR_VERSION ==1 and Adw.MINOR_VERSION == 2
+    ENV['DESKTOP']['ADW_SUPPORT'] = Adw.MAJOR_VERSION ==1 and Adw.MINOR_VERSION >= 2
 except:
     ENV['DESKTOP']['ADW_ENABLED'] = False
     ENV['DESKTOP']['ADW_SUPPORT'] = False
