@@ -55,6 +55,7 @@ class MiAZ:
 
     def run(self):
         """Execute MiAZ in desktop or console mode"""
+        self.log.debug('Desktop name: %s', ENV['SYS']['DESKTOP'])
         if ENV['SYS']['DESKTOP'] is not None:
             from MiAZ.frontend.desktop.app import MiAZApp
         else:

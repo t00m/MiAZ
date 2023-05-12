@@ -16,6 +16,31 @@ from gettext import gettext as _
 
 ENV = {}
 
+# Desktop environment
+ENV['DESKTOP'] = {}
+try:
+    import gi
+    gi.require_version('Gtk', '4.0')
+    from gi.repository import Gtk
+    ENV['DESKTOP']['GTK_ENABLED'] = True
+    ENV['DESKTOP']['GTK_VERSION'] = (Gtk.MAJOR_VERSION, Gtk.MINOR_VERSION, Gtk.MICRO_VERSION)
+    ENV['DESKTOP']['GTK_SUPPORT'] = Gtk.MAJOR_VERSION >= 4 and Gtk.MINOR_VERSION >= 6
+except:
+    ENV['DESKTOP']['GTK_ENABLED'] = False
+    ENV['DESKTOP']['GTK_SUPPORT'] = False
+
+try:
+    gi.require_version('Adw', '1')
+    from gi.repository import Adw
+    ENV['DESKTOP']['ADW_ENABLED'] = True
+    ENV['DESKTOP']['ADW_VERSION'] = (Adw.MAJOR_VERSION, Adw.MINOR_VERSION, Adw.MICRO_VERSION)
+    ENV['DESKTOP']['ADW_SUPPORT'] = Adw.MAJOR_VERSION ==1 and Adw.MINOR_VERSION == 2
+except:
+    ENV['DESKTOP']['ADW_ENABLED'] = False
+    ENV['DESKTOP']['ADW_SUPPORT'] = False
+
+ENV['DESKTOP']['ENABLED'] = ENV['DESKTOP']['GTK_SUPPORT'] and ENV['DESKTOP']['ADW_SUPPORT']
+
 # Configuration
 ENV['CONF'] = {}
 ENV['CONF']['ROOT'] = abspath(sys.modules[__name__].__file__ + "/../..")
