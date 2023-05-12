@@ -45,7 +45,6 @@ DATA_FILES += ['README.adoc']
 DATA_FILES +=[('share/applications', ['MiAZ/data/resources/com.github.t00m.MiAZ.desktop'])]
 DATA_FILES +=[('share/icons/hicolor/48x48/apps/', ['MiAZ/data/icons/com.github.t00m.MiAZ.svg'])]
 
-
 setup(
     name=ENV['APP']['shortname'],
     version=open('MiAZ/data/docs/VERSION', 'r').read().strip(),

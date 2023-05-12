@@ -27,11 +27,6 @@ from MiAZ.backend.log import get_logger
 from MiAZ.backend.models import Country
 from MiAZ.frontend.desktop.icons import MiAZIconManager
 
-# ~ class HeaderType:
-    # ~ DEFAULT = 1
-    # ~ ARTIST = 2
-    # ~ ALBUM = 3
-    # ~ ROUNDED = 4
 
 class MiAZFactory:
     def __init__(self, app):
@@ -61,8 +56,6 @@ class MiAZFactory:
     def create_box_filter(self, title, widget: Gtk.Widget) -> Gtk.Box:
         box = Gtk.Box.new(orientation=Gtk.Orientation.VERTICAL, spacing=3)
         box.set_margin_bottom(margin=12)
-        # ~ box.set_homogeneous(True)
-        # ~ vbox.get_style_context().add_class(class_name='frame')
         lblTitle = self.create_label('<small>%s</small>' % title)
         lblTitle.set_xalign(0.0)
         box.append(lblTitle)
@@ -123,9 +116,7 @@ class MiAZFactory:
                     )
                 )
         button.set_has_frame(False)
-        if callback is None:
-            button.connect('toggled', self.noop, data)
-        else:
+        if callback is not None:
             button.connect('toggled', callback, data)
         return button
 
@@ -136,22 +127,11 @@ class MiAZFactory:
             button.connect('toggled', callback)
         return button
 
-    # ~ def create_button_menu(self, xml: str = '', name:str = '', child: Gtk.Widget = None, css_classes: list = []):
-        # ~ """
-        # ~ Gtk.Menubutton with a menu defined in a Gtk.Builder xml string
-        # ~ """
-        # ~ button = Gtk.MenuButton(child=child, css_classes=css_classes)
-        # ~ builder = Gtk.Builder()
-        # ~ builder.add_from_string(xml)
-        # ~ menu = builder.get_object(name)
-        # ~ button.set_menu_model(menu)
-        # ~ return button
-
     def create_button_menu(self, icon_name: str = '', title:str = '', menu: Gio.Menu = None)-> Gtk.MenuButton:
         """Gtk.Menubutton with a menu"""
-        label = Gtk.Label()
-        label.get_style_context().add_class(class_name='caption')
-        label.set_markup(title)
+        # ~ label = Gtk.Label()
+        # ~ label.get_style_context().add_class(class_name='caption')
+        # ~ label.set_markup(title)
         child=Adw.ButtonContent(icon_name=icon_name, label=title, css_classes=['flat'])
         button = Gtk.MenuButton()
         button.set_has_frame(True)
@@ -165,10 +145,10 @@ class MiAZFactory:
         button.set_sensitive(True)
         return button
 
-    def create_button_popover(self, icon_name: str = '', css_classes: list = [], widgets: list = []) -> Gtk.MenuButton:
+    def create_button_popover(self, icon_name: str = '', title: str = '', css_classes: list = [], widgets: list = []) -> Gtk.MenuButton:
         listbox = Gtk.ListBox.new()
-        listbox.set_activate_on_single_click(False)
-        listbox.set_selection_mode(Gtk.SelectionMode.NONE)
+        listbox.set_activate_on_single_click(True)
+        listbox.set_selection_mode(Gtk.SelectionMode.SINGLE)
         for widget in widgets:
             listbox.append(child=widget)
         vbox = self.create_box_vertical()
@@ -176,10 +156,9 @@ class MiAZFactory:
         popover = Gtk.Popover()
         popover.set_child(vbox)
         popover.present()
-        button = Gtk.MenuButton(child=Adw.ButtonContent(icon_name=icon_name, css_classes=css_classes))
+        button = Gtk.MenuButton(child=Adw.ButtonContent(icon_name=icon_name, label=title, css_classes=css_classes))
         button.set_popover(popover)
         return button
-
 
     def create_dropdown_generic(self, item_type, ellipsize=True, enable_search=True):
         def _get_search_entry_widget(dropdown):
@@ -204,7 +183,7 @@ class MiAZFactory:
             box = list_item.get_child()
             label = box.get_last_child()
             item = list_item.get_item()
-            label.set_text(item.title)
+            label.set_markup('<small>%s</small>' % item.title)
 
         def _on_search_changed(search_entry, item_filter):
             text = search_entry.get_text()
@@ -221,6 +200,12 @@ class MiAZFactory:
             box2 = box.get_first_child()
             search_entry = box2.get_first_child() # Gtk.SearchEntry
             return search_entry
+
+        # ~ def _clear_dropdown(self, nothing, dropdown):
+            # ~ model = dropdown.get_model()
+            # ~ print(len(model))
+            # ~ dropdown.set_selected(0)
+            # ~ print(dropdown)
 
         # Set up the factory
         factory = Gtk.SignalListItemFactory()
@@ -242,6 +227,17 @@ class MiAZFactory:
         item_filter = Gtk.CustomFilter.new(_do_filter, filter_model, search_entry)
         filter_model.set_filter(item_filter)
         search_entry.connect('search-changed', _on_search_changed, item_filter)
+
+        # Enable context menu
+        # FIXME: This code insert a new entry in the context menu
+        # Apparently, it works. But it doesn't. It always chooses
+        # the last dropdown created ¿?
+        # ~ image = search_entry.get_first_child()
+        # ~ text_widget = image.get_next_sibling()
+        # ~ menu_dropdown = Gio.Menu.new()
+        # ~ text_widget.set_extra_menu(menu_dropdown)
+        # ~ menuitem = self.create_menuitem(name='clear', label='Clear dropdown', callback=_clear_dropdown, data=dropdown, shortcuts=[])
+        # ~ menu_dropdown.append_item(menuitem)
 
         return dropdown
 
@@ -279,34 +275,12 @@ class MiAZFactory:
         d_filechooser.set_title(title)
         d_filechooser.set_transient_for(parent)
         d_filechooser.set_modal(True)
-        d_filechooser.add_buttons('Cancel', Gtk.ResponseType.CANCEL, 'Accept', Gtk.ResponseType.ACCEPT)
+        d_filechooser.add_buttons(_('Cancel'), Gtk.ResponseType.CANCEL, _('Accept'), Gtk.ResponseType.ACCEPT)
         d_filechooser.connect('response', callback, data)
         contents = d_filechooser.get_content_area()
         box = self.create_box_vertical()
         w_filechooser = Gtk.FileChooserWidget()
         box.append(w_filechooser)
-        if target == 'FOLDER':
-            w_filechooser.set_action(Gtk.FileChooserAction.SELECT_FOLDER)
-        elif target == 'FILE':
-            w_filechooser.set_action(Gtk.FileChooserAction.OPEN)
-        elif target == 'SAVE':
-            w_filechooser.set_action(Gtk.FileChooserAction.SAVE)
-        contents.append(box)
-        return d_filechooser
-
-    # ~ def create_filechooser_widget(self, title, target, callback, data=None):
-        # ~ #FIXME: Gtk.FileChooser is deprecated. Use Gtk.FileDialog
-        # ~ # Available since Gtk 4.10: https://docs.gtk.org/gtk4/class.FileDialog.html
-        # ~ d_filechooser = Gtk.Dialog()
-        # ~ d_filechooser.set_title(title)
-        # ~ d_filechooser.set_transient_for(parent)
-        # ~ d_filechooser.set_modal(True)
-        # ~ d_filechooser.add_buttons('Cancel', Gtk.ResponseType.CANCEL, 'Accept', Gtk.ResponseType.ACCEPT)
-        # ~ d_filechooser.connect('response', callback, data)
-        # ~ contents = d_filechooser.get_content_area()
-        # ~ box = self.create_box_vertical()
-        # ~ w_filechooser = Gtk.FileChooserWidget()
-        # ~ box.append(w_filechooser)
         if target == 'FOLDER':
             w_filechooser.set_action(Gtk.FileChooserAction.SELECT_FOLDER)
         elif target == 'FILE':
@@ -355,33 +329,6 @@ class MiAZFactory:
             self.app.set_accels_for_action(f'app.{name}', shortcuts)
         return menuitem
 
-    def create_row(self, filepath: str, filedict: dict) -> Gtk.Widget:
-        row = Gtk.Frame()
-        row.set_margin_top(margin=3)
-        row.set_margin_end(margin=3)
-        row.set_margin_bottom(margin=3)
-        row.set_margin_start(margin=3)
-        boxCenter = Gtk.CenterBox()
-        boxCenter.set_margin_top(margin=6)
-        boxCenter.set_margin_end(margin=6)
-        boxCenter.set_margin_bottom(margin=6)
-        boxCenter.set_margin_start(margin=6)
-        icon_mime = self.app.icman.get_icon_mimetype_from_file(filepath, 32)
-        btnMime = Gtk.Button(css_classes=['flat'])
-        btnMime.set_child(icon_mime)
-        btnMime.connect('clicked', self.noop)
-        icon_flag = self.app.icman.get_flag('ES', 32)
-        label = self.create_label(os.path.basename(filepath))
-        boxLayout = Gtk.Box()
-        boxLayout.set_margin_start(6)
-        boxLayout.set_margin_end(6)
-        boxLayout.append(label)
-        boxCenter.set_start_widget(btnMime)
-        boxCenter.set_center_widget(boxLayout)
-        boxCenter.set_end_widget(icon_flag)
-        row.set_child(boxCenter)
-        return row
-
     def create_scrolledwindow(self):
         scrwin = Gtk.ScrolledWindow()
         scrwin.set_hexpand(True)
@@ -391,126 +338,19 @@ class MiAZFactory:
     def create_view(self, customview, title):
         box = self.create_box_vertical(spacing=6, vexpand=True, hexpand=True)
         label = self.create_label(title)
-        # ~ frame = Gtk.Frame()
         view = customview(self.app)
         view.get_style_context().add_class(class_name='monospace')
         view.get_style_context().add_class(class_name='caption')
         view.set_hexpand(True)
         view.set_vexpand(True)
-        # ~ frame.set_child(view)
         box.append(label)
-        # ~ box.append(frame)
         return box, view
-
 
     def create_switch_button(self, icon_name, title, callback=None, data=None):
         button = Gtk.Switch()
-        if callback is None:
-            button.connect('notify::active', self.noop, data)
-        else:
+        if callback is not None:
             button.connect('notify::active', callback, data)
         return button
 
     def noop(self, *args):
         self.log.debug(args)
-
-    def create_menu_selection_single(self) -> Gio.Menu:
-        self.menu_workspace_single = Gio.Menu.new()
-
-        # Fake item for menu title
-        item_fake = Gio.MenuItem.new()
-        item_fake.set_label('Single selection')
-        action = Gio.SimpleAction.new('fake', None)
-        item_fake.set_detailed_action(detailed_action='fake')
-        self.menu_workspace_single.append_item(item_fake)
-
-        item_rename_manual = Gio.MenuItem.new()
-        item_rename_manual.set_label('Rename manually')
-        action = Gio.SimpleAction.new('rename_ws_manually', None)
-        # ~ action.connect('activate', self.action_rename_manually)
-        self.app.add_action(action)
-        item_rename_manual.set_detailed_action(detailed_action='app.rename_ws_manually')
-        self.menu_workspace_single.append_item(item_rename_manual)
-
-        return self.menu_workspace_single
-
-    def create_menu_selection_multiple(self):
-        self.menu_workspace_multiple = Gio.Menu.new()
-
-        fields = ['date', 'country', 'group', 'purpose']
-        item_fake = Gio.MenuItem.new()
-        item_fake.set_label('Multiple selection')
-        action = Gio.SimpleAction.new('fake', None)
-        item_fake.set_detailed_action(detailed_action='fake')
-        self.menu_workspace_multiple.append_item(item_fake)
-
-        # Submenu for mass renaming
-        submenu_rename_root = Gio.Menu.new()
-        submenu_rename = Gio.MenuItem.new_submenu(
-            label='Mass renaming of...',
-            submenu=submenu_rename_root,
-        )
-        self.menu_workspace_multiple.append_item(submenu_rename)
-
-        for item in fields:
-            menuitem = Gio.MenuItem.new()
-            menuitem.set_label(label='... %s' % item)
-            action = Gio.SimpleAction.new('rename_%s' % item, None)
-            callback = 'self.action_rename'
-            action.connect('activate', eval(callback), item)
-            self.app.add_action(action)
-            menuitem.set_detailed_action(detailed_action='app.rename_%s' % item)
-            submenu_rename_root.append_item(menuitem)
-
-        # Submenu for mass adding
-        submenu_add_root = Gio.Menu.new()
-        submenu_add = Gio.MenuItem.new_submenu(
-            label='Mass adding of...',
-            submenu=submenu_add_root,
-        )
-        self.menu_workspace_multiple.append_item(submenu_add)
-
-        for item in fields:
-            menuitem = Gio.MenuItem.new()
-            menuitem.set_label(label='... %s' % item)
-            action = Gio.SimpleAction.new('add_%s' % item, None)
-            callback = 'self.action_add'
-            action.connect('activate', eval(callback), item)
-            self.app.add_action(action)
-            menuitem.set_detailed_action(detailed_action='app.add_%s' % item)
-            submenu_add_root.append_item(menuitem)
-
-        item_force_update = Gio.MenuItem.new()
-        item_force_update.set_label(label='Force update')
-        action = Gio.SimpleAction.new('workspace_update', None)
-        action.connect('activate', self.update)
-        self.app.add_action(action)
-        item_force_update.set_detailed_action(detailed_action='app.workspace_update')
-        self.menu_workspace_multiple.append_item(item_force_update)
-
-        item_delete = Gio.MenuItem.new()
-        item_delete.set_label(label='Delete documents')
-        action = Gio.SimpleAction.new('workspace_delete', None)
-        action.connect('activate', self.noop)
-        self.app.add_action(action)
-        item_delete.set_detailed_action(detailed_action='app.workspace_delete')
-        self.menu_workspace_multiple.append_item(item_delete)
-        return self.menu_workspace_multiple
-
-# ~ class MenuHeader(Gio.MenuItem):
-    # ~ """
-        # ~ A simple menu header with label and icon
-    # ~ """
-
-    # ~ def __init__(self, label, icon_name):
-        # ~ """
-            # ~ Init menu
-            # ~ @param label as str
-            # ~ @param icon_name as str
-        # ~ """
-        # ~ Gio.MenuItem.__init__(self)
-        # ~ header_type = GLib.Variant("i", HeaderType.DEFAULT)
-        # ~ vlabel = GLib.Variant("s", label)
-        # ~ vicon_name = GLib.Variant("s", icon_name)
-        # ~ header = [header_type, vlabel, vicon_name]
-        # ~ self.set_attribute_value("header", GLib.Variant("av", header))

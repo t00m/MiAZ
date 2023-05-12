@@ -7,7 +7,11 @@
 # License: GPL v3
 # Description: Custom models for working with Columnviews
 """
+
+from gettext import gettext as _
+
 from gi.repository import GObject
+
 
 class MiAZModel(GObject.Object):
     """Custom MiAZ data model to be subclassed"""
@@ -134,11 +138,11 @@ class MiAZItem(MiAZModel):
 
 class Concept(MiAZModel):
     __gtype_name__ = 'Concept'
-    __title__ = 'Concept'
+    __title__ = _('Concept')
 
 class Country(MiAZModel):
     __gtype_name__ = 'Country'
-    __title__ = 'Country'
+    __title__ = _('Country')
 
     def __init__(self,  id: str, title: str = '', icon: str = ''):
         super().__init__(id, title)
@@ -150,40 +154,40 @@ class Country(MiAZModel):
 
 class Date(MiAZModel):
     __gtype_name__ = 'Date'
-    __title__ = 'Date'
+    __title__ = _('Date')
 
 class Extension(MiAZModel):
     __gtype_name__ = 'Extension'
-    __title__ = 'Extension'
+    __title__ = _('Extension')
 
 class File(MiAZModel):
     __gtype_name__ = 'File'
-    __title__ = 'File'
+    __title__ = _('File')
 
 class Group(MiAZModel):
     __gtype_name__ = 'Group'
-    __title__ = 'Group'
+    __title__ = _('Group')
 
 class Person(MiAZModel):
     __gtype_name__ = 'Person'
-    __title__ = 'Person'
+    __title__ = _('Person')
 
 class Project(MiAZModel):
     __gtype_name__ = 'Project'
-    __title__ = 'Project'
+    __title__ = _('Project')
 
 class Purpose(MiAZModel):
     __gtype_name__ = 'Purpose'
-    __title__ = 'Purpose'
+    __title__ = _('Purpose')
 
 class Repository(MiAZModel):
     __gtype_name__ = 'Repository'
-    __title__ = 'Repository'
+    __title__ = _('Repository')
 
 class SentBy(Person):
     __gtype_name__ = 'SentBy'
-    __title__ = 'Sender'
+    __title__ = _('Sender')
 
 class SentTo(Person):
     __gtype_name__ = 'SentTo'
-    __title__ = 'Recipient'
+    __title__ = _('Recipient')

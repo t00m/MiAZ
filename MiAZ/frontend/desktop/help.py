@@ -14,7 +14,6 @@ from gi.repository import Gtk
 SHORTCUTS = [
     (_("Main Window"), [
         ('<Ctrl>h', _("Help")),
-        ('<Ctrl>a', _("About this application")),
         ('<Ctrl>q', _("Quit application")),
     ]),
     (_("Workspace"), [

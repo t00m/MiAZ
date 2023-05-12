@@ -1,0 +1,660 @@
+# Traducción MiAZ al español
+# Copyright (C) 2023 Tomás Vírseda
+# This file is distributed under the same license as the MiAZ package.
+# Tomás Vírseda <tomasvirseda@gmail.com>, 2023.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: 0.1\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2023-04-03 23:01+0200\n"
+"PO-Revision-Date: 2023-04-03 23:04+0200\n"
+"Last-Translator: Tomás Vírseda <tomasvirseda@gmail.com>\n"
+"Language-Team: es_ES.UTF-8 <tomasvirseda@gmail.com>\n"
+"Language: es\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Gtranslator 41.0\n"
+
+#: MiAZ/frontend/desktop/settings.py:55
+msgid "Settings - Repositories"
+msgstr "Configuración - Repositorios"
+
+#: MiAZ/frontend/desktop/settings.py:63
+msgid "Repositories"
+msgstr "Repositorios"
+
+#: MiAZ/frontend/desktop/settings.py:71
+msgid "Current active"
+msgstr "Último activo"
+
+#: MiAZ/frontend/desktop/settings.py:73
+msgid "Load repo"
+msgstr "Cargar repositorio"
+
+#: MiAZ/frontend/desktop/settings.py:128
+#: MiAZ/frontend/desktop/widgets/assistant.py:137
+msgid "Choose target directory"
+msgstr "Elige el directorio destino"
+
+#: MiAZ/frontend/desktop/actions.py:75 MiAZ/frontend/desktop/actions.py:82
+#: MiAZ/data/plugins/delete.py:67 MiAZ/data/plugins/delete.py:74
+msgid "Mass deletion"
+msgstr "Borrado masivo"
+
+#: MiAZ/frontend/desktop/actions.py:105
+#, python-format
+msgid "Any %s"
+msgstr "Cualquier %s"
+
+#: MiAZ/frontend/desktop/actions.py:107
+#, python-format
+msgid "No %s"
+msgstr "Ningún %s"
+
+#: MiAZ/frontend/desktop/actions.py:131
+msgid "No data"
+msgstr "Sin datos"
+
+#: MiAZ/frontend/desktop/actions.py:133
+msgid "No repositories found"
+msgstr "Ningún repositorio encontrado"
+
+#: MiAZ/frontend/desktop/actions.py:160
+msgid "Import a directory"
+msgstr "Importar un directorio"
+
+#: MiAZ/frontend/desktop/actions.py:167
+msgid "Walk recursively"
+msgstr "Recorrer subdirectorios"
+
+#: MiAZ/frontend/desktop/actions.py:187
+msgid "Import a configuration file"
+msgstr "Importar un fichero de configuración"
+
+#: MiAZ/frontend/desktop/actions.py:211
+msgid "Import a single file"
+msgstr "Importar un fichero"
+
+#: MiAZ/frontend/desktop/actions.py:224
+#, python-format
+msgid "Manage %s"
+msgstr "Gestionar %s"
+
+#: MiAZ/frontend/desktop/help.py:15
+msgid "Main Window"
+msgstr "Pantalla principal"
+
+#: MiAZ/frontend/desktop/help.py:16 MiAZ/frontend/desktop/app.py:211
+msgid "Help"
+msgstr "Ayuda"
+
+#: MiAZ/frontend/desktop/help.py:17
+msgid "Quit application"
+msgstr "Salir de la aplicación"
+
+#: MiAZ/frontend/desktop/help.py:19
+msgid "Workspace"
+msgstr "Área de trabajo"
+
+#: MiAZ/frontend/desktop/help.py:20
+msgid "Display document"
+msgstr "Mostrar documento"
+
+#: MiAZ/frontend/desktop/help.py:21
+msgid "Rename document"
+msgstr "Renombrar documento"
+
+#: MiAZ/frontend/desktop/factory.py:261
+#: MiAZ/frontend/desktop/widgets/rename.py:77
+msgid "Cancel"
+msgstr "Cancelar"
+
+#: MiAZ/frontend/desktop/factory.py:261
+msgid "Accept"
+msgstr "Aceptar"
+
+#: MiAZ/frontend/desktop/app.py:207
+msgid "Application settings"
+msgstr "Ajustes de la aplicación"
+
+#: MiAZ/frontend/desktop/app.py:213
+msgid "About"
+msgstr "Acerca de"
+
+#: MiAZ/frontend/desktop/app.py:217
+msgid "Quit"
+msgstr "Salir"
+
+#: MiAZ/frontend/desktop/app.py:227
+msgid "Back"
+msgstr "Volver"
+
+#: MiAZ/frontend/desktop/widgets/configview.py:93
+msgid "Edit repository"
+msgstr "Editar repositorio"
+
+#: MiAZ/frontend/desktop/widgets/configview.py:93
+msgid "Repository name"
+msgstr "Nombre del repositorio"
+
+#: MiAZ/frontend/desktop/widgets/configview.py:93
+msgid "Folder"
+msgstr "Directorio"
+
+#: MiAZ/frontend/desktop/widgets/configview.py:255
+#: MiAZ/data/plugins/massrename.py:190 MiAZ/data/plugins/massrename.py:214
+msgid "Mass renaming"
+msgstr "Renombrado masivo"
+
+#: MiAZ/frontend/desktop/widgets/workspace.py:201
+msgid "Import document"
+msgstr "Importar documento"
+
+#: MiAZ/frontend/desktop/widgets/workspace.py:201
+msgid "Import one or more documents"
+msgstr "Importar uno o más documentos"
+
+#: MiAZ/frontend/desktop/widgets/workspace.py:204
+msgid "Import directory"
+msgstr "Importar un directorio"
+
+#: MiAZ/frontend/desktop/widgets/workspace.py:204
+msgid "Import all documents from a directory"
+msgstr "Importar todos los documentos de un directorio"
+
+#: MiAZ/frontend/desktop/widgets/workspace.py:210
+msgid "Import..."
+msgstr "Importar..."
+
+#: MiAZ/frontend/desktop/widgets/workspace.py:224
+msgid "Type here"
+msgstr "Escribe aquí"
+
+#: MiAZ/frontend/desktop/widgets/workspace.py:314
+msgid "This month"
+msgstr "Este mes"
+
+#: MiAZ/frontend/desktop/widgets/workspace.py:319
+msgid "Last 3 months"
+msgstr "Últimos tres meses"
+
+#: MiAZ/frontend/desktop/widgets/workspace.py:324
+msgid "Last 6 months"
+msgstr "Últimos seis meses"
+
+#: MiAZ/frontend/desktop/widgets/workspace.py:329
+msgid "This year"
+msgstr "Este año"
+
+#: MiAZ/frontend/desktop/widgets/workspace.py:334
+msgid "Since two years ago"
+msgstr "Desde hace dos años"
+
+#: MiAZ/frontend/desktop/widgets/workspace.py:339
+msgid "Since three years ago"
+msgstr "Desde hace tres años"
+
+#: MiAZ/frontend/desktop/widgets/workspace.py:344
+msgid "Since five years ago"
+msgstr "Desde hace cinco años"
+
+#: MiAZ/frontend/desktop/widgets/workspace.py:348
+msgid "All documents"
+msgstr "Todos los documentos"
+
+#: MiAZ/frontend/desktop/widgets/workspace.py:352
+msgid "Without date"
+msgstr "Sin fecha"
+
+#: MiAZ/frontend/desktop/widgets/workspace.py:425
+msgid "Export..."
+msgstr "Exportar..."
+
+#: MiAZ/frontend/desktop/widgets/workspace.py:633
+#: MiAZ/frontend/desktop/widgets/views.py:74 MiAZ/data/plugins/export2csv.py:51
+#: MiAZ/backend/models.py:141
+msgid "Concept"
+msgstr "Concepto"
+
+#: MiAZ/frontend/desktop/widgets/welcome.py:36
+msgid "Welcome!"
+msgstr "¡Bienvenido!"
+
+#: MiAZ/frontend/desktop/widgets/welcome.py:41
+msgid "No active repositories has been found.\n"
+msgstr "No se ha encontrado ningún repositorio activo\n"
+
+#: MiAZ/frontend/desktop/widgets/welcome.py:45
+msgid ""
+"Please, open the <i>Application Settings</i> to manage your repositories."
+msgstr ""
+"Por favor, Abre los <i>Ajustes de la aplicación</i> para gestionar tus "
+"repositorios."
+
+#: MiAZ/frontend/desktop/widgets/rename.py:70
+msgid "Rename"
+msgstr "Renombrar"
+
+#: MiAZ/frontend/desktop/widgets/rename.py:79
+msgid "Preview"
+msgstr "Previsualizar"
+
+#: MiAZ/frontend/desktop/widgets/rename.py:175
+#: MiAZ/frontend/desktop/widgets/views.py:82 MiAZ/data/plugins/export2csv.py:51
+#: MiAZ/backend/models.py:157
+msgid "Date"
+msgstr "Fecha"
+
+#: MiAZ/frontend/desktop/widgets/rename.py:195
+msgid "YYYYmmdd"
+msgstr "AAAAmmdd"
+
+#: MiAZ/frontend/desktop/widgets/rename.py:247
+msgid "Type anything here..."
+msgstr "Escribe cualquier cosa aquí..."
+
+#: MiAZ/frontend/desktop/widgets/rename.py:261
+#: MiAZ/data/plugins/export2csv.py:51 MiAZ/backend/models.py:161
+msgid "Extension"
+msgstr "Extensión"
+
+#: MiAZ/frontend/desktop/widgets/rename.py:277
+msgid "Current filename"
+msgstr "Nombre de fichero actual"
+
+#: MiAZ/frontend/desktop/widgets/rename.py:284
+msgid "<b>New filename</b>"
+msgstr "<b>Nuevo nombre de fichero</b>"
+
+#: MiAZ/frontend/desktop/widgets/rename.py:389
+#, python-format
+msgid ""
+"<big>You are about to set this new filename:</big>\n"
+"\n"
+"<b>%s</b>"
+msgstr ""
+"<big>Estás a punto de poner un nuevo nombre de fichero:</big>\n"
+"\n"
+"<b>%s</b>"
+
+#: MiAZ/frontend/desktop/widgets/rename.py:392
+#: MiAZ/frontend/desktop/widgets/rename.py:417
+msgid "Are you sure?"
+msgstr "¿Estás seguro?"
+
+#: MiAZ/frontend/desktop/widgets/rename.py:414
+#, python-format
+msgid ""
+"<big>You are about to delete the following document:\n"
+"\n"
+"<b>%s</b>\n"
+"\n"
+"Confirm, please.</big>"
+msgstr ""
+"<big>Estás a punto de borrar el siguiente documento:\n"
+"\n"
+"<b>%s</b>\n"
+"\n"
+"Confirma, por favor.</big>"
+
+#: MiAZ/frontend/desktop/widgets/views.py:75
+msgid "Active"
+msgstr "Activo"
+
+#: MiAZ/frontend/desktop/widgets/views.py:77
+msgid "Type"
+msgstr "Tipo"
+
+#: MiAZ/frontend/desktop/widgets/views.py:78 MiAZ/data/plugins/export2csv.py:51
+#: MiAZ/data/plugins/export2dir.py:113 MiAZ/backend/models.py:169
+msgid "Group"
+msgstr "Grupo"
+
+#: MiAZ/frontend/desktop/widgets/views.py:79
+#: MiAZ/frontend/desktop/widgets/assistant.py:208
+#: MiAZ/data/plugins/export2dir.py:115
+msgid "Sent by"
+msgstr "Enviado por"
+
+#: MiAZ/frontend/desktop/widgets/views.py:80
+#: MiAZ/frontend/desktop/widgets/assistant.py:208
+#: MiAZ/data/plugins/export2dir.py:116
+msgid "Sent to"
+msgstr "Enviado a"
+
+#: MiAZ/frontend/desktop/widgets/views.py:81 MiAZ/data/plugins/export2csv.py:51
+#: MiAZ/data/plugins/export2dir.py:114 MiAZ/backend/models.py:181
+msgid "Purpose"
+msgstr "Propósito"
+
+#: MiAZ/frontend/desktop/widgets/views.py:83
+#: MiAZ/frontend/desktop/widgets/views.py:264
+#: MiAZ/data/plugins/export2csv.py:51 MiAZ/data/plugins/export2dir.py:112
+#: MiAZ/backend/models.py:145
+msgid "Country"
+msgstr "País"
+
+#: MiAZ/frontend/desktop/widgets/views.py:290
+msgid "Repo Id"
+msgstr "Repo Id"
+
+#: MiAZ/frontend/desktop/widgets/views.py:292
+msgid "Directory"
+msgstr "Directorio"
+
+#: MiAZ/frontend/desktop/widgets/views.py:301
+msgid "Group Id"
+msgstr "Grupo Id"
+
+#: MiAZ/frontend/desktop/widgets/views.py:303
+#: MiAZ/frontend/desktop/widgets/views.py:314
+#: MiAZ/frontend/desktop/widgets/views.py:325
+#: MiAZ/frontend/desktop/widgets/selector.py:189
+#: MiAZ/frontend/desktop/widgets/selector.py:206
+msgid "Description"
+msgstr "Descripción"
+
+#: MiAZ/frontend/desktop/widgets/views.py:312
+msgid "Project Id"
+msgstr "Proyecto Id"
+
+#: MiAZ/frontend/desktop/widgets/views.py:323
+msgid "Purpose Id"
+msgstr "Propósito Id"
+
+#: MiAZ/frontend/desktop/widgets/views.py:334
+msgid "Initials"
+msgstr "Iniciales"
+
+#: MiAZ/frontend/desktop/widgets/views.py:336
+msgid "Full name"
+msgstr "Nombre completo"
+
+#: MiAZ/frontend/desktop/widgets/views.py:345
+msgid "Source"
+msgstr "Origen"
+
+#: MiAZ/frontend/desktop/widgets/views.py:348
+msgid "Target"
+msgstr "Destino"
+
+#: MiAZ/frontend/desktop/widgets/views.py:358
+msgid "Filename"
+msgstr "Nombre de fichero"
+
+#: MiAZ/frontend/desktop/widgets/views.py:362
+#: MiAZ/frontend/desktop/widgets/views.py:372
+msgid "Document"
+msgstr "Documento"
+
+#: MiAZ/frontend/desktop/widgets/views.py:376
+msgid "Projects already assigned"
+msgstr "Proyectos ya asignados"
+
+#: MiAZ/frontend/desktop/widgets/assistant.py:57
+msgid "MiAZ Assistant"
+msgstr "Asistente de MiAZ"
+
+#: MiAZ/frontend/desktop/widgets/assistant.py:71
+#: MiAZ/frontend/desktop/widgets/assistant.py:208
+msgid "Welcome"
+msgstr "Bienvenido"
+
+#: MiAZ/frontend/desktop/widgets/assistant.py:71 MiAZ/backend/models.py:185
+msgid "Repository"
+msgstr "Repositorio"
+
+#: MiAZ/frontend/desktop/widgets/assistant.py:71
+#: MiAZ/frontend/desktop/widgets/assistant.py:114
+#: MiAZ/frontend/desktop/widgets/assistant.py:208
+msgid "Summary"
+msgstr "Sumario"
+
+#: MiAZ/frontend/desktop/widgets/assistant.py:82
+#, python-format
+msgid "%s repository assistant"
+msgstr "Asistente de repositorio para %s "
+
+#: MiAZ/frontend/desktop/widgets/assistant.py:98
+msgid "Select a directory"
+msgstr "Seleccionar un directorio"
+
+#: MiAZ/frontend/desktop/widgets/assistant.py:161
+msgid "Directory not set"
+msgstr "Directorio no establecido"
+
+#: MiAZ/frontend/desktop/widgets/assistant.py:208
+msgid "Countries"
+msgstr "Países"
+
+#: MiAZ/frontend/desktop/widgets/assistant.py:208
+msgid "Groups"
+msgstr "Grupos"
+
+#: MiAZ/frontend/desktop/widgets/assistant.py:208
+msgid "Purposes"
+msgstr "Propósitos"
+
+#: MiAZ/frontend/desktop/widgets/assistant.py:219
+msgid "Repository settings assistant"
+msgstr "Asistente para ajustes del repositorio"
+
+#: MiAZ/frontend/desktop/widgets/assistant.py:244
+msgid "Manage countries"
+msgstr "Gestionar países"
+
+#: MiAZ/frontend/desktop/widgets/assistant.py:262
+msgid "Manage groups"
+msgstr "Gestionar grupos"
+
+#: MiAZ/frontend/desktop/widgets/assistant.py:280
+msgid "Manage purposes"
+msgstr "Gestionar propósitos"
+
+#: MiAZ/frontend/desktop/widgets/assistant.py:298
+msgid "Manage people receiving documents"
+msgstr "Gestionar personas recibiendo documentos"
+
+#: MiAZ/frontend/desktop/widgets/assistant.py:316
+msgid "Manage people sending documents"
+msgstr "Gestionar personas enviando documentos"
+
+#: MiAZ/frontend/desktop/widgets/assistant.py:325
+msgid "You are set!"
+msgstr "¡Todo listo!"
+
+#: MiAZ/frontend/desktop/widgets/assistant.py:329
+msgid "You can continue using the application now"
+msgstr "Puedes continuar ahora usando la aplicación"
+
+#: MiAZ/frontend/desktop/widgets/selector.py:89
+msgid "<b>Available</b>"
+msgstr "<b>Disponible</b>"
+
+#: MiAZ/frontend/desktop/widgets/selector.py:104
+msgid "<b>Used</b>"
+msgstr "<b>En uso</b>"
+
+#: MiAZ/frontend/desktop/widgets/selector.py:173
+#, python-format
+msgid "Removed %s (%s) from used"
+msgstr "%s (%s) eliminado de la configuración en uso"
+
+#: MiAZ/frontend/desktop/widgets/selector.py:179
+#, python-format
+msgid "%s %s is still being used by some docs"
+msgstr "%s %s todavía está siendo usado por algunos documentos"
+
+#: MiAZ/frontend/desktop/widgets/selector.py:189
+#, python-format
+msgid "%s: add a new item"
+msgstr "%s: añadir un nuevo elemento"
+
+#: MiAZ/frontend/desktop/widgets/selector.py:189
+#: MiAZ/frontend/desktop/widgets/selector.py:206
+msgid "Name"
+msgstr "Nombre"
+
+#: MiAZ/frontend/desktop/widgets/selector.py:206
+#, python-format
+msgid "%s: rename item"
+msgstr "%s: renombrar elemento"
+
+#: MiAZ/data/plugins/menurepo.py:45
+msgid "Repository settings"
+msgstr "Ajustes del repositorio"
+
+#: MiAZ/data/plugins/massrename.py:83
+msgid "Mass renaming of..."
+msgstr "Renombrado masivo de..."
+
+#: MiAZ/data/plugins/massrename.py:171
+#, python-format
+msgid "Rename %d files by setting the field <b>%s</b> to:\n"
+msgstr "Renombrar %d ficheros poniendo el campo <b>%s</b> a:\n"
+
+#: MiAZ/data/plugins/export2csv.py:45
+msgid "...to CSV"
+msgstr "...a CSV"
+
+#: MiAZ/data/plugins/export2csv.py:51
+msgid "Send by"
+msgstr "Enviado por"
+
+#: MiAZ/data/plugins/export2csv.py:51
+msgid "Send to"
+msgstr "Enviado a"
+
+#: MiAZ/data/plugins/export2dir.py:57
+msgid "...to directory"
+msgstr "...a un directorio"
+
+#: MiAZ/data/plugins/export2dir.py:109
+msgid "Year"
+msgstr "Año"
+
+#: MiAZ/data/plugins/export2dir.py:110
+msgid "Month"
+msgstr "Mes"
+
+#: MiAZ/data/plugins/export2dir.py:111
+msgid "Day"
+msgstr "Día"
+
+#: MiAZ/data/plugins/export2dir.py:120
+msgid "Export selected items to this directory"
+msgstr "Exportar los documentos seleccionados a este directorio"
+
+#: MiAZ/data/plugins/export2dir.py:130
+msgid "Export with pattern"
+msgstr "Exportar con este patrón"
+
+#: MiAZ/data/plugins/export2text.py:44
+msgid "...to plain text"
+msgstr "...a texto plano"
+
+#: MiAZ/data/plugins/export2zip.py:58
+msgid "...to Zip"
+msgstr "...a fichero Zip"
+
+#: MiAZ/data/plugins/export2zip.py:97
+msgid "Export selected documents to a ZIP file"
+msgstr "Exportar los documentos seleccionados a un fichero Zip"
+
+#: MiAZ/data/plugins/projmgt.py:73
+msgid "Project management..."
+msgstr "Gestión de proyectos..."
+
+#: MiAZ/data/plugins/projmgt.py:79
+msgid "...assign project"
+msgstr "...asignar proyecto"
+
+#: MiAZ/data/plugins/projmgt.py:81
+msgid "...withdraw project"
+msgstr "...retirar proyecto"
+
+#: MiAZ/data/plugins/projmgt.py:108
+msgid "Assign the following documents to this project: "
+msgstr "Asignar los siguientes documentos a este proyecto:"
+
+#: MiAZ/data/plugins/projmgt.py:126 MiAZ/data/plugins/projmgt.py:178
+msgid "Assign to a project"
+msgstr "Asignar a un proyecto"
+
+#: MiAZ/data/plugins/projmgt.py:160
+msgid "Withdraw the following documents from this project: "
+msgstr "Retirar los siguientes documentos de este proyecto:"
+
+#: MiAZ/data/plugins/delete.py:51
+msgid "Delete documents"
+msgstr "Borrar documentos"
+
+#: MiAZ/backend/util.py:359
+#, python-format
+msgid "<i>%s</i> field is empty"
+msgstr "El campo <i>%s</i> está vacío"
+
+#: MiAZ/backend/util.py:369
+#, python-format
+msgid "%s %s (%s) is available and ready to use"
+msgstr "%s %s (%s) está disponible y listo para ser usado"
+
+#: MiAZ/backend/util.py:371
+#, python-format
+msgid "%s %s is available and ready to use"
+msgstr "%s %s está disponible y listo para ser usado"
+
+#: MiAZ/backend/util.py:375
+#, python-format
+msgid "%s %s available? %s. Used? %s"
+msgstr "Está %s %s disponible? %s. ¿Está siendo usado? %s"
+
+#: MiAZ/backend/models.py:165
+msgid "File"
+msgstr "Fichero"
+
+#: MiAZ/backend/models.py:173
+msgid "Person"
+msgstr "Persona"
+
+#: MiAZ/backend/models.py:177
+msgid "Project"
+msgstr "Proyecto"
+
+#: MiAZ/backend/models.py:189
+msgid "Sender"
+msgstr "Remitente"
+
+#: MiAZ/backend/models.py:193
+msgid "Recipient"
+msgstr "Destinatario"
+
+#: MiAZ/backend/pluginsystem.py:39
+msgid "User Plugin"
+msgstr "Plug-in de área de usuario"
+
+#: MiAZ/backend/pluginsystem.py:41
+msgid "System Plugin"
+msgstr "Plug-in del área de sistema"
+
+#: MiAZ/backend/env.py:26
+msgid "AZ Organizer"
+msgstr "Organizador AZ"
+
+#: MiAZ/backend/env.py:28
+msgid "Personal Document Organizer"
+msgstr "Organizador Personal de Documentos"
+
+#: MiAZ/backend/env.py:30
+msgid ""
+"The code is licensed under the terms of the  GPL v3\n"
+"so you're free to grab, extend, improve and fork the code as you want"
+msgstr ""
+"El código está licenciado bajo los términos de la GPL v3 (o posterior)\n"
+"así que eres libre de tomar, extender, mejorar y bifurcar el código como "
+"quieras."
+
+#~ msgid "About this application"
+#~ msgstr "Acerca de esta aplicación"

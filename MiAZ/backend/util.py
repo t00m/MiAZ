@@ -17,7 +17,7 @@ import time
 import shutil
 import zipfile
 from datetime import datetime, timedelta
-from dateutil.parser import parse as dateparser
+# ~ from dateutil.parser import parse as dateparser
 
 from gi.repository import Gio
 from gi.repository import GObject
@@ -42,6 +42,19 @@ class MiAZUtil(GObject.GObject):
     __gtype_name__ = 'MiAZUtil'
 
     def __init__(self, backend):
+        GObject.GObject.__init__(self)
+        GObject.signal_new('filename-added',
+                            MiAZUtil,
+                            GObject.SignalFlags.RUN_LAST,
+                            GObject.TYPE_PYOBJECT, (GObject.TYPE_PYOBJECT,))
+        GObject.signal_new('filename-deleted',
+                            MiAZUtil,
+                            GObject.SignalFlags.RUN_LAST,
+                            GObject.TYPE_PYOBJECT, (GObject.TYPE_PYOBJECT,))
+        GObject.signal_new('filename-renamed',
+                            MiAZUtil,
+                            GObject.SignalFlags.RUN_LAST,
+                            GObject.TYPE_PYOBJECT, (GObject.TYPE_PYOBJECT, GObject.TYPE_PYOBJECT,))
         self.log = get_logger('MiAZ.Backend.Util')
         self.backend = backend
         self.conf = self.backend.conf
@@ -58,17 +71,17 @@ class MiAZUtil(GObject.GObject):
         os.makedirs(dirpath, exist_ok = True)
         self.log.debug("Directory %s created" % dirpath)
 
-    def guess_datetime(self, adate: str) -> datetime:
-        """Return (guess) a datetime object for a given string."""
-        if len(adate) != 7:
-            return None
+    # ~ def guess_datetime(self, adate: str) -> datetime:
+        # ~ """Return (guess) a datetime object for a given string."""
+        # ~ if len(adate) != 7:
+            # ~ return None
 
-        try:
-            timestamp = dateparser(adate)
-        except Exception as error:
-            timestamp = None
+        # ~ try:
+            # ~ timestamp = dateparser(adate)
+        # ~ except Exception as error:
+            # ~ timestamp = None
 
-        return timestamp
+        # ~ return timestamp
 
     def json_load(self, filepath: str) -> {}:
         """Load into a dictionary a file in json format"""
@@ -88,7 +101,7 @@ class MiAZUtil(GObject.GObject):
             fn = Field[item_type]
             if fields[fn] == value:
                 used = True
-                self.log.warning("Value %s of type %s is still being used in %s", value, item_type.__title__, doc)
+                self.log.warning("Value %s of type %s is still being used in %s", value, _(item_type.__title__), doc)
                 break
         return used
 
@@ -200,6 +213,7 @@ class MiAZUtil(GObject.GObject):
                 try:
                     shutil.move(source, target)
                     self.log.info("%s renamed to %s", source, target)
+                    self.emit('filename-renamed', source, target)
                 except Exception as error:
                     self.log.error(error)
             else:
@@ -211,6 +225,7 @@ class MiAZUtil(GObject.GObject):
         try:
             os.unlink(filepath)
             self.log.debug("File %s deleted", filepath)
+            self.emit('filename-deleted', filepath)
         except IsADirectoryError as error:
             self.log.error(error)
 
@@ -223,6 +238,7 @@ class MiAZUtil(GObject.GObject):
         repo = self.backend.repo_config()
         target = repo['dir_docs']
         self.filename_copy(source, target)
+        self.emit('filename-added', target)
 
     def filename_export(self, doc: str, target: str):
         repo = self.backend.repo_config()
@@ -259,7 +275,7 @@ class MiAZUtil(GObject.GObject):
             adate = datetime.strptime(value, "%Y%m%d")
             date_dsc = adate.strftime("%d/%m/%Y")
         except ValueError:
-            date_dsc = ''
+            date_dsc = None
         return date_dsc
 
     def filename_display(self, doc):
@@ -334,13 +350,13 @@ class MiAZUtil(GObject.GObject):
             gtype = item_type.__gtype_name__
             fn = Field[item_type] # Field number
             fname = item_type.__gtype_name__
-            title = item_type.__title__
+            title = _(item_type.__title__)
             key = fields[fn]
             value = None
             if len(key) == 0:
                 valid &= False
                 rc = False
-                message = "<i>%s</i> field is empty" % title
+                message = _('<i>%s</i> field is empty') % title
             else:
                 if item_type != Date:
                     available = self.conf[fname].exists_available(key)
@@ -350,18 +366,30 @@ class MiAZUtil(GObject.GObject):
                         items = self.conf[fname].load_used()
                         value = self.conf[fname].get(key)
                         if len(value) > 0:
-                            message = "%s %s (%s) is available and ready to use" % (fname, key, value)
+                            message = _('%s %s (%s) is available and ready to use') % (fname, key, value)
                         else:
-                            message = "%s %s is available and ready to use" % (fname, key)
+                            message = _('%s %s is available and ready to use') % (fname, key)
                     else:
                         valid &= False
                         rc = False
-                        message = "%s %s available? %s. Used? %s" % (title, key, available, used)
+                        message = _('%s %s available? %s. Used? %s') % (title, key, available, used)
             reasons.append((rc, gtype, value, message))
         return valid, reasons
 
     def since_date_this_year(self, adate: datetime) -> datetime:
         year = adate.year
+        return datetime.strptime("%4d0101" % year, "%Y%m%d")
+
+    def since_date_past_year(self, adate: datetime) -> datetime:
+        year = adate.year - 1
+        return datetime.strptime("%4d0101" % year, "%Y%m%d")
+
+    def since_date_three_years(self, adate: datetime) -> datetime:
+        year = adate.year - 2
+        return datetime.strptime("%4d0101" % year, "%Y%m%d")
+
+    def since_date_five_years(self, adate: datetime) -> datetime:
+        year = adate.year - 4
         return datetime.strptime("%4d0101" % year, "%Y%m%d")
 
     def since_date_this_month(self, adate: datetime) -> datetime:

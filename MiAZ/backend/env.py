@@ -12,29 +12,53 @@ Environment module.
 import os
 from os.path import abspath
 import sys
-import tempfile
-import multiprocessing
+from gettext import gettext as _
 
 ENV = {}
+
+# Desktop environment
+ENV['DESKTOP'] = {}
+try:
+    import gi
+    gi.require_version('Gtk', '4.0')
+    from gi.repository import Gtk
+    ENV['DESKTOP']['GTK_ENABLED'] = True
+    ENV['DESKTOP']['GTK_VERSION'] = (Gtk.MAJOR_VERSION, Gtk.MINOR_VERSION, Gtk.MICRO_VERSION)
+    ENV['DESKTOP']['GTK_SUPPORT'] = Gtk.MAJOR_VERSION >= 4 and Gtk.MINOR_VERSION >= 6
+except:
+    ENV['DESKTOP']['GTK_ENABLED'] = False
+    ENV['DESKTOP']['GTK_SUPPORT'] = False
+
+try:
+    gi.require_version('Adw', '1')
+    from gi.repository import Adw
+    ENV['DESKTOP']['ADW_ENABLED'] = True
+    ENV['DESKTOP']['ADW_VERSION'] = (Adw.MAJOR_VERSION, Adw.MINOR_VERSION, Adw.MICRO_VERSION)
+    ENV['DESKTOP']['ADW_SUPPORT'] = Adw.MAJOR_VERSION ==1 and Adw.MINOR_VERSION >= 2
+except:
+    ENV['DESKTOP']['ADW_ENABLED'] = False
+    ENV['DESKTOP']['ADW_SUPPORT'] = False
+
+ENV['DESKTOP']['ENABLED'] = ENV['DESKTOP']['GTK_SUPPORT'] and ENV['DESKTOP']['ADW_SUPPORT']
 
 # Configuration
 ENV['CONF'] = {}
 ENV['CONF']['ROOT'] = abspath(sys.modules[__name__].__file__ + "/../..")
 ENV['CONF']['USER_DIR'] = os.path.expanduser('~')
-# ~ ENV['CONF']['TMPNAME'] = next(tempfile._get_candidate_names())
-# ~ ENV['CONF']['MAX_WORKERS'] = multiprocessing.cpu_count()  # Avoid MemoryError
 
+# Application
 ENV['APP'] = {}
-ENV['APP']['name'] = "Family AZ Organizer"
-ENV['APP']['shortname'] = "MiAZ"
-ENV['APP']['description'] = "Personal Document Organizer"
+ENV['APP']['name'] = _('AZ Organizer')
+ENV['APP']['shortname'] = 'MiAZ'
+ENV['APP']['description'] = _('Personal Document Organizer')
 ENV['APP']['license'] = 'GPL v3'
-ENV['APP']['license_long'] = "The code is licensed under the terms of the  GPL v3\nso you're free to grab, extend, improve and fork the code as you want"
-ENV['APP']['copyright'] = "Copyright \xa9 2022-2023 Tomás Vírseda"
+ENV['APP']['license_long'] = _("The code is licensed under the terms of the  GPL v3\nso you're free to grab, extend, improve and fork the code as you want")
+ENV['APP']['copyright'] = 'Copyright \xa9 2022-2023 Tomás Vírseda'
 ENV['APP']['author'] = 'Tomás Vírseda'
 ENV['APP']['author_email'] = 'tomasvirseda@gmail.com'
 ENV['APP']['documenters'] = ["Tomás Vírseda <tomasvirseda@gmail.com>"]
 ENV['APP']['website'] = 'https://github.com/t00m/MiAZ'
+ENV['APP']['ID'] = 'com.github.t00m.MiAZ'
 
 # Local paths
 ENV['LPATH'] = {}
@@ -57,6 +81,8 @@ ENV['GPATH']['DATA'] = os.path.join(ENV['GPATH']['ROOT'], 'data')
 ENV['GPATH']['DOCS'] = os.path.join(ENV['GPATH']['DATA'], 'docs')
 ENV['GPATH']['ICONS'] = os.path.join(ENV['GPATH']['DATA'], 'icons')
 ENV['GPATH']['FLAGS'] = os.path.join(ENV['GPATH']['ICONS'], 'flags')
+ENV['GPATH']['LOCALE'] = os.path.join(ENV['GPATH']['DATA'], 'po')
+ENV['GPATH']['PLUGINS'] = os.path.join(ENV['GPATH']['DATA'], 'plugins')
 ENV['GPATH']['RESOURCES'] = os.path.join(ENV['GPATH']['DATA'], 'resources')
 
 # Common file paths

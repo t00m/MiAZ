@@ -11,6 +11,8 @@ Setup MiAZ project.
 
 import os
 import sys
+import locale
+import gettext
 import argparse
 
 from MiAZ.backend.env import ENV
@@ -23,6 +25,7 @@ class MiAZ:
     def __init__(self) -> None:
         self.setup_environment()
         self.log = get_logger('MiAZ.Main')
+        self.set_internationalization()
         self.log.info("%s v%s - Start", app_shortname, app_version)
 
     def setup_environment(self):
@@ -34,13 +37,28 @@ class MiAZ:
             if not os.path.exists(ENV['LPATH'][entry]):
                 os.makedirs(ENV['LPATH'][entry])
 
+    def set_internationalization(self):
+        """Sets application internationalization."""
+        try:
+            locale.bindtextdomain('miaz', ENV['GPATH']['LOCALE'])
+            locale.textdomain('miaz')
+            self.log.debug("Gettext: binding to %s", ENV['GPATH']['LOCALE'])
+            gettext.bindtextdomain('miaz', ENV['GPATH']['LOCALE'])
+            gettext.textdomain('miaz')
+        except AttributeError as e:
+            # Python built without gettext support does not have
+            # bindtextdomain() and textdomain().
+            self.log.error(
+                "Could not bind the gettext translation domain. Some"
+                " translations will not work. Error:\n{}".format(e))
+
     def run(self):
         """Execute MiAZ in desktop or console mode"""
-        if ENV['SYS']['DESKTOP'] is not None:
+        if ENV['DESKTOP']['ENABLED']:
             from MiAZ.frontend.desktop.app import MiAZApp
         else:
             from MiAZ.frontend.console.app import MiAZApp
-        app = MiAZApp(application_id="com.github.t00m.MiAZ")
+        app = MiAZApp(application_id=ENV['APP']['ID'])
         try:
             app.run()
         except KeyboardInterrupt:

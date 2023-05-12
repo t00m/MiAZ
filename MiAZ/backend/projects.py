@@ -20,8 +20,10 @@ class MiAZProject(GObject.GObject):
 
     def __init__(self, backend):
         super(MiAZProject, self).__init__()
-        self.backend = backend
         self.log = get_logger('MiAZProject')
+        self.backend = backend
+        self.config = self.backend.conf['Project']
+        self.util = self.backend.util
         repo = self.backend.repo_config()
         self.cnfprj = os.path.join(repo['dir_conf'], 'projects.json')
         self.projects = {}
@@ -29,6 +31,18 @@ class MiAZProject(GObject.GObject):
             self.save()
             self.log.debug("Created new config file for projects")
         self.projects = self.load()
+        self.check()
+
+    def check(self):
+        self.log.debug("Checking projects consistency")
+        to_delete = []
+        for project in self.projects:
+            for doc in self.docs_in_project(project):
+                docpath = self.util.filename_path(doc)
+                if not os.path.exists(docpath):
+                    to_delete.append((doc, project))
+        for doc, project in to_delete:
+            self.remove(project, doc)
 
     def add(self, project: str, doc: str):
         try:
@@ -38,7 +52,7 @@ class MiAZProject(GObject.GObject):
                 self.projects[project] = docs
         except:
             self.projects[project] = [doc]
-        self.log.debug("Added %s to Project %s", doc, project)
+        self.log.debug("Added '%s' to Project '%s'", doc, project)
 
     def add_batch(self, project: str, docs: list) -> None:
         for doc in docs:
@@ -46,14 +60,33 @@ class MiAZProject(GObject.GObject):
         self.save()
 
     def remove(self, project: str, doc: str) -> None:
-        try:
-            docs = self.projects[project]
-            if doc in docs:
-                docs.remove(doc)
-                self.log.debug("Remove %s from Project %s", doc, project)
-            self.projects[project] = docs
-        except KeyError:
-            pass
+        found = False
+        if len(project) == 0:
+            # Document was deleted, therefore delete all references in
+            # any project
+            for prj in self.projects:
+                docs = self.projects[prj]
+                if doc in docs:
+                    found = True
+                    docs.remove(doc)
+                    self.log.debug("Remove '%s' from Project '%s'", doc, prj)
+                    self.projects[prj] = docs
+        else:
+            # Delete document for a given project
+            try:
+                docs = self.projects[project]
+                if doc in docs:
+                    found = True
+                    docs.remove(doc)
+                    self.log.debug("Remove '%s' from Project '%s'", doc, project)
+                    self.projects[project] = docs
+            except KeyError:
+                self.log.warning("Project '%s' doesn't exist", project)
+                pass
+        if found:
+            self.save()
+        else:
+            self.log.debug("Document '%s' wasn't deleted for any project", doc)
 
     def remove_batch(self, project:str, docs: list) -> None:
         for doc in docs:
@@ -93,4 +126,21 @@ class MiAZProject(GObject.GObject):
     def load(self) -> dict:
         return self.backend.util.json_load(self.cnfprj)
 
+    def description(self, pid):
+        try:
+            description = self.config.get(pid)
+            if len(description) == 0:
+                description = pid
+        except KeyError as error:
+            description = error
+        return description
 
+    # ~ def _on_filename_renamed(self, util, source, target):
+        # ~ source = os.path.basename(source)
+        # ~ target = os.path.basename(target)
+        # ~ projects = self.assigned_to(source)
+        # ~ self.log.debug("%s found in these projects: %s", source, ', '.join(projects))
+        # ~ for project in projects:
+            # ~ self.remove(project, source)
+            # ~ self.add(project, target)
+            # ~ self.log.debug("P[%s]: %s -> %s", project, source, target)

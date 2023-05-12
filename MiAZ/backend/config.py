@@ -78,6 +78,7 @@ class MiAZConfig(GObject.GObject):
         return self.foreign
 
     def load(self, filepath:str) -> dict:
+        # ~ self.log.debug("Loading from %s", filepath)
         try:
             items = self.util.json_load(filepath)
         except Exception as error:
@@ -119,9 +120,15 @@ class MiAZConfig(GObject.GObject):
     def get(self, key: str) -> str:
         config = self.load(self.used)
         try:
+            # return description, if it exists
             return config[key]
         except KeyError:
-            return ''
+            if key in config:
+                # otherwise, return the key
+                return key
+            else:
+                # if no key (and no description) return None
+                return None
 
     def set(self, key: str, value: str) -> None:
         items = self.load(self.used)

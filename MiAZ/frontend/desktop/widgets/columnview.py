@@ -12,6 +12,7 @@ import os
 import sys
 from abc import abstractmethod
 from datetime import datetime
+from gettext import gettext as _
 
 import gi
 gi.require_version('Adw', '1')
@@ -85,9 +86,9 @@ class MiAZColumnView(Gtk.Box):
         self.app = app
         self.item_type = item_type
         self.log = get_logger('MiAZColumnView')
-        self.backend = self.app.get_backend()
-        self.factory = self.app.get_factory()
-        self.actions = self.app.get_actions()
+        self.backend = self.app.get_service('backend')
+        self.factory = self.app.get_service('factory')
+        self.actions = self.app.get_service('actions')
         self.selected_items = []
 
         self.viewport = Gtk.Viewport()
@@ -200,7 +201,7 @@ class MiAZColumnView(Gtk.Box):
         self.store.splice(0, 0, items)
         de = datetime.now()
         dt = de - ds
-        # ~ self.log.debug("Columnview for %s updated with %d items in %s", self.item_type.__title__, len(items), dt)
+        self.log.debug("View for %s updated with %d items in %s", self.item_type.__title__, len(items), dt)
 
     def _on_selection_changed(self, selection, position, n_items):
         self.selected_items = []
@@ -220,6 +221,8 @@ class MiAZColumnView(Gtk.Box):
         item = list_item.get_item()
         label = box.get_first_child()
         label.set_markup(item.id)
+        label.set_ellipsize(True)
+        label.set_property('ellipsize', Pango.EllipsizeMode.MIDDLE)
 
     def _on_factory_setup_title(self, factory, list_item):
         box = ColLabel()
@@ -230,6 +233,8 @@ class MiAZColumnView(Gtk.Box):
         item = list_item.get_item()
         label = box.get_first_child()
         label.set_markup(item.title)
+        label.set_ellipsize(True)
+        label.set_property('ellipsize', Pango.EllipsizeMode.MIDDLE)
 
     def _on_filter_view(self, item, filter_list_model):
         must_filter = False

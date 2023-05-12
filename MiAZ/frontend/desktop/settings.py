@@ -9,6 +9,7 @@
 """
 
 import os
+from gettext import gettext as _
 
 import gi
 from gi.repository import Adw
@@ -40,26 +41,45 @@ Configview['SentTo'] = MiAZPeopleSentTo
 Configview['Project'] = MiAZProjects
 # ~ Configview['Date'] = Gtk.Calendar
 
-class MiAZAppSettings(Gtk.Box):
+class MiAZAppSettings(Adw.PreferencesWindow):
     __gtype_name__ = 'MiAZAppSettings'
-    def __init__(self, app):
-        super(Gtk.Box, self).__init__(spacing=12, orientation=Gtk.Orientation.VERTICAL)
+
+    def __init__(self, app, **kwargs):
+        super().__init__(**kwargs)
+        # ~ super(Gtk.Box, self).__init__(spacing=12, orientation=Gtk.Orientation.VERTICAL, hexpand=True, vexpand=True)
         self.log = get_logger('MiAZAppSettings')
         self.app = app
-        self.backend = self.app.get_backend()
-        self.factory = self.app.get_factory()
-        self.actions = self.app.get_actions()
+        self.app.add_widget('window-settings', self)
+        self.backend = self.app.get_service('backend')
+        self.factory = self.app.get_service('factory')
+        self.actions = self.app.get_service('actions')
         self.config = self.backend.conf
-        page = Adw.PreferencesPage.new()
-        page.set_title("Settings - Repositories")
+        self.connect('close-request', self._on_window_close_request)
+        # ~ group = Adw.PreferencesGroup()
+        # ~ group.set_name('Repos')
+        page = Adw.PreferencesPage(title=_('Repositories'), icon_name='miaz-settings-repos')
         page.add(self._get_group_repositories())
-        self.append(page)
+        self.add(page)
+        page = Adw.PreferencesPage(title=_('System plugins'), icon_name='miaz-settings-plugins')
+        page.add(self._get_group_system_plugins_settings())
+        self.add(page)
+        # ~ page = Adw.PreferencesPage(title=_('System plugins'), icon_name='miaz-settings-plugins-system')
+        # ~ page.add(self._get_group_ui_settings())
+        # ~ self.add(page)
+
+        # ~ page = Adw.PreferencesPage.new()
+        # ~ page.set_title(_("Settings - UI"))
+        # ~ page.add(self._get_group_ui_settings())
+        # ~ self.append(page)
         self.repo_is_set = False
+
+    def _on_window_close_request(self, window):
+        window.hide()
 
     def _get_group_repositories(self):
         self.row_repo_source = self._create_action_row_repo_source()
         group = Adw.PreferencesGroup()
-        group.set_title("Repositories")
+        group.set_title(_("Repositories"))
         group.add(self.row_repo_source)
         return group
 
@@ -67,14 +87,15 @@ class MiAZAppSettings(Gtk.Box):
         row = self.factory.create_box_vertical(hexpand=True, vexpand=True)
         hbox = self.factory.create_box_horizontal()
         lblActive = Gtk.Label()
-        lblActive.set_markup("Current active")
+        lblActive.set_markup(_("Current active"))
         self.dd_repo = self.factory.create_dropdown_generic(item_type=Repository, ellipsize=False, enable_search=False)
-        btnUseRepo = self.factory.create_button(icon_name='MiAZ', callback=self._on_use_repo)
+        btnUseRepo = self.factory.create_button(icon_name='MiAZ', title=_('Load repo'), callback=self._on_use_repo)
         hbox.append(lblActive)
         hbox.append(self.dd_repo)
         hbox.append(btnUseRepo)
         self.actions.dropdown_populate(MiAZConfigRepositories, self.dd_repo, Repository, any_value=False, none_value=False)
-        self.dd_repo.connect("notify::selected-item", self._on_selected_repo)
+        # DOC: By enabling this signal, repos are loaded automatically without pressing the button:
+        # ~ self.dd_repo.connect("notify::selected-item", self._on_selected_repo)
         self.config['Repository'].connect('used-updated', self.actions.dropdown_populate, self.dd_repo, Repository, False, False)
 
         # Load last active repo
@@ -91,15 +112,20 @@ class MiAZAppSettings(Gtk.Box):
                 n += 1
         row.append(hbox)
         configview = MiAZRepositories(self.app)
+        configview.set_hexpand(True)
+        configview.set_vexpand(True)
         configview.update()
         row.append(configview)
         return row
 
     def _on_use_repo(self, *args):
-        self.log.debug(args)
-        workspace = self.app.get_workspace()
-        workspace.update()
-        self.app.show_stack_page_by_name('workspace')
+        repo_id = self.dd_repo.get_selected_item().id
+        repo_dir = self.dd_repo.get_selected_item().title
+        self.config['App'].set('current', repo_id)
+        self.app.check_repository()
+        window = self.app.get_widget('window-settings')
+        window.hide()
+        self.log.debug("Repository %s loaded successfully", repo_id)
 
     def _on_selected_repo(self, dropdown, gparamobj):
         try:
@@ -123,7 +149,7 @@ class MiAZAppSettings(Gtk.Box):
     def show_filechooser_source(self, *args):
         filechooser = self.factory.create_filechooser(
                     parent=self.app.win,
-                    title='Choose target directory',
+                    title=_('Choose target directory'),
                     target = 'FOLDER',
                     callback = self.on_filechooser_response_source,
                     data = None
@@ -134,6 +160,61 @@ class MiAZAppSettings(Gtk.Box):
         dialog.destroy()
         return
 
+    def _get_group_ui_settings(self):
+        # ~ self.row_repo_source = self._create_action_row_repo_source()
+        group = Adw.PreferencesGroup()
+        group.set_title(_("UI"))
+        # ~ group.add(self.row_repo_source)
+        return group
+
+    def _get_group_system_plugins_settings(self):
+        from MiAZ.backend.pluginsystem import MiAZPluginType
+        group = Adw.PreferencesGroup()
+        group.set_title(_("Plugins enabled"))
+        frame = self.factory.create_frame(hexpand=True, vexpand=True)
+        scrwin = self.factory.create_scrolledwindow()
+        frame.set_child(scrwin)
+        pm = self.app.get_widget('plugin-manager')
+        pm.add_repo_plugins_dir()
+
+        box = Gtk.ListBox.new()
+        box.set_vexpand(True)
+        scrwin.set_child(box)
+        for plugin in pm.plugins:
+            if pm.get_plugin_type(plugin) == MiAZPluginType.SYSTEM:
+                title = "<b>%s</b>" % plugin.get_name()
+                subtitle = plugin.get_description() + ' (v%s)' % plugin.get_version()
+                active = plugin.is_loaded()
+                # ~ switch = self.factory.create_button_check(active=active)
+                # ~ switch.set_sensitive(False)
+                row = self.factory.create_actionrow(title=title, subtitle=subtitle)
+                box.append(row)
+        group.add(frame)
+        # ~ view = self.app.add_widget('window-settings-uer_plugins-view', MiAZColumnViewPlugins(self.app))
+        # ~ group.add(view)
+        return group
+
+    def get_plugin_status(self, name: str) -> bool:
+        plugins = self.config['App'].get('plugins')
+        if plugins is None:
+            return False
+
+        if name in plugins:
+            return True
+        return False
+
+    def set_plugin_status(self, checkbox, plugin_name):
+        active = checkbox.get_active()
+        plugins = self.config['App'].get('plugins')
+        if plugins is None:
+            plugins = []
+        if active:
+            if not plugin_name in plugins:
+                plugins.append(plugin_name)
+        else:
+            plugins.remove(plugin_name)
+        self.config['App'].set('plugins', plugins)
+
 
 class MiAZRepoSettings(Gtk.Box):
     __gtype_name__ = 'MiAZRepoSettings'
@@ -141,7 +222,7 @@ class MiAZRepoSettings(Gtk.Box):
         super(Gtk.Box, self).__init__(spacing=6, orientation=Gtk.Orientation.VERTICAL)
         self.log = get_logger('MiAZRepoSettings')
         self.app = app
-        self.factory = self.app.get_factory()
+        self.factory = self.app.get_service('factory')
         self.config = self.app.get_config('Country')
         self.notebook = Gtk.Notebook()
         self.notebook.set_show_border(False)
@@ -150,7 +231,7 @@ class MiAZRepoSettings(Gtk.Box):
 
         def create_tab(item_type):
             i_type = item_type.__gtype_name__
-            i_title = item_type.__title__
+            i_title = _(item_type.__title__)
             page = Gtk.CenterBox(orientation=Gtk.Orientation.VERTICAL)
             page.set_vexpand(True)
             page.set_hexpand(True)
@@ -163,6 +244,7 @@ class MiAZRepoSettings(Gtk.Box):
             wdgLabel = self.factory.create_box_horizontal()
             icon = self.app.icman.get_image_by_name('miaz-res-%s' % i_type.lower())
             icon.set_hexpand(False)
+            icon.set_pixel_size(32)
             label = self.factory.create_label("<b>%s</b>" % i_title)
             label.set_xalign(0.0)
             label.set_hexpand(True)
