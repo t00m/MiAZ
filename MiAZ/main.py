@@ -48,7 +48,7 @@ class MiAZ:
         except AttributeError as e:
             # Python built without gettext support does not have
             # bindtextdomain() and textdomain().
-            self.log.eror(
+            self.log.error(
                 "Could not bind the gettext translation domain. Some"
                 " translations will not work. Error:\n{}".format(e))
 
