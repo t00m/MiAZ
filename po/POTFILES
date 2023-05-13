@@ -1,0 +1,6 @@
+data/com.github.t00m.MiAZ.desktop.in
+data/com.github.t00m.MiAZ.appdata.xml.in
+data/com.github.t00m.MiAZ.gschema.xml
+src/main.py
+src/window.py
+src/window.ui

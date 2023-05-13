@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name=miaz
+Exec=miaz
+Icon=com.github.t00m.MiAZ
+Terminal=false
+Type=Application
+Categories=GTK;
+StartupNotify=true
