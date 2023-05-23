@@ -99,7 +99,7 @@ class MiAZFactory:
         box.set_vexpand(vexpand)
         return box
 
-    def create_button_content(self, icon_name='', title='', callback=None, width=16, height=16, css_classes=['toolbar'], data=None):
+    def create_button_content(self, icon_name='', title='', callback=None, width=16, height=16, css_classes=[''], data=None):
         hbox = self.create_box_horizontal(hexpand=False, vexpand=False)
         if len(icon_name.strip()) > 0:
             icon = self.icons.get_image_by_name(icon_name, width=width, height=height)
@@ -118,7 +118,7 @@ class MiAZFactory:
 
         return hbox
 
-    def create_button(self, icon_name='', title='', callback=None, width=24, height=24, css_classes=['linked', 'flat'], data=None):
+    def create_button(self, icon_name='', title='', callback=None, width=16, height=16, css_classes=['linked', 'flat'], data=None):
         button = Gtk.Button(css_classes=css_classes)
         hbox = self.create_box_horizontal()
         if len(icon_name.strip()) > 0:
@@ -174,7 +174,7 @@ class MiAZFactory:
         # ~ label = Gtk.Label()
         # ~ label.get_style_context().add_class(class_name='caption')
         # ~ label.set_markup(title)
-        child=self.create_button(icon_name=icon_name, title=title, css_classes=['flat'])
+        child=self.create_button_content(icon_name=icon_name, title=title, css_classes=['flat'])
         button = Gtk.MenuButton()
         button.set_has_frame(True)
         button.set_always_show_arrow(True)
@@ -187,13 +187,13 @@ class MiAZFactory:
         button.set_sensitive(True)
         return button
 
-    def create_button_popover(self, icon_name: str = '', title: str = '', css_classes: list = [], widgets: list = []) -> Gtk.MenuButton:
+    def create_button_popover(self, icon_name: str = '', title: str = '', css_classes: list = ['flat'], widgets: list = []) -> Gtk.MenuButton:
         listbox = Gtk.ListBox.new()
         listbox.set_activate_on_single_click(True)
         listbox.set_selection_mode(Gtk.SelectionMode.NONE)
         for widget in widgets:
             listbox.append(child=widget)
-        vbox = self.create_box_vertical()
+        vbox = self.create_box_vertical(hexpand=False, vexpand=False)
         vbox.append(child=listbox)
         popover = Gtk.Popover()
         popover.set_child(vbox)

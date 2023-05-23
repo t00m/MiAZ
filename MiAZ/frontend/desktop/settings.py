@@ -12,7 +12,6 @@ import os
 from gettext import gettext as _
 
 import gi
-from gi.repository import Adw
 from gi.repository import Gio
 from gi.repository import GLib
 from gi.repository import Gtk
@@ -41,7 +40,7 @@ Configview['SentTo'] = MiAZPeopleSentTo
 Configview['Project'] = MiAZProjects
 # ~ Configview['Date'] = Gtk.Calendar
 
-class MiAZAppSettings(Adw.PreferencesWindow):
+class MiAZAppSettings(Gtk.Window):
     __gtype_name__ = 'MiAZAppSettings'
 
     def __init__(self, app, **kwargs):
@@ -55,33 +54,20 @@ class MiAZAppSettings(Adw.PreferencesWindow):
         self.actions = self.app.get_service('actions')
         self.config = self.backend.conf
         self.connect('close-request', self._on_window_close_request)
-        # ~ group = Adw.PreferencesGroup()
-        # ~ group.set_name('Repos')
-        page = Adw.PreferencesPage(title=_('Repositories'), icon_name='miaz-settings-repos')
-        page.add(self._get_group_repositories())
-        self.add(page)
-        page = Adw.PreferencesPage(title=_('System plugins'), icon_name='miaz-settings-plugins')
-        page.add(self._get_group_system_plugins_settings())
-        self.add(page)
-        # ~ page = Adw.PreferencesPage(title=_('System plugins'), icon_name='miaz-settings-plugins-system')
-        # ~ page.add(self._get_group_ui_settings())
-        # ~ self.add(page)
+        self.set_default_size(800, 600)
+        self.notebook = Gtk.Notebook()
+        self.notebook.set_show_border(False)
+        self.notebook.set_tab_pos(Gtk.PositionType.LEFT)
+        self.set_child(self.notebook)
 
-        # ~ page = Adw.PreferencesPage.new()
-        # ~ page.set_title(_("Settings - UI"))
-        # ~ page.add(self._get_group_ui_settings())
-        # ~ self.append(page)
+        widget = self._create_action_row_repo_source()
+        label = Gtk.Label()
+        label.set_markup('<b>Repositories</b>')
+        self.notebook.append_page(widget, label)
         self.repo_is_set = False
 
     def _on_window_close_request(self, window):
         window.hide()
-
-    def _get_group_repositories(self):
-        self.row_repo_source = self._create_action_row_repo_source()
-        group = Adw.PreferencesGroup()
-        group.set_title(_("Repositories"))
-        group.add(self.row_repo_source)
-        return group
 
     def _create_action_row_repo_source(self):
         row = self.factory.create_box_vertical(hexpand=True, vexpand=True)
@@ -159,13 +145,6 @@ class MiAZAppSettings(Adw.PreferencesWindow):
     def on_filechooser_response_source(self, dialog, response, data):
         dialog.destroy()
         return
-
-    def _get_group_ui_settings(self):
-        # ~ self.row_repo_source = self._create_action_row_repo_source()
-        group = Adw.PreferencesGroup()
-        group.set_title(_("UI"))
-        # ~ group.add(self.row_repo_source)
-        return group
 
     def _get_group_system_plugins_settings(self):
         from MiAZ.backend.pluginsystem import MiAZPluginType

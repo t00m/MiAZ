@@ -73,7 +73,7 @@ class MiAZSelector(Gtk.Box):
         self.append(boxViews)
 
         # Status bar...
-        statusbar = self.factory.create_box_horizontal(spacing=12, hexpand=True)
+        statusbar = self.factory.create_box_horizontal(hexpand=True)
         self.sbicon = Gtk.Image() #.new_from_icon_name('info')
         self.sbicon.set_pixel_size(32)
         self.sbtext = Gtk.Label()

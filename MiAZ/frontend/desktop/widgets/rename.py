@@ -16,8 +16,7 @@ from gettext import gettext as _
 
 import gi
 gi.require_version('Gtk', '4.0')
-gi.require_version('Adw', '1')
-from gi.repository import Gtk, Adw
+from gi.repository import Gtk
 from gi.repository import Gio
 from gi.repository import GLib
 from gi.repository.GdkPixbuf import Pixbuf
@@ -39,6 +38,7 @@ class MiAZRenameDialog(Gtk.Box):
         self.backend = self.app.get_service('backend')
         self.factory = self.app.get_service('factory')
         self.actions = self.app.get_service('actions')
+        self.icons = self.app.get_service('icons')
         self.config = self.backend.conf
         self.util = self.app.get_service('util')
         self.log = get_logger('MiazRenameDialog')
@@ -141,19 +141,17 @@ class MiAZRenameDialog(Gtk.Box):
         box.set_valign(Gtk.Align.CENTER)
         return box
 
-    def __create_actionrow(self, title, item_type, conf) -> Adw.ActionRow:
-        row = Adw.ActionRow.new()
-        row.set_title(title)
-        icon = 'miaz-res-%s' % title.lower().replace(' ', '')
-        row.set_icon_name(icon)
+    def __create_actionrow(self, title, item_type, conf) -> Gtk.Widget:
+        icon_name = 'miaz-res-%s' % title.lower().replace(' ', '')
+        icon = self.icons.get_image_by_name(name=icon_name)
         boxValue = self.__create_box_value()
-        row.add_suffix(boxValue)
-        self.boxMain.append(row)
         button = self.factory.create_button('miaz-res-manage', '')
         dropdown = self.factory.create_dropdown_generic(item_type, ellipsize=False) #, item)
         self.actions.dropdown_populate(conf, dropdown, item_type)
         boxValue.append(dropdown)
         boxValue.append(button)
+        row = self.factory.create_actionrow(title, prefix=icon, suffix=boxValue)
+        self.boxMain.append(row)
         return row, button, dropdown
 
     def _set_suggestion(self, dropdown, suggestion):
@@ -171,17 +169,18 @@ class MiAZRenameDialog(Gtk.Box):
 
     def __create_field_0_date(self):
         """Field 0. Date"""
-        self.rowDate = Adw.ActionRow.new()
-        self.rowDate.set_title(_('Date'))
-        self.rowDate.set_icon_name('miaz-res-date')
+        title = _('Date')
+        icon_name = 'miaz-res-date'
+        icon = self.icons.get_image_by_name(name=icon_name)
         boxValue = self.__create_box_value()
         boxValue.set_hexpand(False)
         boxValue.set_valign(Gtk.Align.CENTER)
-        self.rowDate.add_suffix(boxValue)
+        self.rowDate = self.factory.create_actionrow(title=title, suffix=boxValue)
         self.boxMain.append(self.rowDate)
         self.calendar = Gtk.Calendar()
         self.calendar.connect('day-selected', self.calendar_day_selected)
-        button = Gtk.MenuButton(child=Adw.ButtonContent(icon_name='miaz-res-date', css_classes=['flat']))
+        button_content = self.factory.create_button_content(icon_name='miaz-res-date', css_classes=['flat'])
+        button = Gtk.MenuButton(child=button_content)
         popover = Gtk.Popover()
         popover.set_child(self.calendar)
         popover.present()
@@ -232,11 +231,11 @@ class MiAZRenameDialog(Gtk.Box):
 
     def __create_field_6_concept(self):
         """Field 0. Date"""
-        self.rowConcept = Adw.ActionRow.new()
-        self.rowConcept.set_title(Concept.__title__)
-        self.rowConcept.set_icon_name('miaz-res-concept')
+        title = Concept.__title__
+        icon_name = 'miaz-res-concept'
+        icon = self.icons.get_image_by_name(name=icon_name)
         boxValue = self.__create_box_value()
-        self.rowConcept.add_suffix(boxValue)
+        self.rowConcept = self.factory.create_actionrow(title=title, suffix= boxValue)
         self.boxMain.append(self.rowConcept)
         button = self.factory.create_button('', '', css_classes=['flat'])
         button.set_sensitive(False)
@@ -257,11 +256,12 @@ class MiAZRenameDialog(Gtk.Box):
 
     def __create_field_8_extension(self):
         """Field 7. extension"""
-        self.rowExt = Adw.ActionRow.new()
-        self.rowExt.set_title(_('Extension'))
-        self.rowExt.set_icon_name('miaz-res-extension')
+
+        title = _('Extension')
+        icon_name = 'miaz-res-extension'
+        icon = self.icons.get_image_by_name(name=icon_name)
         boxValue = self.__create_box_value()
-        self.rowExt.add_suffix(boxValue)
+        self.rowExt = self.factory.create_actionrow(title=title, prefix=icon, suffix=boxValue)
         self.boxMain.append(self.rowExt)
         button = self.factory.create_button('', '', css_classes=['flat'])
         button.set_sensitive(False)
@@ -273,19 +273,19 @@ class MiAZRenameDialog(Gtk.Box):
     def __create_field_9_result(self, *args):
         """Field 7. extension"""
         # Current filename
-        self.row_cur_filename = Adw.ActionRow.new()
-        self.row_cur_filename.set_title(_('Current filename'))
+        title = _('Current filename')
         boxValueCur = self.__create_box_value()
         self.lblFilenameCur = Gtk.Label()
         self.lblFilenameCur.get_style_context().add_class(class_name='monospace')
-        self.row_cur_filename.add_suffix(self.lblFilenameCur)
+        self.row_cur_filename = self.factory.create_actionrow(title=title, suffix=self.lblFilenameCur)
         self.boxMain.append(self.row_cur_filename)
-        self.row_new_filename = Adw.ActionRow.new()
-        self.row_new_filename.set_title(_('<b>New filename</b>'))
+
+        # New filename
+        title = _('<b>New filename</b>')
         boxValueNew = self.__create_box_value()
         self.lblFilenameNew = Gtk.Label()
         self.lblFilenameNew.get_style_context().add_class(class_name='monospace')
-        self.row_new_filename.add_suffix(self.lblFilenameNew)
+        self.row_new_filename = self.factory.create_actionrow(title=title, suffix=self.lblFilenameNew)
         self.boxMain.append(self.row_new_filename)
 
     def _on_changed_entry(self, *args):

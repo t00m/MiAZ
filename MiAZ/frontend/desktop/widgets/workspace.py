@@ -211,7 +211,9 @@ class MiAZWorkspace(Gtk.Box):
             # ~ self.popDocsSel.set_menu_model(menu)
 
     def _setup_toolbar_top(self):
+        hbox_tt = self.factory.create_box_horizontal(hexpand=True, vexpand=False)
         toolbar_top = Gtk.CenterBox()
+        hbox_tt.append(toolbar_top)
         toolbar_top.get_style_context().add_class(class_name='toolbar')
         toolbar_top.set_hexpand(True)
         toolbar_top.set_vexpand(False)
@@ -229,7 +231,7 @@ class MiAZWorkspace(Gtk.Box):
         # Center
         hbox = self.app.add_widget('workspace-toolbar-top-center', self.factory.create_box_horizontal(spacing=0))
         hbox.get_style_context().add_class(class_name='linked')
-        # ~ toolbar_top.set_center_widget(hbox)
+        toolbar_top.set_center_widget(hbox)
 
         ## Filters
         self.tgbFilters = self.factory.create_button_toggle('miaz-filters', callback=self._on_filters_toggled)
@@ -267,7 +269,7 @@ class MiAZWorkspace(Gtk.Box):
         # Right
         hbox = self.app.add_widget('workspace-toolbar-top-right', self.factory.create_box_horizontal(spacing=0))
         hbox.get_style_context().add_class(class_name='linked')
-        # ~ toolbar_top.set_end_widget(hbox)
+        toolbar_top.set_end_widget(hbox)
 
         ## Import button
         widgets = []
@@ -285,7 +287,6 @@ class MiAZWorkspace(Gtk.Box):
         hbox.append(button)
 
         # Menu Single and Multiple
-        # ~ self._setup_menu_selection_single()
         popovermenu = self._setup_menu_selection()
         label = Gtk.Label()
         label.get_style_context().add_class(class_name='caption')
@@ -333,7 +334,7 @@ class MiAZWorkspace(Gtk.Box):
         btnRepoSettings.set_always_show_arrow(False)
         hbox.append(btnRepoSettings)
 
-        return toolbar_top
+        return hbox_tt
 
     def _update_dropdown_date(self):
         dropdowns = self.app.get_widget('ws-dropdowns')
@@ -407,7 +408,6 @@ class MiAZWorkspace(Gtk.Box):
         gicon = Gio.content_type_get_icon(mimetype)
         icon_name = self.app.icman.choose_icon(gicon.get_names())
         child = self.factory.create_button('icon_name')
-        # ~ child=Adw.ButtonContent(label='', icon_name=icon_name)
         button.set_child(child)
 
     def _setup_workspace(self):

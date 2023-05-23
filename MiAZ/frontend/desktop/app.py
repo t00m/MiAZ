@@ -12,10 +12,8 @@ import sys
 from gettext import gettext as _
 
 import gi
-# ~ gi.require_version('Adw', '1')
 gi.require_version('Gtk', '4.0')
 from gi.repository import GObject
-# ~ from gi.repository import Adw
 from gi.repository import Gdk
 from gi.repository import Gio
 from gi.repository import GLib
@@ -40,7 +38,6 @@ from MiAZ.frontend.desktop.actions import MiAZActions
 from MiAZ.frontend.desktop.help import MiAZHelp
 from MiAZ.backend.pluginsystem import MiAZPluginManager
 
-# ~ Adw.init()
 
 class MiAZApp(Gtk.Application):
     __gsignals__ = {
@@ -139,7 +136,6 @@ class MiAZApp(Gtk.Application):
     def _setup_stack(self):
         self.stack = self.add_widget('stack', Gtk.Stack())
         self.switcher = self.add_widget('switcher', Gtk.StackSwitcher())
-        # ~ self.switcher.set_policy(Adw.ViewSwitcherPolicy.WIDE)
         self.switcher.set_stack(self.stack)
         self.stack.set_vexpand(True)
         return self.stack
