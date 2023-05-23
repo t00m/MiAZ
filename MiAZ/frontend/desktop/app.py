@@ -12,10 +12,10 @@ import sys
 from gettext import gettext as _
 
 import gi
-gi.require_version('Adw', '1')
+# ~ gi.require_version('Adw', '1')
 gi.require_version('Gtk', '4.0')
 from gi.repository import GObject
-from gi.repository import Adw
+# ~ from gi.repository import Adw
 from gi.repository import Gdk
 from gi.repository import Gio
 from gi.repository import GLib
@@ -40,9 +40,9 @@ from MiAZ.frontend.desktop.actions import MiAZActions
 from MiAZ.frontend.desktop.help import MiAZHelp
 from MiAZ.backend.pluginsystem import MiAZPluginManager
 
-Adw.init()
+# ~ Adw.init()
 
-class MiAZApp(Adw.Application):
+class MiAZApp(Gtk.Application):
     __gsignals__ = {
         "start-application-completed":  (GObject.SignalFlags.RUN_LAST, None, ()),
         "exit-application":  (GObject.SignalFlags.RUN_LAST, None, ()),
@@ -137,9 +137,9 @@ class MiAZApp(Adw.Application):
         return self.backend.conf[name]
 
     def _setup_stack(self):
-        self.stack = self.add_widget('stack', Adw.ViewStack())
-        self.switcher = self.add_widget('switcher', Adw.ViewSwitcher())
-        self.switcher.set_policy(Adw.ViewSwitcherPolicy.WIDE)
+        self.stack = self.add_widget('stack', Gtk.Stack())
+        self.switcher = self.add_widget('switcher', Gtk.StackSwitcher())
+        # ~ self.switcher.set_policy(Adw.ViewSwitcherPolicy.WIDE)
         self.switcher.set_stack(self.stack)
         self.stack.set_vexpand(True)
         return self.stack
@@ -229,7 +229,6 @@ class MiAZApp(Adw.Application):
         menubutton = self.factory.create_button_popover(icon_name='miaz-system-menu', title='', widgets=widgets)
         self.add_widget('headerbar-button-menu-system', menubutton)
 
-
         # ~ menu_headerbar = self.add_widget('menu-headerbar', Gio.Menu.new())
         # ~ section_common_in = Gio.Menu.new()
         # ~ section_common_out = Gio.Menu.new()
@@ -274,11 +273,12 @@ class MiAZApp(Adw.Application):
         self.show_stack_page_by_name('workspace')
 
     def _setup_headerbar_left(self):
-        headerbar = self.get_widget('headerbar')
-
         # System menu
-        btnmenu = self.get_widget('headerbar-button-menu-system')
-        headerbar.pack_start(btnmenu)
+        hbox = self.factory.create_box_horizontal()
+        menubutton = self.get_widget('headerbar-button-menu-system')
+        hbox.append(menubutton)
+        headerbar = self.get_widget('headerbar')
+        headerbar.pack_start(hbox)
 
     def _setup_headerbar_right(self):
         headerbar = self.get_widget('headerbar')
@@ -293,7 +293,7 @@ class MiAZApp(Adw.Application):
     def _setup_gui(self):
         # Widgets
         ## HeaderBar
-        headerbar = self.add_widget('headerbar', Adw.HeaderBar())
+        headerbar = self.add_widget('headerbar', Gtk.HeaderBar())
         self.win.set_titlebar(headerbar)
 
         ## Central Box
@@ -375,7 +375,7 @@ class MiAZApp(Adw.Application):
         elif name == 'quit':
             self.exit_app()
 
-    def get_stack_page_by_name(self, name: str) -> Adw.ViewStackPage:
+    def get_stack_page_by_name(self, name: str) -> Gtk.Stack:
         widget = self.stack.get_child_by_name(name)
         return self.stack.get_page(widget)
 

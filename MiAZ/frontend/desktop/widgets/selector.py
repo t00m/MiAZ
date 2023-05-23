@@ -14,7 +14,6 @@ from gettext import gettext as _
 
 import gi
 gi.require_version('Gtk', '4.0')
-from gi.repository import Adw
 from gi.repository import Gio
 from gi.repository import Gtk
 from gi.repository import GLib
@@ -59,8 +58,8 @@ class MiAZSelector(Gtk.Box):
         if edit:
             self.boxButtons = Gtk.Box(spacing=3, orientation=Gtk.Orientation.HORIZONTAL)
             self.boxButtons.set_hexpand(False)
-            self.boxButtons.append(self.factory.create_button('miaz-list-add', '', self.on_item_available_add, self.config_for))
-            self.boxButtons.append(self.factory.create_button('miaz-list-remove', '', self._on_item_available_remove))
+            self.boxButtons.append(self.factory.create_button(icon_name='miaz-list-add', title='', callback=self.on_item_available_add, data=self.config_for))
+            self.boxButtons.append(self.factory.create_button(icon_name='miaz-list-remove', title='', callback=self._on_item_available_remove))
             self.boxOper.append(self.boxButtons)
         self.append(self.boxOper)
         boxViews = self.factory.create_box_horizontal(spacing=0, hexpand=True, vexpand=True)

@@ -15,7 +15,6 @@ from gettext import gettext as _
 
 import gi
 gi.require_version('Gtk', '4.0')
-from gi.repository import Adw
 from gi.repository import Gdk
 from gi.repository import Gio
 from gi.repository import Gtk
@@ -230,7 +229,7 @@ class MiAZWorkspace(Gtk.Box):
         # Center
         hbox = self.app.add_widget('workspace-toolbar-top-center', self.factory.create_box_horizontal(spacing=0))
         hbox.get_style_context().add_class(class_name='linked')
-        toolbar_top.set_center_widget(hbox)
+        # ~ toolbar_top.set_center_widget(hbox)
 
         ## Filters
         self.tgbFilters = self.factory.create_button_toggle('miaz-filters', callback=self._on_filters_toggled)
@@ -268,7 +267,7 @@ class MiAZWorkspace(Gtk.Box):
         # Right
         hbox = self.app.add_widget('workspace-toolbar-top-right', self.factory.create_box_horizontal(spacing=0))
         hbox.get_style_context().add_class(class_name='linked')
-        toolbar_top.set_end_widget(hbox)
+        # ~ toolbar_top.set_end_widget(hbox)
 
         ## Import button
         widgets = []
@@ -407,7 +406,8 @@ class MiAZWorkspace(Gtk.Box):
         mimetype, val = Gio.content_type_guess('filename=%s' % item.id)
         gicon = Gio.content_type_get_icon(mimetype)
         icon_name = self.app.icman.choose_icon(gicon.get_names())
-        child=Adw.ButtonContent(label='', icon_name=icon_name)
+        child = self.factory.create_button('icon_name')
+        # ~ child=Adw.ButtonContent(label='', icon_name=icon_name)
         button.set_child(child)
 
     def _setup_workspace(self):

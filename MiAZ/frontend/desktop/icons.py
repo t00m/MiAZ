@@ -47,7 +47,7 @@ class MiAZIconManager(GObject.GObject):
                 break
         return found
 
-    def get_pixbuf_by_name(self, name, width=48, height=48) -> Pixbuf:
+    def get_pixbuf_by_name(self, name, width=24, height=24) -> Pixbuf:
         key = self.util.valid_key("%s-%d-%d" % (name, width, height))
         try:
             pixbuf = self.pixbufdict[key]
@@ -59,7 +59,7 @@ class MiAZIconManager(GObject.GObject):
             self.pixbufdict[key] = pixbuf
         return pixbuf
 
-    def get_image_by_name(self, name: str, width: int = 32, height: int = 32) -> Gtk.Image:
+    def get_image_by_name(self, name: str, width: int = 36, height: int = 36) -> Gtk.Image:
         pixbuf = self.get_pixbuf_by_name(name, width, height)
         return Gtk.Image.new_from_pixbuf(pixbuf)
 

@@ -29,17 +29,18 @@ except:
     ENV['DESKTOP']['GTK_ENABLED'] = False
     ENV['DESKTOP']['GTK_SUPPORT'] = False
 
-try:
-    gi.require_version('Adw', '1')
-    from gi.repository import Adw
-    ENV['DESKTOP']['ADW_ENABLED'] = True
-    ENV['DESKTOP']['ADW_VERSION'] = (Adw.MAJOR_VERSION, Adw.MINOR_VERSION, Adw.MICRO_VERSION)
-    ENV['DESKTOP']['ADW_SUPPORT'] = Adw.MAJOR_VERSION ==1 and Adw.MINOR_VERSION >= 2
-except:
-    ENV['DESKTOP']['ADW_ENABLED'] = False
-    ENV['DESKTOP']['ADW_SUPPORT'] = False
+# ~ try:
+    # ~ gi.require_version('Adw', '1')
+    # ~ from gi.repository import Adw
+    # ~ ENV['DESKTOP']['ADW_ENABLED'] = True
+    # ~ ENV['DESKTOP']['ADW_VERSION'] = (Adw.MAJOR_VERSION, Adw.MINOR_VERSION, Adw.MICRO_VERSION)
+    # ~ ENV['DESKTOP']['ADW_SUPPORT'] = Adw.MAJOR_VERSION ==1 and Adw.MINOR_VERSION >= 2
+# ~ except:
+    # ~ ENV['DESKTOP']['ADW_ENABLED'] = False
+    # ~ ENV['DESKTOP']['ADW_SUPPORT'] = False
 
-ENV['DESKTOP']['ENABLED'] = ENV['DESKTOP']['GTK_SUPPORT'] and ENV['DESKTOP']['ADW_SUPPORT']
+# ~ ENV['DESKTOP']['ENABLED'] = ENV['DESKTOP']['GTK_SUPPORT'] and ENV['DESKTOP']['ADW_SUPPORT']
+ENV['DESKTOP']['ENABLED'] = ENV['DESKTOP']['GTK_SUPPORT']
 
 # Configuration
 ENV['CONF'] = {}
