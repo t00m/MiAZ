@@ -146,32 +146,28 @@ class MiAZAppSettings(Gtk.Window):
         dialog.destroy()
         return
 
-    def _get_group_system_plugins_settings(self):
-        from MiAZ.backend.pluginsystem import MiAZPluginType
-        group = Adw.PreferencesGroup()
-        group.set_title(_("Plugins enabled"))
-        frame = self.factory.create_frame(hexpand=True, vexpand=True)
-        scrwin = self.factory.create_scrolledwindow()
-        frame.set_child(scrwin)
-        pm = self.app.get_widget('plugin-manager')
-        pm.add_repo_plugins_dir()
+    # ~ def _get_group_system_plugins_settings(self):
+        # ~ from MiAZ.backend.pluginsystem import MiAZPluginType
+        # ~ group = Adw.PreferencesGroup()
+        # ~ group.set_title(_("Plugins enabled"))
+        # ~ frame = self.factory.create_frame(hexpand=True, vexpand=True)
+        # ~ scrwin = self.factory.create_scrolledwindow()
+        # ~ frame.set_child(scrwin)
+        # ~ pm = self.app.get_widget('plugin-manager')
+        # ~ pm.add_repo_plugins_dir()
 
-        box = Gtk.ListBox.new()
-        box.set_vexpand(True)
-        scrwin.set_child(box)
-        for plugin in pm.plugins:
-            if pm.get_plugin_type(plugin) == MiAZPluginType.SYSTEM:
-                title = "<b>%s</b>" % plugin.get_name()
-                subtitle = plugin.get_description() + ' (v%s)' % plugin.get_version()
-                active = plugin.is_loaded()
-                # ~ switch = self.factory.create_button_check(active=active)
-                # ~ switch.set_sensitive(False)
-                row = self.factory.create_actionrow(title=title, subtitle=subtitle)
-                box.append(row)
-        group.add(frame)
-        # ~ view = self.app.add_widget('window-settings-uer_plugins-view', MiAZColumnViewPlugins(self.app))
-        # ~ group.add(view)
-        return group
+        # ~ box = Gtk.ListBox.new()
+        # ~ box.set_vexpand(True)
+        # ~ scrwin.set_child(box)
+        # ~ for plugin in pm.plugins:
+            # ~ if pm.get_plugin_type(plugin) == MiAZPluginType.SYSTEM:
+                # ~ title = "<b>%s</b>" % plugin.get_name()
+                # ~ subtitle = plugin.get_description() + ' (v%s)' % plugin.get_version()
+                # ~ active = plugin.is_loaded()
+                # ~ row = self.factory.create_actionrow(title=title, subtitle=subtitle)
+                # ~ box.append(row)
+        # ~ group.add(frame)
+        # ~ return group
 
     def get_plugin_status(self, name: str) -> bool:
         plugins = self.config['App'].get('plugins')
