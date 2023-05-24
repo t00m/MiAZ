@@ -60,16 +60,22 @@ class MiAZAppSettings(Gtk.Window):
         self.notebook.set_tab_pos(Gtk.PositionType.LEFT)
         self.set_child(self.notebook)
 
-        widget = self._create_action_row_repo_source()
-        label = Gtk.Label()
-        label.set_markup('<b>Repositories</b>')
+        widget = self._create_widget_for_repositories()
+        label = self.factory.create_notebook_label(icon_name='miaz-settings-repos', title='Repositories')
         self.notebook.append_page(widget, label)
+        widget = self._create_widget_for_plugins()
+        label = self.factory.create_notebook_label(icon_name='miaz-settings-plugins', title='Plugins')
+        self.notebook.append_page(widget, label)
+
         self.repo_is_set = False
 
     def _on_window_close_request(self, window):
         window.hide()
 
-    def _create_action_row_repo_source(self):
+
+
+
+    def _create_widget_for_repositories(self):
         row = self.factory.create_box_vertical(hexpand=True, vexpand=True)
         hbox = self.factory.create_box_horizontal()
         lblActive = Gtk.Label()
@@ -146,28 +152,37 @@ class MiAZAppSettings(Gtk.Window):
         dialog.destroy()
         return
 
-    # ~ def _get_group_system_plugins_settings(self):
-        # ~ from MiAZ.backend.pluginsystem import MiAZPluginType
-        # ~ group = Adw.PreferencesGroup()
-        # ~ group.set_title(_("Plugins enabled"))
-        # ~ frame = self.factory.create_frame(hexpand=True, vexpand=True)
-        # ~ scrwin = self.factory.create_scrolledwindow()
-        # ~ frame.set_child(scrwin)
-        # ~ pm = self.app.get_widget('plugin-manager')
-        # ~ pm.add_repo_plugins_dir()
+    def _create_widget_for_plugins(self):
+        notebook = Gtk.Notebook()
+        notebook.set_show_border(False)
 
-        # ~ box = Gtk.ListBox.new()
-        # ~ box.set_vexpand(True)
-        # ~ scrwin.set_child(box)
-        # ~ for plugin in pm.plugins:
-            # ~ if pm.get_plugin_type(plugin) == MiAZPluginType.SYSTEM:
-                # ~ title = "<b>%s</b>" % plugin.get_name()
-                # ~ subtitle = plugin.get_description() + ' (v%s)' % plugin.get_version()
-                # ~ active = plugin.is_loaded()
-                # ~ row = self.factory.create_actionrow(title=title, subtitle=subtitle)
-                # ~ box.append(row)
-        # ~ group.add(frame)
-        # ~ return group
+        widget = self._create_widget_for_system_plugins()
+        label = self.factory.create_notebook_label(icon_name='miaz-app-settings', title='System')
+        notebook.append_page(widget, label)
+        widget = self.factory.create_box_vertical()
+        label = self.factory.create_notebook_label(icon_name='miaz-res-people', title='User')
+        notebook.append_page(widget, label)
+        return notebook
+
+    def _create_widget_for_system_plugins(self):
+        from MiAZ.backend.pluginsystem import MiAZPluginType
+        frame = self.factory.create_frame(hexpand=True, vexpand=True)
+        scrwin = self.factory.create_scrolledwindow()
+        frame.set_child(scrwin)
+        pm = self.app.get_widget('plugin-manager')
+        pm.add_repo_plugins_dir()
+
+        box = Gtk.ListBox.new()
+        box.set_vexpand(True)
+        scrwin.set_child(box)
+        for plugin in pm.plugins:
+            if pm.get_plugin_type(plugin) == MiAZPluginType.SYSTEM:
+                title = "<b>%s</b>" % plugin.get_name()
+                subtitle = plugin.get_description() + ' (v%s)' % plugin.get_version()
+                active = plugin.is_loaded()
+                row = self.factory.create_actionrow(title=title, subtitle=subtitle)
+                box.append(row)
+        return frame
 
     def get_plugin_status(self, name: str) -> bool:
         plugins = self.config['App'].get('plugins')
