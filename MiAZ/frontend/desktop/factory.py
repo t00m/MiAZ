@@ -371,6 +371,15 @@ class MiAZFactory:
             self.app.set_accels_for_action(f'app.{name}', shortcuts)
         return menuitem
 
+    def create_notebook_label(self, icon_name: str, title: str) -> Gtk.Widget:
+        hbox = self.create_box_horizontal()
+        icon = self.icons.get_image_by_name(icon_name)
+        label = Gtk.Label()
+        label.set_markup('<b>%s</b>' % title)
+        hbox.append(icon)
+        hbox.append(label)
+        return hbox
+
     def create_scrolledwindow(self):
         scrwin = Gtk.ScrolledWindow()
         scrwin.set_hexpand(True)
