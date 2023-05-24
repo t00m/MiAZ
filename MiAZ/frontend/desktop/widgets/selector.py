@@ -79,7 +79,7 @@ class MiAZSelector(Gtk.Box):
         self.sbtext = Gtk.Label()
         statusbar.append(self.sbicon)
         statusbar.append(self.sbtext)
-        self.append(statusbar)
+        # ~ self.append(statusbar)
         self.statusbar_message('', '')
 
         # Available
