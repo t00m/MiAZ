@@ -222,7 +222,7 @@ class MiAZWorkspace(Gtk.Box):
         hbox = self.app.add_widget('workspace-toolbar-top-left', self.factory.create_box_horizontal())
         toolbar_top.set_start_widget(hbox)
 
-        button = self.factory.create_button(title='Documents pending', css_classes=['destructive-action'])
+        button = self.factory.create_button(title='Documents pending', css_classes=[''])
         self.app.add_widget('workspace-button-uncategorized', button)
         button.connect('clicked', self.display_uncategorized)
         button.set_visible(False)
@@ -231,11 +231,13 @@ class MiAZWorkspace(Gtk.Box):
         # Center
         hbox = self.app.add_widget('workspace-toolbar-top-center', self.factory.create_box_horizontal(spacing=0))
         hbox.get_style_context().add_class(class_name='linked')
+        hbox.set_valign(Gtk.Align.CENTER)
         toolbar_top.set_center_widget(hbox)
 
         ## Filters
         self.tgbFilters = self.factory.create_button_toggle('miaz-filters', callback=self._on_filters_toggled)
         self.tgbFilters.set_active(True)
+        self.tgbFilters.set_valign(Gtk.Align.CENTER)
         hbox.append(self.tgbFilters)
 
         ## Searchbox
@@ -284,6 +286,7 @@ class MiAZWorkspace(Gtk.Box):
         # ~ rowImportConf = self.factory.create_actionrow(title='Import config', subtitle='Import configuration', suffix=btnImportConf)
         # ~ widgets.append(rowImportConf)
         button = self.factory.create_button_popover(icon_name='miaz-list-add', title='', widgets=widgets)
+        button.set_valign(Gtk.Align.CENTER)
         hbox.append(button)
 
         # Menu Single and Multiple
@@ -422,10 +425,11 @@ class MiAZWorkspace(Gtk.Box):
         self.toolbar_filters = self._setup_toolbar_filters()
         self.app.add_widget('workspace-toolbar-filters', self.toolbar_filters)
         toolbar_top = self.app.add_widget('workspace-toolbar-top', self._setup_toolbar_top())
-        headerbar = self.app.get_widget('headerbar')
-        headerbar.set_title_widget(toolbar_top)
+        # ~ headerbar = self.app.get_widget('headerbar')
+        # ~ headerbar.set_title_widget(toolbar_top)
         frmView = self._setup_columnview()
         # ~ head.append(toolbar_top)
+        head.append(toolbar_top)
         head.append(self.toolbar_filters)
         body.append(frmView)
 
