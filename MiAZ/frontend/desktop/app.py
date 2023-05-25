@@ -202,27 +202,28 @@ class MiAZApp(Gtk.Application):
 
         ## Application Settings
         button = self.factory.create_button('miaz-app-settings', callback=self.show_app_settings)
-        row = self.factory.create_actionrow(title=_('Application settings'), subtitle=_('Manage MiAZ configuration'), prefix=button)
+        row = self.factory.create_actionrow(title=_('Application settings'), subtitle=_('Manage MiAZ configuration'), suffix=button)
         widgets.append(row)
 
         ## Help
         button = self.factory.create_button('miaz-app-help')
-        row = self.factory.create_actionrow(title=_('Help'), subtitle=_('Get help and tips'), prefix=button)
+        row = self.factory.create_actionrow(title=_('Help'), subtitle=_('Get help and tips'), suffix=button)
         widgets.append(row)
 
         ## About
         # ~ Everything you always wanted to know about this application but didn't dare to ask :)
         button = self.factory.create_button('miaz-app-about', callback=self.show_app_about)
-        row = self.factory.create_actionrow(title=_('About'), subtitle=_("About this application"), prefix=button)
+        row = self.factory.create_actionrow(title=_('About'), subtitle=_("About this application"), suffix=button)
         widgets.append(row)
 
 
         ## Quit
         button = self.factory.create_button('miaz-app-quit', callback=self.exit_app)
-        row = self.factory.create_actionrow(title=_('Quit'), subtitle=_('Terminate this application'), prefix=button)
+        row = self.factory.create_actionrow(title=_('Quit'), subtitle=_('Terminate this application'), suffix=button)
         widgets.append(row)
 
         menubutton = self.factory.create_button_popover(icon_name='miaz-system-menu', title='', widgets=widgets)
+        menubutton.get_style_context().add_class(class_name='flat')
         self.add_widget('headerbar-button-menu-system', menubutton)
 
         # ~ menu_headerbar = self.add_widget('menu-headerbar', Gio.Menu.new())
@@ -270,15 +271,16 @@ class MiAZApp(Gtk.Application):
 
     def _setup_headerbar_left(self):
         # System menu
-        hbox = self.factory.create_box_horizontal()
+        hbox = self.factory.create_box_horizontal(margin=0, spacing=0)
         menubutton = self.get_widget('headerbar-button-menu-system')
+        menubutton.set_valign(Gtk.Align.CENTER)
         hbox.append(menubutton)
         headerbar = self.get_widget('headerbar')
         headerbar.pack_start(hbox)
 
     def _setup_headerbar_right(self):
         headerbar = self.get_widget('headerbar')
-        btnBack = self.factory.create_button(icon_name='miaz-go-back', title=_('Back'), callback=self.show_workspace, css_classes=['flat'])
+        btnBack = self.factory.create_button(icon_name='go-previous', title=_('Back'), callback=self.show_workspace, css_classes=['flat'])
         btnBack.set_visible(False)
         self.add_widget('app-header-button-back', btnBack)
         headerbar.pack_end(btnBack)

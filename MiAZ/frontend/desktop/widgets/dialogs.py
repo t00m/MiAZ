@@ -120,8 +120,8 @@ class MiAZDialogAdd(Gtk.Dialog):
         self.widget.set_margin_start(margin=12)
 
         header = Gtk.HeaderBar()
-        header.set_show_end_title_buttons(False)
-        header.set_show_start_title_buttons(False)
+        # ~ header.set_show_end_title_buttons(False)
+        # ~ header.set_show_start_title_buttons(False)
         lblTitle = self.factory.create_label(title)
         header.set_title_widget(lblTitle)
         self.set_titlebar(header)

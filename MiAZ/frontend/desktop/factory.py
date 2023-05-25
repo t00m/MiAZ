@@ -100,10 +100,10 @@ class MiAZFactory:
         return box
 
     def create_button_content(self, icon_name='', title='', callback=None, width=16, height=16, css_classes=[''], data=None):
-        hbox = self.create_box_horizontal(hexpand=False, vexpand=False)
+        hbox = self.create_box_horizontal(hexpand=False, vexpand=False, spacing=0, margin=0)
         if len(icon_name.strip()) > 0:
             icon = self.icons.get_image_by_name(icon_name, width=width, height=height)
-            # ~ icon.set_pixel_size(width)
+            icon.set_pixel_size(width)
             icon.set_valign(Gtk.Align.CENTER)
             hbox.append(icon)
 
