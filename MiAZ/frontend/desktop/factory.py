@@ -11,11 +11,10 @@
 import os
 
 import gi
-gi.require_version('Adw', '1')
 gi.require_version('GdkPixbuf', '2.0')
 gi.require_version('Gtk', '4.0')
 
-from gi.repository import Gtk, Adw
+from gi.repository import Gtk
 from gi.repository import Gdk
 from gi.repository import Gio
 from gi.repository import GLib
@@ -32,24 +31,42 @@ class MiAZFactory:
     def __init__(self, app):
         self.app = app
         self.log = get_logger('MiAZFactory')
+        self.icons = self.app.get_service('icons')
 
-    def create_actionrow(self, icon_name:str = '', title:str = '', subtitle:str = '', prefix: Gtk.Widget = None, suffix: Gtk.Widget = None):
-        row = Adw.ActionRow.new()
-        if len(icon_name) > 0:
-            row.set_icon_name(icon_name)
+    def create_actionrow(self, title:str = '', subtitle:str = '', prefix: Gtk.Widget = None, suffix: Gtk.Widget = None):
+        box = Gtk.CenterBox(orientation=Gtk.Orientation.HORIZONTAL)
+        box.set_hexpand(True)
+        box.set_vexpand(True)
+        row = Gtk.ListBoxRow.new()
+        row.set_child(box)
+        hprefix = self.create_box_horizontal(hexpand=False)
+        hsuffix = self.create_box_horizontal(hexpand=False)
+        box.set_start_widget(hprefix)
+        box.set_end_widget(hsuffix)
 
-        row.set_title(title)
+        hbox = self.create_box_horizontal(hexpand=True)
+
+        vbox = self.create_box_vertical(hexpand=True, vexpand=False)
+        if len(title) > 0:
+            lblTitle = Gtk.Label()
+            lblTitle.set_markup("<b>%s</b>" % title)
+            lblTitle.set_xalign(0.0)
+            vbox.append(lblTitle)
 
         if len(subtitle) > 0:
-            row.set_subtitle(subtitle)
+            lblSubtitle = Gtk.Label()
+            lblSubtitle.set_markup("<small>%s</small>" % subtitle)
+            lblSubtitle.set_xalign(0.0)
+            vbox.append(lblSubtitle)
+
+        hbox.append(vbox)
 
         if prefix is not None:
-            prefix.set_valign(Gtk.Align.CENTER)
-            row.add_prefix(prefix)
+            hprefix.append(prefix)
+        hprefix.append(hbox)
 
         if suffix is not None:
-            suffix.set_valign(Gtk.Align.CENTER)
-            row.add_suffix(suffix)
+            hsuffix.append(suffix)
 
         return row
 
@@ -82,39 +99,64 @@ class MiAZFactory:
         box.set_vexpand(vexpand)
         return box
 
-    def create_button(self, icon_name='', title='', callback=None, width=32, height=32, css_classes=[], data=None):
-        if len(icon_name.strip()) == 0:
-            button = Gtk.Button(css_classes=css_classes)
+    def create_button_content(self, icon_name='', title='', callback=None, width=16, height=16, css_classes=[''], data=None):
+        hbox = self.create_box_horizontal(hexpand=False, vexpand=False, spacing=0, margin=0)
+        if len(icon_name.strip()) > 0:
+            icon = self.icons.get_image_by_name(icon_name, width=width, height=height)
+            icon.set_pixel_size(width)
+            icon.set_valign(Gtk.Align.CENTER)
+            hbox.append(icon)
+
+        if len(title) > 0:
             label = Gtk.Label()
             label.set_markup(title)
-            button.set_child(label)
-            button.set_valign(Gtk.Align.CENTER)
-        else:
-            button = Gtk.Button(
-                css_classes=css_classes,
-                child=Adw.ButtonContent(
-                    label=title,
-                    icon_name=icon_name
-                    )
-                )
+            label.set_valign(Gtk.Align.CENTER)
+            hbox.append(label)
+
+        for css_class in css_classes:
+            hbox.get_style_context().add_class(class_name=css_class)
+
+        return hbox
+
+    def create_button(self, icon_name='', title='', callback=None, width=16, height=16, css_classes=['linked', 'flat'], data=None):
+        button = Gtk.Button(css_classes=css_classes)
+        hbox = self.create_box_horizontal()
+        if len(icon_name.strip()) > 0:
+            icon = self.icons.get_image_by_name(icon_name)
+            icon.set_pixel_size(width)
+            icon.set_valign(Gtk.Align.CENTER)
+            hbox.append(icon)
+
+        if len(title) > 0:
+            label = Gtk.Label()
+            label.set_markup(title)
+            label.set_valign(Gtk.Align.CENTER)
+            hbox.append(label)
+
+        button.set_child(hbox)
+        button.set_valign(Gtk.Align.CENTER)
+
         # ~ button.set_has_frame(False)
         if callback is not None:
             button.connect('clicked', callback, data)
         return button
 
     def create_button_toggle(self, icon_name: str = '', title: str = '', callback=None, css_classes=[], data=None) -> Gtk.ToggleButton:
+        button = Gtk.ToggleButton(css_classes=css_classes)
+        hbox = self.create_box_horizontal()
         if len(icon_name.strip()) == 0:
-            button = Gtk.ToggleButton(css_classes=css_classes)
-            button.set_label(title)
-            button.set_valign(Gtk.Align.CENTER)
+            icon = Gtk.Image()
         else:
-            button = Gtk.ToggleButton(
-                css_classes=css_classes,
-                child=Adw.ButtonContent(
-                    label=title,
-                    icon_name=icon_name
-                    )
-                )
+            icon = self.icons.get_image_by_name(icon_name)
+
+        label = Gtk.Label()
+        if len(title) > 0:
+            label.set_markup(title)
+
+        hbox.append(icon)
+        hbox.append(label)
+        button.set_child(hbox)
+        button.set_valign(Gtk.Align.CENTER)
         button.set_has_frame(False)
         if callback is not None:
             button.connect('toggled', callback, data)
@@ -132,7 +174,7 @@ class MiAZFactory:
         # ~ label = Gtk.Label()
         # ~ label.get_style_context().add_class(class_name='caption')
         # ~ label.set_markup(title)
-        child=Adw.ButtonContent(icon_name=icon_name, label=title, css_classes=['flat'])
+        child=self.create_button_content(icon_name=icon_name, title=title, css_classes=['flat'])
         button = Gtk.MenuButton()
         button.set_has_frame(True)
         button.set_always_show_arrow(True)
@@ -145,18 +187,18 @@ class MiAZFactory:
         button.set_sensitive(True)
         return button
 
-    def create_button_popover(self, icon_name: str = '', title: str = '', css_classes: list = [], widgets: list = []) -> Gtk.MenuButton:
+    def create_button_popover(self, icon_name: str = '', title: str = '', css_classes: list = ['flat'], widgets: list = []) -> Gtk.MenuButton:
         listbox = Gtk.ListBox.new()
-        listbox.set_activate_on_single_click(False)
+        listbox.set_activate_on_single_click(True)
         listbox.set_selection_mode(Gtk.SelectionMode.NONE)
         for widget in widgets:
             listbox.append(child=widget)
-        vbox = self.create_box_vertical()
+        vbox = self.create_box_vertical(hexpand=False, vexpand=False)
         vbox.append(child=listbox)
         popover = Gtk.Popover()
         popover.set_child(vbox)
         popover.present()
-        button = Gtk.MenuButton(child=Adw.ButtonContent(icon_name=icon_name, label=title, css_classes=css_classes))
+        button = Gtk.MenuButton(child=self.create_button_content(icon_name=icon_name, title=title, css_classes=css_classes))
         button.set_popover(popover)
         return button
 
@@ -183,7 +225,7 @@ class MiAZFactory:
             box = list_item.get_child()
             label = box.get_last_child()
             item = list_item.get_item()
-            label.set_text(item.title)
+            label.set_markup('<small>%s</small>' % item.title)
 
         def _on_search_changed(search_entry, item_filter):
             text = search_entry.get_text()
@@ -200,6 +242,12 @@ class MiAZFactory:
             box2 = box.get_first_child()
             search_entry = box2.get_first_child() # Gtk.SearchEntry
             return search_entry
+
+        # ~ def _clear_dropdown(self, nothing, dropdown):
+            # ~ model = dropdown.get_model()
+            # ~ print(len(model))
+            # ~ dropdown.set_selected(0)
+            # ~ print(dropdown)
 
         # Set up the factory
         factory = Gtk.SignalListItemFactory()
@@ -221,6 +269,17 @@ class MiAZFactory:
         item_filter = Gtk.CustomFilter.new(_do_filter, filter_model, search_entry)
         filter_model.set_filter(item_filter)
         search_entry.connect('search-changed', _on_search_changed, item_filter)
+
+        # Enable context menu
+        # FIXME: This code insert a new entry in the context menu
+        # Apparently, it works. But it doesn't. It always chooses
+        # the last dropdown created ¿?
+        # ~ image = search_entry.get_first_child()
+        # ~ text_widget = image.get_next_sibling()
+        # ~ menu_dropdown = Gio.Menu.new()
+        # ~ text_widget.set_extra_menu(menu_dropdown)
+        # ~ menuitem = self.create_menuitem(name='clear', label='Clear dropdown', callback=_clear_dropdown, data=dropdown, shortcuts=[])
+        # ~ menu_dropdown.append_item(menuitem)
 
         return dropdown
 
@@ -311,6 +370,15 @@ class MiAZFactory:
         if shortcuts:
             self.app.set_accels_for_action(f'app.{name}', shortcuts)
         return menuitem
+
+    def create_notebook_label(self, icon_name: str, title: str) -> Gtk.Widget:
+        hbox = self.create_box_horizontal()
+        icon = self.icons.get_image_by_name(icon_name)
+        label = Gtk.Label()
+        label.set_markup('<b>%s</b>' % title)
+        hbox.append(icon)
+        hbox.append(label)
+        return hbox
 
     def create_scrolledwindow(self):
         scrwin = Gtk.ScrolledWindow()

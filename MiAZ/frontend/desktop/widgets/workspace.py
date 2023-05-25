@@ -15,7 +15,6 @@ from gettext import gettext as _
 
 import gi
 gi.require_version('Gtk', '4.0')
-from gi.repository import Adw
 from gi.repository import Gdk
 from gi.repository import Gio
 from gi.repository import Gtk
@@ -212,7 +211,9 @@ class MiAZWorkspace(Gtk.Box):
             # ~ self.popDocsSel.set_menu_model(menu)
 
     def _setup_toolbar_top(self):
+        hbox_tt = self.factory.create_box_horizontal(hexpand=True, vexpand=False)
         toolbar_top = Gtk.CenterBox()
+        hbox_tt.append(toolbar_top)
         toolbar_top.get_style_context().add_class(class_name='toolbar')
         toolbar_top.set_hexpand(True)
         toolbar_top.set_vexpand(False)
@@ -221,7 +222,7 @@ class MiAZWorkspace(Gtk.Box):
         hbox = self.app.add_widget('workspace-toolbar-top-left', self.factory.create_box_horizontal())
         toolbar_top.set_start_widget(hbox)
 
-        button = self.factory.create_button(title='Documents pending', css_classes=['destructive-action'])
+        button = self.factory.create_button(title='Documents pending', css_classes=[''])
         self.app.add_widget('workspace-button-uncategorized', button)
         button.connect('clicked', self.display_uncategorized)
         button.set_visible(False)
@@ -230,11 +231,13 @@ class MiAZWorkspace(Gtk.Box):
         # Center
         hbox = self.app.add_widget('workspace-toolbar-top-center', self.factory.create_box_horizontal(spacing=0))
         hbox.get_style_context().add_class(class_name='linked')
+        hbox.set_valign(Gtk.Align.CENTER)
         toolbar_top.set_center_widget(hbox)
 
         ## Filters
         self.tgbFilters = self.factory.create_button_toggle('miaz-filters', callback=self._on_filters_toggled)
         self.tgbFilters.set_active(True)
+        self.tgbFilters.set_valign(Gtk.Align.CENTER)
         hbox.append(self.tgbFilters)
 
         ## Searchbox
@@ -282,11 +285,11 @@ class MiAZWorkspace(Gtk.Box):
         # ~ btnImportConf = self.factory.create_button('miaz-import-config', callback=self.actions.import_config)
         # ~ rowImportConf = self.factory.create_actionrow(title='Import config', subtitle='Import configuration', suffix=btnImportConf)
         # ~ widgets.append(rowImportConf)
-        button = self.factory.create_button_popover(icon_name='miaz-import', title='', widgets=widgets)
+        button = self.factory.create_button_popover(icon_name='miaz-list-add', title='', widgets=widgets)
+        button.set_valign(Gtk.Align.CENTER)
         hbox.append(button)
 
         # Menu Single and Multiple
-        # ~ self._setup_menu_selection_single()
         popovermenu = self._setup_menu_selection()
         label = Gtk.Label()
         label.get_style_context().add_class(class_name='caption')
@@ -334,7 +337,7 @@ class MiAZWorkspace(Gtk.Box):
         btnRepoSettings.set_always_show_arrow(False)
         hbox.append(btnRepoSettings)
 
-        return toolbar_top
+        return hbox_tt
 
     def _update_dropdown_date(self):
         dropdowns = self.app.get_widget('ws-dropdowns')
@@ -407,7 +410,7 @@ class MiAZWorkspace(Gtk.Box):
         mimetype, val = Gio.content_type_guess('filename=%s' % item.id)
         gicon = Gio.content_type_get_icon(mimetype)
         icon_name = self.app.icman.choose_icon(gicon.get_names())
-        child=Adw.ButtonContent(label='', icon_name=icon_name)
+        child = self.factory.create_button('icon_name')
         button.set_child(child)
 
     def _setup_workspace(self):
@@ -422,10 +425,11 @@ class MiAZWorkspace(Gtk.Box):
         self.toolbar_filters = self._setup_toolbar_filters()
         self.app.add_widget('workspace-toolbar-filters', self.toolbar_filters)
         toolbar_top = self.app.add_widget('workspace-toolbar-top', self._setup_toolbar_top())
-        headerbar = self.app.get_widget('headerbar')
-        headerbar.set_title_widget(toolbar_top)
+        # ~ headerbar = self.app.get_widget('headerbar')
+        # ~ headerbar.set_title_widget(toolbar_top)
         frmView = self._setup_columnview()
         # ~ head.append(toolbar_top)
+        head.append(toolbar_top)
         head.append(self.toolbar_filters)
         body.append(frmView)
 

@@ -43,19 +43,18 @@ class MiAZ:
             locale.bindtextdomain('miaz', ENV['GPATH']['LOCALE'])
             locale.textdomain('miaz')
             self.log.debug("Gettext: binding to %s", ENV['GPATH']['LOCALE'])
+            gettext.bindtextdomain('miaz', ENV['GPATH']['LOCALE'])
+            gettext.textdomain('miaz')
         except AttributeError as e:
             # Python built without gettext support does not have
             # bindtextdomain() and textdomain().
-            self.log.eror(
+            self.log.error(
                 "Could not bind the gettext translation domain. Some"
                 " translations will not work. Error:\n{}".format(e))
 
-        gettext.bindtextdomain('miaz', ENV['GPATH']['LOCALE'])
-        gettext.textdomain('miaz')
-
     def run(self):
         """Execute MiAZ in desktop or console mode"""
-        if ENV['SYS']['DESKTOP'] is not None:
+        if ENV['DESKTOP']['ENABLED']:
             from MiAZ.frontend.desktop.app import MiAZApp
         else:
             from MiAZ.frontend.console.app import MiAZApp

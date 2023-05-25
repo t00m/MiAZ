@@ -14,8 +14,6 @@ from gettext import gettext as _
 
 import gi
 gi.require_version(namespace='Gtk', version='4.0')
-gi.require_version(namespace='Adw', version='1')
-from gi.repository import Adw
 from gi.repository import Gio
 from gi.repository import Gtk
 from gi.repository import Pango
@@ -121,9 +119,9 @@ class MiAZDialogAdd(Gtk.Dialog):
         self.widget.set_margin_end(margin=12)
         self.widget.set_margin_start(margin=12)
 
-        header = Adw.HeaderBar()
-        header.set_show_end_title_buttons(False)
-        header.set_show_start_title_buttons(False)
+        header = Gtk.HeaderBar()
+        # ~ header.set_show_end_title_buttons(False)
+        # ~ header.set_show_start_title_buttons(False)
         lblTitle = self.factory.create_label(title)
         header.set_title_widget(lblTitle)
         self.set_titlebar(header)

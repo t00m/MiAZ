@@ -14,7 +14,6 @@ from gettext import gettext as _
 
 import gi
 gi.require_version('Gtk', '4.0')
-from gi.repository import Adw
 from gi.repository import Gio
 from gi.repository import Gtk
 from gi.repository import GLib
@@ -59,8 +58,8 @@ class MiAZSelector(Gtk.Box):
         if edit:
             self.boxButtons = Gtk.Box(spacing=3, orientation=Gtk.Orientation.HORIZONTAL)
             self.boxButtons.set_hexpand(False)
-            self.boxButtons.append(self.factory.create_button('miaz-list-add', '', self.on_item_available_add, self.config_for))
-            self.boxButtons.append(self.factory.create_button('miaz-list-remove', '', self._on_item_available_remove))
+            self.boxButtons.append(self.factory.create_button(icon_name='miaz-list-add', title='', callback=self.on_item_available_add, data=self.config_for))
+            self.boxButtons.append(self.factory.create_button(icon_name='miaz-list-remove', title='', callback=self._on_item_available_remove))
             self.boxOper.append(self.boxButtons)
         self.append(self.boxOper)
         boxViews = self.factory.create_box_horizontal(spacing=0, hexpand=True, vexpand=True)
@@ -74,13 +73,13 @@ class MiAZSelector(Gtk.Box):
         self.append(boxViews)
 
         # Status bar...
-        statusbar = self.factory.create_box_horizontal(spacing=12, hexpand=True)
+        statusbar = self.factory.create_box_horizontal(hexpand=True)
         self.sbicon = Gtk.Image() #.new_from_icon_name('info')
         self.sbicon.set_pixel_size(32)
         self.sbtext = Gtk.Label()
         statusbar.append(self.sbicon)
         statusbar.append(self.sbtext)
-        self.append(statusbar)
+        # ~ self.append(statusbar)
         self.statusbar_message('', '')
 
         # Available

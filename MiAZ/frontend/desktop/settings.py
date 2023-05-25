@@ -12,7 +12,6 @@ import os
 from gettext import gettext as _
 
 import gi
-from gi.repository import Adw
 from gi.repository import Gio
 from gi.repository import GLib
 from gi.repository import Gtk
@@ -41,7 +40,7 @@ Configview['SentTo'] = MiAZPeopleSentTo
 Configview['Project'] = MiAZProjects
 # ~ Configview['Date'] = Gtk.Calendar
 
-class MiAZAppSettings(Adw.PreferencesWindow):
+class MiAZAppSettings(Gtk.Window):
     __gtype_name__ = 'MiAZAppSettings'
 
     def __init__(self, app, **kwargs):
@@ -55,35 +54,28 @@ class MiAZAppSettings(Adw.PreferencesWindow):
         self.actions = self.app.get_service('actions')
         self.config = self.backend.conf
         self.connect('close-request', self._on_window_close_request)
-        # ~ group = Adw.PreferencesGroup()
-        # ~ group.set_name('Repos')
-        page = Adw.PreferencesPage(title=_('Repositories'), icon_name='miaz-settings-repos')
-        page.add(self._get_group_repositories())
-        self.add(page)
-        page = Adw.PreferencesPage(title=_('System plugins'), icon_name='miaz-settings-plugins')
-        page.add(self._get_group_system_plugins_settings())
-        self.add(page)
-        # ~ page = Adw.PreferencesPage(title=_('System plugins'), icon_name='miaz-settings-plugins-system')
-        # ~ page.add(self._get_group_ui_settings())
-        # ~ self.add(page)
+        self.set_default_size(800, 600)
+        self.notebook = Gtk.Notebook()
+        self.notebook.set_show_border(False)
+        self.notebook.set_tab_pos(Gtk.PositionType.LEFT)
+        self.set_child(self.notebook)
 
-        # ~ page = Adw.PreferencesPage.new()
-        # ~ page.set_title(_("Settings - UI"))
-        # ~ page.add(self._get_group_ui_settings())
-        # ~ self.append(page)
+        widget = self._create_widget_for_repositories()
+        label = self.factory.create_notebook_label(icon_name='miaz-settings-repos', title='Repositories')
+        self.notebook.append_page(widget, label)
+        widget = self._create_widget_for_plugins()
+        label = self.factory.create_notebook_label(icon_name='miaz-settings-plugins', title='Plugins')
+        self.notebook.append_page(widget, label)
+
         self.repo_is_set = False
 
     def _on_window_close_request(self, window):
         window.hide()
 
-    def _get_group_repositories(self):
-        self.row_repo_source = self._create_action_row_repo_source()
-        group = Adw.PreferencesGroup()
-        group.set_title(_("Repositories"))
-        group.add(self.row_repo_source)
-        return group
 
-    def _create_action_row_repo_source(self):
+
+
+    def _create_widget_for_repositories(self):
         row = self.factory.create_box_vertical(hexpand=True, vexpand=True)
         hbox = self.factory.create_box_horizontal()
         lblActive = Gtk.Label()
@@ -160,17 +152,20 @@ class MiAZAppSettings(Adw.PreferencesWindow):
         dialog.destroy()
         return
 
-    def _get_group_ui_settings(self):
-        # ~ self.row_repo_source = self._create_action_row_repo_source()
-        group = Adw.PreferencesGroup()
-        group.set_title(_("UI"))
-        # ~ group.add(self.row_repo_source)
-        return group
+    def _create_widget_for_plugins(self):
+        notebook = Gtk.Notebook()
+        notebook.set_show_border(False)
 
-    def _get_group_system_plugins_settings(self):
+        widget = self._create_widget_for_system_plugins()
+        label = self.factory.create_notebook_label(icon_name='miaz-app-settings', title='System')
+        notebook.append_page(widget, label)
+        widget = self.factory.create_box_vertical()
+        label = self.factory.create_notebook_label(icon_name='miaz-res-people', title='User')
+        notebook.append_page(widget, label)
+        return notebook
+
+    def _create_widget_for_system_plugins(self):
         from MiAZ.backend.pluginsystem import MiAZPluginType
-        group = Adw.PreferencesGroup()
-        group.set_title(_("Plugins enabled"))
         frame = self.factory.create_frame(hexpand=True, vexpand=True)
         scrwin = self.factory.create_scrolledwindow()
         frame.set_child(scrwin)
@@ -185,14 +180,9 @@ class MiAZAppSettings(Adw.PreferencesWindow):
                 title = "<b>%s</b>" % plugin.get_name()
                 subtitle = plugin.get_description() + ' (v%s)' % plugin.get_version()
                 active = plugin.is_loaded()
-                # ~ switch = self.factory.create_button_check(active=active)
-                # ~ switch.set_sensitive(False)
                 row = self.factory.create_actionrow(title=title, subtitle=subtitle)
                 box.append(row)
-        group.add(frame)
-        # ~ view = self.app.add_widget('window-settings-uer_plugins-view', MiAZColumnViewPlugins(self.app))
-        # ~ group.add(view)
-        return group
+        return frame
 
     def get_plugin_status(self, name: str) -> bool:
         plugins = self.config['App'].get('plugins')
