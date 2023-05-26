@@ -55,25 +55,27 @@ class MiAZAppSettings(Gtk.Window):
         self.config = self.backend.conf
         self.connect('close-request', self._on_window_close_request)
         self.set_default_size(800, 600)
-        self.notebook = Gtk.Notebook()
-        self.notebook.set_show_border(False)
-        self.notebook.set_tab_pos(Gtk.PositionType.LEFT)
-        self.set_child(self.notebook)
-
+        self.mainbox = self.factory.create_box_vertical(vexpand=True)
+        self.set_child(self.mainbox)
+        self.stack = self.app.add_widget('stack_settings', Gtk.Stack())
+        self.stack.set_vexpand(True)
+        self.switcher = self.app.add_widget('switcher_settings', Gtk.StackSwitcher())
+        self.switcher.set_stack(self.stack)
+        self.switcher.set_hexpand(False)
+        centerbox = Gtk.CenterBox()
+        centerbox.set_center_widget(self.switcher)
+        self.mainbox.append(centerbox)
+        self.mainbox.append(self.stack)
         widget = self._create_widget_for_repositories()
-        label = self.factory.create_notebook_label(icon_name='miaz-settings-repos', title='Repositories')
-        self.notebook.append_page(widget, label)
+        page = self.stack.add_titled(widget, 'repos', 'Repositories')
+        page.set_visible(True)
         widget = self._create_widget_for_plugins()
-        label = self.factory.create_notebook_label(icon_name='miaz-settings-plugins', title='Plugins')
-        self.notebook.append_page(widget, label)
-
+        page = self.stack.add_titled(widget, 'plugins', 'Plugins')
+        page.set_visible(True)
         self.repo_is_set = False
 
     def _on_window_close_request(self, window):
         window.hide()
-
-
-
 
     def _create_widget_for_repositories(self):
         row = self.factory.create_box_vertical(hexpand=True, vexpand=True)
@@ -155,6 +157,7 @@ class MiAZAppSettings(Gtk.Window):
     def _create_widget_for_plugins(self):
         notebook = Gtk.Notebook()
         notebook.set_show_border(False)
+        notebook.set_tab_pos(Gtk.PositionType.LEFT)
 
         widget = self._create_widget_for_system_plugins()
         label = self.factory.create_notebook_label(icon_name='miaz-app-settings', title='System')
@@ -166,9 +169,9 @@ class MiAZAppSettings(Gtk.Window):
 
     def _create_widget_for_system_plugins(self):
         from MiAZ.backend.pluginsystem import MiAZPluginType
-        frame = self.factory.create_frame(hexpand=True, vexpand=True)
+        vbox = self.factory.create_box_vertical(hexpand=True, vexpand=True)
         scrwin = self.factory.create_scrolledwindow()
-        frame.set_child(scrwin)
+        vbox.append(scrwin)
         pm = self.app.get_widget('plugin-manager')
         pm.add_repo_plugins_dir()
 
@@ -182,7 +185,7 @@ class MiAZAppSettings(Gtk.Window):
                 active = plugin.is_loaded()
                 row = self.factory.create_actionrow(title=title, subtitle=subtitle)
                 box.append(row)
-        return frame
+        return vbox
 
     def get_plugin_status(self, name: str) -> bool:
         plugins = self.config['App'].get('plugins')
