@@ -134,11 +134,10 @@ class MiAZFactory:
             hbox.append(label)
 
         button.set_child(hbox)
-        button.set_valign(Gtk.Align.CENTER)
 
-        # ~ button.set_has_frame(False)
         if callback is not None:
             button.connect('clicked', callback, data)
+
         return button
 
     def create_button_toggle(self, icon_name: str = '', title: str = '', callback=None, css_classes=[], data=None) -> Gtk.ToggleButton:
