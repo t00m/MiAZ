@@ -220,9 +220,11 @@ class MiAZWorkspace(Gtk.Box):
 
         # Left widget
         hbox = self.app.add_widget('workspace-toolbar-top-left', self.factory.create_box_horizontal())
+        hbox.get_style_context().add_class(class_name='linked')
         toolbar_top.set_start_widget(hbox)
 
-        button = self.factory.create_button(title='Documents pending', css_classes=[''])
+        button = self.factory.create_button(title='Pending of review')
+        button.get_style_context().add_class(class_name='suggested-action')
         self.app.add_widget('workspace-button-uncategorized', button)
         button.connect('clicked', self.display_uncategorized)
         button.set_visible(False)
@@ -286,23 +288,16 @@ class MiAZWorkspace(Gtk.Box):
         # ~ rowImportConf = self.factory.create_actionrow(title='Import config', subtitle='Import configuration', suffix=btnImportConf)
         # ~ widgets.append(rowImportConf)
         button = self.factory.create_button_popover(icon_name='miaz-list-add', title='', widgets=widgets)
-        button.set_valign(Gtk.Align.CENTER)
         hbox.append(button)
 
         # Menu Single and Multiple
         popovermenu = self._setup_menu_selection()
         label = Gtk.Label()
-        label.get_style_context().add_class(class_name='caption')
         self.btnDocsSel = Gtk.MenuButton()
-        self.btnDocsSel.set_has_frame(True)
-        self.btnDocsSel.set_always_show_arrow(True)
         self.btnDocsSel.set_child(label)
         self.popDocsSel = Gtk.PopoverMenu()
         self.popDocsSel.set_menu_model(popovermenu)
-        self.popDocsSel.get_style_context().add_class(class_name='menu')
         self.btnDocsSel.set_popover(popover=self.popDocsSel)
-        self.btnDocsSel.set_valign(Gtk.Align.CENTER)
-        self.btnDocsSel.set_hexpand(False)
         self.btnDocsSel.set_sensitive(True)
         hbox.append(self.btnDocsSel)
 
@@ -333,8 +328,7 @@ class MiAZWorkspace(Gtk.Box):
         # ~ menuitem = self.factory.create_menuitem('backup-all', '...config and data', self._on_handle_menu_repo, None, [])
         # ~ submenu_backup.append_item(menuitem)
 
-        btnRepoSettings = self.factory.create_button_menu(icon_name='document-properties', title='', menu=menu_repo)
-        btnRepoSettings.set_always_show_arrow(False)
+        btnRepoSettings = self.factory.create_button_menu(icon_name='document-properties', menu=menu_repo)
         hbox.append(btnRepoSettings)
 
         return hbox_tt

@@ -100,7 +100,7 @@ class MiAZFactory:
         return box
 
     def create_button_content(self, icon_name='', title='', callback=None, width=16, height=16, css_classes=[''], data=None):
-        hbox = self.create_box_horizontal(hexpand=False, vexpand=False, spacing=0, margin=0)
+        hbox = self.create_box_horizontal(hexpand=False, vexpand=False)
         if len(icon_name.strip()) > 0:
             icon = self.icons.get_image_by_name(icon_name, width=width, height=height)
             icon.set_pixel_size(width)
@@ -118,7 +118,7 @@ class MiAZFactory:
 
         return hbox
 
-    def create_button(self, icon_name='', title='', callback=None, width=16, height=16, css_classes=['linked', 'flat'], data=None):
+    def create_button(self, icon_name='', title='', callback=None, width=16, height=16, css_classes=[], data=None):
         button = Gtk.Button(css_classes=css_classes)
         hbox = self.create_box_horizontal()
         if len(icon_name.strip()) > 0:
@@ -169,25 +169,17 @@ class MiAZFactory:
             button.connect('toggled', callback)
         return button
 
-    def create_button_menu(self, icon_name: str = '', title:str = '', menu: Gio.Menu = None)-> Gtk.MenuButton:
+    def create_button_menu(self, icon_name: str = '', title:str = '', css_classes: list = [], menu: Gio.Menu = None)-> Gtk.MenuButton:
         """Gtk.Menubutton with a menu"""
-        # ~ label = Gtk.Label()
-        # ~ label.get_style_context().add_class(class_name='caption')
-        # ~ label.set_markup(title)
-        child=self.create_button_content(icon_name=icon_name, title=title, css_classes=['flat'])
+        child=self.create_button_content(icon_name=icon_name, title=title, css_classes=css_classes)
         button = Gtk.MenuButton()
-        button.set_has_frame(True)
-        button.set_always_show_arrow(True)
         button.set_child(child)
         popover = Gtk.PopoverMenu.new_from_model(menu)
-        popover.get_style_context().add_class(class_name='menu')
         button.set_popover(popover=popover)
-        button.set_valign(Gtk.Align.CENTER)
-        button.set_hexpand(False)
         button.set_sensitive(True)
         return button
 
-    def create_button_popover(self, icon_name: str = '', title: str = '', css_classes: list = ['flat'], widgets: list = []) -> Gtk.MenuButton:
+    def create_button_popover(self, icon_name: str = '', title: str = '', css_classes: list = [], widgets: list = []) -> Gtk.MenuButton:
         listbox = Gtk.ListBox.new()
         listbox.set_activate_on_single_click(True)
         listbox.set_selection_mode(Gtk.SelectionMode.NONE)
