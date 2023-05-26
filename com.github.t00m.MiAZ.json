@@ -1,11 +1,12 @@
 {
     "app-id": "com.github.t00m.MiAZ.json",
-    "branch": "develop",
     "runtime": "org.gnome.Platform",
     "runtime-version": "43",
     "sdk": "org.gnome.Sdk",
+    "command": "miaz",
+    "tags": ["devel", "development", "nightly"],
+    "desktop-file-name-suffix": " ☢️",
     "copy-icon": true,
-    "sdk-extensions": [],
     "finish-args": [
         "--share=ipc",
         "--share=network",
@@ -19,6 +20,18 @@
         "--filesystem=xdg-run/gvfsd",
         "--own-name=com.github.t00m.MiAZ.json",
         "--env=LIBO_FLATPAK=1"
+    ],
+    "cleanup": [
+        "/include",
+        "/lib/pkgconfig",
+        "/share/pkgconfig",
+        "/share/aclocal",
+        "/man",
+        "/share/man",
+        "/share/gtk-doc",
+        "/share/vala",
+        "*.la",
+        "*.a"
     ],
     "modules": [
         {
