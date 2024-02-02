@@ -21,6 +21,7 @@ class MiAZConfig(GObject.GObject):
     """ MiAZ Config class"""
     used = None
     default = None
+    config_data = {}
 
     def __init__(self, backend, log, config_for, used=None, available=None, default=None, model=MiAZModel, must_copy=True, foreign=False):
         super().__init__()
@@ -78,12 +79,24 @@ class MiAZConfig(GObject.GObject):
         return self.foreign
 
     def load(self, filepath:str) -> dict:
-        # ~ self.log.debug("Loading from %s", filepath)
         try:
-            items = self.util.json_load(filepath)
-        except Exception as error:
-            items = None
-        return items
+            config_changed = self.config_data[filepath]['changed']
+        except:
+            config_changed = True
+
+        if config_changed:
+            self.log.debug("Loading from %s", filepath)
+            try:
+                items = self.util.json_load(filepath)
+                self.config_data[filepath] = {}
+                self.config_data[filepath]['changed'] = False
+                self.config_data[filepath]['items'] = items
+                self.log.debug("In-memory config data updated for '%s'", filepath)
+            except Exception as error:
+                items = None
+            return items
+        else:
+            return self.config_data[filepath]['items']
 
     def load_available(self) -> dict:
         return self.load(self.available)
@@ -98,6 +111,8 @@ class MiAZConfig(GObject.GObject):
                 self.emit('available-updated')
             elif filepath == self.used:
                 self.emit('used-updated')
+            self.config_data[filepath]['changed'] = True
+            self.log.debug("Config file '%s' changed", filepath)
         return saved
 
     def save_available(self, items: dict = {}) -> bool:
