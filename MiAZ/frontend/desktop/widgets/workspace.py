@@ -106,8 +106,8 @@ class MiAZWorkspace(Gtk.Box):
         self.cache = {}
         for cache in ['date', 'country', 'group', 'people', 'purpose']:
             self.cache[cache] = {}
-        self.util.json_save(self.fcache, self.cache)
-        self.log.debug("Caches initialized (%s)", self.fcache)
+        # ~ self.util.json_save(self.fcache, self.cache)
+        # ~ self.log.debug("Caches initialized (%s)", self.fcache)
 
     def check_first_time(self):
         conf = self.config['Country']
@@ -124,7 +124,7 @@ class MiAZWorkspace(Gtk.Box):
         # Right now, there is no way to know which config item has been
         # updated, therefore, the whole cache must be invalidated :/
         self._initialize_caches()
-        self.log.debug("Config changed")
+        # ~ self.log.debug("Config changed")
 
     def _on_filename_renamed(self, util, source, target):
         srvprj = self.backend.projects
@@ -221,6 +221,7 @@ class MiAZWorkspace(Gtk.Box):
         # Left widget
         hbox = self.app.add_widget('workspace-toolbar-top-left', self.factory.create_box_horizontal())
         hbox.get_style_context().add_class(class_name='linked')
+        hbox.set_hexpand(True)
         toolbar_top.set_start_widget(hbox)
 
         button = self.factory.create_button(title='Pending of review')
@@ -244,7 +245,7 @@ class MiAZWorkspace(Gtk.Box):
 
         ## Searchbox
         self.ent_sb = Gtk.SearchEntry(placeholder_text=_('Type here'))
-        self.ent_sb.set_hexpand(False)
+        self.ent_sb.set_hexpand(True)
         hbox.append(self.ent_sb)
 
         dropdowns = self.app.get_widget('ws-dropdowns')
@@ -594,8 +595,8 @@ class MiAZWorkspace(Gtk.Box):
                             )
             else:
                 invalid.append(filename)
-        de = datetime.now()
-        dt = de - ds
+        # ~ de = datetime.now()
+        # ~ dt = de - ds
         # ~ self.log.debug("Workspace updated (%s)" % dt)
         self.util.json_save(self.fcache, self.cache)
         # ~ self.log.debug("Saving cache to %s", self.fcache)
@@ -603,9 +604,13 @@ class MiAZWorkspace(Gtk.Box):
         self._on_filter_selected()
         label = self.btnDocsSel.get_child()
         self.view.select_first_item()
+        renamed = 0
         for filename in invalid:
             target = self.util.filename_normalize(filename)
-            self.util.filename_rename(filename, target)
+            rename = self.util.filename_rename(filename, target)
+            if rename:
+                renamed += 1
+        self.log.debug("Documents renamed: %d", renamed)
 
         button = self.app.get_widget('workspace-button-uncategorized')
         if len(invalid) > 0:
