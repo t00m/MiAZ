@@ -21,7 +21,7 @@ class MiAZConfig(GObject.GObject):
     """ MiAZ Config class"""
     used = None
     default = None
-    config_data = {}
+    cache = {}
 
     def __init__(self, backend, log, config_for, used=None, available=None, default=None, model=MiAZModel, must_copy=True, foreign=False):
         super().__init__()
@@ -80,23 +80,23 @@ class MiAZConfig(GObject.GObject):
 
     def load(self, filepath:str) -> dict:
         try:
-            config_changed = self.config_data[filepath]['changed']
+            config_changed = self.cache[filepath]['changed']
         except:
             config_changed = True
 
         if config_changed:
-            self.log.debug("Loading from %s", filepath)
+            # ~ self.log.debug("Loading from %s", filepath)
             try:
                 items = self.util.json_load(filepath)
-                self.config_data[filepath] = {}
-                self.config_data[filepath]['changed'] = False
-                self.config_data[filepath]['items'] = items
-                self.log.debug("In-memory config data updated for '%s'", filepath)
+                self.cache[filepath] = {}
+                self.cache[filepath]['changed'] = False
+                self.cache[filepath]['items'] = items
+                # ~ self.log.debug("In-memory config data updated for '%s'", filepath)
             except Exception as error:
                 items = None
             return items
         else:
-            return self.config_data[filepath]['items']
+            return self.cache[filepath]['items']
 
     def load_available(self) -> dict:
         return self.load(self.available)
@@ -111,8 +111,12 @@ class MiAZConfig(GObject.GObject):
                 self.emit('available-updated')
             elif filepath == self.used:
                 self.emit('used-updated')
-            self.config_data[filepath]['changed'] = True
-            self.log.debug("Config file '%s' changed", filepath)
+            try:
+                self.cache[filepath]['changed'] = True
+            except:
+                self.cache[filepath] = {}
+                self.cache[filepath]['changed'] = True
+            self.log.debug("Cache update for '%s'", filepath)
         return saved
 
     def save_available(self, items: dict = {}) -> bool:
