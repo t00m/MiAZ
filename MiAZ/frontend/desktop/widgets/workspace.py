@@ -59,6 +59,7 @@ class MiAZWorkspace(Gtk.Box):
     # ~ dropdown = {}
     cache = {}
     uncategorized = False
+    pending = 0
 
     def __init__(self, app):
         super(MiAZWorkspace, self).__init__(orientation=Gtk.Orientation.HORIZONTAL)
@@ -101,6 +102,7 @@ class MiAZWorkspace(Gtk.Box):
 
         # Allow plug-ins to make their job
         self.app.connect('start-application-completed', self._finish_configuration)
+        self._on_filter_selected()
 
     def _initialize_caches(self):
         self.cache = {}
@@ -224,19 +226,6 @@ class MiAZWorkspace(Gtk.Box):
         hbox.set_hexpand(True)
         toolbar_top.set_start_widget(hbox)
 
-        button = self.factory.create_button(title='Pending of review')
-        button.get_style_context().add_class(class_name='suggested-action')
-        self.app.add_widget('workspace-button-uncategorized', button)
-        button.connect('clicked', self.display_uncategorized)
-        button.set_visible(False)
-        hbox.append(button)
-
-        # Center
-        hbox = self.app.add_widget('workspace-toolbar-top-center', self.factory.create_box_horizontal(spacing=0))
-        hbox.get_style_context().add_class(class_name='linked')
-        hbox.set_valign(Gtk.Align.CENTER)
-        toolbar_top.set_center_widget(hbox)
-
         ## Filters
         self.tgbFilters = self.factory.create_button_toggle('miaz-filters', callback=self._on_filters_toggled)
         self.tgbFilters.set_active(True)
@@ -266,10 +255,26 @@ class MiAZWorkspace(Gtk.Box):
         dropdowns[i_type] = dd_prj
         self.actions.dropdown_populate(self.config[i_type], dd_prj, Project, any_value=True, none_value=True)
         dd_prj.connect("notify::selected-item", self._on_filter_selected)
+        dd_prj.set_hexpand(False)
         self.config[i_type].connect('used-updated', self.update_dropdown_filter, Project)
         hbox.append(dd_prj)
-
         self.app.set_widget('ws-dropdowns', dropdowns)
+
+        # Center
+        hbox = self.app.add_widget('workspace-toolbar-top-center', self.factory.create_box_horizontal(spacing=0))
+        hbox.get_style_context().add_class(class_name='linked')
+        hbox.set_valign(Gtk.Align.CENTER)
+        hbox.set_hexpand(False)
+        toolbar_top.set_center_widget(hbox)
+
+        button = self.factory.create_button_toggle(icon_name='miaz-warning') #title='<b>Pending!</b>')
+        self.app.add_widget('workspace-button-pending', button)
+        # ~ button.get_style_context().add_class(class_name='suggested-action')
+        self.app.add_widget('workspace-button-uncategorized', button)
+        button.connect('toggled', self.display_uncategorized)
+        button.set_tooltip_markup('There are documents pending of review yet!')
+        button.set_visible(False)
+        hbox.append(button)
 
         # Right
         hbox = self.app.add_widget('workspace-toolbar-top-right', self.factory.create_box_horizontal(spacing=0))
@@ -692,6 +697,10 @@ class MiAZWorkspace(Gtk.Box):
         return matches
 
     def _do_filter_view(self, item, filter_list_model):
+        if item.active == False:
+            self.pending += 1
+            self.log.debug("(count %4d) Item '%s' active? %s", self.pending, item.title, item.active)
+
         if self.uncategorized:
             return item.active == False
         else:
@@ -715,16 +724,27 @@ class MiAZWorkspace(Gtk.Box):
         selection.connect('selection-changed', self._on_selection_changed)
 
     def display_uncategorized(self, *args):
-        self.uncategorized = True
+        button = self.app.get_widget('workspace-button-pending')
+        if button.get_active():
+            self.uncategorized = True
+        else:
+            self.uncategorized = False
         self._on_filter_selected()
-        self.uncategorized = False
 
     def _on_filter_selected(self, *args):
+        self.log.debug("_on_filter_selected")
         self.view.refilter()
         model = self.view.cv.get_model() # nº items in current view
         label = self.btnDocsSel.get_child()
         docs = self.util.get_files() # nº total items
         label.set_markup("<small>%d</small> / %d / <big>%d</big>" % (len(self.selected_items), len(model), len(docs)))
+
+        button = self.app.get_widget('workspace-button-pending')
+        pending = self.pending > 0
+        button.set_visible(pending)
+        self.log.debug("Pending documents: %d", self.pending)
+        self.log.debug("Pending button visible: %s", pending)
+        self.pending = 0
 
     def _on_select_all(self, *args):
         selection = self.view.get_selection()

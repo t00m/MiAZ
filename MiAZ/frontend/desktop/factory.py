@@ -280,6 +280,10 @@ class MiAZFactory:
         dialog.set_titlebar(dlgHeader)
         dialog.set_modal(True)
         dialog.set_title(title)
+        # ~ dialog.set_margin_top(margin=12)
+        # ~ dialog.set_margin_end(margin=12)
+        # ~ dialog.set_margin_bottom(margin=12)
+        # ~ dialog.set_margin_start(margin=12)
         if width != -1 and height != -1:
             dialog.set_size_request(width, height)
         dialog.set_transient_for(parent)
@@ -297,8 +301,12 @@ class MiAZFactory:
         dialog.set_default_response(Gtk.ResponseType.CANCEL)
         btnCancel = dialog.get_widget_for_response(Gtk.ResponseType.CANCEL)
         btnCancel.get_style_context().add_class(class_name='destructive-action')
+        btnCancel.set_margin_end(margin=12)
+        btnCancel.set_margin_bottom(margin=12)
         btnAccept = dialog.get_widget_for_response(Gtk.ResponseType.ACCEPT)
         btnAccept.get_style_context().add_class(class_name='suggested-action')
+        btnAccept.set_margin_end(margin=12)
+        btnAccept.set_margin_bottom(margin=12)
         return dialog
 
     def create_filechooser(self, parent, title, target, callback, data=None):
