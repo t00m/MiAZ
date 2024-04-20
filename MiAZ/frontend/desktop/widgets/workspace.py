@@ -54,12 +54,12 @@ class MiAZWorkspace(Gtk.Box):
         "extend-menu":  (GObject.SignalFlags.RUN_LAST, None, ()),
         "extend-toolbar-top":  (GObject.SignalFlags.RUN_LAST, None, ()),
     }
+    workspace_loaded = False
     selected_items = []
     dates = {}
-    # ~ dropdown = {}
     cache = {}
     uncategorized = False
-    pending = 0
+    pending = False
 
     def __init__(self, app):
         super(MiAZWorkspace, self).__init__(orientation=Gtk.Orientation.HORIZONTAL)
@@ -144,6 +144,7 @@ class MiAZWorkspace(Gtk.Box):
 
     def _finish_configuration(self, *args):
         self.log.debug("Finish loading workspace")
+        self.workspace_loaded = True
         # ~ self.app.load_plugins()
         self.emit('extend-menu')
         self.emit('extend-toolbar-top')
@@ -697,12 +698,13 @@ class MiAZWorkspace(Gtk.Box):
         return matches
 
     def _do_filter_view(self, item, filter_list_model):
-        if item.active == False:
-            self.pending += 1
-            self.log.debug("(count %4d) Item '%s' active? %s", self.pending, item.title, item.active)
+        self.pending = False
+        if item.active is False:
+            self.pending = True
+            self.log.debug("(count %4d) Item '%s' pending of review? %s", self.pending, item.title, item.active)
 
         if self.uncategorized:
-            return item.active == False
+            return item.active is False
         else:
             dropdowns = self.app.get_widget('ws-dropdowns')
             c0 = self._do_eval_cond_matches_freetext(item.id)
@@ -732,19 +734,14 @@ class MiAZWorkspace(Gtk.Box):
         self._on_filter_selected()
 
     def _on_filter_selected(self, *args):
-        self.log.debug("_on_filter_selected")
-        self.view.refilter()
-        model = self.view.cv.get_model() # nº items in current view
-        label = self.btnDocsSel.get_child()
-        docs = self.util.get_files() # nº total items
-        label.set_markup("<small>%d</small> / %d / <big>%d</big>" % (len(self.selected_items), len(model), len(docs)))
-
-        button = self.app.get_widget('workspace-button-pending')
-        pending = self.pending > 0
-        button.set_visible(pending)
-        self.log.debug("Pending documents: %d", self.pending)
-        self.log.debug("Pending button visible: %s", pending)
-        self.pending = 0
+        if self.workspace_loaded:
+            self.view.refilter()
+            model = self.view.cv.get_model() # nº items in current view
+            label = self.btnDocsSel.get_child()
+            docs = self.util.get_files() # nº total items
+            label.set_markup("<small>%d</small> / %d / <big>%d</big>" % (len(self.selected_items), len(model), len(docs)))
+            button = self.app.get_widget('workspace-button-pending')
+            button.set_visible(self.pending)
 
     def _on_select_all(self, *args):
         selection = self.view.get_selection()
