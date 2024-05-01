@@ -1,6 +1,6 @@
 configure_file(
-  input: 'loro.py',
-  output: 'loro',
+  input: 'miaz.py',
+  output: 'miaz',
   configuration: conf,
   install: true,
   install_dir: get_option('bindir'),
@@ -9,14 +9,7 @@ configure_file(
 
 # Python sources
 sources = [
-  'builder.py',
-  'cache.py',
   'main.py',
-  'report.py',
-  'stats.py',
-  'translate.py',
-  'workbook.py',
-  'workflow.py'
 ]
 
 install_data(sources, install_dir: moduledir)

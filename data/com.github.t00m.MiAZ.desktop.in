@@ -1,0 +1,13 @@
+[Desktop Entry]
+Name=MiAZ
+Comment=Personal Document Organizer
+Exec=miaz
+Icon=com.github.t00m.MiAZ
+Terminal=false
+Type=Application
+# Translators: These are search terms to find this application. Do NOT translate or localize the semicolons. The list MUST also end with a semicolon.
+Keywords=Concentrate;Focus;Noise;Productivity;Sleep;
+Categories=Utilities;GTK;
+StartupNotify=true
+# Translators: Do NOT translate or transliterate this text (these are enum types)!
+X-Purism-FormFactor=Workstation;Mobile;
