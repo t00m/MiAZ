@@ -7,5 +7,5 @@ Exec=miaz
 Name=MiAZ
 Comment=Family Document Manager
 Icon=com.github.t00m.MiAZ
-Categories=GTK;GNOME;Utility;
+Categories=Documentation;Utilities;Desktop Environment;GTK;GNOME;Office/Business;
 StartupNotify=True
