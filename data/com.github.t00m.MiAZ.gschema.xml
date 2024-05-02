@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schemalist gettext-domain="loro">
+    <!-- Global Settings -->
+    <schema id="com.github.t00m.Loro" path="/com/github/t00m/Loro/">
+    </schema>
+</schemalist>
