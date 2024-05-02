@@ -1,5 +1,5 @@
 project('MiAZ',
-          version: '0.0.19',
+          version: '0.0.20',
     meson_version: '>= 0.55.0',
   default_options: [ 'warning_level=2',
                    ],
@@ -36,4 +36,4 @@ subdir('data')
 subdir('MiAZ')
 subdir('po')
 
-meson.add_install_script('build-aux/meson/postinstall.py')
+#~ meson.add_install_script('build-aux/meson/postinstall.py')
