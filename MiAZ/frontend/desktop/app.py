@@ -350,7 +350,6 @@ class MiAZApp(Gtk.Application):
             else:
                 valid = False
         except KeyError as error:
-            raise
             self.log.debug("No repository active in the configuration")
             self.show_stack_page_by_name('welcome')
             valid = False

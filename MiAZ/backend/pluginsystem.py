@@ -51,9 +51,9 @@ class MiAZPluginType(IntEnum):
 
 class MiAZPluginManager:
     def __init__(self, app):
+        self.log = get_logger('MiAZ.PluginManager')
         self.app = app
         self.backend = self.app.get_service('backend')
-        self.log = get_logger('MiAZ.PluginManager')
         self.log.debug("Initializing Plugin Manager")
         self.plugin_info_list = []
 
@@ -85,8 +85,7 @@ class MiAZPluginManager:
         """Gets the engine's plugin list."""
         return self.engine.get_plugin_list()
 
-    @classmethod
-    def get_plugin_type(cls, plugin_info):
+    def get_plugin_type(self, plugin_info):
         """Gets the PluginType for the specified Peas.PluginInfo."""
         ENV = self.app.get_env()
         paths = [plugin_info.get_data_dir(), ENV['GPATH']['PLUGINS']]
