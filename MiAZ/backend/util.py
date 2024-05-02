@@ -22,7 +22,6 @@ from datetime import datetime, timedelta
 from gi.repository import Gio
 from gi.repository import GObject
 
-from MiAZ.backend.env import ENV
 from MiAZ.backend.log import get_logger
 from MiAZ.backend.models import Group, Person, Country
 from MiAZ.backend.models import Purpose, Concept, SentBy
@@ -56,6 +55,7 @@ class MiAZUtil(GObject.GObject):
                             GObject.SignalFlags.RUN_LAST,
                             GObject.TYPE_PYOBJECT, (GObject.TYPE_PYOBJECT, GObject.TYPE_PYOBJECT,))
         self.log = get_logger('MiAZ.Backend.Util')
+        self.app = backend.app
         self.backend = backend
         self.conf = self.backend.conf
 
@@ -106,6 +106,7 @@ class MiAZUtil(GObject.GObject):
         return used
 
     def get_temp_dir(self):
+        ENV = self.app.get_env()
         repo = self.backend.repo_config()
         ts = datetime.now().strftime('%Y%m%d_%H%M%S')
         name = self.valid_key(repo['dir_docs'])

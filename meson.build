@@ -1,4 +1,4 @@
-project('miaz',
+project('MiAZ',
           version: '0.0.1',
     meson_version: '>= 0.55.0',
   default_options: [ 'warning_level=2',
@@ -19,7 +19,7 @@ elif profile == 'release'
 endif
 
 pkgdatadir = join_paths(get_option('prefix'), get_option('datadir'), meson.project_name())
-moduledir = join_paths(pkgdatadir, 'miaz')
+moduledir = join_paths(pkgdatadir, 'MiAZ')
 
 conf = configuration_data()
 conf.set('PYTHON', python.find_installation('python3').full_path())

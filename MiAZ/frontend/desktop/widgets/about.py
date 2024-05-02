@@ -13,8 +13,6 @@ from gettext import gettext as _
 import gi
 from gi.repository import Gtk
 
-from MiAZ.backend.env import ENV
-
 
 class MiAZAbout(Gtk.Box):
     """
@@ -22,8 +20,9 @@ class MiAZAbout(Gtk.Box):
     """
     def __init__(self, app):
         super(Gtk.Box, self).__init__(spacing=12, orientation=Gtk.Orientation.VERTICAL)
+        ENV = app.get_env()
         label = Gtk.Label()
-        label.set_markup("%s %s" % (ENV['APP']['shortname'], ENV['APP']['version']))
+        label.set_markup("%s %s" % (ENV['APP']['shortname'], ENV['APP']['VERSION']))
         # ~ widget.set_icon_name(icon_name='MiAZ-big')
         self.append(label)
 

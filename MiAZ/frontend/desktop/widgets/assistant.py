@@ -22,7 +22,7 @@ from gi.repository import GLib
 from gi.repository import Gtk
 from gi.repository import Pango
 from gi.repository.GdkPixbuf import Pixbuf
-from MiAZ.backend.env import ENV
+
 from MiAZ.backend.log import get_logger
 from MiAZ.frontend.desktop.widgets.configview import MiAZCountries
 from MiAZ.frontend.desktop.widgets.configview import MiAZGroups

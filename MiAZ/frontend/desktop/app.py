@@ -20,7 +20,6 @@ from gi.repository import GLib
 from gi.repository import Gtk
 
 
-from MiAZ.backend.env import ENV
 from MiAZ.backend import MiAZBackend
 from MiAZ.backend.log import get_logger
 from MiAZ.frontend.desktop.widgets.configview import MiAZRepositories
@@ -50,9 +49,12 @@ class MiAZApp(Gtk.Application):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.log = get_logger("MiAZ.GUI")
+
+    def set_env(self, ENV: dict):
+        self._env = ENV
         self._miazobjs['widgets'] = {}
         self._miazobjs['services'] = {}
-        self.backend = self.add_service('backend', MiAZBackend())
+        self.backend = self.add_service('backend', MiAZBackend(self))
         self.add_service('util', self.backend.util)
         self.add_service('stats', self.backend.stats)
         self.add_service('icons', MiAZIconManager(self))
@@ -60,7 +62,11 @@ class MiAZApp(Gtk.Application):
         GLib.set_application_name(ENV['APP']['name'])
         self.connect('activate', self._on_activate)
 
+    def get_env(self):
+        return self._env
+
     def _on_activate(self, app):
+        ENV = self.get_env()
         self.win = self.add_widget('window', Gtk.ApplicationWindow(application=self))
         # ~ self.win.set_default_size(1280, 800)
         self.win.set_icon_name('MiAZ')
@@ -344,6 +350,7 @@ class MiAZApp(Gtk.Application):
             else:
                 valid = False
         except KeyError as error:
+            raise
             self.log.debug("No repository active in the configuration")
             self.show_stack_page_by_name('welcome')
             valid = False

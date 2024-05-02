@@ -15,30 +15,26 @@ import locale
 import gettext
 import argparse
 
-from MiAZ.backend.env import ENV
 from MiAZ.backend.log import get_logger
 
-app_version = open(ENV['FILE']['VERSION']).read().strip()
-app_shortname = ENV['APP']['shortname']
-
 class MiAZ:
-    def __init__(self) -> None:
+    def __init__(self, ENV: dict) -> None:
+        self.env = ENV
         self.setup_environment()
         self.log = get_logger('MiAZ.Main')
         self.set_internationalization()
-        self.log.info("%s v%s - Start", app_shortname, app_version)
+        self.log.info("%s v%s - Start", ENV['APP']['shortname'], ENV['FILE']['VERSION'])
 
     def setup_environment(self):
-        """Setup MiAZ user environment
-
-        Create local paths if they do not exist
-        """
+        """Setup MiAZ user environment"""
+        ENV = self.env
         for entry in ENV['LPATH']:
             if not os.path.exists(ENV['LPATH'][entry]):
                 os.makedirs(ENV['LPATH'][entry])
 
     def set_internationalization(self):
         """Sets application internationalization."""
+        ENV = self.env
         try:
             locale.bindtextdomain('miaz', ENV['GPATH']['LOCALE'])
             locale.textdomain('miaz')
@@ -54,6 +50,7 @@ class MiAZ:
 
     def run(self):
         """Execute MiAZ in desktop or console mode"""
+        ENV = self.env
         if ENV['DESKTOP']['ENABLED']:
             from MiAZ.frontend.desktop.app import MiAZApp
         else:
@@ -67,7 +64,7 @@ class MiAZ:
         self.log.info("%s v%s - End", app_shortname, app_version)
 
 
-def main():
+def main(ENV):
     """Set up application arguments and execute."""
     extra_usage = """"""
     parser = argparse.ArgumentParser(
@@ -81,5 +78,5 @@ def main():
     miaz_options.add_argument('-v', '--version', help='Show current version', action='version', version='%s %s' % (ENV['APP']['shortname'], ENV['APP']['version']))
 
     params = parser.parse_args()
-    app = MiAZ()
+    app = MiAZ(ENV)
     app.run()

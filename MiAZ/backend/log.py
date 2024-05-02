@@ -10,8 +10,6 @@
 import queue
 import logging
 
-from MiAZ.backend.env import ENV
-
 levels = {
             10: 'DEBUG',
             20: 'INFO',
@@ -29,10 +27,10 @@ def get_logger(name):
     log = logging.getLogger(name)
     log.setLevel(logging.DEBUG)
 
-    formatter = logging.Formatter("%(levelname)7s | %(lineno)4d  |%(name)-25s | %(asctime)s | %(message)s")
-    fh = logging.FileHandler(ENV['FILE']['LOG'])
-    fh.setFormatter(formatter)
-    fh.setLevel(logging.DEBUG)
-    log.addHandler(fh)
+    # ~ formatter = logging.Formatter("%(levelname)7s | %(lineno)4d  |%(name)-25s | %(asctime)s | %(message)s")
+    # ~ fh = logging.FileHandler(ENV['FILE']['LOG'])
+    # ~ fh.setFormatter(formatter)
+    # ~ fh.setLevel(logging.DEBUG)
+    # ~ log.addHandler(fh)
 
     return log

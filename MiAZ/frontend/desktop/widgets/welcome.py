@@ -13,8 +13,6 @@ from gettext import gettext as _
 import gi
 from gi.repository import Gtk
 
-from MiAZ.backend.env import ENV
-
 
 class MiAZWelcome(Gtk.Box):
     """

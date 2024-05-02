@@ -13,7 +13,6 @@ import shutil
 
 from gi.repository import GObject
 
-from MiAZ.backend.env import ENV
 from MiAZ.backend.log import get_logger
 from MiAZ.backend.models import MiAZModel, MiAZItem, File, Group, Person, Country, Purpose, Concept, SentBy, SentTo, Project, Repository
 
@@ -220,7 +219,9 @@ class MiAZConfig(GObject.GObject):
 class MiAZConfigApp(MiAZConfig):
     def __init__(self, backend):
         self.backend = backend
+        self.app = backend.app
         self.util = self.backend.util
+        ENV = self.app.get_env()
         GObject.GObject.__init__(self)
         GObject.signal_new('repo-settings-updated-app',
                             MiAZConfigApp,
@@ -249,6 +250,8 @@ class MiAZConfigApp(MiAZConfig):
 
 class MiAZConfigRepositories(MiAZConfig):
     def __init__(self, backend):
+        app = backend.app
+        ENV = app.get_env()
         dir_conf = ENV['LPATH']['ETC']
         super().__init__(
             backend = backend,
@@ -264,13 +267,15 @@ class MiAZConfigRepositories(MiAZConfig):
 
 class MiAZConfigCountries(MiAZConfig):
     def __init__(self, backend, dir_conf):
+        app = backend.app
+        ENV = app.get_env()
         super().__init__(
             backend = backend,
             log=get_logger('MiAZ.Settings.Countries'),
             config_for = 'Countries',
             available = os.path.join(dir_conf, 'countries-available.json'),
             used = os.path.join(dir_conf, 'countries-used.json'),
-            default = os.path.join(ENV['GPATH']['RESOURCES'],
+            default = os.path.join(ENV['GPATH']['CONF'],
                             'MiAZ-countries.json'),
             model = Country,
             must_copy = False,
@@ -279,13 +284,15 @@ class MiAZConfigCountries(MiAZConfig):
 
 class MiAZConfigGroups(MiAZConfig):
     def __init__(self, backend, dir_conf):
+        app = backend.app
+        ENV = app.get_env()
         super().__init__(
             backend = backend,
             log=get_logger('MiAZ.Settings.Groups'),
             config_for = 'Groups',
             used = os.path.join(dir_conf, 'groups-used.json'),
             available = os.path.join(dir_conf, 'groups-available.json'),
-            default = os.path.join(ENV['GPATH']['RESOURCES'],
+            default = os.path.join(ENV['GPATH']['CONF'],
                             'MiAZ-groups.json'),
             model = Group,
             must_copy = True
@@ -293,13 +300,15 @@ class MiAZConfigGroups(MiAZConfig):
 
 class MiAZConfigPurposes(MiAZConfig):
     def __init__(self, backend, dir_conf):
+        app = backend.app
+        ENV = app.get_env()
         super().__init__(
             backend = backend,
             log=get_logger('MiAZ.Settings.Purposes'),
             config_for = 'Purposes',
             used = os.path.join(dir_conf, 'purposes-used.json'),
             available = os.path.join(dir_conf, 'purposes-available.json'),
-            default = os.path.join(ENV['GPATH']['RESOURCES'],
+            default = os.path.join(ENV['GPATH']['CONF'],
                             'MiAZ-purposes.json'),
             model = Purpose,
             must_copy = True
@@ -307,6 +316,8 @@ class MiAZConfigPurposes(MiAZConfig):
 
 class MiAZConfigConcepts(MiAZConfig):
     def __init__(self, backend, dir_conf):
+        app = backend.app
+        ENV = app.get_env()
         super().__init__(
             backend = backend,
             log=get_logger('MiAZ.Settings.Concepts'),
@@ -320,13 +331,15 @@ class MiAZConfigConcepts(MiAZConfig):
 
 class MiAZConfigPeople(MiAZConfig):
     def __init__(self, backend, dir_conf):
+        app = backend.app
+        ENV = app.get_env()
         super().__init__(
             backend = backend,
             log=get_logger('MiAZ.Settings.People'),
             config_for = 'Person',
             used = os.path.join(dir_conf, 'people-used.json'),
             available = os.path.join(dir_conf, 'people-available.json'),
-            default = os.path.join(ENV['GPATH']['RESOURCES'],
+            default = os.path.join(ENV['GPATH']['CONF'],
                             'MiAZ-people.json'),
             model = Person,
             must_copy = True
@@ -334,13 +347,15 @@ class MiAZConfigPeople(MiAZConfig):
 
 class MiAZConfigSentBy(MiAZConfig):
     def __init__(self, backend, dir_conf):
+        app = backend.app
+        ENV = app.get_env()
         super().__init__(
             backend = backend,
             log=get_logger('MiAZ.Settings.SentBy'),
             config_for = 'SentBy',
             used = os.path.join(dir_conf, 'sentby-used.json'),
             available = os.path.join(dir_conf, 'people-available.json'),
-            default = os.path.join(ENV['GPATH']['RESOURCES'],
+            default = os.path.join(ENV['GPATH']['CONF'],
                             'MiAZ-people.json'),
             model = SentBy,
             must_copy = False
@@ -348,13 +363,15 @@ class MiAZConfigSentBy(MiAZConfig):
 
 class MiAZConfigSentTo(MiAZConfig):
     def __init__(self, backend, dir_conf):
+        app = backend.app
+        ENV = app.get_env()
         super().__init__(
             backend = backend,
             log=get_logger('MiAZ.Settings.SentTo'),
             config_for = 'SentTo',
             used = os.path.join(dir_conf, 'sentto-used.json'),
             available = os.path.join(dir_conf, 'people-available.json'),
-            default = os.path.join(ENV['GPATH']['RESOURCES'],
+            default = os.path.join(ENV['GPATH']['CONF'],
                             'MiAZ-people.json'),
             model = SentTo,
             must_copy = False
@@ -362,6 +379,8 @@ class MiAZConfigSentTo(MiAZConfig):
 
 class MiAZConfigProjects(MiAZConfig):
     def __init__(self, backend, dir_conf):
+        app = backend.app
+        ENV = app.get_env()
         super().__init__(
             backend = backend,
             log=get_logger('MiAZ.Settings.Project'),

@@ -22,7 +22,6 @@ from gi.repository import Gtk
 from gi.repository import Pango
 
 from MiAZ.backend.log import get_logger
-from MiAZ.backend.env import ENV
 from MiAZ.backend.models import MiAZItem
 
 

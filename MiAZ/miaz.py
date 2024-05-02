@@ -19,7 +19,26 @@ from rich.traceback import install
 
 sys.path.insert(1, '@pkgdatadir@')
 
+from MiAZ.backend.log import get_logger
+
 ENV = {}
+
+# Desktop environment
+ENV['DESKTOP'] = {}
+try:
+    import gi
+    gi.require_version('Gtk', '4.0')
+    from gi.repository import Gtk
+    ENV['DESKTOP']['GTK_ENABLED'] = True
+    ENV['DESKTOP']['GTK_VERSION'] = (Gtk.MAJOR_VERSION, Gtk.MINOR_VERSION, Gtk.MICRO_VERSION)
+    ENV['DESKTOP']['GTK_SUPPORT'] = Gtk.MAJOR_VERSION >= 4 and Gtk.MINOR_VERSION >= 6
+except:
+    ENV['DESKTOP']['GTK_ENABLED'] = False
+    ENV['DESKTOP']['GTK_SUPPORT'] = False
+
+ENV['DESKTOP']['ENABLED'] = ENV['DESKTOP']['GTK_SUPPORT']
+
+# App
 ENV['APP'] = {}
 ENV['APP']['ID'] = '@APP_ID@'
 ENV['APP']['VERSION'] = '@VERSION@'
@@ -66,13 +85,13 @@ ENV['LPATH']['PLUGINS'] = os.path.join(ENV['LPATH']['OPT'], 'plugins')
 # Global paths
 ENV['GPATH'] = {}
 ENV['GPATH']['ROOT'] = ENV['CONF']['ROOT']
-ENV['GPATH']['DATA'] = os.path.join(ENV['GPATH']['ROOT'], 'data')
+ENV['GPATH']['DATA'] = os.path.join(ENV['GPATH']['ROOT'], 'resources')
 ENV['GPATH']['DOCS'] = os.path.join(ENV['GPATH']['DATA'], 'docs')
-ENV['GPATH']['ICONS'] = os.path.join(ENV['GPATH']['DATA'], 'icons')
+ENV['GPATH']['ICONS'] = os.path.join(ENV['GPATH']['DATA'], 'icons', 'scalable')
 ENV['GPATH']['FLAGS'] = os.path.join(ENV['GPATH']['ICONS'], 'flags')
 ENV['GPATH']['LOCALE'] = os.path.join(ENV['GPATH']['DATA'], 'po')
 ENV['GPATH']['PLUGINS'] = os.path.join(ENV['GPATH']['DATA'], 'plugins')
-ENV['GPATH']['RESOURCES'] = os.path.join(ENV['GPATH']['DATA'], 'resources')
+ENV['GPATH']['CONF'] = os.path.join(ENV['GPATH']['DATA'], 'conf')
 
 # Common file paths
 ENV['FILE'] = {}
@@ -104,6 +123,66 @@ except:
   log.error('Cannot load translations.')
 
 
+class MiAZ:
+    def __init__(self, ENV: dict) -> None:
+        self.env = ENV
+        self.setup_environment()
+        self.log = get_logger('MiAZ.Main')
+        self.set_internationalization()
+        self.log.info("%s v%s - Start", ENV['APP']['shortname'], ENV['APP']['VERSION'])
+
+    def setup_environment(self):
+        """Setup MiAZ user environment"""
+        ENV = self.env
+        for entry in ENV['LPATH']:
+            if not os.path.exists(ENV['LPATH'][entry]):
+                os.makedirs(ENV['LPATH'][entry])
+
+    def set_internationalization(self):
+        """Sets application internationalization."""
+        ENV = self.env
+        try:
+            locale.bindtextdomain('miaz', ENV['GPATH']['LOCALE'])
+            locale.textdomain('miaz')
+            # ~ self.log.debug("Gettext: binding to %s", ENV['GPATH']['LOCALE'])
+            gettext.bindtextdomain('miaz', ENV['GPATH']['LOCALE'])
+            gettext.textdomain('miaz')
+        except AttributeError as e:
+            # Python built without gettext support does not have
+            # bindtextdomain() and textdomain().
+            self.log.error(
+                "Could not bind the gettext translation domain. Some"
+                " translations will not work. Error:\n{}".format(e))
+
+    def run(self):
+        """Execute MiAZ in desktop or console mode"""
+        ENV = self.env
+        if ENV['DESKTOP']['ENABLED']:
+            from MiAZ.frontend.desktop.app import MiAZApp
+        else:
+            from MiAZ.frontend.console.app import MiAZApp
+        app = MiAZApp(application_id=ENV['APP']['ID'])
+        app.set_env(ENV)
+        try:
+            app.run()
+        except KeyboardInterrupt:
+            self.log.error("Application killed by user")
+            exit(0)
+        self.log.info("%s v%s - End", ENV['APP']['shortname'], ENV['APP']['VERSION'])
+
 if __name__ == "__main__":
-    from MiAZ.main import main
-    main(ENV)
+    """Set up application arguments and execute."""
+    extra_usage = """"""
+    parser = argparse.ArgumentParser(
+        prog='MiAZ',
+        description='Personal Document Organizer',
+        epilog=extra_usage,
+        formatter_class=argparse.RawDescriptionHelpFormatter)
+
+    # MiAZ arguments
+    miaz_options = parser.add_argument_group('MiAZ Options')
+    miaz_options.add_argument('-v', '--version', help='Show current version', action='version', version='%s %s' % (ENV['APP']['shortname'], ENV['APP']['VERSION']))
+
+    params = parser.parse_args()
+    app = MiAZ(ENV)
+    app.run()
