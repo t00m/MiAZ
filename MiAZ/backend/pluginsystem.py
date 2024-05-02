@@ -18,7 +18,6 @@ import gi
 gi.require_version('Peas', '1.0')
 from gi.repository import GObject, Peas
 
-from MiAZ.backend.env import ENV
 from MiAZ.backend.log import get_logger
 
 
@@ -42,6 +41,7 @@ class MiAZPluginType(IntEnum):
 
     def get_dir(self):
         """Returns the directory where this type of plugins can be found."""
+        ENV = self.app.get_env()
         if self.value == MiAZPluginType.USER:
             return ENV['LPATH']['PLUGINS']
 
@@ -51,9 +51,9 @@ class MiAZPluginType(IntEnum):
 
 class MiAZPluginManager:
     def __init__(self, app):
+        self.log = get_logger('MiAZ.PluginManager')
         self.app = app
         self.backend = self.app.get_service('backend')
-        self.log = get_logger('MiAZ.PluginManager')
         self.log.debug("Initializing Plugin Manager")
         self.plugin_info_list = []
 
@@ -64,10 +64,14 @@ class MiAZPluginManager:
         self._setup_plugins_dir()
         self._setup_extension_set()
 
-    def load_plugin(self, plugin: Peas.PluginInfo):
+    def load_plugin(self, plugin: Peas.PluginInfo) -> bool:
         self.engine.load_plugin(plugin)
         if plugin.is_loaded():
-            self.log.debug("Plugin %s loaded", plugin.get_name())
+            # ~ self.log.debug("Plugin %s loaded", plugin.get_name())
+            return True
+        else:
+            self.log.error("Plugin %s couldn't be loaded", plugin.get_name())
+            return False
 
     def unload_plugin(self, plugin: Peas.PluginInfo):
         self.engine.unload_plugin(plugin)
@@ -81,9 +85,9 @@ class MiAZPluginManager:
         """Gets the engine's plugin list."""
         return self.engine.get_plugin_list()
 
-    @classmethod
-    def get_plugin_type(cls, plugin_info):
+    def get_plugin_type(self, plugin_info):
         """Gets the PluginType for the specified Peas.PluginInfo."""
+        ENV = self.app.get_env()
         paths = [plugin_info.get_data_dir(), ENV['GPATH']['PLUGINS']]
         if os.path.commonprefix(paths) == ENV['GPATH']['PLUGINS']:
             return MiAZPluginType.SYSTEM
@@ -129,6 +133,7 @@ class MiAZPluginManager:
 
     def _setup_plugins_dir(self):
         # System plugins
+        ENV = self.app.get_env()
         if os.path.exists(ENV['GPATH']['PLUGINS']):
             self.engine.add_search_path(ENV['GPATH']['PLUGINS'])
             self.log.debug("Added System plugin dir: %s", ENV['GPATH']['PLUGINS'])

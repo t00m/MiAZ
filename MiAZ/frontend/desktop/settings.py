@@ -16,7 +16,6 @@ from gi.repository import Gio
 from gi.repository import GLib
 from gi.repository import Gtk
 
-from MiAZ.backend.env import ENV
 from MiAZ.backend.log import get_logger
 from MiAZ.frontend.desktop.widgets.configview import MiAZGroups
 from MiAZ.frontend.desktop.widgets.configview import MiAZPurposes

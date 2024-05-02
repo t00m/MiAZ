@@ -12,7 +12,6 @@ from gettext import gettext as _
 
 from gi.repository import GObject
 
-from MiAZ.backend.env import ENV
 from MiAZ.backend.log import get_logger
 from MiAZ.backend.models import Group, Person, Country
 from MiAZ.backend.models import Purpose, Concept, SentBy

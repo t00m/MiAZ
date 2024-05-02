@@ -22,7 +22,6 @@ from gi.repository import Gtk
 from gi.repository import Pango
 
 from MiAZ.backend.log import get_logger
-from MiAZ.backend.env import ENV
 from MiAZ.backend.models import MiAZItem
 
 
@@ -197,9 +196,10 @@ class MiAZColumnView(Gtk.Box):
         ds = datetime.now()
         self.store.remove_all()
         self.store.splice(0, 0, items)
-        de = datetime.now()
-        dt = de - ds
-        self.log.debug("View for %s updated with %d items in %s", self.item_type.__title__, len(items), dt)
+        # ~ de = datetime.now()
+        # ~ dt = de - ds
+        # Columnview update stats
+        # ~ self.log.debug("View for %s updated with %d items in %s", self.item_type.__title__, len(items), dt)
 
     def _on_selection_changed(self, selection, position, n_items):
         self.selected_items = []

@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<gresources>
+  <gresource prefix="/com/github/t00m/Loro">
+    <!-- UI Files
+    <file>window.ui</file>
+    <file>preferences.ui</file>
+    <file>about.ui</file>
+    <file alias="gtk/help-overlay.ui">shortcuts.ui</file>
+    -->
+    <!-- CSS -->
+    <file>style.css</file>
+
+    <!-- Icons -->
+    <file preprocess="xml-stripblanks">icons/scalable/com.github.t00m.MiAZ.svg</file>
+  </gresource>
+</gresources>

@@ -1,0 +1,10 @@
+[Plugin]
+Module=menurepo
+Name=MiAZMenuRepo
+Loader=Python3
+Description=Repository settings and related stuff
+Authors=Tomás Vírseda <tomasvirseda@gmail.com>
+Copyright=Copyright © 2023 Tomás Vírseda
+Website=http://github.com/t00m/MiAZ
+Help=http://github.com/t00m/MiAZ/README.adoc
+Version=0.2

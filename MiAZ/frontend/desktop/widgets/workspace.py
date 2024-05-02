@@ -21,7 +21,6 @@ from gi.repository import Gtk
 from gi.repository import GLib
 from gi.repository import GObject
 
-from MiAZ.backend.env import ENV
 from MiAZ.backend.log import get_logger
 from MiAZ.backend.models import MiAZItem, File, Group, Person, Country, Purpose, Concept, SentBy, SentTo, Date, Extension, Project
 from MiAZ.frontend.desktop.widgets.columnview import MiAZColumnView, ColIcon, ColLabel, ColButton
@@ -54,11 +53,12 @@ class MiAZWorkspace(Gtk.Box):
         "extend-menu":  (GObject.SignalFlags.RUN_LAST, None, ()),
         "extend-toolbar-top":  (GObject.SignalFlags.RUN_LAST, None, ()),
     }
+    workspace_loaded = False
     selected_items = []
     dates = {}
-    # ~ dropdown = {}
     cache = {}
     uncategorized = False
+    pending = False
 
     def __init__(self, app):
         super(MiAZWorkspace, self).__init__(orientation=Gtk.Orientation.HORIZONTAL)
@@ -101,13 +101,14 @@ class MiAZWorkspace(Gtk.Box):
 
         # Allow plug-ins to make their job
         self.app.connect('start-application-completed', self._finish_configuration)
+        self._on_filter_selected()
 
     def _initialize_caches(self):
         self.cache = {}
         for cache in ['date', 'country', 'group', 'people', 'purpose']:
             self.cache[cache] = {}
-        self.util.json_save(self.fcache, self.cache)
-        self.log.debug("Caches initialized (%s)", self.fcache)
+        # ~ self.util.json_save(self.fcache, self.cache)
+        # ~ self.log.debug("Caches initialized (%s)", self.fcache)
 
     def check_first_time(self):
         conf = self.config['Country']
@@ -124,7 +125,7 @@ class MiAZWorkspace(Gtk.Box):
         # Right now, there is no way to know which config item has been
         # updated, therefore, the whole cache must be invalidated :/
         self._initialize_caches()
-        self.log.debug("Config changed")
+        # ~ self.log.debug("Config changed")
 
     def _on_filename_renamed(self, util, source, target):
         srvprj = self.backend.projects
@@ -142,6 +143,7 @@ class MiAZWorkspace(Gtk.Box):
 
     def _finish_configuration(self, *args):
         self.log.debug("Finish loading workspace")
+        self.workspace_loaded = True
         # ~ self.app.load_plugins()
         self.emit('extend-menu')
         self.emit('extend-toolbar-top')
@@ -221,20 +223,8 @@ class MiAZWorkspace(Gtk.Box):
         # Left widget
         hbox = self.app.add_widget('workspace-toolbar-top-left', self.factory.create_box_horizontal())
         hbox.get_style_context().add_class(class_name='linked')
+        hbox.set_hexpand(True)
         toolbar_top.set_start_widget(hbox)
-
-        button = self.factory.create_button(title='Pending of review')
-        button.get_style_context().add_class(class_name='suggested-action')
-        self.app.add_widget('workspace-button-uncategorized', button)
-        button.connect('clicked', self.display_uncategorized)
-        button.set_visible(False)
-        hbox.append(button)
-
-        # Center
-        hbox = self.app.add_widget('workspace-toolbar-top-center', self.factory.create_box_horizontal(spacing=0))
-        hbox.get_style_context().add_class(class_name='linked')
-        hbox.set_valign(Gtk.Align.CENTER)
-        toolbar_top.set_center_widget(hbox)
 
         ## Filters
         self.tgbFilters = self.factory.create_button_toggle('miaz-filters', callback=self._on_filters_toggled)
@@ -244,7 +234,7 @@ class MiAZWorkspace(Gtk.Box):
 
         ## Searchbox
         self.ent_sb = Gtk.SearchEntry(placeholder_text=_('Type here'))
-        self.ent_sb.set_hexpand(False)
+        self.ent_sb.set_hexpand(True)
         hbox.append(self.ent_sb)
 
         dropdowns = self.app.get_widget('ws-dropdowns')
@@ -265,10 +255,26 @@ class MiAZWorkspace(Gtk.Box):
         dropdowns[i_type] = dd_prj
         self.actions.dropdown_populate(self.config[i_type], dd_prj, Project, any_value=True, none_value=True)
         dd_prj.connect("notify::selected-item", self._on_filter_selected)
+        dd_prj.set_hexpand(False)
         self.config[i_type].connect('used-updated', self.update_dropdown_filter, Project)
         hbox.append(dd_prj)
-
         self.app.set_widget('ws-dropdowns', dropdowns)
+
+        # Center
+        hbox = self.app.add_widget('workspace-toolbar-top-center', self.factory.create_box_horizontal(spacing=0))
+        hbox.get_style_context().add_class(class_name='linked')
+        hbox.set_valign(Gtk.Align.CENTER)
+        hbox.set_hexpand(False)
+        toolbar_top.set_center_widget(hbox)
+
+        button = self.factory.create_button_toggle(icon_name='miaz-warning') #title='<b>Pending!</b>')
+        self.app.add_widget('workspace-button-pending', button)
+        # ~ button.get_style_context().add_class(class_name='suggested-action')
+        self.app.add_widget('workspace-button-uncategorized', button)
+        button.connect('toggled', self.display_uncategorized)
+        button.set_tooltip_markup('There are documents pending of review yet!')
+        button.set_visible(False)
+        hbox.append(button)
 
         # Right
         hbox = self.app.add_widget('workspace-toolbar-top-right', self.factory.create_box_horizontal(spacing=0))
@@ -391,7 +397,7 @@ class MiAZWorkspace(Gtk.Box):
     def _setup_columnview(self):
         self.view = MiAZColumnViewWorkspace(self.app)
         self.app.add_widget('workspace-view', self.view)
-        self.view.get_style_context().add_class(class_name='caption')
+        # ~ self.view.get_style_context().add_class(class_name='caption')
         self.view.set_filter(self._do_filter_view)
         frmView = self.factory.create_frame(hexpand=True, vexpand=True)
         frmView.set_child(self.view)
@@ -594,8 +600,8 @@ class MiAZWorkspace(Gtk.Box):
                             )
             else:
                 invalid.append(filename)
-        de = datetime.now()
-        dt = de - ds
+        # ~ de = datetime.now()
+        # ~ dt = de - ds
         # ~ self.log.debug("Workspace updated (%s)" % dt)
         self.util.json_save(self.fcache, self.cache)
         # ~ self.log.debug("Saving cache to %s", self.fcache)
@@ -603,9 +609,13 @@ class MiAZWorkspace(Gtk.Box):
         self._on_filter_selected()
         label = self.btnDocsSel.get_child()
         self.view.select_first_item()
+        renamed = 0
         for filename in invalid:
             target = self.util.filename_normalize(filename)
-            self.util.filename_rename(filename, target)
+            rename = self.util.filename_rename(filename, target)
+            if rename:
+                renamed += 1
+        self.log.debug("Documents renamed: %d", renamed)
 
         button = self.app.get_widget('workspace-button-uncategorized')
         if len(invalid) > 0:
@@ -687,8 +697,13 @@ class MiAZWorkspace(Gtk.Box):
         return matches
 
     def _do_filter_view(self, item, filter_list_model):
+        self.pending = False
+        if item.active is False:
+            self.pending = True
+            # ~ self.log.debug("(count %4d) Item '%s' pending of review? %s", self.pending, item.title, item.active)
+
         if self.uncategorized:
-            return item.active == False
+            return item.active is False
         else:
             dropdowns = self.app.get_widget('ws-dropdowns')
             c0 = self._do_eval_cond_matches_freetext(item.id)
@@ -710,16 +725,22 @@ class MiAZWorkspace(Gtk.Box):
         selection.connect('selection-changed', self._on_selection_changed)
 
     def display_uncategorized(self, *args):
-        self.uncategorized = True
+        button = self.app.get_widget('workspace-button-pending')
+        if button.get_active():
+            self.uncategorized = True
+        else:
+            self.uncategorized = False
         self._on_filter_selected()
-        self.uncategorized = False
 
     def _on_filter_selected(self, *args):
-        self.view.refilter()
-        model = self.view.cv.get_model() # nº items in current view
-        label = self.btnDocsSel.get_child()
-        docs = self.util.get_files() # nº total items
-        label.set_markup("<small>%d</small> / %d / <big>%d</big>" % (len(self.selected_items), len(model), len(docs)))
+        if self.workspace_loaded:
+            self.view.refilter()
+            model = self.view.cv.get_model() # nº items in current view
+            label = self.btnDocsSel.get_child()
+            docs = self.util.get_files() # nº total items
+            label.set_markup("<small>%d</small> / %d / <big>%d</big>" % (len(self.selected_items), len(model), len(docs)))
+            button = self.app.get_widget('workspace-button-pending')
+            button.set_visible(self.pending)
 
     def _on_select_all(self, *args):
         selection = self.view.get_selection()

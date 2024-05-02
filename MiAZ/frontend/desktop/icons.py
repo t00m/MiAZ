@@ -21,13 +21,13 @@ from gi.repository import Gdk
 from gi.repository.GdkPixbuf import Pixbuf
 
 from MiAZ.backend.log import get_logger
-from MiAZ.backend.env import ENV
 
 # FIXME: Review this module
 class MiAZIconManager(GObject.GObject):
     def __init__(self, app):
         super(MiAZIconManager, self).__init__()
         self.app = app
+        ENV = self.app.get_env()
         self.log = get_logger('ICM')
         self.util = self.app.backend.util
         win = Gtk.Window()
@@ -72,6 +72,7 @@ class MiAZIconManager(GObject.GObject):
         return gicon
 
     def get_flag_icon(self, code: str) -> Gtk.Image:
+        ENV = self.app.get_env()
         try:
             paintable = self.paintable[code]
         except:

@@ -35,8 +35,9 @@ class MiAZBackend(GObject.GObject):
     __gtype_name__ = 'MiAZBackend'
     conf = {}
 
-    def __init__(self) -> None:
+    def __init__(self, app) -> None:
         GObject.GObject.__init__(self)
+        self.app = app
         self.log = get_logger('MiAZBackend')
         GObject.signal_new('repository-updated',
                             MiAZBackend,

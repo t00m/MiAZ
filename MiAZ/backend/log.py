@@ -9,8 +9,7 @@
 
 import queue
 import logging
-
-from MiAZ.backend.env import ENV
+from rich.logging import RichHandler
 
 levels = {
             10: 'DEBUG',
@@ -25,14 +24,14 @@ def get_logger(name):
     """Returns a new logger with personalized.
     @param name: logger name
     """
-    logging.basicConfig(level=logging.INFO, format="%(levelname)7s | %(lineno)4d  |%(name)-25s | %(asctime)s | %(message)s")
+    logging.basicConfig(level='NOTSET', format="%(message)s", handlers=[RichHandler()])
     log = logging.getLogger(name)
     log.setLevel(logging.DEBUG)
 
-    formatter = logging.Formatter("%(levelname)7s | %(lineno)4d  |%(name)-25s | %(asctime)s | %(message)s")
-    fh = logging.FileHandler(ENV['FILE']['LOG'])
-    fh.setFormatter(formatter)
-    fh.setLevel(logging.DEBUG)
-    log.addHandler(fh)
+    # ~ formatter = logging.Formatter("%(levelname)7s | %(lineno)4d  |%(name)-25s | %(asctime)s | %(message)s")
+    # ~ fh = logging.FileHandler(ENV['FILE']['LOG'])
+    # ~ fh.setFormatter(formatter)
+    # ~ fh.setLevel(logging.DEBUG)
+    # ~ log.addHandler(fh)
 
     return log
