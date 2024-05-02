@@ -697,24 +697,24 @@ class MiAZWorkspace(Gtk.Box):
         return matches
 
     def _do_filter_view(self, item, filter_list_model):
-        self.pending = False
-        if item.active is False:
-            self.pending = True
+        # ~ self.pending = False
+        # ~ if item.active is False:
+            # ~ self.pending = True
             # ~ self.log.debug("(count %4d) Item '%s' pending of review? %s", self.pending, item.title, item.active)
 
-        if self.uncategorized:
-            return item.active is False
-        else:
-            dropdowns = self.app.get_widget('ws-dropdowns')
-            c0 = self._do_eval_cond_matches_freetext(item.id)
-            cd = self._do_eval_cond_matches_date(item)
-            c1 = self._do_eval_cond_matches(dropdowns['Country'], item.country)
-            c2 = self._do_eval_cond_matches(dropdowns['Group'], item.group)
-            c4 = self._do_eval_cond_matches(dropdowns['SentBy'], item.sentby_id)
-            c5 = self._do_eval_cond_matches(dropdowns['Purpose'], item.purpose)
-            c6 = self._do_eval_cond_matches(dropdowns['SentTo'], item.sentto_id)
-            cp = self._do_eval_cond_matches_project(item.id)
-            return c0 and c1 and c2 and c4 and c5 and c6 and cd and cp
+        # ~ if self.uncategorized:
+            # ~ return item.active is False
+        # ~ else:
+        dropdowns = self.app.get_widget('ws-dropdowns')
+        c0 = self._do_eval_cond_matches_freetext(item.id)
+        cd = self._do_eval_cond_matches_date(item)
+        c1 = self._do_eval_cond_matches(dropdowns['Country'], item.country)
+        c2 = self._do_eval_cond_matches(dropdowns['Group'], item.group)
+        c4 = self._do_eval_cond_matches(dropdowns['SentBy'], item.sentby_id)
+        c5 = self._do_eval_cond_matches(dropdowns['Purpose'], item.purpose)
+        c6 = self._do_eval_cond_matches(dropdowns['SentTo'], item.sentto_id)
+        cp = self._do_eval_cond_matches_project(item.id)
+        return c0 and c1 and c2 and c4 and c5 and c6 and cd and cp
 
     def _do_connect_filter_signals(self):
         self.ent_sb.connect('changed', self._on_filter_selected)
