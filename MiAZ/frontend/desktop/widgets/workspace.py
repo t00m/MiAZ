@@ -397,7 +397,7 @@ class MiAZWorkspace(Gtk.Box):
     def _setup_columnview(self):
         self.view = MiAZColumnViewWorkspace(self.app)
         self.app.add_widget('workspace-view', self.view)
-        self.view.get_style_context().add_class(class_name='caption')
+        # ~ self.view.get_style_context().add_class(class_name='caption')
         self.view.set_filter(self._do_filter_view)
         frmView = self.factory.create_frame(hexpand=True, vexpand=True)
         frmView.set_child(self.view)
@@ -700,7 +700,7 @@ class MiAZWorkspace(Gtk.Box):
         self.pending = False
         if item.active is False:
             self.pending = True
-            self.log.debug("(count %4d) Item '%s' pending of review? %s", self.pending, item.title, item.active)
+            # ~ self.log.debug("(count %4d) Item '%s' pending of review? %s", self.pending, item.title, item.active)
 
         if self.uncategorized:
             return item.active is False
