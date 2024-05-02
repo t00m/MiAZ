@@ -203,7 +203,8 @@ class MiAZUtil(GObject.GObject):
         key = str(key).strip().replace(' ', '_')
         return re.sub(r'(?u)[^-\w.]', '', key)
 
-    def filename_rename(self, doc_source, doc_target):
+    def filename_rename(self, doc_source, doc_target) -> bool:
+        rename = False
         repo = self.backend.repo_config()
         dir_repo = repo['dir_docs']
         source = os.path.join(dir_repo, doc_source)
@@ -212,14 +213,19 @@ class MiAZUtil(GObject.GObject):
             if not os.path.exists(target):
                 try:
                     shutil.move(source, target)
-                    self.log.info("%s renamed to %s", source, target)
+                    self.log.debug("Document renamed:")
+                    self.log.debug("\tFrom: '%s'", source)
+                    self.log.debug("\t  To: '%s'", target)
+                    rename = True
                     self.emit('filename-renamed', source, target)
                 except Exception as error:
                     self.log.error(error)
             else:
-                self.log.error("Target '%s' already exist. Skip rename", doc_target)
-        else:
-            self.log.error("Source and Target are the same. Skip rename")
+                self.log.debug("Document NOT renamed:")
+                self.log.error("\tTarget '%s' already exist", doc_target)
+        # ~ else:
+            # ~ self.log.error("Source and Target are the same. Skip rename")
+        return rename
 
     def filename_delete(self, filepath):
         try:

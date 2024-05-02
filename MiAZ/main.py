@@ -42,7 +42,7 @@ class MiAZ:
         try:
             locale.bindtextdomain('miaz', ENV['GPATH']['LOCALE'])
             locale.textdomain('miaz')
-            self.log.debug("Gettext: binding to %s", ENV['GPATH']['LOCALE'])
+            # ~ self.log.debug("Gettext: binding to %s", ENV['GPATH']['LOCALE'])
             gettext.bindtextdomain('miaz', ENV['GPATH']['LOCALE'])
             gettext.textdomain('miaz')
         except AttributeError as e:

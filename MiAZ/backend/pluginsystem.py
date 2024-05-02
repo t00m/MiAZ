@@ -64,10 +64,14 @@ class MiAZPluginManager:
         self._setup_plugins_dir()
         self._setup_extension_set()
 
-    def load_plugin(self, plugin: Peas.PluginInfo):
+    def load_plugin(self, plugin: Peas.PluginInfo) -> bool:
         self.engine.load_plugin(plugin)
         if plugin.is_loaded():
-            self.log.debug("Plugin %s loaded", plugin.get_name())
+            # ~ self.log.debug("Plugin %s loaded", plugin.get_name())
+            return True
+        else:
+            self.log.error("Plugin %s couldn't be loaded", plugin.get_name())
+            return False
 
     def unload_plugin(self, plugin: Peas.PluginInfo):
         self.engine.unload_plugin(plugin)
