@@ -9,6 +9,7 @@
 
 import queue
 import logging
+from rich.logging import RichHandler
 
 levels = {
             10: 'DEBUG',
@@ -23,7 +24,7 @@ def get_logger(name):
     """Returns a new logger with personalized.
     @param name: logger name
     """
-    logging.basicConfig(level=logging.INFO, format="%(levelname)7s | %(lineno)4d  |%(name)-25s | %(asctime)s | %(message)s")
+    logging.basicConfig(level='NOTSET', format="%(message)s", handlers=[RichHandler()])
     log = logging.getLogger(name)
     log.setLevel(logging.DEBUG)
 
