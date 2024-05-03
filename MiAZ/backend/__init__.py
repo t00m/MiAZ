@@ -96,6 +96,7 @@ class MiAZBackend(GObject.GObject):
     def repo_load(self, path):
         conf = self.repo_config()
         dir_conf = conf['dir_conf']
+        self.log.debug("Loading config repo from: %s", dir_conf)
         self.conf['Country'] = MiAZConfigCountries(self, dir_conf)
         self.conf['Group'] = MiAZConfigGroups(self, dir_conf)
         self.conf['Purpose'] = MiAZConfigPurposes(self, dir_conf)
@@ -104,6 +105,8 @@ class MiAZBackend(GObject.GObject):
         self.conf['SentTo'] = MiAZConfigSentTo(self, dir_conf)
         self.conf['Person'] = MiAZConfigPeople(self, dir_conf)
         self.conf['Project'] = MiAZConfigProjects(self, dir_conf)
+        for cid in self.conf:
+            self.log.debug("\tConfig for %s: %d values", cid, len(self.conf[cid].load_used()))
         self.watcher = MiAZWatcher('source', path)
         self.watcher.set_active(active=True)
         self.watcher.connect('repository-updated', self.repo_check)
