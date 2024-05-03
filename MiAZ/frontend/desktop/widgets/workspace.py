@@ -710,15 +710,25 @@ class MiAZWorkspace(Gtk.Box):
             c4 = self._do_eval_cond_matches(dropdowns['SentBy'], item.sentby_id)
             c5 = self._do_eval_cond_matches(dropdowns['Purpose'], item.purpose)
             c6 = self._do_eval_cond_matches(dropdowns['SentTo'], item.sentto_id)
-            cp = self.backend.projects.exists(project, item.id)
-            # ~ cp = self._do_eval_cond_matches_project(item.id)
-            return c0 and c1 and c2 and c4 and c5 and c6 and cd and cp
+            if project == 'Any':
+                cp = True
+            else:
+                cp = self.backend.projects.exists(project, item.id)
+            show_item = c0 and c1 and c2 and c4 and c5 and c6 and cd and cp
         else:
             projects_assigned = self.backend.projects.assigned_to(item.id)
             if len(projects_assigned) == 0:
-                return True
+                c0 = self._do_eval_cond_matches_freetext(item.id)
+                cd = self._do_eval_cond_matches_date(item)
+                c1 = self._do_eval_cond_matches(dropdowns['Country'], item.country)
+                c2 = self._do_eval_cond_matches(dropdowns['Group'], item.group)
+                c4 = self._do_eval_cond_matches(dropdowns['SentBy'], item.sentby_id)
+                c5 = self._do_eval_cond_matches(dropdowns['Purpose'], item.purpose)
+                c6 = self._do_eval_cond_matches(dropdowns['SentTo'], item.sentto_id)
+                show_item = c0 and c1 and c2 and c4 and c5 and c6 and cd
             else:
-                return False
+                show_item = False
+        return show_item
 
     def _do_connect_filter_signals(self):
         self.ent_sb.connect('changed', self._on_filter_selected)
