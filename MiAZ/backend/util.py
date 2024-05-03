@@ -292,17 +292,17 @@ class MiAZUtil(GObject.GObject):
         elif sys.platform in ['win32', 'cygwin', 'msys']:
             os.startfile(filepath)
 
-    def filename_open_location(self, doc):
-        repo = self.backend.repo_config()
-        dir_docs = repo['dir_docs']
-        filepath = os.path.join(dir_docs, doc)
-        # FIXME: only works if nautilus is present
-        if sys.platform in ['linux', 'linux2']:
-            CMD = "nautilus \"%s\"" % filepath
-        elif sys.platform in['win32', 'cygwin', 'msys']:
-            CMD = r"""explorer /select,%s""" % filepath
-        self.log.debug(CMD)
-        os.system(CMD)
+    # ~ def filename_open_location(self, doc):
+        # ~ repo = self.backend.repo_config()
+        # ~ dir_docs = repo['dir_docs']
+        # ~ filepath = os.path.join(dir_docs, doc)
+        # ~ # FIXME: only works if nautilus is present
+        # ~ if sys.platform in ['linux', 'linux2']:
+            # ~ CMD = "xdg-open \"%s\"" % filepath
+        # ~ elif sys.platform in['win32', 'cygwin', 'msys']:
+            # ~ CMD = r"""explorer /select,%s""" % filepath
+        # ~ self.log.debug(CMD)
+        # ~ os.system(CMD)
 
     def filename_path(self, doc):
         repo = self.backend.repo_config()

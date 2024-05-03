@@ -1,1 +1,1 @@
-G_DEBUG=fatal-criticals ./scripts/build.sh && reset && miaz
+./scripts/build.sh && reset && GOBJECT_DEBUG=instance-count G_DEBUG=fatal-criticals miaz

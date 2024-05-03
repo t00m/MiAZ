@@ -91,7 +91,9 @@ class MiAZColumnViewWorkspace(MiAZColumnView):
         self.cv.append_column(self.column_sentto)
         self.cv.append_column(self.column_date)
         # ~ self.cv.append_column(self.column_country)
-        self.column_title.set_expand(True)
+        self.column_sentto.set_expand(False)
+        self.column_sentby.set_expand(False)
+        self.column_title.set_expand(False)
 
         # Sorting
         self.prop_group_sorter = Gtk.CustomSorter.new(sort_func=self._on_sort_string_func, user_data='group')
@@ -166,7 +168,7 @@ class MiAZColumnViewWorkspace(MiAZColumnView):
         mimetype, val = Gio.content_type_guess('filename=%s' % item.id)
         gicon = self.srvicm.get_mimetype_icon(mimetype)
         icon.set_from_gicon(gicon)
-        icon.set_pixel_size(36)
+        icon.set_pixel_size(24)
 
     def _on_factory_setup_country(self, factory, list_item):
         box = ColLabel()
@@ -247,7 +249,7 @@ class MiAZColumnViewWorkspace(MiAZColumnView):
         code = item.country
         paintable = self.srvicm.get_flag_icon(code)
         icon.set_from_paintable(paintable)
-        icon.set_pixel_size(36)
+        icon.set_pixel_size(24)
 
     def _on_factory_setup_flag(self, factory, list_item):
         box = ColIcon()
