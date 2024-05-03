@@ -115,10 +115,16 @@ class MiAZAppSettings(Gtk.Window):
         repo_id = self.dd_repo.get_selected_item().id
         repo_dir = self.dd_repo.get_selected_item().title
         self.config['App'].set('current', repo_id)
-        self.app.check_repository()
-        window = self.app.get_widget('window-settings')
-        window.hide()
-        self.log.debug("Repository %s loaded successfully", repo_id)
+        valid = self.app.check_repository()
+        if valid:
+            window = self.app.get_widget('window-settings')
+            window.hide()
+            workspace = self.app.get_widget('workspace')
+            workspace.clean_filters()
+            workspace.update()
+            self.log.debug("Repository %s loaded successfully", repo_id)
+        else:
+            self.log.error("Repository %s couldn't be loaded", repo_id)
 
     def _on_selected_repo(self, dropdown, gparamobj):
         try:
