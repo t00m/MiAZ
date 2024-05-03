@@ -156,7 +156,7 @@ class MiAZWorkspace(Gtk.Box):
         widget.append(body)
 
         dropdowns = self.app.get_widget('ws-dropdowns')
-        for item_type in [Country, Group, SentBy, Purpose, SentTo]:
+        for item_type in [Country, Group, SentBy, Purpose, SentTo, Project]:
             i_type = item_type.__gtype_name__
             i_title = _(item_type.__title__)
             dropdown = self.factory.create_dropdown_generic(item_type=item_type)
@@ -166,6 +166,7 @@ class MiAZWorkspace(Gtk.Box):
             body.append(boxDropdown)
             dropdowns[i_type] = dropdown
             self.config[i_type].connect('used-updated', self.update_dropdown_filter, item_type)
+            self.log.debug("Dropdown filter for '%s' setup successfully", i_title)
         self.app.set_widget('ws-dropdowns', dropdowns)
         self.backend.connect('repository-updated', self._on_workspace_update)
         self.backend.connect('repository-switched', self._update_dropdowns)
@@ -174,11 +175,12 @@ class MiAZWorkspace(Gtk.Box):
 
     def _update_dropdowns(self, *args):
         dropdowns = self.app.get_widget('ws-dropdowns')
-        for item_type in [Country, Group, SentBy, Purpose, SentTo]:
+        for item_type in [Country, Group, SentBy, Purpose, SentTo, Project]:
             i_type = item_type.__gtype_name__
             i_title = _(item_type.__title__)
             config = self.config[i_type]
             self.actions.dropdown_populate(config, dropdowns[i_type], item_type, True, True)
+            self.log.debug("Dropdown filter for '%s' updated", i_title)
 
 
     def _on_workspace_update(self, *args):
@@ -480,6 +482,12 @@ class MiAZWorkspace(Gtk.Box):
     def get_selected_items(self):
         return self.selected_items
 
+    def clean_filters(self, *args):
+        dropdowns = self.app.get_widget('ws-dropdowns')
+        for ddId in dropdowns:
+            dropdowns[ddId].set_selected(0)
+        self.log.debug("All filters cleared")
+
     def update(self, *args):
         # FIXME: come up w/ a solution to display only available values
         dropdowns = self.app.get_widget('ws-dropdowns')
@@ -497,10 +505,11 @@ class MiAZWorkspace(Gtk.Box):
 
         try:
             period = dd_date.get_selected_item().title
-        except AttributeError:
+        except AttributeError as error:
+            self.log.error(error)
             return
         project = dd_prj.get_selected_item().id
-        # ~ self.log.debug("Period: %s - Project: %s", period, project)
+        self.log.debug("Period: %s - Project: %s", period, project)
         if project == 'Any' or project == 'None':
             pass
 
@@ -593,9 +602,9 @@ class MiAZWorkspace(Gtk.Box):
                             )
             else:
                 invalid.append(filename)
-        # ~ de = datetime.now()
-        # ~ dt = de - ds
-        # ~ self.log.debug("Workspace updated (%s)" % dt)
+        de = datetime.now()
+        dt = de - ds
+        self.log.debug("Workspace updated (%s)" % dt)
         self.util.json_save(self.fcache, self.cache)
         # ~ self.log.debug("Saving cache to %s", self.fcache)
         GLib.idle_add(self.view.update, items)
