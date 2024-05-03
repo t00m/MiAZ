@@ -57,9 +57,9 @@ class MiAZActions(GObject.GObject):
         self.log.debug("Displaying %s", doc)
         self.util.filename_display(doc)
 
-    def document_open_location(self, item):
-        self.log.debug("Open file location for %s", item.id)
-        self.util.filename_open_location(item.id)
+    # ~ def document_open_location(self, item):
+        # ~ self.log.debug("Open file location for %s", item.id)
+        # ~ self.util.filename_open_location(item.id)
 
     def document_delete(self, items):
         def dialog_response(dialog, response, items):
@@ -83,7 +83,7 @@ class MiAZActions(GObject.GObject):
         dialog.show()
 
     def dropdown_populate(self, config, dropdown, item_type, any_value=True, none_value=False, only_include: list = [], only_exclude: list = []):
-        # FIXME? This method can be called as a reaction to the signal
+        # INFO: This method can be called as a reaction to the signal
         # 'used-updated' or directly. When reacting to a signal, config
         # parameter is set in first place. When the method is called
         # directly, config parameter must be passed.
