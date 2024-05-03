@@ -310,8 +310,10 @@ class MiAZFactory:
         return dialog
 
     def create_filechooser(self, parent, title, target, callback, data=None):
-        #FIXME: Gtk.FileChooser is deprecated. Use Gtk.FileDialog
-        # Available since Gtk 4.10: https://docs.gtk.org/gtk4/class.FileDialog.html
+        # FIXME: Gtk.FileChooser is deprecated. Use Gtk.FileDialog
+        # FIXME: Available since Gtk 4.10: https://docs.gtk.org/gtk4/class.FileDialog.html
+        # FIXME: However, Debian 12.5 is still in 4.8.3
+        # FIXME: Choosing Gtk.FileChooser for compatibility
         d_filechooser = Gtk.Dialog()
         d_filechooser.set_title(title)
         d_filechooser.set_transient_for(parent)
