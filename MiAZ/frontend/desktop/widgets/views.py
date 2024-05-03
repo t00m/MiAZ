@@ -91,7 +91,9 @@ class MiAZColumnViewWorkspace(MiAZColumnView):
         self.cv.append_column(self.column_sentto)
         self.cv.append_column(self.column_date)
         # ~ self.cv.append_column(self.column_country)
-        self.column_title.set_expand(True)
+        self.column_sentto.set_expand(False)
+        self.column_sentby.set_expand(False)
+        self.column_title.set_expand(False)
 
         # Sorting
         self.prop_group_sorter = Gtk.CustomSorter.new(sort_func=self._on_sort_string_func, user_data='group')

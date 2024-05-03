@@ -267,15 +267,6 @@ class MiAZWorkspace(Gtk.Box):
         hbox.set_hexpand(False)
         toolbar_top.set_center_widget(hbox)
 
-        button = self.factory.create_button_toggle(icon_name='miaz-warning') #title='<b>Pending!</b>')
-        self.app.add_widget('workspace-button-pending', button)
-        # ~ button.get_style_context().add_class(class_name='suggested-action')
-        self.app.add_widget('workspace-button-uncategorized', button)
-        button.connect('toggled', self.display_uncategorized)
-        button.set_tooltip_markup('There are documents pending of review yet!')
-        button.set_visible(False)
-        hbox.append(button)
-
         # Right
         hbox = self.app.add_widget('workspace-toolbar-top-right', self.factory.create_box_horizontal(spacing=0))
         hbox.get_style_context().add_class(class_name='linked')
@@ -397,7 +388,7 @@ class MiAZWorkspace(Gtk.Box):
     def _setup_columnview(self):
         self.view = MiAZColumnViewWorkspace(self.app)
         self.app.add_widget('workspace-view', self.view)
-        # ~ self.view.get_style_context().add_class(class_name='caption')
+        self.view.get_style_context().add_class(class_name='caption')
         self.view.set_filter(self._do_filter_view)
         frmView = self.factory.create_frame(hexpand=True, vexpand=True)
         frmView.set_child(self.view)
@@ -441,6 +432,8 @@ class MiAZWorkspace(Gtk.Box):
         # ~ self.view.column_flag.set_visible(True)
         self.view.column_sentby.set_visible(True)
         self.view.column_sentto.set_visible(True)
+        self.view.column_sentto.set_expand(False)
+        self.view.column_sentby.set_expand(False)
         self.view.column_date.set_visible(True)
 
         # Connect signals
@@ -617,12 +610,6 @@ class MiAZWorkspace(Gtk.Box):
                 renamed += 1
         self.log.debug("Documents renamed: %d", renamed)
 
-        button = self.app.get_widget('workspace-button-uncategorized')
-        if len(invalid) > 0:
-            button.set_visible(True)
-        else:
-            button.set_visible(False)
-
     def _do_eval_cond_matches_freetext(self, path):
         left = self.ent_sb.get_text()
         right = path
@@ -724,14 +711,6 @@ class MiAZWorkspace(Gtk.Box):
         selection = self.view.get_selection()
         selection.connect('selection-changed', self._on_selection_changed)
 
-    def display_uncategorized(self, *args):
-        button = self.app.get_widget('workspace-button-pending')
-        if button.get_active():
-            self.uncategorized = True
-        else:
-            self.uncategorized = False
-        self._on_filter_selected()
-
     def _on_filter_selected(self, *args):
         if self.workspace_loaded:
             self.view.refilter()
@@ -739,8 +718,6 @@ class MiAZWorkspace(Gtk.Box):
             label = self.btnDocsSel.get_child()
             docs = self.util.get_files() # nº total items
             label.set_markup("<small>%d</small> / %d / <big>%d</big>" % (len(self.selected_items), len(model), len(docs)))
-            button = self.app.get_widget('workspace-button-pending')
-            button.set_visible(self.pending)
 
     def _on_select_all(self, *args):
         selection = self.view.get_selection()
@@ -753,5 +730,7 @@ class MiAZWorkspace(Gtk.Box):
     def display_dashboard(self, *args):
         self.view.column_subtitle.set_title(_('Concept'))
         self.view.column_subtitle.set_expand(True)
+        self.column_sentto.set_expand(False)
+        self.column_sentby.set_expand(False)
         self.view.refilter()
         self.tgbFilters.set_visible(True)
