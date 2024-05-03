@@ -156,7 +156,7 @@ class MiAZWorkspace(Gtk.Box):
         widget.append(body)
 
         dropdowns = self.app.get_widget('ws-dropdowns')
-        for item_type in [Country, Group, SentBy, Purpose, SentTo, Project]:
+        for item_type in [Country, Group, SentBy, Purpose, SentTo]:
             i_type = item_type.__gtype_name__
             i_title = _(item_type.__title__)
             dropdown = self.factory.create_dropdown_generic(item_type=item_type)
@@ -257,6 +257,7 @@ class MiAZWorkspace(Gtk.Box):
         dropdowns[i_type] = dd_prj
         self.actions.dropdown_populate(self.config[i_type], dd_prj, Project, any_value=True, none_value=True)
         dd_prj.connect("notify::selected-item", self._on_filter_selected)
+        dd_prj.connect("notify::selected-item", self._on_project_selected)
         dd_prj.set_hexpand(False)
         self.config[i_type].connect('used-updated', self.update_dropdown_filter, Project)
         hbox.append(dd_prj)
@@ -693,24 +694,31 @@ class MiAZWorkspace(Gtk.Box):
         return matches
 
     def _do_filter_view(self, item, filter_list_model):
-        # ~ self.pending = False
-        # ~ if item.active is False:
-            # ~ self.pending = True
-            # ~ self.log.debug("(count %4d) Item '%s' pending of review? %s", self.pending, item.title, item.active)
-
-        # ~ if self.uncategorized:
-            # ~ return item.active is False
-        # ~ else:
         dropdowns = self.app.get_widget('ws-dropdowns')
-        c0 = self._do_eval_cond_matches_freetext(item.id)
-        cd = self._do_eval_cond_matches_date(item)
-        c1 = self._do_eval_cond_matches(dropdowns['Country'], item.country)
-        c2 = self._do_eval_cond_matches(dropdowns['Group'], item.group)
-        c4 = self._do_eval_cond_matches(dropdowns['SentBy'], item.sentby_id)
-        c5 = self._do_eval_cond_matches(dropdowns['Purpose'], item.purpose)
-        c6 = self._do_eval_cond_matches(dropdowns['SentTo'], item.sentto_id)
-        cp = self._do_eval_cond_matches_project(item.id)
-        return c0 and c1 and c2 and c4 and c5 and c6 and cd and cp
+        dd_prj = dropdowns[Project.__gtype_name__]
+
+        try:
+            project = dd_prj.get_selected_item().id
+        except:
+            project = 'Any'
+
+        if project != 'None':
+            c0 = self._do_eval_cond_matches_freetext(item.id)
+            cd = self._do_eval_cond_matches_date(item)
+            c1 = self._do_eval_cond_matches(dropdowns['Country'], item.country)
+            c2 = self._do_eval_cond_matches(dropdowns['Group'], item.group)
+            c4 = self._do_eval_cond_matches(dropdowns['SentBy'], item.sentby_id)
+            c5 = self._do_eval_cond_matches(dropdowns['Purpose'], item.purpose)
+            c6 = self._do_eval_cond_matches(dropdowns['SentTo'], item.sentto_id)
+            cp = self.backend.projects.exists(project, item.id)
+            # ~ cp = self._do_eval_cond_matches_project(item.id)
+            return c0 and c1 and c2 and c4 and c5 and c6 and cd and cp
+        else:
+            projects_assigned = self.backend.projects.assigned_to(item.id)
+            if len(projects_assigned) == 0:
+                return True
+            else:
+                return False
 
     def _do_connect_filter_signals(self):
         self.ent_sb.connect('changed', self._on_filter_selected)
@@ -719,6 +727,19 @@ class MiAZWorkspace(Gtk.Box):
             dropdowns[dropdown].connect("notify::selected-item", self._on_filter_selected)
         selection = self.view.get_selection()
         selection.connect('selection-changed', self._on_selection_changed)
+
+    def _on_project_selected(self, dropdown, gparam):
+        """When a project is chosen, the date change to get show all
+        documents"""
+        try:
+            prjkey = dropdown.get_selected_item().id
+            if prjkey != 'Any':
+                dropdowns = self.app.get_widget('ws-dropdowns')
+                i_type = Date.__gtype_name__
+                dropdowns[i_type].set_selected(7)
+        except AttributeError:
+            # ~ Raised when managing projects from selector. Skip
+            pass
 
     def _on_filter_selected(self, *args):
         if self.workspace_loaded:
