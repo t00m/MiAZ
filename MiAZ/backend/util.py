@@ -124,6 +124,11 @@ class MiAZUtil(GObject.GObject):
             return filename.split('-')
 
     def get_files(self, root_dir: str = '') -> []:
+        """Get all files from a given directory.
+        If no directory is given, it will return files from repository
+        documents directory.
+        """
+        # ~ FIXME: validate root_dir
         if len(root_dir) == 0:
             repo = self.backend.repo_config()
             root_dir = repo['dir_docs']
