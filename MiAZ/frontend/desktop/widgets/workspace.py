@@ -504,16 +504,6 @@ class MiAZWorkspace(Gtk.Box):
         purposes = self.app.get_config('Purpose')
         warning = False
 
-        try:
-            period = dd_date.get_selected_item().title
-        except AttributeError as error:
-            self.log.error(error)
-            return
-        project = dd_prj.get_selected_item().id
-        self.log.debug("Period: %s - Project: %s", period, project)
-        if project == 'Any' or project == 'None':
-            pass
-
         items = []
         invalid = []
         ds = datetime.now()
