@@ -14,9 +14,6 @@ import argparse
 import tempfile
 import multiprocessing
 
-from rich.traceback import install
-# ~ install(show_locals=True)
-
 sys.path.insert(1, '@pkgdatadir@')
 
 from MiAZ.backend.log import get_logger
