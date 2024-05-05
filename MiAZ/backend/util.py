@@ -450,3 +450,28 @@ class MiAZUtil(GObject.GObject):
         zip_archive = zipfile.ZipFile(target, "r")
         zip_archive.extractall(path=install_dir)
         zip_archive.close()
+
+def which(program):
+    """
+    Check if a program is available in $PATH
+    """
+    if sys.platform == 'win32':
+        program = program + '.exe'
+
+    def is_exe(fpath):
+        """
+        Missing method docstring (missing-docstring)
+        """
+        return os.path.isfile(fpath) and os.access(fpath, os.X_OK)
+
+    fpath, fname = os.path.split(program)
+    if fpath:
+        if is_exe(program):
+            return program
+    else:
+        for path in os.environ["PATH"].split(os.pathsep):
+            path = path.strip('"')
+            exe_file = os.path.join(path, program)
+            if is_exe(exe_file):
+                return exe_file
+    return None

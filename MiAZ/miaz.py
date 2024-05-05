@@ -6,7 +6,6 @@
 import os
 from os.path import abspath
 import sys
-import pprint
 import signal
 import locale
 import gettext
@@ -17,6 +16,9 @@ import multiprocessing
 sys.path.insert(1, '@pkgdatadir@')
 
 from MiAZ.backend.log import get_logger
+from MiAZ.backend.util import which
+
+log = get_logger('MiAZ')
 
 ENV = {}
 
@@ -124,7 +126,7 @@ class MiAZ:
     def __init__(self, ENV: dict) -> None:
         self.env = ENV
         self.setup_environment()
-        self.log = get_logger('MiAZ.Main')
+        self.log = get_logger('MiAZ')
         self.set_internationalization()
         self.log.info("%s v%s - Start", ENV['APP']['shortname'], ENV['APP']['VERSION'])
 
@@ -167,8 +169,63 @@ class MiAZ:
             exit(0)
         self.log.info("%s v%s - End", ENV['APP']['shortname'], ENV['APP']['VERSION'])
 
+def main():
+    """This is the entry point when the program is installed via PIP"""
+    log.debug("MiAZ installation done via PIP")
+    miaz_exec = which('miaz')
+    if miaz_exec is None:
+        log.error("Are you sure that MiAZ has been installed correctly?")
+        log.error("MiAZ executable not found in $PATH")
+    miaz_dir = os.path.dirname(miaz_exec)
+    ROOT = os.path.abspath(miaz_dir+'/..')
+    ENV['APP']['ID'] = 'com.github.t00m.MiAZ'
+    ENV['APP']['VERSION'] = '0.0.21'
+    ENV['APP']['PGKDATADIR'] = os.path.join(ROOT, 'share/MiAZ/data')
+    ENV['APP']['LOCALEDIR'] = os.path.join(ROOT, 'share/MiAZ/locale')
+    ENV['CONF']['ROOT'] = ENV['APP']['PGKDATADIR']
+
+    # Global paths
+    ENV['GPATH'] = {}
+    ENV['GPATH']['ROOT'] = ENV['CONF']['ROOT']
+    ENV['GPATH']['DATA'] = os.path.join(ENV['GPATH']['ROOT'], 'resources')
+    ENV['GPATH']['DOCS'] = os.path.join(ENV['GPATH']['DATA'], 'docs')
+    ENV['GPATH']['ICONS'] = os.path.join(ENV['GPATH']['DATA'], 'icons', 'scalable')
+    ENV['GPATH']['FLAGS'] = os.path.join(ENV['GPATH']['ICONS'], 'flags')
+    ENV['GPATH']['LOCALE'] = os.path.join(ENV['GPATH']['DATA'], 'po')
+    ENV['GPATH']['PLUGINS'] = os.path.join(ENV['GPATH']['DATA'], 'plugins')
+    ENV['GPATH']['CONF'] = os.path.join(ENV['GPATH']['DATA'], 'conf')
+
+    # Common file paths
+    ENV['FILE'] = {}
+    ENV['FILE']['CONF'] = os.path.join(ENV['LPATH']['ETC'], 'MiAZ-application.json')
+    ENV['FILE']['VERSION'] = os.path.join(ENV['GPATH']['DOCS'], 'VERSION')
+    ENV['FILE']['APPICON'] = os.path.join(ENV['GPATH']['ICONS'], 'MiAZ.svg')
+    ENV['FILE']['LOG'] = os.path.join(ENV['LPATH']['LOG'], 'MiAZ.log')
+    ENV['FILE']['GROUPS'] = os.path.join(ENV['LPATH']['ETC'], 'MiAZ-groups.json')
+    ENV['FILE']['PURPOSES'] = os.path.join(ENV['LPATH']['ETC'], 'MiAZ-purposes.json')
+    ENV['FILE']['CONCEPTS'] = os.path.join(ENV['LPATH']['ETC'], 'MiAZ-concepts.json')
+    ENV['FILE']['PEOPLE'] = os.path.join(ENV['LPATH']['ETC'], 'MiAZ-people.json')
+    ENV['FILE']['EXTENSIONS'] = os.path.join(ENV['LPATH']['ETC'], 'MiAZ-extensions.json')
+    ENV['FILE']['COUNTRIES'] = os.path.join(ENV['LPATH']['ETC'], 'MiAZ-countries.json')
+    ENV['FILE']['WHO'] = os.path.join(ENV['LPATH']['ETC'], 'MiAZ-who.json')
+    extra_usage = """"""
+    parser = argparse.ArgumentParser(
+        prog='MiAZ',
+        description='Personal Document Organizer',
+        epilog=extra_usage,
+        formatter_class=argparse.RawDescriptionHelpFormatter)
+
+    # MiAZ arguments
+    miaz_options = parser.add_argument_group('MiAZ Options')
+    miaz_options.add_argument('-v', '--version', help='Show current version', action='version', version='%s %s' % (ENV['APP']['shortname'], ENV['APP']['VERSION']))
+
+    params = parser.parse_args()
+    app = MiAZ(ENV)
+    app.run()
+
 if __name__ == "__main__":
-    """Set up application arguments and execute."""
+    """This is the entry point when the program is installed via Meson"""
+    log.debug("MiAZ installation done via Meson")
     extra_usage = """"""
     parser = argparse.ArgumentParser(
         prog='MiAZ',
