@@ -13,6 +13,13 @@ import glob
 import pprint
 from setuptools import setup
 
+try:
+    import bdist_nsi
+except ImportError:
+    pass
+
+nsis_options = {} # your nsis options
+
 with open('README.adoc', 'r') as f:
     LONG_DESCRIPTION = f.read()
 
