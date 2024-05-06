@@ -49,15 +49,17 @@ class MiAZApp(Gtk.Application):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.log = get_logger("MiAZ.GUI")
+        self.log.debug("Starting MiAZ")
 
     def set_env(self, ENV: dict):
+        self.log.error("Applying environment")
         self._env = ENV
         self._miazobjs['widgets'] = {}
         self._miazobjs['services'] = {}
         self.backend = self.add_service('backend', MiAZBackend(self))
         self.add_service('util', self.backend.util)
         self.add_service('stats', self.backend.stats)
-        self.add_service('icons', MiAZIconManager(self))
+        self.icman = self.add_service('icons', MiAZIconManager(self))
         self.conf = self.backend.conf
         GLib.set_application_name(ENV['APP']['name'])
         self.connect('activate', self._on_activate)
@@ -72,7 +74,7 @@ class MiAZApp(Gtk.Application):
         self.win.set_icon_name('MiAZ')
         self.win.connect('close-request', self._on_window_close_request)
         self.win.set_default_icon_name('MiAZ')
-        self.icman = self.add_service('icman', MiAZIconManager(self))
+        # ~ self.icman = self.add_service('icman', MiAZIconManager(self))
         self.theme = self.add_service('theme', Gtk.IconTheme.get_for_display(self.win.get_display()))
         self.theme.add_search_path(ENV['GPATH']['ICONS'])
         self.factory = self.add_service('factory', MiAZFactory(self))
@@ -80,7 +82,7 @@ class MiAZApp(Gtk.Application):
         self._setup_gui()
         self._setup_event_listener()
         self._setup_plugin_manager()
-        self.log.debug("Executing MiAZ Desktop mode")
+        self.log.debug("Executing MiAZ Desktop mode!!")
         self.check_repository()
         self.backend.connect('repository-switched', self._update_repo_settings)
 

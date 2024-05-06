@@ -225,7 +225,7 @@ def main():
 
 if __name__ == "__main__":
     """This is the entry point when the program is installed via Meson"""
-    log.debug("MiAZ installation done via Meson")
+    log.debug("MiAZ installation done via Meson!")
     extra_usage = """"""
     parser = argparse.ArgumentParser(
         prog='MiAZ',

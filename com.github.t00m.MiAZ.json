@@ -3,7 +3,7 @@
     "runtime" : "org.gnome.Platform",
     "runtime-version" : "46",
     "sdk" : "org.gnome.Sdk",
-    "command" : "blanket",
+    "command" : "miaz",
     "finish-args" : [
         "--share=ipc",
         "--device=dri",
@@ -27,12 +27,15 @@
             "name" : "miaz",
             "builddir" : true,
             "buildsystem" : "meson",
+            "build-commands": [
+                "python -m pip install --prefix=/app ."
+            ],
             "sources" : [
                 {
                     "type" : "git",
                     "url" : "https://github.com/t00m/MiAZ.git",
                     "tag" : "0.0.21",
-                    "commit" : "6f82e0c1de1c6d289e859359c70fb3026ecf3de4"
+                    "commit" : "a79be5dee48b4a7f9413abcf7135f18e42034527"
                 }
             ]
         }
