@@ -54,11 +54,6 @@ install_data(
 )
 
 install_data(
-  'com.github.t00m.MiAZ.svg',
-  install_dir: get_option('datadir')
-)
-
-install_data(
   'com.github.t00m.MiAZ-symbolic.svg',
   install_dir: join_paths(get_option('datadir'), 'resources', 'icons/hicolor/symbolic/apps')
 )
