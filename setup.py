@@ -11,6 +11,7 @@
 import os
 import glob
 import pprint
+import subprocess
 from setuptools import setup
 
 try:
@@ -18,9 +19,12 @@ try:
 except ImportError:
     pass
 
+cmd_version = 'meson introspect meson.build --projectinfo | jq .version'
+o, e = subprocess.Popen([cmd_version], shell=True, stdout=subprocess.PIPE).communicate()
+VERSION = o.decode('utf-8').strip().replace('"', '')
 nsis_options = {} # your nsis options
 
-with open('README.adoc', 'r') as f:
+with open('data/docs/README', 'r') as f:
     LONG_DESCRIPTION = f.read()
 
 
@@ -54,13 +58,14 @@ for node in resources:
     for datafile in datafiles:
         finaldir = os.path.join('share', 'MiAZ', datadir)
         DATA_FILES +=[(finaldir, [datafile])]
-DATA_FILES += ['README.adoc']
+# ~ DATA_FILES += ['README.adoc']
+DATA_FILES +=[('share/doc/MiAZ', ['data/docs/README'])]
 DATA_FILES +=[('share/applications', ['data/resources/com.github.t00m.MiAZ.desktop'])]
 DATA_FILES +=[('share/icons/hicolor/48x48/apps/', ['data/resources/icons/scalable/com.github.t00m.MiAZ.svg'])]
 
 setup(
     name='MiAZ',
-    version='0.0.21',
+    version=VERSION,
     author='Tomás Vírseda',
     author_email='tomasvirseda@gmail.com',
     url='https://github.com/t00m/MiAZ',

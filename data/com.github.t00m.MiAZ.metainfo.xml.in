@@ -6,18 +6,6 @@
   <name>MiAZ</name>
   <summary>Personal Document Organizer</summary>
   <description>
-    <p>Workspace:
-
-    MiAZ allows to import documents or directories (even in a recursive way)
-
-    It is fast. The Workspace view can deal with hundred or thousand of files.
-
-    Filtering and search: The Workspace view have built-in drop-downs to help find documents easily.
-
-    Support for projects: those documents related between them can be (un)assigned to projects (eg.: all those documents related to the same tax stament). A document can belong to none, one or several projects).
-
-    Single renaming: a useful feature to rename a single document easily.
-    </p>
     <p>Features:</p>
     <ul>
         <li>Possibility of using one or more document repositories. One at time. But it can be switched at any time.</li>
@@ -40,10 +28,6 @@
     <screenshot type="default">
       <image type="source">https://raw.githubusercontent.com/t00m/miaz/main/brand/screenshot.png</image>
       <caption>The default screen in light theme</caption>
-    </screenshot>
-    <screenshot>
-      <image type="source">https://raw.githubusercontent.com/t00m/miaz/main/brand/screenshot.png</image>
-      <caption>The default screen in dark theme</caption>
     </screenshot>
   </screenshots>
 

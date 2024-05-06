@@ -1,0 +1,40 @@
+{
+    "app-id" : "com.github.t00m.MiAZ",
+    "runtime" : "org.gnome.Platform",
+    "runtime-version" : "46",
+    "sdk" : "org.gnome.Sdk",
+    "command" : "blanket",
+    "finish-args" : [
+        "--share=ipc",
+        "--device=dri",
+        "--socket=fallback-x11",
+        "--socket=wayland",
+        "--socket=pulseaudio"
+    ],
+    "cleanup" : [
+        "/include",
+        "/lib/pkgconfig",
+        "/man",
+        "/share/doc",
+        "/share/gtk-doc",
+        "/share/man",
+        "/share/pkgconfig",
+        "*.la",
+        "*.a"
+    ],
+    "modules" : [
+        {
+            "name" : "miaz",
+            "builddir" : true,
+            "buildsystem" : "meson",
+            "sources" : [
+                {
+                    "type" : "git",
+                    "url" : "https://github.com/t00m/MiAZ.git",
+                    "tag" : "0.0.21",
+                    "commit" : "6f82e0c1de1c6d289e859359c70fb3026ecf3de4"
+                }
+            ]
+        }
+    ]
+}
