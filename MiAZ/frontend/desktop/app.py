@@ -57,10 +57,8 @@ class MiAZApp(Gtk.Application):
         self._miazobjs['widgets'] = {}
         self._miazobjs['services'] = {}
         self.backend = self.add_service('backend', MiAZBackend(self))
-        self.add_service('util', self.backend.util)
-        self.add_service('stats', self.backend.stats)
         self.icman = self.add_service('icons', MiAZIconManager(self))
-        self.conf = self.backend.conf
+        self.conf = self.backend.get_conf()
         GLib.set_application_name(ENV['APP']['name'])
         self.connect('activate', self._on_activate)
 
@@ -74,7 +72,6 @@ class MiAZApp(Gtk.Application):
         self.win.set_icon_name('MiAZ')
         self.win.connect('close-request', self._on_window_close_request)
         self.win.set_default_icon_name('MiAZ')
-        # ~ self.icman = self.add_service('icman', MiAZIconManager(self))
         self.theme = self.add_service('theme', Gtk.IconTheme.get_for_display(self.win.get_display()))
         self.theme.add_search_path(ENV['GPATH']['ICONS'])
         self.factory = self.add_service('factory', MiAZFactory(self))
@@ -139,7 +136,8 @@ class MiAZApp(Gtk.Application):
             self.show_stack_page_by_name('workspace')
 
     def get_config(self, name: str):
-        return self.backend.conf[name]
+        config = self.backend.get_conf()
+        return config[name]
 
     def _setup_stack(self):
         self.stack = self.add_widget('stack', Gtk.Stack())

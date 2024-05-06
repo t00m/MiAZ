@@ -96,7 +96,7 @@ class MiAZToolbarProjectMgtPlugin(GObject.GObject, Peas.Activatable):
                 workspace.update()
             dialog.destroy()
 
-        self.config = self.backend.conf
+        self.config = self.backend.get_conf()
         i_type = item_type.__gtype_name__
         box = self.factory.create_box_vertical(spacing=6, vexpand=True, hexpand=True)
         dropdown = self.factory.create_dropdown_generic(Project)
@@ -141,7 +141,7 @@ class MiAZToolbarProjectMgtPlugin(GObject.GObject, Peas.Activatable):
                 workspace.update()
             dialog.destroy()
 
-        self.config = self.backend.conf
+        self.config = self.backend.get_conf()
         i_type = item_type.__gtype_name__
         box = self.factory.create_box_vertical(spacing=6, vexpand=True, hexpand=True)
         dropdown = self.factory.create_dropdown_generic(Project)

@@ -51,7 +51,7 @@ class MiAZAppSettings(Gtk.Window):
         self.backend = self.app.get_service('backend')
         self.factory = self.app.get_service('factory')
         self.actions = self.app.get_service('actions')
-        self.config = self.backend.conf
+        self.config = self.backend.get_conf()
         self.connect('close-request', self._on_window_close_request)
         self.set_default_size(800, 600)
         self.mainbox = self.factory.create_box_vertical(vexpand=True)

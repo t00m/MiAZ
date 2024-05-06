@@ -38,7 +38,7 @@ class MiAZStats(GObject.GObject):
         super(MiAZStats, self).__init__()
         self.backend = backend
         self.log = get_logger('MiAZStats')
-        self.util = self.backend.util
+        self.util = self.backend.get_service('util')
 
     def _build(self, *args):
         self.stats = {}

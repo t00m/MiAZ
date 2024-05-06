@@ -25,7 +25,7 @@ class MiAZConfig(GObject.GObject):
     def __init__(self, backend, log, config_for, used=None, available=None, default=None, model=MiAZModel, must_copy=True, foreign=False):
         super().__init__()
         self.backend = backend
-        self.util = self.backend.util
+        self.util = self.backend.get_service('util')
         self.log = log
         self.config_for = config_for
         self.used = used
@@ -220,7 +220,7 @@ class MiAZConfigApp(MiAZConfig):
     def __init__(self, backend):
         self.backend = backend
         self.app = backend.app
-        self.util = self.backend.util
+        self.util = self.backend.get_service('util')
         ENV = self.app.get_env()
         GObject.GObject.__init__(self)
         GObject.signal_new('repo-settings-updated-app',

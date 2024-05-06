@@ -35,7 +35,7 @@ class MiAZConfigView(MiAZSelector):
         self.app = app
         self.log = get_logger('MiAZConfigView')
         self.backend = self.app.get_service('backend')
-        self.conf = self.backend.conf
+        self.conf = self.backend.get_conf()
         self.config = self.conf[config]
         self.config.connect('used-updated', self.update)
         self.config.connect('available-updated', self.update)

@@ -29,7 +29,7 @@ class MiAZIconManager(GObject.GObject):
         self.app = app
         ENV = self.app.get_env()
         self.log = get_logger('ICM')
-        self.util = self.app.backend.util
+        self.util = self.app.backend.get_service('util')
         win = Gtk.Window()
         self.theme = Gtk.IconTheme.get_for_display(win.get_display())
         self.log.error("Custom icons in: %s", ENV['GPATH']['ICONS'])

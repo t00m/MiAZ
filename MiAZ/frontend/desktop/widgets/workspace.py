@@ -67,7 +67,7 @@ class MiAZWorkspace(Gtk.Box):
         self.backend = self.app.get_service('backend')
         self.factory = self.app.get_service('factory')
         self.actions = self.app.get_service('actions')
-        self.config = self.backend.conf
+        self.config = self.backend.get_conf()
         self.util = self.app.get_service('util')
         self.util.connect('filename-renamed', self._on_filename_renamed)
         self.util.connect('filename-deleted', self._on_filename_deleted)
@@ -87,7 +87,7 @@ class MiAZWorkspace(Gtk.Box):
         # 'TypeError: Object of type date is not JSON serializable'
         self.datetimes = {}
 
-        # Rest of caches
+        # Load/Initialize rest of caches
         repo = self.backend.repo_config()
         dir_conf = repo['dir_conf']
         self.fcache = os.path.join(dir_conf, 'cache.json')
@@ -97,7 +97,7 @@ class MiAZWorkspace(Gtk.Box):
         except:
             self._initialize_caches()
 
-        self.check_first_time()
+        self._check_first_time()
 
         # Allow plug-ins to make their job
         self.app.connect('start-application-completed', self._finish_configuration)
@@ -107,14 +107,16 @@ class MiAZWorkspace(Gtk.Box):
         self.cache = {}
         for cache in ['date', 'country', 'group', 'people', 'purpose']:
             self.cache[cache] = {}
-        # ~ self.util.json_save(self.fcache, self.cache)
-        # ~ self.log.debug("Caches initialized (%s)", self.fcache)
 
-    def check_first_time(self):
+    def _check_first_time(self):
+        """
+        Execute Repository Assistant if no countries have been
+        defined yet.
+        """
         conf = self.config['Country']
         countries = conf.load(conf.used)
         if len(countries) == 0:
-            self.log.debug("Execute Country Selector Assistant")
+            self.log.debug("Executing Assistant")
             assistant = MiAZAssistantRepoSettings(self.app)
             assistant.set_transient_for(self.app.win)
             assistant.set_modal(True)

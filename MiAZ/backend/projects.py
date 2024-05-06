@@ -22,8 +22,9 @@ class MiAZProject(GObject.GObject):
         super(MiAZProject, self).__init__()
         self.log = get_logger('MiAZProject')
         self.backend = backend
-        self.config = self.backend.conf['Project']
-        self.util = self.backend.util
+        conf = self.backend.get_conf()
+        self.config = conf['Project']
+        self.util = self.backend.get_service('util')
         repo = self.backend.repo_config()
         self.cnfprj = os.path.join(repo['dir_conf'], 'projects.json')
         self.projects = {}
@@ -124,7 +125,7 @@ class MiAZProject(GObject.GObject):
         self.backend.util.json_save(self.cnfprj, self.projects)
 
     def load(self) -> dict:
-        return self.backend.util.json_load(self.cnfprj)
+        return self.util.json_load(self.cnfprj)
 
     def description(self, pid):
         try:
