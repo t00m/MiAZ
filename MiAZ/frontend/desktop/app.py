@@ -95,7 +95,7 @@ class MiAZApp(Gtk.Application):
         if widget_settings_repo is not None:
             self.stack.remove(widget_settings_repo)
             self.remove_widget('settings-repo')
-            self._setup_page_repo_settings()
+            # ~ self._setup_page_repo_settings()
         repo_active = self.conf['App'].get('current')
 
         # ~ label_repo.set_markup(' [<b>%s</b>] ' % repo_active.replace('_', ' '))
@@ -172,7 +172,7 @@ class MiAZApp(Gtk.Application):
     def _setup_page_app_settings(self):
         widget_settings_app = self.get_widget('settings-app')
         if widget_settings_app is None:
-            widget_settings_app = self.add_widget('settings-app', MiAZAppSettings(self))
+            self.add_widget('settings-app', MiAZAppSettings(self))
             # ~ page_settings_app = self.stack.add_titled(widget_settings_app, 'settings_app', 'MiAZ')
             # ~ page_settings_app.set_icon_name('document-properties')
             # ~ page_settings_app.set_visible(False)
@@ -180,10 +180,10 @@ class MiAZApp(Gtk.Application):
     def _setup_page_repo_settings(self):
         widget_settings_repo = self.get_widget('settings-repo')
         if widget_settings_repo is None:
-            widget_settings_repo = self.add_widget('settings-repo', MiAZRepoSettings(self))
-            page_settings_repo = self.stack.add_titled(widget_settings_repo, 'settings_repo', 'MiAZ')
-            page_settings_repo.set_icon_name('document-properties')
-            page_settings_repo.set_visible(False)
+            self.add_widget('settings-repo', MiAZRepoSettings(self))
+            # ~ page_settings_repo = self.stack.add_titled(widget_settings_repo, 'settings_repo', 'MiAZ')
+            # ~ page_settings_repo.set_icon_name('document-properties')
+            # ~ page_settings_repo.set_visible(False)
 
     def _setup_page_workspace(self):
         widget_workspace = self.get_widget('workspace')
@@ -205,6 +205,37 @@ class MiAZApp(Gtk.Application):
     def _setup_menu_app(self):
         # Add system menu button to the titlebar (left Side)
         widgets = []
+
+        ## Current Repository Settings
+        menu_repo = self.add_widget('workspace-menu-repo', Gio.Menu.new())
+        section_common_in = self.add_widget('workspace-menu-repo-section-in', Gio.Menu.new())
+        section_common_out = self.add_widget('workspace-menu-repo-section-out', Gio.Menu.new())
+        section_danger = self.add_widget('workspace-menu-repo-section-danger', Gio.Menu.new())
+        menu_repo.append_section(None, section_common_in)
+        menu_repo.append_section(None, section_common_out)
+        menu_repo.append_section(None, section_danger)
+
+        # ~ ## Actions in
+        # ~ menuitem = self.factory.create_menuitem(name='repo_settings', label='Repository settings', callback=self._on_handle_menu_repo, data=None, shortcuts=[])
+        # ~ section_common_in.append_item(menuitem)
+
+        # ~ ## Actions out
+        # ~ submenu_backup = Gio.Menu.new()
+        # ~ menu_backup = Gio.MenuItem.new_submenu(
+            # ~ label = 'Backup...',
+            # ~ submenu = submenu_backup,
+        # ~ )
+        # ~ section_common_out.append_item(menu_backup)
+        # ~ menuitem = self.factory.create_menuitem('backup-config', '...only config', self._on_handle_menu_repo, None, [])
+        # ~ submenu_backup.append_item(menuitem)
+        # ~ menuitem = self.factory.create_menuitem('backup-data', '...only data', self._on_handle_menu_repo, None, [])
+        # ~ submenu_backup.append_item(menuitem)
+        # ~ menuitem = self.factory.create_menuitem('backup-all', '...config and data', self._on_handle_menu_repo, None, [])
+        # ~ submenu_backup.append_item(menuitem)
+
+        button = self.factory.create_button(icon_name='document-properties', callback=self.show_repo_settings)
+        row = self.factory.create_actionrow(title=_('Repository settings'), subtitle=_('Manage current repository'), suffix=button)
+        widgets.append(row)
 
         ## Application Settings
         button = self.factory.create_button('miaz-app-settings', callback=self.show_app_settings)
@@ -229,7 +260,7 @@ class MiAZApp(Gtk.Application):
         widgets.append(row)
 
         menubutton = self.factory.create_button_popover(icon_name='miaz-system-menu', title='', widgets=widgets)
-        menubutton.get_style_context().add_class(class_name='flat')
+        # ~ menubutton.get_style_context().add_class(class_name='flat')
         self.add_widget('headerbar-button-menu-system', menubutton)
 
         # ~ menu_headerbar = self.add_widget('menu-headerbar', Gio.Menu.new())
@@ -269,16 +300,38 @@ class MiAZApp(Gtk.Application):
         window.set_modal(True)
         window.present()
 
+    def show_repo_settings(self, *args):
+        # ~ self.show_stack_page_by_name('settings_repo')
+        self._setup_page_repo_settings()
+        window = self.get_widget('settings-repo')
+        window.set_transient_for(self.win)
+        window.set_modal(True)
+        window.present()
+
     def show_app_about(self, *args):
         self.show_stack_page_by_name('about')
 
     def show_workspace(self, *args):
         self.show_stack_page_by_name('workspace')
 
+    def _setup_headerbar_left_menu(self):
+        # System menu
+        hbox = self.factory.create_box_horizontal(margin=0, spacing=0)
+        hbox.get_style_context().add_class(class_name='linked')
+        menubutton = self.get_widget('headerbar-button-menu-system')
+        menubutton.get_style_context().add_class(class_name='flat')
+        menubutton.set_valign(Gtk.Align.CENTER)
+        hbox.append(menubutton)
+        headerbar = self.get_widget('headerbar')
+        headerbar.pack_start(hbox)
+
     def _setup_headerbar_left(self):
         # System menu
         hbox = self.factory.create_box_horizontal(margin=0, spacing=0)
+        hbox.get_style_context().add_class(class_name='linked')
+        self.add_widget('headerbar-left-box', hbox)
         menubutton = self.get_widget('headerbar-button-menu-system')
+        # ~ menubutton.get_style_context().add_class(class_name='flat')
         menubutton.set_valign(Gtk.Align.CENTER)
         hbox.append(menubutton)
         headerbar = self.get_widget('headerbar')
@@ -286,10 +339,14 @@ class MiAZApp(Gtk.Application):
 
     def _setup_headerbar_right(self):
         headerbar = self.get_widget('headerbar')
+        hbox = self.factory.create_box_horizontal(margin=0, spacing=0)
+        hbox.get_style_context().add_class(class_name='linked')
+        self.add_widget('headerbar-right-box', hbox)
         btnBack = self.factory.create_button(icon_name='go-previous', title=_('Back'), callback=self.show_workspace, css_classes=['flat'])
         btnBack.set_visible(False)
         self.add_widget('app-header-button-back', btnBack)
-        headerbar.pack_end(btnBack)
+        hbox.append(btnBack)
+        headerbar.pack_end(hbox)
 
     def _setup_headerbar_center(self):
         pass
@@ -312,6 +369,7 @@ class MiAZApp(Gtk.Application):
         self._setup_menu_app()
 
         # Setup headerbar
+        self._setup_headerbar_left_menu()
         self._setup_headerbar_left()
         self._setup_headerbar_center()
         self._setup_headerbar_right()
@@ -391,13 +449,13 @@ class MiAZApp(Gtk.Application):
         toolbar_top = self.get_widget('workspace-toolbar-top')
         if name == 'workspace':
             button.set_visible(False)
-            toolbar_top.set_visible(True)
+            # ~ toolbar_top.set_visible(True)
         elif name == 'welcome':
             button.set_visible(False)
             # ~ toolbar_top.set_visible(False)
         else:
             button.set_visible(True)
-            toolbar_top.set_visible(False)
+            # ~ toolbar_top.set_visible(False)
         self.stack.set_visible_child_name(name)
 
     def exit_app(self, *args):

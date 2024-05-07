@@ -4,8 +4,13 @@ from os import environ, path
 from subprocess import call
 
 prefix = environ.get('MESON_INSTALL_PREFIX', '/usr/local')
+bindir = path.join(prefix, 'bin')
+binprg = path.join(bindir, 'miaz')
 datadir = path.join(prefix, 'share')
 destdir = environ.get('DESTDIR', '')
+
+print('Set the right permissions for MiAZ executable')
+call(['chmod', 'a+x', binprg])
 
 # Package managers set this so we don't need to run
 if not destdir:

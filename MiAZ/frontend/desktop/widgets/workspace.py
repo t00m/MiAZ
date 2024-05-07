@@ -217,65 +217,49 @@ class MiAZWorkspace(Gtk.Box):
             # ~ self.popDocsSel.set_menu_model(menu)
 
     def _setup_toolbar_top(self):
-        hbox_tt = self.factory.create_box_horizontal(hexpand=True, vexpand=False)
-        toolbar_top = Gtk.CenterBox()
-        hbox_tt.append(toolbar_top)
-        toolbar_top.get_style_context().add_class(class_name='toolbar')
-        toolbar_top.set_hexpand(True)
-        toolbar_top.set_vexpand(False)
+        hdb_left = self.app.get_widget('headerbar-left-box')
+        hdb_right = self.app.get_widget('headerbar-right-box')
 
-        # Left widget
-        hbox = self.app.add_widget('workspace-toolbar-top-left', self.factory.create_box_horizontal())
-        hbox.get_style_context().add_class(class_name='linked')
-        hbox.set_hexpand(True)
-        toolbar_top.set_start_widget(hbox)
-
-        ## Filters
-        self.tgbFilters = self.factory.create_button_toggle('miaz-filters', callback=self._on_filters_toggled)
-        self.tgbFilters.set_active(True)
+        ## Show/Hide Filters
+        self.tgbFilters = self.factory.create_button_toggle('miaz-filters2', callback=self._on_filters_toggled)
+        self.tgbFilters.set_active(False)
+        self.tgbFilters.set_hexpand(False)
+        self.tgbFilters.get_style_context().remove_class(class_name='flat')
         self.tgbFilters.set_valign(Gtk.Align.CENTER)
-        hbox.append(self.tgbFilters)
+        hdb_left.append(self.tgbFilters)
 
         ## Searchbox
         self.ent_sb = Gtk.SearchEntry(placeholder_text=_('Type here'))
-        self.ent_sb.set_hexpand(True)
-        hbox.append(self.ent_sb)
+        self.ent_sb.set_hexpand(False)
+        self.ent_sb.get_style_context().add_class(class_name='caption')
+        hdb_left.append(self.ent_sb)
 
+        ## Dropdowns
         dropdowns = self.app.get_widget('ws-dropdowns')
-        ## Date dropdown
+
+        ### Date dropdown
         i_type = Date.__gtype_name__
         dd_date = self.factory.create_dropdown_generic(item_type=Date, ellipsize=False, enable_search=False)
+        dd_date.set_hexpand(True)
         dropdowns[i_type] = dd_date
         self._update_dropdown_date()
         dd_date.set_selected(2)
         # ~ self.dd_date.connect("notify::selected-item", self._on_filter_selected)
         dd_date.connect("notify::selected-item", self.update)
-        hbox.append(dd_date)
+        hdb_left.append(dd_date)
 
-        ## Projects dropdown
+        ### Projects dropdown
         i_type = Project.__gtype_name__
         dd_prj = self.factory.create_dropdown_generic(item_type=Project)
-        dd_prj.set_size_request(300, -1)
+        dd_prj.set_size_request(250, -1)
         dropdowns[i_type] = dd_prj
         self.actions.dropdown_populate(self.config[i_type], dd_prj, Project, any_value=True, none_value=True)
         dd_prj.connect("notify::selected-item", self._on_filter_selected)
         dd_prj.connect("notify::selected-item", self._on_project_selected)
-        dd_prj.set_hexpand(False)
+        dd_prj.set_hexpand(True)
         self.config[i_type].connect('used-updated', self.update_dropdown_filter, Project)
-        hbox.append(dd_prj)
+        hdb_left.append(dd_prj)
         self.app.set_widget('ws-dropdowns', dropdowns)
-
-        # Center
-        hbox = self.app.add_widget('workspace-toolbar-top-center', self.factory.create_box_horizontal(spacing=0))
-        hbox.get_style_context().add_class(class_name='linked')
-        hbox.set_valign(Gtk.Align.CENTER)
-        hbox.set_hexpand(False)
-        toolbar_top.set_center_widget(hbox)
-
-        # Right
-        hbox = self.app.add_widget('workspace-toolbar-top-right', self.factory.create_box_horizontal(spacing=0))
-        hbox.get_style_context().add_class(class_name='linked')
-        toolbar_top.set_end_widget(hbox)
 
         ## Import button
         widgets = []
@@ -290,7 +274,7 @@ class MiAZWorkspace(Gtk.Box):
         # ~ rowImportConf = self.factory.create_actionrow(title='Import config', subtitle='Import configuration', suffix=btnImportConf)
         # ~ widgets.append(rowImportConf)
         button = self.factory.create_button_popover(icon_name='miaz-list-add', title='', widgets=widgets)
-        hbox.append(button)
+        hdb_right.append(button)
 
         # Menu Single and Multiple
         popovermenu = self._setup_menu_selection()
@@ -301,39 +285,7 @@ class MiAZWorkspace(Gtk.Box):
         self.popDocsSel.set_menu_model(popovermenu)
         self.btnDocsSel.set_popover(popover=self.popDocsSel)
         self.btnDocsSel.set_sensitive(True)
-        hbox.append(self.btnDocsSel)
-
-        # Repo settings button
-        menu_repo = self.app.add_widget('workspace-menu-repo', Gio.Menu.new())
-        section_common_in = self.app.add_widget('workspace-menu-repo-section-in', Gio.Menu.new())
-        section_common_out = self.app.add_widget('workspace-menu-repo-section-out', Gio.Menu.new())
-        section_danger = self.app.add_widget('workspace-menu-repo-section-danger', Gio.Menu.new())
-        menu_repo.append_section(None, section_common_in)
-        menu_repo.append_section(None, section_common_out)
-        menu_repo.append_section(None, section_danger)
-
-        # ~ ## Actions in
-        # ~ menuitem = self.factory.create_menuitem(name='repo_settings', label='Repository settings', callback=self._on_handle_menu_repo, data=None, shortcuts=[])
-        # ~ section_common_in.append_item(menuitem)
-
-        # ~ ## Actions out
-        # ~ submenu_backup = Gio.Menu.new()
-        # ~ menu_backup = Gio.MenuItem.new_submenu(
-            # ~ label = 'Backup...',
-            # ~ submenu = submenu_backup,
-        # ~ )
-        # ~ section_common_out.append_item(menu_backup)
-        # ~ menuitem = self.factory.create_menuitem('backup-config', '...only config', self._on_handle_menu_repo, None, [])
-        # ~ submenu_backup.append_item(menuitem)
-        # ~ menuitem = self.factory.create_menuitem('backup-data', '...only data', self._on_handle_menu_repo, None, [])
-        # ~ submenu_backup.append_item(menuitem)
-        # ~ menuitem = self.factory.create_menuitem('backup-all', '...config and data', self._on_handle_menu_repo, None, [])
-        # ~ submenu_backup.append_item(menuitem)
-
-        btnRepoSettings = self.factory.create_button_menu(icon_name='document-properties', menu=menu_repo)
-        hbox.append(btnRepoSettings)
-
-        return hbox_tt
+        hdb_right.append(self.btnDocsSel)
 
     def _update_dropdown_date(self):
         dropdowns = self.app.get_widget('ws-dropdowns')
@@ -420,12 +372,12 @@ class MiAZWorkspace(Gtk.Box):
 
         self.toolbar_filters = self._setup_toolbar_filters()
         self.app.add_widget('workspace-toolbar-filters', self.toolbar_filters)
-        toolbar_top = self.app.add_widget('workspace-toolbar-top', self._setup_toolbar_top())
+        # ~ toolbar_top = self.app.add_widget('workspace-toolbar-top', self._setup_toolbar_top())
+        self._setup_toolbar_top()
         # ~ headerbar = self.app.get_widget('headerbar')
         # ~ headerbar.set_title_widget(toolbar_top)
         frmView = self._setup_columnview()
         # ~ head.append(toolbar_top)
-        head.append(toolbar_top)
         head.append(self.toolbar_filters)
         body.append(frmView)
 
