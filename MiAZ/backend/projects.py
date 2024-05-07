@@ -122,7 +122,8 @@ class MiAZProject(GObject.GObject):
                 self.log.debug("\tDoc: %s", doc)
 
     def save(self) -> None:
-        self.backend.util.json_save(self.cnfprj, self.projects)
+        srvutil = self.backend.get_service('util')
+        srvutil.json_save(self.cnfprj, self.projects)
 
     def load(self) -> dict:
         return self.util.json_load(self.cnfprj)

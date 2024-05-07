@@ -57,6 +57,7 @@ class MiAZWorkspace(Gtk.Box):
     selected_items = []
     dates = {}
     cache = {}
+    used_signals = {} # Signals ids for Dropdowns connected to config
     uncategorized = False
     pending = False
 
@@ -105,7 +106,7 @@ class MiAZWorkspace(Gtk.Box):
 
     def _initialize_caches(self):
         self.cache = {}
-        for cache in ['date', 'country', 'group', 'people', 'purpose']:
+        for cache in ['Date', 'Country', 'Group', 'SentBy', 'SentTo', 'Purpose']:
             self.cache[cache] = {}
 
     def _check_first_time(self):
@@ -167,7 +168,7 @@ class MiAZWorkspace(Gtk.Box):
             boxDropdown = self.factory.create_box_filter(i_title, dropdown)
             body.append(boxDropdown)
             dropdowns[i_type] = dropdown
-            self.config[i_type].connect('used-updated', self.update_dropdown_filter, item_type)
+            self.used_signals[i_type] = self.config[i_type].connect('used-updated', self.update_dropdown_filter, item_type)
             self.log.debug("Dropdown filter for '%s' setup successfully", i_title)
         self.app.set_widget('ws-dropdowns', dropdowns)
         self.backend.connect('repository-updated', self._on_workspace_update)
@@ -457,96 +458,95 @@ class MiAZWorkspace(Gtk.Box):
         groups = self.app.get_config('Group')
         purposes = self.app.get_config('Purpose')
         warning = False
-
         items = []
         invalid = []
         ds = datetime.now()
+
+        # Disconnect dropdown signals
+        # ~ for item_type in [Country, Group, SentBy, Purpose, SentTo]:
+            # ~ i_type = item_type.__gtype_name__
+            # ~ i_title = _(item_type.__title__)
+            # ~ sigid = self.used_signals[i_type]
+            # ~ self.config[i_type].disconnect(sigid)
+            # ~ self.log.debug("Signal %d disconnected from Config '%s'", sigid, i_title)
+
+        keys_used = {}
+        kf = [('Date', 0), ('Country', 1), ('Group', 2), ('SentBy', 3), ('Purpose', 4), ('Concept', 5), ('SentTo', 6)]
+        for skey, nkey in kf:
+            keys_used[skey] = set()
         for filename in docs:
             active = True
             doc, ext = self.util.filename_details(filename)
             fields = doc.split('-')
             if self.util.filename_validate(doc):
-                # Get field descriptions
-                ## Dates
-                try:
-                    date_dsc = self.cache['date'][fields[0]]
-                except:
-                    # ~ date_dsc = self.util.filename_date_human(fields[0])
-                    date_dsc = self.util.filename_date_human_simple(fields[0])
-                    if date_dsc is None:
-                        active = False
-                        date_dsc = ''
+                desc = {}
+                for skey, nkey in kf:
+                    key = fields[nkey]
+                    # ~ self.log.debug("%s > %s", key, skey)
+                    if nkey == 0:
+                        # Date field cached value differs from other fields
+                        key = fields[nkey]
+                        try:
+                            desc[skey] = self.cache[skey][key]
+                        except:
+                            desc[skey] = self.util.filename_date_human_simple(key)
+                            if desc[skey] is None:
+                                active = False
+                                desc[skey] = ''
+                            else:
+                                self.cache[skey][key] = desc[skey]
+                    elif nkey == 5:
+                        # Skip concept field
+                        pass
                     else:
-                        self.cache['date'][fields[0]] = date_dsc
+                        config = self.app.get_config(skey)
+                        # Key: autodiscover key fields.
+                        # Save key in config if it is used
+                        if not config.exists_used(key=key):
+                            keys_used[skey].add((key, key))
 
-                ## Countries
-                try:
-                    country_dsc = self.cache['country'][fields[1]]
-                except:
-                    country_dsc = countries.get(fields[1])
-                    if country_dsc is None:
-                        active = False
-                        country_dsc = ''
-                    else:
-                        self.cache['country'][fields[1]] = country_dsc
-
-                ## Purposes
-                try:
-                    purpose_dsc = self.cache['purpose'][fields[4]]
-                except:
-                    purpose_dsc = purposes.get(fields[4])
-                    if purpose_dsc is None:
-                        active = False
-                        purpose_dsc = ''
-                    else:
-                        if len(purpose_dsc) == 0:
-                            purpose_dsc = fields[4]
-                        self.cache['purpose'][fields[4]] = purpose_dsc
-
-                ## People
-                try:
-                    sentby_dsc = self.cache['people'][fields[3]]
-                except:
-                    sentby_dsc = sentby.get(fields[3])
-                    if sentby_dsc is None:
-                        active = False
-                        sentby_dsc = ''
-                    else:
-                        self.cache['people'][fields[3]] = sentby_dsc
-
-                try:
-                    sentto_dsc = self.cache['people'][fields[6]]
-                except:
-                    sentto_dsc = sentto.get(fields[6])
-                    if sentto_dsc is None:
-                        active = False
-                        sentto_dsc = ''
-                    else:
-                        self.cache['people'][fields[6]] = sentto_dsc
+                        # Description
+                        try:
+                            desc[skey] = self.cache[skey][key]
+                        except:
+                            desc[skey] = config.get(key)
+                            if desc[skey] is None:
+                                active = False
+                                desc[skey] = key
+                            else:
+                                self.cache[skey][key] = desc[skey]
 
                 if not active:
                     invalid.append(os.path.basename(filename))
-
+                # ~ self.log.debug("\n%s\n%s\n\n", filename, desc)
                 items.append(MiAZItem
                                     (
                                         id=os.path.basename(filename),
                                         date=fields[0],
-                                        date_dsc = date_dsc,
+                                        date_dsc=desc['Date'],
                                         country=fields[1],
-                                        country_dsc=country_dsc,
+                                        country_dsc=desc['Country'],
                                         group=fields[2],
                                         sentby_id=fields[3],
-                                        sentby_dsc=sentby_dsc,
-                                        purpose=purpose_dsc,
+                                        sentby_dsc=desc['SentBy'],
+                                        purpose=desc['Purpose'],
                                         title=doc,
                                         subtitle=fields[5].replace('_', ' '),
                                         sentto_id=fields[6],
-                                        sentto_dsc=sentto_dsc,
+                                        sentto_dsc=desc['SentTo'],
                                         active=active
                                     )
                             )
             else:
                 invalid.append(filename)
+
+        # Save all keys used to conf
+        for skey in keys_used:
+            config = self.app.get_config(skey)
+            if config is not None: # Skip fields without config
+                config.add_available_batch(list(keys_used[skey]))
+                config.add_used_batch(list(keys_used[skey]))
+
         de = datetime.now()
         dt = de - ds
         self.log.debug("Workspace updated (%s)" % dt)

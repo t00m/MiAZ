@@ -136,8 +136,11 @@ class MiAZApp(Gtk.Application):
             self.show_stack_page_by_name('workspace')
 
     def get_config(self, name: str):
-        config = self.backend.get_conf()
-        return config[name]
+        try:
+            config = self.backend.get_conf()
+            return config[name]
+        except KeyError:
+            return None
 
     def _setup_stack(self):
         self.stack = self.add_widget('stack', Gtk.Stack())
