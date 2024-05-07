@@ -100,7 +100,7 @@ class MiAZFactory:
         return box
 
     def create_button_content(self, icon_name='', title='', callback=None, width=16, height=16, css_classes=[''], data=None):
-        hbox = self.create_box_horizontal(hexpand=False, vexpand=False)
+        hbox = self.create_box_horizontal(spacing=0, margin=0, hexpand=False, vexpand=False)
         if len(icon_name.strip()) > 0:
             icon = self.icons.get_image_by_name(icon_name, width=width, height=height)
             icon.set_pixel_size(width)
@@ -120,6 +120,7 @@ class MiAZFactory:
 
     def create_button(self, icon_name='', title='', callback=None, width=16, height=16, css_classes=[], data=None):
         button = Gtk.Button(css_classes=css_classes)
+        # ~ button.get_style_context().add_class(class_name='flat')
         hbox = self.create_box_horizontal()
         if len(icon_name.strip()) > 0:
             icon = self.icons.get_image_by_name(icon_name)
@@ -163,6 +164,7 @@ class MiAZFactory:
 
     def create_button_check(self, title: str = '', active: bool = False, callback=None) -> Gtk.CheckButton:
         button = Gtk.CheckButton.new_with_label(title)
+        # ~ button.get_style_context().add_class(class_name='flat')
         button.set_active(active)
         if callback is not None:
             button.connect('toggled', callback)
@@ -172,6 +174,7 @@ class MiAZFactory:
         """Gtk.Menubutton with a menu"""
         child=self.create_button_content(icon_name=icon_name, title=title, css_classes=css_classes)
         button = Gtk.MenuButton()
+        # ~ button.get_style_context().add_class(class_name='flat')
         button.set_child(child)
         popover = Gtk.PopoverMenu.new_from_model(menu)
         button.set_popover(popover=popover)
@@ -190,6 +193,7 @@ class MiAZFactory:
         popover.set_child(vbox)
         popover.present()
         button = Gtk.MenuButton(child=self.create_button_content(icon_name=icon_name, title=title, css_classes=css_classes))
+        # ~ button.get_style_context().add_class(class_name='flat')
         button.set_popover(popover)
         return button
 

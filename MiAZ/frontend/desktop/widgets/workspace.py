@@ -57,6 +57,7 @@ class MiAZWorkspace(Gtk.Box):
     selected_items = []
     dates = {}
     cache = {}
+    used_signals = {} # Signals ids for Dropdowns connected to config
     uncategorized = False
     pending = False
 
@@ -67,7 +68,7 @@ class MiAZWorkspace(Gtk.Box):
         self.backend = self.app.get_service('backend')
         self.factory = self.app.get_service('factory')
         self.actions = self.app.get_service('actions')
-        self.config = self.backend.conf
+        self.config = self.backend.get_conf()
         self.util = self.app.get_service('util')
         self.util.connect('filename-renamed', self._on_filename_renamed)
         self.util.connect('filename-deleted', self._on_filename_deleted)
@@ -87,7 +88,7 @@ class MiAZWorkspace(Gtk.Box):
         # 'TypeError: Object of type date is not JSON serializable'
         self.datetimes = {}
 
-        # Rest of caches
+        # Load/Initialize rest of caches
         repo = self.backend.repo_config()
         dir_conf = repo['dir_conf']
         self.fcache = os.path.join(dir_conf, 'cache.json')
@@ -97,7 +98,7 @@ class MiAZWorkspace(Gtk.Box):
         except:
             self._initialize_caches()
 
-        self.check_first_time()
+        self._check_first_time()
 
         # Allow plug-ins to make their job
         self.app.connect('start-application-completed', self._finish_configuration)
@@ -105,16 +106,18 @@ class MiAZWorkspace(Gtk.Box):
 
     def _initialize_caches(self):
         self.cache = {}
-        for cache in ['date', 'country', 'group', 'people', 'purpose']:
+        for cache in ['Date', 'Country', 'Group', 'SentBy', 'SentTo', 'Purpose']:
             self.cache[cache] = {}
-        # ~ self.util.json_save(self.fcache, self.cache)
-        # ~ self.log.debug("Caches initialized (%s)", self.fcache)
 
-    def check_first_time(self):
+    def _check_first_time(self):
+        """
+        Execute Repository Assistant if no countries have been
+        defined yet.
+        """
         conf = self.config['Country']
         countries = conf.load(conf.used)
         if len(countries) == 0:
-            self.log.debug("Execute Country Selector Assistant")
+            self.log.debug("Executing Assistant")
             assistant = MiAZAssistantRepoSettings(self.app)
             assistant.set_transient_for(self.app.win)
             assistant.set_modal(True)
@@ -165,7 +168,7 @@ class MiAZWorkspace(Gtk.Box):
             boxDropdown = self.factory.create_box_filter(i_title, dropdown)
             body.append(boxDropdown)
             dropdowns[i_type] = dropdown
-            self.config[i_type].connect('used-updated', self.update_dropdown_filter, item_type)
+            self.used_signals[i_type] = self.config[i_type].connect('used-updated', self.update_dropdown_filter, item_type)
             self.log.debug("Dropdown filter for '%s' setup successfully", i_title)
         self.app.set_widget('ws-dropdowns', dropdowns)
         self.backend.connect('repository-updated', self._on_workspace_update)
@@ -215,65 +218,49 @@ class MiAZWorkspace(Gtk.Box):
             # ~ self.popDocsSel.set_menu_model(menu)
 
     def _setup_toolbar_top(self):
-        hbox_tt = self.factory.create_box_horizontal(hexpand=True, vexpand=False)
-        toolbar_top = Gtk.CenterBox()
-        hbox_tt.append(toolbar_top)
-        toolbar_top.get_style_context().add_class(class_name='toolbar')
-        toolbar_top.set_hexpand(True)
-        toolbar_top.set_vexpand(False)
+        hdb_left = self.app.get_widget('headerbar-left-box')
+        hdb_right = self.app.get_widget('headerbar-right-box')
 
-        # Left widget
-        hbox = self.app.add_widget('workspace-toolbar-top-left', self.factory.create_box_horizontal())
-        hbox.get_style_context().add_class(class_name='linked')
-        hbox.set_hexpand(True)
-        toolbar_top.set_start_widget(hbox)
-
-        ## Filters
-        self.tgbFilters = self.factory.create_button_toggle('miaz-filters', callback=self._on_filters_toggled)
-        self.tgbFilters.set_active(True)
+        ## Show/Hide Filters
+        self.tgbFilters = self.factory.create_button_toggle('miaz-filters2', callback=self._on_filters_toggled)
+        self.tgbFilters.set_active(False)
+        self.tgbFilters.set_hexpand(False)
+        self.tgbFilters.get_style_context().remove_class(class_name='flat')
         self.tgbFilters.set_valign(Gtk.Align.CENTER)
-        hbox.append(self.tgbFilters)
+        hdb_left.append(self.tgbFilters)
 
         ## Searchbox
         self.ent_sb = Gtk.SearchEntry(placeholder_text=_('Type here'))
-        self.ent_sb.set_hexpand(True)
-        hbox.append(self.ent_sb)
+        self.ent_sb.set_hexpand(False)
+        self.ent_sb.get_style_context().add_class(class_name='caption')
+        hdb_left.append(self.ent_sb)
 
+        ## Dropdowns
         dropdowns = self.app.get_widget('ws-dropdowns')
-        ## Date dropdown
+
+        ### Date dropdown
         i_type = Date.__gtype_name__
         dd_date = self.factory.create_dropdown_generic(item_type=Date, ellipsize=False, enable_search=False)
+        dd_date.set_hexpand(True)
         dropdowns[i_type] = dd_date
         self._update_dropdown_date()
         dd_date.set_selected(2)
         # ~ self.dd_date.connect("notify::selected-item", self._on_filter_selected)
         dd_date.connect("notify::selected-item", self.update)
-        hbox.append(dd_date)
+        hdb_left.append(dd_date)
 
-        ## Projects dropdown
+        ### Projects dropdown
         i_type = Project.__gtype_name__
         dd_prj = self.factory.create_dropdown_generic(item_type=Project)
-        dd_prj.set_size_request(300, -1)
+        dd_prj.set_size_request(250, -1)
         dropdowns[i_type] = dd_prj
         self.actions.dropdown_populate(self.config[i_type], dd_prj, Project, any_value=True, none_value=True)
         dd_prj.connect("notify::selected-item", self._on_filter_selected)
         dd_prj.connect("notify::selected-item", self._on_project_selected)
-        dd_prj.set_hexpand(False)
+        dd_prj.set_hexpand(True)
         self.config[i_type].connect('used-updated', self.update_dropdown_filter, Project)
-        hbox.append(dd_prj)
+        hdb_left.append(dd_prj)
         self.app.set_widget('ws-dropdowns', dropdowns)
-
-        # Center
-        hbox = self.app.add_widget('workspace-toolbar-top-center', self.factory.create_box_horizontal(spacing=0))
-        hbox.get_style_context().add_class(class_name='linked')
-        hbox.set_valign(Gtk.Align.CENTER)
-        hbox.set_hexpand(False)
-        toolbar_top.set_center_widget(hbox)
-
-        # Right
-        hbox = self.app.add_widget('workspace-toolbar-top-right', self.factory.create_box_horizontal(spacing=0))
-        hbox.get_style_context().add_class(class_name='linked')
-        toolbar_top.set_end_widget(hbox)
 
         ## Import button
         widgets = []
@@ -288,7 +275,7 @@ class MiAZWorkspace(Gtk.Box):
         # ~ rowImportConf = self.factory.create_actionrow(title='Import config', subtitle='Import configuration', suffix=btnImportConf)
         # ~ widgets.append(rowImportConf)
         button = self.factory.create_button_popover(icon_name='miaz-list-add', title='', widgets=widgets)
-        hbox.append(button)
+        hdb_right.append(button)
 
         # Menu Single and Multiple
         popovermenu = self._setup_menu_selection()
@@ -299,39 +286,7 @@ class MiAZWorkspace(Gtk.Box):
         self.popDocsSel.set_menu_model(popovermenu)
         self.btnDocsSel.set_popover(popover=self.popDocsSel)
         self.btnDocsSel.set_sensitive(True)
-        hbox.append(self.btnDocsSel)
-
-        # Repo settings button
-        menu_repo = self.app.add_widget('workspace-menu-repo', Gio.Menu.new())
-        section_common_in = self.app.add_widget('workspace-menu-repo-section-in', Gio.Menu.new())
-        section_common_out = self.app.add_widget('workspace-menu-repo-section-out', Gio.Menu.new())
-        section_danger = self.app.add_widget('workspace-menu-repo-section-danger', Gio.Menu.new())
-        menu_repo.append_section(None, section_common_in)
-        menu_repo.append_section(None, section_common_out)
-        menu_repo.append_section(None, section_danger)
-
-        # ~ ## Actions in
-        # ~ menuitem = self.factory.create_menuitem(name='repo_settings', label='Repository settings', callback=self._on_handle_menu_repo, data=None, shortcuts=[])
-        # ~ section_common_in.append_item(menuitem)
-
-        # ~ ## Actions out
-        # ~ submenu_backup = Gio.Menu.new()
-        # ~ menu_backup = Gio.MenuItem.new_submenu(
-            # ~ label = 'Backup...',
-            # ~ submenu = submenu_backup,
-        # ~ )
-        # ~ section_common_out.append_item(menu_backup)
-        # ~ menuitem = self.factory.create_menuitem('backup-config', '...only config', self._on_handle_menu_repo, None, [])
-        # ~ submenu_backup.append_item(menuitem)
-        # ~ menuitem = self.factory.create_menuitem('backup-data', '...only data', self._on_handle_menu_repo, None, [])
-        # ~ submenu_backup.append_item(menuitem)
-        # ~ menuitem = self.factory.create_menuitem('backup-all', '...config and data', self._on_handle_menu_repo, None, [])
-        # ~ submenu_backup.append_item(menuitem)
-
-        btnRepoSettings = self.factory.create_button_menu(icon_name='document-properties', menu=menu_repo)
-        hbox.append(btnRepoSettings)
-
-        return hbox_tt
+        hdb_right.append(self.btnDocsSel)
 
     def _update_dropdown_date(self):
         dropdowns = self.app.get_widget('ws-dropdowns')
@@ -418,12 +373,12 @@ class MiAZWorkspace(Gtk.Box):
 
         self.toolbar_filters = self._setup_toolbar_filters()
         self.app.add_widget('workspace-toolbar-filters', self.toolbar_filters)
-        toolbar_top = self.app.add_widget('workspace-toolbar-top', self._setup_toolbar_top())
+        # ~ toolbar_top = self.app.add_widget('workspace-toolbar-top', self._setup_toolbar_top())
+        self._setup_toolbar_top()
         # ~ headerbar = self.app.get_widget('headerbar')
         # ~ headerbar.set_title_widget(toolbar_top)
         frmView = self._setup_columnview()
         # ~ head.append(toolbar_top)
-        head.append(toolbar_top)
         head.append(self.toolbar_filters)
         body.append(frmView)
 
@@ -503,106 +458,95 @@ class MiAZWorkspace(Gtk.Box):
         groups = self.app.get_config('Group')
         purposes = self.app.get_config('Purpose')
         warning = False
-
-        try:
-            period = dd_date.get_selected_item().title
-        except AttributeError as error:
-            self.log.error(error)
-            return
-        project = dd_prj.get_selected_item().id
-        self.log.debug("Period: %s - Project: %s", period, project)
-        if project == 'Any' or project == 'None':
-            pass
-
         items = []
         invalid = []
         ds = datetime.now()
+
+        # Disconnect dropdown signals
+        # ~ for item_type in [Country, Group, SentBy, Purpose, SentTo]:
+            # ~ i_type = item_type.__gtype_name__
+            # ~ i_title = _(item_type.__title__)
+            # ~ sigid = self.used_signals[i_type]
+            # ~ self.config[i_type].disconnect(sigid)
+            # ~ self.log.debug("Signal %d disconnected from Config '%s'", sigid, i_title)
+
+        keys_used = {}
+        kf = [('Date', 0), ('Country', 1), ('Group', 2), ('SentBy', 3), ('Purpose', 4), ('Concept', 5), ('SentTo', 6)]
+        for skey, nkey in kf:
+            keys_used[skey] = set()
         for filename in docs:
             active = True
             doc, ext = self.util.filename_details(filename)
             fields = doc.split('-')
             if self.util.filename_validate(doc):
-                # Get field descriptions
-                ## Dates
-                try:
-                    date_dsc = self.cache['date'][fields[0]]
-                except:
-                    # ~ date_dsc = self.util.filename_date_human(fields[0])
-                    date_dsc = self.util.filename_date_human_simple(fields[0])
-                    if date_dsc is None:
-                        active = False
-                        date_dsc = ''
+                desc = {}
+                for skey, nkey in kf:
+                    key = fields[nkey]
+                    # ~ self.log.debug("%s > %s", key, skey)
+                    if nkey == 0:
+                        # Date field cached value differs from other fields
+                        key = fields[nkey]
+                        try:
+                            desc[skey] = self.cache[skey][key]
+                        except:
+                            desc[skey] = self.util.filename_date_human_simple(key)
+                            if desc[skey] is None:
+                                active = False
+                                desc[skey] = ''
+                            else:
+                                self.cache[skey][key] = desc[skey]
+                    elif nkey == 5:
+                        # Skip concept field
+                        pass
                     else:
-                        self.cache['date'][fields[0]] = date_dsc
+                        config = self.app.get_config(skey)
+                        # Key: autodiscover key fields.
+                        # Save key in config if it is used
+                        if not config.exists_used(key=key):
+                            keys_used[skey].add((key, key))
 
-                ## Countries
-                try:
-                    country_dsc = self.cache['country'][fields[1]]
-                except:
-                    country_dsc = countries.get(fields[1])
-                    if country_dsc is None:
-                        active = False
-                        country_dsc = ''
-                    else:
-                        self.cache['country'][fields[1]] = country_dsc
-
-                ## Purposes
-                try:
-                    purpose_dsc = self.cache['purpose'][fields[4]]
-                except:
-                    purpose_dsc = purposes.get(fields[4])
-                    if purpose_dsc is None:
-                        active = False
-                        purpose_dsc = ''
-                    else:
-                        if len(purpose_dsc) == 0:
-                            purpose_dsc = fields[4]
-                        self.cache['purpose'][fields[4]] = purpose_dsc
-
-                ## People
-                try:
-                    sentby_dsc = self.cache['people'][fields[3]]
-                except:
-                    sentby_dsc = sentby.get(fields[3])
-                    if sentby_dsc is None:
-                        active = False
-                        sentby_dsc = ''
-                    else:
-                        self.cache['people'][fields[3]] = sentby_dsc
-
-                try:
-                    sentto_dsc = self.cache['people'][fields[6]]
-                except:
-                    sentto_dsc = sentto.get(fields[6])
-                    if sentto_dsc is None:
-                        active = False
-                        sentto_dsc = ''
-                    else:
-                        self.cache['people'][fields[6]] = sentto_dsc
+                        # Description
+                        try:
+                            desc[skey] = self.cache[skey][key]
+                        except:
+                            desc[skey] = config.get(key)
+                            if desc[skey] is None:
+                                active = False
+                                desc[skey] = key
+                            else:
+                                self.cache[skey][key] = desc[skey]
 
                 if not active:
                     invalid.append(os.path.basename(filename))
-
+                # ~ self.log.debug("\n%s\n%s\n\n", filename, desc)
                 items.append(MiAZItem
                                     (
                                         id=os.path.basename(filename),
                                         date=fields[0],
-                                        date_dsc = date_dsc,
+                                        date_dsc=desc['Date'],
                                         country=fields[1],
-                                        country_dsc=country_dsc,
+                                        country_dsc=desc['Country'],
                                         group=fields[2],
                                         sentby_id=fields[3],
-                                        sentby_dsc=sentby_dsc,
-                                        purpose=purpose_dsc,
+                                        sentby_dsc=desc['SentBy'],
+                                        purpose=desc['Purpose'],
                                         title=doc,
                                         subtitle=fields[5].replace('_', ' '),
                                         sentto_id=fields[6],
-                                        sentto_dsc=sentto_dsc,
+                                        sentto_dsc=desc['SentTo'],
                                         active=active
                                     )
                             )
             else:
                 invalid.append(filename)
+
+        # Save all keys used to conf
+        for skey in keys_used:
+            config = self.app.get_config(skey)
+            if config is not None: # Skip fields without config
+                config.add_available_batch(list(keys_used[skey]))
+                config.add_used_batch(list(keys_used[skey]))
+
         de = datetime.now()
         dt = de - ds
         self.log.debug("Workspace updated (%s)" % dt)

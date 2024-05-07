@@ -51,7 +51,7 @@ class MiAZAppSettings(Gtk.Window):
         self.backend = self.app.get_service('backend')
         self.factory = self.app.get_service('factory')
         self.actions = self.app.get_service('actions')
-        self.config = self.backend.conf
+        self.config = self.backend.get_conf()
         self.connect('close-request', self._on_window_close_request)
         self.set_default_size(800, 600)
         self.mainbox = self.factory.create_box_vertical(vexpand=True)
@@ -214,18 +214,23 @@ class MiAZAppSettings(Gtk.Window):
         self.config['App'].set('plugins', plugins)
 
 
-class MiAZRepoSettings(Gtk.Box):
+class MiAZRepoSettings(Gtk.Window):
     __gtype_name__ = 'MiAZRepoSettings'
-    def __init__(self, app):
-        super(Gtk.Box, self).__init__(spacing=6, orientation=Gtk.Orientation.VERTICAL)
+
+    def __init__(self, app, **kwargs):
+        super().__init__(**kwargs)
+        self.set_default_size(800, 600)
         self.log = get_logger('MiAZRepoSettings')
         self.app = app
         self.factory = self.app.get_service('factory')
         self.config = self.app.get_config('Country')
+        self.connect('close-request', self._on_window_close_request)
+        self.mainbox = self.factory.create_box_vertical(vexpand=True)
+        self.set_child(self.mainbox)
         self.notebook = Gtk.Notebook()
         self.notebook.set_show_border(False)
         self.notebook.set_tab_pos(Gtk.PositionType.TOP)
-        self.append(self.notebook)
+        self.mainbox.append(self.notebook)
 
         def create_tab(item_type):
             i_type = item_type.__gtype_name__
@@ -242,7 +247,7 @@ class MiAZRepoSettings(Gtk.Box):
             wdgLabel = self.factory.create_box_horizontal()
             icon = self.app.icman.get_image_by_name('miaz-res-%s' % i_type.lower())
             icon.set_hexpand(False)
-            icon.set_pixel_size(32)
+            icon.set_pixel_size(24)
             label = self.factory.create_label("<b>%s</b>" % i_title)
             label.set_xalign(0.0)
             label.set_hexpand(True)
@@ -256,3 +261,5 @@ class MiAZRepoSettings(Gtk.Box):
             self.notebook.append_page(page, label)
 
 
+    def _on_window_close_request(self, window):
+        window.hide()

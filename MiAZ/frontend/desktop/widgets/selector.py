@@ -266,7 +266,7 @@ class MiAZSelector(Gtk.Box):
 
     def _do_filter_view(self, item, filter_list_model):
         chunk = self.entry.get_text().upper()
-        string = "%s%s" % (item.id, item.title)
+        string = "%s-%s" % (item.id, item.title)
         if chunk in string.upper():
             return True
         return False

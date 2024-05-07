@@ -50,7 +50,7 @@ class MiAZAssistant(Gtk.Assistant):
         self.app = app
         self.factory = self.app.get_service('factory')
         self.backend = self.app.get_service('backend')
-        self.config = self.backend.conf
+        self.config = self.backend.get_conf()
         self.set_size_request(1024, 728)
         self.set_title(_('MiAZ Assistant'))
         self.completed = False

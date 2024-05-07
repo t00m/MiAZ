@@ -1,0 +1,1 @@
+VERSION=0.0.5 DEPLOY_GTK_VERSION=4 ./linuxdeploy-x86_64.AppImage --appdir AppDir --plugin gtk --output appimage --icon-file MiAZ/data/icons/com.github.t00m.MiAZ.svg --desktop-file MiAZ/data/resources/com.github.t00m.MiAZ.desktop

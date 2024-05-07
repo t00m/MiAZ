@@ -25,7 +25,7 @@ class MiAZConfig(GObject.GObject):
     def __init__(self, backend, log, config_for, used=None, available=None, default=None, model=MiAZModel, must_copy=True, foreign=False):
         super().__init__()
         self.backend = backend
-        self.util = self.backend.util
+        self.util = self.backend.get_service('util')
         self.log = log
         self.config_for = config_for
         self.used = used
@@ -115,7 +115,7 @@ class MiAZConfig(GObject.GObject):
             except:
                 self.cache[filepath] = {}
                 self.cache[filepath]['changed'] = True
-            self.log.debug("Cache update for '%s'", filepath)
+            # ~ self.log.debug("Cache update for '%s'", filepath)
         return saved
 
     def save_available(self, items: dict = {}) -> bool:
@@ -168,11 +168,35 @@ class MiAZConfig(GObject.GObject):
             return False
 
     def add_available_batch(self, keysvalues: list):
+        filepath = self.available
+        items = self.load(filepath)
+        saved = 0
         for key, value in keysvalues:
-            self.add(self.available, key, value)
+            if len(key.strip()) != 0:
+                if not key in items:
+                    key = self.util.valid_key(key)
+                    items[key] = value
+                    saved += 1
+        if saved > 0:
+            self.save(filepath, items=items)
+            self.log.info("%s - Added %d keys to %s", self.config_for, saved, filepath)
 
     def add_available(self, key: str, value: str = ''):
         self.add(self.available, key, value)
+
+    def add_used_batch(self, keysvalues: list):
+        filepath = self.used
+        items = self.load(filepath)
+        saved = 0
+        for key, value in keysvalues:
+            if len(key.strip()) != 0:
+                if not key in items:
+                    key = self.util.valid_key(key)
+                    items[key] = value
+                    saved += 1
+        if saved > 0:
+            self.save(filepath, items=items)
+            self.log.info("%s - Added %d keys to %s", self.config_for, saved, filepath)
 
     def add_used(self, key: str, value: str = ''):
         self.add(self.used, key, value)
@@ -220,7 +244,7 @@ class MiAZConfigApp(MiAZConfig):
     def __init__(self, backend):
         self.backend = backend
         self.app = backend.app
-        self.util = self.backend.util
+        self.util = self.backend.get_service('util')
         ENV = self.app.get_env()
         GObject.GObject.__init__(self)
         GObject.signal_new('repo-settings-updated-app',

@@ -1,0 +1,43 @@
+# appimage-builder recipe see https://appimage-builder.readthedocs.io for details
+version: 1
+AppDir:
+  path: ./AppDir
+  app_info:
+    id: com.github.t00m.MiAZ
+    name: MiAZ
+    icon: com.github.t00m.MiAZ
+    version: 0.0.21
+    exec: usr/bin/miaz
+    exec_args: $@
+  apt:
+    arch:
+    - amd64
+    allow_unauthenticated: true
+    sources:
+    - sourceline: deb http://lu.archive.ubuntu.com/ubuntu/ jammy main restricted
+    - sourceline: deb http://lu.archive.ubuntu.com/ubuntu/ jammy-updates main restricted
+    - sourceline: deb http://lu.archive.ubuntu.com/ubuntu/ jammy universe
+    - sourceline: deb http://lu.archive.ubuntu.com/ubuntu/ jammy-updates universe
+    - sourceline: deb http://lu.archive.ubuntu.com/ubuntu/ jammy multiverse
+    - sourceline: deb http://lu.archive.ubuntu.com/ubuntu/ jammy-updates multiverse
+    - sourceline: deb http://lu.archive.ubuntu.com/ubuntu/ jammy-backports main restricted universe multiverse
+    - sourceline: deb http://security.ubuntu.com/ubuntu jammy-security main restricted
+    - sourceline: deb http://security.ubuntu.com/ubuntu jammy-security universe
+    - sourceline: deb http://security.ubuntu.com/ubuntu jammy-security multiverse
+    include:
+      - librsvg2-common
+    exclude:
+      - adwaita-icon-theme
+      - humanity-icon-theme
+  files:
+    exclude:
+    - usr/share/man
+    - usr/share/doc/*/README.*
+    - usr/share/doc/*/changelog.*
+    - usr/share/doc/*/NEWS.*
+    - usr/share/doc/*/TODO.*
+AppImage:
+  update-information: None
+  sign-key: None
+  arch: x86_64
+  update-information: guess
