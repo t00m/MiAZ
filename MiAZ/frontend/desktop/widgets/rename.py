@@ -67,14 +67,14 @@ class MiAZRenameDialog(Gtk.Box):
         frmMain.set_child(self.boxMain)
         self.append(frmMain)
 
-        self.btnAccept = self.factory.create_button('miaz-ok', _('Rename'), self.on_rename_accept, css_classes=['opaque'])
+        self.btnAccept = self.factory.create_button(icon_name='miaz-ok', title=_('Rename'), callback=self.on_rename_accept, css_classes=['opaque'])
         self.btnAccept.set_sensitive(True)
         # ~ self.btnAccept.get_style_context ().add_class('suggested-action')
 
         self.btnAccept.set_can_focus(True)
         self.btnAccept.set_focusable(True)
         self.btnAccept.set_receives_default(True)
-        self.btnCancel = self.factory.create_button('miaz-cancel', _('Cancel'), self.on_rename_cancel)
+        self.btnCancel = self.factory.create_button(icon_name='miaz-cancel', title=_('Cancel'), callback=self.on_rename_cancel)
         # ~ self.btnCancel.get_style_context ().add_class ('destructive-action')
         self.btnPreview = self.factory.create_button('miaz-preview', _('Preview'))
         self.btnPreview.connect('clicked', self._on_document_display)
