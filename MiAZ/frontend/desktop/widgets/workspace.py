@@ -128,6 +128,7 @@ class MiAZWorkspace(Gtk.Box):
         # Right now, there is no way to know which config item has been
         # updated, therefore, the whole cache must be invalidated :/
         self._initialize_caches()
+        self.update()
         # ~ self.log.debug("Config changed")
 
     def _on_filename_renamed(self, util, source, target):
@@ -281,12 +282,17 @@ class MiAZWorkspace(Gtk.Box):
         popovermenu = self._setup_menu_selection()
         label = Gtk.Label()
         self.btnDocsSel = Gtk.MenuButton()
+        self.btnDocsSel.get_style_context().add_class(class_name='flat')
+        self.btnDocsSel.set_has_frame(False)
+        self.btnDocsSel.set_margin_start(24)
+        self.btnDocsSel.set_margin_end(24)
         self.btnDocsSel.set_child(label)
         self.popDocsSel = Gtk.PopoverMenu()
         self.popDocsSel.set_menu_model(popovermenu)
         self.btnDocsSel.set_popover(popover=self.popDocsSel)
         self.btnDocsSel.set_sensitive(True)
-        hdb_right.append(self.btnDocsSel)
+        headerbar = self.app.get_widget('headerbar')
+        headerbar.set_title_widget(self.btnDocsSel)
 
     def _update_dropdown_date(self):
         dropdowns = self.app.get_widget('ws-dropdowns')
@@ -446,6 +452,7 @@ class MiAZWorkspace(Gtk.Box):
 
     def update(self, *args):
         # FIXME: come up w/ a solution to display only available values
+        self.log.debug("Update requested")
         dropdowns = self.app.get_widget('ws-dropdowns')
         dd_date = dropdowns[Date.__gtype_name__]
         dd_prj = dropdowns[Project.__gtype_name__]
@@ -471,16 +478,17 @@ class MiAZWorkspace(Gtk.Box):
             # ~ self.log.debug("Signal %d disconnected from Config '%s'", sigid, i_title)
 
         keys_used = {}
-        kf = [('Date', 0), ('Country', 1), ('Group', 2), ('SentBy', 3), ('Purpose', 4), ('Concept', 5), ('SentTo', 6)]
-        for skey, nkey in kf:
-            keys_used[skey] = set()
+        key_fields = [('Date', 0), ('Country', 1), ('Group', 2), ('SentBy', 3), ('Purpose', 4), ('Concept', 5), ('SentTo', 6)]
+        for skey, nkey in key_fields:
+            keys_used[skey] = set() # Avoid duplicates
+
         for filename in docs:
             active = True
             doc, ext = self.util.filename_details(filename)
             fields = doc.split('-')
             if self.util.filename_validate(doc):
                 desc = {}
-                for skey, nkey in kf:
+                for skey, nkey in key_fields:
                     key = fields[nkey]
                     # ~ self.log.debug("%s > %s", key, skey)
                     if nkey == 0:
