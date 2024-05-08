@@ -41,6 +41,7 @@ class MiAZSelector(Gtk.Box):
         self.boxOper.set_margin_bottom(6)
         self.boxOper.set_margin_start(0)
         self.boxOper.set_margin_end(0)
+        self.boxOper.set_hexpand(True)
         self.boxOper.set_vexpand(False)
         boxEntry = Gtk.Box(spacing=0, orientation=Gtk.Orientation.HORIZONTAL)
         boxEntry.set_hexpand(False)
@@ -56,10 +57,12 @@ class MiAZSelector(Gtk.Box):
         boxEntry.append(self.entry)
         self.boxOper.append(boxEntry)
         if edit:
-            self.boxButtons = Gtk.Box(spacing=3, orientation=Gtk.Orientation.HORIZONTAL)
-            self.boxButtons.set_hexpand(False)
+            self.boxButtons = Gtk.Box(spacing=0, orientation=Gtk.Orientation.HORIZONTAL)
+            self.boxButtons.get_style_context().add_class(class_name='linked')
+            self.boxButtons.set_hexpand(True)
             self.boxButtons.append(self.factory.create_button(icon_name='miaz-list-add', title='', callback=self.on_item_available_add, data=self.config_for))
             self.boxButtons.append(self.factory.create_button(icon_name='miaz-list-remove', title='', callback=self._on_item_available_remove))
+            self.boxButtons.append(self.factory.create_button(icon_name='miaz-import-config', tooltip='Import configuration', callback=self._on_config_import))
             self.boxOper.append(self.boxButtons)
         self.append(self.boxOper)
         boxViews = self.factory.create_box_horizontal(spacing=0, hexpand=True, vexpand=True)
@@ -273,6 +276,10 @@ class MiAZSelector(Gtk.Box):
 
     def _on_entrysearch_delete(self, *args):
         self.entry.set_text("")
+
+
+    def _on_config_import(self, *args):
+        pass
 
     def get_search_entry(self):
         return self.entry
