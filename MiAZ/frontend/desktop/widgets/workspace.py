@@ -96,7 +96,7 @@ class MiAZWorkspace(Gtk.Box):
             self.cache = self.util.json_load(self.fcache)
             self.log.debug("Loading cache from %s", self.fcache)
         except:
-            self._initialize_caches()
+            self.initialize_caches()
 
         self._check_first_time()
 
@@ -104,7 +104,7 @@ class MiAZWorkspace(Gtk.Box):
         self.app.connect('start-application-completed', self._finish_configuration)
         self._on_filter_selected()
 
-    def _initialize_caches(self):
+    def initialize_caches(self):
         self.cache = {}
         for cache in ['Date', 'Country', 'Group', 'SentBy', 'SentTo', 'Purpose']:
             self.cache[cache] = {}
@@ -127,7 +127,7 @@ class MiAZWorkspace(Gtk.Box):
         # FIXME
         # Right now, there is no way to know which config item has been
         # updated, therefore, the whole cache must be invalidated :/
-        self._initialize_caches()
+        self.initialize_caches()
         self.update()
         # ~ self.log.debug("Config changed")
 
@@ -211,6 +211,7 @@ class MiAZWorkspace(Gtk.Box):
         label = self.btnDocsSel.get_child()
         docs = self.util.get_files()
         label.set_markup("<small>%d</small> / %d / <big>%d</big>" % (len(self.selected_items), len(model), len(docs)))
+        self.app.message("Selected %d of %d documents in current view (total documents: %d)" % (len(self.selected_items), len(model), len(docs)))
         # ~ if len(self.selected_items) == 1:
             # ~ menu = self.app.get_widget('workspace-menu-single')
             # ~ self.popDocsSel.set_menu_model(menu)
@@ -263,6 +264,22 @@ class MiAZWorkspace(Gtk.Box):
         hdb_left.append(dd_prj)
         self.app.set_widget('ws-dropdowns', dropdowns)
 
+        # Menu Single and Multiple
+        popovermenu = self._setup_menu_selection()
+        label = Gtk.Label()
+        self.btnDocsSel = Gtk.MenuButton()
+        # ~ self.btnDocsSel.get_style_context().add_class(class_name='flat')
+        # ~ self.btnDocsSel.set_has_frame(False)
+        # ~ self.btnDocsSel.set_margin_start(24)
+        # ~ self.btnDocsSel.set_margin_end(24)
+        self.btnDocsSel.set_child(label)
+        self.popDocsSel = Gtk.PopoverMenu()
+        self.popDocsSel.set_menu_model(popovermenu)
+        self.btnDocsSel.set_popover(popover=self.popDocsSel)
+        self.btnDocsSel.set_sensitive(True)
+        # ~ headerbar = self.app.get_widget('headerbar')
+        hdb_right.append(self.btnDocsSel)
+
         ## Import button
         widgets = []
         btnImportFiles = self.factory.create_button('miaz-import-document', callback=self.actions.import_file)
@@ -278,21 +295,7 @@ class MiAZWorkspace(Gtk.Box):
         button = self.factory.create_button_popover(icon_name='miaz-list-add', title='', widgets=widgets)
         hdb_right.append(button)
 
-        # Menu Single and Multiple
-        popovermenu = self._setup_menu_selection()
-        label = Gtk.Label()
-        self.btnDocsSel = Gtk.MenuButton()
-        self.btnDocsSel.get_style_context().add_class(class_name='flat')
-        self.btnDocsSel.set_has_frame(False)
-        self.btnDocsSel.set_margin_start(24)
-        self.btnDocsSel.set_margin_end(24)
-        self.btnDocsSel.set_child(label)
-        self.popDocsSel = Gtk.PopoverMenu()
-        self.popDocsSel.set_menu_model(popovermenu)
-        self.btnDocsSel.set_popover(popover=self.popDocsSel)
-        self.btnDocsSel.set_sensitive(True)
-        headerbar = self.app.get_widget('headerbar')
-        headerbar.set_title_widget(self.btnDocsSel)
+
 
     def _update_dropdown_date(self):
         dropdowns = self.app.get_widget('ws-dropdowns')
@@ -353,6 +356,7 @@ class MiAZWorkspace(Gtk.Box):
         self.view = MiAZColumnViewWorkspace(self.app)
         self.app.add_widget('workspace-view', self.view)
         self.view.get_style_context().add_class(class_name='caption')
+        # ~ self.view.get_style_context().add_class(class_name='monospace')
         self.view.set_filter(self._do_filter_view)
         frmView = self.factory.create_frame(hexpand=True, vexpand=True)
         frmView.set_child(self.view)
