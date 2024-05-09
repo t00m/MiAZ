@@ -16,6 +16,11 @@ user:
 user_uninstall:
 	cd builddir_user && ninja uninstall
 
+deb:
+	rm -rf deb_dist; rm -f *.tar.gz; python3 setup.py --command-packages=stdeb.command sdist_dsc --debian-version=2 --maintainer 'Tomás Vírseda <tomas.virseda@gmail.com>' --compat 10 --section utils --suggests simple-scan --copyright-file data/docs/LICENSE bdist_deb
+
+rpm:
+	sudo apt install rpm rpmlint rpm-i18n elfutils; rm -rf dist; rm -f *.tar.gz; /usr/bin/env python3 setup.py bdist_rpm
 AppImage:
 #~ 	rm -rf builddir_user
 	meson builddir_user --prefix=/home/t00m/Documents/devel/github/MiAZ/AppDir/usr

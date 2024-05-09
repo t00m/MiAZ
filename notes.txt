@@ -1,0 +1,3 @@
+dh clean --with python3 --buildsystem=pybuild
+dh_auto_clean -O--buildsystem=pybuild
+

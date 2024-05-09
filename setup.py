@@ -65,7 +65,7 @@ DATA_FILES +=[('share/icons/hicolor/48x48/apps/', ['data/resources/icons/scalabl
 
 setup(
     name='MiAZ',
-    version=VERSION,
+    version='0.0.22',
     author='Tomás Vírseda',
     author_email='tomasvirseda@gmail.com',
     url='https://github.com/t00m/MiAZ',
