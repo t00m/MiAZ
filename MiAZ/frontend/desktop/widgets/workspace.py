@@ -594,7 +594,7 @@ class MiAZWorkspace(Gtk.Box):
             if len(id) == 0:
                 return True
         else:
-            return item.id == id
+            return item.id.upper() == id.upper()
 
     def _do_eval_cond_matches_date(self, item):
         # Convert timestamp to timedate object and cache it
