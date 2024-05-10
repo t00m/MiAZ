@@ -168,7 +168,7 @@ class MiAZColumnViewWorkspace(MiAZColumnView):
         mimetype, val = Gio.content_type_guess('filename=%s' % item.id)
         gicon = self.srvicm.get_mimetype_icon(mimetype)
         icon.set_from_gicon(gicon)
-        icon.set_pixel_size(24)
+        icon.set_pixel_size(48)
 
     def _on_factory_setup_country(self, factory, list_item):
         box = ColLabel()
@@ -244,12 +244,13 @@ class MiAZColumnViewWorkspace(MiAZColumnView):
 
     def _on_factory_bind_flag(self, factory, list_item):
         box = list_item.get_child()
+        box.set_halign(Gtk.Align.CENTER)
         item = list_item.get_item()
         icon = box.get_first_child()
         code = item.country
         paintable = self.srvicm.get_flag_icon(code)
         icon.set_from_paintable(paintable)
-        icon.set_pixel_size(24)
+        icon.set_pixel_size(48)
 
     def _on_factory_setup_flag(self, factory, list_item):
         box = ColIcon()

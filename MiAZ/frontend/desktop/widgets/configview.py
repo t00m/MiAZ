@@ -55,6 +55,8 @@ class MiAZConfigView(MiAZSelector):
         frmView.set_child(self.view)
         return selector
 
+    def _on_config_import(self, *args):
+        self.log.debug("Import configuration for '%s'", self.config.config_for)
 
 class MiAZRepositories(MiAZConfigView):
     """Manage Repositories"""

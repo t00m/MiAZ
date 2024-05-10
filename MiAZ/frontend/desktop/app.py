@@ -74,8 +74,11 @@ class MiAZApp(Gtk.Application):
         self.win.set_default_icon_name('MiAZ')
         self.theme = self.add_service('theme', Gtk.IconTheme.get_for_display(self.win.get_display()))
         self.theme.add_search_path(ENV['GPATH']['ICONS'])
+        self.log.debug("Setting up Widget Factory")
         self.factory = self.add_service('factory', MiAZFactory(self))
+        self.log.debug("Setting up MiAZ Actions")
         self.actions = self.add_service('actions', MiAZActions(self))
+        self.log.debug("Setting up Widget GUI")
         self._setup_gui()
         self._setup_event_listener()
         self._setup_plugin_manager()
@@ -91,11 +94,10 @@ class MiAZApp(Gtk.Application):
     def _update_repo_settings(self, *args):
         self.log.debug("Repo switched. Configuration switched")
         widget_settings_repo = self.get_widget('settings-repo')
-        # ~ label_repo = self.get_widget('label_repo')
         if widget_settings_repo is not None:
             self.stack.remove(widget_settings_repo)
             self.remove_widget('settings-repo')
-            # ~ self._setup_page_repo_settings()
+            # ~ #self._setup_page_repo_settings()
         repo_active = self.conf['App'].get('current')
 
         # ~ label_repo.set_markup(' [<b>%s</b>] ' % repo_active.replace('_', ' '))
@@ -313,20 +315,21 @@ class MiAZApp(Gtk.Application):
 
     def show_app_about(self, *args):
         self.show_stack_page_by_name('about')
+        self.message('About MiAZ app')
 
     def show_workspace(self, *args):
         self.show_stack_page_by_name('workspace')
 
-    def _setup_headerbar_left_menu(self):
-        # System menu
-        hbox = self.factory.create_box_horizontal(margin=0, spacing=0)
-        hbox.get_style_context().add_class(class_name='linked')
-        menubutton = self.get_widget('headerbar-button-menu-system')
-        menubutton.get_style_context().add_class(class_name='flat')
-        menubutton.set_valign(Gtk.Align.CENTER)
-        hbox.append(menubutton)
-        headerbar = self.get_widget('headerbar')
-        headerbar.pack_start(hbox)
+    # ~ def _setup_headerbar_left_menu(self):
+        # ~ # System menu
+        # ~ hbox = self.factory.create_box_horizontal(margin=0, spacing=0)
+        # ~ hbox.get_style_context().add_class(class_name='linked')
+        # ~ menubutton = self.get_widget('headerbar-button-menu-system')
+        # ~ menubutton.get_style_context().add_class(class_name='flat')
+        # ~ menubutton.set_valign(Gtk.Align.CENTER)
+        # ~ hbox.append(menubutton)
+        # ~ headerbar = self.get_widget('headerbar')
+        # ~ headerbar.pack_start(hbox)
 
     def _setup_headerbar_left(self):
         # System menu
@@ -357,24 +360,33 @@ class MiAZApp(Gtk.Application):
     def _setup_gui(self):
         # Widgets
         ## HeaderBar
+        self.log.debug("Setting up HeaderBar")
         headerbar = self.add_widget('headerbar', Gtk.HeaderBar())
         self.win.set_titlebar(headerbar)
 
         ## Central Box
+        self.log.debug("Setting up the main box")
         self.mainbox = self.factory.create_box_vertical(vexpand=True)
         self.win.set_child(self.mainbox)
 
         ## Stack & Stack.Switcher
+        self.log.debug("Setting up stack")
         stack = self._setup_stack()
         self.mainbox.append(stack)
 
         # Setup system menu
+        self.log.debug("Setting up menues")
         self._setup_menu_app()
 
-        # Setup headerbar
-        self._setup_headerbar_left_menu()
+        # Setup headerbar widgets
+        self.log.debug("Setting up headerbar")
+        self.log.debug("\tmenu")
+        # ~ self._setup_headerbar_left_menu()
+        self.log.debug("\tleft")
         self._setup_headerbar_left()
+        self.log.debug("\tcenter")
         self._setup_headerbar_center()
+        self.log.debug("\tright")
         self._setup_headerbar_right()
 
         # Create system pages
@@ -383,6 +395,7 @@ class MiAZApp(Gtk.Application):
         self._setup_page_help()
 
         # Statusbar
+        self.log.debug("Setting up Statusbar")
         statusbar = self.add_widget('statusbar', MiAZStatusbar(self))
         self.mainbox.append(statusbar)
 
@@ -393,14 +406,22 @@ class MiAZApp(Gtk.Application):
             self.log.debug("Repo? '%s'", dir_repo)
             if self.backend.repo_validate(dir_repo):
                 self.backend.repo_load(dir_repo)
+                self.log.debug("Setting up workspace")
                 if self.get_widget('workspace') is None:
                     self._setup_page_workspace()
                     if not self.plugins_loaded:
+                        self.log.debug("Rloading plugins")
                         self.load_plugins()
+                self.log.debug("Setting up Rename widget")
                 if self.get_widget('rename') is None:
                     self._setup_page_rename()
+                self.log.debug("Setting up Repository settings widget")
                 if self.get_widget('settings-repo') is None:
                     self._setup_page_repo_settings()
+
+                workspace = self.get_widget('workspace')
+                workspace.initialize_caches()
+
                 self.show_stack_page_by_name('workspace')
                 valid = True
                 statusbar = self.get_widget('statusbar')
@@ -512,3 +533,7 @@ class MiAZApp(Gtk.Application):
             self.log.error("Widget '%s' doesn't exists", name)
         return deleted
 
+    def message(self, message: str):
+        """Statusbar message"""
+        statusbar = self.get_widget('statusbar')
+        statusbar.message(message)

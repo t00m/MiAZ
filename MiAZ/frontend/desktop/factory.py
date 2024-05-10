@@ -118,10 +118,11 @@ class MiAZFactory:
 
         return hbox
 
-    def create_button(self, icon_name='', title='', callback=None, width=16, height=16, css_classes=[], data=None):
+    def create_button(self, icon_name='', title='', tooltip='', callback=None, width=16, height=16, css_classes=[], data=None):
         button = Gtk.Button(css_classes=css_classes)
+
         # ~ button.get_style_context().add_class(class_name='flat')
-        hbox = self.create_box_horizontal()
+        hbox = self.create_box_horizontal(spacing=0, margin=0)
         if len(icon_name.strip()) > 0:
             icon = self.icons.get_image_by_name(icon_name)
             icon.set_pixel_size(width)
@@ -134,6 +135,9 @@ class MiAZFactory:
             label.set_valign(Gtk.Align.CENTER)
             hbox.append(label)
 
+        if len(tooltip) > 0:
+            button.set_tooltip_markup(tooltip)
+
         button.set_child(hbox)
 
         if callback is not None:
@@ -143,7 +147,7 @@ class MiAZFactory:
 
     def create_button_toggle(self, icon_name: str = '', title: str = '', callback=None, css_classes=[], data=None) -> Gtk.ToggleButton:
         button = Gtk.ToggleButton(css_classes=css_classes)
-        hbox = self.create_box_horizontal()
+        hbox = self.create_box_horizontal(spacing=0, margin=0)
         if len(icon_name.strip()) == 0:
             icon = Gtk.Image()
         else:
