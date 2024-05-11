@@ -23,6 +23,7 @@ from MiAZ.backend.log import get_logger
 from MiAZ.backend.models import Project, Repository
 from MiAZ.frontend.desktop.widgets.columnview import MiAZColumnView
 from MiAZ.frontend.desktop.widgets.dialogs import MiAZDialogAdd
+from MiAZ.frontend.desktop.widgets.dialogs import CustomDialog
 
 
 class MiAZSelector(Gtk.Box):
@@ -62,7 +63,7 @@ class MiAZSelector(Gtk.Box):
             self.boxButtons.set_hexpand(True)
             self.boxButtons.append(self.factory.create_button(icon_name='miaz-list-add', title='', callback=self.on_item_available_add, data=self.config_for))
             self.boxButtons.append(self.factory.create_button(icon_name='miaz-list-remove', title='', callback=self._on_item_available_remove))
-            self.boxButtons.append(self.factory.create_button(icon_name='miaz-import-config', tooltip='Import configuration', callback=self._on_config_import))
+            # ~ self.boxButtons.append(self.factory.create_button(icon_name='miaz-import-config', tooltip='Import configuration', callback=self._on_config_import))
             self.boxOper.append(self.boxButtons)
         self.append(self.boxOper)
         boxViews = self.factory.create_box_horizontal(spacing=0, hexpand=True, vexpand=True)
@@ -180,6 +181,12 @@ class MiAZSelector(Gtk.Box):
                 dtype = "warning"
                 text = _('%s %s is still being used by some docs') % (self.config.model.__title__, item_used.id)
                 self.statusbar_message(dtype, text)
+                window = self.app.get_widget('window')
+                dtype = 'error'
+                title = "Item can't be removed"
+                dialog = CustomDialog(app=self.app, parent=window, use_header_bar=True, dtype=dtype, title=title, text=text)
+                dialog.set_modal(True)
+                dialog.show()
         if changed:
             self.config.save_used(items=items_used)
             self.config.save_available(items=items_available)

@@ -32,6 +32,7 @@ icon_name["question"] = "dialog-question-symbolic"
 
 class CustomDialog(Gtk.Dialog):
     def __init__(self,
+                    app,
                     parent: Gtk.Window,
                     use_header_bar: bool = True,
                     dtype: str = 'info', # [info|warning|error|question]
@@ -40,6 +41,7 @@ class CustomDialog(Gtk.Dialog):
                     callback = None
                 ):
         super().__init__()
+        self.app = app
         self.set_transient_for(parent)
         self.set_title(title=title)
         self.use_header_bar = True
@@ -66,6 +68,9 @@ class CustomDialog(Gtk.Dialog):
             btn_cancel = self.get_widget_for_response(response_id=Gtk.ResponseType.CANCEL)
             btn_cancel.get_style_context().add_class(class_name='destructive-action')
 
+        action_box = btn_ok.get_ancestor(Gtk.Box)
+        action_box.get_style_context ().add_class ('toolbar')
+
         # Content area
         content_area = self.get_content_area()
         content_area.set_orientation(orientation=Gtk.Orientation.VERTICAL)
@@ -76,8 +81,9 @@ class CustomDialog(Gtk.Dialog):
         content_area.set_margin_start(margin=12)
         vbox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6, hexpand=True, vexpand=True)
         hbox_title = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6, hexpand=True, vexpand=True)
-        icon = Gtk.Image.new_from_icon_name(icon_name[dtype])
-        icon.set_pixel_size(32)
+        icman = self.app.get_service('icons')
+        icon = icman.get_image_by_name(icon_name[dtype])
+        icon.set_pixel_size(48)
         label = Gtk.Label.new(dtype.title())
         label.get_style_context().add_class(class_name='title-1')
         hbox_title.append(icon)
@@ -85,6 +91,7 @@ class CustomDialog(Gtk.Dialog):
         vbox.append(hbox_title)
         lblDesc = Gtk.Label()
         lblDesc.set_text(text)
+        lblDesc.get_style_context().add_class(class_name='title-4')
         vbox.append(lblDesc)
         content_area.append(child=vbox)
 
@@ -93,7 +100,7 @@ class CustomDialog(Gtk.Dialog):
             # ~ return True
         # ~ elif response == Gtk.ResponseType.CANCEL:
             # ~ return False
-        dialog.destroy()
+        dialog.hide()
 
     def get_entry_text(self):
         return self.entry.get_text()

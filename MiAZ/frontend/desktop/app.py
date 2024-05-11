@@ -151,12 +151,23 @@ class MiAZApp(Gtk.Application):
         self.stack.set_vexpand(True)
         return self.stack
 
-    def _setup_page_about(self):
-        widget_about = self.get_widget('about')
-        if widget_about is None:
-            widget_about = self.add_widget('about', MiAZAbout(self))
-            page_about = self.stack.add_titled(widget_about, 'about', 'MiAZ')
-            page_about.set_icon_name('document-properties')
+    # ~ def _setup_page_about(self):
+        # ~ about = Gtk.AboutDialog(transient_for=self.props.active_window,
+                                # ~ modal=True,
+                                # ~ program_name='{{name}}',
+                                # ~ logo_icon_name='{{appid}}',
+                                # ~ version='{{project_version}}',
+                                # ~ authors=['{{author_escape}}'],
+                                # ~ copyright='© {{year}} {{author_escape}}')
+        # ~ # Translators: Replace "translator-credits" with your name/username, and optionally an email or URL.
+        # ~ about.set_translator_credits(_('translator-credits'))
+        # ~ about.present()
+
+        # ~ widget_about = self.get_widget('about')
+        # ~ if widget_about is None:
+            # ~ widget_about = self.add_widget('about', MiAZAbout(self))
+            # ~ page_about = self.stack.add_titled(widget_about, 'about', 'MiAZ')
+            # ~ page_about.set_icon_name('document-properties')
 
     def _setup_page_help(self):
         widget_help = self.get_widget('help')
@@ -314,22 +325,23 @@ class MiAZApp(Gtk.Application):
         window.present()
 
     def show_app_about(self, *args):
-        self.show_stack_page_by_name('about')
-        self.message('About MiAZ app')
+        window = self.get_widget('window')
+        ENV = self.get_env()
+        about = Gtk.AboutDialog()
+        about.set_transient_for=window
+        about.set_modal(True)
+        about.set_logo_icon_name(ENV['APP']['ID'])
+        about.set_program_name(ENV['APP']['name'])
+        about.set_version(ENV['APP']['VERSION'])
+        about.set_authors(ENV['APP']['author'])
+        about.set_license(ENV['APP']['license'])
+        about.set_copyright('© 2024 %s (%s)' % (ENV['APP']['author'], ENV['APP']['author_email']))
+        about.set_website('https://github.com/t00m/MiAZ')
+        about.set_website_label('Github MiAZ repository')
+        about.present()
 
     def show_workspace(self, *args):
         self.show_stack_page_by_name('workspace')
-
-    # ~ def _setup_headerbar_left_menu(self):
-        # ~ # System menu
-        # ~ hbox = self.factory.create_box_horizontal(margin=0, spacing=0)
-        # ~ hbox.get_style_context().add_class(class_name='linked')
-        # ~ menubutton = self.get_widget('headerbar-button-menu-system')
-        # ~ menubutton.get_style_context().add_class(class_name='flat')
-        # ~ menubutton.set_valign(Gtk.Align.CENTER)
-        # ~ hbox.append(menubutton)
-        # ~ headerbar = self.get_widget('headerbar')
-        # ~ headerbar.pack_start(hbox)
 
     def _setup_headerbar_left(self):
         # System menu
@@ -390,7 +402,7 @@ class MiAZApp(Gtk.Application):
         self._setup_headerbar_right()
 
         # Create system pages
-        self._setup_page_about()
+        # ~ self._setup_page_about()
         self._setup_page_welcome()
         self._setup_page_help()
 
@@ -449,7 +461,17 @@ class MiAZApp(Gtk.Application):
             window.set_modal(True)
             window.present()
         elif name == 'about':
-            self.show_stack_page_by_name('about')
+            ENV = self.get_env()
+            about = Gtk.AboutDialog(transient_for=self.props.active_window,
+                                modal=True,
+                                program_name=ENV['APP']['name'],
+                                logo_icon_name=ENV['APP']['ID'],
+                                version=ENV['APP']['VERSION'],
+                                authors=ENV['APP']['name'],
+                                license=ENV['APP']['license'],
+                                copyright='© {{2024}} %s <%s>' % (ENV['APP']['author'], ENV['APP']['author_email']))
+            # ~ about.set_translator_credits(_('translator-credits'))
+            about.present()
         elif name == 'close':
             self.quit()
         elif name == 'view':
