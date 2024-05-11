@@ -184,7 +184,7 @@ class MiAZSelector(Gtk.Box):
                 window = self.app.get_widget('window')
                 dtype = 'error'
                 title = "Item can't be removed"
-                dialog = CustomDialog(parent=window, use_header_bar=True, dtype=dtype, title=title, text=text)
+                dialog = CustomDialog(app=self.app, parent=window, use_header_bar=True, dtype=dtype, title=title, text=text)
                 dialog.set_modal(True)
                 dialog.show()
         if changed:
