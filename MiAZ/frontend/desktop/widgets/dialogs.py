@@ -66,6 +66,9 @@ class CustomDialog(Gtk.Dialog):
             btn_cancel = self.get_widget_for_response(response_id=Gtk.ResponseType.CANCEL)
             btn_cancel.get_style_context().add_class(class_name='destructive-action')
 
+        action_box = btn_ok.get_ancestor(Gtk.Box)
+        action_box.get_style_context ().add_class ('toolbar')
+
         # Content area
         content_area = self.get_content_area()
         content_area.set_orientation(orientation=Gtk.Orientation.VERTICAL)
@@ -93,7 +96,7 @@ class CustomDialog(Gtk.Dialog):
             # ~ return True
         # ~ elif response == Gtk.ResponseType.CANCEL:
             # ~ return False
-        dialog.destroy()
+        dialog.hide()
 
     def get_entry_text(self):
         return self.entry.get_text()

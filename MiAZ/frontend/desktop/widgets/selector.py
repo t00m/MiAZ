@@ -23,6 +23,7 @@ from MiAZ.backend.log import get_logger
 from MiAZ.backend.models import Project, Repository
 from MiAZ.frontend.desktop.widgets.columnview import MiAZColumnView
 from MiAZ.frontend.desktop.widgets.dialogs import MiAZDialogAdd
+from MiAZ.frontend.desktop.widgets.dialogs import CustomDialog
 
 
 class MiAZSelector(Gtk.Box):
@@ -180,6 +181,12 @@ class MiAZSelector(Gtk.Box):
                 dtype = "warning"
                 text = _('%s %s is still being used by some docs') % (self.config.model.__title__, item_used.id)
                 self.statusbar_message(dtype, text)
+                window = self.app.get_widget('window')
+                dtype = 'error'
+                title = "Item can't be removed"
+                dialog = CustomDialog(parent=window, use_header_bar=True, dtype=dtype, title=title, text=text)
+                dialog.set_modal(True)
+                dialog.show()
         if changed:
             self.config.save_used(items=items_used)
             self.config.save_available(items=items_available)

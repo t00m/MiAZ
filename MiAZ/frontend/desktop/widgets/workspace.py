@@ -528,6 +528,10 @@ class MiAZWorkspace(Gtk.Box):
                             else:
                                 self.cache[skey][key] = desc[skey]
 
+                        # Make sure that sth is displayed if no desc
+                        if self.cache[skey][key] == '':
+                            self.cache[skey][key] = key
+
                 if not active:
                     invalid.append(os.path.basename(filename))
                 # ~ self.log.debug("\n%s\n%s\n\n", filename, desc)
