@@ -529,7 +529,10 @@ class MiAZWorkspace(Gtk.Box):
                                 self.cache[skey][key] = desc[skey]
 
                         # Make sure that sth is displayed if no desc
-                        if self.cache[skey][key] == '':
+                        try:
+                            if self.cache[skey][key] == '':
+                                self.cache[skey][key] = key
+                        except KeyError:
                             self.cache[skey][key] = key
 
                 if not active:
@@ -580,9 +583,9 @@ class MiAZWorkspace(Gtk.Box):
                 renamed += 1
         self.log.debug("Documents renamed: %d", renamed)
 
-    def _do_eval_cond_matches_freetext(self, path):
+    def _do_eval_cond_matches_freetext(self, item):
         left = self.ent_sb.get_text()
-        right = path
+        right = item.id
         if left.upper() in right.upper():
             return True
         return False
@@ -663,7 +666,7 @@ class MiAZWorkspace(Gtk.Box):
             project = 'Any'
 
         if project != 'None':
-            c0 = self._do_eval_cond_matches_freetext(item.id)
+            c0 = self._do_eval_cond_matches_freetext(item)
             cd = self._do_eval_cond_matches_date(item)
             c1 = self._do_eval_cond_matches(dropdowns['Country'], item.country)
             c2 = self._do_eval_cond_matches(dropdowns['Group'], item.group)
@@ -678,7 +681,7 @@ class MiAZWorkspace(Gtk.Box):
         else:
             projects_assigned = self.backend.projects.assigned_to(item.id)
             if len(projects_assigned) == 0:
-                c0 = self._do_eval_cond_matches_freetext(item.id)
+                c0 = self._do_eval_cond_matches_freetext(item)
                 cd = self._do_eval_cond_matches_date(item)
                 c1 = self._do_eval_cond_matches(dropdowns['Country'], item.country)
                 c2 = self._do_eval_cond_matches(dropdowns['Group'], item.group)
