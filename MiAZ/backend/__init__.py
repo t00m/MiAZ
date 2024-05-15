@@ -28,7 +28,7 @@ from MiAZ.backend.config import MiAZConfigPeople
 from MiAZ.backend.config import MiAZConfigSentBy
 from MiAZ.backend.config import MiAZConfigSentTo
 from MiAZ.backend.config import MiAZConfigRepositories
-
+from MiAZ.backend.config import MiAZConfigUserPlugins
 
 class MiAZBackend(GObject.GObject):
     """Backend class"""
@@ -115,6 +115,7 @@ class MiAZBackend(GObject.GObject):
         self._conf['SentTo'] = MiAZConfigSentTo(self, dir_conf)
         self._conf['Person'] = MiAZConfigPeople(self, dir_conf)
         self._conf['Project'] = MiAZConfigProjects(self, dir_conf)
+        self._conf['Plugin'] = MiAZConfigUserPlugins(self, dir_conf)
         for cid in self._conf:
             self.log.debug("\tConfig for %s: %d values", cid, len(self._conf[cid].load_used()))
         self.watcher = MiAZWatcher('source', path)

@@ -41,6 +41,7 @@ class MiAZPluginType(IntEnum):
 
     def get_dir(self):
         """Returns the directory where this type of plugins can be found."""
+        self.log.error("PSDIR: %s", self.value)
         ENV = self.app.get_env()
         if self.value == MiAZPluginType.USER:
             return ENV['LPATH']['PLUGINS']
@@ -66,8 +67,8 @@ class MiAZPluginManager:
 
     def load_plugin(self, plugin: Peas.PluginInfo) -> bool:
         self.engine.load_plugin(plugin)
+        ptype = self.get_plugin_type(plugin)
         if plugin.is_loaded():
-            ptype = self.get_plugin_type(plugin)
             self.log.debug("Plugin %s (%s) loaded", plugin.get_name(), ptype)
             return True
         else:
@@ -89,10 +90,12 @@ class MiAZPluginManager:
     def get_plugin_type(self, plugin_info):
         """Gets the PluginType for the specified Peas.PluginInfo."""
         ENV = self.app.get_env()
-        paths = [plugin_info.get_data_dir(), ENV['GPATH']['PLUGINS']]
-        if os.path.commonprefix(paths) == ENV['GPATH']['PLUGINS']:
+        PLUGIN_DIR = os.path.dirname(plugin_info.get_data_dir())
+        is_plugin_user_dir = PLUGIN_DIR == ENV['LPATH']['PLUGINS']
+        if is_plugin_user_dir:
+            return MiAZPluginType.USER
+        else:
             return MiAZPluginType.SYSTEM
-        return MiAZPluginType.USER
 
     def get_extension(self, module_name):
         """Gets the extension identified by the specified name.
@@ -139,6 +142,9 @@ class MiAZPluginManager:
             self.engine.add_search_path(ENV['GPATH']['PLUGINS'])
             self.log.debug("Added System plugin dir: %s", ENV['GPATH']['PLUGINS'])
 
+        # GLobal user plugins
+        self.add_user_plugins_dir()
+
         # User plugins for a specific repo
         self.add_repo_plugins_dir()
 
@@ -156,6 +162,12 @@ class MiAZPluginManager:
             self.log.debug("Added User plugin dir: %s", dir_plugins_used)
         except KeyError:
             self.log.warning("There isn't any repo loaded right now!")
+
+    def add_user_plugins_dir(self):
+        ENV = self.app.get_env()
+        os.makedirs(ENV['LPATH']['PLUGINS'], exist_ok=True)
+        self.engine.add_search_path(ENV['LPATH']['PLUGINS'])
+        self.log.debug("Added user plugins dir: %s", ENV['LPATH']['PLUGINS'])
 
 
     @staticmethod

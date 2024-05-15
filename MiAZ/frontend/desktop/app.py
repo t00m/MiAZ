@@ -35,7 +35,7 @@ from MiAZ.frontend.desktop.icons import MiAZIconManager
 from MiAZ.frontend.desktop.factory import MiAZFactory
 from MiAZ.frontend.desktop.actions import MiAZActions
 from MiAZ.frontend.desktop.help import MiAZHelp
-from MiAZ.backend.pluginsystem import MiAZPluginManager
+from MiAZ.backend.pluginsystem import MiAZPluginManager, MiAZPluginType
 
 
 class MiAZApp(Gtk.Application):
@@ -74,15 +74,12 @@ class MiAZApp(Gtk.Application):
         self.win.set_default_icon_name('MiAZ')
         self.theme = self.add_service('theme', Gtk.IconTheme.get_for_display(self.win.get_display()))
         self.theme.add_search_path(ENV['GPATH']['ICONS'])
-        self.log.debug("Setting up Widget Factory")
         self.factory = self.add_service('factory', MiAZFactory(self))
-        self.log.debug("Setting up MiAZ Actions")
         self.actions = self.add_service('actions', MiAZActions(self))
-        self.log.debug("Setting up Widget GUI")
         self._setup_gui()
         self._setup_event_listener()
         self._setup_plugin_manager()
-        self.log.debug("Executing MiAZ Desktop mode!!")
+        self.log.debug("Executing MiAZ Desktop mode")
         self.check_repository()
         self.backend.connect('repository-switched', self._update_repo_settings)
 
@@ -115,8 +112,12 @@ class MiAZApp(Gtk.Application):
             a = 0
             for plugin in self.plugin_manager.plugins:
                 try:
-                    plugin_manager.load_plugin(plugin)
-                    a += 1
+                    ptype = plugin_manager.get_plugin_type(plugin)
+                    if ptype == MiAZPluginType.SYSTEM:
+                        plugin_manager.load_plugin(plugin)
+                        a += 1
+                    else:
+                        self.log.debug("User plugin '%s' skipped", plugin.get_name())
                 except Exception as error:
                     self.log.error(error)
                 n += 1
@@ -376,33 +377,23 @@ class MiAZApp(Gtk.Application):
     def _setup_gui(self):
         # Widgets
         ## HeaderBar
-        self.log.debug("Setting up HeaderBar")
         headerbar = self.add_widget('headerbar', Gtk.HeaderBar())
         self.win.set_titlebar(headerbar)
 
         ## Central Box
-        self.log.debug("Setting up the main box")
         self.mainbox = self.factory.create_box_vertical(margin=0, spacing=0, vexpand=True)
         self.win.set_child(self.mainbox)
 
         ## Stack & Stack.Switcher
-        self.log.debug("Setting up stack")
         stack = self._setup_stack()
         self.mainbox.append(stack)
 
         # Setup system menu
-        self.log.debug("Setting up menues")
         self._setup_menu_app()
 
         # Setup headerbar widgets
-        self.log.debug("Setting up headerbar")
-        self.log.debug("\tmenu")
-        # ~ self._setup_headerbar_left_menu()
-        self.log.debug("\tleft")
         self._setup_headerbar_left()
-        self.log.debug("\tcenter")
         self._setup_headerbar_center()
-        self.log.debug("\tright")
         self._setup_headerbar_right()
 
         # Create system pages
@@ -411,7 +402,6 @@ class MiAZApp(Gtk.Application):
         self._setup_page_help()
 
         # Statusbar
-        self.log.debug("Setting up Statusbar")
         statusbar = self.add_widget('statusbar', MiAZStatusbar(self))
         self.mainbox.append(statusbar)
 
@@ -426,7 +416,7 @@ class MiAZApp(Gtk.Application):
                 if self.get_widget('workspace') is None:
                     self._setup_page_workspace()
                     if not self.plugins_loaded:
-                        self.log.debug("Rloading plugins")
+                        # ~ self.log.debug("Rloading plugins")
                         self.load_plugins()
                 self.log.debug("Setting up Rename widget")
                 if self.get_widget('rename') is None:

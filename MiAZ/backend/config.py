@@ -14,7 +14,7 @@ import shutil
 from gi.repository import GObject
 
 from MiAZ.backend.log import get_logger
-from MiAZ.backend.models import MiAZModel, MiAZItem, File, Group, Person, Country, Purpose, Concept, SentBy, SentTo, Project, Repository
+from MiAZ.backend.models import MiAZModel, MiAZItem, File, Group, Person, Country, Purpose, Concept, SentBy, SentTo, Project, Repository, Plugin
 
 class MiAZConfig(GObject.GObject):
     """ MiAZ Config class"""
@@ -413,5 +413,20 @@ class MiAZConfigProjects(MiAZConfig):
             available = os.path.join(dir_conf, 'project-available.json'),
             default = None,
             model = Project,
+            must_copy = False
+        )
+
+class MiAZConfigUserPlugins(MiAZConfig):
+    def __init__(self, backend, dir_conf):
+        app = backend.app
+        ENV = app.get_env()
+        super().__init__(
+            backend = backend,
+            log=get_logger('MiAZ.Settings.UserPlugins'),
+            config_for = 'UserPlugin',
+            used = os.path.join(dir_conf, 'plugins-used.json'),
+            available = os.path.join(dir_conf, 'plugins-available.json'),
+            default = None,
+            model = Plugin,
             must_copy = False
         )

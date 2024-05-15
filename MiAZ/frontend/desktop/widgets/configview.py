@@ -22,6 +22,7 @@ from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewPurpose
 from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewPerson
 from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewProject
 from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewRepo
+from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewPlugin
 from MiAZ.frontend.desktop.widgets.dialogs import MiAZDialogAddRepo
 
 
@@ -291,3 +292,40 @@ class MiAZDates(Gtk.Box):
                 target = "%s.%s" % ('-'.join(lname), ext)
                 self.util.filename_rename(source, target)
         dialog.destroy()
+
+class MiAZUserPlugins(MiAZConfigView):
+    """Manage user plugins from Repo Settings. Edit disabled"""
+    __gtype_name__ = 'MiAZUserPlugins'
+    current = None
+
+    def __init__(self, app):
+        super(MiAZConfigView, self).__init__(app, edit=False)
+        super().__init__(app, 'Plugin')
+
+    def _setup_view_finish(self):
+        # Setup Available and Used Column Views
+        self.viewAv = MiAZColumnViewPlugin(self.app)
+        self.add_columnview_available(self.viewAv)
+        self.viewSl = MiAZColumnViewPlugin(self.app)
+        self.add_columnview_used(self.viewSl)
+        self._update_view_available()
+
+    def _update_view_available(self):
+        plugin_manager = self.app.get_widget('plugin-manager')
+        for plugin in plugin_manager.plugins:
+            ptype = plugin_manager.get_plugin_type(plugin)
+
+        # ~ items = []
+        # ~ item_type = self.config.model
+        # ~ plugins = self.config.load_available()
+        # ~ for code in countries:
+            # ~ items.append(item_type(id=code, title=countries[code], icon='%s.svg' % code))
+        # ~ self.viewAv.update(items)
+
+    # ~ def _update_view_used(self):
+        # ~ items = []
+        # ~ item_type = self.config.model
+        # ~ countries = self.config.load_used()
+        # ~ for code in countries:
+            # ~ items.append(item_type(id=code, title=countries[code], icon='%s.svg' % code))
+        # ~ self.viewSl.update(items)

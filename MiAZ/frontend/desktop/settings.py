@@ -24,10 +24,11 @@ from MiAZ.frontend.desktop.widgets.configview import MiAZPeopleSentBy
 from MiAZ.frontend.desktop.widgets.configview import MiAZPeopleSentTo
 from MiAZ.frontend.desktop.widgets.configview import MiAZProjects
 from MiAZ.frontend.desktop.widgets.configview import MiAZRepositories
+from MiAZ.frontend.desktop.widgets.configview import MiAZUserPlugins
 from MiAZ.frontend.desktop.widgets.dialogs import CustomDialog
 from MiAZ.backend.models import MiAZItem, File, Group, Person, Country
 from MiAZ.backend.models import Purpose, Concept, SentBy, SentTo, Date
-from MiAZ.backend.models import Extension, Project, Repository
+from MiAZ.backend.models import Extension, Project, Repository, Plugin
 from MiAZ.backend.config import MiAZConfigRepositories
 
 Configview = {}
@@ -37,6 +38,7 @@ Configview['Purpose'] = MiAZPurposes
 Configview['SentBy'] = MiAZPeopleSentBy
 Configview['SentTo'] = MiAZPeopleSentTo
 Configview['Project'] = MiAZProjects
+Configview['Plugin'] = MiAZUserPlugins
 # ~ Configview['Date'] = Gtk.Calendar
 
 class MiAZAppSettings(Gtk.Window):
@@ -219,14 +221,17 @@ class MiAZRepoSettings(Gtk.Window):
 
     def __init__(self, app, **kwargs):
         super().__init__(**kwargs)
-        self.set_default_size(800, 600)
+        # ~ self.set_default_size(800, 600)
         self.log = get_logger('MiAZRepoSettings')
         self.app = app
+        self.set_title('Repository settings')
         self.factory = self.app.get_service('factory')
         self.config = self.app.get_config('Country')
         self.connect('close-request', self._on_window_close_request)
         self.mainbox = self.factory.create_box_vertical(margin=0, spacing=0, vexpand=True)
         self.set_child(self.mainbox)
+        headerbar = self.app.add_widget('repo-settings-headerbar', Gtk.HeaderBar())
+        self.set_titlebar(headerbar)
         self.notebook = Gtk.Notebook()
         self.notebook.set_show_border(False)
         self.notebook.set_tab_pos(Gtk.PositionType.TOP)
@@ -245,6 +250,7 @@ class MiAZRepoSettings(Gtk.Window):
             box.append(selector)
             page.set_start_widget(box)
             wdgLabel = self.factory.create_box_horizontal()
+            wdgLabel.get_style_context().add_class(class_name='caption')
             icon = self.app.icman.get_image_by_name('miaz-res-%s' % i_type.lower())
             icon.set_hexpand(False)
             icon.set_pixel_size(24)
@@ -256,7 +262,8 @@ class MiAZRepoSettings(Gtk.Window):
             wdgLabel.set_hexpand(True)
             return page, wdgLabel
 
-        for item_type in [Country, Group, Purpose, Project, SentBy, SentTo]:
+        for item_type in [Country, Group, Purpose, Project, SentBy, SentTo, Plugin]:
+            self.log.debug("Creating config page for %s", item_type)
             page, label = create_tab(item_type)
             self.notebook.append_page(page, label)
 
