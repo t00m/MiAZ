@@ -225,7 +225,7 @@ class MiAZRepoSettings(Gtk.Window):
         self.factory = self.app.get_service('factory')
         self.config = self.app.get_config('Country')
         self.connect('close-request', self._on_window_close_request)
-        self.mainbox = self.factory.create_box_vertical(vexpand=True)
+        self.mainbox = self.factory.create_box_vertical(margin=0, spacing=0, vexpand=True)
         self.set_child(self.mainbox)
         self.notebook = Gtk.Notebook()
         self.notebook.set_show_border(False)

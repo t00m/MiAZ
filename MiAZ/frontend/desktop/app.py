@@ -344,15 +344,19 @@ class MiAZApp(Gtk.Application):
         self.show_stack_page_by_name('workspace')
 
     def _setup_headerbar_left(self):
+        headerbar = self.get_widget('headerbar')
+
         # System menu
+        menubutton = self.get_widget('headerbar-button-menu-system')
+        menubutton.set_has_frame(False)
+        menubutton.get_style_context().add_class(class_name='flat')
+        menubutton.set_valign(Gtk.Align.CENTER)
+        headerbar.pack_start(menubutton)
+
+        # Filters and Search box
         hbox = self.factory.create_box_horizontal(margin=0, spacing=0)
         hbox.get_style_context().add_class(class_name='linked')
         self.add_widget('headerbar-left-box', hbox)
-        menubutton = self.get_widget('headerbar-button-menu-system')
-        # ~ menubutton.get_style_context().add_class(class_name='flat')
-        menubutton.set_valign(Gtk.Align.CENTER)
-        hbox.append(menubutton)
-        headerbar = self.get_widget('headerbar')
         headerbar.pack_start(hbox)
 
     def _setup_headerbar_right(self):
@@ -378,7 +382,7 @@ class MiAZApp(Gtk.Application):
 
         ## Central Box
         self.log.debug("Setting up the main box")
-        self.mainbox = self.factory.create_box_vertical(vexpand=True)
+        self.mainbox = self.factory.create_box_vertical(margin=0, spacing=0, vexpand=True)
         self.win.set_child(self.mainbox)
 
         ## Stack & Stack.Switcher

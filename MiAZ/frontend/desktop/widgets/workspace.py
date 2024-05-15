@@ -153,13 +153,27 @@ class MiAZWorkspace(Gtk.Box):
         self.emit('extend-toolbar-top')
 
     def _setup_toolbar_filters(self):
+        dropdowns = self.app.get_widget('ws-dropdowns')
         widget = self.factory.create_box_horizontal(hexpand=True, vexpand=False)
         body = self.factory.create_box_horizontal(margin=3, spacing=6, hexpand=True, vexpand=True)
         body.set_homogeneous(True)
         body.set_margin_top(margin=6)
         widget.append(body)
 
-        dropdowns = self.app.get_widget('ws-dropdowns')
+        ### Projects dropdown
+        i_type = Project.__gtype_name__
+        i_title = _(Project.__title__)
+        dd_prj = self.factory.create_dropdown_generic(item_type=Project)
+        boxDropdown = self.factory.create_box_filter(i_title, dd_prj)
+        # ~ dd_prj.set_size_request(250, -1)
+        dropdowns[i_type] = dd_prj
+        self.actions.dropdown_populate(self.config[i_type], dd_prj, Project, any_value=True, none_value=True)
+        dd_prj.connect("notify::selected-item", self._on_filter_selected)
+        dd_prj.connect("notify::selected-item", self._on_project_selected)
+        dd_prj.set_hexpand(True)
+        self.config[i_type].connect('used-updated', self.update_dropdown_filter, Project)
+        body.append(boxDropdown)
+
         for item_type in [Country, Group, SentBy, Purpose, SentTo]:
             i_type = item_type.__gtype_name__
             i_title = _(item_type.__title__)
@@ -252,17 +266,17 @@ class MiAZWorkspace(Gtk.Box):
         hdb_left.append(dd_date)
 
         ### Projects dropdown
-        i_type = Project.__gtype_name__
-        dd_prj = self.factory.create_dropdown_generic(item_type=Project)
-        dd_prj.set_size_request(250, -1)
-        dropdowns[i_type] = dd_prj
-        self.actions.dropdown_populate(self.config[i_type], dd_prj, Project, any_value=True, none_value=True)
-        dd_prj.connect("notify::selected-item", self._on_filter_selected)
-        dd_prj.connect("notify::selected-item", self._on_project_selected)
-        dd_prj.set_hexpand(True)
-        self.config[i_type].connect('used-updated', self.update_dropdown_filter, Project)
-        hdb_left.append(dd_prj)
-        self.app.set_widget('ws-dropdowns', dropdowns)
+        # ~ i_type = Project.__gtype_name__
+        # ~ dd_prj = self.factory.create_dropdown_generic(item_type=Project)
+        # ~ dd_prj.set_size_request(250, -1)
+        # ~ dropdowns[i_type] = dd_prj
+        # ~ self.actions.dropdown_populate(self.config[i_type], dd_prj, Project, any_value=True, none_value=True)
+        # ~ dd_prj.connect("notify::selected-item", self._on_filter_selected)
+        # ~ dd_prj.connect("notify::selected-item", self._on_project_selected)
+        # ~ dd_prj.set_hexpand(True)
+        # ~ self.config[i_type].connect('used-updated', self.update_dropdown_filter, Project)
+        # ~ hdb_left.append(dd_prj)
+        # ~ self.app.set_widget('ws-dropdowns', dropdowns)
 
         # Menu Single and Multiple
         popovermenu = self._setup_menu_selection()
