@@ -24,6 +24,7 @@ from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewProject
 from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewRepo
 from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewPlugin
 from MiAZ.frontend.desktop.widgets.dialogs import MiAZDialogAddRepo
+from MiAZ.backend.pluginsystem import MiAZPluginType
 
 
 class MiAZConfigView(MiAZSelector):
@@ -301,6 +302,8 @@ class MiAZUserPlugins(MiAZConfigView):
     def __init__(self, app):
         super(MiAZConfigView, self).__init__(app, edit=False)
         super().__init__(app, 'Plugin')
+        self.log.debug(self.config)
+        self._update_view_available()
 
     def _setup_view_finish(self):
         # Setup Available and Used Column Views
@@ -308,19 +311,18 @@ class MiAZUserPlugins(MiAZConfigView):
         self.add_columnview_available(self.viewAv)
         self.viewSl = MiAZColumnViewPlugin(self.app)
         self.add_columnview_used(self.viewSl)
-        self._update_view_available()
 
     def _update_view_available(self):
         plugin_manager = self.app.get_widget('plugin-manager')
+        items = []
+        item_type = self.config.model
         for plugin in plugin_manager.plugins:
             ptype = plugin_manager.get_plugin_type(plugin)
-
-        # ~ items = []
-        # ~ item_type = self.config.model
-        # ~ plugins = self.config.load_available()
-        # ~ for code in countries:
-            # ~ items.append(item_type(id=code, title=countries[code], icon='%s.svg' % code))
-        # ~ self.viewAv.update(items)
+            if ptype == MiAZPluginType.USER:
+                pid = plugin.get_module_name()
+                title = plugin.get_description() #+ ' (v%s)' % plugin.get_version()
+                items.append(item_type(id=pid, title=title))
+        self.viewAv.update(items)
 
     # ~ def _update_view_used(self):
         # ~ items = []
@@ -329,3 +331,34 @@ class MiAZUserPlugins(MiAZConfigView):
         # ~ for code in countries:
             # ~ items.append(item_type(id=code, title=countries[code], icon='%s.svg' % code))
         # ~ self.viewSl.update(items)
+
+    def _on_item_used_remove(self, *args):
+        plugin_manager = self.app.get_widget('plugin-manager')
+        plugins_used = self.config.load_used()
+        for plugin_used in self.viewSl.get_selected_items():
+            plugin = plugin_manager.get_plugin_info(plugin_used.id)
+            if plugin.is_loaded():
+                plugin_manager.unload_plugin(plugin)
+                self.log.debug("Plugin %s unloaded", plugin.get_name())
+            del(plugins_used[plugin_used.id])
+        self.config.save_used(items=plugins_used)
+        self.log.debug("Plugin %s deactivated", plugin.get_name())
+        self._update_view_used()
+
+
+    def _on_item_used_add(self, *args):
+        plugin_manager = self.app.get_widget('plugin-manager')
+        changed = False
+        plugins_used = self.config.load_used()
+        for plugin_available in self.viewAv.get_selected_items():
+            plugins_used[plugin_available.id] = plugin_available.title
+            self.log.debug("Using %s (%s)", plugin_available.id, plugin_available.title)
+            plugin = plugin_manager.get_plugin_info(plugin_available.id)
+            if not plugin.is_loaded():
+                plugin_manager.load_plugin(plugin)
+                self.log.debug("Plugin %s loaded", plugin.get_name())
+            changed = True
+        if changed:
+            self.config.save_used(items=plugins_used)
+            self._update_view_used()
+

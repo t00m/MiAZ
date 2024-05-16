@@ -46,7 +46,7 @@ class MiAZAppSettings(Gtk.Window):
 
     def __init__(self, app, **kwargs):
         super().__init__(**kwargs)
-        # ~ super(Gtk.Box, self).__init__(spacing=12, orientation=Gtk.Orientation.VERTICAL, hexpand=True, vexpand=True)
+        self.set_title('Application settings')
         self.log = get_logger('MiAZAppSettings')
         self.app = app
         self.app.add_widget('window-settings', self)
@@ -55,6 +55,8 @@ class MiAZAppSettings(Gtk.Window):
         self.actions = self.app.get_service('actions')
         self.config = self.backend.get_conf()
         self.connect('close-request', self._on_window_close_request)
+        headerbar = self.app.add_widget('app-settings-headerbar', Gtk.HeaderBar())
+        self.set_titlebar(headerbar)
         self.set_default_size(800, 600)
         self.mainbox = self.factory.create_box_vertical(vexpand=True)
         self.set_child(self.mainbox)
@@ -63,9 +65,7 @@ class MiAZAppSettings(Gtk.Window):
         self.switcher = self.app.add_widget('switcher_settings', Gtk.StackSwitcher())
         self.switcher.set_stack(self.stack)
         self.switcher.set_hexpand(False)
-        centerbox = Gtk.CenterBox()
-        centerbox.set_center_widget(self.switcher)
-        self.mainbox.append(centerbox)
+        headerbar.pack_start(self.switcher)
         self.mainbox.append(self.stack)
         widget = self._create_widget_for_repositories()
         page = self.stack.add_titled(widget, 'repos', 'Repositories')
@@ -169,14 +169,14 @@ class MiAZAppSettings(Gtk.Window):
         widget = self._create_widget_for_system_plugins()
         label = self.factory.create_notebook_label(icon_name='miaz-app-settings', title='System')
         notebook.append_page(widget, label)
-        widget = self.factory.create_box_vertical()
+        widget = self._create_widget_for_user_plugins()
         label = self.factory.create_notebook_label(icon_name='miaz-res-people', title='User')
         notebook.append_page(widget, label)
         return notebook
 
     def _create_widget_for_system_plugins(self):
         from MiAZ.backend.pluginsystem import MiAZPluginType
-        vbox = self.factory.create_box_vertical(hexpand=True, vexpand=True)
+        vbox = self.factory.create_box_vertical(margin=0, spacing=0, hexpand=True, vexpand=True)
         scrwin = self.factory.create_scrolledwindow()
         vbox.append(scrwin)
         pm = self.app.get_widget('plugin-manager')
@@ -187,6 +187,26 @@ class MiAZAppSettings(Gtk.Window):
         scrwin.set_child(box)
         for plugin in pm.plugins:
             if pm.get_plugin_type(plugin) == MiAZPluginType.SYSTEM:
+                title = "<b>%s</b>" % plugin.get_name()
+                subtitle = plugin.get_description() + ' (v%s)' % plugin.get_version()
+                active = plugin.is_loaded()
+                row = self.factory.create_actionrow(title=title, subtitle=subtitle)
+                box.append(row)
+        return vbox
+
+    def _create_widget_for_user_plugins(self):
+        from MiAZ.backend.pluginsystem import MiAZPluginType
+        vbox = self.factory.create_box_vertical(margin=0, spacing=0, hexpand=True, vexpand=True)
+        scrwin = self.factory.create_scrolledwindow()
+        vbox.append(scrwin)
+        pm = self.app.get_widget('plugin-manager')
+        pm.add_repo_plugins_dir()
+
+        box = Gtk.ListBox.new()
+        box.set_vexpand(True)
+        scrwin.set_child(box)
+        for plugin in pm.plugins:
+            if pm.get_plugin_type(plugin) == MiAZPluginType.USER:
                 title = "<b>%s</b>" % plugin.get_name()
                 subtitle = plugin.get_description() + ' (v%s)' % plugin.get_version()
                 active = plugin.is_loaded()
@@ -221,7 +241,7 @@ class MiAZRepoSettings(Gtk.Window):
 
     def __init__(self, app, **kwargs):
         super().__init__(**kwargs)
-        # ~ self.set_default_size(800, 600)
+        self.set_default_size(1024, 728)
         self.log = get_logger('MiAZRepoSettings')
         self.app = app
         self.set_title('Repository settings')
@@ -263,7 +283,6 @@ class MiAZRepoSettings(Gtk.Window):
             return page, wdgLabel
 
         for item_type in [Country, Group, Purpose, Project, SentBy, SentTo, Plugin]:
-            self.log.debug("Creating config page for %s", item_type)
             page, label = create_tab(item_type)
             self.notebook.append_page(page, label)
 

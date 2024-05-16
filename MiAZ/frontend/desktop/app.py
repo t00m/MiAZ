@@ -105,24 +105,50 @@ class MiAZApp(Gtk.Application):
     def load_plugins(self):
         workspace = self.get_widget('workspace')
         workspace_loaded = workspace is not None
+
+        # Load System Plugins
         if workspace_loaded and not self.plugins_loaded:
-            self.log.debug("Loading plugins...")
+            self.log.debug("Loading system plugins...")
             plugin_manager = self.get_widget('plugin-manager')
-            n = 0
-            a = 0
+            np = 0 # Number of system plugins
+            ap = 0   # system plugins activated
             for plugin in self.plugin_manager.plugins:
                 try:
                     ptype = plugin_manager.get_plugin_type(plugin)
                     if ptype == MiAZPluginType.SYSTEM:
                         plugin_manager.load_plugin(plugin)
-                        a += 1
-                    else:
-                        self.log.debug("User plugin '%s' skipped", plugin.get_name())
+                        ap += 1
                 except Exception as error:
                     self.log.error(error)
-                n += 1
+                if ptype == MiAZPluginType.SYSTEM:
+                    np += 1
             self.plugins_loaded = True
-            self.log.debug("Plugins loaded: %d/%d", a, n)
+            self.log.debug("System plugins loaded: %d/%d", ap, np)
+            self.plugins_loaded = True
+
+            # Load User Plugins
+            self.log.debug("Loading user plugins for this repository...")
+            conf = self.backend.get_conf()
+            plugins = conf['Plugin']
+            np = 0 # Number of user plugins
+            ap = 0   # user plugins activated
+            for plugin in self.plugin_manager.plugins:
+                try:
+                    ptype = plugin_manager.get_plugin_type(plugin)
+                    if ptype == MiAZPluginType.USER:
+                        pid = plugin.get_module_name()
+                        if plugins.exists_used(pid):
+                            plugin_manager.load_plugin(plugin)
+                            ap += 1
+                except Exception as error:
+                    self.log.error(error)
+                if ptype == MiAZPluginType.USER:
+                    np += 1
+
+            self.log.debug("User plugins loaded: %d/%d", ap, np)
+
+
+
 
     def _setup_plugin_manager(self):
         self.plugin_manager = self.add_widget('plugin-manager', MiAZPluginManager(self))
@@ -541,6 +567,11 @@ class MiAZApp(Gtk.Application):
         return self._miazobjs['widgets']
 
     def remove_widget(self, name: str):
+        """
+        Remove widget name from dictionary.
+        They widget is not destroyed. It must be done by the developer.
+        This method is mostly useful during plugins unloading.
+        """
         deleted = False
         try:
             del(self._miazobjs['widgets'][name])

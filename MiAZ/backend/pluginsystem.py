@@ -33,21 +33,11 @@ class MiAZPluginType(IntEnum):
     SYSTEM = 1
     USER = 2
 
-    def __str__(self):
-        if self.value == MiAZPluginType.USER:
-            return _("User Plugin")
-        elif self.value == MiAZPluginType.SYSTEM:
-            return _("System Plugin")
-
-    def get_dir(self):
-        """Returns the directory where this type of plugins can be found."""
-        self.log.error("PSDIR: %s", self.value)
-        ENV = self.app.get_env()
-        if self.value == MiAZPluginType.USER:
-            return ENV['LPATH']['PLUGINS']
-
-        elif self.value == MiAZPluginType.SYSTEM:
-            return ENV['GPATH']['PLUGINS']
+    # ~ def __str__(self):
+        # ~ if self.value == MiAZPluginType.USER:
+            # ~ return _("User Plugin")
+        # ~ elif self.value == MiAZPluginType.SYSTEM:
+            # ~ return _("System Plugin")
 
 
 class MiAZPluginManager:
@@ -68,6 +58,7 @@ class MiAZPluginManager:
     def load_plugin(self, plugin: Peas.PluginInfo) -> bool:
         self.engine.load_plugin(plugin)
         ptype = self.get_plugin_type(plugin)
+        pinfo = self.get_plugin_info(plugin)
         if plugin.is_loaded():
             self.log.debug("Plugin %s (%s) loaded", plugin.get_name(), ptype)
             return True
