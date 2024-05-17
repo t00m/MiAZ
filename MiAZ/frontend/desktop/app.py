@@ -89,15 +89,8 @@ class MiAZApp(Gtk.Application):
         self.exit_app()
 
     def _update_repo_settings(self, *args):
-        self.log.debug("Repo switched. Configuration switched")
-        widget_settings_repo = self.get_widget('settings-repo')
-        if widget_settings_repo is not None:
-            self.stack.remove(widget_settings_repo)
-            self.remove_widget('settings-repo')
-            # ~ #self._setup_page_repo_settings()
         repo_active = self.conf['App'].get('current')
-
-        # ~ label_repo.set_markup(' [<b>%s</b>] ' % repo_active.replace('_', ' '))
+        self.message("Switched to repository '%s'" % repo_active)
 
     def _finish_configuration(self, *args):
         self.log.debug("Finish loading app")
