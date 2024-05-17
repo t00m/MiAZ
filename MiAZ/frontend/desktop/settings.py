@@ -27,6 +27,7 @@ from MiAZ.frontend.desktop.widgets.configview import MiAZProjects
 from MiAZ.frontend.desktop.widgets.configview import MiAZRepositories
 from MiAZ.frontend.desktop.widgets.configview import MiAZUserPlugins
 from MiAZ.frontend.desktop.widgets.dialogs import CustomDialog
+from MiAZ.frontend.desktop.widgets.window import CustomWindow
 from MiAZ.backend.models import MiAZItem, File, Group, Person, Country
 from MiAZ.backend.models import Purpose, Concept, SentBy, SentTo, Date
 from MiAZ.backend.models import Extension, Project, Repository, Plugin
@@ -42,25 +43,17 @@ Configview['Project'] = MiAZProjects
 Configview['Plugin'] = MiAZUserPlugins
 # ~ Configview['Date'] = Gtk.Calendar
 
-class MiAZAppSettings(Gtk.Window):
+class MiAZAppSettings(CustomWindow):
     __gtype_name__ = 'MiAZAppSettings'
 
     def __init__(self, app, **kwargs):
-        super().__init__(**kwargs)
-        self.set_title('Application settings')
-        self.log = get_logger('MiAZAppSettings')
-        self.app = app
-        self.app.add_widget('window-settings', self)
-        self.backend = self.app.get_service('backend')
-        self.factory = self.app.get_service('factory')
-        self.actions = self.app.get_service('actions')
-        self.config = self.backend.get_conf()
-        self.connect('close-request', self._on_window_close_request)
-        headerbar = self.app.add_widget('app-settings-headerbar', Gtk.HeaderBar())
-        self.set_titlebar(headerbar)
-        self.set_default_size(800, 600)
-        self.mainbox = self.factory.create_box_vertical(vexpand=True)
-        self.set_child(self.mainbox)
+        self.name = 'app-settings'
+        self.title = 'Application settings'
+        super().__init__(app, self.name, self.title, **kwargs)
+
+    def _build_ui(self):
+        self.set_default_size(1024, 728)
+        headerbar = self.app.get_widget('window-%s-headerbar' % self.name)
         self.stack = self.app.add_widget('stack_settings', Gtk.Stack())
         self.stack.set_vexpand(True)
         self.switcher = self.app.add_widget('switcher_settings', Gtk.StackSwitcher())
@@ -75,10 +68,6 @@ class MiAZAppSettings(Gtk.Window):
         page = self.stack.add_titled(widget, 'plugins', 'Plugins')
         page.set_visible(True)
         self.repo_is_set = False
-        self._setup_event_listener()
-
-    def _on_window_close_request(self, window):
-        window.hide()
 
     def _create_widget_for_repositories(self):
         row = self.factory.create_box_vertical(hexpand=True, vexpand=True)
@@ -164,17 +153,18 @@ class MiAZAppSettings(Gtk.Window):
         return
 
     def _create_widget_for_plugins(self):
+        vbox = self.factory.create_box_vertical(margin=0, spacing=0, hexpand=True, vexpand=True)
         notebook = Gtk.Notebook()
         notebook.set_show_border(False)
         notebook.set_tab_pos(Gtk.PositionType.LEFT)
-
         widget = self._create_widget_for_system_plugins()
         label = self.factory.create_notebook_label(icon_name='miaz-app-settings', title='System')
         notebook.append_page(widget, label)
         widget = self._create_widget_for_user_plugins()
         label = self.factory.create_notebook_label(icon_name='miaz-res-people', title='User')
         notebook.append_page(widget, label)
-        return notebook
+        vbox.append(notebook)
+        return vbox
 
     def _create_widget_for_system_plugins(self):
         from MiAZ.backend.pluginsystem import MiAZPluginType
@@ -237,33 +227,18 @@ class MiAZAppSettings(Gtk.Window):
             plugins.remove(plugin_name)
         self.config['App'].set('plugins', plugins)
 
-    def _setup_event_listener(self):
-        evk = Gtk.EventControllerKey.new()
-        self.app.add_widget('dialog-app-settings-event-controller', evk)
-        evk.connect("key-pressed", self._on_key_press)
-        self.add_controller(evk)
 
-    def _on_key_press(self, event, keyval, keycode, state):
-        keyname = Gdk.keyval_name(keyval)
-        if keyname == 'Escape':
-            self.hide()
-
-class MiAZRepoSettings(Gtk.Window):
+class MiAZRepoSettings(CustomWindow):
     __gtype_name__ = 'MiAZRepoSettings'
 
     def __init__(self, app, **kwargs):
-        super().__init__(**kwargs)
+        self.name = 'repo-settings'
+        self.title = 'Repository settings'
+        super().__init__(app, self.name, self.title, **kwargs)
+
+    def _build_ui(self):
         self.set_default_size(1024, 728)
-        self.log = get_logger('MiAZRepoSettings')
-        self.app = app
-        self.set_title('Repository settings')
-        self.factory = self.app.get_service('factory')
-        self.config = self.app.get_config('Country')
-        self.connect('close-request', self._on_window_close_request)
-        self.mainbox = self.factory.create_box_vertical(margin=0, spacing=0, vexpand=True)
-        self.set_child(self.mainbox)
-        headerbar = self.app.add_widget('repo-settings-headerbar', Gtk.HeaderBar())
-        self.set_titlebar(headerbar)
+        headerbar = self.app.get_widget('window-%s-headerbar' % self.name)
         self.notebook = Gtk.Notebook()
         self.notebook.set_show_border(False)
         self.notebook.set_tab_pos(Gtk.PositionType.TOP)
@@ -298,19 +273,3 @@ class MiAZRepoSettings(Gtk.Window):
             page, label = create_tab(item_type)
             self.notebook.append_page(page, label)
 
-        self._setup_event_listener()
-
-
-    def _on_window_close_request(self, window):
-        window.hide()
-
-    def _setup_event_listener(self):
-        evk = Gtk.EventControllerKey.new()
-        self.app.add_widget('dialog-repo-settings-event-controller', evk)
-        evk.connect("key-pressed", self._on_key_press)
-        self.add_controller(evk)
-
-    def _on_key_press(self, event, keyval, keycode, state):
-        keyname = Gdk.keyval_name(keyval)
-        if keyname == 'Escape':
-            self.hide()
