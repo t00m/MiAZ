@@ -12,6 +12,7 @@ import os
 from gettext import gettext as _
 
 import gi
+from gi.repository import Gdk
 from gi.repository import Gio
 from gi.repository import GLib
 from gi.repository import Gtk
@@ -74,6 +75,7 @@ class MiAZAppSettings(Gtk.Window):
         page = self.stack.add_titled(widget, 'plugins', 'Plugins')
         page.set_visible(True)
         self.repo_is_set = False
+        self._setup_event_listener()
 
     def _on_window_close_request(self, window):
         window.hide()
@@ -235,6 +237,16 @@ class MiAZAppSettings(Gtk.Window):
             plugins.remove(plugin_name)
         self.config['App'].set('plugins', plugins)
 
+    def _setup_event_listener(self):
+        evk = Gtk.EventControllerKey.new()
+        self.app.add_widget('dialog-app-settings-event-controller', evk)
+        evk.connect("key-pressed", self._on_key_press)
+        self.add_controller(evk)
+
+    def _on_key_press(self, event, keyval, keycode, state):
+        keyname = Gdk.keyval_name(keyval)
+        if keyname == 'Escape':
+            self.hide()
 
 class MiAZRepoSettings(Gtk.Window):
     __gtype_name__ = 'MiAZRepoSettings'
@@ -286,6 +298,19 @@ class MiAZRepoSettings(Gtk.Window):
             page, label = create_tab(item_type)
             self.notebook.append_page(page, label)
 
+        self._setup_event_listener()
+
 
     def _on_window_close_request(self, window):
         window.hide()
+
+    def _setup_event_listener(self):
+        evk = Gtk.EventControllerKey.new()
+        self.app.add_widget('dialog-repo-settings-event-controller', evk)
+        evk.connect("key-pressed", self._on_key_press)
+        self.add_controller(evk)
+
+    def _on_key_press(self, event, keyval, keycode, state):
+        keyname = Gdk.keyval_name(keyval)
+        if keyname == 'Escape':
+            self.hide()
