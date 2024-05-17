@@ -110,7 +110,7 @@ class MiAZAppSettings(CustomWindow):
         self.config['App'].set('current', repo_id)
         valid = self.app.check_repository()
         if valid:
-            window = self.app.get_widget('window-settings')
+            window = self.app.get_widget('window-%s' % self.name)
             window.hide()
             workspace = self.app.get_widget('workspace')
             workspace.clean_filters()
