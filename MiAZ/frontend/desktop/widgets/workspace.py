@@ -224,6 +224,7 @@ class MiAZWorkspace(Gtk.Box):
             self.selected_items.append(item)
         label = self.btnDocsSel.get_child()
         docs = self.util.get_files()
+        self.log.debug(', '.join([item.id for item in self.selected_items]))
         label.set_markup("<small>%d</small> / %d / <big>%d</big>" % (len(self.selected_items), len(model), len(docs)))
         self.app.message("Selected %d of %d documents in current view (total documents: %d)" % (len(self.selected_items), len(model), len(docs)))
         # ~ if len(self.selected_items) == 1:
@@ -596,6 +597,8 @@ class MiAZWorkspace(Gtk.Box):
             if rename:
                 renamed += 1
         self.log.debug("Documents renamed: %d", renamed)
+
+        self.selected_items = []
 
     def _do_eval_cond_matches_freetext(self, item):
         left = self.ent_sb.get_text()
