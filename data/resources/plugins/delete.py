@@ -34,7 +34,7 @@ class MiAZDeleteItemPlugin(GObject.GObject, Peas.Activatable):
         self.actions = self.app.get_service('actions')
         self.backend = self.app.get_service('backend')
         self.factory = self.app.get_service('factory')
-        self.config = self.backend.get_conf()
+        self.config = self.backend.get_config()
         self.util = self.app.get_service('util')
         self.workspace = API.app.get_widget('workspace')
         self.workspace.connect("extend-menu", self.add_menuitem)

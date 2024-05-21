@@ -33,7 +33,7 @@ from MiAZ.backend.config import MiAZConfigUserPlugins
 class MiAZBackend(GObject.GObject):
     """Backend class"""
     __gtype_name__ = 'MiAZBackend'
-    _conf = {} # Dictionary holding configuration for app and repository
+    _config = {} # Dictionary holding configurations
 
     def __init__(self, app) -> None:
         GObject.GObject.__init__(self)
@@ -48,11 +48,11 @@ class MiAZBackend(GObject.GObject):
 
         self.app.add_service('util', MiAZUtil(self))
         self.app.add_service('stats', MiAZStats(self))
-        self._conf['App'] = MiAZConfigApp(self)
-        self._conf['Repository'] = MiAZConfigRepositories(self)
+        self._config['App'] = MiAZConfigApp(self)
+        self._config['Repository'] = MiAZConfigRepositories(self)
 
-    def get_conf(self):
-        return self._conf
+    def get_config(self):
+        return self._config
 
     def get_service(self, service: str):
         """Convenient method to get a service"""
@@ -87,10 +87,14 @@ class MiAZBackend(GObject.GObject):
         self.conf['App'].set('source', path)
         self.log.debug("Repo configuration initialized")
 
-    def repo_config(self):
-        config = self.get_conf()
-        repo_id = config['App'].get('current')
+    def repo_config(self, repo_id: str = None):
+        config = self.get_config()
         repos_used = config['Repository'].load_used()
+
+        if repo_id is None:
+            self.log.debug("Using default repository from configuration")
+            repo_id = config['App'].get('current')
+
         try:
             repo_path = repos_used[repo_id]
             conf = {}
@@ -101,23 +105,24 @@ class MiAZBackend(GObject.GObject):
         except KeyError:
             conf = {}
         finally:
+            self.log.debug("Repo '%s' conf: %s", repo_id, conf)
             return conf
 
     def repo_load(self, path):
         repoconf = self.repo_config()
         dir_conf = repoconf['dir_conf']
         self.log.debug("Loading config repo from: %s", dir_conf)
-        self._conf['Country'] = MiAZConfigCountries(self, dir_conf)
-        self._conf['Group'] = MiAZConfigGroups(self, dir_conf)
-        self._conf['Purpose'] = MiAZConfigPurposes(self, dir_conf)
-        self._conf['Concept'] = MiAZConfigConcepts(self, dir_conf)
-        self._conf['SentBy'] = MiAZConfigSentBy(self, dir_conf)
-        self._conf['SentTo'] = MiAZConfigSentTo(self, dir_conf)
-        self._conf['Person'] = MiAZConfigPeople(self, dir_conf)
-        self._conf['Project'] = MiAZConfigProjects(self, dir_conf)
-        self._conf['Plugin'] = MiAZConfigUserPlugins(self, dir_conf)
-        for cid in self._conf:
-            self.log.debug("\tConfig for %s: %d values", cid, len(self._conf[cid].load_used()))
+        self._config['Country'] = MiAZConfigCountries(self, dir_conf)
+        self._config['Group'] = MiAZConfigGroups(self, dir_conf)
+        self._config['Purpose'] = MiAZConfigPurposes(self, dir_conf)
+        self._config['Concept'] = MiAZConfigConcepts(self, dir_conf)
+        self._config['SentBy'] = MiAZConfigSentBy(self, dir_conf)
+        self._config['SentTo'] = MiAZConfigSentTo(self, dir_conf)
+        self._config['Person'] = MiAZConfigPeople(self, dir_conf)
+        self._config['Project'] = MiAZConfigProjects(self, dir_conf)
+        self._config['Plugin'] = MiAZConfigUserPlugins(self, dir_conf)
+        for cid in self._config:
+            self.log.debug("\tConfig for %s: %d values", cid, len(self._config[cid].load_used()))
         self.watcher = MiAZWatcher('source', path)
         self.watcher.set_active(active=True)
         self.watcher.connect('repository-updated', self.repo_check)

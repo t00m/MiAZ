@@ -58,7 +58,7 @@ class MiAZApp(Gtk.Application):
         self._miazobjs['services'] = {}
         self.backend = self.add_service('backend', MiAZBackend(self))
         self.icman = self.add_service('icons', MiAZIconManager(self))
-        self.conf = self.backend.get_conf()
+        self.conf = self.backend.get_config()
         GLib.set_application_name(ENV['APP']['name'])
         self.connect('activate', self._on_activate)
 
@@ -121,7 +121,7 @@ class MiAZApp(Gtk.Application):
 
             # Load User Plugins
             self.log.debug("Loading user plugins for this repository...")
-            conf = self.backend.get_conf()
+            conf = self.backend.get_config()
             plugins = conf['Plugin']
             np = 0 # Number of user plugins
             ap = 0   # user plugins activated
@@ -159,7 +159,7 @@ class MiAZApp(Gtk.Application):
 
     def get_config(self, name: str):
         try:
-            config = self.backend.get_conf()
+            config = self.backend.get_config()
             return config[name]
         except KeyError:
             return None
@@ -424,8 +424,8 @@ class MiAZApp(Gtk.Application):
         statusbar = self.add_widget('statusbar', MiAZStatusbar(self))
         self.mainbox.append(statusbar)
 
-    def check_repository(self):
-        repo = self.backend.repo_config()
+    def check_repository(self, repo_id: str = None):
+        repo = self.backend.repo_config(repo_id)
         try:
             dir_repo = repo['dir_docs']
             self.log.debug("Repo? '%s'", dir_repo)

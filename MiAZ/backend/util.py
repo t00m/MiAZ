@@ -57,7 +57,7 @@ class MiAZUtil(GObject.GObject):
         self.log = get_logger('MiAZ.Backend.Util')
         self.app = backend.app
         self.backend = backend
-        self.conf = self.backend.get_conf()
+        self.conf = self.backend.get_config()
 
     def directory_open(self, dirpath: str):
         os.system("xdg-open '%s'" % dirpath)

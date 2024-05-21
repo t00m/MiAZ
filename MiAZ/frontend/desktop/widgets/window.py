@@ -42,7 +42,7 @@ class CustomWindow(Gtk.Window):
         self.backend = self.app.get_service('backend')
         self.factory = self.app.get_service('factory')
         self.actions = self.app.get_service('actions')
-        self.config = self.backend.get_conf()
+        self.config = self.backend.get_config()
 
     def _on_window_close_request(self, window):
         window.hide()
