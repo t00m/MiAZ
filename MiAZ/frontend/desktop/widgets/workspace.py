@@ -297,6 +297,7 @@ class MiAZWorkspace(Gtk.Box):
 
         ## Import button
         widgets = []
+        self.app.add_widget('miaz-import-widgets', widgets)
         btnImportFiles = self.factory.create_button('miaz-import-document', callback=self.actions.import_file)
         rowImportDoc = self.factory.create_actionrow(title=_('Import document'), subtitle=_('Import one or more documents'), suffix=btnImportFiles)
         widgets.append(rowImportDoc)
@@ -308,6 +309,7 @@ class MiAZWorkspace(Gtk.Box):
         # ~ rowImportConf = self.factory.create_actionrow(title='Import config', subtitle='Import configuration', suffix=btnImportConf)
         # ~ widgets.append(rowImportConf)
         button = self.factory.create_button_popover(icon_name='miaz-list-add', title='', widgets=widgets)
+        self.app.add_widget('miaz-import-button-popover', button)
         hdb_right.append(button)
 
 

@@ -25,7 +25,7 @@ from gi.repository.GdkPixbuf import Pixbuf
 from MiAZ.backend.log import get_logger
 from MiAZ.backend.models import Country
 from MiAZ.frontend.desktop.icons import MiAZIconManager
-
+from MiAZ.frontend.desktop.widgets.button import MiAZPopoverButton
 
 class MiAZFactory:
     def __init__(self, app):
@@ -186,20 +186,20 @@ class MiAZFactory:
         return button
 
     def create_button_popover(self, icon_name: str = '', title: str = '', css_classes: list = [], widgets: list = []) -> Gtk.MenuButton:
-        listbox = Gtk.ListBox.new()
-        listbox.set_activate_on_single_click(True)
-        listbox.set_selection_mode(Gtk.SelectionMode.NONE)
-        for widget in widgets:
-            listbox.append(child=widget)
-        vbox = self.create_box_vertical(hexpand=False, vexpand=False)
-        vbox.append(child=listbox)
-        popover = Gtk.Popover()
-        popover.set_child(vbox)
-        popover.present()
-        button = Gtk.MenuButton(child=self.create_button_content(icon_name=icon_name, title=title, css_classes=css_classes))
-        # ~ button.get_style_context().add_class(class_name='flat')
-        button.set_popover(popover)
-        return button
+        return MiAZPopoverButton(self.app, icon_name=icon_name, title=title, css_classes=css_classes, widgets=widgets)
+        # ~ listbox = Gtk.ListBox.new()
+        # ~ listbox.set_activate_on_single_click(True)
+        # ~ listbox.set_selection_mode(Gtk.SelectionMode.NONE)
+        # ~ for widget in widgets:
+            # ~ listbox.append(child=widget)
+        # ~ vbox = self.create_box_vertical(hexpand=False, vexpand=False)
+        # ~ vbox.append(child=listbox)
+        # ~ popover = Gtk.Popover()
+        # ~ popover.set_child(vbox)
+        # ~ popover.present()
+        # ~ button = Gtk.MenuButton(child=self.create_button_content(icon_name=icon_name, title=title, css_classes=css_classes))
+        # ~ button.set_popover(popover)
+        # ~ return button
 
     def create_dropdown_generic(self, item_type, ellipsize=True, enable_search=True):
         def _get_search_entry_widget(dropdown):
