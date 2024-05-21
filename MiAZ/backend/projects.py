@@ -22,7 +22,7 @@ class MiAZProject(GObject.GObject):
         super(MiAZProject, self).__init__()
         self.log = get_logger('MiAZProject')
         self.backend = backend
-        conf = self.backend.get_conf()
+        conf = self.backend.get_config()
         self.config = conf['Project']
         self.util = self.backend.get_service('util')
         repo = self.backend.repo_config()

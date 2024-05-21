@@ -68,7 +68,7 @@ class MiAZWorkspace(Gtk.Box):
         self.backend = self.app.get_service('backend')
         self.factory = self.app.get_service('factory')
         self.actions = self.app.get_service('actions')
-        self.config = self.backend.get_conf()
+        self.config = self.backend.get_config()
         self.util = self.app.get_service('util')
         self.util.connect('filename-renamed', self._on_filename_renamed)
         self.util.connect('filename-deleted', self._on_filename_deleted)
@@ -98,7 +98,7 @@ class MiAZWorkspace(Gtk.Box):
         except:
             self.initialize_caches()
 
-        self._check_first_time()
+        # ~ self._check_first_time()
 
         # Allow plug-ins to make their job
         self.app.connect('start-application-completed', self._finish_configuration)

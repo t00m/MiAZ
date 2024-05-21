@@ -39,7 +39,7 @@ class MiAZRenameDialog(Gtk.Box):
         self.factory = self.app.get_service('factory')
         self.actions = self.app.get_service('actions')
         self.icons = self.app.get_service('icons')
-        self.config = self.backend.get_conf()
+        self.config = self.backend.get_config()
         self.util = self.app.get_service('util')
         self.log = get_logger('MiazRenameDialog')
 

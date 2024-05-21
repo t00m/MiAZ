@@ -101,6 +101,7 @@ class MiAZConfig(GObject.GObject):
         return self.load(self.available)
 
     def load_used(self) -> dict:
+        self.log.debug("%s used: %s", self.config_for, self.used)
         return self.load(self.used)
 
     def save(self, filepath: str = '', items: dict = {}) -> bool:
