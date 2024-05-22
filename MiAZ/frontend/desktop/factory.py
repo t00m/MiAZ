@@ -26,6 +26,7 @@ from MiAZ.backend.log import get_logger
 from MiAZ.backend.models import Country
 from MiAZ.frontend.desktop.icons import MiAZIconManager
 from MiAZ.frontend.desktop.widgets.button import MiAZPopoverButton
+from MiAZ.frontend.desktop.widgets.filechooser import MiAZFileChooserDialog
 
 class MiAZFactory:
     def __init__(self, app):
@@ -318,39 +319,40 @@ class MiAZFactory:
         return dialog
 
     def create_filechooser(self, parent, title, target, callback, data=None):
+        return MiAZFileChooserDialog(self.app, parent, title, target, callback, data)
         # FIXME: Gtk.FileChooser is deprecated. Use Gtk.FileDialog
         # FIXME: Available since Gtk 4.10: https://docs.gtk.org/gtk4/class.FileDialog.html
         # FIXME: However, Debian 12.5 is still in 4.8.3
         # FIXME: Choosing Gtk.FileChooser for compatibility
-        d_filechooser = Gtk.Dialog()
-        d_filechooser.set_title(title)
-        d_filechooser.set_transient_for(parent)
-        d_filechooser.set_modal(True)
-        d_filechooser.add_buttons(_('Cancel'), Gtk.ResponseType.CANCEL, _('Accept'), Gtk.ResponseType.ACCEPT)
-        btnCancel = d_filechooser.get_widget_for_response(Gtk.ResponseType.CANCEL)
-        btnCancel.get_style_context ().add_class ('destructive-action')
-        btnAccept = d_filechooser.get_widget_for_response(Gtk.ResponseType.ACCEPT)
-        btnAccept.get_style_context ().add_class ('suggested-action')
-        action_box = btnCancel.get_ancestor(Gtk.Box)
-        action_box.set_spacing(6)
-        action_box.set_margin_start(6)
-        action_box.set_margin_end(6)
-        action_box.set_margin_top(6)
-        action_box.set_margin_bottom(6)
+        # ~ d_filechooser = Gtk.Dialog()
+        # ~ d_filechooser.set_title(title)
+        # ~ d_filechooser.set_transient_for(parent)
+        # ~ d_filechooser.set_modal(True)
+        # ~ d_filechooser.add_buttons(_('Cancel'), Gtk.ResponseType.CANCEL, _('Accept'), Gtk.ResponseType.ACCEPT)
+        # ~ btnCancel = d_filechooser.get_widget_for_response(Gtk.ResponseType.CANCEL)
+        # ~ btnCancel.get_style_context ().add_class ('destructive-action')
+        # ~ btnAccept = d_filechooser.get_widget_for_response(Gtk.ResponseType.ACCEPT)
+        # ~ btnAccept.get_style_context ().add_class ('suggested-action')
+        # ~ action_box = btnCancel.get_ancestor(Gtk.Box)
+        # ~ action_box.set_spacing(6)
+        # ~ action_box.set_margin_start(6)
+        # ~ action_box.set_margin_end(6)
+        # ~ action_box.set_margin_top(6)
+        # ~ action_box.set_margin_bottom(6)
 
-        d_filechooser.connect('response', callback, data)
-        contents = d_filechooser.get_content_area()
-        box = self.create_box_vertical()
-        w_filechooser = Gtk.FileChooserWidget()
-        box.append(w_filechooser)
-        if target == 'FOLDER':
-            w_filechooser.set_action(Gtk.FileChooserAction.SELECT_FOLDER)
-        elif target == 'FILE':
-            w_filechooser.set_action(Gtk.FileChooserAction.OPEN)
-        elif target == 'SAVE':
-            w_filechooser.set_action(Gtk.FileChooserAction.SAVE)
-        contents.append(box)
-        return d_filechooser
+        # ~ d_filechooser.connect('response', callback, data)
+        # ~ contents = d_filechooser.get_content_area()
+        # ~ box = self.create_box_vertical()
+        # ~ w_filechooser = Gtk.FileChooserWidget()
+        # ~ box.append(w_filechooser)
+        # ~ if target == 'FOLDER':
+            # ~ w_filechooser.set_action(Gtk.FileChooserAction.SELECT_FOLDER)
+        # ~ elif target == 'FILE':
+            # ~ w_filechooser.set_action(Gtk.FileChooserAction.OPEN)
+        # ~ elif target == 'SAVE':
+            # ~ w_filechooser.set_action(Gtk.FileChooserAction.SAVE)
+        # ~ contents.append(box)
+        # ~ return d_filechooser
 
     def create_frame(self, title:str = None, margin: int = 3, hexpand: bool = False, vexpand: bool = False) -> Gtk.Frame:
         frame = Gtk.Frame()

@@ -2,10 +2,10 @@
 # -*- coding: utf-8 -*-
 
 """
-# File: about.py
+# File: button.py
 # Author: Tomás Vírseda
 # License: GPL v3
-# Description: About widget
+# Description: Custom popover button
 """
 
 from gettext import gettext as _

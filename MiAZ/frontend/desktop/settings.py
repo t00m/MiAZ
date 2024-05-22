@@ -47,9 +47,11 @@ class MiAZAppSettings(CustomWindow):
     __gtype_name__ = 'MiAZAppSettings'
 
     def __init__(self, app, **kwargs):
+        self.app = app
         self.name = 'app-settings'
         self.title = 'Application settings'
         super().__init__(app, self.name, self.title, **kwargs)
+        self.util = self.app.get_service('util')
 
     def _build_ui(self):
         self.set_default_size(1024, 728)
@@ -189,6 +191,15 @@ class MiAZAppSettings(CustomWindow):
     def _create_widget_for_user_plugins(self):
         from MiAZ.backend.pluginsystem import MiAZPluginType
         vbox = self.factory.create_box_vertical(margin=0, spacing=0, hexpand=True, vexpand=True)
+
+        # Add/Remove
+        hbox = self.factory.create_box_horizontal(margin=0, spacing=0, hexpand=True, vexpand=False)
+        hbox.get_style_context().add_class(class_name='toolbar')
+        hbox.append(self.factory.create_button(icon_name='miaz-list-add', title='Add plugin', callback=self._on_plugin_add))
+        hbox.append(self.factory.create_button(icon_name='miaz-list-remove', title='Remove plugin', callback=self._on_plugin_remove))
+        vbox.append(hbox)
+
+        # Plugins
         scrwin = self.factory.create_scrolledwindow()
         vbox.append(scrwin)
         pm = self.app.get_widget('plugin-manager')
@@ -205,6 +216,37 @@ class MiAZAppSettings(CustomWindow):
                 row = self.factory.create_actionrow(title=title, subtitle=subtitle)
                 box.append(row)
         return vbox
+
+    def on_filechooser_response(self, dialog, response, data):
+        if response == Gtk.ResponseType.ACCEPT:
+            ENV = self.app.get_env()
+            filechooser = dialog.get_filechooser_widget()
+            gfile = filechooser.get_file()
+            if gfile is None:
+                    self.log.debug('No directory set. Do nothing.')
+                    # FIXME: Show warning message. Priority: low
+                    return
+            plugin_path = gfile.get_path()
+            self.util.filename_copy(plugin_path, ENV['LPATH']['PLUGINS'])
+            self.log.debug("Plugin '%s' added to '%s'", os.path.basename(plugin_path), ENV['LPATH']['PLUGINS'])
+        dialog.destroy()
+
+    def _on_plugin_add(self, *args):
+        filechooser_dialog = self.factory.create_filechooser(
+                    parent=self.app.win,
+                    title=_('Upload a plugin'),
+                    target = 'FILE',
+                    callback = self.on_filechooser_response,
+                    data = None
+                    )
+        plugin_filter = Gtk.FileFilter()
+        plugin_filter.add_pattern('*.zip')
+        filechooser_widget = filechooser_dialog.get_filechooser_widget()
+        filechooser_widget.set_filter(plugin_filter)
+        filechooser_dialog.show()
+
+    def _on_plugin_remove(self, *args):
+        self.log.debug(args)
 
     def get_plugin_status(self, name: str) -> bool:
         plugins = self.config['App'].get('plugins')
