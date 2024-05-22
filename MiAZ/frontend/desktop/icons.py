@@ -52,12 +52,16 @@ class MiAZIconManager(GObject.GObject):
         key = self.util.valid_key("%s-%d-%d" % (name, width, height))
         try:
             pixbuf = self.pixbufdict[key]
-        except:
-            paintable = self.theme.lookup_icon(name, None, width, 1, Gtk.TextDirection.NONE, Gtk.IconLookupFlags.FORCE_REGULAR)
-            gfile = paintable.get_file()
-            path = gfile.get_path()
-            pixbuf = Pixbuf.new_from_file_at_size(path, width, height)
-            self.pixbufdict[key] = pixbuf
+        except KeyError:
+            try:
+                paintable = self.theme.lookup_icon(name, None, width, 1, Gtk.TextDirection.NONE, Gtk.IconLookupFlags.FORCE_REGULAR)
+                gfile = paintable.get_file()
+                path = gfile.get_path()
+                pixbuf = Pixbuf.new_from_file_at_size(path, width, height)
+                self.pixbufdict[key] = pixbuf
+            except TypeError:
+                pixbuf = self.get_pixbuf_by_name('folder', width)
+
         return pixbuf
 
     def get_image_by_name(self, name: str, width: int = 24, height: int = 24) -> Gtk.Image:

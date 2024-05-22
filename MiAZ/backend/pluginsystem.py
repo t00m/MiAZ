@@ -56,13 +56,18 @@ class MiAZPluginManager:
         self._setup_extension_set()
 
     def load_plugin(self, plugin: Peas.PluginInfo) -> bool:
-        self.engine.load_plugin(plugin)
         ptype = self.get_plugin_type(plugin)
         pinfo = self.get_plugin_info(plugin)
-        if plugin.is_loaded():
-            self.log.debug("Plugin %s (%s) loaded", plugin.get_name(), ptype)
-            return True
-        else:
+        try:
+            self.engine.load_plugin(plugin)
+            if plugin.is_loaded():
+                self.log.debug("Plugin %s (%s) loaded", plugin.get_name(), ptype)
+                return True
+            else:
+                self.log.error("Plugin %s (%s) couldn't be loaded", plugin.get_name(), ptype)
+                return False
+        except Exception as error:
+            self.log.error(error)
             self.log.error("Plugin %s (%s) couldn't be loaded", plugin.get_name(), ptype)
             return False
 

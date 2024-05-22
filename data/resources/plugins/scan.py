@@ -73,20 +73,9 @@ class MiAZImportFromScanPlugin(GObject.GObject, Peas.Activatable):
         self.log.debug("Plugin Scan activated")
 
     def do_deactivate(self):
-        # Remove button
+        # Remove entry from popover
         button = self.app.get_widget('miaz-import-button-popover')
         button.remove_widget(self.rowImportScan)
-
-    def add_toolbar_button(self, *args):
-        button = self.app.get_widget('toolbar-top-button-hello')
-        if button is None:
-            toolbar_top_right = self.app.get_widget('headerbar-right-box')
-            button = self.factory.create_button(icon_name='help-faq', callback=self.callback)
-            button.set_visible(True)
-            self.app.add_widget('toolbar-top-button-hello', button)
-            toolbar_top_right.append(button)
-        else:
-            button.set_visible(True)
 
     def callback(self, *args):
         if self.scanapp is not None:
