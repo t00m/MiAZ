@@ -105,7 +105,7 @@ class MiAZBackend(GObject.GObject):
         except KeyError:
             conf = {}
         finally:
-            self.log.debug("Repo '%s' conf: %s", repo_id, conf)
+            # ~ self.log.debug("Repo '%s' conf: %s", repo_id, conf)
             return conf
 
     def repo_load(self, path):

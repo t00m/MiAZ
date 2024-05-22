@@ -102,7 +102,7 @@ class MiAZApp(Gtk.Application):
         # Load System Plugins
         if workspace_loaded and not self.plugins_loaded:
             self.log.debug("Loading system plugins...")
-            plugin_manager = self.get_widget('plugin-manager')
+            plugin_manager = self.get_service('plugin-manager')
             np = 0 # Number of system plugins
             ap = 0   # system plugins activated
             for plugin in self.plugin_manager.plugins:
@@ -144,7 +144,7 @@ class MiAZApp(Gtk.Application):
 
 
     def _setup_plugin_manager(self):
-        self.plugin_manager = self.add_widget('plugin-manager', MiAZPluginManager(self))
+        self.plugin_manager = self.add_service('plugin-manager', MiAZPluginManager(self))
 
     def _setup_event_listener(self):
         evk = Gtk.EventControllerKey.new()
@@ -528,6 +528,12 @@ class MiAZApp(Gtk.Application):
         else:
             self.log.error("A service with name '%s' already exists", name)
 
+    def get_service(self, name):
+        try:
+            return self._miazobjs['services'][name]
+        except KeyError:
+            return None
+
     def add_widget(self, name: str, widget):
         # Add widget, but do not overwrite
         if name not in self._miazobjs['widgets']:
@@ -547,12 +553,6 @@ class MiAZApp(Gtk.Application):
     def get_widget(self, name):
         try:
             return self._miazobjs['widgets'][name]
-        except KeyError:
-            return None
-
-    def get_service(self, name):
-        try:
-            return self._miazobjs['services'][name]
         except KeyError:
             return None
 

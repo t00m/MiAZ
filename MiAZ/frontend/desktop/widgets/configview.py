@@ -313,7 +313,7 @@ class MiAZUserPlugins(MiAZConfigView):
         self.add_columnview_used(self.viewSl)
 
     def _update_view_available(self):
-        plugin_manager = self.app.get_widget('plugin-manager')
+        plugin_manager = self.app.get_service('plugin-manager')
         items = []
         item_type = self.config.model
         for plugin in plugin_manager.plugins:
@@ -333,7 +333,7 @@ class MiAZUserPlugins(MiAZConfigView):
         # ~ self.viewSl.update(items)
 
     def _on_item_used_remove(self, *args):
-        plugin_manager = self.app.get_widget('plugin-manager')
+        plugin_manager = self.app.get_service('plugin-manager')
         plugins_used = self.config.load_used()
         for plugin_used in self.viewSl.get_selected_items():
             plugin = plugin_manager.get_plugin_info(plugin_used.id)
@@ -347,7 +347,7 @@ class MiAZUserPlugins(MiAZConfigView):
 
 
     def _on_item_used_add(self, *args):
-        plugin_manager = self.app.get_widget('plugin-manager')
+        plugin_manager = self.app.get_service('plugin-manager')
         changed = False
         plugins_used = self.config.load_used()
         for plugin_available in self.viewAv.get_selected_items():

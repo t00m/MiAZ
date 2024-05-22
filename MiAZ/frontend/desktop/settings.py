@@ -32,6 +32,7 @@ from MiAZ.backend.models import MiAZItem, File, Group, Person, Country
 from MiAZ.backend.models import Purpose, Concept, SentBy, SentTo, Date
 from MiAZ.backend.models import Extension, Project, Repository, Plugin
 from MiAZ.backend.config import MiAZConfigRepositories
+from MiAZ.backend.pluginsystem import MiAZPluginType
 
 Configview = {}
 Configview['Country'] = MiAZCountries
@@ -173,7 +174,7 @@ class MiAZAppSettings(CustomWindow):
         vbox = self.factory.create_box_vertical(margin=0, spacing=0, hexpand=True, vexpand=True)
         scrwin = self.factory.create_scrolledwindow()
         vbox.append(scrwin)
-        pm = self.app.get_widget('plugin-manager')
+        pm = self.app.get_service('plugin-manager')
         pm.add_repo_plugins_dir()
 
         box = Gtk.ListBox.new()
@@ -189,7 +190,6 @@ class MiAZAppSettings(CustomWindow):
         return vbox
 
     def _create_widget_for_user_plugins(self):
-        from MiAZ.backend.pluginsystem import MiAZPluginType
         vbox = self.factory.create_box_vertical(margin=0, spacing=0, hexpand=True, vexpand=True)
 
         # Add/Remove
@@ -202,24 +202,29 @@ class MiAZAppSettings(CustomWindow):
         # Plugins
         scrwin = self.factory.create_scrolledwindow()
         vbox.append(scrwin)
-        pm = self.app.get_widget('plugin-manager')
+        pm = self.app.get_service('plugin-manager')
         pm.add_repo_plugins_dir()
+        listbox = self.app.add_widget('app-settings-plugins-user-listbox', Gtk.ListBox.new())
+        listbox.set_vexpand(True)
+        scrwin.set_child(listbox)
+        self.update_user_plugins()
+        return vbox
 
-        box = Gtk.ListBox.new()
-        box.set_vexpand(True)
-        scrwin.set_child(box)
+    def update_user_plugins(self):
+        pm = self.app.get_service('plugin-manager')
+        listbox = self.app.get_widget('app-settings-plugins-user-listbox')
+        # ~ listbox.remove()
         for plugin in pm.plugins:
             if pm.get_plugin_type(plugin) == MiAZPluginType.USER:
                 title = "<b>%s</b>" % plugin.get_name()
                 subtitle = plugin.get_description() + ' (v%s)' % plugin.get_version()
                 active = plugin.is_loaded()
                 row = self.factory.create_actionrow(title=title, subtitle=subtitle)
-                box.append(row)
-        return vbox
+                listbox.append(row)
 
     def on_filechooser_response(self, dialog, response, data):
         if response == Gtk.ResponseType.ACCEPT:
-            ENV = self.app.get_env()
+            plugin_manager = self.app.get_service('plugin-manager')
             filechooser = dialog.get_filechooser_widget()
             gfile = filechooser.get_file()
             if gfile is None:
@@ -227,8 +232,10 @@ class MiAZAppSettings(CustomWindow):
                     # FIXME: Show warning message. Priority: low
                     return
             plugin_path = gfile.get_path()
-            self.util.filename_copy(plugin_path, ENV['LPATH']['PLUGINS'])
-            self.log.debug("Plugin '%s' added to '%s'", os.path.basename(plugin_path), ENV['LPATH']['PLUGINS'])
+            imported = plugin_manager.import_plugin(plugin_path)
+            self.log.debug("Plugin imported? %s", imported)
+            if imported:
+                self.update_user_plugins()
         dialog.destroy()
 
     def _on_plugin_add(self, *args):

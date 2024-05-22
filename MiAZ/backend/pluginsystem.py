@@ -12,6 +12,7 @@
 """
 
 import os
+import zipfile
 from enum import IntEnum
 
 import gi
@@ -45,6 +46,7 @@ class MiAZPluginManager:
         self.log = get_logger('MiAZ.PluginManager')
         self.app = app
         self.backend = self.app.get_service('backend')
+        self.util = self.app.get_service('util')
         self.log.debug("Initializing Plugin Manager")
         self.plugin_info_list = []
 
@@ -54,6 +56,34 @@ class MiAZPluginManager:
 
         self._setup_plugins_dir()
         self._setup_extension_set()
+
+    def import_plugin(self, plugin_path):
+        """
+        Import plugin in the user space.
+        "A plugin zip file is valid if:
+        - Contains only 2 files
+        - Their names are identical
+        - Extensions are .plugin and .py
+        """
+        valid = False
+        azip = zipfile.ZipFile(plugin_path)
+        files = azip.namelist()
+        if len(files) == 2:
+            fn1_name, fn1_ext = self.util.filename_details(files[0])
+            fn2_name, fn2_ext = self.util.filename_details(files[1])
+            if fn1_name == fn2_name:
+                if fn1_ext == 'py' and fn2_ext == 'plugin':
+                    valid = True
+                elif fn1_ext == 'plugin' and fn2_ext == 'py':
+                    valid = True
+            if valid:
+                ENV = self.app.get_env()
+                azip.extractall(ENV['LPATH']['PLUGINS'])
+                self.engine.rescan_plugins()
+                self.log.debug("Plugin '%s' added to '%s'", os.path.basename(plugin_path), ENV['LPATH']['PLUGINS'])
+        return valid
+
+
 
     def load_plugin(self, plugin: Peas.PluginInfo) -> bool:
         ptype = self.get_plugin_type(plugin)
