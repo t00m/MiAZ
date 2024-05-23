@@ -87,8 +87,12 @@ class MiAZPluginManager(GObject.GObject):
         return valid
 
     def rescan_plugins(self):
-        self.engine.rescan_plugins()
-        self.emit('plugins-updated')
+        try:
+            self.engine.rescan_plugins()
+            self.emit('plugins-updated')
+        except TypeError:
+            # Plugin system not initialized yet
+            pass
 
     def load_plugin(self, plugin: Peas.PluginInfo) -> bool:
         ptype = self.get_plugin_type(plugin)
