@@ -388,6 +388,7 @@ class MiAZColumnViewPlugin(MiAZColumnView):
     def __init__(self, app):
         super().__init__(app, item_type=Plugin)
         self.cv.append_column(self.column_id)
-        self.column_title.set_title(_('Plugin Id'))
+        self.column_id.set_title(_('Plugin'))
         self.cv.append_column(self.column_title)
         self.column_title.set_title(_('Description'))
+        self.column_title.set_expand(True)

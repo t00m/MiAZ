@@ -41,8 +41,11 @@ class MiAZPluginType(IntEnum):
             # ~ return _("System Plugin")
 
 
-class MiAZPluginManager:
+class MiAZPluginManager(GObject.GObject):
     def __init__(self, app):
+        GObject.signal_new('plugins-updated',
+                            MiAZPluginManager,
+                            GObject.SignalFlags.RUN_LAST, None, () )
         self.log = get_logger('MiAZ.PluginManager')
         self.app = app
         self.backend = self.app.get_service('backend')
@@ -83,7 +86,9 @@ class MiAZPluginManager:
                 self.log.debug("Plugin '%s' added to '%s'", os.path.basename(plugin_path), ENV['LPATH']['PLUGINS'])
         return valid
 
-
+    def rescan_plugins(self):
+        self.engine.rescan_plugins()
+        self.emit('plugins-updated')
 
     def load_plugin(self, plugin: Peas.PluginInfo) -> bool:
         ptype = self.get_plugin_type(plugin)
@@ -103,7 +108,6 @@ class MiAZPluginManager:
 
     def unload_plugin(self, plugin: Peas.PluginInfo):
         self.engine.unload_plugin(plugin)
-
 
     def get_engine(self):
         return self.engine

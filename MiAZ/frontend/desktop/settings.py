@@ -26,6 +26,7 @@ from MiAZ.frontend.desktop.widgets.configview import MiAZPeopleSentTo
 from MiAZ.frontend.desktop.widgets.configview import MiAZProjects
 from MiAZ.frontend.desktop.widgets.configview import MiAZRepositories
 from MiAZ.frontend.desktop.widgets.configview import MiAZUserPlugins
+from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewPlugin
 from MiAZ.frontend.desktop.widgets.dialogs import CustomDialog
 from MiAZ.frontend.desktop.widgets.window import CustomWindow
 from MiAZ.backend.models import MiAZItem, File, Group, Person, Country
@@ -33,6 +34,7 @@ from MiAZ.backend.models import Purpose, Concept, SentBy, SentTo, Date
 from MiAZ.backend.models import Extension, Project, Repository, Plugin
 from MiAZ.backend.config import MiAZConfigRepositories
 from MiAZ.backend.pluginsystem import MiAZPluginType
+
 
 Configview = {}
 Configview['Country'] = MiAZCountries
@@ -208,30 +210,41 @@ class MiAZAppSettings(CustomWindow):
         vbox.append(scrwin)
         pm = self.app.get_service('plugin-manager')
         pm.add_repo_plugins_dir()
-        listbox = self.app.add_widget('app-settings-plugins-user-listbox', Gtk.ListBox.new())
-        listbox.set_vexpand(True)
-        scrwin.set_child(listbox)
+        view = MiAZColumnViewPlugin(self.app)
+        view.set_hexpand(True)
+        view.set_vexpand(True)
+        self.app.add_widget('app-settings-plugins-user-view', view)
+        scrwin.set_child(view)
         self.update_user_plugins()
         return vbox
 
     def update_user_plugins(self):
-        pm = self.app.get_service('plugin-manager')
+        ENV = self.app.get_env()
+        plugin_manager = self.app.get_service('plugin-manager')
+        plugin_manager.rescan_plugins()
+        view = self.app.get_widget('app-settings-plugins-user-view')
+        items = []
+        item_type = Plugin
+        for plugin in plugin_manager.plugins:
+            ptype = plugin_manager.get_plugin_type(plugin)
+            if ptype == MiAZPluginType.USER:
+                pid = plugin.get_module_name()
+                plugin_path = os.path.join(ENV['LPATH']['PLUGINS'], '%s.plugin' % pid)
+                if os.path.exists(plugin_path):
+                    title = plugin.get_description() #+ ' (v%s)' % plugin.get_version()
+                    items.append(item_type(id=pid, title=title))
+                    self.log.debug("Updating with plugin '%s'", pid)
+        view.update(items)
 
-        # Remove widgets first
-        listbox = self.app.get_widget('app-settings-plugins-user-listbox')
-        for widget in self.listboxwidgets:
-            listbox.remove(widget)
-        self.listboxwidgets = []
-
-        # Update listbox
-        for plugin in pm.plugins:
-            if pm.get_plugin_type(plugin) == MiAZPluginType.USER:
-                title = "<b>%s</b>" % plugin.get_name()
-                subtitle = plugin.get_description() + ' (v%s)' % plugin.get_version()
-                active = plugin.is_loaded()
-                row = self.factory.create_actionrow(title=title, subtitle=subtitle)
-                listbox.append(row)
-                self.listboxwidgets.append(row)
+        # ~ # Update listbox
+        # ~ for plugin in pm.plugins:
+            # ~ if pm.get_plugin_type(plugin) == MiAZPluginType.USER:
+                # ~ title = "<b>%s</b>" % plugin.get_name()
+                # ~ subtitle = plugin.get_description() + ' (v%s)' % plugin.get_version()
+                # ~ active = plugin.is_loaded()
+                # ~ row = self.factory.create_actionrow(title=title, subtitle=subtitle)
+                # ~ listbox.append(row)
+                # ~ self.listboxwidgets.append(row)
 
     def on_filechooser_response(self, dialog, response, data):
         if response == Gtk.ResponseType.ACCEPT:
@@ -264,7 +277,19 @@ class MiAZAppSettings(CustomWindow):
         filechooser_dialog.show()
 
     def _on_plugin_remove(self, *args):
-        self.log.debug(args)
+        ENV = self.app.get_env()
+        plugin_manager = self.app.get_service('plugin-manager')
+        view = self.app.get_widget('app-settings-plugins-user-view')
+        module = view.get_selected_items()[0]
+        plugin = plugin_manager.get_plugin_info(module.id)
+        plugin_manager.unload_plugin(plugin)
+        plugin_head = os.path.join(ENV['LPATH']['PLUGINS'], '%s.plugin' % module.id)
+        plugin_body = os.path.join(ENV['LPATH']['PLUGINS'], '%s.py' % module.id)
+        self.util.filename_delete(plugin_head)
+        self.util.filename_delete(plugin_body)
+        self.log.debug("Plugin '%s' deleted", module.id)
+        self.app.message("Plugin '%s' deleted" % module.id)
+        self.update_user_plugins()
 
     def get_plugin_status(self, name: str) -> bool:
         plugins = self.config['App'].get('plugins')
