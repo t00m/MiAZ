@@ -342,7 +342,6 @@ class MiAZUserPlugins(MiAZConfigView):
                 self.log.debug("Plugin %s unloaded", plugin.get_name())
             del(plugins_used[plugin_used.id])
         self.config.save_used(items=plugins_used)
-        self.log.debug("Plugin %s deactivated", plugin.get_name())
         self._update_view_used()
 
 
