@@ -190,6 +190,9 @@ class MiAZAppSettings(CustomWindow):
         return vbox
 
     def _create_widget_for_user_plugins(self):
+        # Trick to remove widgets from  listbox in Gtk 4.8.3 (Debian 11)
+        # as the method remove_all is not avaiable only since 4.12 :(
+        self.listboxwidgets = []
         vbox = self.factory.create_box_vertical(margin=0, spacing=0, hexpand=True, vexpand=True)
 
         # Add/Remove
@@ -201,6 +204,7 @@ class MiAZAppSettings(CustomWindow):
 
         # Plugins
         scrwin = self.factory.create_scrolledwindow()
+        self.app.add_widget('app-settings-plugins-user-scrwin', scrwin)
         vbox.append(scrwin)
         pm = self.app.get_service('plugin-manager')
         pm.add_repo_plugins_dir()
@@ -212,8 +216,14 @@ class MiAZAppSettings(CustomWindow):
 
     def update_user_plugins(self):
         pm = self.app.get_service('plugin-manager')
+
+        # Remove widgets first
         listbox = self.app.get_widget('app-settings-plugins-user-listbox')
-        # ~ listbox.remove()
+        for widget in self.listboxwidgets:
+            listbox.remove(widget)
+        self.listboxwidgets = []
+
+        # Update listbox
         for plugin in pm.plugins:
             if pm.get_plugin_type(plugin) == MiAZPluginType.USER:
                 title = "<b>%s</b>" % plugin.get_name()
@@ -221,6 +231,7 @@ class MiAZAppSettings(CustomWindow):
                 active = plugin.is_loaded()
                 row = self.factory.create_actionrow(title=title, subtitle=subtitle)
                 listbox.append(row)
+                self.listboxwidgets.append(row)
 
     def on_filechooser_response(self, dialog, response, data):
         if response == Gtk.ResponseType.ACCEPT:
