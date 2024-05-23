@@ -353,11 +353,12 @@ class MiAZApp(Gtk.Application):
         about.set_logo_icon_name(ENV['APP']['ID'])
         about.set_program_name(ENV['APP']['name'])
         about.set_version(ENV['APP']['VERSION'])
-        about.set_authors(ENV['APP']['author'])
-        about.set_license(ENV['APP']['license'])
-        about.set_copyright('© 2024 %s (%s)' % (ENV['APP']['author'], ENV['APP']['author_email']))
+        about.set_authors(ENV['APP']['documenters'])
+        about.set_license_type(Gtk.License.GPL_3_0_ONLY)
+        about.set_copyright('© 2024 %s' % ENV['APP']['author'])
         about.set_website('https://github.com/t00m/MiAZ')
         about.set_website_label('Github MiAZ repository')
+        about.set_comments(ENV['APP']['description'])
         about.present()
 
     def show_workspace(self, *args):
