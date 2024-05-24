@@ -52,7 +52,6 @@ class MiAZApp(Gtk.Application):
         self.log.debug("Starting MiAZ")
 
     def set_env(self, ENV: dict):
-        self.log.error("Applying environment")
         self._env = ENV
         self._miazobjs['widgets'] = {}
         self._miazobjs['services'] = {}
@@ -138,7 +137,7 @@ class MiAZApp(Gtk.Application):
                 if ptype == MiAZPluginType.USER:
                     np += 1
 
-            self.log.debug("User plugins loaded: %d/%d", ap, np)
+            self.log.debug("User plugins loaded for this repoitory: %d/%d", ap, np)
 
 
 
@@ -429,7 +428,7 @@ class MiAZApp(Gtk.Application):
         repo = self.backend.repo_config(repo_id)
         try:
             dir_repo = repo['dir_docs']
-            self.log.debug("Repo? '%s'", dir_repo)
+            self.log.debug("Using repo '%s'", dir_repo)
             if self.backend.repo_validate(dir_repo):
                 self.backend.repo_load(dir_repo)
                 self.log.debug("Setting up workspace")
@@ -438,16 +437,12 @@ class MiAZApp(Gtk.Application):
                     if not self.plugins_loaded:
                         # ~ self.log.debug("Rloading plugins")
                         self.load_plugins()
-                self.log.debug("Setting up Rename widget")
                 if self.get_widget('rename') is None:
                     self._setup_page_rename()
-                self.log.debug("Setting up Repository settings widget")
                 if self.get_widget('settings-repo') is None:
                     self._setup_page_repo_settings()
-
                 workspace = self.get_widget('workspace')
                 workspace.initialize_caches()
-
                 self.show_stack_page_by_name('workspace')
                 valid = True
                 statusbar = self.get_widget('statusbar')

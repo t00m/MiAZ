@@ -177,7 +177,7 @@ class MiAZAppSettings(CustomWindow):
         scrwin = self.factory.create_scrolledwindow()
         vbox.append(scrwin)
         pm = self.app.get_service('plugin-manager')
-        pm.add_repo_plugins_dir()
+        # ~ pm.add_repo_plugins_dir()
 
         box = Gtk.ListBox.new()
         box.set_vexpand(True)
@@ -209,7 +209,7 @@ class MiAZAppSettings(CustomWindow):
         self.app.add_widget('app-settings-plugins-user-scrwin', scrwin)
         vbox.append(scrwin)
         pm = self.app.get_service('plugin-manager')
-        pm.add_repo_plugins_dir()
+        # ~ pm.add_repo_plugins_dir()
         view = MiAZColumnViewPlugin(self.app)
         view.set_hexpand(True)
         view.set_vexpand(True)

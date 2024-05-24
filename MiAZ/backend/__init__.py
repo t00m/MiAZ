@@ -62,29 +62,29 @@ class MiAZBackend(GObject.GObject):
         srvutil = self.app.get_service('util')
         conf_dir = os.path.join(path, '.conf')
         conf_file = os.path.join(conf_dir, 'repo.json')
+        valid = False
         if os.path.exists(conf_dir):
-            self.log.debug("Config path '%s' exists", conf_dir)
             if os.path.exists(conf_file):
                 repo = srvutil.json_load(conf_file)
-                self.log.debug("Current repository: %s", path)
-                # ~ self.log.debug("MiAZ Repository format: %s", repo['FORMAT'])
-                return True
+                valid = True
             else:
-                self.log.debug("Repo config file '%s' doesn't exist", conf_file)
-                return True
+                valid = False
         else:
-            self.log.debug("Config dir '%s' doesn't exist", conf_dir)
-            return False
+            valid = False
+        self.log.debug("MiAZ Repository valid? %s", valid)
+        return valid
 
     def repo_init(self, path):
+        config = self.get_config()
         srvutil = self.app.get_service('util')
-        conf = {}
-        conf['FORMAT'] = 1
+        repoconf = {}
+        repoconf['FORMAT'] = 1
         dir_conf = os.path.join(path, '.conf')
         os.makedirs(dir_conf, exist_ok = True)
         conf_file = os.path.join(dir_conf, 'repo.json')
-        srvutil.json_save(conf_file, conf)
-        self.conf['App'].set('source', path)
+        srvutil.json_save(conf_file, repoconf)
+        self.log.debug("Repository config file saved: '%s'", conf_file)
+        config['App'].set('source', path)
         self.log.debug("Repo configuration initialized")
 
     def repo_config(self, repo_id: str = None):
@@ -92,8 +92,10 @@ class MiAZBackend(GObject.GObject):
         repos_used = config['Repository'].load_used()
 
         if repo_id is None:
-            self.log.debug("Using default repository from configuration")
             repo_id = config['App'].get('current')
+            # ~ self.log.debug("Using default repository (%s) from configuration", repo_id)
+        # ~ else:
+            # ~ self.log.debug("Using repo '%s'", repo_id)
 
         try:
             repo_path = repos_used[repo_id]
@@ -102,16 +104,14 @@ class MiAZBackend(GObject.GObject):
             conf['dir_conf'] = os.path.join(conf['dir_docs'], '.conf')
             if not os.path.exists(conf['dir_conf']):
                 self.repo_init(conf['dir_docs'])
-        except KeyError:
+        except Exception as error:
+            self.log.error(error)
             conf = {}
-        finally:
-            # ~ self.log.debug("Repo '%s' conf: %s", repo_id, conf)
-            return conf
+        return conf
 
     def repo_load(self, path):
         repoconf = self.repo_config()
         dir_conf = repoconf['dir_conf']
-        self.log.debug("Loading config repo from: %s", dir_conf)
         self._config['Country'] = MiAZConfigCountries(self, dir_conf)
         self._config['Group'] = MiAZConfigGroups(self, dir_conf)
         self._config['Purpose'] = MiAZConfigPurposes(self, dir_conf)
@@ -121,13 +121,13 @@ class MiAZBackend(GObject.GObject):
         self._config['Person'] = MiAZConfigPeople(self, dir_conf)
         self._config['Project'] = MiAZConfigProjects(self, dir_conf)
         self._config['Plugin'] = MiAZConfigUserPlugins(self, dir_conf)
-        for cid in self._config:
-            self.log.debug("\tConfig for %s: %d values", cid, len(self._config[cid].load_used()))
+        # ~ for cid in self._config:
+            # ~ self.log.debug("\tConfig for %s: %d values", cid, len(self._config[cid].load_used()))
         self.watcher = MiAZWatcher('source', path)
         self.watcher.set_active(active=True)
         self.watcher.connect('repository-updated', self.repo_check)
         self.projects = MiAZProject(self)
-        self.log.debug("Configuration loaded")
+        self.log.debug("Config repo loaded from: %s", dir_conf)
         self.emit('repository-switched')
 
     def repo_check(self, *args):

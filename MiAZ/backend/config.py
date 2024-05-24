@@ -152,7 +152,7 @@ class MiAZConfig(GObject.GObject):
     def set(self, key: str, value: str) -> None:
         items = self.load(self.used)
         items[key] = value
-        self.save(items=items)
+        return self.save(items=items)
 
     def exists_used(self, key: str) -> bool:
         config = self.load(self.used)
@@ -270,8 +270,10 @@ class MiAZConfigApp(MiAZConfig):
         return found
 
     def save(self, filepath: str = '', items: dict = {}) -> bool:
-        if self.save_data(filepath, items):
+        saved = self.save_data(filepath, items)
+        if saved:
             self.emit('repo-settings-updated-app')
+        return saved
 
 class MiAZConfigRepositories(MiAZConfig):
     def __init__(self, backend):

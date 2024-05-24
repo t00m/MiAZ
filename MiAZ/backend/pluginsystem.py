@@ -100,7 +100,7 @@ class MiAZPluginManager(GObject.GObject):
         try:
             self.engine.load_plugin(plugin)
             if plugin.is_loaded():
-                self.log.debug("Plugin %s (%s) loaded", plugin.get_name(), ptype)
+                # ~ self.log.debug("Plugin %s (%s) loaded", plugin.get_name(), ptype)
                 return True
             else:
                 self.log.error("Plugin %s (%s) couldn't be loaded", plugin.get_name(), ptype)
@@ -179,23 +179,23 @@ class MiAZPluginManager(GObject.GObject):
         # GLobal user plugins
         self.add_user_plugins_dir()
 
-        # User plugins for a specific repo
-        self.add_repo_plugins_dir()
+        # ~ # User plugins for a specific repo
+        # ~ self.add_repo_plugins_dir()
 
-    def add_repo_plugins_dir(self):
-        try:
-            repo = self.backend.repo_config()
-            dir_conf = repo['dir_conf']
-            dir_plugins = os.path.join(dir_conf, 'plugins')
-            dir_plugins_available = os.path.join(dir_plugins, 'available')
-            dir_plugins_used = os.path.join(dir_plugins, 'used')
-            os.makedirs(dir_plugins, exist_ok=True)
-            os.makedirs(dir_plugins_available, exist_ok=True)
-            os.makedirs(dir_plugins_used, exist_ok=True)
-            self.engine.add_search_path(dir_plugins_used)
-            self.log.debug("Added User plugin dir: %s", dir_plugins_used)
-        except KeyError:
-            self.log.warning("There isn't any repo loaded right now!")
+    # ~ def add_repo_plugins_dir(self):
+        # ~ try:
+            # ~ repo = self.backend.repo_config()
+            # ~ dir_conf = repo['dir_conf']
+            # ~ dir_plugins = os.path.join(dir_conf, 'plugins')
+            # ~ dir_plugins_available = os.path.join(dir_plugins, 'available')
+            # ~ dir_plugins_used = os.path.join(dir_plugins, 'used')
+            # ~ os.makedirs(dir_plugins, exist_ok=True)
+            # ~ os.makedirs(dir_plugins_available, exist_ok=True)
+            # ~ os.makedirs(dir_plugins_used, exist_ok=True)
+            # ~ self.engine.add_search_path(dir_plugins_used)
+            # ~ self.log.debug("Added User plugin dir: %s", dir_plugins_used)
+        # ~ except KeyError:
+            # ~ self.log.warning("There isn't any repo loaded right now!")
 
     def add_user_plugins_dir(self):
         ENV = self.app.get_env()

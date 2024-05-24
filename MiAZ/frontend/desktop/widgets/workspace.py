@@ -94,7 +94,7 @@ class MiAZWorkspace(Gtk.Box):
         self.fcache = os.path.join(dir_conf, 'cache.json')
         try:
             self.cache = self.util.json_load(self.fcache)
-            self.log.debug("Loading cache from %s", self.fcache)
+            # ~ self.log.debug("Loading cache from %s", self.fcache)
         except:
             self.initialize_caches()
 
@@ -146,7 +146,7 @@ class MiAZWorkspace(Gtk.Box):
         self.backend.projects.remove(project='', doc=os.path.basename(target))
 
     def _finish_configuration(self, *args):
-        self.log.debug("Finish loading workspace")
+        # ~ self.log.debug("Finish loading workspace")
         self.workspace_loaded = True
         # ~ self.app.load_plugins()
         self.emit('extend-menu')
@@ -184,7 +184,7 @@ class MiAZWorkspace(Gtk.Box):
             body.append(boxDropdown)
             dropdowns[i_type] = dropdown
             self.used_signals[i_type] = self.config[i_type].connect('used-updated', self.update_dropdown_filter, item_type)
-            self.log.debug("Dropdown filter for '%s' setup successfully", i_title)
+            # ~ self.log.debug("Dropdown filter for '%s' setup successfully", i_title)
         self.app.set_widget('ws-dropdowns', dropdowns)
         self.backend.connect('repository-updated', self._on_workspace_update)
         self.backend.connect('repository-switched', self._update_dropdowns)
@@ -198,7 +198,7 @@ class MiAZWorkspace(Gtk.Box):
             i_title = _(item_type.__title__)
             config = self.config[i_type]
             self.actions.dropdown_populate(config, dropdowns[i_type], item_type, True, True)
-            self.log.debug("Dropdown filter for '%s' updated", i_title)
+            # ~ self.log.debug("Dropdown filter for '%s' updated", i_title)
 
 
     def _on_workspace_update(self, *args):
@@ -208,7 +208,7 @@ class MiAZWorkspace(Gtk.Box):
         dropdowns = self.app.get_widget('ws-dropdowns')
         i_type = item_type.__gtype_name__
         self.actions.dropdown_populate(config, dropdowns[i_type], item_type)
-        self.log.debug("Dropdown %s updated", i_type)
+        # ~ self.log.debug("Dropdown %s updated", i_type)
 
     def _on_filters_toggled(self, button, data=None):
         active = button.get_active()
@@ -473,7 +473,7 @@ class MiAZWorkspace(Gtk.Box):
 
     def update(self, *args):
         # FIXME: come up w/ a solution to display only available values
-        self.log.debug("Update requested")
+        # ~ self.log.debug("Update requested")
         dropdowns = self.app.get_widget('ws-dropdowns')
         dd_date = dropdowns[Date.__gtype_name__]
         dd_prj = dropdowns[Project.__gtype_name__]
@@ -586,6 +586,7 @@ class MiAZWorkspace(Gtk.Box):
         de = datetime.now()
         dt = de - ds
         self.log.debug("Workspace updated (%s)" % dt)
+
         self.util.json_save(self.fcache, self.cache)
         # ~ self.log.debug("Saving cache to %s", self.fcache)
         GLib.idle_add(self.view.update, items)
