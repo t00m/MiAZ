@@ -22,20 +22,21 @@ from gi.repository import Gtk
 
 from MiAZ.backend import MiAZBackend
 from MiAZ.backend.log import get_logger
+from MiAZ.backend.pluginsystem import MiAZPluginManager, MiAZPluginType
 from MiAZ.frontend.desktop.widgets.configview import MiAZRepositories
 from MiAZ.frontend.desktop.widgets.assistant import MiAZAssistantRepo
 from MiAZ.frontend.desktop.widgets.workspace import MiAZWorkspace
 from MiAZ.frontend.desktop.widgets.rename import MiAZRenameDialog
-from MiAZ.frontend.desktop.settings import MiAZAppSettings
-from MiAZ.frontend.desktop.settings import MiAZRepoSettings
+from MiAZ.frontend.desktop.widgets.settings import MiAZAppSettings
+from MiAZ.frontend.desktop.widgets.settings import MiAZRepoSettings
 from MiAZ.frontend.desktop.widgets.about import MiAZAbout
 from MiAZ.frontend.desktop.widgets.welcome import MiAZWelcome
 from MiAZ.frontend.desktop.widgets.statusbar import MiAZStatusbar
-from MiAZ.frontend.desktop.icons import MiAZIconManager
-from MiAZ.frontend.desktop.factory import MiAZFactory
-from MiAZ.frontend.desktop.actions import MiAZActions
-from MiAZ.frontend.desktop.help import MiAZHelp
-from MiAZ.backend.pluginsystem import MiAZPluginManager, MiAZPluginType
+from MiAZ.frontend.desktop.services.icm import MiAZIconManager
+from MiAZ.frontend.desktop.services.factory import MiAZFactory
+from MiAZ.frontend.desktop.services.actions import MiAZActions
+from MiAZ.frontend.desktop.services.help import MiAZHelp
+
 
 
 class MiAZApp(Gtk.Application):
@@ -89,7 +90,7 @@ class MiAZApp(Gtk.Application):
 
     def _update_repo_settings(self, *args):
         repo_active = self.conf['App'].get('current')
-        self.message("Switched to repository '%s'" % repo_active)
+        self.statusbar_message("Switched to repository '%s'" % repo_active)
 
     def _finish_configuration(self, *args):
         self.log.debug("Finish loading app")
@@ -204,7 +205,7 @@ class MiAZApp(Gtk.Application):
             page_welcome.set_icon_name('MiAZ')
             page_welcome.set_visible(True)
 
-    def _setup_page_app_settings(self):
+    def _setup_app_settings_window(self):
         widget_settings_app = self.get_widget('settings-app')
         if widget_settings_app is None:
             self.add_widget('settings-app', MiAZAppSettings(self))
@@ -212,7 +213,7 @@ class MiAZApp(Gtk.Application):
             # ~ page_settings_app.set_icon_name('document-properties')
             # ~ page_settings_app.set_visible(False)
 
-    def _setup_page_repo_settings(self):
+    def _setup_repo_settings_window(self):
         widget_settings_repo = self.get_widget('settings-repo')
         if widget_settings_repo is None:
             self.add_widget('settings-repo', MiAZRepoSettings(self))
@@ -329,7 +330,7 @@ class MiAZApp(Gtk.Application):
         # ~ self.header.pack_start(menubutton)
 
     def show_app_settings(self, *args):
-        self._setup_page_app_settings()
+        self._setup_app_settings_window()
         window = self.get_widget('settings-app')
         window.set_transient_for(self.win)
         window.set_modal(True)
@@ -337,17 +338,17 @@ class MiAZApp(Gtk.Application):
 
     def show_repo_settings(self, *args):
         # ~ self.show_stack_page_by_name('settings_repo')
-        self._setup_page_repo_settings()
+        self._setup_repo_settings_window()
         window = self.get_widget('settings-repo')
         window.set_transient_for(self.win)
         window.set_modal(True)
         window.present()
 
     def show_app_about(self, *args):
-        window = self.get_widget('window')
+        # ~ window = self.get_widget('window')
         ENV = self.get_env()
         about = Gtk.AboutDialog()
-        about.set_transient_for=window
+        about.set_transient_for=self.win
         about.set_modal(True)
         about.set_logo_icon_name(ENV['APP']['ID'])
         about.set_program_name(ENV['APP']['name'])
@@ -440,7 +441,7 @@ class MiAZApp(Gtk.Application):
                 if self.get_widget('rename') is None:
                     self._setup_page_rename()
                 if self.get_widget('settings-repo') is None:
-                    self._setup_page_repo_settings()
+                    self._setup_repo_settings_window()
                 workspace = self.get_widget('workspace')
                 workspace.initialize_caches()
                 self.show_stack_page_by_name('workspace')
@@ -464,7 +465,7 @@ class MiAZApp(Gtk.Application):
     def _handle_menu(self, action, *args):
         name = action.props.name
         if name == 'settings_app':
-            self._setup_page_app_settings()
+            self._setup_app_settings_window()
             window = self.get_widget('settings-app')
             window.set_transient_for(self.win)
             window.set_modal(True)
@@ -569,7 +570,7 @@ class MiAZApp(Gtk.Application):
             self.log.error("Widget '%s' doesn't exists", name)
         return deleted
 
-    def message(self, message: str):
+    def statusbar_message(self, message: str):
         """Statusbar message"""
         statusbar = self.get_widget('statusbar')
-        statusbar.message(message)
+        statusbar.statusbar_message(message)
