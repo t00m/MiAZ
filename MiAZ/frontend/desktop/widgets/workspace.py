@@ -68,7 +68,7 @@ class MiAZWorkspace(Gtk.Box):
         self.backend = self.app.get_service('backend')
         self.factory = self.app.get_service('factory')
         self.actions = self.app.get_service('actions')
-        self.config = self.backend.get_conf()
+        self.config = self.backend.get_config()
         self.util = self.app.get_service('util')
         self.util.connect('filename-renamed', self._on_filename_renamed)
         self.util.connect('filename-deleted', self._on_filename_deleted)
@@ -94,11 +94,11 @@ class MiAZWorkspace(Gtk.Box):
         self.fcache = os.path.join(dir_conf, 'cache.json')
         try:
             self.cache = self.util.json_load(self.fcache)
-            self.log.debug("Loading cache from %s", self.fcache)
+            # ~ self.log.debug("Loading cache from %s", self.fcache)
         except:
             self.initialize_caches()
 
-        self._check_first_time()
+        # ~ self._check_first_time()
 
         # Allow plug-ins to make their job
         self.app.connect('start-application-completed', self._finish_configuration)
@@ -146,20 +146,34 @@ class MiAZWorkspace(Gtk.Box):
         self.backend.projects.remove(project='', doc=os.path.basename(target))
 
     def _finish_configuration(self, *args):
-        self.log.debug("Finish loading workspace")
+        # ~ self.log.debug("Finish loading workspace")
         self.workspace_loaded = True
         # ~ self.app.load_plugins()
         self.emit('extend-menu')
         self.emit('extend-toolbar-top')
 
     def _setup_toolbar_filters(self):
+        dropdowns = self.app.get_widget('ws-dropdowns')
         widget = self.factory.create_box_horizontal(hexpand=True, vexpand=False)
         body = self.factory.create_box_horizontal(margin=3, spacing=6, hexpand=True, vexpand=True)
         body.set_homogeneous(True)
         body.set_margin_top(margin=6)
         widget.append(body)
 
-        dropdowns = self.app.get_widget('ws-dropdowns')
+        ### Projects dropdown
+        i_type = Project.__gtype_name__
+        i_title = _(Project.__title__)
+        dd_prj = self.factory.create_dropdown_generic(item_type=Project)
+        boxDropdown = self.factory.create_box_filter(i_title, dd_prj)
+        # ~ dd_prj.set_size_request(250, -1)
+        dropdowns[i_type] = dd_prj
+        self.actions.dropdown_populate(self.config[i_type], dd_prj, Project, any_value=True, none_value=True)
+        dd_prj.connect("notify::selected-item", self._on_filter_selected)
+        dd_prj.connect("notify::selected-item", self._on_project_selected)
+        dd_prj.set_hexpand(True)
+        self.config[i_type].connect('used-updated', self.update_dropdown_filter, Project)
+        body.append(boxDropdown)
+
         for item_type in [Country, Group, SentBy, Purpose, SentTo]:
             i_type = item_type.__gtype_name__
             i_title = _(item_type.__title__)
@@ -170,7 +184,7 @@ class MiAZWorkspace(Gtk.Box):
             body.append(boxDropdown)
             dropdowns[i_type] = dropdown
             self.used_signals[i_type] = self.config[i_type].connect('used-updated', self.update_dropdown_filter, item_type)
-            self.log.debug("Dropdown filter for '%s' setup successfully", i_title)
+            # ~ self.log.debug("Dropdown filter for '%s' setup successfully", i_title)
         self.app.set_widget('ws-dropdowns', dropdowns)
         self.backend.connect('repository-updated', self._on_workspace_update)
         self.backend.connect('repository-switched', self._update_dropdowns)
@@ -184,7 +198,7 @@ class MiAZWorkspace(Gtk.Box):
             i_title = _(item_type.__title__)
             config = self.config[i_type]
             self.actions.dropdown_populate(config, dropdowns[i_type], item_type, True, True)
-            self.log.debug("Dropdown filter for '%s' updated", i_title)
+            # ~ self.log.debug("Dropdown filter for '%s' updated", i_title)
 
 
     def _on_workspace_update(self, *args):
@@ -194,7 +208,7 @@ class MiAZWorkspace(Gtk.Box):
         dropdowns = self.app.get_widget('ws-dropdowns')
         i_type = item_type.__gtype_name__
         self.actions.dropdown_populate(config, dropdowns[i_type], item_type)
-        self.log.debug("Dropdown %s updated", i_type)
+        # ~ self.log.debug("Dropdown %s updated", i_type)
 
     def _on_filters_toggled(self, button, data=None):
         active = button.get_active()
@@ -210,6 +224,7 @@ class MiAZWorkspace(Gtk.Box):
             self.selected_items.append(item)
         label = self.btnDocsSel.get_child()
         docs = self.util.get_files()
+        self.log.debug(', '.join([item.id for item in self.selected_items]))
         label.set_markup("<small>%d</small> / %d / <big>%d</big>" % (len(self.selected_items), len(model), len(docs)))
         self.app.message("Selected %d of %d documents in current view (total documents: %d)" % (len(self.selected_items), len(model), len(docs)))
         # ~ if len(self.selected_items) == 1:
@@ -252,17 +267,17 @@ class MiAZWorkspace(Gtk.Box):
         hdb_left.append(dd_date)
 
         ### Projects dropdown
-        i_type = Project.__gtype_name__
-        dd_prj = self.factory.create_dropdown_generic(item_type=Project)
-        dd_prj.set_size_request(250, -1)
-        dropdowns[i_type] = dd_prj
-        self.actions.dropdown_populate(self.config[i_type], dd_prj, Project, any_value=True, none_value=True)
-        dd_prj.connect("notify::selected-item", self._on_filter_selected)
-        dd_prj.connect("notify::selected-item", self._on_project_selected)
-        dd_prj.set_hexpand(True)
-        self.config[i_type].connect('used-updated', self.update_dropdown_filter, Project)
-        hdb_left.append(dd_prj)
-        self.app.set_widget('ws-dropdowns', dropdowns)
+        # ~ i_type = Project.__gtype_name__
+        # ~ dd_prj = self.factory.create_dropdown_generic(item_type=Project)
+        # ~ dd_prj.set_size_request(250, -1)
+        # ~ dropdowns[i_type] = dd_prj
+        # ~ self.actions.dropdown_populate(self.config[i_type], dd_prj, Project, any_value=True, none_value=True)
+        # ~ dd_prj.connect("notify::selected-item", self._on_filter_selected)
+        # ~ dd_prj.connect("notify::selected-item", self._on_project_selected)
+        # ~ dd_prj.set_hexpand(True)
+        # ~ self.config[i_type].connect('used-updated', self.update_dropdown_filter, Project)
+        # ~ hdb_left.append(dd_prj)
+        # ~ self.app.set_widget('ws-dropdowns', dropdowns)
 
         # Menu Single and Multiple
         popovermenu = self._setup_menu_selection()
@@ -282,6 +297,7 @@ class MiAZWorkspace(Gtk.Box):
 
         ## Import button
         widgets = []
+        self.app.add_widget('miaz-import-widgets', widgets)
         btnImportFiles = self.factory.create_button('miaz-import-document', callback=self.actions.import_file)
         rowImportDoc = self.factory.create_actionrow(title=_('Import document'), subtitle=_('Import one or more documents'), suffix=btnImportFiles)
         widgets.append(rowImportDoc)
@@ -293,6 +309,7 @@ class MiAZWorkspace(Gtk.Box):
         # ~ rowImportConf = self.factory.create_actionrow(title='Import config', subtitle='Import configuration', suffix=btnImportConf)
         # ~ widgets.append(rowImportConf)
         button = self.factory.create_button_popover(icon_name='miaz-list-add', title='', widgets=widgets)
+        self.app.add_widget('miaz-import-button-popover', button)
         hdb_right.append(button)
 
 
@@ -456,7 +473,7 @@ class MiAZWorkspace(Gtk.Box):
 
     def update(self, *args):
         # FIXME: come up w/ a solution to display only available values
-        self.log.debug("Update requested")
+        # ~ self.log.debug("Update requested")
         dropdowns = self.app.get_widget('ws-dropdowns')
         dd_date = dropdowns[Date.__gtype_name__]
         dd_prj = dropdowns[Project.__gtype_name__]
@@ -569,6 +586,7 @@ class MiAZWorkspace(Gtk.Box):
         de = datetime.now()
         dt = de - ds
         self.log.debug("Workspace updated (%s)" % dt)
+
         self.util.json_save(self.fcache, self.cache)
         # ~ self.log.debug("Saving cache to %s", self.fcache)
         GLib.idle_add(self.view.update, items)
@@ -582,6 +600,8 @@ class MiAZWorkspace(Gtk.Box):
             if rename:
                 renamed += 1
         self.log.debug("Documents renamed: %d", renamed)
+
+        self.selected_items = []
 
     def _do_eval_cond_matches_freetext(self, item):
         left = self.ent_sb.get_text()

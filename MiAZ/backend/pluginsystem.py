@@ -12,6 +12,7 @@
 """
 
 import os
+import zipfile
 from enum import IntEnum
 
 import gi
@@ -33,27 +34,22 @@ class MiAZPluginType(IntEnum):
     SYSTEM = 1
     USER = 2
 
-    def __str__(self):
-        if self.value == MiAZPluginType.USER:
-            return _("User Plugin")
-        elif self.value == MiAZPluginType.SYSTEM:
-            return _("System Plugin")
-
-    def get_dir(self):
-        """Returns the directory where this type of plugins can be found."""
-        ENV = self.app.get_env()
-        if self.value == MiAZPluginType.USER:
-            return ENV['LPATH']['PLUGINS']
-
-        elif self.value == MiAZPluginType.SYSTEM:
-            return ENV['GPATH']['PLUGINS']
+    # ~ def __str__(self):
+        # ~ if self.value == MiAZPluginType.USER:
+            # ~ return _("User Plugin")
+        # ~ elif self.value == MiAZPluginType.SYSTEM:
+            # ~ return _("System Plugin")
 
 
-class MiAZPluginManager:
+class MiAZPluginManager(GObject.GObject):
     def __init__(self, app):
+        GObject.signal_new('plugins-updated',
+                            MiAZPluginManager,
+                            GObject.SignalFlags.RUN_LAST, None, () )
         self.log = get_logger('MiAZ.PluginManager')
         self.app = app
         self.backend = self.app.get_service('backend')
+        self.util = self.app.get_service('util')
         self.log.debug("Initializing Plugin Manager")
         self.plugin_info_list = []
 
@@ -64,18 +60,58 @@ class MiAZPluginManager:
         self._setup_plugins_dir()
         self._setup_extension_set()
 
+    def import_plugin(self, plugin_path):
+        """
+        Import plugin in the user space.
+        "A plugin zip file is valid if:
+        - Contains only 2 files
+        - Their names are identical
+        - Extensions are .plugin and .py
+        """
+        valid = False
+        azip = zipfile.ZipFile(plugin_path)
+        files = azip.namelist()
+        if len(files) == 2:
+            fn1_name, fn1_ext = self.util.filename_details(files[0])
+            fn2_name, fn2_ext = self.util.filename_details(files[1])
+            if fn1_name == fn2_name:
+                if fn1_ext == 'py' and fn2_ext == 'plugin':
+                    valid = True
+                elif fn1_ext == 'plugin' and fn2_ext == 'py':
+                    valid = True
+            if valid:
+                ENV = self.app.get_env()
+                azip.extractall(ENV['LPATH']['PLUGINS'])
+                self.engine.rescan_plugins()
+                self.log.debug("Plugin '%s' added to '%s'", os.path.basename(plugin_path), ENV['LPATH']['PLUGINS'])
+        return valid
+
+    def rescan_plugins(self):
+        try:
+            self.engine.rescan_plugins()
+            self.emit('plugins-updated')
+        except TypeError:
+            # Plugin system not initialized yet
+            pass
+
     def load_plugin(self, plugin: Peas.PluginInfo) -> bool:
-        self.engine.load_plugin(plugin)
-        if plugin.is_loaded():
-            # ~ self.log.debug("Plugin %s loaded", plugin.get_name())
-            return True
-        else:
-            self.log.error("Plugin %s couldn't be loaded", plugin.get_name())
+        ptype = self.get_plugin_type(plugin)
+        pinfo = self.get_plugin_info(plugin)
+        try:
+            self.engine.load_plugin(plugin)
+            if plugin.is_loaded():
+                # ~ self.log.debug("Plugin %s (%s) loaded", plugin.get_name(), ptype)
+                return True
+            else:
+                self.log.error("Plugin %s (%s) couldn't be loaded", plugin.get_name(), ptype)
+                return False
+        except Exception as error:
+            self.log.error(error)
+            self.log.error("Plugin %s (%s) couldn't be loaded", plugin.get_name(), ptype)
             return False
 
     def unload_plugin(self, plugin: Peas.PluginInfo):
         self.engine.unload_plugin(plugin)
-
 
     def get_engine(self):
         return self.engine
@@ -88,10 +124,12 @@ class MiAZPluginManager:
     def get_plugin_type(self, plugin_info):
         """Gets the PluginType for the specified Peas.PluginInfo."""
         ENV = self.app.get_env()
-        paths = [plugin_info.get_data_dir(), ENV['GPATH']['PLUGINS']]
-        if os.path.commonprefix(paths) == ENV['GPATH']['PLUGINS']:
+        PLUGIN_DIR = os.path.dirname(plugin_info.get_data_dir())
+        is_plugin_user_dir = PLUGIN_DIR == ENV['LPATH']['PLUGINS']
+        if is_plugin_user_dir:
+            return MiAZPluginType.USER
+        else:
             return MiAZPluginType.SYSTEM
-        return MiAZPluginType.USER
 
     def get_extension(self, module_name):
         """Gets the extension identified by the specified name.
@@ -138,23 +176,32 @@ class MiAZPluginManager:
             self.engine.add_search_path(ENV['GPATH']['PLUGINS'])
             self.log.debug("Added System plugin dir: %s", ENV['GPATH']['PLUGINS'])
 
-        # User plugins for a specific repo
-        self.add_repo_plugins_dir()
+        # GLobal user plugins
+        self.add_user_plugins_dir()
 
-    def add_repo_plugins_dir(self):
-        try:
-            repo = self.backend.repo_config()
-            dir_conf = repo['dir_conf']
-            dir_plugins = os.path.join(dir_conf, 'plugins')
-            dir_plugins_available = os.path.join(dir_plugins, 'available')
-            dir_plugins_used = os.path.join(dir_plugins, 'used')
-            os.makedirs(dir_plugins, exist_ok=True)
-            os.makedirs(dir_plugins_available, exist_ok=True)
-            os.makedirs(dir_plugins_used, exist_ok=True)
-            self.engine.add_search_path(dir_plugins_used)
-            self.log.debug("Added User plugin dir: %s", dir_plugins_used)
-        except KeyError:
-            self.log.warning("There isn't any repo loaded right now!")
+        # ~ # User plugins for a specific repo
+        # ~ self.add_repo_plugins_dir()
+
+    # ~ def add_repo_plugins_dir(self):
+        # ~ try:
+            # ~ repo = self.backend.repo_config()
+            # ~ dir_conf = repo['dir_conf']
+            # ~ dir_plugins = os.path.join(dir_conf, 'plugins')
+            # ~ dir_plugins_available = os.path.join(dir_plugins, 'available')
+            # ~ dir_plugins_used = os.path.join(dir_plugins, 'used')
+            # ~ os.makedirs(dir_plugins, exist_ok=True)
+            # ~ os.makedirs(dir_plugins_available, exist_ok=True)
+            # ~ os.makedirs(dir_plugins_used, exist_ok=True)
+            # ~ self.engine.add_search_path(dir_plugins_used)
+            # ~ self.log.debug("Added User plugin dir: %s", dir_plugins_used)
+        # ~ except KeyError:
+            # ~ self.log.warning("There isn't any repo loaded right now!")
+
+    def add_user_plugins_dir(self):
+        ENV = self.app.get_env()
+        os.makedirs(ENV['LPATH']['PLUGINS'], exist_ok=True)
+        self.engine.add_search_path(ENV['LPATH']['PLUGINS'])
+        self.log.debug("Added user plugins dir: %s", ENV['LPATH']['PLUGINS'])
 
 
     @staticmethod

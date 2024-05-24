@@ -22,7 +22,7 @@ from gi.repository import Pango
 from MiAZ.backend.log import get_logger
 from MiAZ.frontend.desktop.widgets.columnview import MiAZColumnView
 from MiAZ.frontend.desktop.widgets.columnview import ColIcon, ColLabel, ColMenuButton, ColCheck, ColButton
-from MiAZ.backend.models import MiAZItem, Country, Group, Person, Purpose, File, Project, Repository
+from MiAZ.backend.models import MiAZItem, Country, Group, Person, Purpose, File, Project, Repository, Plugin
 
 
 class MiAZColumnViewWorkspace(MiAZColumnView):
@@ -379,4 +379,16 @@ class MiAZColumnViewMassProject(MiAZColumnView):
         self.column_id.set_visible(True)
         self.cv.append_column(self.column_title)
         self.column_title.set_title(_('Projects already assigned'))
+        self.column_title.set_expand(True)
+
+class MiAZColumnViewPlugin(MiAZColumnView):
+    """ Custom ColumnView widget for MiAZ """
+    __gtype_name__ = 'MiAZColumnViewPlugin'
+
+    def __init__(self, app):
+        super().__init__(app, item_type=Plugin)
+        self.cv.append_column(self.column_id)
+        self.column_id.set_title(_('Plugin'))
+        self.cv.append_column(self.column_title)
+        self.column_title.set_title(_('Description'))
         self.column_title.set_expand(True)

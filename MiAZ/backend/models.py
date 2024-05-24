@@ -191,3 +191,7 @@ class SentBy(Person):
 class SentTo(Person):
     __gtype_name__ = 'SentTo'
     __title__ = _('Recipient')
+
+class Plugin(MiAZModel):
+    __gtype_name__ = 'Plugin'
+    __title__ = _('Plugin')

@@ -14,7 +14,7 @@ import shutil
 from gi.repository import GObject
 
 from MiAZ.backend.log import get_logger
-from MiAZ.backend.models import MiAZModel, MiAZItem, File, Group, Person, Country, Purpose, Concept, SentBy, SentTo, Project, Repository
+from MiAZ.backend.models import MiAZModel, MiAZItem, File, Group, Person, Country, Purpose, Concept, SentBy, SentTo, Project, Repository, Plugin
 
 class MiAZConfig(GObject.GObject):
     """ MiAZ Config class"""
@@ -101,6 +101,7 @@ class MiAZConfig(GObject.GObject):
         return self.load(self.available)
 
     def load_used(self) -> dict:
+        # ~ self.log.debug("%s used: %s", self.config_for, self.used)
         return self.load(self.used)
 
     def save(self, filepath: str = '', items: dict = {}) -> bool:
@@ -151,7 +152,7 @@ class MiAZConfig(GObject.GObject):
     def set(self, key: str, value: str) -> None:
         items = self.load(self.used)
         items[key] = value
-        self.save(items=items)
+        return self.save(items=items)
 
     def exists_used(self, key: str) -> bool:
         config = self.load(self.used)
@@ -269,8 +270,10 @@ class MiAZConfigApp(MiAZConfig):
         return found
 
     def save(self, filepath: str = '', items: dict = {}) -> bool:
-        if self.save_data(filepath, items):
+        saved = self.save_data(filepath, items)
+        if saved:
             self.emit('repo-settings-updated-app')
+        return saved
 
 class MiAZConfigRepositories(MiAZConfig):
     def __init__(self, backend):
@@ -413,5 +416,20 @@ class MiAZConfigProjects(MiAZConfig):
             available = os.path.join(dir_conf, 'project-available.json'),
             default = None,
             model = Project,
+            must_copy = False
+        )
+
+class MiAZConfigUserPlugins(MiAZConfig):
+    def __init__(self, backend, dir_conf):
+        app = backend.app
+        ENV = app.get_env()
+        super().__init__(
+            backend = backend,
+            log=get_logger('MiAZ.Settings.UserPlugins'),
+            config_for = 'UserPlugin',
+            used = os.path.join(dir_conf, 'plugins-used.json'),
+            available = os.path.join(dir_conf, 'plugins-available.json'),
+            default = None,
+            model = Plugin,
             must_copy = False
         )

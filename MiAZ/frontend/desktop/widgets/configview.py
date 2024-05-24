@@ -22,7 +22,9 @@ from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewPurpose
 from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewPerson
 from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewProject
 from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewRepo
+from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewPlugin
 from MiAZ.frontend.desktop.widgets.dialogs import MiAZDialogAddRepo
+from MiAZ.backend.pluginsystem import MiAZPluginType
 
 
 class MiAZConfigView(MiAZSelector):
@@ -35,7 +37,7 @@ class MiAZConfigView(MiAZSelector):
         self.app = app
         self.log = get_logger('MiAZConfigView')
         self.backend = self.app.get_service('backend')
-        self.conf = self.backend.get_conf()
+        self.conf = self.backend.get_config()
         self.config = self.conf[config]
         self.config.connect('used-updated', self.update)
         self.config.connect('available-updated', self.update)
@@ -291,3 +293,70 @@ class MiAZDates(Gtk.Box):
                 target = "%s.%s" % ('-'.join(lname), ext)
                 self.util.filename_rename(source, target)
         dialog.destroy()
+
+class MiAZUserPlugins(MiAZConfigView):
+    """Manage user plugins from Repo Settings. Edit disabled"""
+    __gtype_name__ = 'MiAZUserPlugins'
+    current = None
+
+    def __init__(self, app):
+        super(MiAZConfigView, self).__init__(app, edit=False)
+        super().__init__(app, 'Plugin')
+        self._update_view_available()
+
+    def _setup_view_finish(self):
+        # Setup Available and Used Column Views
+        self.viewAv = MiAZColumnViewPlugin(self.app)
+        self.add_columnview_available(self.viewAv)
+        self.viewSl = MiAZColumnViewPlugin(self.app)
+        self.add_columnview_used(self.viewSl)
+
+    def _update_view_available(self):
+        plugin_manager = self.app.get_service('plugin-manager')
+        items = []
+        item_type = self.config.model
+        for plugin in plugin_manager.plugins:
+            ptype = plugin_manager.get_plugin_type(plugin)
+            if ptype == MiAZPluginType.USER:
+                pid = plugin.get_module_name()
+                title = plugin.get_description() #+ ' (v%s)' % plugin.get_version()
+                items.append(item_type(id=pid, title=title))
+        self.viewAv.update(items)
+
+    # ~ def _update_view_used(self):
+        # ~ items = []
+        # ~ item_type = self.config.model
+        # ~ countries = self.config.load_used()
+        # ~ for code in countries:
+            # ~ items.append(item_type(id=code, title=countries[code], icon='%s.svg' % code))
+        # ~ self.viewSl.update(items)
+
+    def _on_item_used_remove(self, *args):
+        plugin_manager = self.app.get_service('plugin-manager')
+        plugins_used = self.config.load_used()
+        for plugin_used in self.viewSl.get_selected_items():
+            plugin = plugin_manager.get_plugin_info(plugin_used.id)
+            if plugin.is_loaded():
+                plugin_manager.unload_plugin(plugin)
+                self.log.debug("Plugin %s unloaded", plugin.get_name())
+            del(plugins_used[plugin_used.id])
+        self.config.save_used(items=plugins_used)
+        self._update_view_used()
+
+
+    def _on_item_used_add(self, *args):
+        plugin_manager = self.app.get_service('plugin-manager')
+        changed = False
+        plugins_used = self.config.load_used()
+        for plugin_available in self.viewAv.get_selected_items():
+            plugins_used[plugin_available.id] = plugin_available.title
+            self.log.debug("Using %s (%s)", plugin_available.id, plugin_available.title)
+            plugin = plugin_manager.get_plugin_info(plugin_available.id)
+            if not plugin.is_loaded():
+                plugin_manager.load_plugin(plugin)
+                self.log.debug("Plugin %s loaded", plugin.get_name())
+            changed = True
+        if changed:
+            self.config.save_used(items=plugins_used)
+            self._update_view_used()
+
