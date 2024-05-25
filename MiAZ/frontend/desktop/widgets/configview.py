@@ -304,6 +304,11 @@ class MiAZUserPlugins(MiAZConfigView):
         super().__init__(app, 'Plugin')
         self._update_view_available()
 
+    def plugins_updated(self, *args):
+        # ~ self._update_view_used()
+        self._update_view_available()
+        self.log.debug("Selector plugin views updated")
+
     def _setup_view_finish(self):
         # Setup Available and Used Column Views
         self.viewAv = MiAZColumnViewPlugin(self.app)
@@ -311,25 +316,17 @@ class MiAZUserPlugins(MiAZConfigView):
         self.viewSl = MiAZColumnViewPlugin(self.app)
         self.add_columnview_used(self.viewSl)
 
-    def _update_view_available(self):
-        plugin_manager = self.app.get_service('plugin-manager')
-        items = []
-        item_type = self.config.model
-        for plugin in plugin_manager.plugins:
-            ptype = plugin_manager.get_plugin_type(plugin)
-            if ptype == MiAZPluginType.USER:
-                pid = plugin.get_module_name()
-                title = plugin.get_description() #+ ' (v%s)' % plugin.get_version()
-                items.append(item_type(id=pid, title=title))
-        self.viewAv.update(items)
-
-    # ~ def _update_view_used(self):
+    # ~ def _update_view_available(self):
+        # ~ plugin_manager = self.app.get_service('plugin-manager')
         # ~ items = []
         # ~ item_type = self.config.model
-        # ~ countries = self.config.load_used()
-        # ~ for code in countries:
-            # ~ items.append(item_type(id=code, title=countries[code], icon='%s.svg' % code))
-        # ~ self.viewSl.update(items)
+        # ~ for plugin in plugin_manager.plugins:
+            # ~ ptype = plugin_manager.get_plugin_type(plugin)
+            # ~ if ptype == MiAZPluginType.USER:
+                # ~ pid = plugin.get_module_name()
+                # ~ title = plugin.get_description() #+ ' (v%s)' % plugin.get_version()
+                # ~ items.append(item_type(id=pid, title=title))
+        # ~ self.viewAv.update(items)
 
     def _on_item_used_remove(self, *args):
         plugin_manager = self.app.get_service('plugin-manager')

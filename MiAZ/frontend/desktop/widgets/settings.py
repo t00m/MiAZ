@@ -91,9 +91,7 @@ class MiAZAppSettings(CustomWindow):
 
         # Load last active repo
         repos_used = self.config['Repository'].load_used()
-        self.log.debug("Repositories in use: %s", ','.join(repos_used.keys()))
         repo_active = self.config['App'].get('current')
-        self.log.debug("Current active: %s", repo_active)
         if repo_active in repos_used:
             model = self.dd_repo.get_model()
             n = 0
@@ -162,39 +160,39 @@ class MiAZAppSettings(CustomWindow):
         notebook = Gtk.Notebook()
         notebook.set_show_border(False)
         notebook.set_tab_pos(Gtk.PositionType.LEFT)
-        widget = self._create_widget_for_system_plugins()
+        widget = self._create_view_plugins_system()
         label = self.factory.create_notebook_label(icon_name='miaz-app-settings', title='System')
         notebook.append_page(widget, label)
-        widget = self._create_widget_for_user_plugins()
+        widget = self._create_view_plugins_user()
         label = self.factory.create_notebook_label(icon_name='miaz-res-people', title='User')
         notebook.append_page(widget, label)
         vbox.append(notebook)
         return vbox
 
-    def _create_widget_for_system_plugins(self):
-        from MiAZ.backend.pluginsystem import MiAZPluginType
+    def _create_view_plugins_system(self):
         vbox = self.factory.create_box_vertical(margin=0, spacing=0, hexpand=True, vexpand=True)
         scrwin = self.factory.create_scrolledwindow()
+        self.app.add_widget('app-settings-plugins-system-scrwin', scrwin)
         vbox.append(scrwin)
         pm = self.app.get_service('plugin-manager')
-        # ~ pm.add_repo_plugins_dir()
+        view = MiAZColumnViewPlugin(self.app)
+        view.set_hexpand(True)
+        view.set_vexpand(True)
+        self.app.add_widget('app-settings-plugins-system-view', view)
+        scrwin.set_child(view)
 
-        box = Gtk.ListBox.new()
-        box.set_vexpand(True)
-        scrwin.set_child(box)
+        # System Plugins
+        items = []
+        item_type = Plugin
         for plugin in pm.plugins:
             if pm.get_plugin_type(plugin) == MiAZPluginType.SYSTEM:
-                title = "<b>%s</b>" % plugin.get_name()
-                subtitle = plugin.get_description() + ' (v%s)' % plugin.get_version()
-                active = plugin.is_loaded()
-                row = self.factory.create_actionrow(title=title, subtitle=subtitle)
-                box.append(row)
+                pid = plugin.get_module_name()
+                title = plugin.get_description()
+                items.append(item_type(id=pid, title=title))
+        view.update(items)
         return vbox
 
-    def _create_widget_for_user_plugins(self):
-        # Trick to remove widgets from  listbox in Gtk 4.8.3 (Debian 11)
-        # as the method remove_all is not avaiable only since 4.12 :(
-        self.listboxwidgets = []
+    def _create_view_plugins_user(self):
         vbox = self.factory.create_box_vertical(margin=0, spacing=0, hexpand=True, vexpand=True)
 
         # Add/Remove
@@ -204,12 +202,11 @@ class MiAZAppSettings(CustomWindow):
         hbox.append(self.factory.create_button(icon_name='miaz-list-remove', title='Remove plugin', callback=self._on_plugin_remove))
         vbox.append(hbox)
 
-        # Plugins
+        # User Plugins
         scrwin = self.factory.create_scrolledwindow()
         self.app.add_widget('app-settings-plugins-user-scrwin', scrwin)
         vbox.append(scrwin)
         pm = self.app.get_service('plugin-manager')
-        # ~ pm.add_repo_plugins_dir()
         view = MiAZColumnViewPlugin(self.app)
         view.set_hexpand(True)
         view.set_vexpand(True)
@@ -231,20 +228,9 @@ class MiAZAppSettings(CustomWindow):
                 pid = plugin.get_module_name()
                 plugin_path = os.path.join(ENV['LPATH']['PLUGINS'], '%s.plugin' % pid)
                 if os.path.exists(plugin_path):
-                    title = plugin.get_description() #+ ' (v%s)' % plugin.get_version()
+                    title = plugin.get_description()
                     items.append(item_type(id=pid, title=title))
-                    self.log.debug("Updating with plugin '%s'", pid)
         view.update(items)
-
-        # ~ # Update listbox
-        # ~ for plugin in pm.plugins:
-            # ~ if pm.get_plugin_type(plugin) == MiAZPluginType.USER:
-                # ~ title = "<b>%s</b>" % plugin.get_name()
-                # ~ subtitle = plugin.get_description() + ' (v%s)' % plugin.get_version()
-                # ~ active = plugin.is_loaded()
-                # ~ row = self.factory.create_actionrow(title=title, subtitle=subtitle)
-                # ~ listbox.append(row)
-                # ~ self.listboxwidgets.append(row)
 
     def on_filechooser_response(self, dialog, response, data):
         if response == Gtk.ResponseType.ACCEPT:
@@ -277,19 +263,15 @@ class MiAZAppSettings(CustomWindow):
         filechooser_dialog.show()
 
     def _on_plugin_remove(self, *args):
-        ENV = self.app.get_env()
         plugin_manager = self.app.get_service('plugin-manager')
         view = self.app.get_widget('app-settings-plugins-user-view')
         module = view.get_selected_items()[0]
         plugin = plugin_manager.get_plugin_info(module.id)
-        plugin_manager.unload_plugin(plugin)
-        plugin_head = os.path.join(ENV['LPATH']['PLUGINS'], '%s.plugin' % module.id)
-        plugin_body = os.path.join(ENV['LPATH']['PLUGINS'], '%s.py' % module.id)
-        self.util.filename_delete(plugin_head)
-        self.util.filename_delete(plugin_body)
-        self.log.debug("Plugin '%s' deleted", module.id)
-        self.app.message("Plugin '%s' deleted" % module.id)
-        self.update_user_plugins()
+        deleted = plugin_manager.remove_plugin(plugin)
+        if deleted:
+            self.log.debug("Plugin '%s' deleted", module.id)
+            self.app.statusbar_message("Plugin '%s' deleted" % module.id)
+            self.update_user_plugins()
 
     def get_plugin_status(self, name: str) -> bool:
         plugins = self.config['App'].get('plugins')
@@ -357,4 +339,5 @@ class MiAZRepoSettings(CustomWindow):
         for item_type in [Country, Group, Purpose, Project, SentBy, SentTo, Plugin]:
             page, label = create_tab(item_type)
             self.notebook.append_page(page, label)
+
 

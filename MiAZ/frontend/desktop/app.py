@@ -573,4 +573,4 @@ class MiAZApp(Gtk.Application):
     def statusbar_message(self, message: str):
         """Statusbar message"""
         statusbar = self.get_widget('statusbar')
-        statusbar.statusbar_message(message)
+        statusbar.message(message)

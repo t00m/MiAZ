@@ -226,7 +226,7 @@ class MiAZWorkspace(Gtk.Box):
         docs = self.util.get_files()
         self.log.debug(', '.join([item.id for item in self.selected_items]))
         label.set_markup("<small>%d</small> / %d / <big>%d</big>" % (len(self.selected_items), len(model), len(docs)))
-        self.app.message("Selected %d of %d documents in current view (total documents: %d)" % (len(self.selected_items), len(model), len(docs)))
+        self.app.statusbar_message("Selected %d of %d documents in current view (total documents: %d)" % (len(self.selected_items), len(model), len(docs)))
         # ~ if len(self.selected_items) == 1:
             # ~ menu = self.app.get_widget('workspace-menu-single')
             # ~ self.popDocsSel.set_menu_model(menu)

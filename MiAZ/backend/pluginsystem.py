@@ -43,6 +43,7 @@ class MiAZPluginType(IntEnum):
 
 class MiAZPluginManager(GObject.GObject):
     def __init__(self, app):
+        super().__init__()
         GObject.signal_new('plugins-updated',
                             MiAZPluginManager,
                             GObject.SignalFlags.RUN_LAST, None, () )
@@ -83,8 +84,26 @@ class MiAZPluginManager(GObject.GObject):
                 ENV = self.app.get_env()
                 azip.extractall(ENV['LPATH']['PLUGINS'])
                 self.engine.rescan_plugins()
+                config = self.app.get_config('Plugin')
+                config.add_available(key=fn1_name)
                 self.log.debug("Plugin '%s' added to '%s'", os.path.basename(plugin_path), ENV['LPATH']['PLUGINS'])
+        # ~ self.emit('plugins-updated')
         return valid
+
+    def remove_plugin(self, plugin: Peas.PluginInfo):
+        """Remove plugin for user space plugins"""
+        # FIXME: Make sure the plugin is deleted and unloaded
+        ENV = self.app.get_env()
+        module = plugin.get_module_name()
+        self.unload_plugin(plugin)
+        plugin_head = os.path.join(ENV['LPATH']['PLUGINS'], '%s.plugin' % module)
+        plugin_body = os.path.join(ENV['LPATH']['PLUGINS'], '%s.py' % module)
+        os.unlink(plugin_head)
+        os.unlink(plugin_body)
+        config = self.app.get_config('Plugin')
+        config.remove_available(key=module)
+        # ~ self.emit('plugins-updated')
+        return True
 
     def rescan_plugins(self):
         try:
@@ -111,7 +130,11 @@ class MiAZPluginManager(GObject.GObject):
             return False
 
     def unload_plugin(self, plugin: Peas.PluginInfo):
-        self.engine.unload_plugin(plugin)
+        try:
+            self.engine.unload_plugin(plugin)
+            self.log.debug("Plugin unloaded")
+        except Exception as error:
+            self.log.error(error)
 
     def get_engine(self):
         return self.engine
@@ -131,7 +154,7 @@ class MiAZPluginManager(GObject.GObject):
         else:
             return MiAZPluginType.SYSTEM
 
-    def get_extension(self, module_name):
+    def get_extension(self, module_name: str):
         """Gets the extension identified by the specified name.
         Args:
             module_name (str): The name of the extension.
@@ -144,7 +167,7 @@ class MiAZPluginManager(GObject.GObject):
 
         return self.extension_set.get_extension(plugin)
 
-    def get_plugin_info(self, module_name):
+    def get_plugin_info(self, module_name: str):
         """Gets the plugin info for the specified plugin name.
         Args:
             module_name (str): The name from the .plugin file of the module.
@@ -171,31 +194,16 @@ class MiAZPluginManager(GObject.GObject):
 
     def _setup_plugins_dir(self):
         # System plugins
+        # Mandatory set of plugins for every repository
         ENV = self.app.get_env()
         if os.path.exists(ENV['GPATH']['PLUGINS']):
             self.engine.add_search_path(ENV['GPATH']['PLUGINS'])
             self.log.debug("Added System plugin dir: %s", ENV['GPATH']['PLUGINS'])
 
         # GLobal user plugins
+        # All user space plugins are available for all repositories
+        # However, each repository can use none, any or all of them
         self.add_user_plugins_dir()
-
-        # ~ # User plugins for a specific repo
-        # ~ self.add_repo_plugins_dir()
-
-    # ~ def add_repo_plugins_dir(self):
-        # ~ try:
-            # ~ repo = self.backend.repo_config()
-            # ~ dir_conf = repo['dir_conf']
-            # ~ dir_plugins = os.path.join(dir_conf, 'plugins')
-            # ~ dir_plugins_available = os.path.join(dir_plugins, 'available')
-            # ~ dir_plugins_used = os.path.join(dir_plugins, 'used')
-            # ~ os.makedirs(dir_plugins, exist_ok=True)
-            # ~ os.makedirs(dir_plugins_available, exist_ok=True)
-            # ~ os.makedirs(dir_plugins_used, exist_ok=True)
-            # ~ self.engine.add_search_path(dir_plugins_used)
-            # ~ self.log.debug("Added User plugin dir: %s", dir_plugins_used)
-        # ~ except KeyError:
-            # ~ self.log.warning("There isn't any repo loaded right now!")
 
     def add_user_plugins_dir(self):
         ENV = self.app.get_env()

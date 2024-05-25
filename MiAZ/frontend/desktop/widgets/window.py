@@ -21,7 +21,8 @@ class CustomWindow(Gtk.Window):
         self.name = name
         self.title = title
         self.set_title(title)
-        self.log = get_logger(name)
+        logname = "Miaz.%s" % name.replace('-', '.').title()
+        self.log = get_logger(logname)
         self.app.add_widget('window-%s' % name, self)
         self.connect('close-request', self._on_window_close_request)
         evk = Gtk.EventControllerKey.new()
