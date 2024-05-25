@@ -108,9 +108,9 @@ class MiAZUtil(GObject.GObject):
 
     def get_temp_dir(self):
         ENV = self.app.get_env()
-        repoconf = self.repository.setup()
+        repo_dir = self.repository.get('dir_docs')
         ts = datetime.now().strftime('%Y%m%d_%H%M%S')
-        name = self.valid_key(repoconf['dir_docs'])
+        name = self.valid_key(repo_dir)
         return os.path.join(ENV['LPATH']['TMP'], "%s_%s" % (ts, name))
 
     def get_temp_file(self, dir_tmp, suffix='.txt'):
@@ -131,9 +131,8 @@ class MiAZUtil(GObject.GObject):
         """
         # ~ FIXME: validate root_dir
         if len(root_dir) == 0:
-            repoconf = self.repository.setup()
-            root_dir = repoconf['dir_docs']
-        return glob.glob(os.path.join(root_dir, '*'))
+            repo_dir = self.repository.get('dir_docs')
+        return glob.glob(os.path.join(repo_dir, '*'))
 
     def get_files_recursively(self, root_dir: str) -> []:
         """Get documents from a given directory recursively
@@ -164,9 +163,8 @@ class MiAZUtil(GObject.GObject):
         return documents
 
     def filename_get_creation_date(self, doc: str) -> datetime:
-        repoconf = self.repository.setup()
-        dir_repo = repoconf['dir_docs']
-        filepath = os.path.join(dir_repo, doc)
+        repo_dir = self.repository.get('dir_docs')
+        filepath = os.path.join(repo_dir, doc)
         lastmod = os.stat(filepath).st_mtime
         return datetime.fromtimestamp(lastmod)
 
@@ -212,10 +210,9 @@ class MiAZUtil(GObject.GObject):
 
     def filename_rename(self, doc_source, doc_target) -> bool:
         rename = False
-        repoconf = self.repository.setup()
-        dir_repo = repoconf['dir_docs']
-        source = os.path.join(dir_repo, doc_source)
-        target = os.path.join(dir_repo, doc_target)
+        repo_dir = self.repository.get('dir_docs')
+        source = os.path.join(repo_dir, doc_source)
+        target = os.path.join(repo_dir, doc_target)
         if source != target:
             if not os.path.exists(target):
                 try:
@@ -248,20 +245,16 @@ class MiAZUtil(GObject.GObject):
         Normally, only the source filename would be necessary, but
         as it is renamed according MiAZ rules, target is also needed.
         """
-        repoconf = self.repository.setup()
-        target = repoconf['dir_docs']
+        target = self.repository.get('dir_docs')
         self.filename_copy(source, target)
         self.emit('filename-added', target)
 
     def filename_export(self, doc: str, target: str):
-        repoconf = self.repository.setup()
-        source = os.path.join(repoconf['dir_docs'], doc)
+        repo_dir = self.repository.get('dir_docs')
+        source = os.path.join(repo_dir, doc)
         self.filename_copy(source, target)
 
     def filename_copy(self, source, target, overwrite=True):
-        # ~ repoconf = self.repository.setup()
-        # ~ dir_repo = repoconf['dir_docs']
-        # ~ target = os.path.join(dir_repo, doc_target)
         if source != target:
             if overwrite:
                 try:
@@ -298,22 +291,9 @@ class MiAZUtil(GObject.GObject):
         elif sys.platform in ['win32', 'cygwin', 'msys']:
             os.startfile(filepath)
 
-    # ~ def filename_open_location(self, doc):
-        # ~ repoconf = self.repository.setup()
-        # ~ dir_docs = repoconf['dir_docs']
-        # ~ filepath = os.path.join(dir_docs, doc)
-        # ~ # FIXME: only works if nautilus is present
-        # ~ if sys.platform in ['linux', 'linux2']:
-            # ~ CMD = "xdg-open \"%s\"" % filepath
-        # ~ elif sys.platform in['win32', 'cygwin', 'msys']:
-            # ~ CMD = r"""explorer /select,%s""" % filepath
-        # ~ self.log.debug(CMD)
-        # ~ os.system(CMD)
-
     def filename_path(self, doc):
-        repoconf = self.repository.setup()
-        dirpath = repoconf['dir_docs']
-        return os.path.join(dirpath, doc)
+        repo_dir = self.repository.get('dir_docs')
+        return os.path.join(repo_dir, doc)
 
     def filename_validate(self, doc:str) -> bool:
         if len(doc.split('-')) == 7:
@@ -321,8 +301,6 @@ class MiAZUtil(GObject.GObject):
         return False
 
     def filename_validate_complex(self, filepath: str) -> tuple:
-        repoconf = self.repository.setup()
-        dir_repo = repoconf['dir_docs']
         filename = os.path.basename(filepath)
         reasons = "OK"
         valid = True

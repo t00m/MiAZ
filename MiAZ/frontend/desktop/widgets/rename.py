@@ -41,7 +41,7 @@ class MiAZRenameDialog(Gtk.Box):
         self.icons = self.app.get_service('icons')
         self.config = self.backend.get_config()
         self.util = self.app.get_service('util')
-        self.log = get_logger('MiazRenameDialog')
+        self.log = get_logger('Miaz.Rename')
 
         # Box to be inserted as contents
         self.boxMain = Gtk.ListBox.new()

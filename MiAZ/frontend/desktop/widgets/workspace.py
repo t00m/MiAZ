@@ -63,7 +63,7 @@ class MiAZWorkspace(Gtk.Box):
 
     def __init__(self, app):
         super(MiAZWorkspace, self).__init__(orientation=Gtk.Orientation.HORIZONTAL)
-        self.log = get_logger('MiAZWorkspace')
+        self.log = get_logger('MiAZ.Workspace')
         self.app = app
         self.backend = self.app.get_service('backend')
         self.factory = self.app.get_service('factory')
@@ -90,9 +90,8 @@ class MiAZWorkspace(Gtk.Box):
         self.datetimes = {}
 
         # Load/Initialize rest of caches
-        repoconf = self.repository.setup()
-        dir_conf = repoconf['dir_conf']
-        self.fcache = os.path.join(dir_conf, 'cache.json')
+        repo_dir_conf = self.repository.get('dir_conf')
+        self.fcache = os.path.join(repo_dir_conf, 'cache.json')
         try:
             self.cache = self.util.json_load(self.fcache)
             # ~ self.log.debug("Loading cache from %s", self.fcache)
@@ -228,9 +227,9 @@ class MiAZWorkspace(Gtk.Box):
             self.selected_items.append(item)
         label = self.btnDocsSel.get_child()
         docs = self.util.get_files()
-        self.log.debug(', '.join([item.id for item in self.selected_items]))
+        # ~ self.log.debug(', '.join([item.id for item in self.selected_items]))
         label.set_markup("<small>%d</small> / %d / <big>%d</big>" % (len(self.selected_items), len(model), len(docs)))
-        self.app.statusbar_message("Selected %d of %d documents in current view (total documents: %d)" % (len(self.selected_items), len(model), len(docs)))
+        # ~ self.app.statusbar_message("Selected %d of %d documents in current view (total documents: %d)" % (len(self.selected_items), len(model), len(docs)))
         # ~ if len(self.selected_items) == 1:
             # ~ menu = self.app.get_widget('workspace-menu-single')
             # ~ self.popDocsSel.set_menu_model(menu)
@@ -603,7 +602,8 @@ class MiAZWorkspace(Gtk.Box):
             rename = self.util.filename_rename(filename, target)
             if rename:
                 renamed += 1
-        self.log.debug("Documents renamed: %d", renamed)
+        if renamed > 0:
+            self.log.debug("Documents renamed: %d", renamed)
 
         self.selected_items = []
 

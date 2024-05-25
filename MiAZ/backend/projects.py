@@ -20,14 +20,14 @@ class MiAZProject(GObject.GObject):
 
     def __init__(self, backend):
         super(MiAZProject, self).__init__()
-        self.log = get_logger('MiAZProject')
+        self.log = get_logger('MiAZ.Projects')
         self.backend = backend
         conf = self.backend.get_config()
         self.config = conf['Project']
         self.util = self.backend.get_service('util')
         repository = self.backend.get_service('repo')
-        repoconf = repository.setup()
-        self.cnfprj = os.path.join(repoconf['dir_conf'], 'projects.json')
+        repo_dir_conf = repository.get('dir_conf')
+        self.cnfprj = os.path.join(repo_dir_conf, 'projects.json')
         self.projects = {}
         if not os.path.exists(self.cnfprj):
             self.save()
@@ -36,7 +36,6 @@ class MiAZProject(GObject.GObject):
         self.check()
 
     def check(self):
-        self.log.debug("Checking projects consistency")
         to_delete = []
         for project in self.projects:
             for doc in self.docs_in_project(project):
@@ -45,6 +44,7 @@ class MiAZProject(GObject.GObject):
                     to_delete.append((doc, project))
         for doc, project in to_delete:
             self.remove(project, doc)
+        self.log.debug("Projects consistency checked")
 
     def add(self, project: str, doc: str):
         try:

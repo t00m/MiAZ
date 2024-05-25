@@ -33,7 +33,7 @@ class MiAZSelector(Gtk.Box):
         self.backend = self.app.get_service('backend')
         self.util = self.app.get_service('util')
         self.factory = self.app.get_service('factory')
-        self.log = get_logger('MiAZSelector')
+        self.log = get_logger('MiAZ.Selector')
         super(MiAZSelector, self).__init__(orientation=Gtk.Orientation.VERTICAL, hexpand=True, vexpand=True, spacing=0)
 
         # Entry and buttons for operations (edit/add/remove)

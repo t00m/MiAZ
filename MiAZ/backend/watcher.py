@@ -28,7 +28,7 @@ class MiAZWatcher(GObject.GObject):
 
     def __init__(self, name: str, dirpath: str):
         super(MiAZWatcher, self).__init__()
-        self.log = get_logger('MiAZWatcher')
+        self.log = get_logger('MiAZ.Watcher')
         self.name = name.lower()
         self.dirpath = dirpath
         sid = GObject.signal_lookup('repository-updated', MiAZWatcher)

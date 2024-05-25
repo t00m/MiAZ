@@ -49,7 +49,7 @@ class MiAZApp(Gtk.Application):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.log = get_logger("MiAZ.GUI")
+        self.log = get_logger("MiAZ.App")
         self.log.debug("Starting MiAZ")
 
     def set_env(self, ENV: dict):
@@ -85,7 +85,7 @@ class MiAZApp(Gtk.Application):
         repository.connect('repository-switched', self._update_repo_settings)
 
     def _on_window_close_request(self, window):
-        self.log.debug("Close window requested")
+        self.log.debug("Close application requested")
         self.emit("exit-application")
         self.exit_app()
 
@@ -428,12 +428,11 @@ class MiAZApp(Gtk.Application):
 
     def check_repository(self, repo_id: str = None):
         repository = self.get_service('repo')
-        repoconf = repository.setup(repo_id)
+        repo_dir = repository.get('dir_docs')
         try:
-            dir_repo = repoconf['dir_docs']
-            self.log.debug("Using repo '%s'", dir_repo)
-            if repository.validate(dir_repo):
-                repository.load(dir_repo)
+            self.log.debug("Using repo '%s'", repo_dir)
+            if repository.validate(repo_dir):
+                repository.load(repo_dir)
                 self.log.debug("Setting up workspace")
                 if self.get_widget('workspace') is None:
                     self._setup_page_workspace()
