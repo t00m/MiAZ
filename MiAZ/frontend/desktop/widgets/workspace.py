@@ -68,6 +68,7 @@ class MiAZWorkspace(Gtk.Box):
         self.backend = self.app.get_service('backend')
         self.factory = self.app.get_service('factory')
         self.actions = self.app.get_service('actions')
+        self.repository = self.app.get_service('repo')
         self.config = self.backend.get_config()
         self.util = self.app.get_service('util')
         self.util.connect('filename-renamed', self._on_filename_renamed)
@@ -89,8 +90,8 @@ class MiAZWorkspace(Gtk.Box):
         self.datetimes = {}
 
         # Load/Initialize rest of caches
-        repo = self.backend.repo_config()
-        dir_conf = repo['dir_conf']
+        repoconf = self.repository.setup()
+        dir_conf = repoconf['dir_conf']
         self.fcache = os.path.join(dir_conf, 'cache.json')
         try:
             self.cache = self.util.json_load(self.fcache)
@@ -132,18 +133,19 @@ class MiAZWorkspace(Gtk.Box):
         # ~ self.log.debug("Config changed")
 
     def _on_filename_renamed(self, util, source, target):
-        srvprj = self.backend.projects
+        projects = self.app.get_service('Projects')
         source = os.path.basename(source)
         target = os.path.basename(target)
-        projects = srvprj.assigned_to(source)
+        lprojects = projects.assigned_to(source)
         self.log.debug("%s found in these projects: %s", source, ', '.join(projects))
-        for project in projects:
+        for project in lprojects:
             srvprj.remove(project, source)
             srvprj.add(project, target)
             self.log.debug("P[%s]: %s -> %s", project, source, target)
 
     def _on_filename_deleted(self, util, target):
-        self.backend.projects.remove(project='', doc=os.path.basename(target))
+        projects = self.app.get_service('Projects')
+        projects.remove(project='', doc=os.path.basename(target))
 
     def _finish_configuration(self, *args):
         # ~ self.log.debug("Finish loading workspace")
@@ -186,8 +188,10 @@ class MiAZWorkspace(Gtk.Box):
             self.used_signals[i_type] = self.config[i_type].connect('used-updated', self.update_dropdown_filter, item_type)
             # ~ self.log.debug("Dropdown filter for '%s' setup successfully", i_title)
         self.app.set_widget('ws-dropdowns', dropdowns)
-        self.backend.connect('repository-updated', self._on_workspace_update)
-        self.backend.connect('repository-switched', self._update_dropdowns)
+        watcher = self.app.get_service('watcher')
+        watcher.connect('repository-updated', self._on_workspace_update)
+        repository = self.app.get_service('repo')
+        repository.connect('repository-switched', self._update_dropdowns)
 
         return widget
 
@@ -657,6 +661,7 @@ class MiAZWorkspace(Gtk.Box):
         return matches
 
     def _do_eval_cond_matches_project(self, doc):
+        projects = self.app.get_service('Projects')
         dropdowns = self.app.get_widget('ws-dropdowns')
         dd_prj = dropdowns[Project.__gtype_name__]
         matches = False
@@ -669,14 +674,15 @@ class MiAZWorkspace(Gtk.Box):
         if project == 'Any':
             matches = True
         elif project == 'None':
-            projects = self.backend.projects.assigned_to(doc)
-            if len(projects) == 0:
+            lprojects = projects.assigned_to(doc)
+            if len(lprojects) == 0:
                 matches = True
         else:
             matches = self.backend.projects.exists(project, doc)
         return matches
 
     def _do_filter_view(self, item, filter_list_model):
+        projects = self.app.get_service('Projects')
         dropdowns = self.app.get_widget('ws-dropdowns')
         dd_prj = dropdowns[Project.__gtype_name__]
 
@@ -696,10 +702,10 @@ class MiAZWorkspace(Gtk.Box):
             if project == 'Any':
                 cp = True
             else:
-                cp = self.backend.projects.exists(project, item.id)
+                cp = projects.exists(project, item.id)
             show_item = c0 and c1 and c2 and c4 and c5 and c6 and cd and cp
         else:
-            projects_assigned = self.backend.projects.assigned_to(item.id)
+            projects_assigned = projects.assigned_to(item.id)
             if len(projects_assigned) == 0:
                 c0 = self._do_eval_cond_matches_freetext(item)
                 cd = self._do_eval_cond_matches_date(item)

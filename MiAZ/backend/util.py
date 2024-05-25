@@ -58,6 +58,7 @@ class MiAZUtil(GObject.GObject):
         self.app = backend.app
         self.backend = backend
         self.conf = self.backend.get_config()
+        self.repository = self.backend.get_service('repo')
 
     def directory_open(self, dirpath: str):
         os.system("xdg-open '%s'" % dirpath)
@@ -107,9 +108,9 @@ class MiAZUtil(GObject.GObject):
 
     def get_temp_dir(self):
         ENV = self.app.get_env()
-        repo = self.backend.repo_config()
+        repoconf = self.repository.setup()
         ts = datetime.now().strftime('%Y%m%d_%H%M%S')
-        name = self.valid_key(repo['dir_docs'])
+        name = self.valid_key(repoconf['dir_docs'])
         return os.path.join(ENV['LPATH']['TMP'], "%s_%s" % (ts, name))
 
     def get_temp_file(self, dir_tmp, suffix='.txt'):
@@ -130,8 +131,8 @@ class MiAZUtil(GObject.GObject):
         """
         # ~ FIXME: validate root_dir
         if len(root_dir) == 0:
-            repo = self.backend.repo_config()
-            root_dir = repo['dir_docs']
+            repoconf = self.repository.setup()
+            root_dir = repoconf['dir_docs']
         return glob.glob(os.path.join(root_dir, '*'))
 
     def get_files_recursively(self, root_dir: str) -> []:
@@ -163,8 +164,8 @@ class MiAZUtil(GObject.GObject):
         return documents
 
     def filename_get_creation_date(self, doc: str) -> datetime:
-        repo = self.backend.repo_config()
-        dir_repo = repo['dir_docs']
+        repoconf = self.repository.setup()
+        dir_repo = repoconf['dir_docs']
         filepath = os.path.join(dir_repo, doc)
         lastmod = os.stat(filepath).st_mtime
         return datetime.fromtimestamp(lastmod)
@@ -211,8 +212,8 @@ class MiAZUtil(GObject.GObject):
 
     def filename_rename(self, doc_source, doc_target) -> bool:
         rename = False
-        repo = self.backend.repo_config()
-        dir_repo = repo['dir_docs']
+        repoconf = self.repository.setup()
+        dir_repo = repoconf['dir_docs']
         source = os.path.join(dir_repo, doc_source)
         target = os.path.join(dir_repo, doc_target)
         if source != target:
@@ -247,19 +248,19 @@ class MiAZUtil(GObject.GObject):
         Normally, only the source filename would be necessary, but
         as it is renamed according MiAZ rules, target is also needed.
         """
-        repo = self.backend.repo_config()
-        target = repo['dir_docs']
+        repoconf = self.repository.setup()
+        target = repoconf['dir_docs']
         self.filename_copy(source, target)
         self.emit('filename-added', target)
 
     def filename_export(self, doc: str, target: str):
-        repo = self.backend.repo_config()
-        source = os.path.join(repo['dir_docs'], doc)
+        repoconf = self.repository.setup()
+        source = os.path.join(repoconf['dir_docs'], doc)
         self.filename_copy(source, target)
 
     def filename_copy(self, source, target, overwrite=True):
-        # ~ repo = self.backend.repo_config()
-        # ~ dir_repo = repo['dir_docs']
+        # ~ repoconf = self.repository.setup()
+        # ~ dir_repo = repoconf['dir_docs']
         # ~ target = os.path.join(dir_repo, doc_target)
         if source != target:
             if overwrite:
@@ -298,8 +299,8 @@ class MiAZUtil(GObject.GObject):
             os.startfile(filepath)
 
     # ~ def filename_open_location(self, doc):
-        # ~ repo = self.backend.repo_config()
-        # ~ dir_docs = repo['dir_docs']
+        # ~ repoconf = self.repository.setup()
+        # ~ dir_docs = repoconf['dir_docs']
         # ~ filepath = os.path.join(dir_docs, doc)
         # ~ # FIXME: only works if nautilus is present
         # ~ if sys.platform in ['linux', 'linux2']:
@@ -310,8 +311,8 @@ class MiAZUtil(GObject.GObject):
         # ~ os.system(CMD)
 
     def filename_path(self, doc):
-        repo = self.backend.repo_config()
-        dirpath = repo['dir_docs']
+        repoconf = self.repository.setup()
+        dirpath = repoconf['dir_docs']
         return os.path.join(dirpath, doc)
 
     def filename_validate(self, doc:str) -> bool:
@@ -320,8 +321,8 @@ class MiAZUtil(GObject.GObject):
         return False
 
     def filename_validate_complex(self, filepath: str) -> tuple:
-        repo = self.backend.repo_config()
-        dir_repo = repo['dir_docs']
+        repoconf = self.repository.setup()
+        dir_repo = repoconf['dir_docs']
         filename = os.path.basename(filepath)
         reasons = "OK"
         valid = True

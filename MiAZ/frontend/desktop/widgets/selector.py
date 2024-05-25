@@ -166,8 +166,9 @@ class MiAZSelector(Gtk.Box):
             if self.config.model == Repository:
                 value_used = False
             elif self.config.model == Project:
-                self.projects = self.backend.projects
-                docs = self.projects.docs_in_project(item_used.id)
+                projects = self.app.get_service('Projects')
+                # ~ self.projects = self.backend.projects
+                docs = projects.docs_in_project(item_used.id)
                 value_used = len(docs) > 0
             else:
                 value_used = self.util.field_used(self.config.model, item_used.id)

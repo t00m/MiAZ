@@ -25,8 +25,9 @@ class MiAZProject(GObject.GObject):
         conf = self.backend.get_config()
         self.config = conf['Project']
         self.util = self.backend.get_service('util')
-        repo = self.backend.repo_config()
-        self.cnfprj = os.path.join(repo['dir_conf'], 'projects.json')
+        repository = self.backend.get_service('repo')
+        repoconf = repository.setup()
+        self.cnfprj = os.path.join(repoconf['dir_conf'], 'projects.json')
         self.projects = {}
         if not os.path.exists(self.cnfprj):
             self.save()
