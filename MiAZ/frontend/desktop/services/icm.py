@@ -28,7 +28,7 @@ class MiAZIconManager(GObject.GObject):
         super(MiAZIconManager, self).__init__()
         self.app = app
         ENV = self.app.get_env()
-        self.log = get_logger('ICM')
+        self.log = get_logger('MiAZ.IconManager')
         self.util = self.app.backend.get_service('util')
         win = Gtk.Window()
         self.theme = Gtk.IconTheme.get_for_display(win.get_display())

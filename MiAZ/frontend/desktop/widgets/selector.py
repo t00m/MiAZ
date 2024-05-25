@@ -33,7 +33,7 @@ class MiAZSelector(Gtk.Box):
         self.backend = self.app.get_service('backend')
         self.util = self.app.get_service('util')
         self.factory = self.app.get_service('factory')
-        self.log = get_logger('MiAZSelector')
+        self.log = get_logger('MiAZ.Selector')
         super(MiAZSelector, self).__init__(orientation=Gtk.Orientation.VERTICAL, hexpand=True, vexpand=True, spacing=0)
 
         # Entry and buttons for operations (edit/add/remove)
@@ -166,8 +166,9 @@ class MiAZSelector(Gtk.Box):
             if self.config.model == Repository:
                 value_used = False
             elif self.config.model == Project:
-                self.projects = self.backend.projects
-                docs = self.projects.docs_in_project(item_used.id)
+                projects = self.app.get_service('Projects')
+                # ~ self.projects = self.backend.projects
+                docs = projects.docs_in_project(item_used.id)
                 value_used = len(docs) > 0
             else:
                 value_used = self.util.field_used(self.config.model, item_used.id)

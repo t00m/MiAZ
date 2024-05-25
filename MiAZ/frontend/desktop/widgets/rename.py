@@ -41,7 +41,7 @@ class MiAZRenameDialog(Gtk.Box):
         self.icons = self.app.get_service('icons')
         self.config = self.backend.get_config()
         self.util = self.app.get_service('util')
-        self.log = get_logger('MiazRenameDialog')
+        self.log = get_logger('Miaz.Rename')
 
         # Box to be inserted as contents
         self.boxMain = Gtk.ListBox.new()
@@ -93,7 +93,8 @@ class MiAZRenameDialog(Gtk.Box):
         self.config['SentBy'].connect('used-updated', self.update_dropdown, SentBy)
         self.config['Purpose'].connect('used-updated', self.update_dropdown, Purpose)
         self.config['SentTo'].connect('used-updated', self.update_dropdown, SentTo)
-        self.backend.connect('repository-switched', self._update_dropdowns)
+        repository = self.app.get_service('repo')
+        repository.connect('repository-switched', self._update_dropdowns)
 
     def _update_dropdowns(self, *args):
         for item_type in [Country, Group, SentBy, Purpose, SentTo]:

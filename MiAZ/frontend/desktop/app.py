@@ -49,7 +49,7 @@ class MiAZApp(Gtk.Application):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.log = get_logger("MiAZ.GUI")
+        self.log = get_logger("MiAZ.App")
         self.log.debug("Starting MiAZ")
 
     def set_env(self, ENV: dict):
@@ -81,10 +81,11 @@ class MiAZApp(Gtk.Application):
         self._setup_plugin_manager()
         self.log.debug("Executing MiAZ Desktop mode")
         self.check_repository()
-        self.backend.connect('repository-switched', self._update_repo_settings)
+        repository = self.get_service('repo')
+        repository.connect('repository-switched', self._update_repo_settings)
 
     def _on_window_close_request(self, window):
-        self.log.debug("Close window requested")
+        self.log.debug("Close application requested")
         self.emit("exit-application")
         self.exit_app()
 
@@ -426,12 +427,12 @@ class MiAZApp(Gtk.Application):
         self.mainbox.append(statusbar)
 
     def check_repository(self, repo_id: str = None):
-        repo = self.backend.repo_config(repo_id)
+        repository = self.get_service('repo')
+        repo_dir = repository.get('dir_docs')
         try:
-            dir_repo = repo['dir_docs']
-            self.log.debug("Using repo '%s'", dir_repo)
-            if self.backend.repo_validate(dir_repo):
-                self.backend.repo_load(dir_repo)
+            self.log.debug("Using repo '%s'", repo_dir)
+            if repository.validate(repo_dir):
+                repository.load(repo_dir)
                 self.log.debug("Setting up workspace")
                 if self.get_widget('workspace') is None:
                     self._setup_page_workspace()
@@ -518,7 +519,7 @@ class MiAZApp(Gtk.Application):
         self.emit("exit-application")
         self.quit()
 
-    def add_service(self, name: str, service) -> Gtk.Widget:
+    def add_service(self, name: str, service: GObject.GObject) -> GObject.GObject:
         if name not in self._miazobjs['services']:
             self._miazobjs['services'][name] = service
             return service

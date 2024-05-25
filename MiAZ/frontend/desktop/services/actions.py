@@ -47,7 +47,7 @@ Configview['Date'] = Gtk.Calendar
 
 class MiAZActions(GObject.GObject):
     def __init__(self, app):
-        self.log = get_logger('MiAZActions')
+        self.log = get_logger('MiAZ.Actions')
         self.app = app
         self.backend = self.app.get_service('backend')
         self.util = self.app.get_service('util')

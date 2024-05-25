@@ -31,7 +31,7 @@ from MiAZ.frontend.desktop.widgets.filechooser import MiAZFileChooserDialog
 class MiAZFactory:
     def __init__(self, app):
         self.app = app
-        self.log = get_logger('MiAZFactory')
+        self.log = get_logger('MiAZ.Factory')
         self.icons = self.app.get_service('icons')
 
     def create_actionrow(self, title:str = '', subtitle:str = '', prefix: Gtk.Widget = None, suffix: Gtk.Widget = None):

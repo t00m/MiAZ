@@ -56,7 +56,7 @@ class MiAZToolbarProjectMgtPlugin(GObject.GObject, Peas.Activatable):
         self.backend = self.app.get_service('backend')
         self.factory = self.app.get_service('factory')
         self.util = self.app.get_service('util')
-        self.projects = self.backend.projects
+        self.projects = self.app.get_service('Projects')
         self.workspace = API.app.get_widget('workspace')
         self.workspace.connect("extend-menu", self.add_menuitem)
 
