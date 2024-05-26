@@ -427,9 +427,9 @@ class MiAZApp(Gtk.Application):
         self.mainbox.append(statusbar)
 
     def check_repository(self, repo_id: str = None):
-        repository = self.get_service('repo')
-        repo_dir = repository.get('dir_docs')
         try:
+            repository = self.get_service('repo')
+            repo_dir = repository.get('dir_docs')
             self.log.debug("Using repo '%s'", repo_dir)
             if repository.validate(repo_dir):
                 repository.load(repo_dir)
