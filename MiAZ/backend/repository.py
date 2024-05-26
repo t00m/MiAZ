@@ -76,7 +76,7 @@ class MiAZRepository(GObject.GObject):
             conf['dir_docs'] = repo_path
             conf['dir_conf'] = os.path.join(conf['dir_docs'], '.conf')
             if not os.path.exists(conf['dir_conf']):
-                self.repo_init(conf['dir_docs'])
+                self.init(conf['dir_docs'])
         except Exception as error:
             self.log.error(error)
             conf = {}
