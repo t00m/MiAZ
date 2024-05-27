@@ -24,7 +24,7 @@ from gi.repository.GdkPixbuf import Pixbuf
 
 from MiAZ.backend.log import get_logger
 from MiAZ.backend.models import Country
-from MiAZ.frontend.desktop.icons import MiAZIconManager
+from MiAZ.frontend.desktop.services.icm import MiAZIconManager
 from MiAZ.frontend.desktop.widgets.button import MiAZPopoverButton
 from MiAZ.frontend.desktop.widgets.filechooser import MiAZFileChooserDialog
 
