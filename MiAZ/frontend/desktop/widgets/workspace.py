@@ -65,7 +65,6 @@ class MiAZWorkspace(Gtk.Box):
         super(MiAZWorkspace, self).__init__(orientation=Gtk.Orientation.HORIZONTAL)
         self.log = get_logger('MiAZ.Workspace')
         self.app = app
-        self.backend = self.app.get_service('backend')
         self.factory = self.app.get_service('factory')
         self.actions = self.app.get_service('actions')
         self.repository = self.app.get_service('repo')
@@ -75,11 +74,6 @@ class MiAZWorkspace(Gtk.Box):
         self.util.connect('filename-deleted', self._on_filename_deleted)
         for node in self.config:
             self.config[node].connect('used-updated', self._on_config_used_updated)
-        self.set_vexpand(False)
-        self.set_margin_top(margin=3)
-        self.set_margin_end(margin=3)
-        self.set_margin_bottom(margin=3)
-        self.set_margin_start(margin=3)
         self.app.add_widget('ws-dropdowns', {})
         frmView = self._setup_workspace()
         self.append(frmView)
@@ -97,8 +91,6 @@ class MiAZWorkspace(Gtk.Box):
             # ~ self.log.debug("Loading cache from %s", self.fcache)
         except:
             self.initialize_caches()
-
-        # ~ self._check_first_time()
 
         # Allow plug-ins to make their job
         self.app.connect('start-application-completed', self._finish_configuration)
@@ -376,11 +368,9 @@ class MiAZWorkspace(Gtk.Box):
         self.view = MiAZColumnViewWorkspace(self.app)
         self.app.add_widget('workspace-view', self.view)
         self.view.get_style_context().add_class(class_name='caption')
-        # ~ self.view.get_style_context().add_class(class_name='monospace')
+        self.view.get_style_context().add_class(class_name='monospace')
         self.view.set_filter(self._do_filter_view)
-        frmView = self.factory.create_frame(hexpand=True, vexpand=True)
-        frmView.set_child(self.view)
-        return frmView
+        return self.view
 
     def _on_factory_bind_icon_type(self, factory, list_item):
         box = list_item.get_child()
@@ -678,7 +668,7 @@ class MiAZWorkspace(Gtk.Box):
             if len(lprojects) == 0:
                 matches = True
         else:
-            matches = self.backend.projects.exists(project, doc)
+            matches = projects.exists(project, doc)
         return matches
 
     def _do_filter_view(self, item, filter_list_model):
