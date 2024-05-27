@@ -171,8 +171,7 @@ class MiAZSelector(Gtk.Box):
                 docs = projects.docs_in_project(item_used.id)
                 value_used = len(docs) > 0
             else:
-                repo_dir = self.repository.get('dir_docs')
-                value_used = self.util.field_used(repo_dir, self.config.model, item_used.id)
+                value_used = self.util.field_used(self.repository.docs, self.config.model, item_used.id)
 
             if not value_used:
                 del(items_used[item_used.id])

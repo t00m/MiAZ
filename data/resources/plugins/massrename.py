@@ -144,9 +144,8 @@ class MiAZToolbarProjectMgtPlugin(GObject.GObject, Peas.Activatable):
                     tmpfile = name.split('-')
                     tmpfile[n] = dropdown.get_selected_item().id
                     btarget = "%s.%s" % ('-'.join(tmpfile), ext)
-                    repo_dir = self.repository.get('dir_docs')
-                    source = os.path.join(repo_dir, bsource)
-                    target = os.path.join(repo_dir, btarget)
+                    source = os.path.join(self.repository.docs, bsource)
+                    target = os.path.join(self.repository.docs, btarget)
                     self.util.filename_rename(source, target)
             dialog.destroy()
 
@@ -163,9 +162,8 @@ class MiAZToolbarProjectMgtPlugin(GObject.GObject, Peas.Activatable):
                     lname = name.split('-')
                     lname[0] = sdate
                     btarget = "%s.%s" % ('-'.join(lname), ext)
-                    repo_dir = self.repository.get('dir_docs')
-                    source = os.path.join(repo_dir, bsource)
-                    target = os.path.join(repo_dir, btarget)
+                    source = os.path.join(self.repository.docs, bsource)
+                    target = os.path.join(self.repository.docs, btarget)
                     self.util.filename_rename(source, target)
             dialog.destroy()
 

@@ -53,8 +53,7 @@ class MiAZStats(GObject.GObject):
         self.stats[_(Purpose.__title__)] = {}
         self.stats[_(SentTo.__title__)] = {}
 
-        repo_dir = self.repository.get('dir_docs')
-        for document in self.util.get_files(repo_dir):
+        for document in self.util.get_files(self.repository.docs):
             fields = self.util.get_fields(document)
 
             # Date

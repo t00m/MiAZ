@@ -64,7 +64,6 @@ class Export2Zip(GObject.GObject, Peas.Activatable):
         items = self.workspace.get_selected_items()
 
         def filechooser_response(dialog, response, patterns):
-            target_dir = self.repository.get('dir_docs')
             if response == Gtk.ResponseType.ACCEPT:
                 content_area = dialog.get_content_area()
                 box = content_area.get_first_child()
@@ -74,16 +73,14 @@ class Export2Zip(GObject.GObject, Peas.Activatable):
                 gfile = filechooser.get_file()
                 dirpath = gfile.get_path()
                 if gfile is not None:
-                    dir_doc = self.repository.get('dir_docs')
                     dir_zip = self.util.get_temp_dir()
                     self.util.directory_create(dir_zip)
                     for item in items:
-                        source = os.path.join(dir_doc, item.id)
+                        source = os.path.join(self.repository.docs, item.id)
                         target = dir_zip
                         self.util.filename_copy(source, target)
                     zip_file = "%s.zip" % os.path.basename(dir_zip)
                     zip_target = os.path.join(ENV['LPATH']['TMP'], zip_file)
-                    repo_dir = self.repository.get('dir_docs')
                     source = zip_target
                     target = os.path.join(dirpath, zip_file)
                     self.util.zip(target, dir_zip)

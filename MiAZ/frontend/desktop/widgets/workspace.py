@@ -84,8 +84,7 @@ class MiAZWorkspace(Gtk.Box):
         self.datetimes = {}
 
         # Load/Initialize rest of caches
-        repo_dir_conf = self.repository.get('dir_conf')
-        self.fcache = os.path.join(repo_dir_conf, 'cache.json')
+        self.fcache = os.path.join(self.repository.conf, 'cache.json')
         try:
             self.cache = self.util.json_load(self.fcache)
             # ~ self.log.debug("Loading cache from %s", self.fcache)
@@ -216,8 +215,7 @@ class MiAZWorkspace(Gtk.Box):
             item = model.get_item(pos)
             self.selected_items.append(item)
         label = self.btnDocsSel.get_child()
-        repo_dir = self.repository.get('dir_docs')
-        docs = self.util.get_files(repo_dir)
+        docs = self.util.get_files(self.repository.docs)
         # ~ self.log.debug(', '.join([item.id for item in self.selected_items]))
         label.set_markup("<small>%d</small> / %d / <big>%d</big>" % (len(self.selected_items), len(model), len(docs)))
         # ~ self.app.statusbar_message("Selected %d of %d documents in current view (total documents: %d)" % (len(self.selected_items), len(model), len(docs)))
@@ -471,8 +469,7 @@ class MiAZWorkspace(Gtk.Box):
         dd_prj = dropdowns[Project.__gtype_name__]
         filters = {}
         self.selected_items = []
-        repo_dir = self.repository.get('dir_docs')
-        docs = self.util.get_files(repo_dir)
+        docs = self.util.get_files(self.repository.docs)
         sentby = self.app.get_config('SentBy')
         sentto = self.app.get_config('SentTo')
         countries = self.app.get_config('Country')
@@ -588,10 +585,9 @@ class MiAZWorkspace(Gtk.Box):
         self.view.select_first_item()
         renamed = 0
         for filename in invalid:
-            repo_dir = self.repository.get('dir_docs')
-            source = os.path.join(repo_dir, filename)
+            source = os.path.join(self.repository.docs, filename)
             btarget = self.util.filename_normalize(filename)
-            target = os.path.join(repo_dir, btarget)
+            target = os.path.join(self.repository.docs, btarget)
             rename = self.util.filename_rename(source, target)
             if rename:
                 renamed += 1
@@ -738,8 +734,7 @@ class MiAZWorkspace(Gtk.Box):
             self.view.refilter()
             model = self.view.cv.get_model() # nº items in current view
             label = self.btnDocsSel.get_child()
-            repo_dir = self.repository.get('dir_docs')
-            docs = self.util.get_files(repo_dir) # nº total items
+            docs = self.util.get_files(self.repository.docs) # nº total items
             label.set_markup("<small>%d</small> / %d / <big>%d</big>" % (len(self.selected_items), len(model), len(docs)))
 
     def _on_select_all(self, *args):

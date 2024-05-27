@@ -36,11 +36,10 @@ class MiAZProject(GObject.GObject):
         self.check()
 
     def check(self):
-        repo_dir = self.repository.get('dir_docs')
         to_delete = []
         for project in self.projects:
             for doc in self.docs_in_project(project):
-                docpath = os.path.join(repo_dir, doc)
+                docpath = os.path.join(self.repository.docs, doc)
                 if not os.path.exists(docpath):
                     to_delete.append((doc, project))
         for doc, project in to_delete:

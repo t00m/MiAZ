@@ -233,7 +233,6 @@ class MiAZUtil(GObject.GObject):
         Normally, only the source filename would be necessary, but
         as it is renamed according MiAZ rules, target is also needed.
         """
-        # ~ target = self.repository.get('dir_docs')
         self.filename_copy(source, target)
         self.emit('filename-added', target)
 
@@ -271,87 +270,15 @@ class MiAZUtil(GObject.GObject):
         return date_dsc
 
     def filename_display(self, filepath):
-        # ~ filepath = self.filename_path(doc)
         if sys.platform in ['linux', 'linux2']:
             os.system("xdg-open \"%s\"" % filepath)
         elif sys.platform in ['win32', 'cygwin', 'msys']:
             os.startfile(filepath)
 
-    # ~ def filename_path(self, doc):
-        # ~ repo_dir = self.repository.get('dir_docs')
-        # ~ return os.path.join(repo_dir, doc)
-
     def filename_validate(self, doc:str) -> bool:
         if len(doc.split('-')) == 7:
             return True
         return False
-
-    # ~ def filename_validate_complex(self, filepath: str) -> tuple:
-        # ~ filename = os.path.basename(filepath)
-        # ~ reasons = "OK"
-        # ~ valid = True
-        # ~ reasons = []
-
-        # ~ # Check fields partitioning
-        # ~ partitioning = False
-        # ~ fields = filename.split('-')
-        # ~ if len(fields) != 7:
-            # ~ source = filename
-            # ~ target = self.filename_normalize(filename)
-            # ~ if source != target:
-                # ~ self.filename_rename(source, target)
-            # ~ else:
-                # ~ self.log.debug("Target normalized filename is the same than source")
-        # ~ name, ext = self.filename_details(filename)
-        # ~ fields = name.split('-')
-
-        # ~ # Check extension
-        # ~ item_type = Extension
-        # ~ gtype = Date.__gtype_name__
-        # ~ dot = filename.rfind('.')
-        # ~ if dot > 0:
-            # ~ name = filename[:dot]
-            # ~ ext = filename[dot+1:]
-            # ~ message = "File extension '%s' is valid" % ext
-            # ~ rc = True
-        # ~ else:
-            # ~ name = filename
-            # ~ ext = ''
-            # ~ rc = False
-            # ~ valid &= False
-            # ~ message = "File extension missing. Please, check this document!"
-        # ~ reasons.append((rc, gtype, ext, message))
-
-        # ~ # Validate fields
-        # ~ for item_type in [Date, Country, Group, SentBy, Purpose, SentTo]:
-            # ~ gtype = item_type.__gtype_name__
-            # ~ fn = Field[item_type] # Field number
-            # ~ fname = item_type.__gtype_name__
-            # ~ title = _(item_type.__title__)
-            # ~ key = fields[fn]
-            # ~ value = None
-            # ~ if len(key) == 0:
-                # ~ valid &= False
-                # ~ rc = False
-                # ~ message = _('<i>%s</i> field is empty') % title
-            # ~ else:
-                # ~ if item_type != Date:
-                    # ~ available = self.conf[fname].exists_available(key)
-                    # ~ used = self.conf[fname].exists_used(key)
-                    # ~ if available and used:
-                        # ~ rc = True
-                        # ~ items = self.conf[fname].load_used()
-                        # ~ value = self.conf[fname].get(key)
-                        # ~ if len(value) > 0:
-                            # ~ message = _('%s %s (%s) is available and ready to use') % (fname, key, value)
-                        # ~ else:
-                            # ~ message = _('%s %s is available and ready to use') % (fname, key)
-                    # ~ else:
-                        # ~ valid &= False
-                        # ~ rc = False
-                        # ~ message = _('%s %s available? %s. Used? %s') % (title, key, available, used)
-            # ~ reasons.append((rc, gtype, value, message))
-        # ~ return valid, reasons
 
     def since_date_this_year(self, adate: datetime) -> datetime:
         year = adate.year
