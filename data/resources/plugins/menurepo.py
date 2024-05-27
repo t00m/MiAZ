@@ -31,7 +31,7 @@ class MiAZMenuRepo(GObject.GObject, Peas.Activatable):
         self.factory = self.app.get_service('factory')
         self.util = self.app.get_service('util')
         self.workspace = API.app.get_widget('workspace')
-        self.workspace.connect("extend-menu", self.repo_settings_menu)
+        self.workspace.connect('workspace-loaded', self.repo_settings_menu)
 
     def do_deactivate(self):
         self.log.debug("Plugin deactivation not implemented")

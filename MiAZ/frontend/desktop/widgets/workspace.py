@@ -50,8 +50,7 @@ class MiAZWorkspace(Gtk.Box):
     __gtype_name__ = 'MiAZWorkspace'
     """Workspace"""
     __gsignals__ = {
-        "extend-menu":  (GObject.SignalFlags.RUN_LAST, None, ()),
-        "extend-toolbar-top":  (GObject.SignalFlags.RUN_LAST, None, ()),
+        "workspace-loaded":  (GObject.SignalFlags.RUN_LAST, None, ()),
     }
     workspace_loaded = False
     selected_items = []
@@ -65,6 +64,7 @@ class MiAZWorkspace(Gtk.Box):
         super(MiAZWorkspace, self).__init__(orientation=Gtk.Orientation.HORIZONTAL)
         self.log = get_logger('MiAZ.Workspace')
         self.app = app
+        self.backend = self.app.backend
         self.factory = self.app.get_service('factory')
         self.actions = self.app.get_service('actions')
         self.repository = self.app.get_service('repo')
@@ -141,9 +141,7 @@ class MiAZWorkspace(Gtk.Box):
     def _finish_configuration(self, *args):
         # ~ self.log.debug("Finish loading workspace")
         self.workspace_loaded = True
-        # ~ self.app.load_plugins()
-        self.emit('extend-menu')
-        self.emit('extend-toolbar-top')
+        self.emit('workspace-loaded')
 
     def _setup_toolbar_filters(self):
         dropdowns = self.app.get_widget('ws-dropdowns')

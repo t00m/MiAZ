@@ -41,7 +41,7 @@ class MiAZToolbarRenameItemPlugin(GObject.GObject, Peas.Activatable):
         self.factory = self.app.get_service('factory')
         self.util = self.app.get_service('util')
         self.workspace = API.app.get_widget('workspace')
-        self.workspace.connect("extend-toolbar-top", self.add_toolbar_button)
+        self.workspace.connect('workspace-loaded', self.add_toolbar_button)
         view = self.app.get_widget('workspace-view')
         selection = view.get_selection()
         selection.connect('selection-changed', self._on_selection_changed)

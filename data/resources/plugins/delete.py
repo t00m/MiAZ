@@ -37,7 +37,7 @@ class MiAZDeleteItemPlugin(GObject.GObject, Peas.Activatable):
         self.config = self.backend.get_config()
         self.util = self.app.get_service('util')
         self.workspace = API.app.get_widget('workspace')
-        self.workspace.connect("extend-menu", self.add_menuitem)
+        self.workspace.connect('workspace-loaded', self.add_menuitem)
 
 
     def do_deactivate(self):

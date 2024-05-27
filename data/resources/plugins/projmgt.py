@@ -58,7 +58,7 @@ class MiAZToolbarProjectMgtPlugin(GObject.GObject, Peas.Activatable):
         self.util = self.app.get_service('util')
         self.projects = self.app.get_service('Projects')
         self.workspace = API.app.get_widget('workspace')
-        self.workspace.connect("extend-menu", self.add_menuitem)
+        self.workspace.connect('workspace-loaded', self.add_menuitem)
 
     def do_deactivate(self):
         self.log.debug("Plugin deactivation not implemented")
