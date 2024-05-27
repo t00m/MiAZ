@@ -50,8 +50,7 @@ class MiAZWorkspace(Gtk.Box):
     __gtype_name__ = 'MiAZWorkspace'
     """Workspace"""
     __gsignals__ = {
-        "extend-menu":  (GObject.SignalFlags.RUN_LAST, None, ()),
-        "extend-toolbar-top":  (GObject.SignalFlags.RUN_LAST, None, ()),
+        "workspace-loaded":  (GObject.SignalFlags.RUN_LAST, None, ()),
     }
     workspace_loaded = False
     selected_items = []
@@ -65,7 +64,7 @@ class MiAZWorkspace(Gtk.Box):
         super(MiAZWorkspace, self).__init__(orientation=Gtk.Orientation.HORIZONTAL)
         self.log = get_logger('MiAZ.Workspace')
         self.app = app
-        self.backend = self.app.get_service('backend')
+        self.backend = self.app.backend
         self.factory = self.app.get_service('factory')
         self.actions = self.app.get_service('actions')
         self.repository = self.app.get_service('repo')
@@ -75,11 +74,6 @@ class MiAZWorkspace(Gtk.Box):
         self.util.connect('filename-deleted', self._on_filename_deleted)
         for node in self.config:
             self.config[node].connect('used-updated', self._on_config_used_updated)
-        self.set_vexpand(False)
-        self.set_margin_top(margin=3)
-        self.set_margin_end(margin=3)
-        self.set_margin_bottom(margin=3)
-        self.set_margin_start(margin=3)
         self.app.add_widget('ws-dropdowns', {})
         frmView = self._setup_workspace()
         self.append(frmView)
@@ -97,8 +91,6 @@ class MiAZWorkspace(Gtk.Box):
             # ~ self.log.debug("Loading cache from %s", self.fcache)
         except:
             self.initialize_caches()
-
-        # ~ self._check_first_time()
 
         # Allow plug-ins to make their job
         self.app.connect('start-application-completed', self._finish_configuration)
@@ -136,7 +128,7 @@ class MiAZWorkspace(Gtk.Box):
         source = os.path.basename(source)
         target = os.path.basename(target)
         lprojects = projects.assigned_to(source)
-        self.log.debug("%s found in these projects: %s", source, ', '.join(projects))
+        self.log.debug("%s found in these projects: %s", source, ', '.join(lprojects))
         for project in lprojects:
             srvprj.remove(project, source)
             srvprj.add(project, target)
@@ -149,9 +141,7 @@ class MiAZWorkspace(Gtk.Box):
     def _finish_configuration(self, *args):
         # ~ self.log.debug("Finish loading workspace")
         self.workspace_loaded = True
-        # ~ self.app.load_plugins()
-        self.emit('extend-menu')
-        self.emit('extend-toolbar-top')
+        self.emit('workspace-loaded')
 
     def _setup_toolbar_filters(self):
         dropdowns = self.app.get_widget('ws-dropdowns')
@@ -226,7 +216,8 @@ class MiAZWorkspace(Gtk.Box):
             item = model.get_item(pos)
             self.selected_items.append(item)
         label = self.btnDocsSel.get_child()
-        docs = self.util.get_files()
+        repo_dir = self.repository.get('dir_docs')
+        docs = self.util.get_files(repo_dir)
         # ~ self.log.debug(', '.join([item.id for item in self.selected_items]))
         label.set_markup("<small>%d</small> / %d / <big>%d</big>" % (len(self.selected_items), len(model), len(docs)))
         # ~ self.app.statusbar_message("Selected %d of %d documents in current view (total documents: %d)" % (len(self.selected_items), len(model), len(docs)))
@@ -376,11 +367,9 @@ class MiAZWorkspace(Gtk.Box):
         self.view = MiAZColumnViewWorkspace(self.app)
         self.app.add_widget('workspace-view', self.view)
         self.view.get_style_context().add_class(class_name='caption')
-        # ~ self.view.get_style_context().add_class(class_name='monospace')
+        self.view.get_style_context().add_class(class_name='monospace')
         self.view.set_filter(self._do_filter_view)
-        frmView = self.factory.create_frame(hexpand=True, vexpand=True)
-        frmView.set_child(self.view)
-        return frmView
+        return self.view
 
     def _on_factory_bind_icon_type(self, factory, list_item):
         box = list_item.get_child()
@@ -482,7 +471,8 @@ class MiAZWorkspace(Gtk.Box):
         dd_prj = dropdowns[Project.__gtype_name__]
         filters = {}
         self.selected_items = []
-        docs = self.util.get_files()
+        repo_dir = self.repository.get('dir_docs')
+        docs = self.util.get_files(repo_dir)
         sentby = self.app.get_config('SentBy')
         sentto = self.app.get_config('SentTo')
         countries = self.app.get_config('Country')
@@ -598,8 +588,11 @@ class MiAZWorkspace(Gtk.Box):
         self.view.select_first_item()
         renamed = 0
         for filename in invalid:
-            target = self.util.filename_normalize(filename)
-            rename = self.util.filename_rename(filename, target)
+            repo_dir = self.repository.get('dir_docs')
+            source = os.path.join(repo_dir, filename)
+            btarget = self.util.filename_normalize(filename)
+            target = os.path.join(repo_dir, btarget)
+            rename = self.util.filename_rename(source, target)
             if rename:
                 renamed += 1
         if renamed > 0:
@@ -678,7 +671,7 @@ class MiAZWorkspace(Gtk.Box):
             if len(lprojects) == 0:
                 matches = True
         else:
-            matches = self.backend.projects.exists(project, doc)
+            matches = projects.exists(project, doc)
         return matches
 
     def _do_filter_view(self, item, filter_list_model):
@@ -745,7 +738,8 @@ class MiAZWorkspace(Gtk.Box):
             self.view.refilter()
             model = self.view.cv.get_model() # nº items in current view
             label = self.btnDocsSel.get_child()
-            docs = self.util.get_files() # nº total items
+            repo_dir = self.repository.get('dir_docs')
+            docs = self.util.get_files(repo_dir) # nº total items
             label.set_markup("<small>%d</small> / %d / <big>%d</big>" % (len(self.selected_items), len(model), len(docs)))
 
     def _on_select_all(self, *args):

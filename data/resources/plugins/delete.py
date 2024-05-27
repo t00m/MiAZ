@@ -36,8 +36,9 @@ class MiAZDeleteItemPlugin(GObject.GObject, Peas.Activatable):
         self.factory = self.app.get_service('factory')
         self.config = self.backend.get_config()
         self.util = self.app.get_service('util')
+        self.repository = self.app.get_service('repo')
         self.workspace = API.app.get_widget('workspace')
-        self.workspace.connect("extend-menu", self.add_menuitem)
+        self.workspace.connect('workspace-loaded', self.add_menuitem)
 
 
     def do_deactivate(self):
@@ -54,9 +55,9 @@ class MiAZDeleteItemPlugin(GObject.GObject, Peas.Activatable):
     def document_delete(self, *args):
         def dialog_response(dialog, response, items):
             if response == Gtk.ResponseType.ACCEPT:
-                repo = self.backend.repo_config()
                 for item in items:
-                    filepath = os.path.join(repo['dir_docs'], item.id)
+                    dir_docs = self.repository.get('dir_docs')
+                    filepath = os.path.join(dir_docs, item.id)
                     self.util.filename_delete(filepath)
             dialog.destroy()
 

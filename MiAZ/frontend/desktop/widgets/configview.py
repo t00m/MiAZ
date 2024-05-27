@@ -37,6 +37,7 @@ class MiAZConfigView(MiAZSelector):
         self.app = app
         self.log = get_logger('MiAZConfigView')
         self.backend = self.app.get_service('backend')
+        self.repository = self.app.get_service('repo')
         self.conf = self.backend.get_config()
         self.config = self.conf[config]
         self.config.connect('used-updated', self.update)
@@ -280,17 +281,20 @@ class MiAZDates(Gtk.Box):
 
     def _on_mass_action_rename_date_response(self, dialog, response, calendar):
         if response == Gtk.ResponseType.ACCEPT:
+            repo_dir = self.repository.get('dir_docs')
             adate = calendar.get_date()
             y = "%04d" % adate.get_year()
             m = "%02d" % adate.get_month()
             d = "%02d" % adate.get_day_of_month()
             sdate = "%s%s%s" % (y, m, d)
             for item in self.selected_items:
-                source = os.path.basename(item.id)
+                bsource = os.path.basename(item.id)
+                source = os.path.join(repo_dir, bsource)
                 name, ext = self.util.filename_details(source)
                 lname = name.split('-')
                 lname[0] = sdate
-                target = "%s.%s" % ('-'.join(lname), ext)
+                btarget = "%s.%s" % ('-'.join(lname), ext)
+                target = os.path.join(repo_dir, btarget)
                 self.util.filename_rename(source, target)
         dialog.destroy()
 
@@ -316,17 +320,17 @@ class MiAZUserPlugins(MiAZConfigView):
         self.viewSl = MiAZColumnViewPlugin(self.app)
         self.add_columnview_used(self.viewSl)
 
-    # ~ def _update_view_available(self):
-        # ~ plugin_manager = self.app.get_service('plugin-manager')
-        # ~ items = []
-        # ~ item_type = self.config.model
-        # ~ for plugin in plugin_manager.plugins:
-            # ~ ptype = plugin_manager.get_plugin_type(plugin)
-            # ~ if ptype == MiAZPluginType.USER:
-                # ~ pid = plugin.get_module_name()
-                # ~ title = plugin.get_description() #+ ' (v%s)' % plugin.get_version()
-                # ~ items.append(item_type(id=pid, title=title))
-        # ~ self.viewAv.update(items)
+    def _update_view_available(self):
+        plugin_manager = self.app.get_service('plugin-manager')
+        items = []
+        item_type = self.config.model
+        for plugin in plugin_manager.plugins:
+            ptype = plugin_manager.get_plugin_type(plugin)
+            if ptype == MiAZPluginType.USER:
+                pid = plugin.get_module_name()
+                title = plugin.get_description() #+ ' (v%s)' % plugin.get_version()
+                items.append(item_type(id=pid, title=title))
+        self.viewAv.update(items)
 
     def _on_item_used_remove(self, *args):
         plugin_manager = self.app.get_service('plugin-manager')
@@ -335,7 +339,6 @@ class MiAZUserPlugins(MiAZConfigView):
             plugin = plugin_manager.get_plugin_info(plugin_used.id)
             if plugin.is_loaded():
                 plugin_manager.unload_plugin(plugin)
-                self.log.debug("Plugin %s unloaded", plugin.get_name())
             del(plugins_used[plugin_used.id])
         self.config.save_used(items=plugins_used)
         self._update_view_used()
@@ -351,7 +354,6 @@ class MiAZUserPlugins(MiAZConfigView):
             plugin = plugin_manager.get_plugin_info(plugin_available.id)
             if not plugin.is_loaded():
                 plugin_manager.load_plugin(plugin)
-                self.log.debug("Plugin %s loaded", plugin.get_name())
             changed = True
         if changed:
             self.config.save_used(items=plugins_used)

@@ -33,6 +33,7 @@ class MiAZSelector(Gtk.Box):
         self.backend = self.app.get_service('backend')
         self.util = self.app.get_service('util')
         self.factory = self.app.get_service('factory')
+        self.repository = self.app.get_service('repository')
         self.log = get_logger('MiAZ.Selector')
         super(MiAZSelector, self).__init__(orientation=Gtk.Orientation.VERTICAL, hexpand=True, vexpand=True, spacing=0)
 
@@ -167,11 +168,11 @@ class MiAZSelector(Gtk.Box):
                 value_used = False
             elif self.config.model == Project:
                 projects = self.app.get_service('Projects')
-                # ~ self.projects = self.backend.projects
                 docs = projects.docs_in_project(item_used.id)
                 value_used = len(docs) > 0
             else:
-                value_used = self.util.field_used(self.config.model, item_used.id)
+                repo_dir = self.repository.get('dir_docs')
+                value_used = self.util.field_used(repo_dir, self.config.model, item_used.id)
 
             if not value_used:
                 del(items_used[item_used.id])
