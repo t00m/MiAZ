@@ -39,6 +39,7 @@ class MiAZRenameDialog(Gtk.Box):
         self.factory = self.app.get_service('factory')
         self.actions = self.app.get_service('actions')
         self.icons = self.app.get_service('icons')
+        self.repository = self.app.get_service('repository')
         self.config = self.backend.get_config()
         self.util = self.app.get_service('util')
         self.log = get_logger('Miaz.Rename')
@@ -111,11 +112,13 @@ class MiAZRenameDialog(Gtk.Box):
         self.doc = doc
         self.filepath = doc
         name, self.extension = self.util.filename_details(doc)
+        repo_dir = self.repository.get('dir_docs')
+        filepath = os.path.join(repo_dir, doc)
         # ~ self.extension = filepath[filepath.rfind('.')+1:]
         # ~ self.doc = os.path.basename(filepath)
         self.suggested = self.util.get_fields(self.doc)
         if len(self.suggested[0]) == 0:
-            adate = self.util.filename_get_creation_date(doc)
+            adate = self.util.filename_get_creation_date(filepath)
             self.entry_date.set_text(adate.strftime("%Y%m%d"))
         else:
             self.entry_date.set_text(self.suggested[0])
@@ -397,8 +400,11 @@ class MiAZRenameDialog(Gtk.Box):
 
     def on_answer_question_rename(self, dialog, response):
         if response == Gtk.ResponseType.ACCEPT:
-            source = self.get_filepath_source()
-            target = self.get_filepath_target()
+            repo_dir = self.repository.get('dir_docs')
+            bsource = self.get_filepath_source()
+            source = os.path.join(repo_dir, bsource)
+            btarget = self.get_filepath_target()
+            target = os.path.join(repo_dir, btarget)
             self.util.filename_rename(source, target)
             dialog.destroy()
             self.app.show_stack_page_by_name('workspace')

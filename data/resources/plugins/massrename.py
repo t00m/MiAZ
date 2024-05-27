@@ -137,12 +137,15 @@ class MiAZToolbarProjectMgtPlugin(GObject.GObject, Peas.Activatable):
             if response == Gtk.ResponseType.ACCEPT:
                 title = _(item_type.__title__)
                 for item in items:
-                    source = item.id
-                    name, ext = self.util.filename_details(source)
+                    bsource = item.id
+                    name, ext = self.util.filename_details(bsource)
                     n = Field[item_type]
                     tmpfile = name.split('-')
                     tmpfile[n] = dropdown.get_selected_item().id
-                    target = "%s.%s" % ('-'.join(tmpfile), ext)
+                    btarget = "%s.%s" % ('-'.join(tmpfile), ext)
+                    repo_dir = self.repository.get('dir_docs')
+                    source = os.path.join(repo_dir, bsource)
+                    target = os.path.join(repo_dir, btarget)
                     self.util.filename_rename(source, target)
             dialog.destroy()
 
@@ -154,11 +157,14 @@ class MiAZToolbarProjectMgtPlugin(GObject.GObject, Peas.Activatable):
                 d = "%02d" % adate.get_day_of_month()
                 sdate = "%s%s%s" % (y, m, d)
                 for item in items:
-                    source = os.path.basename(item.id)
-                    name, ext = self.util.filename_details(source)
+                    bsource = os.path.basename(item.id)
+                    name, ext = self.util.filename_details(bsource)
                     lname = name.split('-')
                     lname[0] = sdate
-                    target = "%s.%s" % ('-'.join(lname), ext)
+                    btarget = "%s.%s" % ('-'.join(lname), ext)
+                    repo_dir = self.repository.get('dir_docs')
+                    source = os.path.join(repo_dir, bsource)
+                    target = os.path.join(repo_dir, btarget)
                     self.util.filename_rename(source, target)
             dialog.destroy()
 

@@ -112,8 +112,8 @@ class MiAZToolbarProjectMgtPlugin(GObject.GObject, Peas.Activatable):
         cv.set_vexpand(True)
         citems = []
         for item in items:
-            projects = ', '.join([self.projects.description(pid) for pid in self.projects.assigned_to(item.id)])
-            citems.append(File(id=item.id, title="<b>%s</b>" % projects))
+            tprojects = ', '.join([self.projects.description(pid) for pid in self.projects.assigned_to(item.id)])
+            citems.append(File(id=item.id, title="<b>%s</b>" % tprojects))
         cv.update(citems)
         frame.set_child(cv)
         hbox = self.factory.create_box_horizontal(hexpand=False, vexpand=False)
@@ -148,12 +148,12 @@ class MiAZToolbarProjectMgtPlugin(GObject.GObject, Peas.Activatable):
         self.config[i_type].connect('used-updated', self.actions.dropdown_populate, dropdown, item_type, False, False)
 
         # Get projects
-        projects = set()
+        sprojects = set()
         for item in items:
-            for project in self.backend.projects.assigned_to(item.id):
-                projects.add(project)
+            for project in self.projects.assigned_to(item.id):
+                sprojects.add(project)
 
-        self.actions.dropdown_populate(self.config[i_type], dropdown, Project, any_value=False, only_include=list(projects))
+        self.actions.dropdown_populate(self.config[i_type], dropdown, Project, any_value=False, only_include=list(sprojects))
         btnManage = self.factory.create_button('miaz-res-manage', '')
         btnManage.connect('clicked', self.actions.manage_resource, Configview['Project'](self.app))
         label = self.factory.create_label(_('Withdraw the following documents from this project: '))
@@ -164,8 +164,8 @@ class MiAZToolbarProjectMgtPlugin(GObject.GObject, Peas.Activatable):
         cv.set_vexpand(True)
         citems = []
         for item in items:
-            projects = ', '.join([self.projects.description(pid) for pid in self.projects.assigned_to(item.id)])
-            citems.append(File(id=item.id, title="<b>%s</b>" % projects))
+            tprojects = ', '.join([self.projects.description(pid) for pid in self.projects.assigned_to(item.id)])
+            citems.append(File(id=item.id, title="<b>%s</b>" % tprojects))
         cv.update(citems)
         frame.set_child(cv)
         hbox = self.factory.create_box_horizontal(hexpand=False, vexpand=False)

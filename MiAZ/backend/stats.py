@@ -39,6 +39,7 @@ class MiAZStats(GObject.GObject):
         self.backend = backend
         self.log = get_logger('MiAZStats')
         self.util = self.backend.get_service('util')
+        self.repository = self.backend.get_service('repo')
 
     def _build(self, *args):
         self.stats = {}
@@ -52,7 +53,8 @@ class MiAZStats(GObject.GObject):
         self.stats[_(Purpose.__title__)] = {}
         self.stats[_(SentTo.__title__)] = {}
 
-        for document in self.util.get_files():
+        repo_dir = self.repository.get('dir_docs')
+        for document in self.util.get_files(repo_dir):
             fields = self.util.get_fields(document)
 
             # Date

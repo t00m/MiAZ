@@ -37,6 +37,7 @@ class MiAZConfigView(MiAZSelector):
         self.app = app
         self.log = get_logger('MiAZConfigView')
         self.backend = self.app.get_service('backend')
+        self.repository = self.app.get_service('repo')
         self.conf = self.backend.get_config()
         self.config = self.conf[config]
         self.config.connect('used-updated', self.update)
@@ -280,17 +281,20 @@ class MiAZDates(Gtk.Box):
 
     def _on_mass_action_rename_date_response(self, dialog, response, calendar):
         if response == Gtk.ResponseType.ACCEPT:
+            repo_dir = self.repository.get('dir_docs')
             adate = calendar.get_date()
             y = "%04d" % adate.get_year()
             m = "%02d" % adate.get_month()
             d = "%02d" % adate.get_day_of_month()
             sdate = "%s%s%s" % (y, m, d)
             for item in self.selected_items:
-                source = os.path.basename(item.id)
+                bsource = os.path.basename(item.id)
+                source = os.path.join(repo_dir, bsource)
                 name, ext = self.util.filename_details(source)
                 lname = name.split('-')
                 lname[0] = sdate
-                target = "%s.%s" % ('-'.join(lname), ext)
+                btarget = "%s.%s" % ('-'.join(lname), ext)
+                target = os.path.join(repo_dir, btarget)
                 self.util.filename_rename(source, target)
         dialog.destroy()
 

@@ -128,7 +128,7 @@ class MiAZWorkspace(Gtk.Box):
         source = os.path.basename(source)
         target = os.path.basename(target)
         lprojects = projects.assigned_to(source)
-        self.log.debug("%s found in these projects: %s", source, ', '.join(projects))
+        self.log.debug("%s found in these projects: %s", source, ', '.join(lprojects))
         for project in lprojects:
             srvprj.remove(project, source)
             srvprj.add(project, target)
@@ -216,7 +216,8 @@ class MiAZWorkspace(Gtk.Box):
             item = model.get_item(pos)
             self.selected_items.append(item)
         label = self.btnDocsSel.get_child()
-        docs = self.util.get_files()
+        repo_dir = self.repository.get('dir_docs')
+        docs = self.util.get_files(repo_dir)
         # ~ self.log.debug(', '.join([item.id for item in self.selected_items]))
         label.set_markup("<small>%d</small> / %d / <big>%d</big>" % (len(self.selected_items), len(model), len(docs)))
         # ~ self.app.statusbar_message("Selected %d of %d documents in current view (total documents: %d)" % (len(self.selected_items), len(model), len(docs)))
@@ -470,7 +471,8 @@ class MiAZWorkspace(Gtk.Box):
         dd_prj = dropdowns[Project.__gtype_name__]
         filters = {}
         self.selected_items = []
-        docs = self.util.get_files()
+        repo_dir = self.repository.get('dir_docs')
+        docs = self.util.get_files(repo_dir)
         sentby = self.app.get_config('SentBy')
         sentto = self.app.get_config('SentTo')
         countries = self.app.get_config('Country')
@@ -586,8 +588,11 @@ class MiAZWorkspace(Gtk.Box):
         self.view.select_first_item()
         renamed = 0
         for filename in invalid:
-            target = self.util.filename_normalize(filename)
-            rename = self.util.filename_rename(filename, target)
+            repo_dir = self.repository.get('dir_docs')
+            source = os.path.join(repo_dir, filename)
+            btarget = self.util.filename_normalize(filename)
+            target = os.path.join(repo_dir, btarget)
+            rename = self.util.filename_rename(source, target)
             if rename:
                 renamed += 1
         if renamed > 0:
@@ -733,7 +738,8 @@ class MiAZWorkspace(Gtk.Box):
             self.view.refilter()
             model = self.view.cv.get_model() # nº items in current view
             label = self.btnDocsSel.get_child()
-            docs = self.util.get_files() # nº total items
+            repo_dir = self.repository.get('dir_docs')
+            docs = self.util.get_files(repo_dir) # nº total items
             label.set_markup("<small>%d</small> / %d / <big>%d</big>" % (len(self.selected_items), len(model), len(docs)))
 
     def _on_select_all(self, *args):

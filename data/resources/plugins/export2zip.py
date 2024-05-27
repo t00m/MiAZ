@@ -9,6 +9,7 @@
 """
 
 import os
+import shutil
 import tempfile
 from datetime import datetime
 from gettext import gettext as _
@@ -44,6 +45,7 @@ class Export2Zip(GObject.GObject, Peas.Activatable):
         self.backend = self.app.get_service('backend')
         self.factory = self.app.get_service('factory')
         self.util = self.app.get_service('util')
+        self.repository = self.app.get_service('repo')
         self.workspace = API.app.get_widget('workspace')
         self.workspace.connect('workspace-loaded', self.add_menuitem)
 
@@ -62,8 +64,7 @@ class Export2Zip(GObject.GObject, Peas.Activatable):
         items = self.workspace.get_selected_items()
 
         def filechooser_response(dialog, response, patterns):
-            config = self.backend.repo_config()
-            target_dir = config['dir_docs']
+            target_dir = self.repository.get('dir_docs')
             if response == Gtk.ResponseType.ACCEPT:
                 content_area = dialog.get_content_area()
                 box = content_area.get_first_child()
@@ -73,8 +74,7 @@ class Export2Zip(GObject.GObject, Peas.Activatable):
                 gfile = filechooser.get_file()
                 dirpath = gfile.get_path()
                 if gfile is not None:
-                    repo = self.backend.repo_config()
-                    dir_doc = repo['dir_docs']
+                    dir_doc = self.repository.get('dir_docs')
                     dir_zip = self.util.get_temp_dir()
                     self.util.directory_create(dir_zip)
                     for item in items:
@@ -82,13 +82,15 @@ class Export2Zip(GObject.GObject, Peas.Activatable):
                         target = dir_zip
                         self.util.filename_copy(source, target)
                     zip_file = "%s.zip" % os.path.basename(dir_zip)
-                    target = os.path.join(ENV['LPATH']['TMP'], zip_file)
+                    zip_target = os.path.join(ENV['LPATH']['TMP'], zip_file)
+                    repo_dir = self.repository.get('dir_docs')
+                    source = zip_target
+                    target = os.path.join(dirpath, zip_file)
                     self.util.zip(target, dir_zip)
-                    self.util.filename_rename(target, os.path.join(dirpath, zip_file))
-                    self.util.directory_remove(dir_zip)
+                    self.util.filename_rename(source, target)
+                    shutil.rmtree(dir_zip)
                     self.util.directory_open(dirpath)
                     self.log.debug(target)
-
             dialog.destroy()
 
         self.factory = self.app.get_service('factory')

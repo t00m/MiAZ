@@ -74,8 +74,7 @@ class Export2Dir(GObject.GObject, Peas.Activatable):
             return paths
 
         def filechooser_response(dialog, response, patterns):
-            config = self.backend.repo_config()
-            target_dir = config['dir_docs']
+            target_dir = self.repository.get('dir_docs')
             if response == Gtk.ResponseType.ACCEPT:
                 content_area = dialog.get_content_area()
                 box = content_area.get_first_child()
@@ -83,6 +82,7 @@ class Export2Dir(GObject.GObject, Peas.Activatable):
                 hbox = box.get_last_child()
                 toggle_pattern = hbox.get_first_child()
                 gfile = filechooser.get_file()
+                repo_dir = self.repository.get('dir_docs')
                 if gfile is not None:
                     dirpath = gfile.get_path()
                     if toggle_pattern.get_active():
@@ -97,11 +97,13 @@ class Export2Dir(GObject.GObject, Peas.Activatable):
                                 thispath.append(paths[key])
                             target = os.path.join(*thispath)
                             os.makedirs(target, exist_ok = True)
-                            self.util.filename_export(item.id, target)
+                            source = os.path.join(repo_dir, item.id)
+                            self.util.filename_export(source, target)
                     else:
                         for item in items:
+                            source = os.path.join(repo_dir, item.id)
                             target = os.path.join(dirpath, os.path.basename(item.id))
-                            self.util.filename_export(item.id, target)
+                            self.util.filename_export(source, target)
                     self.util.directory_open(dirpath)
             dialog.destroy()
 

@@ -58,7 +58,7 @@ class MiAZUtil(GObject.GObject):
         self.app = backend.app
         self.backend = backend
         self.conf = self.backend.get_config()
-        self.repository = self.backend.get_service('repo')
+        # ~ self.repository = self.backend.get_service('repo')
 
     def directory_open(self, dirpath: str):
         os.system("xdg-open '%s'" % dirpath)
@@ -95,9 +95,9 @@ class MiAZUtil(GObject.GObject):
         with open(filepath, 'w') as fout:
             json.dump(adict, fout, sort_keys=True, indent=4)
 
-    def field_used(self, item_type, value):
+    def field_used(self, repo_dir, item_type, value):
         used = False
-        for doc in self.get_files():
+        for doc in self.get_files(repo_dir):
             fields = self.get_fields(doc)
             fn = Field[item_type]
             if fields[fn] == value:
@@ -108,10 +108,8 @@ class MiAZUtil(GObject.GObject):
 
     def get_temp_dir(self):
         ENV = self.app.get_env()
-        repo_dir = self.repository.get('dir_docs')
         ts = datetime.now().strftime('%Y%m%d_%H%M%S')
-        name = self.valid_key(repo_dir)
-        return os.path.join(ENV['LPATH']['TMP'], "%s_%s" % (ts, name))
+        return os.path.join(ENV['LPATH']['TMP'], "%s_%s" % (ts, 'miaz-export'))
 
     def get_temp_file(self, dir_tmp, suffix='.txt'):
         return tempfile.mkstemp(dir=dir_tmp, suffix=suffix)
@@ -124,15 +122,10 @@ class MiAZUtil(GObject.GObject):
                 filename = filename[:dot]
             return filename.split('-')
 
-    def get_files(self, root_dir: str = '') -> []:
-        """Get all files from a given directory.
-        If no directory is given, it will return files from repository
-        documents directory.
-        """
+    def get_files(self, dirpath: str) -> []:
+        """Get all files from a given directory."""
         # ~ FIXME: validate root_dir
-        if len(root_dir) == 0:
-            repo_dir = self.repository.get('dir_docs')
-        return glob.glob(os.path.join(repo_dir, '*'))
+        return glob.glob(os.path.join(dirpath, '*'))
 
     def get_files_recursively(self, root_dir: str) -> []:
         """Get documents from a given directory recursively
@@ -162,9 +155,7 @@ class MiAZUtil(GObject.GObject):
                         documents.add(thisfile)
         return documents
 
-    def filename_get_creation_date(self, doc: str) -> datetime:
-        repo_dir = self.repository.get('dir_docs')
-        filepath = os.path.join(repo_dir, doc)
+    def filename_get_creation_date(self, filepath: str) -> datetime:
         lastmod = os.stat(filepath).st_mtime
         return datetime.fromtimestamp(lastmod)
 
@@ -208,11 +199,8 @@ class MiAZUtil(GObject.GObject):
         key = str(key).strip().replace(' ', '_')
         return re.sub(r'(?u)[^-\w.]', '', key)
 
-    def filename_rename(self, doc_source, doc_target) -> bool:
+    def filename_rename(self, source, target) -> bool:
         rename = False
-        repo_dir = self.repository.get('dir_docs')
-        source = os.path.join(repo_dir, doc_source)
-        target = os.path.join(repo_dir, doc_target)
         if source != target:
             if not os.path.exists(target):
                 try:
@@ -226,7 +214,7 @@ class MiAZUtil(GObject.GObject):
                     self.log.error(error)
             else:
                 self.log.debug("Document NOT renamed:")
-                self.log.error("\tTarget '%s' already exist", doc_target)
+                self.log.error("\tTarget '%s' already exist", target)
         # ~ else:
             # ~ self.log.error("Source and Target are the same. Skip rename")
         return rename
@@ -245,13 +233,11 @@ class MiAZUtil(GObject.GObject):
         Normally, only the source filename would be necessary, but
         as it is renamed according MiAZ rules, target is also needed.
         """
-        target = self.repository.get('dir_docs')
+        # ~ target = self.repository.get('dir_docs')
         self.filename_copy(source, target)
         self.emit('filename-added', target)
 
-    def filename_export(self, doc: str, target: str):
-        repo_dir = self.repository.get('dir_docs')
-        source = os.path.join(repo_dir, doc)
+    def filename_export(self, source: str, target: str):
         self.filename_copy(source, target)
 
     def filename_copy(self, source, target, overwrite=True):
@@ -284,88 +270,88 @@ class MiAZUtil(GObject.GObject):
             date_dsc = None
         return date_dsc
 
-    def filename_display(self, doc):
-        filepath = self.filename_path(doc)
+    def filename_display(self, filepath):
+        # ~ filepath = self.filename_path(doc)
         if sys.platform in ['linux', 'linux2']:
             os.system("xdg-open \"%s\"" % filepath)
         elif sys.platform in ['win32', 'cygwin', 'msys']:
             os.startfile(filepath)
 
-    def filename_path(self, doc):
-        repo_dir = self.repository.get('dir_docs')
-        return os.path.join(repo_dir, doc)
+    # ~ def filename_path(self, doc):
+        # ~ repo_dir = self.repository.get('dir_docs')
+        # ~ return os.path.join(repo_dir, doc)
 
     def filename_validate(self, doc:str) -> bool:
         if len(doc.split('-')) == 7:
             return True
         return False
 
-    def filename_validate_complex(self, filepath: str) -> tuple:
-        filename = os.path.basename(filepath)
-        reasons = "OK"
-        valid = True
-        reasons = []
+    # ~ def filename_validate_complex(self, filepath: str) -> tuple:
+        # ~ filename = os.path.basename(filepath)
+        # ~ reasons = "OK"
+        # ~ valid = True
+        # ~ reasons = []
 
-        # Check fields partitioning
-        partitioning = False
-        fields = filename.split('-')
-        if len(fields) != 7:
-            source = filename
-            target = self.filename_normalize(filename)
-            if source != target:
-                self.filename_rename(source, target)
-            else:
-                self.log.debug("Target normalized filename is the same than source")
-        name, ext = self.filename_details(filename)
-        fields = name.split('-')
+        # ~ # Check fields partitioning
+        # ~ partitioning = False
+        # ~ fields = filename.split('-')
+        # ~ if len(fields) != 7:
+            # ~ source = filename
+            # ~ target = self.filename_normalize(filename)
+            # ~ if source != target:
+                # ~ self.filename_rename(source, target)
+            # ~ else:
+                # ~ self.log.debug("Target normalized filename is the same than source")
+        # ~ name, ext = self.filename_details(filename)
+        # ~ fields = name.split('-')
 
-        # Check extension
-        item_type = Extension
-        gtype = Date.__gtype_name__
-        dot = filename.rfind('.')
-        if dot > 0:
-            name = filename[:dot]
-            ext = filename[dot+1:]
-            message = "File extension '%s' is valid" % ext
-            rc = True
-        else:
-            name = filename
-            ext = ''
-            rc = False
-            valid &= False
-            message = "File extension missing. Please, check this document!"
-        reasons.append((rc, gtype, ext, message))
+        # ~ # Check extension
+        # ~ item_type = Extension
+        # ~ gtype = Date.__gtype_name__
+        # ~ dot = filename.rfind('.')
+        # ~ if dot > 0:
+            # ~ name = filename[:dot]
+            # ~ ext = filename[dot+1:]
+            # ~ message = "File extension '%s' is valid" % ext
+            # ~ rc = True
+        # ~ else:
+            # ~ name = filename
+            # ~ ext = ''
+            # ~ rc = False
+            # ~ valid &= False
+            # ~ message = "File extension missing. Please, check this document!"
+        # ~ reasons.append((rc, gtype, ext, message))
 
-        # Validate fields
-        for item_type in [Date, Country, Group, SentBy, Purpose, SentTo]:
-            gtype = item_type.__gtype_name__
-            fn = Field[item_type] # Field number
-            fname = item_type.__gtype_name__
-            title = _(item_type.__title__)
-            key = fields[fn]
-            value = None
-            if len(key) == 0:
-                valid &= False
-                rc = False
-                message = _('<i>%s</i> field is empty') % title
-            else:
-                if item_type != Date:
-                    available = self.conf[fname].exists_available(key)
-                    used = self.conf[fname].exists_used(key)
-                    if available and used:
-                        rc = True
-                        items = self.conf[fname].load_used()
-                        value = self.conf[fname].get(key)
-                        if len(value) > 0:
-                            message = _('%s %s (%s) is available and ready to use') % (fname, key, value)
-                        else:
-                            message = _('%s %s is available and ready to use') % (fname, key)
-                    else:
-                        valid &= False
-                        rc = False
-                        message = _('%s %s available? %s. Used? %s') % (title, key, available, used)
-            reasons.append((rc, gtype, value, message))
-        return valid, reasons
+        # ~ # Validate fields
+        # ~ for item_type in [Date, Country, Group, SentBy, Purpose, SentTo]:
+            # ~ gtype = item_type.__gtype_name__
+            # ~ fn = Field[item_type] # Field number
+            # ~ fname = item_type.__gtype_name__
+            # ~ title = _(item_type.__title__)
+            # ~ key = fields[fn]
+            # ~ value = None
+            # ~ if len(key) == 0:
+                # ~ valid &= False
+                # ~ rc = False
+                # ~ message = _('<i>%s</i> field is empty') % title
+            # ~ else:
+                # ~ if item_type != Date:
+                    # ~ available = self.conf[fname].exists_available(key)
+                    # ~ used = self.conf[fname].exists_used(key)
+                    # ~ if available and used:
+                        # ~ rc = True
+                        # ~ items = self.conf[fname].load_used()
+                        # ~ value = self.conf[fname].get(key)
+                        # ~ if len(value) > 0:
+                            # ~ message = _('%s %s (%s) is available and ready to use') % (fname, key, value)
+                        # ~ else:
+                            # ~ message = _('%s %s is available and ready to use') % (fname, key)
+                    # ~ else:
+                        # ~ valid &= False
+                        # ~ rc = False
+                        # ~ message = _('%s %s available? %s. Used? %s') % (title, key, available, used)
+            # ~ reasons.append((rc, gtype, value, message))
+        # ~ return valid, reasons
 
     def since_date_this_year(self, adate: datetime) -> datetime:
         year = adate.year

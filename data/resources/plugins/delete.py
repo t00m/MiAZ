@@ -54,9 +54,9 @@ class MiAZDeleteItemPlugin(GObject.GObject, Peas.Activatable):
     def document_delete(self, *args):
         def dialog_response(dialog, response, items):
             if response == Gtk.ResponseType.ACCEPT:
-                repo = self.backend.repo_config()
                 for item in items:
-                    filepath = os.path.join(repo['dir_docs'], item.id)
+                    dir_docs = self.repository.get('dir_docs')
+                    filepath = os.path.join(dir_docs, item.id)
                     self.util.filename_delete(filepath)
             dialog.destroy()
 

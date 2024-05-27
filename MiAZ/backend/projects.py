@@ -25,8 +25,8 @@ class MiAZProject(GObject.GObject):
         conf = self.backend.get_config()
         self.config = conf['Project']
         self.util = self.backend.get_service('util')
-        repository = self.backend.get_service('repo')
-        repo_dir_conf = repository.get('dir_conf')
+        self.repository = self.backend.get_service('repo')
+        repo_dir_conf = self.repository.get('dir_conf')
         self.cnfprj = os.path.join(repo_dir_conf, 'projects.json')
         self.projects = {}
         if not os.path.exists(self.cnfprj):
@@ -36,10 +36,11 @@ class MiAZProject(GObject.GObject):
         self.check()
 
     def check(self):
+        repo_dir = self.repository.get('dir_docs')
         to_delete = []
         for project in self.projects:
             for doc in self.docs_in_project(project):
-                docpath = self.util.filename_path(doc)
+                docpath = os.path.join(repo_dir, doc)
                 if not os.path.exists(docpath):
                     to_delete.append((doc, project))
         for doc, project in to_delete:
