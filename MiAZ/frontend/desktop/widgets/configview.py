@@ -316,17 +316,17 @@ class MiAZUserPlugins(MiAZConfigView):
         self.viewSl = MiAZColumnViewPlugin(self.app)
         self.add_columnview_used(self.viewSl)
 
-    # ~ def _update_view_available(self):
-        # ~ plugin_manager = self.app.get_service('plugin-manager')
-        # ~ items = []
-        # ~ item_type = self.config.model
-        # ~ for plugin in plugin_manager.plugins:
-            # ~ ptype = plugin_manager.get_plugin_type(plugin)
-            # ~ if ptype == MiAZPluginType.USER:
-                # ~ pid = plugin.get_module_name()
-                # ~ title = plugin.get_description() #+ ' (v%s)' % plugin.get_version()
-                # ~ items.append(item_type(id=pid, title=title))
-        # ~ self.viewAv.update(items)
+    def _update_view_available(self):
+        plugin_manager = self.app.get_service('plugin-manager')
+        items = []
+        item_type = self.config.model
+        for plugin in plugin_manager.plugins:
+            ptype = plugin_manager.get_plugin_type(plugin)
+            if ptype == MiAZPluginType.USER:
+                pid = plugin.get_module_name()
+                title = plugin.get_description() #+ ' (v%s)' % plugin.get_version()
+                items.append(item_type(id=pid, title=title))
+        self.viewAv.update(items)
 
     def _on_item_used_remove(self, *args):
         plugin_manager = self.app.get_service('plugin-manager')
@@ -335,7 +335,6 @@ class MiAZUserPlugins(MiAZConfigView):
             plugin = plugin_manager.get_plugin_info(plugin_used.id)
             if plugin.is_loaded():
                 plugin_manager.unload_plugin(plugin)
-                self.log.debug("Plugin %s unloaded", plugin.get_name())
             del(plugins_used[plugin_used.id])
         self.config.save_used(items=plugins_used)
         self._update_view_used()
@@ -351,7 +350,6 @@ class MiAZUserPlugins(MiAZConfigView):
             plugin = plugin_manager.get_plugin_info(plugin_available.id)
             if not plugin.is_loaded():
                 plugin_manager.load_plugin(plugin)
-                self.log.debug("Plugin %s loaded", plugin.get_name())
             changed = True
         if changed:
             self.config.save_used(items=plugins_used)
