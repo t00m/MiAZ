@@ -34,11 +34,11 @@ class MiAZPluginType(IntEnum):
     SYSTEM = 1
     USER = 2
 
-    # ~ def __str__(self):
-        # ~ if self.value == MiAZPluginType.USER:
-            # ~ return _("User Plugin")
-        # ~ elif self.value == MiAZPluginType.SYSTEM:
-            # ~ return _("System Plugin")
+    def __str__(self):
+        if self.value == MiAZPluginType.USER:
+            return _("User Plugin")
+        elif self.value == MiAZPluginType.SYSTEM:
+            return _("System Plugin")
 
 
 class MiAZPluginManager(GObject.GObject):
@@ -119,7 +119,7 @@ class MiAZPluginManager(GObject.GObject):
         try:
             self.engine.load_plugin(plugin)
             if plugin.is_loaded():
-                # ~ self.log.debug("Plugin %s (%s) loaded", plugin.get_name(), ptype)
+                self.log.debug("Plugin %s (%s) loaded", plugin.get_name(), ptype)
                 return True
             else:
                 self.log.error("Plugin %s (%s) couldn't be loaded", plugin.get_name(), ptype)
@@ -131,8 +131,9 @@ class MiAZPluginManager(GObject.GObject):
 
     def unload_plugin(self, plugin: Peas.PluginInfo):
         try:
+            ptype = self.get_plugin_type(plugin)
             self.engine.unload_plugin(plugin)
-            self.log.debug("Plugin unloaded")
+            self.log.debug("Plugin %s (%s) unloaded", plugin.get_name(), ptype)
         except Exception as error:
             self.log.error(error)
 
