@@ -112,8 +112,7 @@ class MiAZRenameDialog(Gtk.Box):
         self.doc = doc
         self.filepath = doc
         name, self.extension = self.util.filename_details(doc)
-        repo_dir = self.repository.get('dir_docs')
-        filepath = os.path.join(repo_dir, doc)
+        filepath = os.path.join(self.repository.docs, doc)
         # ~ self.extension = filepath[filepath.rfind('.')+1:]
         # ~ self.doc = os.path.basename(filepath)
         self.suggested = self.util.get_fields(self.doc)
@@ -400,11 +399,10 @@ class MiAZRenameDialog(Gtk.Box):
 
     def on_answer_question_rename(self, dialog, response):
         if response == Gtk.ResponseType.ACCEPT:
-            repo_dir = self.repository.get('dir_docs')
             bsource = self.get_filepath_source()
-            source = os.path.join(repo_dir, bsource)
+            source = os.path.join(self.repository.docs, bsource)
             btarget = self.get_filepath_target()
-            target = os.path.join(repo_dir, btarget)
+            target = os.path.join(self.repository.docs, btarget)
             self.util.filename_rename(source, target)
             dialog.destroy()
             self.app.show_stack_page_by_name('workspace')

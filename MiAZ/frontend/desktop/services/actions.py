@@ -56,13 +56,8 @@ class MiAZActions(GObject.GObject):
 
     def document_display(self, doc):
         self.log.debug("Displaying %s", doc)
-        repo_dir = self.repository.get('dir_docs')
-        filepath = os.path.join(repo_dir, doc)
+        filepath = os.path.join(self.repository.docs, doc)
         self.util.filename_display(filepath)
-
-    # ~ def document_open_location(self, item):
-        # ~ self.log.debug("Open file location for %s", item.id)
-        # ~ self.util.filename_open_location(item.id)
 
     def document_delete(self, items):
         def dialog_response(dialog, response, items):
@@ -136,7 +131,6 @@ class MiAZActions(GObject.GObject):
 
     def import_directory(self, *args):
         def filechooser_response(dialog, response, data):
-            target_dir = self.repository.get('dir_docs')
             if response == Gtk.ResponseType.ACCEPT:
                 content_area = dialog.get_content_area()
                 box = content_area.get_first_child()
@@ -144,7 +138,6 @@ class MiAZActions(GObject.GObject):
                 toggle = box.get_last_child()
                 recursive = toggle.get_active()
                 gfile = filechooser.get_file()
-                repo_dir = self.repository.get('dir_docs')
                 if gfile is not None:
                     dirpath = gfile.get_path()
                     self.log.debug("Walk directory %s recursively? %s", dirpath, recursive)
@@ -154,7 +147,7 @@ class MiAZActions(GObject.GObject):
                         files = glob.glob(os.path.join(dirpath, '*.*'))
                     for source in files:
                         btarget = self.util.filename_normalize(source)
-                        target = os.path.join(repo_dir, btarget)
+                        target = os.path.join(self.repository.docs, btarget)
                         self.util.filename_import(source, target)
             dialog.destroy()
 
@@ -173,7 +166,6 @@ class MiAZActions(GObject.GObject):
 
     def import_config(self, *args):
         def filechooser_response(dialog, response, data):
-            target_dir = self.repository.get('dir_docs')
             if response == Gtk.ResponseType.ACCEPT:
                 content_area = dialog.get_content_area()
                 box = content_area.get_first_child()
@@ -195,7 +187,6 @@ class MiAZActions(GObject.GObject):
 
     def import_file(self, *args):
         def filechooser_response(dialog, response, data):
-            repo_dir = self.repository.get('dir_docs')
             if response == Gtk.ResponseType.ACCEPT:
                 content_area = dialog.get_content_area()
                 box = content_area.get_first_child()
@@ -204,7 +195,7 @@ class MiAZActions(GObject.GObject):
                 if gfile is not None:
                     source = gfile.get_path()
                     btarget = self.util.filename_normalize(source)
-                    target = os.path.join(repo_dir, btarget)
+                    target = os.path.join(self.repository.docs, btarget)
                     self.util.filename_import(source, target)
             dialog.destroy()
 

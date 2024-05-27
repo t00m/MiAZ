@@ -40,6 +40,16 @@ class MiAZRepository(GObject.GObject):
         self.backend = backend
         self.config = self.backend.get_config()
 
+    @property
+    def docs(self):
+        """Repository documents directory"""
+        return self.get('dir_docs')
+
+    @property
+    def conf(self):
+        """Repository documents directory"""
+        return self.get('dir_conf')
+
     def validate(self, path: str) -> bool:
         conf_dir = os.path.join(path, '.conf')
         conf_file = os.path.join(conf_dir, 'repo.json')

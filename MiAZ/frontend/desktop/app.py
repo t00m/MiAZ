@@ -429,10 +429,9 @@ class MiAZApp(Gtk.Application):
     def check_repository(self, repo_id: str = None):
         try:
             repository = self.get_service('repo')
-            repo_dir = repository.get('dir_docs')
-            self.log.debug("Using repo '%s'", repo_dir)
-            if repository.validate(repo_dir):
-                repository.load(repo_dir)
+            self.log.debug("Using repo '%s'", repository.docs)
+            if repository.validate(repository.docs):
+                repository.load(repository.docs)
                 self.log.debug("Setting up workspace")
                 if self.get_widget('workspace') is None:
                     self._setup_page_workspace()

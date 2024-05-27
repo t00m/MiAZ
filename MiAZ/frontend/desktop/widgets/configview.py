@@ -281,7 +281,6 @@ class MiAZDates(Gtk.Box):
 
     def _on_mass_action_rename_date_response(self, dialog, response, calendar):
         if response == Gtk.ResponseType.ACCEPT:
-            repo_dir = self.repository.get('dir_docs')
             adate = calendar.get_date()
             y = "%04d" % adate.get_year()
             m = "%02d" % adate.get_month()
@@ -289,12 +288,12 @@ class MiAZDates(Gtk.Box):
             sdate = "%s%s%s" % (y, m, d)
             for item in self.selected_items:
                 bsource = os.path.basename(item.id)
-                source = os.path.join(repo_dir, bsource)
+                source = os.path.join(self.repository.docs, bsource)
                 name, ext = self.util.filename_details(source)
                 lname = name.split('-')
                 lname[0] = sdate
                 btarget = "%s.%s" % ('-'.join(lname), ext)
-                target = os.path.join(repo_dir, btarget)
+                target = os.path.join(self.repository.docs, btarget)
                 self.util.filename_rename(source, target)
         dialog.destroy()
 
