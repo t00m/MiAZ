@@ -17,7 +17,7 @@ from gi.repository import Gtk
 class MiAZPopoverButton(Gtk.Box):
     """Custom Popover Button"""
     def __init__(self, app, icon_name: str = '', title: str = '', css_classes: list = [], widgets: list = []):
-        super(Gtk.Box, self).__init__(spacing=0, orientation=Gtk.Orientation.HORIZONTAL)
+        super(Gtk.Box, self).__init__(spacing=0, orientation=Gtk.Orientation.VERTICAL)
         self.app = app
         ENV = app.get_env()
         self.icon_name = icon_name

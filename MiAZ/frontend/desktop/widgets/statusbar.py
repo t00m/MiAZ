@@ -24,12 +24,12 @@ class MiAZStatusbar(Gtk.Box):
         # ~ self.get_style_context().add_class(class_name='osd')
         self.get_style_context().add_class(class_name='caption')
         self.get_style_context().add_class(class_name='monospace')
-        self.get_style_context().add_class(class_name='toolbar')
+        # ~ self.get_style_context().add_class(class_name='toolbar')
         self.get_style_context().add_class(class_name='linked')
 
         # Separator
-        # ~ separator = Gtk.Separator.new(orientation=Gtk.Orientation.HORIZONTAL)
-        # ~ self.append(separator)
+        separator = Gtk.Separator.new(orientation=Gtk.Orientation.HORIZONTAL)
+        self.append(separator)
 
         hbox = self.factory.create_box_horizontal(margin=0, spacing=6, hexpand=True, vexpand=False)
         self.app.add_widget('statusbar-hbox', hbox)

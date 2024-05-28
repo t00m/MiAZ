@@ -144,11 +144,12 @@ class MiAZWorkspace(Gtk.Box):
 
     def _setup_toolbar_filters(self):
         dropdowns = self.app.get_widget('ws-dropdowns')
-        widget = self.factory.create_box_horizontal(hexpand=True, vexpand=False)
+        widget = self.factory.create_box_vertical(spacing=0, margin=0, hexpand=True, vexpand=False)
         body = self.factory.create_box_horizontal(margin=3, spacing=6, hexpand=True, vexpand=True)
         body.set_homogeneous(True)
         body.set_margin_top(margin=6)
         widget.append(body)
+        widget.append(Gtk.Separator.new(orientation=Gtk.Orientation.HORIZONTAL))
 
         ### Projects dropdown
         i_type = Project.__gtype_name__
@@ -229,6 +230,7 @@ class MiAZWorkspace(Gtk.Box):
     def _setup_toolbar_top(self):
         hdb_left = self.app.get_widget('headerbar-left-box')
         hdb_right = self.app.get_widget('headerbar-right-box')
+        hdb_right.get_style_context().add_class(class_name='linked')
 
         ## Show/Hide Filters
         self.tgbFilters = self.factory.create_button_toggle('miaz-filters2', callback=self._on_filters_toggled)
@@ -272,11 +274,18 @@ class MiAZWorkspace(Gtk.Box):
         # ~ self.app.set_widget('ws-dropdowns', dropdowns)
 
         # Menu Single and Multiple
+        hbox = self.factory.create_box_horizontal(margin=0, spacing=6, hexpand=False)
+        self.app.add_widget('window-headerbar-title-widget', hbox)
+
+        # ~ lblTitle = Gtk.Label()
+        # ~ lblTitle.set_markup('<b>AZ </b>')
+        # ~ hbox.append(lblTitle)
+
         popovermenu = self._setup_menu_selection()
         label = Gtk.Label()
         self.btnDocsSel = Gtk.MenuButton()
-        # ~ self.btnDocsSel.get_style_context().add_class(class_name='flat')
-        # ~ self.btnDocsSel.set_has_frame(False)
+        self.btnDocsSel.get_style_context().add_class(class_name='flat')
+        self.btnDocsSel.set_has_frame(False)
         # ~ self.btnDocsSel.set_margin_start(24)
         # ~ self.btnDocsSel.set_margin_end(24)
         self.btnDocsSel.set_child(label)
@@ -284,8 +293,7 @@ class MiAZWorkspace(Gtk.Box):
         self.popDocsSel.set_menu_model(popovermenu)
         self.btnDocsSel.set_popover(popover=self.popDocsSel)
         self.btnDocsSel.set_sensitive(True)
-        # ~ headerbar = self.app.get_widget('headerbar')
-        hdb_right.append(self.btnDocsSel)
+        hbox.append(self.btnDocsSel)
 
         ## Import button
         widgets = []
@@ -300,9 +308,14 @@ class MiAZWorkspace(Gtk.Box):
         # ~ btnImportConf = self.factory.create_button('miaz-import-config', callback=self.actions.import_config)
         # ~ rowImportConf = self.factory.create_actionrow(title='Import config', subtitle='Import configuration', suffix=btnImportConf)
         # ~ widgets.append(rowImportConf)
-        button = self.factory.create_button_popover(icon_name='miaz-list-add', title='', widgets=widgets)
+        button = self.factory.create_button_popover(icon_name='miaz-list-add', title='', widgets=widgets, css_classes=['flat'])
         self.app.add_widget('miaz-import-button-popover', button)
-        hdb_right.append(button)
+        hbox.append(button)
+
+        headerbar = self.app.get_widget('headerbar')
+        headerbar.set_title_widget(hbox)
+
+
 
 
 

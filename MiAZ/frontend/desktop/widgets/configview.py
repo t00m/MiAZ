@@ -81,6 +81,8 @@ class MiAZRepositories(MiAZConfigView):
     def on_item_available_add(self, *args):
         dialog = MiAZDialogAddRepo(self.app, self.app.win, 'Add a new repository', 'Repository name', 'Folder')
         dialog.connect('response', self._on_response_item_available_add)
+        search_term = self.entry.get_text()
+        dialog.set_value1(search_term)
         dialog.show()
 
     def _on_response_item_available_add(self, dialog, response):
