@@ -274,7 +274,7 @@ class MiAZWorkspace(Gtk.Box):
         # ~ self.app.set_widget('ws-dropdowns', dropdowns)
 
         # Menu Single and Multiple
-        hbox = self.factory.create_box_horizontal(margin=0, spacing=6, hexpand=False)
+        hbox = self.factory.create_box_horizontal(margin=0, spacing=0, hexpand=False)
         self.app.add_widget('window-headerbar-title-widget', hbox)
 
         # ~ lblTitle = Gtk.Label()
@@ -309,6 +309,7 @@ class MiAZWorkspace(Gtk.Box):
         # ~ rowImportConf = self.factory.create_actionrow(title='Import config', subtitle='Import configuration', suffix=btnImportConf)
         # ~ widgets.append(rowImportConf)
         button = self.factory.create_button_popover(icon_name='miaz-list-add', title='', widgets=widgets, css_classes=['flat'])
+        button.set_has_frame(False)
         self.app.add_widget('miaz-import-button-popover', button)
         hbox.append(button)
 
