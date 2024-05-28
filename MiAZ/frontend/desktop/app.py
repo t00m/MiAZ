@@ -68,7 +68,7 @@ class MiAZApp(Gtk.Application):
     def _on_activate(self, app):
         ENV = self.get_env()
         self.win = self.add_widget('window', Gtk.ApplicationWindow(application=self))
-        # ~ self.win.set_default_size(1280, 800)
+        self.win.set_default_size(1280, 800)
         self.win.set_icon_name('MiAZ')
         self.win.connect('close-request', self._on_window_close_request)
         self.win.set_default_icon_name('MiAZ')
