@@ -518,12 +518,16 @@ class MiAZApp(Gtk.Application):
         self.emit("exit-application")
         self.quit()
 
-    def add_service(self, name: str, service: GObject.GObject) -> GObject.GObject:
+    def add_service(self, name: str, service: GObject.GObject, replace: bool = True) -> GObject.GObject:
         if name not in self._miazobjs['services']:
             self._miazobjs['services'][name] = service
-            return service
         else:
-            self.log.error("A service with name '%s' already exists", name)
+            if replace:
+                self._miazobjs['services'][name] = service
+            else:
+                service = None
+                self.log.error("A service with name '%s' already exists, and it won't be replaced", name)
+        return service
 
     def get_service(self, name):
         try:
