@@ -260,59 +260,18 @@ class MiAZWorkspace(Gtk.Box):
         dd_date.connect("notify::selected-item", self.update)
         hdb_left.append(dd_date)
 
-        ### Projects dropdown
-        # ~ i_type = Project.__gtype_name__
-        # ~ dd_prj = self.factory.create_dropdown_generic(item_type=Project)
-        # ~ dd_prj.set_size_request(250, -1)
-        # ~ dropdowns[i_type] = dd_prj
-        # ~ self.actions.dropdown_populate(self.config[i_type], dd_prj, Project, any_value=True, none_value=True)
-        # ~ dd_prj.connect("notify::selected-item", self._on_filter_selected)
-        # ~ dd_prj.connect("notify::selected-item", self._on_project_selected)
-        # ~ dd_prj.set_hexpand(True)
-        # ~ self.config[i_type].connect('used-updated', self.update_dropdown_filter, Project)
-        # ~ hdb_left.append(dd_prj)
-        # ~ self.app.set_widget('ws-dropdowns', dropdowns)
-
-        # Menu Single and Multiple
+        # Workspace Menu
         hbox = self.factory.create_box_horizontal(margin=0, spacing=0, hexpand=False)
-        self.app.add_widget('window-headerbar-title-widget', hbox)
-
-        # ~ lblTitle = Gtk.Label()
-        # ~ lblTitle.set_markup('<b>AZ </b>')
-        # ~ hbox.append(lblTitle)
-
         popovermenu = self._setup_menu_selection()
         label = Gtk.Label()
         self.btnDocsSel = Gtk.MenuButton()
-        self.btnDocsSel.get_style_context().add_class(class_name='flat')
-        self.btnDocsSel.set_has_frame(False)
-        # ~ self.btnDocsSel.set_margin_start(24)
-        # ~ self.btnDocsSel.set_margin_end(24)
+        self.btnDocsSel.set_always_show_arrow(True)
         self.btnDocsSel.set_child(label)
         self.popDocsSel = Gtk.PopoverMenu()
         self.popDocsSel.set_menu_model(popovermenu)
         self.btnDocsSel.set_popover(popover=self.popDocsSel)
         self.btnDocsSel.set_sensitive(True)
         hbox.append(self.btnDocsSel)
-
-        ## Import button
-        widgets = []
-        self.app.add_widget('miaz-import-widgets', widgets)
-        btnImportFiles = self.factory.create_button('miaz-import-document', callback=self.actions.import_file)
-        rowImportDoc = self.factory.create_actionrow(title=_('Import document'), subtitle=_('Import one or more documents'), suffix=btnImportFiles)
-        widgets.append(rowImportDoc)
-        btnImportDir = self.factory.create_button('miaz-import-folder', callback=self.actions.import_directory)
-        rowImportDir = self.factory.create_actionrow(title=_('Import directory'), subtitle=_('Import all documents from a directory'), suffix=btnImportDir)
-        widgets.append(rowImportDir)
-        # FIXME: Not implemented yet
-        # ~ btnImportConf = self.factory.create_button('miaz-import-config', callback=self.actions.import_config)
-        # ~ rowImportConf = self.factory.create_actionrow(title='Import config', subtitle='Import configuration', suffix=btnImportConf)
-        # ~ widgets.append(rowImportConf)
-        button = self.factory.create_button_popover(icon_name='miaz-list-add', title='', widgets=widgets, css_classes=['flat'])
-        button.set_has_frame(False)
-        self.app.add_widget('miaz-import-button-popover', button)
-        hbox.append(button)
-
         headerbar = self.app.get_widget('headerbar')
         headerbar.set_title_widget(hbox)
 
@@ -446,6 +405,15 @@ class MiAZWorkspace(Gtk.Box):
         menu_selection.append_section(None, section_common_in)
         menu_selection.append_section(None, section_common_out)
         menu_selection.append_section(None, section_danger)
+
+        ## Add
+        submenu_add = Gio.Menu.new()
+        menu_add = Gio.MenuItem.new_submenu(
+            label = _('Add new...'),
+            submenu = submenu_add,
+        )
+        section_common_in.append_item(menu_add)
+        self.app.add_widget('workspace-menu-in-add', submenu_add)
 
         ## Export
         submenu_export = Gio.Menu.new()
