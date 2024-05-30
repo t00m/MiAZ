@@ -405,7 +405,7 @@ class MiAZRenameDialog(Gtk.Box):
             target = os.path.join(self.repository.docs, btarget)
             self.util.filename_rename(source, target)
             dialog.destroy()
-            self.app.show_stack_page_by_name('workspace')
+            self.actions.show_stack_page_by_name('workspace')
         else:
             dialog.destroy()
 
