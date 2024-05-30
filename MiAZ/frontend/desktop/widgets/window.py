@@ -13,7 +13,7 @@ from gi.repository import Gdk, Gio, GLib, Gtk
 from MiAZ.backend.log import get_logger
 
 
-class CustomWindow(Gtk.Window):
+class MiAZCustomWindow(Gtk.Window):
 
     def __init__(self, app, name, title, **kwargs):
         super().__init__(**kwargs)
@@ -55,3 +55,4 @@ class CustomWindow(Gtk.Window):
 
     def _build_ui(self):
         pass
+

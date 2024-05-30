@@ -8,16 +8,8 @@
 # Description: Custom dialogs
 """
 
-import os
-import json
-from gettext import gettext as _
-
-import gi
-gi.require_version(namespace='Gtk', version='4.0')
 from gi.repository import Gio
 from gi.repository import Gtk
-from gi.repository import Pango
-from gi.repository.GdkPixbuf import Pixbuf
 
 from MiAZ.backend.log import get_logger
 
@@ -44,7 +36,7 @@ class CustomDialog(Gtk.Dialog):
         self.app = app
         self.set_transient_for(parent)
         self.set_title(title=title)
-        self.use_header_bar = True
+        self.use_header_bar = use_header_bar
 
         if callback is not None:
             self.connect('response', callback)
@@ -70,6 +62,7 @@ class CustomDialog(Gtk.Dialog):
 
         action_box = btn_ok.get_ancestor(Gtk.Box)
         action_box.get_style_context ().add_class ('toolbar')
+        action_box.set_homogeneous(True)
 
         # Content area
         content_area = self.get_content_area()
@@ -86,7 +79,7 @@ class CustomDialog(Gtk.Dialog):
         icon.set_pixel_size(48)
         label = Gtk.Label.new(dtype.title())
         label.get_style_context().add_class(class_name='title-1')
-        hbox_title.append(icon)
+        # ~ hbox_title.append(icon)
         hbox_title.append(label)
         vbox.append(hbox_title)
         lblDesc = Gtk.Label()
@@ -96,14 +89,27 @@ class CustomDialog(Gtk.Dialog):
         content_area.append(child=vbox)
 
     def dialog_response(self, dialog, response):
-        # ~ if response == Gtk.ResponseType.OK:
-            # ~ return True
-        # ~ elif response == Gtk.ResponseType.CANCEL:
-            # ~ return False
         dialog.hide()
 
     def get_entry_text(self):
         return self.entry.get_text()
+
+class Question(CustomDialog):
+    def __init__(self,
+                    app,
+                    parent: Gtk.Window,
+                    title: str = '',
+                    text: str = '',
+                    callback = None
+                ):
+        super().__init__(app=app, parent=parent, use_header_bar=False, dtype='question', title=title, text=text, callback=callback)
+
+    def dialog_response(self, dialog, response):
+        if response == Gtk.ResponseType.OK:
+            return True
+        elif response == Gtk.ResponseType.CANCEL:
+            return False
+        dialog.hide()
 
 class MiAZDialogAdd(Gtk.Dialog):
     """ MiAZ Doc Browser Widget"""

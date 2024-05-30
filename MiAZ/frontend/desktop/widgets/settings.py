@@ -11,13 +11,11 @@
 import os
 from gettext import gettext as _
 
-import gi
-from gi.repository import Gdk
-from gi.repository import Gio
-from gi.repository import GLib
 from gi.repository import Gtk
 
 from MiAZ.backend.log import get_logger
+from MiAZ.backend.models import Repository, Plugin, Project
+from MiAZ.backend.models import Country, Group, Purpose, SentBy, SentTo
 from MiAZ.frontend.desktop.widgets.configview import MiAZGroups
 from MiAZ.frontend.desktop.widgets.configview import MiAZPurposes
 from MiAZ.frontend.desktop.widgets.configview import MiAZCountries
@@ -27,14 +25,9 @@ from MiAZ.frontend.desktop.widgets.configview import MiAZProjects
 from MiAZ.frontend.desktop.widgets.configview import MiAZRepositories
 from MiAZ.frontend.desktop.widgets.configview import MiAZUserPlugins
 from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewPlugin
-from MiAZ.frontend.desktop.widgets.dialogs import CustomDialog
-from MiAZ.frontend.desktop.widgets.window import CustomWindow
-from MiAZ.backend.models import MiAZItem, File, Group, Person, Country
-from MiAZ.backend.models import Purpose, Concept, SentBy, SentTo, Date
-from MiAZ.backend.models import Extension, Project, Repository, Plugin
+from MiAZ.frontend.desktop.widgets.window import MiAZCustomWindow
 from MiAZ.backend.config import MiAZConfigRepositories
 from MiAZ.backend.pluginsystem import MiAZPluginType
-
 
 Configview = {}
 Configview['Country'] = MiAZCountries
@@ -46,11 +39,13 @@ Configview['Project'] = MiAZProjects
 Configview['Plugin'] = MiAZUserPlugins
 # ~ Configview['Date'] = Gtk.Calendar
 
-class MiAZAppSettings(CustomWindow):
+
+class MiAZAppSettings(MiAZCustomWindow):
     __gtype_name__ = 'MiAZAppSettings'
 
     def __init__(self, app, **kwargs):
         self.app = app
+        self.log = get_logger('MiAZ.AppSettings')
         self.name = 'app-settings'
         self.title = 'Application settings'
         super().__init__(app, self.name, self.title, **kwargs)
@@ -109,7 +104,6 @@ class MiAZAppSettings(CustomWindow):
 
     def _on_use_repo(self, *args):
         repo_id = self.dd_repo.get_selected_item().id
-        repo_dir = self.dd_repo.get_selected_item().title
         self.config['App'].set('current', repo_id)
         valid = self.app.check_repository()
         if valid:
@@ -270,7 +264,7 @@ class MiAZAppSettings(CustomWindow):
         deleted = plugin_manager.remove_plugin(plugin)
         if deleted:
             self.log.debug("Plugin '%s' deleted", module.id)
-            self.app.statusbar_message("Plugin '%s' deleted" % module.id)
+            self.actions.statusbar_message("Plugin '%s' deleted" % module.id)
             self.update_user_plugins()
 
     def get_plugin_status(self, name: str) -> bool:
@@ -295,17 +289,18 @@ class MiAZAppSettings(CustomWindow):
         self.config['App'].set('plugins', plugins)
 
 
-class MiAZRepoSettings(CustomWindow):
+class MiAZRepoSettings(MiAZCustomWindow):
     __gtype_name__ = 'MiAZRepoSettings'
 
     def __init__(self, app, **kwargs):
+        self.app = app
+        self.log = get_logger('MiAZ.RepoSettings')
         self.name = 'repo-settings'
         self.title = 'Repository settings'
         super().__init__(app, self.name, self.title, **kwargs)
 
     def _build_ui(self):
         self.set_default_size(1024, 728)
-        headerbar = self.app.get_widget('window-%s-headerbar' % self.name)
         self.notebook = Gtk.Notebook()
         self.notebook.set_show_border(False)
         self.notebook.set_tab_pos(Gtk.PositionType.TOP)

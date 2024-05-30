@@ -9,15 +9,9 @@
 
 import os
 
-import pkg_resources
-
-import gi
-gi.require_version('GdkPixbuf', '2.0')
-gi.require_version('Gtk', '4.0')
 from gi.repository import Gtk
 from gi.repository import Gio
 from gi.repository import GObject
-from gi.repository import Gdk
 from gi.repository.GdkPixbuf import Pixbuf
 
 from MiAZ.backend.log import get_logger
@@ -44,7 +38,7 @@ class MiAZIconManager(GObject.GObject):
         found = 'unknown'
         for icon_name in icon_list:
             if self.theme.has_icon(icon_name):
-                found = icon_name;
+                found = icon_name
                 break
         return found
 
@@ -71,7 +65,7 @@ class MiAZIconManager(GObject.GObject):
     def get_mimetype_icon(self, mimetype: str) -> Gtk.Image:
         try:
             gicon = self.gicondict[mimetype]
-        except:
+        except Exception:
             gicon = Gio.content_type_get_icon(mimetype)
             self.gicondict[mimetype] = gicon
         return gicon
@@ -80,7 +74,7 @@ class MiAZIconManager(GObject.GObject):
         ENV = self.app.get_env()
         try:
             paintable = self.paintable[code]
-        except:
+        except Exception:
             iconpath = os.path.join(ENV['GPATH']['FLAGS'], "%s.svg" % code)
             if not os.path.exists(iconpath):
                 iconpath = os.path.join(ENV['GPATH']['FLAGS'], "__.svg")
@@ -89,3 +83,8 @@ class MiAZIconManager(GObject.GObject):
             paintable = image.get_paintable()
             self.paintable[code] = paintable
         return paintable
+
+    def get_gicon(self, name:str):
+        gicon = Gio.Icon.new_for_string(name)
+        self.log.debug(gicon)
+        return gicon

@@ -87,7 +87,7 @@ class MiAZSelector(Gtk.Box):
         statusbar.append(self.sbicon)
         statusbar.append(self.sbtext)
         # ~ self.append(statusbar)
-        self.statusbar_message('', '')
+        # ~ self.actions.statusbar_message('', '')
 
         # Available
         self.frmViewAv = Gtk.Frame()
@@ -112,15 +112,15 @@ class MiAZSelector(Gtk.Box):
         boxRight.append(self.frmViewSl)
         self._setup_view_finish()
 
-    def statusbar_message(self, dtype: str = 'warning', message: str = ''):
-        icon_name = {}
-        icon_name["info"] = "dialog-information-symbolic"
-        icon_name["warning"] = "dialog-warning-symbolic"
-        icon_name["error"] = "dialog-error-symbolic"
-        icon_name["question"] = "dialog-question-symbolic"
-        icon_name[""] = None
-        self.sbicon.set_from_icon_name(icon_name[dtype])
-        self.sbtext.set_markup(message)
+    # ~ def statusbar_message(self, dtype: str = 'warning', message: str = ''):
+        # ~ icon_name = {}
+        # ~ icon_name["info"] = "dialog-information-symbolic"
+        # ~ icon_name["warning"] = "dialog-warning-symbolic"
+        # ~ icon_name["error"] = "dialog-error-symbolic"
+        # ~ icon_name["question"] = "dialog-question-symbolic"
+        # ~ icon_name[""] = None
+        # ~ self.sbicon.set_from_icon_name(icon_name[dtype])
+        # ~ self.sbtext.set_markup(message)
 
     def add_columnview_available(self, columnview):
         columnview.set_filter(self._do_filter_view)
@@ -183,7 +183,7 @@ class MiAZSelector(Gtk.Box):
                 # ~ title = "%s %s not removed" % (self.config.model.__title__, item_used.id)
                 dtype = "warning"
                 text = _('%s %s is still being used by some docs') % (self.config.model.__title__, item_used.id)
-                self.statusbar_message(dtype, text)
+                # ~ self.statusbar_message(dtype, text)
                 window = self.app.get_widget('window')
                 dtype = 'error'
                 title = "Item can't be removed"

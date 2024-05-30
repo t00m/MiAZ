@@ -10,12 +10,8 @@
 
 import os
 from datetime import datetime
-from datetime import timedelta
 from gettext import gettext as _
 
-import gi
-gi.require_version('Gtk', '4.0')
-from gi.repository import Gdk
 from gi.repository import Gio
 from gi.repository import Gtk
 from gi.repository import GLib
@@ -129,8 +125,8 @@ class MiAZWorkspace(Gtk.Box):
         lprojects = projects.assigned_to(source)
         self.log.debug("%s found in these projects: %s", source, ', '.join(lprojects))
         for project in lprojects:
-            srvprj.remove(project, source)
-            srvprj.add(project, target)
+            projects.remove(project, source)
+            projects.add(project, target)
             self.log.debug("P[%s]: %s -> %s", project, source, target)
 
     def _on_filename_deleted(self, util, target):
@@ -144,11 +140,12 @@ class MiAZWorkspace(Gtk.Box):
 
     def _setup_toolbar_filters(self):
         dropdowns = self.app.get_widget('ws-dropdowns')
-        widget = self.factory.create_box_horizontal(hexpand=True, vexpand=False)
+        widget = self.factory.create_box_vertical(spacing=0, margin=0, hexpand=True, vexpand=False)
         body = self.factory.create_box_horizontal(margin=3, spacing=6, hexpand=True, vexpand=True)
         body.set_homogeneous(True)
         body.set_margin_top(margin=6)
         widget.append(body)
+        widget.append(Gtk.Separator.new(orientation=Gtk.Orientation.HORIZONTAL))
 
         ### Projects dropdown
         i_type = Project.__gtype_name__
@@ -229,6 +226,7 @@ class MiAZWorkspace(Gtk.Box):
     def _setup_toolbar_top(self):
         hdb_left = self.app.get_widget('headerbar-left-box')
         hdb_right = self.app.get_widget('headerbar-right-box')
+        hdb_right.get_style_context().add_class(class_name='linked')
 
         ## Show/Hide Filters
         self.tgbFilters = self.factory.create_button_toggle('miaz-filters2', callback=self._on_filters_toggled)
@@ -258,53 +256,20 @@ class MiAZWorkspace(Gtk.Box):
         dd_date.connect("notify::selected-item", self.update)
         hdb_left.append(dd_date)
 
-        ### Projects dropdown
-        # ~ i_type = Project.__gtype_name__
-        # ~ dd_prj = self.factory.create_dropdown_generic(item_type=Project)
-        # ~ dd_prj.set_size_request(250, -1)
-        # ~ dropdowns[i_type] = dd_prj
-        # ~ self.actions.dropdown_populate(self.config[i_type], dd_prj, Project, any_value=True, none_value=True)
-        # ~ dd_prj.connect("notify::selected-item", self._on_filter_selected)
-        # ~ dd_prj.connect("notify::selected-item", self._on_project_selected)
-        # ~ dd_prj.set_hexpand(True)
-        # ~ self.config[i_type].connect('used-updated', self.update_dropdown_filter, Project)
-        # ~ hdb_left.append(dd_prj)
-        # ~ self.app.set_widget('ws-dropdowns', dropdowns)
-
-        # Menu Single and Multiple
+        # Workspace Menu
+        hbox = self.factory.create_box_horizontal(margin=0, spacing=0, hexpand=False)
         popovermenu = self._setup_menu_selection()
         label = Gtk.Label()
         self.btnDocsSel = Gtk.MenuButton()
-        # ~ self.btnDocsSel.get_style_context().add_class(class_name='flat')
-        # ~ self.btnDocsSel.set_has_frame(False)
-        # ~ self.btnDocsSel.set_margin_start(24)
-        # ~ self.btnDocsSel.set_margin_end(24)
+        self.btnDocsSel.set_always_show_arrow(True)
         self.btnDocsSel.set_child(label)
         self.popDocsSel = Gtk.PopoverMenu()
         self.popDocsSel.set_menu_model(popovermenu)
         self.btnDocsSel.set_popover(popover=self.popDocsSel)
         self.btnDocsSel.set_sensitive(True)
-        # ~ headerbar = self.app.get_widget('headerbar')
-        hdb_right.append(self.btnDocsSel)
-
-        ## Import button
-        widgets = []
-        self.app.add_widget('miaz-import-widgets', widgets)
-        btnImportFiles = self.factory.create_button('miaz-import-document', callback=self.actions.import_file)
-        rowImportDoc = self.factory.create_actionrow(title=_('Import document'), subtitle=_('Import one or more documents'), suffix=btnImportFiles)
-        widgets.append(rowImportDoc)
-        btnImportDir = self.factory.create_button('miaz-import-folder', callback=self.actions.import_directory)
-        rowImportDir = self.factory.create_actionrow(title=_('Import directory'), subtitle=_('Import all documents from a directory'), suffix=btnImportDir)
-        widgets.append(rowImportDir)
-        # FIXME: Not implemented yet
-        # ~ btnImportConf = self.factory.create_button('miaz-import-config', callback=self.actions.import_config)
-        # ~ rowImportConf = self.factory.create_actionrow(title='Import config', subtitle='Import configuration', suffix=btnImportConf)
-        # ~ widgets.append(rowImportConf)
-        button = self.factory.create_button_popover(icon_name='miaz-list-add', title='', widgets=widgets)
-        self.app.add_widget('miaz-import-button-popover', button)
-        hdb_right.append(button)
-
-
+        hbox.append(self.btnDocsSel)
+        headerbar = self.app.get_widget('headerbar')
+        headerbar.set_title_widget(hbox)
 
     def _update_dropdown_date(self):
         dropdowns = self.app.get_widget('ws-dropdowns')
@@ -428,10 +393,21 @@ class MiAZWorkspace(Gtk.Box):
         menu_selection = self.app.add_widget('workspace-menu-selection', Gio.Menu.new())
         section_common_in = self.app.add_widget('workspace-menu-selection-section-common-in', Gio.Menu.new())
         section_common_out = self.app.add_widget('workspace-menu-selection-section-common-out', Gio.Menu.new())
+        section_common_app = self.app.add_widget('workspace-menu-selection-section-app', Gio.Menu.new())
         section_danger = self.app.add_widget('workspace-menu-selection-section-danger', Gio.Menu.new())
         menu_selection.append_section(None, section_common_in)
         menu_selection.append_section(None, section_common_out)
+        menu_selection.append_section(None, section_common_app)
         menu_selection.append_section(None, section_danger)
+
+        ## Add
+        submenu_add = Gio.Menu.new()
+        menu_add = Gio.MenuItem.new_submenu(
+            label = _('Add new...'),
+            submenu = submenu_add,
+        )
+        section_common_in.append_item(menu_add)
+        self.app.add_widget('workspace-menu-in-add', submenu_add)
 
         ## Export
         submenu_export = Gio.Menu.new()

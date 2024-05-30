@@ -10,7 +10,6 @@
 
 from gettext import gettext as _
 
-import gi
 from gi.repository import Gtk
 
 
@@ -42,7 +41,7 @@ class MiAZWelcome(Gtk.Box):
         button = self.factory.create_button(title='Manage repositories')
         button.set_valign(Gtk.Align.CENTER)
         button.set_halign(Gtk.Align.CENTER)
-        button.connect('clicked', self.app.show_app_settings)
+        # ~ button.connect('clicked', self.app.show_app_settings)
         vbox.append(button)
 
 
