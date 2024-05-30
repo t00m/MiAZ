@@ -89,3 +89,8 @@ class MiAZIconManager(GObject.GObject):
             paintable = image.get_paintable()
             self.paintable[code] = paintable
         return paintable
+
+    def get_gicon(self, name:str):
+        gicon = Gio.Icon.new_for_string(name)
+        self.log.debug(gicon)
+        return gicon
