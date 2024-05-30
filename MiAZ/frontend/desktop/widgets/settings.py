@@ -14,6 +14,8 @@ from gettext import gettext as _
 from gi.repository import Gtk
 
 from MiAZ.backend.log import get_logger
+from MiAZ.backend.models import Repository, Plugin, Project
+from MiAZ.backend.models import Country, Group, Purpose, SentBy, SentTo
 from MiAZ.frontend.desktop.widgets.configview import MiAZGroups
 from MiAZ.frontend.desktop.widgets.configview import MiAZPurposes
 from MiAZ.frontend.desktop.widgets.configview import MiAZCountries

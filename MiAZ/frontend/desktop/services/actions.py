@@ -262,7 +262,7 @@ class MiAZActions(GObject.GObject):
 
     def statusbar_message(self, message: str):
         """Statusbar message"""
-        statusbar = self.get_widget('statusbar')
+        statusbar = self.app.get_widget('statusbar')
         statusbar.message(message)
 
     def exit_app(self, *args):
