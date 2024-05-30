@@ -39,16 +39,19 @@ class MiAZMenuRepo(GObject.GObject, Peas.Activatable):
 
     def repo_settings_menu(self, *args):
         # Add menutitem to menu for single items
-        if self.app.get_widget('workspace-menu-repo-section-in-menuitem-settings') is None:
-            section_common_in = self.app.get_widget('workspace-menu-repo-section-in')
-            menuitem = self.factory.create_menuitem(name='repo_settings', label=_('Repository settings'), callback=self.show_repo_settings, data=None, shortcuts=[])
-            self.app.add_widget('workspace-menu-repo-section-in-menuitem-settings', menuitem)
-            section_common_in.append_item(menuitem)
+        try:
+            if self.app.get_widget('workspace-menu-repo-section-in-menuitem-settings') is None:
+                section_common_in = self.app.get_widget('workspace-menu-repo-section-in')
+                menuitem = self.factory.create_menuitem(name='repo_settings', label=_('Repository settings'), callback=self.show_repo_settings, data=None, shortcuts=[])
+                self.app.add_widget('workspace-menu-repo-section-in-menuitem-settings', menuitem)
+                section_common_in.append_item(menuitem)
 
-            # ~ submenu_export_multi = self.app.get_widget('workspace-menu-selection-submenu-export')
-            # ~ menuitem = self.factory.create_menuitem('export-to-csv', '...to CSV', self.export, None, [])
-            # ~ self.app.add_widget('workspace-menu-multiple-menu-export-item-export2csv', menuitem)
-            # ~ submenu_export_multi.append_item(menuitem)
+                # ~ submenu_export_multi = self.app.get_widget('workspace-menu-selection-submenu-export')
+                # ~ menuitem = self.factory.create_menuitem('export-to-csv', '...to CSV', self.export, None, [])
+                # ~ self.app.add_widget('workspace-menu-multiple-menu-export-item-export2csv', menuitem)
+                # ~ submenu_export_multi.append_item(menuitem)
+        except Exception as error:
+            self.log.error(error)
 
     def show_repo_settings(self, *args):
         self.app.show_stack_page_by_name('settings_repo')
