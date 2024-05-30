@@ -26,6 +26,7 @@ from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewWorkspace
 from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewMassRename
 from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewMassDelete
 from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewMassProject
+from MiAZ.frontend.desktop.widgets.settings import MiAZAppSettings
 
 # Conversion Item type to Field Number
 Field = {}
@@ -216,3 +217,55 @@ class MiAZActions(GObject.GObject):
         selector.update()
         dialog = self.factory.create_dialog(self.app.win, _('Manage %s') % config_for, box, 800, 600)
         dialog.show()
+
+    def show_app_settings(self, *args):
+        window = self.app.get_widget('window')
+        settings = self.app.get_widget('settings-app')
+        if settings is None:
+            settings = self.app.add_widget('settings-app', MiAZAppSettings(self.app))
+        settings.set_transient_for(window)
+        settings.set_modal(True)
+        settings.present()
+
+    def show_app_about(self, *args):
+        window = self.app.get_widget('window')
+        ENV = self.app.get_env()
+        about = Gtk.AboutDialog()
+        about.set_transient_for=window
+        about.set_modal(True)
+        about.set_logo_icon_name(ENV['APP']['ID'])
+        about.set_program_name(ENV['APP']['name'])
+        about.set_version(ENV['APP']['VERSION'])
+        about.set_authors(ENV['APP']['documenters'])
+        about.set_license_type(Gtk.License.GPL_3_0_ONLY)
+        about.set_copyright('© 2024 %s' % ENV['APP']['author'])
+        about.set_website('https://github.com/t00m/MiAZ')
+        about.set_website_label('Github MiAZ repository')
+        about.set_comments(ENV['APP']['description'])
+        about.present()
+
+    def get_stack_page_by_name(self, name: str) -> Gtk.Stack:
+        stack = self.app.get_widget('stack')
+        widget = stack.get_child_by_name(name)
+        return stack.get_page(widget)
+
+    def get_stack_page_widget_by_name(self, name:str) -> Gtk.Widget:
+        stack = self.app.get_widget('stack')
+        return stack.get_child_by_name(name)
+
+    def show_stack_page_by_name(self, name: str = 'workspace'):
+        stack = self.app.get_widget('stack')
+        stack.set_visible_child_name(name)
+
+    def noop(self, *args):
+        pass
+
+    def statusbar_message(self, message: str):
+        """Statusbar message"""
+        statusbar = self.get_widget('statusbar')
+        statusbar.message(message)
+
+    def exit_app(self, *args):
+        self.log.debug('Closing MiAZ')
+        self.app.emit("exit-application")
+        self.app.quit()

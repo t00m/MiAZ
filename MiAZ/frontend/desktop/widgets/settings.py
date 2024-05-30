@@ -28,7 +28,7 @@ from MiAZ.frontend.desktop.widgets.configview import MiAZRepositories
 from MiAZ.frontend.desktop.widgets.configview import MiAZUserPlugins
 from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewPlugin
 from MiAZ.frontend.desktop.widgets.dialogs import CustomDialog
-from MiAZ.frontend.desktop.widgets.window import CustomWindow
+from MiAZ.frontend.desktop.widgets.window import MiAZCustomWindow
 from MiAZ.backend.models import MiAZItem, File, Group, Person, Country
 from MiAZ.backend.models import Purpose, Concept, SentBy, SentTo, Date
 from MiAZ.backend.models import Extension, Project, Repository, Plugin
@@ -46,7 +46,7 @@ Configview['Project'] = MiAZProjects
 Configview['Plugin'] = MiAZUserPlugins
 # ~ Configview['Date'] = Gtk.Calendar
 
-class MiAZAppSettings(CustomWindow):
+class MiAZAppSettings(MiAZCustomWindow):
     __gtype_name__ = 'MiAZAppSettings'
 
     def __init__(self, app, **kwargs):
@@ -270,7 +270,7 @@ class MiAZAppSettings(CustomWindow):
         deleted = plugin_manager.remove_plugin(plugin)
         if deleted:
             self.log.debug("Plugin '%s' deleted", module.id)
-            self.app.statusbar_message("Plugin '%s' deleted" % module.id)
+            self.actions.statusbar_message("Plugin '%s' deleted" % module.id)
             self.update_user_plugins()
 
     def get_plugin_status(self, name: str) -> bool:
@@ -295,7 +295,7 @@ class MiAZAppSettings(CustomWindow):
         self.config['App'].set('plugins', plugins)
 
 
-class MiAZRepoSettings(CustomWindow):
+class MiAZRepoSettings(MiAZCustomWindow):
     __gtype_name__ = 'MiAZRepoSettings'
 
     def __init__(self, app, **kwargs):

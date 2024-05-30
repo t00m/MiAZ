@@ -275,10 +275,6 @@ class MiAZWorkspace(Gtk.Box):
         headerbar = self.app.get_widget('headerbar')
         headerbar.set_title_widget(hbox)
 
-
-
-
-
     def _update_dropdown_date(self):
         dropdowns = self.app.get_widget('ws-dropdowns')
         dd_date = dropdowns[Date.__gtype_name__]
@@ -401,9 +397,11 @@ class MiAZWorkspace(Gtk.Box):
         menu_selection = self.app.add_widget('workspace-menu-selection', Gio.Menu.new())
         section_common_in = self.app.add_widget('workspace-menu-selection-section-common-in', Gio.Menu.new())
         section_common_out = self.app.add_widget('workspace-menu-selection-section-common-out', Gio.Menu.new())
+        section_common_app = self.app.add_widget('workspace-menu-selection-section-app', Gio.Menu.new())
         section_danger = self.app.add_widget('workspace-menu-selection-section-danger', Gio.Menu.new())
         menu_selection.append_section(None, section_common_in)
         menu_selection.append_section(None, section_common_out)
+        menu_selection.append_section(None, section_common_app)
         menu_selection.append_section(None, section_danger)
 
         ## Add
