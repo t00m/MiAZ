@@ -10,12 +10,8 @@
 
 import os
 from datetime import datetime
-from datetime import timedelta
 from gettext import gettext as _
 
-import gi
-gi.require_version('Gtk', '4.0')
-from gi.repository import Gdk
 from gi.repository import Gio
 from gi.repository import Gtk
 from gi.repository import GLib
@@ -129,8 +125,8 @@ class MiAZWorkspace(Gtk.Box):
         lprojects = projects.assigned_to(source)
         self.log.debug("%s found in these projects: %s", source, ', '.join(lprojects))
         for project in lprojects:
-            srvprj.remove(project, source)
-            srvprj.add(project, target)
+            projects.remove(project, source)
+            projects.add(project, target)
             self.log.debug("P[%s]: %s -> %s", project, source, target)
 
     def _on_filename_deleted(self, util, target):

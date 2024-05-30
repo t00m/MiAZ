@@ -10,7 +10,6 @@
 
 from gettext import gettext as _
 
-import gi
 from gi.repository import Gtk
 
 

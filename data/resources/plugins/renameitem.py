@@ -8,22 +8,10 @@
 # Description: Plugin for rename documents
 """
 
-from datetime import datetime
-from gettext import gettext as _
-
-from gi.repository import GLib
 from gi.repository import GObject
-from gi.repository import Gtk
 from gi.repository import Peas
 
 from MiAZ.backend.log import get_logger
-from MiAZ.backend.models import MiAZItem, File, Group, Person, Country, Purpose, Concept, SentBy, SentTo, Date, Extension, Project, Repository
-from MiAZ.frontend.desktop.widgets.configview import MiAZCountries, MiAZGroups, MiAZPeople, MiAZPurposes, MiAZPeopleSentBy, MiAZPeopleSentTo, MiAZProjects
-from MiAZ.frontend.desktop.widgets.rename import MiAZRenameDialog
-from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewWorkspace
-from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewMassRename
-from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewMassDelete
-from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewMassProject
 
 
 class MiAZToolbarRenameItemPlugin(GObject.GObject, Peas.Activatable):

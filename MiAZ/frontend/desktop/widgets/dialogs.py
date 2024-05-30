@@ -8,16 +8,8 @@
 # Description: Custom dialogs
 """
 
-import os
-import json
-from gettext import gettext as _
-
-import gi
-gi.require_version(namespace='Gtk', version='4.0')
 from gi.repository import Gio
 from gi.repository import Gtk
-from gi.repository import Pango
-from gi.repository.GdkPixbuf import Pixbuf
 
 from MiAZ.backend.log import get_logger
 

@@ -8,7 +8,6 @@
 # Description: Plugin for exporting items to CSV
 """
 
-import tempfile
 from gettext import gettext as _
 
 from gi.repository import GObject
