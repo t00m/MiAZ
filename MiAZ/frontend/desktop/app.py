@@ -172,7 +172,7 @@ class MiAZApp(Gtk.Application):
                 valid = False
         except KeyError as error:
             self.log.debug("No repository active in the configuration")
-            self.show_stack_page_by_name('welcome')
+            self.actions.show_stack_page_by_name('welcome')
             valid = False
         window = self.get_widget('window')
         if window is not None:
