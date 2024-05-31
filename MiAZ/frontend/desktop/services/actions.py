@@ -260,10 +260,10 @@ class MiAZActions(GObject.GObject):
     def noop(self, *args):
         pass
 
-    def statusbar_message(self, message: str):
-        """Statusbar message"""
-        statusbar = self.app.get_widget('statusbar')
-        statusbar.message(message)
+    # ~ def statusbar_message(self, message: str):
+        # ~ """Statusbar message"""
+        # ~ statusbar = self.app.get_widget('statusbar')
+        # ~ statusbar.message(message)
 
     def exit_app(self, *args):
         self.log.debug('Closing MiAZ')

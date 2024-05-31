@@ -87,7 +87,7 @@ class MiAZApp(Gtk.Application):
 
     def _update_repo_settings(self, *args):
         repo_active = self.conf['App'].get('current')
-        self.actions.statusbar_message("Switched to repository '%s'" % repo_active)
+        # ~ self.actions.statusbar_message("Switched to repository '%s'" % repo_active)
 
     def _finish_configuration(self, *args):
         self.log.debug("Finish loading app")
@@ -167,10 +167,6 @@ class MiAZApp(Gtk.Application):
                     self._setup_page_rename()
                 self.actions.show_stack_page_by_name('workspace')
                 valid = True
-                statusbar = self.get_widget('statusbar')
-                name = self.conf['App'].get('current')
-                statusbar.repo(name)
-                statusbar.message("Repository loaded")
                 self.emit('start-application-completed')
             else:
                 valid = False
@@ -243,6 +239,7 @@ class MiAZApp(Gtk.Application):
             return widget
         else:
             self.log.error("A widget with name '%s' doesn't exists", name)
+            return None
 
     def get_widget(self, name):
         try:
