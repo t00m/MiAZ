@@ -8,23 +8,11 @@
 # Description: Custom widgets widely used
 """
 
-import os
-
-import gi
-gi.require_version('GdkPixbuf', '2.0')
-gi.require_version('Gtk', '4.0')
-
 from gi.repository import Gtk
-from gi.repository import Gdk
 from gi.repository import Gio
-from gi.repository import GLib
-from gi.repository import GObject
 from gi.repository import Pango
-from gi.repository.GdkPixbuf import Pixbuf
 
 from MiAZ.backend.log import get_logger
-from MiAZ.backend.models import Country
-from MiAZ.frontend.desktop.services.icm import MiAZIconManager
 from MiAZ.frontend.desktop.widgets.button import MiAZPopoverButton
 from MiAZ.frontend.desktop.widgets.filechooser import MiAZFileChooserDialog
 
