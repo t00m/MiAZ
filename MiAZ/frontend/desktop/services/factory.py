@@ -225,7 +225,7 @@ class MiAZFactory:
             box = list_item.get_child()
             label = box.get_last_child()
             item = list_item.get_item()
-            label.set_markup('<small>%s</small>' % item.title)
+            label.set_markup('%s' % item.title)
 
         def _on_search_changed(search_entry, item_filter):
             text = search_entry.get_text()
