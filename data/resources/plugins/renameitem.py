@@ -47,7 +47,7 @@ class MiAZToolbarRenameItemPlugin(GObject.GObject, Peas.Activatable):
     def add_toolbar_button(self, *args):
         if self.app.get_widget('toolbar-top-button-rename') is None:
             toolbar_top_right = self.app.get_widget('headerbar-right-box')
-            button = self.factory.create_button(icon_name='miaz-res-manage', callback=self.callback)
+            button = self.factory.create_button(icon_name='com.github.t00m.MiAZ-text-editor-symbolic', callback=self.callback)
             # ~ button.get_style_context().add_class(class_name='flat')
             button.set_visible(False)
             self.app.add_widget('toolbar-top-button-rename', button)
