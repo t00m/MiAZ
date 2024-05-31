@@ -216,24 +216,7 @@ class MiAZWorkspace(Gtk.Box):
             self.selected_items.append(item)
         label = self.btnDocsSel.get_child()
         docs = self.util.get_files(self.repository.docs)
-        # ~ self.log.debug(', '.join([item.id for item in self.selected_items]))
         label.set_markup("<small>%d</small> / %d / <big>%d</big>" % (len(self.selected_items), len(model), len(docs)))
-        # ~ self.app.statusbar_message("Selected %d of %d documents in current view (total documents: %d)" % (len(self.selected_items), len(model), len(docs)))
-        # ~ if len(self.selected_items) == 1:
-            # ~ menu = self.app.get_widget('workspace-menu-single')
-            # ~ self.popDocsSel.set_menu_model(menu)
-        # ~ else:
-            # ~ menu = self.app.get_widget('workspace-menu-selection')
-            # ~ self.popDocsSel.set_menu_model(menu)
-
-    def _setup_searchbar(self):
-        # ~ window = self.app.get_widget('window')
-        # ~ mainbox = self.app.get_widget('window-mainbox')
-        # ~ search = self.app.add_widget('searchbar', SearchBar(window))
-        # ~ self.append(mainbox)
-        # ~ searchbar = self.app.get_widget('searchbar')
-        # ~ searchbar.set_callback(self._on_filter_selected)
-        pass
 
     def _setup_toolbar_top(self):
         hdb_left = self.app.get_widget('headerbar-left-box')
@@ -363,7 +346,6 @@ class MiAZWorkspace(Gtk.Box):
         self.toolbar_filters = self._setup_toolbar_filters()
         self.app.add_widget('workspace-toolbar-filters', self.toolbar_filters)
         self._setup_toolbar_top()
-        self._setup_searchbar()
         frmView = self._setup_columnview()
         head.append(self.toolbar_filters)
         body.append(frmView)

@@ -216,7 +216,6 @@ class MiAZFactory:
             label.set_markup('%s' % item.title)
 
         def _on_search_changed(search_entry, item_filter):
-            text = search_entry.get_text()
             item_filter.changed(Gtk.FilterChange.DIFFERENT)
 
         def _do_filter(item, filter_list_model, search_entry):
