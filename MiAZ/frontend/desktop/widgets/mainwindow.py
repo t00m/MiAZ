@@ -120,3 +120,6 @@ class MiAZMainWindow(Gtk.Box):
         # ~ self.log.debug(keyname)
         if keyname == 'Escape':
             self.actions.show_stack_page_by_name('workspace')
+        elif keyname == 'F3':
+            self.actions.toggle_workspace_filters()
+

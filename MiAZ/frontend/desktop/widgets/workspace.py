@@ -199,8 +199,9 @@ class MiAZWorkspace(Gtk.Box):
         self.actions.dropdown_populate(config, dropdowns[i_type], item_type)
         # ~ self.log.debug("Dropdown %s updated", i_type)
 
-    def _on_filters_toggled(self, button, data=None):
-        active = button.get_active()
+    def _on_filters_toggled(self, *args):
+        btnShowFilters = self.app.get_widget('workspace-togglebutton-filters')
+        active = btnShowFilters.get_active()
         self.toolbar_filters.set_visible(active)
 
     def _on_selection_changed(self, selection, position, n_items):
@@ -238,12 +239,13 @@ class MiAZWorkspace(Gtk.Box):
         hdb_right.get_style_context().add_class(class_name='linked')
 
         ## Show/Hide Filters
-        self.tgbFilters = self.factory.create_button_toggle('miaz-filters2', callback=self._on_filters_toggled)
-        self.tgbFilters.set_active(False)
-        self.tgbFilters.set_hexpand(False)
-        self.tgbFilters.get_style_context().remove_class(class_name='flat')
-        self.tgbFilters.set_valign(Gtk.Align.CENTER)
-        hdb_left.append(self.tgbFilters)
+        tgbFilters = self.factory.create_button_toggle('miaz-filters2', callback=self._on_filters_toggled)
+        self.app.add_widget('workspace-togglebutton-filters', tgbFilters)
+        tgbFilters.set_active(False)
+        tgbFilters.set_hexpand(False)
+        tgbFilters.get_style_context().remove_class(class_name='flat')
+        tgbFilters.set_valign(Gtk.Align.CENTER)
+        hdb_left.append(tgbFilters)
 
         ## Dropdowns
         dropdowns = self.app.get_widget('ws-dropdowns')
@@ -385,7 +387,7 @@ class MiAZWorkspace(Gtk.Box):
 
         # Trigger events
         self._do_connect_filter_signals()
-        self._on_filters_toggled(self.tgbFilters)
+        self._on_filters_toggled()
 
         return widget
 
@@ -727,10 +729,3 @@ class MiAZWorkspace(Gtk.Box):
         selection = self.view.get_selection()
         selection.unselect_all()
 
-    def display_dashboard(self, *args):
-        self.view.column_subtitle.set_title(_('Concept'))
-        self.view.column_subtitle.set_expand(True)
-        self.column_sentto.set_expand(False)
-        self.column_sentby.set_expand(False)
-        self.view.refilter()
-        self.tgbFilters.set_visible(True)
