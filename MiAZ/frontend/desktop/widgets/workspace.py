@@ -144,6 +144,8 @@ class MiAZWorkspace(Gtk.Box):
         body = self.factory.create_box_horizontal(margin=3, spacing=6, hexpand=True, vexpand=True)
         body.set_homogeneous(True)
         body.set_margin_top(margin=6)
+        body.set_margin_start(margin=12)
+        body.set_margin_end(margin=12)
         widget.append(body)
         widget.append(Gtk.Separator.new(orientation=Gtk.Orientation.HORIZONTAL))
 
@@ -199,8 +201,9 @@ class MiAZWorkspace(Gtk.Box):
         self.actions.dropdown_populate(config, dropdowns[i_type], item_type)
         # ~ self.log.debug("Dropdown %s updated", i_type)
 
-    def _on_filters_toggled(self, button, data=None):
-        active = button.get_active()
+    def _on_filters_toggled(self, *args):
+        toggleButtonFilters = self.app.get_widget('workspace-togglebutton-filters')
+        active = toggleButtonFilters.get_active()
         self.toolbar_filters.set_visible(active)
 
     def _on_selection_changed(self, selection, position, n_items):
@@ -213,15 +216,7 @@ class MiAZWorkspace(Gtk.Box):
             self.selected_items.append(item)
         label = self.btnDocsSel.get_child()
         docs = self.util.get_files(self.repository.docs)
-        # ~ self.log.debug(', '.join([item.id for item in self.selected_items]))
         label.set_markup("<small>%d</small> / %d / <big>%d</big>" % (len(self.selected_items), len(model), len(docs)))
-        # ~ self.app.statusbar_message("Selected %d of %d documents in current view (total documents: %d)" % (len(self.selected_items), len(model), len(docs)))
-        # ~ if len(self.selected_items) == 1:
-            # ~ menu = self.app.get_widget('workspace-menu-single')
-            # ~ self.popDocsSel.set_menu_model(menu)
-        # ~ else:
-            # ~ menu = self.app.get_widget('workspace-menu-selection')
-            # ~ self.popDocsSel.set_menu_model(menu)
 
     def _setup_toolbar_top(self):
         hdb_left = self.app.get_widget('headerbar-left-box')
@@ -229,18 +224,13 @@ class MiAZWorkspace(Gtk.Box):
         hdb_right.get_style_context().add_class(class_name='linked')
 
         ## Show/Hide Filters
-        self.tgbFilters = self.factory.create_button_toggle('miaz-filters2', callback=self._on_filters_toggled)
-        self.tgbFilters.set_active(False)
-        self.tgbFilters.set_hexpand(False)
-        self.tgbFilters.get_style_context().remove_class(class_name='flat')
-        self.tgbFilters.set_valign(Gtk.Align.CENTER)
-        hdb_left.append(self.tgbFilters)
-
-        ## Searchbox
-        self.ent_sb = Gtk.SearchEntry(placeholder_text=_('Type here'))
-        self.ent_sb.set_hexpand(False)
-        self.ent_sb.get_style_context().add_class(class_name='caption')
-        hdb_left.append(self.ent_sb)
+        tgbFilters = self.factory.create_button_toggle('miaz-filters2', callback=self._on_filters_toggled)
+        self.app.add_widget('workspace-togglebutton-filters', tgbFilters)
+        tgbFilters.set_active(False)
+        tgbFilters.set_hexpand(False)
+        tgbFilters.get_style_context().remove_class(class_name='flat')
+        tgbFilters.set_valign(Gtk.Align.CENTER)
+        hdb_left.append(tgbFilters)
 
         ## Dropdowns
         dropdowns = self.app.get_widget('ws-dropdowns')
@@ -355,12 +345,8 @@ class MiAZWorkspace(Gtk.Box):
 
         self.toolbar_filters = self._setup_toolbar_filters()
         self.app.add_widget('workspace-toolbar-filters', self.toolbar_filters)
-        # ~ toolbar_top = self.app.add_widget('workspace-toolbar-top', self._setup_toolbar_top())
         self._setup_toolbar_top()
-        # ~ headerbar = self.app.get_widget('headerbar')
-        # ~ headerbar.set_title_widget(toolbar_top)
         frmView = self._setup_columnview()
-        # ~ head.append(toolbar_top)
         head.append(self.toolbar_filters)
         body.append(frmView)
 
@@ -369,7 +355,6 @@ class MiAZWorkspace(Gtk.Box):
         self.view.column_subtitle.set_expand(True)
         self.view.column_group.set_visible(True)
         self.view.column_purpose.set_visible(True)
-        # ~ self.view.column_flag.set_visible(True)
         self.view.column_sentby.set_visible(True)
         self.view.column_sentto.set_visible(True)
         self.view.column_sentto.set_expand(False)
@@ -381,7 +366,7 @@ class MiAZWorkspace(Gtk.Box):
 
         # Trigger events
         self._do_connect_filter_signals()
-        self._on_filters_toggled(self.tgbFilters)
+        self._on_filters_toggled()
 
         return widget
 
@@ -573,7 +558,8 @@ class MiAZWorkspace(Gtk.Box):
         self.selected_items = []
 
     def _do_eval_cond_matches_freetext(self, item):
-        left = self.ent_sb.get_text()
+        entry = self.app.get_widget('searchbar_entry')
+        left = entry.get_text()
         right = item.id
         if left.upper() in right.upper():
             return True
@@ -685,7 +671,8 @@ class MiAZWorkspace(Gtk.Box):
         return show_item
 
     def _do_connect_filter_signals(self):
-        self.ent_sb.connect('changed', self._on_filter_selected)
+        searchbar = self.app.get_widget('searchbar')
+        searchbar.set_callback(self._on_filter_selected)
         dropdowns = self.app.get_widget('ws-dropdowns')
         for dropdown in dropdowns:
             dropdowns[dropdown].connect("notify::selected-item", self._on_filter_selected)
@@ -721,10 +708,3 @@ class MiAZWorkspace(Gtk.Box):
         selection = self.view.get_selection()
         selection.unselect_all()
 
-    def display_dashboard(self, *args):
-        self.view.column_subtitle.set_title(_('Concept'))
-        self.view.column_subtitle.set_expand(True)
-        self.column_sentto.set_expand(False)
-        self.column_sentby.set_expand(False)
-        self.view.refilter()
-        self.tgbFilters.set_visible(True)

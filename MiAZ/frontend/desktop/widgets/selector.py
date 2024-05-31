@@ -79,16 +79,6 @@ class MiAZSelector(Gtk.Box):
         boxViews.append(boxRight)
         self.append(boxViews)
 
-        # Status bar...
-        statusbar = self.factory.create_box_horizontal(hexpand=True)
-        self.sbicon = Gtk.Image() #.new_from_icon_name('info')
-        self.sbicon.set_pixel_size(32)
-        self.sbtext = Gtk.Label()
-        statusbar.append(self.sbicon)
-        statusbar.append(self.sbtext)
-        # ~ self.append(statusbar)
-        # ~ self.actions.statusbar_message('', '')
-
         # Available
         self.frmViewAv = Gtk.Frame()
         title = Gtk.Label()
@@ -112,16 +102,6 @@ class MiAZSelector(Gtk.Box):
         boxRight.append(self.frmViewSl)
         self._setup_view_finish()
 
-    # ~ def statusbar_message(self, dtype: str = 'warning', message: str = ''):
-        # ~ icon_name = {}
-        # ~ icon_name["info"] = "dialog-information-symbolic"
-        # ~ icon_name["warning"] = "dialog-warning-symbolic"
-        # ~ icon_name["error"] = "dialog-error-symbolic"
-        # ~ icon_name["question"] = "dialog-question-symbolic"
-        # ~ icon_name[""] = None
-        # ~ self.sbicon.set_from_icon_name(icon_name[dtype])
-        # ~ self.sbtext.set_markup(message)
-
     def add_columnview_available(self, columnview):
         columnview.set_filter(self._do_filter_view)
         columnview.column_title.set_expand(True)
@@ -143,7 +123,6 @@ class MiAZSelector(Gtk.Box):
     def update(self, *args):
         self._update_view_available()
         self._update_view_used()
-        # ~ self.statusbar_message('', '')
 
     def _on_item_used_add(self, *args):
         changed = False
@@ -178,12 +157,9 @@ class MiAZSelector(Gtk.Box):
                 changed = True
                 text = _('Removed %s (%s) from used') % (item_used.id, item_used.title)
                 self.log.debug(text)
-                # ~ self.statusbar_message('info', text)
             else:
-                # ~ title = "%s %s not removed" % (self.config.model.__title__, item_used.id)
                 dtype = "warning"
                 text = _('%s %s is still being used by some docs') % (self.config.model.__title__, item_used.id)
-                # ~ self.statusbar_message(dtype, text)
                 window = self.app.get_widget('window')
                 dtype = 'error'
                 title = "Item can't be removed"

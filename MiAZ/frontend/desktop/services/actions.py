@@ -260,10 +260,10 @@ class MiAZActions(GObject.GObject):
     def noop(self, *args):
         pass
 
-    def statusbar_message(self, message: str):
-        """Statusbar message"""
-        statusbar = self.app.get_widget('statusbar')
-        statusbar.message(message)
+    def toggle_workspace_filters(self, *args):
+        btnShowFilters = self.app.get_widget('workspace-togglebutton-filters')
+        active = btnShowFilters.get_active()
+        btnShowFilters.set_active(not active)
 
     def exit_app(self, *args):
         self.log.debug('Closing MiAZ')

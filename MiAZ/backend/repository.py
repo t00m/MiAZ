@@ -104,7 +104,7 @@ class MiAZRepository(GObject.GObject):
         self.config['Project'] = MiAZConfigProjects(self.backend, repo_dir_conf)
         self.config['Plugin'] = MiAZConfigUserPlugins(self.backend, repo_dir_conf)
         self.backend.add_service('Projects', MiAZProject(self.backend))
-        watcher = MiAZWatcher('source', path)
+        watcher = MiAZWatcher(path)
         watcher.set_active(active=True)
         self.backend.add_service('watcher', watcher)
         self.log.debug("Config repo loaded from: %s", repo_dir_conf)

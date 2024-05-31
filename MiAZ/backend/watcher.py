@@ -26,10 +26,9 @@ class MiAZWatcher(GObject.GObject):
     before = {}
     active = False
 
-    def __init__(self, name: str, dirpath: str):
+    def __init__(self, dirpath: str):
         super(MiAZWatcher, self).__init__()
         self.log = get_logger('MiAZ.Watcher')
-        self.name = name.lower()
         self.dirpath = dirpath
         sid = GObject.signal_lookup('repository-updated', MiAZWatcher)
         if sid == 0:
@@ -67,7 +66,7 @@ class MiAZWatcher(GObject.GObject):
 
     def set_path(self, dirpath: str):
         self.dirpath = dirpath
-        self.log.debug("Monitoring '%s'", self.dirpath)
+        self.log.debug("Watcher monitoring '%s'", self.dirpath)
 
     def set_active(self, active: bool = True) -> None:
         self.active = active
@@ -95,18 +94,17 @@ class MiAZWatcher(GObject.GObject):
                     modified.append(f)
 
         if added:
-            self.log.debug("Watcher[%s] > %d files added", self.name, len(added))
+            self.log.debug("Watcher > %d files added", len(added))
             updated |= True
         if removed:
-            self.log.debug("Watcher[%s] > %d files removed", self.name, len(removed))
+            self.log.debug("Watcher > %d files removed", len(removed))
             updated |= True
         if modified:
-            self.log.debug("Watcher[%s] > %d files modified", self.name, len(modified))
+            self.log.debug("Watcher > %d files modified", len(modified))
             updated |= True
 
         if updated:
             self.emit('repository-updated')
-            # ~ self.log.debug("Signal 'repository-updated'  emitted", self.name)
 
         self.before = after
         return True

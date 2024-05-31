@@ -8,23 +8,11 @@
 # Description: Custom widgets widely used
 """
 
-import os
-
-import gi
-gi.require_version('GdkPixbuf', '2.0')
-gi.require_version('Gtk', '4.0')
-
 from gi.repository import Gtk
-from gi.repository import Gdk
 from gi.repository import Gio
-from gi.repository import GLib
-from gi.repository import GObject
 from gi.repository import Pango
-from gi.repository.GdkPixbuf import Pixbuf
 
 from MiAZ.backend.log import get_logger
-from MiAZ.backend.models import Country
-from MiAZ.frontend.desktop.services.icm import MiAZIconManager
 from MiAZ.frontend.desktop.widgets.button import MiAZPopoverButton
 from MiAZ.frontend.desktop.widgets.filechooser import MiAZFileChooserDialog
 
@@ -74,7 +62,7 @@ class MiAZFactory:
     def create_box_filter(self, title, widget: Gtk.Widget) -> Gtk.Box:
         box = Gtk.Box.new(orientation=Gtk.Orientation.VERTICAL, spacing=3)
         box.set_margin_bottom(margin=12)
-        lblTitle = self.create_label('<small>%s</small>' % title)
+        lblTitle = self.create_label('<b>%s</b>' % title)
         lblTitle.set_xalign(0.0)
         box.append(lblTitle)
         box.append(widget)
@@ -225,10 +213,9 @@ class MiAZFactory:
             box = list_item.get_child()
             label = box.get_last_child()
             item = list_item.get_item()
-            label.set_markup('<small>%s</small>' % item.title)
+            label.set_markup('%s' % item.title)
 
         def _on_search_changed(search_entry, item_filter):
-            text = search_entry.get_text()
             item_filter.changed(Gtk.FilterChange.DIFFERENT)
 
         def _do_filter(item, filter_list_model, search_entry):

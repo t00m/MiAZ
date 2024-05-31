@@ -264,7 +264,7 @@ class MiAZAppSettings(MiAZCustomWindow):
         deleted = plugin_manager.remove_plugin(plugin)
         if deleted:
             self.log.debug("Plugin '%s' deleted", module.id)
-            self.actions.statusbar_message("Plugin '%s' deleted" % module.id)
+            # ~ self.actions.statusbar_message("Plugin '%s' deleted" % module.id)
             self.update_user_plugins()
 
     def get_plugin_status(self, name: str) -> bool:
