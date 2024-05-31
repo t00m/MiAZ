@@ -223,6 +223,15 @@ class MiAZWorkspace(Gtk.Box):
             # ~ menu = self.app.get_widget('workspace-menu-selection')
             # ~ self.popDocsSel.set_menu_model(menu)
 
+    def _setup_searchbar(self):
+        # ~ window = self.app.get_widget('window')
+        # ~ mainbox = self.app.get_widget('window-mainbox')
+        # ~ search = self.app.add_widget('searchbar', SearchBar(window))
+        # ~ self.append(mainbox)
+        # ~ searchbar = self.app.get_widget('searchbar')
+        # ~ searchbar.set_callback(self._on_filter_selected)
+        pass
+
     def _setup_toolbar_top(self):
         hdb_left = self.app.get_widget('headerbar-left-box')
         hdb_right = self.app.get_widget('headerbar-right-box')
@@ -235,12 +244,6 @@ class MiAZWorkspace(Gtk.Box):
         self.tgbFilters.get_style_context().remove_class(class_name='flat')
         self.tgbFilters.set_valign(Gtk.Align.CENTER)
         hdb_left.append(self.tgbFilters)
-
-        ## Searchbox
-        self.ent_sb = Gtk.SearchEntry(placeholder_text=_('Type here'))
-        self.ent_sb.set_hexpand(False)
-        self.ent_sb.get_style_context().add_class(class_name='caption')
-        hdb_left.append(self.ent_sb)
 
         ## Dropdowns
         dropdowns = self.app.get_widget('ws-dropdowns')
@@ -357,6 +360,7 @@ class MiAZWorkspace(Gtk.Box):
         self.app.add_widget('workspace-toolbar-filters', self.toolbar_filters)
         # ~ toolbar_top = self.app.add_widget('workspace-toolbar-top', self._setup_toolbar_top())
         self._setup_toolbar_top()
+        self._setup_searchbar()
         # ~ headerbar = self.app.get_widget('headerbar')
         # ~ headerbar.set_title_widget(toolbar_top)
         frmView = self._setup_columnview()
@@ -573,7 +577,8 @@ class MiAZWorkspace(Gtk.Box):
         self.selected_items = []
 
     def _do_eval_cond_matches_freetext(self, item):
-        left = self.ent_sb.get_text()
+        entry = self.app.get_widget('searchbar_entry')
+        left = entry.get_text()
         right = item.id
         if left.upper() in right.upper():
             return True
@@ -685,7 +690,8 @@ class MiAZWorkspace(Gtk.Box):
         return show_item
 
     def _do_connect_filter_signals(self):
-        self.ent_sb.connect('changed', self._on_filter_selected)
+        searchbar = self.app.get_widget('searchbar')
+        searchbar.set_callback(self._on_filter_selected)
         dropdowns = self.app.get_widget('ws-dropdowns')
         for dropdown in dropdowns:
             dropdowns[dropdown].connect("notify::selected-item", self._on_filter_selected)

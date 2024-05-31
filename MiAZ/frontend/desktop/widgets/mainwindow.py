@@ -12,6 +12,7 @@ from gi.repository import Gdk, Gio, GLib, Gtk
 
 from MiAZ.backend.log import get_logger
 from MiAZ.frontend.desktop.widgets.statusbar import MiAZStatusbar
+from MiAZ.frontend.desktop.widgets.searchbar import SearchBar
 
 
 class MiAZMainWindow(Gtk.Box):
@@ -47,9 +48,9 @@ class MiAZMainWindow(Gtk.Box):
         self._setup_headerbar_center()
         self._setup_headerbar_right()
 
-        # Statusbar
-        statusbar = self.app.add_widget('statusbar', MiAZStatusbar(self.app))
-        self.append(statusbar)
+        # On-Demand SearchBar
+        search = self.app.add_widget('searchbar', SearchBar(self.app))
+        self.append(search)
 
     def _setup_event_listener(self):
         evk = Gtk.EventControllerKey.new()
@@ -116,6 +117,6 @@ class MiAZMainWindow(Gtk.Box):
 
     def _on_key_press(self, event, keyval, keycode, state):
         keyname = Gdk.keyval_name(keyval)
-        self.log.debug(keyname)
+        # ~ self.log.debug(keyname)
         if keyname == 'Escape':
             self.actions.show_stack_page_by_name('workspace')
