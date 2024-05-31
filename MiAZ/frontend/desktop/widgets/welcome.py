@@ -21,6 +21,7 @@ class MiAZWelcome(Gtk.Box):
         super(Gtk.Box, self).__init__(spacing=12, orientation=Gtk.Orientation.VERTICAL)
         self.app = app
         self.factory = self.app.get_service('factory')
+        self.actions = self.app.get_service('actions')
         ENV = self.app.get_env()
         centerbox = Gtk.CenterBox(orientation=Gtk.Orientation.VERTICAL)
         centerbox.set_vexpand(True)
@@ -41,7 +42,7 @@ class MiAZWelcome(Gtk.Box):
         button = self.factory.create_button(title='Manage repositories')
         button.set_valign(Gtk.Align.CENTER)
         button.set_halign(Gtk.Align.CENTER)
-        # ~ button.connect('clicked', self.app.show_app_settings)
+        button.connect('clicked', self.actions.show_app_settings)
         vbox.append(button)
 
 
