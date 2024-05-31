@@ -9,22 +9,15 @@
 """
 
 import os
-import sys
 from datetime import datetime
-from abc import abstractmethod
 from gettext import gettext as _
 
-import gi
-gi.require_version('Gtk', '4.0')
 from gi.repository import Gtk
-from gi.repository import Gio
 from gi.repository import GLib
-from gi.repository.GdkPixbuf import Pixbuf
 
 from MiAZ.backend.log import get_logger
-from MiAZ.frontend.desktop.widgets.dialogs import MiAZDialogAdd
 from MiAZ.backend.models import Group, Person, Country, Purpose, Concept, SentBy, SentTo
-from MiAZ.frontend.desktop.widgets.configview import MiAZCountries, MiAZGroups, MiAZPeople, MiAZPurposes, MiAZPeopleSentBy, MiAZPeopleSentTo
+from MiAZ.frontend.desktop.widgets.configview import MiAZCountries, MiAZGroups, MiAZPurposes, MiAZPeopleSentBy, MiAZPeopleSentTo
 
 
 class MiAZRenameDialog(Gtk.Box):
@@ -100,7 +93,6 @@ class MiAZRenameDialog(Gtk.Box):
     def _update_dropdowns(self, *args):
         for item_type in [Country, Group, SentBy, Purpose, SentTo]:
             i_type = item_type.__gtype_name__
-            i_title = _(item_type.__title__)
             config = self.config[i_type]
             self.actions.dropdown_populate(config, self.dropdown[i_type], item_type, False, False)
 
@@ -174,7 +166,6 @@ class MiAZRenameDialog(Gtk.Box):
         """Field 0. Date"""
         title = _('Date')
         icon_name = 'miaz-res-date'
-        icon = self.icons.get_image_by_name(name=icon_name)
         boxValue = self.__create_box_value()
         boxValue.set_hexpand(False)
         boxValue.set_valign(Gtk.Align.CENTER)
@@ -278,7 +269,6 @@ class MiAZRenameDialog(Gtk.Box):
         """Field 7. extension"""
         # Current filename
         title = _('Current filename')
-        boxValueCur = self.__create_box_value()
         self.lblFilenameCur = Gtk.Label()
         self.lblFilenameCur.get_style_context().add_class(class_name='monospace')
         self.row_cur_filename = self.factory.create_actionrow(title=title, suffix=self.lblFilenameCur)
@@ -286,7 +276,6 @@ class MiAZRenameDialog(Gtk.Box):
 
         # New filename
         title = _('<b>New filename</b>')
-        boxValueNew = self.__create_box_value()
         self.lblFilenameNew = Gtk.Label()
         self.lblFilenameNew.get_style_context().add_class(class_name='monospace')
         self.row_new_filename = self.factory.create_actionrow(title=title, suffix=self.lblFilenameNew)
@@ -380,7 +369,7 @@ class MiAZRenameDialog(Gtk.Box):
             self.calendar.select_day(GLib.DateTime.new_from_iso8601(iso8601))
             self.label_date.set_markup(adate.strftime("%A, %B %d %Y"))
             return True
-        except Exception as error:
+        except Exception:
             return False
 
     def get_filepath_source(self) -> str:

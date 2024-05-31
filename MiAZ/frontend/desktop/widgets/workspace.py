@@ -202,8 +202,8 @@ class MiAZWorkspace(Gtk.Box):
         # ~ self.log.debug("Dropdown %s updated", i_type)
 
     def _on_filters_toggled(self, *args):
-        btnShowFilters = self.app.get_widget('workspace-togglebutton-filters')
-        active = btnShowFilters.get_active()
+        toggleButtonFilters = self.app.get_widget('workspace-togglebutton-filters')
+        active = toggleButtonFilters.get_active()
         self.toolbar_filters.set_visible(active)
 
     def _on_selection_changed(self, selection, position, n_items):
@@ -362,13 +362,9 @@ class MiAZWorkspace(Gtk.Box):
 
         self.toolbar_filters = self._setup_toolbar_filters()
         self.app.add_widget('workspace-toolbar-filters', self.toolbar_filters)
-        # ~ toolbar_top = self.app.add_widget('workspace-toolbar-top', self._setup_toolbar_top())
         self._setup_toolbar_top()
         self._setup_searchbar()
-        # ~ headerbar = self.app.get_widget('headerbar')
-        # ~ headerbar.set_title_widget(toolbar_top)
         frmView = self._setup_columnview()
-        # ~ head.append(toolbar_top)
         head.append(self.toolbar_filters)
         body.append(frmView)
 
@@ -377,7 +373,6 @@ class MiAZWorkspace(Gtk.Box):
         self.view.column_subtitle.set_expand(True)
         self.view.column_group.set_visible(True)
         self.view.column_purpose.set_visible(True)
-        # ~ self.view.column_flag.set_visible(True)
         self.view.column_sentby.set_visible(True)
         self.view.column_sentto.set_visible(True)
         self.view.column_sentto.set_expand(False)
