@@ -410,7 +410,7 @@ class MiAZRenameDialog(Gtk.Box):
             dialog.destroy()
 
     def on_rename_cancel(self, *args):
-        self.app.show_stack_page_by_name('workspace')
+        self.actions.show_stack_page_by_name('workspace')
 
     def _on_document_display(self, *args):
         doc = self.get_filepath_source()
@@ -436,4 +436,4 @@ class MiAZRenameDialog(Gtk.Box):
                 self.log.error("Something went wrong: %s", error)
                 self.log.error("Doesn't it exist? Really?")
         else:
-            self.app.show_stack_page_by_name('workspace')
+            self.actions.show_stack_page_by_name('workspace')
