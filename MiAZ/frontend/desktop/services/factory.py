@@ -74,7 +74,7 @@ class MiAZFactory:
     def create_box_filter(self, title, widget: Gtk.Widget) -> Gtk.Box:
         box = Gtk.Box.new(orientation=Gtk.Orientation.VERTICAL, spacing=3)
         box.set_margin_bottom(margin=12)
-        lblTitle = self.create_label('<small>%s</small>' % title)
+        lblTitle = self.create_label('<b>%s</b>' % title)
         lblTitle.set_xalign(0.0)
         box.append(lblTitle)
         box.append(widget)

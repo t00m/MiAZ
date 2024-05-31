@@ -144,6 +144,8 @@ class MiAZWorkspace(Gtk.Box):
         body = self.factory.create_box_horizontal(margin=3, spacing=6, hexpand=True, vexpand=True)
         body.set_homogeneous(True)
         body.set_margin_top(margin=6)
+        body.set_margin_start(margin=12)
+        body.set_margin_end(margin=12)
         widget.append(body)
         widget.append(Gtk.Separator.new(orientation=Gtk.Orientation.HORIZONTAL))
 
