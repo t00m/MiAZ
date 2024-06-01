@@ -236,7 +236,11 @@ class MiAZActions(GObject.GObject):
         about.set_logo_icon_name(ENV['APP']['ID'])
         about.set_program_name(ENV['APP']['name'])
         about.set_version(ENV['APP']['VERSION'])
-        about.set_authors(ENV['APP']['documenters'])
+        authors = ['%s %s' % (ENV['APP']['author'], ENV['APP']['author_website'])]
+        about.set_authors(authors)
+        artists = ['Flags borrowed from FlagKit project https://github.com/madebybowtie/FlagKit']
+        artists.append('Icons borrowed from GNOME contributors https://www.gnome.org')
+        about.set_artists(artists)
         about.set_license_type(Gtk.License.GPL_3_0_ONLY)
         about.set_copyright('© 2024 %s' % ENV['APP']['author'])
         about.set_website('https://github.com/t00m/MiAZ')

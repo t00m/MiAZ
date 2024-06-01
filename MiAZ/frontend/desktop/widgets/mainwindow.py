@@ -101,7 +101,7 @@ class MiAZMainWindow(Gtk.Box):
         menu.append_section(None, section_danger)
         menuitem = self.app.factory.create_menuitem('app-settings', _('Application settings'), self.actions.show_app_settings, None, [])
         section_common_in.append_item(menuitem)
-        menuitem = self.app.factory.create_menuitem('app-about', _('About'), self.actions.show_app_about, None, [])
+        menuitem = self.app.factory.create_menuitem('app-about', _('About MiAZ'), self.actions.show_app_about, None, [])
         section_common_out.append_item(menuitem)
         menuitem = self.app.factory.create_menuitem('app-quit', _('Exit application'), self.actions.exit_app, None, [])
         section_danger.append_item(menuitem)

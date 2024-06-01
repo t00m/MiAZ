@@ -53,7 +53,8 @@ ENV['APP']['license_long'] = "The code is licensed under the terms of the  GPL v
 ENV['APP']['copyright'] = "Copyright \xa9 2019 Tomás Vírseda"
 ENV['APP']['author'] = 'Tomás Vírseda'
 ENV['APP']['author_email'] = 'tomasvirseda@gmail.com'
-ENV['APP']['documenters'] = ["Tomás Vírseda <tomasvirseda@gmail.com>"]
+ENV['APP']['author_website'] = 'https://github.com/t00m'
+ENV['APP']['contributors'] = []
 ENV['APP']['website'] = 'https://github.com/t00m/MiAZ'
 
 # Process
