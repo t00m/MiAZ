@@ -284,16 +284,8 @@ class MiAZUtil(GObject.GObject):
         year = adate.year
         return datetime.strptime("%4d0101" % year, "%Y%m%d")
 
-    def since_date_past_year(self, adate: datetime) -> datetime:
-        year = adate.year - 1
-        return datetime.strptime("%4d0101" % year, "%Y%m%d")
-
-    def since_date_three_years(self, adate: datetime) -> datetime:
-        year = adate.year - 2
-        return datetime.strptime("%4d0101" % year, "%Y%m%d")
-
-    def since_date_five_years(self, adate: datetime) -> datetime:
-        year = adate.year - 4
+    def since_date_past_n_years_ago(self, adate: datetime, n: int) -> datetime:
+        year = adate.year - n
         return datetime.strptime("%4d0101" % year, "%Y%m%d")
 
     def since_date_this_month(self, adate: datetime) -> datetime:
