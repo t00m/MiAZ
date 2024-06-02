@@ -49,6 +49,8 @@ class MiAZConfig(GObject.GObject):
                                 MiAZConfig,
                                 GObject.SignalFlags.RUN_LAST, None, () )
 
+        self.log.debug("Config for %s initialited", self.config_for)
+
     def __repr__(self):
         return __class__.__name__
 
@@ -84,24 +86,27 @@ class MiAZConfig(GObject.GObject):
             config_changed = True
 
         if config_changed:
-            # ~ self.log.debug("Loading from %s", filepath)
+            self.log.debug("Loading from %s", filepath)
             try:
                 items = self.util.json_load(filepath)
                 self.cache[filepath] = {}
                 self.cache[filepath]['changed'] = False
                 self.cache[filepath]['items'] = items
-                # ~ self.log.debug("In-memory config data updated for '%s'", filepath)
+                self.log.debug("In-memory config data updated for '%s'", filepath)
             except Exception as error:
                 items = None
             return items
         else:
+            self.log.debug("Got %s items from cache for %s", self.config_for, filepath)
+            self.cache[filepath]['changed'] = False
             return self.cache[filepath]['items']
 
     def load_available(self) -> dict:
+        self.log.debug("%s available: %s", self.config_for, self.available)
         return self.load(self.available)
 
     def load_used(self) -> dict:
-        # ~ self.log.debug("%s used: %s", self.config_for, self.used)
+        self.log.debug("%s used: %s", self.config_for, self.used)
         return self.load(self.used)
 
     def save(self, filepath: str = '', items: dict = {}) -> bool:
@@ -199,18 +204,21 @@ class MiAZConfig(GObject.GObject):
             self.save(filepath, items=items)
             self.log.info("%s - Added %d keys to %s", self.config_for, saved, filepath)
 
-    def add_used(self, key: str, value: str = ''):
-        self.add(self.used, key, value)
+    def add_used(self, key: str, value: str = '') -> bool:
+        return self.add(self.used, key, value)
 
-    def add(self, filepath: str, key: str, value:str  = ''):
+    def add(self, filepath: str, key: str, value:str  = '') -> bool:
+        added = True
         if len(key.strip()) == 0:
-            return
+            self.log.warning('Key is None or empty. Add skipped')
         items = self.load(filepath)
         if not key in items:
             key = self.util.valid_key(key)
             items[key] = value
             self.save(filepath, items=items)
             self.log.info("%s - Add: %s[%s] to %s", self.config_for, key, value, filepath)
+            added = True
+        return added
 
     def remove_available_batch(self, keys:list):
         self.remove_batch(self.available, keys)
@@ -221,8 +229,8 @@ class MiAZConfig(GObject.GObject):
     def remove_available(self, key:str):
         self.remove(self.available, key)
 
-    def remove_used(self, key:str):
-        self.remove(self.used, key)
+    def remove_used(self, key:str) -> bool:
+        return self.remove(self.used, key)
 
     def remove_batch(self, filepath: str, keys: list):
         items = self.load(filepath)
@@ -232,14 +240,18 @@ class MiAZConfig(GObject.GObject):
                 self.log.info("%s - Remove: %s from %s", self.config_for, key, filepath)
         self.save(filepath=filepath, items=items)
 
-    def remove(self, filepath: str, key: str):
+    def remove(self, filepath: str, key: str) -> bool:
+        removed = False
         if key is None or key.strip() == '':
-            return
+            self.log.warning('Key is None or empty. Remove skipped')
         items = self.load(filepath)
         if key in items:
             del(items[key])
             self.save(filepath=filepath, items=items)
             self.log.info("%s - Remove: %s from %s", self.config_for, key, filepath)
+            removed = True
+        return removed
+
 
 class MiAZConfigApp(MiAZConfig):
     def __init__(self, backend):

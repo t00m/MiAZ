@@ -441,7 +441,10 @@ class MiAZWorkspace(Gtk.Box):
         dd_prj = dropdowns[Project.__gtype_name__]
         filters = {}
         self.selected_items = []
-        docs = self.util.get_files(self.repository.docs)
+        try:
+            docs = self.util.get_files(self.repository.docs)
+        except KeyError:
+            docs = []
         sentby = self.app.get_config('SentBy')
         sentto = self.app.get_config('SentTo')
         countries = self.app.get_config('Country')
