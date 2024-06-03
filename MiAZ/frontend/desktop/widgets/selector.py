@@ -107,14 +107,14 @@ class MiAZSelector(Gtk.Box):
         columnview.column_title.set_expand(True)
         columnview.cv.connect("activate", self._on_selected_item_available_notify)
         self.frmViewAv.set_child(columnview)
-        columnview.cv.sort_by_column(columnview.column_title, Gtk.SortType.ASCENDING)
+        columnview.cv.sort_by_column(columnview.column_id, Gtk.SortType.ASCENDING)
         columnview.cv.get_style_context().add_class(class_name='caption')
 
     def add_columnview_used(self, columnview):
         columnview.set_filter(None)
         columnview.column_title.set_expand(True)
         self.frmViewSl.set_child(columnview)
-        columnview.cv.sort_by_column(columnview.column_title, Gtk.SortType.ASCENDING)
+        columnview.cv.sort_by_column(columnview.column_id, Gtk.SortType.ASCENDING)
         columnview.cv.get_style_context().add_class(class_name='caption')
 
     def _setup_view_finish(self, *args):
