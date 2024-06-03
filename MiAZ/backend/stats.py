@@ -12,7 +12,7 @@ from gettext import gettext as _
 
 from gi.repository import GObject
 
-from MiAZ.backend.log import get_logger
+from MiAZ.backend.log import MiAZLog
 from MiAZ.backend.models import Group, Person, Country
 from MiAZ.backend.models import Purpose, Concept, SentBy
 from MiAZ.backend.models import SentTo, Date, Extension
@@ -37,7 +37,7 @@ class MiAZStats(GObject.GObject):
     def __init__(self, backend):
         super(MiAZStats, self).__init__()
         self.backend = backend
-        self.log = get_logger('MiAZStats')
+        self.log = MiAZLog('MiAZStats')
         self.util = self.backend.get_service('util')
         self.repository = self.backend.get_service('repo')
 

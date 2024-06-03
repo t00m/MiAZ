@@ -12,7 +12,7 @@ import os
 
 from gi.repository import GObject
 
-from MiAZ.backend.log import get_logger
+from MiAZ.backend.log import MiAZLog
 
 
 class MiAZProject(GObject.GObject):
@@ -20,7 +20,7 @@ class MiAZProject(GObject.GObject):
 
     def __init__(self, backend):
         super(MiAZProject, self).__init__()
-        self.log = get_logger('MiAZ.Projects')
+        self.log = MiAZLog('MiAZ.Projects')
         self.backend = backend
         conf = self.backend.get_config()
         self.config = conf['Project']

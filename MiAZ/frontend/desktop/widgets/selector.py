@@ -19,7 +19,7 @@ from gi.repository import Gtk
 from gi.repository import GLib
 from gi.repository import GObject
 
-from MiAZ.backend.log import get_logger
+from MiAZ.backend.log import MiAZLog
 from MiAZ.backend.models import Project, Repository
 from MiAZ.frontend.desktop.widgets.columnview import MiAZColumnView
 from MiAZ.frontend.desktop.widgets.dialogs import MiAZDialogAdd
@@ -34,7 +34,7 @@ class MiAZSelector(Gtk.Box):
         self.util = self.app.get_service('util')
         self.factory = self.app.get_service('factory')
         self.repository = self.app.get_service('repository')
-        self.log = get_logger('MiAZ.Selector')
+        self.log = MiAZLog('MiAZ.Selector')
         super(MiAZSelector, self).__init__(orientation=Gtk.Orientation.VERTICAL, hexpand=True, vexpand=True, spacing=0)
 
         # Entry and buttons for operations (edit/add/remove)

@@ -15,10 +15,10 @@ import multiprocessing
 
 sys.path.insert(1, '@pkgdatadir@')
 
-from MiAZ.backend.log import get_logger
+from MiAZ.backend.log import MiAZLog
 from MiAZ.backend.util import which
 
-log = get_logger('MiAZ')
+log = MiAZLog('MiAZ')
 
 ENV = {}
 
@@ -127,9 +127,9 @@ class MiAZ:
     def __init__(self, ENV: dict) -> None:
         self.env = ENV
         self.setup_environment()
-        self.log = get_logger('MiAZ')
+        self.log = MiAZLog('MiAZ')
         self.set_internationalization()
-        self.log.info("%s v%s - Start", ENV['APP']['shortname'], ENV['APP']['VERSION'])
+        self.log.info("%s v%s - Start" % (ENV['APP']['shortname'], ENV['APP']['VERSION']))
 
     def setup_environment(self):
         """Setup MiAZ user environment"""

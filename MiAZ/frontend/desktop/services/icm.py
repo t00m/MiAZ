@@ -14,7 +14,7 @@ from gi.repository import Gio
 from gi.repository import GObject
 from gi.repository.GdkPixbuf import Pixbuf
 
-from MiAZ.backend.log import get_logger
+from MiAZ.backend.log import MiAZLog
 
 # FIXME: Review this module
 class MiAZIconManager(GObject.GObject):
@@ -22,7 +22,7 @@ class MiAZIconManager(GObject.GObject):
         super(MiAZIconManager, self).__init__()
         self.app = app
         ENV = self.app.get_env()
-        self.log = get_logger('MiAZ.IconManager')
+        self.log = MiAZLog('MiAZ.IconManager')
         self.util = self.app.backend.get_service('util')
         win = Gtk.Window()
         self.theme = Gtk.IconTheme.get_for_display(win.get_display())

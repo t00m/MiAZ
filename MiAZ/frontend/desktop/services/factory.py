@@ -12,14 +12,14 @@ from gi.repository import Gtk
 from gi.repository import Gio
 from gi.repository import Pango
 
-from MiAZ.backend.log import get_logger
+from MiAZ.backend.log import MiAZLog
 from MiAZ.frontend.desktop.widgets.button import MiAZPopoverButton
 from MiAZ.frontend.desktop.widgets.filechooser import MiAZFileChooserDialog
 
 class MiAZFactory:
     def __init__(self, app):
         self.app = app
-        self.log = get_logger('MiAZ.Factory')
+        self.log = MiAZLog('MiAZ.Factory')
         self.icons = self.app.get_service('icons')
 
     def create_actionrow(self, title:str = '', subtitle:str = '', prefix: Gtk.Widget = None, suffix: Gtk.Widget = None):

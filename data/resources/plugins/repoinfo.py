@@ -16,7 +16,7 @@ from gi.repository import Gtk
 from gi.repository import GObject
 from gi.repository import Peas
 
-from MiAZ.backend.log import get_logger
+from MiAZ.backend.log import MiAZLog
 from MiAZ.frontend.desktop.widgets.settings import MiAZRepoSettings
 
 
@@ -25,7 +25,7 @@ class MiAZRepositoryInfoPlugin(GObject.GObject, Peas.Activatable):
     object = GObject.Property(type=GObject.Object)
 
     def __init__(self):
-        self.log = get_logger('Plugin.RepoInfo')
+        self.log = MiAZLog('Plugin.RepoInfo')
 
     def do_activate(self):
         API = self.object

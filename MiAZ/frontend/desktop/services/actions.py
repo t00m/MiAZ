@@ -18,7 +18,7 @@ from gi.repository import GLib
 from gi.repository import GObject
 from gi.repository import Gtk
 
-from MiAZ.backend.log import get_logger
+from MiAZ.backend.log import MiAZLog
 from MiAZ.backend.models import MiAZItem, File, Group, Person, Country, Purpose, Concept, SentBy, SentTo, Date, Extension, Project, Repository
 from MiAZ.frontend.desktop.widgets.configview import MiAZCountries, MiAZGroups, MiAZPeople, MiAZPurposes, MiAZPeopleSentBy, MiAZPeopleSentTo, MiAZProjects
 from MiAZ.frontend.desktop.widgets.rename import MiAZRenameDialog
@@ -48,7 +48,7 @@ Configview['Date'] = Gtk.Calendar
 
 class MiAZActions(GObject.GObject):
     def __init__(self, app):
-        self.log = get_logger('MiAZ.Actions')
+        self.log = MiAZLog('MiAZ.Actions')
         self.app = app
         self.backend = self.app.get_service('backend')
         self.util = self.app.get_service('util')

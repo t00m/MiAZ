@@ -20,7 +20,7 @@ from gi.repository import GObject
 from gi.repository import Gtk
 from gi.repository import Peas
 
-from MiAZ.backend.log import get_logger
+from MiAZ.backend.log import MiAZLog
 from MiAZ.backend.models import Concept, Country, Date, Group
 from MiAZ.backend.models import Person, Purpose, SentBy, SentTo
 
@@ -37,7 +37,7 @@ class Export2Zip(GObject.GObject, Peas.Activatable):
     object = GObject.Property(type=GObject.Object)
 
     def __init__(self):
-        self.log = get_logger('Plugin.Export2Zip')
+        self.log = MiAZLog('Plugin.Export2Zip')
 
     def do_activate(self):
         API = self.object

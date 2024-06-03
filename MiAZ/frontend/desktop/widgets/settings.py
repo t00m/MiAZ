@@ -13,7 +13,7 @@ from gettext import gettext as _
 
 from gi.repository import Gtk
 
-from MiAZ.backend.log import get_logger
+from MiAZ.backend.log import MiAZLog
 from MiAZ.backend.models import Repository, Plugin, Project
 from MiAZ.backend.models import Country, Group, Purpose, SentBy, SentTo
 from MiAZ.frontend.desktop.widgets.configview import MiAZGroups
@@ -45,7 +45,7 @@ class MiAZAppSettings(MiAZCustomWindow):
 
     def __init__(self, app, **kwargs):
         self.app = app
-        self.log = get_logger('MiAZ.AppSettings')
+        self.log = MiAZLog('MiAZ.AppSettings')
         self.name = 'app-settings'
         self.title = 'Application settings'
         super().__init__(app, self.name, self.title, **kwargs)
@@ -294,7 +294,7 @@ class MiAZRepoSettings(MiAZCustomWindow):
 
     def __init__(self, app, **kwargs):
         self.app = app
-        self.log = get_logger('MiAZ.RepoSettings')
+        self.log = MiAZLog('MiAZ.RepoSettings')
         self.name = 'repo-settings'
         self.title = 'Repository settings'
         super().__init__(app, self.name, self.title, **kwargs)

@@ -23,7 +23,7 @@ from gi.repository import Gtk
 from gi.repository import Pango
 from gi.repository.GdkPixbuf import Pixbuf
 
-from MiAZ.backend.log import get_logger
+from MiAZ.backend.log import MiAZLog
 from MiAZ.frontend.desktop.widgets.configview import MiAZCountries
 from MiAZ.frontend.desktop.widgets.configview import MiAZGroups
 from MiAZ.frontend.desktop.widgets.configview import MiAZPurposes
@@ -46,7 +46,7 @@ class MiAZAssistant(Gtk.Assistant):
 
     def __init__(self, app):
         super(MiAZAssistant, self).__init__()
-        self.log = get_logger('MiAZAssistant')
+        self.log = MiAZLog('MiAZAssistant')
         self.app = app
         self.factory = self.app.get_service('factory')
         self.backend = self.app.get_service('backend')

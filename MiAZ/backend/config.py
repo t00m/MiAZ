@@ -13,7 +13,7 @@ import shutil
 
 from gi.repository import GObject
 
-from MiAZ.backend.log import get_logger
+from MiAZ.backend.log import MiAZLog
 from MiAZ.backend.models import MiAZModel, MiAZItem, File, Group, Person, Country, Purpose, Concept, SentBy, SentTo, Project, Repository, Plugin
 
 class MiAZConfig(GObject.GObject):
@@ -86,18 +86,18 @@ class MiAZConfig(GObject.GObject):
             config_changed = True
 
         if config_changed:
-            self.log.debug("Loading from %s", filepath)
+            # ~ self.log.debug("Loading from %s", filepath)
             try:
                 items = self.util.json_load(filepath)
                 self.cache[filepath] = {}
                 self.cache[filepath]['changed'] = False
                 self.cache[filepath]['items'] = items
-                self.log.debug("In-memory config data updated for '%s'", filepath)
+                # ~ self.log.debug("In-memory config data updated for '%s'", filepath)
             except Exception as error:
                 items = None
             return items
         else:
-            self.log.debug("Got %s items from cache for %s", self.config_for, filepath)
+            # ~ self.log.debug("Got %s items from cache for %s", self.config_for, filepath)
             self.cache[filepath]['changed'] = False
             return self.cache[filepath]['items']
 
@@ -106,7 +106,7 @@ class MiAZConfig(GObject.GObject):
         return self.load(self.available)
 
     def load_used(self) -> dict:
-        self.log.debug("%s used: %s", self.config_for, self.used)
+        # ~ self.log.debug("%s used: %s", self.config_for, self.used)
         return self.load(self.used)
 
     def save(self, filepath: str = '', items: dict = {}) -> bool:
@@ -265,7 +265,7 @@ class MiAZConfigApp(MiAZConfig):
                             GObject.SignalFlags.RUN_LAST, None, () )
         super().__init__(
             backend = backend,
-            log=get_logger('MiAZ.Config.App'),
+            log=MiAZLog('MiAZ.Config.App'),
             config_for = 'App',
             available = ENV['FILE']['CONF'],
             used = ENV['FILE']['CONF'],
@@ -294,7 +294,7 @@ class MiAZConfigRepositories(MiAZConfig):
         dir_conf = ENV['LPATH']['ETC']
         super().__init__(
             backend = backend,
-            log=get_logger('MiAZ.Settings.Repos'),
+            log=MiAZLog('MiAZ.Settings.Repos'),
             config_for = 'Repositories',
             available = os.path.join(dir_conf, 'repos-available.json'),
             used = os.path.join(dir_conf, 'repos-used.json'),
@@ -310,7 +310,7 @@ class MiAZConfigCountries(MiAZConfig):
         ENV = app.get_env()
         super().__init__(
             backend = backend,
-            log=get_logger('MiAZ.Settings.Countries'),
+            log=MiAZLog('MiAZ.Settings.Countries'),
             config_for = 'Countries',
             available = os.path.join(dir_conf, 'countries-available.json'),
             used = os.path.join(dir_conf, 'countries-used.json'),
@@ -327,7 +327,7 @@ class MiAZConfigGroups(MiAZConfig):
         ENV = app.get_env()
         super().__init__(
             backend = backend,
-            log=get_logger('MiAZ.Settings.Groups'),
+            log=MiAZLog('MiAZ.Settings.Groups'),
             config_for = 'Groups',
             used = os.path.join(dir_conf, 'groups-used.json'),
             available = os.path.join(dir_conf, 'groups-available.json'),
@@ -343,7 +343,7 @@ class MiAZConfigPurposes(MiAZConfig):
         ENV = app.get_env()
         super().__init__(
             backend = backend,
-            log=get_logger('MiAZ.Settings.Purposes'),
+            log=MiAZLog('MiAZ.Settings.Purposes'),
             config_for = 'Purposes',
             used = os.path.join(dir_conf, 'purposes-used.json'),
             available = os.path.join(dir_conf, 'purposes-available.json'),
@@ -359,7 +359,7 @@ class MiAZConfigConcepts(MiAZConfig):
         ENV = app.get_env()
         super().__init__(
             backend = backend,
-            log=get_logger('MiAZ.Settings.Concepts'),
+            log=MiAZLog('MiAZ.Settings.Concepts'),
             config_for = 'Concepts',
             used = os.path.join(dir_conf, 'concepts-used.json'),
             available = os.path.join(dir_conf, 'concepts-available.json'),
@@ -374,7 +374,7 @@ class MiAZConfigPeople(MiAZConfig):
         ENV = app.get_env()
         super().__init__(
             backend = backend,
-            log=get_logger('MiAZ.Settings.People'),
+            log=MiAZLog('MiAZ.Settings.People'),
             config_for = 'Person',
             used = os.path.join(dir_conf, 'people-used.json'),
             available = os.path.join(dir_conf, 'people-available.json'),
@@ -390,7 +390,7 @@ class MiAZConfigSentBy(MiAZConfig):
         ENV = app.get_env()
         super().__init__(
             backend = backend,
-            log=get_logger('MiAZ.Settings.SentBy'),
+            log=MiAZLog('MiAZ.Settings.SentBy'),
             config_for = 'SentBy',
             used = os.path.join(dir_conf, 'sentby-used.json'),
             available = os.path.join(dir_conf, 'people-available.json'),
@@ -406,7 +406,7 @@ class MiAZConfigSentTo(MiAZConfig):
         ENV = app.get_env()
         super().__init__(
             backend = backend,
-            log=get_logger('MiAZ.Settings.SentTo'),
+            log=MiAZLog('MiAZ.Settings.SentTo'),
             config_for = 'SentTo',
             used = os.path.join(dir_conf, 'sentto-used.json'),
             available = os.path.join(dir_conf, 'people-available.json'),
@@ -422,7 +422,7 @@ class MiAZConfigProjects(MiAZConfig):
         ENV = app.get_env()
         super().__init__(
             backend = backend,
-            log=get_logger('MiAZ.Settings.Project'),
+            log=MiAZLog('MiAZ.Settings.Project'),
             config_for = 'Project',
             used = os.path.join(dir_conf, 'project-used.json'),
             available = os.path.join(dir_conf, 'project-available.json'),
@@ -437,7 +437,7 @@ class MiAZConfigUserPlugins(MiAZConfig):
         ENV = app.get_env()
         super().__init__(
             backend = backend,
-            log=get_logger('MiAZ.Settings.UserPlugins'),
+            log=MiAZLog('MiAZ.Settings.UserPlugins'),
             config_for = 'UserPlugin',
             used = os.path.join(dir_conf, 'plugins-used.json'),
             available = os.path.join(dir_conf, 'plugins-available.json'),

@@ -19,7 +19,7 @@ import time
 from gi.repository import GLib
 from gi.repository import GObject
 
-from MiAZ.backend.log import get_logger
+from MiAZ.backend.log import MiAZLog
 
 class MiAZWatcher(GObject.GObject):
     __gtype_name__ = 'MiAZWatcher'
@@ -28,7 +28,7 @@ class MiAZWatcher(GObject.GObject):
 
     def __init__(self, dirpath: str):
         super(MiAZWatcher, self).__init__()
-        self.log = get_logger('MiAZ.Watcher')
+        self.log = MiAZLog('MiAZ.Watcher')
         self.dirpath = dirpath
         sid = GObject.signal_lookup('repository-updated', MiAZWatcher)
         if sid == 0:

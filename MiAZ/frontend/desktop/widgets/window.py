@@ -10,7 +10,7 @@
 
 from gi.repository import Gdk, Gio, GLib, Gtk
 
-from MiAZ.backend.log import get_logger
+from MiAZ.backend.log import MiAZLog
 
 
 class MiAZCustomWindow(Gtk.Window):
@@ -22,7 +22,7 @@ class MiAZCustomWindow(Gtk.Window):
         self.title = title
         self.set_title(title)
         logname = "Miaz.%s" % name.replace('-', '.').title()
-        self.log = get_logger(logname)
+        self.log = MiAZLog(logname)
         self.app.add_widget('window-%s' % name, self)
         self.connect('close-request', self._on_window_close_request)
         evk = Gtk.EventControllerKey.new()

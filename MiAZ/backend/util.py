@@ -22,7 +22,7 @@ from datetime import datetime, timedelta
 from gi.repository import Gio
 from gi.repository import GObject
 
-from MiAZ.backend.log import get_logger
+from MiAZ.backend.log import MiAZLog
 from MiAZ.backend.models import Group, Person, Country
 from MiAZ.backend.models import Purpose, Concept, SentBy
 from MiAZ.backend.models import SentTo, Date, Extension
@@ -54,7 +54,7 @@ class MiAZUtil(GObject.GObject):
                             MiAZUtil,
                             GObject.SignalFlags.RUN_LAST,
                             GObject.TYPE_PYOBJECT, (GObject.TYPE_PYOBJECT, GObject.TYPE_PYOBJECT,))
-        self.log = get_logger('MiAZ.Backend.Util')
+        self.log = MiAZLog('MiAZ.Backend.Util')
         self.app = backend.app
         self.backend = backend
         self.conf = self.backend.get_config()

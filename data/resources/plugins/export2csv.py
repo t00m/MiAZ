@@ -14,7 +14,7 @@ from gettext import gettext as _
 from gi.repository import GObject
 from gi.repository import Peas
 
-from MiAZ.backend.log import get_logger
+from MiAZ.backend.log import MiAZLog
 
 
 class Export2CSV(GObject.GObject, Peas.Activatable):
@@ -22,7 +22,7 @@ class Export2CSV(GObject.GObject, Peas.Activatable):
     object = GObject.Property(type=GObject.Object)
 
     def __init__(self):
-        self.log = get_logger('Plugin.Export2CSV')
+        self.log = MiAZLog('Plugin.Export2CSV')
 
     def do_activate(self):
         API = self.object

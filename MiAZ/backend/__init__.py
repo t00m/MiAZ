@@ -13,7 +13,7 @@ import os
 import gi
 from gi.repository import GObject
 
-from MiAZ.backend.log import get_logger
+from MiAZ.backend.log import MiAZLog
 from MiAZ.backend.config import MiAZConfigApp
 from MiAZ.backend.util import MiAZUtil
 from MiAZ.backend.stats import MiAZStats
@@ -29,7 +29,7 @@ class MiAZBackend(GObject.GObject):
     def __init__(self, app) -> None:
         GObject.GObject.__init__(self)
         self.app = app
-        self.log = get_logger('MiAZBackend')
+        self.log = MiAZLog('MiAZBackend')
         self.app.add_service('repo', MiAZRepository(self))
         self.app.add_service('util', MiAZUtil(self))
         self.app.add_service('stats', MiAZStats(self))

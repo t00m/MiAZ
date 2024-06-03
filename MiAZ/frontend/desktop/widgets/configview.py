@@ -13,7 +13,7 @@ from gettext import gettext as _
 
 from gi.repository import Gtk
 
-from MiAZ.backend.log import get_logger
+from MiAZ.backend.log import MiAZLog
 from MiAZ.frontend.desktop.widgets.selector import MiAZSelector
 from MiAZ.frontend.desktop.widgets.columnview import MiAZColumnView
 from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewCountry
@@ -35,7 +35,7 @@ class MiAZConfigView(MiAZSelector):
     def __init__(self, app, config=None):
         super(MiAZSelector, self).__init__(spacing=0, orientation=Gtk.Orientation.VERTICAL)
         self.app = app
-        self.log = get_logger('MiAZConfigView')
+        self.log = MiAZLog('MiAZConfigView')
         self.backend = self.app.get_service('backend')
         self.repository = self.app.get_service('repo')
         self.conf = self.backend.get_config()

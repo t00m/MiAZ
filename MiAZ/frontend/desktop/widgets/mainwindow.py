@@ -10,7 +10,7 @@
 
 from gi.repository import Gdk, Gio, GLib, Gtk
 
-from MiAZ.backend.log import get_logger
+from MiAZ.backend.log import MiAZLog
 from MiAZ.frontend.desktop.widgets.statusbar import MiAZStatusbar
 from MiAZ.frontend.desktop.widgets.searchbar import SearchBar
 
@@ -24,7 +24,7 @@ class MiAZMainWindow(Gtk.Box):
         self.icm = self.app.get_service('icons')
         self.factory = self.app.get_service('factory')
         self.repository = self.app.get_service('repository')
-        self.log = get_logger('MiAZ.Selector')
+        self.log = MiAZLog('MiAZ.Selector')
         super(MiAZMainWindow, self).__init__(orientation=Gtk.Orientation.VERTICAL, hexpand=True, vexpand=True, spacing=0)
         self.win = self.app.get_widget('window')
         self._setup_ui()

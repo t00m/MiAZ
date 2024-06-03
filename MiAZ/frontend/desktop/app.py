@@ -21,7 +21,7 @@ from gi.repository import Gtk
 
 
 from MiAZ.backend import MiAZBackend
-from MiAZ.backend.log import get_logger
+from MiAZ.backend.log import MiAZLog
 from MiAZ.backend.pluginsystem import MiAZPluginManager, MiAZPluginType
 from MiAZ.frontend.desktop.services.icm import MiAZIconManager
 from MiAZ.frontend.desktop.services.factory import MiAZFactory
@@ -44,7 +44,7 @@ class MiAZApp(Gtk.Application):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.log = get_logger("MiAZ.App")
+        self.log = MiAZLog("MiAZ.App")
         self.log.debug("Starting MiAZ")
 
     def set_env(self, ENV: dict):

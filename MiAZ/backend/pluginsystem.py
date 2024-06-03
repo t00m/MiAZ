@@ -19,7 +19,7 @@ import gi
 gi.require_version('Peas', '1.0')
 from gi.repository import GObject, Peas
 
-from MiAZ.backend.log import get_logger
+from MiAZ.backend.log import MiAZLog
 
 
 class MiAZAPI(GObject.GObject):
@@ -47,7 +47,7 @@ class MiAZPluginManager(GObject.GObject):
         GObject.signal_new('plugins-updated',
                             MiAZPluginManager,
                             GObject.SignalFlags.RUN_LAST, None, () )
-        self.log = get_logger('MiAZ.PluginManager')
+        self.log = MiAZLog('MiAZ.PluginManager')
         self.app = app
         self.backend = self.app.get_service('backend')
         self.util = self.app.get_service('util')

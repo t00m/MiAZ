@@ -13,7 +13,7 @@ import json
 
 from gi.repository import GObject
 
-from MiAZ.backend.log import get_logger
+from MiAZ.backend.log import MiAZLog
 from MiAZ.backend.config import MiAZConfigCountries
 from MiAZ.backend.config import MiAZConfigGroups
 from MiAZ.backend.config import MiAZConfigProjects
@@ -36,7 +36,7 @@ class MiAZRepository(GObject.GObject):
         GObject.signal_new('repository-switched',
                             MiAZRepository,
                             GObject.SignalFlags.RUN_LAST, None, () )
-        self.log = get_logger('MiAZ.Repository')
+        self.log = MiAZLog('MiAZ.Repository')
         self.backend = backend
         self.config = self.backend.get_config()
 

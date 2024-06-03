@@ -17,7 +17,7 @@ from gi.repository import Gtk
 from gi.repository import GLib
 from gi.repository import GObject
 
-from MiAZ.backend.log import get_logger
+from MiAZ.backend.log import MiAZLog
 from MiAZ.backend.models import MiAZItem, File, Group, Person, Country, Purpose, Concept, SentBy, SentTo, Date, Extension, Project
 from MiAZ.frontend.desktop.widgets.columnview import MiAZColumnView, ColIcon, ColLabel, ColButton
 from MiAZ.frontend.desktop.widgets.assistant import MiAZAssistantRepoSettings
@@ -58,7 +58,7 @@ class MiAZWorkspace(Gtk.Box):
 
     def __init__(self, app):
         super(MiAZWorkspace, self).__init__(orientation=Gtk.Orientation.HORIZONTAL)
-        self.log = get_logger('MiAZ.Workspace')
+        self.log = MiAZLog('MiAZ.Workspace')
         self.app = app
         self.backend = self.app.backend
         self.factory = self.app.get_service('factory')

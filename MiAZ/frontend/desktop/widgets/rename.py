@@ -15,7 +15,7 @@ from gettext import gettext as _
 from gi.repository import Gtk
 from gi.repository import GLib
 
-from MiAZ.backend.log import get_logger
+from MiAZ.backend.log import MiAZLog
 from MiAZ.backend.models import Group, Person, Country, Purpose, Concept, SentBy, SentTo
 from MiAZ.frontend.desktop.widgets.configview import MiAZCountries, MiAZGroups, MiAZPurposes, MiAZPeopleSentBy, MiAZPeopleSentTo
 
@@ -35,7 +35,7 @@ class MiAZRenameDialog(Gtk.Box):
         self.repository = self.app.get_service('repo')
         self.config = self.backend.get_config()
         self.util = self.app.get_service('util')
-        self.log = get_logger('Miaz.Rename')
+        self.log = MiAZLog('Miaz.Rename')
 
         # Box to be inserted as contents
         self.boxMain = Gtk.ListBox.new()
