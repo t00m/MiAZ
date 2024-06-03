@@ -102,7 +102,7 @@ class MiAZConfig(GObject.GObject):
             return self.cache[filepath]['items']
 
     def load_available(self) -> dict:
-        self.log.debug("%s available: %s", self.config_for, self.available)
+        # ~ self.log.debug("%s available: %s", self.config_for, self.available)
         return self.load(self.available)
 
     def load_used(self) -> dict:
