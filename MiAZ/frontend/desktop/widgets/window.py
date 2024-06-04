@@ -40,10 +40,9 @@ class MiAZCustomWindow(Gtk.Window):
         self.set_child(self.mainbox)
 
     def _get_services(self):
-        self.backend = self.app.get_service('backend')
         self.factory = self.app.get_service('factory')
         self.actions = self.app.get_service('actions')
-        self.config = self.backend.get_config()
+        self.config = self.app.get_config()
 
     def _on_window_close_request(self, window):
         window.hide()

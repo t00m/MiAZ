@@ -20,7 +20,7 @@ from gi.repository import GLib
 from gi.repository import Gtk
 
 
-from MiAZ.backend import MiAZBackend
+# ~ from MiAZ.backend import MiAZBackend
 from MiAZ.backend.log import MiAZLog
 from MiAZ.backend.pluginsystem import MiAZPluginManager, MiAZPluginType
 from MiAZ.frontend.desktop.services.icm import MiAZIconManager
@@ -32,7 +32,11 @@ from MiAZ.frontend.desktop.widgets.rename import MiAZRenameDialog
 from MiAZ.frontend.desktop.widgets.settings import MiAZAppSettings
 from MiAZ.frontend.desktop.widgets.settings import MiAZRepoSettings
 from MiAZ.frontend.desktop.widgets.welcome import MiAZWelcome
-
+from MiAZ.backend.util import MiAZUtil, HERE
+from MiAZ.backend.stats import MiAZStats
+from MiAZ.backend.config import MiAZConfigApp
+from MiAZ.backend.repository import MiAZRepository
+from MiAZ.backend.config import MiAZConfigRepositories
 
 class MiAZApp(Gtk.Application):
     __gsignals__ = {
@@ -40,20 +44,27 @@ class MiAZApp(Gtk.Application):
         "exit-application":  (GObject.SignalFlags.RUN_LAST, None, ()),
     }
     plugins_loaded = False
-    _miazobjs = {} # MiAZ Objects
+    _miazobjs = {}  # MiAZ Objects
+    _config = {}    # Dictionary holding configurations
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.log = MiAZLog("MiAZ.App")
-        self.log.debug("Starting MiAZ")
+
+    def get_config_dict(self):
+        return self._config
 
     def set_env(self, ENV: dict):
         self._env = ENV
         self._miazobjs['widgets'] = {}
         self._miazobjs['services'] = {}
-        self.backend = self.add_service('backend', MiAZBackend(self))
-        self.icman = self.add_service('icons', MiAZIconManager(self))
-        self.conf = self.backend.get_config()
+        self.log = self.add_service('log', MiAZLog("MiAZ.App"))
+        self.log.debug("Starting MiAZ")
+        self.add_service('util', MiAZUtil(self))
+        self._config['App'] = MiAZConfigApp(self)
+        self._config['Repository'] = MiAZConfigRepositories(self)
+        # ~ self.add_service('repo', MiAZRepository(self))
+        # ~ self.add_service('icons', MiAZIconManager(self))
+        self.conf = self.get_config_dict()
         GLib.set_application_name(ENV['APP']['name'])
         self.connect('activate', self._on_activate)
 
@@ -67,7 +78,10 @@ class MiAZApp(Gtk.Application):
         self.win.set_icon_name('MiAZ')
         self.win.connect('close-request', self._on_window_close_request)
         self.win.set_default_icon_name('MiAZ')
-        self.factory = self.add_service('factory', MiAZFactory(self))
+        self.add_service('repo', MiAZRepository(self))
+        # ~ self.add_service('util', MiAZUtil(self))
+        self.add_service('icons', MiAZIconManager(self))
+        self.add_service('factory', MiAZFactory(self))
         self.actions = self.add_service('actions', MiAZActions(self))
         self._setup_ui()
         self._setup_plugin_manager()
@@ -118,7 +132,7 @@ class MiAZApp(Gtk.Application):
 
             # Load User Plugins
             self.log.debug("Loading user plugins for this repository...")
-            conf = self.backend.get_config()
+            conf = self.get_config_dict()
             plugins = conf['Plugin']
             np = 0 # Number of user plugins
             ap = 0   # user plugins activated
@@ -142,7 +156,7 @@ class MiAZApp(Gtk.Application):
 
     def get_config(self, name: str):
         try:
-            config = self.backend.get_config()
+            config = self.get_config_dict()
             return config[name]
         except KeyError:
             return None
@@ -171,6 +185,7 @@ class MiAZApp(Gtk.Application):
             else:
                 valid = False
         except KeyError as error:
+            raise
             self.log.debug("No repository active in the configuration")
             self.actions.show_stack_page_by_name('welcome')
             valid = False
@@ -261,3 +276,5 @@ class MiAZApp(Gtk.Application):
             self.log.error("Widget '%s' doesn't exists", name)
         return deleted
 
+    def get_logger(self):
+        return self.log

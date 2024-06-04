@@ -42,7 +42,6 @@ class Export2Zip(GObject.GObject, Peas.Activatable):
     def do_activate(self):
         API = self.object
         self.app = API.app
-        self.backend = self.app.get_service('backend')
         self.factory = self.app.get_service('factory')
         self.util = self.app.get_service('util')
         self.repository = self.app.get_service('repo')

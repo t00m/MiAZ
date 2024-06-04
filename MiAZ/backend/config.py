@@ -22,10 +22,10 @@ class MiAZConfig(GObject.GObject):
     default = None
     cache = {}
 
-    def __init__(self, backend, log, config_for, used=None, available=None, default=None, model=MiAZModel, must_copy=True, foreign=False):
+    def __init__(self, app, log, config_for, used=None, available=None, default=None, model=MiAZModel, must_copy=True, foreign=False):
         super().__init__()
-        self.backend = backend
-        self.util = self.backend.get_service('util')
+        self.app = app
+        self.util = self.app.get_service('util')
         self.log = log
         self.config_for = config_for
         self.used = used
@@ -94,6 +94,8 @@ class MiAZConfig(GObject.GObject):
                 self.cache[filepath]['items'] = items
                 # ~ self.log.debug("In-memory config data updated for '%s'", filepath)
             except Exception as error:
+                self.log.error(error)
+                raise
                 items = None
             return items
         else:
@@ -254,17 +256,16 @@ class MiAZConfig(GObject.GObject):
 
 
 class MiAZConfigApp(MiAZConfig):
-    def __init__(self, backend):
-        self.backend = backend
-        self.app = backend.app
-        self.util = self.backend.get_service('util')
+    def __init__(self, app):
+        self.app = app
+        self.util = self.app.get_service('util')
         ENV = self.app.get_env()
         GObject.GObject.__init__(self)
         GObject.signal_new('repo-settings-updated-app',
                             MiAZConfigApp,
                             GObject.SignalFlags.RUN_LAST, None, () )
         super().__init__(
-            backend = backend,
+            app = app,
             log=MiAZLog('MiAZ.Config.App'),
             config_for = 'App',
             available = ENV['FILE']['CONF'],
@@ -288,12 +289,11 @@ class MiAZConfigApp(MiAZConfig):
         return saved
 
 class MiAZConfigRepositories(MiAZConfig):
-    def __init__(self, backend):
-        app = backend.app
+    def __init__(self, app):
         ENV = app.get_env()
         dir_conf = ENV['LPATH']['ETC']
         super().__init__(
-            backend = backend,
+            app = app,
             log=MiAZLog('MiAZ.Settings.Repos'),
             config_for = 'Repositories',
             available = os.path.join(dir_conf, 'repos-available.json'),
@@ -305,11 +305,11 @@ class MiAZConfigRepositories(MiAZConfig):
         )
 
 class MiAZConfigCountries(MiAZConfig):
-    def __init__(self, backend, dir_conf):
-        app = backend.app
+    def __init__(self, app, dir_conf):
+
         ENV = app.get_env()
         super().__init__(
-            backend = backend,
+            app = app,
             log=MiAZLog('MiAZ.Settings.Countries'),
             config_for = 'Countries',
             available = os.path.join(dir_conf, 'countries-available.json'),
@@ -322,11 +322,11 @@ class MiAZConfigCountries(MiAZConfig):
         )
 
 class MiAZConfigGroups(MiAZConfig):
-    def __init__(self, backend, dir_conf):
-        app = backend.app
+    def __init__(self, app, dir_conf):
+
         ENV = app.get_env()
         super().__init__(
-            backend = backend,
+            app = app,
             log=MiAZLog('MiAZ.Settings.Groups'),
             config_for = 'Groups',
             used = os.path.join(dir_conf, 'groups-used.json'),
@@ -338,11 +338,11 @@ class MiAZConfigGroups(MiAZConfig):
         )
 
 class MiAZConfigPurposes(MiAZConfig):
-    def __init__(self, backend, dir_conf):
-        app = backend.app
+    def __init__(self, app, dir_conf):
+
         ENV = app.get_env()
         super().__init__(
-            backend = backend,
+            app = app,
             log=MiAZLog('MiAZ.Settings.Purposes'),
             config_for = 'Purposes',
             used = os.path.join(dir_conf, 'purposes-used.json'),
@@ -354,11 +354,11 @@ class MiAZConfigPurposes(MiAZConfig):
         )
 
 class MiAZConfigConcepts(MiAZConfig):
-    def __init__(self, backend, dir_conf):
-        app = backend.app
+    def __init__(self, app, dir_conf):
+
         ENV = app.get_env()
         super().__init__(
-            backend = backend,
+            app = app,
             log=MiAZLog('MiAZ.Settings.Concepts'),
             config_for = 'Concepts',
             used = os.path.join(dir_conf, 'concepts-used.json'),
@@ -369,11 +369,11 @@ class MiAZConfigConcepts(MiAZConfig):
         )
 
 class MiAZConfigPeople(MiAZConfig):
-    def __init__(self, backend, dir_conf):
-        app = backend.app
+    def __init__(self, app, dir_conf):
+
         ENV = app.get_env()
         super().__init__(
-            backend = backend,
+            app = app,
             log=MiAZLog('MiAZ.Settings.People'),
             config_for = 'Person',
             used = os.path.join(dir_conf, 'people-used.json'),
@@ -385,11 +385,11 @@ class MiAZConfigPeople(MiAZConfig):
         )
 
 class MiAZConfigSentBy(MiAZConfig):
-    def __init__(self, backend, dir_conf):
-        app = backend.app
+    def __init__(self, app, dir_conf):
+
         ENV = app.get_env()
         super().__init__(
-            backend = backend,
+            app = app,
             log=MiAZLog('MiAZ.Settings.SentBy'),
             config_for = 'SentBy',
             used = os.path.join(dir_conf, 'sentby-used.json'),
@@ -401,11 +401,11 @@ class MiAZConfigSentBy(MiAZConfig):
         )
 
 class MiAZConfigSentTo(MiAZConfig):
-    def __init__(self, backend, dir_conf):
-        app = backend.app
+    def __init__(self, app, dir_conf):
+
         ENV = app.get_env()
         super().__init__(
-            backend = backend,
+            app = app,
             log=MiAZLog('MiAZ.Settings.SentTo'),
             config_for = 'SentTo',
             used = os.path.join(dir_conf, 'sentto-used.json'),
@@ -417,11 +417,11 @@ class MiAZConfigSentTo(MiAZConfig):
         )
 
 class MiAZConfigProjects(MiAZConfig):
-    def __init__(self, backend, dir_conf):
-        app = backend.app
+    def __init__(self, app, dir_conf):
+
         ENV = app.get_env()
         super().__init__(
-            backend = backend,
+            app = app,
             log=MiAZLog('MiAZ.Settings.Project'),
             config_for = 'Project',
             used = os.path.join(dir_conf, 'project-used.json'),
@@ -432,11 +432,11 @@ class MiAZConfigProjects(MiAZConfig):
         )
 
 class MiAZConfigUserPlugins(MiAZConfig):
-    def __init__(self, backend, dir_conf):
-        app = backend.app
+    def __init__(self, app, dir_conf):
+
         ENV = app.get_env()
         super().__init__(
-            backend = backend,
+            app = app,
             log=MiAZLog('MiAZ.Settings.UserPlugins'),
             config_for = 'UserPlugin',
             used = os.path.join(dir_conf, 'plugins-used.json'),

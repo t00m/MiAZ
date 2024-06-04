@@ -49,8 +49,7 @@ class MiAZAssistant(Gtk.Assistant):
         self.log = MiAZLog('MiAZAssistant')
         self.app = app
         self.factory = self.app.get_service('factory')
-        self.backend = self.app.get_service('backend')
-        self.config = self.backend.get_config()
+        self.config = self.app.get_config()
         self.set_size_request(1024, 728)
         self.set_title(_('MiAZ Assistant'))
         self.completed = False
@@ -172,17 +171,17 @@ class MiAZAssistantRepo(MiAZAssistant):
             self.app.quit()
 
     def on_assistant_close(self, *args):
-        backend = self.app.get_service('backend')
+        repository = self.app.get_service('repo')
         conf_app = self.app.get_config('App')
         dirpath = self.repopath
-        if backend.repo_validate(dirpath):
+        if repo.validate(dirpath):
             self.log.debug("Directory '%s' is a MiAZ Repository", dirpath)
             if len(conf_app.get('source')) == 0:
                 conf_app.set('source', dirpath)
-            backend.repo_load(dirpath)
+            repo.load(dirpath)
         else:
             self.log.debug("Directory '%s' is not a MiAZ repository", dirpath)
-            backend.repo_init(dirpath)
+            repo.init(dirpath)
 
         # ~ conf_app = self.app.get_config('App')
         # ~ conf_app.set('source', dirpath)

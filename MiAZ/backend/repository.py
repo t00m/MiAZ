@@ -26,19 +26,23 @@ from MiAZ.backend.config import MiAZConfigSentTo
 from MiAZ.backend.config import MiAZConfigUserPlugins
 from MiAZ.backend.watcher import MiAZWatcher
 from MiAZ.backend.projects import MiAZProject
+from MiAZ.backend.util import HERE
 
 
 class MiAZRepository(GObject.GObject):
     __gtype_name__ = 'MiAZRepository'
 
-    def __init__(self, backend):
-        super(MiAZRepository, self).__init__()
-        GObject.signal_new('repository-switched',
-                            MiAZRepository,
-                            GObject.SignalFlags.RUN_LAST, None, () )
-        self.log = MiAZLog('MiAZ.Repository')
-        self.backend = backend
-        self.config = self.backend.get_config()
+    def __init__(self, app):
+        sid = GObject.signal_lookup('repository-switched', MiAZRepository)
+        if sid == 0:
+            super(MiAZRepository, self).__init__()
+            GObject.signal_new('repository-switched',
+                                MiAZRepository,
+                                GObject.SignalFlags.RUN_LAST, None, () )
+        self.app = app
+        self.log = self.app.get_logger() #MiAZLog('MiAZ.Repository')
+        self.config = self.app.get_config_dict()
+        self.log.debug(self.config)
 
     @property
     def docs(self):
@@ -94,19 +98,19 @@ class MiAZRepository(GObject.GObject):
 
     def load(self, path):
         repo_dir_conf = self.get('dir_conf')
-        self.config['Country'] = MiAZConfigCountries(self.backend, repo_dir_conf)
-        self.config['Group'] = MiAZConfigGroups(self.backend, repo_dir_conf)
-        self.config['Purpose'] = MiAZConfigPurposes(self.backend, repo_dir_conf)
-        self.config['Concept'] = MiAZConfigConcepts(self.backend, repo_dir_conf)
-        self.config['SentBy'] = MiAZConfigSentBy(self.backend, repo_dir_conf)
-        self.config['SentTo'] = MiAZConfigSentTo(self.backend, repo_dir_conf)
-        self.config['Person'] = MiAZConfigPeople(self.backend, repo_dir_conf)
-        self.config['Project'] = MiAZConfigProjects(self.backend, repo_dir_conf)
-        self.config['Plugin'] = MiAZConfigUserPlugins(self.backend, repo_dir_conf)
-        self.backend.add_service('Projects', MiAZProject(self.backend))
+        self.config['Country'] = MiAZConfigCountries(self.app, repo_dir_conf)
+        self.config['Group'] = MiAZConfigGroups(self.app, repo_dir_conf)
+        self.config['Purpose'] = MiAZConfigPurposes(self.app, repo_dir_conf)
+        self.config['Concept'] = MiAZConfigConcepts(self.app, repo_dir_conf)
+        self.config['SentBy'] = MiAZConfigSentBy(self.app, repo_dir_conf)
+        self.config['SentTo'] = MiAZConfigSentTo(self.app, repo_dir_conf)
+        self.config['Person'] = MiAZConfigPeople(self.app, repo_dir_conf)
+        self.config['Project'] = MiAZConfigProjects(self.app, repo_dir_conf)
+        self.config['Plugin'] = MiAZConfigUserPlugins(self.app, repo_dir_conf)
+        self.app.add_service('Projects', MiAZProject(self.app))
         watcher = MiAZWatcher(path)
         watcher.set_active(active=True)
-        self.backend.add_service('watcher', watcher)
+        self.app.add_service('watcher', watcher)
         self.log.debug("Config repo loaded from: %s", repo_dir_conf)
         self.emit('repository-switched')
 

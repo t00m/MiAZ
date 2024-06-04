@@ -49,7 +49,6 @@ class MiAZPluginManager(GObject.GObject):
                             GObject.SignalFlags.RUN_LAST, None, () )
         self.log = MiAZLog('MiAZ.PluginManager')
         self.app = app
-        self.backend = self.app.get_service('backend')
         self.util = self.app.get_service('util')
         self.log.debug("Initializing Plugin Manager")
         self.plugin_info_list = []

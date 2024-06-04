@@ -34,12 +34,12 @@ class MiAZStats(GObject.GObject):
     }
     stats = {}
 
-    def __init__(self, backend):
+    def __init__(self, app):
         super(MiAZStats, self).__init__()
-        self.backend = backend
+        self.app = app
         self.log = MiAZLog('MiAZStats')
-        self.util = self.backend.get_service('util')
-        self.repository = self.backend.get_service('repo')
+        self.util = self.app.get_service('util')
+        self.repository = self.app.get_service('repo')
 
     def _build(self, *args):
         self.stats = {}

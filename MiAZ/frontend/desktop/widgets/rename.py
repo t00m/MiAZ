@@ -28,12 +28,11 @@ class MiAZRenameDialog(Gtk.Box):
     def __init__(self, app) -> Gtk.Widget:
         super(MiAZRenameDialog, self).__init__(orientation=Gtk.Orientation.VERTICAL, spacing=3, hexpand=True, vexpand=True)
         self.app = app
-        self.backend = self.app.get_service('backend')
         self.factory = self.app.get_service('factory')
         self.actions = self.app.get_service('actions')
         self.icons = self.app.get_service('icons')
         self.repository = self.app.get_service('repo')
-        self.config = self.backend.get_config()
+        self.config = self.app.get_config_dict()
         self.util = self.app.get_service('util')
         self.log = MiAZLog('Miaz.Rename')
 

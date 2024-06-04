@@ -60,11 +60,10 @@ class MiAZWorkspace(Gtk.Box):
         super(MiAZWorkspace, self).__init__(orientation=Gtk.Orientation.HORIZONTAL)
         self.log = MiAZLog('MiAZ.Workspace')
         self.app = app
-        self.backend = self.app.backend
         self.factory = self.app.get_service('factory')
         self.actions = self.app.get_service('actions')
         self.repository = self.app.get_service('repo')
-        self.config = self.backend.get_config()
+        self.config = self.app.get_config_dict()
         self.util = self.app.get_service('util')
         self.util.connect('filename-renamed', self._on_filename_renamed)
         self.util.connect('filename-deleted', self._on_filename_deleted)

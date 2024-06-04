@@ -36,12 +36,40 @@ Field[SentBy] = 3
 Field[Purpose] = 4
 Field[SentTo] = 6
 
+def HERE(do_print=False):
+    ''' Get the current file and line number in Python script. The line
+    number is taken from the caller, i.e. where this function is called.
+    Via: https://stackoverflow.com/a/67663308/2013690
+
+    Parameters
+    ----------
+    do_print : boolean
+        If True, print the file name and line number to stdout.
+
+    Returns
+    -------
+    String with file name and line number if do_print is False.
+
+    Examples
+    --------
+    >>> HERE() # Prints to stdout
+
+    >>> print(HERE(do_print=False))
+    '''
+    frameinfo = getframeinfo(currentframe().f_back)
+    filename = frameinfo.filename.split('/')[-1]
+    linenumber = frameinfo.lineno
+    loc_str = 'File: %s, line: %d >' % (filename, linenumber)
+    if do_print:
+        print('HERE AT %s' % (loc_str))
+    else:
+        return loc_str
 
 class MiAZUtil(GObject.GObject):
     """Backend class"""
     __gtype_name__ = 'MiAZUtil'
 
-    def __init__(self, backend):
+    def __init__(self, app):
         GObject.GObject.__init__(self)
         GObject.signal_new('filename-added',
                             MiAZUtil,
@@ -56,10 +84,7 @@ class MiAZUtil(GObject.GObject):
                             GObject.SignalFlags.RUN_LAST,
                             GObject.TYPE_PYOBJECT, (GObject.TYPE_PYOBJECT, GObject.TYPE_PYOBJECT,))
         self.log = MiAZLog('MiAZ.Backend.Util')
-        self.app = backend.app
-        self.backend = backend
-        self.conf = self.backend.get_config()
-        # ~ self.repository = self.backend.get_service('repo')
+        self.app = app
 
     def directory_open(self, dirpath: str):
         os.system("xdg-open '%s'" % dirpath)

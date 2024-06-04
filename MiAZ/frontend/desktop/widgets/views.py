@@ -32,7 +32,6 @@ class MiAZColumnViewWorkspace(MiAZColumnView):
     def __init__(self, app):
         super().__init__(app, item_type=MiAZItem)
         self.log = MiAZLog('MiAZColumnViewWorkspace')
-        self.backend = self.app.get_service('backend')
         self.srvicm = self.app.get_service('icons')
         self.factory_subtitle = Gtk.SignalListItemFactory()
         self.factory_subtitle.connect("setup", self._on_factory_setup_subtitle)

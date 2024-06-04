@@ -18,14 +18,14 @@ from MiAZ.backend.log import MiAZLog
 class MiAZProject(GObject.GObject):
     __gtype_name__ = 'MiAZProject'
 
-    def __init__(self, backend):
+    def __init__(self, app):
         super(MiAZProject, self).__init__()
         self.log = MiAZLog('MiAZ.Projects')
-        self.backend = backend
-        conf = self.backend.get_config()
+        self.app = app
+        conf = self.app.get_config_dict()
         self.config = conf['Project']
-        self.util = self.backend.get_service('util')
-        self.repository = self.backend.get_service('repo')
+        self.util = self.app.get_service('util')
+        self.repository = self.app.get_service('repo')
         repo_dir_conf = self.repository.get('dir_conf')
         self.cnfprj = os.path.join(repo_dir_conf, 'projects.json')
         self.projects = {}
@@ -123,7 +123,7 @@ class MiAZProject(GObject.GObject):
                 self.log.debug("\tDoc: %s", doc)
 
     def save(self) -> None:
-        srvutil = self.backend.get_service('util')
+        srvutil = self.app.get_service('util')
         srvutil.json_save(self.cnfprj, self.projects)
 
     def load(self) -> dict:
