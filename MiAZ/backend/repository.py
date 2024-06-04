@@ -40,7 +40,7 @@ class MiAZRepository(GObject.GObject):
                                 MiAZRepository,
                                 GObject.SignalFlags.RUN_LAST, None, () )
         self.app = app
-        self.log = self.app.get_logger() #MiAZLog('MiAZ.Repository')
+        self.log = MiAZLog('MiAZ.Repository')
         self.config = self.app.get_config_dict()
         self.log.debug(self.config)
 
@@ -57,6 +57,7 @@ class MiAZRepository(GObject.GObject):
     def validate(self, path: str) -> bool:
         conf_dir = os.path.join(path, '.conf')
         conf_file = os.path.join(conf_dir, 'repo.json')
+        self.log.debug("Validating repository '%s'", conf_file)
         valid = False
         if os.path.exists(conf_dir):
             if os.path.exists(conf_file):
@@ -91,8 +92,8 @@ class MiAZRepository(GObject.GObject):
             conf['dir_conf'] = os.path.join(conf['dir_docs'], '.conf')
             if not os.path.exists(conf['dir_conf']):
                 self.init(conf['dir_docs'])
-        except Exception as error:
-            self.log.error(error)
+        except Exception as warning:
+            self.log.warning("Repository configuration couldn't be loaded for repo_id '%s'", repo_id)
             conf = {}
         return conf
 

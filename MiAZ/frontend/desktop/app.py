@@ -164,25 +164,29 @@ class MiAZApp(Gtk.Application):
     def check_repository(self, repo_id: str = None):
         try:
             repository = self.get_service('repo')
-            self.log.debug("Using repo '%s'", repository.docs)
-            if repository.validate(repository.docs):
-                repository.load(repository.docs)
+            # ~ self.log.debug("Using repo '%s'", repository.docs)
+            try:
+                if repository.validate(repository.docs):
+                    repository.load(repository.docs)
 
-                # Workspace and Rename widgets can be only loaded
-                # after opening the Repository
-                self.log.debug("Setting up workspace")
-                if self.get_widget('workspace') is None:
-                    self._setup_page_workspace()
-                    workspace = self.get_widget('workspace')
-                    workspace.initialize_caches()
-                    if not self.plugins_loaded:
-                        self._load_plugins()
-                if self.get_widget('rename') is None:
-                    self._setup_page_rename()
-                self.actions.show_stack_page_by_name('workspace')
-                valid = True
-                self.emit('start-application-completed')
-            else:
+                    # Workspace and Rename widgets can be only loaded
+                    # after opening the Repository
+                    # FIXME: check this workflow
+                    self.log.debug("Setting up workspace")
+                    if self.get_widget('workspace') is None:
+                        self._setup_page_workspace()
+                        workspace = self.get_widget('workspace')
+                        workspace.initialize_caches()
+                        if not self.plugins_loaded:
+                            self._load_plugins()
+                    if self.get_widget('rename') is None:
+                        self._setup_page_rename()
+                    self.actions.show_stack_page_by_name('workspace')
+                    valid = True
+                    self.emit('start-application-completed')
+                else:
+                    valid = False
+            except KeyError:
                 valid = False
         except KeyError as error:
             raise
