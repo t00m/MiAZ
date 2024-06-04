@@ -16,6 +16,7 @@ import json
 import time
 import shutil
 import zipfile
+from inspect import currentframe, getframeinfo
 from datetime import datetime, timedelta
 # ~ from dateutil.parser import parse as dateparser
 
@@ -359,3 +360,7 @@ def which(program):
             if is_exe(exe_file):
                 return exe_file
     return None
+
+    def get_line_code_info(self):
+        frameinfo = getframeinfo(currentframe())
+        return frameinfo.filename, frameinfo.lineno
