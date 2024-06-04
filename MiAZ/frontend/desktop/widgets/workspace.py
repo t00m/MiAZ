@@ -141,7 +141,7 @@ class MiAZWorkspace(Gtk.Box):
         dropdowns = self.app.get_widget('ws-dropdowns')
         widget = self.factory.create_box_vertical(spacing=0, margin=0, hexpand=True, vexpand=False)
         body = self.factory.create_box_horizontal(margin=3, spacing=6, hexpand=True, vexpand=True)
-        body.set_homogeneous(True)
+        # ~ body.set_homogeneous(True)
         body.set_margin_top(margin=6)
         body.set_margin_start(margin=12)
         body.set_margin_end(margin=12)
@@ -174,12 +174,24 @@ class MiAZWorkspace(Gtk.Box):
             self.used_signals[i_type] = self.config[i_type].connect('used-updated', self.update_dropdown_filter, item_type)
             # ~ self.log.debug("Dropdown filter for '%s' setup successfully", i_title)
         self.app.set_widget('ws-dropdowns', dropdowns)
+        btnClearFilters = self.factory.create_button(icon_name='miaz-entry-clear', tooltip='Clear all filters', css_classes=['flat'], callback=self.clear_filters)
+        boxDropdown = self.factory.create_box_filter('', btnClearFilters)
+        body.append(boxDropdown)
+
         watcher = self.app.get_service('watcher')
         watcher.connect('repository-updated', self._on_workspace_update)
         repository = self.app.get_service('repo')
         repository.connect('repository-switched', self._update_dropdowns)
 
         return widget
+
+    def clear_filters(self, *args):
+        dropdowns = self.app.get_widget('ws-dropdowns')
+        for item_type in [Country, Group, SentBy, Purpose, SentTo, Project]:
+            i_type = item_type.__gtype_name__
+            dropdown = dropdowns[i_type]
+            model = dropdown.get_model()
+            dropdown.set_selected(0)
 
     def _update_dropdowns(self, *args):
         dropdowns = self.app.get_widget('ws-dropdowns')
