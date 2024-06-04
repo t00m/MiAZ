@@ -67,7 +67,7 @@ class MiAZActions(GObject.GObject):
             dialog.destroy()
 
         self.log.debug("Mass deletion")
-        self.config = self.app.get_config()
+        self.config = self.app.get_config_dict()
         frame = Gtk.Frame()
         box, view = self.factory.create_view(MiAZColumnViewMassDelete, _('Mass deletion'))
         citems = []

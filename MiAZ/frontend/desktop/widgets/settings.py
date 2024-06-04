@@ -320,7 +320,7 @@ class MiAZRepoSettings(MiAZCustomWindow):
             page.set_start_widget(box)
             wdgLabel = self.factory.create_box_horizontal()
             wdgLabel.get_style_context().add_class(class_name='caption')
-            icon = self.app.icman.get_image_by_name('miaz-res-%s' % i_type.lower())
+            icon = self.icman.get_image_by_name('miaz-res-%s' % i_type.lower())
             icon.set_hexpand(False)
             icon.set_pixel_size(24)
             label = self.factory.create_label("<b>%s</b>" % i_title)
