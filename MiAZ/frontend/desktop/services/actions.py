@@ -76,7 +76,8 @@ class MiAZActions(GObject.GObject):
         view.update(citems)
         frame.set_child(view)
         box.append(frame)
-        dialog = self.factory.create_dialog_question(self.app.win, _('Mass deletion'), box, width=1024, height=600)
+        window = self.app.get_widget('window')
+        dialog = self.factory.create_dialog_question(window, _('Mass deletion'), box, width=1024, height=600)
         dialog.connect('response', dialog_response, items)
         dialog.show()
 
@@ -214,7 +215,8 @@ class MiAZActions(GObject.GObject):
         config_for = selector.get_config_for()
         selector.set_vexpand(True)
         selector.update()
-        dialog = self.factory.create_dialog(self.app.win, _('Manage %s') % config_for, box, 800, 600)
+        window = self.app.get_widget('window')
+        dialog = self.factory.create_dialog(window, _('Manage %s') % config_for, box, 800, 600)
         dialog.show()
 
     def show_app_settings(self, *args):

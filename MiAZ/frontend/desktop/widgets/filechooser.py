@@ -30,6 +30,7 @@ class MiAZFileChooserDialog(Gtk.Dialog):
         self.callback = callback
         self.data = data
         ENV = app.get_env()
+        self.factory = self.app.get_service('factory')
         self.build_ui()
 
     def build_ui(self):
@@ -53,7 +54,7 @@ class MiAZFileChooserDialog(Gtk.Dialog):
         action_box.set_margin_bottom(6)
         self.connect('response', self.callback, self.data)
         contents = self.get_content_area()
-        box = self.app.factory.create_box_vertical()
+        box = self.factory.create_box_vertical()
         self.w_filechooser = Gtk.FileChooserWidget()
         box.append(self.w_filechooser)
         contents.append(box)
