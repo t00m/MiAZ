@@ -16,10 +16,12 @@ class MiAZPopoverButton(Gtk.Box):
     def __init__(self, app, icon_name: str = '', title: str = '', css_classes: list = [], widgets: list = []):
         super(Gtk.Box, self).__init__(spacing=0, orientation=Gtk.Orientation.VERTICAL)
         self.app = app
+        self.factory = self.app.get_service('factory')
         self.icon_name = icon_name
         self.title = title
         self.css_classes = css_classes
         self.widgets = widgets
+        self.factory = self.app.get_service('factory')
         self.build_ui()
 
     def build_ui(self):
@@ -32,12 +34,12 @@ class MiAZPopoverButton(Gtk.Box):
         self.listbox.set_selection_mode(Gtk.SelectionMode.NONE)
         for widget in self.widgets:
             self.listbox.append(child=widget)
-        vbox = self.app.factory.create_box_vertical(spacing=0, margin=0, hexpand=False, vexpand=False)
+        vbox = self.factory.create_box_vertical(spacing=0, margin=0, hexpand=False, vexpand=False)
         vbox.append(child=self.listbox)
         self.popover = Gtk.Popover()
         self.popover.set_child(vbox)
         self.popover.present()
-        self.button = Gtk.MenuButton(child=self.app.factory.create_button_content(icon_name=self.icon_name, title=self.title, css_classes=self.css_classes))
+        self.button = Gtk.MenuButton(child=self.factory.create_button_content(icon_name=self.icon_name, title=self.title, css_classes=self.css_classes))
         self.button.set_popover(self.popover)
         self.append(self.button)
 

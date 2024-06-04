@@ -21,7 +21,7 @@ from gi.repository import Gdk
 from gi.repository import Gtk
 from gi.repository import Pango
 
-from MiAZ.backend.log import get_logger
+from MiAZ.backend.log import MiAZLog
 from MiAZ.backend.models import MiAZItem
 
 
@@ -82,8 +82,7 @@ class MiAZColumnView(Gtk.Box):
         super(MiAZColumnView, self).__init__(orientation=Gtk.Orientation.VERTICAL, spacing=3, hexpand=True, vexpand=True)
         self.app = app
         self.item_type = item_type
-        self.log = get_logger('MiAZColumnView')
-        self.backend = self.app.get_service('backend')
+        self.log = MiAZLog('MiAZColumnView')
         self.factory = self.app.get_service('factory')
         self.actions = self.app.get_service('actions')
         self.selected_items = []

@@ -11,7 +11,7 @@
 from gi.repository import Gio
 from gi.repository import Gtk
 
-from MiAZ.backend.log import get_logger
+from MiAZ.backend.log import MiAZLog
 
 # FIXME: move to factory?
 
@@ -118,7 +118,7 @@ class MiAZDialogAdd(Gtk.Dialog):
     def __init__(self, app, parent, title, key1, key2, width=-1, height=-1):
         super(MiAZDialogAdd, self).__init__()
         self.app = app
-        self.log = get_logger('MiAZDialogAdd')
+        self.log = MiAZLog('MiAZDialogAdd')
         self.title = title
         self.key1 = key1
         self.key2 = key2

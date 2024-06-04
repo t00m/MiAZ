@@ -16,13 +16,14 @@ import json
 import time
 import shutil
 import zipfile
+from inspect import currentframe, getframeinfo
 from datetime import datetime, timedelta
 # ~ from dateutil.parser import parse as dateparser
 
 from gi.repository import Gio
 from gi.repository import GObject
 
-from MiAZ.backend.log import get_logger
+from MiAZ.backend.log import MiAZLog
 from MiAZ.backend.models import Group, Person, Country
 from MiAZ.backend.models import Purpose, Concept, SentBy
 from MiAZ.backend.models import SentTo, Date, Extension
@@ -35,12 +36,40 @@ Field[SentBy] = 3
 Field[Purpose] = 4
 Field[SentTo] = 6
 
+def HERE(do_print=False):
+    ''' Get the current file and line number in Python script. The line
+    number is taken from the caller, i.e. where this function is called.
+    Via: https://stackoverflow.com/a/67663308/2013690
+
+    Parameters
+    ----------
+    do_print : boolean
+        If True, print the file name and line number to stdout.
+
+    Returns
+    -------
+    String with file name and line number if do_print is False.
+
+    Examples
+    --------
+    >>> HERE() # Prints to stdout
+
+    >>> print(HERE(do_print=False))
+    '''
+    frameinfo = getframeinfo(currentframe().f_back)
+    filename = frameinfo.filename.split('/')[-1]
+    linenumber = frameinfo.lineno
+    loc_str = 'File: %s, line: %d >' % (filename, linenumber)
+    if do_print:
+        print('HERE AT %s' % (loc_str))
+    else:
+        return loc_str
 
 class MiAZUtil(GObject.GObject):
     """Backend class"""
     __gtype_name__ = 'MiAZUtil'
 
-    def __init__(self, backend):
+    def __init__(self, app):
         GObject.GObject.__init__(self)
         GObject.signal_new('filename-added',
                             MiAZUtil,
@@ -54,11 +83,8 @@ class MiAZUtil(GObject.GObject):
                             MiAZUtil,
                             GObject.SignalFlags.RUN_LAST,
                             GObject.TYPE_PYOBJECT, (GObject.TYPE_PYOBJECT, GObject.TYPE_PYOBJECT,))
-        self.log = get_logger('MiAZ.Backend.Util')
-        self.app = backend.app
-        self.backend = backend
-        self.conf = self.backend.get_config()
-        # ~ self.repository = self.backend.get_service('repo')
+        self.log = MiAZLog('MiAZ.Backend.Util')
+        self.app = app
 
     def directory_open(self, dirpath: str):
         os.system("xdg-open '%s'" % dirpath)
@@ -284,16 +310,8 @@ class MiAZUtil(GObject.GObject):
         year = adate.year
         return datetime.strptime("%4d0101" % year, "%Y%m%d")
 
-    def since_date_past_year(self, adate: datetime) -> datetime:
-        year = adate.year - 1
-        return datetime.strptime("%4d0101" % year, "%Y%m%d")
-
-    def since_date_three_years(self, adate: datetime) -> datetime:
-        year = adate.year - 2
-        return datetime.strptime("%4d0101" % year, "%Y%m%d")
-
-    def since_date_five_years(self, adate: datetime) -> datetime:
-        year = adate.year - 4
+    def since_date_past_n_years_ago(self, adate: datetime, n: int) -> datetime:
+        year = adate.year - n
         return datetime.strptime("%4d0101" % year, "%Y%m%d")
 
     def since_date_this_month(self, adate: datetime) -> datetime:
@@ -367,3 +385,7 @@ def which(program):
             if is_exe(exe_file):
                 return exe_file
     return None
+
+    def get_line_code_info(self):
+        frameinfo = getframeinfo(currentframe())
+        return frameinfo.filename, frameinfo.lineno

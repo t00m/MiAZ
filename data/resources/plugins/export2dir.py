@@ -19,7 +19,7 @@ from gi.repository import GObject
 from gi.repository import Gtk
 from gi.repository import Peas
 
-from MiAZ.backend.log import get_logger
+from MiAZ.backend.log import MiAZLog
 from MiAZ.backend.models import Concept, Country, Date, Group
 from MiAZ.backend.models import Person, Purpose, SentBy, SentTo
 
@@ -36,12 +36,11 @@ class Export2Dir(GObject.GObject, Peas.Activatable):
     object = GObject.Property(type=GObject.Object)
 
     def __init__(self):
-        self.log = get_logger('Plugin.Export2Dir')
+        self.log = MiAZLog('Plugin.Export2Dir')
 
     def do_activate(self):
         API = self.object
         self.app = API.app
-        self.backend = self.app.get_service('backend')
         self.factory = self.app.get_service('factory')
         self.util = self.app.get_service('util')
         self.repository = self.app.get_service('repo')

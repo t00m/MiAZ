@@ -17,7 +17,7 @@ from gi.repository import Gtk
 from gi.repository import GLib
 from gi.repository import GObject
 
-from MiAZ.backend.log import get_logger
+from MiAZ.backend.log import MiAZLog
 from MiAZ.backend.models import MiAZItem, File, Group, Person, Country, Purpose, Concept, SentBy, SentTo, Date, Extension, Project
 from MiAZ.frontend.desktop.widgets.columnview import MiAZColumnView, ColIcon, ColLabel, ColButton
 from MiAZ.frontend.desktop.widgets.assistant import MiAZAssistantRepoSettings
@@ -58,13 +58,12 @@ class MiAZWorkspace(Gtk.Box):
 
     def __init__(self, app):
         super(MiAZWorkspace, self).__init__(orientation=Gtk.Orientation.HORIZONTAL)
-        self.log = get_logger('MiAZ.Workspace')
+        self.log = MiAZLog('MiAZ.Workspace')
         self.app = app
-        self.backend = self.app.backend
         self.factory = self.app.get_service('factory')
         self.actions = self.app.get_service('actions')
         self.repository = self.app.get_service('repo')
-        self.config = self.backend.get_config()
+        self.config = self.app.get_config_dict()
         self.util = self.app.get_service('util')
         self.util.connect('filename-renamed', self._on_filename_renamed)
         self.util.connect('filename-deleted', self._on_filename_deleted)
@@ -241,7 +240,7 @@ class MiAZWorkspace(Gtk.Box):
         dd_date.set_hexpand(True)
         dropdowns[i_type] = dd_date
         self._update_dropdown_date()
-        dd_date.set_selected(2)
+        dd_date.set_selected(1)
         # ~ self.dd_date.connect("notify::selected-item", self._on_filter_selected)
         dd_date.connect("notify::selected-item", self.update)
         hdb_left.append(dd_date)
@@ -278,35 +277,46 @@ class MiAZWorkspace(Gtk.Box):
         key = "%s-%s" % (dt2str(ll), dt2str(ul))
         model.append(Date(id=key, title=_('This month')))
 
+        ul = now                                  # upper limit
+        ## past month
+        ll = self.util.since_date_last_n_months(now, 1) # lower limit
+        key = "%s-%s" % (dt2str(ll), dt2str(ul))
+        model.append(Date(id=key, title=_('Since past month')))
+
         ## Last 3 months
         ll = self.util.since_date_last_n_months(now, 3) # lower limit
         key = "%s-%s" % (dt2str(ll), dt2str(ul))
-        model.append(Date(id=key, title=_('Last 3 months')))
+        model.append(Date(id=key, title=_('Since last 3 months')))
 
         ## Last six months
         ll = self.util.since_date_last_n_months(now, 6) # lower limit
         key = "%s-%s" % (dt2str(ll), dt2str(ul))
-        model.append(Date(id=key, title=_('Last 6 months')))
+        model.append(Date(id=key, title=_('Since last 6 months')))
 
         ## This year
         ll = self.util.since_date_this_year(now) # lower limit
         key = "%s-%s" % (dt2str(ll), dt2str(ul))
-        model.append(Date(id=key, title=_('This year')))
+        model.append(Date(id=key, title=_('Since last year')))
 
         ## Two years ago
-        ll = self.util.since_date_past_year(now) # lower limit
+        ll = self.util.since_date_past_n_years_ago(now, 2) # lower limit
         key = "%s-%s" % (dt2str(ll), dt2str(ul))
         model.append(Date(id=key, title=_('Since two years ago')))
 
         ## Three years ago
-        ll = self.util.since_date_three_years(now) # lower limit
+        ll = self.util.since_date_past_n_years_ago(now, 3) # lower limit
         key = "%s-%s" % (dt2str(ll), dt2str(ul))
         model.append(Date(id=key, title=_('Since three years ago')))
 
         ## Five years ago
-        ll = self.util.since_date_five_years(now) # lower limit
+        ll = self.util.since_date_past_n_years_ago(now, 5) # lower limit
         key = "%s-%s" % (dt2str(ll), dt2str(ul))
         model.append(Date(id=key, title=_('Since five years ago')))
+
+        ## Ten years ago
+        ll = self.util.since_date_past_n_years_ago(now, 10) # lower limit
+        key = "%s-%s" % (dt2str(ll), dt2str(ul))
+        model.append(Date(id=key, title=_('Since ten years ago')))
 
         ## All documents
         key = "All-All"
@@ -430,7 +440,10 @@ class MiAZWorkspace(Gtk.Box):
         dd_prj = dropdowns[Project.__gtype_name__]
         filters = {}
         self.selected_items = []
-        docs = self.util.get_files(self.repository.docs)
+        try:
+            docs = self.util.get_files(self.repository.docs)
+        except KeyError:
+            docs = []
         sentby = self.app.get_config('SentBy')
         sentto = self.app.get_config('SentTo')
         countries = self.app.get_config('Country')

@@ -15,7 +15,7 @@ from gettext import gettext as _
 from gi.repository import Gtk
 from gi.repository import GLib
 
-from MiAZ.backend.log import get_logger
+from MiAZ.backend.log import MiAZLog
 from MiAZ.backend.models import Group, Person, Country, Purpose, Concept, SentBy, SentTo
 from MiAZ.frontend.desktop.widgets.configview import MiAZCountries, MiAZGroups, MiAZPurposes, MiAZPeopleSentBy, MiAZPeopleSentTo
 
@@ -28,14 +28,13 @@ class MiAZRenameDialog(Gtk.Box):
     def __init__(self, app) -> Gtk.Widget:
         super(MiAZRenameDialog, self).__init__(orientation=Gtk.Orientation.VERTICAL, spacing=3, hexpand=True, vexpand=True)
         self.app = app
-        self.backend = self.app.get_service('backend')
         self.factory = self.app.get_service('factory')
         self.actions = self.app.get_service('actions')
         self.icons = self.app.get_service('icons')
         self.repository = self.app.get_service('repo')
-        self.config = self.backend.get_config()
+        self.config = self.app.get_config_dict()
         self.util = self.app.get_service('util')
-        self.log = get_logger('Miaz.Rename')
+        self.log = MiAZLog('Miaz.Rename')
 
         # Box to be inserted as contents
         self.boxMain = Gtk.ListBox.new()
@@ -105,12 +104,10 @@ class MiAZRenameDialog(Gtk.Box):
         self.filepath = doc
         name, self.extension = self.util.filename_details(doc)
         filepath = os.path.join(self.repository.docs, doc)
-        # ~ self.extension = filepath[filepath.rfind('.')+1:]
-        # ~ self.doc = os.path.basename(filepath)
         self.suggested = self.util.get_fields(self.doc)
         if len(self.suggested[0]) == 0:
-            adate = self.util.filename_get_creation_date(filepath)
-            self.entry_date.set_text(adate.strftime("%Y%m%d"))
+            adate = self.guess_date_if_empty(self.suggested[5], filepath)
+            self.entry_date.set_text(adate)
         else:
             self.entry_date.set_text(self.suggested[0])
         self._set_suggestion(self.dpdCountry, self.suggested[1])
@@ -192,6 +189,24 @@ class MiAZRenameDialog(Gtk.Box):
         boxValue.append(self.entry_date)
         boxValue.append(button)
         self.entry_date.connect('changed', self._on_changed_entry)
+
+    def guess_date_if_empty(self, concept: str, filepath: str):
+        adate = ''
+        found = False
+        chunks = concept.split('_')
+        for chunk in chunks:
+            if len(chunk) == 8:
+                try:
+                    datetime.strptime(chunk, "%Y%m%d")
+                    adate = chunk
+                    found = True
+                    break
+                except Exception as error:
+                    pass
+        if not found:
+            ddate = self.util.filename_get_creation_date(filepath)
+            adate = ddate.strftime("%Y%m%d")
+        return adate
 
     def calendar_day_selected(self, calendar):
         adate = calendar.get_date()

@@ -19,7 +19,7 @@ from gi.repository import Gtk
 from gi.repository import GLib
 from gi.repository import GObject
 
-from MiAZ.backend.log import get_logger
+from MiAZ.backend.log import MiAZLog
 from MiAZ.backend.models import Project, Repository
 from MiAZ.frontend.desktop.widgets.columnview import MiAZColumnView
 from MiAZ.frontend.desktop.widgets.dialogs import MiAZDialogAdd
@@ -30,11 +30,10 @@ class MiAZSelector(Gtk.Box):
     def __init__(self, app, edit=True):
         self.app = app
         self.edit = edit
-        self.backend = self.app.get_service('backend')
         self.util = self.app.get_service('util')
         self.factory = self.app.get_service('factory')
         self.repository = self.app.get_service('repository')
-        self.log = get_logger('MiAZ.Selector')
+        self.log = MiAZLog('MiAZ.Selector')
         super(MiAZSelector, self).__init__(orientation=Gtk.Orientation.VERTICAL, hexpand=True, vexpand=True, spacing=0)
 
         # Entry and buttons for operations (edit/add/remove)
@@ -107,14 +106,14 @@ class MiAZSelector(Gtk.Box):
         columnview.column_title.set_expand(True)
         columnview.cv.connect("activate", self._on_selected_item_available_notify)
         self.frmViewAv.set_child(columnview)
-        columnview.cv.sort_by_column(columnview.column_title, Gtk.SortType.ASCENDING)
+        columnview.cv.sort_by_column(columnview.column_id, Gtk.SortType.ASCENDING)
         columnview.cv.get_style_context().add_class(class_name='caption')
 
     def add_columnview_used(self, columnview):
         columnview.set_filter(None)
         columnview.column_title.set_expand(True)
         self.frmViewSl.set_child(columnview)
-        columnview.cv.sort_by_column(columnview.column_title, Gtk.SortType.ASCENDING)
+        columnview.cv.sort_by_column(columnview.column_id, Gtk.SortType.ASCENDING)
         columnview.cv.get_style_context().add_class(class_name='caption')
 
     def _setup_view_finish(self, *args):
@@ -200,21 +199,22 @@ class MiAZSelector(Gtk.Box):
     def _on_response_item_available_rename(self, dialog, response, item):
         if response == Gtk.ResponseType.ACCEPT:
             oldkey = item.id
+            oldval = item.title
             newkey = dialog.get_value1()
             newval = dialog.get_value2()
-            self.log.debug("Renaming %s by %s (%s)", oldkey, newkey, newval)
             if len(newkey) > 0:
+                self.log.debug("Renaming %s (%s) by %s (%s)", oldkey, oldval, newkey, newval)
                 # Rename items used
                 items_used = self.config.load_used()
                 if oldkey in items_used:
-                    self.config.remove_used(oldkey)
-                    self.config.add_used(newkey, newval)
-                    self.log.debug("Renamed items_used")
+                    if self.config.remove_used(oldkey):
+                        if self.config.add_used(newkey, newval):
+                            self.log.debug("Renamed items_used")
                 # Rename items available
                 items_available = self.config.load_available()
                 self.config.remove_available(oldkey)
                 self.config.add_available(newkey, newval)
-                self.log.debug("%s renamed to %s (%s) in the list of available items", oldkey, newkey, newval)
+                self.log.debug("%s (%s) renamed to %s (%s) in the list of available items", oldkey, oldval, newkey, newval)
                 self.update()
         dialog.destroy()
 

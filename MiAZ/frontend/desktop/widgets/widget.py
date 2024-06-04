@@ -16,7 +16,7 @@ import gi
 gi.require_version('Gtk', '4.0')
 from gi.repository import Gtk
 
-from MiAZ.backend.log import get_logger
+from MiAZ.backend.log import MiAZLog
 
 class MiAZWidget(object):
     """Widget helper class for MiAZ widgets"""
@@ -29,4 +29,4 @@ class MiAZWidget(object):
         if name is None:
             name = __class__.__name__
         self.name = name
-        self.log = get_logger(name)
+        self.log = MiAZLog(name)

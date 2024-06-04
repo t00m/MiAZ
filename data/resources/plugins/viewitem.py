@@ -14,7 +14,7 @@ from gettext import gettext as _
 from gi.repository import GObject
 from gi.repository import Peas
 
-from MiAZ.backend.log import get_logger
+from MiAZ.backend.log import MiAZLog
 
 
 class MiAZToolbarViewItemPlugin(GObject.GObject, Peas.Activatable):
@@ -22,13 +22,12 @@ class MiAZToolbarViewItemPlugin(GObject.GObject, Peas.Activatable):
     object = GObject.Property(type=GObject.Object)
 
     def __init__(self):
-        self.log = get_logger('Plugin.ViewItem')
+        self.log = MiAZLog('Plugin.ViewItem')
 
     def do_activate(self):
         API = self.object
         self.app = API.app
         self.actions = self.app.get_service('actions')
-        self.backend = self.app.get_service('backend')
         self.factory = self.app.get_service('factory')
         self.util = self.app.get_service('util')
         self.workspace = API.app.get_widget('workspace')

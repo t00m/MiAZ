@@ -10,7 +10,7 @@
 
 from gi.repository import Gdk, Gio, GLib, Gtk
 
-from MiAZ.backend.log import get_logger
+from MiAZ.backend.log import MiAZLog
 from MiAZ.frontend.desktop.widgets.statusbar import MiAZStatusbar
 from MiAZ.frontend.desktop.widgets.searchbar import SearchBar
 
@@ -18,13 +18,12 @@ from MiAZ.frontend.desktop.widgets.searchbar import SearchBar
 class MiAZMainWindow(Gtk.Box):
     def __init__(self, app, edit=True):
         self.app = app
-        self.backend = self.app.get_service('backend')
         self.actions = self.app.get_service('actions')
         self.util = self.app.get_service('util')
         self.icm = self.app.get_service('icons')
         self.factory = self.app.get_service('factory')
         self.repository = self.app.get_service('repository')
-        self.log = get_logger('MiAZ.Selector')
+        self.log = MiAZLog('MiAZ.Selector')
         super(MiAZMainWindow, self).__init__(orientation=Gtk.Orientation.VERTICAL, hexpand=True, vexpand=True, spacing=0)
         self.win = self.app.get_widget('window')
         self._setup_ui()
@@ -99,14 +98,14 @@ class MiAZMainWindow(Gtk.Box):
         menu.append_section(None, section_common_in)
         menu.append_section(None, section_common_out)
         menu.append_section(None, section_danger)
-        menuitem = self.app.factory.create_menuitem('app-settings', _('Application settings'), self.actions.show_app_settings, None, [])
+        menuitem = self.factory.create_menuitem('app-settings', _('Application settings'), self.actions.show_app_settings, None, [])
         section_common_in.append_item(menuitem)
-        menuitem = self.app.factory.create_menuitem('app-about', _('About'), self.actions.show_app_about, None, [])
+        menuitem = self.factory.create_menuitem('app-about', _('About MiAZ'), self.actions.show_app_about, None, [])
         section_common_out.append_item(menuitem)
-        menuitem = self.app.factory.create_menuitem('app-quit', _('Exit application'), self.actions.exit_app, None, [])
+        menuitem = self.factory.create_menuitem('app-quit', _('Exit application'), self.actions.exit_app, None, [])
         section_danger.append_item(menuitem)
 
-        menubutton = Gtk.MenuButton(child=self.app.factory.create_button_content(icon_name='miaz-system-menu'))
+        menubutton = Gtk.MenuButton(child=self.factory.create_button_content(icon_name='miaz-system-menu'))
         popover = Gtk.PopoverMenu()
         popover.set_menu_model(menu)
         menubutton.set_popover(popover=popover)

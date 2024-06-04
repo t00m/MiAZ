@@ -19,7 +19,7 @@ from gi.repository import GObject
 from gi.repository import Gtk
 from gi.repository import Peas
 
-from MiAZ.backend.log import get_logger
+from MiAZ.backend.log import MiAZLog
 from MiAZ.backend.models import MiAZItem, File, Group, Person, Country, Purpose, Concept, SentBy, SentTo, Date, Extension, Project, Repository
 from MiAZ.frontend.desktop.widgets.configview import MiAZCountries
 from MiAZ.frontend.desktop.widgets.configview import MiAZGroups
@@ -56,15 +56,14 @@ class MiAZToolbarProjectMgtPlugin(GObject.GObject, Peas.Activatable):
     object = GObject.Property(type=GObject.Object)
 
     def __init__(self):
-        self.log = get_logger('Plugin.MassRename')
+        self.log = MiAZLog('Plugin.MassRename')
 
     def do_activate(self):
         API = self.object
         self.app = API.app
         self.actions = self.app.get_service('actions')
-        self.backend = self.app.get_service('backend')
         self.factory = self.app.get_service('factory')
-        self.config = self.backend.get_config()
+        self.config = self.app.get_config_dict()
         self.util = self.app.get_service('util')
         self.repository = self.app.get_service('repo')
         self.workspace = API.app.get_widget('workspace')

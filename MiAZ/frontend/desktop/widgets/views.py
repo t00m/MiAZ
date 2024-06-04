@@ -19,7 +19,7 @@ from gi.repository import Gio
 from gi.repository import Gtk
 from gi.repository import Pango
 
-from MiAZ.backend.log import get_logger
+from MiAZ.backend.log import MiAZLog
 from MiAZ.frontend.desktop.widgets.columnview import MiAZColumnView
 from MiAZ.frontend.desktop.widgets.columnview import ColIcon, ColLabel, ColMenuButton, ColCheck, ColButton
 from MiAZ.backend.models import MiAZItem, Country, Group, Person, Purpose, File, Project, Repository, Plugin
@@ -31,8 +31,7 @@ class MiAZColumnViewWorkspace(MiAZColumnView):
 
     def __init__(self, app):
         super().__init__(app, item_type=MiAZItem)
-        self.log = get_logger('MiAZColumnViewWorkspace')
-        self.backend = self.app.get_service('backend')
+        self.log = MiAZLog('MiAZColumnViewWorkspace')
         self.srvicm = self.app.get_service('icons')
         self.factory_subtitle = Gtk.SignalListItemFactory()
         self.factory_subtitle.connect("setup", self._on_factory_setup_subtitle)

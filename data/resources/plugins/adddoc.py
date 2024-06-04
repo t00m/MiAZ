@@ -19,14 +19,14 @@ from gi.repository import GObject
 from gi.repository import Gtk
 from gi.repository import Peas
 
-from MiAZ.backend.log import get_logger
+from MiAZ.backend.log import MiAZLog
 
 class MiAZAddDocumentPlugin(GObject.GObject, Peas.Activatable):
     __gtype_name__ = 'MiAZAddDocumentPlugin'
     object = GObject.Property(type=GObject.Object)
 
     def __init__(self):
-        self.log = get_logger('Plugin.AddDocument')
+        self.log = MiAZLog('Plugin.AddDocument')
 
     def do_activate(self):
         API = self.object

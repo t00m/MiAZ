@@ -17,7 +17,7 @@ from gi.repository import GObject
 from gi.repository import Gtk
 from gi.repository import Peas
 
-from MiAZ.backend.log import get_logger
+from MiAZ.backend.log import MiAZLog
 from MiAZ.backend.models import File
 from MiAZ.backend.models import Project
 from MiAZ.frontend.desktop.widgets.configview import MiAZCountries
@@ -47,13 +47,12 @@ class MiAZToolbarProjectMgtPlugin(GObject.GObject, Peas.Activatable):
     object = GObject.Property(type=GObject.Object)
 
     def __init__(self):
-        self.log = get_logger('Plugin.ProjectMgt')
+        self.log = MiAZLog('Plugin.ProjectMgt')
 
     def do_activate(self):
         API = self.object
         self.app = API.app
         self.actions = self.app.get_service('actions')
-        self.backend = self.app.get_service('backend')
         self.factory = self.app.get_service('factory')
         self.util = self.app.get_service('util')
         self.projects = self.app.get_service('Projects')
@@ -96,7 +95,7 @@ class MiAZToolbarProjectMgtPlugin(GObject.GObject, Peas.Activatable):
                 workspace.update()
             dialog.destroy()
 
-        self.config = self.backend.get_config()
+        self.config = self.app.get_config_dict()
         i_type = item_type.__gtype_name__
         box = self.factory.create_box_vertical(spacing=6, vexpand=True, hexpand=True)
         dropdown = self.factory.create_dropdown_generic(Project)
@@ -141,7 +140,7 @@ class MiAZToolbarProjectMgtPlugin(GObject.GObject, Peas.Activatable):
                 workspace.update()
             dialog.destroy()
 
-        self.config = self.backend.get_config()
+        self.config = self.app.get_config_dict()
         i_type = item_type.__gtype_name__
         box = self.factory.create_box_vertical(spacing=6, vexpand=True, hexpand=True)
         dropdown = self.factory.create_dropdown_generic(Project)

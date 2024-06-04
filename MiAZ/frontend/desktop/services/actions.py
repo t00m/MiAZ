@@ -18,7 +18,7 @@ from gi.repository import GLib
 from gi.repository import GObject
 from gi.repository import Gtk
 
-from MiAZ.backend.log import get_logger
+from MiAZ.backend.log import MiAZLog
 from MiAZ.backend.models import MiAZItem, File, Group, Person, Country, Purpose, Concept, SentBy, SentTo, Date, Extension, Project, Repository
 from MiAZ.frontend.desktop.widgets.configview import MiAZCountries, MiAZGroups, MiAZPeople, MiAZPurposes, MiAZPeopleSentBy, MiAZPeopleSentTo, MiAZProjects
 from MiAZ.frontend.desktop.widgets.rename import MiAZRenameDialog
@@ -48,9 +48,8 @@ Configview['Date'] = Gtk.Calendar
 
 class MiAZActions(GObject.GObject):
     def __init__(self, app):
-        self.log = get_logger('MiAZ.Actions')
+        self.log = MiAZLog('MiAZ.Actions')
         self.app = app
-        self.backend = self.app.get_service('backend')
         self.util = self.app.get_service('util')
         self.factory = self.app.get_service('factory')
         self.repository = self.app.get_service('repo')
@@ -68,7 +67,7 @@ class MiAZActions(GObject.GObject):
             dialog.destroy()
 
         self.log.debug("Mass deletion")
-        self.config = self.backend.get_config()
+        self.config = self.app.get_config_dict()
         frame = Gtk.Frame()
         box, view = self.factory.create_view(MiAZColumnViewMassDelete, _('Mass deletion'))
         citems = []
@@ -77,7 +76,8 @@ class MiAZActions(GObject.GObject):
         view.update(citems)
         frame.set_child(view)
         box.append(frame)
-        dialog = self.factory.create_dialog_question(self.app.win, _('Mass deletion'), box, width=1024, height=600)
+        window = self.app.get_widget('window')
+        dialog = self.factory.create_dialog_question(window, _('Mass deletion'), box, width=1024, height=600)
         dialog.connect('response', dialog_response, items)
         dialog.show()
 
@@ -215,7 +215,8 @@ class MiAZActions(GObject.GObject):
         config_for = selector.get_config_for()
         selector.set_vexpand(True)
         selector.update()
-        dialog = self.factory.create_dialog(self.app.win, _('Manage %s') % config_for, box, 800, 600)
+        window = self.app.get_widget('window')
+        dialog = self.factory.create_dialog(window, _('Manage %s') % config_for, box, 800, 600)
         dialog.show()
 
     def show_app_settings(self, *args):
@@ -236,7 +237,11 @@ class MiAZActions(GObject.GObject):
         about.set_logo_icon_name(ENV['APP']['ID'])
         about.set_program_name(ENV['APP']['name'])
         about.set_version(ENV['APP']['VERSION'])
-        about.set_authors(ENV['APP']['documenters'])
+        authors = ['%s %s' % (ENV['APP']['author'], ENV['APP']['author_website'])]
+        about.set_authors(authors)
+        artists = ['Flags borrowed from FlagKit project https://github.com/madebybowtie/FlagKit']
+        artists.append('Icons borrowed from GNOME contributors https://www.gnome.org')
+        about.set_artists(artists)
         about.set_license_type(Gtk.License.GPL_3_0_ONLY)
         about.set_copyright('© 2024 %s' % ENV['APP']['author'])
         about.set_website('https://github.com/t00m/MiAZ')
