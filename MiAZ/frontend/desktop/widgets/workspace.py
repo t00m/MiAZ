@@ -82,7 +82,7 @@ class MiAZWorkspace(Gtk.Box):
         try:
             self.cache = self.util.json_load(self.fcache)
             # ~ self.log.debug("Loading cache from %s", self.fcache)
-        except Exception as error:
+        except Exception:
             self.initialize_caches()
 
         # Allow plug-ins to make their job
