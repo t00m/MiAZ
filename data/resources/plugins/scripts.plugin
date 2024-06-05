@@ -1,0 +1,10 @@
+[Plugin]
+Module=scripts
+Name=MiAZScripts
+Loader=Python3
+Description=Execute a script over a selection of documents
+Authors=Tomás Vírseda <tomasvirseda@gmail.com>
+Copyright=Copyright © 2023 Tomás Vírseda
+Website=http://github.com/t00m/MiAZ
+Help=http://github.com/t00m/MiAZ/README.adoc
+Version=0.1
