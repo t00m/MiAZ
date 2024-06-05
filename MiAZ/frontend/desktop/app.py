@@ -190,9 +190,8 @@ class MiAZApp(Gtk.Application):
                     self.emit('start-application-completed')
                 else:
                     valid = False
-            except Exception as error:
-                raise
-                self.log.error(error)
+            except Exception as warning:
+                self.log.error("Default repository configuration not available")
                 valid = False
         except KeyError as error:
             raise
