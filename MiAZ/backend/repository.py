@@ -42,7 +42,6 @@ class MiAZRepository(GObject.GObject):
         self.app = app
         self.log = MiAZLog('MiAZ.Repository')
         self.config = self.app.get_config_dict()
-        self.log.debug(self.config)
 
     @property
     def docs(self):

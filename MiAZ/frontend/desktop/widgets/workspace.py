@@ -18,11 +18,10 @@ from gi.repository import GLib
 from gi.repository import GObject
 
 from MiAZ.backend.log import MiAZLog
-from MiAZ.backend.models import MiAZItem, File, Group, Person, Country, Purpose, Concept, SentBy, SentTo, Date, Extension, Project
-from MiAZ.frontend.desktop.widgets.columnview import MiAZColumnView, ColIcon, ColLabel, ColButton
+from MiAZ.backend.models import MiAZItem, Group, Country, Purpose, SentBy, SentTo, Date, Project
 from MiAZ.frontend.desktop.widgets.assistant import MiAZAssistantRepoSettings
-from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewWorkspace, MiAZColumnViewMassRename, MiAZColumnViewMassDelete, MiAZColumnViewMassProject
-from MiAZ.frontend.desktop.widgets.configview import MiAZCountries, MiAZGroups, MiAZPeople, MiAZPurposes, MiAZPeopleSentBy, MiAZPeopleSentTo, MiAZProjects
+from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewWorkspace
+from MiAZ.frontend.desktop.widgets.configview import MiAZCountries, MiAZGroups, MiAZPurposes, MiAZPeopleSentBy, MiAZPeopleSentTo, MiAZProjects
 
 # Conversion Item type to Field Number
 Field = {}
@@ -83,7 +82,7 @@ class MiAZWorkspace(Gtk.Box):
         try:
             self.cache = self.util.json_load(self.fcache)
             # ~ self.log.debug("Loading cache from %s", self.fcache)
-        except:
+        except Exception as error:
             self.initialize_caches()
 
         # Allow plug-ins to make their job
@@ -167,7 +166,7 @@ class MiAZWorkspace(Gtk.Box):
             i_title = _(item_type.__title__)
             dropdown = self.factory.create_dropdown_generic(item_type=item_type)
             self.actions.dropdown_populate(self.config[i_type], dropdown, item_type, none_value=True)
-            sigid = dropdown.connect("notify::selected-item", self._on_filter_selected)
+            dropdown.connect("notify::selected-item", self._on_filter_selected)
             boxDropdown = self.factory.create_box_filter(i_title, dropdown)
             body.append(boxDropdown)
             dropdowns[i_type] = dropdown
@@ -190,14 +189,14 @@ class MiAZWorkspace(Gtk.Box):
         for item_type in [Country, Group, SentBy, Purpose, SentTo, Project]:
             i_type = item_type.__gtype_name__
             dropdown = dropdowns[i_type]
-            model = dropdown.get_model()
+            # ~ model = dropdown.get_model()
             dropdown.set_selected(0)
 
     def _update_dropdowns(self, *args):
         dropdowns = self.app.get_widget('ws-dropdowns')
         for item_type in [Country, Group, SentBy, Purpose, SentTo, Project]:
             i_type = item_type.__gtype_name__
-            i_title = _(item_type.__title__)
+            # ~ i_title = _(item_type.__title__)
             config = self.config[i_type]
             self.actions.dropdown_populate(config, dropdowns[i_type], item_type, True, True)
             # ~ self.log.debug("Dropdown filter for '%s' updated", i_title)
@@ -346,15 +345,16 @@ class MiAZWorkspace(Gtk.Box):
         self.view.set_filter(self._do_filter_view)
         return self.view
 
-    def _on_factory_bind_icon_type(self, factory, list_item):
-        box = list_item.get_child()
-        button = box.get_first_child()
-        item = list_item.get_item()
-        mimetype, val = Gio.content_type_guess('filename=%s' % item.id)
-        gicon = Gio.content_type_get_icon(mimetype)
-        icon_name = self.app.icman.choose_icon(gicon.get_names())
-        child = self.factory.create_button('icon_name')
-        button.set_child(child)
+    # ~ def _on_factory_bind_icon_type(self, factory, list_item):
+        # ~ box = list_item.get_child()
+        # ~ button = box.get_first_child()
+        # ~ item = list_item.get_item()
+        # ~ mimetype, val = Gio.content_type_guess('filename=%s' % item.id)
+        # ~ gicon = Gio.content_type_get_icon(mimetype)
+        # ~ icon_name = self.app.icman.choose_icon(gicon.get_names())
+        # ~ self.log.debug("ICON NAME: %s", icon_name)
+        # ~ child = self.factory.create_button(icon_name)
+        # ~ button.set_child(child)
 
     def _setup_workspace(self):
         widget = self.factory.create_box_vertical(margin=0, spacing=0, hexpand=True, vexpand=True)
@@ -384,7 +384,7 @@ class MiAZWorkspace(Gtk.Box):
         self.view.column_date.set_visible(True)
 
         # Connect signals
-        selection = self.view.get_selection()
+        # ~ selection = self.view.get_selection()
 
         # Trigger events
         self._do_connect_filter_signals()
@@ -448,20 +448,20 @@ class MiAZWorkspace(Gtk.Box):
         # FIXME: come up w/ a solution to display only available values
         # ~ self.log.debug("Update requested")
         dropdowns = self.app.get_widget('ws-dropdowns')
-        dd_date = dropdowns[Date.__gtype_name__]
-        dd_prj = dropdowns[Project.__gtype_name__]
-        filters = {}
+        # ~ dd_date = dropdowns[Date.__gtype_name__]
+        # ~ dd_prj = dropdowns[Project.__gtype_name__]
+        # ~ filters = {}
         self.selected_items = []
         try:
             docs = self.util.get_files(self.repository.docs)
         except KeyError:
             docs = []
-        sentby = self.app.get_config('SentBy')
-        sentto = self.app.get_config('SentTo')
-        countries = self.app.get_config('Country')
-        groups = self.app.get_config('Group')
-        purposes = self.app.get_config('Purpose')
-        warning = False
+        # ~ sentby = self.app.get_config('SentBy')
+        # ~ sentto = self.app.get_config('SentTo')
+        # ~ countries = self.app.get_config('Country')
+        # ~ groups = self.app.get_config('Group')
+        # ~ purposes = self.app.get_config('Purpose')
+        # ~ warning = False
         items = []
         invalid = []
         ds = datetime.now()
@@ -567,7 +567,7 @@ class MiAZWorkspace(Gtk.Box):
         # ~ self.log.debug("Saving cache to %s", self.fcache)
         GLib.idle_add(self.view.update, items)
         self._on_filter_selected()
-        label = self.btnDocsSel.get_child()
+        # ~ label = self.btnDocsSel.get_child()
         self.view.select_first_item()
         renamed = 0
         for filename in invalid:
