@@ -42,7 +42,6 @@ class MiAZRepository(GObject.GObject):
         self.app = app
         self.log = MiAZLog('MiAZ.Repository')
         self.config = self.app.get_config_dict()
-        self.log.debug(self.config)
 
     @property
     def docs(self):
@@ -55,19 +54,22 @@ class MiAZRepository(GObject.GObject):
         return self.get('dir_conf')
 
     def validate(self, path: str) -> bool:
-        conf_dir = os.path.join(path, '.conf')
-        conf_file = os.path.join(conf_dir, 'repo.json')
-        self.log.debug("Validating repository '%s'", conf_file)
         valid = False
-        if os.path.exists(conf_dir):
-            if os.path.exists(conf_file):
-                with open(conf_file, 'r') as fin:
-                    try:
-                        repo = json.load(fin)
-                        valid = True
-                    except Exception as error:
-                        self.log.error(error)
-        self.log.debug("MiAZ Repository valid? %s", valid)
+        try:
+            conf_dir = os.path.join(path, '.conf')
+            conf_file = os.path.join(conf_dir, 'repo.json')
+            self.log.debug("Validating repository '%s'", conf_file)
+            if os.path.exists(conf_dir):
+                if os.path.exists(conf_file):
+                    with open(conf_file, 'r') as fin:
+                        try:
+                            repo = json.load(fin)
+                            valid = True
+                        except Exception as error:
+                            self.log.error(error)
+            self.log.debug("MiAZ Repository valid? %s", valid)
+        except Exception as warning:
+            self.log.warning(warning)
         return valid
 
     def init(self, path):
@@ -82,19 +84,24 @@ class MiAZRepository(GObject.GObject):
         self.log.debug("Repository initialited: '%s'", conf_file)
 
     def setup(self, repo_id: str = None):
-        repos_used = self.config['Repository'].load_used()
+        conf = {}
         if repo_id is None:
+            # Try to load the default repository
             repo_id = self.config['App'].get('current')
-        try:
-            repo_path = repos_used[repo_id]
-            conf = {}
-            conf['dir_docs'] = repo_path
-            conf['dir_conf'] = os.path.join(conf['dir_docs'], '.conf')
-            if not os.path.exists(conf['dir_conf']):
-                self.init(conf['dir_docs'])
-        except Exception as warning:
-            self.log.warning("Repository configuration couldn't be loaded for repo_id '%s'", repo_id)
-            conf = {}
+            if repo_id is None:
+                self.log.warning("No repository configuration available")
+        if repo_id is not None:
+            repos_used = self.config['Repository'].load_used()
+            try:
+                repo_path = repos_used[repo_id]
+                conf = {}
+                conf['dir_docs'] = repo_path
+                conf['dir_conf'] = os.path.join(conf['dir_docs'], '.conf')
+                if not os.path.exists(conf['dir_conf']):
+                    self.init(conf['dir_docs'])
+            except Exception as warning:
+                self.log.warning("Repository configuration couldn't be loaded for repo_id '%s'", repo_id)
+                conf = {}
         return conf
 
     def load(self, path):
@@ -112,7 +119,7 @@ class MiAZRepository(GObject.GObject):
         watcher = MiAZWatcher(path)
         watcher.set_active(active=True)
         self.app.add_service('watcher', watcher)
-        self.log.debug("Config repo loaded from: %s", repo_dir_conf)
+        self.log.debug("Repository configuration loaded correctly from: %s", repo_dir_conf)
         self.emit('repository-switched')
 
     def get(self, key: str) -> str:

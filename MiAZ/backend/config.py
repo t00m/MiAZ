@@ -14,7 +14,7 @@ import shutil
 from gi.repository import GObject
 
 from MiAZ.backend.log import MiAZLog
-from MiAZ.backend.models import MiAZModel, MiAZItem, File, Group, Person, Country, Purpose, Concept, SentBy, SentTo, Project, Repository, Plugin
+from MiAZ.backend.models import MiAZModel, Group, Person, Country, Purpose, Concept, SentBy, SentTo, Project, Repository, Plugin
 
 class MiAZConfig(GObject.GObject):
     """ MiAZ Config class"""
@@ -48,7 +48,6 @@ class MiAZConfig(GObject.GObject):
             GObject.signal_new('used-updated',
                                 MiAZConfig,
                                 GObject.SignalFlags.RUN_LAST, None, () )
-
         self.log.debug("Config for %s initialited", self.config_for)
 
     def __repr__(self):
@@ -82,7 +81,7 @@ class MiAZConfig(GObject.GObject):
     def load(self, filepath:str) -> dict:
         try:
             config_changed = self.cache[filepath]['changed']
-        except:
+        except Exception as error:
             config_changed = True
 
         if config_changed:
@@ -95,7 +94,6 @@ class MiAZConfig(GObject.GObject):
                 # ~ self.log.debug("In-memory config data updated for '%s'", filepath)
             except Exception as error:
                 self.log.error(error)
-                raise
                 items = None
             return items
         else:
@@ -120,7 +118,7 @@ class MiAZConfig(GObject.GObject):
                 self.emit('used-updated')
             try:
                 self.cache[filepath]['changed'] = True
-            except:
+            except Exception as error:
                 self.cache[filepath] = {}
                 self.cache[filepath]['changed'] = True
             # ~ self.log.debug("Cache update for '%s'", filepath)
@@ -181,7 +179,7 @@ class MiAZConfig(GObject.GObject):
         saved = 0
         for key, value in keysvalues:
             if len(key.strip()) != 0:
-                if not key in items:
+                if key not in items:
                     key = self.util.valid_key(key)
                     items[key] = value
                     saved += 1
@@ -198,7 +196,7 @@ class MiAZConfig(GObject.GObject):
         saved = 0
         for key, value in keysvalues:
             if len(key.strip()) != 0:
-                if not key in items:
+                if key not in items:
                     key = self.util.valid_key(key)
                     items[key] = value
                     saved += 1
@@ -214,7 +212,7 @@ class MiAZConfig(GObject.GObject):
         if len(key.strip()) == 0:
             self.log.warning('Key is None or empty. Add skipped')
         items = self.load(filepath)
-        if not key in items:
+        if key not in items:
             key = self.util.valid_key(key)
             items[key] = value
             self.save(filepath, items=items)

@@ -17,7 +17,6 @@ from gi.repository import GObject
 from gi.repository import Peas
 
 from MiAZ.backend.log import MiAZLog
-from MiAZ.frontend.desktop.widgets.settings import MiAZRepoSettings
 
 
 class MiAZRepositoryInfoPlugin(GObject.GObject, Peas.Activatable):
@@ -46,15 +45,7 @@ class MiAZRepositoryInfoPlugin(GObject.GObject, Peas.Activatable):
     def add_menuitem(self, *args):
         if self.app.get_widget('workspace-menu-selection-section-app-repository-info') is None:
             section_app = self.app.get_widget('workspace-menu-selection-section-app')
-            menuitem = self.factory.create_menuitem('repoinfo', _('Repository properties'), self.repository_info, None, [])
+            menuitem = self.factory.create_menuitem('repoinfo', _('Repository properties'), self.actions.show_repository_settings, None, [])
             self.app.add_widget('workspace-menu-selection-section-app-repository-info', menuitem)
             section_app.append_item(menuitem)
 
-    def repository_info(self, *args):
-        window_main = self.app.get_widget('window')
-        window_settings = self.app.get_widget('settings-repo')
-        if window_settings is None:
-            window_settings = self.app.add_widget('settings-repo', MiAZRepoSettings(self.app))
-        window_settings.set_transient_for(window_main)
-        window_settings.set_modal(True)
-        window_settings.present()

@@ -181,12 +181,17 @@ class MiAZApp(Gtk.Application):
                             self._load_plugins()
                     if self.get_widget('rename') is None:
                         self._setup_page_rename()
+                    repo_settings = self.get_widget('settings-repo')
+                    if repo_settings is None:
+                        repo_settings = self.add_widget('settings-repo', MiAZRepoSettings(self))
+                    repo_settings.update()
                     self.actions.show_stack_page_by_name('workspace')
                     valid = True
                     self.emit('start-application-completed')
                 else:
                     valid = False
-            except KeyError:
+            except Exception as warning:
+                self.log.error("Default repository configuration not available")
                 valid = False
         except KeyError as error:
             raise
@@ -253,12 +258,8 @@ class MiAZApp(Gtk.Application):
 
     def set_widget(self, name: str, widget):
         # Overwrite existing widget
-        if name in self._miazobjs['widgets']:
-            self._miazobjs['widgets'][name] = widget
-            return widget
-        else:
-            self.log.error("A widget with name '%s' doesn't exists", name)
-            return None
+        self._miazobjs['widgets'][name] = widget
+        return widget
 
     def get_widget(self, name):
         try:

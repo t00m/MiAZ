@@ -139,10 +139,12 @@ class MiAZItem(MiAZModel):
 class Concept(MiAZModel):
     __gtype_name__ = 'Concept'
     __title__ = _('Concept')
+    __title_plural__ = _('Concepts')
 
 class Country(MiAZModel):
     __gtype_name__ = 'Country'
     __title__ = _('Country')
+    __title_plural__ = _('Countries')
 
     def __init__(self,  id: str, title: str = '', icon: str = ''):
         super().__init__(id, title)
@@ -155,43 +157,54 @@ class Country(MiAZModel):
 class Date(MiAZModel):
     __gtype_name__ = 'Date'
     __title__ = _('Date')
+    __title_plural__ = _('Dates')
 
 class Extension(MiAZModel):
     __gtype_name__ = 'Extension'
     __title__ = _('Extension')
+    __title_plural__ = _('Extensions')
 
 class File(MiAZModel):
     __gtype_name__ = 'File'
     __title__ = _('File')
+    __title_plural__ = _('Files')
 
 class Group(MiAZModel):
     __gtype_name__ = 'Group'
     __title__ = _('Group')
+    __title_plural__ = _('Groups')
 
 class Person(MiAZModel):
     __gtype_name__ = 'Person'
     __title__ = _('Person')
+    __title_plural__ = _('People')
 
 class Project(MiAZModel):
     __gtype_name__ = 'Project'
     __title__ = _('Project')
+    __title_plural__ = _('Projects')
 
 class Purpose(MiAZModel):
     __gtype_name__ = 'Purpose'
     __title__ = _('Purpose')
+    __title_plural__ = _('Purposes')
 
 class Repository(MiAZModel):
     __gtype_name__ = 'Repository'
     __title__ = _('Repository')
+    __title_plural__ = _('Repositories')
 
 class SentBy(Person):
     __gtype_name__ = 'SentBy'
     __title__ = _('Sender')
+    __title_plural__ = _('Senders')
 
 class SentTo(Person):
     __gtype_name__ = 'SentTo'
     __title__ = _('Recipient')
+    __title_plural__ = _('Recipients')
 
 class Plugin(MiAZModel):
     __gtype_name__ = 'Plugin'
     __title__ = _('Plugin')
+    __title_plural__ = _('Plugins')
