@@ -181,12 +181,18 @@ class MiAZApp(Gtk.Application):
                             self._load_plugins()
                     if self.get_widget('rename') is None:
                         self._setup_page_rename()
+                    repo_settings = self.get_widget('settings-repo')
+                    if repo_settings is None:
+                        repo_settings = self.add_widget('settings-repo', MiAZRepoSettings(self))
+                    repo_settings.update()
                     self.actions.show_stack_page_by_name('workspace')
                     valid = True
                     self.emit('start-application-completed')
                 else:
                     valid = False
-            except KeyError:
+            except Exception as error:
+                raise
+                self.log.error(error)
                 valid = False
         except KeyError as error:
             raise

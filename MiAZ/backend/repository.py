@@ -112,7 +112,7 @@ class MiAZRepository(GObject.GObject):
         watcher = MiAZWatcher(path)
         watcher.set_active(active=True)
         self.app.add_service('watcher', watcher)
-        self.log.debug("Config repo loaded from: %s", repo_dir_conf)
+        self.log.debug("Repository configuration loaded correctly from: %s", repo_dir_conf)
         self.emit('repository-switched')
 
     def get(self, key: str) -> str:

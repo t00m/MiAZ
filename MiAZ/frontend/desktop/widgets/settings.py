@@ -312,9 +312,10 @@ class MiAZRepoSettings(MiAZCustomWindow):
             page = Gtk.CenterBox(orientation=Gtk.Orientation.VERTICAL)
             page.set_vexpand(True)
             page.set_hexpand(True)
-            selector = Configview[i_type](self.app)
+            widget_title = 'configview-%s' % i_title
+            selector = self.app.add_widget(widget_title, Configview[i_type](self.app))
             selector.set_vexpand(True)
-            selector.update()
+            selector.update_views()
             box = self.factory.create_box_vertical(spacing=12, vexpand=True, hexpand=True)
             box.append(selector)
             page.set_start_widget(box)
@@ -335,4 +336,11 @@ class MiAZRepoSettings(MiAZCustomWindow):
             page, label = create_tab(item_type)
             self.notebook.append_page(page, label)
 
-
+    def update(self, *args):
+        for item_type in [Country, Group, Purpose, Project, SentBy, SentTo, Plugin]:
+            i_type = item_type.__gtype_name__
+            i_title = _(item_type.__title_plural__)
+            widget_title = 'configview-%s' % i_title
+            configview = self.app.get_widget(widget_title)
+            configview.update_config()
+            configview.update_views()

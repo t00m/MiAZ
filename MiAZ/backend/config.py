@@ -48,7 +48,6 @@ class MiAZConfig(GObject.GObject):
             GObject.signal_new('used-updated',
                                 MiAZConfig,
                                 GObject.SignalFlags.RUN_LAST, None, () )
-
         self.log.debug("Config for %s initialited", self.config_for)
 
     def __repr__(self):
@@ -95,7 +94,6 @@ class MiAZConfig(GObject.GObject):
                 # ~ self.log.debug("In-memory config data updated for '%s'", filepath)
             except Exception as error:
                 self.log.error(error)
-                raise
                 items = None
             return items
         else:

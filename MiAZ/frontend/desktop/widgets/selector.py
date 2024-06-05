@@ -122,7 +122,7 @@ class MiAZSelector(Gtk.Box):
     def _setup_view_finish(self, *args):
         pass
 
-    def update(self, *args):
+    def update_views(self, *args):
         self._update_view_available()
         self._update_view_used()
 
@@ -189,7 +189,7 @@ class MiAZSelector(Gtk.Box):
             if len(key) > 0:
                 self.config.add_available(key.upper(), value)
                 self.log.debug("%s (%s) added to list of available items", key, value)
-                self.update()
+                self.update_views()
         dialog.destroy()
 
     def _on_item_available_edit(self, *args):
@@ -225,7 +225,7 @@ class MiAZSelector(Gtk.Box):
                 self.config.remove_available(oldkey)
                 self.config.add_available(newkey, newval)
                 self.log.debug("%s (%s) renamed to %s (%s) in the list of available items", oldkey, oldval, newkey, newval)
-                self.update()
+                self.update_views()
         dialog.destroy()
 
     def _on_item_available_remove(self, *args):
@@ -234,7 +234,7 @@ class MiAZSelector(Gtk.Box):
             keys.append(item_available.id)
         self.config.remove_available_batch(keys)
         # ~ # FIXME: self.config.remove_used(item.id)
-        self.update()
+        self.update_views()
         self.entry.set_text('')
         self.entry.activate()
 

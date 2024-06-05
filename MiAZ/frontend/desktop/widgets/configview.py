@@ -32,19 +32,20 @@ class MiAZConfigView(MiAZSelector):
     __gtype_name__ = 'MiAZConfigView'
     config_for = None
 
-    def __init__(self, app, config=None):
+    def __init__(self, app, config_name=None):
         super(MiAZSelector, self).__init__(spacing=0, orientation=Gtk.Orientation.VERTICAL)
         self.app = app
         self.log = MiAZLog('MiAZConfigView')
         self.repository = self.app.get_service('repo')
+        self.config_name = config_name
         self.conf = self.app.get_config_dict()
-        self.config = self.conf[config]
-        self.config.connect('used-updated', self.update)
-        self.config.connect('available-updated', self.update)
+        self.config = self.conf[config_name]
+        self.config.connect('used-updated', self.update_views)
+        self.config.connect('available-updated', self.update_views)
         self.set_vexpand(True)
 
     def update_config(self):
-        self.config = self.conf[config]
+        self.config = self.conf[self.config_name]
 
     def get_config_for(self):
         return self.config.config_for
@@ -91,7 +92,7 @@ class MiAZRepositories(MiAZConfigView):
             if len(repo_name) > 0 and os.path.exists(repo_path):
                 self.config.add_available(repo_name, repo_path)
                 self.log.debug("Repo '%s' added to list of available repositories", repo_name)
-                self.update()
+                self.update_views()
         dialog.destroy()
 
     def _on_item_available_rename(self, item):
@@ -175,7 +176,7 @@ class MiAZPeopleSentBy(MiAZConfigView):
         super().__init__(app, 'SentBy')
         # Trick to keep People sync for SentBy/SentTo
         self.config_paired = self.conf['SentTo']
-        self.config_paired.connect('available-updated', self.update)
+        self.config_paired.connect('available-updated', self.update_views)
 
     def _setup_view_finish(self):
         # Setup Available and Used Columns Views
@@ -193,7 +194,7 @@ class MiAZPeopleSentTo(MiAZConfigView):
         super().__init__(app, 'SentTo')
         # Trick to keep People sync for SentBy/SentTo
         self.config_paired = self.conf['SentBy']
-        self.config_paired.connect('available-updated', self.update)
+        self.config_paired.connect('available-updated', self.update_views)
 
     def _setup_view_finish(self):
         # Setup Available and Used Columns Views
