@@ -27,6 +27,7 @@ from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewMassRename
 from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewMassDelete
 from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewMassProject
 from MiAZ.frontend.desktop.widgets.settings import MiAZAppSettings
+from MiAZ.frontend.desktop.widgets.settings import MiAZRepoSettings
 
 # Conversion Item type to Field Number
 Field = {}
@@ -227,6 +228,15 @@ class MiAZActions(GObject.GObject):
         settings.set_transient_for(window)
         settings.set_modal(True)
         settings.present()
+
+    def show_repository_settings(self, *args):
+        window_main = self.app.get_widget('window')
+        window_settings = self.app.get_widget('settings-repo')
+        if window_settings is None:
+            window_settings = self.app.add_widget('settings-repo', MiAZRepoSettings(self.app))
+        window_settings.set_transient_for(window_main)
+        window_settings.set_modal(True)
+        window_settings.present()
 
     def show_app_about(self, *args):
         window = self.app.get_widget('window')

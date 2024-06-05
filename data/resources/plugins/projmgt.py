@@ -74,9 +74,11 @@ class MiAZToolbarProjectMgtPlugin(GObject.GObject, Peas.Activatable):
             section_common_in.append_item(menu_project)
             self.app.add_widget('workspace-menu-selection-menu-project', menu_project)
             self.app.add_widget('workspace-menu-selection-submenu-project', submenu_project)
-            menuitem = self.factory.create_menuitem('project-assign', _('...assign project'), self.project_assign, None, [])
+            menuitem = self.factory.create_menuitem('project-manage', _('...Manage projects'), self.project_manage, None, [])
             submenu_project.append_item(menuitem)
-            menuitem = self.factory.create_menuitem('project-withdraw', _('...withdraw project'), self.project_withdraw, None, [])
+            menuitem = self.factory.create_menuitem('project-assign', _('...assign to project'), self.project_assign, None, [])
+            submenu_project.append_item(menuitem)
+            menuitem = self.factory.create_menuitem('project-withdraw', _('...withdraw from project'), self.project_withdraw, None, [])
             submenu_project.append_item(menuitem)
 
 
@@ -177,3 +179,9 @@ class MiAZToolbarProjectMgtPlugin(GObject.GObject, Peas.Activatable):
         dialog.connect('response', dialog_response, dropdown, items)
         dialog.show()
 
+    def project_manage(self, *args):
+        self.actions.show_repository_settings()
+        winRepoSettings = self.app.get_widget('settings-repo')
+        if winRepoSettings is not None:
+            notebook = self.app.get_widget('repository-settings-notebook')
+            notebook.set_current_page(3)

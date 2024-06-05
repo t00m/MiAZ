@@ -301,14 +301,14 @@ class MiAZRepoSettings(MiAZCustomWindow):
 
     def _build_ui(self):
         self.set_default_size(1024, 728)
-        self.notebook = Gtk.Notebook()
+        self.notebook = self.app.add_widget('repository-settings-notebook', Gtk.Notebook())
         self.notebook.set_show_border(False)
         self.notebook.set_tab_pos(Gtk.PositionType.TOP)
         self.mainbox.append(self.notebook)
 
         def create_tab(item_type):
             i_type = item_type.__gtype_name__
-            i_title = _(item_type.__title__)
+            i_title = _(item_type.__title_plural__)
             page = Gtk.CenterBox(orientation=Gtk.Orientation.VERTICAL)
             page.set_vexpand(True)
             page.set_hexpand(True)
