@@ -336,10 +336,16 @@ class MiAZUserPlugins(MiAZConfigView):
         plugin_manager = self.app.get_service('plugin-manager')
         plugins_used = self.config.load_used()
         for plugin_used in self.viewSl.get_selected_items():
-            plugin = plugin_manager.get_plugin_info(plugin_used.id)
-            if plugin.is_loaded():
-                plugin_manager.unload_plugin(plugin)
-            del(plugins_used[plugin_used.id])
+            try:
+                plugin = plugin_manager.get_plugin_info(plugin_used.id)
+                if plugin.is_loaded():
+                    plugin_manager.unload_plugin(plugin)
+                self.log.debug("Plugin '%s' unloaded", plugin_used.id)
+            except AttributeError:
+                self.log.debug("Unknown error unloading plugin '%s'", plugin_used.id)
+            finally:
+                del(plugins_used[plugin_used.id])
+                self.log.debug("Plugin '%s' removed from used view", plugin_used.id)
         self.config.save_used(items=plugins_used)
         self._update_view_used()
 

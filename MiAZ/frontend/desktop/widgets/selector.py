@@ -63,9 +63,10 @@ class MiAZSelector(Gtk.Box):
             self.boxButtons = Gtk.Box(spacing=0, orientation=Gtk.Orientation.HORIZONTAL)
             self.boxButtons.get_style_context().add_class(class_name='linked')
             self.boxButtons.set_hexpand(True)
-            self.boxButtons.append(self.factory.create_button(icon_name='miaz-list-add', title='', callback=self.on_item_available_add, data=self.config_for))
-            self.boxButtons.append(self.factory.create_button(icon_name='miaz-list-remove', title='', callback=self._on_item_available_remove))
-            # ~ self.boxButtons.append(self.factory.create_button(icon_name='miaz-import-config', tooltip='Import configuration', callback=self._on_config_import))
+            self.boxButtons.append(self.factory.create_button(icon_name='com.github.t00m.MiAZ-list-add-symbolic', title='', callback=self.on_item_available_add))
+            self.boxButtons.append(self.factory.create_button(icon_name='com.github.t00m.MiAZ-list-remove-symbolic', title='', callback=self._on_item_available_remove))
+            self.boxButtons.append(self.factory.create_button(icon_name='com.github.t00m.MiAZ-list-edit-symbolic', title='', callback=self._on_item_available_edit))
+            # ~ self.boxButtons.append(self.factory.create_button(icon_name='miaz-import-config', tooltip='Import configuration', callback=self._on_config_import, data=self.config_for))
             self.boxOper.append(self.boxButtons)
         self.append(self.boxOper)
         boxViews = self.factory.create_box_horizontal(spacing=0, hexpand=True, vexpand=True)
@@ -102,6 +103,8 @@ class MiAZSelector(Gtk.Box):
         self._setup_view_finish()
 
     def add_columnview_available(self, columnview):
+        widget_name = 'selector-cv-%s' % self.config_for
+        self.app.set_widget(widget_name, columnview)
         columnview.set_filter(self._do_filter_view)
         columnview.column_title.set_expand(True)
         columnview.cv.connect("activate", self._on_selected_item_available_notify)
@@ -188,6 +191,13 @@ class MiAZSelector(Gtk.Box):
                 self.log.debug("%s (%s) added to list of available items", key, value)
                 self.update()
         dialog.destroy()
+
+    def _on_item_available_edit(self, *args):
+        try:
+            item = self.viewAv.get_selected_items()[0]
+            self._on_item_available_rename(item)
+        except IndexError:
+            self.log.debug("No item selected. Cancel operation")
 
     def _on_item_available_rename(self, item):
         dialog = MiAZDialogAdd(self.app, self.get_root(), _('%s: rename item') % self.config.config_for, _('Name'), _('Description'))

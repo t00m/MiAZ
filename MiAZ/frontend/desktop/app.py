@@ -253,12 +253,8 @@ class MiAZApp(Gtk.Application):
 
     def set_widget(self, name: str, widget):
         # Overwrite existing widget
-        if name in self._miazobjs['widgets']:
-            self._miazobjs['widgets'][name] = widget
-            return widget
-        else:
-            self.log.error("A widget with name '%s' doesn't exists", name)
-            return None
+        self._miazobjs['widgets'][name] = widget
+        return widget
 
     def get_widget(self, name):
         try:
