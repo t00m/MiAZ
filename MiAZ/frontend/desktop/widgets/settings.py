@@ -98,7 +98,7 @@ class MiAZAppSettings(MiAZCustomWindow):
         configview = MiAZRepositories(self.app)
         configview.set_hexpand(True)
         configview.set_vexpand(True)
-        configview.update()
+        configview.update_views()
         row.append(configview)
         return row
 
