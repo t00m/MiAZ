@@ -321,7 +321,7 @@ class MiAZRepoSettings(MiAZCustomWindow):
             page.set_start_widget(box)
             wdgLabel = self.factory.create_box_horizontal()
             wdgLabel.get_style_context().add_class(class_name='caption')
-            icon = self.icman.get_image_by_name('miaz-res-%s' % i_type.lower())
+            icon = self.icman.get_image_by_name('com.github.t00m.MiAZ-res-%s' % i_title.lower())
             icon.set_hexpand(False)
             icon.set_pixel_size(24)
             label = self.factory.create_label("<b>%s</b>" % i_title)
@@ -332,7 +332,7 @@ class MiAZRepoSettings(MiAZCustomWindow):
             wdgLabel.set_hexpand(True)
             return page, wdgLabel
 
-        for item_type in [Country, Group, Purpose, Project, SentBy, SentTo, Plugin]:
+        for item_type in [Country, Group, Purpose, SentBy, SentTo, Project, Plugin]:
             page, label = create_tab(item_type)
             self.notebook.append_page(page, label)
 
