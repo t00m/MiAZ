@@ -120,15 +120,15 @@ class MiAZApp(Gtk.Application):
                 try:
                     ptype = plugin_manager.get_plugin_type(plugin)
                     if ptype == MiAZPluginType.SYSTEM:
-                        plugin_manager.load_plugin(plugin)
-                        ap += 1
+                        if not plugin.is_loaded():
+                            plugin_manager.load_plugin(plugin)
+                            ap += 1
                 except Exception as error:
                     self.log.error(error)
                 if ptype == MiAZPluginType.SYSTEM:
                     np += 1
             self.plugins_loaded = True
             self.log.debug("System plugins loaded: %d/%d", ap, np)
-            self.plugins_loaded = True
 
             # Load User Plugins
             self.log.debug("Loading user plugins for this repository...")
@@ -142,8 +142,9 @@ class MiAZApp(Gtk.Application):
                     if ptype == MiAZPluginType.USER:
                         pid = plugin.get_module_name()
                         if plugins.exists_used(pid):
-                            plugin_manager.load_plugin(plugin)
-                            ap += 1
+                            if not plugin.is_loaded():
+                                plugin_manager.load_plugin(plugin)
+                                ap += 1
                 except Exception as error:
                     self.log.error(error)
                 if ptype == MiAZPluginType.USER:
