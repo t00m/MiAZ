@@ -181,6 +181,18 @@ class MiAZDialogAdd(Gtk.Dialog):
         contents = self.get_content_area()
         contents.append(self.widget)
 
+    def get_label_key1(self):
+        return self.lblKey1
+
+    def get_label_key2(self):
+        return self.lblKey2
+
+    def get_entry_key1(self):
+        return  self.etyValue1
+
+    def get_entry_key2(self):
+        return  self.etyValue2
+
     def on_dialog_save(self, *args):
         self.emit('response', Gtk.ResponseType.ACCEPT)
         self.destroy()
