@@ -220,18 +220,26 @@ class MiAZSelector(Gtk.Box):
             oldval = item.title
             newkey = dialog.get_value1()
             newval = dialog.get_value2()
-            if len(newkey) > 0:
-                self.log.debug("Renaming %s (%s) by %s (%s)", oldkey, oldval, newkey, newval)
-                # Rename items used
+            if newval != oldval:
                 items_used = self.config.load_used()
                 if oldkey in items_used:
-                    if self.config.remove_used(oldkey):
-                        if self.config.add_used(newkey, newval):
-                            self.log.debug("Added %s (%s) to used", newkey, newval)
-                # Rename items available
+                    items_used[oldkey] = newval
+                    self.log.debug("%s (%s) renamed to %s (%s) in the list of used items", oldkey, oldval, newkey, newval)
                 items_available = self.config.load_available()
-                self.config.remove_available(oldkey)
-                self.config.add_available(newkey, newval)
+                items_available[oldkey] = newval
+
+            # ~ if len(newkey) > 0:
+                # ~ self.log.debug("Renaming %s (%s) by %s (%s)", oldkey, oldval, newkey, newval)
+                # ~ # Rename items used
+                # ~ items_used = self.config.load_used()
+                # ~ if oldkey in items_used:
+                    # ~ if self.config.remove_used(oldkey):
+                        # ~ if self.config.add_used(newkey, newval):
+                            # ~ self.log.debug("Added %s (%s) to used", newkey, newval)
+                # ~ # Rename items available
+                # ~ items_available = self.config.load_available()
+                # ~ self.config.remove_available(oldkey)
+                # ~ self.config.add_available(newkey, newval)
                 self.log.debug("%s (%s) renamed to %s (%s) in the list of available items", oldkey, oldval, newkey, newval)
                 self.update_views()
         dialog.destroy()
