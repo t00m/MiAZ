@@ -163,11 +163,10 @@ class MiAZColumnViewWorkspace(MiAZColumnView):
         box = list_item.get_child()
         icon = box.get_first_child()
         item = list_item.get_item()
-        # ~ self.log.debug("%s is active? %s", item.id, item.active)
         mimetype, val = Gio.content_type_guess('filename=%s' % item.id)
         gicon = self.srvicm.get_mimetype_icon(mimetype)
         icon.set_from_gicon(gicon)
-        icon.set_pixel_size(48)
+        icon.set_pixel_size(36)
 
     def _on_factory_setup_country(self, factory, list_item):
         box = ColLabel()
@@ -249,7 +248,7 @@ class MiAZColumnViewWorkspace(MiAZColumnView):
         code = item.country
         paintable = self.srvicm.get_flag_icon(code)
         icon.set_from_paintable(paintable)
-        icon.set_pixel_size(48)
+        icon.set_pixel_size(36)
 
     def _on_factory_setup_flag(self, factory, list_item):
         box = ColIcon()
@@ -282,7 +281,7 @@ class MiAZColumnViewCountry(MiAZColumnView):
         if not os.path.exists(flag):
             flag = os.path.join(ENV['GPATH']['FLAGS'], "__.svg")
         icon.set_from_file(flag)
-        icon.set_pixel_size(32)
+        icon.set_pixel_size(36)
 
 class MiAZColumnViewRepo(MiAZColumnView):
     """ Custom ColumnView widget for MiAZ """
