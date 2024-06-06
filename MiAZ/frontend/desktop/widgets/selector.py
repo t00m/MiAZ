@@ -24,6 +24,7 @@ from MiAZ.backend.models import Project, Repository
 from MiAZ.frontend.desktop.widgets.columnview import MiAZColumnView
 from MiAZ.frontend.desktop.widgets.dialogs import MiAZDialogAdd
 from MiAZ.frontend.desktop.widgets.dialogs import CustomDialog
+from MiAZ.backend.models import Country
 
 
 class MiAZSelector(Gtk.Box):
@@ -200,11 +201,18 @@ class MiAZSelector(Gtk.Box):
             self.log.debug("No item selected. Cancel operation")
 
     def _on_item_available_rename(self, item):
-        dialog = MiAZDialogAdd(self.app, self.get_root(), _('%s: rename item') % self.config.config_for, _('Name'), _('Description'))
-        dialog.set_value1(item.id)
-        dialog.set_value2(item.title)
-        dialog.connect('response', self._on_response_item_available_rename, item)
-        dialog.show()
+        item_type = self.config.model
+        if item_type != Country:
+            i_title = item_type.__title__
+            dialog = MiAZDialogAdd(self.app, self.get_root(), _('%s: rename item') % self.config.config_for, _('Name'), _('Description'))
+            label1 = dialog.get_label_key1()
+            label1.set_text(i_title)
+            entry1 = dialog.get_entry_key1()
+            entry1.set_sensitive(False)
+            dialog.set_value1(item.id)
+            dialog.set_value2(item.title)
+            dialog.connect('response', self._on_response_item_available_rename, item)
+            dialog.show()
 
     def _on_response_item_available_rename(self, dialog, response, item):
         if response == Gtk.ResponseType.ACCEPT:
@@ -219,7 +227,7 @@ class MiAZSelector(Gtk.Box):
                 if oldkey in items_used:
                     if self.config.remove_used(oldkey):
                         if self.config.add_used(newkey, newval):
-                            self.log.debug("Renamed items_used")
+                            self.log.debug("Added %s (%s) to used", newkey, newval)
                 # Rename items available
                 items_available = self.config.load_available()
                 self.config.remove_available(oldkey)
