@@ -38,9 +38,11 @@ class Export2Text(GObject.GObject, Peas.Activatable):
         API.app.disconnect_by_func(self.add_menuitem)
 
     def add_menuitem(self, *args):
-        submenu_export = self.app.get_widget('workspace-menu-selection-submenu-export')
-        menuitem = self.factory.create_menuitem('export-to-text', _('...to plain text'), self.export, None, [])
-        submenu_export.append_item(menuitem)
+        if self.app.get_widget('workspace-menu-multiple-menu-export-item-export2text') is None:
+            submenu_export = self.app.get_widget('workspace-menu-selection-submenu-export')
+            menuitem = self.factory.create_menuitem('export-to-text', _('...to plain text'), self.export, None, [])
+            submenu_export.append_item(menuitem)
+            self.app.add_widget('workspace-menu-multiple-menu-export-item-export2text', menuitem)
 
     def export(self, *args):
         ENV = self.app.get_env()

@@ -54,9 +54,11 @@ class Export2Zip(GObject.GObject, Peas.Activatable):
         # ~ API.app.disconnect_by_func(self.processInputCb)
 
     def add_menuitem(self, *args):
-        submenu_export = self.app.get_widget('workspace-menu-selection-submenu-export')
-        menuitem = self.factory.create_menuitem('export-to-zip', _('...to Zip'), self.export, None, [])
-        submenu_export.append_item(menuitem)
+        if self.app.get_widget('workspace-menu-multiple-menu-export-item-export2zip') is None:
+            submenu_export = self.app.get_widget('workspace-menu-selection-submenu-export')
+            menuitem = self.factory.create_menuitem('export-to-zip', _('...to Zip'), self.export, None, [])
+            submenu_export.append_item(menuitem)
+            self.app.add_widget('workspace-menu-multiple-menu-export-item-export2zip', menuitem)
 
     def export(self, *args):
         ENV = self.app.get_env()

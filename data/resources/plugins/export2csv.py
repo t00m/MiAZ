@@ -37,7 +37,6 @@ class Export2CSV(GObject.GObject, Peas.Activatable):
         API = self.object
 
     def add_menuitem(self, *args):
-        # Add menutitem to menu for single items
         if self.app.get_widget('workspace-menu-multiple-menu-export-item-export2csv') is None:
             submenu_export_multi = self.app.get_widget('workspace-menu-selection-submenu-export')
             menuitem = self.factory.create_menuitem('export-to-csv', _('...to CSV'), self.export, None, [])
