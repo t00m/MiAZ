@@ -159,6 +159,11 @@ class Date(MiAZModel):
     __title__ = _('Date')
     __title_plural__ = _('Dates')
 
+class Document(MiAZModel):
+    __gtype_name__ = 'Document'
+    __title__ = _('Document')
+    __title_plural__ = _('Documents')
+
 class Extension(MiAZModel):
     __gtype_name__ = 'Extension'
     __title__ = _('Extension')

@@ -123,14 +123,18 @@ class MiAZUtil(GObject.GObject):
 
     def field_used(self, repo_dir, item_type, value):
         used = False
+        docs = []
         for doc in self.get_files(repo_dir):
             fields = self.get_fields(doc)
             fn = Field[item_type]
             if fields[fn] == value:
-                used = True
-                self.log.warning("Value %s of type %s is still being used in %s", value, _(item_type.__title__), doc)
-                break
-        return used
+                docs.append(doc)
+                # ~ used = True
+                # ~ self.log.warning("Value %s of type %s is still being used in %s", value, _(item_type.__title__), doc)
+                # ~ break
+        if len(docs) > 0:
+            used = True
+        return used, docs
 
     def get_temp_dir(self):
         ENV = self.app.get_env()

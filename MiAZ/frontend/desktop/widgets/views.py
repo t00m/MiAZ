@@ -283,6 +283,20 @@ class MiAZColumnViewCountry(MiAZColumnView):
         icon.set_from_file(flag)
         icon.set_pixel_size(36)
 
+class MiAZColumnViewDocuments(MiAZColumnView):
+    """ Custom ColumnView widget for MiAZ """
+    __gtype_name__ = 'MiAZColumnViewDocuments'
+
+    def __init__(self, app):
+        super().__init__(app, item_type=File)
+        self.cv.append_column(self.column_id)
+        self.column_id.set_title(_('File'))
+        self.column_id.set_expand(False)
+        self.column_id.set_visible(False)
+        self.cv.append_column(self.column_title)
+        self.column_title.set_title(_('Document'))
+        self.column_title.set_expand(True)
+
 class MiAZColumnViewRepo(MiAZColumnView):
     """ Custom ColumnView widget for MiAZ """
     __gtype_name__ = 'MiAZColumnViewRepo'

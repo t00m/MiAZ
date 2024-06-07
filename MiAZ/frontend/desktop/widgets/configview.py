@@ -78,7 +78,7 @@ class MiAZRepositories(MiAZConfigView):
         self.viewSl = MiAZColumnViewRepo(self.app)
         self.add_columnview_used(self.viewSl)
 
-    def on_item_available_add(self, *args):
+    def _on_item_available_add(self, *args):
         dialog = MiAZDialogAddRepo(self.app, self.app.win, 'Add a new repository', 'Repository name', 'Folder')
         dialog.connect('response', self._on_response_item_available_add)
         search_term = self.entry.get_text()

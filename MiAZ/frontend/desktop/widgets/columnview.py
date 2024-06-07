@@ -91,6 +91,7 @@ class MiAZColumnView(Gtk.Box):
         self.scrwin = Gtk.ScrolledWindow()
         self.scrwin.set_hexpand(True)
         self.scrwin.set_vexpand(True)
+        self.scrwin.set_has_frame(False)
 
         # Set up the factories
         factory_id = Gtk.SignalListItemFactory()
