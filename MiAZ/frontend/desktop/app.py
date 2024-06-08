@@ -20,11 +20,9 @@ from MiAZ.frontend.desktop.services.actions import MiAZActions
 from MiAZ.frontend.desktop.widgets.mainwindow import MiAZMainWindow
 from MiAZ.frontend.desktop.widgets.workspace import MiAZWorkspace
 from MiAZ.frontend.desktop.widgets.rename import MiAZRenameDialog
-from MiAZ.frontend.desktop.widgets.settings import MiAZAppSettings
 from MiAZ.frontend.desktop.widgets.settings import MiAZRepoSettings
 from MiAZ.frontend.desktop.widgets.welcome import MiAZWelcome
-from MiAZ.backend.util import MiAZUtil, HERE
-from MiAZ.backend.stats import MiAZStats
+from MiAZ.backend.util import MiAZUtil
 from MiAZ.backend.config import MiAZConfigApp
 from MiAZ.backend.repository import MiAZRepository
 from MiAZ.backend.config import MiAZConfigRepositories
@@ -176,10 +174,10 @@ class MiAZApp(Gtk.Application):
                     self.emit('start-application-completed')
                 else:
                     valid = False
-            except Exception as warning:
+            except Exception:
                 self.log.error("Default repository configuration not available")
                 valid = False
-        except KeyError as error:
+        except KeyError:
             self.log.debug("No repository active in the configuration")
             self.actions.show_stack_page_by_name('welcome')
             valid = False

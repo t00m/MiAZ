@@ -9,19 +9,12 @@
 """
 
 import os
-from datetime import datetime
 from gettext import gettext as _
 
-import gi
-gi.require_version('Gtk', '4.0')
-from gi.repository import Gio
 from gi.repository import Gtk
-from gi.repository import GLib
-from gi.repository import GObject
 
 from MiAZ.backend.log import MiAZLog
 from MiAZ.backend.models import Project, Repository
-from MiAZ.frontend.desktop.widgets.columnview import MiAZColumnView
 from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewDocuments
 from MiAZ.frontend.desktop.widgets.dialogs import MiAZDialogAdd
 from MiAZ.frontend.desktop.widgets.dialogs import CustomDialog

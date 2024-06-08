@@ -14,6 +14,7 @@ import sys
 import glob
 import json
 import shutil
+import tempfile
 import zipfile
 from inspect import currentframe, getframeinfo
 from datetime import datetime, timedelta
@@ -209,7 +210,7 @@ class MiAZUtil(GObject.GObject):
                 normalized = True
             else:
                 normalized = False
-        except:
+        except Exception:
             normalized = False
         return normalized
 
