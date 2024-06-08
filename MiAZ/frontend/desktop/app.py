@@ -8,19 +8,10 @@
 # Description: Frontent/Desktop entry point
 """
 
-import sys
-from gettext import gettext as _
-
-import gi
-gi.require_version('Gtk', '4.0')
 from gi.repository import GObject
-from gi.repository import Gdk
-from gi.repository import Gio
 from gi.repository import GLib
 from gi.repository import Gtk
 
-
-# ~ from MiAZ.backend import MiAZBackend
 from MiAZ.backend.log import MiAZLog
 from MiAZ.backend.pluginsystem import MiAZPluginManager, MiAZPluginType
 from MiAZ.frontend.desktop.services.icm import MiAZIconManager
@@ -29,11 +20,9 @@ from MiAZ.frontend.desktop.services.actions import MiAZActions
 from MiAZ.frontend.desktop.widgets.mainwindow import MiAZMainWindow
 from MiAZ.frontend.desktop.widgets.workspace import MiAZWorkspace
 from MiAZ.frontend.desktop.widgets.rename import MiAZRenameDialog
-from MiAZ.frontend.desktop.widgets.settings import MiAZAppSettings
 from MiAZ.frontend.desktop.widgets.settings import MiAZRepoSettings
 from MiAZ.frontend.desktop.widgets.welcome import MiAZWelcome
-from MiAZ.backend.util import MiAZUtil, HERE
-from MiAZ.backend.stats import MiAZStats
+from MiAZ.backend.util import MiAZUtil
 from MiAZ.backend.config import MiAZConfigApp
 from MiAZ.backend.repository import MiAZRepository
 from MiAZ.backend.config import MiAZConfigRepositories
@@ -72,7 +61,6 @@ class MiAZApp(Gtk.Application):
         return self._env
 
     def _on_activate(self, app):
-        ENV = self.get_env()
         self.win = self.add_widget('window', Gtk.ApplicationWindow(application=self))
         self.win.set_default_size(1280, 800)
         self.win.set_icon_name('MiAZ')
@@ -88,7 +76,6 @@ class MiAZApp(Gtk.Application):
         self.log.debug("Executing MiAZ Desktop mode")
         self.check_repository()
         repository = self.get_service('repo')
-        repository.connect('repository-switched', self._update_repo_settings)
 
     def _setup_ui(self):
         mainbox = self.add_widget('window-mainbox', MiAZMainWindow(self))
@@ -98,10 +85,6 @@ class MiAZApp(Gtk.Application):
     def _on_window_close_request(self, window):
         self.log.debug("Close application requested")
         self.actions.exit_app()
-
-    def _update_repo_settings(self, *args):
-        repo_active = self.conf['App'].get('current')
-        # ~ self.actions.statusbar_message("Switched to repository '%s'" % repo_active)
 
     def _finish_configuration(self, *args):
         self.log.debug("Finish loading app")
@@ -120,15 +103,15 @@ class MiAZApp(Gtk.Application):
                 try:
                     ptype = plugin_manager.get_plugin_type(plugin)
                     if ptype == MiAZPluginType.SYSTEM:
-                        plugin_manager.load_plugin(plugin)
-                        ap += 1
+                        if not plugin.is_loaded():
+                            plugin_manager.load_plugin(plugin)
+                            ap += 1
                 except Exception as error:
                     self.log.error(error)
                 if ptype == MiAZPluginType.SYSTEM:
                     np += 1
             self.plugins_loaded = True
             self.log.debug("System plugins loaded: %d/%d", ap, np)
-            self.plugins_loaded = True
 
             # Load User Plugins
             self.log.debug("Loading user plugins for this repository...")
@@ -142,8 +125,9 @@ class MiAZApp(Gtk.Application):
                     if ptype == MiAZPluginType.USER:
                         pid = plugin.get_module_name()
                         if plugins.exists_used(pid):
-                            plugin_manager.load_plugin(plugin)
-                            ap += 1
+                            if not plugin.is_loaded():
+                                plugin_manager.load_plugin(plugin)
+                                ap += 1
                 except Exception as error:
                     self.log.error(error)
                 if ptype == MiAZPluginType.USER:
@@ -190,11 +174,10 @@ class MiAZApp(Gtk.Application):
                     self.emit('start-application-completed')
                 else:
                     valid = False
-            except Exception as warning:
+            except Exception:
                 self.log.error("Default repository configuration not available")
                 valid = False
-        except KeyError as error:
-            raise
+        except KeyError:
             self.log.debug("No repository active in the configuration")
             self.actions.show_stack_page_by_name('welcome')
             valid = False

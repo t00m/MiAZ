@@ -44,4 +44,5 @@ class MiAZAddDocumentPlugin(GObject.GObject, Peas.Activatable):
         if self.app.get_widget('workspace-menu-in-add-document') is None:
             menu_add = self.app.get_widget('workspace-menu-in-add')
             menuitem = self.factory.create_menuitem('add_docs', '... document(s)', self.actions.import_file, None, [])
+            self.app.add_widget('workspace-menu-in-add-document', menuitem)
             menu_add.append_item(menuitem)

@@ -30,9 +30,11 @@ class CustomDialog(Gtk.Dialog):
                     dtype: str = 'info', # [info|warning|error|question]
                     title: str = '',
                     text: str = '',
+                    widget: Gtk.Widget = None,
                     callback = None
                 ):
         super().__init__()
+        self.set_default_size(600, 480)
         self.app = app
         self.set_transient_for(parent)
         self.set_title(title=title)
@@ -68,24 +70,34 @@ class CustomDialog(Gtk.Dialog):
         content_area = self.get_content_area()
         content_area.set_orientation(orientation=Gtk.Orientation.VERTICAL)
         content_area.set_spacing(spacing=24)
-        content_area.set_margin_top(margin=12)
-        content_area.set_margin_end(margin=12)
-        content_area.set_margin_bottom(margin=12)
-        content_area.set_margin_start(margin=12)
+        content_area.set_margin_top(margin=6)
+        content_area.set_margin_end(margin=6)
+        content_area.set_margin_bottom(margin=6)
+        content_area.set_margin_start(margin=6)
         vbox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6, hexpand=True, vexpand=True)
-        hbox_title = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6, hexpand=True, vexpand=True)
+        hbox_title = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6, hexpand=True, vexpand=False)
         icman = self.app.get_service('icons')
         icon = icman.get_image_by_name(icon_name[dtype])
         icon.set_pixel_size(48)
-        label = Gtk.Label.new(dtype.title())
+        label = Gtk.Label()
+        label.set_markup(dtype.title())
         label.get_style_context().add_class(class_name='title-1')
-        # ~ hbox_title.append(icon)
+        hbox_title.append(icon)
         hbox_title.append(label)
         vbox.append(hbox_title)
         lblDesc = Gtk.Label()
-        lblDesc.set_text(text)
-        lblDesc.get_style_context().add_class(class_name='title-4')
+        lblDesc.set_markup(text)
+        lblDesc.set_xalign(0.0)
+        lblDesc.get_style_context().add_class(class_name='title-5')
         vbox.append(lblDesc)
+        if widget is not None:
+            widget.set_vexpand(True)
+            widget.set_hexpand(True)
+            widget.get_style_context().add_class(class_name='caption')
+            widget.get_style_context().add_class(class_name='monospace')
+            frame = Gtk.Frame()
+            frame.set_child(widget)
+            vbox.append(frame)
         content_area.append(child=vbox)
 
     def dialog_response(self, dialog, response):
@@ -180,6 +192,18 @@ class MiAZDialogAdd(Gtk.Dialog):
         self.widget.append(self.boxButtons)
         contents = self.get_content_area()
         contents.append(self.widget)
+
+    def get_label_key1(self):
+        return self.lblKey1
+
+    def get_label_key2(self):
+        return self.lblKey2
+
+    def get_entry_key1(self):
+        return  self.etyValue1
+
+    def get_entry_key2(self):
+        return  self.etyValue2
 
     def on_dialog_save(self, *args):
         self.emit('response', Gtk.ResponseType.ACCEPT)

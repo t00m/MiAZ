@@ -25,6 +25,7 @@ from MiAZ.backend.log import MiAZLog
 class MiAZAddDirectoryPlugin(GObject.GObject, Peas.Activatable):
     __gtype_name__ = 'MiAZAddDirectoryPlugin'
     object = GObject.Property(type=GObject.Object)
+    enabled = False
 
     def __init__(self):
         self.log = MiAZLog('Plugin.AddDirectory')
@@ -44,5 +45,6 @@ class MiAZAddDirectoryPlugin(GObject.GObject, Peas.Activatable):
     def add_menuitem(self, *args):
         if self.app.get_widget('workspace-menu-in-add-directory') is None:
             menu_add = self.app.get_widget('workspace-menu-in-add')
-            menuitem = self.factory.create_menuitem('add_docs', '... documents from a directory', self.actions.import_directory, None, [])
+            menuitem = self.factory.create_menuitem('add_dir', '... documents from a directory', self.actions.import_directory, None, [])
+            self.app.add_widget('workspace-menu-in-add-directory', menuitem)
             menu_add.append_item(menuitem)

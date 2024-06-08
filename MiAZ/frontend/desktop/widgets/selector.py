@@ -9,21 +9,16 @@
 """
 
 import os
-from datetime import datetime
 from gettext import gettext as _
 
-import gi
-gi.require_version('Gtk', '4.0')
-from gi.repository import Gio
 from gi.repository import Gtk
-from gi.repository import GLib
-from gi.repository import GObject
 
 from MiAZ.backend.log import MiAZLog
 from MiAZ.backend.models import Project, Repository
-from MiAZ.frontend.desktop.widgets.columnview import MiAZColumnView
+from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewDocuments
 from MiAZ.frontend.desktop.widgets.dialogs import MiAZDialogAdd
 from MiAZ.frontend.desktop.widgets.dialogs import CustomDialog
+from MiAZ.backend.models import Country, Plugin, File
 
 
 class MiAZSelector(Gtk.Box):
@@ -53,7 +48,7 @@ class MiAZSelector(Gtk.Box):
         self.entry.set_icon_activatable(Gtk.EntryIconPosition.SECONDARY, True)
         self.entry.connect('icon-press', self._on_entrysearch_delete)
         self.entry.connect('changed', self._on_filter_selected)
-        self.entry.connect('activate', self.on_item_available_add, self.config_for)
+        self.entry.connect('activate', self._on_item_available_add, self.config_for)
         self.entry.set_hexpand(True)
         self.entry.set_has_frame(True)
         self.entry.set_placeholder_text('Type here for filtering')
@@ -63,7 +58,7 @@ class MiAZSelector(Gtk.Box):
             self.boxButtons = Gtk.Box(spacing=0, orientation=Gtk.Orientation.HORIZONTAL)
             self.boxButtons.get_style_context().add_class(class_name='linked')
             self.boxButtons.set_hexpand(True)
-            self.boxButtons.append(self.factory.create_button(icon_name='com.github.t00m.MiAZ-list-add-symbolic', title='', callback=self.on_item_available_add))
+            self.boxButtons.append(self.factory.create_button(icon_name='com.github.t00m.MiAZ-list-add-symbolic', title='', callback=self._on_item_available_add))
             self.boxButtons.append(self.factory.create_button(icon_name='com.github.t00m.MiAZ-list-remove-symbolic', title='', callback=self._on_item_available_remove))
             self.boxButtons.append(self.factory.create_button(icon_name='com.github.t00m.MiAZ-list-edit-symbolic', title='', callback=self._on_item_available_edit))
             # ~ self.boxButtons.append(self.factory.create_button(icon_name='miaz-import-config', tooltip='Import configuration', callback=self._on_config_import, data=self.config_for))
@@ -152,7 +147,7 @@ class MiAZSelector(Gtk.Box):
                 docs = projects.docs_in_project(item_used.id)
                 value_used = len(docs) > 0
             else:
-                value_used = self.util.field_used(self.repository.docs, self.config.model, item_used.id)
+                value_used, docs = self.util.field_used(self.repository.docs, self.config.model, item_used.id)
 
             if not value_used:
                 del(items_used[item_used.id])
@@ -160,12 +155,22 @@ class MiAZSelector(Gtk.Box):
                 text = _('Removed %s (%s) from used') % (item_used.id, item_used.title)
                 self.log.debug(text)
             else:
+                self.log.debug('\n'.join(docs))
+                item_type = self.config.model
+                i_title = item_type.__title__
                 dtype = "warning"
-                text = _('%s %s is still being used by some docs') % (self.config.model.__title__, item_used.id)
+                text = _('%s %s is still being used by %d docs:') % (i_title, item_used.title, len(docs))
                 window = self.app.get_widget('window')
                 dtype = 'error'
-                title = "Item can't be removed"
-                dialog = CustomDialog(app=self.app, parent=window, use_header_bar=True, dtype=dtype, title=title, text=text)
+                title = "%s %s can't be removed" % (i_title, item_used.title)
+
+                items = []
+                for doc in docs:
+                    items.append(File(id=doc, title=os.path.basename(doc)))
+                view = MiAZColumnViewDocuments(self.app)
+                view.update(items)
+
+                dialog = CustomDialog(app=self.app, parent=window, use_header_bar=True, dtype=dtype, title=title, text=text, widget=view)
                 dialog.set_modal(True)
                 dialog.show()
         if changed:
@@ -174,9 +179,11 @@ class MiAZSelector(Gtk.Box):
             self._update_view_used()
             self._update_view_available()
 
-    def on_item_available_add(self, *args):
+    def _on_item_available_add(self, *args):
         if self.edit:
-            dialog = MiAZDialogAdd(self.app, self.get_root(), _('%s: add a new item') % self.config.config_for, _('Name'), _('Description'))
+            item_type = self.config.model
+            i_title = item_type.__title__
+            dialog = MiAZDialogAdd(self.app, self.get_root(), _('Add new %s') % i_title.lower(), _('Key'), _('Description'))
             search_term = self.entry.get_text()
             dialog.set_value1(search_term)
             dialog.connect('response', self._on_response_item_available_add)
@@ -200,11 +207,19 @@ class MiAZSelector(Gtk.Box):
             self.log.debug("No item selected. Cancel operation")
 
     def _on_item_available_rename(self, item):
-        dialog = MiAZDialogAdd(self.app, self.get_root(), _('%s: rename item') % self.config.config_for, _('Name'), _('Description'))
-        dialog.set_value1(item.id)
-        dialog.set_value2(item.title)
-        dialog.connect('response', self._on_response_item_available_rename, item)
-        dialog.show()
+        item_type = self.config.model
+        if item_type not in [Country, Plugin]:
+            i_title = item_type.__title__
+            i_title_plural = item_type.__title_plural__
+            dialog = MiAZDialogAdd(self.app, self.get_root(), _('Change %s description') % i_title.lower(), _('Key'), _('Description'))
+            label1 = dialog.get_label_key1()
+            label1.set_text(i_title)
+            entry1 = dialog.get_entry_key1()
+            entry1.set_sensitive(False)
+            dialog.set_value1(item.id)
+            dialog.set_value2(item.title)
+            dialog.connect('response', self._on_response_item_available_rename, item)
+            dialog.show()
 
     def _on_response_item_available_rename(self, dialog, response, item):
         if response == Gtk.ResponseType.ACCEPT:
@@ -212,18 +227,26 @@ class MiAZSelector(Gtk.Box):
             oldval = item.title
             newkey = dialog.get_value1()
             newval = dialog.get_value2()
-            if len(newkey) > 0:
-                self.log.debug("Renaming %s (%s) by %s (%s)", oldkey, oldval, newkey, newval)
-                # Rename items used
+            if newval != oldval:
                 items_used = self.config.load_used()
                 if oldkey in items_used:
-                    if self.config.remove_used(oldkey):
-                        if self.config.add_used(newkey, newval):
-                            self.log.debug("Renamed items_used")
-                # Rename items available
+                    items_used[oldkey] = newval
+                    self.log.debug("%s (%s) renamed to %s (%s) in the list of used items", oldkey, oldval, newkey, newval)
                 items_available = self.config.load_available()
-                self.config.remove_available(oldkey)
-                self.config.add_available(newkey, newval)
+                items_available[oldkey] = newval
+
+            # ~ if len(newkey) > 0:
+                # ~ self.log.debug("Renaming %s (%s) by %s (%s)", oldkey, oldval, newkey, newval)
+                # ~ # Rename items used
+                # ~ items_used = self.config.load_used()
+                # ~ if oldkey in items_used:
+                    # ~ if self.config.remove_used(oldkey):
+                        # ~ if self.config.add_used(newkey, newval):
+                            # ~ self.log.debug("Added %s (%s) to used", newkey, newval)
+                # ~ # Rename items available
+                # ~ items_available = self.config.load_available()
+                # ~ self.config.remove_available(oldkey)
+                # ~ self.config.add_available(newkey, newval)
                 self.log.debug("%s (%s) renamed to %s (%s) in the list of available items", oldkey, oldval, newkey, newval)
                 self.update_views()
         dialog.destroy()

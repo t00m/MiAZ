@@ -8,16 +8,9 @@
 # Description: Custom Gtk.Columnview widget for displaying info
 """
 
-import os
-import sys
-from abc import abstractmethod
 from datetime import datetime
-from gettext import gettext as _
 
-import gi
-gi.require_version('Gtk', '4.0')
 from gi.repository import Gio
-from gi.repository import Gdk
 from gi.repository import Gtk
 from gi.repository import Pango
 
@@ -91,6 +84,7 @@ class MiAZColumnView(Gtk.Box):
         self.scrwin = Gtk.ScrolledWindow()
         self.scrwin.set_hexpand(True)
         self.scrwin.set_vexpand(True)
+        self.scrwin.set_has_frame(False)
 
         # Set up the factories
         factory_id = Gtk.SignalListItemFactory()
@@ -178,27 +172,10 @@ class MiAZColumnView(Gtk.Box):
     def refilter(self):
         self.filter.emit('changed', Gtk.FilterChange.DIFFERENT)
 
-    # ~ def update(self, items):
-        # ~ self.selected_items = []
-        # ~ self.store.remove_all()
-        # ~ ds = datetime.now()
-        # ~ for item in items:
-            # ~ # item =~ Subclass of MiAZModel(id='xxx', title='xxx', ...)
-            # ~ self.store.append(item)
-        # ~ self.select_first_item()
-        # ~ de = datetime.now()
-        # ~ dt = de - ds
-        # ~ self.log.debug("Columnview for %s updated (%s)", self.item_type.__title__, dt)
-
     def update(self, items):
         self.selected_items = []
-        ds = datetime.now()
         self.store.remove_all()
         self.store.splice(0, 0, items)
-        # ~ de = datetime.now()
-        # ~ dt = de - ds
-        # Columnview update stats
-        # ~ self.log.debug("View for %s updated with %d items in %s", self.item_type.__title__, len(items), dt)
 
     def _on_selection_changed(self, selection, position, n_items):
         self.selected_items = []

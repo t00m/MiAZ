@@ -53,9 +53,12 @@ class Export2Dir(GObject.GObject, Peas.Activatable):
         # ~ API.app.disconnect_by_func(self.processInputCb)
 
     def add_menuitem(self, *args):
-        submenu_export = self.app.get_widget('workspace-menu-selection-submenu-export')
-        menuitem = self.factory.create_menuitem('export-to-dir', _('...to directory'), self.export, None, [])
-        submenu_export.append_item(menuitem)
+        if self.app.get_widget('workspace-menu-multiple-menu-export-item-export2dir') is None:
+            submenu_export = self.app.get_widget('workspace-menu-selection-submenu-export')
+            menuitem = self.factory.create_menuitem('export-to-dir', _('...to directory'), self.export, None, [])
+            submenu_export.append_item(menuitem)
+            self.app.add_widget('workspace-menu-multiple-menu-export-item-export2dir', menuitem)
+
 
     def export(self, *args):
         items = self.workspace.get_selected_items()

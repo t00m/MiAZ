@@ -13,8 +13,8 @@ import re
 import sys
 import glob
 import json
-import time
 import shutil
+import tempfile
 import zipfile
 from inspect import currentframe, getframeinfo
 from datetime import datetime, timedelta
@@ -24,9 +24,9 @@ from gi.repository import Gio
 from gi.repository import GObject
 
 from MiAZ.backend.log import MiAZLog
-from MiAZ.backend.models import Group, Person, Country
-from MiAZ.backend.models import Purpose, Concept, SentBy
-from MiAZ.backend.models import SentTo, Date, Extension
+from MiAZ.backend.models import Group, Country
+from MiAZ.backend.models import Purpose, SentBy
+from MiAZ.backend.models import SentTo, Date
 
 Field = {}
 Field[Date] = 0
@@ -123,14 +123,18 @@ class MiAZUtil(GObject.GObject):
 
     def field_used(self, repo_dir, item_type, value):
         used = False
+        docs = []
         for doc in self.get_files(repo_dir):
             fields = self.get_fields(doc)
             fn = Field[item_type]
             if fields[fn] == value:
-                used = True
-                self.log.warning("Value %s of type %s is still being used in %s", value, _(item_type.__title__), doc)
-                break
-        return used
+                docs.append(doc)
+                # ~ used = True
+                # ~ self.log.warning("Value %s of type %s is still being used in %s", value, _(item_type.__title__), doc)
+                # ~ break
+        if len(docs) > 0:
+            used = True
+        return used, docs
 
     def get_temp_dir(self):
         ENV = self.app.get_env()
@@ -206,7 +210,7 @@ class MiAZUtil(GObject.GObject):
                 normalized = True
             else:
                 normalized = False
-        except:
+        except Exception:
             normalized = False
         return normalized
 

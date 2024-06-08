@@ -184,4 +184,4 @@ class MiAZToolbarProjectMgtPlugin(GObject.GObject, Peas.Activatable):
         winRepoSettings = self.app.get_widget('settings-repo')
         if winRepoSettings is not None:
             notebook = self.app.get_widget('repository-settings-notebook')
-            notebook.set_current_page(3)
+            notebook.set_current_page(5)
