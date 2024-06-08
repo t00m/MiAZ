@@ -215,7 +215,7 @@ class MiAZActions(GObject.GObject):
         box.append(selector)
         config_for = selector.get_config_for()
         selector.set_vexpand(True)
-        selector.update()
+        selector.update_views()
         window = self.app.get_widget('window')
         dialog = self.factory.create_dialog(window, _('Manage %s') % config_for, box, 800, 600)
         dialog.show()
