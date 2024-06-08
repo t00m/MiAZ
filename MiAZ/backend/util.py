@@ -13,7 +13,6 @@ import re
 import sys
 import glob
 import json
-import time
 import shutil
 import zipfile
 from inspect import currentframe, getframeinfo
@@ -24,9 +23,9 @@ from gi.repository import Gio
 from gi.repository import GObject
 
 from MiAZ.backend.log import MiAZLog
-from MiAZ.backend.models import Group, Person, Country
-from MiAZ.backend.models import Purpose, Concept, SentBy
-from MiAZ.backend.models import SentTo, Date, Extension
+from MiAZ.backend.models import Group, Country
+from MiAZ.backend.models import Purpose, SentBy
+from MiAZ.backend.models import SentTo, Date
 
 Field = {}
 Field[Date] = 0

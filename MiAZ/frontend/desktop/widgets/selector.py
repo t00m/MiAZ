@@ -25,7 +25,7 @@ from MiAZ.frontend.desktop.widgets.columnview import MiAZColumnView
 from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewDocuments
 from MiAZ.frontend.desktop.widgets.dialogs import MiAZDialogAdd
 from MiAZ.frontend.desktop.widgets.dialogs import CustomDialog
-from MiAZ.backend.models import Country, Plugin, Document, File
+from MiAZ.backend.models import Country, Plugin, File
 
 
 class MiAZSelector(Gtk.Box):
@@ -190,7 +190,6 @@ class MiAZSelector(Gtk.Box):
         if self.edit:
             item_type = self.config.model
             i_title = item_type.__title__
-            i_title_plural = item_type.__title_plural__
             dialog = MiAZDialogAdd(self.app, self.get_root(), _('Add new %s') % i_title.lower(), _('Key'), _('Description'))
             search_term = self.entry.get_text()
             dialog.set_value1(search_term)

@@ -9,8 +9,10 @@
 """
 
 import os
+from datetime import datetime
 from gettext import gettext as _
 
+from gi.repository import GLib
 from gi.repository import Gtk
 
 from MiAZ.backend.log import MiAZLog
@@ -255,14 +257,14 @@ class MiAZDates(Gtk.Box):
         self.append(frame)
         sdate = datetime.strftime(datetime.now(), '%Y%m%d')
         iso8601 = "%sT00:00:00Z" % sdate
-        calendar.connect('day-selected', calendar_day_selected, label, cv, self.selected_items)
+        calendar.connect('day-selected', self.calendar_day_selected, label, cv, self.selected_items)
         calendar.select_day(GLib.DateTime.new_from_iso8601(iso8601))
         calendar.emit('day-selected')
         dialog = self.factory.create_dialog_question(self.app.win, _('Mass renaming'), box, width=640, height=480)
         dialog.connect('response', self._on_mass_action_rename_date_response, calendar)
         dialog.show()
 
-    def calendar_day_selected(calendar, label, columnview, items):
+    def calendar_day_selected(self, calendar, label, columnview, items):
         adate = calendar.get_date()
         y = "%04d" % adate.get_year()
         m = "%02d" % adate.get_month()
