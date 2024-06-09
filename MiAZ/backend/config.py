@@ -251,7 +251,13 @@ class MiAZConfig(GObject.GObject):
 
 class MiAZConfigApp(MiAZConfig):
     def __init__(self, app):
-        ENV = app.get_env()
+        self.app = app
+        self.util = self.app.get_service('util')
+        ENV = self.app.get_env()
+        GObject.GObject.__init__(self)
+        GObject.signal_new('repo-settings-updated-app',
+                            MiAZConfigApp,
+                            GObject.SignalFlags.RUN_LAST, None, () )
         super().__init__(
             app = app,
             log=MiAZLog('MiAZ.Config.App'),
@@ -261,12 +267,6 @@ class MiAZConfigApp(MiAZConfig):
             default = None,
             must_copy = False
         )
-        self.app = app
-        self.util = self.app.get_service('util')
-        GObject.GObject.__init__(self)
-        GObject.signal_new('repo-settings-updated-app',
-                            MiAZConfigApp,
-                            GObject.SignalFlags.RUN_LAST, None, () )
 
     def exists(self, key: str) -> bool:
         config = self.load(self.used)
