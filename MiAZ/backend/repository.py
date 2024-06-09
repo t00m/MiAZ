@@ -26,7 +26,6 @@ from MiAZ.backend.config import MiAZConfigSentTo
 from MiAZ.backend.config import MiAZConfigUserPlugins
 from MiAZ.backend.watcher import MiAZWatcher
 from MiAZ.backend.projects import MiAZProject
-from MiAZ.backend.util import HERE
 
 
 class MiAZRepository(GObject.GObject):
@@ -35,7 +34,7 @@ class MiAZRepository(GObject.GObject):
     def __init__(self, app):
         sid = GObject.signal_lookup('repository-switched', MiAZRepository)
         if sid == 0:
-            super(MiAZRepository, self).__init__()
+            super().__init__()
             GObject.signal_new('repository-switched',
                                 MiAZRepository,
                                 GObject.SignalFlags.RUN_LAST, None, () )
@@ -63,7 +62,7 @@ class MiAZRepository(GObject.GObject):
                 if os.path.exists(conf_file):
                     with open(conf_file, 'r') as fin:
                         try:
-                            repo = json.load(fin)
+                            json.load(fin)
                             valid = True
                         except Exception as error:
                             self.log.error(error)
