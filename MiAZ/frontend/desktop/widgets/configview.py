@@ -76,9 +76,9 @@ class MiAZRepositories(MiAZConfigView):
     def _setup_view_finish(self):
         # Setup Available and Used Columns Views
         self.viewAv = MiAZColumnViewRepo(self.app)
-        self.add_columnview_available(self.viewAv)
+        self._add_columnview_available(self.viewAv)
         self.viewSl = MiAZColumnViewRepo(self.app)
-        self.add_columnview_used(self.viewSl)
+        self._add_columnview_used(self.viewSl)
 
     def _on_item_available_add(self, *args):
         dialog = MiAZDialogAddRepo(self.app, self.app.win, 'Add a new repository', 'Repository name', 'Folder')
@@ -118,9 +118,9 @@ class MiAZCountries(MiAZConfigView):
     def _setup_view_finish(self):
         # Setup Available and Used Column Views
         self.viewAv = MiAZColumnViewCountry(self.app)
-        self.add_columnview_available(self.viewAv)
+        self._add_columnview_available(self.viewAv)
         self.viewSl = MiAZColumnViewCountry(self.app)
-        self.add_columnview_used(self.viewSl)
+        self._add_columnview_used(self.viewSl)
 
     def _update_view_available(self):
         items = []
@@ -150,9 +150,9 @@ class MiAZGroups(MiAZConfigView):
     def _setup_view_finish(self):
         # Setup Available and Used Columns Views
         self.viewAv = MiAZColumnViewGroup(self.app)
-        self.add_columnview_available(self.viewAv)
+        self._add_columnview_available(self.viewAv)
         self.viewSl = MiAZColumnViewGroup(self.app)
-        self.add_columnview_used(self.viewSl)
+        self._add_columnview_used(self.viewSl)
 
 class MiAZPeople(MiAZConfigView):
     """Class for managing People from Settings"""
@@ -165,9 +165,9 @@ class MiAZPeople(MiAZConfigView):
     def _setup_view_finish(self):
         # Setup Available and Used Columns Views
         self.viewAv = MiAZColumnViewPerson(self.app)
-        self.add_columnview_available(self.viewAv)
+        self._add_columnview_available(self.viewAv)
         self.viewSl = MiAZColumnViewPerson(self.app)
-        self.add_columnview_used(self.viewSl)
+        self._add_columnview_used(self.viewSl)
 
 class MiAZPeopleSentBy(MiAZConfigView):
     """Class for managing People from Settings"""
@@ -183,9 +183,9 @@ class MiAZPeopleSentBy(MiAZConfigView):
     def _setup_view_finish(self):
         # Setup Available and Used Columns Views
         self.viewAv = MiAZColumnViewPerson(self.app)
-        self.add_columnview_available(self.viewAv)
+        self._add_columnview_available(self.viewAv)
         self.viewSl = MiAZColumnViewPerson(self.app)
-        self.add_columnview_used(self.viewSl)
+        self._add_columnview_used(self.viewSl)
 
 class MiAZPeopleSentTo(MiAZConfigView):
     """Class for managing People from Settings"""
@@ -201,9 +201,9 @@ class MiAZPeopleSentTo(MiAZConfigView):
     def _setup_view_finish(self):
         # Setup Available and Used Columns Views
         self.viewAv = MiAZColumnViewPerson(self.app)
-        self.add_columnview_available(self.viewAv)
+        self._add_columnview_available(self.viewAv)
         self.viewSl = MiAZColumnViewPerson(self.app)
-        self.add_columnview_used(self.viewSl)
+        self._add_columnview_used(self.viewSl)
 
 class MiAZPurposes(MiAZConfigView):
     """Manage purposes from Repo Settings"""
@@ -216,9 +216,9 @@ class MiAZPurposes(MiAZConfigView):
     def _setup_view_finish(self):
         # Setup Available and Used Columns Views
         self.viewAv = MiAZColumnViewPurpose(self.app)
-        self.add_columnview_available(self.viewAv)
+        self._add_columnview_available(self.viewAv)
         self.viewSl = MiAZColumnViewPurpose(self.app)
-        self.add_columnview_used(self.viewSl)
+        self._add_columnview_used(self.viewSl)
 
 class MiAZProjects(MiAZConfigView):
     """Manage projects from Repo Settings"""
@@ -231,9 +231,9 @@ class MiAZProjects(MiAZConfigView):
     def _setup_view_finish(self):
         # Setup Available and Used Columns Views
         self.viewAv = MiAZColumnViewProject(self.app)
-        self.add_columnview_available(self.viewAv)
+        self._add_columnview_available(self.viewAv)
         self.viewSl = MiAZColumnViewProject(self.app)
-        self.add_columnview_used(self.viewSl)
+        self._add_columnview_used(self.viewSl)
 
 class MiAZDates(Gtk.Box):
     """"""
@@ -319,9 +319,9 @@ class MiAZUserPlugins(MiAZConfigView):
     def _setup_view_finish(self):
         # Setup Available and Used Column Views
         self.viewAv = MiAZColumnViewPlugin(self.app)
-        self.add_columnview_available(self.viewAv)
+        self._add_columnview_available(self.viewAv)
         self.viewSl = MiAZColumnViewPlugin(self.app)
-        self.add_columnview_used(self.viewSl)
+        self._add_columnview_used(self.viewSl)
 
     def _update_view_available(self):
         plugin_manager = self.app.get_service('plugin-manager')

@@ -172,7 +172,7 @@ class MiAZWorkspace(Gtk.Box):
             dropdowns[i_type] = dropdown
             self.used_signals[i_type] = self.config[i_type].connect('used-updated', self.update_dropdown_filter, item_type)
             # ~ self.log.debug("Dropdown filter for '%s' setup successfully", i_title)
-        self.app.set_widget('ws-dropdowns', dropdowns)
+        self.app.add_widget('ws-dropdowns', dropdowns)
         btnClearFilters = self.factory.create_button(icon_name='miaz-entry-clear', tooltip='Clear all filters', css_classes=['flat'], callback=self.clear_filters)
         boxDropdown = self.factory.create_box_filter('', btnClearFilters)
         body.append(boxDropdown)

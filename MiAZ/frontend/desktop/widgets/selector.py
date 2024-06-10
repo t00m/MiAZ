@@ -23,13 +23,17 @@ from MiAZ.backend.models import Country, Plugin, File
 
 class MiAZSelector(Gtk.Box):
     def __init__(self, app, edit=True):
+        super().__init__(orientation=Gtk.Orientation.VERTICAL, hexpand=True, vexpand=True, spacing=0)
+        self.log = MiAZLog('MiAZ.Selector')
         self.app = app
         self.edit = edit
         self.util = self.app.get_service('util')
         self.factory = self.app.get_service('factory')
         self.repository = self.app.get_service('repository')
-        self.log = MiAZLog('MiAZ.Selector')
-        super(MiAZSelector, self).__init__(orientation=Gtk.Orientation.VERTICAL, hexpand=True, vexpand=True, spacing=0)
+        self.config = None
+        self.viewAv = None
+        self.viewSl = None
+
 
         # Entry and buttons for operations (edit/add/remove)
         self.boxOper = Gtk.Box(spacing=3, orientation=Gtk.Orientation.HORIZONTAL)
@@ -97,9 +101,7 @@ class MiAZSelector(Gtk.Box):
         boxRight.append(self.frmViewSl)
         self._setup_view_finish()
 
-    def add_columnview_available(self, columnview):
-        widget_name = 'selector-cv-%s' % self.config_for
-        self.app.set_widget(widget_name, columnview)
+    def _add_columnview_available(self, columnview):
         columnview.set_filter(self._do_filter_view)
         columnview.column_title.set_expand(True)
         columnview.cv.connect("activate", self._on_selected_item_available_notify)
@@ -107,7 +109,7 @@ class MiAZSelector(Gtk.Box):
         columnview.cv.sort_by_column(columnview.column_id, Gtk.SortType.ASCENDING)
         columnview.cv.get_style_context().add_class(class_name='caption')
 
-    def add_columnview_used(self, columnview):
+    def _add_columnview_used(self, columnview):
         columnview.set_filter(None)
         columnview.column_title.set_expand(True)
         self.frmViewSl.set_child(columnview)
@@ -150,7 +152,7 @@ class MiAZSelector(Gtk.Box):
                 value_used, docs = self.util.field_used(self.repository.docs, self.config.model, item_used.id)
 
             if not value_used:
-                del(items_used[item_used.id])
+                del items_used[item_used.id]
                 changed = True
                 text = _('Removed %s (%s) from used') % (item_used.id, item_used.title)
                 self.log.debug(text)
@@ -210,7 +212,6 @@ class MiAZSelector(Gtk.Box):
         item_type = self.config.model
         if item_type not in [Country, Plugin]:
             i_title = item_type.__title__
-            i_title_plural = item_type.__title_plural__
             dialog = MiAZDialogAdd(self.app, self.get_root(), _('Change %s description') % i_title.lower(), _('Key'), _('Description'))
             label1 = dialog.get_label_key1()
             label1.set_text(i_title)
@@ -251,12 +252,42 @@ class MiAZSelector(Gtk.Box):
                 self.update_views()
         dialog.destroy()
 
+    def select_item(self, view, item_id):
+        self.log.debug("%s > %s", view, item_id)
+        model = view.get_model_filter()
+        selection = view.get_selection()
+        n = 0
+        for item in model:
+            if item.id == item_id:
+                self.log.debug(item)
+                selection.unselect_all()
+                res = selection.select_range(n, 1, False)
+                self.log.error("%s > %s", res, n)
+                selected_items = view.get_selected_items()
+                self.log.error("USED ITEMS SELECTED: %s", selected_items)
+                self._on_item_used_remove()
+                break
+            n += 1
+
     def _on_item_available_remove(self, *args):
         keys = []
         for item_available in self.viewAv.get_selected_items():
             keys.append(item_available.id)
-        self.config.remove_available_batch(keys)
-        # ~ # FIXME: self.config.remove_used(item.id)
+
+        must_be_kept = []
+        can_be_deleted = []
+        items_used = self.config.load_used()
+        for key in keys:
+            if key not in items_used:
+                can_be_deleted.append(key)
+            else:
+                self.select_item(self.viewSl, key)
+                must_be_kept.append(key)
+        if len(can_be_deleted) > 0:
+            self.config.remove_available_batch(can_be_deleted)
+        if len(must_be_kept) > 0:
+            self.log.warning("Some items couldn't be deleted because they are still being used")
+            self.log.warning("%s", ', '.join(must_be_kept))
         self.update_views()
         self.entry.set_text('')
         self.entry.activate()
@@ -299,6 +330,3 @@ class MiAZSelector(Gtk.Box):
 
     def _on_config_import(self, *args):
         pass
-
-    def get_search_entry(self):
-        return self.entry
