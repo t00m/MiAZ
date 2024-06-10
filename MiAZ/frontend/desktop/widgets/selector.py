@@ -108,6 +108,13 @@ class MiAZSelector(Gtk.Box):
         self.frmViewAv.set_child(columnview)
         columnview.cv.sort_by_column(columnview.column_id, Gtk.SortType.ASCENDING)
         columnview.cv.get_style_context().add_class(class_name='caption')
+        filter_model = columnview.get_model_filter()
+        selection = Gtk.SingleSelection.new(filter_model)
+        columnview.cv.set_model(selection)
+        # ~ selection.connect("selection-changed", self._on_selection_change)
+
+    def _on_selection_change(self, *args):
+        self.log.debug(args)
 
     def _add_columnview_used(self, columnview):
         columnview.set_filter(None)
@@ -115,6 +122,9 @@ class MiAZSelector(Gtk.Box):
         self.frmViewSl.set_child(columnview)
         columnview.cv.sort_by_column(columnview.column_id, Gtk.SortType.ASCENDING)
         columnview.cv.get_style_context().add_class(class_name='caption')
+        filter_model = columnview.get_model_filter()
+        selection = Gtk.SingleSelection.new(filter_model)
+        columnview.cv.set_model(selection)
 
     def _setup_view_finish(self, *args):
         pass
@@ -261,8 +271,7 @@ class MiAZSelector(Gtk.Box):
             if item.id == item_id:
                 self.log.debug(item)
                 selection.unselect_all()
-                res = selection.select_range(n, 1, False)
-                self.log.error("%s > %s", res, n)
+                selection.set_selected(n)
                 selected_items = view.get_selected_items()
                 self.log.error("USED ITEMS SELECTED: %s", selected_items)
                 self._on_item_used_remove()
@@ -270,27 +279,22 @@ class MiAZSelector(Gtk.Box):
             n += 1
 
     def _on_item_available_remove(self, *args):
-        keys = []
-        for item_available in self.viewAv.get_selected_items():
-            keys.append(item_available.id)
-
-        must_be_kept = []
-        can_be_deleted = []
+        selected_item = self.viewAv.get_selected()
         items_used = self.config.load_used()
-        for key in keys:
-            if key not in items_used:
-                can_be_deleted.append(key)
-            else:
-                self.select_item(self.viewSl, key)
-                must_be_kept.append(key)
-        if len(can_be_deleted) > 0:
-            self.config.remove_available_batch(can_be_deleted)
-        if len(must_be_kept) > 0:
-            self.log.warning("Some items couldn't be deleted because they are still being used")
-            self.log.warning("%s", ', '.join(must_be_kept))
-        self.update_views()
-        self.entry.set_text('')
-        self.entry.activate()
+        if selected_item.id not in items_used:
+            self.config.remove_available_batch([selected_item.id])
+            self.update_views()
+            self.entry.set_text('')
+            self.entry.activate()
+        else:
+            self.viewSl.set_selected(selected_item)
+            self._on_item_used_remove()
+                # ~ must_be_kept.append(key)
+        # ~ if len(can_be_deleted) > 0:
+
+        # ~ if len(must_be_kept) > 0:
+            # ~ self.log.warning("Some items couldn't be deleted because they are still being used")
+            # ~ self.log.warning("%s", ', '.join(must_be_kept))
 
     def _on_selected_item_available_notify(self, colview, pos):
         model = colview.get_model()

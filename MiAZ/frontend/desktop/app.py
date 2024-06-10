@@ -186,6 +186,7 @@ class MiAZApp(Gtk.Application):
             except Exception:
                 self.log.error("Default repository configuration not available")
                 valid = False
+                raise
         except KeyError:
             self.log.debug("No repository active in the configuration")
             actions = self.get_service('actions')

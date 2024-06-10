@@ -21,6 +21,7 @@ from gi.repository import Pango
 
 from MiAZ.backend.log import MiAZLog
 from MiAZ.frontend.desktop.widgets.columnview import MiAZColumnView
+from MiAZ.frontend.desktop.widgets.columnview import MiAZColumnViewSelector
 from MiAZ.frontend.desktop.widgets.columnview import ColIcon, ColLabel, ColMenuButton, ColCheck, ColButton
 from MiAZ.backend.models import MiAZItem, Country, Group, Person, Purpose, File, Project, Repository, Plugin
 
@@ -254,6 +255,16 @@ class MiAZColumnViewWorkspace(MiAZColumnView):
         box = ColIcon()
         list_item.set_child(box)
 
+# ~ class MiAZColumnViewSelector(MiAZColumnView):
+    # ~ """ Custom ColumnView widget for MiAZ """
+    # ~ __gtype_name__ = 'MiAZColumnViewSelector'
+
+    # ~ def __init__(self, app, item_type=MiAZItem):
+        # ~ super().__init__(app, item_type)
+        # ~ self.selection = Gtk.SingleSelection.new(self.filter_model)
+        # ~ self.cv.set_model(self.selection)
+
+
 class MiAZColumnViewCountry(MiAZColumnView):
     """ Custom ColumnView widget for MiAZ """
     __gtype_name__ = 'MiAZColumnViewCountry'
@@ -308,7 +319,7 @@ class MiAZColumnViewRepo(MiAZColumnView):
         self.cv.append_column(self.column_title)
         self.column_title.set_title(_('Directory'))
 
-class MiAZColumnViewGroup(MiAZColumnView):
+class MiAZColumnViewGroup(MiAZColumnViewSelector):
     """ Custom ColumnView widget for MiAZ """
     __gtype_name__ = 'MiAZColumnViewGroup'
 
@@ -318,6 +329,10 @@ class MiAZColumnViewGroup(MiAZColumnView):
         self.column_title.set_title(_('Group Id'))
         self.cv.append_column(self.column_title)
         self.column_title.set_title(_('Description'))
+        self.selection.connect("selection-changed", self._on_selection_change)
+
+    def _on_selection_change(self, *args):
+        pass
 
 class MiAZColumnViewProject(MiAZColumnView):
     """ Custom ColumnView widget for MiAZ """
