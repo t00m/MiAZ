@@ -136,8 +136,9 @@ class MiAZAppSettings(MiAZCustomWindow):
         return self.repo_is_set
 
     def show_filechooser_source(self, *args):
+        window = self.app.get_widget('window')
         filechooser = self.factory.create_filechooser(
-                    parent=self.app.win,
+                    parent=window,
                     title=_('Choose target directory'),
                     target = 'FOLDER',
                     callback = self.on_filechooser_response_source,
@@ -243,8 +244,9 @@ class MiAZAppSettings(MiAZCustomWindow):
         dialog.destroy()
 
     def _on_plugin_add(self, *args):
+        window = self.app.get_widget('window')
         filechooser_dialog = self.factory.create_filechooser(
-                    parent=self.app.win,
+                    parent=window,
                     title=_('Upload a plugin'),
                     target = 'FILE',
                     callback = self.on_filechooser_response,
@@ -259,13 +261,16 @@ class MiAZAppSettings(MiAZCustomWindow):
     def _on_plugin_remove(self, *args):
         plugin_manager = self.app.get_service('plugin-manager')
         view = self.app.get_widget('app-settings-plugins-user-view')
-        module = view.get_selected_items()[0]
-        plugin = plugin_manager.get_plugin_info(module.id)
-        deleted = plugin_manager.remove_plugin(plugin)
-        if deleted:
-            self.log.debug("Plugin '%s' deleted", module.id)
-            # ~ self.actions.statusbar_message("Plugin '%s' deleted" % module.id)
-            self.update_user_plugins()
+        try:
+            module = view.get_selected_items()[0]
+            plugin = plugin_manager.get_plugin_info(module.id)
+            deleted = plugin_manager.remove_plugin(plugin)
+            if deleted:
+                self.log.debug("Plugin '%s' deleted", module.id)
+                # ~ self.actions.statusbar_message("Plugin '%s' deleted" % module.id)
+                self.update_user_plugins()
+        except IndexError:
+            self.log.debug("No user plugins installed and/or selected")
 
     def get_plugin_status(self, name: str) -> bool:
         plugins = self.config['App'].get('plugins')

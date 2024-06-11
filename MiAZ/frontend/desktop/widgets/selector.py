@@ -136,60 +136,43 @@ class MiAZSelector(Gtk.Box):
     def _on_item_used_add(self, *args):
         changed = False
         items_used = self.config.load_used()
-        for item_available in self.viewAv.get_selected_items():
-            items_used[item_available.id] = item_available.title
-            self.log.debug("Using %s (%s)", item_available.id, item_available.title)
-            changed = True
-        if changed:
-            self.config.save_used(items=items_used)
-            self._update_view_used()
+        selected_item = self.viewAv.get_selected()
+        items_used[selected_item.id] = selected_item.title
+        self.log.debug("Using %s (%s)", selected_item.id, selected_item.title)
+        self.config.save_used(items=items_used)
+        self._update_view_used()
 
     def _on_item_used_remove(self, *args):
         value_used = False
         changed = False
         items_used = self.config.load_used()
         items_available = self.config.load_available()
-        for item_used in self.viewSl.get_selected_items():
-            if item_used.id not in items_available:
-                items_available[item_used.id] = item_used.title
-            if self.config.model == Repository:
-                value_used = False
-            elif self.config.model == Project:
-                projects = self.app.get_service('Projects')
-                docs = projects.docs_in_project(item_used.id)
-                value_used = len(docs) > 0
-            else:
-                value_used, docs = self.util.field_used(self.repository.docs, self.config.model, item_used.id)
-
-            if not value_used:
-                del items_used[item_used.id]
-                changed = True
-                text = _('Removed %s (%s) from used') % (item_used.id, item_used.title)
-                self.log.debug(text)
-            else:
-                self.log.debug('\n'.join(docs))
-                item_type = self.config.model
-                i_title = item_type.__title__
-                dtype = "warning"
-                text = _('%s %s is still being used by %d docs:') % (i_title, item_used.title, len(docs))
-                window = self.app.get_widget('window')
-                dtype = 'error'
-                title = "%s %s can't be removed" % (i_title, item_used.title)
-
+        selected_item = self.viewSl.get_selected()
+        is_used, docs = self.util.field_used(self.repository.docs, self.config.model, selected_item.id)
+        if is_used:
+            item_type = self.config.model
+            i_title = item_type.__title__
+            text = _('%s %s is still being used by %d docs:') % (i_title, selected_item.title, len(docs))
+            window = self.app.get_widget('window')
+            dtype = 'error'
+            title = "%s %s can't be removed" % (i_title, selected_item.title)
+            if len(docs) > 0:
                 items = []
                 for doc in docs:
                     items.append(File(id=doc, title=os.path.basename(doc)))
                 view = MiAZColumnViewDocuments(self.app)
                 view.update(items)
-
-                dialog = CustomDialog(app=self.app, parent=window, use_header_bar=True, dtype=dtype, title=title, text=text, widget=view)
-                dialog.set_modal(True)
-                dialog.show()
-        if changed:
+            else:
+                view = None
+            dialog = CustomDialog(app=self.app, parent=window, use_header_bar=True, dtype=dtype, title=title, text=text, widget=view)
+            dialog.set_modal(True)
+            dialog.show()
+        else:
+            items_available[selected_item.id] = selected_item.title
+            del items_used[selected_item.id]
             self.config.save_used(items=items_used)
             self.config.save_available(items=items_available)
-            self._update_view_used()
-            self._update_view_available()
+            self.update_views()
 
     def _on_item_available_add(self, *args):
         if self.edit:
@@ -213,7 +196,7 @@ class MiAZSelector(Gtk.Box):
 
     def _on_item_available_edit(self, *args):
         try:
-            item = self.viewAv.get_selected_items()[0]
+            item = self.viewAv.get_selected()
             self._on_item_available_rename(item)
         except IndexError:
             self.log.debug("No item selected. Cancel operation")
@@ -281,20 +264,39 @@ class MiAZSelector(Gtk.Box):
     def _on_item_available_remove(self, *args):
         selected_item = self.viewAv.get_selected()
         items_used = self.config.load_used()
-        if selected_item.id not in items_used:
+        is_used = selected_item.id in items_used
+        self.log.debug("Is '%s' used? %s", selected_item.id, is_used)
+        if not is_used:
             self.config.remove_available_batch([selected_item.id])
             self.update_views()
             self.entry.set_text('')
             self.entry.activate()
         else:
-            self.viewSl.set_selected(selected_item)
-            self._on_item_used_remove()
-                # ~ must_be_kept.append(key)
-        # ~ if len(can_be_deleted) > 0:
+            value_used, docs = self.util.field_used(self.repository.docs, self.config.model, selected_item.id)
+            item_type = self.config.model
+            i_title = item_type.__title__
+            dtype = "warning"
+            window = self.app.get_widget('window')
+            dtype = 'error'
+            title = "%s %s can't be removed" % (i_title, selected_item.title)
 
-        # ~ if len(must_be_kept) > 0:
-            # ~ self.log.warning("Some items couldn't be deleted because they are still being used")
-            # ~ self.log.warning("%s", ', '.join(must_be_kept))
+            if len(docs) > 0:
+                text = _('%s %s is still being used by %d docs:') % (i_title, selected_item.title, len(docs))
+                items = []
+                for doc in docs:
+                    items.append(File(id=doc, title=os.path.basename(doc)))
+                view = MiAZColumnViewDocuments(self.app)
+                view.update(items)
+            else:
+                text = _('%s %s is still being used') % (i_title, selected_item.title)
+                view = None
+
+            dialog = CustomDialog(app=self.app, parent=window, use_header_bar=True, dtype=dtype, title=title, text=text, widget=view)
+            if len(docs) == 0:
+                dialog.set_default_size(-1, -1)
+
+            dialog.set_modal(True)
+            dialog.show()
 
     def _on_selected_item_available_notify(self, colview, pos):
         model = colview.get_model()

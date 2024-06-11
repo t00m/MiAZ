@@ -398,7 +398,8 @@ class MiAZRenameDialog(Gtk.Box):
         body = _('<big>You are about to set this new filename:</big>\n\n<b>%s</b>') % self.get_filepath_target()
         widget = Gtk.Label()
         widget.set_markup(body)
-        question = self.factory.create_dialog_question(self.app.win, _('Are you sure?'), widget)
+        window = self.app.get_widget('window')
+        question = self.factory.create_dialog_question(window, _('Are you sure?'), widget)
         question.connect('response', self.on_answer_question_rename)
         question.show()
 

@@ -265,7 +265,7 @@ class MiAZColumnViewWorkspace(MiAZColumnView):
         # ~ self.cv.set_model(self.selection)
 
 
-class MiAZColumnViewCountry(MiAZColumnView):
+class MiAZColumnViewCountry(MiAZColumnViewSelector):
     """ Custom ColumnView widget for MiAZ """
     __gtype_name__ = 'MiAZColumnViewCountry'
 
@@ -308,7 +308,7 @@ class MiAZColumnViewDocuments(MiAZColumnView):
         self.column_title.set_title(_('Document'))
         self.column_title.set_expand(True)
 
-class MiAZColumnViewRepo(MiAZColumnView):
+class MiAZColumnViewRepo(MiAZColumnViewSelector):
     """ Custom ColumnView widget for MiAZ """
     __gtype_name__ = 'MiAZColumnViewRepo'
 
@@ -334,7 +334,7 @@ class MiAZColumnViewGroup(MiAZColumnViewSelector):
     def _on_selection_change(self, *args):
         pass
 
-class MiAZColumnViewProject(MiAZColumnView):
+class MiAZColumnViewProject(MiAZColumnViewSelector):
     """ Custom ColumnView widget for MiAZ """
     __gtype_name__ = 'MiAZColumnViewProject'
 
@@ -345,7 +345,7 @@ class MiAZColumnViewProject(MiAZColumnView):
         self.cv.append_column(self.column_title)
         self.column_title.set_title(_('Description'))
 
-class MiAZColumnViewPurpose(MiAZColumnView):
+class MiAZColumnViewPurpose(MiAZColumnViewSelector):
     """ Custom ColumnView widget for MiAZ """
     __gtype_name__ = 'MiAZColumnViewPurpose'
 
@@ -356,7 +356,7 @@ class MiAZColumnViewPurpose(MiAZColumnView):
         self.cv.append_column(self.column_title)
         self.column_title.set_title(_('Description'))
 
-class MiAZColumnViewPerson(MiAZColumnView):
+class MiAZColumnViewPerson(MiAZColumnViewSelector):
     """ Custom ColumnView widget for MiAZ """
     __gtype_name__ = 'MiAZColumnViewPerson'
 

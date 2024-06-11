@@ -26,6 +26,7 @@ from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewProject
 from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewRepo
 from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewPlugin
 from MiAZ.frontend.desktop.widgets.dialogs import MiAZDialogAddRepo
+from MiAZ.frontend.desktop.widgets.dialogs import CustomDialog
 from MiAZ.backend.pluginsystem import MiAZPluginType
 
 
@@ -81,7 +82,8 @@ class MiAZRepositories(MiAZConfigView):
         self._add_columnview_used(self.viewSl)
 
     def _on_item_available_add(self, *args):
-        dialog = MiAZDialogAddRepo(self.app, self.app.win, 'Add a new repository', 'Repository name', 'Folder')
+        window = self.app.get_widget('window')
+        dialog = MiAZDialogAddRepo(self.app, window, 'Add a new repository', 'Repository name', 'Folder')
         dialog.connect('response', self._on_response_item_available_add)
         search_term = self.entry.get_text()
         dialog.set_value1(search_term)
@@ -98,12 +100,65 @@ class MiAZRepositories(MiAZConfigView):
         dialog.destroy()
 
     def _on_item_available_rename(self, item):
-        dialog = MiAZDialogAddRepo(self.app, self.app.win, _('Edit repository'), _('Repository name'), _('Folder'))
+        window = self.app.get_widget('window')
+        dialog = MiAZDialogAddRepo(self.app, window, _('Edit repository'), _('Repository name'), _('Folder'))
         repo_name = item.id
         dialog.set_value1(repo_name.replace('_', ' '))
         dialog.set_value2(item.title)
         dialog.connect('response', self._on_response_item_available_rename, item)
         dialog.show()
+
+    def _on_item_available_remove(self, *args):
+        selected_item = self.viewAv.get_selected()
+        items_available = self.config.load_available()
+        items_used = self.config.load_used()
+        item_type = self.config.model
+        i_title = item_type.__title__
+
+        is_used = self.config.exists_used(selected_item.id)
+        if not is_used:
+            del items_available[selected_item.id]
+            self.config.save_available(items=items_available)
+            self.log.debug("%s %s removed from de list of available items", i_title, selected_item.id)
+        else:
+            dtype = "error"
+            text = _('%s %s is still being used') % (i_title, selected_item.id)
+            window = self.app.get_widget('window')
+            dtype = 'error'
+            title = "%s %s can't be removed" % (i_title, selected_item.id)
+            dialog = CustomDialog(app=self.app, parent=window, use_header_bar=True, dtype=dtype, title=title, text=text, widget=None)
+            dialog.set_default_size(-1, -1)
+            dialog.set_modal(True)
+            dialog.show()
+
+    def _on_item_used_add(self, *args):
+        items_available = self.config.load_available()
+        items_used = self.config.load_used()
+        selected_item = self.viewAv.get_selected()
+        is_used = selected_item.id in items_used
+        item_type = self.config.model
+        i_title = item_type.__title__
+        if not is_used:
+            items_used[selected_item.id] = selected_item.title
+            self.config.save_used(items=items_used)
+            self.update_views()
+            self.log.debug("%s %s not used yet. Can be used now", i_title, selected_item.id)
+        else:
+            self.log.debug("%s %s is already being used", i_title, selected_item.id)
+
+    def _on_item_used_remove(self, *args):
+        items_available = self.config.load_available()
+        items_used = self.config.load_used()
+        selected_item = self.viewSl.get_selected()
+        item_type = self.config.model
+        i_title = item_type.__title__
+        items_available[selected_item.id] = selected_item.title
+        self.log.debug("%s %s added back to the list of available items", i_title, selected_item.id)
+        del items_used[selected_item.id]
+        self.log.debug("%s %s removed from de list of used items", i_title, selected_item.id)
+        self.config.save_used(items=items_used)
+        self.config.save_available(items=items_available)
+        self.update_views()
 
 
 class MiAZCountries(MiAZConfigView):
@@ -235,6 +290,87 @@ class MiAZProjects(MiAZConfigView):
         self.viewSl = MiAZColumnViewProject(self.app)
         self._add_columnview_used(self.viewSl)
 
+
+    # ~ def _on_item_available_add(self, *args):
+        # ~ window = self.app.get_widget('window')
+        # ~ dialog = MiAZDialogAddRepo(self.app, window, 'Add a new repository', 'Repository name', 'Folder')
+        # ~ dialog.connect('response', self._on_response_item_available_add)
+        # ~ search_term = self.entry.get_text()
+        # ~ dialog.set_value1(search_term)
+        # ~ dialog.show()
+
+    # ~ def _on_response_item_available_add(self, dialog, response):
+        # ~ if response == Gtk.ResponseType.ACCEPT:
+            # ~ repo_name = dialog.get_value1()
+            # ~ repo_path = dialog.get_value2()
+            # ~ if len(repo_name) > 0 and os.path.exists(repo_path):
+                # ~ self.config.add_available(repo_name, repo_path)
+                # ~ self.log.debug("Repo '%s' added to list of available repositories", repo_name)
+                # ~ self.update_views()
+        # ~ dialog.destroy()
+
+    # ~ def _on_item_available_rename(self, item):
+        # ~ window = self.app.get_widget('window')
+        # ~ dialog = MiAZDialogAddRepo(self.app, window, _('Edit repository'), _('Repository name'), _('Folder'))
+        # ~ repo_name = item.id
+        # ~ dialog.set_value1(repo_name.replace('_', ' '))
+        # ~ dialog.set_value2(item.title)
+        # ~ dialog.connect('response', self._on_response_item_available_rename, item)
+        # ~ dialog.show()
+
+    def _on_item_available_remove(self, *args):
+        selected_item = self.viewAv.get_selected()
+        items_available = self.config.load_available()
+        items_used = self.config.load_used()
+        item_type = self.config.model
+        i_title = item_type.__title__
+
+        is_used = self.config.exists_used(selected_item.id)
+        if not is_used:
+            del items_available[selected_item.id]
+            self.config.save_available(items=items_available)
+            self.log.debug("%s %s removed from de list of available items", i_title, selected_item.id)
+        else:
+            dtype = "error"
+            text = _('%s %s is still being used') % (i_title, selected_item.id)
+            window = self.app.get_widget('window')
+            dtype = 'error'
+            title = "%s %s can't be removed" % (i_title, selected_item.id)
+            dialog = CustomDialog(app=self.app, parent=window, use_header_bar=True, dtype=dtype, title=title, text=text, widget=None)
+            dialog.set_default_size(-1, -1)
+            dialog.set_modal(True)
+            dialog.show()
+
+    def _on_item_used_add(self, *args):
+        items_available = self.config.load_available()
+        items_used = self.config.load_used()
+        selected_item = self.viewAv.get_selected()
+        is_used = selected_item.id in items_used
+        item_type = self.config.model
+        i_title = item_type.__title__
+        if not is_used:
+            items_used[selected_item.id] = selected_item.title
+            self.config.save_used(items=items_used)
+            self.update_views()
+            self.log.debug("%s %s not used yet. Can be used now", i_title, selected_item.id)
+        else:
+            self.log.debug("%s %s is already being used", i_title, selected_item.id)
+
+    def _on_item_used_remove(self, *args):
+        items_available = self.config.load_available()
+        items_used = self.config.load_used()
+        selected_item = self.viewSl.get_selected()
+        item_type = self.config.model
+        i_title = item_type.__title__
+        items_available[selected_item.id] = selected_item.title
+        self.log.debug("%s %s added back to the list of available items", i_title, selected_item.id)
+        del items_used[selected_item.id]
+        self.log.debug("%s %s removed from de list of used items", i_title, selected_item.id)
+        self.config.save_used(items=items_used)
+        self.config.save_available(items=items_available)
+        self.update_views()
+
+
 class MiAZDates(Gtk.Box):
     """"""
     __gtype_name__ = 'MiAZDates'
@@ -260,7 +396,8 @@ class MiAZDates(Gtk.Box):
         calendar.connect('day-selected', self.calendar_day_selected, label, cv, self.selected_items)
         calendar.select_day(GLib.DateTime.new_from_iso8601(iso8601))
         calendar.emit('day-selected')
-        dialog = self.factory.create_dialog_question(self.app.win, _('Mass renaming'), box, width=640, height=480)
+        window = self.app.get_widget('window')
+        dialog = self.factory.create_dialog_question(window, _('Mass renaming'), box, width=640, height=480)
         dialog.connect('response', self._on_mass_action_rename_date_response, calendar)
         dialog.show()
 
