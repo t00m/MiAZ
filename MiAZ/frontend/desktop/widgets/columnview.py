@@ -316,7 +316,10 @@ class MiAZColumnViewSelector(Gtk.Box):
         for i in range(self.store.get_n_items()):
             if self.cv.get_model().is_selected(i):
                 selected_items.append(self.cv.get_model().get_item(i))
-        return selected_items[0]
+        try:
+            return selected_items[0]
+        except IndexError:
+            return None
 
     def set_selected(self, item):
         # set selection

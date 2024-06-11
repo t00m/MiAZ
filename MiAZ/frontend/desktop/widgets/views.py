@@ -408,7 +408,7 @@ class MiAZColumnViewMassProject(MiAZColumnView):
         self.column_title.set_title(_('Projects already assigned'))
         self.column_title.set_expand(True)
 
-class MiAZColumnViewPlugin(MiAZColumnView):
+class MiAZColumnViewPlugin(MiAZColumnViewSelector):
     """ Custom ColumnView widget for MiAZ """
     __gtype_name__ = 'MiAZColumnViewPlugin'
 
