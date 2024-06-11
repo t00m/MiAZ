@@ -92,8 +92,9 @@ class Export2Zip(GObject.GObject, Peas.Activatable):
             dialog.destroy()
 
         self.factory = self.app.get_service('factory')
+        window = self.app.get_widget('window')
         filechooser = self.factory.create_filechooser(
-                    parent=self.app.win,
+                    parent=window,
                     title=_('Export selected documents to a ZIP file'),
                     target = 'FOLDER',
                     callback = filechooser_response,

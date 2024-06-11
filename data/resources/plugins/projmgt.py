@@ -123,7 +123,8 @@ class MiAZToolbarProjectMgtPlugin(GObject.GObject, Peas.Activatable):
         hbox.append(btnManage)
         box.append(hbox)
         box.append(frame)
-        dialog = self.factory.create_dialog_question(self.app.win, _('Assign to a project'), box, width=1024, height=600)
+        window = self.app.get_widget('window')
+        dialog = self.factory.create_dialog_question(window, _('Assign to a project'), box, width=1024, height=600)
         dialog.connect('response', dialog_response, dropdown, items)
         dialog.show()
 
@@ -175,7 +176,8 @@ class MiAZToolbarProjectMgtPlugin(GObject.GObject, Peas.Activatable):
         hbox.append(btnManage)
         box.append(hbox)
         box.append(frame)
-        dialog = self.factory.create_dialog_question(self.app.win, _('Assign to a project'), box, width=1024, height=600)
+        window = self.app.get_widget('window')
+        dialog = self.factory.create_dialog_question(window, _('Assign to a project'), box, width=1024, height=600)
         dialog.connect('response', dialog_response, dropdown, items)
         dialog.show()
 

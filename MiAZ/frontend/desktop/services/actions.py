@@ -153,8 +153,9 @@ class MiAZActions(GObject.GObject):
                         self.util.filename_import(source, target)
             dialog.destroy()
 
+        window = self.app.get_widget('window')
         filechooser = self.factory.create_filechooser(
-                    parent=self.app.win,
+                    parent=window,
                     title=_('Import a directory'),
                     target = 'FOLDER',
                     callback = filechooser_response,
@@ -178,8 +179,9 @@ class MiAZActions(GObject.GObject):
                     self.log.debug(source)
             dialog.destroy()
 
+        window = self.app.get_widget('window')
         filechooser = self.factory.create_filechooser(
-                    parent=self.app.win,
+                    parent=window,
                     title=_('Import a configuration file'),
                     target = 'FILE',
                     callback = filechooser_response,
@@ -201,8 +203,9 @@ class MiAZActions(GObject.GObject):
                     self.util.filename_import(source, target)
             dialog.destroy()
 
+        window = self.app.get_widget('window')
         filechooser = self.factory.create_filechooser(
-                    parent=self.app.win,
+                    parent=window,
                     title=_('Import a single file'),
                     target = 'FILE',
                     callback = filechooser_response,
