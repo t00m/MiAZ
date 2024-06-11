@@ -16,7 +16,6 @@ import json
 import shutil
 import tempfile
 import zipfile
-from inspect import currentframe, getframeinfo
 from datetime import datetime, timedelta
 # ~ from dateutil.parser import parse as dateparser
 
@@ -36,34 +35,6 @@ Field[SentBy] = 3
 Field[Purpose] = 4
 Field[SentTo] = 6
 
-def HERE(do_print=False):
-    ''' Get the current file and line number in Python script. The line
-    number is taken from the caller, i.e. where this function is called.
-    Via: https://stackoverflow.com/a/67663308/2013690
-
-    Parameters
-    ----------
-    do_print : boolean
-        If True, print the file name and line number to stdout.
-
-    Returns
-    -------
-    String with file name and line number if do_print is False.
-
-    Examples
-    --------
-    >>> HERE() # Prints to stdout
-
-    >>> print(HERE(do_print=False))
-    '''
-    frameinfo = getframeinfo(currentframe().f_back)
-    filename = frameinfo.filename.split('/')[-1]
-    linenumber = frameinfo.lineno
-    loc_str = 'File: %s, line: %d >' % (filename, linenumber)
-    if do_print:
-        print('HERE AT %s' % (loc_str))
-    else:
-        return loc_str
 
 class MiAZUtil(GObject.GObject):
     """Backend class"""
@@ -88,15 +59,15 @@ class MiAZUtil(GObject.GObject):
 
     def directory_open(self, dirpath: str):
         os.system("xdg-open '%s'" % dirpath)
-        self.log.debug("Directory %s opened in file browser" % dirpath)
+        self.log.debug("Directory %s opened in file browser", dirpath)
 
     def directory_remove(self, dirpath: str):
         shutil.rmtree(dirpath)
-        self.log.debug("Directory %s deleted" % dirpath)
+        self.log.debug("Directory %s deleted", dirpath)
 
     def directory_create(self, dirpath: str):
         os.makedirs(dirpath, exist_ok = True)
-        self.log.debug("Directory %s created" % dirpath)
+        self.log.debug("Directory %s created", dirpath)
 
     # ~ def guess_datetime(self, adate: str) -> datetime:
         # ~ """Return (guess) a datetime object for a given string."""
@@ -146,11 +117,11 @@ class MiAZUtil(GObject.GObject):
 
 
     def get_fields(self, filename: str) -> []:
-            filename = os.path.basename(filename)
-            dot = filename.rfind('.')
-            if dot > 0:
-                filename = filename[:dot]
-            return filename.split('-')
+        filename = os.path.basename(filename)
+        dot = filename.rfind('.')
+        if dot > 0:
+            filename = filename[:dot]
+        return filename.split('-')
 
     def get_files(self, dirpath: str) -> []:
         """Get all files from a given directory."""
@@ -206,13 +177,9 @@ class MiAZUtil(GObject.GObject):
 
     def filename_is_normalized(self, name: str) -> bool:
         try:
-            if len(name.split('-')) == 7:
-                normalized = True
-            else:
-                normalized = False
+            return len(name.split('-')) == 7
         except Exception:
-            normalized = False
-        return normalized
+            return False
 
     def filename_normalize(self, filename: str) -> str:
         name, ext = self.filename_details(filename)
@@ -352,9 +319,9 @@ class MiAZUtil(GObject.GObject):
             basename = sourcename[:dot]
         sourcedir = os.path.dirname(filename)
         source = os.path.join(sourcedir, basename)
-        zipfile = shutil.make_archive(source, 'zip', directory)
+        zip_file = shutil.make_archive(source, 'zip', directory)
         target = source + '.zip'
-        shutil.move(zipfile, target)
+        shutil.move(zip_file, target)
         return target
 
     def unzip(self, target: str, install_dir):
@@ -389,7 +356,3 @@ def which(program):
             if is_exe(exe_file):
                 return exe_file
     return None
-
-    def get_line_code_info(self):
-        frameinfo = getframeinfo(currentframe())
-        return frameinfo.filename, frameinfo.lineno

@@ -161,17 +161,11 @@ class MiAZConfig(GObject.GObject):
 
     def exists_used(self, key: str) -> bool:
         config = self.load(self.used)
-        if key in config:
-            return True
-        else:
-            return False
+        return key in config
 
     def exists_available(self, key: str) -> bool:
         config = self.load(self.available)
-        if key in config:
-            return True
-        else:
-            return False
+        return key in config
 
     def add_available_batch(self, keysvalues: list):
         filepath = self.available
@@ -233,20 +227,22 @@ class MiAZConfig(GObject.GObject):
         return self.remove(self.used, key)
 
     def remove_batch(self, filepath: str, keys: list):
+        # FIXME: check del operation
         items = self.load(filepath)
         for key in keys:
             if key in items:
-                del(items[key])
+                del items[key]
                 self.log.info("%s - Remove: %s from %s", self.config_for, key, filepath)
         self.save(filepath=filepath, items=items)
 
     def remove(self, filepath: str, key: str) -> bool:
+        # FIXME: check del operation
         removed = False
         if key is None or key.strip() == '':
             self.log.warning('Key is None or empty. Remove skipped')
         items = self.load(filepath)
         if key in items:
-            del(items[key])
+            del items[key]
             self.save(filepath=filepath, items=items)
             self.log.info("%s - Remove: %s from %s", self.config_for, key, filepath)
             removed = True
@@ -274,11 +270,7 @@ class MiAZConfigApp(MiAZConfig):
 
     def exists(self, key: str) -> bool:
         config = self.load(self.used)
-        if key in config:
-            found = True
-        else:
-            found = False
-        return found
+        return key in config
 
     def save(self, filepath: str = '', items: dict = {}) -> bool:
         saved = self.save_data(filepath, items)
@@ -353,8 +345,6 @@ class MiAZConfigPurposes(MiAZConfig):
 
 class MiAZConfigConcepts(MiAZConfig):
     def __init__(self, app, dir_conf):
-
-        ENV = app.get_env()
         super().__init__(
             app = app,
             log=MiAZLog('MiAZ.Settings.Concepts'),
@@ -416,8 +406,6 @@ class MiAZConfigSentTo(MiAZConfig):
 
 class MiAZConfigProjects(MiAZConfig):
     def __init__(self, app, dir_conf):
-
-        ENV = app.get_env()
         super().__init__(
             app = app,
             log=MiAZLog('MiAZ.Settings.Project'),
@@ -431,8 +419,6 @@ class MiAZConfigProjects(MiAZConfig):
 
 class MiAZConfigUserPlugins(MiAZConfig):
     def __init__(self, app, dir_conf):
-
-        ENV = app.get_env()
         super().__init__(
             app = app,
             log=MiAZLog('MiAZ.Settings.UserPlugins'),

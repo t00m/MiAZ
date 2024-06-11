@@ -18,6 +18,7 @@ from gi.repository import Gtk
 from MiAZ.backend.log import MiAZLog
 from MiAZ.frontend.desktop.widgets.selector import MiAZSelector
 from MiAZ.frontend.desktop.widgets.columnview import MiAZColumnView
+from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewDocuments
 from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewCountry
 from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewGroup
 from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewPurpose
@@ -26,7 +27,9 @@ from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewProject
 from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewRepo
 from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewPlugin
 from MiAZ.frontend.desktop.widgets.dialogs import MiAZDialogAddRepo
+from MiAZ.frontend.desktop.widgets.dialogs import CustomDialog
 from MiAZ.backend.pluginsystem import MiAZPluginType
+from MiAZ.backend.models import File
 
 
 class MiAZConfigView(MiAZSelector):
@@ -76,12 +79,13 @@ class MiAZRepositories(MiAZConfigView):
     def _setup_view_finish(self):
         # Setup Available and Used Columns Views
         self.viewAv = MiAZColumnViewRepo(self.app)
-        self.add_columnview_available(self.viewAv)
+        self._add_columnview_available(self.viewAv)
         self.viewSl = MiAZColumnViewRepo(self.app)
-        self.add_columnview_used(self.viewSl)
+        self._add_columnview_used(self.viewSl)
 
     def _on_item_available_add(self, *args):
-        dialog = MiAZDialogAddRepo(self.app, self.app.win, 'Add a new repository', 'Repository name', 'Folder')
+        window = self.app.get_widget('window')
+        dialog = MiAZDialogAddRepo(self.app, window, 'Add a new repository', 'Repository name', 'Folder')
         dialog.connect('response', self._on_response_item_available_add)
         search_term = self.entry.get_text()
         dialog.set_value1(search_term)
@@ -98,12 +102,65 @@ class MiAZRepositories(MiAZConfigView):
         dialog.destroy()
 
     def _on_item_available_rename(self, item):
-        dialog = MiAZDialogAddRepo(self.app, self.app.win, _('Edit repository'), _('Repository name'), _('Folder'))
+        window = self.app.get_widget('window')
+        dialog = MiAZDialogAddRepo(self.app, window, _('Edit repository'), _('Repository name'), _('Folder'))
         repo_name = item.id
         dialog.set_value1(repo_name.replace('_', ' '))
         dialog.set_value2(item.title)
         dialog.connect('response', self._on_response_item_available_rename, item)
         dialog.show()
+
+    def _on_item_available_remove(self, *args):
+        selected_item = self.viewAv.get_selected()
+        items_available = self.config.load_available()
+        items_used = self.config.load_used()
+        item_type = self.config.model
+        i_title = item_type.__title__
+
+        is_used = self.config.exists_used(selected_item.id)
+        if not is_used:
+            del items_available[selected_item.id]
+            self.config.save_available(items=items_available)
+            self.log.debug("%s %s removed from de list of available items", i_title, selected_item.id)
+        else:
+            dtype = "error"
+            text = _('%s %s is still being used') % (i_title, selected_item.id)
+            window = self.app.get_widget('window')
+            dtype = 'error'
+            title = "%s %s can't be removed" % (i_title, selected_item.id)
+            dialog = CustomDialog(app=self.app, parent=window, use_header_bar=True, dtype=dtype, title=title, text=text, widget=None)
+            dialog.set_default_size(-1, -1)
+            dialog.set_modal(True)
+            dialog.show()
+
+    def _on_item_used_add(self, *args):
+        items_available = self.config.load_available()
+        items_used = self.config.load_used()
+        selected_item = self.viewAv.get_selected()
+        is_used = selected_item.id in items_used
+        item_type = self.config.model
+        i_title = item_type.__title__
+        if not is_used:
+            items_used[selected_item.id] = selected_item.title
+            self.config.save_used(items=items_used)
+            self.update_views()
+            self.log.debug("%s %s not used yet. Can be used now", i_title, selected_item.id)
+        else:
+            self.log.debug("%s %s is already being used", i_title, selected_item.id)
+
+    def _on_item_used_remove(self, *args):
+        items_available = self.config.load_available()
+        items_used = self.config.load_used()
+        selected_item = self.viewSl.get_selected()
+        item_type = self.config.model
+        i_title = item_type.__title__
+        items_available[selected_item.id] = selected_item.title
+        self.log.debug("%s %s added back to the list of available items", i_title, selected_item.id)
+        del items_used[selected_item.id]
+        self.log.debug("%s %s removed from de list of used items", i_title, selected_item.id)
+        self.config.save_used(items=items_used)
+        self.config.save_available(items=items_available)
+        self.update_views()
 
 
 class MiAZCountries(MiAZConfigView):
@@ -118,9 +175,9 @@ class MiAZCountries(MiAZConfigView):
     def _setup_view_finish(self):
         # Setup Available and Used Column Views
         self.viewAv = MiAZColumnViewCountry(self.app)
-        self.add_columnview_available(self.viewAv)
+        self._add_columnview_available(self.viewAv)
         self.viewSl = MiAZColumnViewCountry(self.app)
-        self.add_columnview_used(self.viewSl)
+        self._add_columnview_used(self.viewSl)
 
     def _update_view_available(self):
         items = []
@@ -150,9 +207,9 @@ class MiAZGroups(MiAZConfigView):
     def _setup_view_finish(self):
         # Setup Available and Used Columns Views
         self.viewAv = MiAZColumnViewGroup(self.app)
-        self.add_columnview_available(self.viewAv)
+        self._add_columnview_available(self.viewAv)
         self.viewSl = MiAZColumnViewGroup(self.app)
-        self.add_columnview_used(self.viewSl)
+        self._add_columnview_used(self.viewSl)
 
 class MiAZPeople(MiAZConfigView):
     """Class for managing People from Settings"""
@@ -165,9 +222,9 @@ class MiAZPeople(MiAZConfigView):
     def _setup_view_finish(self):
         # Setup Available and Used Columns Views
         self.viewAv = MiAZColumnViewPerson(self.app)
-        self.add_columnview_available(self.viewAv)
+        self._add_columnview_available(self.viewAv)
         self.viewSl = MiAZColumnViewPerson(self.app)
-        self.add_columnview_used(self.viewSl)
+        self._add_columnview_used(self.viewSl)
 
 class MiAZPeopleSentBy(MiAZConfigView):
     """Class for managing People from Settings"""
@@ -183,9 +240,9 @@ class MiAZPeopleSentBy(MiAZConfigView):
     def _setup_view_finish(self):
         # Setup Available and Used Columns Views
         self.viewAv = MiAZColumnViewPerson(self.app)
-        self.add_columnview_available(self.viewAv)
+        self._add_columnview_available(self.viewAv)
         self.viewSl = MiAZColumnViewPerson(self.app)
-        self.add_columnview_used(self.viewSl)
+        self._add_columnview_used(self.viewSl)
 
 class MiAZPeopleSentTo(MiAZConfigView):
     """Class for managing People from Settings"""
@@ -201,9 +258,9 @@ class MiAZPeopleSentTo(MiAZConfigView):
     def _setup_view_finish(self):
         # Setup Available and Used Columns Views
         self.viewAv = MiAZColumnViewPerson(self.app)
-        self.add_columnview_available(self.viewAv)
+        self._add_columnview_available(self.viewAv)
         self.viewSl = MiAZColumnViewPerson(self.app)
-        self.add_columnview_used(self.viewSl)
+        self._add_columnview_used(self.viewSl)
 
 class MiAZPurposes(MiAZConfigView):
     """Manage purposes from Repo Settings"""
@@ -216,9 +273,9 @@ class MiAZPurposes(MiAZConfigView):
     def _setup_view_finish(self):
         # Setup Available and Used Columns Views
         self.viewAv = MiAZColumnViewPurpose(self.app)
-        self.add_columnview_available(self.viewAv)
+        self._add_columnview_available(self.viewAv)
         self.viewSl = MiAZColumnViewPurpose(self.app)
-        self.add_columnview_used(self.viewSl)
+        self._add_columnview_used(self.viewSl)
 
 class MiAZProjects(MiAZConfigView):
     """Manage projects from Repo Settings"""
@@ -231,9 +288,80 @@ class MiAZProjects(MiAZConfigView):
     def _setup_view_finish(self):
         # Setup Available and Used Columns Views
         self.viewAv = MiAZColumnViewProject(self.app)
-        self.add_columnview_available(self.viewAv)
+        self._add_columnview_available(self.viewAv)
         self.viewSl = MiAZColumnViewProject(self.app)
-        self.add_columnview_used(self.viewSl)
+        self._add_columnview_used(self.viewSl)
+
+    def _on_item_available_remove(self, *args):
+        selected_item = self.viewAv.get_selected()
+        items_available = self.config.load_available()
+        items_used = self.config.load_used()
+        item_type = self.config.model
+        i_title = item_type.__title__
+
+        is_used = self.config.exists_used(selected_item.id)
+        if not is_used:
+            del items_available[selected_item.id]
+            self.config.save_available(items=items_available)
+            self.log.debug("%s %s removed from de list of available items", i_title, selected_item.id)
+        else:
+            dtype = "error"
+            text = _('%s %s is still being used') % (i_title, selected_item.id)
+            window = self.app.get_widget('window')
+            dtype = 'error'
+            title = "%s %s can't be removed" % (i_title, selected_item.id)
+            dialog = CustomDialog(app=self.app, parent=window, use_header_bar=True, dtype=dtype, title=title, text=text, widget=None)
+            dialog.set_default_size(-1, -1)
+            dialog.set_modal(True)
+            dialog.show()
+
+    def _on_item_used_add(self, *args):
+        items_available = self.config.load_available()
+        items_used = self.config.load_used()
+        selected_item = self.viewAv.get_selected()
+        is_used = selected_item.id in items_used
+        item_type = self.config.model
+        i_title = item_type.__title__
+        if not is_used:
+            items_used[selected_item.id] = selected_item.title
+            self.config.save_used(items=items_used)
+            self.update_views()
+            self.log.debug("%s %s not used yet. Can be used now", i_title, selected_item.id)
+        else:
+            self.log.debug("%s %s is already being used", i_title, selected_item.id)
+
+    def _on_item_used_remove(self, *args):
+        items_available = self.config.load_available()
+        items_used = self.config.load_used()
+        selected_item = self.viewSl.get_selected()
+        item_type = self.config.model
+        i_title = item_type.__title__
+        srvprj = self.app.get_service('Projects')
+        docs = srvprj.docs_in_project(selected_item.id)
+        if len(docs) == 0:
+            items_available[selected_item.id] = selected_item.title
+            self.log.debug("%s %s added back to the list of available items", i_title, selected_item.id)
+            del items_used[selected_item.id]
+            self.log.debug("%s %s removed from de list of used items", i_title, selected_item.id)
+            self.config.save_used(items=items_used)
+            self.config.save_available(items=items_available)
+            self.update_views()
+        else:
+            text = _('%s %s is still being used by %d docs:') % (i_title, selected_item.title, len(docs))
+            window = self.app.get_widget('window')
+            dtype = 'error'
+            title = "%s %s can't be removed" % (i_title, selected_item.title)
+            if len(docs) > 0:
+                items = []
+                for doc in docs:
+                    items.append(File(id=doc, title=os.path.basename(doc)))
+                view = MiAZColumnViewDocuments(self.app)
+                view.update(items)
+            else:
+                view = None
+            dialog = CustomDialog(app=self.app, parent=window, use_header_bar=True, dtype=dtype, title=title, text=text, widget=view)
+            dialog.set_modal(True)
+            dialog.show()
 
 class MiAZDates(Gtk.Box):
     """"""
@@ -260,7 +388,8 @@ class MiAZDates(Gtk.Box):
         calendar.connect('day-selected', self.calendar_day_selected, label, cv, self.selected_items)
         calendar.select_day(GLib.DateTime.new_from_iso8601(iso8601))
         calendar.emit('day-selected')
-        dialog = self.factory.create_dialog_question(self.app.win, _('Mass renaming'), box, width=640, height=480)
+        window = self.app.get_widget('window')
+        dialog = self.factory.create_dialog_question(window, _('Mass renaming'), box, width=640, height=480)
         dialog.connect('response', self._on_mass_action_rename_date_response, calendar)
         dialog.show()
 
@@ -310,6 +439,7 @@ class MiAZUserPlugins(MiAZConfigView):
         super(MiAZConfigView, self).__init__(app, edit=False)
         super().__init__(app, 'Plugin')
         self._update_view_available()
+        self._update_view_used()
 
     def plugins_updated(self, *args):
         # ~ self._update_view_used()
@@ -319,9 +449,9 @@ class MiAZUserPlugins(MiAZConfigView):
     def _setup_view_finish(self):
         # Setup Available and Used Column Views
         self.viewAv = MiAZColumnViewPlugin(self.app)
-        self.add_columnview_available(self.viewAv)
+        self._add_columnview_available(self.viewAv)
         self.viewSl = MiAZColumnViewPlugin(self.app)
-        self.add_columnview_used(self.viewSl)
+        self._add_columnview_used(self.viewSl)
 
     def _update_view_available(self):
         plugin_manager = self.app.get_service('plugin-manager')
@@ -335,36 +465,64 @@ class MiAZUserPlugins(MiAZConfigView):
                 items.append(item_type(id=pid, title=title))
         self.viewAv.update(items)
 
+    def _update_view_used(self):
+        plugin_manager = self.app.get_service('plugin-manager')
+        plugins_used = self.config.load_used()
+        items = []
+        item_type = self.config.model
+        for plugin in plugin_manager.plugins:
+            ptype = plugin_manager.get_plugin_type(plugin)
+            if ptype == MiAZPluginType.USER:
+                pid = plugin.get_module_name()
+                title = plugin.get_description() #+ ' (v%s)' % plugin.get_version()
+                if self.config.exists_used(pid):
+                    items.append(item_type(id=pid, title=title))
+        self.viewSl.update(items)
+
     def _on_item_used_remove(self, *args):
         plugin_manager = self.app.get_service('plugin-manager')
         plugins_used = self.config.load_used()
-        for plugin_used in self.viewSl.get_selected_items():
-            try:
-                plugin = plugin_manager.get_plugin_info(plugin_used.id)
-                if plugin.is_loaded():
-                    plugin_manager.unload_plugin(plugin)
-                self.log.debug("Plugin '%s' unloaded", plugin_used.id)
-            except AttributeError:
-                self.log.debug("Unknown error unloading plugin '%s'", plugin_used.id)
-            finally:
-                del(plugins_used[plugin_used.id])
-                self.log.debug("Plugin '%s' removed from used view", plugin_used.id)
-        self.config.save_used(items=plugins_used)
-        self._update_view_used()
+        selected_plugin = self.viewAv.get_selected()
+        if selected_plugin is None:
+            return
 
+        try:
+            plugin = plugin_manager.get_plugin_info(selected_plugin.id)
+            if plugin.is_loaded():
+                plugin_manager.unload_plugin(plugin)
+                self.log.debug("Plugin '%s' unloaded", selected_plugin.id)
+        except AttributeError as error:
+            self.log.error("Unknown error unloading plugin '%s'", selected_plugin.id)
+            self.log.error(error)
+        finally:
+            del(plugins_used[selected_plugin.id])
+            self.log.debug("Plugin '%s' removed from used view", selected_plugin.id)
+            self.config.save_used(items=plugins_used)
+            self._update_view_used()
 
     def _on_item_used_add(self, *args):
         plugin_manager = self.app.get_service('plugin-manager')
-        changed = False
+        plugins_available = self.config.load_available()
         plugins_used = self.config.load_used()
-        for plugin_available in self.viewAv.get_selected_items():
-            plugins_used[plugin_available.id] = plugin_available.title
-            self.log.debug("Using %s (%s)", plugin_available.id, plugin_available.title)
-            plugin = plugin_manager.get_plugin_info(plugin_available.id)
+        selected_plugin = self.viewAv.get_selected()
+        if selected_plugin is None:
+            return
+
+        plugin_used = self.config.exists_used(selected_plugin.id)
+        item_type = self.config.model
+        i_title = item_type.__title__
+        if not plugin_used:
+            plugins_used[selected_plugin.id] = selected_plugin.title
+            self.log.debug("Using %s (%s)", selected_plugin.id, selected_plugin.title)
+            plugin = plugin_manager.get_plugin_info(selected_plugin.id)
             if not plugin.is_loaded():
                 plugin_manager.load_plugin(plugin)
-            changed = True
-        if changed:
-            self.config.save_used(items=plugins_used)
-            self._update_view_used()
+                self.config.save_used(items=plugins_used)
+                self._update_view_used()
+                self.log.debug("%s %s not used yet. Can be used now", i_title, selected_plugin.id)
+        else:
+            self.log.debug("%s %s is already being used", i_title, selected_plugin.id)
+
+    def update_views(self, *args):
+        self.log.debug("Update user plugin views")
 

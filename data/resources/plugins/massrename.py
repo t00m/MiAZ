@@ -190,7 +190,8 @@ class MiAZToolbarProjectMgtPlugin(GObject.GObject, Peas.Activatable):
             hbox.append(btnManage)
             box.append(hbox)
             box.append(frame)
-            dialog = self.factory.create_dialog_question(self.app.win, _('Mass renaming'), box, width=1024, height=600)
+            window = self.app.get_widget('window')
+            dialog = self.factory.create_dialog_question(window, _('Mass renaming'), box, width=1024, height=600)
             dialog.connect('response', dialog_response, dropdown, item_type, items)
             dialog.show()
         else:
@@ -214,7 +215,8 @@ class MiAZToolbarProjectMgtPlugin(GObject.GObject, Peas.Activatable):
             calendar.connect('day-selected', calendar_day_selected, label, cv, items)
             calendar.select_day(GLib.DateTime.new_from_iso8601(iso8601))
             calendar.emit('day-selected')
-            dialog = self.factory.create_dialog_question(self.app.win, _('Mass renaming'), box, width=640, height=480)
+            window = self.app.get_widget('window')
+            dialog = self.factory.create_dialog_question(window, _('Mass renaming'), box, width=640, height=480)
             dialog.connect('response', dialog_response_date, calendar, items)
             dialog.show()
 

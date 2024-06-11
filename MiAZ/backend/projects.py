@@ -16,10 +16,16 @@ from MiAZ.backend.log import MiAZLog
 
 
 class MiAZProject(GObject.GObject):
+    """
+    C0115: Missing class docstring (missing-class-docstring)
+    """
     __gtype_name__ = 'MiAZProject'
 
     def __init__(self, app):
-        super(MiAZProject, self).__init__()
+        """
+        C0116: Missing function or method docstring (missing-function-docstring)
+        """
+        super().__init__()
         self.log = MiAZLog('MiAZ.Projects')
         self.app = app
         conf = self.app.get_config_dict()
@@ -36,6 +42,9 @@ class MiAZProject(GObject.GObject):
         self.check()
 
     def check(self):
+        """
+        C0116: Missing function or method docstring (missing-function-docstring)
+        """
         to_delete = []
         for project in self.projects:
             for doc in self.docs_in_project(project):
@@ -47,21 +56,30 @@ class MiAZProject(GObject.GObject):
         self.log.debug("Projects consistency checked")
 
     def add(self, project: str, doc: str):
+        """
+        C0116: Missing function or method docstring (missing-function-docstring)
+        """
         try:
             docs = self.projects[project]
             if not doc in docs:
                 docs.append(doc)
                 self.projects[project] = docs
-        except:
+        except KeyError:
             self.projects[project] = [doc]
         self.log.debug("Added '%s' to Project '%s'", doc, project)
 
     def add_batch(self, project: str, docs: list) -> None:
+        """
+        C0116: Missing function or method docstring (missing-function-docstring)
+        """
         for doc in docs:
             self.add(project, doc)
         self.save()
 
     def remove(self, project: str, doc: str) -> None:
+        """
+        C0116: Missing function or method docstring (missing-function-docstring)
+        """
         found = False
         if len(project) == 0:
             # Document was deleted, therefore delete all references in
@@ -84,18 +102,23 @@ class MiAZProject(GObject.GObject):
                     self.projects[project] = docs
             except KeyError:
                 self.log.warning("Project '%s' doesn't exist", project)
-                pass
         if found:
             self.save()
         else:
             self.log.debug("Document '%s' wasn't deleted for any project", doc)
 
     def remove_batch(self, project:str, docs: list) -> None:
+        """
+        C0116: Missing function or method docstring (missing-function-docstring)
+        """
         for doc in docs:
             self.remove(project, doc)
         self.save()
 
     def exists(self, project, doc):
+        """
+        C0116: Missing function or method docstring (missing-function-docstring)
+        """
         try:
             return doc in self.projects[project]
         except KeyError:
@@ -104,6 +127,9 @@ class MiAZProject(GObject.GObject):
             return False
 
     def assigned_to(self, doc):
+        """
+        C0116: Missing function or method docstring (missing-function-docstring)
+        """
         projects = []
         for project in self.projects:
             if doc in self.projects[project]:
@@ -111,25 +137,40 @@ class MiAZProject(GObject.GObject):
         return projects
 
     def docs_in_project(self, project):
+        """
+        C0116: Missing function or method docstring (missing-function-docstring)
+        """
         try:
             return self.projects[project]
-        except:
+        except KeyError:
             return []
 
     def list_all(self):
+        """
+        C0116: Missing function or method docstring (missing-function-docstring)
+        """
         for project in self.projects:
             self.log.debug("Project: %s", project)
             for doc in self.projects[project]:
                 self.log.debug("\tDoc: %s", doc)
 
     def save(self) -> None:
+        """
+        C0116: Missing function or method docstring (missing-function-docstring)
+        """
         srvutil = self.app.get_service('util')
         srvutil.json_save(self.cnfprj, self.projects)
 
     def load(self) -> dict:
+        """
+        C0116: Missing function or method docstring (missing-function-docstring)
+        """
         return self.util.json_load(self.cnfprj)
 
     def description(self, pid):
+        """
+        C0116: Missing function or method docstring (missing-function-docstring)
+        """
         try:
             description = self.config.get(pid)
             if len(description) == 0:
@@ -137,13 +178,3 @@ class MiAZProject(GObject.GObject):
         except KeyError as error:
             description = error
         return description
-
-    # ~ def _on_filename_renamed(self, util, source, target):
-        # ~ source = os.path.basename(source)
-        # ~ target = os.path.basename(target)
-        # ~ projects = self.assigned_to(source)
-        # ~ self.log.debug("%s found in these projects: %s", source, ', '.join(projects))
-        # ~ for project in projects:
-            # ~ self.remove(project, source)
-            # ~ self.add(project, target)
-            # ~ self.log.debug("P[%s]: %s -> %s", project, source, target)

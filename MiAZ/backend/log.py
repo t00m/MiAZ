@@ -7,12 +7,20 @@
 # Description: log module
 """
 
+import os
 import sys
+import datetime
 import logging
 
 
 class MiAZLog(logging.getLoggerClass()):
-    def __init__(self, name='MiAZ', verbose=True, log_dir=None):
+    """
+    C0115: Missing class docstring (missing-class-docstring)
+    """
+    def __init__(self, name='MiAZ', log_dir=None):
+        """
+        C0116: Missing function or method docstring (missing-function-docstring)
+        """
         super().__init__(name)
         # Create custom logger logging all five levels
         self.setLevel(logging.DEBUG)
@@ -31,8 +39,10 @@ class MiAZLog(logging.getLoggerClass()):
         MiAZLog.logger_initialized = True
 
     def add_file_handler(self, name, log_dir):
-        """Add a file handler for this logger with the specified `name` (and
-        store the log file under `log_dir`)."""
+        """
+        Add a file handler for this logger with the specified `name` (and
+        store the log file under `log_dir`).
+        """
         # Format for file log
         fmt = '%(asctime)s | %(levelname)8s | %(filename)s:%(lineno)d | %(message)s'
         formatter = logging.Formatter(fmt)
@@ -43,7 +53,7 @@ class MiAZLog(logging.getLoggerClass()):
         if not os.path.exists(log_dir):
             try:
                 os.makedirs(log_dir)
-            except:
+            except Exception:
                 print('{}: Cannot create directory {}. '.format(
                     self.__class__.__name__, log_dir),
                     end='', file=sys.stderr)
@@ -59,27 +69,45 @@ class MiAZLog(logging.getLoggerClass()):
         self.addHandler(self.file_handler)
 
     def disable_console_output(self):
+        """
+        C0116: Missing function or method docstring (missing-function-docstring)
+        """
         if not self.has_console_handler():
             return
         self.removeHandler(self.stdout_handler)
 
     def enable_console_output(self):
+        """
+        C0116: Missing function or method docstring (missing-function-docstring)
+        """
         if self.has_console_handler():
             return
         self.addHandler(self.stdout_handler)
 
     def disable_file_output(self):
+        """
+        C0116: Missing function or method docstring (missing-function-docstring)
+        """
         if not self.has_file_handler():
             return
         self.removeHandler(self.file_handler)
 
     def enable_file_output(self):
+        """
+        C0116: Missing function or method docstring (missing-function-docstring)
+        """
         if self.has_file_handler():
             return
         self.addHandler(self.file_handler)
 
     def has_console_handler(self):
+        """
+        C0116: Missing function or method docstring (missing-function-docstring)
+        """
         return len([h for h in self.handlers if type(h) == logging.StreamHandler]) > 0
 
     def has_file_handler(self):
+        """
+        C0116: Missing function or method docstring (missing-function-docstring)
+        """
         return len([h for h in self.handlers if isinstance(h, logging.FileHandler)]) > 0

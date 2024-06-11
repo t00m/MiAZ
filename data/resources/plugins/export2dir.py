@@ -118,8 +118,9 @@ class Export2Dir(GObject.GObject, Peas.Activatable):
             'B': _('Sent by'),
             'T': _('Sent to'),
         }
+        window = self.app.get_widget('window')
         filechooser = self.factory.create_filechooser(
-                    parent=self.app.win,
+                    parent=window,
                     title=_('Export selected items to this directory'),
                     target = 'FOLDER',
                     callback = filechooser_response,

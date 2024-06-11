@@ -12,9 +12,7 @@
 # https://stackoverflow.com/questions/182197/how-do-i-watch-a-file-for-changes
 
 import os
-import sys
 import glob
-import time
 
 from gi.repository import GLib
 from gi.repository import GObject
@@ -27,7 +25,7 @@ class MiAZWatcher(GObject.GObject):
     active = False
 
     def __init__(self, dirpath: str):
-        super(MiAZWatcher, self).__init__()
+        super().__init__()
         self.log = MiAZLog('MiAZ.Watcher')
         self.dirpath = dirpath
         sid = GObject.signal_lookup('repository-updated', MiAZWatcher)

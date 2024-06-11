@@ -38,15 +38,21 @@ class MiAZApp(Gtk.Application):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+        self._miazobjs['widgets'] = {}
+        self._miazobjs['services'] = {}
+        self.log = self._miazobjs['services']['log'] = MiAZLog("MiAZ.App")
+        self._env = None
+        self.conf = None
+        self.app = None
+        self.plugin_manager = None
+        # ~ self.log = self.add_service('log', MiAZLog("MiAZ.App"))
 
     def get_config_dict(self):
         return self._config
 
     def set_env(self, ENV: dict):
         self._env = ENV
-        self._miazobjs['widgets'] = {}
-        self._miazobjs['services'] = {}
-        self.log = self.add_service('log', MiAZLog("MiAZ.App"))
+        # ~ self.log = self.add_service('log', MiAZLog("MiAZ.App"))
         self.log.debug("Starting MiAZ")
         self.add_service('util', MiAZUtil(self))
         self._config['App'] = MiAZConfigApp(self)
@@ -61,30 +67,32 @@ class MiAZApp(Gtk.Application):
         return self._env
 
     def _on_activate(self, app):
-        self.win = self.add_widget('window', Gtk.ApplicationWindow(application=self))
-        self.win.set_default_size(1280, 800)
-        self.win.set_icon_name('MiAZ')
-        self.win.connect('close-request', self._on_window_close_request)
-        self.win.set_default_icon_name('MiAZ')
+        self.app = app
         self.add_service('repo', MiAZRepository(self))
-        # ~ self.add_service('util', MiAZUtil(self))
         self.add_service('icons', MiAZIconManager(self))
         self.add_service('factory', MiAZFactory(self))
-        self.actions = self.add_service('actions', MiAZActions(self))
+        self.add_service('actions', MiAZActions(self))
         self._setup_ui()
         self._setup_plugin_manager()
         self.log.debug("Executing MiAZ Desktop mode")
         self.check_repository()
-        repository = self.get_service('repo')
+        # ~ repository = self.get_service('repo')
 
     def _setup_ui(self):
+        window = self.add_widget('window', Gtk.ApplicationWindow(application=self))
+        window.set_default_size(1280, 800)
+        window.set_icon_name('MiAZ')
+        window.connect('close-request', self._on_window_close_request)
+        window.set_default_icon_name('MiAZ')
         mainbox = self.add_widget('window-mainbox', MiAZMainWindow(self))
-        self.win.set_child(mainbox)
+        window.set_child(mainbox)
         self._setup_page_welcome()
+        # ~ self._setup_page_workspace()
 
-    def _on_window_close_request(self, window):
+    def _on_window_close_request(self, *args):
         self.log.debug("Close application requested")
-        self.actions.exit_app()
+        actions = self.get_service('actions')
+        actions.exit_app()
 
     def _finish_configuration(self, *args):
         self.log.debug("Finish loading app")
@@ -145,7 +153,7 @@ class MiAZApp(Gtk.Application):
         except KeyError:
             return None
 
-    def check_repository(self, repo_id: str = None):
+    def check_repository(self):
         try:
             repository = self.get_service('repo')
             # ~ self.log.debug("Using repo '%s'", repository.docs)
@@ -169,7 +177,8 @@ class MiAZApp(Gtk.Application):
                     if repo_settings is None:
                         repo_settings = self.add_widget('settings-repo', MiAZRepoSettings(self))
                     repo_settings.update()
-                    self.actions.show_stack_page_by_name('workspace')
+                    actions = self.get_service('actions')
+                    actions.show_stack_page_by_name('workspace')
                     valid = True
                     self.emit('start-application-completed')
                 else:
@@ -177,9 +186,11 @@ class MiAZApp(Gtk.Application):
             except Exception:
                 self.log.error("Default repository configuration not available")
                 valid = False
+                raise
         except KeyError:
             self.log.debug("No repository active in the configuration")
-            self.actions.show_stack_page_by_name('welcome')
+            actions = self.get_service('actions')
+            actions.show_stack_page_by_name('welcome')
             valid = False
         window = self.get_widget('window')
         if window is not None:
@@ -203,7 +214,8 @@ class MiAZApp(Gtk.Application):
             page_workspace = stack.add_titled(widget_workspace, 'workspace', 'MiAZ')
             page_workspace.set_icon_name('document-properties')
             page_workspace.set_visible(True)
-            self.actions.show_stack_page_by_name('workspace')
+            actions = self.get_service('actions')
+            actions.show_stack_page_by_name('workspace')
 
     def _setup_page_rename(self):
         stack = self.get_widget('stack')
@@ -214,16 +226,21 @@ class MiAZApp(Gtk.Application):
             page_rename.set_icon_name('document-properties')
             page_rename.set_visible(False)
 
-    def add_service(self, name: str, service: GObject.GObject, replace: bool = True) -> GObject.GObject:
-        if name not in self._miazobjs['services']:
+    def add_service(self, name: str, service: GObject.GObject) -> GObject.GObject:
+        srv = self.get_service(name)
+        if srv is None:
             self._miazobjs['services'][name] = service
-        else:
-            if replace:
-                self._miazobjs['services'][name] = service
-            else:
-                service = None
-                self.log.error("A service with name '%s' already exists, and it won't be replaced", name)
-        return service
+            srv = service
+            self.log.debug("Adding new service: %s", name)
+        return srv
+
+
+        # ~ print(self._miazobjs['services'])
+        # ~ self._miazobjs['services'][name] = service
+        # ~ if name in list(self._miazobjs['services'].keys()):
+            # ~ self.log.error("A service with name '%s' already exists. It has been replaced", name)
+            # ~ print("A service with name '%s' already exists. It has been replaced" % name)
+        # ~ return service
 
     def get_service(self, name):
         try:
@@ -231,18 +248,25 @@ class MiAZApp(Gtk.Application):
         except KeyError:
             return None
 
-    def add_widget(self, name: str, widget):
-        # Add widget, but do not overwrite
-        if name not in self._miazobjs['widgets']:
-            self._miazobjs['widgets'][name] = widget
-            return widget
-        else:
-            self.log.error("A widget with name '%s' already exists", name)
+    def add_widget(self, name: str, widget) -> Gtk.Widget or None:
+        wdg = self.get_widget(name)
+        if wdg is not None:
+            self.log.debug("Widget '%s' will be overwritten", name)
+        wdg = self._miazobjs['widgets'][name] = widget
 
-    def set_widget(self, name: str, widget):
-        # Overwrite existing widget
-        self._miazobjs['widgets'][name] = widget
-        return widget
+        return wdg
+
+
+        # Add widget, but do not overwrite
+        # ~ if name in self._miazobjs['widgets']:
+            # ~ self.log.warning("A widget with name '%s' already exists. Overwriten", name)
+        # ~ self._miazobjs['widgets'][name] = widget
+        # ~ return widget
+
+    # ~ def set_widget(self, name: str, widget):
+        # ~ # Overwrite existing widget
+        # ~ self._miazobjs['widgets'][name] = widget
+        # ~ return widget
 
     def get_widget(self, name):
         try:
@@ -258,7 +282,7 @@ class MiAZApp(Gtk.Application):
         """
         deleted = False
         try:
-            del(self._miazobjs['widgets'][name])
+            del self._miazobjs['widgets'][name]
             deleted = True
         except KeyError:
             self.log.error("Widget '%s' doesn't exists", name)

@@ -4,14 +4,10 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import os
-from os.path import abspath
 import sys
 import signal
 import locale
 import gettext
-import argparse
-import tempfile
-import multiprocessing
 
 sys.path.insert(1, '@pkgdatadir@')
 
@@ -31,7 +27,7 @@ try:
     ENV['DESKTOP']['GTK_ENABLED'] = True
     ENV['DESKTOP']['GTK_VERSION'] = (Gtk.MAJOR_VERSION, Gtk.MINOR_VERSION, Gtk.MICRO_VERSION)
     ENV['DESKTOP']['GTK_SUPPORT'] = Gtk.MAJOR_VERSION >= 4 and Gtk.MINOR_VERSION >= 6
-except:
+except (ValueError, ModuleNotFoundError):
     ENV['DESKTOP']['GTK_ENABLED'] = False
     ENV['DESKTOP']['GTK_SUPPORT'] = False
 
@@ -111,16 +107,16 @@ signal.signal(signal.SIGINT, signal.SIG_DFL)
 gettext.install('miaz', ENV['APP']['LOCALEDIR'])
 
 try:
-  locale.bindtextdomain('miaz', ENV['APP']['LOCALEDIR'])
-  locale.textdomain('miaz')
+    locale.bindtextdomain('miaz', ENV['APP']['LOCALEDIR'])
+    locale.textdomain('miaz')
 except:
-  log.error('Cannot set locale.')
+    log.error('Cannot set locale.')
 
 try:
-  gettext.bindtextdomain('miaz', ENV['APP']['LOCALEDIR'])
-  gettext.textdomain('miaz')
+    gettext.bindtextdomain('miaz', ENV['APP']['LOCALEDIR'])
+    gettext.textdomain('miaz')
 except:
-  log.error('Cannot load translations.')
+    log.error('Cannot load translations.')
 
 
 class MiAZ:
@@ -129,7 +125,7 @@ class MiAZ:
         self.setup_environment()
         self.log = MiAZLog('MiAZ')
         self.set_internationalization()
-        self.log.info("%s v%s - Start" % (ENV['APP']['shortname'], ENV['APP']['VERSION']))
+        self.log.info("%s v%s - Start", ENV['APP']['shortname'], ENV['APP']['VERSION'])
 
     def setup_environment(self):
         """Setup MiAZ user environment"""
@@ -167,7 +163,7 @@ class MiAZ:
             app.run()
         except KeyboardInterrupt:
             self.log.error("Application killed by user")
-            exit(0)
+            sys.exit(0)
         self.log.info("%s v%s - End", ENV['APP']['shortname'], ENV['APP']['VERSION'])
 
 def main():
@@ -209,35 +205,14 @@ def main():
     ENV['FILE']['EXTENSIONS'] = os.path.join(ENV['LPATH']['ETC'], 'MiAZ-extensions.json')
     ENV['FILE']['COUNTRIES'] = os.path.join(ENV['LPATH']['ETC'], 'MiAZ-countries.json')
     ENV['FILE']['WHO'] = os.path.join(ENV['LPATH']['ETC'], 'MiAZ-who.json')
-    extra_usage = """"""
-    parser = argparse.ArgumentParser(
-        prog='MiAZ',
-        description='Personal Document Organizer',
-        epilog=extra_usage,
-        formatter_class=argparse.RawDescriptionHelpFormatter)
 
-    # MiAZ arguments
-    miaz_options = parser.add_argument_group('MiAZ Options')
-    miaz_options.add_argument('-v', '--version', help='Show current version', action='version', version='%s %s' % (ENV['APP']['shortname'], ENV['APP']['VERSION']))
-
-    params = parser.parse_args()
     app = MiAZ(ENV)
     app.run()
 
 if __name__ == "__main__":
-    """This is the entry point when the program is installed via Meson"""
+    """
+    This is the entry point when the program is installed via Meson
+    """
     log.debug("MiAZ installation done via Meson!")
-    extra_usage = """"""
-    parser = argparse.ArgumentParser(
-        prog='MiAZ',
-        description='Personal Document Organizer',
-        epilog=extra_usage,
-        formatter_class=argparse.RawDescriptionHelpFormatter)
-
-    # MiAZ arguments
-    miaz_options = parser.add_argument_group('MiAZ Options')
-    miaz_options.add_argument('-v', '--version', help='Show current version', action='version', version='%s %s' % (ENV['APP']['shortname'], ENV['APP']['VERSION']))
-
-    params = parser.parse_args()
     app = MiAZ(ENV)
     app.run()
