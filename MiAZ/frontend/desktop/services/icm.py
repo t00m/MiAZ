@@ -7,84 +7,54 @@
 # Description: Icon manager
 """
 
-import os
-
 from gi.repository import Gtk
 from gi.repository import Gio
 from gi.repository import GObject
-from gi.repository.GdkPixbuf import Pixbuf
 
-from MiAZ.backend.log import MiAZLog
 
-# FIXME: Review this module
 class MiAZIconManager(GObject.GObject):
+    """
+    Icon Manager for MiAZ
+    It helps to retrieve (custom) icons
+    """
+    gicondict = {}
+
     def __init__(self, app):
-        super(MiAZIconManager, self).__init__()
-        self.app = app
-        ENV = self.app.get_env()
-        self.log = MiAZLog('MiAZ.IconManager')
-        self.util = self.app.get_service('util')
-        win = Gtk.Window()
-        self.theme = Gtk.IconTheme.get_for_display(win.get_display())
-        self.log.debug("Custom icons in: %s", ENV['GPATH']['ICONS'])
-        self.theme.add_search_path(ENV['GPATH']['ICONS'])
-        self.paintable = {}
-        self.gicondict = {}
-        self.icondict = {}
-        self.pixbufdict = {}
-        self.imgdict = {}
+        """
+        Initializes the IconManager service.
 
-    def choose_icon(self, icon_list: list) -> str:
-        found = 'unknown'
-        for icon_name in icon_list:
-            if self.theme.has_icon(icon_name):
-                found = icon_name
-                break
-        return found
+        :param app: pointer to MiAZApp
+        :type app: MiAZApp
+        """
+        super().__init__()
 
-    def get_pixbuf_by_name(self, name, width=24, height=24) -> Pixbuf:
-        key = self.util.valid_key("%s-%d-%d" % (name, width, height))
-        try:
-            pixbuf = self.pixbufdict[key]
-        except KeyError:
-            try:
-                paintable = self.theme.lookup_icon(name, None, width, 1, Gtk.TextDirection.NONE, Gtk.IconLookupFlags.FORCE_REGULAR)
-                gfile = paintable.get_file()
-                path = gfile.get_path()
-                pixbuf = Pixbuf.new_from_file_at_size(path, width, height)
-                self.pixbufdict[key] = pixbuf
-            except TypeError:
-                pixbuf = self.get_pixbuf_by_name('folder', width)
+    def get_image_by_name(self, name: str, size: int = 24) -> Gtk.Image:
+        """
+        Get (custom) icon from theme.
 
-        return pixbuf
+        :param name: icon name
+        :type name: str
+        :param size: icon size
+        :type size: int
+        :return: an image
+        :rtype: Gtk.Image
+        """
+        image = Gtk.Image.new_from_icon_name(name)
+        image.set_pixel_size(size)
+        return image
 
-    def get_image_by_name(self, name: str, width: int = 24, height: int = 24) -> Gtk.Image:
-        pixbuf = self.get_pixbuf_by_name(name, width, height)
-        return Gtk.Image.new_from_pixbuf(pixbuf)
+    def get_mimetype_icon(self, mimetype: str) -> Gio.Icon:
+        """
+        Get icon for a given mimetype.
 
-    def get_mimetype_icon(self, mimetype: str) -> Gtk.Image:
+        :param mimetype: file mimetype
+        :type mimetype: str
+        :return: an icon
+        :rtype: Gio.Icon
+        """
         try:
             gicon = self.gicondict[mimetype]
-        except Exception:
+        except KeyError:
             gicon = Gio.content_type_get_icon(mimetype)
             self.gicondict[mimetype] = gicon
-        return gicon
-
-    def get_flag_icon(self, code: str) -> Gtk.Image:
-        ENV = self.app.get_env()
-        try:
-            paintable = self.paintable[code]
-        except Exception:
-            iconpath = os.path.join(ENV['GPATH']['FLAGS'], "%s.svg" % code)
-            if not os.path.exists(iconpath):
-                iconpath = os.path.join(ENV['GPATH']['FLAGS'], "__.svg")
-            image = Gtk.Image()
-            image.set_from_file(iconpath)
-            paintable = image.get_paintable()
-            self.paintable[code] = paintable
-        return paintable
-
-    def get_gicon(self, name:str):
-        gicon = Gio.Icon.new_for_string(name)
-        self.log.debug(gicon)
         return gicon
