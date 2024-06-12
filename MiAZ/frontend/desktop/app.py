@@ -45,20 +45,16 @@ class MiAZApp(Gtk.Application):
         self.conf = None
         self.app = None
         self.plugin_manager = None
-        # ~ self.log = self.add_service('log', MiAZLog("MiAZ.App"))
 
     def get_config_dict(self):
         return self._config
 
     def set_env(self, ENV: dict):
         self._env = ENV
-        # ~ self.log = self.add_service('log', MiAZLog("MiAZ.App"))
         self.log.debug("Starting MiAZ")
         self.add_service('util', MiAZUtil(self))
         self._config['App'] = MiAZConfigApp(self)
         self._config['Repository'] = MiAZConfigRepositories(self)
-        # ~ self.add_service('repo', MiAZRepository(self))
-        # ~ self.add_service('icons', MiAZIconManager(self))
         self.conf = self.get_config_dict()
         GLib.set_application_name(ENV['APP']['name'])
         self.connect('activate', self._on_activate)
@@ -69,9 +65,9 @@ class MiAZApp(Gtk.Application):
     def _on_activate(self, app):
         self.app = app
         self.add_service('repo', MiAZRepository(self))
-        self.add_service('icons', MiAZIconManager(self))
-        self.add_service('factory', MiAZFactory(self))
-        self.add_service('actions', MiAZActions(self))
+        # ~ self.add_service('icons', MiAZIconManager(self))
+        # ~ self.add_service('factory', MiAZFactory(self))
+        # ~ self.add_service('actions', MiAZActions(self))
         self._setup_ui()
         self._setup_plugin_manager()
         self.log.debug("Executing MiAZ Desktop mode")
@@ -79,15 +75,34 @@ class MiAZApp(Gtk.Application):
         # ~ repository = self.get_service('repo')
 
     def _setup_ui(self):
+        """
+        """
+        ENV = self.get_env()
+
+        # Main MiAZ Window
         window = self.add_widget('window', Gtk.ApplicationWindow(application=self))
         window.set_default_size(1280, 800)
         window.set_icon_name('MiAZ')
         window.connect('close-request', self._on_window_close_request)
         window.set_default_icon_name('MiAZ')
+
+        # Theme
+        theme = self.add_service('theme', Gtk.IconTheme.get_for_display(window.get_display()))
+        theme.add_search_path(ENV['GPATH']['ICONS'])
+        theme.add_search_path(ENV['GPATH']['FLAGS'])
+        self.log.debug("MiAZ custom icons in: %s", ENV['GPATH']['ICONS'])
+
+        # Setup services
+        self.add_service('icons', MiAZIconManager(self))
+        self.add_service('factory', MiAZFactory(self))
+        self.add_service('actions', MiAZActions(self))
+
+        # Setup main window contents
         mainbox = self.add_widget('window-mainbox', MiAZMainWindow(self))
         window.set_child(mainbox)
+
+        # Other widgets
         self._setup_page_welcome()
-        # ~ self._setup_page_workspace()
 
     def _on_window_close_request(self, *args):
         self.log.debug("Close application requested")
