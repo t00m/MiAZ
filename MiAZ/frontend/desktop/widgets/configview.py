@@ -9,9 +9,11 @@
 """
 
 import os
+import random
 from datetime import datetime
 from gettext import gettext as _
 
+from gi.repository import Gio
 from gi.repository import GLib
 from gi.repository import Gtk
 
@@ -45,6 +47,7 @@ class MiAZConfigView(MiAZSelector):
         self.config_name = config_name
         self.conf = self.app.get_config_dict()
         self.config = self.conf[config_name]
+        self._setup_view_finish()
         self.config.connect('used-updated', self.update_views)
         self.config.connect('available-updated', self.update_views)
         self.set_vexpand(True)
@@ -66,6 +69,38 @@ class MiAZConfigView(MiAZSelector):
     def _on_config_import(self, *args):
         self.log.debug("Import configuration for '%s'", self.config.config_for)
 
+    def _add_config_menubutton(self, name: str):
+        boxEmpty = self.factory.create_box_horizontal(hexpand=True)
+        self.boxOper.append(boxEmpty)
+        menu = self._setup_menu_config_expimp(name)
+        menubutton = Gtk.MenuButton(child=self.factory.create_button_content(icon_name='com.github.t00m.MiAZ-config-symbolic'))
+        popover = Gtk.PopoverMenu()
+        popover.set_menu_model(menu)
+        menubutton.set_popover(popover=popover)
+        self.boxOper.append(menubutton)
+
+    def _setup_menu_config_expimp(self, name: str):
+        menu = Gio.Menu.new()
+        section_common_in = Gio.Menu.new()
+        section_common_out = Gio.Menu.new()
+        menu.append_section(None, section_common_in)
+        menu.append_section(None, section_common_out)
+        action_name = 'repo-config-export-%s-%d' % (name, random.randint(1, 10000))
+        menuitem = self.factory.create_menuitem(name=action_name,
+                                                label=_('Export configuration'),
+                                                callback=self.actions.import_config,
+                                                data=None,
+                                                shortcuts=[])
+        section_common_out.append_item(menuitem)
+        action_name = 'repo-config-import-%s' % name
+        menuitem = self.factory.create_menuitem(name=action_name,
+                                                label=_('Import configuration'),
+                                                callback=self.actions.import_config,
+                                                data=None,
+                                                shortcuts=[])
+        section_common_in.append_item(menuitem)
+        return menu
+
 class MiAZRepositories(MiAZConfigView):
     """Manage Repositories"""
     __gtype_name__ = 'MiAZRepositories'
@@ -82,6 +117,7 @@ class MiAZRepositories(MiAZConfigView):
         self._add_columnview_available(self.viewAv)
         self.viewSl = MiAZColumnViewRepo(self.app)
         self._add_columnview_used(self.viewSl)
+        self._add_config_menubutton(self.config.config_for)
 
     def _on_item_available_add(self, *args):
         window = self.app.get_widget('window')
@@ -178,6 +214,7 @@ class MiAZCountries(MiAZConfigView):
         self._add_columnview_available(self.viewAv)
         self.viewSl = MiAZColumnViewCountry(self.app)
         self._add_columnview_used(self.viewSl)
+        self._add_config_menubutton(self.config.config_for)
 
     def _update_view_available(self):
         items = []
@@ -210,6 +247,7 @@ class MiAZGroups(MiAZConfigView):
         self._add_columnview_available(self.viewAv)
         self.viewSl = MiAZColumnViewGroup(self.app)
         self._add_columnview_used(self.viewSl)
+        self._add_config_menubutton(self.config.config_for)
 
 class MiAZPeople(MiAZConfigView):
     """Class for managing People from Settings"""
@@ -225,6 +263,7 @@ class MiAZPeople(MiAZConfigView):
         self._add_columnview_available(self.viewAv)
         self.viewSl = MiAZColumnViewPerson(self.app)
         self._add_columnview_used(self.viewSl)
+        self._add_config_menubutton(self.config.config_for)
 
 class MiAZPeopleSentBy(MiAZConfigView):
     """Class for managing People from Settings"""
@@ -243,6 +282,7 @@ class MiAZPeopleSentBy(MiAZConfigView):
         self._add_columnview_available(self.viewAv)
         self.viewSl = MiAZColumnViewPerson(self.app)
         self._add_columnview_used(self.viewSl)
+        self._add_config_menubutton(self.config.config_for)
 
 class MiAZPeopleSentTo(MiAZConfigView):
     """Class for managing People from Settings"""
@@ -261,6 +301,7 @@ class MiAZPeopleSentTo(MiAZConfigView):
         self._add_columnview_available(self.viewAv)
         self.viewSl = MiAZColumnViewPerson(self.app)
         self._add_columnview_used(self.viewSl)
+        self._add_config_menubutton(self.config.config_for)
 
 class MiAZPurposes(MiAZConfigView):
     """Manage purposes from Repo Settings"""
@@ -276,6 +317,7 @@ class MiAZPurposes(MiAZConfigView):
         self._add_columnview_available(self.viewAv)
         self.viewSl = MiAZColumnViewPurpose(self.app)
         self._add_columnview_used(self.viewSl)
+        self._add_config_menubutton(self.config.config_for)
 
 class MiAZProjects(MiAZConfigView):
     """Manage projects from Repo Settings"""
@@ -291,6 +333,7 @@ class MiAZProjects(MiAZConfigView):
         self._add_columnview_available(self.viewAv)
         self.viewSl = MiAZColumnViewProject(self.app)
         self._add_columnview_used(self.viewSl)
+        self._add_config_menubutton(self.config.config_for)
 
     def _on_item_available_remove(self, *args):
         selected_item = self.viewAv.get_selected()

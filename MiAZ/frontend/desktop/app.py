@@ -41,6 +41,9 @@ class MiAZApp(Gtk.Application):
         self._miazobjs['widgets'] = {}
         self._miazobjs['services'] = {}
         self.log = self._miazobjs['services']['log'] = MiAZLog("MiAZ.App")
+        self.add_service('icons', MiAZIconManager(self))
+        self.add_service('factory', MiAZFactory(self))
+        self.add_service('actions', MiAZActions(self))
         self._env = None
         self.conf = None
         self.app = None
@@ -92,10 +95,10 @@ class MiAZApp(Gtk.Application):
         theme.add_search_path(ENV['GPATH']['FLAGS'])
         self.log.debug("MiAZ custom icons in: %s", ENV['GPATH']['ICONS'])
 
-        # Setup services
-        self.add_service('icons', MiAZIconManager(self))
-        self.add_service('factory', MiAZFactory(self))
-        self.add_service('actions', MiAZActions(self))
+        # ~ # Setup services
+        # ~ self.add_service('icons', MiAZIconManager(self))
+        # ~ self.add_service('factory', MiAZFactory(self))
+        # ~ self.add_service('actions', MiAZActions(self))
 
         # Setup main window contents
         mainbox = self.add_widget('window-mainbox', MiAZMainWindow(self))

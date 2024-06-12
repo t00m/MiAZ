@@ -11,6 +11,7 @@
 import os
 from gettext import gettext as _
 
+from gi.repository import Gio
 from gi.repository import Gtk
 
 from MiAZ.backend.log import MiAZLog
@@ -27,14 +28,16 @@ class MiAZSelector(Gtk.Box):
         self.log = MiAZLog('MiAZ.Selector')
         self.app = app
         self.edit = edit
+        self.actions = self.app.get_service('actions')
         self.util = self.app.get_service('util')
         self.factory = self.app.get_service('factory')
         self.repository = self.app.get_service('repository')
         self.config = None
         self.viewAv = None
         self.viewSl = None
+        self._setup_ui()
 
-
+    def _setup_ui(self):
         # Entry and buttons for operations (edit/add/remove)
         self.boxOper = Gtk.Box(spacing=3, orientation=Gtk.Orientation.HORIZONTAL)
         self.boxOper.set_margin_top(24)
@@ -58,15 +61,24 @@ class MiAZSelector(Gtk.Box):
         self.entry.set_placeholder_text('Type here for filtering')
         boxEntry.append(self.entry)
         self.boxOper.append(boxEntry)
-        if edit:
+        if self.edit:
             self.boxButtons = Gtk.Box(spacing=0, orientation=Gtk.Orientation.HORIZONTAL)
             self.boxButtons.get_style_context().add_class(class_name='linked')
             self.boxButtons.set_hexpand(True)
             self.boxButtons.append(self.factory.create_button(icon_name='com.github.t00m.MiAZ-list-add-symbolic', title='', callback=self._on_item_available_add))
             self.boxButtons.append(self.factory.create_button(icon_name='com.github.t00m.MiAZ-list-remove-symbolic', title='', callback=self._on_item_available_remove))
             self.boxButtons.append(self.factory.create_button(icon_name='com.github.t00m.MiAZ-list-edit-symbolic', title='', callback=self._on_item_available_edit))
-            # ~ self.boxButtons.append(self.factory.create_button(icon_name='miaz-import-config', tooltip='Import configuration', callback=self._on_config_import, data=self.config_for))
             self.boxOper.append(self.boxButtons)
+        # ~ boxEmpty = self.factory.create_box_horizontal(hexpand=True)
+        # ~ self.boxOper.append(boxEmpty)
+
+        # ~ menu = self._setup_menu_config_expimp()
+        # ~ menubutton = Gtk.MenuButton(child=self.factory.create_button_content(icon_name='com.github.t00m.MiAZ-config-symbolic'))
+        # ~ popover = Gtk.PopoverMenu()
+        # ~ popover.set_menu_model(menu)
+        # ~ menubutton.set_popover(popover=popover)
+        # ~ self.boxOper.append(menubutton)
+
         self.append(self.boxOper)
         boxViews = self.factory.create_box_horizontal(spacing=0, hexpand=True, vexpand=True)
         boxLeft = self.factory.create_box_vertical(spacing=0, hexpand=True, vexpand=True)
@@ -99,7 +111,7 @@ class MiAZSelector(Gtk.Box):
         title.set_markup(_('<b>Used</b>'))
         boxRight.append(title)
         boxRight.append(self.frmViewSl)
-        self._setup_view_finish()
+        # ~ self._setup_view_finish()
 
     def _add_columnview_available(self, columnview):
         columnview.set_filter(self._do_filter_view)
@@ -127,11 +139,12 @@ class MiAZSelector(Gtk.Box):
         columnview.cv.set_model(selection)
 
     def _setup_view_finish(self, *args):
-        pass
+        self.log.debug("Setup selector for %s", self.config_for)
 
     def update_views(self, *args):
         self._update_view_available()
         self._update_view_used()
+        self.log.debug("Setup selector for %s", self.config.config_for)
 
     def _on_item_used_add(self, *args):
         changed = False
