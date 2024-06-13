@@ -8,6 +8,7 @@
 # Description: Frontent/Desktop entry point
 """
 
+from gi.repository import Gio
 from gi.repository import GObject
 from gi.repository import GLib
 from gi.repository import Gtk
@@ -40,25 +41,25 @@ class MiAZApp(Gtk.Application):
         super().__init__(**kwargs)
         self._miazobjs['widgets'] = {}
         self._miazobjs['services'] = {}
+        self._miazobjs['actions'] = {}
         self.log = self._miazobjs['services']['log'] = MiAZLog("MiAZ.App")
+        self.add_service('icons', MiAZIconManager(self))
+        self.add_service('factory', MiAZFactory(self))
+        self.add_service('actions', MiAZActions(self))
         self._env = None
         self.conf = None
         self.app = None
         self.plugin_manager = None
-        # ~ self.log = self.add_service('log', MiAZLog("MiAZ.App"))
 
     def get_config_dict(self):
         return self._config
 
     def set_env(self, ENV: dict):
         self._env = ENV
-        # ~ self.log = self.add_service('log', MiAZLog("MiAZ.App"))
         self.log.debug("Starting MiAZ")
         self.add_service('util', MiAZUtil(self))
         self._config['App'] = MiAZConfigApp(self)
         self._config['Repository'] = MiAZConfigRepositories(self)
-        # ~ self.add_service('repo', MiAZRepository(self))
-        # ~ self.add_service('icons', MiAZIconManager(self))
         self.conf = self.get_config_dict()
         GLib.set_application_name(ENV['APP']['name'])
         self.connect('activate', self._on_activate)
@@ -69,9 +70,9 @@ class MiAZApp(Gtk.Application):
     def _on_activate(self, app):
         self.app = app
         self.add_service('repo', MiAZRepository(self))
-        self.add_service('icons', MiAZIconManager(self))
-        self.add_service('factory', MiAZFactory(self))
-        self.add_service('actions', MiAZActions(self))
+        # ~ self.add_service('icons', MiAZIconManager(self))
+        # ~ self.add_service('factory', MiAZFactory(self))
+        # ~ self.add_service('actions', MiAZActions(self))
         self._setup_ui()
         self._setup_plugin_manager()
         self.log.debug("Executing MiAZ Desktop mode")
@@ -79,15 +80,34 @@ class MiAZApp(Gtk.Application):
         # ~ repository = self.get_service('repo')
 
     def _setup_ui(self):
+        """
+        """
+        ENV = self.get_env()
+
+        # Main MiAZ Window
         window = self.add_widget('window', Gtk.ApplicationWindow(application=self))
         window.set_default_size(1280, 800)
         window.set_icon_name('MiAZ')
         window.connect('close-request', self._on_window_close_request)
         window.set_default_icon_name('MiAZ')
+
+        # Theme
+        theme = self.add_service('theme', Gtk.IconTheme.get_for_display(window.get_display()))
+        theme.add_search_path(ENV['GPATH']['ICONS'])
+        theme.add_search_path(ENV['GPATH']['FLAGS'])
+        self.log.debug("MiAZ custom icons in: %s", ENV['GPATH']['ICONS'])
+
+        # ~ # Setup services
+        # ~ self.add_service('icons', MiAZIconManager(self))
+        # ~ self.add_service('factory', MiAZFactory(self))
+        # ~ self.add_service('actions', MiAZActions(self))
+
+        # Setup main window contents
         mainbox = self.add_widget('window-mainbox', MiAZMainWindow(self))
         window.set_child(mainbox)
+
+        # Other widgets
         self._setup_page_welcome()
-        # ~ self._setup_page_workspace()
 
     def _on_window_close_request(self, *args):
         self.log.debug("Close application requested")
@@ -253,26 +273,26 @@ class MiAZApp(Gtk.Application):
         if wdg is not None:
             self.log.debug("Widget '%s' will be overwritten", name)
         wdg = self._miazobjs['widgets'][name] = widget
-
         return wdg
-
-
-        # Add widget, but do not overwrite
-        # ~ if name in self._miazobjs['widgets']:
-            # ~ self.log.warning("A widget with name '%s' already exists. Overwriten", name)
-        # ~ self._miazobjs['widgets'][name] = widget
-        # ~ return widget
-
-    # ~ def set_widget(self, name: str, widget):
-        # ~ # Overwrite existing widget
-        # ~ self._miazobjs['widgets'][name] = widget
-        # ~ return widget
 
     def get_widget(self, name):
         try:
             return self._miazobjs['widgets'][name]
         except KeyError:
             return None
+
+    # ~ def add_action(self, name: str, callback = None, data = None) -> Gio.SimpleAction:
+        # ~ action = Gio.SimpleAction.new(name, None)
+        # ~ action.connect('activate', callback, data)
+        # ~ action.set_enabled(True)
+        # ~ self.add_action(action)
+        # ~ return action
+
+    # ~ def get_action(self, name):
+        # ~ try:
+            # ~ return self._miazobjs['actions'][name]
+        # ~ except KeyError:
+            # ~ return None
 
     def remove_widget(self, name: str):
         """

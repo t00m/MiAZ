@@ -156,10 +156,10 @@ class MiAZAppSettings(MiAZCustomWindow):
         notebook.set_show_border(False)
         notebook.set_tab_pos(Gtk.PositionType.LEFT)
         widget = self._create_view_plugins_system()
-        label = self.factory.create_notebook_label(icon_name='miaz-app-settings', title='System')
+        label = self.factory.create_notebook_label(icon_name='com.github.t00m.MiAZ-res-plugins-system', title='System')
         notebook.append_page(widget, label)
         widget = self._create_view_plugins_user()
-        label = self.factory.create_notebook_label(icon_name='miaz-res-people', title='User')
+        label = self.factory.create_notebook_label(icon_name='com.github.t00m.MiAZ-res-plugins', title='User')
         notebook.append_page(widget, label)
         vbox.append(notebook)
         return vbox
@@ -193,8 +193,8 @@ class MiAZAppSettings(MiAZCustomWindow):
         # Add/Remove
         hbox = self.factory.create_box_horizontal(margin=0, spacing=0, hexpand=True, vexpand=False)
         hbox.get_style_context().add_class(class_name='toolbar')
-        hbox.append(self.factory.create_button(icon_name='miaz-list-add', title='Add plugin', callback=self._on_plugin_add))
-        hbox.append(self.factory.create_button(icon_name='miaz-list-remove', title='Remove plugin', callback=self._on_plugin_remove))
+        hbox.append(self.factory.create_button(icon_name='com.github.t00m.MiAZ-list-add-symbolic', title='Add plugin', callback=self._on_plugin_add))
+        hbox.append(self.factory.create_button(icon_name='com.github.t00m.MiAZ-list-remove-symbolic', title='Remove plugin', callback=self._on_plugin_remove))
         vbox.append(hbox)
 
         # User Plugins
@@ -303,6 +303,7 @@ class MiAZRepoSettings(MiAZCustomWindow):
         self.name = 'repo-settings'
         self.title = 'Repository settings'
         super().__init__(app, self.name, self.title, **kwargs)
+        self.connect('notify::visible', self.update)
 
     def _build_ui(self):
         self.set_default_size(1024, 728)
@@ -349,3 +350,5 @@ class MiAZRepoSettings(MiAZCustomWindow):
             configview = self.app.get_widget(widget_title)
             configview.update_config()
             configview.update_views()
+        self.log.debug("Repository UI updated according to current settings")
+

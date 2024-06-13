@@ -18,8 +18,13 @@ from MiAZ.backend.log import MiAZLog
 icon_name = {}
 icon_name["info"] = "dialog-information-symbolic"
 icon_name["warning"] = "dialog-warning-symbolic"
-icon_name["error"] = "dialog-error-symbolic"
+icon_name["error"] = "com.github.t00m.MiAZ-dialog-error-symbolic"
 icon_name["question"] = "dialog-question-symbolic"
+
+# ~ icon_name["info"] = "dialog-information-symbolic"
+# ~ icon_name["warning"] = "dialog-warning-symbolic"
+# ~ icon_name["error"] = "dialog-error-symbolic"
+# ~ icon_name["question"] = "dialog-question-symbolic"
 
 
 class CustomDialog(Gtk.Dialog):

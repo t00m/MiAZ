@@ -12,6 +12,7 @@ import os
 from datetime import datetime
 from gettext import gettext as _
 
+from gi.repository import Gio
 from gi.repository import GLib
 from gi.repository import Gtk
 
@@ -45,6 +46,7 @@ class MiAZConfigView(MiAZSelector):
         self.config_name = config_name
         self.conf = self.app.get_config_dict()
         self.config = self.conf[config_name]
+        self._setup_view_finish()
         self.config.connect('used-updated', self.update_views)
         self.config.connect('available-updated', self.update_views)
         self.set_vexpand(True)
@@ -66,6 +68,28 @@ class MiAZConfigView(MiAZSelector):
     def _on_config_import(self, *args):
         self.log.debug("Import configuration for '%s'", self.config.config_for)
 
+    def _add_config_menubutton(self, name: str):
+        widgets = []
+        btnConfigImport = self.factory.create_button(icon_name='com.github.t00m.MiAZ-document-open-symbolic',
+                                                     title='Import config for %s' % self.config.config_for.lower(),
+                                                     callback=self.actions.import_config,
+                                                     data=self.config.model,
+                                                     css_classes=['flat'])
+        widgets.append(btnConfigImport)
+        btnConfigImport = self.factory.create_button(icon_name='com.github.t00m.MiAZ-document-save-symbolic',
+                                                     title='Export config for %s' % self.config.config_for.lower(),
+                                                     callback=self.actions.export_config,
+                                                     data=self.config.model,
+                                                     css_classes=['flat'])
+        widgets.append(btnConfigImport)
+        button = self.factory.create_button_popover(icon_name='emblem-system-symbolic',
+                                                    title='',
+                                                    widgets=widgets)
+
+        boxEmpty = self.factory.create_box_horizontal(hexpand=True)
+        self.boxOper.append(boxEmpty)
+        self.boxOper.append(button)
+
 class MiAZRepositories(MiAZConfigView):
     """Manage Repositories"""
     __gtype_name__ = 'MiAZRepositories'
@@ -82,6 +106,7 @@ class MiAZRepositories(MiAZConfigView):
         self._add_columnview_available(self.viewAv)
         self.viewSl = MiAZColumnViewRepo(self.app)
         self._add_columnview_used(self.viewSl)
+        self._add_config_menubutton(self.config.config_for)
 
     def _on_item_available_add(self, *args):
         window = self.app.get_widget('window')
@@ -178,6 +203,7 @@ class MiAZCountries(MiAZConfigView):
         self._add_columnview_available(self.viewAv)
         self.viewSl = MiAZColumnViewCountry(self.app)
         self._add_columnview_used(self.viewSl)
+        self._add_config_menubutton(self.config.config_for)
 
     def _update_view_available(self):
         items = []
@@ -210,6 +236,7 @@ class MiAZGroups(MiAZConfigView):
         self._add_columnview_available(self.viewAv)
         self.viewSl = MiAZColumnViewGroup(self.app)
         self._add_columnview_used(self.viewSl)
+        self._add_config_menubutton(self.config.config_for)
 
 class MiAZPeople(MiAZConfigView):
     """Class for managing People from Settings"""
@@ -225,6 +252,7 @@ class MiAZPeople(MiAZConfigView):
         self._add_columnview_available(self.viewAv)
         self.viewSl = MiAZColumnViewPerson(self.app)
         self._add_columnview_used(self.viewSl)
+        self._add_config_menubutton(self.config.config_for)
 
 class MiAZPeopleSentBy(MiAZConfigView):
     """Class for managing People from Settings"""
@@ -243,6 +271,7 @@ class MiAZPeopleSentBy(MiAZConfigView):
         self._add_columnview_available(self.viewAv)
         self.viewSl = MiAZColumnViewPerson(self.app)
         self._add_columnview_used(self.viewSl)
+        self._add_config_menubutton(self.config.config_for)
 
 class MiAZPeopleSentTo(MiAZConfigView):
     """Class for managing People from Settings"""
@@ -261,6 +290,7 @@ class MiAZPeopleSentTo(MiAZConfigView):
         self._add_columnview_available(self.viewAv)
         self.viewSl = MiAZColumnViewPerson(self.app)
         self._add_columnview_used(self.viewSl)
+        self._add_config_menubutton(self.config.config_for)
 
 class MiAZPurposes(MiAZConfigView):
     """Manage purposes from Repo Settings"""
@@ -276,6 +306,7 @@ class MiAZPurposes(MiAZConfigView):
         self._add_columnview_available(self.viewAv)
         self.viewSl = MiAZColumnViewPurpose(self.app)
         self._add_columnview_used(self.viewSl)
+        self._add_config_menubutton(self.config.config_for)
 
 class MiAZProjects(MiAZConfigView):
     """Manage projects from Repo Settings"""
@@ -291,6 +322,7 @@ class MiAZProjects(MiAZConfigView):
         self._add_columnview_available(self.viewAv)
         self.viewSl = MiAZColumnViewProject(self.app)
         self._add_columnview_used(self.viewSl)
+        self._add_config_menubutton(self.config.config_for)
 
     def _on_item_available_remove(self, *args):
         selected_item = self.viewAv.get_selected()

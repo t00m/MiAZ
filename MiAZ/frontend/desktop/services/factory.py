@@ -88,11 +88,11 @@ class MiAZFactory:
         box.set_vexpand(vexpand)
         return box
 
-    def create_button_content(self, icon_name='', title='', callback=None, width=16, height=16, css_classes=[''], data=None):
+    def create_button_content(self, icon_name='', title='', callback=None, size=16, css_classes=[''], data=None):
         hbox = self.create_box_horizontal(spacing=0, margin=0, hexpand=False, vexpand=False)
         if len(icon_name.strip()) > 0:
-            icon = self.icons.get_image_by_name(icon_name, width=width, height=height)
-            icon.set_pixel_size(width)
+            icon = self.icons.get_image_by_name(icon_name, size=size)
+            icon.set_pixel_size(size)
             icon.set_valign(Gtk.Align.CENTER)
             hbox.append(icon)
 
@@ -107,14 +107,12 @@ class MiAZFactory:
 
         return hbox
 
-    def create_button(self, icon_name='', title='', tooltip='', callback=None, width=16, height=16, css_classes=[], data=None):
+    def create_button(self, icon_name='', title='', tooltip='', callback=None, size=16, css_classes=[], data=None):
         button = Gtk.Button(css_classes=css_classes)
-
-        # ~ button.get_style_context().add_class(class_name='flat')
-        hbox = self.create_box_horizontal(spacing=0, margin=0)
+        hbox = self.create_box_horizontal(spacing=6, margin=0)
         if len(icon_name.strip()) > 0:
             icon = self.icons.get_image_by_name(icon_name)
-            icon.set_pixel_size(width)
+            icon.set_pixel_size(size)
             icon.set_valign(Gtk.Align.CENTER)
             hbox.append(icon)
 
@@ -157,7 +155,6 @@ class MiAZFactory:
 
     def create_button_check(self, title: str = '', active: bool = False, callback=None) -> Gtk.CheckButton:
         button = Gtk.CheckButton.new_with_label(title)
-        # ~ button.get_style_context().add_class(class_name='flat')
         button.set_active(active)
         if callback is not None:
             button.connect('toggled', callback)
@@ -167,7 +164,6 @@ class MiAZFactory:
         """Gtk.Menubutton with a menu"""
         child=self.create_button_content(icon_name=icon_name, title=title, css_classes=css_classes)
         button = Gtk.MenuButton()
-        # ~ button.get_style_context().add_class(class_name='flat')
         button.set_child(child)
         popover = Gtk.PopoverMenu.new_from_model(menu)
         button.set_popover(popover=popover)
@@ -176,19 +172,6 @@ class MiAZFactory:
 
     def create_button_popover(self, icon_name: str = '', title: str = '', css_classes: list = [], widgets: list = []) -> Gtk.MenuButton:
         return MiAZPopoverButton(self.app, icon_name=icon_name, title=title, css_classes=css_classes, widgets=widgets)
-        # ~ listbox = Gtk.ListBox.new()
-        # ~ listbox.set_activate_on_single_click(True)
-        # ~ listbox.set_selection_mode(Gtk.SelectionMode.NONE)
-        # ~ for widget in widgets:
-            # ~ listbox.append(child=widget)
-        # ~ vbox = self.create_box_vertical(hexpand=False, vexpand=False)
-        # ~ vbox.append(child=listbox)
-        # ~ popover = Gtk.Popover()
-        # ~ popover.set_child(vbox)
-        # ~ popover.present()
-        # ~ button = Gtk.MenuButton(child=self.create_button_content(icon_name=icon_name, title=title, css_classes=css_classes))
-        # ~ button.set_popover(popover)
-        # ~ return button
 
     def create_dropdown_generic(self, item_type, ellipsize=True, enable_search=True):
         def _get_search_entry_widget(dropdown):
@@ -315,39 +298,6 @@ class MiAZFactory:
 
     def create_filechooser(self, parent, title, target, callback, data=None):
         return MiAZFileChooserDialog(self.app, parent, title, target, callback, data)
-        # FIXME: Gtk.FileChooser is deprecated. Use Gtk.FileDialog
-        # FIXME: Available since Gtk 4.10: https://docs.gtk.org/gtk4/class.FileDialog.html
-        # FIXME: However, Debian 12.5 is still in 4.8.3
-        # FIXME: Choosing Gtk.FileChooser for compatibility
-        # ~ d_filechooser = Gtk.Dialog()
-        # ~ d_filechooser.set_title(title)
-        # ~ d_filechooser.set_transient_for(parent)
-        # ~ d_filechooser.set_modal(True)
-        # ~ d_filechooser.add_buttons(_('Cancel'), Gtk.ResponseType.CANCEL, _('Accept'), Gtk.ResponseType.ACCEPT)
-        # ~ btnCancel = d_filechooser.get_widget_for_response(Gtk.ResponseType.CANCEL)
-        # ~ btnCancel.get_style_context ().add_class ('destructive-action')
-        # ~ btnAccept = d_filechooser.get_widget_for_response(Gtk.ResponseType.ACCEPT)
-        # ~ btnAccept.get_style_context ().add_class ('suggested-action')
-        # ~ action_box = btnCancel.get_ancestor(Gtk.Box)
-        # ~ action_box.set_spacing(6)
-        # ~ action_box.set_margin_start(6)
-        # ~ action_box.set_margin_end(6)
-        # ~ action_box.set_margin_top(6)
-        # ~ action_box.set_margin_bottom(6)
-
-        # ~ d_filechooser.connect('response', callback, data)
-        # ~ contents = d_filechooser.get_content_area()
-        # ~ box = self.create_box_vertical()
-        # ~ w_filechooser = Gtk.FileChooserWidget()
-        # ~ box.append(w_filechooser)
-        # ~ if target == 'FOLDER':
-            # ~ w_filechooser.set_action(Gtk.FileChooserAction.SELECT_FOLDER)
-        # ~ elif target == 'FILE':
-            # ~ w_filechooser.set_action(Gtk.FileChooserAction.OPEN)
-        # ~ elif target == 'SAVE':
-            # ~ w_filechooser.set_action(Gtk.FileChooserAction.SAVE)
-        # ~ contents.append(box)
-        # ~ return d_filechooser
 
     def create_frame(self, title:str = None, margin: int = 3, hexpand: bool = False, vexpand: bool = False) -> Gtk.Frame:
         frame = Gtk.Frame()
@@ -382,6 +332,7 @@ class MiAZFactory:
         menuitem.set_label(label=label)
         action = Gio.SimpleAction.new(name, None)
         action.connect('activate', callback, data)
+        action.set_enabled(True)
         self.app.add_action(action)
         menuitem.set_detailed_action(detailed_action='app.%s' % name)
         if shortcuts:

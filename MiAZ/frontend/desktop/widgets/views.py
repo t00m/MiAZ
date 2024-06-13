@@ -247,8 +247,7 @@ class MiAZColumnViewWorkspace(MiAZColumnView):
         item = list_item.get_item()
         icon = box.get_first_child()
         code = item.country
-        paintable = self.srvicm.get_flag_icon(code)
-        icon.set_from_paintable(paintable)
+        icon.set_from_icon_name(code)
         icon.set_pixel_size(36)
 
     def _on_factory_setup_flag(self, factory, list_item):

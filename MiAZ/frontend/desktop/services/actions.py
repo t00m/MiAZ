@@ -49,6 +49,7 @@ Configview['Date'] = Gtk.Calendar
 
 class MiAZActions(GObject.GObject):
     def __init__(self, app):
+        super().__init__()
         self.log = MiAZLog('MiAZ.Actions')
         self.app = app
         self.util = self.app.get_service('util')
@@ -167,26 +168,106 @@ class MiAZActions(GObject.GObject):
         box.append(toggle)
         filechooser.show()
 
-    def import_config(self, *args):
+    def import_config(self, button, item_type):
+        i_title = item_type.__title__
+        i_title_plural = item_type.__title_plural__
+        file_available = '%s-available.json' % i_title_plural.lower()
+        file_used = '%s-used.json' % i_title_plural.lower()
+        name_available = item_type.__config_name_available__
+        name_used = item_type.__config_name_used__
+
         def filechooser_response(dialog, response, data):
+            if response == Gtk.ResponseType.ACCEPT:
+                srvutl = self.app.get_service('util')
+                content_area = dialog.get_content_area()
+                box = content_area.get_first_child()
+                filechooser = box.get_first_child()
+                gfile = filechooser.get_file()
+                if gfile is not None:
+                    filepath = gfile.get_path()
+                    files = srvutl.zip_list(filepath)
+                    available_exists = file_available in files
+                    self.log.debug("%s exists? %s", file_available, available_exists)
+                    used_exists = file_used in files
+                    self.log.debug("%s exists? %s", file_used, used_exists)
+                    if available_exists and used_exists:
+                        import zipfile
+                        ENV = self.app.get_env()
+                        srvutl.unzip(filepath, ENV['LPATH']['TMP'])
+                        target_a = os.path.join(ENV['LPATH']['TMP'], file_available)
+                        target_u = os.path.join(ENV['LPATH']['TMP'], file_used)
+                        available = srvutl.json_load(target_a)
+                        used = srvutl.json_load(target_u)
+                        config = self.app.get_config_dict()
+                        config_item = config[i_title]
+                        config_item.add_used_batch(used.items())
+                        config_item.add_available_batch(available.items())
+                        self.show_repository_settings()
+                        self.log.info("%s imported successfully", i_title_plural)
+                    else:
+                        self.log.error("This is not a config file for %s" % i_title_plural.lower())
+            dialog.destroy()
+
+        window = self.app.get_widget('window')
+        filechooser = self.factory.create_filechooser(
+                    parent=window,
+                    title=_('Import a configuration file for %s' % i_title_plural.lower()),
+                    target = 'FILE',
+                    callback = filechooser_response,
+                    data = None)
+        config_filter = Gtk.FileFilter()
+        config_filter.add_pattern('*.zip')
+        filechooser_widget = filechooser.get_filechooser_widget()
+        filechooser_widget.set_filter(config_filter)
+        filechooser.show()
+
+    def export_config(self, button, item_type):
+        i_title = item_type.__title__
+        i_title_plural = item_type.__title_plural__
+        file_available = '%s-available.json' % i_title_plural.lower()
+        file_used = '%s-used.json' % i_title_plural.lower()
+        name_available = item_type.__config_name_available__
+        name_used = item_type.__config_name_used__
+
+        def filechooser_response(dialog, response, data):
+            srvutl = self.app.get_service('util')
+            repository = self.app.get_service('repo')
             if response == Gtk.ResponseType.ACCEPT:
                 content_area = dialog.get_content_area()
                 box = content_area.get_first_child()
                 filechooser = box.get_first_child()
                 gfile = filechooser.get_file()
                 if gfile is not None:
-                    source = gfile.get_path()
-                    self.log.debug(source)
+                    target_directory = gfile.get_path()
+                    import pathlib
+                    import zipfile
+                    source_directory = pathlib.Path(os.path.join(repository.docs, '.conf'))
+                    config_name_available = "%s-available.json" % name_available
+                    config_name_used = "%s-used.json" % name_used
+                    filenames = []
+                    config_file_available = pathlib.Path(os.path.join(repository.docs, '.conf', config_name_available))
+                    config_file_used = pathlib.Path(os.path.join(repository.docs, '.conf', config_name_used))
+                    filenames.append(config_file_available)
+                    filenames.append(config_file_used)
+                    target_filename = "miaz-%s-config-%s.zip" % (i_title_plural.lower(), srvutl.timestamp())
+                    target_filepath = os.path.join(target_directory, target_filename)
+                    with zipfile.ZipFile(target_filepath, mode="w") as zip_archive:
+                        for file_path in filenames:
+                            zip_archive.write(
+                                file_path,
+                                arcname=file_path.relative_to(source_directory)
+                            )
+                    self.log.info("%s exported successfully to %s", i_title_plural, target_filepath)
+                    self.show_repository_settings()
             dialog.destroy()
 
         window = self.app.get_widget('window')
         filechooser = self.factory.create_filechooser(
                     parent=window,
-                    title=_('Import a configuration file'),
-                    target = 'FILE',
+                    title=_('Export the configuration for %s' % i_title_plural.lower()),
+                    target = 'FOLDER',
                     callback = filechooser_response,
-                    data = None
-                    )
+                    data = None)
         filechooser.show()
 
     def import_file(self, *args):
@@ -239,6 +320,7 @@ class MiAZActions(GObject.GObject):
             window_settings = self.app.add_widget('settings-repo', MiAZRepoSettings(self.app))
         window_settings.set_transient_for(window_main)
         window_settings.set_modal(True)
+        window_settings.update()
         window_settings.present()
 
     def show_app_about(self, *args):
