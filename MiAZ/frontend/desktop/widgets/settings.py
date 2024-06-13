@@ -303,6 +303,7 @@ class MiAZRepoSettings(MiAZCustomWindow):
         self.name = 'repo-settings'
         self.title = 'Repository settings'
         super().__init__(app, self.name, self.title, **kwargs)
+        self.connect('notify::visible', self.update)
 
     def _build_ui(self):
         self.set_default_size(1024, 728)
@@ -349,3 +350,5 @@ class MiAZRepoSettings(MiAZCustomWindow):
             configview = self.app.get_widget(widget_title)
             configview.update_config()
             configview.update_views()
+        self.log.debug("Repository UI updated according to current settings")
+

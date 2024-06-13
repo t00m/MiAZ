@@ -9,7 +9,6 @@
 """
 
 import os
-import random
 from datetime import datetime
 from gettext import gettext as _
 
@@ -70,36 +69,26 @@ class MiAZConfigView(MiAZSelector):
         self.log.debug("Import configuration for '%s'", self.config.config_for)
 
     def _add_config_menubutton(self, name: str):
+        widgets = []
+        btnConfigImport = self.factory.create_button(icon_name='com.github.t00m.MiAZ-document-open-symbolic',
+                                                     title='Import config for %s' % self.config.config_for.lower(),
+                                                     callback=self.actions.import_config,
+                                                     data=self.config.model,
+                                                     css_classes=['flat'])
+        widgets.append(btnConfigImport)
+        btnConfigImport = self.factory.create_button(icon_name='com.github.t00m.MiAZ-document-save-symbolic',
+                                                     title='Export config for %s' % self.config.config_for.lower(),
+                                                     callback=self.actions.export_config,
+                                                     data=self.config.model,
+                                                     css_classes=['flat'])
+        widgets.append(btnConfigImport)
+        button = self.factory.create_button_popover(icon_name='emblem-system-symbolic',
+                                                    title='',
+                                                    widgets=widgets)
+
         boxEmpty = self.factory.create_box_horizontal(hexpand=True)
         self.boxOper.append(boxEmpty)
-        menu = self._setup_menu_config_expimp(name)
-        menubutton = Gtk.MenuButton(child=self.factory.create_button_content(icon_name='com.github.t00m.MiAZ-config-symbolic'))
-        popover = Gtk.PopoverMenu()
-        popover.set_menu_model(menu)
-        menubutton.set_popover(popover=popover)
-        self.boxOper.append(menubutton)
-
-    def _setup_menu_config_expimp(self, name: str):
-        menu = Gio.Menu.new()
-        section_common_in = Gio.Menu.new()
-        section_common_out = Gio.Menu.new()
-        menu.append_section(None, section_common_in)
-        menu.append_section(None, section_common_out)
-        action_name = 'repo-config-export-%s-%d' % (name, random.randint(1, 10000))
-        menuitem = self.factory.create_menuitem(name=action_name,
-                                                label=_('Export configuration'),
-                                                callback=self.actions.import_config,
-                                                data=None,
-                                                shortcuts=[])
-        section_common_out.append_item(menuitem)
-        action_name = 'repo-config-import-%s' % name
-        menuitem = self.factory.create_menuitem(name=action_name,
-                                                label=_('Import configuration'),
-                                                callback=self.actions.import_config,
-                                                data=None,
-                                                shortcuts=[])
-        section_common_in.append_item(menuitem)
-        return menu
+        self.boxOper.append(button)
 
 class MiAZRepositories(MiAZConfigView):
     """Manage Repositories"""

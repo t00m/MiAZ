@@ -43,7 +43,7 @@ class MiAZSelector(Gtk.Box):
         self.boxOper.set_margin_top(24)
         self.boxOper.set_margin_bottom(6)
         self.boxOper.set_margin_start(6)
-        self.boxOper.set_margin_end(0)
+        self.boxOper.set_margin_end(6)
         self.boxOper.set_hexpand(True)
         self.boxOper.set_vexpand(False)
         boxEntry = Gtk.Box(spacing=0, orientation=Gtk.Orientation.HORIZONTAL)
@@ -144,7 +144,7 @@ class MiAZSelector(Gtk.Box):
     def update_views(self, *args):
         self._update_view_available()
         self._update_view_used()
-        self.log.debug("Setup selector for %s", self.config.config_for)
+        # ~ self.log.debug("Setup selector for %s", self.config.config_for)
 
     def _on_item_used_add(self, *args):
         changed = False
@@ -156,11 +156,14 @@ class MiAZSelector(Gtk.Box):
         self._update_view_used()
 
     def _on_item_used_remove(self, *args):
+        selected_item = self.viewSl.get_selected()
+        if selected_item is None:
+            return
+
         value_used = False
         changed = False
         items_used = self.config.load_used()
         items_available = self.config.load_available()
-        selected_item = self.viewSl.get_selected()
         is_used, docs = self.util.field_used(self.repository.docs, self.config.model, selected_item.id)
         if is_used:
             item_type = self.config.model
@@ -276,6 +279,9 @@ class MiAZSelector(Gtk.Box):
 
     def _on_item_available_remove(self, *args):
         selected_item = self.viewAv.get_selected()
+        if selected_item is None:
+            return
+
         items_used = self.config.load_used()
         is_used = selected_item.id in items_used
         self.log.debug("Is '%s' used? %s", selected_item.id, is_used)

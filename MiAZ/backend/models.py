@@ -140,11 +140,17 @@ class Concept(MiAZModel):
     __gtype_name__ = 'Concept'
     __title__ = _('Concept')
     __title_plural__ = _('Concepts')
+    __config_name__ = 'concepts'
+    __config_name_available__ = 'concepts'
+    __config_name_used__ = 'concepts'
 
 class Country(MiAZModel):
     __gtype_name__ = 'Country'
     __title__ = _('Country')
     __title_plural__ = _('Countries')
+    __config_name__ = 'countries'
+    __config_name_available__ = 'countries'
+    __config_name_used__ = 'countries'
 
     def __init__(self,  id: str, title: str = '', icon: str = ''):
         super().__init__(id, title)
@@ -158,58 +164,94 @@ class Date(MiAZModel):
     __gtype_name__ = 'Date'
     __title__ = _('Date')
     __title_plural__ = _('Dates')
+    __config_name__ = 'dates'
+    __config_name_available__ = 'dates'
+    __config_name_used__ = 'dates'
 
 class Document(MiAZModel):
     __gtype_name__ = 'Document'
     __title__ = _('Document')
     __title_plural__ = _('Documents')
+    __config_name__ = 'documents'
+    __config_name_available__ = 'documents'
+    __config_name_used__ = 'documents'
 
 class Extension(MiAZModel):
     __gtype_name__ = 'Extension'
     __title__ = _('Extension')
     __title_plural__ = _('Extensions')
+    __config_name__ = 'extensions'
+    __config_name_available__ = 'extensions'
+    __config_name_used__ = 'extensions'
 
 class File(MiAZModel):
     __gtype_name__ = 'File'
     __title__ = _('File')
     __title_plural__ = _('Files')
+    __config_name__ = 'files'
+    __config_name_available__ = 'files'
+    __config_name_used__ = 'files'
 
 class Group(MiAZModel):
     __gtype_name__ = 'Group'
     __title__ = _('Group')
-    __title_plural__ = _('Groups')
+    __title_plural__ = _('groups')
+    __config_name__ = 'groups'
+    __config_name_available__ = 'groups'
+    __config_name_used__ = 'groups'
 
 class Person(MiAZModel):
     __gtype_name__ = 'Person'
     __title__ = _('Person')
-    __title_plural__ = _('People')
+    __title_plural__ = _('groups')
+    __config_name__ = 'people'
+    __config_name_available__ = 'people'
+    __config_name_used__ = 'people'
 
 class Project(MiAZModel):
     __gtype_name__ = 'Project'
     __title__ = _('Project')
     __title_plural__ = _('Projects')
+    __config_name__ = 'projects'
+    __config_name_available__ = 'projects'
+    __config_name_used__ = 'projects'
 
 class Purpose(MiAZModel):
     __gtype_name__ = 'Purpose'
     __title__ = _('Purpose')
     __title_plural__ = _('Purposes')
+    __config_name__ = 'purposes'
+    __config_name_available__ = 'purposes'
+    __config_name_used__ = 'purposes'
 
 class Repository(MiAZModel):
     __gtype_name__ = 'Repository'
     __title__ = _('Repository')
     __title_plural__ = _('Repositories')
+    __config_name__ = 'repositories'
+    __config_name_available__ = 'repositories'
+    __config_name_used__ = 'repositories'
 
 class SentBy(Person):
     __gtype_name__ = 'SentBy'
     __title__ = _('Sender')
     __title_plural__ = _('Senders')
+    __config_name__ = 'people'
+    __config_name_available__ = 'people'
+    __config_name_used__ = 'senders'
 
 class SentTo(Person):
     __gtype_name__ = 'SentTo'
     __title__ = _('Recipient')
     __title_plural__ = _('Recipients')
+    __config_name__ = 'recipients'
+    __config_name_available__ = 'people'
+    __config_name_used__ = 'recipients'
 
 class Plugin(MiAZModel):
     __gtype_name__ = 'Plugin'
     __title__ = _('Plugin')
     __title_plural__ = _('Plugins')
+    __config_name__ = 'plugins'
+    __config_name_available__ = 'plugins'
+    __config_name_used__ = 'plugins'

@@ -8,6 +8,7 @@
 # Description: Frontent/Desktop entry point
 """
 
+from gi.repository import Gio
 from gi.repository import GObject
 from gi.repository import GLib
 from gi.repository import Gtk
@@ -40,6 +41,7 @@ class MiAZApp(Gtk.Application):
         super().__init__(**kwargs)
         self._miazobjs['widgets'] = {}
         self._miazobjs['services'] = {}
+        self._miazobjs['actions'] = {}
         self.log = self._miazobjs['services']['log'] = MiAZLog("MiAZ.App")
         self.add_service('icons', MiAZIconManager(self))
         self.add_service('factory', MiAZFactory(self))
@@ -271,26 +273,26 @@ class MiAZApp(Gtk.Application):
         if wdg is not None:
             self.log.debug("Widget '%s' will be overwritten", name)
         wdg = self._miazobjs['widgets'][name] = widget
-
         return wdg
-
-
-        # Add widget, but do not overwrite
-        # ~ if name in self._miazobjs['widgets']:
-            # ~ self.log.warning("A widget with name '%s' already exists. Overwriten", name)
-        # ~ self._miazobjs['widgets'][name] = widget
-        # ~ return widget
-
-    # ~ def set_widget(self, name: str, widget):
-        # ~ # Overwrite existing widget
-        # ~ self._miazobjs['widgets'][name] = widget
-        # ~ return widget
 
     def get_widget(self, name):
         try:
             return self._miazobjs['widgets'][name]
         except KeyError:
             return None
+
+    # ~ def add_action(self, name: str, callback = None, data = None) -> Gio.SimpleAction:
+        # ~ action = Gio.SimpleAction.new(name, None)
+        # ~ action.connect('activate', callback, data)
+        # ~ action.set_enabled(True)
+        # ~ self.add_action(action)
+        # ~ return action
+
+    # ~ def get_action(self, name):
+        # ~ try:
+            # ~ return self._miazobjs['actions'][name]
+        # ~ except KeyError:
+            # ~ return None
 
     def remove_widget(self, name: str):
         """

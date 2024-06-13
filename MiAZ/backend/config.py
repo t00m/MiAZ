@@ -173,10 +173,10 @@ class MiAZConfig(GObject.GObject):
         saved = 0
         for key, value in keysvalues:
             if len(key.strip()) != 0:
-                if key not in items:
-                    key = self.util.valid_key(key)
-                    items[key] = value
-                    saved += 1
+                # ~ if key not in items:
+                key = self.util.valid_key(key)
+                items[key] = value
+                saved += 1
         if saved > 0:
             self.save(filepath, items=items)
             self.log.info("%s - Added %d keys to %s", self.config_for, saved, filepath)
@@ -190,10 +190,10 @@ class MiAZConfig(GObject.GObject):
         saved = 0
         for key, value in keysvalues:
             if len(key.strip()) != 0:
-                if key not in items:
-                    key = self.util.valid_key(key)
-                    items[key] = value
-                    saved += 1
+                # ~ if key not in items:
+                key = self.util.valid_key(key)
+                items[key] = value
+                saved += 1
         if saved > 0:
             self.save(filepath, items=items)
             self.log.info("%s - Added %d keys to %s", self.config_for, saved, filepath)
@@ -376,12 +376,14 @@ class MiAZConfigSentBy(MiAZConfig):
     def __init__(self, app, dir_conf):
 
         ENV = app.get_env()
+        config_name_available = SentBy.__config_name_available__
+        config_name_used = SentBy.__config_name_used__
         super().__init__(
             app = app,
             log=MiAZLog('MiAZ.Settings.SentBy'),
             config_for = 'SentBy',
-            used = os.path.join(dir_conf, 'sentby-used.json'),
-            available = os.path.join(dir_conf, 'people-available.json'),
+            used = os.path.join(dir_conf, '%s-used.json' % config_name_used),
+            available = os.path.join(dir_conf, '%s-available.json' % config_name_available),
             default = os.path.join(ENV['GPATH']['CONF'],
                             'MiAZ-people.json'),
             model = SentBy,

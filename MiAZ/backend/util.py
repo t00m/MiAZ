@@ -324,6 +324,12 @@ class MiAZUtil(GObject.GObject):
         shutil.move(zip_file, target)
         return target
 
+    def timestamp(self):
+        """Get timestamp (YYYYmmdd_hhmmss)"""
+        now = datetime.now()
+        return "%4d%02d%02d_%02d%02d%02d" % (now.year, now.month, now.day,
+                                            now.hour, now.minute, now.second)
+
     def unzip(self, target: str, install_dir):
         """
         Unzip file to a given dir
@@ -331,6 +337,10 @@ class MiAZUtil(GObject.GObject):
         zip_archive = zipfile.ZipFile(target, "r")
         zip_archive.extractall(path=install_dir)
         zip_archive.close()
+
+    def zip_list(self, filepath: str) -> []:
+        zip_archive = zipfile.ZipFile(filepath, "r")
+        return zip_archive.namelist()
 
 def which(program):
     """

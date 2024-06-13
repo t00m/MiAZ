@@ -109,7 +109,7 @@ class MiAZFactory:
 
     def create_button(self, icon_name='', title='', tooltip='', callback=None, size=16, css_classes=[], data=None):
         button = Gtk.Button(css_classes=css_classes)
-        hbox = self.create_box_horizontal(spacing=0, margin=0)
+        hbox = self.create_box_horizontal(spacing=6, margin=0)
         if len(icon_name.strip()) > 0:
             icon = self.icons.get_image_by_name(icon_name)
             icon.set_pixel_size(size)
@@ -332,6 +332,7 @@ class MiAZFactory:
         menuitem.set_label(label=label)
         action = Gio.SimpleAction.new(name, None)
         action.connect('activate', callback, data)
+        action.set_enabled(True)
         self.app.add_action(action)
         menuitem.set_detailed_action(detailed_action='app.%s' % name)
         if shortcuts:
