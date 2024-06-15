@@ -195,7 +195,7 @@ class File(MiAZModel):
 class Group(MiAZModel):
     __gtype_name__ = 'Group'
     __title__ = _('Group')
-    __title_plural__ = _('groups')
+    __title_plural__ = _('Groups')
     __config_name__ = 'groups'
     __config_name_available__ = 'groups'
     __config_name_used__ = 'groups'

@@ -242,8 +242,10 @@ class MiAZSelector(Gtk.Box):
                 if oldkey in items_used:
                     items_used[oldkey] = newval
                     self.log.debug("%s (%s) renamed to %s (%s) in the list of used items", oldkey, oldval, newkey, newval)
+                    self.config.save_used(items_used)
                 items_available = self.config.load_available()
                 items_available[oldkey] = newval
+                self.config.save_available(items_available)
 
             # ~ if len(newkey) > 0:
                 # ~ self.log.debug("Renaming %s (%s) by %s (%s)", oldkey, oldval, newkey, newval)

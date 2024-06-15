@@ -70,10 +70,9 @@ class MiAZApp(Gtk.Application):
     def _on_activate(self, app):
         self.app = app
         self.add_service('repo', MiAZRepository(self))
-        # ~ self.add_service('icons', MiAZIconManager(self))
-        # ~ self.add_service('factory', MiAZFactory(self))
-        # ~ self.add_service('actions', MiAZActions(self))
         self._setup_ui()
+        menubar = self.get_widget('window-menu-app')
+        self.set_menubar(menubar)
         self._setup_plugin_manager()
         self.log.debug("Executing MiAZ Desktop mode")
         self.check_repository()

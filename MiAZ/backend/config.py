@@ -93,7 +93,6 @@ class MiAZConfig(GObject.GObject):
                 self.cache[filepath]['items'] = items
                 # ~ self.log.debug("In-memory config data updated for '%s'", filepath)
             except Exception as error:
-                self.log.error(error)
                 items = None
             return items
         else:
@@ -146,7 +145,7 @@ class MiAZConfig(GObject.GObject):
         try:
             # return description, if it exists
             return config[key]
-        except KeyError:
+        except KeyError as error:
             if key in config:
                 # otherwise, return the key
                 return key
@@ -398,8 +397,8 @@ class MiAZConfigSentTo(MiAZConfig):
             app = app,
             log=MiAZLog('MiAZ.Settings.SentTo'),
             config_for = 'SentTo',
-            used = os.path.join(dir_conf, 'sentto-used.json'),
-            available = os.path.join(dir_conf, 'people-available.json'),
+            used = os.path.join(dir_conf, '%s-used.json' % SentTo.__config_name_used__),
+            available = os.path.join(dir_conf, '%s-available.json' % SentTo.__config_name_available__),
             default = os.path.join(ENV['GPATH']['CONF'],
                             'MiAZ-people.json'),
             model = SentTo,

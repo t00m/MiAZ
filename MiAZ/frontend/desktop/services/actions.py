@@ -28,6 +28,7 @@ from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewMassDelete
 from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewMassProject
 from MiAZ.frontend.desktop.widgets.settings import MiAZAppSettings
 from MiAZ.frontend.desktop.widgets.settings import MiAZRepoSettings
+from MiAZ.frontend.desktop.services.help import MiAZHelp
 
 # Conversion Item type to Field Number
 Field = {}
@@ -124,6 +125,8 @@ class MiAZActions(GObject.GObject):
                     title = key
                 if item_type == Repository:
                     title = key.replace('_', ' ')
+                else:
+                    title = "%s - %s" % (key, title)
                 model.append(item_type(id=key, title=title))
 
         if len(model) == 0:
@@ -343,6 +346,14 @@ class MiAZActions(GObject.GObject):
         about.set_website_label('Github MiAZ repository')
         about.set_comments(ENV['APP']['description'])
         about.present()
+
+    def show_app_help(self, *args):
+        shwin = self.app.get_widget('shortcutswindow')
+        if shwin is None:
+            shwin = Gtk.ShortcutsWindow()
+            shwin.set_child(MiAZHelp(self.app))
+            self.app.add_widget('shortcutswindow', shwin)
+        shwin.present()
 
     def get_stack_page_by_name(self, name: str) -> Gtk.Stack:
         stack = self.app.get_widget('stack')
