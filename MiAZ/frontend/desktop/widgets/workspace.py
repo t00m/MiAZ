@@ -488,7 +488,6 @@ class MiAZWorkspace(Gtk.Box):
                 desc = {}
                 for skey, nkey in key_fields:
                     key = fields[nkey]
-                    # ~ self.log.debug("%s > %s", key, skey)
                     if nkey == 0:
                         # Date field cached value differs from other fields
                         key = fields[nkey]
