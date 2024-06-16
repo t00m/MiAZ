@@ -136,9 +136,10 @@ class MiAZRenameDialog(Gtk.Box):
     def __create_actionrow(self, title, item_type, conf) -> Gtk.Widget:
         i_title = item_type.__title_plural__
         icon_name = 'com.github.t00m.MiAZ-res-%s' % i_title.lower().replace(' ', '')
+        self.log.debug(icon_name)
         icon = self.icons.get_image_by_name(name=icon_name)
         boxValue = self.__create_box_value()
-        button = self.factory.create_button('miaz-res-manage', '')
+        button = self.factory.create_button(icon_name=icon_name, title='')
         dropdown = self.factory.create_dropdown_generic(item_type, ellipsize=False) #, item)
         self.actions.dropdown_populate(conf, dropdown, item_type)
         boxValue.append(dropdown)
@@ -163,7 +164,7 @@ class MiAZRenameDialog(Gtk.Box):
     def __create_field_0_date(self):
         """Field 0. Date"""
         title = _('Date')
-        icon_name = 'miaz-res-date'
+        icon_name = 'com.github.t00m.MiAZ-res-date'
         boxValue = self.__create_box_value()
         boxValue.set_hexpand(False)
         boxValue.set_valign(Gtk.Align.CENTER)
@@ -171,7 +172,7 @@ class MiAZRenameDialog(Gtk.Box):
         self.boxMain.append(self.rowDate)
         self.calendar = Gtk.Calendar()
         self.calendar.connect('day-selected', self.calendar_day_selected)
-        button_content = self.factory.create_button_content(icon_name='miaz-res-date', css_classes=['flat'])
+        button_content = self.factory.create_button_content(icon_name='com.github.t00m.MiAZ-res-date', css_classes=['flat'])
         button = Gtk.MenuButton(child=button_content)
         popover = Gtk.Popover()
         popover.set_child(self.calendar)
@@ -241,7 +242,7 @@ class MiAZRenameDialog(Gtk.Box):
         self.dpdPurpose.connect("notify::selected-item", self._on_changed_entry)
 
     def __create_field_6_concept(self):
-        """Field 0. Date"""
+        """Field 6. Concept"""
         title = Concept.__title__
         icon_name = 'com.github.t00m.MiAZ-res-concept'
         icon = self.icons.get_image_by_name(name=icon_name)
