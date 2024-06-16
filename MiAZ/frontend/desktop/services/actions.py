@@ -53,20 +53,22 @@ class MiAZActions(GObject.GObject):
         super().__init__()
         self.log = MiAZLog('MiAZ.Actions')
         self.app = app
-        self.util = self.app.get_service('util')
         self.factory = self.app.get_service('factory')
         self.repository = self.app.get_service('repo')
 
     def document_display(self, doc):
+        srvutl = self.app.get_service('util')
+        srvrepo = self.app.get_service('repo')
         self.log.debug("Displaying %s", doc)
-        filepath = os.path.join(self.repository.docs, doc)
-        self.util.filename_display(filepath)
+        filepath = os.path.join(srvrepo.docs, doc)
+        srvutl.filename_display(filepath)
 
     def document_delete(self, items):
+        srvutl = self.app.get_service('util')
         def dialog_response(dialog, response, items):
             if response == Gtk.ResponseType.ACCEPT:
                 for item in items:
-                    self.util.filename_delete(item.id)
+                    srvutl.filename_delete(item.id)
             dialog.destroy()
 
         self.log.debug("Mass deletion")
@@ -136,6 +138,8 @@ class MiAZActions(GObject.GObject):
                 model.append(item_type(id='None', title=_('No repositories found')))
 
     def import_directory(self, *args):
+        srvutl = self.app.get_service('util')
+        srvrepo = self.app.get_service('repo')
         def filechooser_response(dialog, response, data):
             if response == Gtk.ResponseType.ACCEPT:
                 content_area = dialog.get_content_area()
@@ -148,13 +152,13 @@ class MiAZActions(GObject.GObject):
                     dirpath = gfile.get_path()
                     self.log.debug("Walk directory %s recursively? %s", dirpath, recursive)
                     if recursive:
-                        files = self.util.get_files_recursively(dirpath)
+                        files = srvutl.get_files_recursively(dirpath)
                     else:
                         files = glob.glob(os.path.join(dirpath, '*.*'))
                     for source in files:
-                        btarget = self.util.filename_normalize(source)
-                        target = os.path.join(self.repository.docs, btarget)
-                        self.util.filename_import(source, target)
+                        btarget = srvutl.filename_normalize(source)
+                        target = os.path.join(srvrepo.docs, btarget)
+                        srvutl.filename_import(source, target)
             dialog.destroy()
 
         window = self.app.get_widget('window')
@@ -274,6 +278,8 @@ class MiAZActions(GObject.GObject):
         filechooser.show()
 
     def import_file(self, *args):
+        srvutl = self.app.get_service('util')
+        srvrepo = self.app.get_service('repo')
         def filechooser_response(dialog, response, data):
             if response == Gtk.ResponseType.ACCEPT:
                 content_area = dialog.get_content_area()
@@ -282,9 +288,9 @@ class MiAZActions(GObject.GObject):
                 gfile = filechooser.get_file()
                 if gfile is not None:
                     source = gfile.get_path()
-                    btarget = self.util.filename_normalize(source)
-                    target = os.path.join(self.repository.docs, btarget)
-                    self.util.filename_import(source, target)
+                    btarget = srvutl.filename_normalize(source)
+                    target = os.path.join(srvrepo.docs, btarget)
+                    srvutl.filename_import(source, target)
             dialog.destroy()
 
         window = self.app.get_widget('window')
