@@ -1,5 +1,5 @@
 #!/usr/bin/python3
-# -*- coding: utf-8 -*-
+# pylint: disable=E1101
 
 """
 # File: export2csv.py
@@ -8,6 +8,7 @@
 # Description: Plugin for exporting items to CSV
 """
 
+import csv
 import tempfile
 from gettext import gettext as _
 
@@ -23,34 +24,33 @@ class Export2CSV(GObject.GObject, Peas.Activatable):
 
     def __init__(self):
         self.log = MiAZLog('Plugin.Export2CSV')
+        self.app = None
 
     def do_activate(self):
-        API = self.object
-        self.app = API.app
-        self.factory = self.app.get_service('factory')
-        self.util = self.app.get_service('util')
-        self.workspace = API.app.get_widget('workspace')
-        self.workspace.connect('workspace-loaded', self.add_menuitem)
+        self.app = self.object.app
+        workspace = self.app.get_widget('workspace')
+        workspace.connect('workspace-loaded', self.add_menuitem)
 
     def do_deactivate(self):
         self.log.debug("Plugin deactivation not implemented")
-        API = self.object
 
     def add_menuitem(self, *args):
         if self.app.get_widget('workspace-menu-multiple-menu-export-item-export2csv') is None:
+            factory = self.app.get_service('factory')
             submenu_export_multi = self.app.get_widget('workspace-menu-selection-submenu-export')
-            menuitem = self.factory.create_menuitem('export-to-csv', _('...to CSV'), self.export, None, [])
+            menuitem = factory.create_menuitem('export-to-csv', _('...to CSV'), self.export, None, [])
             self.app.add_widget('workspace-menu-multiple-menu-export-item-export2csv', menuitem)
             submenu_export_multi.append_item(menuitem)
 
     def export(self, *args):
-        import csv
+        util = self.app.get_service('util')
+        workspace = self.app.get_widget('workspace')
         ENV = self.app.get_env()
         fields = [_('Date'), _('Country'), _('Group'), _('Send by'), _('Purpose'), _('Concept'), _('Send to'), _('Extension')]
-        items = self.workspace.get_selected_items()
+        items = workspace.get_selected_items()
         rows = []
         for item in items:
-            name, ext = self.util.filename_details(item.id)
+            name, ext = util.filename_details(item.id)
             row = name.split('-')
             row.append(ext)
             rows.append(row)
@@ -59,4 +59,4 @@ class Export2CSV(GObject.GObject, Peas.Activatable):
             csvwriter = csv.writer(csvfile)
             csvwriter.writerow(fields)
             csvwriter.writerows(rows)
-        self.util.filename_display(filepath)
+        util.filename_display(filepath)

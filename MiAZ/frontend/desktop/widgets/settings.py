@@ -1,5 +1,4 @@
 #!/usr/bin/python3
-# -*- coding: utf-8 -*-
 
 """
 # File: settings.py
@@ -201,7 +200,6 @@ class MiAZAppSettings(MiAZCustomWindow):
         scrwin = self.factory.create_scrolledwindow()
         self.app.add_widget('app-settings-plugins-user-scrwin', scrwin)
         vbox.append(scrwin)
-        pm = self.app.get_service('plugin-manager')
         view = MiAZColumnViewPlugin(self.app)
         view.set_hexpand(True)
         view.set_vexpand(True)
@@ -287,7 +285,7 @@ class MiAZAppSettings(MiAZCustomWindow):
         if plugins is None:
             plugins = []
         if active:
-            if not plugin_name in plugins:
+            if plugin_name not in plugins:
                 plugins.append(plugin_name)
         else:
             plugins.remove(plugin_name)
@@ -344,8 +342,7 @@ class MiAZRepoSettings(MiAZCustomWindow):
 
     def update(self, *args):
         for item_type in [Country, Group, Purpose, Project, SentBy, SentTo, Plugin]:
-            i_type = item_type.__gtype_name__
-            i_title = _(item_type.__title_plural__)
+            i_title = item_type.__title_plural__
             widget_title = 'configview-%s' % i_title
             configview = self.app.get_widget(widget_title)
             configview.update_config()

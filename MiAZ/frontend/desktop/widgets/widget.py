@@ -1,5 +1,4 @@
 #!/usr/bin/python3
-# -*- coding: utf-8 -*-
 
 """
 # File: widget.py
@@ -7,14 +6,6 @@
 # License: GPL v3
 # Description: Not used
 """
-
-import logging
-import traceback as tb
-from gettext import gettext as _
-
-import gi
-gi.require_version('Gtk', '4.0')
-from gi.repository import Gtk
 
 from MiAZ.backend.log import MiAZLog
 

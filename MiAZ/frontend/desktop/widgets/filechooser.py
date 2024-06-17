@@ -1,5 +1,4 @@
 #!/usr/bin/python3
-# -*- coding: utf-8 -*-
 
 """
 # File: filechooser.py
@@ -15,7 +14,6 @@
 
 from gettext import gettext as _
 
-import gi
 from gi.repository import Gtk
 
 
@@ -29,7 +27,6 @@ class MiAZFileChooserDialog(Gtk.Dialog):
         self.target = target
         self.callback = callback
         self.data = data
-        ENV = app.get_env()
         self.factory = self.app.get_service('factory')
         self.build_ui()
 

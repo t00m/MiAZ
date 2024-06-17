@@ -1,5 +1,4 @@
 #!/usr/bin/python3
-# -*- coding: utf-8 -*-
 
 """
 # File: pluginsystem.py
@@ -14,6 +13,7 @@
 import os
 import zipfile
 from enum import IntEnum
+from gettext import gettext as _
 
 import gi
 gi.require_version('Peas', '1.0')
@@ -114,7 +114,7 @@ class MiAZPluginManager(GObject.GObject):
 
     def load_plugin(self, plugin: Peas.PluginInfo) -> bool:
         ptype = self.get_plugin_type(plugin)
-        pinfo = self.get_plugin_info(plugin)
+        # ~ pinfo = self.get_plugin_info(plugin)
         try:
             self.engine.load_plugin(plugin)
             if plugin.is_loaded():

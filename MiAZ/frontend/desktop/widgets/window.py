@@ -1,5 +1,4 @@
 #!/usr/bin/python3
-# -*- coding: utf-8 -*-
 
 """
 # File: window.py
@@ -8,7 +7,7 @@
 # Description: Custom Window widget
 """
 
-from gi.repository import Gdk, Gio, GLib, Gtk
+from gi.repository import Gdk, Gtk
 
 from MiAZ.backend.log import MiAZLog
 

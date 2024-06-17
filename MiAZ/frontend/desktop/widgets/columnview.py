@@ -1,5 +1,4 @@
 #!/usr/bin/python3
-# -*- coding: utf-8 -*-
 
 """
 # File: columnview.py
@@ -8,7 +7,6 @@
 # Description: Custom Gtk.Columnview widget for displaying info
 """
 
-from datetime import datetime
 
 from gi.repository import Gio
 from gi.repository import Gtk

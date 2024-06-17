@@ -1,5 +1,4 @@
 #!/usr/bin/python3
-# -*- coding: utf-8 -*-
 
 """
 # File: actions.py
@@ -10,22 +9,17 @@
 
 import os
 import glob
-import tempfile
-from datetime import datetime
+import pathlib
+import zipfile
 from gettext import gettext as _
 
-from gi.repository import GLib
 from gi.repository import GObject
 from gi.repository import Gtk
 
 from MiAZ.backend.log import MiAZLog
-from MiAZ.backend.models import MiAZItem, File, Group, Person, Country, Purpose, Concept, SentBy, SentTo, Date, Extension, Project, Repository
-from MiAZ.frontend.desktop.widgets.configview import MiAZCountries, MiAZGroups, MiAZPeople, MiAZPurposes, MiAZPeopleSentBy, MiAZPeopleSentTo, MiAZProjects
-from MiAZ.frontend.desktop.widgets.rename import MiAZRenameDialog
-from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewWorkspace
-from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewMassRename
+from MiAZ.backend.models import File, Group, Country, Purpose, SentBy, SentTo, Date, Repository
+from MiAZ.frontend.desktop.widgets.configview import MiAZCountries, MiAZGroups, MiAZPurposes, MiAZPeopleSentBy, MiAZPeopleSentTo, MiAZProjects
 from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewMassDelete
-from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewMassProject
 from MiAZ.frontend.desktop.widgets.settings import MiAZAppSettings
 from MiAZ.frontend.desktop.widgets.settings import MiAZRepoSettings
 from MiAZ.frontend.desktop.services.help import MiAZHelp
@@ -53,8 +47,6 @@ class MiAZActions(GObject.GObject):
         super().__init__()
         self.log = MiAZLog('MiAZ.Actions')
         self.app = app
-        self.factory = self.app.get_service('factory')
-        self.repository = self.app.get_service('repo')
 
     def document_display(self, doc):
         srvutl = self.app.get_service('util')
@@ -64,6 +56,7 @@ class MiAZActions(GObject.GObject):
         srvutl.filename_display(filepath)
 
     def document_delete(self, items):
+        factory = self.app.get_service('factory')
         srvutl = self.app.get_service('util')
         def dialog_response(dialog, response, items):
             if response == Gtk.ResponseType.ACCEPT:
@@ -72,9 +65,8 @@ class MiAZActions(GObject.GObject):
             dialog.destroy()
 
         self.log.debug("Mass deletion")
-        self.config = self.app.get_config_dict()
         frame = Gtk.Frame()
-        box, view = self.factory.create_view(MiAZColumnViewMassDelete, _('Mass deletion'))
+        box, view = factory.create_view(MiAZColumnViewMassDelete, _('Mass deletion'))
         citems = []
         for item in items:
             citems.append(File(id=item.id, title=os.path.basename(item.id)))
@@ -82,7 +74,7 @@ class MiAZActions(GObject.GObject):
         frame.set_child(view)
         box.append(frame)
         window = self.app.get_widget('window')
-        dialog = self.factory.create_dialog_question(window, _('Mass deletion'), box, width=1024, height=600)
+        dialog = factory.create_dialog_question(window, _('Mass deletion'), box, width=1024, height=600)
         dialog.connect('response', dialog_response, items)
         dialog.show()
 
@@ -138,6 +130,7 @@ class MiAZActions(GObject.GObject):
                 model.append(item_type(id='None', title=_('No repositories found')))
 
     def import_directory(self, *args):
+        factory = self.app.get_service('factory')
         srvutl = self.app.get_service('util')
         srvrepo = self.app.get_service('repo')
         def filechooser_response(dialog, response, data):
@@ -162,7 +155,7 @@ class MiAZActions(GObject.GObject):
             dialog.destroy()
 
         window = self.app.get_widget('window')
-        filechooser = self.factory.create_filechooser(
+        filechooser = factory.create_filechooser(
                     parent=window,
                     title=_('Import a directory'),
                     target = 'FOLDER',
@@ -171,17 +164,16 @@ class MiAZActions(GObject.GObject):
                     )
         contents = filechooser.get_content_area()
         box = contents.get_first_child()
-        toggle = self.factory.create_button_check(title=_('Walk recursively'), callback=None)
+        toggle = factory.create_button_check(title=_('Walk recursively'), callback=None)
         box.append(toggle)
         filechooser.show()
 
     def import_config(self, button, item_type):
+        factory = self.app.get_service('factory')
         i_title = item_type.__title__
         i_title_plural = item_type.__title_plural__
         file_available = '%s-available.json' % i_title_plural.lower()
         file_used = '%s-used.json' % i_title_plural.lower()
-        name_available = item_type.__config_name_available__
-        name_used = item_type.__config_name_used__
 
         def filechooser_response(dialog, response, data):
             if response == Gtk.ResponseType.ACCEPT:
@@ -198,7 +190,6 @@ class MiAZActions(GObject.GObject):
                     used_exists = file_used in files
                     self.log.debug("%s exists? %s", file_used, used_exists)
                     if available_exists and used_exists:
-                        import zipfile
                         ENV = self.app.get_env()
                         srvutl.unzip(filepath, ENV['LPATH']['TMP'])
                         target_a = os.path.join(ENV['LPATH']['TMP'], file_available)
@@ -212,13 +203,13 @@ class MiAZActions(GObject.GObject):
                         self.show_repository_settings()
                         self.log.info("%s imported successfully", i_title_plural)
                     else:
-                        self.log.error("This is not a config file for %s" % i_title_plural.lower())
+                        self.log.error("This is not a config file for %s", i_title_plural.lower())
             dialog.destroy()
 
         window = self.app.get_widget('window')
-        filechooser = self.factory.create_filechooser(
+        filechooser = factory.create_filechooser(
                     parent=window,
-                    title=_('Import a configuration file for %s' % i_title_plural.lower()),
+                    title=_('Import a configuration file for %s', i_title_plural.lower()),
                     target = 'FILE',
                     callback = filechooser_response,
                     data = None)
@@ -229,10 +220,11 @@ class MiAZActions(GObject.GObject):
         filechooser.show()
 
     def export_config(self, button, item_type):
-        i_title = item_type.__title__
+        factory = self.app.get_service('factory')
+        # ~ i_title = item_type.__title__
         i_title_plural = item_type.__title_plural__
-        file_available = '%s-available.json' % i_title_plural.lower()
-        file_used = '%s-used.json' % i_title_plural.lower()
+        # ~ file_available = '%s-available.json' % i_title_plural.lower()
+        # ~ file_used = '%s-used.json' % i_title_plural.lower()
         name_available = item_type.__config_name_available__
         name_used = item_type.__config_name_used__
 
@@ -246,8 +238,6 @@ class MiAZActions(GObject.GObject):
                 gfile = filechooser.get_file()
                 if gfile is not None:
                     target_directory = gfile.get_path()
-                    import pathlib
-                    import zipfile
                     source_directory = pathlib.Path(os.path.join(repository.docs, '.conf'))
                     config_name_available = "%s-available.json" % name_available
                     config_name_used = "%s-used.json" % name_used
@@ -269,7 +259,7 @@ class MiAZActions(GObject.GObject):
             dialog.destroy()
 
         window = self.app.get_widget('window')
-        filechooser = self.factory.create_filechooser(
+        filechooser = factory.create_filechooser(
                     parent=window,
                     title=_('Export the configuration for %s' % i_title_plural.lower()),
                     target = 'FOLDER',
@@ -278,6 +268,7 @@ class MiAZActions(GObject.GObject):
         filechooser.show()
 
     def import_file(self, *args):
+        factory = self.app.get_service('factory')
         srvutl = self.app.get_service('util')
         srvrepo = self.app.get_service('repo')
         def filechooser_response(dialog, response, data):
@@ -294,7 +285,7 @@ class MiAZActions(GObject.GObject):
             dialog.destroy()
 
         window = self.app.get_widget('window')
-        filechooser = self.factory.create_filechooser(
+        filechooser = factory.create_filechooser(
                     parent=window,
                     title=_('Import a single file'),
                     target = 'FILE',
@@ -304,13 +295,14 @@ class MiAZActions(GObject.GObject):
         filechooser.show()
 
     def manage_resource(self, widget: Gtk.Widget, selector: Gtk.Widget):
-        box = self.factory.create_box_vertical(spacing=0, vexpand=True, hexpand=True)
+        factory = self.app.get_service('factory')
+        box = factory.create_box_vertical(spacing=0, vexpand=True, hexpand=True)
         box.append(selector)
         config_for = selector.get_config_for()
         selector.set_vexpand(True)
         selector.update_views()
         window = self.app.get_widget('window')
-        dialog = self.factory.create_dialog(window, _('Manage %s') % config_for, box, 800, 600)
+        dialog = factory.create_dialog(window, _('Manage %s') % config_for, box, 800, 600)
         dialog.show()
 
     def show_app_settings(self, *args):

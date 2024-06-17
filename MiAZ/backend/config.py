@@ -1,5 +1,4 @@
 #!/usr/bin/python3
-# -*- coding: utf-8 -*-
 
 """
 # File: config.py
@@ -81,7 +80,7 @@ class MiAZConfig(GObject.GObject):
     def load(self, filepath:str) -> dict:
         try:
             config_changed = self.cache[filepath]['changed']
-        except Exception as error:
+        except KeyError:
             config_changed = True
 
         if config_changed:
@@ -92,7 +91,7 @@ class MiAZConfig(GObject.GObject):
                 self.cache[filepath]['changed'] = False
                 self.cache[filepath]['items'] = items
                 # ~ self.log.debug("In-memory config data updated for '%s'", filepath)
-            except Exception as error:
+            except Exception:
                 items = None
             return items
         else:
@@ -117,7 +116,7 @@ class MiAZConfig(GObject.GObject):
                 self.emit('used-updated')
             try:
                 self.cache[filepath]['changed'] = True
-            except Exception as error:
+            except KeyError:
                 self.cache[filepath] = {}
                 self.cache[filepath]['changed'] = True
             # ~ self.log.debug("Cache update for '%s'", filepath)
@@ -145,7 +144,7 @@ class MiAZConfig(GObject.GObject):
         try:
             # return description, if it exists
             return config[key]
-        except KeyError as error:
+        except KeyError:
             if key in config:
                 # otherwise, return the key
                 return key

@@ -1,5 +1,4 @@
 #!/usr/bin/python3
-# -*- coding: utf-8 -*-
 
 """
 # File: views.py
@@ -9,12 +8,8 @@
 """
 
 import os
-import sys
-from abc import abstractmethod
 from gettext import gettext as _
 
-import gi
-gi.require_version('Gtk', '4.0')
 from gi.repository import Gio
 from gi.repository import Gtk
 from gi.repository import Pango
@@ -22,7 +17,7 @@ from gi.repository import Pango
 from MiAZ.backend.log import MiAZLog
 from MiAZ.frontend.desktop.widgets.columnview import MiAZColumnView
 from MiAZ.frontend.desktop.widgets.columnview import MiAZColumnViewSelector
-from MiAZ.frontend.desktop.widgets.columnview import ColIcon, ColLabel, ColMenuButton, ColCheck, ColButton
+from MiAZ.frontend.desktop.widgets.columnview import ColIcon, ColLabel, ColCheck
 from MiAZ.backend.models import MiAZItem, Country, Group, Person, Purpose, File, Project, Repository, Plugin
 
 
@@ -136,7 +131,7 @@ class MiAZColumnViewWorkspace(MiAZColumnView):
     def _on_factory_setup_active(self, factory, list_item):
         box = ColCheck()
         list_item.set_child(box)
-        button = box.get_first_child()
+        # ~ button = box.get_first_child()
 
     def _on_factory_bind_active(self, factory, list_item):
         box = list_item.get_child()
@@ -151,9 +146,10 @@ class MiAZColumnViewWorkspace(MiAZColumnView):
 
     def _on_factory_bind_icon(self, factory, list_item):
         """To be subclassed"""
-        box = list_item.get_child()
-        item = list_item.get_item()
-        icon = box.get_first_child()
+        # ~ box = list_item.get_child()
+        # ~ item = list_item.get_item()
+        # ~ icon = box.get_first_child()
+        pass
 
     def _on_factory_setup_icon_type(self, factory, list_item):
         box = ColIcon()

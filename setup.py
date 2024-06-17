@@ -1,5 +1,4 @@
 #!/usr/bin/python3
-# -*- coding: utf-8 -*-
 
 """
 # File: setup.py.
@@ -10,14 +9,8 @@
 
 import os
 import glob
-import pprint
 import subprocess
 from setuptools import setup
-
-try:
-    import bdist_nsi
-except ImportError:
-    pass
 
 cmd_version = 'meson introspect meson.build --projectinfo | jq .version'
 o, e = subprocess.Popen([cmd_version], shell=True, stdout=subprocess.PIPE).communicate()

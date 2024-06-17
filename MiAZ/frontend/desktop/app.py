@@ -1,5 +1,4 @@
 #!/usr/bin/python3
-# -*- coding: utf-8 -*-
 
 """
 # File: app.py
@@ -8,7 +7,6 @@
 # Description: Frontent/Desktop entry point
 """
 
-from gi.repository import Gio
 from gi.repository import GObject
 from gi.repository import GLib
 from gi.repository import Gtk

@@ -1,5 +1,4 @@
 #!/usr/bin/python3
-# -*- coding: utf-8 -*-
 
 """
 # File: about.py
@@ -8,9 +7,6 @@
 # Description: About widget
 """
 
-from gettext import gettext as _
-
-import gi
 from gi.repository import Gtk
 
 

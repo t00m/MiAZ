@@ -1,5 +1,4 @@
 #!/usr/bin/python3
-# -*- coding: utf-8 -*-
 
 """
 # File: factory.py
@@ -216,7 +215,7 @@ class MiAZFactory:
             return search_entry
 
         def _clear_dropdown(button, dropdown):
-            model = dropdown.get_model()
+            # ~ model = dropdown.get_model()
             dropdown.set_selected(0)
 
         # Set up the factory
