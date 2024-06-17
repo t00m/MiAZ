@@ -209,7 +209,7 @@ class MiAZActions(GObject.GObject):
         window = self.app.get_widget('window')
         filechooser = factory.create_filechooser(
                     parent=window,
-                    title=_('Import a configuration file for %s', i_title_plural.lower()),
+                    title=_(f'Import a configuration file for {i_title_plural.lower()}'),
                     target = 'FILE',
                     callback = filechooser_response,
                     data = None)
