@@ -1,27 +1,24 @@
 #!/usr/bin/python3
-# -*- coding: utf-8 -*-
+# pylint: disable=E1101
 
 """
-# File: export2csv.py
+# File: export2dir.py
 # Author: Tomás Vírseda
 # License: GPL v3
-# Description: Plugin for exporting items to CSV
+# Description: Plugin for exporting items to a given directory
 """
 
 import os
-import tempfile
 from datetime import datetime
 from gettext import gettext as _
 
-import gi
-gi.require_version('Gtk', '4.0')
 from gi.repository import GObject
 from gi.repository import Gtk
 from gi.repository import Peas
 
 from MiAZ.backend.log import MiAZLog
-from MiAZ.backend.models import Concept, Country, Date, Group
-from MiAZ.backend.models import Person, Purpose, SentBy, SentTo
+from MiAZ.backend.models import Country, Date, Group
+from MiAZ.backend.models import Purpose, SentBy, SentTo
 
 Field = {}
 Field[Date] = 0
@@ -37,34 +34,34 @@ class Export2Dir(GObject.GObject, Peas.Activatable):
 
     def __init__(self):
         self.log = MiAZLog('Plugin.Export2Dir')
+        self.app = None
 
     def do_activate(self):
-        API = self.object
-        self.app = API.app
-        self.factory = self.app.get_service('factory')
-        self.util = self.app.get_service('util')
-        self.repository = self.app.get_service('repo')
-        self.workspace = API.app.get_widget('workspace')
-        self.workspace.connect('workspace-loaded', self.add_menuitem)
+        self.app = self.object.app
+        workspace = self.app.get_widget('workspace')
+        workspace.connect('workspace-loaded', self.add_menuitem)
 
     def do_deactivate(self):
         print("do_deactivate")
-        API = self.object
-        # ~ API.app.disconnect_by_func(self.processInputCb)
 
     def add_menuitem(self, *args):
         if self.app.get_widget('workspace-menu-multiple-menu-export-item-export2dir') is None:
+            factory = self.app.get_service('factory')
             submenu_export = self.app.get_widget('workspace-menu-selection-submenu-export')
-            menuitem = self.factory.create_menuitem('export-to-dir', _('...to directory'), self.export, None, [])
+            menuitem = factory.create_menuitem('export-to-dir', _('...to directory'), self.export, None, [])
             submenu_export.append_item(menuitem)
             self.app.add_widget('workspace-menu-multiple-menu-export-item-export2dir', menuitem)
 
 
     def export(self, *args):
-        items = self.workspace.get_selected_items()
+        factory = self.app.get_service('factory')
+        repository = self.app.get_service('repo')
+        util = self.app.get_service('util')
+        workspace = self.app.get_widget('workspace')
+        items = workspace.get_selected_items()
 
         def get_pattern_paths(item):
-            fields = self.util.get_fields(item.id)
+            fields = util.get_fields(item.id)
             paths = {}
             paths['Y'] = '%04d' % datetime.strptime(fields[0], '%Y%m%d').year
             paths['m'] = "%02d" % datetime.strptime(fields[0], '%Y%m%d').month
@@ -90,7 +87,6 @@ class Export2Dir(GObject.GObject, Peas.Activatable):
                         entry = toggle_pattern.get_next_sibling()
                         keys = [key for key in entry.get_text()]
                         for item in items:
-                            basename = os.path.basename(item.id)
                             thispath = []
                             thispath.append(dirpath)
                             paths = get_pattern_paths(item)
@@ -98,14 +94,14 @@ class Export2Dir(GObject.GObject, Peas.Activatable):
                                 thispath.append(paths[key])
                             target = os.path.join(*thispath)
                             os.makedirs(target, exist_ok = True)
-                            source = os.path.join(self.repository.docs, item.id)
-                            self.util.filename_export(source, target)
+                            source = os.path.join(repository.docs, item.id)
+                            util.filename_export(source, target)
                     else:
                         for item in items:
-                            source = os.path.join(self.repository.docs, item.id)
+                            source = os.path.join(repository.docs, item.id)
                             target = os.path.join(dirpath, os.path.basename(item.id))
-                            self.util.filename_export(source, target)
-                    self.util.directory_open(dirpath)
+                            util.filename_export(source, target)
+                    util.directory_open(dirpath)
             dialog.destroy()
 
         patterns = {
@@ -119,7 +115,7 @@ class Export2Dir(GObject.GObject, Peas.Activatable):
             'T': _('Sent to'),
         }
         window = self.app.get_widget('window')
-        filechooser = self.factory.create_filechooser(
+        filechooser = factory.create_filechooser(
                     parent=window,
                     title=_('Export selected items to this directory'),
                     target = 'FOLDER',
@@ -130,17 +126,17 @@ class Export2Dir(GObject.GObject, Peas.Activatable):
         # Export with pattern
         contents = filechooser.get_content_area()
         box = contents.get_first_child()
-        hbox = self.factory.create_box_horizontal()
-        chkPattern = self.factory.create_button_check(title=_('Export with pattern'), callback=None)
+        hbox = factory.create_box_horizontal()
+        chkPattern = factory.create_button_check(title=_('Export with pattern'), callback=None)
         etyPattern = Gtk.Entry()
         etyPattern.set_text('CYmGP') #/{target}/{Country}/{Year}/{month}/{Group}/{Purpose}
         widgets = []
         for key in patterns:
             label = Gtk.Label()
-            label.set_markup('<b>%s</b> = %s' % (key, patterns[key]))
+            label.set_markup(f'<b>{key}</b> = {patterns[key]}')
             label.set_xalign(0.0)
             widgets.append(label)
-        btpPattern = self.factory.create_button_popover(icon_name='miaz-info', widgets=widgets)
+        btpPattern = factory.create_button_popover(icon_name='com.github.t00m.MiAZ-dialog-information-symbolic', widgets=widgets)
         hbox.append(chkPattern)
         hbox.append(etyPattern)
         hbox.append(btpPattern)

@@ -1,5 +1,4 @@
 #!/usr/bin/python3
-# -*- coding: utf-8 -*-
 
 import semver
 current = open('MiAZ/data/docs/VERSION', 'r').read().strip()

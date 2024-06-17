@@ -1,5 +1,4 @@
 #!/usr/bin/python3
-# -*- coding: utf-8 -*-
 
 """
 # File: workspace.py
@@ -448,7 +447,7 @@ class MiAZWorkspace(Gtk.Box):
     def update(self, *args):
         # FIXME: come up w/ a solution to display only available values
         # ~ self.log.debug("Update requested")
-        dropdowns = self.app.get_widget('ws-dropdowns')
+        # ~ dropdowns = self.app.get_widget('ws-dropdowns')
         # ~ dd_date = dropdowns[Date.__gtype_name__]
         # ~ dd_prj = dropdowns[Project.__gtype_name__]
         # ~ filters = {}
@@ -493,7 +492,7 @@ class MiAZWorkspace(Gtk.Box):
                         key = fields[nkey]
                         try:
                             desc[skey] = self.cache[skey][key]
-                        except:
+                        except KeyError:
                             desc[skey] = self.util.filename_date_human_simple(key)
                             if desc[skey] is None:
                                 active = False
@@ -513,7 +512,7 @@ class MiAZWorkspace(Gtk.Box):
                         # Description
                         try:
                             desc[skey] = self.cache[skey][key]
-                        except:
+                        except KeyError:
                             desc[skey] = config.get(key)
                             if desc[skey] is None:
                                 active = False
@@ -607,7 +606,7 @@ class MiAZWorkspace(Gtk.Box):
         # Convert timestamp to timedate object and cache it
         try:
             item_dt = self.datetimes[item.date]
-        except:
+        except KeyError:
             item_dt = self.util.string_to_datetime(item.date)
             self.datetimes[item.date] = item_dt
 
@@ -664,7 +663,7 @@ class MiAZWorkspace(Gtk.Box):
 
         try:
             project = dd_prj.get_selected_item().id
-        except:
+        except AttributeError:
             project = 'Any'
 
         if project != 'None':

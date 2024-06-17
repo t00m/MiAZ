@@ -1,5 +1,4 @@
 #!/usr/bin/python3
-# -*- coding: utf-8 -*-
 
 """
 # File: projects.py
@@ -61,7 +60,7 @@ class MiAZProject(GObject.GObject):
         """
         try:
             docs = self.projects[project]
-            if not doc in docs:
+            if doc not in docs:
                 docs.append(doc)
                 self.projects[project] = docs
         except KeyError:

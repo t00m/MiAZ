@@ -1,5 +1,4 @@
 #!/usr/bin/python3
-# -*- coding: utf-8 -*-
 
 """
 # File: assistant.py
@@ -9,19 +8,10 @@
 """
 
 import os
-import sys
 from enum import IntEnum
-from abc import abstractmethod
 from gettext import gettext as _
 
-import gi
-gi.require_version('Gtk', '4.0')
-gi.require_version('GdkPixbuf', '2.0')
-from gi.repository import Gio
-from gi.repository import GLib
 from gi.repository import Gtk
-from gi.repository import Pango
-from gi.repository.GdkPixbuf import Pixbuf
 
 from MiAZ.backend.log import MiAZLog
 from MiAZ.frontend.desktop.widgets.configview import MiAZCountries
@@ -63,6 +53,8 @@ class MiAZAssistantRepo(MiAZAssistant):
     def __init__(self, app):
         super(MiAZAssistant, self).__init__()
         super().__init__(app)
+        self.app = app
+        ENV = self.app.get_env()
 
         # Pages
         for title in [_('Welcome'), _('Repository'), _('Summary')]:
@@ -138,7 +130,6 @@ class MiAZAssistantRepo(MiAZAssistant):
         filechooser.show()
 
     def on_filechooser_response_source(self, dialog, response, data=None):
-        use_repo = False
         if response == Gtk.ResponseType.ACCEPT:
             content_area = dialog.get_content_area()
             box = content_area.get_first_child()
@@ -175,14 +166,14 @@ class MiAZAssistantRepo(MiAZAssistant):
         repository = self.app.get_service('repo')
         conf_app = self.app.get_config('App')
         dirpath = self.repopath
-        if repo.validate(dirpath):
+        if repository.validate(dirpath):
             self.log.debug("Directory '%s' is a MiAZ Repository", dirpath)
             if len(conf_app.get('source')) == 0:
                 conf_app.set('source', dirpath)
-            repo.load(dirpath)
+            repository.load(dirpath)
         else:
             self.log.debug("Directory '%s' is not a MiAZ repository", dirpath)
-            repo.init(dirpath)
+            repository.init(dirpath)
 
         # ~ conf_app = self.app.get_config('App')
         # ~ conf_app.set('source', dirpath)

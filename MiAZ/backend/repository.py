@@ -1,5 +1,4 @@
 #!/usr/bin/python3
-# -*- coding: utf-8 -*-
 
 """
 # File: repository.py
@@ -98,7 +97,7 @@ class MiAZRepository(GObject.GObject):
                 conf['dir_conf'] = os.path.join(conf['dir_docs'], '.conf')
                 if not os.path.exists(conf['dir_conf']):
                     self.init(conf['dir_docs'])
-            except Exception as warning:
+            except Exception:
                 self.log.warning("Repository configuration couldn't be loaded for repo_id '%s'", repo_id)
                 conf = {}
         return conf

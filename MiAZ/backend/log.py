@@ -1,5 +1,5 @@
 #!/usr/bin/python
-# -*- coding: utf-8 -*-
+
 """
 # File: log.py
 # Author: Tomás Vírseda

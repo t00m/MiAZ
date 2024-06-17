@@ -109,13 +109,13 @@ gettext.install('miaz', ENV['APP']['LOCALEDIR'])
 try:
     locale.bindtextdomain('miaz', ENV['APP']['LOCALEDIR'])
     locale.textdomain('miaz')
-except:
+except Exception:
     log.error('Cannot set locale.')
 
 try:
     gettext.bindtextdomain('miaz', ENV['APP']['LOCALEDIR'])
     gettext.textdomain('miaz')
-except:
+except Exception:
     log.error('Cannot load translations.')
 
 

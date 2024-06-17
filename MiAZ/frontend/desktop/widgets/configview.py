@@ -1,5 +1,4 @@
 #!/usr/bin/python3
-# -*- coding: utf-8 -*-
 
 """
 # File: configview.py
@@ -9,11 +8,8 @@
 """
 
 import os
-from datetime import datetime
 from gettext import gettext as _
 
-from gi.repository import Gio
-from gi.repository import GLib
 from gi.repository import Gtk
 
 from MiAZ.backend.log import MiAZLog
@@ -138,7 +134,6 @@ class MiAZRepositories(MiAZConfigView):
     def _on_item_available_remove(self, *args):
         selected_item = self.viewAv.get_selected()
         items_available = self.config.load_available()
-        items_used = self.config.load_used()
         item_type = self.config.model
         i_title = item_type.__title__
 
@@ -159,7 +154,6 @@ class MiAZRepositories(MiAZConfigView):
             dialog.show()
 
     def _on_item_used_add(self, *args):
-        items_available = self.config.load_available()
         items_used = self.config.load_used()
         selected_item = self.viewAv.get_selected()
         is_used = selected_item.id in items_used
@@ -327,7 +321,6 @@ class MiAZProjects(MiAZConfigView):
     def _on_item_available_remove(self, *args):
         selected_item = self.viewAv.get_selected()
         items_available = self.config.load_available()
-        items_used = self.config.load_used()
         item_type = self.config.model
         i_title = item_type.__title__
 
@@ -348,7 +341,6 @@ class MiAZProjects(MiAZConfigView):
             dialog.show()
 
     def _on_item_used_add(self, *args):
-        items_available = self.config.load_available()
         items_used = self.config.load_used()
         selected_item = self.viewAv.get_selected()
         is_used = selected_item.id in items_used
@@ -395,73 +387,6 @@ class MiAZProjects(MiAZConfigView):
             dialog.set_modal(True)
             dialog.show()
 
-class MiAZDates(Gtk.Box):
-    """"""
-    __gtype_name__ = 'MiAZDates'
-
-    def __init__(self, app):
-        super(MiAZDates, self).__init__(orientation=Gtk.Orientation.VERTICAL)
-        hbox = self.factory.create_box_horizontal()
-        label = Gtk.Label()
-        calendar = Gtk.Calendar()
-        btnDate = self.factory.create_button_popover(icon_name='miaz-res-date', widgets=[calendar])
-        hbox.append(btnDate)
-        hbox.append(label)
-        frame = Gtk.Frame()
-        cv = MiAZColumnViewMassRename(self.app)
-        cv.get_style_context().add_class(class_name='monospace')
-        cv.set_hexpand(True)
-        cv.set_vexpand(True)
-        frame.set_child(cv)
-        self.append(hbox)
-        self.append(frame)
-        sdate = datetime.strftime(datetime.now(), '%Y%m%d')
-        iso8601 = "%sT00:00:00Z" % sdate
-        calendar.connect('day-selected', self.calendar_day_selected, label, cv, self.selected_items)
-        calendar.select_day(GLib.DateTime.new_from_iso8601(iso8601))
-        calendar.emit('day-selected')
-        window = self.app.get_widget('window')
-        dialog = self.factory.create_dialog_question(window, _('Mass renaming'), box, width=640, height=480)
-        dialog.connect('response', self._on_mass_action_rename_date_response, calendar)
-        dialog.show()
-
-    def calendar_day_selected(self, calendar, label, columnview, items):
-        adate = calendar.get_date()
-        y = "%04d" % adate.get_year()
-        m = "%02d" % adate.get_month()
-        d = "%02d" % adate.get_day_of_month()
-        sdate = "%s%s%s" % (y, m, d)
-        ddate = datetime.strptime(sdate, '%Y%m%d')
-        label.set_text(ddate.strftime('%A, %B %d %Y'))
-        citems = []
-        for item in items:
-            source = os.path.basename(item.id)
-            name, ext = self.util.filename_details(source)
-            lname = name.split('-')
-            lname[0] = sdate
-            target = "%s.%s" % ('-'.join(lname), ext)
-            citems.append(File(id=source, title=target))
-        columnview.update(citems)
-
-
-    def _on_mass_action_rename_date_response(self, dialog, response, calendar):
-        if response == Gtk.ResponseType.ACCEPT:
-            adate = calendar.get_date()
-            y = "%04d" % adate.get_year()
-            m = "%02d" % adate.get_month()
-            d = "%02d" % adate.get_day_of_month()
-            sdate = "%s%s%s" % (y, m, d)
-            for item in self.selected_items:
-                bsource = os.path.basename(item.id)
-                source = os.path.join(self.repository.docs, bsource)
-                name, ext = self.util.filename_details(source)
-                lname = name.split('-')
-                lname[0] = sdate
-                btarget = "%s.%s" % ('-'.join(lname), ext)
-                target = os.path.join(self.repository.docs, btarget)
-                self.util.filename_rename(source, target)
-        dialog.destroy()
-
 class MiAZUserPlugins(MiAZConfigView):
     """Manage user plugins from Repo Settings. Edit disabled"""
     __gtype_name__ = 'MiAZUserPlugins'
@@ -499,7 +424,6 @@ class MiAZUserPlugins(MiAZConfigView):
 
     def _update_view_used(self):
         plugin_manager = self.app.get_service('plugin-manager')
-        plugins_used = self.config.load_used()
         items = []
         item_type = self.config.model
         for plugin in plugin_manager.plugins:
@@ -534,7 +458,6 @@ class MiAZUserPlugins(MiAZConfigView):
 
     def _on_item_used_add(self, *args):
         plugin_manager = self.app.get_service('plugin-manager')
-        plugins_available = self.config.load_available()
         plugins_used = self.config.load_used()
         selected_plugin = self.viewAv.get_selected()
         if selected_plugin is None:

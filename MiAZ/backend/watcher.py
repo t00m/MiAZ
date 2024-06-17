@@ -1,5 +1,4 @@
 #!/usr/bin/python3
-# -*- coding: utf-8 -*-
 
 """
 # File: watcher.py
@@ -82,12 +81,12 @@ class MiAZWatcher(GObject.GObject):
 
         after = self.__files_with_timestamp(self.dirpath)
 
-        added = [f for f in after.keys() if not f in self.before.keys()]
-        removed = [f for f in self.before.keys() if not f in after.keys()]
+        added = [f for f in after.keys() if f not in self.before.keys()]
+        removed = [f for f in self.before.keys() if f not in after.keys()]
         modified = []
 
         for f in self.before.keys():
-            if not f in removed:
+            if f not in removed:
                 if os.path.getmtime(f) != self.before.get(f):
                     modified.append(f)
 

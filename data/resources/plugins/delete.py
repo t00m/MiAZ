@@ -1,5 +1,5 @@
 #!/usr/bin/python3
-# -*- coding: utf-8 -*-
+# pylint: disable=E1101
 
 """
 # File: delete.py
@@ -9,7 +9,6 @@
 """
 
 import os
-import tempfile
 from gettext import gettext as _
 
 from gi.repository import Gtk
@@ -27,42 +26,40 @@ class MiAZDeleteItemPlugin(GObject.GObject, Peas.Activatable):
 
     def __init__(self):
         self.log = MiAZLog('Plugin.DeleteItem')
+        self.app = None
 
     def do_activate(self):
-        API = self.object
-        self.app = API.app
-        self.actions = self.app.get_service('actions')
-        self.factory = self.app.get_service('factory')
-        self.config = self.app.get_config_dict()
-        self.util = self.app.get_service('util')
-        self.repository = self.app.get_service('repo')
-        self.workspace = API.app.get_widget('workspace')
-        self.workspace.connect('workspace-loaded', self.add_menuitem)
-
+        self.app = self.object.app
+        workspace = self.app.get_widget('workspace')
+        workspace.connect('workspace-loaded', self.add_menuitem)
 
     def do_deactivate(self):
         self.log.debug("Plugin deactivation not implemented")
-        API = self.object
 
     def add_menuitem(self, *args):
         if self.app.get_widget('workspace-menu-selection-section-danger-menuitem-delete') is None:
+            factory = self.app.get_service('factory')
             section_danger = self.app.get_widget('workspace-menu-selection-section-danger')
-            menuitem = self.factory.create_menuitem('delete', _('Delete documents'), self.document_delete, None, [])
+            menuitem = factory.create_menuitem('delete', _('Delete documents'), self.document_delete, None, [])
             self.app.add_widget('workspace-menu-selection-section-danger-menuitem-delete', menuitem)
             section_danger.append_item(menuitem)
 
     def document_delete(self, *args):
+        factory = self.app.get_service('factory')
+        repository = self.app.get_service('repo')
+        util = self.app.get_service('util')
+        workspace = self.app.get_widget('workspace')
         def dialog_response(dialog, response, items):
             if response == Gtk.ResponseType.ACCEPT:
                 for item in items:
-                    filepath = os.path.join(self.repository.docs, item.id)
-                    self.util.filename_delete(filepath)
+                    filepath = os.path.join(repository.docs, item.id)
+                    util.filename_delete(filepath)
             dialog.destroy()
 
         self.log.debug("Mass deletion")
-        items = self.workspace.get_selected_items()
+        items = workspace.get_selected_items()
         frame = Gtk.Frame()
-        box, view = self.factory.create_view(MiAZColumnViewMassDelete, _("Mass deletion"))
+        box, view = factory.create_view(MiAZColumnViewMassDelete, _("Mass deletion"))
         citems = []
         for item in items:
             citems.append(File(id=item.id, title=os.path.basename(item.id)))
@@ -70,6 +67,6 @@ class MiAZDeleteItemPlugin(GObject.GObject, Peas.Activatable):
         frame.set_child(view)
         box.append(frame)
         window = self.app.get_widget('window')
-        dialog = self.factory.create_dialog_question(window, _('Mass deletion'), box, width=1024, height=600)
+        dialog = factory.create_dialog_question(window, _('Mass deletion'), box, width=1024, height=600)
         dialog.connect('response', dialog_response, items)
         dialog.show()

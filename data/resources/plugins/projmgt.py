@@ -1,5 +1,5 @@
 #!/usr/bin/python3
-# -*- coding: utf-8 -*-
+# pylint: disable=E1101
 
 """
 # File: export2csv.py
@@ -9,7 +9,6 @@
 """
 
 import os
-import tempfile
 from gettext import gettext as _
 
 from gi.repository import Gio
@@ -22,14 +21,10 @@ from MiAZ.backend.models import File
 from MiAZ.backend.models import Project
 from MiAZ.frontend.desktop.widgets.configview import MiAZCountries
 from MiAZ.frontend.desktop.widgets.configview import MiAZGroups
-from MiAZ.frontend.desktop.widgets.configview import MiAZPeople
 from MiAZ.frontend.desktop.widgets.configview import MiAZPurposes
 from MiAZ.frontend.desktop.widgets.configview import MiAZPeopleSentBy
 from MiAZ.frontend.desktop.widgets.configview import MiAZPeopleSentTo
 from MiAZ.frontend.desktop.widgets.configview import MiAZProjects
-from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewWorkspace
-from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewMassRename
-from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewMassDelete
 from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewMassProject
 
 Configview = {}
@@ -48,22 +43,18 @@ class MiAZToolbarProjectMgtPlugin(GObject.GObject, Peas.Activatable):
 
     def __init__(self):
         self.log = MiAZLog('Plugin.ProjectMgt')
+        self.app = None
 
     def do_activate(self):
-        API = self.object
-        self.app = API.app
-        self.actions = self.app.get_service('actions')
-        self.factory = self.app.get_service('factory')
-        self.util = self.app.get_service('util')
-        self.projects = self.app.get_service('Projects')
-        self.workspace = API.app.get_widget('workspace')
-        self.workspace.connect('workspace-loaded', self.add_menuitem)
+        self.app = self.object.app
+        workspace = self.app.get_widget('workspace')
+        workspace.connect('workspace-loaded', self.add_menuitem)
 
     def do_deactivate(self):
         self.log.debug("Plugin deactivation not implemented")
-        API = self.object
 
     def add_menuitem(self, *args):
+        factory = self.app.get_service('factory')
         section_common_in = self.app.get_widget('workspace-menu-selection-section-common-in')
         if self.app.get_widget('workspace-menu-selection-menu-project') is None:
             submenu_project = Gio.Menu.new()
@@ -74,17 +65,20 @@ class MiAZToolbarProjectMgtPlugin(GObject.GObject, Peas.Activatable):
             section_common_in.append_item(menu_project)
             self.app.add_widget('workspace-menu-selection-menu-project', menu_project)
             self.app.add_widget('workspace-menu-selection-submenu-project', submenu_project)
-            menuitem = self.factory.create_menuitem('project-manage', _('...Manage projects'), self.project_manage, None, [])
+            menuitem = factory.create_menuitem('project-manage', _('...Manage projects'), self.project_manage, None, [])
             submenu_project.append_item(menuitem)
-            menuitem = self.factory.create_menuitem('project-assign', _('...assign to project'), self.project_assign, None, [])
+            menuitem = factory.create_menuitem('project-assign', _('...assign to project'), self.project_assign, None, [])
             submenu_project.append_item(menuitem)
-            menuitem = self.factory.create_menuitem('project-withdraw', _('...withdraw from project'), self.project_withdraw, None, [])
+            menuitem = factory.create_menuitem('project-withdraw', _('...withdraw from project'), self.project_withdraw, None, [])
             submenu_project.append_item(menuitem)
 
 
     def project_assign(self, *args):
+        actions = self.app.get_service('actions')
+        factory = self.app.get_service('factory')
         item_type = Project
-        items = self.workspace.get_selected_items()
+        workspace = self.app.get_widget('workspace')
+        items = workspace.get_selected_items()
 
         def dialog_response(dialog, response, dropdown, items):
             if response == Gtk.ResponseType.ACCEPT:
@@ -92,73 +86,80 @@ class MiAZToolbarProjectMgtPlugin(GObject.GObject, Peas.Activatable):
                 docs = []
                 for item in items:
                     docs.append(os.path.basename(item.id))
-                self.projects.add_batch(pid, docs)
+                projects = self.app.get_service('Projects')
+                projects.add_batch(pid, docs)
                 workspace = self.app.get_widget('workspace')
                 workspace.update()
             dialog.destroy()
 
-        self.config = self.app.get_config_dict()
+        config = self.app.get_config_dict()
         i_type = item_type.__gtype_name__
-        box = self.factory.create_box_vertical(spacing=6, vexpand=True, hexpand=True)
-        dropdown = self.factory.create_dropdown_generic(Project)
-        self.config[i_type].connect('used-updated', self.actions.dropdown_populate, dropdown, item_type, False, False)
-        self.actions.dropdown_populate(self.config[i_type], dropdown, Project, any_value=False)
-        btnManage = self.factory.create_button('miaz-res-manage', '')
-        btnManage.connect('clicked', self.actions.manage_resource, Configview['Project'](self.app))
-        label = self.factory.create_label(_('Assign the following documents to this project: '))
+        box = factory.create_box_vertical(spacing=6, vexpand=True, hexpand=True)
+        dropdown = factory.create_dropdown_generic(Project)
+        config[i_type].connect('used-updated', actions.dropdown_populate, dropdown, item_type, False, False)
+        actions.dropdown_populate(config[i_type], dropdown, Project, any_value=False)
+        btnManage = factory.create_button('miaz-res-manage', '')
+        btnManage.connect('clicked', actions.manage_resource, Configview['Project'](self.app))
+        label = factory.create_label(_('Assign the following documents to this project: '))
         frame = Gtk.Frame()
         cv = MiAZColumnViewMassProject(self.app)
         cv.get_style_context().add_class(class_name='caption')
         cv.set_hexpand(True)
         cv.set_vexpand(True)
         citems = []
+        projects = self.app.get_service('Projects')
         for item in items:
-            tprojects = ', '.join([self.projects.description(pid) for pid in self.projects.assigned_to(item.id)])
-            citems.append(File(id=item.id, title="<b>%s</b>" % tprojects))
+            tprojects = ', '.join([projects.description(pid) for pid in projects.assigned_to(item.id)])
+            citems.append(File(id=item.id, title=f"<b>{tprojects}</b>"))
         cv.update(citems)
         frame.set_child(cv)
-        hbox = self.factory.create_box_horizontal(hexpand=False, vexpand=False)
+        hbox = factory.create_box_horizontal(hexpand=False, vexpand=False)
         hbox.append(label)
         hbox.append(dropdown)
         hbox.append(btnManage)
         box.append(hbox)
         box.append(frame)
         window = self.app.get_widget('window')
-        dialog = self.factory.create_dialog_question(window, _('Assign to a project'), box, width=1024, height=600)
+        dialog = factory.create_dialog_question(window, _('Assign to a project'), box, width=1024, height=600)
         dialog.connect('response', dialog_response, dropdown, items)
         dialog.show()
 
     def project_withdraw(self, *args):
+        actions = self.app.get_service('actions')
+        factory = self.app.get_service('factory')
+        workspace = self.app.get_widget('workspace')
         item_type = Project
-        items = self.workspace.get_selected_items()
+        items = workspace.get_selected_items()
 
         def dialog_response(dialog, response, dropdown, items):
             if response == Gtk.ResponseType.ACCEPT:
+                projects = self.app.get_service('Projects')
                 pid = dropdown.get_selected_item().id
                 docs = []
                 for item in items:
                     docs.append(os.path.basename(item.id))
-                self.projects.remove_batch(pid, docs)
+                projects.remove_batch(pid, docs)
                 workspace = self.app.get_widget('workspace')
                 workspace.update()
             dialog.destroy()
 
-        self.config = self.app.get_config_dict()
+        config = self.app.get_config_dict()
         i_type = item_type.__gtype_name__
-        box = self.factory.create_box_vertical(spacing=6, vexpand=True, hexpand=True)
-        dropdown = self.factory.create_dropdown_generic(Project)
-        self.config[i_type].connect('used-updated', self.actions.dropdown_populate, dropdown, item_type, False, False)
+        box = factory.create_box_vertical(spacing=6, vexpand=True, hexpand=True)
+        dropdown = factory.create_dropdown_generic(Project)
+        config[i_type].connect('used-updated', actions.dropdown_populate, dropdown, item_type, False, False)
 
         # Get projects
+        projects = self.app.get_service('Projects')
         sprojects = set()
         for item in items:
-            for project in self.projects.assigned_to(item.id):
+            for project in projects.assigned_to(item.id):
                 sprojects.add(project)
 
-        self.actions.dropdown_populate(self.config[i_type], dropdown, Project, any_value=False, only_include=list(sprojects))
-        btnManage = self.factory.create_button('miaz-res-manage', '')
-        btnManage.connect('clicked', self.actions.manage_resource, Configview['Project'](self.app))
-        label = self.factory.create_label(_('Withdraw the following documents from this project: '))
+        actions.dropdown_populate(config[i_type], dropdown, Project, any_value=False, only_include=list(sprojects))
+        btnManage = factory.create_button('miaz-res-manage', '')
+        btnManage.connect('clicked', actions.manage_resource, Configview['Project'](self.app))
+        label = factory.create_label(_('Withdraw the following documents from this project: '))
         frame = Gtk.Frame()
         cv = MiAZColumnViewMassProject(self.app)
         cv.get_style_context().add_class(class_name='caption')
@@ -166,23 +167,24 @@ class MiAZToolbarProjectMgtPlugin(GObject.GObject, Peas.Activatable):
         cv.set_vexpand(True)
         citems = []
         for item in items:
-            tprojects = ', '.join([self.projects.description(pid) for pid in self.projects.assigned_to(item.id)])
-            citems.append(File(id=item.id, title="<b>%s</b>" % tprojects))
+            tprojects = ', '.join([projects.description(pid) for pid in projects.assigned_to(item.id)])
+            citems.append(File(id=item.id, title=f"<b>{tprojects}</b>"))
         cv.update(citems)
         frame.set_child(cv)
-        hbox = self.factory.create_box_horizontal(hexpand=False, vexpand=False)
+        hbox = factory.create_box_horizontal(hexpand=False, vexpand=False)
         hbox.append(label)
         hbox.append(dropdown)
         hbox.append(btnManage)
         box.append(hbox)
         box.append(frame)
         window = self.app.get_widget('window')
-        dialog = self.factory.create_dialog_question(window, _('Assign to a project'), box, width=1024, height=600)
+        dialog = factory.create_dialog_question(window, _('Assign to a project'), box, width=1024, height=600)
         dialog.connect('response', dialog_response, dropdown, items)
         dialog.show()
 
     def project_manage(self, *args):
-        self.actions.show_repository_settings()
+        actions = self.app.get_service('actions')
+        actions.show_repository_settings()
         winRepoSettings = self.app.get_widget('settings-repo')
         if winRepoSettings is not None:
             notebook = self.app.get_widget('repository-settings-notebook')

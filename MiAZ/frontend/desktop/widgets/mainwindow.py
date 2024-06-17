@@ -1,5 +1,4 @@
 #!/usr/bin/python3
-# -*- coding: utf-8 -*-
 
 """
 # File: mainwindow.py
@@ -8,10 +7,11 @@
 # Description: Setup widget for the main window
 """
 
-from gi.repository import Gdk, Gio, GLib, Gtk
+from gettext import gettext as _
+
+from gi.repository import Gdk, Gio, Gtk
 
 from MiAZ.backend.log import MiAZLog
-from MiAZ.frontend.desktop.widgets.statusbar import MiAZStatusbar
 from MiAZ.frontend.desktop.widgets.searchbar import SearchBar
 
 

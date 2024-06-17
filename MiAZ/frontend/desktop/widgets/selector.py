@@ -1,5 +1,4 @@
 #!/usr/bin/python3
-# -*- coding: utf-8 -*-
 
 """
 # File: selector.py
@@ -11,11 +10,9 @@
 import os
 from gettext import gettext as _
 
-from gi.repository import Gio
 from gi.repository import Gtk
 
 from MiAZ.backend.log import MiAZLog
-from MiAZ.backend.models import Project, Repository
 from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewDocuments
 from MiAZ.frontend.desktop.widgets.dialogs import MiAZDialogAdd
 from MiAZ.frontend.desktop.widgets.dialogs import CustomDialog
@@ -147,7 +144,6 @@ class MiAZSelector(Gtk.Box):
         # ~ self.log.debug("Setup selector for %s", self.config.config_for)
 
     def _on_item_used_add(self, *args):
-        changed = False
         items_used = self.config.load_used()
         selected_item = self.viewAv.get_selected()
         items_used[selected_item.id] = selected_item.title
@@ -160,8 +156,6 @@ class MiAZSelector(Gtk.Box):
         if selected_item is None:
             return
 
-        value_used = False
-        changed = False
         items_used = self.config.load_used()
         items_available = self.config.load_available()
         is_used, docs = self.util.field_used(self.repository.docs, self.config.model, selected_item.id)
