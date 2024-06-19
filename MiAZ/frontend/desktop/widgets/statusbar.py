@@ -52,6 +52,6 @@ class MiAZStatusbar(Gtk.Box):
         self.label_message.set_markup(text)
 
     def repo(self, name: str) -> None:
-        self.label_repo.set_text('[%s]' % name)
+        self.label_repo.set_text(f'[{name}]')
 
 

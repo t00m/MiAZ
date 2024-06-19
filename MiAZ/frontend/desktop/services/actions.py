@@ -51,7 +51,7 @@ class MiAZActions(GObject.GObject):
     def document_display(self, doc):
         srvutl = self.app.get_service('util')
         srvrepo = self.app.get_service('repo')
-        self.log.debug("Displaying %s", doc)
+        self.log.debug(f"Displaying {doc}")
         filepath = os.path.join(srvrepo.docs, doc)
         srvutl.filename_display(filepath)
 
@@ -97,9 +97,9 @@ class MiAZActions(GObject.GObject):
 
         model.remove_all()
         if any_value:
-            model.append(item_type(id='Any', title=_('Any %s') % i_title.lower()))
+            model.append(item_type(id='Any', title=_(f'Any {i_title.lower()}')))
         if none_value:
-            model.append(item_type(id='None', title=_('No %s') % i_title.lower()))
+            model.append(item_type(id='None', title=_(f'No {i_title.lower()}')))
 
         for key in items:
             accepted = True
@@ -120,7 +120,7 @@ class MiAZActions(GObject.GObject):
                 if item_type == Repository:
                     title = key.replace('_', ' ')
                 else:
-                    title = "%s - %s" % (key, title)
+                    title = f"{key} - {title}"
                 model.append(item_type(id=key, title=title))
 
         if len(model) == 0:
@@ -143,7 +143,7 @@ class MiAZActions(GObject.GObject):
                 gfile = filechooser.get_file()
                 if gfile is not None:
                     dirpath = gfile.get_path()
-                    self.log.debug("Walk directory %s recursively? %s", dirpath, recursive)
+                    self.log.debug(f"Walk directory {dirpath} recursively? {recursive}")
                     if recursive:
                         files = srvutl.get_files_recursively(dirpath)
                     else:
@@ -172,8 +172,8 @@ class MiAZActions(GObject.GObject):
         factory = self.app.get_service('factory')
         i_title = item_type.__title__
         i_title_plural = item_type.__title_plural__
-        file_available = '%s-available.json' % i_title_plural.lower()
-        file_used = '%s-used.json' % i_title_plural.lower()
+        file_available = f'{i_title_plural.lower()}-available.json'
+        file_used = f'{i_title_plural.lower()}-used.json'
 
         def filechooser_response(dialog, response, data):
             if response == Gtk.ResponseType.ACCEPT:
@@ -186,9 +186,9 @@ class MiAZActions(GObject.GObject):
                     filepath = gfile.get_path()
                     files = srvutl.zip_list(filepath)
                     available_exists = file_available in files
-                    self.log.debug("%s exists? %s", file_available, available_exists)
+                    self.log.debug(f"{file_available} exists? {available_exists}")
                     used_exists = file_used in files
-                    self.log.debug("%s exists? %s", file_used, used_exists)
+                    self.log.debug(f"{file_used} exists? {used_exists}")
                     if available_exists and used_exists:
                         ENV = self.app.get_env()
                         srvutl.unzip(filepath, ENV['LPATH']['TMP'])
@@ -201,9 +201,9 @@ class MiAZActions(GObject.GObject):
                         config_item.add_used_batch(used.items())
                         config_item.add_available_batch(available.items())
                         self.show_repository_settings()
-                        self.log.info("%s imported successfully", i_title_plural)
+                        self.log.info(f"{i_title_plural} imported successfully")
                     else:
-                        self.log.error("This is not a config file for %s", i_title_plural.lower())
+                        self.log.error(f"This is not a config file for {i_title_plural.lower()}")
             dialog.destroy()
 
         window = self.app.get_widget('window')
@@ -239,14 +239,14 @@ class MiAZActions(GObject.GObject):
                 if gfile is not None:
                     target_directory = gfile.get_path()
                     source_directory = pathlib.Path(os.path.join(repository.docs, '.conf'))
-                    config_name_available = "%s-available.json" % name_available
-                    config_name_used = "%s-used.json" % name_used
+                    config_name_available = f"{name_available}-available.json"
+                    config_name_used = f"{name_used}-used.json"
                     filenames = []
                     config_file_available = pathlib.Path(os.path.join(repository.docs, '.conf', config_name_available))
                     config_file_used = pathlib.Path(os.path.join(repository.docs, '.conf', config_name_used))
                     filenames.append(config_file_available)
                     filenames.append(config_file_used)
-                    target_filename = "miaz-%s-config-%s.zip" % (i_title_plural.lower(), srvutl.timestamp())
+                    target_filename = f"miaz-{i_title_plural.lower()}-config-{srvutl.timestamp()}.zip"
                     target_filepath = os.path.join(target_directory, target_filename)
                     with zipfile.ZipFile(target_filepath, mode="w") as zip_archive:
                         for file_path in filenames:
@@ -254,14 +254,14 @@ class MiAZActions(GObject.GObject):
                                 file_path,
                                 arcname=file_path.relative_to(source_directory)
                             )
-                    self.log.info("%s exported successfully to %s", i_title_plural, target_filepath)
+                    self.log.info(f"{i_title_plural} exported successfully to {target_filepath}")
                     self.show_repository_settings()
             dialog.destroy()
 
         window = self.app.get_widget('window')
         filechooser = factory.create_filechooser(
                     parent=window,
-                    title=_('Export the configuration for %s' % i_title_plural.lower()),
+                    title=_(f'Export the configuration for {i_title_plural.lower()}'),
                     target = 'FOLDER',
                     callback = filechooser_response,
                     data = None)
@@ -302,7 +302,7 @@ class MiAZActions(GObject.GObject):
         selector.set_vexpand(True)
         selector.update_views()
         window = self.app.get_widget('window')
-        dialog = factory.create_dialog(window, _('Manage %s') % config_for, box, 800, 600)
+        dialog = factory.create_dialog(window, _(f'Manage {config_for}'), box, 800, 600)
         dialog.show()
 
     def show_app_settings(self, *args):
@@ -333,13 +333,13 @@ class MiAZActions(GObject.GObject):
         about.set_logo_icon_name(ENV['APP']['ID'])
         about.set_program_name(ENV['APP']['name'])
         about.set_version(ENV['APP']['VERSION'])
-        authors = ['%s %s' % (ENV['APP']['author'], ENV['APP']['author_website'])]
+        authors = [f"{ENV['APP']['author']} {ENV['APP']['author_website']}"]
         about.set_authors(authors)
         artists = ['Flags borrowed from FlagKit project https://github.com/madebybowtie/FlagKit']
         artists.append('Icons borrowed from GNOME contributors https://www.gnome.org')
         about.set_artists(artists)
         about.set_license_type(Gtk.License.GPL_3_0_ONLY)
-        about.set_copyright('© 2024 %s' % ENV['APP']['author'])
+        about.set_copyright(f"© 2024 {ENV['APP']['author']}")
         about.set_website('https://github.com/t00m/MiAZ')
         about.set_website_label('Github MiAZ repository')
         about.set_comments(ENV['APP']['description'])

@@ -58,7 +58,7 @@ class MiAZToolbarRenameItemPlugin(GObject.GObject, Peas.Activatable):
             self.log.debug("No item selected")
 
     def document_rename_single(self, doc):
-        self.log.debug("Rename %s", doc)
+        self.log.debug(f"Rename {doc}")
         actions = self.app.get_service('actions')
         rename = self.app.get_widget('rename')
         rename.set_data(doc)

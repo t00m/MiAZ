@@ -18,11 +18,6 @@ from MiAZ.frontend.desktop.widgets.searchbar import SearchBar
 class MiAZMainWindow(Gtk.Box):
     def __init__(self, app, edit=True):
         self.app = app
-        self.actions = self.app.get_service('actions')
-        self.util = self.app.get_service('util')
-        self.icm = self.app.get_service('icons')
-        self.factory = self.app.get_service('factory')
-        self.repository = self.app.get_service('repository')
         self.log = MiAZLog('MiAZ.Selector')
         super(MiAZMainWindow, self).__init__(orientation=Gtk.Orientation.VERTICAL, hexpand=True, vexpand=True, spacing=0)
         self.win = self.app.get_widget('window')
@@ -58,6 +53,7 @@ class MiAZMainWindow(Gtk.Box):
         self.win.add_controller(evk)
 
     def _setup_headerbar_left(self):
+        factory = self.app.get_service('factory')
         headerbar = self.app.get_widget('headerbar')
 
         # System menu
@@ -68,14 +64,15 @@ class MiAZMainWindow(Gtk.Box):
         headerbar.pack_start(menubutton)
 
         # Filters and Search box
-        hbox = self.factory.create_box_horizontal(margin=0, spacing=0)
+        hbox = factory.create_box_horizontal(margin=0, spacing=0)
         hbox.get_style_context().add_class(class_name='linked')
         self.app.add_widget('headerbar-left-box', hbox)
         headerbar.pack_start(hbox)
 
     def _setup_headerbar_right(self):
+        factory = self.app.get_service('factory')
         headerbar = self.app.get_widget('headerbar')
-        hbox = self.factory.create_box_horizontal(margin=0, spacing=0)
+        hbox = factory.create_box_horizontal(margin=0, spacing=0)
         hbox.get_style_context().add_class(class_name='linked')
         self.app.add_widget('headerbar-right-box', hbox)
         headerbar.pack_end(hbox)
@@ -91,6 +88,8 @@ class MiAZMainWindow(Gtk.Box):
         return self.stack
 
     def _setup_menu_app(self):
+        actions = self.app.get_service('actions')
+        factory = self.app.get_service('factory')
         menu = self.app.add_widget('window-menu-app', Gio.Menu.new())
         section_common_in = self.app.add_widget('app-menu-section-common-in', Gio.Menu.new())
         section_common_out = self.app.add_widget('app-menu-section-common-out', Gio.Menu.new())
@@ -98,29 +97,30 @@ class MiAZMainWindow(Gtk.Box):
         menu.append_section(None, section_common_in)
         menu.append_section(None, section_common_out)
         menu.append_section(None, section_danger)
-        menuitem = self.factory.create_menuitem('app-settings', _('Application settings'), self.actions.show_app_settings, None, ['<Control>s'])
+        menuitem = factory.create_menuitem('app-settings', _('Application settings'), actions.show_app_settings, None, ['<Control>s'])
         section_common_in.append_item(menuitem)
-        menuitem = self.factory.create_menuitem('app-help', _('Help'), self.actions.show_app_help, None, ['<Control>h'])
+        menuitem = factory.create_menuitem('app-help', _('Help'), actions.show_app_help, None, ['<Control>h'])
         section_common_out.append_item(menuitem)
-        menuitem = self.factory.create_menuitem('app-about', _('About MiAZ'), self.actions.show_app_about, None, ['<Control>h'])
+        menuitem = factory.create_menuitem('app-about', _('About MiAZ'), actions.show_app_about, None, ['<Control>h'])
         section_common_out.append_item(menuitem)
-        menuitem = self.factory.create_menuitem('app-quit', _('Exit application'), self.actions.exit_app, None, ['<Control>q'])
+        menuitem = factory.create_menuitem('app-quit', _('Exit application'), actions.exit_app, None, ['<Control>q'])
         section_danger.append_item(menuitem)
 
-        menubutton = Gtk.MenuButton(child=self.factory.create_button_content(icon_name='miaz-system-menu'))
+        menubutton = Gtk.MenuButton(child=factory.create_button_content(icon_name='miaz-system-menu'))
         popover = Gtk.PopoverMenu()
         popover.set_menu_model(menu)
         menubutton.set_popover(popover=popover)
         self.app.add_widget('headerbar-button-menu-system', menubutton)
 
     def show_workspace(self, *args):
-        self.actions.show_stack_page_by_name('workspace')
+        actions = self.app.get_service('actions')
+        actions.show_stack_page_by_name('workspace')
 
     def _on_key_press(self, event, keyval, keycode, state):
+        actions = self.app.get_service('actions')
         keyname = Gdk.keyval_name(keyval)
-        # ~ self.log.debug(keyname)
         if keyname == 'Escape':
-            self.actions.show_stack_page_by_name('workspace')
+            actions.show_stack_page_by_name('workspace')
         elif keyname == 'F3':
-            self.actions.toggle_workspace_filters()
+            actions.toggle_workspace_filters()
 

@@ -29,9 +29,8 @@ class MiAZProject(GObject.GObject):
         self.app = app
         conf = self.app.get_config_dict()
         self.config = conf['Project']
-        self.util = self.app.get_service('util')
-        self.repository = self.app.get_service('repo')
-        repo_dir_conf = self.repository.get('dir_conf')
+        repository = self.app.get_service('repo')
+        repo_dir_conf = repository.get('dir_conf')
         self.cnfprj = os.path.join(repo_dir_conf, 'projects.json')
         self.projects = {}
         if not os.path.exists(self.cnfprj):
@@ -44,10 +43,11 @@ class MiAZProject(GObject.GObject):
         """
         C0116: Missing function or method docstring (missing-function-docstring)
         """
+        repository = self.app.get_service('repo')
         to_delete = []
         for project in self.projects:
             for doc in self.docs_in_project(project):
-                docpath = os.path.join(self.repository.docs, doc)
+                docpath = os.path.join(repository.docs, doc)
                 if not os.path.exists(docpath):
                     to_delete.append((doc, project))
         for doc, project in to_delete:
@@ -65,7 +65,7 @@ class MiAZProject(GObject.GObject):
                 self.projects[project] = docs
         except KeyError:
             self.projects[project] = [doc]
-        self.log.debug("Added '%s' to Project '%s'", doc, project)
+        self.log.debug(f"Added '{doc}' to project '{project}'")
 
     def add_batch(self, project: str, docs: list) -> None:
         """
@@ -88,7 +88,7 @@ class MiAZProject(GObject.GObject):
                 if doc in docs:
                     found = True
                     docs.remove(doc)
-                    self.log.debug("Remove '%s' from Project '%s'", doc, prj)
+                    self.log.debug(f"Removed '{doc}' from project '{prj}'")
                     self.projects[prj] = docs
         else:
             # Delete document for a given project
@@ -97,14 +97,14 @@ class MiAZProject(GObject.GObject):
                 if doc in docs:
                     found = True
                     docs.remove(doc)
-                    self.log.debug("Remove '%s' from Project '%s'", doc, project)
+                    self.log.debug(f"Removed '{doc}' from project '{project}'")
                     self.projects[project] = docs
             except KeyError:
-                self.log.warning("Project '%s' doesn't exist", project)
+                self.log.warning(f"Project '{project}' doesn't exist")
         if found:
             self.save()
         else:
-            self.log.debug("Document '%s' wasn't deleted for any project", doc)
+            self.log.debug(f"Document '{doc}' does not belong to project {project}")
 
     def remove_batch(self, project:str, docs: list) -> None:
         """
@@ -149,9 +149,9 @@ class MiAZProject(GObject.GObject):
         C0116: Missing function or method docstring (missing-function-docstring)
         """
         for project in self.projects:
-            self.log.debug("Project: %s", project)
+            self.log.debug(f"Project: {project}")
             for doc in self.projects[project]:
-                self.log.debug("\tDoc: %s", doc)
+                self.log.debug(f"\tDoc: {doc}")
 
     def save(self) -> None:
         """
@@ -164,7 +164,8 @@ class MiAZProject(GObject.GObject):
         """
         C0116: Missing function or method docstring (missing-function-docstring)
         """
-        return self.util.json_load(self.cnfprj)
+        util = self.app.get_service('util')
+        return util.json_load(self.cnfprj)
 
     def description(self, pid):
         """

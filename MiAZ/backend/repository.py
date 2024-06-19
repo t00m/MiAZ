@@ -56,7 +56,7 @@ class MiAZRepository(GObject.GObject):
         try:
             conf_dir = os.path.join(path, '.conf')
             conf_file = os.path.join(conf_dir, 'repo.json')
-            self.log.debug("Validating repository '%s'", conf_file)
+            self.log.debug(f"Validating repository '{conf_file}'")
             if os.path.exists(conf_dir):
                 if os.path.exists(conf_file):
                     with open(conf_file, 'r') as fin:
@@ -65,7 +65,7 @@ class MiAZRepository(GObject.GObject):
                             valid = True
                         except Exception as error:
                             self.log.error(error)
-            self.log.debug("MiAZ Repository valid? %s", valid)
+            self.log.debug(f"Repository {conf_file} valid? {valid}")
         except Exception as warning:
             self.log.warning(warning)
         return valid
@@ -79,7 +79,7 @@ class MiAZRepository(GObject.GObject):
         with open(conf_file, 'w') as fout:
             json.dump(repoconf, fout, sort_keys=True, indent=4)
         self.config['App'].set('source', path)
-        self.log.debug("Repository initialited: '%s'", conf_file)
+        self.log.debug(f"Repository initialited: '{conf_file}'")
 
     def setup(self, repo_id: str = None):
         conf = {}
@@ -98,7 +98,7 @@ class MiAZRepository(GObject.GObject):
                 if not os.path.exists(conf['dir_conf']):
                     self.init(conf['dir_docs'])
             except Exception:
-                self.log.warning("Repository configuration couldn't be loaded for repo_id '%s'", repo_id)
+                self.log.warning(f"Repository configuration couldn't be loaded for repo_id '{repo_id}'")
                 conf = {}
         return conf
 
@@ -117,7 +117,7 @@ class MiAZRepository(GObject.GObject):
         watcher = MiAZWatcher(path)
         watcher.set_active(active=True)
         self.app.add_service('watcher', watcher)
-        self.log.debug("Repository configuration loaded correctly from: %s", repo_dir_conf)
+        self.log.debug(f"Repository configuration loaded correctly from: {repo_dir_conf}")
         self.emit('repository-switched')
 
     def get(self, key: str) -> str:

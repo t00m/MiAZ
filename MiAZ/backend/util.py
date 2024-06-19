@@ -57,28 +57,16 @@ class MiAZUtil(GObject.GObject):
         self.app = app
 
     def directory_open(self, dirpath: str):
-        os.system("xdg-open '%s'" % dirpath)
-        self.log.debug("Directory %s opened in file browser", dirpath)
+        os.system(f"xdg-open '{dirpath}'")
+        self.log.debug(f"Directory {dirpath} opened in file browser")
 
     def directory_remove(self, dirpath: str):
         shutil.rmtree(dirpath)
-        self.log.debug("Directory %s deleted", dirpath)
+        self.log.debug(f"Directory {dirpath} deleted")
 
     def directory_create(self, dirpath: str):
         os.makedirs(dirpath, exist_ok = True)
-        self.log.debug("Directory %s created", dirpath)
-
-    # ~ def guess_datetime(self, adate: str) -> datetime:
-        # ~ """Return (guess) a datetime object for a given string."""
-        # ~ if len(adate) != 7:
-            # ~ return None
-
-        # ~ try:
-            # ~ timestamp = dateparser(adate)
-        # ~ except Exception as error:
-            # ~ timestamp = None
-
-        # ~ return timestamp
+        self.log.debug(f"Directory {dirpath} created")
 
     def json_load(self, filepath: str) -> {}:
         """Load into a dictionary a file in json format"""
@@ -99,9 +87,6 @@ class MiAZUtil(GObject.GObject):
             fn = Field[item_type]
             if fields[fn] == value:
                 docs.append(doc)
-                # ~ used = True
-                # ~ self.log.warning("Value %s of type %s is still being used in %s", value, _(item_type.__title__), doc)
-                # ~ break
         if len(docs) > 0:
             used = True
         return used, docs
@@ -109,7 +94,7 @@ class MiAZUtil(GObject.GObject):
     def get_temp_dir(self):
         ENV = self.app.get_env()
         ts = datetime.now().strftime('%Y%m%d_%H%M%S')
-        return os.path.join(ENV['LPATH']['TMP'], "%s_%s" % (ts, 'miaz-export'))
+        return os.path.join(ENV['LPATH']['TMP'], f"{ts}_miaz-export")
 
     def get_temp_file(self, dir_tmp, suffix='.txt'):
         return tempfile.mkstemp(dir=dir_tmp, suffix=suffix)
@@ -160,7 +145,7 @@ class MiAZUtil(GObject.GObject):
         return datetime.fromtimestamp(lastmod)
 
     def filename_get_mimetype(self, filepath: str) -> str:
-        mimetype, val = Gio.content_type_guess('filename=%s' % filepath, data=None)
+        mimetype, val = Gio.content_type_guess(f"filename={filepath}", data=None)
         return mimetype
 
     def filename_details(self, filepath: str):
@@ -185,9 +170,9 @@ class MiAZUtil(GObject.GObject):
         if not self.filename_is_normalized(name):
             fields = ['' for fields in range(7)]
             fields[5] = self.valid_key(name)
-            filename = "%s.%s" % ('-'.join(fields), ext)
+            filename = f"{'-'.join(fields)}.{ext}"
         else:
-            filename = "%s.%s" % (name, ext)
+            filename = f"{name}.{ext}"
         return filename
 
     def valid_key(self, key: str) -> str:
@@ -202,15 +187,15 @@ class MiAZUtil(GObject.GObject):
                 try:
                     shutil.move(source, target)
                     self.log.debug("Document renamed:")
-                    self.log.debug("\tFrom: '%s'", source)
-                    self.log.debug("\t  To: '%s'", target)
+                    self.log.debug(f"\tFrom: '{source}'")
+                    self.log.debug(f"\t  To: '{target}'")
                     rename = True
                     self.emit('filename-renamed', source, target)
                 except Exception as error:
                     self.log.error(error)
             else:
                 self.log.debug("Document NOT renamed:")
-                self.log.error("\tTarget '%s' already exist", target)
+                self.log.error("\tTarget '{target}' already exist")
         # ~ else:
             # ~ self.log.error("Source and Target are the same. Skip rename")
         return rename
@@ -218,7 +203,7 @@ class MiAZUtil(GObject.GObject):
     def filename_delete(self, filepath):
         try:
             os.unlink(filepath)
-            self.log.debug("File %s deleted", filepath)
+            self.log.debug(f"File {filepath} deleted")
             self.emit('filename-deleted', filepath)
         except IsADirectoryError as error:
             self.log.error(error)
@@ -241,11 +226,11 @@ class MiAZUtil(GObject.GObject):
                 try:
                     # preserve metadata
                     shutil.copy2(source, target)
-                    self.log.info("%s copied to %s", source, target)
+                    self.log.info("{source} copied to {target}")
                 except Exception as error:
                     self.log.error(error)
             else:
-                self.log.debug("Target file %s exists. Copy operation skipped", target)
+                self.log.debug(f"Target file {target} exists. Copy operation skipped")
         else:
             self.log.error("Source and Target are the same. Skip rename")
 
@@ -267,7 +252,7 @@ class MiAZUtil(GObject.GObject):
 
     def filename_display(self, filepath):
         if sys.platform in ['linux', 'linux2']:
-            os.system("xdg-open \"%s\"" % filepath)
+            os.system(f"xdg-open \"{filepath}\"")
         elif sys.platform in ['win32', 'cygwin', 'msys']:
             os.startfile(filepath)
 
@@ -309,7 +294,7 @@ class MiAZUtil(GObject.GObject):
 
     def zip(self, filename: str, directory: str):
         """ Zip directory into a file """
-        self.log.debug("Target: %s", filename)
+        self.log.debug(f"Target: {filename}")
         sourcename = os.path.basename(filename)
         dot = sourcename.find('.')
         if dot == -1:

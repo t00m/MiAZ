@@ -20,9 +20,9 @@ class MiAZCustomWindow(Gtk.Window):
         self.name = name
         self.title = title
         self.set_title(title)
-        logname = "Miaz.%s" % name.replace('-', '.').title()
+        logname = f"Miaz.{name.replace('-', '.').title()}"
         self.log = MiAZLog(logname)
-        self.app.add_widget('window-%s' % name, self)
+        self.app.add_widget(f'window-{name}', self)
         self.connect('close-request', self._on_window_close_request)
         evk = Gtk.EventControllerKey.new()
         self.add_controller(evk)
@@ -33,7 +33,7 @@ class MiAZCustomWindow(Gtk.Window):
         self._build_ui()
 
     def _setup_window(self):
-        headerbar = self.app.add_widget('window-%s-headerbar' % self.name, Gtk.HeaderBar())
+        headerbar = self.app.add_widget(f'window-{self.name}-headerbar', Gtk.HeaderBar())
         self.set_titlebar(headerbar)
         self.mainbox = self.factory.create_box_vertical(margin=0, spacing=0, hexpand=True, vexpand=True)
         self.set_child(self.mainbox)
