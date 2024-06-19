@@ -21,6 +21,7 @@ from MiAZ.backend.models import MiAZItem, Group, Country, Purpose, SentBy, SentT
 from MiAZ.frontend.desktop.widgets.assistant import MiAZAssistantRepoSettings
 from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewWorkspace
 from MiAZ.frontend.desktop.widgets.configview import MiAZCountries, MiAZGroups, MiAZPurposes, MiAZPeopleSentBy, MiAZPeopleSentTo, MiAZProjects
+from MiAZ.backend.status import MiAZStatus
 
 # Conversion Item type to Field Number
 Field = {}
@@ -57,38 +58,32 @@ class MiAZWorkspace(Gtk.Box):
     def __init__(self, app):
         super(MiAZWorkspace, self).__init__(orientation=Gtk.Orientation.HORIZONTAL)
         self.log = MiAZLog('MiAZ.Workspace')
+        self.log.debug("Initializing widget Workspace!!")
         self.app = app
-        self.factory = self.app.get_service('factory')
-        self.actions = self.app.get_service('actions')
-        self.repository = self.app.get_service('repo')
         self.config = self.app.get_config_dict()
-        self.util = self.app.get_service('util')
-        self.util.connect('filename-renamed', self._on_filename_renamed)
-        self.util.connect('filename-deleted', self._on_filename_deleted)
-        for node in self.config:
-            self.config[node].connect('used-updated', self._on_config_used_updated)
-        self.app.add_widget('ws-dropdowns', {})
-        frmView = self._setup_workspace()
-        self.append(frmView)
+        self._setup_workspace()
+        self._setup_logic()
 
+        # Allow plug-ins to make their job
+        self.app.connect('start-application-completed', self._on_finish_configuration)
+
+    def initialize_caches(self):
         # Initialize caches
         # Runtime cache for datetime objects to avoid errors such as:
         # 'TypeError: Object of type date is not JSON serializable'
+        repository = self.app.get_service('repo')
+        util = self.app.get_service('util')
+
         self.datetimes = {}
 
         # Load/Initialize rest of caches
-        self.fcache = os.path.join(self.repository.conf, 'cache.json')
+        self.fcache = os.path.join(repository.conf, 'cache.json')
         try:
-            self.cache = self.util.json_load(self.fcache)
-            # ~ self.log.debug("Loading cache from %s", self.fcache)
+            self.cache = util.json_load(self.fcache)
+            self.log.debug(f"Loading cache from '{self.fcache}")
         except Exception:
             self.initialize_caches()
 
-        # Allow plug-ins to make their job
-        self.app.connect('start-application-completed', self._finish_configuration)
-        self._on_filter_selected()
-
-    def initialize_caches(self):
         self.cache = {}
         for cache in ['Date', 'Country', 'Group', 'SentBy', 'SentTo', 'Purpose']:
             self.cache[cache] = {}
@@ -113,74 +108,121 @@ class MiAZWorkspace(Gtk.Box):
         # Right now, there is no way to know which config item has been
         # updated, therefore, the whole cache must be invalidated :/
         self.initialize_caches()
-        self.update()
-        # ~ self.log.debug("Config changed")
+        # ~ self.update()
+        self.log.debug("Config changed")
 
     def _on_filename_renamed(self, util, source, target):
         projects = self.app.get_service('Projects')
         source = os.path.basename(source)
         target = os.path.basename(target)
         lprojects = projects.assigned_to(source)
-        self.log.debug("%s found in these projects: %s", source, ', '.join(lprojects))
+        self.log.debug(f"{source} found in these projects: {', '.join(lprojects)}")
         for project in lprojects:
             projects.remove(project, source)
             projects.add(project, target)
-            self.log.debug("P[%s]: %s -> %s", project, source, target)
+            self.log.debug(f"P[{project}]: {source} -> {target}")
 
     def _on_filename_deleted(self, util, target):
         projects = self.app.get_service('Projects')
         projects.remove(project='', doc=os.path.basename(target))
 
-    def _finish_configuration(self, *args):
-        # ~ self.log.debug("Finish loading workspace")
+    def _setup_logic(self):
+        actions = self.app.get_service('actions')
+        util = self.app.get_service('util')
+        repository = self.app.get_service('repo')
+
+        # Dropdowns data loading
+        dropdowns = self.app.get_widget('ws-dropdowns')
+
+        ## Date dropdown
+        i_type = Date.__gtype_name__
+        dd_date = dropdowns[i_type]
+        self._update_dropdown_date()
+        dd_date.set_selected(1)
+        dd_date.connect("notify::selected-item", self.update)
+
+        ## Dropdown Projects
+        i_type = Project.__gtype_name__
+        i_title = _(Project.__title__)
+        dd_prj = dropdowns[i_type]
+        actions.dropdown_populate(self.config[i_type], dd_prj, Project, any_value=True, none_value=True)
+        dd_prj.connect("notify::selected-item", self._on_filter_selected)
+        dd_prj.connect("notify::selected-item", self._on_project_selected)
+        dd_prj.set_hexpand(True)
+        self.config[i_type].connect('used-updated', self.update_dropdown_filter, Project)
+        self.log.debug(f"Dropdown filter for '{i_title}' setup successfully")
+
+        ## Rest of dropdowns
+        for item_type in [Country, Group, SentBy, Purpose, SentTo]:
+            i_type = item_type.__gtype_name__
+            i_title = _(item_type.__title__)
+            dropdown = dropdowns[i_type]
+            actions.dropdown_populate(self.config[i_type], dropdown, item_type, none_value=True)
+            dropdown.connect("notify::selected-item", self._on_filter_selected)
+            self.used_signals[i_type] = self.config[i_type].connect('used-updated', self.update_dropdown_filter, item_type)
+            self.log.debug(f"Dropdown filter for '{i_title}' setup successfully")
+
+        # Connect Watcher service
+        watcher = self.app.get_service('watcher')
+        watcher.connect('repository-updated', self._on_workspace_update)
+
+        # Connect Repository
+        repository = self.app.get_service('repo')
+        repository.connect('repository-switched', self._update_dropdowns)
+
+        # Observe filename changes
+        util.connect('filename-renamed', self._on_filename_renamed)
+        util.connect('filename-deleted', self._on_filename_deleted)
+
+        # Observe config changes
+        for node in self.config:
+            self.config[node].connect('used-updated', self._on_config_used_updated)
+
+        # Trigger events
+        self._do_connect_filter_signals()
+        self._on_filters_toggled()
+        self._on_filter_selected()
         self.workspace_loaded = True
+
+    def _on_finish_configuration(self, *args):
+        self.log.debug("Finish loading workspace")
+        window = self.app.get_widget('window')
+        window.present()
         self.emit('workspace-loaded')
 
     def _setup_toolbar_filters(self):
+        factory = self.app.get_service('factory')
         dropdowns = self.app.get_widget('ws-dropdowns')
-        widget = self.factory.create_box_vertical(spacing=0, margin=0, hexpand=True, vexpand=False)
-        body = self.factory.create_box_horizontal(margin=3, spacing=6, hexpand=True, vexpand=True)
-        # ~ body.set_homogeneous(True)
+        widget = factory.create_box_vertical(spacing=0, margin=0, hexpand=True, vexpand=False)
+        body = factory.create_box_horizontal(margin=3, spacing=6, hexpand=True, vexpand=True)
         body.set_margin_top(margin=6)
         body.set_margin_start(margin=12)
         body.set_margin_end(margin=12)
         widget.append(body)
         widget.append(Gtk.Separator.new(orientation=Gtk.Orientation.HORIZONTAL))
 
+        dropdowns = self.app.add_widget('ws-dropdowns', {})
+
         ### Projects dropdown
         i_type = Project.__gtype_name__
         i_title = _(Project.__title__)
-        dd_prj = self.factory.create_dropdown_generic(item_type=Project)
-        boxDropdown = self.factory.create_box_filter(i_title, dd_prj)
-        # ~ dd_prj.set_size_request(250, -1)
+        dd_prj = factory.create_dropdown_generic(item_type=Project)
+        boxDropdown = factory.create_box_filter(i_title, dd_prj)
         dropdowns[i_type] = dd_prj
-        self.actions.dropdown_populate(self.config[i_type], dd_prj, Project, any_value=True, none_value=True)
-        dd_prj.connect("notify::selected-item", self._on_filter_selected)
-        dd_prj.connect("notify::selected-item", self._on_project_selected)
-        dd_prj.set_hexpand(True)
-        self.config[i_type].connect('used-updated', self.update_dropdown_filter, Project)
         body.append(boxDropdown)
 
         for item_type in [Country, Group, SentBy, Purpose, SentTo]:
             i_type = item_type.__gtype_name__
             i_title = _(item_type.__title__)
-            dropdown = self.factory.create_dropdown_generic(item_type=item_type)
-            self.actions.dropdown_populate(self.config[i_type], dropdown, item_type, none_value=True)
-            dropdown.connect("notify::selected-item", self._on_filter_selected)
-            boxDropdown = self.factory.create_box_filter(i_title, dropdown)
+            dropdown = factory.create_dropdown_generic(item_type=item_type)
+            boxDropdown = factory.create_box_filter(i_title, dropdown)
             body.append(boxDropdown)
             dropdowns[i_type] = dropdown
-            self.used_signals[i_type] = self.config[i_type].connect('used-updated', self.update_dropdown_filter, item_type)
-            # ~ self.log.debug("Dropdown filter for '%s' setup successfully", i_title)
-        self.app.add_widget('ws-dropdowns', dropdowns)
-        btnClearFilters = self.factory.create_button(icon_name='miaz-entry-clear', tooltip='Clear all filters', css_classes=['flat'], callback=self.clear_filters)
-        boxDropdown = self.factory.create_box_filter('', btnClearFilters)
-        body.append(boxDropdown)
 
-        watcher = self.app.get_service('watcher')
-        watcher.connect('repository-updated', self._on_workspace_update)
-        repository = self.app.get_service('repo')
-        repository.connect('repository-switched', self._update_dropdowns)
+        self.app.add_widget('ws-dropdowns', dropdowns)
+        btnClearFilters = factory.create_button(icon_name='miaz-entry-clear', tooltip='Clear all filters', css_classes=['flat'], callback=self.clear_filters)
+        boxDropdown = factory.create_box_filter('', btnClearFilters)
+        body.append(boxDropdown)
 
         return widget
 
@@ -193,23 +235,29 @@ class MiAZWorkspace(Gtk.Box):
             dropdown.set_selected(0)
 
     def _update_dropdowns(self, *args):
+        actions = self.app.get_service('actions')
         dropdowns = self.app.get_widget('ws-dropdowns')
         for item_type in [Country, Group, SentBy, Purpose, SentTo, Project]:
             i_type = item_type.__gtype_name__
-            # ~ i_title = _(item_type.__title__)
             config = self.config[i_type]
-            self.actions.dropdown_populate(config, dropdowns[i_type], item_type, True, True)
-            # ~ self.log.debug("Dropdown filter for '%s' updated", i_title)
+            actions.dropdown_populate(config, dropdowns[i_type], item_type, True, True)
+            # ~ self.log.debug(f"Dropdown filter for '{i_title}' updated")
 
+        self._update_dropdown_date()
+        i_type = Date.__gtype_name__
+        dd_date = dropdowns[i_type]
+        dd_date.set_selected(1)
+        # ~ dd_date.connect("notify::selected-item", self.update)
 
     def _on_workspace_update(self, *args):
         GLib.idle_add(self.update)
 
     def update_dropdown_filter(self, config, item_type):
+        actions = self.app.get_service('actions')
         dropdowns = self.app.get_widget('ws-dropdowns')
         i_type = item_type.__gtype_name__
-        self.actions.dropdown_populate(config, dropdowns[i_type], item_type)
-        # ~ self.log.debug("Dropdown %s updated", i_type)
+        actions.dropdown_populate(config, dropdowns[i_type], item_type)
+        # ~ self.log.debug(f"Dropdown '{i_type} updated")
 
     def _on_filters_toggled(self, *args):
         toggleButtonFilters = self.app.get_widget('workspace-togglebutton-filters')
@@ -217,6 +265,8 @@ class MiAZWorkspace(Gtk.Box):
         self.toolbar_filters.set_visible(active)
 
     def _on_selection_changed(self, selection, position, n_items):
+        repository = self.app.get_service('repo')
+        util = self.app.get_service('util')
         self.selected_items = []
         model = selection.get_model()
         bitset = selection.get_selection()
@@ -225,16 +275,22 @@ class MiAZWorkspace(Gtk.Box):
             item = model.get_item(pos)
             self.selected_items.append(item)
         label = self.btnDocsSel.get_child()
-        docs = self.util.get_files(self.repository.docs)
-        label.set_markup("<small>%d</small> / %d / <big>%d</big>" % (len(self.selected_items), len(model), len(docs)))
+        docs = util.get_files(repository.docs)
+        label.set_markup(f"<small>{len(self.selected_items)}</small> / {len(model)} / <big>{len(docs)}</big>")
+        tooltip = ""
+        tooltip += f"{len(self.selected_items)} documents selected\n"
+        tooltip += f"{len(model)} documents in this view\n"
+        tooltip += f"{len(docs)} documents in this repository"
+        self.btnDocsSel.set_tooltip_markup(tooltip)
 
     def _setup_toolbar_top(self):
+        factory = self.app.get_service('factory')
         hdb_left = self.app.get_widget('headerbar-left-box')
         hdb_right = self.app.get_widget('headerbar-right-box')
         hdb_right.get_style_context().add_class(class_name='linked')
 
         ## Show/Hide Filters
-        tgbFilters = self.factory.create_button_toggle('miaz-filters2', callback=self._on_filters_toggled)
+        tgbFilters = factory.create_button_toggle('miaz-filters2', callback=self._on_filters_toggled)
         self.app.add_widget('workspace-togglebutton-filters', tgbFilters)
         tgbFilters.set_active(False)
         tgbFilters.set_hexpand(False)
@@ -247,17 +303,13 @@ class MiAZWorkspace(Gtk.Box):
 
         ### Date dropdown
         i_type = Date.__gtype_name__
-        dd_date = self.factory.create_dropdown_generic(item_type=Date, ellipsize=False, enable_search=False)
+        dd_date = factory.create_dropdown_generic(item_type=Date, ellipsize=False, enable_search=False)
         dd_date.set_hexpand(True)
         dropdowns[i_type] = dd_date
-        self._update_dropdown_date()
-        dd_date.set_selected(1)
-        # ~ self.dd_date.connect("notify::selected-item", self._on_filter_selected)
-        dd_date.connect("notify::selected-item", self.update)
         hdb_left.append(dd_date)
 
         # Workspace Menu
-        hbox = self.factory.create_box_horizontal(margin=0, spacing=0, hexpand=False)
+        hbox = factory.create_box_horizontal(margin=0, spacing=0, hexpand=False)
         popovermenu = self._setup_menu_selection()
         label = Gtk.Label()
         self.btnDocsSel = Gtk.MenuButton()
@@ -272,9 +324,10 @@ class MiAZWorkspace(Gtk.Box):
         headerbar.set_title_widget(hbox)
 
     def _update_dropdown_date(self):
+        util = self.app.get_service('util')
         dropdowns = self.app.get_widget('ws-dropdowns')
         dd_date = dropdowns[Date.__gtype_name__]
-        dt2str = self.util.datetime_to_string
+        dt2str = util.datetime_to_string
         now = datetime.now().date()
         model_filter = dd_date.get_model()
         model_sort = model_filter.get_model()
@@ -284,49 +337,49 @@ class MiAZWorkspace(Gtk.Box):
         # Since...
         ul = now                                  # upper limit
         ## this month
-        ll = self.util.since_date_this_month(now) # lower limit
-        key = "%s-%s" % (dt2str(ll), dt2str(ul))
+        ll = util.since_date_this_month(now) # lower limit
+        key = f"{dt2str(ll)}-{dt2str(ul)}"
         model.append(Date(id=key, title=_('This month')))
 
         ul = now                                  # upper limit
         ## past month
-        ll = self.util.since_date_last_n_months(now, 1) # lower limit
-        key = "%s-%s" % (dt2str(ll), dt2str(ul))
+        ll = util.since_date_last_n_months(now, 1) # lower limit
+        key = f"{dt2str(ll)}-{dt2str(ul)}"
         model.append(Date(id=key, title=_('Since past month')))
 
         ## Last 3 months
-        ll = self.util.since_date_last_n_months(now, 3) # lower limit
-        key = "%s-%s" % (dt2str(ll), dt2str(ul))
+        ll = util.since_date_last_n_months(now, 3) # lower limit
+        key = f"{dt2str(ll)}-{dt2str(ul)}"
         model.append(Date(id=key, title=_('Since last 3 months')))
 
         ## Last six months
-        ll = self.util.since_date_last_n_months(now, 6) # lower limit
-        key = "%s-%s" % (dt2str(ll), dt2str(ul))
+        ll = util.since_date_last_n_months(now, 6) # lower limit
+        key = f"{dt2str(ll)}-{dt2str(ul)}"
         model.append(Date(id=key, title=_('Since last 6 months')))
 
         ## This year
-        ll = self.util.since_date_this_year(now) # lower limit
-        key = "%s-%s" % (dt2str(ll), dt2str(ul))
+        ll = util.since_date_this_year(now) # lower limit
+        key = f"{dt2str(ll)}-{dt2str(ul)}"
         model.append(Date(id=key, title=_('Since last year')))
 
         ## Two years ago
-        ll = self.util.since_date_past_n_years_ago(now, 2) # lower limit
-        key = "%s-%s" % (dt2str(ll), dt2str(ul))
+        ll = util.since_date_past_n_years_ago(now, 2) # lower limit
+        key = f"{dt2str(ll)}-{dt2str(ul)}"
         model.append(Date(id=key, title=_('Since two years ago')))
 
         ## Three years ago
-        ll = self.util.since_date_past_n_years_ago(now, 3) # lower limit
-        key = "%s-%s" % (dt2str(ll), dt2str(ul))
+        ll = util.since_date_past_n_years_ago(now, 3) # lower limit
+        key = f"{dt2str(ll)}-{dt2str(ul)}"
         model.append(Date(id=key, title=_('Since three years ago')))
 
         ## Five years ago
-        ll = self.util.since_date_past_n_years_ago(now, 5) # lower limit
-        key = "%s-%s" % (dt2str(ll), dt2str(ul))
+        ll = util.since_date_past_n_years_ago(now, 5) # lower limit
+        key = f"{dt2str(ll)}-{dt2str(ul)}"
         model.append(Date(id=key, title=_('Since five years ago')))
 
         ## Ten years ago
-        ll = self.util.since_date_past_n_years_ago(now, 10) # lower limit
-        key = "%s-%s" % (dt2str(ll), dt2str(ul))
+        ll = util.since_date_past_n_years_ago(now, 10) # lower limit
+        key = f"{dt2str(ll)}-{dt2str(ul)}"
         model.append(Date(id=key, title=_('Since ten years ago')))
 
         ## All documents
@@ -352,18 +405,19 @@ class MiAZWorkspace(Gtk.Box):
         # ~ mimetype, val = Gio.content_type_guess('filename=%s' % item.id)
         # ~ gicon = Gio.content_type_get_icon(mimetype)
         # ~ icon_name = self.app.icman.choose_icon(gicon.get_names())
-        # ~ self.log.debug("ICON NAME: %s", icon_name)
-        # ~ child = self.factory.create_button(icon_name)
+        # ~ self.log.debug(f"ICON NAME: %s", icon_name)
+        # ~ child = factory.create_button(icon_name)
         # ~ button.set_child(child)
 
     def _setup_workspace(self):
-        widget = self.factory.create_box_vertical(margin=0, spacing=0, hexpand=True, vexpand=True)
-        head = self.factory.create_box_vertical(margin=0, spacing=0, hexpand=True)
-        body = self.factory.create_box_vertical(margin=0, spacing=0, hexpand=True, vexpand=True)
-        # ~ foot = self.factory.create_box_vertical(margin=0, spacing=0, hexpand=False, vexpand=False)
+        factory = self.app.get_service('factory')
+        widget = factory.create_box_vertical(margin=0, spacing=0, hexpand=True, vexpand=True)
+        head = factory.create_box_vertical(margin=0, spacing=0, hexpand=True)
+        body = factory.create_box_vertical(margin=0, spacing=0, hexpand=True, vexpand=True)
+        foot = factory.create_box_vertical(margin=0, spacing=0, hexpand=False, vexpand=False)
         widget.append(head)
         widget.append(body)
-        # ~ widget.append(foot)
+        widget.append(foot)
 
         self.toolbar_filters = self._setup_toolbar_filters()
         self.app.add_widget('workspace-toolbar-filters', self.toolbar_filters)
@@ -383,18 +437,11 @@ class MiAZWorkspace(Gtk.Box):
         self.view.column_sentby.set_expand(False)
         self.view.column_date.set_visible(True)
 
-        # Connect signals
-        # ~ selection = self.view.get_selection()
+        self.append(widget)
 
-        # Trigger events
-        self._do_connect_filter_signals()
-        self._on_filters_toggled()
-
-        return widget
-
-        # ~ menuitem = self.factory.create_menuitem('annotate', 'Annotate document', self._on_handle_menu_single, None, [])
-        # ~ menuitem = self.factory.create_menuitem('clipboard', 'Copy filename', self._on_handle_menu_single, None, [])
-        # ~ menuitem = self.factory.create_menuitem('directory', 'Open file location', self._on_handle_menu_single, None, [])
+        # ~ menuitem = factory.create_menuitem('annotate', 'Annotate document', self._on_handle_menu_single, None, [])
+        # ~ menuitem = factory.create_menuitem('clipboard', 'Copy filename', self._on_handle_menu_single, None, [])
+        # ~ menuitem = factory.create_menuitem('directory', 'Open file location', self._on_handle_menu_single, None, [])
 
     def _setup_menu_selection(self):
         menu_selection = self.app.add_widget('workspace-menu-selection', Gio.Menu.new())
@@ -445,15 +492,19 @@ class MiAZWorkspace(Gtk.Box):
         self.log.debug("All filters cleared")
 
     def update(self, *args):
+        if self.app.get_status() == MiAZStatus.BUSY:
+            return
         # FIXME: come up w/ a solution to display only available values
-        # ~ self.log.debug("Update requested")
+        # ~ self.log.debug(f"Update requested")
         # ~ dropdowns = self.app.get_widget('ws-dropdowns')
         # ~ dd_date = dropdowns[Date.__gtype_name__]
         # ~ dd_prj = dropdowns[Project.__gtype_name__]
         # ~ filters = {}
+        repository = self.app.get_service('repo')
+        util = self.app.get_service('util')
         self.selected_items = []
         try:
-            docs = self.util.get_files(self.repository.docs)
+            docs = util.get_files(repository.docs)
         except KeyError:
             docs = []
         # ~ sentby = self.app.get_config('SentBy')
@@ -472,7 +523,7 @@ class MiAZWorkspace(Gtk.Box):
             # ~ i_title = _(item_type.__title__)
             # ~ sigid = self.used_signals[i_type]
             # ~ self.config[i_type].disconnect(sigid)
-            # ~ self.log.debug("Signal %d disconnected from Config '%s'", sigid, i_title)
+            # ~ self.log.debug(f"Signal %d disconnected from Config '%s'", sigid, i_title)
 
         keys_used = {}
         key_fields = [('Date', 0), ('Country', 1), ('Group', 2), ('SentBy', 3), ('Purpose', 4), ('Concept', 5), ('SentTo', 6)]
@@ -481,9 +532,9 @@ class MiAZWorkspace(Gtk.Box):
 
         for filename in docs:
             active = True
-            doc, ext = self.util.filename_details(filename)
+            doc, ext = util.filename_details(filename)
             fields = doc.split('-')
-            if self.util.filename_validate(doc):
+            if util.filename_validate(doc):
                 desc = {}
                 for skey, nkey in key_fields:
                     key = fields[nkey]
@@ -493,7 +544,7 @@ class MiAZWorkspace(Gtk.Box):
                         try:
                             desc[skey] = self.cache[skey][key]
                         except KeyError:
-                            desc[skey] = self.util.filename_date_human_simple(key)
+                            desc[skey] = util.filename_date_human_simple(key)
                             if desc[skey] is None:
                                 active = False
                                 desc[skey] = ''
@@ -529,7 +580,7 @@ class MiAZWorkspace(Gtk.Box):
 
                 if not active:
                     invalid.append(os.path.basename(filename))
-                # ~ self.log.debug("\n%s\n%s\n\n", filename, desc)
+
                 items.append(MiAZItem
                                     (
                                         id=os.path.basename(filename),
@@ -560,26 +611,26 @@ class MiAZWorkspace(Gtk.Box):
 
         de = datetime.now()
         dt = de - ds
-        self.log.debug("Workspace updated (%s)" % dt)
+        self.log.debug(f"Workspace updated ({dt})")
 
-        self.util.json_save(self.fcache, self.cache)
-        # ~ self.log.debug("Saving cache to %s", self.fcache)
+        util.json_save(self.fcache, self.cache)
+        # ~ self.log.debug(f"Saving cache to '{self.fcache}")
         GLib.idle_add(self.view.update, items)
         self._on_filter_selected()
-        # ~ label = self.btnDocsSel.get_child()
         self.view.select_first_item()
         renamed = 0
         for filename in invalid:
-            source = os.path.join(self.repository.docs, filename)
-            btarget = self.util.filename_normalize(filename)
-            target = os.path.join(self.repository.docs, btarget)
-            rename = self.util.filename_rename(source, target)
+            source = os.path.join(repository.docs, filename)
+            btarget = util.filename_normalize(filename)
+            target = os.path.join(repository.docs, btarget)
+            rename = util.filename_rename(source, target)
             if rename:
                 renamed += 1
         if renamed > 0:
-            self.log.debug("Documents renamed: %d", renamed)
+            self.log.debug(f"Documents renamed: {renamed}")
 
         self.selected_items = []
+        return False
 
     def _do_eval_cond_matches_freetext(self, item):
         entry = self.app.get_widget('searchbar_entry')
@@ -603,17 +654,22 @@ class MiAZWorkspace(Gtk.Box):
             return item.id.upper() == id.upper()
 
     def _do_eval_cond_matches_date(self, item):
+        util = self.app.get_service('util')
         # Convert timestamp to timedate object and cache it
         try:
             item_dt = self.datetimes[item.date]
         except KeyError:
-            item_dt = self.util.string_to_datetime(item.date)
+            item_dt = util.string_to_datetime(item.date)
             self.datetimes[item.date] = item_dt
 
         # Check if the date belongs to the lower/upper limit
         dropdowns = self.app.get_widget('ws-dropdowns')
         dd_date = dropdowns[Date.__gtype_name__]
-        period = dd_date.get_selected_item().id
+        selected = dd_date.get_selected_item()
+        if selected is None:
+            # ~ self.log.debug(f"FIXME: Dropdown {dd_date} with selected item '{selected}' shouldn't be None")
+            return False
+        period = selected.id
         ll, ul = period.split('-')
 
         if ll == 'All' and ul == 'All':
@@ -626,13 +682,13 @@ class MiAZWorkspace(Gtk.Box):
         elif item_dt is None:
                 matches = False
         else:
-            start = self.util.string_to_datetime(ll)
-            end = self.util.string_to_datetime(ul)
+            start = util.string_to_datetime(ll)
+            end = util.string_to_datetime(ul)
             if item_dt >= start and item_dt <= end:
                 matches = True
             else:
                 matches = False
-        # ~ self.log.debug("%s >= Item[%s] Datetime[%s] <= %s? %s", ll, item.date, item_dt, ul, matches)
+        # ~ self.log.debug(f"%s >= Item[%s] Datetime[%s] <= %s? %s", ll, item.date, item_dt, ul, matches)
         return matches
 
     def _do_eval_cond_matches_project(self, doc):
@@ -717,12 +773,19 @@ class MiAZWorkspace(Gtk.Box):
             pass
 
     def _on_filter_selected(self, *args):
+        util = self.app.get_service('util')
+        repository = self.app.get_service('repo')
         if self.workspace_loaded:
             self.view.refilter()
             model = self.view.cv.get_model() # nº items in current view
             label = self.btnDocsSel.get_child()
-            docs = self.util.get_files(self.repository.docs) # nº total items
-            label.set_markup("<small>%d</small> / %d / <big>%d</big>" % (len(self.selected_items), len(model), len(docs)))
+            docs = util.get_files(repository.docs) # nº total items
+            label.set_markup(f"<small>{len(self.selected_items)}</small> / {len(model)} / <big>{len(docs)}</big>")
+            tooltip = ""
+            tooltip += f"{len(self.selected_items)} documents selected\n"
+            tooltip += f"{len(model)} documents in this view\n"
+            tooltip += f"{len(docs)} documents in this repository"
+            self.btnDocsSel.set_tooltip_markup(tooltip)
 
     def _on_select_all(self, *args):
         selection = self.view.get_selection()

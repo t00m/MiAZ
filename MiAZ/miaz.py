@@ -66,7 +66,7 @@ ENV['CONF']['USER_DIR'] = os.path.expanduser('~')
 
 # Local paths
 ENV['LPATH'] = {}
-ENV['LPATH']['ROOT'] = os.path.join(ENV['CONF']['USER_DIR'], ".%s" % ENV['APP']['shortname'])
+ENV['LPATH']['ROOT'] = os.path.join(ENV['CONF']['USER_DIR'], f".{ENV['APP']['shortname']}")
 ENV['LPATH']['ETC'] = os.path.join(ENV['LPATH']['ROOT'], 'etc')
 ENV['LPATH']['REPOS'] = os.path.join(ENV['LPATH']['ETC'], 'repos')
 ENV['LPATH']['VAR'] = os.path.join(ENV['LPATH']['ROOT'], 'var')
@@ -125,7 +125,7 @@ class MiAZ:
         self.setup_environment()
         self.log = MiAZLog('MiAZ')
         self.set_internationalization()
-        self.log.info("%s v%s - Start", ENV['APP']['shortname'], ENV['APP']['VERSION'])
+        self.log.info(f"{ENV['APP']['shortname']} v{ENV['APP']['VERSION']} - Start")
 
     def setup_environment(self):
         """Setup MiAZ user environment"""
@@ -140,7 +140,6 @@ class MiAZ:
         try:
             locale.bindtextdomain('miaz', ENV['GPATH']['LOCALE'])
             locale.textdomain('miaz')
-            # ~ self.log.debug("Gettext: binding to %s", ENV['GPATH']['LOCALE'])
             gettext.bindtextdomain('miaz', ENV['GPATH']['LOCALE'])
             gettext.textdomain('miaz')
         except AttributeError as e:
@@ -164,7 +163,7 @@ class MiAZ:
         except KeyboardInterrupt:
             self.log.error("Application killed by user")
             sys.exit(0)
-        self.log.info("%s v%s - End", ENV['APP']['shortname'], ENV['APP']['VERSION'])
+        self.log.info(f"{ENV['APP']['shortname']} v{ENV['APP']['VERSION']} - End")
 
 def main():
     """This is the entry point when the program is installed via PIP"""

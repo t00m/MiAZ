@@ -49,7 +49,7 @@ class Export2Text(GObject.GObject, Peas.Activatable):
         items = workspace.get_selected_items()
         text = ""
         for item in items:
-            text += "%s\n" % item.id
+            text += f"{item.id}\n"
         fp, filepath = tempfile.mkstemp(dir=ENV['LPATH']['TMP'], suffix='.txt')
         with open(filepath, 'w') as temp:
             temp.write(text)

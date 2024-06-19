@@ -30,7 +30,7 @@ class MiAZWelcome(Gtk.Box):
         vbox = self.factory.create_box_vertical(spacing=24, hexpand=True, vexpand=False)
         centerbox.set_center_widget(vbox)
 
-        label = Gtk.Label.new(_('Welcome to %s!' % ENV['APP']['shortname']))
+        label = Gtk.Label.new(_(f"Welcome to {ENV['APP']['shortname']}!"))
         label.get_style_context().add_class(class_name='title-1')
         vbox.append(label)
         label = Gtk.Label()
@@ -43,7 +43,3 @@ class MiAZWelcome(Gtk.Box):
         button.set_halign(Gtk.Align.CENTER)
         button.connect('clicked', self.actions.show_app_settings)
         vbox.append(button)
-
-
-
-

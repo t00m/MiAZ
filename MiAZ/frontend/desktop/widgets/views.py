@@ -123,9 +123,9 @@ class MiAZColumnViewWorkspace(MiAZColumnView):
         # ~ label.set_ellipsize(True)
         # ~ label.set_property('ellipsize', Pango.EllipsizeMode.MIDDLE)
         if item.active:
-            label.set_markup("<b>%s</b>" % item.subtitle)
+            label.set_markup(f"<b>{item.subtitle}</b>")
         else:
-            label.set_markup("<span color='red'><b>%s</b></span>" % item.subtitle)
+            label.set_markup(f"<span color='red'><b>{item.subtitle}</b></span>")
             label.get_style_context().add_class(class_name='destructive-action')
 
     def _on_factory_setup_active(self, factory, list_item):
@@ -160,7 +160,7 @@ class MiAZColumnViewWorkspace(MiAZColumnView):
         box = list_item.get_child()
         icon = box.get_first_child()
         item = list_item.get_item()
-        mimetype, val = Gio.content_type_guess('filename=%s' % item.id)
+        mimetype, val = Gio.content_type_guess(f"filename={item.id}")
         gicon = self.srvicm.get_mimetype_icon(mimetype)
         icon.set_from_gicon(gicon)
         icon.set_pixel_size(36)
@@ -283,7 +283,7 @@ class MiAZColumnViewCountry(MiAZColumnViewSelector):
         box = list_item.get_child()
         country = list_item.get_item()
         icon = box.get_first_child()
-        flag = os.path.join(ENV['GPATH']['FLAGS'], "%s.svg" % country.id)
+        flag = os.path.join(ENV['GPATH']['FLAGS'], f"{country.id}.svg")
         if not os.path.exists(flag):
             flag = os.path.join(ENV['GPATH']['FLAGS'], "__.svg")
         icon.set_from_file(flag)

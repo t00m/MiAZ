@@ -37,13 +37,13 @@ class MiAZFactory:
         vbox = self.create_box_vertical(hexpand=True, vexpand=False)
         if len(title) > 0:
             lblTitle = Gtk.Label()
-            lblTitle.set_markup("<b>%s</b>" % title)
+            lblTitle.set_markup(f"<b>{title}</b>")
             lblTitle.set_xalign(0.0)
             vbox.append(lblTitle)
 
         if len(subtitle) > 0:
             lblSubtitle = Gtk.Label()
-            lblSubtitle.set_markup("<small>%s</small>" % subtitle)
+            lblSubtitle.set_markup(f"<small>{subtitle}</small>")
             lblSubtitle.set_xalign(0.0)
             vbox.append(lblSubtitle)
 
@@ -61,7 +61,7 @@ class MiAZFactory:
     def create_box_filter(self, title, widget: Gtk.Widget) -> Gtk.Box:
         box = Gtk.Box.new(orientation=Gtk.Orientation.VERTICAL, spacing=3)
         box.set_margin_bottom(margin=12)
-        lblTitle = self.create_label('<b>%s</b>' % title)
+        lblTitle = self.create_label(f'<b>{title}</b>')
         lblTitle.set_xalign(0.0)
         box.append(lblTitle)
         box.append(widget)
@@ -195,7 +195,7 @@ class MiAZFactory:
             box = list_item.get_child()
             label = box.get_last_child()
             item = list_item.get_item()
-            label.set_markup('%s' % item.title)
+            label.set_markup(f'{item.title}')
             label.get_style_context().add_class(class_name='caption')
             label.get_style_context().add_class(class_name='monospace')
 
@@ -204,7 +204,7 @@ class MiAZFactory:
 
         def _do_filter(item, filter_list_model, search_entry):
             text = search_entry.get_text()
-            name = '%s %s' % (item.id, item.title)
+            name = f'{item.id} {item.title}'
             return text.upper() in name.upper()
 
         def _get_search_entry_widget(dropdown):
@@ -250,7 +250,7 @@ class MiAZFactory:
         # ~ search_entry.set_placeholder_text("Type %s" % item_type.__title__)
         image = search_entry.get_first_child()
         text_widget = image.get_next_sibling()
-        text_widget.set_placeholder_text("Type %s" % item_type.__title__)
+        text_widget.set_placeholder_text(f"Type {item_type.__title__}")
         # Enable context menu
         # FIXME: This code insert a new entry in the context menu
         # Apparently, it works. But it doesn't. It always chooses
@@ -335,7 +335,7 @@ class MiAZFactory:
         action.connect('activate', callback, data)
         action.set_enabled(True)
         self.app.add_action(action)
-        menuitem.set_detailed_action(detailed_action='app.%s' % name)
+        menuitem.set_detailed_action(detailed_action=f'app.{name}')
         if shortcuts:
             self.app.set_accels_for_action(f'app.{name}', shortcuts)
         return menuitem
@@ -344,7 +344,7 @@ class MiAZFactory:
         hbox = self.create_box_horizontal()
         icon = self.icons.get_image_by_name(icon_name)
         label = Gtk.Label()
-        label.set_markup('<b>%s</b>' % title)
+        label.set_markup(f'<b>{title}</b>')
         hbox.append(icon)
         hbox.append(label)
         return hbox

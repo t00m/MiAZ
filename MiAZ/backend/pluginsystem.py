@@ -85,7 +85,8 @@ class MiAZPluginManager(GObject.GObject):
                 self.engine.rescan_plugins()
                 config = self.app.get_config('Plugin')
                 config.add_available(key=fn1_name)
-                self.log.debug("Plugin '%s' added to '%s'", os.path.basename(plugin_path), ENV['LPATH']['PLUGINS'])
+                plugin_fname = os.path.basename(plugin_path)
+                self.log.debug(f"Plugin '{plugin_fname}' added to 'ENV['LPATH']['PLUGINS']'")
         # ~ self.emit('plugins-updated')
         return valid
 
@@ -95,13 +96,12 @@ class MiAZPluginManager(GObject.GObject):
         ENV = self.app.get_env()
         module = plugin.get_module_name()
         self.unload_plugin(plugin)
-        plugin_head = os.path.join(ENV['LPATH']['PLUGINS'], '%s.plugin' % module)
-        plugin_body = os.path.join(ENV['LPATH']['PLUGINS'], '%s.py' % module)
+        plugin_head = os.path.join(ENV['LPATH']['PLUGINS'], f'{module}.plugin')
+        plugin_body = os.path.join(ENV['LPATH']['PLUGINS'], f'{module}.py')
         os.unlink(plugin_head)
         os.unlink(plugin_body)
         config = self.app.get_config('Plugin')
         config.remove_available(key=module)
-        # ~ self.emit('plugins-updated')
         return True
 
     def rescan_plugins(self):
@@ -118,21 +118,21 @@ class MiAZPluginManager(GObject.GObject):
         try:
             self.engine.load_plugin(plugin)
             if plugin.is_loaded():
-                self.log.debug("Plugin %s (%s) loaded", plugin.get_name(), ptype)
+                self.log.debug(f"Plugin {plugin.get_name()} ({ptype}) loaded")
                 return True
             else:
-                self.log.error("Plugin %s (%s) couldn't be loaded", plugin.get_name(), ptype)
+                self.log.error(f"Plugin {plugin.get_name()} ({ptype}) couldn't be loaded")
                 return False
         except Exception as error:
             self.log.error(error)
-            self.log.error("Plugin %s (%s) couldn't be loaded", plugin.get_name(), ptype)
+            self.log.error("Plugin {plugin.get_name()} ({ptype}) couldn't be loaded")
             return False
 
     def unload_plugin(self, plugin: Peas.PluginInfo):
         try:
             ptype = self.get_plugin_type(plugin)
             self.engine.unload_plugin(plugin)
-            self.log.debug("Plugin %s (%s) unloaded", plugin.get_name(), ptype)
+            self.log.debug(f"Plugin {plugin.get_name()} ({ptype}) unloaded")
         except Exception as error:
             self.log.error(error)
 
@@ -198,7 +198,7 @@ class MiAZPluginManager(GObject.GObject):
         ENV = self.app.get_env()
         if os.path.exists(ENV['GPATH']['PLUGINS']):
             self.engine.add_search_path(ENV['GPATH']['PLUGINS'])
-            self.log.debug("Added System plugin dir: %s", ENV['GPATH']['PLUGINS'])
+            self.log.debug(f"Added System plugin dir: {ENV['GPATH']['PLUGINS']}")
 
         # GLobal user plugins
         # All user space plugins are available for all repositories
@@ -209,7 +209,7 @@ class MiAZPluginManager(GObject.GObject):
         ENV = self.app.get_env()
         os.makedirs(ENV['LPATH']['PLUGINS'], exist_ok=True)
         self.engine.add_search_path(ENV['LPATH']['PLUGINS'])
-        self.log.debug("Added user plugins dir: %s", ENV['LPATH']['PLUGINS'])
+        self.log.debug(f"Added user plugins dir: {ENV['LPATH']['PLUGINS']}")
 
 
     @staticmethod

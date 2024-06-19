@@ -52,7 +52,7 @@ class MiAZAppSettings(MiAZCustomWindow):
 
     def _build_ui(self):
         self.set_default_size(1024, 728)
-        headerbar = self.app.get_widget('window-%s-headerbar' % self.name)
+        headerbar = self.app.get_widget(f"window-{self.name}-headerbar")
         self.stack = self.app.add_widget('stack_settings', Gtk.Stack())
         self.stack.set_vexpand(True)
         self.switcher = self.app.add_widget('switcher_settings', Gtk.StackSwitcher())
@@ -104,24 +104,23 @@ class MiAZAppSettings(MiAZCustomWindow):
     def _on_use_repo(self, *args):
         repo_id = self.dd_repo.get_selected_item().id
         self.config['App'].set('current', repo_id)
-        valid = self.app.check_repository()
+        valid = self.app.switch()
         if valid:
-            window = self.app.get_widget('window-%s' % self.name)
+            window = self.app.get_widget(f"window-{self.name}")
             window.hide()
             workspace = self.app.get_widget('workspace')
             workspace.clean_filters()
-            workspace.update()
-            self.log.debug("Repository %s loaded successfully", repo_id)
+            self.log.debug(f"Repository {repo_id} loaded successfully")
         else:
-            self.log.error("Repository %s couldn't be loaded", repo_id)
+            self.log.error(f"Repository {repo_id} couldn't be loaded")
 
     def _on_selected_repo(self, dropdown, gparamobj):
         try:
             repo_id = dropdown.get_selected_item().id
             repo_dir = dropdown.get_selected_item().title
-            self.log.debug("Repository selected: %s[%s]", repo_id, repo_dir)
+            self.log.debug(f"Repository selected: {repo_id}[{repo_dir}]")
             self.config['App'].set('current', repo_id)
-            self.app.check_repository()
+            self.app.switch()
         except AttributeError:
             # Probably the repository was removed from used view
             pass
@@ -219,7 +218,7 @@ class MiAZAppSettings(MiAZCustomWindow):
             ptype = plugin_manager.get_plugin_type(plugin)
             if ptype == MiAZPluginType.USER:
                 pid = plugin.get_module_name()
-                plugin_path = os.path.join(ENV['LPATH']['PLUGINS'], '%s.plugin' % pid)
+                plugin_path = os.path.join(ENV['LPATH']['PLUGINS'], f"{pid}.plugin")
                 if os.path.exists(plugin_path):
                     title = plugin.get_description()
                     items.append(item_type(id=pid, title=title))
@@ -236,7 +235,7 @@ class MiAZAppSettings(MiAZCustomWindow):
                     return
             plugin_path = gfile.get_path()
             imported = plugin_manager.import_plugin(plugin_path)
-            self.log.debug("Plugin imported? %s", imported)
+            self.log.debug(f"Plugin imported? {imported}")
             if imported:
                 self.update_user_plugins()
         dialog.destroy()
@@ -264,8 +263,7 @@ class MiAZAppSettings(MiAZCustomWindow):
             plugin = plugin_manager.get_plugin_info(module.id)
             deleted = plugin_manager.remove_plugin(plugin)
             if deleted:
-                self.log.debug("Plugin '%s' deleted", module.id)
-                # ~ self.actions.statusbar_message("Plugin '%s' deleted" % module.id)
+                self.log.debug(f"Plugin '{module.id}' deleted")
                 self.update_user_plugins()
         except IndexError:
             self.log.debug("No user plugins installed and/or selected")
@@ -299,16 +297,18 @@ class MiAZRepoSettings(MiAZCustomWindow):
         self.app = app
         self.log = MiAZLog('MiAZ.RepoSettings')
         self.name = 'repo-settings'
-        self.title = 'Repository settings'
+        appconf = self.app.get_config('App')
+        repo_id = appconf.get('current')
+        self.title = f"Settings for repository {repo_id}"
         super().__init__(app, self.name, self.title, **kwargs)
         self.connect('notify::visible', self.update)
 
     def _build_ui(self):
         self.set_default_size(1024, 728)
-        self.notebook = self.app.add_widget('repository-settings-notebook', Gtk.Notebook())
-        self.notebook.set_show_border(False)
-        self.notebook.set_tab_pos(Gtk.PositionType.TOP)
-        self.mainbox.append(self.notebook)
+        notebook = self.app.add_widget('repository-settings-notebook', Gtk.Notebook())
+        notebook.set_show_border(False)
+        notebook.set_tab_pos(Gtk.PositionType.TOP)
+        self.mainbox.append(notebook)
 
         def create_tab(item_type):
             i_type = item_type.__gtype_name__
@@ -316,7 +316,7 @@ class MiAZRepoSettings(MiAZCustomWindow):
             page = Gtk.CenterBox(orientation=Gtk.Orientation.VERTICAL)
             page.set_vexpand(True)
             page.set_hexpand(True)
-            widget_title = 'configview-%s' % i_title
+            widget_title = f"configview-{i_title}"
             selector = self.app.add_widget(widget_title, Configview[i_type](self.app))
             selector.set_vexpand(True)
             selector.update_views()
@@ -325,10 +325,10 @@ class MiAZRepoSettings(MiAZCustomWindow):
             page.set_start_widget(box)
             wdgLabel = self.factory.create_box_horizontal()
             wdgLabel.get_style_context().add_class(class_name='caption')
-            icon = self.icman.get_image_by_name('com.github.t00m.MiAZ-res-%s' % i_title.lower())
+            icon = self.icman.get_image_by_name(f"com.github.t00m.MiAZ-res-{i_title.lower()}")
             icon.set_hexpand(False)
             icon.set_pixel_size(24)
-            label = self.factory.create_label("<b>%s</b>" % i_title)
+            label = self.factory.create_label(f"<b>{i_title}</b>")
             label.set_xalign(0.0)
             label.set_hexpand(True)
             wdgLabel.append(icon)
@@ -338,12 +338,17 @@ class MiAZRepoSettings(MiAZCustomWindow):
 
         for item_type in [Country, Group, Purpose, SentBy, SentTo, Project, Plugin]:
             page, label = create_tab(item_type)
-            self.notebook.append_page(page, label)
+            notebook.append_page(page, label)
 
     def update(self, *args):
+        appconf = self.app.get_config('App')
+        repo_id = appconf.get('current')
+        title = f"Settings for repository {repo_id}"
+        self.set_title(title)
+
         for item_type in [Country, Group, Purpose, Project, SentBy, SentTo, Plugin]:
             i_title = item_type.__title_plural__
-            widget_title = 'configview-%s' % i_title
+            widget_title = f"configview-{i_title}"
             configview = self.app.get_widget(widget_title)
             configview.update_config()
             configview.update_views()

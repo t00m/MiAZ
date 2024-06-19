@@ -68,7 +68,7 @@ class MiAZAssistantRepo(MiAZAssistant):
 
         # Page 0 - Welcome
         page = self.get_nth_page(0)
-        lblWelcome = Gtk.Label.new(str=_('%s repository assistant') % (ENV['APP']['shortname']))
+        lblWelcome = Gtk.Label.new(str=_(f"{ENV['APP']['shortname']} repository assistant"))
         lblWelcome.get_style_context().add_class(class_name='title-1')
         lblWelcome.set_margin_top(24)
         imgWelcome = Gtk.Image.new_from_icon_name('MiAZ-big')
@@ -167,18 +167,18 @@ class MiAZAssistantRepo(MiAZAssistant):
         conf_app = self.app.get_config('App')
         dirpath = self.repopath
         if repository.validate(dirpath):
-            self.log.debug("Directory '%s' is a MiAZ Repository", dirpath)
+            self.log.debug(f"Directory '{dirpath}' is a MiAZ Repository")
             if len(conf_app.get('source')) == 0:
                 conf_app.set('source', dirpath)
             repository.load(dirpath)
         else:
-            self.log.debug("Directory '%s' is not a MiAZ repository", dirpath)
+            self.log.debug(f"Directory '{dirpath}' is not a MiAZ repository")
             repository.init(dirpath)
 
         # ~ conf_app = self.app.get_config('App')
         # ~ conf_app.set('source', dirpath)
         self.destroy()
-        self.app.check_repository()
+        self.app.switch()
 
 class MiAZAssistantRepoSettings(MiAZAssistant):
     """"""
