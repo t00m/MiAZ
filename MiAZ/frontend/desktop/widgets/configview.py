@@ -62,27 +62,29 @@ class MiAZConfigView(MiAZSelector):
         return selector
 
     def _on_config_import(self, *args):
-        self.log.debug("Import configuration for '%s'", self.config.config_for)
+        self.log.debug(f"Import configuration for '{self.config.config_for}'")
 
     def _add_config_menubutton(self, name: str):
+        actions = self.app.get_service('actions')
+        factory = self.app.get_service('factory')
         widgets = []
-        btnConfigImport = self.factory.create_button(icon_name='com.github.t00m.MiAZ-document-open-symbolic',
-                                                     title='Import config for %s' % self.config.config_for.lower(),
-                                                     callback=self.actions.import_config,
+        btnConfigImport = factory.create_button(icon_name='com.github.t00m.MiAZ-document-open-symbolic',
+                                                     title=f'Import config for {self.config.config_for.lower()}',
+                                                     callback=actions.import_config,
                                                      data=self.config.model,
                                                      css_classes=['flat'])
         widgets.append(btnConfigImport)
-        btnConfigImport = self.factory.create_button(icon_name='com.github.t00m.MiAZ-document-save-symbolic',
-                                                     title='Export config for %s' % self.config.config_for.lower(),
-                                                     callback=self.actions.export_config,
+        btnConfigImport = factory.create_button(icon_name='com.github.t00m.MiAZ-document-save-symbolic',
+                                                     title=f'Export config for {self.config.config_for.lower()}',
+                                                     callback=actions.export_config,
                                                      data=self.config.model,
                                                      css_classes=['flat'])
         widgets.append(btnConfigImport)
-        button = self.factory.create_button_popover(icon_name='emblem-system-symbolic',
+        button = factory.create_button_popover(icon_name='emblem-system-symbolic',
                                                     title='',
                                                     widgets=widgets)
 
-        boxEmpty = self.factory.create_box_horizontal(hexpand=True)
+        boxEmpty = factory.create_box_horizontal(hexpand=True)
         self.boxOper.append(boxEmpty)
         self.boxOper.append(button)
 
@@ -118,7 +120,7 @@ class MiAZRepositories(MiAZConfigView):
             repo_path = dialog.get_value2()
             if len(repo_name) > 0 and os.path.exists(repo_path):
                 self.config.add_available(repo_name, repo_path)
-                self.log.debug("Repo '%s' added to list of available repositories", repo_name)
+                self.log.debug(f"Repo '{repo_name}' added to list of available repositories")
                 self.update_views()
         dialog.destroy()
 
@@ -141,13 +143,13 @@ class MiAZRepositories(MiAZConfigView):
         if not is_used:
             del items_available[selected_item.id]
             self.config.save_available(items=items_available)
-            self.log.debug("%s %s removed from de list of available items", i_title, selected_item.id)
+            self.log.debug(f"{i_title} {selected_item.id} removed from de list of available items")
         else:
             dtype = "error"
-            text = _('%s %s is still being used') % (i_title, selected_item.id)
+            text = _(f'{i_title} {selected_item.id} is still being used')
             window = self.app.get_widget('window')
             dtype = 'error'
-            title = "%s %s can't be removed" % (i_title, selected_item.id)
+            title = f"{i_title} {selected_item.id} can't be removed"
             dialog = CustomDialog(app=self.app, parent=window, use_header_bar=True, dtype=dtype, title=title, text=text, widget=None)
             dialog.set_default_size(-1, -1)
             dialog.set_modal(True)
@@ -163,9 +165,9 @@ class MiAZRepositories(MiAZConfigView):
             items_used[selected_item.id] = selected_item.title
             self.config.save_used(items=items_used)
             self.update_views()
-            self.log.debug("%s %s not used yet. Can be used now", i_title, selected_item.id)
+            self.log.debug(f"{i_title} {selected_item.id} not used yet. Can be used now")
         else:
-            self.log.debug("%s %s is already being used", i_title, selected_item.id)
+            self.log.debug(f"{i_title} {selected_item.id} is already being used")
 
     def _on_item_used_remove(self, *args):
         items_available = self.config.load_available()
@@ -174,9 +176,9 @@ class MiAZRepositories(MiAZConfigView):
         item_type = self.config.model
         i_title = item_type.__title__
         items_available[selected_item.id] = selected_item.title
-        self.log.debug("%s %s added back to the list of available items", i_title, selected_item.id)
+        self.log.debug(f"{i_title} {selected_item.id} added back to the list of available items")
         del items_used[selected_item.id]
-        self.log.debug("%s %s removed from de list of used items", i_title, selected_item.id)
+        self.log.debug(f"{i_title} {selected_item.id} removed from de list of used items")
         self.config.save_used(items=items_used)
         self.config.save_available(items=items_available)
         self.update_views()
@@ -188,7 +190,7 @@ class MiAZCountries(MiAZConfigView):
     current = None
 
     def __init__(self, app):
-        super(MiAZConfigView, self).__init__(app, edit=False)
+        super(MiAZConfigView, self).__init__(app, edit=True)
         super().__init__(app, 'Country')
 
     def _setup_view_finish(self):
@@ -204,7 +206,7 @@ class MiAZCountries(MiAZConfigView):
         item_type = self.config.model
         countries = self.config.load_available()
         for code in countries:
-            items.append(item_type(id=code, title=countries[code], icon='%s.svg' % code))
+            items.append(item_type(id=code, title=countries[code], icon=f'{code}.svg'))
         self.viewAv.update(items)
 
     def _update_view_used(self):
@@ -212,7 +214,7 @@ class MiAZCountries(MiAZConfigView):
         item_type = self.config.model
         countries = self.config.load_used()
         for code in countries:
-            items.append(item_type(id=code, title=countries[code], icon='%s.svg' % code))
+            items.append(item_type(id=code, title=countries[code], icon=f'{code}.svg'))
         self.viewSl.update(items)
 
 
@@ -328,13 +330,13 @@ class MiAZProjects(MiAZConfigView):
         if not is_used:
             del items_available[selected_item.id]
             self.config.save_available(items=items_available)
-            self.log.debug("%s %s removed from de list of available items", i_title, selected_item.id)
+            self.log.debug(f"{i_title} {selected_item.id} removed from de list of available items")
         else:
             dtype = "error"
-            text = _('%s %s is still being used') % (i_title, selected_item.id)
+            text = _(f'{i_title} {selected_item.id} is still being used')
             window = self.app.get_widget('window')
             dtype = 'error'
-            title = "%s %s can't be removed" % (i_title, selected_item.id)
+            title = f"{i_title} {selected_item.id} can't be removed"
             dialog = CustomDialog(app=self.app, parent=window, use_header_bar=True, dtype=dtype, title=title, text=text, widget=None)
             dialog.set_default_size(-1, -1)
             dialog.set_modal(True)
@@ -350,9 +352,9 @@ class MiAZProjects(MiAZConfigView):
             items_used[selected_item.id] = selected_item.title
             self.config.save_used(items=items_used)
             self.update_views()
-            self.log.debug("%s %s not used yet. Can be used now", i_title, selected_item.id)
+            self.log.debug(f"{i_title} {selected_item.id} not used yet. Can be used now")
         else:
-            self.log.debug("%s %s is already being used", i_title, selected_item.id)
+            self.log.debug(f"{i_title} {selected_item.id} is already being used")
 
     def _on_item_used_remove(self, *args):
         items_available = self.config.load_available()
@@ -364,17 +366,17 @@ class MiAZProjects(MiAZConfigView):
         docs = srvprj.docs_in_project(selected_item.id)
         if len(docs) == 0:
             items_available[selected_item.id] = selected_item.title
-            self.log.debug("%s %s added back to the list of available items", i_title, selected_item.id)
+            self.log.debug(f"{i_title} {selected_item.id} added back to the list of available items")
             del items_used[selected_item.id]
-            self.log.debug("%s %s removed from de list of used items", i_title, selected_item.id)
+            self.log.debug(f"{i_title} {selected_item.id} removed from de list of used items")
             self.config.save_used(items=items_used)
             self.config.save_available(items=items_available)
             self.update_views()
         else:
-            text = _('%s %s is still being used by %d docs:') % (i_title, selected_item.title, len(docs))
+            text = _(f'{i_title} {selected_item.title} is still being used by {len(docs)} docs:')
             window = self.app.get_widget('window')
             dtype = 'error'
-            title = "%s %s can't be removed" % (i_title, selected_item.title)
+            title = f"{i_title} {selected_item.title} can't be removed"
             if len(docs) > 0:
                 items = []
                 for doc in docs:
@@ -399,9 +401,7 @@ class MiAZUserPlugins(MiAZConfigView):
         self._update_view_used()
 
     def plugins_updated(self, *args):
-        # ~ self._update_view_used()
         self._update_view_available()
-        self.log.debug("Selector plugin views updated")
 
     def _setup_view_finish(self):
         # Setup Available and Used Column Views
@@ -446,13 +446,13 @@ class MiAZUserPlugins(MiAZConfigView):
             plugin = plugin_manager.get_plugin_info(selected_plugin.id)
             if plugin.is_loaded():
                 plugin_manager.unload_plugin(plugin)
-                self.log.debug("Plugin '%s' unloaded", selected_plugin.id)
+                self.log.debug(f"Plugin '{selected_plugin.id}' unloaded")
         except AttributeError as error:
-            self.log.error("Unknown error unloading plugin '%s'", selected_plugin.id)
+            self.log.error(f"Unknown error unloading plugin '{selected_plugin.id}'")
             self.log.error(error)
         finally:
             del(plugins_used[selected_plugin.id])
-            self.log.debug("Plugin '%s' removed from used view", selected_plugin.id)
+            self.log.debug(f"Plugin '{selected_plugin.id}' removed from used view")
             self.config.save_used(items=plugins_used)
             self._update_view_used()
 
@@ -468,16 +468,17 @@ class MiAZUserPlugins(MiAZConfigView):
         i_title = item_type.__title__
         if not plugin_used:
             plugins_used[selected_plugin.id] = selected_plugin.title
-            self.log.debug("Using %s (%s)", selected_plugin.id, selected_plugin.title)
+            self.log.debug(f"Using {selected_plugin.id} ({selected_plugin.title})")
             plugin = plugin_manager.get_plugin_info(selected_plugin.id)
             if not plugin.is_loaded():
                 plugin_manager.load_plugin(plugin)
                 self.config.save_used(items=plugins_used)
                 self._update_view_used()
-                self.log.debug("%s %s not used yet. Can be used now", i_title, selected_plugin.id)
+                self.log.debug(f"{i_title} {selected_plugin.id} not used yet. Can be used now")
         else:
-            self.log.debug("%s %s is already being used", i_title, selected_plugin.id)
+            self.log.debug(f"{i_title} {selected_plugin.id} is already being used")
 
     def update_views(self, *args):
-        self.log.debug("Update user plugin views")
+        # ~ self.log.debug("Update user plugin views")
+        pass
 

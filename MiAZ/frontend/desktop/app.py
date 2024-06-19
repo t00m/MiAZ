@@ -25,6 +25,8 @@ from MiAZ.backend.util import MiAZUtil
 from MiAZ.backend.config import MiAZConfigApp
 from MiAZ.backend.repository import MiAZRepository
 from MiAZ.backend.config import MiAZConfigRepositories
+from MiAZ.backend.status import MiAZStatus
+
 
 class MiAZApp(Gtk.Application):
     __gsignals__ = {
@@ -34,6 +36,7 @@ class MiAZApp(Gtk.Application):
     plugins_loaded = False
     _miazobjs = {}  # MiAZ Objects
     _config = {}    # Dictionary holding configurations
+    _status = MiAZStatus.BUSY
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -48,6 +51,12 @@ class MiAZApp(Gtk.Application):
         self.conf = None
         self.app = None
         self.plugin_manager = None
+
+    def get_status(self):
+        return self._status
+
+    def set_status(self, status: MiAZStatus):
+        self._status = status
 
     def get_config_dict(self):
         return self._config
@@ -72,9 +81,8 @@ class MiAZApp(Gtk.Application):
         menubar = self.get_widget('window-menu-app')
         self.set_menubar(menubar)
         self._setup_plugin_manager()
+        self.switch()
         self.log.debug("Executing MiAZ Desktop mode")
-        self.check_repository()
-        # ~ repository = self.get_service('repo')
 
     def _setup_ui(self):
         """
@@ -92,19 +100,11 @@ class MiAZApp(Gtk.Application):
         theme = self.add_service('theme', Gtk.IconTheme.get_for_display(window.get_display()))
         theme.add_search_path(ENV['GPATH']['ICONS'])
         theme.add_search_path(ENV['GPATH']['FLAGS'])
-        self.log.debug("MiAZ custom icons in: %s", ENV['GPATH']['ICONS'])
-
-        # ~ # Setup services
-        # ~ self.add_service('icons', MiAZIconManager(self))
-        # ~ self.add_service('factory', MiAZFactory(self))
-        # ~ self.add_service('actions', MiAZActions(self))
+        self.log.debug(f"MiAZ custom icons in: {ENV['GPATH']['ICONS']}")
 
         # Setup main window contents
         mainbox = self.add_widget('window-mainbox', MiAZMainWindow(self))
         window.set_child(mainbox)
-
-        # Other widgets
-        self._setup_page_welcome()
 
     def _on_window_close_request(self, *args):
         self.log.debug("Close application requested")
@@ -136,7 +136,7 @@ class MiAZApp(Gtk.Application):
                 if ptype == MiAZPluginType.SYSTEM:
                     np += 1
             self.plugins_loaded = True
-            self.log.debug("System plugins loaded: %d/%d", ap, np)
+            self.log.debug(f"System plugins loaded: {ap}/{np}")
 
             # Load User Plugins
             self.log.debug("Loading user plugins for this repository...")
@@ -157,11 +157,10 @@ class MiAZApp(Gtk.Application):
                     self.log.error(error)
                 if ptype == MiAZPluginType.USER:
                     np += 1
-            self.log.debug("User plugins loaded for this repoitory: %d/%d", ap, np)
+            self.log.debug(f"User plugins loaded for this repoitory: {ap}/{np}")
 
     def _setup_plugin_manager(self):
         self.plugin_manager = self.add_service('plugin-manager', MiAZPluginManager(self))
-
 
     def get_config(self, name: str):
         try:
@@ -170,49 +169,48 @@ class MiAZApp(Gtk.Application):
         except KeyError:
             return None
 
-    def check_repository(self):
+    def switch(self):
+        self.log.debug("Repository switch requested")
+        actions = self.get_service('actions')
+        repository = self.get_service('repo')
         try:
-            repository = self.get_service('repo')
-            # ~ self.log.debug("Using repo '%s'", repository.docs)
-            try:
-                if repository.validate(repository.docs):
-                    repository.load(repository.docs)
+            self.set_status(MiAZStatus.BUSY)
+            appconf = self.get_config('App')
+            repo_loaded = False
+            if repository.validate(repository.docs):
+                repository.load(repository.docs)
+                repo_loaded = True
+        except Exception:
+            repo_loaded = False
 
-                    # Workspace and Rename widgets can be only loaded
-                    # after opening the Repository
-                    # FIXME: check this workflow
-                    self.log.debug("Setting up workspace")
-                    if self.get_widget('workspace') is None:
-                        self._setup_page_workspace()
-                        workspace = self.get_widget('workspace')
-                        workspace.initialize_caches()
-                        if not self.plugins_loaded:
-                            self._load_plugins()
-                    if self.get_widget('rename') is None:
-                        self._setup_page_rename()
-                    repo_settings = self.get_widget('settings-repo')
-                    if repo_settings is None:
-                        repo_settings = self.add_widget('settings-repo', MiAZRepoSettings(self))
-                    repo_settings.update()
-                    actions = self.get_service('actions')
-                    actions.show_stack_page_by_name('workspace')
-                    valid = True
-                    self.emit('start-application-completed')
-                else:
-                    valid = False
-            except Exception:
-                self.log.error("Default repository configuration not available")
-                valid = False
-                raise
-        except KeyError:
-            self.log.debug("No repository active in the configuration")
-            actions = self.get_service('actions')
-            actions.show_stack_page_by_name('welcome')
-            valid = False
-        window = self.get_widget('window')
-        if window is not None:
-            window.present()
-        return valid
+        repo_id = appconf.get('current')
+        self.log.debug(f"Repository '{repo_id}' loaded? {repo_loaded}")
+
+        if repo_loaded:
+            self.log.debug(f"Repo Working directory: '{repository.docs}")
+            repo_settings = self.get_widget('settings-repo')
+            if repo_settings is None:
+                repo_settings = self.add_widget('settings-repo', MiAZRepoSettings(self))
+                repo_settings.update()
+            if self.get_widget('rename') is None:
+                self._setup_page_rename()
+            workspace = self._setup_page_workspace()
+            workspace.initialize_caches()
+            if not self.plugins_loaded:
+                self._load_plugins()
+            self.set_status(MiAZStatus.RUNNING)
+            actions.show_stack_page_by_name('workspace')
+            self.emit('start-application-completed')
+        else:
+            self.log.debug(f"Error loading repo {repo_id} of type {type(repo_id)}")
+            if repo_id is None:
+                welcome_widget = self.get_widget('welcome')
+                if welcome_widget is None:
+                    self._setup_page_welcome()
+                actions.show_stack_page_by_name('welcome')
+                window = self.get_widget('window')
+                window.present()
+        return repo_loaded
 
     def _setup_page_welcome(self):
         stack = self.get_widget('stack')
@@ -233,6 +231,7 @@ class MiAZApp(Gtk.Application):
             page_workspace.set_visible(True)
             actions = self.get_service('actions')
             actions.show_stack_page_by_name('workspace')
+        return widget_workspace
 
     def _setup_page_rename(self):
         stack = self.get_widget('stack')
@@ -248,16 +247,8 @@ class MiAZApp(Gtk.Application):
         if srv is None:
             self._miazobjs['services'][name] = service
             srv = service
-            self.log.debug("Adding new service: %s", name)
+            self.log.debug(f"Adding new service: {name}")
         return srv
-
-
-        # ~ print(self._miazobjs['services'])
-        # ~ self._miazobjs['services'][name] = service
-        # ~ if name in list(self._miazobjs['services'].keys()):
-            # ~ self.log.error("A service with name '%s' already exists. It has been replaced", name)
-            # ~ print("A service with name '%s' already exists. It has been replaced" % name)
-        # ~ return service
 
     def get_service(self, name):
         try:
@@ -268,7 +259,7 @@ class MiAZApp(Gtk.Application):
     def add_widget(self, name: str, widget) -> Gtk.Widget or None:
         wdg = self.get_widget(name)
         if wdg is not None:
-            self.log.debug("Widget '%s' will be overwritten", name)
+            self.log.debug(f"Widget '{name}' will be overwritten")
         wdg = self._miazobjs['widgets'][name] = widget
         return wdg
 
@@ -277,19 +268,6 @@ class MiAZApp(Gtk.Application):
             return self._miazobjs['widgets'][name]
         except KeyError:
             return None
-
-    # ~ def add_action(self, name: str, callback = None, data = None) -> Gio.SimpleAction:
-        # ~ action = Gio.SimpleAction.new(name, None)
-        # ~ action.connect('activate', callback, data)
-        # ~ action.set_enabled(True)
-        # ~ self.add_action(action)
-        # ~ return action
-
-    # ~ def get_action(self, name):
-        # ~ try:
-            # ~ return self._miazobjs['actions'][name]
-        # ~ except KeyError:
-            # ~ return None
 
     def remove_widget(self, name: str):
         """
@@ -302,7 +280,7 @@ class MiAZApp(Gtk.Application):
             del self._miazobjs['widgets'][name]
             deleted = True
         except KeyError:
-            self.log.error("Widget '%s' doesn't exists", name)
+            self.log.error(f"Widget '{name}' doesn't exists")
         return deleted
 
     def get_logger(self):

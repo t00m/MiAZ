@@ -24,7 +24,6 @@ class MiAZConfig(GObject.GObject):
     def __init__(self, app, log, config_for, used=None, available=None, default=None, model=MiAZModel, must_copy=True, foreign=False):
         super().__init__()
         self.app = app
-        self.util = self.app.get_service('util')
         self.log = log
         self.config_for = config_for
         self.used = used
@@ -47,7 +46,7 @@ class MiAZConfig(GObject.GObject):
             GObject.signal_new('used-updated',
                                 MiAZConfig,
                                 GObject.SignalFlags.RUN_LAST, None, () )
-        self.log.debug("Config for %s initialited", self.config_for)
+        self.log.debug(f"Config for {self.config_for} initialited")
 
     def __repr__(self):
         return __class__.__name__
@@ -56,14 +55,14 @@ class MiAZConfig(GObject.GObject):
         if not os.path.exists(self.available):
             if self.default is not None:
                 shutil.copy(self.default, self.available)
-                self.log.debug("%s - Available configuration created from default", self.config_for)
+                self.log.debug(f"{self.config_for} - Available configuration created from default")
             else:
                 self.save(filepath=self.available, items={})
-                self.log.debug("%s - Available configuration file created (empty)", self.config_for)
+                self.log.debug(f"{self.config_for} - Available configuration file created (empty)")
 
         if not os.path.exists(self.used):
             self.save(filepath=self.used, items={})
-            self.log.debug("%s - Used configuration file created (empty)", self.config_for)
+            self.log.debug(f"{self.config_for} - Used configuration file created (empty)")
 
     def get_config_for(self):
         return self.config_for
@@ -78,33 +77,34 @@ class MiAZConfig(GObject.GObject):
         return self.foreign
 
     def load(self, filepath:str) -> dict:
+        util = self.app.get_service('util')
         try:
             config_changed = self.cache[filepath]['changed']
         except KeyError:
             config_changed = True
 
         if config_changed:
-            # ~ self.log.debug("Loading from %s", filepath)
+            # ~ self.log.debug(f"Loading from {filepath}")
             try:
-                items = self.util.json_load(filepath)
+                items = util.json_load(filepath)
                 self.cache[filepath] = {}
                 self.cache[filepath]['changed'] = False
                 self.cache[filepath]['items'] = items
-                # ~ self.log.debug("In-memory config data updated for '%s'", filepath)
+                # ~ self.log.debug(f"In-memory config data updated for '{filepath}'")
             except Exception:
                 items = None
             return items
         else:
-            # ~ self.log.debug("Got %s items from cache for %s", self.config_for, filepath)
+            # ~ self.log.debug(f"Got {self.config_for} items from cache for {filepath}")
             self.cache[filepath]['changed'] = False
             return self.cache[filepath]['items']
 
     def load_available(self) -> dict:
-        # ~ self.log.debug("%s available: %s", self.config_for, self.available)
+        # ~ self.log.debug(f"{self.config_for} available: {self.available}")
         return self.load(self.available)
 
     def load_used(self) -> dict:
-        # ~ self.log.debug("%s used: %s", self.config_for, self.used)
+        # ~ self.log.debug(f"{self.config_for} used: {self.used}")
         return self.load(self.used)
 
     def save(self, filepath: str = '', items: dict = {}) -> bool:
@@ -119,7 +119,7 @@ class MiAZConfig(GObject.GObject):
             except KeyError:
                 self.cache[filepath] = {}
                 self.cache[filepath]['changed'] = True
-            # ~ self.log.debug("Cache update for '%s'", filepath)
+            # ~ self.log.debug(f"Cache update for '{filepath}'")
         return saved
 
     def save_available(self, items: dict = {}) -> bool:
@@ -129,10 +129,11 @@ class MiAZConfig(GObject.GObject):
         return self.save(self.used, items)
 
     def save_data(self, filepath: str = '', items: dict = {}) -> bool:
+        util = self.app.get_service('util')
         if filepath == '':
             filepath = self.used
         try:
-            self.util.json_save(filepath, items)
+            util.json_save(filepath, items)
             saved = True
         except Exception as error:
             self.log.error(error)
@@ -166,49 +167,52 @@ class MiAZConfig(GObject.GObject):
         return key in config
 
     def add_available_batch(self, keysvalues: list):
+        util = self.app.get_service('util')
         filepath = self.available
         items = self.load(filepath)
         saved = 0
         for key, value in keysvalues:
             if len(key.strip()) != 0:
                 # ~ if key not in items:
-                key = self.util.valid_key(key)
+                key = util.valid_key(key)
                 items[key] = value
                 saved += 1
         if saved > 0:
             self.save(filepath, items=items)
-            self.log.info("%s - Added %d keys to %s", self.config_for, saved, filepath)
+            self.log.info(f"{self.config_for} - Added {saved} keys to {filepath}")
 
     def add_available(self, key: str, value: str = ''):
         self.add(self.available, key, value)
 
     def add_used_batch(self, keysvalues: list):
+        util = self.app.get_service('util')
         filepath = self.used
         items = self.load(filepath)
         saved = 0
         for key, value in keysvalues:
             if len(key.strip()) != 0:
                 # ~ if key not in items:
-                key = self.util.valid_key(key)
+                key = util.valid_key(key)
                 items[key] = value
                 saved += 1
         if saved > 0:
             self.save(filepath, items=items)
-            self.log.info("%s - Added %d keys to %s", self.config_for, saved, filepath)
+            self.log.info(f"{self.config_for} - Added {saved} keys to {filepath}")
 
     def add_used(self, key: str, value: str = '') -> bool:
         return self.add(self.used, key, value)
 
     def add(self, filepath: str, key: str, value:str  = '') -> bool:
+        util = self.app.get_service('util')
         added = True
         if len(key.strip()) == 0:
             self.log.warning('Key is None or empty. Add skipped')
         items = self.load(filepath)
         if key not in items:
-            key = self.util.valid_key(key)
+            key = util.valid_key(key)
             items[key] = value
             self.save(filepath, items=items)
-            self.log.info("%s - Add: %s[%s] to %s", self.config_for, key, value, filepath)
+            self.log.info(f"{self.config_for} - Add: '{key}' to {filepath}")
             added = True
         return added
 
@@ -230,7 +234,7 @@ class MiAZConfig(GObject.GObject):
         for key in keys:
             if key in items:
                 del items[key]
-                self.log.info("%s - Remove: %s from %s", self.config_for, key, filepath)
+                self.log.info(f"{self.config_for} - Remove: {key} from {filepath}")
         self.save(filepath=filepath, items=items)
 
     def remove(self, filepath: str, key: str) -> bool:
@@ -242,7 +246,7 @@ class MiAZConfig(GObject.GObject):
         if key in items:
             del items[key]
             self.save(filepath=filepath, items=items)
-            self.log.info("%s - Remove: %s from %s", self.config_for, key, filepath)
+            self.log.info(f"{self.config_for} - Remove: {key} from {filepath}")
             removed = True
         return removed
 
@@ -250,7 +254,6 @@ class MiAZConfig(GObject.GObject):
 class MiAZConfigApp(MiAZConfig):
     def __init__(self, app):
         self.app = app
-        self.util = self.app.get_service('util')
         ENV = self.app.get_env()
         GObject.GObject.__init__(self)
         GObject.signal_new('repo-settings-updated-app',
@@ -380,8 +383,8 @@ class MiAZConfigSentBy(MiAZConfig):
             app = app,
             log=MiAZLog('MiAZ.Settings.SentBy'),
             config_for = 'SentBy',
-            used = os.path.join(dir_conf, '%s-used.json' % config_name_used),
-            available = os.path.join(dir_conf, '%s-available.json' % config_name_available),
+            used = os.path.join(dir_conf, f'{config_name_used}-used.json'),
+            available = os.path.join(dir_conf, f'{config_name_available}-available.json'),
             default = os.path.join(ENV['GPATH']['CONF'],
                             'MiAZ-people.json'),
             model = SentBy,
@@ -396,8 +399,8 @@ class MiAZConfigSentTo(MiAZConfig):
             app = app,
             log=MiAZLog('MiAZ.Settings.SentTo'),
             config_for = 'SentTo',
-            used = os.path.join(dir_conf, '%s-used.json' % SentTo.__config_name_used__),
-            available = os.path.join(dir_conf, '%s-available.json' % SentTo.__config_name_available__),
+            used = os.path.join(dir_conf, f'{SentTo.__config_name_used__}-used.json'),
+            available = os.path.join(dir_conf, f'{SentTo.__config_name_available__}-available.json'),
             default = os.path.join(ENV['GPATH']['CONF'],
                             'MiAZ-people.json'),
             model = SentTo,

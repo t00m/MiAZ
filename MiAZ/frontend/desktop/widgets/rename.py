@@ -131,7 +131,7 @@ class MiAZRenameDialog(Gtk.Box):
 
     def __create_actionrow(self, title, item_type, conf) -> Gtk.Widget:
         i_title = item_type.__title_plural__
-        icon_name = 'com.github.t00m.MiAZ-res-%s' % i_title.lower().replace(' ', '')
+        icon_name = f"com.github.t00m.MiAZ-res-{i_title.lower().replace(' ', '')}"
         icon = self.icons.get_image_by_name(name=icon_name)
         boxValue = self.__create_box_value()
         button = self.factory.create_button(icon_name=icon_name, title='')
@@ -210,7 +210,7 @@ class MiAZRenameDialog(Gtk.Box):
         y = "%04d" % adate.get_year()
         m = "%02d" % adate.get_month()
         d = "%02d" % adate.get_day_of_month()
-        self.entry_date.set_text("%s%s%s" % (y, m, d))
+        self.entry_date.set_text(f"{y}{m}{d}")
 
     def __create_field_1_country(self):
         self.rowCountry, self.btnCountry, self.dpdCountry = self.__create_actionrow(Country.__title__, Country, 'countries')
@@ -338,7 +338,7 @@ class MiAZRenameDialog(Gtk.Box):
             fields.append(apurpose)     # 5. Purpose
             fields.append(aconcept)     # 6. Concept
             fields.append(asentto)       # 7. SentTo
-            self.result = "%s.%s" % ('-'.join(fields), aextension)
+            self.result = f"{'-'.join(fields)}.{aextension}"
             self.lblFilenameNew.set_markup(self.result)
 
             sentby = self.app.get_config('SentBy')
@@ -377,7 +377,7 @@ class MiAZRenameDialog(Gtk.Box):
     def validate_date(self, sdate: str) -> bool:
         try:
             adate = datetime.strptime(sdate, '%Y%m%d')
-            iso8601 = "%sT00:00:00Z" % sdate
+            iso8601 = f"{sdate}T00:00:00Z"
             self.calendar.select_day(GLib.DateTime.new_from_iso8601(iso8601))
             self.label_date.set_markup(adate.strftime("%A, %B %d %Y"))
             return True
@@ -391,7 +391,7 @@ class MiAZRenameDialog(Gtk.Box):
         return self.result
 
     def on_rename_accept(self, *args):
-        body = _('<big>You are about to set this new filename:</big>\n\n<b>%s</b>') % self.get_filepath_target()
+        body = _(f"<big>You are about to set this new filename:</big>\n\n<b>{self.get_filepath_target()}</b>")
         widget = Gtk.Label()
         widget.set_markup(body)
         window = self.app.get_widget('window')
@@ -419,7 +419,7 @@ class MiAZRenameDialog(Gtk.Box):
         self.actions.document_display(doc)
 
     def on_document_delete(self, button, filepath):
-        body = _('<big>You are about to delete the following document:\n\n<b>%s</b>\n\nConfirm, please.</big>') % os.path.basename(filepath)
+        body = _(f"<big>You are about to delete the following document:\n\n<b>{os.path.basename(filepath)}</b>\n\nConfirm, please.</big>")
         widget = Gtk.Label()
         widget.set_markup(body)
         question = self.factory.create_dialog_question(self, _('Are you sure?'), widget)
@@ -431,11 +431,11 @@ class MiAZRenameDialog(Gtk.Box):
         if response == Gtk.ResponseType.YES:
             try:
                 os.unlink(filepath)
-                self.log.debug("Document deleted: %s", filepath)
+                self.log.debug(f"Document deleted: {filepath}")
                 dialog.destroy()
                 self.destroy()
             except FileNotFoundError as error:
-                self.log.error("Something went wrong: %s", error)
-                self.log.error("Doesn't it exist? Really?")
+                self.log.error(f"Something went wrong: {error}")
+                raise
         else:
             self.actions.show_stack_page_by_name('workspace')

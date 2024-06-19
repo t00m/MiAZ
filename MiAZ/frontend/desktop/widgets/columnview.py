@@ -74,8 +74,6 @@ class MiAZColumnView(Gtk.Box):
         self.app = app
         self.item_type = item_type
         self.log = MiAZLog('MiAZColumnView')
-        self.factory = self.app.get_service('factory')
-        self.actions = self.app.get_service('actions')
         self.selected_items = []
 
         self.viewport = Gtk.Viewport()
@@ -222,9 +220,9 @@ class MiAZColumnView(Gtk.Box):
         self.log.debug(item.id)
 
     def _on_sort_string_func(self, item1, item2, prop):
-        if eval("item1.%s.upper()" % prop) > eval("item2.%s.upper()" % prop):
+        if eval(f"item1.{prop}.upper()") > eval(f"item2.{prop}.upper()"):
             return Gtk.Ordering.LARGER
-        elif eval("item1.%s.upper()" % prop) < eval("item2.%s.upper()" % prop):
+        elif eval(f"item1.{prop}.upper()") < eval(f"item2.{prop}.upper()"):
             return Gtk.Ordering.SMALLER
         else:
             return Gtk.Ordering.EQUAL
@@ -325,9 +323,7 @@ class MiAZColumnViewSelector(Gtk.Box):
             value = self.cv.get_model().get_item(i)
             if item.id == value.id:
                 self.cv.get_model().select_item(i, False)
-                self.log.debug("%s == %s? %s", item.id, value.id, item.id == value.id)
-            # ~ else:
-                # ~ self.cv.get_model().unselect_item(i)
+                self.log.debug(f"{item.id} == {value.id}? {item.id == value.id}")
 
     def get_selected_items(self):
         return self.selected_items
@@ -408,9 +404,9 @@ class MiAZColumnViewSelector(Gtk.Box):
         self.log.debug(item.id)
 
     def _on_sort_string_func(self, item1, item2, prop):
-        if eval("item1.%s.upper()" % prop) > eval("item2.%s.upper()" % prop):
+        if eval(f"item1.{prop}.upper()") > eval(f"item2.{prop}.upper()"):
             return Gtk.Ordering.LARGER
-        elif eval("item1.%s.upper()" % prop) < eval("item2.%s.upper()" % prop):
+        elif eval(f"item1.{prop}.upper()") < eval(f"item2.{prop}.upper()"):
             return Gtk.Ordering.SMALLER
         else:
             return Gtk.Ordering.EQUAL
