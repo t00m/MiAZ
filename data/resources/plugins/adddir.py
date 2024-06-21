@@ -1,13 +1,14 @@
 #!/usr/bin/python3
 # pylint: disable=E1101
-
-"""
 # File: adddir.py
 # Author: Tomás Vírseda
 # License: GPL v3
 # Description: Add a directory to repository
-"""
 
+import os
+import glob
+
+from gi.repository import Gtk
 from gi.repository import GObject
 from gi.repository import Peas
 
@@ -33,9 +34,48 @@ class MiAZAddDirectoryPlugin(GObject.GObject, Peas.Activatable):
 
     def add_menuitem(self, *args):
         if self.app.get_widget('workspace-menu-in-add-directory') is None:
-            actions = self.app.get_service('actions')
             factory = self.app.get_service('factory')
             menu_add = self.app.get_widget('workspace-menu-in-add')
-            menuitem = factory.create_menuitem('add_dir', '... documents from a directory', actions.import_directory, None, [])
+            menuitem = factory.create_menuitem('add_dir', '... from a directory', self.import_directory, None, [])
             self.app.add_widget('workspace-menu-in-add-directory', menuitem)
             menu_add.append_item(menuitem)
+
+    def import_directory(self, *args):
+        factory = self.app.get_service('factory')
+        srvutl = self.app.get_service('util')
+        srvrepo = self.app.get_service('repo')
+
+        def filechooser_response(dialog, response, data):
+            if response == Gtk.ResponseType.ACCEPT:
+                content_area = dialog.get_content_area()
+                box = content_area.get_first_child()
+                filechooser = box.get_first_child()
+                toggle = box.get_last_child()
+                recursive = toggle.get_active()
+                gfile = filechooser.get_file()
+                if gfile is not None:
+                    dirpath = gfile.get_path()
+                    self.log.debug(f"Walk directory {dirpath} recursively? {recursive}")
+                    if recursive:
+                        files = srvutl.get_files_recursively(dirpath)
+                    else:
+                        files = glob.glob(os.path.join(dirpath, '*.*'))
+                    for source in files:
+                        btarget = srvutl.filename_normalize(source)
+                        target = os.path.join(srvrepo.docs, btarget)
+                        srvutl.filename_import(source, target)
+            dialog.destroy()
+
+        window = self.app.get_widget('window')
+        filechooser = factory.create_filechooser(
+                    parent=window,
+                    title=_('Import a directory'),
+                    target = 'FOLDER',
+                    callback = filechooser_response,
+                    data = None
+                    )
+        contents = filechooser.get_content_area()
+        box = contents.get_first_child()
+        toggle = factory.create_button_check(title=_('Walk recursively'), callback=None)
+        box.append(toggle)
+        filechooser.show()

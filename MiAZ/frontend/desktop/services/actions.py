@@ -126,45 +126,6 @@ class MiAZActions(GObject.GObject):
             else:
                 model.append(item_type(id='None', title=_('No repositories found')))
 
-    def import_directory(self, *args):
-        factory = self.app.get_service('factory')
-        srvutl = self.app.get_service('util')
-        srvrepo = self.app.get_service('repo')
-        def filechooser_response(dialog, response, data):
-            if response == Gtk.ResponseType.ACCEPT:
-                content_area = dialog.get_content_area()
-                box = content_area.get_first_child()
-                filechooser = box.get_first_child()
-                toggle = box.get_last_child()
-                recursive = toggle.get_active()
-                gfile = filechooser.get_file()
-                if gfile is not None:
-                    dirpath = gfile.get_path()
-                    self.log.debug(f"Walk directory {dirpath} recursively? {recursive}")
-                    if recursive:
-                        files = srvutl.get_files_recursively(dirpath)
-                    else:
-                        files = glob.glob(os.path.join(dirpath, '*.*'))
-                    for source in files:
-                        btarget = srvutl.filename_normalize(source)
-                        target = os.path.join(srvrepo.docs, btarget)
-                        srvutl.filename_import(source, target)
-            dialog.destroy()
-
-        window = self.app.get_widget('window')
-        filechooser = factory.create_filechooser(
-                    parent=window,
-                    title=_('Import a directory'),
-                    target = 'FOLDER',
-                    callback = filechooser_response,
-                    data = None
-                    )
-        contents = filechooser.get_content_area()
-        box = contents.get_first_child()
-        toggle = factory.create_button_check(title=_('Walk recursively'), callback=None)
-        box.append(toggle)
-        filechooser.show()
-
     def import_config(self, button, item_type):
         factory = self.app.get_service('factory')
         i_title = item_type.__title__
