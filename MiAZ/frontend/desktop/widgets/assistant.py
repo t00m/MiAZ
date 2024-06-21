@@ -1,11 +1,8 @@
 #!/usr/bin/python3
-
-"""
 # File: assistant.py
 # Author: Tomás Vírseda
 # License: GPL v3
 # Description: Repository creation assistant
-"""
 
 import os
 from enum import IntEnum

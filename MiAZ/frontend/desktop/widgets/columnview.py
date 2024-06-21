@@ -1,12 +1,8 @@
 #!/usr/bin/python3
-
-"""
 # File: columnview.py
 # Author: Tomás Vírseda
 # License: GPL v3
 # Description: Custom Gtk.Columnview widget for displaying info
-"""
-
 
 from gi.repository import Gio
 from gi.repository import Gtk

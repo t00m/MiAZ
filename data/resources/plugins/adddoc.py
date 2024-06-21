@@ -14,6 +14,7 @@ from gi.repository import Peas
 
 from MiAZ.backend.log import MiAZLog
 
+
 class MiAZAddDocumentPlugin(GObject.GObject, Peas.Activatable):
     __gtype_name__ = 'MiAZAddDocumentPlugin'
     object = GObject.Property(type=GObject.Object)

@@ -1,11 +1,8 @@
 #!/usr/bin/python3
-
-"""
 # File: settings.py
 # Author: Tomás Vírseda
 # License: GPL v3
 # Description: Manage App and Repository settings
-"""
 
 import os
 from gettext import gettext as _
@@ -104,7 +101,7 @@ class MiAZAppSettings(MiAZCustomWindow):
     def _on_use_repo(self, *args):
         repo_id = self.dd_repo.get_selected_item().id
         self.config['App'].set('current', repo_id)
-        valid = self.app.switch()
+        valid = self.app.switch_start()
         if valid:
             window = self.app.get_widget(f"window-{self.name}")
             window.hide()

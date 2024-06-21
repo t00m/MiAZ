@@ -1,11 +1,8 @@
 #!/usr/bin/python3
-
-"""
 # File: window.py
 # Author: Tomás Vírseda
 # License: GPL v3
 # Description: Custom Window widget
-"""
 
 from gi.repository import Gdk, Gtk
 

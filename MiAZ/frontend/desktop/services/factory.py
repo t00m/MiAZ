@@ -1,11 +1,8 @@
 #!/usr/bin/python3
-
-"""
 # File: factory.py
 # Author: Tomás Vírseda
 # License: GPL v3
 # Description: Custom widgets widely used
-"""
 
 from gi.repository import Gtk
 from gi.repository import Gio
@@ -206,13 +203,6 @@ class MiAZFactory:
             text = search_entry.get_text()
             name = f'{item.id} {item.title}'
             return text.upper() in name.upper()
-
-        def _get_search_entry_widget(dropdown):
-            popover = dropdown.get_last_child()
-            box = popover.get_child()
-            box2 = box.get_first_child()
-            search_entry = box2.get_first_child() # Gtk.SearchEntry
-            return search_entry
 
         def _clear_dropdown(button, dropdown):
             # ~ model = dropdown.get_model()

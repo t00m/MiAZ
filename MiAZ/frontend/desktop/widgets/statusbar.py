@@ -1,11 +1,8 @@
 #!/usr/bin/python3
-
-"""
 # File: statusbar.py
 # Author: Tomás Vírseda
 # License: GPL v3
 # Description: Simple statusbar widget
-"""
 
 from gi.repository import Gtk
 

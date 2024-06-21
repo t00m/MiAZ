@@ -1,11 +1,8 @@
 #!/usr/bin/python3
-
-"""
 # File: actions.py
 # Author: Tomás Vírseda
 # License: GPL v3
 # Description: App actions
-"""
 
 import os
 import glob

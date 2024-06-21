@@ -65,7 +65,7 @@ class MiAZUtil(GObject.GObject):
         self.log.debug(f"Directory {dirpath} deleted")
 
     def directory_create(self, dirpath: str):
-        os.makedirs(dirpath, exist_ok = True)
+        os.makedirs(dirpath, exist_ok=True)
         self.log.debug(f"Directory {dirpath} created")
 
     def json_load(self, filepath: str) -> {}:
@@ -98,7 +98,6 @@ class MiAZUtil(GObject.GObject):
 
     def get_temp_file(self, dir_tmp, suffix='.txt'):
         return tempfile.mkstemp(dir=dir_tmp, suffix=suffix)
-
 
     def get_fields(self, filename: str) -> []:
         filename = os.path.basename(filename)
@@ -153,7 +152,7 @@ class MiAZUtil(GObject.GObject):
         dot = basename.rfind('.')
         if dot > 0:
             name = basename[:dot]
-            ext = basename[dot+1:].lower()
+            ext = basename[dot + 1:].lower()
         else:
             name = basename
             ext = ''
@@ -256,7 +255,7 @@ class MiAZUtil(GObject.GObject):
         elif sys.platform in ['win32', 'cygwin', 'msys']:
             os.startfile(filepath)
 
-    def filename_validate(self, doc:str) -> bool:
+    def filename_validate(self, doc: str) -> bool:
         if len(doc.split('-')) == 7:
             return True
         return False
@@ -278,10 +277,10 @@ class MiAZUtil(GObject.GObject):
         return datetime.strptime("%4d%02d%02d" % (adate.year, adate.month, adate.day), "%Y%m%d")
 
     def since_date_last_n_months(self, adate: datetime, nm: int) -> datetime:
-        return (adate - timedelta(days=30*nm)).replace(day=1)
+        return (adate - timedelta(days=30 * nm)).replace(day=1)
 
     def since_date_last_six_months(self, adate: datetime) -> datetime:
-        return (adate - timedelta(days=30*6)).replace(day=1).date()
+        return (adate - timedelta(days=30 * 6)).replace(day=1).date()
 
     def datetime_to_string(self, adate: datetime) -> str:
         return adate.strftime("%Y%m%d")
@@ -312,7 +311,7 @@ class MiAZUtil(GObject.GObject):
         """Get timestamp (YYYYmmdd_hhmmss)"""
         now = datetime.now()
         return "%4d%02d%02d_%02d%02d%02d" % (now.year, now.month, now.day,
-                                            now.hour, now.minute, now.second)
+                                             now.hour, now.minute, now.second)
 
     def unzip(self, target: str, install_dir):
         """
@@ -325,6 +324,7 @@ class MiAZUtil(GObject.GObject):
     def zip_list(self, filepath: str) -> []:
         zip_archive = zipfile.ZipFile(filepath, "r")
         return zip_archive.namelist()
+
 
 def which(program):
     """

@@ -106,7 +106,7 @@ class MiAZProject(GObject.GObject):
         else:
             self.log.debug(f"Document '{doc}' does not belong to project {project}")
 
-    def remove_batch(self, project:str, docs: list) -> None:
+    def remove_batch(self, project: str, docs: list) -> None:
         """
         C0116: Missing function or method docstring (missing-function-docstring)
         """

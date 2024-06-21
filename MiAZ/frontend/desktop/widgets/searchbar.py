@@ -1,12 +1,9 @@
 #!/usr/bin/python3
-
-"""
 # File: searchbar.py
 # Author: Tomás Vírseda
 # License: GPL v3
 # Description: Custom SearchBar widget
 # Borrowed from: https://github.com/timlau/gtk4-python
-"""
 
 from gi.repository import Gtk
 

@@ -1,11 +1,8 @@
 #!/usr/bin/python3
-
-"""
 # File: dialogs.py
 # Author: Tomás Vírseda
 # License: GPL v3
 # Description: Custom dialogs
-"""
 
 from gi.repository import Gio
 from gi.repository import Gtk

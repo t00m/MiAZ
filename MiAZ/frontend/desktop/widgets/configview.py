@@ -1,11 +1,8 @@
 #!/usr/bin/python3
-
-"""
 # File: configview.py
 # Author: Tomás Vírseda
 # License: GPL v3
 # Description: Custom selector views to manage configuration
-"""
 
 import os
 from gettext import gettext as _

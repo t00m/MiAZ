@@ -1,11 +1,8 @@
 #!/usr/bin/python3
-
-"""
 # File: views.py
 # Author: Tomás Vírseda
 # License: GPL v3
 # Description: Different views based on ColumnView widget
-"""
 
 import os
 from gettext import gettext as _
@@ -245,10 +242,6 @@ class MiAZColumnViewWorkspace(MiAZColumnView):
         code = item.country
         icon.set_from_icon_name(code)
         icon.set_pixel_size(36)
-
-    def _on_factory_setup_flag(self, factory, list_item):
-        box = ColIcon()
-        list_item.set_child(box)
 
 # ~ class MiAZColumnViewSelector(MiAZColumnView):
     # ~ """ Custom ColumnView widget for MiAZ """

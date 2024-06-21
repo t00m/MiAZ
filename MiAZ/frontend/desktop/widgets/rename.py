@@ -1,11 +1,8 @@
 #!/usr/bin/python3
-
-"""
 # File: rename.py
 # Author: Tomás Vírseda
 # License: GPL v3
 # Description: Rename widget for single items
-"""
 
 import os
 from datetime import datetime

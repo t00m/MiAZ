@@ -1,11 +1,8 @@
 #!/usr/bin/python3
-
-"""
 # File: button.py
 # Author: Tomás Vírseda
 # License: GPL v3
 # Description: Custom popover button
-"""
 
 from gi.repository import Gtk
 

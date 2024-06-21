@@ -15,6 +15,7 @@ from gi.repository import GObject
 from MiAZ.backend.log import MiAZLog
 from MiAZ.backend.models import MiAZModel, Group, Person, Country, Purpose, Concept, SentBy, SentTo, Project, Repository, Plugin
 
+
 class MiAZConfig(GObject.GObject):
     """ MiAZ Config class"""
     used = None
@@ -40,12 +41,12 @@ class MiAZConfig(GObject.GObject):
             GObject.GObject.__init__(self)
             GObject.signal_new('available-updated',
                                 MiAZConfig,
-                                GObject.SignalFlags.RUN_LAST, None, () )
+                                GObject.SignalFlags.RUN_LAST, None, ())
         if sid_u == 0:
             GObject.GObject.__init__(self)
             GObject.signal_new('used-updated',
                                 MiAZConfig,
-                                GObject.SignalFlags.RUN_LAST, None, () )
+                                GObject.SignalFlags.RUN_LAST, None, ())
         self.log.debug(f"Config for {self.config_for} initialited")
 
     def __repr__(self):
@@ -76,7 +77,7 @@ class MiAZConfig(GObject.GObject):
     def get_config_foreign(self):
         return self.foreign
 
-    def load(self, filepath:str) -> dict:
+    def load(self, filepath: str) -> dict:
         util = self.app.get_service('util')
         try:
             config_changed = self.cache[filepath]['changed']
@@ -107,7 +108,9 @@ class MiAZConfig(GObject.GObject):
         # ~ self.log.debug(f"{self.config_for} used: {self.used}")
         return self.load(self.used)
 
-    def save(self, filepath: str = '', items: dict = {}) -> bool:
+    def save(self, filepath: str = '', items: dict = None) -> bool:
+        if items is None:
+            items = {}
         saved = self.save_data(filepath, items)
         if saved:
             if filepath == self.available:
@@ -202,7 +205,7 @@ class MiAZConfig(GObject.GObject):
     def add_used(self, key: str, value: str = '') -> bool:
         return self.add(self.used, key, value)
 
-    def add(self, filepath: str, key: str, value:str  = '') -> bool:
+    def add(self, filepath: str, key: str, value: str = '') -> bool:
         util = self.app.get_service('util')
         added = True
         if len(key.strip()) == 0:
@@ -216,16 +219,16 @@ class MiAZConfig(GObject.GObject):
             added = True
         return added
 
-    def remove_available_batch(self, keys:list):
+    def remove_available_batch(self, keys: list):
         self.remove_batch(self.available, keys)
 
-    def remove_used_batch(self, keys:list):
+    def remove_used_batch(self, keys: list):
         self.remove_batch(self.used, keys)
 
-    def remove_available(self, key:str):
+    def remove_available(self, key: str):
         self.remove(self.available, key)
 
-    def remove_used(self, key:str) -> bool:
+    def remove_used(self, key: str) -> bool:
         return self.remove(self.used, key)
 
     def remove_batch(self, filepath: str, keys: list):
@@ -258,15 +261,15 @@ class MiAZConfigApp(MiAZConfig):
         GObject.GObject.__init__(self)
         GObject.signal_new('repo-settings-updated-app',
                             MiAZConfigApp,
-                            GObject.SignalFlags.RUN_LAST, None, () )
+                            GObject.SignalFlags.RUN_LAST, None, ())
         super().__init__(
-            app = app,
+            app=app,
             log=MiAZLog('MiAZ.Config.App'),
-            config_for = 'App',
-            available = ENV['FILE']['CONF'],
-            used = ENV['FILE']['CONF'],
-            default = None,
-            must_copy = False
+            config_for='App',
+            available=ENV['FILE']['CONF'],
+            used=ENV['FILE']['CONF'],
+            default=None,
+            must_copy=False
         )
 
     def exists(self, key: str) -> bool:
@@ -279,99 +282,102 @@ class MiAZConfigApp(MiAZConfig):
             self.emit('repo-settings-updated-app')
         return saved
 
+
 class MiAZConfigRepositories(MiAZConfig):
     def __init__(self, app):
         ENV = app.get_env()
         dir_conf = ENV['LPATH']['ETC']
         super().__init__(
-            app = app,
+            app=app,
             log=MiAZLog('MiAZ.Settings.Repos'),
-            config_for = 'Repositories',
-            available = os.path.join(dir_conf, 'repos-available.json'),
-            used = os.path.join(dir_conf, 'repos-used.json'),
-            default = None,
-            model = Repository,
-            must_copy = False,
-            foreign = True
+            config_for='Repositories',
+            available=os.path.join(dir_conf, 'repos-available.json'),
+            used=os.path.join(dir_conf, 'repos-used.json'),
+            default=None,
+            model=Repository,
+            must_copy=False,
+            foreign=True
         )
+
 
 class MiAZConfigCountries(MiAZConfig):
     def __init__(self, app, dir_conf):
 
         ENV = app.get_env()
         super().__init__(
-            app = app,
+            app=app,
             log=MiAZLog('MiAZ.Settings.Countries'),
-            config_for = 'Countries',
-            available = os.path.join(dir_conf, 'countries-available.json'),
-            used = os.path.join(dir_conf, 'countries-used.json'),
-            default = os.path.join(ENV['GPATH']['CONF'],
-                            'MiAZ-countries.json'),
-            model = Country,
-            must_copy = False,
-            foreign = True
+            config_for='Countries',
+            available=os.path.join(dir_conf, 'countries-available.json'),
+            used=os.path.join(dir_conf, 'countries-used.json'),
+            default=os.path.join(ENV['GPATH']['CONF'], 'MiAZ-countries.json'),
+            model=Country,
+            must_copy=False,
+            foreign=True
         )
+
 
 class MiAZConfigGroups(MiAZConfig):
     def __init__(self, app, dir_conf):
 
         ENV = app.get_env()
         super().__init__(
-            app = app,
+            app=app,
             log=MiAZLog('MiAZ.Settings.Groups'),
-            config_for = 'Groups',
-            used = os.path.join(dir_conf, 'groups-used.json'),
-            available = os.path.join(dir_conf, 'groups-available.json'),
-            default = os.path.join(ENV['GPATH']['CONF'],
-                            'MiAZ-groups.json'),
-            model = Group,
-            must_copy = True
+            config_for='Groups',
+            used=os.path.join(dir_conf, 'groups-used.json'),
+            available=os.path.join(dir_conf, 'groups-available.json'),
+            default=os.path.join(ENV['GPATH']['CONF'], 'MiAZ-groups.json'),
+            model=Group,
+            must_copy=True
         )
+
 
 class MiAZConfigPurposes(MiAZConfig):
     def __init__(self, app, dir_conf):
 
         ENV = app.get_env()
         super().__init__(
-            app = app,
+            app=app,
             log=MiAZLog('MiAZ.Settings.Purposes'),
-            config_for = 'Purposes',
-            used = os.path.join(dir_conf, 'purposes-used.json'),
-            available = os.path.join(dir_conf, 'purposes-available.json'),
-            default = os.path.join(ENV['GPATH']['CONF'],
-                            'MiAZ-purposes.json'),
-            model = Purpose,
-            must_copy = True
+            config_for='Purposes',
+            used=os.path.join(dir_conf, 'purposes-used.json'),
+            available=os.path.join(dir_conf, 'purposes-available.json'),
+            default=os.path.join(ENV['GPATH']['CONF'], 'MiAZ-purposes.json'),
+            model=Purpose,
+            must_copy=True
         )
+
 
 class MiAZConfigConcepts(MiAZConfig):
     def __init__(self, app, dir_conf):
         super().__init__(
-            app = app,
+            app=app,
             log=MiAZLog('MiAZ.Settings.Concepts'),
-            config_for = 'Concepts',
-            used = os.path.join(dir_conf, 'concepts-used.json'),
-            available = os.path.join(dir_conf, 'concepts-available.json'),
-            default = None,
-            model = Concept,
-            must_copy = False
+            config_for='Concepts',
+            used=os.path.join(dir_conf, 'concepts-used.json'),
+            available=os.path.join(dir_conf, 'concepts-available.json'),
+            default=None,
+            model=Concept,
+            must_copy=False
         )
+
 
 class MiAZConfigPeople(MiAZConfig):
     def __init__(self, app, dir_conf):
 
         ENV = app.get_env()
         super().__init__(
-            app = app,
+            app=app,
             log=MiAZLog('MiAZ.Settings.People'),
-            config_for = 'Person',
-            used = os.path.join(dir_conf, 'people-used.json'),
-            available = os.path.join(dir_conf, 'people-available.json'),
-            default = os.path.join(ENV['GPATH']['CONF'],
-                            'MiAZ-people.json'),
-            model = Person,
-            must_copy = True
+            config_for='Person',
+            used=os.path.join(dir_conf, 'people-used.json'),
+            available=os.path.join(dir_conf, 'people-available.json'),
+            default=os.path.join(ENV['GPATH']['CONF'], 'MiAZ-people.json'),
+            model=Person,
+            must_copy=True
         )
+
 
 class MiAZConfigSentBy(MiAZConfig):
     def __init__(self, app, dir_conf):
@@ -380,55 +386,56 @@ class MiAZConfigSentBy(MiAZConfig):
         config_name_available = SentBy.__config_name_available__
         config_name_used = SentBy.__config_name_used__
         super().__init__(
-            app = app,
+            app=app,
             log=MiAZLog('MiAZ.Settings.SentBy'),
-            config_for = 'SentBy',
-            used = os.path.join(dir_conf, f'{config_name_used}-used.json'),
-            available = os.path.join(dir_conf, f'{config_name_available}-available.json'),
-            default = os.path.join(ENV['GPATH']['CONF'],
-                            'MiAZ-people.json'),
-            model = SentBy,
-            must_copy = False
+            config_for='SentBy',
+            used=os.path.join(dir_conf, f'{config_name_used}-used.json'),
+            available=os.path.join(dir_conf, f'{config_name_available}-available.json'),
+            default=os.path.join(ENV['GPATH']['CONF'], 'MiAZ-people.json'),
+            model=SentBy,
+            must_copy=False
         )
+
 
 class MiAZConfigSentTo(MiAZConfig):
     def __init__(self, app, dir_conf):
 
         ENV = app.get_env()
         super().__init__(
-            app = app,
+            app=app,
             log=MiAZLog('MiAZ.Settings.SentTo'),
-            config_for = 'SentTo',
-            used = os.path.join(dir_conf, f'{SentTo.__config_name_used__}-used.json'),
-            available = os.path.join(dir_conf, f'{SentTo.__config_name_available__}-available.json'),
-            default = os.path.join(ENV['GPATH']['CONF'],
-                            'MiAZ-people.json'),
-            model = SentTo,
-            must_copy = False
+            config_for='SentTo',
+            used=os.path.join(dir_conf, f'{SentTo.__config_name_used__}-used.json'),
+            available=os.path.join(dir_conf, f'{SentTo.__config_name_available__}-available.json'),
+            default=os.path.join(ENV['GPATH']['CONF'], 'MiAZ-people.json'),
+            model=SentTo,
+            must_copy=False
         )
+
 
 class MiAZConfigProjects(MiAZConfig):
     def __init__(self, app, dir_conf):
         super().__init__(
-            app = app,
+            app=app,
             log=MiAZLog('MiAZ.Settings.Project'),
-            config_for = 'Project',
-            used = os.path.join(dir_conf, 'project-used.json'),
-            available = os.path.join(dir_conf, 'project-available.json'),
-            default = None,
-            model = Project,
-            must_copy = False
+            config_for='Project',
+            used=os.path.join(dir_conf, 'project-used.json'),
+            available=os.path.join(dir_conf, 'project-available.json'),
+            default=None,
+            model=Project,
+            must_copy=False
         )
+
 
 class MiAZConfigUserPlugins(MiAZConfig):
     def __init__(self, app, dir_conf):
         super().__init__(
-            app = app,
+            app=app,
             log=MiAZLog('MiAZ.Settings.UserPlugins'),
-            config_for = 'UserPlugin',
-            used = os.path.join(dir_conf, 'plugins-used.json'),
-            available = os.path.join(dir_conf, 'plugins-available.json'),
-            default = None,
-            model = Plugin,
-            must_copy = False
+            config_for='UserPlugin',
+            used=os.path.join(dir_conf, 'plugins-used.json'),
+            available=os.path.join(dir_conf, 'plugins-available.json'),
+            default=None,
+            model=Plugin,
+            must_copy=False
         )

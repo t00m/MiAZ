@@ -18,21 +18,23 @@ from gi.repository import GObject
 
 from MiAZ.backend.log import MiAZLog
 
+
 class MiAZWatcher(GObject.GObject):
     __gtype_name__ = 'MiAZWatcher'
     before = {}
     active = False
 
-    def __init__(self, dirpath: str):
+    def __init__(self, dirpath: str = None):
         super().__init__()
         self.log = MiAZLog('MiAZ.Watcher')
         self.dirpath = dirpath
         sid = GObject.signal_lookup('repository-updated', MiAZWatcher)
         if sid == 0:
             GObject.GObject.__init__(self)
-            GObject.signal_new('repository-updated', MiAZWatcher, GObject.SignalFlags.RUN_LAST, None, () )
+            GObject.signal_new('repository-updated', MiAZWatcher, GObject.SignalFlags.RUN_LAST, None, ())
             self.set_path(dirpath)
             GLib.timeout_add_seconds(1, self.watch)
+        self.log.debug("Watcher initialized")
 
     # PLAIN
     def __files_with_timestamp(self, rootdir):
@@ -62,8 +64,9 @@ class MiAZWatcher(GObject.GObject):
         # ~ return dict([(f, os.path.getmtime(f)) for f in filelist])
 
     def set_path(self, dirpath: str):
-        self.dirpath = dirpath
-        self.log.debug(f"Watcher monitoring '{self.dirpath}'")
+        if dirpath is not None:
+            self.dirpath = dirpath
+            self.log.debug(f"Watcher monitoring '{self.dirpath}'")
 
     def set_active(self, active: bool = True) -> None:
         self.active = active

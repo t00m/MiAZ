@@ -1,11 +1,9 @@
 #!/usr/bin/python3
-
-"""
 # File: app.py
 # Author: Tomás Vírseda
 # License: GPL v3
 # Description: Frontent/Desktop entry point
-"""
+
 
 from gi.repository import GObject
 from gi.repository import GLib
@@ -17,21 +15,22 @@ from MiAZ.frontend.desktop.services.icm import MiAZIconManager
 from MiAZ.frontend.desktop.services.factory import MiAZFactory
 from MiAZ.frontend.desktop.services.actions import MiAZActions
 from MiAZ.frontend.desktop.widgets.mainwindow import MiAZMainWindow
-from MiAZ.frontend.desktop.widgets.workspace import MiAZWorkspace
-from MiAZ.frontend.desktop.widgets.rename import MiAZRenameDialog
 from MiAZ.frontend.desktop.widgets.settings import MiAZRepoSettings
-from MiAZ.frontend.desktop.widgets.welcome import MiAZWelcome
 from MiAZ.backend.util import MiAZUtil
 from MiAZ.backend.config import MiAZConfigApp
 from MiAZ.backend.repository import MiAZRepository
 from MiAZ.backend.config import MiAZConfigRepositories
 from MiAZ.backend.status import MiAZStatus
+from MiAZ.backend.watcher import MiAZWatcher
+from MiAZ.backend.projects import MiAZProject
 
 
 class MiAZApp(Gtk.Application):
+    """MiAZ Gtk Application class."""
+
     __gsignals__ = {
-        "start-application-completed":  (GObject.SignalFlags.RUN_LAST, None, ()),
-        "exit-application":  (GObject.SignalFlags.RUN_LAST, None, ()),
+        "start-application-completed": (GObject.SignalFlags.RUN_LAST, None, ()),
+        "exit-application": (GObject.SignalFlags.RUN_LAST, None, ()),
     }
     plugins_loaded = False
     _miazobjs = {}  # MiAZ Objects
@@ -39,54 +38,73 @@ class MiAZApp(Gtk.Application):
     _status = MiAZStatus.BUSY
 
     def __init__(self, **kwargs):
+        """Set up env, UI and services used by the rest of modules."""
         super().__init__(**kwargs)
         self._miazobjs['widgets'] = {}
         self._miazobjs['services'] = {}
         self._miazobjs['actions'] = {}
         self.log = self._miazobjs['services']['log'] = MiAZLog("MiAZ.App")
-        self.add_service('icons', MiAZIconManager(self))
-        self.add_service('factory', MiAZFactory(self))
-        self.add_service('actions', MiAZActions(self))
+        self.set_service('util', MiAZUtil(self))
+        self.set_service('icons', MiAZIconManager(self))
+        self.set_service('factory', MiAZFactory(self))
+        self.set_service('actions', MiAZActions(self))
+        repository = self.set_service('repo', MiAZRepository(self))
+        repository.connect('repository-switched', self.switch_finish)
         self._env = None
         self.conf = None
         self.app = None
-        self.plugin_manager = None
 
     def get_status(self):
+        """Return current app status.
+
+        Statuses defined in the class MiAZStatus (backend mod. status.)
+        """
         return self._status
 
     def set_status(self, status: MiAZStatus):
+        """
+        Set current application status.
+
+        Normal status is RUNNING.
+        BUSY status is used when the UI is being updated. Because there
+        are many widgets listening to config changes, it is very useful
+        to avoid updating workspace view repeteadly.
+        """
         self._status = status
 
     def get_config_dict(self):
         return self._config
 
     def set_env(self, ENV: dict):
+        """Receive and set the environment when the app is launched.
+
+        Once MiAZ gets the environment, it starts loading basic config.
+        """
         self._env = ENV
-        self.log.debug("Starting MiAZ")
-        self.add_service('util', MiAZUtil(self))
         self._config['App'] = MiAZConfigApp(self)
         self._config['Repository'] = MiAZConfigRepositories(self)
         self.conf = self.get_config_dict()
-        GLib.set_application_name(ENV['APP']['name'])
         self.connect('activate', self._on_activate)
+        GLib.set_application_name(ENV['APP']['name'])
 
     def get_env(self):
+        """Return current environment dictionary."""
         return self._env
 
     def _on_activate(self, app):
+        """Start application workflow.
+
+        As soon as the the application become active, the app workflow
+        is started.
+        """
         self.app = app
-        self.add_service('repo', MiAZRepository(self))
         self._setup_ui()
-        menubar = self.get_widget('window-menu-app')
-        self.set_menubar(menubar)
-        self._setup_plugin_manager()
-        self.switch()
+        self.set_service('plugin-manager', MiAZPluginManager(self))
+        self.switch_start()
         self.log.debug("Executing MiAZ Desktop mode")
 
     def _setup_ui(self):
-        """
-        """
+        """Set up main application window."""
         ENV = self.get_env()
 
         # Main MiAZ Window
@@ -97,7 +115,7 @@ class MiAZApp(Gtk.Application):
         window.set_default_icon_name('MiAZ')
 
         # Theme
-        theme = self.add_service('theme', Gtk.IconTheme.get_for_display(window.get_display()))
+        theme = self.set_service('theme', Gtk.IconTheme.get_for_display(window.get_display()))
         theme.add_search_path(ENV['GPATH']['ICONS'])
         theme.add_search_path(ENV['GPATH']['FLAGS'])
         self.log.debug(f"MiAZ custom icons in: {ENV['GPATH']['ICONS']}")
@@ -105,6 +123,10 @@ class MiAZApp(Gtk.Application):
         # Setup main window contents
         mainbox = self.add_widget('window-mainbox', MiAZMainWindow(self))
         window.set_child(mainbox)
+
+        # FIXME: Setup menu bar
+        menubar = self.get_widget('window-menu-app')
+        self.set_menubar(menubar)
 
     def _on_window_close_request(self, *args):
         self.log.debug("Close application requested")
@@ -122,9 +144,9 @@ class MiAZApp(Gtk.Application):
         if workspace_loaded and not self.plugins_loaded:
             self.log.debug("Loading system plugins...")
             plugin_manager = self.get_service('plugin-manager')
-            np = 0 # Number of system plugins
-            ap = 0   # system plugins activated
-            for plugin in self.plugin_manager.plugins:
+            np = 0  # Number of system plugins
+            ap = 0  # system plugins activated
+            for plugin in plugin_manager.plugins:
                 try:
                     ptype = plugin_manager.get_plugin_type(plugin)
                     if ptype == MiAZPluginType.SYSTEM:
@@ -142,9 +164,9 @@ class MiAZApp(Gtk.Application):
             self.log.debug("Loading user plugins for this repository...")
             conf = self.get_config_dict()
             plugins = conf['Plugin']
-            np = 0 # Number of user plugins
-            ap = 0   # user plugins activated
-            for plugin in self.plugin_manager.plugins:
+            np = 0  # Number of user plugins
+            ap = 0  # user plugins activated
+            for plugin in plugin_manager.plugins:
                 try:
                     ptype = plugin_manager.get_plugin_type(plugin)
                     if ptype == MiAZPluginType.USER:
@@ -159,9 +181,6 @@ class MiAZApp(Gtk.Application):
                     np += 1
             self.log.debug(f"User plugins loaded for this repoitory: {ap}/{np}")
 
-    def _setup_plugin_manager(self):
-        self.plugin_manager = self.add_service('plugin-manager', MiAZPluginManager(self))
-
     def get_config(self, name: str):
         try:
             config = self.get_config_dict()
@@ -169,7 +188,8 @@ class MiAZApp(Gtk.Application):
         except KeyError:
             return None
 
-    def switch(self):
+    def switch_start(self):
+        """Switch from one repository to another."""
         self.log.debug("Repository switch requested")
         actions = self.get_service('actions')
         repository = self.get_service('repo')
@@ -192,9 +212,7 @@ class MiAZApp(Gtk.Application):
             if repo_settings is None:
                 repo_settings = self.add_widget('settings-repo', MiAZRepoSettings(self))
                 repo_settings.update()
-            if self.get_widget('rename') is None:
-                self._setup_page_rename()
-            workspace = self._setup_page_workspace()
+            workspace = self.get_widget('workspace')
             workspace.initialize_caches()
             if not self.plugins_loaded:
                 self._load_plugins()
@@ -205,44 +223,35 @@ class MiAZApp(Gtk.Application):
             self.log.debug(f"Error loading repo {repo_id} of type {type(repo_id)}")
             if repo_id is None:
                 welcome_widget = self.get_widget('welcome')
-                if welcome_widget is None:
-                    self._setup_page_welcome()
                 actions.show_stack_page_by_name('welcome')
                 window = self.get_widget('window')
                 window.present()
         return repo_loaded
 
-    def _setup_page_welcome(self):
-        stack = self.get_widget('stack')
-        widget_welcome = self.get_widget('welcome')
-        if widget_welcome is None:
-            widget_welcome = self.add_widget('welcome', MiAZWelcome(self))
-            page_welcome = stack.add_titled(widget_welcome, 'welcome', 'MiAZ')
-            page_welcome.set_icon_name('MiAZ')
-            page_welcome.set_visible(True)
+    def switch_finish(self, *args):
+        """Finish switch repository operation"""
+        repository = self.get_service('repo')
+        self.set_service('Projects', MiAZProject(self))
+        watcher = MiAZWatcher()
+        watcher.set_path(repository.docs)
+        watcher.set_active(active=True)
+        self.app.set_service('watcher', watcher)
+        self.log.debug("Repository switch finished")
 
-    def _setup_page_workspace(self):
-        stack = self.get_widget('stack')
-        widget_workspace = self.get_widget('workspace')
-        if widget_workspace is None:
-            widget_workspace = self.add_widget('workspace', MiAZWorkspace(self))
-            page_workspace = stack.add_titled(widget_workspace, 'workspace', 'MiAZ')
-            page_workspace.set_icon_name('document-properties')
-            page_workspace.set_visible(True)
-            actions = self.get_service('actions')
-            actions.show_stack_page_by_name('workspace')
-        return widget_workspace
+        # Setup stack pages
+        mainbox = self.get_widget('window-mainbox')
+        page_welcome = self.get_widget('welcome')
+        if page_welcome is None:
+            mainbox._setup_page_welcome()
+        page_rename = self.get_widget('rename')
+        if page_rename is None:
+            mainbox._setup_page_rename()
+        page_workspace = self.get_widget('workspace')
+        if page_workspace is None:
+            mainbox._setup_page_workspace()
 
-    def _setup_page_rename(self):
-        stack = self.get_widget('stack')
-        widget_rename = self.get_widget('rename')
-        if widget_rename is None:
-            widget_rename = self.add_widget('rename', MiAZRenameDialog(self))
-            page_rename = stack.add_titled(widget_rename, 'rename', 'MiAZ')
-            page_rename.set_icon_name('document-properties')
-            page_rename.set_visible(False)
-
-    def add_service(self, name: str, service: GObject.GObject) -> GObject.GObject:
+    def set_service(self, name: str, service: GObject.GObject) -> GObject.GObject:
+        """Add a service to internal MiAZ objects dictionary."""
         srv = self.get_service(name)
         if srv is None:
             self._miazobjs['services'][name] = service
@@ -251,12 +260,14 @@ class MiAZApp(Gtk.Application):
         return srv
 
     def get_service(self, name):
+        """Return a service from the MiAZ objects dictionary."""
         try:
             return self._miazobjs['services'][name]
         except KeyError:
             return None
 
     def add_widget(self, name: str, widget) -> Gtk.Widget or None:
+        """Add widget to internal MiAZ objects dictionary."""
         wdg = self.get_widget(name)
         if wdg is not None:
             self.log.debug(f"Widget '{name}' will be overwritten")
@@ -264,6 +275,7 @@ class MiAZApp(Gtk.Application):
         return wdg
 
     def get_widget(self, name):
+        """Return a widget from the MiAZ objects dictionary."""
         try:
             return self._miazobjs['widgets'][name]
         except KeyError:
@@ -271,7 +283,8 @@ class MiAZApp(Gtk.Application):
 
     def remove_widget(self, name: str):
         """
-        Remove widget name from dictionary.
+        Remove widget from dictionary.
+
         They widget is not destroyed. It must be done by the developer.
         This method is mostly useful during plugins unloading.
         """

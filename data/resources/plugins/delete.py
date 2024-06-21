@@ -49,6 +49,7 @@ class MiAZDeleteItemPlugin(GObject.GObject, Peas.Activatable):
         repository = self.app.get_service('repo')
         util = self.app.get_service('util')
         workspace = self.app.get_widget('workspace')
+
         def dialog_response(dialog, response, items):
             if response == Gtk.ResponseType.ACCEPT:
                 for item in items:

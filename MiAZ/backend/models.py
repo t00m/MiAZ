@@ -30,6 +30,7 @@ class MiAZModel(GObject.Object):
     def title(self):
         return self._title
 
+
 class MiAZItem(MiAZModel):
     """Custom data model for MiAZ use cases
     {timestamp}-{country}-{group}-{sentby}-{purpose}-{concept}-{sentto}.{extension}
@@ -37,7 +38,7 @@ class MiAZItem(MiAZModel):
     __gtype_name__ = 'MiAZItem'
     __title__ = 'MiAZItem'
 
-    def __init__(self,  id: str,
+    def __init__(self, id: str,
                         date: str = '',
                         date_dsc: str = '',
                         group: str = '',
@@ -47,7 +48,7 @@ class MiAZItem(MiAZModel):
                         sentby_id: str = '',
                         sentby_dsc: str = '',
                         title: str = '',
-                        subtitle:str = '',
+                        subtitle: str = '',
                         sentto_id: str = '',
                         sentto_dsc: str = '',
                         active: bool = False,
@@ -89,7 +90,6 @@ class MiAZItem(MiAZModel):
     @GObject.Property
     def country_dsc(self):
         return self._country_dsc
-
 
     @GObject.Property
     def purpose(self):
@@ -135,6 +135,7 @@ class MiAZItem(MiAZModel):
     def icon(self):
         return self._icon
 
+
 class Concept(MiAZModel):
     __gtype_name__ = 'Concept'
     __title__ = _('Concept')
@@ -142,6 +143,7 @@ class Concept(MiAZModel):
     __config_name__ = 'concepts'
     __config_name_available__ = 'concepts'
     __config_name_used__ = 'concepts'
+
 
 class Country(MiAZModel):
     __gtype_name__ = 'Country'
@@ -151,13 +153,14 @@ class Country(MiAZModel):
     __config_name_available__ = 'countries'
     __config_name_used__ = 'countries'
 
-    def __init__(self,  id: str, title: str = '', icon: str = ''):
+    def __init__(self, id: str, title: str = '', icon: str = ''):
         super().__init__(id, title)
         self._icon = icon
 
     @GObject.Property
     def icon(self):
         return self._icon
+
 
 class Date(MiAZModel):
     __gtype_name__ = 'Date'
@@ -167,6 +170,7 @@ class Date(MiAZModel):
     __config_name_available__ = 'dates'
     __config_name_used__ = 'dates'
 
+
 class Document(MiAZModel):
     __gtype_name__ = 'Document'
     __title__ = _('Document')
@@ -174,6 +178,7 @@ class Document(MiAZModel):
     __config_name__ = 'documents'
     __config_name_available__ = 'documents'
     __config_name_used__ = 'documents'
+
 
 class Extension(MiAZModel):
     __gtype_name__ = 'Extension'
@@ -183,6 +188,7 @@ class Extension(MiAZModel):
     __config_name_available__ = 'extensions'
     __config_name_used__ = 'extensions'
 
+
 class File(MiAZModel):
     __gtype_name__ = 'File'
     __title__ = _('File')
@@ -190,6 +196,7 @@ class File(MiAZModel):
     __config_name__ = 'files'
     __config_name_available__ = 'files'
     __config_name_used__ = 'files'
+
 
 class Group(MiAZModel):
     __gtype_name__ = 'Group'
@@ -199,6 +206,7 @@ class Group(MiAZModel):
     __config_name_available__ = 'groups'
     __config_name_used__ = 'groups'
 
+
 class Person(MiAZModel):
     __gtype_name__ = 'Person'
     __title__ = _('Person')
@@ -206,6 +214,7 @@ class Person(MiAZModel):
     __config_name__ = 'people'
     __config_name_available__ = 'people'
     __config_name_used__ = 'people'
+
 
 class Project(MiAZModel):
     __gtype_name__ = 'Project'
@@ -215,6 +224,7 @@ class Project(MiAZModel):
     __config_name_available__ = 'projects'
     __config_name_used__ = 'projects'
 
+
 class Purpose(MiAZModel):
     __gtype_name__ = 'Purpose'
     __title__ = _('Purpose')
@@ -222,6 +232,7 @@ class Purpose(MiAZModel):
     __config_name__ = 'purposes'
     __config_name_available__ = 'purposes'
     __config_name_used__ = 'purposes'
+
 
 class Repository(MiAZModel):
     __gtype_name__ = 'Repository'
@@ -231,6 +242,7 @@ class Repository(MiAZModel):
     __config_name_available__ = 'repositories'
     __config_name_used__ = 'repositories'
 
+
 class SentBy(Person):
     __gtype_name__ = 'SentBy'
     __title__ = _('Sender')
@@ -239,6 +251,7 @@ class SentBy(Person):
     __config_name_available__ = 'people'
     __config_name_used__ = 'senders'
 
+
 class SentTo(Person):
     __gtype_name__ = 'SentTo'
     __title__ = _('Recipient')
@@ -246,6 +259,7 @@ class SentTo(Person):
     __config_name__ = 'recipients'
     __config_name_available__ = 'people'
     __config_name_used__ = 'recipients'
+
 
 class Plugin(MiAZModel):
     __gtype_name__ = 'Plugin'

@@ -21,10 +21,7 @@ from MiAZ.backend.config import MiAZConfigConcepts
 from MiAZ.backend.config import MiAZConfigPeople
 from MiAZ.backend.config import MiAZConfigSentBy
 from MiAZ.backend.config import MiAZConfigSentTo
-
 from MiAZ.backend.config import MiAZConfigUserPlugins
-from MiAZ.backend.watcher import MiAZWatcher
-from MiAZ.backend.projects import MiAZProject
 
 
 class MiAZRepository(GObject.GObject):
@@ -36,7 +33,7 @@ class MiAZRepository(GObject.GObject):
             super().__init__()
             GObject.signal_new('repository-switched',
                                 MiAZRepository,
-                                GObject.SignalFlags.RUN_LAST, None, () )
+                                GObject.SignalFlags.RUN_LAST, None, ())
         self.app = app
         self.log = MiAZLog('MiAZ.Repository')
         self.config = self.app.get_config_dict()
@@ -56,7 +53,7 @@ class MiAZRepository(GObject.GObject):
         try:
             conf_dir = os.path.join(path, '.conf')
             conf_file = os.path.join(conf_dir, 'repo.json')
-            self.log.debug(f"Validating repository '{conf_file}'")
+            # ~ self.log.debug(f"Validating repository '{conf_file}'")
             if os.path.exists(conf_dir):
                 if os.path.exists(conf_file):
                     with open(conf_file, 'r') as fin:
@@ -74,7 +71,7 @@ class MiAZRepository(GObject.GObject):
         repoconf = {}
         repoconf['FORMAT'] = 1
         dir_conf = os.path.join(path, '.conf')
-        os.makedirs(dir_conf, exist_ok = True)
+        os.makedirs(dir_conf, exist_ok=True)
         conf_file = os.path.join(dir_conf, 'repo.json')
         with open(conf_file, 'w') as fout:
             json.dump(repoconf, fout, sort_keys=True, indent=4)
@@ -113,10 +110,6 @@ class MiAZRepository(GObject.GObject):
         self.config['Person'] = MiAZConfigPeople(self.app, repo_dir_conf)
         self.config['Project'] = MiAZConfigProjects(self.app, repo_dir_conf)
         self.config['Plugin'] = MiAZConfigUserPlugins(self.app, repo_dir_conf)
-        self.app.add_service('Projects', MiAZProject(self.app))
-        watcher = MiAZWatcher(path)
-        watcher.set_active(active=True)
-        self.app.add_service('watcher', watcher)
         self.log.debug(f"Repository configuration loaded correctly from: {repo_dir_conf}")
         self.emit('repository-switched')
 
