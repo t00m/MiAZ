@@ -8,14 +8,17 @@ import sys
 import signal
 import locale
 import gettext
+import subprocess
 
 sys.path.insert(1, '@pkgdatadir@')
 
 from MiAZ.backend.log import MiAZLog
 from MiAZ.backend.util import which
 
+cmd_version = 'meson introspect meson.build --projectinfo | jq .version'
+o, e = subprocess.Popen([cmd_version], shell=True, stdout=subprocess.PIPE).communicate()
+VERSION = o.decode('utf-8').strip().replace('"', '')
 log = MiAZLog('MiAZ')
-
 ENV = {}
 
 # Desktop environment
@@ -182,7 +185,7 @@ def main():
     miaz_dir = os.path.dirname(miaz_exec)
     ROOT = os.path.abspath(miaz_dir + '/..')
     ENV['APP']['ID'] = 'com.github.t00m.MiAZ'
-    ENV['APP']['VERSION'] = '0.0.21'
+    ENV['APP']['VERSION'] = VERSION
     ENV['APP']['PGKDATADIR'] = os.path.join(ROOT, 'share/MiAZ/data')
     ENV['APP']['LOCALEDIR'] = os.path.join(ROOT, 'share/MiAZ/locale')
     ENV['CONF']['ROOT'] = ENV['APP']['PGKDATADIR']
