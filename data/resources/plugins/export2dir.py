@@ -30,6 +30,8 @@ Field[SentTo] = 6
 
 
 class Export2Dir(GObject.GObject, Peas.Activatable):
+    """Export selected documents to a directory"""
+
     __gtype_name__ = 'MiAZExport2DirPlugin'
     object = GObject.Property(type=GObject.Object)
 

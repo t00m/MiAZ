@@ -9,8 +9,10 @@ from gi.repository import Gtk
 
 class MiAZPopoverButton(Gtk.Box):
     """Custom Popover Button"""
-    def __init__(self, app, icon_name: str = '', title: str = '', css_classes: list = [], widgets: list = []):
+    def __init__(self, app, icon_name: str = '', title: str = '', css_classes: list = None, widgets: list = None):
         super(Gtk.Box, self).__init__(spacing=0, orientation=Gtk.Orientation.VERTICAL)
+        css_classes = css_classes if css_classes is not None else []
+        widgets = widgets if widgets is not None else []
         self.app = app
         self.factory = self.app.get_service('factory')
         self.icon_name = icon_name

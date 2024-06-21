@@ -6,7 +6,7 @@
 
 from MiAZ.backend.log import MiAZLog
 
-class MiAZWidget(object):
+class MiAZWidget:
     """Widget helper class for MiAZ widgets"""
     log = None
 

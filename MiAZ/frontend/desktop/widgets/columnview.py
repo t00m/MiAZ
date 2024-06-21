@@ -17,7 +17,7 @@ class ColLabel(Gtk.Box):
     __gtype_name__ = 'ColLabel'
 
     def __init__(self):
-        super(ColLabel, self).__init__()
+        super().__init__()
         label = Gtk.Label()
         self.append(label)
 
@@ -26,7 +26,7 @@ class ColIcon(Gtk.Box):
     __gtype_name__ = 'ColIcon'
 
     def __init__(self):
-        super(ColIcon, self).__init__()
+        super().__init__()
         icon = Gtk.Image()
         self.append(icon)
 
@@ -35,7 +35,7 @@ class ColButton(Gtk.Box):
     __gtype_name__ = 'ColButton'
 
     def __init__(self):
-        super(ColButton, self).__init__()
+        super().__init__()
         button = Gtk.Button()
         button.get_style_context().add_class(class_name='flat')
         self.append(button)
@@ -45,7 +45,7 @@ class ColMenuButton(Gtk.Box):
     __gtype_name__ = 'ColMenuButton'
 
     def __init__(self):
-        super(ColMenuButton, self).__init__()
+        super().__init__()
         popover = Gtk.Popover()
         button = Gtk.MenuButton()
         button.set_popover(popover)
@@ -57,7 +57,7 @@ class ColCheck(Gtk.Box):
     __gtype_name__ = 'ColCheck'
 
     def __init__(self):
-        super(ColLabel, self).__init__()
+        super().__init__()
         check = Gtk.CheckButton()
         self.append(check)
 
@@ -66,7 +66,7 @@ class MiAZColumnView(Gtk.Box):
     __gtype_name__ = 'MiAZColumnView'
 
     def __init__(self, app, item_type=MiAZItem):
-        super(MiAZColumnView, self).__init__(orientation=Gtk.Orientation.VERTICAL, spacing=3, hexpand=True, vexpand=True)
+        super().__init__(orientation=Gtk.Orientation.VERTICAL, spacing=3, hexpand=True, vexpand=True)
         self.app = app
         self.item_type = item_type
         self.log = MiAZLog('MiAZColumnView')

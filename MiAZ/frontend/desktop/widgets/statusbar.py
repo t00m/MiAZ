@@ -11,7 +11,7 @@ class MiAZStatusbar(Gtk.Box):
     def __init__(self, app):
         self.app = app
         self.factory = self.app.get_service('factory')
-        super(MiAZStatusbar, self).__init__(orientation=Gtk.Orientation.VERTICAL, hexpand=True, vexpand=False, spacing=3)
+        super().__init__(orientation=Gtk.Orientation.VERTICAL, hexpand=True, vexpand=False, spacing=3)
         self.set_margin_top(margin=0)
         self.set_margin_bottom(margin=6)
         self.set_margin_start(margin=6)

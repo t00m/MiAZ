@@ -32,7 +32,7 @@ class MiAZAssistant(Gtk.Assistant):
     """ Start up Assistant"""
 
     def __init__(self, app):
-        super(MiAZAssistant, self).__init__()
+        super().__init__()
         self.log = MiAZLog('MiAZAssistant')
         self.app = app
         self.factory = self.app.get_service('factory')

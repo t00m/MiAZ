@@ -170,7 +170,10 @@ class MiAZ:
 
 
 def main():
-    """Entry point when the program is installed via PIP."""
+    """Entry point when the program is installed via PIP.
+
+    This entry point is useful when building deb packages.
+    """
     log.debug("MiAZ installation done via PIP")
     miaz_exec = which('miaz')
     if miaz_exec is None:

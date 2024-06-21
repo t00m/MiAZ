@@ -129,7 +129,7 @@ class MiAZDialogAdd(Gtk.Dialog):
     __gtype_name__ = 'MiAZDialogAdd'
 
     def __init__(self, app, parent, title, key1, key2, width=-1, height=-1):
-        super(MiAZDialogAdd, self).__init__()
+        super().__init__()
         self.app = app
         self.log = MiAZLog('MiAZDialogAdd')
         self.title = title

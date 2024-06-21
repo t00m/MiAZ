@@ -11,7 +11,7 @@ class SearchBar(Gtk.SearchBar):
     """ Wrapper for Gtk.Searchbar Gtk.SearchEntry"""
 
     def __init__(self, app):
-        super(SearchBar, self).__init__()
+        super().__init__()
         self.app = app
         window = self.app.get_widget('window')
         box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)

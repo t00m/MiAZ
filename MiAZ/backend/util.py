@@ -120,7 +120,7 @@ class MiAZUtil(GObject.GObject):
         subdirs = set()
 
         subdirs.add(os.path.abspath(root_dir))
-        for root, dirs, files in os.walk(os.path.abspath(root_dir)):
+        for root, _dirs, files in os.walk(os.path.abspath(root_dir)):
             thisdir = os.path.abspath(root)
             if os.path.basename(thisdir).startswith('.'):
                 hidden.add(thisdir)
