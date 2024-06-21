@@ -68,8 +68,8 @@ class MiAZToolbarProjectMgtPlugin(GObject.GObject, Peas.Activatable):
             section_common_in = self.app.get_widget('workspace-menu-selection-section-common-in')
             submenu_massrename = Gio.Menu.new()
             menu_massrename = Gio.MenuItem.new_submenu(
-                label = _('Mass renaming of...'),
-                submenu = submenu_massrename,
+                label=_('Mass renaming of...'),
+                submenu=submenu_massrename,
             )
             section_common_in.append_item(menu_massrename)
             fields = [Date, Country, Group, SentBy, Purpose, SentTo]
@@ -170,7 +170,7 @@ class MiAZToolbarProjectMgtPlugin(GObject.GObject, Peas.Activatable):
             box = factory.create_box_vertical(spacing=6, vexpand=True, hexpand=True)
             label = factory.create_label(_(f'Rename {len(items)} files by setting the field <b>{i_title}</b> to:\n'))
             dropdown = factory.create_dropdown_generic(item_type)
-            icon_name=f'com.github.t00m.MiAZ-res-{i_title_plural.lower()}'
+            icon_name = f'com.github.t00m.MiAZ-res-{i_title_plural.lower()}'
             self.log.debug(icon_name)
             btnManage = factory.create_button(icon_name=icon_name, title='')
             btnManage.connect('clicked', actions.manage_resource, Configview[i_type](self.app))

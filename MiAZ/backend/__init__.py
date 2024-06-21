@@ -6,5 +6,3 @@
 # License: GPL v3
 # Description: Backend Package initialization
 """
-
-

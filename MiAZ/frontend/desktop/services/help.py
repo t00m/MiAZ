@@ -1,11 +1,9 @@
 #!/usr/bin/python3
-
-"""
 # File: help.py
 # Author: Tomás Vírseda
 # License: GPL v3
 # Description: Help module with shortcuts used
-"""
+
 
 from gettext import gettext as _
 from gi.repository import Gtk

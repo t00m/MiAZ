@@ -1,11 +1,8 @@
 #!/usr/bin/python
-# -*- coding: utf-8 -*-
-"""
-# File: icons.py
+# File: icm.py
 # Author: Tomás Vírseda
 # License: GPL v3
 # Description: Icon manager
-"""
 
 from gi.repository import Gtk
 from gi.repository import Gio
@@ -14,14 +11,16 @@ from gi.repository import GObject
 
 class MiAZIconManager(GObject.GObject):
     """
-    Icon Manager for MiAZ
+    Icon Manager for MiAZ.
+
     It helps to retrieve (custom) icons
     """
+
     gicondict = {}
 
     def __init__(self, app):
         """
-        Initializes the IconManager service.
+        Initialize the IconManager service.
 
         :param app: pointer to MiAZApp
         :type app: MiAZApp

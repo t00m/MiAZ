@@ -1,12 +1,9 @@
 #!/usr/bin/python3
-
-"""
 # File: searchbar.py
 # Author: Tomás Vírseda
 # License: GPL v3
 # Description: Custom SearchBar widget
 # Borrowed from: https://github.com/timlau/gtk4-python
-"""
 
 from gi.repository import Gtk
 
@@ -14,7 +11,7 @@ class SearchBar(Gtk.SearchBar):
     """ Wrapper for Gtk.Searchbar Gtk.SearchEntry"""
 
     def __init__(self, app):
-        super(SearchBar, self).__init__()
+        super().__init__()
         self.app = app
         window = self.app.get_widget('window')
         box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)

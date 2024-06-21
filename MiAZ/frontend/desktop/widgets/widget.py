@@ -1,15 +1,12 @@
 #!/usr/bin/python3
-
-"""
 # File: widget.py
 # Author: Tomás Vírseda
 # License: GPL v3
 # Description: Not used
-"""
 
 from MiAZ.backend.log import MiAZLog
 
-class MiAZWidget(object):
+class MiAZWidget:
     """Widget helper class for MiAZ widgets"""
     log = None
 

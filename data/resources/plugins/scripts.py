@@ -52,8 +52,8 @@ class MiAZScriptsPlugin(GObject.GObject, Peas.Activatable):
         if self.app.get_widget('workspace-menu-selection-menu-scripts') is None:
             submenu_scripts = Gio.Menu.new()
             menu_scripts = Gio.MenuItem.new_submenu(
-                label = _('Scripts'),
-                submenu = submenu_scripts,
+                label=_('Scripts'),
+                submenu=submenu_scripts,
             )
             section_common_in.append_item(menu_scripts)
             self.app.add_widget('workspace-menu-selection-menu-scripts', menu_scripts)

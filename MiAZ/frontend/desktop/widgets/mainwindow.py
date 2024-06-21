@@ -1,11 +1,8 @@
 #!/usr/bin/python3
-
-"""
 # File: mainwindow.py
 # Author: Tomás Vírseda
 # License: GPL v3
 # Description: Setup widget for the main window
-"""
 
 from gettext import gettext as _
 
@@ -13,6 +10,9 @@ from gi.repository import Gdk, Gio, Gtk
 
 from MiAZ.backend.log import MiAZLog
 from MiAZ.frontend.desktop.widgets.searchbar import SearchBar
+from MiAZ.frontend.desktop.widgets.welcome import MiAZWelcome
+from MiAZ.frontend.desktop.widgets.rename import MiAZRenameDialog
+from MiAZ.frontend.desktop.widgets.workspace import MiAZWorkspace
 
 
 class MiAZMainWindow(Gtk.Box):
@@ -45,6 +45,7 @@ class MiAZMainWindow(Gtk.Box):
         # On-Demand SearchBar
         search = self.app.add_widget('searchbar', SearchBar(self.app))
         self.append(search)
+
 
     def _setup_event_listener(self):
         evk = Gtk.EventControllerKey.new()
@@ -124,3 +125,32 @@ class MiAZMainWindow(Gtk.Box):
         elif keyname == 'F3':
             actions.toggle_workspace_filters()
 
+    def _setup_page_welcome(self):
+        stack = self.app.get_widget('stack')
+        widget_welcome = self.app.get_widget('welcome')
+        if widget_welcome is None:
+            widget_welcome = self.app.add_widget('welcome', MiAZWelcome(self.app))
+            page_welcome = stack.add_titled(widget_welcome, 'welcome', 'MiAZ')
+            page_welcome.set_icon_name('MiAZ')
+            page_welcome.set_visible(True)
+
+    def _setup_page_rename(self):
+        stack = self.app.get_widget('stack')
+        widget_rename = self.app.get_widget('rename')
+        if widget_rename is None:
+            widget_rename = self.app.add_widget('rename', MiAZRenameDialog(self.app))
+            page_rename = stack.add_titled(widget_rename, 'rename', 'MiAZ')
+            page_rename.set_icon_name('document-properties')
+            page_rename.set_visible(False)
+
+    def _setup_page_workspace(self):
+        stack = self.app.get_widget('stack')
+        widget_workspace = self.app.get_widget('workspace')
+        if widget_workspace is None:
+            widget_workspace = self.app.add_widget('workspace', MiAZWorkspace(self.app))
+            page_workspace = stack.add_titled(widget_workspace, 'workspace', 'MiAZ')
+            page_workspace.set_icon_name('document-properties')
+            page_workspace.set_visible(True)
+            actions = self.app.get_service('actions')
+            actions.show_stack_page_by_name('workspace')
+        return widget_workspace

@@ -1,11 +1,8 @@
 #!/usr/bin/python3
-
-"""
 # File: filechooser.py
 # Author: Tomás Vírseda
 # License: GPL v3
 # Description: Custom filechooser dialog
-"""
 
 # FIXME: Gtk.FileChooser is deprecated. Use Gtk.FileDialog
 # FIXME: Available since Gtk 4.10: https://docs.gtk.org/gtk4/class.FileDialog.html

@@ -8,14 +8,17 @@ import sys
 import signal
 import locale
 import gettext
+import subprocess
 
 sys.path.insert(1, '@pkgdatadir@')
 
 from MiAZ.backend.log import MiAZLog
 from MiAZ.backend.util import which
 
+cmd_version = 'meson introspect meson.build --projectinfo | jq .version'
+o, e = subprocess.Popen([cmd_version], shell=True, stdout=subprocess.PIPE).communicate()
+VERSION = o.decode('utf-8').strip().replace('"', '')
 log = MiAZLog('MiAZ')
-
 ENV = {}
 
 # Desktop environment
@@ -120,7 +123,10 @@ except Exception:
 
 
 class MiAZ:
+    """MiAZ Entry point class."""
+
     def __init__(self, ENV: dict) -> None:
+        """Set up environment and run the application."""
         self.env = ENV
         self.setup_environment()
         self.log = MiAZLog('MiAZ')
@@ -128,14 +134,14 @@ class MiAZ:
         self.log.info(f"{ENV['APP']['shortname']} v{ENV['APP']['VERSION']} - Start")
 
     def setup_environment(self):
-        """Setup MiAZ user environment"""
+        """Set up MiAZ user environment."""
         ENV = self.env
         for entry in ENV['LPATH']:
             if not os.path.exists(ENV['LPATH'][entry]):
                 os.makedirs(ENV['LPATH'][entry])
 
     def set_internationalization(self):
-        """Sets application internationalization."""
+        """Set application internationalization."""
         ENV = self.env
         try:
             locale.bindtextdomain('miaz', ENV['GPATH']['LOCALE'])
@@ -150,7 +156,7 @@ class MiAZ:
                 " translations will not work. Error:\n{}".format(e))
 
     def run(self):
-        """Execute MiAZ in desktop or console mode"""
+        """Execute MiAZ in desktop or console mode."""
         ENV = self.env
         if ENV['DESKTOP']['ENABLED']:
             from MiAZ.frontend.desktop.app import MiAZApp
@@ -165,17 +171,21 @@ class MiAZ:
             sys.exit(0)
         self.log.info(f"{ENV['APP']['shortname']} v{ENV['APP']['VERSION']} - End")
 
+
 def main():
-    """This is the entry point when the program is installed via PIP"""
+    """Entry point when the program is installed via PIP.
+
+    This entry point is useful when building deb packages.
+    """
     log.debug("MiAZ installation done via PIP")
     miaz_exec = which('miaz')
     if miaz_exec is None:
         log.error("Are you sure that MiAZ has been installed correctly?")
         log.error("MiAZ executable not found in $PATH")
     miaz_dir = os.path.dirname(miaz_exec)
-    ROOT = os.path.abspath(miaz_dir+'/..')
+    ROOT = os.path.abspath(miaz_dir + '/..')
     ENV['APP']['ID'] = 'com.github.t00m.MiAZ'
-    ENV['APP']['VERSION'] = '0.0.21'
+    ENV['APP']['VERSION'] = VERSION
     ENV['APP']['PGKDATADIR'] = os.path.join(ROOT, 'share/MiAZ/data')
     ENV['APP']['LOCALEDIR'] = os.path.join(ROOT, 'share/MiAZ/locale')
     ENV['CONF']['ROOT'] = ENV['APP']['PGKDATADIR']
@@ -207,6 +217,7 @@ def main():
 
     app = MiAZ(ENV)
     app.run()
+
 
 if __name__ == "__main__":
     """

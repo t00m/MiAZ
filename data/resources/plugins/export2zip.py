@@ -28,6 +28,7 @@ Field[SentBy] = 3
 Field[Purpose] = 4
 Field[SentTo] = 6
 
+
 class Export2Zip(GObject.GObject, Peas.Activatable):
     __gtype_name__ = 'MiAZExport2ZipPlugin'
     object = GObject.Property(type=GObject.Object)
@@ -92,9 +93,9 @@ class Export2Zip(GObject.GObject, Peas.Activatable):
         filechooser = factory.create_filechooser(
                     parent=window,
                     title=_('Export selected documents to a ZIP file'),
-                    target = 'FOLDER',
-                    callback = filechooser_response,
-                    data = None
+                    target='FOLDER',
+                    callback=filechooser_response,
+                    data=None
                     )
 
         # Export with pattern

@@ -46,7 +46,7 @@ class MiAZPluginManager(GObject.GObject):
         super().__init__()
         GObject.signal_new('plugins-updated',
                             MiAZPluginManager,
-                            GObject.SignalFlags.RUN_LAST, None, () )
+                            GObject.SignalFlags.RUN_LAST, None, ())
         self.log = MiAZLog('MiAZ.PluginManager')
         self.app = app
         self.util = self.app.get_service('util')
@@ -210,7 +210,6 @@ class MiAZPluginManager(GObject.GObject):
         os.makedirs(ENV['LPATH']['PLUGINS'], exist_ok=True)
         self.engine.add_search_path(ENV['LPATH']['PLUGINS'])
         self.log.debug(f"Added user plugins dir: {ENV['LPATH']['PLUGINS']}")
-
 
     @staticmethod
     def __extension_removed_cb(unused_set, unused_plugin_info, extension):

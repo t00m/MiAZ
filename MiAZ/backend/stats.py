@@ -29,12 +29,12 @@ Fields[SentTo] = 6
 class MiAZStats(GObject.GObject):
     __gtype_name__ = 'MiAZStats'
     __gsignals__ = {
-        "stats-updated":  (GObject.SignalFlags.RUN_LAST, None, ()),
+        "stats-updated": (GObject.SignalFlags.RUN_LAST, None, ()),
     }
     stats = {}
 
     def __init__(self, app):
-        super(MiAZStats, self).__init__()
+        super().__init__()
         self.app = app
         self.log = MiAZLog('MiAZStats')
         self.util = self.app.get_service('util')
@@ -90,4 +90,3 @@ class MiAZStats(GObject.GObject):
     def get(self):
         self._build()
         return self.stats
-

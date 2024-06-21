@@ -1,11 +1,8 @@
 #!/usr/bin/python3
-
-"""
 # File: factory.py
 # Author: Tomás Vírseda
 # License: GPL v3
 # Description: Custom widgets widely used
-"""
 
 from gi.repository import Gtk
 from gi.repository import Gio
@@ -106,7 +103,9 @@ class MiAZFactory:
 
         return hbox
 
-    def create_button(self, icon_name='', title='', tooltip='', callback=None, size=16, css_classes=[], data=None):
+    def create_button(self, icon_name='', title='', tooltip='', callback=None, size=16, css_classes=None, data=None):
+        if css_classes is None:
+            css_classes = []
         button = Gtk.Button(css_classes=css_classes)
         hbox = self.create_box_horizontal(spacing=6, margin=0)
         if len(icon_name.strip()) > 0:
@@ -131,7 +130,9 @@ class MiAZFactory:
 
         return button
 
-    def create_button_toggle(self, icon_name: str = '', title: str = '', callback=None, css_classes=[], data=None) -> Gtk.ToggleButton:
+    def create_button_toggle(self, icon_name: str = '', title: str = '', callback=None, css_classes=None, data=None) -> Gtk.ToggleButton:
+        if css_classes is None:
+            css_classes = []
         button = Gtk.ToggleButton(css_classes=css_classes)
         hbox = self.create_box_horizontal(spacing=0, margin=0)
         if len(icon_name.strip()) == 0:
@@ -159,8 +160,9 @@ class MiAZFactory:
             button.connect('toggled', callback)
         return button
 
-    def create_button_menu(self, icon_name: str = '', title:str = '', css_classes: list = [], menu: Gio.Menu = None)-> Gtk.MenuButton:
-        """Gtk.Menubutton with a menu"""
+    def create_button_menu(self, icon_name: str = '', title:str = '', css_classes: list = None, menu: Gio.Menu = None)-> Gtk.MenuButton:
+        if css_classes is None:
+            css_classes = []
         child=self.create_button_content(icon_name=icon_name, title=title, css_classes=css_classes)
         button = Gtk.MenuButton()
         button.set_child(child)
@@ -206,13 +208,6 @@ class MiAZFactory:
             text = search_entry.get_text()
             name = f'{item.id} {item.title}'
             return text.upper() in name.upper()
-
-        def _get_search_entry_widget(dropdown):
-            popover = dropdown.get_last_child()
-            box = popover.get_child()
-            box2 = box.get_first_child()
-            search_entry = box2.get_first_child() # Gtk.SearchEntry
-            return search_entry
 
         def _clear_dropdown(button, dropdown):
             # ~ model = dropdown.get_model()

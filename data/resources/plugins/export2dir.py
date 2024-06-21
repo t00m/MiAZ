@@ -28,7 +28,10 @@ Field[SentBy] = 3
 Field[Purpose] = 4
 Field[SentTo] = 6
 
+
 class Export2Dir(GObject.GObject, Peas.Activatable):
+    """Export selected documents to a directory"""
+
     __gtype_name__ = 'MiAZExport2DirPlugin'
     object = GObject.Property(type=GObject.Object)
 
@@ -51,7 +54,6 @@ class Export2Dir(GObject.GObject, Peas.Activatable):
             menuitem = factory.create_menuitem('export-to-dir', _('...to directory'), self.export, None, [])
             submenu_export.append_item(menuitem)
             self.app.add_widget('workspace-menu-multiple-menu-export-item-export2dir', menuitem)
-
 
     def export(self, *args):
         factory = self.app.get_service('factory')
@@ -93,7 +95,7 @@ class Export2Dir(GObject.GObject, Peas.Activatable):
                             for key in keys:
                                 thispath.append(paths[key])
                             target = os.path.join(*thispath)
-                            os.makedirs(target, exist_ok = True)
+                            os.makedirs(target, exist_ok=True)
                             source = os.path.join(repository.docs, item.id)
                             util.filename_export(source, target)
                     else:
@@ -118,9 +120,9 @@ class Export2Dir(GObject.GObject, Peas.Activatable):
         filechooser = factory.create_filechooser(
                     parent=window,
                     title=_('Export selected items to this directory'),
-                    target = 'FOLDER',
-                    callback = filechooser_response,
-                    data = patterns
+                    target='FOLDER',
+                    callback=filechooser_response,
+                    data=patterns
                     )
 
         # Export with pattern
@@ -129,7 +131,7 @@ class Export2Dir(GObject.GObject, Peas.Activatable):
         hbox = factory.create_box_horizontal()
         chkPattern = factory.create_button_check(title=_('Export with pattern'), callback=None)
         etyPattern = Gtk.Entry()
-        etyPattern.set_text('CYmGP') #/{target}/{Country}/{Year}/{month}/{Group}/{Purpose}
+        etyPattern.set_text('CYmGP')  # /{target}/{Country}/{Year}/{month}/{Group}/{Purpose}
         widgets = []
         for key in patterns:
             label = Gtk.Label()

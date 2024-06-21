@@ -59,8 +59,8 @@ class MiAZToolbarProjectMgtPlugin(GObject.GObject, Peas.Activatable):
         if self.app.get_widget('workspace-menu-selection-menu-project') is None:
             submenu_project = Gio.Menu.new()
             menu_project = Gio.MenuItem.new_submenu(
-                label = _('Project management...'),
-                submenu = submenu_project,
+                label=_('Project management...'),
+                submenu=submenu_project,
             )
             section_common_in.append_item(menu_project)
             self.app.add_widget('workspace-menu-selection-menu-project', menu_project)
@@ -71,7 +71,6 @@ class MiAZToolbarProjectMgtPlugin(GObject.GObject, Peas.Activatable):
             submenu_project.append_item(menuitem)
             menuitem = factory.create_menuitem('project-withdraw', _('...withdraw from project'), self.project_withdraw, None, [])
             submenu_project.append_item(menuitem)
-
 
     def project_assign(self, *args):
         actions = self.app.get_service('actions')

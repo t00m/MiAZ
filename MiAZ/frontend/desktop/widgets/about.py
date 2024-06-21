@@ -1,11 +1,8 @@
 #!/usr/bin/python3
-
-"""
 # File: about.py
 # Author: Tomás Vírseda
 # License: GPL v3
 # Description: About widget
-"""
 
 from gi.repository import Gtk
 

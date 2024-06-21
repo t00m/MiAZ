@@ -1,11 +1,8 @@
 #!/usr/bin/python3
-
-"""
 # File: workspace.py
 # Author: Tomás Vírseda
 # License: GPL v3
 # Description: The central place to manage the AZ
-"""
 
 import os
 from datetime import datetime
@@ -82,7 +79,7 @@ class MiAZWorkspace(Gtk.Box):
             self.cache = util.json_load(self.fcache)
             self.log.debug(f"Loading cache from '{self.fcache}")
         except Exception:
-            self.initialize_caches()
+            util.json_save(self.fcache, {})
 
         self.cache = {}
         for cache in ['Date', 'Country', 'Group', 'SentBy', 'SentTo', 'Purpose']:
