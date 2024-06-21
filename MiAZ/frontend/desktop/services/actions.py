@@ -225,33 +225,6 @@ class MiAZActions(GObject.GObject):
                     data = None)
         filechooser.show()
 
-    def import_file(self, *args):
-        factory = self.app.get_service('factory')
-        srvutl = self.app.get_service('util')
-        srvrepo = self.app.get_service('repo')
-        def filechooser_response(dialog, response, data):
-            if response == Gtk.ResponseType.ACCEPT:
-                content_area = dialog.get_content_area()
-                box = content_area.get_first_child()
-                filechooser = box.get_first_child()
-                gfile = filechooser.get_file()
-                if gfile is not None:
-                    source = gfile.get_path()
-                    btarget = srvutl.filename_normalize(source)
-                    target = os.path.join(srvrepo.docs, btarget)
-                    srvutl.filename_import(source, target)
-            dialog.destroy()
-
-        window = self.app.get_widget('window')
-        filechooser = factory.create_filechooser(
-                    parent=window,
-                    title=_('Import a single file'),
-                    target = 'FILE',
-                    callback = filechooser_response,
-                    data = None
-                    )
-        filechooser.show()
-
     def manage_resource(self, widget: Gtk.Widget, selector: Gtk.Widget):
         factory = self.app.get_service('factory')
         box = factory.create_box_vertical(spacing=0, vexpand=True, hexpand=True)
