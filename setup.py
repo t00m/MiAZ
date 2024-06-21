@@ -15,7 +15,6 @@ from setuptools import setup
 cmd_version = 'meson introspect meson.build --projectinfo | jq .version'
 o, e = subprocess.Popen([cmd_version], shell=True, stdout=subprocess.PIPE).communicate()
 VERSION = o.decode('utf-8').strip().replace('"', '')
-nsis_options = {} # your nsis options
 
 with open('data/docs/README', 'r') as f:
     LONG_DESCRIPTION = f.read()
@@ -72,7 +71,8 @@ setup(
                 'MiAZ.frontend',
                 'MiAZ.frontend.console',
                 'MiAZ.frontend.desktop',
-                'MiAZ.frontend.desktop.widgets'
+                'MiAZ.frontend.desktop.widgets',
+                'MiAZ.frontend.desktop.services'
             ],
     # distutils does not support install_requires, but pip needs it to be
     # able to automatically install dependencies
