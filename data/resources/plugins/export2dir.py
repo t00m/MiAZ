@@ -91,13 +91,17 @@ class Export2Dir(GObject.GObject, Peas.Activatable):
                         for item in items:
                             thispath = []
                             thispath.append(dirpath)
-                            paths = get_pattern_paths(item)
-                            for key in keys:
-                                thispath.append(paths[key])
-                            target = os.path.join(*thispath)
-                            os.makedirs(target, exist_ok=True)
-                            source = os.path.join(repository.docs, item.id)
-                            util.filename_export(source, target)
+                            try:
+                                paths = get_pattern_paths(item)
+                                for key in keys:
+                                    thispath.append(paths[key])
+                                target = os.path.join(*thispath)
+                                os.makedirs(target, exist_ok=True)
+                                source = os.path.join(repository.docs, item.id)
+                                util.filename_export(source, target)
+                            except ValueError as error:
+                                self.log.error(f"{os.path.basename(source)} couldn't be exported.")
+                                self.log.error("Reason: filename not compliant with MiAZ format")
                     else:
                         for item in items:
                             source = os.path.join(repository.docs, item.id)

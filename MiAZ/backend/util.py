@@ -225,7 +225,7 @@ class MiAZUtil(GObject.GObject):
                 try:
                     # preserve metadata
                     shutil.copy2(source, target)
-                    self.log.info("{source} copied to {target}")
+                    self.log.info(f"{source} copied to {target}")
                 except Exception as error:
                     self.log.error(error)
             else:
