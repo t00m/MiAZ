@@ -55,10 +55,11 @@ class MiAZImportFromScanPlugin(GObject.GObject, Peas.Activatable):
         self.log.debug("Plugin deactivation not implemented")
 
     def add_menuitem(self, *args):
-        if self.app.get_widget('workspace-menu-in-add-document') is None:
+        if self.app.get_widget('workspace-menu-in-add-scan') is None:
             factory = self.app.get_service('factory')
             menu_add = self.app.get_widget('workspace-menu-in-add')
             menuitem = factory.create_menuitem('add_from_scan', '... from scanner', self.exec_scanner, None, [])
+            self.app.add_widget('workspace-menu-in-add-scan', menuitem)
             menu_add.append_item(menuitem)
 
     def exec_scanner(self, *args):
