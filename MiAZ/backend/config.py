@@ -93,7 +93,7 @@ class MiAZConfig(GObject.GObject):
                 self.cache[filepath]['items'] = items
                 # ~ self.log.debug(f"In-memory config data updated for '{filepath}'")
             except Exception:
-                items = None
+                items = []
             return items
         else:
             # ~ self.log.debug(f"Got {self.config_for} items from cache for {filepath}")
@@ -144,16 +144,21 @@ class MiAZConfig(GObject.GObject):
         return saved
 
     def get(self, key: str) -> str:
+        # ~ util = self.app.get_service('util')
+        # ~ util.display_traceback()
         config = self.load(self.used)
         try:
             # return description, if it exists
+            # ~ self.log.debug(f"{self.config_for}[{key}] = {config[key]}")
             return config[key]
         except KeyError:
             if key in config:
                 # otherwise, return the key
+                self.log.debug(f"Description not found for {self.config_for}[{key}]. Return {key} as description instead")
                 return key
             else:
                 # if no key (and no description) return None
+                # ~ self.log.debug(f"Key not found in {self.config_for}. Return None instead")
                 return None
 
     def set(self, key: str, value: str) -> None:

@@ -42,9 +42,11 @@ class MiAZItem(MiAZModel):
                         date: str = '',
                         date_dsc: str = '',
                         group: str = '',
+                        group_dsc: str = '',
                         country: str = '',
                         country_dsc: str = '',
                         purpose: str = '',
+                        purpose_dsc: str = '',
                         sentby_id: str = '',
                         sentby_dsc: str = '',
                         title: str = '',
@@ -58,10 +60,12 @@ class MiAZItem(MiAZModel):
 
         self._date = date
         self._date_dsc = date_dsc
-        self._group = group
         self._country = country
         self._country_dsc = country_dsc
+        self._group = group
+        self._group_dsc = group_dsc
         self._purpose = purpose
+        self._purpose_dsc = purpose_dsc
         self._sentby_id = sentby_id
         self._sentby_dsc = sentby_dsc
         self._subtitle = subtitle
@@ -80,10 +84,6 @@ class MiAZItem(MiAZModel):
         return self._date_dsc
 
     @GObject.Property
-    def group(self):
-        return self._group
-
-    @GObject.Property
     def country(self):
         return self._country
 
@@ -92,8 +92,20 @@ class MiAZItem(MiAZModel):
         return self._country_dsc
 
     @GObject.Property
+    def group(self):
+        return self._group
+
+    @GObject.Property
+    def group_dsc(self):
+        return self._group_dsc
+
+    @GObject.Property
     def purpose(self):
         return self._purpose
+
+    @GObject.Property
+    def purpose_dsc(self):
+        return self._purpose_dsc
 
     @GObject.Property
     def sentby_id(self):

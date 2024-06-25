@@ -181,7 +181,7 @@ class MiAZColumnViewWorkspace(MiAZColumnView):
         box = list_item.get_child()
         item = list_item.get_item()
         label = box.get_first_child()
-        group = item.group
+        group = item.group_dsc
         label.set_markup(group)
 
     def _on_factory_setup_date(self, factory, list_item):
@@ -227,7 +227,7 @@ class MiAZColumnViewWorkspace(MiAZColumnView):
         box = list_item.get_child()
         item = list_item.get_item()
         label = box.get_first_child()
-        purpose = item.purpose
+        purpose = item.purpose_dsc
         label.set_markup(purpose)
 
     def _on_factory_setup_flag(self, factory, list_item):

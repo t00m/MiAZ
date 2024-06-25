@@ -50,24 +50,37 @@ All documents managed by MiAZ are renamed following this name convention consist
 * SentBy/SentTo fields are stored as a key/value where key is a identifier (eg.: person initials) and value is the full name (eg.: Company or person name)
 ====
 
+
+
+
+
 == Screenshots
 
+image::data/mkt/miaz-workspace.png[Workspace]
 
-image::MiAZ/data/mkt/miaz-demo-001.png[Manage countries]
+image::data/mkt/miaz-country-selector.png[Manage countries]
 
-image::MiAZ/data/mkt/miaz-demo-002.png[Mange other properties]
+image::data/mkt/miaz-projects-selector.png[Manage groups]
 
-image::MiAZ/data/mkt/miaz-demo-004.png[Add more info]
+image::data/mkt/miaz-purposes-selector.png[Manage purposes]
 
-image::MiAZ/data/mkt/miaz-demo-005.png[Single rename]
+image::data/mkt/miaz-people-selector.png[Manage senders and recipients]
 
-image::MiAZ/data/mkt/miaz-demo-006.png[Workspace]
+image::data/mkt/miaz-workspace-menu.png[Workspace menu]
 
-image::MiAZ/data/mkt/miaz-demo-008.png[Manage repos]
+image::data/mkt/miaz-workspace-menu-add-new.png[Add documents from several sources]
 
-image::MiAZ/data/mkt/miaz-demo-009.png[Plugins]
+image::data/mkt/miaz-workspace-menu-mass-renaming.png[Mass renaming]
 
-image::MiAZ/data/mkt/miaz-demo-007.png[About]
+image::data/mkt/miaz-workspace-menu-projectmgt.png[Projects management]
+
+image::data/mkt/miaz-plugin-export2dir.png[Plugins Export to directory]
+
+image::data/mkt/miaz-editor.png[Single rename]
+
+image::data/mkt/miaz-plugin-system.png[Plugins]
+
+image::data/mkt/miaz-about.png[About]
 
 
 == Installation
