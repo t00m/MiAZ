@@ -149,7 +149,7 @@ class MiAZConfig(GObject.GObject):
         config = self.load(self.used)
         try:
             # return description, if it exists
-            self.log.debug(f"{self.config_for}[{key}] = {config[key]}")
+            # ~ self.log.debug(f"{self.config_for}[{key}] = {config[key]}")
             return config[key]
         except KeyError:
             if key in config:
@@ -158,7 +158,7 @@ class MiAZConfig(GObject.GObject):
                 return key
             else:
                 # if no key (and no description) return None
-                self.log.debug(f"Key not found in {self.config_for}. Return None instead")
+                # ~ self.log.debug(f"Key not found in {self.config_for}. Return None instead")
                 return None
 
     def set(self, key: str, value: str) -> None:

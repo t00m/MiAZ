@@ -536,8 +536,6 @@ class MiAZWorkspace(Gtk.Box):
                         if description is None:
                             description = key
                         desc[skey] = description
-                        self.log.debug(f"Config => Description for {skey}[{key}] = {desc[skey]}")
-
 
                         # ~ # Key: autodiscover key fields.
                         # ~ # Save key in config if it is used
