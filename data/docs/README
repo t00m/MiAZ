@@ -1,5 +1,9 @@
 MiAZ, a Personal Document Organizer
 
+Sometimes, it is quite a challenge to keep the documentation of the family, schools, institutions, billing, etc... well organized in terms of classification, necessary space, time to do it and effort. At least, that is my case (born and lived half life in Spain, working now in Luxembourg, and living in Germany).
+
+MiAZ is an attempt to fix this problem: with a little effort, have all papework organized. By a little effort I mean to scan letters, donwload attachments from emails, place it in the right MiAZ repository directory, and edit the filename according to a set of fixed rules (choose the country, the proper date, the group, a purpose, a concept, the sender, and the receiver). MiAZ helps you out with the these rules in a effortless way.
+
 # Features
 
 * Possibility of using one or more document repositories. One at time. But it can be switched at any time.

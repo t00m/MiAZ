@@ -14,6 +14,7 @@ import glob
 import json
 import shutil
 import tempfile
+import traceback
 import zipfile
 from datetime import datetime, timedelta
 # ~ from dateutil.parser import parse as dateparser
@@ -55,6 +56,19 @@ class MiAZUtil(GObject.GObject):
                             GObject.TYPE_PYOBJECT, (GObject.TYPE_PYOBJECT, GObject.TYPE_PYOBJECT,))
         self.log = MiAZLog('MiAZ.Backend.Util')
         self.app = app
+
+    def display_traceback(self):
+        print(traceback.print_exc())
+        # ~ print("\n==================Traceback Start ===================\n")
+        # ~ stack_summary = traceback.StackSummary.extract(traceback.walk_tb(tbk))
+
+        # ~ print("%50s | %10s | %5s | %10s" %("File Name", "Method Name", "Line Number", "Line"))
+        # ~ print("-"*100)
+
+        # ~ for frame_summary in stack_summary:
+            # ~ print("%50s | %11s | %11d | %10s"%(frame_summary.filename, frame_summary.name, frame_summary.lineno, frame_summary.line))
+            # ~ print("-"*100)
+        # ~ print("\n==================Traceback End ===================\n")
 
     def directory_open(self, dirpath: str):
         os.system(f"xdg-open '{dirpath}'")

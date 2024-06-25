@@ -24,6 +24,7 @@ from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewPlugin
 from MiAZ.frontend.desktop.widgets.window import MiAZCustomWindow
 from MiAZ.backend.config import MiAZConfigRepositories
 from MiAZ.backend.pluginsystem import MiAZPluginType
+from MiAZ.backend.status import MiAZStatus
 
 Configview = {}
 Configview['Country'] = MiAZCountries
@@ -338,6 +339,8 @@ class MiAZRepoSettings(MiAZCustomWindow):
             notebook.append_page(page, label)
 
     def update(self, *args):
+        if self.app.get_status() == MiAZStatus.BUSY:
+            return
         appconf = self.app.get_config('App')
         repo_id = appconf.get('current')
         title = f"Settings for repository {repo_id}"

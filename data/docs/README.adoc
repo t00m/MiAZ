@@ -50,6 +50,10 @@ All documents managed by MiAZ are renamed following this name convention consist
 * SentBy/SentTo fields are stored as a key/value where key is a identifier (eg.: person initials) and value is the full name (eg.: Company or person name)
 ====
 
+
+
+
+
 == Screenshots
 
 image::data/mkt/miaz-workspace.png[Workspace]

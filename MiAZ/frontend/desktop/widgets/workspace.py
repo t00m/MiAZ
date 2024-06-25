@@ -51,6 +51,7 @@ class MiAZWorkspace(Gtk.Box):
     used_signals = {} # Signals ids for Dropdowns connected to config
     uncategorized = False
     pending = False
+    count = 0
 
     def __init__(self, app):
         super(MiAZWorkspace, self).__init__(orientation=Gtk.Orientation.HORIZONTAL)
@@ -60,7 +61,7 @@ class MiAZWorkspace(Gtk.Box):
         self.config = self.app.get_config_dict()
         self._setup_workspace()
         self._setup_logic()
-
+        self.count += 1
         # Allow plug-ins to make their job
         self.app.connect('start-application-completed', self._on_finish_configuration)
 
@@ -491,12 +492,7 @@ class MiAZWorkspace(Gtk.Box):
     def update(self, *args):
         if self.app.get_status() == MiAZStatus.BUSY:
             return
-        # FIXME: come up w/ a solution to display only available values
-        # ~ self.log.debug(f"Update requested")
-        # ~ dropdowns = self.app.get_widget('ws-dropdowns')
-        # ~ dd_date = dropdowns[Date.__gtype_name__]
-        # ~ dd_prj = dropdowns[Project.__gtype_name__]
-        # ~ filters = {}
+
         repository = self.app.get_service('repo')
         util = self.app.get_service('util')
         self.selected_items = []
@@ -504,36 +500,25 @@ class MiAZWorkspace(Gtk.Box):
             docs = util.get_files(repository.docs)
         except KeyError:
             docs = []
-        # ~ sentby = self.app.get_config('SentBy')
-        # ~ sentto = self.app.get_config('SentTo')
-        # ~ countries = self.app.get_config('Country')
-        # ~ groups = self.app.get_config('Group')
-        # ~ purposes = self.app.get_config('Purpose')
-        # ~ warning = False
+
         items = []
         invalid = []
         ds = datetime.now()
-
-        # Disconnect dropdown signals
-        # ~ for item_type in [Country, Group, SentBy, Purpose, SentTo]:
-            # ~ i_type = item_type.__gtype_name__
-            # ~ i_title = _(item_type.__title__)
-            # ~ sigid = self.used_signals[i_type]
-            # ~ self.config[i_type].disconnect(sigid)
-            # ~ self.log.debug(f"Signal %d disconnected from Config '%s'", sigid, i_title)
 
         keys_used = {}
         key_fields = [('Date', 0), ('Country', 1), ('Group', 2), ('SentBy', 3), ('Purpose', 4), ('Concept', 5), ('SentTo', 6)]
         for skey, nkey in key_fields:
             keys_used[skey] = set() # Avoid duplicates
 
+        desc = {}
         for filename in docs:
             active = True
             doc, ext = util.filename_details(filename)
             fields = doc.split('-')
             if util.filename_validate(doc):
-                desc = {}
                 for skey, nkey in key_fields:
+                    # ~ self.log.debug(f"{doc} => {skey}, {nkey}")
+                    config = self.app.get_config(skey)
                     key = fields[nkey]
                     if nkey == 0:
                         # Date field cached value differs from other fields
@@ -551,60 +536,53 @@ class MiAZWorkspace(Gtk.Box):
                         # Skip concept field
                         pass
                     else:
-                        config = self.app.get_config(skey)
-                        # Key: autodiscover key fields.
-                        # Save key in config if it is used
-                        if not config.exists_used(key=key):
-                            keys_used[skey].add((key, key))
-
-                        # Description
                         try:
                             desc[skey] = self.cache[skey][key]
+                            # ~ self.log.debug(f"Cache => Description for {skey}[{key}] = {desc[skey]}")
                         except KeyError:
-                            desc[skey] = config.get(key)
-                            if desc[skey] is None:
-                                active = False
-                                desc[skey] = key
-                            else:
-                                self.cache[skey][key] = desc[skey]
+                            description = config.get(key)
+                            # ~ self.log.debug(f"{key} = {description}")
+                            if description is None:
+                                description = key
+                            desc[skey] = self.cache[skey][key] = description
+                            self.log.debug(f"Config => Description for {skey}[{key}] = {desc[skey]}")
 
-                        # Make sure that sth is displayed if no desc
-                        try:
-                            if self.cache[skey][key] == '':
-                                self.cache[skey][key] = key
-                        except KeyError:
-                            self.cache[skey][key] = key
 
-                if not active:
-                    invalid.append(os.path.basename(filename))
-
-                items.append(MiAZItem
-                                    (
-                                        id=os.path.basename(filename),
-                                        date=fields[0],
-                                        date_dsc=desc['Date'],
-                                        country=fields[1],
-                                        country_dsc=desc['Country'],
-                                        group=fields[2],
-                                        sentby_id=fields[3],
-                                        sentby_dsc=desc['SentBy'],
-                                        purpose=desc['Purpose'],
-                                        title=doc,
-                                        subtitle=fields[5].replace('_', ' '),
-                                        sentto_id=fields[6],
-                                        sentto_dsc=desc['SentTo'],
-                                        active=active
-                                    )
-                            )
+                        # ~ # Key: autodiscover key fields.
+                        # ~ # Save key in config if it is used
+                        if not config.exists_used(key=key):
+                            keys_used[skey].add((key, desc[skey]))
             else:
                 invalid.append(filename)
 
+            items.append(MiAZItem
+                                (
+                                    id=os.path.basename(filename),
+                                    date=fields[0],
+                                    date_dsc=desc['Date'],
+                                    country=fields[1],
+                                    country_dsc=desc['Country'],
+                                    group=fields[2],
+                                    sentby_id=fields[3],
+                                    sentby_dsc=desc['SentBy'],
+                                    purpose=desc['Purpose'],
+                                    title=doc,
+                                    subtitle=fields[5].replace('_', ' '),
+                                    sentto_id=fields[6],
+                                    sentto_dsc=desc['SentTo'],
+                                    active=active
+                                )
+                        )
+
         # Save all keys used to conf
-        for skey in keys_used:
-            config = self.app.get_config(skey)
-            if config is not None: # Skip fields without config
-                config.add_available_batch(list(keys_used[skey]))
-                config.add_used_batch(list(keys_used[skey]))
+
+        # ~ for skey in keys_used:
+            # ~ self.log.debug(keys_used[skey])
+            # ~ config = self.app.get_config(skey)
+
+            # ~ if not config.exists_available(skey):
+                # ~ config.add_available_batch(list(keys_used[skey]))
+                # ~ config.add_used_batch(list(keys_used[skey]))
 
         de = datetime.now()
         dt = de - ds
@@ -627,6 +605,7 @@ class MiAZWorkspace(Gtk.Box):
             self.log.debug(f"Documents renamed: {renamed}")
 
         self.selected_items = []
+        self.log.debug(f"Workspace instances: {self.count}")
         return False
 
     def _do_eval_cond_matches_freetext(self, item):
