@@ -93,33 +93,31 @@ Raise an issue, please.
 
 ## Screenshots
 
-![Alt text](/relative/path/to/img.jpg?raw=true "Optional Title")
+![Workspace](data/mkt/miaz-workspace.png)
 
-[Workspace](data/mkt/miaz-workspace.png)
+![Manage countries](data/mkt/miaz-country-selector.png)
 
-[Manage countries](data/mkt/miaz-country-selector.png)
+![Manage groups](data/mkt/miaz-projects-selector.png)
 
-[Manage groups](data/mkt/miaz-projects-selector.png)
+![Manage purposes](data/mkt/miaz-purposes-selector.png)
 
-[Manage purposes](data/mkt/miaz-purposes-selector.png)
+![Manage senders and recipients](data/mkt/miaz-people-selector.png)
 
-[Manage senders and recipients](data/mkt/miaz-people-selector.png)
+![Workspace menu](data/mkt/miaz-workspace-menu.png)
 
-[Workspace menu](data/mkt/miaz-workspace-menu.png)
+![Add documents from several sources](data/mkt/miaz-workspace-menu-add-new.png)
 
-[Add documents from several sources](data/mkt/miaz-workspace-menu-add-new.png)
+![Mass renaming](data/mkt/miaz-workspace-menu-mass-renaming.png)
 
-[Mass renaming](data/mkt/miaz-workspace-menu-mass-renaming.png)
+![Projects management](data/mkt/miaz-workspace-menu-projectmgt.png)
 
-[Projects management](data/mkt/miaz-workspace-menu-projectmgt.png)
+![Plugins Export to directory](data/mkt/miaz-plugin-export2dir.png)
 
-[Plugins Export to directory](data/mkt/miaz-plugin-export2dir.png)
+![Single rename](data/mkt/miaz-editor.png)
 
-[Single rename](data/mkt/miaz-editor.png)
+![Plugins](data/mkt/miaz-plugin-system.png)
 
-[Plugins](data/mkt/miaz-plugin-system.png)
-
-[About](data/mkt/miaz-about.png)
+![About](data/mkt/miaz-about.png)
 
 
 ## About me

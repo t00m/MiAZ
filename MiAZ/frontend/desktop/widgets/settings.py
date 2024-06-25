@@ -46,7 +46,6 @@ class MiAZAppSettings(MiAZCustomWindow):
         self.name = 'app-settings'
         self.title = 'Application settings'
         super().__init__(app, self.name, self.title, **kwargs)
-        self.util = self.app.get_service('util')
 
     def _build_ui(self):
         self.set_default_size(1024, 728)

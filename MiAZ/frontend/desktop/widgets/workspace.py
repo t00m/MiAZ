@@ -51,7 +51,6 @@ class MiAZWorkspace(Gtk.Box):
     used_signals = {} # Signals ids for Dropdowns connected to config
     uncategorized = False
     pending = False
-    count = 0
 
     def __init__(self, app):
         super(MiAZWorkspace, self).__init__(orientation=Gtk.Orientation.HORIZONTAL)
@@ -61,7 +60,6 @@ class MiAZWorkspace(Gtk.Box):
         self.config = self.app.get_config_dict()
         self._setup_workspace()
         self._setup_logic()
-        self.count += 1
         # Allow plug-ins to make their job
         self.app.connect('start-application-completed', self._on_finish_configuration)
 
@@ -605,7 +603,6 @@ class MiAZWorkspace(Gtk.Box):
             self.log.debug(f"Documents renamed: {renamed}")
 
         self.selected_items = []
-        self.log.debug(f"Workspace instances: {self.count}")
         return False
 
     def _do_eval_cond_matches_freetext(self, item):

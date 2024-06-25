@@ -21,7 +21,6 @@ class MiAZConfig(GObject.GObject):
     used = None
     default = None
     cache = {}
-    count = 0
 
     def __init__(self, app, log, config_for, used=None, available=None, default=None, model=MiAZModel, must_copy=True, foreign=False):
         super().__init__()
@@ -50,7 +49,6 @@ class MiAZConfig(GObject.GObject):
                                 GObject.SignalFlags.RUN_LAST, None, ())
         self.log.debug(f"Config for {self.config_for} initialited")
         self.count += 1
-        self.log.debug(f"Config for {self.config_for} class count: {self.count}")
 
     def __repr__(self):
         return __class__.__name__
