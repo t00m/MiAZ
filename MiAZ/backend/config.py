@@ -48,7 +48,6 @@ class MiAZConfig(GObject.GObject):
                                 MiAZConfig,
                                 GObject.SignalFlags.RUN_LAST, None, ())
         self.log.debug(f"Config for {self.config_for} initialited")
-        self.count += 1
 
     def __repr__(self):
         return __class__.__name__

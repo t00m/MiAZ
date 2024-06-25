@@ -530,26 +530,19 @@ class MiAZWorkspace(Gtk.Box):
                                 desc[skey] = ''
                             else:
                                 self.cache[skey][key] = desc[skey]
-                    elif nkey == 5:
-                        # Skip concept field
-                        pass
-                    else:
-                        try:
-                            desc[skey] = self.cache[skey][key]
-                            # ~ self.log.debug(f"Cache => Description for {skey}[{key}] = {desc[skey]}")
-                        except KeyError:
-                            description = config.get(key)
-                            # ~ self.log.debug(f"{key} = {description}")
-                            if description is None:
-                                description = key
-                            desc[skey] = self.cache[skey][key] = description
-                            self.log.debug(f"Config => Description for {skey}[{key}] = {desc[skey]}")
+                    elif nkey != 5:
+                        description = config.get(key)
+                        # ~ self.log.debug(f"{key} = {description}")
+                        if description is None:
+                            description = key
+                        desc[skey] = description
+                        self.log.debug(f"Config => Description for {skey}[{key}] = {desc[skey]}")
 
 
                         # ~ # Key: autodiscover key fields.
                         # ~ # Save key in config if it is used
-                        if not config.exists_used(key=key):
-                            keys_used[skey].add((key, desc[skey]))
+                        # ~ if not config.exists_used(key=key):
+                            # ~ keys_used[skey].add((key, desc[skey]))
             else:
                 invalid.append(filename)
 
@@ -561,9 +554,11 @@ class MiAZWorkspace(Gtk.Box):
                                     country=fields[1],
                                     country_dsc=desc['Country'],
                                     group=fields[2],
+                                    group_dsc=desc['Group'],
                                     sentby_id=fields[3],
                                     sentby_dsc=desc['SentBy'],
-                                    purpose=desc['Purpose'],
+                                    purpose=fields[4],
+                                    purpose_dsc=desc['Purpose'],
                                     title=doc,
                                     subtitle=fields[5].replace('_', ' '),
                                     sentto_id=fields[6],

@@ -338,8 +338,8 @@ class MiAZRepoSettings(MiAZCustomWindow):
             notebook.append_page(page, label)
 
     def update(self, *args):
-        if self.app.get_status() == MiAZStatus.BUSY:
-            return
+        # ~ if self.app.get_status() == MiAZStatus.BUSY:
+            # ~ return
         appconf = self.app.get_config('App')
         repo_id = appconf.get('current')
         title = f"Settings for repository {repo_id}"
