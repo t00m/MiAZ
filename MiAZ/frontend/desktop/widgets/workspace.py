@@ -53,7 +53,7 @@ class MiAZWorkspace(Gtk.Box):
     pending = False
 
     def __init__(self, app):
-        super(MiAZWorkspace, self).__init__(orientation=Gtk.Orientation.HORIZONTAL)
+        super().__init__(orientation=Gtk.Orientation.HORIZONTAL)
         self.log = MiAZLog('MiAZ.Workspace')
         self.log.debug("Initializing widget Workspace!!")
         self.app = app
@@ -230,13 +230,11 @@ class MiAZWorkspace(Gtk.Box):
             i_type = item_type.__gtype_name__
             config = self.config[i_type]
             actions.dropdown_populate(config, dropdowns[i_type], item_type, True, True)
-            # ~ self.log.debug(f"Dropdown filter for '{i_title}' updated")
 
         self._update_dropdown_date()
         i_type = Date.__gtype_name__
         dd_date = dropdowns[i_type]
         dd_date.set_selected(1)
-        # ~ dd_date.connect("notify::selected-item", self.update)
 
     def _on_workspace_update(self, *args):
         GLib.idle_add(self.update)
@@ -246,7 +244,6 @@ class MiAZWorkspace(Gtk.Box):
         dropdowns = self.app.get_widget('ws-dropdowns')
         i_type = item_type.__gtype_name__
         actions.dropdown_populate(config, dropdowns[i_type], item_type)
-        # ~ self.log.debug(f"Dropdown '{i_type} updated")
 
     def _on_filters_toggled(self, *args):
         toggleButtonFilters = self.app.get_widget('workspace-togglebutton-filters')
@@ -279,7 +276,7 @@ class MiAZWorkspace(Gtk.Box):
         hdb_right.get_style_context().add_class(class_name='linked')
 
         ## Show/Hide Filters
-        tgbFilters = factory.create_button_toggle('miaz-filters2', callback=self._on_filters_toggled)
+        tgbFilters = factory.create_button_toggle('com.github.t00m.MiAZ-filter-symbolic', callback=self._on_filters_toggled)
         self.app.add_widget('workspace-togglebutton-filters', tgbFilters)
         tgbFilters.set_active(False)
         tgbFilters.set_hexpand(False)
@@ -310,16 +307,15 @@ class MiAZWorkspace(Gtk.Box):
         self.btnDocsSel.set_sensitive(True)
         hbox.append(self.btnDocsSel)
 
-        # Pending documents
+        # Pending documents toggle button
         button = factory.create_button_toggle( icon_name='com.github.t00m.MiAZ-rename',
-                                        title='Pending documents',
+                                        title='Review',
                                         tooltip='There are documents pending of review',
                                         callback=self._show_pending_documents
                                     )
+        button.set_has_frame(True)
         self.app.add_widget('workspace-togglebutton-pending-docs', button)
         button.set_visible(False)
-        # ~ button.set_visible(self.review)
-
         hbox.append(button)
 
         headerbar = self.app.get_widget('headerbar')
@@ -393,10 +389,6 @@ class MiAZWorkspace(Gtk.Box):
         key = "All-All"
         model.append(Date(id=key, title=_('All documents')))
 
-        # ~ ## No date
-        # ~ key = "None-None"
-        # ~ model.append(Date(id=key, title=_('Without date')))
-
     def _setup_columnview(self):
         self.view = MiAZColumnViewWorkspace(self.app)
         self.app.add_widget('workspace-view', self.view)
@@ -404,17 +396,6 @@ class MiAZWorkspace(Gtk.Box):
         self.view.get_style_context().add_class(class_name='monospace')
         self.view.set_filter(self._do_filter_view)
         return self.view
-
-    # ~ def _on_factory_bind_icon_type(self, factory, list_item):
-        # ~ box = list_item.get_child()
-        # ~ button = box.get_first_child()
-        # ~ item = list_item.get_item()
-        # ~ mimetype, val = Gio.content_type_guess('filename=%s' % item.id)
-        # ~ gicon = Gio.content_type_get_icon(mimetype)
-        # ~ icon_name = self.app.icman.choose_icon(gicon.get_names())
-        # ~ self.log.debug(f"ICON NAME: %s", icon_name)
-        # ~ child = factory.create_button(icon_name)
-        # ~ button.set_child(child)
 
     def _setup_workspace(self):
         factory = self.app.get_service('factory')
@@ -522,7 +503,6 @@ class MiAZWorkspace(Gtk.Box):
             if util.filename_validate(doc):
                 active = True
                 for skey, nkey in key_fields:
-                    # ~ self.log.debug(f"{doc} => {skey}, {nkey}")
                     config = self.app.get_config(skey)
                     key = fields[nkey]
                     if nkey == 0:
@@ -539,15 +519,9 @@ class MiAZWorkspace(Gtk.Box):
                                 self.cache[skey][key] = desc[skey]
                     elif nkey != 5:
                         description = config.get(key)
-                        # ~ self.log.debug(f"{key} = {description}")
                         if description is None:
                             description = key
                         desc[skey] = description
-
-                        # ~ # Key: autodiscover key fields.
-                        # ~ # Save key in config if it is used
-                        # ~ if not config.exists_used(key=key):
-                            # ~ keys_used[skey].add((key, desc[skey]))
                         active &= config.exists_used(key=key)
             else:
                 invalid.append(filename)
@@ -577,22 +551,11 @@ class MiAZWorkspace(Gtk.Box):
                                 )
                         )
 
-        # Save all keys used to conf
-
-        # ~ for skey in keys_used:
-            # ~ self.log.debug(keys_used[skey])
-            # ~ config = self.app.get_config(skey)
-
-            # ~ if not config.exists_available(skey):
-                # ~ config.add_available_batch(list(keys_used[skey]))
-                # ~ config.add_used_batch(list(keys_used[skey]))
-
         de = datetime.now()
         dt = de - ds
         self.log.debug(f"Workspace updated ({dt})")
 
         util.json_save(self.fcache, self.cache)
-        # ~ self.log.debug(f"Saving cache to '{self.fcache}")
         GLib.idle_add(self.view.update, items)
         self._on_filter_selected()
         self.view.select_first_item()
@@ -611,6 +574,7 @@ class MiAZWorkspace(Gtk.Box):
 
         togglebutton = self.app.get_widget('workspace-togglebutton-pending-docs')
         togglebutton.set_visible(show_pending)
+        togglebutton.set_active(show_pending)
         self.review = show_pending
 
         return False
@@ -650,7 +614,7 @@ class MiAZWorkspace(Gtk.Box):
         dd_date = dropdowns[Date.__gtype_name__]
         selected = dd_date.get_selected_item()
         if selected is None:
-            # ~ self.log.debug(f"FIXME: Dropdown {dd_date} with selected item '{selected}' shouldn't be None")
+            self.log.warning(f"FIXME: Dropdown {dd_date} with selected item '{selected}' shouldn't be None")
             return False
         period = selected.id
         ll, ul = period.split('-')
@@ -671,7 +635,6 @@ class MiAZWorkspace(Gtk.Box):
                 matches = True
             else:
                 matches = False
-        # ~ self.log.debug(f"%s >= Item[%s] Datetime[%s] <= %s? %s", ll, item.date, item_dt, ul, matches)
         return matches
 
     def _do_eval_cond_matches_project(self, doc):

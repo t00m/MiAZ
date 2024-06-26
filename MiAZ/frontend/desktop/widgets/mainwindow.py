@@ -107,7 +107,7 @@ class MiAZMainWindow(Gtk.Box):
         menuitem = factory.create_menuitem('app-quit', _('Exit application'), actions.exit_app, None, ['<Control>q'])
         section_danger.append_item(menuitem)
 
-        menubutton = Gtk.MenuButton(child=factory.create_button_content(icon_name='miaz-system-menu'))
+        menubutton = Gtk.MenuButton(child=factory.create_button_content(icon_name='com.github.t00m.MiAZ-system-menu'))
         popover = Gtk.PopoverMenu()
         popover.set_menu_model(menu)
         menubutton.set_popover(popover=popover)
