@@ -486,6 +486,8 @@ class MiAZWorkspace(Gtk.Box):
         return self.selected_items
 
     def clear_filters(self, *args):
+        search_entry = self.app.get_widget('searchbar_entry')
+        search_entry.set_text('')
         dropdowns = self.app.get_widget('ws-dropdowns')
         for ddId in dropdowns:
             dropdowns[ddId].set_selected(0)
@@ -697,12 +699,19 @@ class MiAZWorkspace(Gtk.Box):
         return item.active
 
     def _do_filter_view(self, item, filter_list_model):
+        dropdowns = self.app.get_widget('ws-dropdowns')
         if self.review:
             c0 = self._do_eval_cond_matches_freetext(item)
-            return not item.active and c0
+            # ~ cd = self._do_eval_cond_matches_date(item)
+            c1 = self._do_eval_cond_matches(dropdowns['Country'], item.country)
+            c2 = self._do_eval_cond_matches(dropdowns['Group'], item.group)
+            c4 = self._do_eval_cond_matches(dropdowns['SentBy'], item.sentby_id)
+            c5 = self._do_eval_cond_matches(dropdowns['Purpose'], item.purpose)
+            c6 = self._do_eval_cond_matches(dropdowns['SentTo'], item.sentto_id)
+            return not item.active and c0 and c1 and c2 and c4 and c5 and c6
         else:
             projects = self.app.get_service('Projects')
-            dropdowns = self.app.get_widget('ws-dropdowns')
+            # ~ dropdowns = self.app.get_widget('ws-dropdowns')
             dd_prj = dropdowns[Project.__gtype_name__]
 
             try:
