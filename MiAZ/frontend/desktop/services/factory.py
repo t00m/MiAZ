@@ -130,7 +130,7 @@ class MiAZFactory:
 
         return button
 
-    def create_button_toggle(self, icon_name: str = '', title: str = '', callback=None, css_classes=None, data=None) -> Gtk.ToggleButton:
+    def create_button_toggle(self, icon_name: str = '', title: str = '', tooltip: str = '', callback=None, css_classes=None, data=None) -> Gtk.ToggleButton:
         if css_classes is None:
             css_classes = []
         button = Gtk.ToggleButton(css_classes=css_classes)
@@ -143,6 +143,9 @@ class MiAZFactory:
         label = Gtk.Label()
         if len(title) > 0:
             label.set_markup(title)
+
+        if len(tooltip) > 0:
+            button.set_tooltip_markup(tooltip)
 
         hbox.append(icon)
         hbox.append(label)
