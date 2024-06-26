@@ -5,7 +5,7 @@
 Sometimes, it is quite a challenge to keep the documentation of the family, schools, administration, billing, etc... well organized in terms of classification, disk space, time to do it and effort.
 
 
-MiAZ app is an attempt to fix this problem: with a little effort, it is possible to have all papework organized.
+MiAZ app aims to solve this problem: with minimal effort, it is possible to have all paperwork organized.
 
 
 A little effort means: scan letters, donwload attachments from emails, place it in the right MiAZ repository directory, and edit the filename according to a set of fixed rules, like choosing:
@@ -17,7 +17,7 @@ A little effort means: scan letters, donwload attachments from emails, place it 
 - Sender
 - Receiver
 
-MiAZ helps you to comply with these rules in a effortless way.
+MiAZ helps you comply with these rules effortlessly.
 
 **Disclaimer**: please, take into account that this project is based solely in my own experience and for my own necesities.
 
@@ -27,11 +27,11 @@ MiAZ helps you to comply with these rules in a effortless way.
 * **No database**. The directory holding the documents is the database. Properties are extracted from the own filenames. Configuration files reside in the same repository.
 * **Workspace**: a single place where you can view/edit your documents
 * **Filtering and search**: built-in drop-downs to help finding documents easily.
-* It is **fast**. Depending of the volume of documents and the HW capacity of your device, thousand of documents can be displayed in a matter of seconds.
+* It is **fast**. Depending on the volume of documents and the hardware capacity of your device, thousands of documents can be displayed in seconds.
 * Support for **projects**: those documents related between them can be (un)assigned to projects (eg.: all those documents related to the same tax stament year).
 * **Single renaming**: a useful feature to rename a single document easily.
 * **Mass renaming**: when importing several documents, sometimes is useful to assign the same property to all of them (e.g.: same country). This functionality allows MiAZ to do mass renaming for countries, groups, purposes, senders, and receivers, saving you a lot of time.
-* **Predefined properties**: in order to speed up the process of archive your documents, you can choose from a default set of values. For instance, for groups, among othe values, you have MED, INS, BIL (MEDICAL, INSURANCE, BILLING respectively). Same for purposes. These values can be edited.
+* **Predefined properties**: To expedite the document archiving process, you can select from a default set of values. For instance, for groups, among othe values, you have MED, INS, BIL (MEDICAL, INSURANCE, BILLING respectively). Same for purposes. These values can be edited.
 * **Plug-in system**: in order to avoid large modifications in the code base, MiAZ uses a plug-in system to extend the functionality and the UI. MiAZ comes with a set of standard plugins to help you importing documents from several sources (a single file, a directory, from the scanner, etc...), and also for exporting them (to excel, CSV, to another directory, in a zip file, as filenames in a plain text file, etc...)
 
 

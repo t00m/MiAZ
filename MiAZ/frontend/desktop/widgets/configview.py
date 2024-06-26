@@ -77,7 +77,7 @@ class MiAZConfigView(MiAZSelector):
                                                      data=self.config.model,
                                                      css_classes=['flat'])
         widgets.append(btnConfigImport)
-        button = factory.create_button_popover(icon_name='emblem-system-symbolic',
+        button = factory.create_button_popover(icon_name='com.github.t00m.MiAZ-emblem-system-symbolic',
                                                     title='',
                                                     widgets=widgets)
 

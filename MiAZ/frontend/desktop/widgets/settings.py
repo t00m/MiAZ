@@ -24,7 +24,6 @@ from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewPlugin
 from MiAZ.frontend.desktop.widgets.window import MiAZCustomWindow
 from MiAZ.backend.config import MiAZConfigRepositories
 from MiAZ.backend.pluginsystem import MiAZPluginType
-from MiAZ.backend.status import MiAZStatus
 
 Configview = {}
 Configview['Country'] = MiAZCountries
@@ -85,11 +84,9 @@ class MiAZAppSettings(MiAZCustomWindow):
         repo_active = self.config['App'].get('current')
         if repo_active in repos_used:
             model = self.dd_repo.get_model()
-            n = 0
-            for item in model:
+            for n, item in enumerate(model):
                 if item.id == repo_active:
                     self.dd_repo.set_selected(n)
-                n += 1
         row.append(hbox)
         configview = MiAZRepositories(self.app)
         configview.set_hexpand(True)
@@ -106,7 +103,7 @@ class MiAZAppSettings(MiAZCustomWindow):
             window = self.app.get_widget(f"window-{self.name}")
             window.hide()
             workspace = self.app.get_widget('workspace')
-            workspace.clean_filters()
+            workspace.clear_filters()
             self.log.debug(f"Repository {repo_id} loaded successfully")
         else:
             self.log.error(f"Repository {repo_id} couldn't be loaded")
@@ -338,8 +335,6 @@ class MiAZRepoSettings(MiAZCustomWindow):
             notebook.append_page(page, label)
 
     def update(self, *args):
-        # ~ if self.app.get_status() == MiAZStatus.BUSY:
-            # ~ return
         appconf = self.app.get_config('App')
         repo_id = appconf.get('current')
         title = f"Settings for repository {repo_id}"

@@ -74,6 +74,10 @@ class MiAZItem(MiAZModel):
         self._active = active
         self._valid = valid
         self._icon = icon
+        self.search_text =  self.id + ' ' + date + ' ' + date_dsc + ' ' + group + ' ' + group_dsc + ' ' + \
+                            country + ' ' + country_dsc + ' ' + purpose + ' ' + purpose_dsc + ' ' + \
+                            sentby_id + ' ' + sentby_dsc + ' ' + title + ' ' + subtitle + ' ' + \
+                            sentto_id + ' ' + sentto_dsc
 
     @GObject.Property
     def date(self):

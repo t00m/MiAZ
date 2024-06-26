@@ -58,17 +58,7 @@ class MiAZUtil(GObject.GObject):
         self.app = app
 
     def display_traceback(self):
-        print(traceback.print_exc())
-        # ~ print("\n==================Traceback Start ===================\n")
-        # ~ stack_summary = traceback.StackSummary.extract(traceback.walk_tb(tbk))
-
-        # ~ print("%50s | %10s | %5s | %10s" %("File Name", "Method Name", "Line Number", "Line"))
-        # ~ print("-"*100)
-
-        # ~ for frame_summary in stack_summary:
-            # ~ print("%50s | %11s | %11d | %10s"%(frame_summary.filename, frame_summary.name, frame_summary.lineno, frame_summary.line))
-            # ~ print("-"*100)
-        # ~ print("\n==================Traceback End ===================\n")
+        self.log.error("Traceback:", exc_info=True)
 
     def directory_open(self, dirpath: str):
         os.system(f"xdg-open '{dirpath}'")
@@ -84,7 +74,7 @@ class MiAZUtil(GObject.GObject):
 
     def json_load(self, filepath: str) -> {}:
         """Load into a dictionary a file in json format"""
-        with open(filepath, 'r') as fin:
+        with open(filepath) as fin:
             adict = json.load(fin)
         return adict
 
