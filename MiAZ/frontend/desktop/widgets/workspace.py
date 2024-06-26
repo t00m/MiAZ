@@ -616,7 +616,7 @@ class MiAZWorkspace(Gtk.Box):
     def _do_eval_cond_matches_freetext(self, item):
         entry = self.app.get_widget('searchbar_entry')
         left = entry.get_text()
-        right = item.id
+        right = item.search_text
         if left.upper() in right.upper():
             return True
         return False
@@ -698,7 +698,8 @@ class MiAZWorkspace(Gtk.Box):
 
     def _do_filter_view(self, item, filter_list_model):
         if self.review:
-            return not item.active
+            c0 = self._do_eval_cond_matches_freetext(item)
+            return not item.active and c0
         else:
             projects = self.app.get_service('Projects')
             dropdowns = self.app.get_widget('ws-dropdowns')
