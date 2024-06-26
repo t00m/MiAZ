@@ -4,12 +4,10 @@
     "EDU": "Education",
     "INS": "Insurance",
     "LON": "Loans",
-    "SER": "Services",
-    "TRN": "Transport",
+    "SRV": "Services",
     "MED": "Medical",
     "FIN": "Financial",
     "PRS": "Personal",
-    "WRT": "Warranties",
     "HOU": "Housing",
     "EMP": "Employment",
     "LEG": "Legal",
@@ -22,5 +20,6 @@
     "FUN": "Leisure",
     "SHP": "Shopping",
     "TAX": "Taxes",
-    "CNF": "Configuration"
+    "CNF": "Configuration",
+    "WRK": "Work"
 }
