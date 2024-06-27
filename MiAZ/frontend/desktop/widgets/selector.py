@@ -81,8 +81,8 @@ class MiAZSelector(Gtk.Box):
 
         # Controls
         boxSel = factory.create_box_vertical()
-        btnAddToUsed = factory.create_button('miaz-selector-add', callback=self._on_item_used_add)
-        btnRemoveFromUsed = factory.create_button('miaz-selector-remove', callback=self._on_item_used_remove)
+        btnAddToUsed = factory.create_button('com.github.t00m.MiAZ-selector-add', callback=self._on_item_used_add)
+        btnRemoveFromUsed = factory.create_button('com.github.t00m.MiAZ-selector-remove', callback=self._on_item_used_remove)
         boxSel.append(btnAddToUsed)
         boxSel.append(btnRemoveFromUsed)
         boxControls.set_center_widget(boxSel)
