@@ -527,29 +527,50 @@ class MiAZWorkspace(Gtk.Box):
                 invalid.append(filename)
                 active &= False
 
-            self.log.debug(f"{doc} active? {active}")
             show_pending |= not active
 
-            items.append(MiAZItem
-                                (
-                                    id=os.path.basename(filename),
-                                    date=fields[0],
-                                    date_dsc=desc['Date'],
-                                    country=fields[1],
-                                    country_dsc=desc['Country'],
-                                    group=fields[2],
-                                    group_dsc=desc['Group'],
-                                    sentby_id=fields[3],
-                                    sentby_dsc=desc['SentBy'],
-                                    purpose=fields[4],
-                                    purpose_dsc=desc['Purpose'],
-                                    title=doc,
-                                    subtitle=fields[5].replace('_', ' '),
-                                    sentto_id=fields[6],
-                                    sentto_dsc=desc['SentTo'],
-                                    active=active
-                                )
-                        )
+            try:
+                items.append(MiAZItem
+                                    (
+                                        id=os.path.basename(filename),
+                                        date=fields[0],
+                                        date_dsc=desc['Date'],
+                                        country=fields[1],
+                                        country_dsc=desc['Country'],
+                                        group=fields[2],
+                                        group_dsc=desc['Group'],
+                                        sentby_id=fields[3],
+                                        sentby_dsc=desc['SentBy'],
+                                        purpose=fields[4],
+                                        purpose_dsc=desc['Purpose'],
+                                        title=doc,
+                                        subtitle=fields[5].replace('_', ' '),
+                                        sentto_id=fields[6],
+                                        sentto_dsc=desc['SentTo'],
+                                        active=active
+                                    )
+                            )
+            except (IndexError, KeyError):
+                items.append(MiAZItem
+                                    (
+                                        id=os.path.basename(filename),
+                                        date='',
+                                        date_dsc='',
+                                        country='',
+                                        country_dsc='',
+                                        group='',
+                                        group_dsc='',
+                                        sentby_id='',
+                                        sentby_dsc='',
+                                        purpose='',
+                                        purpose_dsc='',
+                                        title=doc,
+                                        subtitle='_'.join(fields),
+                                        sentto_id='',
+                                        sentto_dsc='',
+                                        active=False
+                                    )
+                            )
 
         de = datetime.now()
         dt = de - ds
