@@ -240,9 +240,6 @@ class MiAZApp(Gtk.Application):
 
         # Setup stack pages
         mainbox = self.get_widget('window-mainbox')
-        page_welcome = self.get_widget('welcome')
-        if page_welcome is None:
-            mainbox._setup_page_welcome()
         page_rename = self.get_widget('rename')
         if page_rename is None:
             mainbox._setup_page_rename()
