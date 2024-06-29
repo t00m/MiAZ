@@ -46,6 +46,10 @@ class MiAZMainWindow(Gtk.Box):
         search = self.app.add_widget('searchbar', SearchBar(self.app))
         self.append(search)
 
+        page_welcome = self.app.get_widget('welcome')
+        if page_welcome is None:
+            self._setup_page_welcome()
+
 
     def _setup_event_listener(self):
         evk = Gtk.EventControllerKey.new()
