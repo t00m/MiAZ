@@ -527,8 +527,6 @@ class MiAZWorkspace(Gtk.Box):
                 invalid.append(filename)
                 active &= False
 
-            self.log.debug(f"{doc} active? {active}")
-            self.log.debug(f"{fields}")
             show_pending |= not active
 
             try:
