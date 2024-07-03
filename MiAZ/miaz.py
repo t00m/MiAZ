@@ -57,10 +57,10 @@ ENV['APP']['contributors'] = []
 ENV['APP']['website'] = 'https://github.com/t00m/MiAZ'
 
 # Process
-PID = os.getpid()
-ENV['PS'] = {}
-ENV['PS']['PID'] = PID
-ENV['PS']['NAME'] = open('/proc/%d/comm' % PID, 'r').read().strip()
+# ~ PID = os.getpid()
+# ~ ENV['PS'] = {}
+# ~ ENV['PS']['PID'] = PID
+# ~ ENV['PS']['NAME'] = open('/proc/%d/comm' % PID, 'r').read().strip()
 
 # Configuration
 ENV['CONF'] = {}

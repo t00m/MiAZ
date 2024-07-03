@@ -30,17 +30,21 @@ class MiAZImportFromScanPlugin(GObject.GObject, Peas.Activatable):
 
     def _search_scan_app(self):
         scanapp = None
-        desktop_files = glob.glob('/usr/share/applications/*.desktop')
-        DAI = Gio.DesktopAppInfo()
-        for desktop_path in desktop_files:
-            desktop_name = os.path.basename(desktop_path)
-            try:
-                appinfo = DAI.new(desktop_name)
-                if re.search('scan', appinfo.get_categories(), re.IGNORECASE):
-                    scanapp = appinfo
-                    break
-            except TypeError:
-                pass
+        try:
+            desktop_files = glob.glob('/usr/share/applications/*.desktop')
+            DAI = Gio.DesktopAppInfo()
+            for desktop_path in desktop_files:
+                desktop_name = os.path.basename(desktop_path)
+                try:
+                    appinfo = DAI.new(desktop_name)
+                    if re.search('scan', appinfo.get_categories(), re.IGNORECASE):
+                        scanapp = appinfo
+                        break
+                except TypeError:
+                    self.log.error(f"Plugin 'scan' couldn't be activated")
+        except AttributeError:
+            # Not available in Windows/MSYS2
+            self.log.error(f"Plugin 'scan' couldn't be activated")
         return scanapp
 
     def do_activate(self):
