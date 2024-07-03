@@ -550,7 +550,8 @@ class MiAZWorkspace(Gtk.Box):
                                         active=active
                                     )
                             )
-            except (IndexError, KeyError):
+            except (IndexError, KeyError) as error:
+                self.log.error(error)
                 items.append(MiAZItem
                                     (
                                         id=os.path.basename(filename),
