@@ -551,7 +551,6 @@ class MiAZWorkspace(Gtk.Box):
                                     )
                             )
             except (IndexError, KeyError) as error:
-                self.log.error(error)
                 items.append(MiAZItem
                                     (
                                         id=os.path.basename(filename),
