@@ -57,13 +57,14 @@ class MiAZRenameDialog(Gtk.Box):
         self.append(frmMain)
 
         self.btnAccept = self.factory.create_button(icon_name='com.github.t00m.MiAZ-ok', title=_('Rename'), callback=self.on_rename_accept, css_classes=['opaque'])
-        self.btnAccept.set_sensitive(True)
-        self.btnAccept.set_can_focus(True)
-        self.btnAccept.set_focusable(True)
-        self.btnAccept.set_receives_default(True)
         self.btnCancel = self.factory.create_button(icon_name='com.github.t00m.MiAZ-stop', title=_('Cancel'), callback=self.on_rename_cancel)
         self.btnPreview = self.factory.create_button('com.github.t00m.MiAZ-view-document', _('Preview'))
         self.btnPreview.connect('clicked', self._on_document_display)
+        self.btnAccept.set_sensitive(True)
+        self.btnAccept.has_default()
+        self.btnAccept.set_can_focus(True)
+        self.btnAccept.set_focusable(True)
+        self.btnAccept.set_receives_default(True)
         boxButtons = Gtk.CenterBox(hexpand=True)
         boxButtons.set_start_widget(self.btnCancel)
         boxButtons.set_center_widget(self.btnPreview)
@@ -251,6 +252,7 @@ class MiAZRenameDialog(Gtk.Box):
         boxValue.append(self.entry_concept)
         boxValue.append(button)
         self.entry_concept.connect('changed', self._on_changed_entry)
+        self.entry_concept.connect('activate', self.on_rename_accept)
 
     def __create_field_7_sentto(self):
         self.rowSentTo, self.btnSentTo, self.dpdSentTo = self.__create_actionrow(SentTo.__title__, SentTo, 'SentTo')
@@ -402,7 +404,10 @@ class MiAZRenameDialog(Gtk.Box):
             source = os.path.join(self.repository.docs, bsource)
             btarget = self.get_filepath_target()
             target = os.path.join(self.repository.docs, btarget)
-            self.util.filename_rename(source, target)
+            renamed = self.util.filename_rename(source, target)
+            if not renamed:
+                # ~ FIXME: Raise warning!!
+                self.log.debug(f"Target {os.path.basename(target)} already exists!")
             dialog.destroy()
             self.actions.show_stack_page_by_name('workspace')
         else:
