@@ -198,7 +198,7 @@ class MiAZUtil(GObject.GObject):
                     self.log.error(error)
             else:
                 self.log.debug("Document NOT renamed:")
-                self.log.error("\tTarget '{target}' already exist")
+                self.log.error(f"\tTarget '{target}' already exist")
         # ~ else:
             # ~ self.log.error("Source and Target are the same. Skip rename")
         return rename
