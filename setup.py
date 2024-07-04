@@ -17,7 +17,7 @@ from setuptools import setup
 # ~ VERSION = o.decode('utf-8').strip().replace('"', '')
 VERSION = '0.0.44'
 
-with open('README.md', 'r') as f:
+with open('README.md') as f:
     LONG_DESCRIPTION = f.read()
 
 

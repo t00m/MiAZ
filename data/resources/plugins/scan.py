@@ -41,10 +41,10 @@ class MiAZImportFromScanPlugin(GObject.GObject, Peas.Activatable):
                         scanapp = appinfo
                         break
                 except TypeError:
-                    self.log.error(f"Plugin 'scan' couldn't be activated")
+                    self.log.error("Plugin 'scan' couldn't be activated")
         except AttributeError:
             # Not available in Windows/MSYS2
-            self.log.error(f"Plugin 'scan' couldn't be activated")
+            self.log.error("Plugin 'scan' couldn't be activated")
         return scanapp
 
     def do_activate(self):
