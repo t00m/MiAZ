@@ -597,10 +597,10 @@ class MiAZWorkspace(Gtk.Box):
         togglebutton = self.app.get_widget('workspace-togglebutton-pending-docs')
         togglebutton.set_visible(show_pending)
 
-        # FIXME: DEACTIVATE SHOW_PENDING DOCUMENTS. REVIEW WORKFLOW LOGIC
-        show_pending = False
-        togglebutton.set_active(False)
-        self.review = show_pending
+        if not show_pending:
+            togglebutton.set_active(False)
+        self.review = togglebutton.get_active()
+
 
         return False
 
