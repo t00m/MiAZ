@@ -12,11 +12,12 @@ import glob
 import subprocess
 from setuptools import setup
 
-cmd_version = 'meson introspect meson.build --projectinfo | jq .version'
-o, e = subprocess.Popen([cmd_version], shell=True, stdout=subprocess.PIPE).communicate()
-VERSION = o.decode('utf-8').strip().replace('"', '')
+# ~ cmd_version = 'meson introspect meson.build --projectinfo | jq .version'
+# ~ o, e = subprocess.Popen([cmd_version], shell=True, stdout=subprocess.PIPE).communicate()
+# ~ VERSION = o.decode('utf-8').strip().replace('"', '')
+VERSION = '0.0.44'
 
-with open('data/docs/README', 'r') as f:
+with open('README.md') as f:
     LONG_DESCRIPTION = f.read()
 
 

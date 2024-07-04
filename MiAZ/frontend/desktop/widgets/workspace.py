@@ -316,6 +316,7 @@ class MiAZWorkspace(Gtk.Box):
         button.set_has_frame(True)
         self.app.add_widget('workspace-togglebutton-pending-docs', button)
         button.set_visible(False)
+        button.set_active(False)
         hbox.append(button)
 
         headerbar = self.app.get_widget('headerbar')
@@ -595,7 +596,10 @@ class MiAZWorkspace(Gtk.Box):
 
         togglebutton = self.app.get_widget('workspace-togglebutton-pending-docs')
         togglebutton.set_visible(show_pending)
-        togglebutton.set_active(show_pending)
+
+        # FIXME: DEACTIVATE SHOW_PENDING DOCUMENTS. REVIEW WORKFLOW LOGIC
+        show_pending = False
+        togglebutton.set_active(False)
         self.review = show_pending
 
         return False
