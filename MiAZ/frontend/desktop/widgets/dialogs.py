@@ -49,22 +49,23 @@ class CustomDialog(Gtk.Dialog):
         # Buttons
         if dtype in ['info', 'warning', 'error']:
             self.add_buttons(
-            '_OK', Gtk.ResponseType.OK,
+            '_Close', Gtk.ResponseType.OK,
             )
-            btn_ok = self.get_widget_for_response(response_id=Gtk.ResponseType.OK)
-            btn_ok.get_style_context().add_class(class_name='suggested-action')
         else:
             self.add_buttons(
-                '_Cancelar', Gtk.ResponseType.CANCEL,
-                '_OK', Gtk.ResponseType.OK,
+                '_Cancel', Gtk.ResponseType.CANCEL,
+                '_Accept', Gtk.ResponseType.OK,
             )
-            btn_ok = self.get_widget_for_response(response_id=Gtk.ResponseType.OK)
-            btn_ok.get_style_context().add_class(class_name='suggested-action')
-            btn_cancel = self.get_widget_for_response(response_id=Gtk.ResponseType.CANCEL)
-            btn_cancel.get_style_context().add_class(class_name='destructive-action')
-
+        btn_ok = self.get_widget_for_response(response_id=Gtk.ResponseType.OK)
+        btn_ok.set_has_frame(True)
+        btn_ok.set_hexpand(True)
+        btn_ok.has_default()
+        btn_ok.set_can_focus(True)
+        btn_ok.set_focusable(True)
+        btn_ok.set_receives_default(True)
         action_box = btn_ok.get_ancestor(Gtk.Box)
-        action_box.get_style_context ().add_class ('toolbar')
+        action_box.set_hexpand(True)
+        action_box.get_style_context().add_class('toolbar')
         action_box.set_homogeneous(True)
 
         # Content area
@@ -76,6 +77,7 @@ class CustomDialog(Gtk.Dialog):
         content_area.set_margin_bottom(margin=6)
         content_area.set_margin_start(margin=6)
         vbox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6, hexpand=True, vexpand=True)
+        vbox.set_can_focus(False)
         hbox_title = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6, hexpand=True, vexpand=False)
         icman = self.app.get_service('icons')
         icon = icman.get_image_by_name(icon_name[dtype])
