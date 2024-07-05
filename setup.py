@@ -9,13 +9,14 @@
 
 import os
 import glob
+import json
 import subprocess
 from setuptools import setup
 
-# ~ cmd_version = 'meson introspect meson.build --projectinfo | jq .version'
-# ~ o, e = subprocess.Popen([cmd_version], shell=True, stdout=subprocess.PIPE).communicate()
-# ~ VERSION = o.decode('utf-8').strip().replace('"', '')
-VERSION = '0.0.44'
+cmd_version = "meson introspect meson.build --projectinfo"
+o, e = subprocess.Popen(cmd_version.split(), shell=True, stdout=subprocess.PIPE).communicate()
+props = json.loads(o)
+VERSION = props['version']
 
 with open('README.md') as f:
     LONG_DESCRIPTION = f.read()
