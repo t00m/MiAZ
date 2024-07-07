@@ -207,8 +207,9 @@ class MiAZSelector(Gtk.Box):
             label1.set_text(i_title)
             entry1 = dialog.get_entry_key1()
             entry1.set_sensitive(False)
-            dialog.set_value1(item.id)
-            dialog.set_value2(item.title)
+            if item is not None:
+                dialog.set_value1(item.id)
+                dialog.set_value2(item.title)
             dialog.connect('response', self._on_response_item_available_rename, item)
             dialog.show()
 
