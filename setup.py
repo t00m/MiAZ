@@ -13,10 +13,7 @@ import json
 import subprocess
 from setuptools import setup
 
-cmd_version = "meson introspect meson.build --projectinfo"
-o, e = subprocess.Popen(cmd_version.split(), shell=True, stdout=subprocess.PIPE).communicate()
-props = json.loads(o)
-VERSION = props['version']
+VERSION = open('data/docs/VERSION').read().replace('\n', '')
 
 with open('README.md') as f:
     LONG_DESCRIPTION = f.read()
@@ -53,6 +50,7 @@ for node in resources:
         finaldir = os.path.join('share', 'MiAZ', datadir)
         DATA_FILES +=[(finaldir, [datafile])]
 # ~ DATA_FILES += ['README.adoc']
+DATA_FILES +=[('share/doc/MiAZ', ['data/docs/VERSION'])]
 DATA_FILES +=[('share/doc/MiAZ', ['data/docs/README'])]
 DATA_FILES +=[('share/applications', ['data/resources/com.github.t00m.MiAZ.desktop'])]
 DATA_FILES +=[('share/icons/hicolor/48x48/apps/', ['data/resources/icons/scalable/com.github.t00m.MiAZ.svg'])]

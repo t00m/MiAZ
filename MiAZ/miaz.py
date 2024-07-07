@@ -16,10 +16,7 @@ sys.path.insert(1, '@pkgdatadir@')
 from MiAZ.backend.log import MiAZLog
 from MiAZ.backend.util import which
 
-cmd_version = "meson introspect meson.build --projectinfo"
-o, e = subprocess.Popen(cmd_version.split(), shell=True, stdout=subprocess.PIPE).communicate()
-props = json.loads(o)
-VERSION = props['version']
+VERSION = '0.0.45'
 log = MiAZLog('MiAZ')
 ENV = {}
 
@@ -41,7 +38,7 @@ ENV['DESKTOP']['ENABLED'] = ENV['DESKTOP']['GTK_SUPPORT']
 # App
 ENV['APP'] = {}
 ENV['APP']['ID'] = '@APP_ID@'
-ENV['APP']['VERSION'] = '@VERSION@'
+ENV['APP']['VERSION'] = VERSION
 ENV['APP']['PGKDATADIR'] = '@pkgdatadir@'
 ENV['APP']['LOCALEDIR'] = '@localedir@'
 ENV['APP']['name'] = "AZ Organizer"
