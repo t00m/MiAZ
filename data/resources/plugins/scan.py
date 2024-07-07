@@ -28,6 +28,16 @@ class MiAZImportFromScanPlugin(GObject.GObject, Peas.Activatable):
         self.app = None
         self.scanapp = None
 
+    def do_activate(self):
+        self.app = self.object.app
+        workspace = self.app.get_widget('workspace')
+        scanapp = self._search_scan_app()
+        if scanapp is not None:
+            workspace.connect('workspace-loaded', self.add_menuitem)
+
+    def do_deactivate(self):
+        self.log.debug("Plugin deactivation not implemented")
+
     def _search_scan_app(self):
         scanapp = None
         try:
@@ -37,26 +47,19 @@ class MiAZImportFromScanPlugin(GObject.GObject, Peas.Activatable):
                 desktop_name = os.path.basename(desktop_path)
                 try:
                     appinfo = DAI.new(desktop_name)
-                    if re.search('scan', appinfo.get_categories(), re.IGNORECASE):
-                        scanapp = appinfo
-                        break
-                except TypeError:
-                    self.log.error("Plugin 'scan' couldn't be activated")
-        except AttributeError:
+                    categories = appinfo.get_categories()
+                    if categories is not None:
+                        if re.search('scan', categories, re.IGNORECASE):
+                            scanapp = appinfo
+                            break
+                except TypeError as error:
+                    pass
+                    # ~ self.log.error(f"Plugin 'scan' couldn't be activated: {error}")
+
+        except AttributeError as error:
             # Not available in Windows/MSYS2
-            self.log.error("Plugin 'scan' couldn't be activated")
+            self.log.error("Plugin 'scan' couldn't be activated: {error}")
         return scanapp
-
-    def do_activate(self):
-        self.app = self.object.app
-        workspace = self.app.get_widget('workspace')
-        scanapp = self._search_scan_app()
-        if scanapp is not None:
-            workspace.connect('workspace-loaded', self.add_menuitem)
-            self.log.debug("Plugin Scan activated")
-
-    def do_deactivate(self):
-        self.log.debug("Plugin deactivation not implemented")
 
     def add_menuitem(self, *args):
         if self.app.get_widget('workspace-menu-in-add-scan') is None:
