@@ -126,6 +126,8 @@ class MiAZSelector(Gtk.Box):
     def update_views(self, *args):
         self._update_view_available()
         self._update_view_used()
+        self.viewAv.cv.sort_by_column(self.viewAv.column_id, Gtk.SortType.ASCENDING)
+        self.viewSl.cv.sort_by_column(self.viewSl.column_id, Gtk.SortType.ASCENDING)
         # ~ self.log.debug(f"Setup selector for {self.config.config_for}")
 
     def _on_item_used_add(self, *args):
