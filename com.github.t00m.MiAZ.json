@@ -1,41 +1,64 @@
 {
     "app-id" : "com.github.t00m.MiAZ",
     "runtime" : "org.gnome.Platform",
-    "runtime-version" : "46",
+    "runtime-version" : "45",
     "sdk" : "org.gnome.Sdk",
     "command" : "miaz",
     "finish-args" : [
+        "--share=network",
         "--share=ipc",
-        "--device=dri",
         "--socket=fallback-x11",
+        "--device=dri",
         "--socket=wayland",
         "--socket=pulseaudio"
     ],
     "cleanup" : [
+        "/lib/debug",
         "/include",
         "/lib/pkgconfig",
         "/man",
-        "/share/doc",
+        "/share/aclocal",
         "/share/gtk-doc",
         "/share/man",
         "/share/pkgconfig",
+        "/share/vala",
         "*.la",
         "*.a"
     ],
     "modules" : [
         {
+            "name" : "libpeas",
+            "buildsystem": "meson",
+            "config-opts" : [
+                "-Dlua51=false",
+                "-Dpython3=false"
+            ],
+            "cleanup" : [
+                "/bin/*",
+                "/lib/peas-demo",
+                "/lib/libpeas-gtk*"
+            ],
+            "sources" : [
+                {
+                    "type" : "git",
+                    "url" : "https://gitlab.gnome.org/GNOME/libpeas.git",
+                    "branch": "1.36"
+                }
+            ]
+        },
+        {
             "name" : "miaz",
             "builddir" : true,
             "buildsystem" : "meson",
             "build-commands": [
-                "python -m pip install --prefix=/app ."
+                "python -m pip install --prefix=/app .."
             ],
             "sources" : [
                 {
                     "type" : "git",
                     "url" : "https://github.com/t00m/MiAZ.git",
-                    "tag" : "0.0.21",
-                    "commit" : "a79be5dee48b4a7f9413abcf7135f18e42034527"
+                    "tag" : "0.0.45",
+                    "commit" : "4add64165b940201d2a8d8bdd28b26d84f1cf74c"
                 }
             ]
         }
