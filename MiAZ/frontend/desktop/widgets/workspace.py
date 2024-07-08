@@ -284,6 +284,12 @@ class MiAZWorkspace(Gtk.Box):
         tgbFilters.set_valign(Gtk.Align.CENTER)
         hdb_left.append(tgbFilters)
 
+        # Search box
+        # ~ search = self.app.add_widget('searchbar', SearchBar(self.app))
+        searchentry = self.app.add_widget('searchentry', Gtk.SearchEntry())
+        hdb_left.append(searchentry)
+
+
         ## Dropdowns
         dropdowns = self.app.get_widget('ws-dropdowns')
 
@@ -605,7 +611,7 @@ class MiAZWorkspace(Gtk.Box):
         return False
 
     def _do_eval_cond_matches_freetext(self, item):
-        entry = self.app.get_widget('searchbar_entry')
+        entry = self.app.get_widget('searchentry')
         left = entry.get_text()
         right = item.search_text
         if left.upper() in right.upper():
@@ -737,8 +743,8 @@ class MiAZWorkspace(Gtk.Box):
             return show_item
 
     def _do_connect_filter_signals(self):
-        searchbar = self.app.get_widget('searchbar')
-        searchbar.set_callback(self._on_filter_selected)
+        searchentry = self.app.get_widget('searchentry')
+        searchentry.connect('changed', self._on_filter_selected)
         dropdowns = self.app.get_widget('ws-dropdowns')
         for dropdown in dropdowns:
             dropdowns[dropdown].connect("notify::selected-item", self._on_filter_selected)

@@ -42,10 +42,7 @@ class MiAZMainWindow(Gtk.Box):
         self._setup_headerbar_center()
         self._setup_headerbar_right()
 
-        # On-Demand SearchBar
-        search = self.app.add_widget('searchbar', SearchBar(self.app))
-        self.append(search)
-
+        # Welcome page
         page_welcome = self.app.get_widget('welcome')
         if page_welcome is None:
             self._setup_page_welcome()
@@ -68,11 +65,12 @@ class MiAZMainWindow(Gtk.Box):
         menubutton.set_valign(Gtk.Align.CENTER)
         headerbar.pack_start(menubutton)
 
-        # Filters and Search box
+        # Box for filters button and search entry
         hbox = factory.create_box_horizontal(margin=0, spacing=0)
         hbox.get_style_context().add_class(class_name='linked')
         self.app.add_widget('headerbar-left-box', hbox)
         headerbar.pack_start(hbox)
+
 
     def _setup_headerbar_right(self):
         factory = self.app.get_service('factory')
