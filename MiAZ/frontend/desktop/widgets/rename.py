@@ -12,6 +12,7 @@ from gi.repository import Gtk
 from gi.repository import GLib
 
 from MiAZ.backend.log import MiAZLog
+from MiAZ.frontend.desktop.widgets.dialogs import CustomDialog
 from MiAZ.backend.models import Group, Country, Purpose, Concept, SentBy, SentTo
 from MiAZ.frontend.desktop.widgets.configview import MiAZCountries, MiAZGroups, MiAZPurposes, MiAZPeopleSentBy, MiAZPeopleSentTo
 
@@ -406,8 +407,13 @@ class MiAZRenameDialog(Gtk.Box):
             target = os.path.join(self.repository.docs, btarget)
             renamed = self.util.filename_rename(source, target)
             if not renamed:
-                # ~ FIXME: Raise warning!!
-                self.log.debug(f"Target {os.path.basename(target)} already exists!")
+                wrnmsg = f"Document '{os.path.basename(target)}' already exists!"
+                self.log.debug(wrnmsg)
+                title='Renaming not possible'
+                wrndlg = CustomDialog(app=self.app, parent=dialog, use_header_bar=True, dtype='warning', title=title, text=f"\n{wrnmsg}\n", widget=None)
+                wrndlg.set_default_size(-1, -1)
+                wrndlg.set_modal(True)
+                wrndlg.show()
             dialog.destroy()
             self.actions.show_stack_page_by_name('workspace')
         else:
