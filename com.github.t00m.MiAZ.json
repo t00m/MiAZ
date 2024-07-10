@@ -1,7 +1,7 @@
 {
     "app-id" : "com.github.t00m.MiAZ",
     "runtime" : "org.gnome.Platform",
-    "runtime-version" : "46",
+    "runtime-version" : "45",
     "sdk" : "org.gnome.Sdk",
     "command" : "miaz",
     "finish-args" : [
@@ -10,7 +10,7 @@
         "--socket=fallback-x11",
         "--socket=wayland",
         "--socket=pulseaudio",
-        "--share=network",
+        "--share=network"
     ],
     "cleanup" : [
         "/include",
@@ -55,7 +55,7 @@
                 {
                     "type" : "git",
                     "url" : "https://github.com/t00m/MiAZ.git",
-                    "branch": "main"
+                    "branch": "0.0.45"
                 }
             ]
         }

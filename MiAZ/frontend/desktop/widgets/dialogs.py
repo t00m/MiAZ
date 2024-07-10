@@ -18,6 +18,11 @@ icon_name["error"] = "com.github.t00m.MiAZ-dialog-error-symbolic"
 icon_name["question"] = "dialog-question-symbolic"
 
 miaz_dialog = {
+    'action': {
+        'icon': 'com.github.t00m.MiAZ-document-edit-symbolic',
+        'type': Gtk.MessageType.INFO,
+        'buttons': Gtk.ButtonsType.OK_CANCEL
+        },
     'info': {
         'icon': 'dialog-information-symbolic',
         'type': Gtk.MessageType.INFO,
@@ -61,10 +66,26 @@ class MiAZDialog:
                     destroy_with_parent=False,
                     modal=True,
                     message_type=miaz_dialog[dtype]['type'],
-                    text=title,
+                    # ~ text=title,
                     secondary_text=body,
                     secondary_use_markup=True,
                     buttons=miaz_dialog[dtype]['buttons'])
+
+        # Set header
+        header = Gtk.HeaderBar()
+        # ~ centerbox = Gtk.CenterBox(orientation=Gtk.Orientation.HORIZONTAL)
+        # ~ centerbox.set_hexpand(True)
+        # ~ centerbox.set_vexpand(False)
+        # ~ left = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
+        # ~ icon =
+
+        lblType = Gtk.Label.new(dtype.title())
+        lblType.get_style_context().add_class(class_name='title-3')
+        header.pack_start(lblType)
+        lblTitle = Gtk.Label.new(title)
+        lblTitle.get_style_context().add_class(class_name='title-3')
+        header.set_title_widget(lblTitle)
+        self.dialog.set_titlebar(header)
 
         # Set custom size
         self.dialog.set_default_size(width, height)

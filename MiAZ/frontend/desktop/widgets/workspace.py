@@ -474,7 +474,7 @@ class MiAZWorkspace(Gtk.Box):
         return self.selected_items
 
     def clear_filters(self, *args):
-        search_entry = self.app.get_widget('searchbar_entry')
+        search_entry = self.app.get_widget('searchentry')
         search_entry.set_text('')
         dropdowns = self.app.get_widget('ws-dropdowns')
         for ddId in dropdowns:

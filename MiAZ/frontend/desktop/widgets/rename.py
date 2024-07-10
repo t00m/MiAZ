@@ -419,13 +419,13 @@ class MiAZRenameDialog(Gtk.Box):
         doc = self.get_filepath_source()
         self.actions.document_display(doc)
 
-    def on_document_delete(self, button, filepath):
-        body = _(f"<big>You are about to delete the following document:\n\n<b>{os.path.basename(filepath)}</b>\n\nConfirm, please.</big>")
-        widget = Gtk.Label()
-        widget.set_markup(body)
-        question = self.factory.create_dialog_question(self, _('Are you sure?'), widget)
-        question.connect('response', self.on_answer_question_delete)
-        question.show()
+    # ~ def on_document_delete(self, button, filepath):
+        # ~ body = _(f"<big>You are about to delete the following document:\n\n<b>{os.path.basename(filepath)}</b>\n\nConfirm, please.</big>")
+        # ~ widget = Gtk.Label()
+        # ~ widget.set_markup(body)
+        # ~ question = self.factory.create_dialog_question(self, _('Are you sure?'), widget)
+        # ~ question.connect('response', self.on_answer_question_delete)
+        # ~ question.show()
 
     def on_answer_question_delete(self, dialog, response):
         filepath = self.get_filepath_source()

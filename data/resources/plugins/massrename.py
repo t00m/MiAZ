@@ -27,6 +27,7 @@ from MiAZ.frontend.desktop.widgets.configview import MiAZPeopleSentBy
 from MiAZ.frontend.desktop.widgets.configview import MiAZPeopleSentTo
 from MiAZ.frontend.desktop.widgets.configview import MiAZProjects
 from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewMassRename
+from MiAZ.frontend.desktop.widgets.dialogs import MiAZDialog
 
 Field = {}
 Field[Date] = 0
@@ -46,7 +47,7 @@ Configview['Project'] = MiAZProjects
 Configview['Date'] = Gtk.Calendar
 
 
-class MiAZToolbarProjectMgtPlugin(GObject.GObject, Peas.Activatable):
+class MiAZMassRenamingPlugin(GObject.GObject, Peas.Activatable):
     __gtype_name__ = 'MiAZMassRenamingPlugin'
     object = GObject.Property(type=GObject.Object)
 
@@ -131,7 +132,7 @@ class MiAZToolbarProjectMgtPlugin(GObject.GObject, Peas.Activatable):
         def dialog_response(dialog, response, dropdown, item_type, items):
             util = self.app.get_service('util')
             repository = self.app.get_service('repo')
-            if response == Gtk.ResponseType.ACCEPT:
+            if response == Gtk.ResponseType.OK:
                 for item in items:
                     bsource = item.id
                     name, ext = util.filename_details(bsource)
@@ -145,7 +146,7 @@ class MiAZToolbarProjectMgtPlugin(GObject.GObject, Peas.Activatable):
             dialog.destroy()
 
         def dialog_response_date(dialog, response, calendar, items):
-            if response == Gtk.ResponseType.ACCEPT:
+            if response == Gtk.ResponseType.OK:
                 adate = calendar.get_date()
                 y = f"{adate.get_year():04d}"
                 m = f"{adate.get_month():02d}"
@@ -190,7 +191,7 @@ class MiAZToolbarProjectMgtPlugin(GObject.GObject, Peas.Activatable):
             box.append(hbox)
             box.append(frame)
             window = self.app.get_widget('window')
-            dialog = factory.create_dialog_question(window, _('Mass renaming'), box, width=1024, height=600)
+            dialog = MiAZDialog(parent=window, dtype='action', title=_('Mass renaming'), widget=box, width=1024, height=600).get_dialog()
             dialog.connect('response', dialog_response, dropdown, item_type, items)
             dialog.show()
         else:
@@ -215,6 +216,6 @@ class MiAZToolbarProjectMgtPlugin(GObject.GObject, Peas.Activatable):
             calendar.select_day(GLib.DateTime.new_from_iso8601(iso8601))
             calendar.emit('day-selected')
             window = self.app.get_widget('window')
-            dialog = factory.create_dialog_question(window, _('Mass renaming'), box, width=640, height=480)
+            dialog = MiAZDialog(parent=window, action='action', title=_('Mass renaming'), widget=box, width=640, height=480)
             dialog.connect('response', dialog_response_date, calendar, items)
             dialog.show()
