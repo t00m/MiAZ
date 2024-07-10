@@ -44,6 +44,7 @@ class MiAZAppSettings(MiAZCustomWindow):
         self.log = MiAZLog('MiAZ.AppSettings')
         self.name = 'app-settings'
         self.title = 'Application settings'
+        self.app.add_widget('window-settings', self)
         super().__init__(app, self.name, self.title, **kwargs)
 
     def _build_ui(self):

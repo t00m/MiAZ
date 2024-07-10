@@ -77,10 +77,11 @@ class MiAZToolbarProjectMgtPlugin(GObject.GObject, Peas.Activatable):
         factory = self.app.get_service('factory')
         item_type = Project
         workspace = self.app.get_widget('workspace')
+        srvdlg = self.app.get_service('dialogs')
         items = workspace.get_selected_items()
 
         def dialog_response(dialog, response, dropdown, items):
-            if response == Gtk.ResponseType.ACCEPT:
+            if response == Gtk.ResponseType.YES:
                 pid = dropdown.get_selected_item().id
                 docs = []
                 for item in items:
@@ -97,7 +98,7 @@ class MiAZToolbarProjectMgtPlugin(GObject.GObject, Peas.Activatable):
         dropdown = factory.create_dropdown_generic(Project)
         config[i_type].connect('used-updated', actions.dropdown_populate, dropdown, item_type, False, False)
         actions.dropdown_populate(config[i_type], dropdown, Project, any_value=False)
-        btnManage = factory.create_button('miaz-res-manage', '')
+        btnManage = factory.create_button('com.github.t00m.MiAZ-res-projects', '')
         btnManage.connect('clicked', actions.manage_resource, Configview['Project'](self.app))
         label = factory.create_label(_('Assign the following documents to this project: '))
         frame = Gtk.Frame()
@@ -119,7 +120,7 @@ class MiAZToolbarProjectMgtPlugin(GObject.GObject, Peas.Activatable):
         box.append(hbox)
         box.append(frame)
         window = self.app.get_widget('window')
-        dialog = factory.create_dialog_question(window, _('Assign to a project'), box, width=1024, height=600)
+        dialog = srvdlg.create(parent=window, dtype='question', title=_('Assign document(s) to a project'), widget=box, width=1024, height=600)
         dialog.connect('response', dialog_response, dropdown, items)
         dialog.show()
 
@@ -127,11 +128,12 @@ class MiAZToolbarProjectMgtPlugin(GObject.GObject, Peas.Activatable):
         actions = self.app.get_service('actions')
         factory = self.app.get_service('factory')
         workspace = self.app.get_widget('workspace')
+        srvdlg = self.app.get_service('dialogs')
         item_type = Project
         items = workspace.get_selected_items()
 
         def dialog_response(dialog, response, dropdown, items):
-            if response == Gtk.ResponseType.ACCEPT:
+            if response == Gtk.ResponseType.YES:
                 projects = self.app.get_service('Projects')
                 pid = dropdown.get_selected_item().id
                 docs = []
@@ -156,7 +158,7 @@ class MiAZToolbarProjectMgtPlugin(GObject.GObject, Peas.Activatable):
                 sprojects.add(project)
 
         actions.dropdown_populate(config[i_type], dropdown, Project, any_value=False, only_include=list(sprojects))
-        btnManage = factory.create_button('miaz-res-manage', '')
+        btnManage = factory.create_button('com.github.t00m.MiAZ-res-projects', '')
         btnManage.connect('clicked', actions.manage_resource, Configview['Project'](self.app))
         label = factory.create_label(_('Withdraw the following documents from this project: '))
         frame = Gtk.Frame()
@@ -177,7 +179,7 @@ class MiAZToolbarProjectMgtPlugin(GObject.GObject, Peas.Activatable):
         box.append(hbox)
         box.append(frame)
         window = self.app.get_widget('window')
-        dialog = factory.create_dialog_question(window, _('Assign to a project'), box, width=1024, height=600)
+        dialog = srvdlg.create(parent=window, dtype='question', title=_('Withdraw from project'), widget=box, width=1024, height=600)
         dialog.connect('response', dialog_response, dropdown, items)
         dialog.show()
 

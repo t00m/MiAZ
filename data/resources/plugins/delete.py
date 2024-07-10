@@ -49,9 +49,10 @@ class MiAZDeleteItemPlugin(GObject.GObject, Peas.Activatable):
         repository = self.app.get_service('repo')
         util = self.app.get_service('util')
         workspace = self.app.get_widget('workspace')
+        srvdlg = self.app.get_service('dialogs')
 
         def dialog_response(dialog, response, items):
-            if response == Gtk.ResponseType.ACCEPT:
+            if response == Gtk.ResponseType.ACCEPT or response == Gtk.ResponseType.YES:
                 for item in items:
                     filepath = os.path.join(repository.docs, item.id)
                     util.filename_delete(filepath)
@@ -60,7 +61,7 @@ class MiAZDeleteItemPlugin(GObject.GObject, Peas.Activatable):
         self.log.debug("Mass deletion")
         items = workspace.get_selected_items()
         frame = Gtk.Frame()
-        box, view = factory.create_view(MiAZColumnViewMassDelete, _("Mass deletion"))
+        box, view = factory.create_view(MiAZColumnViewMassDelete)
         citems = []
         for item in items:
             citems.append(File(id=item.id, title=os.path.basename(item.id)))
@@ -68,6 +69,10 @@ class MiAZDeleteItemPlugin(GObject.GObject, Peas.Activatable):
         frame.set_child(view)
         box.append(frame)
         window = self.app.get_widget('window')
-        dialog = factory.create_dialog_question(window, _('Mass deletion'), box, width=1024, height=600)
+        body = _("The following files will be deleted")
+        dialog = srvdlg.create(parent=window, dtype='question', title=_('Mass deletion'), body=body, widget=box, width=600, height=480)
         dialog.connect('response', dialog_response, items)
-        dialog.show()
+        dialog.present()
+        # ~ dialog = factory.create_dialog_question(window, _('Mass deletion'), box, width=1024, height=600)
+        # ~ dialog.connect('response', dialog_response, items)
+        # ~ dialog.show()

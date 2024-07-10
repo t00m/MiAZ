@@ -260,40 +260,32 @@ class MiAZFactory:
 
         return dropdown
 
-    def create_dialog(self, parent, title, widget, width=-1, height=-1):
-        dialog = Gtk.Dialog()
-        dlgHeader = Gtk.HeaderBar()
-        dialog.set_titlebar(dlgHeader)
-        dialog.set_modal(True)
-        dialog.set_title(title)
-        # ~ dialog.set_margin_top(margin=12)
-        # ~ dialog.set_margin_end(margin=12)
-        # ~ dialog.set_margin_bottom(margin=12)
-        # ~ dialog.set_margin_start(margin=12)
-        if width != -1 and height != -1:
-            dialog.set_size_request(width, height)
-        dialog.set_transient_for(parent)
-        contents = dialog.get_content_area()
-        contents.set_margin_top(margin=12)
-        contents.set_margin_end(margin=12)
-        contents.set_margin_bottom(margin=12)
-        contents.set_margin_start(margin=12)
-        contents.append(widget)
-        return dialog
+    # ~ def create_dialog(self, parent, title, widget, width=-1, height=-1):
+        # ~ dialog = Gtk.Dialog()
+        # ~ dlgHeader = Gtk.HeaderBar()
+        # ~ dialog.set_titlebar(dlgHeader)
+        # ~ dialog.set_modal(True)
+        # ~ dialog.set_title(title)
+        # ~ if width != -1 and height != -1:
+            # ~ dialog.set_size_request(width, height)
+        # ~ dialog.set_transient_for(parent)
+        # ~ contents = dialog.get_content_area()
+        # ~ contents.set_margin_top(margin=12)
+        # ~ contents.set_margin_end(margin=12)
+        # ~ contents.set_margin_bottom(margin=12)
+        # ~ contents.set_margin_start(margin=12)
+        # ~ contents.append(widget)
+        # ~ return dialog
 
-    def create_dialog_question(self, parent, title, body, width=-1, height=-1):
-        dialog = self.create_dialog(parent, title, body, width, height)
-        dialog.add_buttons('Cancel', Gtk.ResponseType.CANCEL, 'Accept', Gtk.ResponseType.ACCEPT)
-        dialog.set_default_response(Gtk.ResponseType.CANCEL)
-        btnCancel = dialog.get_widget_for_response(Gtk.ResponseType.CANCEL)
-        btnCancel.get_style_context().add_class(class_name='destructive-action')
-        btnCancel.set_margin_end(margin=12)
-        btnCancel.set_margin_bottom(margin=12)
-        btnAccept = dialog.get_widget_for_response(Gtk.ResponseType.ACCEPT)
-        btnAccept.get_style_context().add_class(class_name='suggested-action')
-        btnAccept.set_margin_end(margin=12)
-        btnAccept.set_margin_bottom(margin=12)
-        return dialog
+    # ~ def create_dialog_question(self, parent, title, body, width=-1, height=-1):
+        # ~ dialog = self.create_dialog(parent, title, body, width, height)
+        # ~ dialog.add_buttons('Cancel', Gtk.ResponseType.CANCEL, 'Accept', Gtk.ResponseType.ACCEPT)
+        # ~ dialog.set_default_response(Gtk.ResponseType.CANCEL)
+        # ~ btn_ok = dialog.get_widget_for_response(response_id=Gtk.ResponseType.ACCEPT)
+        # ~ action_box = btn_ok.get_ancestor(Gtk.Box)
+        # ~ action_box.set_homogeneous(True)
+        # ~ action_box.get_style_context().add_class('toolbar')
+        # ~ return dialog
 
     def create_filechooser(self, parent, title, target, callback, data=None):
         return MiAZFileChooserDialog(self.app, parent, title, target, callback, data)
@@ -353,15 +345,16 @@ class MiAZFactory:
         scrwin.set_vexpand(True)
         return scrwin
 
-    def create_view(self, customview, title):
+    def create_view(self, customview, title=''):
         box = self.create_box_vertical(spacing=6, vexpand=True, hexpand=True)
-        label = self.create_label(title)
         view = customview(self.app)
         view.get_style_context().add_class(class_name='monospace')
         view.get_style_context().add_class(class_name='caption')
         view.set_hexpand(True)
         view.set_vexpand(True)
-        box.append(label)
+        if len(title) > 0:
+            label = self.create_label(title)
+            box.append(label)
         return box, view
 
     def create_switch_button(self, icon_name, title, callback=None, data=None):

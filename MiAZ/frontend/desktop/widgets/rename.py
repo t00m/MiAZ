@@ -390,28 +390,28 @@ class MiAZRenameDialog(Gtk.Box):
         return self.result
 
     def on_rename_accept(self, *args):
-        body = _(f"<big>You are about to set this new filename:</big>\n\n<b>{self.get_filepath_target()}</b>")
-        widget = Gtk.Label()
-        widget.set_markup(body)
+        srvdlg = self.app.get_service('dialogs')
+        body = _(f"<big>You are about to set a new name to this document:\n\n<b>{self.get_filepath_target()}</b></big>")
         window = self.app.get_widget('window')
-        question = self.factory.create_dialog_question(window, _('Are you sure?'), widget)
-        question.connect('response', self.on_answer_question_rename)
-        question.show()
+        title = _('Are you sure?')
+        dialog = srvdlg.create(parent=window, dtype='question', title=title, body=body, callback=self.on_answer_question_rename)
+        dialog.present()
 
-    def on_answer_question_rename(self, dialog, response):
-        if response == Gtk.ResponseType.ACCEPT:
+    def on_answer_question_rename(self, dialog, response, data=None):
+        srvdlg = self.app.get_service('dialogs')
+        if response in [Gtk.ResponseType.ACCEPT, Gtk.ResponseType.YES]:
             bsource = self.get_filepath_source()
             source = os.path.join(self.repository.docs, bsource)
             btarget = self.get_filepath_target()
             target = os.path.join(self.repository.docs, btarget)
             renamed = self.util.filename_rename(source, target)
             if not renamed:
-                # ~ FIXME: Raise warning!!
-                self.log.debug(f"Target {os.path.basename(target)} already exists!")
-            dialog.destroy()
-            self.actions.show_stack_page_by_name('workspace')
-        else:
-            dialog.destroy()
+                wrnmsg = f"<big>Another document with the same name already exists in this repository.</big>"
+                title=_('Renaming not possible')
+                dlgerror = srvdlg.create(parent=dialog, dtype='error', title=title, body=wrnmsg)
+                dlgerror.present()
+        self.actions.show_stack_page_by_name('workspace')
+        dialog.destroy()
 
     def on_rename_cancel(self, *args):
         self.actions.show_stack_page_by_name('workspace')
@@ -420,13 +420,13 @@ class MiAZRenameDialog(Gtk.Box):
         doc = self.get_filepath_source()
         self.actions.document_display(doc)
 
-    def on_document_delete(self, button, filepath):
-        body = _(f"<big>You are about to delete the following document:\n\n<b>{os.path.basename(filepath)}</b>\n\nConfirm, please.</big>")
-        widget = Gtk.Label()
-        widget.set_markup(body)
-        question = self.factory.create_dialog_question(self, _('Are you sure?'), widget)
-        question.connect('response', self.on_answer_question_delete)
-        question.show()
+    # ~ def on_document_delete(self, button, filepath):
+        # ~ body = _(f"<big>You are about to delete the following document:\n\n<b>{os.path.basename(filepath)}</b>\n\nConfirm, please.</big>")
+        # ~ widget = Gtk.Label()
+        # ~ widget.set_markup(body)
+        # ~ question = self.factory.create_dialog_question(self, _('Are you sure?'), widget)
+        # ~ question.connect('response', self.on_answer_question_delete)
+        # ~ question.show()
 
     def on_answer_question_delete(self, dialog, response):
         filepath = self.get_filepath_source()

@@ -52,29 +52,6 @@ class MiAZActions(GObject.GObject):
         filepath = os.path.join(srvrepo.docs, doc)
         srvutl.filename_display(filepath)
 
-    def document_delete(self, items):
-        factory = self.app.get_service('factory')
-        srvutl = self.app.get_service('util')
-        def dialog_response(dialog, response, items):
-            if response == Gtk.ResponseType.ACCEPT:
-                for item in items:
-                    srvutl.filename_delete(item.id)
-            dialog.destroy()
-
-        self.log.debug("Mass deletion")
-        frame = Gtk.Frame()
-        box, view = factory.create_view(MiAZColumnViewMassDelete, _('Mass deletion'))
-        citems = []
-        for item in items:
-            citems.append(File(id=item.id, title=os.path.basename(item.id)))
-        view.update(citems)
-        frame.set_child(view)
-        box.append(frame)
-        window = self.app.get_widget('window')
-        dialog = factory.create_dialog_question(window, _('Mass deletion'), box, width=1024, height=600)
-        dialog.connect('response', dialog_response, items)
-        dialog.show()
-
     def dropdown_populate(self, config, dropdown, item_type, any_value=True, none_value=False, only_include: list = [], only_exclude: list = []):
         # INFO: This method can be called as a reaction to the signal
         # 'used-updated' or directly. When reacting to a signal, config
@@ -227,14 +204,16 @@ class MiAZActions(GObject.GObject):
 
     def manage_resource(self, widget: Gtk.Widget, selector: Gtk.Widget):
         factory = self.app.get_service('factory')
+        srvdlg = self.app.get_service('dialogs')
+        parent = widget.get_root() # wonderful
+
         box = factory.create_box_vertical(spacing=0, vexpand=True, hexpand=True)
         box.append(selector)
         config_for = selector.get_config_for()
         selector.set_vexpand(True)
         selector.update_views()
-        window = self.app.get_widget('window')
-        dialog = factory.create_dialog(window, _(f'Manage {config_for}'), box, 800, 600)
-        dialog.show()
+        dialog = srvdlg.create(parent=parent, dtype='action', title=_(f'Manage {config_for}'), widget=box, width=800, height=600)
+        dialog.present()
 
     def show_app_settings(self, *args):
         window = self.app.get_widget('window')

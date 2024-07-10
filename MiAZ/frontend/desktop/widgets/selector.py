@@ -126,6 +126,8 @@ class MiAZSelector(Gtk.Box):
     def update_views(self, *args):
         self._update_view_available()
         self._update_view_used()
+        self.viewAv.cv.sort_by_column(self.viewAv.column_id, Gtk.SortType.ASCENDING)
+        self.viewSl.cv.sort_by_column(self.viewSl.column_id, Gtk.SortType.ASCENDING)
         # ~ self.log.debug(f"Setup selector for {self.config.config_for}")
 
     def _on_item_used_add(self, *args):
@@ -207,8 +209,9 @@ class MiAZSelector(Gtk.Box):
             label1.set_text(i_title)
             entry1 = dialog.get_entry_key1()
             entry1.set_sensitive(False)
-            dialog.set_value1(item.id)
-            dialog.set_value2(item.title)
+            if item is not None:
+                dialog.set_value1(item.id)
+                dialog.set_value2(item.title)
             dialog.connect('response', self._on_response_item_available_rename, item)
             dialog.show()
 

@@ -5,6 +5,7 @@
 
 import os
 import sys
+import json
 import signal
 import locale
 import gettext
@@ -15,9 +16,7 @@ sys.path.insert(1, '@pkgdatadir@')
 from MiAZ.backend.log import MiAZLog
 from MiAZ.backend.util import which
 
-cmd_version = 'meson introspect meson.build --projectinfo | jq .version'
-o, e = subprocess.Popen([cmd_version], shell=True, stdout=subprocess.PIPE).communicate()
-VERSION = o.decode('utf-8').strip().replace('"', '')
+VERSION = '0.0.45'
 log = MiAZLog('MiAZ')
 ENV = {}
 
@@ -39,7 +38,7 @@ ENV['DESKTOP']['ENABLED'] = ENV['DESKTOP']['GTK_SUPPORT']
 # App
 ENV['APP'] = {}
 ENV['APP']['ID'] = '@APP_ID@'
-ENV['APP']['VERSION'] = '@VERSION@'
+ENV['APP']['VERSION'] = VERSION
 ENV['APP']['PGKDATADIR'] = '@pkgdatadir@'
 ENV['APP']['LOCALEDIR'] = '@localedir@'
 ENV['APP']['name'] = "AZ Organizer"
@@ -151,9 +150,8 @@ class MiAZ:
         except AttributeError as e:
             # Python built without gettext support does not have
             # bindtextdomain() and textdomain().
-            self.log.error(
-                "Could not bind the gettext translation domain. Some"
-                " translations will not work. Error:\n{}".format(e))
+            self.log.error(f"{e}")
+            self.log.error("Could not bind the gettext translation domain")
 
     def run(self):
         """Execute MiAZ in desktop or console mode."""
