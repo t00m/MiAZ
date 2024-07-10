@@ -645,7 +645,7 @@ class MiAZWorkspace(Gtk.Box):
         dd_date = dropdowns[Date.__gtype_name__]
         selected = dd_date.get_selected_item()
         if selected is None:
-            self.log.warning(f"FIXME: Dropdown {dd_date} with selected item '{selected}' shouldn't be None")
+            # ~ FIXME: Dropdown {dd_date} with selected item '{selected}' shouldn't be None"
             return False
         period = selected.id
         ll, ul = period.split('-')
