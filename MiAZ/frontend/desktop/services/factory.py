@@ -345,7 +345,7 @@ class MiAZFactory:
         scrwin.set_vexpand(True)
         return scrwin
 
-    def create_view(self, customview, title=''):
+    def create_view(self, customview: Gtk.Widget, title=''):
         box = self.create_box_vertical(spacing=6, vexpand=True, hexpand=True)
         view = customview(self.app)
         view.get_style_context().add_class(class_name='monospace')
