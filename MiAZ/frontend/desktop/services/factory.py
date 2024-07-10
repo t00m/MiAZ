@@ -283,15 +283,8 @@ class MiAZFactory:
         dialog.set_default_response(Gtk.ResponseType.CANCEL)
         btn_ok = dialog.get_widget_for_response(response_id=Gtk.ResponseType.ACCEPT)
         action_box = btn_ok.get_ancestor(Gtk.Box)
+        action_box.set_homogeneous(True)
         action_box.get_style_context().add_class('toolbar')
-        # ~ btnCancel = dialog.get_widget_for_response(Gtk.ResponseType.CANCEL)
-        # ~ btnCancel.get_style_context().add_class(class_name='destructive-action')
-        # ~ btnCancel.set_margin_end(margin=12)
-        # ~ btnCancel.set_margin_bottom(margin=12)
-        # ~ btnAccept = dialog.get_widget_for_response(Gtk.ResponseType.ACCEPT)
-        # ~ btnAccept.get_style_context().add_class(class_name='suggested-action')
-        # ~ btnAccept.set_margin_end(margin=12)
-        # ~ btnAccept.set_margin_bottom(margin=12)
         return dialog
 
     def create_filechooser(self, parent, title, target, callback, data=None):
@@ -352,15 +345,16 @@ class MiAZFactory:
         scrwin.set_vexpand(True)
         return scrwin
 
-    def create_view(self, customview, title):
+    def create_view(self, customview, title=''):
         box = self.create_box_vertical(spacing=6, vexpand=True, hexpand=True)
-        label = self.create_label(title)
         view = customview(self.app)
         view.get_style_context().add_class(class_name='monospace')
         view.get_style_context().add_class(class_name='caption')
         view.set_hexpand(True)
         view.set_vexpand(True)
-        box.append(label)
+        if len(title) > 0:
+            label = self.create_label(title)
+            box.append(label)
         return box, view
 
     def create_switch_button(self, icon_name, title, callback=None, data=None):

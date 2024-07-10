@@ -12,7 +12,7 @@ from gi.repository import Gtk
 from gi.repository import GLib
 
 from MiAZ.backend.log import MiAZLog
-from MiAZ.frontend.desktop.widgets.dialogs import CustomDialog
+from MiAZ.frontend.desktop.widgets.dialogs import MiAZDialog
 from MiAZ.backend.models import Group, Country, Purpose, Concept, SentBy, SentTo
 from MiAZ.frontend.desktop.widgets.configview import MiAZCountries, MiAZGroups, MiAZPurposes, MiAZPeopleSentBy, MiAZPeopleSentTo
 
@@ -391,33 +391,26 @@ class MiAZRenameDialog(Gtk.Box):
         return self.result
 
     def on_rename_accept(self, *args):
-        body = _(f"<big>You are about to set this new filename:</big>\n\n<b>{self.get_filepath_target()}</b>")
-        widget = Gtk.Label()
-        widget.set_markup(body)
+        body = _(f"<big>You are about to set a new name to this document:\n\n<b>{self.get_filepath_target()}</b></big>")
         window = self.app.get_widget('window')
-        question = self.factory.create_dialog_question(window, _('Are you sure?'), widget)
-        question.connect('response', self.on_answer_question_rename)
-        question.show()
+        title = _('Are you sure?')
+        dialog = MiAZDialog(parent=window, dtype='question', title=title, body=body, callback=self.on_answer_question_rename).get_dialog()
+        dialog.present()
 
-    def on_answer_question_rename(self, dialog, response):
-        if response == Gtk.ResponseType.ACCEPT:
+    def on_answer_question_rename(self, dialog, response, data=None):
+        if response in [Gtk.ResponseType.ACCEPT, Gtk.ResponseType.YES]:
             bsource = self.get_filepath_source()
             source = os.path.join(self.repository.docs, bsource)
             btarget = self.get_filepath_target()
             target = os.path.join(self.repository.docs, btarget)
             renamed = self.util.filename_rename(source, target)
             if not renamed:
-                wrnmsg = f"Document '{os.path.basename(target)}' already exists!"
-                self.log.debug(wrnmsg)
-                title='Renaming not possible'
-                wrndlg = CustomDialog(app=self.app, parent=dialog, use_header_bar=True, dtype='warning', title=title, text=f"\n{wrnmsg}\n", widget=None)
-                wrndlg.set_default_size(-1, -1)
-                wrndlg.set_modal(True)
-                wrndlg.show()
-            dialog.destroy()
-            self.actions.show_stack_page_by_name('workspace')
-        else:
-            dialog.destroy()
+                wrnmsg = f"<big>Another document with the same name already exists in this repository.</big>"
+                title=_('Renaming not possible')
+                dlgerror = MiAZDialog(parent=dialog, dtype='error', title=title, body=wrnmsg).get_dialog()
+                dlgerror.present()
+        self.actions.show_stack_page_by_name('workspace')
+        dialog.destroy()
 
     def on_rename_cancel(self, *args):
         self.actions.show_stack_page_by_name('workspace')

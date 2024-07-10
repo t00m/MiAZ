@@ -21,6 +21,7 @@ from MiAZ.frontend.desktop.widgets.settings import MiAZAppSettings
 from MiAZ.frontend.desktop.widgets.settings import MiAZRepoSettings
 from MiAZ.frontend.desktop.services.help import MiAZHelp
 
+
 # Conversion Item type to Field Number
 Field = {}
 Field[Date] = 0
@@ -51,29 +52,6 @@ class MiAZActions(GObject.GObject):
         self.log.debug(f"Displaying {doc}")
         filepath = os.path.join(srvrepo.docs, doc)
         srvutl.filename_display(filepath)
-
-    def document_delete(self, items):
-        factory = self.app.get_service('factory')
-        srvutl = self.app.get_service('util')
-        def dialog_response(dialog, response, items):
-            if response == Gtk.ResponseType.ACCEPT:
-                for item in items:
-                    srvutl.filename_delete(item.id)
-            dialog.destroy()
-
-        self.log.debug("Mass deletion")
-        frame = Gtk.Frame()
-        box, view = factory.create_view(MiAZColumnViewMassDelete, _('Mass deletion'))
-        citems = []
-        for item in items:
-            citems.append(File(id=item.id, title=os.path.basename(item.id)))
-        view.update(citems)
-        frame.set_child(view)
-        box.append(frame)
-        window = self.app.get_widget('window')
-        dialog = factory.create_dialog_question(window, _('Mass deletion'), box, width=1024, height=600)
-        dialog.connect('response', dialog_response, items)
-        dialog.show()
 
     def dropdown_populate(self, config, dropdown, item_type, any_value=True, none_value=False, only_include: list = [], only_exclude: list = []):
         # INFO: This method can be called as a reaction to the signal

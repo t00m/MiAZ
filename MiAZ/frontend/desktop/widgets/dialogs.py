@@ -17,10 +17,82 @@ icon_name["warning"] = "dialog-warning-symbolic"
 icon_name["error"] = "com.github.t00m.MiAZ-dialog-error-symbolic"
 icon_name["question"] = "dialog-question-symbolic"
 
-# ~ icon_name["info"] = "dialog-information-symbolic"
-# ~ icon_name["warning"] = "dialog-warning-symbolic"
-# ~ icon_name["error"] = "dialog-error-symbolic"
-# ~ icon_name["question"] = "dialog-question-symbolic"
+miaz_dialog = {
+    'info': {
+        'icon': 'dialog-information-symbolic',
+        'type': Gtk.MessageType.INFO,
+        'buttons': Gtk.ButtonsType.NONE
+        },
+    'warning': {
+        'icon': 'dialog-warning-symbolic',
+        'type': Gtk.MessageType.WARNING,
+        'buttons': Gtk.ButtonsType.NONE
+        },
+    'error': {
+        'icon': 'com.github.t00m.MiAZ-dialog-error-symbolic',
+        'type': Gtk.MessageType.ERROR,
+        'buttons': Gtk.ButtonsType.NONE
+        },
+    'question': {
+        'icon': 'dialog-question-symbolic',
+        'type': Gtk.MessageType.QUESTION,
+        'buttons': Gtk.ButtonsType.YES_NO
+        }
+}
+
+class MiAZDialog:
+    dialog = None
+
+    def __init__(self,
+                    parent: Gtk.Window,
+                    dtype: str,
+                    title: str,
+                    body: str = '',
+                    widget: Gtk.Widget = None,
+                    callback = None,
+                    data = None,
+                    width: int = -1,
+                    height: int = -1,
+                    ):
+
+        # Build dialog
+        self.dialog = Gtk.MessageDialog(
+                    transient_for=parent,
+                    destroy_with_parent=False,
+                    modal=True,
+                    message_type=miaz_dialog[dtype]['type'],
+                    text=title,
+                    secondary_text=body,
+                    secondary_use_markup=True,
+                    buttons=miaz_dialog[dtype]['buttons'])
+
+        # Set custom size
+        self.dialog.set_default_size(width, height)
+
+        self.dialog.use_header_bar = True
+
+        # Add custom widget
+        if widget is not None:
+            message_area = self.dialog.get_message_area()
+            message_area.set_vexpand(False)
+            content_area = self.dialog.get_content_area()
+            content_area.set_margin_top(margin=6)
+            content_area.set_margin_end(margin=6)
+            content_area.set_margin_bottom(margin=6)
+            content_area.set_margin_start(margin=6)
+            content_area.append(child=widget)
+
+        # Assign callback, if any. Otherwise, default is closing.
+        if callback is None:
+            self.dialog.connect('response', self.close)
+        else:
+            self.dialog.connect('response', callback, data)
+
+    def get_dialog(self):
+        return self.dialog
+
+    def close(self, dialog, response):
+        dialog.destroy()
 
 
 class CustomDialog(Gtk.Dialog):
@@ -152,20 +224,21 @@ class MiAZDialogAdd(Gtk.Dialog):
         self.widget.set_margin_start(margin=12)
 
         header = Gtk.HeaderBar()
-        # ~ header.set_show_end_title_buttons(False)
-        # ~ header.set_show_start_title_buttons(False)
         lblTitle = self.factory.create_label(title)
         header.set_title_widget(lblTitle)
         self.set_titlebar(header)
-        btnSave = self.factory.create_button(icon_name='', title='Save', callback=self.on_dialog_save)
-        btnSave.get_style_context().add_class(class_name='suggested-action')
-        btnCancel = self.factory.create_button(icon_name='', title='Cancel', callback=self.on_dialog_cancel)
-        btnCancel.get_style_context().add_class(class_name='destructive-action')
+        btnHelp = self.factory.create_button(icon_name='com.github.t00m.MiAZ-dialog-information-symbolic', title='Help', callback=None)
+        btnSave = self.factory.create_button(icon_name='com.github.t00m.MiAZ-document-save-symbolic', title='Save', callback=self.on_dialog_save)
+        btnCancel = self.factory.create_button(icon_name='com.github.t00m.MiAZ-stop-symbolic', title='Cancel', callback=self.on_dialog_cancel)
         self.boxButtons = Gtk.CenterBox()
-        self.boxButtons.set_halign(Gtk.Align.END)
+        # ~ self.boxButtons.set_halign(Gtk.Align.END)
+        hbox_actions = self.factory.create_box_horizontal()
+        hbox_actions.append(btnCancel)
+        hbox_actions.append(btnSave)
+        hbox_actions.set_homogeneous(True)
         self.boxButtons.set_margin_bottom(6)
-        self.boxButtons.set_start_widget(btnCancel)
-        self.boxButtons.set_end_widget(btnSave)
+        self.boxButtons.set_start_widget(btnHelp)
+        self.boxButtons.set_end_widget(hbox_actions)
         self.fields = Gtk.Box(spacing=6, orientation=Gtk.Orientation.HORIZONTAL)
         self.fields.set_margin_bottom(margin=12)
         self.boxKey1 = Gtk.Box(spacing=6, orientation=Gtk.Orientation.VERTICAL)
@@ -195,7 +268,7 @@ class MiAZDialogAdd(Gtk.Dialog):
         self.fields.append(self.boxKey1)
         self.fields.append(self.boxKey2)
         self.widget.append(self.fields)
-        self.widget.append(separator)
+        # ~ self.widget.append(separator)
         self.widget.append(self.boxButtons)
         contents = self.get_content_area()
         contents.append(self.widget)
@@ -273,10 +346,10 @@ class MiAZDialogAddRepo(MiAZDialogAdd):
         self.filechooser.set_action(Gtk.FileChooserAction.SELECT_FOLDER)
         frame.set_child(self.filechooser)
         vbox.append(frame)
-        separator = Gtk.Separator.new(Gtk.Orientation.HORIZONTAL)
+        # ~ separator = Gtk.Separator.new(Gtk.Orientation.HORIZONTAL)
         self.fields.append(self.boxKey1)
         self.widget.append(self.fields)
-        self.widget.append(separator)
+        # ~ self.widget.append(separator)
         self.widget.append(self.boxButtons)
         contents = self.get_content_area()
         contents.append(self.widget)
@@ -289,7 +362,10 @@ class MiAZDialogAddRepo(MiAZDialogAdd):
 
     def get_value2(self):
         gfile = self.filechooser.get_file()
-        return gfile.get_path()
+        try:
+            return gfile.get_path()
+        except AttributeError:
+            return None
 
     def set_value2(self, value):
         gfile = Gio.File.new_for_path(value)

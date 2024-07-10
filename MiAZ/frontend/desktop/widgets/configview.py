@@ -21,7 +21,7 @@ from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewProject
 from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewRepo
 from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewPlugin
 from MiAZ.frontend.desktop.widgets.dialogs import MiAZDialogAddRepo
-from MiAZ.frontend.desktop.widgets.dialogs import CustomDialog
+from MiAZ.frontend.desktop.widgets.dialogs import MiAZDialog
 from MiAZ.backend.pluginsystem import MiAZPluginType
 from MiAZ.backend.models import File
 
@@ -104,7 +104,7 @@ class MiAZRepositories(MiAZConfigView):
         self._add_config_menubutton(self.config.config_for)
 
     def _on_item_available_add(self, *args):
-        window = self.app.get_widget('window')
+        window = self.app.get_widget('window-settings')
         dialog = MiAZDialogAddRepo(self.app, window, 'Add a new repository', 'Repository name', 'Folder')
         dialog.connect('response', self._on_response_item_available_add)
         search_term = self.entry.get_text()
@@ -119,6 +119,8 @@ class MiAZRepositories(MiAZConfigView):
                 self.config.add_available(repo_name, repo_path)
                 self.log.debug(f"Repo '{repo_name}' added to list of available repositories")
                 self.update_views()
+            else:
+                self.log.debug("No repository added. Invalid data")
         dialog.destroy()
 
     def _on_item_available_rename(self, item):
@@ -143,14 +145,12 @@ class MiAZRepositories(MiAZConfigView):
             self.log.debug(f"{i_title} {selected_item.id} removed from de list of available items")
         else:
             dtype = "error"
-            text = _(f'{i_title} {selected_item.id} is still being used')
+            text = _(f'<big>{i_title} {selected_item.id} is still being used</big>')
             window = self.app.get_widget('window')
             dtype = 'error'
-            title = f"{i_title} {selected_item.id} can't be removed"
-            dialog = CustomDialog(app=self.app, parent=window, use_header_bar=True, dtype=dtype, title=title, text=text, widget=None)
-            dialog.set_default_size(-1, -1)
-            dialog.set_modal(True)
-            dialog.show()
+            title = "Action not possible"
+            dialog = MiAZDialog(parent=window, dtype=dtype, title=title, body=text, widget=None).get_dialog()
+            dialog.present()
 
     def _on_item_used_add(self, *args):
         items_used = self.config.load_used()
