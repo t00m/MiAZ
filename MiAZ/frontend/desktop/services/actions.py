@@ -20,8 +20,6 @@ from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewMassDelete
 from MiAZ.frontend.desktop.widgets.settings import MiAZAppSettings
 from MiAZ.frontend.desktop.widgets.settings import MiAZRepoSettings
 from MiAZ.frontend.desktop.services.help import MiAZHelp
-from MiAZ.frontend.desktop.widgets.dialogs import MiAZDialog
-
 
 # Conversion Item type to Field Number
 Field = {}
@@ -205,14 +203,16 @@ class MiAZActions(GObject.GObject):
         filechooser.show()
 
     def manage_resource(self, widget: Gtk.Widget, selector: Gtk.Widget):
-        parent = widget.get_root() # wonderful
         factory = self.app.get_service('factory')
+        srvdlg = self.app.get_service('dialogs')
+        parent = widget.get_root() # wonderful
+
         box = factory.create_box_vertical(spacing=0, vexpand=True, hexpand=True)
         box.append(selector)
         config_for = selector.get_config_for()
         selector.set_vexpand(True)
         selector.update_views()
-        dialog = MiAZDialog(parent=parent, dtype='action', title=_(f'Manage {config_for}'), widget=box, width=800, height=600).get_dialog()
+        dialog = srvdlg.create(parent=parent, dtype='action', title=_(f'Manage {config_for}'), widget=box, width=800, height=600)
         dialog.present()
 
     def show_app_settings(self, *args):

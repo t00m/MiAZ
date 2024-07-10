@@ -14,6 +14,7 @@ from MiAZ.backend.pluginsystem import MiAZPluginManager, MiAZPluginType
 from MiAZ.frontend.desktop.services.icm import MiAZIconManager
 from MiAZ.frontend.desktop.services.factory import MiAZFactory
 from MiAZ.frontend.desktop.services.actions import MiAZActions
+from MiAZ.frontend.desktop.services.dialogs import MiAZDialog
 from MiAZ.frontend.desktop.widgets.mainwindow import MiAZMainWindow
 from MiAZ.frontend.desktop.widgets.settings import MiAZRepoSettings
 from MiAZ.backend.util import MiAZUtil
@@ -48,6 +49,7 @@ class MiAZApp(Gtk.Application):
         self.set_service('icons', MiAZIconManager(self))
         self.set_service('factory', MiAZFactory(self))
         self.set_service('actions', MiAZActions(self))
+        self.set_service('dialogs', MiAZDialog(self))
         repository = self.set_service('repo', MiAZRepository(self))
         repository.connect('repository-switched', self.switch_finish)
         self._env = None

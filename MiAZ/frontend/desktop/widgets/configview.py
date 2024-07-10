@@ -21,7 +21,7 @@ from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewProject
 from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewRepo
 from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewPlugin
 from MiAZ.frontend.desktop.widgets.dialogs import MiAZDialogAddRepo
-from MiAZ.frontend.desktop.widgets.dialogs import MiAZDialog
+# ~ from MiAZ.frontend.desktop.widgets.dialogs import MiAZDialog
 from MiAZ.backend.pluginsystem import MiAZPluginType
 from MiAZ.backend.models import File
 
@@ -133,6 +133,7 @@ class MiAZRepositories(MiAZConfigView):
         dialog.show()
 
     def _on_item_available_remove(self, *args):
+        srvdlg = self.app.get_service('dialogs')
         selected_item = self.viewAv.get_selected()
         items_available = self.config.load_available()
         item_type = self.config.model
@@ -146,10 +147,10 @@ class MiAZRepositories(MiAZConfigView):
         else:
             dtype = "error"
             text = _(f'<big>{i_title} {selected_item.id} is still being used</big>')
-            window = self.app.get_widget('window')
+            window = self.app.get_widget('window-settings')
             dtype = 'error'
             title = "Action not possible"
-            dialog = MiAZDialog(parent=window, dtype=dtype, title=title, body=text, widget=None).get_dialog()
+            dialog = srvdlg.create(parent=window, dtype=dtype, title=title, body=text, widget=None)
             dialog.present()
 
     def _on_item_used_add(self, *args):

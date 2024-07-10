@@ -45,7 +45,7 @@ miaz_dialog = {
         }
 }
 
-class MiAZDialog:
+class MiAZDialoga:
     dialog = None
 
     def __init__(self,

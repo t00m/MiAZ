@@ -18,7 +18,6 @@ from gi.repository import Peas
 from MiAZ.backend.log import MiAZLog
 from MiAZ.backend.models import File
 from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewMassDelete
-from MiAZ.frontend.desktop.widgets.dialogs import MiAZDialog
 
 
 class MiAZDeleteItemPlugin(GObject.GObject, Peas.Activatable):
@@ -50,6 +49,7 @@ class MiAZDeleteItemPlugin(GObject.GObject, Peas.Activatable):
         repository = self.app.get_service('repo')
         util = self.app.get_service('util')
         workspace = self.app.get_widget('workspace')
+        srvdlg = self.app.get_service('dialogs')
 
         def dialog_response(dialog, response, items):
             if response == Gtk.ResponseType.ACCEPT or response == Gtk.ResponseType.YES:
@@ -70,7 +70,7 @@ class MiAZDeleteItemPlugin(GObject.GObject, Peas.Activatable):
         box.append(frame)
         window = self.app.get_widget('window')
         body = _("The following files will be deleted")
-        dialog = MiAZDialog(parent=window, dtype='question', title=_('Mass deletion'), body=body, widget=box, width=600, height=480).get_dialog()
+        dialog = srvdlg.create(parent=window, dtype='question', title=_('Mass deletion'), body=body, widget=box, width=600, height=480)
         dialog.connect('response', dialog_response, items)
         dialog.present()
         # ~ dialog = factory.create_dialog_question(window, _('Mass deletion'), box, width=1024, height=600)

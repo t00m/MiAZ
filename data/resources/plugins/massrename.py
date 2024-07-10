@@ -27,7 +27,6 @@ from MiAZ.frontend.desktop.widgets.configview import MiAZPeopleSentBy
 from MiAZ.frontend.desktop.widgets.configview import MiAZPeopleSentTo
 from MiAZ.frontend.desktop.widgets.configview import MiAZProjects
 from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewMassRename
-from MiAZ.frontend.desktop.widgets.dialogs import MiAZDialog
 
 Field = {}
 Field[Date] = 0
@@ -88,6 +87,7 @@ class MiAZMassRenamingPlugin(GObject.GObject, Peas.Activatable):
         repository = self.app.get_service('repo')
         util = self.app.get_service('util')
         workspace = self.app.get_widget('workspace')
+        srvdlg = self.app.get_service('dialogs')
 
         def update_columnview(dropdown, gparamobj, columnview, item_type, items):
             util = self.app.get_service('util')
@@ -191,7 +191,7 @@ class MiAZMassRenamingPlugin(GObject.GObject, Peas.Activatable):
             box.append(hbox)
             box.append(frame)
             window = self.app.get_widget('window')
-            dialog = MiAZDialog(parent=window, dtype='action', title=_('Mass renaming'), widget=box, width=1024, height=600).get_dialog()
+            dialog = srvdlg.create(parent=window, dtype='action', title=_('Mass renaming'), widget=box, width=1024, height=600)
             dialog.connect('response', dialog_response, dropdown, item_type, items)
             dialog.show()
         else:
@@ -216,6 +216,6 @@ class MiAZMassRenamingPlugin(GObject.GObject, Peas.Activatable):
             calendar.select_day(GLib.DateTime.new_from_iso8601(iso8601))
             calendar.emit('day-selected')
             window = self.app.get_widget('window')
-            dialog = MiAZDialog(parent=window, action='action', title=_('Mass renaming'), widget=box, width=640, height=480)
+            dialog = srvdlg.create(parent=window, action='action', title=_('Mass renaming'), widget=box, width=640, height=480)
             dialog.connect('response', dialog_response_date, calendar, items)
             dialog.show()

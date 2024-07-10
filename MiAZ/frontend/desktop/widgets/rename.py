@@ -12,7 +12,6 @@ from gi.repository import Gtk
 from gi.repository import GLib
 
 from MiAZ.backend.log import MiAZLog
-from MiAZ.frontend.desktop.widgets.dialogs import MiAZDialog
 from MiAZ.backend.models import Group, Country, Purpose, Concept, SentBy, SentTo
 from MiAZ.frontend.desktop.widgets.configview import MiAZCountries, MiAZGroups, MiAZPurposes, MiAZPeopleSentBy, MiAZPeopleSentTo
 
@@ -391,13 +390,15 @@ class MiAZRenameDialog(Gtk.Box):
         return self.result
 
     def on_rename_accept(self, *args):
+        srvdlg = self.app.get_service('dialogs')
         body = _(f"<big>You are about to set a new name to this document:\n\n<b>{self.get_filepath_target()}</b></big>")
         window = self.app.get_widget('window')
         title = _('Are you sure?')
-        dialog = MiAZDialog(parent=window, dtype='question', title=title, body=body, callback=self.on_answer_question_rename).get_dialog()
+        dialog = srvdlg.create(parent=window, dtype='question', title=title, body=body, callback=self.on_answer_question_rename)
         dialog.present()
 
     def on_answer_question_rename(self, dialog, response, data=None):
+        srvdlg = self.app.get_service('dialogs')
         if response in [Gtk.ResponseType.ACCEPT, Gtk.ResponseType.YES]:
             bsource = self.get_filepath_source()
             source = os.path.join(self.repository.docs, bsource)
@@ -407,7 +408,7 @@ class MiAZRenameDialog(Gtk.Box):
             if not renamed:
                 wrnmsg = f"<big>Another document with the same name already exists in this repository.</big>"
                 title=_('Renaming not possible')
-                dlgerror = MiAZDialog(parent=dialog, dtype='error', title=title, body=wrnmsg).get_dialog()
+                dlgerror = srvdlg.create(parent=dialog, dtype='error', title=title, body=wrnmsg)
                 dlgerror.present()
         self.actions.show_stack_page_by_name('workspace')
         dialog.destroy()

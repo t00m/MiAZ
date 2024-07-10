@@ -11,7 +11,6 @@ from gi.repository import GObject
 from gi.repository import Peas
 
 from MiAZ.backend.log import get_logger
-from MiAZ.frontend.desktop.widgets.dialogs import CustomDialog
 
 
 class MiAZToolbarHelloItemPlugin(GObject.GObject, Peas.Activatable):
@@ -47,10 +46,10 @@ class MiAZToolbarHelloItemPlugin(GObject.GObject, Peas.Activatable):
             button.set_visible(True)
 
     def callback(self, *args):
+        srvdlg = self.app.get_service('dialogs')
         window = self.app.get_widget('window')
         dtype = 'info'
         title = "Hello World!"
         text = 'This an example'
-        dialog = CustomDialog(app=self.app, parent=window, use_header_bar=True, dtype=dtype, title=title, text=text)
-        dialog.set_modal(True)
+        dialog = srvdlg.create(parent=window, dtype=dtype, title=title, body=text)
         dialog.show()

@@ -26,7 +26,6 @@ from MiAZ.frontend.desktop.widgets.configview import MiAZPeopleSentBy
 from MiAZ.frontend.desktop.widgets.configview import MiAZPeopleSentTo
 from MiAZ.frontend.desktop.widgets.configview import MiAZProjects
 from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewMassProject
-from MiAZ.frontend.desktop.widgets.dialogs import MiAZDialog
 
 Configview = {}
 Configview['Country'] = MiAZCountries
@@ -78,6 +77,7 @@ class MiAZToolbarProjectMgtPlugin(GObject.GObject, Peas.Activatable):
         factory = self.app.get_service('factory')
         item_type = Project
         workspace = self.app.get_widget('workspace')
+        srvdlg = self.app.get_service('dialogs')
         items = workspace.get_selected_items()
 
         def dialog_response(dialog, response, dropdown, items):
@@ -120,7 +120,7 @@ class MiAZToolbarProjectMgtPlugin(GObject.GObject, Peas.Activatable):
         box.append(hbox)
         box.append(frame)
         window = self.app.get_widget('window')
-        dialog = MiAZDialog(parent=window, dtype='question', title=_('Assign document(s) to a project'), widget=box, width=1024, height=600).get_dialog()
+        dialog = srvdlg.create(parent=window, dtype='question', title=_('Assign document(s) to a project'), widget=box, width=1024, height=600)
         dialog.connect('response', dialog_response, dropdown, items)
         dialog.show()
 
@@ -128,6 +128,7 @@ class MiAZToolbarProjectMgtPlugin(GObject.GObject, Peas.Activatable):
         actions = self.app.get_service('actions')
         factory = self.app.get_service('factory')
         workspace = self.app.get_widget('workspace')
+        srvdlg = self.app.get_service('dialogs')
         item_type = Project
         items = workspace.get_selected_items()
 
@@ -178,7 +179,7 @@ class MiAZToolbarProjectMgtPlugin(GObject.GObject, Peas.Activatable):
         box.append(hbox)
         box.append(frame)
         window = self.app.get_widget('window')
-        dialog = MiAZDialog(parent=window, dtype='question', title=_('Withdraw from project'), widget=box, width=1024, height=600).get_dialog()
+        dialog = srvdlg.create(parent=window, dtype='question', title=_('Withdraw from project'), widget=box, width=1024, height=600)
         dialog.connect('response', dialog_response, dropdown, items)
         dialog.show()
 
