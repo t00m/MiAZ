@@ -10,7 +10,13 @@
         "--socket=fallback-x11",
         "--socket=wayland",
         "--socket=pulseaudio",
-        "--share=network"
+        "--share=network",
+        "--allow=bluetooth",
+        "--socket=cups",
+        "--socket=gpg-agent",
+        "--socket=pulseaudio",
+        "--socket=ssh-auth",
+        "--filesystem=host"
     ],
     "cleanup" : [
         "/include",
