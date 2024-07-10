@@ -52,3 +52,8 @@ install_data(
   'com.github.t00m.MiAZ.svg',
   install_dir: join_paths(get_option('datadir'), 'icons/hicolor/scalable/apps')
 )
+
+install_data(
+    join_paths('resources/icons/scalable', 'com.github.t00m.MiAZ.svg'),
+    install_dir: join_paths(get_option('prefix'), get_option('datadir'), 'icons/hicolor/scalable/apps')
+)

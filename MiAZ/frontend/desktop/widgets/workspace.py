@@ -185,6 +185,10 @@ class MiAZWorkspace(Gtk.Box):
         self.log.debug("Finish loading workspace")
         window = self.app.get_widget('window')
         window.present()
+        srvutl = self.app.get_service('util')
+        srvutl.connect('filename-renamed', self.update)
+        srvutl.connect('filename-deleted', self.update)
+        srvutl.connect('filename-added', self.update)
         self.emit('workspace-loaded')
 
     def _setup_toolbar_filters(self):
