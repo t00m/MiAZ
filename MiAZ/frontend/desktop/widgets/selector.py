@@ -12,7 +12,6 @@ from gi.repository import Gtk
 from MiAZ.backend.log import MiAZLog
 from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewDocuments
 from MiAZ.frontend.desktop.services.dialogs import MiAZDialogAdd
-from MiAZ.frontend.desktop.widgets.dialogs import CustomDialog
 from MiAZ.backend.models import Country, Plugin, File
 
 
@@ -179,7 +178,11 @@ class MiAZSelector(Gtk.Box):
             item_type = self.config.model
             i_title = item_type.__title__
             this_item = MiAZDialogAdd(self.app)
-            dialog = this_item.create(self.get_root(), _(f'Add new {i_title.lower()}'), _('Key'), _('Description'))
+            parent = self.get_root()
+            title = _(f'Add new {i_title.lower()}')
+            key1 = _(f'<b>{i_title.title()} key</b>')
+            key2 = _('<b>Description</b>')
+            dialog = this_item.create(parent=parent, title=title, key1=key1, key2=key2)
             dialog.connect('response', self._on_response_item_available_add, this_item)
             this_item.set_value1(search_term)
             dialog.present()
@@ -205,10 +208,14 @@ class MiAZSelector(Gtk.Box):
         item_type = self.config.model
         if item_type not in [Country, Plugin]:
             i_title = item_type.__title__
+            parent = self.get_root()
+            title = _(f'Change {i_title.lower()} description')
+            key1 = _(f'<b>{i_title.title()} key</b>')
+            key2 = _('<b>Description</b>')
             this_item = MiAZDialogAdd(self.app)
-            dialog = this_item.create(self.get_root(), _(f'Change {i_title.lower()} description'), _('Key'), _('Description'))
-            label1 = this_item.get_label_key1()
-            label1.set_text(i_title)
+            dialog = this_item.create(parent=parent, title=title, key1=key1, key2=key2)
+            # ~ label1 = this_item.get_label_key1()
+            # ~ label1.set_text(i_title)
             entry1 = this_item.get_entry_key1()
             entry1.set_sensitive(False)
             if item is not None:
