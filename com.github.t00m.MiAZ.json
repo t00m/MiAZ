@@ -61,7 +61,7 @@
                 {
                     "type" : "git",
                     "url" : "https://github.com/t00m/MiAZ.git",
-                    "branch": "main"
+                    "branch": "0.0.48"
                 }
             ]
         }
