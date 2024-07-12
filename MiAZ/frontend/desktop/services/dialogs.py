@@ -309,7 +309,6 @@ class MiAZFileChooserDialog(MiAZDialog):
                 callback=None,
                 data=None):
 
-        factory = self.app.get_service('factory')
         srvdlg = self.app.get_service('dialogs')
 
         self.parent = parent

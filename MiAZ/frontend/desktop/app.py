@@ -4,6 +4,7 @@
 # License: GPL v3
 # Description: Frontent/Desktop entry point
 
+from gettext import gettext as _
 
 from gi.repository import GObject
 from gi.repository import GLib
@@ -222,10 +223,9 @@ class MiAZApp(Gtk.Application):
             actions.show_stack_page_by_name('workspace')
             self.emit('start-application-completed')
         else:
-            welcome_widget = self.get_widget('welcome')
             actions.show_stack_page_by_name('welcome')
-            window = self.get_widget('window')
-            window.present()
+        window = self.get_widget('window')
+        window.present()
         return repo_loaded
 
     def switch_finish(self, *args):

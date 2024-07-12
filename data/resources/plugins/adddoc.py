@@ -9,6 +9,7 @@
 """
 
 import os
+from gettext import gettext as _
 
 from gi.repository import Gtk
 from gi.repository import GObject
@@ -49,7 +50,6 @@ class MiAZAddDocumentPlugin(GObject.GObject, Peas.Activatable):
 
         def filechooser_response(dialog, response, clsdlg):
             if response in [Gtk.ResponseType.ACCEPT, Gtk.ResponseType.OK]:
-                content_area = dialog.get_content_area()
                 filechooser = clsdlg.get_filechooser_widget()
                 gfile = filechooser.get_file()
                 if gfile is not None:
