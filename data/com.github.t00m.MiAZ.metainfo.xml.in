@@ -13,17 +13,8 @@
     <p>Features:
         <ul>
             <li>One or more document repositories</li>
-            <li>No database. The directory holding the documents is the database. Properties are extracted from the own filenames. Configuration files reside in the same repository.</li>
-            <li>Workspace: a single place where you can view/edit your documents</li>
-            <li>Filtering and search: built-in drop-downs to help finding documents easily.</li>
-            <li>It is fast. Depending on the volume of documents and the hardware capacity of your device, thousands of documents can be displayed in seconds.
-            <li>Support for projects: those documents related between them can be (un)assigned to projects (eg.: all those documents related to the same tax stament year).</li>
-            <li>Single renaming: a useful feature to rename a single document easily.</li>
-            <li>Mass renaming: when importing several documents, sometimes is useful to assign the same property to all of them (e.g.: same country). This functionality allows MiAZ to do mass renaming for countries, groups, purposes, senders, and receivers, saving you a lot of time.</li>
-            <li>Predefined properties: To expedite the document archiving process, you can select from a default set of values. For instance, for groups, among othe values, you have MED, INS, BIL (MEDICAL, INSURANCE, BILLING respectively). Same for purposes. These values can be edited.</li>
-            <li>Plug-in system: in order to avoid large modifications in the code base, MiAZ uses a plug-in system to extend the functionality and the UI. MiAZ comes with a set of standard plugins to help you importing documents from several sources (a single file, a directory, from the scanner, etc...), and also for exporting them (to excel, CSV, to another directory, in a zip file, as filenames in a plain text file, etc...)</li>
         </ul>
-        </p>
+    </p>
   </description>
   <url type="homepage">https://github.com/t00m/MiAZ</url>
   <url type="bugtracker">https://github.com/t00m/MiAZ/issues</url>
