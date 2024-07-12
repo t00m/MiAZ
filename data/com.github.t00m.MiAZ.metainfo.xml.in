@@ -47,9 +47,9 @@
     </screenshot>
   </screenshots>
   <releases>
-    <release version="0.1.0" date="2020-07-20">
+    <release version="0.0.48" date="2024-07-12">
       <description translatable="no">
-        <p>Initial release</p>
+        <p>Pre-release</p>
       </description>
     </release>
   </releases>
