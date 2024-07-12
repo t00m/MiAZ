@@ -8,7 +8,8 @@
   <description>
     <p>Sometimes, it is quite a challenge to keep the documentation of the family, schools, administration, billing, etc... well organized in terms of classification, disk space, time to do it and effort.</p>
     <p>MiAZ app aims to solve this problem: with minimal effort, it is possible to have all paperwork organized.</p>
-    <p>A little effort means: scan letters, donwload attachments from emails, place it in the right MiAZ repository directory, and edit the filename according to a set of fixed rules, like choosing:
+    <p>A little effort means: scan letters, donwload attachments from emails, place it in the right MiAZ repository directory, and edit the filename according to a set of fixed rules, like choosing:</p>
+    <p>
         <ul>
             <li>Country</li>
             <li>Date</li>
