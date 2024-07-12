@@ -45,6 +45,7 @@ class MiAZDeleteItemPlugin(GObject.GObject, Peas.Activatable):
             section_danger.append_item(menuitem)
 
     def document_delete(self, *args):
+        actions = self.app.get_service('actions')
         factory = self.app.get_service('factory')
         repository = self.app.get_service('repo')
         util = self.app.get_service('util')
@@ -58,8 +59,10 @@ class MiAZDeleteItemPlugin(GObject.GObject, Peas.Activatable):
                     util.filename_delete(filepath)
             dialog.destroy()
 
-        self.log.debug("Mass deletion")
         items = workspace.get_selected_items()
+        if actions.stop_if_no_items(items):
+            return
+
         frame = Gtk.Frame()
         box, view = factory.create_view(MiAZColumnViewMassDelete)
         citems = []

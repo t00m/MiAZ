@@ -239,7 +239,7 @@ class MiAZFactory:
 
         # Enable clear button by brute force
         box = search_entry.get_parent()
-        button = self.create_button(icon_name='miaz-entry-clear', css_classes=['flat'], tooltip='Clear this filter', callback=_clear_dropdown, data=dropdown)
+        button = self.create_button(icon_name='com.github.t00m.MiAZ-entry_clear', css_classes=['flat'], tooltip='Clear this filter', callback=_clear_dropdown, data=dropdown)
         button.set_margin_start(3)
         box.append(button)
 

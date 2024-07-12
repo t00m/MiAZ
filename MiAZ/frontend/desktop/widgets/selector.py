@@ -41,7 +41,7 @@ class MiAZSelector(Gtk.Box):
         self.entry = Gtk.Entry()
         self.entry.get_style_context().add_class(class_name='caption')
         self.entry.set_activates_default(True)
-        self.entry.set_icon_from_icon_name(Gtk.EntryIconPosition.SECONDARY, 'miaz-entry-clear')
+        self.entry.set_icon_from_icon_name(Gtk.EntryIconPosition.SECONDARY, 'com.github.t00m.MiAZ-entry_clear')
         self.entry.set_icon_activatable(Gtk.EntryIconPosition.SECONDARY, True)
         self.entry.connect('icon-press', self._on_entrysearch_delete)
         self.entry.connect('changed', self._on_filter_selected)
@@ -214,8 +214,6 @@ class MiAZSelector(Gtk.Box):
             key2 = _('<b>Description</b>')
             this_item = MiAZDialogAdd(self.app)
             dialog = this_item.create(parent=parent, title=title, key1=key1, key2=key2)
-            # ~ label1 = this_item.get_label_key1()
-            # ~ label1.set_text(i_title)
             entry1 = this_item.get_entry_key1()
             entry1.set_sensitive(False)
             if item is not None:
@@ -225,11 +223,12 @@ class MiAZSelector(Gtk.Box):
             dialog.present()
 
     def _on_response_item_available_rename(self, dialog, response, item, this_item):
-        if response == Gtk.ResponseType.OK:
+        if response in [Gtk.ResponseType.ACCEPT, Gtk.ResponseType.OK]:
             oldkey = item.id
             oldval = item.title
             newkey = this_item.get_value1()
             newval = this_item.get_value2()
+            self.log.debug(f"{oldval} == {newval}? {newval != oldval}")
             if newval != oldval:
                 items_used = self.config.load_used()
                 if oldkey in items_used:

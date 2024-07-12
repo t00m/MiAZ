@@ -4,6 +4,7 @@
 # License: GPL v3
 # Description: Custom dialogs for MiAZ
 
+from gi.repository import Gio
 from gi.repository import Gtk
 
 from MiAZ.backend.log import MiAZLog
@@ -52,7 +53,7 @@ class MiAZDialog:
                 width: int = -1,
                 height: int = -1,
                 ):
-        self.log.debug(f"Setting dialog size to {width}x{height}")
+
         icm = self.app.get_service('icons')
 
         # Build dialog
@@ -65,7 +66,7 @@ class MiAZDialog:
                     secondary_use_markup=True,
                     buttons=miaz_dialog[dtype]['buttons'])
 
-        # Set custom size
+        # FIXME: Set custom size
         # ~ self.log.debug(f"Setting dialog size to {width}x{height}")
         # ~ dialog.set_default_size(width, height)
 
@@ -103,7 +104,6 @@ class MiAZDialog:
 
     def close(self, dialog, response):
         dialog.destroy()
-
 
 
 class MiAZDialogAdd:
@@ -253,9 +253,13 @@ class MiAZDialogAddRepo(MiAZDialogAdd):
         self.title = title
         self.key1 = key1
 
+        self.lblKey1.set_markup(f"<b>{self.key1}</b>")
         vbox = factory.create_box_vertical(spacing=12, vexpand=True)
         self.boxKey1.append(vbox)
-        self.lblKey1.set_markup(f"<b>{self.key1}</b>")
+        hbox = factory.create_box_horizontal()
+        hbox.append(self.lblKey1)
+        hbox.append(self.etyValue1)
+        vbox.append(hbox)
         self.filechooser = Gtk.FileChooserWidget()
         self.filechooser.set_action(Gtk.FileChooserAction.SELECT_FOLDER)
         vbox.append(self.filechooser)
@@ -268,6 +272,9 @@ class MiAZDialogAddRepo(MiAZDialogAdd):
                                         title=title,
                                         widget=self.widget)
         return self.dialog
+
+    def get_entry_key1(self):
+        return  self.etyValue1
 
     def get_value1(self):
         return self.etyValue1.get_text()
@@ -285,3 +292,50 @@ class MiAZDialogAddRepo(MiAZDialogAdd):
     def set_value2(self, value):
         gfile = Gio.File.new_for_path(value)
         self.filechooser.set_file(gfile)
+
+
+class MiAZFileChooserDialog(MiAZDialog):
+    """ MiAZ Doc Browser Widget"""
+    __gtype_name__ = 'MiAZFileChooserDialog'
+
+    def __init__(self, app):
+        self.log = MiAZLog('MiAZ.FileChooserDialog')
+        self.app = app
+
+    def create( self,
+                parent: Gtk.Window,
+                title: str,
+                target: str,
+                callback=None,
+                data=None):
+
+        factory = self.app.get_service('factory')
+        srvdlg = self.app.get_service('dialogs')
+
+        self.parent = parent
+        self.title = title
+        self.target = target
+        self.callback = callback
+        self.data = data
+
+        # Widget
+        self.w_filechooser = Gtk.FileChooserWidget()
+        if self.target == 'FOLDER':
+            self.w_filechooser.set_action(Gtk.FileChooserAction.SELECT_FOLDER)
+        elif self.target == 'FILE':
+            self.w_filechooser.set_action(Gtk.FileChooserAction.OPEN)
+        elif self.target == 'SAVE':
+            self.w_filechooser.set_action(Gtk.FileChooserAction.SAVE)
+
+        # Create dialog
+        self.dialog = srvdlg.create(parent=parent,
+                                    dtype='action',
+                                    title=title,
+                                    widget=self.w_filechooser,
+                                    callback=callback,
+                                    data=data)
+
+        return self.dialog
+
+    def get_filechooser_widget(self):
+        return self.w_filechooser

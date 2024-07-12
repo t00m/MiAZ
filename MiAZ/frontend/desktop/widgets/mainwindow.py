@@ -102,8 +102,8 @@ class MiAZMainWindow(Gtk.Box):
         menu.append_section(None, section_danger)
         menuitem = factory.create_menuitem('app-settings', _('Application settings'), actions.show_app_settings, None, ['<Control>s'])
         section_common_in.append_item(menuitem)
-        menuitem = factory.create_menuitem('app-help', _('Help'), actions.show_app_help, None, ['<Control>h'])
-        section_common_out.append_item(menuitem)
+        # ~ menuitem = factory.create_menuitem('app-help', _('Help'), actions.show_app_help, None, ['<Control>h'])
+        # ~ section_common_out.append_item(menuitem)
         menuitem = factory.create_menuitem('app-about', _('About MiAZ'), actions.show_app_about, None, ['<Control>h'])
         section_common_out.append_item(menuitem)
         menuitem = factory.create_menuitem('app-quit', _('Exit application'), actions.exit_app, None, ['<Control>q'])
@@ -133,7 +133,7 @@ class MiAZMainWindow(Gtk.Box):
         if widget_welcome is None:
             widget_welcome = self.app.add_widget('welcome', MiAZWelcome(self.app))
             page_welcome = stack.add_titled(widget_welcome, 'welcome', 'MiAZ')
-            page_welcome.set_icon_name('MiAZ')
+            page_welcome.set_icon_name('com.github.t00m.MiAZ')
             page_welcome.set_visible(True)
 
     def _setup_page_rename(self):

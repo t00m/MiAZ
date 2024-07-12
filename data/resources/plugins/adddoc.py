@@ -15,6 +15,7 @@ from gi.repository import GObject
 from gi.repository import Peas
 
 from MiAZ.backend.log import MiAZLog
+from MiAZ.frontend.desktop.services.dialogs import MiAZFileChooserDialog
 
 
 class MiAZAddDocumentPlugin(GObject.GObject, Peas.Activatable):
@@ -45,11 +46,11 @@ class MiAZAddDocumentPlugin(GObject.GObject, Peas.Activatable):
         factory = self.app.get_service('factory')
         srvutl = self.app.get_service('util')
         srvrepo = self.app.get_service('repo')
-        def filechooser_response(dialog, response, data):
-            if response == Gtk.ResponseType.ACCEPT:
+
+        def filechooser_response(dialog, response, clsdlg):
+            if response in [Gtk.ResponseType.ACCEPT, Gtk.ResponseType.OK]:
                 content_area = dialog.get_content_area()
-                box = content_area.get_first_child()
-                filechooser = box.get_first_child()
+                filechooser = clsdlg.get_filechooser_widget()
                 gfile = filechooser.get_file()
                 if gfile is not None:
                     source = gfile.get_path()
@@ -59,11 +60,12 @@ class MiAZAddDocumentPlugin(GObject.GObject, Peas.Activatable):
             dialog.destroy()
 
         window = self.app.get_widget('window')
-        filechooser = factory.create_filechooser(
-                    parent=window,
-                    title=_('Import a single file'),
-                    target = 'FILE',
-                    callback = filechooser_response,
-                    data = None
-                    )
-        filechooser.show()
+        clsdlg = MiAZFileChooserDialog(self.app)
+        filechooser = clsdlg.create(
+                        parent=window,
+                        title=_('Import a single file'),
+                        target = 'FILE',
+                        callback = filechooser_response,
+                        data=clsdlg)
+        filechooser.present()
+

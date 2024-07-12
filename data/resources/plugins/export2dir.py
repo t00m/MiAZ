@@ -56,11 +56,14 @@ class Export2Dir(GObject.GObject, Peas.Activatable):
             self.app.add_widget('workspace-menu-multiple-menu-export-item-export2dir', menuitem)
 
     def export(self, *args):
+        actions = self.app.get_service('actions')
         factory = self.app.get_service('factory')
         repository = self.app.get_service('repo')
         util = self.app.get_service('util')
         workspace = self.app.get_widget('workspace')
         items = workspace.get_selected_items()
+        if actions.stop_if_no_items(items):
+            return
 
         def get_pattern_paths(item):
             fields = util.get_fields(item.id)

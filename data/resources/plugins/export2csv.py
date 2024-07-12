@@ -44,10 +44,14 @@ class Export2CSV(GObject.GObject, Peas.Activatable):
 
     def export(self, *args):
         util = self.app.get_service('util')
+        actions = self.app.get_service('actions')
         workspace = self.app.get_widget('workspace')
         ENV = self.app.get_env()
         fields = [_('Date'), _('Country'), _('Group'), _('Send by'), _('Purpose'), _('Concept'), _('Send to'), _('Extension')]
         items = workspace.get_selected_items()
+        if actions.stop_if_no_items(items):
+            return
+
         rows = []
         for item in items:
             name, ext = util.filename_details(item.id)

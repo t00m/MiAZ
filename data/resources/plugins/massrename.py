@@ -164,6 +164,9 @@ class MiAZMassRenamingPlugin(GObject.GObject, Peas.Activatable):
             dialog.destroy()
 
         items = workspace.get_selected_items()
+        if actions.stop_if_no_items(items):
+            return
+
         if item_type != Date:
             i_type = item_type.__gtype_name__
             i_title = item_type.__title__
@@ -193,7 +196,7 @@ class MiAZMassRenamingPlugin(GObject.GObject, Peas.Activatable):
             window = self.app.get_widget('window')
             dialog = srvdlg.create(parent=window, dtype='action', title=_('Mass renaming'), widget=box, width=1024, height=600)
             dialog.connect('response', dialog_response, dropdown, item_type, items)
-            dialog.show()
+            dialog.present()
         else:
             box = factory.create_box_vertical(spacing=6, vexpand=True, hexpand=True)
             hbox = factory.create_box_horizontal()
@@ -216,6 +219,7 @@ class MiAZMassRenamingPlugin(GObject.GObject, Peas.Activatable):
             calendar.select_day(GLib.DateTime.new_from_iso8601(iso8601))
             calendar.emit('day-selected')
             window = self.app.get_widget('window')
-            dialog = srvdlg.create(parent=window, action='action', title=_('Mass renaming'), widget=box, width=640, height=480)
+            dialog = srvdlg.create(parent=window, dtype='action', title=_('Mass renaming'), widget=box, width=640, height=480)
             dialog.connect('response', dialog_response_date, calendar, items)
-            dialog.show()
+            dialog.present()
+

@@ -105,19 +105,19 @@ class MiAZRepositories(MiAZConfigView):
     def _on_item_available_add(self, *args):
         window = self.app.get_widget('window-settings')
         title = 'Add a new repository'
-        key1 = 'Repository name'
-        key2 = 'Folder'
+        key1 = '<big><b>Repository name</b></big>'
+        key2 = '<big><b>Folder</b></big>'
         search_term = self.entry.get_text()
         this_repo = MiAZDialogAddRepo(self.app)
         dialog = this_repo.create(parent=window, title=title, key1=key1, key2=key2)
         this_repo.set_value1(search_term)
-        dialog.connect('response', self._on_response_item_available_add)
+        dialog.connect('response', self._on_response_item_available_add, this_repo)
         dialog.present()
 
-    def _on_response_item_available_add(self, dialog, response):
-        if response == Gtk.ResponseType.ACCEPT:
-            repo_name = dialog.get_value1()
-            repo_path = dialog.get_value2()
+    def _on_response_item_available_add(self, dialog, response, this_repo):
+        if response in [Gtk.ResponseType.ACCEPT, Gtk.ResponseType.OK]:
+            repo_name = this_repo.get_value1()
+            repo_path = this_repo.get_value2()
             if len(repo_name) > 0 and os.path.exists(repo_path):
                 self.config.add_available(repo_name, repo_path)
                 self.log.debug(f"Repo '{repo_name}' added to list of available repositories")
@@ -127,13 +127,19 @@ class MiAZRepositories(MiAZConfigView):
         dialog.destroy()
 
     def _on_item_available_rename(self, item):
-        window = self.app.get_widget('window')
-        dialog = MiAZDialogAddRepo(self.app, window, _('Edit repository'), _('Repository name'), _('Folder'))
         repo_name = item.id
-        dialog.set_value1(repo_name.replace('_', ' '))
-        dialog.set_value2(item.title)
-        dialog.connect('response', self._on_response_item_available_rename, item)
-        dialog.show()
+        window = self.app.get_widget('window-settings')
+        this_repo = MiAZDialogAddRepo(self.app)
+        title = _('Edit repository')
+        key1 = '<big><b>Repository name</b></big>'
+        key2 = '<big><b>Folder</b></big>'
+        dialog = this_repo.create(parent=window, title=title, key1=key1, key2=key2)
+        this_repo.set_value1(repo_name.replace('_', ' '))
+        this_repo.set_value2(item.title)
+        entry1 = this_repo.get_entry_key1()
+        entry1.set_sensitive(False)
+        dialog.connect('response', self._on_response_item_available_rename, item, this_repo)
+        dialog.present()
 
     def _on_item_available_remove(self, *args):
         srvdlg = self.app.get_service('dialogs')

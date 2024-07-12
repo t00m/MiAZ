@@ -56,11 +56,14 @@ class Export2Zip(GObject.GObject, Peas.Activatable):
 
     def export(self, *args):
         ENV = self.app.get_env()
+        actions = self.app.get_service('actions')
         factory = self.app.get_service('factory')
         repository = self.app.get_service('repo')
         util = self.app.get_service('util')
         workspace = self.app.get_widget('workspace')
         items = workspace.get_selected_items()
+        if actions.stop_if_no_items(items):
+            return
 
         def filechooser_response(dialog, response, patterns):
 
