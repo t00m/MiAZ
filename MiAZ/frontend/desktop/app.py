@@ -112,9 +112,9 @@ class MiAZApp(Gtk.Application):
         # Main MiAZ Window
         window = self.add_widget('window', Gtk.ApplicationWindow(application=self))
         window.set_default_size(1280, 800)
-        window.set_icon_name('MiAZ')
+        window.set_icon_name('com.github.t00m.MiAZ')
         window.connect('close-request', self._on_window_close_request)
-        window.set_default_icon_name('MiAZ')
+        window.set_default_icon_name('com.github.t00m.MiAZ')
 
         # Theme
         theme = self.set_service('theme', Gtk.IconTheme.get_for_display(window.get_display()))
@@ -222,12 +222,10 @@ class MiAZApp(Gtk.Application):
             actions.show_stack_page_by_name('workspace')
             self.emit('start-application-completed')
         else:
-            self.log.debug(f"Error loading repo {repo_id} of type {type(repo_id)}")
-            if repo_id is None:
-                welcome_widget = self.get_widget('welcome')
-                actions.show_stack_page_by_name('welcome')
-                window = self.get_widget('window')
-                window.present()
+            welcome_widget = self.get_widget('welcome')
+            actions.show_stack_page_by_name('welcome')
+            window = self.get_widget('window')
+            window.present()
         return repo_loaded
 
     def switch_finish(self, *args):
@@ -255,7 +253,7 @@ class MiAZApp(Gtk.Application):
         if srv is None:
             self._miazobjs['services'][name] = service
             srv = service
-            self.log.debug(f"Adding new service: {name}")
+            # ~ self.log.debug(f"Adding new service: {name}")
         return srv
 
     def get_service(self, name):
@@ -265,13 +263,10 @@ class MiAZApp(Gtk.Application):
         except KeyError:
             return None
 
-    def add_widget(self, name: str, widget) -> Gtk.Widget or None:
+    def add_widget(self, name: str, widget: Gtk.Widget = None) -> Gtk.Widget or None:
         """Add widget to internal MiAZ objects dictionary."""
-        wdg = self.get_widget(name)
-        if wdg is not None:
-            self.log.debug(f"Widget '{name}' will be overwritten")
-        wdg = self._miazobjs['widgets'][name] = widget
-        return wdg
+        self._miazobjs['widgets'][name] = widget
+        return widget
 
     def get_widget(self, name):
         """Return a widget from the MiAZ objects dictionary."""

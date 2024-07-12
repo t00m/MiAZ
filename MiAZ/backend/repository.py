@@ -53,7 +53,7 @@ class MiAZRepository(GObject.GObject):
         try:
             conf_dir = os.path.join(path, '.conf')
             conf_file = os.path.join(conf_dir, 'repo.json')
-            # ~ self.log.debug(f"Validating repository '{conf_file}'")
+            self.log.debug(f"Validating repository '{conf_file}'")
             if os.path.exists(conf_dir):
                 if os.path.exists(conf_file):
                     with open(conf_file, 'r') as fin:
@@ -80,23 +80,27 @@ class MiAZRepository(GObject.GObject):
 
     def setup(self, repo_id: str = None):
         conf = {}
+        # ~ self.log.debug(f"Repo Id: {repo_id}")
         if repo_id is None:
             # Try to load the default repository
+            # ~ self.log.debug("Loading current repository from config")
             repo_id = self.config['App'].get('current')
+            # ~ self.log.debug(f"Config has repo: {repo_id}")
             if repo_id is None:
                 self.log.warning("No repository configuration available")
         if repo_id is not None:
             repos_used = self.config['Repository'].load_used()
-            try:
-                repo_path = repos_used[repo_id]
-                conf = {}
-                conf['dir_docs'] = repo_path
-                conf['dir_conf'] = os.path.join(conf['dir_docs'], '.conf')
-                if not os.path.exists(conf['dir_conf']):
-                    self.init(conf['dir_docs'])
-            except Exception:
-                self.log.warning(f"Repository configuration couldn't be loaded for repo_id '{repo_id}'")
-                conf = {}
+            # ~ self.log.debug(f"Number of repositories in use: {len(repos_used)}")
+            if len(repos_used) > 0:
+                try:
+                    repo_path = repos_used[repo_id]
+                    conf['dir_docs'] = repo_path
+                    conf['dir_conf'] = os.path.join(conf['dir_docs'], '.conf')
+                    if not os.path.exists(conf['dir_conf']):
+                        self.init(conf['dir_docs'])
+                except Exception as error:
+                    self.log.error(error)
+                    self.log.warning(f"Repository configuration couldn't be loaded for repo_id '{repo_id}'")
         return conf
 
     def load(self, path):
