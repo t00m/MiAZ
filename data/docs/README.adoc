@@ -1,6 +1,6 @@
 = MiAZ, a Personal Document Organizer
 
-image::MiAZ/data/icons/MiAZ-big.svg[align="center"]
+image::MiAZ/data/icons/com.github.t00m.MiAZ-big.svg[align="center"]
 
 == Features
 

@@ -13,6 +13,7 @@ from gi.repository import GObject
 from gi.repository import Peas
 
 from MiAZ.backend.log import MiAZLog
+from MiAZ.frontend.desktop.services.dialogs import MiAZFileChooserDialog
 
 
 class MiAZAddDirectoryPlugin(GObject.GObject, Peas.Activatable):
@@ -45,12 +46,11 @@ class MiAZAddDirectoryPlugin(GObject.GObject, Peas.Activatable):
         srvutl = self.app.get_service('util')
         srvrepo = self.app.get_service('repo')
 
-        def filechooser_response(dialog, response, data):
-            if response == Gtk.ResponseType.ACCEPT:
+        def filechooser_response(dialog, response, clsdlg):
+            if response in [Gtk.ResponseType.ACCEPT, Gtk.ResponseType.OK]:
                 content_area = dialog.get_content_area()
-                box = content_area.get_first_child()
-                filechooser = box.get_first_child()
-                toggle = box.get_last_child()
+                filechooser = clsdlg.get_filechooser_widget()
+                toggle = content_area.get_last_child()
                 recursive = toggle.get_active()
                 gfile = filechooser.get_file()
                 if gfile is not None:
@@ -67,15 +67,14 @@ class MiAZAddDirectoryPlugin(GObject.GObject, Peas.Activatable):
             dialog.destroy()
 
         window = self.app.get_widget('window')
-        filechooser = factory.create_filechooser(
+        clsdlg = MiAZFileChooserDialog(self.app)
+        filechooser = clsdlg.create(
                     parent=window,
                     title=_('Import a directory'),
                     target = 'FOLDER',
                     callback = filechooser_response,
-                    data = None
-                    )
+                    data = clsdlg)
         contents = filechooser.get_content_area()
-        box = contents.get_first_child()
         toggle = factory.create_button_check(title=_('Walk recursively'), callback=None)
-        box.append(toggle)
-        filechooser.show()
+        contents.append(toggle)
+        filechooser.present()

@@ -43,10 +43,14 @@ class Export2Text(GObject.GObject, Peas.Activatable):
             self.app.add_widget('workspace-menu-multiple-menu-export-item-export2text', menuitem)
 
     def export(self, *args):
+        actions = self.app.get_service('actions')
         ENV = self.app.get_env()
         util = self.app.get_service('util')
         workspace = self.app.get_widget('workspace')
         items = workspace.get_selected_items()
+        if actions.stop_if_no_items(items):
+            return
+
         text = ""
         for item in items:
             text += f"{item.id}\n"

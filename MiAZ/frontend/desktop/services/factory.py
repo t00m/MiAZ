@@ -239,7 +239,7 @@ class MiAZFactory:
 
         # Enable clear button by brute force
         box = search_entry.get_parent()
-        button = self.create_button(icon_name='miaz-entry-clear', css_classes=['flat'], tooltip='Clear this filter', callback=_clear_dropdown, data=dropdown)
+        button = self.create_button(icon_name='com.github.t00m.MiAZ-entry_clear', css_classes=['flat'], tooltip='Clear this filter', callback=_clear_dropdown, data=dropdown)
         button.set_margin_start(3)
         box.append(button)
 
@@ -259,33 +259,6 @@ class MiAZFactory:
         # ~ menu_dropdown.append_item(menuitem)
 
         return dropdown
-
-    # ~ def create_dialog(self, parent, title, widget, width=-1, height=-1):
-        # ~ dialog = Gtk.Dialog()
-        # ~ dlgHeader = Gtk.HeaderBar()
-        # ~ dialog.set_titlebar(dlgHeader)
-        # ~ dialog.set_modal(True)
-        # ~ dialog.set_title(title)
-        # ~ if width != -1 and height != -1:
-            # ~ dialog.set_size_request(width, height)
-        # ~ dialog.set_transient_for(parent)
-        # ~ contents = dialog.get_content_area()
-        # ~ contents.set_margin_top(margin=12)
-        # ~ contents.set_margin_end(margin=12)
-        # ~ contents.set_margin_bottom(margin=12)
-        # ~ contents.set_margin_start(margin=12)
-        # ~ contents.append(widget)
-        # ~ return dialog
-
-    # ~ def create_dialog_question(self, parent, title, body, width=-1, height=-1):
-        # ~ dialog = self.create_dialog(parent, title, body, width, height)
-        # ~ dialog.add_buttons('Cancel', Gtk.ResponseType.CANCEL, 'Accept', Gtk.ResponseType.ACCEPT)
-        # ~ dialog.set_default_response(Gtk.ResponseType.CANCEL)
-        # ~ btn_ok = dialog.get_widget_for_response(response_id=Gtk.ResponseType.ACCEPT)
-        # ~ action_box = btn_ok.get_ancestor(Gtk.Box)
-        # ~ action_box.set_homogeneous(True)
-        # ~ action_box.get_style_context().add_class('toolbar')
-        # ~ return dialog
 
     def create_filechooser(self, parent, title, target, callback, data=None):
         return MiAZFileChooserDialog(self.app, parent, title, target, callback, data)

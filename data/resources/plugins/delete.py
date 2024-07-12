@@ -45,6 +45,7 @@ class MiAZDeleteItemPlugin(GObject.GObject, Peas.Activatable):
             section_danger.append_item(menuitem)
 
     def document_delete(self, *args):
+        actions = self.app.get_service('actions')
         factory = self.app.get_service('factory')
         repository = self.app.get_service('repo')
         util = self.app.get_service('util')
@@ -58,8 +59,10 @@ class MiAZDeleteItemPlugin(GObject.GObject, Peas.Activatable):
                     util.filename_delete(filepath)
             dialog.destroy()
 
-        self.log.debug("Mass deletion")
         items = workspace.get_selected_items()
+        if actions.stop_if_no_items(items):
+            return
+
         frame = Gtk.Frame()
         box, view = factory.create_view(MiAZColumnViewMassDelete)
         citems = []
@@ -69,10 +72,7 @@ class MiAZDeleteItemPlugin(GObject.GObject, Peas.Activatable):
         frame.set_child(view)
         box.append(frame)
         window = self.app.get_widget('window')
-        body = _("The following files will be deleted")
+        body = _("<big>These documents are going to be deleted.\n<b>Are you sure?</b></big>")
         dialog = srvdlg.create(parent=window, dtype='question', title=_('Mass deletion'), body=body, widget=box, width=600, height=480)
         dialog.connect('response', dialog_response, items)
         dialog.present()
-        # ~ dialog = factory.create_dialog_question(window, _('Mass deletion'), box, width=1024, height=600)
-        # ~ dialog.connect('response', dialog_response, items)
-        # ~ dialog.show()

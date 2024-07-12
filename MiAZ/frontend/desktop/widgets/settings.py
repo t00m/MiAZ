@@ -71,7 +71,7 @@ class MiAZAppSettings(MiAZCustomWindow):
         lblActive = Gtk.Label()
         lblActive.set_markup(_("Current active"))
         self.dd_repo = self.factory.create_dropdown_generic(item_type=Repository, ellipsize=False, enable_search=False)
-        btnUseRepo = self.factory.create_button(icon_name='MiAZ', title=_('Load repo'), callback=self._on_use_repo)
+        btnUseRepo = self.factory.create_button(icon_name='com.github.t00m.MiAZ', title=_('Load repo'), callback=self._on_use_repo)
         hbox.append(lblActive)
         hbox.append(self.dd_repo)
         hbox.append(btnUseRepo)
@@ -347,5 +347,5 @@ class MiAZRepoSettings(MiAZCustomWindow):
             configview = self.app.get_widget(widget_title)
             configview.update_config()
             configview.update_views()
-        self.log.debug("Repository UI updated according to current settings")
+        # ~ self.log.debug("Repository UI updated according to current settings")
 

@@ -11,8 +11,7 @@ from gi.repository import Gtk
 
 from MiAZ.backend.log import MiAZLog
 from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewDocuments
-from MiAZ.frontend.desktop.widgets.dialogs import MiAZDialogAdd
-from MiAZ.frontend.desktop.widgets.dialogs import CustomDialog
+from MiAZ.frontend.desktop.services.dialogs import MiAZDialogAdd
 from MiAZ.backend.models import Country, Plugin, File
 
 
@@ -42,7 +41,7 @@ class MiAZSelector(Gtk.Box):
         self.entry = Gtk.Entry()
         self.entry.get_style_context().add_class(class_name='caption')
         self.entry.set_activates_default(True)
-        self.entry.set_icon_from_icon_name(Gtk.EntryIconPosition.SECONDARY, 'miaz-entry-clear')
+        self.entry.set_icon_from_icon_name(Gtk.EntryIconPosition.SECONDARY, 'com.github.t00m.MiAZ-entry_clear')
         self.entry.set_icon_activatable(Gtk.EntryIconPosition.SECONDARY, True)
         self.entry.connect('icon-press', self._on_entrysearch_delete)
         self.entry.connect('changed', self._on_filter_selected)
@@ -151,10 +150,10 @@ class MiAZSelector(Gtk.Box):
         if is_used:
             item_type = self.config.model
             i_title = item_type.__title__
-            text = _(f'{i_title} {selected_item.title} is still being used by {len(docs)} docs:')
-            window = self.app.get_widget('window')
+            text = _(f'<big>{i_title} {selected_item.title} is still being used by {len(docs)} docs:</big>')
+            window = self.viewSl.get_root()
             dtype = 'error'
-            title = f"{i_title} {selected_item.title} can't be removed"
+            title = "Action not possible"
             if len(docs) > 0:
                 items = []
                 for doc in docs:
@@ -163,9 +162,9 @@ class MiAZSelector(Gtk.Box):
                 view.update(items)
             else:
                 view = None
-            dialog = CustomDialog(app=self.app, parent=window, use_header_bar=True, dtype=dtype, title=title, text=text, widget=view)
-            dialog.set_modal(True)
-            dialog.show()
+            srvdlg = self.app.get_service('dialogs')
+            dialog = srvdlg.create(parent=window, dtype=dtype, title=title, body=text, widget=view)
+            dialog.present()
         else:
             items_available[selected_item.id] = selected_item.title
             del items_used[selected_item.id]
@@ -175,18 +174,23 @@ class MiAZSelector(Gtk.Box):
 
     def _on_item_available_add(self, *args):
         if self.edit:
+            search_term = self.entry.get_text()
             item_type = self.config.model
             i_title = item_type.__title__
-            dialog = MiAZDialogAdd(self.app, self.get_root(), _(f'Add new {i_title.lower()}'), _('Key'), _('Description'))
-            search_term = self.entry.get_text()
-            dialog.set_value1(search_term)
-            dialog.connect('response', self._on_response_item_available_add)
-            dialog.show()
+            this_item = MiAZDialogAdd(self.app)
+            parent = self.get_root()
+            title = _(f'Add new {i_title.lower()}')
+            key1 = _(f'<b>{i_title.title()} key</b>')
+            key2 = _('<b>Description</b>')
+            dialog = this_item.create(parent=parent, title=title, key1=key1, key2=key2)
+            dialog.connect('response', self._on_response_item_available_add, this_item)
+            this_item.set_value1(search_term)
+            dialog.present()
 
-    def _on_response_item_available_add(self, dialog, response):
-        if response == Gtk.ResponseType.ACCEPT:
-            key = dialog.get_value1()
-            value = dialog.get_value2()
+    def _on_response_item_available_add(self, dialog, response, this_item):
+        if response == Gtk.ResponseType.OK:
+            key = this_item.get_value1()
+            value = this_item.get_value2()
             if len(key) > 0:
                 self.config.add_available(key.upper(), value)
                 self.log.debug(f"{key} ({value}) added to list of available items")
@@ -204,23 +208,27 @@ class MiAZSelector(Gtk.Box):
         item_type = self.config.model
         if item_type not in [Country, Plugin]:
             i_title = item_type.__title__
-            dialog = MiAZDialogAdd(self.app, self.get_root(), _('Change {i_title.lower()} description'), _('Key'), _('Description'))
-            label1 = dialog.get_label_key1()
-            label1.set_text(i_title)
-            entry1 = dialog.get_entry_key1()
+            parent = self.get_root()
+            title = _(f'Change {i_title.lower()} description')
+            key1 = _(f'<b>{i_title.title()} key</b>')
+            key2 = _('<b>Description</b>')
+            this_item = MiAZDialogAdd(self.app)
+            dialog = this_item.create(parent=parent, title=title, key1=key1, key2=key2)
+            entry1 = this_item.get_entry_key1()
             entry1.set_sensitive(False)
             if item is not None:
-                dialog.set_value1(item.id)
-                dialog.set_value2(item.title)
-            dialog.connect('response', self._on_response_item_available_rename, item)
-            dialog.show()
+                this_item.set_value1(item.id)
+                this_item.set_value2(item.title)
+            dialog.connect('response', self._on_response_item_available_rename, item, this_item)
+            dialog.present()
 
-    def _on_response_item_available_rename(self, dialog, response, item):
-        if response == Gtk.ResponseType.ACCEPT:
+    def _on_response_item_available_rename(self, dialog, response, item, this_item):
+        if response in [Gtk.ResponseType.ACCEPT, Gtk.ResponseType.OK]:
             oldkey = item.id
             oldval = item.title
-            newkey = dialog.get_value1()
-            newval = dialog.get_value2()
+            newkey = this_item.get_value1()
+            newval = this_item.get_value2()
+            self.log.debug(f"{oldval} == {newval}? {newval != oldval}")
             if newval != oldval:
                 items_used = self.config.load_used()
                 if oldkey in items_used:
@@ -268,12 +276,12 @@ class MiAZSelector(Gtk.Box):
             item_type = self.config.model
             i_title = item_type.__title__
             dtype = "warning"
-            window = self.app.get_widget('window')
+            window = self.viewAv.get_root()
             dtype = 'error'
-            title = f"{i_title} {selected_item.title} can't be removed"
+            title = "Action not possible"
 
             if len(docs) > 0:
-                text = _(f'{i_title} {selected_item.title} is still being used by {len(docs)} docs:')
+                text = _(f'<big>{i_title} {selected_item.title} is still being used by {len(docs)} docs:</big>')
                 items = []
                 for doc in docs:
                     items.append(File(id=doc, title=os.path.basename(doc)))
@@ -283,12 +291,9 @@ class MiAZSelector(Gtk.Box):
                 text = _(f'{i_title} {selected_item.title} is still being used')
                 view = None
 
-            dialog = CustomDialog(app=self.app, parent=window, use_header_bar=True, dtype=dtype, title=title, text=text, widget=view)
-            if len(docs) == 0:
-                dialog.set_default_size(-1, -1)
-
-            dialog.set_modal(True)
-            dialog.show()
+            srvdlg = self.app.get_service('dialogs')
+            dialog = srvdlg.create(parent=window, dtype=dtype, title=title, body=text, widget=view)
+            dialog.present()
 
     def _on_selected_item_available_notify(self, colview, pos):
         model = colview.get_model()

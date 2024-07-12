@@ -59,6 +59,8 @@ class MiAZFileChooserDialog(Gtk.Dialog):
         elif self.target == 'SAVE':
             self.w_filechooser.set_action(Gtk.FileChooserAction.SAVE)
 
+        return self.dialog
+
     def get_filechooser_widget(self):
         return self.w_filechooser
 

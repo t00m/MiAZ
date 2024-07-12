@@ -19,7 +19,7 @@ from MiAZ.frontend.desktop.widgets.configview import MiAZCountries, MiAZGroups, 
 from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewMassDelete
 from MiAZ.frontend.desktop.widgets.settings import MiAZAppSettings
 from MiAZ.frontend.desktop.widgets.settings import MiAZRepoSettings
-from MiAZ.frontend.desktop.services.help import MiAZHelp
+from MiAZ.frontend.desktop.services.help import MiAZShortcutsWindow
 
 # Conversion Item type to Field Number
 Field = {}
@@ -258,8 +258,7 @@ class MiAZActions(GObject.GObject):
     def show_app_help(self, *args):
         shwin = self.app.get_widget('shortcutswindow')
         if shwin is None:
-            shwin = Gtk.ShortcutsWindow()
-            shwin.set_child(MiAZHelp(self.app))
+            shwin = MiAZShortcutsWindow()
             self.app.add_widget('shortcutswindow', shwin)
         shwin.present()
 
@@ -288,3 +287,17 @@ class MiAZActions(GObject.GObject):
         self.log.debug('Closing MiAZ')
         self.app.emit("exit-application")
         self.app.quit()
+
+    def stop_if_no_items(self, items: [], widget: Gtk.Widget = None):
+        stop = False
+        if len(items) == 0:
+            srvdlg = self.app.get_service('dialogs')
+            if widget is None:
+                widget = self.app.get_widget('workspace')
+            parent = widget.get_root()
+            body = '<big>You must select at least one file</big>'
+            dialog = srvdlg.create(parent=parent, dtype='info', title=_('Action ignored'), body=body)
+            dialog.present()
+            stop = True
+        return stop
+

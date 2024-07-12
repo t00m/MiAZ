@@ -147,7 +147,7 @@ class MiAZWorkspace(Gtk.Box):
         dd_prj.connect("notify::selected-item", self._on_project_selected)
         dd_prj.set_hexpand(True)
         self.config[i_type].connect('used-updated', self.update_dropdown_filter, Project)
-        self.log.debug(f"Dropdown filter for '{i_title}' setup successfully")
+        # ~ self.log.debug(f"Dropdown filter for '{i_title}' setup successfully")
 
         ## Rest of dropdowns
         for item_type in [Country, Group, SentBy, Purpose, SentTo]:
@@ -157,7 +157,7 @@ class MiAZWorkspace(Gtk.Box):
             actions.dropdown_populate(self.config[i_type], dropdown, item_type, none_value=True)
             dropdown.connect("notify::selected-item", self._on_filter_selected)
             self.used_signals[i_type] = self.config[i_type].connect('used-updated', self.update_dropdown_filter, item_type)
-            self.log.debug(f"Dropdown filter for '{i_title}' setup successfully")
+            # ~ self.log.debug(f"Dropdown filter for '{i_title}' setup successfully")
 
         # Connect Watcher service
         watcher = self.app.get_service('watcher')
@@ -221,7 +221,7 @@ class MiAZWorkspace(Gtk.Box):
             dropdowns[i_type] = dropdown
 
         self.app.add_widget('ws-dropdowns', dropdowns)
-        btnClearFilters = factory.create_button(icon_name='miaz-entry-clear', tooltip='Clear all filters', css_classes=['flat'], callback=self.clear_filters)
+        btnClearFilters = factory.create_button(icon_name='com.github.t00m.MiAZ-entry_clear', tooltip='Clear all filters', css_classes=['flat'], callback=self.clear_filters)
         boxDropdown = factory.create_box_filter('', btnClearFilters)
         body.append(boxDropdown)
 

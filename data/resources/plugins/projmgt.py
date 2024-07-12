@@ -79,6 +79,8 @@ class MiAZToolbarProjectMgtPlugin(GObject.GObject, Peas.Activatable):
         workspace = self.app.get_widget('workspace')
         srvdlg = self.app.get_service('dialogs')
         items = workspace.get_selected_items()
+        if actions.stop_if_no_items(items):
+            return
 
         def dialog_response(dialog, response, dropdown, items):
             if response == Gtk.ResponseType.YES:
@@ -131,6 +133,8 @@ class MiAZToolbarProjectMgtPlugin(GObject.GObject, Peas.Activatable):
         srvdlg = self.app.get_service('dialogs')
         item_type = Project
         items = workspace.get_selected_items()
+        if actions.stop_if_no_items(items):
+            return
 
         def dialog_response(dialog, response, dropdown, items):
             if response == Gtk.ResponseType.YES:

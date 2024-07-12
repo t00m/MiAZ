@@ -47,7 +47,7 @@ class MiAZConfig(GObject.GObject):
             GObject.signal_new('used-updated',
                                 MiAZConfig,
                                 GObject.SignalFlags.RUN_LAST, None, ())
-        self.log.debug(f"Config for {self.config_for} initialited")
+        # ~ self.log.debug(f"Config for {self.config_for} initialited")
 
     def __repr__(self):
         return __class__.__name__
