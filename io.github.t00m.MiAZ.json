@@ -46,8 +46,8 @@
                 {
                     "type" : "git",
                     "url" : "https://gitlab.gnome.org/GNOME/libpeas.git",
-                    "tag": "1.36",
-                    "commit": "7f245fa5158204621c3469756a951b68a651c4fe"
+                    "branch": "1.36",
+                    "commit": "c68ecac0025caa5fa2401deff41d3b1959062600"
                 }
             ]
         },
