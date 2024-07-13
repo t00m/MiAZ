@@ -56,9 +56,9 @@ class MiAZRenameDialog(Gtk.Box):
         frmMain.set_child(self.boxMain)
         self.append(frmMain)
 
-        self.btnAccept = self.factory.create_button(icon_name='com.github.t00m.MiAZ-ok', title=_('Rename'), callback=self.on_rename_accept, css_classes=['opaque'])
-        self.btnCancel = self.factory.create_button(icon_name='com.github.t00m.MiAZ-stop', title=_('Cancel'), callback=self.on_rename_cancel)
-        self.btnPreview = self.factory.create_button('com.github.t00m.MiAZ-view-document', _('Preview'))
+        self.btnAccept = self.factory.create_button(icon_name='io.github.t00m.MiAZ-ok', title=_('Rename'), callback=self.on_rename_accept, css_classes=['opaque'])
+        self.btnCancel = self.factory.create_button(icon_name='io.github.t00m.MiAZ-stop', title=_('Cancel'), callback=self.on_rename_cancel)
+        self.btnPreview = self.factory.create_button('io.github.t00m.MiAZ-view-document', _('Preview'))
         self.btnPreview.connect('clicked', self._on_document_display)
         self.btnAccept.set_sensitive(True)
         self.btnAccept.has_default()
@@ -129,7 +129,7 @@ class MiAZRenameDialog(Gtk.Box):
 
     def __create_actionrow(self, title, item_type, conf) -> Gtk.Widget:
         i_title = item_type.__title_plural__
-        icon_name = f"com.github.t00m.MiAZ-res-{i_title.lower().replace(' ', '')}"
+        icon_name = f"io.github.t00m.MiAZ-res-{i_title.lower().replace(' ', '')}"
         icon = self.icons.get_image_by_name(name=icon_name)
         boxValue = self.__create_box_value()
         button = self.factory.create_button(icon_name=icon_name, title='')
@@ -157,7 +157,7 @@ class MiAZRenameDialog(Gtk.Box):
     def __create_field_0_date(self):
         """Field 0. Date"""
         title = _('Date')
-        icon_name = 'com.github.t00m.MiAZ-res-date'
+        icon_name = 'io.github.t00m.MiAZ-res-date'
         boxValue = self.__create_box_value()
         boxValue.set_hexpand(False)
         boxValue.set_valign(Gtk.Align.CENTER)
@@ -237,7 +237,7 @@ class MiAZRenameDialog(Gtk.Box):
     def __create_field_6_concept(self):
         """Field 6. Concept"""
         title = Concept.__title__
-        # ~ icon_name = 'com.github.t00m.MiAZ-res-concept'
+        # ~ icon_name = 'io.github.t00m.MiAZ-res-concept'
         # ~ icon = self.icons.get_image_by_name(name=icon_name)
         boxValue = self.__create_box_value()
         self.rowConcept = self.factory.create_actionrow(title=title, suffix= boxValue)
@@ -264,7 +264,7 @@ class MiAZRenameDialog(Gtk.Box):
         """Field 7. extension"""
 
         title = _('Extension')
-        icon_name = 'com.github.t00m.MiAZ-res-extension'
+        icon_name = 'io.github.t00m.MiAZ-res-extension'
         icon = self.icons.get_image_by_name(name=icon_name)
         boxValue = self.__create_box_value()
         self.rowExt = self.factory.create_actionrow(title=title, prefix=icon, suffix=boxValue)

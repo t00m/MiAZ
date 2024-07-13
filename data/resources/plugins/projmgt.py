@@ -100,7 +100,7 @@ class MiAZToolbarProjectMgtPlugin(GObject.GObject, Peas.Activatable):
         dropdown = factory.create_dropdown_generic(Project)
         config[i_type].connect('used-updated', actions.dropdown_populate, dropdown, item_type, False, False)
         actions.dropdown_populate(config[i_type], dropdown, Project, any_value=False)
-        btnManage = factory.create_button('com.github.t00m.MiAZ-res-projects', '')
+        btnManage = factory.create_button('io.github.t00m.MiAZ-res-projects', '')
         btnManage.connect('clicked', actions.manage_resource, Configview['Project'](self.app))
         label = factory.create_label(_('Assign the following documents to this project: '))
         frame = Gtk.Frame()
@@ -162,7 +162,7 @@ class MiAZToolbarProjectMgtPlugin(GObject.GObject, Peas.Activatable):
                 sprojects.add(project)
 
         actions.dropdown_populate(config[i_type], dropdown, Project, any_value=False, only_include=list(sprojects))
-        btnManage = factory.create_button('com.github.t00m.MiAZ-res-projects', '')
+        btnManage = factory.create_button('io.github.t00m.MiAZ-res-projects', '')
         btnManage.connect('clicked', actions.manage_resource, Configview['Project'](self.app))
         label = factory.create_label(_('Withdraw the following documents from this project: '))
         frame = Gtk.Frame()

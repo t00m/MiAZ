@@ -2,7 +2,7 @@
 Name=MiAZ
 Comment=Personal Document Organizer
 Exec=miaz
-Icon=com.github.t00m.MiAZ
+Icon=io.github.t00m.MiAZ
 Terminal=false
 Type=Application
 # Translators: These are search terms to find this application. Do NOT translate or localize the semicolons. The list MUST also end with a semicolon.

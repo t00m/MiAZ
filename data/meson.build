@@ -1,8 +1,8 @@
 subdir('resources')
 
 desktop_file = i18n.merge_file(
-  input: 'com.github.t00m.MiAZ.desktop.in',
-  output: 'com.github.t00m.MiAZ.desktop',
+  input: 'io.github.t00m.MiAZ.desktop.in',
+  output: 'io.github.t00m.MiAZ.desktop',
   type: 'desktop',
   po_dir: '../po',
   install: true,
@@ -22,8 +22,8 @@ if desktop_utils.found()
 endif
 
 appstream_file = i18n.merge_file(
-  input: 'com.github.t00m.MiAZ.metainfo.xml.in',
-  output: 'com.github.t00m.MiAZ.metainfo.xml',
+  input: 'io.github.t00m.MiAZ.metainfo.xml.in',
+  output: 'io.github.t00m.MiAZ.metainfo.xml',
   po_dir: '../po',
   install: true,
   install_dir: join_paths(get_option('datadir'), 'metainfo')
@@ -37,7 +37,7 @@ if appstreamcli.found()
   )
 endif
 
-install_data('com.github.t00m.MiAZ.gschema.xml',
+install_data('io.github.t00m.MiAZ.gschema.xml',
   install_dir: join_paths(get_option('datadir'), 'glib-2.0/schemas')
 )
 
@@ -49,11 +49,11 @@ if compile_schemas.found()
 endif
 
 install_data(
-  'com.github.t00m.MiAZ.svg',
+  'io.github.t00m.MiAZ.svg',
   install_dir: join_paths(get_option('datadir'), 'icons/hicolor/scalable/apps')
 )
 
 install_data(
-    join_paths('resources/icons/scalable', 'com.github.t00m.MiAZ.svg'),
+    join_paths('resources/icons/scalable', 'io.github.t00m.MiAZ.svg'),
     install_dir: join_paths(get_option('prefix'), get_option('datadir'), 'icons/hicolor/scalable/apps')
 )

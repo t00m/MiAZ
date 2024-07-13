@@ -11,11 +11,11 @@ i18n = import('i18n')
 
 profile = get_option('profile')
 if profile == 'development'
-  app_id = 'com.github.t00m.MiAZ.Devel'
-  prefix = '/com/github/t00m/MiAZ/Devel'
+  app_id = 'io.github.t00m.MiAZ.Devel'
+  prefix = '/io/github/t00m/MiAZ/Devel'
 elif profile == 'release'
-  app_id = 'com.github.t00m.MiAZ'
-  prefix = '/com/github/t00m/MiAZ'
+  app_id = 'io.github.t00m.MiAZ'
+  prefix = '/io/github/t00m/MiAZ'
 endif
 
 pkgdatadir = join_paths(get_option('prefix'), get_option('datadir'), meson.project_name())

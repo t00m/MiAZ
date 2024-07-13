@@ -64,19 +64,19 @@ class MiAZConfigView(MiAZSelector):
         actions = self.app.get_service('actions')
         factory = self.app.get_service('factory')
         widgets = []
-        btnConfigImport = factory.create_button(icon_name='com.github.t00m.MiAZ-document-open-symbolic',
+        btnConfigImport = factory.create_button(icon_name='io.github.t00m.MiAZ-document-open-symbolic',
                                                      title=f'Import config for {self.config.config_for.lower()}',
                                                      callback=actions.import_config,
                                                      data=self.config.model,
                                                      css_classes=['flat'])
         widgets.append(btnConfigImport)
-        btnConfigImport = factory.create_button(icon_name='com.github.t00m.MiAZ-document-save-symbolic',
+        btnConfigImport = factory.create_button(icon_name='io.github.t00m.MiAZ-document-save-symbolic',
                                                      title=f'Export config for {self.config.config_for.lower()}',
                                                      callback=actions.export_config,
                                                      data=self.config.model,
                                                      css_classes=['flat'])
         widgets.append(btnConfigImport)
-        button = factory.create_button_popover(icon_name='com.github.t00m.MiAZ-emblem-system-symbolic',
+        button = factory.create_button_popover(icon_name='io.github.t00m.MiAZ-emblem-system-symbolic',
                                                     title='',
                                                     widgets=widgets)
 

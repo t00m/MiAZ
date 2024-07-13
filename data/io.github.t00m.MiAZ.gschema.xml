@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <schemalist gettext-domain="miaz">
     <!-- Global Settings -->
-    <schema id="com.github.t00m.MiAZ" path="/com/github/t00m/MiAZ/">
+    <schema id="io.github.t00m.MiAZ" path="/io/github/t00m/MiAZ/">
     </schema>
 </schemalist>

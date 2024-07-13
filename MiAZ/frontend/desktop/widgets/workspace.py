@@ -221,7 +221,7 @@ class MiAZWorkspace(Gtk.Box):
             dropdowns[i_type] = dropdown
 
         self.app.add_widget('ws-dropdowns', dropdowns)
-        btnClearFilters = factory.create_button(icon_name='com.github.t00m.MiAZ-entry_clear', tooltip='Clear all filters', css_classes=['flat'], callback=self.clear_filters)
+        btnClearFilters = factory.create_button(icon_name='io.github.t00m.MiAZ-entry_clear', tooltip='Clear all filters', css_classes=['flat'], callback=self.clear_filters)
         boxDropdown = factory.create_box_filter('', btnClearFilters)
         body.append(boxDropdown)
 
@@ -280,7 +280,7 @@ class MiAZWorkspace(Gtk.Box):
         hdb_right.get_style_context().add_class(class_name='linked')
 
         ## Show/Hide Filters
-        tgbFilters = factory.create_button_toggle('com.github.t00m.MiAZ-filter-symbolic', callback=self._on_filters_toggled)
+        tgbFilters = factory.create_button_toggle('io.github.t00m.MiAZ-filter-symbolic', callback=self._on_filters_toggled)
         self.app.add_widget('workspace-togglebutton-filters', tgbFilters)
         tgbFilters.set_active(False)
         tgbFilters.set_hexpand(False)
@@ -318,7 +318,7 @@ class MiAZWorkspace(Gtk.Box):
         hbox.append(self.btnDocsSel)
 
         # Pending documents toggle button
-        button = factory.create_button_toggle( icon_name='com.github.t00m.MiAZ-rename',
+        button = factory.create_button_toggle( icon_name='io.github.t00m.MiAZ-rename',
                                         title='Review',
                                         tooltip='There are documents pending of review',
                                         callback=self._show_pending_documents

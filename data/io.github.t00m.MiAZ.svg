@@ -4,8 +4,8 @@
 <svg
    version="1.1"
    inkscape:output_extension="org.inkscape.output.svg.inkscape"
-   sodipodi:docname="com.github.t00m.MiAZ-big.svg"
-   inkscape:version="1.2.1 (9c6d41e410, 2022-07-14)"
+   sodipodi:docname="io.github.t00m.MiAZ.svg"
+   inkscape:version="1.2.2 (b0a8486541, 2022-12-01)"
    sodipodi:version="0.32"
    id="svg1256"
    height="128"
@@ -250,14 +250,14 @@
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
      inkscape:zoom="1.9999999"
-     inkscape:cx="34.000001"
+     inkscape:cx="34.750002"
      inkscape:cy="-21.000001"
      inkscape:current-layer="layer1"
      showgrid="false"
      inkscape:grid-bbox="true"
      inkscape:document-units="px"
      inkscape:window-width="1920"
-     inkscape:window-height="1011"
+     inkscape:window-height="979"
      inkscape:window-x="0"
      inkscape:window-y="0"
      fill="#ef2929"
@@ -388,27 +388,15 @@
        sodipodi:nodetypes="cccscssc" />
     <text
        xml:space="preserve"
-       style="font-size:34.6099px;line-height:0%;fill:#000000;stroke-width:3.69271"
-       x="42.735451"
-       y="82.803261"
+       style="font-size:31.1966px;line-height:0%;fill:#000000;stroke-width:3.32853"
+       x="58.387684"
+       y="75.370956"
        id="text271"
-       transform="matrix(0.93452471,0.00826484,-0.00893929,1.0699836,0,0)"><tspan
+       transform="matrix(0.83042044,-0.01170875,0.0225234,1.2038917,0,0)"><tspan
          sodipodi:role="line"
          id="tspan269"
-         x="42.735451"
-         y="82.803261"
-         style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:44.3121px;line-height:1.25;font-family:Waree;-inkscape-font-specification:'Waree Bold';fill:#404040;stroke-width:3.69271">AZ</tspan></text>
-    <text
-       xml:space="preserve"
-       style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;line-height:0%;font-family:Waree;-inkscape-font-specification:'Waree Bold';fill:#404040;stroke-width:0.679182;filter:url(#filter1231)"
-       x="25.86824"
-       y="21.342323"
-       id="text325"
-       transform="matrix(2.8241302,-0.28130454,0.2910748,2.9164676,-9.6810616,-3.7825193)"><tspan
-         sodipodi:role="line"
-         id="tspan323"
-         x="25.86824"
-         y="21.342323"
-         style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:8px;line-height:1.25;font-family:Waree;-inkscape-font-specification:'Waree Bold';fill:#404040;stroke-width:0.679182">Mi</tspan></text>
+         x="58.387684"
+         y="75.370956"
+         style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:39.942px;line-height:1.25;font-family:Waree;-inkscape-font-specification:'Waree Bold';fill:#404040;stroke-width:3.32853">AZ</tspan></text>
   </g>
 </svg>

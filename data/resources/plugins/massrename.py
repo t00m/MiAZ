@@ -174,7 +174,7 @@ class MiAZMassRenamingPlugin(GObject.GObject, Peas.Activatable):
             box = factory.create_box_vertical(spacing=6, vexpand=True, hexpand=True)
             label = factory.create_label(_(f'Rename {len(items)} files by setting the field <b>{i_title}</b> to:\n'))
             dropdown = factory.create_dropdown_generic(item_type)
-            icon_name = f'com.github.t00m.MiAZ-res-{i_title_plural.lower()}'
+            icon_name = f'io.github.t00m.MiAZ-res-{i_title_plural.lower()}'
             self.log.debug(icon_name)
             btnManage = factory.create_button(icon_name=icon_name, title='')
             btnManage.connect('clicked', actions.manage_resource, Configview[i_type](self.app))
@@ -202,7 +202,7 @@ class MiAZMassRenamingPlugin(GObject.GObject, Peas.Activatable):
             hbox = factory.create_box_horizontal()
             label = Gtk.Label()
             calendar = Gtk.Calendar()
-            btnDate = factory.create_button_popover(icon_name='com.github.t00m.MiAZ-res-date', widgets=[calendar])
+            btnDate = factory.create_button_popover(icon_name='io.github.t00m.MiAZ-res-date', widgets=[calendar])
             hbox.append(btnDate)
             hbox.append(label)
             frame = Gtk.Frame()

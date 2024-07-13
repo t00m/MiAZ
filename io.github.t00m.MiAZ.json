@@ -1,5 +1,5 @@
 {
-    "app-id" : "com.github.t00m.MiAZ",
+    "app-id" : "io.github.t00m.MiAZ",
     "runtime" : "org.gnome.Platform",
     "runtime-version" : "45",
     "sdk" : "org.gnome.Sdk",
@@ -46,7 +46,8 @@
                 {
                     "type" : "git",
                     "url" : "https://gitlab.gnome.org/GNOME/libpeas.git",
-                    "branch": "1.36"
+                    "tag": "1.36",
+                    "commit": "7f245fa5158204621c3469756a951b68a651c4fe"
                 }
             ]
         },

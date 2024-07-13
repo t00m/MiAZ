@@ -145,7 +145,7 @@ class Export2Dir(GObject.GObject, Peas.Activatable):
             label.set_markup(f'<b>{key}</b> = {patterns[key]}')
             label.set_xalign(0.0)
             widgets.append(label)
-        btpPattern = factory.create_button_popover(icon_name='com.github.t00m.MiAZ-dialog-information-symbolic', widgets=widgets)
+        btpPattern = factory.create_button_popover(icon_name='io.github.t00m.MiAZ-dialog-information-symbolic', widgets=widgets)
         hbox.append(chkPattern)
         hbox.append(etyPattern)
         hbox.append(btpPattern)

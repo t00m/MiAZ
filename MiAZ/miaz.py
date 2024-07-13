@@ -182,7 +182,7 @@ def main():
         log.error("MiAZ executable not found in $PATH")
     miaz_dir = os.path.dirname(miaz_exec)
     ROOT = os.path.abspath(miaz_dir + '/..')
-    ENV['APP']['ID'] = 'com.github.t00m.MiAZ'
+    ENV['APP']['ID'] = 'io.github.t00m.MiAZ'
     ENV['APP']['VERSION'] = VERSION
     ENV['APP']['PGKDATADIR'] = os.path.join(ROOT, 'share/MiAZ/data')
     ENV['APP']['LOCALEDIR'] = os.path.join(ROOT, 'share/MiAZ/locale')
