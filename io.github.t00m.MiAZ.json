@@ -62,7 +62,8 @@
                 {
                     "type" : "git",
                     "url" : "https://github.com/t00m/MiAZ.git",
-                    "branch": "main"
+                    "tag" : "v0.0.49",
+                    "commit" : "9ce2b6de674868c19e75bbf8a241347b5be1e3f8"
                 }
             ]
         }
