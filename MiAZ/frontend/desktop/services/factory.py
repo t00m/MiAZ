@@ -157,10 +157,11 @@ class MiAZFactory:
         return button
 
     def create_button_check(self, title: str = '', active: bool = False, callback=None) -> Gtk.CheckButton:
-        button = Gtk.CheckButton.new_with_label(title)
+        button = Gtk.Switch()
         button.set_active(active)
         if callback is not None:
-            button.connect('toggled', callback)
+            button.connect('activate', callback)
+
         return button
 
     def create_button_menu(self, icon_name: str = '', title:str = '', css_classes: list = None, menu: Gio.Menu = None)-> Gtk.MenuButton:

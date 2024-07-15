@@ -189,7 +189,17 @@ class MiAZWorkspace(Gtk.Box):
         srvutl.connect('filename-renamed', self.update)
         srvutl.connect('filename-deleted', self.update)
         srvutl.connect('filename-added', self.update)
+        self.app.connect('repo-switch', self._on_repo_switch)
+        self._on_repo_switch()
+
         self.emit('workspace-loaded')
+
+    def _on_repo_switch(self, *args):
+        self.selected_items = 0
+        self.clear_filters()
+        self.view.refilter()
+        self.update()
+        self._on_filter_selected()
 
     def _setup_toolbar_filters(self):
         factory = self.app.get_service('factory')

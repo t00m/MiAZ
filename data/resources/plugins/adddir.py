@@ -49,8 +49,8 @@ class MiAZAddDirectoryPlugin(GObject.GObject, Peas.Activatable):
         def filechooser_response(dialog, response, clsdlg):
             if response in [Gtk.ResponseType.ACCEPT, Gtk.ResponseType.OK]:
                 content_area = dialog.get_content_area()
-                filechooser = clsdlg.get_filechooser_widget()
-                toggle = content_area.get_last_child()
+                filechooser = self.app.get_widget('plugin-adddir-filechooser')
+                toggle = self.app.get_widget('plugin-adddir-togglebutton')
                 recursive = toggle.get_active()
                 gfile = filechooser.get_file()
                 if gfile is not None:
@@ -68,13 +68,23 @@ class MiAZAddDirectoryPlugin(GObject.GObject, Peas.Activatable):
 
         window = self.app.get_widget('window')
         clsdlg = MiAZFileChooserDialog(self.app)
-        filechooser = clsdlg.create(
+        filechooser_dialog = clsdlg.create(
                     parent=window,
                     title=_('Import a directory'),
                     target = 'FOLDER',
-                    callback = filechooser_response,
-                    data = clsdlg)
-        contents = filechooser.get_content_area()
-        toggle = factory.create_button_check(title=_('Walk recursively'), callback=None)
-        contents.append(toggle)
-        filechooser.present()
+                    callback = filechooser_response)
+                    #data = clsdlg)
+        self.app.add_widget('plugin-adddir-filechooser', clsdlg.get_filechooser_widget())
+        contents = filechooser_dialog.get_content_area()
+        hbox = factory.create_box_horizontal()
+        hbox.get_style_context().add_class(class_name='toolbar')
+        label = Gtk.Label()
+        title=_('<big><b>Walk recursively</b></big>')
+        label.set_markup(title)
+        toggle = factory.create_button_check(callback=None)
+        self.app.add_widget('plugin-adddir-togglebutton', toggle)
+        hbox.append(toggle)
+        hbox.append(label)
+        contents.append(hbox)
+        contents.get_style_context().add_class(class_name='toolbar')
+        filechooser_dialog.present()

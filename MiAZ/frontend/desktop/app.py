@@ -33,6 +33,7 @@ class MiAZApp(Gtk.Application):
     __gsignals__ = {
         "start-application-completed": (GObject.SignalFlags.RUN_LAST, None, ()),
         "exit-application": (GObject.SignalFlags.RUN_LAST, None, ()),
+        "repo-switch": (GObject.SignalFlags.RUN_LAST, None, ()),
     }
     plugins_loaded = False
     _miazobjs = {}  # MiAZ Objects
