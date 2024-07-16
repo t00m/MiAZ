@@ -19,6 +19,7 @@ from gi.repository import Peas
 from MiAZ.backend.log import MiAZLog
 from MiAZ.backend.models import Country, Date, Group
 from MiAZ.backend.models import Purpose, SentBy, SentTo
+from MiAZ.frontend.desktop.services.dialogs import MiAZFileChooserDialog
 
 Field = {}
 Field[Date] = 0
@@ -67,10 +68,9 @@ class Export2Zip(GObject.GObject, Peas.Activatable):
 
         def filechooser_response(dialog, response, patterns):
 
-            if response == Gtk.ResponseType.ACCEPT:
+            if response in [Gtk.ResponseType.ACCEPT, Gtk.ResponseType.OK]:
                 content_area = dialog.get_content_area()
-                box = content_area.get_first_child()
-                filechooser = box.get_first_child()
+                filechooser = self.app.get_widget('plugin-export2zip-filechooser')
                 gfile = filechooser.get_file()
                 dirpath = gfile.get_path()
                 if gfile is not None:
@@ -93,13 +93,12 @@ class Export2Zip(GObject.GObject, Peas.Activatable):
             dialog.destroy()
 
         window = self.app.get_widget('window')
-        filechooser = factory.create_filechooser(
+        clsdlg = MiAZFileChooserDialog(self.app)
+        filechooser_dialog = clsdlg.create(
                     parent=window,
-                    title=_('Export selected documents to a ZIP file'),
-                    target='FOLDER',
-                    callback=filechooser_response,
-                    data=None
-                    )
+                    title=_('Choose a directory to export the Zip archive'),
+                    target = 'FOLDER',
+                    callback = filechooser_response)
+        self.app.add_widget('plugin-export2zip-filechooser', clsdlg.get_filechooser_widget())
+        filechooser_dialog.present()
 
-        # Export with pattern
-        filechooser.show()

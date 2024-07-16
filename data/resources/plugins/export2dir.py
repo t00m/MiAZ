@@ -19,6 +19,7 @@ from gi.repository import Peas
 from MiAZ.backend.log import MiAZLog
 from MiAZ.backend.models import Country, Date, Group
 from MiAZ.backend.models import Purpose, SentBy, SentTo
+from MiAZ.frontend.desktop.services.dialogs import MiAZFileChooserDialog
 
 Field = {}
 Field[Date] = 0
@@ -79,10 +80,11 @@ class Export2Dir(GObject.GObject, Peas.Activatable):
             return paths
 
         def filechooser_response(dialog, response, patterns):
-            if response == Gtk.ResponseType.ACCEPT:
+            if response in [Gtk.ResponseType.ACCEPT, Gtk.ResponseType.OK]:
                 content_area = dialog.get_content_area()
                 box = content_area.get_first_child()
-                filechooser = box.get_first_child()
+                # ~ filechooser = box.get_first_child()
+                filechooser = self.app.get_widget('plugin-export2dir-filechooser')
                 hbox = box.get_last_child()
                 toggle_pattern = hbox.get_first_child()
                 gfile = filechooser.get_file()
@@ -124,16 +126,19 @@ class Export2Dir(GObject.GObject, Peas.Activatable):
             'T': _('Sent to'),
         }
         window = self.app.get_widget('window')
-        filechooser = factory.create_filechooser(
+
+        clsdlg = MiAZFileChooserDialog(self.app)
+        filechooser_dialog = clsdlg.create(
                     parent=window,
-                    title=_('Export selected items to this directory'),
-                    target='FOLDER',
-                    callback=filechooser_response,
+                    title=_('Choose a directory to export selected files'),
+                    target = 'FOLDER',
+                    callback = filechooser_response,
                     data=patterns
                     )
+        self.app.add_widget('plugin-export2dir-filechooser', clsdlg.get_filechooser_widget())
 
         # Export with pattern
-        contents = filechooser.get_content_area()
+        contents = filechooser_dialog.get_content_area()
         box = contents.get_first_child()
         hbox = factory.create_box_horizontal()
         chkPattern = factory.create_button_check(title=_('Export with pattern'), callback=None)
@@ -150,4 +155,6 @@ class Export2Dir(GObject.GObject, Peas.Activatable):
         hbox.append(etyPattern)
         hbox.append(btpPattern)
         box.append(hbox)
-        filechooser.show()
+        # ~ filechooser.show()
+
+        filechooser_dialog.present()
