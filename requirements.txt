@@ -1,2 +1,2 @@
 PyGObject==3.42.2
-setuptools==66.1.1
+setuptools==70.0.0
