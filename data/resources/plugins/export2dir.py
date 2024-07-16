@@ -135,8 +135,9 @@ class Export2Dir(GObject.GObject, Peas.Activatable):
                     callback = filechooser_response,
                     data=patterns
                     )
-        self.app.add_widget('plugin-export2dir-filechooser', clsdlg.get_filechooser_widget())
-
+        filechooser_widget = self.app.add_widget('plugin-export2dir-filechooser', clsdlg.get_filechooser_widget())
+        filechooser_dialog.get_style_context().add_class(class_name='toolbar')
+        filechooser_widget.get_style_context().add_class(class_name='frame')
         # Export with pattern
         contents = filechooser_dialog.get_content_area()
         box = contents.get_first_child()
