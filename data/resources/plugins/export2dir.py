@@ -113,6 +113,9 @@ class Export2Dir(GObject.GObject, Peas.Activatable):
                             target = os.path.join(dirpath, os.path.basename(item.id))
                             util.filename_export(source, target)
                     util.directory_open(dirpath)
+                    srvdlg = self.app.get_service('dialogs')
+                    body = f"<big>Selected documents were exported to:\n\n{dirpath}</big>"
+                    srvdlg.create(parent=window, dtype='info', title=_('Export successfull'), body=body).present()
             dialog.destroy()
 
         patterns = {

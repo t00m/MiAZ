@@ -89,7 +89,11 @@ class Export2Zip(GObject.GObject, Peas.Activatable):
                     util.filename_rename(source, target)
                     shutil.rmtree(dir_zip)
                     util.directory_open(dirpath)
-                    self.log.debug(target)
+
+                    srvdlg = self.app.get_service('dialogs')
+                    body = f"<big>Selected documents were zipped into:\n\n{target}</big>"
+                    srvdlg.create(parent=window, dtype='info', title=_('Export successfull'), body=body).present()
+
             dialog.destroy()
 
         window = self.app.get_widget('window')

@@ -59,7 +59,7 @@ class Export2CSV(GObject.GObject, Peas.Activatable):
             row.append(ext)
             rows.append(row)
         fp, filepath = tempfile.mkstemp(dir=ENV['LPATH']['TMP'], suffix='.csv')
-        with open(filepath, 'w') as csvfile:
+        with open(filepath, 'w', newline='') as csvfile:
             csvwriter = csv.writer(csvfile)
             csvwriter.writerow(fields)
             csvwriter.writerows(rows)
