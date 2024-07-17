@@ -61,8 +61,8 @@
             "sources" : [
                 {
                     "type" : "archive",
-                    "url" : "https://github.com/t00m/MiAZ/archive/refs/tags/v0.0.49.tar.gz",
-                    "sha256" : "33024044cdf81b3090db5a3a5aaaec3d54d114f2927e0fd8bdc3dd20251bbe7f"
+                    "url" : "https://github.com/t00m/MiAZ/releases/download/v0.0.50/MiAZ-0.0.50.tar.xz",
+                    "sha256" : "1a4b2cae1bb88a38734ab0517c80b79b38068f7a7e3f2ac7d91cebcdd3cac1f5"
                 }
             ]
         }
