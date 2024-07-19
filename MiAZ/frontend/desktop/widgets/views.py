@@ -5,6 +5,8 @@
 # Description: Different views based on ColumnView widget
 
 import os
+import mimetypes
+mimetypes.init()
 from gettext import gettext as _
 
 from gi.repository import Gio
@@ -154,11 +156,12 @@ class MiAZColumnViewWorkspace(MiAZColumnView):
 
     def _on_factory_bind_icon_type(self, factory, list_item):
         """To be subclassed"""
+        utils = self.app.get_service('util')
         box = list_item.get_child()
         icon = box.get_first_child()
         item = list_item.get_item()
-        mimetype, val = Gio.content_type_guess(f"filename={item.id}")
-        gicon = self.srvicm.get_mimetype_icon(mimetype)
+        name, ext = utils.filename_details(item.id)
+        gicon = self.srvicm.get_mimetype_icon(f'.{ext}')
         icon.set_from_gicon(gicon)
         icon.set_pixel_size(36)
 
