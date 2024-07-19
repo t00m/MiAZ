@@ -296,7 +296,7 @@ class MiAZRepoSettings(MiAZCustomWindow):
         repo_id = appconf.get('current')
         self.title = f"Settings for repository {repo_id}"
         super().__init__(app, self.name, self.title, **kwargs)
-        self.connect('notify::visible', self.update)
+        # ~ self.connect('notify::visible', self.update)
 
     def _build_ui(self):
         self.set_default_size(1024, 728)
@@ -331,7 +331,8 @@ class MiAZRepoSettings(MiAZCustomWindow):
             wdgLabel.set_hexpand(True)
             return page, wdgLabel
 
-        for item_type in [Country, Group, Purpose, SentBy, SentTo, Project, Plugin]:
+        # FIXME: User plugins disabled temporary
+        for item_type in [Country, Group, Purpose, SentBy, SentTo, Project]: #, Plugin]:
             page, label = create_tab(item_type)
             notebook.append_page(page, label)
 
@@ -341,7 +342,8 @@ class MiAZRepoSettings(MiAZCustomWindow):
         title = f"Settings for repository {repo_id}"
         self.set_title(title)
 
-        for item_type in [Country, Group, Purpose, Project, SentBy, SentTo, Plugin]:
+        # FIXME: User plugins disabled temporary
+        for item_type in [Country, Group, Purpose, Project, SentBy, SentTo]: #, Plugin]:
             i_title = item_type.__title_plural__
             widget_title = f"configview-{i_title}"
             configview = self.app.get_widget(widget_title)
