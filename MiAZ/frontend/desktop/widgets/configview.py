@@ -266,7 +266,7 @@ class MiAZPeopleSentBy(MiAZConfigView):
         super().__init__(app, 'SentBy')
         # Trick to keep People sync for SentBy/SentTo
         self.config_paired = self.conf['SentTo']
-        self.config_paired.connect('available-updated', self.update_views)
+        # ~ self.config_paired.connect('available-updated', self.update_views)
 
     def _setup_view_finish(self):
         # Setup Available and Used Columns Views
@@ -285,7 +285,7 @@ class MiAZPeopleSentTo(MiAZConfigView):
         super().__init__(app, 'SentTo')
         # Trick to keep People sync for SentBy/SentTo
         self.config_paired = self.conf['SentBy']
-        self.config_paired.connect('available-updated', self.update_views)
+        # ~ self.config_paired.connect('available-updated', self.update_views)
 
     def _setup_view_finish(self):
         # Setup Available and Used Columns Views

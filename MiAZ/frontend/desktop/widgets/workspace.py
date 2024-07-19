@@ -519,6 +519,7 @@ class MiAZWorkspace(Gtk.Box):
         desc = {}
         show_pending = False
         for filename in docs:
+            # ~ self.log.debug(f"{filename}")
             doc, ext = util.filename_details(filename)
             fields = doc.split('-')
             if util.filename_validate(doc):
