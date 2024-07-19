@@ -1,0 +1,1 @@
+cd builddir_system && ninja uninstall && cd .. && rm -rf builddir_system && meson builddir_system --prefix=/usr && meson setup builddir_system --prefix=/usr --wipe && ninja -C builddir_system install && reset && miaz
