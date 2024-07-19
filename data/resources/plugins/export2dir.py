@@ -83,7 +83,6 @@ class Export2Dir(GObject.GObject, Peas.Activatable):
             if response in [Gtk.ResponseType.ACCEPT, Gtk.ResponseType.OK]:
                 content_area = dialog.get_content_area()
                 box = content_area.get_first_child()
-                # ~ filechooser = box.get_first_child()
                 filechooser = self.app.get_widget('plugin-export2dir-filechooser')
                 hbox = box.get_last_child()
                 toggle_pattern = hbox.get_first_child()
@@ -114,6 +113,7 @@ class Export2Dir(GObject.GObject, Peas.Activatable):
                             util.filename_export(source, target)
                     util.directory_open(dirpath)
                     srvdlg = self.app.get_service('dialogs')
+                    window = workspace.get_root()
                     body = f"<big>Selected documents were exported to:\n\n{dirpath}</big>"
                     srvdlg.create(parent=window, dtype='info', title=_('Export successfull'), body=body).present()
             dialog.destroy()

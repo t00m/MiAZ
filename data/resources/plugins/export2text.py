@@ -44,9 +44,11 @@ class Export2Text(GObject.GObject, Peas.Activatable):
 
     def export(self, *args):
         actions = self.app.get_service('actions')
+        srvdlg = self.app.get_service('dialogs')
         ENV = self.app.get_env()
         util = self.app.get_service('util')
         workspace = self.app.get_widget('workspace')
+        window = workspace.get_root()
         items = workspace.get_selected_items()
         if actions.stop_if_no_items(items):
             return
@@ -59,3 +61,5 @@ class Export2Text(GObject.GObject, Peas.Activatable):
             temp.write(text)
         temp.close()
         util.filename_display(filepath)
+        body = '<big>Your should see your default editor listing the document names</big>'
+        srvdlg.create(parent=window, dtype='info', title=_('Export successfull'), body=body).present()

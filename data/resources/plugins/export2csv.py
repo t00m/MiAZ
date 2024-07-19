@@ -45,7 +45,9 @@ class Export2CSV(GObject.GObject, Peas.Activatable):
     def export(self, *args):
         util = self.app.get_service('util')
         actions = self.app.get_service('actions')
+        srvdlg = self.app.get_service('dialogs')
         workspace = self.app.get_widget('workspace')
+        window = workspace.get_root()
         ENV = self.app.get_env()
         fields = [_('Date'), _('Country'), _('Group'), _('Send by'), _('Purpose'), _('Concept'), _('Send to'), _('Extension')]
         items = workspace.get_selected_items()
@@ -64,3 +66,5 @@ class Export2CSV(GObject.GObject, Peas.Activatable):
             csvwriter.writerow(fields)
             csvwriter.writerows(rows)
         util.filename_display(filepath)
+        body = ''
+        srvdlg.create(parent=window, dtype='info', title=_('Export successfull'), body=body).present()

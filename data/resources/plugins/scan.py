@@ -58,7 +58,7 @@ class MiAZImportFromScanPlugin(GObject.GObject, Peas.Activatable):
 
         except AttributeError as error:
             # Not available in Windows/MSYS2
-            self.log.error("Plugin 'scan' couldn't be activated: {error}")
+            self.log.error(f"Plugin 'scan' couldn't be activated: {error}")
         return scanapp
 
     def add_menuitem(self, *args):
