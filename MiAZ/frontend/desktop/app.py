@@ -46,7 +46,7 @@ class MiAZApp(Gtk.Application):
         self._miazobjs['widgets'] = {}
         self._miazobjs['services'] = {}
         self._miazobjs['actions'] = {}
-        self.log = self._miazobjs['services']['log'] = MiAZLog("MiAZ.App")
+        self.log = MiAZLog("MiAZ.App")
         self.set_service('util', MiAZUtil(self))
         self.set_service('icons', MiAZIconManager(self))
         self.set_service('factory', MiAZFactory(self))
