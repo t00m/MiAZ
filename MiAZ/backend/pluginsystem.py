@@ -5,9 +5,8 @@
 # Author: Tomás Vírseda
 # License: GPL v3
 # Description: a Plugin System based on LibPeas
-# Code borrowed and adapted from from Orca project:
+# Code borrowed and adapted from Orca project:
 # https://github.com/chrys87/orca-plugin/blob/plugin_system/src/orca/plugin_system_manager.py
-# Adapted for MiAZ
 """
 
 import os
@@ -193,23 +192,29 @@ class MiAZPluginManager(GObject.GObject):
                                    self.__extension_added_cb)
 
     def _setup_plugins_dir(self):
+        """Set System and User plugins directories"""
         # System plugins
         # Mandatory set of plugins for every repository
         ENV = self.app.get_env()
         if os.path.exists(ENV['GPATH']['PLUGINS']):
             self.engine.add_search_path(ENV['GPATH']['PLUGINS'])
             self.log.debug(f"Added System plugin dir: {ENV['GPATH']['PLUGINS']}")
+        else:
+            self.log.error("System plugins directory doesn not exist!")
+            self.log.error("MiAZ will exit now!")
+            sys.exit()
 
-        # GLobal user plugins
+        # User plugins
         # All user space plugins are available for all repositories
         # However, each repository can use none, any or all of them
-        self.add_user_plugins_dir()
 
-    def add_user_plugins_dir(self):
-        ENV = self.app.get_env()
-        os.makedirs(ENV['LPATH']['PLUGINS'], exist_ok=True)
-        self.engine.add_search_path(ENV['LPATH']['PLUGINS'])
-        self.log.debug(f"Added user plugins dir: {ENV['LPATH']['PLUGINS']}")
+        # FIXME: User plugins disabled temporary
+        # ~ if not os.path.exists(ENV['LPATH']['PLUGINS']):
+            # ~ os.makedirs(ENV['LPATH']['PLUGINS'], exist_ok=True)
+        # ~ self.engine.add_search_path(ENV['LPATH']['PLUGINS'])
+        # ~ self.log.debug(f"Added user plugins dir: {ENV['LPATH']['PLUGINS']}")
+
+
 
     @staticmethod
     def __extension_removed_cb(unused_set, unused_plugin_info, extension):
