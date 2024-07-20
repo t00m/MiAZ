@@ -10,6 +10,7 @@
 """
 
 import os
+import sys
 import zipfile
 from enum import IntEnum
 from gettext import gettext as _
