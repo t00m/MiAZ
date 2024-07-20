@@ -52,8 +52,8 @@ for node in resources:
 # ~ DATA_FILES += ['README.adoc']
 DATA_FILES +=[('share/doc/MiAZ', ['data/docs/VERSION'])]
 DATA_FILES +=[('share/doc/MiAZ', ['data/docs/README'])]
-DATA_FILES +=[('share/applications', ['data/resources/com.github.t00m.MiAZ.desktop'])]
-DATA_FILES +=[('share/icons/hicolor/48x48/apps/', ['data/resources/icons/scalable/com.github.t00m.MiAZ.svg'])]
+DATA_FILES +=[('share/applications', ['data/resources/io.github.t00m.MiAZ.desktop'])]
+DATA_FILES +=[('share/icons/hicolor/48x48/apps/', ['data/resources/icons/scalable/io.github.t00m.MiAZ.svg'])]
 
 setup(
     name='MiAZ',

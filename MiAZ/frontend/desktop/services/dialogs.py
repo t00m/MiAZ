@@ -11,7 +11,7 @@ from MiAZ.backend.log import MiAZLog
 
 miaz_dialog = {
     'action': {
-        'icon': 'com.github.t00m.MiAZ-document-edit-symbolic',
+        'icon': 'io.github.t00m.MiAZ-document-edit-symbolic',
         'type': Gtk.MessageType.INFO,
         'buttons': Gtk.ButtonsType.OK_CANCEL
         },
@@ -26,7 +26,7 @@ miaz_dialog = {
         'buttons': Gtk.ButtonsType.NONE
         },
     'error': {
-        'icon': 'com.github.t00m.MiAZ-dialog-error-symbolic',
+        'icon': 'io.github.t00m.MiAZ-dialog-error-symbolic',
         'type': Gtk.MessageType.ERROR,
         'buttons': Gtk.ButtonsType.NONE
         },

@@ -61,7 +61,12 @@ class MiAZUtil(GObject.GObject):
         self.log.error("Traceback:", exc_info=True)
 
     def directory_open(self, dirpath: str):
-        os.system(f"xdg-open '{dirpath}'")
+        if sys.platform in ['linux', 'linux2']:
+            os.system(f"xdg-open '{dirpath}'")
+        elif sys.platform in ['win32', 'cygwin', 'msys']:
+            os.startfile(dirpath)
+
+
         self.log.debug(f"Directory {dirpath} opened in file browser")
 
     def directory_remove(self, dirpath: str):
@@ -189,18 +194,17 @@ class MiAZUtil(GObject.GObject):
             if not os.path.exists(target):
                 try:
                     shutil.move(source, target)
-                    self.log.debug("Document renamed:")
-                    self.log.debug(f"\tFrom: '{source}'")
-                    self.log.debug(f"\t  To: '{target}'")
+                    self.log.debug(f"Renaming doc from '{source}' to {target}' successful")
                     rename = True
                     self.emit('filename-renamed', source, target)
                 except Exception as error:
-                    self.log.error(error)
+                    self.log.error(f"Renaming doc from '{source}' to {target}' not possible. Error: {error}")
             else:
-                self.log.debug("Document NOT renamed:")
-                self.log.error(f"\tTarget '{target}' already exist")
-        # ~ else:
-            # ~ self.log.error("Source and Target are the same. Skip rename")
+                self.log.error(f"Renaming doc from '{source}' to {target}' not possible. Target already exist")
+        else:
+            # FIXME
+            self.log.warning("FIXME: this might not be true in Windows systems")
+            self.log.warning(f"Renaming doc from '{source}' to {target}' skipped. Source and target are the same")
         return rename
 
     def filename_delete(self, filepath):
@@ -254,6 +258,7 @@ class MiAZUtil(GObject.GObject):
         return date_dsc
 
     def filename_display(self, filepath):
+        self.log.debug(f"OS Platform: {sys.platform}")
         if sys.platform in ['linux', 'linux2']:
             os.system(f"xdg-open \"{filepath}\"")
         elif sys.platform in ['win32', 'cygwin', 'msys']:

@@ -189,7 +189,17 @@ class MiAZWorkspace(Gtk.Box):
         srvutl.connect('filename-renamed', self.update)
         srvutl.connect('filename-deleted', self.update)
         srvutl.connect('filename-added', self.update)
+        self.app.connect('repo-switch', self._on_repo_switch)
+        self._on_repo_switch()
+
         self.emit('workspace-loaded')
+
+    def _on_repo_switch(self, *args):
+        self.selected_items = 0
+        self.clear_filters()
+        self.view.refilter()
+        self.update()
+        self._on_filter_selected()
 
     def _setup_toolbar_filters(self):
         factory = self.app.get_service('factory')
@@ -221,7 +231,7 @@ class MiAZWorkspace(Gtk.Box):
             dropdowns[i_type] = dropdown
 
         self.app.add_widget('ws-dropdowns', dropdowns)
-        btnClearFilters = factory.create_button(icon_name='com.github.t00m.MiAZ-entry_clear', tooltip='Clear all filters', css_classes=['flat'], callback=self.clear_filters)
+        btnClearFilters = factory.create_button(icon_name='io.github.t00m.MiAZ-entry_clear', tooltip='Clear all filters', css_classes=['flat'], callback=self.clear_filters)
         boxDropdown = factory.create_box_filter('', btnClearFilters)
         body.append(boxDropdown)
 
@@ -280,7 +290,7 @@ class MiAZWorkspace(Gtk.Box):
         hdb_right.get_style_context().add_class(class_name='linked')
 
         ## Show/Hide Filters
-        tgbFilters = factory.create_button_toggle('com.github.t00m.MiAZ-filter-symbolic', callback=self._on_filters_toggled)
+        tgbFilters = factory.create_button_toggle('io.github.t00m.MiAZ-filter-symbolic', callback=self._on_filters_toggled)
         self.app.add_widget('workspace-togglebutton-filters', tgbFilters)
         tgbFilters.set_active(False)
         tgbFilters.set_hexpand(False)
@@ -318,7 +328,7 @@ class MiAZWorkspace(Gtk.Box):
         hbox.append(self.btnDocsSel)
 
         # Pending documents toggle button
-        button = factory.create_button_toggle( icon_name='com.github.t00m.MiAZ-rename',
+        button = factory.create_button_toggle( icon_name='io.github.t00m.MiAZ-rename',
                                         title='Review',
                                         tooltip='There are documents pending of review',
                                         callback=self._show_pending_documents
@@ -509,6 +519,7 @@ class MiAZWorkspace(Gtk.Box):
         desc = {}
         show_pending = False
         for filename in docs:
+            # ~ self.log.debug(f"{filename}")
             doc, ext = util.filename_details(filename)
             fields = doc.split('-')
             if util.filename_validate(doc):

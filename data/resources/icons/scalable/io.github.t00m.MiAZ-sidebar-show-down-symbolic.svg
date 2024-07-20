@@ -5,7 +5,7 @@
    width="16px"
    version="1.1"
    id="svg3826"
-   sodipodi:docname="com.github.t00m.Loro-sidebar-show-up-symbolic.svg"
+   sodipodi:docname="io.github.t00m.MiAZ-sidebar-show-down-symbolic.svg"
    inkscape:version="1.2.2 (b0a8486541, 2022-12-01)"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
@@ -35,7 +35,7 @@
   <g
      fill="#2e3436"
      id="g3824"
-     transform="rotate(-90,8,8)">
+     transform="matrix(0,1,1,0,0,0)">
     <path
        d="M 9.5,14 V 2 h 5 v 12 z m 0,0"
        fill-opacity="0.34902"

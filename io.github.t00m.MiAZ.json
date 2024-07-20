@@ -1,5 +1,5 @@
 {
-    "app-id" : "com.github.t00m.MiAZ",
+    "app-id" : "io.github.t00m.MiAZ",
     "runtime" : "org.gnome.Platform",
     "runtime-version" : "45",
     "sdk" : "org.gnome.Sdk",
@@ -46,7 +46,8 @@
                 {
                     "type" : "git",
                     "url" : "https://gitlab.gnome.org/GNOME/libpeas.git",
-                    "branch": "1.36"
+                    "tag": "1.36",
+                    "commit": "c68ecac0025caa5fa2401deff41d3b1959062600"
                 }
             ]
         },
@@ -59,9 +60,9 @@
             ],
             "sources" : [
                 {
-                    "type" : "git",
-                    "url" : "https://github.com/t00m/MiAZ.git",
-                    "branch": "main"
+                    "type" : "archive",
+                    "url" : "https://github.com/t00m/MiAZ/releases/download/v0.0.50/MiAZ-0.0.50.tar.xz",
+                    "sha256" : "7a5805d7d91896c964d681fd16979429227054734ace74ebddb7ad819db5115a"
                 }
             ]
         }

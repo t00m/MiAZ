@@ -71,7 +71,7 @@ class MiAZAppSettings(MiAZCustomWindow):
         lblActive = Gtk.Label()
         lblActive.set_markup(_("Current active"))
         self.dd_repo = self.factory.create_dropdown_generic(item_type=Repository, ellipsize=False, enable_search=False)
-        btnUseRepo = self.factory.create_button(icon_name='com.github.t00m.MiAZ', title=_('Load repo'), callback=self._on_use_repo)
+        btnUseRepo = self.factory.create_button(icon_name='io.github.t00m.MiAZ', title=_('Load repo'), callback=self._on_use_repo)
         hbox.append(lblActive)
         hbox.append(self.dd_repo)
         hbox.append(btnUseRepo)
@@ -149,10 +149,10 @@ class MiAZAppSettings(MiAZCustomWindow):
         notebook.set_show_border(False)
         notebook.set_tab_pos(Gtk.PositionType.LEFT)
         widget = self._create_view_plugins_system()
-        label = self.factory.create_notebook_label(icon_name='com.github.t00m.MiAZ-res-plugins-system', title='System')
+        label = self.factory.create_notebook_label(icon_name='io.github.t00m.MiAZ-res-plugins-system', title='System')
         notebook.append_page(widget, label)
         widget = self._create_view_plugins_user()
-        label = self.factory.create_notebook_label(icon_name='com.github.t00m.MiAZ-res-plugins', title='User')
+        label = self.factory.create_notebook_label(icon_name='io.github.t00m.MiAZ-res-plugins', title='User')
         notebook.append_page(widget, label)
         vbox.append(notebook)
         return vbox
@@ -186,8 +186,8 @@ class MiAZAppSettings(MiAZCustomWindow):
         # Add/Remove
         hbox = self.factory.create_box_horizontal(margin=0, spacing=0, hexpand=True, vexpand=False)
         hbox.get_style_context().add_class(class_name='toolbar')
-        hbox.append(self.factory.create_button(icon_name='com.github.t00m.MiAZ-list-add-symbolic', title='Add plugin', callback=self._on_plugin_add))
-        hbox.append(self.factory.create_button(icon_name='com.github.t00m.MiAZ-list-remove-symbolic', title='Remove plugin', callback=self._on_plugin_remove))
+        hbox.append(self.factory.create_button(icon_name='io.github.t00m.MiAZ-list-add-symbolic', title='Add plugin', callback=self._on_plugin_add))
+        hbox.append(self.factory.create_button(icon_name='io.github.t00m.MiAZ-list-remove-symbolic', title='Remove plugin', callback=self._on_plugin_remove))
         vbox.append(hbox)
 
         # User Plugins
@@ -296,7 +296,7 @@ class MiAZRepoSettings(MiAZCustomWindow):
         repo_id = appconf.get('current')
         self.title = f"Settings for repository {repo_id}"
         super().__init__(app, self.name, self.title, **kwargs)
-        self.connect('notify::visible', self.update)
+        # ~ self.connect('notify::visible', self.update)
 
     def _build_ui(self):
         self.set_default_size(1024, 728)
@@ -320,7 +320,7 @@ class MiAZRepoSettings(MiAZCustomWindow):
             page.set_start_widget(box)
             wdgLabel = self.factory.create_box_horizontal()
             wdgLabel.get_style_context().add_class(class_name='caption')
-            icon = self.icman.get_image_by_name(f"com.github.t00m.MiAZ-res-{i_title.lower()}")
+            icon = self.icman.get_image_by_name(f"io.github.t00m.MiAZ-res-{i_title.lower()}")
             icon.set_hexpand(False)
             icon.set_pixel_size(24)
             label = self.factory.create_label(f"<b>{i_title}</b>")
@@ -331,7 +331,8 @@ class MiAZRepoSettings(MiAZCustomWindow):
             wdgLabel.set_hexpand(True)
             return page, wdgLabel
 
-        for item_type in [Country, Group, Purpose, SentBy, SentTo, Project, Plugin]:
+        # FIXME: User plugins disabled temporary
+        for item_type in [Country, Group, Purpose, SentBy, SentTo, Project]: #, Plugin]:
             page, label = create_tab(item_type)
             notebook.append_page(page, label)
 
@@ -341,7 +342,8 @@ class MiAZRepoSettings(MiAZCustomWindow):
         title = f"Settings for repository {repo_id}"
         self.set_title(title)
 
-        for item_type in [Country, Group, Purpose, Project, SentBy, SentTo, Plugin]:
+        # FIXME: User plugins disabled temporary
+        for item_type in [Country, Group, Purpose, Project, SentBy, SentTo]: #, Plugin]:
             i_title = item_type.__title_plural__
             widget_title = f"configview-{i_title}"
             configview = self.app.get_widget(widget_title)

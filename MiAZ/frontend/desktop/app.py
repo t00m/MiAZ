@@ -33,6 +33,7 @@ class MiAZApp(Gtk.Application):
     __gsignals__ = {
         "start-application-completed": (GObject.SignalFlags.RUN_LAST, None, ()),
         "exit-application": (GObject.SignalFlags.RUN_LAST, None, ()),
+        "repo-switch": (GObject.SignalFlags.RUN_LAST, None, ()),
     }
     plugins_loaded = False
     _miazobjs = {}  # MiAZ Objects
@@ -45,7 +46,7 @@ class MiAZApp(Gtk.Application):
         self._miazobjs['widgets'] = {}
         self._miazobjs['services'] = {}
         self._miazobjs['actions'] = {}
-        self.log = self._miazobjs['services']['log'] = MiAZLog("MiAZ.App")
+        self.log = MiAZLog("MiAZ.App")
         self.set_service('util', MiAZUtil(self))
         self.set_service('icons', MiAZIconManager(self))
         self.set_service('factory', MiAZFactory(self))
@@ -113,9 +114,9 @@ class MiAZApp(Gtk.Application):
         # Main MiAZ Window
         window = self.add_widget('window', Gtk.ApplicationWindow(application=self))
         window.set_default_size(1280, 800)
-        window.set_icon_name('com.github.t00m.MiAZ')
+        window.set_icon_name('io.github.t00m.MiAZ')
         window.connect('close-request', self._on_window_close_request)
-        window.set_default_icon_name('com.github.t00m.MiAZ')
+        window.set_default_icon_name('io.github.t00m.MiAZ')
 
         # Theme
         theme = self.set_service('theme', Gtk.IconTheme.get_for_display(window.get_display()))

@@ -156,11 +156,18 @@ class MiAZFactory:
             button.connect('toggled', callback, data)
         return button
 
-    def create_button_check(self, title: str = '', active: bool = False, callback=None) -> Gtk.CheckButton:
-        button = Gtk.CheckButton.new_with_label(title)
+    def create_button_switch(self, title: str = '', active: bool = False, callback=None) -> Gtk.CheckButton:
+        button = Gtk.Switch()
         button.set_active(active)
         if callback is not None:
-            button.connect('toggled', callback)
+            button.connect('activate', callback)
+        return button
+
+    def create_button_check(self, title: str = '', active: bool = False, callback=None) -> Gtk.CheckButton:
+        button = Gtk.CheckButton()
+        button.set_active(active)
+        if callback is not None:
+            button.connect('activate', callback)
         return button
 
     def create_button_menu(self, icon_name: str = '', title:str = '', css_classes: list = None, menu: Gio.Menu = None)-> Gtk.MenuButton:
@@ -239,7 +246,7 @@ class MiAZFactory:
 
         # Enable clear button by brute force
         box = search_entry.get_parent()
-        button = self.create_button(icon_name='com.github.t00m.MiAZ-entry_clear', css_classes=['flat'], tooltip='Clear this filter', callback=_clear_dropdown, data=dropdown)
+        button = self.create_button(icon_name='io.github.t00m.MiAZ-entry_clear', css_classes=['flat'], tooltip='Clear this filter', callback=_clear_dropdown, data=dropdown)
         button.set_margin_start(3)
         box.append(button)
 

@@ -41,7 +41,7 @@ class MiAZSelector(Gtk.Box):
         self.entry = Gtk.Entry()
         self.entry.get_style_context().add_class(class_name='caption')
         self.entry.set_activates_default(True)
-        self.entry.set_icon_from_icon_name(Gtk.EntryIconPosition.SECONDARY, 'com.github.t00m.MiAZ-entry_clear')
+        self.entry.set_icon_from_icon_name(Gtk.EntryIconPosition.SECONDARY, 'io.github.t00m.MiAZ-entry_clear')
         self.entry.set_icon_activatable(Gtk.EntryIconPosition.SECONDARY, True)
         self.entry.connect('icon-press', self._on_entrysearch_delete)
         self.entry.connect('changed', self._on_filter_selected)
@@ -55,9 +55,9 @@ class MiAZSelector(Gtk.Box):
             self.boxButtons = Gtk.Box(spacing=0, orientation=Gtk.Orientation.HORIZONTAL)
             self.boxButtons.get_style_context().add_class(class_name='linked')
             self.boxButtons.set_hexpand(True)
-            self.boxButtons.append(factory.create_button(icon_name='com.github.t00m.MiAZ-list-add-symbolic', title='', callback=self._on_item_available_add))
-            self.boxButtons.append(factory.create_button(icon_name='com.github.t00m.MiAZ-list-remove-symbolic', title='', callback=self._on_item_available_remove))
-            self.boxButtons.append(factory.create_button(icon_name='com.github.t00m.MiAZ-list-edit-symbolic', title='', callback=self._on_item_available_edit))
+            self.boxButtons.append(factory.create_button(icon_name='io.github.t00m.MiAZ-list-add-symbolic', title='', callback=self._on_item_available_add))
+            self.boxButtons.append(factory.create_button(icon_name='io.github.t00m.MiAZ-list-remove-symbolic', title='', callback=self._on_item_available_remove))
+            self.boxButtons.append(factory.create_button(icon_name='io.github.t00m.MiAZ-list-edit-symbolic', title='', callback=self._on_item_available_edit))
             self.boxOper.append(self.boxButtons)
 
         self.append(self.boxOper)
@@ -80,8 +80,8 @@ class MiAZSelector(Gtk.Box):
 
         # Controls
         boxSel = factory.create_box_vertical()
-        btnAddToUsed = factory.create_button('com.github.t00m.MiAZ-selector-add', callback=self._on_item_used_add)
-        btnRemoveFromUsed = factory.create_button('com.github.t00m.MiAZ-selector-remove', callback=self._on_item_used_remove)
+        btnAddToUsed = factory.create_button('io.github.t00m.MiAZ-selector-add', callback=self._on_item_used_add)
+        btnRemoveFromUsed = factory.create_button('io.github.t00m.MiAZ-selector-remove', callback=self._on_item_used_remove)
         boxSel.append(btnAddToUsed)
         boxSel.append(btnRemoveFromUsed)
         boxControls.set_center_widget(boxSel)

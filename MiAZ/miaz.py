@@ -16,7 +16,7 @@ sys.path.insert(1, '@pkgdatadir@')
 from MiAZ.backend.log import MiAZLog
 from MiAZ.backend.util import which
 
-VERSION = '0.0.48'
+VERSION = '0.0.50'
 log = MiAZLog('MiAZ')
 ENV = {}
 
@@ -182,7 +182,7 @@ def main():
         log.error("MiAZ executable not found in $PATH")
     miaz_dir = os.path.dirname(miaz_exec)
     ROOT = os.path.abspath(miaz_dir + '/..')
-    ENV['APP']['ID'] = 'com.github.t00m.MiAZ'
+    ENV['APP']['ID'] = 'io.github.t00m.MiAZ'
     ENV['APP']['VERSION'] = VERSION
     ENV['APP']['PGKDATADIR'] = os.path.join(ROOT, 'share/MiAZ/data')
     ENV['APP']['LOCALEDIR'] = os.path.join(ROOT, 'share/MiAZ/locale')

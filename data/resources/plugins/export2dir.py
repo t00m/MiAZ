@@ -19,6 +19,7 @@ from gi.repository import Peas
 from MiAZ.backend.log import MiAZLog
 from MiAZ.backend.models import Country, Date, Group
 from MiAZ.backend.models import Purpose, SentBy, SentTo
+from MiAZ.frontend.desktop.services.dialogs import MiAZFileChooserDialog
 
 Field = {}
 Field[Date] = 0
@@ -79,10 +80,10 @@ class Export2Dir(GObject.GObject, Peas.Activatable):
             return paths
 
         def filechooser_response(dialog, response, patterns):
-            if response == Gtk.ResponseType.ACCEPT:
+            if response in [Gtk.ResponseType.ACCEPT, Gtk.ResponseType.OK]:
                 content_area = dialog.get_content_area()
                 box = content_area.get_first_child()
-                filechooser = box.get_first_child()
+                filechooser = self.app.get_widget('plugin-export2dir-filechooser')
                 hbox = box.get_last_child()
                 toggle_pattern = hbox.get_first_child()
                 gfile = filechooser.get_file()
@@ -111,6 +112,10 @@ class Export2Dir(GObject.GObject, Peas.Activatable):
                             target = os.path.join(dirpath, os.path.basename(item.id))
                             util.filename_export(source, target)
                     util.directory_open(dirpath)
+                    srvdlg = self.app.get_service('dialogs')
+                    window = workspace.get_root()
+                    body = f"<big>Selected documents were exported to:\n\n{dirpath}</big>"
+                    srvdlg.create(parent=window, dtype='info', title=_('Export successfull'), body=body).present()
             dialog.destroy()
 
         patterns = {
@@ -124,16 +129,20 @@ class Export2Dir(GObject.GObject, Peas.Activatable):
             'T': _('Sent to'),
         }
         window = self.app.get_widget('window')
-        filechooser = factory.create_filechooser(
+
+        clsdlg = MiAZFileChooserDialog(self.app)
+        filechooser_dialog = clsdlg.create(
                     parent=window,
-                    title=_('Export selected items to this directory'),
-                    target='FOLDER',
-                    callback=filechooser_response,
+                    title=_('Choose a directory to export selected files'),
+                    target = 'FOLDER',
+                    callback = filechooser_response,
                     data=patterns
                     )
-
+        filechooser_widget = self.app.add_widget('plugin-export2dir-filechooser', clsdlg.get_filechooser_widget())
+        filechooser_dialog.get_style_context().add_class(class_name='toolbar')
+        filechooser_widget.get_style_context().add_class(class_name='frame')
         # Export with pattern
-        contents = filechooser.get_content_area()
+        contents = filechooser_dialog.get_content_area()
         box = contents.get_first_child()
         hbox = factory.create_box_horizontal()
         chkPattern = factory.create_button_check(title=_('Export with pattern'), callback=None)
@@ -145,9 +154,11 @@ class Export2Dir(GObject.GObject, Peas.Activatable):
             label.set_markup(f'<b>{key}</b> = {patterns[key]}')
             label.set_xalign(0.0)
             widgets.append(label)
-        btpPattern = factory.create_button_popover(icon_name='com.github.t00m.MiAZ-dialog-information-symbolic', widgets=widgets)
+        btpPattern = factory.create_button_popover(icon_name='io.github.t00m.MiAZ-dialog-information-symbolic', widgets=widgets)
         hbox.append(chkPattern)
         hbox.append(etyPattern)
         hbox.append(btpPattern)
         box.append(hbox)
-        filechooser.show()
+        # ~ filechooser.show()
+
+        filechooser_dialog.present()
