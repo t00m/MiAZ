@@ -162,7 +162,6 @@ class MiAZColumnViewWorkspace(MiAZColumnView):
         item = list_item.get_item()        
         url = f"file://{item.id}"
         mimetype, encoding = mimetypes.guess_type(url)
-        self.log.debug(f"{url} > {mimetype}")
         gicon = self.srvicm.get_mimetype_icon(mimetype)
         icon.set_from_gicon(gicon)
         icon.set_pixel_size(36)
