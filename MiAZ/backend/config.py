@@ -96,7 +96,7 @@ class MiAZConfig(GObject.GObject):
                 items = []
             return items
         else:
-            # ~ self.log.debug(f"Loading {self.config_for} items from cache ({filepath})")
+            self.log.trace(f"Loading {self.config_for} items from cache ({filepath})")
             self.cache[filepath]['changed'] = False
             return self.cache[filepath]['items']
 
