@@ -64,29 +64,41 @@ class MiAZPluginManager(GObject.GObject):
         """
         Import plugin in the user space.
         "A plugin zip file is valid if:
-        - Contains only 2 files
-        - Their names are identical
-        - Extensions are .plugin and .py
+        - Contains at least 2 files
+          - Their names are identical
+          - Extensions are .plugin and .py
+          - Their names are the same than the plugin name
+        - Optionally, a directory named resources
+          - with a subdirectory with the same name as the plugin
+
+        Eg.:
+        hello.zip
+        ├── hello.plugin
+        ├── hello.py
+        └── resources
+            └── hello
+                └── css
+                    └── noprint.css
         """
+        utils = self.app.get_service('util')
         valid = False
         azip = zipfile.ZipFile(plugin_path)
-        files = azip.namelist()
-        if len(files) == 2:
-            fn1_name, fn1_ext = self.util.filename_details(files[0])
-            fn2_name, fn2_ext = self.util.filename_details(files[1])
-            if fn1_name == fn2_name:
-                if fn1_ext == 'py' and fn2_ext == 'plugin':
-                    valid = True
-                elif fn1_ext == 'plugin' and fn2_ext == 'py':
-                    valid = True
-            if valid:
-                ENV = self.app.get_env()
-                azip.extractall(ENV['LPATH']['PLUGINS'])
-                self.engine.rescan_plugins()
-                config = self.app.get_config('Plugin')
-                config.add_available(key=fn1_name)
-                plugin_fname = os.path.basename(plugin_path)
-                self.log.debug(f"Plugin '{plugin_fname}' added to 'ENV['LPATH']['PLUGINS']'")
+        plugin_name, plugin_ext = utils.filename_details(plugin_path)
+        plugin_code = f"{plugin_name}.py"
+        plugin_meta = f"{plugin_name}.plugin"
+        plugin_code_exist = plugin_code in azip.namelist()
+        plugin_meta_exist = plugin_meta in azip.namelist()
+        if plugin_code_exist and plugin_meta_exist:
+             valid = True
+
+        if valid:
+            ENV = self.app.get_env()
+            azip.extractall(ENV['LPATH']['PLUGINS'])
+            self.engine.rescan_plugins()
+            config = self.app.get_config('Plugin')
+            config.add_available(key=fn1_name)
+            plugin_fname = os.path.basename(plugin_path)
+            self.log.debug(f"Plugin '{plugin_fname}' added to 'ENV['LPATH']['PLUGINS']'")
         # ~ self.emit('plugins-updated')
         return valid
 
