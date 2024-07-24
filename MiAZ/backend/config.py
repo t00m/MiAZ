@@ -227,10 +227,16 @@ class MiAZConfig(GObject.GObject):
         self.remove_batch(self.used, keys)
 
     def remove_available(self, key: str):
-        self.remove(self.available, key)
+        updated = self.remove(self.available, key)
+        if updated:
+            self.emit('available-updated')
+        return updated
 
     def remove_used(self, key: str) -> bool:
-        return self.remove(self.used, key)
+        updated = self.remove(self.used, key)
+        if updated:
+            self.emit('used-updated')
+        return updated
 
     def remove_batch(self, filepath: str, keys: list):
         # FIXME: check del operation

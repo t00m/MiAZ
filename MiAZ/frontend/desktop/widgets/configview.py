@@ -409,6 +409,10 @@ class MiAZUserPlugins(MiAZConfigView):
     def plugins_updated(self, *args):
         self._update_view_available()
 
+    # ~ def update_views(self, *args):
+        # ~ self._update_view_available()
+        # ~ self._update_view_used()
+
     def _setup_view_finish(self):
         # Setup Available and Used Column Views
         self.viewAv = MiAZColumnViewPlugin(self.app)
@@ -484,7 +488,4 @@ class MiAZUserPlugins(MiAZConfigView):
         else:
             self.log.debug(f"{i_title} {selected_plugin.id} is already being used")
 
-    def update_views(self, *args):
-        # ~ self.log.debug("Update user plugin views")
-        pass
 
