@@ -16,7 +16,7 @@ sys.path.insert(1, '@pkgdatadir@')
 from MiAZ.backend.log import MiAZLog
 from MiAZ.backend.util import which
 
-VERSION = '0.0.50'
+VERSION = '0.0.99'
 log = MiAZLog('MiAZ')
 ENV = {}
 
