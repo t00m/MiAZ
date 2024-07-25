@@ -93,24 +93,11 @@ class MiAZDialog:
             label.get_style_context().add_class(class_name='toolbar')
             label.set_markup(body)
             box.append(label)
-            self.log.debug(body)
             content_area.append(child=box)
 
         # Add custom widget
         if widget is not None:
             dialog.set_default_size(width, height)
-
-
-            # ~ if len(body) > 0:
-                # ~ label = Gtk.Label()
-                # ~ label.set_markup(body)
-                # ~ content_area.append(child=label)
-                # ~ message_area.set_visible(True)
-                # ~ message_area.set_vexpand(False)
-                # ~ message_area.set_margin_bottom(12)
-            # ~ else:
-
-
             content_area.set_spacing(6)
             content_area.append(child=widget)
 
