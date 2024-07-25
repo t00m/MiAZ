@@ -133,25 +133,31 @@ class MiAZPluginManager(GObject.GObject):
 
     def load_plugin(self, plugin: Peas.PluginInfo) -> bool:
         ptype = self.get_plugin_type(plugin)
+        pname = plugin.get_name()
+        pvers = plugin.get_version()
         # ~ pinfo = self.get_plugin_info(plugin)
         try:
             self.engine.load_plugin(plugin)
+
             if plugin.is_loaded():
-                self.log.debug(f"Plugin {plugin.get_name()} ({ptype}) loaded")
+
+                self.log.debug(f"Plugin {pname} v{pvers} ({ptype}) loaded")
                 return True
             else:
-                self.log.error(f"Plugin {plugin.get_name()} ({ptype}) couldn't be loaded")
+                self.log.error(f"Plugin {pname} v{pvers} ({ptype}) couldn't be loaded")
                 return False
         except Exception as error:
             self.log.error(error)
-            self.log.error("Plugin {plugin.get_name()} ({ptype}) couldn't be loaded")
+            self.log.error("Plugin {pname} v{pvers} ({ptype}) couldn't be loaded")
             return False
 
     def unload_plugin(self, plugin: Peas.PluginInfo):
         try:
             ptype = self.get_plugin_type(plugin)
+            pname = plugin.get_name()
+            pvers = plugin.get_version()
             self.engine.unload_plugin(plugin)
-            self.log.debug(f"Plugin {plugin.get_name()} ({ptype}) unloaded")
+            self.log.debug(f"Plugin  {pname} v{pvers} ({ptype}) unloaded")
         except Exception as error:
             self.log.error(error)
 

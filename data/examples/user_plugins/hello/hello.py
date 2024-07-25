@@ -7,10 +7,13 @@
 # Description: Example of MiAZuser plugin
 """
 
+import os
+import html
+
 from gi.repository import GObject
 from gi.repository import Peas
 
-from MiAZ.backend.log import get_logger
+from MiAZ.backend.log import MiAZLog
 
 
 class MiAZToolbarHelloItemPlugin(GObject.GObject, Peas.Activatable):
@@ -18,7 +21,7 @@ class MiAZToolbarHelloItemPlugin(GObject.GObject, Peas.Activatable):
     object = GObject.Property(type=GObject.Object)
 
     def __init__(self):
-        self.log = get_logger('Plugin.HelloItem')
+        self.log = MiAZLog('Plugin.HelloItem')
 
     def do_activate(self):
         # ~ API = self.object
@@ -46,10 +49,24 @@ class MiAZToolbarHelloItemPlugin(GObject.GObject, Peas.Activatable):
             button.set_visible(True)
 
     def callback(self, *args):
+        utils = self.app.get_service('util')
+        pm = self.app.get_service('plugin-manager')
+        plugin_name, module_ext = utils.filename_details(__file__)
+        plugin = pm.get_plugin_info(plugin_name)
+        self.log.debug(dir(plugin))
+        ENV = self.app.get_env()
+        PLUGRES = os.path.join(ENV['LPATH']['PLUGRES'], plugin_name)
+        CSS = 'noprint.css'
+        CSS_EXISTS = os.path.exists(os.path.join(PLUGRES, 'css', CSS))
         srvdlg = self.app.get_service('dialogs')
         window = self.app.get_widget('window')
         dtype = 'info'
         title = "Hello World!"
-        text = 'This an example'
+        text = "<big>"
+        text += f"<b>Plugin</b>: {plugin.get_name()} v{plugin.get_version()}\n"
+        text += f"<b>Author(s)</b>:  {html.escape(', '.join(plugin.get_authors()))}\n"
+        text += f"<b>Copyright</b>: {plugin.get_copyright()}"
+        text += "</big>"
+        # ~ text = f'CSS file exists? {CSS_EXISTS}'
         dialog = srvdlg.create(parent=window, dtype=dtype, title=title, body=text)
         dialog.show()
