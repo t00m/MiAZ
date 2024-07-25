@@ -54,6 +54,7 @@ class MiAZDialog:
                 height: int = -1,
                 ):
 
+        factory = self.app.get_service('factory')
         icm = self.app.get_service('icons')
 
         # Build dialog
@@ -62,9 +63,10 @@ class MiAZDialog:
                     destroy_with_parent=False,
                     modal=True,
                     message_type=miaz_dialog[dtype]['type'],
-                    secondary_text=body,
-                    secondary_use_markup=True,
+                    # ~ secondary_text=body,
+                    # ~ secondary_use_markup=True,
                     buttons=miaz_dialog[dtype]['buttons'])
+        dialog.set_property('secondary-use-markup', True)
 
         # FIXME: Set custom size
         # ~ self.log.debug(f"Setting dialog size to {width}x{height}")
@@ -80,18 +82,23 @@ class MiAZDialog:
         header.set_title_widget(lblTitle)
         dialog.set_titlebar(header)
 
+        message_area = dialog.get_message_area()
+        message_area.set_visible(False)
+        content_area = dialog.get_content_area()
+
+        # Add body
+        if len(body) > 0:
+            box = factory.create_box_vertical(margin=12)
+            label = Gtk.Label()
+            label.get_style_context().add_class(class_name='toolbar')
+            label.set_markup(body)
+            box.append(label)
+            content_area.append(child=box)
+
         # Add custom widget
         if widget is not None:
             dialog.set_default_size(width, height)
-            message_area = dialog.get_message_area()
-            if len(body) > 0:
-                message_area.set_visible(True)
-                message_area.set_vexpand(False)
-                message_area.set_margin_bottom(12)
-            else:
-                message_area.set_visible(False)
-            content_area = dialog.get_content_area()
-            content_area.set_spacing(0)
+            content_area.set_spacing(6)
             content_area.append(child=widget)
 
         # Assign callback, if any. Otherwise, default is closing.

@@ -43,6 +43,7 @@ class MiAZWorkspace(Gtk.Box):
     """Workspace"""
     __gsignals__ = {
         "workspace-loaded":  (GObject.SignalFlags.RUN_LAST, None, ()),
+        "workspace-view-updated": (GObject.SignalFlags.RUN_LAST, None, ()),
     }
     workspace_loaded = False
     selected_items = []
@@ -519,7 +520,7 @@ class MiAZWorkspace(Gtk.Box):
         desc = {}
         show_pending = False
         for filename in docs:
-            # ~ self.log.debug(f"{filename}")
+            self.log.trace(f"{filename}")
             doc, ext = util.filename_details(filename)
             fields = doc.split('-')
             if util.filename_validate(doc):
@@ -621,6 +622,7 @@ class MiAZWorkspace(Gtk.Box):
         if not show_pending:
             togglebutton.set_active(False)
         self.review = togglebutton.get_active()
+        self.emit('workspace-view-updated')
 
 
         return False

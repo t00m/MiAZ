@@ -11,32 +11,24 @@ import os
 import sys
 import datetime
 import logging
-from enum import Enum
 
+# Define new trace level
 TRACE = logging.DEBUG - 1
 setattr(logging, "TRACE", TRACE)
 logging.addLevelName(TRACE, "TRACE")
 
-
-class DebugLevel(int, Enum):
-    NONE = 0
-    DEFAULT = 1
-    TRACE = 2
-    SUPERTRACE = 3
-
-
-GREY = "\x1b[38;21m"
-CYAN = "\x1b[36;21m"
-MAUVE = "\x1b[34;21m"
-YELLOW = "\x1b[33;21m"
-RED = "\x1b[31;21m"
+# Define colors
+GREY = "\x1b[38;20m"
+CYAN = "\x1b[36;20m"
+MAUVE = "\x1b[34;20m"
+YELLOW = "\x1b[33;20m"
+RED = "\x1b[31;20m"
 BOLD_RED = "\x1b[31;1m"
 RESET = "\x1b[0m"
 
 
 def make_format(color):
-    return f"{color}%(levelname)s{RESET}: %(name)s: %(message)s"
-
+    return f"{color}%(levelname)7s | %(lineno)4d  |%(name)-25s | %(asctime)s | %(message)s{RESET}"
 
 FORMATS = {
     logging.TRACE: make_format(MAUVE),  # type: ignore
@@ -96,17 +88,16 @@ class MiAZLog(logging.getLoggerClass()):
         C0116: Missing function or method docstring (missing-function-docstring)
         """
         super().__init__(name)
-        # ~ print(dir(self.root))
-        # ~ exit()
 
         # Create custom logger logging all five levels
-        self.setLevel(logging.DEBUG)
+        self.setLevel(logging.TRACE)
 
         # Create stream handler for logging to stdout (log all five levels)
         if self.stdout_handler is None:
             self.stdout_handler = logging.StreamHandler(sys.stdout)
+            # ~ self.stdout_handler.setLevel(logging.TRACE)
             self.stdout_handler.setLevel(logging.DEBUG)
-            self.stdout_handler.setFormatter(logging.Formatter("%(levelname)7s | %(lineno)4d  |%(name)-25s | %(asctime)s | %(message)s"))
+            self.stdout_handler.setFormatter(ColorFormatter()) #logging.Formatter("%(levelname)7s | %(lineno)4d  |%(name)-25s | %(asctime)s | %(message)s"))
             self.enable_console_output()
 
         # Add file handler only if the log directory was specified

@@ -16,7 +16,7 @@ sys.path.insert(1, '@pkgdatadir@')
 from MiAZ.backend.log import MiAZLog
 from MiAZ.backend.util import which
 
-VERSION = '0.0.50'
+VERSION = '0.0.99'
 log = MiAZLog('MiAZ')
 ENV = {}
 
@@ -79,6 +79,7 @@ ENV['LPATH']['TMP'] = os.path.join(ENV['LPATH']['VAR'], 'tmp')
 ENV['LPATH']['REPO'] = os.path.join(ENV['LPATH']['TMP'], 'repo')
 ENV['LPATH']['OPT'] = os.path.join(ENV['LPATH']['ROOT'], 'opt')
 ENV['LPATH']['PLUGINS'] = os.path.join(ENV['LPATH']['OPT'], 'plugins')
+ENV['LPATH']['PLUGRES'] = os.path.join(ENV['LPATH']['PLUGINS'], 'resources')
 
 # Global paths
 ENV['GPATH'] = {}
@@ -89,6 +90,7 @@ ENV['GPATH']['ICONS'] = os.path.join(ENV['GPATH']['DATA'], 'icons', 'scalable')
 ENV['GPATH']['FLAGS'] = os.path.join(ENV['GPATH']['ICONS'], 'flags')
 ENV['GPATH']['LOCALE'] = os.path.join(ENV['GPATH']['DATA'], 'po')
 ENV['GPATH']['PLUGINS'] = os.path.join(ENV['GPATH']['DATA'], 'plugins')
+ENV['GPATH']['PLUGRES'] = os.path.join(ENV['GPATH']['PLUGINS'], 'resources')
 ENV['GPATH']['CONF'] = os.path.join(ENV['GPATH']['DATA'], 'conf')
 
 # Common file paths

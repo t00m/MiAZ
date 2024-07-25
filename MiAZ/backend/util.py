@@ -15,6 +15,7 @@ import json
 import shutil
 import tempfile
 import traceback
+import mimetypes
 import zipfile
 from datetime import datetime, timedelta
 # ~ from dateutil.parser import parse as dateparser
@@ -26,6 +27,8 @@ from MiAZ.backend.log import MiAZLog
 from MiAZ.backend.models import Group, Country
 from MiAZ.backend.models import Purpose, SentBy
 from MiAZ.backend.models import SentTo, Date
+
+mimetypes.init()
 
 Field = {}
 Field[Date] = 0
@@ -99,6 +102,16 @@ class MiAZUtil(GObject.GObject):
         if len(docs) > 0:
             used = True
         return used, docs
+
+    def get_mimetype(self, filename: str) -> str:
+        if sys.platform == 'win32':
+            name, ext = self.filename_details(filename)
+            mimetype = f'.{ext}'
+        else:
+            url = f"file://{filename}"
+            mimetype, encoding = mimetypes.guess_type(url)
+        return mimetype
+
 
     def get_temp_dir(self):
         ENV = self.app.get_env()

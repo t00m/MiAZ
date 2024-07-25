@@ -24,6 +24,7 @@ from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewPlugin
 from MiAZ.frontend.desktop.widgets.window import MiAZCustomWindow
 from MiAZ.backend.config import MiAZConfigRepositories
 from MiAZ.backend.pluginsystem import MiAZPluginType
+from MiAZ.frontend.desktop.services.dialogs import MiAZFileChooserDialog
 
 Configview = {}
 Configview['Country'] = MiAZCountries
@@ -219,10 +220,10 @@ class MiAZAppSettings(MiAZCustomWindow):
                     items.append(item_type(id=pid, title=title))
         view.update(items)
 
-    def on_filechooser_response(self, dialog, response, data):
-        if response == Gtk.ResponseType.ACCEPT:
+    def on_filechooser_response(self, dialog, response, clsdlg):
+        if response in [Gtk.ResponseType.ACCEPT, Gtk.ResponseType.OK]:
             plugin_manager = self.app.get_service('plugin-manager')
-            filechooser = dialog.get_filechooser_widget()
+            filechooser = clsdlg.get_filechooser_widget()
             gfile = filechooser.get_file()
             if gfile is None:
                     self.log.debug('No directory set. Do nothing.')
@@ -236,32 +237,33 @@ class MiAZAppSettings(MiAZCustomWindow):
         dialog.destroy()
 
     def _on_plugin_add(self, *args):
-        window = self.app.get_widget('window')
-        filechooser_dialog = self.factory.create_filechooser(
-                    parent=window,
-                    title=_('Upload a plugin'),
-                    target = 'FILE',
-                    callback = self.on_filechooser_response,
-                    data = None
-                    )
         plugin_filter = Gtk.FileFilter()
         plugin_filter.add_pattern('*.zip')
-        filechooser_widget = filechooser_dialog.get_filechooser_widget()
+        window = self.app.get_widget('window-settings')
+        clsdlg = MiAZFileChooserDialog(self.app)
+        filechooser_dialog = clsdlg.create(
+                        parent=window,
+                        title=_('Import a single file'),
+                        target = 'FILE',
+                        callback = self.on_filechooser_response,
+                        data=clsdlg)
+        filechooser_widget = clsdlg.get_filechooser_widget()
         filechooser_widget.set_filter(plugin_filter)
-        filechooser_dialog.show()
+        filechooser_dialog.present()
 
     def _on_plugin_remove(self, *args):
         plugin_manager = self.app.get_service('plugin-manager')
         view = self.app.get_widget('app-settings-plugins-user-view')
         try:
-            module = view.get_selected_items()[0]
+            module = view.get_selected()
             plugin = plugin_manager.get_plugin_info(module.id)
             deleted = plugin_manager.remove_plugin(plugin)
             if deleted:
                 self.log.debug(f"Plugin '{module.id}' deleted")
                 self.update_user_plugins()
-        except IndexError:
+        except IndexError as error:
             self.log.debug("No user plugins installed and/or selected")
+            raise
 
     def get_plugin_status(self, name: str) -> bool:
         plugins = self.config['App'].get('plugins')
@@ -332,7 +334,7 @@ class MiAZRepoSettings(MiAZCustomWindow):
             return page, wdgLabel
 
         # FIXME: User plugins disabled temporary
-        for item_type in [Country, Group, Purpose, SentBy, SentTo, Project]: #, Plugin]:
+        for item_type in [Country, Group, Purpose, SentBy, SentTo, Project, Plugin]:
             page, label = create_tab(item_type)
             notebook.append_page(page, label)
 
@@ -343,7 +345,7 @@ class MiAZRepoSettings(MiAZCustomWindow):
         self.set_title(title)
 
         # FIXME: User plugins disabled temporary
-        for item_type in [Country, Group, Purpose, Project, SentBy, SentTo]: #, Plugin]:
+        for item_type in [Country, Group, Purpose, Project, SentBy, SentTo, Plugin]:
             i_title = item_type.__title_plural__
             widget_title = f"configview-{i_title}"
             configview = self.app.get_widget(widget_title)

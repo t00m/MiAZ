@@ -64,45 +64,64 @@ class MiAZPluginManager(GObject.GObject):
         """
         Import plugin in the user space.
         "A plugin zip file is valid if:
-        - Contains only 2 files
-        - Their names are identical
-        - Extensions are .plugin and .py
+        - Contains at least 2 files
+          - Their names are identical
+          - Extensions are .plugin and .py
+          - Their names are the same than the plugin name
+        - Optionally, a directory named resources
+          - with a subdirectory with the same name as the plugin
+
+        Eg.:
+        hello.zip
+        ├── hello.plugin
+        ├── hello.py
+        └── resources
+            └── hello
+                └── css
+                    └── noprint.css
         """
+        utils = self.app.get_service('util')
         valid = False
         azip = zipfile.ZipFile(plugin_path)
-        files = azip.namelist()
-        if len(files) == 2:
-            fn1_name, fn1_ext = self.util.filename_details(files[0])
-            fn2_name, fn2_ext = self.util.filename_details(files[1])
-            if fn1_name == fn2_name:
-                if fn1_ext == 'py' and fn2_ext == 'plugin':
-                    valid = True
-                elif fn1_ext == 'plugin' and fn2_ext == 'py':
-                    valid = True
-            if valid:
-                ENV = self.app.get_env()
-                azip.extractall(ENV['LPATH']['PLUGINS'])
-                self.engine.rescan_plugins()
-                config = self.app.get_config('Plugin')
-                config.add_available(key=fn1_name)
-                plugin_fname = os.path.basename(plugin_path)
-                self.log.debug(f"Plugin '{plugin_fname}' added to 'ENV['LPATH']['PLUGINS']'")
+        plugin_name, plugin_ext = utils.filename_details(plugin_path)
+        plugin_code = f"{plugin_name}.py"
+        plugin_meta = f"{plugin_name}.plugin"
+        plugin_code_exist = plugin_code in azip.namelist()
+        plugin_meta_exist = plugin_meta in azip.namelist()
+        if plugin_code_exist and plugin_meta_exist:
+             valid = True
+
+        if valid:
+            ENV = self.app.get_env()
+            azip.extractall(ENV['LPATH']['PLUGINS'])
+            self.engine.rescan_plugins()
+            config = self.app.get_config('Plugin')
+            config.add_available(key=plugin_name)
+            plugin_fname = os.path.basename(plugin_path)
+            self.log.debug(f"Plugin '{plugin_fname}' added to '{ENV['LPATH']['PLUGINS']}'")
         # ~ self.emit('plugins-updated')
         return valid
 
     def remove_plugin(self, plugin: Peas.PluginInfo):
         """Remove plugin for user space plugins"""
-        # FIXME: Make sure the plugin is deleted and unloaded
-        ENV = self.app.get_env()
-        module = plugin.get_module_name()
-        self.unload_plugin(plugin)
-        plugin_head = os.path.join(ENV['LPATH']['PLUGINS'], f'{module}.plugin')
-        plugin_body = os.path.join(ENV['LPATH']['PLUGINS'], f'{module}.py')
-        os.unlink(plugin_head)
-        os.unlink(plugin_body)
         config = self.app.get_config('Plugin')
-        config.remove_available(key=module)
-        return True
+        module = plugin.get_module_name()
+        if not config.exists_used(module):
+            self.log.debug(f"Plugin '{module}' is not being used and will be deleted")
+            utils = self.app.get_service('util')
+            ENV = self.app.get_env()
+            self.unload_plugin(plugin)
+            plugin_head = os.path.join(ENV['LPATH']['PLUGINS'], f'{module}.plugin')
+            plugin_body = os.path.join(ENV['LPATH']['PLUGINS'], f'{module}.py')
+            os.unlink(plugin_head)
+            os.unlink(plugin_body)
+            plugin_res = os.path.join(ENV['LPATH']['PLUGRES'], module)
+            utils.directory_remove(plugin_res)
+            config.remove_available(key=module)
+            return True
+        else:
+            self.log.warning(f"Plugin {module} can't be deleted because it is still in use")
+            return False
 
     def rescan_plugins(self):
         try:
@@ -114,25 +133,31 @@ class MiAZPluginManager(GObject.GObject):
 
     def load_plugin(self, plugin: Peas.PluginInfo) -> bool:
         ptype = self.get_plugin_type(plugin)
+        pname = plugin.get_name()
+        pvers = plugin.get_version()
         # ~ pinfo = self.get_plugin_info(plugin)
         try:
             self.engine.load_plugin(plugin)
+
             if plugin.is_loaded():
-                self.log.debug(f"Plugin {plugin.get_name()} ({ptype}) loaded")
+
+                self.log.debug(f"Plugin {pname} v{pvers} ({ptype}) loaded")
                 return True
             else:
-                self.log.error(f"Plugin {plugin.get_name()} ({ptype}) couldn't be loaded")
+                self.log.error(f"Plugin {pname} v{pvers} ({ptype}) couldn't be loaded")
                 return False
         except Exception as error:
             self.log.error(error)
-            self.log.error("Plugin {plugin.get_name()} ({ptype}) couldn't be loaded")
+            self.log.error("Plugin {pname} v{pvers} ({ptype}) couldn't be loaded")
             return False
 
     def unload_plugin(self, plugin: Peas.PluginInfo):
         try:
             ptype = self.get_plugin_type(plugin)
+            pname = plugin.get_name()
+            pvers = plugin.get_version()
             self.engine.unload_plugin(plugin)
-            self.log.debug(f"Plugin {plugin.get_name()} ({ptype}) unloaded")
+            self.log.debug(f"Plugin  {pname} v{pvers} ({ptype}) unloaded")
         except Exception as error:
             self.log.error(error)
 
@@ -208,14 +233,10 @@ class MiAZPluginManager(GObject.GObject):
         # User plugins
         # All user space plugins are available for all repositories
         # However, each repository can use none, any or all of them
-
-        # FIXME: User plugins disabled temporary
-        # ~ if not os.path.exists(ENV['LPATH']['PLUGINS']):
-            # ~ os.makedirs(ENV['LPATH']['PLUGINS'], exist_ok=True)
-        # ~ self.engine.add_search_path(ENV['LPATH']['PLUGINS'])
-        # ~ self.log.debug(f"Added user plugins dir: {ENV['LPATH']['PLUGINS']}")
-
-
+        if not os.path.exists(ENV['LPATH']['PLUGINS']):
+            os.makedirs(ENV['LPATH']['PLUGINS'], exist_ok=True)
+        self.engine.add_search_path(ENV['LPATH']['PLUGINS'])
+        self.log.debug(f"Added user plugins dir: {ENV['LPATH']['PLUGINS']}")
 
     @staticmethod
     def __extension_removed_cb(unused_set, unused_plugin_info, extension):

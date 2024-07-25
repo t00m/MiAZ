@@ -114,7 +114,7 @@ class Export2Dir(GObject.GObject, Peas.Activatable):
                     util.directory_open(dirpath)
                     srvdlg = self.app.get_service('dialogs')
                     window = workspace.get_root()
-                    body = f"<big>Selected documents were exported to:\n\n{dirpath}</big>"
+                    body = f"<big>Check your default file browser</big>"
                     srvdlg.create(parent=window, dtype='info', title=_('Export successfull'), body=body).present()
             dialog.destroy()
 

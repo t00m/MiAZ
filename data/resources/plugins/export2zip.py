@@ -91,7 +91,7 @@ class Export2Zip(GObject.GObject, Peas.Activatable):
                     util.directory_open(dirpath)
 
                     srvdlg = self.app.get_service('dialogs')
-                    body = f"<big>Selected documents were zipped into:\n\n{target}</big>"
+                    body = f"<big>Check your default file browser</big>"
                     workspace = self.app.get_widget('workspace')
                     window = workspace.get_root()
                     body=''

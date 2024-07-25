@@ -5,8 +5,6 @@
 # Description: Different views based on ColumnView widget
 
 import os
-import mimetypes
-mimetypes.init()
 from gettext import gettext as _
 
 from gi.repository import Gio
@@ -160,8 +158,8 @@ class MiAZColumnViewWorkspace(MiAZColumnView):
         box = list_item.get_child()
         icon = box.get_first_child()
         item = list_item.get_item()
-        name, ext = utils.filename_details(item.id)
-        gicon = self.srvicm.get_mimetype_icon(f'.{ext}')
+        mimetype = utils.get_mimetype(item.id)
+        gicon = self.srvicm.get_mimetype_icon(mimetype)
         icon.set_from_gicon(gicon)
         icon.set_pixel_size(36)
 
@@ -246,15 +244,6 @@ class MiAZColumnViewWorkspace(MiAZColumnView):
         icon.set_from_icon_name(code)
         icon.set_pixel_size(36)
 
-# ~ class MiAZColumnViewSelector(MiAZColumnView):
-    # ~ """ Custom ColumnView widget for MiAZ """
-    # ~ __gtype_name__ = 'MiAZColumnViewSelector'
-
-    # ~ def __init__(self, app, item_type=MiAZItem):
-        # ~ super().__init__(app, item_type)
-        # ~ self.selection = Gtk.SingleSelection.new(self.filter_model)
-        # ~ self.cv.set_model(self.selection)
-
 
 class MiAZColumnViewCountry(MiAZColumnViewSelector):
     """ Custom ColumnView widget for MiAZ """
@@ -285,6 +274,7 @@ class MiAZColumnViewCountry(MiAZColumnViewSelector):
         icon.set_from_file(flag)
         icon.set_pixel_size(36)
 
+
 class MiAZColumnViewDocuments(MiAZColumnView):
     """ Custom ColumnView widget for MiAZ """
     __gtype_name__ = 'MiAZColumnViewDocuments'
@@ -299,6 +289,7 @@ class MiAZColumnViewDocuments(MiAZColumnView):
         self.column_title.set_title(_('Document'))
         self.column_title.set_expand(True)
 
+
 class MiAZColumnViewRepo(MiAZColumnViewSelector):
     """ Custom ColumnView widget for MiAZ """
     __gtype_name__ = 'MiAZColumnViewRepo'
@@ -309,6 +300,7 @@ class MiAZColumnViewRepo(MiAZColumnViewSelector):
         self.column_title.set_title(_('Repo Id'))
         self.cv.append_column(self.column_title)
         self.column_title.set_title(_('Directory'))
+
 
 class MiAZColumnViewGroup(MiAZColumnViewSelector):
     """ Custom ColumnView widget for MiAZ """
@@ -325,6 +317,7 @@ class MiAZColumnViewGroup(MiAZColumnViewSelector):
     def _on_selection_change(self, *args):
         pass
 
+
 class MiAZColumnViewProject(MiAZColumnViewSelector):
     """ Custom ColumnView widget for MiAZ """
     __gtype_name__ = 'MiAZColumnViewProject'
@@ -335,6 +328,7 @@ class MiAZColumnViewProject(MiAZColumnViewSelector):
         self.column_title.set_title(_('Project Id'))
         self.cv.append_column(self.column_title)
         self.column_title.set_title(_('Description'))
+
 
 class MiAZColumnViewPurpose(MiAZColumnViewSelector):
     """ Custom ColumnView widget for MiAZ """
@@ -347,6 +341,7 @@ class MiAZColumnViewPurpose(MiAZColumnViewSelector):
         self.cv.append_column(self.column_title)
         self.column_title.set_title(_('Description'))
 
+
 class MiAZColumnViewPerson(MiAZColumnViewSelector):
     """ Custom ColumnView widget for MiAZ """
     __gtype_name__ = 'MiAZColumnViewPerson'
@@ -357,6 +352,7 @@ class MiAZColumnViewPerson(MiAZColumnViewSelector):
         self.column_id.set_title(_('Initials'))
         self.cv.append_column(self.column_title)
         self.column_title.set_title(_('Full name'))
+
 
 class MiAZColumnViewMassRename(MiAZColumnView):
     """ Custom ColumnView widget for MiAZ """
@@ -370,6 +366,7 @@ class MiAZColumnViewMassRename(MiAZColumnView):
         self.cv.append_column(self.column_title)
         self.column_title.set_title(_('Target'))
         self.column_title.set_expand(True)
+
 
 class MiAZColumnViewMassDelete(MiAZColumnView):
     """ Custom ColumnView widget for MiAZ """
@@ -385,6 +382,7 @@ class MiAZColumnViewMassDelete(MiAZColumnView):
         self.column_title.set_title(_('Document'))
         self.column_title.set_expand(True)
 
+
 class MiAZColumnViewMassProject(MiAZColumnView):
     """ Custom ColumnView widget for MiAZ """
     __gtype_name__ = 'MiAZColumnViewMassProject'
@@ -398,6 +396,7 @@ class MiAZColumnViewMassProject(MiAZColumnView):
         self.cv.append_column(self.column_title)
         self.column_title.set_title(_('Projects already assigned'))
         self.column_title.set_expand(True)
+
 
 class MiAZColumnViewPlugin(MiAZColumnViewSelector):
     """ Custom ColumnView widget for MiAZ """
