@@ -1,0 +1,52 @@
+# Changelog
+
+All notable changes to this project will be documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [Unreleased]
+
+### Added
+- New dark mode feature.
+- Support for multiple languages.
+
+### Changed
+- Improved performance of the data processing algorithm.
+
+### Deprecated
+- The `oldFunction()` will be removed in the next release.
+
+### Removed
+- Removed the legacy logging system.
+
+### Fixed
+- Fixed crash when opening the settings menu.
+- Corrected typo in the welcome message.
+
+### Security
+- Updated dependencies to address security vulnerabilities.
+
+## [1.0.1] - 2024-08-05
+
+### Added
+- New user profile page.
+- Export data as CSV feature.
+
+### Changed
+- UI enhancements for the dashboard.
+- Updated documentation for the new API endpoints.
+
+### Fixed
+- Resolved issue with data synchronization.
+- Fixed broken link in the footer.
+
+## [1.0.0] - 2024-07-15
+
+### Added
+- Initial release of the project.
+- User authentication and authorization.
+
+[Unreleased]: https://github.com/your-repo/compare/1.0.1...HEAD
+[1.0.1]: https://github.com/your-repo/compare/1.0.0...1.0.1
+[1.0.0]: https://github.com/your-repo/releases/tag/1.0.0
