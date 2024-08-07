@@ -271,7 +271,7 @@ class MiAZUtil(GObject.GObject):
         return date_dsc
 
     def filename_display(self, filepath):
-        self.log.debug(f"OS Platform: {sys.platform}")
+        # ~ self.log.debug(f"OS Platform: {sys.platform}")
         if sys.platform in ['linux', 'linux2']:
             os.system(f"xdg-open \"{filepath}\"")
         elif sys.platform in ['win32', 'cygwin', 'msys']:
@@ -315,7 +315,7 @@ class MiAZUtil(GObject.GObject):
 
     def zip(self, filename: str, directory: str):
         """ Zip directory into a file """
-        self.log.debug(f"Target: {filename}")
+        # ~ self.log.debug(f"Target: {filename}")
         sourcename = os.path.basename(filename)
         dot = sourcename.find('.')
         if dot == -1:
