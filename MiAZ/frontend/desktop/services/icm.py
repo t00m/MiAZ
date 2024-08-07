@@ -4,9 +4,13 @@
 # License: GPL v3
 # Description: Icon manager
 
+import os
+
 from gi.repository import Gtk
 from gi.repository import Gio
 from gi.repository import GObject
+
+from MiAZ.backend.log import MiAZLog
 
 
 class MiAZIconManager(GObject.GObject):
@@ -26,6 +30,8 @@ class MiAZIconManager(GObject.GObject):
         :type app: MiAZApp
         """
         super().__init__()
+        self.app = app
+        self.log = MiAZLog('MiAZ.IconManager')
 
     def get_image_by_name(self, name: str, size: int = 24) -> Gtk.Image:
         """
@@ -42,18 +48,20 @@ class MiAZIconManager(GObject.GObject):
         image.set_pixel_size(size)
         return image
 
-    def get_mimetype_icon(self, mimetype: str) -> Gio.Icon:
+    def get_mimetype_icon(self, filename: str) -> Gio.Icon:
         """
-        Get icon for a given mimetype.
+        Get mimetype icon for a given file.
 
-        :param mimetype: file mimetype
-        :type mimetype: str
-        :return: an icon
-        :rtype: Gio.Icon
+        :param filename: file name
+        :type filename: str
+        return: an icon
+        rtype: Gio.ThemedIcon (GIcon)
         """
-        try:
-            gicon = self.gicondict[mimetype]
-        except KeyError:
-            gicon = Gio.content_type_get_icon(mimetype)
-            self.gicondict[mimetype] = gicon
-        return gicon
+        repository = self.app.get_service('repo')
+        basedir = repository.docs
+        filepath = os.path.join(basedir, filename)
+        if os.path.exists(filepath):
+            gfile = Gio.File.new_for_path(filepath)
+            info = gfile.query_info(Gio.FILE_ATTRIBUTE_STANDARD_ICON, Gio.FileQueryInfoFlags.NONE, None)
+            gicon = info.get_icon()
+            return gicon
