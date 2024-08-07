@@ -154,12 +154,10 @@ class MiAZColumnViewWorkspace(MiAZColumnView):
 
     def _on_factory_bind_icon_type(self, factory, list_item):
         """To be subclassed"""
-        utils = self.app.get_service('util')
         box = list_item.get_child()
         icon = box.get_first_child()
         item = list_item.get_item()
-        mimetype = utils.get_mimetype(item.id)
-        gicon = self.srvicm.get_mimetype_icon(mimetype)
+        gicon = self.srvicm.get_mimetype_icon(item.id)
         icon.set_from_gicon(gicon)
         icon.set_pixel_size(36)
 
