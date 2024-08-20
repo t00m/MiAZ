@@ -16,7 +16,7 @@ sys.path.insert(1, '@pkgdatadir@')
 from MiAZ.backend.log import MiAZLog
 from MiAZ.backend.util import which
 
-VERSION = '0.0.99'
+VERSION = '0.1.0-rc1+build.1'
 log = MiAZLog('MiAZ')
 ENV = {}
 
@@ -223,6 +223,6 @@ if __name__ == "__main__":
     """
     This is the entry point when the program is installed via Meson
     """
-    log.debug("MiAZ installation done via Meson!")
+    log.trace("MiAZ installation done via Meson!")
     app = MiAZ(ENV)
     app.run()
