@@ -85,13 +85,13 @@ class MiAZConfig(GObject.GObject):
             config_changed = True
 
         if config_changed:
-            self.log.debug(f"Loading {self.config_for} items from disk ({filepath})")
+            self.log.trace(f"Loading {self.config_for} items from disk ({filepath})")
             try:
                 items = util.json_load(filepath)
                 self.cache[filepath] = {}
                 self.cache[filepath]['changed'] = False
                 self.cache[filepath]['items'] = items
-                # ~ self.log.debug(f"In-memory config data updated for '{filepath}'")
+                self.log.trace(f"In-memory config data updated for '{filepath}'")
             except Exception:
                 items = []
             return items
@@ -101,11 +101,11 @@ class MiAZConfig(GObject.GObject):
             return self.cache[filepath]['items']
 
     def load_available(self) -> dict:
-        # ~ self.log.debug(f"{self.config_for} available: {self.available}")
+        self.log.trace(f"{self.config_for} available: {self.available}")
         return self.load(self.available)
 
     def load_used(self) -> dict:
-        # ~ self.log.debug(f"{self.config_for} used: {self.used}")
+        self.log.trace(f"{self.config_for} used: {self.used}")
         return self.load(self.used)
 
     def save(self, filepath: str = '', items: dict = None) -> bool:
@@ -322,7 +322,6 @@ class MiAZConfigCountries(MiAZConfig):
             must_copy=False,
             foreign=True
         )
-        self.log.debug("Config for countries created")
 
 
 class MiAZConfigGroups(MiAZConfig):

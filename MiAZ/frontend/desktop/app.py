@@ -122,7 +122,7 @@ class MiAZApp(Gtk.Application):
         theme = self.set_service('theme', Gtk.IconTheme.get_for_display(window.get_display()))
         theme.add_search_path(ENV['GPATH']['ICONS'])
         theme.add_search_path(ENV['GPATH']['FLAGS'])
-        self.log.debug(f"MiAZ custom icons in: {ENV['GPATH']['ICONS']}")
+        self.log.trace(f"MiAZ custom icons in: {ENV['GPATH']['ICONS']}")
 
         # Setup main window contents
         mainbox = self.add_widget('window-mainbox', MiAZMainWindow(self))
@@ -133,7 +133,7 @@ class MiAZApp(Gtk.Application):
         self.set_menubar(menubar)
 
     def _on_window_close_request(self, *args):
-        self.log.debug("Close application requested")
+        self.log.trace("Close application requested")
         actions = self.get_service('actions')
         actions.exit_app()
 
@@ -162,7 +162,7 @@ class MiAZApp(Gtk.Application):
                 if ptype == MiAZPluginType.SYSTEM:
                     np += 1
             self.plugins_loaded = True
-            self.log.debug(f"System plugins loaded: {ap}/{np}")
+            self.log.info(f"System plugins loaded: {ap}/{np}")
 
             # Load User Plugins
             self.log.debug("Loading user plugins for this repository...")
@@ -183,7 +183,7 @@ class MiAZApp(Gtk.Application):
                     self.log.error(error)
                 if ptype == MiAZPluginType.USER:
                     np += 1
-            self.log.debug(f"User plugins loaded for this repoitory: {ap}/{np}")
+            self.log.info(f"User plugins loaded for this repository: {ap}/{np}")
 
     def get_config(self, name: str):
         try:
@@ -194,7 +194,7 @@ class MiAZApp(Gtk.Application):
 
     def switch_start(self):
         """Switch from one repository to another."""
-        self.log.debug("Repository switch requested")
+        self.log.trace("Repository switch requested")
         actions = self.get_service('actions')
         repository = self.get_service('repo')
         try:
@@ -208,10 +208,10 @@ class MiAZApp(Gtk.Application):
             repo_loaded = False
 
         repo_id = appconf.get('current')
-        self.log.debug(f"Repository '{repo_id}' loaded? {repo_loaded}")
+        self.log.trace(f"Repository '{repo_id}' loaded? {repo_loaded}")
 
         if repo_loaded:
-            self.log.debug(f"Repo Working directory: '{repository.docs}")
+            self.log.info(f"Repo Working directory: '{repository.docs}'")
             repo_settings = self.get_widget('settings-repo')
             if repo_settings is None:
                 repo_settings = self.add_widget('settings-repo', MiAZRepoSettings(self))
