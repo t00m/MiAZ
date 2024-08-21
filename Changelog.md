@@ -7,17 +7,42 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Added 
+### Added
 
-### Changed 
+### Changed
 
-### Deprecated 
+### Deprecated
 
-### Removed 
+### Removed
 
-### Fixed 
+### Fixed
 
-### Security 
+### Security
+
+
+## [0.1.0-rc1] - 2024-08-21
+
+### First Release Candidate for version 0.1
+
+### Added
+- N/A
+
+### Changed
+- Reduce log level verbosity (from DEBUG to TRACE)
+
+### Deprecated
+- N/A
+
+### Removed
+- N/A
+
+### Fixed
+
+- Add missing icons for date and concept actionrows in Rename dialog
+- Do not raise error when disabling an already disabled plugin
+
+### Security
+- N/A
 
 
 ## [0.0.99] - 2024-07-25
