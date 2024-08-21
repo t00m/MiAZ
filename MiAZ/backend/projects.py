@@ -52,7 +52,7 @@ class MiAZProject(GObject.GObject):
                     to_delete.append((doc, project))
         for doc, project in to_delete:
             self.remove(project, doc)
-        self.log.debug("Projects consistency checked")
+        self.log.trace("Projects consistency checked")
 
     def add(self, project: str, doc: str):
         """

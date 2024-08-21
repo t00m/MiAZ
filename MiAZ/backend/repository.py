@@ -53,7 +53,7 @@ class MiAZRepository(GObject.GObject):
         try:
             conf_dir = os.path.join(path, '.conf')
             conf_file = os.path.join(conf_dir, 'repo.json')
-            self.log.debug(f"Validating repository '{conf_file}'")
+            self.log.trace(f"Validating repository '{conf_file}'")
             if os.path.exists(conf_dir):
                 if os.path.exists(conf_file):
                     with open(conf_file, 'r') as fin:
@@ -62,7 +62,7 @@ class MiAZRepository(GObject.GObject):
                             valid = True
                         except Exception as error:
                             self.log.error(error)
-            self.log.debug(f"Repository {conf_file} valid? {valid}")
+            self.log.trace(f"Repository {conf_file} valid? {valid}")
         except Exception as warning:
             self.log.warning(warning)
         return valid

@@ -50,7 +50,7 @@ class MiAZPluginManager(GObject.GObject):
         self.log = MiAZLog('MiAZ.PluginManager')
         self.app = app
         self.util = self.app.get_service('util')
-        self.log.debug("Initializing Plugin Manager")
+        self.log.trace("Initializing Plugin Manager")
         self.plugin_info_list = []
 
         self.engine = Peas.Engine.get_default()
@@ -140,8 +140,7 @@ class MiAZPluginManager(GObject.GObject):
             self.engine.load_plugin(plugin)
 
             if plugin.is_loaded():
-
-                self.log.debug(f"Plugin {pname} v{pvers} ({ptype}) loaded")
+                self.log.info(f"Plugin {pname} v{pvers} ({ptype}) loaded")
                 return True
             else:
                 self.log.error(f"Plugin {pname} v{pvers} ({ptype}) couldn't be loaded")
@@ -157,7 +156,7 @@ class MiAZPluginManager(GObject.GObject):
             pname = plugin.get_name()
             pvers = plugin.get_version()
             self.engine.unload_plugin(plugin)
-            self.log.debug(f"Plugin  {pname} v{pvers} ({ptype}) unloaded")
+            self.log.info(f"Plugin  {pname} v{pvers} ({ptype}) unloaded")
         except Exception as error:
             self.log.error(error)
 
