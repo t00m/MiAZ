@@ -156,12 +156,14 @@ class MiAZRenameDialog(Gtk.Box):
 
     def __create_field_0_date(self):
         """Field 0. Date"""
+        icm = self.app.get_service('icons')
         title = _('Date')
         icon_name = 'io.github.t00m.MiAZ-res-date'
+        prefix = icm.get_image_by_name(icon_name)
         boxValue = self.__create_box_value()
         boxValue.set_hexpand(False)
         boxValue.set_valign(Gtk.Align.CENTER)
-        self.rowDate = self.factory.create_actionrow(title=title, suffix=boxValue)
+        self.rowDate = self.factory.create_actionrow(title=title, prefix=prefix, suffix=boxValue)
         self.boxMain.append(self.rowDate)
         self.calendar = Gtk.Calendar()
         self.calendar.connect('day-selected', self.calendar_day_selected)
@@ -237,10 +239,11 @@ class MiAZRenameDialog(Gtk.Box):
     def __create_field_6_concept(self):
         """Field 6. Concept"""
         title = Concept.__title__
-        # ~ icon_name = 'io.github.t00m.MiAZ-res-concept'
-        # ~ icon = self.icons.get_image_by_name(name=icon_name)
+        icm = self.app.get_service('icons')
+        icon_name = 'io.github.t00m.MiAZ-res-concept'
+        prefix = icm.get_image_by_name(icon_name)
         boxValue = self.__create_box_value()
-        self.rowConcept = self.factory.create_actionrow(title=title, suffix= boxValue)
+        self.rowConcept = self.factory.create_actionrow(title=title, prefix=prefix, suffix= boxValue)
         self.boxMain.append(self.rowConcept)
         button = self.factory.create_button('', '', css_classes=['flat'])
         button.set_sensitive(False)
@@ -282,6 +285,7 @@ class MiAZRenameDialog(Gtk.Box):
         title = _('Current filename')
         self.lblFilenameCur = Gtk.Label()
         self.lblFilenameCur.get_style_context().add_class(class_name='monospace')
+        self.lblFilenameCur.get_style_context().add_class(class_name='error')
         self.row_cur_filename = self.factory.create_actionrow(title=title, suffix=self.lblFilenameCur)
         self.boxMain.append(self.row_cur_filename)
 
@@ -289,6 +293,7 @@ class MiAZRenameDialog(Gtk.Box):
         title = _('<b>New filename</b>')
         self.lblFilenameNew = Gtk.Label()
         self.lblFilenameNew.get_style_context().add_class(class_name='monospace')
+        self.lblFilenameNew.get_style_context().add_class(class_name='success')
         self.row_new_filename = self.factory.create_actionrow(title=title, suffix=self.lblFilenameNew)
         self.boxMain.append(self.row_new_filename)
 
