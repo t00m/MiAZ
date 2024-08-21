@@ -156,7 +156,7 @@ class MiAZPluginManager(GObject.GObject):
             pname = plugin.get_name()
             pvers = plugin.get_version()
             self.engine.unload_plugin(plugin)
-            self.log.debug(f"Plugin  {pname} v{pvers} ({ptype}) unloaded")
+            self.log.info(f"Plugin  {pname} v{pvers} ({ptype}) unloaded")
         except Exception as error:
             self.log.error(error)
 

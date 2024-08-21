@@ -107,7 +107,7 @@ class MiAZWorkspace(Gtk.Box):
         # updated, therefore, the whole cache must be invalidated :/
         self.initialize_caches()
         # ~ self.update()
-        self.log.debug("Config changed")
+        self.log.trace("Caches initialized")
 
     def _on_filename_renamed(self, util, source, target):
         projects = self.app.get_service('Projects')

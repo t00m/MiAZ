@@ -237,7 +237,7 @@ class MiAZApp(Gtk.Application):
         watcher.set_path(repository.docs)
         watcher.set_active(active=True)
         self.app.set_service('watcher', watcher)
-        self.log.debug("Repository switch finished")
+        self.log.trace("Repository switch finished")
 
         # Setup stack pages
         mainbox = self.get_widget('window-mainbox')
