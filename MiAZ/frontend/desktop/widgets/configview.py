@@ -456,15 +456,21 @@ class MiAZUserPlugins(MiAZConfigView):
             plugin = plugin_manager.get_plugin_info(selected_plugin.id)
             if plugin.is_loaded():
                 plugin_manager.unload_plugin(plugin)
-                self.log.debug(f"Plugin '{selected_plugin.id}' unloaded")
+                self.log.trace(f"Plugin '{selected_plugin.id}' unloaded")
         except AttributeError as error:
             self.log.error(f"Unknown error unloading plugin '{selected_plugin.id}'")
             self.log.error(error)
         finally:
-            del(plugins_used[selected_plugin.id])
-            self.log.debug(f"Plugin '{selected_plugin.id}' removed from used view")
-            self.config.save_used(items=plugins_used)
-            self._update_view_used()
+            try:
+                del(plugins_used[selected_plugin.id])
+                self.log.debug(f"Plugin '{selected_plugin.id}' deactivated")
+                self.config.save_used(items=plugins_used)
+                self._update_view_used()
+            except KeyError:
+                # FIXME: it shouldn't reach this code.
+                # It happens when the user removes a plugin from the
+                # used view and hit the button remove ([<]) again.
+                pass
 
     def _on_item_used_add(self, *args):
         plugin_manager = self.app.get_service('plugin-manager')
@@ -478,14 +484,13 @@ class MiAZUserPlugins(MiAZConfigView):
         i_title = item_type.__title__
         if not plugin_used:
             plugins_used[selected_plugin.id] = selected_plugin.title
-            self.log.debug(f"Using {selected_plugin.id} ({selected_plugin.title})")
             plugin = plugin_manager.get_plugin_info(selected_plugin.id)
             if not plugin.is_loaded():
                 plugin_manager.load_plugin(plugin)
                 self.config.save_used(items=plugins_used)
                 self._update_view_used()
-                self.log.debug(f"{i_title} {selected_plugin.id} not used yet. Can be used now")
+                self.log.debug(f"{i_title} {selected_plugin.id} activated")
         else:
-            self.log.debug(f"{i_title} {selected_plugin.id} is already being used")
+            self.log.debug(f"{i_title} '{selected_plugin.id}' was already activated. Nothing to do")
 
 
