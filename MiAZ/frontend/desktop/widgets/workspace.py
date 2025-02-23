@@ -56,7 +56,7 @@ class MiAZWorkspace(Gtk.Box):
     def __init__(self, app):
         super().__init__(orientation=Gtk.Orientation.HORIZONTAL)
         self.log = MiAZLog('MiAZ.Workspace')
-        self.log.trace("Initializing widget Workspace!!")
+        self.log.debug("Initializing widget Workspace!!")
         self.app = app
         self.config = self.app.get_config_dict()
         self._setup_workspace()
@@ -78,7 +78,7 @@ class MiAZWorkspace(Gtk.Box):
         self.fcache = os.path.join(repository.conf, 'cache.json')
         try:
             self.cache = util.json_load(self.fcache)
-            self.log.trace(f"Loading cache from '{self.fcache}")
+            self.log.debug(f"Loading cache from '{self.fcache}")
         except Exception:
             util.json_save(self.fcache, {})
 
@@ -107,7 +107,7 @@ class MiAZWorkspace(Gtk.Box):
         # updated, therefore, the whole cache must be invalidated :/
         self.initialize_caches()
         # ~ self.update()
-        self.log.trace("Caches initialized")
+        self.log.debug("Caches initialized")
 
     def _on_filename_renamed(self, util, source, target):
         projects = self.app.get_service('Projects')
@@ -183,7 +183,7 @@ class MiAZWorkspace(Gtk.Box):
         self.workspace_loaded = True
 
     def _on_finish_configuration(self, *args):
-        self.log.trace("Finish loading workspace")
+        self.log.debug("Finish loading workspace")
         window = self.app.get_widget('window')
         window.present()
         srvutl = self.app.get_service('util')
@@ -494,7 +494,7 @@ class MiAZWorkspace(Gtk.Box):
         dropdowns = self.app.get_widget('ws-dropdowns')
         for ddId in dropdowns:
             dropdowns[ddId].set_selected(0)
-        self.log.trace("All filters cleared")
+        self.log.debug("All filters cleared")
 
     def update(self, *args):
         if self.app.get_status() == MiAZStatus.BUSY:
@@ -520,7 +520,7 @@ class MiAZWorkspace(Gtk.Box):
         desc = {}
         show_pending = False
         for filename in docs:
-            self.log.trace(f"{filename}")
+            # ~ self.log.debug(f"{filename}")
             doc, ext = util.filename_details(filename)
             fields = doc.split('-')
             if util.filename_validate(doc):
@@ -597,7 +597,7 @@ class MiAZWorkspace(Gtk.Box):
 
         de = datetime.now()
         dt = de - ds
-        self.log.trace(f"Workspace updated ({dt})")
+        self.log.debug(f"Workspace updated ({dt})")
 
         util.json_save(self.fcache, self.cache)
         GLib.idle_add(self.view.update, items)
