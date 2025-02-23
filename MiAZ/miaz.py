@@ -25,6 +25,8 @@ ENV['DESKTOP'] = {}
 try:
     import gi
     gi.require_version('Gtk', '4.0')
+    gi.require_version('Adw', '1')
+    from gi.repository import Adw
     from gi.repository import Gtk
     ENV['DESKTOP']['GTK_ENABLED'] = True
     ENV['DESKTOP']['GTK_VERSION'] = (Gtk.MAJOR_VERSION, Gtk.MINOR_VERSION, Gtk.MICRO_VERSION)
@@ -224,5 +226,6 @@ if __name__ == "__main__":
     This is the entry point when the program is installed via Meson
     """
     log.trace("MiAZ installation done via Meson!")
+    Adw.init()
     app = MiAZ(ENV)
     app.run()

@@ -9,6 +9,7 @@ from gettext import gettext as _
 from gi.repository import GObject
 from gi.repository import GLib
 from gi.repository import Gtk
+from gi.repository import Adw
 
 from MiAZ.backend.log import MiAZLog
 from MiAZ.backend.pluginsystem import MiAZPluginManager, MiAZPluginType
@@ -27,7 +28,7 @@ from MiAZ.backend.watcher import MiAZWatcher
 from MiAZ.backend.projects import MiAZProject
 
 
-class MiAZApp(Gtk.Application):
+class MiAZApp(Adw.Application):
     """MiAZ Gtk Application class."""
 
     __gsignals__ = {
