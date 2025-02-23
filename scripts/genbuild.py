@@ -1,9 +1,11 @@
 #!/usr/bin/python3
 
 import semver
-current = open('MiAZ/data/docs/VERSION', 'r').read().strip()
+
+FILEPATH_VERSION = 'data/docs/VERSION'
+current = open(FILEPATH_VERSION, 'r').read().strip()
 print("Current version: %s" % current)
 version = semver.VersionInfo.parse(current).bump_build()
 print("Next build: %s" % version)
-with open('MiAZ/data/docs/VERSION', 'w') as fv:
+with open(FILEPATH_VERSION, 'w') as fv:
     fv.write(str(version).strip())
