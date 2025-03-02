@@ -16,8 +16,8 @@ sys.path.insert(1, '@pkgdatadir@')
 from MiAZ.backend.log import MiAZLog
 from MiAZ.backend.util import which
 
-VERSION = '0.1.0'
 log = MiAZLog('MiAZ')
+VERSION = '@VERSION@'
 ENV = {}
 
 # Desktop environment
@@ -28,14 +28,17 @@ try:
     gi.require_version('Adw', '1')
     from gi.repository import Adw
     from gi.repository import Gtk
-    ENV['DESKTOP']['GTK_ENABLED'] = True
+    from gi.repository import GLib
     ENV['DESKTOP']['GTK_VERSION'] = (Gtk.MAJOR_VERSION, Gtk.MINOR_VERSION, Gtk.MICRO_VERSION)
     ENV['DESKTOP']['GTK_SUPPORT'] = Gtk.MAJOR_VERSION >= 4 and Gtk.MINOR_VERSION >= 6
 except (ValueError, ModuleNotFoundError):
-    ENV['DESKTOP']['GTK_ENABLED'] = False
     ENV['DESKTOP']['GTK_SUPPORT'] = False
 
 ENV['DESKTOP']['ENABLED'] = ENV['DESKTOP']['GTK_SUPPORT']
+
+log.trace(f"GTK available ({Gtk.MAJOR_VERSION}.{Gtk.MINOR_VERSION}.{Gtk.MICRO_VERSION})")
+log.trace(f"GTK version supported? {ENV['DESKTOP']['GTK_SUPPORT']}")
+log.trace(f"Desktop enabled? {ENV['DESKTOP']['ENABLED']}")
 
 # App
 ENV['APP'] = {}
@@ -166,6 +169,10 @@ class MiAZ:
             from MiAZ.frontend.console.app import MiAZApp
         app = MiAZApp(application_id=ENV['APP']['ID'])
         app.set_env(ENV)
+
+        # Set up the signal handler for CONTROL-C
+        GLib.unix_signal_add(GLib.PRIORITY_DEFAULT, signal.SIGINT, app.exit)
+
         try:
             app.run()
         except KeyboardInterrupt:

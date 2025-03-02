@@ -294,3 +294,10 @@ class MiAZApp(Adw.Application):
 
     def get_logger(self):
         return self.log
+
+    def exit(self, *args):
+        # Signal handler for CONTROL-C
+        self.log.warning("CONTROL-C detected! Exiting gracefully...")
+        actions = self.get_service('actions')
+        actions.exit_app()  # Quit the GTK main loop
+        return True  # Return True to stop further propagation

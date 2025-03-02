@@ -56,31 +56,30 @@ class MiAZWorkspace(Gtk.Box):
     def __init__(self, app):
         super().__init__(orientation=Gtk.Orientation.HORIZONTAL)
         self.log = MiAZLog('MiAZ.Workspace')
-        self.log.debug("Initializing widget Workspace!!")
+        self.log.trace("Initializing widget Workspace!!")
         self.app = app
         self.config = self.app.get_config_dict()
         self._setup_workspace()
         self._setup_logic()
         self.review = False
+
         # Allow plug-ins to make their job
         self.app.connect('start-application-completed', self._on_finish_configuration)
 
     def initialize_caches(self):
-        # Initialize caches
-        # Runtime cache for datetime objects to avoid errors such as:
-        # 'TypeError: Object of type date is not JSON serializable'
-        repository = self.app.get_service('repo')
+        repo = self.app.get_service('repo')
         util = self.app.get_service('util')
 
         self.datetimes = {}
 
         # Load/Initialize rest of caches
-        self.fcache = os.path.join(repository.conf, 'cache.json')
+        self.fcache = os.path.join(repo.conf, 'cache.json')
         try:
             self.cache = util.json_load(self.fcache)
-            self.log.debug(f"Loading cache from '{self.fcache}")
+            self.log.trace(f"Loading cache from '{self.fcache}'")
         except Exception:
             util.json_save(self.fcache, {})
+            self.log.trace(f"New cache created in '{self.fcache}'")
 
         self.cache = {}
         for cache in ['Date', 'Country', 'Group', 'SentBy', 'SentTo', 'Purpose']:

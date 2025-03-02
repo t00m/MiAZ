@@ -95,8 +95,8 @@ class MiAZLog(logging.getLoggerClass()):
         # Create stream handler for logging to stdout (log all five levels)
         if self.stdout_handler is None:
             self.stdout_handler = logging.StreamHandler(sys.stdout)
-            # ~ self.stdout_handler.setLevel(logging.TRACE)
-            self.stdout_handler.setLevel(logging.DEBUG)
+            self.stdout_handler.setLevel(logging.TRACE)
+            # ~ self.stdout_handler.setLevel(logging.DEBUG)
             self.stdout_handler.setFormatter(ColorFormatter()) #logging.Formatter("%(levelname)7s | %(lineno)4d  |%(name)-25s | %(asctime)s | %(message)s"))
             self.enable_console_output()
 
