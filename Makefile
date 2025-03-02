@@ -18,15 +18,10 @@ uninstall_msys2:
 
 user:
 	rm -rf builddir_user
-	meson builddir_user --prefix=~/.local
-	meson setup builddir_user --prefix=~/.local --reconfigure --buildtype=debug --wipe
+#~ 	meson setup builddir_user --prefix=~/.local
+	meson setup builddir_user --prefix=~/.local --reconfigure --buildtype=debugoptimized --wipe
 	ninja -C builddir_user install
 
 user_uninstall:
 	cd builddir_user && ninja uninstall
 
-AppImage:
-#~ 	rm -rf builddir_user
-	meson builddir_user --prefix=/home/t00m/Documents/devel/github/MiAZ/AppDir/usr
-	meson setup builddir_user --prefix=/home/t00m/Documents/devel/github/MiAZ/AppDir/usr --reconfigure --buildtype=debug --wipe
-	ninja -C builddir_user install
