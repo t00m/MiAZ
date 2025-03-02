@@ -6,6 +6,7 @@
 import os
 import sys
 import json
+import argparse
 import signal
 import locale
 import gettext
@@ -18,6 +19,7 @@ from MiAZ.backend.util import which
 
 log = MiAZLog('MiAZ')
 VERSION = '@VERSION@'
+APP_DSC = '@APP_DSC@'
 ENV = {}
 
 # Desktop environment
@@ -48,7 +50,7 @@ ENV['APP']['PGKDATADIR'] = '@pkgdatadir@'
 ENV['APP']['LOCALEDIR'] = '@localedir@'
 ENV['APP']['name'] = "AZ Organizer"
 ENV['APP']['shortname'] = "MiAZ"
-ENV['APP']['description'] = "Personal Document Organizer"
+ENV['APP']['description'] = APP_DSC
 ENV['APP']['license'] = 'GPL v3'
 ENV['APP']['license_long'] = "The code is licensed under the terms of the  GPL v3\n\
                   so you're free to grab, extend, improve and fork the \
@@ -160,8 +162,9 @@ class MiAZ:
             self.log.error(f"{e}")
             self.log.error("Could not bind the gettext translation domain")
 
-    def run(self):
+    def run(self, params):
         """Execute MiAZ in desktop or console mode."""
+        self.log.info(f"Params: {params}")
         ENV = self.env
         if ENV['DESKTOP']['ENABLED']:
             from MiAZ.frontend.desktop.app import MiAZApp
@@ -227,12 +230,18 @@ def main():
     app = MiAZ(ENV)
     app.run()
 
+def parse_arguments():
+    parser = argparse.ArgumentParser(description=APP_DSC)
+    parser.add_argument('--version', action='version', version=VERSION, help='Show version number and exit.')
+    return parser.parse_args()
+
 
 if __name__ == "__main__":
     """
     This is the entry point when the program is installed via Meson
     """
     log.trace("MiAZ installation done via Meson!")
+    args = parse_arguments()
     Adw.init()
     app = MiAZ(ENV)
-    app.run()
+    app.run(sys.argv)
