@@ -11,6 +11,7 @@ import zipfile
 from gettext import gettext as _
 
 from gi.repository import GObject
+from gi.repository import Adw
 from gi.repository import Gtk
 
 from MiAZ.backend.log import MiAZLog
@@ -237,21 +238,19 @@ class MiAZActions(GObject.GObject):
     def show_app_about(self, *args):
         window = self.app.get_widget('window')
         ENV = self.app.get_env()
-        about = Gtk.AboutDialog()
+        about = Adw.AboutDialog()
         about.set_transient_for=window
-        about.set_modal(True)
-        about.set_logo_icon_name(ENV['APP']['ID'])
-        about.set_program_name(ENV['APP']['name'])
+        about.set_application_icon(ENV['APP']['ID'])
+        about.set_application_name(ENV['APP']['name'])
         about.set_version(ENV['APP']['VERSION'])
-        authors = [f"{ENV['APP']['author']} {ENV['APP']['author_website']}"]
-        about.set_authors(authors)
+        author = f"{ENV['APP']['author']}"
+        about.set_developer_name(author)
         artists = ['Flags borrowed from FlagKit project https://github.com/madebybowtie/FlagKit']
         artists.append('Icons borrowed from GNOME contributors https://www.gnome.org')
         about.set_artists(artists)
         about.set_license_type(Gtk.License.GPL_3_0_ONLY)
-        about.set_copyright(f"© 2024 {ENV['APP']['author']}")
+        about.set_copyright(f"© 2019-2025 {ENV['APP']['author']}")
         about.set_website('https://github.com/t00m/MiAZ')
-        about.set_website_label('Github MiAZ repository')
         about.set_comments(ENV['APP']['description'])
         about.present()
 
