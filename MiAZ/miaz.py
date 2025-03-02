@@ -1,6 +1,6 @@
 #!@PYTHON@
 
-# Copyright 2024 Tomás Vírseda
+# Copyright 2019-2025 Tomás Vírseda
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import os
