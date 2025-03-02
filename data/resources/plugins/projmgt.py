@@ -65,11 +65,11 @@ class MiAZToolbarProjectMgtPlugin(GObject.GObject, Peas.Activatable):
             section_common_in.append_item(menu_project)
             self.app.add_widget('workspace-menu-selection-menu-project', menu_project)
             self.app.add_widget('workspace-menu-selection-submenu-project', submenu_project)
-            menuitem = factory.create_menuitem('project-manage', _('...Manage projects'), self.project_manage, None, [])
+            menuitem = factory.create_menuitem('project-manage', _('... manage projects'), self.project_manage, None, [])
             submenu_project.append_item(menuitem)
-            menuitem = factory.create_menuitem('project-assign', _('...assign to project'), self.project_assign, None, [])
+            menuitem = factory.create_menuitem('project-assign', _('... assign to project'), self.project_assign, None, [])
             submenu_project.append_item(menuitem)
-            menuitem = factory.create_menuitem('project-withdraw', _('...withdraw from project'), self.project_withdraw, None, [])
+            menuitem = factory.create_menuitem('project-withdraw', _('... withdraw from project'), self.project_withdraw, None, [])
             submenu_project.append_item(menuitem)
 
     def project_assign(self, *args):

@@ -76,7 +76,7 @@ class MiAZMassRenamingPlugin(GObject.GObject, Peas.Activatable):
             for item_type in fields:
                 i_type = item_type.__gtype_name__
                 i_title = _(item_type.__title__)
-                menuitem = factory.create_menuitem(f'rename_{i_type.lower()}', f'...{i_title.lower()}', self.document_rename_multiple, item_type, [])
+                menuitem = factory.create_menuitem(f'rename_{i_type.lower()}', f'... {i_title.lower()}', self.document_rename_multiple, item_type, [])
                 submenu_massrename.append_item(menuitem)
             self.app.add_widget('workspace-menu-selection-menu-massrename', menu_massrename)
 

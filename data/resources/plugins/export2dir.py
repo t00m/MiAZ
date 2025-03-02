@@ -52,7 +52,7 @@ class Export2Dir(GObject.GObject, Peas.Activatable):
         if self.app.get_widget('workspace-menu-multiple-menu-export-item-export2dir') is None:
             factory = self.app.get_service('factory')
             submenu_export = self.app.get_widget('workspace-menu-selection-submenu-export')
-            menuitem = factory.create_menuitem('export-to-dir', _('...to directory'), self.export, None, [])
+            menuitem = factory.create_menuitem('export-to-dir', _('... to directory'), self.export, None, [])
             submenu_export.append_item(menuitem)
             self.app.add_widget('workspace-menu-multiple-menu-export-item-export2dir', menuitem)
 
