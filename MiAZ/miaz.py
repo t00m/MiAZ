@@ -242,6 +242,5 @@ if __name__ == "__main__":
     """
     log.trace("MiAZ installation done via Meson!")
     args = parse_arguments()
-    Adw.init()
     app = MiAZ(ENV)
     app.run(sys.argv)
