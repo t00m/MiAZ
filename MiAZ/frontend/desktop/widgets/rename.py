@@ -411,9 +411,9 @@ class MiAZRenameDialog(Gtk.Box):
             target = os.path.join(self.repository.docs, btarget)
             renamed = self.util.filename_rename(source, target)
             if not renamed:
-                wrnmsg = f"<big>Another document with the same name already exists in this repository.</big>"
+                text = f"<big>Another document with the same name already exists in this repository.</big>"
                 title=_('Renaming not possible')
-                dlgerror = srvdlg.create(parent=dialog, dtype='error', title=title, body=wrnmsg)
+                dlgerror = srvdlg.create(parent=dialog, dtype='error', title=title, body=text)
                 dlgerror.present()
         self.actions.show_stack_page_by_name('workspace')
         dialog.destroy()

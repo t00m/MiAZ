@@ -213,7 +213,8 @@ class MiAZActions(GObject.GObject):
         config_for = selector.get_config_for()
         selector.set_vexpand(True)
         selector.update_views()
-        dialog = srvdlg.create(parent=parent, dtype='action', title=_(f'Manage {config_for}'), widget=box, width=800, height=600)
+        title = _(f'Manage {config_for}')
+        dialog = srvdlg.create(parent=parent, dtype='action', title=title, widget=box, width=800, height=600)
         dialog.present()
 
     def show_app_settings(self, *args):
@@ -295,7 +296,8 @@ class MiAZActions(GObject.GObject):
                 widget = self.app.get_widget('workspace')
             parent = widget.get_root()
             body = '<big>You must select at least one file</big>'
-            dialog = srvdlg.create(parent=parent, dtype='info', title=_('Action ignored'), body=body)
+            title = _('Action ignored')
+            dialog = srvdlg.create(parent=parent, dtype='info', title=title, body=body)
             dialog.present()
             stop = True
         return stop
