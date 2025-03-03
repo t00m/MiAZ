@@ -4,6 +4,7 @@
 # License: GPL v3
 # Description: Custom dialogs for MiAZ
 
+from gi.repository import Adw
 from gi.repository import Gio
 from gi.repository import Gtk
 
@@ -57,60 +58,20 @@ class MiAZDialog:
         factory = self.app.get_service('factory')
         icm = self.app.get_service('icons')
 
-        # Build dialog
-        dialog = Gtk.MessageDialog(
-                    transient_for=parent,
-                    destroy_with_parent=False,
-                    modal=True,
-                    message_type=miaz_dialog[dtype]['type'],
-                    # ~ secondary_text=body,
-                    # ~ secondary_use_markup=True,
-                    buttons=miaz_dialog[dtype]['buttons'])
-        dialog.set_property('secondary-use-markup', True)
-
-        # FIXME: Set custom size
-        # ~ self.log.debug(f"Setting dialog size to {width}x{height}")
-        # ~ dialog.set_default_size(width, height)
-
-        # Set header
-        dialog.use_header_bar = True
-        header = Gtk.HeaderBar()
-        icon = icm.get_image_by_name(miaz_dialog[dtype]['icon'])
-        header.pack_start(icon)
-        lblTitle = Gtk.Label.new(title)
-        lblTitle.get_style_context().add_class(class_name='title-3')
-        header.set_title_widget(lblTitle)
-        dialog.set_titlebar(header)
-
-        message_area = dialog.get_message_area()
-        message_area.set_visible(False)
-        content_area = dialog.get_content_area()
-
-        # Add body
-        if len(body) > 0:
-            box = factory.create_box_vertical(margin=12)
-            label = Gtk.Label()
-            label.get_style_context().add_class(class_name='toolbar')
-            label.set_markup(body)
-            box.append(label)
-            content_area.append(child=box)
+        dialog = Adw.AlertDialog.new(title, body)
+        dialog.set_body_use_markup(True)
+        dialog.set_heading_use_markup(True)
+        # ~ dialog.set_body(body)
 
         # Add custom widget
-        if widget is not None:
-            dialog.set_default_size(width, height)
-            content_area.set_spacing(6)
-            content_area.append(child=widget)
-
-        # Assign callback, if any. Otherwise, default is closing.
-        if callback is None:
-            dialog.connect('response', self.close)
-        else:
-            dialog.connect('response', callback, data)
+        # ~ if widget is not None:
+            # ~ dialog.set_extra_child(widget)
 
         return dialog
 
     def close(self, dialog, response):
-        dialog.destroy()
+        # ~ dialog.destroy()
+        pass
 
 
 class MiAZDialogAdd:

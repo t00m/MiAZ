@@ -28,7 +28,7 @@ class MiAZMainWindow(Gtk.Box):
         # Widgets
         ## HeaderBar
         headerbar = self.app.add_widget('headerbar', Adw.HeaderBar())
-        self.win.set_titlebar(headerbar)
+        self.append(headerbar)
 
         ## Stack & Stack.Switcher
         stack = self._setup_stack()

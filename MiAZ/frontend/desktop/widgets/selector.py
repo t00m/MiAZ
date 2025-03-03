@@ -150,7 +150,7 @@ class MiAZSelector(Gtk.Box):
         if is_used:
             item_type = self.config.model
             i_title = item_type.__title__
-            text = _(f'<big>{i_title} {selected_item.title} is still being used by {len(docs)} docs:</big>')
+            text = _(f'{i_title} {selected_item.title} is still being used by {len(docs)} docs')
             window = self.viewSl.get_root()
             dtype = 'error'
             title = "Action not possible"
@@ -281,7 +281,7 @@ class MiAZSelector(Gtk.Box):
             title = "Action not possible"
 
             if len(docs) > 0:
-                text = _(f'<big>{i_title} {selected_item.title} is still being used by {len(docs)} docs:</big>')
+                text = _(f'{i_title} {selected_item.title} is still being used by {len(docs)} docs')
                 items = []
                 for doc in docs:
                     items.append(File(id=doc, title=os.path.basename(doc)))

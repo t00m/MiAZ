@@ -6,10 +6,11 @@
 
 from gettext import gettext as _
 
+from gi.repository import Adw
 from gi.repository import GObject
 from gi.repository import GLib
 from gi.repository import Gtk
-from gi.repository import Adw
+
 
 from MiAZ.backend.log import MiAZLog
 from MiAZ.backend.pluginsystem import MiAZPluginManager, MiAZPluginType
@@ -113,7 +114,7 @@ class MiAZApp(Adw.Application):
         ENV = self.get_env()
 
         # Main MiAZ Window
-        window = self.add_widget('window', Gtk.ApplicationWindow(application=self))
+        window = self.add_widget('window', Adw.ApplicationWindow(application=self))
         window.set_default_size(1280, 800)
         window.set_icon_name('io.github.t00m.MiAZ')
         window.connect('close-request', self._on_window_close_request)
@@ -127,7 +128,7 @@ class MiAZApp(Adw.Application):
 
         # Setup main window contents
         mainbox = self.add_widget('window-mainbox', MiAZMainWindow(self))
-        window.set_child(mainbox)
+        window.set_content(mainbox)
 
         # FIXME: Setup menu bar
         menubar = self.get_widget('window-menu-app')
