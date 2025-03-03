@@ -236,10 +236,10 @@ class MiAZActions(GObject.GObject):
         window_settings.present()
 
     def show_app_about(self, *args):
+        # FIXME: The about dialog not modal
         window = self.app.get_widget('window')
         ENV = self.app.get_env()
         about = Adw.AboutDialog()
-        about.set_transient_for=window
         about.set_application_icon(ENV['APP']['ID'])
         about.set_application_name(ENV['APP']['name'])
         about.set_version(ENV['APP']['VERSION'])
