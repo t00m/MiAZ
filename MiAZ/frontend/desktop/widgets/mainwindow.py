@@ -6,7 +6,7 @@
 
 from gettext import gettext as _
 
-from gi.repository import Gdk, Gio, Gtk
+from gi.repository import Adw, Gdk, Gio, Gtk
 
 from MiAZ.backend.log import MiAZLog
 from MiAZ.frontend.desktop.widgets.searchbar import SearchBar
@@ -27,7 +27,7 @@ class MiAZMainWindow(Gtk.Box):
     def _setup_ui(self):
         # Widgets
         ## HeaderBar
-        headerbar = self.app.add_widget('headerbar', Gtk.HeaderBar())
+        headerbar = self.app.add_widget('headerbar', Adw.HeaderBar())
         self.win.set_titlebar(headerbar)
 
         ## Stack & Stack.Switcher
