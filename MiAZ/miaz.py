@@ -26,9 +26,11 @@ ENV = {}
 ENV['DESKTOP'] = {}
 try:
     import gi
-    gi.require_version('Adw', '1')
+except:
+    sys.exit("No support for Python GObject")
+
+try:
     gi.require_version('Gtk', '4.0')
-    from gi.repository import Adw
     from gi.repository import Gtk
     from gi.repository import GLib
     ENV['DESKTOP']['GTK_VERSION'] = (Gtk.MAJOR_VERSION, Gtk.MINOR_VERSION, Gtk.MICRO_VERSION)
@@ -36,11 +38,23 @@ try:
 except (ValueError, ModuleNotFoundError):
     ENV['DESKTOP']['GTK_SUPPORT'] = False
 
-ENV['DESKTOP']['ENABLED'] = ENV['DESKTOP']['GTK_SUPPORT']
+try:
+    gi.require_version('Adw', '1')
+    from gi.repository import Adw
+    ENV['DESKTOP']['ADW_VERSION'] = (Adw.MAJOR_VERSION, Adw.MINOR_VERSION, Adw.MICRO_VERSION)
+    ENV['DESKTOP']['ADW_SUPPORT'] = Adw.MAJOR_VERSION >= 1 and Adw.MINOR_VERSION >= 7
+except (ValueError, ModuleNotFoundError):
+    ENV['DESKTOP']['ADW_SUPPORT'] = False
 
+
+ENV['DESKTOP']['ENABLED'] = ENV['DESKTOP']['GTK_SUPPORT'] and ENV['DESKTOP']['ADW_SUPPORT']
 log.trace(f"GTK available ({Gtk.MAJOR_VERSION}.{Gtk.MINOR_VERSION}.{Gtk.MICRO_VERSION})")
-log.trace(f"GTK version supported? {ENV['DESKTOP']['GTK_SUPPORT']}")
+log.trace(f"ADW available ({Adw.MAJOR_VERSION}.{Adw.MINOR_VERSION}.{Adw.MICRO_VERSION})")
 log.trace(f"Desktop enabled? {ENV['DESKTOP']['ENABLED']}")
+if not ENV['DESKTOP']['ENABLED']:
+    log.error("Desktop dependencies not met to run this app")
+    log.error("Make sure that Gtk version is >= 4.6 and Adw is >= 1.7")
+    sys.exit(-1)
 
 # App
 ENV['APP'] = {}
