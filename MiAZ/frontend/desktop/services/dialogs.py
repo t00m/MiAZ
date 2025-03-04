@@ -64,8 +64,27 @@ class MiAZDialog:
         # ~ dialog.set_body(body)
 
         # Add custom widget
-        # ~ if widget is not None:
-            # ~ dialog.set_extra_child(widget)
+        if widget is not None:
+            dialog.set_extra_child(widget)
+
+        # Assign callback, if any. Otherwise, default is closing.
+        if callback is None:
+            dialog.connect('response', self.close)
+        else:
+            dialog.connect('response', callback, data)
+
+        # ~ dialog.add_responses("cancel",  _("_Cancel"), "replace", _("_Replace"))
+
+        # ~ adw_alert_dialog_set_response_appearance (ADW_ALERT_DIALOG (dialog),
+                                                  # ~ "replace",
+                                                  # ~ ADW_RESPONSE_DESTRUCTIVE);
+
+        # ~ adw_alert_dialog_set_default_response (ADW_ALERT_DIALOG (dialog), "cancel");
+        # ~ adw_alert_dialog_set_close_response (ADW_ALERT_DIALOG (dialog), "cancel");
+
+        # ~ g_signal_connect (dialog, "response", G_CALLBACK (response_cb), self);
+
+        # ~ adw_dialog_present (dialog, parent);
 
         return dialog
 

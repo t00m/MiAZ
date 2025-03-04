@@ -7,6 +7,7 @@
 from gettext import gettext as _
 
 from gi.repository import Adw
+from gi.repository import Gio
 from gi.repository import GObject
 from gi.repository import GLib
 from gi.repository import Gtk
@@ -44,7 +45,9 @@ class MiAZApp(Adw.Application):
 
     def __init__(self, **kwargs):
         """Set up env, UI and services used by the rest of modules."""
-        super().__init__(**kwargs)
+        application_id = kwargs['application_id']
+        Adw.Application.__init__(self, application_id=application_id)
+        # ~ super().__init__(**kwargs)
         self._miazobjs['widgets'] = {}
         self._miazobjs['services'] = {}
         self._miazobjs['actions'] = {}

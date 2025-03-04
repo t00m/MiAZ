@@ -140,7 +140,7 @@ class MiAZActions(GObject.GObject):
                         self.log.info(f"{i_title_plural} imported successfully")
                     else:
                         self.log.error(f"This is not a config file for {i_title_plural.lower()}")
-            dialog.destroy()
+            # ~ dialog.destroy()
 
         window = self.app.get_widget('window')
         filechooser = factory.create_filechooser(
@@ -192,7 +192,7 @@ class MiAZActions(GObject.GObject):
                             )
                     self.log.info(f"{i_title_plural} exported successfully to {target_filepath}")
                     self.show_repository_settings()
-            dialog.destroy()
+            # ~ dialog.destroy()
 
         window = self.app.get_widget('window')
         filechooser = factory.create_filechooser(

@@ -195,7 +195,7 @@ class MiAZSelector(Gtk.Box):
                 self.config.add_available(key.upper(), value)
                 self.log.debug(f"{key} ({value}) added to list of available items")
                 self.update_views()
-        dialog.destroy()
+        # ~ dialog.destroy()
 
     def _on_item_available_edit(self, *args):
         try:
@@ -240,7 +240,7 @@ class MiAZSelector(Gtk.Box):
                 self.config.save_available(items_available)
                 self.log.debug(f"{oldkey} ({oldval}) renamed to {newkey} ({newval}) in the list of available items")
                 self.update_views()
-        dialog.destroy()
+        # ~ dialog.destroy()
 
     def select_item(self, view, item_id):
         self.log.debug(f"{view} > {item_id}")

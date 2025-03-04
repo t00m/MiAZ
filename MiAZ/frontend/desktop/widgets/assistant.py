@@ -147,7 +147,7 @@ class MiAZAssistantRepo(MiAZAssistant):
                 self.row_repo_source.set_subtitle('')
                 self.set_page_complete(page, False)
 
-        dialog.destroy()
+        # ~ dialog.destroy()
 
     def on_assistant_cancel(self, *args):
         if self.completed:

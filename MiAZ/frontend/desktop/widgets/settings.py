@@ -141,7 +141,7 @@ class MiAZAppSettings(MiAZCustomWindow):
         filechooser.show()
 
     def on_filechooser_response_source(self, dialog, response, data):
-        dialog.destroy()
+        # ~ dialog.destroy()
         return
 
     def _create_widget_for_plugins(self):
@@ -234,7 +234,7 @@ class MiAZAppSettings(MiAZCustomWindow):
             self.log.debug(f"Plugin imported? {imported}")
             if imported:
                 self.update_user_plugins()
-        dialog.destroy()
+        # ~ dialog.destroy()
 
     def _on_plugin_add(self, *args):
         plugin_filter = Gtk.FileFilter()
