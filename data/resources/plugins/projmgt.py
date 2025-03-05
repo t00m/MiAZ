@@ -92,7 +92,6 @@ class MiAZToolbarProjectMgtPlugin(GObject.GObject, Peas.Activatable):
                 projects.add_batch(pid, docs)
                 workspace = self.app.get_widget('workspace')
                 workspace.update()
-            dialog.destroy()
 
         config = self.app.get_config_dict()
         i_type = item_type.__gtype_name__

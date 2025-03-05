@@ -267,8 +267,8 @@ class MiAZFactory:
 
         return dropdown
 
-    def create_filechooser(self, parent, title, target, callback, data=None):
-        return MiAZFileChooserDialog(self.app, parent, title, target, callback, data)
+    def create_filechooser(self, enable_response, title, target, callback, data=None):
+        return MiAZFileChooserDialog(self.app, enable_response, title, target, callback, data)
 
     def create_frame(self, title:str = None, margin: int = 3, hexpand: bool = False, vexpand: bool = False) -> Gtk.Frame:
         frame = Gtk.Frame()

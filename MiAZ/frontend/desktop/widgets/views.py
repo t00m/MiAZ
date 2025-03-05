@@ -158,8 +158,9 @@ class MiAZColumnViewWorkspace(MiAZColumnView):
         icon = box.get_first_child()
         item = list_item.get_item()
         gicon = self.srvicm.get_mimetype_icon(item.id)
-        icon.set_from_gicon(gicon)
-        icon.set_pixel_size(36)
+        if gicon is not None:
+            icon.set_from_gicon(gicon)
+            icon.set_pixel_size(36)
 
     def _on_factory_setup_country(self, factory, list_item):
         box = ColLabel()

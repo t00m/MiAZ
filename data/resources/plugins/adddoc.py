@@ -57,7 +57,6 @@ class MiAZAddDocumentPlugin(GObject.GObject, Peas.Activatable):
                     btarget = srvutl.filename_normalize(source)
                     target = os.path.join(srvrepo.docs, btarget)
                     srvutl.filename_import(source, target)
-            dialog.destroy()
 
         window = self.app.get_widget('window')
         clsdlg = MiAZFileChooserDialog(self.app)

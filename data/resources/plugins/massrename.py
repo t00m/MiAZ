@@ -143,7 +143,6 @@ class MiAZMassRenamingPlugin(GObject.GObject, Peas.Activatable):
                     source = os.path.join(repository.docs, bsource)
                     target = os.path.join(repository.docs, btarget)
                     util.filename_rename(source, target)
-            dialog.destroy()
 
         def dialog_response_date(dialog, response, calendar, items):
             if response == 'apply':
@@ -161,7 +160,6 @@ class MiAZMassRenamingPlugin(GObject.GObject, Peas.Activatable):
                     source = os.path.join(repository.docs, bsource)
                     target = os.path.join(repository.docs, btarget)
                     util.filename_rename(source, target)
-            dialog.destroy()
 
         items = workspace.get_selected_items()
         if actions.stop_if_no_items(items):

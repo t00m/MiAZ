@@ -416,7 +416,6 @@ class MiAZRenameDialog(Gtk.Box):
                 dlgerror = srvdlg.create(enable_response=False, dtype='error', title=title, body=text)
                 dlgerror.present(dialog)
         self.actions.show_stack_page_by_name('workspace')
-        # ~ dialog.destroy()
 
     def on_rename_cancel(self, *args):
         self.actions.show_stack_page_by_name('workspace')
@@ -439,8 +438,6 @@ class MiAZRenameDialog(Gtk.Box):
             try:
                 os.unlink(filepath)
                 self.log.debug(f"Document deleted: {filepath}")
-                # ~ dialog.destroy()
-                self.destroy()
             except FileNotFoundError as error:
                 self.log.error(f"Something went wrong: {error}")
                 raise

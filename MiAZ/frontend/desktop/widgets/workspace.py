@@ -96,9 +96,7 @@ class MiAZWorkspace(Gtk.Box):
             window = self.app.get_widget('window')
             self.log.debug("Executing Assistant")
             assistant = MiAZAssistantRepoSettings(self.app)
-            assistant.set_transient_for(window)
-            assistant.set_modal(True)
-            assistant.present()
+            assistant.present(window)
 
     def _on_config_used_updated(self, *args):
         # FIXME

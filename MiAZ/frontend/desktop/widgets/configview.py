@@ -124,7 +124,6 @@ class MiAZRepositories(MiAZConfigView):
                 self.update_views()
             else:
                 self.log.debug("No repository added. Invalid data")
-        # ~ dialog.destroy()
 
     def _on_item_available_rename(self, item):
         repo_name = item.id

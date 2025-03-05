@@ -97,7 +97,6 @@ class Export2Zip(GObject.GObject, Peas.Activatable):
                     body=''
                     srvdlg.create(enable_response=False, dtype='info', title=_('Export successfull'), body=body).present(window)
 
-            dialog.destroy()
 
         window = self.app.get_widget('window')
         clsdlg = MiAZFileChooserDialog(self.app)

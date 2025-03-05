@@ -48,7 +48,7 @@ class MiAZAddDirectoryPlugin(GObject.GObject, Peas.Activatable):
 
         def filechooser_response(dialog, response, clsdlg):
             if response == 'apply':
-                content_area = dialog.get_content_area()
+                # ~ content_area = dialog.get_extra_child()
                 filechooser = self.app.get_widget('plugin-adddir-filechooser')
                 toggle = self.app.get_widget('plugin-adddir-togglebutton')
                 recursive = toggle.get_active()
@@ -64,7 +64,6 @@ class MiAZAddDirectoryPlugin(GObject.GObject, Peas.Activatable):
                         btarget = srvutl.filename_normalize(source)
                         target = os.path.join(srvrepo.docs, btarget)
                         srvutl.filename_import(source, target)
-            dialog.destroy()
 
         window = self.app.get_widget('window')
         clsdlg = MiAZFileChooserDialog(self.app)
@@ -76,7 +75,9 @@ class MiAZAddDirectoryPlugin(GObject.GObject, Peas.Activatable):
         filechooser_widget = self.app.add_widget('plugin-adddir-filechooser', clsdlg.get_filechooser_widget())
         filechooser_dialog.get_style_context().add_class(class_name='toolbar')
         filechooser_widget.get_style_context().add_class(class_name='frame')
-        contents = filechooser_dialog.get_content_area()
+        filechooser = filechooser_dialog.get_extra_child()
+        gtkbin = filechooser.get_parent()
+        contents = gtkbin.get_parent()
         hbox = factory.create_box_horizontal()
         hbox.get_style_context().add_class(class_name='toolbar')
         label = Gtk.Label()

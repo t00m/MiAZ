@@ -116,7 +116,6 @@ class Export2Dir(GObject.GObject, Peas.Activatable):
                     window = workspace.get_root()
                     body = f"<big>Check your default file browser</big>"
                     srvdlg.create(enable_response=False, dtype='info', title=_('Export successfull'), body=body).present()
-            dialog.destroy()
 
         patterns = {
             'Y': _('Year'),

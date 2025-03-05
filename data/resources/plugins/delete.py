@@ -57,7 +57,6 @@ class MiAZDeleteItemPlugin(GObject.GObject, Peas.Activatable):
                 for item in items:
                     filepath = os.path.join(repository.docs, item.id)
                     util.filename_delete(filepath)
-            dialog.destroy()
 
         items = workspace.get_selected_items()
         if actions.stop_if_no_items(items):

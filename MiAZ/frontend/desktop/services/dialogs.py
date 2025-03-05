@@ -61,6 +61,7 @@ class MiAZDialog:
         dialog = Adw.AlertDialog.new(title, body)
         dialog.set_body_use_markup(True)
         dialog.set_heading_use_markup(True)
+        dialog.set_size_request(width, height)
         # ~ dialog.set_body(body)
 
         # Add custom widget
@@ -282,15 +283,14 @@ class MiAZFileChooserDialog(MiAZDialog):
         self.app = app
 
     def create( self,
-                parent: Gtk.Window,
-                title: str,
-                target: str,
+                enable_response: bool = False,
+                title: str = '',
+                target: str = '',
                 callback=None,
                 data=None):
 
         srvdlg = self.app.get_service('dialogs')
 
-        self.parent = parent
         self.title = title
         self.target = target
         self.callback = callback
