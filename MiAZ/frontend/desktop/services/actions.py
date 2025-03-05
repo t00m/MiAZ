@@ -253,7 +253,7 @@ class MiAZActions(GObject.GObject):
         about.set_copyright(f"© 2019-2025 {ENV['APP']['author']}")
         about.set_website('https://github.com/t00m/MiAZ')
         about.set_comments(ENV['APP']['description'])
-        about.present()
+        about.present(window)
 
     def show_app_help(self, *args):
         shwin = self.app.get_widget('shortcutswindow')
