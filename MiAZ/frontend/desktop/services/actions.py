@@ -112,7 +112,7 @@ class MiAZActions(GObject.GObject):
         file_used = f'{i_title_plural.lower()}-used.json'
 
         def filechooser_response(dialog, response, data):
-            if response == Gtk.ResponseType.ACCEPT:
+            if response == 'apply':
                 srvutl = self.app.get_service('util')
                 content_area = dialog.get_content_area()
                 box = content_area.get_first_child()
@@ -167,7 +167,7 @@ class MiAZActions(GObject.GObject):
         def filechooser_response(dialog, response, data):
             srvutl = self.app.get_service('util')
             repository = self.app.get_service('repo')
-            if response == Gtk.ResponseType.ACCEPT:
+            if response == 'apply':
                 content_area = dialog.get_content_area()
                 box = content_area.get_first_child()
                 filechooser = box.get_first_child()
@@ -214,8 +214,8 @@ class MiAZActions(GObject.GObject):
         selector.set_vexpand(True)
         selector.update_views()
         title = _(f'Manage {config_for}')
-        dialog = srvdlg.create(parent=parent, dtype='action', title=title, widget=box, width=800, height=600)
-        dialog.present()
+        dialog = srvdlg.create(enable_response=True, dtype='action', title=title, widget=box, width=800, height=600)
+        dialog.present(parent)
 
     def show_app_settings(self, *args):
         window = self.app.get_widget('window')
@@ -297,8 +297,8 @@ class MiAZActions(GObject.GObject):
             parent = widget.get_root()
             body = '<big>You must select at least one file</big>'
             title = _('Action ignored')
-            dialog = srvdlg.create(parent=parent, dtype='info', title=title, body=body)
-            dialog.present()
+            dialog = srvdlg.create(enable_response=False, dtype='info', title=title, body=body)
+            dialog.present(parent)
             stop = True
         return stop
 

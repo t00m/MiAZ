@@ -127,7 +127,7 @@ class MiAZAssistantRepo(MiAZAssistant):
         filechooser.show()
 
     def on_filechooser_response_source(self, dialog, response, data=None):
-        if response == Gtk.ResponseType.ACCEPT:
+        if response == 'apply':
             content_area = dialog.get_content_area()
             box = content_area.get_first_child()
             filechooser = box.get_first_child()

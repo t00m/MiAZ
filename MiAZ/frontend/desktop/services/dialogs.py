@@ -44,16 +44,16 @@ class MiAZDialog:
         self.log = MiAZLog('MiAZ.Dialogs')
 
     def create( self,
-                parent: Gtk.Window,
-                dtype: str,
-                title: str,
+                enable_response: bool = False,
+                dtype: str = '',
+                title: str = '',
                 body: str = '',
                 widget: Gtk.Widget = None,
                 callback = None,
                 data = None,
                 width: int = -1,
                 height: int = -1,
-                ):
+        ):
 
         factory = self.app.get_service('factory')
         icm = self.app.get_service('icons')
@@ -68,28 +68,22 @@ class MiAZDialog:
             dialog.set_extra_child(widget)
 
         # Assign callback, if any. Otherwise, default is closing.
+        if enable_response:
+            dialog.add_response("cancel", _("Cancel"))
+            dialog.add_response("apply", _("Apply"))
+            dialog.set_response_appearance("cancel", Adw.ResponseAppearance.DESTRUCTIVE)
+        else:
+            dialog.add_response("cancel", _("Ok"))
+            dialog.set_response_appearance("cancel", Adw.ResponseAppearance.SUGGESTED)
+
         if callback is None:
             dialog.connect('response', self.close)
         else:
             dialog.connect('response', callback, data)
 
-        # ~ dialog.add_responses("cancel",  _("_Cancel"), "replace", _("_Replace"))
-
-        # ~ adw_alert_dialog_set_response_appearance (ADW_ALERT_DIALOG (dialog),
-                                                  # ~ "replace",
-                                                  # ~ ADW_RESPONSE_DESTRUCTIVE);
-
-        # ~ adw_alert_dialog_set_default_response (ADW_ALERT_DIALOG (dialog), "cancel");
-        # ~ adw_alert_dialog_set_close_response (ADW_ALERT_DIALOG (dialog), "cancel");
-
-        # ~ g_signal_connect (dialog, "response", G_CALLBACK (response_cb), self);
-
-        # ~ adw_dialog_present (dialog, parent);
-
         return dialog
 
     def close(self, dialog, response):
-        # ~ dialog.destroy()
         pass
 
 
@@ -114,14 +108,14 @@ class MiAZDialogAdd:
         self.lblKey1.set_hexpand(False)
         self.etyValue1 = Gtk.Entry()
         self.etyValue1.set_hexpand(False)
-        self.etyValue1.connect('activate', self.on_dialog_save)
+        # ~ self.etyValue1.connect('activate', self.on_dialog_save)
 
         self.boxKey2 = factory.create_box_vertical(spacing=6)
         self.boxKey2.set_hexpand(True)
         self.lblKey2 = Gtk.Label()
         self.lblKey2.set_xalign(0.0)
         self.etyValue2 = Gtk.Entry()
-        self.etyValue2.connect('activate', self.on_dialog_save)
+        # ~ self.etyValue2.connect('activate', self.on_dialog_save)
 
         self.fields = factory.create_box_horizontal(spacing=6)
         self.fields.set_margin_bottom(margin=12)
@@ -162,10 +156,10 @@ class MiAZDialogAdd:
         self.widget.append(self.fields)
 
         # Create dialog
-        self.dialog = srvdlg.create( parent=parent,
-                                dtype='action',
-                                title=title,
-                                widget=self.widget)
+        self.dialog = srvdlg.create(    enable_response=True,
+                                        dtype='action',
+                                        title=title,
+                                        widget=self.widget)
         return self.dialog
 
     def get_label_key1(self):
@@ -181,12 +175,10 @@ class MiAZDialogAdd:
         return  self.etyValue2
 
     def on_dialog_save(self, *args):
-        button = self.dialog.get_widget_for_response(Gtk.ResponseType.OK)
-        button.activate()
+        self.log.error(f"FIXME: {args}")
 
     def on_dialog_cancel(self, dialog, respone):
-        button = self.dialog.get_widget_for_response(Gtk.ResponseType.CANCEL)
-        button.activate()
+        self.log.error(f"FIXME: {args}")
 
     def get_boxKey1(self):
         return self.boxKey1
@@ -254,7 +246,7 @@ class MiAZDialogAddRepo(MiAZDialogAdd):
         self.widget.append(self.fields)
 
         # Create dialog
-        self.dialog = srvdlg.create(    parent=parent,
+        self.dialog = srvdlg.create(    enable_response=False,
                                         dtype='action',
                                         title=title,
                                         widget=self.widget)
@@ -314,7 +306,7 @@ class MiAZFileChooserDialog(MiAZDialog):
             self.w_filechooser.set_action(Gtk.FileChooserAction.SAVE)
 
         # Create dialog
-        self.dialog = srvdlg.create(parent=parent,
+        self.dialog = srvdlg.create(enable_response=True,
                                     dtype='action',
                                     title=title,
                                     widget=self.w_filechooser,

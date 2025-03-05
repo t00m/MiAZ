@@ -47,7 +47,7 @@ class MiAZAddDirectoryPlugin(GObject.GObject, Peas.Activatable):
         srvrepo = self.app.get_service('repo')
 
         def filechooser_response(dialog, response, clsdlg):
-            if response in [Gtk.ResponseType.ACCEPT, Gtk.ResponseType.OK]:
+            if response == 'apply':
                 content_area = dialog.get_content_area()
                 filechooser = self.app.get_widget('plugin-adddir-filechooser')
                 toggle = self.app.get_widget('plugin-adddir-togglebutton')
@@ -69,7 +69,7 @@ class MiAZAddDirectoryPlugin(GObject.GObject, Peas.Activatable):
         window = self.app.get_widget('window')
         clsdlg = MiAZFileChooserDialog(self.app)
         filechooser_dialog = clsdlg.create(
-                    parent=window,
+                    enable_response=True,
                     title=_('Import a directory'),
                     target = 'FOLDER',
                     callback = filechooser_response)
@@ -88,4 +88,4 @@ class MiAZAddDirectoryPlugin(GObject.GObject, Peas.Activatable):
         hbox.append(label)
         contents.append(hbox)
         contents.get_style_context().add_class(class_name='toolbar')
-        filechooser_dialog.present()
+        filechooser_dialog.present(window)

@@ -132,7 +132,7 @@ class MiAZMassRenamingPlugin(GObject.GObject, Peas.Activatable):
         def dialog_response(dialog, response, dropdown, item_type, items):
             util = self.app.get_service('util')
             repository = self.app.get_service('repo')
-            if response == Gtk.ResponseType.OK:
+            if response == 'apply':
                 for item in items:
                     bsource = item.id
                     name, ext = util.filename_details(bsource)
@@ -146,7 +146,7 @@ class MiAZMassRenamingPlugin(GObject.GObject, Peas.Activatable):
             dialog.destroy()
 
         def dialog_response_date(dialog, response, calendar, items):
-            if response == Gtk.ResponseType.OK:
+            if response == 'apply':
                 adate = calendar.get_date()
                 y = f"{adate.get_year():04d}"
                 m = f"{adate.get_month():02d}"
@@ -194,9 +194,9 @@ class MiAZMassRenamingPlugin(GObject.GObject, Peas.Activatable):
             box.append(hbox)
             box.append(frame)
             window = self.app.get_widget('window')
-            dialog = srvdlg.create(parent=window, dtype='action', title=_('Mass renaming'), widget=box, width=1024, height=600)
+            dialog = srvdlg.create(enable_response=True, dtype='action', title=_('Mass renaming'), widget=box, width=1024, height=600)
             dialog.connect('response', dialog_response, dropdown, item_type, items)
-            dialog.present()
+            dialog.present(window)
         else:
             box = factory.create_box_vertical(spacing=6, vexpand=True, hexpand=True)
             hbox = factory.create_box_horizontal()
@@ -219,7 +219,7 @@ class MiAZMassRenamingPlugin(GObject.GObject, Peas.Activatable):
             calendar.select_day(GLib.DateTime.new_from_iso8601(iso8601))
             calendar.emit('day-selected')
             window = self.app.get_widget('window')
-            dialog = srvdlg.create(parent=window, dtype='action', title=_('Mass renaming'), widget=box, width=640, height=480)
+            dialog = srvdlg.create(enable_response=True, dtype='action', title=_('Mass renaming'), widget=box, width=640, height=480)
             dialog.connect('response', dialog_response_date, calendar, items)
-            dialog.present()
+            dialog.present(window)
 

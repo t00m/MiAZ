@@ -221,7 +221,7 @@ class MiAZAppSettings(MiAZCustomWindow):
         view.update(items)
 
     def on_filechooser_response(self, dialog, response, clsdlg):
-        if response in [Gtk.ResponseType.ACCEPT, Gtk.ResponseType.OK]:
+        if response == 'apply':
             plugin_manager = self.app.get_service('plugin-manager')
             filechooser = clsdlg.get_filechooser_widget()
             gfile = filechooser.get_file()

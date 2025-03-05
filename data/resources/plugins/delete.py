@@ -53,7 +53,7 @@ class MiAZDeleteItemPlugin(GObject.GObject, Peas.Activatable):
         srvdlg = self.app.get_service('dialogs')
 
         def dialog_response(dialog, response, items):
-            if response == Gtk.ResponseType.ACCEPT or response == Gtk.ResponseType.YES:
+            if response == 'apply':
                 for item in items:
                     filepath = os.path.join(repository.docs, item.id)
                     util.filename_delete(filepath)
@@ -73,6 +73,6 @@ class MiAZDeleteItemPlugin(GObject.GObject, Peas.Activatable):
         box.append(frame)
         window = self.app.get_widget('window')
         body = _("<big>These documents are going to be deleted.\n<b>Are you sure?</b></big>")
-        dialog = srvdlg.create(parent=window, dtype='question', title=_('Mass deletion'), body=body, widget=box, width=600, height=480)
+        dialog = srvdlg.create(enable_response=True, dtype='question', title=_('Mass deletion'), body=body, widget=box, width=600, height=480)
         dialog.connect('response', dialog_response, items)
-        dialog.present()
+        dialog.present(window)

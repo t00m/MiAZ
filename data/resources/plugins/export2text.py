@@ -62,4 +62,4 @@ class Export2Text(GObject.GObject, Peas.Activatable):
         temp.close()
         util.filename_display(filepath)
         body = '<big>Check your default text editor</big>'
-        srvdlg.create(parent=window, dtype='info', title=_('Export successfull'), body=body).present()
+        srvdlg.create(enable_response=False, dtype='info', title=_('Export successfull'), body=body).present(window)

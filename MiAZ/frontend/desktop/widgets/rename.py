@@ -399,12 +399,12 @@ class MiAZRenameDialog(Gtk.Box):
         body = _(f"<big>You are about to set a new name to this document:\n\n<b>{self.get_filepath_target()}</b></big>")
         window = self.app.get_widget('window')
         title = _('Are you sure?')
-        dialog = srvdlg.create(parent=window, dtype='question', title=title, body=body, callback=self.on_answer_question_rename)
-        dialog.present()
+        dialog = srvdlg.create(enable_response=True, dtype='question', title=title, body=body, callback=self.on_answer_question_rename)
+        dialog.present(window)
 
     def on_answer_question_rename(self, dialog, response, data=None):
         srvdlg = self.app.get_service('dialogs')
-        if response in [Gtk.ResponseType.ACCEPT, Gtk.ResponseType.YES]:
+        if response == 'apply':
             bsource = self.get_filepath_source()
             source = os.path.join(self.repository.docs, bsource)
             btarget = self.get_filepath_target()
@@ -413,8 +413,8 @@ class MiAZRenameDialog(Gtk.Box):
             if not renamed:
                 text = f"<big>Another document with the same name already exists in this repository.</big>"
                 title=_('Renaming not possible')
-                dlgerror = srvdlg.create(parent=dialog, dtype='error', title=title, body=text)
-                dlgerror.present()
+                dlgerror = srvdlg.create(enable_response=False, dtype='error', title=title, body=text)
+                dlgerror.present(dialog)
         self.actions.show_stack_page_by_name('workspace')
         # ~ dialog.destroy()
 
@@ -435,7 +435,7 @@ class MiAZRenameDialog(Gtk.Box):
 
     def on_answer_question_delete(self, dialog, response):
         filepath = self.get_filepath_source()
-        if response == Gtk.ResponseType.YES:
+        if response == 'apply':
             try:
                 os.unlink(filepath)
                 self.log.debug(f"Document deleted: {filepath}")

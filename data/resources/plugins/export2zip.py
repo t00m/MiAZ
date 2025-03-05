@@ -68,7 +68,7 @@ class Export2Zip(GObject.GObject, Peas.Activatable):
 
         def filechooser_response(dialog, response, patterns):
 
-            if response in [Gtk.ResponseType.ACCEPT, Gtk.ResponseType.OK]:
+            if response == 'apply':
                 content_area = dialog.get_content_area()
                 filechooser = self.app.get_widget('plugin-export2zip-filechooser')
                 gfile = filechooser.get_file()
@@ -95,17 +95,17 @@ class Export2Zip(GObject.GObject, Peas.Activatable):
                     workspace = self.app.get_widget('workspace')
                     window = workspace.get_root()
                     body=''
-                    srvdlg.create(parent=window, dtype='info', title=_('Export successfull'), body=body).present()
+                    srvdlg.create(enable_response=False, dtype='info', title=_('Export successfull'), body=body).present(window)
 
             dialog.destroy()
 
         window = self.app.get_widget('window')
         clsdlg = MiAZFileChooserDialog(self.app)
         filechooser_dialog = clsdlg.create(
-                    parent=window,
+                    enable_response=True,
                     title=_('Choose a directory to export the Zip archive'),
                     target = 'FOLDER',
                     callback = filechooser_response)
         self.app.add_widget('plugin-export2zip-filechooser', clsdlg.get_filechooser_widget())
-        filechooser_dialog.present()
+        filechooser_dialog.present(window)
 

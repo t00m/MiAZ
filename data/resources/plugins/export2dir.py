@@ -80,7 +80,7 @@ class Export2Dir(GObject.GObject, Peas.Activatable):
             return paths
 
         def filechooser_response(dialog, response, patterns):
-            if response in [Gtk.ResponseType.ACCEPT, Gtk.ResponseType.OK]:
+            if response == 'apply':
                 content_area = dialog.get_content_area()
                 box = content_area.get_first_child()
                 filechooser = self.app.get_widget('plugin-export2dir-filechooser')
@@ -115,7 +115,7 @@ class Export2Dir(GObject.GObject, Peas.Activatable):
                     srvdlg = self.app.get_service('dialogs')
                     window = workspace.get_root()
                     body = f"<big>Check your default file browser</big>"
-                    srvdlg.create(parent=window, dtype='info', title=_('Export successfull'), body=body).present()
+                    srvdlg.create(enable_response=False, dtype='info', title=_('Export successfull'), body=body).present()
             dialog.destroy()
 
         patterns = {
@@ -132,7 +132,7 @@ class Export2Dir(GObject.GObject, Peas.Activatable):
 
         clsdlg = MiAZFileChooserDialog(self.app)
         filechooser_dialog = clsdlg.create(
-                    parent=window,
+                    enable_response=True,
                     title=_('Choose a directory to export selected files'),
                     target = 'FOLDER',
                     callback = filechooser_response,
@@ -161,4 +161,4 @@ class Export2Dir(GObject.GObject, Peas.Activatable):
         box.append(hbox)
         # ~ filechooser.show()
 
-        filechooser_dialog.present()
+        filechooser_dialog.present(window)
