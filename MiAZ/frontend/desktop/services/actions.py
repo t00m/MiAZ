@@ -95,7 +95,8 @@ class MiAZActions(GObject.GObject):
                 if item_type == Repository:
                     title = key.replace('_', ' ')
                 else:
-                    title = f"{key} - {title}"
+                    # ~ title = f"{key} - {title}"
+                    title = f"{title}"
                 model.append(item_type(id=key, title=title))
 
         if len(model) == 0:
