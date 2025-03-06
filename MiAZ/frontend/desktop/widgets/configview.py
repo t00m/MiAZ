@@ -42,9 +42,11 @@ class MiAZConfigView(MiAZSelector):
         self.config.connect('used-updated', self.update_views)
         self.config.connect('available-updated', self.update_views)
         self.set_vexpand(True)
+        self.log.trace(f"Configview for {config_name} initialited")
 
     def update_config(self):
         self.config = self.conf[self.config_name]
+        self.log.trace(f"Updated configview for {self.config_name}")
 
     def get_config_for(self):
         return self.config.config_for
