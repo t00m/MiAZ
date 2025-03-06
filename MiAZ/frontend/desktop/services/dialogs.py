@@ -221,10 +221,9 @@ class MiAZDialogAddRepo(MiAZDialogAdd):
         self.key2 = ''
 
     def create( self,
-                parent:Gtk.Window,
-                title: str,
-                key1: str,
-                key2: str,
+                title: str='',
+                key1: str='',
+                key2: str='',
                 width: int = -1,
                 height: int = -1):
 
@@ -232,6 +231,7 @@ class MiAZDialogAddRepo(MiAZDialogAdd):
         srvdlg = self.app.get_service('dialogs')
         self.title = title
         self.key1 = key1
+        enable_response=True
 
         self.lblKey1.set_markup(f"<b>{self.key1}</b>")
         vbox = factory.create_box_vertical(spacing=12, vexpand=True)
@@ -247,7 +247,7 @@ class MiAZDialogAddRepo(MiAZDialogAdd):
         self.widget.append(self.fields)
 
         # Create dialog
-        self.dialog = srvdlg.create(    enable_response=False,
+        self.dialog = srvdlg.create(    enable_response=enable_response,
                                         dtype='action',
                                         title=title,
                                         widget=self.widget)

@@ -109,7 +109,7 @@ class MiAZRepositories(MiAZConfigView):
         key2 = '<big><b>Folder</b></big>'
         search_term = self.entry.get_text()
         this_repo = MiAZDialogAddRepo(self.app)
-        dialog = this_repo.create(parent=window, title=title, key1=key1, key2=key2)
+        dialog = this_repo.create(title=title, key1=key1, key2=key2)
         this_repo.set_value1(search_term)
         dialog.connect('response', self._on_response_item_available_add, this_repo)
         dialog.present(window)
@@ -158,7 +158,7 @@ class MiAZRepositories(MiAZConfigView):
             window = self.app.get_widget('window-settings')
             dtype = 'error'
             title = "Action not possible"
-            dialog = srvdlg.create(enable_response=False, dtype=dtype, title=title, body=text, widget=None, width=800, height=600)
+            dialog = srvdlg.create(enable_response=False, dtype=dtype, title=title, body=text, widget=None)
             dialog.present(window)
 
     def _on_item_used_add(self, *args):
