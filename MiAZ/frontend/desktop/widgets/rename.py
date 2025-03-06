@@ -396,7 +396,7 @@ class MiAZRenameDialog(Gtk.Box):
 
     def on_rename_accept(self, *args):
         srvdlg = self.app.get_service('dialogs')
-        body = _(f"<big>You are about to set a new name to this document:\n\n<b>{self.get_filepath_target()}</b></big>")
+        body = _(f"\n<big>You are about to set a new name to this document:\n\n<b>{self.get_filepath_target()}</b></big>")
         window = self.app.get_widget('window')
         title = _('Are you sure?')
         dialog = srvdlg.create(enable_response=True, dtype='question', title=title, body=body, callback=self.on_answer_question_rename)
@@ -415,10 +415,13 @@ class MiAZRenameDialog(Gtk.Box):
                 title=_('Renaming not possible')
                 dlgerror = srvdlg.create(enable_response=False, dtype='error', title=title, body=text)
                 dlgerror.present(dialog)
-        self.actions.show_stack_page_by_name('workspace')
+            else:
+                self.actions.show_stack_page_by_name('workspace')
 
     def on_rename_cancel(self, *args):
-        self.actions.show_stack_page_by_name('workspace')
+        # ~ self.actions.show_stack_page_by_name('workspace')
+        self.log.info("Rename canceled by user")
+        self.actions.show_stack_page_by_name('rename')
 
     def _on_document_display(self, *args):
         doc = self.get_filepath_source()
