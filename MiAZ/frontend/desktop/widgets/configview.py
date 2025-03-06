@@ -127,14 +127,16 @@ class MiAZRepositories(MiAZConfigView):
 
     def _on_item_available_rename(self, item):
         repo_name = item.id
+        repo_path = item.title
+        self.log.trace(f"Renaming Repository '{repo_name}' located in {repo_path}")
         window = self.app.get_widget('window-settings')
         this_repo = MiAZDialogAddRepo(self.app)
         title = _('Edit repository')
         key1 = '<big><b>Repository name</b></big>'
         key2 = '<big><b>Folder</b></big>'
-        dialog = this_repo.create(parent=window, title=title, key1=key1, key2=key2)
+        dialog = this_repo.create(title=title, key1=key1, key2=key2)
         this_repo.set_value1(repo_name.replace('_', ' '))
-        this_repo.set_value2(item.title)
+        this_repo.set_value2(repo_path)
         entry1 = this_repo.get_entry_key1()
         entry1.set_sensitive(False)
         dialog.connect('response', self._on_response_item_available_rename, item, this_repo)
