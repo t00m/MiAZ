@@ -427,8 +427,8 @@ class MiAZConfigProjects(MiAZConfig):
             app=app,
             log=MiAZLog('MiAZ.Config.Project'),
             config_for='Project',
-            used=os.path.join(dir_conf, 'project-used.json'),
-            available=os.path.join(dir_conf, 'project-available.json'),
+            used=os.path.join(dir_conf, 'projects-used.json'),
+            available=os.path.join(dir_conf, 'projects-available.json'),
             default=None,
             model=Project,
             must_copy=False
