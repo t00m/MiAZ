@@ -92,6 +92,7 @@ class MiAZRenameDialog(Gtk.Box):
     def update_dropdown(self, config, item_type):
         title = item_type.__gtype_name__
         self.actions.dropdown_populate(config, self.dropdown[title], item_type)
+        self._on_changed_entry()
 
     def set_data(self, doc):
         self.doc = doc
@@ -396,7 +397,7 @@ class MiAZRenameDialog(Gtk.Box):
 
     def on_rename_accept(self, *args):
         srvdlg = self.app.get_service('dialogs')
-        body = _(f"\n<big>You are about to set a new name to this document:\n\n<b>{self.get_filepath_target()}</b></big>")
+        body = _(f"\nYou are about to rename this document")
         window = self.app.get_widget('window')
         title = _('Are you sure?')
         dialog = srvdlg.create(enable_response=True, dtype='question', title=title, body=body, callback=self.on_answer_question_rename)
