@@ -193,7 +193,7 @@ class MiAZSelector(Gtk.Box):
             value = this_item.get_value2()
             if len(key) > 0:
                 self.config.add_available(key.upper(), value)
-                self.log.debug(f"{key} ({value}) added to list of available items")
+                self.log.trace(f"{key} ({value}) added to list of available items in {self.config.config_for}")
                 self.update_views()
 
     def _on_item_available_edit(self, *args):
@@ -313,6 +313,7 @@ class MiAZSelector(Gtk.Box):
         for key in items:
             items_used.append(item_type(id=key, title=items[key]))
         self.viewSl.update(items_used)
+        self.log.trace(f"Update used view {self.config.config_for} with {len(items)} items")
 
     def _on_filter_selected(self, *args):
         self.viewAv.refilter()
@@ -321,6 +322,8 @@ class MiAZSelector(Gtk.Box):
     def _do_filter_view(self, item, filter_list_model):
         chunk = self.entry.get_text().upper()
         string = f"{item.id}-{item.title}"
+        if len(chunk) > 0:
+            self.log.trace(f"Filtering by {chunk}")
         if chunk in string.upper():
             return True
         return False
