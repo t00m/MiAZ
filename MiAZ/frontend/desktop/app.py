@@ -246,12 +246,13 @@ class MiAZApp(Adw.Application):
 
         # Setup stack pages
         mainbox = self.get_widget('window-mainbox')
-        page_rename = self.get_widget('rename')
-        if page_rename is None:
-            mainbox._setup_page_rename()
         page_workspace = self.get_widget('workspace')
         if page_workspace is None:
             mainbox._setup_page_workspace()
+        # Setup Rename widget
+        rename_widget = self.get_widget('rename')
+        if rename_widget is None:
+            mainbox._setup_widget_rename()
 
     def set_service(self, name: str, service: GObject.GObject) -> GObject.GObject:
         """Add a service to internal MiAZ objects dictionary."""

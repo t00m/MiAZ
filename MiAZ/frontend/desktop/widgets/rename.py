@@ -73,7 +73,7 @@ class MiAZRenameDialog(Gtk.Box):
         boxButtons.set_margin_end(margin=12)
         boxButtons.set_margin_bottom(margin=12)
         boxButtons.set_margin_start(margin=12)
-        self.append(boxButtons)
+        # ~ self.append(boxButtons)
 
         self.config['Country'].connect('used-updated', self.update_dropdown, Country)
         self.config['Group'].connect('used-updated', self.update_dropdown, Group)
@@ -398,7 +398,10 @@ class MiAZRenameDialog(Gtk.Box):
     def on_rename_accept(self, *args):
         srvdlg = self.app.get_service('dialogs')
         body = _(f"\nYou are about to rename this document")
-        window = self.app.get_widget('window')
+        # ~ window = self.app.get_widget('window')
+        window = self.app.get_widget('dialog-rename')
+        # ~ print(window)
+
         title = _('Are you sure?')
         dialog = srvdlg.create(enable_response=True, dtype='question', title=title, body=body, callback=self.on_answer_question_rename)
         dialog.present(window)
@@ -420,9 +423,8 @@ class MiAZRenameDialog(Gtk.Box):
                 self.actions.show_stack_page_by_name('workspace')
 
     def on_rename_cancel(self, *args):
-        # ~ self.actions.show_stack_page_by_name('workspace')
+        self.log.trace(f"on_rename_cancel: {args}")
         self.log.info("Rename canceled by user")
-        self.actions.show_stack_page_by_name('rename')
 
     def _on_document_display(self, *args):
         doc = self.get_filepath_source()

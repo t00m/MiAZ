@@ -12,6 +12,7 @@ from gi.repository import GObject
 from gi.repository import Peas
 
 from MiAZ.backend.log import MiAZLog
+from MiAZ.frontend.desktop.widgets.rename import MiAZRenameDialog
 
 
 class MiAZToolbarRenameItemPlugin(GObject.GObject, Peas.Activatable):
@@ -61,7 +62,19 @@ class MiAZToolbarRenameItemPlugin(GObject.GObject, Peas.Activatable):
 
     def document_rename_single(self, doc):
         self.log.debug(f"Rename {doc}")
-        actions = self.app.get_service('actions')
-        rename = self.app.get_widget('rename')
-        rename.set_data(doc)
-        actions.show_stack_page_by_name('rename')
+        srvdlg = self.app.get_service('dialogs')
+        # ~ actions = self.app.get_service('actions')
+        rename_widget = self.app.add_widget('rename-widget', MiAZRenameDialog(self.app))
+        rename_widget.set_data(doc)
+        dtype = "question"
+        text = '' # _(f'<big>{i_title} {selected_item.id} is still being used</big>')
+        window = self.app.get_widget('window')
+        title = "Rename document"
+        dialog = srvdlg.create(enable_response=True, dtype=dtype, title=title, body=text, widget=rename_widget)
+        self.app.add_widget('dialog-rename', dialog)
+        dialog.connect('response', self._on_rename_response, rename_widget)
+        dialog.present(window)
+
+    def _on_rename_response(self, dialog, response, rename):
+        if response == 'apply':
+            rename.on_rename_accept()

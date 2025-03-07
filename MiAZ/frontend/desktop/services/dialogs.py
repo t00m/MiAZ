@@ -69,18 +69,19 @@ class MiAZDialog:
             dialog.set_extra_child(widget)
 
         # Assign callback, if any. Otherwise, default is closing.
-        if enable_response:
-            dialog.add_response("cancel", _("Cancel"))
-            dialog.add_response("apply", _("Apply"))
-            dialog.set_response_appearance("cancel", Adw.ResponseAppearance.DESTRUCTIVE)
-        else:
-            dialog.add_response("cancel", _("Ok"))
-            dialog.set_response_appearance("cancel", Adw.ResponseAppearance.SUGGESTED)
+        if enable_response is not None:
+            if enable_response:
+                dialog.add_response("cancel", _("Cancel"))
+                dialog.add_response("apply", _("Apply"))
+                dialog.set_response_appearance("cancel", Adw.ResponseAppearance.DESTRUCTIVE)
+            else:
+                dialog.add_response("cancel", _("Ok"))
+                dialog.set_response_appearance("cancel", Adw.ResponseAppearance.SUGGESTED)
 
-        if callback is None:
-            dialog.connect('response', self.close)
-        else:
-            dialog.connect('response', callback, data)
+            if callback is None:
+                dialog.connect('response', self.close)
+            else:
+                dialog.connect('response', callback, data)
 
         return dialog
 

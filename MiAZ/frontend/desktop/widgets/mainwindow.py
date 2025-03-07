@@ -11,7 +11,6 @@ from gi.repository import Adw, Gdk, Gio, Gtk
 from MiAZ.backend.log import MiAZLog
 from MiAZ.frontend.desktop.widgets.searchbar import SearchBar
 from MiAZ.frontend.desktop.widgets.welcome import MiAZWelcome
-from MiAZ.frontend.desktop.widgets.rename import MiAZRenameDialog
 from MiAZ.frontend.desktop.widgets.workspace import MiAZWorkspace
 
 
@@ -136,14 +135,15 @@ class MiAZMainWindow(Gtk.Box):
             page_welcome.set_icon_name('io.github.t00m.MiAZ')
             page_welcome.set_visible(True)
 
-    def _setup_page_rename(self):
-        stack = self.app.get_widget('stack')
-        widget_rename = self.app.get_widget('rename')
-        if widget_rename is None:
-            widget_rename = self.app.add_widget('rename', MiAZRenameDialog(self.app))
-            page_rename = stack.add_titled(widget_rename, 'rename', 'MiAZ')
-            page_rename.set_icon_name('document-properties')
-            page_rename.set_visible(False)
+    def _setup_widget_rename(self):
+        pass
+        # ~ stack = self.app.get_widget('stack')
+        # ~ widget_rename = self.app.get_widget('rename')
+        # ~ if widget_rename is None:
+            # ~ widget_rename = self.app.add_widget('rename', MiAZRenameDialog(self.app))
+            # ~ page_rename = stack.add_titled(widget_rename, 'rename', 'MiAZ')
+            # ~ page_rename.set_icon_name('document-properties')
+            # ~ page_rename.set_visible(False)
 
     def _setup_page_workspace(self):
         stack = self.app.get_widget('stack')
