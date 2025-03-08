@@ -197,53 +197,6 @@ class MiAZ:
             sys.exit(0)
         self.log.info(f"{ENV['APP']['shortname']} v{ENV['APP']['VERSION']} - End")
 
-
-def main():
-    """Entry point when the program is installed via PIP.
-
-    This entry point is useful when building deb packages.
-    """
-    log.debug("MiAZ installation done via PIP")
-    miaz_exec = which('miaz')
-    if miaz_exec is None:
-        log.error("Are you sure that MiAZ has been installed correctly?")
-        log.error("MiAZ executable not found in $PATH")
-    miaz_dir = os.path.dirname(miaz_exec)
-    ROOT = os.path.abspath(miaz_dir + '/..')
-    ENV['APP']['ID'] = 'io.github.t00m.MiAZ'
-    ENV['APP']['VERSION'] = VERSION
-    ENV['APP']['PGKDATADIR'] = os.path.join(ROOT, 'share/MiAZ/data')
-    ENV['APP']['LOCALEDIR'] = os.path.join(ROOT, 'share/MiAZ/locale')
-    ENV['CONF']['ROOT'] = ENV['APP']['PGKDATADIR']
-
-    # Global paths
-    ENV['GPATH'] = {}
-    ENV['GPATH']['ROOT'] = ENV['CONF']['ROOT']
-    ENV['GPATH']['DATA'] = os.path.join(ENV['GPATH']['ROOT'], 'resources')
-    ENV['GPATH']['DOCS'] = os.path.join(ENV['GPATH']['DATA'], 'docs')
-    ENV['GPATH']['ICONS'] = os.path.join(ENV['GPATH']['DATA'], 'icons', 'scalable')
-    ENV['GPATH']['FLAGS'] = os.path.join(ENV['GPATH']['ICONS'], 'flags')
-    ENV['GPATH']['LOCALE'] = os.path.join(ENV['GPATH']['DATA'], 'po')
-    ENV['GPATH']['PLUGINS'] = os.path.join(ENV['GPATH']['DATA'], 'plugins')
-    ENV['GPATH']['CONF'] = os.path.join(ENV['GPATH']['DATA'], 'conf')
-
-    # Common file paths
-    ENV['FILE'] = {}
-    ENV['FILE']['CONF'] = os.path.join(ENV['LPATH']['ETC'], 'MiAZ-application.json')
-    ENV['FILE']['VERSION'] = os.path.join(ENV['GPATH']['DOCS'], 'VERSION')
-    ENV['FILE']['APPICON'] = os.path.join(ENV['GPATH']['ICONS'], 'MiAZ.svg')
-    ENV['FILE']['LOG'] = os.path.join(ENV['LPATH']['LOG'], 'MiAZ.log')
-    ENV['FILE']['GROUPS'] = os.path.join(ENV['LPATH']['ETC'], 'MiAZ-groups.json')
-    ENV['FILE']['PURPOSES'] = os.path.join(ENV['LPATH']['ETC'], 'MiAZ-purposes.json')
-    ENV['FILE']['CONCEPTS'] = os.path.join(ENV['LPATH']['ETC'], 'MiAZ-concepts.json')
-    ENV['FILE']['PEOPLE'] = os.path.join(ENV['LPATH']['ETC'], 'MiAZ-people.json')
-    ENV['FILE']['EXTENSIONS'] = os.path.join(ENV['LPATH']['ETC'], 'MiAZ-extensions.json')
-    ENV['FILE']['COUNTRIES'] = os.path.join(ENV['LPATH']['ETC'], 'MiAZ-countries.json')
-    ENV['FILE']['WHO'] = os.path.join(ENV['LPATH']['ETC'], 'MiAZ-who.json')
-
-    app = MiAZ(ENV)
-    app.run()
-
 def parse_arguments():
     parser = argparse.ArgumentParser(description=APP_DSC)
     parser.add_argument('--version', action='version', version=VERSION, help='Show version number and exit.')
