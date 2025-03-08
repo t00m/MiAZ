@@ -9,4 +9,4 @@ meson setup builddir --prefix=/home/t00m/Documents/devel/github/MiAZ/AppDir --re
 ninja -C builddir install
 mkdir -p AppDir/usr/bin
 cp -fv AppDir/bin/miaz AppDir/usr/bin/miaz
-VERSION=0.0.21 DEPLOY_GTK_VERSION=4 ./linuxdeploy-x86_64.AppImage --appdir AppDir --plugin gtk --output appimage --icon-file MiAZ/data/io.github.t00m.MiAZ.svg --desktop-file MiAZ/data/io.github.t00m.MiAZ.desktop
+VERSION=0.1.1 DEPLOY_GTK_VERSION=4 ./linuxdeploy-x86_64.AppImage --appdir AppDir --plugin gtk --output appimage --icon-file data/io.github.t00m.MiAZ.svg --desktop-file data/io.github.t00m.MiAZ.desktop
