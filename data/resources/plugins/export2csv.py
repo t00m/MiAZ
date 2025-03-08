@@ -38,7 +38,7 @@ class Export2CSV(GObject.GObject, Peas.Activatable):
         if self.app.get_widget('workspace-menu-multiple-menu-export-item-export2csv') is None:
             factory = self.app.get_service('factory')
             submenu_export_multi = self.app.get_widget('workspace-menu-selection-submenu-export')
-            menuitem = factory.create_menuitem('export-to-csv', _('...to CSV'), self.export, None, [])
+            menuitem = factory.create_menuitem('export-to-csv', _('... to CSV'), self.export, None, [])
             self.app.add_widget('workspace-menu-multiple-menu-export-item-export2csv', menuitem)
             submenu_export_multi.append_item(menuitem)
 
@@ -67,4 +67,4 @@ class Export2CSV(GObject.GObject, Peas.Activatable):
             csvwriter.writerows(rows)
         util.filename_display(filepath)
         body = f"<big>Check your default spreadsheet application</big>"
-        srvdlg.create(parent=window, dtype='info', title=_('Export successfull'), body=body).present()
+        srvdlg.create(enable_response=False, dtype='info', title=_('Export successfull'), body=body).present(window)

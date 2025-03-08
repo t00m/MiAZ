@@ -119,7 +119,7 @@ class MiAZAssistantRepo(MiAZAssistant):
 
     def show_filechooser_source(self, *args):
         filechooser = self.factory.create_filechooser(
-                    parent=self,
+                    enable_response=True,
                     title=_('Choose target directory'),
                     target = 'FOLDER',
                     callback = self.on_filechooser_response_source
@@ -127,7 +127,7 @@ class MiAZAssistantRepo(MiAZAssistant):
         filechooser.show()
 
     def on_filechooser_response_source(self, dialog, response, data=None):
-        if response == Gtk.ResponseType.ACCEPT:
+        if response == 'apply':
             content_area = dialog.get_content_area()
             box = content_area.get_first_child()
             filechooser = box.get_first_child()
@@ -147,7 +147,6 @@ class MiAZAssistantRepo(MiAZAssistant):
                 self.row_repo_source.set_subtitle('')
                 self.set_page_complete(page, False)
 
-        dialog.destroy()
 
     def on_assistant_cancel(self, *args):
         if self.completed:

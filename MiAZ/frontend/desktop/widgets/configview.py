@@ -42,9 +42,11 @@ class MiAZConfigView(MiAZSelector):
         self.config.connect('used-updated', self.update_views)
         self.config.connect('available-updated', self.update_views)
         self.set_vexpand(True)
+        self.log.trace(f"Configview for {config_name} initialited")
 
     def update_config(self):
         self.config = self.conf[self.config_name]
+        self.log.trace(f"Updated configview for {self.config_name}")
 
     def get_config_for(self):
         return self.config.config_for
@@ -109,13 +111,13 @@ class MiAZRepositories(MiAZConfigView):
         key2 = '<big><b>Folder</b></big>'
         search_term = self.entry.get_text()
         this_repo = MiAZDialogAddRepo(self.app)
-        dialog = this_repo.create(parent=window, title=title, key1=key1, key2=key2)
+        dialog = this_repo.create(title=title, key1=key1, key2=key2)
         this_repo.set_value1(search_term)
         dialog.connect('response', self._on_response_item_available_add, this_repo)
-        dialog.present()
+        dialog.present(window)
 
     def _on_response_item_available_add(self, dialog, response, this_repo):
-        if response in [Gtk.ResponseType.ACCEPT, Gtk.ResponseType.OK]:
+        if response == 'apply':
             repo_name = this_repo.get_value1()
             repo_path = this_repo.get_value2()
             if len(repo_name) > 0 and os.path.exists(repo_path):
@@ -124,22 +126,23 @@ class MiAZRepositories(MiAZConfigView):
                 self.update_views()
             else:
                 self.log.debug("No repository added. Invalid data")
-        dialog.destroy()
 
     def _on_item_available_rename(self, item):
         repo_name = item.id
+        repo_path = item.title
+        self.log.trace(f"Renaming Repository '{repo_name}' located in {repo_path}")
         window = self.app.get_widget('window-settings')
         this_repo = MiAZDialogAddRepo(self.app)
         title = _('Edit repository')
         key1 = '<big><b>Repository name</b></big>'
         key2 = '<big><b>Folder</b></big>'
-        dialog = this_repo.create(parent=window, title=title, key1=key1, key2=key2)
+        dialog = this_repo.create(title=title, key1=key1, key2=key2)
         this_repo.set_value1(repo_name.replace('_', ' '))
-        this_repo.set_value2(item.title)
+        this_repo.set_value2(repo_path)
         entry1 = this_repo.get_entry_key1()
         entry1.set_sensitive(False)
         dialog.connect('response', self._on_response_item_available_rename, item, this_repo)
-        dialog.present()
+        dialog.present(window)
 
     def _on_item_available_remove(self, *args):
         srvdlg = self.app.get_service('dialogs')
@@ -159,8 +162,8 @@ class MiAZRepositories(MiAZConfigView):
             window = self.app.get_widget('window-settings')
             dtype = 'error'
             title = "Action not possible"
-            dialog = srvdlg.create(parent=window, dtype=dtype, title=title, body=text, widget=None, width=800, height=600)
-            dialog.present()
+            dialog = srvdlg.create(enable_response=False, dtype=dtype, title=title, body=text, widget=None)
+            dialog.present(window)
 
     def _on_item_used_add(self, *args):
         items_used = self.config.load_used()
@@ -345,8 +348,8 @@ class MiAZProjects(MiAZConfigView):
             window = self.app.get_widget('window')
             dtype = 'error'
             title = f"{i_title} {selected_item.id} can't be removed"
-            dialog = srvdlg.create(parent=window, dtype=dtype, title=title, body=text, width=800, height=600)
-            dialog.present()
+            dialog = srvdlg.create(enable_response=False, dtype=dtype, title=title, body=text, width=800, height=600)
+            dialog.present(window)
 
     def _on_item_used_add(self, *args):
         items_used = self.config.load_used()
@@ -392,8 +395,8 @@ class MiAZProjects(MiAZConfigView):
                 view.update(items)
             else:
                 view = None
-            dialog = srvdlg.create(parent=window, dtype=dtype, title=title, body=text, widget=view, width=800, height=600)
-            dialog.present()
+            dialog = srvdlg.create(enable_response=False, dtype=dtype, title=title, body=text, widget=view, width=800, height=600)
+            dialog.present(window)
 
 class MiAZUserPlugins(MiAZConfigView):
     """Manage user plugins from Repo Settings. Edit disabled"""

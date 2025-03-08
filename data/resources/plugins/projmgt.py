@@ -65,11 +65,11 @@ class MiAZToolbarProjectMgtPlugin(GObject.GObject, Peas.Activatable):
             section_common_in.append_item(menu_project)
             self.app.add_widget('workspace-menu-selection-menu-project', menu_project)
             self.app.add_widget('workspace-menu-selection-submenu-project', submenu_project)
-            menuitem = factory.create_menuitem('project-manage', _('...Manage projects'), self.project_manage, None, [])
+            menuitem = factory.create_menuitem('project-manage', _('... manage projects'), self.project_manage, None, [])
             submenu_project.append_item(menuitem)
-            menuitem = factory.create_menuitem('project-assign', _('...assign to project'), self.project_assign, None, [])
+            menuitem = factory.create_menuitem('project-assign', _('... assign to project'), self.project_assign, None, [])
             submenu_project.append_item(menuitem)
-            menuitem = factory.create_menuitem('project-withdraw', _('...withdraw from project'), self.project_withdraw, None, [])
+            menuitem = factory.create_menuitem('project-withdraw', _('... withdraw from project'), self.project_withdraw, None, [])
             submenu_project.append_item(menuitem)
 
     def project_assign(self, *args):
@@ -83,7 +83,7 @@ class MiAZToolbarProjectMgtPlugin(GObject.GObject, Peas.Activatable):
             return
 
         def dialog_response(dialog, response, dropdown, items):
-            if response == Gtk.ResponseType.YES:
+            if response == 'apply':
                 pid = dropdown.get_selected_item().id
                 docs = []
                 for item in items:
@@ -92,7 +92,6 @@ class MiAZToolbarProjectMgtPlugin(GObject.GObject, Peas.Activatable):
                 projects.add_batch(pid, docs)
                 workspace = self.app.get_widget('workspace')
                 workspace.update()
-            dialog.destroy()
 
         config = self.app.get_config_dict()
         i_type = item_type.__gtype_name__
@@ -122,9 +121,9 @@ class MiAZToolbarProjectMgtPlugin(GObject.GObject, Peas.Activatable):
         box.append(hbox)
         box.append(frame)
         window = self.app.get_widget('window')
-        dialog = srvdlg.create(parent=window, dtype='question', title=_('Assign document(s) to a project'), widget=box, width=1024, height=600)
+        dialog = srvdlg.create(enable_response=True, dtype='question', title=_('Assign document(s) to a project'), widget=box, width=1024, height=600)
         dialog.connect('response', dialog_response, dropdown, items)
-        dialog.show()
+        dialog.present(window)
 
     def project_withdraw(self, *args):
         actions = self.app.get_service('actions')
@@ -137,7 +136,7 @@ class MiAZToolbarProjectMgtPlugin(GObject.GObject, Peas.Activatable):
             return
 
         def dialog_response(dialog, response, dropdown, items):
-            if response == Gtk.ResponseType.YES:
+            if response == 'apply':
                 projects = self.app.get_service('Projects')
                 pid = dropdown.get_selected_item().id
                 docs = []
@@ -146,7 +145,7 @@ class MiAZToolbarProjectMgtPlugin(GObject.GObject, Peas.Activatable):
                 projects.remove_batch(pid, docs)
                 workspace = self.app.get_widget('workspace')
                 workspace.update()
-            dialog.destroy()
+
 
         config = self.app.get_config_dict()
         i_type = item_type.__gtype_name__
@@ -183,9 +182,9 @@ class MiAZToolbarProjectMgtPlugin(GObject.GObject, Peas.Activatable):
         box.append(hbox)
         box.append(frame)
         window = self.app.get_widget('window')
-        dialog = srvdlg.create(parent=window, dtype='question', title=_('Withdraw from project'), widget=box, width=1024, height=600)
+        dialog = srvdlg.create(enable_response=True, dtype='question', title=_('Withdraw from project'), widget=box, width=1024, height=600)
         dialog.connect('response', dialog_response, dropdown, items)
-        dialog.show()
+        dialog.present(window)
 
     def project_manage(self, *args):
         actions = self.app.get_service('actions')

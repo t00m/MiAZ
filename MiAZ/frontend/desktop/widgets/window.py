@@ -4,12 +4,13 @@
 # License: GPL v3
 # Description: Custom Window widget
 
+from gi.repository import Adw
 from gi.repository import Gdk, Gtk
 
 from MiAZ.backend.log import MiAZLog
 
 
-class MiAZCustomWindow(Gtk.Window):
+class MiAZCustomWindow(Adw.Window):
 
     def __init__(self, app, name, title, **kwargs):
         super().__init__(**kwargs)
@@ -30,10 +31,10 @@ class MiAZCustomWindow(Gtk.Window):
         self._build_ui()
 
     def _setup_window(self):
-        headerbar = self.app.add_widget(f'window-{self.name}-headerbar', Gtk.HeaderBar())
-        self.set_titlebar(headerbar)
+        headerbar = self.app.add_widget(f'window-{self.name}-headerbar', Adw.HeaderBar())
         self.mainbox = self.factory.create_box_vertical(margin=0, spacing=0, hexpand=True, vexpand=True)
-        self.set_child(self.mainbox)
+        self.mainbox.append(headerbar)
+        self.set_content(self.mainbox)
 
     def _get_services(self):
         self.icman = self.app.get_service('icons')

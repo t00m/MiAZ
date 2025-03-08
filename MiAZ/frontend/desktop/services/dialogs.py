@@ -4,6 +4,7 @@
 # License: GPL v3
 # Description: Custom dialogs for MiAZ
 
+from gi.repository import Adw
 from gi.repository import Gio
 from gi.repository import Gtk
 
@@ -43,74 +44,49 @@ class MiAZDialog:
         self.log = MiAZLog('MiAZ.Dialogs')
 
     def create( self,
-                parent: Gtk.Window,
-                dtype: str,
-                title: str,
+                enable_response: bool = False,
+                dtype: str = '',
+                title: str = '',
                 body: str = '',
                 widget: Gtk.Widget = None,
                 callback = None,
                 data = None,
                 width: int = -1,
                 height: int = -1,
-                ):
+        ):
 
         factory = self.app.get_service('factory')
         icm = self.app.get_service('icons')
 
-        # Build dialog
-        dialog = Gtk.MessageDialog(
-                    transient_for=parent,
-                    destroy_with_parent=False,
-                    modal=True,
-                    message_type=miaz_dialog[dtype]['type'],
-                    # ~ secondary_text=body,
-                    # ~ secondary_use_markup=True,
-                    buttons=miaz_dialog[dtype]['buttons'])
-        dialog.set_property('secondary-use-markup', True)
-
-        # FIXME: Set custom size
-        # ~ self.log.debug(f"Setting dialog size to {width}x{height}")
-        # ~ dialog.set_default_size(width, height)
-
-        # Set header
-        dialog.use_header_bar = True
-        header = Gtk.HeaderBar()
-        icon = icm.get_image_by_name(miaz_dialog[dtype]['icon'])
-        header.pack_start(icon)
-        lblTitle = Gtk.Label.new(title)
-        lblTitle.get_style_context().add_class(class_name='title-3')
-        header.set_title_widget(lblTitle)
-        dialog.set_titlebar(header)
-
-        message_area = dialog.get_message_area()
-        message_area.set_visible(False)
-        content_area = dialog.get_content_area()
-
-        # Add body
-        if len(body) > 0:
-            box = factory.create_box_vertical(margin=12)
-            label = Gtk.Label()
-            label.get_style_context().add_class(class_name='toolbar')
-            label.set_markup(body)
-            box.append(label)
-            content_area.append(child=box)
+        dialog = Adw.AlertDialog.new(title, body)
+        dialog.set_body_use_markup(True)
+        dialog.set_heading_use_markup(True)
+        dialog.set_size_request(width, height)
+        # ~ dialog.set_body(body)
 
         # Add custom widget
         if widget is not None:
-            dialog.set_default_size(width, height)
-            content_area.set_spacing(6)
-            content_area.append(child=widget)
+            dialog.set_extra_child(widget)
 
         # Assign callback, if any. Otherwise, default is closing.
-        if callback is None:
-            dialog.connect('response', self.close)
-        else:
-            dialog.connect('response', callback, data)
+        if enable_response is not None:
+            if enable_response:
+                dialog.add_response("cancel", _("Cancel"))
+                dialog.add_response("apply", _("Apply"))
+                dialog.set_response_appearance("cancel", Adw.ResponseAppearance.DESTRUCTIVE)
+            else:
+                dialog.add_response("cancel", _("Ok"))
+                dialog.set_response_appearance("cancel", Adw.ResponseAppearance.SUGGESTED)
+
+            if callback is None:
+                dialog.connect('response', self.close)
+            else:
+                dialog.connect('response', callback, data)
 
         return dialog
 
     def close(self, dialog, response):
-        dialog.destroy()
+        pass
 
 
 class MiAZDialogAdd:
@@ -134,14 +110,14 @@ class MiAZDialogAdd:
         self.lblKey1.set_hexpand(False)
         self.etyValue1 = Gtk.Entry()
         self.etyValue1.set_hexpand(False)
-        self.etyValue1.connect('activate', self.on_dialog_save)
+        # ~ self.etyValue1.connect('activate', self.on_dialog_save)
 
         self.boxKey2 = factory.create_box_vertical(spacing=6)
         self.boxKey2.set_hexpand(True)
         self.lblKey2 = Gtk.Label()
         self.lblKey2.set_xalign(0.0)
         self.etyValue2 = Gtk.Entry()
-        self.etyValue2.connect('activate', self.on_dialog_save)
+        # ~ self.etyValue2.connect('activate', self.on_dialog_save)
 
         self.fields = factory.create_box_horizontal(spacing=6)
         self.fields.set_margin_bottom(margin=12)
@@ -182,10 +158,10 @@ class MiAZDialogAdd:
         self.widget.append(self.fields)
 
         # Create dialog
-        self.dialog = srvdlg.create( parent=parent,
-                                dtype='action',
-                                title=title,
-                                widget=self.widget)
+        self.dialog = srvdlg.create(    enable_response=True,
+                                        dtype='action',
+                                        title=title,
+                                        widget=self.widget)
         return self.dialog
 
     def get_label_key1(self):
@@ -201,12 +177,10 @@ class MiAZDialogAdd:
         return  self.etyValue2
 
     def on_dialog_save(self, *args):
-        button = self.dialog.get_widget_for_response(Gtk.ResponseType.OK)
-        button.activate()
+        self.log.error(f"FIXME: {args}")
 
     def on_dialog_cancel(self, dialog, respone):
-        button = self.dialog.get_widget_for_response(Gtk.ResponseType.CANCEL)
-        button.activate()
+        self.log.error(f"FIXME: {args}")
 
     def get_boxKey1(self):
         return self.boxKey1
@@ -248,10 +222,9 @@ class MiAZDialogAddRepo(MiAZDialogAdd):
         self.key2 = ''
 
     def create( self,
-                parent:Gtk.Window,
-                title: str,
-                key1: str,
-                key2: str,
+                title: str='',
+                key1: str='',
+                key2: str='',
                 width: int = -1,
                 height: int = -1):
 
@@ -259,6 +232,7 @@ class MiAZDialogAddRepo(MiAZDialogAdd):
         srvdlg = self.app.get_service('dialogs')
         self.title = title
         self.key1 = key1
+        enable_response=True
 
         self.lblKey1.set_markup(f"<b>{self.key1}</b>")
         vbox = factory.create_box_vertical(spacing=12, vexpand=True)
@@ -274,7 +248,7 @@ class MiAZDialogAddRepo(MiAZDialogAdd):
         self.widget.append(self.fields)
 
         # Create dialog
-        self.dialog = srvdlg.create(    parent=parent,
+        self.dialog = srvdlg.create(    enable_response=enable_response,
                                         dtype='action',
                                         title=title,
                                         widget=self.widget)
@@ -310,15 +284,14 @@ class MiAZFileChooserDialog(MiAZDialog):
         self.app = app
 
     def create( self,
-                parent: Gtk.Window,
-                title: str,
-                target: str,
+                enable_response: bool = False,
+                title: str = '',
+                target: str = '',
                 callback=None,
                 data=None):
 
         srvdlg = self.app.get_service('dialogs')
 
-        self.parent = parent
         self.title = title
         self.target = target
         self.callback = callback
@@ -334,7 +307,7 @@ class MiAZFileChooserDialog(MiAZDialog):
             self.w_filechooser.set_action(Gtk.FileChooserAction.SAVE)
 
         # Create dialog
-        self.dialog = srvdlg.create(parent=parent,
+        self.dialog = srvdlg.create(enable_response=True,
                                     dtype='action',
                                     title=title,
                                     widget=self.w_filechooser,

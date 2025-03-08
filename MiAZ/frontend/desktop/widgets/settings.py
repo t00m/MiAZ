@@ -132,7 +132,7 @@ class MiAZAppSettings(MiAZCustomWindow):
     def show_filechooser_source(self, *args):
         window = self.app.get_widget('window')
         filechooser = self.factory.create_filechooser(
-                    parent=window,
+                    enable_response=True,
                     title=_('Choose target directory'),
                     target = 'FOLDER',
                     callback = self.on_filechooser_response_source,
@@ -141,8 +141,7 @@ class MiAZAppSettings(MiAZCustomWindow):
         filechooser.show()
 
     def on_filechooser_response_source(self, dialog, response, data):
-        dialog.destroy()
-        return
+                return
 
     def _create_widget_for_plugins(self):
         vbox = self.factory.create_box_vertical(margin=0, spacing=0, hexpand=True, vexpand=True)
@@ -221,7 +220,7 @@ class MiAZAppSettings(MiAZCustomWindow):
         view.update(items)
 
     def on_filechooser_response(self, dialog, response, clsdlg):
-        if response in [Gtk.ResponseType.ACCEPT, Gtk.ResponseType.OK]:
+        if response == 'apply':
             plugin_manager = self.app.get_service('plugin-manager')
             filechooser = clsdlg.get_filechooser_widget()
             gfile = filechooser.get_file()
@@ -234,7 +233,6 @@ class MiAZAppSettings(MiAZCustomWindow):
             self.log.debug(f"Plugin imported? {imported}")
             if imported:
                 self.update_user_plugins()
-        dialog.destroy()
 
     def _on_plugin_add(self, *args):
         plugin_filter = Gtk.FileFilter()

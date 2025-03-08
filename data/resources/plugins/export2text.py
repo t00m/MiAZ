@@ -38,7 +38,7 @@ class Export2Text(GObject.GObject, Peas.Activatable):
         if self.app.get_widget('workspace-menu-multiple-menu-export-item-export2text') is None:
             factory = self.app.get_service('factory')
             submenu_export = self.app.get_widget('workspace-menu-selection-submenu-export')
-            menuitem = factory.create_menuitem('export-to-text', _('...to plain text'), self.export, None, [])
+            menuitem = factory.create_menuitem('export-to-text', _('... to plain text'), self.export, None, [])
             submenu_export.append_item(menuitem)
             self.app.add_widget('workspace-menu-multiple-menu-export-item-export2text', menuitem)
 
@@ -62,4 +62,4 @@ class Export2Text(GObject.GObject, Peas.Activatable):
         temp.close()
         util.filename_display(filepath)
         body = '<big>Check your default text editor</big>'
-        srvdlg.create(parent=window, dtype='info', title=_('Export successfull'), body=body).present()
+        srvdlg.create(enable_response=False, dtype='info', title=_('Export successfull'), body=body).present(window)

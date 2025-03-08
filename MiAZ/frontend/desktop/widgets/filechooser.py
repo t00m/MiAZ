@@ -33,8 +33,6 @@ class MiAZFileChooserDialog(Gtk.Dialog):
         self.set_margin_top(0)
         self.set_margin_bottom(0)
         self.set_title(self.title)
-        self.set_transient_for(self.parent)
-        self.set_modal(True)
         self.add_buttons(_('Cancel'), Gtk.ResponseType.CANCEL, _('Accept'), Gtk.ResponseType.ACCEPT)
         btnCancel = self.get_widget_for_response(Gtk.ResponseType.CANCEL)
         btnCancel.get_style_context ().add_class ('destructive-action')

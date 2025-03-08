@@ -56,13 +56,13 @@
             "builddir" : true,
             "buildsystem" : "meson",
             "build-commands": [
-                "python -m pip install --prefix=/app .."
+                "meson setup builddir_user --prefix=~/app --reconfigure --buildtype=debugoptimized --wipe"
             ],
             "sources" : [
                 {
                     "type" : "archive",
-                    "url" : "https://github.com/t00m/MiAZ/releases/download/v0.0.99/MiAZ-0.0.99.tar.xz",
-                    "sha256" : "e92b38c3943954acf324aef5c93af3b4ad5b7257b2255fc6348f70cb600f5be2"
+                    "url" : "https://github.com/t00m/MiAZ/archive/refs/tags/v0.1.1+build.8.tar.gz",
+                    "sha256" : "f97fdafaffb34cea6bb555206dbf27d137cdb2518041567a68e34da7f48e7eb4"
                 }
             ]
         }

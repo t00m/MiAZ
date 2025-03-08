@@ -49,7 +49,7 @@ class MiAZAddDocumentPlugin(GObject.GObject, Peas.Activatable):
         srvrepo = self.app.get_service('repo')
 
         def filechooser_response(dialog, response, clsdlg):
-            if response in [Gtk.ResponseType.ACCEPT, Gtk.ResponseType.OK]:
+            if response == 'apply':
                 filechooser = clsdlg.get_filechooser_widget()
                 gfile = filechooser.get_file()
                 if gfile is not None:
@@ -57,15 +57,14 @@ class MiAZAddDocumentPlugin(GObject.GObject, Peas.Activatable):
                     btarget = srvutl.filename_normalize(source)
                     target = os.path.join(srvrepo.docs, btarget)
                     srvutl.filename_import(source, target)
-            dialog.destroy()
 
         window = self.app.get_widget('window')
         clsdlg = MiAZFileChooserDialog(self.app)
         filechooser = clsdlg.create(
-                        parent=window,
+                        enable_response=True,
                         title=_('Import a single file'),
                         target = 'FILE',
                         callback = filechooser_response,
                         data=clsdlg)
-        filechooser.present()
+        filechooser.present(window)
 

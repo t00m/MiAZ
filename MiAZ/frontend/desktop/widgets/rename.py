@@ -56,24 +56,24 @@ class MiAZRenameDialog(Gtk.Box):
         frmMain.set_child(self.boxMain)
         self.append(frmMain)
 
-        self.btnAccept = self.factory.create_button(icon_name='io.github.t00m.MiAZ-ok', title=_('Rename'), callback=self.on_rename_accept, css_classes=['opaque'])
-        self.btnCancel = self.factory.create_button(icon_name='io.github.t00m.MiAZ-stop', title=_('Cancel'), callback=self.on_rename_cancel)
-        self.btnPreview = self.factory.create_button('io.github.t00m.MiAZ-view-document', _('Preview'))
-        self.btnPreview.connect('clicked', self._on_document_display)
-        self.btnAccept.set_sensitive(True)
-        self.btnAccept.has_default()
-        self.btnAccept.set_can_focus(True)
-        self.btnAccept.set_focusable(True)
-        self.btnAccept.set_receives_default(True)
-        boxButtons = Gtk.CenterBox(hexpand=True)
-        boxButtons.set_start_widget(self.btnCancel)
-        boxButtons.set_center_widget(self.btnPreview)
-        boxButtons.set_end_widget(self.btnAccept)
-        boxButtons.set_margin_top(margin=12)
-        boxButtons.set_margin_end(margin=12)
-        boxButtons.set_margin_bottom(margin=12)
-        boxButtons.set_margin_start(margin=12)
-        self.append(boxButtons)
+        # ~ self.btnAccept = self.factory.create_button(icon_name='io.github.t00m.MiAZ-ok', title=_('Rename'), callback=self.on_rename_accept, css_classes=['opaque'])
+        # ~ self.btnCancel = self.factory.create_button(icon_name='io.github.t00m.MiAZ-stop', title=_('Cancel'), callback=self.on_rename_cancel)
+        # ~ self.btnPreview = self.factory.create_button('io.github.t00m.MiAZ-view-document', _('Preview'))
+        # ~ self.btnPreview.connect('clicked', self._on_document_display)
+        # ~ self.btnAccept.set_sensitive(True)
+        # ~ self.btnAccept.has_default()
+        # ~ self.btnAccept.set_can_focus(True)
+        # ~ self.btnAccept.set_focusable(True)
+        # ~ self.btnAccept.set_receives_default(True)
+        # ~ boxButtons = Gtk.CenterBox(hexpand=True)
+        # ~ boxButtons.set_start_widget(self.btnCancel)
+        # ~ boxButtons.set_center_widget(self.btnPreview)
+        # ~ boxButtons.set_end_widget(self.btnAccept)
+        # ~ boxButtons.set_margin_top(margin=12)
+        # ~ boxButtons.set_margin_end(margin=12)
+        # ~ boxButtons.set_margin_bottom(margin=12)
+        # ~ boxButtons.set_margin_start(margin=12)
+        # ~ self.append(boxButtons)
 
         self.config['Country'].connect('used-updated', self.update_dropdown, Country)
         self.config['Group'].connect('used-updated', self.update_dropdown, Group)
@@ -92,6 +92,7 @@ class MiAZRenameDialog(Gtk.Box):
     def update_dropdown(self, config, item_type):
         title = item_type.__gtype_name__
         self.actions.dropdown_populate(config, self.dropdown[title], item_type)
+        self._on_changed_entry()
 
     def set_data(self, doc):
         self.doc = doc
@@ -255,7 +256,7 @@ class MiAZRenameDialog(Gtk.Box):
         boxValue.append(self.entry_concept)
         boxValue.append(button)
         self.entry_concept.connect('changed', self._on_changed_entry)
-        self.entry_concept.connect('activate', self.on_rename_accept)
+        # ~ self.entry_concept.connect('activate', self.on_rename_accept)
 
     def __create_field_7_sentto(self):
         self.rowSentTo, self.btnSentTo, self.dpdSentTo = self.__create_actionrow(SentTo.__title__, SentTo, 'SentTo')
@@ -394,32 +395,33 @@ class MiAZRenameDialog(Gtk.Box):
     def get_filepath_target(self) -> str:
         return self.result
 
-    def on_rename_accept(self, *args):
-        srvdlg = self.app.get_service('dialogs')
-        body = _(f"<big>You are about to set a new name to this document:\n\n<b>{self.get_filepath_target()}</b></big>")
-        window = self.app.get_widget('window')
-        title = _('Are you sure?')
-        dialog = srvdlg.create(parent=window, dtype='question', title=title, body=body, callback=self.on_answer_question_rename)
-        dialog.present()
+    # ~ def on_rename_accept(self, *args):
+        # ~ srvdlg = self.app.get_service('dialogs')
+        # ~ body = _(f"\nYou are about to rename this document")
+        # ~ window = self.app.get_widget('dialog-rename')
+        # ~ title = _('Are you sure?')
+        # ~ dialog = srvdlg.create(enable_response=True, dtype='question', title=title, body=body, callback=self.on_answer_question_rename)
+        # ~ dialog.present(window)
 
-    def on_answer_question_rename(self, dialog, response, data=None):
-        srvdlg = self.app.get_service('dialogs')
-        if response in [Gtk.ResponseType.ACCEPT, Gtk.ResponseType.YES]:
-            bsource = self.get_filepath_source()
-            source = os.path.join(self.repository.docs, bsource)
-            btarget = self.get_filepath_target()
-            target = os.path.join(self.repository.docs, btarget)
-            renamed = self.util.filename_rename(source, target)
-            if not renamed:
-                wrnmsg = f"<big>Another document with the same name already exists in this repository.</big>"
-                title=_('Renaming not possible')
-                dlgerror = srvdlg.create(parent=dialog, dtype='error', title=title, body=wrnmsg)
-                dlgerror.present()
-        self.actions.show_stack_page_by_name('workspace')
-        dialog.destroy()
+    # ~ def on_answer_question_rename(self, dialog, response, data=None):
+        # ~ srvdlg = self.app.get_service('dialogs')
+        # ~ if response == 'apply':
+            # ~ bsource = self.get_filepath_source()
+            # ~ source = os.path.join(self.repository.docs, bsource)
+            # ~ btarget = self.get_filepath_target()
+            # ~ target = os.path.join(self.repository.docs, btarget)
+            # ~ renamed = self.util.filename_rename(source, target)
+            # ~ if not renamed:
+                # ~ text = f"<big>Another document with the same name already exists in this repository.</big>"
+                # ~ title=_('Renaming not possible')
+                # ~ dlgerror = srvdlg.create(enable_response=False, dtype='error', title=title, body=text)
+                # ~ dlgerror.present(dialog)
+            # ~ else:
+                # ~ self.actions.show_stack_page_by_name('workspace')
 
     def on_rename_cancel(self, *args):
-        self.actions.show_stack_page_by_name('workspace')
+        self.log.trace(f"on_rename_cancel: {args}")
+        self.log.info("Rename canceled by user")
 
     def _on_document_display(self, *args):
         doc = self.get_filepath_source()
@@ -435,12 +437,10 @@ class MiAZRenameDialog(Gtk.Box):
 
     def on_answer_question_delete(self, dialog, response):
         filepath = self.get_filepath_source()
-        if response == Gtk.ResponseType.YES:
+        if response == 'apply':
             try:
                 os.unlink(filepath)
                 self.log.debug(f"Document deleted: {filepath}")
-                dialog.destroy()
-                self.destroy()
             except FileNotFoundError as error:
                 self.log.error(f"Something went wrong: {error}")
                 raise

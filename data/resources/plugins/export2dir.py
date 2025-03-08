@@ -52,7 +52,7 @@ class Export2Dir(GObject.GObject, Peas.Activatable):
         if self.app.get_widget('workspace-menu-multiple-menu-export-item-export2dir') is None:
             factory = self.app.get_service('factory')
             submenu_export = self.app.get_widget('workspace-menu-selection-submenu-export')
-            menuitem = factory.create_menuitem('export-to-dir', _('...to directory'), self.export, None, [])
+            menuitem = factory.create_menuitem('export-to-dir', _('... to directory'), self.export, None, [])
             submenu_export.append_item(menuitem)
             self.app.add_widget('workspace-menu-multiple-menu-export-item-export2dir', menuitem)
 
@@ -80,7 +80,7 @@ class Export2Dir(GObject.GObject, Peas.Activatable):
             return paths
 
         def filechooser_response(dialog, response, patterns):
-            if response in [Gtk.ResponseType.ACCEPT, Gtk.ResponseType.OK]:
+            if response == 'apply':
                 content_area = dialog.get_content_area()
                 box = content_area.get_first_child()
                 filechooser = self.app.get_widget('plugin-export2dir-filechooser')
@@ -115,8 +115,7 @@ class Export2Dir(GObject.GObject, Peas.Activatable):
                     srvdlg = self.app.get_service('dialogs')
                     window = workspace.get_root()
                     body = f"<big>Check your default file browser</big>"
-                    srvdlg.create(parent=window, dtype='info', title=_('Export successfull'), body=body).present()
-            dialog.destroy()
+                    srvdlg.create(enable_response=False, dtype='info', title=_('Export successfull'), body=body).present()
 
         patterns = {
             'Y': _('Year'),
@@ -132,7 +131,7 @@ class Export2Dir(GObject.GObject, Peas.Activatable):
 
         clsdlg = MiAZFileChooserDialog(self.app)
         filechooser_dialog = clsdlg.create(
-                    parent=window,
+                    enable_response=True,
                     title=_('Choose a directory to export selected files'),
                     target = 'FOLDER',
                     callback = filechooser_response,
@@ -161,4 +160,4 @@ class Export2Dir(GObject.GObject, Peas.Activatable):
         box.append(hbox)
         # ~ filechooser.show()
 
-        filechooser_dialog.present()
+        filechooser_dialog.present(window)

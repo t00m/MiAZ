@@ -1,2 +1,0 @@
-https://byabbe.se/2022/11/07/python-dependencies-and-flatpak
-https://github.com/flatpak/flatpak-builder-tools/tree/master/pip

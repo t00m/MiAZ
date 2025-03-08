@@ -150,7 +150,7 @@ class MiAZSelector(Gtk.Box):
         if is_used:
             item_type = self.config.model
             i_title = item_type.__title__
-            text = _(f'<big>{i_title} {selected_item.title} is still being used by {len(docs)} docs:</big>')
+            text = _(f'{i_title} {selected_item.title} is still being used by {len(docs)} docs')
             window = self.viewSl.get_root()
             dtype = 'error'
             title = "Action not possible"
@@ -163,8 +163,8 @@ class MiAZSelector(Gtk.Box):
             else:
                 view = None
             srvdlg = self.app.get_service('dialogs')
-            dialog = srvdlg.create(parent=window, dtype=dtype, title=title, body=text, widget=view)
-            dialog.present()
+            dialog = srvdlg.create(enable_response=False, dtype=dtype, title=title, body=text, widget=view)
+            dialog.present(window)
         else:
             items_available[selected_item.id] = selected_item.title
             del items_used[selected_item.id]
@@ -185,17 +185,16 @@ class MiAZSelector(Gtk.Box):
             dialog = this_item.create(parent=parent, title=title, key1=key1, key2=key2)
             dialog.connect('response', self._on_response_item_available_add, this_item)
             this_item.set_value1(search_term)
-            dialog.present()
+            dialog.present(parent)
 
     def _on_response_item_available_add(self, dialog, response, this_item):
-        if response == Gtk.ResponseType.OK:
+        if response ==  'apply':
             key = this_item.get_value1()
             value = this_item.get_value2()
             if len(key) > 0:
                 self.config.add_available(key.upper(), value)
-                self.log.debug(f"{key} ({value}) added to list of available items")
+                self.log.trace(f"{key} ({value}) added to list of available items in {self.config.config_for}")
                 self.update_views()
-        dialog.destroy()
 
     def _on_item_available_edit(self, *args):
         try:
@@ -220,10 +219,10 @@ class MiAZSelector(Gtk.Box):
                 this_item.set_value1(item.id)
                 this_item.set_value2(item.title)
             dialog.connect('response', self._on_response_item_available_rename, item, this_item)
-            dialog.present()
+            dialog.present(parent)
 
     def _on_response_item_available_rename(self, dialog, response, item, this_item):
-        if response in [Gtk.ResponseType.ACCEPT, Gtk.ResponseType.OK]:
+        if response == 'apply':
             oldkey = item.id
             oldval = item.title
             newkey = this_item.get_value1()
@@ -240,7 +239,6 @@ class MiAZSelector(Gtk.Box):
                 self.config.save_available(items_available)
                 self.log.debug(f"{oldkey} ({oldval}) renamed to {newkey} ({newval}) in the list of available items")
                 self.update_views()
-        dialog.destroy()
 
     def select_item(self, view, item_id):
         self.log.debug(f"{view} > {item_id}")
@@ -281,7 +279,7 @@ class MiAZSelector(Gtk.Box):
             title = "Action not possible"
 
             if len(docs) > 0:
-                text = _(f'<big>{i_title} {selected_item.title} is still being used by {len(docs)} docs:</big>')
+                text = _(f'{i_title} {selected_item.title} is still being used by {len(docs)} docs')
                 items = []
                 for doc in docs:
                     items.append(File(id=doc, title=os.path.basename(doc)))
@@ -292,8 +290,8 @@ class MiAZSelector(Gtk.Box):
                 view = None
 
             srvdlg = self.app.get_service('dialogs')
-            dialog = srvdlg.create(parent=window, dtype=dtype, title=title, body=text, widget=view)
-            dialog.present()
+            dialog = srvdlg.create(enable_response=False, dtype=dtype, title=title, body=text, widget=view)
+            dialog.present(window)
 
     def _on_selected_item_available_notify(self, colview, pos):
         model = colview.get_model()
@@ -315,6 +313,7 @@ class MiAZSelector(Gtk.Box):
         for key in items:
             items_used.append(item_type(id=key, title=items[key]))
         self.viewSl.update(items_used)
+        self.log.trace(f"Update used view {self.config.config_for} with {len(items)} items")
 
     def _on_filter_selected(self, *args):
         self.viewAv.refilter()
@@ -323,6 +322,8 @@ class MiAZSelector(Gtk.Box):
     def _do_filter_view(self, item, filter_list_model):
         chunk = self.entry.get_text().upper()
         string = f"{item.id}-{item.title}"
+        if len(chunk) > 0:
+            self.log.trace(f"Filtering by {chunk}")
         if chunk in string.upper():
             return True
         return False

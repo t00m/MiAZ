@@ -6,9 +6,12 @@
 
 from gettext import gettext as _
 
+from gi.repository import Adw
+from gi.repository import Gio
 from gi.repository import GObject
 from gi.repository import GLib
 from gi.repository import Gtk
+
 
 from MiAZ.backend.log import MiAZLog
 from MiAZ.backend.pluginsystem import MiAZPluginManager, MiAZPluginType
@@ -27,7 +30,7 @@ from MiAZ.backend.watcher import MiAZWatcher
 from MiAZ.backend.projects import MiAZProject
 
 
-class MiAZApp(Gtk.Application):
+class MiAZApp(Adw.Application):
     """MiAZ Gtk Application class."""
 
     __gsignals__ = {
@@ -42,7 +45,9 @@ class MiAZApp(Gtk.Application):
 
     def __init__(self, **kwargs):
         """Set up env, UI and services used by the rest of modules."""
-        super().__init__(**kwargs)
+        application_id = kwargs['application_id']
+        Adw.Application.__init__(self, application_id=application_id)
+        # ~ super().__init__(**kwargs)
         self._miazobjs['widgets'] = {}
         self._miazobjs['services'] = {}
         self._miazobjs['actions'] = {}
@@ -112,7 +117,7 @@ class MiAZApp(Gtk.Application):
         ENV = self.get_env()
 
         # Main MiAZ Window
-        window = self.add_widget('window', Gtk.ApplicationWindow(application=self))
+        window = self.add_widget('window', Adw.ApplicationWindow(application=self))
         window.set_default_size(1280, 800)
         window.set_icon_name('io.github.t00m.MiAZ')
         window.connect('close-request', self._on_window_close_request)
@@ -126,7 +131,7 @@ class MiAZApp(Gtk.Application):
 
         # Setup main window contents
         mainbox = self.add_widget('window-mainbox', MiAZMainWindow(self))
-        window.set_child(mainbox)
+        window.set_content(mainbox)
 
         # FIXME: Setup menu bar
         menubar = self.get_widget('window-menu-app')
@@ -241,12 +246,13 @@ class MiAZApp(Gtk.Application):
 
         # Setup stack pages
         mainbox = self.get_widget('window-mainbox')
-        page_rename = self.get_widget('rename')
-        if page_rename is None:
-            mainbox._setup_page_rename()
         page_workspace = self.get_widget('workspace')
         if page_workspace is None:
             mainbox._setup_page_workspace()
+        # Setup Rename widget
+        rename_widget = self.get_widget('rename')
+        if rename_widget is None:
+            mainbox._setup_widget_rename()
 
     def set_service(self, name: str, service: GObject.GObject) -> GObject.GObject:
         """Add a service to internal MiAZ objects dictionary."""
@@ -293,3 +299,10 @@ class MiAZApp(Gtk.Application):
 
     def get_logger(self):
         return self.log
+
+    def exit(self, *args):
+        # Signal handler for CONTROL-C
+        self.log.warning("CONTROL-C detected! Exiting gracefully...")
+        actions = self.get_service('actions')
+        actions.exit_app()  # Quit the GTK main loop
+        return True  # Return True to stop further propagation

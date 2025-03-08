@@ -8,10 +8,14 @@
 # Description: Plugin for rename documents
 """
 
+import os
+from gettext import gettext as _
+
 from gi.repository import GObject
 from gi.repository import Peas
 
 from MiAZ.backend.log import MiAZLog
+from MiAZ.frontend.desktop.widgets.rename import MiAZRenameDialog
 
 
 class MiAZToolbarRenameItemPlugin(GObject.GObject, Peas.Activatable):
@@ -24,6 +28,9 @@ class MiAZToolbarRenameItemPlugin(GObject.GObject, Peas.Activatable):
 
     def do_activate(self):
         self.app = self.object.app
+        self.actions = self.app.get_service('actions')
+        self.util = self.app.get_service('util')
+        self.repository = self.app.get_service('repo')
         workspace = self.app.get_widget('workspace')
         workspace.connect('workspace-loaded', self.add_toolbar_button)
         workspace.connect('workspace-view-updated', self._on_selection_changed)
@@ -61,7 +68,49 @@ class MiAZToolbarRenameItemPlugin(GObject.GObject, Peas.Activatable):
 
     def document_rename_single(self, doc):
         self.log.debug(f"Rename {doc}")
-        actions = self.app.get_service('actions')
-        rename = self.app.get_widget('rename')
-        rename.set_data(doc)
-        actions.show_stack_page_by_name('rename')
+        srvdlg = self.app.get_service('dialogs')
+        # ~ actions = self.app.get_service('actions')
+        rename_widget = self.app.add_widget('rename-widget', MiAZRenameDialog(self.app))
+        rename_widget.set_data(doc)
+        dtype = "question"
+        text = '' # _(f'<big>{i_title} {selected_item.id} is still being used</big>')
+        window = self.app.get_widget('window')
+        title = "Rename document"
+        dialog = srvdlg.create(enable_response=True, dtype=dtype, title=title, body=text, widget=rename_widget)
+        dialog.add_response("preview", _("Preview"))
+        self.app.add_widget('dialog-rename', dialog)
+        dialog.connect('response', self._on_rename_response, rename_widget)
+        dialog.present(window)
+
+    def _on_rename_response(self, dialog, response, rename_widget):
+        if response == 'apply':
+            srvdlg = self.app.get_service('dialogs')
+            body = _(f"\nYou are about to rename this document")
+            title = _('Are you sure?')
+            dialog_confirm = srvdlg.create(enable_response=True, dtype='question', title=title, body=body, callback=self.on_answer_question_rename, data=(rename_widget, dialog))
+            dialog_confirm.present(dialog)
+        elif response == 'preview':
+            window = self.app.get_widget('window')
+            doc = rename_widget.get_filepath_source()
+            self.actions.document_display(doc)
+            dialog.present(window)
+
+    def on_answer_question_rename(self, dialog, response, data=tuple):
+        rename_widget, parent_dialog = data
+        srvdlg = self.app.get_service('dialogs')
+        if response == 'apply':
+            bsource = rename_widget.get_filepath_source()
+            source = os.path.join(self.repository.docs, bsource)
+            btarget = rename_widget.get_filepath_target()
+            target = os.path.join(self.repository.docs, btarget)
+            renamed = self.util.filename_rename(source, target)
+            if not renamed:
+                text = f"<big>Another document with the same name already exists in this repository.</big>"
+                title=_('Renaming not possible')
+                dlgerror = srvdlg.create(enable_response=False, dtype='error', title=title, body=text)
+                dlgerror.present(dialog)
+            # ~ else:
+                # ~ self.actions.show_stack_page_by_name('workspace')
+        else:
+            window = self.app.get_widget('window')
+            parent_dialog.present(window)

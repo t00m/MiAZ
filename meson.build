@@ -1,5 +1,5 @@
 project('MiAZ',
-          version: '0.1.0+build.1',
+          version : '0.1.1+build.25',
     meson_version: '>= 0.61.2',
   default_options: [ 'warning_level=2',
                    ],
@@ -25,6 +25,7 @@ conf = configuration_data()
 conf.set('PYTHON', python.find_installation('python3').full_path())
 conf.set('PYTHON_VERSION', python.find_installation('python3').language_version())
 conf.set('APP_ID', app_id)
+conf.set('APP_DSC', 'MiAZ, a Personal Document Organizer')
 conf.set('PREFIX', prefix)
 conf.set('VERSION', meson.project_version())
 #~ conf.set('REVISION', revision)

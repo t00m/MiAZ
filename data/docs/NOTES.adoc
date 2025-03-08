@@ -1,0 +1,12 @@
+* Git
+** https://gist.github.com/qoomon/5dfcdf8eec66a051ecd85625518cfd13[Conventional Commit Messages starline]
+** https://ohshitgit.com[Oh Shit, Git!?!]
+
+* Flatpak
+** https://byabbe.se/2022/11/07/python-dependencies-and-flatpak[Python Dependencies and Flatpak]
+** https://github.com/flatpak/flatpak-builder-tools/tree/master/pip[Flatpak PIP Generator]
+
+* Adw – 1 (Building blocks for modern GNOME applications)
+** https://gnome.pages.gitlab.gnome.org/libadwaita/[Index]
+** https://gnome.pages.gitlab.gnome.org/libadwaita/doc/1-latest/index.html[Latest docs]
+

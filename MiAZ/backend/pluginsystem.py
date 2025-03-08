@@ -226,6 +226,8 @@ class MiAZPluginManager(GObject.GObject):
             self.log.debug(f"Added System plugin dir: {ENV['GPATH']['PLUGINS']}")
         else:
             self.log.error("System plugins directory doesn not exist!")
+            self.log.error(f"{ENV['GPATH']['PLUGINS']}")
+            self.log.error("Make sure the installation is correct")
             self.log.error("MiAZ will exit now!")
             sys.exit()
 

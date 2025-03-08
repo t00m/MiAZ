@@ -56,31 +56,30 @@ class MiAZWorkspace(Gtk.Box):
     def __init__(self, app):
         super().__init__(orientation=Gtk.Orientation.HORIZONTAL)
         self.log = MiAZLog('MiAZ.Workspace')
-        self.log.debug("Initializing widget Workspace!!")
+        self.log.trace("Initializing widget Workspace!!")
         self.app = app
         self.config = self.app.get_config_dict()
         self._setup_workspace()
         self._setup_logic()
         self.review = False
+
         # Allow plug-ins to make their job
         self.app.connect('start-application-completed', self._on_finish_configuration)
 
     def initialize_caches(self):
-        # Initialize caches
-        # Runtime cache for datetime objects to avoid errors such as:
-        # 'TypeError: Object of type date is not JSON serializable'
-        repository = self.app.get_service('repo')
+        repo = self.app.get_service('repo')
         util = self.app.get_service('util')
 
         self.datetimes = {}
 
         # Load/Initialize rest of caches
-        self.fcache = os.path.join(repository.conf, 'cache.json')
+        self.fcache = os.path.join(repo.conf, 'cache.json')
         try:
             self.cache = util.json_load(self.fcache)
-            self.log.debug(f"Loading cache from '{self.fcache}")
+            self.log.trace(f"Loading cache from '{self.fcache}'")
         except Exception:
             util.json_save(self.fcache, {})
+            self.log.trace(f"New cache created in '{self.fcache}'")
 
         self.cache = {}
         for cache in ['Date', 'Country', 'Group', 'SentBy', 'SentTo', 'Purpose']:
@@ -97,9 +96,7 @@ class MiAZWorkspace(Gtk.Box):
             window = self.app.get_widget('window')
             self.log.debug("Executing Assistant")
             assistant = MiAZAssistantRepoSettings(self.app)
-            assistant.set_transient_for(window)
-            assistant.set_modal(True)
-            assistant.present()
+            assistant.present(window)
 
     def _on_config_used_updated(self, *args):
         # FIXME
@@ -206,11 +203,15 @@ class MiAZWorkspace(Gtk.Box):
         factory = self.app.get_service('factory')
         dropdowns = self.app.get_widget('ws-dropdowns')
         widget = factory.create_box_vertical(spacing=0, margin=0, hexpand=True, vexpand=False)
-        body = factory.create_box_horizontal(margin=3, spacing=6, hexpand=True, vexpand=True)
+        body = factory.create_box_vertical(margin=3, spacing=6, hexpand=True, vexpand=True)
         body.set_margin_top(margin=6)
         body.set_margin_start(margin=12)
         body.set_margin_end(margin=12)
         widget.append(body)
+        row_up = factory.create_box_horizontal(margin=3, spacing=6, hexpand=True, vexpand=True)
+        row_down = factory.create_box_horizontal(margin=3, spacing=6, hexpand=True, vexpand=True)
+        body.append(row_up)
+        body.append(row_down)
         widget.append(Gtk.Separator.new(orientation=Gtk.Orientation.HORIZONTAL))
 
         dropdowns = self.app.add_widget('ws-dropdowns', {})
@@ -221,20 +222,20 @@ class MiAZWorkspace(Gtk.Box):
         dd_prj = factory.create_dropdown_generic(item_type=Project)
         boxDropdown = factory.create_box_filter(i_title, dd_prj)
         dropdowns[i_type] = dd_prj
-        body.append(boxDropdown)
+        row_up.append(boxDropdown)
 
         for item_type in [Country, Group, SentBy, Purpose, SentTo]:
             i_type = item_type.__gtype_name__
             i_title = _(item_type.__title__)
             dropdown = factory.create_dropdown_generic(item_type=item_type)
             boxDropdown = factory.create_box_filter(i_title, dropdown)
-            body.append(boxDropdown)
+            row_down.append(boxDropdown)
             dropdowns[i_type] = dropdown
 
         self.app.add_widget('ws-dropdowns', dropdowns)
         btnClearFilters = factory.create_button(icon_name='io.github.t00m.MiAZ-entry_clear', tooltip='Clear all filters', css_classes=['flat'], callback=self.clear_filters)
         boxDropdown = factory.create_box_filter('', btnClearFilters)
-        body.append(boxDropdown)
+        row_up.append(boxDropdown)
 
         return widget
 

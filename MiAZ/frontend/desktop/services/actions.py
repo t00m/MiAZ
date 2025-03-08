@@ -11,6 +11,7 @@ import zipfile
 from gettext import gettext as _
 
 from gi.repository import GObject
+from gi.repository import Adw
 from gi.repository import Gtk
 
 from MiAZ.backend.log import MiAZLog
@@ -94,7 +95,8 @@ class MiAZActions(GObject.GObject):
                 if item_type == Repository:
                     title = key.replace('_', ' ')
                 else:
-                    title = f"{key} - {title}"
+                    # ~ title = f"{key} - {title}"
+                    title = f"{title}"
                 model.append(item_type(id=key, title=title))
 
         if len(model) == 0:
@@ -111,7 +113,7 @@ class MiAZActions(GObject.GObject):
         file_used = f'{i_title_plural.lower()}-used.json'
 
         def filechooser_response(dialog, response, data):
-            if response == Gtk.ResponseType.ACCEPT:
+            if response == 'apply':
                 srvutl = self.app.get_service('util')
                 content_area = dialog.get_content_area()
                 box = content_area.get_first_child()
@@ -139,11 +141,10 @@ class MiAZActions(GObject.GObject):
                         self.log.info(f"{i_title_plural} imported successfully")
                     else:
                         self.log.error(f"This is not a config file for {i_title_plural.lower()}")
-            dialog.destroy()
 
         window = self.app.get_widget('window')
         filechooser = factory.create_filechooser(
-                    parent=window,
+                    enable_response=True,
                     title=_(f'Import a configuration file for {i_title_plural.lower()}'),
                     target = 'FILE',
                     callback = filechooser_response,
@@ -166,7 +167,7 @@ class MiAZActions(GObject.GObject):
         def filechooser_response(dialog, response, data):
             srvutl = self.app.get_service('util')
             repository = self.app.get_service('repo')
-            if response == Gtk.ResponseType.ACCEPT:
+            if response == 'apply':
                 content_area = dialog.get_content_area()
                 box = content_area.get_first_child()
                 filechooser = box.get_first_child()
@@ -191,11 +192,10 @@ class MiAZActions(GObject.GObject):
                             )
                     self.log.info(f"{i_title_plural} exported successfully to {target_filepath}")
                     self.show_repository_settings()
-            dialog.destroy()
 
         window = self.app.get_widget('window')
         filechooser = factory.create_filechooser(
-                    parent=window,
+                    enable_response=True,
                     title=_(f'Export the configuration for {i_title_plural.lower()}'),
                     target = 'FOLDER',
                     callback = filechooser_response,
@@ -212,8 +212,9 @@ class MiAZActions(GObject.GObject):
         config_for = selector.get_config_for()
         selector.set_vexpand(True)
         selector.update_views()
-        dialog = srvdlg.create(parent=parent, dtype='action', title=_(f'Manage {config_for}'), widget=box, width=800, height=600)
-        dialog.present()
+        title = _(f'Manage {config_for}')
+        dialog = srvdlg.create(enable_response=True, dtype='action', title=title, widget=box, width=800, height=600)
+        dialog.present(parent)
 
     def show_app_settings(self, *args):
         window = self.app.get_widget('window')
@@ -235,25 +236,23 @@ class MiAZActions(GObject.GObject):
         window_settings.present()
 
     def show_app_about(self, *args):
+        # FIXME: The about dialog not modal
         window = self.app.get_widget('window')
         ENV = self.app.get_env()
-        about = Gtk.AboutDialog()
-        about.set_transient_for=window
-        about.set_modal(True)
-        about.set_logo_icon_name(ENV['APP']['ID'])
-        about.set_program_name(ENV['APP']['name'])
+        about = Adw.AboutDialog()
+        about.set_application_icon(ENV['APP']['ID'])
+        about.set_application_name(ENV['APP']['name'])
         about.set_version(ENV['APP']['VERSION'])
-        authors = [f"{ENV['APP']['author']} {ENV['APP']['author_website']}"]
-        about.set_authors(authors)
+        author = f"{ENV['APP']['author']}"
+        about.set_developer_name(author)
         artists = ['Flags borrowed from FlagKit project https://github.com/madebybowtie/FlagKit']
         artists.append('Icons borrowed from GNOME contributors https://www.gnome.org')
         about.set_artists(artists)
         about.set_license_type(Gtk.License.GPL_3_0_ONLY)
-        about.set_copyright(f"© 2024 {ENV['APP']['author']}")
+        about.set_copyright(f"© 2019-2025 {ENV['APP']['author']}")
         about.set_website('https://github.com/t00m/MiAZ')
-        about.set_website_label('Github MiAZ repository')
         about.set_comments(ENV['APP']['description'])
-        about.present()
+        about.present(window)
 
     def show_app_help(self, *args):
         shwin = self.app.get_widget('shortcutswindow')
@@ -296,8 +295,9 @@ class MiAZActions(GObject.GObject):
                 widget = self.app.get_widget('workspace')
             parent = widget.get_root()
             body = '<big>You must select at least one file</big>'
-            dialog = srvdlg.create(parent=parent, dtype='info', title=_('Action ignored'), body=body)
-            dialog.present()
+            title = _('Action ignored')
+            dialog = srvdlg.create(enable_response=False, dtype='info', title=title, body=body)
+            dialog.present(parent)
             stop = True
         return stop
 

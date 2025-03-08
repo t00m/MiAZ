@@ -7,6 +7,7 @@
 
 import os
 import glob
+from gettext import gettext as _
 
 from gi.repository import Gtk
 from gi.repository import GObject
@@ -47,8 +48,8 @@ class MiAZAddDirectoryPlugin(GObject.GObject, Peas.Activatable):
         srvrepo = self.app.get_service('repo')
 
         def filechooser_response(dialog, response, clsdlg):
-            if response in [Gtk.ResponseType.ACCEPT, Gtk.ResponseType.OK]:
-                content_area = dialog.get_content_area()
+            if response == 'apply':
+                # ~ content_area = dialog.get_extra_child()
                 filechooser = self.app.get_widget('plugin-adddir-filechooser')
                 toggle = self.app.get_widget('plugin-adddir-togglebutton')
                 recursive = toggle.get_active()
@@ -64,19 +65,20 @@ class MiAZAddDirectoryPlugin(GObject.GObject, Peas.Activatable):
                         btarget = srvutl.filename_normalize(source)
                         target = os.path.join(srvrepo.docs, btarget)
                         srvutl.filename_import(source, target)
-            dialog.destroy()
 
         window = self.app.get_widget('window')
         clsdlg = MiAZFileChooserDialog(self.app)
         filechooser_dialog = clsdlg.create(
-                    parent=window,
+                    enable_response=True,
                     title=_('Import a directory'),
                     target = 'FOLDER',
                     callback = filechooser_response)
         filechooser_widget = self.app.add_widget('plugin-adddir-filechooser', clsdlg.get_filechooser_widget())
         filechooser_dialog.get_style_context().add_class(class_name='toolbar')
         filechooser_widget.get_style_context().add_class(class_name='frame')
-        contents = filechooser_dialog.get_content_area()
+        filechooser = filechooser_dialog.get_extra_child()
+        gtkbin = filechooser.get_parent()
+        contents = gtkbin.get_parent()
         hbox = factory.create_box_horizontal()
         hbox.get_style_context().add_class(class_name='toolbar')
         label = Gtk.Label()
@@ -88,4 +90,4 @@ class MiAZAddDirectoryPlugin(GObject.GObject, Peas.Activatable):
         hbox.append(label)
         contents.append(hbox)
         contents.get_style_context().add_class(class_name='toolbar')
-        filechooser_dialog.present()
+        filechooser_dialog.present(window)
