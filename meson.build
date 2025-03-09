@@ -7,6 +7,7 @@ project('MiAZ',
 
 python = import('python')
 i18n = import('i18n')
+gnome = import('gnome')
 
 
 profile = get_option('profile')
@@ -37,4 +38,9 @@ subdir('data')
 subdir('MiAZ')
 subdir('po')
 
-meson.add_install_script('build-aux/meson/postinstall.py')
+
+gnome.post_install(
+  gtk_update_icon_cache: true,
+  update_desktop_database: true,
+)
+#~ meson.add_install_script('build-aux/meson/postinstall.py')
