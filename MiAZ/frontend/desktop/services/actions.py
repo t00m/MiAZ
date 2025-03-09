@@ -236,11 +236,11 @@ class MiAZActions(GObject.GObject):
         window_settings.present()
 
     def show_app_about(self, *args):
-        # FIXME: The about dialog not modal
+        # FIXME: App icon not displayed in local installation
         window = self.app.get_widget('window')
         ENV = self.app.get_env()
         about = Adw.AboutDialog()
-        about.set_application_icon(ENV['APP']['ID'])
+        about.set_application_icon('io.github.t00m.MiAZ')
         about.set_application_name(ENV['APP']['name'])
         about.set_version(ENV['APP']['VERSION'])
         author = f"{ENV['APP']['author']}"
