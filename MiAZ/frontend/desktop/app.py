@@ -126,7 +126,9 @@ class MiAZApp(Adw.Application):
         # Theme
         theme = self.set_service('theme', Gtk.IconTheme.get_for_display(window.get_display()))
         theme.add_search_path(ENV['GPATH']['ICONS'])
+        self.log.trace(f"Add ENV['GPATH']['ICONS'] ({ENV['GPATH']['ICONS']}) to the theme search path")
         theme.add_search_path(ENV['GPATH']['FLAGS'])
+        self.log.trace(f"Add ENV['GPATH']['FLAGS'] ({ENV['GPATH']['FLAGS']}) to the theme search path")
         self.log.trace(f"MiAZ custom icons in: {ENV['GPATH']['ICONS']}")
 
         # Setup main window contents
