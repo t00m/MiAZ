@@ -77,6 +77,11 @@ class MiAZ:
     def __init__(self, ENV: dict) -> None:
         """Set up environment and run the application."""
         self.env = ENV
+        log.trace("MiAZ Environment variables:")
+        for section in self.env:
+            log.trace(f"\tSection: {section}")
+            for envvar in self.env[section]:
+                log.trace(f"\t\t{envvar} = {self.env[section][envvar]}")
         self.setup_environment()
         self.log = MiAZLog('MiAZ')
         self.set_internationalization()
