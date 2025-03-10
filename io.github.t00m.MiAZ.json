@@ -60,9 +60,9 @@
             ],
             "sources" : [
                 {
-                    "type" : "archive",
-                    "url" : "https://github.com/t00m/MiAZ/archive/refs/tags/v0.1.1+build.8.tar.gz",
-                    "sha256" : "f97fdafaffb34cea6bb555206dbf27d137cdb2518041567a68e34da7f48e7eb4"
+                    "type" : "git",
+                    "url" : "https://github.com/t00m/MiAZ.git",
+                    "tag" : "0.1.2"
                 }
             ]
         }
