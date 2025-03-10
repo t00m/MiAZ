@@ -40,7 +40,7 @@ try:
     gi.require_version('Adw', '1')
     from gi.repository import Adw
     ENV['DESKTOP']['ADW_VERSION'] = (Adw.MAJOR_VERSION, Adw.MINOR_VERSION, Adw.MICRO_VERSION)
-    ENV['DESKTOP']['ADW_SUPPORT'] = Adw.MAJOR_VERSION >= 1 and Adw.MINOR_VERSION >= 7
+    ENV['DESKTOP']['ADW_SUPPORT'] = Adw.MAJOR_VERSION >= 1 and Adw.MINOR_VERSION >= 6
 except (ValueError, ModuleNotFoundError):
     ENV['DESKTOP']['ADW_SUPPORT'] = False
 
