@@ -25,7 +25,7 @@ class MiAZAbout(Gtk.Box):
 
         # Set App license
         label = Gtk.Label()
-        label.set_markup(f"<i>\n\n{ENV['APP']['license_long']}\n\n</i>")
+        label.set_markup(f"<i>\n\n{ENV['APP']['license']}\n\n</i>")
         label.set_justify(Gtk.Justification.CENTER)
         self.append(label)
 

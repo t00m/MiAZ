@@ -106,6 +106,16 @@ class MiAZActions(GObject.GObject):
                 model.append(item_type(id='None', title=_('No repositories found')))
 
     def import_config(self, button, item_type):
+        # FIXME: Implement import config
+        srvdlg = self.app.get_service('dialogs')
+        window = button.get_root()
+        dtype = 'error'
+        title = "Action not implemented yet"
+        body = "Import the configuration hasn't been implemented yet"
+        dialog = srvdlg.create(enable_response=False, dtype=dtype, title=title, body=body, widget=None)
+        dialog.present(window)
+        return
+
         factory = self.app.get_service('factory')
         i_title = item_type.__title__
         i_title_plural = item_type.__title_plural__
@@ -156,11 +166,22 @@ class MiAZActions(GObject.GObject):
         filechooser.show()
 
     def export_config(self, button, item_type):
-        factory = self.app.get_service('factory')
+        # FIXME: Implement export config
+        srvdlg = self.app.get_service('dialogs')
+        window = button.get_root()
+        dtype = 'error'
+        title = "Action not implemented yet"
+        body = "Export the configuration hasn't been implemented yet"
+        dialog = srvdlg.create(enable_response=False, dtype=dtype, title=title, body=body, widget=None)
+        dialog.present(window)
+        return
+
+
         # ~ i_title = item_type.__title__
-        i_title_plural = item_type.__title_plural__
         # ~ file_available = '%s-available.json' % i_title_plural.lower()
         # ~ file_used = '%s-used.json' % i_title_plural.lower()
+        factory = self.app.get_service('factory')
+        i_title_plural = item_type.__title_plural__
         name_available = item_type.__config_name_available__
         name_used = item_type.__config_name_used__
 
@@ -236,11 +257,11 @@ class MiAZActions(GObject.GObject):
         window_settings.present()
 
     def show_app_about(self, *args):
-        # FIXME: The about dialog not modal
+        # FIXME: App icon not displayed in local installation
         window = self.app.get_widget('window')
         ENV = self.app.get_env()
         about = Adw.AboutDialog()
-        about.set_application_icon(ENV['APP']['ID'])
+        about.set_application_icon('io.github.t00m.MiAZ')
         about.set_application_name(ENV['APP']['name'])
         about.set_version(ENV['APP']['VERSION'])
         author = f"{ENV['APP']['author']}"
