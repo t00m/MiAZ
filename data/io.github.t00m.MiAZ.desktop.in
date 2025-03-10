@@ -5,8 +5,6 @@ Exec=miaz
 Icon=io.github.t00m.MiAZ
 Terminal=false
 Type=Application
-# Translators: These are search terms to find this application. Do NOT translate or localize the semicolons. The list MUST also end with a semicolon.
-Keywords=personal;documents;AZ;database;
+Keywords=Productivity;Personal;Documents;Organizer
 Categories=Office;Database;GNOME;GTK;
 StartupNotify=true
-# Translators: Do NOT translate or transliterate this text (these are enum types)!
