@@ -1,0 +1,11 @@
+[Desktop Entry]
+Name=MiAZ
+Comment=Personal Document Organizer
+Exec=miaz
+Icon=io.github.t00m.MiAZ
+Terminal=false
+Type=Application
+Keywords=Productivity;Personal;Documents;Organizer
+Categories=Office;Database;GNOME;GTK;
+StartupNotify=true
+
