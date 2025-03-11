@@ -1,6 +1,6 @@
 # MiAZ, a Personal Document Organizer
 
-![About MiAZ](data/mkt/miaz-about.png)
+![About MiAZ](data/docs/brand/io.github.t00m.MiAZ-brand.png)
 
 ## About MiAZ
 
