@@ -105,7 +105,7 @@ class MiAZRepositories(MiAZConfigView):
         self._add_config_menubutton(self.config.config_for)
 
     def _on_item_available_add(self, *args):
-        window = self.app.get_widget('window-settings')
+        window = self.viewSl.get_root()
         title = 'Add a new repository'
         key1 = '<big><b>Repository name</b></big>'
         key2 = '<big><b>Folder</b></big>'
@@ -131,7 +131,7 @@ class MiAZRepositories(MiAZConfigView):
         repo_name = item.id
         repo_path = item.title
         self.log.trace(f"Renaming Repository '{repo_name}' located in {repo_path}")
-        window = self.app.get_widget('window-settings')
+        window = self.viewSl.get_root()
         this_repo = MiAZDialogAddRepo(self.app)
         title = _('Edit repository')
         key1 = '<big><b>Repository name</b></big>'
@@ -159,7 +159,7 @@ class MiAZRepositories(MiAZConfigView):
         else:
             dtype = "error"
             text = _(f'<big>{i_title} {selected_item.id} is still being used</big>')
-            window = self.app.get_widget('window-settings')
+            window = self.viewSl.get_root()
             dtype = 'error'
             title = "Action not possible"
             dialog = srvdlg.create(enable_response=False, dtype=dtype, title=title, body=text, widget=None)
@@ -345,10 +345,11 @@ class MiAZProjects(MiAZConfigView):
         else:
             dtype = "error"
             text = _(f'{i_title} {selected_item.id} is still being used')
-            window = self.app.get_widget('window')
+            window = self.viewSl.get_root()
             dtype = 'error'
             title = f"{i_title} {selected_item.id} can't be removed"
-            dialog = srvdlg.create(enable_response=False, dtype=dtype, title=title, body=text, width=800, height=600)
+            title = "Action not possible"
+            dialog = srvdlg.create(enable_response=False, dtype=dtype, title=title, body=text, width=600, height=480)
             dialog.present(window)
 
     def _on_item_used_add(self, *args):
@@ -366,6 +367,7 @@ class MiAZProjects(MiAZConfigView):
             self.log.debug(f"{i_title} {selected_item.id} is already being used")
 
     def _on_item_used_remove(self, *args):
+        self.log.trace("_on_item_used_remove:: start")
         items_available = self.config.load_available()
         items_used = self.config.load_used()
         selected_item = self.viewSl.get_selected()
@@ -375,6 +377,7 @@ class MiAZProjects(MiAZConfigView):
         srvdlg = self.app.get_service('dialogs')
         docs = srvprj.docs_in_project(selected_item.id)
         if len(docs) == 0:
+            self.log.trace("_on_item_used_remove:: no dependencies")
             items_available[selected_item.id] = selected_item.title
             self.log.debug(f"{i_title} {selected_item.id} added back to the list of available items")
             del items_used[selected_item.id]
@@ -383,20 +386,20 @@ class MiAZProjects(MiAZConfigView):
             self.config.save_available(items=items_available)
             self.update_views()
         else:
-            text = _(f'{i_title} {selected_item.title} is still being used by {len(docs)} docs:')
-            window = self.app.get_widget('window')
+            text = _(f'{i_title} {selected_item.title} is still being used by {len(docs)} docs')
+            self.log.error(text)
+            window = self.viewSl.get_root()
             dtype = 'error'
             title = f"{i_title} {selected_item.title} can't be removed"
-            if len(docs) > 0:
-                items = []
-                for doc in docs:
-                    items.append(File(id=doc, title=os.path.basename(doc)))
-                view = MiAZColumnViewDocuments(self.app)
-                view.update(items)
-            else:
-                view = None
-            dialog = srvdlg.create(enable_response=False, dtype=dtype, title=title, body=text, widget=view, width=800, height=600)
+            title = "Action not possible"
+            items = []
+            for doc in docs:
+                items.append(File(id=doc, title=os.path.basename(doc)))
+            view = MiAZColumnViewDocuments(self.app)
+            view.update(items)
+            dialog = srvdlg.create(enable_response=False, dtype=dtype, title=title, body=text, widget=view, width=600, height=480)
             dialog.present(window)
+
 
 class MiAZUserPlugins(MiAZConfigView):
     """Manage user plugins from Repo Settings. Edit disabled"""
