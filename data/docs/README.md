@@ -1,50 +1,26 @@
 # MiAZ, a Personal Document Organizer
 
+![About MiAZ](data/mkt/miaz-about.png)
+
 ## About MiAZ
 
-Sometimes, it is quite a challenge to keep the documentation of the family, schools, administration, billing, etc... well organized in terms of classification, disk space, time to do it and effort.
+Managing documentation for family records, school files, institutional paperwork, and billing can often feel like an overwhelming task.
+From organizing and classifying to finding the necessary time, and putting in the effort, it’s a constant balancing act.
+As someone who has lived a life split across borders, I’ve experienced firsthand how complex it can be to keep everything in order.
 
+MiAZ app aims to solve this problem with minimal effort.
 
-MiAZ app aims to solve this problem: with minimal effort, it is possible to have all paperwork organized.
-
-
-A little effort means: scan letters, donwload attachments from emails, place it in the right MiAZ repository directory, and edit the filename according to a set of fixed rules, like choosing:
+Minimal effort means: scan postal letters, donwload attachments from emails, and process them with MiAZ by setting:
 
 - Country,
 - Date,
 - Group
 - Purpose
+- Concept
 - Sender
 - Receiver
 
-MiAZ helps you comply with these rules effortlessly.
-
-**Disclaimer**: please, take into account that this project is based solely in my own experience and for my own necesities.
-
-## Changelog
-
-### [0.1.0-rc1] - 2024-08-21
-
-First Release Candidate for version 0.1
-
-### Added
-- N/A
-
-### Changed
-- Reduce log level verbosity (from DEBUG to TRACE)
-
-### Deprecated
-- N/A
-
-### Removed
-- N/A
-
-### Fixed
-- Add missing icons for date and concept actionrows in Rename dialog
-- Do not raise error when disabling an already disabled plugin
-
-### Security
-- N/A
+MiAZ helps you to organize your documents effortlessly with predefined values.
 
 ## Features
 
@@ -64,9 +40,9 @@ First Release Candidate for version 0.1
 
 All documents managed by MiAZ are renamed following this name convention consisting on 7 fields:
 
-`{timestamp}-{country}-{group}-{sentby}-{purpose}-{concept}-{sentto}.{extension}`
+`{date}-{country}-{group}-{sentby}-{purpose}-{concept}-{sentto}`
 
-* **Timestamp**: with format: %Y%m%d (eg.: 20221119)
+* **Date**: with format: %Y%m%d (eg.: 20221119)
 * **Country**: ISO-3166 Alpha-2 code (eg.: ES for Spain)
 * **Group**: root category to which any document belongs to with a similar purpose. Eg.: HOU (Housing), EDU (Education), FIN (Finances), ADM (Public Admon.) and so on.
 * **Purpose**: Type of document. Eg.: INF (Informative), REQ (Request), INV (Invoice), etc...
@@ -76,80 +52,65 @@ All documents managed by MiAZ are renamed following this name convention consist
 
 Notes:
 
-* Each field is separated by a hyphen (`-`). Only 6 hyphens are allowed. Extra hyphens found in a field are automatically converted to underscores (`_`)
-* The timestamp format helps to sort documents easily in a file browser or even in a terminal
-* Filename fields correspond to the key. If the configuration is lost for any reason, you'll have to figure out what the key stands for. So, try to use meaninful keys whenever you can.
+* Each field is separated by a hyphen (`-`).
+* The date format helps to sort documents easily in a file browser or even in a terminal.
+* Filename fields correspond to keys.
 
 ## Get started
 
 ### Requirements
 
-MiAZ has been developed under Linux in Python with GTK4 and GObject libraries.
-The base for development is always the last Debian stable version, so it should be compatible with newer distros like Ubuntu or Fedora.
+MiAZ has been developed under Linux in Python/GObject/GTK/Libadwaita libraries:
+- Python > 3.9
+- GObject > 3.50.0
+- GTK >= 4.10
+- Libadwaita >= 1.6
 
-At this moment, I haven't released any initial version, neither there is a .deb, .rpm, flatpack or snap package for an easy installation.
 
-It must be installed from source.
-
-**meson** and **ninja** must be already installed in your system.
 
 ### Installation
 
-sudo make install
+* Developers:
+** Download sources: `git clone https://github.com/t00m/MiAZ`
+** Installation: `./scripts/install/local/install_user.sh`
+** Uninstallation: `./scripts/uninstall/uninstall_user.sh`
 
-### Uninstallation
+Please note that **meson** and **ninja** must be already installed in your system
 
-sudo make uninstall
+* Users:
+** Installation/Uninstallation from Flatpak repositories: not available yet.
 
-### Troubleshooting
-
-Sometimes, because of a bad development decision of mine, software installation can be broken.
-
-Usually, to fix any problem with MiAZ, the environment must be cleaned by:
-
-- deleting all contents in /usr/share/MiAZ
-
-If you installed the software by using PIP (which is also possible), you have to make sure you delete any version deployed.
 
 ### Need help?
 
-Raise an issue, please.
+Please, raise an [issue](https://github.com/t00m/MiAZ/issues) in MiAZ Github repository:
 
 
 ## Screenshots
 
-![Workspace](data/mkt/miaz-workspace.png)
+![Workspace](data/docs/screenshots/MiAZ-Worskpace.png)
 
-![Manage countries](data/mkt/miaz-country-selector.png)
+![Repository settings](data/docs/screenshots/MiAZ-repository-settings.png)
 
-![Manage groups](data/mkt/miaz-projects-selector.png)
+![Main menu](data/docs/screenshots/MiAZ-Workspace-menu.png)
 
-![Manage purposes](data/mkt/miaz-purposes-selector.png)
+![Plugins](data/docs/screenshots/MiAZ-settings-plugins.png)
 
-![Manage senders and recipients](data/mkt/miaz-people-selector.png)
+![Filters](data/docs/screenshots/MiAZ-Workspace-filters.png)
 
-![Workspace menu](data/mkt/miaz-workspace-menu.png)
 
-![Add documents from several sources](data/mkt/miaz-workspace-menu-add-new.png)
-
-![Mass renaming](data/mkt/miaz-workspace-menu-mass-renaming.png)
-
-![Projects management](data/mkt/miaz-workspace-menu-projectmgt.png)
-
-![Plugins Export to directory](data/mkt/miaz-plugin-export2dir.png)
-
-![Single rename](data/mkt/miaz-editor.png)
-
-![Plugins](data/mkt/miaz-plugin-system.png)
-
-![About](data/mkt/miaz-about.png)
 
 
 ## About me
 
-Hi, this is Tomás Vírseda. I was born in Spain, and lived half life there, working now in Luxembourg, and living in Germany.
-I work as a SAP Basis Administrator, use GNU/Linux in a daily basis, and I love to develop just for fun, mostly with Python.
-Do not hesitate to contact me for whatever reason.
+Hi, I'm Tomás Vírseda. Originally from Spain, where I spent half of my life, I now work in Luxembourg and live in Germany.
+
+I’m a SAP Basis Administrator with a passion for technology. I use GNU/Linux daily and enjoy programming in my free time, primarily with Python, as a way to explore new ideas and solve problems.
+
+Feel free to reach out—I’m always open to connecting and collaborating!
+
+mailto:tomas.virseda@gmail.com
+
 
 ## Caution
 
