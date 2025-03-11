@@ -1,7 +1,7 @@
 {
     "app-id" : "io.github.t00m.MiAZ",
     "runtime" : "org.gnome.Platform",
-    "runtime-version" : "45",
+    "runtime-version" : "47",
     "sdk" : "org.gnome.Sdk",
     "command" : "miaz",
     "finish-args" : [
@@ -55,14 +55,11 @@
             "name" : "miaz",
             "builddir" : true,
             "buildsystem" : "meson",
-            "build-commands": [
-                "meson setup builddir_user --prefix=~/app --reconfigure --buildtype=debugoptimized --wipe"
-            ],
             "sources" : [
                 {
-                    "type" : "archive",
-                    "url" : "https://github.com/t00m/MiAZ/archive/refs/tags/v0.1.1+build.8.tar.gz",
-                    "sha256" : "f97fdafaffb34cea6bb555206dbf27d137cdb2518041567a68e34da7f48e7eb4"
+                    "type" : "git",
+                    "url" : "https://github.com/t00m/MiAZ.git",
+                    "tag" : "main"
                 }
             ]
         }

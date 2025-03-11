@@ -1,2 +1,0 @@
-PyGObject==3.42.2
-setuptools==70.0.0
