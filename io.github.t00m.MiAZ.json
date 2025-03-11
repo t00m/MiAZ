@@ -1,7 +1,7 @@
 {
     "app-id" : "io.github.t00m.MiAZ",
     "runtime" : "org.gnome.Platform",
-    "runtime-version" : "45",
+    "runtime-version" : "47",
     "sdk" : "org.gnome.Sdk",
     "command" : "miaz",
     "finish-args" : [
@@ -55,9 +55,6 @@
             "name" : "miaz",
             "builddir" : true,
             "buildsystem" : "meson",
-            "build-commands": [
-                "meson setup builddir_user --prefix=~/app --reconfigure --buildtype=debugoptimized --wipe"
-            ],
             "sources" : [
                 {
                     "type" : "git",
