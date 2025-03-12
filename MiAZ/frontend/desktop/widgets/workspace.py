@@ -519,6 +519,8 @@ class MiAZWorkspace(Gtk.Box):
             keys_used[skey] = set() # Avoid duplicates
 
         desc = {}
+        concepts_active = set()
+        concepts_inactive = set()
         show_pending = False
         for filename in docs:
             # ~ self.log.debug(f"{filename}")
@@ -574,6 +576,10 @@ class MiAZWorkspace(Gtk.Box):
                                         active=active
                                     )
                             )
+                if active:
+                    concepts_active.add(fields[5].replace('_', ' '))
+                else:
+                    concepts_inactive.add(fields[5].replace('_', ' '))
             except (IndexError, KeyError):
                 items.append(MiAZItem
                                     (
@@ -595,7 +601,13 @@ class MiAZWorkspace(Gtk.Box):
                                         active=False
                                     )
                             )
-
+        self.log.trace(f"Num. Concepts active: {len(concepts_active)}")
+        self.log.trace(f"Num. Concepts active: {len(concepts_inactive)}")
+        concepts_active = os.path.join(repository.conf, 'concepts_active.txt')
+        concepts_inactive = os.path.join(repository.conf, 'concepts_active.txt')
+        with open(concepts_active, 'w') as fca:
+            fca.write('\n'.join(concepts_active))
+        self.log.trace(concepts_active)
         de = datetime.now()
         dt = de - ds
         self.log.debug(f"Workspace updated ({dt})")
