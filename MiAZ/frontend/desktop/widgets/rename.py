@@ -8,12 +8,15 @@ import os
 from datetime import datetime
 from gettext import gettext as _
 
+from gi.repository import Gdk
 from gi.repository import Gtk
 from gi.repository import GLib
 
+from MiAZ.env import ENV
 from MiAZ.backend.log import MiAZLog
 from MiAZ.backend.models import Group, Country, Purpose, Concept, SentBy, SentTo
 from MiAZ.frontend.desktop.widgets.configview import MiAZCountries, MiAZGroups, MiAZPurposes, MiAZPeopleSentBy, MiAZPeopleSentTo
+from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewConcept
 
 
 class MiAZRenameDialog(Gtk.Box):
@@ -30,6 +33,7 @@ class MiAZRenameDialog(Gtk.Box):
         self.repository = self.app.get_service('repo')
         self.config = self.app.get_config_dict()
         self.util = self.app.get_service('util')
+        self.srvdlg = self.app.get_service('dialogs')
         self.log = MiAZLog('Miaz.Rename')
 
         # Box to be inserted as contents
@@ -127,6 +131,62 @@ class MiAZRenameDialog(Gtk.Box):
         box.set_hexpand(False)
         box.set_valign(Gtk.Align.CENTER)
         return box
+
+    def __setup_button_suggest_concept(self) -> Gtk.Box:
+        def choose_concept(button, view, rename_widget):
+            window = rename_widget.get_root()
+            body = ''
+            dialog = self.srvdlg.create(enable_response=True, dtype='question', title=_('Choose a concept'), body=body, widget=view, width=600, height=480)
+            dialog.connect('response', dialog_response, view)
+            dialog.present(window)
+
+        def dialog_response(dialog, response, widget):
+            if response == 'apply':
+                view = self.app.get_widget('window-rename-view-concepts')
+                try:
+                    item = view.get_selected()
+                    self.entry_concept.set_text(item.title)
+                except IndexError as error:
+                    self.log.error(error)
+
+        def on_filter_concepts_view(*args):
+            view = self.app.get_widget('window-rename-view-concepts')
+            view.refilter()
+
+        def do_filter_view(item, filter_list_model):
+            entry = self.app.get_widget('window-rename-searchentry-concepts')
+            left = entry.get_text()
+            right = item.title
+            if left.upper() in right.upper():
+                return True
+            return False
+
+
+        widget = self.factory.create_box_vertical(hexpand=True, vexpand=True)
+        searchentry = Gtk.SearchEntry()
+        self.app.add_widget('window-rename-searchentry-concepts', searchentry)
+        searchentry.connect('changed', on_filter_concepts_view)
+        frame = Gtk.Frame()
+        view = MiAZColumnViewConcept(self.app)
+        self.app.add_widget('window-rename-view-concepts', view)
+        view.set_filter(do_filter_view)
+        view.column_id.set_visible(False)
+        view.column_title.set_expand(True)
+        frame.set_child(view)
+        button = self.factory.create_button(title='Use concept')
+        widget.append(searchentry)
+        widget.append(frame)
+
+        items = []
+        for concept in ENV['CACHE']['CONCEPTS']['ACTIVE']:
+            items.append(Concept(id='', title=concept))
+        view.update(items)
+
+        button = self.factory.create_button(icon_name='io.github.t00m.MiAZ-edit-paste-symbolic',
+                                            tooltip='Reuse a concept for this document'
+                                            )
+        button.connect('clicked', choose_concept, widget, self)
+        return button
 
     def __create_actionrow(self, title, item_type, conf) -> Gtk.Widget:
         i_title = item_type.__title_plural__
@@ -246,9 +306,10 @@ class MiAZRenameDialog(Gtk.Box):
         boxValue = self.__create_box_value()
         self.rowConcept = self.factory.create_actionrow(title=title, prefix=prefix, suffix= boxValue)
         self.boxMain.append(self.rowConcept)
-        button = self.factory.create_button('', '', css_classes=['flat'])
-        button.set_sensitive(False)
-        button.set_has_frame(False)
+        # ~ button = self.factory.create_button('', '', css_classes=['flat'])
+        # ~ button.set_sensitive(False)
+        # ~ button.set_has_frame(False)
+        button = self.__setup_button_suggest_concept()
         self.entry_concept = Gtk.Entry()
         self.entry_concept.set_width_chars(41)
         # ~ self.entry_concept.set_alignment(1.0)

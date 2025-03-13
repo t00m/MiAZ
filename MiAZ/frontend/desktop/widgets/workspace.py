@@ -13,6 +13,7 @@ from gi.repository import Gtk
 from gi.repository import GLib
 from gi.repository import GObject
 
+from MiAZ.env import ENV
 from MiAZ.backend.log import MiAZLog
 from MiAZ.backend.models import MiAZItem, Group, Country, Purpose, SentBy, SentTo, Date, Project
 from MiAZ.frontend.desktop.widgets.assistant import MiAZAssistantRepoSettings
@@ -193,7 +194,7 @@ class MiAZWorkspace(Gtk.Box):
         self.emit('workspace-loaded')
 
     def _on_repo_switch(self, *args):
-        self.selected_items = 0
+        self.selected_items = []
         self.clear_filters()
         self.view.refilter()
         self.update()
@@ -519,6 +520,8 @@ class MiAZWorkspace(Gtk.Box):
             keys_used[skey] = set() # Avoid duplicates
 
         desc = {}
+        concepts_active = set()
+        concepts_inactive = set()
         show_pending = False
         for filename in docs:
             # ~ self.log.debug(f"{filename}")
@@ -574,6 +577,10 @@ class MiAZWorkspace(Gtk.Box):
                                         active=active
                                     )
                             )
+                if active:
+                    concepts_active.add(fields[5].replace('_', ' '))
+                else:
+                    concepts_inactive.add(fields[5].replace('_', ' '))
             except (IndexError, KeyError):
                 items.append(MiAZItem
                                     (
@@ -595,7 +602,10 @@ class MiAZWorkspace(Gtk.Box):
                                         active=False
                                     )
                             )
-
+        self.log.trace(f"Num. Concepts active: {len(concepts_active)}")
+        self.log.trace(f"Num. Concepts inactive: {len(concepts_inactive)}")
+        ENV['CACHE']['CONCEPTS']['ACTIVE'] = sorted(concepts_active)
+        ENV['CACHE']['CONCEPTS']['INACTIVE'] = sorted(concepts_inactive)
         de = datetime.now()
         dt = de - ds
         self.log.debug(f"Workspace updated ({dt})")

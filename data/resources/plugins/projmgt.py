@@ -121,7 +121,7 @@ class MiAZToolbarProjectMgtPlugin(GObject.GObject, Peas.Activatable):
         box.append(hbox)
         box.append(frame)
         window = self.app.get_widget('window')
-        dialog = srvdlg.create(enable_response=True, dtype='question', title=_('Assign document(s) to a project'), widget=box, width=1024, height=600)
+        dialog = srvdlg.create(enable_response=True, dtype='question', title=_('Assign document(s) to a project'), widget=box, width=-1, height=-1)
         dialog.connect('response', dialog_response, dropdown, items)
         dialog.present(window)
 
@@ -182,7 +182,7 @@ class MiAZToolbarProjectMgtPlugin(GObject.GObject, Peas.Activatable):
         box.append(hbox)
         box.append(frame)
         window = self.app.get_widget('window')
-        dialog = srvdlg.create(enable_response=True, dtype='question', title=_('Withdraw from project'), widget=box, width=1024, height=600)
+        dialog = srvdlg.create(enable_response=True, dtype='question', title=_('Withdraw from project'), widget=box, width=-1, height=-1)
         dialog.connect('response', dialog_response, dropdown, items)
         dialog.present(window)
 

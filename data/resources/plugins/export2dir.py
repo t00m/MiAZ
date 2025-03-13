@@ -81,7 +81,7 @@ class Export2Dir(GObject.GObject, Peas.Activatable):
 
         def filechooser_response(dialog, response, patterns):
             if response == 'apply':
-                content_area = dialog.get_content_area()
+                content_area = dialog.get_extra_child()
                 box = content_area.get_first_child()
                 filechooser = self.app.get_widget('plugin-export2dir-filechooser')
                 hbox = box.get_last_child()
@@ -141,7 +141,7 @@ class Export2Dir(GObject.GObject, Peas.Activatable):
         filechooser_dialog.get_style_context().add_class(class_name='toolbar')
         filechooser_widget.get_style_context().add_class(class_name='frame')
         # Export with pattern
-        contents = filechooser_dialog.get_content_area()
+        contents = filechooser_dialog.get_extra_child()
         box = contents.get_first_child()
         hbox = factory.create_box_horizontal()
         chkPattern = factory.create_button_check(title=_('Export with pattern'), callback=None)

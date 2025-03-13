@@ -58,9 +58,11 @@ class MiAZDialog:
         factory = self.app.get_service('factory')
         icm = self.app.get_service('icons')
 
-        dialog = Adw.AlertDialog.new(title, body)
+        dialog = Adw.AlertDialog.new() #title, body)
         dialog.set_body_use_markup(True)
         dialog.set_heading_use_markup(True)
+        dialog.set_heading(f"<big>{title}</big>")
+        # ~ dialog.set_body(f"<big>{body}</big>")
         dialog.set_size_request(width, height)
         # ~ dialog.set_body(body)
 
@@ -74,6 +76,7 @@ class MiAZDialog:
                 dialog.add_response("cancel", _("Cancel"))
                 dialog.add_response("apply", _("Apply"))
                 dialog.set_response_appearance("cancel", Adw.ResponseAppearance.DESTRUCTIVE)
+                dialog.set_response_appearance("apply", Adw.ResponseAppearance.SUGGESTED)
             else:
                 dialog.add_response("cancel", _("Ok"))
                 dialog.set_response_appearance("cancel", Adw.ResponseAppearance.SUGGESTED)
