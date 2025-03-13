@@ -32,7 +32,7 @@ class MiAZPopoverButton(Gtk.Box):
         self.listbox.set_selection_mode(Gtk.SelectionMode.NONE)
         for widget in self.widgets:
             self.listbox.append(child=widget)
-        vbox = self.factory.create_box_vertical(spacing=0, margin=0, hexpand=False, vexpand=False)
+        vbox = self.factory.create_box_vertical(spacing=0, margin=0, hexpand=True, vexpand=True)
         vbox.append(child=self.listbox)
         self.popover = Gtk.Popover()
         self.popover.set_child(vbox)

@@ -13,6 +13,7 @@ from gi.repository import Gtk
 from gi.repository import GLib
 from gi.repository import GObject
 
+from MiAZ.env import ENV
 from MiAZ.backend.log import MiAZLog
 from MiAZ.backend.models import MiAZItem, Group, Country, Purpose, SentBy, SentTo, Date, Project
 from MiAZ.frontend.desktop.widgets.assistant import MiAZAssistantRepoSettings
@@ -602,12 +603,9 @@ class MiAZWorkspace(Gtk.Box):
                                     )
                             )
         self.log.trace(f"Num. Concepts active: {len(concepts_active)}")
-        self.log.trace(f"Num. Concepts active: {len(concepts_inactive)}")
-        concepts_active = os.path.join(repository.conf, 'concepts_active.txt')
-        concepts_inactive = os.path.join(repository.conf, 'concepts_active.txt')
-        with open(concepts_active, 'w') as fca:
-            fca.write('\n'.join(concepts_active))
-        self.log.trace(concepts_active)
+        self.log.trace(f"Num. Concepts inactive: {len(concepts_inactive)}")
+        ENV['CACHE']['CONCEPTS']['ACTIVE'] = sorted(concepts_active)
+        ENV['CACHE']['CONCEPTS']['INACTIVE'] = sorted(concepts_inactive)
         de = datetime.now()
         dt = de - ds
         self.log.debug(f"Workspace updated ({dt})")

@@ -15,7 +15,7 @@ from MiAZ.backend.log import MiAZLog
 from MiAZ.frontend.desktop.widgets.columnview import MiAZColumnView
 from MiAZ.frontend.desktop.widgets.columnview import MiAZColumnViewSelector
 from MiAZ.frontend.desktop.widgets.columnview import ColIcon, ColLabel, ColCheck
-from MiAZ.backend.models import MiAZItem, Country, Group, Person, Purpose, File, Project, Repository, Plugin
+from MiAZ.backend.models import MiAZItem, Country, Group, Person, Purpose, File, Project, Repository, Plugin, Concept
 
 
 class MiAZColumnViewWorkspace(MiAZColumnView):
@@ -339,6 +339,17 @@ class MiAZColumnViewPurpose(MiAZColumnViewSelector):
         self.column_title.set_title(_('Purpose Id'))
         self.cv.append_column(self.column_title)
         self.column_title.set_title(_('Description'))
+
+class MiAZColumnViewConcept(MiAZColumnViewSelector):
+    """ Custom ColumnView widget for MiAZ """
+    __gtype_name__ = 'MiAZColumnViewConcept'
+
+    def __init__(self, app):
+        super().__init__(app, item_type=Concept)
+        self.cv.append_column(self.column_id)
+        self.column_title.set_title(_('Concept Id'))
+        self.cv.append_column(self.column_title)
+        self.column_title.set_title(_('Concept'))
 
 
 class MiAZColumnViewPerson(MiAZColumnViewSelector):

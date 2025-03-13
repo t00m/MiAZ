@@ -302,6 +302,31 @@ class MiAZApp(Adw.Application):
     def get_logger(self):
         return self.log
 
+    def find_widget_by_name(self, parent, name):
+        # Start with the first child
+        print(f"{parent}, {name}")
+        child = parent.get_first_child()
+
+
+        # Iterate through all children
+        while child is not None:
+            # Check if the current child has the desired name
+            print(child.get_name())
+            if child.get_name() == name:
+                return child
+
+            # Recursively search in the child's children (if it's a container)
+            result = self.find_widget_by_name(child, name)
+            if result is not None:
+                return result
+
+            # Move to the next sibling
+            child = child.get_next_sibling()
+
+        # If no matching widget is found, return None
+        return None
+
+
     def exit(self, *args):
         # Signal handler for CONTROL-C
         self.log.warning("CONTROL-C detected! Exiting gracefully...")

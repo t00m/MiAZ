@@ -62,7 +62,7 @@ class MiAZDialog:
         dialog.set_body_use_markup(True)
         dialog.set_heading_use_markup(True)
         dialog.set_heading(f"<big>{title}</big>")
-        dialog.set_body(f"<big>{body}</big>")
+        # ~ dialog.set_body(f"<big>{body}</big>")
         dialog.set_size_request(width, height)
         # ~ dialog.set_body(body)
 
