@@ -69,7 +69,7 @@ class Export2Zip(GObject.GObject, Peas.Activatable):
         def filechooser_response(dialog, response, patterns):
 
             if response == 'apply':
-                content_area = dialog.get_content_area()
+                content_area = dialog.get_extra_child()
                 filechooser = self.app.get_widget('plugin-export2zip-filechooser')
                 gfile = filechooser.get_file()
                 dirpath = gfile.get_path()
