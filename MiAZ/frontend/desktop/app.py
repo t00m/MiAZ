@@ -304,14 +304,12 @@ class MiAZApp(Adw.Application):
 
     def find_widget_by_name(self, parent, name):
         # Start with the first child
-        print(f"{parent}, {name}")
         child = parent.get_first_child()
 
 
         # Iterate through all children
         while child is not None:
             # Check if the current child has the desired name
-            print(child.get_name())
             if child.get_name() == name:
                 return child
 
