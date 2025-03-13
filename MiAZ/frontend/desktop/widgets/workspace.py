@@ -194,7 +194,7 @@ class MiAZWorkspace(Gtk.Box):
         self.emit('workspace-loaded')
 
     def _on_repo_switch(self, *args):
-        self.selected_items = 0
+        self.selected_items = []
         self.clear_filters()
         self.view.refilter()
         self.update()
