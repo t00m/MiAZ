@@ -76,6 +76,7 @@ class MiAZDialog:
                 dialog.add_response("cancel", _("Cancel"))
                 dialog.add_response("apply", _("Apply"))
                 dialog.set_response_appearance("cancel", Adw.ResponseAppearance.DESTRUCTIVE)
+                dialog.set_response_appearance("apply", Adw.ResponseAppearance.SUGGESTED)
             else:
                 dialog.add_response("cancel", _("Ok"))
                 dialog.set_response_appearance("cancel", Adw.ResponseAppearance.SUGGESTED)
