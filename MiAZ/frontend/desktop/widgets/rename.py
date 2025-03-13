@@ -136,16 +136,47 @@ class MiAZRenameDialog(Gtk.Box):
         def choose_concept(button, view, rename_widget):
             window = rename_widget.get_root()
             body = ''
-            dialog = self.srvdlg.create(enable_response=False, dtype='question', title=_('Choose a concept'), body=body, widget=view, width=600, height=480)
-            # ~ body_widget = self.app.find_widget_by_name(dialog, 'body-label')
-            # ~ body_widget.set_visible(False)
-            # ~ dialog.connect('response', dialog_response, items)
+            dialog = self.srvdlg.create(enable_response=True, dtype='question', title=_('Choose a concept'), body=body, widget=view, width=600, height=480)
+            dialog.connect('response', dialog_response, view)
             dialog.present(window)
 
+        def dialog_response(dialog, response, widget):
+            if response == 'apply':
+                view = self.app.get_widget('window-rename-view-concepts')
+                try:
+                    item = view.get_selected()
+                    self.entry_concept.set_text(item.title)
+                except IndexError as error:
+                    self.log.error(error)
 
+        def on_filter_concepts_view(*args):
+            view = self.app.get_widget('window-rename-view-concepts')
+            view.refilter()
+
+        def do_filter_view(item, filter_list_model):
+            entry = self.app.get_widget('window-rename-searchentry-concepts')
+            left = entry.get_text()
+            right = item.title
+            if left.upper() in right.upper():
+                return True
+            return False
+
+
+        widget = self.factory.create_box_vertical(hexpand=True, vexpand=True)
+        searchentry = Gtk.SearchEntry()
+        self.app.add_widget('window-rename-searchentry-concepts', searchentry)
+        searchentry.connect('changed', on_filter_concepts_view)
+        frame = Gtk.Frame()
         view = MiAZColumnViewConcept(self.app)
+        self.app.add_widget('window-rename-view-concepts', view)
+        view.set_filter(do_filter_view)
         view.column_id.set_visible(False)
         view.column_title.set_expand(True)
+        frame.set_child(view)
+        button = self.factory.create_button(title='Use concept')
+        widget.append(searchentry)
+        widget.append(frame)
+
         items = []
         for concept in ENV['CACHE']['CONCEPTS']['ACTIVE']:
             items.append(Concept(id='', title=concept))
@@ -154,40 +185,8 @@ class MiAZRenameDialog(Gtk.Box):
         button = self.factory.create_button(icon_name='io.github.t00m.MiAZ-edit-paste-symbolic',
                                             tooltip='Reuse a concept for this document'
                                             )
-        button.connect('clicked', choose_concept, view, self)
+        button.connect('clicked', choose_concept, widget, self)
         return button
-
-
-
-
-
-
-        # ~ box = Gtk.Box.new(orientation=Gtk.Orientation.VERTICAL, spacing=6)
-        # ~ box.set_hexpand(False)
-        # ~ box.set_valign(Gtk.Align.CENTER)
-        # ~ widgets = []
-
-        # ~ vbox = self.factory.create_box_vertical(hexpand=True)
-        # ~ entrysearch = Gtk.Entry()
-
-        # ~ button = self.factory.create_button(title='Use concept')
-        # ~ vbox.append(entrysearch)
-        # ~ vbox.append(view)
-        # ~ vbox.append(button)
-        # ~ widgets.append(vbox)
-        # ~ popover_button = self.factory.create_button_popover(icon_name='io.github.t00m.MiAZ-edit-paste-symbolic',
-                                                    # ~ title='',
-                                                    # ~ widgets=widgets)
-        # ~ popover_content = popover_button.get_child()
-        # ~ popover_content.set_property(witdh-request, 400)
-        # ~ popover_content.height-request = 300
-        # ~ popover_button.set_css_name("popover-concepts")
-        # ~ popover_button.set_tooltip_text('Reuse a concept for this document')
-        # ~ box.append(popover_button)
-
-        # ~ return box
-
-
 
     def __create_actionrow(self, title, item_type, conf) -> Gtk.Widget:
         i_title = item_type.__title_plural__
