@@ -11,6 +11,7 @@ from gi.repository import Adw, Gdk, Gio, Gtk
 from MiAZ.backend.log import MiAZLog
 from MiAZ.frontend.desktop.widgets.searchbar import SearchBar
 from MiAZ.frontend.desktop.widgets.welcome import MiAZWelcome
+from MiAZ.frontend.desktop.widgets.sidebar import MiAZSidebar
 from MiAZ.frontend.desktop.widgets.workspace import MiAZWorkspace
 
 
@@ -24,28 +25,46 @@ class MiAZMainWindow(Gtk.Box):
         self._setup_event_listener()
 
     def _setup_ui(self):
+        factory = self.app.get_service('factory')
+
         # Widgets
         ## HeaderBar
         headerbar = self.app.add_widget('headerbar', Adw.HeaderBar())
-        self.append(headerbar)
-
-        ## Stack & Stack.Switcher
-        stack = self._setup_stack()
-        self.append(stack)
-
-        # Setup system menu
-        self._setup_menu_app()
-
-        # Setup headerbar widgets
         self._setup_headerbar_left()
         self._setup_headerbar_center()
         self._setup_headerbar_right()
+        # ~ self.append(headerbar)
+
+        # View Stack
+        self.view_stack: Adw.ViewStack = Adw.ViewStack()
+
+        # Split View
+        self.split_view: Adw.NavigationSplitView = Adw.NavigationSplitView(
+            show_content=True,
+            max_sidebar_width=300,
+            min_sidebar_width=200,
+            sidebar=Adw.NavigationPage(child=MiAZSidebar(self.app), title=_("Sidebar")),
+            content=Adw.NavigationPage(child=self.view_stack, title=_("Documents"), width_request=360),
+        )
+        self.split_view.set_vexpand(True)
+        # ~ self.split_view.set_collapsed(True)
+
+        ## Stack & Stack.Switcher
+        box = factory.create_box_vertical(margin=0, spacing=0, hexpand=True, vexpand=True)
+        box.append(headerbar)
+        stack = self._setup_stack()
+        box.append(stack)
 
         # Welcome page
         page_welcome = self.app.get_widget('welcome')
         if page_welcome is None:
             self._setup_page_welcome()
 
+        # ~ workspace = self.app.add_widget('workspace', MiAZWorkspace(self.app))
+        self.view_stack.add_titled(child=box, name="Workspace", title=_("Workspace"),
+        )
+
+        self.append(self.split_view)
 
     def _setup_event_listener(self):
         evk = Gtk.EventControllerKey.new()
@@ -56,13 +75,6 @@ class MiAZMainWindow(Gtk.Box):
     def _setup_headerbar_left(self):
         factory = self.app.get_service('factory')
         headerbar = self.app.get_widget('headerbar')
-
-        # System menu
-        menubutton = self.app.get_widget('headerbar-button-menu-system')
-        menubutton.set_has_frame(False)
-        menubutton.get_style_context().add_class(class_name='flat')
-        menubutton.set_valign(Gtk.Align.CENTER)
-        headerbar.pack_start(menubutton)
 
         # Box for filters button and search entry
         hbox = factory.create_box_horizontal(margin=0, spacing=0)
@@ -88,31 +100,6 @@ class MiAZMainWindow(Gtk.Box):
         self.switcher.set_stack(self.stack)
         self.stack.set_vexpand(True)
         return self.stack
-
-    def _setup_menu_app(self):
-        actions = self.app.get_service('actions')
-        factory = self.app.get_service('factory')
-        menu = self.app.add_widget('window-menu-app', Gio.Menu.new())
-        section_common_in = self.app.add_widget('app-menu-section-common-in', Gio.Menu.new())
-        section_common_out = self.app.add_widget('app-menu-section-common-out', Gio.Menu.new())
-        section_danger = self.app.add_widget('app-menu-section-common-danger', Gio.Menu.new())
-        menu.append_section(None, section_common_in)
-        menu.append_section(None, section_common_out)
-        menu.append_section(None, section_danger)
-        menuitem = factory.create_menuitem('app-settings', _('Application settings'), actions.show_app_settings, None, ['<Control>s'])
-        section_common_in.append_item(menuitem)
-        # ~ menuitem = factory.create_menuitem('app-help', _('Help'), actions.show_app_help, None, ['<Control>h'])
-        # ~ section_common_out.append_item(menuitem)
-        menuitem = factory.create_menuitem('app-about', _('About MiAZ'), actions.show_app_about, None, ['<Control>h'])
-        section_common_out.append_item(menuitem)
-        menuitem = factory.create_menuitem('app-quit', _('Exit application'), actions.exit_app, None, ['<Control>q'])
-        section_danger.append_item(menuitem)
-
-        menubutton = Gtk.MenuButton(child=factory.create_button_content(icon_name='io.github.t00m.MiAZ-system-menu'))
-        popover = Gtk.PopoverMenu()
-        popover.set_menu_model(menu)
-        menubutton.set_popover(popover=popover)
-        self.app.add_widget('headerbar-button-menu-system', menubutton)
 
     def show_workspace(self, *args):
         actions = self.app.get_service('actions')
