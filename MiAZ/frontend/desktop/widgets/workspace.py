@@ -358,14 +358,6 @@ class MiAZWorkspace(Gtk.Box):
     def get_selected_items(self):
         return self.selected_items
 
-    # ~ def clear_filters(self, *args):
-        # ~ search_entry = self.app.get_widget('searchentry')
-        # ~ search_entry.set_text('')
-        # ~ dropdowns = self.app.get_widget('ws-dropdowns')
-        # ~ for ddId in dropdowns:
-            # ~ dropdowns[ddId].set_selected(0)
-        # ~ self.log.debug("All filters cleared")
-
     def update(self, *args):
         if self.app.get_status() == MiAZStatus.BUSY:
             return
@@ -470,8 +462,7 @@ class MiAZWorkspace(Gtk.Box):
                                         active=False
                                     )
                             )
-        self.log.trace(f"Num. Concepts active: {len(concepts_active)}")
-        self.log.trace(f"Num. Concepts inactive: {len(concepts_inactive)}")
+
         ENV['CACHE']['CONCEPTS']['ACTIVE'] = sorted(concepts_active)
         ENV['CACHE']['CONCEPTS']['INACTIVE'] = sorted(concepts_inactive)
         de = datetime.now()

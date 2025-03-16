@@ -25,6 +25,8 @@ class MiAZMainWindow(Gtk.Box):
         self._setup_ui()
         self._setup_event_listener()
 
+
+
     def _setup_ui(self):
         factory = self.app.get_service('factory')
 
@@ -229,6 +231,7 @@ class MiAZMainWindow(Gtk.Box):
     def _setup_toolbar_filters(self):
         factory = self.app.get_service('factory')
         dropdowns = self.app.get_widget('ws-dropdowns')
+
         widget = factory.create_box_vertical(spacing=0, margin=0, hexpand=True, vexpand=False)
         body = factory.create_box_vertical(margin=3, spacing=6, hexpand=True, vexpand=True)
         body.set_margin_top(margin=6)
@@ -239,7 +242,7 @@ class MiAZMainWindow(Gtk.Box):
         row_down = factory.create_box_vertical(margin=3, spacing=6, hexpand=True, vexpand=True)
         body.append(row_up)
         body.append(row_down)
-        widget.append(Gtk.Separator.new(orientation=Gtk.Orientation.HORIZONTAL))
+        # ~ vbox.append(Gtk.Separator.new(orientation=Gtk.Orientation.HORIZONTAL))
 
         dropdowns = {}
         ### Projects dropdown

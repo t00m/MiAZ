@@ -258,6 +258,9 @@ class MiAZApp(Adw.Application):
         if rename_widget is None:
             mainbox._setup_widget_rename()
 
+        # ~ sidebar = self.app.get_widget('sidebar')
+        # ~ sidebar.update_repo_status()
+
     def set_service(self, name: str, service: GObject.GObject) -> GObject.GObject:
         """Add a service to internal MiAZ objects dictionary."""
         srv = self.get_service(name)

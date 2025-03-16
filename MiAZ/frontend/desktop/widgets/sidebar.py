@@ -4,6 +4,7 @@
 
 from gi.repository import Adw, GObject, Gio, Gtk  # type:ignore
 
+from MiAZ.backend.log import MiAZLog
 from MiAZ.backend.models import MiAZItem, Group, Country, Purpose, SentBy, SentTo, Date, Project
 from MiAZ.frontend.desktop.services.factory import MiAZBox
 
@@ -51,6 +52,7 @@ class MiAZSidebar(Adw.Bin):
     def __init__(self, app) -> None:
         super().__init__()
         self.app = app
+        self.log = MiAZLog('MiAZ.Sidebar')
         self.__build_ui()
         self.app.add_widget('sidebar', self)
 
@@ -59,13 +61,21 @@ class MiAZSidebar(Adw.Bin):
         self._setup_menu_system()
 
         # Status page
-        self.status_page = Adw.StatusPage(
-            title=_(""),
-            description=_('Personal Document Organizer'),
-            icon_name="io.github.t00m.MiAZ",
-            css_classes=["compact"],
-            vexpand=True,
-        )
+        self.status_page = Gtk.Label()
+
+        # ~ TEMPORARY DISABLED
+        # ~ repository = self.app.get_service('repository')
+        # ~ config = self.app.get_config_dict()
+        # ~ repo_id = config['App'].get('current')
+        # ~ self.status_page = Adw.StatusPage(
+            # ~ title=_(""),
+            # ~ description=_(f"<big>Repository {repo_id}</big>"),
+            # ~ icon_name="io.github.t00m.MiAZ",
+            # ~ css_classes=["compact"],
+            # ~ vexpand=True,
+        # ~ )
+        # ~ self.app.add_widget('sidebar-status-repo', self.status_page)
+
 
         menubutton_system = self.app.get_widget('headerbar-button-menu-system')
         toolbar_filters = self.app.get_widget('workspace-toolbar-filters')
@@ -95,6 +105,16 @@ class MiAZSidebar(Adw.Bin):
             )
         )
 
+    def update_repo_status(self, *args):
+        repo_status = self.app.get_widget('sidebar-status-repo')
+        repository = self.app.get_service('repository')
+        workspace = self.app.get_widget('workspace')
+        num_docs = len(workspace.get_selected_items())
+        config = self.app.get_config_dict()
+        repo_id = config['App'].get('current')
+        description = f"<big>Repository {repo_id}\n<b>{num_docs} documents</b></big>"
+        repo_status.set_description(description)
+        self.log.trace(description)
 
     def _setup_menu_system(self):
         actions = self.app.get_service('actions')
