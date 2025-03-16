@@ -495,13 +495,15 @@ class MiAZWorkspace(Gtk.Box):
 
         self.selected_items = []
 
-        # ~ togglebutton = self.app.get_widget('workspace-togglebutton-pending-docs')
-        # ~ togglebutton.set_visible(show_pending)
+        togglebutton = self.app.get_widget('workspace-togglebutton-pending-docs')
+        if show_pending:
+            self.log.trace("There are pending documents. Displaying warning button")
+        togglebutton.set_visible(show_pending)
 
-        # ~ if not show_pending:
-            # ~ togglebutton.set_active(False)
-        # ~ self.review = togglebutton.get_active()
-        # ~ self.emit('workspace-view-updated')
+        if not show_pending:
+            togglebutton.set_active(False)
+        self.review = togglebutton.get_active()
+        self.emit('workspace-view-updated')
 
 
         return False

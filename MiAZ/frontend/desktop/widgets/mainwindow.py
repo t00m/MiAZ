@@ -206,17 +206,15 @@ class MiAZMainWindow(Gtk.Box):
         hbox.append(self.btnDocsSel)
 
         # Pending documents toggle button
-        # ~ workspace = self.app.get_widget('workspace')
-        # ~ button = factory.create_button_toggle( icon_name='io.github.t00m.MiAZ-rename',
-                                        # ~ title='Review',
-                                        # ~ tooltip='There are documents pending of review',
-                                        # ~ callback=workspace.show_pending_documents
-                                    # ~ )
-        # ~ button.set_has_frame(True)
-        # ~ self.app.add_widget('workspace-togglebutton-pending-docs', button)
-        # ~ button.set_visible(False)
-        # ~ button.set_active(False)
-        # ~ hbox.append(button)
+        button = factory.create_button_toggle( icon_name='io.github.t00m.MiAZ-rename',
+                                        title='Review',
+                                        tooltip='There are documents pending of review'
+                                    )
+        self.app.add_widget('workspace-togglebutton-pending-docs', button)
+        button.set_has_frame(True)
+        button.set_visible(False)
+        button.set_active(False)
+        hbox.append(button)
 
         return hbox
 

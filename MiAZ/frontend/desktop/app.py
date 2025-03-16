@@ -225,6 +225,8 @@ class MiAZApp(Adw.Application):
                 repo_settings.update()
             workspace = self.get_widget('workspace')
             workspace.initialize_caches()
+            tgbPendingDocs = self.app.get_widget('workspace-togglebutton-pending-docs')
+            tgbPendingDocs.connect('toggled', workspace.show_pending_documents)
             if not self.plugins_loaded:
                 self._load_plugins()
             self.set_status(MiAZStatus.RUNNING)
