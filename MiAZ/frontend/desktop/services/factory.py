@@ -12,11 +12,60 @@ from MiAZ.backend.log import MiAZLog
 from MiAZ.frontend.desktop.widgets.button import MiAZPopoverButton
 from MiAZ.frontend.desktop.widgets.filechooser import MiAZFileChooserDialog
 
+
+def get_children(obj: Gtk.Widget) -> list[Gtk.Widget]:
+    """
+    Get list of widget's children
+    """
+
+    children: list[Gtk.Widget] = []
+    child: Gtk.Widget = obj.get_first_child()
+    while child:
+        children.append(child)
+        child = child.get_next_sibling()
+    return children
+
+from typing import Callable
+from gi.repository import Gtk  # type:ignore
+
+from MiAZ.frontend.desktop.services.factory import get_children
+
+
+class MiAZBox(Gtk.Box):
+    def __init__(self, children: list[Gtk.Widget], **kwargs) -> None:
+        super().__init__(**kwargs)
+        for child in children:
+            self.append(child)
+
+    @property
+    def children(self) -> list[Gtk.Widget]:
+        return get_children(self)
+
+    def for_each(self, func: Callable) -> None:
+        """Call func for each child. Child passed as first argument"""
+
+        for child in self.children:
+            func(child)
+
+
+
 class MiAZFactory:
     def __init__(self, app):
         self.app = app
         self.log = MiAZLog('MiAZ.Factory')
         self.icons = self.app.get_service('icons')
+
+    def get_children(obj: Gtk.Widget) -> list[Gtk.Widget]:
+        """
+        Get list of widget's children
+        """
+
+        children: list[Gtk.Widget] = []
+        child: Gtk.Widget = obj.get_first_child()
+        while child:
+            children.append(child)
+            child = child.get_next_sibling()
+        return children
 
     def create_actionrow(self, title:str = '', subtitle:str = '', prefix: Gtk.Widget = None, suffix: Gtk.Widget = None):
         box = Gtk.CenterBox(orientation=Gtk.Orientation.HORIZONTAL)
@@ -56,11 +105,12 @@ class MiAZFactory:
         return row
 
     def create_box_filter(self, title, widget: Gtk.Widget) -> Gtk.Box:
-        box = Gtk.Box.new(orientation=Gtk.Orientation.VERTICAL, spacing=3)
+        box = Gtk.Box.new(orientation=Gtk.Orientation.HORIZONTAL, spacing=3)
         box.set_margin_bottom(margin=12)
-        lblTitle = self.create_label(f'<b>{title}</b>')
-        lblTitle.set_xalign(0.0)
-        box.append(lblTitle)
+        lblTitle = self.create_label('<b>%20s</b>' % title)
+        # ~ lblTitle.set_xalign(0.0)
+        # ~ box.append(lblTitle)
+        widget.set_tooltip_text(title)
         box.append(widget)
         return box
 

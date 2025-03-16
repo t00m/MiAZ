@@ -79,7 +79,7 @@ class MiAZ:
         self.env = ENV
         log.trace("MiAZ Environment variables:")
         for section in self.env:
-            log.trace(f"\tSection: {section}")
+            log.trace(f"\t[{section}]")
             for envvar in self.env[section]:
                 log.trace(f"\t\t{envvar} = {self.env[section][envvar]}")
         self.setup_environment()

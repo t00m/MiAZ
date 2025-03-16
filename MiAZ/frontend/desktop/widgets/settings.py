@@ -104,8 +104,8 @@ class MiAZAppSettings(MiAZCustomWindow):
         if valid:
             window = self.app.get_widget(f"window-{self.name}")
             window.hide()
-            workspace = self.app.get_widget('workspace')
-            workspace.clear_filters()
+            sidebar = self.app.get_widget('sidebar')
+            sidebar.clear_filters()
             self.log.debug(f"Repository {repo_id} loaded successfully")
         else:
             self.log.error(f"Repository {repo_id} couldn't be loaded")

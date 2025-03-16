@@ -176,7 +176,7 @@ class MiAZWorkspace(Gtk.Box):
 
         # Trigger events
         self._do_connect_filter_signals()
-        self._on_filters_toggled()
+        # ~ self._on_sidebar_toggled()
         self._on_filter_selected()
         self.workspace_loaded = True
 
@@ -194,51 +194,14 @@ class MiAZWorkspace(Gtk.Box):
         self.emit('workspace-loaded')
 
     def _on_repo_switch(self, *args):
+        sidebar = self.app.get_widget('sidebar')
         self.selected_items = []
-        self.clear_filters()
+        sidebar.clear_filters()
         self.view.refilter()
         self.update()
         self._on_filter_selected()
 
-    def _setup_toolbar_filters(self):
-        factory = self.app.get_service('factory')
-        dropdowns = self.app.get_widget('ws-dropdowns')
-        widget = factory.create_box_vertical(spacing=0, margin=0, hexpand=True, vexpand=False)
-        body = factory.create_box_vertical(margin=3, spacing=6, hexpand=True, vexpand=True)
-        body.set_margin_top(margin=6)
-        body.set_margin_start(margin=12)
-        body.set_margin_end(margin=12)
-        widget.append(body)
-        row_up = factory.create_box_horizontal(margin=3, spacing=6, hexpand=True, vexpand=True)
-        row_down = factory.create_box_horizontal(margin=3, spacing=6, hexpand=True, vexpand=True)
-        body.append(row_up)
-        body.append(row_down)
-        widget.append(Gtk.Separator.new(orientation=Gtk.Orientation.HORIZONTAL))
 
-        dropdowns = self.app.add_widget('ws-dropdowns', {})
-
-        ### Projects dropdown
-        i_type = Project.__gtype_name__
-        i_title = _(Project.__title__)
-        dd_prj = factory.create_dropdown_generic(item_type=Project)
-        boxDropdown = factory.create_box_filter(i_title, dd_prj)
-        dropdowns[i_type] = dd_prj
-        row_up.append(boxDropdown)
-
-        for item_type in [Country, Group, SentBy, Purpose, SentTo]:
-            i_type = item_type.__gtype_name__
-            i_title = _(item_type.__title__)
-            dropdown = factory.create_dropdown_generic(item_type=item_type)
-            boxDropdown = factory.create_box_filter(i_title, dropdown)
-            row_down.append(boxDropdown)
-            dropdowns[i_type] = dropdown
-
-        self.app.add_widget('ws-dropdowns', dropdowns)
-        btnClearFilters = factory.create_button(icon_name='io.github.t00m.MiAZ-entry_clear', tooltip='Clear all filters', css_classes=['flat'], callback=self.clear_filters)
-        boxDropdown = factory.create_box_filter('', btnClearFilters)
-        row_up.append(boxDropdown)
-
-        return widget
 
     def _update_dropdowns(self, *args):
         actions = self.app.get_service('actions')
@@ -262,12 +225,8 @@ class MiAZWorkspace(Gtk.Box):
         i_type = item_type.__gtype_name__
         actions.dropdown_populate(config, dropdowns[i_type], item_type)
 
-    def _on_filters_toggled(self, *args):
-        toggleButtonFilters = self.app.get_widget('workspace-togglebutton-filters')
-        active = toggleButtonFilters.get_active()
-        self.toolbar_filters.set_visible(active)
-
     def _on_selection_changed(self, selection, position, n_items):
+        workspace_menu = self.app.get_widget('workspace-menu')
         repository = self.app.get_service('repo')
         util = self.app.get_service('util')
         self.selected_items = []
@@ -277,75 +236,16 @@ class MiAZWorkspace(Gtk.Box):
             pos = bitset.get_nth(index)
             item = model.get_item(pos)
             self.selected_items.append(item)
-        label = self.btnDocsSel.get_child()
+        label = workspace_menu.get_child()
         docs = util.get_files(repository.docs)
         label.set_markup(f"<small>{len(self.selected_items)}</small> / {len(model)} / <big>{len(docs)}</big>")
         tooltip = ""
         tooltip += f"{len(self.selected_items)} documents selected\n"
         tooltip += f"{len(model)} documents in this view\n"
         tooltip += f"{len(docs)} documents in this repository"
-        self.btnDocsSel.set_tooltip_markup(tooltip)
+        workspace_menu.set_tooltip_markup(tooltip)
 
-    def _setup_toolbar_top(self):
-        factory = self.app.get_service('factory')
-        hdb_left = self.app.get_widget('headerbar-left-box')
-        hdb_right = self.app.get_widget('headerbar-right-box')
-        hdb_right.get_style_context().add_class(class_name='linked')
-
-        ## Show/Hide Filters
-        tgbFilters = factory.create_button_toggle('io.github.t00m.MiAZ-filter-symbolic', callback=self._on_filters_toggled)
-        self.app.add_widget('workspace-togglebutton-filters', tgbFilters)
-        tgbFilters.set_active(False)
-        tgbFilters.set_hexpand(False)
-        tgbFilters.get_style_context().remove_class(class_name='flat')
-        tgbFilters.set_valign(Gtk.Align.CENTER)
-        hdb_left.append(tgbFilters)
-
-        # Search box
-        # ~ search = self.app.add_widget('searchbar', SearchBar(self.app))
-        searchentry = self.app.add_widget('searchentry', Gtk.SearchEntry())
-        hdb_left.append(searchentry)
-
-
-        ## Dropdowns
-        dropdowns = self.app.get_widget('ws-dropdowns')
-
-        ### Date dropdown
-        i_type = Date.__gtype_name__
-        dd_date = factory.create_dropdown_generic(item_type=Date, ellipsize=False, enable_search=False)
-        dd_date.set_hexpand(True)
-        dropdowns[i_type] = dd_date
-        hdb_left.append(dd_date)
-
-        # Workspace Menu
-        hbox = factory.create_box_horizontal(margin=0, spacing=6, hexpand=False)
-        popovermenu = self._setup_menu_selection()
-        label = Gtk.Label()
-        self.btnDocsSel = Gtk.MenuButton()
-        self.btnDocsSel.set_always_show_arrow(True)
-        self.btnDocsSel.set_child(label)
-        self.popDocsSel = Gtk.PopoverMenu()
-        self.popDocsSel.set_menu_model(popovermenu)
-        self.btnDocsSel.set_popover(popover=self.popDocsSel)
-        self.btnDocsSel.set_sensitive(True)
-        hbox.append(self.btnDocsSel)
-
-        # Pending documents toggle button
-        button = factory.create_button_toggle( icon_name='io.github.t00m.MiAZ-rename',
-                                        title='Review',
-                                        tooltip='There are documents pending of review',
-                                        callback=self._show_pending_documents
-                                    )
-        button.set_has_frame(True)
-        self.app.add_widget('workspace-togglebutton-pending-docs', button)
-        button.set_visible(False)
-        button.set_active(False)
-        hbox.append(button)
-
-        headerbar = self.app.get_widget('headerbar')
-        headerbar.set_title_widget(hbox)
-
-    def _show_pending_documents(self, *args):
+    def show_pending_documents(self, *args):
         togglebutton = self.app.get_widget('workspace-togglebutton-pending-docs')
         self.review = togglebutton.get_active()
         self.view.refilter()
@@ -431,13 +331,11 @@ class MiAZWorkspace(Gtk.Box):
         widget.append(body)
         widget.append(foot)
 
-        self.toolbar_filters = self._setup_toolbar_filters()
-        self.app.add_widget('workspace-toolbar-filters', self.toolbar_filters)
-        self._setup_toolbar_top()
+        # Documents columnview
         frmView = self._setup_columnview()
-        head.append(self.toolbar_filters)
         body.append(frmView)
 
+        # Setup columnview
         self.view.column_title.set_visible(False)
         self.view.column_subtitle.set_visible(True)
         self.view.column_subtitle.set_expand(True)
@@ -455,48 +353,10 @@ class MiAZWorkspace(Gtk.Box):
         # ~ menuitem = factory.create_menuitem('clipboard', 'Copy filename', self._on_handle_menu_single, None, [])
         # ~ menuitem = factory.create_menuitem('directory', 'Open file location', self._on_handle_menu_single, None, [])
 
-    def _setup_menu_selection(self):
-        menu_selection = self.app.add_widget('workspace-menu-selection', Gio.Menu.new())
-        section_common_in = self.app.add_widget('workspace-menu-selection-section-common-in', Gio.Menu.new())
-        section_common_out = self.app.add_widget('workspace-menu-selection-section-common-out', Gio.Menu.new())
-        section_common_app = self.app.add_widget('workspace-menu-selection-section-app', Gio.Menu.new())
-        section_danger = self.app.add_widget('workspace-menu-selection-section-danger', Gio.Menu.new())
-        menu_selection.append_section(None, section_common_in)
-        menu_selection.append_section(None, section_common_out)
-        menu_selection.append_section(None, section_common_app)
-        menu_selection.append_section(None, section_danger)
 
-        ## Add
-        submenu_add = Gio.Menu.new()
-        menu_add = Gio.MenuItem.new_submenu(
-            label = _('Add new...'),
-            submenu = submenu_add,
-        )
-        section_common_in.append_item(menu_add)
-        self.app.add_widget('workspace-menu-in-add', submenu_add)
-
-        ## Export
-        submenu_export = Gio.Menu.new()
-        menu_export = Gio.MenuItem.new_submenu(
-            label = _('Export...'),
-            submenu = submenu_export,
-        )
-        section_common_out.append_item(menu_export)
-        self.app.add_widget('workspace-menu-selection-menu-export', menu_export)
-        self.app.add_widget('workspace-menu-selection-submenu-export', submenu_export)
-
-        return menu_selection
 
     def get_selected_items(self):
         return self.selected_items
-
-    def clear_filters(self, *args):
-        search_entry = self.app.get_widget('searchentry')
-        search_entry.set_text('')
-        dropdowns = self.app.get_widget('ws-dropdowns')
-        for ddId in dropdowns:
-            dropdowns[ddId].set_selected(0)
-        self.log.debug("All filters cleared")
 
     def update(self, *args):
         if self.app.get_status() == MiAZStatus.BUSY:
@@ -602,8 +462,7 @@ class MiAZWorkspace(Gtk.Box):
                                         active=False
                                     )
                             )
-        self.log.trace(f"Num. Concepts active: {len(concepts_active)}")
-        self.log.trace(f"Num. Concepts inactive: {len(concepts_inactive)}")
+
         ENV['CACHE']['CONCEPTS']['ACTIVE'] = sorted(concepts_active)
         ENV['CACHE']['CONCEPTS']['INACTIVE'] = sorted(concepts_inactive)
         de = datetime.now()
@@ -628,6 +487,8 @@ class MiAZWorkspace(Gtk.Box):
         self.selected_items = []
 
         togglebutton = self.app.get_widget('workspace-togglebutton-pending-docs')
+        if show_pending:
+            self.log.trace("There are pending documents. Displaying warning button")
         togglebutton.set_visible(show_pending)
 
         if not show_pending:
@@ -795,17 +656,18 @@ class MiAZWorkspace(Gtk.Box):
     def _on_filter_selected(self, *args):
         util = self.app.get_service('util')
         repository = self.app.get_service('repo')
+        workspace_menu = self.app.get_widget('workspace-menu')
         if self.workspace_loaded:
             self.view.refilter()
             model = self.view.cv.get_model() # nº items in current view
-            label = self.btnDocsSel.get_child()
+            label = workspace_menu.get_child()
             docs = util.get_files(repository.docs) # nº total items
             label.set_markup(f"<small>{len(self.selected_items)}</small> / {len(model)} / <big>{len(docs)}</big>")
             tooltip = ""
             tooltip += f"{len(self.selected_items)} documents selected\n"
             tooltip += f"{len(model)} documents in this view\n"
             tooltip += f"{len(docs)} documents in this repository"
-            self.btnDocsSel.set_tooltip_markup(tooltip)
+            workspace_menu.set_tooltip_markup(tooltip)
 
     def _on_select_all(self, *args):
         selection = self.view.get_selection()

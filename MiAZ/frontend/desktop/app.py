@@ -225,6 +225,8 @@ class MiAZApp(Adw.Application):
                 repo_settings.update()
             workspace = self.get_widget('workspace')
             workspace.initialize_caches()
+            tgbPendingDocs = self.app.get_widget('workspace-togglebutton-pending-docs')
+            tgbPendingDocs.connect('toggled', workspace.show_pending_documents)
             if not self.plugins_loaded:
                 self._load_plugins()
             self.set_status(MiAZStatus.RUNNING)
@@ -255,6 +257,9 @@ class MiAZApp(Adw.Application):
         rename_widget = self.get_widget('rename')
         if rename_widget is None:
             mainbox._setup_widget_rename()
+
+        # ~ sidebar = self.app.get_widget('sidebar')
+        # ~ sidebar.update_repo_status()
 
     def set_service(self, name: str, service: GObject.GObject) -> GObject.GObject:
         """Add a service to internal MiAZ objects dictionary."""
