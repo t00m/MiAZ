@@ -11,7 +11,8 @@ from gi.repository import Adw, Gdk, Gio, Gtk
 from MiAZ.backend.log import MiAZLog
 from MiAZ.backend.models import MiAZItem, Group, Country, Purpose, SentBy, SentTo, Date, Project
 from MiAZ.frontend.desktop.widgets.searchbar import SearchBar
-from MiAZ.frontend.desktop.widgets.welcome import MiAZWelcome
+from MiAZ.frontend.desktop.widgets.pages import MiAZWelcome
+from MiAZ.frontend.desktop.widgets.pages import MiAZPageNotFound
 from MiAZ.frontend.desktop.widgets.sidebar import MiAZSidebar
 from MiAZ.frontend.desktop.widgets.workspace import MiAZWorkspace
 
@@ -52,7 +53,7 @@ class MiAZMainWindow(Gtk.Box):
         headerbar.set_title_widget(toolbar)
 
         # View Stack
-        self.view_stack: Adw.ViewStack = Adw.ViewStack()
+        self.view_stack: Adw.ViewStack = self.app.add_widget('view-stack', Adw.ViewStack())
 
         # Split View
         self.split_view: Adw.NavigationSplitView = Adw.NavigationSplitView(
@@ -78,7 +79,13 @@ class MiAZMainWindow(Gtk.Box):
         if page_welcome is None:
             self._setup_page_welcome()
 
-        # ~ workspace = self.app.add_widget('workspace', MiAZWorkspace(self.app))
+        # Page Not found
+        page = self.app.get_widget('page-notfound')
+        if page is None:
+            self._setup_page_404()
+
+
+        # Workspace page
         self.view_stack.add_titled(child=box, name="Workspace", title=_("Workspace"),
         )
 
@@ -139,6 +146,16 @@ class MiAZMainWindow(Gtk.Box):
             page_welcome = stack.add_titled(widget_welcome, 'welcome', 'MiAZ')
             page_welcome.set_icon_name('io.github.t00m.MiAZ')
             page_welcome.set_visible(True)
+
+    def _setup_page_404(self):
+        stack = self.app.get_widget('stack')
+        widget_notfound = self.app.get_widget('page-404')
+        if widget_notfound is None:
+            widget_notfound = self.app.add_widget('page-404', MiAZPageNotFound(self.app))
+            page_not_found = stack.add_titled(widget_notfound, 'page-404', 'MiAZ')
+            self.app.add_widget('page-404', page_not_found)
+            page_not_found.set_icon_name('io.github.t00m.MiAZ-dialog-warning-symbolic')
+            page_not_found.set_visible(True)
 
     def _setup_widget_rename(self):
         pass

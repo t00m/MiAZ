@@ -383,6 +383,7 @@ class MiAZWorkspace(Gtk.Box):
         concepts_active = set()
         concepts_inactive = set()
         show_pending = False
+
         for filename in docs:
             # ~ self.log.debug(f"{filename}")
             doc, ext = util.filename_details(filename)
@@ -662,12 +663,19 @@ class MiAZWorkspace(Gtk.Box):
             model = self.view.cv.get_model() # nº items in current view
             label = workspace_menu.get_child()
             docs = util.get_files(repository.docs) # nº total items
-            label.set_markup(f"<small>{len(self.selected_items)}</small> / {len(model)} / <big>{len(docs)}</big>")
-            tooltip = ""
-            tooltip += f"{len(self.selected_items)} documents selected\n"
-            tooltip += f"{len(model)} documents in this view\n"
-            tooltip += f"{len(docs)} documents in this repository"
-            workspace_menu.set_tooltip_markup(tooltip)
+            stack = self.app.get_widget('stack')
+            items_in_view = len(model)
+            if items_in_view > 0:
+                label.set_markup(f"<small>{len(self.selected_items)}</small> / {len(model)} / <big>{len(docs)}</big>")
+                tooltip = ""
+                tooltip += f"{len(self.selected_items)} documents selected\n"
+                tooltip += f"{len(model)} documents in this view\n"
+                tooltip += f"{len(docs)} documents in this repository"
+                workspace_menu.set_tooltip_markup(tooltip)
+                stack.set_visible_child_name('workspace')
+            else:
+                stack.set_visible_child_name('page-404')
+
 
     def _on_select_all(self, *args):
         selection = self.view.get_selection()
