@@ -9,6 +9,7 @@ from gettext import gettext as _
 from gi.repository import Adw, Gdk, Gio, Gtk
 
 from MiAZ.backend.log import MiAZLog
+from MiAZ.backend.models import MiAZItem, Group, Country, Purpose, SentBy, SentTo, Date, Project
 from MiAZ.frontend.desktop.widgets.searchbar import SearchBar
 from MiAZ.frontend.desktop.widgets.welcome import MiAZWelcome
 from MiAZ.frontend.desktop.widgets.sidebar import MiAZSidebar
@@ -30,10 +31,23 @@ class MiAZMainWindow(Gtk.Box):
         # Widgets
         ## HeaderBar
         headerbar = self.app.add_widget('headerbar', Adw.HeaderBar())
+
+        # Hide back button
+        # https://gnome.pages.gitlab.gnome.org/libadwaita/doc/main/method.HeaderBar.set_show_back_button.html
+        # Button doesn't behave as expected. When sidebar is uncollpased, it takes the whole page. Content is gone.
+        headerbar.set_show_back_button(False) # This is ugly. FIXME
         self._setup_headerbar_left()
         self._setup_headerbar_center()
         self._setup_headerbar_right()
-        # ~ self.append(headerbar)
+
+        # Dropdown filters
+        self.toolbar_filters = self._setup_toolbar_filters()
+        self.app.add_widget('workspace-toolbar-filters', self.toolbar_filters)
+
+        # header toolbar
+        toolbar = self._setup_toolbar_top()
+        # ~ headerbar = self.app.get_widget('headerbar')
+        headerbar.set_title_widget(toolbar)
 
         # View Stack
         self.view_stack: Adw.ViewStack = Adw.ViewStack()
@@ -46,6 +60,8 @@ class MiAZMainWindow(Gtk.Box):
             sidebar=Adw.NavigationPage(child=MiAZSidebar(self.app), title=_("Sidebar")),
             content=Adw.NavigationPage(child=self.view_stack, title=_("Documents"), width_request=360),
         )
+        self.split_view.set_max_sidebar_width(400)
+        self.app.add_widget('split_view', self.split_view)
         self.split_view.set_vexpand(True)
         # ~ self.split_view.set_collapsed(True)
 
@@ -143,3 +159,142 @@ class MiAZMainWindow(Gtk.Box):
             actions = self.app.get_service('actions')
             actions.show_stack_page_by_name('workspace')
         return widget_workspace
+
+    def _setup_toolbar_top(self):
+        factory = self.app.get_service('factory')
+        hdb_left = self.app.get_widget('headerbar-left-box')
+        hdb_right = self.app.get_widget('headerbar-right-box')
+        hdb_right.get_style_context().add_class(class_name='linked')
+
+        ## Show/Hide Filters
+        tgbSidebar = factory.create_button_toggle('io.github.t00m.MiAZ-sidebar-show-left-symbolic', callback=self._on_sidebar_toggled)
+        tgbSidebar.set_tooltip_text("Show sidebar and filters")
+        self.app.add_widget('workspace-togglebutton-filters', tgbSidebar)
+        tgbSidebar.set_active(False)
+        tgbSidebar.set_hexpand(False)
+        tgbSidebar.get_style_context().remove_class(class_name='flat')
+        tgbSidebar.set_valign(Gtk.Align.CENTER)
+        hdb_left.append(tgbSidebar)
+
+        # Search box
+        searchentry = self.app.add_widget('searchentry', Gtk.SearchEntry())
+        hdb_left.append(searchentry)
+
+
+        ## Dropdowns
+        dropdowns = self.app.get_widget('ws-dropdowns')
+
+        ### Date dropdown
+        i_type = Date.__gtype_name__
+        dd_date = factory.create_dropdown_generic(item_type=Date, ellipsize=False, enable_search=False)
+        dd_date.set_hexpand(True)
+        dropdowns[i_type] = dd_date
+        hdb_left.append(dd_date)
+
+        # Workspace Menu
+        hbox = factory.create_box_horizontal(margin=0, spacing=6, hexpand=False)
+        popovermenu = self._setup_menu_selection()
+        label = Gtk.Label()
+        self.btnDocsSel = Gtk.MenuButton()
+        self.app.add_widget('workspace-menu', self.btnDocsSel)
+        self.btnDocsSel.set_always_show_arrow(True)
+        self.btnDocsSel.set_child(label)
+        self.popDocsSel = Gtk.PopoverMenu()
+        self.popDocsSel.set_menu_model(popovermenu)
+        self.btnDocsSel.set_popover(popover=self.popDocsSel)
+        self.btnDocsSel.set_sensitive(True)
+        hbox.append(self.btnDocsSel)
+
+        # Pending documents toggle button
+        # ~ workspace = self.app.get_widget('workspace')
+        # ~ button = factory.create_button_toggle( icon_name='io.github.t00m.MiAZ-rename',
+                                        # ~ title='Review',
+                                        # ~ tooltip='There are documents pending of review',
+                                        # ~ callback=workspace.show_pending_documents
+                                    # ~ )
+        # ~ button.set_has_frame(True)
+        # ~ self.app.add_widget('workspace-togglebutton-pending-docs', button)
+        # ~ button.set_visible(False)
+        # ~ button.set_active(False)
+        # ~ hbox.append(button)
+
+        return hbox
+
+    def _on_sidebar_toggled(self, *args):
+        sidebar = self.app.get_widget('sidebar')
+        toggleButtonFilters = self.app.get_widget('workspace-togglebutton-filters')
+        active = toggleButtonFilters.get_active()
+        splitview = self.app.get_widget('split_view')
+        splitview.set_collapsed(active)
+        splitview.set_show_content(True)
+
+    def _setup_toolbar_filters(self):
+        factory = self.app.get_service('factory')
+        dropdowns = self.app.get_widget('ws-dropdowns')
+        widget = factory.create_box_vertical(spacing=0, margin=0, hexpand=True, vexpand=False)
+        body = factory.create_box_vertical(margin=3, spacing=6, hexpand=True, vexpand=True)
+        body.set_margin_top(margin=6)
+        body.set_margin_start(margin=12)
+        body.set_margin_end(margin=12)
+        widget.append(body)
+        row_up = factory.create_box_vertical(margin=3, spacing=6, hexpand=True, vexpand=True)
+        row_down = factory.create_box_vertical(margin=3, spacing=6, hexpand=True, vexpand=True)
+        body.append(row_up)
+        body.append(row_down)
+        widget.append(Gtk.Separator.new(orientation=Gtk.Orientation.HORIZONTAL))
+
+        dropdowns = {}
+        ### Projects dropdown
+        i_type = Project.__gtype_name__
+        i_title = _(Project.__title__)
+        dd_prj = factory.create_dropdown_generic(item_type=Project)
+        boxDropdown = factory.create_box_filter(i_title, dd_prj)
+        dropdowns[i_type] = dd_prj
+        row_up.append(boxDropdown)
+
+        for item_type in [Country, Group, SentBy, Purpose, SentTo]:
+            i_type = item_type.__gtype_name__
+            i_title = _(item_type.__title__)
+            dropdown = factory.create_dropdown_generic(item_type=item_type)
+            boxDropdown = factory.create_box_filter(i_title, dropdown)
+            row_down.append(boxDropdown)
+            dropdowns[i_type] = dropdown
+
+        self.app.add_widget('ws-dropdowns', dropdowns)
+        # ~ btnClearFilters = factory.create_button(icon_name='io.github.t00m.MiAZ-entry_clear', tooltip='Clear all filters', css_classes=['flat'], callback=self.clear_filters)
+        # ~ boxDropdown = factory.create_box_filter('', btnClearFilters)
+        # ~ row_up.append(boxDropdown)
+
+        return widget
+
+    def _setup_menu_selection(self):
+        menu_selection = self.app.add_widget('workspace-menu-selection', Gio.Menu.new())
+        section_common_in = self.app.add_widget('workspace-menu-selection-section-common-in', Gio.Menu.new())
+        section_common_out = self.app.add_widget('workspace-menu-selection-section-common-out', Gio.Menu.new())
+        section_common_app = self.app.add_widget('workspace-menu-selection-section-app', Gio.Menu.new())
+        section_danger = self.app.add_widget('workspace-menu-selection-section-danger', Gio.Menu.new())
+        menu_selection.append_section(None, section_common_in)
+        menu_selection.append_section(None, section_common_out)
+        menu_selection.append_section(None, section_common_app)
+        menu_selection.append_section(None, section_danger)
+
+        ## Add
+        submenu_add = Gio.Menu.new()
+        menu_add = Gio.MenuItem.new_submenu(
+            label = _('Add new...'),
+            submenu = submenu_add,
+        )
+        section_common_in.append_item(menu_add)
+        self.app.add_widget('workspace-menu-in-add', submenu_add)
+
+        ## Export
+        submenu_export = Gio.Menu.new()
+        menu_export = Gio.MenuItem.new_submenu(
+            label = _('Export...'),
+            submenu = submenu_export,
+        )
+        section_common_out.append_item(menu_export)
+        self.app.add_widget('workspace-menu-selection-menu-export', menu_export)
+        self.app.add_widget('workspace-menu-selection-submenu-export', submenu_export)
+
+        return menu_selection
