@@ -63,8 +63,11 @@ class MiAZRepository(GObject.GObject):
                         except Exception as error:
                             self.log.error(error)
             self.log.trace(f"Repository {conf_file} valid? {valid}")
-        except Exception as warning:
-            self.log.warning(warning)
+        except Exception as error:
+            self.log.error(f"Repository '{path}' not valid")
+            self.log.error(f"Probably, no repository is loaded yet or defined")
+            self.log.error(f"Exception error: {error}")
+            self.log.warning("Skip this error if no repository has been defined yet or the path to the repository doesn't exist")
         return valid
 
     def init(self, path):
@@ -118,5 +121,8 @@ class MiAZRepository(GObject.GObject):
         self.emit('repository-switched')
 
     def get(self, key: str) -> str:
-        repoconf = self.setup()
-        return repoconf[key]
+        try:
+            repoconf = self.setup()
+            return repoconf[key]
+        except Exception as error:
+            self.log.error(f"Repository Configuration Key '{key}' not found")
