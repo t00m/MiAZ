@@ -102,8 +102,10 @@ class MiAZRepository(GObject.GObject):
                     if not os.path.exists(conf['dir_conf']):
                         self.init(conf['dir_docs'])
                 except Exception as error:
-                    self.log.error(error)
-                    self.log.warning(f"Repository configuration couldn't be loaded for repo_id '{repo_id}'")
+                    if error is None:
+                        self.log.warning(f"Repository configuration couldn't be loaded for repo_id '{repo_id}'")
+                    else:
+                        self.log.error(f"Repository configuration couldn't be loaded for repo_id '{repo_id}'")
         return conf
 
     def load(self, path):
