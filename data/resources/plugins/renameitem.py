@@ -84,20 +84,22 @@ class MiAZToolbarRenameItemPlugin(GObject.GObject, Peas.Activatable):
 
     def _on_rename_response(self, dialog, response, rename_widget):
         if response == 'apply':
+            window = self.app.get_widget('window')
             srvdlg = self.app.get_service('dialogs')
             body = _(f"\nYou are about to rename this document")
             title = _('Are you sure?')
             dialog_confirm = srvdlg.create(enable_response=True, dtype='question', title=title, body=body, callback=self.on_answer_question_rename, data=(rename_widget, dialog))
-            dialog_confirm.present(dialog)
+            dialog_confirm.present(window)
         elif response == 'preview':
             window = self.app.get_widget('window')
             doc = rename_widget.get_filepath_source()
             self.actions.document_display(doc)
-            dialog.present(window)
+            # ~ dialog.present(window)
 
     def on_answer_question_rename(self, dialog, response, data=tuple):
         rename_widget, parent_dialog = data
         srvdlg = self.app.get_service('dialogs')
+        window = self.app.get_widget('window')
         if response == 'apply':
             bsource = rename_widget.get_filepath_source()
             source = os.path.join(self.repository.docs, bsource)
@@ -108,9 +110,6 @@ class MiAZToolbarRenameItemPlugin(GObject.GObject, Peas.Activatable):
                 text = f"<big>Another document with the same name already exists in this repository.</big>"
                 title=_('Renaming not possible')
                 dlgerror = srvdlg.create(enable_response=False, dtype='error', title=title, body=text)
-                dlgerror.present(dialog)
-            # ~ else:
-                # ~ self.actions.show_stack_page_by_name('workspace')
+                dlgerror.present(window)
         else:
-            window = self.app.get_widget('window')
             parent_dialog.present(window)
