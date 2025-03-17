@@ -49,7 +49,6 @@ class MiAZMainWindow(Gtk.Box):
 
         # header toolbar
         toolbar = self._setup_toolbar_top()
-        # ~ headerbar = self.app.get_widget('headerbar')
         headerbar.set_title_widget(toolbar)
 
         # View Stack
@@ -146,6 +145,8 @@ class MiAZMainWindow(Gtk.Box):
             page_welcome = stack.add_titled(widget_welcome, 'welcome', 'MiAZ')
             page_welcome.set_icon_name('io.github.t00m.MiAZ')
             page_welcome.set_visible(True)
+            headerbar = self.app.get_widget('headerbar')
+            headerbar.set_visible(False)
 
     def _setup_page_404(self):
         stack = self.app.get_widget('stack')
@@ -187,9 +188,9 @@ class MiAZMainWindow(Gtk.Box):
 
         ## Show/Hide Filters
         tgbSidebar = factory.create_button_toggle('io.github.t00m.MiAZ-sidebar-show-left-symbolic', callback=self._on_sidebar_toggled)
-        tgbSidebar.set_tooltip_text("Show sidebar and filters")
         self.app.add_widget('workspace-togglebutton-filters', tgbSidebar)
-        tgbSidebar.set_active(False)
+        tgbSidebar.set_tooltip_text("Show sidebar and filters")
+        tgbSidebar.set_active(True)
         tgbSidebar.set_hexpand(False)
         tgbSidebar.get_style_context().remove_class(class_name='flat')
         tgbSidebar.set_valign(Gtk.Align.CENTER)
@@ -238,12 +239,20 @@ class MiAZMainWindow(Gtk.Box):
         return hbox
 
     def _on_sidebar_toggled(self, *args):
+        """ Sidebar collapsed when active = False"""
         sidebar = self.app.get_widget('sidebar')
         toggleButtonFilters = self.app.get_widget('workspace-togglebutton-filters')
-        active = toggleButtonFilters.get_active()
         splitview = self.app.get_widget('split_view')
-        splitview.set_collapsed(active)
-        splitview.set_show_content(True)
+        active = toggleButtonFilters.get_active()
+        collapsed = not active
+        self.log.debug(f"Toggle sidebar is {active}. Sidebar collapsed? {collapsed}")
+        try:
+            splitview.set_collapsed(collapsed)
+            splitview.set_show_content(True)
+        except AttributeError as error:
+            # FIXME
+            self.log.warning("Splitview not loaded yet.")
+
 
     def _setup_toolbar_filters(self):
         factory = self.app.get_service('factory')

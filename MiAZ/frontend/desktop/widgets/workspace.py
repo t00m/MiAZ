@@ -74,6 +74,8 @@ class MiAZWorkspace(Gtk.Box):
         self.datetimes = {}
 
         # Load/Initialize rest of caches
+        if repo.conf is None:
+            return
         self.fcache = os.path.join(repo.conf, 'cache.json')
         try:
             self.cache = util.json_load(self.fcache)
@@ -85,6 +87,7 @@ class MiAZWorkspace(Gtk.Box):
         self.cache = {}
         for cache in ['Date', 'Country', 'Group', 'SentBy', 'SentTo', 'Purpose']:
             self.cache[cache] = {}
+        self.log.debug("Caches initialized")
 
     def _check_first_time(self):
         """
@@ -105,7 +108,7 @@ class MiAZWorkspace(Gtk.Box):
         # updated, therefore, the whole cache must be invalidated :/
         self.initialize_caches()
         # ~ self.update()
-        self.log.debug("Caches initialized")
+
 
     def _on_filename_renamed(self, util, source, target):
         projects = self.app.get_service('Projects')
@@ -364,6 +367,9 @@ class MiAZWorkspace(Gtk.Box):
             return
 
         repository = self.app.get_service('repo')
+        if repository.conf is None:
+            return
+
         util = self.app.get_service('util')
         self.selected_items = []
         try:
@@ -658,6 +664,9 @@ class MiAZWorkspace(Gtk.Box):
     def _on_filter_selected(self, *args):
         util = self.app.get_service('util')
         repository = self.app.get_service('repo')
+        if repository.conf is None:
+            return
+
         workspace_menu = self.app.get_widget('workspace-menu')
         if self.workspace_loaded:
             self.view.refilter()
