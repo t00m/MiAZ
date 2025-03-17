@@ -238,7 +238,8 @@ class MiAZWorkspace(Gtk.Box):
             self.selected_items.append(item)
         label = workspace_menu.get_child()
         docs = util.get_files(repository.docs)
-        label.set_markup(f"<small>{len(self.selected_items)}</small> / {len(model)} / <big>{len(docs)}</big>")
+        docs_in_view = len(model)
+        label.set_markup(f"<small>{len(self.selected_items)}</small> / {docs_in_view} / <big>{len(docs)}</big>")
         tooltip = ""
         tooltip += f"{len(self.selected_items)} documents selected\n"
         tooltip += f"{len(model)} documents in this view\n"
@@ -665,13 +666,13 @@ class MiAZWorkspace(Gtk.Box):
             docs = util.get_files(repository.docs) # nº total items
             stack = self.app.get_widget('stack')
             items_in_view = len(model)
+            label.set_markup(f"<small>{len(self.selected_items)}</small> / {len(model)} / <big>{len(docs)}</big>")
+            tooltip = ""
+            tooltip += f"{len(self.selected_items)} documents selected\n"
+            tooltip += f"{len(model)} documents in this view\n"
+            tooltip += f"{len(docs)} documents in this repository"
+            workspace_menu.set_tooltip_markup(tooltip)
             if items_in_view > 0:
-                label.set_markup(f"<small>{len(self.selected_items)}</small> / {len(model)} / <big>{len(docs)}</big>")
-                tooltip = ""
-                tooltip += f"{len(self.selected_items)} documents selected\n"
-                tooltip += f"{len(model)} documents in this view\n"
-                tooltip += f"{len(docs)} documents in this repository"
-                workspace_menu.set_tooltip_markup(tooltip)
                 stack.set_visible_child_name('workspace')
             else:
                 stack.set_visible_child_name('page-404')
