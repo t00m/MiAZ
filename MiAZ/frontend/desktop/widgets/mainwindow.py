@@ -20,7 +20,7 @@ from MiAZ.frontend.desktop.widgets.workspace import MiAZWorkspace
 class MiAZMainWindow(Gtk.Box):
     def __init__(self, app, edit=True):
         self.app = app
-        self.log = MiAZLog('MiAZ.Selector')
+        self.log = MiAZLog('MiAZ.MainWindow')
         super(MiAZMainWindow, self).__init__(orientation=Gtk.Orientation.VERTICAL, hexpand=True, vexpand=True, spacing=0)
         self.win = self.app.get_widget('window')
         self._setup_ui()
