@@ -59,11 +59,18 @@ class MiAZDialog:
         icm = self.app.get_service('icons')
 
         dialog = Adw.AlertDialog.new() #title, body)
+        headerbar = Adw.HeaderBar()
+
+        # ~ dialog.set_prefer_wide_layout(True)
+        # ~ dialog.set_follows_content_size(False)
+        # ~ dialog.set_content_width(800)
         dialog.set_presentation_mode (Adw.DialogPresentationMode.BOTTOM_SHEET)
         dialog.set_body_use_markup(True)
         dialog.set_heading_use_markup(True)
-        dialog.set_heading(f"<big>{title}</big>")
-        dialog.set_body(f"<big>{body}</big>")
+        # ~ dialog.set_heading(f"<big>{title}</big>")
+        # ~ dialog.set_body(f"<big>{body}</big>")
+        dialog.set_heading(f"{title}")
+        dialog.set_body(f"{body}")
         dialog.set_size_request(width, height)
         # ~ dialog.set_body(body)
 
@@ -80,6 +87,7 @@ class MiAZDialog:
                 dialog.set_response_appearance("apply", Adw.ResponseAppearance.SUGGESTED)
             else:
                 dialog.add_response("cancel", _("Ok"))
+                dialog.set_default_response("cancel")
                 dialog.set_response_appearance("cancel", Adw.ResponseAppearance.SUGGESTED)
 
             if callback is None:
