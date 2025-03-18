@@ -681,10 +681,13 @@ class MiAZWorkspace(Gtk.Box):
             tooltip += f"{len(model)} documents in this view\n"
             tooltip += f"{len(docs)} documents in this repository"
             workspace_menu.set_tooltip_markup(tooltip)
+            searchentry = self.app.get_widget('searchentry')
             if items_in_view > 0:
                 stack.set_visible_child_name('workspace')
+                searchentry.get_style_context().remove_class(class_name='error')
             else:
                 stack.set_visible_child_name('page-404')
+                searchentry.get_style_context().add_class(class_name='error')
 
 
     def _on_select_all(self, *args):
