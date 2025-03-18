@@ -153,9 +153,9 @@ class MiAZSidebar(Adw.Bin):
 
 
     def clear_filters(self, *args):
-        # ~ search_entry = self.app.get_widget('searchentry')
-        # ~ search_entry.set_text('')
+        search_entry = self.app.get_widget('searchentry')
+        search_entry.set_text('')
         dropdowns = self.app.get_widget('ws-dropdowns')
         for ddId in dropdowns:
             dropdowns[ddId].set_selected(0)
-        # ~ self.log.debug("All filters cleared")
+        self.log.debug("All filters cleared")
