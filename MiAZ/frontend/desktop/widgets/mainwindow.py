@@ -288,9 +288,6 @@ class MiAZMainWindow(Gtk.Box):
             dropdowns[i_type] = dropdown
 
         self.app.add_widget('ws-dropdowns', dropdowns)
-        # ~ btnClearFilters = factory.create_button(icon_name='io.github.t00m.MiAZ-entry_clear', tooltip='Clear all filters', css_classes=['flat'], callback=self.clear_filters)
-        # ~ boxDropdown = factory.create_box_filter('', btnClearFilters)
-        # ~ row_up.append(boxDropdown)
 
         return widget
 

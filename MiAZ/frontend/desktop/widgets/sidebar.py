@@ -59,6 +59,7 @@ class MiAZSidebar(Adw.Bin):
     def __build_ui(self) -> None:
         # Setup system menu
         self._setup_menu_system()
+        self._setup_clear_filters_button()
 
         # Status page
         self.status_page = Gtk.Label()
@@ -78,6 +79,7 @@ class MiAZSidebar(Adw.Bin):
 
 
         menubutton_system = self.app.get_widget('headerbar-button-menu-system')
+        button_clear_filters = self.app.get_widget('headerbar-button-clear-filters')
         toolbar_filters = self.app.get_widget('workspace-toolbar-filters')
 
         self.set_child(
@@ -89,7 +91,7 @@ class MiAZSidebar(Adw.Bin):
                             css_classes=["heading"],
                         ),
                         start_children=[menubutton_system],
-                        end_children=[],
+                        end_children=[button_clear_filters],
                     )
                 ],
                 content=MiAZBox(
@@ -143,6 +145,11 @@ class MiAZSidebar(Adw.Bin):
         popover.set_menu_model(menu)
         menubutton.set_popover(popover=popover)
         self.app.add_widget('headerbar-button-menu-system', menubutton)
+
+    def _setup_clear_filters_button(self):
+        factory = self.app.get_service('factory')
+        button = factory.create_button(icon_name='io.github.t00m.MiAZ-entry_clear', tooltip='Clear all filters', css_classes=['flat'], callback=self.clear_filters)
+        self.app.add_widget('headerbar-button-clear-filters', button)
 
 
     def clear_filters(self, *args):
