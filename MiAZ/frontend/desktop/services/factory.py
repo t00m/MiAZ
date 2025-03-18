@@ -204,7 +204,7 @@ class MiAZFactory:
         if css_classes is None:
             css_classes = []
         button = Gtk.ToggleButton(css_classes=css_classes)
-        hbox = self.create_box_horizontal(spacing=3, margin=0)
+        hbox = self.create_box_horizontal(spacing=0, margin=0)
         if len(icon_name.strip()) == 0:
             icon = Gtk.Image()
         else:

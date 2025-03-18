@@ -267,6 +267,12 @@ class MiAZApp(Adw.Application):
         # ~ tgbSidebar.set_active(True)
         self.log.debug(f"Sidebar visible? {tgbSidebar.get_active()}")
 
+        tgbSidebar = self.app.get_widget('workspace-togglebutton-filters')
+        tgbSidebar.set_active(True)
+        tgbSidebar.set_visible(True)
+        btnWorkspace = self.app.get_widget('workspace-menu')
+        btnWorkspace.set_visible(True)
+
     def set_service(self, name: str, service: GObject.GObject) -> GObject.GObject:
         """Add a service to internal MiAZ objects dictionary."""
         srv = self.get_service(name)

@@ -122,6 +122,9 @@ class MiAZMainWindow(Gtk.Box):
         if keyname == 'Escape':
             # ~ actions.show_stack_page_by_name('workspace')
             self.log.debug("Escape key pressed by user")
+            tgbSidebar = self.app.get_widget('workspace-togglebutton-filters')
+            active = tgbSidebar.get_active()
+            tgbSidebar.set_active(not active)
         elif keyname == 'F3':
             actions.toggle_workspace_filters()
 
@@ -134,7 +137,12 @@ class MiAZMainWindow(Gtk.Box):
             page_welcome.set_icon_name('io.github.t00m.MiAZ')
             page_welcome.set_visible(True)
             headerbar = self.app.get_widget('headerbar')
-            headerbar.set_visible(False)
+            headerbar.set_visible(True)
+            tgbSidebar = self.app.get_widget('workspace-togglebutton-filters')
+            tgbSidebar.set_active(False)
+            tgbSidebar.set_visible(False)
+            btnWorkspace = self.app.get_widget('workspace-menu')
+            btnWorkspace.set_visible(False)
 
     def _setup_page_404(self):
         stack = self.app.get_widget('stack')
@@ -181,8 +189,9 @@ class MiAZMainWindow(Gtk.Box):
         tgbSidebar.set_tooltip_text("Show sidebar and filters")
         tgbSidebar.set_active(True)
         tgbSidebar.set_hexpand(False)
+        tgbSidebar.get_style_context().add_class(class_name='dimmed')
         # ~ tgbSidebar.get_style_context().remove_class(class_name='flat')
-        tgbSidebar.set_valign(Gtk.Align.CENTER)
+        # ~ tgbSidebar.set_valign(Gtk.Align.CENTER)
         hdb_left.append(tgbSidebar)
 
         # Workspace Menu
