@@ -211,7 +211,8 @@ class MiAZApp(Adw.Application):
             if repository.validate(repository.docs):
                 repository.load(repository.docs)
                 repo_loaded = True
-        except Exception:
+        except Exception as error:
+            self.log.error(error)
             repo_loaded = False
 
         repo_id = appconf.get('current')
@@ -260,6 +261,17 @@ class MiAZApp(Adw.Application):
 
         # ~ sidebar = self.app.get_widget('sidebar')
         # ~ sidebar.update_repo_status()
+        headerbar = self.app.get_widget('headerbar')
+        headerbar.set_visible(True)
+        tgbSidebar = self.app.get_widget('workspace-togglebutton-filters')
+        # ~ tgbSidebar.set_active(True)
+        self.log.debug(f"Sidebar visible? {tgbSidebar.get_active()}")
+
+        tgbSidebar = self.app.get_widget('workspace-togglebutton-filters')
+        tgbSidebar.set_active(True)
+        tgbSidebar.set_visible(True)
+        btnWorkspace = self.app.get_widget('workspace-menu')
+        btnWorkspace.set_visible(True)
 
     def set_service(self, name: str, service: GObject.GObject) -> GObject.GObject:
         """Add a service to internal MiAZ objects dictionary."""

@@ -11,6 +11,7 @@ from gettext import gettext as _
 from gi.repository import Gdk
 from gi.repository import Gtk
 from gi.repository import GLib
+from gi.repository import Pango
 
 from MiAZ.env import ENV
 from MiAZ.backend.log import MiAZLog
@@ -350,12 +351,17 @@ class MiAZRenameDialog(Gtk.Box):
         self.lblFilenameCur.get_style_context().add_class(class_name='error')
         self.row_cur_filename = self.factory.create_actionrow(title=title, suffix=self.lblFilenameCur)
         self.boxMain.append(self.row_cur_filename)
+        self.lblFilenameCur.set_ellipsize(True)
+        self.lblFilenameCur.set_property('ellipsize', Pango.EllipsizeMode.MIDDLE)
 
         # New filename
         title = _('<b>New filename</b>')
         self.lblFilenameNew = Gtk.Label()
         self.lblFilenameNew.get_style_context().add_class(class_name='monospace')
         self.lblFilenameNew.get_style_context().add_class(class_name='success')
+        self.lblFilenameNew.set_ellipsize(True)
+        self.lblFilenameNew.set_property('ellipsize', Pango.EllipsizeMode.MIDDLE)
+
         self.row_new_filename = self.factory.create_actionrow(title=title, suffix=self.lblFilenameNew)
         self.boxMain.append(self.row_new_filename)
 
@@ -406,6 +412,7 @@ class MiAZRenameDialog(Gtk.Box):
             fields.append(asentto)       # 7. SentTo
             self.result = f"{'-'.join(fields)}.{aextension}"
             self.lblFilenameNew.set_markup(self.result)
+            self.lblFilenameNew.set_tooltip_text(self.result)
 
             sentby = self.app.get_config('SentBy')
             sentto = self.app.get_config('SentTo')

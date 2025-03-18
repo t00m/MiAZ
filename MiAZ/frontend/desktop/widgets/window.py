@@ -48,7 +48,8 @@ class MiAZCustomWindow(Adw.Window):
     def _on_key_press(self, event, keyval, keycode, state):
         keyname = Gdk.keyval_name(keyval)
         if keyname == 'Escape':
-            self.hide()
+            # ~ self.hide()
+            pass
 
     def _build_ui(self):
         pass

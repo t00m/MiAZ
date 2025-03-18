@@ -315,7 +315,7 @@ class MiAZActions(GObject.GObject):
             if widget is None:
                 widget = self.app.get_widget('workspace')
             parent = widget.get_root()
-            body = '<big>You must select at least one file</big>'
+            body = '<big>You must select at least one document</big>'
             title = _('Action ignored')
             dialog = srvdlg.create(enable_response=False, dtype='info', title=title, body=body)
             dialog.present(parent)

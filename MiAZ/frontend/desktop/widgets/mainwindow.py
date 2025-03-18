@@ -11,7 +11,8 @@ from gi.repository import Adw, Gdk, Gio, Gtk
 from MiAZ.backend.log import MiAZLog
 from MiAZ.backend.models import MiAZItem, Group, Country, Purpose, SentBy, SentTo, Date, Project
 from MiAZ.frontend.desktop.widgets.searchbar import SearchBar
-from MiAZ.frontend.desktop.widgets.welcome import MiAZWelcome
+from MiAZ.frontend.desktop.widgets.pages import MiAZWelcome
+from MiAZ.frontend.desktop.widgets.pages import MiAZPageNotFound
 from MiAZ.frontend.desktop.widgets.sidebar import MiAZSidebar
 from MiAZ.frontend.desktop.widgets.workspace import MiAZWorkspace
 
@@ -19,7 +20,7 @@ from MiAZ.frontend.desktop.widgets.workspace import MiAZWorkspace
 class MiAZMainWindow(Gtk.Box):
     def __init__(self, app, edit=True):
         self.app = app
-        self.log = MiAZLog('MiAZ.Selector')
+        self.log = MiAZLog('MiAZ.MainWindow')
         super(MiAZMainWindow, self).__init__(orientation=Gtk.Orientation.VERTICAL, hexpand=True, vexpand=True, spacing=0)
         self.win = self.app.get_widget('window')
         self._setup_ui()
@@ -42,47 +43,39 @@ class MiAZMainWindow(Gtk.Box):
         self._setup_headerbar_center()
         self._setup_headerbar_right()
 
-        # Dropdown filters
-        self.toolbar_filters = self._setup_toolbar_filters()
-        self.app.add_widget('workspace-toolbar-filters', self.toolbar_filters)
-
         # header toolbar
         toolbar = self._setup_toolbar_top()
-        # ~ headerbar = self.app.get_widget('headerbar')
         headerbar.set_title_widget(toolbar)
 
-        # View Stack
-        self.view_stack: Adw.ViewStack = Adw.ViewStack()
-
-        # Split View
-        self.split_view: Adw.NavigationSplitView = Adw.NavigationSplitView(
-            show_content=True,
-            max_sidebar_width=300,
-            min_sidebar_width=200,
-            sidebar=Adw.NavigationPage(child=MiAZSidebar(self.app), title=_("Sidebar")),
-            content=Adw.NavigationPage(child=self.view_stack, title=_("Documents"), width_request=360),
-        )
-        self.split_view.set_max_sidebar_width(400)
-        self.app.add_widget('split_view', self.split_view)
-        self.split_view.set_vexpand(True)
-        # ~ self.split_view.set_collapsed(True)
-
         ## Stack & Stack.Switcher
-        box = factory.create_box_vertical(margin=0, spacing=0, hexpand=True, vexpand=True)
-        box.append(headerbar)
-        stack = self._setup_stack()
-        box.append(stack)
+        vmainbox = factory.create_box_vertical(margin=0, spacing=0, hexpand=True, vexpand=True)
+        hmainbox = factory.create_box_horizontal(margin=0, spacing=0, hexpand=True, vexpand=True)
+        content = self._setup_stack()
+        content.set_hexpand(True)
+        sidebar = MiAZSidebar(self.app)
+        sidebar.set_hexpand(False)
+        vmainbox.append(headerbar)
+        vmainbox.append(hmainbox)
+        hmainbox.append(sidebar)
+        hmainbox.append(content)
 
         # Welcome page
         page_welcome = self.app.get_widget('welcome')
         if page_welcome is None:
             self._setup_page_welcome()
 
-        # ~ workspace = self.app.add_widget('workspace', MiAZWorkspace(self.app))
-        self.view_stack.add_titled(child=box, name="Workspace", title=_("Workspace"),
-        )
+        # Page Not found
+        page = self.app.get_widget('page-notfound')
+        if page is None:
+            self._setup_page_404()
 
-        self.append(self.split_view)
+
+        # Workspace page
+        # ~ self.view_stack.add_titled(child=box, name="Workspace", title=_("Workspace"),
+        # ~ )
+
+        # ~ self.append(self.split_view)
+        self.append(vmainbox)
 
     def _setup_event_listener(self):
         evk = Gtk.EventControllerKey.new()
@@ -113,11 +106,11 @@ class MiAZMainWindow(Gtk.Box):
         pass
 
     def _setup_stack(self):
-        self.stack = self.app.add_widget('stack', Gtk.Stack())
-        self.switcher = self.app.add_widget('switcher', Gtk.StackSwitcher())
-        self.switcher.set_stack(self.stack)
-        self.stack.set_vexpand(True)
-        return self.stack
+        viewstack = self.app.add_widget('stack', Adw.ViewStack())
+        switcher = self.app.add_widget('switcher', Adw.ViewSwitcher())
+        switcher.set_stack(viewstack)
+        viewstack.set_vexpand(True)
+        return viewstack
 
     def show_workspace(self, *args):
         actions = self.app.get_service('actions')
@@ -127,7 +120,11 @@ class MiAZMainWindow(Gtk.Box):
         actions = self.app.get_service('actions')
         keyname = Gdk.keyval_name(keyval)
         if keyname == 'Escape':
-            actions.show_stack_page_by_name('workspace')
+            # ~ actions.show_stack_page_by_name('workspace')
+            self.log.debug("Escape key pressed by user")
+            tgbSidebar = self.app.get_widget('workspace-togglebutton-filters')
+            active = tgbSidebar.get_active()
+            tgbSidebar.set_active(not active)
         elif keyname == 'F3':
             actions.toggle_workspace_filters()
 
@@ -139,6 +136,23 @@ class MiAZMainWindow(Gtk.Box):
             page_welcome = stack.add_titled(widget_welcome, 'welcome', 'MiAZ')
             page_welcome.set_icon_name('io.github.t00m.MiAZ')
             page_welcome.set_visible(True)
+            headerbar = self.app.get_widget('headerbar')
+            headerbar.set_visible(True)
+            tgbSidebar = self.app.get_widget('workspace-togglebutton-filters')
+            tgbSidebar.set_active(False)
+            tgbSidebar.set_visible(False)
+            btnWorkspace = self.app.get_widget('workspace-menu')
+            btnWorkspace.set_visible(False)
+
+    def _setup_page_404(self):
+        stack = self.app.get_widget('stack')
+        widget_notfound = self.app.get_widget('page-404')
+        if widget_notfound is None:
+            widget_notfound = self.app.add_widget('page-404', MiAZPageNotFound(self.app))
+            page_not_found = stack.add_titled(widget_notfound, 'page-404', 'MiAZ')
+            self.app.add_widget('page-404', page_not_found)
+            page_not_found.set_icon_name('io.github.t00m.MiAZ-dialog-warning-symbolic')
+            page_not_found.set_visible(True)
 
     def _setup_widget_rename(self):
         pass
@@ -168,30 +182,17 @@ class MiAZMainWindow(Gtk.Box):
         hdb_right = self.app.get_widget('headerbar-right-box')
         hdb_right.get_style_context().add_class(class_name='linked')
 
+
         ## Show/Hide Filters
         tgbSidebar = factory.create_button_toggle('io.github.t00m.MiAZ-sidebar-show-left-symbolic', callback=self._on_sidebar_toggled)
-        tgbSidebar.set_tooltip_text("Show sidebar and filters")
         self.app.add_widget('workspace-togglebutton-filters', tgbSidebar)
-        tgbSidebar.set_active(False)
+        tgbSidebar.set_tooltip_text("Show sidebar and filters")
+        tgbSidebar.set_active(True)
         tgbSidebar.set_hexpand(False)
-        tgbSidebar.get_style_context().remove_class(class_name='flat')
-        tgbSidebar.set_valign(Gtk.Align.CENTER)
+        tgbSidebar.get_style_context().add_class(class_name='dimmed')
+        # ~ tgbSidebar.get_style_context().remove_class(class_name='flat')
+        # ~ tgbSidebar.set_valign(Gtk.Align.CENTER)
         hdb_left.append(tgbSidebar)
-
-        # Search box
-        searchentry = self.app.add_widget('searchentry', Gtk.SearchEntry())
-        hdb_left.append(searchentry)
-
-
-        ## Dropdowns
-        dropdowns = self.app.get_widget('ws-dropdowns')
-
-        ### Date dropdown
-        i_type = Date.__gtype_name__
-        dd_date = factory.create_dropdown_generic(item_type=Date, ellipsize=False, enable_search=False)
-        dd_date.set_hexpand(True)
-        dropdowns[i_type] = dd_date
-        hdb_left.append(dd_date)
 
         # Workspace Menu
         hbox = factory.create_box_horizontal(margin=0, spacing=6, hexpand=False)
@@ -221,52 +222,12 @@ class MiAZMainWindow(Gtk.Box):
         return hbox
 
     def _on_sidebar_toggled(self, *args):
+        """ Sidebar collapsed when active = False"""
         sidebar = self.app.get_widget('sidebar')
         toggleButtonFilters = self.app.get_widget('workspace-togglebutton-filters')
         active = toggleButtonFilters.get_active()
-        splitview = self.app.get_widget('split_view')
-        splitview.set_collapsed(active)
-        splitview.set_show_content(True)
-
-    def _setup_toolbar_filters(self):
-        factory = self.app.get_service('factory')
-        dropdowns = self.app.get_widget('ws-dropdowns')
-
-        widget = factory.create_box_vertical(spacing=0, margin=0, hexpand=True, vexpand=False)
-        body = factory.create_box_vertical(margin=3, spacing=6, hexpand=True, vexpand=True)
-        body.set_margin_top(margin=6)
-        body.set_margin_start(margin=12)
-        body.set_margin_end(margin=12)
-        widget.append(body)
-        row_up = factory.create_box_vertical(margin=3, spacing=6, hexpand=True, vexpand=True)
-        row_down = factory.create_box_vertical(margin=3, spacing=6, hexpand=True, vexpand=True)
-        body.append(row_up)
-        body.append(row_down)
-        # ~ vbox.append(Gtk.Separator.new(orientation=Gtk.Orientation.HORIZONTAL))
-
-        dropdowns = {}
-        ### Projects dropdown
-        i_type = Project.__gtype_name__
-        i_title = _(Project.__title__)
-        dd_prj = factory.create_dropdown_generic(item_type=Project)
-        boxDropdown = factory.create_box_filter(i_title, dd_prj)
-        dropdowns[i_type] = dd_prj
-        row_up.append(boxDropdown)
-
-        for item_type in [Country, Group, SentBy, Purpose, SentTo]:
-            i_type = item_type.__gtype_name__
-            i_title = _(item_type.__title__)
-            dropdown = factory.create_dropdown_generic(item_type=item_type)
-            boxDropdown = factory.create_box_filter(i_title, dropdown)
-            row_down.append(boxDropdown)
-            dropdowns[i_type] = dropdown
-
-        self.app.add_widget('ws-dropdowns', dropdowns)
-        # ~ btnClearFilters = factory.create_button(icon_name='io.github.t00m.MiAZ-entry_clear', tooltip='Clear all filters', css_classes=['flat'], callback=self.clear_filters)
-        # ~ boxDropdown = factory.create_box_filter('', btnClearFilters)
-        # ~ row_up.append(boxDropdown)
-
-        return widget
+        if sidebar is not None:
+            sidebar.set_visible(active)
 
     def _setup_menu_selection(self):
         menu_selection = self.app.add_widget('workspace-menu-selection', Gio.Menu.new())

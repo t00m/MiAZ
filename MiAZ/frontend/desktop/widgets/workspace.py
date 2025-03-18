@@ -74,6 +74,8 @@ class MiAZWorkspace(Gtk.Box):
         self.datetimes = {}
 
         # Load/Initialize rest of caches
+        if repo.conf is None:
+            return
         self.fcache = os.path.join(repo.conf, 'cache.json')
         try:
             self.cache = util.json_load(self.fcache)
@@ -85,6 +87,7 @@ class MiAZWorkspace(Gtk.Box):
         self.cache = {}
         for cache in ['Date', 'Country', 'Group', 'SentBy', 'SentTo', 'Purpose']:
             self.cache[cache] = {}
+        self.log.debug("Caches initialized")
 
     def _check_first_time(self):
         """
@@ -105,7 +108,7 @@ class MiAZWorkspace(Gtk.Box):
         # updated, therefore, the whole cache must be invalidated :/
         self.initialize_caches()
         # ~ self.update()
-        self.log.debug("Caches initialized")
+
 
     def _on_filename_renamed(self, util, source, target):
         projects = self.app.get_service('Projects')
@@ -238,7 +241,8 @@ class MiAZWorkspace(Gtk.Box):
             self.selected_items.append(item)
         label = workspace_menu.get_child()
         docs = util.get_files(repository.docs)
-        label.set_markup(f"<small>{len(self.selected_items)}</small> / {len(model)} / <big>{len(docs)}</big>")
+        docs_in_view = len(model)
+        label.set_markup(f"<small>{len(self.selected_items)}</small> / {docs_in_view} / <big>{len(docs)}</big>")
         tooltip = ""
         tooltip += f"{len(self.selected_items)} documents selected\n"
         tooltip += f"{len(model)} documents in this view\n"
@@ -363,6 +367,9 @@ class MiAZWorkspace(Gtk.Box):
             return
 
         repository = self.app.get_service('repo')
+        if repository.conf is None:
+            return
+
         util = self.app.get_service('util')
         self.selected_items = []
         try:
@@ -383,6 +390,7 @@ class MiAZWorkspace(Gtk.Box):
         concepts_active = set()
         concepts_inactive = set()
         show_pending = False
+
         for filename in docs:
             # ~ self.log.debug(f"{filename}")
             doc, ext = util.filename_details(filename)
@@ -656,18 +664,31 @@ class MiAZWorkspace(Gtk.Box):
     def _on_filter_selected(self, *args):
         util = self.app.get_service('util')
         repository = self.app.get_service('repo')
+        if repository.conf is None:
+            return
+
         workspace_menu = self.app.get_widget('workspace-menu')
         if self.workspace_loaded:
             self.view.refilter()
             model = self.view.cv.get_model() # nº items in current view
             label = workspace_menu.get_child()
             docs = util.get_files(repository.docs) # nº total items
+            stack = self.app.get_widget('stack')
+            items_in_view = len(model)
             label.set_markup(f"<small>{len(self.selected_items)}</small> / {len(model)} / <big>{len(docs)}</big>")
             tooltip = ""
             tooltip += f"{len(self.selected_items)} documents selected\n"
             tooltip += f"{len(model)} documents in this view\n"
             tooltip += f"{len(docs)} documents in this repository"
             workspace_menu.set_tooltip_markup(tooltip)
+            searchentry = self.app.get_widget('searchentry')
+            if items_in_view > 0:
+                stack.set_visible_child_name('workspace')
+                searchentry.get_style_context().remove_class(class_name='error')
+            else:
+                stack.set_visible_child_name('page-404')
+                searchentry.get_style_context().add_class(class_name='error')
+
 
     def _on_select_all(self, *args):
         selection = self.view.get_selection()
