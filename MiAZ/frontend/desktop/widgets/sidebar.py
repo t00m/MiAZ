@@ -37,6 +37,8 @@ def MiAZHeaderBar(
     """Create AdwHeaderBar with children packed"""
 
     hb: Adw.HeaderBar = Adw.HeaderBar(**kwargs)
+    hb.set_show_back_button(True)
+    hb.set_show_end_title_buttons(False)
 
     if start_children:
         for child in start_children:
@@ -53,6 +55,7 @@ class MiAZSidebar(Adw.Bin):
         super().__init__()
         self.app = app
         self.log = MiAZLog('MiAZ.Sidebar')
+        self.set_size_request(350, -1)
         self.__build_ui()
         self.app.add_widget('sidebar', self)
 
@@ -80,6 +83,7 @@ class MiAZSidebar(Adw.Bin):
 
         menubutton_system = self.app.get_widget('headerbar-button-menu-system')
         button_clear_filters = self.app.get_widget('headerbar-button-clear-filters')
+
         # Dropdown filters
         toolbar_filters = self._setup_toolbar_filters()
         self.app.add_widget('workspace-toolbar-filters', toolbar_filters)
@@ -98,12 +102,8 @@ class MiAZSidebar(Adw.Bin):
                 ],
                 content=MiAZBox(
                     orientation=Gtk.Orientation.VERTICAL,
-                    children=[
-                        # ~ Gtk.ScrolledWindow(
-                            # ~ propagate_natural_height=True, child=Gtk.Box()
-                        # ~ ),
-                        toolbar_filters,
-                        self.status_page,
+                    children=[  toolbar_filters,
+                                self.status_page,
                     ],
                 ),
             )

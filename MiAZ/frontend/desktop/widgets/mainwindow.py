@@ -47,27 +47,17 @@ class MiAZMainWindow(Gtk.Box):
         toolbar = self._setup_toolbar_top()
         headerbar.set_title_widget(toolbar)
 
-        # View Stack
-        self.view_stack: Adw.ViewStack = self.app.add_widget('view-stack', Adw.ViewStack())
-
-        # Split View
-        self.split_view: Adw.NavigationSplitView = Adw.NavigationSplitView(
-            show_content=True,
-            max_sidebar_width=300,
-            min_sidebar_width=200,
-            sidebar=Adw.NavigationPage(child=MiAZSidebar(self.app), title=_("Sidebar")),
-            content=Adw.NavigationPage(child=self.view_stack, title=_("Documents"), width_request=360),
-        )
-        self.split_view.set_max_sidebar_width(400)
-        self.app.add_widget('split_view', self.split_view)
-        self.split_view.set_vexpand(True)
-        # ~ self.split_view.set_collapsed(True)
-
         ## Stack & Stack.Switcher
-        box = factory.create_box_vertical(margin=0, spacing=0, hexpand=True, vexpand=True)
-        box.append(headerbar)
-        stack = self._setup_stack()
-        box.append(stack)
+        vmainbox = factory.create_box_vertical(margin=0, spacing=0, hexpand=True, vexpand=True)
+        hmainbox = factory.create_box_horizontal(margin=0, spacing=0, hexpand=True, vexpand=True)
+        content = self._setup_stack()
+        content.set_hexpand(True)
+        sidebar = MiAZSidebar(self.app)
+        sidebar.set_hexpand(False)
+        vmainbox.append(headerbar)
+        vmainbox.append(hmainbox)
+        hmainbox.append(sidebar)
+        hmainbox.append(content)
 
         # Welcome page
         page_welcome = self.app.get_widget('welcome')
@@ -81,10 +71,11 @@ class MiAZMainWindow(Gtk.Box):
 
 
         # Workspace page
-        self.view_stack.add_titled(child=box, name="Workspace", title=_("Workspace"),
-        )
+        # ~ self.view_stack.add_titled(child=box, name="Workspace", title=_("Workspace"),
+        # ~ )
 
-        self.append(self.split_view)
+        # ~ self.append(self.split_view)
+        self.append(vmainbox)
 
     def _setup_event_listener(self):
         evk = Gtk.EventControllerKey.new()
@@ -115,11 +106,11 @@ class MiAZMainWindow(Gtk.Box):
         pass
 
     def _setup_stack(self):
-        self.stack = self.app.add_widget('stack', Gtk.Stack())
-        self.switcher = self.app.add_widget('switcher', Gtk.StackSwitcher())
-        self.switcher.set_stack(self.stack)
-        self.stack.set_vexpand(True)
-        return self.stack
+        viewstack = self.app.add_widget('stack', Adw.ViewStack())
+        switcher = self.app.add_widget('switcher', Adw.ViewSwitcher())
+        switcher.set_stack(viewstack)
+        viewstack.set_vexpand(True)
+        return viewstack
 
     def show_workspace(self, *args):
         actions = self.app.get_service('actions')
@@ -129,7 +120,8 @@ class MiAZMainWindow(Gtk.Box):
         actions = self.app.get_service('actions')
         keyname = Gdk.keyval_name(keyval)
         if keyname == 'Escape':
-            actions.show_stack_page_by_name('workspace')
+            # ~ actions.show_stack_page_by_name('workspace')
+            self.log.debug("Escape key pressed by user")
         elif keyname == 'F3':
             actions.toggle_workspace_filters()
 
@@ -182,6 +174,7 @@ class MiAZMainWindow(Gtk.Box):
         hdb_right = self.app.get_widget('headerbar-right-box')
         hdb_right.get_style_context().add_class(class_name='linked')
 
+
         ## Show/Hide Filters
         tgbSidebar = factory.create_button_toggle('io.github.t00m.MiAZ-sidebar-show-left-symbolic', callback=self._on_sidebar_toggled)
         self.app.add_widget('workspace-togglebutton-filters', tgbSidebar)
@@ -223,16 +216,9 @@ class MiAZMainWindow(Gtk.Box):
         """ Sidebar collapsed when active = False"""
         sidebar = self.app.get_widget('sidebar')
         toggleButtonFilters = self.app.get_widget('workspace-togglebutton-filters')
-        splitview = self.app.get_widget('split_view')
         active = toggleButtonFilters.get_active()
-        collapsed = not active
-        self.log.debug(f"Toggle sidebar is {active}. Sidebar collapsed? {collapsed}")
-        try:
-            splitview.set_collapsed(collapsed)
-            splitview.set_show_content(True)
-        except AttributeError as error:
-            # FIXME
-            self.log.warning("Splitview not loaded yet.")
+        if sidebar is not None:
+            sidebar.set_visible(active)
 
     def _setup_menu_selection(self):
         menu_selection = self.app.add_widget('workspace-menu-selection', Gio.Menu.new())

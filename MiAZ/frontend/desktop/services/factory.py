@@ -119,7 +119,6 @@ class MiAZFactory:
             css_provider,
             Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION
         )
-
         box = Gtk.Box.new(orientation=Gtk.Orientation.HORIZONTAL, spacing=3)
         box.set_margin_bottom(margin=12)
         frame = Gtk.Frame()
@@ -132,7 +131,7 @@ class MiAZFactory:
         # ~ lblTitle.set_xalign(0.0)
         # ~ box.append(lblTitle)
         # ~ widget.set_tooltip_text(title)
-        box.append(widget)
+        # ~ box.append(widget)
         return box
 
     def create_box_horizontal(self, margin:int = 3, spacing:int = 3, hexpand: bool = False, vexpand: bool = False):
