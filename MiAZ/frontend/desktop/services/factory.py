@@ -4,6 +4,7 @@
 # License: GPL v3
 # Description: Custom widgets widely used
 
+from gi.repository import Gdk
 from gi.repository import Gtk
 from gi.repository import Gio
 from gi.repository import Pango
@@ -105,12 +106,32 @@ class MiAZFactory:
         return row
 
     def create_box_filter(self, title, widget: Gtk.Widget) -> Gtk.Box:
+        css = "frame.transparent-frame {\
+                background-color: transparent; \
+                border: none; \
+            }"
+
+        css_provider = Gtk.CssProvider()
+        css_provider.load_from_string(css)
+        # Apply the CSS to the default display
+        Gtk.StyleContext.add_provider_for_display(
+            Gdk.Display.get_default(),
+            css_provider,
+            Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION
+        )
+
         box = Gtk.Box.new(orientation=Gtk.Orientation.HORIZONTAL, spacing=3)
         box.set_margin_bottom(margin=12)
-        lblTitle = self.create_label('<b>%20s</b>' % title)
+        frame = Gtk.Frame()
+        frame.set_name("transparent-frame")  # Set the CSS name
+        frame.add_css_class("transparent-frame")  # Add the CSS class
+        lblTitle = self.create_label(f"<small>{title}</small>")
+        frame.set_label_widget(lblTitle)
+        frame.set_child(widget)
+        box.append(frame)
         # ~ lblTitle.set_xalign(0.0)
         # ~ box.append(lblTitle)
-        widget.set_tooltip_text(title)
+        # ~ widget.set_tooltip_text(title)
         box.append(widget)
         return box
 

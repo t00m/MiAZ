@@ -80,7 +80,9 @@ class MiAZSidebar(Adw.Bin):
 
         menubutton_system = self.app.get_widget('headerbar-button-menu-system')
         button_clear_filters = self.app.get_widget('headerbar-button-clear-filters')
-        toolbar_filters = self.app.get_widget('workspace-toolbar-filters')
+        # Dropdown filters
+        toolbar_filters = self._setup_toolbar_filters()
+        self.app.add_widget('workspace-toolbar-filters', toolbar_filters)
 
         self.set_child(
             MiAZToolbarView(
@@ -145,6 +147,53 @@ class MiAZSidebar(Adw.Bin):
         popover.set_menu_model(menu)
         menubutton.set_popover(popover=popover)
         self.app.add_widget('headerbar-button-menu-system', menubutton)
+
+
+    def _setup_toolbar_filters(self):
+        factory = self.app.get_service('factory')
+        widget = factory.create_box_vertical(spacing=0, margin=0, hexpand=True, vexpand=False)
+        body = factory.create_box_vertical(margin=3, spacing=6, hexpand=True, vexpand=True)
+        body.set_margin_top(margin=6)
+        body.set_margin_start(margin=12)
+        body.set_margin_end(margin=12)
+        row = factory.create_box_vertical(margin=3, spacing=6, hexpand=True, vexpand=True)
+        body.append(row)
+        widget.append(body)
+
+        # Search box
+        searchentry = self.app.add_widget('searchentry', Gtk.SearchEntry())
+        searchentry.set_hexpand(True)
+        boxDropdown = factory.create_box_filter('Filter by free text', searchentry)
+        row.append(boxDropdown)
+
+        ## Dropdowns
+        dropdowns = self.app.add_widget('ws-dropdowns', {})
+
+        ### Date dropdown
+        i_type = Date.__gtype_name__
+        dd_date = factory.create_dropdown_generic(item_type=Date, ellipsize=False, enable_search=False)
+        dd_date.set_hexpand(True)
+        dropdowns[i_type] = dd_date
+        boxDropdown = factory.create_box_filter('Date', dd_date)
+        row.append(boxDropdown)
+
+        ### Projects dropdown
+        i_type = Project.__gtype_name__
+        i_title = _(Project.__title__)
+        dd_prj = factory.create_dropdown_generic(item_type=Project)
+        boxDropdown = factory.create_box_filter(i_title, dd_prj)
+        dropdowns[i_type] = dd_prj
+        row.append(boxDropdown)
+
+        for item_type in [Country, Group, SentBy, Purpose, SentTo]:
+            i_type = item_type.__gtype_name__
+            i_title = _(item_type.__title__)
+            dropdown = factory.create_dropdown_generic(item_type=item_type)
+            boxDropdown = factory.create_box_filter(i_title, dropdown)
+            row.append(boxDropdown)
+            dropdowns[i_type] = dropdown
+
+        return widget
 
     def _setup_clear_filters_button(self):
         factory = self.app.get_service('factory')

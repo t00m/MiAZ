@@ -43,10 +43,6 @@ class MiAZMainWindow(Gtk.Box):
         self._setup_headerbar_center()
         self._setup_headerbar_right()
 
-        # Dropdown filters
-        self.toolbar_filters = self._setup_toolbar_filters()
-        self.app.add_widget('workspace-toolbar-filters', self.toolbar_filters)
-
         # header toolbar
         toolbar = self._setup_toolbar_top()
         headerbar.set_title_widget(toolbar)
@@ -192,24 +188,9 @@ class MiAZMainWindow(Gtk.Box):
         tgbSidebar.set_tooltip_text("Show sidebar and filters")
         tgbSidebar.set_active(True)
         tgbSidebar.set_hexpand(False)
-        tgbSidebar.get_style_context().remove_class(class_name='flat')
+        # ~ tgbSidebar.get_style_context().remove_class(class_name='flat')
         tgbSidebar.set_valign(Gtk.Align.CENTER)
         hdb_left.append(tgbSidebar)
-
-        # Search box
-        searchentry = self.app.add_widget('searchentry', Gtk.SearchEntry())
-        hdb_left.append(searchentry)
-
-
-        ## Dropdowns
-        dropdowns = self.app.get_widget('ws-dropdowns')
-
-        ### Date dropdown
-        i_type = Date.__gtype_name__
-        dd_date = factory.create_dropdown_generic(item_type=Date, ellipsize=False, enable_search=False)
-        dd_date.set_hexpand(True)
-        dropdowns[i_type] = dd_date
-        hdb_left.append(dd_date)
 
         # Workspace Menu
         hbox = factory.create_box_horizontal(margin=0, spacing=6, hexpand=False)
@@ -252,44 +233,6 @@ class MiAZMainWindow(Gtk.Box):
         except AttributeError as error:
             # FIXME
             self.log.warning("Splitview not loaded yet.")
-
-
-    def _setup_toolbar_filters(self):
-        factory = self.app.get_service('factory')
-        dropdowns = self.app.get_widget('ws-dropdowns')
-
-        widget = factory.create_box_vertical(spacing=0, margin=0, hexpand=True, vexpand=False)
-        body = factory.create_box_vertical(margin=3, spacing=6, hexpand=True, vexpand=True)
-        body.set_margin_top(margin=6)
-        body.set_margin_start(margin=12)
-        body.set_margin_end(margin=12)
-        widget.append(body)
-        row_up = factory.create_box_vertical(margin=3, spacing=6, hexpand=True, vexpand=True)
-        row_down = factory.create_box_vertical(margin=3, spacing=6, hexpand=True, vexpand=True)
-        body.append(row_up)
-        body.append(row_down)
-        # ~ vbox.append(Gtk.Separator.new(orientation=Gtk.Orientation.HORIZONTAL))
-
-        dropdowns = {}
-        ### Projects dropdown
-        i_type = Project.__gtype_name__
-        i_title = _(Project.__title__)
-        dd_prj = factory.create_dropdown_generic(item_type=Project)
-        boxDropdown = factory.create_box_filter(i_title, dd_prj)
-        dropdowns[i_type] = dd_prj
-        row_up.append(boxDropdown)
-
-        for item_type in [Country, Group, SentBy, Purpose, SentTo]:
-            i_type = item_type.__gtype_name__
-            i_title = _(item_type.__title__)
-            dropdown = factory.create_dropdown_generic(item_type=item_type)
-            boxDropdown = factory.create_box_filter(i_title, dropdown)
-            row_down.append(boxDropdown)
-            dropdowns[i_type] = dropdown
-
-        self.app.add_widget('ws-dropdowns', dropdowns)
-
-        return widget
 
     def _setup_menu_selection(self):
         menu_selection = self.app.add_widget('workspace-menu-selection', Gio.Menu.new())
