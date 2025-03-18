@@ -54,9 +54,8 @@ class MiAZPageNotFound(Gtk.Box):
 
         status_page = Adw.StatusPage(
             title=_("No documents found"),
-            description=_(f"<big>Current view doesn't contain any document</big>"),
-            icon_name="io.github.t00m.MiAZ",
-            css_classes=["compact"],
+            description=_(f"<big>Try a different search, reset filters or add new documents</big>"),
+            icon_name="io.github.t00m.MiAZ-edit-find-symbolic",
             vexpand=True,
         )
 
