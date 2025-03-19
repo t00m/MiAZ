@@ -267,7 +267,8 @@ class MiAZActions(GObject.GObject):
         author = f"{ENV['APP']['author']}"
         about.set_developer_name(author)
         artists = ['Flags borrowed from FlagKit project https://github.com/madebybowtie/FlagKit']
-        artists.append('Icons borrowed from GNOME contributors https://www.gnome.org')
+        artists.append('Some icons borrowed from GNOME contributors https://www.gnome.org')
+        artists.append("MiAZ app icon based on Collection Business Duotone Icons with license 'CC Attribution License' by 'cataicon' from https://www.svgrepo.com/svg/391994/binder-business-finance-management-marketing-office")
         about.set_artists(artists)
         about.set_license_type(Gtk.License.GPL_3_0_ONLY)
         about.set_copyright(f"© 2019-2025 {ENV['APP']['author']}")

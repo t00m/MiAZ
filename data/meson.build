@@ -49,6 +49,6 @@ if compile_schemas.found()
 endif
 
 install_data(
-  'resources/icons/scalable/io.github.t00m.MiAZ.svg',
+  'resources/icons/hicolor/scalable/io.github.t00m.MiAZ.svg',
   install_dir: join_paths(get_option('datadir'), 'icons/hicolor/scalable/apps')
 )
