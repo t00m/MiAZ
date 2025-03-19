@@ -50,6 +50,14 @@ def MiAZHeaderBar(
 
     return hb
 
+class SidebarTitle(Adw.Bin):
+    def __init__(self, app) -> None:
+        super().__init__()
+        self.app = app
+        self.title = ''
+        lblTitle
+
+
 class MiAZSidebar(Adw.Bin):
     def __init__(self, app) -> None:
         super().__init__()
