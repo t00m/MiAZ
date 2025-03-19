@@ -320,7 +320,6 @@ class MiAZWorkspace(Gtk.Box):
     def _setup_columnview(self):
         self.view = MiAZColumnViewWorkspace(self.app)
         self.app.add_widget('workspace-view', self.view)
-        self.view.get_style_context().add_class(class_name='caption')
         self.view.get_style_context().add_class(class_name='monospace')
         self.view.set_filter(self._do_filter_view)
         return self.view
