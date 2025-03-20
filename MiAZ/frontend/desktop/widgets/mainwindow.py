@@ -10,6 +10,7 @@ from gi.repository import Adw, Gdk, Gio, Gtk
 
 from MiAZ.backend.log import MiAZLog
 from MiAZ.backend.models import MiAZItem, Group, Country, Purpose, SentBy, SentTo, Date, Project
+from MiAZ.backend.pluginsystem import plugin_categories
 from MiAZ.frontend.desktop.widgets.searchbar import SearchBar
 from MiAZ.frontend.desktop.widgets.pages import MiAZWelcome
 from MiAZ.frontend.desktop.widgets.pages import MiAZPageNotFound
@@ -230,7 +231,34 @@ class MiAZMainWindow(Gtk.Box):
             sidebar.set_visible(active)
 
     def _setup_menu_selection(self):
+        # Create the main menu
         menu_selection = self.app.add_widget('workspace-menu-selection', Gio.Menu.new())
+
+        # Create the 'Plugins' submenu
+        plugins_submenu = self.app.add_widget('workspace-menu-plugins', Gio.Menu.new())
+
+        # Iterate through the plugin categories and subcategories
+        for category, subcategories in plugin_categories.items():
+            # Create a submenu for each category
+            category_submenu = Gio.Menu()
+            cid = category.lower().replace(' ', '-')
+            self.app.add_widget(f"workspace-menu-plugins-{cid}", category_submenu)
+            for subcategory, description in subcategories.items():
+                # Add each subcategory as a submenu (to attach plugins later)
+                subcategory_submenu = Gio.Menu()
+                sid = subcategory.lower().replace(' ', '-')
+                self.app.add_widget(f"workspace-menu-plugins-{cid}-{sid}", subcategory_submenu)
+                # Add a placeholder menu item (you can replace this with actual plugins)
+                subcategory_submenu.append("Plugin 1", f"app.{subcategory.replace(' ', '').lower()}_plugin1")
+                subcategory_submenu.append("Plugin 2", f"app.{subcategory.replace(' ', '').lower()}_plugin2")
+                # Add the subcategory submenu to the category submenu
+                category_submenu.append_submenu(subcategory, subcategory_submenu)
+            # Add the category submenu to the 'Plugins' submenu
+            plugins_submenu.append_submenu(category, category_submenu)
+
+        # Add the 'Plugins' submenu to the main menu
+        menu_selection.append_submenu("Plugins", plugins_submenu)
+
         section_common_in = self.app.add_widget('workspace-menu-selection-section-common-in', Gio.Menu.new())
         section_common_out = self.app.add_widget('workspace-menu-selection-section-common-out', Gio.Menu.new())
         section_common_app = self.app.add_widget('workspace-menu-selection-section-app', Gio.Menu.new())
