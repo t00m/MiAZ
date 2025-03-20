@@ -82,6 +82,9 @@ plugin_categories = {
         "Long-Term Archiving": "Plugins for storing documents in long-term, secure formats.",
         "Compliance Checkers": "Tools that ensure documents meet regulatory or legal standards.",
         "Retention Policies": "Plugins for setting and enforcing document retention rules."
+    },
+    "Others": {
+        "Miscelanea": "Plugins not fitting in another category"
     }
 }
 

@@ -37,7 +37,7 @@ class MiAZAddDirectoryPlugin(GObject.GObject, Peas.Activatable):
     def add_menuitem(self, *args):
         if self.app.get_widget('workspace-menu-in-add-directory') is None:
             factory = self.app.get_service('factory')
-            menu_add = self.app.get_widget('workspace-menu-in-add')
+            menu_add = self.app.get_widget('workspace-menu-in-import')
             menuitem = factory.create_menuitem('add_dir', '... from a directory', self.import_directory, None, [])
             self.app.add_widget('workspace-menu-in-add-directory', menuitem)
             menu_add.append_item(menuitem)

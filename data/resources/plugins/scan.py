@@ -62,11 +62,11 @@ class MiAZImportFromScanPlugin(GObject.GObject, Peas.Activatable):
         return scanapp
 
     def add_menuitem(self, *args):
-        if self.app.get_widget('workspace-menu-in-add-scan') is None:
+        if self.app.get_widget('workspace-menu-in-import-scan') is None:
             factory = self.app.get_service('factory')
-            menu_add = self.app.get_widget('workspace-menu-in-add')
-            menuitem = factory.create_menuitem('add_from_scan', '... from scanner', self.exec_scanner, None, [])
-            self.app.add_widget('workspace-menu-in-add-scan', menuitem)
+            menu_add = self.app.get_widget('workspace-menu-in-import')
+            menuitem = factory.create_menuitem('import_scan', '... from scanner', self.exec_scanner, None, [])
+            self.app.add_widget('workspace-menu-in-import-scan', menuitem)
             menu_add.append_item(menuitem)
 
     def exec_scanner(self, *args):

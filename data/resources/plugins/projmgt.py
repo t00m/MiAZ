@@ -55,7 +55,7 @@ class MiAZToolbarProjectMgtPlugin(GObject.GObject, Peas.Activatable):
 
     def add_menuitem(self, *args):
         factory = self.app.get_service('factory')
-        section_common_in = self.app.get_widget('workspace-menu-selection-section-common-in')
+        section_common_in = self.app.get_widget('workspace-menu-selection-section-common')
         if self.app.get_widget('workspace-menu-selection-menu-project') is None:
             submenu_project = Gio.Menu.new()
             menu_project = Gio.MenuItem.new_submenu(

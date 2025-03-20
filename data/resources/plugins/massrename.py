@@ -65,7 +65,7 @@ class MiAZMassRenamingPlugin(GObject.GObject, Peas.Activatable):
     def add_menuitem(self, *args):
         if self.app.get_widget('workspace-menu-selection-menu-massrename') is None:
             factory = self.app.get_service('factory')
-            section_common_in = self.app.get_widget('workspace-menu-selection-section-common-in')
+            section_common_in = self.app.get_widget('workspace-menu-selection-section-common')
             submenu_massrename = Gio.Menu.new()
             menu_massrename = Gio.MenuItem.new_submenu(
                 label=_('Mass renaming of...'),

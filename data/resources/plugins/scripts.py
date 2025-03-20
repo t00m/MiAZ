@@ -48,7 +48,7 @@ class MiAZScriptsPlugin(GObject.GObject, Peas.Activatable):
         self.log.debug("Plugin deactivation not implemented")
 
     def add_menuitem(self, *args):
-        section_common_in = self.app.get_widget('workspace-menu-selection-section-common-in')
+        section_common_in = self.app.get_widget('workspace-menu-selection-section-common')
         if self.app.get_widget('workspace-menu-selection-menu-scripts') is None:
             submenu_scripts = Gio.Menu.new()
             menu_scripts = Gio.MenuItem.new_submenu(
