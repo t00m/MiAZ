@@ -289,9 +289,6 @@ class MiAZMainWindow(Gtk.Box):
             submenu = submenu_export,
         )
         section_shortcut_common.append_item(menu_export)
-        self.app.add_widget('workspace-menu-selection-menu-export', menu_export)
-        self.app.add_widget('workspace-menu-selection-submenu-export', submenu_export)
-
-
+        self.app.add_widget('workspace-menu-selection-menu-export', submenu_export)
 
         return menu_selection
