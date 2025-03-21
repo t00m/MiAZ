@@ -23,8 +23,10 @@ from MiAZ.backend.log import MiAZLog
 
 plugin_categories = {
     "Data Management": {
-        "Import/Export": "Plugins for handling different file formats (e.g., PDF, DOCX, CSV, JSON, XML).",
-        "Backup/Restore": "Tools for creating and restoring backups.",
+        "Import": "Plugins for importing documents.",
+        "Export": "Plugins for exporting documents",
+        "Backup": "Plugins for backing up your repository",
+        "Restore": "Tools for restoring backups.",
         "Data Synchronisation": "Plugins for syncing data with cloud services or between devices.",
         "Data Migration": "For transferring data between different platforms or systems."
     },
@@ -198,11 +200,12 @@ class MiAZPluginManager(GObject.GObject):
             pass
 
     def load_plugin(self, plugin: Peas.PluginInfo) -> bool:
-        ptype = self.get_plugin_type(plugin)
-        pname = plugin.get_name()
-        pvers = plugin.get_version()
-        # ~ pinfo = self.get_plugin_info(plugin)
         try:
+            ptype = self.get_plugin_type(plugin)
+            pname = plugin.get_name()
+            pvers = plugin.get_version()
+            # ~ pinfo = self.get_plugin_info(plugin)
+
             self.engine.load_plugin(plugin)
 
             if plugin.is_loaded():
@@ -211,9 +214,13 @@ class MiAZPluginManager(GObject.GObject):
             else:
                 self.log.error(f"Plugin {pname} v{pvers} ({ptype}) couldn't be loaded")
                 return False
+        except AttributeError as error:
+            self.log.error(f"Plugin {pname} v{pvers} ({ptype}) couldn't be loaded")
+            self.log.error(f"Reason: {error}")
         except Exception as error:
             self.log.error(error)
-            self.log.error("Plugin {pname} v{pvers} ({ptype}) couldn't be loaded")
+            self.log.error(f"Plugin {pname} v{pvers} ({ptype}) couldn't be loaded")
+            self.log.error(f"Reason: {error}")
             return False
 
     def unload_plugin(self, plugin: Peas.PluginInfo):

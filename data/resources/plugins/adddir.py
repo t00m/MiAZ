@@ -29,7 +29,10 @@ class MiAZAddDirectoryPlugin(GObject.GObject, Peas.Activatable):
     def do_activate(self):
         self.app = self.object.app
         workspace = self.app.get_widget('workspace')
-        workspace.connect('workspace-loaded', self.add_menuitem)
+        try:
+            workspace.connect('workspace-loaded', self.add_menuitem)
+        except Exception as error:
+            self.log.error("Error loading plugin: {error}")
 
     def do_deactivate(self):
         self.log.debug("Plugin deactivation not implemented")
@@ -37,10 +40,19 @@ class MiAZAddDirectoryPlugin(GObject.GObject, Peas.Activatable):
     def add_menuitem(self, *args):
         if self.app.get_widget('workspace-menu-in-add-directory') is None:
             factory = self.app.get_service('factory')
-            menu_add = self.app.get_widget('workspace-menu-in-import')
+
+            # Create menu item for plugin
             menuitem = factory.create_menuitem('add_dir', '... from a directory', self.import_directory, None, [])
             self.app.add_widget('workspace-menu-in-add-directory', menuitem)
-            menu_add.append_item(menuitem)
+
+            # Add plugin to its default (sub)category
+            menu_plugin_export_import = self.app.get_widget('workspace-menu-plugins-data-management-import')
+            menu_plugin_export_import.append_item(menuitem)
+
+            # This is a common action: add to shortcuts
+            menu_shortcut_import = self.app.get_widget('workspace-menu-shortcut-import')
+            menu_shortcut_import.append_item(menuitem)
+
 
     def import_directory(self, *args):
         factory = self.app.get_service('factory')

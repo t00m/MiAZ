@@ -279,7 +279,7 @@ class MiAZMainWindow(Gtk.Box):
             submenu = submenu_import,
         )
         section_common_in.append_item(menu_import)
-        self.app.add_widget('workspace-menu-in-import', submenu_import)
+        self.app.add_widget('workspace-menu-shortcut-import', submenu_import)
 
         ## Export
         submenu_export = Gio.Menu.new()
