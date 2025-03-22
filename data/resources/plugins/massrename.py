@@ -20,6 +20,7 @@ from gi.repository import Peas
 
 from MiAZ.backend.log import MiAZLog
 from MiAZ.backend.models import File, Group, Country, Purpose, SentBy, SentTo, Date
+from MiAZ.backend.status import MiAZStatus
 from MiAZ.frontend.desktop.widgets.configview import MiAZCountries
 from MiAZ.frontend.desktop.widgets.configview import MiAZGroups
 from MiAZ.frontend.desktop.widgets.configview import MiAZPurposes
@@ -65,19 +66,29 @@ class MiAZMassRenamingPlugin(GObject.GObject, Peas.Activatable):
     def add_menuitem(self, *args):
         if self.app.get_widget('workspace-menu-selection-menu-massrename') is None:
             factory = self.app.get_service('factory')
-            section_common_in = self.app.get_widget('workspace-menu-selection-section-common-in')
+
+            # Create submenu for plugin
+            section_shortcut = self.app.get_widget('workspace-menu-selection-section-common')
             submenu_massrename = Gio.Menu.new()
             menu_massrename = Gio.MenuItem.new_submenu(
                 label=_('Mass renaming of...'),
                 submenu=submenu_massrename,
             )
-            section_common_in.append_item(menu_massrename)
             fields = [Date, Country, Group, SentBy, Purpose, SentTo]
             for item_type in fields:
                 i_type = item_type.__gtype_name__
                 i_title = _(item_type.__title__)
                 menuitem = factory.create_menuitem(f'rename_{i_type.lower()}', f'... {i_title.lower()}', self.document_rename_multiple, item_type, [])
                 submenu_massrename.append_item(menuitem)
+
+            # This is a common action: add to shortcuts
+            section_shortcut.append_item(menu_massrename)
+
+            # Add plugin to its default (sub)category
+            category = self.app.get_widget('workspace-menu-plugins-content-organisation-metadata-management')
+            category.append_submenu('Mass renaming', submenu_massrename)
+
+
             self.app.add_widget('workspace-menu-selection-menu-massrename', menu_massrename)
 
     def document_rename_multiple(self, action, data, item_type):
@@ -133,6 +144,7 @@ class MiAZMassRenamingPlugin(GObject.GObject, Peas.Activatable):
             util = self.app.get_service('util')
             repository = self.app.get_service('repo')
             if response == 'apply':
+                self.app.set_status(MiAZStatus.BUSY)
                 for item in items:
                     bsource = item.id
                     name, ext = util.filename_details(bsource)
@@ -143,6 +155,7 @@ class MiAZMassRenamingPlugin(GObject.GObject, Peas.Activatable):
                     source = os.path.join(repository.docs, bsource)
                     target = os.path.join(repository.docs, btarget)
                     util.filename_rename(source, target)
+                self.app.set_status(MiAZStatus.RUNNING)
 
         def dialog_response_date(dialog, response, calendar, items):
             if response == 'apply':
@@ -151,6 +164,7 @@ class MiAZMassRenamingPlugin(GObject.GObject, Peas.Activatable):
                 m = f"{adate.get_month():02d}"
                 d = f"{adate.get_day_of_month():02d}"
                 sdate = f"{y}{m}{d}"
+                self.app.set_status(MiAZStatus.BUSY)
                 for item in items:
                     bsource = os.path.basename(item.id)
                     name, ext = util.filename_details(bsource)
@@ -160,6 +174,7 @@ class MiAZMassRenamingPlugin(GObject.GObject, Peas.Activatable):
                     source = os.path.join(repository.docs, bsource)
                     target = os.path.join(repository.docs, btarget)
                     util.filename_rename(source, target)
+                self.app.set_status(MiAZStatus.RUNNING)
 
         items = workspace.get_selected_items()
         if actions.stop_if_no_items(items):

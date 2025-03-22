@@ -50,10 +50,19 @@ class Export2Zip(GObject.GObject, Peas.Activatable):
     def add_menuitem(self, *args):
         if self.app.get_widget('workspace-menu-multiple-menu-export-item-export2zip') is None:
             factory = self.app.get_service('factory')
-            submenu_export = self.app.get_widget('workspace-menu-selection-submenu-export')
+
+            # Create menu item for plugin
             menuitem = factory.create_menuitem('export-to-zip', _('... to Zip'), self.export, None, [])
-            submenu_export.append_item(menuitem)
             self.app.add_widget('workspace-menu-multiple-menu-export-item-export2zip', menuitem)
+
+            # Add plugin to its default (sub)category
+            category = self.app.get_widget('workspace-menu-plugins-data-management-export')
+            category.append_item(menuitem)
+
+            # This is a common action: add to shortcuts
+            submenu_export = self.app.get_widget('workspace-menu-selection-menu-export')
+            submenu_export.append_item(menuitem)
+
 
     def export(self, *args):
         ENV = self.app.get_env()

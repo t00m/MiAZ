@@ -14,6 +14,7 @@ from gi.repository import GObject
 from gi.repository import Peas
 
 from MiAZ.backend.log import MiAZLog
+from MiAZ.backend.status import MiAZStatus
 from MiAZ.frontend.desktop.services.dialogs import MiAZFileChooserDialog
 
 
@@ -29,18 +30,30 @@ class MiAZAddDirectoryPlugin(GObject.GObject, Peas.Activatable):
     def do_activate(self):
         self.app = self.object.app
         workspace = self.app.get_widget('workspace')
-        workspace.connect('workspace-loaded', self.add_menuitem)
+        try:
+            workspace.connect('workspace-loaded', self.add_menuitem)
+        except Exception as error:
+            self.log.error("Error loading plugin: {error}")
 
     def do_deactivate(self):
         self.log.debug("Plugin deactivation not implemented")
 
     def add_menuitem(self, *args):
-        if self.app.get_widget('workspace-menu-in-add-directory') is None:
+        if self.app.get_widget('workspace-menu-import-add-directory') is None:
             factory = self.app.get_service('factory')
-            menu_add = self.app.get_widget('workspace-menu-in-add')
+
+            # Create menu item for plugin
             menuitem = factory.create_menuitem('add_dir', '... from a directory', self.import_directory, None, [])
-            self.app.add_widget('workspace-menu-in-add-directory', menuitem)
-            menu_add.append_item(menuitem)
+            self.app.add_widget('workspace-menu-import-add-directory', menuitem)
+
+            # Add plugin to its default (sub)category
+            category = self.app.get_widget('workspace-menu-plugins-data-management-import')
+            category.append_item(menuitem)
+
+            # This is a common action: add to shortcuts
+            menu_shortcut_import = self.app.get_widget('workspace-menu-shortcut-import')
+            menu_shortcut_import.append_item(menuitem)
+
 
     def import_directory(self, *args):
         factory = self.app.get_service('factory')
@@ -49,12 +62,12 @@ class MiAZAddDirectoryPlugin(GObject.GObject, Peas.Activatable):
 
         def filechooser_response(dialog, response, clsdlg):
             if response == 'apply':
-                # ~ content_area = dialog.get_extra_child()
                 filechooser = self.app.get_widget('plugin-adddir-filechooser')
                 toggle = self.app.get_widget('plugin-adddir-togglebutton')
                 recursive = toggle.get_active()
                 gfile = filechooser.get_file()
                 if gfile is not None:
+                    self.app.set_status(MiAZStatus.BUSY)
                     dirpath = gfile.get_path()
                     self.log.debug(f"Walk directory {dirpath} recursively? {recursive}")
                     if recursive:
@@ -65,6 +78,7 @@ class MiAZAddDirectoryPlugin(GObject.GObject, Peas.Activatable):
                         btarget = srvutl.filename_normalize(source)
                         target = os.path.join(srvrepo.docs, btarget)
                         srvutl.filename_import(source, target)
+                    self.app.set_status(MiAZStatus.RUNNING)
 
         window = self.app.get_widget('window')
         clsdlg = MiAZFileChooserDialog(self.app)

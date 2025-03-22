@@ -33,10 +33,18 @@ class MiAZRepositoryInfoPlugin(GObject.GObject, Peas.Activatable):
         self.log.debug("Plugin deactivation not implemented")
 
     def add_menuitem(self, *args):
-        actions = self.app.get_service('actions')
-        factory = self.app.get_service('factory')
         if self.app.get_widget('workspace-menu-selection-section-app-repository-info') is None:
-            section_app = self.app.get_widget('workspace-menu-selection-section-app')
-            menuitem = factory.create_menuitem('repoinfo', _('Repository properties'), actions.show_repository_settings, None, [])
+            actions = self.app.get_service('actions')
+            factory = self.app.get_service('factory')
+
+            # Create menuitem for plugin
+            menuitem = factory.create_menuitem('repoinfo', _('Manage repository'), actions.show_repository_settings, None, [])
             self.app.add_widget('workspace-menu-selection-section-app-repository-info', menuitem)
+
+            # This is a common action: add to shortcuts, app zone
+            section_app = self.app.get_widget('workspace-menu-selection-section-app')
             section_app.append_item(menuitem)
+
+            # Add plugin to its default (sub)category
+            category = self.app.get_widget('workspace-menu-plugins-content-organisation-metadata-management')
+            category.append_item(menuitem)

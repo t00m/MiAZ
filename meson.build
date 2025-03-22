@@ -1,5 +1,5 @@
 project('MiAZ',
-          version : '0.1.6+build.12',
+          version : '0.1.7+build.11',
     meson_version: '>= 1.5.1',
   default_options: [ 'warning_level=2',
                    ],
@@ -43,4 +43,4 @@ gnome.post_install(
 #~   gtk_update_icon_cache: true,
   update_desktop_database: true,
 )
-#~ meson.add_install_script('build-aux/meson/postinstall.py')
+meson.add_install_script('build-aux/meson/postinstall.py')

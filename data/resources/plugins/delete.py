@@ -39,10 +39,18 @@ class MiAZDeleteItemPlugin(GObject.GObject, Peas.Activatable):
     def add_menuitem(self, *args):
         if self.app.get_widget('workspace-menu-selection-section-danger-menuitem-delete') is None:
             factory = self.app.get_service('factory')
-            section_danger = self.app.get_widget('workspace-menu-selection-section-danger')
+
+            # Create menuitem for plugin
             menuitem = factory.create_menuitem('delete', _('Delete documents'), self.document_delete, None, [])
             self.app.add_widget('workspace-menu-selection-section-danger-menuitem-delete', menuitem)
+
+            # This is a common action: add to shortcuts, danger zone
+            section_danger = self.app.get_widget('workspace-menu-selection-section-danger')
             section_danger.append_item(menuitem)
+
+            # Add plugin to its default (sub)category
+            category = self.app.get_widget('workspace-menu-plugins-data-management-deletion')
+            category.append_item(menuitem)
 
     def document_delete(self, *args):
         actions = self.app.get_service('actions')

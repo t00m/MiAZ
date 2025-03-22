@@ -372,12 +372,13 @@ class MiAZFactory:
         menuitem = Gio.MenuItem.new()
         menuitem.set_label(label=label)
         action = Gio.SimpleAction.new(name, None)
-        action.connect('activate', callback, data)
-        action.set_enabled(True)
-        self.app.add_action(action)
-        menuitem.set_detailed_action(detailed_action=f'app.{name}')
-        if shortcuts:
-            self.app.set_accels_for_action(f'app.{name}', shortcuts)
+        if callback is not None:
+            action.connect('activate', callback, data)
+            action.set_enabled(True)
+            self.app.add_action(action)
+            menuitem.set_detailed_action(detailed_action=f'app.{name}')
+            if shortcuts:
+                self.app.set_accels_for_action(f'app.{name}', shortcuts)
         return menuitem
 
     def create_notebook_label(self, icon_name: str, title: str) -> Gtk.Widget:

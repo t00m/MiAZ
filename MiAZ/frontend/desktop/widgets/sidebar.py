@@ -50,6 +50,14 @@ def MiAZHeaderBar(
 
     return hb
 
+class SidebarTitle(Adw.Bin):
+    def __init__(self, app) -> None:
+        super().__init__()
+        self.app = app
+        self.title = ''
+        lblTitle
+
+
 class MiAZSidebar(Adw.Bin):
     def __init__(self, app) -> None:
         super().__init__()
@@ -60,42 +68,40 @@ class MiAZSidebar(Adw.Bin):
         self.app.add_widget('sidebar', self)
 
     def __build_ui(self) -> None:
+        factory = self.app.get_service('factory')
+        config = self.app.get_config_dict()
+
         # Setup system menu
         self._setup_menu_system()
         self._setup_clear_filters_button()
-
-        # Status page
-        self.status_page = Gtk.Label()
-
-        # ~ TEMPORARY DISABLED
-        # ~ repository = self.app.get_service('repository')
-        # ~ config = self.app.get_config_dict()
-        # ~ repo_id = config['App'].get('current')
-        # ~ self.status_page = Adw.StatusPage(
-            # ~ title=_(""),
-            # ~ description=_(f"<big>Repository {repo_id}</big>"),
-            # ~ icon_name="io.github.t00m.MiAZ",
-            # ~ css_classes=["compact"],
-            # ~ vexpand=True,
-        # ~ )
-        # ~ self.app.add_widget('sidebar-status-repo', self.status_page)
 
 
         menubutton_system = self.app.get_widget('headerbar-button-menu-system')
         button_clear_filters = self.app.get_widget('headerbar-button-clear-filters')
 
+        # Sidebar title and subtitle
+        boxTitle = factory.create_box_vertical(margin=0, spacing=0)
+        lblTitle = Gtk.Label()
+        lblTitle.set_markup(_("<b>MiAZ</b>"))
+        lblSubtitle = Gtk.Label()
+        repo_id = config['App'].get('current')
+        lblSubtitle.set_markup(_(f"<small>Repository {repo_id}</small>"))
+        boxTitle.append(lblTitle)
+        boxTitle.append(lblSubtitle)
+
         # Dropdown filters
         toolbar_filters = self._setup_toolbar_filters()
         self.app.add_widget('workspace-toolbar-filters', toolbar_filters)
 
+        # Status page
+        self.status_page = Gtk.Label()
+
+        # Create sidebar
         self.set_child(
             MiAZToolbarView(
                 top_bars=[
                     MiAZHeaderBar(
-                        title_widget=Gtk.Label(
-                            label=_("MiAZ"),
-                            css_classes=["heading"],
-                        ),
+                        title_widget=boxTitle,
                         start_children=[menubutton_system],
                         end_children=[button_clear_filters],
                     )
