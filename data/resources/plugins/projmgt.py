@@ -74,9 +74,9 @@ class MiAZToolbarProjectMgtPlugin(GObject.GObject, Peas.Activatable):
             menuitem = factory.create_menuitem('project-withdraw', _('... withdraw from project'), self.project_withdraw, None, [])
             submenu_project.append_item(menuitem)
 
-        # Add plugin to its default (sub)category
-        category = self.app.get_widget('workspace-menu-plugins-content-organisation-tagging-and-classification')
-        category.append_submenu('Projects', submenu_project)
+            # Add plugin to its default (sub)category
+            category = self.app.get_widget('workspace-menu-plugins-content-organisation-tagging-and-classification')
+            category.append_submenu('Projects', submenu_project)
 
     def project_assign(self, *args):
         actions = self.app.get_service('actions')
