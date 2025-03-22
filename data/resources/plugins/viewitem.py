@@ -26,6 +26,7 @@ class MiAZToolbarViewItemPlugin(GObject.GObject, Peas.Activatable):
 
     def do_activate(self):
         self.app = self.object.app
+        self.factory = self.app.get_service('factory')
         workspace = self.app.get_widget('workspace')
         workspace.connect('workspace-loaded', self.add_toolbar_button)
         workspace.connect('workspace-view-updated', self._on_selection_changed)
@@ -33,6 +34,15 @@ class MiAZToolbarViewItemPlugin(GObject.GObject, Peas.Activatable):
         view.cv.connect("activate", self.callback)
         selection = view.get_selection()
         selection.connect('selection-changed', self._on_selection_changed)
+
+        # Plugin menu
+        ## Create menuitem for plugin
+        menuitem = self.factory.create_menuitem('viewitem', _('Display selected document'), None, None, [])
+        self.app.add_widget('workspace-menu-selection-section-app-display-item', menuitem)
+
+        # Add plugin to its default (sub)category
+        category = self.app.get_widget('workspace-menu-plugins-visualisation-and-diagrams-dashboard-widgets')
+        category.append_item(menuitem)
 
     def do_deactivate(self):
         self.log.debug("Plugin deactivation not implemented")

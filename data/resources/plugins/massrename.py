@@ -65,19 +65,29 @@ class MiAZMassRenamingPlugin(GObject.GObject, Peas.Activatable):
     def add_menuitem(self, *args):
         if self.app.get_widget('workspace-menu-selection-menu-massrename') is None:
             factory = self.app.get_service('factory')
+
+            # Create submenu for plugin
             section_shortcut = self.app.get_widget('workspace-menu-selection-section-common')
             submenu_massrename = Gio.Menu.new()
             menu_massrename = Gio.MenuItem.new_submenu(
                 label=_('Mass renaming of...'),
                 submenu=submenu_massrename,
             )
-            section_shortcut.append_item(menu_massrename)
             fields = [Date, Country, Group, SentBy, Purpose, SentTo]
             for item_type in fields:
                 i_type = item_type.__gtype_name__
                 i_title = _(item_type.__title__)
                 menuitem = factory.create_menuitem(f'rename_{i_type.lower()}', f'... {i_title.lower()}', self.document_rename_multiple, item_type, [])
                 submenu_massrename.append_item(menuitem)
+
+            # This is a common action: add to shortcuts
+            section_shortcut.append_item(menu_massrename)
+
+            # Add plugin to its default (sub)category
+            category = self.app.get_widget('workspace-menu-plugins-content-organisation-metadata-management')
+            category.append_submenu('Mass renaming', submenu_massrename)
+
+
             self.app.add_widget('workspace-menu-selection-menu-massrename', menu_massrename)
 
     def document_rename_multiple(self, action, data, item_type):
