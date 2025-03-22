@@ -27,8 +27,10 @@ plugin_categories = {
         "Export": "Plugins for exporting documents",
         "Backup": "Plugins for backing up your repository",
         "Restore": "Tools for restoring backups.",
-        "Data Synchronisation": "Plugins for syncing data with cloud services or between devices.",
-        "Data Migration": "For transferring data between different platforms or systems."
+        "Batch": "Tools for bulk data manipulation.",
+        "Synchronisation": "Plugins for syncing data with cloud services or between devices.",
+        "Migration": "For transferring data between different platforms or systems.",
+        "Deletion": "Tools for securely removing documents or data from the repository."
     },
     "Content Organisation": {
         "Tagging and Classification": "Tools for categorising and tagging documents.",
