@@ -364,6 +364,7 @@ class MiAZWorkspace(Gtk.Box):
     def update(self, *args):
         if self.app.get_status() == MiAZStatus.BUSY:
             return
+        self.app.set_status(MiAZStatus.BUSY)
 
         repository = self.app.get_service('repo')
         if repository.conf is None:
@@ -501,8 +502,8 @@ class MiAZWorkspace(Gtk.Box):
         if not show_pending:
             togglebutton.set_active(False)
         self.review = togglebutton.get_active()
+        self.app.set_status(MiAZStatus.RUNNING)
         self.emit('workspace-view-updated')
-
 
         return False
 

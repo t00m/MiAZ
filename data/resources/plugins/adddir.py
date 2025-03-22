@@ -14,6 +14,7 @@ from gi.repository import GObject
 from gi.repository import Peas
 
 from MiAZ.backend.log import MiAZLog
+from MiAZ.backend.status import MiAZStatus
 from MiAZ.frontend.desktop.services.dialogs import MiAZFileChooserDialog
 
 
@@ -61,12 +62,12 @@ class MiAZAddDirectoryPlugin(GObject.GObject, Peas.Activatable):
 
         def filechooser_response(dialog, response, clsdlg):
             if response == 'apply':
-                # ~ content_area = dialog.get_extra_child()
                 filechooser = self.app.get_widget('plugin-adddir-filechooser')
                 toggle = self.app.get_widget('plugin-adddir-togglebutton')
                 recursive = toggle.get_active()
                 gfile = filechooser.get_file()
                 if gfile is not None:
+                    self.app.set_status(MiAZStatus.BUSY)
                     dirpath = gfile.get_path()
                     self.log.debug(f"Walk directory {dirpath} recursively? {recursive}")
                     if recursive:
@@ -77,6 +78,7 @@ class MiAZAddDirectoryPlugin(GObject.GObject, Peas.Activatable):
                         btarget = srvutl.filename_normalize(source)
                         target = os.path.join(srvrepo.docs, btarget)
                         srvutl.filename_import(source, target)
+                    self.app.set_status(MiAZStatus.RUNNING)
 
         window = self.app.get_widget('window')
         clsdlg = MiAZFileChooserDialog(self.app)

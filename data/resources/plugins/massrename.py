@@ -20,6 +20,7 @@ from gi.repository import Peas
 
 from MiAZ.backend.log import MiAZLog
 from MiAZ.backend.models import File, Group, Country, Purpose, SentBy, SentTo, Date
+from MiAZ.backend.status import MiAZStatus
 from MiAZ.frontend.desktop.widgets.configview import MiAZCountries
 from MiAZ.frontend.desktop.widgets.configview import MiAZGroups
 from MiAZ.frontend.desktop.widgets.configview import MiAZPurposes
@@ -143,6 +144,7 @@ class MiAZMassRenamingPlugin(GObject.GObject, Peas.Activatable):
             util = self.app.get_service('util')
             repository = self.app.get_service('repo')
             if response == 'apply':
+                self.app.set_status(MiAZStatus.BUSY)
                 for item in items:
                     bsource = item.id
                     name, ext = util.filename_details(bsource)
@@ -153,6 +155,7 @@ class MiAZMassRenamingPlugin(GObject.GObject, Peas.Activatable):
                     source = os.path.join(repository.docs, bsource)
                     target = os.path.join(repository.docs, btarget)
                     util.filename_rename(source, target)
+                self.app.set_status(MiAZStatus.RUNNING)
 
         def dialog_response_date(dialog, response, calendar, items):
             if response == 'apply':
@@ -161,6 +164,7 @@ class MiAZMassRenamingPlugin(GObject.GObject, Peas.Activatable):
                 m = f"{adate.get_month():02d}"
                 d = f"{adate.get_day_of_month():02d}"
                 sdate = f"{y}{m}{d}"
+                self.app.set_status(MiAZStatus.BUSY)
                 for item in items:
                     bsource = os.path.basename(item.id)
                     name, ext = util.filename_details(bsource)
@@ -170,6 +174,7 @@ class MiAZMassRenamingPlugin(GObject.GObject, Peas.Activatable):
                     source = os.path.join(repository.docs, bsource)
                     target = os.path.join(repository.docs, btarget)
                     util.filename_rename(source, target)
+                self.app.set_status(MiAZStatus.RUNNING)
 
         items = workspace.get_selected_items()
         if actions.stop_if_no_items(items):
