@@ -59,7 +59,7 @@
                 {
                     "type" : "git",
                     "url" : "https://github.com/t00m/MiAZ.git",
-                    "tag" : "main"
+                    "tag" : "dev"
                 }
             ]
         }
