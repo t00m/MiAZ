@@ -305,7 +305,7 @@ class MiAZActions(GObject.GObject):
         btnShowFilters.set_active(not active)
 
     def exit_app(self, *args):
-        self.log.trace('Closing MiAZ')
+        self.log.debug('Closing MiAZ')
         self.app.emit("exit-application")
         self.app.quit()
 

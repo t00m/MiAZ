@@ -57,7 +57,7 @@ class MiAZWorkspace(Gtk.Box):
     def __init__(self, app):
         super().__init__(orientation=Gtk.Orientation.HORIZONTAL)
         self.log = MiAZLog('MiAZ.Workspace')
-        self.log.trace("Initializing widget Workspace!!")
+        self.log.debug("Initializing widget Workspace!!")
         self.app = app
         self.config = self.app.get_config_dict()
         self._setup_workspace()
@@ -79,10 +79,10 @@ class MiAZWorkspace(Gtk.Box):
         self.fcache = os.path.join(repo.conf, 'cache.json')
         try:
             self.cache = util.json_load(self.fcache)
-            self.log.trace(f"Loading cache from '{self.fcache}'")
+            self.log.debug(f"Loading cache from '{self.fcache}'")
         except Exception:
             util.json_save(self.fcache, {})
-            self.log.trace(f"New cache created in '{self.fcache}'")
+            self.log.debug(f"New cache created in '{self.fcache}'")
 
         self.cache = {}
         for cache in ['Date', 'Country', 'Group', 'SentBy', 'SentTo', 'Purpose']:
@@ -496,7 +496,7 @@ class MiAZWorkspace(Gtk.Box):
 
         togglebutton = self.app.get_widget('workspace-togglebutton-pending-docs')
         if show_pending:
-            self.log.trace("There are pending documents. Displaying warning button")
+            self.log.debug("There are pending documents. Displaying warning button")
         togglebutton.set_visible(show_pending)
 
         if not show_pending:

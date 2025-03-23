@@ -120,7 +120,7 @@ class MiAZPluginManager(GObject.GObject):
         self.log = MiAZLog('MiAZ.PluginManager')
         self.app = app
         self.util = self.app.get_service('util')
-        self.log.trace("Initializing Plugin Manager")
+        self.log.debug("Initializing Plugin Manager")
         self.plugin_info_list = []
 
         self.engine = Peas.Engine.get_default()

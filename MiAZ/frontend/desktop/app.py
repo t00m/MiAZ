@@ -126,10 +126,10 @@ class MiAZApp(Adw.Application):
         # Theme
         theme = self.set_service('theme', Gtk.IconTheme.get_for_display(window.get_display()))
         theme.add_search_path(ENV['GPATH']['ICONS'])
-        self.log.trace(f"Add ENV['GPATH']['ICONS'] ({ENV['GPATH']['ICONS']}) to the theme search path")
+        self.log.debug(f"Add ENV['GPATH']['ICONS'] ({ENV['GPATH']['ICONS']}) to the theme search path")
         theme.add_search_path(ENV['GPATH']['FLAGS'])
-        self.log.trace(f"Add ENV['GPATH']['FLAGS'] ({ENV['GPATH']['FLAGS']}) to the theme search path")
-        self.log.trace(f"MiAZ custom icons in: {ENV['GPATH']['ICONS']}")
+        self.log.debug(f"Add ENV['GPATH']['FLAGS'] ({ENV['GPATH']['FLAGS']}) to the theme search path")
+        self.log.debug(f"MiAZ custom icons in: {ENV['GPATH']['ICONS']}")
 
         # Setup main window contents
         mainbox = self.add_widget('window-mainbox', MiAZMainWindow(self))
@@ -140,7 +140,7 @@ class MiAZApp(Adw.Application):
         self.set_menubar(menubar)
 
     def _on_window_close_request(self, *args):
-        self.log.trace("Close application requested")
+        self.log.debug("Close application requested")
         actions = self.get_service('actions')
         actions.exit_app()
 
@@ -201,7 +201,7 @@ class MiAZApp(Adw.Application):
 
     def switch_start(self):
         """Switch from one repository to another."""
-        self.log.trace("Repository switch requested")
+        self.log.debug("Repository switch requested")
         actions = self.get_service('actions')
         repository = self.get_service('repo')
         try:
@@ -216,7 +216,7 @@ class MiAZApp(Adw.Application):
             repo_loaded = False
 
         repo_id = appconf.get('current')
-        self.log.trace(f"Repository '{repo_id}' loaded? {repo_loaded}")
+        self.log.debug(f"Repository '{repo_id}' loaded? {repo_loaded}")
 
         if repo_loaded:
             self.log.info(f"Repo Working directory: '{repository.docs}'")
@@ -247,7 +247,7 @@ class MiAZApp(Adw.Application):
         watcher.set_path(repository.docs)
         watcher.set_active(active=True)
         self.app.set_service('watcher', watcher)
-        self.log.trace("Repository switch finished")
+        self.log.debug("Repository switch finished")
 
         # Setup stack pages
         mainbox = self.get_widget('window-mainbox')

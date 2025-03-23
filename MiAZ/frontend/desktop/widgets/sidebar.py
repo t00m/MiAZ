@@ -124,7 +124,7 @@ class MiAZSidebar(Adw.Bin):
         repo_id = config['App'].get('current')
         description = f"<big>Repository {repo_id}\n<b>{num_docs} documents</b></big>"
         repo_status.set_description(description)
-        self.log.trace(description)
+        self.log.debug(description)
 
     def _setup_menu_system(self):
         actions = self.app.get_service('actions')

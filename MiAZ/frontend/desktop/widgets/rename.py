@@ -488,7 +488,7 @@ class MiAZRenameDialog(Gtk.Box):
                 # ~ self.actions.show_stack_page_by_name('workspace')
 
     def on_rename_cancel(self, *args):
-        self.log.trace(f"on_rename_cancel: {args}")
+        self.log.debug(f"on_rename_cancel: {args}")
         self.log.info("Rename canceled by user")
 
     def _on_document_display(self, *args):
