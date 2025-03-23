@@ -23,7 +23,8 @@ class MiAZWorkflow(GObject.GObject):
     """
 
     __gsignals__ = {
-        "repo-switch": (GObject.SignalFlags.RUN_LAST, None, ()),
+        "repository-switch-started": (GObject.SignalFlags.RUN_LAST, None, ()),
+        "repository-switch-finished": (GObject.SignalFlags.RUN_LAST, None, ()),
     }
 
     def __init__(self, app):
@@ -72,7 +73,7 @@ class MiAZWorkflow(GObject.GObject):
                 self.app.load_plugins()
             self.app.set_status(MiAZStatus.RUNNING)
             actions.show_stack_page_by_name('workspace')
-            self.app.emit('start-application-completed')
+            self.app.emit('application-started')
         else:
             actions.show_stack_page_by_name('welcome')
         window = self.app.get_widget('window')
@@ -94,21 +95,18 @@ class MiAZWorkflow(GObject.GObject):
         page_workspace = self.app.get_widget('workspace')
         if page_workspace is None:
             mainbox._setup_page_workspace()
+
         # Setup Rename widget
         rename_widget = self.app.get_widget('rename')
         if rename_widget is None:
             mainbox._setup_widget_rename()
 
-        # ~ sidebar = self.app.get_widget('sidebar')
-        # ~ sidebar.update_repo_status()
         headerbar = self.app.get_widget('headerbar')
         headerbar.set_visible(True)
-        tgbSidebar = self.app.get_widget('workspace-togglebutton-filters')
-        # ~ tgbSidebar.set_active(True)
-        self.log.debug(f"Sidebar visible? {tgbSidebar.get_active()}")
-
         tgbSidebar = self.app.get_widget('workspace-togglebutton-filters')
         tgbSidebar.set_active(True)
         tgbSidebar.set_visible(True)
         btnWorkspace = self.app.get_widget('workspace-menu')
         btnWorkspace.set_visible(True)
+
+        self.emit("repository-switch-finished")
