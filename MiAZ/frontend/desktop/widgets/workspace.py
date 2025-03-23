@@ -187,11 +187,12 @@ class MiAZWorkspace(Gtk.Box):
         self.log.debug("Finish loading workspace")
         window = self.app.get_widget('window')
         window.present()
+        workflow = self.app.get_service('workflow')
         srvutl = self.app.get_service('util')
         srvutl.connect('filename-renamed', self.update)
         srvutl.connect('filename-deleted', self.update)
         srvutl.connect('filename-added', self.update)
-        self.app.connect('repo-switch', self._on_repo_switch)
+        workflow.connect('repo-switch', self._on_repo_switch)
         self._on_repo_switch()
 
         self.emit('workspace-loaded')
