@@ -65,7 +65,7 @@ class MiAZWorkspace(Gtk.Box):
         self.review = False
 
         # Allow plug-ins to make their job
-        self.app.connect('start-application-completed', self._on_finish_configuration)
+        self.app.connect('application-started', self._on_finish_configuration)
 
     def initialize_caches(self):
         repo = self.app.get_service('repo')
@@ -192,7 +192,7 @@ class MiAZWorkspace(Gtk.Box):
         srvutl.connect('filename-renamed', self.update)
         srvutl.connect('filename-deleted', self.update)
         srvutl.connect('filename-added', self.update)
-        workflow.connect('repo-switch', self._on_repo_switch)
+        workflow.connect('repository-switch-started', self._on_repo_switch)
         self._on_repo_switch()
 
         self.emit('workspace-loaded')
@@ -663,9 +663,15 @@ class MiAZWorkspace(Gtk.Box):
             pass
 
     def _on_filter_selected(self, *args):
+        app_status = self.app.get_status()
         util = self.app.get_service('util')
         repository = self.app.get_service('repo')
+
         if repository.conf is None:
+            return
+
+        status = self.app.get_status()
+        if status == MiAZStatus.BUSY:
             return
 
         workspace_menu = self.app.get_widget('workspace-menu')
@@ -676,7 +682,9 @@ class MiAZWorkspace(Gtk.Box):
             docs = util.get_files(repository.docs) # nº total items
             stack = self.app.get_widget('stack')
             items_in_view = len(model)
-            label.set_markup(f"<small>{len(self.selected_items)}</small> / {len(model)} / <big>{len(docs)}</big>")
+            label_text = f"<small>{len(self.selected_items)}</small> / {len(model)} / <big>{len(docs)}</big>"
+            # ~ self.log.error(label_text)
+            label.set_markup(label_text)
             tooltip = ""
             tooltip += f"{len(self.selected_items)} documents selected\n"
             tooltip += f"{len(model)} documents in this view\n"
