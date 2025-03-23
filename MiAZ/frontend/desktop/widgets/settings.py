@@ -98,9 +98,10 @@ class MiAZAppSettings(MiAZCustomWindow):
         return row
 
     def _on_use_repo(self, *args):
+        workflow = self.app.get_service('workflow')
         repo_id = self.dd_repo.get_selected_item().id
         self.config['App'].set('current', repo_id)
-        valid = self.app.switch_start()
+        valid = workflow.switch_start()
         if valid:
             window = self.app.get_widget(f"window-{self.name}")
             window.hide()
