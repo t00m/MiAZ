@@ -306,7 +306,7 @@ class MiAZActions(GObject.GObject):
 
     def exit_app(self, *args):
         self.log.debug('Closing MiAZ')
-        self.app.emit("exit-application")
+        self.app.emit("application-finished")
         self.app.quit()
 
     def stop_if_no_items(self, items: [], widget: Gtk.Widget = None):
