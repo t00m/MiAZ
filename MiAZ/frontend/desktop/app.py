@@ -34,8 +34,8 @@ class MiAZApp(Adw.Application):
     """MiAZ Gtk Application class."""
 
     __gsignals__ = {
-        "start-application-completed": (GObject.SignalFlags.RUN_LAST, None, ()),
-        "exit-application": (GObject.SignalFlags.RUN_LAST, None, ()),
+        "application-started": (GObject.SignalFlags.RUN_LAST, None, ()),
+        "application-finished": (GObject.SignalFlags.RUN_LAST, None, ()),
     }
     _plugins_loaded = False
     _miazobjs = {}  # MiAZ Objects
