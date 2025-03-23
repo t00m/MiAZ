@@ -113,10 +113,6 @@ class MiAZMainWindow(Gtk.Box):
         viewstack.set_vexpand(True)
         return viewstack
 
-    def show_workspace(self, *args):
-        actions = self.app.get_service('actions')
-        actions.show_stack_page_by_name('workspace')
-
     def _on_key_press(self, event, keyval, keycode, state):
         actions = self.app.get_service('actions')
         keyname = Gdk.keyval_name(keyval)
