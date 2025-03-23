@@ -67,6 +67,17 @@ class MiAZSidebar(Adw.Bin):
         self.__build_ui()
         self.app.add_widget('sidebar', self)
 
+        workflow = self.app.get_service('workflow')
+        workflow.connect("repository-switch-finished", self._on_repo_switch)
+
+    def _on_repo_switch(self, *args):
+        workspace = self.app.get_widget('workspace')
+        workspace.update()
+        searchentry = self.app.get_widget('searchentry')
+        searchentry.set_text('asdf')
+        searchentry.set_text('')
+        self.log.debug("Repository switched > Sidebar updated")
+
     def __build_ui(self) -> None:
         factory = self.app.get_service('factory')
         config = self.app.get_config_dict()
