@@ -251,8 +251,13 @@ class MiAZWorkspace(Gtk.Box):
         workspace_menu.set_tooltip_markup(tooltip)
 
     def show_pending_documents(self, *args):
+        sidebar = self.app.get_widget('sidebar')
         togglebutton = self.app.get_widget('workspace-togglebutton-pending-docs')
         self.review = togglebutton.get_active()
+        i_type = Date.__gtype_name__
+        dropdowns = self.app.get_widget('ws-dropdowns')
+        sidebar.clear_filters()
+        dropdowns[i_type].set_selected(9)
         self.view.refilter()
 
     def _update_dropdown_date(self):
@@ -495,7 +500,12 @@ class MiAZWorkspace(Gtk.Box):
 
         self.selected_items = []
 
+        review = 0
+        for item in items:
+            if not item.active:
+                review += 1
         togglebutton = self.app.get_widget('workspace-togglebutton-pending-docs')
+        togglebutton.set_label(f"Review ({review})")
         if show_pending:
             self.log.debug("There are pending documents. Displaying warning button")
         togglebutton.set_visible(show_pending)
