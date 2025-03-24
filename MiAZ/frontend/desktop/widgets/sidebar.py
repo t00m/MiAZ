@@ -82,13 +82,8 @@ class MiAZSidebar(Adw.Bin):
         factory = self.app.get_service('factory')
         config = self.app.get_config_dict()
 
-        # Setup system menu
-        self._setup_menu_system()
-        self._setup_clear_filters_button()
-
-
-        menubutton_system = self.app.get_widget('headerbar-button-menu-system')
-        button_clear_filters = self.app.get_widget('headerbar-button-clear-filters')
+        # Clear filters button
+        button_clear_filters = self._setup_clear_filters_button()
 
         # Sidebar title and subtitle
         boxTitle = factory.create_box_vertical(margin=0, spacing=0)
@@ -113,7 +108,7 @@ class MiAZSidebar(Adw.Bin):
                 top_bars=[
                     MiAZHeaderBar(
                         title_widget=boxTitle,
-                        start_children=[menubutton_system],
+                        start_children=[],
                         end_children=[button_clear_filters],
                     )
                 ],
@@ -136,35 +131,6 @@ class MiAZSidebar(Adw.Bin):
         description = f"<big>Repository {repo_id}\n<b>{num_docs} documents</b></big>"
         repo_status.set_description(description)
         self.log.debug(description)
-
-    def _setup_menu_system(self):
-        actions = self.app.get_service('actions')
-        factory = self.app.get_service('factory')
-        menu = self.app.add_widget('window-menu-app', Gio.Menu.new())
-        section_common_in = self.app.add_widget('app-menu-section-common-in', Gio.Menu.new())
-        section_common_out = self.app.add_widget('app-menu-section-common-out', Gio.Menu.new())
-        section_danger = self.app.add_widget('app-menu-section-common-danger', Gio.Menu.new())
-        menu.append_section(None, section_common_in)
-        menu.append_section(None, section_common_out)
-        menu.append_section(None, section_danger)
-        menuitem = factory.create_menuitem('app-settings', _('Application settings'), actions.show_app_settings, None, ['<Control>s'])
-        section_common_in.append_item(menuitem)
-        # ~ menuitem = factory.create_menuitem('app-help', _('Help'), actions.show_app_help, None, ['<Control>h'])
-        # ~ section_common_out.append_item(menuitem)
-        menuitem = factory.create_menuitem('app-about', _('About MiAZ'), actions.show_app_about, None, ['<Control>h'])
-        section_common_out.append_item(menuitem)
-        menuitem = factory.create_menuitem('app-quit', _('Exit application'), actions.exit_app, None, ['<Control>q'])
-        section_danger.append_item(menuitem)
-
-        menubutton = Gtk.MenuButton(child=factory.create_button_content(icon_name='io.github.t00m.MiAZ-system-menu'))
-        menubutton.set_has_frame(False)
-        menubutton.get_style_context().add_class(class_name='flat')
-        menubutton.set_valign(Gtk.Align.CENTER)
-        popover = Gtk.PopoverMenu()
-        popover.set_menu_model(menu)
-        menubutton.set_popover(popover=popover)
-        self.app.add_widget('headerbar-button-menu-system', menubutton)
-
 
     def _setup_toolbar_filters(self):
         factory = self.app.get_service('factory')
@@ -216,6 +182,8 @@ class MiAZSidebar(Adw.Bin):
         factory = self.app.get_service('factory')
         button = factory.create_button(icon_name='io.github.t00m.MiAZ-entry_clear', tooltip='Clear all filters', css_classes=['flat'], callback=self.clear_filters)
         self.app.add_widget('headerbar-button-clear-filters', button)
+
+        return button
 
 
     def clear_filters(self, *args):

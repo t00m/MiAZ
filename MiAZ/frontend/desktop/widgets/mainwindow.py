@@ -89,10 +89,13 @@ class MiAZMainWindow(Gtk.Box):
         headerbar = self.app.get_widget('headerbar')
 
         # Box for filters button and search entry
-        hbox = factory.create_box_horizontal(margin=0, spacing=0)
-        hbox.get_style_context().add_class(class_name='linked')
+        hbox = factory.create_box_horizontal(margin=0, spacing=6)
         self.app.add_widget('headerbar-left-box', hbox)
         headerbar.pack_start(hbox)
+
+        # Setup system menu
+        menubutton = self._setup_menu_system()
+        hbox.append(menubutton)
 
 
     def _setup_headerbar_right(self):
@@ -288,3 +291,31 @@ class MiAZMainWindow(Gtk.Box):
         self.app.add_widget('workspace-menu-selection-menu-export', submenu_export)
 
         return menu_selection
+
+    def _setup_menu_system(self):
+        actions = self.app.get_service('actions')
+        factory = self.app.get_service('factory')
+        menu = self.app.add_widget('window-menu-app', Gio.Menu.new())
+        section_common = self.app.add_widget('app-menu-section-common', Gio.Menu.new())
+        section_danger = self.app.add_widget('app-menu-section-common-danger', Gio.Menu.new())
+        menu.append_section(None, section_common)
+        menu.append_section(None, section_danger)
+        menuitem = factory.create_menuitem('app-settings', _('Settings'), actions.show_app_settings, None, ['<Control>s'])
+        section_common.append_item(menuitem)
+        menuitem = factory.create_menuitem('app-help', _('Help'), actions.show_app_help, None, ['<Control>h'])
+        section_common.append_item(menuitem)
+        menuitem = factory.create_menuitem('app-about', _('About'), actions.show_app_about, None, ['<Control>a'])
+        section_common.append_item(menuitem)
+        menuitem = factory.create_menuitem('app-quit', _('Exit'), actions.exit_app, None, ['<Control>q'])
+        section_danger.append_item(menuitem)
+
+        menubutton = Gtk.MenuButton(child=factory.create_button_content(icon_name='io.github.t00m.MiAZ-system-menu'))
+        menubutton.set_has_frame(False)
+        menubutton.get_style_context().add_class(class_name='flat')
+        menubutton.set_valign(Gtk.Align.CENTER)
+        popover = Gtk.PopoverMenu()
+        popover.set_menu_model(menu)
+        menubutton.set_popover(popover=popover)
+        self.app.add_widget('headerbar-button-menu-system', menubutton)
+
+        return menubutton
