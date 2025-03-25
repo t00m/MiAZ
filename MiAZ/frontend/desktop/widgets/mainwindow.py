@@ -259,7 +259,7 @@ class MiAZMainWindow(Gtk.Box):
                 sid = subcategory.lower().replace(' ', '-')
                 subcategory_name = f"workspace-menu-plugins-{cid}-{sid}"
                 self.app.add_widget(subcategory_name, subcategory_submenu)
-                self.log.debug(f"\t- '{subcategory_name}'")
+                self.log.debug(f"\t\t- '{subcategory_name}'")
                 # Add a placeholder menu item (you can replace this with actual plugins)
                 # ~ subcategory_submenu.append("Plugin 1", f"app.{subcategory.replace(' ', '').lower()}_plugin1")
 
