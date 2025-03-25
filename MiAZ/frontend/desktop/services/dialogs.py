@@ -254,6 +254,7 @@ class MiAZDialogAddRepo(MiAZDialogAdd):
         hbox.append(self.etyValue1)
         vbox.append(hbox)
         self.filechooser = Gtk.FileChooserWidget()
+        self.filechooser.get_style_context().add_class(class_name='frame')
         self.filechooser.set_action(Gtk.FileChooserAction.SELECT_FOLDER)
         vbox.append(self.filechooser)
         self.fields.append(self.boxKey1)
@@ -311,6 +312,7 @@ class MiAZFileChooserDialog(MiAZDialog):
 
         # Widget
         self.w_filechooser = Gtk.FileChooserWidget()
+        self.w_filechooser.get_style_context().add_class(class_name='frame')
         if self.target == 'FOLDER':
             self.w_filechooser.set_action(Gtk.FileChooserAction.SELECT_FOLDER)
         elif self.target == 'FILE':
