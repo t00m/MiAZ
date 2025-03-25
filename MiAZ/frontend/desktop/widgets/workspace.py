@@ -370,7 +370,7 @@ class MiAZWorkspace(Gtk.Box):
     def update(self, *args):
         if self.app.get_status() == MiAZStatus.BUSY:
             return
-        self.app.set_status(MiAZStatus.BUSY)
+
 
         repository = self.app.get_service('repo')
         if repository.conf is None:
