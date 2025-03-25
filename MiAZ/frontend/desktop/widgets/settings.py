@@ -7,6 +7,7 @@
 import os
 from gettext import gettext as _
 
+from gi.repository import Adw
 from gi.repository import Gtk
 
 from MiAZ.backend.log import MiAZLog
@@ -37,34 +38,47 @@ Configview['Plugin'] = MiAZUserPlugins
 # ~ Configview['Date'] = Gtk.Calendar
 
 
-class MiAZAppSettings(MiAZCustomWindow):
+class MiAZAppSettings(Adw.PreferencesDialog):
     __gtype_name__ = 'MiAZAppSettings'
 
     def __init__(self, app, **kwargs):
+        # ~ super().__init__()
         self.app = app
         self.log = MiAZLog('MiAZ.AppSettings')
         self.name = 'app-settings'
-        self.title = 'Application settings'
         self.app.add_widget('window-settings', self)
-        super().__init__(app, self.name, self.title, **kwargs)
+        super().__init__()  #app, self.name, self.title, **kwargs)
+        self._build_ui()
 
     def _build_ui(self):
-        self.set_default_size(1024, 728)
-        headerbar = self.app.get_widget(f"window-{self.name}-headerbar")
-        self.stack = self.app.add_widget('stack_settings', Gtk.Stack())
-        self.stack.set_vexpand(True)
-        self.switcher = self.app.add_widget('switcher_settings', Gtk.StackSwitcher())
-        self.switcher.set_stack(self.stack)
-        self.switcher.set_hexpand(False)
-        headerbar.pack_start(self.switcher)
-        self.mainbox.append(self.stack)
-        widget = self._create_widget_for_repositories()
-        page = self.stack.add_titled(widget, 'repos', 'Repositories')
-        page.set_visible(True)
-        widget = self._create_widget_for_plugins()
-        page = self.stack.add_titled(widget, 'plugins', 'Plugins')
-        page.set_visible(True)
-        self.repo_is_set = False
+        self.set_title('Application settings')
+        self.set_search_enabled(False)
+        repositories_group = self.app.add_widget('dialog-settings-group-repositories', Adw.PreferencesGroup())
+        page = self.app.add_widget('dialog-settings-page-repositories', Adw.PreferencesPage())
+        self.add(page)
+        page.add(repositories_group)
+
+        plugins_group = self.app.add_widget('dialog-settings-plugins', Adw.PreferencesGroup())
+        page = self.app.add_widget('dialog-settings-page-plugins', Adw.PreferencesPage())
+        self.add(page)
+        page.add(plugins_group)
+
+        # ~ self.set_default_size(1024, 728)
+        # ~ headerbar = self.app.get_widget(f"window-{self.name}-headerbar")
+        # ~ self.stack = self.app.add_widget('stack_settings', Gtk.Stack())
+        # ~ self.stack.set_vexpand(True)
+        # ~ self.switcher = self.app.add_widget('switcher_settings', Gtk.StackSwitcher())
+        # ~ self.switcher.set_stack(self.stack)
+        # ~ self.switcher.set_hexpand(False)
+        # ~ headerbar.pack_start(self.switcher)
+        # ~ self.mainbox.append(self.stack)
+        # ~ widget = self._create_widget_for_repositories()
+        # ~ page = self.stack.add_titled(widget, 'repos', 'Repositories')
+        # ~ page.set_visible(True)
+        # ~ widget = self._create_widget_for_plugins()
+        # ~ page = self.stack.add_titled(widget, 'plugins', 'Plugins')
+        # ~ page.set_visible(True)
+        # ~ self.repo_is_set = False
 
     def _create_widget_for_repositories(self):
         row = self.factory.create_box_vertical(hexpand=True, vexpand=True)

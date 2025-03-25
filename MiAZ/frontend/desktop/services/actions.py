@@ -242,8 +242,8 @@ class MiAZActions(GObject.GObject):
         settings = self.app.get_widget('settings-app')
         if settings is None:
             settings = self.app.add_widget('settings-app', MiAZAppSettings(self.app))
-        settings.set_transient_for(window)
-        settings.set_modal(True)
+        # ~ settings.set_transient_for(window)
+        # ~ settings.set_modal(True)
         settings.present()
 
     def show_repository_settings(self, *args):
@@ -251,8 +251,8 @@ class MiAZActions(GObject.GObject):
         window_settings = self.app.get_widget('settings-repo')
         if window_settings is None:
             window_settings = self.app.add_widget('settings-repo', MiAZRepoSettings(self.app))
-        window_settings.set_transient_for(window_main)
-        window_settings.set_modal(True)
+        # ~ window_settings.set_transient_for(window_main)
+        # ~ window_settings.set_modal(True)
         window_settings.update()
         window_settings.present()
 
