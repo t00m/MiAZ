@@ -239,22 +239,24 @@ class MiAZActions(GObject.GObject):
 
     def show_app_settings(self, *args):
         window = self.app.get_widget('window')
-        settings = self.app.get_widget('settings-app')
-        if settings is None:
-            settings = self.app.add_widget('settings-app', MiAZAppSettings(self.app))
-        # ~ settings.set_transient_for(window)
-        # ~ settings.set_modal(True)
-        settings.present()
+        dialog_app_settings = MiAZAppSettings(self.app)
+        dialog_app_settings.present(window)
 
     def show_repository_settings(self, *args):
+        self.log.debug(args)
         window_main = self.app.get_widget('window')
-        window_settings = self.app.get_widget('settings-repo')
-        if window_settings is None:
-            window_settings = self.app.add_widget('settings-repo', MiAZRepoSettings(self.app))
+        self.log.debug(window_main)
+        # ~ window_settings = self.app.get_widget('settings-repo')
+        window_settings = MiAZRepoSettings(self.app)
+        # ~ window_settings.update()
+        window_settings.present(window_main)
+
+        # ~ if window_settings is None:
+            # ~ window_settings = self.app.add_widget('settings-repo', MiAZRepoSettings(self.app))
         # ~ window_settings.set_transient_for(window_main)
         # ~ window_settings.set_modal(True)
-        window_settings.update()
-        window_settings.present()
+        # ~ window_settings.update()
+        # ~ window_settings.present(window_main)
 
     def show_app_about(self, *args):
         # FIXME: App icon not displayed in local installation

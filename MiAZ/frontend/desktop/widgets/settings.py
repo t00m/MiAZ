@@ -46,9 +46,17 @@ class MiAZAppSettings(Adw.PreferencesDialog):
         self.app = app
         self.log = MiAZLog('MiAZ.AppSettings')
         self.name = 'app-settings'
-        self.app.add_widget('window-settings', self)
+        window = self.app.get_widget('widnow')
+        # ~ self.app.add_widget('window-app-settings', window)
         super().__init__()  #app, self.name, self.title, **kwargs)
         self._build_ui()
+        # ~ self.connect('close-attempt', lambda d: self._on_close_dialog())
+        # ~ self.connect('closed', lambda d: self._on_close_dialog())
+
+    # ~ def _on_close_dialog(self, *args):
+        # ~ self.log.error(args)
+        # ~ self.close()
+        # ~ return True
 
     def repository_selected(self, *args):
         self.log.error(args)
@@ -60,7 +68,9 @@ class MiAZAppSettings(Adw.PreferencesDialog):
 
         # Repositories page
         group = self.app.add_widget('dialog-settings-group-repositories', Adw.PreferencesGroup())
-        page = self.app.add_widget('dialog-settings-page-repositories', Adw.PreferencesPage())
+        page_title = _("Repositories")
+        page_icon = "io.github.t00m.MiAZ-study-symbolic"
+        page = self.app.add_widget('dialog-settings-page-repositories', Adw.PreferencesPage(title=page_title, icon_name=page_icon))
         self.add(page)
         page.add(group)
 
@@ -81,7 +91,9 @@ class MiAZAppSettings(Adw.PreferencesDialog):
 
         # Plugins page
         group = self.app.add_widget('dialog-settings-plugins', Adw.PreferencesGroup())
-        page = self.app.add_widget('dialog-settings-page-plugins', Adw.PreferencesPage())
+        page_title = _("Plugins")
+        page_icon = "io.github.t00m.MiAZ-res-plugins"
+        page = self.app.add_widget('dialog-settings-page-plugins', Adw.PreferencesPage(title=page_title, icon_name=page_icon))
         self.add(page)
         page.add(group)
 
@@ -137,13 +149,12 @@ class MiAZAppSettings(Adw.PreferencesDialog):
         config = self.app.get_config_dict()
         workflow = self.app.get_service('workflow')
         comborow = self.app.get_widget('dialog-settings-repositories-choose-repo')
-        repo_item = comborow.get_selected_item()
-        repo_id = repo_item.id
+        repo_id = comborow.get_selected_item().get_string()
         config['App'].set('current', repo_id)
         valid = workflow.switch_start()
         if valid:
-            window = self.app.get_widget(f"window-{self.name}")
-            window.hide()
+            # ~ window = self.app.get_widget("window-app-settings")
+            self.close()
             sidebar = self.app.get_widget('sidebar')
             sidebar.clear_filters()
             self.log.debug(f"Repository {repo_id} loaded successfully")
@@ -277,7 +288,7 @@ class MiAZAppSettings(Adw.PreferencesDialog):
     def _on_plugin_add(self, *args):
         plugin_filter = Gtk.FileFilter()
         plugin_filter.add_pattern('*.zip')
-        window = self.app.get_widget('window-settings')
+        window = self.app.get_widget('window-app-settings')
         clsdlg = MiAZFileChooserDialog(self.app)
         filechooser_dialog = clsdlg.create(
                         parent=window,
