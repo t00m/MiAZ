@@ -86,9 +86,11 @@ class MiAZDialog:
                 dialog.set_response_appearance("cancel", Adw.ResponseAppearance.DESTRUCTIVE)
                 dialog.set_response_appearance("apply", Adw.ResponseAppearance.SUGGESTED)
             else:
-                dialog.add_response("cancel", _("Ok"))
-                dialog.set_default_response("cancel")
-                dialog.set_response_appearance("cancel", Adw.ResponseAppearance.SUGGESTED)
+                dialog.add_response("apply", _("Close"))
+                dialog.set_default_response("apply")
+                dialog.set_close_response("apply")
+                dialog.set_response_appearance("apply", Adw.ResponseAppearance.SUGGESTED)
+                dialog.set_response_enabled("apply", True)
 
             if callback is None:
                 dialog.connect('response', self.close)
