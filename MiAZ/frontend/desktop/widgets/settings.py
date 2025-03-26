@@ -50,18 +50,40 @@ class MiAZAppSettings(Adw.PreferencesDialog):
         super().__init__()  #app, self.name, self.title, **kwargs)
         self._build_ui()
 
+    def repository_selected(self, *args):
+        self.log.error(args)
+
     def _build_ui(self):
+        factory = self.app.get_service('factory')
         self.set_title('Application settings')
         self.set_search_enabled(False)
-        repositories_group = self.app.add_widget('dialog-settings-group-repositories', Adw.PreferencesGroup())
+
+        # Repositories page
+        group = self.app.add_widget('dialog-settings-group-repositories', Adw.PreferencesGroup())
         page = self.app.add_widget('dialog-settings-page-repositories', Adw.PreferencesPage())
         self.add(page)
-        page.add(repositories_group)
+        page.add(group)
 
-        plugins_group = self.app.add_widget('dialog-settings-plugins', Adw.PreferencesGroup())
+        row = Adw.ComboRow(title=_('Repository'), subtitle=_('Select active'))
+        self.app.add_widget('dialog-settings-repositories-choose-repo', row)
+        row.connect('activated', self.repository_selected)
+        row.set_icon_name('io.github.t00m.MiAZ-study-symbolic')
+        btnUseRepo = factory.create_button(icon_name='io.github.t00m.MiAZ-document-open-symbolic', title=_('Load'), callback=self._on_use_repo)
+        btnUseRepo.set_valign(Gtk.Align.CENTER)
+        row.add_suffix(btnUseRepo)
+        group.add(row)
+        config = self.app.get_config(Repository.__gtype_name__)
+        items = config.load(config.used)
+        strings = [rid for rid in items]
+        model_repos = Gtk.StringList.new(strings=strings)
+        row.set_model(model_repos)
+        # ~ self.log.error(items)
+
+        # Plugins page
+        group = self.app.add_widget('dialog-settings-plugins', Adw.PreferencesGroup())
         page = self.app.add_widget('dialog-settings-page-plugins', Adw.PreferencesPage())
         self.add(page)
-        page.add(plugins_group)
+        page.add(group)
 
         # ~ self.set_default_size(1024, 728)
         # ~ headerbar = self.app.get_widget(f"window-{self.name}-headerbar")
@@ -112,9 +134,12 @@ class MiAZAppSettings(Adw.PreferencesDialog):
         return row
 
     def _on_use_repo(self, *args):
+        config = self.app.get_config_dict()
         workflow = self.app.get_service('workflow')
-        repo_id = self.dd_repo.get_selected_item().id
-        self.config['App'].set('current', repo_id)
+        comborow = self.app.get_widget('dialog-settings-repositories-choose-repo')
+        repo_item = comborow.get_selected_item()
+        repo_id = repo_item.id
+        config['App'].set('current', repo_id)
         valid = workflow.switch_start()
         if valid:
             window = self.app.get_widget(f"window-{self.name}")
