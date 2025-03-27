@@ -54,13 +54,15 @@ class MiAZAppSettings(Adw.PreferencesDialog):
         self._build_ui()
 
     def _on_update_repos_available(self, *args):
-        row = self.app.get_widget('window-setting-row-active-repository')
-        config = self.app.get_config(Repository.__gtype_name__)
-        items = config.load(config.used)
-        repositories = [rid for rid in items]
-        model = Gtk.StringList.new(strings=repositories)
-        model.connect("notify::selected", self._on_use_repo)
-        row.set_model(model)
+        config = self.app.get_config_dict()
+        repo_id = config['App'].get('current')
+        n = 0
+        dd_repo = self.app.get_widget('window-settings-dropdown-repository-active')
+        for repo in dd_repo.get_model():
+            self.log.debug(f"{repo.id}: {repo.title}")
+            if repo_id ==  repo.id:
+                dd_repo.set_selected(n)
+            n += 1
 
     def _build_ui(self):
         self.set_title('Application settings')
@@ -96,14 +98,15 @@ class MiAZAppSettings(Adw.PreferencesDialog):
         self.actions.dropdown_populate(MiAZConfigRepositories, dd_repo, Repository, any_value=False, none_value=False)
 
         #### Select active repository
-        config = self.app.get_config_dict()
-        repo_id = config['App'].get('current')
-        n = 0
-        for repo in dd_repo.get_model():
-            self.log.debug(f"{repo.id}: {repo.title}")
-            if repo_id ==  repo.id:
-                dd_repo.set_selected(n)
-            n += 1
+        self._on_update_repos_available()
+        # ~ config = self.app.get_config_dict()
+        # ~ repo_id = config['App'].get('current')
+        # ~ n = 0
+        # ~ for repo in dd_repo.get_model():
+            # ~ self.log.debug(f"{repo.id}: {repo.title}")
+            # ~ if repo_id ==  repo.id:
+                # ~ dd_repo.set_selected(n)
+            # ~ n += 1
 
 
         # DOC: By enabling this signal, repos are loaded automatically without pressing the button:
@@ -142,50 +145,9 @@ class MiAZAppSettings(Adw.PreferencesDialog):
         self.add(page)
         page.add(group)
 
-        # ~ self.set_default_size(1024, 728)
-        # ~ headerbar = self.app.get_widget(f"window-{self.name}-headerbar")
-        # ~ self.stack = self.app.add_widget('stack_settings', Gtk.Stack())
-        # ~ self.stack.set_vexpand(True)
-        # ~ self.switcher = self.app.add_widget('switcher_settings', Gtk.StackSwitcher())
-        # ~ self.switcher.set_stack(self.stack)
-        # ~ self.switcher.set_hexpand(False)
-        # ~ headerbar.pack_start(self.switcher)
-        # ~ self.mainbox.append(self.stack)
-        # ~ widget = self._create_widget_for_repositories()
-        # ~ page = self.stack.add_titled(widget, 'repos', 'Repositories')
-        # ~ page.set_visible(True)
-        # ~ widget = self._create_widget_for_plugins()
-        # ~ page = self.stack.add_titled(widget, 'plugins', 'Plugins')
-        # ~ page.set_visible(True)
-        # ~ self.repo_is_set = False
-
-
     def _create_widget_for_repositories(self):
         row = self.factory.create_box_vertical(hexpand=True, vexpand=True)
-        # ~ hbox = self.factory.create_box_horizontal()
-        # ~ lblActive = Gtk.Label()
-        # ~ lblActive.set_markup(_("<b>Select repository</b>"))
-        # ~ self.dd_repo = self.factory.create_dropdown_generic(item_type=Repository, ellipsize=False, enable_search=False)
-        # ~ btnUseRepo = self.factory.create_button(icon_name='io.github.t00m.MiAZ-document-open-symbolic', title=_('Load'), callback=self._on_use_repo)
-        # ~ hbox.append(lblActive)
-        # ~ hbox.append(self.dd_repo)
-        # ~ hbox.append(btnUseRepo)
-        # ~ self.actions.dropdown_populate(MiAZConfigRepositories, self.dd_repo, Repository, any_value=False, none_value=False)
-        # DOC: By enabling this signal, repos are loaded automatically without pressing the button:
-        # ~ self.dd_repo.connect("notify::selected-item", self._on_selected_repo)
-        # ~ self.config['Repository'].connect('used-updated', self.actions.dropdown_populate, self.dd_repo, Repository, False, False)
-
-        # Load last active repo
-        # ~ repos_used = self.config['Repository'].load_used()
-        # ~ repo_active = self.config['App'].get('current')
-        # ~ if repo_active in repos_used:
-            # ~ model = self.dd_repo.get_model()
-            # ~ for n, item in enumerate(model):
-                # ~ if item.id == repo_active:
-                    # ~ self.dd_repo.set_selected(n)
-        # ~ row.append(hbox)
         configview = MiAZRepositories(self.app)
-        # ~ configview.set_size_request(600, 600)
         configview.set_hexpand(True)
         configview.set_vexpand(True)
         configview.update_views()
