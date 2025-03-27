@@ -252,13 +252,6 @@ class MiAZActions(GObject.GObject):
         window_repoconfig.update()
         window_repoconfig.present()
 
-        # ~ if window_settings is None:
-            # ~ window_settings = self.app.add_widget('settings-repo', MiAZRepoSettings(self.app))
-        # ~ window_settings.set_transient_for(window_main)
-        # ~ window_settings.set_modal(True)
-        # ~ window_settings.update()
-        # ~ window_settings.present(window_main)
-
     def show_app_about(self, *args):
         # FIXME: App icon not displayed in local installation
         window = self.app.get_widget('window')
