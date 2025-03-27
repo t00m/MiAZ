@@ -57,9 +57,8 @@
             "buildsystem" : "meson",
             "sources" : [
                 {
-                    "type" : "git",
-                    "url" : "https://github.com/t00m/MiAZ.git",
-                    "tag" : "dev"
+                    "type" : "dir",
+                    "path" : "/home/t00m/Documents/devel/github/MiAZ"
                 }
             ]
         }

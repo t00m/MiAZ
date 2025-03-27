@@ -59,12 +59,8 @@ class MiAZDialog:
         icm = self.app.get_service('icons')
 
         dialog = Adw.AlertDialog.new() #title, body)
-        headerbar = Adw.HeaderBar()
-
-        # ~ dialog.set_prefer_wide_layout(True)
-        # ~ dialog.set_follows_content_size(False)
-        # ~ dialog.set_content_width(800)
-        dialog.set_presentation_mode (Adw.DialogPresentationMode.BOTTOM_SHEET)
+        # ~ dialog.set_presentation_mode (Adw.DialogPresentationMode.BOTTOM_SHEET)
+        # ~ dialog.set_presentation_mode (Adw.DialogPresentationMode.FLOATING)
         dialog.set_body_use_markup(True)
         dialog.set_heading_use_markup(True)
         # ~ dialog.set_heading(f"<big>{title}</big>")
@@ -86,9 +82,11 @@ class MiAZDialog:
                 dialog.set_response_appearance("cancel", Adw.ResponseAppearance.DESTRUCTIVE)
                 dialog.set_response_appearance("apply", Adw.ResponseAppearance.SUGGESTED)
             else:
-                dialog.add_response("cancel", _("Ok"))
-                dialog.set_default_response("cancel")
-                dialog.set_response_appearance("cancel", Adw.ResponseAppearance.SUGGESTED)
+                dialog.add_response("apply", _("Close"))
+                dialog.set_default_response("apply")
+                dialog.set_close_response("apply")
+                dialog.set_response_appearance("apply", Adw.ResponseAppearance.SUGGESTED)
+                dialog.set_response_enabled("apply", True)
 
             if callback is None:
                 dialog.connect('response', self.close)
@@ -254,6 +252,7 @@ class MiAZDialogAddRepo(MiAZDialogAdd):
         hbox.append(self.etyValue1)
         vbox.append(hbox)
         self.filechooser = Gtk.FileChooserWidget()
+        self.filechooser.get_style_context().add_class(class_name='frame')
         self.filechooser.set_action(Gtk.FileChooserAction.SELECT_FOLDER)
         vbox.append(self.filechooser)
         self.fields.append(self.boxKey1)
@@ -311,6 +310,7 @@ class MiAZFileChooserDialog(MiAZDialog):
 
         # Widget
         self.w_filechooser = Gtk.FileChooserWidget()
+        self.w_filechooser.get_style_context().add_class(class_name='frame')
         if self.target == 'FOLDER':
             self.w_filechooser.set_action(Gtk.FileChooserAction.SELECT_FOLDER)
         elif self.target == 'FILE':

@@ -14,12 +14,22 @@
   <url type="homepage">https://github.com/t00m/MiAZ</url>
   <url type="bugtracker">https://github.com/t00m/MiAZ/issues</url>
   <url type="vcs-browser">https://github.com/t00m/MiAZ</url>
-  <update_contact>tomasvirseda@gmail.com</update_contact>
+  <update_contact>tomas.virseda@gmail.com</update_contact>
   <content_rating type="oars-1.1" />
-
   <launchable type="desktop-id">io.github.t00m.MiAZ.desktop</launchable>
+  <provides>
+    <binary>miaz</binary>
+  </provides>
+  <branding>
+    <color type="primary" scheme_preference="light">#a9a9da</color>
+    <color type="primary" scheme_preference="dark">#45457c</color>
+  </branding>
   <translation type="gettext">miaz</translation>
-
+  <recommends>
+    <control>keyboard</control>
+    <control>pointing</control>
+    <internet>always</internet>
+  </recommends>
   <screenshots>
     <screenshot type="default">
       <image type="source">https://raw.githubusercontent.com/t00m/miaz/main/data/docs/screenshots/MiAZ-About.png</image>
@@ -32,6 +42,10 @@
     <screenshot type="default">
       <image type="source">https://raw.githubusercontent.com/t00m/miaz/main/data/docs/screenshots/MiAZ-Workspace-menu.png</image>
       <caption>One menu for all tasks</caption>
+    </screenshot>
+    <screenshot type="default">
+      <image type="source">https://raw.githubusercontent.com/t00m/miaz/main/data/docs/screenshots/MiAZ-Workspace-menu-plugins.png</image>
+      <caption>Plugins submenu</caption>
     </screenshot>
     <screenshot type="default">
       <image type="source">https://raw.githubusercontent.com/t00m/miaz/main/data/docs/screenshots/MiAZ-repository-settings-countries.png</image>
@@ -47,6 +61,11 @@
     </screenshot>
   </screenshots>
   <releases>
+    <release version="0.1.7" date="2025-03-22">
+      <description translatable="no">
+        <p>Pre-release</p>
+      </description>
+    </release>
     <release version="0.0.48" date="2024-07-12">
       <description translatable="no">
         <p>Pre-release</p>

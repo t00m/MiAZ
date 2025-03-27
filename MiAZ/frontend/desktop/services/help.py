@@ -112,8 +112,8 @@ class PreviewGroup(ShortcutsGroup):
 
 
 class GeneralGroup(ShortcutsGroup):
-    def __init__(self, editor_type):
-        super().__init__(title="Genaral")
+    def __init__(self):
+        super().__init__(title="General")
 
         self.add(ShortcutsShortcut(
             accelerator="<Control>n", title="New Document"))

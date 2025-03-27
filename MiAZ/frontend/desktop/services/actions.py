@@ -239,22 +239,18 @@ class MiAZActions(GObject.GObject):
 
     def show_app_settings(self, *args):
         window = self.app.get_widget('window')
-        settings = self.app.get_widget('settings-app')
-        if settings is None:
-            settings = self.app.add_widget('settings-app', MiAZAppSettings(self.app))
-        settings.set_transient_for(window)
-        settings.set_modal(True)
-        settings.present()
+        dialog_app_settings = MiAZAppSettings(self.app)
+        dialog_app_settings.present(window)
 
     def show_repository_settings(self, *args):
+        self.log.debug(args)
         window_main = self.app.get_widget('window')
-        window_settings = self.app.get_widget('settings-repo')
-        if window_settings is None:
-            window_settings = self.app.add_widget('settings-repo', MiAZRepoSettings(self.app))
-        window_settings.set_transient_for(window_main)
-        window_settings.set_modal(True)
-        window_settings.update()
-        window_settings.present()
+        self.log.debug(window_main)
+        window_repoconfig = MiAZRepoSettings(self.app)
+        window_repoconfig.set_transient_for(window_main)
+        window_repoconfig.set_modal(True)
+        window_repoconfig.update()
+        window_repoconfig.present()
 
     def show_app_about(self, *args):
         # FIXME: App icon not displayed in local installation
@@ -267,7 +263,8 @@ class MiAZActions(GObject.GObject):
         author = f"{ENV['APP']['author']}"
         about.set_developer_name(author)
         artists = ['Flags borrowed from FlagKit project https://github.com/madebybowtie/FlagKit']
-        artists.append('Icons borrowed from GNOME contributors https://www.gnome.org')
+        artists.append('Some icons borrowed from GNOME contributors https://www.gnome.org')
+        artists.append("MiAZ app icon based on Collection Business Duotone Icons with license 'CC Attribution License' by 'cataicon' from https://www.svgrepo.com/svg/391994/binder-business-finance-management-marketing-office")
         about.set_artists(artists)
         about.set_license_type(Gtk.License.GPL_3_0_ONLY)
         about.set_copyright(f"© 2019-2025 {ENV['APP']['author']}")
@@ -276,11 +273,12 @@ class MiAZActions(GObject.GObject):
         about.present(window)
 
     def show_app_help(self, *args):
-        shwin = self.app.get_widget('shortcutswindow')
-        if shwin is None:
-            shwin = MiAZShortcutsWindow()
-            self.app.add_widget('shortcutswindow', shwin)
-        shwin.present()
+        pass
+        # ~ shwin = self.app.get_widget('shortcutswindow')
+        # ~ if shwin is None:
+            # ~ shwin = MiAZShortcutsWindow()
+            # ~ self.app.add_widget('shortcutswindow', shwin)
+        # ~ shwin.present()
 
     def get_stack_page_by_name(self, name: str) -> Gtk.Stack:
         stack = self.app.get_widget('stack')
@@ -304,8 +302,8 @@ class MiAZActions(GObject.GObject):
         btnShowFilters.set_active(not active)
 
     def exit_app(self, *args):
-        self.log.trace('Closing MiAZ')
-        self.app.emit("exit-application")
+        self.log.debug('Closing MiAZ')
+        self.app.emit("application-finished")
         self.app.quit()
 
     def stop_if_no_items(self, items: [], widget: Gtk.Widget = None):

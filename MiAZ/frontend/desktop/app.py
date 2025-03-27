@@ -19,26 +19,25 @@ from MiAZ.frontend.desktop.services.icm import MiAZIconManager
 from MiAZ.frontend.desktop.services.factory import MiAZFactory
 from MiAZ.frontend.desktop.services.actions import MiAZActions
 from MiAZ.frontend.desktop.services.dialogs import MiAZDialog
+from MiAZ.frontend.desktop.services.workflow import MiAZWorkflow
 from MiAZ.frontend.desktop.widgets.mainwindow import MiAZMainWindow
-from MiAZ.frontend.desktop.widgets.settings import MiAZRepoSettings
+
 from MiAZ.backend.util import MiAZUtil
 from MiAZ.backend.config import MiAZConfigApp
 from MiAZ.backend.repository import MiAZRepository
 from MiAZ.backend.config import MiAZConfigRepositories
 from MiAZ.backend.status import MiAZStatus
-from MiAZ.backend.watcher import MiAZWatcher
-from MiAZ.backend.projects import MiAZProject
+
 
 
 class MiAZApp(Adw.Application):
     """MiAZ Gtk Application class."""
 
     __gsignals__ = {
-        "start-application-completed": (GObject.SignalFlags.RUN_LAST, None, ()),
-        "exit-application": (GObject.SignalFlags.RUN_LAST, None, ()),
-        "repo-switch": (GObject.SignalFlags.RUN_LAST, None, ()),
+        "application-started": (GObject.SignalFlags.RUN_LAST, None, ()),
+        "application-finished": (GObject.SignalFlags.RUN_LAST, None, ()),
     }
-    plugins_loaded = False
+    _plugins_loaded = False
     _miazobjs = {}  # MiAZ Objects
     _config = {}    # Dictionary holding configurations
     _status = MiAZStatus.BUSY
@@ -57,8 +56,9 @@ class MiAZApp(Adw.Application):
         self.set_service('factory', MiAZFactory(self))
         self.set_service('actions', MiAZActions(self))
         self.set_service('dialogs', MiAZDialog(self))
+        workflow = self.set_service('workflow', MiAZWorkflow(self))
         repository = self.set_service('repo', MiAZRepository(self))
-        repository.connect('repository-switched', self.switch_finish)
+        repository.connect('repository-switched', workflow.switch_finish)
         self._env = None
         self.conf = None
         self.app = None
@@ -74,10 +74,8 @@ class MiAZApp(Adw.Application):
         """
         Set current application status.
 
-        Normal status is RUNNING.
-        BUSY status is used when the UI is being updated. Because there
-        are many widgets listening to config changes, it is very useful
-        to avoid updating workspace view repeteadly.
+        RUNNING: Normal status. Do update the workspace view.
+        BUSY: Used to avoid updating the workspace view.
         """
         self._status = status
 
@@ -93,8 +91,8 @@ class MiAZApp(Adw.Application):
         self._config['App'] = MiAZConfigApp(self)
         self._config['Repository'] = MiAZConfigRepositories(self)
         self.conf = self.get_config_dict()
-        self.connect('activate', self._on_activate)
         GLib.set_application_name(ENV['APP']['name'])
+        self.connect('activate', self._on_activate)
 
     def get_env(self):
         """Return current environment dictionary."""
@@ -107,9 +105,10 @@ class MiAZApp(Adw.Application):
         is started.
         """
         self.app = app
-        self._setup_ui()
+        workflow = self.get_service('workflow')
         self.set_service('plugin-manager', MiAZPluginManager(self))
-        self.switch_start()
+        self._setup_ui()
+        workflow.switch_start()
         self.log.debug("Executing MiAZ Desktop mode")
 
     def _setup_ui(self):
@@ -126,10 +125,10 @@ class MiAZApp(Adw.Application):
         # Theme
         theme = self.set_service('theme', Gtk.IconTheme.get_for_display(window.get_display()))
         theme.add_search_path(ENV['GPATH']['ICONS'])
-        self.log.trace(f"Add ENV['GPATH']['ICONS'] ({ENV['GPATH']['ICONS']}) to the theme search path")
+        self.log.debug(f"Add ENV['GPATH']['ICONS'] ({ENV['GPATH']['ICONS']}) to the theme search path")
         theme.add_search_path(ENV['GPATH']['FLAGS'])
-        self.log.trace(f"Add ENV['GPATH']['FLAGS'] ({ENV['GPATH']['FLAGS']}) to the theme search path")
-        self.log.trace(f"MiAZ custom icons in: {ENV['GPATH']['ICONS']}")
+        self.log.debug(f"Add ENV['GPATH']['FLAGS'] ({ENV['GPATH']['FLAGS']}) to the theme search path")
+        self.log.debug(f"MiAZ custom icons in: {ENV['GPATH']['ICONS']}")
 
         # Setup main window contents
         mainbox = self.add_widget('window-mainbox', MiAZMainWindow(self))
@@ -140,19 +139,25 @@ class MiAZApp(Adw.Application):
         self.set_menubar(menubar)
 
     def _on_window_close_request(self, *args):
-        self.log.trace("Close application requested")
+        self.log.debug("Close application requested")
         actions = self.get_service('actions')
         actions.exit_app()
 
     def _finish_configuration(self, *args):
         self.log.debug("Finish loading app")
 
-    def _load_plugins(self):
+    def get_plugins_loaded(self):
+        return self._plugins_loaded
+
+    def set_plugins_loaded(self, loaded=True):
+        return self._plugins_loaded
+
+    def load_plugins(self):
         workspace = self.get_widget('workspace')
         workspace_loaded = workspace is not None
 
         # Load System Plugins
-        if workspace_loaded and not self.plugins_loaded:
+        if workspace_loaded and not self.get_plugins_loaded():
             self.log.debug("Loading system plugins...")
             plugin_manager = self.get_service('plugin-manager')
             np = 0  # Number of system plugins
@@ -168,7 +173,7 @@ class MiAZApp(Adw.Application):
                     self.log.error(error)
                 if ptype == MiAZPluginType.SYSTEM:
                     np += 1
-            self.plugins_loaded = True
+            self.set_plugins_loaded(True)
             self.log.info(f"System plugins loaded: {ap}/{np}")
 
             # Load User Plugins
@@ -198,80 +203,6 @@ class MiAZApp(Adw.Application):
             return config[name]
         except KeyError:
             return None
-
-    def switch_start(self):
-        """Switch from one repository to another."""
-        self.log.trace("Repository switch requested")
-        actions = self.get_service('actions')
-        repository = self.get_service('repo')
-        try:
-            self.set_status(MiAZStatus.BUSY)
-            appconf = self.get_config('App')
-            repo_loaded = False
-            if repository.validate(repository.docs):
-                repository.load(repository.docs)
-                repo_loaded = True
-        except Exception as error:
-            self.log.error(error)
-            repo_loaded = False
-
-        repo_id = appconf.get('current')
-        self.log.trace(f"Repository '{repo_id}' loaded? {repo_loaded}")
-
-        if repo_loaded:
-            self.log.info(f"Repo Working directory: '{repository.docs}'")
-            repo_settings = self.get_widget('settings-repo')
-            if repo_settings is None:
-                repo_settings = self.add_widget('settings-repo', MiAZRepoSettings(self))
-                repo_settings.update()
-            workspace = self.get_widget('workspace')
-            workspace.initialize_caches()
-            tgbPendingDocs = self.app.get_widget('workspace-togglebutton-pending-docs')
-            tgbPendingDocs.connect('toggled', workspace.show_pending_documents)
-            if not self.plugins_loaded:
-                self._load_plugins()
-            self.set_status(MiAZStatus.RUNNING)
-            actions.show_stack_page_by_name('workspace')
-            self.emit('start-application-completed')
-        else:
-            actions.show_stack_page_by_name('welcome')
-        window = self.get_widget('window')
-        window.present()
-        return repo_loaded
-
-    def switch_finish(self, *args):
-        """Finish switch repository operation"""
-        repository = self.get_service('repo')
-        self.set_service('Projects', MiAZProject(self))
-        watcher = MiAZWatcher()
-        watcher.set_path(repository.docs)
-        watcher.set_active(active=True)
-        self.app.set_service('watcher', watcher)
-        self.log.trace("Repository switch finished")
-
-        # Setup stack pages
-        mainbox = self.get_widget('window-mainbox')
-        page_workspace = self.get_widget('workspace')
-        if page_workspace is None:
-            mainbox._setup_page_workspace()
-        # Setup Rename widget
-        rename_widget = self.get_widget('rename')
-        if rename_widget is None:
-            mainbox._setup_widget_rename()
-
-        # ~ sidebar = self.app.get_widget('sidebar')
-        # ~ sidebar.update_repo_status()
-        headerbar = self.app.get_widget('headerbar')
-        headerbar.set_visible(True)
-        tgbSidebar = self.app.get_widget('workspace-togglebutton-filters')
-        # ~ tgbSidebar.set_active(True)
-        self.log.debug(f"Sidebar visible? {tgbSidebar.get_active()}")
-
-        tgbSidebar = self.app.get_widget('workspace-togglebutton-filters')
-        tgbSidebar.set_active(True)
-        tgbSidebar.set_visible(True)
-        btnWorkspace = self.app.get_widget('workspace-menu')
-        btnWorkspace.set_visible(True)
 
     def set_service(self, name: str, service: GObject.GObject) -> GObject.GObject:
         """Add a service to internal MiAZ objects dictionary."""

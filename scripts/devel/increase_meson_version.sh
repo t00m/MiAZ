@@ -11,8 +11,8 @@ CURRENT_VERSION=$(grep -oP "version\s*:\s*'\K[0-9]+\.[0-9]+\.[0-9]+(\+build\.[0-
 
 # Check if the user provided a valid argument
 if [ "$#" -ne 1 ]; then
-  echo "Usage: $0 <major|minor|patch|build>"
-  echo "Current version: $CURRENT_VERSION"
+  #~ echo "Usage: $0 <major|minor|patch|build>"
+  echo "$CURRENT_VERSION"
   exit 1
 fi
 

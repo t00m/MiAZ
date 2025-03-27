@@ -36,12 +36,20 @@ class MiAZAddDocumentPlugin(GObject.GObject, Peas.Activatable):
         self.log.debug("Plugin deactivation not implemented")
 
     def add_menuitem(self, *args):
-        if self.app.get_widget('workspace-menu-in-add-document') is None:
+        if self.app.get_widget('workspace-menu-import-add-document') is None:
             factory = self.app.get_service('factory')
-            menu_add = self.app.get_widget('workspace-menu-in-add')
+
+            # Create menu item for plugin
             menuitem = factory.create_menuitem('add_docs', '... document(s)', self.import_file, None, [])
-            self.app.add_widget('workspace-menu-in-add-document', menuitem)
-            menu_add.append_item(menuitem)
+            self.app.add_widget('workspace-menu-import-add-document', menuitem)
+
+            # Add plugin to its default (sub)category
+            category = self.app.get_widget('workspace-menu-plugins-data-management-import')
+            category.append_item(menuitem)
+
+            # This is a common action: add to shortcuts
+            menu_shortcut_import = self.app.get_widget('workspace-menu-shortcut-import')
+            menu_shortcut_import.append_item(menuitem)
 
     def import_file(self, *args):
         factory = self.app.get_service('factory')

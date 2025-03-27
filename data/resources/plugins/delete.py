@@ -37,12 +37,20 @@ class MiAZDeleteItemPlugin(GObject.GObject, Peas.Activatable):
         self.log.debug("Plugin deactivation not implemented")
 
     def add_menuitem(self, *args):
-        if self.app.get_widget('workspace-menu-selection-section-danger-menuitem-delete') is None:
+        if self.app.get_widget('workspace-menu-selection-section-common-menuitem-delete') is None:
             factory = self.app.get_service('factory')
-            section_danger = self.app.get_widget('workspace-menu-selection-section-danger')
+
+            # Create menuitem for plugin
             menuitem = factory.create_menuitem('delete', _('Delete documents'), self.document_delete, None, [])
-            self.app.add_widget('workspace-menu-selection-section-danger-menuitem-delete', menuitem)
-            section_danger.append_item(menuitem)
+            self.app.add_widget('workspace-menu-selection-section-common-menuitem-delete', menuitem)
+
+            # This is a common action: add to shortcuts, common zone
+            section = self.app.get_widget('workspace-menu-selection-section-common')
+            section.append_item(menuitem)
+
+            # Add plugin to its default (sub)category
+            category = self.app.get_widget('workspace-menu-plugins-data-management-deletion')
+            category.append_item(menuitem)
 
     def document_delete(self, *args):
         actions = self.app.get_service('actions')

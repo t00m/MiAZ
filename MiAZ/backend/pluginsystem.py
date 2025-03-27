@@ -21,6 +21,76 @@ from gi.repository import GObject, Peas
 
 from MiAZ.backend.log import MiAZLog
 
+plugin_categories = {
+    "Data Management": {
+        "Import": "Plugins for importing documents.",
+        "Export": "Plugins for exporting documents",
+        "Backup": "Plugins for backing up your repository",
+        "Restore": "Tools for restoring backups.",
+        "Batch": "Tools for bulk data manipulation.",
+        "Synchronisation": "Plugins for syncing data with cloud services or between devices.",
+        "Migration": "For transferring data between different platforms or systems.",
+        "Deletion": "Tools for securely removing documents or data from the repository."
+    },
+    "Content Organisation": {
+        "Tagging and Classification": "Tools for categorising and tagging documents.",
+        "Search and Indexing": "Plugins that improve search capabilities or indexing methods.",
+        "Metadata Management": "For adding, editing, or viewing document metadata."
+    },
+    "Visualisation and Diagrams": {
+        "Diagram Creation": "Tools for creating flowcharts, mind maps, and other visual representations.",
+        "Data Visualisation": "Plugins that generate graphs, charts, or other visual data summaries.",
+        "Dashboard Widgets": "Add-ons that provide a summary of key information in a dashboard format."
+    },
+    "Security and Privacy": {
+        "Encryption/Decryption": "Plugins that encrypt or decrypt documents.",
+        "Access Control": "Tools for managing user permissions and access levels.",
+        "Audit and Logging": "Plugins that track changes and access history."
+    },
+    "Automation and Workflow": {
+        "Task Automation": "Plugins that automate repetitive tasks, like renaming files or sorting documents.",
+        "Workflow Management": "For creating and managing document-related workflows.",
+        "Notification Systems": "Tools that notify users of specific events or deadlines."
+    },
+    "Integration and Interoperability": {
+        "API Connectors": "Plugins that allow integration with third-party services (e.g., Google Drive, Dropbox, Slack).",
+        "Third-Party Service Integration": "For integrating with tools like CRM, ERP, or project management systems.",
+        "Communication Tools": "Plugins for email, messaging, or social media integration."
+    },
+    "Customisation and Personalisation": {
+        "Themes and UI Customisation": "Plugins that allow users to change the application's appearance.",
+        "Templates": "Pre-defined document templates or layout options.",
+        "Language Packs": "Plugins for multi-language support or localisation."
+    },
+    "Analytics and Reporting": {
+        "Usage Analytics": "Tools that provide insights into how the application is used.",
+        "Document Statistics": "Plugins that analyse and report on document content.",
+        "Custom Reports": "For generating bespoke reports based on user-defined criteria."
+    },
+    "Collaboration": {
+        "Real-time Collaboration": "Plugins that enable multiple users to work on the same document simultaneously.",
+        "Version Control": "Tools for managing document versions and changes.",
+        "Comments and Annotations": "Plugins for adding comments or annotations to documents."
+    },
+    "Content Editing and Formatting": {
+        "Advanced Editors": "Plugins that offer enhanced text, image, or video editing capabilities.",
+        "Formatting Tools": "For applying or automating specific formatting rules across documents.",
+        "Conversion Tools": "Plugins that convert documents into different formats (e.g., Word to PDF)."
+    },
+    "Support and Help": {
+        "Guides and Tutorials": "Plugins that provide user manuals, tutorials, or onboarding guides.",
+        "Troubleshooting Tools": "For diagnosing and fixing common issues within the application.",
+        "User Feedback": "Tools that allow users to submit feedback or suggestions."
+    },
+    "Archiving and Compliance": {
+        "Long-Term Archiving": "Plugins for storing documents in long-term, secure formats.",
+        "Compliance Checkers": "Tools that ensure documents meet regulatory or legal standards.",
+        "Retention Policies": "Plugins for setting and enforcing document retention rules."
+    },
+    "Others": {
+        "Miscelanea": "Plugins not fitting in another category"
+    }
+}
 
 class MiAZAPI(GObject.GObject):
     def __init__(self, app):
@@ -50,7 +120,7 @@ class MiAZPluginManager(GObject.GObject):
         self.log = MiAZLog('MiAZ.PluginManager')
         self.app = app
         self.util = self.app.get_service('util')
-        self.log.trace("Initializing Plugin Manager")
+        self.log.debug("Initializing Plugin Manager")
         self.plugin_info_list = []
 
         self.engine = Peas.Engine.get_default()
@@ -132,11 +202,12 @@ class MiAZPluginManager(GObject.GObject):
             pass
 
     def load_plugin(self, plugin: Peas.PluginInfo) -> bool:
-        ptype = self.get_plugin_type(plugin)
-        pname = plugin.get_name()
-        pvers = plugin.get_version()
-        # ~ pinfo = self.get_plugin_info(plugin)
         try:
+            ptype = self.get_plugin_type(plugin)
+            pname = plugin.get_name()
+            pvers = plugin.get_version()
+            # ~ pinfo = self.get_plugin_info(plugin)
+
             self.engine.load_plugin(plugin)
 
             if plugin.is_loaded():
@@ -145,9 +216,13 @@ class MiAZPluginManager(GObject.GObject):
             else:
                 self.log.error(f"Plugin {pname} v{pvers} ({ptype}) couldn't be loaded")
                 return False
+        except AttributeError as error:
+            self.log.error(f"Plugin {pname} v{pvers} ({ptype}) couldn't be loaded")
+            self.log.error(f"Reason: {error}")
         except Exception as error:
             self.log.error(error)
-            self.log.error("Plugin {pname} v{pvers} ({ptype}) couldn't be loaded")
+            self.log.error(f"Plugin {pname} v{pvers} ({ptype}) couldn't be loaded")
+            self.log.error(f"Reason: {error}")
             return False
 
     def unload_plugin(self, plugin: Peas.PluginInfo):
