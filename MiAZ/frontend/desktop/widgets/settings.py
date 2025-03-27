@@ -155,6 +155,10 @@ class MiAZAppSettings(Adw.PreferencesDialog):
         return row
 
     def _on_use_repo(self, *args):
+        """
+        Load repository automatically whenever is selected.
+        Once loaded, it is set as the default in the app config.
+        """
         workflow = self.app.get_service('workflow')
         dd_repo = self.app.get_widget('window-settings-dropdown-repository-active')
         repo = dd_repo.get_selected_item()
@@ -162,13 +166,7 @@ class MiAZAppSettings(Adw.PreferencesDialog):
         config = self.app.get_config_dict()
         config['App'].set('current', repo.id)
         valid = workflow.switch_start()
-        if valid:
-            sidebar = self.app.get_widget('sidebar')
-            sidebar.clear_filters()
-            self.close()
-            self.log.debug(f"Repository {repo.id} loaded successfully")
-        else:
-            self.log.error(f"Repository {repo.id} couldn't be loaded")
+        self.log.debug(f"Repository {repo.id} loaded successfully? {valid}")
 
     def _on_manage_repositories(self, *args):
         widget = self._create_widget_for_repositories()
@@ -180,7 +178,6 @@ class MiAZAppSettings(Adw.PreferencesDialog):
         dialog.set_presentation_mode(Adw.DialogPresentationMode.FLOATING)
         dialog.set_size_request(800, 600)
         dialog.present(window)
-
 
     def _on_selected_repo(self, dropdown, gparamobj):
         try:
