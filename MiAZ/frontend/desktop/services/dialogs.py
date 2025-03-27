@@ -59,7 +59,8 @@ class MiAZDialog:
         icm = self.app.get_service('icons')
 
         dialog = Adw.AlertDialog.new() #title, body)
-        dialog.set_presentation_mode (Adw.DialogPresentationMode.BOTTOM_SHEET)
+        # ~ dialog.set_presentation_mode (Adw.DialogPresentationMode.BOTTOM_SHEET)
+        # ~ dialog.set_presentation_mode (Adw.DialogPresentationMode.FLOATING)
         dialog.set_body_use_markup(True)
         dialog.set_heading_use_markup(True)
         # ~ dialog.set_heading(f"<big>{title}</big>")
