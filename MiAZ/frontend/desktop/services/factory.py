@@ -315,10 +315,10 @@ class MiAZFactory:
         search_entry.connect('search-changed', _on_search_changed, item_filter)
 
         # Enable clear button by brute force
-        box = search_entry.get_parent()
-        button = self.create_button(icon_name='io.github.t00m.MiAZ-entry_clear', css_classes=['flat'], tooltip='Clear this filter', callback=_clear_dropdown, data=dropdown)
-        button.set_margin_start(3)
-        box.append(button)
+        # ~ box = search_entry.get_parent()
+        # ~ button = self.create_button(icon_name='io.github.t00m.MiAZ-entry_clear', css_classes=['flat'], tooltip='Clear this filter', callback=_clear_dropdown, data=dropdown)
+        # ~ button.set_margin_start(3)
+        # ~ box.append(button)
 
         # Enable placeholder text by brute force too...
         # 'set_placeholder_text' doesn't work with lower Gtk4 versions
