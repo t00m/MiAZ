@@ -46,10 +46,11 @@ class MiAZAppSettings(Adw.PreferencesDialog):
         self.app = app
         self.log = MiAZLog('MiAZ.AppSettings')
         config_dict = self.app.get_config_dict()
-        config_repos = config_dict['Repository']
-        config_repos.connect('used-updated', self._on_update_repos_available)
+        self.config_repos = config_dict['Repository']
+        self.config_repos.connect('used-updated', self._on_update_repos_available)
         self.factory = self.app.get_service('factory')
         self.srvdlg = self.app.get_service('dialogs')
+        self.actions = self.app.get_service('actions')
         self._build_ui()
 
     def _on_update_repos_available(self, *args):
@@ -83,16 +84,33 @@ class MiAZAppSettings(Adw.PreferencesDialog):
 
         ### Row Repositories
         #### View active repository / Select repository
-        row = Adw.ComboRow(title=_('Active repository'))
+        row = Adw.ActionRow(title=_('Active repository'))
         self.app.add_widget('window-setting-row-active-repository', row)
         group.add(row)
-        config = self.app.get_config(Repository.__gtype_name__)
-        items = config.load(config.used)
-        repositories = [rid for rid in items]
-        model = Gtk.StringList.new(strings=repositories)
-        model.connect("notify::selected-item", self._on_use_repo)
-        # ~ row.connect("activate", self._on_use_repo)
-        row.set_model(model)
+
+        #### Configure repository dropdown
+        dd_repo = self.factory.create_dropdown_generic(item_type=Repository, ellipsize=False, enable_search=False)
+        self.app.add_widget('window-settings-dropdown-repository-active', dd_repo)
+        dd_repo.set_valign(Gtk.Align.CENTER)
+        dd_repo.set_hexpand(False)
+        self.actions.dropdown_populate(MiAZConfigRepositories, dd_repo, Repository, any_value=False, none_value=False)
+
+        #### Select active repository
+        config = self.app.get_config_dict()
+        repo_id = config['App'].get('current')
+        n = 0
+        for repo in dd_repo.get_model():
+            self.log.debug(f"{repo.id}: {repo.title}")
+            if repo_id ==  repo.id:
+                dd_repo.set_selected(n)
+            n += 1
+
+
+        # DOC: By enabling this signal, repos are loaded automatically without pressing the button:
+        dd_repo.connect("notify::selected-item", self._on_use_repo)
+        # ~ self.config['Repository'].connect('used-updated', self.actions.dropdown_populate, dd_repo, Repository, False, False)
+        self.config_repos.connect('used-updated', self.actions.dropdown_populate, dd_repo, Repository, False, False)
+        row.add_suffix(dd_repo)
 
         #### Manage repositories
         btnManageRepos = self.factory.create_button(icon_name='io.github.t00m.MiAZ-study-symbolic', callback=self._on_manage_repositories, tooltip="Manage repositories")
@@ -175,21 +193,20 @@ class MiAZAppSettings(Adw.PreferencesDialog):
         return row
 
     def _on_use_repo(self, *args):
-        self.log.debug("Hola")
-        config = self.app.get_config_dict()
         workflow = self.app.get_service('workflow')
-        comborow = self.app.get_widget('dialog-settings-repositories-choose-repo')
-        repo_id = comborow.get_selected_item().get_string()
-        config['App'].set('current', repo_id)
+        dd_repo = self.app.get_widget('window-settings-dropdown-repository-active')
+        repo = dd_repo.get_selected_item()
+        self.log.debug(f"Repository chosen: {repo.id}")
+        config = self.app.get_config_dict()
+        config['App'].set('current', repo.id)
         valid = workflow.switch_start()
         if valid:
-            # ~ window = self.app.get_widget("window-app-settings")
-            self.close()
             sidebar = self.app.get_widget('sidebar')
             sidebar.clear_filters()
-            self.log.debug(f"Repository {repo_id} loaded successfully")
+            self.close()
+            self.log.debug(f"Repository {repo.id} loaded successfully")
         else:
-            self.log.error(f"Repository {repo_id} couldn't be loaded")
+            self.log.error(f"Repository {repo.id} couldn't be loaded")
 
     def _on_manage_repositories(self, *args):
         widget = self._create_widget_for_repositories()
