@@ -89,7 +89,7 @@ class MiAZSelector(Gtk.Box):
         # Used
         self.frmViewSl = Gtk.Frame()
         title = Gtk.Label()
-        title.set_markup(_('<b>Used</b>'))
+        title.set_markup(_('<b>In use</b>'))
         boxRight.append(title)
         boxRight.append(self.frmViewSl)
         # ~ self._setup_view_finish()
