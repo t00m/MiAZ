@@ -7,6 +7,7 @@
 import os
 from gettext import gettext as _
 
+from gi.repository import Adw
 from gi.repository import Gtk
 
 from MiAZ.backend.log import MiAZLog
@@ -37,59 +38,105 @@ Configview['Plugin'] = MiAZUserPlugins
 # ~ Configview['Date'] = Gtk.Calendar
 
 
-class MiAZAppSettings(MiAZCustomWindow):
+class MiAZAppSettings(Adw.PreferencesDialog):
     __gtype_name__ = 'MiAZAppSettings'
 
     def __init__(self, app, **kwargs):
+        super().__init__()
         self.app = app
         self.log = MiAZLog('MiAZ.AppSettings')
-        self.name = 'app-settings'
-        self.title = 'Application settings'
-        self.app.add_widget('window-settings', self)
-        super().__init__(app, self.name, self.title, **kwargs)
+        config_dict = self.app.get_config_dict()
+        self.config_repos = config_dict['Repository']
+        self.config_repos.connect('used-updated', self._on_update_repos_available)
+        self.factory = self.app.get_service('factory')
+        self.srvdlg = self.app.get_service('dialogs')
+        self.actions = self.app.get_service('actions')
+        self._build_ui()
+
+    def _on_update_repos_available(self, *args):
+        config = self.app.get_config_dict()
+        repo_id = config['App'].get('current')
+        n = 0
+        dd_repo = self.app.get_widget('window-settings-dropdown-repository-active')
+        for repo in dd_repo.get_model():
+            self.log.debug(f"{repo.id}: {repo.title}")
+            if repo_id ==  repo.id:
+                dd_repo.set_selected(n)
+            n += 1
 
     def _build_ui(self):
-        self.set_default_size(1024, 728)
-        headerbar = self.app.get_widget(f"window-{self.name}-headerbar")
-        self.stack = self.app.add_widget('stack_settings', Gtk.Stack())
-        self.stack.set_vexpand(True)
-        self.switcher = self.app.add_widget('switcher_settings', Gtk.StackSwitcher())
-        self.switcher.set_stack(self.stack)
-        self.switcher.set_hexpand(False)
-        headerbar.pack_start(self.switcher)
-        self.mainbox.append(self.stack)
-        widget = self._create_widget_for_repositories()
-        page = self.stack.add_titled(widget, 'repos', 'Repositories')
-        page.set_visible(True)
-        widget = self._create_widget_for_plugins()
-        page = self.stack.add_titled(widget, 'plugins', 'Plugins')
-        page.set_visible(True)
-        self.repo_is_set = False
+        self.set_title('Application settings')
+        self.set_search_enabled(False)
+        self._build_ui_page_preferences()
+
+    def _build_ui_page_preferences(self):
+        """Repositories dialog page"""
+
+        # Create preferences page
+        page_title = _("Preferences")
+        page_icon = "io.github.t00m.MiAZ-emblem-system-symbolic"
+        page = Adw.PreferencesPage(title=page_title, icon_name=page_icon)
+        self.add(page)
+
+        ## Group Repositories
+        group = Adw.PreferencesGroup()
+        group.set_title('Repositories')
+        page.add(group)
+
+        ### Row Repositories
+        #### View active repository / Select repository
+        row = Adw.ActionRow(title=_('Active repository'))
+        self.app.add_widget('window-setting-row-active-repository', row)
+        group.add(row)
+
+        #### Configure repository dropdown
+        dd_repo = self.factory.create_dropdown_generic(item_type=Repository, ellipsize=False, enable_search=True)
+        self.app.add_widget('window-settings-dropdown-repository-active', dd_repo)
+        dd_repo.set_valign(Gtk.Align.CENTER)
+        dd_repo.set_hexpand(False)
+        self.actions.dropdown_populate(MiAZConfigRepositories, dd_repo, Repository, any_value=False, none_value=False)
+
+        #### Select active repository
+        self._on_update_repos_available()
+
+        # DOC: By enabling this signal, repos are loaded automatically without pressing the button:
+        dd_repo.connect("notify::selected-item", self._on_use_repo)
+        self.config_repos.connect('used-updated', self.actions.dropdown_populate, dd_repo, Repository, False, False)
+        row.add_suffix(dd_repo)
+
+        #### Manage repositories
+        btnManageRepos = self.factory.create_button(icon_name='io.github.t00m.MiAZ-study-symbolic', callback=self._on_manage_repositories, tooltip="Manage repositories")
+        btnManageRepos.set_valign(Gtk.Align.CENTER)
+        row.add_prefix(btnManageRepos)
+
+        ## Group plugins
+        group = Adw.PreferencesGroup()
+        group.set_title('Plugins')
+        # ~ FIXME: Add plugins back revamped.
+        # ~ page.add(group)
+
+        ### Row Plugins
+        #### Manage plugins
+        row = Adw.ActionRow(title=_('Manage plugins'))
+        group.add(row)
+        button = self.factory.create_button(icon_name='io.github.t00m.MiAZ-res-plugins', callback=self.noop, tooltip="Manage plugins")
+        button.set_valign(Gtk.Align.CENTER)
+        row.add_prefix(button)
+
+    def noop(self, *args):
+        self.log.debug("noop")
+
+    def _build_ui_page_plugins(self):
+        # Plugins page
+        group = self.app.add_widget('dialog-settings-plugins', Adw.PreferencesGroup())
+        page_title = _("Plugins")
+        page_icon = "io.github.t00m.MiAZ-res-plugins"
+        page = self.app.add_widget('dialog-settings-page-plugins', Adw.PreferencesPage(title=page_title, icon_name=page_icon))
+        self.add(page)
+        page.add(group)
 
     def _create_widget_for_repositories(self):
         row = self.factory.create_box_vertical(hexpand=True, vexpand=True)
-        hbox = self.factory.create_box_horizontal()
-        lblActive = Gtk.Label()
-        lblActive.set_markup(_("<b>Select repository</b>"))
-        self.dd_repo = self.factory.create_dropdown_generic(item_type=Repository, ellipsize=False, enable_search=False)
-        btnUseRepo = self.factory.create_button(icon_name='io.github.t00m.MiAZ-document-open-symbolic', title=_('Load'), callback=self._on_use_repo)
-        hbox.append(lblActive)
-        hbox.append(self.dd_repo)
-        hbox.append(btnUseRepo)
-        self.actions.dropdown_populate(MiAZConfigRepositories, self.dd_repo, Repository, any_value=False, none_value=False)
-        # DOC: By enabling this signal, repos are loaded automatically without pressing the button:
-        # ~ self.dd_repo.connect("notify::selected-item", self._on_selected_repo)
-        self.config['Repository'].connect('used-updated', self.actions.dropdown_populate, self.dd_repo, Repository, False, False)
-
-        # Load last active repo
-        repos_used = self.config['Repository'].load_used()
-        repo_active = self.config['App'].get('current')
-        if repo_active in repos_used:
-            model = self.dd_repo.get_model()
-            for n, item in enumerate(model):
-                if item.id == repo_active:
-                    self.dd_repo.set_selected(n)
-        row.append(hbox)
         configview = MiAZRepositories(self.app)
         configview.set_hexpand(True)
         configview.set_vexpand(True)
@@ -98,18 +145,29 @@ class MiAZAppSettings(MiAZCustomWindow):
         return row
 
     def _on_use_repo(self, *args):
+        """
+        Load repository automatically whenever is selected.
+        Once loaded, it is set as the default in the app config.
+        """
         workflow = self.app.get_service('workflow')
-        repo_id = self.dd_repo.get_selected_item().id
-        self.config['App'].set('current', repo_id)
+        dd_repo = self.app.get_widget('window-settings-dropdown-repository-active')
+        repo = dd_repo.get_selected_item()
+        self.log.debug(f"Repository chosen: {repo.id}")
+        config = self.app.get_config_dict()
+        config['App'].set('current', repo.id)
         valid = workflow.switch_start()
-        if valid:
-            window = self.app.get_widget(f"window-{self.name}")
-            window.hide()
-            sidebar = self.app.get_widget('sidebar')
-            sidebar.clear_filters()
-            self.log.debug(f"Repository {repo_id} loaded successfully")
-        else:
-            self.log.error(f"Repository {repo_id} couldn't be loaded")
+        self.log.debug(f"Repository {repo.id} loaded successfully? {valid}")
+
+    def _on_manage_repositories(self, *args):
+        widget = self._create_widget_for_repositories()
+        window = self
+        dtype = 'action'
+        title = "Manage repositories"
+        body = "" # "Add, edit, delete and (de)activate repositories"
+        dialog = self.srvdlg.create(enable_response=None, dtype=dtype, title=title, body=body, widget=widget)
+        dialog.set_presentation_mode(Adw.DialogPresentationMode.FLOATING)
+        dialog.set_size_request(800, 600)
+        dialog.present(window)
 
     def _on_selected_repo(self, dropdown, gparamobj):
         try:
@@ -238,7 +296,7 @@ class MiAZAppSettings(MiAZCustomWindow):
     def _on_plugin_add(self, *args):
         plugin_filter = Gtk.FileFilter()
         plugin_filter.add_pattern('*.zip')
-        window = self.app.get_widget('window-settings')
+        window = self.app.get_widget('window-app-settings')
         clsdlg = MiAZFileChooserDialog(self.app)
         filechooser_dialog = clsdlg.create(
                         parent=window,

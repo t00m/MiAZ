@@ -24,20 +24,20 @@ class MiAZSelector(Gtk.Box):
         self.config = None
         self.viewAv = None
         self.viewSl = None
-        self._setup_ui()
+        self._build_ui()
 
-    def _setup_ui(self):
+    def _build_ui(self):
         factory = self.app.get_service('factory')
         # Entry and buttons for operations (edit/add/remove)
-        self.boxOper = Gtk.Box(spacing=3, orientation=Gtk.Orientation.HORIZONTAL)
-        self.boxOper.set_margin_top(24)
+        self.boxOper = Gtk.Box(spacing=6, orientation=Gtk.Orientation.HORIZONTAL)
+        self.boxOper.set_margin_top(12)
         self.boxOper.set_margin_bottom(6)
         self.boxOper.set_margin_start(6)
         self.boxOper.set_margin_end(6)
         self.boxOper.set_hexpand(True)
         self.boxOper.set_vexpand(False)
         boxEntry = Gtk.Box(spacing=0, orientation=Gtk.Orientation.HORIZONTAL)
-        boxEntry.set_hexpand(False)
+        boxEntry.set_hexpand(True)
         self.entry = Gtk.Entry()
         self.entry.get_style_context().add_class(class_name='caption')
         self.entry.set_activates_default(True)
@@ -54,7 +54,7 @@ class MiAZSelector(Gtk.Box):
         if self.edit:
             self.boxButtons = Gtk.Box(spacing=0, orientation=Gtk.Orientation.HORIZONTAL)
             self.boxButtons.get_style_context().add_class(class_name='linked')
-            self.boxButtons.set_hexpand(True)
+            self.boxButtons.set_hexpand(False)
             self.boxButtons.append(factory.create_button(icon_name='io.github.t00m.MiAZ-list-add-symbolic', title='', callback=self._on_item_available_add))
             self.boxButtons.append(factory.create_button(icon_name='io.github.t00m.MiAZ-list-remove-symbolic', title='', callback=self._on_item_available_remove))
             self.boxButtons.append(factory.create_button(icon_name='io.github.t00m.MiAZ-list-edit-symbolic', title='', callback=self._on_item_available_edit))
@@ -89,7 +89,7 @@ class MiAZSelector(Gtk.Box):
         # Used
         self.frmViewSl = Gtk.Frame()
         title = Gtk.Label()
-        title.set_markup(_('<b>Used</b>'))
+        title.set_markup(_('<b>In use</b>'))
         boxRight.append(title)
         boxRight.append(self.frmViewSl)
         # ~ self._setup_view_finish()

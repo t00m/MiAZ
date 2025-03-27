@@ -84,7 +84,9 @@ class MiAZConfigView(MiAZSelector):
 
         boxEmpty = factory.create_box_horizontal(hexpand=True)
         self.boxOper.append(boxEmpty)
-        self.boxOper.append(button)
+
+        # ~ FIXME: hidden until the import/export functionality is fixed
+        # ~ self.boxOper.append(button)
 
 class MiAZRepositories(MiAZConfigView):
     """Manage Repositories"""
@@ -128,6 +130,9 @@ class MiAZRepositories(MiAZConfigView):
                 self.log.debug("No repository added. Invalid data")
 
     def _on_item_available_rename(self, item):
+        if item is None:
+            return
+
         repo_name = item.id
         repo_path = item.title
         self.log.debug(f"Renaming Repository '{repo_name}' located in {repo_path}")
@@ -147,6 +152,9 @@ class MiAZRepositories(MiAZConfigView):
     def _on_item_available_remove(self, *args):
         srvdlg = self.app.get_service('dialogs')
         selected_item = self.viewAv.get_selected()
+        if selected_item is None:
+            return
+
         items_available = self.config.load_available()
         item_type = self.config.model
         i_title = item_type.__title__
@@ -168,6 +176,9 @@ class MiAZRepositories(MiAZConfigView):
     def _on_item_used_add(self, *args):
         items_used = self.config.load_used()
         selected_item = self.viewAv.get_selected()
+        if selected_item is None:
+            return
+
         is_used = selected_item.id in items_used
         item_type = self.config.model
         i_title = item_type.__title__
@@ -183,6 +194,9 @@ class MiAZRepositories(MiAZConfigView):
         items_available = self.config.load_available()
         items_used = self.config.load_used()
         selected_item = self.viewSl.get_selected()
+        if selected_item is None:
+            return
+
         item_type = self.config.model
         i_title = item_type.__title__
         items_available[selected_item.id] = selected_item.title
@@ -333,6 +347,9 @@ class MiAZProjects(MiAZConfigView):
     def _on_item_available_remove(self, *args):
         srvdlg = self.app.get_service('dialogs')
         selected_item = self.viewAv.get_selected()
+        if selected_item is None:
+            return
+
         items_available = self.config.load_available()
         item_type = self.config.model
         i_title = item_type.__title__
