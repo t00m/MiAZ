@@ -246,10 +246,11 @@ class MiAZActions(GObject.GObject):
         self.log.debug(args)
         window_main = self.app.get_widget('window')
         self.log.debug(window_main)
-        # ~ window_settings = self.app.get_widget('settings-repo')
-        window_settings = MiAZRepoSettings(self.app)
-        # ~ window_settings.update()
-        window_settings.present(window_main)
+        window_repoconfig = MiAZRepoSettings(self.app)
+        window_repoconfig.set_transient_for(window_main)
+        window_repoconfig.set_modal(True)
+        window_repoconfig.update()
+        window_repoconfig.present()
 
         # ~ if window_settings is None:
             # ~ window_settings = self.app.add_widget('settings-repo', MiAZRepoSettings(self.app))
@@ -279,11 +280,12 @@ class MiAZActions(GObject.GObject):
         about.present(window)
 
     def show_app_help(self, *args):
-        shwin = self.app.get_widget('shortcutswindow')
-        if shwin is None:
-            shwin = MiAZShortcutsWindow()
-            self.app.add_widget('shortcutswindow', shwin)
-        shwin.present()
+        pass
+        # ~ shwin = self.app.get_widget('shortcutswindow')
+        # ~ if shwin is None:
+            # ~ shwin = MiAZShortcutsWindow()
+            # ~ self.app.add_widget('shortcutswindow', shwin)
+        # ~ shwin.present()
 
     def get_stack_page_by_name(self, name: str) -> Gtk.Stack:
         stack = self.app.get_widget('stack')
