@@ -46,12 +46,12 @@ except (ValueError, ModuleNotFoundError):
 
 
 ENV['DESKTOP']['ENABLED'] = ENV['DESKTOP']['GTK_SUPPORT'] and ENV['DESKTOP']['ADW_SUPPORT']
-log.trace(f"GTK available ({Gtk.MAJOR_VERSION}.{Gtk.MINOR_VERSION}.{Gtk.MICRO_VERSION})")
-log.trace(f"ADW available ({Adw.MAJOR_VERSION}.{Adw.MINOR_VERSION}.{Adw.MICRO_VERSION})")
-log.trace(f"Desktop enabled? {ENV['DESKTOP']['ENABLED']}")
+log.debug(f"GTK available ({Gtk.MAJOR_VERSION}.{Gtk.MINOR_VERSION}.{Gtk.MICRO_VERSION})")
+log.debug(f"ADW available ({Adw.MAJOR_VERSION}.{Adw.MINOR_VERSION}.{Adw.MICRO_VERSION})")
+log.debug(f"Desktop enabled? {ENV['DESKTOP']['ENABLED']}")
 if not ENV['DESKTOP']['ENABLED']:
     log.error("Desktop dependencies not met to run this app")
-    log.error("Make sure that Gtk version is >= 4.6 and Adw is >= 1.7")
+    log.error("Make sure that Gtk version is >= 4.6 and Adw is >= 1.6")
     sys.exit(-1)
 
 
@@ -77,11 +77,11 @@ class MiAZ:
     def __init__(self, ENV: dict) -> None:
         """Set up environment and run the application."""
         self.env = ENV
-        log.trace("MiAZ Environment variables:")
+        log.debug("MiAZ Environment variables:")
         for section in self.env:
-            log.trace(f"\t[{section}]")
+            log.debug(f"\t[{section}]")
             for envvar in self.env[section]:
-                log.trace(f"\t\t{envvar} = {self.env[section][envvar]}")
+                log.debug(f"\t\t{envvar} = {self.env[section][envvar]}")
         self.setup_environment()
         self.log = MiAZLog('MiAZ')
         self.set_internationalization()
@@ -139,7 +139,7 @@ if __name__ == "__main__":
     """
     This is the entry point when the program is installed via Meson
     """
-    log.trace("MiAZ installation done via Meson!")
+    log.debug("MiAZ installation done via Meson!")
     args = parse_arguments()
     app = MiAZ(ENV)
     app.run(sys.argv)

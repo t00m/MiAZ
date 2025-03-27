@@ -43,12 +43,12 @@ class MiAZCustomWindow(Adw.Window):
         self.config = self.app.get_config_dict()
 
     def _on_window_close_request(self, window):
-        window.hide()
+        window.close()
 
     def _on_key_press(self, event, keyval, keycode, state):
         keyname = Gdk.keyval_name(keyval)
         if keyname == 'Escape':
-            # ~ self.hide()
+            self.close()
             pass
 
     def _build_ui(self):

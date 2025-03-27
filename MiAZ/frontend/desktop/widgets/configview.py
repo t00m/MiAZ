@@ -42,11 +42,11 @@ class MiAZConfigView(MiAZSelector):
         self.config.connect('used-updated', self.update_views)
         self.config.connect('available-updated', self.update_views)
         self.set_vexpand(True)
-        self.log.trace(f"Configview for {config_name} initialited")
+        self.log.debug(f"Configview for {config_name} initialited")
 
     def update_config(self):
         self.config = self.conf[self.config_name]
-        self.log.trace(f"Updated configview for {self.config_name}")
+        self.log.debug(f"Updated configview for {self.config_name}")
 
     def get_config_for(self):
         return self.config.config_for
@@ -84,7 +84,9 @@ class MiAZConfigView(MiAZSelector):
 
         boxEmpty = factory.create_box_horizontal(hexpand=True)
         self.boxOper.append(boxEmpty)
-        self.boxOper.append(button)
+
+        # ~ FIXME: hidden until the import/export functionality is fixed
+        # ~ self.boxOper.append(button)
 
 class MiAZRepositories(MiAZConfigView):
     """Manage Repositories"""
@@ -128,9 +130,12 @@ class MiAZRepositories(MiAZConfigView):
                 self.log.debug("No repository added. Invalid data")
 
     def _on_item_available_rename(self, item):
+        if item is None:
+            return
+
         repo_name = item.id
         repo_path = item.title
-        self.log.trace(f"Renaming Repository '{repo_name}' located in {repo_path}")
+        self.log.debug(f"Renaming Repository '{repo_name}' located in {repo_path}")
         window = self.viewSl.get_root()
         this_repo = MiAZDialogAddRepo(self.app)
         title = _('Edit repository')
@@ -147,6 +152,9 @@ class MiAZRepositories(MiAZConfigView):
     def _on_item_available_remove(self, *args):
         srvdlg = self.app.get_service('dialogs')
         selected_item = self.viewAv.get_selected()
+        if selected_item is None:
+            return
+
         items_available = self.config.load_available()
         item_type = self.config.model
         i_title = item_type.__title__
@@ -168,6 +176,9 @@ class MiAZRepositories(MiAZConfigView):
     def _on_item_used_add(self, *args):
         items_used = self.config.load_used()
         selected_item = self.viewAv.get_selected()
+        if selected_item is None:
+            return
+
         is_used = selected_item.id in items_used
         item_type = self.config.model
         i_title = item_type.__title__
@@ -183,6 +194,9 @@ class MiAZRepositories(MiAZConfigView):
         items_available = self.config.load_available()
         items_used = self.config.load_used()
         selected_item = self.viewSl.get_selected()
+        if selected_item is None:
+            return
+
         item_type = self.config.model
         i_title = item_type.__title__
         items_available[selected_item.id] = selected_item.title
@@ -333,6 +347,9 @@ class MiAZProjects(MiAZConfigView):
     def _on_item_available_remove(self, *args):
         srvdlg = self.app.get_service('dialogs')
         selected_item = self.viewAv.get_selected()
+        if selected_item is None:
+            return
+
         items_available = self.config.load_available()
         item_type = self.config.model
         i_title = item_type.__title__
@@ -367,7 +384,7 @@ class MiAZProjects(MiAZConfigView):
             self.log.debug(f"{i_title} {selected_item.id} is already being used")
 
     def _on_item_used_remove(self, *args):
-        self.log.trace("_on_item_used_remove:: start")
+        self.log.debug("_on_item_used_remove:: start")
         items_available = self.config.load_available()
         items_used = self.config.load_used()
         selected_item = self.viewSl.get_selected()
@@ -377,7 +394,7 @@ class MiAZProjects(MiAZConfigView):
         srvdlg = self.app.get_service('dialogs')
         docs = srvprj.docs_in_project(selected_item.id)
         if len(docs) == 0:
-            self.log.trace("_on_item_used_remove:: no dependencies")
+            self.log.debug("_on_item_used_remove:: no dependencies")
             items_available[selected_item.id] = selected_item.title
             self.log.debug(f"{i_title} {selected_item.id} added back to the list of available items")
             del items_used[selected_item.id]
@@ -462,7 +479,7 @@ class MiAZUserPlugins(MiAZConfigView):
             plugin = plugin_manager.get_plugin_info(selected_plugin.id)
             if plugin.is_loaded():
                 plugin_manager.unload_plugin(plugin)
-                self.log.trace(f"Plugin '{selected_plugin.id}' unloaded")
+                self.log.debug(f"Plugin '{selected_plugin.id}' unloaded")
         except AttributeError as error:
             self.log.error(f"Unknown error unloading plugin '{selected_plugin.id}'")
             self.log.error(error)
