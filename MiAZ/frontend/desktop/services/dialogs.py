@@ -59,11 +59,6 @@ class MiAZDialog:
         icm = self.app.get_service('icons')
 
         dialog = Adw.AlertDialog.new() #title, body)
-        headerbar = Adw.HeaderBar()
-
-        # ~ dialog.set_prefer_wide_layout(True)
-        # ~ dialog.set_follows_content_size(False)
-        # ~ dialog.set_content_width(800)
         dialog.set_presentation_mode (Adw.DialogPresentationMode.BOTTOM_SHEET)
         dialog.set_body_use_markup(True)
         dialog.set_heading_use_markup(True)
