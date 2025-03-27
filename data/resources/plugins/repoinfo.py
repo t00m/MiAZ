@@ -38,7 +38,7 @@ class MiAZRepositoryInfoPlugin(GObject.GObject, Peas.Activatable):
             factory = self.app.get_service('factory')
 
             # Create menuitem for plugin
-            menuitem = factory.create_menuitem('repoinfo', _('Manage repository'), actions.show_repository_settings, None, [])
+            menuitem = factory.create_menuitem('repoinfo', _('Repository management'), actions.show_repository_settings, None, [])
             self.app.add_widget('workspace-menu-selection-section-app-repository-info', menuitem)
 
             # This is a common action: add to shortcuts, app zone
