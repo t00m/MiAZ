@@ -12,4 +12,16 @@ install_app() {
   echo "App installed successfully."
 }
 
+uninstall_app() {
+    echo "Uninstalling previous version"
+
+    if ! make user_uninstall; then
+      echo "Error: Uninstall failed. The app was not uninstalled."
+      return 1
+  fi
+
+  echo "App uninstalled successfully."
+}
+
+uninstall_app
 install_app

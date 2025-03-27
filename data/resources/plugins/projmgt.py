@@ -55,14 +55,16 @@ class MiAZToolbarProjectMgtPlugin(GObject.GObject, Peas.Activatable):
 
     def add_menuitem(self, *args):
         factory = self.app.get_service('factory')
-        section_common_in = self.app.get_widget('workspace-menu-selection-section-common-in')
+
+
         if self.app.get_widget('workspace-menu-selection-menu-project') is None:
             submenu_project = Gio.Menu.new()
             menu_project = Gio.MenuItem.new_submenu(
                 label=_('Project management...'),
                 submenu=submenu_project,
             )
-            section_common_in.append_item(menu_project)
+            section_shortcut = self.app.get_widget('workspace-menu-selection-section-common')
+            section_shortcut.append_item(menu_project)
             self.app.add_widget('workspace-menu-selection-menu-project', menu_project)
             self.app.add_widget('workspace-menu-selection-submenu-project', submenu_project)
             menuitem = factory.create_menuitem('project-manage', _('... manage projects'), self.project_manage, None, [])
@@ -71,6 +73,10 @@ class MiAZToolbarProjectMgtPlugin(GObject.GObject, Peas.Activatable):
             submenu_project.append_item(menuitem)
             menuitem = factory.create_menuitem('project-withdraw', _('... withdraw from project'), self.project_withdraw, None, [])
             submenu_project.append_item(menuitem)
+
+            # Add plugin to its default (sub)category
+            category = self.app.get_widget('workspace-menu-plugins-content-organisation-tagging-and-classification')
+            category.append_submenu('Projects', submenu_project)
 
     def project_assign(self, *args):
         actions = self.app.get_service('actions')

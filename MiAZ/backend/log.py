@@ -12,11 +12,6 @@ import sys
 import datetime
 import logging
 
-# Define new trace level
-TRACE = logging.DEBUG - 1
-setattr(logging, "TRACE", TRACE)
-logging.addLevelName(TRACE, "TRACE")
-
 # Define colors
 GREY = "\x1b[38;20m"
 CYAN = "\x1b[36;20m"
@@ -31,7 +26,6 @@ def make_format(color):
     return f"{color}%(levelname)7s | %(lineno)4d  |%(name)-25s | %(asctime)s | %(message)s{RESET}"
 
 FORMATS = {
-    logging.TRACE: make_format(MAUVE),  # type: ignore
     logging.DEBUG: make_format(GREY),
     logging.INFO: make_format(CYAN),
     logging.WARNING: make_format(YELLOW),
@@ -52,29 +46,6 @@ class ColorFormatter(logging.Formatter):
         return FORMATTERS[record.levelno].format(record)
 
 
-class LoggerWithTrace(logging.getLoggerClass()):  # type: ignore
-    def trace(self, msg, *args, **kwargs):
-        self.log(TRACE, msg, *args, **kwargs)
-
-
-logging.setLoggerClass(LoggerWithTrace)
-
-def get_logger(name) -> LoggerWithTrace:
-    """
-    a logging constructor that guarantees that the TRACE level is available.
-    use this just like `logging.getLogger`.
-
-    because we patch stdlib logging upon import of this module (side-effect),
-    and we can't be sure how callers order their imports,
-    then we want to provide a way to ensure that callers can access TRACE consistently.
-    if callers use `floss.logging.getLogger()` intead of `logging.getLogger()`,
-    then they'll be guaranteed to have access to TRACE.
-    """
-    logger = logging.getLogger(name)  # type: ignore
-    # ~ logger.propagate = False
-    return logger
-
-
 class MiAZLog(logging.getLoggerClass()):
     """
     C0115: Missing class docstring (missing-class-docstring)
@@ -89,22 +60,11 @@ class MiAZLog(logging.getLoggerClass()):
         """
         super().__init__(name)
 
-        # Create custom logger logging all five levels
-        self.setLevel(logging.TRACE)
-
         # Create stream handler for logging to stdout (log all five levels)
         if self.stdout_handler is None:
             self.stdout_handler = logging.StreamHandler(sys.stdout)
-            self.stdout_handler.setLevel(logging.TRACE)
-            # ~ self.stdout_handler.setLevel(logging.DEBUG)
             self.stdout_handler.setFormatter(ColorFormatter())
-            # ~ self.stdout_handler.setFormatter(logging.Formatter("%(levelname)7s | %(lineno)4d  |%(name)-25s | %(asctime)s | %(message)s"))
             self.enable_console_output()
-
-        # Add file handler only if the log directory was specified
-        # ~ self.file_handler = None
-        # ~ if log_dir:
-            # ~ self.add_file_handler(name, log_dir)
 
         self.logger_initialized = True
 

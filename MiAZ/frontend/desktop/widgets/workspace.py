@@ -57,7 +57,7 @@ class MiAZWorkspace(Gtk.Box):
     def __init__(self, app):
         super().__init__(orientation=Gtk.Orientation.HORIZONTAL)
         self.log = MiAZLog('MiAZ.Workspace')
-        self.log.trace("Initializing widget Workspace!!")
+        self.log.debug("Initializing widget Workspace!!")
         self.app = app
         self.config = self.app.get_config_dict()
         self._setup_workspace()
@@ -65,7 +65,7 @@ class MiAZWorkspace(Gtk.Box):
         self.review = False
 
         # Allow plug-ins to make their job
-        self.app.connect('start-application-completed', self._on_finish_configuration)
+        self.app.connect('application-started', self._on_finish_configuration)
 
     def initialize_caches(self):
         repo = self.app.get_service('repo')
@@ -79,10 +79,10 @@ class MiAZWorkspace(Gtk.Box):
         self.fcache = os.path.join(repo.conf, 'cache.json')
         try:
             self.cache = util.json_load(self.fcache)
-            self.log.trace(f"Loading cache from '{self.fcache}'")
+            self.log.debug(f"Loading cache from '{self.fcache}'")
         except Exception:
             util.json_save(self.fcache, {})
-            self.log.trace(f"New cache created in '{self.fcache}'")
+            self.log.debug(f"New cache created in '{self.fcache}'")
 
         self.cache = {}
         for cache in ['Date', 'Country', 'Group', 'SentBy', 'SentTo', 'Purpose']:
@@ -187,11 +187,12 @@ class MiAZWorkspace(Gtk.Box):
         self.log.debug("Finish loading workspace")
         window = self.app.get_widget('window')
         window.present()
+        workflow = self.app.get_service('workflow')
         srvutl = self.app.get_service('util')
         srvutl.connect('filename-renamed', self.update)
         srvutl.connect('filename-deleted', self.update)
         srvutl.connect('filename-added', self.update)
-        self.app.connect('repo-switch', self._on_repo_switch)
+        workflow.connect('repository-switch-started', self._on_repo_switch)
         self._on_repo_switch()
 
         self.emit('workspace-loaded')
@@ -250,8 +251,13 @@ class MiAZWorkspace(Gtk.Box):
         workspace_menu.set_tooltip_markup(tooltip)
 
     def show_pending_documents(self, *args):
+        sidebar = self.app.get_widget('sidebar')
         togglebutton = self.app.get_widget('workspace-togglebutton-pending-docs')
         self.review = togglebutton.get_active()
+        i_type = Date.__gtype_name__
+        dropdowns = self.app.get_widget('ws-dropdowns')
+        sidebar.clear_filters()
+        dropdowns[i_type].set_selected(9)
         self.view.refilter()
 
     def _update_dropdown_date(self):
@@ -320,7 +326,6 @@ class MiAZWorkspace(Gtk.Box):
     def _setup_columnview(self):
         self.view = MiAZColumnViewWorkspace(self.app)
         self.app.add_widget('workspace-view', self.view)
-        self.view.get_style_context().add_class(class_name='caption')
         self.view.get_style_context().add_class(class_name='monospace')
         self.view.set_filter(self._do_filter_view)
         return self.view
@@ -365,6 +370,7 @@ class MiAZWorkspace(Gtk.Box):
     def update(self, *args):
         if self.app.get_status() == MiAZStatus.BUSY:
             return
+
 
         repository = self.app.get_service('repo')
         if repository.conf is None:
@@ -494,16 +500,21 @@ class MiAZWorkspace(Gtk.Box):
 
         self.selected_items = []
 
+        review = 0
+        for item in items:
+            if not item.active:
+                review += 1
         togglebutton = self.app.get_widget('workspace-togglebutton-pending-docs')
+        togglebutton.set_label(f"Review ({review})")
         if show_pending:
-            self.log.trace("There are pending documents. Displaying warning button")
+            self.log.debug("There are pending documents. Displaying warning button")
         togglebutton.set_visible(show_pending)
 
         if not show_pending:
             togglebutton.set_active(False)
         self.review = togglebutton.get_active()
+        self.app.set_status(MiAZStatus.RUNNING)
         self.emit('workspace-view-updated')
-
 
         return False
 
@@ -662,9 +673,15 @@ class MiAZWorkspace(Gtk.Box):
             pass
 
     def _on_filter_selected(self, *args):
+        app_status = self.app.get_status()
         util = self.app.get_service('util')
         repository = self.app.get_service('repo')
+
         if repository.conf is None:
+            return
+
+        status = self.app.get_status()
+        if status == MiAZStatus.BUSY:
             return
 
         workspace_menu = self.app.get_widget('workspace-menu')
@@ -675,7 +692,9 @@ class MiAZWorkspace(Gtk.Box):
             docs = util.get_files(repository.docs) # nº total items
             stack = self.app.get_widget('stack')
             items_in_view = len(model)
-            label.set_markup(f"<small>{len(self.selected_items)}</small> / {len(model)} / <big>{len(docs)}</big>")
+            label_text = f"<small>{len(self.selected_items)}</small> / {len(model)} / <big>{len(docs)}</big>"
+            # ~ self.log.error(label_text)
+            label.set_markup(label_text)
             tooltip = ""
             tooltip += f"{len(self.selected_items)} documents selected\n"
             tooltip += f"{len(model)} documents in this view\n"

@@ -315,10 +315,10 @@ class MiAZFactory:
         search_entry.connect('search-changed', _on_search_changed, item_filter)
 
         # Enable clear button by brute force
-        box = search_entry.get_parent()
-        button = self.create_button(icon_name='io.github.t00m.MiAZ-entry_clear', css_classes=['flat'], tooltip='Clear this filter', callback=_clear_dropdown, data=dropdown)
-        button.set_margin_start(3)
-        box.append(button)
+        # ~ box = search_entry.get_parent()
+        # ~ button = self.create_button(icon_name='io.github.t00m.MiAZ-entry_clear', css_classes=['flat'], tooltip='Clear this filter', callback=_clear_dropdown, data=dropdown)
+        # ~ button.set_margin_start(3)
+        # ~ box.append(button)
 
         # Enable placeholder text by brute force too...
         # 'set_placeholder_text' doesn't work with lower Gtk4 versions
@@ -372,12 +372,13 @@ class MiAZFactory:
         menuitem = Gio.MenuItem.new()
         menuitem.set_label(label=label)
         action = Gio.SimpleAction.new(name, None)
-        action.connect('activate', callback, data)
-        action.set_enabled(True)
-        self.app.add_action(action)
-        menuitem.set_detailed_action(detailed_action=f'app.{name}')
-        if shortcuts:
-            self.app.set_accels_for_action(f'app.{name}', shortcuts)
+        if callback is not None:
+            action.connect('activate', callback, data)
+            action.set_enabled(True)
+            self.app.add_action(action)
+            menuitem.set_detailed_action(detailed_action=f'app.{name}')
+            if shortcuts:
+                self.app.set_accels_for_action(f'app.{name}', shortcuts)
         return menuitem
 
     def create_notebook_label(self, icon_name: str, title: str) -> Gtk.Widget:

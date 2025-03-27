@@ -28,6 +28,7 @@ class MiAZToolbarRenameItemPlugin(GObject.GObject, Peas.Activatable):
 
     def do_activate(self):
         self.app = self.object.app
+        self.factory = self.app.get_service('factory')
         self.actions = self.app.get_service('actions')
         self.util = self.app.get_service('util')
         self.repository = self.app.get_service('repo')
@@ -37,6 +38,17 @@ class MiAZToolbarRenameItemPlugin(GObject.GObject, Peas.Activatable):
         view = self.app.get_widget('workspace-view')
         selection = view.get_selection()
         selection.connect('selection-changed', self._on_selection_changed)
+
+        # Create menuitem for plugin
+        menuitem = self.factory.create_menuitem('renameitem', _('Edit selected document'), None, None, [])
+        self.app.add_widget('workspace-menu-selection-section-app-rename-item', menuitem)
+
+        # Add plugin to its default (sub)category
+        category = self.app.get_widget('workspace-menu-plugins-content-organisation-metadata-management')
+        category.append_item(menuitem)
+        category = self.app.get_widget('workspace-menu-plugins-visualisation-and-diagrams-dashboard-widgets')
+        category.append_item(menuitem)
+
 
     def do_deactivate(self):
         self.log.debug("Plugin deactivation not implemented")

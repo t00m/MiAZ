@@ -50,6 +50,14 @@ def MiAZHeaderBar(
 
     return hb
 
+class SidebarTitle(Adw.Bin):
+    def __init__(self, app) -> None:
+        super().__init__()
+        self.app = app
+        self.title = ''
+        lblTitle
+
+
 class MiAZSidebar(Adw.Bin):
     def __init__(self, app) -> None:
         super().__init__()
@@ -59,44 +67,50 @@ class MiAZSidebar(Adw.Bin):
         self.__build_ui()
         self.app.add_widget('sidebar', self)
 
+        workflow = self.app.get_service('workflow')
+        workflow.connect("repository-switch-finished", self._on_repo_switch)
+
+    def _on_repo_switch(self, *args):
+        config = self.app.get_config_dict()
+        repo_id = config['App'].get('current')
+        title = _(f"<big><b>{repo_id}</b></big>")
+        self.set_title(title)
+        workspace = self.app.get_widget('workspace')
+        workspace.update()
+        searchentry = self.app.get_widget('searchentry')
+        self.clear_filters()
+        self.log.debug(f"Switched to repository {repo_id} > Sidebar updated")
+
     def __build_ui(self) -> None:
-        # Setup system menu
-        self._setup_menu_system()
-        self._setup_clear_filters_button()
+        factory = self.app.get_service('factory')
+        config = self.app.get_config_dict()
 
-        # Status page
-        self.status_page = Gtk.Label()
+        # Clear filters button
+        button_clear_filters = self._setup_clear_filters_button()
 
-        # ~ TEMPORARY DISABLED
-        # ~ repository = self.app.get_service('repository')
-        # ~ config = self.app.get_config_dict()
-        # ~ repo_id = config['App'].get('current')
-        # ~ self.status_page = Adw.StatusPage(
-            # ~ title=_(""),
-            # ~ description=_(f"<big>Repository {repo_id}</big>"),
-            # ~ icon_name="io.github.t00m.MiAZ",
-            # ~ css_classes=["compact"],
-            # ~ vexpand=True,
-        # ~ )
-        # ~ self.app.add_widget('sidebar-status-repo', self.status_page)
-
-
-        menubutton_system = self.app.get_widget('headerbar-button-menu-system')
-        button_clear_filters = self.app.get_widget('headerbar-button-clear-filters')
+        # Sidebar title
+        repo_id = config['App'].get('current')
+        boxTitle = factory.create_box_vertical(margin=0, spacing=0, hexpand=True, vexpand=True)
+        lblTitle = Gtk.Label()
+        lblTitle.set_markup(_(f"<big><b>{repo_id}</b></big>"))
+        boxTitle.append(lblTitle)
+        boxTitle.set_valign(Gtk.Align.CENTER)
+        self.app.add_widget('sidebar-title', lblTitle)
 
         # Dropdown filters
         toolbar_filters = self._setup_toolbar_filters()
         self.app.add_widget('workspace-toolbar-filters', toolbar_filters)
 
+        # Status page
+        self.status_page = Gtk.Label()
+
+        # Create sidebar
         self.set_child(
             MiAZToolbarView(
                 top_bars=[
                     MiAZHeaderBar(
-                        title_widget=Gtk.Label(
-                            label=_("MiAZ"),
-                            css_classes=["heading"],
-                        ),
-                        start_children=[menubutton_system],
+                        title_widget=boxTitle,
+                        start_children=[],
                         end_children=[button_clear_filters],
                     )
                 ],
@@ -118,36 +132,7 @@ class MiAZSidebar(Adw.Bin):
         repo_id = config['App'].get('current')
         description = f"<big>Repository {repo_id}\n<b>{num_docs} documents</b></big>"
         repo_status.set_description(description)
-        self.log.trace(description)
-
-    def _setup_menu_system(self):
-        actions = self.app.get_service('actions')
-        factory = self.app.get_service('factory')
-        menu = self.app.add_widget('window-menu-app', Gio.Menu.new())
-        section_common_in = self.app.add_widget('app-menu-section-common-in', Gio.Menu.new())
-        section_common_out = self.app.add_widget('app-menu-section-common-out', Gio.Menu.new())
-        section_danger = self.app.add_widget('app-menu-section-common-danger', Gio.Menu.new())
-        menu.append_section(None, section_common_in)
-        menu.append_section(None, section_common_out)
-        menu.append_section(None, section_danger)
-        menuitem = factory.create_menuitem('app-settings', _('Application settings'), actions.show_app_settings, None, ['<Control>s'])
-        section_common_in.append_item(menuitem)
-        # ~ menuitem = factory.create_menuitem('app-help', _('Help'), actions.show_app_help, None, ['<Control>h'])
-        # ~ section_common_out.append_item(menuitem)
-        menuitem = factory.create_menuitem('app-about', _('About MiAZ'), actions.show_app_about, None, ['<Control>h'])
-        section_common_out.append_item(menuitem)
-        menuitem = factory.create_menuitem('app-quit', _('Exit application'), actions.exit_app, None, ['<Control>q'])
-        section_danger.append_item(menuitem)
-
-        menubutton = Gtk.MenuButton(child=factory.create_button_content(icon_name='io.github.t00m.MiAZ-system-menu'))
-        menubutton.set_has_frame(False)
-        menubutton.get_style_context().add_class(class_name='flat')
-        menubutton.set_valign(Gtk.Align.CENTER)
-        popover = Gtk.PopoverMenu()
-        popover.set_menu_model(menu)
-        menubutton.set_popover(popover=popover)
-        self.app.add_widget('headerbar-button-menu-system', menubutton)
-
+        self.log.debug(description)
 
     def _setup_toolbar_filters(self):
         factory = self.app.get_service('factory')
@@ -171,7 +156,7 @@ class MiAZSidebar(Adw.Bin):
 
         ### Date dropdown
         i_type = Date.__gtype_name__
-        dd_date = factory.create_dropdown_generic(item_type=Date, ellipsize=False, enable_search=False)
+        dd_date = factory.create_dropdown_generic(item_type=Date, ellipsize=False, enable_search=True)
         dd_date.set_hexpand(True)
         dropdowns[i_type] = dd_date
         boxDropdown = factory.create_box_filter('Date', dd_date)
@@ -200,6 +185,8 @@ class MiAZSidebar(Adw.Bin):
         button = factory.create_button(icon_name='io.github.t00m.MiAZ-entry_clear', tooltip='Clear all filters', css_classes=['flat'], callback=self.clear_filters)
         self.app.add_widget('headerbar-button-clear-filters', button)
 
+        return button
+
 
     def clear_filters(self, *args):
         search_entry = self.app.get_widget('searchentry')
@@ -208,3 +195,7 @@ class MiAZSidebar(Adw.Bin):
         for ddId in dropdowns:
             dropdowns[ddId].set_selected(0)
         self.log.debug("All filters cleared")
+
+    def set_title(self, title: str=''):
+        sidebar_title = self.app.get_widget('sidebar-title')
+        sidebar_title.set_markup(title.replace('_', ' '))

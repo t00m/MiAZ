@@ -10,6 +10,7 @@ from gi.repository import Adw, Gdk, Gio, Gtk
 
 from MiAZ.backend.log import MiAZLog
 from MiAZ.backend.models import MiAZItem, Group, Country, Purpose, SentBy, SentTo, Date, Project
+from MiAZ.backend.pluginsystem import plugin_categories
 from MiAZ.frontend.desktop.widgets.searchbar import SearchBar
 from MiAZ.frontend.desktop.widgets.pages import MiAZWelcome
 from MiAZ.frontend.desktop.widgets.pages import MiAZPageNotFound
@@ -88,10 +89,13 @@ class MiAZMainWindow(Gtk.Box):
         headerbar = self.app.get_widget('headerbar')
 
         # Box for filters button and search entry
-        hbox = factory.create_box_horizontal(margin=0, spacing=0)
-        hbox.get_style_context().add_class(class_name='linked')
+        hbox = factory.create_box_horizontal(margin=0, spacing=6)
         self.app.add_widget('headerbar-left-box', hbox)
         headerbar.pack_start(hbox)
+
+        # Setup system menu
+        # ~ menubutton = self._setup_menu_system()
+        # ~ hbox.append(menubutton)
 
 
     def _setup_headerbar_right(self):
@@ -111,10 +115,6 @@ class MiAZMainWindow(Gtk.Box):
         switcher.set_stack(viewstack)
         viewstack.set_vexpand(True)
         return viewstack
-
-    def show_workspace(self, *args):
-        actions = self.app.get_service('actions')
-        actions.show_stack_page_by_name('workspace')
 
     def _on_key_press(self, event, keyval, keycode, state):
         actions = self.app.get_service('actions')
@@ -230,24 +230,29 @@ class MiAZMainWindow(Gtk.Box):
             sidebar.set_visible(active)
 
     def _setup_menu_selection(self):
-        menu_selection = self.app.add_widget('workspace-menu-selection', Gio.Menu.new())
-        section_common_in = self.app.add_widget('workspace-menu-selection-section-common-in', Gio.Menu.new())
-        section_common_out = self.app.add_widget('workspace-menu-selection-section-common-out', Gio.Menu.new())
-        section_common_app = self.app.add_widget('workspace-menu-selection-section-app', Gio.Menu.new())
-        section_danger = self.app.add_widget('workspace-menu-selection-section-danger', Gio.Menu.new())
-        menu_selection.append_section(None, section_common_in)
-        menu_selection.append_section(None, section_common_out)
-        menu_selection.append_section(None, section_common_app)
-        menu_selection.append_section(None, section_danger)
+        """Create workspace menu"""
+        actions = self.app.get_service('actions')
+        factory = self.app.get_service('factory')
 
-        ## Add
-        submenu_add = Gio.Menu.new()
-        menu_add = Gio.MenuItem.new_submenu(
-            label = _('Add new...'),
-            submenu = submenu_add,
+        menu_selection = self.app.add_widget('workspace-menu-selection', Gio.Menu.new())
+
+        section_shortcut_plugins = self.app.add_widget('workspace-menu-selection-section-common', Gio.Menu.new())
+        section_shortcut_common = self.app.add_widget('workspace-menu-selection-section-common', Gio.Menu.new())
+        section_shortcut_app = self.app.add_widget('workspace-menu-selection-section-app', Gio.Menu.new())
+        section_bottom = self.app.add_widget('workspace-menu-selection-section-bottom', Gio.Menu.new())
+        menu_selection.append_section(None, section_shortcut_plugins)
+        menu_selection.append_section(None, section_shortcut_common)
+        menu_selection.append_section(None, section_shortcut_app)
+        menu_selection.append_section(None, section_bottom)
+
+        ## Import
+        submenu_import = Gio.Menu.new()
+        menu_import = Gio.MenuItem.new_submenu(
+            label = _('Import...'),
+            submenu = submenu_import,
         )
-        section_common_in.append_item(menu_add)
-        self.app.add_widget('workspace-menu-in-add', submenu_add)
+        section_shortcut_common.append_item(menu_import)
+        self.app.add_widget('workspace-menu-shortcut-import', submenu_import)
 
         ## Export
         submenu_export = Gio.Menu.new()
@@ -255,8 +260,80 @@ class MiAZMainWindow(Gtk.Box):
             label = _('Export...'),
             submenu = submenu_export,
         )
-        section_common_out.append_item(menu_export)
-        self.app.add_widget('workspace-menu-selection-menu-export', menu_export)
-        self.app.add_widget('workspace-menu-selection-submenu-export', submenu_export)
+        section_shortcut_common.append_item(menu_export)
+        self.app.add_widget('workspace-menu-selection-menu-export', submenu_export)
+
+        # Create the 'Plugins' submenu
+        plugins_submenu = self.app.add_widget('workspace-menu-plugins', Gio.Menu.new())
+        self.log.debug("Plugins menu")
+        # Iterate through the plugin categories and subcategories
+        for category, subcategories in plugin_categories.items():
+            # Create a submenu for each category
+            category_submenu = Gio.Menu()
+            cid = category.lower().replace(' ', '-')
+            category_name = f"workspace-menu-plugins-{cid}"
+            self.app.add_widget(category_name, category_submenu)
+            self.log.debug(f"- '{category_name}'")
+            for subcategory, description in subcategories.items():
+                # Add each subcategory as a submenu (to attach plugins later)
+                subcategory_submenu = Gio.Menu()
+                sid = subcategory.lower().replace(' ', '-')
+                subcategory_name = f"workspace-menu-plugins-{cid}-{sid}"
+                self.app.add_widget(subcategory_name, subcategory_submenu)
+                self.log.debug(f"\t\t- '{subcategory_name}'")
+                # Add a placeholder menu item (you can replace this with actual plugins)
+                # ~ subcategory_submenu.append("Plugin 1", f"app.{subcategory.replace(' ', '').lower()}_plugin1")
+
+                # Add the subcategory submenu to the category submenu
+                category_submenu.append_submenu(subcategory, subcategory_submenu)
+            # Add the category submenu to the 'Plugins' submenu
+            plugins_submenu.append_submenu(category, category_submenu)
+
+        # Add the 'Plugins' submenu to the main menu
+        section_shortcut_common.append_submenu("All plugins ...", plugins_submenu)
+
+        # Create menuitem for Application preferences
+        menuitem = factory.create_menuitem('preferences', _('Application preferences'), actions.show_app_settings, None, [])
+        self.app.add_widget('workspace-menu-selection-section-app-preferences', menuitem)
+
+        # This is a common action: add to shortcuts, app zone
+        section_app = self.app.get_widget('workspace-menu-selection-section-app')
+        section_app.append_item(menuitem)
+
+        # Create menuitem for Application preferences
+        menuitem = factory.create_menuitem('about', _('About this application ...'), actions.show_app_about, None, [])
+        self.app.add_widget('workspace-menu-selection-section-bottom-about', menuitem)
+
+        # This is a common action: add to shortcuts, app zone
+        section_app = self.app.get_widget('workspace-menu-selection-section-bottom')
+        section_app.append_item(menuitem)
 
         return menu_selection
+
+    def _setup_menu_system(self):
+        actions = self.app.get_service('actions')
+        factory = self.app.get_service('factory')
+        menu = self.app.add_widget('window-menu-app', Gio.Menu.new())
+        section_common = self.app.add_widget('app-menu-section-common', Gio.Menu.new())
+        section_bottom = self.app.add_widget('app-menu-section-common-bottom', Gio.Menu.new())
+        menu.append_section(None, section_common)
+        menu.append_section(None, section_bottom)
+        menuitem = factory.create_menuitem('app-settings', _('Settings'), actions.show_app_settings, None, ['<Control>s'])
+        section_common.append_item(menuitem)
+        # ~ menuitem = factory.create_menuitem('app-help', _('Help'), actions.show_app_help, None, ['<Control>h'])
+        # ~ section_common.append_item(menuitem)
+        menuitem = factory.create_menuitem('app-about', _('About'), actions.show_app_about, None, ['<Control>a'])
+        section_common.append_item(menuitem)
+        menuitem = factory.create_menuitem('app-quit', _('Exit'), actions.exit_app, None, ['<Control>q'])
+        section_bottom.append_item(menuitem)
+
+        menubutton = Gtk.MenuButton(child=factory.create_button_content(icon_name='io.github.t00m.MiAZ-system-menu'))
+        menubutton.set_has_frame(False)
+        menubutton.get_style_context().add_class(class_name='flat')
+        menubutton.set_valign(Gtk.Align.CENTER)
+        popover = Gtk.PopoverMenu()
+        popover.set_menu_model(menu)
+        menubutton.set_popover(popover=popover)
+        self.app.add_widget('headerbar-button-menu-system', menubutton)
+
+        return menubutton
