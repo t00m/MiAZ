@@ -152,6 +152,8 @@ class MiAZAppSettings(Adw.PreferencesDialog):
         workflow = self.app.get_service('workflow')
         dd_repo = self.app.get_widget('window-settings-dropdown-repository-active')
         repo = dd_repo.get_selected_item()
+        if repo is None:
+            return
         self.log.debug(f"Repository chosen: {repo.id}")
         config = self.app.get_config_dict()
         config['App'].set('current', repo.id)
