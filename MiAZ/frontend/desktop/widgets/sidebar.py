@@ -71,12 +71,15 @@ class MiAZSidebar(Adw.Bin):
         workflow.connect("repository-switch-finished", self._on_repo_switch)
 
     def _on_repo_switch(self, *args):
+        config = self.app.get_config_dict()
+        repo_id = config['App'].get('current')
+        title = _(f"<big><b>{repo_id}</b></big>")
+        self.set_title(title)
         workspace = self.app.get_widget('workspace')
         workspace.update()
         searchentry = self.app.get_widget('searchentry')
-        searchentry.set_text('asdf')
-        searchentry.set_text('')
-        self.log.debug("Repository switched > Sidebar updated")
+        self.clear_filters()
+        self.log.debug(f"Switched to repository {repo_id} > Sidebar updated")
 
     def __build_ui(self) -> None:
         factory = self.app.get_service('factory')
@@ -85,15 +88,14 @@ class MiAZSidebar(Adw.Bin):
         # Clear filters button
         button_clear_filters = self._setup_clear_filters_button()
 
-        # Sidebar title and subtitle
-        boxTitle = factory.create_box_vertical(margin=0, spacing=0)
-        lblTitle = Gtk.Label()
-        lblTitle.set_markup(_("<b>MiAZ</b>"))
-        lblSubtitle = Gtk.Label()
+        # Sidebar title
         repo_id = config['App'].get('current')
-        lblSubtitle.set_markup(_(f"<small>Repository {repo_id}</small>"))
+        boxTitle = factory.create_box_vertical(margin=0, spacing=0, hexpand=True, vexpand=True)
+        lblTitle = Gtk.Label()
+        lblTitle.set_markup(_(f"<big><b>{repo_id}</b></big>"))
         boxTitle.append(lblTitle)
-        boxTitle.append(lblSubtitle)
+        boxTitle.set_valign(Gtk.Align.CENTER)
+        self.app.add_widget('sidebar-title', lblTitle)
 
         # Dropdown filters
         toolbar_filters = self._setup_toolbar_filters()
@@ -154,7 +156,7 @@ class MiAZSidebar(Adw.Bin):
 
         ### Date dropdown
         i_type = Date.__gtype_name__
-        dd_date = factory.create_dropdown_generic(item_type=Date, ellipsize=False, enable_search=False)
+        dd_date = factory.create_dropdown_generic(item_type=Date, ellipsize=False, enable_search=True)
         dd_date.set_hexpand(True)
         dropdowns[i_type] = dd_date
         boxDropdown = factory.create_box_filter('Date', dd_date)
@@ -193,3 +195,7 @@ class MiAZSidebar(Adw.Bin):
         for ddId in dropdowns:
             dropdowns[ddId].set_selected(0)
         self.log.debug("All filters cleared")
+
+    def set_title(self, title: str=''):
+        sidebar_title = self.app.get_widget('sidebar-title')
+        sidebar_title.set_markup(title.replace('_', ' '))
