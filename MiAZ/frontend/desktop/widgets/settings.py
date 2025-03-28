@@ -9,6 +9,7 @@ from gettext import gettext as _
 
 from gi.repository import Adw
 from gi.repository import Gtk
+from gi.repository import GObject
 
 from MiAZ.backend.log import MiAZLog
 from MiAZ.backend.models import Repository, Plugin, Project
@@ -40,6 +41,10 @@ Configview['Plugin'] = MiAZUserPlugins
 
 class MiAZAppSettings(Adw.PreferencesDialog):
     __gtype_name__ = 'MiAZAppSettings'
+    """Workspace"""
+    __gsignals__ = {
+        "settings-loaded":  (GObject.SignalFlags.RUN_LAST, None, ()),
+    }
 
     def __init__(self, app, **kwargs):
         super().__init__()
@@ -52,6 +57,7 @@ class MiAZAppSettings(Adw.PreferencesDialog):
         self.srvdlg = self.app.get_service('dialogs')
         self.actions = self.app.get_service('actions')
         self._build_ui()
+        self.emit('settings-loaded')
 
     def _on_update_repos_available(self, *args):
         config = self.app.get_config_dict()
@@ -68,6 +74,21 @@ class MiAZAppSettings(Adw.PreferencesDialog):
         self.set_title('Application settings')
         self.set_search_enabled(False)
         self._build_ui_page_preferences()
+        self._build_ui_page_aspect()
+
+    def _build_ui_page_aspect(self):
+        # Create preferences page
+        page_title = _("Aspect")
+        page_icon = "io.github.t00m.MiAZ-preferences-ui"
+        page = Adw.PreferencesPage(title=page_title, icon_name=page_icon)
+        self.add(page)
+        self.app.add_widget('window-preferences-page-aspect', page)
+
+        ## Group UI
+        group = Adw.PreferencesGroup()
+        group.set_title('User interface')
+        page.add(group)
+        self.app.add_widget('window-preferences-page-aspect-group-ui', group)
 
     def _build_ui_page_preferences(self):
         """Repositories dialog page"""

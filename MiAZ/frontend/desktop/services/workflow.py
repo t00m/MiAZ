@@ -103,9 +103,9 @@ class MiAZWorkflow(GObject.GObject):
 
         headerbar = self.app.get_widget('headerbar')
         headerbar.set_visible(True)
-        tgbSidebar = self.app.get_widget('workspace-togglebutton-filters')
-        tgbSidebar.set_active(False)
-        tgbSidebar.set_visible(False)
+        # ~ tgbSidebar = self.app.get_widget('workspace-togglebutton-filters')
+        # ~ tgbSidebar.set_active(False)
+        # ~ tgbSidebar.set_visible(False)
         btnWorkspace = self.app.get_widget('workspace-menu')
         btnWorkspace.set_visible(True)
 

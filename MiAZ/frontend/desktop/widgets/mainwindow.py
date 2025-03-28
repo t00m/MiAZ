@@ -27,8 +27,6 @@ class MiAZMainWindow(Gtk.Box):
         self._setup_ui()
         self._setup_event_listener()
 
-
-
     def _setup_ui(self):
         factory = self.app.get_service('factory')
 
@@ -70,12 +68,6 @@ class MiAZMainWindow(Gtk.Box):
         if page is None:
             self._setup_page_404()
 
-
-        # Workspace page
-        # ~ self.view_stack.add_titled(child=box, name="Workspace", title=_("Workspace"),
-        # ~ )
-
-        # ~ self.append(self.split_view)
         self.append(vmainbox)
 
     def _setup_event_listener(self):
@@ -94,8 +86,8 @@ class MiAZMainWindow(Gtk.Box):
         headerbar.pack_start(hbox)
 
         # Setup system menu
-        # ~ menubutton = self._setup_menu_system()
-        # ~ hbox.append(menubutton)
+        menubutton = self._setup_menu_system()
+        hbox.append(menubutton)
 
 
     def _setup_headerbar_right(self):
@@ -138,9 +130,9 @@ class MiAZMainWindow(Gtk.Box):
             page_welcome.set_visible(True)
             headerbar = self.app.get_widget('headerbar')
             headerbar.set_visible(True)
-            tgbSidebar = self.app.get_widget('workspace-togglebutton-filters')
-            tgbSidebar.set_active(False)
-            tgbSidebar.set_visible(False)
+            # ~ tgbSidebar = self.app.get_widget('workspace-togglebutton-filters')
+            # ~ tgbSidebar.set_active(False)
+            # ~ tgbSidebar.set_visible(False)
             btnWorkspace = self.app.get_widget('workspace-menu')
             btnWorkspace.set_visible(False)
 
@@ -184,15 +176,15 @@ class MiAZMainWindow(Gtk.Box):
 
 
         ## Show/Hide Filters
-        tgbSidebar = factory.create_button_toggle('io.github.t00m.MiAZ-sidebar-show-left-symbolic', callback=self._on_sidebar_toggled)
-        self.app.add_widget('workspace-togglebutton-filters', tgbSidebar)
-        tgbSidebar.set_tooltip_text("Show sidebar and filters")
-        tgbSidebar.set_active(True)
-        tgbSidebar.set_hexpand(False)
-        tgbSidebar.get_style_context().add_class(class_name='dimmed')
-        # ~ tgbSidebar.get_style_context().remove_class(class_name='flat')
-        # ~ tgbSidebar.set_valign(Gtk.Align.CENTER)
-        hdb_left.append(tgbSidebar)
+        # ~ tgbSidebar = factory.create_button_toggle('io.github.t00m.MiAZ-sidebar-show-left-symbolic', callback=self._on_sidebar_toggled)
+        # ~ self.app.add_widget('workspace-togglebutton-filters', tgbSidebar)
+        # ~ tgbSidebar.set_tooltip_text("Show sidebar and filters")
+        # ~ tgbSidebar.set_active(True)
+        # ~ tgbSidebar.set_hexpand(False)
+        # ~ tgbSidebar.get_style_context().add_class(class_name='dimmed')
+        # ~ #tgbSidebar.get_style_context().remove_class(class_name='flat')
+        # ~ #tgbSidebar.set_valign(Gtk.Align.CENTER)
+        # ~ hdb_left.append(tgbSidebar)
 
         # Workspace Menu
         hbox = factory.create_box_horizontal(margin=0, spacing=6, hexpand=False)
@@ -220,14 +212,6 @@ class MiAZMainWindow(Gtk.Box):
         hbox.append(button)
 
         return hbox
-
-    def _on_sidebar_toggled(self, *args):
-        """ Sidebar collapsed when active = False"""
-        sidebar = self.app.get_widget('sidebar')
-        toggleButtonFilters = self.app.get_widget('workspace-togglebutton-filters')
-        active = toggleButtonFilters.get_active()
-        if sidebar is not None:
-            sidebar.set_visible(active)
 
     def _setup_menu_selection(self):
         """Create workspace menu"""
@@ -327,7 +311,7 @@ class MiAZMainWindow(Gtk.Box):
         menuitem = factory.create_menuitem('app-quit', _('Exit'), actions.exit_app, None, ['<Control>q'])
         section_bottom.append_item(menuitem)
 
-        menubutton = Gtk.MenuButton(child=factory.create_button_content(icon_name='io.github.t00m.MiAZ-system-menu'))
+        menubutton = Gtk.MenuButton(child=factory.create_button_content(icon_name='io.github.t00m.MiAZ'))
         menubutton.set_has_frame(False)
         menubutton.get_style_context().add_class(class_name='flat')
         menubutton.set_valign(Gtk.Align.CENTER)
