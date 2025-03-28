@@ -65,7 +65,6 @@ class MiAZAppSettings(Adw.PreferencesDialog):
         n = 0
         dd_repo = self.app.get_widget('window-settings-dropdown-repository-active')
         for repo in dd_repo.get_model():
-            self.log.debug(f"{repo.id}: {repo.title}")
             if repo_id ==  repo.id:
                 dd_repo.set_selected(n)
             n += 1

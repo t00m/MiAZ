@@ -12,6 +12,7 @@ import os
 import re
 import glob
 
+from gi.repository import Adw
 from gi.repository import Gio
 from gi.repository import GObject
 from gi.repository import Peas
@@ -30,8 +31,10 @@ class MiAZSidebarToggleButtonPlugin(GObject.GObject, Peas.Activatable):
 
     def do_activate(self):
         self.app = self.object.app
+        actions = self.app.get_service('actions')
         workspace = self.app.get_widget('workspace')
         workspace.connect('workspace-loaded', self.add_menuitem)
+        actions.connect('settings-loaded', self._on_settings_loaded)
 
     def do_deactivate(self):
         self.log.debug("Plugin deactivation not implemented")
@@ -50,6 +53,7 @@ class MiAZSidebarToggleButtonPlugin(GObject.GObject, Peas.Activatable):
             # ~ tgbSidebar.get_style_context().remove_class(class_name='flat')
             # ~ tgbSidebar.set_valign(Gtk.Align.CENTER)
             hdb_left.append(tgbSidebar)
+            self.log.debug("Plugin sidebartgb initialitez")
 
 
             # Create menu item for plugin
@@ -63,3 +67,21 @@ class MiAZSidebarToggleButtonPlugin(GObject.GObject, Peas.Activatable):
             # This is a common action: add to shortcuts
             # ~ menu_shortcut_import = self.app.get_widget('workspace-menu-shortcut-import')
             # ~ menu_shortcut_import.append_item(menuitem)
+
+    def _on_settings_loaded(self, *args):
+        group = self.app.get_widget('window-preferences-page-aspect-group-ui')
+        row = Adw.SwitchRow(title=_("Display sidebar toggle button?"), subtitle=_('Plugin Sidebar ToggleButton'))
+        row.connect('notify::active', self._on_activate_setting)
+        tgbSidebar = self.app.get_widget('workspace-togglebutton-filters')
+        visible = tgbSidebar.get_visible()
+        row.set_active(visible)
+        group.add(row)
+
+    def _on_activate_setting(self, row, gparam):
+        active = row.get_active()
+        togglebutton = self.app.get_widget('workspace-togglebutton-filters')
+        togglebutton.set_visible(active)
+
+
+
+
