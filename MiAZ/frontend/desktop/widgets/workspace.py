@@ -65,7 +65,9 @@ class MiAZWorkspace(Gtk.Box):
         self.review = False
 
         # Allow plug-ins to make their job
+        self.connect('workspace-view-updated', self._on_filter_selected)
         self.app.connect('application-started', self._on_finish_configuration)
+        self.app.connect('application-finished', self._on_application_finished)
 
     def initialize_caches(self):
         repo = self.app.get_service('repo')
@@ -180,7 +182,7 @@ class MiAZWorkspace(Gtk.Box):
         # Trigger events
         self._do_connect_filter_signals()
         # ~ self._on_sidebar_toggled()
-        self._on_filter_selected()
+        # ~ self._on_filter_selected()
         self.workspace_loaded = True
 
     def _on_finish_configuration(self, *args):
@@ -203,9 +205,7 @@ class MiAZWorkspace(Gtk.Box):
         sidebar.clear_filters()
         self.view.refilter()
         self.update()
-        self._on_filter_selected()
-
-
+        # ~ self._on_filter_selected()
 
     def _update_dropdowns(self, *args):
         actions = self.app.get_service('actions')
@@ -358,34 +358,37 @@ class MiAZWorkspace(Gtk.Box):
 
         self.append(widget)
 
-        # ~ menuitem = factory.create_menuitem('annotate', 'Annotate document', self._on_handle_menu_single, None, [])
-        # ~ menuitem = factory.create_menuitem('clipboard', 'Copy filename', self._on_handle_menu_single, None, [])
-        # ~ menuitem = factory.create_menuitem('directory', 'Open file location', self._on_handle_menu_single, None, [])
-
-
-
     def get_selected_items(self):
         return self.selected_items
 
     def update(self, *args):
+        """Update Workspace columnview"""
+
+        #Load necessary services
+        util = self.app.get_service('util')
+
+        # No update while app is bussy
         if self.app.get_status() == MiAZStatus.BUSY:
             return
 
-
+        # No update is no repository is loaded
         repository = self.app.get_service('repo')
         if repository.conf is None:
             return
 
-        util = self.app.get_service('util')
+        ds = datetime.now() # Measure performance (start timestamp)
+
+        # Get list of files from current repository
         self.selected_items = []
         try:
             docs = util.get_files(repository.docs)
         except KeyError:
             docs = []
 
-        items = []
-        invalid = []
-        ds = datetime.now()
+
+        # Initialize variables
+        items = []      # Valid items
+        invalid = []    # Invalid items
 
         keys_used = {}
         key_fields = [('Date', 0), ('Country', 1), ('Group', 2), ('SentBy', 3), ('Purpose', 4), ('Concept', 5), ('SentTo', 6)]
@@ -479,13 +482,9 @@ class MiAZWorkspace(Gtk.Box):
 
         ENV['CACHE']['CONCEPTS']['ACTIVE'] = sorted(concepts_active)
         ENV['CACHE']['CONCEPTS']['INACTIVE'] = sorted(concepts_inactive)
-        de = datetime.now()
-        dt = de - ds
-        self.log.debug(f"Workspace updated ({dt})")
 
-        util.json_save(self.fcache, self.cache)
         GLib.idle_add(self.view.update, items)
-        self._on_filter_selected()
+        # ~ self._on_filter_selected()
         self.view.select_first_item()
         renamed = 0
         for filename in invalid:
@@ -514,8 +513,13 @@ class MiAZWorkspace(Gtk.Box):
             togglebutton.set_active(False)
         self.review = togglebutton.get_active()
         self.app.set_status(MiAZStatus.RUNNING)
-        self.emit('workspace-view-updated')
 
+        # Measure performance (end timestamp and result)
+        de = datetime.now()
+        dt = de - ds
+        self.log.debug(f"Workspace updated in {dt}s")
+
+        self.emit('workspace-view-updated')
         return False
 
     def _do_eval_cond_matches_freetext(self, item):
@@ -717,3 +721,7 @@ class MiAZWorkspace(Gtk.Box):
         selection = self.view.get_selection()
         selection.unselect_all()
 
+    def _on_application_finished(self, *args):
+        util = self.app.get_service('util')
+        util.json_save(self.fcache, self.cache)
+        self.log.debug(f"Workspace cache saved to {self.fcache}")
