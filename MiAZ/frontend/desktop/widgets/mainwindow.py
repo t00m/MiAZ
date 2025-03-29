@@ -278,8 +278,8 @@ class MiAZMainWindow(Gtk.Box):
         section_shortcut_common.append_submenu("All plugins ...", plugins_submenu)
 
         # Create menuitem for Application preferences
-        menuitem = factory.create_menuitem('preferences', _('Application preferences'), actions.show_app_settings, None, [])
-        self.app.add_widget('workspace-menu-selection-section-app-preferences', menuitem)
+        # ~ menuitem = factory.create_menuitem('preferences', _('Application preferences'), actions.show_app_settings, None, [])
+        # ~ self.app.add_widget('workspace-menu-selection-section-app-preferences', menuitem)
 
         # ~ # This is a common action: add to shortcuts, app zone
         # ~ section_app = self.app.get_widget('workspace-menu-selection-section-app')
