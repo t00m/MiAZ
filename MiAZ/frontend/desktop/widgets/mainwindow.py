@@ -250,6 +250,7 @@ class MiAZMainWindow(Gtk.Box):
         # Create the 'Plugins' submenu
         plugins_submenu = self.app.add_widget('workspace-menu-plugins', Gio.Menu.new())
         self.log.debug("Plugins menu")
+
         # Iterate through the plugin categories and subcategories
         for category, subcategories in plugin_categories.items():
             # Create a submenu for each category
@@ -258,18 +259,18 @@ class MiAZMainWindow(Gtk.Box):
             category_name = f"workspace-menu-plugins-{cid}"
             self.app.add_widget(category_name, category_submenu)
             self.log.debug(f"- '{category_name}'")
+
+            # Add each subcategory as a submenu (to attach plugins later)
             for subcategory, description in subcategories.items():
-                # Add each subcategory as a submenu (to attach plugins later)
                 subcategory_submenu = Gio.Menu()
                 sid = subcategory.lower().replace(' ', '-')
                 subcategory_name = f"workspace-menu-plugins-{cid}-{sid}"
                 self.app.add_widget(subcategory_name, subcategory_submenu)
                 self.log.debug(f"\t\t- '{subcategory_name}'")
-                # Add a placeholder menu item (you can replace this with actual plugins)
-                # ~ subcategory_submenu.append("Plugin 1", f"app.{subcategory.replace(' ', '').lower()}_plugin1")
 
                 # Add the subcategory submenu to the category submenu
                 category_submenu.append_submenu(subcategory, subcategory_submenu)
+
             # Add the category submenu to the 'Plugins' submenu
             plugins_submenu.append_submenu(category, category_submenu)
 
@@ -280,17 +281,17 @@ class MiAZMainWindow(Gtk.Box):
         menuitem = factory.create_menuitem('preferences', _('Application preferences'), actions.show_app_settings, None, [])
         self.app.add_widget('workspace-menu-selection-section-app-preferences', menuitem)
 
-        # This is a common action: add to shortcuts, app zone
-        section_app = self.app.get_widget('workspace-menu-selection-section-app')
-        section_app.append_item(menuitem)
+        # ~ # This is a common action: add to shortcuts, app zone
+        # ~ section_app = self.app.get_widget('workspace-menu-selection-section-app')
+        # ~ section_app.append_item(menuitem)
 
-        # Create menuitem for Application preferences
-        menuitem = factory.create_menuitem('about', _('About this application ...'), actions.show_app_about, None, [])
-        self.app.add_widget('workspace-menu-selection-section-bottom-about', menuitem)
+        # ~ # Create menuitem for Application preferences
+        # ~ menuitem = factory.create_menuitem('about', _('About this application ...'), actions.show_app_about, None, [])
+        # ~ self.app.add_widget('workspace-menu-selection-section-bottom-about', menuitem)
 
-        # This is a common action: add to shortcuts, app zone
-        section_app = self.app.get_widget('workspace-menu-selection-section-bottom')
-        section_app.append_item(menuitem)
+        # ~ # This is a common action: add to shortcuts, app zone
+        # ~ section_app = self.app.get_widget('workspace-menu-selection-section-bottom')
+        # ~ section_app.append_item(menuitem)
 
         return menu_selection
 

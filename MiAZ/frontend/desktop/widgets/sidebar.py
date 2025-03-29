@@ -87,6 +87,7 @@ class MiAZSidebar(Adw.Bin):
 
         # Clear filters button
         button_clear_filters = self._setup_clear_filters_button()
+        button_repository_settings = self._setup_repo_settings_button()
 
         # Sidebar title
         repo_id = config['App'].get('current')
@@ -110,7 +111,7 @@ class MiAZSidebar(Adw.Bin):
                 top_bars=[
                     MiAZHeaderBar(
                         title_widget=boxTitle,
-                        start_children=[],
+                        start_children=[button_repository_settings],
                         end_children=[button_clear_filters],
                     )
                 ],
@@ -183,6 +184,14 @@ class MiAZSidebar(Adw.Bin):
     def _setup_clear_filters_button(self):
         factory = self.app.get_service('factory')
         button = factory.create_button(icon_name='io.github.t00m.MiAZ-entry_clear', tooltip='Clear all filters', css_classes=['flat'], callback=self.clear_filters)
+        self.app.add_widget('headerbar-button-clear-filters', button)
+
+        return button
+
+    def _setup_repo_settings_button(self):
+        actions = self.app.get_service('actions')
+        factory = self.app.get_service('factory')
+        button = factory.create_button(icon_name='io.github.t00m.MiAZ-emblem-system-symbolic', tooltip='Repository management', css_classes=['flat'], callback=actions.show_repository_settings)
         self.app.add_widget('headerbar-button-clear-filters', button)
 
         return button
