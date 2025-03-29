@@ -6,6 +6,7 @@
 
 from gi.repository import Adw
 from gi.repository import Gio
+from gi.repository import GLib
 from gi.repository import Gtk
 
 from MiAZ.backend.log import MiAZLog
@@ -87,6 +88,8 @@ class MiAZDialog:
                 dialog.set_close_response("apply")
                 dialog.set_response_appearance("apply", Adw.ResponseAppearance.SUGGESTED)
                 dialog.set_response_enabled("apply", True)
+                # Set up timeout to close after 5 seconds (5000 milliseconds)
+                GLib.timeout_add(5000, lambda: dialog.close() or GLib.SOURCE_REMOVE)
 
             if callback is None:
                 dialog.connect('response', self.close)
