@@ -46,7 +46,6 @@ class MiAZConfigView(MiAZSelector):
 
     def update_config(self):
         self.config = self.conf[self.config_name]
-        self.log.debug(f"Updated configview for {self.config_name}")
 
     def get_config_for(self):
         return self.config.config_for
