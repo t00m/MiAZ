@@ -24,6 +24,7 @@ from MiAZ.frontend.desktop.widgets.configview import MiAZRepositories
 from MiAZ.frontend.desktop.widgets.configview import MiAZUserPlugins
 from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewPlugin
 from MiAZ.frontend.desktop.widgets.window import MiAZCustomWindow
+from MiAZ.frontend.desktop.widgets.pluginuimanager import MiAZPluginUIManager
 from MiAZ.backend.config import MiAZConfigRepositories
 from MiAZ.backend.pluginsystem import MiAZPluginType
 from MiAZ.frontend.desktop.services.dialogs import MiAZFileChooserDialog
@@ -133,18 +134,22 @@ class MiAZAppSettings(Adw.PreferencesDialog):
         group = Adw.PreferencesGroup()
         group.set_title('Plugins')
         # ~ FIXME: Add plugins back revamped.
-        # ~ page.add(group)
+        page.add(group)
 
         ### Row Plugins
         #### Manage plugins
         row = Adw.ActionRow(title=_('Manage plugins'))
         group.add(row)
-        button = self.factory.create_button(icon_name='io.github.t00m.MiAZ-res-plugins', callback=self.noop, tooltip="Manage plugins")
+        button = self.factory.create_button(icon_name='io.github.t00m.MiAZ-res-plugins', callback=self._on_manage_plugins, tooltip="Manage plugins")
         button.set_valign(Gtk.Align.CENTER)
         row.add_prefix(button)
 
-    def noop(self, *args):
-        self.log.debug("noop")
+    def _on_manage_plugins(self, *args):
+        window = self.app.get_widget('window')
+        winplugins = MiAZPluginUIManager(self.app)
+        winplugins.set_transient_for(window)
+        winplugins.set_modal(True)
+        winplugins.present()
 
     def _build_ui_page_plugins(self):
         # Plugins page
