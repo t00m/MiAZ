@@ -45,7 +45,12 @@ class MiAZWorkspace(Gtk.Box):
     __gsignals__ = {
         "workspace-loaded":  (GObject.SignalFlags.RUN_LAST, None, ()),
         "workspace-view-updated": (GObject.SignalFlags.RUN_LAST, None, ()),
+        "workspace-view-selection-changed": (GObject.SignalFlags.RUN_LAST, None, ()),
+        "workspace-view-filtered": (GObject.SignalFlags.RUN_LAST, None, ()),
     }
+    _num_selected_items = 0
+    _num_displayed_items = 0
+    _num_total_items = 0
     workspace_loaded = False
     selected_items = []
     dates = {}
@@ -223,32 +228,14 @@ class MiAZWorkspace(Gtk.Box):
     def _on_workspace_update(self, *args):
         GLib.idle_add(self.update)
 
+    def unselect_items(self):
+        self.selected_items = []
+
     def update_dropdown_filter(self, config, item_type):
         actions = self.app.get_service('actions')
         dropdowns = self.app.get_widget('ws-dropdowns')
         i_type = item_type.__gtype_name__
         actions.dropdown_populate(config, dropdowns[i_type], item_type)
-
-    def _on_selection_changed(self, selection, position, n_items):
-        workspace_menu = self.app.get_widget('workspace-menu')
-        repository = self.app.get_service('repo')
-        util = self.app.get_service('util')
-        self.selected_items = []
-        model = selection.get_model()
-        bitset = selection.get_selection()
-        for index in range(bitset.get_size()):
-            pos = bitset.get_nth(index)
-            item = model.get_item(pos)
-            self.selected_items.append(item)
-        label = workspace_menu.get_child()
-        docs = util.get_files(repository.docs)
-        docs_in_view = len(model)
-        label.set_markup(f"<small>{len(self.selected_items)}</small> / {docs_in_view} / <big>{len(docs)}</big>")
-        tooltip = ""
-        tooltip += f"{len(self.selected_items)} documents selected\n"
-        tooltip += f"{len(model)} documents in this view\n"
-        tooltip += f"{len(docs)} documents in this repository"
-        workspace_menu.set_tooltip_markup(tooltip)
 
     def show_pending_documents(self, *args):
         sidebar = self.app.get_widget('sidebar')
@@ -385,7 +372,6 @@ class MiAZWorkspace(Gtk.Box):
         except KeyError:
             docs = []
 
-
         # Initialize variables
         items = []      # Valid items
         invalid = []    # Invalid items
@@ -485,7 +471,7 @@ class MiAZWorkspace(Gtk.Box):
 
         GLib.idle_add(self.view.update, items)
         # ~ self._on_filter_selected()
-        self.view.select_first_item()
+        # ~ self.view.select_first_item()
         renamed = 0
         for filename in invalid:
             source = os.path.join(repository.docs, filename)
@@ -497,7 +483,7 @@ class MiAZWorkspace(Gtk.Box):
         if renamed > 0:
             self.log.debug(f"Documents renamed: {renamed}")
 
-        self.selected_items = []
+        # ~ self.selected_items = []
 
         review = 0
         for item in items:
@@ -677,6 +663,7 @@ class MiAZWorkspace(Gtk.Box):
             pass
 
     def _on_filter_selected(self, *args):
+        workspace_menu = self.app.get_widget('workspace-menu')
         app_status = self.app.get_status()
         util = self.app.get_service('util')
         repository = self.app.get_service('repo')
@@ -688,30 +675,38 @@ class MiAZWorkspace(Gtk.Box):
         if status == MiAZStatus.BUSY:
             return
 
-        workspace_menu = self.app.get_widget('workspace-menu')
         if self.workspace_loaded:
             self.view.refilter()
             model = self.view.cv.get_model() # nº items in current view
-            label = workspace_menu.get_child()
-            docs = util.get_files(repository.docs) # nº total items
-            stack = self.app.get_widget('stack')
-            items_in_view = len(model)
-            label_text = f"<small>{len(self.selected_items)}</small> / {len(model)} / <big>{len(docs)}</big>"
-            # ~ self.log.error(label_text)
-            label.set_markup(label_text)
-            tooltip = ""
-            tooltip += f"{len(self.selected_items)} documents selected\n"
-            tooltip += f"{len(model)} documents in this view\n"
-            tooltip += f"{len(docs)} documents in this repository"
-            workspace_menu.set_tooltip_markup(tooltip)
-            searchentry = self.app.get_widget('searchentry')
-            if items_in_view > 0:
-                stack.set_visible_child_name('workspace')
-                searchentry.get_style_context().remove_class(class_name='error')
-            else:
-                stack.set_visible_child_name('page-404')
-                searchentry.get_style_context().add_class(class_name='error')
+            self._num_selected_items = len(self.selected_items)
+            self._num_displayed_items = len(model)
+            self._num_total_items = len(util.get_files(repository.docs)) # nº total items
+            self.emit('workspace-view-filtered')
 
+    def _on_selection_changed(self, selection, position, n_items):
+        repository = self.app.get_service('repo')
+        util = self.app.get_service('util')
+        self.selected_items = []
+        model = selection.get_model()
+        bitset = selection.get_selection()
+        for index in range(bitset.get_size()):
+            pos = bitset.get_nth(index)
+            item = model.get_item(pos)
+            self.selected_items.append(item)
+        self._on_filter_selected()
+        # ~ self._num_selected_items = len(self.selected_items)
+        # ~ self._num_displayed_items = len(model)
+        # ~ self._num_total_items = len(util.get_files(repository.docs)) # nº total items
+        # ~ self.emit('workspace-view-selection-changed')
+
+    def get_num_selected_items(self):
+        return self._num_selected_items
+
+    def get_num_total_items(self):
+        return self._num_total_items
+
+    def get_num_displayed_items(self):
+        return self._num_displayed_items
 
     def _on_select_all(self, *args):
         selection = self.view.get_selection()
