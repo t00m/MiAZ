@@ -1,4 +1,5 @@
 import os
+import base64
 import requests
 from gettext import gettext as _
 
@@ -8,11 +9,11 @@ from gi.repository import GObject
 
 from MiAZ.backend.log import MiAZLog
 from MiAZ.backend.models import Plugin
-from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewPlugin
+# ~ from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewPlugin
+from MiAZ.frontend.desktop.widgets.configview import MiAZUserPlugins
 from MiAZ.frontend.desktop.widgets.window import MiAZCustomWindow
 from MiAZ.backend.pluginsystem import MiAZPluginType
 
-TOKEN_PLUGINS_REPO_READ_ONLY = "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"
 
 class MiAZPluginUIManager(MiAZCustomWindow):
     __gtype_name__ = 'MiAZPluginUIManager'
@@ -21,32 +22,78 @@ class MiAZPluginUIManager(MiAZCustomWindow):
         self.app = app
         self.log = MiAZLog('MiAZ.MiAZPluginUIManager')
         self.name = 'plugin-ui-manager'
-
         self.title = f"Plugin Manager"
         super().__init__(app, self.name, self.title, **kwargs)
-        self._build_ui()
+
 
     def _build_ui(self):
-        vbox = self.factory.create_box_vertical(margin=0, spacing=0, hexpand=True, vexpand=True)
+        factory = self.app.get_service('factory')
+        self.set_default_size(800, 600)
+        vbox = self.factory.create_box_vertical(margin=0, spacing=6, hexpand=True, vexpand=True)
+
+        # Toolbar
+        toolbar = Gtk.ActionBar()
+        vbox.append(toolbar)
+
+        # Toolbar refresh button
+        button = factory.create_button(icon_name='io.github.t00m.MiAZ-view-refresh-symbolic', tooltip='Refresh plugin list', callback=self.refresh_available_plugin_list)
+        toolbar.pack_start(button)
+
         scrwin = self.factory.create_scrolledwindow()
         self.app.add_widget('window-plugin-ui-manager-scrwin', scrwin)
         vbox.append(scrwin)
         pm = self.app.get_service('plugin-manager')
-        view = self.app.add_widget('window-plugin-ui-manager-view', MiAZColumnViewPlugin(self.app))
+        view = self.app.add_widget('window-plugin-ui-manager-view', MiAZUserPlugins(self.app))
         view.set_hexpand(True)
         view.set_vexpand(True)
         scrwin.set_child(view)
+        self.mainbox.append(vbox)
 
         # System Plugins
-        items = []
-        item_type = Plugin
-        for plugin in pm.plugins:
-            if pm.get_plugin_type(plugin) == MiAZPluginType.SYSTEM:
-                pid = plugin.get_module_name()
-                title = plugin.get_description()
-                items.append(item_type(id=pid, title=title))
-        view.update(items)
-        return vbox
+        # ~ items = []
+        # ~ item_type = Plugin
+        # ~ for plugin in pm.plugins:
+            # ~ if pm.get_plugin_type(plugin) == MiAZPluginType.SYSTEM:
+                # ~ pid = plugin.get_module_name()
+                # ~ title = plugin.get_description()
+                # ~ items.append(item_type(id=pid, title=title))
+        # ~ view.update(items)
+
+        # ~ return vbox
+
+    def refresh_available_plugin_list(self, *args):
+        """Retrieve MiAZ plugin index file"""
+        owner = "t00m"
+        repo = "MiAZ-Plugins"
+        file_name = "index-plugins.json"
+        branch = "sandbox"  # Specify your branch here
+        # TOKEN_PLUGINS_REPO_READ_ONLY
+        token_encoded = "Z2l0aHViX3BhdF8xMUFBQzZNWlEwT0NNM210bm1LV3JYX016NzdyYkVKekFxUkQ4M1ozdlF4T3FhQ1lBc29hMm9HeW5LeTlrWTZ4WUdRTlBXUkFJNHpiVUVxZzQz"
+        token = base64.b64decode(token_encoded.encode('utf-8')).decode('utf-8')
+        headers = {'Authorization': f'token {token}'} if token else {}
+        base_url = f'https://api.github.com/repos/{owner}/{repo}/contents/'
+        params = {'ref': branch}  # This parameter specifies the branch
+
+        try:
+            response = requests.get(base_url, headers=headers, params=params)
+            response.raise_for_status()
+            contents = response.json()
+            for item in contents:
+                if item['name'] == file_name:
+                    file_url = item['download_url']
+                    response = requests.get(file_url)
+                    response.raise_for_status()
+                    self.log.info(f"Downloaded plugin index from repo {repo} (branch: {branch})")
+                    return response.json()
+        except HTTPError as http_err:
+            print(f"HTTP error occurred: {http_err}")
+        except Exception as err:
+            print(f"An error occurred: {err}")
+
+
+
+
+
 
     # ~ def _create_widget_for_plugins(self):
         # ~ vbox = self.factory.create_box_vertical(margin=0, spacing=0, hexpand=True, vexpand=True)
