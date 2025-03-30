@@ -146,16 +146,6 @@ class MiAZMainWindow(Gtk.Box):
             page_not_found.set_icon_name('io.github.t00m.MiAZ-dialog-warning-symbolic')
             page_not_found.set_visible(True)
 
-    def _setup_widget_rename(self):
-        pass
-        # ~ stack = self.app.get_widget('stack')
-        # ~ widget_rename = self.app.get_widget('rename')
-        # ~ if widget_rename is None:
-            # ~ widget_rename = self.app.add_widget('rename', MiAZRenameDialog(self.app))
-            # ~ page_rename = stack.add_titled(widget_rename, 'rename', 'MiAZ')
-            # ~ page_rename.set_icon_name('document-properties')
-            # ~ page_rename.set_visible(False)
-
     def _setup_page_workspace(self):
         stack = self.app.get_widget('stack')
         widget_workspace = self.app.get_widget('workspace')
@@ -166,7 +156,37 @@ class MiAZMainWindow(Gtk.Box):
             page_workspace.set_visible(True)
             actions = self.app.get_service('actions')
             actions.show_stack_page_by_name('workspace')
+            widget_workspace.connect('workspace-view-selection-changed', self._on_workspace_menu_update)
+            widget_workspace.connect('workspace-view-filtered', self._on_workspace_menu_update)
         return widget_workspace
+
+    def _on_workspace_menu_update(self, *args):
+        stack = self.app.get_widget('stack')
+        workspace = self. app.get_widget('workspace')
+        workspace_menu = self.app.get_widget('workspace-menu')
+
+        s = workspace.get_num_selected_items() # Items selected
+        v = workspace.get_num_displayed_items() # Items in view
+        t = workspace.get_num_total_items() # Items in repository
+
+        label = workspace_menu.get_child()
+        label_text = f"<small>{s}</small> / {v} / <big>{t}</big>"
+        label.set_markup(label_text)
+        tooltip = ""
+        tooltip += f"{s} documents selected\n"
+        tooltip += f"{v} documents in this view\n"
+        tooltip += f"{t} documents in this repository"
+        workspace_menu.set_tooltip_markup(tooltip)
+        self.log.debug(f"filter selected: {s}/{v}/{t}")
+        searchentry = self.app.get_widget('searchentry')
+        if v > 0:
+            stack.set_visible_child_name('workspace')
+            searchentry.get_style_context().remove_class(class_name='error')
+            searchentry.get_style_context().add_class(class_name='success')
+        else:
+            stack.set_visible_child_name('page-404')
+            searchentry.get_style_context().remove_class(class_name='success')
+            searchentry.get_style_context().add_class(class_name='error')
 
     def _setup_toolbar_top(self):
         factory = self.app.get_service('factory')
@@ -174,31 +194,19 @@ class MiAZMainWindow(Gtk.Box):
         hdb_right = self.app.get_widget('headerbar-right-box')
         hdb_right.get_style_context().add_class(class_name='linked')
 
-
-        ## Show/Hide Filters
-        # ~ tgbSidebar = factory.create_button_toggle('io.github.t00m.MiAZ-sidebar-show-left-symbolic', callback=self._on_sidebar_toggled)
-        # ~ self.app.add_widget('workspace-togglebutton-filters', tgbSidebar)
-        # ~ tgbSidebar.set_tooltip_text("Show sidebar and filters")
-        # ~ tgbSidebar.set_active(True)
-        # ~ tgbSidebar.set_hexpand(False)
-        # ~ tgbSidebar.get_style_context().add_class(class_name='dimmed')
-        # ~ #tgbSidebar.get_style_context().remove_class(class_name='flat')
-        # ~ #tgbSidebar.set_valign(Gtk.Align.CENTER)
-        # ~ hdb_left.append(tgbSidebar)
-
         # Workspace Menu
         hbox = factory.create_box_horizontal(margin=0, spacing=6, hexpand=False)
         popovermenu = self._setup_menu_selection()
         label = Gtk.Label()
-        self.btnDocsSel = Gtk.MenuButton()
-        self.app.add_widget('workspace-menu', self.btnDocsSel)
-        self.btnDocsSel.set_always_show_arrow(True)
-        self.btnDocsSel.set_child(label)
-        self.popDocsSel = Gtk.PopoverMenu()
-        self.popDocsSel.set_menu_model(popovermenu)
-        self.btnDocsSel.set_popover(popover=self.popDocsSel)
-        self.btnDocsSel.set_sensitive(True)
-        hbox.append(self.btnDocsSel)
+        btnDocsSel  = Gtk.MenuButton()
+        self.app.add_widget('workspace-menu', btnDocsSel)
+        btnDocsSel .set_always_show_arrow(True)
+        btnDocsSel .set_child(label)
+        popDocsSel = Gtk.PopoverMenu()
+        popDocsSel.set_menu_model(popovermenu)
+        btnDocsSel .set_popover(popover=popDocsSel)
+        btnDocsSel .set_sensitive(True)
+        hbox.append(btnDocsSel)
 
         # Pending documents toggle button
         button = factory.create_button_toggle( icon_name='io.github.t00m.MiAZ-rename',
