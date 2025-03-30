@@ -72,6 +72,7 @@ class MiAZWorkflow(GObject.GObject):
             if not self.app.get_plugins_loaded():
                 self.app.load_plugins()
             self.app.set_status(MiAZStatus.RUNNING)
+            workspace.emit('workspace-view-filtered')
             actions.show_stack_page_by_name('workspace')
             self.app.emit('application-started')
         else:
@@ -96,16 +97,8 @@ class MiAZWorkflow(GObject.GObject):
         if page_workspace is None:
             mainbox._setup_page_workspace()
 
-        # Setup Rename widget
-        rename_widget = self.app.get_widget('rename')
-        if rename_widget is None:
-            mainbox._setup_widget_rename()
-
         headerbar = self.app.get_widget('headerbar')
         headerbar.set_visible(True)
-        # ~ tgbSidebar = self.app.get_widget('workspace-togglebutton-filters')
-        # ~ tgbSidebar.set_active(False)
-        # ~ tgbSidebar.set_visible(False)
         btnWorkspace = self.app.get_widget('workspace-menu')
         btnWorkspace.set_visible(True)
 

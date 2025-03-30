@@ -69,7 +69,6 @@ class MiAZDialog:
         dialog.set_heading(f"{title}")
         dialog.set_body(f"{body}")
         dialog.set_size_request(width, height)
-        # ~ dialog.set_body(body)
 
         # Add custom widget
         if widget is not None:
