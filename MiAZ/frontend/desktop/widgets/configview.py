@@ -423,7 +423,7 @@ class MiAZUserPlugins(MiAZConfigView):
     current = None
 
     def __init__(self, app):
-        super(MiAZConfigView, self).__init__(app, edit=False)
+        super(MiAZConfigView, self).__init__(app, edit=True)
         super().__init__(app, 'Plugin')
         self._update_view_available()
         self._update_view_used()
