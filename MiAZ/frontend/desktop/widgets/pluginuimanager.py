@@ -1,4 +1,5 @@
 import os
+import json
 import base64
 import requests
 from gettext import gettext as _
@@ -7,6 +8,7 @@ from gi.repository import Adw
 from gi.repository import Gtk
 from gi.repository import GObject
 
+from MiAZ.env import ENV
 from MiAZ.backend.log import MiAZLog
 from MiAZ.backend.models import Plugin
 # ~ from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewPlugin
@@ -63,32 +65,31 @@ class MiAZPluginUIManager(MiAZCustomWindow):
 
     def refresh_available_plugin_list(self, *args):
         """Retrieve MiAZ plugin index file"""
-        owner = "t00m"
-        repo = "MiAZ-Plugins"
-        file_name = "index-plugins.json"
-        branch = "sandbox"  # Specify your branch here
+        # ~ owner = "t00m"
+        # ~ repo = "MiAZ-Plugins"
+        # ~ file_name = "index-plugins.json"
+        # ~ branch = "sandbox"  # Specify your branch here
         # TOKEN_PLUGINS_REPO_READ_ONLY
-        token_encoded = "Z2l0aHViX3BhdF8xMUFBQzZNWlEwT0NNM210bm1LV3JYX016NzdyYkVKekFxUkQ4M1ozdlF4T3FhQ1lBc29hMm9HeW5LeTlrWTZ4WUdRTlBXUkFJNHpiVUVxZzQz"
-        token = base64.b64decode(token_encoded.encode('utf-8')).decode('utf-8')
-        headers = {'Authorization': f'token {token}'} if token else {}
-        base_url = f'https://api.github.com/repos/{owner}/{repo}/contents/'
-        params = {'ref': branch}  # This parameter specifies the branch
+        # ~ token_encoded = "Z2l0aHViX3BhdF8xMUFBQzZNWlEwT0NNM210bm1LV3JYX016NzdyYkVKekFxUkQ4M1ozdlF4T3FhQ1lBc29hMm9HeW5LeTlrWTZ4WUdRTlBXUkFJNHpiVUVxZzQz"
+        # ~ token = base64.b64decode(token_encoded.encode('utf-8')).decode('utf-8')
+        # ~ self.log.debug(token)
+        # ~ headers = {'Authorization': f'token {token}'} if token else {}
+        # ~ base_url = f'https://api.github.com/repos/{owner}/{repo}/contents/'
+        # ~ params = {'ref': branch}  # This parameter specifies the branch
+        url = "https://raw.githubusercontent.com/t00m/MiAZ-Plugins/refs/heads/sandbox/index-plugins.json"
 
         try:
-            response = requests.get(base_url, headers=headers, params=params)
+            response = requests.get(url)
             response.raise_for_status()
             contents = response.json()
-            for item in contents:
-                if item['name'] == file_name:
-                    file_url = item['download_url']
-                    response = requests.get(file_url)
-                    response.raise_for_status()
-                    self.log.info(f"Downloaded plugin index from repo {repo} (branch: {branch})")
-                    return response.json()
-        except HTTPError as http_err:
-            print(f"HTTP error occurred: {http_err}")
+            index_plugins = os.path.join(ENV['LPATH']['CACHE'], "index-plugins.json")
+            with open(index_plugins, 'w') as fp:
+                json.dump(contents, fp)
+            self.log.info(f"Plugin index saved to {index_plugins}")
+        # ~ except HTTPError as http_err:
+            # ~ print(f"HTTP error occurred: {http_err}")
         except Exception as err:
-            print(f"An error occurred: {err}")
+            self.log.error(f"An error occurred: {err}")
 
 
 
