@@ -442,77 +442,77 @@ class MiAZUserPlugins(MiAZConfigView):
         self.viewSl = MiAZColumnViewPlugin(self.app)
         self._add_columnview_used(self.viewSl)
 
-    def _update_view_available(self):
-        plugin_manager = self.app.get_service('plugin-manager')
-        items = []
-        item_type = self.config.model
-        for plugin in plugin_manager.plugins:
-            ptype = plugin_manager.get_plugin_type(plugin)
-            if ptype == MiAZPluginType.USER:
-                pid = plugin.get_module_name()
-                title = plugin.get_description() #+ ' (v%s)' % plugin.get_version()
-                items.append(item_type(id=pid, title=title))
-        self.viewAv.update(items)
+    # ~ def _update_view_available(self):
+        # ~ plugin_manager = self.app.get_service('plugin-manager')
+        # ~ items = []
+        # ~ item_type = self.config.model
+        # ~ for plugin in plugin_manager.plugins:
+            # ~ ptype = plugin_manager.get_plugin_type(plugin)
+            # ~ if ptype == MiAZPluginType.USER:
+                # ~ pid = plugin.get_module_name()
+                # ~ title = plugin.get_description() #+ ' (v%s)' % plugin.get_version()
+                # ~ items.append(item_type(id=pid, title=title))
+        # ~ self.viewAv.update(items)
 
-    def _update_view_used(self):
-        plugin_manager = self.app.get_service('plugin-manager')
-        items = []
-        item_type = self.config.model
-        for plugin in plugin_manager.plugins:
-            ptype = plugin_manager.get_plugin_type(plugin)
-            if ptype == MiAZPluginType.USER:
-                pid = plugin.get_module_name()
-                title = plugin.get_description() #+ ' (v%s)' % plugin.get_version()
-                if self.config.exists_used(pid):
-                    items.append(item_type(id=pid, title=title))
-        self.viewSl.update(items)
+    # ~ def _update_view_used(self):
+        # ~ plugin_manager = self.app.get_service('plugin-manager')
+        # ~ items = []
+        # ~ item_type = self.config.model
+        # ~ for plugin in plugin_manager.plugins:
+            # ~ ptype = plugin_manager.get_plugin_type(plugin)
+            # ~ if ptype == MiAZPluginType.USER:
+                # ~ pid = plugin.get_module_name()
+                # ~ title = plugin.get_description() #+ ' (v%s)' % plugin.get_version()
+                # ~ if self.config.exists_used(pid):
+                    # ~ items.append(item_type(id=pid, title=title))
+        # ~ self.viewSl.update(items)
 
-    def _on_item_used_remove(self, *args):
-        plugin_manager = self.app.get_service('plugin-manager')
-        plugins_used = self.config.load_used()
-        selected_plugin = self.viewAv.get_selected()
-        if selected_plugin is None:
-            return
+    # ~ def _on_item_used_remove(self, *args):
+        # ~ plugin_manager = self.app.get_service('plugin-manager')
+        # ~ plugins_used = self.config.load_used()
+        # ~ selected_plugin = self.viewAv.get_selected()
+        # ~ if selected_plugin is None:
+            # ~ return
 
-        try:
-            plugin = plugin_manager.get_plugin_info(selected_plugin.id)
-            if plugin.is_loaded():
-                plugin_manager.unload_plugin(plugin)
-                self.log.debug(f"Plugin '{selected_plugin.id}' unloaded")
-        except AttributeError as error:
-            self.log.error(f"Unknown error unloading plugin '{selected_plugin.id}'")
-            self.log.error(error)
-        finally:
-            try:
-                del(plugins_used[selected_plugin.id])
-                self.log.debug(f"Plugin '{selected_plugin.id}' deactivated")
-                self.config.save_used(items=plugins_used)
-                self._update_view_used()
-            except KeyError:
-                # FIXME: it shouldn't reach this code.
-                # It happens when the user removes a plugin from the
-                # used view and hit the button remove ([<]) again.
-                pass
+        # ~ try:
+            # ~ plugin = plugin_manager.get_plugin_info(selected_plugin.id)
+            # ~ if plugin.is_loaded():
+                # ~ plugin_manager.unload_plugin(plugin)
+                # ~ self.log.debug(f"Plugin '{selected_plugin.id}' unloaded")
+        # ~ except AttributeError as error:
+            # ~ self.log.error(f"Unknown error unloading plugin '{selected_plugin.id}'")
+            # ~ self.log.error(error)
+        # ~ finally:
+            # ~ try:
+                # ~ del(plugins_used[selected_plugin.id])
+                # ~ self.log.debug(f"Plugin '{selected_plugin.id}' deactivated")
+                # ~ self.config.save_used(items=plugins_used)
+                # ~ self._update_view_used()
+            # ~ except KeyError:
+                # ~ # FIXME: it shouldn't reach this code.
+                # ~ # It happens when the user removes a plugin from the
+                # ~ # used view and hit the button remove ([<]) again.
+                # ~ pass
 
-    def _on_item_used_add(self, *args):
-        plugin_manager = self.app.get_service('plugin-manager')
-        plugins_used = self.config.load_used()
-        selected_plugin = self.viewAv.get_selected()
-        if selected_plugin is None:
-            return
+    # ~ def _on_item_used_add(self, *args):
+        # ~ plugin_manager = self.app.get_service('plugin-manager')
+        # ~ plugins_used = self.config.load_used()
+        # ~ selected_plugin = self.viewAv.get_selected()
+        # ~ if selected_plugin is None:
+            # ~ return
 
-        plugin_used = self.config.exists_used(selected_plugin.id)
-        item_type = self.config.model
-        i_title = item_type.__title__
-        if not plugin_used:
-            plugins_used[selected_plugin.id] = selected_plugin.title
-            plugin = plugin_manager.get_plugin_info(selected_plugin.id)
-            if not plugin.is_loaded():
-                plugin_manager.load_plugin(plugin)
-                self.config.save_used(items=plugins_used)
-                self._update_view_used()
-                self.log.debug(f"{i_title} {selected_plugin.id} activated")
-        else:
-            self.log.debug(f"{i_title} '{selected_plugin.id}' was already activated. Nothing to do")
+        # ~ plugin_used = self.config.exists_used(selected_plugin.id)
+        # ~ item_type = self.config.model
+        # ~ i_title = item_type.__title__
+        # ~ if not plugin_used:
+            # ~ plugins_used[selected_plugin.id] = selected_plugin.title
+            # ~ plugin = plugin_manager.get_plugin_info(selected_plugin.id)
+            # ~ if not plugin.is_loaded():
+                # ~ plugin_manager.load_plugin(plugin)
+                # ~ self.config.save_used(items=plugins_used)
+                # ~ self._update_view_used()
+                # ~ self.log.debug(f"{i_title} {selected_plugin.id} activated")
+        # ~ else:
+            # ~ self.log.debug(f"{i_title} '{selected_plugin.id}' was already activated. Nothing to do")
 
 

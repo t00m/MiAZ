@@ -56,7 +56,7 @@ class MiAZPluginUIManager(MiAZCustomWindow):
     def refresh_available_plugin_list(self, *args):
         """Retrieve MiAZ plugin index file if:
             - Plugin index file doesn't exist
-            - it is older than one day
+            - It is older than one day
         """
         download = False
         PLUGIN_INDEX_FILE = os.path.join(ENV['LPATH']['CACHE'], "index-plugins.json")
@@ -67,8 +67,8 @@ class MiAZPluginUIManager(MiAZCustomWindow):
         else:
             file_mod_time = datetime.fromtimestamp(file.stat().st_mtime)
             if datetime.now() - file_mod_time > timedelta(days=1):
-                self.log.debug(f"Plugin index file older than 1 day")
                 download = True
+                self.log.debug(f"Plugin index file older than 1 day")
 
         if download:
             url = "https://raw.githubusercontent.com/t00m/MiAZ-Plugins/refs/heads/sandbox/index-plugins.json"
@@ -78,22 +78,23 @@ class MiAZPluginUIManager(MiAZCustomWindow):
                 contents = response.json()
                 with open(PLUGIN_INDEX_FILE, 'w') as fp:
                     json.dump(contents, fp)
-                self.log.info(f"Plugin index saved to {PLUGIN_INDEX_FILE}")
+                self.log.info(f"Plugin index downloaded and saved to {PLUGIN_INDEX_FILE}")
             except Exception as err:
                 # FIXME: raise error dialog
                 self.log.error(f"An error occurred: {err}")
-                raise
+        else:
+            self.log.debug("Plugin index file is available and it is recent")
 
+        items = []
         with open(PLUGIN_INDEX_FILE, 'r') as fp:
-            view = self.app.get_widget('window-plugin-ui-manager-view')
             plugins = json.load(fp)
-            items = []
             for pid in plugins:
                 name = plugins[pid]['Name']
                 version = plugins[pid]['Version']
                 description = plugins[pid]['Description']
                 title = f"{name} v{version} ({description})"
                 items.append((pid, title))
-            config = self.app.get_config('Plugin')
-            config.add_available_batch(items)
-            view.update_views()
+        view = self.app.get_widget('window-plugin-ui-manager-view')
+        config = self.app.get_config('Plugin')
+        config.add_available_batch(items)
+        view.update_views()
