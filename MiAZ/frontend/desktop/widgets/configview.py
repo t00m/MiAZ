@@ -467,32 +467,34 @@ class MiAZUserPlugins(MiAZConfigView):
                     # ~ items.append(item_type(id=pid, title=title))
         # ~ self.viewSl.update(items)
 
-    # ~ def _on_item_used_remove(self, *args):
-        # ~ plugin_manager = self.app.get_service('plugin-manager')
-        # ~ plugins_used = self.config.load_used()
-        # ~ selected_plugin = self.viewAv.get_selected()
-        # ~ if selected_plugin is None:
-            # ~ return
+    def _on_item_used_remove(self, *args):
+        plugin_manager = self.app.get_service('plugin-manager')
+        plugins_used = self.config.load_used()
+        selected_plugin = self.viewAv.get_selected()
+        if selected_plugin is None:
+            return
 
-        # ~ try:
-            # ~ plugin = plugin_manager.get_plugin_info(selected_plugin.id)
-            # ~ if plugin.is_loaded():
-                # ~ plugin_manager.unload_plugin(plugin)
-                # ~ self.log.debug(f"Plugin '{selected_plugin.id}' unloaded")
-        # ~ except AttributeError as error:
-            # ~ self.log.error(f"Unknown error unloading plugin '{selected_plugin.id}'")
-            # ~ self.log.error(error)
-        # ~ finally:
-            # ~ try:
-                # ~ del(plugins_used[selected_plugin.id])
-                # ~ self.log.debug(f"Plugin '{selected_plugin.id}' deactivated")
-                # ~ self.config.save_used(items=plugins_used)
-                # ~ self._update_view_used()
-            # ~ except KeyError:
-                # ~ # FIXME: it shouldn't reach this code.
-                # ~ # It happens when the user removes a plugin from the
-                # ~ # used view and hit the button remove ([<]) again.
-                # ~ pass
+        try:
+            plugin = plugin_manager.get_plugin_info(selected_plugin.id)
+            if plugin is not None:
+                if plugin.is_loaded():
+                    plugin_manager.unload_plugin(plugin)
+                    self.log.debug(f"Plugin '{selected_plugin.id}' unloaded")
+        except AttributeError as error:
+            self.log.error(f"Unknown error unloading plugin '{selected_plugin.id}'")
+            self.log.error(error)
+            raise
+        finally:
+            try:
+                del(plugins_used[selected_plugin.id])
+                self.log.debug(f"Plugin '{selected_plugin.id}' deactivated")
+                self.config.save_used(items=plugins_used)
+                self._update_view_used()
+            except KeyError:
+                # FIXME: it shouldn't reach this code.
+                # It happens when the user removes a plugin from the
+                # used view and hit the button remove ([<]) again.
+                raise
 
     # ~ def _on_item_used_add(self, *args):
         # ~ plugin_manager = self.app.get_service('plugin-manager')

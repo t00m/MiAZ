@@ -59,8 +59,7 @@ class MiAZPluginUIManager(MiAZCustomWindow):
             - It is older than one day
         """
         download = False
-        PLUGIN_INDEX_FILE = os.path.join(ENV['LPATH']['CACHE'], "index-plugins.json")
-        file = Path(PLUGIN_INDEX_FILE)
+        file = Path(ENV['FILE']['PLUGINS'])
         if not file.exists():
             download = True
             self.log.debug("Plugin index file doesn't exist")
@@ -71,30 +70,34 @@ class MiAZPluginUIManager(MiAZCustomWindow):
                 self.log.debug(f"Plugin index file older than 1 day")
 
         if download:
-            url = "https://raw.githubusercontent.com/t00m/MiAZ-Plugins/refs/heads/sandbox/index-plugins.json"
-            try:
-                response = requests.get(url)
-                response.raise_for_status()
-                contents = response.json()
-                with open(PLUGIN_INDEX_FILE, 'w') as fp:
-                    json.dump(contents, fp)
-                self.log.info(f"Plugin index downloaded and saved to {PLUGIN_INDEX_FILE}")
-            except Exception as err:
-                # FIXME: raise error dialog
-                self.log.error(f"An error occurred: {err}")
+            self.download_plugin_index()
+            self.log.debug("Plugin index file downloaded")
         else:
             self.log.debug("Plugin index file is available and it is recent")
 
         items = []
-        with open(PLUGIN_INDEX_FILE, 'r') as fp:
+        with open(ENV['FILE']['PLUGINS'], 'r') as fp:
             plugins = json.load(fp)
             for pid in plugins:
                 name = plugins[pid]['Name']
                 version = plugins[pid]['Version']
                 description = plugins[pid]['Description']
-                title = f"{name} v{version} ({description})"
-                items.append((pid, title))
+                items.append((pid, description))
         view = self.app.get_widget('window-plugin-ui-manager-view')
         config = self.app.get_config('Plugin')
         config.add_available_batch(items)
         view.update_views()
+
+    def download_plugin_index(self, *args):
+        # FIXME: let user choose url?
+        url = "https://raw.githubusercontent.com/t00m/MiAZ-Plugins/refs/heads/sandbox/index-plugins.json"
+        try:
+            response = requests.get(url)
+            response.raise_for_status()
+            contents = response.json()
+            with open(ENV['FILE']['PLUGINS'], 'w') as fp:
+                json.dump(contents, fp)
+            self.log.info(f"Plugin index downloaded and saved to {ENV['FILE']['PLUGINS']}")
+        except Exception as err:
+            # FIXME: raise error dialog
+            self.log.error(f"An error occurred: {err}")
