@@ -19,39 +19,31 @@ from MiAZ.frontend.desktop.widgets.window import MiAZCustomWindow
 from MiAZ.backend.pluginsystem import MiAZPluginType
 
 
-class MiAZPluginUIManager(MiAZCustomWindow):
+class MiAZPluginUIManager(Adw.PreferencesDialog):
     __gtype_name__ = 'MiAZPluginUIManager'
 
     def __init__(self, app, **kwargs):
+        super().__init__()
         self.app = app
         self.log = MiAZLog('MiAZ.MiAZPluginUIManager')
-        self.name = 'plugin-ui-manager'
-        self.title = f"Plugin Manager"
-        super().__init__(app, self.name, self.title, **kwargs)
-
+        self.log.debug("UI Plugin Manager")
+        self._build_ui()
+        self.refresh_available_plugin_list()
 
     def _build_ui(self):
         factory = self.app.get_service('factory')
-        self.set_default_size(800, 600)
-        vbox = self.factory.create_box_vertical(margin=0, spacing=6, hexpand=True, vexpand=True)
 
-        # Toolbar
-        toolbar = Gtk.ActionBar()
-        vbox.append(toolbar)
+        self.set_title('Plugin management')
+        self.set_search_enabled(True)
+        page_title = _("Available plugins")
+        page_icon = "io.github.t00m.MiAZ-res-plugins"
+        self.page = Adw.PreferencesPage(title=page_title, icon_name=page_icon)
+        self.add(self.page)
 
-        # Toolbar refresh button
-        button = factory.create_button(icon_name='io.github.t00m.MiAZ-view-refresh-symbolic', tooltip='Refresh plugin list', callback=self.refresh_available_plugin_list)
-        toolbar.pack_start(button)
-
-        scrwin = self.factory.create_scrolledwindow()
-        self.app.add_widget('window-plugin-ui-manager-scrwin', scrwin)
-        vbox.append(scrwin)
-        pm = self.app.get_service('plugin-manager')
-        view = self.app.add_widget('window-plugin-ui-manager-view', MiAZUserPlugins(self.app))
-        view.set_hexpand(True)
-        view.set_vexpand(True)
-        scrwin.set_child(view)
-        self.mainbox.append(vbox)
+        ## Group plugins
+        self.group = Adw.PreferencesGroup()
+        self.group.set_title('Plugins')
+        self.page.add(self.group)
 
     def refresh_available_plugin_list(self, *args):
         """Retrieve MiAZ plugin index file if:
@@ -75,18 +67,17 @@ class MiAZPluginUIManager(MiAZCustomWindow):
         else:
             self.log.debug("Plugin index file is available and it is recent")
 
-        items = []
         with open(ENV['FILE']['PLUGINS'], 'r') as fp:
             plugins = json.load(fp)
             for pid in plugins:
                 name = plugins[pid]['Name']
                 version = plugins[pid]['Version']
                 description = plugins[pid]['Description']
-                items.append((pid, description))
-        view = self.app.get_widget('window-plugin-ui-manager-view')
-        config = self.app.get_config('Plugin')
-        config.add_available_batch(items)
-        view.update_views()
+                row = Adw.SwitchRow(title=name, subtitle=description)
+                self.group.add(row)
+        # ~ config = self.app.get_config('Plugin')
+        # ~ config.add_available_batch(items)
+        # ~ view.update_views()
 
     def download_plugin_index(self, *args):
         # FIXME: let user choose url?

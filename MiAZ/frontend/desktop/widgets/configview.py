@@ -496,7 +496,8 @@ class MiAZUserPlugins(MiAZConfigView):
                 # used view and hit the button remove ([<]) again.
                 raise
 
-    # ~ def _on_item_used_add(self, *args):
+    def _on_item_used_add(self, *args):
+        self.log.error("Not implemented yet")
         # ~ plugin_manager = self.app.get_service('plugin-manager')
         # ~ plugins_used = self.config.load_used()
         # ~ selected_plugin = self.viewAv.get_selected()
@@ -508,6 +509,7 @@ class MiAZUserPlugins(MiAZConfigView):
         # ~ i_title = item_type.__title__
         # ~ if not plugin_used:
             # ~ plugins_used[selected_plugin.id] = selected_plugin.title
+
             # ~ plugin = plugin_manager.get_plugin_info(selected_plugin.id)
             # ~ if not plugin.is_loaded():
                 # ~ plugin_manager.load_plugin(plugin)
