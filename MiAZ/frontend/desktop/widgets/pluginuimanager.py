@@ -13,14 +13,16 @@ from gi.repository import GObject
 
 from MiAZ.env import ENV
 from MiAZ.backend.log import MiAZLog
-from MiAZ.backend.models import Plugin
-from MiAZ.frontend.desktop.widgets.configview import MiAZUserPlugins
-from MiAZ.frontend.desktop.widgets.window import MiAZCustomWindow
-from MiAZ.backend.pluginsystem import MiAZPluginType
+# ~ from MiAZ.backend.models import Plugin
+# ~ from MiAZ.frontend.desktop.widgets.configview import MiAZUserPlugins
+# ~ from MiAZ.frontend.desktop.widgets.window import MiAZCustomWindow
+# ~ from MiAZ.backend.pluginsystem import MiAZPluginType
 
 
 class MiAZPluginUIManager(Adw.PreferencesDialog):
     __gtype_name__ = 'MiAZPluginUIManager'
+    pages = {}
+    groups = {}
 
     def __init__(self, app, **kwargs):
         super().__init__()
@@ -32,24 +34,24 @@ class MiAZPluginUIManager(Adw.PreferencesDialog):
 
     def _build_ui(self):
         factory = self.app.get_service('factory')
-
         self.set_title('Plugin management')
         self.set_search_enabled(True)
-        page_title = _("Available plugins")
-        page_icon = "io.github.t00m.MiAZ-res-plugins"
-        self.page = Adw.PreferencesPage(title=page_title, icon_name=page_icon)
-        self.add(self.page)
+        # ~ page_title = _("Available plugins")
+        # ~ page_icon = "io.github.t00m.MiAZ-res-plugins"
+        # ~ self.page = Adw.PreferencesPage(title=page_title, icon_name=page_icon)
+        # ~ self.add(self.page)
 
         ## Group plugins
-        self.group = Adw.PreferencesGroup()
-        self.group.set_title('Plugins')
-        self.page.add(self.group)
+        # ~ self.group = Adw.PreferencesGroup()
+        # ~ self.group.set_title('Plugins')
+        # ~ self.page.add(self.group)
 
     def refresh_available_plugin_list(self, *args):
         """Retrieve MiAZ plugin index file if:
             - Plugin index file doesn't exist
             - It is older than one day
         """
+        factory = self.app.get_service('factory')
         download = False
         file = Path(ENV['FILE']['PLUGINS'])
         if not file.exists():
@@ -71,13 +73,35 @@ class MiAZPluginUIManager(Adw.PreferencesDialog):
             plugins = json.load(fp)
             for pid in plugins:
                 name = plugins[pid]['Name']
+                self.log.debug(f"Adding plugin {name}")
                 version = plugins[pid]['Version']
                 description = plugins[pid]['Description']
-                row = Adw.SwitchRow(title=name, subtitle=description)
-                self.group.add(row)
-        # ~ config = self.app.get_config('Plugin')
-        # ~ config.add_available_batch(items)
-        # ~ view.update_views()
+                category = plugins[pid]['Category']
+                subcategory = plugins[pid]['Subcategory']
+                row = Adw.SwitchRow(title=description) #, subtitle=description)
+                group = self.get_group(category, subcategory)
+                group.add(row)
+
+    def get_group(self, category, subcategory):
+        try:
+            page = self.pages[category]
+        except:
+            page = Adw.PreferencesPage(title=category)
+            self.add(page)
+            self.pages[category] = page
+
+        try:
+            group = self.groups[page][subcategory]
+        except:
+            self.groups[page] = {}
+            group = Adw.PreferencesGroup()
+            group.set_title(subcategory)
+            page.add(group)
+            self.groups[page][subcategory] = group
+
+        self.log.debug(f"{page} {group} {category} {subcategory}")
+        return group
+
 
     def download_plugin_index(self, *args):
         # FIXME: let user choose url?
