@@ -21,7 +21,6 @@ from MiAZ.backend.log import MiAZLog
 
 class MiAZPluginUIManager(Adw.PreferencesDialog):
     __gtype_name__ = 'MiAZPluginUIManager'
-    pages = {}
     groups = {}
 
     def __init__(self, app, **kwargs):
@@ -36,10 +35,10 @@ class MiAZPluginUIManager(Adw.PreferencesDialog):
         factory = self.app.get_service('factory')
         self.set_title('Plugin management')
         self.set_search_enabled(True)
-        # ~ page_title = _("Available plugins")
-        # ~ page_icon = "io.github.t00m.MiAZ-res-plugins"
-        # ~ self.page = Adw.PreferencesPage(title=page_title, icon_name=page_icon)
-        # ~ self.add(self.page)
+        page_title = _("Available plugins")
+        page_icon = "io.github.t00m.MiAZ-res-plugins"
+        self.page = Adw.PreferencesPage(title=page_title, icon_name=page_icon)
+        self.add(self.page)
 
         ## Group plugins
         # ~ self.group = Adw.PreferencesGroup()
@@ -52,6 +51,7 @@ class MiAZPluginUIManager(Adw.PreferencesDialog):
             - It is older than one day
         """
         factory = self.app.get_service('factory')
+        self.groups = {}
         download = False
         file = Path(ENV['FILE']['PLUGINS'])
         if not file.exists():
@@ -79,29 +79,23 @@ class MiAZPluginUIManager(Adw.PreferencesDialog):
                 category = plugins[pid]['Category']
                 subcategory = plugins[pid]['Subcategory']
                 row = Adw.SwitchRow(title=description) #, subtitle=description)
-                group = self.get_group(category, subcategory)
+                prefix = factory.create_button(icon_name='io.github.t00m.MiAZ-dialog-information-symbolic')
+                prefix.set_valign(Gtk.Align.CENTER)
+                prefix.set_has_frame(False)
+                row.add_prefix(prefix)
+                group = self.get_group(category)
                 group.add(row)
+        for group_title, group_node in sorted(self.groups.items(), key=lambda item: item[0]):
+            self.page.add(group_node)
 
-    def get_group(self, category, subcategory):
+
+    def get_group(self, category):
         try:
-            page = self.pages[category]
-        except:
-            page = Adw.PreferencesPage(title=category)
-            self.add(page)
-            self.pages[category] = page
-
-        try:
-            group = self.groups[page][subcategory]
-        except:
-            self.groups[page] = {}
-            group = Adw.PreferencesGroup()
-            group.set_title(subcategory)
-            page.add(group)
-            self.groups[page][subcategory] = group
-
-        self.log.debug(f"{page} {group} {category} {subcategory}")
+            group = self.groups[category]
+        except KeyError:
+            group = Adw.PreferencesGroup(title=category)
+            self.groups[category] = group
         return group
-
 
     def download_plugin_index(self, *args):
         # FIXME: let user choose url?

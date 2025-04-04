@@ -147,7 +147,7 @@ class MiAZAppSettings(Adw.PreferencesDialog):
     def _on_manage_plugins(self, *args):
         window = self.app.get_widget('window')
         dialog = MiAZPluginUIManager(self.app)
-        dialog.present(window)
+        dialog.present(self)
 
     def _build_ui_page_plugins(self):
         # Plugins page
