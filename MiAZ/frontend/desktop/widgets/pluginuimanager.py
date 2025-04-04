@@ -13,11 +13,26 @@ from gi.repository import GObject
 
 from MiAZ.env import ENV
 from MiAZ.backend.log import MiAZLog
-# ~ from MiAZ.backend.models import Plugin
-# ~ from MiAZ.frontend.desktop.widgets.configview import MiAZUserPlugins
-# ~ from MiAZ.frontend.desktop.widgets.window import MiAZCustomWindow
-# ~ from MiAZ.backend.pluginsystem import MiAZPluginType
 
+
+class MiAZPluginUIRow:
+    def __init__(self, app):
+        self.app = app
+
+    def new(self, title: str = '', subtitle: str = ''):
+        factory = self.app.get_service('factory')
+        self._title = title
+        self._subtitle = subtitle
+        self.row = Adw.ActionRow(title=title, subtitle=subtitle)
+        widget = factory.create_box_horizontal(spacing=6)
+        separator = Gtk.Separator.new(orientation=Gtk.Orientation.VERTICAL)
+        btnInfo = factory.create_button(icon_name='io.github.t00m.MiAZ-dialog-information-symbolic')
+        btnInfo.set_valign(Gtk.Align.CENTER)
+        btnInfo.set_has_frame(False)
+        widget.append(separator)
+        widget.append(btnInfo)
+        self.row.add_suffix(widget)
+        return self.row
 
 class MiAZPluginUIManager(Adw.PreferencesDialog):
     __gtype_name__ = 'MiAZPluginUIManager'
@@ -78,11 +93,7 @@ class MiAZPluginUIManager(Adw.PreferencesDialog):
                 description = plugins[pid]['Description']
                 category = plugins[pid]['Category']
                 subcategory = plugins[pid]['Subcategory']
-                row = Adw.SwitchRow(title=description) #, subtitle=description)
-                prefix = factory.create_button(icon_name='io.github.t00m.MiAZ-dialog-information-symbolic')
-                prefix.set_valign(Gtk.Align.CENTER)
-                prefix.set_has_frame(False)
-                row.add_prefix(prefix)
+                row = MiAZPluginUIRow(self.app).new(title=description)
                 group = self.get_group(category)
                 group.add(row)
         for group_title, group_node in sorted(self.groups.items(), key=lambda item: item[0]):
