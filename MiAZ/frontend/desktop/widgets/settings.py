@@ -24,7 +24,7 @@ from MiAZ.frontend.desktop.widgets.configview import MiAZRepositories
 from MiAZ.frontend.desktop.widgets.configview import MiAZUserPlugins
 from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewPlugin
 from MiAZ.frontend.desktop.widgets.window import MiAZCustomWindow
-from MiAZ.frontend.desktop.widgets.pluginuimanager import MiAZPluginUIManager
+# ~ from MiAZ.frontend.desktop.widgets.pluginuimanager import MiAZPluginUIManager
 from MiAZ.backend.config import MiAZConfigRepositories
 from MiAZ.backend.pluginsystem import MiAZPluginType
 from MiAZ.frontend.desktop.services.dialogs import MiAZFileChooserDialog
@@ -145,8 +145,12 @@ class MiAZAppSettings(Adw.PreferencesDialog):
         row.add_prefix(button)
 
     def _on_manage_plugins(self, *args):
+        srvdlg = self.app.get_service('dialogs')
         window = self.app.get_widget('window')
-        dialog = MiAZPluginUIManager(self.app)
+        # ~ dialog = MiAZPluginUIManager(self.app)
+        widget = self._create_widget_for_plugins()
+        dialog = srvdlg.create(enable_response=False, dtype='action', title='Plugin Manager', body='', widget=widget, width=800, height=600)
+
         dialog.present(self)
 
     def _build_ui_page_plugins(self):
@@ -228,7 +232,9 @@ class MiAZAppSettings(Adw.PreferencesDialog):
                 return
 
     def _create_widget_for_plugins(self):
-        vbox = self.factory.create_box_vertical(margin=0, spacing=0, hexpand=True, vexpand=True)
+        box = self.factory.create_box_horizontal(margin=0, spacing=6, hexpand=True, vexpand=True)
+
+        # Plugins box
         notebook = Gtk.Notebook()
         notebook.set_show_border(False)
         notebook.set_tab_pos(Gtk.PositionType.LEFT)
@@ -238,8 +244,28 @@ class MiAZAppSettings(Adw.PreferencesDialog):
         widget = self._create_view_plugins_user()
         label = self.factory.create_notebook_label(icon_name='io.github.t00m.MiAZ-res-plugins', title='User')
         notebook.append_page(widget, label)
-        vbox.append(notebook)
-        return vbox
+
+        # Vertical right toolbar
+        toolbar = self.factory.create_box_vertical(margin=0, spacing=6, hexpand=False, vexpand=False)
+        btnInfo = self.factory.create_button(icon_name='io.github.t00m.MiAZ-dialog-information-symbolic')
+        btnInfo.set_has_frame(False)
+        separator = Gtk.Separator()
+        btnUpd = self.factory.create_button(icon_name='io.github.t00m.MiAZ-view-refresh-symbolic')
+        btnUpd.set_has_frame(False)
+        btnAdd = self.factory.create_button(icon_name='io.github.t00m.MiAZ-list-add-symbolic')
+        btnAdd.set_has_frame(False)
+        btnDel = self.factory.create_button(icon_name='io.github.t00m.MiAZ-list-remove-symbolic')
+        btnDel.set_has_frame(False)
+        toolbar.append(btnInfo)
+        toolbar.append(separator)
+        toolbar.append(btnUpd)
+        toolbar.append(btnAdd)
+        toolbar.append(btnDel)
+
+        box.append(notebook)
+        box.append(toolbar)
+
+        return box
 
     def _create_view_plugins_system(self):
         vbox = self.factory.create_box_vertical(margin=0, spacing=0, hexpand=True, vexpand=True)
