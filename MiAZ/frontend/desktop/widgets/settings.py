@@ -237,16 +237,63 @@ class MiAZAppSettings(Adw.PreferencesDialog):
         # Plugins box
         notebook = Gtk.Notebook()
         notebook.set_show_border(False)
-        notebook.set_tab_pos(Gtk.PositionType.LEFT)
+        notebook.set_tab_pos(Gtk.PositionType.TOP)
         widget = self._create_view_plugins_system()
         label = self.factory.create_notebook_label(icon_name='io.github.t00m.MiAZ-res-plugins-system', title='System')
         notebook.append_page(widget, label)
         widget = self._create_view_plugins_user()
         label = self.factory.create_notebook_label(icon_name='io.github.t00m.MiAZ-res-plugins', title='User')
         notebook.append_page(widget, label)
+        box.append(notebook)
+
+
+        return box
+
+    def _create_view_plugins_system(self):
+        box = self.factory.create_box_horizontal(margin=0, spacing=0, hexpand=True, vexpand=True)
+        scrwin = self.factory.create_scrolledwindow()
+        self.app.add_widget('app-settings-plugins-system-scrwin', scrwin)
+        box.append(scrwin)
+        pm = self.app.get_service('plugin-manager')
+        view = MiAZColumnViewPlugin(self.app)
+        view.set_hexpand(True)
+        view.set_vexpand(True)
+        self.app.add_widget('app-settings-plugins-system-view', view)
+        scrwin.set_child(view)
 
         # Vertical right toolbar
         toolbar = self.factory.create_box_vertical(margin=0, spacing=6, hexpand=False, vexpand=False)
+        toolbar.get_style_context().add_class(class_name='toolbar')
+        btnInfo = self.factory.create_button(icon_name='io.github.t00m.MiAZ-dialog-information-symbolic')
+        btnInfo.set_has_frame(False)
+        toolbar.append(btnInfo)
+        box.append(toolbar)
+
+        # System Plugins
+        items = []
+        item_type = Plugin
+        for plugin in pm.plugins:
+            if pm.get_plugin_type(plugin) == MiAZPluginType.SYSTEM:
+                pid = plugin.get_module_name()
+                title = plugin.get_description()
+                items.append(item_type(id=pid, title=title))
+        view.update(items)
+        return box
+
+    def _create_view_plugins_user(self):
+        box = self.factory.create_box_horizontal(margin=0, spacing=0, hexpand=True, vexpand=True)
+        scrwin = self.factory.create_scrolledwindow()
+        self.app.add_widget('app-settings-plugins-user-scrwin', scrwin)
+        box.append(scrwin)
+        view = MiAZColumnViewPlugin(self.app)
+        view.set_hexpand(True)
+        view.set_vexpand(True)
+        self.app.add_widget('app-settings-plugins-user-view', view)
+        scrwin.set_child(view)
+
+        # Vertical right toolbar
+        toolbar = self.factory.create_box_vertical(margin=0, spacing=6, hexpand=False, vexpand=False)
+        toolbar.get_style_context().add_class(class_name='toolbar')
         btnInfo = self.factory.create_button(icon_name='io.github.t00m.MiAZ-dialog-information-symbolic')
         btnInfo.set_has_frame(False)
         separator = Gtk.Separator()
@@ -261,56 +308,10 @@ class MiAZAppSettings(Adw.PreferencesDialog):
         toolbar.append(btnUpd)
         toolbar.append(btnAdd)
         toolbar.append(btnDel)
-
-        box.append(notebook)
         box.append(toolbar)
 
-        return box
-
-    def _create_view_plugins_system(self):
-        vbox = self.factory.create_box_vertical(margin=0, spacing=0, hexpand=True, vexpand=True)
-        scrwin = self.factory.create_scrolledwindow()
-        self.app.add_widget('app-settings-plugins-system-scrwin', scrwin)
-        vbox.append(scrwin)
-        pm = self.app.get_service('plugin-manager')
-        view = MiAZColumnViewPlugin(self.app)
-        view.set_hexpand(True)
-        view.set_vexpand(True)
-        self.app.add_widget('app-settings-plugins-system-view', view)
-        scrwin.set_child(view)
-
-        # System Plugins
-        items = []
-        item_type = Plugin
-        for plugin in pm.plugins:
-            if pm.get_plugin_type(plugin) == MiAZPluginType.SYSTEM:
-                pid = plugin.get_module_name()
-                title = plugin.get_description()
-                items.append(item_type(id=pid, title=title))
-        view.update(items)
-        return vbox
-
-    def _create_view_plugins_user(self):
-        vbox = self.factory.create_box_vertical(margin=0, spacing=0, hexpand=True, vexpand=True)
-
-        # Add/Remove
-        hbox = self.factory.create_box_horizontal(margin=0, spacing=0, hexpand=True, vexpand=False)
-        hbox.get_style_context().add_class(class_name='toolbar')
-        hbox.append(self.factory.create_button(icon_name='io.github.t00m.MiAZ-list-add-symbolic', title='Add plugin', callback=self._on_plugin_add))
-        hbox.append(self.factory.create_button(icon_name='io.github.t00m.MiAZ-list-remove-symbolic', title='Remove plugin', callback=self._on_plugin_remove))
-        vbox.append(hbox)
-
-        # User Plugins
-        scrwin = self.factory.create_scrolledwindow()
-        self.app.add_widget('app-settings-plugins-user-scrwin', scrwin)
-        vbox.append(scrwin)
-        view = MiAZColumnViewPlugin(self.app)
-        view.set_hexpand(True)
-        view.set_vexpand(True)
-        self.app.add_widget('app-settings-plugins-user-view', view)
-        scrwin.set_child(view)
         self.update_user_plugins()
-        return vbox
+        return box
 
     def update_user_plugins(self):
         ENV = self.app.get_env()
@@ -322,11 +323,12 @@ class MiAZAppSettings(Adw.PreferencesDialog):
         for plugin in plugin_manager.plugins:
             ptype = plugin_manager.get_plugin_type(plugin)
             if ptype == MiAZPluginType.USER:
-                pid = plugin.get_module_name()
-                plugin_path = os.path.join(ENV['LPATH']['PLUGINS'], f"{pid}.plugin")
+                base_dir = plugin.get_name()
+                module_name = plugin.get_module_name()
+                plugin_path = os.path.join(ENV['LPATH']['PLUGINS'], base_dir, f"{module_name}.plugin")
                 if os.path.exists(plugin_path):
                     title = plugin.get_description()
-                    items.append(item_type(id=pid, title=title))
+                    items.append(item_type(id=module_name, title=title))
         view.update(items)
 
     def on_filechooser_response(self, dialog, response, clsdlg):

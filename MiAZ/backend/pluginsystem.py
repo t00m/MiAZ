@@ -206,8 +206,6 @@ class MiAZPluginManager(GObject.GObject):
             ptype = self.get_plugin_type(plugin)
             pname = plugin.get_name()
             pvers = plugin.get_version()
-            # ~ pinfo = self.get_plugin_info(plugin)
-
             self.engine.load_plugin(plugin)
 
             if plugin.is_loaded():
@@ -219,6 +217,7 @@ class MiAZPluginManager(GObject.GObject):
         except AttributeError as error:
             self.log.error(f"Plugin {pname} v{pvers} ({ptype}) couldn't be loaded")
             self.log.error(f"Reason: {error}")
+            return False
         except Exception as error:
             self.log.error(error)
             self.log.error(f"Plugin {pname} v{pvers} ({ptype}) couldn't be loaded")
@@ -247,6 +246,7 @@ class MiAZPluginManager(GObject.GObject):
         """Gets the PluginType for the specified Peas.PluginInfo."""
         ENV = self.app.get_env()
         PLUGIN_DIR = os.path.dirname(plugin_info.get_data_dir())
+        plugin_name = plugin_info.get_name()
         is_plugin_user_dir = PLUGIN_DIR == ENV['LPATH']['PLUGINS']
         if is_plugin_user_dir:
             return MiAZPluginType.USER
