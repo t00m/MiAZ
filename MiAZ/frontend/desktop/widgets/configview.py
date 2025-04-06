@@ -5,6 +5,7 @@
 # Description: Custom selector views to manage configuration
 
 import os
+import glob
 from gettext import gettext as _
 
 from gi.repository import Gtk
@@ -425,6 +426,7 @@ class MiAZUserPlugins(MiAZConfigView):
     def __init__(self, app):
         super(MiAZConfigView, self).__init__(app, edit=True)
         super().__init__(app, 'Plugin')
+        self.log.error(self.config.model)
         self._update_view_available()
         self._update_view_used()
 
@@ -441,6 +443,23 @@ class MiAZUserPlugins(MiAZConfigView):
         self._add_columnview_available(self.viewAv)
         self.viewSl = MiAZColumnViewPlugin(self.app)
         self._add_columnview_used(self.viewSl)
+
+    def _update_view_available(self):
+        # ~ ENV = self.app.get_env()
+        # ~ plugins_used = self.config.load_used()
+        # ~ self.log.error(plugins_used)
+        # ~ self.log.error(ENV['LPATH']['PLUGINS'])
+        # ~ for plugin_dir in glob.glob(os.path.join(ENV['LPATH']['PLUGINS'], '*')):
+            # ~ plugin_id = os.path.basename(plugin_dir)
+            # ~ self.log.error(plugin_id)
+            # ~ self.config.add_available(plugin_id, plugin_id)
+
+        items_available = []
+        item_type = self.config.model
+        items = self.config.load_available()
+        for key in items:
+            items_available.append(item_type(id=key, title=items[key]))
+        self.viewAv.update(items_available)
 
     # ~ def _update_view_available(self):
         # ~ plugin_manager = self.app.get_service('plugin-manager')

@@ -273,6 +273,7 @@ class MiAZPluginManager(GObject.GObject):
         Returns:
             Peas.PluginInfo: The plugin info if it exists. Otherwise, `None`.
         """
+        self.log.error(f"Get Plugin Info for: {module_name}")
         for plugin in self.plugins:
             if plugin.get_module_name() == module_name:
                 return plugin
