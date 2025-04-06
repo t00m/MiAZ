@@ -106,9 +106,9 @@ class MiAZPluginType(IntEnum):
 
     def __str__(self):
         if self.value == MiAZPluginType.USER:
-            return _("User Plugin")
+            return _("user")
         elif self.value == MiAZPluginType.SYSTEM:
-            return _("System Plugin")
+            return _("system")
 
 
 class MiAZPluginManager(GObject.GObject):

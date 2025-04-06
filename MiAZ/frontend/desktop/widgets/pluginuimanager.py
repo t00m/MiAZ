@@ -13,111 +13,171 @@ from gi.repository import GObject
 
 from MiAZ.env import ENV
 from MiAZ.backend.log import MiAZLog
+from MiAZ.backend.models import Plugin
+from MiAZ.backend.pluginsystem import MiAZPluginType
+from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewPlugin
 
-
-class MiAZPluginUIRow:
-    def __init__(self, app):
-        self.app = app
-
-    def new(self, title: str = '', subtitle: str = ''):
-        factory = self.app.get_service('factory')
-        self._title = title
-        self._subtitle = subtitle
-        self.row = Adw.ActionRow(title=title, subtitle=subtitle)
-        widget = factory.create_box_horizontal(spacing=6)
-        separator = Gtk.Separator.new(orientation=Gtk.Orientation.VERTICAL)
-        btnInfo = factory.create_button(icon_name='io.github.t00m.MiAZ-dialog-information-symbolic')
-        btnInfo.set_valign(Gtk.Align.CENTER)
-        btnInfo.set_has_frame(False)
-        widget.append(separator)
-        widget.append(btnInfo)
-        self.row.add_suffix(widget)
-        return self.row
-
-class MiAZPluginUIManager(Adw.PreferencesDialog):
+class MiAZPluginUIManager(Gtk.Box):
+    """Plugin Manager UI Widget"""
     __gtype_name__ = 'MiAZPluginUIManager'
-    groups = {}
 
-    def __init__(self, app, **kwargs):
-        super().__init__()
+    def __init__(self, app):
+        super().__init__(orientation=Gtk.Orientation.HORIZONTAL, spacing=6, hexpand=True, vexpand=True)
         self.app = app
-        self.log = MiAZLog('MiAZ.MiAZPluginUIManager')
-        self.log.debug("UI Plugin Manager")
+        self.log = MiAZLog('MiAZPluginUIManager')
+        self.factory = self.app.get_service('factory')
         self._build_ui()
-        self.refresh_available_plugin_list()
 
     def _build_ui(self):
-        factory = self.app.get_service('factory')
-        self.set_title('Plugin management')
-        self.set_search_enabled(True)
-        page_title = _("Available plugins")
-        page_icon = "io.github.t00m.MiAZ-res-plugins"
-        self.page = Adw.PreferencesPage(title=page_title, icon_name=page_icon)
-        self.add(self.page)
+        notebook = self.app.add_widget('plugin-manager-ui-notebook', Gtk.Notebook())
+        notebook.set_show_border(False)
+        notebook.set_tab_pos(Gtk.PositionType.TOP)
+        widget = self._create_view_plugins_system()
+        label = self.factory.create_notebook_label(icon_name='io.github.t00m.MiAZ-res-plugins-system', title='System')
+        notebook.append_page(widget, label)
+        widget = self._create_view_plugins_user()
+        label = self.factory.create_notebook_label(icon_name='io.github.t00m.MiAZ-res-plugins', title='User')
+        notebook.append_page(widget, label)
+        self.append(notebook)
 
-        ## Group plugins
-        # ~ self.group = Adw.PreferencesGroup()
-        # ~ self.group.set_title('Plugins')
-        # ~ self.page.add(self.group)
+    def _create_view_plugins_system(self):
+        box = self.factory.create_box_horizontal(margin=0, spacing=0, hexpand=True, vexpand=True)
+        viewbox = self._create_plugin_view(MiAZPluginType.SYSTEM)
+        toolbar = self._create_plugin_view_toolbar(MiAZPluginType.SYSTEM)
+        box.append(viewbox)
+        box.append(toolbar)
 
-    def refresh_available_plugin_list(self, *args):
-        """Retrieve MiAZ plugin index file if:
-            - Plugin index file doesn't exist
-            - It is older than one day
-        """
-        factory = self.app.get_service('factory')
-        self.groups = {}
-        download = False
-        file = Path(ENV['FILE']['PLUGINS'])
-        if not file.exists():
-            download = True
-            self.log.debug("Plugin index file doesn't exist")
-        else:
-            file_mod_time = datetime.fromtimestamp(file.stat().st_mtime)
-            if datetime.now() - file_mod_time > timedelta(days=1):
-                download = True
-                self.log.debug(f"Plugin index file older than 1 day")
+        pm = self.app.get_service('plugin-manager')
+        view = self.app.get_widget('app-settings-plugins-system-view')
+        items = []
+        item_type = Plugin
+        for plugin in pm.plugins:
+            if pm.get_plugin_type(plugin) == MiAZPluginType.SYSTEM:
+                pid = plugin.get_module_name()
+                title = plugin.get_description()
+                items.append(item_type(id=pid, title=title))
+        view.update(items)
+        return box
 
-        if download:
-            self.download_plugin_index()
-            self.log.debug("Plugin index file downloaded")
-        else:
-            self.log.debug("Plugin index file is available and it is recent")
+    def _create_view_plugins_user(self):
+        box = self.factory.create_box_horizontal(margin=0, spacing=0, hexpand=True, vexpand=True)
+        viewbox = self._create_plugin_view(MiAZPluginType.USER)
+        toolbar = self._create_plugin_view_toolbar(MiAZPluginType.USER)
+        box.append(viewbox)
+        box.append(toolbar)
+        self.update_user_plugins()
+        return box
 
-        with open(ENV['FILE']['PLUGINS'], 'r') as fp:
-            plugins = json.load(fp)
-            for pid in plugins:
-                name = plugins[pid]['Name']
-                self.log.debug(f"Adding plugin {name}")
-                version = plugins[pid]['Version']
-                description = plugins[pid]['Description']
-                category = plugins[pid]['Category']
-                subcategory = plugins[pid]['Subcategory']
-                row = MiAZPluginUIRow(self.app).new(title=description)
-                group = self.get_group(category)
-                group.add(row)
-        for group_title, group_node in sorted(self.groups.items(), key=lambda item: item[0]):
-            self.page.add(group_node)
+    def _create_plugin_view(self, plugin_view: MiAZPluginType = MiAZPluginType.SYSTEM):
+        scrwin = self.factory.create_scrolledwindow()
+        view_type = str(plugin_view)
+        self.app.add_widget(f'app-settings-plugins-{view_type}-scrwin', scrwin)
+        view = MiAZColumnViewPlugin(self.app)
+        view.set_hexpand(True)
+        view.set_vexpand(True)
+        self.app.add_widget(f'app-settings-plugins-{view_type}-view', view)
+        scrwin.set_child(view)
+        return scrwin
 
+    def _create_plugin_view_toolbar(self, plugin_view: MiAZPluginType = MiAZPluginType.SYSTEM):
+        toolbar = self.factory.create_box_vertical(margin=0, spacing=6, hexpand=False, vexpand=False)
+        toolbar.get_style_context().add_class(class_name='toolbar')
+        btnInfo = self.factory.create_button(icon_name='io.github.t00m.MiAZ-dialog-information-symbolic')
+        btnInfo.set_has_frame(False)
+        toolbar.append(btnInfo)
+        if plugin_view == MiAZPluginType.USER:
+            separator = Gtk.Separator()
+            btnUpd = self.factory.create_button(icon_name='io.github.t00m.MiAZ-view-refresh-symbolic')
+            btnUpd.set_has_frame(False)
+            btnAdd = self.factory.create_button(icon_name='io.github.t00m.MiAZ-list-add-symbolic')
+            btnAdd.set_has_frame(False)
+            btnDel = self.factory.create_button(icon_name='io.github.t00m.MiAZ-list-remove-symbolic')
+            btnDel.set_has_frame(False)
+            toolbar.append(separator)
+            toolbar.append(btnUpd)
+            toolbar.append(btnAdd)
+            toolbar.append(btnDel)
+        return toolbar
 
-    def get_group(self, category):
+    def update_user_plugins(self):
+        ENV = self.app.get_env()
+        plugin_manager = self.app.get_service('plugin-manager')
+        plugin_manager.rescan_plugins()
+        view = self.app.get_widget('app-settings-plugins-user-view')
+        items = []
+        item_type = Plugin
+        for plugin in plugin_manager.plugins:
+            ptype = plugin_manager.get_plugin_type(plugin)
+            if ptype == MiAZPluginType.USER:
+                base_dir = plugin.get_name()
+                module_name = plugin.get_module_name()
+                plugin_path = os.path.join(ENV['LPATH']['PLUGINS'], base_dir, f"{module_name}.plugin")
+                if os.path.exists(plugin_path):
+                    title = plugin.get_description()
+                    items.append(item_type(id=module_name, title=title))
+        view.update(items)
+
+    def on_filechooser_response(self, dialog, response, clsdlg):
+        if response == 'apply':
+            plugin_manager = self.app.get_service('plugin-manager')
+            filechooser = clsdlg.get_filechooser_widget()
+            gfile = filechooser.get_file()
+            if gfile is None:
+                    self.log.debug('No directory set. Do nothing.')
+                    # FIXME: Show warning message. Priority: low
+                    return
+            plugin_path = gfile.get_path()
+            imported = plugin_manager.import_plugin(plugin_path)
+            self.log.debug(f"Plugin imported? {imported}")
+            if imported:
+                self.update_user_plugins()
+
+    def _on_plugin_add(self, *args):
+        plugin_filter = Gtk.FileFilter()
+        plugin_filter.add_pattern('*.zip')
+        window = self.app.get_widget('window-app-settings')
+        clsdlg = MiAZFileChooserDialog(self.app)
+        filechooser_dialog = clsdlg.create(
+                        parent=window,
+                        title=_('Import a single file'),
+                        target = 'FILE',
+                        callback = self.on_filechooser_response,
+                        data=clsdlg)
+        filechooser_widget = clsdlg.get_filechooser_widget()
+        filechooser_widget.set_filter(plugin_filter)
+        filechooser_dialog.present()
+
+    def _on_plugin_remove(self, *args):
+        plugin_manager = self.app.get_service('plugin-manager')
+        view = self.app.get_widget('app-settings-plugins-user-view')
         try:
-            group = self.groups[category]
-        except KeyError:
-            group = Adw.PreferencesGroup(title=category)
-            self.groups[category] = group
-        return group
+            module = view.get_selected()
+            plugin = plugin_manager.get_plugin_info(module.id)
+            deleted = plugin_manager.remove_plugin(plugin)
+            if deleted:
+                self.log.debug(f"Plugin '{module.id}' deleted")
+                self.update_user_plugins()
+        except IndexError as error:
+            self.log.debug("No user plugins installed and/or selected")
+            raise
 
-    def download_plugin_index(self, *args):
-        # FIXME: let user choose url?
-        url = "https://raw.githubusercontent.com/t00m/MiAZ-Plugins/refs/heads/sandbox/index-plugins.json"
-        try:
-            response = requests.get(url)
-            response.raise_for_status()
-            contents = response.json()
-            with open(ENV['FILE']['PLUGINS'], 'w') as fp:
-                json.dump(contents, fp)
-            self.log.info(f"Plugin index downloaded and saved to {ENV['FILE']['PLUGINS']}")
-        except Exception as err:
-            # FIXME: raise error dialog
-            self.log.error(f"An error occurred: {err}")
+    def get_plugin_status(self, name: str) -> bool:
+        plugins = self.config['App'].get('plugins')
+        if plugins is None:
+            return False
+
+        if name in plugins:
+            return True
+        return False
+
+    def set_plugin_status(self, checkbox, plugin_name):
+        active = checkbox.get_active()
+        plugins = self.config['App'].get('plugins')
+        if plugins is None:
+            plugins = []
+        if active:
+            if plugin_name not in plugins:
+                plugins.append(plugin_name)
+        else:
+            plugins.remove(plugin_name)
+        self.config['App'].set('plugins', plugins)
