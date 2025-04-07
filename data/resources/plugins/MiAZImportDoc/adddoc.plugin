@@ -1,10 +1,12 @@
 [Plugin]
-Module=viewitem
-Name=MiAZViewItem
+Module=adddoc
+Name=MiAZImportDoc
 Loader=Python3
-Description=Display item with the default associated application
+Description=Add a new document
 Authors=Tomás Vírseda <tomasvirseda@gmail.com>
 Copyright=Copyright © 2023 Tomás Vírseda
 Website=http://github.com/t00m/MiAZ
 Help=http://github.com/t00m/MiAZ/README.adoc
-Version=0.4
+Version=0.3
+Category=Data Management
+Subcategory=Import

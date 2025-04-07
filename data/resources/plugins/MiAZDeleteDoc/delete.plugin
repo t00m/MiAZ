@@ -1,10 +1,12 @@
 [Plugin]
-Module=sidebartgb
-Name=MiAZSidebarToggleButtonPlugin
+Module=delete
+Name=MiAZDeleteDoc
 Loader=Python3
-Description=Togglebutton for displayihg/hiding the sidebar
+Description=Delete selected items
 Authors=Tomás Vírseda <tomasvirseda@gmail.com>
 Copyright=Copyright © 2023 Tomás Vírseda
 Website=http://github.com/t00m/MiAZ
 Help=http://github.com/t00m/MiAZ/README.adoc
-Version=0.1
+Version=0.3
+Category=Data Management
+Subcategory=Deletion
