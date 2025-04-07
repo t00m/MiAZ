@@ -156,95 +156,42 @@ class MiAZApp(Adw.Application):
         workspace = self.get_widget('workspace')
         workspace_loaded = workspace is not None
 
-        # Load System Plugins
+        # Load system and user plugins
         if workspace_loaded and not self.get_plugins_loaded():
-            self.log.debug("Loading system plugins...")
+            self.log.debug("Loading plugins...")
             plugin_manager = self.get_service('plugin-manager')
             ns = 0  # Number of system plugins
             nu = 0  # Number of system plugins
             na = 0  # Number of plugins activated
             nt = 0  # Number of plugins in total
             for plugin in plugin_manager.plugins:
+                plugin_name = plugin.get_name()
+                plugin_module = plugin.get_module_name()
                 try:
                     ptype = plugin_manager.get_plugin_type(plugin)
                     if not plugin.is_loaded():
-                        plugin_manager.load_plugin(plugin)
                         if ptype == MiAZPluginType.SYSTEM:
+                            # Always load system plugins
+                            plugin_manager.load_plugin(plugin)
+                            self.log.debug(f"System Plugin {plugin_name} loaded")
                             ns += 1
+                            na += 1
                         else:
-                            nu += 1
-                        na += 1
+                            # Check if plugin must be loaded for selected repository
+                            config_plugins = self.get_config('Plugin')
+                            plugins_used = config_plugins.load_used().keys()
+                            if plugin_name in plugins_used:
+                                plugin_manager.load_plugin(plugin)
+                                self.log.debug(f"User Plugin {plugin_name} loaded because it is used in current repository")
+                                nu += 1
+                                na += 1
+                            else:
+                                self.log.debug(f"User Plugin {plugin_name} NOT loaded because it is not used in current repository")
                 except Exception as error:
                     self.log.error(error)
                 nt += 1
             self.log.info(f"Plugins activated: System[{ns}] User[{nu}] ({na} of {nt})")
             self.set_plugins_loaded(True)
-
-            # ~ # Load User Plugins
-            # ~ self.log.debug("Loading user plugins for this repository...")
-            # ~ conf = self.get_config_dict()
-            # ~ plugins = conf['Plugin']
-            # ~ np = 0  # Number of user plugins
-            # ~ ap = 0  # user plugins activated
-            # ~ for plugin in plugin_manager.plugins:
-                # ~ try:
-                    # ~ ptype = plugin_manager.get_plugin_type(plugin)
-                    # ~ if ptype == MiAZPluginType.USER:
-                        # ~ pid = plugin.get_module_name()
-                        # ~ if plugins.exists_used(pid):
-                            # ~ if not plugin.is_loaded():
-                                # ~ plugin_manager.load_plugin(plugin)
-                                # ~ ap += 1
-                # ~ except Exception as error:
-                    # ~ self.log.error(error)
-                # ~ if ptype == MiAZPluginType.USER:
-                    # ~ np += 1
-            # ~ self.log.info(f"User plugins loaded for this repository: {ap}/{np}")
-
-    # ~ def load_plugins(self):
-        # ~ workspace = self.get_widget('workspace')
-        # ~ workspace_loaded = workspace is not None
-
-        # ~ # Load System Plugins
-        # ~ if workspace_loaded and not self.get_plugins_loaded():
-            # ~ self.log.debug("Loading system plugins...")
-            # ~ plugin_manager = self.get_service('plugin-manager')
-            # ~ np = 0  # Number of system plugins
-            # ~ ap = 0  # system plugins activated
-            # ~ for plugin in plugin_manager.plugins:
-                # ~ try:
-                    # ~ ptype = plugin_manager.get_plugin_type(plugin)
-                    # ~ if ptype == MiAZPluginType.SYSTEM:
-                        # ~ if not plugin.is_loaded():
-                            # ~ plugin_manager.load_plugin(plugin)
-                            # ~ ap += 1
-                # ~ except Exception as error:
-                    # ~ self.log.error(error)
-                # ~ if ptype == MiAZPluginType.SYSTEM:
-                    # ~ np += 1
-            # ~ self.log.info(f"System plugins loaded: {ap}/{np}")
-
-            # ~ # Load User Plugins
-            # ~ self.log.debug("Loading user plugins for this repository...")
-            # ~ conf = self.get_config_dict()
-            # ~ plugins = conf['Plugin']
-            # ~ np = 0  # Number of user plugins
-            # ~ ap = 0  # user plugins activated
-            # ~ for plugin in plugin_manager.plugins:
-                # ~ try:
-                    # ~ ptype = plugin_manager.get_plugin_type(plugin)
-                    # ~ if ptype == MiAZPluginType.USER:
-                        # ~ pid = plugin.get_module_name()
-                        # ~ if plugins.exists_used(pid):
-                            # ~ if not plugin.is_loaded():
-                                # ~ plugin_manager.load_plugin(plugin)
-                                # ~ ap += 1
-                # ~ except Exception as error:
-                    # ~ self.log.error(error)
-                # ~ if ptype == MiAZPluginType.USER:
-                    # ~ np += 1
-            # ~ self.log.info(f"User plugins loaded for this repository: {ap}/{np}")
-            # ~ self.set_plugins_loaded(True)
 
     def get_config(self, name: str):
         try:

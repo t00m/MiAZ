@@ -275,6 +275,7 @@ class MiAZPluginManager(GObject.GObject):
         """
         self.log.error(f"Get Plugin Info for: {module_name}")
         for plugin in self.plugins:
+            self.log.error(f"{plugin.get_module_name()} - {module_name}")
             if plugin.get_module_name() == module_name:
                 return plugin
         return None

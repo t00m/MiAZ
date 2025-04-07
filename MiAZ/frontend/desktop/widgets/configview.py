@@ -426,7 +426,6 @@ class MiAZUserPlugins(MiAZConfigView):
     def __init__(self, app):
         super(MiAZConfigView, self).__init__(app, edit=True)
         super().__init__(app, 'Plugin')
-        self.log.error(self.config.model)
         self._update_view_available()
         self._update_view_used()
 
