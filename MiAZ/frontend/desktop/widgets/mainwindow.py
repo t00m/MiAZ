@@ -109,6 +109,8 @@ class MiAZMainWindow(Gtk.Box):
         return viewstack
 
     def _on_key_press(self, event, keyval, keycode, state):
+        # FIXME: code shouldn't know about plugins, so why this is
+        #        getting a reference to tgbSidebar?
         actions = self.app.get_service('actions')
         keyname = Gdk.keyval_name(keyval)
         if keyname == 'Escape':
