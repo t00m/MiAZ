@@ -243,6 +243,17 @@ class MiAZPluginManager(GObject.GObject):
         """Gets the engine's plugin list"""
         return self.engine.get_plugin_list()
 
+    def get_user_plugins(self):
+        self.rescan_plugins()
+        user_plugins = []
+        for plugin in self.plugins:
+            ptype = self.get_plugin_type(plugin)
+            if ptype == MiAZPluginType.USER:
+                plugin_id = plugin.get_name()
+                user_plugins.append(plugin_id)
+        return user_plugins
+
+
     def get_plugin_type(self, plugin_info):
         """Gets the PluginType for the specified Peas.PluginInfo"""
         ENV = self.app.get_env()

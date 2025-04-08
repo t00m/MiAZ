@@ -17,6 +17,7 @@ from MiAZ.backend.models import Plugin
 from MiAZ.backend.pluginsystem import MiAZPluginType
 from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewPlugin
 
+
 class MiAZPluginUIManager(Gtk.Box):
     """Plugin Manager UI Widget"""
     __gtype_name__ = 'MiAZPluginUIManager'
@@ -184,4 +185,33 @@ class MiAZPluginUIManager(Gtk.Box):
         self.config['App'].set('plugins', plugins)
 
     def _refresh_index_plugin_file(self, *args):
-        self.log.debug(args)
+        ENV = self.app.get_env()
+        source = ENV['APP']['PLUGINS']['SOURCE']
+        url_base = ENV['APP']['PLUGINS']['INDEX']
+        url = url_base % source
+        url_plugin_base = ENV['APP']['PLUGINS']['DOWNLOAD']
+        user_plugins_dir = ENV['LPATH']['PLUGINS']
+        try:
+            response = requests.get(url)
+            response.raise_for_status()
+            plugin_index = response.json()
+            plugin_manager = self.app.get_service('plugin-manager')
+            util = self.app.get_service('util')
+            user_plugins = plugin_manager.get_user_plugins()
+            plugin_list = []
+            for pid in plugin_index:
+                desc = plugin_index[pid]['Description']
+                url_plugin = url_plugin_base % (source, pid)
+                self.log.info(url_plugin)
+                added = util.download_and_unzip(url_plugin, user_plugins_dir)
+                if added:
+                    plugin_list.append((pid, desc))
+
+            self.update_user_plugins()
+            config_plugins = self.app.get_config('Plugin')
+            config_plugins.add_available_batch(plugin_list)
+
+        except HTTPError as http_error:
+            self.log.error(f"HTTP error occurred: {http_error}")
+        except Exception as error:
+            self.log.error(f"An error occurred: {error}")
