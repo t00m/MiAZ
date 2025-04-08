@@ -88,6 +88,7 @@ class MiAZPluginUIManager(Gtk.Box):
         if plugin_view == MiAZPluginType.USER:
             separator = Gtk.Separator()
             btnUpd = self.factory.create_button(icon_name='io.github.t00m.MiAZ-view-refresh-symbolic')
+            btnUpd.connect('clicked', self._refresh_index_plugin_file)
             btnUpd.set_has_frame(False)
             btnAdd = self.factory.create_button(icon_name='io.github.t00m.MiAZ-list-add-symbolic')
             btnAdd.set_has_frame(False)
@@ -181,3 +182,6 @@ class MiAZPluginUIManager(Gtk.Box):
         else:
             plugins.remove(plugin_name)
         self.config['App'].set('plugins', plugins)
+
+    def _refresh_index_plugin_file(self, *args):
+        self.log.debug(args)
