@@ -432,10 +432,6 @@ class MiAZUserPlugins(MiAZConfigView):
     def plugins_updated(self, *args):
         self._update_view_available()
 
-    # ~ def update_views(self, *args):
-        # ~ self._update_view_available()
-        # ~ self._update_view_used()
-
     def _setup_view_finish(self):
         # Setup Available and Used Column Views
         self.viewAv = MiAZColumnViewPlugin(self.app)
@@ -443,49 +439,19 @@ class MiAZUserPlugins(MiAZConfigView):
         self.viewSl = MiAZColumnViewPlugin(self.app)
         self._add_columnview_used(self.viewSl)
 
-    # ~ def _update_view_available(self):
-        # ~ items_available = []
-        # ~ item_type = self.config.model
-        # ~ items = self.config.load_available()
-        # ~ self.log.debug(f"Plugins available: {items}")
-        # ~ for key in items:
-            # ~ items_available.append(item_type(id=key, title=items[key]))
-        # ~ self.log.debug(f"Plugins available: {items_available}")
-        # ~ self.viewAv.update(items_available)
-
-    # ~ def _update_view_used(self):
-        # ~ items_used = []
-        # ~ item_type = self.config.model
-        # ~ self.log.error(item_type)
-        # ~ items = self.config.load_used()
-        # ~ self.log.debug(f"Plugins in use: {items}")
-        # ~ for key in items:
-            # ~ items_used.append(item_type(id=key, title=items[key]))
-        # ~ self.log.debug(f"Plugins used: {items_used}")
-        # ~ self.viewSl.update(items_used)
-
-    # ~ def _update_view_used(self):
-        # ~ plugin_manager = self.app.get_service('plugin-manager')
-        # ~ items = []
-        # ~ item_type = self.config.model
-        # ~ for plugin in plugin_manager.plugins:
-            # ~ ptype = plugin_manager.get_plugin_type(plugin)
-            # ~ if ptype == MiAZPluginType.USER:
-                # ~ pid = plugin.get_module_name()
-                # ~ title = plugin.get_description() #+ ' (v%s)' % plugin.get_version()
-                # ~ if self.config.exists_used(pid):
-                    # ~ items.append(item_type(id=pid, title=title))
-        # ~ self.viewSl.update(items)
-
     def _on_item_used_remove(self, *args):
         plugin_manager = self.app.get_service('plugin-manager')
         plugins_used = self.config.load_used()
-        selected_plugin = self.viewAv.get_selected()
+        selected_plugin = self.viewSl.get_selected()
         if selected_plugin is None:
             return
 
         try:
-            plugin = plugin_manager.get_plugin_info(selected_plugin.id)
+            util = self.app.get_service('util')
+            ENV = self.app.get_env()
+            user_plugins = util.json_load(ENV['APP']['PLUGINS']['LOCAL_INDEX'])
+            plugin_module = user_plugins[selected_plugin.id]['Module']
+            plugin = plugin_manager.get_plugin_info(plugin_module)
             if plugin is not None:
                 if plugin.is_loaded():
                     plugin_manager.unload_plugin(plugin)
@@ -499,12 +465,14 @@ class MiAZUserPlugins(MiAZConfigView):
                 del(plugins_used[selected_plugin.id])
                 self.log.debug(f"Plugin '{selected_plugin.id}' deactivated")
                 self.config.save_used(items=plugins_used)
-                self._update_view_used()
+                # ~ self._update_view_used()
             except KeyError:
                 # FIXME: it shouldn't reach this code.
                 # It happens when the user removes a plugin from the
                 # used view and hit the button remove ([<]) again.
+                self.log.error(plugins_used)
                 raise
+            self.update_views()
 
     def _on_item_used_add(self, *args):
         plugin_manager = self.app.get_service('plugin-manager')
@@ -527,9 +495,9 @@ class MiAZUserPlugins(MiAZConfigView):
             if not plugin.is_loaded():
                 plugin_manager.load_plugin(plugin)
                 self.config.save_used(items=plugins_used)
-                self._update_view_used()
                 self.log.debug(f"{i_title} {selected_plugin.id} activated")
         else:
             self.log.debug(f"{i_title} '{selected_plugin.id}' was already activated. Nothing to do")
+        self.update_views()
 
 

@@ -224,6 +224,7 @@ class MiAZPluginManager(GObject.GObject):
             self.log.error(f"Plugin {pname} v{pvers} ({ptype}) couldn't be loaded")
             self.log.error(f"Reason: {error}")
             return False
+        self.emit('plugins-updated')
 
     def unload_plugin(self, plugin: Peas.PluginInfo):
         try:
@@ -232,6 +233,7 @@ class MiAZPluginManager(GObject.GObject):
             pvers = plugin.get_version()
             self.engine.unload_plugin(plugin)
             self.log.info(f"Plugin  {pname} v{pvers} ({ptype}) unloaded")
+            self.emit('plugins-updated')
         except Exception as error:
             self.log.error(error)
 
@@ -285,9 +287,7 @@ class MiAZPluginManager(GObject.GObject):
         Returns:
             Peas.PluginInfo: The plugin info if it exists. Otherwise, `None`.
         """
-        self.log.error(f"Get Plugin Info for: {module_name}")
         for plugin in self.plugins:
-            self.log.error(f"{plugin.get_module_name()} - {module_name}")
             if plugin.get_module_name() == module_name:
                 return plugin
         return None
