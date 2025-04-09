@@ -187,16 +187,17 @@ class MiAZPluginUIManager(Gtk.Box):
     def _refresh_index_plugin_file(self, *args):
         ENV = self.app.get_env()
         source = ENV['APP']['PLUGINS']['SOURCE']
-        url_base = ENV['APP']['PLUGINS']['INDEX']
+        url_base = ENV['APP']['PLUGINS']['REMOTE_INDEX']
         url = url_base % source
         url_plugin_base = ENV['APP']['PLUGINS']['DOWNLOAD']
         user_plugins_dir = ENV['LPATH']['PLUGINS']
         try:
+            util = self.app.get_service('util')
             response = requests.get(url)
             response.raise_for_status()
             plugin_index = response.json()
+            util.json_save(ENV['APP']['PLUGINS']['LOCAL_INDEX'], plugin_index)
             plugin_manager = self.app.get_service('plugin-manager')
-            util = self.app.get_service('util')
             user_plugins = plugin_manager.get_user_plugins()
             plugin_list = []
             for pid in plugin_index:

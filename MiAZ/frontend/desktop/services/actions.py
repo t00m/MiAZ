@@ -249,7 +249,6 @@ class MiAZActions(GObject.GObject):
         self.emit('settings-loaded', dialog_app_settings)
 
     def show_repository_settings(self, *args):
-        self.log.debug(args)
         window_main = self.app.get_widget('window')
         self.log.debug(window_main)
         window_repoconfig = MiAZRepoSettings(self.app)

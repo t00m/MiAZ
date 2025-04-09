@@ -233,8 +233,6 @@ class MiAZAppSettings(Adw.PreferencesDialog):
                 return
 
 
-
-
 class MiAZRepoSettings(MiAZCustomWindow):
     __gtype_name__ = 'MiAZRepoSettings'
 
@@ -243,7 +241,7 @@ class MiAZRepoSettings(MiAZCustomWindow):
         self.log = MiAZLog('MiAZ.RepoSettings')
         self.name = 'repo-settings'
         appconf = self.app.get_config('App')
-        repo_id = appconf.get('current')
+        repo_id = appconf.get('current').replace('_', ' ')
         self.title = f"Settings for repository {repo_id}"
         super().__init__(app, self.name, self.title, **kwargs)
         # ~ self.connect('notify::visible', self.update)

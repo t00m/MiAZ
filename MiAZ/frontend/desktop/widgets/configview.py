@@ -424,7 +424,7 @@ class MiAZUserPlugins(MiAZConfigView):
     current = None
 
     def __init__(self, app):
-        super(MiAZConfigView, self).__init__(app, edit=True)
+        super(MiAZConfigView, self).__init__(app, edit=False)
         super().__init__(app, 'Plugin')
         self._update_view_available()
         self._update_view_used()
@@ -443,34 +443,26 @@ class MiAZUserPlugins(MiAZConfigView):
         self.viewSl = MiAZColumnViewPlugin(self.app)
         self._add_columnview_used(self.viewSl)
 
-    def _update_view_available(self):
-        # ~ ENV = self.app.get_env()
-        # ~ plugins_used = self.config.load_used()
-        # ~ self.log.error(plugins_used)
-        # ~ self.log.error(ENV['LPATH']['PLUGINS'])
-        # ~ for plugin_dir in glob.glob(os.path.join(ENV['LPATH']['PLUGINS'], '*')):
-            # ~ plugin_id = os.path.basename(plugin_dir)
-            # ~ self.log.error(plugin_id)
-            # ~ self.config.add_available(plugin_id, plugin_id)
-
-        items_available = []
-        item_type = self.config.model
-        items = self.config.load_available()
-        for key in items:
-            items_available.append(item_type(id=key, title=items[key]))
-        self.viewAv.update(items_available)
-
     # ~ def _update_view_available(self):
-        # ~ plugin_manager = self.app.get_service('plugin-manager')
-        # ~ items = []
+        # ~ items_available = []
         # ~ item_type = self.config.model
-        # ~ for plugin in plugin_manager.plugins:
-            # ~ ptype = plugin_manager.get_plugin_type(plugin)
-            # ~ if ptype == MiAZPluginType.USER:
-                # ~ pid = plugin.get_module_name()
-                # ~ title = plugin.get_description() #+ ' (v%s)' % plugin.get_version()
-                # ~ items.append(item_type(id=pid, title=title))
-        # ~ self.viewAv.update(items)
+        # ~ items = self.config.load_available()
+        # ~ self.log.debug(f"Plugins available: {items}")
+        # ~ for key in items:
+            # ~ items_available.append(item_type(id=key, title=items[key]))
+        # ~ self.log.debug(f"Plugins available: {items_available}")
+        # ~ self.viewAv.update(items_available)
+
+    # ~ def _update_view_used(self):
+        # ~ items_used = []
+        # ~ item_type = self.config.model
+        # ~ self.log.error(item_type)
+        # ~ items = self.config.load_used()
+        # ~ self.log.debug(f"Plugins in use: {items}")
+        # ~ for key in items:
+            # ~ items_used.append(item_type(id=key, title=items[key]))
+        # ~ self.log.debug(f"Plugins used: {items_used}")
+        # ~ self.viewSl.update(items_used)
 
     # ~ def _update_view_used(self):
         # ~ plugin_manager = self.app.get_service('plugin-manager')
@@ -515,26 +507,29 @@ class MiAZUserPlugins(MiAZConfigView):
                 raise
 
     def _on_item_used_add(self, *args):
-        self.log.error("Not implemented yet")
-        # ~ plugin_manager = self.app.get_service('plugin-manager')
-        # ~ plugins_used = self.config.load_used()
-        # ~ selected_plugin = self.viewAv.get_selected()
-        # ~ if selected_plugin is None:
-            # ~ return
+        plugin_manager = self.app.get_service('plugin-manager')
+        plugins_used = self.config.load_used()
+        selected_plugin = self.viewAv.get_selected()
+        if selected_plugin is None:
+            return
 
-        # ~ plugin_used = self.config.exists_used(selected_plugin.id)
-        # ~ item_type = self.config.model
-        # ~ i_title = item_type.__title__
-        # ~ if not plugin_used:
-            # ~ plugins_used[selected_plugin.id] = selected_plugin.title
-
-            # ~ plugin = plugin_manager.get_plugin_info(selected_plugin.id)
-            # ~ if not plugin.is_loaded():
-                # ~ plugin_manager.load_plugin(plugin)
-                # ~ self.config.save_used(items=plugins_used)
-                # ~ self._update_view_used()
-                # ~ self.log.debug(f"{i_title} {selected_plugin.id} activated")
-        # ~ else:
-            # ~ self.log.debug(f"{i_title} '{selected_plugin.id}' was already activated. Nothing to do")
+        plugin_used = self.config.exists_used(selected_plugin.id)
+        item_type = self.config.model
+        i_title = item_type.__title__
+        if not plugin_used:
+            util = self.app.get_service('util')
+            ENV = self.app.get_env()
+            user_plugins = util.json_load(ENV['APP']['PLUGINS']['LOCAL_INDEX'])
+            plugin_module = user_plugins['MiAZExport2CSV']['Module']
+            plugins_used[selected_plugin.id] = selected_plugin.title
+            self.log.info(selected_plugin.id)
+            plugin = plugin_manager.get_plugin_info(plugin_module)
+            if not plugin.is_loaded():
+                plugin_manager.load_plugin(plugin)
+                self.config.save_used(items=plugins_used)
+                self._update_view_used()
+                self.log.debug(f"{i_title} {selected_plugin.id} activated")
+        else:
+            self.log.debug(f"{i_title} '{selected_plugin.id}' was already activated. Nothing to do")
 
 

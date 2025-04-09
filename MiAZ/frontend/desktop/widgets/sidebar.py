@@ -55,7 +55,6 @@ class SidebarTitle(Adw.Bin):
         super().__init__()
         self.app = app
         self.title = ''
-        lblTitle
 
 
 class MiAZSidebar(Adw.Bin):
