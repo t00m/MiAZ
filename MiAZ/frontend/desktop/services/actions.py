@@ -45,6 +45,10 @@ class MiAZActions(GObject.GObject):
         super().__init__()
         self.log = MiAZLog('MiAZ.Actions')
         self.app = app
+        GObject.signal_new('settings-loaded',
+                            MiAZActions,
+                            GObject.SignalFlags.RUN_LAST,
+                            GObject.TYPE_PYOBJECT, (GObject.TYPE_PYOBJECT,))
 
     def document_display(self, doc):
         srvutl = self.app.get_service('util')
@@ -241,11 +245,11 @@ class MiAZActions(GObject.GObject):
         window = self.app.get_widget('window')
         dialog_app_settings = MiAZAppSettings(self.app)
         dialog_app_settings.present(window)
+        self.app.add_widget('window-settings', dialog_app_settings)
+        self.emit('settings-loaded', dialog_app_settings)
 
     def show_repository_settings(self, *args):
-        self.log.debug(args)
         window_main = self.app.get_widget('window')
-        self.log.debug(window_main)
         window_repoconfig = MiAZRepoSettings(self.app)
         window_repoconfig.set_transient_for(window_main)
         window_repoconfig.set_modal(True)

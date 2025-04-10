@@ -27,8 +27,6 @@ class MiAZMainWindow(Gtk.Box):
         self._setup_ui()
         self._setup_event_listener()
 
-
-
     def _setup_ui(self):
         factory = self.app.get_service('factory')
 
@@ -70,12 +68,6 @@ class MiAZMainWindow(Gtk.Box):
         if page is None:
             self._setup_page_404()
 
-
-        # Workspace page
-        # ~ self.view_stack.add_titled(child=box, name="Workspace", title=_("Workspace"),
-        # ~ )
-
-        # ~ self.append(self.split_view)
         self.append(vmainbox)
 
     def _setup_event_listener(self):
@@ -94,8 +86,8 @@ class MiAZMainWindow(Gtk.Box):
         headerbar.pack_start(hbox)
 
         # Setup system menu
-        # ~ menubutton = self._setup_menu_system()
-        # ~ hbox.append(menubutton)
+        menubutton = self._setup_menu_system()
+        hbox.append(menubutton)
 
 
     def _setup_headerbar_right(self):
@@ -117,6 +109,8 @@ class MiAZMainWindow(Gtk.Box):
         return viewstack
 
     def _on_key_press(self, event, keyval, keycode, state):
+        # FIXME: code shouldn't know about plugins, so why this is
+        #        getting a reference to tgbSidebar?
         actions = self.app.get_service('actions')
         keyname = Gdk.keyval_name(keyval)
         if keyname == 'Escape':
@@ -138,9 +132,9 @@ class MiAZMainWindow(Gtk.Box):
             page_welcome.set_visible(True)
             headerbar = self.app.get_widget('headerbar')
             headerbar.set_visible(True)
-            tgbSidebar = self.app.get_widget('workspace-togglebutton-filters')
-            tgbSidebar.set_active(False)
-            tgbSidebar.set_visible(False)
+            # ~ tgbSidebar = self.app.get_widget('workspace-togglebutton-filters')
+            # ~ tgbSidebar.set_active(False)
+            # ~ tgbSidebar.set_visible(False)
             btnWorkspace = self.app.get_widget('workspace-menu')
             btnWorkspace.set_visible(False)
 
@@ -154,16 +148,6 @@ class MiAZMainWindow(Gtk.Box):
             page_not_found.set_icon_name('io.github.t00m.MiAZ-dialog-warning-symbolic')
             page_not_found.set_visible(True)
 
-    def _setup_widget_rename(self):
-        pass
-        # ~ stack = self.app.get_widget('stack')
-        # ~ widget_rename = self.app.get_widget('rename')
-        # ~ if widget_rename is None:
-            # ~ widget_rename = self.app.add_widget('rename', MiAZRenameDialog(self.app))
-            # ~ page_rename = stack.add_titled(widget_rename, 'rename', 'MiAZ')
-            # ~ page_rename.set_icon_name('document-properties')
-            # ~ page_rename.set_visible(False)
-
     def _setup_page_workspace(self):
         stack = self.app.get_widget('stack')
         widget_workspace = self.app.get_widget('workspace')
@@ -174,7 +158,37 @@ class MiAZMainWindow(Gtk.Box):
             page_workspace.set_visible(True)
             actions = self.app.get_service('actions')
             actions.show_stack_page_by_name('workspace')
+            widget_workspace.connect('workspace-view-selection-changed', self._on_workspace_menu_update)
+            widget_workspace.connect('workspace-view-filtered', self._on_workspace_menu_update)
         return widget_workspace
+
+    def _on_workspace_menu_update(self, *args):
+        stack = self.app.get_widget('stack')
+        workspace = self. app.get_widget('workspace')
+        workspace_menu = self.app.get_widget('workspace-menu')
+
+        s = workspace.get_num_selected_items() # Items selected
+        v = workspace.get_num_displayed_items() # Items in view
+        t = workspace.get_num_total_items() # Items in repository
+
+        label = workspace_menu.get_child()
+        label_text = f"<small>{s}</small> / {v} / <big>{t}</big>"
+        label.set_markup(label_text)
+        tooltip = ""
+        tooltip += f"{s} documents selected\n"
+        tooltip += f"{v} documents in this view\n"
+        tooltip += f"{t} documents in this repository"
+        workspace_menu.set_tooltip_markup(tooltip)
+        self.log.debug(f"filter selected: {s}/{v}/{t}")
+        searchentry = self.app.get_widget('searchentry')
+        if v > 0:
+            stack.set_visible_child_name('workspace')
+            searchentry.get_style_context().remove_class(class_name='error')
+            searchentry.get_style_context().add_class(class_name='success')
+        else:
+            stack.set_visible_child_name('page-404')
+            searchentry.get_style_context().remove_class(class_name='success')
+            searchentry.get_style_context().add_class(class_name='error')
 
     def _setup_toolbar_top(self):
         factory = self.app.get_service('factory')
@@ -182,31 +196,19 @@ class MiAZMainWindow(Gtk.Box):
         hdb_right = self.app.get_widget('headerbar-right-box')
         hdb_right.get_style_context().add_class(class_name='linked')
 
-
-        ## Show/Hide Filters
-        tgbSidebar = factory.create_button_toggle('io.github.t00m.MiAZ-sidebar-show-left-symbolic', callback=self._on_sidebar_toggled)
-        self.app.add_widget('workspace-togglebutton-filters', tgbSidebar)
-        tgbSidebar.set_tooltip_text("Show sidebar and filters")
-        tgbSidebar.set_active(True)
-        tgbSidebar.set_hexpand(False)
-        tgbSidebar.get_style_context().add_class(class_name='dimmed')
-        # ~ tgbSidebar.get_style_context().remove_class(class_name='flat')
-        # ~ tgbSidebar.set_valign(Gtk.Align.CENTER)
-        hdb_left.append(tgbSidebar)
-
         # Workspace Menu
         hbox = factory.create_box_horizontal(margin=0, spacing=6, hexpand=False)
         popovermenu = self._setup_menu_selection()
         label = Gtk.Label()
-        self.btnDocsSel = Gtk.MenuButton()
-        self.app.add_widget('workspace-menu', self.btnDocsSel)
-        self.btnDocsSel.set_always_show_arrow(True)
-        self.btnDocsSel.set_child(label)
-        self.popDocsSel = Gtk.PopoverMenu()
-        self.popDocsSel.set_menu_model(popovermenu)
-        self.btnDocsSel.set_popover(popover=self.popDocsSel)
-        self.btnDocsSel.set_sensitive(True)
-        hbox.append(self.btnDocsSel)
+        btnDocsSel  = Gtk.MenuButton()
+        self.app.add_widget('workspace-menu', btnDocsSel)
+        btnDocsSel .set_always_show_arrow(True)
+        btnDocsSel .set_child(label)
+        popDocsSel = Gtk.PopoverMenu()
+        popDocsSel.set_menu_model(popovermenu)
+        btnDocsSel .set_popover(popover=popDocsSel)
+        btnDocsSel .set_sensitive(True)
+        hbox.append(btnDocsSel)
 
         # Pending documents toggle button
         button = factory.create_button_toggle( icon_name='io.github.t00m.MiAZ-rename',
@@ -220,14 +222,6 @@ class MiAZMainWindow(Gtk.Box):
         hbox.append(button)
 
         return hbox
-
-    def _on_sidebar_toggled(self, *args):
-        """ Sidebar collapsed when active = False"""
-        sidebar = self.app.get_widget('sidebar')
-        toggleButtonFilters = self.app.get_widget('workspace-togglebutton-filters')
-        active = toggleButtonFilters.get_active()
-        if sidebar is not None:
-            sidebar.set_visible(active)
 
     def _setup_menu_selection(self):
         """Create workspace menu"""
@@ -266,6 +260,7 @@ class MiAZMainWindow(Gtk.Box):
         # Create the 'Plugins' submenu
         plugins_submenu = self.app.add_widget('workspace-menu-plugins', Gio.Menu.new())
         self.log.debug("Plugins menu")
+
         # Iterate through the plugin categories and subcategories
         for category, subcategories in plugin_categories.items():
             # Create a submenu for each category
@@ -274,39 +269,23 @@ class MiAZMainWindow(Gtk.Box):
             category_name = f"workspace-menu-plugins-{cid}"
             self.app.add_widget(category_name, category_submenu)
             self.log.debug(f"- '{category_name}'")
+
+            # Add each subcategory as a submenu (to attach plugins later)
             for subcategory, description in subcategories.items():
-                # Add each subcategory as a submenu (to attach plugins later)
                 subcategory_submenu = Gio.Menu()
                 sid = subcategory.lower().replace(' ', '-')
                 subcategory_name = f"workspace-menu-plugins-{cid}-{sid}"
                 self.app.add_widget(subcategory_name, subcategory_submenu)
                 self.log.debug(f"\t\t- '{subcategory_name}'")
-                # Add a placeholder menu item (you can replace this with actual plugins)
-                # ~ subcategory_submenu.append("Plugin 1", f"app.{subcategory.replace(' ', '').lower()}_plugin1")
 
                 # Add the subcategory submenu to the category submenu
                 category_submenu.append_submenu(subcategory, subcategory_submenu)
+
             # Add the category submenu to the 'Plugins' submenu
             plugins_submenu.append_submenu(category, category_submenu)
 
         # Add the 'Plugins' submenu to the main menu
         section_shortcut_common.append_submenu("All plugins ...", plugins_submenu)
-
-        # Create menuitem for Application preferences
-        menuitem = factory.create_menuitem('preferences', _('Application preferences'), actions.show_app_settings, None, [])
-        self.app.add_widget('workspace-menu-selection-section-app-preferences', menuitem)
-
-        # This is a common action: add to shortcuts, app zone
-        section_app = self.app.get_widget('workspace-menu-selection-section-app')
-        section_app.append_item(menuitem)
-
-        # Create menuitem for Application preferences
-        menuitem = factory.create_menuitem('about', _('About this application ...'), actions.show_app_about, None, [])
-        self.app.add_widget('workspace-menu-selection-section-bottom-about', menuitem)
-
-        # This is a common action: add to shortcuts, app zone
-        section_app = self.app.get_widget('workspace-menu-selection-section-bottom')
-        section_app.append_item(menuitem)
 
         return menu_selection
 
@@ -327,7 +306,7 @@ class MiAZMainWindow(Gtk.Box):
         menuitem = factory.create_menuitem('app-quit', _('Exit'), actions.exit_app, None, ['<Control>q'])
         section_bottom.append_item(menuitem)
 
-        menubutton = Gtk.MenuButton(child=factory.create_button_content(icon_name='io.github.t00m.MiAZ-system-menu'))
+        menubutton = Gtk.MenuButton(child=factory.create_button_content(icon_name='io.github.t00m.MiAZ'))
         menubutton.set_has_frame(False)
         menubutton.get_style_context().add_class(class_name='flat')
         menubutton.set_valign(Gtk.Align.CENTER)

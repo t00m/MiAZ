@@ -5,6 +5,7 @@
 # Description: Custom selector views to manage configuration
 
 import os
+import glob
 from gettext import gettext as _
 
 from gi.repository import Gtk
@@ -46,7 +47,6 @@ class MiAZConfigView(MiAZSelector):
 
     def update_config(self):
         self.config = self.conf[self.config_name]
-        self.log.debug(f"Updated configview for {self.config_name}")
 
     def get_config_for(self):
         return self.config.config_for
@@ -432,10 +432,6 @@ class MiAZUserPlugins(MiAZConfigView):
     def plugins_updated(self, *args):
         self._update_view_available()
 
-    # ~ def update_views(self, *args):
-        # ~ self._update_view_available()
-        # ~ self._update_view_used()
-
     def _setup_view_finish(self):
         # Setup Available and Used Column Views
         self.viewAv = MiAZColumnViewPlugin(self.app)
@@ -443,60 +439,21 @@ class MiAZUserPlugins(MiAZConfigView):
         self.viewSl = MiAZColumnViewPlugin(self.app)
         self._add_columnview_used(self.viewSl)
 
-    def _update_view_available(self):
-        plugin_manager = self.app.get_service('plugin-manager')
-        items = []
-        item_type = self.config.model
-        for plugin in plugin_manager.plugins:
-            ptype = plugin_manager.get_plugin_type(plugin)
-            if ptype == MiAZPluginType.USER:
-                pid = plugin.get_module_name()
-                title = plugin.get_description() #+ ' (v%s)' % plugin.get_version()
-                items.append(item_type(id=pid, title=title))
-        self.viewAv.update(items)
-
-    def _update_view_used(self):
-        plugin_manager = self.app.get_service('plugin-manager')
-        items = []
-        item_type = self.config.model
-        for plugin in plugin_manager.plugins:
-            ptype = plugin_manager.get_plugin_type(plugin)
-            if ptype == MiAZPluginType.USER:
-                pid = plugin.get_module_name()
-                title = plugin.get_description() #+ ' (v%s)' % plugin.get_version()
-                if self.config.exists_used(pid):
-                    items.append(item_type(id=pid, title=title))
-        self.viewSl.update(items)
-
     def _on_item_used_remove(self, *args):
-        plugin_manager = self.app.get_service('plugin-manager')
-        plugins_used = self.config.load_used()
-        selected_plugin = self.viewAv.get_selected()
+        selected_plugin = self.viewSl.get_selected()
         if selected_plugin is None:
             return
 
-        try:
-            plugin = plugin_manager.get_plugin_info(selected_plugin.id)
-            if plugin.is_loaded():
-                plugin_manager.unload_plugin(plugin)
-                self.log.debug(f"Plugin '{selected_plugin.id}' unloaded")
-        except AttributeError as error:
-            self.log.error(f"Unknown error unloading plugin '{selected_plugin.id}'")
-            self.log.error(error)
-        finally:
-            try:
-                del(plugins_used[selected_plugin.id])
-                self.log.debug(f"Plugin '{selected_plugin.id}' deactivated")
-                self.config.save_used(items=plugins_used)
-                self._update_view_used()
-            except KeyError:
-                # FIXME: it shouldn't reach this code.
-                # It happens when the user removes a plugin from the
-                # used view and hit the button remove ([<]) again.
-                pass
+        ENV = self.app.get_env()
+        ENV['APP']['STATUS']['RESTART_NEEDED'] = True
+        self.config.remove_used(selected_plugin.id)
+        banner = self.app.get_widget('repository-settings-banner')
+        banner.set_revealed(True)
+        self.update_views()
 
     def _on_item_used_add(self, *args):
-        plugin_manager = self.app.get_service('plugin-manager')
+        workflow = self.app.get_service('workflow')
+        plugin_manager = self.app.get_service('plugin-system')
         plugins_used = self.config.load_used()
         selected_plugin = self.viewAv.get_selected()
         if selected_plugin is None:
@@ -506,14 +463,19 @@ class MiAZUserPlugins(MiAZConfigView):
         item_type = self.config.model
         i_title = item_type.__title__
         if not plugin_used:
+            util = self.app.get_service('util')
+            ENV = self.app.get_env()
+            user_plugins = util.json_load(ENV['APP']['PLUGINS']['LOCAL_INDEX'])
+            plugin_module = user_plugins[selected_plugin.id]['Module']
             plugins_used[selected_plugin.id] = selected_plugin.title
-            plugin = plugin_manager.get_plugin_info(selected_plugin.id)
+            plugin = plugin_manager.get_plugin_info(plugin_module)
             if not plugin.is_loaded():
                 plugin_manager.load_plugin(plugin)
                 self.config.save_used(items=plugins_used)
-                self._update_view_used()
                 self.log.debug(f"{i_title} {selected_plugin.id} activated")
+                workflow.switch_start()
         else:
-            self.log.debug(f"{i_title} '{selected_plugin.id}' was already activated. Nothing to do")
+            self.log.warning(f"{i_title} '{selected_plugin.id}' was already activated. Nothing to do")
+        self.update_views()
 
 
