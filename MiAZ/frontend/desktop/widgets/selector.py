@@ -29,11 +29,13 @@ class MiAZSelector(Gtk.Box):
 
     def _build_ui(self):
         factory = self.app.get_service('factory')
+        ENV = self.app.get_env()
 
         # Banner
         title = "One or more plugins were disabled. Application restart needed."
         banner = self.app.add_widget('repository-settings-banner', Adw.Banner.new(title))
-        banner.set_revealed(True)
+        restart_needed = ENV['APP']['STATUS']['RESTART_NEEDED']
+        banner.set_revealed(restart_needed)
         self.append(banner)
 
         # Toolbar
