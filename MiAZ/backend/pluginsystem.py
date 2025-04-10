@@ -23,69 +23,70 @@ from MiAZ.backend.log import MiAZLog
 
 plugin_categories = {
     "Data Management": {
-        "Import": "Plugins for importing documents.",
+        "Import": "Plugins for importing documents",
         "Export": "Plugins for exporting documents",
         "Backup": "Plugins for backing up your repository",
-        "Restore": "Tools for restoring backups.",
-        "Batch": "Tools for bulk data manipulation.",
-        "Synchronisation": "Plugins for syncing data with cloud services or between devices.",
-        "Migration": "For transferring data between different platforms or systems.",
-        "Deletion": "Tools for securely removing documents or data from the repository."
+        "Restore": "Tools for restoring backups",
+        "Single update": "Tool for manipulating data for a single file",
+        "Batch update": "Tools for bulk data manipulation",
+        "Synchronisation": "Plugins for syncing data with cloud services or between devices",
+        "Migration": "For transferring data between different platforms or systems",
+        "Deletion": "Tools for securely removing documents or data from the repository"
     },
     "Content Organisation": {
-        "Tagging and Classification": "Tools for categorising and tagging documents.",
-        "Search and Indexing": "Plugins that improve search capabilities or indexing methods.",
-        "Metadata Management": "For adding, editing, or viewing document metadata."
+        "Tagging and Classification": "Tools for categorising and tagging documents",
+        "Search and Indexing": "Plugins that improve search capabilities or indexing methods",
+        "Metadata Management": "For adding, editing, or viewing document metadata"
     },
     "Visualisation and Diagrams": {
-        "Diagram Creation": "Tools for creating flowcharts, mind maps, and other visual representations.",
-        "Data Visualisation": "Plugins that generate graphs, charts, or other visual data summaries.",
-        "Dashboard Widgets": "Add-ons that provide a summary of key information in a dashboard format."
+        "Diagram Creation": "Tools for creating flowcharts, mind maps, and other visual representations",
+        "Data Visualisation": "Plugins that generate graphs, charts, or other visual data summaries",
+        "Dashboard Widgets": "Add-ons that provide a summary of key information in a dashboard format"
     },
     "Security and Privacy": {
-        "Encryption/Decryption": "Plugins that encrypt or decrypt documents.",
-        "Access Control": "Tools for managing user permissions and access levels.",
-        "Audit and Logging": "Plugins that track changes and access history."
+        "Encryption/Decryption": "Plugins that encrypt or decrypt documents",
+        "Access Control": "Tools for managing user permissions and access levels",
+        "Audit and Logging": "Plugins that track changes and access history"
     },
     "Automation and Workflow": {
-        "Task Automation": "Plugins that automate repetitive tasks, like renaming files or sorting documents.",
-        "Workflow Management": "For creating and managing document-related workflows.",
-        "Notification Systems": "Tools that notify users of specific events or deadlines."
+        "Task Automation": "Plugins that automate repetitive tasks, like renaming files or sorting documents",
+        "Workflow Management": "For creating and managing document-related workflows",
+        "Notification Systems": "Tools that notify users of specific events or deadlines"
     },
     "Integration and Interoperability": {
-        "API Connectors": "Plugins that allow integration with third-party services (e.g., Google Drive, Dropbox, Slack).",
-        "Third-Party Service Integration": "For integrating with tools like CRM, ERP, or project management systems.",
-        "Communication Tools": "Plugins for email, messaging, or social media integration."
+        "API Connectors": "Plugins that allow integration with third-party services (e.g., Google Drive, Dropbox, Slack)",
+        "Third-Party Service Integration": "For integrating with tools like CRM, ERP, or project management systems",
+        "Communication Tools": "Plugins for email, messaging, or social media integration"
     },
     "Customisation and Personalisation": {
-        "Themes and UI Customisation": "Plugins that allow users to change the application's appearance.",
-        "Templates": "Pre-defined document templates or layout options.",
-        "Language Packs": "Plugins for multi-language support or localisation."
+        "Themes and UI Customisation": "Plugins that allow users to change the application's appearance",
+        "Templates": "Pre-defined document templates or layout options",
+        "Language Packs": "Plugins for multi-language support or localisation"
     },
     "Analytics and Reporting": {
-        "Usage Analytics": "Tools that provide insights into how the application is used.",
-        "Document Statistics": "Plugins that analyse and report on document content.",
-        "Custom Reports": "For generating bespoke reports based on user-defined criteria."
+        "Usage Analytics": "Tools that provide insights into how the application is used",
+        "Document Statistics": "Plugins that analyse and report on document content",
+        "Custom Reports": "For generating bespoke reports based on user-defined criteria"
     },
     "Collaboration": {
-        "Real-time Collaboration": "Plugins that enable multiple users to work on the same document simultaneously.",
-        "Version Control": "Tools for managing document versions and changes.",
-        "Comments and Annotations": "Plugins for adding comments or annotations to documents."
+        "Real-time Collaboration": "Plugins that enable multiple users to work on the same document simultaneously",
+        "Version Control": "Tools for managing document versions and changes",
+        "Comments and Annotations": "Plugins for adding comments or annotations to documents"
     },
     "Content Editing and Formatting": {
-        "Advanced Editors": "Plugins that offer enhanced text, image, or video editing capabilities.",
-        "Formatting Tools": "For applying or automating specific formatting rules across documents.",
-        "Conversion Tools": "Plugins that convert documents into different formats (e.g., Word to PDF)."
+        "Advanced Editors": "Plugins that offer enhanced text, image, or video editing capabilities",
+        "Formatting Tools": "For applying or automating specific formatting rules across documents",
+        "Conversion Tools": "Plugins that convert documents into different formats (e.g., Word to PDF)"
     },
     "Support and Help": {
-        "Guides and Tutorials": "Plugins that provide user manuals, tutorials, or onboarding guides.",
-        "Troubleshooting Tools": "For diagnosing and fixing common issues within the application.",
-        "User Feedback": "Tools that allow users to submit feedback or suggestions."
+        "Guides and Tutorials": "Plugins that provide user manuals, tutorials, or onboarding guides",
+        "Troubleshooting Tools": "For diagnosing and fixing common issues within the application",
+        "User Feedback": "Tools that allow users to submit feedback or suggestions"
     },
     "Archiving and Compliance": {
-        "Long-Term Archiving": "Plugins for storing documents in long-term, secure formats.",
-        "Compliance Checkers": "Tools that ensure documents meet regulatory or legal standards.",
-        "Retention Policies": "Plugins for setting and enforcing document retention rules."
+        "Long-Term Archiving": "Plugins for storing documents in long-term, secure formats",
+        "Compliance Checkers": "Tools that ensure documents meet regulatory or legal standards",
+        "Retention Policies": "Plugins for setting and enforcing document retention rules"
     },
     "Others": {
         "Miscelanea": "Plugins not fitting in another category"
@@ -99,23 +100,23 @@ class MiAZAPI(GObject.GObject):
 
 
 class MiAZPluginType(IntEnum):
-    """Types of plugins depending on their directory location."""
+    """Types of plugins depending on their directory location"""
 
     SYSTEM = 1
     USER = 2
 
     def __str__(self):
         if self.value == MiAZPluginType.USER:
-            return _("User Plugin")
+            return _("user")
         elif self.value == MiAZPluginType.SYSTEM:
-            return _("System Plugin")
+            return _("system")
 
 
-class MiAZPluginManager(GObject.GObject):
+class MiAZPluginSystem(GObject.GObject):
     def __init__(self, app):
         super().__init__()
         GObject.signal_new('plugins-updated',
-                            MiAZPluginManager,
+                            MiAZPluginSystem,
                             GObject.SignalFlags.RUN_LAST, None, ())
         self.log = MiAZLog('MiAZ.PluginManager')
         self.app = app
@@ -206,12 +207,10 @@ class MiAZPluginManager(GObject.GObject):
             ptype = self.get_plugin_type(plugin)
             pname = plugin.get_name()
             pvers = plugin.get_version()
-            # ~ pinfo = self.get_plugin_info(plugin)
-
             self.engine.load_plugin(plugin)
 
             if plugin.is_loaded():
-                self.log.info(f"Plugin {pname} v{pvers} ({ptype}) loaded")
+                self.log.info(f"{str(ptype).title()} Plugin {pname} v{pvers} ({ptype}) loaded")
                 return True
             else:
                 self.log.error(f"Plugin {pname} v{pvers} ({ptype}) couldn't be loaded")
@@ -219,11 +218,13 @@ class MiAZPluginManager(GObject.GObject):
         except AttributeError as error:
             self.log.error(f"Plugin {pname} v{pvers} ({ptype}) couldn't be loaded")
             self.log.error(f"Reason: {error}")
+            return False
         except Exception as error:
             self.log.error(error)
             self.log.error(f"Plugin {pname} v{pvers} ({ptype}) couldn't be loaded")
             self.log.error(f"Reason: {error}")
             return False
+        self.emit('plugins-updated')
 
     def unload_plugin(self, plugin: Peas.PluginInfo):
         try:
@@ -232,6 +233,7 @@ class MiAZPluginManager(GObject.GObject):
             pvers = plugin.get_version()
             self.engine.unload_plugin(plugin)
             self.log.info(f"Plugin  {pname} v{pvers} ({ptype}) unloaded")
+            self.emit('plugins-updated')
         except Exception as error:
             self.log.error(error)
 
@@ -240,13 +242,25 @@ class MiAZPluginManager(GObject.GObject):
 
     @property
     def plugins(self):
-        """Gets the engine's plugin list."""
+        """Gets the engine's plugin list"""
         return self.engine.get_plugin_list()
 
+    def get_user_plugins(self):
+        self.rescan_plugins()
+        user_plugins = []
+        for plugin in self.plugins:
+            ptype = self.get_plugin_type(plugin)
+            if ptype == MiAZPluginType.USER:
+                plugin_id = plugin.get_name()
+                user_plugins.append(plugin_id)
+        return user_plugins
+
+
     def get_plugin_type(self, plugin_info):
-        """Gets the PluginType for the specified Peas.PluginInfo."""
+        """Gets the PluginType for the specified Peas.PluginInfo"""
         ENV = self.app.get_env()
         PLUGIN_DIR = os.path.dirname(plugin_info.get_data_dir())
+        plugin_name = plugin_info.get_name()
         is_plugin_user_dir = PLUGIN_DIR == ENV['LPATH']['PLUGINS']
         if is_plugin_user_dir:
             return MiAZPluginType.USER

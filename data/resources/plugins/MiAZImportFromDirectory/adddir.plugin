@@ -1,10 +1,12 @@
 [Plugin]
-Module=scan
-Name=MiAZImportFromScan
+Module=adddir
+Name=MiAZImportFromDirectory
 Loader=Python3
-Description=Open scanner application
+Description=Import all documents from a directory
 Authors=Tomás Vírseda <tomasvirseda@gmail.com>
 Copyright=Copyright © 2023 Tomás Vírseda
 Website=http://github.com/t00m/MiAZ
 Help=http://github.com/t00m/MiAZ/README.adoc
-Version=0.3
+Version=0.2
+Category=Data Management
+Subcategory=Import

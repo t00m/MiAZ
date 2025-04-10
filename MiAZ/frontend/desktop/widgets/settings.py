@@ -9,6 +9,7 @@ from gettext import gettext as _
 
 from gi.repository import Adw
 from gi.repository import Gtk
+from gi.repository import GObject
 
 from MiAZ.backend.log import MiAZLog
 from MiAZ.backend.models import Repository, Plugin, Project
@@ -21,10 +22,11 @@ from MiAZ.frontend.desktop.widgets.configview import MiAZPeopleSentTo
 from MiAZ.frontend.desktop.widgets.configview import MiAZProjects
 from MiAZ.frontend.desktop.widgets.configview import MiAZRepositories
 from MiAZ.frontend.desktop.widgets.configview import MiAZUserPlugins
-from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewPlugin
+
 from MiAZ.frontend.desktop.widgets.window import MiAZCustomWindow
+from MiAZ.frontend.desktop.widgets.pluginuimanager import MiAZPluginUIManager
 from MiAZ.backend.config import MiAZConfigRepositories
-from MiAZ.backend.pluginsystem import MiAZPluginType
+
 from MiAZ.frontend.desktop.services.dialogs import MiAZFileChooserDialog
 
 Configview = {}
@@ -40,6 +42,10 @@ Configview['Plugin'] = MiAZUserPlugins
 
 class MiAZAppSettings(Adw.PreferencesDialog):
     __gtype_name__ = 'MiAZAppSettings'
+    """Workspace"""
+    __gsignals__ = {
+        "settings-loaded":  (GObject.SignalFlags.RUN_LAST, None, ()),
+    }
 
     def __init__(self, app, **kwargs):
         super().__init__()
@@ -52,6 +58,7 @@ class MiAZAppSettings(Adw.PreferencesDialog):
         self.srvdlg = self.app.get_service('dialogs')
         self.actions = self.app.get_service('actions')
         self._build_ui()
+        self.emit('settings-loaded')
 
     def _on_update_repos_available(self, *args):
         config = self.app.get_config_dict()
@@ -59,7 +66,6 @@ class MiAZAppSettings(Adw.PreferencesDialog):
         n = 0
         dd_repo = self.app.get_widget('window-settings-dropdown-repository-active')
         for repo in dd_repo.get_model():
-            self.log.debug(f"{repo.id}: {repo.title}")
             if repo_id ==  repo.id:
                 dd_repo.set_selected(n)
             n += 1
@@ -68,6 +74,21 @@ class MiAZAppSettings(Adw.PreferencesDialog):
         self.set_title('Application settings')
         self.set_search_enabled(False)
         self._build_ui_page_preferences()
+        self._build_ui_page_aspect()
+
+    def _build_ui_page_aspect(self):
+        # Create preferences page
+        page_title = _("Aspect")
+        page_icon = "io.github.t00m.MiAZ-preferences-ui"
+        page = Adw.PreferencesPage(title=page_title, icon_name=page_icon)
+        self.add(page)
+        self.app.add_widget('window-preferences-page-aspect', page)
+
+        ## Group UI
+        group = Adw.PreferencesGroup()
+        group.set_title('User interface')
+        page.add(group)
+        self.app.add_widget('window-preferences-page-aspect-group-ui', group)
 
     def _build_ui_page_preferences(self):
         """Repositories dialog page"""
@@ -113,18 +134,25 @@ class MiAZAppSettings(Adw.PreferencesDialog):
         group = Adw.PreferencesGroup()
         group.set_title('Plugins')
         # ~ FIXME: Add plugins back revamped.
-        # ~ page.add(group)
+        page.add(group)
 
         ### Row Plugins
         #### Manage plugins
         row = Adw.ActionRow(title=_('Manage plugins'))
         group.add(row)
-        button = self.factory.create_button(icon_name='io.github.t00m.MiAZ-res-plugins', callback=self.noop, tooltip="Manage plugins")
+        button = self.factory.create_button(icon_name='io.github.t00m.MiAZ-res-plugins', callback=self._on_manage_plugins, tooltip="Manage plugins")
         button.set_valign(Gtk.Align.CENTER)
         row.add_prefix(button)
 
-    def noop(self, *args):
-        self.log.debug("noop")
+    def _on_manage_plugins(self, *args):
+        srvdlg = self.app.get_service('dialogs')
+        window = self.app.get_widget('window')
+        # ~ dialog = MiAZPluginUIManager(self.app)
+        # ~ widget = self._create_widget_for_plugins()
+        widget = MiAZPluginUIManager(self.app)
+        dialog = srvdlg.create(enable_response=False, dtype='action', title='Plugin Manager', body='', widget=widget, width=800, height=600)
+
+        dialog.present(self)
 
     def _build_ui_page_plugins(self):
         # Plugins page
@@ -204,147 +232,6 @@ class MiAZAppSettings(Adw.PreferencesDialog):
     def on_filechooser_response_source(self, dialog, response, data):
                 return
 
-    def _create_widget_for_plugins(self):
-        vbox = self.factory.create_box_vertical(margin=0, spacing=0, hexpand=True, vexpand=True)
-        notebook = Gtk.Notebook()
-        notebook.set_show_border(False)
-        notebook.set_tab_pos(Gtk.PositionType.LEFT)
-        widget = self._create_view_plugins_system()
-        label = self.factory.create_notebook_label(icon_name='io.github.t00m.MiAZ-res-plugins-system', title='System')
-        notebook.append_page(widget, label)
-        widget = self._create_view_plugins_user()
-        label = self.factory.create_notebook_label(icon_name='io.github.t00m.MiAZ-res-plugins', title='User')
-        notebook.append_page(widget, label)
-        vbox.append(notebook)
-        return vbox
-
-    def _create_view_plugins_system(self):
-        vbox = self.factory.create_box_vertical(margin=0, spacing=0, hexpand=True, vexpand=True)
-        scrwin = self.factory.create_scrolledwindow()
-        self.app.add_widget('app-settings-plugins-system-scrwin', scrwin)
-        vbox.append(scrwin)
-        pm = self.app.get_service('plugin-manager')
-        view = MiAZColumnViewPlugin(self.app)
-        view.set_hexpand(True)
-        view.set_vexpand(True)
-        self.app.add_widget('app-settings-plugins-system-view', view)
-        scrwin.set_child(view)
-
-        # System Plugins
-        items = []
-        item_type = Plugin
-        for plugin in pm.plugins:
-            if pm.get_plugin_type(plugin) == MiAZPluginType.SYSTEM:
-                pid = plugin.get_module_name()
-                title = plugin.get_description()
-                items.append(item_type(id=pid, title=title))
-        view.update(items)
-        return vbox
-
-    def _create_view_plugins_user(self):
-        vbox = self.factory.create_box_vertical(margin=0, spacing=0, hexpand=True, vexpand=True)
-
-        # Add/Remove
-        hbox = self.factory.create_box_horizontal(margin=0, spacing=0, hexpand=True, vexpand=False)
-        hbox.get_style_context().add_class(class_name='toolbar')
-        hbox.append(self.factory.create_button(icon_name='io.github.t00m.MiAZ-list-add-symbolic', title='Add plugin', callback=self._on_plugin_add))
-        hbox.append(self.factory.create_button(icon_name='io.github.t00m.MiAZ-list-remove-symbolic', title='Remove plugin', callback=self._on_plugin_remove))
-        vbox.append(hbox)
-
-        # User Plugins
-        scrwin = self.factory.create_scrolledwindow()
-        self.app.add_widget('app-settings-plugins-user-scrwin', scrwin)
-        vbox.append(scrwin)
-        view = MiAZColumnViewPlugin(self.app)
-        view.set_hexpand(True)
-        view.set_vexpand(True)
-        self.app.add_widget('app-settings-plugins-user-view', view)
-        scrwin.set_child(view)
-        self.update_user_plugins()
-        return vbox
-
-    def update_user_plugins(self):
-        ENV = self.app.get_env()
-        plugin_manager = self.app.get_service('plugin-manager')
-        plugin_manager.rescan_plugins()
-        view = self.app.get_widget('app-settings-plugins-user-view')
-        items = []
-        item_type = Plugin
-        for plugin in plugin_manager.plugins:
-            ptype = plugin_manager.get_plugin_type(plugin)
-            if ptype == MiAZPluginType.USER:
-                pid = plugin.get_module_name()
-                plugin_path = os.path.join(ENV['LPATH']['PLUGINS'], f"{pid}.plugin")
-                if os.path.exists(plugin_path):
-                    title = plugin.get_description()
-                    items.append(item_type(id=pid, title=title))
-        view.update(items)
-
-    def on_filechooser_response(self, dialog, response, clsdlg):
-        if response == 'apply':
-            plugin_manager = self.app.get_service('plugin-manager')
-            filechooser = clsdlg.get_filechooser_widget()
-            gfile = filechooser.get_file()
-            if gfile is None:
-                    self.log.debug('No directory set. Do nothing.')
-                    # FIXME: Show warning message. Priority: low
-                    return
-            plugin_path = gfile.get_path()
-            imported = plugin_manager.import_plugin(plugin_path)
-            self.log.debug(f"Plugin imported? {imported}")
-            if imported:
-                self.update_user_plugins()
-
-    def _on_plugin_add(self, *args):
-        plugin_filter = Gtk.FileFilter()
-        plugin_filter.add_pattern('*.zip')
-        window = self.app.get_widget('window-app-settings')
-        clsdlg = MiAZFileChooserDialog(self.app)
-        filechooser_dialog = clsdlg.create(
-                        parent=window,
-                        title=_('Import a single file'),
-                        target = 'FILE',
-                        callback = self.on_filechooser_response,
-                        data=clsdlg)
-        filechooser_widget = clsdlg.get_filechooser_widget()
-        filechooser_widget.set_filter(plugin_filter)
-        filechooser_dialog.present()
-
-    def _on_plugin_remove(self, *args):
-        plugin_manager = self.app.get_service('plugin-manager')
-        view = self.app.get_widget('app-settings-plugins-user-view')
-        try:
-            module = view.get_selected()
-            plugin = plugin_manager.get_plugin_info(module.id)
-            deleted = plugin_manager.remove_plugin(plugin)
-            if deleted:
-                self.log.debug(f"Plugin '{module.id}' deleted")
-                self.update_user_plugins()
-        except IndexError as error:
-            self.log.debug("No user plugins installed and/or selected")
-            raise
-
-    def get_plugin_status(self, name: str) -> bool:
-        plugins = self.config['App'].get('plugins')
-        if plugins is None:
-            return False
-
-        if name in plugins:
-            return True
-        return False
-
-    def set_plugin_status(self, checkbox, plugin_name):
-        active = checkbox.get_active()
-        plugins = self.config['App'].get('plugins')
-        if plugins is None:
-            plugins = []
-        if active:
-            if plugin_name not in plugins:
-                plugins.append(plugin_name)
-        else:
-            plugins.remove(plugin_name)
-        self.config['App'].set('plugins', plugins)
-
 
 class MiAZRepoSettings(MiAZCustomWindow):
     __gtype_name__ = 'MiAZRepoSettings'
@@ -354,7 +241,7 @@ class MiAZRepoSettings(MiAZCustomWindow):
         self.log = MiAZLog('MiAZ.RepoSettings')
         self.name = 'repo-settings'
         appconf = self.app.get_config('App')
-        repo_id = appconf.get('current')
+        repo_id = appconf.get('current').replace('_', ' ')
         self.title = f"Settings for repository {repo_id}"
         super().__init__(app, self.name, self.title, **kwargs)
         # ~ self.connect('notify::visible', self.update)

@@ -1,10 +1,12 @@
 [Plugin]
-Module=export2text
-Name=MiAZExport2Text
+Module=viewitem
+Name=MiAZViewItem
 Loader=Python3
-Description=Export selected items to plain text
+Description=Display item with the default associated application
 Authors=Tomás Vírseda <tomasvirseda@gmail.com>
 Copyright=Copyright © 2023 Tomás Vírseda
 Website=http://github.com/t00m/MiAZ
 Help=http://github.com/t00m/MiAZ/README.adoc
-Version=0.1
+Version=0.4
+Category=Customisation and Personalisation
+Subcategory=Themes and UI Customisation
