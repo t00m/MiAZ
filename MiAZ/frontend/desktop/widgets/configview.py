@@ -440,6 +440,7 @@ class MiAZUserPlugins(MiAZConfigView):
         self._add_columnview_used(self.viewSl)
 
     def _on_item_used_remove(self, *args):
+        workflow = self.app.get_service('workflow')
         plugin_manager = self.app.get_service('plugin-manager')
         plugins_used = self.config.load_used()
         selected_plugin = self.viewSl.get_selected()
@@ -451,21 +452,25 @@ class MiAZUserPlugins(MiAZConfigView):
             ENV = self.app.get_env()
             user_plugins = util.json_load(ENV['APP']['PLUGINS']['LOCAL_INDEX'])
             plugin_module = user_plugins[selected_plugin.id]['Module']
+            self.log.info(selected_plugin.id)
+            self.log.info(plugins_used[selected_plugin.id])
+            del(plugins_used[selected_plugin.id])
+            self.log.debug(f"Plugin '{selected_plugin.id}' deactivated")
+            self.config.save_used(items=plugins_used)
             plugin = plugin_manager.get_plugin_info(plugin_module)
+            self.log.info(plugin)
             if plugin is not None:
                 if plugin.is_loaded():
                     plugin_manager.unload_plugin(plugin)
-                    self.log.debug(f"Plugin '{selected_plugin.id}' unloaded")
+                    self.log.warning(f"Plugin '{selected_plugin.id}' unloaded")
+                    workflow.switch_start()
         except AttributeError as error:
             self.log.error(f"Unknown error unloading plugin '{selected_plugin.id}'")
             self.log.error(error)
             raise
         finally:
             try:
-                del(plugins_used[selected_plugin.id])
-                self.log.debug(f"Plugin '{selected_plugin.id}' deactivated")
-                self.config.save_used(items=plugins_used)
-                # ~ self._update_view_used()
+                pass
             except KeyError:
                 # FIXME: it shouldn't reach this code.
                 # It happens when the user removes a plugin from the
@@ -475,6 +480,7 @@ class MiAZUserPlugins(MiAZConfigView):
             self.update_views()
 
     def _on_item_used_add(self, *args):
+        workflow = self.app.get_service('workflow')
         plugin_manager = self.app.get_service('plugin-manager')
         plugins_used = self.config.load_used()
         selected_plugin = self.viewAv.get_selected()
@@ -488,7 +494,7 @@ class MiAZUserPlugins(MiAZConfigView):
             util = self.app.get_service('util')
             ENV = self.app.get_env()
             user_plugins = util.json_load(ENV['APP']['PLUGINS']['LOCAL_INDEX'])
-            plugin_module = user_plugins['MiAZExport2CSV']['Module']
+            plugin_module = user_plugins[selected_plugin.id]['Module']
             plugins_used[selected_plugin.id] = selected_plugin.title
             self.log.info(selected_plugin.id)
             plugin = plugin_manager.get_plugin_info(plugin_module)
@@ -496,6 +502,7 @@ class MiAZUserPlugins(MiAZConfigView):
                 plugin_manager.load_plugin(plugin)
                 self.config.save_used(items=plugins_used)
                 self.log.debug(f"{i_title} {selected_plugin.id} activated")
+                workflow.switch_start()
         else:
             self.log.debug(f"{i_title} '{selected_plugin.id}' was already activated. Nothing to do")
         self.update_views()
