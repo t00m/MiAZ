@@ -210,7 +210,7 @@ class MiAZPluginManager(GObject.GObject):
             self.engine.load_plugin(plugin)
 
             if plugin.is_loaded():
-                self.log.info(f"Plugin {pname} v{pvers} ({ptype}) loaded")
+                self.log.info(f"{str(ptype).title()} Plugin {pname} v{pvers} ({ptype}) loaded")
                 return True
             else:
                 self.log.error(f"Plugin {pname} v{pvers} ({ptype}) couldn't be loaded")
