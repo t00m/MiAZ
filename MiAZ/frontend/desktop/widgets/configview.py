@@ -440,44 +440,16 @@ class MiAZUserPlugins(MiAZConfigView):
         self._add_columnview_used(self.viewSl)
 
     def _on_item_used_remove(self, *args):
-        workflow = self.app.get_service('workflow')
-        plugin_manager = self.app.get_service('plugin-manager')
-        plugins_used = self.config.load_used()
         selected_plugin = self.viewSl.get_selected()
         if selected_plugin is None:
             return
 
-        try:
-            util = self.app.get_service('util')
-            ENV = self.app.get_env()
-            user_plugins = util.json_load(ENV['APP']['PLUGINS']['LOCAL_INDEX'])
-            plugin_module = user_plugins[selected_plugin.id]['Module']
-            self.log.info(selected_plugin.id)
-            self.log.info(plugins_used[selected_plugin.id])
-            del(plugins_used[selected_plugin.id])
-            self.log.debug(f"Plugin '{selected_plugin.id}' deactivated")
-            self.config.save_used(items=plugins_used)
-            plugin = plugin_manager.get_plugin_info(plugin_module)
-            self.log.info(plugin)
-            if plugin is not None:
-                if plugin.is_loaded():
-                    plugin_manager.unload_plugin(plugin)
-                    self.log.warning(f"Plugin '{selected_plugin.id}' unloaded")
-                    workflow.switch_start()
-        except AttributeError as error:
-            self.log.error(f"Unknown error unloading plugin '{selected_plugin.id}'")
-            self.log.error(error)
-            raise
-        finally:
-            try:
-                pass
-            except KeyError:
-                # FIXME: it shouldn't reach this code.
-                # It happens when the user removes a plugin from the
-                # used view and hit the button remove ([<]) again.
-                self.log.error(plugins_used)
-                raise
-            self.update_views()
+        ENV = self.app.get_env()
+        ENV['APP']['STATUS']['RESTART_NEEDED'] = True
+        self.config.remove_used(selected_plugin.id)
+        banner = self.app.get_widget('repository-settings-banner')
+        banner.set_revealed(True)
+        self.update_views()
 
     def _on_item_used_add(self, *args):
         workflow = self.app.get_service('workflow')
@@ -496,7 +468,6 @@ class MiAZUserPlugins(MiAZConfigView):
             user_plugins = util.json_load(ENV['APP']['PLUGINS']['LOCAL_INDEX'])
             plugin_module = user_plugins[selected_plugin.id]['Module']
             plugins_used[selected_plugin.id] = selected_plugin.title
-            self.log.info(selected_plugin.id)
             plugin = plugin_manager.get_plugin_info(plugin_module)
             if not plugin.is_loaded():
                 plugin_manager.load_plugin(plugin)
@@ -504,7 +475,7 @@ class MiAZUserPlugins(MiAZConfigView):
                 self.log.debug(f"{i_title} {selected_plugin.id} activated")
                 workflow.switch_start()
         else:
-            self.log.debug(f"{i_title} '{selected_plugin.id}' was already activated. Nothing to do")
+            self.log.warning(f"{i_title} '{selected_plugin.id}' was already activated. Nothing to do")
         self.update_views()
 
 
