@@ -7,6 +7,7 @@
 import os
 from gettext import gettext as _
 
+from gi.repository import Adw
 from gi.repository import Gtk
 
 from MiAZ.backend.log import MiAZLog
@@ -28,15 +29,25 @@ class MiAZSelector(Gtk.Box):
 
     def _build_ui(self):
         factory = self.app.get_service('factory')
-        # Entry and buttons for operations (edit/add/remove)
-        self.boxOper = Gtk.Box(spacing=6, orientation=Gtk.Orientation.HORIZONTAL)
+
+        # Banner
+        title = "One or more plugins were disabled. Application restart needed."
+        banner = self.app.add_widget('repository-settings-banner', Adw.Banner.new(title))
+        banner.set_revealed(True)
+        self.append(banner)
+
+        # Toolbar
+        ## Entry and buttons for operations (edit/add/remove)
+        self.boxOper = factory.create_box_horizontal(spacing=6)
         self.boxOper.set_margin_top(12)
         self.boxOper.set_margin_bottom(6)
         self.boxOper.set_margin_start(6)
         self.boxOper.set_margin_end(6)
         self.boxOper.set_hexpand(True)
         self.boxOper.set_vexpand(False)
-        boxEntry = Gtk.Box(spacing=0, orientation=Gtk.Orientation.HORIZONTAL)
+
+        ## Toolbar left
+        boxEntry = factory.create_box_horizontal(spacing=0)
         boxEntry.set_hexpand(True)
         self.entry = Gtk.Entry()
         self.entry.get_style_context().add_class(class_name='caption')
@@ -46,13 +57,13 @@ class MiAZSelector(Gtk.Box):
         self.entry.connect('icon-press', self._on_entrysearch_delete)
         self.entry.connect('changed', self._on_filter_selected)
         self.entry.connect('activate', self._on_item_available_add, self.config_for)
-        self.entry.set_hexpand(True)
+        self.entry.set_hexpand(False)
         self.entry.set_has_frame(True)
         self.entry.set_placeholder_text('Type here for filtering')
         boxEntry.append(self.entry)
         self.boxOper.append(boxEntry)
         if self.edit:
-            self.boxButtons = Gtk.Box(spacing=0, orientation=Gtk.Orientation.HORIZONTAL)
+            self.boxButtons = factory.create_box_horizontal(spacing=0)
             self.boxButtons.get_style_context().add_class(class_name='linked')
             self.boxButtons.set_hexpand(False)
             self.boxButtons.append(factory.create_button(icon_name='io.github.t00m.MiAZ-list-add-symbolic', title='', callback=self._on_item_available_add))
@@ -60,7 +71,13 @@ class MiAZSelector(Gtk.Box):
             self.boxButtons.append(factory.create_button(icon_name='io.github.t00m.MiAZ-list-edit-symbolic', title='', callback=self._on_item_available_edit))
             self.boxOper.append(self.boxButtons)
 
+        ## Toolbar right
+        boxUsed = factory.create_box_horizontal(spacing=0)
+        self.boxOper.append(boxUsed)
+
         self.append(self.boxOper)
+
+        # Views & middel controls
         boxViews = factory.create_box_horizontal(spacing=0, hexpand=True, vexpand=True)
         boxLeft = factory.create_box_vertical(spacing=0, hexpand=True, vexpand=True)
         boxControls = Gtk.CenterBox()
@@ -71,14 +88,14 @@ class MiAZSelector(Gtk.Box):
         boxViews.append(boxRight)
         self.append(boxViews)
 
-        # Available
+        ## Available view
         self.frmViewAv = Gtk.Frame()
         title = Gtk.Label()
         title.set_markup(_('<b>Available</b>'))
         boxLeft.append(title)
         boxLeft.append(self.frmViewAv)
 
-        # Controls
+        ## Controls
         boxSel = factory.create_box_vertical()
         btnAddToUsed = factory.create_button('io.github.t00m.MiAZ-selector-add', callback=self._on_item_used_add)
         btnRemoveFromUsed = factory.create_button('io.github.t00m.MiAZ-selector-remove', callback=self._on_item_used_remove)
@@ -86,13 +103,13 @@ class MiAZSelector(Gtk.Box):
         boxSel.append(btnRemoveFromUsed)
         boxControls.set_center_widget(boxSel)
 
-        # Used
+        ## Used view
         self.frmViewSl = Gtk.Frame()
         title = Gtk.Label()
         title.set_markup(_('<b>In use</b>'))
         boxRight.append(title)
         boxRight.append(self.frmViewSl)
-        # ~ self._setup_view_finish()
+
 
     def _add_columnview_available(self, columnview):
         columnview.set_filter(self._do_filter_view)
