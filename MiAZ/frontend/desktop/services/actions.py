@@ -250,7 +250,6 @@ class MiAZActions(GObject.GObject):
 
     def show_repository_settings(self, *args):
         window_main = self.app.get_widget('window')
-        self.log.debug(window_main)
         window_repoconfig = MiAZRepoSettings(self.app)
         window_repoconfig.set_transient_for(window_main)
         window_repoconfig.set_modal(True)
