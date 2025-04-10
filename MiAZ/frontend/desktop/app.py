@@ -161,7 +161,7 @@ class MiAZApp(Adw.Application):
             self.log.debug("Loading plugins...")
             plugin_manager = self.get_service('plugin-manager')
             ns = 0  # Number of system plugins
-            nu = 0  # Number of system plugins
+            nu = 0  # Number of user plugins
             na = 0  # Number of plugins activated
             nt = 0  # Number of plugins in total
             for plugin in plugin_manager.plugins:
@@ -173,7 +173,7 @@ class MiAZApp(Adw.Application):
                         if ptype == MiAZPluginType.SYSTEM:
                             # Always load system plugins
                             plugin_manager.load_plugin(plugin)
-                            self.log.debug(f"System Plugin {plugin_name} loaded")
+                            # ~ self.log.debug(f"System Plugin {plugin_name} loaded")
                             ns += 1
                             na += 1
                         else:
@@ -182,11 +182,17 @@ class MiAZApp(Adw.Application):
                             plugins_used = config_plugins.load_used().keys()
                             if plugin_name in plugins_used:
                                 plugin_manager.load_plugin(plugin)
-                                self.log.debug(f"User Plugin {plugin_name} loaded because it is used in current repository")
+                                # ~ self.log.debug(f"User Plugin {plugin_name} loaded because it is used in current repository")
                                 nu += 1
                                 na += 1
                             else:
-                                self.log.debug(f"User Plugin {plugin_name} NOT loaded because it is not used in current repository")
+                                self.log.warning(f"User Plugin {plugin_name} NOT loaded because it is not used in current repository")
+                    else:
+                        if ptype == MiAZPluginType.SYSTEM:
+                            ns += 1
+                        else:
+                            nu += 1
+                        na += 1
                 except Exception as error:
                     self.log.error(error)
                 nt += 1
