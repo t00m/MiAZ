@@ -207,9 +207,9 @@ class MiAZSidebar(Adw.Bin):
         sidebar_title = self.app.get_widget('sidebar-title')
         sidebar_title.set_markup(title.replace('_', ' '))
 
-    def toggle(self, *args):
-        """ Sidebar collapsed when active = False"""
-        if self is not None:
-            toggleButtonFilters = self.app.get_widget('workspace-togglebutton-filters')
-            active = toggleButtonFilters.get_active()
-            self.set_visible(active)
+    # ~ def toggle(self, *args):
+        # ~ """ Sidebar collapsed when active = False"""
+        # ~ if self is not None:
+            # ~ toggleButtonFilters = self.app.get_widget('workspace-togglebutton-filters')
+            # ~ active = toggleButtonFilters.get_active()
+            # ~ self.set_visible(active)
