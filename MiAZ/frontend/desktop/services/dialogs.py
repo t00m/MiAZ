@@ -6,6 +6,7 @@
 
 from gi.repository import Adw
 from gi.repository import Gio
+from gi.repository import GLib
 from gi.repository import Gtk
 
 from MiAZ.backend.log import MiAZLog
@@ -68,7 +69,6 @@ class MiAZDialog:
         dialog.set_heading(f"{title}")
         dialog.set_body(f"{body}")
         dialog.set_size_request(width, height)
-        # ~ dialog.set_body(body)
 
         # Add custom widget
         if widget is not None:
@@ -82,11 +82,12 @@ class MiAZDialog:
                 dialog.set_response_appearance("cancel", Adw.ResponseAppearance.DESTRUCTIVE)
                 dialog.set_response_appearance("apply", Adw.ResponseAppearance.SUGGESTED)
             else:
-                dialog.add_response("apply", _("Close"))
-                dialog.set_default_response("apply")
-                dialog.set_close_response("apply")
-                dialog.set_response_appearance("apply", Adw.ResponseAppearance.SUGGESTED)
-                dialog.set_response_enabled("apply", True)
+                # ~ dialog.add_response("apply", _("Close"))
+                # ~ dialog.set_default_response("apply")
+                # ~ dialog.set_close_response("apply")
+                # ~ dialog.set_response_appearance("apply", Adw.ResponseAppearance.SUGGESTED)
+                # ~ dialog.set_response_enabled("apply", True)
+                dialog.set_can_close(True)
 
             if callback is None:
                 dialog.connect('response', self.close)

@@ -55,7 +55,6 @@ class SidebarTitle(Adw.Bin):
         super().__init__()
         self.app = app
         self.title = ''
-        lblTitle
 
 
 class MiAZSidebar(Adw.Bin):
@@ -87,6 +86,7 @@ class MiAZSidebar(Adw.Bin):
 
         # Clear filters button
         button_clear_filters = self._setup_clear_filters_button()
+        button_repository_settings = self._setup_repo_settings_button()
 
         # Sidebar title
         repo_id = config['App'].get('current')
@@ -110,7 +110,7 @@ class MiAZSidebar(Adw.Bin):
                 top_bars=[
                     MiAZHeaderBar(
                         title_widget=boxTitle,
-                        start_children=[],
+                        start_children=[button_repository_settings],
                         end_children=[button_clear_filters],
                     )
                 ],
@@ -187,6 +187,13 @@ class MiAZSidebar(Adw.Bin):
 
         return button
 
+    def _setup_repo_settings_button(self):
+        actions = self.app.get_service('actions')
+        factory = self.app.get_service('factory')
+        button = factory.create_button(icon_name='io.github.t00m.MiAZ-emblem-system-symbolic', tooltip='Repository management', css_classes=['flat'], callback=actions.show_repository_settings)
+        self.app.add_widget('headerbar-button-clear-filters', button)
+
+        return button
 
     def clear_filters(self, *args):
         search_entry = self.app.get_widget('searchentry')
@@ -199,3 +206,10 @@ class MiAZSidebar(Adw.Bin):
     def set_title(self, title: str=''):
         sidebar_title = self.app.get_widget('sidebar-title')
         sidebar_title.set_markup(title.replace('_', ' '))
+
+    # ~ def toggle(self, *args):
+        # ~ """ Sidebar collapsed when active = False"""
+        # ~ if self is not None:
+            # ~ toggleButtonFilters = self.app.get_widget('workspace-togglebutton-filters')
+            # ~ active = toggleButtonFilters.get_active()
+            # ~ self.set_visible(active)

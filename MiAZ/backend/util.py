@@ -7,6 +7,7 @@
 # Description: useful often low-level methods for this app
 """
 
+import io
 import os
 import re
 import sys
@@ -14,6 +15,7 @@ import glob
 import json
 import shutil
 import tempfile
+import requests
 import traceback
 import mimetypes
 import zipfile
@@ -347,6 +349,35 @@ class MiAZUtil(GObject.GObject):
         zip_archive = zipfile.ZipFile(filepath, "r")
         return zip_archive.namelist()
 
+
+    def download_and_unzip(self, url:str, extract_to:str):
+        """
+        Download a zip file from a URL and extract it to a directory.
+
+        Args:
+            url (str): URL of the zip file to download
+            extract_to (str): Directory to extract the files to (defaults to current directory)
+        """
+        try:
+            self.log.debug(f"Downloading zip file from {url}")
+            response = requests.get(url, stream=True)
+            response.raise_for_status()  # Raise an error for bad status codes
+
+            # Open the zip file from bytes
+            with zipfile.ZipFile(io.BytesIO(response.content)) as zip_ref:
+                self.log.debug(f"Extracting files to {extract_to}")
+                zip_ref.extractall(extract_to)
+
+            self.log.debug("Download and extraction completed successfully!")
+            return True
+
+        except requests.exceptions.RequestException as e:
+            self.log.error(f"Error downloading the file: {e}")
+        except zipfile.BadZipFile:
+            self.log.error("Error: The downloaded file is not a valid zip file")
+        except Exception as e:
+            self.log.error(f"An unexpected error occurred: {e}")
+        return False
 
 def which(program):
     """
