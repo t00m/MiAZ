@@ -14,7 +14,7 @@ from gi.repository import Gtk
 
 
 from MiAZ.backend.log import MiAZLog
-from MiAZ.backend.pluginsystem import MiAZPluginManager, MiAZPluginType
+from MiAZ.backend.pluginsystem import MiAZPluginSystem, MiAZPluginType
 from MiAZ.frontend.desktop.services.icm import MiAZIconManager
 from MiAZ.frontend.desktop.services.factory import MiAZFactory
 from MiAZ.frontend.desktop.services.actions import MiAZActions
@@ -106,7 +106,7 @@ class MiAZApp(Adw.Application):
         """
         self.app = app
         workflow = self.get_service('workflow')
-        self.set_service('plugin-manager', MiAZPluginManager(self))
+        self.set_service('plugin-system', MiAZPluginSystem(self))
         self._setup_ui()
         workflow.switch_start()
         self.log.debug("Executing MiAZ Desktop mode")
@@ -159,7 +159,7 @@ class MiAZApp(Adw.Application):
         # Load system and user plugins
         if workspace_loaded and not self.get_plugins_loaded():
             self.log.debug("Loading plugins...")
-            plugin_manager = self.get_service('plugin-manager')
+            plugin_manager = self.get_service('plugin-system')
             ns = 0  # Number of system plugins
             nu = 0  # Number of user plugins
             na = 0  # Number of plugins activated

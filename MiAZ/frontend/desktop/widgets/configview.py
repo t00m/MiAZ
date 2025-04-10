@@ -453,7 +453,7 @@ class MiAZUserPlugins(MiAZConfigView):
 
     def _on_item_used_add(self, *args):
         workflow = self.app.get_service('workflow')
-        plugin_manager = self.app.get_service('plugin-manager')
+        plugin_manager = self.app.get_service('plugin-system')
         plugins_used = self.config.load_used()
         selected_plugin = self.viewAv.get_selected()
         if selected_plugin is None:

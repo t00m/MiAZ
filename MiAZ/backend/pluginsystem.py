@@ -112,11 +112,11 @@ class MiAZPluginType(IntEnum):
             return _("system")
 
 
-class MiAZPluginManager(GObject.GObject):
+class MiAZPluginSystem(GObject.GObject):
     def __init__(self, app):
         super().__init__()
         GObject.signal_new('plugins-updated',
-                            MiAZPluginManager,
+                            MiAZPluginSystem,
                             GObject.SignalFlags.RUN_LAST, None, ())
         self.log = MiAZLog('MiAZ.PluginManager')
         self.app = app

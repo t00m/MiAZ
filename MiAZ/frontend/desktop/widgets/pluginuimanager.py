@@ -48,7 +48,7 @@ class MiAZPluginUIManager(Gtk.Box):
         box.append(viewbox)
         box.append(toolbar)
 
-        pm = self.app.get_service('plugin-manager')
+        pm = self.app.get_service('plugin-system')
         view = self.app.get_widget('app-settings-plugins-system-view')
         items = []
         item_type = Plugin
@@ -103,7 +103,7 @@ class MiAZPluginUIManager(Gtk.Box):
 
     def update_user_plugins(self):
         ENV = self.app.get_env()
-        plugin_manager = self.app.get_service('plugin-manager')
+        plugin_manager = self.app.get_service('plugin-system')
         plugin_manager.rescan_plugins()
         view = self.app.get_widget('app-settings-plugins-user-view')
         items = []
@@ -121,7 +121,7 @@ class MiAZPluginUIManager(Gtk.Box):
 
     def on_filechooser_response(self, dialog, response, clsdlg):
         if response == 'apply':
-            plugin_manager = self.app.get_service('plugin-manager')
+            plugin_manager = self.app.get_service('plugin-system')
             filechooser = clsdlg.get_filechooser_widget()
             gfile = filechooser.get_file()
             if gfile is None:
@@ -150,7 +150,7 @@ class MiAZPluginUIManager(Gtk.Box):
         filechooser_dialog.present()
 
     def _on_plugin_remove(self, *args):
-        plugin_manager = self.app.get_service('plugin-manager')
+        plugin_manager = self.app.get_service('plugin-system')
         view = self.app.get_widget('app-settings-plugins-user-view')
         try:
             module = view.get_selected()
@@ -197,7 +197,7 @@ class MiAZPluginUIManager(Gtk.Box):
             response.raise_for_status()
             plugin_index = response.json()
             util.json_save(ENV['APP']['PLUGINS']['LOCAL_INDEX'], plugin_index)
-            plugin_manager = self.app.get_service('plugin-manager')
+            plugin_manager = self.app.get_service('plugin-system')
             user_plugins = plugin_manager.get_user_plugins()
             plugin_list = []
             for pid in plugin_index:
