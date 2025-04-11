@@ -115,10 +115,11 @@ class MiAZMainWindow(Gtk.Box):
         keyname = Gdk.keyval_name(keyval)
         if keyname == 'Escape':
             # ~ actions.show_stack_page_by_name('workspace')
-            self.log.debug("Escape key pressed by user")
-            tgbSidebar = self.app.get_widget('workspace-togglebutton-filters')
-            active = tgbSidebar.get_active()
-            tgbSidebar.set_active(not active)
+            # ~ self.log.debug("Escape key pressed by user")
+            # ~ tgbSidebar = self.app.get_widget('workspace-togglebutton-filters')
+            # ~ active = tgbSidebar.get_active()
+            # ~ tgbSidebar.set_active(not active)
+            pass
         elif keyname == 'F3':
             actions.toggle_workspace_filters()
 
