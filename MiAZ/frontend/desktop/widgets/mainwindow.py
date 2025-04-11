@@ -71,9 +71,9 @@ class MiAZMainWindow(Gtk.Box):
         self.append(vmainbox)
 
     def _setup_event_listener(self):
+        """Setup an event listener for mainwindow"""
         evk = Gtk.EventControllerKey.new()
         self.app.add_widget('window-event-controller', evk)
-        evk.connect("key-pressed", self._on_key_press)
         self.win.add_controller(evk)
 
     def _setup_headerbar_left(self):
@@ -107,21 +107,6 @@ class MiAZMainWindow(Gtk.Box):
         switcher.set_stack(viewstack)
         viewstack.set_vexpand(True)
         return viewstack
-
-    def _on_key_press(self, event, keyval, keycode, state):
-        # FIXME: code shouldn't know about plugins, so why this is
-        #        getting a reference to tgbSidebar?
-        actions = self.app.get_service('actions')
-        keyname = Gdk.keyval_name(keyval)
-        if keyname == 'Escape':
-            # ~ actions.show_stack_page_by_name('workspace')
-            # ~ self.log.debug("Escape key pressed by user")
-            # ~ tgbSidebar = self.app.get_widget('workspace-togglebutton-filters')
-            # ~ active = tgbSidebar.get_active()
-            # ~ tgbSidebar.set_active(not active)
-            pass
-        elif keyname == 'F3':
-            actions.toggle_workspace_filters()
 
     def _setup_page_welcome(self):
         stack = self.app.get_widget('stack')

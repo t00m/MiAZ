@@ -300,11 +300,6 @@ class MiAZActions(GObject.GObject):
     def noop(self, *args):
         pass
 
-    def toggle_workspace_filters(self, *args):
-        btnShowFilters = self.app.get_widget('workspace-togglebutton-filters')
-        active = btnShowFilters.get_active()
-        btnShowFilters.set_active(not active)
-
     def exit_app(self, *args):
         self.log.debug('Closing MiAZ')
         self.app.emit("application-finished")
