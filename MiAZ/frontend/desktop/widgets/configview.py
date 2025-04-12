@@ -466,7 +466,11 @@ class MiAZUserPlugins(MiAZConfigView):
             util = self.app.get_service('util')
             ENV = self.app.get_env()
             user_plugins = util.json_load(ENV['APP']['PLUGINS']['LOCAL_INDEX'])
-            plugin_module = user_plugins[selected_plugin.id]['Module']
+            try:
+                plugin_module = user_plugins[selected_plugin.id]['Module']
+            except KeyError as key:
+                self.log.error(f"Plugin {key} not found in {ENV['APP']['PLUGINS']['LOCAL_INDEX']}")
+                return
             plugins_used[selected_plugin.id] = selected_plugin.title
             plugin = plugin_manager.get_plugin_info(plugin_module)
             if not plugin.is_loaded():
