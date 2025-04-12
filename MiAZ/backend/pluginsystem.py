@@ -132,7 +132,7 @@ class MiAZPluginSystem(GObject.GObject):
 
         self._setup_plugins_dir()
         self._setup_extension_set()
-        self._create_plugin_index()
+        self.create_plugin_index()
 
     def import_plugin(self, plugin_path):
         """
@@ -340,7 +340,7 @@ class MiAZPluginSystem(GObject.GObject):
         extension.activate()
 
 
-    def _create_plugin_index(self):
+    def create_plugin_index(self):
         """Parse plugins info file and recreate index on runtime"""
         self.log.info("Creating plugin index during runtime")
         plugin_index = {}
