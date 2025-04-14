@@ -211,8 +211,6 @@ class MiAZPluginUIManager(Gtk.Box):
             plugin_system.create_plugin_index()
 
             self.update_user_plugins()
-            config_plugins = self.app.get_config('Plugin')
-            config_plugins.add_available_batch(plugin_list)
 
         except HTTPError as http_error:
             self.log.error(f"HTTP error occurred: {http_error}")
