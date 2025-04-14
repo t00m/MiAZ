@@ -278,8 +278,8 @@ class MiAZFactory:
             label = box.get_last_child()
             item = list_item.get_item()
             label.set_markup(f'{item.title}')
-            label.get_style_context().add_class(class_name='caption')
-            label.get_style_context().add_class(class_name='monospace')
+            # ~ label.get_style_context().add_class(class_name='caption')
+            # ~ label.get_style_context().add_class(class_name='monospace')
 
         def _on_search_changed(search_entry, item_filter):
             item_filter.changed(Gtk.FilterChange.DIFFERENT)
