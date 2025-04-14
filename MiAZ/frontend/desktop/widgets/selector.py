@@ -5,6 +5,7 @@
 # Description: Custom widget to manage available/used config items
 
 import os
+import sys
 from gettext import gettext as _
 
 from gi.repository import Adw
@@ -34,6 +35,8 @@ class MiAZSelector(Gtk.Box):
         # Banner
         title = "One or more plugins were disabled. Application restart needed."
         banner = self.app.add_widget('repository-settings-banner', Adw.Banner.new(title))
+        banner.set_button_label('restart')
+        banner.connect('button-clicked', self._on_restart_clicked)
         restart_needed = ENV['APP']['STATUS']['RESTART_NEEDED']
         banner.set_revealed(restart_needed)
         self.append(banner)
@@ -112,6 +115,16 @@ class MiAZSelector(Gtk.Box):
         boxRight.append(title)
         boxRight.append(self.frmViewSl)
 
+    def _on_restart_clicked(self, *args):
+        ENV = self.app.get_env()
+        # ~ miaz_exec = f"{ENV['APP']['RUNTIME']['EXEC']}"
+        # ~ self.log.debug(f"MiAZ executable: {miaz_exec}")
+        # ~ os.execv(miaz_exec, sys.argv)
+        # Restart the app
+        python = sys.executable
+        script = ENV['APP']['RUNTIME']['EXEC']
+        print("Restarting with:", [python, script] + sys.argv[1:])
+        os.execv(python, [python, script] + sys.argv[1:])
 
     def _add_columnview_available(self, columnview):
         columnview.set_filter(self._do_filter_view)
