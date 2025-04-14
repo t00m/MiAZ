@@ -91,6 +91,7 @@ class MiAZSidebar(Adw.Bin):
         # Sidebar title
         repo_id = config['App'].get('current')
         boxTitle = factory.create_box_vertical(margin=0, spacing=0, hexpand=True, vexpand=True)
+        self.app.add_widget('sidebar-box-title', boxTitle)
         lblTitle = Gtk.Label()
         lblTitle.set_markup(_(f"<big><b>{repo_id}</b></big>"))
         boxTitle.append(lblTitle)
