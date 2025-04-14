@@ -382,7 +382,10 @@ class MiAZPluginSystem(GObject.GObject):
             self.log.info(f"File index-plugins.json generated with {len(plugin_index)} plugins")
 
         try:
+            config = self.app.get_config_dict()
+            repo_id = config['App'].get('current')
             config_plugins = self.app.get_config('Plugin')
             config_plugins.add_available_batch(plugin_list)
+            self.log.info(f"Plugins available updated successfully for repository {repo_id}")
         except AttributeError:
             self.log.warning("Skip. Plugin config not ready yet")
