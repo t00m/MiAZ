@@ -627,8 +627,8 @@ class MiAZWorkspace(Gtk.Box):
                     show_item = c0 and c1 and c2 and c4 and c5 and c6 and cd
                 else:
                     show_item = False
-        self.log.debug(f"{show_item} \t > {item.id}")
-            # ~ self.log.debug(f"\tProject[{cp}] FreeText[{c0}] Date[{cd}] Country[{c1}] Group[{c2}] SentBy[{c4}] Purpose[{c5}] SentTo[{c6}]")
+        # ~ self.log.debug(f"{show_item} \t > {item.id}")
+        # ~ self.log.debug(f"\tProject[{cp}] FreeText[{c0}] Date[{cd}] Country[{c1}] Group[{c2}] SentBy[{c4}] Purpose[{c5}] SentTo[{c6}]")
         return show_item
 
     def _do_connect_filter_signals(self):

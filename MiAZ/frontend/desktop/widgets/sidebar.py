@@ -1,3 +1,10 @@
+#!/usr/bin/python
+# File: icm.py
+# Author: Tomás Vírseda
+# License: GPL v3
+# Description: Icon manager
+
+# Code initially borrowed from:
 # Copyright 2023-2024 Vlad Krupinskii <mrvladus@yandex.ru>
 # SPDX-License-Identifier: MIT
 
