@@ -74,10 +74,10 @@ class MiAZSidebar(Adw.Bin):
         repo_id = config['App'].get('current')
         title = _(f"<big><b>{repo_id}</b></big>")
         self.set_title(title)
+        # ~ searchentry = self.app.get_widget('searchentry')
+        self.clear_filters()
         workspace = self.app.get_widget('workspace')
         workspace.update()
-        searchentry = self.app.get_widget('searchentry')
-        self.clear_filters()
         self.log.debug(f"Switched to repository {repo_id} > Sidebar updated")
 
     def __build_ui(self) -> None:
@@ -86,7 +86,9 @@ class MiAZSidebar(Adw.Bin):
 
         # Clear filters button
         button_clear_filters = self._setup_clear_filters_button()
+        self.app.add_widget('sidebar-button-clear-filters', button_clear_filters)
         button_repository_settings = self._setup_repo_settings_button()
+        self.app.add_widget('sidebar-button-repo-settings', button_repository_settings)
 
         # Sidebar title
         repo_id = config['App'].get('current')
@@ -199,9 +201,12 @@ class MiAZSidebar(Adw.Bin):
     def clear_filters(self, *args):
         search_entry = self.app.get_widget('searchentry')
         search_entry.set_text('')
+        search_entry.emit("activate")
         dropdowns = self.app.get_widget('ws-dropdowns')
         for ddId in dropdowns:
             dropdowns[ddId].set_selected(0)
+        workspace_view = self.app.get_widget('workspace-view')
+        workspace_view.refilter()
         self.log.debug("All filters cleared")
 
     def set_title(self, title: str=''):
