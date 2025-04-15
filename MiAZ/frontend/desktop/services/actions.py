@@ -5,6 +5,7 @@
 # Description: App actions
 
 import os
+import sys
 import glob
 import pathlib
 import zipfile
@@ -319,3 +320,10 @@ class MiAZActions(GObject.GObject):
             stop = True
         return stop
 
+    def application_restart(self, *args):
+        ENV = self.app.get_env()
+        python = sys.executable
+        script = ENV['APP']['RUNTIME']['EXEC']
+        self.app.emit('application-finished')
+        self.log.info("Application restart: ", [python, script] + sys.argv[1:])
+        os.execv(python, [python, script] + sys.argv[1:])
