@@ -90,6 +90,7 @@ class MiAZToolbarRenameItemPlugin(GObject.GObject, Peas.Activatable):
         title = "Rename document"
         dialog = srvdlg.create(enable_response=True, dtype=dtype, title=title, body=text, widget=rename_widget)
         dialog.add_response("preview", _("Preview"))
+        dialog.set_response_enabled("preview", True)
         self.app.add_widget('dialog-rename', dialog)
         dialog.connect('response', self._on_rename_response, rename_widget)
         dialog.present(window)
@@ -106,7 +107,8 @@ class MiAZToolbarRenameItemPlugin(GObject.GObject, Peas.Activatable):
             window = self.app.get_widget('window')
             doc = rename_widget.get_filepath_source()
             self.actions.document_display(doc)
-            # ~ dialog.present(window)
+            dialog.present(window)
+            return True
 
     def on_answer_question_rename(self, dialog, response, data=tuple):
         rename_widget, parent_dialog = data
