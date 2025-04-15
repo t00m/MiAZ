@@ -116,15 +116,8 @@ class MiAZSelector(Gtk.Box):
         boxRight.append(self.frmViewSl)
 
     def _on_restart_clicked(self, *args):
-        ENV = self.app.get_env()
-        # ~ miaz_exec = f"{ENV['APP']['RUNTIME']['EXEC']}"
-        # ~ self.log.debug(f"MiAZ executable: {miaz_exec}")
-        # ~ os.execv(miaz_exec, sys.argv)
-        # Restart the app
-        python = sys.executable
-        script = ENV['APP']['RUNTIME']['EXEC']
-        print("Restarting with:", [python, script] + sys.argv[1:])
-        os.execv(python, [python, script] + sys.argv[1:])
+        actions = self.app.get_service('actions')
+        actions.application_restart()
 
     def _add_columnview_available(self, columnview):
         columnview.set_filter(self._do_filter_view)
