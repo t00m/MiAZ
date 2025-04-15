@@ -169,12 +169,8 @@ class MiAZMainWindow(Gtk.Box):
         searchentry = self.app.get_widget('searchentry')
         if v > 0:
             stack.set_visible_child_name('workspace')
-            searchentry.get_style_context().remove_class(class_name='error')
-            searchentry.get_style_context().add_class(class_name='success')
         else:
             stack.set_visible_child_name('page-404')
-            searchentry.get_style_context().remove_class(class_name='success')
-            searchentry.get_style_context().add_class(class_name='error')
 
     def _setup_toolbar_top(self):
         factory = self.app.get_service('factory')
