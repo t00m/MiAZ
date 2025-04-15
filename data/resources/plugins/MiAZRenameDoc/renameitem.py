@@ -108,7 +108,7 @@ class MiAZToolbarRenameItemPlugin(GObject.GObject, Peas.Activatable):
             doc = rename_widget.get_filepath_source()
             self.actions.document_display(doc)
             dialog.present(window)
-            return True
+            return False
 
     def on_answer_question_rename(self, dialog, response, data=tuple):
         rename_widget, parent_dialog = data
