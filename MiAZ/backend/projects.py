@@ -125,9 +125,10 @@ class MiAZProject(GObject.GObject):
             # Config file projects.json deleted and then recreated emtpy?
             return False
 
-    def assigned_to(self, doc):
+    def assigned_to(self, doc) -> []:
         """
-        C0116: Missing function or method docstring (missing-function-docstring)
+        Check if document is assigned to any project.
+        In any case, it returns a list, empty or not.
         """
         projects = []
         for project in self.projects:

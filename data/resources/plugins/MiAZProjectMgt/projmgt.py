@@ -48,14 +48,13 @@ class MiAZToolbarProjectMgtPlugin(GObject.GObject, Peas.Activatable):
     def do_activate(self):
         self.app = self.object.app
         workspace = self.app.get_widget('workspace')
-        workspace.connect('workspace-loaded', self.add_menuitem)
+        workspace.connect('workspace-loaded', self.startup)
 
     def do_deactivate(self):
         self.log.debug("Plugin deactivation not implemented")
 
-    def add_menuitem(self, *args):
+    def startup(self, *args):
         factory = self.app.get_service('factory')
-
 
         if self.app.get_widget('workspace-menu-selection-menu-project') is None:
             submenu_project = Gio.Menu.new()
@@ -77,6 +76,25 @@ class MiAZToolbarProjectMgtPlugin(GObject.GObject, Peas.Activatable):
             # Add plugin to its default (sub)category
             category = self.app.get_widget('workspace-menu-plugins-content-organisation-tagging-and-classification')
             category.append_submenu('Projects', submenu_project)
+
+            util = self.app.get_service('util')
+            util.connect('filename-renamed', self._on_filename_renamed)
+
+    def _on_filename_renamed(self, util, source, target):
+        """
+        Listen to changes in repository directory and remove source
+        document from assigned projects, then assigned target document
+        to them.
+        """
+        projects = self.app.get_service('Projects')
+
+        # Check if source document is assigned to any project
+        source_assigned_to = projects.assigned_to(source)
+
+        # Remove document from assigned projects and assign to new ones
+        for project in source_assigned_to:
+            projects.remove(project, source)
+            projects.add(project, target)
 
     def project_assign(self, *args):
         actions = self.app.get_service('actions')
