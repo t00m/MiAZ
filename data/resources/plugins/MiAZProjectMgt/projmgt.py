@@ -19,13 +19,16 @@ from gi.repository import Peas
 from MiAZ.backend.log import MiAZLog
 from MiAZ.backend.models import File
 from MiAZ.backend.models import Project
+from MiAZ.backend.models import Document
 from MiAZ.frontend.desktop.widgets.configview import MiAZCountries
 from MiAZ.frontend.desktop.widgets.configview import MiAZGroups
 from MiAZ.frontend.desktop.widgets.configview import MiAZPurposes
 from MiAZ.frontend.desktop.widgets.configview import MiAZPeopleSentBy
 from MiAZ.frontend.desktop.widgets.configview import MiAZPeopleSentTo
 from MiAZ.frontend.desktop.widgets.configview import MiAZProjects
+from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewProject
 from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewMassProject
+from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewDocuments
 
 Configview = {}
 Configview['Country'] = MiAZCountries
@@ -111,7 +114,7 @@ class MiAZToolbarProjectMgtPlugin(GObject.GObject, Peas.Activatable):
         label = factory.create_label(_('Assign the following documents to this project: '))
         frame = Gtk.Frame()
         cv = MiAZColumnViewMassProject(self.app)
-        cv.get_style_context().add_class(class_name='caption')
+        # ~ cv.get_style_context().add_class(class_name='caption')
         cv.set_hexpand(True)
         cv.set_vexpand(True)
         citems = []
@@ -173,7 +176,7 @@ class MiAZToolbarProjectMgtPlugin(GObject.GObject, Peas.Activatable):
         label = factory.create_label(_('Withdraw the following documents from this project: '))
         frame = Gtk.Frame()
         cv = MiAZColumnViewMassProject(self.app)
-        cv.get_style_context().add_class(class_name='caption')
+        # ~ cv.get_style_context().add_class(class_name='caption')
         cv.set_hexpand(True)
         cv.set_vexpand(True)
         citems = []
@@ -202,20 +205,40 @@ class MiAZToolbarProjectMgtPlugin(GObject.GObject, Peas.Activatable):
             notebook.set_current_page(5)
 
     def project_view(self, *args):
+        def _on_selected_project(dropdown, gparamobject, cv):
+            srvprj = self.app.get_service('Projects')
+            pid = dropdown.get_selected_item().id
+            docs = srvprj.docs_in_project(pid)
+            items = []
+            for doc in docs:
+                items.append(File(id=doc, title=doc))
+            cv.update(items)
+            self.log.warning(f"{len(docs)} documents in project {pid}")
+
         actions = self.app.get_service('actions')
         srvdlg = self.app.get_service('dialogs')
         factory = self.app.get_service('factory')
+
+        # Documents columnview
+        frame = Gtk.Frame()
+        cv = MiAZColumnViewDocuments(self.app)
+        frame.set_child(cv)
+        cv.set_hexpand(True)
+        cv.set_vexpand(True)
 
         # Get projects
         item_type = Project
         i_type = item_type.__gtype_name__
         config = self.app.get_config_dict()
         dropdown = factory.create_dropdown_generic(Project)
+        dropdown.connect('notify::selected-item', _on_selected_project, cv)
         actions.dropdown_populate(config[i_type], dropdown, Project, any_value=False)
 
         # dialog
         box = factory.create_box_vertical(hexpand=True, vexpand=True)
+        box.get_style_context().add_class(class_name='toolbar')
         box.append(dropdown)
+        box.append(frame)
         window = self.app.get_widget('window')
         dialog = srvdlg.create(enable_response=False, dtype='info', title=_('Documents per project'), widget=box, width=800, height=600)
         # ~ dialog.connect('response', dialog_response, dropdown, items)
