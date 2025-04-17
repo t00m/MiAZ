@@ -77,25 +77,6 @@ class MiAZToolbarProjectMgtPlugin(GObject.GObject, Peas.Activatable):
             category = self.app.get_widget('workspace-menu-plugins-content-organisation-tagging-and-classification')
             category.append_submenu('Projects', submenu_project)
 
-            util = self.app.get_service('util')
-            util.connect('filename-renamed', self._on_filename_renamed)
-
-    def _on_filename_renamed(self, util, source, target):
-        """
-        Listen to changes in repository directory and remove source
-        document from assigned projects, then assigned target document
-        to them.
-        """
-        projects = self.app.get_service('Projects')
-
-        # Check if source document is assigned to any project
-        source_assigned_to = projects.assigned_to(source)
-
-        # Remove document from assigned projects and assign to new ones
-        for project in source_assigned_to:
-            projects.remove(project, source)
-            projects.add(project, target)
-
     def project_assign(self, *args):
         actions = self.app.get_service('actions')
         factory = self.app.get_service('factory')

@@ -116,22 +116,6 @@ class MiAZWorkspace(Gtk.Box):
         self.initialize_caches()
         # ~ self.update()
 
-
-    def _on_filename_renamed(self, util, source, target):
-        projects = self.app.get_service('Projects')
-        source = os.path.basename(source)
-        target = os.path.basename(target)
-        lprojects = projects.assigned_to(source)
-        self.log.debug(f"{source} found in these projects: {', '.join(lprojects)}")
-        for project in lprojects:
-            projects.remove(project, source)
-            projects.add(project, target)
-            self.log.debug(f"P[{project}]: {source} -> {target}")
-
-    def _on_filename_deleted(self, util, target):
-        projects = self.app.get_service('Projects')
-        projects.remove(project='', doc=os.path.basename(target))
-
     def _setup_logic(self):
         actions = self.app.get_service('actions')
         util = self.app.get_service('util')
@@ -175,10 +159,6 @@ class MiAZWorkspace(Gtk.Box):
         # Connect Repository
         repository = self.app.get_service('repo')
         repository.connect('repository-switched', self._update_dropdowns)
-
-        # Observe filename changes
-        util.connect('filename-renamed', self._on_filename_renamed)
-        util.connect('filename-deleted', self._on_filename_deleted)
 
         # Observe config changes
         for node in self.config:
