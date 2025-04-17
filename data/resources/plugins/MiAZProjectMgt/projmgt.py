@@ -72,6 +72,8 @@ class MiAZToolbarProjectMgtPlugin(GObject.GObject, Peas.Activatable):
             submenu_project.append_item(menuitem)
             menuitem = factory.create_menuitem('project-withdraw', _('... withdraw from project'), self.project_withdraw, None, [])
             submenu_project.append_item(menuitem)
+            menuitem = factory.create_menuitem('project-view', _('... view documents per project'), self.project_view, None, [])
+            submenu_project.append_item(menuitem)
 
             # Add plugin to its default (sub)category
             category = self.app.get_widget('workspace-menu-plugins-content-organisation-tagging-and-classification')
@@ -198,3 +200,26 @@ class MiAZToolbarProjectMgtPlugin(GObject.GObject, Peas.Activatable):
         if winRepoSettings is not None:
             notebook = self.app.get_widget('repository-settings-notebook')
             notebook.set_current_page(5)
+
+    def project_view(self, *args):
+        actions = self.app.get_service('actions')
+        srvdlg = self.app.get_service('dialogs')
+        factory = self.app.get_service('factory')
+
+        # Get projects
+        item_type = Project
+        i_type = item_type.__gtype_name__
+        config = self.app.get_config_dict()
+        dropdown = factory.create_dropdown_generic(Project)
+        actions.dropdown_populate(config[i_type], dropdown, Project, any_value=False)
+
+        # dialog
+        box = factory.create_box_vertical(hexpand=True, vexpand=True)
+        box.append(dropdown)
+        window = self.app.get_widget('window')
+        dialog = srvdlg.create(enable_response=False, dtype='info', title=_('Documents per project'), widget=box, width=800, height=600)
+        # ~ dialog.connect('response', dialog_response, dropdown, items)
+        dialog.present(window)
+
+
+
