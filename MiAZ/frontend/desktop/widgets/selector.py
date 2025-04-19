@@ -62,7 +62,7 @@ class MiAZSelector(Gtk.Box):
         self.entry.connect('icon-press', self._on_entrysearch_delete)
         self.entry.connect('changed', self._on_filter_selected)
         self.entry.connect('activate', self._on_item_available_add, self.config_for)
-        self.entry.set_hexpand(False)
+        self.entry.set_hexpand(True)
         self.entry.set_has_frame(True)
         self.entry.set_placeholder_text('Type here for filtering')
         boxEntry.append(self.entry)
