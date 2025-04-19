@@ -69,13 +69,6 @@ class MiAZDialog:
             box.append(widget)
         dialog.set_extra_child(box)
 
-        # ~ if enable_response:
-            # ~ dialog.add_response("cancel", _("Cancel"))
-            # ~ dialog.add_response("apply", _("Apply"))
-            # ~ dialog.set_response_appearance("cancel", Adw.ResponseAppearance.DESTRUCTIVE)
-            # ~ dialog.set_response_appearance("apply", Adw.ResponseAppearance.SUGGESTED)
-        # ~ else:
-            # ~ dialog.set_can_close(True)
         responses = miaz_dialog[dtype]['responses']
         for response in responses:
             respid, label = response
