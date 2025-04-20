@@ -119,7 +119,6 @@ class MiAZAssistantRepo(MiAZAssistant):
 
     def show_filechooser_source(self, *args):
         filechooser = self.factory.create_filechooser(
-                    enable_response=True,
                     title=_('Choose target directory'),
                     target = 'FOLDER',
                     callback = self.on_filechooser_response_source

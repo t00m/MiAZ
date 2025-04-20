@@ -137,7 +137,7 @@ class MiAZRenameDialog(Gtk.Box):
         def choose_concept(button, view, rename_widget):
             window = rename_widget.get_root()
             body = ''
-            dialog = self.srvdlg.create(enable_response=True, dtype='question', title=_('Choose a concept'), body=body, widget=view, width=600, height=480)
+            dialog = self.srvdlg.create(dtype='question', title=_('Choose a concept'), body=body, widget=view, width=600, height=480)
             dialog.connect('response', dialog_response, view)
             dialog.present(window)
 
@@ -468,7 +468,7 @@ class MiAZRenameDialog(Gtk.Box):
         # ~ body = _(f"\nYou are about to rename this document")
         # ~ window = self.app.get_widget('dialog-rename')
         # ~ title = _('Are you sure?')
-        # ~ dialog = srvdlg.create(enable_response=True, dtype='question', title=title, body=body, callback=self.on_answer_question_rename)
+        # ~ dialog = srvdlg.create(dtype='question', title=title, body=body, callback=self.on_answer_question_rename)
         # ~ dialog.present(window)
 
     # ~ def on_answer_question_rename(self, dialog, response, data=None):
@@ -482,7 +482,7 @@ class MiAZRenameDialog(Gtk.Box):
             # ~ if not renamed:
                 # ~ text = f"<big>Another document with the same name already exists in this repository.</big>"
                 # ~ title=_('Renaming not possible')
-                # ~ dlgerror = srvdlg.create(enable_response=False, dtype='error', title=title, body=text)
+                # ~ dlgerror = srvdlg.create(dtype='error', title=title, body=text)
                 # ~ dlgerror.present(dialog)
             # ~ else:
                 # ~ self.actions.show_stack_page_by_name('workspace')

@@ -117,7 +117,7 @@ class MiAZActions(GObject.GObject):
         dtype = 'error'
         title = "Action not implemented yet"
         body = "Import the configuration hasn't been implemented yet"
-        dialog = srvdlg.create(enable_response=False, dtype=dtype, title=title, body=body, widget=None)
+        dialog = srvdlg.create(dtype=dtype, title=title, body=body, widget=None)
         dialog.present(window)
         return
 
@@ -159,7 +159,6 @@ class MiAZActions(GObject.GObject):
 
         window = self.app.get_widget('window')
         filechooser = factory.create_filechooser(
-                    enable_response=True,
                     title=_(f'Import a configuration file for {i_title_plural.lower()}'),
                     target = 'FILE',
                     callback = filechooser_response,
@@ -177,7 +176,7 @@ class MiAZActions(GObject.GObject):
         dtype = 'error'
         title = "Action not implemented yet"
         body = "Export the configuration hasn't been implemented yet"
-        dialog = srvdlg.create(enable_response=False, dtype=dtype, title=title, body=body, widget=None)
+        dialog = srvdlg.create(dtype=dtype, title=title, body=body, widget=None)
         dialog.present(window)
         return
 
@@ -221,7 +220,6 @@ class MiAZActions(GObject.GObject):
 
         window = self.app.get_widget('window')
         filechooser = factory.create_filechooser(
-                    enable_response=True,
                     title=_(f'Export the configuration for {i_title_plural.lower()}'),
                     target = 'FOLDER',
                     callback = filechooser_response,
@@ -239,7 +237,7 @@ class MiAZActions(GObject.GObject):
         selector.set_vexpand(True)
         selector.update_views()
         title = _(f'Manage {config_for}')
-        dialog = srvdlg.create(enable_response=True, dtype='action', title=title, widget=box, width=800, height=600)
+        dialog = srvdlg.create(dtype='action', title=title, widget=box, width=800, height=600)
         dialog.present(parent)
 
     def show_app_settings(self, *args):
@@ -315,7 +313,7 @@ class MiAZActions(GObject.GObject):
             parent = widget.get_root()
             body = '<big>You must select at least one document</big>'
             title = _('Action ignored')
-            dialog = srvdlg.create(enable_response=False, dtype='info', title=title, body=body)
+            dialog = srvdlg.create(dtype='info', title=title, body=body)
             dialog.present(parent)
             stop = True
         return stop

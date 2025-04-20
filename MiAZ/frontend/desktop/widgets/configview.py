@@ -170,7 +170,7 @@ class MiAZRepositories(MiAZConfigView):
             window = self.viewSl.get_root()
             dtype = 'error'
             title = "Action not possible"
-            dialog = srvdlg.create(enable_response=False, dtype=dtype, title=title, body=text, widget=None)
+            dialog = srvdlg.create(dtype=dtype, title=title, body=text, widget=None)
             dialog.present(window)
 
     def _on_item_used_add(self, *args):
@@ -366,7 +366,7 @@ class MiAZProjects(MiAZConfigView):
             dtype = 'error'
             title = f"{i_title} {selected_item.id} can't be removed"
             title = "Action not possible"
-            dialog = srvdlg.create(enable_response=False, dtype=dtype, title=title, body=text, width=600, height=480)
+            dialog = srvdlg.create(dtype=dtype, title=title, body=text, width=600, height=480)
             dialog.present(window)
 
     def _on_item_used_add(self, *args):
@@ -414,7 +414,7 @@ class MiAZProjects(MiAZConfigView):
                 items.append(File(id=doc, title=os.path.basename(doc)))
             view = MiAZColumnViewDocuments(self.app)
             view.update(items)
-            dialog = srvdlg.create(enable_response=False, dtype=dtype, title=title, body=text, widget=view, width=600, height=480)
+            dialog = srvdlg.create(dtype=dtype, title=title, body=text, widget=view, width=600, height=480)
             dialog.present(window)
 
 

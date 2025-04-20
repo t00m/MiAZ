@@ -40,7 +40,6 @@ class MiAZDialog:
         self.log = MiAZLog('MiAZ.Dialogs')
 
     def create( self,
-                enable_response: bool = False,
                 dtype: str = '',
                 title: str = '',
                 body: str = '',
@@ -158,8 +157,7 @@ class MiAZDialogAdd:
         self.widget.append(self.fields)
 
         # Create dialog
-        self.dialog = srvdlg.create(    enable_response=True,
-                                        dtype='action',
+        self.dialog = srvdlg.create(    dtype='action',
                                         title=title,
                                         widget=self.widget)
         return self.dialog
@@ -232,7 +230,6 @@ class MiAZDialogAddRepo(MiAZDialogAdd):
         srvdlg = self.app.get_service('dialogs')
         self.title = title
         self.key1 = key1
-        enable_response=True
 
         self.lblKey1.set_markup(f"<b>{self.key1}</b>")
         vbox = factory.create_box_vertical(spacing=12, vexpand=True)
@@ -249,8 +246,7 @@ class MiAZDialogAddRepo(MiAZDialogAdd):
         self.widget.append(self.fields)
 
         # Create dialog
-        self.dialog = srvdlg.create(    enable_response=enable_response,
-                                        dtype='action',
+        self.dialog = srvdlg.create(    dtype='action',
                                         title=title,
                                         widget=self.widget)
         return self.dialog
@@ -285,7 +281,6 @@ class MiAZFileChooserDialog(MiAZDialog):
         self.app = app
 
     def create( self,
-                enable_response: bool = False,
                 title: str = '',
                 target: str = '',
                 callback=None,
@@ -309,8 +304,7 @@ class MiAZFileChooserDialog(MiAZDialog):
             self.w_filechooser.set_action(Gtk.FileChooserAction.SAVE)
 
         # Create dialog
-        self.dialog = srvdlg.create(enable_response=True,
-                                    dtype='action',
+        self.dialog = srvdlg.create(dtype='action',
                                     title=title,
                                     widget=self.w_filechooser,
                                     callback=callback,

@@ -80,6 +80,6 @@ class MiAZDeleteItemPlugin(GObject.GObject, Peas.Activatable):
         box.append(frame)
         window = self.app.get_widget('window')
         body = _("<big>These documents are going to be deleted.\n<b>Are you sure?</b></big>")
-        dialog = srvdlg.create(enable_response=True, dtype='question', title=_('Mass deletion'), body=body, widget=box, width=600, height=480)
+        dialog = srvdlg.create(dtype='question', title=_('Mass deletion'), body=body, widget=box, width=600, height=480)
         dialog.connect('response', dialog_response, items)
         dialog.present(window)

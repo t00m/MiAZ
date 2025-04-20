@@ -192,7 +192,7 @@ class MiAZSelector(Gtk.Box):
             else:
                 view = None
             srvdlg = self.app.get_service('dialogs')
-            dialog = srvdlg.create(enable_response=False, dtype=dtype, title=title, body=text, widget=view, width=600, height=480)
+            dialog = srvdlg.create(dtype=dtype, title=title, body=text, widget=view, width=600, height=480)
             dialog.present(window)
         else:
             items_available[selected_item.id] = selected_item.title
@@ -319,7 +319,7 @@ class MiAZSelector(Gtk.Box):
                 view = None
 
             srvdlg = self.app.get_service('dialogs')
-            dialog = srvdlg.create(enable_response=False, dtype=dtype, title=title, body=text, widget=view, width=600, height=480)
+            dialog = srvdlg.create(dtype=dtype, title=title, body=text, widget=view, width=600, height=480)
             dialog.present(window)
 
     def _on_selected_item_available_notify(self, colview, pos):
