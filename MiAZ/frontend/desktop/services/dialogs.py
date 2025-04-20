@@ -30,7 +30,7 @@ miaz_dialog = {
         },
     'question': {
         'icon': 'dialog-question-symbolic',
-        'responses': [('yes', _('Yes')), ('no', _('No'))]
+        'responses': [('apply', _('Yes')), ('cancel', _('No'))]
         },
     'noop': {
         'icon': '',
