@@ -628,7 +628,7 @@ class MiAZWorkspace(Gtk.Box):
             if prjkey != 'Any':
                 dropdowns = self.app.get_widget('ws-dropdowns')
                 i_type = Date.__gtype_name__
-                dropdowns[i_type].set_selected(7)
+                dropdowns[i_type].set_selected(9)
         except AttributeError:
             # ~ Raised when managing projects from selector. Skip
             pass
