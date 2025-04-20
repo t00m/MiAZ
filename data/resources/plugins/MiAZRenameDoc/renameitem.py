@@ -88,8 +88,9 @@ class MiAZToolbarRenameItemPlugin(GObject.GObject, Peas.Activatable):
         text = '' # _(f'<big>{i_title} {selected_item.id} is still being used</big>')
         window = self.app.get_widget('window')
         title = "Rename document"
-        dialog = srvdlg.create(enable_response=True, dtype=dtype, title=title, body=text, widget=rename_widget)
+        dialog = srvdlg.create(dtype=dtype, title=title, body=text, widget=rename_widget)
         dialog.add_response("preview", _("Preview"))
+        dialog.set_response_enabled("preview", True)
         self.app.add_widget('dialog-rename', dialog)
         dialog.connect('response', self._on_rename_response, rename_widget)
         dialog.present(window)
@@ -100,13 +101,14 @@ class MiAZToolbarRenameItemPlugin(GObject.GObject, Peas.Activatable):
             srvdlg = self.app.get_service('dialogs')
             body = _(f"\nYou are about to rename this document")
             title = _('Are you sure?')
-            dialog_confirm = srvdlg.create(enable_response=True, dtype='question', title=title, body=body, callback=self.on_answer_question_rename, data=(rename_widget, dialog))
+            dialog_confirm = srvdlg.create(dtype='question', title=title, body=body, callback=self.on_answer_question_rename, data=(rename_widget, dialog))
             dialog_confirm.present(window)
         elif response == 'preview':
             window = self.app.get_widget('window')
             doc = rename_widget.get_filepath_source()
             self.actions.document_display(doc)
-            # ~ dialog.present(window)
+            dialog.present(window)
+            return False
 
     def on_answer_question_rename(self, dialog, response, data=tuple):
         rename_widget, parent_dialog = data
@@ -121,7 +123,7 @@ class MiAZToolbarRenameItemPlugin(GObject.GObject, Peas.Activatable):
             if not renamed:
                 text = f"<big>Another document with the same name already exists in this repository.</big>"
                 title=_('Renaming not possible')
-                dlgerror = srvdlg.create(enable_response=False, dtype='error', title=title, body=text)
+                dlgerror = srvdlg.create(dtype='error', title=title, body=text)
                 dlgerror.present(window)
         else:
             parent_dialog.present(window)

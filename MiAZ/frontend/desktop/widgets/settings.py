@@ -150,7 +150,7 @@ class MiAZAppSettings(Adw.PreferencesDialog):
         # ~ dialog = MiAZPluginUIManager(self.app)
         # ~ widget = self._create_widget_for_plugins()
         widget = MiAZPluginUIManager(self.app)
-        dialog = srvdlg.create(enable_response=False, dtype='action', title='Plugin Manager', body='', widget=widget, width=800, height=600)
+        dialog = srvdlg.create(dtype='noop', title='Plugin Manager', body='', widget=widget, width=800, height=600)
 
         dialog.present(self)
 
@@ -191,10 +191,10 @@ class MiAZAppSettings(Adw.PreferencesDialog):
     def _on_manage_repositories(self, *args):
         widget = self._create_widget_for_repositories()
         window = self
-        dtype = 'action'
+        dtype = 'noop'
         title = "Manage repositories"
         body = "" # "Add, edit, delete and (de)activate repositories"
-        dialog = self.srvdlg.create(enable_response=None, dtype=dtype, title=title, body=body, widget=widget)
+        dialog = self.srvdlg.create(dtype=dtype, title=title, body=body, widget=widget)
         dialog.set_presentation_mode(Adw.DialogPresentationMode.FLOATING)
         dialog.set_size_request(800, 600)
         dialog.present(window)
@@ -221,7 +221,6 @@ class MiAZAppSettings(Adw.PreferencesDialog):
     def show_filechooser_source(self, *args):
         window = self.app.get_widget('window')
         filechooser = self.factory.create_filechooser(
-                    enable_response=True,
                     title=_('Choose target directory'),
                     target = 'FOLDER',
                     callback = self.on_filechooser_response_source,

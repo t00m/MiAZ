@@ -11,6 +11,8 @@
 
 import os
 import sys
+import glob
+import json
 import zipfile
 from enum import IntEnum
 from gettext import gettext as _
@@ -118,7 +120,7 @@ class MiAZPluginSystem(GObject.GObject):
         GObject.signal_new('plugins-updated',
                             MiAZPluginSystem,
                             GObject.SignalFlags.RUN_LAST, None, ())
-        self.log = MiAZLog('MiAZ.PluginManager')
+        self.log = MiAZLog('MiAZ.PluginSystem')
         self.app = app
         self.util = self.app.get_service('util')
         self.log.debug("Initializing Plugin Manager")
@@ -130,6 +132,10 @@ class MiAZPluginSystem(GObject.GObject):
 
         self._setup_plugins_dir()
         self._setup_extension_set()
+        self.create_plugin_index()
+        self.log.info("Plugin system initialited")
+        srvrepo = self.app.get_service('repo')
+        srvrepo.connect('repository-switched', self.create_plugin_index)
 
     def import_plugin(self, plugin_path):
         """
@@ -335,3 +341,51 @@ class MiAZPluginSystem(GObject.GObject):
     @staticmethod
     def __extension_added_cb(unused_set, unused_plugin_info, extension):
         extension.activate()
+
+
+    def create_plugin_index(self, *args):
+        """Parse plugins info file and recreate index on runtime"""
+        self.log.info("Creating plugin index during runtime")
+        plugin_index = {}
+        ENV = self.app.get_env()
+        plugins_dir = ENV['LPATH']['PLUGINS']
+        plugin_files = glob.glob(os.path.join(plugins_dir, '*', '*.plugin'))
+        if not plugin_files:
+            self.log.warning(f"No .plugin files found in {plugins_dir}")
+
+        plugin_list = []
+        for plugin_file in plugin_files:
+            plugin_info = {}
+
+            with open(plugin_file, 'r') as file:
+                # Skip the first line (assuming it's [Plugin])
+                next(file)
+
+                for line in file:
+                    line = line.strip()
+                    if not line:  # Skip empty lines
+                        continue
+
+                    # Split each line at the first '=' character
+                    if '=' in line:
+                        key, value = line.split('=', 1)
+                        plugin_info[key.strip()] = value.strip()
+            plugin_name = plugin_info['Name']
+            plugin_desc = plugin_info['Description']
+            plugin_index[plugin_name] = plugin_info
+            plugin_list.append((plugin_name, plugin_desc))
+            self.log.info(f" - Adding plugin {plugin_name} to plugin index")
+
+
+        with open(ENV['APP']['PLUGINS']['LOCAL_INDEX'], 'w') as fp:
+            json.dump(plugin_index, fp, sort_keys=False, indent=4)
+            self.log.info(f"File index-plugins.json generated with {len(plugin_index)} plugins")
+
+        try:
+            config = self.app.get_config_dict()
+            repo_id = config['App'].get('current')
+            config_plugins = self.app.get_config('Plugin')
+            config_plugins.add_available_batch(plugin_list)
+            self.log.info(f"Plugins available updated successfully for repository {repo_id}")
+        except AttributeError:
+            self.log.warning("Skip. Plugin config not ready yet")

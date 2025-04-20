@@ -25,15 +25,14 @@ MiAZ helps you to organize your documents effortlessly with predefined values.
 ## Features
 
 * **One or more document repositories**.
-* **No database**. The directory holding the documents is the database. Properties are extracted from the own filenames. Configuration files reside in the same repository.
-* **Workspace**: a single place where you can view/edit your documents
+* **No database**. The directory holding the documents is the database.
+* **Workspace**: a single place for viewieng/editing/managing your documents
 * **Filtering and search**: built-in drop-downs to help finding documents easily.
-* It is **fast**. Depending on the volume of documents and the hardware capacity of your device, thousands of documents can be displayed in seconds.
-* Support for **projects**: those documents related between them can be (un)assigned to projects (eg.: all those documents related to the same tax stament year).
+* **Fast**: Thousands of documents can be displayed in seconds.
+* **Project management**: Related documents can be (un)assigned to projects
 * **Single renaming**: a useful feature to rename a single document easily.
-* **Mass renaming**: when importing several documents, sometimes is useful to assign the same property to all of them (e.g.: same country). This functionality allows MiAZ to do mass renaming for countries, groups, purposes, senders, and receivers, saving you a lot of time.
-* **Predefined properties**: To expedite the document archiving process, you can select from a default set of values. For instance, for groups, among othe values, you have MED, INS, BIL (MEDICAL, INSURANCE, BILLING respectively). Same for purposes. These values can be edited.
-* **Plug-in system**: in order to avoid large modifications in the code base, MiAZ uses a plug-in system to extend the functionality and the UI. MiAZ comes with a set of standard plugins to help you importing documents from several sources (a single file, a directory, from the scanner, etc...), and also for exporting them (to excel, CSV, to another directory, in a zip file, as filenames in a plain text file, etc...)
+* **Mass renaming**: Save time renaming several documents at once using the same property
+* **Plugin system**: Support for user plugins
 
 
 ## File name convention
@@ -65,7 +64,6 @@ MiAZ has been developed under Linux in Python/GObject/GTK/Libadwaita libraries:
 - GObject > 3.50.0
 - GTK >= 4.10
 - Libadwaita >= 1.6
-
 
 
 ### Installation
@@ -103,11 +101,11 @@ Please, raise an [issue](https://github.com/t00m/MiAZ/issues) in MiAZ Github rep
 
 ## About me
 
-Hi, I'm Tomás Vírseda. Originally from Spain, where I spent half of my life, I now work in Luxembourg and live in Germany.
+My name is Tomás Vírseda. Originally from Spain, where I spent half of my life, I now work in Luxembourg, but I live in Germany.
 
-I’m a SAP Basis Administrator with a passion for technology. I use GNU/Linux daily and enjoy programming in my free time, primarily with Python, as a way to explore new ideas and solve problems.
+I work as an SAP Basis Administrator. I use GNU/Linux daily and enjoy programming in my spare time, primarily with Python, as a way to explore new ideas and solve problems.
 
-Feel free to reach out—I’m always open to connecting and collaborating!
+Feel free to reach out —I’m always open to connecting and collaborating!
 
 mailto:tomas.virseda@gmail.com
 

@@ -97,19 +97,19 @@ class MiAZPluginUIManager(Gtk.Box):
             btnDel.set_has_frame(False)
             toolbar.append(separator)
             toolbar.append(btnUpd)
-            toolbar.append(btnAdd)
-            toolbar.append(btnDel)
+            # ~ toolbar.append(btnAdd)
+            # ~ toolbar.append(btnDel)
         return toolbar
 
     def update_user_plugins(self):
         ENV = self.app.get_env()
-        plugin_manager = self.app.get_service('plugin-system')
-        plugin_manager.rescan_plugins()
+        plugin_system = self.app.get_service('plugin-system')
+        plugin_system.rescan_plugins()
         view = self.app.get_widget('app-settings-plugins-user-view')
         items = []
         item_type = Plugin
-        for plugin in plugin_manager.plugins:
-            ptype = plugin_manager.get_plugin_type(plugin)
+        for plugin in plugin_system.plugins:
+            ptype = plugin_system.get_plugin_type(plugin)
             if ptype == MiAZPluginType.USER:
                 base_dir = plugin.get_name()
                 module_name = plugin.get_module_name()
@@ -121,7 +121,7 @@ class MiAZPluginUIManager(Gtk.Box):
 
     def on_filechooser_response(self, dialog, response, clsdlg):
         if response == 'apply':
-            plugin_manager = self.app.get_service('plugin-system')
+            plugin_system = self.app.get_service('plugin-system')
             filechooser = clsdlg.get_filechooser_widget()
             gfile = filechooser.get_file()
             if gfile is None:
@@ -129,7 +129,7 @@ class MiAZPluginUIManager(Gtk.Box):
                     # FIXME: Show warning message. Priority: low
                     return
             plugin_path = gfile.get_path()
-            imported = plugin_manager.import_plugin(plugin_path)
+            imported = plugin_system.import_plugin(plugin_path)
             self.log.debug(f"Plugin imported? {imported}")
             if imported:
                 self.update_user_plugins()
@@ -150,12 +150,12 @@ class MiAZPluginUIManager(Gtk.Box):
         filechooser_dialog.present()
 
     def _on_plugin_remove(self, *args):
-        plugin_manager = self.app.get_service('plugin-system')
+        plugin_system = self.app.get_service('plugin-system')
         view = self.app.get_widget('app-settings-plugins-user-view')
         try:
             module = view.get_selected()
-            plugin = plugin_manager.get_plugin_info(module.id)
-            deleted = plugin_manager.remove_plugin(plugin)
+            plugin = plugin_system.get_plugin_info(module.id)
+            deleted = plugin_system.remove_plugin(plugin)
             if deleted:
                 self.log.debug(f"Plugin '{module.id}' deleted")
                 self.update_user_plugins()
@@ -197,8 +197,8 @@ class MiAZPluginUIManager(Gtk.Box):
             response.raise_for_status()
             plugin_index = response.json()
             util.json_save(ENV['APP']['PLUGINS']['LOCAL_INDEX'], plugin_index)
-            plugin_manager = self.app.get_service('plugin-system')
-            user_plugins = plugin_manager.get_user_plugins()
+            plugin_system = self.app.get_service('plugin-system')
+            user_plugins = plugin_system.get_user_plugins()
             plugin_list = []
             for pid in plugin_index:
                 desc = plugin_index[pid]['Description']
@@ -207,10 +207,10 @@ class MiAZPluginUIManager(Gtk.Box):
                 added = util.download_and_unzip(url_plugin, user_plugins_dir)
                 if added:
                     plugin_list.append((pid, desc))
+            # Recreate index plugin again (useful for devel purposes)
+            plugin_system.create_plugin_index()
 
             self.update_user_plugins()
-            config_plugins = self.app.get_config('Plugin')
-            config_plugins.add_available_batch(plugin_list)
 
         except HTTPError as http_error:
             self.log.error(f"HTTP error occurred: {http_error}")

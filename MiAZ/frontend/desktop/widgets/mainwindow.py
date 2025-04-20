@@ -14,6 +14,7 @@ from MiAZ.backend.pluginsystem import plugin_categories
 from MiAZ.frontend.desktop.widgets.searchbar import SearchBar
 from MiAZ.frontend.desktop.widgets.pages import MiAZWelcome
 from MiAZ.frontend.desktop.widgets.pages import MiAZPageNotFound
+from MiAZ.frontend.desktop.widgets.webbrowser import MiAZWebBrowser
 from MiAZ.frontend.desktop.widgets.sidebar import MiAZSidebar
 from MiAZ.frontend.desktop.widgets.workspace import MiAZWorkspace
 
@@ -68,12 +69,17 @@ class MiAZMainWindow(Gtk.Box):
         if page is None:
             self._setup_page_404()
 
+        # Page WebBrowser
+        page = self.app.get_widget('page-webbroser')
+        if page is None:
+            self._setup_webbrowser()
+
         self.append(vmainbox)
 
     def _setup_event_listener(self):
+        """Setup an event listener for mainwindow"""
         evk = Gtk.EventControllerKey.new()
         self.app.add_widget('window-event-controller', evk)
-        evk.connect("key-pressed", self._on_key_press)
         self.win.add_controller(evk)
 
     def _setup_headerbar_left(self):
@@ -108,20 +114,6 @@ class MiAZMainWindow(Gtk.Box):
         viewstack.set_vexpand(True)
         return viewstack
 
-    def _on_key_press(self, event, keyval, keycode, state):
-        # FIXME: code shouldn't know about plugins, so why this is
-        #        getting a reference to tgbSidebar?
-        actions = self.app.get_service('actions')
-        keyname = Gdk.keyval_name(keyval)
-        if keyname == 'Escape':
-            # ~ actions.show_stack_page_by_name('workspace')
-            self.log.debug("Escape key pressed by user")
-            tgbSidebar = self.app.get_widget('workspace-togglebutton-filters')
-            active = tgbSidebar.get_active()
-            tgbSidebar.set_active(not active)
-        elif keyname == 'F3':
-            actions.toggle_workspace_filters()
-
     def _setup_page_welcome(self):
         stack = self.app.get_widget('stack')
         widget_welcome = self.app.get_widget('welcome')
@@ -132,9 +124,6 @@ class MiAZMainWindow(Gtk.Box):
             page_welcome.set_visible(True)
             headerbar = self.app.get_widget('headerbar')
             headerbar.set_visible(True)
-            # ~ tgbSidebar = self.app.get_widget('workspace-togglebutton-filters')
-            # ~ tgbSidebar.set_active(False)
-            # ~ tgbSidebar.set_visible(False)
             btnWorkspace = self.app.get_widget('workspace-menu')
             btnWorkspace.set_visible(False)
 
@@ -147,6 +136,16 @@ class MiAZMainWindow(Gtk.Box):
             self.app.add_widget('page-404', page_not_found)
             page_not_found.set_icon_name('io.github.t00m.MiAZ-dialog-warning-symbolic')
             page_not_found.set_visible(True)
+
+    def _setup_webbrowser(self):
+        stack = self.app.get_widget('stack')
+        widget_webbrowser = self.app.get_widget('page-webbrowser')
+        if widget_webbrowser is None:
+            widget_webbrowser = self.app.add_widget('page-webbrowser', MiAZWebBrowser(self.app))
+            page_webbrowser = stack.add_titled(widget_webbrowser, 'page-webbrowser', 'MiAZ')
+            self.app.add_widget('page-webbrowser', page_webbrowser)
+            page_webbrowser.set_icon_name('io.github.t00m.MiAZ-webbrowser')
+            page_webbrowser.set_visible(True)
 
     def _setup_page_workspace(self):
         stack = self.app.get_widget('stack')
@@ -183,12 +182,8 @@ class MiAZMainWindow(Gtk.Box):
         searchentry = self.app.get_widget('searchentry')
         if v > 0:
             stack.set_visible_child_name('workspace')
-            searchentry.get_style_context().remove_class(class_name='error')
-            searchentry.get_style_context().add_class(class_name='success')
         else:
             stack.set_visible_child_name('page-404')
-            searchentry.get_style_context().remove_class(class_name='success')
-            searchentry.get_style_context().add_class(class_name='error')
 
     def _setup_toolbar_top(self):
         factory = self.app.get_service('factory')

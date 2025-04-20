@@ -30,6 +30,7 @@ class MiAZProject(GObject.GObject):
         conf = self.app.get_config_dict()
         self.config = conf['Project']
         repository = self.app.get_service('repo')
+        util = self.app.get_service('util')
         repo_dir_conf = repository.get('dir_conf')
         self.cnfprj = os.path.join(repo_dir_conf, 'projects.json')
         self.projects = {}
@@ -38,6 +39,10 @@ class MiAZProject(GObject.GObject):
             self.log.debug("Created new config file for projects")
         self.projects = self.load()
         self.check()
+
+        # Observe filename changes
+        util.connect('filename-renamed', self._on_filename_renamed)
+        util.connect('filename-deleted', self._on_filename_deleted)
 
     def check(self):
         """
@@ -52,6 +57,7 @@ class MiAZProject(GObject.GObject):
                     to_delete.append((doc, project))
         for doc, project in to_delete:
             self.remove(project, doc)
+            self.log.warning(f"Document '{doc}' doesn't exists. Reference deleted from project {project}")
         self.log.debug("Projects consistency checked")
 
     def add(self, project: str, doc: str):
@@ -77,12 +83,12 @@ class MiAZProject(GObject.GObject):
 
     def remove(self, project: str, doc: str) -> None:
         """
-        C0116: Missing function or method docstring (missing-function-docstring)
+        Remove a document from a project
         """
         found = False
         if len(project) == 0:
-            # Document was deleted, therefore delete all references in
-            # any project
+            # If no project is given, it deletes all references in any
+            # project it was assigned to
             for prj in self.projects:
                 docs = self.projects[prj]
                 if doc in docs:
@@ -125,9 +131,10 @@ class MiAZProject(GObject.GObject):
             # Config file projects.json deleted and then recreated emtpy?
             return False
 
-    def assigned_to(self, doc):
+    def assigned_to(self, doc) -> []:
         """
-        C0116: Missing function or method docstring (missing-function-docstring)
+        Check if document is assigned to any project.
+        In any case, it returns a list, empty or not.
         """
         projects = []
         for project in self.projects:
@@ -178,3 +185,27 @@ class MiAZProject(GObject.GObject):
         except KeyError as error:
             description = error
         return description
+
+    def _on_filename_renamed(self, util, source, target):
+        """
+        Listen to changes in repository directory and remove source
+        document from assigned projects, then assigned target document
+        to them.
+        """
+        self.log.debug("Document rename event triggered")
+        source = os.path.basename(source)
+        target = os.path.basename(target)
+        lprojects = self.assigned_to(source)
+        self.log.debug(f"{source} found in these projects: {', '.join(lprojects)}")
+        for project in lprojects:
+            self.remove(project, source)
+            self.add(project, target)
+            self.log.debug(f"P[{project}]: {source} -> {target}")
+
+    def _on_filename_deleted(self, util, target):
+        """
+        Listen to changes in repository directory and remove source
+        document from assigned projects when documents are deleted.
+        """
+        self.log.debug("Document delete event triggered")
+        self.remove(project='', doc=os.path.basename(target))
