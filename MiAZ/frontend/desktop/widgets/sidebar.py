@@ -180,6 +180,7 @@ class MiAZSidebar(Adw.Bin):
         dropdowns[i_type] = dd_prj
         row.append(boxDropdown)
 
+        # Rest of filters dropdowns
         for item_type in [Country, Group, SentBy, Purpose, SentTo]:
             i_type = item_type.__gtype_name__
             i_title = _(item_type.__title__)
