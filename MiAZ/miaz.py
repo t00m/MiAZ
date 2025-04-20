@@ -71,6 +71,9 @@ except Exception:
     log.error('Cannot load translations.')
 
 
+ENV['APP']['RUNTIME']['EXEC'] = os.path.abspath(__file__)
+
+
 class MiAZ:
     """MiAZ Entry point class."""
 

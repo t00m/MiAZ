@@ -58,7 +58,7 @@
             "sources" : [
                 {
                     "type" : "dir",
-                    "path" : "/home/t00m/Documents/devel/github/MiAZ"
+                    "path" : "."
                 }
             ]
         }

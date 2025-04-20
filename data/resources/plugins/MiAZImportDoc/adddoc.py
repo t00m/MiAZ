@@ -69,7 +69,6 @@ class MiAZAddDocumentPlugin(GObject.GObject, Peas.Activatable):
         window = self.app.get_widget('window')
         clsdlg = MiAZFileChooserDialog(self.app)
         filechooser = clsdlg.create(
-                        enable_response=True,
                         title=_('Import a single file'),
                         target = 'FILE',
                         callback = filechooser_response,
