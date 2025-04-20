@@ -14,28 +14,27 @@ from MiAZ.backend.log import MiAZLog
 miaz_dialog = {
     'action': {
         'icon': 'io.github.t00m.MiAZ-document-edit-symbolic',
-        'type': Gtk.MessageType.INFO,
-        'buttons': Gtk.ButtonsType.OK_CANCEL
+        'responses': [('cancel', _('Cancel')), ('apply', _('Apply'))]
         },
     'info': {
         'icon': 'dialog-information-symbolic',
-        'type': Gtk.MessageType.INFO,
-        'buttons': Gtk.ButtonsType.NONE
+        'responses': [('close', _('Close'))]
         },
     'warning': {
         'icon': 'dialog-warning-symbolic',
-        'type': Gtk.MessageType.WARNING,
-        'buttons': Gtk.ButtonsType.NONE
+        'responses': [('close', _('Close'))]
         },
     'error': {
         'icon': 'io.github.t00m.MiAZ-dialog-error-symbolic',
-        'type': Gtk.MessageType.ERROR,
-        'buttons': Gtk.ButtonsType.NONE
+        'responses': [('close', _('Close'))]
         },
     'question': {
         'icon': 'dialog-question-symbolic',
-        'type': Gtk.MessageType.QUESTION,
-        'buttons': Gtk.ButtonsType.YES_NO
+        'responses': [('apply', _('Yes')), ('cancel', _('No'))]
+        },
+    'noop': {
+        'icon': '',
+        'responses': []
         }
 }
 
@@ -45,7 +44,6 @@ class MiAZDialog:
         self.log = MiAZLog('MiAZ.Dialogs')
 
     def create( self,
-                enable_response: bool = False,
                 dtype: str = '',
                 title: str = '',
                 body: str = '',
@@ -59,40 +57,34 @@ class MiAZDialog:
         factory = self.app.get_service('factory')
         icm = self.app.get_service('icons')
 
-        dialog = Adw.AlertDialog.new() #title, body)
-        # ~ dialog.set_presentation_mode (Adw.DialogPresentationMode.BOTTOM_SHEET)
-        # ~ dialog.set_presentation_mode (Adw.DialogPresentationMode.FLOATING)
+        dialog = Adw.AlertDialog.new()
         dialog.set_body_use_markup(True)
         dialog.set_heading_use_markup(True)
-        # ~ dialog.set_heading(f"<big>{title}</big>")
-        # ~ dialog.set_body(f"<big>{body}</big>")
         dialog.set_heading(f"{title}")
         dialog.set_body(f"{body}")
         dialog.set_size_request(width, height)
 
+        box = factory.create_box_vertical(hexpand=True, vexpand=True)
+        # ~ icon = Gtk.Image.new_from_icon_name(miaz_dialog[dtype]['icon'])
+        # ~ box.append(icon)
         # Add custom widget
         if widget is not None:
-            dialog.set_extra_child(widget)
+            box.append(widget)
+        dialog.set_extra_child(box)
 
-        # Assign callback, if any. Otherwise, default is closing.
-        if enable_response is not None:
-            if enable_response:
-                dialog.add_response("cancel", _("Cancel"))
-                dialog.add_response("apply", _("Apply"))
-                dialog.set_response_appearance("cancel", Adw.ResponseAppearance.DESTRUCTIVE)
-                dialog.set_response_appearance("apply", Adw.ResponseAppearance.SUGGESTED)
-            else:
-                # ~ dialog.add_response("apply", _("Close"))
-                # ~ dialog.set_default_response("apply")
-                # ~ dialog.set_close_response("apply")
-                # ~ dialog.set_response_appearance("apply", Adw.ResponseAppearance.SUGGESTED)
-                # ~ dialog.set_response_enabled("apply", True)
-                dialog.set_can_close(True)
+        responses = miaz_dialog[dtype]['responses']
+        for response in responses:
+            respid, label = response
+            dialog.add_response(respid, label)
+            if respid in ['apply', 'close']:
+                dialog.set_response_appearance(respid, Adw.ResponseAppearance.SUGGESTED)
+            elif respid in ['cancel', 'no']:
+                dialog.set_response_appearance(respid, Adw.ResponseAppearance.DESTRUCTIVE)
 
-            if callback is None:
-                dialog.connect('response', self.close)
-            else:
-                dialog.connect('response', callback, data)
+        if callback is None:
+            dialog.connect('response', self.close)
+        else:
+            dialog.connect('response', callback, data)
 
         return dialog
 
@@ -169,8 +161,7 @@ class MiAZDialogAdd:
         self.widget.append(self.fields)
 
         # Create dialog
-        self.dialog = srvdlg.create(    enable_response=True,
-                                        dtype='action',
+        self.dialog = srvdlg.create(    dtype='action',
                                         title=title,
                                         widget=self.widget)
         return self.dialog
@@ -243,7 +234,6 @@ class MiAZDialogAddRepo(MiAZDialogAdd):
         srvdlg = self.app.get_service('dialogs')
         self.title = title
         self.key1 = key1
-        enable_response=True
 
         self.lblKey1.set_markup(f"<b>{self.key1}</b>")
         vbox = factory.create_box_vertical(spacing=12, vexpand=True)
@@ -260,8 +250,7 @@ class MiAZDialogAddRepo(MiAZDialogAdd):
         self.widget.append(self.fields)
 
         # Create dialog
-        self.dialog = srvdlg.create(    enable_response=enable_response,
-                                        dtype='action',
+        self.dialog = srvdlg.create(    dtype='action',
                                         title=title,
                                         widget=self.widget)
         return self.dialog
@@ -296,7 +285,6 @@ class MiAZFileChooserDialog(MiAZDialog):
         self.app = app
 
     def create( self,
-                enable_response: bool = False,
                 title: str = '',
                 target: str = '',
                 callback=None,
@@ -320,8 +308,7 @@ class MiAZFileChooserDialog(MiAZDialog):
             self.w_filechooser.set_action(Gtk.FileChooserAction.SAVE)
 
         # Create dialog
-        self.dialog = srvdlg.create(enable_response=True,
-                                    dtype='action',
+        self.dialog = srvdlg.create(dtype='action',
                                     title=title,
                                     widget=self.w_filechooser,
                                     callback=callback,

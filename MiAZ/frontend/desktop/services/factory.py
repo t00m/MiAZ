@@ -278,8 +278,8 @@ class MiAZFactory:
             label = box.get_last_child()
             item = list_item.get_item()
             label.set_markup(f'{item.title}')
-            label.get_style_context().add_class(class_name='caption')
-            label.get_style_context().add_class(class_name='monospace')
+            # ~ label.get_style_context().add_class(class_name='caption')
+            # ~ label.get_style_context().add_class(class_name='monospace')
 
         def _on_search_changed(search_entry, item_filter):
             item_filter.changed(Gtk.FilterChange.DIFFERENT)
@@ -337,8 +337,8 @@ class MiAZFactory:
 
         return dropdown
 
-    def create_filechooser(self, enable_response, title, target, callback, data=None):
-        return MiAZFileChooserDialog(self.app, enable_response, title, target, callback, data)
+    def create_filechooser(self, title, target, callback, data=None):
+        return MiAZFileChooserDialog(self.app, title, target, callback, data)
 
     def create_frame(self, title:str = None, margin: int = 3, hexpand: bool = False, vexpand: bool = False) -> Gtk.Frame:
         frame = Gtk.Frame()

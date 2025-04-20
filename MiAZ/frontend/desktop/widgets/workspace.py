@@ -116,22 +116,6 @@ class MiAZWorkspace(Gtk.Box):
         self.initialize_caches()
         # ~ self.update()
 
-
-    def _on_filename_renamed(self, util, source, target):
-        projects = self.app.get_service('Projects')
-        source = os.path.basename(source)
-        target = os.path.basename(target)
-        lprojects = projects.assigned_to(source)
-        self.log.debug(f"{source} found in these projects: {', '.join(lprojects)}")
-        for project in lprojects:
-            projects.remove(project, source)
-            projects.add(project, target)
-            self.log.debug(f"P[{project}]: {source} -> {target}")
-
-    def _on_filename_deleted(self, util, target):
-        projects = self.app.get_service('Projects')
-        projects.remove(project='', doc=os.path.basename(target))
-
     def _setup_logic(self):
         actions = self.app.get_service('actions')
         util = self.app.get_service('util')
@@ -175,10 +159,6 @@ class MiAZWorkspace(Gtk.Box):
         # Connect Repository
         repository = self.app.get_service('repo')
         repository.connect('repository-switched', self._update_dropdowns)
-
-        # Observe filename changes
-        util.connect('filename-renamed', self._on_filename_renamed)
-        util.connect('filename-deleted', self._on_filename_deleted)
 
         # Observe config changes
         for node in self.config:
@@ -591,35 +571,31 @@ class MiAZWorkspace(Gtk.Box):
         return item.active
 
     def _do_filter_view(self, item, filter_list_model):
+        show_item = False
         dropdowns = self.app.get_widget('ws-dropdowns')
-        if self.review:
-            c0 = self._do_eval_cond_matches_freetext(item)
-            # ~ cd = self._do_eval_cond_matches_date(item)
-            c1 = self._do_eval_cond_matches(dropdowns['Country'], item.country)
-            c2 = self._do_eval_cond_matches(dropdowns['Group'], item.group)
-            c4 = self._do_eval_cond_matches(dropdowns['SentBy'], item.sentby_id)
-            c5 = self._do_eval_cond_matches(dropdowns['Purpose'], item.purpose)
-            c6 = self._do_eval_cond_matches(dropdowns['SentTo'], item.sentto_id)
-            return not item.active and c0 and c1 and c2 and c4 and c5 and c6
-        else:
-            projects = self.app.get_service('Projects')
-            # ~ dropdowns = self.app.get_widget('ws-dropdowns')
-            dd_prj = dropdowns[Project.__gtype_name__]
+        c0 = self._do_eval_cond_matches_freetext(item)
+        ca = self._do_eval_cond_matches_active(item)
+        cd = self._do_eval_cond_matches_date(item)
+        # ~ cp = projects.exists(project, item.id)
+        c1 = self._do_eval_cond_matches(dropdowns['Country'], item.country)
+        c2 = self._do_eval_cond_matches(dropdowns['Group'], item.group)
+        c4 = self._do_eval_cond_matches(dropdowns['SentBy'], item.sentby_id)
+        c5 = self._do_eval_cond_matches(dropdowns['Purpose'], item.purpose)
+        c6 = self._do_eval_cond_matches(dropdowns['SentTo'], item.sentto_id)
 
+        # If workspace is in review mode, filter results. Dates don't mind
+        if self.review:
+            show_item = not ca and c0 and c1 and c2 and c4 and c5 and c6
+        else:
+            # Normal mode. Take projects into account
+            projects = self.app.get_service('Projects')
+            dd_prj = dropdowns[Project.__gtype_name__]
             try:
                 project = dd_prj.get_selected_item().id
             except AttributeError:
                 project = 'Any'
 
             if project != 'None':
-                ca = self._do_eval_cond_matches_active(item)
-                c0 = self._do_eval_cond_matches_freetext(item)
-                cd = self._do_eval_cond_matches_date(item)
-                c1 = self._do_eval_cond_matches(dropdowns['Country'], item.country)
-                c2 = self._do_eval_cond_matches(dropdowns['Group'], item.group)
-                c4 = self._do_eval_cond_matches(dropdowns['SentBy'], item.sentby_id)
-                c5 = self._do_eval_cond_matches(dropdowns['Purpose'], item.purpose)
-                c6 = self._do_eval_cond_matches(dropdowns['SentTo'], item.sentto_id)
                 if project == 'Any':
                     cp = True
                 else:
@@ -628,17 +604,12 @@ class MiAZWorkspace(Gtk.Box):
             else:
                 projects_assigned = projects.assigned_to(item.id)
                 if len(projects_assigned) == 0:
-                    c0 = self._do_eval_cond_matches_freetext(item)
-                    cd = self._do_eval_cond_matches_date(item)
-                    c1 = self._do_eval_cond_matches(dropdowns['Country'], item.country)
-                    c2 = self._do_eval_cond_matches(dropdowns['Group'], item.group)
-                    c4 = self._do_eval_cond_matches(dropdowns['SentBy'], item.sentby_id)
-                    c5 = self._do_eval_cond_matches(dropdowns['Purpose'], item.purpose)
-                    c6 = self._do_eval_cond_matches(dropdowns['SentTo'], item.sentto_id)
                     show_item = c0 and c1 and c2 and c4 and c5 and c6 and cd
                 else:
                     show_item = False
-            return show_item
+        # ~ self.log.debug(f"{show_item} \t > {item.id}")
+        # ~ self.log.debug(f"\tProject[{cp}] FreeText[{c0}] Date[{cd}] Country[{c1}] Group[{c2}] SentBy[{c4}] Purpose[{c5}] SentTo[{c6}]")
+        return show_item
 
     def _do_connect_filter_signals(self):
         searchentry = self.app.get_widget('searchentry')
@@ -657,7 +628,7 @@ class MiAZWorkspace(Gtk.Box):
             if prjkey != 'Any':
                 dropdowns = self.app.get_widget('ws-dropdowns')
                 i_type = Date.__gtype_name__
-                dropdowns[i_type].set_selected(7)
+                dropdowns[i_type].set_selected(9)
         except AttributeError:
             # ~ Raised when managing projects from selector. Skip
             pass

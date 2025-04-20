@@ -37,6 +37,7 @@ class MiAZRepository(GObject.GObject):
         self.app = app
         self.log = MiAZLog('MiAZ.Repository')
         self.config = self.app.get_config_dict()
+        self.log.info("Repository class initialited")
 
     @property
     def docs(self):

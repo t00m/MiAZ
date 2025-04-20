@@ -5,6 +5,7 @@
 # Description: Custom widget to manage available/used config items
 
 import os
+import sys
 from gettext import gettext as _
 
 from gi.repository import Adw
@@ -34,6 +35,8 @@ class MiAZSelector(Gtk.Box):
         # Banner
         title = "One or more plugins were disabled. Application restart needed."
         banner = self.app.add_widget('repository-settings-banner', Adw.Banner.new(title))
+        banner.set_button_label('restart')
+        banner.connect('button-clicked', self._on_restart_clicked)
         restart_needed = ENV['APP']['STATUS']['RESTART_NEEDED']
         banner.set_revealed(restart_needed)
         self.append(banner)
@@ -52,14 +55,14 @@ class MiAZSelector(Gtk.Box):
         boxEntry = factory.create_box_horizontal(spacing=0)
         boxEntry.set_hexpand(True)
         self.entry = Gtk.Entry()
-        self.entry.get_style_context().add_class(class_name='caption')
+        # ~ self.entry.get_style_context().add_class(class_name='caption')
         self.entry.set_activates_default(True)
         self.entry.set_icon_from_icon_name(Gtk.EntryIconPosition.SECONDARY, 'io.github.t00m.MiAZ-entry_clear')
         self.entry.set_icon_activatable(Gtk.EntryIconPosition.SECONDARY, True)
         self.entry.connect('icon-press', self._on_entrysearch_delete)
         self.entry.connect('changed', self._on_filter_selected)
         self.entry.connect('activate', self._on_item_available_add, self.config_for)
-        self.entry.set_hexpand(False)
+        self.entry.set_hexpand(True)
         self.entry.set_has_frame(True)
         self.entry.set_placeholder_text('Type here for filtering')
         boxEntry.append(self.entry)
@@ -112,6 +115,9 @@ class MiAZSelector(Gtk.Box):
         boxRight.append(title)
         boxRight.append(self.frmViewSl)
 
+    def _on_restart_clicked(self, *args):
+        actions = self.app.get_service('actions')
+        actions.application_restart()
 
     def _add_columnview_available(self, columnview):
         columnview.set_filter(self._do_filter_view)
@@ -119,7 +125,7 @@ class MiAZSelector(Gtk.Box):
         columnview.cv.connect("activate", self._on_selected_item_available_notify)
         self.frmViewAv.set_child(columnview)
         columnview.cv.sort_by_column(columnview.column_id, Gtk.SortType.ASCENDING)
-        columnview.cv.get_style_context().add_class(class_name='caption')
+        # ~ columnview.cv.get_style_context().add_class(class_name='caption')
         filter_model = columnview.get_model_filter()
         selection = Gtk.SingleSelection.new(filter_model)
         columnview.cv.set_model(selection)
@@ -133,7 +139,7 @@ class MiAZSelector(Gtk.Box):
         columnview.column_title.set_expand(True)
         self.frmViewSl.set_child(columnview)
         columnview.cv.sort_by_column(columnview.column_id, Gtk.SortType.ASCENDING)
-        columnview.cv.get_style_context().add_class(class_name='caption')
+        # ~ columnview.cv.get_style_context().add_class(class_name='caption')
         filter_model = columnview.get_model_filter()
         selection = Gtk.SingleSelection.new(filter_model)
         columnview.cv.set_model(selection)
@@ -186,7 +192,7 @@ class MiAZSelector(Gtk.Box):
             else:
                 view = None
             srvdlg = self.app.get_service('dialogs')
-            dialog = srvdlg.create(enable_response=False, dtype=dtype, title=title, body=text, widget=view, width=600, height=480)
+            dialog = srvdlg.create(dtype=dtype, title=title, body=text, widget=view, width=600, height=480)
             dialog.present(window)
         else:
             items_available[selected_item.id] = selected_item.title
@@ -313,7 +319,7 @@ class MiAZSelector(Gtk.Box):
                 view = None
 
             srvdlg = self.app.get_service('dialogs')
-            dialog = srvdlg.create(enable_response=False, dtype=dtype, title=title, body=text, widget=view, width=600, height=480)
+            dialog = srvdlg.create(dtype=dtype, title=title, body=text, widget=view, width=600, height=480)
             dialog.present(window)
 
     def _on_selected_item_available_notify(self, colview, pos):

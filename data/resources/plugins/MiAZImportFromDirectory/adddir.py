@@ -83,7 +83,6 @@ class MiAZAddDirectoryPlugin(GObject.GObject, Peas.Activatable):
         window = self.app.get_widget('window')
         clsdlg = MiAZFileChooserDialog(self.app)
         filechooser_dialog = clsdlg.create(
-                    enable_response=True,
                     title=_('Import a directory'),
                     target = 'FOLDER',
                     callback = filechooser_response)
