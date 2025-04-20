@@ -150,7 +150,7 @@ class MiAZAppSettings(Adw.PreferencesDialog):
         # ~ dialog = MiAZPluginUIManager(self.app)
         # ~ widget = self._create_widget_for_plugins()
         widget = MiAZPluginUIManager(self.app)
-        dialog = srvdlg.create(dtype='action', title='Plugin Manager', body='', widget=widget, width=800, height=600)
+        dialog = srvdlg.create(dtype='noop', title='Plugin Manager', body='', widget=widget, width=800, height=600)
 
         dialog.present(self)
 
@@ -191,7 +191,7 @@ class MiAZAppSettings(Adw.PreferencesDialog):
     def _on_manage_repositories(self, *args):
         widget = self._create_widget_for_repositories()
         window = self
-        dtype = 'action'
+        dtype = 'noop'
         title = "Manage repositories"
         body = "" # "Add, edit, delete and (de)activate repositories"
         dialog = self.srvdlg.create(dtype=dtype, title=title, body=body, widget=widget)
