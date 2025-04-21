@@ -23,31 +23,10 @@ class MiAZWebBrowser(Gtk.Box):
         self.app.add_widget('webbrowser', self)
 
     def _build_ui(self):
-        # Create the WebKit WebView
-        self.webview = WebKit.WebView()
-        self.app.add_widget('webbrowser-view', self.webview)
-
-        # Navigation bar
-        self.header = self.app.add_widget('webbrowser-headerbar', Gtk.HeaderBar())
-
-
-        # ~ self.back_button = Gtk.Button.new_from_icon_name("go-previous-symbolic")
-        # ~ self.back_button.connect("clicked", self.on_back_clicked)
-        # ~ self.header.pack_start(self.back_button)
-
-        # ~ self.forward_button = Gtk.Button.new_from_icon_name("go-next-symbolic")
-        # ~ self.forward_button.connect("clicked", self.on_forward_clicked)
-        # ~ self.header.pack_start(self.forward_button)
-
-        # ~ self.address_entry = Gtk.Entry()
-        # ~ self.address_entry.set_placeholder_text("Enter URL...")
-        # ~ self.address_entry.connect("activate", self.on_url_entered)
-        # ~ self.header.pack_end(self.address_entry)
-
-        self.append(self.header)
+        self.webview = self.app.add_widget('webbrowser-view', WebKit.WebView())
         self.append(self.webview)
-
-        self.set_vexpand(True)
+        self.webview.set_vexpand(True)
+        self.webview.set_hexpand(True)
 
     def on_back_clicked(self, _):
         if self.webview.can_go_back():
@@ -67,3 +46,10 @@ class MiAZWebBrowser(Gtk.Box):
         if not url.startswith("http"):
             url = "https://" + url
         self.webview.load_uri(url)
+        self.log.debug(f"Remote resource '{url}' loaded")
+
+    def load_file(self, url):
+        if not url.startswith('file://'):
+            url = "file://" + url
+        self.webview.load_uri(url)
+        self.log.debug(f"Local resource '{url}' loaded")

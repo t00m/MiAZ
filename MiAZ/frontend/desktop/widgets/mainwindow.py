@@ -141,7 +141,7 @@ class MiAZMainWindow(Gtk.Box):
         stack = self.app.get_widget('stack')
         widget_webbrowser = self.app.get_widget('page-webbrowser')
         if widget_webbrowser is None:
-            widget_webbrowser = self.app.add_widget('page-webbrowser', MiAZWebBrowser(self.app))
+            widget_webbrowser = self.app.add_widget('webbrowser', MiAZWebBrowser(self.app))
             page_webbrowser = stack.add_titled(widget_webbrowser, 'page-webbrowser', 'MiAZ')
             self.app.add_widget('page-webbrowser', page_webbrowser)
             page_webbrowser.set_icon_name('io.github.t00m.MiAZ-webbrowser')
