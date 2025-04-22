@@ -147,8 +147,6 @@ class MiAZAppSettings(Adw.PreferencesDialog):
     def _on_manage_plugins(self, *args):
         srvdlg = self.app.get_service('dialogs')
         window = self.app.get_widget('window')
-        # ~ dialog = MiAZPluginUIManager(self.app)
-        # ~ widget = self._create_widget_for_plugins()
         widget = MiAZPluginUIManager(self.app)
         dialog = srvdlg.create(dtype='noop', title='Plugin Manager', body='', widget=widget, width=800, height=600)
 
