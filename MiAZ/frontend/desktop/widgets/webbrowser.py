@@ -43,8 +43,8 @@ class MiAZWebBrowser(Gtk.Box):
         self.webview.load_uri(url)
 
     def load_url(self, url):
-        if not url.startswith("http"):
-            url = "https://" + url
+        # ~ if not url.startswith("http"):
+            # ~ url = "https://" + url
         self.webview.load_uri(url)
         self.log.debug(f"Remote resource '{url}' loaded")
 
