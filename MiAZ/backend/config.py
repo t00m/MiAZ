@@ -221,6 +221,9 @@ class MiAZConfig(GObject.GObject):
             added = True
         return added
 
+    def remove_all(self):
+        self.save_available(items={})
+
     def remove_available_batch(self, keys: list):
         self.remove_batch(self.available, keys)
 

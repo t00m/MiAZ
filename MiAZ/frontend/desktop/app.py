@@ -15,6 +15,7 @@ from gi.repository import Gtk
 
 from MiAZ.backend.log import MiAZLog
 from MiAZ.backend.pluginsystem import MiAZPluginSystem, MiAZPluginType
+from MiAZ.backend.webserver import MiAZHTTPServer
 from MiAZ.frontend.desktop.services.icm import MiAZIconManager
 from MiAZ.frontend.desktop.services.factory import MiAZFactory
 from MiAZ.frontend.desktop.services.actions import MiAZActions
@@ -27,7 +28,6 @@ from MiAZ.backend.config import MiAZConfigApp
 from MiAZ.backend.repository import MiAZRepository
 from MiAZ.backend.config import MiAZConfigRepositories
 from MiAZ.backend.status import MiAZStatus
-
 
 
 class MiAZApp(Adw.Application):
@@ -46,7 +46,6 @@ class MiAZApp(Adw.Application):
         """Set up env, UI and services used by the rest of modules."""
         application_id = kwargs['application_id']
         Adw.Application.__init__(self, application_id=application_id)
-        # ~ super().__init__(**kwargs)
         self._miazobjs['widgets'] = {}
         self._miazobjs['services'] = {}
         self._miazobjs['actions'] = {}
@@ -107,6 +106,8 @@ class MiAZApp(Adw.Application):
         self.app = app
         workflow = self.get_service('workflow')
         self.set_service('plugin-system', MiAZPluginSystem(self))
+        webserver = self.set_service('webserver', MiAZHTTPServer(self.get_env()))
+        webserver.start()
         self._setup_ui()
         workflow.switch_start()
         self.log.debug("Executing MiAZ Desktop mode")
