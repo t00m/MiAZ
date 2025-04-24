@@ -385,6 +385,7 @@ class MiAZPluginSystem(GObject.GObject):
             config = self.app.get_config_dict()
             repo_id = config['App'].get('current')
             config_plugins = self.app.get_config('Plugin')
+            config_plugins.remove_all()
             config_plugins.add_available_batch(plugin_list)
             self.log.info(f"Plugins available updated successfully for repository {repo_id}")
         except AttributeError:

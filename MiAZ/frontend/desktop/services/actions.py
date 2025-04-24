@@ -301,6 +301,8 @@ class MiAZActions(GObject.GObject):
 
     def exit_app(self, *args):
         self.log.debug('Closing MiAZ')
+        webserver = self.app.get_service('webserver')
+        webserver.stop()
         self.app.emit("application-finished")
         self.app.quit()
 

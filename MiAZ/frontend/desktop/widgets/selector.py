@@ -125,21 +125,18 @@ class MiAZSelector(Gtk.Box):
         columnview.cv.connect("activate", self._on_selected_item_available_notify)
         self.frmViewAv.set_child(columnview)
         columnview.cv.sort_by_column(columnview.column_id, Gtk.SortType.ASCENDING)
-        # ~ columnview.cv.get_style_context().add_class(class_name='caption')
         filter_model = columnview.get_model_filter()
         selection = Gtk.SingleSelection.new(filter_model)
         columnview.cv.set_model(selection)
-        # ~ selection.connect("selection-changed", self._on_selection_change)
 
     def _on_selection_change(self, *args):
         self.log.debug(args)
 
     def _add_columnview_used(self, columnview):
-        columnview.set_filter(None)
+        columnview.set_filter(self._do_filter_view)
         columnview.column_title.set_expand(True)
         self.frmViewSl.set_child(columnview)
         columnview.cv.sort_by_column(columnview.column_id, Gtk.SortType.ASCENDING)
-        # ~ columnview.cv.get_style_context().add_class(class_name='caption')
         filter_model = columnview.get_model_filter()
         selection = Gtk.SingleSelection.new(filter_model)
         columnview.cv.set_model(selection)
