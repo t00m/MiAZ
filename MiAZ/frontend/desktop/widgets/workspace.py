@@ -310,8 +310,13 @@ class MiAZWorkspace(Gtk.Box):
         # Documents columnview
         frmView = self._setup_columnview()
         body.append(frmView)
+        self.append(widget)
+        self.set_default_columnview_attrs()
 
+    def set_default_columnview_attrs(self):
         # Setup columnview
+        self.view.column_flag.set_visible(True)
+        self.view.column_icon_type.set_visible(True)
         self.view.column_title.set_visible(False)
         self.view.column_subtitle.set_visible(True)
         self.view.column_subtitle.set_expand(True)
@@ -323,7 +328,8 @@ class MiAZWorkspace(Gtk.Box):
         self.view.column_sentby.set_expand(False)
         self.view.column_date.set_visible(True)
 
-        self.append(widget)
+    def get_workspace_view(self):
+        return self.view
 
     def get_selected_items(self):
         return self.selected_items
