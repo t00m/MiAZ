@@ -24,17 +24,21 @@ from MiAZ.backend.log import MiAZLog
 class MiAZWorkspaceToggleViewPlugin(GObject.GObject, Peas.Activatable):
     __gtype_name__ = 'MiAZWorkspaceToggleViewPlugin'
     object = GObject.Property(type=GObject.Object)
+    info = {}
 
     def __init__(self):
         self.log = MiAZLog('Plugin.WsToggleView')
         self.app = None
-        self.scanapp = None
 
     def do_activate(self):
+        plugin_file = __file__.replace('.py', '.plugin')
         self.app = self.object.app
+        plugin_system = self.app.get_service('plugin-system')
+        self.info = plugin_system.get_plugin_attributes(plugin_file)
         actions = self.app.get_service('actions')
         workspace = self.app.get_widget('workspace')
         workspace.connect('workspace-loaded', self.startup)
+
         actions.connect('settings-loaded', self._on_settings_loaded)
 
     def do_deactivate(self):
@@ -60,8 +64,12 @@ class MiAZWorkspaceToggleViewPlugin(GObject.GObject, Peas.Activatable):
             self.app.add_widget('window-headerbar-togglebutton-workspace-view', menuitem)
 
             # ~ # Add plugin to its default (sub)category
-            category = self.app.get_widget('workspace-menu-plugins-visualisation-and-diagrams-dashboard-widgets')
-            category.append_item(menuitem)
+            # ~ category = self.app.get_widget('workspace-menu-plugins-visualisation-and-diagrams-dashboard-widgets')
+            category = self.info['Category']
+            subcategory = self.info['Subcategory']
+            subcategory_submenu = self.app.install_plugin_menu(category, subcategory)
+            self.log.info(subcategory_submenu)
+            subcategory_submenu.append_item(menuitem)
 
             # This is a common action: add to shortcuts
             # ~ menu_shortcut_import = self.app.get_widget('workspace-menu-shortcut-import')
@@ -94,10 +102,10 @@ class MiAZWorkspaceToggleViewPlugin(GObject.GObject, Peas.Activatable):
 
     def _on_key_press(self, event, keyval, keycode, state):
         keyname = Gdk.keyval_name(keyval)
-        # ~ if keyname == 'Escape':
-            # ~ tgbWSToggleView = self.app.get_widget('workspace-togglebutton-view')
-            # ~ active = tgbWSToggleView.get_active()
-            # ~ tgbWSToggleView.set_active(not active)
+        if keyname == 'F3':
+            tgbWSToggleView = self.app.get_widget('workspace-togglebutton-view')
+            active = tgbWSToggleView.get_active()
+            tgbWSToggleView.set_active(not active)
 
     def _on_settings_loaded(self, *args):
         group = self.app.get_widget('window-preferences-page-aspect-group-ui')

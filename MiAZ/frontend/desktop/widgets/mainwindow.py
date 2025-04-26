@@ -225,7 +225,7 @@ class MiAZMainWindow(Gtk.Box):
 
         menu_selection = self.app.add_widget('workspace-menu-selection', Gio.Menu.new())
 
-        section_shortcut_plugins = self.app.add_widget('workspace-menu-selection-section-common', Gio.Menu.new())
+        section_shortcut_plugins = self.app.add_widget('workspace-menu-selection-section-shortcut', Gio.Menu.new())
         section_shortcut_common = self.app.add_widget('workspace-menu-selection-section-common', Gio.Menu.new())
         section_shortcut_app = self.app.add_widget('workspace-menu-selection-section-app', Gio.Menu.new())
         section_bottom = self.app.add_widget('workspace-menu-selection-section-bottom', Gio.Menu.new())
@@ -256,28 +256,28 @@ class MiAZMainWindow(Gtk.Box):
         plugins_submenu = self.app.add_widget('workspace-menu-plugins', Gio.Menu.new())
         self.log.debug("Plugins menu")
 
-        # Iterate through the plugin categories and subcategories
-        for category, subcategories in plugin_categories.items():
-            # Create a submenu for each category
-            category_submenu = Gio.Menu()
-            cid = category.lower().replace(' ', '-')
-            category_name = f"workspace-menu-plugins-{cid}"
-            self.app.add_widget(category_name, category_submenu)
-            self.log.debug(f"- '{category_name}'")
+        # ~ # Iterate through the plugin categories and subcategories
+        # ~ for category, subcategories in plugin_categories.items():
+            # ~ # Create a submenu for each category
+            # ~ category_submenu = Gio.Menu()
+            # ~ cid = category.lower().replace(' ', '-')
+            # ~ category_name = f"workspace-menu-plugins-{cid}"
+            # ~ self.app.add_widget(category_name, category_submenu)
+            # ~ self.log.debug(f"- '{category_name}'")
 
-            # Add each subcategory as a submenu (to attach plugins later)
-            for subcategory, description in subcategories.items():
-                subcategory_submenu = Gio.Menu()
-                sid = subcategory.lower().replace(' ', '-')
-                subcategory_name = f"workspace-menu-plugins-{cid}-{sid}"
-                self.app.add_widget(subcategory_name, subcategory_submenu)
-                self.log.debug(f"\t\t- '{subcategory_name}'")
+            # ~ # Add each subcategory as a submenu (to attach plugins later)
+            # ~ for subcategory, description in subcategories.items():
+                # ~ subcategory_submenu = Gio.Menu()
+                # ~ sid = subcategory.lower().replace(' ', '-')
+                # ~ subcategory_name = f"workspace-menu-plugins-{cid}-{sid}"
+                # ~ self.app.add_widget(subcategory_name, subcategory_submenu)
+                # ~ self.log.debug(f"\t\t- '{subcategory_name}'")
 
-                # Add the subcategory submenu to the category submenu
-                category_submenu.append_submenu(subcategory, subcategory_submenu)
+                # ~ # Add the subcategory submenu to the category submenu
+                # ~ category_submenu.append_submenu(subcategory, subcategory_submenu)
 
-            # Add the category submenu to the 'Plugins' submenu
-            plugins_submenu.append_submenu(category, category_submenu)
+            # ~ # Add the category submenu to the 'Plugins' submenu
+            # ~ plugins_submenu.append_submenu(category, category_submenu)
 
         # Add the 'Plugins' submenu to the main menu
         section_shortcut_common.append_submenu("All plugins ...", plugins_submenu)

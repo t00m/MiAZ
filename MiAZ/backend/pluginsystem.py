@@ -342,6 +342,23 @@ class MiAZPluginSystem(GObject.GObject):
     def __extension_added_cb(unused_set, unused_plugin_info, extension):
         extension.activate()
 
+    def get_plugin_attributes(self, plugin_file: str):
+        """Get plugin attributes from `plugin_module`.plugin file"""
+        plugin_info = {}
+        with open(plugin_file, 'r') as file:
+            # Skip the first line (assuming it's [Plugin])
+            next(file)
+
+            for line in file:
+                line = line.strip()
+                if not line:  # Skip empty lines
+                    continue
+
+                # Split each line at the first '=' character
+                if '=' in line:
+                    key, value = line.split('=', 1)
+                    plugin_info[key.strip()] = value.strip()
+        return plugin_info
 
     def create_plugin_index(self, *args):
         """Parse plugins info file and recreate index on runtime"""
@@ -355,21 +372,7 @@ class MiAZPluginSystem(GObject.GObject):
 
         plugin_list = []
         for plugin_file in plugin_files:
-            plugin_info = {}
-
-            with open(plugin_file, 'r') as file:
-                # Skip the first line (assuming it's [Plugin])
-                next(file)
-
-                for line in file:
-                    line = line.strip()
-                    if not line:  # Skip empty lines
-                        continue
-
-                    # Split each line at the first '=' character
-                    if '=' in line:
-                        key, value = line.split('=', 1)
-                        plugin_info[key.strip()] = value.strip()
+            plugin_info = self.get_plugin_attributes(plugin_file)
             plugin_name = plugin_info['Name']
             plugin_desc = plugin_info['Description']
             plugin_index[plugin_name] = plugin_info
