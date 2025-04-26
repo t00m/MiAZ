@@ -401,7 +401,7 @@ class MiAZWorkspace(Gtk.Box):
                         active &= config.exists_used(key=key)
             else:
                 invalid.append(filename)
-                active &= False
+                active = False
 
             show_pending |= not active
 
