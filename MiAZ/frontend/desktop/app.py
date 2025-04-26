@@ -275,6 +275,37 @@ class MiAZApp(Adw.Application):
         # If no matching widget is found, return None
         return None
 
+    def get_plugin_category_submenu(self, category: str):
+        cid = category.lower().replace(' ', '-')
+        key = f"workspace-menu-plugins-{cid}"
+        category_submenu = self.app.get_widget(key)
+        if category_submenu is None:
+            category_submenu = Gio.Menu()
+            self.app.add_widget(key, category_submenu)
+        self.log.info(f"Created category menu for: {key} ({category_submenu})")
+        return category_submenu
+
+    def get_plugin_subcategory_submenu(self, category: str, subcategory: str):
+        cid = category.lower().replace(' ', '-')
+        sid = subcategory.lower().replace(' ', '-')
+        key = f"workspace-menu-plugins-{cid}-{sid}"
+        subcategory_submenu = self.app.get_widget(key)
+        if subcategory_submenu is None:
+            subcategory_submenu = Gio.Menu()
+            self.app.add_widget(key, subcategory_submenu)
+        self.log.info(f"Created subcategory menu for: {key} ({subcategory_submenu})")
+        return subcategory_submenu
+
+    def install_plugin_menu(self, category, subcategory):
+        """
+        """
+        plugins_submenu = self.app.get_widget('workspace-menu-plugins')
+        category_submenu = self.get_plugin_category_submenu(category)
+        subcategory_submenu = self.get_plugin_subcategory_submenu(category, subcategory)
+        category_submenu.append_submenu(subcategory, subcategory_submenu)
+        plugins_submenu.append_submenu(category, category_submenu)
+        self.log.info(f"Created plugin menu entry for: {category} >> {subcategory}")
+        return subcategory_submenu
 
     def exit(self, *args):
         # Signal handler for CONTROL-C
