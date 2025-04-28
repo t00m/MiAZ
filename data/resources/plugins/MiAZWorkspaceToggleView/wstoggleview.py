@@ -26,20 +26,16 @@ class MiAZWorkspaceToggleViewPlugin(GObject.GObject, Peas.Activatable):
     object = GObject.Property(type=GObject.Object)
     info = {}
 
-    def __init__(self):
-        self.log = MiAZLog('Plugin.WsToggleView')
-        self.app = None
-
     def do_activate(self):
-        plugin_file = __file__.replace('.py', '.plugin')
         self.app = self.object.app
-        plugin_system = self.app.get_service('plugin-system')
-        self.info = plugin_system.get_plugin_attributes(plugin_file)
+        self.log = MiAZLog('Plugin.MiAZWsToggleView')
+        plugin_file = __file__.replace('.py', '.plugin')
+        self.info = self.object.get_plugin_attributes(plugin_file)
         actions = self.app.get_service('actions')
         workspace = self.app.get_widget('workspace')
         workspace.connect('workspace-loaded', self.startup)
-
         actions.connect('settings-loaded', self._on_settings_loaded)
+        self.log.debug("Plugin activated")
 
     def do_deactivate(self):
         self.log.error("Plugin deactivated")
@@ -68,7 +64,6 @@ class MiAZWorkspaceToggleViewPlugin(GObject.GObject, Peas.Activatable):
             category = self.info['Category']
             subcategory = self.info['Subcategory']
             subcategory_submenu = self.app.install_plugin_menu(category, subcategory)
-            self.log.info(subcategory_submenu)
             subcategory_submenu.append_item(menuitem)
 
             # This is a common action: add to shortcuts
@@ -77,8 +72,6 @@ class MiAZWorkspaceToggleViewPlugin(GObject.GObject, Peas.Activatable):
 
             evk = self.app.get_widget('window-event-controller')
             evk.connect("key-pressed", self._on_key_press)
-
-            self.log.debug("Plugin wstoggleview activated")
 
     def toggle_workspace_view(self, *args):
         """ Sidebar not visible when active = False"""
@@ -109,7 +102,7 @@ class MiAZWorkspaceToggleViewPlugin(GObject.GObject, Peas.Activatable):
 
     def _on_settings_loaded(self, *args):
         group = self.app.get_widget('window-preferences-page-aspect-group-ui')
-        row = Adw.SwitchRow(title=_("Display sidebar toggle button?"), subtitle=_('Plugin Sidebar ToggleButton'))
+        row = Adw.SwitchRow(title=_("Display Workspace toggle view button?"), subtitle=_('Plugin Workspace toggle view'))
         row.connect('notify::active', self._on_activate_setting)
         tgbWSToggleView = self.app.get_widget('workspace-togglebutton-view')
         visible = tgbWSToggleView.get_visible()

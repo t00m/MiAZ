@@ -100,6 +100,11 @@ class MiAZAPI(GObject.GObject):
         GObject.Object.__init__(self)
         self.app = app
 
+    def get_plugin_attributes(self, plugin_file):
+        plugin_system = self.app.get_service('plugin-system')
+        return plugin_system.get_plugin_attributes(plugin_file)
+
+
 
 class MiAZPluginType(IntEnum):
     """Types of plugins depending on their directory location"""
