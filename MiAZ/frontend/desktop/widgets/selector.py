@@ -44,6 +44,7 @@ class MiAZSelector(Gtk.Box):
         # Toolbar
         ## Entry and buttons for operations (edit/add/remove)
         self.boxOper = factory.create_box_horizontal(spacing=6)
+        self.app.add_widget('selector-box-operations', self.boxOper)
         self.boxOper.set_margin_top(12)
         self.boxOper.set_margin_bottom(6)
         self.boxOper.set_margin_start(6)
@@ -79,7 +80,6 @@ class MiAZSelector(Gtk.Box):
         ## Toolbar right
         boxUsed = factory.create_box_horizontal(spacing=0)
         self.boxOper.append(boxUsed)
-
         self.append(self.boxOper)
 
         # Views & middel controls

@@ -426,8 +426,30 @@ class MiAZUserPlugins(MiAZConfigView):
     def __init__(self, app):
         super(MiAZConfigView, self).__init__(app, edit=False)
         super().__init__(app, 'Plugin')
+        boxopers = self.app.get_widget('selector-box-operations')
+        factory = self.app.get_service('factory')
+        btnConfig = factory.create_button(icon_name='io.github.t00m.MiAZ-config-symbolic', callback=self._configure_plugin_options)
+        btnConfig.set_valign(Gtk.Align.CENTER)
+        boxopers.append(btnConfig)
         self._update_view_available()
         self._update_view_used()
+
+    def _configure_plugin_options(self, *args):
+        selected_plugin = self.viewSl.get_selected()
+        if selected_plugin is None:
+            return
+        self.log.info(f"{selected_plugin.id}: {selected_plugin.title}")
+        ENV = self.app.get_env()
+        util = self.app.get_service('util')
+        plugin_system = self.app.get_service('plugin-system')
+        user_plugins = util.json_load(ENV['APP']['PLUGINS']['LOCAL_INDEX'])
+        module = user_plugins[selected_plugin.id]['Module']
+        plugin = self.app.get_widget(f'plugin-{module}')
+        if plugin:
+            try:
+                plugin.show_settings()
+            except Exception as error:
+                self.log.error(error)
 
     def plugins_updated(self, *args):
         self._update_view_available()

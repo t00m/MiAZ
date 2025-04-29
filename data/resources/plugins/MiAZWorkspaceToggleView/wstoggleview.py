@@ -31,6 +31,9 @@ class MiAZWorkspaceToggleViewPlugin(GObject.GObject, Peas.Activatable):
         self.log = MiAZLog('Plugin.MiAZWsToggleView')
         plugin_file = __file__.replace('.py', '.plugin')
         self.info = self.object.get_plugin_attributes(plugin_file)
+        module = self.info['Module']
+        self.log.error(f"Registering widget plugin plugin-{module}")
+        self.app.add_widget(f'plugin-{module}', self)
         actions = self.app.get_service('actions')
         workspace = self.app.get_widget('workspace')
         workspace.connect('workspace-loaded', self.startup)
@@ -114,6 +117,5 @@ class MiAZWorkspaceToggleViewPlugin(GObject.GObject, Peas.Activatable):
         togglebutton = self.app.get_widget('workspace-togglebutton-view')
         togglebutton.set_visible(active)
 
-
-
-
+    def show_settings(self, *args):
+        self.log.info(args)
