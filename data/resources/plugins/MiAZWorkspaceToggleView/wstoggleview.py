@@ -26,14 +26,17 @@ class MiAZWorkspaceToggleViewPlugin(GObject.GObject, Peas.Activatable):
     object = GObject.Property(type=GObject.Object)
     info = {}
 
-    def do_activate(self):
-        self.app = self.object.app
-        self.log = MiAZLog('Plugin.MiAZWsToggleView')
+    def register_plugin(self):
         plugin_file = __file__.replace('.py', '.plugin')
         self.info = self.object.get_plugin_attributes(plugin_file)
         module = self.info['Module']
-        self.log.error(f"Registering widget plugin plugin-{module}")
         self.app.add_widget(f'plugin-{module}', self)
+        self.log.error(f"Registered widget plugin plugin-{module}")
+
+    def do_activate(self):
+        self.app = self.object.app
+        self.log = MiAZLog('Plugin.MiAZWsToggleView')
+        self.register_plugin()
         actions = self.app.get_service('actions')
         workspace = self.app.get_widget('workspace')
         workspace.connect('workspace-loaded', self.startup)

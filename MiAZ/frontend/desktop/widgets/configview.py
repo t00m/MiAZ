@@ -63,6 +63,7 @@ class MiAZConfigView(MiAZSelector):
         self.log.debug(f"Import configuration for '{self.config.config_for}'")
 
     def _add_config_menubutton(self, name: str):
+        return
         actions = self.app.get_service('actions')
         factory = self.app.get_service('factory')
         widgets = []
@@ -428,9 +429,9 @@ class MiAZUserPlugins(MiAZConfigView):
         super().__init__(app, 'Plugin')
         boxopers = self.app.get_widget('selector-box-operations')
         factory = self.app.get_service('factory')
-        btnConfig = factory.create_button(icon_name='io.github.t00m.MiAZ-config-symbolic', callback=self._configure_plugin_options)
+        btnConfig = factory.create_button(icon_name='io.github.t00m.MiAZ-config-symbolic', callback=self._configure_plugin_options, css_classes=['flat'])
         btnConfig.set_valign(Gtk.Align.CENTER)
-        boxopers.append(btnConfig)
+        self.toolbar_buttons_Sl.append(btnConfig)
         self._update_view_available()
         self._update_view_used()
 
@@ -445,11 +446,14 @@ class MiAZUserPlugins(MiAZConfigView):
         user_plugins = util.json_load(ENV['APP']['PLUGINS']['LOCAL_INDEX'])
         module = user_plugins[selected_plugin.id]['Module']
         plugin = self.app.get_widget(f'plugin-{module}')
-        if plugin:
-            try:
-                plugin.show_settings()
-            except Exception as error:
-                self.log.error(error)
+        if plugin is not None:
+            if hasattr(plugin, 'show_settings') and callable(getattr(plugin, 'show_settings')):
+                try:
+                    plugin.show_settings()
+                except Exception as error:
+                    self.log.error(error)
+            else:
+                self.log.info(f"Plugin {selected_plugin.id} doesn't have a settings dialog")
 
     def plugins_updated(self, *args):
         self._update_view_available()
