@@ -11,7 +11,7 @@ from gi.repository import Adw, Gdk, Gio, Gtk
 from MiAZ.backend.log import MiAZLog
 from MiAZ.backend.models import MiAZItem, Group, Country, Purpose, SentBy, SentTo, Date, Project
 from MiAZ.backend.pluginsystem import plugin_categories
-from MiAZ.frontend.desktop.widgets.searchbar import SearchBar
+# ~ from MiAZ.frontend.desktop.widgets.searchbar import SearchBar
 from MiAZ.frontend.desktop.widgets.pages import MiAZWelcome
 from MiAZ.frontend.desktop.widgets.pages import MiAZPageNotFound
 from MiAZ.frontend.desktop.widgets.webbrowser import MiAZWebBrowser
