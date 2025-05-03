@@ -100,10 +100,57 @@ class MiAZAPI(GObject.GObject):
         GObject.Object.__init__(self)
         self.app = app
 
-    def get_plugin_attributes(self, plugin_file):
+
+class MiAZPlugin(GObject.GObject):
+    def __init__(self, app):
+        self.app = app
+        self.log = MiAZLog('MiAZPlugin')
+
+    def _get_plugin_attributes(self, plugin_file):
         plugin_system = self.app.get_service('plugin-system')
         return plugin_system.get_plugin_attributes(plugin_file)
 
+    def register(self, plugin_file):
+        self.info = self._get_plugin_attributes(plugin_file)
+        self.name = self.info['Name']
+        self.desc = self.info['Description']
+        self.plugin_file = plugin_file
+        self.log.debug(f"Registering {self.name} ({self.desc}) from {plugin_file}")
+
+
+    def get_app(self):
+        return self.app
+
+    def get_logger(self):
+        return MiAZLog(f'Plugin.{self.name}')
+
+    def get_name(self):
+        return self.name
+
+    def get_plugin_file(self):
+        return self.plugin_file
+
+    def get_plugin_info_dict(self):
+        return self.info
+
+    def get_plugin_info_key(self, key):
+        return self.info[key]
+
+    def get_widget_name(self):
+        module = self.info['Module']
+        return f'plugin-{module}'
+
+    def get_menu_item(self, callback=None):
+        factory = self.app.get_service('factory')
+        menuitem = factory.create_menuitem(f'plugin-menuitem-{self.name}', self.desc, callback, None, [])
+        return self.app.add_widget(f'plugin-menuitem-{self.name}', menuitem)
+
+    def install_menu_entry(self, menuitem):
+        category = self.info['Category']
+        subcategory = self.info['Subcategory']
+        subcategory_submenu = self.app.install_plugin_menu(category, subcategory)
+        subcategory_submenu.append_item(menuitem)
+        self.log.debug(f"Installing menu entry {menuitem} in {category} > {subcategory} {subcategory_submenu}")
 
 
 class MiAZPluginType(IntEnum):
