@@ -220,41 +220,41 @@ class MiAZMainWindow(Gtk.Box):
 
     def _setup_menu_selection(self):
         """Create workspace menu"""
-        actions = self.app.get_service('actions')
-        factory = self.app.get_service('factory')
+        # ~ actions = self.app.get_service('actions')
+        # ~ factory = self.app.get_service('factory')
 
         menu_selection = self.app.add_widget('workspace-menu-selection', Gio.Menu.new())
 
-        section_shortcut_plugins = self.app.add_widget('workspace-menu-selection-section-shortcut', Gio.Menu.new())
-        section_shortcut_common = self.app.add_widget('workspace-menu-selection-section-common', Gio.Menu.new())
-        section_shortcut_app = self.app.add_widget('workspace-menu-selection-section-app', Gio.Menu.new())
-        section_bottom = self.app.add_widget('workspace-menu-selection-section-bottom', Gio.Menu.new())
-        menu_selection.append_section(None, section_shortcut_plugins)
-        menu_selection.append_section(None, section_shortcut_common)
-        menu_selection.append_section(None, section_shortcut_app)
-        menu_selection.append_section(None, section_bottom)
+        # ~ section_shortcut_plugins = self.app.add_widget('workspace-menu-selection-section-shortcut', Gio.Menu.new())
+        # ~ section_shortcut_common = self.app.add_widget('workspace-menu-selection-section-common', Gio.Menu.new())
+        # ~ section_shortcut_app = self.app.add_widget('workspace-menu-selection-section-app', Gio.Menu.new())
+        # ~ section_bottom = self.app.add_widget('workspace-menu-selection-section-bottom', Gio.Menu.new())
+        # ~ menu_selection.append_section(None, section_shortcut_plugins)
+        # ~ menu_selection.append_section(None, section_shortcut_common)
+        # ~ menu_selection.append_section(None, section_shortcut_app)
+        # ~ menu_selection.append_section(None, section_bottom)
 
         ## Import
-        submenu_import = Gio.Menu.new()
-        menu_import = Gio.MenuItem.new_submenu(
-            label = _('Import...'),
-            submenu = submenu_import,
-        )
-        section_shortcut_common.append_item(menu_import)
-        self.app.add_widget('workspace-menu-shortcut-import', submenu_import)
+        # ~ submenu_import = Gio.Menu.new()
+        # ~ menu_import = Gio.MenuItem.new_submenu(
+            # ~ label = _('Import...'),
+            # ~ submenu = submenu_import,
+        # ~ )
+        # ~ section_shortcut_common.append_item(menu_import)
+        # ~ self.app.add_widget('workspace-menu-shortcut-import', submenu_import)
 
-        ## Export
-        submenu_export = Gio.Menu.new()
-        menu_export = Gio.MenuItem.new_submenu(
-            label = _('Export...'),
-            submenu = submenu_export,
-        )
-        section_shortcut_common.append_item(menu_export)
-        self.app.add_widget('workspace-menu-selection-menu-export', submenu_export)
+        # ~ ## Export
+        # ~ submenu_export = Gio.Menu.new()
+        # ~ menu_export = Gio.MenuItem.new_submenu(
+            # ~ label = _('Export...'),
+            # ~ submenu = submenu_export,
+        # ~ )
+        # ~ section_shortcut_common.append_item(menu_export)
+        # ~ self.app.add_widget('workspace-menu-selection-menu-export', submenu_export)
 
-        # Create the 'Plugins' submenu
-        plugins_submenu = self.app.add_widget('workspace-menu-plugins', Gio.Menu.new())
-        self.log.debug("Plugins menu")
+        # ~ # Create the 'Plugins' submenu
+        # ~ plugins_submenu = self.app.add_widget('workspace-menu-plugins', Gio.Menu.new())
+        # ~ self.log.debug("Plugins menu")
 
         # ~ # Iterate through the plugin categories and subcategories
         # ~ for category, subcategories in plugin_categories.items():
@@ -280,7 +280,7 @@ class MiAZMainWindow(Gtk.Box):
             # ~ plugins_submenu.append_submenu(category, category_submenu)
 
         # Add the 'Plugins' submenu to the main menu
-        section_shortcut_common.append_submenu("All plugins ...", plugins_submenu)
+        # ~ section_shortcut_common.append_submenu("All plugins ...", plugins_submenu)
 
         return menu_selection
 
