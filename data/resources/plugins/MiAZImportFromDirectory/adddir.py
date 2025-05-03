@@ -46,11 +46,12 @@ class MiAZAddDirectoryPlugin(GObject.GObject, Peas.Activatable):
         self.log.debug("Plugin deactivation not implemented")
 
     def startup(self, *args):
-        # Create menu item for plugin
-        menuitem = self.plugin.get_menu_item(callback=self.import_directory)
+        if not self.plugin.menu_item_loaded():
+            # Create menu item for plugin
+            menuitem = self.plugin.get_menu_item(callback=self.import_directory)
 
-        # Add plugin to its default (sub)category
-        self.plugin.install_menu_entry(menuitem)
+            # Add plugin to its default (sub)category
+            self.plugin.install_menu_entry(menuitem)
 
 
     def import_directory(self, *args):

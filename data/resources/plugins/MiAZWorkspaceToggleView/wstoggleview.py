@@ -51,25 +51,26 @@ class MiAZWorkspaceToggleViewPlugin(GObject.GObject, Peas.Activatable):
         self.log.info(f"Plugin loaded? {self.plugin_info.is_loaded()}")
 
     def startup(self, *args):
-        factory = self.app.get_service('factory')
-        hdb_right = self.app.get_widget('headerbar-right-box')
-        tgbWSToggleView = self.app.get_widget('workspace-togglebutton-view')
-        if tgbWSToggleView is None:
-            tgbWSToggleView = factory.create_button_toggle('io.github.t00m.MiAZ-view-details', callback=self.toggle_workspace_view)
-            self.app.add_widget('workspace-togglebutton-view', tgbWSToggleView)
-            tgbWSToggleView.set_tooltip_text("Show sidebar and filters")
-            tgbWSToggleView.set_active(False)
-            tgbWSToggleView.set_hexpand(False)
-            hdb_right.append(tgbWSToggleView)
-
+        if not self.plugin.menu_item_loaded():
             # Create menu item for plugin
             menuitem = self.plugin.get_menu_item(callback=None)
 
             # Add plugin to its default (sub)category
             self.plugin.install_menu_entry(menuitem)
 
-            evk = self.app.get_widget('window-event-controller')
-            evk.connect("key-pressed", self._on_key_press)
+            # ToggleButton
+            factory = self.app.get_service('factory')
+            hdb_right = self.app.get_widget('headerbar-right-box')
+            tgbWSToggleView = self.app.get_widget('workspace-togglebutton-view')
+            if tgbWSToggleView is None:
+                tgbWSToggleView = factory.create_button_toggle('io.github.t00m.MiAZ-view-details', callback=self.toggle_workspace_view)
+                self.app.add_widget('workspace-togglebutton-view', tgbWSToggleView)
+                tgbWSToggleView.set_tooltip_text("Show sidebar and filters")
+                tgbWSToggleView.set_active(False)
+                tgbWSToggleView.set_hexpand(False)
+                hdb_right.append(tgbWSToggleView)
+                evk = self.app.get_widget('window-event-controller')
+                evk.connect("key-pressed", self._on_key_press)
 
     def toggle_workspace_view(self, *args):
         """ Sidebar not visible when active = False"""

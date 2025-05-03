@@ -46,11 +46,12 @@ class MiAZDeleteItemPlugin(GObject.GObject, Peas.Activatable):
         self.log.debug("Plugin deactivation not implemented")
 
     def startup(self, *args):
-        # Create menu item for plugin
-        menuitem = self.plugin.get_menu_item(callback=self.document_delete)
+        if not self.plugin.menu_item_loaded():
+            # Create menu item for plugin
+            menuitem = self.plugin.get_menu_item(callback=self.document_delete)
 
-        # Add plugin to its default (sub)category
-        self.plugin.install_menu_entry(menuitem)
+            # Add plugin to its default (sub)category
+            self.plugin.install_menu_entry(menuitem)
 
     def document_delete(self, *args):
         actions = self.app.get_service('actions')
