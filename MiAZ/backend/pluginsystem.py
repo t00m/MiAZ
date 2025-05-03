@@ -101,6 +101,84 @@ class MiAZAPI(GObject.GObject):
         self.app = app
 
 
+class MiAZPlugin(GObject.GObject):
+    def __init__(self, app):
+        self.app = app
+        self.log = MiAZLog('MiAZPlugin')
+
+    def _get_plugin_attributes(self, plugin_file):
+        plugin_system = self.app.get_service('plugin-system')
+        return plugin_system.get_plugin_attributes(plugin_file)
+
+    def register(self, plugin_file):
+        util = self.app.get_service('util')
+        self.info = self._get_plugin_attributes(plugin_file)
+        self.name = self.info['Name']
+        self.desc = self.info['Description']
+        self.plugin_file = plugin_file
+        configdir = self.get_config_dir()
+        if not os.path.exists(configdir):
+            os.makedirs(configdir, exist_ok=True)
+            self.log.debug(f"Created configuration directory for plugin {self.name} in:")
+            self.log.debug(f"{configdir}")
+        configfile = self.get_config_file()
+        if not os.path.exists(configfile):
+            util.json_save(configfile, {})
+
+
+    def get_app(self):
+        return self.app
+
+    def get_logger(self):
+        return MiAZLog(f'Plugin.{self.name}')
+
+    def get_name(self):
+        return self.name
+
+    def get_plugin_file(self):
+        return self.plugin_file
+
+    def get_plugin_info_dict(self):
+        return self.info
+
+    def get_plugin_info_key(self, key):
+        return self.info[key]
+
+    def get_widget_name(self):
+        module = self.info['Module']
+        return f'plugin-{module}'
+
+    def get_menu_item(self, callback=None):
+        factory = self.app.get_service('factory')
+        name = self.get_menu_item_name()
+        menuitem = factory.create_menuitem(name, self.desc, callback, None, [])
+        return self.app.add_widget(f'plugin-menuitem-{self.name}', menuitem)
+
+    def get_menu_item_name(self):
+        return f'plugin-menuitem-{self.name}'
+
+    def menu_item_loaded(self):
+        name = self.get_menu_item_name()
+        if self.app.get_widget(name) is None:
+            return False
+        return True
+
+    def get_config_dir(self):
+        repository = self.app.get_service('repo')
+        basedir = repository.docs
+        return os.path.join(basedir, '.conf', 'plugins', self.name)
+
+    def get_config_file(self):
+        return os.path.join(self.get_config_dir(), f"Plugin-{self.name}.json")
+
+    def install_menu_entry(self, menuitem):
+        category = self.info['Category']
+        subcategory = self.info['Subcategory']
+        subcategory_submenu = self.app.install_plugin_menu(category, subcategory)
+        subcategory_submenu.append_item(menuitem)
+        return subcategory_submenu
+
+
 class MiAZPluginType(IntEnum):
     """Types of plugins depending on their directory location"""
 

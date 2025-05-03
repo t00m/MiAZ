@@ -14,41 +14,40 @@ from gettext import gettext as _
 from gi.repository import GObject
 from gi.repository import Peas
 
-from MiAZ.backend.log import MiAZLog
+from MiAZ.backend.pluginsystem import MiAZPlugin
 from MiAZ.frontend.desktop.widgets.rename import MiAZRenameDialog
 
 
 class MiAZToolbarRenameItemPlugin(GObject.GObject, Peas.Activatable):
     __gtype_name__ = 'MiAZToolbarRenameItemPlugin'
     object = GObject.Property(type=GObject.Object)
-
-    def __init__(self):
-        self.log = MiAZLog('Plugin.RenameItem')
-        self.app = None
+    plugin = None
+    file = __file__.replace('.py', '.plugin')
 
     def do_activate(self):
+        """Plugin activation"""
+        # Setup plugin
+        ## Get pointer to app
         self.app = self.object.app
+        self.plugin = MiAZPlugin(self.app)
+
+        ## Initialize plugin
+        self.plugin.register(self.file)
+
+        ## Get logger
+        self.log = self.plugin.get_logger()
+
+        # Connect signals to startup
         self.factory = self.app.get_service('factory')
         self.actions = self.app.get_service('actions')
         self.util = self.app.get_service('util')
         self.repository = self.app.get_service('repo')
         workspace = self.app.get_widget('workspace')
-        workspace.connect('workspace-loaded', self.add_toolbar_button)
+        workspace.connect('workspace-loaded', self.startup)
         workspace.connect('workspace-view-updated', self._on_selection_changed)
         view = self.app.get_widget('workspace-view')
         selection = view.get_selection()
         selection.connect('selection-changed', self._on_selection_changed)
-
-        # Create menuitem for plugin
-        menuitem = self.factory.create_menuitem('renameitem', _('Edit selected document'), None, None, [])
-        self.app.add_widget('workspace-menu-selection-section-app-rename-item', menuitem)
-
-        # Add plugin to its default (sub)category
-        category = self.app.get_widget('workspace-menu-plugins-content-organisation-metadata-management')
-        category.append_item(menuitem)
-        category = self.app.get_widget('workspace-menu-plugins-visualisation-and-diagrams-dashboard-widgets')
-        category.append_item(menuitem)
-
 
     def do_deactivate(self):
         self.log.debug("Plugin deactivation not implemented")
@@ -61,14 +60,22 @@ class MiAZToolbarRenameItemPlugin(GObject.GObject, Peas.Activatable):
             visible = len(items) == 1
             button.set_visible(visible)
 
-    def add_toolbar_button(self, *args):
-        if self.app.get_widget('toolbar-top-button-rename') is None:
-            factory = self.app.get_service('factory')
-            toolbar_top_right = self.app.get_widget('headerbar-right-box')
-            button = factory.create_button(icon_name='io.github.t00m.MiAZ-text-editor-symbolic', callback=self.callback)
-            button.set_visible(False)
-            self.app.add_widget('toolbar-top-button-rename', button)
-            toolbar_top_right.append(button)
+    def startup(self, *args):
+        if not self.plugin.menu_item_loaded():
+            # Create menu item for plugin
+            menuitem = self.plugin.get_menu_item(callback=None)
+
+            # Add plugin to its default (sub)category
+            self.plugin.install_menu_entry(menuitem)
+
+            # Button
+            if self.app.get_widget('toolbar-top-button-rename') is None:
+                factory = self.app.get_service('factory')
+                toolbar_top_right = self.app.get_widget('headerbar-right-box')
+                button = factory.create_button(icon_name='io.github.t00m.MiAZ-text-editor-symbolic', callback=self.callback)
+                button.set_visible(False)
+                self.app.add_widget('toolbar-top-button-rename', button)
+                toolbar_top_right.append(button)
 
     def callback(self, *args):
         try:

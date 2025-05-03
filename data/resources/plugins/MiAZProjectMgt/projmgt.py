@@ -16,7 +16,7 @@ from gi.repository import GObject
 from gi.repository import Gtk
 from gi.repository import Peas
 
-from MiAZ.backend.log import MiAZLog
+from MiAZ.backend.pluginsystem import MiAZPlugin
 from MiAZ.backend.models import File
 from MiAZ.backend.models import Project
 from MiAZ.backend.models import Document
@@ -43,13 +43,21 @@ Configview['Date'] = Gtk.Calendar
 class MiAZToolbarProjectMgtPlugin(GObject.GObject, Peas.Activatable):
     __gtype_name__ = 'MiAZToolbarProjectMgtPlugin'
     object = GObject.Property(type=GObject.Object)
-
-    def __init__(self):
-        self.log = MiAZLog('Plugin.ProjectMgt')
-        self.app = None
+    plugin = None
+    file = __file__.replace('.py', '.plugin')
 
     def do_activate(self):
+        """Plugin activation"""
+        # Setup plugin
+        ## Get pointer to app
         self.app = self.object.app
+        self.plugin = MiAZPlugin(self.app)
+
+        ## Initialize plugin
+        self.plugin.register(self.file)
+
+        ## Get logger
+        self.log = self.plugin.get_logger()
         workspace = self.app.get_widget('workspace')
         workspace.connect('workspace-loaded', self.startup)
 
@@ -57,16 +65,18 @@ class MiAZToolbarProjectMgtPlugin(GObject.GObject, Peas.Activatable):
         self.log.debug("Plugin deactivation not implemented")
 
     def startup(self, *args):
-        factory = self.app.get_service('factory')
+        menuitem_name = f'plugin-menuitem-{self.plugin.get_name()}'
+        menuitem = self.app.get_widget(menuitem_name)
+        if menuitem is None:
+            factory = self.app.get_service('factory')
+            main_menu = self.app.get_widget('workspace-menu-selection')
 
-        if self.app.get_widget('workspace-menu-selection-menu-project') is None:
             submenu_project = Gio.Menu.new()
             menu_project = Gio.MenuItem.new_submenu(
                 label=_('Project management...'),
                 submenu=submenu_project,
             )
-            section_shortcut = self.app.get_widget('workspace-menu-selection-section-common')
-            section_shortcut.append_item(menu_project)
+            self.app.add_widget(menuitem_name, menu_project)
             self.app.add_widget('workspace-menu-selection-menu-project', menu_project)
             self.app.add_widget('workspace-menu-selection-submenu-project', submenu_project)
             menuitem = factory.create_menuitem('project-manage', _('... manage projects'), self.project_manage, None, [])
@@ -77,10 +87,7 @@ class MiAZToolbarProjectMgtPlugin(GObject.GObject, Peas.Activatable):
             submenu_project.append_item(menuitem)
             menuitem = factory.create_menuitem('project-view', _('... view documents per project'), self.project_view, None, [])
             submenu_project.append_item(menuitem)
-
-            # Add plugin to its default (sub)category
-            category = self.app.get_widget('workspace-menu-plugins-content-organisation-tagging-and-classification')
-            category.append_submenu('Projects', submenu_project)
+            main_menu.append_item(menu_project)
 
     def project_assign(self, *args):
         actions = self.app.get_service('actions')
