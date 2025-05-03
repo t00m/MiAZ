@@ -115,8 +115,6 @@ class MiAZPlugin(GObject.GObject):
         self.name = self.info['Name']
         self.desc = self.info['Description']
         self.plugin_file = plugin_file
-        self.log.debug(f"Registering {self.name} ({self.desc}) from {plugin_file}")
-
 
     def get_app(self):
         return self.app
@@ -150,7 +148,7 @@ class MiAZPlugin(GObject.GObject):
         subcategory = self.info['Subcategory']
         subcategory_submenu = self.app.install_plugin_menu(category, subcategory)
         subcategory_submenu.append_item(menuitem)
-        self.log.debug(f"Installing menu entry {menuitem} in {category} > {subcategory} {subcategory_submenu}")
+        return subcategory_submenu
 
 
 class MiAZPluginType(IntEnum):

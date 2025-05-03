@@ -14,20 +14,30 @@ from gettext import gettext as _
 from gi.repository import GObject
 from gi.repository import Peas
 
-from MiAZ.backend.log import MiAZLog
+from MiAZ.backend.pluginsystem import MiAZPlugin
 from MiAZ.frontend.desktop.widgets.rename import MiAZRenameDialog
 
 
 class MiAZToolbarRenameItemPlugin(GObject.GObject, Peas.Activatable):
     __gtype_name__ = 'MiAZToolbarRenameItemPlugin'
     object = GObject.Property(type=GObject.Object)
-
-    def __init__(self):
-        self.log = MiAZLog('Plugin.RenameItem')
-        self.app = None
+    plugin = None
+    file = __file__.replace('.py', '.plugin')
 
     def do_activate(self):
+        """Plugin activation"""
+        # Setup plugin
+        ## Get pointer to app
         self.app = self.object.app
+        self.plugin = MiAZPlugin(self.app)
+
+        ## Initialize plugin
+        self.plugin.register(self.file)
+
+        ## Get logger
+        self.log = self.plugin.get_logger()
+
+        # Connect signals to startup
         self.factory = self.app.get_service('factory')
         self.actions = self.app.get_service('actions')
         self.util = self.app.get_service('util')
@@ -39,15 +49,11 @@ class MiAZToolbarRenameItemPlugin(GObject.GObject, Peas.Activatable):
         selection = view.get_selection()
         selection.connect('selection-changed', self._on_selection_changed)
 
-        # Create menuitem for plugin
-        menuitem = self.factory.create_menuitem('renameitem', _('Edit selected document'), None, None, [])
-        self.app.add_widget('workspace-menu-selection-section-app-rename-item', menuitem)
+        # Create menu item for plugin
+        menuitem = self.plugin.get_menu_item(callback=None)
 
         # Add plugin to its default (sub)category
-        category = self.app.get_widget('workspace-menu-plugins-content-organisation-metadata-management')
-        category.append_item(menuitem)
-        category = self.app.get_widget('workspace-menu-plugins-visualisation-and-diagrams-dashboard-widgets')
-        category.append_item(menuitem)
+        self.plugin.install_menu_entry(menuitem)
 
 
     def do_deactivate(self):

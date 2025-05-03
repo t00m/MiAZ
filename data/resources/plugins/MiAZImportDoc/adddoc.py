@@ -16,40 +16,44 @@ from gi.repository import GObject
 from gi.repository import Peas
 
 from MiAZ.backend.log import MiAZLog
+from MiAZ.backend.pluginsystem import MiAZPlugin
 from MiAZ.frontend.desktop.services.dialogs import MiAZFileChooserDialog
 
 
 class MiAZAddDocumentPlugin(GObject.GObject, Peas.Activatable):
     __gtype_name__ = 'MiAZAddDocumentPlugin'
     object = GObject.Property(type=GObject.Object)
-
-    def __init__(self):
-        self.log = MiAZLog('Plugin.AddDocument')
-        self.app = None
+    plugin = None
+    name = 'AddDocs'     # Plugin internal name
+    desc = '... document(s)'   # Plugin menuitem entry
+    file = __file__.replace('.py', '.plugin')
 
     def do_activate(self):
+        """Plugin activation"""
+        # Setup plugin
+        ## Get pointer to app
         self.app = self.object.app
+        self.plugin = MiAZPlugin(self.app)
+
+        ## Initialize plugin
+        self.plugin.register(self.file)
+
+        ## Get logger
+        self.log = self.plugin.get_logger()
+
+        ## Connect signals to startup
         workspace = self.app.get_widget('workspace')
-        workspace.connect('workspace-loaded', self.add_menuitem)
+        workspace.connect('workspace-loaded', self.startup)
 
     def do_deactivate(self):
         self.log.debug("Plugin deactivation not implemented")
 
-    def add_menuitem(self, *args):
-        if self.app.get_widget('workspace-menu-import-add-document') is None:
-            factory = self.app.get_service('factory')
+    def startup(self, *args):
+        # Create menu item for plugin
+        menuitem = self.plugin.get_menu_item(callback=self.import_file)
 
-            # Create menu item for plugin
-            menuitem = factory.create_menuitem('add_docs', '... document(s)', self.import_file, None, [])
-            self.app.add_widget('workspace-menu-import-add-document', menuitem)
-
-            # Add plugin to its default (sub)category
-            category = self.app.get_widget('workspace-menu-plugins-data-management-import')
-            category.append_item(menuitem)
-
-            # This is a common action: add to shortcuts
-            menu_shortcut_import = self.app.get_widget('workspace-menu-shortcut-import')
-            menu_shortcut_import.append_item(menuitem)
+        # Add plugin to its default (sub)category
+        self.plugin.install_menu_entry(menuitem)
 
     def import_file(self, *args):
         factory = self.app.get_service('factory')
