@@ -420,7 +420,10 @@ class MiAZProjects(MiAZConfigView):
 
 
 class MiAZUserPlugins(MiAZConfigView):
-    """Manage user plugins from Repo Settings. Edit disabled"""
+    """
+    Manage user plugins from Repo Settings. Edit disabled
+    Only display those plugins found in ENV['APP']['PLUGINS']['LOCAL_INDEX']
+    """
     __gtype_name__ = 'MiAZUserPlugins'
     current = None
 
