@@ -30,7 +30,7 @@ class MiAZToolbarViewItemPlugin(GObject.GObject, Peas.Activatable):
         self.plugin = MiAZPlugin(self.app)
 
         ## Initialize plugin
-        self.plugin.register(self.file)
+        self.plugin.register(self.file, self)
 
         ## Get logger
         self.log = self.plugin.get_logger()

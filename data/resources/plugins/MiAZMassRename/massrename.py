@@ -57,7 +57,7 @@ class MiAZMassRenamingPlugin(GObject.GObject, Peas.Activatable):
         """Plugin activation"""
         self.app = self.object.app
         self.plugin = MiAZPlugin(self.app)
-        self.plugin.register(self.file)
+        self.plugin.register(self.file, self)
         self.log = self.plugin.get_logger()
         workspace = self.app.get_widget('workspace')
         workspace.connect('workspace-loaded', self.startup)

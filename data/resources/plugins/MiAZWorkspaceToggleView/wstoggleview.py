@@ -35,7 +35,7 @@ class MiAZWorkspaceToggleViewPlugin(GObject.GObject, Peas.Activatable):
         self.plugin = MiAZPlugin(self.app)
 
         ## Initialize plugin
-        self.plugin.register(self.file)
+        self.plugin.register(self.file, self)
 
         ## Get logger
         self.log = self.plugin.get_logger()
@@ -68,7 +68,13 @@ class MiAZWorkspaceToggleViewPlugin(GObject.GObject, Peas.Activatable):
                 tgbWSToggleView.set_tooltip_text("Show sidebar and filters")
                 tgbWSToggleView.set_active(False)
                 tgbWSToggleView.set_hexpand(False)
+                visible = self.plugin.get_config_key('icon_visible')
+                if visible is None:
+                    visible = True
+                    self.plugin.set_config_key('icon_visible', True)
+                tgbWSToggleView.set_visible(visible)
                 hdb_right.append(tgbWSToggleView)
+
                 evk = self.app.get_widget('window-event-controller')
                 evk.connect("key-pressed", self._on_key_press)
 
@@ -99,19 +105,42 @@ class MiAZWorkspaceToggleViewPlugin(GObject.GObject, Peas.Activatable):
             active = tgbWSToggleView.get_active()
             tgbWSToggleView.set_active(not active)
 
-    def _on_settings_loaded(self, *args):
-        group = self.app.get_widget('window-preferences-page-aspect-group-ui')
-        row = Adw.SwitchRow(title=_("Display Workspace toggle view button?"), subtitle=_('Plugin Workspace toggle view'))
+    def _on_activate_setting(self, row, gparam):
+        # Set togglebutton status
+        togglebutton = self.app.get_widget('workspace-togglebutton-view')
+        visible = row.get_active()
+        togglebutton.set_visible(visible)
+
+        # Update plugin config
+        self.plugin.set_config_key('icon_visible', visible)
+
+    def show_settings(self, widget):
+        util = self.app.get_service('util')
+
+        # Build preferences dialog
+        dialog = Adw.PreferencesDialog()
+        desc = self.plugin.get_plugin_info_key('Description')
+        page_title = _(desc)
+        page_icon = "io.github.t00m.MiAZ-preferences-ui"
+        page = Adw.PreferencesPage(title=page_title, icon_name=page_icon)
+        dialog.add(page)
+        group = Adw.PreferencesGroup()
+        group.set_title('User interface')
+        page.add(group)
+
+        # Row for option "Display Workspace toggle view button?"
+        row = Adw.SwitchRow(title=_("Display Workspace toggle view button?"))
         row.connect('notify::active', self._on_activate_setting)
+
+        config = self.plugin.get_config_data()
+        try:
+            visible = config['icon_visible']
+        except:
+            visible = config['icon_visible'] = True
+            self.plugin.set_config_data(config)
+
         tgbWSToggleView = self.app.get_widget('workspace-togglebutton-view')
-        visible = tgbWSToggleView.get_visible()
         row.set_active(visible)
         group.add(row)
 
-    def _on_activate_setting(self, row, gparam):
-        active = row.get_active()
-        togglebutton = self.app.get_widget('workspace-togglebutton-view')
-        togglebutton.set_visible(active)
-
-    def show_settings(self, *args):
-        self.log.info(args)
+        dialog.present(widget.get_root())

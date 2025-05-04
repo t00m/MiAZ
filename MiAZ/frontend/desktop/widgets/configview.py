@@ -422,7 +422,7 @@ class MiAZProjects(MiAZConfigView):
 class MiAZUserPlugins(MiAZConfigView):
     """
     Manage user plugins from Repo Settings. Edit disabled
-    Only display those plugins found in ENV['APP']['PLUGINS']['LOCAL_INDEX']
+    Only display those plugins found in ENV['APP']['PLUGINS']['USER_INDEX']
     """
     __gtype_name__ = 'MiAZUserPlugins'
     current = None
@@ -446,17 +446,20 @@ class MiAZUserPlugins(MiAZConfigView):
         ENV = self.app.get_env()
         util = self.app.get_service('util')
         plugin_system = self.app.get_service('plugin-system')
-        user_plugins = util.json_load(ENV['APP']['PLUGINS']['LOCAL_INDEX'])
+        user_plugins = util.json_load(ENV['APP']['PLUGINS']['USER_INDEX'])
         module = user_plugins[selected_plugin.id]['Module']
-        plugin = self.app.get_widget(f'plugin-{module}')
+        plugin_id = f"plugin-{selected_plugin.id}"
+        plugin = self.app.get_widget(plugin_id)
         if plugin is not None:
             if hasattr(plugin, 'show_settings') and callable(getattr(plugin, 'show_settings')):
                 try:
-                    plugin.show_settings()
+                    plugin.show_settings(widget=self)
                 except Exception as error:
                     self.log.error(error)
             else:
                 self.log.info(f"Plugin {selected_plugin.id} doesn't have a settings dialog")
+        else:
+            self.log.error(f"Can't find plugin object for {plugin_id}!!")
 
     def plugins_updated(self, *args):
         self._update_view_available()
@@ -494,11 +497,11 @@ class MiAZUserPlugins(MiAZConfigView):
         if not plugin_used:
             util = self.app.get_service('util')
             ENV = self.app.get_env()
-            user_plugins = util.json_load(ENV['APP']['PLUGINS']['LOCAL_INDEX'])
+            user_plugins = util.json_load(ENV['APP']['PLUGINS']['USER_INDEX'])
             try:
                 plugin_module = user_plugins[selected_plugin.id]['Module']
             except KeyError as key:
-                self.log.error(f"Plugin {key} not found in {ENV['APP']['PLUGINS']['LOCAL_INDEX']}")
+                self.log.error(f"Plugin {key} not found in {ENV['APP']['PLUGINS']['USER_INDEX']}")
                 return
             plugins_used[selected_plugin.id] = selected_plugin.title
             plugin = plugin_manager.get_plugin_info(plugin_module)

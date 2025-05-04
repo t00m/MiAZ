@@ -57,7 +57,7 @@ class MiAZPluginUIManager(Gtk.Box):
         item_type = Plugin
         for plugin in pm.plugins:
             if pm.get_plugin_type(plugin) == MiAZPluginType.SYSTEM:
-                pid = plugin.get_module_name()
+                pid = plugin.get_name()
                 title = plugin.get_description()
                 items.append(item_type(id=pid, title=title))
         view.update(items)
@@ -91,17 +91,16 @@ class MiAZPluginUIManager(Gtk.Box):
         selected_plugin = view.get_selected()
         if selected_plugin is None:
             return
-        self.log.info(f"{selected_plugin.id}: {selected_plugin.title}")
         ENV = self.app.get_env()
         util = self.app.get_service('util')
         plugin_system = self.app.get_service('plugin-system')
-        user_plugins = util.json_load(ENV['APP']['PLUGINS']['LOCAL_INDEX'])
-        module = user_plugins[selected_plugin.id]['Module']
-        plugin = self.app.get_widget(f'plugin-{module}')
+        system_plugins = util.json_load(ENV['APP']['PLUGINS']['SYSTEM_INDEX'])
+        module = system_plugins[selected_plugin.id]['Module']
+        plugin = self.app.get_widget(f'plugin-{selected_plugin.id}')
         if plugin is not None:
             if hasattr(plugin, 'show_settings') and callable(getattr(plugin, 'show_settings')):
                 try:
-                    plugin.show_settings()
+                    plugin.show_settings(self)
                 except Exception as error:
                     self.log.error(error)
             else:
@@ -202,7 +201,7 @@ class MiAZPluginUIManager(Gtk.Box):
             response = requests.get(url)
             response.raise_for_status()
             plugin_index = response.json()
-            util.json_save(ENV['APP']['PLUGINS']['LOCAL_INDEX'], plugin_index)
+            util.json_save(ENV['APP']['PLUGINS']['USER_INDEX'], plugin_index)
             plugin_system = self.app.get_service('plugin-system')
             user_plugins = plugin_system.get_user_plugins()
             plugin_list = []

@@ -1,12 +1,12 @@
 [Plugin]
 Module=wstoggleview
-Name=MiAZWorkspaceToggleViewPlugin
+Name=MiAZWSToggleView
 Loader=Python3
 Description=Workspace Toogle View
 Authors=Tomás Vírseda <tomasvirseda@gmail.com>
 Copyright=Copyright © 2025 Tomás Vírseda
 Website=http://github.com/t00m/MiAZ
 Help=http://github.com/t00m/MiAZ/README.adoc
-Version=0.2
+Version=0.4
 Category=Customisation and Personalisation
 Subcategory=User Interface
