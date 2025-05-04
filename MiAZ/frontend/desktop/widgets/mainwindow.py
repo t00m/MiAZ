@@ -178,7 +178,7 @@ class MiAZMainWindow(Gtk.Box):
         tooltip += f"{v} documents in this view\n"
         tooltip += f"{t} documents in this repository"
         workspace_menu.set_tooltip_markup(tooltip)
-        self.log.debug(f"filter selected: {s}/{v}/{t}")
+        # ~ self.log.debug(f"filter selected: {s}/{v}/{t}")
         searchentry = self.app.get_widget('searchentry')
         if v > 0:
             stack.set_visible_child_name('workspace')

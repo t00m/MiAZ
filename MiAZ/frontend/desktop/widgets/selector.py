@@ -341,6 +341,7 @@ class MiAZSelector(Gtk.Box):
         for key in items:
             items_available.append(item_type(id=key, title=items[key]))
         self.viewAv.update(items_available)
+        self.log.debug(f"Update available view {self.config.config_for} with {len(items)} items")
 
     def _update_view_used(self):
         items_used = []

@@ -32,7 +32,7 @@ class MiAZConfigView(MiAZSelector):
     config_for = None
 
     def __init__(self, app, config_name=None):
-        super(MiAZSelector, self).__init__(spacing=0, orientation=Gtk.Orientation.VERTICAL)
+        # ~ super(MiAZSelector, self).__init__(spacing=0, orientation=Gtk.Orientation.VERTICAL)
         self.app = app
         self.log = MiAZLog('MiAZConfigView')
         self.repository = self.app.get_service('repo')
@@ -43,7 +43,7 @@ class MiAZConfigView(MiAZSelector):
         self.config.connect('used-updated', self.update_views)
         self.config.connect('available-updated', self.update_views)
         self.set_vexpand(True)
-        self.log.debug(f"Configview for {config_name} initialited")
+        # ~ self.log.debug(f"Configview for {config_name} initialited")
 
     def update_config(self):
         self.config = self.conf[self.config_name]
@@ -432,8 +432,8 @@ class MiAZUserPlugins(MiAZConfigView):
         btnConfig = factory.create_button(icon_name='io.github.t00m.MiAZ-config-symbolic', callback=self._configure_plugin_options, css_classes=['flat'])
         btnConfig.set_valign(Gtk.Align.CENTER)
         self.toolbar_buttons_Sl.append(btnConfig)
-        self._update_view_available()
-        self._update_view_used()
+        # ~ self._update_view_available()
+        # ~ self._update_view_used()
 
     def _configure_plugin_options(self, *args):
         selected_plugin = self.viewSl.get_selected()
