@@ -52,7 +52,8 @@ class MiAZPluginUIManager(Gtk.Box):
         box.append(toolbar)
 
         pm = self.app.get_service('plugin-system')
-        view = self.app.get_widget('app-settings-plugins-system-view')
+        view_type = MiAZPluginType.SYSTEM
+        view = self.app.get_widget(f'app-settings-plugins-{view_type}-view')
         items = []
         item_type = Plugin
         for plugin in pm.plugins:
@@ -61,7 +62,22 @@ class MiAZPluginUIManager(Gtk.Box):
                 title = plugin.get_description()
                 items.append(item_type(id=pid, title=title))
         view.update(items)
+
+        # Action to be done when selecting an used plugin
+        # ~ selection_model = self.viewSl.cv.get_model()
+        # ~ selection_model.connect('selection-changed', self._on_plugin_system_selected)
+
         return box
+
+    def _on_plugin_system_selected(self, selection_model, position, n_items):
+        btnConfig = self.app.get_widget('plugin-view-system-button-config')
+        selected_plugin = selection_model.get_selected_item()
+        plugin_id = f"plugin-{selected_plugin.id}"
+        plugin = self.app.get_widget(plugin_id)
+        has_settings = False
+        if plugin is not None:
+            has_settings = hasattr(plugin, 'show_settings') and callable(getattr(plugin, 'show_settings'))
+        btnConfig.set_visible(has_settings)
 
     def _create_plugin_view(self, plugin_view: MiAZPluginType = MiAZPluginType.SYSTEM):
         scrwin = self.factory.create_scrolledwindow()
@@ -81,6 +97,7 @@ class MiAZPluginUIManager(Gtk.Box):
         btnInfo.set_has_frame(False)
         toolbar.append(btnInfo)
         btnConfig = self.factory.create_button(icon_name='io.github.t00m.MiAZ-config-symbolic', callback=self._configure_plugin_options, css_classes=['flat'])
+        self.app.add_widget('plugin-view-system-button-config', btnConfig)
         btnConfig.set_valign(Gtk.Align.CENTER)
         btnConfig.set_has_frame(False)
         toolbar.append(btnConfig)

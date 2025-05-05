@@ -435,17 +435,20 @@ class MiAZUserPlugins(MiAZConfigView):
         boxopers = self.app.get_widget('selector-box-operations')
         factory = self.app.get_service('factory')
 
+        # Available view buttons
         btnRefresh = factory.create_button(icon_name='io.github.t00m.MiAZ-view-refresh-symbolic', callback=self._refresh_index_plugin_file, css_classes=['flat'])
         btnRefresh.set_valign(Gtk.Align.CENTER)
         self.toolbar_buttons_Av.append(btnRefresh)
 
+        # Used view buttons
         self.btnConfig = factory.create_button(icon_name='io.github.t00m.MiAZ-config-symbolic', callback=self._configure_plugin_options, css_classes=['flat', 'suggested-action'])
         self.btnConfig.set_valign(Gtk.Align.CENTER)
-        self.btnConfig.set_visible(False)
+        # ~ self.btnConfig.set_visible(False)
         self.toolbar_buttons_Sl.append(self.btnConfig)
 
-        selection_model = self.viewSl.cv.get_model()
-        selection_model.connect('selection-changed', self._on_plugin_used_selected)
+        # Action to be done when selecting an used plugin
+        # ~ selection_model = self.viewSl.cv.get_model()
+        # ~ selection_model.connect('selection-changed', self._on_plugin_used_selected)
 
     def _on_plugin_used_selected(self, selection_model, position, n_items):
         selected_plugin = selection_model.get_selected_item()
