@@ -8,9 +8,13 @@ import os
 import glob
 from gettext import gettext as _
 
+import requests
+
 from gi.repository import Gtk
 
 from MiAZ.backend.log import MiAZLog
+from MiAZ.backend.models import File, Plugin
+from MiAZ.backend.pluginsystem import MiAZPluginType
 from MiAZ.frontend.desktop.widgets.selector import MiAZSelector
 from MiAZ.frontend.desktop.widgets.columnview import MiAZColumnView
 from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewDocuments
@@ -22,8 +26,6 @@ from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewProject
 from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewRepo
 from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewPlugin
 from MiAZ.frontend.desktop.services.dialogs import MiAZDialogAddRepo
-from MiAZ.backend.pluginsystem import MiAZPluginType
-from MiAZ.backend.models import File
 
 
 class MiAZConfigView(MiAZSelector):
@@ -432,11 +434,61 @@ class MiAZUserPlugins(MiAZConfigView):
         super().__init__(app, 'Plugin')
         boxopers = self.app.get_widget('selector-box-operations')
         factory = self.app.get_service('factory')
-        btnConfig = factory.create_button(icon_name='io.github.t00m.MiAZ-config-symbolic', callback=self._configure_plugin_options, css_classes=['flat'])
-        btnConfig.set_valign(Gtk.Align.CENTER)
-        self.toolbar_buttons_Sl.append(btnConfig)
-        # ~ self._update_view_available()
-        # ~ self._update_view_used()
+
+        btnRefresh = factory.create_button(icon_name='io.github.t00m.MiAZ-view-refresh-symbolic', callback=self._refresh_index_plugin_file, css_classes=['flat'])
+        btnRefresh.set_valign(Gtk.Align.CENTER)
+        self.toolbar_buttons_Av.append(btnRefresh)
+
+        self.btnConfig = factory.create_button(icon_name='io.github.t00m.MiAZ-config-symbolic', callback=self._configure_plugin_options, css_classes=['flat', 'suggested-action'])
+        self.btnConfig.set_valign(Gtk.Align.CENTER)
+        self.btnConfig.set_visible(False)
+        self.toolbar_buttons_Sl.append(self.btnConfig)
+
+        selection_model = self.viewSl.cv.get_model()
+        selection_model.connect('selection-changed', self._on_plugin_used_selected)
+
+    def _on_plugin_used_selected(self, selection_model, position, n_items):
+        selected_plugin = selection_model.get_selected_item()
+        plugin_id = f"plugin-{selected_plugin.id}"
+        plugin = self.app.get_widget(plugin_id)
+        self.log.warning(plugin)
+        has_settings = False
+        if plugin is not None:
+            has_settings = hasattr(plugin, 'show_settings') and callable(getattr(plugin, 'show_settings'))
+        self.btnConfig.set_visible(has_settings)
+
+    def _refresh_index_plugin_file(self, *args):
+        ENV = self.app.get_env()
+        source = ENV['APP']['PLUGINS']['SOURCE']
+        url_base = ENV['APP']['PLUGINS']['REMOTE_INDEX']
+        url = url_base % source
+        url_plugin_base = ENV['APP']['PLUGINS']['DOWNLOAD']
+        user_plugins_dir = ENV['LPATH']['PLUGINS']
+        try:
+            util = self.app.get_service('util')
+            response = requests.get(url)
+            response.raise_for_status()
+            plugin_index = response.json()
+            util.json_save(ENV['APP']['PLUGINS']['USER_INDEX'], plugin_index)
+            plugin_system = self.app.get_service('plugin-system')
+            user_plugins = plugin_system.get_user_plugins()
+            plugin_list = []
+            for pid in plugin_index:
+                desc = plugin_index[pid]['Description']
+                url_plugin = url_plugin_base % (source, pid)
+                self.log.info(url_plugin)
+                added = util.download_and_unzip(url_plugin, user_plugins_dir)
+                if added:
+                    plugin_list.append((pid, desc))
+            # Recreate index plugin again (useful for devel purposes)
+            plugin_system.create_user_plugin_index()
+
+            self.update_user_plugins()
+
+        except HTTPError as http_error:
+            self.log.error(f"HTTP error occurred: {http_error}")
+        except Exception as error:
+            self.log.error(f"An error occurred: {error}")
 
     def _configure_plugin_options(self, *args):
         selected_plugin = self.viewSl.get_selected()
@@ -460,6 +512,24 @@ class MiAZUserPlugins(MiAZConfigView):
                 self.log.info(f"Plugin {selected_plugin.id} doesn't have a settings dialog")
         else:
             self.log.error(f"Can't find plugin object for {plugin_id}!!")
+
+    def update_user_plugins(self):
+        ENV = self.app.get_env()
+        plugin_system = self.app.get_service('plugin-system')
+        plugin_system.rescan_plugins()
+        view = self.app.get_widget('app-settings-plugins-user-view')
+        items = []
+        item_type = Plugin
+        for plugin in plugin_system.plugins:
+            ptype = plugin_system.get_plugin_type(plugin)
+            if ptype == MiAZPluginType.USER:
+                base_dir = plugin.get_name()
+                module_name = plugin.get_module_name()
+                plugin_path = os.path.join(ENV['LPATH']['PLUGINS'], base_dir, f"{module_name}.plugin")
+                if os.path.exists(plugin_path):
+                    title = plugin.get_description()
+                    items.append(item_type(id=module_name, title=title))
+        self.update_views()
 
     def plugins_updated(self, *args):
         self._update_view_available()
