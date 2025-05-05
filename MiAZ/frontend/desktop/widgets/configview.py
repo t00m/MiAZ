@@ -451,7 +451,6 @@ class MiAZUserPlugins(MiAZConfigView):
         selected_plugin = selection_model.get_selected_item()
         plugin_id = f"plugin-{selected_plugin.id}"
         plugin = self.app.get_widget(plugin_id)
-        self.log.warning(plugin)
         has_settings = False
         if plugin is not None:
             has_settings = hasattr(plugin, 'show_settings') and callable(getattr(plugin, 'show_settings'))
