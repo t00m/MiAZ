@@ -14,7 +14,7 @@ from gi.repository import GObject
 from MiAZ.env import ENV
 from MiAZ.backend.log import MiAZLog
 from MiAZ.backend.models import Plugin
-from MiAZ.backend.pluginsystem import MiAZPluginType
+from MiAZ.frontend.desktop.services.pluginsystem import MiAZPluginType
 from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewPlugin
 
 

@@ -14,7 +14,7 @@ from gi.repository import GObject
 from gi.repository import Peas
 
 from MiAZ.backend.status import MiAZStatus
-from MiAZ.backend.pluginsystem import MiAZPlugin
+from MiAZ.frontend.desktop.services.pluginsystem import MiAZPlugin
 from MiAZ.frontend.desktop.services.dialogs import MiAZFileChooserDialog
 
 

@@ -13,7 +13,7 @@ from gettext import gettext as _
 from gi.repository import GObject
 from gi.repository import Peas
 
-from MiAZ.backend.pluginsystem import MiAZPlugin
+from MiAZ.frontend.desktop.services.pluginsystem import MiAZPlugin
 
 
 class MiAZToolbarViewItemPlugin(GObject.GObject, Peas.Activatable):

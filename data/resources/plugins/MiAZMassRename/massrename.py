@@ -19,7 +19,7 @@ from gi.repository import Gtk
 from gi.repository import Peas
 
 from MiAZ.backend.status import MiAZStatus
-from MiAZ.backend.pluginsystem import MiAZPlugin
+from MiAZ.frontend.desktop.services.pluginsystem import MiAZPlugin
 from MiAZ.backend.models import File, Group, Country, Purpose, SentBy, SentTo, Date
 from MiAZ.frontend.desktop.widgets.configview import MiAZCountries
 from MiAZ.frontend.desktop.widgets.configview import MiAZGroups

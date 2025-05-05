@@ -14,7 +14,7 @@ from gi.repository import Gtk
 
 
 from MiAZ.backend.log import MiAZLog
-from MiAZ.backend.pluginsystem import MiAZPluginSystem, MiAZPluginType
+from MiAZ.frontend.desktop.services.pluginsystem import MiAZPluginSystem, MiAZPluginType
 from MiAZ.backend.webserver import MiAZHTTPServer
 from MiAZ.frontend.desktop.services.icm import MiAZIconManager
 from MiAZ.frontend.desktop.services.factory import MiAZFactory

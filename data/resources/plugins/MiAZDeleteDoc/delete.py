@@ -16,7 +16,7 @@ from gi.repository import GObject
 from gi.repository import Peas
 
 from MiAZ.backend.models import File
-from MiAZ.backend.pluginsystem import MiAZPlugin
+from MiAZ.frontend.desktop.services.pluginsystem import MiAZPlugin
 from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewMassDelete
 
 

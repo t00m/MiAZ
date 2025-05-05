@@ -14,7 +14,7 @@ from gi.repository import Gtk
 
 from MiAZ.backend.log import MiAZLog
 from MiAZ.backend.models import File, Plugin
-from MiAZ.backend.pluginsystem import MiAZPluginType
+from MiAZ.frontend.desktop.services.pluginsystem import MiAZPluginType
 from MiAZ.frontend.desktop.widgets.selector import MiAZSelector
 from MiAZ.frontend.desktop.widgets.columnview import MiAZColumnView
 from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewDocuments
