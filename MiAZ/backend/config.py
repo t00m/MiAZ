@@ -86,7 +86,7 @@ class MiAZConfig(GObject.GObject):
 
 
         if config_changed:
-            self.log.debug(f"Loading {self.config_for} items from disk ({filepath})!!")
+            # ~ self.log.debug(f"Loading {self.config_for} items from disk ({filepath})!!")
             try:
                 items = util.json_load(filepath)
                 self.cache[filepath] = {}

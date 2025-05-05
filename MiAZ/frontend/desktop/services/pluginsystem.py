@@ -101,6 +101,125 @@ class MiAZAPI(GObject.GObject):
         self.app = app
 
 
+class MiAZPlugin(GObject.GObject):
+    def __init__(self, app):
+        self.app = app
+        self.log = MiAZLog('MiAZPlugin')
+
+    def _get_plugin_attributes(self, plugin_file):
+        plugin_system = self.app.get_service('plugin-system')
+        return plugin_system.get_plugin_attributes(plugin_file)
+
+    def register(self, plugin_file: str, plugin_object):
+        self.util = self.app.get_service('util')
+        self.info = self._get_plugin_attributes(plugin_file)
+        self.name = self.info['Name']
+        self.desc = self.info['Description']
+        self.plugin_file = plugin_file
+        self.plugin_object = plugin_object
+        plugin_id = f'plugin-{self.name}'
+        self.app.add_widget(plugin_id, plugin_object)
+        self.log.debug(f"Plugin Object Id: {plugin_id}")
+
+        # Create plugin directories for config and data
+        ## Configuration directory and file
+        configdir = self.get_config_dir()
+        if not os.path.exists(configdir):
+            os.makedirs(configdir, exist_ok=True)
+        self.log.debug(f"\tConf: {configdir}")
+        configfile = self.get_config_file()
+        if not os.path.exists(configfile):
+            self.util.json_save(configfile, {})
+
+        # Data directory
+        datadir = self.get_data_dir()
+        if not os.path.exists(datadir):
+            os.makedirs(datadir, exist_ok=True)
+        self.log.debug(f"\tData: {datadir}")
+
+    def get_app(self):
+        return self.app
+
+    def get_logger(self):
+        return MiAZLog(f'Plugin.{self.name}')
+
+    def get_name(self):
+        return self.name
+
+    def get_plugin_file(self):
+        return self.plugin_file
+
+    def get_plugin_info_dict(self):
+        return self.info
+
+    def get_plugin_info_key(self, key):
+        return self.info[key]
+
+    def get_widget_name(self):
+        module = self.info['Module']
+        return f'plugin-{module}'
+
+    def get_menu_item(self, callback=None):
+        factory = self.app.get_service('factory')
+        name = self.get_menu_item_name()
+        menuitem = factory.create_menuitem(name, self.desc, callback, None, [])
+        return self.app.add_widget(f'plugin-menuitem-{self.name}', menuitem)
+
+    def get_menu_item_name(self):
+        return f'plugin-menuitem-{self.name}'
+
+    def menu_item_loaded(self):
+        name = self.get_menu_item_name()
+        if self.app.get_widget(name) is None:
+            return False
+        return True
+
+    def get_config_dir(self):
+        repository = self.app.get_service('repo')
+        return os.path.join(repository.docs, '.conf', 'plugins', self.name, 'conf')
+
+    def get_data_dir(self):
+        repository = self.app.get_service('repo')
+        return os.path.join(repository.docs, '.conf', 'plugins', self.name, 'data')
+
+    def get_config_file(self):
+        return os.path.join(self.get_config_dir(), f"Plugin-{self.name}.json")
+
+    def get_config_data(self):
+        config_file = self.get_config_file()
+        try:
+            config_data = self.util.json_load(config_file)
+        except Exception:
+            config_data = {}
+            self.util.json_save(config_file, config_data)
+        return config_data
+
+    def get_config_key(self, key: str):
+        config_data = self.get_config_data()
+        try:
+            return config_data[key]
+        except:
+            return None
+
+    def set_config_data(self, config_data: {}):
+        config_file = self.get_config_file()
+        self.util.json_save(config_file, config_data)
+
+    def set_config_key(self, key: str, value):
+        config_file = self.get_config_file()
+        config_data = self.get_config_data()
+        config_data[key] = value
+        self.util.json_save(config_file, config_data)
+        self.log.debug(f"Plugin config for {self.name} updated: [{key}] = {value}")
+
+    def install_menu_entry(self, menuitem):
+        category = self.info['Category']
+        subcategory = self.info['Subcategory']
+        subcategory_submenu = self.app.install_plugin_menu(category, subcategory)
+        subcategory_submenu.append_item(menuitem)
+        return subcategory_submenu
+
+
 class MiAZPluginType(IntEnum):
     """Types of plugins depending on their directory location"""
 
@@ -132,10 +251,11 @@ class MiAZPluginSystem(GObject.GObject):
 
         self._setup_plugins_dir()
         self._setup_extension_set()
-        self.create_plugin_index()
+        self.create_user_plugin_index()
+        self.create_system_plugin_index()
         self.log.info("Plugin system initialited")
         srvrepo = self.app.get_service('repo')
-        srvrepo.connect('repository-switched', self.create_plugin_index)
+        srvrepo.connect('repository-switched', self.create_user_plugin_index)
 
     def import_plugin(self, plugin_path):
         """
@@ -342,10 +462,27 @@ class MiAZPluginSystem(GObject.GObject):
     def __extension_added_cb(unused_set, unused_plugin_info, extension):
         extension.activate()
 
+    def get_plugin_attributes(self, plugin_file: str):
+        """Get plugin attributes from `plugin_module`.plugin file"""
+        plugin_info = {}
+        with open(plugin_file, 'r') as file:
+            # Skip the first line (assuming it's [Plugin])
+            next(file)
 
-    def create_plugin_index(self, *args):
+            for line in file:
+                line = line.strip()
+                if not line:  # Skip empty lines
+                    continue
+
+                # Split each line at the first '=' character
+                if '=' in line:
+                    key, value = line.split('=', 1)
+                    plugin_info[key.strip()] = value.strip()
+        return plugin_info
+
+    def create_user_plugin_index(self, *args):
         """Parse plugins info file and recreate index on runtime"""
-        self.log.info("Creating plugin index during runtime")
+        self.log.info("Creating user plugin index during runtime")
         plugin_index = {}
         ENV = self.app.get_env()
         plugins_dir = ENV['LPATH']['PLUGINS']
@@ -355,31 +492,17 @@ class MiAZPluginSystem(GObject.GObject):
 
         plugin_list = []
         for plugin_file in plugin_files:
-            plugin_info = {}
-
-            with open(plugin_file, 'r') as file:
-                # Skip the first line (assuming it's [Plugin])
-                next(file)
-
-                for line in file:
-                    line = line.strip()
-                    if not line:  # Skip empty lines
-                        continue
-
-                    # Split each line at the first '=' character
-                    if '=' in line:
-                        key, value = line.split('=', 1)
-                        plugin_info[key.strip()] = value.strip()
+            plugin_info = self.get_plugin_attributes(plugin_file)
             plugin_name = plugin_info['Name']
             plugin_desc = plugin_info['Description']
             plugin_index[plugin_name] = plugin_info
             plugin_list.append((plugin_name, plugin_desc))
-            self.log.info(f" - Adding plugin {plugin_name} to plugin index")
+            self.log.info(f" - Adding user plugin {plugin_name} to plugin index")
 
 
-        with open(ENV['APP']['PLUGINS']['LOCAL_INDEX'], 'w') as fp:
+        with open(ENV['APP']['PLUGINS']['USER_INDEX'], 'w') as fp:
             json.dump(plugin_index, fp, sort_keys=False, indent=4)
-            self.log.info(f"File index-plugins.json generated with {len(plugin_index)} plugins")
+            self.log.info(f"File index-user-plugins.json generated with {len(plugin_index)} plugins")
 
         try:
             config = self.app.get_config_dict()
@@ -390,3 +513,37 @@ class MiAZPluginSystem(GObject.GObject):
             self.log.info(f"Plugins available updated successfully for repository {repo_id}")
         except AttributeError:
             self.log.warning("Skip. Plugin config not ready yet")
+
+    def create_system_plugin_index(self, *args):
+        """Parse plugins info file and recreate index on runtime"""
+        self.log.info("Creating system plugin index during runtime")
+        plugin_index = {}
+        ENV = self.app.get_env()
+        plugins_dir = ENV['GPATH']['PLUGINS']
+        plugin_files = glob.glob(os.path.join(plugins_dir, '*', '*.plugin'))
+        if not plugin_files:
+            self.log.warning(f"No .plugin files found in {plugins_dir}")
+
+        plugin_list = []
+        for plugin_file in plugin_files:
+            plugin_info = self.get_plugin_attributes(plugin_file)
+            plugin_name = plugin_info['Name']
+            plugin_desc = plugin_info['Description']
+            plugin_index[plugin_name] = plugin_info
+            plugin_list.append((plugin_name, plugin_desc))
+            self.log.info(f" - Adding system plugin {plugin_name} to plugin index")
+
+
+        with open(ENV['APP']['PLUGINS']['SYSTEM_INDEX'], 'w') as fp:
+            json.dump(plugin_index, fp, sort_keys=False, indent=4)
+            self.log.info(f"File index-system-plugins.json generated with {len(plugin_index)} plugins")
+
+        # ~ try:
+            # ~ config = self.app.get_config_dict()
+            # ~ repo_id = config['App'].get('current')
+            # ~ config_plugins = self.app.get_config('Plugin')
+            # ~ config_plugins.remove_all()
+            # ~ config_plugins.add_available_batch(plugin_list)
+            # ~ self.log.info(f"Plugins available updated successfully for repository {repo_id}")
+        # ~ except AttributeError:
+            # ~ self.log.warning("Skip. Plugin config not ready yet")

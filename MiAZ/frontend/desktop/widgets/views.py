@@ -311,10 +311,10 @@ class MiAZColumnViewGroup(MiAZColumnViewSelector):
         self.column_title.set_title(_('Group Id'))
         self.cv.append_column(self.column_title)
         self.column_title.set_title(_('Description'))
-        self.selection.connect("selection-changed", self._on_selection_change)
+        # ~ self.selection.connect("selection-changed", self._on_selection_change)
 
-    def _on_selection_change(self, *args):
-        pass
+    # ~ def _on_selection_change(self, *args):
+        # ~ pass
 
 
 class MiAZColumnViewProject(MiAZColumnViewSelector):

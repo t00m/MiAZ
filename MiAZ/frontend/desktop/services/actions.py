@@ -325,5 +325,5 @@ class MiAZActions(GObject.GObject):
         python = sys.executable
         script = ENV['APP']['RUNTIME']['EXEC']
         self.app.emit('application-finished')
-        self.log.info("Application restart: ", [python, script] + sys.argv[1:])
+        self.log.info("Application restart: {python} {script} {sys.argv[1:]}")
         os.execv(python, [python, script] + sys.argv[1:])

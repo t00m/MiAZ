@@ -43,77 +43,87 @@ class MiAZSelector(Gtk.Box):
 
         # Toolbar
         ## Entry and buttons for operations (edit/add/remove)
-        self.boxOper = factory.create_box_horizontal(spacing=6)
-        self.boxOper.set_margin_top(12)
-        self.boxOper.set_margin_bottom(6)
-        self.boxOper.set_margin_start(6)
-        self.boxOper.set_margin_end(6)
-        self.boxOper.set_hexpand(True)
-        self.boxOper.set_vexpand(False)
-
-        ## Toolbar left
-        boxEntry = factory.create_box_horizontal(spacing=0)
-        boxEntry.set_hexpand(True)
-        self.entry = Gtk.Entry()
-        # ~ self.entry.get_style_context().add_class(class_name='caption')
-        self.entry.set_activates_default(True)
-        self.entry.set_icon_from_icon_name(Gtk.EntryIconPosition.SECONDARY, 'io.github.t00m.MiAZ-entry_clear')
-        self.entry.set_icon_activatable(Gtk.EntryIconPosition.SECONDARY, True)
-        self.entry.connect('icon-press', self._on_entrysearch_delete)
-        self.entry.connect('changed', self._on_filter_selected)
-        self.entry.connect('activate', self._on_item_available_add, self.config_for)
-        self.entry.set_hexpand(True)
-        self.entry.set_has_frame(True)
-        self.entry.set_placeholder_text('Type here for filtering')
-        boxEntry.append(self.entry)
-        self.boxOper.append(boxEntry)
-        if self.edit:
-            self.boxButtons = factory.create_box_horizontal(spacing=0)
-            self.boxButtons.get_style_context().add_class(class_name='linked')
-            self.boxButtons.set_hexpand(False)
-            self.boxButtons.append(factory.create_button(icon_name='io.github.t00m.MiAZ-list-add-symbolic', title='', callback=self._on_item_available_add))
-            self.boxButtons.append(factory.create_button(icon_name='io.github.t00m.MiAZ-list-remove-symbolic', title='', callback=self._on_item_available_remove))
-            self.boxButtons.append(factory.create_button(icon_name='io.github.t00m.MiAZ-list-edit-symbolic', title='', callback=self._on_item_available_edit))
-            self.boxOper.append(self.boxButtons)
+        # ~ self.boxOper = factory.create_box_horizontal(spacing=6)
+        # ~ self.app.add_widget('selector-box-operations', self.boxOper)
+        # ~ self.boxOper.set_margin_top(12)
+        # ~ self.boxOper.set_margin_bottom(6)
+        # ~ self.boxOper.set_margin_start(6)
+        # ~ self.boxOper.set_margin_end(6)
+        # ~ self.boxOper.set_hexpand(True)
+        # ~ self.boxOper.set_vexpand(False)
 
         ## Toolbar right
-        boxUsed = factory.create_box_horizontal(spacing=0)
-        self.boxOper.append(boxUsed)
+        # ~ boxUsed = factory.create_box_horizontal(spacing=0)
+        # ~ self.boxOper.append(boxUsed)
+        # ~ self.append(self.boxOper)
 
-        self.append(self.boxOper)
-
-        # Views & middel controls
+        # Views
         boxViews = factory.create_box_horizontal(spacing=0, hexpand=True, vexpand=True)
+        boxViews.set_homogeneous(True)
         boxLeft = factory.create_box_vertical(spacing=0, hexpand=True, vexpand=True)
-        boxControls = Gtk.CenterBox()
-        boxControls.set_orientation(Gtk.Orientation.VERTICAL)
         boxRight = factory.create_box_vertical(spacing=0, hexpand=True, vexpand=True)
         boxViews.append(boxLeft)
-        boxViews.append(boxControls)
         boxViews.append(boxRight)
         self.append(boxViews)
 
         ## Available view
+        boxViewAv = factory.create_box_vertical(hexpand=True, vexpand=True)
+        boxViewAv.get_style_context().add_class(class_name='toolbar')
         self.frmViewAv = Gtk.Frame()
+        boxViewAv.append(self.frmViewAv)
+        toolbar = Gtk.CenterBox()
+        toolbar.get_style_context().add_class(class_name='toolbar')
         title = Gtk.Label()
         title.set_markup(_('<b>Available</b>'))
-        boxLeft.append(title)
-        boxLeft.append(self.frmViewAv)
-
-        ## Controls
-        boxSel = factory.create_box_vertical()
-        btnAddToUsed = factory.create_button('io.github.t00m.MiAZ-selector-add', callback=self._on_item_used_add)
-        btnRemoveFromUsed = factory.create_button('io.github.t00m.MiAZ-selector-remove', callback=self._on_item_used_remove)
-        boxSel.append(btnAddToUsed)
-        boxSel.append(btnRemoveFromUsed)
-        boxControls.set_center_widget(boxSel)
+        self.toolbar_buttons_Av = factory.create_box_horizontal(margin=0, spacing=0, vexpand=False, hexpand=True)
+        # ~ self.toolbar_buttons_Av.get_style_context().add_class(class_name='linked')
+        if self.edit:
+            self.toolbar_buttons_Av.set_hexpand(False)
+            self.toolbar_buttons_Av.append(factory.create_button(icon_name='io.github.t00m.MiAZ-list-add-symbolic', title='', callback=self._on_item_available_add, css_classes=['flat']))
+            self.toolbar_buttons_Av.append(factory.create_button(icon_name='io.github.t00m.MiAZ-list-remove-symbolic', title='', callback=self._on_item_available_remove, css_classes=['flat']))
+            self.toolbar_buttons_Av.append(factory.create_button(icon_name='io.github.t00m.MiAZ-list-edit-symbolic', title='', callback=self._on_item_available_edit, css_classes=['flat']))
+        btnAddToUsed = factory.create_button('io.github.t00m.MiAZ-selector-add', title='enable', callback=self._on_item_used_add, css_classes=['flat', 'success'])
+        toolbar.set_start_widget(self.toolbar_buttons_Av)
+        toolbar.set_center_widget(title)
+        toolbar.set_end_widget(btnAddToUsed)
+        boxLeft.append(toolbar)
+        boxLeft.append(boxViewAv)
 
         ## Used view
+        boxViewSl = factory.create_box_vertical(hexpand=True, vexpand=True)
+        boxViewSl.get_style_context().add_class(class_name='toolbar')
         self.frmViewSl = Gtk.Frame()
+        boxViewSl.append(self.frmViewSl)
+        toolbar = Gtk.CenterBox()
+        toolbar.get_style_context().add_class(class_name='toolbar')
         title = Gtk.Label()
         title.set_markup(_('<b>In use</b>'))
-        boxRight.append(title)
-        boxRight.append(self.frmViewSl)
+        self.toolbar_buttons_Sl = factory.create_box_horizontal(margin=0, spacing=0, vexpand=False, hexpand=True)
+        # ~ self.toolbar_buttons_Sl.get_style_context().add_class(class_name='linked')
+        self.toolbar_buttons_Sl.set_halign(Gtk.Align.END)
+        btnRemoveFromUsed = factory.create_button('io.github.t00m.MiAZ-selector-remove', title='disable', callback=self._on_item_used_remove, css_classes=['flat', 'error'])
+        toolbar.set_start_widget(btnRemoveFromUsed)
+        toolbar.set_center_widget(title)
+        toolbar.set_end_widget(self.toolbar_buttons_Sl)
+        boxRight.append(toolbar)
+        boxRight.append(boxViewSl)
+
+        # Search bar
+        searchbar = Gtk.SearchBar()
+        searchbar.set_show_close_button(True)
+        searchbar.set_search_mode(True)
+        searchbar.set_valign(Gtk.Align.START)
+        boxSearch = factory.create_box_horizontal(spacing=6, hexpand=True, vexpand=False)
+        searchbar.set_child(boxSearch)
+        self.searchentry = Gtk.SearchEntry()
+        self.searchentry.set_placeholder_text('Type here for filtering entries')
+        self.searchentry.connect('search-changed', self._on_filter_selected)
+        self.searchentry.connect('search-started', self._on_filter_selected)
+        self.searchentry.connect('activate', self._on_item_available_add, self.config_for)
+        boxSearch.append(self.searchentry)
+        searchbar.connect_entry(self.searchentry)
+        searchbar.set_key_capture_widget(self)
+        self.append(searchbar)
 
     def _on_restart_clicked(self, *args):
         actions = self.app.get_service('actions')
@@ -200,7 +210,7 @@ class MiAZSelector(Gtk.Box):
 
     def _on_item_available_add(self, *args):
         if self.edit:
-            search_term = self.entry.get_text()
+            search_term = self.searchentry.get_text()
             item_type = self.config.model
             i_title = item_type.__title__
             this_item = MiAZDialogAdd(self.app)
@@ -293,8 +303,8 @@ class MiAZSelector(Gtk.Box):
         if not is_used:
             self.config.remove_available_batch([selected_item.id])
             self.update_views()
-            self.entry.set_text('')
-            self.entry.activate()
+            self.searchentry.set_text('')
+            self.searchentry.activate()
         else:
             value_used, docs = util.field_used(repository.docs, self.config.model, selected_item.id)
             item_type = self.config.model
@@ -331,6 +341,7 @@ class MiAZSelector(Gtk.Box):
         for key in items:
             items_available.append(item_type(id=key, title=items[key]))
         self.viewAv.update(items_available)
+        self.log.debug(f"Update available view {self.config.config_for} with {len(items)} items")
 
     def _update_view_used(self):
         items_used = []
@@ -346,17 +357,11 @@ class MiAZSelector(Gtk.Box):
         self.viewSl.refilter()
 
     def _do_filter_view(self, item, filter_list_model):
-        chunk = self.entry.get_text().upper()
+        chunk = self.searchentry.get_text().upper()
         string = f"{item.id}-{item.title}"
-        if len(chunk) > 0:
-            self.log.debug(f"Filtering by {chunk}")
         if chunk in string.upper():
             return True
         return False
-
-    def _on_entrysearch_delete(self, *args):
-        self.entry.set_text("")
-
 
     def _on_config_import(self, *args):
         pass

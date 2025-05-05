@@ -377,7 +377,7 @@ class MiAZFactory:
             action.set_enabled(True)
             self.app.add_action(action)
             menuitem.set_detailed_action(detailed_action=f'app.{name}')
-            if shortcuts:
+            if shortcuts is not None:
                 self.app.set_accels_for_action(f'app.{name}', shortcuts)
         return menuitem
 
