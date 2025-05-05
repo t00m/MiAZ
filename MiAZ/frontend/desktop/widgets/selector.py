@@ -82,7 +82,7 @@ class MiAZSelector(Gtk.Box):
             self.toolbar_buttons_Av.append(factory.create_button(icon_name='io.github.t00m.MiAZ-list-add-symbolic', title='', callback=self._on_item_available_add, css_classes=['flat']))
             self.toolbar_buttons_Av.append(factory.create_button(icon_name='io.github.t00m.MiAZ-list-remove-symbolic', title='', callback=self._on_item_available_remove, css_classes=['flat']))
             self.toolbar_buttons_Av.append(factory.create_button(icon_name='io.github.t00m.MiAZ-list-edit-symbolic', title='', callback=self._on_item_available_edit, css_classes=['flat']))
-        btnAddToUsed = factory.create_button('io.github.t00m.MiAZ-selector-add', callback=self._on_item_used_add, css_classes=['flat', 'success'])
+        btnAddToUsed = factory.create_button('io.github.t00m.MiAZ-selector-add', title='enable', callback=self._on_item_used_add, css_classes=['flat', 'success'])
         toolbar.set_start_widget(self.toolbar_buttons_Av)
         toolbar.set_center_widget(title)
         toolbar.set_end_widget(btnAddToUsed)
@@ -101,7 +101,7 @@ class MiAZSelector(Gtk.Box):
         self.toolbar_buttons_Sl = factory.create_box_horizontal(margin=0, spacing=0, vexpand=False, hexpand=True)
         # ~ self.toolbar_buttons_Sl.get_style_context().add_class(class_name='linked')
         self.toolbar_buttons_Sl.set_halign(Gtk.Align.END)
-        btnRemoveFromUsed = factory.create_button('io.github.t00m.MiAZ-selector-remove', callback=self._on_item_used_remove, css_classes=['flat', 'error'])
+        btnRemoveFromUsed = factory.create_button('io.github.t00m.MiAZ-selector-remove', title='disable', callback=self._on_item_used_remove, css_classes=['flat', 'error'])
         toolbar.set_start_widget(btnRemoveFromUsed)
         toolbar.set_center_widget(title)
         toolbar.set_end_widget(self.toolbar_buttons_Sl)
@@ -111,7 +111,7 @@ class MiAZSelector(Gtk.Box):
         # Search bar
         searchbar = Gtk.SearchBar()
         searchbar.set_show_close_button(True)
-        searchbar.set_search_mode(False)
+        searchbar.set_search_mode(True)
         searchbar.set_valign(Gtk.Align.START)
         boxSearch = factory.create_box_horizontal(spacing=6, hexpand=True, vexpand=False)
         searchbar.set_child(boxSearch)
@@ -341,6 +341,7 @@ class MiAZSelector(Gtk.Box):
         for key in items:
             items_available.append(item_type(id=key, title=items[key]))
         self.viewAv.update(items_available)
+        self.log.debug(f"Update available view {self.config.config_for} with {len(items)} items")
 
     def _update_view_used(self):
         items_used = []

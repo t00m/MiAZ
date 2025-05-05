@@ -10,7 +10,7 @@ from gi.repository import Adw, Gdk, Gio, Gtk
 
 from MiAZ.backend.log import MiAZLog
 from MiAZ.backend.models import MiAZItem, Group, Country, Purpose, SentBy, SentTo, Date, Project
-from MiAZ.backend.pluginsystem import plugin_categories
+from MiAZ.frontend.desktop.services.pluginsystem import plugin_categories
 # ~ from MiAZ.frontend.desktop.widgets.searchbar import SearchBar
 from MiAZ.frontend.desktop.widgets.pages import MiAZWelcome
 from MiAZ.frontend.desktop.widgets.pages import MiAZPageNotFound
@@ -178,7 +178,7 @@ class MiAZMainWindow(Gtk.Box):
         tooltip += f"{v} documents in this view\n"
         tooltip += f"{t} documents in this repository"
         workspace_menu.set_tooltip_markup(tooltip)
-        self.log.debug(f"filter selected: {s}/{v}/{t}")
+        # ~ self.log.debug(f"filter selected: {s}/{v}/{t}")
         searchentry = self.app.get_widget('searchentry')
         if v > 0:
             stack.set_visible_child_name('workspace')

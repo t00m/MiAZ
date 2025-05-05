@@ -16,7 +16,7 @@ from gi.repository import GObject
 from gi.repository import Peas
 
 from MiAZ.backend.models import File
-from MiAZ.backend.pluginsystem import MiAZPlugin
+from MiAZ.frontend.desktop.services.pluginsystem import MiAZPlugin
 from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewMassDelete
 
 
@@ -34,7 +34,7 @@ class MiAZDeleteItemPlugin(GObject.GObject, Peas.Activatable):
         self.plugin = MiAZPlugin(self.app)
 
         ## Initialize plugin
-        self.plugin.register(self.file)
+        self.plugin.register(self.file, self)
 
         ## Get logger
         self.log = self.plugin.get_logger()

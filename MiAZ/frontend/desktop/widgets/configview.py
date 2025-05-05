@@ -8,9 +8,14 @@ import os
 import glob
 from gettext import gettext as _
 
+import requests
+
+from gi.repository import Adw
 from gi.repository import Gtk
 
 from MiAZ.backend.log import MiAZLog
+from MiAZ.backend.models import File, Plugin
+from MiAZ.frontend.desktop.services.pluginsystem import MiAZPluginType
 from MiAZ.frontend.desktop.widgets.selector import MiAZSelector
 from MiAZ.frontend.desktop.widgets.columnview import MiAZColumnView
 from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewDocuments
@@ -22,8 +27,6 @@ from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewProject
 from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewRepo
 from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewPlugin
 from MiAZ.frontend.desktop.services.dialogs import MiAZDialogAddRepo
-from MiAZ.backend.pluginsystem import MiAZPluginType
-from MiAZ.backend.models import File
 
 
 class MiAZConfigView(MiAZSelector):
@@ -32,7 +35,7 @@ class MiAZConfigView(MiAZSelector):
     config_for = None
 
     def __init__(self, app, config_name=None):
-        super(MiAZSelector, self).__init__(spacing=0, orientation=Gtk.Orientation.VERTICAL)
+        # ~ super(MiAZSelector, self).__init__(spacing=0, orientation=Gtk.Orientation.VERTICAL)
         self.app = app
         self.log = MiAZLog('MiAZConfigView')
         self.repository = self.app.get_service('repo')
@@ -43,7 +46,7 @@ class MiAZConfigView(MiAZSelector):
         self.config.connect('used-updated', self.update_views)
         self.config.connect('available-updated', self.update_views)
         self.set_vexpand(True)
-        self.log.debug(f"Configview for {config_name} initialited")
+        # ~ self.log.debug(f"Configview for {config_name} initialited")
 
     def update_config(self):
         self.config = self.conf[self.config_name]
@@ -420,7 +423,10 @@ class MiAZProjects(MiAZConfigView):
 
 
 class MiAZUserPlugins(MiAZConfigView):
-    """Manage user plugins from Repo Settings. Edit disabled"""
+    """
+    Manage user plugins from Repo Settings. Edit disabled
+    Only display those plugins found in ENV['APP']['PLUGINS']['USER_INDEX']
+    """
     __gtype_name__ = 'MiAZUserPlugins'
     current = None
 
@@ -429,11 +435,68 @@ class MiAZUserPlugins(MiAZConfigView):
         super().__init__(app, 'Plugin')
         boxopers = self.app.get_widget('selector-box-operations')
         factory = self.app.get_service('factory')
-        btnConfig = factory.create_button(icon_name='io.github.t00m.MiAZ-config-symbolic', callback=self._configure_plugin_options, css_classes=['flat'])
-        btnConfig.set_valign(Gtk.Align.CENTER)
-        self.toolbar_buttons_Sl.append(btnConfig)
-        self._update_view_available()
-        self._update_view_used()
+
+        # Available view buttons
+        btnInfo = factory.create_button(icon_name='io.github.t00m.MiAZ-dialog-information-symbolic', callback=self._show_plugin_info, css_classes=['flat'])
+        btnInfo.set_valign(Gtk.Align.CENTER)
+        btnInfo.set_has_frame(False)
+        self.toolbar_buttons_Av.append(btnInfo)
+
+        btnRefresh = factory.create_button(icon_name='io.github.t00m.MiAZ-view-refresh-symbolic', callback=self._refresh_index_plugin_file, css_classes=['flat'])
+        btnRefresh.set_valign(Gtk.Align.CENTER)
+        self.toolbar_buttons_Av.append(btnRefresh)
+
+        # Used view buttons
+        self.btnConfig = factory.create_button(icon_name='io.github.t00m.MiAZ-config-symbolic', callback=self._configure_plugin_options, css_classes=['flat', 'suggested-action'])
+        self.btnConfig.set_valign(Gtk.Align.CENTER)
+        # ~ self.btnConfig.set_visible(False)
+        self.toolbar_buttons_Sl.append(self.btnConfig)
+
+        # Action to be done when selecting an used plugin
+        # ~ selection_model = self.viewSl.cv.get_model()
+        # ~ selection_model.connect('selection-changed', self._on_plugin_used_selected)
+
+    def _on_plugin_used_selected(self, selection_model, position, n_items):
+        selected_plugin = selection_model.get_selected_item()
+        plugin_id = f"plugin-{selected_plugin.id}"
+        plugin = self.app.get_widget(plugin_id)
+        has_settings = False
+        if plugin is not None:
+            has_settings = hasattr(plugin, 'show_settings') and callable(getattr(plugin, 'show_settings'))
+        self.btnConfig.set_visible(has_settings)
+
+    def _refresh_index_plugin_file(self, *args):
+        ENV = self.app.get_env()
+        source = ENV['APP']['PLUGINS']['SOURCE']
+        url_base = ENV['APP']['PLUGINS']['REMOTE_INDEX']
+        url = url_base % source
+        url_plugin_base = ENV['APP']['PLUGINS']['DOWNLOAD']
+        user_plugins_dir = ENV['LPATH']['PLUGINS']
+        try:
+            util = self.app.get_service('util')
+            response = requests.get(url)
+            response.raise_for_status()
+            plugin_index = response.json()
+            util.json_save(ENV['APP']['PLUGINS']['USER_INDEX'], plugin_index)
+            plugin_system = self.app.get_service('plugin-system')
+            user_plugins = plugin_system.get_user_plugins()
+            plugin_list = []
+            for pid in plugin_index:
+                desc = plugin_index[pid]['Description']
+                url_plugin = url_plugin_base % (source, pid)
+                self.log.info(url_plugin)
+                added = util.download_and_unzip(url_plugin, user_plugins_dir)
+                if added:
+                    plugin_list.append((pid, desc))
+            # Recreate index plugin again (useful for devel purposes)
+            plugin_system.create_user_plugin_index()
+
+            self.update_user_plugins()
+
+        except HTTPError as http_error:
+            self.log.error(f"HTTP error occurred: {http_error}")
+        except Exception as error:
+            self.log.error(f"An error occurred: {error}")
 
     def _configure_plugin_options(self, *args):
         selected_plugin = self.viewSl.get_selected()
@@ -443,17 +506,38 @@ class MiAZUserPlugins(MiAZConfigView):
         ENV = self.app.get_env()
         util = self.app.get_service('util')
         plugin_system = self.app.get_service('plugin-system')
-        user_plugins = util.json_load(ENV['APP']['PLUGINS']['LOCAL_INDEX'])
+        user_plugins = util.json_load(ENV['APP']['PLUGINS']['USER_INDEX'])
         module = user_plugins[selected_plugin.id]['Module']
-        plugin = self.app.get_widget(f'plugin-{module}')
+        plugin_id = f"plugin-{selected_plugin.id}"
+        plugin = self.app.get_widget(plugin_id)
         if plugin is not None:
             if hasattr(plugin, 'show_settings') and callable(getattr(plugin, 'show_settings')):
                 try:
-                    plugin.show_settings()
+                    plugin.show_settings(widget=self)
                 except Exception as error:
                     self.log.error(error)
             else:
                 self.log.info(f"Plugin {selected_plugin.id} doesn't have a settings dialog")
+        else:
+            self.log.error(f"Can't find plugin object for {plugin_id}!!")
+
+    def update_user_plugins(self):
+        ENV = self.app.get_env()
+        plugin_system = self.app.get_service('plugin-system')
+        plugin_system.rescan_plugins()
+        view = self.app.get_widget('app-settings-plugins-user-view')
+        items = []
+        item_type = Plugin
+        for plugin in plugin_system.plugins:
+            ptype = plugin_system.get_plugin_type(plugin)
+            if ptype == MiAZPluginType.USER:
+                base_dir = plugin.get_name()
+                module_name = plugin.get_module_name()
+                plugin_path = os.path.join(ENV['LPATH']['PLUGINS'], base_dir, f"{module_name}.plugin")
+                if os.path.exists(plugin_path):
+                    title = plugin.get_description()
+                    items.append(item_type(id=module_name, title=title))
+        self.update_views()
 
     def plugins_updated(self, *args):
         self._update_view_available()
@@ -491,11 +575,11 @@ class MiAZUserPlugins(MiAZConfigView):
         if not plugin_used:
             util = self.app.get_service('util')
             ENV = self.app.get_env()
-            user_plugins = util.json_load(ENV['APP']['PLUGINS']['LOCAL_INDEX'])
+            user_plugins = util.json_load(ENV['APP']['PLUGINS']['USER_INDEX'])
             try:
                 plugin_module = user_plugins[selected_plugin.id]['Module']
             except KeyError as key:
-                self.log.error(f"Plugin {key} not found in {ENV['APP']['PLUGINS']['LOCAL_INDEX']}")
+                self.log.error(f"Plugin {key} not found in {ENV['APP']['PLUGINS']['USER_INDEX']}")
                 return
             plugins_used[selected_plugin.id] = selected_plugin.title
             plugin = plugin_manager.get_plugin_info(plugin_module)
@@ -508,4 +592,32 @@ class MiAZUserPlugins(MiAZConfigView):
             self.log.warning(f"{i_title} '{selected_plugin.id}' was already activated. Nothing to do")
         self.update_views()
 
+    def _show_plugin_info(self, *args):
+        util = self.app.get_service('util')
+        ENV = self.app.get_env()
+        plugin_system = self.app.get_service('plugin-system')
+        selected_plugin = self.viewAv.get_selected()
+        if selected_plugin is None:
+            return
+        user_plugins = util.json_load(ENV['APP']['PLUGINS']['USER_INDEX'])
+        plugin_info = user_plugins[selected_plugin.id]
 
+        # Build info dialog
+        dialog = Adw.PreferencesDialog()
+        dialog.set_title('Plugin info')
+        page_title = _('Properties')
+        page_icon = "io.github.t00m.MiAZ-dialog-information-symbolic"
+        page = Adw.PreferencesPage(title=page_title, icon_name=page_icon)
+        dialog.add(page)
+        group = Adw.PreferencesGroup()
+        group.set_title('Data Sheet')
+        page.add(group)
+
+        # Add plugin info as key/value rows
+        for key in plugin_info:
+            row = Adw.ActionRow(title=_(f'<b>{key}</b>'))
+            label = Gtk.Label.new(plugin_info[key])
+            row.add_suffix(label)
+            group.add(row)
+        dialog.set_presentation_mode(Adw.DialogPresentationMode.BOTTOM_SHEET)
+        dialog.present(self.viewAv.get_root())
