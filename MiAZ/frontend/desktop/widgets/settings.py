@@ -12,6 +12,7 @@ from gi.repository import Gtk
 from gi.repository import GObject
 
 from MiAZ.backend.log import MiAZLog
+from MiAZ.backend.config import MiAZConfigRepositories
 from MiAZ.backend.models import Repository, Plugin, Project
 from MiAZ.backend.models import Country, Group, Purpose, SentBy, SentTo
 from MiAZ.frontend.desktop.widgets.configview import MiAZGroups
@@ -22,11 +23,8 @@ from MiAZ.frontend.desktop.widgets.configview import MiAZPeopleSentTo
 from MiAZ.frontend.desktop.widgets.configview import MiAZProjects
 from MiAZ.frontend.desktop.widgets.configview import MiAZRepositories
 from MiAZ.frontend.desktop.widgets.configview import MiAZUserPlugins
-
 from MiAZ.frontend.desktop.widgets.window import MiAZCustomWindow
 from MiAZ.frontend.desktop.widgets.pluginuimanager import MiAZPluginUIManager
-from MiAZ.backend.config import MiAZConfigRepositories
-
 from MiAZ.frontend.desktop.services.dialogs import MiAZFileChooserDialog
 
 Configview = {}
@@ -148,7 +146,7 @@ class MiAZAppSettings(Adw.PreferencesDialog):
         srvdlg = self.app.get_service('dialogs')
         window = self.app.get_widget('window')
         widget = MiAZPluginUIManager(self.app)
-        dialog = srvdlg.create(dtype='noop', title='Plugin Manager', body='', widget=widget, width=800, height=600)
+        dialog = srvdlg.create(dtype='close', title='Plugin Manager', body='', widget=widget, width=800, height=600)
 
         dialog.present(self)
 
