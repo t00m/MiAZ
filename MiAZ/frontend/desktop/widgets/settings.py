@@ -72,7 +72,7 @@ class MiAZAppSettings(Adw.PreferencesDialog):
         self.set_title('Application settings')
         self.set_search_enabled(False)
         self._build_ui_page_preferences()
-        self._build_ui_page_aspect()
+        # ~ self._build_ui_page_aspect()
 
     def _build_ui_page_aspect(self):
         # Create preferences page
