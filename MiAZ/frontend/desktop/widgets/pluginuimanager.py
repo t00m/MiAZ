@@ -92,7 +92,7 @@ class MiAZPluginUIManager(Gtk.Box):
 
     def _create_plugin_view_toolbar(self, plugin_view: MiAZPluginType = MiAZPluginType.SYSTEM):
         toolbar = self.factory.create_box_vertical(margin=0, spacing=6, hexpand=False, vexpand=False)
-        btnInfo = self.factory.create_button(icon_name='io.github.t00m.MiAZ-dialog-information-symbolic')
+        btnInfo = self.factory.create_button(icon_name='io.github.t00m.MiAZ-dialog-information-symbolic', callback=self._show_plugin_info, css_classes=['flat'])
         btnInfo.set_valign(Gtk.Align.CENTER)
         btnInfo.set_has_frame(False)
         toolbar.append(btnInfo)
@@ -102,6 +102,35 @@ class MiAZPluginUIManager(Gtk.Box):
         btnConfig.set_has_frame(False)
         toolbar.append(btnConfig)
         return toolbar
+
+    def _show_plugin_info(self, *args):
+        plugin_system = self.app.get_service('plugin-system')
+        view = self.app.get_widget(f'app-settings-plugins-{MiAZPluginType.SYSTEM}-view')
+        selected_plugin = view.get_selected()
+        if selected_plugin is None:
+            return
+        plugin_module = self.app.get_widget(f'plugin-{selected_plugin.id}')
+        plugin_info = plugin_module.plugin.get_plugin_info_dict()
+
+        # Build info dialog
+        dialog = Adw.PreferencesDialog()
+        dialog.set_title('Plugin info')
+        page_title = _('Properties')
+        page_icon = "io.github.t00m.MiAZ-dialog-information-symbolic"
+        page = Adw.PreferencesPage(title=page_title, icon_name=page_icon)
+        dialog.add(page)
+        group = Adw.PreferencesGroup()
+        group.set_title('Data Sheet')
+        page.add(group)
+
+        # Add plugin info as key/value rows
+        for key in plugin_info:
+            row = Adw.ActionRow(title=_(f'<b>{key}</b>'))
+            label = Gtk.Label.new(plugin_info[key])
+            row.add_suffix(label)
+            group.add(row)
+        dialog.set_presentation_mode(Adw.DialogPresentationMode.BOTTOM_SHEET)
+        dialog.present(view.get_root())
 
     def _configure_plugin_options(self, *args):
         view = self.app.get_widget(f'app-settings-plugins-{MiAZPluginType.SYSTEM}-view')

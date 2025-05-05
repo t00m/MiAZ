@@ -10,6 +10,7 @@ from gettext import gettext as _
 
 import requests
 
+from gi.repository import Adw
 from gi.repository import Gtk
 
 from MiAZ.backend.log import MiAZLog
@@ -436,6 +437,11 @@ class MiAZUserPlugins(MiAZConfigView):
         factory = self.app.get_service('factory')
 
         # Available view buttons
+        btnInfo = factory.create_button(icon_name='io.github.t00m.MiAZ-dialog-information-symbolic', callback=self._show_plugin_info, css_classes=['flat'])
+        btnInfo.set_valign(Gtk.Align.CENTER)
+        btnInfo.set_has_frame(False)
+        self.toolbar_buttons_Av.append(btnInfo)
+
         btnRefresh = factory.create_button(icon_name='io.github.t00m.MiAZ-view-refresh-symbolic', callback=self._refresh_index_plugin_file, css_classes=['flat'])
         btnRefresh.set_valign(Gtk.Align.CENTER)
         self.toolbar_buttons_Av.append(btnRefresh)
@@ -586,4 +592,32 @@ class MiAZUserPlugins(MiAZConfigView):
             self.log.warning(f"{i_title} '{selected_plugin.id}' was already activated. Nothing to do")
         self.update_views()
 
+    def _show_plugin_info(self, *args):
+        util = self.app.get_service('util')
+        ENV = self.app.get_env()
+        plugin_system = self.app.get_service('plugin-system')
+        selected_plugin = self.viewAv.get_selected()
+        if selected_plugin is None:
+            return
+        user_plugins = util.json_load(ENV['APP']['PLUGINS']['USER_INDEX'])
+        plugin_info = user_plugins[selected_plugin.id]
 
+        # Build info dialog
+        dialog = Adw.PreferencesDialog()
+        dialog.set_title('Plugin info')
+        page_title = _('Properties')
+        page_icon = "io.github.t00m.MiAZ-dialog-information-symbolic"
+        page = Adw.PreferencesPage(title=page_title, icon_name=page_icon)
+        dialog.add(page)
+        group = Adw.PreferencesGroup()
+        group.set_title('Data Sheet')
+        page.add(group)
+
+        # Add plugin info as key/value rows
+        for key in plugin_info:
+            row = Adw.ActionRow(title=_(f'<b>{key}</b>'))
+            label = Gtk.Label.new(plugin_info[key])
+            row.add_suffix(label)
+            group.add(row)
+        dialog.set_presentation_mode(Adw.DialogPresentationMode.BOTTOM_SHEET)
+        dialog.present(self.viewAv.get_root())
