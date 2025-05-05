@@ -18,24 +18,31 @@ from gi.repository import Gio
 from gi.repository import GObject
 from gi.repository import Peas
 
-from MiAZ.backend.log import MiAZLog
+from MiAZ.frontend.desktop.services.pluginsystem import MiAZPlugin
 
 
 class MiAZWorkspaceToggleViewPlugin(GObject.GObject, Peas.Activatable):
     __gtype_name__ = 'MiAZWorkspaceToggleViewPlugin'
     object = GObject.Property(type=GObject.Object)
-
-    def __init__(self):
-        self.log = MiAZLog('Plugin.WsToggleView')
-        self.app = None
-        self.scanapp = None
+    plugin = None
+    file = __file__.replace('.py', '.plugin')
 
     def do_activate(self):
+        """Plugin activation"""
+        # Setup plugin
+        ## Get pointer to app
         self.app = self.object.app
-        actions = self.app.get_service('actions')
+        self.plugin = MiAZPlugin(self.app)
+
+        ## Initialize plugin
+        self.plugin.register(self.file, self)
+
+        ## Get logger
+        self.log = self.plugin.get_logger()
+
+        # Connect signals to startup
         workspace = self.app.get_widget('workspace')
         workspace.connect('workspace-loaded', self.startup)
-        actions.connect('settings-loaded', self._on_settings_loaded)
 
     def do_deactivate(self):
         self.log.error("Plugin deactivated")
@@ -44,33 +51,32 @@ class MiAZWorkspaceToggleViewPlugin(GObject.GObject, Peas.Activatable):
         self.log.info(f"Plugin loaded? {self.plugin_info.is_loaded()}")
 
     def startup(self, *args):
-        factory = self.app.get_service('factory')
-        hdb_right = self.app.get_widget('headerbar-right-box')
-        tgbWSToggleView = self.app.get_widget('workspace-togglebutton-view')
-        if tgbWSToggleView is None:
-            tgbWSToggleView = factory.create_button_toggle('io.github.t00m.MiAZ-view-details', callback=self.toggle_workspace_view)
-            self.app.add_widget('workspace-togglebutton-view', tgbWSToggleView)
-            tgbWSToggleView.set_tooltip_text("Show sidebar and filters")
-            tgbWSToggleView.set_active(False)
-            tgbWSToggleView.set_hexpand(False)
-            hdb_right.append(tgbWSToggleView)
-
+        if not self.plugin.menu_item_loaded():
             # Create menu item for plugin
-            menuitem = factory.create_menuitem('togglebutton_workspace_view', 'Workspace toggle view', None, None, [])
-            self.app.add_widget('window-headerbar-togglebutton-workspace-view', menuitem)
+            menuitem = self.plugin.get_menu_item(callback=None)
 
-            # ~ # Add plugin to its default (sub)category
-            category = self.app.get_widget('workspace-menu-plugins-visualisation-and-diagrams-dashboard-widgets')
-            category.append_item(menuitem)
+            # Add plugin to its default (sub)category
+            self.plugin.install_menu_entry(menuitem)
 
-            # This is a common action: add to shortcuts
-            # ~ menu_shortcut_import = self.app.get_widget('workspace-menu-shortcut-import')
-            # ~ menu_shortcut_import.append_item(menuitem)
+            # ToggleButton
+            factory = self.app.get_service('factory')
+            hdb_right = self.app.get_widget('headerbar-right-box')
+            tgbWSToggleView = self.app.get_widget('workspace-togglebutton-view')
+            if tgbWSToggleView is None:
+                tgbWSToggleView = factory.create_button_toggle('io.github.t00m.MiAZ-view-details', callback=self.toggle_workspace_view)
+                self.app.add_widget('workspace-togglebutton-view', tgbWSToggleView)
+                tgbWSToggleView.set_tooltip_text("Show sidebar and filters")
+                tgbWSToggleView.set_active(False)
+                tgbWSToggleView.set_hexpand(False)
+                visible = self.plugin.get_config_key('icon_visible')
+                if visible is None:
+                    visible = True
+                    self.plugin.set_config_key('icon_visible', True)
+                tgbWSToggleView.set_visible(visible)
+                hdb_right.append(tgbWSToggleView)
 
-            evk = self.app.get_widget('window-event-controller')
-            evk.connect("key-pressed", self._on_key_press)
-
-            self.log.debug("Plugin wstoggleview activated")
+                evk = self.app.get_widget('window-event-controller')
+                evk.connect("key-pressed", self._on_key_press)
 
     def toggle_workspace_view(self, *args):
         """ Sidebar not visible when active = False"""
@@ -94,25 +100,47 @@ class MiAZWorkspaceToggleViewPlugin(GObject.GObject, Peas.Activatable):
 
     def _on_key_press(self, event, keyval, keycode, state):
         keyname = Gdk.keyval_name(keyval)
-        # ~ if keyname == 'Escape':
-            # ~ tgbWSToggleView = self.app.get_widget('workspace-togglebutton-view')
-            # ~ active = tgbWSToggleView.get_active()
-            # ~ tgbWSToggleView.set_active(not active)
+        if keyname == 'F3':
+            tgbWSToggleView = self.app.get_widget('workspace-togglebutton-view')
+            active = tgbWSToggleView.get_active()
+            tgbWSToggleView.set_active(not active)
 
-    def _on_settings_loaded(self, *args):
-        group = self.app.get_widget('window-preferences-page-aspect-group-ui')
-        row = Adw.SwitchRow(title=_("Display sidebar toggle button?"), subtitle=_('Plugin Sidebar ToggleButton'))
+    def _on_activate_setting(self, row, gparam):
+        # Set togglebutton status
+        togglebutton = self.app.get_widget('workspace-togglebutton-view')
+        visible = row.get_active()
+        togglebutton.set_visible(visible)
+
+        # Update plugin config
+        self.plugin.set_config_key('icon_visible', visible)
+
+    def show_settings(self, widget):
+        util = self.app.get_service('util')
+
+        # Build preferences dialog
+        dialog = Adw.PreferencesDialog()
+        desc = self.plugin.get_plugin_info_key('Description')
+        page_title = _(desc)
+        page_icon = "io.github.t00m.MiAZ-preferences-ui"
+        page = Adw.PreferencesPage(title=page_title, icon_name=page_icon)
+        dialog.add(page)
+        group = Adw.PreferencesGroup()
+        group.set_title('User interface')
+        page.add(group)
+
+        # Row for option "Display Workspace toggle view button?"
+        row = Adw.SwitchRow(title=_("Display Workspace toggle view button?"))
         row.connect('notify::active', self._on_activate_setting)
+
+        config = self.plugin.get_config_data()
+        try:
+            visible = config['icon_visible']
+        except:
+            visible = config['icon_visible'] = True
+            self.plugin.set_config_data(config)
+
         tgbWSToggleView = self.app.get_widget('workspace-togglebutton-view')
-        visible = tgbWSToggleView.get_visible()
         row.set_active(visible)
         group.add(row)
 
-    def _on_activate_setting(self, row, gparam):
-        active = row.get_active()
-        togglebutton = self.app.get_widget('workspace-togglebutton-view')
-        togglebutton.set_visible(active)
-
-
-
-
+        dialog.present(widget.get_root())

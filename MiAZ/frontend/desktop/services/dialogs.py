@@ -20,6 +20,10 @@ miaz_dialog = {
         'icon': 'dialog-information-symbolic',
         'responses': [('close', _('Close'))]
         },
+    'close': {
+        'icon': 'dialog-information-symbolic',
+        'responses': [('close', _('Close'))]
+        },
     'warning': {
         'icon': 'dialog-warning-symbolic',
         'responses': [('close', _('Close'))]

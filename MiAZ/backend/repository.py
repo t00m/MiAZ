@@ -49,6 +49,16 @@ class MiAZRepository(GObject.GObject):
         """Repository documents directory"""
         return self.get('dir_conf')
 
+    @property
+    def docs(self):
+        """Repository documents directory"""
+        return self.get('dir_docs')
+
+    @property
+    def conf(self):
+        """Repository configuration directory"""
+        return self.get('dir_conf')
+
     def validate(self, path: str) -> bool:
         valid = False
         try:
