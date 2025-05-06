@@ -7,10 +7,12 @@
 import os
 import glob
 from gettext import gettext as _
+import threading
 
 import requests
 
 from gi.repository import Adw
+from gi.repository import GLib
 from gi.repository import Gtk
 
 from MiAZ.backend.log import MiAZLog
@@ -466,37 +468,87 @@ class MiAZUserPlugins(MiAZConfigView):
         self.btnConfig.set_visible(has_settings)
 
     def _refresh_index_plugin_file(self, *args):
+        # Create the dialog
+        self.dialog = Adw.AlertDialog(
+            heading="Downloading plugins",
+            body="Please wait while downloading...",
+        )
+        self.dialog.set_presentation_mode(Adw.DialogPresentationMode.BOTTOM_SHEET)
+        # Create a progress bar
+        self.progress = Gtk.ProgressBar()
+        self.progress.set_show_text(True)
+        self.progress.set_fraction(0.0)
+
+        # Add the progress bar to the dialog
+        self.dialog.set_extra_child(self.progress)
+
+        # Connect to response signal
+        self.dialog.connect("response", self._on_dialog_response)
+
+        # Show the dialog (non-blocking)
+        self.dialog.present(self.viewAv.get_root())
+
+        threading.Thread(target=self.download_plugins, daemon=True).start()
+
+    def download_plugins(self):
+        self.dialog.set_heading("Downloading plugins")
+        self.dialog.set_body("Please wait while downloading...")
+        util = self.app.get_service('util')
         ENV = self.app.get_env()
         source = ENV['APP']['PLUGINS']['SOURCE']
         url_base = ENV['APP']['PLUGINS']['REMOTE_INDEX']
         url = url_base % source
         url_plugin_base = ENV['APP']['PLUGINS']['DOWNLOAD']
         user_plugins_dir = ENV['LPATH']['PLUGINS']
+
         try:
-            util = self.app.get_service('util')
             response = requests.get(url)
             response.raise_for_status()
             plugin_index = response.json()
             util.json_save(ENV['APP']['PLUGINS']['USER_INDEX'], plugin_index)
             plugin_system = self.app.get_service('plugin-system')
             user_plugins = plugin_system.get_user_plugins()
-            plugin_list = []
-            for pid in plugin_index:
-                desc = plugin_index[pid]['Description']
-                url_plugin = url_plugin_base % (source, pid)
-                self.log.info(url_plugin)
-                added = util.download_and_unzip(url_plugin, user_plugins_dir)
-                if added:
-                    plugin_list.append((pid, desc))
-            # Recreate index plugin again (useful for devel purposes)
-            plugin_system.create_user_plugin_index()
-
-            self.update_user_plugins()
-
-        except HTTPError as http_error:
-            self.log.error(f"HTTP error occurred: {http_error}")
         except Exception as error:
-            self.log.error(f"An error occurred: {error}")
+            # FIXME: display error dialog
+            self.log.error(error)
+            return
+
+        urls = []
+        plugin_list = []
+        for pid in plugin_index:
+            url_plugin = url_plugin_base % (source, pid)
+            urls.append(url_plugin)
+        total_files = len(urls)
+
+        for i, url in enumerate(urls):
+            if hasattr(self, 'cancelled') and self.cancelled:
+                break
+
+            # Update progress
+            progress = (i + 1) / total_files
+            GLib.idle_add(self.update_progress, progress, f"Downloading file {i+1}/{total_files}")
+
+            try:
+                util.download_and_unzip(url_plugin, user_plugins_dir)
+            except HTTPError as http_error:
+                self.log.error(f"HTTP error occurred: {http_error}")
+            except Exception as error:
+                GLib.idle_add(self.show_error, str(error))
+
+    def _on_dialog_response(self, *args):
+        # Recreate index plugin again (useful for devel purposes)
+        plugin_system = self.app.get_service('plugin-system')
+        plugin_system.create_user_plugin_index()
+        self.update_user_plugins()
+        self.dialog.close()
+
+    def update_progress(self, fraction, text):
+        self.progress.set_fraction(fraction)
+        self.progress.set_text(text)
+        if fraction == 1.0:
+            self.progress.set_text('Completed')
+        self.dialog.set_body('')
+        # ~ self.dialog.set_heading('Plugins download')
 
     def _configure_plugin_options(self, *args):
         selected_plugin = self.viewSl.get_selected()
