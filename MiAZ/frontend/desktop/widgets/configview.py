@@ -6,6 +6,7 @@
 
 import os
 import glob
+import time
 from gettext import gettext as _
 import threading
 
@@ -446,6 +447,7 @@ class MiAZUserPlugins(MiAZConfigView):
 
         btnRefresh = factory.create_button(icon_name='io.github.t00m.MiAZ-view-refresh-symbolic', callback=self._refresh_index_plugin_file, css_classes=['flat'])
         btnRefresh.set_valign(Gtk.Align.CENTER)
+        self.app.add_widget('repository-settings-plugins-av-btnRefresh', btnRefresh)
         self.toolbar_buttons_Av.append(btnRefresh)
 
         # Used view buttons
@@ -468,31 +470,18 @@ class MiAZUserPlugins(MiAZConfigView):
         self.btnConfig.set_visible(has_settings)
 
     def _refresh_index_plugin_file(self, *args):
-        # Create the dialog
-        self.dialog = Adw.AlertDialog(
-            heading="Downloading plugins",
-            body="Please wait while downloading...",
-        )
-        self.dialog.set_presentation_mode(Adw.DialogPresentationMode.BOTTOM_SHEET)
-        # Create a progress bar
-        self.progress = Gtk.ProgressBar()
-        self.progress.set_show_text(True)
-        self.progress.set_fraction(0.0)
-
-        # Add the progress bar to the dialog
-        self.dialog.set_extra_child(self.progress)
-
-        # Connect to response signal
-        self.dialog.connect("response", self._on_dialog_response)
-
-        # Show the dialog (non-blocking)
-        self.dialog.present(self.viewAv.get_root())
-
         threading.Thread(target=self.download_plugins, daemon=True).start()
 
     def download_plugins(self):
-        self.dialog.set_heading("Downloading plugins")
-        self.dialog.set_body("Please wait while downloading...")
+        banner = self.app.get_widget('repository-settings-banner')
+        banner.set_revealed(True)
+        banner.set_button_label('')
+        banner.set_title("")
+        toolbarAv = self.app.get_widget('settings-repository-toolbar-av')
+        toolbarSl = self.app.get_widget('settings-repository-toolbar-sl')
+        toolbarAv.set_sensitive(False)
+        toolbarSl.set_sensitive(False)
+
         util = self.app.get_service('util')
         ENV = self.app.get_env()
         source = ENV['APP']['PLUGINS']['SOURCE']
@@ -530,25 +519,21 @@ class MiAZUserPlugins(MiAZConfigView):
 
             try:
                 util.download_and_unzip(url_plugin, user_plugins_dir)
+                # ~ time.sleep(1) # Comment above line and disable this one for testing
             except HTTPError as http_error:
                 self.log.error(f"HTTP error occurred: {http_error}")
             except Exception as error:
-                GLib.idle_add(self.show_error, str(error))
-
-    def _on_dialog_response(self, *args):
-        # Recreate index plugin again (useful for devel purposes)
-        plugin_system = self.app.get_service('plugin-system')
-        plugin_system.create_user_plugin_index()
-        self.update_user_plugins()
-        self.dialog.close()
+                self.log.error(f"Another error occurred: {error}")
 
     def update_progress(self, fraction, text):
-        self.progress.set_fraction(fraction)
-        self.progress.set_text(text)
+        percentage = int(fraction*100)
+        banner = self.app.get_widget('repository-settings-banner')
+        banner.set_title(f"{text} ({percentage}%) done")
         if fraction == 1.0:
-            self.progress.set_text('Completed')
-        self.dialog.set_body('')
-        # ~ self.dialog.set_heading('Plugins download')
+            banner = self.app.get_widget('repository-settings-banner')
+            banner.set_revealed(True)
+            banner.set_title("One or more plugins were updated. Application restart needed")
+            banner.set_button_label('Restart')
 
     def _configure_plugin_options(self, *args):
         selected_plugin = self.viewSl.get_selected()
