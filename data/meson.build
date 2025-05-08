@@ -1,5 +1,9 @@
 subdir('resources')
 
+# Subpackages
+pkgdatadir = join_paths(get_option('prefix'), get_option('datadir'), meson.project_name(), 'resources')
+install_subdir('docs', install_dir: pkgdatadir)
+
 desktop_file = i18n.merge_file(
   input: 'io.github.t00m.MiAZ.desktop.in',
   output: 'io.github.t00m.MiAZ.desktop',

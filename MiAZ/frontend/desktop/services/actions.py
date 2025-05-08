@@ -114,10 +114,9 @@ class MiAZActions(GObject.GObject):
         # FIXME: Implement import config
         srvdlg = self.app.get_service('dialogs')
         window = button.get_root()
-        dtype = 'error'
         title = "Action not implemented yet"
         body = "Import the configuration hasn't been implemented yet"
-        dialog = srvdlg.create(dtype=dtype, title=title, body=body, widget=None)
+        dialog = srvdlg.show_error(title=title, body=body)
         dialog.present(window)
         return
 
@@ -173,10 +172,9 @@ class MiAZActions(GObject.GObject):
         # FIXME: Implement export config
         srvdlg = self.app.get_service('dialogs')
         window = button.get_root()
-        dtype = 'error'
         title = "Action not implemented yet"
         body = "Export the configuration hasn't been implemented yet"
-        dialog = srvdlg.create(dtype=dtype, title=title, body=body, widget=None)
+        dialog = srvdlg.show_error(title=title, body=body)
         dialog.present(window)
         return
 
@@ -237,7 +235,7 @@ class MiAZActions(GObject.GObject):
         selector.set_vexpand(True)
         selector.update_views()
         title = _(f'Manage {config_for}')
-        dialog = srvdlg.create(dtype='action', title=title, widget=box, width=800, height=600)
+        dialog = srvdlg.show_action(title=title, widget=box, width=800, height=600)
         dialog.present(parent)
 
     def show_app_settings(self, *args):
@@ -267,12 +265,14 @@ class MiAZActions(GObject.GObject):
         about.set_developer_name(author)
         artists = ['Flags borrowed from FlagKit project https://github.com/madebybowtie/FlagKit']
         artists.append('Some icons borrowed from GNOME contributors https://www.gnome.org')
-        artists.append("MiAZ app icon based on Collection Business Duotone Icons with license 'CC Attribution License' by 'cataicon' from https://www.svgrepo.com/svg/391994/binder-business-finance-management-marketing-office")
+        artists.append("MiAZ app icon based on Collection Business Duotone Icons with license 'CC Attribution License' by 'cataicon' https://www.svgrepo.com/svg/391994/binder-business-finance-management-marketing-office")
         about.set_artists(artists)
         about.set_license_type(Gtk.License.GPL_3_0_ONLY)
         about.set_copyright(f"© 2019-2025 {ENV['APP']['author']}")
         about.set_website('https://github.com/t00m/MiAZ')
         about.set_comments(ENV['APP']['description'])
+        README = open(ENV['FILE']['README'], 'r').read()
+        about.set_comments(README)
         about.present(window)
 
     def show_app_help(self, *args):
@@ -315,7 +315,7 @@ class MiAZActions(GObject.GObject):
             parent = widget.get_root()
             body = '<big>You must select at least one document</big>'
             title = _('Action ignored')
-            dialog = srvdlg.create(dtype='info', title=title, body=body)
+            dialog = srvdlg.show_error(title=title, body=body)
             dialog.present(parent)
             stop = True
         return stop

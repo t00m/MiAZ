@@ -146,7 +146,7 @@ class MiAZAppSettings(Adw.PreferencesDialog):
         srvdlg = self.app.get_service('dialogs')
         window = self.app.get_widget('window')
         widget = MiAZPluginUIManager(self.app)
-        dialog = srvdlg.create(dtype='close', title='Plugin Manager', body='', widget=widget, width=800, height=600)
+        dialog = srvdlg.show_noop(title='Plugin Manager', body='', widget=widget, width=800, height=600)
 
         dialog.present(self)
 
@@ -173,6 +173,7 @@ class MiAZAppSettings(Adw.PreferencesDialog):
         Load repository automatically whenever is selected.
         Once loaded, it is set as the default in the app config.
         """
+        actions = self.app.get_service('actions')
         workflow = self.app.get_service('workflow')
         dd_repo = self.app.get_widget('window-settings-dropdown-repository-active')
         repo = dd_repo.get_selected_item()
@@ -181,18 +182,17 @@ class MiAZAppSettings(Adw.PreferencesDialog):
         self.log.debug(f"Repository chosen: {repo.id}")
         config = self.app.get_config_dict()
         config['App'].set('current', repo.id)
-        valid = workflow.switch_start()
-        self.log.debug(f"Repository {repo.id} loaded successfully? {valid}")
+        # ~ valid = workflow.switch_start()
+        # ~ self.log.debug(f"Repository {repo.id} loaded successfully? {valid}")
+        actions.application_restart()
+
 
     def _on_manage_repositories(self, *args):
         widget = self._create_widget_for_repositories()
         window = self
-        dtype = 'noop'
         title = "Manage repositories"
         body = "" # "Add, edit, delete and (de)activate repositories"
-        dialog = self.srvdlg.create(dtype=dtype, title=title, body=body, widget=widget)
-        dialog.set_presentation_mode(Adw.DialogPresentationMode.FLOATING)
-        dialog.set_size_request(800, 600)
+        dialog = self.srvdlg.show_noop(title=title, body=body, widget=widget, width=800, height=600)
         dialog.present(window)
 
     def _on_selected_repo(self, dropdown, gparamobj):
@@ -201,7 +201,9 @@ class MiAZAppSettings(Adw.PreferencesDialog):
             repo_dir = dropdown.get_selected_item().title
             self.log.debug(f"Repository selected: {repo_id}[{repo_dir}]")
             self.config['App'].set('current', repo_id)
-            self.app.switch()
+            # ~ self.app.switch()
+            actions = self.app.get_service('actions')
+            actions.application_restart()
         except AttributeError:
             # Probably the repository was removed from used view
             pass

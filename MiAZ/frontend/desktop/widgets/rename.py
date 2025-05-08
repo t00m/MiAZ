@@ -137,7 +137,7 @@ class MiAZRenameDialog(Gtk.Box):
         def choose_concept(button, view, rename_widget):
             window = rename_widget.get_root()
             body = ''
-            dialog = self.srvdlg.create(dtype='question', title=_('Choose a concept'), body=body, widget=view, width=600, height=480)
+            dialog = self.srvdlg.show_question(title=_('Choose a concept'), body=body, widget=view, width=600, height=480)
             dialog.connect('response', dialog_response, view)
             dialog.present(window)
 
