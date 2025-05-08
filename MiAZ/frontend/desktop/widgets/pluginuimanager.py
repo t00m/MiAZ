@@ -44,11 +44,15 @@ class MiAZPluginUIManager(Gtk.Box):
     def _create_view_plugins_system(self):
         box = self.factory.create_box_horizontal(margin=0, spacing=0, hexpand=True, vexpand=True)
         box.get_style_context().add_class(class_name='toolbar')
-        frame = Gtk.Frame()
+        frame_view = Gtk.Frame()
         viewbox = self._create_plugin_view(MiAZPluginType.SYSTEM)
-        frame.set_child(viewbox)
+        frame_view.set_child(viewbox)
+
+        # ~ frame_toolbar = Gtk.Frame()
         toolbar = self._create_plugin_view_toolbar(MiAZPluginType.SYSTEM)
-        box.append(frame)
+        toolbar.get_style_context().add_class(class_name='linked')
+        # ~ frame_toolbar.set_child(toolbar)
+        box.append(frame_view)
         box.append(toolbar)
 
         pm = self.app.get_service('plugin-system')
@@ -91,15 +95,13 @@ class MiAZPluginUIManager(Gtk.Box):
         return scrwin
 
     def _create_plugin_view_toolbar(self, plugin_view: MiAZPluginType = MiAZPluginType.SYSTEM):
-        toolbar = self.factory.create_box_vertical(margin=0, spacing=6, hexpand=False, vexpand=False)
-        btnInfo = self.factory.create_button(icon_name='io.github.t00m.MiAZ-dialog-information-symbolic', callback=self._show_plugin_info, css_classes=['flat'])
+        toolbar = self.factory.create_box_vertical(margin=0, spacing=0, hexpand=False, vexpand=False)
+        btnInfo = self.factory.create_button(icon_name='io.github.t00m.MiAZ-dialog-information-symbolic', callback=self._show_plugin_info, css_classes=[''])
         btnInfo.set_valign(Gtk.Align.CENTER)
-        btnInfo.set_has_frame(False)
         toolbar.append(btnInfo)
-        btnConfig = self.factory.create_button(icon_name='io.github.t00m.MiAZ-config-symbolic', callback=self._configure_plugin_options, css_classes=['flat'])
+        btnConfig = self.factory.create_button(icon_name='io.github.t00m.MiAZ-config-symbolic', callback=self._configure_plugin_options, css_classes=['suggested-action'])
         self.app.add_widget('plugin-view-system-button-config', btnConfig)
         btnConfig.set_valign(Gtk.Align.CENTER)
-        btnConfig.set_has_frame(False)
         toolbar.append(btnConfig)
         return toolbar
 

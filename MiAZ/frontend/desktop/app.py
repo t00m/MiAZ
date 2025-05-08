@@ -253,14 +253,62 @@ class MiAZApp(Adw.Application):
     def get_logger(self):
         return self.log
 
+    def find_widget_by_type(self, widget, widget_type=None):
+        """
+        Recursively search for a widget inside `widget` by optional type and/or widget name (ID).
+
+        :param widget: The root Gtk.Widget to start the search from.
+        :param widget_type: The Gtk.Widget subclass to match (e.g., Gtk.Label), or None to match any type.
+        :return: The first matching Gtk.Widget, or None if not found.
+        """
+        self.log.debug(f"Looking for widget type {widget_type}) in {widget}")
+        type_matches = widget_type is None or isinstance(widget, widget_type)
+
+        if type_matches:
+            self.log.debug(f"Found widget of type {widget_type}: {widget}")
+            return widget
+
+        child = widget.get_first_child()
+        while child:
+            result = self.find_widget_by_type(child, widget_type)
+            if result:
+                return result
+            child = child.get_next_sibling()
+
+    def find_widget(self, widget, widget_type=None, widget_id=None):
+        """
+        Recursively search for a widget inside `widget` by optional type and/or widget name (ID).
+
+        :param widget: The root Gtk.Widget to start the search from.
+        :param widget_type: The Gtk.Widget subclass to match (e.g., Gtk.Label), or None to match any type.
+        :param widget_id: The widget name (set with set_widget_name()) to match, or None to match any name.
+        :return: The first matching Gtk.Widget, or None if not found.
+        """
+        type_matches = widget_type is None or isinstance(widget, widget_type)
+        id_matches = widget_id is None or widget.get_buildable_id() == widget_id
+
+        if type_matches and id_matches:
+            return widget
+
+        child = widget.get_first_child()
+        while child:
+            result = self.find_widget(child, widget_type, widget_id)
+            if result:
+                return result
+            child = child.get_next_sibling()
+
+        return None
+
     def find_widget_by_name(self, parent, name):
+        self.log.error(f"Looking for {name} in {parent}")
         # Start with the first child
         child = parent.get_first_child()
-
+        self.log.error(f"\tchild {child}")
 
         # Iterate through all children
         while child is not None:
             # Check if the current child has the desired name
+            self.log.error(f"\t{child.get_name()}")
             if child.get_name() == name:
                 return child
 

@@ -6,11 +6,14 @@
 
 import os
 import glob
+import time
 from gettext import gettext as _
+import threading
 
 import requests
 
 from gi.repository import Adw
+from gi.repository import GLib
 from gi.repository import Gtk
 
 from MiAZ.backend.log import MiAZLog
@@ -115,10 +118,10 @@ class MiAZRepositories(MiAZConfigView):
         title = 'Add a new repository'
         key1 = '<big><b>Repository name</b></big>'
         key2 = '<big><b>Folder</b></big>'
-        search_term = self.entry.get_text()
+        # ~ search_term = self.entry.get_text()
         this_repo = MiAZDialogAddRepo(self.app)
         dialog = this_repo.create(title=title, key1=key1, key2=key2)
-        this_repo.set_value1(search_term)
+        this_repo.set_value1('')
         dialog.connect('response', self._on_response_item_available_add, this_repo)
         dialog.present(window)
 
@@ -162,19 +165,18 @@ class MiAZRepositories(MiAZConfigView):
         items_available = self.config.load_available()
         item_type = self.config.model
         i_title = item_type.__title__
+        item_id = selected_item.id.replace('_', ' ')
 
         is_used = self.config.exists_used(selected_item.id)
         if not is_used:
             del items_available[selected_item.id]
             self.config.save_available(items=items_available)
-            self.log.debug(f"{i_title} {selected_item.id} removed from de list of available items")
+            self.log.debug(f"{i_title} {item_id} removed from de list of available items")
         else:
-            dtype = "error"
-            text = _(f'<big>{i_title} {selected_item.id} is still being used</big>')
+            text = _(f'<big>{i_title} {item_id} is still being used</big>')
             window = self.viewSl.get_root()
-            dtype = 'error'
             title = "Action not possible"
-            dialog = srvdlg.create(dtype=dtype, title=title, body=text, widget=None)
+            dialog = srvdlg.show_error(title=title, body=text, widget=None)
             dialog.present(window)
 
     def _on_item_used_add(self, *args):
@@ -357,20 +359,19 @@ class MiAZProjects(MiAZConfigView):
         items_available = self.config.load_available()
         item_type = self.config.model
         i_title = item_type.__title__
+        item_id = selected_item.id.replace('_', ' ')
 
         is_used = self.config.exists_used(selected_item.id)
         if not is_used:
             del items_available[selected_item.id]
             self.config.save_available(items=items_available)
-            self.log.debug(f"{i_title} {selected_item.id} removed from de list of available items")
+            self.log.debug(f"{i_title} {item_id} removed from de list of available items")
         else:
-            dtype = "error"
-            text = _(f'{i_title} {selected_item.id} is still being used')
+            text = _(f'{i_title} {item_id} is still being used')
             window = self.viewSl.get_root()
-            dtype = 'error'
-            title = f"{i_title} {selected_item.id} can't be removed"
+            title = f"{i_title} {item_id} can't be removed"
             title = "Action not possible"
-            dialog = srvdlg.create(dtype=dtype, title=title, body=text, width=600, height=480)
+            dialog = srvdlg.show_error(title=title, body=text, width=600, height=480)
             dialog.present(window)
 
     def _on_item_used_add(self, *args):
@@ -394,31 +395,34 @@ class MiAZProjects(MiAZConfigView):
         selected_item = self.viewSl.get_selected()
         item_type = self.config.model
         i_title = item_type.__title__
+        item_id = selected_item.id.replace('_', ' ')
+        item_desc = selected_item.title.replace('_', ' ')
         srvprj = self.app.get_service('Projects')
         srvdlg = self.app.get_service('dialogs')
         docs = srvprj.docs_in_project(selected_item.id)
         if len(docs) == 0:
             self.log.debug("_on_item_used_remove:: no dependencies")
             items_available[selected_item.id] = selected_item.title
-            self.log.debug(f"{i_title} {selected_item.id} added back to the list of available items")
+            self.log.debug(f"{i_title} {item_id} added back to the list of available items")
             del items_used[selected_item.id]
-            self.log.debug(f"{i_title} {selected_item.id} removed from de list of used items")
+            self.log.debug(f"{i_title} {item_id} removed from de list of used items")
             self.config.save_used(items=items_used)
             self.config.save_available(items=items_available)
             self.update_views()
         else:
-            text = _(f'{i_title} {selected_item.title} is still being used by {len(docs)} docs')
+            text = _(f'{i_title} {item_desc} is still being used by {len(docs)} documents')
             self.log.error(text)
             window = self.viewSl.get_root()
-            dtype = 'error'
-            title = f"{i_title} {selected_item.title} can't be removed"
+            title = f"{i_title} {item_desc} can't be removed"
             title = "Action not possible"
             items = []
             for doc in docs:
                 items.append(File(id=doc, title=os.path.basename(doc)))
             view = MiAZColumnViewDocuments(self.app)
             view.update(items)
-            dialog = srvdlg.create(dtype=dtype, title=title, body=text, widget=view, width=600, height=480)
+            widget = Gtk.Frame()
+            widget.set_child(view)
+            dialog = srvdlg.show_error(title=title, body=text, widget=widget, width=600, height=480)
             dialog.present(window)
 
 
@@ -444,6 +448,7 @@ class MiAZUserPlugins(MiAZConfigView):
 
         btnRefresh = factory.create_button(icon_name='io.github.t00m.MiAZ-view-refresh-symbolic', callback=self._refresh_index_plugin_file, css_classes=['flat'])
         btnRefresh.set_valign(Gtk.Align.CENTER)
+        self.app.add_widget('repository-settings-plugins-av-btnRefresh', btnRefresh)
         self.toolbar_buttons_Av.append(btnRefresh)
 
         # Used view buttons
@@ -466,37 +471,70 @@ class MiAZUserPlugins(MiAZConfigView):
         self.btnConfig.set_visible(has_settings)
 
     def _refresh_index_plugin_file(self, *args):
+        threading.Thread(target=self.download_plugins, daemon=True).start()
+
+    def download_plugins(self):
+        banner = self.app.get_widget('repository-settings-banner')
+        banner.set_revealed(True)
+        banner.set_button_label('')
+        banner.set_title("")
+        toolbarAv = self.app.get_widget('settings-repository-toolbar-av')
+        toolbarSl = self.app.get_widget('settings-repository-toolbar-sl')
+        toolbarAv.set_sensitive(False)
+        toolbarSl.set_sensitive(False)
+
+        util = self.app.get_service('util')
         ENV = self.app.get_env()
         source = ENV['APP']['PLUGINS']['SOURCE']
         url_base = ENV['APP']['PLUGINS']['REMOTE_INDEX']
         url = url_base % source
         url_plugin_base = ENV['APP']['PLUGINS']['DOWNLOAD']
         user_plugins_dir = ENV['LPATH']['PLUGINS']
+
         try:
-            util = self.app.get_service('util')
             response = requests.get(url)
             response.raise_for_status()
             plugin_index = response.json()
             util.json_save(ENV['APP']['PLUGINS']['USER_INDEX'], plugin_index)
             plugin_system = self.app.get_service('plugin-system')
             user_plugins = plugin_system.get_user_plugins()
-            plugin_list = []
-            for pid in plugin_index:
-                desc = plugin_index[pid]['Description']
-                url_plugin = url_plugin_base % (source, pid)
-                self.log.info(url_plugin)
-                added = util.download_and_unzip(url_plugin, user_plugins_dir)
-                if added:
-                    plugin_list.append((pid, desc))
-            # Recreate index plugin again (useful for devel purposes)
-            plugin_system.create_user_plugin_index()
-
-            self.update_user_plugins()
-
-        except HTTPError as http_error:
-            self.log.error(f"HTTP error occurred: {http_error}")
         except Exception as error:
-            self.log.error(f"An error occurred: {error}")
+            # FIXME: display error dialog
+            self.log.error(error)
+            return
+
+        urls = []
+        plugin_list = []
+        for pid in plugin_index:
+            url_plugin = url_plugin_base % (source, pid)
+            urls.append(url_plugin)
+        total_files = len(urls)
+
+        for i, url in enumerate(urls):
+            if hasattr(self, 'cancelled') and self.cancelled:
+                break
+
+            # Update progress
+            progress = (i + 1) / total_files
+            GLib.idle_add(self.update_progress, progress, f"Downloading file {i+1}/{total_files}")
+
+            try:
+                util.download_and_unzip(url_plugin, user_plugins_dir)
+                # ~ time.sleep(1) # Comment above line and disable this one for testing
+            except HTTPError as http_error:
+                self.log.error(f"HTTP error occurred: {http_error}")
+            except Exception as error:
+                self.log.error(f"Another error occurred: {error}")
+
+    def update_progress(self, fraction, text):
+        percentage = int(fraction*100)
+        banner = self.app.get_widget('repository-settings-banner')
+        banner.set_title(f"{text} ({percentage}%) done")
+        if fraction == 1.0:
+            banner = self.app.get_widget('repository-settings-banner')
+            banner.set_revealed(True)
+            banner.set_title("One or more plugins were updated. Application restart needed")
+            banner.set_button_label('Restart')
 
     def _configure_plugin_options(self, *args):
         selected_plugin = self.viewSl.get_selected()

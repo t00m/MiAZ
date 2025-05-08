@@ -14,31 +14,33 @@ from MiAZ.backend.log import MiAZLog
 miaz_dialog = {
     'action': {
         'icon': 'io.github.t00m.MiAZ-document-edit-symbolic',
-        'responses': [('cancel', _('Cancel')), ('apply', _('Apply'))]
+        'responses': [('cancel', _('Cancel')), ('apply', _('Apply'))],
+        'class_name': 'accent'
         },
     'info': {
         'icon': 'dialog-information-symbolic',
-        'responses': [('close', _('Close'))]
-        },
-    'close': {
-        'icon': 'dialog-information-symbolic',
-        'responses': [('close', _('Close'))]
+        'responses': [('close', _('Close'))],
+        'class_name': 'accent'
         },
     'warning': {
         'icon': 'dialog-warning-symbolic',
-        'responses': [('close', _('Close'))]
+        'responses': [('close', _('Close'))],
+        'class_name': 'warning'
         },
     'error': {
         'icon': 'io.github.t00m.MiAZ-dialog-error-symbolic',
-        'responses': [('close', _('Close'))]
+        'responses': [('close', _('Close'))],
+        'class_name': 'error'
         },
     'question': {
         'icon': 'dialog-question-symbolic',
-        'responses': [('apply', _('Yes')), ('cancel', _('No'))]
+        'responses': [('apply', _('Yes')), ('cancel', _('No'))],
+        'class_name': ''
         },
     'noop': {
         'icon': '',
-        'responses': []
+        'responses': [],
+        'class_name': 'success'
         }
 }
 
@@ -65,13 +67,22 @@ class MiAZDialog:
         dialog.set_body_use_markup(True)
         dialog.set_heading_use_markup(True)
         dialog.set_heading(f"{title}")
-        dialog.set_body(f"{body}")
+        dialog.set_body(f"<big>{body}</big>")
         dialog.set_size_request(width, height)
+        dialog.set_presentation_mode(Adw.DialogPresentationMode.BOTTOM_SHEET)
 
-        box = factory.create_box_vertical(hexpand=True, vexpand=True)
-        # ~ icon = Gtk.Image.new_from_icon_name(miaz_dialog[dtype]['icon'])
-        # ~ box.append(icon)
+        # Trick to reduce body_label size
+        adwgizmo = dialog.get_child()
+        windowhandle = adwgizmo.get_first_child()
+        label = self.app.find_widget(windowhandle, Gtk.Label, 'body_label')
+        if label is not None:
+            label.set_vexpand(False)
+            label.get_style_context().add_class(class_name='toolbar')
+        # And change color
+        label.get_style_context().add_class(class_name=miaz_dialog[dtype]['class_name'])
+
         # Add custom widget
+        box = factory.create_box_vertical(hexpand=True, vexpand=True)
         if widget is not None:
             box.append(widget)
         dialog.set_extra_child(box)
@@ -95,6 +106,88 @@ class MiAZDialog:
     def close(self, dialog, response):
         pass
 
+    def show_noop(  self,
+                    title: str = '',
+                    body: str = '',
+                    widget: Gtk.Widget = None,
+                    callback = None,
+                    data = None,
+                    width: int = -1,
+                    height: int = -1
+                ):
+        """Create a new dialog of type info"""
+        dialog = self.create(title=title, body=body, dtype='noop', widget=widget, callback=callback, data=data, width=width, height=height)
+        dialog.get_style_context().add_class(class_name='success')
+        return dialog
+
+    def show_info(  self,
+                    title: str = '',
+                    body: str = '',
+                    widget: Gtk.Widget = None,
+                    callback = None,
+                    data = None,
+                    width: int = -1,
+                    height: int = -1
+                ):
+        """Create a new dialog of type info"""
+        dialog = self.create(title=title, body=body, dtype='info', widget=widget, callback=callback, data=data, width=width, height=height)
+        dialog.get_style_context().add_class(class_name='success')
+        return dialog
+
+    def show_error( self,
+                    title: str = '',
+                    body: str = '',
+                    widget: Gtk.Widget = None,
+                    callback = None,
+                    data = None,
+                    width: int = -1,
+                    height: int = -1
+                ):
+        """Create a new dialog of type error"""
+        dialog = self.create(title=title, body=body, dtype='error', widget=widget, callback=callback, data=data, width=width, height=height)
+        dialog.get_style_context().add_class(class_name='error')
+        return dialog
+
+    def show_action(self,
+                    title: str = '',
+                    body: str = '',
+                    widget: Gtk.Widget = None,
+                    callback = None,
+                    data = None,
+                    width: int = -1,
+                    height: int = -1
+                ):
+        """Create a new dialog of type error"""
+        dialog = self.create(title=title, body=body, dtype='action', widget=widget, callback=callback, data=data, width=width, height=height)
+        dialog.get_style_context().add_class(class_name='accent')
+        return dialog
+
+    def show_warning(self,
+                    title: str = '',
+                    body: str = '',
+                    widget: Gtk.Widget = None,
+                    callback = None,
+                    data = None,
+                    width: int = -1,
+                    height: int = -1
+                ):
+        """Create a new dialog of type error"""
+        dialog = self.create(title=title, body=body, dtype='action', widget=widget, callback=callback, data=data, width=width, height=height)
+        dialog.get_style_context().add_class(class_name='warning')
+        return dialog
+
+    def show_question(self,
+                    title: str = '',
+                    body: str = '',
+                    widget: Gtk.Widget = None,
+                    callback = None,
+                    data = None,
+                    width: int = -1,
+                    height: int = -1
+                ):
+        """Create a new dialog of type error"""
+        dialog = self.create(title=title, body=body, dtype='question', widget=widget, callback=callback, data=data, width=width, height=height)
+        return dialog
 
 class MiAZDialogAdd:
     """ MiAZ Doc Browser Widget"""
@@ -165,9 +258,7 @@ class MiAZDialogAdd:
         self.widget.append(self.fields)
 
         # Create dialog
-        self.dialog = srvdlg.create(    dtype='action',
-                                        title=title,
-                                        widget=self.widget)
+        self.dialog = srvdlg.show_action(title=title, widget=self.widget)
         return self.dialog
 
     def get_label_key1(self):
@@ -254,9 +345,7 @@ class MiAZDialogAddRepo(MiAZDialogAdd):
         self.widget.append(self.fields)
 
         # Create dialog
-        self.dialog = srvdlg.create(    dtype='action',
-                                        title=title,
-                                        widget=self.widget)
+        self.dialog = srvdlg.show_action(title=title, widget=self.widget)
         return self.dialog
 
     def get_entry_key1(self):
@@ -312,11 +401,10 @@ class MiAZFileChooserDialog(MiAZDialog):
             self.w_filechooser.set_action(Gtk.FileChooserAction.SAVE)
 
         # Create dialog
-        self.dialog = srvdlg.create(dtype='action',
-                                    title=title,
-                                    widget=self.w_filechooser,
-                                    callback=callback,
-                                    data=data)
+        self.dialog = srvdlg.show_action(   title=title,
+                                            widget=self.w_filechooser,
+                                            callback=callback,
+                                            data=data)
 
         return self.dialog
 
