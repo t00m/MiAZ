@@ -173,7 +173,7 @@ class MiAZFactory:
 
         return hbox
 
-    def create_button(self, icon_name='', title='', tooltip='', callback=None, size=16, css_classes=None, data=None):
+    def create_button(self, icon_name='', title='', tooltip='', callback=None, size=16, css_classes=None, data=None, reverse=False):
         if css_classes is None:
             css_classes = []
         button = Gtk.Button(css_classes=css_classes)
@@ -182,13 +182,19 @@ class MiAZFactory:
             icon = self.icons.get_image_by_name(icon_name)
             icon.set_pixel_size(size)
             icon.set_valign(Gtk.Align.CENTER)
-            hbox.append(icon)
+            if reverse:
+                hbox.prepend(icon)
+            else:
+                hbox.append(icon)
 
         if len(title) > 0:
             label = Gtk.Label()
             label.set_markup(title)
             label.set_valign(Gtk.Align.CENTER)
-            hbox.append(label)
+            if reverse:
+                hbox.prepend(label)
+            else:
+                hbox.append(label)
 
         if len(tooltip) > 0:
             button.set_tooltip_markup(tooltip)
