@@ -118,10 +118,10 @@ class MiAZRepositories(MiAZConfigView):
         title = 'Add a new repository'
         key1 = '<big><b>Repository name</b></big>'
         key2 = '<big><b>Folder</b></big>'
-        search_term = self.entry.get_text()
+        # ~ search_term = self.entry.get_text()
         this_repo = MiAZDialogAddRepo(self.app)
         dialog = this_repo.create(title=title, key1=key1, key2=key2)
-        this_repo.set_value1(search_term)
+        this_repo.set_value1('')
         dialog.connect('response', self._on_response_item_available_add, this_repo)
         dialog.present(window)
 
@@ -165,19 +165,18 @@ class MiAZRepositories(MiAZConfigView):
         items_available = self.config.load_available()
         item_type = self.config.model
         i_title = item_type.__title__
+        item_id = selected_item.id.replace('_', ' ')
 
         is_used = self.config.exists_used(selected_item.id)
         if not is_used:
             del items_available[selected_item.id]
             self.config.save_available(items=items_available)
-            self.log.debug(f"{i_title} {selected_item.id} removed from de list of available items")
+            self.log.debug(f"{i_title} {item_id} removed from de list of available items")
         else:
-            dtype = "error"
-            text = _(f'<big>{i_title} {selected_item.id} is still being used</big>')
+            text = _(f'<big>{i_title} {item_id} is still being used</big>')
             window = self.viewSl.get_root()
-            dtype = 'error'
             title = "Action not possible"
-            dialog = srvdlg.create(dtype=dtype, title=title, body=text, widget=None)
+            dialog = srvdlg.show_error(title=title, body=text, widget=None)
             dialog.present(window)
 
     def _on_item_used_add(self, *args):
@@ -360,20 +359,19 @@ class MiAZProjects(MiAZConfigView):
         items_available = self.config.load_available()
         item_type = self.config.model
         i_title = item_type.__title__
+        item_id = selected_item.id.replace('_', ' ')
 
         is_used = self.config.exists_used(selected_item.id)
         if not is_used:
             del items_available[selected_item.id]
             self.config.save_available(items=items_available)
-            self.log.debug(f"{i_title} {selected_item.id} removed from de list of available items")
+            self.log.debug(f"{i_title} {item_id} removed from de list of available items")
         else:
-            dtype = "error"
-            text = _(f'{i_title} {selected_item.id} is still being used')
+            text = _(f'{i_title} {item_id} is still being used')
             window = self.viewSl.get_root()
-            dtype = 'error'
-            title = f"{i_title} {selected_item.id} can't be removed"
+            title = f"{i_title} {item_id} can't be removed"
             title = "Action not possible"
-            dialog = srvdlg.create(dtype=dtype, title=title, body=text, width=600, height=480)
+            dialog = srvdlg.show_error(title=title, body=text, width=600, height=480)
             dialog.present(window)
 
     def _on_item_used_add(self, *args):
@@ -397,31 +395,34 @@ class MiAZProjects(MiAZConfigView):
         selected_item = self.viewSl.get_selected()
         item_type = self.config.model
         i_title = item_type.__title__
+        item_id = selected_item.id.replace('_', ' ')
+        item_desc = selected_item.title.replace('_', ' ')
         srvprj = self.app.get_service('Projects')
         srvdlg = self.app.get_service('dialogs')
         docs = srvprj.docs_in_project(selected_item.id)
         if len(docs) == 0:
             self.log.debug("_on_item_used_remove:: no dependencies")
             items_available[selected_item.id] = selected_item.title
-            self.log.debug(f"{i_title} {selected_item.id} added back to the list of available items")
+            self.log.debug(f"{i_title} {item_id} added back to the list of available items")
             del items_used[selected_item.id]
-            self.log.debug(f"{i_title} {selected_item.id} removed from de list of used items")
+            self.log.debug(f"{i_title} {item_id} removed from de list of used items")
             self.config.save_used(items=items_used)
             self.config.save_available(items=items_available)
             self.update_views()
         else:
-            text = _(f'{i_title} {selected_item.title} is still being used by {len(docs)} docs')
+            text = _(f'{i_title} {item_desc} is still being used by {len(docs)} documents')
             self.log.error(text)
             window = self.viewSl.get_root()
-            dtype = 'error'
-            title = f"{i_title} {selected_item.title} can't be removed"
+            title = f"{i_title} {item_desc} can't be removed"
             title = "Action not possible"
             items = []
             for doc in docs:
                 items.append(File(id=doc, title=os.path.basename(doc)))
             view = MiAZColumnViewDocuments(self.app)
             view.update(items)
-            dialog = srvdlg.create(dtype=dtype, title=title, body=text, widget=view, width=600, height=480)
+            widget = Gtk.Frame()
+            widget.set_child(view)
+            dialog = srvdlg.show_error(title=title, body=text, widget=widget, width=600, height=480)
             dialog.present(window)
 
 

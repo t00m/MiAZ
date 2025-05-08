@@ -188,9 +188,9 @@ class MiAZSelector(Gtk.Box):
         if is_used:
             item_type = self.config.model
             i_title = item_type.__title__
-            text = _(f'{i_title} {selected_item.title} is still being used by {len(docs)} docs')
+            item_desc = selected_item.title.replace('_', ' ')
+            text = _(f'{i_title} {item_desc} is still being used by {len(docs)} documents')
             window = self.viewSl.get_root()
-            dtype = 'error'
             title = "Action not possible"
             if len(docs) > 0:
                 items = []
@@ -200,8 +200,14 @@ class MiAZSelector(Gtk.Box):
                 view.update(items)
             else:
                 view = None
+
+            if view is not None:
+                widget = Gtk.Frame()
+                widget.set_child(view)
+            else:
+                widget = view
             srvdlg = self.app.get_service('dialogs')
-            dialog = srvdlg.create(dtype=dtype, title=title, body=text, widget=view, width=600, height=480)
+            dialog = srvdlg.show_error(title=title, body=text, widget=widget, width=600, height=480)
             dialog.present(window)
         else:
             items_available[selected_item.id] = selected_item.title
@@ -311,24 +317,28 @@ class MiAZSelector(Gtk.Box):
             value_used, docs = util.field_used(repository.docs, self.config.model, selected_item.id)
             item_type = self.config.model
             i_title = item_type.__title__
-            dtype = "warning"
             window = self.viewAv.get_root()
-            dtype = 'error'
             title = "Action not possible"
+            item_desc = selected_item.title.replace('_', ' ')
 
             if len(docs) > 0:
-                text = _(f'{i_title} {selected_item.title} is still being used by {len(docs)} docs')
+                text = _(f'{i_title} {item_desc} is still being used by {len(docs)} docs')
                 items = []
                 for doc in docs:
                     items.append(File(id=doc, title=os.path.basename(doc)))
                 view = MiAZColumnViewDocuments(self.app)
                 view.update(items)
             else:
-                text = _(f'{i_title} {selected_item.title} is still being used')
+                text = _(f'{i_title} {item_desc} is not used by any document.\n\n\nPlease, disable it first before deleting it.')
                 view = None
 
+            if view is not None:
+                widget = Gtk.Frame()
+                widget.set_child(view)
+            else:
+                widget = view
             srvdlg = self.app.get_service('dialogs')
-            dialog = srvdlg.create(dtype=dtype, title=title, body=text, widget=view, width=600, height=480)
+            dialog = srvdlg.show_error(title=title, body=text, widget=widget, width=600, height=480)
             dialog.present(window)
 
     def _on_selected_item_available_notify(self, colview, pos):
