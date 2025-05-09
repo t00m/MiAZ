@@ -50,6 +50,11 @@ class MiAZConfigView(MiAZSelector):
         self.config.connect('available-updated', self.update_views)
         self.set_vexpand(True)
         # ~ self.log.debug(f"Configview for {config_name} initialited")
+        item_type = self.config.model
+        tooltip=f'Enable selected {item_type.__title__.lower()}'
+        self.btnAddToUsed.set_tooltip_markup(tooltip)
+        tooltip=f'Disable selected {item_type.__title__.lower()}'
+        self.btnRemoveFromUsed.set_tooltip_markup(tooltip)
 
     def update_config(self):
         self.config = self.conf[self.config_name]
@@ -230,9 +235,6 @@ class MiAZCountries(MiAZConfigView):
         self.viewSl = MiAZColumnViewCountry(self.app, available=False)
         self._add_columnview_used(self.viewSl)
         self._add_config_menubutton(self.config.config_for)
-        item_type = self.config.model
-        tooltip=f'Enable selected {item_type.__title__.lower()}'
-        self.btnAddToUsed.set_tooltip_markup(tooltip)
 
     def _update_view_available(self):
         items = []
