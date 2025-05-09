@@ -230,6 +230,9 @@ class MiAZCountries(MiAZConfigView):
         self.viewSl = MiAZColumnViewCountry(self.app, available=False)
         self._add_columnview_used(self.viewSl)
         self._add_config_menubutton(self.config.config_for)
+        item_type = self.config.model
+        tooltip=f'Enable selected {item_type.__title__.lower()}'
+        self.btnAddToUsed.set_tooltip_markup(tooltip)
 
     def _update_view_available(self):
         items = []
