@@ -41,22 +41,6 @@ class MiAZSelector(Gtk.Box):
         banner.set_revealed(restart_needed)
         self.append(banner)
 
-        # Toolbar
-        ## Entry and buttons for operations (edit/add/remove)
-        # ~ self.boxOper = factory.create_box_horizontal(spacing=6)
-        # ~ self.app.add_widget('selector-box-operations', self.boxOper)
-        # ~ self.boxOper.set_margin_top(12)
-        # ~ self.boxOper.set_margin_bottom(6)
-        # ~ self.boxOper.set_margin_start(6)
-        # ~ self.boxOper.set_margin_end(6)
-        # ~ self.boxOper.set_hexpand(True)
-        # ~ self.boxOper.set_vexpand(False)
-
-        ## Toolbar right
-        # ~ boxUsed = factory.create_box_horizontal(spacing=0)
-        # ~ self.boxOper.append(boxUsed)
-        # ~ self.append(self.boxOper)
-
         # Views
         boxViews = factory.create_box_horizontal(spacing=0, hexpand=True, vexpand=True)
         boxViews.set_homogeneous(True)
@@ -74,8 +58,8 @@ class MiAZSelector(Gtk.Box):
         toolbar = Gtk.CenterBox()
         self.app.add_widget('settings-repository-toolbar-av', toolbar)
         toolbar.get_style_context().add_class(class_name='toolbar')
-        title = Gtk.Label()
-        title.set_markup(_('<b>Available</b>'))
+        # ~ title = Gtk.Label()
+        # ~ title.set_markup(_('<b>Available</b>'))
         self.toolbar_buttons_Av = factory.create_box_horizontal(margin=0, spacing=0, vexpand=False, hexpand=True)
         # ~ self.toolbar_buttons_Av.get_style_context().add_class(class_name='linked')
         if self.edit:
@@ -85,7 +69,7 @@ class MiAZSelector(Gtk.Box):
             self.toolbar_buttons_Av.append(factory.create_button(icon_name='io.github.t00m.MiAZ-list-edit-symbolic', title='', callback=self._on_item_available_edit, css_classes=['flat']))
         btnAddToUsed = factory.create_button('io.github.t00m.MiAZ-selector-add', title='enable', callback=self._on_item_used_add, css_classes=['flat', 'success'], reverse=True)
         toolbar.set_start_widget(self.toolbar_buttons_Av)
-        toolbar.set_center_widget(title)
+        # ~ toolbar.set_center_widget(title)
         toolbar.set_end_widget(btnAddToUsed)
         boxLeft.append(toolbar)
         boxLeft.append(boxViewAv)
@@ -98,14 +82,14 @@ class MiAZSelector(Gtk.Box):
         toolbar = Gtk.CenterBox()
         self.app.add_widget('settings-repository-toolbar-sl', toolbar)
         toolbar.get_style_context().add_class(class_name='toolbar')
-        title = Gtk.Label()
-        title.set_markup(_('<b>In use</b>'))
+        # ~ title = Gtk.Label()
+        # ~ title.set_markup(_('<b>In use</b>'))
         self.toolbar_buttons_Sl = factory.create_box_horizontal(margin=0, spacing=0, vexpand=False, hexpand=True)
         # ~ self.toolbar_buttons_Sl.get_style_context().add_class(class_name='linked')
         self.toolbar_buttons_Sl.set_halign(Gtk.Align.END)
         btnRemoveFromUsed = factory.create_button('io.github.t00m.MiAZ-selector-remove', title='disable', callback=self._on_item_used_remove, css_classes=['flat', 'error'])
         toolbar.set_start_widget(btnRemoveFromUsed)
-        toolbar.set_center_widget(title)
+        # ~ toolbar.set_center_widget(title)
         toolbar.set_end_widget(self.toolbar_buttons_Sl)
         boxRight.append(toolbar)
         boxRight.append(boxViewSl)
@@ -329,7 +313,7 @@ class MiAZSelector(Gtk.Box):
                 view = MiAZColumnViewDocuments(self.app)
                 view.update(items)
             else:
-                text = _(f'{i_title} {item_desc} is not used by any document.\n\n\nPlease, disable it first before deleting it.')
+                text = _(f"{i_title} {item_desc} is not used by any document.\nHowever, it is enabled.\n\n\nPlease, disable it first before deleting it.")
                 view = None
 
             if view is not None:

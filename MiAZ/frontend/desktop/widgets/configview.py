@@ -109,7 +109,7 @@ class MiAZRepositories(MiAZConfigView):
         # Setup Available and Used Columns Views
         self.viewAv = MiAZColumnViewRepo(self.app)
         self._add_columnview_available(self.viewAv)
-        self.viewSl = MiAZColumnViewRepo(self.app)
+        self.viewSl = MiAZColumnViewRepo(self.app, available=False)
         self._add_columnview_used(self.viewSl)
         self._add_config_menubutton(self.config.config_for)
 
@@ -227,7 +227,7 @@ class MiAZCountries(MiAZConfigView):
         # Setup Available and Used Column Views
         self.viewAv = MiAZColumnViewCountry(self.app)
         self._add_columnview_available(self.viewAv)
-        self.viewSl = MiAZColumnViewCountry(self.app)
+        self.viewSl = MiAZColumnViewCountry(self.app, available=False)
         self._add_columnview_used(self.viewSl)
         self._add_config_menubutton(self.config.config_for)
 
@@ -260,7 +260,7 @@ class MiAZGroups(MiAZConfigView):
         # Setup Available and Used Columns Views
         self.viewAv = MiAZColumnViewGroup(self.app)
         self._add_columnview_available(self.viewAv)
-        self.viewSl = MiAZColumnViewGroup(self.app)
+        self.viewSl = MiAZColumnViewGroup(self.app, available=False)
         self._add_columnview_used(self.viewSl)
         self._add_config_menubutton(self.config.config_for)
 
@@ -276,7 +276,7 @@ class MiAZPeople(MiAZConfigView):
         # Setup Available and Used Columns Views
         self.viewAv = MiAZColumnViewPerson(self.app)
         self._add_columnview_available(self.viewAv)
-        self.viewSl = MiAZColumnViewPerson(self.app)
+        self.viewSl = MiAZColumnViewPerson(self.app, available=False)
         self._add_columnview_used(self.viewSl)
         self._add_config_menubutton(self.config.config_for)
 
@@ -295,7 +295,7 @@ class MiAZPeopleSentBy(MiAZConfigView):
         # Setup Available and Used Columns Views
         self.viewAv = MiAZColumnViewPerson(self.app)
         self._add_columnview_available(self.viewAv)
-        self.viewSl = MiAZColumnViewPerson(self.app)
+        self.viewSl = MiAZColumnViewPerson(self.app, available=False)
         self._add_columnview_used(self.viewSl)
         self._add_config_menubutton(self.config.config_for)
 
@@ -314,7 +314,7 @@ class MiAZPeopleSentTo(MiAZConfigView):
         # Setup Available and Used Columns Views
         self.viewAv = MiAZColumnViewPerson(self.app)
         self._add_columnview_available(self.viewAv)
-        self.viewSl = MiAZColumnViewPerson(self.app)
+        self.viewSl = MiAZColumnViewPerson(self.app, available=False)
         self._add_columnview_used(self.viewSl)
         self._add_config_menubutton(self.config.config_for)
 
@@ -330,7 +330,7 @@ class MiAZPurposes(MiAZConfigView):
         # Setup Available and Used Columns Views
         self.viewAv = MiAZColumnViewPurpose(self.app)
         self._add_columnview_available(self.viewAv)
-        self.viewSl = MiAZColumnViewPurpose(self.app)
+        self.viewSl = MiAZColumnViewPurpose(self.app, available=False)
         self._add_columnview_used(self.viewSl)
         self._add_config_menubutton(self.config.config_for)
 
@@ -346,7 +346,7 @@ class MiAZProjects(MiAZConfigView):
         # Setup Available and Used Columns Views
         self.viewAv = MiAZColumnViewProject(self.app)
         self._add_columnview_available(self.viewAv)
-        self.viewSl = MiAZColumnViewProject(self.app)
+        self.viewSl = MiAZColumnViewProject(self.app, available=False)
         self._add_columnview_used(self.viewSl)
         self._add_config_menubutton(self.config.config_for)
 

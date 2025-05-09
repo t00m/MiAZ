@@ -161,6 +161,11 @@ class MiAZColumnViewWorkspace(MiAZColumnView):
         if gicon is not None:
             icon.set_from_gicon(gicon)
             icon.set_pixel_size(36)
+            # ~ tooltip = f"<big>{item.country}</big>\n<b>{item.country_dsc}</b>"
+            # ~ icon.set_tooltip_markup(tooltip)
+            # ~ print(info.get_attribute_type())
+            # ~ print(info.get_content_type())
+            # ~ print(file_type)
 
     def _on_factory_setup_country(self, factory, list_item):
         box = ColLabel()
@@ -206,6 +211,8 @@ class MiAZColumnViewWorkspace(MiAZColumnView):
         label.set_markup(item.sentby_dsc)
         label.set_ellipsize(True)
         label.set_property('ellipsize', Pango.EllipsizeMode.MIDDLE)
+        tooltip = f"<big>{item.sentby_id}</big>\n<b>{item.sentby_dsc}</b>"
+        label.set_tooltip_markup(tooltip)
 
     def _on_factory_setup_sentto(self, factory, list_item):
         box = ColLabel()
@@ -218,6 +225,8 @@ class MiAZColumnViewWorkspace(MiAZColumnView):
         label.set_markup(item.sentto_dsc)
         label.set_ellipsize(True)
         label.set_property('ellipsize', Pango.EllipsizeMode.MIDDLE)
+        tooltip = f"<big>{item.sentto_id}</big>\n<b>{item.sentto_dsc}</b>"
+        label.set_tooltip_markup(tooltip)
 
     def _on_factory_setup_purpose(self, factory, list_item):
         box = ColLabel()
@@ -229,6 +238,8 @@ class MiAZColumnViewWorkspace(MiAZColumnView):
         label = box.get_first_child()
         purpose = item.purpose_dsc
         label.set_markup(purpose)
+        tooltip = f"<big>{item.purpose}</big>\n<b>{item.purpose_dsc}</b>"
+        label.set_tooltip_markup(tooltip)
 
     def _on_factory_setup_flag(self, factory, list_item):
         box = ColIcon()
@@ -242,21 +253,30 @@ class MiAZColumnViewWorkspace(MiAZColumnView):
         code = item.country
         icon.set_from_icon_name(code)
         icon.set_pixel_size(36)
+        tooltip = f"<big>{item.country}</big>\n<b>{item.country_dsc}</b>"
+        icon.set_tooltip_markup(tooltip)
 
 
 class MiAZColumnViewCountry(MiAZColumnViewSelector):
     """ Custom ColumnView widget for MiAZ """
     __gtype_name__ = 'MiAZColumnViewCountry'
 
-    def __init__(self, app):
-        super().__init__(app, item_type=Country)
+    def __init__(self, app, available=True):
+        item_type=Country
+        super().__init__(app, item_type=item_type)
         factory_flag = Gtk.SignalListItemFactory()
         factory_flag.connect("setup", self._on_factory_setup_flag)
         factory_flag.connect("bind", self._on_factory_bind_flag)
-        self.column_flag = Gtk.ColumnViewColumn.new(_('Country'), factory_flag)
+        self.column_flag = Gtk.ColumnViewColumn.new(_('Flag'), factory_flag)
         self.cv.append_column(self.column_flag)
         self.cv.append_column(self.column_id)
         self.cv.append_column(self.column_title)
+        self.column_id.set_visible(False)
+        if available:
+            title = _(f"{item_type.__title_plural__} available")
+        else:
+            title = _(f"{item_type.__title_plural__} enabled")
+        self.column_title.set_title(title)
 
     def _on_factory_setup_flag(self, factory, list_item):
         box = ColIcon()
@@ -272,6 +292,8 @@ class MiAZColumnViewCountry(MiAZColumnViewSelector):
             flag = os.path.join(ENV['GPATH']['FLAGS'], "__.svg")
         icon.set_from_file(flag)
         icon.set_pixel_size(36)
+        tooltip = f"<big>{country.id}</big>\n<b>{country.title}</b>"
+        icon.set_tooltip_markup(tooltip)
 
 
 class MiAZColumnViewDocuments(MiAZColumnView):
@@ -293,75 +315,104 @@ class MiAZColumnViewRepo(MiAZColumnViewSelector):
     """ Custom ColumnView widget for MiAZ """
     __gtype_name__ = 'MiAZColumnViewRepo'
 
-    def __init__(self, app):
+    def __init__(self, app, available=True):
         super().__init__(app, item_type=Repository)
         self.cv.append_column(self.column_id)
-        self.column_title.set_title(_('Repo Id'))
+        self.column_id.set_expand(True)
+        if available:
+            self.column_id.set_title(_('Repositories available'))
+        else:
+            self.column_id.set_title(_('Repositories enabled'))
         self.cv.append_column(self.column_title)
         self.column_title.set_title(_('Directory'))
+        self.column_title.set_visible(False)
 
 
 class MiAZColumnViewGroup(MiAZColumnViewSelector):
     """ Custom ColumnView widget for MiAZ """
     __gtype_name__ = 'MiAZColumnViewGroup'
 
-    def __init__(self, app):
-        super().__init__(app, item_type=Group)
+    def __init__(self, app, available=True):
+        item_type=Group
+        super().__init__(app, item_type)
         self.cv.append_column(self.column_id)
         self.column_title.set_title(_('Group Id'))
+        self.column_id.set_visible(False)
         self.cv.append_column(self.column_title)
-        self.column_title.set_title(_('Description'))
-        # ~ self.selection.connect("selection-changed", self._on_selection_change)
-
-    # ~ def _on_selection_change(self, *args):
-        # ~ pass
+        if available:
+            title = _(f"{item_type.__title_plural__} available")
+        else:
+            title = _(f"{item_type.__title_plural__} enabled")
+        self.column_title.set_title(title)
 
 
 class MiAZColumnViewProject(MiAZColumnViewSelector):
     """ Custom ColumnView widget for MiAZ """
     __gtype_name__ = 'MiAZColumnViewProject'
 
-    def __init__(self, app):
-        super().__init__(app, item_type=Project)
+    def __init__(self, app, available=True):
+        item_type=Project
+        super().__init__(app, item_type)
         self.cv.append_column(self.column_id)
+        self.column_id.set_visible(False)
         self.column_title.set_title(_('Project Id'))
         self.cv.append_column(self.column_title)
-        self.column_title.set_title(_('Description'))
-
+        if available:
+            title = _(f"{item_type.__title_plural__} available")
+        else:
+            title = _(f"{item_type.__title_plural__} enabled")
+        self.column_title.set_title(title)
 
 class MiAZColumnViewPurpose(MiAZColumnViewSelector):
     """ Custom ColumnView widget for MiAZ """
     __gtype_name__ = 'MiAZColumnViewPurpose'
 
-    def __init__(self, app):
-        super().__init__(app, item_type=Purpose)
+    def __init__(self, app, available=True):
+        item_type=Purpose
+        super().__init__(app, item_type)
         self.cv.append_column(self.column_id)
+        self.column_id.set_visible(False)
         self.column_title.set_title(_('Purpose Id'))
         self.cv.append_column(self.column_title)
-        self.column_title.set_title(_('Description'))
+        if available:
+            title = _(f"{item_type.__title_plural__} available")
+        else:
+            title = _(f"{item_type.__title_plural__} enabled")
+        self.column_title.set_title(title)
 
 class MiAZColumnViewConcept(MiAZColumnViewSelector):
     """ Custom ColumnView widget for MiAZ """
     __gtype_name__ = 'MiAZColumnViewConcept'
 
-    def __init__(self, app):
-        super().__init__(app, item_type=Concept)
+    def __init__(self, app, available=True):
+        item_type=Concept
+        super().__init__(app, item_type)
         self.cv.append_column(self.column_id)
+        self.column_id.set_visible(False)
         self.column_title.set_title(_('Concept Id'))
         self.cv.append_column(self.column_title)
-        self.column_title.set_title(_('Concept'))
-
+        if available:
+            title = _(f"{item_type.__title_plural__} available")
+        else:
+            title = _(f"{item_type.__title_plural__} enabled")
+        self.column_title.set_title(title)
 
 class MiAZColumnViewPerson(MiAZColumnViewSelector):
     """ Custom ColumnView widget for MiAZ """
     __gtype_name__ = 'MiAZColumnViewPerson'
 
-    def __init__(self, app):
-        super().__init__(app, item_type=Person)
+    def __init__(self, app, available=True):
+        item_type=Person
+        super().__init__(app, item_type)
         self.cv.append_column(self.column_id)
         self.column_id.set_title(_('Initials'))
+        self.column_id.set_visible(False)
         self.cv.append_column(self.column_title)
-        self.column_title.set_title(_('Full name'))
+        if available:
+            title = _(f"{item_type.__title_plural__} available")
+        else:
+            title = _(f"{item_type.__title_plural__} enabled")
+        self.column_title.set_title(title)
 
 
 class MiAZColumnViewMassRename(MiAZColumnView):
