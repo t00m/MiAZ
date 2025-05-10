@@ -41,22 +41,6 @@ class MiAZSelector(Gtk.Box):
         banner.set_revealed(restart_needed)
         self.append(banner)
 
-        # Toolbar
-        ## Entry and buttons for operations (edit/add/remove)
-        # ~ self.boxOper = factory.create_box_horizontal(spacing=6)
-        # ~ self.app.add_widget('selector-box-operations', self.boxOper)
-        # ~ self.boxOper.set_margin_top(12)
-        # ~ self.boxOper.set_margin_bottom(6)
-        # ~ self.boxOper.set_margin_start(6)
-        # ~ self.boxOper.set_margin_end(6)
-        # ~ self.boxOper.set_hexpand(True)
-        # ~ self.boxOper.set_vexpand(False)
-
-        ## Toolbar right
-        # ~ boxUsed = factory.create_box_horizontal(spacing=0)
-        # ~ self.boxOper.append(boxUsed)
-        # ~ self.append(self.boxOper)
-
         # Views
         boxViews = factory.create_box_horizontal(spacing=0, hexpand=True, vexpand=True)
         boxViews.set_homogeneous(True)
@@ -74,19 +58,20 @@ class MiAZSelector(Gtk.Box):
         toolbar = Gtk.CenterBox()
         self.app.add_widget('settings-repository-toolbar-av', toolbar)
         toolbar.get_style_context().add_class(class_name='toolbar')
-        title = Gtk.Label()
-        title.set_markup(_('<b>Available</b>'))
         self.toolbar_buttons_Av = factory.create_box_horizontal(margin=0, spacing=0, vexpand=False, hexpand=True)
         # ~ self.toolbar_buttons_Av.get_style_context().add_class(class_name='linked')
         if self.edit:
             self.toolbar_buttons_Av.set_hexpand(False)
-            self.toolbar_buttons_Av.append(factory.create_button(icon_name='io.github.t00m.MiAZ-list-add-symbolic', title='', callback=self._on_item_available_add, css_classes=['flat']))
-            self.toolbar_buttons_Av.append(factory.create_button(icon_name='io.github.t00m.MiAZ-list-remove-symbolic', title='', callback=self._on_item_available_remove, css_classes=['flat']))
-            self.toolbar_buttons_Av.append(factory.create_button(icon_name='io.github.t00m.MiAZ-list-edit-symbolic', title='', callback=self._on_item_available_edit, css_classes=['flat']))
-        btnAddToUsed = factory.create_button('io.github.t00m.MiAZ-selector-add', title='enable', callback=self._on_item_used_add, css_classes=['flat', 'success'], reverse=True)
+            self.btnAvAdd = factory.create_button(icon_name='io.github.t00m.MiAZ-list-add-symbolic', title='', callback=self._on_item_available_add, css_classes=['flat'])
+            self.toolbar_buttons_Av.append(self.btnAvAdd)
+            self.btnAvRemove = factory.create_button(icon_name='io.github.t00m.MiAZ-list-remove-symbolic', title='', callback=self._on_item_available_remove, css_classes=['flat'])
+            self.toolbar_buttons_Av.append(self.btnAvRemove)
+            self.btnAvEdit = factory.create_button(icon_name='io.github.t00m.MiAZ-list-edit-symbolic', title='', callback=self._on_item_available_edit, css_classes=['flat'])
+            self.toolbar_buttons_Av.append(self.btnAvEdit)
+        self.btnAddToUsed = factory.create_button('io.github.t00m.MiAZ-selector-add', callback=self._on_item_used_add, css_classes=['flat', 'success'], reverse=True)
         toolbar.set_start_widget(self.toolbar_buttons_Av)
-        toolbar.set_center_widget(title)
-        toolbar.set_end_widget(btnAddToUsed)
+        # ~ toolbar.set_center_widget(title)
+        toolbar.set_end_widget(self.btnAddToUsed)
         boxLeft.append(toolbar)
         boxLeft.append(boxViewAv)
 
@@ -98,14 +83,12 @@ class MiAZSelector(Gtk.Box):
         toolbar = Gtk.CenterBox()
         self.app.add_widget('settings-repository-toolbar-sl', toolbar)
         toolbar.get_style_context().add_class(class_name='toolbar')
-        title = Gtk.Label()
-        title.set_markup(_('<b>In use</b>'))
         self.toolbar_buttons_Sl = factory.create_box_horizontal(margin=0, spacing=0, vexpand=False, hexpand=True)
         # ~ self.toolbar_buttons_Sl.get_style_context().add_class(class_name='linked')
         self.toolbar_buttons_Sl.set_halign(Gtk.Align.END)
-        btnRemoveFromUsed = factory.create_button('io.github.t00m.MiAZ-selector-remove', title='disable', callback=self._on_item_used_remove, css_classes=['flat', 'error'])
-        toolbar.set_start_widget(btnRemoveFromUsed)
-        toolbar.set_center_widget(title)
+        self.btnRemoveFromUsed = factory.create_button('io.github.t00m.MiAZ-selector-remove', tooltip='disable', callback=self._on_item_used_remove, css_classes=['flat', 'error'])
+        toolbar.set_start_widget(self.btnRemoveFromUsed)
+        # ~ toolbar.set_center_widget(title)
         toolbar.set_end_widget(self.toolbar_buttons_Sl)
         boxRight.append(toolbar)
         boxRight.append(boxViewSl)
@@ -161,17 +144,6 @@ class MiAZSelector(Gtk.Box):
         self._update_view_used()
         self.viewAv.cv.sort_by_column(self.viewAv.column_id, Gtk.SortType.ASCENDING)
         self.viewSl.cv.sort_by_column(self.viewSl.column_id, Gtk.SortType.ASCENDING)
-        # ~ self.log.debug(f"Setup selector for {self.config.config_for}")
-
-    def _on_item_used_add(self, *args):
-        items_used = self.config.load_used()
-        selected_item = self.viewAv.get_selected()
-        if selected_item is None:
-            return
-        items_used[selected_item.id] = selected_item.title
-        self.log.debug(f"Using {selected_item.id} ({selected_item.title})")
-        self.config.save_used(items=items_used)
-        self._update_view_used()
 
     def _on_item_used_remove(self, *args):
         # This works only for the standard fields.
@@ -182,13 +154,13 @@ class MiAZSelector(Gtk.Box):
         if selected_item is None:
             return
 
+        item_type = self.config.model
+        i_title = item_type.__title__
+        item_dsc = selected_item.title.replace('_', ' ')
         items_used = self.config.load_used()
         items_available = self.config.load_available()
         is_used, docs = util.field_used(repository.docs, self.config.model, selected_item.id)
         if is_used:
-            item_type = self.config.model
-            i_title = item_type.__title__
-            item_desc = selected_item.title.replace('_', ' ')
             text = _(f'{i_title} {item_desc} is still being used by {len(docs)} documents')
             window = self.viewSl.get_root()
             title = "Action not possible"
@@ -207,14 +179,14 @@ class MiAZSelector(Gtk.Box):
             else:
                 widget = view
             srvdlg = self.app.get_service('dialogs')
-            dialog = srvdlg.show_error(title=title, body=text, widget=widget, width=600, height=480)
-            dialog.present(window)
+            srvdlg.show_error(title=title, body=text, widget=widget, width=600, height=480, parent=window)
         else:
-            items_available[selected_item.id] = selected_item.title
-            del items_used[selected_item.id]
-            self.config.save_used(items=items_used)
-            self.config.save_available(items=items_available)
+            self.config.add_available(selected_item.id, selected_item.title)
+            self.config.remove_used(selected_item.id)
             self.update_views()
+            title = f"{i_title} management"
+            body = f"{i_title} {item_dsc} disabled"
+            self.srvdlg.show_warning(title=title, body=body, parent=self)
 
     def _on_item_available_add(self, *args):
         if self.edit:
@@ -227,45 +199,54 @@ class MiAZSelector(Gtk.Box):
             key1 = _(f'<b>{i_title.title()} key</b>')
             key2 = _('<b>Description</b>')
             dialog = this_item.create(parent=parent, title=title, key1=key1, key2=key2)
-            dialog.connect('response', self._on_response_item_available_add, this_item)
+            dialog.connect('response', self._on_item_available_add_response, this_item)
             this_item.set_value1(search_term)
             dialog.present(parent)
 
-    def _on_response_item_available_add(self, dialog, response, this_item):
+    def _on_item_available_add_response(self, dialog, response, this_item):
+        item_type = self.config.model
+        i_title = item_type.__title__
+
         if response ==  'apply':
             key = this_item.get_value1()
             value = this_item.get_value2()
-            if len(key) > 0:
+            if len(key) > 0 and len(value) > 0:
                 self.config.add_available(key.upper(), value)
-                self.log.debug(f"{key} ({value}) added to list of available items in {self.config.config_for}")
                 self.update_views()
+                title = f"{i_title} management"
+                body = f"{i_title} {value} added to list of available {item_type.__title_plural__.lower()}"
+                self.srvdlg.show_info(title=title, body=body, parent=dialog)
+            else:
+                title = "Action not possible"
+                body = f"Either the {i_title.lower()} key or the description are empty. Please, check."
+                self.srvdlg.show_error(title=title, body=body, parent=dialog)
 
     def _on_item_available_edit(self, *args):
         try:
             item = self.viewAv.get_selected()
-            self._on_item_available_rename(item)
+            item_type = self.config.model
+            i_title = item_type.__title__
+            if item_type not in [Country, Plugin]:
+                parent = self.get_root()
+                title = _(f'Change {i_title.lower()} description')
+                key1 = _(f'<b>{i_title.title()} key</b>')
+                key2 = _('<b>Description</b>')
+                this_item = MiAZDialogAdd(self.app)
+                dialog = this_item.create(parent=parent, title=title, key1=key1, key2=key2)
+                entry1 = this_item.get_entry_key1()
+                entry1.set_sensitive(False)
+                if item is not None:
+                    this_item.set_value1(item.id)
+                    this_item.set_value2(item.title)
+                dialog.connect('response', self._on_item_available_edit_description, item, this_item)
+                dialog.present(parent)
         except IndexError:
             self.log.debug("No item selected. Cancel operation")
 
-    def _on_item_available_rename(self, item):
+    def _on_item_available_edit_description(self, dialog, response, item, this_item):
         item_type = self.config.model
-        if item_type not in [Country, Plugin]:
-            i_title = item_type.__title__
-            parent = self.get_root()
-            title = _(f'Change {i_title.lower()} description')
-            key1 = _(f'<b>{i_title.title()} key</b>')
-            key2 = _('<b>Description</b>')
-            this_item = MiAZDialogAdd(self.app)
-            dialog = this_item.create(parent=parent, title=title, key1=key1, key2=key2)
-            entry1 = this_item.get_entry_key1()
-            entry1.set_sensitive(False)
-            if item is not None:
-                this_item.set_value1(item.id)
-                this_item.set_value2(item.title)
-            dialog.connect('response', self._on_response_item_available_rename, item, this_item)
-            dialog.present(parent)
+        i_title = item_type.__title__
 
-    def _on_response_item_available_rename(self, dialog, response, item, this_item):
         if response == 'apply':
             oldkey = item.id
             oldval = item.title
@@ -276,13 +257,18 @@ class MiAZSelector(Gtk.Box):
                 items_used = self.config.load_used()
                 if oldkey in items_used:
                     items_used[oldkey] = newval
-                    self.log.debug(f"{oldkey} ({oldval}) renamed to {newkey} ({newval}) in the list of used items")
                     self.config.save_used(items_used)
                 items_available = self.config.load_available()
                 items_available[oldkey] = newval
                 self.config.save_available(items_available)
-                self.log.debug(f"{oldkey} ({oldval}) renamed to {newkey} ({newval}) in the list of available items")
                 self.update_views()
+                title = f"{i_title} management"
+                body = f"{i_title} <i>{oldval}</i> renamed to <i>{newval}</i> globally"
+                self.srvdlg.show_info(title=title, body=body, parent=dialog)
+            else:
+                title = "Rename not possible"
+                body = f"Both {i_title.lower()} descriptions are the same"
+                self.srvdlg.show_error(title=title, body=body, parent=dialog)
 
     def select_item(self, view, item_id):
         self.log.debug(f"{view} > {item_id}")
@@ -305,14 +291,21 @@ class MiAZSelector(Gtk.Box):
         if selected_item is None:
             return
 
+        items_available = self.config.load_available()
+        item_type = self.config.model
+        i_title = item_type.__title__
+        item_id = selected_item.id.replace('_', ' ')
+        item_dsc = selected_item.title
+
         items_used = self.config.load_used()
         is_used = selected_item.id in items_used
         self.log.debug(f"Is '{selected_item.id}' used? {is_used}")
         if not is_used:
-            self.config.remove_available_batch([selected_item.id])
-            self.update_views()
-            self.searchentry.set_text('')
-            self.searchentry.activate()
+            title = f"{i_title} management"
+            body = f"Your about to delete <i>{i_title.lower()} {item_dsc}</i>.\n\nAre you sure?"
+            dialog = self.srvdlg.show_question(title=title, body=body)
+            dialog.connect('response', self._on_item_available_remove_response, selected_item)
+            dialog.present(self)
         else:
             value_used, docs = util.field_used(repository.docs, self.config.model, selected_item.id)
             item_type = self.config.model
@@ -329,7 +322,7 @@ class MiAZSelector(Gtk.Box):
                 view = MiAZColumnViewDocuments(self.app)
                 view.update(items)
             else:
-                text = _(f'{i_title} {item_desc} is not used by any document.\n\n\nPlease, disable it first before deleting it.')
+                text = _(f"{i_title} {item_desc} is not used by any document.\nHowever, it is enabled.\n\n\nPlease, disable it first before deleting it.")
                 view = None
 
             if view is not None:
@@ -338,8 +331,7 @@ class MiAZSelector(Gtk.Box):
             else:
                 widget = view
             srvdlg = self.app.get_service('dialogs')
-            dialog = srvdlg.show_error(title=title, body=text, widget=widget, width=600, height=480)
-            dialog.present(window)
+            srvdlg.show_error(title=title, body=text, widget=widget, width=600, height=480, parent=window)
 
     def _on_selected_item_available_notify(self, colview, pos):
         model = colview.get_model()
@@ -377,3 +369,58 @@ class MiAZSelector(Gtk.Box):
 
     def _on_config_import(self, *args):
         pass
+
+    # ~ def _on_item_available_remove(self, *args):
+        # ~ selected_item = self.viewAv.get_selected()
+        # ~ if selected_item is None:
+            # ~ return
+
+        # ~ items_available = self.config.load_available()
+        # ~ item_type = self.config.model
+        # ~ i_title = item_type.__title__
+        # ~ item_id = selected_item.id.replace('_', ' ')
+        # ~ item_dsc = selected_item.title
+
+        # ~ is_used = self.config.exists_used(selected_item.id)
+        # ~ if not is_used:
+            # ~ title = f"{i_title} management"
+            # ~ body = f"Your about to delete <i>{i_title.lower()} {item_dsc}</i>.\n\nAre you sure?"
+            # ~ dialog = self.srvdlg.show_question(title=title, body=body)
+            # ~ dialog.connect('response', self._on_item_available_remove_response, selected_item)
+            # ~ dialog.present(self)
+        # ~ else:
+            # ~ window = self.viewSl.get_root()
+            # ~ title = "Action not possible"
+            # ~ body = f"{i_title} {item_dsc} can't be removed because it is still being used"
+            # ~ self.srvdlg.show_error(title=title, body=body, parent=window)
+
+    def _on_item_available_remove_response(self, dialog, response, selected_item):
+        item_type = self.config.model
+        i_title = item_type.__title__
+        item_id = selected_item.id.replace('_', ' ')
+        item_dsc = selected_item.title
+        if response == 'apply':
+            self.config.remove_available(selected_item.id)
+            self.searchentry.set_text('')
+            self.searchentry.activate()
+            title = f"{i_title} management"
+            body = f"{i_title} {item_dsc} removed from de list of available {item_type.__title_plural__.lower()}"
+            self.srvdlg.show_warning(title=title, body=body, parent=self)
+        else:
+            title = f"{i_title} management"
+            body = f"{i_title} {item_dsc} not deleted from the list of available {item_type.__title_plural__.lower()}"
+            self.srvdlg.show_info(title=title, body=body, parent=self)
+
+    def _on_item_used_add(self, *args):
+        items_used = self.config.load_used()
+        selected_item = self.viewAv.get_selected()
+        is_used = selected_item.id in items_used
+        item_type = self.config.model
+        i_title = item_type.__title__
+        if not is_used:
+            items_used[selected_item.id] = selected_item.title
+            self.config.save_used(items=items_used)
+            self.update_views()
+            self.srvdlg.show_info(title=f"{i_title} management", body=f"{i_title} {selected_item.title} has been enabled", parent=self)
+        else:
+            self.srvdlg.show_error('Action not possible', f"{i_title} {selected_item.title} is already enabled", parent=self)

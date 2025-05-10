@@ -201,6 +201,8 @@ class MiAZColumnView(Gtk.Box):
         label.set_markup(item.title)
         label.set_ellipsize(True)
         label.set_property('ellipsize', Pango.EllipsizeMode.MIDDLE)
+        tooltip = f"<big>{item.id}</big>\n<b>{item.title}</b>"
+        label.set_tooltip_markup(tooltip)
 
     def _on_filter_view(self, item, filter_list_model):
         must_filter = False
@@ -228,7 +230,7 @@ class MiAZColumnViewSelector(Gtk.Box):
     """ Custom ColumnView widget for MiAZ """
     __gtype_name__ = 'MiAZColumnViewSelector'
 
-    def __init__(self, app, item_type=MiAZItem):
+    def __init__(self, app, item_type=MiAZItem, available=True):
         super().__init__(orientation=Gtk.Orientation.VERTICAL, spacing=3, hexpand=True, vexpand=True)
         self.app = app
         self.item_type = item_type
@@ -385,6 +387,8 @@ class MiAZColumnViewSelector(Gtk.Box):
         label.set_markup(item.title)
         label.set_ellipsize(True)
         label.set_property('ellipsize', Pango.EllipsizeMode.MIDDLE)
+        tooltip = f"<big>{item.id}</big>\n<b>{item.title}</b>"
+        label.set_tooltip_markup(tooltip)
 
     def _on_filter_view(self, item, filter_list_model):
         must_filter = False
