@@ -127,11 +127,13 @@ class MiAZDialog:
                     callback = None,
                     data = None,
                     width: int = -1,
-                    height: int = -1
+                    height: int = -1,
+                    parent: Gtk.Widget = None
                 ):
         """Create a new dialog of type info"""
         dialog = self.create(title=title, body=body, dtype='info', widget=widget, callback=callback, data=data, width=width, height=height)
         dialog.get_style_context().add_class(class_name='success')
+        dialog.present(parent)
         return dialog
 
     def show_error( self,
@@ -141,12 +143,13 @@ class MiAZDialog:
                     callback = None,
                     data = None,
                     width: int = -1,
-                    height: int = -1
+                    height: int = -1,
+                    parent: Gtk.Widget = None
                 ):
         """Create a new dialog of type error"""
         dialog = self.create(title=title, body=body, dtype='error', widget=widget, callback=callback, data=data, width=width, height=height)
         dialog.get_style_context().add_class(class_name='error')
-        return dialog
+        dialog.present(parent)
 
     def show_action(self,
                     title: str = '',
@@ -169,12 +172,13 @@ class MiAZDialog:
                     callback = None,
                     data = None,
                     width: int = -1,
-                    height: int = -1
+                    height: int = -1,
+                    parent: Gtk.Widget = None
                 ):
         """Create a new dialog of type error"""
-        dialog = self.create(title=title, body=body, dtype='action', widget=widget, callback=callback, data=data, width=width, height=height)
+        dialog = self.create(title=title, body=body, dtype='warning', widget=widget, callback=callback, data=data, width=width, height=height)
         dialog.get_style_context().add_class(class_name='warning')
-        return dialog
+        dialog.present(parent)
 
     def show_question(self,
                     title: str = '',

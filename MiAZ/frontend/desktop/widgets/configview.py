@@ -42,6 +42,7 @@ class MiAZConfigView(MiAZSelector):
         self.app = app
         self.log = MiAZLog('MiAZConfigView')
         self.repository = self.app.get_service('repo')
+        self.srvdlg = self.app.get_service('dialogs')
         self.config_name = config_name
         self.conf = self.app.get_config_dict()
         self.config = self.conf[config_name]
@@ -100,6 +101,59 @@ class MiAZConfigView(MiAZSelector):
         # ~ FIXME: hidden until the import/export functionality is fixed
         # ~ self.boxOper.append(button)
 
+    # ~ def _on_item_available_remove(self, *args):
+        # ~ selected_item = self.viewAv.get_selected()
+        # ~ if selected_item is None:
+            # ~ return
+
+        # ~ items_available = self.config.load_available()
+        # ~ item_type = self.config.model
+        # ~ i_title = item_type.__title__
+        # ~ item_id = selected_item.id.replace('_', ' ')
+        # ~ item_dsc = selected_item.title
+
+        # ~ is_used = self.config.exists_used(selected_item.id)
+        # ~ if not is_used:
+            # ~ title = f"{i_title} management"
+            # ~ body = f"Your about to delete <i>{i_title.lower()} {item_dsc}</i>.\n\nAre you sure?"
+            # ~ dialog = self.srvdlg.show_question(title=title, body=body)
+            # ~ dialog.connect('response', self._on_item_available_remove_response, selected_item)
+            # ~ dialog.present(self)
+        # ~ else:
+            # ~ window = self.viewSl.get_root()
+            # ~ title = "Action not possible"
+            # ~ body = f"{i_title} {item_dsc} can't be removed because it is still being used"
+            # ~ self.srvdlg.show_error(title=title, body=body, parent=window)
+
+    # ~ def _on_item_available_remove_response(self, dialog, response, selected_item):
+        # ~ item_type = self.config.model
+        # ~ i_title = item_type.__title__
+        # ~ item_id = selected_item.id.replace('_', ' ')
+        # ~ item_dsc = selected_item.title
+        # ~ if response == 'apply':
+            # ~ self.config.remove_available(selected_item.id)
+            # ~ title = f"{i_title} management"
+            # ~ body = f"{i_title} {item_dsc} removed from de list of available {item_type.__title_plural__.lower()}"
+            # ~ self.srvdlg.show_warning(title=title, body=body, parent=self)
+        # ~ else:
+            # ~ title = f"{i_title} management"
+            # ~ body = f"{i_title} {item_dsc} not deleted from the list of available {item_type.__title_plural__.lower()}"
+            # ~ self.srvdlg.show_info(title=title, body=body, parent=self)
+
+    # ~ def _on_item_used_add(self, *args):
+        # ~ items_used = self.config.load_used()
+        # ~ selected_item = self.viewAv.get_selected()
+        # ~ is_used = selected_item.id in items_used
+        # ~ item_type = self.config.model
+        # ~ i_title = item_type.__title__
+        # ~ if not is_used:
+            # ~ items_used[selected_item.id] = selected_item.title
+            # ~ self.config.save_used(items=items_used)
+            # ~ self.update_views()
+            # ~ self.srvdlg.show_info(title=f"{i_title} management", body=f"{i_title} {selected_item.title} has been enabled", parent=self)
+        # ~ else:
+            # ~ self.srvdlg.show_error('Action not possible', f"{i_title} {selected_item.title} is already enabled", parent=self)
+
 class MiAZRepositories(MiAZConfigView):
     """Manage Repositories"""
     __gtype_name__ = 'MiAZRepositories'
@@ -122,7 +176,7 @@ class MiAZRepositories(MiAZConfigView):
         window = self.viewSl.get_root()
         title = 'Add a new repository'
         key1 = '<big><b>Repository name</b></big>'
-        key2 = '<big><b>Folder</b></big>'
+        key2 = '<big><b>Directory</b></big>'
         # ~ search_term = self.entry.get_text()
         this_repo = MiAZDialogAddRepo(self.app)
         dialog = this_repo.create(title=title, key1=key1, key2=key2)
@@ -131,6 +185,7 @@ class MiAZRepositories(MiAZConfigView):
         dialog.present(window)
 
     def _on_response_item_available_add(self, dialog, response, this_repo):
+        srvdlg = self.app.get_service('dialogs')
         if response == 'apply':
             repo_name = this_repo.get_value1()
             repo_path = this_repo.get_value2()
@@ -139,7 +194,7 @@ class MiAZRepositories(MiAZConfigView):
                 self.log.debug(f"Repo '{repo_name}' added to list of available repositories")
                 self.update_views()
             else:
-                self.log.debug("No repository added. Invalid data")
+                srvdlg.show_error(title='Action not possible', body='No repository added. Invalid input.\n\nTry again by setting a repository name and a valid target directory', parent=dialog)
 
     def _on_item_available_rename(self, item):
         if item is None:
@@ -181,8 +236,7 @@ class MiAZRepositories(MiAZConfigView):
             text = _(f'<big>{i_title} {item_id} is still being used</big>')
             window = self.viewSl.get_root()
             title = "Action not possible"
-            dialog = srvdlg.show_error(title=title, body=text, widget=None)
-            dialog.present(window)
+            srvdlg.show_error(title=title, body=text, widget=None, parent=window)
 
     def _on_item_used_add(self, *args):
         items_used = self.config.load_used()
@@ -235,6 +289,11 @@ class MiAZCountries(MiAZConfigView):
         self.viewSl = MiAZColumnViewCountry(self.app, available=False)
         self._add_columnview_used(self.viewSl)
         self._add_config_menubutton(self.config.config_for)
+
+        # FIXME: allow Countries CRUD operations on demand
+        self.btnAvAdd.set_visible(False)
+        self.btnAvRemove.set_visible(False)
+        self.btnAvEdit.set_visible(False)
 
     def _update_view_available(self):
         items = []
@@ -355,44 +414,6 @@ class MiAZProjects(MiAZConfigView):
         self._add_columnview_used(self.viewSl)
         self._add_config_menubutton(self.config.config_for)
 
-    def _on_item_available_remove(self, *args):
-        srvdlg = self.app.get_service('dialogs')
-        selected_item = self.viewAv.get_selected()
-        if selected_item is None:
-            return
-
-        items_available = self.config.load_available()
-        item_type = self.config.model
-        i_title = item_type.__title__
-        item_id = selected_item.id.replace('_', ' ')
-
-        is_used = self.config.exists_used(selected_item.id)
-        if not is_used:
-            del items_available[selected_item.id]
-            self.config.save_available(items=items_available)
-            self.log.debug(f"{i_title} {item_id} removed from de list of available items")
-        else:
-            text = _(f'{i_title} {item_id} is still being used')
-            window = self.viewSl.get_root()
-            title = f"{i_title} {item_id} can't be removed"
-            title = "Action not possible"
-            dialog = srvdlg.show_error(title=title, body=text, width=600, height=480)
-            dialog.present(window)
-
-    def _on_item_used_add(self, *args):
-        items_used = self.config.load_used()
-        selected_item = self.viewAv.get_selected()
-        is_used = selected_item.id in items_used
-        item_type = self.config.model
-        i_title = item_type.__title__
-        if not is_used:
-            items_used[selected_item.id] = selected_item.title
-            self.config.save_used(items=items_used)
-            self.update_views()
-            self.log.debug(f"{i_title} {selected_item.id} not used yet. Can be used now")
-        else:
-            self.log.debug(f"{i_title} {selected_item.id} is already being used")
-
     def _on_item_used_remove(self, *args):
         self.log.debug("_on_item_used_remove:: start")
         items_available = self.config.load_available()
@@ -409,11 +430,14 @@ class MiAZProjects(MiAZConfigView):
             self.log.debug("_on_item_used_remove:: no dependencies")
             items_available[selected_item.id] = selected_item.title
             self.log.debug(f"{i_title} {item_id} added back to the list of available items")
-            del items_used[selected_item.id]
+            self.config.remove_used(selected_item.id)
             self.log.debug(f"{i_title} {item_id} removed from de list of used items")
-            self.config.save_used(items=items_used)
             self.config.save_available(items=items_available)
             self.update_views()
+            title = f"{i_title} management"
+            body = f"{i_title} {item_desc} disabled"
+            self.srvdlg.show_warning(title=title, body=body, parent=self)
+
         else:
             text = _(f'{i_title} {item_desc} is still being used by {len(docs)} documents')
             self.log.error(text)
@@ -427,9 +451,7 @@ class MiAZProjects(MiAZConfigView):
             view.update(items)
             widget = Gtk.Frame()
             widget.set_child(view)
-            dialog = srvdlg.show_error(title=title, body=text, widget=widget, width=600, height=480)
-            dialog.present(window)
-
+            srvdlg.show_error(title=title, body=text, widget=widget, width=600, height=480, parent=window)
 
 class MiAZUserPlugins(MiAZConfigView):
     """
@@ -513,14 +535,16 @@ class MiAZUserPlugins(MiAZConfigView):
         for pid in plugin_index:
             url_plugin = url_plugin_base % (source, pid)
             urls.append(url_plugin)
+            self.log.debug(f"Appending plugin {url_plugin}")
         total_files = len(urls)
 
-        for i, url in enumerate(urls):
+        for i, url_plugin in enumerate(urls):
             if hasattr(self, 'cancelled') and self.cancelled:
                 break
 
             # Update progress
             progress = (i + 1) / total_files
+            self.log.debug(f"Downloading plugin from {url_plugin}")
             GLib.idle_add(self.update_progress, progress, f"Downloading file {i+1}/{total_files}")
 
             try:
@@ -540,6 +564,7 @@ class MiAZUserPlugins(MiAZConfigView):
             banner.set_revealed(True)
             banner.set_title("One or more plugins were updated. Application restart needed")
             banner.set_button_label('Restart')
+            self.update_views()
 
     def _configure_plugin_options(self, *args):
         selected_plugin = self.viewSl.get_selected()

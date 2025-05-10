@@ -129,7 +129,6 @@ class MiAZToolbarRenameItemPlugin(GObject.GObject, Peas.Activatable):
             if not renamed:
                 text = f"<big>Another document with the same name already exists in this repository.</big>"
                 title=_('Renaming not possible')
-                dlgerror = srvdlg.show_error(title=title, body=text)
-                dlgerror.present(window)
+                srvdlg.show_error(title=title, body=text, parent=window)
         else:
             parent_dialog.present(window)

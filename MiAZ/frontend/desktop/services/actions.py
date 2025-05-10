@@ -116,8 +116,7 @@ class MiAZActions(GObject.GObject):
         window = button.get_root()
         title = "Action not implemented yet"
         body = "Import the configuration hasn't been implemented yet"
-        dialog = srvdlg.show_error(title=title, body=body)
-        dialog.present(window)
+        srvdlg.show_error(title=title, body=body, parent=window)
         return
 
         factory = self.app.get_service('factory')
@@ -174,10 +173,8 @@ class MiAZActions(GObject.GObject):
         window = button.get_root()
         title = "Action not implemented yet"
         body = "Export the configuration hasn't been implemented yet"
-        dialog = srvdlg.show_error(title=title, body=body)
-        dialog.present(window)
+        srvdlg.show_error(title=title, body=body, parent=window)
         return
-
 
         # ~ i_title = item_type.__title__
         # ~ file_available = '%s-available.json' % i_title_plural.lower()
@@ -315,8 +312,7 @@ class MiAZActions(GObject.GObject):
             parent = widget.get_root()
             body = '<big>You must select at least one document</big>'
             title = _('Action ignored')
-            dialog = srvdlg.show_error(title=title, body=body)
-            dialog.present(parent)
+            srvdlg.show_error(title=title, body=body, parent=parent)
             stop = True
         return stop
 
