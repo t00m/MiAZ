@@ -225,8 +225,8 @@ class Group(MiAZModel):
 
 class Person(MiAZModel):
     __gtype_name__ = 'Person'
-    __title__ = _('Person')
-    __title_plural__ = _('groups')
+    __title__ = _('Natural or legal entity')
+    __title_plural__ = _('Natural or legal entities')
     __config_name__ = 'people'
     __config_name_available__ = 'people'
     __config_name_used__ = 'people'
