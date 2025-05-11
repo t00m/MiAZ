@@ -146,6 +146,12 @@ class MiAZSidebar(Adw.Bin):
 
     def _setup_toolbar_filters(self):
         factory = self.app.get_service('factory')
+
+        notebook = self.app.add_widget('repository-sidebar-filters-notebook', Gtk.Notebook())
+        notebook.set_show_border(False)
+        notebook.set_tab_pos(Gtk.PositionType.TOP)
+
+        # First tab - Main filters
         widget = factory.create_box_vertical(spacing=0, margin=0, hexpand=True, vexpand=False)
         body = factory.create_box_vertical(margin=3, spacing=6, hexpand=True, vexpand=True)
         body.set_margin_top(margin=6)
@@ -155,7 +161,7 @@ class MiAZSidebar(Adw.Bin):
         body.append(row)
         widget.append(body)
 
-        # Search box
+        ## Search box
         searchentry = self.app.add_widget('searchentry', Gtk.SearchEntry())
         searchentry.set_hexpand(True)
         boxDropdown = factory.create_box_filter('Filter by free text', searchentry)
@@ -180,7 +186,7 @@ class MiAZSidebar(Adw.Bin):
         dropdowns[i_type] = dd_prj
         row.append(boxDropdown)
 
-        # Rest of filters dropdowns
+        ### Rest of filters dropdowns
         for item_type in [Country, Group, SentBy, Purpose, SentTo]:
             i_type = item_type.__gtype_name__
             i_title = _(item_type.__title__)
@@ -189,7 +195,35 @@ class MiAZSidebar(Adw.Bin):
             row.append(boxDropdown)
             dropdowns[i_type] = dropdown
 
-        return widget
+        label = factory.create_label(f"<b>Main filters</b>")
+        label.set_hexpand(True)
+        notebook.append_page(widget, label)
+
+        # Second tab - Custom filters
+        widget = factory.create_box_vertical(spacing=0, margin=0, hexpand=True, vexpand=False)
+        body = factory.create_box_vertical(margin=3, spacing=6, hexpand=True, vexpand=True)
+        body.set_margin_top(margin=6)
+        body.set_margin_start(margin=12)
+        body.set_margin_end(margin=12)
+        row = factory.create_box_vertical(margin=3, spacing=6, hexpand=True, vexpand=True)
+        self.app.add_widget('sidebar-box-custom-filters', row)
+        body.append(row)
+        widget.append(body)
+
+        label = factory.create_label(f"<b>Custom filters</b>")
+        label.set_hexpand(True)
+        notebook.append_page(widget, label)
+
+        ### Date dropdown
+        i_type = Date.__gtype_name__
+        dd_period = factory.create_dropdown_generic(item_type=Date, ellipsize=False, enable_search=True)
+        dd_period.set_hexpand(True)
+        dropdowns[i_type] = dd_date
+        boxDropdown = factory.create_box_filter('Period', dd_period)
+        row = self.app.get_widget('sidebar-box-custom-filters')
+        row.append(boxDropdown)
+
+        return notebook
 
     def _setup_clear_filters_button(self):
         factory = self.app.get_service('factory')

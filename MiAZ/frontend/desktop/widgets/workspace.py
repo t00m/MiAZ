@@ -48,6 +48,8 @@ class MiAZWorkspace(Gtk.Box):
         "workspace-view-selection-changed": (GObject.SignalFlags.RUN_LAST, None, ()),
         "workspace-view-filtered": (GObject.SignalFlags.RUN_LAST, None, ()),
     }
+    _main_filter = {}
+    _workspace_filters = {}
     _num_selected_items = 0
     _num_displayed_items = 0
     _num_total_items = 0
@@ -294,8 +296,13 @@ class MiAZWorkspace(Gtk.Box):
         self.view = MiAZColumnViewWorkspace(self.app)
         self.app.add_widget('workspace-view', self.view)
         self.view.get_style_context().add_class(class_name='monospace')
+        self._workspace_filters['main'] = self._do_filter_view_main
         self.view.set_filter(self._do_filter_view)
+        self._workspace_filters['period'] = self._do_filter_view_period
         return self.view
+
+    def _do_filter_view_period(self, item, filter_list_model):
+        return True
 
     def _setup_workspace(self):
         factory = self.app.get_service('factory')
@@ -577,6 +584,19 @@ class MiAZWorkspace(Gtk.Box):
         return item.active
 
     def _do_filter_view(self, item, filter_list_model):
+        show_item = True
+        lresults = []
+        for name in self._workspace_filters:
+            filter_func = self._workspace_filters[name]
+            result = filter_func(item, filter_list_model)
+            lresults.append(f"{name}[{result}]")
+            show_item = show_item and result
+        msg = 'and '.join(lresults)
+        msg += f" = {show_item}"
+        self.log.warning(msg)
+        return show_item
+
+    def _do_filter_view_main(self, item, filter_list_model):
         show_item = False
         dropdowns = self.app.get_widget('ws-dropdowns')
         c0 = self._do_eval_cond_matches_freetext(item)
@@ -615,6 +635,7 @@ class MiAZWorkspace(Gtk.Box):
                     show_item = False
         # ~ self.log.debug(f"{show_item} \t > {item.id}")
         # ~ self.log.debug(f"\tProject[{cp}] FreeText[{c0}] Date[{cd}] Country[{c1}] Group[{c2}] SentBy[{c4}] Purpose[{c5}] SentTo[{c6}]")
+        self._main_filter[item.id] = show_item
         return show_item
 
     def _do_connect_filter_signals(self):
