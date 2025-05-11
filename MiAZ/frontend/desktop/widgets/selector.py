@@ -161,7 +161,7 @@ class MiAZSelector(Gtk.Box):
         items_available = self.config.load_available()
         is_used, docs = util.field_used(repository.docs, self.config.model, selected_item.id)
         if is_used:
-            text = _(f'{i_title} {item_desc} is still being used by {len(docs)} documents')
+            text = _(f'{i_title} {item_dsc} is still being used by {len(docs)} documents')
             window = self.viewSl.get_root()
             title = "Action not possible"
             if len(docs) > 0:

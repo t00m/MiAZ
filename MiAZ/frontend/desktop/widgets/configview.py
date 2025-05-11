@@ -575,7 +575,6 @@ class MiAZUserPlugins(MiAZConfigView):
         util = self.app.get_service('util')
         plugin_system = self.app.get_service('plugin-system')
         user_plugins = util.json_load(ENV['APP']['PLUGINS']['USER_INDEX'])
-        module = user_plugins[selected_plugin.id]['Module']
         plugin_id = f"plugin-{selected_plugin.id}"
         plugin = self.app.get_widget(plugin_id)
         if plugin is not None:
