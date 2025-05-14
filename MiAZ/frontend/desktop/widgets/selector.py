@@ -159,7 +159,14 @@ class MiAZSelector(Gtk.Box):
         item_dsc = selected_item.title.replace('_', ' ')
         items_used = self.config.load_used()
         items_available = self.config.load_available()
-        is_used, docs = util.field_used(repository.docs, self.config.model, selected_item.id)
+        try:
+            is_used, docs = util.field_used(repository.docs, self.config.model, selected_item.id)
+        except KeyError:
+            # FIXME
+            # Above call works out only for MiAZ standard fields.
+            # For plugins, find another solution
+            self.log.warning(f"Custom model for {self.config.config_for} returns False")
+            is_used = False
         if is_used:
             text = _(f'{i_title} {item_dsc} is still being used by {len(docs)} documents')
             window = self.viewSl.get_root()
