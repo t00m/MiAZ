@@ -40,7 +40,7 @@ miaz_dialog = {
     'noop': {
         'icon': '',
         'responses': [],
-        'class_name': 'success'
+        'class_name': 'accent'
         }
 }
 
