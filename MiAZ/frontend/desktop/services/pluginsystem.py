@@ -182,8 +182,15 @@ class MiAZPlugin(GObject.GObject):
         repository = self.app.get_service('repo')
         return os.path.join(repository.docs, '.conf', 'plugins', self.name, 'data')
 
+    def get_data_file(self):
+        data_dir = self.get_data_dir()
+        return os.path.join(data_dir, f"{self.name}.json")
+
     def get_config_file(self):
         return os.path.join(self.get_config_dir(), f"Plugin-{self.name}.json")
+
+    def get_config_file_setup(self):
+        return os.path.join(self.get_config_dir(), f"{self.name}-setup.json")
 
     def get_config_data(self):
         config_file = self.get_config_file()
@@ -212,11 +219,12 @@ class MiAZPlugin(GObject.GObject):
         self.util.json_save(config_file, config_data)
         self.log.debug(f"Plugin config for {self.name} updated: [{key}] = {value}")
 
-    def install_menu_entry(self, menuitem):
+    def install_menu_entry(self, menuitem = None):
         category = self.info['Category']
         subcategory = self.info['Subcategory']
         subcategory_submenu = self.app.install_plugin_menu(category, subcategory)
-        subcategory_submenu.append_item(menuitem)
+        if menuitem is not None:
+            subcategory_submenu.append_item(menuitem)
         return subcategory_submenu
 
 
