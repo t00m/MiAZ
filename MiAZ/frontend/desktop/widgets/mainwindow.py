@@ -6,7 +6,7 @@
 
 from gettext import gettext as _
 
-from gi.repository import Adw, Gdk, Gio, Gtk
+from gi.repository import Adw, Gdk, Gio, GObject, Gtk
 
 from MiAZ.backend.log import MiAZLog
 from MiAZ.backend.models import MiAZItem, Group, Country, Purpose, SentBy, SentTo, Date, Project
@@ -20,6 +20,8 @@ from MiAZ.frontend.desktop.widgets.workspace import MiAZWorkspace
 
 
 class MiAZMainWindow(Gtk.Box):
+    __gtype_name__ = 'MiAZMainWindow'
+
     def __init__(self, app, edit=True):
         self.app = app
         self.log = MiAZLog('MiAZ.MainWindow')
@@ -27,6 +29,7 @@ class MiAZMainWindow(Gtk.Box):
         self.win = self.app.get_widget('window')
         self._setup_ui()
         self._setup_event_listener()
+        self.app.add_widget('mainwindow', self)
 
     def _setup_ui(self):
         factory = self.app.get_service('factory')
