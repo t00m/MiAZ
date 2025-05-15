@@ -573,7 +573,7 @@ class MiAZUserPlugins(MiAZConfigView):
         selected_plugin = self.viewSl.get_selected()
         if selected_plugin is None:
             return
-        self.log.info(f"{selected_plugin.id}: {selected_plugin.title}")
+        self.log.debug(f"Open configuration dialog for plugin {selected_plugin.id}")
         ENV = self.app.get_env()
         util = self.app.get_service('util')
         plugin_system = self.app.get_service('plugin-system')
