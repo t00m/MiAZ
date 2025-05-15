@@ -189,8 +189,8 @@ class MiAZPlugin(GObject.GObject):
     def get_config_file(self):
         return os.path.join(self.get_config_dir(), f"Plugin-{self.name}.json")
 
-    def get_config_file_setup(self):
-        return os.path.join(self.get_config_dir(), f"{self.name}-setup.json")
+    def get_config_file_default_available_data(self):
+        return os.path.join(self.get_config_dir(), f"default_available_data.json")
 
     def get_config_data(self):
         config_file = self.get_config_file()
