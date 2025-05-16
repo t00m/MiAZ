@@ -113,6 +113,7 @@ class MiAZSidebar(Adw.Bin):
 
         # Dropdown filters
         toolbar_filters = self._setup_toolbar_filters()
+        toolbar_filters.set_margin_top(12)
         self.app.add_widget('workspace-toolbar-filters', toolbar_filters)
 
         # Status page
@@ -154,6 +155,7 @@ class MiAZSidebar(Adw.Bin):
         box_filters = factory.create_box_vertical(margin=3, spacing=6, hexpand=True, vexpand=True)
         viewstack = self.app.add_widget('sidebar-stack-filters', Adw.ViewStack())
         switcher = self.app.add_widget('sidebar-switcher-filters', Adw.ViewSwitcher())
+        switcher.set_policy(Adw.ViewSwitcherPolicy.WIDE)
         switcher.set_halign(Gtk.Align.CENTER)
         switcher.set_stack(viewstack)
         viewstack.set_vexpand(True)
