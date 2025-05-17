@@ -37,15 +37,18 @@ class MiAZConfigView(MiAZSelector):
     __gtype_name__ = 'MiAZConfigView'
     config_for = None
 
-    def __init__(self, app, config_name=None):
+    def __init__(self, app, config_name=None, custom_config=None):
         # ~ super(MiAZSelector, self).__init__(spacing=0, orientation=Gtk.Orientation.VERTICAL)
         self.app = app
         self.log = MiAZLog('MiAZConfigView')
         self.repository = self.app.get_service('repo')
         self.srvdlg = self.app.get_service('dialogs')
         self.config_name = config_name
-        self.conf = self.app.get_config_dict()
-        self.config = self.conf[config_name]
+        try:
+            self.conf = self.app.get_config_dict()
+            self.config = self.conf[config_name]
+        except Exception as error:
+            self.config = custom_config
         self._setup_view_finish()
         self.config.connect('used-updated', self.update_views)
         self.config.connect('available-updated', self.update_views)
@@ -570,7 +573,7 @@ class MiAZUserPlugins(MiAZConfigView):
         selected_plugin = self.viewSl.get_selected()
         if selected_plugin is None:
             return
-        self.log.info(f"{selected_plugin.id}: {selected_plugin.title}")
+        self.log.debug(f"Open configuration dialog for plugin {selected_plugin.id}")
         ENV = self.app.get_env()
         util = self.app.get_service('util')
         plugin_system = self.app.get_service('plugin-system')
@@ -583,6 +586,7 @@ class MiAZUserPlugins(MiAZConfigView):
                     plugin.show_settings(widget=self)
                 except Exception as error:
                     self.log.error(error)
+                    raise
             else:
                 self.log.info(f"Plugin {selected_plugin.id} doesn't have a settings dialog")
         else:

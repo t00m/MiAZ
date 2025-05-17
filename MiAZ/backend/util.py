@@ -209,7 +209,7 @@ class MiAZUtil(GObject.GObject):
             if not os.path.exists(target):
                 try:
                     shutil.move(source, target)
-                    self.log.debug(f"Renaming doc from '{source}' to {target}' successful")
+                    self.log.debug(f"File renamed: '{source}' -> {target}'")
                     rename = True
                     self.emit('filename-renamed', source, target)
                 except Exception as error:
@@ -225,7 +225,7 @@ class MiAZUtil(GObject.GObject):
     def filename_delete(self, filepath):
         try:
             os.unlink(filepath)
-            self.log.debug(f"File {filepath} deleted")
+            self.log.debug(f"File deleted: {filepath}")
             self.emit('filename-deleted', filepath)
         except IsADirectoryError as error:
             self.log.error(error)
