@@ -65,6 +65,9 @@ class SidebarTitle(Adw.Bin):
 
 
 class MiAZSidebar(Adw.Bin):
+    """Main Sidebar"""
+    __gtype_name__ = 'MiAZSidebar'
+
     def __init__(self, app) -> None:
         super().__init__()
         self.app = app
@@ -72,7 +75,6 @@ class MiAZSidebar(Adw.Bin):
         self.set_size_request(350, -1)
         self.__build_ui()
         self.app.add_widget('sidebar', self)
-
         workflow = self.app.get_service('workflow')
         workflow.connect("repository-switch-finished", self._on_repo_switch)
 
@@ -83,6 +85,8 @@ class MiAZSidebar(Adw.Bin):
         self.set_title(title)
         # ~ searchentry = self.app.get_widget('searchentry')
         self.clear_filters()
+        self.setup_custom_filters()
+        row = self.app.get_widget('sidebar-box-custom-filters')
         workspace = self.app.get_widget('workspace')
         workspace.update()
         self.log.debug(f"Switched to repository {repo_id} > Sidebar updated")
@@ -109,6 +113,7 @@ class MiAZSidebar(Adw.Bin):
 
         # Dropdown filters
         toolbar_filters = self._setup_toolbar_filters()
+        toolbar_filters.set_margin_top(12)
         self.app.add_widget('workspace-toolbar-filters', toolbar_filters)
 
         # Status page
@@ -146,6 +151,18 @@ class MiAZSidebar(Adw.Bin):
 
     def _setup_toolbar_filters(self):
         factory = self.app.get_service('factory')
+
+        box_filters = factory.create_box_vertical(margin=3, spacing=6, hexpand=True, vexpand=True)
+        viewstack = self.app.add_widget('sidebar-stack-filters', Adw.ViewStack())
+        switcher = self.app.add_widget('sidebar-switcher-filters', Adw.ViewSwitcher())
+        switcher.set_policy(Adw.ViewSwitcherPolicy.WIDE)
+        switcher.set_halign(Gtk.Align.CENTER)
+        switcher.set_stack(viewstack)
+        viewstack.set_vexpand(True)
+        box_filters.append(switcher)
+        box_filters.append(viewstack)
+
+        # First tab - Main filters
         widget = factory.create_box_vertical(spacing=0, margin=0, hexpand=True, vexpand=False)
         body = factory.create_box_vertical(margin=3, spacing=6, hexpand=True, vexpand=True)
         body.set_margin_top(margin=6)
@@ -155,7 +172,7 @@ class MiAZSidebar(Adw.Bin):
         body.append(row)
         widget.append(body)
 
-        # Search box
+        ## Search box
         searchentry = self.app.add_widget('searchentry', Gtk.SearchEntry())
         searchentry.set_hexpand(True)
         boxDropdown = factory.create_box_filter('Filter by free text', searchentry)
@@ -180,7 +197,7 @@ class MiAZSidebar(Adw.Bin):
         dropdowns[i_type] = dd_prj
         row.append(boxDropdown)
 
-        # Rest of filters dropdowns
+        ### Rest of filters dropdowns
         for item_type in [Country, Group, SentBy, Purpose, SentTo]:
             i_type = item_type.__gtype_name__
             i_title = _(item_type.__title__)
@@ -189,7 +206,31 @@ class MiAZSidebar(Adw.Bin):
             row.append(boxDropdown)
             dropdowns[i_type] = dropdown
 
-        return widget
+        page_main_filters = viewstack.add_titled(widget, 'main-filters', 'Main filters')
+        page_main_filters.set_icon_name('io.github.t00m.MiAZ-filter-symbolic')
+        page_main_filters.set_visible(True)
+
+        return box_filters
+
+    def setup_custom_filters(self, *args):
+        # Second tab - Custom filters
+        if self.app.get_widget('sidebar-box-custom-filters') is None:
+            factory = self.app.get_service('factory')
+            workspace = self.app.get_widget('workspace')
+            workspace_filters = workspace.get_workspace_filters()
+            viewstack = self.app.get_widget('sidebar-stack-filters')
+            widget = factory.create_box_vertical(spacing=0, margin=0, hexpand=True, vexpand=False)
+            body = factory.create_box_vertical(margin=3, spacing=6, hexpand=True, vexpand=True)
+            body.set_margin_top(margin=6)
+            body.set_margin_start(margin=12)
+            body.set_margin_end(margin=12)
+            row = factory.create_box_vertical(margin=3, spacing=6, hexpand=True, vexpand=True)
+            self.app.add_widget('sidebar-box-custom-filters', row)
+            body.append(row)
+            widget.append(body)
+            page_custom_fiters = viewstack.add_titled(widget, 'custom-filters', 'Custom filters')
+            page_custom_fiters.set_icon_name('io.github.t00m.MiAZ-filter-custom-symbolic')
+            page_custom_fiters.set_visible(True)
 
     def _setup_clear_filters_button(self):
         factory = self.app.get_service('factory')

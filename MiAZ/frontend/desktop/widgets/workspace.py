@@ -40,14 +40,15 @@ Configview['Date'] = Gtk.Calendar
 
 
 class MiAZWorkspace(Gtk.Box):
-    __gtype_name__ = 'MiAZWorkspace'
     """Workspace"""
+    __gtype_name__ = 'MiAZWorkspace'
     __gsignals__ = {
         "workspace-loaded":  (GObject.SignalFlags.RUN_LAST, None, ()),
         "workspace-view-updated": (GObject.SignalFlags.RUN_LAST, None, ()),
         "workspace-view-selection-changed": (GObject.SignalFlags.RUN_LAST, None, ()),
         "workspace-view-filtered": (GObject.SignalFlags.RUN_LAST, None, ()),
     }
+    _workspace_filters = {}
     _num_selected_items = 0
     _num_displayed_items = 0
     _num_total_items = 0
@@ -294,8 +295,28 @@ class MiAZWorkspace(Gtk.Box):
         self.view = MiAZColumnViewWorkspace(self.app)
         self.app.add_widget('workspace-view', self.view)
         self.view.get_style_context().add_class(class_name='monospace')
+        self._workspace_filters['main'] = self._do_filter_view_main
         self.view.set_filter(self._do_filter_view)
         return self.view
+
+    def register_filter_view(self, name: str, callback):
+        registered = False
+        if name not in self._workspace_filters:
+            self._workspace_filters[name] = callback
+            self.log.debug(f"Added new workspace filter: {name}")
+            registered = True
+        else:
+            self.log.error(f"Workspace filter {name} already registerd. Skip.")
+        return registered
+
+    def unregister_filter_view(self, name):
+        unregistered = False
+        if name in self._workspace_filters:
+            del(self._workspace_filters[name])
+            unregistered = True
+        else:
+            self.log.error(f"Workspace filter {name} was not registerd. Skip.")
+        return unregistered
 
     def _setup_workspace(self):
         factory = self.app.get_service('factory')
@@ -577,6 +598,19 @@ class MiAZWorkspace(Gtk.Box):
         return item.active
 
     def _do_filter_view(self, item, filter_list_model):
+        show_item = True
+        lresults = []
+        for name in self._workspace_filters:
+            filter_func = self._workspace_filters[name]
+            result = filter_func(item, filter_list_model)
+            lresults.append(f"{name}[{result}]")
+            show_item = show_item and result
+        msg = 'and '.join(lresults)
+        msg += f" = {show_item}"
+        # ~ self.log.warning(msg)
+        return show_item
+
+    def _do_filter_view_main(self, item, filter_list_model):
         show_item = False
         dropdowns = self.app.get_widget('ws-dropdowns')
         c0 = self._do_eval_cond_matches_freetext(item)
@@ -615,6 +649,7 @@ class MiAZWorkspace(Gtk.Box):
                     show_item = False
         # ~ self.log.debug(f"{show_item} \t > {item.id}")
         # ~ self.log.debug(f"\tProject[{cp}] FreeText[{c0}] Date[{cd}] Country[{c1}] Group[{c2}] SentBy[{c4}] Purpose[{c5}] SentTo[{c6}]")
+
         return show_item
 
     def _do_connect_filter_signals(self):
@@ -697,3 +732,6 @@ class MiAZWorkspace(Gtk.Box):
         util = self.app.get_service('util')
         util.json_save(self.fcache, self.cache)
         self.log.debug(f"Workspace cache saved to {self.fcache}")
+
+    def get_workspace_filters(self):
+        return self._workspace_filters
