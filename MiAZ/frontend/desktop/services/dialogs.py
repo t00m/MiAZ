@@ -8,6 +8,7 @@ from gi.repository import Adw
 from gi.repository import Gio
 from gi.repository import GLib
 from gi.repository import Gtk
+from gi.repository import Pango
 
 from MiAZ.backend.log import MiAZLog
 
@@ -134,7 +135,6 @@ class MiAZDialog:
         dialog = self.create(title=title, body=body, dtype='info', widget=widget, callback=callback, data=data, width=width, height=height)
         dialog.get_style_context().add_class(class_name='success')
         dialog.present(parent)
-        return dialog
 
     def show_error( self,
                     title: str = '',
@@ -147,6 +147,8 @@ class MiAZDialog:
                     parent: Gtk.Widget = None
                 ):
         """Create a new dialog of type error"""
+        if parent is None:
+            parent = self.app.get_widget('window')
         dialog = self.create(title=title, body=body, dtype='error', widget=widget, callback=callback, data=data, width=width, height=height)
         dialog.get_style_context().add_class(class_name='error')
         dialog.present(parent)
@@ -332,25 +334,78 @@ class MiAZDialogAddRepo(MiAZDialogAdd):
         factory = self.app.get_service('factory')
         srvdlg = self.app.get_service('dialogs')
         self.title = title
-        self.key1 = key1
 
+        if len(key2.strip()) == 0:
+            key2 = GLib.get_home_dir()
+
+        # Repository key
+        self.key1 = key1
         self.lblKey1.set_markup(f"<b>{self.key1}</b>")
         vbox = factory.create_box_vertical(spacing=12, vexpand=True)
         self.boxKey1.append(vbox)
         hbox = factory.create_box_horizontal()
         hbox.append(self.lblKey1)
         hbox.append(self.etyValue1)
+        self.etyValue1.connect('changed', self._check_user_input_key)
         vbox.append(hbox)
-        self.filechooser = Gtk.FileChooserWidget()
-        self.filechooser.get_style_context().add_class(class_name='frame')
-        self.filechooser.set_action(Gtk.FileChooserAction.SELECT_FOLDER)
-        vbox.append(self.filechooser)
+
+        # Repository directory
+        self.key2 = key2
+        self.button = Gtk.Button()
+        self.button.set_label(self.key2)
+        label = self.button.get_child()
+        label.set_property('ellipsize', Pango.EllipsizeMode.MIDDLE)
+        self.button.connect("clicked", self.on_open_file)
+        vbox.append(self.button)
+
         self.fields.append(self.boxKey1)
         self.widget.append(self.fields)
 
         # Create dialog
         self.dialog = srvdlg.show_action(title=title, widget=self.widget)
+        self.dialog.set_response_enabled('apply', False)
         return self.dialog
+
+    def disable_key1(self):
+        self.etyValue1.set_sensitive(False)
+
+    def on_open_file(self, button):
+        dirpath = button.get_label()
+        if len(dirpath.strip()) == 0 or dirpath is None:
+            dirpath = GLib.get_home_dir()
+            folder = Gio.File.new_for_path(dirpath)
+        else:
+            folder = Gio.File.new_for_path(dirpath)
+        button.set_label(dirpath)
+
+        dialog = Gtk.FileDialog.new()
+        dialog.set_initial_folder(folder)
+        dialog_filter = Gtk.FileFilter()
+        dialog_filter.set_name("Folders")
+        dialog_filter.add_mime_type("inode/directory")  # Accept only directories
+        dialog.set_default_filter(dialog_filter)
+        parent = self.app.get_widget('window')
+        dialog.select_folder(parent, None, self.on_folder_selected)
+
+    def on_folder_selected(self, dialog, result):
+        try:
+            folder = dialog.select_folder_finish(result)
+            self.button.set_label(folder.get_path())
+        except GLib.Error as e:
+            self.log.error(f"Selection cancelled or failed: {e.message}")
+
+    def _check_user_input_key(self, entry):
+        key = entry.get_text()
+        key_valid = len(key) > 1
+        dir_valid = True
+
+        if key_valid and dir_valid:
+            user_input_valid = True
+        else:
+            user_input_valid = False
+
+        self.dialog.set_response_enabled('apply', user_input_valid)
+
 
     def get_entry_key1(self):
         return  self.etyValue1
@@ -362,55 +417,8 @@ class MiAZDialogAddRepo(MiAZDialogAdd):
         self.etyValue1.set_text(value)
 
     def get_value2(self):
-        gfile = self.filechooser.get_file()
-        try:
-            return gfile.get_path()
-        except AttributeError:
-            return None
+        # ~ folder = dialog.select_folder_finish(result)
+        return self.button.get_label()
 
     def set_value2(self, value):
-        gfile = Gio.File.new_for_path(value)
-        self.filechooser.set_file(gfile)
-
-
-class MiAZFileChooserDialog(MiAZDialog):
-    """ MiAZ Doc Browser Widget"""
-    __gtype_name__ = 'MiAZFileChooserDialog'
-
-    def __init__(self, app):
-        self.log = MiAZLog('MiAZ.FileChooserDialog')
-        self.app = app
-
-    def create( self,
-                title: str = '',
-                target: str = '',
-                callback=None,
-                data=None):
-
-        srvdlg = self.app.get_service('dialogs')
-
-        self.title = title
-        self.target = target
-        self.callback = callback
-        self.data = data
-
-        # Widget
-        self.w_filechooser = Gtk.FileChooserWidget()
-        self.w_filechooser.get_style_context().add_class(class_name='frame')
-        if self.target == 'FOLDER':
-            self.w_filechooser.set_action(Gtk.FileChooserAction.SELECT_FOLDER)
-        elif self.target == 'FILE':
-            self.w_filechooser.set_action(Gtk.FileChooserAction.OPEN)
-        elif self.target == 'SAVE':
-            self.w_filechooser.set_action(Gtk.FileChooserAction.SAVE)
-
-        # Create dialog
-        self.dialog = srvdlg.show_action(   title=title,
-                                            widget=self.w_filechooser,
-                                            callback=callback,
-                                            data=data)
-
-        return self.dialog
-
-    def get_filechooser_widget(self):
-        return self.w_filechooser
+        self.button.set_label(value)

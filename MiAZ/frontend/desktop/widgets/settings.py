@@ -25,7 +25,6 @@ from MiAZ.frontend.desktop.widgets.configview import MiAZRepositories
 from MiAZ.frontend.desktop.widgets.configview import MiAZUserPlugins
 from MiAZ.frontend.desktop.widgets.window import MiAZCustomWindow
 from MiAZ.frontend.desktop.widgets.pluginuimanager import MiAZPluginUIManager
-from MiAZ.frontend.desktop.services.dialogs import MiAZFileChooserDialog
 
 Configview = {}
 Configview['Country'] = MiAZCountries
@@ -119,8 +118,12 @@ class MiAZAppSettings(Adw.PreferencesDialog):
         self._on_update_repos_available()
 
         # DOC: By enabling this signal, repos are loaded automatically without pressing the button:
-        dd_repo.connect("notify::selected-item", self._on_use_repo)
+        # However, if a repository is loaded automatically, plugins too
+        # Right now, the load/unload plugin procedure is not working well
+        # Therefore, the app is restarted.
         self.config_repos.connect('used-updated', self.actions.dropdown_populate, dd_repo, Repository, False, False)
+        signal = dd_repo.connect("notify::selected-item", self._on_use_repo)
+        self.app.add_widget('signal-dd_repo', signal)
         row.add_suffix(dd_repo)
 
         #### Manage repositories
@@ -168,24 +171,55 @@ class MiAZAppSettings(Adw.PreferencesDialog):
         row.append(configview)
         return row
 
-    def _on_use_repo(self, *args):
+    def _on_use_repo(self, dropdown, gparam):
         """
         Load repository automatically whenever is selected.
         Once loaded, it is set as the default in the app config.
+        Then, the  user is asked if enabled repo should be the default one.
+        If yes, the app is restarted.
         """
-        actions = self.app.get_service('actions')
-        workflow = self.app.get_service('workflow')
-        dd_repo = self.app.get_widget('window-settings-dropdown-repository-active')
-        repo = dd_repo.get_selected_item()
+        # ~ dd_repo = self.app.get_widget('window-settings-dropdown-repository-active')
+        repo = dropdown.get_selected_item()
         if repo is None:
             return
-        self.log.debug(f"Repository chosen: {repo.id}")
-        config = self.app.get_config_dict()
-        config['App'].set('current', repo.id)
-        # ~ valid = workflow.switch_start()
-        # ~ self.log.debug(f"Repository {repo.id} loaded successfully? {valid}")
-        actions.application_restart()
 
+        title = "Repository management"
+        body = f"Would you like to set the repository {repo.id} as default?\n\nPlease, note that the app will be restarted upon confirmation"
+        parent = self.app.get_widget('window')
+        srvdlg = self.app.get_service('dialogs')
+        dialog = srvdlg.show_question(title=title, body=body, callback=self._on_use_repo_response, data=repo)
+        dialog.present(parent)
+
+    def _on_use_repo_response(self, dialog, response, repo):
+        srvdlg = self.app.get_service('dialogs')
+        config = self.app.get_config_dict()
+        default_repo = config['App'].get('current')
+
+        if response == 'apply':
+            config['App'].set('current', repo.id)
+            self.log.debug(f"Repository {repo.id} enabled")
+            # ~ srvdlg.show_info("Repostory management", body="Repository {repo.id} switched.\nApplication will be restarted now.", parent=dialog)
+            actions = self.app.get_service('actions')
+            actions.application_restart()
+        else:
+            # Trick to avoid restart app when repos are enabled/disabled
+            ## Block signal "dd_repo > notify::selected-item"
+            dd_repo = self.app.get_widget('window-settings-dropdown-repository-active')
+            signal = self.app.get_widget('signal-dd_repo')
+            dd_repo.handler_block(signal)
+
+            # Set default report back again
+            model = dd_repo.get_model()
+            n = 0
+            for item in model:
+                if item.id == default_repo:
+                    dd_repo.set_selected(n)
+                n += 1
+
+            ## Unblock signal "dd_repo > notify::selected-item"
+            dd_repo.handler_unblock(signal)
+
+            srvdlg.show_error("Repository management", body="Action canceled. Repository not switched", parent=dialog)
 
     def _on_manage_repositories(self, *args):
         widget = self._create_widget_for_repositories()
@@ -199,11 +233,11 @@ class MiAZAppSettings(Adw.PreferencesDialog):
         try:
             repo_id = dropdown.get_selected_item().id
             repo_dir = dropdown.get_selected_item().title
-            self.log.debug(f"Repository selected: {repo_id}[{repo_dir}]")
+            self.log.debug(f"ON_SELECTED_REPO: Repository selected: {repo_id}[{repo_dir}]")
             self.config['App'].set('current', repo_id)
             # ~ self.app.switch()
             actions = self.app.get_service('actions')
-            actions.application_restart()
+            # ~ actions.application_restart()
         except AttributeError:
             # Probably the repository was removed from used view
             pass
