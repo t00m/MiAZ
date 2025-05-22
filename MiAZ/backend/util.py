@@ -215,11 +215,14 @@ class MiAZUtil(GObject.GObject):
                 except Exception as error:
                     self.log.error(f"Renaming doc from '{source}' to {target}' not possible. Error: {error}")
             else:
-                self.log.error(f"Renaming doc from '{source}' to {target}' not possible. Target already exist")
+                # FIXME
+                # ~ self.log.error(f"Renaming doc from '{source}' to {target}' not possible. Target already exist")
+                pass
         else:
             # FIXME
-            self.log.warning("FIXME: this might not be true in Windows systems")
-            self.log.warning(f"Renaming doc from '{source}' to {target}' skipped. Source and target are the same")
+            # ~ self.log.warning("FIXME: this might not be true in Windows systems")
+            # ~ self.log.warning(f"Renaming doc from '{source}' to {target}' skipped. Source and target are the same")
+            pass
         return rename
 
     def filename_delete(self, filepath):
