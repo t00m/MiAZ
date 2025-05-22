@@ -68,13 +68,14 @@ class MiAZFactory:
             child = child.get_next_sibling()
         return children
 
-    def create_filechooser_for_directories(self, callback, initial_folder: str, parent=None):
+    def create_filechooser_for_directories(self, callback, initial_folder: str = '', parent: Gtk.Widget = None) -> Gtk.FileDialog:
         """
         Create a new FileDialog for selecting directories
         """
         # Set default values
         if len(initial_folder) == 0:
-            initial_folder = GLib.get_user_special_dir(GLib.UserDirectory.DIRECTORY_DOCUMENTS)
+            dirpath = GLib.get_user_special_dir(GLib.UserDirectory.DIRECTORY_DOCUMENTS)
+            initial_folder = Gio.File.new_for_path(dirpath)
         if parent is None:
             parent = self.app.get_widget('window')
 
@@ -91,7 +92,7 @@ class MiAZFactory:
 
     def create_filechooser_for_files(self, callback, initial_folder: str = '', parent: Gtk.Widget = None) -> Gtk.FileDialog:
         """
-        Create a new FileDialog for selecting directories
+        Create a new FileDialog for selecting multiple files
         """
         # Set default values
         if len(initial_folder) == 0:
