@@ -164,7 +164,7 @@ class MiAZDialog:
                 ):
         """Create a new dialog of type error"""
         dialog = self.create(title=title, body=body, dtype='action', widget=widget, callback=callback, data=data, width=width, height=height)
-        dialog.get_style_context().add_class(class_name='accent')
+        # ~ dialog.get_style_context().add_class(class_name='accent')
         return dialog
 
     def show_warning(self,
