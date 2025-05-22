@@ -313,7 +313,7 @@ class MiAZActions(GObject.GObject):
             if widget is None:
                 widget = self.app.get_widget('workspace')
             parent = widget.get_root()
-            body = '<big>You must select at least one document</big>'
+            body = 'You must select at least one document'
             title = _('Action ignored')
             srvdlg.show_error(title=title, body=body, parent=parent)
             stop = True

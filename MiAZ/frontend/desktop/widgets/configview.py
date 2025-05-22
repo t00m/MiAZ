@@ -14,6 +14,7 @@ import requests
 
 from gi.repository import Adw
 from gi.repository import GLib
+from gi.repository import GObject
 from gi.repository import Gtk
 
 from MiAZ.backend.log import MiAZLog
@@ -179,11 +180,12 @@ class MiAZRepositories(MiAZConfigView):
         window = self.viewSl.get_root()
         title = 'Add a new repository'
         key1 = '<big><b>Repository name</b></big>'
-        key2 = '<big><b>Directory</b></big>'
+        key2 = 'Select target folder'
         # ~ search_term = self.entry.get_text()
         this_repo = MiAZDialogAddRepo(self.app)
         dialog = this_repo.create(title=title, key1=key1, key2=key2)
         this_repo.set_value1('')
+        this_repo.set_value2(GLib.get_user_special_dir(GLib.UserDirectory.DIRECTORY_DOCUMENTS))
         dialog.connect('response', self._on_response_item_available_add, this_repo)
         dialog.present(window)
 
@@ -199,25 +201,51 @@ class MiAZRepositories(MiAZConfigView):
             else:
                 srvdlg.show_error(title='Action not possible', body='No repository added. Invalid input.\n\nTry again by setting a repository name and a valid target directory', parent=dialog)
 
-    def _on_item_available_rename(self, item):
+    def _on_item_available_edit(self, *args):
+        item = self.viewAv.get_selected()
         if item is None:
             return
 
-        repo_name = item.id
-        repo_path = item.title
-        self.log.debug(f"Renaming Repository '{repo_name}' located in {repo_path}")
-        window = self.viewSl.get_root()
-        this_repo = MiAZDialogAddRepo(self.app)
-        title = _('Edit repository')
+        item_type = self.config.model
+        i_title = item_type.__title__
+        parent = self.viewSl.get_root()
+        title = 'Add a new repository'
         key1 = '<big><b>Repository name</b></big>'
-        key2 = '<big><b>Folder</b></big>'
+        key2 = '<big><b>Directory</b></big>'
+        this_repo = MiAZDialogAddRepo(self.app)
         dialog = this_repo.create(title=title, key1=key1, key2=key2)
-        this_repo.set_value1(repo_name.replace('_', ' '))
-        this_repo.set_value2(repo_path)
-        entry1 = this_repo.get_entry_key1()
-        entry1.set_sensitive(False)
-        dialog.connect('response', self._on_response_item_available_rename, item, this_repo)
-        dialog.present(window)
+        this_repo.disable_key1()
+        this_repo.set_value1(item.id)
+        this_repo.set_value2(item.title)
+        dialog.connect('response', self._on_item_available_edit_description, item, this_repo)
+        dialog.present(parent)
+
+    def _on_item_available_edit_description(self, dialog, response, item, this_item):
+        item_type = self.config.model
+        i_title = item_type.__title__
+
+        if response == 'apply':
+            oldkey = item.id
+            oldval = item.title
+            newkey = this_item.get_value1()
+            newval = this_item.get_value2()
+            self.log.debug(f"{oldval} == {newval}? {newval != oldval}")
+            if newval != oldval:
+                items_used = self.config.load_used()
+                if oldkey in items_used:
+                    items_used[oldkey] = newval
+                    self.config.save_used(items_used)
+                items_available = self.config.load_available()
+                items_available[oldkey] = newval
+                self.config.save_available(items_available)
+                self.update_views()
+                title = f"{i_title} management"
+                body = f"Repository {item.id} has changed its directory:\n\nFrom: {oldval}\n\nTo: {newval}"
+                self.srvdlg.show_info(title=title, body=body, parent=dialog)
+            else:
+                title = "Action not possible"
+                body = f"Old and new {i_title.lower()} directories are the same"
+                self.srvdlg.show_error(title=title, body=body, parent=dialog)
 
     def _on_item_available_remove(self, *args):
         srvdlg = self.app.get_service('dialogs')
@@ -242,6 +270,9 @@ class MiAZRepositories(MiAZConfigView):
             srvdlg.show_error(title=title, body=text, widget=None, parent=window)
 
     def _on_item_used_add(self, *args):
+        dd_repo = self.app.get_widget('window-settings-dropdown-repository-active')
+        signal = self.app.get_widget('signal-dd_repo')
+        dd_repo.handler_block(signal)
         items_used = self.config.load_used()
         selected_item = self.viewAv.get_selected()
         if selected_item is None:
@@ -257,8 +288,15 @@ class MiAZRepositories(MiAZConfigView):
             self.log.debug(f"{i_title} {selected_item.id} not used yet. Can be used now")
         else:
             self.log.debug(f"{i_title} {selected_item.id} is already being used")
+        dd_repo.handler_unblock(signal)
 
     def _on_item_used_remove(self, *args):
+        # Trick to avoid restart app when repos are enabled/disabled
+        ## Block signal "dd_repo > notify::selected-item"
+        dd_repo = self.app.get_widget('window-settings-dropdown-repository-active')
+        signal = self.app.get_widget('signal-dd_repo')
+        dd_repo.handler_block(signal)
+
         items_available = self.config.load_available()
         items_used = self.config.load_used()
         selected_item = self.viewSl.get_selected()
@@ -274,6 +312,8 @@ class MiAZRepositories(MiAZConfigView):
         self.config.save_used(items=items_used)
         self.config.save_available(items=items_available)
         self.update_views()
+        ## Unblock signal "dd_repo > notify::selected-item"
+        dd_repo.handler_unblock(signal)
 
 
 class MiAZCountries(MiAZConfigView):
