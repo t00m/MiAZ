@@ -5,8 +5,9 @@
 # Description: Custom widgets widely used
 
 from gi.repository import Gdk
-from gi.repository import Gtk
 from gi.repository import Gio
+from gi.repository import GLib
+from gi.repository import Gtk
 from gi.repository import Pango
 
 from MiAZ.backend.log import MiAZLog
@@ -49,7 +50,6 @@ class MiAZBox(Gtk.Box):
             func(child)
 
 
-
 class MiAZFactory:
     def __init__(self, app):
         self.app = app
@@ -67,6 +67,51 @@ class MiAZFactory:
             children.append(child)
             child = child.get_next_sibling()
         return children
+
+    def create_filechooser_for_directories(self, callback, initial_folder: str = '', parent: Gtk.Widget = None) -> Gtk.FileDialog:
+        """
+        Create a new FileDialog for selecting directories
+        """
+        # Set default values
+        if len(initial_folder) == 0:
+            dirpath = GLib.get_user_special_dir(GLib.UserDirectory.DIRECTORY_DOCUMENTS)
+            initial_folder = Gio.File.new_for_path(dirpath)
+        if parent is None:
+            parent = self.app.get_widget('window')
+
+        # Create dialog
+        dialog = Gtk.FileDialog.new()
+        dialog.set_title("Select folder")
+        dialog.set_initial_folder(initial_folder)
+        dialog_filter = Gtk.FileFilter()
+        dialog_filter.set_name("Folders")
+        dialog_filter.add_mime_type("inode/directory")  # Accept only directories
+        dialog.set_default_filter(dialog_filter)
+        dialog.select_folder(parent, None, callback)
+        return dialog
+
+    def create_filechooser_for_files(self, callback, initial_folder: str = '', parent: Gtk.Widget = None) -> Gtk.FileDialog:
+        """
+        Create a new FileDialog for selecting multiple files
+        """
+        # Set default values
+        if len(initial_folder) == 0:
+            dirpath = GLib.get_user_special_dir(GLib.UserDirectory.DIRECTORY_DOCUMENTS)
+            initial_folder = Gio.File.new_for_path(dirpath)
+        if parent is None:
+            parent = self.app.get_widget('window')
+
+        # Create dialog
+        dialog = Gtk.FileDialog.new()
+        dialog.set_title("Select documents")
+        dialog.set_initial_folder(initial_folder)
+        dialog_filter = Gtk.FileFilter()
+        dialog_filter.set_name("Documents")
+        dialog_filter.add_pattern("*.*")
+        dialog.set_default_filter(dialog_filter)
+        dialog.set_modal(True)
+        dialog.open_multiple(parent, None, callback)
+        return dialog
 
     def create_actionrow(self, title:str = '', subtitle:str = '', prefix: Gtk.Widget = None, suffix: Gtk.Widget = None):
         box = Gtk.CenterBox(orientation=Gtk.Orientation.HORIZONTAL)

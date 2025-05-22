@@ -2,11 +2,11 @@
 Module=adddir
 Name=MiAZImportFromDirectory
 Loader=Python3
-Description=Import all documents from a directory
+Description=Import directory
 Authors=Tomás Vírseda <tomasvirseda@gmail.com>
 Copyright=Copyright © 2025 Tomás Vírseda
 Website=http://github.com/t00m/MiAZ
 Help=http://github.com/t00m/MiAZ/README.adoc
-Version=0.3
+Version=0.4
 Category=Data Management
 Subcategory=Import
