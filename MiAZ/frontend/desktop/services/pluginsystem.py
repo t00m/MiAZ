@@ -102,6 +102,8 @@ class MiAZAPI(GObject.GObject):
 
 
 class MiAZPlugin(GObject.GObject):
+    _started = False
+
     def __init__(self, app):
         self.app = app
         self.log = MiAZLog('MiAZPlugin')
@@ -136,6 +138,12 @@ class MiAZPlugin(GObject.GObject):
         if not os.path.exists(datadir):
             os.makedirs(datadir, exist_ok=True)
         self.log.debug(f"\tData: {datadir}")
+
+    def set_started(self, started: bool) -> None:
+        self._started = started
+
+    def started(self):
+        return self._started
 
     def get_app(self):
         return self.app
