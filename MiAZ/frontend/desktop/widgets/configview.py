@@ -544,14 +544,11 @@ class MiAZUserPlugins(MiAZConfigView):
         threading.Thread(target=self.download_plugins, daemon=True).start()
 
     def download_plugins(self):
+        # FIXME: set toolbar sensitivity to False
         banner = self.app.get_widget('repository-settings-banner')
         banner.set_revealed(True)
         banner.set_button_label('')
         banner.set_title("")
-        toolbarAv = self.app.get_widget('settings-repository-toolbar-av')
-        toolbarSl = self.app.get_widget('settings-repository-toolbar-sl')
-        toolbarAv.set_sensitive(False)
-        toolbarSl.set_sensitive(False)
 
         util = self.app.get_service('util')
         ENV = self.app.get_env()
