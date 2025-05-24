@@ -65,29 +65,33 @@ class MiAZToolbarProjectMgtPlugin(GObject.GObject, Peas.Activatable):
         self.log.debug("Plugin deactivation not implemented")
 
     def startup(self, *args):
-        menuitem_name = f'plugin-menuitem-{self.plugin.get_name()}'
-        menuitem = self.app.get_widget(menuitem_name)
-        if menuitem is None:
-            factory = self.app.get_service('factory')
-            main_menu = self.app.get_widget('workspace-menu-selection')
+        if not self.plugin.started():
+            menuitem_name = f'plugin-menuitem-{self.plugin.get_name()}'
+            menuitem = self.app.get_widget(menuitem_name)
+            if menuitem is None:
+                factory = self.app.get_service('factory')
+                main_menu = self.app.get_widget('workspace-menu-selection')
 
-            submenu_project = Gio.Menu.new()
-            menu_project = Gio.MenuItem.new_submenu(
-                label=_('Project management...'),
-                submenu=submenu_project,
-            )
-            self.app.add_widget(menuitem_name, menu_project)
-            self.app.add_widget('workspace-menu-selection-menu-project', menu_project)
-            self.app.add_widget('workspace-menu-selection-submenu-project', submenu_project)
-            menuitem = factory.create_menuitem('project-manage', _('... manage projects'), self.project_manage, None, [])
-            submenu_project.append_item(menuitem)
-            menuitem = factory.create_menuitem('project-assign', _('... assign to project'), self.project_assign, None, [])
-            submenu_project.append_item(menuitem)
-            menuitem = factory.create_menuitem('project-withdraw', _('... withdraw from project'), self.project_withdraw, None, [])
-            submenu_project.append_item(menuitem)
-            menuitem = factory.create_menuitem('project-view', _('... view documents per project'), self.project_view, None, [])
-            submenu_project.append_item(menuitem)
-            main_menu.append_item(menu_project)
+                submenu_project = Gio.Menu.new()
+                menu_project = Gio.MenuItem.new_submenu(
+                    label=_('Project management...'),
+                    submenu=submenu_project,
+                )
+                self.app.add_widget(menuitem_name, menu_project)
+                self.app.add_widget('workspace-menu-selection-menu-project', menu_project)
+                self.app.add_widget('workspace-menu-selection-submenu-project', submenu_project)
+                menuitem = factory.create_menuitem('project-manage', _('... manage projects'), self.project_manage, None, [])
+                submenu_project.append_item(menuitem)
+                menuitem = factory.create_menuitem('project-assign', _('... assign to project'), self.project_assign, None, [])
+                submenu_project.append_item(menuitem)
+                menuitem = factory.create_menuitem('project-withdraw', _('... withdraw from project'), self.project_withdraw, None, [])
+                submenu_project.append_item(menuitem)
+                menuitem = factory.create_menuitem('project-view', _('... view documents per project'), self.project_view, None, [])
+                submenu_project.append_item(menuitem)
+                main_menu.append_item(menu_project)
+
+            # Plugin configured
+            self.plugin.set_started(started=True)
 
     def project_assign(self, *args):
         actions = self.app.get_service('actions')

@@ -66,25 +66,29 @@ class MiAZMassRenamingPlugin(GObject.GObject, Peas.Activatable):
         self.log.debug("Plugin deactivation not implemented")
 
     def startup(self, *args):
-        menuitem_name = f'plugin-menuitem-{self.plugin.get_name()}'
-        menuitem = self.app.get_widget(menuitem_name)
-        if menuitem is None:
-            factory = self.app.get_service('factory')
-            submenu_massrename = Gio.Menu.new()
-            menu_massrename = Gio.MenuItem.new_submenu(
-                    label=_('Mass renaming'),
-                    submenu=submenu_massrename,
-                )
-            self.app.add_widget(menuitem_name, menu_massrename)
-            fields = [Date, Country, Group, SentBy, Purpose, SentTo]
-            for item_type in fields:
-                i_type = item_type.__gtype_name__
-                i_title = _(item_type.__title__)
-                menuitem = factory.create_menuitem(f'rename_{i_type.lower()}', f'... of {i_title.lower()}', self.document_rename_multiple, item_type, [])
-                submenu_massrename.append_item(menuitem)
+        if not self.plugin.started():
+            menuitem_name = f'plugin-menuitem-{self.plugin.get_name()}'
+            menuitem = self.app.get_widget(menuitem_name)
+            if menuitem is None:
+                factory = self.app.get_service('factory')
+                submenu_massrename = Gio.Menu.new()
+                menu_massrename = Gio.MenuItem.new_submenu(
+                        label=_('Mass renaming'),
+                        submenu=submenu_massrename,
+                    )
+                self.app.add_widget(menuitem_name, menu_massrename)
+                fields = [Date, Country, Group, SentBy, Purpose, SentTo]
+                for item_type in fields:
+                    i_type = item_type.__gtype_name__
+                    i_title = _(item_type.__title__)
+                    menuitem = factory.create_menuitem(f'rename_{i_type.lower()}', f'... of {i_title.lower()}', self.document_rename_multiple, item_type, [])
+                    submenu_massrename.append_item(menuitem)
 
-            main_menu = self.app.get_widget('workspace-menu-selection')
-            main_menu.append_item(menu_massrename)
+                main_menu = self.app.get_widget('workspace-menu-selection')
+                main_menu.append_item(menu_massrename)
+
+            # Plugin configured
+            self.plugin.set_started(started=True)
 
 
     def document_rename_multiple(self, action, data, item_type):
