@@ -15,7 +15,7 @@ from MiAZ.backend.log import MiAZLog
 from MiAZ.frontend.desktop.widgets.columnview import MiAZColumnView
 from MiAZ.frontend.desktop.widgets.columnview import MiAZColumnViewSelector
 from MiAZ.frontend.desktop.widgets.columnview import ColIcon, ColLabel, ColCheck
-from MiAZ.backend.models import MiAZItem, Country, Group, Person, Purpose, File, Project, Repository, Plugin, Concept
+from MiAZ.backend.models import MiAZItem, Country, Group, Person, Purpose, File, Repository, Plugin, Concept
 
 
 class MiAZColumnViewWorkspace(MiAZColumnView):
@@ -346,23 +346,6 @@ class MiAZColumnViewGroup(MiAZColumnViewSelector):
         self.column_title.set_title(title)
 
 
-class MiAZColumnViewProject(MiAZColumnViewSelector):
-    """ Custom ColumnView widget for MiAZ """
-    __gtype_name__ = 'MiAZColumnViewProject'
-
-    def __init__(self, app, available=True):
-        item_type=Project
-        super().__init__(app, item_type)
-        self.cv.append_column(self.column_id)
-        self.column_id.set_visible(False)
-        self.column_title.set_title(_('Project Id'))
-        self.cv.append_column(self.column_title)
-        if available:
-            title = _(f"{item_type.__title_plural__} available")
-        else:
-            title = _(f"{item_type.__title_plural__} enabled")
-        self.column_title.set_title(title)
-
 class MiAZColumnViewPurpose(MiAZColumnViewSelector):
     """ Custom ColumnView widget for MiAZ """
     __gtype_name__ = 'MiAZColumnViewPurpose'
@@ -444,19 +427,19 @@ class MiAZColumnViewMassDelete(MiAZColumnView):
         self.column_title.set_expand(True)
 
 
-class MiAZColumnViewMassProject(MiAZColumnView):
-    """ Custom ColumnView widget for MiAZ """
-    __gtype_name__ = 'MiAZColumnViewMassProject'
+# ~ class MiAZColumnViewMassProject(MiAZColumnView):
+    # ~ """ Custom ColumnView widget for MiAZ """
+    # ~ __gtype_name__ = 'MiAZColumnViewMassProject'
 
-    def __init__(self, app):
-        super().__init__(app, item_type=File)
-        self.cv.append_column(self.column_id)
-        self.column_id.set_title(_('Document'))
-        self.column_id.set_expand(False)
-        self.column_id.set_visible(True)
-        self.cv.append_column(self.column_title)
-        self.column_title.set_title(_('Projects already assigned'))
-        self.column_title.set_expand(True)
+    # ~ def __init__(self, app):
+        # ~ super().__init__(app, item_type=File)
+        # ~ self.cv.append_column(self.column_id)
+        # ~ self.column_id.set_title(_('Document'))
+        # ~ self.column_id.set_expand(False)
+        # ~ self.column_id.set_visible(True)
+        # ~ self.cv.append_column(self.column_title)
+        # ~ self.column_title.set_title(_('Projects already assigned'))
+        # ~ self.column_title.set_expand(True)
 
 
 class MiAZColumnViewPlugin(MiAZColumnViewSelector):

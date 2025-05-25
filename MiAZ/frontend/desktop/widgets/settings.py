@@ -13,14 +13,13 @@ from gi.repository import GObject
 
 from MiAZ.backend.log import MiAZLog
 from MiAZ.backend.config import MiAZConfigRepositories
-from MiAZ.backend.models import Repository, Plugin, Project
+from MiAZ.backend.models import Repository, Plugin
 from MiAZ.backend.models import Country, Group, Purpose, SentBy, SentTo
 from MiAZ.frontend.desktop.widgets.configview import MiAZGroups
 from MiAZ.frontend.desktop.widgets.configview import MiAZPurposes
 from MiAZ.frontend.desktop.widgets.configview import MiAZCountries
 from MiAZ.frontend.desktop.widgets.configview import MiAZPeopleSentBy
 from MiAZ.frontend.desktop.widgets.configview import MiAZPeopleSentTo
-from MiAZ.frontend.desktop.widgets.configview import MiAZProjects
 from MiAZ.frontend.desktop.widgets.configview import MiAZRepositories
 from MiAZ.frontend.desktop.widgets.configview import MiAZUserPlugins
 from MiAZ.frontend.desktop.widgets.window import MiAZCustomWindow
@@ -32,7 +31,6 @@ Configview['Group'] = MiAZGroups
 Configview['Purpose'] = MiAZPurposes
 Configview['SentBy'] = MiAZPeopleSentBy
 Configview['SentTo'] = MiAZPeopleSentTo
-Configview['Project'] = MiAZProjects
 Configview['Plugin'] = MiAZUserPlugins
 # ~ Configview['Date'] = Gtk.Calendar
 
@@ -311,7 +309,7 @@ class MiAZRepoSettings(MiAZCustomWindow):
             return page, wdgLabel
 
         # FIXME: User plugins disabled temporary
-        for item_type in [Country, Group, Purpose, SentBy, SentTo, Project, Plugin]:
+        for item_type in [Country, Group, Purpose, SentBy, SentTo, Plugin]:
             page, label = create_tab(item_type)
             notebook.append_page(page, label)
 
@@ -322,7 +320,7 @@ class MiAZRepoSettings(MiAZCustomWindow):
         self.set_title(title)
 
         # FIXME: User plugins disabled temporary
-        for item_type in [Country, Group, Purpose, Project, SentBy, SentTo, Plugin]:
+        for item_type in [Country, Group, Purpose, SentBy, SentTo, Plugin]:
             i_title = item_type.__title_plural__
             widget_title = f"configview-{i_title}"
             configview = self.app.get_widget(widget_title)

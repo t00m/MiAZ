@@ -13,7 +13,7 @@ import shutil
 from gi.repository import GObject
 
 from MiAZ.backend.log import MiAZLog
-from MiAZ.backend.models import MiAZModel, Group, Person, Country, Purpose, Concept, SentBy, SentTo, Project, Repository, Plugin
+from MiAZ.backend.models import MiAZModel, Group, Person, Country, Purpose, Concept, SentBy, SentTo, Repository, Plugin
 
 
 class MiAZConfig(GObject.GObject):
@@ -438,20 +438,6 @@ class MiAZConfigSentTo(MiAZConfig):
             available=os.path.join(dir_conf, f'{SentTo.__config_name_available__}-available.json'),
             default=os.path.join(ENV['GPATH']['CONF'], 'MiAZ-people.json'),
             model=SentTo,
-            must_copy=False
-        )
-
-
-class MiAZConfigProjects(MiAZConfig):
-    def __init__(self, app, dir_conf):
-        super().__init__(
-            app=app,
-            log=MiAZLog('MiAZ.Config.Project'),
-            config_for='Project',
-            used=os.path.join(dir_conf, 'projects-used.json'),
-            available=os.path.join(dir_conf, 'projects-available.json'),
-            default=None,
-            model=Project,
             must_copy=False
         )
 

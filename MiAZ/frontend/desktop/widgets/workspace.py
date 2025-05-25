@@ -15,10 +15,10 @@ from gi.repository import GObject
 
 from MiAZ.env import ENV
 from MiAZ.backend.log import MiAZLog
-from MiAZ.backend.models import MiAZItem, Group, Country, Purpose, SentBy, SentTo, Date, Project
+from MiAZ.backend.models import MiAZItem, Group, Country, Purpose, SentBy, SentTo, Date
 from MiAZ.frontend.desktop.widgets.assistant import MiAZAssistantRepoSettings
 from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewWorkspace
-from MiAZ.frontend.desktop.widgets.configview import MiAZCountries, MiAZGroups, MiAZPurposes, MiAZPeopleSentBy, MiAZPeopleSentTo, MiAZProjects
+from MiAZ.frontend.desktop.widgets.configview import MiAZCountries, MiAZGroups, MiAZPurposes, MiAZPeopleSentBy, MiAZPeopleSentTo
 from MiAZ.backend.status import MiAZStatus
 
 # Conversion Item type to Field Number
@@ -35,7 +35,6 @@ Configview['Group'] = MiAZGroups
 Configview['Purpose'] = MiAZPurposes
 Configview['SentBy'] = MiAZPeopleSentBy
 Configview['SentTo'] = MiAZPeopleSentTo
-Configview['Project'] = MiAZProjects
 Configview['Date'] = Gtk.Calendar
 
 
@@ -132,15 +131,15 @@ class MiAZWorkspace(Gtk.Box):
         dd_date.set_selected(1)
         dd_date.connect("notify::selected-item", self.update)
 
-        ## Dropdown Projects
-        i_type = Project.__gtype_name__
-        i_title = _(Project.__title__)
-        dd_prj = dropdowns[i_type]
-        actions.dropdown_populate(self.config[i_type], dd_prj, Project, any_value=True, none_value=True)
-        dd_prj.connect("notify::selected-item", self._on_filter_selected)
-        dd_prj.connect("notify::selected-item", self._on_project_selected)
-        dd_prj.set_hexpand(True)
-        self.config[i_type].connect('used-updated', self.update_dropdown_filter, Project)
+        # ~ ## Dropdown Projects
+        # ~ i_type = Project.__gtype_name__
+        # ~ i_title = _(Project.__title__)
+        # ~ dd_prj = dropdowns[i_type]
+        # ~ actions.dropdown_populate(self.config[i_type], dd_prj, Project, any_value=True, none_value=True)
+        # ~ dd_prj.connect("notify::selected-item", self._on_filter_selected)
+        # ~ dd_prj.connect("notify::selected-item", self._on_project_selected)
+        # ~ dd_prj.set_hexpand(True)
+        # ~ self.config[i_type].connect('used-updated', self.update_dropdown_filter, Project)
         # ~ self.log.debug(f"Dropdown filter for '{i_title}' setup successfully")
 
         ## Rest of dropdowns
@@ -196,7 +195,7 @@ class MiAZWorkspace(Gtk.Box):
     def _update_dropdowns(self, *args):
         actions = self.app.get_service('actions')
         dropdowns = self.app.get_widget('ws-dropdowns')
-        for item_type in [Country, Group, SentBy, Purpose, SentTo, Project]:
+        for item_type in [Country, Group, SentBy, Purpose, SentTo]:
             i_type = item_type.__gtype_name__
             config = self.config[i_type]
             actions.dropdown_populate(config, dropdowns[i_type], item_type, True, True)
@@ -573,26 +572,26 @@ class MiAZWorkspace(Gtk.Box):
                 matches = False
         return matches
 
-    def _do_eval_cond_matches_project(self, doc):
-        projects = self.app.get_service('Projects')
-        dropdowns = self.app.get_widget('ws-dropdowns')
-        dd_prj = dropdowns[Project.__gtype_name__]
-        matches = False
-        try:
-            project = dd_prj.get_selected_item().id
-        except AttributeError:
-            # Raised when managing projects from selector
-            # Workaround: do not filter
-            return True
-        if project == 'Any':
-            matches = True
-        elif project == 'None':
-            lprojects = projects.assigned_to(doc)
-            if len(lprojects) == 0:
-                matches = True
-        else:
-            matches = projects.exists(project, doc)
-        return matches
+    # ~ def _do_eval_cond_matches_project(self, doc):
+        # ~ projects = self.app.get_service('Projects')
+        # ~ dropdowns = self.app.get_widget('ws-dropdowns')
+        # ~ dd_prj = dropdowns[Project.__gtype_name__]
+        # ~ matches = False
+        # ~ try:
+            # ~ project = dd_prj.get_selected_item().id
+        # ~ except AttributeError:
+            # ~ # Raised when managing projects from selector
+            # ~ # Workaround: do not filter
+            # ~ return True
+        # ~ if project == 'Any':
+            # ~ matches = True
+        # ~ elif project == 'None':
+            # ~ lprojects = projects.assigned_to(doc)
+            # ~ if len(lprojects) == 0:
+                # ~ matches = True
+        # ~ else:
+            # ~ matches = projects.exists(project, doc)
+        # ~ return matches
 
     def _do_eval_cond_matches_active(self, item):
         return item.active
@@ -627,28 +626,27 @@ class MiAZWorkspace(Gtk.Box):
         if self.review:
             show_item = not ca and c0 and c1 and c2 and c4 and c5 and c6
         else:
-            # Normal mode. Take projects into account
-            projects = self.app.get_service('Projects')
-            dd_prj = dropdowns[Project.__gtype_name__]
-            try:
-                project = dd_prj.get_selected_item().id
-            except AttributeError:
-                project = 'Any'
+            show_item = c0 and c1 and c2 and c4 and c5 and c6 and cd
+            # ~ # Normal mode. Take projects into account
+            # ~ projects = self.app.get_service('Projects')
+            # ~ dd_prj = dropdowns[Project.__gtype_name__]
+            # ~ try:
+                # ~ project = dd_prj.get_selected_item().id
+            # ~ except AttributeError:
+                # ~ project = 'Any'
 
-            if project != 'None':
-                if project == 'Any':
-                    cp = True
-                else:
-                    cp = projects.exists(project, item.id)
-                show_item = ca and c0 and c1 and c2 and c4 and c5 and c6 and cd and cp
-            else:
-                projects_assigned = projects.assigned_to(item.id)
-                if len(projects_assigned) == 0:
-                    show_item = c0 and c1 and c2 and c4 and c5 and c6 and cd
-                else:
-                    show_item = False
-        # ~ self.log.debug(f"{show_item} \t > {item.id}")
-        # ~ self.log.debug(f"\tProject[{cp}] FreeText[{c0}] Date[{cd}] Country[{c1}] Group[{c2}] SentBy[{c4}] Purpose[{c5}] SentTo[{c6}]")
+            # ~ if project != 'None':
+                # ~ if project == 'Any':
+                    # ~ cp = True
+                # ~ else:
+                    # ~ cp = projects.exists(project, item.id)
+                # ~ show_item = ca and c0 and c1 and c2 and c4 and c5 and c6 and cd and cp
+            # ~ else:
+                # ~ projects_assigned = projects.assigned_to(item.id)
+                # ~ if len(projects_assigned) == 0:
+                    # ~ show_item = c0 and c1 and c2 and c4 and c5 and c6 and cd
+                # ~ else:
+                    # ~ show_item = False
 
         return show_item
 
@@ -661,18 +659,18 @@ class MiAZWorkspace(Gtk.Box):
         selection = self.view.get_selection()
         selection.connect('selection-changed', self._on_selection_changed)
 
-    def _on_project_selected(self, dropdown, gparam):
-        """When a project is chosen, the date change to get show all
-        documents"""
-        try:
-            prjkey = dropdown.get_selected_item().id
-            if prjkey != 'Any':
-                dropdowns = self.app.get_widget('ws-dropdowns')
-                i_type = Date.__gtype_name__
-                dropdowns[i_type].set_selected(9)
-        except AttributeError:
-            # ~ Raised when managing projects from selector. Skip
-            pass
+    # ~ def _on_project_selected(self, dropdown, gparam):
+        # ~ """When a project is chosen, the date change to get show all
+        # ~ documents"""
+        # ~ try:
+            # ~ prjkey = dropdown.get_selected_item().id
+            # ~ if prjkey != 'Any':
+                # ~ dropdowns = self.app.get_widget('ws-dropdowns')
+                # ~ i_type = Date.__gtype_name__
+                # ~ dropdowns[i_type].set_selected(9)
+        # ~ except AttributeError:
+            # ~ # Raised when managing projects from selector. Skip
+            # ~ pass
 
     def _on_filter_selected(self, *args):
         workspace_menu = self.app.get_widget('workspace-menu')

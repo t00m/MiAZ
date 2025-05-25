@@ -232,15 +232,6 @@ class Person(MiAZModel):
     __config_name_used__ = 'people'
 
 
-class Project(MiAZModel):
-    __gtype_name__ = 'Project'
-    __title__ = _('Project')
-    __title_plural__ = _('Projects')
-    __config_name__ = 'projects'
-    __config_name_available__ = 'projects'
-    __config_name_used__ = 'projects'
-
-
 class Purpose(MiAZModel):
     __gtype_name__ = 'Purpose'
     __title__ = _('Purpose')

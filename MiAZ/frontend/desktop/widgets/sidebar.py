@@ -12,7 +12,7 @@
 from gi.repository import Adw, GObject, Gio, Gtk  # type:ignore
 
 from MiAZ.backend.log import MiAZLog
-from MiAZ.backend.models import MiAZItem, Group, Country, Purpose, SentBy, SentTo, Date, Project
+from MiAZ.backend.models import MiAZItem, Group, Country, Purpose, SentBy, SentTo, Date
 from MiAZ.frontend.desktop.services.factory import MiAZBox
 
 
@@ -189,13 +189,13 @@ class MiAZSidebar(Adw.Bin):
         boxDropdown = factory.create_box_filter('Date', dd_date)
         row.append(boxDropdown)
 
-        ### Projects dropdown
-        i_type = Project.__gtype_name__
-        i_title = _(Project.__title__)
-        dd_prj = factory.create_dropdown_generic(item_type=Project)
-        boxDropdown = factory.create_box_filter(i_title, dd_prj)
-        dropdowns[i_type] = dd_prj
-        row.append(boxDropdown)
+        # ~ ### Projects dropdown
+        # ~ i_type = Project.__gtype_name__
+        # ~ i_title = _(Project.__title__)
+        # ~ dd_prj = factory.create_dropdown_generic(item_type=Project)
+        # ~ boxDropdown = factory.create_box_filter(i_title, dd_prj)
+        # ~ dropdowns[i_type] = dd_prj
+        # ~ row.append(boxDropdown)
 
         ### Rest of filters dropdowns
         for item_type in [Country, Group, SentBy, Purpose, SentTo]:

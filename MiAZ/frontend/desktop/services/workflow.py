@@ -13,7 +13,6 @@ from gi.repository import GObject
 from MiAZ.backend.log import MiAZLog
 from MiAZ.backend.status import MiAZStatus
 from MiAZ.backend.watcher import MiAZWatcher
-from MiAZ.backend.projects import MiAZProject
 from MiAZ.frontend.desktop.widgets.settings import MiAZRepoSettings
 
 
@@ -84,7 +83,6 @@ class MiAZWorkflow(GObject.GObject):
     def switch_finish(self, *args):
         """Finish switch repository operation"""
         repository = self.app.get_service('repo')
-        self.app.set_service('Projects', MiAZProject(self.app))
         watcher = MiAZWatcher()
         watcher.set_path(repository.docs)
         watcher.set_active(active=True)

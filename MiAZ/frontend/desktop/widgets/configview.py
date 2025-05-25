@@ -27,7 +27,6 @@ from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewCountry
 from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewGroup
 from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewPurpose
 from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewPerson
-from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewProject
 from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewRepo
 from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewPlugin
 from MiAZ.frontend.desktop.services.dialogs import MiAZDialogAddRepo
@@ -440,61 +439,6 @@ class MiAZPurposes(MiAZConfigView):
         self.viewSl = MiAZColumnViewPurpose(self.app, available=False)
         self._add_columnview_used(self.viewSl)
         self._add_config_menubutton(self.config.config_for)
-
-class MiAZProjects(MiAZConfigView):
-    """Manage projects from Repo Settings"""
-    __gtype_name__ = 'MiAZProjects'
-
-    def __init__(self, app):
-        super(MiAZConfigView, self).__init__(app, edit=True)
-        super().__init__(app, 'Project')
-
-    def _setup_view_finish(self):
-        # Setup Available and Used Columns Views
-        self.viewAv = MiAZColumnViewProject(self.app)
-        self._add_columnview_available(self.viewAv)
-        self.viewSl = MiAZColumnViewProject(self.app, available=False)
-        self._add_columnview_used(self.viewSl)
-        self._add_config_menubutton(self.config.config_for)
-
-    def _on_item_used_remove(self, *args):
-        self.log.debug("_on_item_used_remove:: start")
-        items_available = self.config.load_available()
-        items_used = self.config.load_used()
-        selected_item = self.viewSl.get_selected()
-        item_type = self.config.model
-        i_title = item_type.__title__
-        item_id = selected_item.id.replace('_', ' ')
-        item_desc = selected_item.title.replace('_', ' ')
-        srvprj = self.app.get_service('Projects')
-        srvdlg = self.app.get_service('dialogs')
-        docs = srvprj.docs_in_project(selected_item.id)
-        if len(docs) == 0:
-            self.log.debug("_on_item_used_remove:: no dependencies")
-            items_available[selected_item.id] = selected_item.title
-            self.log.debug(f"{i_title} {item_id} added back to the list of available items")
-            self.config.remove_used(selected_item.id)
-            self.log.debug(f"{i_title} {item_id} removed from de list of used items")
-            self.config.save_available(items=items_available)
-            self.update_views()
-            title = f"{i_title} management"
-            body = f"{i_title} {item_desc} disabled"
-            self.srvdlg.show_warning(title=title, body=body, parent=self)
-
-        else:
-            text = _(f'{i_title} {item_desc} is still being used by {len(docs)} documents')
-            self.log.error(text)
-            window = self.viewSl.get_root()
-            title = f"{i_title} {item_desc} can't be removed"
-            title = "Action not possible"
-            items = []
-            for doc in docs:
-                items.append(File(id=doc, title=os.path.basename(doc)))
-            view = MiAZColumnViewDocuments(self.app)
-            view.update(items)
-            widget = Gtk.Frame()
-            widget.set_child(view)
-            srvdlg.show_error(title=title, body=text, widget=widget, width=600, height=480, parent=window)
 
 class MiAZUserPlugins(MiAZConfigView):
     """
