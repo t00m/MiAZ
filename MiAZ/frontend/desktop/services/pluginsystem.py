@@ -108,13 +108,13 @@ class MiAZPlugin(GObject.GObject):
         self.app = app
         self.log = MiAZLog('MiAZPlugin')
 
-    def _get_plugin_attributes(self, plugin_file):
+    def get_plugin_attributes(self, plugin_file):
         plugin_system = self.app.get_service('plugin-system')
         return plugin_system.get_plugin_attributes(plugin_file)
 
     def register(self, plugin_file: str, plugin_object):
         self.util = self.app.get_service('util')
-        self.info = self._get_plugin_attributes(plugin_file)
+        self.info = self.get_plugin_attributes(plugin_file)
         self.name = self.info['Name']
         self.desc = self.info['Description']
         self.plugin_file = plugin_file

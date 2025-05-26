@@ -340,13 +340,14 @@ class MiAZUtil(GObject.GObject):
         return "%4d%02d%02d_%02d%02d%02d" % (now.year, now.month, now.day,
                                              now.hour, now.minute, now.second)
 
-    def unzip(self, target: str, install_dir):
+    def unzip(self, target: str, install_dir) -> zipfile.ZipFile:
         """
         Unzip file to a given dir
         """
         zip_archive = zipfile.ZipFile(target, "r")
         zip_archive.extractall(path=install_dir)
         zip_archive.close()
+        return zip_archive
 
     def zip_list(self, filepath: str) -> []:
         zip_archive = zipfile.ZipFile(filepath, "r")

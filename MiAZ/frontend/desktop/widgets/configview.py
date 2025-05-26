@@ -443,30 +443,29 @@ class MiAZPurposes(MiAZConfigView):
 class MiAZUserPlugins(MiAZConfigView):
     """
     Manage user plugins from Repo Settings. Edit disabled
-    Only display those plugins found in ENV['APP']['PLUGINS']['USER_INDEX']
+    Only display User plugins found in ENV['APP']['PLUGINS']['USER_INDEX']
     """
     __gtype_name__ = 'MiAZUserPlugins'
     current = None
 
     def __init__(self, app):
-        super(MiAZConfigView, self).__init__(app, edit=False)
+        super(MiAZConfigView, self).__init__(app, edit=True)
         super().__init__(app, 'Plugin')
         boxopers = self.app.get_widget('selector-box-operations')
         factory = self.app.get_service('factory')
 
         # Available view buttons
-        btnInfo = factory.create_button(icon_name='io.github.t00m.MiAZ-dialog-information-symbolic', callback=self._show_plugin_info, css_classes=['flat'])
+        btnInfo = factory.create_button(icon_name='io.github.t00m.MiAZ-dialog-information-symbolic', callback=self._show_plugin_info, css_classes=['linked'])
         btnInfo.set_valign(Gtk.Align.CENTER)
-        btnInfo.set_has_frame(False)
         self.toolbar_buttons_Av.append(btnInfo)
 
-        btnRefresh = factory.create_button(icon_name='io.github.t00m.MiAZ-view-refresh-symbolic', callback=self._refresh_index_plugin_file, css_classes=['flat'])
+        btnRefresh = factory.create_button(icon_name='io.github.t00m.MiAZ-view-refresh-symbolic', callback=self._refresh_index_plugin_file, css_classes=['linked'])
         btnRefresh.set_valign(Gtk.Align.CENTER)
         self.app.add_widget('repository-settings-plugins-av-btnRefresh', btnRefresh)
         self.toolbar_buttons_Av.append(btnRefresh)
 
         # Used view buttons
-        self.btnConfig = factory.create_button(icon_name='io.github.t00m.MiAZ-config-symbolic', callback=self._configure_plugin_options, css_classes=['flat', 'suggested-action'])
+        self.btnConfig = factory.create_button(icon_name='io.github.t00m.MiAZ-config-symbolic', callback=self._configure_plugin_options)
         self.btnConfig.set_valign(Gtk.Align.CENTER)
         # ~ self.btnConfig.set_visible(False)
         self.toolbar_buttons_Sl.append(self.btnConfig)
@@ -474,6 +473,86 @@ class MiAZUserPlugins(MiAZConfigView):
         # Action to be done when selecting an used plugin
         # ~ selection_model = self.viewSl.cv.get_model()
         # ~ selection_model.connect('selection-changed', self._on_plugin_used_selected)
+
+    def _on_item_available_add(self, *args):
+        factory = self.app.get_service('factory')
+        factory.create_filechooser_for_plugins(self._on_item_available_add_response, parent=self)
+
+    def _on_item_available_add_response(self, dialog, result):
+        try:
+            ENV = self.app.get_env()
+            util = self.app.get_service('util')
+            pluginsystem = self.app.get_service('plugin-system')
+            filepath = dialog.open_finish(result)
+            plugin_file = filepath.get_path()
+            zip_archive = util.unzip(plugin_file, ENV['LPATH']['PLUGINS'])
+            pluginsystem.create_user_plugin_index()
+            self.searchentry.set_text('')
+            self.searchentry.activate()
+            plugin_dirname = zip_archive.namelist()[0]
+            plugin_path = glob.glob(os.path.join(ENV['LPATH']['PLUGINS'], plugin_dirname, '*.plugin'))[0]
+            plugin_info = pluginsystem.get_plugin_attributes(plugin_path)
+            plugin_name = plugin_info['Name']
+            plugin_version = plugin_info['Version']
+            self.srvdlg.show_info(title='Import plugin', body=f"Plugin {plugin_name} v{plugin_version} imported successfully", parent=self)
+        except Exception as error:
+            self.srvdlg.show_error(title='Error import plugin', body=error, parent=self)
+            self.log.error(f"Error import plugin: {error}")
+
+    def _on_item_available_remove(self, *args):
+        util = self.app.get_service('util')
+        selected_item = self.viewAv.get_selected()
+        if selected_item is None:
+            return
+
+        items_available = self.config.load_available()
+        item_type = self.config.model
+        i_title = item_type.__title__
+        item_id = selected_item.id.replace('_', ' ')
+        item_dsc = selected_item.title
+
+        items_used = self.config.load_used()
+        is_used = selected_item.id in items_used
+        self.log.debug(f"Is '{selected_item.id}' used? {is_used}")
+        if not is_used:
+            title = f"{i_title} management"
+            body = f"Your about to delete <i>{i_title.lower()} {item_dsc}</i>.\n\nAre you sure?"
+            dialog = self.srvdlg.show_question(title=title, body=body)
+            dialog.connect('response', self._on_item_available_remove_response, selected_item)
+            dialog.present(self)
+        else:
+            item_type = self.config.model
+            i_title = item_type.__title__
+            window = self.viewAv.get_root()
+            title = "Action not possible"
+            item_desc = selected_item.title.replace('_', ' ')
+            text = _(f"{i_title} '<i>{item_desc}</i>' is still enabled.\nPlease, disable it first before deleting it.")
+            widget = None
+            srvdlg = self.app.get_service('dialogs')
+            srvdlg.show_error(title=title, body=text, widget=widget, parent=window)
+
+    def _on_item_available_remove_response(self, dialog, response, selected_item):
+        ENV = self.app.get_env()
+        item_type = self.config.model
+        i_title = item_type.__title__
+        item_id = selected_item.id.replace('_', ' ')
+        item_dsc = selected_item.title
+
+        if response == 'apply':
+            self.config.remove_available(selected_item.id)
+            plugin_path = os.path.join(ENV['LPATH']['PLUGINS'], selected_item.id)
+            if os.path.exists(plugin_path):
+                util = self.app.get_service('util')
+                util.directory_remove(plugin_path)
+            self.searchentry.set_text('')
+            self.searchentry.activate()
+            title = f"{i_title} management"
+            body = f"{i_title} {item_dsc} removed from de list of available {item_type.__title_plural__.lower()}"
+            self.srvdlg.show_warning(title=title, body=body, parent=self)
+        else:
+            title = f"{i_title} management"
+            body = f"{i_title} {item_dsc} not deleted from the list of available {item_type.__title_plural__.lower()}"
+            self.srvdlg.show_info(title=title, body=body, parent=self)
 
     def _on_plugin_used_selected(self, selection_model, position, n_items):
         selected_plugin = selection_model.get_selected_item()
