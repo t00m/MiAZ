@@ -335,6 +335,7 @@ class MiAZWorkspace(Gtk.Box):
 
     def set_default_columnview_attrs(self):
         # Setup columnview
+        self.view.column_country.set_visible(False)
         self.view.column_flag.set_visible(True)
         self.view.column_icon_type.set_visible(True)
         self.view.column_title.set_visible(False)

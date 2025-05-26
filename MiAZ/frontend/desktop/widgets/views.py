@@ -56,9 +56,9 @@ class MiAZColumnViewWorkspace(MiAZColumnView):
         self.factory_flag = Gtk.SignalListItemFactory()
         self.factory_flag.connect("setup", self._on_factory_setup_flag)
         self.factory_flag.connect("bind", self._on_factory_bind_flag)
-        # ~ self.factory_country = Gtk.SignalListItemFactory()
-        # ~ self.factory_country.connect("setup", self._on_factory_setup_country)
-        # ~ self.factory_country.connect("bind", self._on_factory_bind_country)
+        self.factory_country = Gtk.SignalListItemFactory()
+        self.factory_country.connect("setup", self._on_factory_setup_country)
+        self.factory_country.connect("bind", self._on_factory_bind_country)
 
         # Setup columnview columns
         self.column_subtitle = Gtk.ColumnViewColumn.new(_('Concept'), self.factory_subtitle)
@@ -71,8 +71,10 @@ class MiAZColumnViewWorkspace(MiAZColumnView):
         self.column_purpose = Gtk.ColumnViewColumn.new(_('Purpose'), self.factory_purpose)
         self.column_date = Gtk.ColumnViewColumn.new(_('Date'), self.factory_date)
         self.column_flag = Gtk.ColumnViewColumn.new(_('Country'), self.factory_flag)
-        # ~ self.column_country = Gtk.ColumnViewColumn.new("Country", self.factory_country)
+        self.column_country = Gtk.ColumnViewColumn.new("Country", self.factory_country)
 
+        self.cv.append_column(self.column_date)
+        self.cv.append_column(self.column_country)
         self.cv.append_column(self.column_flag)
         self.cv.append_column(self.column_icon_type)
         self.cv.append_column(self.column_group)
@@ -81,8 +83,6 @@ class MiAZColumnViewWorkspace(MiAZColumnView):
         self.cv.append_column(self.column_subtitle)
         self.cv.append_column(self.column_sentby)
         self.cv.append_column(self.column_sentto)
-        self.cv.append_column(self.column_date)
-        # ~ self.cv.append_column(self.column_country)
         self.column_sentto.set_expand(False)
         self.column_sentby.set_expand(False)
         self.column_title.set_expand(False)
@@ -95,7 +95,7 @@ class MiAZColumnViewWorkspace(MiAZColumnView):
         self.prop_sentto_sorter = Gtk.CustomSorter.new(sort_func=self._on_sort_string_func, user_data='sentto_dsc')
         self.prop_date_sorter = Gtk.CustomSorter.new(sort_func=self._on_sort_string_func, user_data='date')
         self.prop_flag_sorter = Gtk.CustomSorter.new(sort_func=self._on_sort_string_func, user_data='country')
-        # ~ self.prop_country_sorter = Gtk.CustomSorter.new(sort_func=self._on_sort_string_func, user_data='country')
+        self.prop_country_sorter = Gtk.CustomSorter.new(sort_func=self._on_sort_string_func, user_data='country')
         self.column_group.set_sorter(self.prop_group_sorter)
         self.column_purpose.set_sorter(self.prop_purpose_sorter)
         self.column_sentby.set_sorter(self.prop_sentby_sorter)
@@ -103,7 +103,7 @@ class MiAZColumnViewWorkspace(MiAZColumnView):
         self.column_sentto.set_sorter(self.prop_sentto_sorter)
         self.column_date.set_sorter(self.prop_date_sorter)
         self.column_flag.set_sorter(self.prop_flag_sorter)
-        # ~ self.column_country.set_sorter(self.prop_country_sorter)
+        self.column_country.set_sorter(self.prop_country_sorter)
 
         # Default sorting by date
         self.cv.sort_by_column(self.column_date, Gtk.SortType.DESCENDING)
@@ -160,7 +160,7 @@ class MiAZColumnViewWorkspace(MiAZColumnView):
         gicon = self.srvicm.get_mimetype_icon(item.id)
         if gicon is not None:
             icon.set_from_gicon(gicon)
-            icon.set_pixel_size(36)
+            icon.set_pixel_size(24)
             # ~ tooltip = f"<big>{item.country}</big>\n<b>{item.country_dsc}</b>"
             # ~ icon.set_tooltip_markup(tooltip)
             # ~ print(info.get_attribute_type())
@@ -252,7 +252,7 @@ class MiAZColumnViewWorkspace(MiAZColumnView):
         icon = box.get_first_child()
         code = item.country
         icon.set_from_icon_name(code)
-        icon.set_pixel_size(36)
+        icon.set_pixel_size(24)
         tooltip = f"<big>{item.country}</big>\n<b>{item.country_dsc}</b>"
         icon.set_tooltip_markup(tooltip)
 
