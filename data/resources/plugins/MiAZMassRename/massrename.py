@@ -26,7 +26,6 @@ from MiAZ.frontend.desktop.widgets.configview import MiAZGroups
 from MiAZ.frontend.desktop.widgets.configview import MiAZPurposes
 from MiAZ.frontend.desktop.widgets.configview import MiAZPeopleSentBy
 from MiAZ.frontend.desktop.widgets.configview import MiAZPeopleSentTo
-from MiAZ.frontend.desktop.widgets.configview import MiAZProjects
 from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewMassRename
 
 Field = {}
@@ -43,7 +42,6 @@ Configview['Group'] = MiAZGroups
 Configview['Purpose'] = MiAZPurposes
 Configview['SentBy'] = MiAZPeopleSentBy
 Configview['SentTo'] = MiAZPeopleSentTo
-Configview['Project'] = MiAZProjects
 Configview['Date'] = Gtk.Calendar
 
 
