@@ -291,12 +291,14 @@ class MiAZWorkspace(Gtk.Box):
         model.append(Date(id=key, title=_('All documents')))
 
     def _setup_columnview(self):
+        frame = Gtk.Frame()
         self.view = MiAZColumnViewWorkspace(self.app)
         self.app.add_widget('workspace-view', self.view)
         self.view.get_style_context().add_class(class_name='monospace')
         self._workspace_filters['main'] = self._do_filter_view_main
         self.view.set_filter(self._do_filter_view)
-        return self.view
+        frame.set_child(self.view)
+        return frame
 
     def register_filter_view(self, name: str, callback):
         registered = False
@@ -332,6 +334,9 @@ class MiAZWorkspace(Gtk.Box):
         body.append(frmView)
         self.append(widget)
         self.set_default_columnview_attrs()
+
+        self.get_style_context().add_class(class_name='toolbar')
+        # ~ self.get_style_context().add_class(class_name='frame')
 
     def set_default_columnview_attrs(self):
         # Setup columnview
