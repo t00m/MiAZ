@@ -59,6 +59,9 @@ class MiAZColumnViewWorkspace(MiAZColumnView):
         self.factory_country = Gtk.SignalListItemFactory()
         self.factory_country.connect("setup", self._on_factory_setup_country)
         self.factory_country.connect("bind", self._on_factory_bind_country)
+        self.factory_extension = Gtk.SignalListItemFactory()
+        self.factory_extension.connect("setup", self._on_factory_setup_extension)
+        self.factory_extension.connect("bind", self._on_factory_bind_extension)
 
         # Setup columnview columns
         self.column_subtitle = Gtk.ColumnViewColumn.new(_('Concept'), self.factory_subtitle)
@@ -72,6 +75,7 @@ class MiAZColumnViewWorkspace(MiAZColumnView):
         self.column_date = Gtk.ColumnViewColumn.new(_('Date'), self.factory_date)
         self.column_flag = Gtk.ColumnViewColumn.new(_('Country'), self.factory_flag)
         self.column_country = Gtk.ColumnViewColumn.new("Country", self.factory_country)
+        self.column_extension = Gtk.ColumnViewColumn.new("Ext.", self.factory_extension)
 
         self.cv.append_column(self.column_date)
         self.cv.append_column(self.column_country)
@@ -83,9 +87,11 @@ class MiAZColumnViewWorkspace(MiAZColumnView):
         self.cv.append_column(self.column_subtitle)
         self.cv.append_column(self.column_sentby)
         self.cv.append_column(self.column_sentto)
+        self.cv.append_column(self.column_extension)
         self.column_sentto.set_expand(False)
         self.column_sentby.set_expand(False)
         self.column_title.set_expand(False)
+        self.column_extension.set_expand(False)
 
         # Sorting
         self.prop_group_sorter = Gtk.CustomSorter.new(sort_func=self._on_sort_string_func, user_data='group')
@@ -96,6 +102,7 @@ class MiAZColumnViewWorkspace(MiAZColumnView):
         self.prop_date_sorter = Gtk.CustomSorter.new(sort_func=self._on_sort_string_func, user_data='date')
         self.prop_flag_sorter = Gtk.CustomSorter.new(sort_func=self._on_sort_string_func, user_data='country')
         self.prop_country_sorter = Gtk.CustomSorter.new(sort_func=self._on_sort_string_func, user_data='country')
+        self.prop_extension_sorter = Gtk.CustomSorter.new(sort_func=self._on_sort_string_func, user_data='extension')
         self.column_group.set_sorter(self.prop_group_sorter)
         self.column_purpose.set_sorter(self.prop_purpose_sorter)
         self.column_sentby.set_sorter(self.prop_sentby_sorter)
@@ -104,6 +111,7 @@ class MiAZColumnViewWorkspace(MiAZColumnView):
         self.column_date.set_sorter(self.prop_date_sorter)
         self.column_flag.set_sorter(self.prop_flag_sorter)
         self.column_country.set_sorter(self.prop_country_sorter)
+        self.column_extension.set_sorter(self.prop_extension_sorter)
 
         # Default sorting by date
         self.cv.sort_by_column(self.column_date, Gtk.SortType.DESCENDING)
@@ -116,9 +124,9 @@ class MiAZColumnViewWorkspace(MiAZColumnView):
         box = list_item.get_child()
         item = list_item.get_item()
         label = box.get_first_child()
-        # ~ label.set_markup("<b>%s</b>" % item.subtitle)
-        # ~ label.set_ellipsize(True)
-        # ~ label.set_property('ellipsize', Pango.EllipsizeMode.MIDDLE)
+        label.set_tooltip_text(item.subtitle)
+        label.set_ellipsize(True)
+        label.set_property('ellipsize', Pango.EllipsizeMode.MIDDLE)
         if item.active:
             label.set_markup(f"<b>{item.subtitle}</b>")
         else:
@@ -177,6 +185,24 @@ class MiAZColumnViewWorkspace(MiAZColumnView):
         label = box.get_first_child()
         country = item.country_dsc
         label.set_markup(country)
+        tooltip = f"{item.country}\n<b>{item.country_dsc}</b>"
+        label.set_tooltip_markup(tooltip)
+        label.set_ellipsize(True)
+        label.set_property('ellipsize', Pango.EllipsizeMode.MIDDLE)
+
+    def _on_factory_setup_extension(self, factory, list_item):
+        box = ColLabel()
+        list_item.set_child(box)
+
+    def _on_factory_bind_extension(self, factory, list_item):
+        box = list_item.get_child()
+        item = list_item.get_item()
+        label = box.get_first_child()
+        extension = item.extension
+        label.set_markup(extension)
+        label.set_tooltip_text(extension)
+        label.set_ellipsize(True)
+        label.set_property('ellipsize', Pango.EllipsizeMode.MIDDLE)
 
     def _on_factory_setup_group(self, factory, list_item):
         box = ColLabel()
@@ -188,6 +214,11 @@ class MiAZColumnViewWorkspace(MiAZColumnView):
         label = box.get_first_child()
         group = item.group_dsc
         label.set_markup(group)
+        label.set_tooltip_text(group)
+        label.set_ellipsize(True)
+        tooltip = f"{item.group}\n<b>{item.group_dsc}</b>"
+        label.set_tooltip_markup(tooltip)
+        label.set_property('ellipsize', Pango.EllipsizeMode.MIDDLE)
 
     def _on_factory_setup_date(self, factory, list_item):
         box = ColLabel()
@@ -199,6 +230,9 @@ class MiAZColumnViewWorkspace(MiAZColumnView):
         label = box.get_first_child()
         date = item.date_dsc
         label.set_markup(date)
+        label.set_tooltip_text(date)
+        label.set_ellipsize(True)
+        label.set_property('ellipsize', Pango.EllipsizeMode.MIDDLE)
 
     def _on_factory_setup_sentby(self, factory, list_item):
         box = ColLabel()
@@ -211,7 +245,7 @@ class MiAZColumnViewWorkspace(MiAZColumnView):
         label.set_markup(item.sentby_dsc)
         label.set_ellipsize(True)
         label.set_property('ellipsize', Pango.EllipsizeMode.MIDDLE)
-        tooltip = f"<big>{item.sentby_id}</big>\n<b>{item.sentby_dsc}</b>"
+        tooltip = f"{item.sentby_id}\n<b>{item.sentby_dsc}</b>"
         label.set_tooltip_markup(tooltip)
 
     def _on_factory_setup_sentto(self, factory, list_item):
@@ -238,8 +272,10 @@ class MiAZColumnViewWorkspace(MiAZColumnView):
         label = box.get_first_child()
         purpose = item.purpose_dsc
         label.set_markup(purpose)
-        tooltip = f"<big>{item.purpose}</big>\n<b>{item.purpose_dsc}</b>"
+        tooltip = f"{item.purpose}\n<b>{item.purpose_dsc}</b>"
         label.set_tooltip_markup(tooltip)
+        label.set_ellipsize(True)
+        label.set_property('ellipsize', Pango.EllipsizeMode.MIDDLE)
 
     def _on_factory_setup_flag(self, factory, list_item):
         box = ColIcon()
