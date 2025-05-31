@@ -136,7 +136,6 @@ class MiAZColumnViewWorkspace(MiAZColumnView):
     def _on_factory_setup_active(self, factory, list_item):
         box = ColCheck()
         list_item.set_child(box)
-        # ~ button = box.get_first_child()
 
     def _on_factory_bind_active(self, factory, list_item):
         box = list_item.get_child()
@@ -169,11 +168,6 @@ class MiAZColumnViewWorkspace(MiAZColumnView):
         if gicon is not None:
             icon.set_from_gicon(gicon)
             icon.set_pixel_size(24)
-            # ~ tooltip = f"<big>{item.country}</big>\n<b>{item.country_dsc}</b>"
-            # ~ icon.set_tooltip_markup(tooltip)
-            # ~ print(info.get_attribute_type())
-            # ~ print(info.get_content_type())
-            # ~ print(file_type)
 
     def _on_factory_setup_country(self, factory, list_item):
         box = ColLabel()
@@ -461,22 +455,6 @@ class MiAZColumnViewMassDelete(MiAZColumnView):
         self.cv.append_column(self.column_title)
         self.column_title.set_title(_('Document'))
         self.column_title.set_expand(True)
-
-
-# ~ class MiAZColumnViewMassProject(MiAZColumnView):
-    # ~ """ Custom ColumnView widget for MiAZ """
-    # ~ __gtype_name__ = 'MiAZColumnViewMassProject'
-
-    # ~ def __init__(self, app):
-        # ~ super().__init__(app, item_type=File)
-        # ~ self.cv.append_column(self.column_id)
-        # ~ self.column_id.set_title(_('Document'))
-        # ~ self.column_id.set_expand(False)
-        # ~ self.column_id.set_visible(True)
-        # ~ self.cv.append_column(self.column_title)
-        # ~ self.column_title.set_title(_('Projects already assigned'))
-        # ~ self.column_title.set_expand(True)
-
 
 class MiAZColumnViewPlugin(MiAZColumnViewSelector):
     """ Custom ColumnView widget for MiAZ """

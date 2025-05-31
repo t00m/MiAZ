@@ -2,7 +2,7 @@
 # File: icm.py
 # Author: Tomás Vírseda
 # License: GPL v3
-# Description: Icon manager
+# Description: Sidebar widget
 
 # Code initially borrowed from:
 # Copyright 2023-2024 Vlad Krupinskii <mrvladus@yandex.ru>
@@ -83,7 +83,6 @@ class MiAZSidebar(Adw.Bin):
         repo_id = config['App'].get('current')
         title = _(f"<big><b>{repo_id}</b></big>")
         self.set_title(title)
-        # ~ searchentry = self.app.get_widget('searchentry')
         self.clear_filters()
         self.setup_custom_filters()
         row = self.app.get_widget('sidebar-box-custom-filters')
@@ -266,10 +265,3 @@ class MiAZSidebar(Adw.Bin):
     def set_title(self, title: str=''):
         sidebar_title = self.app.get_widget('sidebar-title')
         sidebar_title.set_markup(title.replace('_', ' '))
-
-    # ~ def toggle(self, *args):
-        # ~ """ Sidebar collapsed when active = False"""
-        # ~ if self is not None:
-            # ~ toggleButtonFilters = self.app.get_widget('workspace-togglebutton-filters')
-            # ~ active = toggleButtonFilters.get_active()
-            # ~ self.set_visible(active)

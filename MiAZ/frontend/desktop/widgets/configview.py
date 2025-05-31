@@ -101,61 +101,6 @@ class MiAZConfigView(MiAZSelector):
         boxEmpty = factory.create_box_horizontal(hexpand=True)
         self.boxOper.append(boxEmpty)
 
-        # ~ FIXME: hidden until the import/export functionality is fixed
-        # ~ self.boxOper.append(button)
-
-    # ~ def _on_item_available_remove(self, *args):
-        # ~ selected_item = self.viewAv.get_selected()
-        # ~ if selected_item is None:
-            # ~ return
-
-        # ~ items_available = self.config.load_available()
-        # ~ item_type = self.config.model
-        # ~ i_title = item_type.__title__
-        # ~ item_id = selected_item.id.replace('_', ' ')
-        # ~ item_dsc = selected_item.title
-
-        # ~ is_used = self.config.exists_used(selected_item.id)
-        # ~ if not is_used:
-            # ~ title = f"{i_title} management"
-            # ~ body = f"Your about to delete <i>{i_title.lower()} {item_dsc}</i>.\n\nAre you sure?"
-            # ~ dialog = self.srvdlg.show_question(title=title, body=body)
-            # ~ dialog.connect('response', self._on_item_available_remove_response, selected_item)
-            # ~ dialog.present(self)
-        # ~ else:
-            # ~ window = self.viewSl.get_root()
-            # ~ title = "Action not possible"
-            # ~ body = f"{i_title} {item_dsc} can't be removed because it is still being used"
-            # ~ self.srvdlg.show_error(title=title, body=body, parent=window)
-
-    # ~ def _on_item_available_remove_response(self, dialog, response, selected_item):
-        # ~ item_type = self.config.model
-        # ~ i_title = item_type.__title__
-        # ~ item_id = selected_item.id.replace('_', ' ')
-        # ~ item_dsc = selected_item.title
-        # ~ if response == 'apply':
-            # ~ self.config.remove_available(selected_item.id)
-            # ~ title = f"{i_title} management"
-            # ~ body = f"{i_title} {item_dsc} removed from de list of available {item_type.__title_plural__.lower()}"
-            # ~ self.srvdlg.show_warning(title=title, body=body, parent=self)
-        # ~ else:
-            # ~ title = f"{i_title} management"
-            # ~ body = f"{i_title} {item_dsc} not deleted from the list of available {item_type.__title_plural__.lower()}"
-            # ~ self.srvdlg.show_info(title=title, body=body, parent=self)
-
-    # ~ def _on_item_used_add(self, *args):
-        # ~ items_used = self.config.load_used()
-        # ~ selected_item = self.viewAv.get_selected()
-        # ~ is_used = selected_item.id in items_used
-        # ~ item_type = self.config.model
-        # ~ i_title = item_type.__title__
-        # ~ if not is_used:
-            # ~ items_used[selected_item.id] = selected_item.title
-            # ~ self.config.save_used(items=items_used)
-            # ~ self.update_views()
-            # ~ self.srvdlg.show_info(title=f"{i_title} management", body=f"{i_title} {selected_item.title} has been enabled", parent=self)
-        # ~ else:
-            # ~ self.srvdlg.show_error('Action not possible', f"{i_title} {selected_item.title} is already enabled", parent=self)
 
 class MiAZRepositories(MiAZConfigView):
     """Manage Repositories"""
