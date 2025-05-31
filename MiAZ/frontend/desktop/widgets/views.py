@@ -307,7 +307,7 @@ class MiAZColumnViewCountry(MiAZColumnViewSelector):
         self.cv.append_column(self.column_flag)
         self.cv.append_column(self.column_id)
         self.cv.append_column(self.column_title)
-        self.column_id.set_visible(False)
+        self.column_id.set_visible(True)
         if available:
             title = _(f"{item_type.__title_plural__} available")
         else:
@@ -341,7 +341,7 @@ class MiAZColumnViewDocuments(MiAZColumnView):
         self.cv.append_column(self.column_id)
         self.column_id.set_title(_('File'))
         self.column_id.set_expand(False)
-        self.column_id.set_visible(False)
+        self.column_id.set_visible(True)
         self.cv.append_column(self.column_title)
         self.column_title.set_title(_('Document'))
         self.column_title.set_expand(True)
@@ -373,7 +373,7 @@ class MiAZColumnViewGroup(MiAZColumnViewSelector):
         super().__init__(app, item_type)
         self.cv.append_column(self.column_id)
         self.column_title.set_title(_('Group Id'))
-        self.column_id.set_visible(False)
+        self.column_id.set_visible(True)
         self.cv.append_column(self.column_title)
         if available:
             title = _(f"{item_type.__title_plural__} available")
@@ -390,7 +390,7 @@ class MiAZColumnViewPurpose(MiAZColumnViewSelector):
         item_type=Purpose
         super().__init__(app, item_type)
         self.cv.append_column(self.column_id)
-        self.column_id.set_visible(False)
+        self.column_id.set_visible(True)
         self.column_title.set_title(_('Purpose Id'))
         self.cv.append_column(self.column_title)
         if available:
@@ -407,7 +407,7 @@ class MiAZColumnViewConcept(MiAZColumnViewSelector):
         item_type=Concept
         super().__init__(app, item_type)
         self.cv.append_column(self.column_id)
-        self.column_id.set_visible(False)
+        self.column_id.set_visible(True)
         self.column_title.set_title(_('Concept Id'))
         self.cv.append_column(self.column_title)
         if available:
@@ -425,7 +425,7 @@ class MiAZColumnViewPerson(MiAZColumnViewSelector):
         super().__init__(app, item_type)
         self.cv.append_column(self.column_id)
         self.column_id.set_title(_('Initials'))
-        self.column_id.set_visible(False)
+        self.column_id.set_visible(True)
         self.cv.append_column(self.column_title)
         if available:
             title = _(f"{item_type.__title_plural__} available")
@@ -457,7 +457,7 @@ class MiAZColumnViewMassDelete(MiAZColumnView):
         self.cv.append_column(self.column_id)
         self.column_id.set_title(_('Filename'))
         self.column_id.set_expand(False)
-        self.column_id.set_visible(False)
+        self.column_id.set_visible(True)
         self.cv.append_column(self.column_title)
         self.column_title.set_title(_('Document'))
         self.column_title.set_expand(True)
@@ -486,7 +486,7 @@ class MiAZColumnViewPlugin(MiAZColumnViewSelector):
         super().__init__(app, item_type=Plugin)
         self.cv.append_column(self.column_id)
         self.column_id.set_title(_('Plugin Id'))
-        self.column_id.set_visible(False)
+        self.column_id.set_visible(True)
         self.cv.append_column(self.column_title)
         self.column_title.set_title(_('Plugin'))
         self.column_title.set_expand(True)
