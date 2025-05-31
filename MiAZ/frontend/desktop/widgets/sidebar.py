@@ -73,6 +73,7 @@ class MiAZSidebar(Adw.Bin):
         self.app = app
         self.log = MiAZLog('MiAZ.Sidebar')
         self.set_size_request(350, -1)
+        self.config = self.app.get_config_dict()
         self.__build_ui()
         self.app.add_widget('sidebar', self)
         workflow = self.app.get_service('workflow')
@@ -90,6 +91,13 @@ class MiAZSidebar(Adw.Bin):
         workspace = self.app.get_widget('workspace')
         workspace.update()
         self.log.debug(f"Switched to repository {repo_id} > Sidebar updated")
+
+        # Connect signals to repository config
+        self.config = self.app.get_config_dict()
+        for item_type in [Country, Group, SentBy, Purpose, SentTo]:
+            i_type = item_type.__gtype_name__
+            config = self.config[i_type]
+            actions.dropdown_populate(config, self.dropdowns[i_type], item_type, True, True)
 
     def __build_ui(self) -> None:
         factory = self.app.get_service('factory')
@@ -150,6 +158,7 @@ class MiAZSidebar(Adw.Bin):
         self.log.debug(description)
 
     def _setup_toolbar_filters(self):
+        actions = self.app.get_service('actions')
         factory = self.app.get_service('factory')
 
         box_filters = factory.create_box_vertical(margin=3, spacing=6, hexpand=True, vexpand=True)
@@ -179,23 +188,15 @@ class MiAZSidebar(Adw.Bin):
         row.append(boxDropdown)
 
         ## Dropdowns
-        dropdowns = self.app.add_widget('ws-dropdowns', {})
+        self.dropdowns = self.app.add_widget('ws-dropdowns', {})
 
         ### Date dropdown
         i_type = Date.__gtype_name__
         dd_date = factory.create_dropdown_generic(item_type=Date, ellipsize=False, enable_search=True)
         dd_date.set_hexpand(True)
-        dropdowns[i_type] = dd_date
+        self.dropdowns[i_type] = dd_date
         boxDropdown = factory.create_box_filter('Date', dd_date)
         row.append(boxDropdown)
-
-        # ~ ### Projects dropdown
-        # ~ i_type = Project.__gtype_name__
-        # ~ i_title = _(Project.__title__)
-        # ~ dd_prj = factory.create_dropdown_generic(item_type=Project)
-        # ~ boxDropdown = factory.create_box_filter(i_title, dd_prj)
-        # ~ dropdowns[i_type] = dd_prj
-        # ~ row.append(boxDropdown)
 
         ### Rest of filters dropdowns
         for item_type in [Country, Group, SentBy, Purpose, SentTo]:
@@ -204,7 +205,8 @@ class MiAZSidebar(Adw.Bin):
             dropdown = factory.create_dropdown_generic(item_type=item_type)
             boxDropdown = factory.create_box_filter(i_title, dropdown)
             row.append(boxDropdown)
-            dropdowns[i_type] = dropdown
+            self.dropdowns[i_type] = dropdown
+
 
         page_main_filters = viewstack.add_titled(widget, 'main-filters', 'Main filters')
         page_main_filters.set_icon_name('io.github.t00m.MiAZ-filter-symbolic')
