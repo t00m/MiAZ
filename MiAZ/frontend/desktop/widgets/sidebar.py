@@ -73,7 +73,6 @@ class MiAZSidebar(Adw.Bin):
         self.app = app
         self.log = MiAZLog('MiAZ.Sidebar')
         self.set_size_request(350, -1)
-        self.config = self.app.get_config_dict()
         self.__build_ui()
         self.app.add_widget('sidebar', self)
         workflow = self.app.get_service('workflow')
@@ -93,11 +92,15 @@ class MiAZSidebar(Adw.Bin):
         self.log.debug(f"Switched to repository {repo_id} > Sidebar updated")
 
         # Connect signals to repository config
-        self.config = self.app.get_config_dict()
+        configdict = self.app.get_config_dict()
         for item_type in [Country, Group, SentBy, Purpose, SentTo]:
             i_type = item_type.__gtype_name__
-            config = self.config[i_type]
-            actions.dropdown_populate(config, self.dropdowns[i_type], item_type, True, True)
+            config = configdict[i_type]
+            actions.dropdown_populate(  config=config,
+                                        dropdown=self.dropdowns[i_type],
+                                        item_type=item_type,
+                                        any_value=True,
+                                        none_value=True)
 
     def __build_ui(self) -> None:
         factory = self.app.get_service('factory')

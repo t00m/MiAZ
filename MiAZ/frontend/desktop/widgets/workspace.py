@@ -148,7 +148,11 @@ class MiAZWorkspace(Gtk.Box):
             i_type = item_type.__gtype_name__
             i_title = _(item_type.__title__)
             dropdown = dropdowns[i_type]
-            actions.dropdown_populate(self.config[i_type], dropdown, item_type, none_value=True)
+            actions.dropdown_populate(  config=self.config,
+                                        dropdown=dropdowns[i_type],
+                                        item_type=item_type,
+                                        any_value=True,
+                                        none_value=True)
             dropdown.connect("notify::selected-item", self._on_filter_selected)
             self.used_signals[i_type] = self.config[i_type].connect('used-updated', self.update_dropdown_filter, item_type)
             # ~ self.log.debug(f"Dropdown filter for '{i_title}' setup successfully")
@@ -199,7 +203,11 @@ class MiAZWorkspace(Gtk.Box):
         for item_type in [Country, Group, SentBy, Purpose, SentTo]:
             i_type = item_type.__gtype_name__
             config = self.config[i_type]
-            actions.dropdown_populate(config, dropdowns[i_type], item_type, True, True)
+            actions.dropdown_populate(  config=config,
+                                    dropdown=dropdowns[i_type],
+                                    item_type=item_type,
+                                    any_value=True,
+                                    none_value=True)
 
         # ~ self._update_dropdown_date()
         # ~ i_type = Date.__gtype_name__
@@ -216,18 +224,23 @@ class MiAZWorkspace(Gtk.Box):
         actions = self.app.get_service('actions')
         dropdowns = self.app.get_widget('ws-dropdowns')
         i_type = item_type.__gtype_name__
-        actions.dropdown_populate(config, dropdowns[i_type], item_type)
+        actions.dropdown_populate(  config=config,
+                                    dropdown=dropdowns[i_type],
+                                    item_type=item_type,
+                                    any_value=True,
+                                    none_value=True)
 
     def show_pending_documents(self, *args):
         sidebar = self.app.get_widget('sidebar')
         togglebutton = self.app.get_widget('workspace-togglebutton-pending-docs')
-        self.review = togglebutton.get_active()
         sidebar.clear_filters()
-        # ~ i_type = Date.__gtype_name__
-        # ~ dropdowns = self.app.get_widget('ws-dropdowns')
-        # ~ self.last_period_selected = dropdowns[i_type]
-        # ~ dropdowns[i_type].set_selected(9)
-        # ~ self.view.refilter()
+        self.review = togglebutton.get_active()
+        i_type = Date.__gtype_name__
+        dropdowns = self.app.get_widget('ws-dropdowns')
+        if self.review:
+            dropdowns[i_type].set_selected(9)
+        else:
+            dropdowns[i_type].set_selected(0)
 
     def _update_dropdown_date(self):
         util = self.app.get_service('util')
