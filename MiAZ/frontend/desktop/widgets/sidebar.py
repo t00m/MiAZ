@@ -91,6 +91,7 @@ class MiAZSidebar(Adw.Bin):
         self.log.debug(f"Switched to repository {repo_id} > Sidebar updated")
 
         # Connect signals to repository config
+        actions = self.app.get_service('actions')
         configdict = self.app.get_config_dict()
         for item_type in [Country, Group, SentBy, Purpose, SentTo]:
             i_type = item_type.__gtype_name__
