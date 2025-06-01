@@ -121,7 +121,7 @@ class MiAZPlugin(GObject.GObject):
         self.plugin_object = plugin_object
         plugin_id = f'plugin-{self.name}'
         self.app.add_widget(plugin_id, plugin_object)
-        self.log.debug(f"Plugin Object Id: {plugin_id}")
+        # ~ self.log.debug(f"Plugin Object Id: {plugin_id}")
 
         # Create plugin directories for config and data
         ## Configuration directory and file
