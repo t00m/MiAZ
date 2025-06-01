@@ -15,7 +15,7 @@ from MiAZ.backend.log import MiAZLog
 from MiAZ.frontend.desktop.widgets.columnview import MiAZColumnView
 from MiAZ.frontend.desktop.widgets.columnview import MiAZColumnViewSelector
 from MiAZ.frontend.desktop.widgets.columnview import ColIcon, ColLabel, ColCheck
-from MiAZ.backend.models import MiAZItem, Country, Group, Person, Purpose, File, Project, Repository, Plugin, Concept
+from MiAZ.backend.models import MiAZItem, Country, Group, Person, Purpose, File, Repository, Plugin, Concept
 
 
 class MiAZColumnViewWorkspace(MiAZColumnView):
@@ -56,9 +56,12 @@ class MiAZColumnViewWorkspace(MiAZColumnView):
         self.factory_flag = Gtk.SignalListItemFactory()
         self.factory_flag.connect("setup", self._on_factory_setup_flag)
         self.factory_flag.connect("bind", self._on_factory_bind_flag)
-        # ~ self.factory_country = Gtk.SignalListItemFactory()
-        # ~ self.factory_country.connect("setup", self._on_factory_setup_country)
-        # ~ self.factory_country.connect("bind", self._on_factory_bind_country)
+        self.factory_country = Gtk.SignalListItemFactory()
+        self.factory_country.connect("setup", self._on_factory_setup_country)
+        self.factory_country.connect("bind", self._on_factory_bind_country)
+        self.factory_extension = Gtk.SignalListItemFactory()
+        self.factory_extension.connect("setup", self._on_factory_setup_extension)
+        self.factory_extension.connect("bind", self._on_factory_bind_extension)
 
         # Setup columnview columns
         self.column_subtitle = Gtk.ColumnViewColumn.new(_('Concept'), self.factory_subtitle)
@@ -71,8 +74,11 @@ class MiAZColumnViewWorkspace(MiAZColumnView):
         self.column_purpose = Gtk.ColumnViewColumn.new(_('Purpose'), self.factory_purpose)
         self.column_date = Gtk.ColumnViewColumn.new(_('Date'), self.factory_date)
         self.column_flag = Gtk.ColumnViewColumn.new(_('Country'), self.factory_flag)
-        # ~ self.column_country = Gtk.ColumnViewColumn.new("Country", self.factory_country)
+        self.column_country = Gtk.ColumnViewColumn.new("Country", self.factory_country)
+        self.column_extension = Gtk.ColumnViewColumn.new("Ext.", self.factory_extension)
 
+        self.cv.append_column(self.column_date)
+        self.cv.append_column(self.column_country)
         self.cv.append_column(self.column_flag)
         self.cv.append_column(self.column_icon_type)
         self.cv.append_column(self.column_group)
@@ -81,11 +87,11 @@ class MiAZColumnViewWorkspace(MiAZColumnView):
         self.cv.append_column(self.column_subtitle)
         self.cv.append_column(self.column_sentby)
         self.cv.append_column(self.column_sentto)
-        self.cv.append_column(self.column_date)
-        # ~ self.cv.append_column(self.column_country)
+        self.cv.append_column(self.column_extension)
         self.column_sentto.set_expand(False)
         self.column_sentby.set_expand(False)
         self.column_title.set_expand(False)
+        self.column_extension.set_expand(False)
 
         # Sorting
         self.prop_group_sorter = Gtk.CustomSorter.new(sort_func=self._on_sort_string_func, user_data='group')
@@ -95,7 +101,8 @@ class MiAZColumnViewWorkspace(MiAZColumnView):
         self.prop_sentto_sorter = Gtk.CustomSorter.new(sort_func=self._on_sort_string_func, user_data='sentto_dsc')
         self.prop_date_sorter = Gtk.CustomSorter.new(sort_func=self._on_sort_string_func, user_data='date')
         self.prop_flag_sorter = Gtk.CustomSorter.new(sort_func=self._on_sort_string_func, user_data='country')
-        # ~ self.prop_country_sorter = Gtk.CustomSorter.new(sort_func=self._on_sort_string_func, user_data='country')
+        self.prop_country_sorter = Gtk.CustomSorter.new(sort_func=self._on_sort_string_func, user_data='country')
+        self.prop_extension_sorter = Gtk.CustomSorter.new(sort_func=self._on_sort_string_func, user_data='extension')
         self.column_group.set_sorter(self.prop_group_sorter)
         self.column_purpose.set_sorter(self.prop_purpose_sorter)
         self.column_sentby.set_sorter(self.prop_sentby_sorter)
@@ -103,7 +110,8 @@ class MiAZColumnViewWorkspace(MiAZColumnView):
         self.column_sentto.set_sorter(self.prop_sentto_sorter)
         self.column_date.set_sorter(self.prop_date_sorter)
         self.column_flag.set_sorter(self.prop_flag_sorter)
-        # ~ self.column_country.set_sorter(self.prop_country_sorter)
+        self.column_country.set_sorter(self.prop_country_sorter)
+        self.column_extension.set_sorter(self.prop_extension_sorter)
 
         # Default sorting by date
         self.cv.sort_by_column(self.column_date, Gtk.SortType.DESCENDING)
@@ -116,9 +124,9 @@ class MiAZColumnViewWorkspace(MiAZColumnView):
         box = list_item.get_child()
         item = list_item.get_item()
         label = box.get_first_child()
-        # ~ label.set_markup("<b>%s</b>" % item.subtitle)
-        # ~ label.set_ellipsize(True)
-        # ~ label.set_property('ellipsize', Pango.EllipsizeMode.MIDDLE)
+        label.set_tooltip_text(item.subtitle)
+        label.set_ellipsize(True)
+        label.set_property('ellipsize', Pango.EllipsizeMode.MIDDLE)
         if item.active:
             label.set_markup(f"<b>{item.subtitle}</b>")
         else:
@@ -128,7 +136,6 @@ class MiAZColumnViewWorkspace(MiAZColumnView):
     def _on_factory_setup_active(self, factory, list_item):
         box = ColCheck()
         list_item.set_child(box)
-        # ~ button = box.get_first_child()
 
     def _on_factory_bind_active(self, factory, list_item):
         box = list_item.get_child()
@@ -160,12 +167,7 @@ class MiAZColumnViewWorkspace(MiAZColumnView):
         gicon = self.srvicm.get_mimetype_icon(item.id)
         if gicon is not None:
             icon.set_from_gicon(gicon)
-            icon.set_pixel_size(36)
-            # ~ tooltip = f"<big>{item.country}</big>\n<b>{item.country_dsc}</b>"
-            # ~ icon.set_tooltip_markup(tooltip)
-            # ~ print(info.get_attribute_type())
-            # ~ print(info.get_content_type())
-            # ~ print(file_type)
+            icon.set_pixel_size(24)
 
     def _on_factory_setup_country(self, factory, list_item):
         box = ColLabel()
@@ -177,6 +179,24 @@ class MiAZColumnViewWorkspace(MiAZColumnView):
         label = box.get_first_child()
         country = item.country_dsc
         label.set_markup(country)
+        tooltip = f"{item.country}\n<b>{item.country_dsc}</b>"
+        label.set_tooltip_markup(tooltip)
+        label.set_ellipsize(True)
+        label.set_property('ellipsize', Pango.EllipsizeMode.MIDDLE)
+
+    def _on_factory_setup_extension(self, factory, list_item):
+        box = ColLabel()
+        list_item.set_child(box)
+
+    def _on_factory_bind_extension(self, factory, list_item):
+        box = list_item.get_child()
+        item = list_item.get_item()
+        label = box.get_first_child()
+        extension = item.extension
+        label.set_markup(extension)
+        label.set_tooltip_text(extension)
+        label.set_ellipsize(True)
+        label.set_property('ellipsize', Pango.EllipsizeMode.MIDDLE)
 
     def _on_factory_setup_group(self, factory, list_item):
         box = ColLabel()
@@ -188,6 +208,11 @@ class MiAZColumnViewWorkspace(MiAZColumnView):
         label = box.get_first_child()
         group = item.group_dsc
         label.set_markup(group)
+        label.set_tooltip_text(group)
+        label.set_ellipsize(True)
+        tooltip = f"{item.group}\n<b>{item.group_dsc}</b>"
+        label.set_tooltip_markup(tooltip)
+        label.set_property('ellipsize', Pango.EllipsizeMode.MIDDLE)
 
     def _on_factory_setup_date(self, factory, list_item):
         box = ColLabel()
@@ -199,6 +224,9 @@ class MiAZColumnViewWorkspace(MiAZColumnView):
         label = box.get_first_child()
         date = item.date_dsc
         label.set_markup(date)
+        label.set_tooltip_text(date)
+        label.set_ellipsize(True)
+        label.set_property('ellipsize', Pango.EllipsizeMode.MIDDLE)
 
     def _on_factory_setup_sentby(self, factory, list_item):
         box = ColLabel()
@@ -211,7 +239,7 @@ class MiAZColumnViewWorkspace(MiAZColumnView):
         label.set_markup(item.sentby_dsc)
         label.set_ellipsize(True)
         label.set_property('ellipsize', Pango.EllipsizeMode.MIDDLE)
-        tooltip = f"<big>{item.sentby_id}</big>\n<b>{item.sentby_dsc}</b>"
+        tooltip = f"{item.sentby_id}\n<b>{item.sentby_dsc}</b>"
         label.set_tooltip_markup(tooltip)
 
     def _on_factory_setup_sentto(self, factory, list_item):
@@ -238,8 +266,10 @@ class MiAZColumnViewWorkspace(MiAZColumnView):
         label = box.get_first_child()
         purpose = item.purpose_dsc
         label.set_markup(purpose)
-        tooltip = f"<big>{item.purpose}</big>\n<b>{item.purpose_dsc}</b>"
+        tooltip = f"{item.purpose}\n<b>{item.purpose_dsc}</b>"
         label.set_tooltip_markup(tooltip)
+        label.set_ellipsize(True)
+        label.set_property('ellipsize', Pango.EllipsizeMode.MIDDLE)
 
     def _on_factory_setup_flag(self, factory, list_item):
         box = ColIcon()
@@ -252,7 +282,7 @@ class MiAZColumnViewWorkspace(MiAZColumnView):
         icon = box.get_first_child()
         code = item.country
         icon.set_from_icon_name(code)
-        icon.set_pixel_size(36)
+        icon.set_pixel_size(24)
         tooltip = f"<big>{item.country}</big>\n<b>{item.country_dsc}</b>"
         icon.set_tooltip_markup(tooltip)
 
@@ -271,7 +301,7 @@ class MiAZColumnViewCountry(MiAZColumnViewSelector):
         self.cv.append_column(self.column_flag)
         self.cv.append_column(self.column_id)
         self.cv.append_column(self.column_title)
-        self.column_id.set_visible(False)
+        self.column_id.set_visible(True)
         if available:
             title = _(f"{item_type.__title_plural__} available")
         else:
@@ -305,7 +335,7 @@ class MiAZColumnViewDocuments(MiAZColumnView):
         self.cv.append_column(self.column_id)
         self.column_id.set_title(_('File'))
         self.column_id.set_expand(False)
-        self.column_id.set_visible(False)
+        self.column_id.set_visible(True)
         self.cv.append_column(self.column_title)
         self.column_title.set_title(_('Document'))
         self.column_title.set_expand(True)
@@ -337,7 +367,7 @@ class MiAZColumnViewGroup(MiAZColumnViewSelector):
         super().__init__(app, item_type)
         self.cv.append_column(self.column_id)
         self.column_title.set_title(_('Group Id'))
-        self.column_id.set_visible(False)
+        self.column_id.set_visible(True)
         self.cv.append_column(self.column_title)
         if available:
             title = _(f"{item_type.__title_plural__} available")
@@ -345,23 +375,6 @@ class MiAZColumnViewGroup(MiAZColumnViewSelector):
             title = _(f"{item_type.__title_plural__} enabled")
         self.column_title.set_title(title)
 
-
-class MiAZColumnViewProject(MiAZColumnViewSelector):
-    """ Custom ColumnView widget for MiAZ """
-    __gtype_name__ = 'MiAZColumnViewProject'
-
-    def __init__(self, app, available=True):
-        item_type=Project
-        super().__init__(app, item_type)
-        self.cv.append_column(self.column_id)
-        self.column_id.set_visible(False)
-        self.column_title.set_title(_('Project Id'))
-        self.cv.append_column(self.column_title)
-        if available:
-            title = _(f"{item_type.__title_plural__} available")
-        else:
-            title = _(f"{item_type.__title_plural__} enabled")
-        self.column_title.set_title(title)
 
 class MiAZColumnViewPurpose(MiAZColumnViewSelector):
     """ Custom ColumnView widget for MiAZ """
@@ -371,7 +384,7 @@ class MiAZColumnViewPurpose(MiAZColumnViewSelector):
         item_type=Purpose
         super().__init__(app, item_type)
         self.cv.append_column(self.column_id)
-        self.column_id.set_visible(False)
+        self.column_id.set_visible(True)
         self.column_title.set_title(_('Purpose Id'))
         self.cv.append_column(self.column_title)
         if available:
@@ -388,7 +401,7 @@ class MiAZColumnViewConcept(MiAZColumnViewSelector):
         item_type=Concept
         super().__init__(app, item_type)
         self.cv.append_column(self.column_id)
-        self.column_id.set_visible(False)
+        self.column_id.set_visible(True)
         self.column_title.set_title(_('Concept Id'))
         self.cv.append_column(self.column_title)
         if available:
@@ -406,7 +419,7 @@ class MiAZColumnViewPerson(MiAZColumnViewSelector):
         super().__init__(app, item_type)
         self.cv.append_column(self.column_id)
         self.column_id.set_title(_('Initials'))
-        self.column_id.set_visible(False)
+        self.column_id.set_visible(True)
         self.cv.append_column(self.column_title)
         if available:
             title = _(f"{item_type.__title_plural__} available")
@@ -438,26 +451,10 @@ class MiAZColumnViewMassDelete(MiAZColumnView):
         self.cv.append_column(self.column_id)
         self.column_id.set_title(_('Filename'))
         self.column_id.set_expand(False)
-        self.column_id.set_visible(False)
+        self.column_id.set_visible(True)
         self.cv.append_column(self.column_title)
         self.column_title.set_title(_('Document'))
         self.column_title.set_expand(True)
-
-
-class MiAZColumnViewMassProject(MiAZColumnView):
-    """ Custom ColumnView widget for MiAZ """
-    __gtype_name__ = 'MiAZColumnViewMassProject'
-
-    def __init__(self, app):
-        super().__init__(app, item_type=File)
-        self.cv.append_column(self.column_id)
-        self.column_id.set_title(_('Document'))
-        self.column_id.set_expand(False)
-        self.column_id.set_visible(True)
-        self.cv.append_column(self.column_title)
-        self.column_title.set_title(_('Projects already assigned'))
-        self.column_title.set_expand(True)
-
 
 class MiAZColumnViewPlugin(MiAZColumnViewSelector):
     """ Custom ColumnView widget for MiAZ """
@@ -467,7 +464,7 @@ class MiAZColumnViewPlugin(MiAZColumnViewSelector):
         super().__init__(app, item_type=Plugin)
         self.cv.append_column(self.column_id)
         self.column_id.set_title(_('Plugin Id'))
-        self.column_id.set_visible(False)
+        self.column_id.set_visible(True)
         self.cv.append_column(self.column_title)
         self.column_title.set_title(_('Plugin'))
         self.column_title.set_expand(True)

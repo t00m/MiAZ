@@ -46,6 +46,8 @@ miaz_dialog = {
 }
 
 class MiAZDialog:
+    # FIXME: to be replace by Gtk.Window in order to allow
+    # Gtk.FileDialog have the proper parent
     def __init__(self, app):
         self.app = app
         self.log = MiAZLog('MiAZ.Dialogs')
@@ -68,7 +70,7 @@ class MiAZDialog:
         dialog.set_body_use_markup(True)
         dialog.set_heading_use_markup(True)
         dialog.set_heading(f"{title}")
-        dialog.set_body(f"<big>{body}</big>")
+        dialog.set_body(f"{body}")
         dialog.set_size_request(width, height)
         dialog.set_presentation_mode(Adw.DialogPresentationMode.BOTTOM_SHEET)
 
@@ -368,6 +370,9 @@ class MiAZDialogAddRepo(MiAZDialogAdd):
 
     def disable_key1(self):
         self.etyValue1.set_sensitive(False)
+
+    def hide_key1(self):
+        self.etyValue1.set_visible(False)
 
     def on_open_file(self, button):
         dirpath = button.get_label()

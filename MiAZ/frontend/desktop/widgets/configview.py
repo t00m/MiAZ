@@ -27,7 +27,6 @@ from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewCountry
 from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewGroup
 from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewPurpose
 from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewPerson
-from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewProject
 from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewRepo
 from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewPlugin
 from MiAZ.frontend.desktop.services.dialogs import MiAZDialogAddRepo
@@ -102,61 +101,6 @@ class MiAZConfigView(MiAZSelector):
         boxEmpty = factory.create_box_horizontal(hexpand=True)
         self.boxOper.append(boxEmpty)
 
-        # ~ FIXME: hidden until the import/export functionality is fixed
-        # ~ self.boxOper.append(button)
-
-    # ~ def _on_item_available_remove(self, *args):
-        # ~ selected_item = self.viewAv.get_selected()
-        # ~ if selected_item is None:
-            # ~ return
-
-        # ~ items_available = self.config.load_available()
-        # ~ item_type = self.config.model
-        # ~ i_title = item_type.__title__
-        # ~ item_id = selected_item.id.replace('_', ' ')
-        # ~ item_dsc = selected_item.title
-
-        # ~ is_used = self.config.exists_used(selected_item.id)
-        # ~ if not is_used:
-            # ~ title = f"{i_title} management"
-            # ~ body = f"Your about to delete <i>{i_title.lower()} {item_dsc}</i>.\n\nAre you sure?"
-            # ~ dialog = self.srvdlg.show_question(title=title, body=body)
-            # ~ dialog.connect('response', self._on_item_available_remove_response, selected_item)
-            # ~ dialog.present(self)
-        # ~ else:
-            # ~ window = self.viewSl.get_root()
-            # ~ title = "Action not possible"
-            # ~ body = f"{i_title} {item_dsc} can't be removed because it is still being used"
-            # ~ self.srvdlg.show_error(title=title, body=body, parent=window)
-
-    # ~ def _on_item_available_remove_response(self, dialog, response, selected_item):
-        # ~ item_type = self.config.model
-        # ~ i_title = item_type.__title__
-        # ~ item_id = selected_item.id.replace('_', ' ')
-        # ~ item_dsc = selected_item.title
-        # ~ if response == 'apply':
-            # ~ self.config.remove_available(selected_item.id)
-            # ~ title = f"{i_title} management"
-            # ~ body = f"{i_title} {item_dsc} removed from de list of available {item_type.__title_plural__.lower()}"
-            # ~ self.srvdlg.show_warning(title=title, body=body, parent=self)
-        # ~ else:
-            # ~ title = f"{i_title} management"
-            # ~ body = f"{i_title} {item_dsc} not deleted from the list of available {item_type.__title_plural__.lower()}"
-            # ~ self.srvdlg.show_info(title=title, body=body, parent=self)
-
-    # ~ def _on_item_used_add(self, *args):
-        # ~ items_used = self.config.load_used()
-        # ~ selected_item = self.viewAv.get_selected()
-        # ~ is_used = selected_item.id in items_used
-        # ~ item_type = self.config.model
-        # ~ i_title = item_type.__title__
-        # ~ if not is_used:
-            # ~ items_used[selected_item.id] = selected_item.title
-            # ~ self.config.save_used(items=items_used)
-            # ~ self.update_views()
-            # ~ self.srvdlg.show_info(title=f"{i_title} management", body=f"{i_title} {selected_item.title} has been enabled", parent=self)
-        # ~ else:
-            # ~ self.srvdlg.show_error('Action not possible', f"{i_title} {selected_item.title} is already enabled", parent=self)
 
 class MiAZRepositories(MiAZConfigView):
     """Manage Repositories"""
@@ -441,88 +385,32 @@ class MiAZPurposes(MiAZConfigView):
         self._add_columnview_used(self.viewSl)
         self._add_config_menubutton(self.config.config_for)
 
-class MiAZProjects(MiAZConfigView):
-    """Manage projects from Repo Settings"""
-    __gtype_name__ = 'MiAZProjects'
-
-    def __init__(self, app):
-        super(MiAZConfigView, self).__init__(app, edit=True)
-        super().__init__(app, 'Project')
-
-    def _setup_view_finish(self):
-        # Setup Available and Used Columns Views
-        self.viewAv = MiAZColumnViewProject(self.app)
-        self._add_columnview_available(self.viewAv)
-        self.viewSl = MiAZColumnViewProject(self.app, available=False)
-        self._add_columnview_used(self.viewSl)
-        self._add_config_menubutton(self.config.config_for)
-
-    def _on_item_used_remove(self, *args):
-        self.log.debug("_on_item_used_remove:: start")
-        items_available = self.config.load_available()
-        items_used = self.config.load_used()
-        selected_item = self.viewSl.get_selected()
-        item_type = self.config.model
-        i_title = item_type.__title__
-        item_id = selected_item.id.replace('_', ' ')
-        item_desc = selected_item.title.replace('_', ' ')
-        srvprj = self.app.get_service('Projects')
-        srvdlg = self.app.get_service('dialogs')
-        docs = srvprj.docs_in_project(selected_item.id)
-        if len(docs) == 0:
-            self.log.debug("_on_item_used_remove:: no dependencies")
-            items_available[selected_item.id] = selected_item.title
-            self.log.debug(f"{i_title} {item_id} added back to the list of available items")
-            self.config.remove_used(selected_item.id)
-            self.log.debug(f"{i_title} {item_id} removed from de list of used items")
-            self.config.save_available(items=items_available)
-            self.update_views()
-            title = f"{i_title} management"
-            body = f"{i_title} {item_desc} disabled"
-            self.srvdlg.show_warning(title=title, body=body, parent=self)
-
-        else:
-            text = _(f'{i_title} {item_desc} is still being used by {len(docs)} documents')
-            self.log.error(text)
-            window = self.viewSl.get_root()
-            title = f"{i_title} {item_desc} can't be removed"
-            title = "Action not possible"
-            items = []
-            for doc in docs:
-                items.append(File(id=doc, title=os.path.basename(doc)))
-            view = MiAZColumnViewDocuments(self.app)
-            view.update(items)
-            widget = Gtk.Frame()
-            widget.set_child(view)
-            srvdlg.show_error(title=title, body=text, widget=widget, width=600, height=480, parent=window)
-
 class MiAZUserPlugins(MiAZConfigView):
     """
     Manage user plugins from Repo Settings. Edit disabled
-    Only display those plugins found in ENV['APP']['PLUGINS']['USER_INDEX']
+    Only display User plugins found in ENV['APP']['PLUGINS']['USER_INDEX']
     """
     __gtype_name__ = 'MiAZUserPlugins'
     current = None
 
     def __init__(self, app):
-        super(MiAZConfigView, self).__init__(app, edit=False)
+        super(MiAZConfigView, self).__init__(app, edit=True)
         super().__init__(app, 'Plugin')
         boxopers = self.app.get_widget('selector-box-operations')
         factory = self.app.get_service('factory')
 
         # Available view buttons
-        btnInfo = factory.create_button(icon_name='io.github.t00m.MiAZ-dialog-information-symbolic', callback=self._show_plugin_info, css_classes=['flat'])
+        btnInfo = factory.create_button(icon_name='io.github.t00m.MiAZ-dialog-information-symbolic', callback=self._show_plugin_info, css_classes=['linked'])
         btnInfo.set_valign(Gtk.Align.CENTER)
-        btnInfo.set_has_frame(False)
         self.toolbar_buttons_Av.append(btnInfo)
 
-        btnRefresh = factory.create_button(icon_name='io.github.t00m.MiAZ-view-refresh-symbolic', callback=self._refresh_index_plugin_file, css_classes=['flat'])
+        btnRefresh = factory.create_button(icon_name='io.github.t00m.MiAZ-view-refresh-symbolic', callback=self._refresh_index_plugin_file, css_classes=['linked'])
         btnRefresh.set_valign(Gtk.Align.CENTER)
         self.app.add_widget('repository-settings-plugins-av-btnRefresh', btnRefresh)
         self.toolbar_buttons_Av.append(btnRefresh)
 
         # Used view buttons
-        self.btnConfig = factory.create_button(icon_name='io.github.t00m.MiAZ-config-symbolic', callback=self._configure_plugin_options, css_classes=['flat', 'suggested-action'])
+        self.btnConfig = factory.create_button(icon_name='io.github.t00m.MiAZ-config-symbolic', callback=self._configure_plugin_options)
         self.btnConfig.set_valign(Gtk.Align.CENTER)
         # ~ self.btnConfig.set_visible(False)
         self.toolbar_buttons_Sl.append(self.btnConfig)
@@ -530,6 +418,86 @@ class MiAZUserPlugins(MiAZConfigView):
         # Action to be done when selecting an used plugin
         # ~ selection_model = self.viewSl.cv.get_model()
         # ~ selection_model.connect('selection-changed', self._on_plugin_used_selected)
+
+    def _on_item_available_add(self, *args):
+        factory = self.app.get_service('factory')
+        factory.create_filechooser_for_plugins(self._on_item_available_add_response, parent=self)
+
+    def _on_item_available_add_response(self, dialog, result):
+        try:
+            ENV = self.app.get_env()
+            util = self.app.get_service('util')
+            pluginsystem = self.app.get_service('plugin-system')
+            filepath = dialog.open_finish(result)
+            plugin_file = filepath.get_path()
+            zip_archive = util.unzip(plugin_file, ENV['LPATH']['PLUGINS'])
+            pluginsystem.create_user_plugin_index()
+            self.searchentry.set_text('')
+            self.searchentry.activate()
+            plugin_dirname = zip_archive.namelist()[0]
+            plugin_path = glob.glob(os.path.join(ENV['LPATH']['PLUGINS'], plugin_dirname, '*.plugin'))[0]
+            plugin_info = pluginsystem.get_plugin_attributes(plugin_path)
+            plugin_name = plugin_info['Name']
+            plugin_version = plugin_info['Version']
+            self.srvdlg.show_info(title='Import plugin', body=f"Plugin {plugin_name} v{plugin_version} imported successfully", parent=self)
+        except Exception as error:
+            self.srvdlg.show_error(title='Error import plugin', body=error, parent=self)
+            self.log.error(f"Error import plugin: {error}")
+
+    def _on_item_available_remove(self, *args):
+        util = self.app.get_service('util')
+        selected_item = self.viewAv.get_selected()
+        if selected_item is None:
+            return
+
+        items_available = self.config.load_available()
+        item_type = self.config.model
+        i_title = item_type.__title__
+        item_id = selected_item.id.replace('_', ' ')
+        item_dsc = selected_item.title
+
+        items_used = self.config.load_used()
+        is_used = selected_item.id in items_used
+        self.log.debug(f"Is '{selected_item.id}' used? {is_used}")
+        if not is_used:
+            title = f"{i_title} management"
+            body = f"Your about to delete <i>{i_title.lower()} {item_dsc}</i>.\n\nAre you sure?"
+            dialog = self.srvdlg.show_question(title=title, body=body)
+            dialog.connect('response', self._on_item_available_remove_response, selected_item)
+            dialog.present(self)
+        else:
+            item_type = self.config.model
+            i_title = item_type.__title__
+            window = self.viewAv.get_root()
+            title = "Action not possible"
+            item_desc = selected_item.title.replace('_', ' ')
+            text = _(f"{i_title} '<i>{item_desc}</i>' is still enabled.\nPlease, disable it first before deleting it.")
+            widget = None
+            srvdlg = self.app.get_service('dialogs')
+            srvdlg.show_error(title=title, body=text, widget=widget, parent=window)
+
+    def _on_item_available_remove_response(self, dialog, response, selected_item):
+        ENV = self.app.get_env()
+        item_type = self.config.model
+        i_title = item_type.__title__
+        item_id = selected_item.id.replace('_', ' ')
+        item_dsc = selected_item.title
+
+        if response == 'apply':
+            self.config.remove_available(selected_item.id)
+            plugin_path = os.path.join(ENV['LPATH']['PLUGINS'], selected_item.id)
+            if os.path.exists(plugin_path):
+                util = self.app.get_service('util')
+                util.directory_remove(plugin_path)
+            self.searchentry.set_text('')
+            self.searchentry.activate()
+            title = f"{i_title} management"
+            body = f"{i_title} {item_dsc} removed from de list of available {item_type.__title_plural__.lower()}"
+            self.srvdlg.show_warning(title=title, body=body, parent=self)
+        else:
+            title = f"{i_title} management"
+            body = f"{i_title} {item_dsc} not deleted from the list of available {item_type.__title_plural__.lower()}"
+            self.srvdlg.show_info(title=title, body=body, parent=self)
 
     def _on_plugin_used_selected(self, selection_model, position, n_items):
         selected_plugin = selection_model.get_selected_item()
@@ -544,14 +512,11 @@ class MiAZUserPlugins(MiAZConfigView):
         threading.Thread(target=self.download_plugins, daemon=True).start()
 
     def download_plugins(self):
+        # FIXME: set toolbar sensitivity to False
         banner = self.app.get_widget('repository-settings-banner')
         banner.set_revealed(True)
         banner.set_button_label('')
         banner.set_title("")
-        toolbarAv = self.app.get_widget('settings-repository-toolbar-av')
-        toolbarSl = self.app.get_widget('settings-repository-toolbar-sl')
-        toolbarAv.set_sensitive(False)
-        toolbarSl.set_sensitive(False)
 
         util = self.app.get_service('util')
         ENV = self.app.get_env()

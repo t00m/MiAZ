@@ -72,6 +72,7 @@ class MiAZFactory:
         """
         Create a new FileDialog for selecting directories
         """
+        # FIXME: Integrate this widget in service dialogs
         # Set default values
         if len(initial_folder) == 0:
             dirpath = GLib.get_user_special_dir(GLib.UserDirectory.DIRECTORY_DOCUMENTS)
@@ -94,6 +95,7 @@ class MiAZFactory:
         """
         Create a new FileDialog for selecting multiple files
         """
+        # FIXME: Integrate this widget in service dialogs
         # Set default values
         if len(initial_folder) == 0:
             dirpath = GLib.get_user_special_dir(GLib.UserDirectory.DIRECTORY_DOCUMENTS)
@@ -112,6 +114,31 @@ class MiAZFactory:
         dialog.set_modal(True)
         dialog.open_multiple(parent, None, callback)
         return dialog
+
+    def create_filechooser_for_plugins(self, callback, initial_folder: str = '', parent: Gtk.Widget = None) -> Gtk.FileDialog:
+        # FIXME: Integrate this widget in service dialogs
+        """
+        Create a new FileDialog for selecting multiple files
+        """
+        # Set default values
+        if len(initial_folder) == 0:
+            dirpath = GLib.get_user_special_dir(GLib.UserDirectory.DIRECTORY_DOWNLOAD)
+            initial_folder = Gio.File.new_for_path(dirpath)
+        # ~ if parent is None:
+            # ~ parent = self.app.get_widget('window')
+
+        # Create dialog
+        dialog = Gtk.FileDialog.new()
+        dialog.set_title("Select documents")
+        dialog.set_initial_folder(initial_folder)
+        dialog_filter = Gtk.FileFilter()
+        dialog_filter.set_name("MiAZ plugins")
+        dialog_filter.add_pattern("*.zip")
+        dialog.set_default_filter(dialog_filter)
+        dialog.set_modal(True)
+        dialog.open(None, None, callback)
+        return dialog
+
 
     def create_actionrow(self, title:str = '', subtitle:str = '', prefix: Gtk.Widget = None, suffix: Gtk.Widget = None):
         box = Gtk.CenterBox(orientation=Gtk.Orientation.HORIZONTAL)
