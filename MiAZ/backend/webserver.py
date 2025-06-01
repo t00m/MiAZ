@@ -61,7 +61,7 @@ class MiAZHTTPServer:
             self.stop()
             python = sys.executable
             script = self.ENV['APP']['RUNTIME']['EXEC']
-            self.log.info("Application restart: ", [python, script] + sys.argv[1:])
+            self.log.info(f"Application restart: {python} {script} {sys.argv[1:]}")
             os.execv(python, [python, script] + sys.argv[1:])
 
     def stop(self):
