@@ -123,7 +123,7 @@ class MiAZRepositories(MiAZConfigView):
     def _on_item_available_add(self, *args):
         window = self.viewSl.get_root()
         title = 'Add a new repository'
-        key1 = '<big><b>Repository name</b></big>'
+        key1 = '<b>Repository name</b>'
         key2 = 'Select target folder'
         # ~ search_term = self.entry.get_text()
         this_repo = MiAZDialogAddRepo(self.app)
@@ -140,8 +140,11 @@ class MiAZRepositories(MiAZConfigView):
             repo_path = this_repo.get_value2()
             if len(repo_name) > 0 and os.path.exists(repo_path):
                 self.config.add_available(repo_name, repo_path)
-                self.log.debug(f"Repo '{repo_name}' added to list of available repositories")
+                title = "Repository management"
+                body = f"Repo '{repo_name}' added to list of available repositories"
+                self.log.debug(body)
                 self.update_views()
+                srvdlg.show_info(title=title, body=body, parent=dialog)
             else:
                 srvdlg.show_error(title='Action not possible', body='No repository added. Invalid input.\n\nTry again by setting a repository name and a valid target directory', parent=dialog)
 
@@ -154,8 +157,8 @@ class MiAZRepositories(MiAZConfigView):
         i_title = item_type.__title__
         parent = self.viewSl.get_root()
         title = 'Add a new repository'
-        key1 = '<big><b>Repository name</b></big>'
-        key2 = '<big><b>Directory</b></big>'
+        key1 = '<b>Repository name</b>'
+        key2 = '<b>Directory</b>'
         this_repo = MiAZDialogAddRepo(self.app)
         dialog = this_repo.create(title=title, key1=key1, key2=key2)
         this_repo.disable_key1()
@@ -191,8 +194,10 @@ class MiAZRepositories(MiAZConfigView):
                 body = f"Old and new {i_title.lower()} directories are the same"
                 self.srvdlg.show_error(title=title, body=body, parent=dialog)
 
-    def _on_item_available_remove(self, *args):
+    def _on_item_available_remove(self, button, data=None):
+        parent=button
         srvdlg = self.app.get_service('dialogs')
+        parent = self.viewAv.get_root()
         selected_item = self.viewAv.get_selected()
         if selected_item is None:
             return
@@ -206,14 +211,19 @@ class MiAZRepositories(MiAZConfigView):
         if not is_used:
             del items_available[selected_item.id]
             self.config.save_available(items=items_available)
-            self.log.debug(f"{i_title} {item_id} removed from de list of available items")
+            title = "Repository management"
+            body = f"{i_title} {item_id} removed from de list of available items"
+            self.log.debug(body)
+            srvdlg.show_warning(title=title, body=body, widget=None, parent=parent)
         else:
-            text = _(f'<big>{i_title} {item_id} is still being used</big>')
-            window = self.viewSl.get_root()
             title = "Action not possible"
-            srvdlg.show_error(title=title, body=text, widget=None, parent=window)
+            body = _(f'{i_title} {item_id} is still being used')
+            srvdlg.show_error(title=title, body=body, widget=None, parent=parent)
 
     def _on_item_used_add(self, *args):
+        srvdlg = self.app.get_service('dialogs')
+        title="Repository management"
+
         dd_repo = self.app.get_widget('window-settings-dropdown-repository-active')
         signal = self.app.get_widget('signal-dd_repo')
         dd_repo.handler_block(signal)
@@ -229,10 +239,23 @@ class MiAZRepositories(MiAZConfigView):
             items_used[selected_item.id] = selected_item.title
             self.config.save_used(items=items_used)
             self.update_views()
-            self.log.debug(f"{i_title} {selected_item.id} not used yet. Can be used now")
+            body = f"{i_title} {selected_item.id} ready to be used"
+            self.log.debug(body)
         else:
-            self.log.debug(f"{i_title} {selected_item.id} is already being used")
+            body = f"{i_title} {selected_item.id} is already being used"
+            self.log.debug(body)
         dd_repo.handler_unblock(signal)
+
+        if len(self.config.load_used()) == 1:
+            config = self.app.get_config_dict()
+            config['App'].set('current', selected_item.id)
+            self.log.debug(f"Repository {selected_item.id} enabled")
+            workflow = self.app.get_service('workflow')
+            workflow.switch_start()
+            body=f"Repository {selected_item.id} set as default"
+            self.log.info(body)
+        srvdlg.show_info(title=title, body=body, parent=self)
+
 
     def _on_item_used_remove(self, *args):
         # Trick to avoid restart app when repos are enabled/disabled
