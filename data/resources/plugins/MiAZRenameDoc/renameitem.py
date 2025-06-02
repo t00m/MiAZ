@@ -61,7 +61,7 @@ class MiAZToolbarRenameItemPlugin(GObject.GObject, Peas.Activatable):
             button.set_visible(visible)
 
     def startup(self, *args):
-        if not self.plugin.menu_item_loaded():
+        if not self.plugin.started():
             # Create menu item for plugin
             menuitem = self.plugin.get_menu_item(callback=None)
 
@@ -76,6 +76,9 @@ class MiAZToolbarRenameItemPlugin(GObject.GObject, Peas.Activatable):
                 button.set_visible(False)
                 self.app.add_widget('toolbar-top-button-rename', button)
                 toolbar_top_right.append(button)
+
+            # Plugin configured
+            self.plugin.set_started(started=True)
 
     def callback(self, *args):
         try:

@@ -13,7 +13,7 @@ import shutil
 from gi.repository import GObject
 
 from MiAZ.backend.log import MiAZLog
-from MiAZ.backend.models import MiAZModel, Group, Person, Country, Purpose, Concept, SentBy, SentTo, Project, Repository, Plugin
+from MiAZ.backend.models import MiAZModel, Group, Person, Country, Purpose, Concept, SentBy, SentTo, Repository, Plugin
 
 
 class MiAZConfig(GObject.GObject):
@@ -52,14 +52,32 @@ class MiAZConfig(GObject.GObject):
     def __repr__(self):
         return __class__.__name__
 
+    def test(self):
+        self.log.debug(f"Test for Config {self}")
+        self.log.debug(f"\tModel: {self.model}")
+        self.log.debug(f"\tConfig for: {self.config_for}")
+        self.log.debug(f"\tConfig for used: {self.used}")
+        self.log.debug(f"\tConfig for available: {self.available}")
+
+
     def setup(self):
         if not os.path.exists(self.available):
             if self.default is not None:
-                shutil.copy(self.default, self.available)
-                self.log.debug(f"{self.config_for} - Available configuration created from default")
+                try:
+                    shutil.copy(self.default, self.available)
+                    self.log.debug(f"{self.config_for} - Available configuration created from default")
+                    self.log.debug(f"{self.config_for} - Config file path: {self.available}")
+                except FileNotFoundError as error:
+                    self.log.error(error)
+                    if '.conf/plugins' in self.default:
+                        self.log.error("It is very likely the problem is coming from a plugin")
+                        self.log.error("The file with factory data hasn't been found")
+                        self.log.error("The plugin should generate this file during the start up")
+
             else:
                 self.save(filepath=self.available, items={})
                 self.log.debug(f"{self.config_for} - Available configuration file created (empty)")
+                self.log.debug(f"{self.config_for} - Config file path: {self.available}")
 
         if not os.path.exists(self.used):
             self.save(filepath=self.used, items={})
@@ -117,6 +135,7 @@ class MiAZConfig(GObject.GObject):
             if filepath == self.available:
                 self.emit('available-updated')
             elif filepath == self.used:
+                self.log.debug(f"Signal emitted after saving used config for {self.config_for}")
                 self.emit('used-updated')
             try:
                 self.cache[filepath]['changed'] = True
@@ -346,7 +365,6 @@ class MiAZConfigGroups(MiAZConfig):
 
 class MiAZConfigPurposes(MiAZConfig):
     def __init__(self, app, dir_conf):
-
         ENV = app.get_env()
         super().__init__(
             app=app,
@@ -420,20 +438,6 @@ class MiAZConfigSentTo(MiAZConfig):
             available=os.path.join(dir_conf, f'{SentTo.__config_name_available__}-available.json'),
             default=os.path.join(ENV['GPATH']['CONF'], 'MiAZ-people.json'),
             model=SentTo,
-            must_copy=False
-        )
-
-
-class MiAZConfigProjects(MiAZConfig):
-    def __init__(self, app, dir_conf):
-        super().__init__(
-            app=app,
-            log=MiAZLog('MiAZ.Config.Project'),
-            config_for='Project',
-            used=os.path.join(dir_conf, 'projects-used.json'),
-            available=os.path.join(dir_conf, 'projects-available.json'),
-            default=None,
-            model=Project,
             must_copy=False
         )
 

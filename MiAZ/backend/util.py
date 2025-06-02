@@ -209,23 +209,26 @@ class MiAZUtil(GObject.GObject):
             if not os.path.exists(target):
                 try:
                     shutil.move(source, target)
-                    self.log.debug(f"Renaming doc from '{source}' to {target}' successful")
+                    self.log.debug(f"File renamed: '{source}' -> {target}'")
                     rename = True
                     self.emit('filename-renamed', source, target)
                 except Exception as error:
                     self.log.error(f"Renaming doc from '{source}' to {target}' not possible. Error: {error}")
             else:
-                self.log.error(f"Renaming doc from '{source}' to {target}' not possible. Target already exist")
+                # FIXME
+                # ~ self.log.error(f"Renaming doc from '{source}' to {target}' not possible. Target already exist")
+                pass
         else:
             # FIXME
-            self.log.warning("FIXME: this might not be true in Windows systems")
-            self.log.warning(f"Renaming doc from '{source}' to {target}' skipped. Source and target are the same")
+            # ~ self.log.warning("FIXME: this might not be true in Windows systems")
+            # ~ self.log.warning(f"Renaming doc from '{source}' to {target}' skipped. Source and target are the same")
+            pass
         return rename
 
     def filename_delete(self, filepath):
         try:
             os.unlink(filepath)
-            self.log.debug(f"File {filepath} deleted")
+            self.log.debug(f"File deleted: {filepath}")
             self.emit('filename-deleted', filepath)
         except IsADirectoryError as error:
             self.log.error(error)
@@ -337,13 +340,14 @@ class MiAZUtil(GObject.GObject):
         return "%4d%02d%02d_%02d%02d%02d" % (now.year, now.month, now.day,
                                              now.hour, now.minute, now.second)
 
-    def unzip(self, target: str, install_dir):
+    def unzip(self, target: str, install_dir) -> zipfile.ZipFile:
         """
         Unzip file to a given dir
         """
         zip_archive = zipfile.ZipFile(target, "r")
         zip_archive.extractall(path=install_dir)
         zip_archive.close()
+        return zip_archive
 
     def zip_list(self, filepath: str) -> []:
         zip_archive = zipfile.ZipFile(filepath, "r")

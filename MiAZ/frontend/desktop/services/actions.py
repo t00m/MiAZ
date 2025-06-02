@@ -17,7 +17,7 @@ from gi.repository import Gtk
 
 from MiAZ.backend.log import MiAZLog
 from MiAZ.backend.models import File, Group, Country, Purpose, SentBy, SentTo, Date, Repository
-from MiAZ.frontend.desktop.widgets.configview import MiAZCountries, MiAZGroups, MiAZPurposes, MiAZPeopleSentBy, MiAZPeopleSentTo, MiAZProjects
+from MiAZ.frontend.desktop.widgets.configview import MiAZCountries, MiAZGroups, MiAZPurposes, MiAZPeopleSentBy, MiAZPeopleSentTo
 from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewMassDelete
 from MiAZ.frontend.desktop.widgets.settings import MiAZAppSettings
 from MiAZ.frontend.desktop.widgets.settings import MiAZRepoSettings
@@ -38,7 +38,6 @@ Configview['Group'] = MiAZGroups
 Configview['Purpose'] = MiAZPurposes
 Configview['SentBy'] = MiAZPeopleSentBy
 Configview['SentTo'] = MiAZPeopleSentTo
-Configview['Project'] = MiAZProjects
 Configview['Date'] = Gtk.Calendar
 
 class MiAZActions(GObject.GObject):
@@ -59,14 +58,17 @@ class MiAZActions(GObject.GObject):
         srvutl.filename_display(filepath)
 
     def dropdown_populate(self, config, dropdown, item_type, any_value=True, none_value=False, only_include: list = [], only_exclude: list = []):
-        # INFO: This method can be called as a reaction to the signal
-        # 'used-updated' or directly. When reacting to a signal, config
-        # parameter is set in first place. When the method is called
-        # directly, config parameter must be passed.
-        # In any case, config parameter is not used. Config is got from
-        # item_type
+        # FIXME: THIS METHOD DIDN'T TAKE INTO ACCOUNT CUSTOM MODELS
+        #        IT HAS BEEN MODIFIED TO DETECT WHEN A MODEL IS STANDARD
+        #        OR CUSTOM.
+        # INFO: This method can be called as a reaction to the signal 'used-updated' or directly.
+        # When reacting to a signal, config parameter is set in first place automatically.
+        # When the method is called directly, config parameter must be passed.
+        # In any case, config parameter is not used. Config is got from item_type
         i_type = item_type.__gtype_name__
-        config = self.app.get_config(i_type)
+        config_standard = self.app.get_config(i_type)
+        if config_standard is not None:
+            config = config_standard
         items = config.load(config.used)
         i_title = _(item_type.__title__)
 
@@ -310,7 +312,7 @@ class MiAZActions(GObject.GObject):
             if widget is None:
                 widget = self.app.get_widget('workspace')
             parent = widget.get_root()
-            body = '<big>You must select at least one document</big>'
+            body = 'You must select at least one document'
             title = _('Action ignored')
             srvdlg.show_error(title=title, body=body, parent=parent)
             stop = True

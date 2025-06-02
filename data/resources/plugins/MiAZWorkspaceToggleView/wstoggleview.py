@@ -51,7 +51,7 @@ class MiAZWorkspaceToggleViewPlugin(GObject.GObject, Peas.Activatable):
         self.log.info(f"Plugin loaded? {self.plugin_info.is_loaded()}")
 
     def startup(self, *args):
-        if not self.plugin.menu_item_loaded():
+        if not self.plugin.started():
             # Create menu item for plugin
             menuitem = self.plugin.get_menu_item(callback=None)
 
@@ -77,6 +77,9 @@ class MiAZWorkspaceToggleViewPlugin(GObject.GObject, Peas.Activatable):
 
                 evk = self.app.get_widget('window-event-controller')
                 evk.connect("key-pressed", self._on_key_press)
+
+            # Plugin configured
+            self.plugin.set_started(started=True)
 
     def toggle_workspace_view(self, *args):
         """ Sidebar not visible when active = False"""

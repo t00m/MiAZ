@@ -55,7 +55,9 @@ class MiAZItem(MiAZModel):
                         sentto_dsc: str = '',
                         active: bool = False,
                         valid: bool = False,
-                        icon: str = ''):
+                        icon: str = '',
+                        extension: str = '',
+                        ):
         super().__init__(id, title)
 
         self._date = date
@@ -74,10 +76,11 @@ class MiAZItem(MiAZModel):
         self._active = active
         self._valid = valid
         self._icon = icon
+        self._extension = extension
         self.search_text =  self.id + ' ' + date + ' ' + date_dsc + ' ' + group + ' ' + group_dsc + ' ' + \
                             country + ' ' + country_dsc + ' ' + purpose + ' ' + purpose_dsc + ' ' + \
                             sentby_id + ' ' + sentby_dsc + ' ' + title + ' ' + subtitle + ' ' + \
-                            sentto_id + ' ' + sentto_dsc
+                            sentto_id + ' ' + sentto_dsc + ' ' + extension
 
     @GObject.Property
     def date(self):
@@ -90,6 +93,10 @@ class MiAZItem(MiAZModel):
     @GObject.Property
     def country(self):
         return self._country
+
+    @GObject.Property
+    def extension(self):
+        return self._extension
 
     @GObject.Property
     def country_dsc(self):
@@ -230,15 +237,6 @@ class Person(MiAZModel):
     __config_name__ = 'people'
     __config_name_available__ = 'people'
     __config_name_used__ = 'people'
-
-
-class Project(MiAZModel):
-    __gtype_name__ = 'Project'
-    __title__ = _('Project')
-    __title_plural__ = _('Projects')
-    __config_name__ = 'projects'
-    __config_name_available__ = 'projects'
-    __config_name_used__ = 'projects'
 
 
 class Purpose(MiAZModel):

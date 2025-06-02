@@ -15,7 +15,6 @@ from gi.repository import Peas
 
 from MiAZ.backend.status import MiAZStatus
 from MiAZ.frontend.desktop.services.pluginsystem import MiAZPlugin
-from MiAZ.frontend.desktop.services.dialogs import MiAZFileChooserDialog
 
 
 class MiAZAddDirectoryPlugin(GObject.GObject, Peas.Activatable):
@@ -41,65 +40,39 @@ class MiAZAddDirectoryPlugin(GObject.GObject, Peas.Activatable):
         workspace = self.app.get_widget('workspace')
         workspace.connect('workspace-loaded', self.startup)
 
+        # Load other services
+        self.factory = self.app.get_service('factory')
+        self.repository = self.app.get_service('repo')
+        self.util = self.app.get_service('util')
+        self.srvdlg = self.app.get_service('dialogs')
+
 
     def do_deactivate(self):
         self.log.debug("Plugin deactivation not implemented")
 
     def startup(self, *args):
-        if not self.plugin.menu_item_loaded():
+        if not self.plugin.started():
             # Create menu item for plugin
             menuitem = self.plugin.get_menu_item(callback=self.import_directory)
 
             # Add plugin to its default (sub)category
             self.plugin.install_menu_entry(menuitem)
 
+            # Plugin configured
+            self.plugin.set_started(started=True)
 
     def import_directory(self, *args):
-        factory = self.app.get_service('factory')
-        srvutl = self.app.get_service('util')
-        srvrepo = self.app.get_service('repo')
+        self.factory.create_filechooser_for_directories(self._on_filechooser_response)
 
-        def filechooser_response(dialog, response, clsdlg):
-            if response == 'apply':
-                filechooser = self.app.get_widget('plugin-adddir-filechooser')
-                toggle = self.app.get_widget('plugin-adddir-togglebutton')
-                recursive = toggle.get_active()
-                gfile = filechooser.get_file()
-                if gfile is not None:
-                    self.app.set_status(MiAZStatus.BUSY)
-                    dirpath = gfile.get_path()
-                    self.log.debug(f"Walk directory {dirpath} recursively? {recursive}")
-                    if recursive:
-                        files = srvutl.get_files_recursively(dirpath)
-                    else:
-                        files = glob.glob(os.path.join(dirpath, '*.*'))
-                    for source in files:
-                        btarget = srvutl.filename_normalize(source)
-                        target = os.path.join(srvrepo.docs, btarget)
-                        srvutl.filename_import(source, target)
-                    self.app.set_status(MiAZStatus.RUNNING)
-
-        window = self.app.get_widget('window')
-        clsdlg = MiAZFileChooserDialog(self.app)
-        filechooser_dialog = clsdlg.create(
-                    title=_('Import a directory'),
-                    target = 'FOLDER',
-                    callback = filechooser_response)
-        filechooser_widget = self.app.add_widget('plugin-adddir-filechooser', clsdlg.get_filechooser_widget())
-        filechooser_dialog.get_style_context().add_class(class_name='toolbar')
-        filechooser_widget.get_style_context().add_class(class_name='frame')
-        filechooser = filechooser_dialog.get_extra_child()
-        gtkbin = filechooser.get_parent()
-        contents = gtkbin.get_parent()
-        hbox = factory.create_box_horizontal()
-        hbox.get_style_context().add_class(class_name='toolbar')
-        label = Gtk.Label()
-        title=_('<big><b>Walk recursively</b></big>')
-        label.set_markup(title)
-        toggle = factory.create_button_switch(callback=None)
-        self.app.add_widget('plugin-adddir-togglebutton', toggle)
-        hbox.append(toggle)
-        hbox.append(label)
-        contents.append(hbox)
-        contents.get_style_context().add_class(class_name='toolbar')
-        filechooser_dialog.present(window)
+    def _on_filechooser_response(self, dialog, result):
+        try:
+            folder = dialog.select_folder_finish(result)
+            filepaths = glob.glob(os.path.join(folder, '*.*'))
+            for source in filepaths:
+                btarget = self.util.filename_normalize(source)
+                target = os.path.join(self.repository.docs, btarget)
+                self.util.filename_import(source, target)
+            self.srvdlg.show_info(title='Import directory', body=f'{len(filepaths)} documents imported successfully')
+        except Exception as error:
+            self.srvdlg.show_error(title='Error selecting files', body=error)
+            self.log.error(f"Error selecting files: {error}")
