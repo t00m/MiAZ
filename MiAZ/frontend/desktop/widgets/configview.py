@@ -419,6 +419,11 @@ class MiAZUserPlugins(MiAZConfigView):
     def __init__(self, app):
         super(MiAZConfigView, self).__init__(app, edit=True)
         super().__init__(app, 'Plugin')
+        sid_u = GObject.signal_lookup('plugins-downloaded', MiAZUserPlugins)
+        if sid_u == 0:
+            GObject.signal_new('plugins-downloaded',
+                                MiAZUserPlugins,
+                                GObject.SignalFlags.RUN_LAST, None, ())
         boxopers = self.app.get_widget('selector-box-operations')
         factory = self.app.get_service('factory')
 
@@ -587,6 +592,8 @@ class MiAZUserPlugins(MiAZConfigView):
                 self.log.error(f"Another error occurred: {error}")
 
     def update_progress(self, fraction, text):
+        srvdlg = self.app.get_service('dialogs')
+        title = "Plugin management"
         percentage = int(fraction*100)
         banner = self.app.get_widget('repository-settings-banner')
         banner.set_title(f"{text} ({percentage}%) done")
@@ -595,9 +602,16 @@ class MiAZUserPlugins(MiAZConfigView):
             banner.set_revealed(True)
             banner.set_title("One or more plugins were updated. Application restart needed")
             banner.set_button_label('Restart')
-            self.update_views()
+            pluginsystem = self.app.get_service('plugin-system')
+            pluginsystem.create_user_plugin_index()
+            self.update_user_plugins()
+            body = "Plugins updated"
+            self.log.info(body)
+            srvdlg.show_info(title=title, body=body, parent=self)
 
     def _configure_plugin_options(self, *args):
+        srvdlg = self.app.get_service('dialogs')
+        title = 'Plugin management'
         selected_plugin = self.viewSl.get_selected()
         if selected_plugin is None:
             return
@@ -613,12 +627,17 @@ class MiAZUserPlugins(MiAZConfigView):
                 try:
                     plugin.show_settings(widget=self)
                 except Exception as error:
+                    body = error
                     self.log.error(error)
-                    raise
+                    srvdlg.show_error(title=title, body=body, parent=self)
             else:
-                self.log.info(f"Plugin {selected_plugin.id} doesn't have a settings dialog")
+                body = f"Plugin {selected_plugin.id} doesn't have a settings dialog"
+                self.log.warning(body)
+                srvdlg.show_warning(title=title, body=body, parent=self)
         else:
-            self.log.error(f"Can't find plugin object for {plugin_id}!!")
+            body = f"Can't find plugin object for {plugin_id}!!"
+            self.log.error(body)
+            srvdlg.show_error(title=title, body=body, parent=self)
 
     def update_user_plugins(self):
         ENV = self.app.get_env()
