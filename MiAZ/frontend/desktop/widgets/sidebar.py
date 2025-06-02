@@ -260,8 +260,9 @@ class MiAZSidebar(Adw.Bin):
         for ddId in dropdowns:
             dropdowns[ddId].set_selected(0)
         workspace_view = self.app.get_widget('workspace-view')
-        workspace_view.refilter()
-        self.log.debug("All filters cleared")
+        if workspace_view is not None:
+            workspace_view.refilter()
+            self.log.debug("All filters cleared")
 
     def set_title(self, title: str=''):
         sidebar_title = self.app.get_widget('sidebar-title')
