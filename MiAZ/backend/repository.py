@@ -4,7 +4,7 @@
 # File: repository.py
 # Author: Tomás Vírseda
 # License: GPL v3
-# Description: Allow (un)assign documentos from/to projects
+# Description: Repository documents module
 """
 
 import os
@@ -15,7 +15,6 @@ from gi.repository import GObject
 from MiAZ.backend.log import MiAZLog
 from MiAZ.backend.config import MiAZConfigCountries
 from MiAZ.backend.config import MiAZConfigGroups
-from MiAZ.backend.config import MiAZConfigProjects
 from MiAZ.backend.config import MiAZConfigPurposes
 from MiAZ.backend.config import MiAZConfigConcepts
 from MiAZ.backend.config import MiAZConfigPeople
@@ -128,7 +127,6 @@ class MiAZRepository(GObject.GObject):
         self.config['SentBy'] = MiAZConfigSentBy(self.app, repo_dir_conf)
         self.config['SentTo'] = MiAZConfigSentTo(self.app, repo_dir_conf)
         self.config['Person'] = MiAZConfigPeople(self.app, repo_dir_conf)
-        self.config['Project'] = MiAZConfigProjects(self.app, repo_dir_conf)
         self.config['Plugin'] = MiAZConfigUserPlugins(self.app, repo_dir_conf)
         self.log.debug(f"Repository configuration loaded correctly from: {repo_dir_conf}")
         self.emit('repository-switched')

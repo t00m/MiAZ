@@ -17,7 +17,7 @@ from gi.repository import Gtk
 
 from MiAZ.backend.log import MiAZLog
 from MiAZ.backend.models import File, Group, Country, Purpose, SentBy, SentTo, Date, Repository
-from MiAZ.frontend.desktop.widgets.configview import MiAZCountries, MiAZGroups, MiAZPurposes, MiAZPeopleSentBy, MiAZPeopleSentTo, MiAZProjects
+from MiAZ.frontend.desktop.widgets.configview import MiAZCountries, MiAZGroups, MiAZPurposes, MiAZPeopleSentBy, MiAZPeopleSentTo
 from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewMassDelete
 from MiAZ.frontend.desktop.widgets.settings import MiAZAppSettings
 from MiAZ.frontend.desktop.widgets.settings import MiAZRepoSettings
@@ -38,7 +38,6 @@ Configview['Group'] = MiAZGroups
 Configview['Purpose'] = MiAZPurposes
 Configview['SentBy'] = MiAZPeopleSentBy
 Configview['SentTo'] = MiAZPeopleSentTo
-Configview['Project'] = MiAZProjects
 Configview['Date'] = Gtk.Calendar
 
 class MiAZActions(GObject.GObject):

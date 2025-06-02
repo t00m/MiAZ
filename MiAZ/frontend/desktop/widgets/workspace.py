@@ -15,10 +15,10 @@ from gi.repository import GObject
 
 from MiAZ.env import ENV
 from MiAZ.backend.log import MiAZLog
-from MiAZ.backend.models import MiAZItem, Group, Country, Purpose, SentBy, SentTo, Date, Project
+from MiAZ.backend.models import MiAZItem, Group, Country, Purpose, SentBy, SentTo, Date
 from MiAZ.frontend.desktop.widgets.assistant import MiAZAssistantRepoSettings
 from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewWorkspace
-from MiAZ.frontend.desktop.widgets.configview import MiAZCountries, MiAZGroups, MiAZPurposes, MiAZPeopleSentBy, MiAZPeopleSentTo, MiAZProjects
+from MiAZ.frontend.desktop.widgets.configview import MiAZCountries, MiAZGroups, MiAZPurposes, MiAZPeopleSentBy, MiAZPeopleSentTo
 from MiAZ.backend.status import MiAZStatus
 
 # Conversion Item type to Field Number
@@ -35,7 +35,6 @@ Configview['Group'] = MiAZGroups
 Configview['Purpose'] = MiAZPurposes
 Configview['SentBy'] = MiAZPeopleSentBy
 Configview['SentTo'] = MiAZPeopleSentTo
-Configview['Project'] = MiAZProjects
 Configview['Date'] = Gtk.Calendar
 
 
@@ -69,6 +68,7 @@ class MiAZWorkspace(Gtk.Box):
         self._setup_workspace()
         self._setup_logic()
         self.review = False
+        self.last_period_selected = 0
 
         # Allow plug-ins to make their job
         self.connect('workspace-view-updated', self._on_filter_selected)
@@ -132,15 +132,15 @@ class MiAZWorkspace(Gtk.Box):
         dd_date.set_selected(1)
         dd_date.connect("notify::selected-item", self.update)
 
-        ## Dropdown Projects
-        i_type = Project.__gtype_name__
-        i_title = _(Project.__title__)
-        dd_prj = dropdowns[i_type]
-        actions.dropdown_populate(self.config[i_type], dd_prj, Project, any_value=True, none_value=True)
-        dd_prj.connect("notify::selected-item", self._on_filter_selected)
-        dd_prj.connect("notify::selected-item", self._on_project_selected)
-        dd_prj.set_hexpand(True)
-        self.config[i_type].connect('used-updated', self.update_dropdown_filter, Project)
+        # ~ ## Dropdown Projects
+        # ~ i_type = Project.__gtype_name__
+        # ~ i_title = _(Project.__title__)
+        # ~ dd_prj = dropdowns[i_type]
+        # ~ actions.dropdown_populate(self.config[i_type], dd_prj, Project, any_value=True, none_value=True)
+        # ~ dd_prj.connect("notify::selected-item", self._on_filter_selected)
+        # ~ dd_prj.connect("notify::selected-item", self._on_project_selected)
+        # ~ dd_prj.set_hexpand(True)
+        # ~ self.config[i_type].connect('used-updated', self.update_dropdown_filter, Project)
         # ~ self.log.debug(f"Dropdown filter for '{i_title}' setup successfully")
 
         ## Rest of dropdowns
@@ -148,7 +148,11 @@ class MiAZWorkspace(Gtk.Box):
             i_type = item_type.__gtype_name__
             i_title = _(item_type.__title__)
             dropdown = dropdowns[i_type]
-            actions.dropdown_populate(self.config[i_type], dropdown, item_type, none_value=True)
+            actions.dropdown_populate(  config=self.config,
+                                        dropdown=dropdowns[i_type],
+                                        item_type=item_type,
+                                        any_value=True,
+                                        none_value=True)
             dropdown.connect("notify::selected-item", self._on_filter_selected)
             self.used_signals[i_type] = self.config[i_type].connect('used-updated', self.update_dropdown_filter, item_type)
             # ~ self.log.debug(f"Dropdown filter for '{i_title}' setup successfully")
@@ -196,15 +200,19 @@ class MiAZWorkspace(Gtk.Box):
     def _update_dropdowns(self, *args):
         actions = self.app.get_service('actions')
         dropdowns = self.app.get_widget('ws-dropdowns')
-        for item_type in [Country, Group, SentBy, Purpose, SentTo, Project]:
+        for item_type in [Country, Group, SentBy, Purpose, SentTo]:
             i_type = item_type.__gtype_name__
             config = self.config[i_type]
-            actions.dropdown_populate(config, dropdowns[i_type], item_type, True, True)
+            actions.dropdown_populate(  config=config,
+                                    dropdown=dropdowns[i_type],
+                                    item_type=item_type,
+                                    any_value=True,
+                                    none_value=True)
 
-        self._update_dropdown_date()
-        i_type = Date.__gtype_name__
-        dd_date = dropdowns[i_type]
-        dd_date.set_selected(1)
+        # ~ self._update_dropdown_date()
+        # ~ i_type = Date.__gtype_name__
+        # ~ dd_date = dropdowns[i_type]
+        # ~ dd_date.set_selected(1)
 
     def _on_workspace_update(self, *args):
         GLib.idle_add(self.update)
@@ -216,17 +224,23 @@ class MiAZWorkspace(Gtk.Box):
         actions = self.app.get_service('actions')
         dropdowns = self.app.get_widget('ws-dropdowns')
         i_type = item_type.__gtype_name__
-        actions.dropdown_populate(config, dropdowns[i_type], item_type)
+        actions.dropdown_populate(  config=config,
+                                    dropdown=dropdowns[i_type],
+                                    item_type=item_type,
+                                    any_value=True,
+                                    none_value=True)
 
     def show_pending_documents(self, *args):
         sidebar = self.app.get_widget('sidebar')
         togglebutton = self.app.get_widget('workspace-togglebutton-pending-docs')
+        sidebar.clear_filters()
         self.review = togglebutton.get_active()
         i_type = Date.__gtype_name__
         dropdowns = self.app.get_widget('ws-dropdowns')
-        sidebar.clear_filters()
-        dropdowns[i_type].set_selected(9)
-        self.view.refilter()
+        if self.review:
+            dropdowns[i_type].set_selected(9)
+        else:
+            dropdowns[i_type].set_selected(0)
 
     def _update_dropdown_date(self):
         util = self.app.get_service('util')
@@ -292,12 +306,14 @@ class MiAZWorkspace(Gtk.Box):
         model.append(Date(id=key, title=_('All documents')))
 
     def _setup_columnview(self):
+        frame = Gtk.Frame()
         self.view = MiAZColumnViewWorkspace(self.app)
         self.app.add_widget('workspace-view', self.view)
         self.view.get_style_context().add_class(class_name='monospace')
         self._workspace_filters['main'] = self._do_filter_view_main
         self.view.set_filter(self._do_filter_view)
-        return self.view
+        frame.set_child(self.view)
+        return frame
 
     def register_filter_view(self, name: str, callback):
         registered = False
@@ -334,8 +350,12 @@ class MiAZWorkspace(Gtk.Box):
         self.append(widget)
         self.set_default_columnview_attrs()
 
+        self.get_style_context().add_class(class_name='toolbar')
+        # ~ self.get_style_context().add_class(class_name='frame')
+
     def set_default_columnview_attrs(self):
         # Setup columnview
+        self.view.column_country.set_visible(False)
         self.view.column_flag.set_visible(True)
         self.view.column_icon_type.set_visible(True)
         self.view.column_title.set_visible(False)
@@ -348,6 +368,7 @@ class MiAZWorkspace(Gtk.Box):
         self.view.column_sentto.set_expand(False)
         self.view.column_sentby.set_expand(False)
         self.view.column_date.set_visible(True)
+        self.view.column_extension.set_visible(False)
 
     def get_workspace_view(self):
         return self.view
@@ -394,7 +415,6 @@ class MiAZWorkspace(Gtk.Box):
         show_pending = False
 
         for filename in docs:
-            # ~ self.log.debug(f"{filename}")
             doc, ext = util.filename_details(filename)
             fields = doc.split('-')
             if util.filename_validate(doc):
@@ -440,10 +460,11 @@ class MiAZWorkspace(Gtk.Box):
                                         sentby_dsc=desc['SentBy'],
                                         purpose=fields[4],
                                         purpose_dsc=desc['Purpose'],
-                                        title=doc,
+                                        title=doc, #f'{doc}.{ext}',
                                         subtitle=fields[5].replace('_', ' '),
                                         sentto_id=fields[6],
                                         sentto_dsc=desc['SentTo'],
+                                        extension = filename[filename.rfind('.')+1:],
                                         active=active
                                     )
                             )
@@ -465,11 +486,12 @@ class MiAZWorkspace(Gtk.Box):
                                         sentby_dsc='',
                                         purpose='',
                                         purpose_dsc='',
-                                        title=doc,
+                                        title=doc, #f'{doc}.{ext}',
                                         subtitle='_'.join(fields),
                                         sentto_id='',
                                         sentto_dsc='',
-                                        active=False
+                                        extension = filename[filename.rfind('.')+1:],
+                                        active=active
                                     )
                             )
 
@@ -504,6 +526,9 @@ class MiAZWorkspace(Gtk.Box):
 
         if not show_pending:
             togglebutton.set_active(False)
+            # ~ i_type = Date.__gtype_name__
+            # ~ dropdowns = self.app.get_widget('ws-dropdowns')
+            # ~ dropdowns[i_type].set_selected(self.last_period_selected)
         self.review = togglebutton.get_active()
         self.app.set_status(MiAZStatus.RUNNING)
 
@@ -544,6 +569,7 @@ class MiAZWorkspace(Gtk.Box):
         except KeyError:
             item_dt = util.string_to_datetime(item.date)
             self.datetimes[item.date] = item_dt
+        # ~ self.log.warning(f"\t\tItem dt? {item_dt}") # DEBUG FILTERS
 
         # Check if the date belongs to the lower/upper limit
         dropdowns = self.app.get_widget('ws-dropdowns')
@@ -551,12 +577,12 @@ class MiAZWorkspace(Gtk.Box):
         selected = dd_date.get_selected_item()
         if selected is None:
             # ~ FIXME: Dropdown {dd_date} with selected item '{selected}' shouldn't be None"
-            return False
+            return True
         period = selected.id
         ll, ul = period.split('-')
 
         if ll == 'All' and ul == 'All':
-            return True
+            matches = True
         elif ll == 'None' and ul == 'None':
             if item_dt is None:
                 matches = True
@@ -571,30 +597,11 @@ class MiAZWorkspace(Gtk.Box):
                 matches = True
             else:
                 matches = False
-        return matches
-
-    def _do_eval_cond_matches_project(self, doc):
-        projects = self.app.get_service('Projects')
-        dropdowns = self.app.get_widget('ws-dropdowns')
-        dd_prj = dropdowns[Project.__gtype_name__]
-        matches = False
-        try:
-            project = dd_prj.get_selected_item().id
-        except AttributeError:
-            # Raised when managing projects from selector
-            # Workaround: do not filter
-            return True
-        if project == 'Any':
-            matches = True
-        elif project == 'None':
-            lprojects = projects.assigned_to(doc)
-            if len(lprojects) == 0:
-                matches = True
-        else:
-            matches = projects.exists(project, doc)
+        # ~ self.log.warning(f"\t\tPeriod {period}: {ll} - {ul} matches? {matches}") # DEBUG FILTERS
         return matches
 
     def _do_eval_cond_matches_active(self, item):
+        # ~ self.log.warning(f"\t\t{item.id} active? {item.active}") # DEBUG FILTERS
         return item.active
 
     def _do_filter_view(self, item, filter_list_model):
@@ -605,51 +612,31 @@ class MiAZWorkspace(Gtk.Box):
             result = filter_func(item, filter_list_model)
             lresults.append(f"{name}[{result}]")
             show_item = show_item and result
-        msg = 'and '.join(lresults)
-        msg += f" = {show_item}"
-        # ~ self.log.warning(msg)
+        # ~ msg = '\t\t' + ' and '.join(lresults) # DEBUG FILTERS
+        # ~ msg += f" = {show_item}" # DEBUG FILTERS
+        # ~ self.log.error(msg)  # DEBUG FILTERS
         return show_item
 
     def _do_filter_view_main(self, item, filter_list_model):
+        # ~ self.log.info(f"- {item.id}") # DEBUG FILTERS
         show_item = False
         dropdowns = self.app.get_widget('ws-dropdowns')
         c0 = self._do_eval_cond_matches_freetext(item)
         ca = self._do_eval_cond_matches_active(item)
         cd = self._do_eval_cond_matches_date(item)
-        # ~ cp = projects.exists(project, item.id)
         c1 = self._do_eval_cond_matches(dropdowns['Country'], item.country)
         c2 = self._do_eval_cond_matches(dropdowns['Group'], item.group)
         c4 = self._do_eval_cond_matches(dropdowns['SentBy'], item.sentby_id)
         c5 = self._do_eval_cond_matches(dropdowns['Purpose'], item.purpose)
         c6 = self._do_eval_cond_matches(dropdowns['SentTo'], item.sentto_id)
-
+        # ~ self.log.warning( # DEBUG FILTERSf"\t\tReview mode? {self.review}")
         # If workspace is in review mode, filter results. Dates don't mind
         if self.review:
             show_item = not ca and c0 and c1 and c2 and c4 and c5 and c6
         else:
-            # Normal mode. Take projects into account
-            projects = self.app.get_service('Projects')
-            dd_prj = dropdowns[Project.__gtype_name__]
-            try:
-                project = dd_prj.get_selected_item().id
-            except AttributeError:
-                project = 'Any'
+            show_item = ca and c0 and c1 and c2 and c4 and c5 and c6 and cd
 
-            if project != 'None':
-                if project == 'Any':
-                    cp = True
-                else:
-                    cp = projects.exists(project, item.id)
-                show_item = ca and c0 and c1 and c2 and c4 and c5 and c6 and cd and cp
-            else:
-                projects_assigned = projects.assigned_to(item.id)
-                if len(projects_assigned) == 0:
-                    show_item = c0 and c1 and c2 and c4 and c5 and c6 and cd
-                else:
-                    show_item = False
-        # ~ self.log.debug(f"{show_item} \t > {item.id}")
-        # ~ self.log.debug(f"\tProject[{cp}] FreeText[{c0}] Date[{cd}] Country[{c1}] Group[{c2}] SentBy[{c4}] Purpose[{c5}] SentTo[{c6}]")
-
+        # ~ self.log.warning(f"\t\tc0[{c0}] ca[{ca}] cd[{cd}] c1[{c1}] c2[{c2}] c4[{c4}] c5[{c5}] c6[{c6}] = {show_item}") # DEBUG FILTERS
         return show_item
 
     def _do_connect_filter_signals(self):
@@ -661,18 +648,18 @@ class MiAZWorkspace(Gtk.Box):
         selection = self.view.get_selection()
         selection.connect('selection-changed', self._on_selection_changed)
 
-    def _on_project_selected(self, dropdown, gparam):
-        """When a project is chosen, the date change to get show all
-        documents"""
-        try:
-            prjkey = dropdown.get_selected_item().id
-            if prjkey != 'Any':
-                dropdowns = self.app.get_widget('ws-dropdowns')
-                i_type = Date.__gtype_name__
-                dropdowns[i_type].set_selected(9)
-        except AttributeError:
-            # ~ Raised when managing projects from selector. Skip
-            pass
+    # ~ def _on_project_selected(self, dropdown, gparam):
+        # ~ """When a project is chosen, the date change to get show all
+        # ~ documents"""
+        # ~ try:
+            # ~ prjkey = dropdown.get_selected_item().id
+            # ~ if prjkey != 'Any':
+                # ~ dropdowns = self.app.get_widget('ws-dropdowns')
+                # ~ i_type = Date.__gtype_name__
+                # ~ dropdowns[i_type].set_selected(9)
+        # ~ except AttributeError:
+            # ~ # Raised when managing projects from selector. Skip
+            # ~ pass
 
     def _on_filter_selected(self, *args):
         workspace_menu = self.app.get_widget('workspace-menu')

@@ -52,12 +52,15 @@ class MiAZAddDocumentPlugin(GObject.GObject, Peas.Activatable):
         self.log.debug("Plugin deactivation not implemented")
 
     def startup(self, *args):
-        if not self.plugin.menu_item_loaded():
+        if not self.plugin.started():
             # Create menu item for plugin
             menuitem = self.plugin.get_menu_item(callback=self.import_files)
 
             # Add plugin to its default (sub)category
             self.plugin.install_menu_entry(menuitem)
+
+            # Plugin configured
+            self.plugin.set_started(started=True)
 
     def import_files(self, *args):
         self.factory.create_filechooser_for_files(self._on_filechooser_response)

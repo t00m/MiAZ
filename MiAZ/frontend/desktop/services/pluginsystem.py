@@ -102,24 +102,26 @@ class MiAZAPI(GObject.GObject):
 
 
 class MiAZPlugin(GObject.GObject):
+    _started = False
+
     def __init__(self, app):
         self.app = app
         self.log = MiAZLog('MiAZPlugin')
 
-    def _get_plugin_attributes(self, plugin_file):
+    def get_plugin_attributes(self, plugin_file):
         plugin_system = self.app.get_service('plugin-system')
         return plugin_system.get_plugin_attributes(plugin_file)
 
     def register(self, plugin_file: str, plugin_object):
         self.util = self.app.get_service('util')
-        self.info = self._get_plugin_attributes(plugin_file)
+        self.info = self.get_plugin_attributes(plugin_file)
         self.name = self.info['Name']
         self.desc = self.info['Description']
         self.plugin_file = plugin_file
         self.plugin_object = plugin_object
         plugin_id = f'plugin-{self.name}'
         self.app.add_widget(plugin_id, plugin_object)
-        self.log.debug(f"Plugin Object Id: {plugin_id}")
+        # ~ self.log.debug(f"Plugin Object Id: {plugin_id}")
 
         # Create plugin directories for config and data
         ## Configuration directory and file
@@ -136,6 +138,12 @@ class MiAZPlugin(GObject.GObject):
         if not os.path.exists(datadir):
             os.makedirs(datadir, exist_ok=True)
         self.log.debug(f"\tData: {datadir}")
+
+    def set_started(self, started: bool) -> None:
+        self._started = started
+
+    def started(self):
+        return self._started
 
     def get_app(self):
         return self.app
@@ -244,9 +252,11 @@ class MiAZPluginType(IntEnum):
 class MiAZPluginSystem(GObject.GObject):
     def __init__(self, app):
         super().__init__()
-        GObject.signal_new('plugins-updated',
-                            MiAZPluginSystem,
-                            GObject.SignalFlags.RUN_LAST, None, ())
+        sid_u = GObject.signal_lookup('plugins-updated', MiAZPluginSystem)
+        if sid_u == 0:
+            GObject.signal_new('plugins-updated',
+                                MiAZPluginSystem,
+                                GObject.SignalFlags.RUN_LAST, None, ())
         self.log = MiAZLog('MiAZ.PluginSystem')
         self.app = app
         self.util = self.app.get_service('util')
