@@ -321,10 +321,15 @@ class MiAZRepoSettings(MiAZCustomWindow):
 
         # FIXME: User plugins disabled temporary
         for item_type in [Country, Group, Purpose, SentBy, SentTo, Plugin]:
-            i_title = item_type.__title_plural__
-            widget_title = f"configview-{i_title}"
-            configview = self.app.get_widget(widget_title)
-            configview.update_config()
-            configview.update_views()
+            try:
+                i_title = item_type.__title_plural__
+                widget_title = f"configview-{i_title}"
+                configview = self.app.get_widget(widget_title)
+                configview.update_config()
+                configview.update_views()
+            except Exception as error:
+                # FIXME: investigate this error
+                self.log.warning(error)
         # ~ self.log.debug("Repository UI updated according to current settings")
+
 
