@@ -99,7 +99,7 @@ class MiAZPluginUIManager(Gtk.Box):
         btnInfo = self.factory.create_button(icon_name='io.github.t00m.MiAZ-dialog-information-symbolic', callback=self._show_plugin_info, css_classes=[''])
         btnInfo.set_valign(Gtk.Align.CENTER)
         toolbar.append(btnInfo)
-        btnConfig = self.factory.create_button(icon_name='io.github.t00m.MiAZ-config-symbolic', callback=self._configure_plugin_options, css_classes=['suggested-action'])
+        btnConfig = self.factory.create_button(icon_name='io.github.t00m.MiAZ-config-symbolic', callback=self._configure_plugin_options, css_classes=[''])
         self.app.add_widget('plugin-view-system-button-config', btnConfig)
         btnConfig.set_valign(Gtk.Align.CENTER)
         toolbar.append(btnConfig)

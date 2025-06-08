@@ -245,12 +245,22 @@ class MiAZActions(GObject.GObject):
         self.emit('settings-loaded', dialog_app_settings)
 
     def show_repository_settings(self, *args):
-        window_main = self.app.get_widget('window')
-        window_repoconfig = MiAZRepoSettings(self.app)
-        window_repoconfig.set_transient_for(window_main)
-        window_repoconfig.set_modal(True)
-        window_repoconfig.update()
-        window_repoconfig.present()
+        try:
+            # Continue if a default repository exists
+            appconf = self.app.get_config('App')
+            repo_id = appconf.get('current').replace('_', ' ')
+            window_main = self.app.get_widget('window')
+            window_repoconfig = MiAZRepoSettings(self.app)
+            window_repoconfig.set_transient_for(window_main)
+            window_repoconfig.set_modal(True)
+            window_repoconfig.update()
+            window_repoconfig.present()
+        except AttributeError:
+            srvdlg = self.app.get_service('dialogs')
+            parent = self.app.get_widget('window')
+            title = "Repository management"
+            body = "There is no repositories configured.\nPlease, create one."
+            srvdlg.show_error(title=title, body=body, parent=parent)
 
     def show_app_about(self, *args):
         # FIXME: App icon not displayed in local installation
