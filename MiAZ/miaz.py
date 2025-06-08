@@ -87,7 +87,7 @@ class MiAZ:
                 log.debug(f"\t\t{envvar} = {self.env[section][envvar]}")
         self.setup_environment()
         self.log = MiAZLog('MiAZ')
-        self.set_internationalization()
+        # ~ self.set_internationalization()
         self.log.info(f"{ENV['APP']['shortname']} v{ENV['APP']['VERSION']} - Start")
 
     def setup_environment(self):
@@ -97,19 +97,19 @@ class MiAZ:
             if not os.path.exists(ENV['LPATH'][entry]):
                 os.makedirs(ENV['LPATH'][entry])
 
-    def set_internationalization(self):
-        """Set application internationalization."""
-        ENV = self.env
-        try:
-            locale.bindtextdomain('miaz', ENV['GPATH']['LOCALE'])
-            locale.textdomain('miaz')
-            gettext.bindtextdomain('miaz', ENV['GPATH']['LOCALE'])
-            gettext.textdomain('miaz')
-        except AttributeError as e:
-            # Python built without gettext support does not have
-            # bindtextdomain() and textdomain().
-            self.log.error(f"{e}")
-            self.log.error("Could not bind the gettext translation domain")
+    # ~ def set_internationalization(self):
+        # ~ """Set application internationalization."""
+        # ~ ENV = self.env
+        # ~ try:
+            # ~ locale.bindtextdomain('miaz', ENV['GPATH']['LOCALE'])
+            # ~ locale.textdomain('miaz')
+            # ~ gettext.bindtextdomain('miaz', ENV['GPATH']['LOCALE'])
+            # ~ gettext.textdomain('miaz')
+        # ~ except AttributeError as e:
+            # ~ # Python built without gettext support does not have
+            # ~ # bindtextdomain() and textdomain().
+            # ~ self.log.error(f"{e}")
+            # ~ self.log.error("Could not bind the gettext translation domain")
 
     def run(self, params):
         """Execute MiAZ in desktop or console mode."""
