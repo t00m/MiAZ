@@ -18,8 +18,8 @@ uninstall_msys2:
 
 user:
 	rm -rf builddir_user
-#~ 	meson setup builddir_user --prefix=~/.local
 	meson setup builddir_user --prefix=~/.local --reconfigure --buildtype=debugoptimized --wipe
+	meson compile -C builddir_user miaz-update-po
 	ninja -C builddir_user install
 
 user_uninstall:
