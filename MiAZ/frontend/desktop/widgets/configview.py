@@ -55,10 +55,13 @@ class MiAZConfigView(MiAZSelector):
         self.set_vexpand(True)
         # ~ self.log.debug(f"Configview for {config_name} initialited")
         item_type = self.config.model
-        tooltip=f'Enable selected {item_type.__title__.lower()}'
+        i_title = _(item_type.__title__)
+        i_title_plural = _(item_type.__title_plural__)
+        tooltip=_('Enable ') + i_title.lower()
         self.btnAddToUsed.set_tooltip_markup(tooltip)
-        tooltip=f'Disable selected {item_type.__title__.lower()}'
+        tooltip=_('Disable ') + i_title.lower()
         self.btnRemoveFromUsed.set_tooltip_markup(tooltip)
+        self.dialog_title = _(i_title_plural) + _(' > Management > ')
 
     def update_config(self):
         self.config = self.conf[self.config_name]
@@ -111,6 +114,8 @@ class MiAZRepositories(MiAZConfigView):
         self.app = app
         super(MiAZConfigView, self).__init__(app, edit=True)
         super().__init__(app, 'Repository')
+        self.log.error(self.dialog_title)
+
 
     def _setup_view_finish(self):
         # Setup Available and Used Columns Views
@@ -122,9 +127,9 @@ class MiAZRepositories(MiAZConfigView):
 
     def _on_item_available_add(self, *args):
         window = self.viewSl.get_root()
-        title = 'Add a new repository'
-        key1 = '<b>Repository name</b>'
-        key2 = 'Select target folder'
+        title = self.dialog_title + _(' : Add')
+        key1 = _('<b>Repository name</b>')
+        key2 = _('Select target folder')
         # ~ search_term = self.entry.get_text()
         this_repo = MiAZDialogAddRepo(self.app)
         dialog = this_repo.create(title=title, key1=key1, key2=key2)
@@ -140,13 +145,13 @@ class MiAZRepositories(MiAZConfigView):
             repo_path = this_repo.get_value2()
             if len(repo_name) > 0 and os.path.exists(repo_path):
                 self.config.add_available(repo_name, repo_path)
-                title = "Repository management"
-                body = f"Repo '{repo_name}' added to list of available repositories"
+                title = self.dialog_title
+                body = _('Repository added to list of available repositories')
                 self.log.debug(body)
                 self.update_views()
                 srvdlg.show_info(title=title, body=body, parent=dialog)
             else:
-                srvdlg.show_error(title='Action not possible', body='No repository added. Invalid input.\n\nTry again by setting a repository name and a valid target directory', parent=dialog)
+                srvdlg.show_error(title=_('Action not possible'), body=_('No repository added. Invalid input.\n\nTry again by setting a repository name and a valid target directory'), parent=dialog)
 
     def _on_item_available_edit(self, *args):
         item = self.viewAv.get_selected()
@@ -156,9 +161,9 @@ class MiAZRepositories(MiAZConfigView):
         item_type = self.config.model
         i_title = item_type.__title__
         parent = self.viewSl.get_root()
-        title = 'Add a new repository'
-        key1 = '<b>Repository name</b>'
-        key2 = '<b>Directory</b>'
+        title = self.dialog_title + _(' : Edit')
+        key1 = _('<b>Repository name</b>')
+        key2 = _('Select target folder')
         this_repo = MiAZDialogAddRepo(self.app)
         dialog = this_repo.create(title=title, key1=key1, key2=key2)
         this_repo.disable_key1()
@@ -186,12 +191,12 @@ class MiAZRepositories(MiAZConfigView):
                 items_available[oldkey] = newval
                 self.config.save_available(items_available)
                 self.update_views()
-                title = f"{i_title} management"
-                body = f"Repository {item.id} has changed its directory:\n\nFrom: {oldval}\n\nTo: {newval}"
+                title = self.dialog_title
+                body = _('Repository target folder updated')
                 self.srvdlg.show_info(title=title, body=body, parent=dialog)
             else:
-                title = "Action not possible"
-                body = f"Old and new {i_title.lower()} directories are the same"
+                title = _('Action not possible')
+                body = _('Repository target folder not updated')
                 self.srvdlg.show_error(title=title, body=body, parent=dialog)
 
     def _on_item_available_remove(self, button, data=None):
@@ -211,7 +216,7 @@ class MiAZRepositories(MiAZConfigView):
         if not is_used:
             del items_available[selected_item.id]
             self.config.save_available(items=items_available)
-            title = "Repository management"
+            title = self.dialog_title
             body = f"{i_title} {item_id} removed from de list of available items"
             self.log.debug(body)
             srvdlg.show_warning(title=title, body=body, widget=None, parent=parent)

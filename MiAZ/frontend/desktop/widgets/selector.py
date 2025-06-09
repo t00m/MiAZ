@@ -73,7 +73,7 @@ class MiAZSelector(Gtk.Box):
 
         ## Search entry
         self.searchentry = Gtk.SearchEntry()
-        self.searchentry.set_placeholder_text('Type here for filtering entries')
+        self.searchentry.set_placeholder_text(_('Type here for filtering entries'))
         self.searchentry.connect('search-changed', self._on_filter_selected)
         self.searchentry.connect('search-started', self._on_filter_selected)
         self.searchentry.connect('activate', self._on_item_available_add, self.config_for)

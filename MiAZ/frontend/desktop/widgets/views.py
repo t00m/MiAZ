@@ -303,9 +303,9 @@ class MiAZColumnViewCountry(MiAZColumnViewSelector):
         self.cv.append_column(self.column_title)
         self.column_id.set_visible(True)
         if available:
-            title = _(f"{item_type.__title_plural__} available")
+            title = _(item_type.__title_plural__) + ' ' + _('available')
         else:
-            title = _(f"{item_type.__title_plural__} enabled")
+            title = _(item_type.__title_plural__) + ' ' + _('enabled')
         self.column_title.set_title(title)
 
     def _on_factory_setup_flag(self, factory, list_item):
@@ -346,13 +346,14 @@ class MiAZColumnViewRepo(MiAZColumnViewSelector):
     __gtype_name__ = 'MiAZColumnViewRepo'
 
     def __init__(self, app, available=True):
-        super().__init__(app, item_type=Repository)
+        item_type=Repository
+        super().__init__(app, item_type=item_type)
         self.cv.append_column(self.column_id)
         self.column_id.set_expand(True)
         if available:
-            self.column_id.set_title(_('Repositories available'))
+            title = _(item_type.__title_plural__) + ' ' + _('available')
         else:
-            self.column_id.set_title(_('Repositories enabled'))
+            title = _(item_type.__title_plural__) + ' ' + _('enabled')
         self.cv.append_column(self.column_title)
         self.column_title.set_title(_('Directory'))
         self.column_title.set_visible(False)
@@ -370,9 +371,9 @@ class MiAZColumnViewGroup(MiAZColumnViewSelector):
         self.column_id.set_visible(True)
         self.cv.append_column(self.column_title)
         if available:
-            title = _(f"{item_type.__title_plural__} available")
+            title = _(item_type.__title_plural__) + ' ' + _('available')
         else:
-            title = _(f"{item_type.__title_plural__} enabled")
+            title = _(item_type.__title_plural__) + ' ' + _('enabled')
         self.column_title.set_title(title)
 
 
@@ -388,9 +389,9 @@ class MiAZColumnViewPurpose(MiAZColumnViewSelector):
         self.column_title.set_title(_('Purpose Id'))
         self.cv.append_column(self.column_title)
         if available:
-            title = _(f"{item_type.__title_plural__} available")
+            title = _(item_type.__title_plural__) + ' ' + _('available')
         else:
-            title = _(f"{item_type.__title_plural__} enabled")
+            title = _(item_type.__title_plural__) + ' ' + _('enabled')
         self.column_title.set_title(title)
 
 class MiAZColumnViewConcept(MiAZColumnViewSelector):
@@ -405,9 +406,9 @@ class MiAZColumnViewConcept(MiAZColumnViewSelector):
         self.column_title.set_title(_('Concept Id'))
         self.cv.append_column(self.column_title)
         if available:
-            title = _(f"{item_type.__title_plural__} available")
+            title = _(item_type.__title_plural__) + ' ' + _('available')
         else:
-            title = _(f"{item_type.__title_plural__} enabled")
+            title = _(item_type.__title_plural__) + ' ' + _('enabled')
         self.column_title.set_title(title)
 
 class MiAZColumnViewPerson(MiAZColumnViewSelector):
@@ -422,9 +423,9 @@ class MiAZColumnViewPerson(MiAZColumnViewSelector):
         self.column_id.set_visible(True)
         self.cv.append_column(self.column_title)
         if available:
-            title = _(f"{item_type.__title_plural__} available")
+            title = _(item_type.__title_plural__) + ' ' + _('available')
         else:
-            title = _(f"{item_type.__title_plural__} enabled")
+            title = _(item_type.__title_plural__) + ' ' + _('enabled')
         self.column_title.set_title(title)
 
 

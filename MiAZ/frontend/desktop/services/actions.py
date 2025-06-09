@@ -79,9 +79,9 @@ class MiAZActions(GObject.GObject):
 
         model.remove_all()
         if any_value:
-            model.append(item_type(id='Any', title=_(f'Any {i_title.lower()}')))
+            model.append(item_type(id='Any', title=_('Any'))) # {i_title.lower()}')))
         if none_value:
-            model.append(item_type(id='None', title=_(f'No {i_title.lower()}')))
+            model.append(item_type(id='None', title=_('None'))) # {i_title.lower()}')))
 
         for key in items:
             accepted = True

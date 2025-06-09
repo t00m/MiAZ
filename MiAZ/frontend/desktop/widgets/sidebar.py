@@ -81,7 +81,7 @@ class MiAZSidebar(Adw.Bin):
     def _on_repo_switch(self, *args):
         config = self.app.get_config_dict()
         repo_id = config['App'].get('current')
-        title = _(f"<big><b>{repo_id}</b></big>")
+        title = f"<big><b>{repo_id}</b></big>"
         self.set_title(title)
         self.clear_filters()
         self.setup_custom_filters()
@@ -117,7 +117,7 @@ class MiAZSidebar(Adw.Bin):
         boxTitle = factory.create_box_vertical(margin=0, spacing=0, hexpand=True, vexpand=True)
         self.app.add_widget('sidebar-box-title', boxTitle)
         lblTitle = Gtk.Label()
-        lblTitle.set_markup(_(f"<big><b>{repo_id}</b></big>"))
+        lblTitle.set_markup(f"<big><b>{repo_id}</b></big>")
         boxTitle.append(lblTitle)
         boxTitle.set_valign(Gtk.Align.CENTER)
         self.app.add_widget('sidebar-title', lblTitle)
@@ -156,7 +156,7 @@ class MiAZSidebar(Adw.Bin):
         num_docs = len(workspace.get_selected_items())
         config = self.app.get_config_dict()
         repo_id = config['App'].get('current')
-        description = f"<big>Repository {repo_id}\n<b>{num_docs} documents</b></big>"
+        description = _(f"<big>Repository {repo_id}\n<b>{num_docs} documents</b></big>")
         repo_status.set_description(description)
         self.log.debug(description)
 
@@ -187,7 +187,7 @@ class MiAZSidebar(Adw.Bin):
         ## Search box
         searchentry = self.app.add_widget('searchentry', Gtk.SearchEntry())
         searchentry.set_hexpand(True)
-        boxDropdown = factory.create_box_filter('Filter by free text', searchentry)
+        boxDropdown = factory.create_box_filter(_('Filter by free text'), searchentry)
         row.append(boxDropdown)
 
         ## Dropdowns
@@ -198,7 +198,7 @@ class MiAZSidebar(Adw.Bin):
         dd_date = factory.create_dropdown_generic(item_type=Date, ellipsize=False, enable_search=True)
         dd_date.set_hexpand(True)
         self.dropdowns[i_type] = dd_date
-        boxDropdown = factory.create_box_filter('Date', dd_date)
+        boxDropdown = factory.create_box_filter(_('Date'), dd_date)
         row.append(boxDropdown)
 
         ### Rest of filters dropdowns
@@ -211,7 +211,7 @@ class MiAZSidebar(Adw.Bin):
             self.dropdowns[i_type] = dropdown
 
 
-        page_main_filters = viewstack.add_titled(widget, 'main-filters', 'Main filters')
+        page_main_filters = viewstack.add_titled(widget, 'main-filters', _('Main filters'))
         page_main_filters.set_icon_name('io.github.t00m.MiAZ-filter-symbolic')
         page_main_filters.set_visible(True)
 
@@ -233,13 +233,13 @@ class MiAZSidebar(Adw.Bin):
             self.app.add_widget('sidebar-box-custom-filters', row)
             body.append(row)
             widget.append(body)
-            page_custom_fiters = viewstack.add_titled(widget, 'custom-filters', 'Custom filters')
+            page_custom_fiters = viewstack.add_titled(widget, 'custom-filters', _('Custom filters'))
             page_custom_fiters.set_icon_name('io.github.t00m.MiAZ-filter-custom-symbolic')
             page_custom_fiters.set_visible(True)
 
     def _setup_clear_filters_button(self):
         factory = self.app.get_service('factory')
-        button = factory.create_button(icon_name='io.github.t00m.MiAZ-entry_clear', tooltip='Clear all filters', css_classes=['flat'], callback=self.clear_filters)
+        button = factory.create_button(icon_name='io.github.t00m.MiAZ-entry_clear', tooltip=_('Clear all filters'), css_classes=['flat'], callback=self.clear_filters)
         self.app.add_widget('headerbar-button-clear-filters', button)
 
         return button
@@ -247,7 +247,7 @@ class MiAZSidebar(Adw.Bin):
     def _setup_repo_settings_button(self):
         actions = self.app.get_service('actions')
         factory = self.app.get_service('factory')
-        button = factory.create_button(icon_name='io.github.t00m.MiAZ-emblem-system-symbolic', tooltip='Repository management', css_classes=['flat'], callback=actions.show_repository_settings)
+        button = factory.create_button(icon_name='io.github.t00m.MiAZ-emblem-system-symbolic', tooltip=_('Repository management'), css_classes=['flat'], callback=actions.show_repository_settings)
         self.app.add_widget('headerbar-button-clear-filters', button)
 
         return button

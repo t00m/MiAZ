@@ -66,7 +66,7 @@ class MiAZAppSettings(Adw.PreferencesDialog):
             n += 1
 
     def _build_ui(self):
-        self.set_title('Application settings')
+        self.set_title(_('Application settings'))
         self.set_search_enabled(False)
         self._build_ui_page_preferences()
         # ~ self._build_ui_page_aspect()
@@ -81,7 +81,7 @@ class MiAZAppSettings(Adw.PreferencesDialog):
 
         ## Group UI
         group = Adw.PreferencesGroup()
-        group.set_title('User interface')
+        group.set_title(_('User interface'))
         page.add(group)
         self.app.add_widget('window-preferences-page-aspect-group-ui', group)
 
@@ -96,7 +96,7 @@ class MiAZAppSettings(Adw.PreferencesDialog):
 
         ## Group Repositories
         group = Adw.PreferencesGroup()
-        group.set_title('Repositories')
+        group.set_title(_('Repositories'))
         page.add(group)
 
         ### Row Repositories
@@ -131,7 +131,7 @@ class MiAZAppSettings(Adw.PreferencesDialog):
 
         ## Group plugins
         group = Adw.PreferencesGroup()
-        group.set_title('Plugins')
+        group.set_title(_('Plugins'))
         # ~ FIXME: Add plugins back revamped.
         page.add(group)
 
@@ -147,7 +147,7 @@ class MiAZAppSettings(Adw.PreferencesDialog):
         srvdlg = self.app.get_service('dialogs')
         window = self.app.get_widget('window')
         widget = MiAZPluginUIManager(self.app)
-        dialog = srvdlg.show_noop(title='Plugin Manager', body='', widget=widget, width=800, height=600)
+        dialog = srvdlg.show_noop(title=_('Plugin Manager'), body='', widget=widget, width=800, height=600)
 
         dialog.present(self)
 
@@ -181,8 +181,8 @@ class MiAZAppSettings(Adw.PreferencesDialog):
         if repo is None:
             return
 
-        title = "Repository management"
-        body = f"Would you like to set the repository {repo.id} as default?\n\nPlease, note that the app will be restarted upon confirmation"
+        title = _('Repository management')
+        body = _('Would you like to set the repository %s as default?\n\nPlease, note that the app will be restarted upon confirmation' % repo.id)
         parent = self.app.get_widget('window')
         srvdlg = self.app.get_service('dialogs')
         dialog = srvdlg.show_question(title=title, body=body, callback=self._on_use_repo_response, data=repo)
@@ -195,7 +195,7 @@ class MiAZAppSettings(Adw.PreferencesDialog):
 
         if response == 'apply':
             config['App'].set('current', repo.id)
-            self.log.debug(f"Repository {repo.id} enabled")
+            self.log.debug(_('Repository %s enabled' % repo.id))
             # ~ srvdlg.show_info("Repostory management", body="Repository {repo.id} switched.\nApplication will be restarted now.", parent=dialog)
             actions = self.app.get_service('actions')
             actions.application_restart()
@@ -217,12 +217,12 @@ class MiAZAppSettings(Adw.PreferencesDialog):
             ## Unblock signal "dd_repo > notify::selected-item"
             dd_repo.handler_unblock(signal)
 
-            srvdlg.show_error("Repository management", body="Action canceled. Repository not switched", parent=dialog)
+            srvdlg.show_error(_('Repository management'), body=_('Action canceled. Repository not switched'), parent=dialog)
 
     def _on_manage_repositories(self, *args):
         widget = self._create_widget_for_repositories()
         window = self
-        title = "Manage repositories"
+        title = _('Repository management')
         body = "" # "Add, edit, delete and (de)activate repositories"
         dialog = self.srvdlg.show_noop(title=title, body=body, widget=widget, width=800, height=600)
         dialog.present(window)
@@ -271,7 +271,7 @@ class MiAZRepoSettings(MiAZCustomWindow):
         self.name = 'repo-settings'
         appconf = self.app.get_config('App')
         repo_id = appconf.get('current').replace('_', ' ')
-        self.title = f"Settings for repository {repo_id}"
+        self.title = _('Settings for repository') + ' ' + repo_id
         super().__init__(app, self.name, self.title, **kwargs)
         # ~ self.connect('notify::visible', self.update)
 

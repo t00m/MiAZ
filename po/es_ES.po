@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 0.1\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-06-08 18:47+0200\n"
-"PO-Revision-Date: 2025-06-08 18:45+0200\n"
+"POT-Creation-Date: 2025-06-09 23:25+0200\n"
+"PO-Revision-Date: 2025-06-09 23:29+0200\n"
 "Last-Translator: Tomás Vírseda <tomas.virseda@gmail.com>\n"
 "Language-Team: Spanish\n"
 "Language: es\n"
@@ -21,7 +21,7 @@ msgstr ""
 #: data/io.github.t00m.MiAZ.desktop.in:2
 #: data/io.github.t00m.MiAZ.metainfo.xml.in:6
 msgid "MiAZ"
-msgstr ""
+msgstr "MiAZ"
 
 #: data/io.github.t00m.MiAZ.desktop.in:3
 #: data/io.github.t00m.MiAZ.metainfo.xml.in:7
@@ -29,9 +29,8 @@ msgid "Personal Document Organizer"
 msgstr "Organizador Personal de Documentos"
 
 #: data/io.github.t00m.MiAZ.desktop.in:8
-#, fuzzy
 msgid "Productivity;Personal;Documents;Organizer"
-msgstr "Organizador Personal de Documentos"
+msgstr ""
 
 #: data/io.github.t00m.MiAZ.metainfo.xml.in:9
 msgid ""
@@ -92,83 +91,110 @@ msgid "Pre-release"
 msgstr ""
 
 #: MiAZ/backend/stats.py:46 MiAZ/backend/stats.py:65 MiAZ/backend/stats.py:67
-#, fuzzy
 msgid "year"
-msgstr "Este año"
+msgstr "año"
 
 #: MiAZ/backend/stats.py:47 MiAZ/backend/stats.py:70 MiAZ/backend/stats.py:72
-#, fuzzy
 msgid "month"
-msgstr "Mes"
+msgstr "mes"
 
 #: MiAZ/backend/stats.py:48 MiAZ/backend/stats.py:75 MiAZ/backend/stats.py:77
-#, fuzzy
 msgid "day"
-msgstr "Día"
+msgstr "día"
+
+#: MiAZ/backend/config.py:299
+msgid "App"
+msgstr "Aplicación"
+
+#: MiAZ/backend/config.py:324 MiAZ/backend/models.py:254
+#: MiAZ/frontend/desktop/widgets/settings.py:99
+msgid "Repositories"
+msgstr "Repositorios"
+
+#: MiAZ/backend/config.py:341 MiAZ/backend/models.py:174
+#: MiAZ/frontend/desktop/widgets/assistant.py:192
+msgid "Countries"
+msgstr "Países"
+
+#: MiAZ/backend/config.py:358 MiAZ/backend/models.py:227
+#: MiAZ/frontend/desktop/widgets/assistant.py:192
+msgid "Groups"
+msgstr "Grupos"
+
+#: MiAZ/backend/config.py:373 MiAZ/backend/models.py:245
+#: MiAZ/frontend/desktop/widgets/assistant.py:192
+msgid "Purposes"
+msgstr "Propósitos"
+
+#: MiAZ/backend/config.py:387 MiAZ/backend/models.py:165
+msgid "Concepts"
+msgstr "Conceptos"
+
+#: MiAZ/backend/config.py:403
+msgid "Person"
+msgstr "Persona"
+
+#: MiAZ/backend/config.py:421 MiAZ/frontend/desktop/widgets/assistant.py:192
+#: MiAZ/frontend/desktop/widgets/views.py:72
+msgid "Sent by"
+msgstr "Enviado por"
+
+#: MiAZ/backend/config.py:437 MiAZ/frontend/desktop/widgets/assistant.py:192
+#: MiAZ/frontend/desktop/widgets/views.py:73
+msgid "Sent to"
+msgstr "Enviado a"
+
+#: MiAZ/backend/config.py:451
+msgid "UserPlugin"
+msgstr "Plugin de usuario"
 
 #. Setup columnview columns
 #: MiAZ/backend/models.py:164 MiAZ/frontend/desktop/widgets/views.py:67
 msgid "Concept"
 msgstr "Concepto"
 
-#: MiAZ/backend/models.py:165
-#, fuzzy
-msgid "Concepts"
-msgstr "Concepto"
-
 #: MiAZ/backend/models.py:173 MiAZ/frontend/desktop/widgets/views.py:76
 msgid "Country"
 msgstr "País"
 
-#: MiAZ/backend/models.py:174 MiAZ/frontend/desktop/widgets/assistant.py:192
-msgid "Countries"
-msgstr "Países"
-
 #: MiAZ/backend/models.py:190 MiAZ/frontend/desktop/widgets/rename.py:203
 #: MiAZ/frontend/desktop/widgets/views.py:75
+#: MiAZ/frontend/desktop/widgets/sidebar.py:201
 msgid "Date"
 msgstr "Fecha"
 
 #: MiAZ/backend/models.py:191
-#, fuzzy
 msgid "Dates"
-msgstr "Fecha"
+msgstr "Fechas"
 
 #: MiAZ/backend/models.py:199 MiAZ/frontend/desktop/widgets/views.py:340
-#: MiAZ/frontend/desktop/widgets/views.py:456
+#: MiAZ/frontend/desktop/widgets/views.py:457
 msgid "Document"
 msgstr "Documento"
 
 #: MiAZ/backend/models.py:200
-#, fuzzy
 msgid "Documents"
-msgstr "Documento"
+msgstr "Documentos"
 
 #: MiAZ/backend/models.py:208 MiAZ/frontend/desktop/widgets/rename.py:308
 msgid "Extension"
 msgstr "Extensión"
 
 #: MiAZ/backend/models.py:209
-#, fuzzy
 msgid "Extensions"
-msgstr "Extensión"
+msgstr "Extensiones"
 
 #: MiAZ/backend/models.py:217 MiAZ/frontend/desktop/widgets/views.py:336
 msgid "File"
 msgstr "Fichero"
 
 #: MiAZ/backend/models.py:218
-#, fuzzy
 msgid "Files"
-msgstr "Fichero"
+msgstr "Ficheros"
 
 #: MiAZ/backend/models.py:226 MiAZ/frontend/desktop/widgets/views.py:71
 msgid "Group"
 msgstr "Grupo"
-
-#: MiAZ/backend/models.py:227 MiAZ/frontend/desktop/widgets/assistant.py:192
-msgid "Groups"
-msgstr "Grupos"
 
 #: MiAZ/backend/models.py:235
 msgid "Natural or legal entity"
@@ -182,45 +208,34 @@ msgstr "Personas/Entidades"
 msgid "Purpose"
 msgstr "Propósito"
 
-#: MiAZ/backend/models.py:245 MiAZ/frontend/desktop/widgets/assistant.py:192
-msgid "Purposes"
-msgstr "Propósitos"
-
 #: MiAZ/backend/models.py:253 MiAZ/frontend/desktop/widgets/assistant.py:57
 msgid "Repository"
 msgstr "Repositorio"
-
-#: MiAZ/backend/models.py:254
-msgid "Repositories"
-msgstr "Repositorios"
 
 #: MiAZ/backend/models.py:262
 msgid "Sender"
 msgstr "Remitente"
 
 #: MiAZ/backend/models.py:263
-#, fuzzy
 msgid "Senders"
-msgstr "Remitente"
+msgstr "Remitentes"
 
 #: MiAZ/backend/models.py:271
 msgid "Recipient"
 msgstr "Destinatario"
 
 #: MiAZ/backend/models.py:272
-#, fuzzy
 msgid "Recipients"
-msgstr "Destinatario"
+msgstr "Destinatarios"
 
-#: MiAZ/backend/models.py:280 MiAZ/frontend/desktop/widgets/views.py:469
-#, fuzzy
+#: MiAZ/backend/models.py:280 MiAZ/frontend/desktop/widgets/views.py:470
 msgid "Plugin"
-msgstr "Plug-in de área de usuario"
+msgstr "Plug-in"
 
-#: MiAZ/backend/models.py:281 MiAZ/frontend/desktop/widgets/settings.py:157
-#, fuzzy
+#: MiAZ/backend/models.py:281 MiAZ/frontend/desktop/widgets/settings.py:134
+#: MiAZ/frontend/desktop/widgets/settings.py:157
 msgid "Plugins"
-msgstr "Plug-in de área de usuario"
+msgstr "Plug-ins"
 
 #: MiAZ/frontend/desktop/services/help.py:18
 msgid "Main Window"
@@ -259,7 +274,7 @@ msgstr "Aplicar"
 #: MiAZ/frontend/desktop/services/dialogs.py:28
 #: MiAZ/frontend/desktop/services/dialogs.py:33
 msgid "Close"
-msgstr "Cerra"
+msgstr "Cerrar"
 
 #: MiAZ/frontend/desktop/services/dialogs.py:38
 msgid "Yes"
@@ -276,6 +291,14 @@ msgstr "usuario"
 #: MiAZ/frontend/desktop/services/pluginsystem.py:249
 msgid "system"
 msgstr "sistema"
+
+#: MiAZ/frontend/desktop/services/actions.py:82
+msgid "Any"
+msgstr "Cualquiera"
+
+#: MiAZ/frontend/desktop/services/actions.py:84
+msgid "None"
+msgstr "Ninguno"
 
 #: MiAZ/frontend/desktop/services/actions.py:111
 msgid "No data"
@@ -294,7 +317,6 @@ msgid "Accept"
 msgstr "Aceptar"
 
 #: MiAZ/frontend/desktop/widgets/pages.py:35
-#, fuzzy
 msgid "No active repositories have been found\n"
 msgstr "No se ha encontrado ningún repositorio activo\n"
 
@@ -336,16 +358,6 @@ msgstr "Elige el directorio destino"
 #: MiAZ/frontend/desktop/widgets/assistant.py:145
 msgid "Directory not set"
 msgstr "Directorio no establecido"
-
-#: MiAZ/frontend/desktop/widgets/assistant.py:192
-#: MiAZ/frontend/desktop/widgets/views.py:72
-msgid "Sent by"
-msgstr "Enviado por"
-
-#: MiAZ/frontend/desktop/widgets/assistant.py:192
-#: MiAZ/frontend/desktop/widgets/views.py:73
-msgid "Sent to"
-msgstr "Enviado a"
 
 #: MiAZ/frontend/desktop/widgets/assistant.py:203
 msgid "Repository settings assistant"
@@ -415,15 +427,27 @@ msgstr "Nombre de fichero actual"
 msgid "<b>New filename</b>"
 msgstr "<b>Nuevo nombre de fichero</b>"
 
+#: MiAZ/frontend/desktop/widgets/selector.py:76
+msgid "Type here for filtering entries"
+msgstr "Escribe aquí para filtrar"
+
 #: MiAZ/frontend/desktop/widgets/selector.py:209
 #: MiAZ/frontend/desktop/widgets/selector.py:242
 msgid "<b>Description</b>"
 msgstr "<b>Descripción</b>"
 
+#: MiAZ/frontend/desktop/widgets/settings.py:69
+msgid "Application settings"
+msgstr "Ajustes de la aplicación"
+
 #. Create preferences page
 #: MiAZ/frontend/desktop/widgets/settings.py:76
 msgid "Aspect"
 msgstr "Aspecto"
+
+#: MiAZ/frontend/desktop/widgets/settings.py:84
+msgid "User interface"
+msgstr "Interface de usuario"
 
 #. Create preferences page
 #: MiAZ/frontend/desktop/widgets/settings.py:92
@@ -439,9 +463,44 @@ msgstr "Repositorio activo"
 #. ## Row Plugins
 #. ### Manage plugins
 #: MiAZ/frontend/desktop/widgets/settings.py:140
-#, fuzzy
 msgid "Manage plugins"
-msgstr "Gestionar %s"
+msgstr "Gestionar plugins"
+
+#: MiAZ/frontend/desktop/widgets/settings.py:150
+msgid "Plugin Manager"
+msgstr "Gestor de plugins"
+
+#: MiAZ/frontend/desktop/widgets/settings.py:184
+#: MiAZ/frontend/desktop/widgets/settings.py:220
+#: MiAZ/frontend/desktop/widgets/settings.py:225
+#: MiAZ/frontend/desktop/widgets/sidebar.py:250
+msgid "Repository management"
+msgstr "Gestión de repositorios"
+
+#: MiAZ/frontend/desktop/widgets/settings.py:185
+#, python-format
+msgid ""
+"Would you like to set the repository %s as default?\n"
+"\n"
+"Please, note that the app will be restarted upon confirmation"
+msgstr ""
+"¿Te gustaría establecer el repositorio %s por defecto?\n"
+"\n"
+"Por favor, tenga en cuenta que la aplicación se reiniciará después de una "
+"confirmación afirmativa"
+
+#: MiAZ/frontend/desktop/widgets/settings.py:198
+#, python-format
+msgid "Repository %s enabled"
+msgstr "Repositorio %s habilitado"
+
+#: MiAZ/frontend/desktop/widgets/settings.py:220
+msgid "Action canceled. Repository not switched"
+msgstr "Acción cancelada. No se ha cambiado de repositorio"
+
+#: MiAZ/frontend/desktop/widgets/settings.py:274
+msgid "Settings for repository"
+msgstr "Ajustes del repositorio"
 
 #: MiAZ/frontend/desktop/widgets/views.py:68
 msgid "Active"
@@ -454,75 +513,79 @@ msgstr "Tipo"
 
 #: MiAZ/frontend/desktop/widgets/views.py:300
 msgid "Flag"
-msgstr ""
+msgstr "Bandera"
 
-#: MiAZ/frontend/desktop/widgets/views.py:353
-msgid "Repositories available"
-msgstr "Repositorios disponibles"
+#: MiAZ/frontend/desktop/widgets/views.py:306
+#: MiAZ/frontend/desktop/widgets/views.py:354
+#: MiAZ/frontend/desktop/widgets/views.py:374
+#: MiAZ/frontend/desktop/widgets/views.py:392
+#: MiAZ/frontend/desktop/widgets/views.py:409
+#: MiAZ/frontend/desktop/widgets/views.py:426
+msgid "available"
+msgstr "disponibles"
 
-#: MiAZ/frontend/desktop/widgets/views.py:355
-msgid "Repositories enabled"
-msgstr "Repositorios en uso"
+#: MiAZ/frontend/desktop/widgets/views.py:308
+#: MiAZ/frontend/desktop/widgets/views.py:356
+#: MiAZ/frontend/desktop/widgets/views.py:376
+#: MiAZ/frontend/desktop/widgets/views.py:394
+#: MiAZ/frontend/desktop/widgets/views.py:411
+#: MiAZ/frontend/desktop/widgets/views.py:428
+msgid "enabled"
+msgstr "habiltados"
 
-#: MiAZ/frontend/desktop/widgets/views.py:357
+#: MiAZ/frontend/desktop/widgets/views.py:358
 msgid "Directory"
 msgstr "Directorio"
 
-#: MiAZ/frontend/desktop/widgets/views.py:369
+#: MiAZ/frontend/desktop/widgets/views.py:370
 msgid "Group Id"
-msgstr "Grupo Id"
+msgstr "Grupo"
 
-#: MiAZ/frontend/desktop/widgets/views.py:388
+#: MiAZ/frontend/desktop/widgets/views.py:389
 msgid "Purpose Id"
-msgstr "Propósito Id"
+msgstr "Propósito"
 
-#: MiAZ/frontend/desktop/widgets/views.py:405
-#, fuzzy
+#: MiAZ/frontend/desktop/widgets/views.py:406
 msgid "Concept Id"
 msgstr "Concepto"
 
-#: MiAZ/frontend/desktop/widgets/views.py:421
+#: MiAZ/frontend/desktop/widgets/views.py:422
 msgid "Initials"
 msgstr "Iniciales"
 
-#: MiAZ/frontend/desktop/widgets/views.py:438
+#: MiAZ/frontend/desktop/widgets/views.py:439
 msgid "Source"
 msgstr "Origen"
 
-#: MiAZ/frontend/desktop/widgets/views.py:441
+#: MiAZ/frontend/desktop/widgets/views.py:442
 msgid "Target"
 msgstr "Destino"
 
-#: MiAZ/frontend/desktop/widgets/views.py:452
+#: MiAZ/frontend/desktop/widgets/views.py:453
 msgid "Filename"
 msgstr "Nombre de fichero"
 
-#: MiAZ/frontend/desktop/widgets/views.py:466
-#, fuzzy
+#: MiAZ/frontend/desktop/widgets/views.py:467
 msgid "Plugin Id"
-msgstr "Plug-in de área de usuario"
+msgstr "Plug-in"
 
 #: MiAZ/frontend/desktop/widgets/workspace.py:261
 msgid "This month"
 msgstr "Este mes"
 
 #: MiAZ/frontend/desktop/widgets/workspace.py:267
-#, fuzzy
 msgid "Since past month"
-msgstr "Últimos tres meses"
+msgstr "Desde hace un mes"
 
 #: MiAZ/frontend/desktop/widgets/workspace.py:272
-#, fuzzy
 msgid "Since last 3 months"
-msgstr "Últimos tres meses"
+msgstr "Desde hace tres meses"
 
 #: MiAZ/frontend/desktop/widgets/workspace.py:277
-#, fuzzy
 msgid "Since last 6 months"
-msgstr "Últimos seis meses"
+msgstr "Desde hace seis meses"
 
 #: MiAZ/frontend/desktop/widgets/workspace.py:282
-#, fuzzy
 msgid "Since last year"
 msgstr "Desde hace dos años"
 
@@ -539,18 +602,91 @@ msgid "Since five years ago"
 msgstr "Desde hace cinco años"
 
 #: MiAZ/frontend/desktop/widgets/workspace.py:302
-#, fuzzy
 msgid "Since ten years ago"
-msgstr "Desde hace tres años"
+msgstr "Desde hace diez años"
 
 #: MiAZ/frontend/desktop/widgets/workspace.py:306
 msgid "All documents"
 msgstr "Todos los documentos"
 
-#: MiAZ/frontend/desktop/widgets/configview.py:726
+#: MiAZ/frontend/desktop/widgets/configview.py:60
+msgid "Enable "
+msgstr "Habiltar "
+
+#: MiAZ/frontend/desktop/widgets/configview.py:62
+msgid "Disable "
+msgstr "Deshabiltar "
+
+#: MiAZ/frontend/desktop/widgets/configview.py:64
+msgid " > Management > "
+msgstr " > Gestión > "
+
+#: MiAZ/frontend/desktop/widgets/configview.py:130
+msgid " : Add"
+msgstr " : Añadir"
+
+#: MiAZ/frontend/desktop/widgets/configview.py:131
+#: MiAZ/frontend/desktop/widgets/configview.py:165
+msgid "<b>Repository name</b>"
+msgstr "<b>Nombre del repositorio</b>"
+
+#: MiAZ/frontend/desktop/widgets/configview.py:132
+#: MiAZ/frontend/desktop/widgets/configview.py:166
+msgid "Select target folder"
+msgstr "Seleccionar el directorio destino"
+
+#: MiAZ/frontend/desktop/widgets/configview.py:149
+msgid "Repository added to list of available repositories"
+msgstr "Repositorio añadido a la lista de repositorios disponible"
+
+#: MiAZ/frontend/desktop/widgets/configview.py:154
+#: MiAZ/frontend/desktop/widgets/configview.py:198
+msgid "Action not possible"
+msgstr "Acción no posible"
+
+#: MiAZ/frontend/desktop/widgets/configview.py:154
+msgid ""
+"No repository added. Invalid input.\n"
+"\n"
+"Try again by setting a repository name and a valid target directory"
+msgstr ""
+"No se ha añadido el repositorio. Datos no válidos.\n"
+"\n"
+"Inténtalo otra vez seleccionando un directorio de destino y un nombre de "
+"repositorio válidos,"
+
+#: MiAZ/frontend/desktop/widgets/configview.py:164
+msgid " : Edit"
+msgstr " : Editar"
+
+#: MiAZ/frontend/desktop/widgets/configview.py:195
+msgid "Repository target folder updated"
+msgstr "Se ha actualizado el directorio destino para el repositorio "
+
+#: MiAZ/frontend/desktop/widgets/configview.py:199
+msgid "Repository target folder not updated"
+msgstr "No se ha actualizado el directorio destino para el repositorio "
+
+#: MiAZ/frontend/desktop/widgets/configview.py:731
 #: MiAZ/frontend/desktop/widgets/pluginuimanager.py:120
 msgid "Properties"
-msgstr ""
+msgstr "Propiedades"
+
+#: MiAZ/frontend/desktop/widgets/sidebar.py:190
+msgid "Filter by free text"
+msgstr "Filtrar por texto"
+
+#: MiAZ/frontend/desktop/widgets/sidebar.py:214
+msgid "Main filters"
+msgstr "Filtros"
+
+#: MiAZ/frontend/desktop/widgets/sidebar.py:236
+msgid "Custom filters"
+msgstr "Otros filtros"
+
+#: MiAZ/frontend/desktop/widgets/sidebar.py:242
+msgid "Clear all filters"
+msgstr "Limpiar todos los filtros"
 
 #: data/resources/plugins/MiAZDeleteDoc/delete.py:86
 msgid ""
@@ -581,6 +717,8 @@ msgid ""
 "\n"
 "You are about to rename this document"
 msgstr ""
+"\n"
+"Estás a punto de renombrar este documento"
 
 #: data/resources/plugins/MiAZRenameDoc/renameitem.py:112
 msgid "Are you sure?"
@@ -591,27 +729,27 @@ msgid "Renaming not possible"
 msgstr "El renombrado no es posible"
 
 #: data/resources/plugins/MiAZViewDoc/viewitem.py:69
-#, fuzzy
 msgid "View document"
-msgstr "Renombrar documento"
+msgstr "Ver documento"
 
 #. Row for option "Display Workspace toggle view button?"
 #: data/resources/plugins/MiAZWorkspaceToggleView/wstoggleview.py:135
 msgid "Display Workspace toggle view button?"
 msgstr "¿Mostrar el botón de Workspace?"
 
-#~ msgid "Settings - Repositories"
-#~ msgstr "Configuración - Repositorios"
+#, python-format
+#~ msgid "Initializing configview %s"
+#~ msgstr "Inicializando configview %s"
+
+#, fuzzy
+#~ msgid "Add a new repository"
+#~ msgstr "Repositorio activo"
 
 #~ msgid "Current active"
 #~ msgstr "Último activo"
 
 #~ msgid "Load repo"
 #~ msgstr "Cargar repositorio"
-
-#, python-format
-#~ msgid "Any %s"
-#~ msgstr "Cualquier %s"
 
 #, python-format
 #~ msgid "No %s"
@@ -629,17 +767,11 @@ msgstr "¿Mostrar el botón de Workspace?"
 #~ msgid "Import a single file"
 #~ msgstr "Importar un fichero"
 
-#~ msgid "Application settings"
-#~ msgstr "Ajustes de la aplicación"
-
 #~ msgid "Quit"
 #~ msgstr "Salir"
 
 #~ msgid "Back"
 #~ msgstr "Volver"
-
-#~ msgid "Repository name"
-#~ msgstr "Nombre del repositorio"
 
 #~ msgid "Folder"
 #~ msgstr "Directorio"
@@ -821,9 +953,6 @@ msgstr "¿Mostrar el botón de Workspace?"
 #, python-format
 #~ msgid "%s %s available? %s. Used? %s"
 #~ msgstr "Está %s %s disponible? %s. ¿Está siendo usado? %s"
-
-#~ msgid "Person"
-#~ msgstr "Persona"
 
 #~ msgid "Project"
 #~ msgstr "Proyecto"
