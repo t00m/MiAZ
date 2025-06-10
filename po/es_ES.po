@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 0.1\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-06-09 23:25+0200\n"
-"PO-Revision-Date: 2025-06-09 23:29+0200\n"
+"POT-Creation-Date: 2025-06-10 23:25+0200\n"
+"PO-Revision-Date: 2025-06-10 23:26+0200\n"
 "Last-Translator: Tomás Vírseda <tomas.virseda@gmail.com>\n"
 "Language-Team: Spanish\n"
 "Language: es\n"
@@ -351,7 +351,7 @@ msgid "Select a directory"
 msgstr "Seleccionar un directorio"
 
 #: MiAZ/frontend/desktop/widgets/assistant.py:122
-#: MiAZ/frontend/desktop/widgets/settings.py:254
+#: MiAZ/frontend/desktop/widgets/settings.py:256
 msgid "Choose target directory"
 msgstr "Elige el directorio destino"
 
@@ -390,6 +390,15 @@ msgstr "¡Todo listo!"
 #: MiAZ/frontend/desktop/widgets/assistant.py:313
 msgid "You can continue using the application now"
 msgstr "Puedes continuar ahora usando la aplicación"
+
+#: MiAZ/frontend/desktop/widgets/mainwindow.py:212
+#: MiAZ/frontend/desktop/widgets/workspace.py:522
+msgid "Review"
+msgstr "Revisar"
+
+#: MiAZ/frontend/desktop/widgets/mainwindow.py:213
+msgid "There are documents pending of review"
+msgstr "Hay documentos pendientes de revisión"
 
 #: MiAZ/frontend/desktop/widgets/mainwindow.py:236
 msgid "Settings"
@@ -431,10 +440,93 @@ msgstr "<b>Nuevo nombre de fichero</b>"
 msgid "Type here for filtering entries"
 msgstr "Escribe aquí para filtrar"
 
-#: MiAZ/frontend/desktop/widgets/selector.py:209
-#: MiAZ/frontend/desktop/widgets/selector.py:242
+#: MiAZ/frontend/desktop/widgets/selector.py:175
+#: MiAZ/frontend/desktop/widgets/selector.py:228
+#: MiAZ/frontend/desktop/widgets/selector.py:234
+#: MiAZ/frontend/desktop/widgets/selector.py:320
+#: MiAZ/frontend/desktop/widgets/selector.py:334
+#: MiAZ/frontend/desktop/widgets/selector.py:343
+#: MiAZ/frontend/desktop/widgets/selector.py:423
+#: MiAZ/frontend/desktop/widgets/configview.py:198
+#: MiAZ/frontend/desktop/widgets/configview.py:225
+#: MiAZ/frontend/desktop/widgets/configview.py:507
+msgid "<b>Action not possible</b>"
+msgstr "<b>Acción no posible</b>"
+
+#: MiAZ/frontend/desktop/widgets/selector.py:176
+#: MiAZ/frontend/desktop/widgets/selector.py:335
+#, python-brace-format
+msgid "{title} {desc} is still being used by {num_docs} documents"
+msgstr "{title} {desc} todavía está siendo usado por {num_docs} documentos"
+
+#: MiAZ/frontend/desktop/widgets/selector.py:199
+#, python-brace-format
+msgid "{title} {desc} disabled"
+msgstr "{title} {desc} deshabilitado"
+
+#: MiAZ/frontend/desktop/widgets/selector.py:211
+#: MiAZ/frontend/desktop/widgets/selector.py:248
 msgid "<b>Description</b>"
 msgstr "<b>Descripción</b>"
+
+#: MiAZ/frontend/desktop/widgets/selector.py:229
+#, python-brace-format
+msgid "{title} {value} added to list of available {item_types}"
+msgstr "{title} {value} añadido a la lista de {item_types} disponibles"
+
+#: MiAZ/frontend/desktop/widgets/selector.py:235
+#, python-brace-format
+msgid "Either the {title} key or the description are empty. Please, check."
+msgstr ""
+"O bien el identificador del {title} o bien la descripción están vacíos. Por "
+"favor, revisa."
+
+#: MiAZ/frontend/desktop/widgets/selector.py:321
+#, python-brace-format
+msgid ""
+"Your about to delete <i>{title} {desc}</i>.\n"
+"\n"
+"Are you sure?"
+msgstr ""
+"Estás a punto de borrar <i>{title} {desc}</i>.\n"
+"\n"
+"¿Estás seguro?"
+
+#: MiAZ/frontend/desktop/widgets/selector.py:344
+#, python-brace-format
+msgid ""
+"{title} {desc} is not used by any document.\n"
+"However, it is enabled.\n"
+"\n"
+"\n"
+"Please, disable it first before deleting it."
+msgstr ""
+"{title} {desc} no está siendo usado por ningún documento.\n"
+"Sin embargo, todavía está habilitado.\n"
+"\n"
+"\n"
+"Please, disable it first before deleting it."
+
+#: MiAZ/frontend/desktop/widgets/selector.py:403
+#, python-brace-format
+msgid "{title} {desc} removed from de list of available {item_types}"
+msgstr "{title} {desc} eliminado de la lista de {item_types} disponibles"
+
+#: MiAZ/frontend/desktop/widgets/selector.py:406
+#, python-brace-format
+msgid "{title} {desc} not deleted from de list of available {item_types}"
+msgstr ""
+"{title} {desc} no fue eliminado de la lista de {item_types} disponibles"
+
+#: MiAZ/frontend/desktop/widgets/selector.py:420
+#, python-brace-format
+msgid "{title} {item} has been enabled"
+msgstr "{title} {item} ha sido habilitado"
+
+#: MiAZ/frontend/desktop/widgets/selector.py:424
+#, python-brace-format
+msgid "{title} {item} is already enabled"
+msgstr "{title} {item} ya está habilitado"
 
 #: MiAZ/frontend/desktop/widgets/settings.py:69
 msgid "Application settings"
@@ -471,34 +563,33 @@ msgid "Plugin Manager"
 msgstr "Gestor de plugins"
 
 #: MiAZ/frontend/desktop/widgets/settings.py:184
-#: MiAZ/frontend/desktop/widgets/settings.py:220
-#: MiAZ/frontend/desktop/widgets/settings.py:225
+#: MiAZ/frontend/desktop/widgets/settings.py:222
+#: MiAZ/frontend/desktop/widgets/settings.py:227
 #: MiAZ/frontend/desktop/widgets/sidebar.py:250
 msgid "Repository management"
 msgstr "Gestión de repositorios"
 
 #: MiAZ/frontend/desktop/widgets/settings.py:185
-#, python-format
-msgid ""
-"Would you like to set the repository %s as default?\n"
-"\n"
-"Please, note that the app will be restarted upon confirmation"
-msgstr ""
-"¿Te gustaría establecer el repositorio %s por defecto?\n"
-"\n"
-"Por favor, tenga en cuenta que la aplicación se reiniciará después de una "
-"confirmación afirmativa"
+#, python-brace-format
+msgid "Would you like to set the repository {repository} as default?"
+msgstr "¿Te gustaría establecer el repositorio {repository} por defecto?"
 
-#: MiAZ/frontend/desktop/widgets/settings.py:198
+#: MiAZ/frontend/desktop/widgets/settings.py:186
+msgid "Please, note that the app will be restarted upon confirmation"
+msgstr ""
+"Por favor, tenga en cuenta que la aplicación se reiniciará después de "
+"confirmar"
+
+#: MiAZ/frontend/desktop/widgets/settings.py:200
 #, python-format
 msgid "Repository %s enabled"
 msgstr "Repositorio %s habilitado"
 
-#: MiAZ/frontend/desktop/widgets/settings.py:220
+#: MiAZ/frontend/desktop/widgets/settings.py:222
 msgid "Action canceled. Repository not switched"
 msgstr "Acción cancelada. No se ha cambiado de repositorio"
 
-#: MiAZ/frontend/desktop/widgets/settings.py:274
+#: MiAZ/frontend/desktop/widgets/settings.py:276
 msgid "Settings for repository"
 msgstr "Ajustes del repositorio"
 
@@ -531,7 +622,7 @@ msgstr "disponibles"
 #: MiAZ/frontend/desktop/widgets/views.py:411
 #: MiAZ/frontend/desktop/widgets/views.py:428
 msgid "enabled"
-msgstr "habiltados"
+msgstr "en uso"
 
 #: MiAZ/frontend/desktop/widgets/views.py:358
 msgid "Directory"
@@ -618,8 +709,9 @@ msgid "Disable "
 msgstr "Deshabiltar "
 
 #: MiAZ/frontend/desktop/widgets/configview.py:64
-msgid " > Management > "
-msgstr " > Gestión > "
+#, python-brace-format
+msgid "{item_types} management"
+msgstr "Gestión de {item_types}"
 
 #: MiAZ/frontend/desktop/widgets/configview.py:130
 msgid " : Add"
@@ -640,7 +732,6 @@ msgid "Repository added to list of available repositories"
 msgstr "Repositorio añadido a la lista de repositorios disponible"
 
 #: MiAZ/frontend/desktop/widgets/configview.py:154
-#: MiAZ/frontend/desktop/widgets/configview.py:198
 msgid "Action not possible"
 msgstr "Acción no posible"
 
@@ -667,7 +758,31 @@ msgstr "Se ha actualizado el directorio destino para el repositorio "
 msgid "Repository target folder not updated"
 msgstr "No se ha actualizado el directorio destino para el repositorio "
 
-#: MiAZ/frontend/desktop/widgets/configview.py:731
+#: MiAZ/frontend/desktop/widgets/configview.py:226
+#, python-brace-format
+msgid "{title} {id} is still being used"
+msgstr "{title} {id} todavía está siendo usado"
+
+#: MiAZ/frontend/desktop/widgets/configview.py:249
+#, python-brace-format
+msgid "{title} {item} ready to be used"
+msgstr "{title} {item} listo para ser usado"
+
+#: MiAZ/frontend/desktop/widgets/configview.py:262
+#, python-brace-format
+msgid "{title} {item} set as default"
+msgstr "{title} {item} establecido como valor por defecto"
+
+#: MiAZ/frontend/desktop/widgets/configview.py:508
+#, python-brace-format
+msgid ""
+"{title} <i>{desc}</i> is still enabled.\n"
+"Please, disable it first before deleting it."
+msgstr ""
+"{title} <i>{desc}</i> todavía está habilitado\n"
+"Por favor, deshabilítalo primero antes de borrarlo."
+
+#: MiAZ/frontend/desktop/widgets/configview.py:734
 #: MiAZ/frontend/desktop/widgets/pluginuimanager.py:120
 msgid "Properties"
 msgstr "Propiedades"
@@ -861,10 +976,6 @@ msgstr "¿Mostrar el botón de Workspace?"
 #, python-format
 #~ msgid "Removed %s (%s) from used"
 #~ msgstr "%s (%s) eliminado de la configuración en uso"
-
-#, python-format
-#~ msgid "%s %s is still being used by some docs"
-#~ msgstr "%s %s todavía está siendo usado por algunos documentos"
 
 #, python-format
 #~ msgid "%s: add a new item"

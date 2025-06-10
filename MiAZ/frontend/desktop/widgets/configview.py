@@ -61,7 +61,7 @@ class MiAZConfigView(MiAZSelector):
         self.btnAddToUsed.set_tooltip_markup(tooltip)
         tooltip=_('Disable ') + i_title.lower()
         self.btnRemoveFromUsed.set_tooltip_markup(tooltip)
-        self.dialog_title = _(i_title_plural) + _(' > Management > ')
+        self.dialog_title = _('{item_types} management').format(item_types=i_title_plural)
 
     def update_config(self):
         self.config = self.conf[self.config_name]
@@ -195,7 +195,7 @@ class MiAZRepositories(MiAZConfigView):
                 body = _('Repository target folder updated')
                 self.srvdlg.show_info(title=title, body=body, parent=dialog)
             else:
-                title = _('Action not possible')
+                title = _('<b>Action not possible</b>')
                 body = _('Repository target folder not updated')
                 self.srvdlg.show_error(title=title, body=body, parent=dialog)
 
@@ -221,13 +221,15 @@ class MiAZRepositories(MiAZConfigView):
             self.log.debug(body)
             srvdlg.show_warning(title=title, body=body, widget=None, parent=parent)
         else:
-            title = "Action not possible"
-            body = _(f'{i_title} {item_id} is still being used')
+            title = self.dialog_title
+            body1 = _('<b>Action not possible</b>')
+            body2 = _('{title} {id} is still being used').format(title=i_title, id=item_id)
+            body = body1 + '\n' + body2
             srvdlg.show_error(title=title, body=body, widget=None, parent=parent)
 
     def _on_item_used_add(self, *args):
         srvdlg = self.app.get_service('dialogs')
-        title="Repository management"
+        title = self.dialog_title
 
         dd_repo = self.app.get_widget('window-settings-dropdown-repository-active')
         signal = self.app.get_widget('signal-dd_repo')
@@ -244,7 +246,7 @@ class MiAZRepositories(MiAZConfigView):
             items_used[selected_item.id] = selected_item.title
             self.config.save_used(items=items_used)
             self.update_views()
-            body = f"{i_title} {selected_item.id} ready to be used"
+            body = _('{title} {item} ready to be used').format(title=i_title, item=selected_item.id)
             self.log.debug(body)
         else:
             body = f"{i_title} {selected_item.id} is already being used"
@@ -257,10 +259,9 @@ class MiAZRepositories(MiAZConfigView):
             self.log.debug(f"Repository {selected_item.id} enabled")
             workflow = self.app.get_service('workflow')
             workflow.switch_start()
-            body=f"Repository {selected_item.id} set as default"
+            body=_('{title} {item} set as default').format(title=i_title, item=selected_item.id)
             self.log.info(body)
         srvdlg.show_info(title=title, body=body, parent=self)
-
 
     def _on_item_used_remove(self, *args):
         # Trick to avoid restart app when repos are enabled/disabled
@@ -502,12 +503,14 @@ class MiAZUserPlugins(MiAZConfigView):
             item_type = self.config.model
             i_title = item_type.__title__
             window = self.viewAv.get_root()
-            title = "Action not possible"
+            title = self.dialog_title
+            body1 = _('<b>Action not possible</b>')
+            body2 = _('{title} <i>{desc}</i> is still enabled.\nPlease, disable it first before deleting it.').format(title=i_title, desc=item_dsc)
+            body = body1 + '\n' + body2
             item_desc = selected_item.title.replace('_', ' ')
-            text = _(f"{i_title} '<i>{item_desc}</i>' is still enabled.\nPlease, disable it first before deleting it.")
             widget = None
             srvdlg = self.app.get_service('dialogs')
-            srvdlg.show_error(title=title, body=text, widget=widget, parent=window)
+            srvdlg.show_error(title=title, body=body, widget=widget, parent=window)
 
     def _on_item_available_remove_response(self, dialog, response, selected_item):
         ENV = self.app.get_env()

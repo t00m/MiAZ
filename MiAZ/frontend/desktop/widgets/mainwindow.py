@@ -209,8 +209,8 @@ class MiAZMainWindow(Gtk.Box):
 
         # Pending documents toggle button
         button = factory.create_button_toggle( icon_name='io.github.t00m.MiAZ-rename',
-                                        title='Review',
-                                        tooltip='There are documents pending of review'
+                                        title=_('Review'),
+                                        tooltip=_('There are documents pending of review')
                                     )
         self.app.add_widget('workspace-togglebutton-pending-docs', button)
         button.set_has_frame(True)

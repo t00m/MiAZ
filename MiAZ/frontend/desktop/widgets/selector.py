@@ -157,7 +157,7 @@ class MiAZSelector(Gtk.Box):
             return
 
         item_type = self.config.model
-        i_title = item_type.__title__
+        i_title = _(item_type.__title__)
         item_dsc = selected_item.title.replace('_', ' ')
         items_used = self.config.load_used()
         items_available = self.config.load_available()
@@ -170,9 +170,11 @@ class MiAZSelector(Gtk.Box):
             self.log.warning(f"Custom model for {self.config.config_for} returns False")
             is_used = False
         if is_used:
-            text = _(f'{i_title} {item_dsc} is still being used by {len(docs)} documents')
             window = self.viewSl.get_root()
-            title = "Action not possible"
+            title = self.dialog_title
+            body1 = _('<b>Action not possible</b>')
+            body2 = _('{title} {desc} is still being used by {num_docs} documents').format(title=i_title, desc=item_dsc, num_docs=len(docs))
+            body = body1 + '\n' + body2
             if len(docs) > 0:
                 items = []
                 for doc in docs:
@@ -188,13 +190,13 @@ class MiAZSelector(Gtk.Box):
             else:
                 widget = view
             srvdlg = self.app.get_service('dialogs')
-            srvdlg.show_error(title=title, body=text, widget=widget, width=600, height=480, parent=window)
+            srvdlg.show_error(title=title, body=body, widget=widget, width=600, height=480, parent=window)
         else:
             self.config.add_available(selected_item.id, selected_item.title)
             self.config.remove_used(selected_item.id)
             self.update_views()
-            title = f"{i_title} management"
-            body = f"{i_title} {item_dsc} disabled"
+            title = self.dialog_title
+            body = _('{title} {desc} disabled').format(title=i_title, desc=item_dsc)
             self.srvdlg.show_warning(title=title, body=body, parent=self)
 
     def _on_item_available_add(self, *args):
@@ -222,12 +224,16 @@ class MiAZSelector(Gtk.Box):
             if len(key) > 0 and len(value) > 0:
                 self.config.add_available(key.upper(), value)
                 self.update_views()
-                title = f"{i_title} management"
-                body = f"{i_title} {value} added to list of available {item_type.__title_plural__.lower()}"
+                title = self.dialog_title
+                body1 = _('<b>Action not possible</b>')
+                body2 = _('{title} {value} added to list of available {item_types}').format(title=i_title, value=value, item_types=item_type.__title_plural__.lower())
+                body = body1 + '\n' + body2
                 self.srvdlg.show_info(title=title, body=body, parent=dialog)
             else:
-                title = "Action not possible"
-                body = f"Either the {i_title.lower()} key or the description are empty. Please, check."
+                title = self.dialog_title
+                body1 = _('<b>Action not possible</b>')
+                body2 = _('Either the {title} key or the description are empty. Please, check.').format(title=i_title.lower())
+                body = body1 + '\n' + body2
                 self.srvdlg.show_error(title=title, body=body, parent=dialog)
 
     def _on_item_available_edit(self, *args):
@@ -309,9 +315,11 @@ class MiAZSelector(Gtk.Box):
         items_used = self.config.load_used()
         is_used = selected_item.id in items_used
         self.log.debug(f"Is '{selected_item.id}' used? {is_used}")
+        title = self.dialog_title
         if not is_used:
-            title = f"{i_title} management"
-            body = f"Your about to delete <i>{i_title.lower()} {item_dsc}</i>.\n\nAre you sure?"
+            body1 = _('<b>Action not possible</b>')
+            body2 = _('Your about to delete <i>{title} {desc}</i>.\n\nAre you sure?').format(title=i_title.lower(), desc=item_dsc)
+            body = body1 + '\n' + body2
             dialog = self.srvdlg.show_question(title=title, body=body)
             dialog.connect('response', self._on_item_available_remove_response, selected_item)
             dialog.present(self)
@@ -320,18 +328,21 @@ class MiAZSelector(Gtk.Box):
             item_type = self.config.model
             i_title = item_type.__title__
             window = self.viewAv.get_root()
-            title = "Action not possible"
             item_desc = selected_item.title.replace('_', ' ')
 
             if len(docs) > 0:
-                text = _(f'{i_title} {item_desc} is still being used by {len(docs)} docs')
+                body1 = _('<b>Action not possible</b>')
+                body2 = _('{title} {desc} is still being used by {num_docs} documents').format(title=i_title, desc=item_desc, num_docs=len(docs))
+                body = body1 + '\n' + body2
                 items = []
                 for doc in docs:
                     items.append(File(id=doc, title=os.path.basename(doc)))
                 view = MiAZColumnViewDocuments(self.app)
                 view.update(items)
             else:
-                text = _(f"{i_title} {item_desc} is not used by any document.\nHowever, it is enabled.\n\n\nPlease, disable it first before deleting it.")
+                body1 = _('<b>Action not possible</b>')
+                body2 = _('{title} {desc} is not used by any document.\nHowever, it is enabled.\n\n\nPlease, disable it first before deleting it.').format(title=i_title, desc=item_desc)
+                body = body1 + '\n' + body2
                 view = None
 
             if view is not None:
@@ -340,7 +351,7 @@ class MiAZSelector(Gtk.Box):
             else:
                 widget = view
             srvdlg = self.app.get_service('dialogs')
-            srvdlg.show_error(title=title, body=text, widget=widget, width=600, height=480, parent=window)
+            srvdlg.show_error(title=title, body=body, widget=widget, width=600, height=480, parent=window)
 
     def _on_selected_item_available_notify(self, colview, pos):
         model = colview.get_model()
@@ -384,16 +395,15 @@ class MiAZSelector(Gtk.Box):
         i_title = item_type.__title__
         item_id = selected_item.id.replace('_', ' ')
         item_dsc = selected_item.title
+        title = self.dialog_title
         if response == 'apply':
             self.config.remove_available(selected_item.id)
             self.searchentry.set_text('')
             self.searchentry.activate()
-            title = f"{i_title} management"
-            body = f"{i_title} {item_dsc} removed from de list of available {item_type.__title_plural__.lower()}"
+            body = _('{title} {desc} removed from de list of available {item_types}').format(title=i_title, desc=item_dsc, item_types=item_type.__title_plural__.lower())
             self.srvdlg.show_warning(title=title, body=body, parent=self)
         else:
-            title = f"{i_title} management"
-            body = f"{i_title} {item_dsc} not deleted from the list of available {item_type.__title_plural__.lower()}"
+            body = _('{title} {desc} not deleted from de list of available {item_types}').format(title=i_title, desc=item_dsc, item_types=item_type.__title_plural__.lower())
             self.srvdlg.show_info(title=title, body=body, parent=self)
 
     def _on_item_used_add(self, *args):
@@ -402,10 +412,15 @@ class MiAZSelector(Gtk.Box):
         is_used = selected_item.id in items_used
         item_type = self.config.model
         i_title = item_type.__title__
+        title = self.dialog_title
         if not is_used:
             items_used[selected_item.id] = selected_item.title
             self.config.save_used(items=items_used)
             self.update_views()
-            self.srvdlg.show_info(title=f"{i_title} management", body=f"{i_title} {selected_item.title} has been enabled", parent=self)
+            body = _('{title} {item} has been enabled').format(title=i_title, item=selected_item.title)
+            self.srvdlg.show_info(title=title, body=body, parent=self)
         else:
-            self.srvdlg.show_error('Action not possible', f"{i_title} {selected_item.title} is already enabled", parent=self)
+            body1 = _('<b>Action not possible</b>')
+            body2 = _('{title} {item} is already enabled').format(title=i_title, item=selected_item.title)
+            body = body1 + '\n' + body2
+            self.srvdlg.show_error(title=title, body=body, parent=self)

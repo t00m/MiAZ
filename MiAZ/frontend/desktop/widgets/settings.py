@@ -182,7 +182,9 @@ class MiAZAppSettings(Adw.PreferencesDialog):
             return
 
         title = _('Repository management')
-        body = _('Would you like to set the repository %s as default?\n\nPlease, note that the app will be restarted upon confirmation' % repo.id)
+        body1 = _('Would you like to set the repository {repository} as default?').format(repository=repo.id)
+        body2 = _('Please, note that the app will be restarted upon confirmation')
+        body = body1 + '\n\n' + body2
         parent = self.app.get_widget('window')
         srvdlg = self.app.get_service('dialogs')
         dialog = srvdlg.show_question(title=title, body=body, callback=self._on_use_repo_response, data=repo)
@@ -284,7 +286,9 @@ class MiAZRepoSettings(MiAZCustomWindow):
 
         def create_tab(item_type):
             i_type = item_type.__gtype_name__
-            i_title = _(item_type.__title_plural__)
+            i_id = item_type.__config_name__
+            i_title = item_type.__title__
+            i_title_plural = _(item_type.__title_plural__)
             page = Gtk.CenterBox(orientation=Gtk.Orientation.VERTICAL)
             page.set_vexpand(True)
             page.set_hexpand(True)
@@ -297,10 +301,12 @@ class MiAZRepoSettings(MiAZCustomWindow):
             page.set_start_widget(box)
             wdgLabel = self.factory.create_box_horizontal()
             wdgLabel.get_style_context().add_class(class_name='caption')
-            icon = self.icman.get_image_by_name(f"io.github.t00m.MiAZ-res-{i_title.lower()}")
+            icon_name = f"io.github.t00m.MiAZ-res-{i_id.lower()}"
+            icon = self.icman.get_image_by_name(icon_name)
             icon.set_hexpand(False)
-            icon.set_pixel_size(24)
-            label = self.factory.create_label(f"<b>{i_title}</b>")
+            icon.set_pixel_size(16)
+            title = _(i_title_plural)
+            label = self.factory.create_label(f"<b>{title}</b>")
             label.set_xalign(0.0)
             label.set_hexpand(True)
             wdgLabel.append(icon)

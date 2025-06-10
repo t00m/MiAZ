@@ -519,7 +519,8 @@ class MiAZWorkspace(Gtk.Box):
             if not item.active:
                 review += 1
         togglebutton = self.app.get_widget('workspace-togglebutton-pending-docs')
-        togglebutton.set_label(f"Review ({review})")
+        label = _('Review') + f' ({review})'
+        togglebutton.set_label(label)
         if show_pending:
             self.log.debug("There are pending documents. Displaying warning button")
         togglebutton.set_visible(show_pending)
