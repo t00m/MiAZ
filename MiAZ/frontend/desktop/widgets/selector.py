@@ -203,11 +203,12 @@ class MiAZSelector(Gtk.Box):
         if self.edit:
             search_term = self.searchentry.get_text()
             item_type = self.config.model
-            i_title = item_type.__title__
+            i_title = _(item_type.__title__)
             this_item = MiAZDialogAdd(self.app)
-            parent = self.get_root()
-            title = _(f'Add new {i_title.lower()}')
-            key1 = _(f'<b>{i_title.title()} key</b>')
+            parent = self.searchentry.get_root()
+            title = self.dialog_title
+            title = _('<b>Add new {title}</b>').format(title=i_title.lower())
+            key1 = _('<b>{title} key</b>').format(title=i_title.title())
             key2 = _('<b>Description</b>')
             dialog = this_item.create(parent=parent, title=title, key1=key1, key2=key2)
             dialog.connect('response', self._on_item_available_add_response, this_item)
@@ -216,7 +217,7 @@ class MiAZSelector(Gtk.Box):
 
     def _on_item_available_add_response(self, dialog, response, this_item):
         item_type = self.config.model
-        i_title = item_type.__title__
+        i_title = _(item_type.__title__)
 
         if response ==  'apply':
             key = this_item.get_value1()
@@ -225,9 +226,7 @@ class MiAZSelector(Gtk.Box):
                 self.config.add_available(key.upper(), value)
                 self.update_views()
                 title = self.dialog_title
-                body1 = _('<b>Action not possible</b>')
-                body2 = _('{title} {value} added to list of available {item_types}').format(title=i_title, value=value, item_types=item_type.__title_plural__.lower())
-                body = body1 + '\n' + body2
+                body = _('{title} {value} added to list of available {item_types}').format(title=i_title, value=value, item_types=item_type.__title_plural__.lower())
                 self.srvdlg.show_info(title=title, body=body, parent=dialog)
             else:
                 title = self.dialog_title
@@ -240,11 +239,12 @@ class MiAZSelector(Gtk.Box):
         try:
             item = self.viewAv.get_selected()
             item_type = self.config.model
-            i_title = item_type.__title__
+            i_title = _(item_type.__title__)
             if item_type not in [Country, Plugin]:
                 parent = self.get_root()
-                title = _(f'Change {i_title.lower()} description')
-                key1 = _(f'<b>{i_title.title()} key</b>')
+                title = self.dialog_title
+                # ~ title = _('Change {title} description').format(title=i_title.lower())
+                key1 = _('<b>{title} key</b>').format(title=i_title.title())
                 key2 = _('<b>Description</b>')
                 this_item = MiAZDialogAdd(self.app)
                 dialog = this_item.create(parent=parent, title=title, key1=key1, key2=key2)
@@ -253,14 +253,15 @@ class MiAZSelector(Gtk.Box):
                 if item is not None:
                     this_item.set_value1(item.id)
                     this_item.set_value2(item.title)
-                dialog.connect('response', self._on_item_available_edit_description, item, this_item)
+                dialog.connect('response', self._on_item_available_edit_description, item, this_item, parent)
                 dialog.present(parent)
         except IndexError:
             self.log.debug("No item selected. Cancel operation")
 
-    def _on_item_available_edit_description(self, dialog, response, item, this_item):
+    def _on_item_available_edit_description(self, dialog, response, item, this_item, parent):
         item_type = self.config.model
-        i_title = item_type.__title__
+        i_title = _(item_type.__title__)
+        title = self.dialog_title
 
         if response == 'apply':
             oldkey = item.id
@@ -277,12 +278,12 @@ class MiAZSelector(Gtk.Box):
                 items_available[oldkey] = newval
                 self.config.save_available(items_available)
                 self.update_views()
-                title = f"{i_title} management"
-                body = f"{i_title} <i>{oldval}</i> renamed to <i>{newval}</i> globally"
-                self.srvdlg.show_info(title=title, body=body, parent=dialog)
+                body = _('{title} <i>{old}</i> renamed to <i>{new}</i> globally').format(title=i_title, old=oldval, new=newval)
+                self.srvdlg.show_info(title=title, body=body, parent=parent)
             else:
-                title = "Rename not possible"
-                body = f"Both {i_title.lower()} descriptions are the same"
+                body1 = _('<b>Action not possible</b>')
+                body2 = _('Rename not possible. Both {title} descriptions are the same').format(title=i_title.lower())
+                body = body1 + '\n' + body2
                 self.srvdlg.show_error(title=title, body=body, parent=dialog)
 
     def select_item(self, view, item_id):
@@ -317,9 +318,7 @@ class MiAZSelector(Gtk.Box):
         self.log.debug(f"Is '{selected_item.id}' used? {is_used}")
         title = self.dialog_title
         if not is_used:
-            body1 = _('<b>Action not possible</b>')
-            body2 = _('Your about to delete <i>{title} {desc}</i>.\n\nAre you sure?').format(title=i_title.lower(), desc=item_dsc)
-            body = body1 + '\n' + body2
+            body = _('You are about to delete <i>{title} {desc}</i>.\n\nAre you sure?').format(title=i_title.lower(), desc=item_dsc)
             dialog = self.srvdlg.show_question(title=title, body=body)
             dialog.connect('response', self._on_item_available_remove_response, selected_item)
             dialog.present(self)
@@ -346,12 +345,17 @@ class MiAZSelector(Gtk.Box):
                 view = None
 
             if view is not None:
+                width = 600
+                height = 400
                 widget = Gtk.Frame()
                 widget.set_child(view)
             else:
+                width = -1
+                height = -1
                 widget = view
+
             srvdlg = self.app.get_service('dialogs')
-            srvdlg.show_error(title=title, body=body, widget=widget, width=600, height=480, parent=window)
+            srvdlg.show_error(title=title, body=body, widget=widget, height=height, width=width, parent=window)
 
     def _on_selected_item_available_notify(self, colview, pos):
         model = colview.get_model()

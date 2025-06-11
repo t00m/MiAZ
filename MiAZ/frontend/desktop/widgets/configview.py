@@ -140,18 +140,21 @@ class MiAZRepositories(MiAZConfigView):
 
     def _on_response_item_available_add(self, dialog, response, this_repo):
         srvdlg = self.app.get_service('dialogs')
+        title = self.dialog_title
         if response == 'apply':
             repo_name = this_repo.get_value1()
             repo_path = this_repo.get_value2()
             if len(repo_name) > 0 and os.path.exists(repo_path):
                 self.config.add_available(repo_name, repo_path)
-                title = self.dialog_title
                 body = _('Repository added to list of available repositories')
                 self.log.debug(body)
                 self.update_views()
                 srvdlg.show_info(title=title, body=body, parent=dialog)
             else:
-                srvdlg.show_error(title=_('Action not possible'), body=_('No repository added. Invalid input.\n\nTry again by setting a repository name and a valid target directory'), parent=dialog)
+                body1 = _('<b>Action not possible</b>')
+                body2 = _('No repository added. Invalid input.\n\nTry again by setting a repository name and a valid target directory')
+                body = body1 + '\n' + body2
+                srvdlg.show_error(title=title, body=body, parent=dialog)
 
     def _on_item_available_edit(self, *args):
         item = self.viewAv.get_selected()
@@ -182,6 +185,7 @@ class MiAZRepositories(MiAZConfigView):
             newkey = this_item.get_value1()
             newval = this_item.get_value2()
             self.log.debug(f"{oldval} == {newval}? {newval != oldval}")
+            title = self.dialog_title
             if newval != oldval:
                 items_used = self.config.load_used()
                 if oldkey in items_used:
@@ -191,12 +195,14 @@ class MiAZRepositories(MiAZConfigView):
                 items_available[oldkey] = newval
                 self.config.save_available(items_available)
                 self.update_views()
-                title = self.dialog_title
-                body = _('Repository target folder updated')
+                body1 = _('<b>Action not possible</b>')
+                body2 = _('Repository target folder updated')
+                body = body1 + '\n' + body2
                 self.srvdlg.show_info(title=title, body=body, parent=dialog)
             else:
-                title = _('<b>Action not possible</b>')
-                body = _('Repository target folder not updated')
+                body1 = _('<b>Action not possible</b>')
+                body2 = _('Repository target folder not updated')
+                body = body1 + '\n' + body2
                 self.srvdlg.show_error(title=title, body=body, parent=dialog)
 
     def _on_item_available_remove(self, button, data=None):
@@ -209,15 +215,14 @@ class MiAZRepositories(MiAZConfigView):
 
         items_available = self.config.load_available()
         item_type = self.config.model
-        i_title = item_type.__title__
+        i_title = _(item_type.__title__)
         item_id = selected_item.id.replace('_', ' ')
-
         is_used = self.config.exists_used(selected_item.id)
+        title = self.dialog_title
         if not is_used:
             del items_available[selected_item.id]
             self.config.save_available(items=items_available)
-            title = self.dialog_title
-            body = f"{i_title} {item_id} removed from de list of available items"
+            body = _('{title} {id} removed from de list of available items').format(title=i_title, id=item_id)
             self.log.debug(body)
             srvdlg.show_warning(title=title, body=body, widget=None, parent=parent)
         else:
@@ -458,6 +463,7 @@ class MiAZUserPlugins(MiAZConfigView):
         factory.create_filechooser_for_plugins(self._on_item_available_add_response, parent=self)
 
     def _on_item_available_add_response(self, dialog, result):
+        title = self.dialog_title
         try:
             ENV = self.app.get_env()
             util = self.app.get_service('util')
@@ -473,9 +479,15 @@ class MiAZUserPlugins(MiAZConfigView):
             plugin_info = pluginsystem.get_plugin_attributes(plugin_path)
             plugin_name = plugin_info['Name']
             plugin_version = plugin_info['Version']
-            self.srvdlg.show_info(title='Import plugin', body=f"Plugin {plugin_name} v{plugin_version} imported successfully", parent=self)
+            body1 = _('<b>Import plugin</b>')
+            body2 = _('Plugin {plugin_name} v{plugin_version} imported successfully').format(plugin_name=plugin_name, plugin_version=plugin_version)
+            body = body1 + '\n' + body2
+            self.srvdlg.show_info(title='Import plugin', body=body, parent=self)
         except Exception as error:
-            self.srvdlg.show_error(title='Error import plugin', body=error, parent=self)
+            body1 = _('<b>Action not possible</b>')
+            body2 = _('Error: {error}').format(error=error)
+            body = body1 + '\n' + body2
+            self.srvdlg.show_error(title=title, body=error, parent=self)
             self.log.error(f"Error import plugin: {error}")
 
     def _on_item_available_remove(self, *args):
@@ -493,15 +505,15 @@ class MiAZUserPlugins(MiAZConfigView):
         items_used = self.config.load_used()
         is_used = selected_item.id in items_used
         self.log.debug(f"Is '{selected_item.id}' used? {is_used}")
+        title = self.dialog_title
         if not is_used:
-            title = f"{i_title} management"
-            body = f"Your about to delete <i>{i_title.lower()} {item_dsc}</i>.\n\nAre you sure?"
+            body = _('You are about to delete <i>{title} {desc}</i>.\n\nAre you sure?').format(title=i_title.lower(), desc=item_dsc)
             dialog = self.srvdlg.show_question(title=title, body=body)
             dialog.connect('response', self._on_item_available_remove_response, selected_item)
             dialog.present(self)
         else:
             item_type = self.config.model
-            i_title = item_type.__title__
+            i_title = _(item_type.__title__)
             window = self.viewAv.get_root()
             title = self.dialog_title
             body1 = _('<b>Action not possible</b>')
@@ -518,7 +530,7 @@ class MiAZUserPlugins(MiAZConfigView):
         i_title = item_type.__title__
         item_id = selected_item.id.replace('_', ' ')
         item_dsc = selected_item.title
-
+        title = self.dialog_title
         if response == 'apply':
             self.config.remove_available(selected_item.id)
             plugin_path = os.path.join(ENV['LPATH']['PLUGINS'], selected_item.id)
@@ -527,12 +539,10 @@ class MiAZUserPlugins(MiAZConfigView):
                 util.directory_remove(plugin_path)
             self.searchentry.set_text('')
             self.searchentry.activate()
-            title = f"{i_title} management"
-            body = f"{i_title} {item_dsc} removed from de list of available {item_type.__title_plural__.lower()}"
+            body = _('{title} {desc}  removed from de list of available {item_types}').format(title=i_title, desc=item_dsc, item_types=item_type.__title_plural__.lower())
             self.srvdlg.show_warning(title=title, body=body, parent=self)
         else:
-            title = f"{i_title} management"
-            body = f"{i_title} {item_dsc} not deleted from the list of available {item_type.__title_plural__.lower()}"
+            body = _('{title} {desc}  not removed from de list of available {item_types}').format(title=i_title, desc=item_dsc, item_types=item_type.__title_plural__.lower())
             self.srvdlg.show_info(title=title, body=body, parent=self)
 
     def _on_plugin_used_selected(self, selection_model, position, n_items):

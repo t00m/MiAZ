@@ -211,7 +211,7 @@ class MiAZSidebar(Adw.Bin):
             self.dropdowns[i_type] = dropdown
 
 
-        page_main_filters = viewstack.add_titled(widget, 'main-filters', _('Main filters'))
+        page_main_filters = viewstack.add_titled(widget, 'main-filters', '') #_('Main filters'))
         page_main_filters.set_icon_name('io.github.t00m.MiAZ-filter-symbolic')
         page_main_filters.set_visible(True)
 
@@ -233,7 +233,7 @@ class MiAZSidebar(Adw.Bin):
             self.app.add_widget('sidebar-box-custom-filters', row)
             body.append(row)
             widget.append(body)
-            page_custom_fiters = viewstack.add_titled(widget, 'custom-filters', _('Custom filters'))
+            page_custom_fiters = viewstack.add_titled(widget, 'custom-filters', '') # _('Custom filters'))
             page_custom_fiters.set_icon_name('io.github.t00m.MiAZ-filter-custom-symbolic')
             page_custom_fiters.set_visible(True)
 
