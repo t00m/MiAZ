@@ -135,10 +135,10 @@ class MiAZRepositories(MiAZConfigView):
         dialog = this_repo.create(title=title, key1=key1, key2=key2)
         this_repo.set_value1('')
         this_repo.set_value2(GLib.get_user_special_dir(GLib.UserDirectory.DIRECTORY_DOCUMENTS))
-        dialog.connect('response', self._on_response_item_available_add, this_repo)
+        dialog.connect('response', self._on_response_item_available_add, this_repo, window)
         dialog.present(window)
 
-    def _on_response_item_available_add(self, dialog, response, this_repo):
+    def _on_response_item_available_add(self, dialog, response, this_repo, parent):
         srvdlg = self.app.get_service('dialogs')
         title = self.dialog_title
         if response == 'apply':
@@ -149,12 +149,12 @@ class MiAZRepositories(MiAZConfigView):
                 body = _('Repository added to list of available repositories')
                 self.log.debug(body)
                 self.update_views()
-                srvdlg.show_info(title=title, body=body, parent=dialog)
+                srvdlg.show_info(title=title, body=body, parent=parent)
             else:
                 body1 = _('<b>Action not possible</b>')
                 body2 = _('No repository added. Invalid input.\n\nTry again by setting a repository name and a valid target directory')
                 body = body1 + '\n' + body2
-                srvdlg.show_error(title=title, body=body, parent=dialog)
+                srvdlg.show_error(title=title, body=body, parent=parent)
 
     def _on_item_available_edit(self, *args):
         item = self.viewAv.get_selected()
@@ -172,10 +172,10 @@ class MiAZRepositories(MiAZConfigView):
         this_repo.disable_key1()
         this_repo.set_value1(item.id)
         this_repo.set_value2(item.title)
-        dialog.connect('response', self._on_item_available_edit_description, item, this_repo)
+        dialog.connect('response', self._on_item_available_edit_description, item, this_repo, parent)
         dialog.present(parent)
 
-    def _on_item_available_edit_description(self, dialog, response, item, this_item):
+    def _on_item_available_edit_description(self, dialog, response, item, this_item, parent):
         item_type = self.config.model
         i_title = item_type.__title__
 
@@ -198,12 +198,12 @@ class MiAZRepositories(MiAZConfigView):
                 body1 = _('<b>Action not possible</b>')
                 body2 = _('Repository target folder updated')
                 body = body1 + '\n' + body2
-                self.srvdlg.show_info(title=title, body=body, parent=dialog)
+                self.srvdlg.show_info(title=title, body=body, parent=parent)
             else:
                 body1 = _('<b>Action not possible</b>')
                 body2 = _('Repository target folder not updated')
                 body = body1 + '\n' + body2
-                self.srvdlg.show_error(title=title, body=body, parent=dialog)
+                self.srvdlg.show_error(title=title, body=body, parent=parent)
 
     def _on_item_available_remove(self, button, data=None):
         parent=button

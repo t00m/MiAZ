@@ -1,7 +1,13 @@
 data/io.github.t00m.MiAZ.desktop.in
 data/io.github.t00m.MiAZ.metainfo.xml.in
 data/io.github.t00m.MiAZ.gschema.xml
-
+data/resources/plugins/MiAZDeleteDoc/delete.py
+data/resources/plugins/MiAZImportDoc/adddoc.py
+data/resources/plugins/MiAZImportFromDirectory/adddir.py
+data/resources/plugins/MiAZMassRename/massrename.py
+data/resources/plugins/MiAZRenameDoc/renameitem.py
+data/resources/plugins/MiAZViewDoc/viewitem.py
+data/resources/plugins/MiAZWorkspaceToggleView/wstoggleview.py
 MiAZ/__init__.py
 MiAZ/backend/__init__.py
 MiAZ/backend/data.py
@@ -49,10 +55,3 @@ MiAZ/frontend/desktop/widgets/pluginuimanager.py
 MiAZ/frontend/desktop/widgets/sidebar.py
 MiAZ/frontend/desktop/app.py
 MiAZ/miaz.py
-data/resources/plugins/MiAZDeleteDoc/delete.py
-data/resources/plugins/MiAZImportDoc/adddoc.py
-data/resources/plugins/MiAZImportFromDirectory/adddir.py
-data/resources/plugins/MiAZMassRename/massrename.py
-data/resources/plugins/MiAZRenameDoc/renameitem.py
-data/resources/plugins/MiAZViewDoc/viewitem.py
-data/resources/plugins/MiAZWorkspaceToggleView/wstoggleview.py

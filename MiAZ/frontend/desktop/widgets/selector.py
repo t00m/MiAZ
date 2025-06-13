@@ -211,11 +211,11 @@ class MiAZSelector(Gtk.Box):
             key1 = _('<b>{title} key</b>').format(title=i_title.title())
             key2 = _('<b>Description</b>')
             dialog = this_item.create(parent=parent, title=title, key1=key1, key2=key2)
-            dialog.connect('response', self._on_item_available_add_response, this_item)
+            dialog.connect('response', self._on_item_available_add_response, this_item, parent)
             this_item.set_value1(search_term)
             dialog.present(parent)
 
-    def _on_item_available_add_response(self, dialog, response, this_item):
+    def _on_item_available_add_response(self, dialog, response, this_item, parent):
         item_type = self.config.model
         i_title = _(item_type.__title__)
 
@@ -227,13 +227,13 @@ class MiAZSelector(Gtk.Box):
                 self.update_views()
                 title = self.dialog_title
                 body = _('{title} {value} added to list of available {item_types}').format(title=i_title, value=value, item_types=item_type.__title_plural__.lower())
-                self.srvdlg.show_info(title=title, body=body, parent=dialog)
+                self.srvdlg.show_info(title=title, body=body, parent=parent)
             else:
                 title = self.dialog_title
                 body1 = _('<b>Action not possible</b>')
                 body2 = _('Either the {title} key or the description are empty. Please, check.').format(title=i_title.lower())
                 body = body1 + '\n' + body2
-                self.srvdlg.show_error(title=title, body=body, parent=dialog)
+                self.srvdlg.show_error(title=title, body=body, parent=parent)
 
     def _on_item_available_edit(self, *args):
         try:
@@ -284,7 +284,7 @@ class MiAZSelector(Gtk.Box):
                 body1 = _('<b>Action not possible</b>')
                 body2 = _('Rename not possible. Both {title} descriptions are the same').format(title=i_title.lower())
                 body = body1 + '\n' + body2
-                self.srvdlg.show_error(title=title, body=body, parent=dialog)
+                self.srvdlg.show_error(title=title, body=body, parent=parent)
 
     def select_item(self, view, item_id):
         self.log.debug(f"{view} > {item_id}")

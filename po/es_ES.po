@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 0.1\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-06-11 18:14+0200\n"
-"PO-Revision-Date: 2025-06-11 18:14+0200\n"
+"POT-Creation-Date: 2025-06-13 11:36+0200\n"
+"PO-Revision-Date: 2025-06-13 17:53+0200\n"
 "Last-Translator: Tomás Vírseda <tomas.virseda@gmail.com>\n"
 "Language-Team: Spanish\n"
 "Language: es\n"
@@ -99,6 +99,55 @@ msgstr "MiAZ tiene soporte para plugins"
 #: data/io.github.t00m.MiAZ.metainfo.xml.in:71
 msgid "Pre-release"
 msgstr "Pre-release"
+
+#: data/resources/plugins/MiAZDeleteDoc/delete.py:86
+msgid ""
+"<big>These documents are going to be deleted.\n"
+"\n"
+"<b>Are you sure?</b></big>"
+msgstr ""
+"<big>Los siguientes documentos van a ser borrados.\n"
+"\n"
+"<b>¿Estás seguro de continuar?</b></big>"
+
+#: data/resources/plugins/MiAZDeleteDoc/delete.py:87
+msgid "Mass deletion"
+msgstr "Borrado masivo"
+
+#: data/resources/plugins/MiAZMassRename/massrename.py:74
+#: data/resources/plugins/MiAZMassRename/massrename.py:208
+#: data/resources/plugins/MiAZMassRename/massrename.py:233
+msgid "Mass renaming"
+msgstr "Renombrado masivo"
+
+#: data/resources/plugins/MiAZRenameDoc/renameitem.py:101
+msgid "Preview"
+msgstr "Previsualizar"
+
+#: data/resources/plugins/MiAZRenameDoc/renameitem.py:111
+msgid ""
+"\n"
+"You are about to rename this document"
+msgstr ""
+"\n"
+"Estás a punto de renombrar este documento"
+
+#: data/resources/plugins/MiAZRenameDoc/renameitem.py:112
+msgid "Are you sure?"
+msgstr "¿Estás seguro?"
+
+#: data/resources/plugins/MiAZRenameDoc/renameitem.py:134
+msgid "Renaming not possible"
+msgstr "El renombrado no es posible"
+
+#: data/resources/plugins/MiAZViewDoc/viewitem.py:69
+msgid "View document"
+msgstr "Ver documento"
+
+#. Row for option "Display Workspace toggle view button?"
+#: data/resources/plugins/MiAZWorkspaceToggleView/wstoggleview.py:135
+msgid "Display Workspace toggle view button?"
+msgstr "¿Mostrar el botón de Workspace?"
 
 #: MiAZ/backend/stats.py:46 MiAZ/backend/stats.py:65 MiAZ/backend/stats.py:67
 msgid "year"
@@ -294,6 +343,448 @@ msgstr "Sí"
 msgid "No"
 msgstr "No"
 
+#: MiAZ/frontend/desktop/services/pluginsystem.py:27
+msgid "Data Management"
+msgstr "Gestión de datos"
+
+#: MiAZ/frontend/desktop/services/pluginsystem.py:28
+msgid "Import"
+msgstr "Importar"
+
+#: MiAZ/frontend/desktop/services/pluginsystem.py:28
+msgid "Plugins for importing documents"
+msgstr "Plugin para importar documentos"
+
+#: MiAZ/frontend/desktop/services/pluginsystem.py:29
+msgid "Export"
+msgstr "Exportar"
+
+#: MiAZ/frontend/desktop/services/pluginsystem.py:29
+msgid "Plugins for exporting documents"
+msgstr "Plugins para exportar documentos"
+
+#: MiAZ/frontend/desktop/services/pluginsystem.py:30
+msgid "Backup"
+msgstr "Copia de seguridad"
+
+#: MiAZ/frontend/desktop/services/pluginsystem.py:30
+msgid "Plugins for backing up your repository"
+msgstr "Plugins para hacer copias de seguridad de tu repositorio"
+
+#: MiAZ/frontend/desktop/services/pluginsystem.py:31
+msgid "Restore"
+msgstr "Restaurar"
+
+#: MiAZ/frontend/desktop/services/pluginsystem.py:31
+msgid "Plugins for restoring backups"
+msgstr "Plugins para restaurar copias de seguridad"
+
+#: MiAZ/frontend/desktop/services/pluginsystem.py:32
+msgid "Single update"
+msgstr "Actualización simple"
+
+#: MiAZ/frontend/desktop/services/pluginsystem.py:32
+msgid "Plugins for manipulating data for a single file"
+msgstr "Plugins para manipular datos para un documento"
+
+#: MiAZ/frontend/desktop/services/pluginsystem.py:33
+msgid "Batch update"
+msgstr "Actualización por lotes"
+
+#: MiAZ/frontend/desktop/services/pluginsystem.py:33
+msgid "Plugins for bulk data manipulation"
+msgstr "Plugins para la manipulación masiva de datos"
+
+#: MiAZ/frontend/desktop/services/pluginsystem.py:34
+msgid "Synchronisation"
+msgstr "Sincronización"
+
+#: MiAZ/frontend/desktop/services/pluginsystem.py:34
+msgid "Plugins for syncing data with cloud services or between devices"
+msgstr ""
+"Plugins para sincronizar datos con servicios en cloud o entre dispositivos"
+
+#: MiAZ/frontend/desktop/services/pluginsystem.py:35
+msgid "Migration"
+msgstr "Migración"
+
+#: MiAZ/frontend/desktop/services/pluginsystem.py:35
+msgid "Plugins for transferring data between different platforms or systems"
+msgstr "Plugins para transferir datos entre diferentes plataformas o systemas"
+
+#: MiAZ/frontend/desktop/services/pluginsystem.py:36
+msgid "Deletion"
+msgstr "Borrado"
+
+#: MiAZ/frontend/desktop/services/pluginsystem.py:36
+msgid "Plugins for securely removing documents or data from the repository"
+msgstr "Plugins para borrar con seguridad documentos o datos de un repositorio"
+
+#: MiAZ/frontend/desktop/services/pluginsystem.py:38
+msgid "Content Organisation"
+msgstr "Organización de contenido"
+
+#: MiAZ/frontend/desktop/services/pluginsystem.py:39
+msgid "Tagging and Classification"
+msgstr "Etiquetado y clasificación"
+
+#: MiAZ/frontend/desktop/services/pluginsystem.py:39
+msgid "Plugins for categorising and tagging documents"
+msgstr "Plugins para categorizar y etiquetar documentos"
+
+#: MiAZ/frontend/desktop/services/pluginsystem.py:40
+msgid "Search and Indexing"
+msgstr "Búsqueda e indexado"
+
+#: MiAZ/frontend/desktop/services/pluginsystem.py:40
+msgid "Plugins that improve search capabilities or indexing methods"
+msgstr ""
+"Plugins para mejorar las capacidades de búsqueda o los métodos de indexación"
+
+#: MiAZ/frontend/desktop/services/pluginsystem.py:41
+msgid "Metadata Management"
+msgstr "Gestión de metadatos"
+
+#: MiAZ/frontend/desktop/services/pluginsystem.py:41
+msgid "Plugins for adding, editing, or viewing document metadata"
+msgstr "Plugin para añadir, editar o ver los metadatos de un documento"
+
+#: MiAZ/frontend/desktop/services/pluginsystem.py:43
+msgid "Visualisation and Diagrams"
+msgstr "Visualización y diagramas"
+
+#: MiAZ/frontend/desktop/services/pluginsystem.py:44
+msgid "Diagram Creation"
+msgstr "Creación de diagramas"
+
+#: MiAZ/frontend/desktop/services/pluginsystem.py:44
+msgid ""
+"Plugins for creating flowcharts, mind maps, and other visual representations"
+msgstr ""
+"Plugins para crear diagramas de flujo, mapas mentales y otras "
+"representaciones visuales"
+
+#: MiAZ/frontend/desktop/services/pluginsystem.py:45
+msgid "Data Visualisation"
+msgstr "Visualización de datos"
+
+#: MiAZ/frontend/desktop/services/pluginsystem.py:45
+msgid "Plugins that generate graphs, charts, or other visual data summaries"
+msgstr "Plugins que generan gráficas u otros resúmenes de datos visuales"
+
+#: MiAZ/frontend/desktop/services/pluginsystem.py:46
+msgid "Dashboard Widgets"
+msgstr "Widgets del panel de control"
+
+#: MiAZ/frontend/desktop/services/pluginsystem.py:46
+msgid "Plugins that provide a summary of key information in a dashboard format"
+msgstr ""
+"Plugins que proporcionan un resumen de la información clave en formato de "
+"panel de control"
+
+#: MiAZ/frontend/desktop/services/pluginsystem.py:48
+msgid "Security and Privacy"
+msgstr "Seguridad y privacidad"
+
+#: MiAZ/frontend/desktop/services/pluginsystem.py:49
+msgid "Encryption/Decryption"
+msgstr "Cifrado/Descifrado"
+
+#: MiAZ/frontend/desktop/services/pluginsystem.py:49
+msgid "Plugins that encrypt or decrypt documents"
+msgstr "Plugins para cifrar o descifrar documentos"
+
+#: MiAZ/frontend/desktop/services/pluginsystem.py:50
+msgid "Access Control"
+msgstr "Control de acceso"
+
+#: MiAZ/frontend/desktop/services/pluginsystem.py:50
+msgid "Plugins for managing user permissions and access levels"
+msgstr "Plugins para administrar permisos de usuario y niveles de acceso"
+
+#: MiAZ/frontend/desktop/services/pluginsystem.py:51
+msgid "Audit and Logging"
+msgstr "Auditoría y registro"
+
+#: MiAZ/frontend/desktop/services/pluginsystem.py:51
+msgid "Plugins that track changes and access history"
+msgstr "Plugins que rastrean los cambios y acceden al historial"
+
+#: MiAZ/frontend/desktop/services/pluginsystem.py:53
+msgid "Automation and Workflow"
+msgstr "Automatización y flujo de trabajo"
+
+#: MiAZ/frontend/desktop/services/pluginsystem.py:54
+msgid "Task Automation"
+msgstr "Automatización de tareas"
+
+#: MiAZ/frontend/desktop/services/pluginsystem.py:54
+msgid ""
+"Plugins that automate repetitive tasks, like renaming files or sorting "
+"documents"
+msgstr ""
+"Plugins para automatizar tareas repetitivas, tales como renombrado de "
+"ficheros u ordenación de documentos"
+
+#: MiAZ/frontend/desktop/services/pluginsystem.py:55
+msgid "Workflow Management"
+msgstr "Gestión de flujos de trabajo"
+
+#: MiAZ/frontend/desktop/services/pluginsystem.py:55
+msgid "Plugins for creating and managing document-related workflows"
+msgstr ""
+"Plugins para crear y gestionar flujos de trabajo relacionados con documentos"
+
+#: MiAZ/frontend/desktop/services/pluginsystem.py:56
+msgid "Notification Systems"
+msgstr "Sistemas de notificaciones"
+
+#: MiAZ/frontend/desktop/services/pluginsystem.py:56
+msgid "Plugins for notifying users of specific events or deadlines"
+msgstr ""
+"Plugins para notificar a los usuarios sobre eventos o fechas límite "
+"específicas"
+
+#: MiAZ/frontend/desktop/services/pluginsystem.py:58
+msgid "Integration and Interoperability"
+msgstr "Integración e interoperabilidad"
+
+#: MiAZ/frontend/desktop/services/pluginsystem.py:59
+msgid "API Connectors"
+msgstr "Conectores API"
+
+#: MiAZ/frontend/desktop/services/pluginsystem.py:59
+msgid ""
+"Plugins that allow integration with third-party services (e.g., Google "
+"Drive, Dropbox, Slack)"
+msgstr ""
+"Plugins que permiten la integación con servicios de terceros (como Google "
+"Drive, Dropbox, Slack, etcétera)"
+
+#: MiAZ/frontend/desktop/services/pluginsystem.py:60
+msgid "Third-Party Service Integration"
+msgstr "Integración con servicios de terceros"
+
+#: MiAZ/frontend/desktop/services/pluginsystem.py:60
+msgid ""
+"Plugins for integrating with tools like CRM, ERP, or project management "
+"systems"
+msgstr ""
+"Plugins para integrar herramientas como CRM, ERP o sistemas de gestión de "
+"proyectos"
+
+#: MiAZ/frontend/desktop/services/pluginsystem.py:61
+msgid "Communication Tools"
+msgstr "Herramientas de comunicación"
+
+#: MiAZ/frontend/desktop/services/pluginsystem.py:61
+msgid "Plugins for email, messaging, or social media integration"
+msgstr ""
+"Plugins para la integración con correo electrónico, mensajería o redes "
+"sociales"
+
+#: MiAZ/frontend/desktop/services/pluginsystem.py:63
+msgid "Customisation and Personalisation"
+msgstr "Personalización"
+
+#: MiAZ/frontend/desktop/services/pluginsystem.py:64
+msgid "Themes and UI Customisation"
+msgstr "Temas y personalización del Interfaz Gráfico"
+
+#: MiAZ/frontend/desktop/services/pluginsystem.py:64
+msgid "Plugins that allow users to change the application appearance"
+msgstr ""
+"Plugins para permitir a los usuarios cambiar la apariencia de la aplicación"
+
+#: MiAZ/frontend/desktop/services/pluginsystem.py:65
+msgid "Templates"
+msgstr "Plantillas"
+
+#: MiAZ/frontend/desktop/services/pluginsystem.py:65
+msgid "Pre-defined document templates or layout options"
+msgstr "Plantillas de documentos predefinidas u opciones de diseño"
+
+#: MiAZ/frontend/desktop/services/pluginsystem.py:66
+msgid "Language Packs"
+msgstr "Paquetes de lenguaje"
+
+#: MiAZ/frontend/desktop/services/pluginsystem.py:66
+msgid "Plugins for multi-language support or localisation"
+msgstr "Plugins para compatibilidad con varios idiomas o localización"
+
+#: MiAZ/frontend/desktop/services/pluginsystem.py:68
+msgid "Analytics and Reporting"
+msgstr "Análisis e informes"
+
+#: MiAZ/frontend/desktop/services/pluginsystem.py:69
+msgid "Usage Analytics"
+msgstr "Análisis de uso"
+
+#: MiAZ/frontend/desktop/services/pluginsystem.py:69
+msgid "Plugins that provide insights into how the application is used"
+msgstr "Plugins que brindan información sobre cómo se utiliza la aplicación"
+
+#: MiAZ/frontend/desktop/services/pluginsystem.py:70
+msgid "Document Statistics"
+msgstr "Estadísticas de documentos"
+
+#: MiAZ/frontend/desktop/services/pluginsystem.py:70
+msgid "Plugins that analyse and report on document content"
+msgstr ""
+"Complementos que analizan e informan sobre el contenido de los documentos"
+
+#: MiAZ/frontend/desktop/services/pluginsystem.py:71
+msgid "Custom Reports"
+msgstr "Informes personalizados"
+
+#: MiAZ/frontend/desktop/services/pluginsystem.py:71
+msgid "Plugins for generating bespoke reports based on user-defined criteria"
+msgstr ""
+"Plugins para generar informes personalizados según criterios definidos por "
+"el usuario"
+
+#: MiAZ/frontend/desktop/services/pluginsystem.py:73
+msgid "Collaboration"
+msgstr "Colaboración"
+
+#: MiAZ/frontend/desktop/services/pluginsystem.py:74
+msgid "Real-time Collaboration"
+msgstr "Colaboración en tiempo real"
+
+#: MiAZ/frontend/desktop/services/pluginsystem.py:74
+msgid ""
+"Plugins that enable multiple users to work on the same document "
+"simultaneously"
+msgstr ""
+"Complementos que permiten que varios usuarios trabajen en el mismo documento "
+"simultáneamente"
+
+#: MiAZ/frontend/desktop/services/pluginsystem.py:75
+msgid "Version Control"
+msgstr "Control de versiones"
+
+#: MiAZ/frontend/desktop/services/pluginsystem.py:75
+msgid "Plugins for managing document versions and changes"
+msgstr "Plugins para gestionar versiones y cambios de documentos"
+
+#: MiAZ/frontend/desktop/services/pluginsystem.py:76
+msgid "Comments and Annotations"
+msgstr "Comentarios y anotaciones"
+
+#: MiAZ/frontend/desktop/services/pluginsystem.py:76
+msgid "Plugins for adding comments or annotations to documents"
+msgstr "Plugins para añadi comentarios o anotaciones a documentos"
+
+#: MiAZ/frontend/desktop/services/pluginsystem.py:78
+msgid "Content Editing and Formatting"
+msgstr "Edición y formato de contenido"
+
+#: MiAZ/frontend/desktop/services/pluginsystem.py:79
+msgid "Advanced Editors"
+msgstr "Editores avanzados"
+
+#: MiAZ/frontend/desktop/services/pluginsystem.py:79
+msgid "Plugins that offer enhanced text, image, or video editing capabilities"
+msgstr ""
+"Plugins que ofrecen capacidades mejoradas de edición de texto, imágenes o "
+"videos"
+
+#: MiAZ/frontend/desktop/services/pluginsystem.py:80
+msgid "Formatting Tools"
+msgstr "Herramientas de formato"
+
+#: MiAZ/frontend/desktop/services/pluginsystem.py:80
+msgid ""
+"Plugins for applying or automating specific formatting rules across documents"
+msgstr ""
+"Plugins para aplicar o automatizar reglas de formato específicas en todos "
+"los documentos"
+
+#: MiAZ/frontend/desktop/services/pluginsystem.py:81
+msgid "Conversion Tools"
+msgstr "Herramientas de conversión"
+
+#: MiAZ/frontend/desktop/services/pluginsystem.py:81
+msgid ""
+"Plugins that convert documents into different formats (e.g., Word to PDF)"
+msgstr ""
+"Plugins que convierten documentos a diferentes formatos (por ejemplo, de "
+"Word a PDF)"
+
+#: MiAZ/frontend/desktop/services/pluginsystem.py:83
+msgid "Support and Help"
+msgstr "Soporte y ayuda"
+
+#: MiAZ/frontend/desktop/services/pluginsystem.py:84
+msgid "Guides and Tutorials"
+msgstr "Guías y tutoriales"
+
+#: MiAZ/frontend/desktop/services/pluginsystem.py:84
+msgid "Plugins that provide user manuals, tutorials, or onboarding guides"
+msgstr ""
+"Plugins que proporcionan manuales de usuario, tutoriales o guías de "
+"incorporación"
+
+#: MiAZ/frontend/desktop/services/pluginsystem.py:85
+msgid "Troubleshooting Tools"
+msgstr "Herramientas de resolución de problemas"
+
+#: MiAZ/frontend/desktop/services/pluginsystem.py:85
+msgid "Plugins for diagnosing and fixing common issues within the application"
+msgstr ""
+"Plugins para diagnosticar y solucionar problemas comunes dentro de la "
+"aplicación"
+
+#: MiAZ/frontend/desktop/services/pluginsystem.py:86
+msgid "User Feedback"
+msgstr "Comentarios de los usuarios"
+
+#: MiAZ/frontend/desktop/services/pluginsystem.py:86
+msgid "Plugins that allow users to submit feedback or suggestions"
+msgstr "Plugins que permiten a los usuarios enviar comentarios o sugerencias"
+
+#: MiAZ/frontend/desktop/services/pluginsystem.py:88
+msgid "Archiving and Compliance"
+msgstr "Archivado y cumplimiento"
+
+#: MiAZ/frontend/desktop/services/pluginsystem.py:89
+msgid "Long-Term Archiving"
+msgstr "Archivado a largo plazo"
+
+#: MiAZ/frontend/desktop/services/pluginsystem.py:89
+msgid "Plugins for storing documents in long-term, secure formats"
+msgstr "Plugins para almacenar documentos en formatos seguros a largo plazo"
+
+#: MiAZ/frontend/desktop/services/pluginsystem.py:90
+msgid "Compliance Checkers"
+msgstr "Verificadores de cumplimiento"
+
+#: MiAZ/frontend/desktop/services/pluginsystem.py:90
+msgid "Plugins that ensure documents meet regulatory or legal standards"
+msgstr ""
+"Plugins que garantizan que los documentos cumplan con los estándares "
+"regulatorios o legales"
+
+#: MiAZ/frontend/desktop/services/pluginsystem.py:91
+msgid "Retention Policies"
+msgstr "Políticas de retención"
+
+#: MiAZ/frontend/desktop/services/pluginsystem.py:91
+msgid "Plugins for setting and enforcing document retention rules"
+msgstr "Plugins para establecer y aplicar reglas de retención de documentos"
+
+#: MiAZ/frontend/desktop/services/pluginsystem.py:93
+msgid "Others"
+msgstr "Otros"
+
+#: MiAZ/frontend/desktop/services/pluginsystem.py:94
+msgid "Miscelanea"
+msgstr "Miscelánea"
+
+#: MiAZ/frontend/desktop/services/pluginsystem.py:94
+msgid "Plugins not fitting in another category"
+msgstr "que no encajan en otra categoría"
+
 #: MiAZ/frontend/desktop/services/pluginsystem.py:247
 msgid "user"
 msgstr "usuario"
@@ -455,7 +946,7 @@ msgstr "Escribe aquí para filtrar"
 #: MiAZ/frontend/desktop/widgets/selector.py:284
 #: MiAZ/frontend/desktop/widgets/selector.py:333
 #: MiAZ/frontend/desktop/widgets/selector.py:342
-#: MiAZ/frontend/desktop/widgets/selector.py:422
+#: MiAZ/frontend/desktop/widgets/selector.py:427
 #: MiAZ/frontend/desktop/widgets/configview.py:154
 #: MiAZ/frontend/desktop/widgets/configview.py:198
 #: MiAZ/frontend/desktop/widgets/configview.py:203
@@ -543,23 +1034,23 @@ msgstr ""
 "\n"
 "Por favor, deshabilítalo antes de borrarlo."
 
-#: MiAZ/frontend/desktop/widgets/selector.py:402
+#: MiAZ/frontend/desktop/widgets/selector.py:407
 #, python-brace-format
 msgid "{title} {desc} removed from de list of available {item_types}"
 msgstr "{title} {desc} eliminado de la lista de {item_types} disponibles"
 
-#: MiAZ/frontend/desktop/widgets/selector.py:405
+#: MiAZ/frontend/desktop/widgets/selector.py:410
 #, python-brace-format
 msgid "{title} {desc} not deleted from de list of available {item_types}"
 msgstr ""
 "{title} {desc} no fue eliminado de la lista de {item_types} disponibles"
 
-#: MiAZ/frontend/desktop/widgets/selector.py:419
+#: MiAZ/frontend/desktop/widgets/selector.py:424
 #, python-brace-format
 msgid "{title} {item} has been enabled"
 msgstr "{title} {item} ha sido habilitado"
 
-#: MiAZ/frontend/desktop/widgets/selector.py:423
+#: MiAZ/frontend/desktop/widgets/selector.py:428
 #, python-brace-format
 msgid "{title} {item} is already enabled"
 msgstr "{title} {item} ya está habilitado"
@@ -857,55 +1348,6 @@ msgstr "Filtrar por texto"
 msgid "Clear all filters"
 msgstr "Limpiar todos los filtros"
 
-#: data/resources/plugins/MiAZDeleteDoc/delete.py:86
-msgid ""
-"<big>These documents are going to be deleted.\n"
-"\n"
-"<b>Are you sure?</b></big>"
-msgstr ""
-"<big>Los siguientes documentos van a ser borrados.\n"
-"\n"
-"<b>¿Estás seguro de continuar?</b></big>"
-
-#: data/resources/plugins/MiAZDeleteDoc/delete.py:87
-msgid "Mass deletion"
-msgstr "Borrado masivo"
-
-#: data/resources/plugins/MiAZMassRename/massrename.py:74
-#: data/resources/plugins/MiAZMassRename/massrename.py:208
-#: data/resources/plugins/MiAZMassRename/massrename.py:233
-msgid "Mass renaming"
-msgstr "Renombrado masivo"
-
-#: data/resources/plugins/MiAZRenameDoc/renameitem.py:101
-msgid "Preview"
-msgstr "Previsualizar"
-
-#: data/resources/plugins/MiAZRenameDoc/renameitem.py:111
-msgid ""
-"\n"
-"You are about to rename this document"
-msgstr ""
-"\n"
-"Estás a punto de renombrar este documento"
-
-#: data/resources/plugins/MiAZRenameDoc/renameitem.py:112
-msgid "Are you sure?"
-msgstr "¿Estás seguro?"
-
-#: data/resources/plugins/MiAZRenameDoc/renameitem.py:134
-msgid "Renaming not possible"
-msgstr "El renombrado no es posible"
-
-#: data/resources/plugins/MiAZViewDoc/viewitem.py:69
-msgid "View document"
-msgstr "Ver documento"
-
-#. Row for option "Display Workspace toggle view button?"
-#: data/resources/plugins/MiAZWorkspaceToggleView/wstoggleview.py:135
-msgid "Display Workspace toggle view button?"
-msgstr "¿Mostrar el botón de Workspace?"
-
 #, python-brace-format
 #~ msgid "Change {title} description"
 #~ msgstr "Cambiar descripción del {title}"
@@ -925,9 +1367,6 @@ msgstr "¿Mostrar el botón de Workspace?"
 
 #~ msgid "Main filters"
 #~ msgstr "Filtros"
-
-#~ msgid "Custom filters"
-#~ msgstr "Otros filtros"
 
 #, python-format
 #~ msgid "Initializing configview %s"
@@ -962,17 +1401,11 @@ msgstr "¿Mostrar el botón de Workspace?"
 #~ msgid "Quit"
 #~ msgstr "Salir"
 
-#~ msgid "Back"
-#~ msgstr "Volver"
-
 #~ msgid "Folder"
 #~ msgstr "Directorio"
 
 #~ msgid "Import document"
 #~ msgstr "Importar documento"
-
-#~ msgid "Import one or more documents"
-#~ msgstr "Importar uno o más documentos"
 
 #~ msgid "Import directory"
 #~ msgstr "Importar un directorio"
@@ -980,17 +1413,11 @@ msgstr "¿Mostrar el botón de Workspace?"
 #~ msgid "Import all documents from a directory"
 #~ msgstr "Importar todos los documentos de un directorio"
 
-#~ msgid "Import..."
-#~ msgstr "Importar..."
-
 #~ msgid "Type here"
 #~ msgstr "Escribe aquí"
 
 #~ msgid "Without date"
 #~ msgstr "Sin fecha"
-
-#~ msgid "Export..."
-#~ msgstr "Exportar..."
 
 #~ msgid "Welcome!"
 #~ msgstr "¡Bienvenido!"
@@ -1158,6 +1585,3 @@ msgstr "¿Mostrar el botón de Workspace?"
 #~ "El código está licenciado bajo los términos de la GPL v3 (o posterior)\n"
 #~ "así que eres libre de tomar, extender, mejorar y bifurcar el código como "
 #~ "quieras."
-
-#~ msgid "About this application"
-#~ msgstr "Acerca de esta aplicación"

@@ -171,7 +171,7 @@ class MiAZPluginUIManager(Gtk.Box):
             user_plugins = plugin_system.get_user_plugins()
             plugin_list = []
             for pid in plugin_index:
-                desc = plugin_index[pid]['Description']
+                desc = _(plugin_index[pid]['Description'])
                 url_plugin = url_plugin_base % (source, pid)
                 self.log.info(url_plugin)
                 added = util.download_and_unzip(url_plugin, user_plugins_dir)

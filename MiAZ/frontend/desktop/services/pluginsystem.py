@@ -24,74 +24,74 @@ from gi.repository import GObject, Peas
 from MiAZ.backend.log import MiAZLog
 
 plugin_categories = {
-    "Data Management": {
-        "Import": "Plugins for importing documents",
-        "Export": "Plugins for exporting documents",
-        "Backup": "Plugins for backing up your repository",
-        "Restore": "Tools for restoring backups",
-        "Single update": "Tool for manipulating data for a single file",
-        "Batch update": "Tools for bulk data manipulation",
-        "Synchronisation": "Plugins for syncing data with cloud services or between devices",
-        "Migration": "For transferring data between different platforms or systems",
-        "Deletion": "Tools for securely removing documents or data from the repository"
+    _('Data Management'): {
+        _('Import'): _('Plugins for importing documents'),
+        _('Export'): _('Plugins for exporting documents'),
+        _('Backup'): _('Plugins for backing up your repository'),
+        _('Restore'): _('Plugins for restoring backups'),
+        _('Single update'): _('Plugins for manipulating data for a single file'),
+        _('Batch update'): _('Plugins for bulk data manipulation'),
+        _('Synchronisation'): _('Plugins for syncing data with cloud services or between devices'),
+        _('Migration'): _('Plugins for transferring data between different platforms or systems'),
+        _('Deletion'): _('Plugins for securely removing documents or data from the repository')
     },
-    "Content Organisation": {
-        "Tagging and Classification": "Tools for categorising and tagging documents",
-        "Search and Indexing": "Plugins that improve search capabilities or indexing methods",
-        "Metadata Management": "For adding, editing, or viewing document metadata"
+    _('Content Organisation'): {
+        _('Tagging and Classification'): _('Plugins for categorising and tagging documents'),
+        _('Search and Indexing'): _('Plugins that improve search capabilities or indexing methods'),
+        _('Metadata Management'): _('Plugins for adding, editing, or viewing document metadata')
     },
-    "Visualisation and Diagrams": {
-        "Diagram Creation": "Tools for creating flowcharts, mind maps, and other visual representations",
-        "Data Visualisation": "Plugins that generate graphs, charts, or other visual data summaries",
-        "Dashboard Widgets": "Add-ons that provide a summary of key information in a dashboard format"
+    _('Visualisation and Diagrams'): {
+        _('Diagram Creation'): _('Plugins for creating flowcharts, mind maps, and other visual representations'),
+        _('Data Visualisation'): _('Plugins that generate graphs, charts, or other visual data summaries'),
+        _('Dashboard Widgets'): _('Plugins that provide a summary of key information in a dashboard format')
     },
-    "Security and Privacy": {
-        "Encryption/Decryption": "Plugins that encrypt or decrypt documents",
-        "Access Control": "Tools for managing user permissions and access levels",
-        "Audit and Logging": "Plugins that track changes and access history"
+    _('Security and Privacy'): {
+        _('Encryption/Decryption'): _('Plugins that encrypt or decrypt documents'),
+        _('Access Control'): _('Plugins for managing user permissions and access levels'),
+        _('Audit and Logging'): _('Plugins that track changes and access history')
     },
-    "Automation and Workflow": {
-        "Task Automation": "Plugins that automate repetitive tasks, like renaming files or sorting documents",
-        "Workflow Management": "For creating and managing document-related workflows",
-        "Notification Systems": "Tools that notify users of specific events or deadlines"
+    _('Automation and Workflow'): {
+        _('Task Automation'): _('Plugins that automate repetitive tasks, like renaming files or sorting documents'),
+        _('Workflow Management'): _('Plugins for creating and managing document-related workflows'),
+        _('Notification Systems'): _('Plugins for notifying users of specific events or deadlines')
     },
-    "Integration and Interoperability": {
-        "API Connectors": "Plugins that allow integration with third-party services (e.g., Google Drive, Dropbox, Slack)",
-        "Third-Party Service Integration": "For integrating with tools like CRM, ERP, or project management systems",
-        "Communication Tools": "Plugins for email, messaging, or social media integration"
+    _('Integration and Interoperability'): {
+        _('API Connectors'): _('Plugins that allow integration with third-party services (e.g., Google Drive, Dropbox, Slack)'),
+        _('Third-Party Service Integration'): _('Plugins for integrating with tools like CRM, ERP, or project management systems'),
+        _('Communication Tools'): _('Plugins for email, messaging, or social media integration')
     },
-    "Customisation and Personalisation": {
-        "Themes and UI Customisation": "Plugins that allow users to change the application's appearance",
-        "Templates": "Pre-defined document templates or layout options",
-        "Language Packs": "Plugins for multi-language support or localisation"
+    _('Customisation and Personalisation'): {
+        _('Themes and UI Customisation'): _('Plugins that allow users to change the application appearance'),
+        _('Templates'): _('Pre-defined document templates or layout options'),
+        _('Language Packs'): _('Plugins for multi-language support or localisation')
     },
-    "Analytics and Reporting": {
-        "Usage Analytics": "Tools that provide insights into how the application is used",
-        "Document Statistics": "Plugins that analyse and report on document content",
-        "Custom Reports": "For generating bespoke reports based on user-defined criteria"
+    _('Analytics and Reporting'): {
+        _('Usage Analytics'): _('Plugins that provide insights into how the application is used'),
+        _('Document Statistics'): _('Plugins that analyse and report on document content'),
+        _('Custom Reports'): _('Plugins for generating bespoke reports based on user-defined criteria')
     },
-    "Collaboration": {
-        "Real-time Collaboration": "Plugins that enable multiple users to work on the same document simultaneously",
-        "Version Control": "Tools for managing document versions and changes",
-        "Comments and Annotations": "Plugins for adding comments or annotations to documents"
+    _('Collaboration'): {
+        _('Real-time Collaboration'): _('Plugins that enable multiple users to work on the same document simultaneously'),
+        _('Version Control'): _('Plugins for managing document versions and changes'),
+        _('Comments and Annotations'): _('Plugins for adding comments or annotations to documents')
     },
-    "Content Editing and Formatting": {
-        "Advanced Editors": "Plugins that offer enhanced text, image, or video editing capabilities",
-        "Formatting Tools": "For applying or automating specific formatting rules across documents",
-        "Conversion Tools": "Plugins that convert documents into different formats (e.g., Word to PDF)"
+    _('Content Editing and Formatting'): {
+        _('Advanced Editors'): _('Plugins that offer enhanced text, image, or video editing capabilities'),
+        _('Formatting Tools'): _('Plugins for applying or automating specific formatting rules across documents'),
+        _('Conversion Tools'): _('Plugins that convert documents into different formats (e.g., Word to PDF)')
     },
-    "Support and Help": {
-        "Guides and Tutorials": "Plugins that provide user manuals, tutorials, or onboarding guides",
-        "Troubleshooting Tools": "For diagnosing and fixing common issues within the application",
-        "User Feedback": "Tools that allow users to submit feedback or suggestions"
+    _('Support and Help'): {
+        _('Guides and Tutorials'): _('Plugins that provide user manuals, tutorials, or onboarding guides'),
+        _('Troubleshooting Tools'): _('Plugins for diagnosing and fixing common issues within the application'),
+        _('User Feedback'): _('Plugins that allow users to submit feedback or suggestions')
     },
-    "Archiving and Compliance": {
-        "Long-Term Archiving": "Plugins for storing documents in long-term, secure formats",
-        "Compliance Checkers": "Tools that ensure documents meet regulatory or legal standards",
-        "Retention Policies": "Plugins for setting and enforcing document retention rules"
+    _('Archiving and Compliance'): {
+        _('Long-Term Archiving'): _('Plugins for storing documents in long-term, secure formats'),
+        _('Compliance Checkers'): _('Plugins that ensure documents meet regulatory or legal standards'),
+        _('Retention Policies'): _('Plugins for setting and enforcing document retention rules')
     },
-    "Others": {
-        "Miscelanea": "Plugins not fitting in another category"
+    _('Others'): {
+        _('Miscelanea'): _('Plugins not fitting in another category')
     }
 }
 
@@ -495,7 +495,7 @@ class MiAZPluginSystem(GObject.GObject):
                 # Split each line at the first '=' character
                 if '=' in line:
                     key, value = line.split('=', 1)
-                    plugin_info[key.strip()] = value.strip()
+                    plugin_info[key.strip()] = _(value.strip())
         return plugin_info
 
     def create_user_plugin_index(self, *args):
