@@ -107,21 +107,18 @@ class MiAZPlugin(GObject.GObject):
     def __init__(self, app):
         self.app = app
         self.log = MiAZLog('MiAZPlugin')
+        self.util = self.app.get_service('util')
 
     def get_plugin_attributes(self, plugin_file):
         plugin_system = self.app.get_service('plugin-system')
         return plugin_system.get_plugin_attributes(plugin_file)
 
-    def register(self, plugin_file: str, plugin_object):
-        self.util = self.app.get_service('util')
-        self.info = self.get_plugin_attributes(plugin_file)
+    def register(self, plugin_object):
+        self.info = plugin_object.info
         self.name = self.info['Name']
         self.desc = self.info['Description']
-        self.plugin_file = plugin_file
-        self.plugin_object = plugin_object
-        plugin_id = f'plugin-{self.name}'
-        self.app.add_widget(plugin_id, plugin_object)
-        # ~ self.log.debug(f"Plugin Object Id: {plugin_id}")
+        self.poid = f'plugin-{self.name}'
+        self.app.add_widget(self.poid, plugin_object)
 
         # Create plugin directories for config and data
         ## Configuration directory and file
@@ -395,8 +392,8 @@ class MiAZPluginSystem(GObject.GObject):
         for plugin in self.plugins:
             ptype = self.get_plugin_type(plugin)
             if ptype == MiAZPluginType.USER:
-                plugin_id = plugin.get_name()
-                user_plugins.append(plugin_id)
+                plugin_name = plugin.get_name()
+                user_plugins.append(plugin_name)
         return user_plugins
 
 
