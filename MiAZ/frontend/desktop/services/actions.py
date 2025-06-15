@@ -116,8 +116,8 @@ class MiAZActions(GObject.GObject):
         # FIXME: Implement import config
         srvdlg = self.app.get_service('dialogs')
         window = button.get_root()
-        title = "Action not implemented yet"
-        body = "Import the configuration hasn't been implemented yet"
+        title = _("Action not implemented yet")
+        body = _("Import the configuration hasn't been implemented yet")
         srvdlg.show_error(title=title, body=body, parent=window)
         return
 
@@ -173,8 +173,8 @@ class MiAZActions(GObject.GObject):
         # FIXME: Implement export config
         srvdlg = self.app.get_service('dialogs')
         window = button.get_root()
-        title = "Action not implemented yet"
-        body = "Export the configuration hasn't been implemented yet"
+        title = _("Action not implemented yet")
+        body = ("Export the configuration hasn't been implemented yet")
         srvdlg.show_error(title=title, body=body, parent=window)
         return
 
@@ -258,8 +258,8 @@ class MiAZActions(GObject.GObject):
         except AttributeError:
             srvdlg = self.app.get_service('dialogs')
             parent = self.app.get_widget('window')
-            title = "Repository management"
-            body = "There is no repositories configured.\nPlease, create one."
+            title = _("Repository management")
+            body = _("There aren't repositories configured.\nPlease, create one.")
             srvdlg.show_error(title=title, body=body, parent=parent)
 
     def show_app_about(self, *args):
@@ -272,9 +272,9 @@ class MiAZActions(GObject.GObject):
         about.set_version(ENV['APP']['VERSION'])
         author = f"{ENV['APP']['author']}"
         about.set_developer_name(author)
-        artists = ['Flags borrowed from FlagKit project https://github.com/madebybowtie/FlagKit']
-        artists.append('Some icons borrowed from GNOME contributors https://www.gnome.org')
-        artists.append("MiAZ app icon based on Collection Business Duotone Icons with license 'CC Attribution License' by 'cataicon' https://www.svgrepo.com/svg/391994/binder-business-finance-management-marketing-office")
+        artists = [_('Flags borrowed from FlagKit project https://github.com/madebybowtie/FlagKit')]
+        artists.append(_('Some icons borrowed from GNOME contributors https://www.gnome.org'))
+        artists.append(_("MiAZ app icon based on Collection Business Duotone Icons with license 'CC Attribution License' by 'cataicon' https://www.svgrepo.com/svg/391994/binder-business-finance-management-marketing-office"))
         about.set_artists(artists)
         about.set_license_type(Gtk.License.GPL_3_0_ONLY)
         about.set_copyright(f"© 2019-2025 {ENV['APP']['author']}")
@@ -322,7 +322,7 @@ class MiAZActions(GObject.GObject):
             if widget is None:
                 widget = self.app.get_widget('workspace')
             parent = widget.get_root()
-            body = 'You must select at least one document'
+            body = _('You must select at least one document')
             title = _('Action ignored')
             srvdlg.show_error(title=title, body=body, parent=parent)
             stop = True
