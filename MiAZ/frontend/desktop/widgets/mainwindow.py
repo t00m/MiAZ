@@ -176,9 +176,9 @@ class MiAZMainWindow(Gtk.Box):
         label_text = f"<small>{s}</small> / {v} / <big>{t}</big>"
         label.set_markup(label_text)
         tooltip = ""
-        tooltip += f"{s} documents selected\n"
-        tooltip += f"{v} documents in this view\n"
-        tooltip += f"{t} documents in this repository"
+        tooltip += _('{ns} documents selected\n').format(ns=s)
+        tooltip += _('{nv} documents in this view\n').format(nv=v)
+        tooltip += _('{nr} documents in this repository').format(nr=t)
         workspace_menu.set_tooltip_markup(tooltip)
         # ~ self.log.debug(f"filter selected: {s}/{v}/{t}")
         searchentry = self.app.get_widget('searchentry')
@@ -195,9 +195,11 @@ class MiAZMainWindow(Gtk.Box):
 
         # Workspace Menu
         hbox = factory.create_box_horizontal(margin=0, spacing=6, hexpand=False)
+        hbox.set_homogeneous(True)
         popovermenu = self._setup_menu_selection()
         label = Gtk.Label()
         btnDocsSel  = Gtk.MenuButton()
+        btnDocsSel.get_style_context().add_class(class_name='accent')
         self.app.add_widget('workspace-menu', btnDocsSel)
         btnDocsSel .set_always_show_arrow(True)
         btnDocsSel .set_child(label)
