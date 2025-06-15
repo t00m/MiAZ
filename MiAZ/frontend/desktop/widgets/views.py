@@ -452,7 +452,7 @@ class MiAZColumnViewMassDelete(MiAZColumnView):
         self.cv.append_column(self.column_id)
         self.column_id.set_title(_('Filename'))
         self.column_id.set_expand(False)
-        self.column_id.set_visible(True)
+        self.column_id.set_visible(False)
         self.cv.append_column(self.column_title)
         self.column_title.set_title(_('Document'))
         self.column_title.set_expand(True)
