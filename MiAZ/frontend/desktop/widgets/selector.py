@@ -367,7 +367,7 @@ class MiAZSelector(Gtk.Box):
         item_type = self.config.model
         items = self.config.load_available()
         for key in items:
-            items_available.append(item_type(id=key, title=items[key]))
+            items_available.append(item_type(id=key, title=_(items[key])))
         self.viewAv.update(items_available)
         self.log.debug(f"Update available view {self.config.config_for} with {len(items)} items")
 
@@ -376,7 +376,7 @@ class MiAZSelector(Gtk.Box):
         item_type = self.config.model
         items = self.config.load_used()
         for key in items:
-            items_used.append(item_type(id=key, title=items[key]))
+            items_used.append(item_type(id=key, title=_(items[key])))
         self.viewSl.update(items_used)
         self.log.debug(f"Update used view {self.config.config_for} with {len(items)} items")
 

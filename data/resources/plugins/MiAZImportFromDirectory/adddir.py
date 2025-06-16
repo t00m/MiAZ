@@ -16,6 +16,20 @@ from gi.repository import Peas
 from MiAZ.backend.status import MiAZStatus
 from MiAZ.frontend.desktop.services.pluginsystem import MiAZPlugin
 
+plugin_info = {
+        'Module':        'adddir',
+        'Name':          'MiAZImportFromDirectory',
+        'Loader':        'Python3',
+        'Description':   _('Add documents from directory'),
+        'Authors':       'Tomás Vírseda <tomasvirseda@gmail.com>',
+        'Copyright':     'Copyright © 2025 Tomás Vírseda',
+        'Website':       'http://github.com/t00m/MiAZ',
+        'Help':          'http://github.com/t00m/MiAZ/README.adoc',
+        'Version':       '0.5',
+        'Category':      _('Data Management'),
+        'Subcategory':   _('Import')
+    }
+
 
 class MiAZAddDirectoryPlugin(GObject.GObject, Peas.Activatable):
     __gtype_name__ = 'MiAZAddDirectoryPlugin'
@@ -31,7 +45,7 @@ class MiAZAddDirectoryPlugin(GObject.GObject, Peas.Activatable):
         self.plugin = MiAZPlugin(self.app)
 
         ## Initialize plugin
-        self.plugin.register(self.file, self)
+        self.plugin.register(self, plugin_info)
 
         ## Get logger
         self.log = self.plugin.get_logger()
@@ -53,7 +67,9 @@ class MiAZAddDirectoryPlugin(GObject.GObject, Peas.Activatable):
     def startup(self, *args):
         if not self.plugin.started():
             # Create menu item for plugin
-            menuitem = self.plugin.get_menu_item(callback=self.import_directory)
+            # ~ menuitem = self.plugin.get_menu_item(callback=self.import_directory)
+            mnuItemName = self.plugin.get_menu_item_name()
+            menuitem = self.factory.create_menuitem(name=mnuItemName, label=_('Add documents from directory'), callback=self.import_directory)
 
             # Add plugin to its default (sub)category
             self.plugin.install_menu_entry(menuitem)

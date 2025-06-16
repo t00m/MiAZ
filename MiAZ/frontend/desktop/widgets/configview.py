@@ -672,7 +672,7 @@ class MiAZUserPlugins(MiAZConfigView):
                 plugin_path = os.path.join(ENV['LPATH']['PLUGINS'], base_dir, f"{module_name}.plugin")
                 if os.path.exists(plugin_path):
                     title = plugin.get_description()
-                    items.append(item_type(id=module_name, title=title))
+                    items.append(item_type(id=module_name, title=_(title)))
         self.update_views()
 
     def plugins_updated(self, *args):

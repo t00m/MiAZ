@@ -18,6 +18,20 @@ from gi.repository import Peas
 from MiAZ.backend.log import MiAZLog
 from MiAZ.frontend.desktop.services.pluginsystem import MiAZPlugin
 
+plugin_info = {
+        'Module':        'adddoc',
+        'Name':          'MiAZImportDoc',
+        'Loader':        'Python3',
+        'Description':   _('Add new document(s)'),
+        'Authors':       'Tomás Vírseda <tomasvirseda@gmail.com>',
+        'Copyright':     'Copyright © 2025 Tomás Vírseda',
+        'Website':       'http://github.com/t00m/MiAZ',
+        'Help':          'http://github.com/t00m/MiAZ/README.adoc',
+        'Version':       '0.6',
+        'Category':      _('Data Management'),
+        'Subcategory':   _('Import')
+    }
+
 
 class MiAZAddDocumentPlugin(GObject.GObject, Peas.Activatable):
     __gtype_name__ = 'MiAZAddDocumentPlugin'
@@ -35,18 +49,20 @@ class MiAZAddDocumentPlugin(GObject.GObject, Peas.Activatable):
         self.plugin = MiAZPlugin(self.app)
 
         ## Initialize plugin
-        self.plugin.register(self.file, self)
+        self.plugin.register(self, plugin_info)
 
         ## Get logger
         self.log = self.plugin.get_logger()
 
-        ## Connect signals to startup
-        workspace = self.app.get_widget('workspace')
-        workspace.connect('workspace-loaded', self.startup)
+        # Get services
         self.factory = self.app.get_service('factory')
         self.repository = self.app.get_service('repo')
         self.util = self.app.get_service('util')
         self.srvdlg = self.app.get_service('dialogs')
+
+        ## Connect signals to startup
+        workspace = self.app.get_widget('workspace')
+        workspace.connect('workspace-loaded', self.startup)
 
     def do_deactivate(self):
         self.log.debug("Plugin deactivation not implemented")
@@ -54,7 +70,8 @@ class MiAZAddDocumentPlugin(GObject.GObject, Peas.Activatable):
     def startup(self, *args):
         if not self.plugin.started():
             # Create menu item for plugin
-            menuitem = self.plugin.get_menu_item(callback=self.import_files)
+            mnuItemName = self.plugin.get_menu_item_name()
+            menuitem = self.factory.create_menuitem(name=mnuItemName, label=_('Add new document(s)'), callback=self.import_files)
 
             # Add plugin to its default (sub)category
             self.plugin.install_menu_entry(menuitem)

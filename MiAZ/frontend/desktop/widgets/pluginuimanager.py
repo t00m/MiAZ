@@ -64,7 +64,7 @@ class MiAZPluginUIManager(Gtk.Box):
             if pm.get_plugin_type(plugin) == MiAZPluginType.SYSTEM:
                 pid = plugin.get_name()
                 title = plugin.get_description()
-                items.append(item_type(id=pid, title=title))
+                items.append(item_type(id=pid, title=_(title)))
         view.update(items)
 
         # Action to be done when selecting an used plugin
