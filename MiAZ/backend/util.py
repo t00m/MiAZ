@@ -10,6 +10,7 @@
 import io
 import os
 import re
+import ast
 import sys
 import glob
 import json
@@ -41,6 +42,34 @@ Field[Purpose] = 4
 Field[SentTo] = 6
 
 
+class SafeDictExtractor(ast.NodeVisitor):
+    def __init__(self, variable_name):
+        self.variable_name = variable_name
+        self.result = None
+
+    def visit_Assign(self, node):
+        for target in node.targets:
+            if isinstance(target, ast.Name) and target.id == self.variable_name:
+                self.result = self._safe_eval(node.value)
+
+    def _safe_eval(self, node):
+        if isinstance(node, ast.Dict):
+            return {
+                self._safe_eval(k): self._safe_eval(v)
+                for k, v in zip(node.keys, node.values)
+            }
+        elif isinstance(node, ast.List):
+            return [self._safe_eval(elt) for elt in node.elts]
+        elif isinstance(node, ast.Constant):  # str, int, float, etc.
+            return node.value
+        elif isinstance(node, ast.Call):
+            # Handle gettext-style calls like _('Some text')
+            if isinstance(node.func, ast.Name) and node.func.id == "_":
+                if node.args and isinstance(node.args[0], ast.Constant):
+                    return node.args[0].value
+        raise ValueError(f"Unsupported expression: {ast.dump(node)}")
+
+
 class MiAZUtil(GObject.GObject):
     """Backend class"""
     __gtype_name__ = 'MiAZUtil'
@@ -61,6 +90,16 @@ class MiAZUtil(GObject.GObject):
                             GObject.TYPE_PYOBJECT, (GObject.TYPE_PYOBJECT, GObject.TYPE_PYOBJECT,))
         self.log = MiAZLog('MiAZ.Backend.Util')
         self.app = app
+
+    def extract_variable_from_python_module(self, filepath, variable_name):
+        with open(filepath, "r") as f:
+            tree = ast.parse(f.read(), filename=filepath)
+        extractor = SafeDictExtractor(variable_name)
+        extractor.visit(tree)
+        if extractor.result is None:
+            # ~ raise ValueError(f"Variable '{variable_name}' not found.")
+            return None
+        return extractor.result
 
     def display_traceback(self):
         self.log.error("Traceback:", exc_info=True)
