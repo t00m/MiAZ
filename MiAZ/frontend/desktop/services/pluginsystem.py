@@ -10,6 +10,7 @@
 """
 
 import os
+import ast
 import sys
 import glob
 import json
@@ -29,8 +30,8 @@ plugin_categories = {
         _('Export'): _('Plugins for exporting documents'),
         _('Backup'): _('Plugins for backing up your repository'),
         _('Restore'): _('Plugins for restoring backups'),
-        _('Single update'): _('Plugins for manipulating data for a single file'),
-        _('Batch update'): _('Plugins for bulk data manipulation'),
+        _('Single mode'): _('Plugins for manipulating data for a single document'),
+        _('Batch mode'): _('Plugins for bulk data manipulation'),
         _('Synchronisation'): _('Plugins for syncing data with cloud services or between devices'),
         _('Migration'): _('Plugins for transferring data between different platforms or systems'),
         _('Deletion'): _('Plugins for securely removing documents or data from the repository')
@@ -113,8 +114,8 @@ class MiAZPlugin(GObject.GObject):
         plugin_system = self.app.get_service('plugin-system')
         return plugin_system.get_plugin_attributes(plugin_file)
 
-    def register(self, plugin_object):
-        self.info = plugin_object.info
+    def register(self, plugin_object, info):
+        self.info = info
         self.name = self.info['Name']
         self.desc = self.info['Description']
         self.poid = f'plugin-{self.name}'
@@ -495,6 +496,12 @@ class MiAZPluginSystem(GObject.GObject):
                     plugin_info[key.strip()] = _(value.strip())
         return plugin_info
 
+    # ~ # Example usage
+    # ~ file_path = "/path/to/your/module.py"
+    # ~ variable_name = "plugin_info"
+    # ~ result = extract_variable_from_module(file_path, variable_name)
+    # ~ print(result)  # Will print the dictionary if found
+
     def create_user_plugin_index(self, *args):
         """Parse plugins info file and recreate index on runtime"""
         self.log.info("Creating user plugin index during runtime")
@@ -502,18 +509,29 @@ class MiAZPluginSystem(GObject.GObject):
         ENV = self.app.get_env()
         plugins_dir = ENV['LPATH']['PLUGINS']
         plugin_files = glob.glob(os.path.join(plugins_dir, '*', '*.plugin'))
-        if not plugin_files:
-            self.log.warning(f"No .plugin files found in {plugins_dir}")
-
+        module_files = glob.glob(os.path.join(plugins_dir, '*', '*.py'))
         plugin_list = []
-        for plugin_file in plugin_files:
-            plugin_info = self.get_plugin_attributes(plugin_file)
-            plugin_name = plugin_info['Name']
-            plugin_desc = plugin_info['Description']
-            plugin_index[plugin_name] = plugin_info
-            plugin_list.append((plugin_name, plugin_desc))
-            self.log.info(f" - Adding user plugin {plugin_name} to plugin index")
+        for module_file in module_files:
+            plugin_info = self.util.extract_variable_from_python_module(module_file, 'plugin_info')
+            if plugin_info is not None:
+                plugin_name = plugin_info['Name']
+                plugin_desc = plugin_info['Description']
+                plugin_index[plugin_name] = plugin_info
+                plugin_list.append((plugin_name, plugin_desc))
+                self.log.info(f" - Adding user plugin {plugin_name} to plugin index")
 
+            # ~ self.log.error(f"{module_file}: {plugin_info}")
+        # ~ if not plugin_files:
+            # ~ self.log.warning(f"No .plugin files found in {plugins_dir}")
+
+        # ~ plugin_list = []
+        # ~ for plugin_file in plugin_files:
+            # ~ plugin_info = self.get_plugin_attributes(plugin_file)
+            # ~ plugin_name = plugin_info['Name']
+            # ~ plugin_desc = plugin_info['Description']
+            # ~ plugin_index[plugin_name] = plugin_info
+            # ~ plugin_list.append((plugin_name, plugin_desc))
+            # ~ self.log.info(f" - Adding user plugin {plugin_name} to plugin index")
 
         with open(ENV['APP']['PLUGINS']['USER_INDEX'], 'w') as fp:
             json.dump(plugin_index, fp, sort_keys=False, indent=4)
@@ -536,17 +554,28 @@ class MiAZPluginSystem(GObject.GObject):
         ENV = self.app.get_env()
         plugins_dir = ENV['GPATH']['PLUGINS']
         plugin_files = glob.glob(os.path.join(plugins_dir, '*', '*.plugin'))
-        if not plugin_files:
-            self.log.warning(f"No .plugin files found in {plugins_dir}")
-
+        module_files = glob.glob(os.path.join(plugins_dir, '*', '*.py'))
         plugin_list = []
-        for plugin_file in plugin_files:
-            plugin_info = self.get_plugin_attributes(plugin_file)
-            plugin_name = plugin_info['Name']
-            plugin_desc = plugin_info['Description']
-            plugin_index[plugin_name] = plugin_info
-            plugin_list.append((plugin_name, plugin_desc))
-            self.log.info(f" - Adding system plugin {plugin_name} to plugin index")
+        for module_file in module_files:
+            plugin_info = self.util.extract_variable_from_python_module(module_file, 'plugin_info')
+            if plugin_info is not None:
+                plugin_name = plugin_info['Name']
+                plugin_desc = plugin_info['Description']
+                plugin_index[plugin_name] = plugin_info
+                plugin_list.append((plugin_name, plugin_desc))
+                self.log.info(f" - Adding system plugin {plugin_name} to plugin index")
+            # ~ self.log.error(f"{module_file}: {plugin_info}")
+        # ~ if not plugin_files:
+            # ~ self.log.warning(f"No .plugin files found in {plugins_dir}")
+
+        # ~ plugin_list = []
+        # ~ for plugin_file in plugin_files:
+            # ~ plugin_info = self.get_plugin_attributes(plugin_file)
+            # ~ plugin_name = plugin_info['Name']
+            # ~ plugin_desc = plugin_info['Description']
+            # ~ plugin_index[plugin_name] = plugin_info
+            # ~ plugin_list.append((plugin_name, plugin_desc))
+            # ~ self.log.info(f" - Adding system plugin {plugin_name} to plugin index")
 
 
         with open(ENV['APP']['PLUGINS']['SYSTEM_INDEX'], 'w') as fp:
