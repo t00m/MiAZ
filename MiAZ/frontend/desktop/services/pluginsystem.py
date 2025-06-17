@@ -24,6 +24,20 @@ from gi.repository import GObject, Peas
 
 from MiAZ.backend.log import MiAZLog
 
+plugin_info_template = {
+        _('Module'):        '',
+        _('Name'):          '',
+        _('Loader'):        '',
+        _('Description'):   '',
+        _('Authors'):       '',
+        _('Copyright'):     '',
+        _('Website'):       '',
+        _('Help'):          '',
+        _('Version'):       '',
+        _('Category'):      '',
+        _('Subcategory'):   ''
+    }
+
 plugin_categories = {
     _('Data Management'): {
         _('Import'): _('Plugins for importing documents'),
@@ -44,7 +58,8 @@ plugin_categories = {
     _('Visualisation and Diagrams'): {
         _('Diagram Creation'): _('Plugins for creating flowcharts, mind maps, and other visual representations'),
         _('Data Visualisation'): _('Plugins that generate graphs, charts, or other visual data summaries'),
-        _('Dashboard Widgets'): _('Plugins that provide a summary of key information in a dashboard format')
+        _('Dashboard Widgets'): _('Plugins that provide a summary of key information in a dashboard format'),
+        _('Document Viewers'): _('Plugins for displaying documents in their native formats')
     },
     _('Security and Privacy'): {
         _('Encryption/Decryption'): _('Plugins that encrypt or decrypt documents'),
@@ -90,6 +105,21 @@ plugin_categories = {
         _('Long-Term Archiving'): _('Plugins for storing documents in long-term, secure formats'),
         _('Compliance Checkers'): _('Plugins that ensure documents meet regulatory or legal standards'),
         _('Retention Policies'): _('Plugins for setting and enforcing document retention rules')
+    },
+    _('ETL and Data Processing'): {
+        _('Data Extraction'): _('Plugins for extracting data from various sources (APIs, databases, files)'),
+        _('Data Transformation'): _('Plugins for cleaning, enriching, or reformatting extracted data'),
+        _('Data Loading'): _('Plugins for importing processed data into target systems or repositories'),
+        _('Workflow Automation'): _('Plugins for orchestrating multi-step ETL processes'),
+        _('Data Quality'): _('Plugins for validating, deduplicating, or ensuring data consistency')
+    },
+    _('Artificial Intelligence'): {
+        _('Text Analysis'): _('Plugins for NLP tasks like summarization, sentiment analysis, or entity recognition'),
+        _('Document AI'): _('Plugins for intelligent document processing (e.g., OCR, form recognition)'),
+        _('Predictive Analytics'): _('Plugins for forecasting or pattern detection in data'),
+        _('Recommendation Systems'): _('Plugins for suggesting relevant content or actions based on user behavior'),
+        _('AI Assistants'): _('Plugins with chatbot-like interactions or automated task assistance'),
+        _('Model Integration'): _('Plugins for connecting to external AI models (e.g., OpenAI, Hugging Face)')
     },
     _('Others'): {
         _('Miscelanea'): _('Plugins not fitting in another category')
