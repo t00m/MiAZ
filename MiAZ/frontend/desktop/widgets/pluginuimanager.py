@@ -31,8 +31,8 @@ class MiAZPluginUIManager(Gtk.Box):
 
     def _build_ui(self):
         box = self.factory.create_box_vertical(spacing=6, hexpand=True, vexpand=True)
-        title = "These system plugins are always enabled for any repository"
-        title += "\n\n<small>Check your repository preferences to manage user plugins</small>"
+        title = _("These system plugins are always enabled for any repository")
+        title += _("\n\n<small>Check your repository preferences to manage user plugins</small>")
         banner = Adw.Banner.new(title)
         banner.set_use_markup(True)
         banner.set_revealed(True)
@@ -127,8 +127,9 @@ class MiAZPluginUIManager(Gtk.Box):
 
         # Add plugin info as key/value rows
         for key in plugin_info:
-            row = Adw.ActionRow(title=_(f'<b>{key}</b>'))
-            label = Gtk.Label.new(plugin_info[key])
+            lblkey = _(key)
+            row = Adw.ActionRow(title=f'<b>{lblkey}</b>')
+            label = Gtk.Label.new(_(plugin_info[key]))
             row.add_suffix(label)
             group.add(row)
         dialog.set_presentation_mode(Adw.DialogPresentationMode.BOTTOM_SHEET)

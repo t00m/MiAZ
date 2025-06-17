@@ -15,6 +15,20 @@ from gi.repository import Peas
 
 from MiAZ.frontend.desktop.services.pluginsystem import MiAZPlugin
 
+plugin_info = {
+        'Module':        'viewitem',
+        'Name':          'MiAZViewItem',
+        'Loader':        'Python3',
+        'Description':   _('Display document'),
+        'Authors':       'Tomás Vírseda <tomasvirseda@gmail.com>',
+        'Copyright':     'Copyright © 2025 Tomás Vírseda',
+        'Website':       'http://github.com/t00m/MiAZ',
+        'Help':          'http://github.com/t00m/MiAZ/README.adoc',
+        'Version':       '0.6',
+        'Category':      _('Visualisation and Diagrams'),
+        'Subcategory':   _('Document Viewers')
+    }
+
 
 class MiAZToolbarViewItemPlugin(GObject.GObject, Peas.Activatable):
     __gtype_name__ = 'MiAZToolbarViewItemPlugin'
@@ -30,16 +44,21 @@ class MiAZToolbarViewItemPlugin(GObject.GObject, Peas.Activatable):
         self.plugin = MiAZPlugin(self.app)
 
         ## Initialize plugin
-        self.plugin.register(self.file, self)
+        self.plugin.register(self, plugin_info)
 
         ## Get logger
         self.log = self.plugin.get_logger()
 
-        workspace = self.app.get_widget('workspace')
-        workspace.connect('workspace-loaded', self.startup)
-        workspace.connect('workspace-view-updated', self._on_selection_changed)
+        ## Get services
+        self.actions = self.app.get_service('actions')
+        self.factory = self.app.get_service('factory')
+
+        ## Connect signals
+        self.workspace = self.app.get_widget('workspace')
+        self.workspace.connect('workspace-loaded', self.startup)
+        self.workspace.connect('workspace-view-updated', self._on_selection_changed)
         view = self.app.get_widget('workspace-view')
-        view.cv.connect("activate", self.callback)
+        view.cv.connect("activate", self.document_display)
         selection = view.get_selection()
         selection.connect('selection-changed', self._on_selection_changed)
 
@@ -47,8 +66,7 @@ class MiAZToolbarViewItemPlugin(GObject.GObject, Peas.Activatable):
         self.log.debug("Plugin deactivation not implemented")
 
     def _on_selection_changed(self, *args):
-        workspace = self.app.get_widget('workspace')
-        items = workspace.get_selected_items()
+        items = self.workspace.get_selected_items()
         button = self.app.get_widget('toolbar-top-button-view')
         if button is not None:
             visible = len(items) == 1
@@ -57,16 +75,16 @@ class MiAZToolbarViewItemPlugin(GObject.GObject, Peas.Activatable):
     def startup(self, *args):
         if not self.plugin.started():
             # Create menu item for plugin
-            menuitem = self.plugin.get_menu_item(callback=None)
+            mnuItemName = self.plugin.get_menu_item_name()
+            menuitem = self.factory.create_menuitem(name=mnuItemName, label=_('Display document'), callback=self.document_display)
 
             # Add plugin to its default (sub)category
             self.plugin.install_menu_entry(menuitem)
 
             # Button
             if self.app.get_widget('toolbar-top-button-view') is None:
-                factory = self.app.get_service('factory')
                 toolbar_top_right = self.app.get_widget('headerbar-right-box')
-                button = factory.create_button(icon_name='io.github.t00m.MiAZ-view-document', tooltip=_('View document'), callback=self.callback)
+                button = self.factory.create_button(icon_name='io.github.t00m.MiAZ-view-document', tooltip=_('View document'), callback=self.document_display)
                 button.set_visible(False)
                 self.app.add_widget('toolbar-top-button-view', button)
                 toolbar_top_right.append(button)
@@ -74,11 +92,9 @@ class MiAZToolbarViewItemPlugin(GObject.GObject, Peas.Activatable):
             # Plugin configured
             self.plugin.set_started(started=True)
 
-    def callback(self, *args):
+    def document_display(self, *args):
         try:
-            workspace = self.app.get_widget('workspace')
-            item = workspace.get_selected_items()[0]
-            actions = self.app.get_service('actions')
-            actions.document_display(item.id)
+            item = self.workspace.get_selected_items()[0]
+            self.actions.document_display(item.id)
         except IndexError:
             self.log.debug("No item selected")
