@@ -84,10 +84,13 @@ class MiAZFactory:
         dialog = Gtk.FileDialog.new()
         dialog.set_title("Select folder")
         dialog.set_initial_folder(initial_folder)
-        dialog_filter = Gtk.FileFilter()
-        dialog_filter.set_name("Folders")
-        dialog_filter.add_mime_type("inode/directory")  # Accept only directories
-        dialog.set_default_filter(dialog_filter)
+
+        # If the filter is enabled, only directories are shown.
+        # The user might want to see files too, though.
+        # ~ dialog_filter = Gtk.FileFilter()
+        # ~ dialog_filter.set_name("Folders")
+        # ~ dialog_filter.add_mime_type("inode/directory")  # Accept only directories
+        # ~ dialog.set_default_filter(dialog_filter)
         dialog.select_folder(parent, None, callback)
         return dialog
 
