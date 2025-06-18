@@ -53,6 +53,9 @@ class MiAZWorkspaceToggleViewPlugin(GObject.GObject, Peas.Activatable):
         ## Get logger
         self.log = self.plugin.get_logger()
 
+        ## Get services
+        self.factory = self.app.get_service('factory')
+
         # Connect signals to startup
         self.workspace = self.app.get_widget('workspace')
         self.workspace.connect('workspace-loaded', self.startup)
@@ -65,18 +68,13 @@ class MiAZWorkspaceToggleViewPlugin(GObject.GObject, Peas.Activatable):
 
     def startup(self, *args):
         if not self.plugin.started():
-            # Create menu item for plugin
-            # ~ menuitem = self.plugin.get_menu_item(callback=None)
-
-            # Add plugin to its default (sub)category
-            # ~ self.plugin.install_menu_entry(menuitem)
+            # No menu item for plugin
 
             # ToggleButton
-            factory = self.app.get_service('factory')
             hdb_right = self.app.get_widget('headerbar-right-box')
             tgbWSToggleView = self.app.get_widget('workspace-togglebutton-view')
             if tgbWSToggleView is None:
-                tgbWSToggleView = factory.create_button_toggle('io.github.t00m.MiAZ-view-details', callback=self.toggle_workspace_view)
+                tgbWSToggleView = self.factory.create_button_toggle('io.github.t00m.MiAZ-view-details', callback=self.toggle_workspace_view)
                 self.app.add_widget('workspace-togglebutton-view', tgbWSToggleView)
                 tgbWSToggleView.set_tooltip_text("Show sidebar and filters")
                 tgbWSToggleView.set_active(False)
@@ -130,8 +128,6 @@ class MiAZWorkspaceToggleViewPlugin(GObject.GObject, Peas.Activatable):
         self.plugin.set_config_key('icon_visible', visible)
 
     def show_settings(self, widget):
-        util = self.app.get_service('util')
-
         # Build preferences dialog
         dialog = Adw.PreferencesDialog()
         desc = self.plugin.get_plugin_info_key('Description')

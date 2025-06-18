@@ -67,7 +67,6 @@ class MiAZAddDirectoryPlugin(GObject.GObject, Peas.Activatable):
     def startup(self, *args):
         if not self.plugin.started():
             # Create menu item for plugin
-            # ~ menuitem = self.plugin.get_menu_item(callback=self.import_directory)
             mnuItemName = self.plugin.get_menu_item_name()
             menuitem = self.factory.create_menuitem(name=mnuItemName, label=_('Add documents from directory'), callback=self.import_directory)
 

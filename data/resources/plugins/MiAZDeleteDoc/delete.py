@@ -55,10 +55,14 @@ class MiAZDeleteItemPlugin(GObject.GObject, Peas.Activatable):
 
         ## Get services
         self.factory = self.app.get_service('factory')
+        self.actions = self.app.get_service('actions')
+        self.repository = self.app.get_service('repo')
+        self.util = self.app.get_service('util')
+        self.srvdlg = self.app.get_service('dialogs')
 
         ## Connect signals
-        workspace = self.app.get_widget('workspace')
-        workspace.connect('workspace-loaded', self.startup)
+        self.workspace = self.app.get_widget('workspace')
+        self.workspace.connect('workspace-loaded', self.startup)
 
     def do_deactivate(self):
         self.log.debug("Plugin deactivation not implemented")
@@ -76,19 +80,12 @@ class MiAZDeleteItemPlugin(GObject.GObject, Peas.Activatable):
             self.plugin.set_started(started=True)
 
     def document_delete(self, *args):
-        actions = self.app.get_service('actions')
-        factory = self.app.get_service('factory')
-        repository = self.app.get_service('repo')
-        util = self.app.get_service('util')
-        workspace = self.app.get_widget('workspace')
-        srvdlg = self.app.get_service('dialogs')
-
-        items = workspace.get_selected_items()
-        if actions.stop_if_no_items(items):
+        items = self.workspace.get_selected_items()
+        if self.actions.stop_if_no_items(items):
             return
 
         frame = Gtk.Frame()
-        box, view = factory.create_view(MiAZColumnViewMassDelete)
+        box, view = self.factory.create_view(MiAZColumnViewMassDelete)
         citems = []
         for item in items:
             citems.append(File(id=item.id, title=os.path.basename(item.id)))
@@ -97,23 +94,20 @@ class MiAZDeleteItemPlugin(GObject.GObject, Peas.Activatable):
         box.append(frame)
         window = self.app.get_widget('window')
         body = _("<b>Are you sure?</b>\n\nThe following documents will be deleted:")
-        dialog = srvdlg.show_question(title=_('Mass deletion'), body=body, widget=box, width=600, height=480)
+        dialog = self.srvdlg.show_question(title=_('Mass deletion'), body=body, widget=box, width=600, height=480)
         dialog.connect('response', self._on_document_delete_response, items)
         dialog.present(window)
 
     def _on_document_delete_response(self, dialog, response, items):
-        srvdlg = self.app.get_service('dialogs')
-        repository = self.app.get_service('repo')
-        util = self.app.get_service('util')
         parent = self.app.get_widget('window')
         if response == 'apply':
             for item in items:
-                filepath = os.path.join(repository.docs, item.id)
-                util.filename_delete(filepath)
+                filepath = os.path.join(self.repository.docs, item.id)
+                self.util.filename_delete(filepath)
             title = _('Repository management')
             body = _('{num_docs} documents deleted from repository').format(num_docs=len(items))
-            srvdlg.show_warning(title=title, body=body, parent=parent)
+            self.srvdlg.show_warning(title=title, body=body, parent=parent)
         else:
             title = _('Repository management')
             body = _('Action canceled by user')
-            srvdlg.show_warning(title=title, body=body, parent=parent)
+            self.srvdlg.show_warning(title=title, body=body, parent=parent)
