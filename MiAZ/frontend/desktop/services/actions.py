@@ -158,6 +158,7 @@ class MiAZActions(GObject.GObject):
                         self.log.error(f"This is not a config file for {i_title_plural.lower()}")
 
         window = self.app.get_widget('window')
+        # FIXME: use the new filechooser
         filechooser = factory.create_filechooser(
                     title=_(f'Import a configuration file for {i_title_plural.lower()}'),
                     target = 'FILE',
@@ -216,6 +217,7 @@ class MiAZActions(GObject.GObject):
                     self.show_repository_settings()
 
         window = self.app.get_widget('window')
+        # FIXME: use the new filechooser
         filechooser = factory.create_filechooser(
                     title=_(f'Export the configuration for {i_title_plural.lower()}'),
                     target = 'FOLDER',

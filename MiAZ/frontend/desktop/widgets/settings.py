@@ -250,16 +250,6 @@ class MiAZAppSettings(Adw.PreferencesDialog):
     def is_repo_set(self):
         return self.repo_is_set
 
-    def show_filechooser_source(self, *args):
-        window = self.app.get_widget('window')
-        filechooser = self.factory.create_filechooser(
-                    title=_('Choose target directory'),
-                    target = 'FOLDER',
-                    callback = self.on_filechooser_response_source,
-                    data = None
-                    )
-        filechooser.show()
-
     def on_filechooser_response_source(self, dialog, response, data):
                 return
 

@@ -12,7 +12,6 @@ from gi.repository import Pango
 
 from MiAZ.backend.log import MiAZLog
 from MiAZ.frontend.desktop.widgets.button import MiAZPopoverButton
-from MiAZ.frontend.desktop.widgets.filechooser import MiAZFileChooserDialog
 
 
 def get_children(obj: Gtk.Widget) -> list[Gtk.Widget]:
@@ -417,9 +416,6 @@ class MiAZFactory:
         # ~ menu_dropdown.append_item(menuitem)
 
         return dropdown
-
-    def create_filechooser(self, title, target, callback, data=None):
-        return MiAZFileChooserDialog(self.app, title, target, callback, data)
 
     def create_frame(self, title:str = None, margin: int = 3, hexpand: bool = False, vexpand: bool = False) -> Gtk.Frame:
         frame = Gtk.Frame()
