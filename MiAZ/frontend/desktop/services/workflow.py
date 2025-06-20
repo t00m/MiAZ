@@ -57,7 +57,7 @@ class MiAZWorkflow(GObject.GObject):
 
         repo_id = appconf.get('current')
         self.log.debug(f"Repository '{repo_id}' loaded? {repo_loaded}")
-
+        sidebar = self.app.get_widget('sidebar')
         if repo_loaded:
             self.log.info(f"Repo Working directory: '{repository.docs}'")
             repo_settings = self.app.get_widget('settings-repo')
@@ -72,10 +72,12 @@ class MiAZWorkflow(GObject.GObject):
                 self.app.load_plugins()
             self.app.set_status(MiAZStatus.RUNNING)
             workspace.emit('workspace-view-filtered')
+            sidebar.set_visible(True)
             actions.show_stack_page_by_name('workspace')
             self.app.emit('application-started')
         else:
             actions.show_stack_page_by_name('welcome')
+            sidebar.set_visible(False)
         window = self.app.get_widget('window')
         window.present()
         return repo_loaded
