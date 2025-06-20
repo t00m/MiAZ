@@ -39,7 +39,6 @@ class MiAZAddDocumentPlugin(GObject.GObject, Peas.Activatable):
     plugin = None
     name = 'AddDocs'     # Plugin internal name
     desc = '... document(s)'   # Plugin menuitem entry
-    file = __file__.replace('.py', '.plugin')
 
     def do_activate(self):
         """Plugin activation"""
