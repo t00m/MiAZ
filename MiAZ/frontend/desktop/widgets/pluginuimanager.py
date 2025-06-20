@@ -111,10 +111,14 @@ class MiAZPluginUIManager(Gtk.Box):
         selected_plugin = view.get_selected()
         if selected_plugin is None:
             return
+
+        # If no repository is loaded, plugins aren't loaded either
         plugin_module = self.app.get_widget(f'plugin-{selected_plugin.id}')
-        plugin_info = plugin_module.plugin.get_plugin_info_dict()
+        if plugin_module is None:
+            return
 
         # Build info dialog
+        plugin_info = plugin_module.plugin.get_plugin_info_dict()
         dialog = Adw.PreferencesDialog()
         dialog.set_title('Plugin info')
         page_title = _('Properties')
