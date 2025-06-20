@@ -114,8 +114,6 @@ class MiAZRepositories(MiAZConfigView):
         self.app = app
         super(MiAZConfigView, self).__init__(app, edit=True)
         super().__init__(app, 'Repository')
-        self.log.error(self.dialog_title)
-
 
     def _setup_view_finish(self):
         # Setup Available and Used Columns Views
@@ -195,9 +193,7 @@ class MiAZRepositories(MiAZConfigView):
                 items_available[oldkey] = newval
                 self.config.save_available(items_available)
                 self.update_views()
-                body1 = _('<b>Action not possible</b>')
-                body2 = _('Repository target folder updated')
-                body = body1 + '\n' + body2
+                body = _('Repository target folder updated')
                 self.srvdlg.show_info(title=title, body=body, parent=parent)
             else:
                 body1 = _('<b>Action not possible</b>')
