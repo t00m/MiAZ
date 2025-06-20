@@ -67,15 +67,15 @@ class MiAZFactory:
             child = child.get_next_sibling()
         return children
 
-    def create_filechooser_for_directories(self, callback, initial_folder: str = '', parent: Gtk.Widget = None) -> Gtk.FileDialog:
+    def create_filechooser_for_directories(self, callback, dirpath: str = '', parent: Gtk.Widget = None) -> Gtk.FileDialog:
         """
         Create a new FileDialog for selecting directories
         """
         # FIXME: Integrate this widget in service dialogs
         # Set default values
-        if len(initial_folder) == 0:
+        if len(dirpath) == 0:
             dirpath = GLib.get_user_special_dir(GLib.UserDirectory.DIRECTORY_DOCUMENTS)
-            initial_folder = Gio.File.new_for_path(dirpath)
+        initial_folder = Gio.File.new_for_path(dirpath)
         if parent is None:
             parent = self.app.get_widget('window')
 
@@ -93,15 +93,15 @@ class MiAZFactory:
         dialog.select_folder(parent, None, callback)
         return dialog
 
-    def create_filechooser_for_files(self, callback, initial_folder: str = '', parent: Gtk.Widget = None) -> Gtk.FileDialog:
+    def create_filechooser_for_files(self, callback, dirpath: str = '', parent: Gtk.Widget = None) -> Gtk.FileDialog:
         """
         Create a new FileDialog for selecting multiple files
         """
         # FIXME: Integrate this widget in service dialogs
         # Set default values
-        if len(initial_folder) == 0:
+        if len(dirpath) == 0:
             dirpath = GLib.get_user_special_dir(GLib.UserDirectory.DIRECTORY_DOCUMENTS)
-            initial_folder = Gio.File.new_for_path(dirpath)
+        initial_folder = Gio.File.new_for_path(dirpath)
         if parent is None:
             parent = self.app.get_widget('window')
 
