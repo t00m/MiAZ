@@ -4,7 +4,6 @@
 # License: GPL v3
 # Description: Manage App and Repository settings
 
-import os
 from gettext import gettext as _
 
 from gi.repository import Adw

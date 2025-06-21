@@ -5,7 +5,6 @@
 
 import os
 import sys
-import json
 import argparse
 import signal
 import locale

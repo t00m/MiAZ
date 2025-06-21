@@ -9,10 +9,10 @@
 # SPDX-License-Identifier: MIT
 
 
-from gi.repository import Adw, GObject, Gio, Gtk  # type:ignore
+from gi.repository import Adw, Gtk  # type:ignore
 
 from MiAZ.backend.log import MiAZLog
-from MiAZ.backend.models import MiAZItem, Group, Country, Purpose, SentBy, SentTo, Date
+from MiAZ.backend.models import Group, Country, Purpose, SentBy, SentTo, Date
 from MiAZ.frontend.desktop.services.factory import MiAZBox
 
 

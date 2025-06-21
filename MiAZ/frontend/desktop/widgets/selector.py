@@ -5,7 +5,6 @@
 # Description: Custom widget to manage available/used config items
 
 import os
-import sys
 from gettext import gettext as _
 
 from gi.repository import Adw

@@ -4,10 +4,6 @@
 # License: GPL v3
 # Description: Icon manager
 
-import os
-
-from gi.repository import Gtk
-from gi.repository import Gio
 from gi.repository import GObject
 
 from MiAZ.backend.log import MiAZLog

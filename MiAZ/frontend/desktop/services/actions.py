@@ -6,7 +6,6 @@
 
 import os
 import sys
-import glob
 import pathlib
 import zipfile
 from gettext import gettext as _
@@ -16,7 +15,7 @@ from gi.repository import Adw
 from gi.repository import Gtk
 
 from MiAZ.backend.log import MiAZLog
-from MiAZ.backend.models import File, Group, Country, Purpose, SentBy, SentTo, Date, Repository
+from MiAZ.backend.models import Group, Country, Purpose, SentBy, SentTo, Date, Repository
 from MiAZ.frontend.desktop.widgets.configview import MiAZCountries, MiAZGroups, MiAZPurposes, MiAZPeopleSentBy, MiAZPeopleSentTo
 from MiAZ.frontend.desktop.widgets.settings import MiAZAppSettings
 from MiAZ.frontend.desktop.widgets.settings import MiAZRepoSettings

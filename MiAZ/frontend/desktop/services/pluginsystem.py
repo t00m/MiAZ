@@ -10,7 +10,6 @@
 """
 
 import os
-import ast
 import sys
 import glob
 import json

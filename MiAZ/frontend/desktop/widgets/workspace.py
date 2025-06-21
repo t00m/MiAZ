@@ -8,7 +8,6 @@ import os
 from datetime import datetime
 from gettext import gettext as _
 
-from gi.repository import Gio
 from gi.repository import Gtk
 from gi.repository import GLib
 from gi.repository import GObject

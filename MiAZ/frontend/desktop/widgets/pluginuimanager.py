@@ -1,15 +1,14 @@
-import os
-import json
-import requests
-from pathlib import Path
-from datetime import datetime, timedelta
+#!/usr/bin/python3
+# File: pluginuimangager.py
+# Author: Tomás Vírseda
+# License: GPL v3
+# Description: Plugin UI Manager
+
 from gettext import gettext as _
 
 from gi.repository import Adw
 from gi.repository import Gtk
-from gi.repository import GObject
 
-from MiAZ.env import ENV
 from MiAZ.backend.log import MiAZLog
 from MiAZ.backend.models import Plugin
 from MiAZ.frontend.desktop.services.pluginsystem import MiAZPluginType

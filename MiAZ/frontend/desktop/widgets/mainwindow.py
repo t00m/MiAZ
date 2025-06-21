@@ -6,10 +6,11 @@
 
 from gettext import gettext as _
 
-from gi.repository import Adw, Gdk, Gio, GObject, Gtk
+from gi.repository import Adw
+from gi.repository import Gio
+from gi.repository import Gtk
 
 from MiAZ.backend.log import MiAZLog
-from MiAZ.backend.models import MiAZItem, Group, Country, Purpose, SentBy, SentTo, Date
 from MiAZ.frontend.desktop.widgets.pages import MiAZWelcome
 from MiAZ.frontend.desktop.widgets.pages import MiAZPageNotFound
 from MiAZ.frontend.desktop.widgets.webbrowser import MiAZWebBrowser
