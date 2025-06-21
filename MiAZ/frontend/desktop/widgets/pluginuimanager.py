@@ -1,7 +1,5 @@
 import os
 import json
-import base64
-import pprint
 import requests
 from pathlib import Path
 from datetime import datetime, timedelta

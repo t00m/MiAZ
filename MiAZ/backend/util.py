@@ -17,7 +17,6 @@ import json
 import shutil
 import tempfile
 import requests
-import traceback
 import mimetypes
 import zipfile
 from datetime import datetime, timedelta

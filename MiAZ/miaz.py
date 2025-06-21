@@ -10,13 +10,11 @@ import argparse
 import signal
 import locale
 import gettext
-import subprocess
 
 sys.path.insert(1, '@pkgdatadir@')
 
 from MiAZ.env import ENV
 from MiAZ.backend.log import MiAZLog
-from MiAZ.backend.util import which
 
 log = MiAZLog('MiAZ')
 

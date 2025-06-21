@@ -18,10 +18,8 @@ from gi.repository import Gtk
 from MiAZ.backend.log import MiAZLog
 from MiAZ.backend.models import File, Group, Country, Purpose, SentBy, SentTo, Date, Repository
 from MiAZ.frontend.desktop.widgets.configview import MiAZCountries, MiAZGroups, MiAZPurposes, MiAZPeopleSentBy, MiAZPeopleSentTo
-from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewMassDelete
 from MiAZ.frontend.desktop.widgets.settings import MiAZAppSettings
 from MiAZ.frontend.desktop.widgets.settings import MiAZRepoSettings
-from MiAZ.frontend.desktop.services.help import MiAZShortcutsWindow
 
 # Conversion Item type to Field Number
 Field = {}
