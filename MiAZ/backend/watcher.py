@@ -40,6 +40,9 @@ class MiAZWatcher(GObject.GObject):
             seconds = 60
         else:
             seconds = 2
+        self.log.debug(f"Watching repository: {dirpath}")
+        self.log.debug(f"Remote repository? {remote}")
+        self.log.debug(f"Timeout set to: {seconds}")
         sid = GObject.signal_lookup('repository-updated', MiAZWatcher)
         if sid == 0:
             GObject.GObject.__init__(self)
@@ -65,19 +68,16 @@ class MiAZWatcher(GObject.GObject):
 
     def set_path(self, dirpath: str):
         """Set a directory to watch"""
-
         if dirpath is not None:
             self.dirpath = dirpath
             self.log.info(f"Watcher monitoring '{self.dirpath}'")
 
     def set_active(self, active: bool = True) -> None:
         """Set current watcher as active"""
-
         self.active = active
 
     def get_active(self):
         """Return if the watcher is active or not"""
-
         return self.active
 
     def watch(self):
@@ -116,6 +116,7 @@ class MiAZWatcher(GObject.GObject):
             updated |= True
 
         if updated:
+            self.log.debug("Repository updated")
             self.emit('repository-updated')
 
         self.before = after
