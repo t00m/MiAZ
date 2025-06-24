@@ -32,6 +32,7 @@ class MiAZWorkflow(GObject.GObject):
         super().__init__()
         self.app = app
         self.log = MiAZLog('MiAZ.Workflow')
+        self.util = self.app.get_service('util')
         self.log.debug("Service Workflow initialized")
 
     def switch_start(self, *args):
@@ -81,8 +82,8 @@ class MiAZWorkflow(GObject.GObject):
     def switch_finish(self, *args):
         """Finish switch repository operation"""
         repository = self.app.get_service('repo')
-        watcher = MiAZWatcher()
-        watcher.set_path(repository.docs)
+        remote = self.util.is_remote_path(repository.docs)
+        watcher = MiAZWatcher(dirpath=repository.docs, remote=remote)
         watcher.set_active(active=True)
         self.app.set_service('watcher', watcher)
         self.log.debug("Repository switch finished")
