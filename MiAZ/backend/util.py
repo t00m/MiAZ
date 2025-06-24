@@ -40,6 +40,9 @@ Field[SentBy] = 3
 Field[Purpose] = 4
 Field[SentTo] = 6
 
+REMOTE_SCHEMES = {
+    "sftp", "smb", "ftp", "http", "https", "dav", "davs", "afp", "mtp", "obex", "ssh"
+}
 
 class SafeDictExtractor(ast.NodeVisitor):
     def __init__(self, variable_name):
@@ -391,7 +394,6 @@ class MiAZUtil(GObject.GObject):
         zip_archive = zipfile.ZipFile(filepath, "r")
         return zip_archive.namelist()
 
-
     def download_and_unzip(self, url:str, extract_to:str):
         """
         Download a zip file from a URL and extract it to a directory.
@@ -421,6 +423,25 @@ class MiAZUtil(GObject.GObject):
             self.log.error(f"An unexpected error occurred: {e}")
         return False
 
+    def is_remote_path(self, path_or_uri: str) -> bool:
+        # Convert to Gio.File using path or URI
+        is_uri = "://" in path_or_uri
+        file = Gio.File.new_for_uri(path_or_uri) if is_uri else Gio.File.new_for_path(path_or_uri)
+
+        try:
+            # Try to detect based on URI scheme
+            scheme = file.get_uri_scheme()
+            if scheme in REMOTE_SCHEMES:
+                return True
+
+            # Fallback: Ask the file system backend
+            info = file.query_filesystem_info('filesystem::remote', None)
+            return info.get_attribute_boolean('filesystem::remote')
+
+        except Exception as e:
+            print(f"Warning: Could not determine if file is remote: {e}")
+            return False
+
 def which(program):
     """
     Check if a program is available in $PATH
@@ -434,14 +455,14 @@ def which(program):
         """
         return os.path.isfile(fpath) and os.access(fpath, os.X_OK)
 
-    fpath, fname = os.path.split(program)
-    if fpath:
-        if is_exe(program):
-            return program
-    else:
-        for path in os.environ["PATH"].split(os.pathsep):
-            path = path.strip('"')
-            exe_file = os.path.join(path, program)
-            if is_exe(exe_file):
-                return exe_file
-    return None
+    # ~ fpath, fname = os.path.split(program)
+    # ~ if fpath:
+        # ~ if is_exe(program):
+            # ~ return program
+    # ~ else:
+        # ~ for path in os.environ["PATH"].split(os.pathsep):
+            # ~ path = path.strip('"')
+            # ~ exe_file = os.path.join(path, program)
+            # ~ if is_exe(exe_file):
+                # ~ return exe_file
+    # ~ return None
