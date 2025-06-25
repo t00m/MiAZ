@@ -9,6 +9,7 @@
 
 import os
 import json
+from gettext import gettext as _
 
 from gi.repository import GObject
 
@@ -25,6 +26,7 @@ from MiAZ.backend.config import MiAZConfigUserPlugins
 
 class MiAZRepository(GObject.GObject):
     __gtype_name__ = 'MiAZRepository'
+    _errmsg = None
 
     def __init__(self, app):
         sid = GObject.signal_lookup('repository-switched', MiAZRepository)
@@ -37,16 +39,6 @@ class MiAZRepository(GObject.GObject):
         self.log = MiAZLog('MiAZ.Repository')
         self.config = self.app.get_config_dict()
         self.log.info("Repository class initialited")
-
-    @property
-    def docs(self):
-        """Repository documents directory"""
-        return self.get('dir_docs')
-
-    @property
-    def conf(self):
-        """Repository documents directory"""
-        return self.get('dir_conf')
 
     @property
     def docs(self):
@@ -74,10 +66,11 @@ class MiAZRepository(GObject.GObject):
                             self.log.error(error)
             self.log.debug(f"Repository {conf_file} valid? {valid}")
         except Exception as error:
-            # ~ self.log.error(f"Repository '{path}' not valid")
-            # ~ self.log.error(f"Probably, no repository is loaded yet or defined")
-            # ~ self.log.error(f"Exception error: {error}")
-            self.log.warning("Skip this error if no repository has been defined yet or the path to the repository doesn't exist")
+            errmsg = _("Repository path '{path}' not valid.\n").format(path=path)
+            errmsg += _("Probably, no repository is loaded yet or defined\n")
+            errmsg += _("Exception error: {error}\n\n").format(error=error)
+            errmsg += _("Ignore this error if no repository has been defined yet or the path to the repository doesn't exist")
+            self.set_error(errmsg)
         return valid
 
     def init(self, path):
@@ -112,10 +105,7 @@ class MiAZRepository(GObject.GObject):
                     if not os.path.exists(conf['dir_conf']):
                         self.init(conf['dir_docs'])
                 except Exception as error:
-                    if error is None:
-                        self.log.warning(f"Repository configuration couldn't be loaded for repo_id '{repo_id}'")
-                    else:
-                        self.log.error(f"Repository configuration couldn't be loaded for repo_id '{repo_id}'")
+                    self.set_error(error)
         return conf
 
     def load(self, path):
@@ -137,3 +127,10 @@ class MiAZRepository(GObject.GObject):
             return repoconf[key]
         except Exception as error:
             self.log.warning(f"Repository Configuration Key '{key}' not found")
+
+    def get_error(self):
+        return self._errmsg
+
+    def set_error(self, msg):
+        """Last repository error"""
+        self._errmsg = msg
