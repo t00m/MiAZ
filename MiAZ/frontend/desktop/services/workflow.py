@@ -2,7 +2,9 @@
 # File: icm.py
 # Author: Tomás Vírseda
 # License: GPL v3
-# Description: Icon manager
+# Description: Workflow module
+
+from gettext import gettext as _
 
 from gi.repository import GObject
 
@@ -32,13 +34,14 @@ class MiAZWorkflow(GObject.GObject):
         super().__init__()
         self.app = app
         self.log = MiAZLog('MiAZ.Workflow')
+        self.actions = self.app.get_service('actions')
         self.util = self.app.get_service('util')
+        self.srvdlg = self.app.get_service('dialogs')
         self.log.debug("Service Workflow initialized")
 
     def switch_start(self, *args):
         """Switch from one repository to another."""
         self.log.debug("Repository switch requested")
-        actions = self.app.get_service('actions')
         repository = self.app.get_service('repo')
         try:
             self.app.set_status(MiAZStatus.BUSY)
@@ -54,6 +57,10 @@ class MiAZWorkflow(GObject.GObject):
 
         repo_id = appconf.get('current')
         self.log.debug(f"Repository '{repo_id}' loaded? {repo_loaded}")
+        self.log.debug(f"Repository error: {repository.get_error()}")
+
+        window = self.app.get_widget('window')
+        window.present()
         sidebar = self.app.get_widget('sidebar')
         if repo_loaded:
             self.log.info(f"Repo Working directory: '{repository.docs}'")
@@ -70,19 +77,34 @@ class MiAZWorkflow(GObject.GObject):
             self.app.set_status(MiAZStatus.RUNNING)
             workspace.emit('workspace-view-filtered')
             sidebar.set_visible(True)
-            actions.show_stack_page_by_name('workspace')
+            self.actions.show_stack_page_by_name('workspace')
             self.app.emit('application-started')
         else:
-            actions.show_stack_page_by_name('welcome')
+            self.actions.show_stack_page_by_name('welcome')
             sidebar.set_visible(False)
-        window = self.app.get_widget('window')
-        window.present()
+            parent = self.app.get_widget('window')
+            title = _("Repository management")
+            body = repository.get_error()
+            self.srvdlg.show_error(title=title, body=body, parent=parent)
+
         return repo_loaded
 
     def switch_finish(self, *args):
         """Finish switch repository operation"""
         repository = self.app.get_service('repo')
         remote = self.util.is_remote_path(repository.docs)
+        if remote:
+            success, error = self.util.check_remote_directory_sync(repository.docs)
+        else:
+            success = True
+            error = None
+
+        if success:
+            self.log.info(f"Remote directory '{repository.docs}' is available.")
+        else:
+            self.log.info(f"Remote directory '{repository.docs}' is NOT available. Reason: {error}")
+            return
+
         watcher = MiAZWatcher(dirpath=repository.docs, remote=remote)
         watcher.set_active(active=True)
         self.app.set_service('watcher', watcher)
