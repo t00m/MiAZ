@@ -13,6 +13,7 @@
 import os
 import glob
 
+from gi.repository import Gio
 from gi.repository import GLib
 from gi.repository import GObject
 
@@ -37,9 +38,10 @@ class MiAZWatcher(GObject.GObject):
         self.dirpath = dirpath
         self.remote = remote
         if remote:
-            seconds = 60
+            seconds = 15
         else:
             seconds = 2
+
         self.log.debug(f"Watching repository: {dirpath}")
         self.log.debug(f"Remote repository? {remote}")
         self.log.debug(f"Timeout set to: {seconds}")
@@ -48,23 +50,74 @@ class MiAZWatcher(GObject.GObject):
             GObject.GObject.__init__(self)
             GObject.signal_new('repository-updated', MiAZWatcher, GObject.SignalFlags.RUN_LAST, None, ())
             self.set_path(dirpath)
-            GLib.timeout_add_seconds(seconds, self.watch)
+            GLib.timeout_add_seconds(seconds, self.files_with_timestamp_async, dirpath, self.watch)
             self.log.debug(f"Watcher initialized. Watching every {seconds} seconds")
 
-    def __files_with_timestamp(self, rootdir):
+    def files_with_timestamp_async(self, path, callback):
         """
-        This function generates a dictionary where the keys are the
-        absolute paths of files in a specified directory (rootdir), and
-        the values are the last modification timestamps of those files.
+        Asynchronously fetches {file_path: mtime} from a directory.
+        'callback' is a function receiving the dictionary once ready.
         """
-        # FIXME: FileNotFoundError
+        self.log.debug(f"Checking files for directory: {path}")
+        gfile = Gio.File.new_for_path(path)
 
-        filelist = []
-        files = glob.glob(os.path.join(rootdir, '*'))
-        for thisfile in files:
-            if os.path.exists(thisfile) and not os.path.isdir(thisfile):
-                    filelist.append(os.path.abspath(os.path.relpath(thisfile)))
-        return dict([(f, os.path.getmtime(f)) for f in filelist])
+        def on_query_info(fileobj, res, user_data):
+            try:
+                info = fileobj.query_info_finish(res)
+                if info.get_file_type() != Gio.FileType.DIRECTORY:
+                    self.log.warning(f"Not a directory: {path}")
+                    callback({})
+                    return
+
+                # Proceed with enumeration
+                fileobj.enumerate_children_async(
+                    'standard::name,standard::type,time::modified',
+                    Gio.FileQueryInfoFlags.NONE,
+                    GLib.PRIORITY_DEFAULT,
+                    None,
+                    on_enumerate_ready,
+                    None
+                )
+            except Exception as error:
+                self.log.error(f"Failed to query info: {error}")
+                callback({})
+
+        def on_enumerate_ready(fileobj, res, user_data):
+            timestamps = {}
+            try:
+                enumerator = fileobj.enumerate_children_finish(res)
+
+                def on_next_file(enum, res2, user_data2):
+                    try:
+                        infos = enum.next_files_finish(res2)
+                        if not infos:
+                            callback(timestamps)
+                            return
+                        for i in infos:
+                            if i.get_file_type() == Gio.FileType.REGULAR:
+                                name = i.get_name()
+                                mtime = i.get_modification_time().tv_sec
+                                child = fileobj.get_child(name)
+                                timestamps[child.get_uri()] = mtime
+                        enum.next_files_async(100, GLib.PRIORITY_DEFAULT, None, on_next_file, None)
+                    except Exception as error:
+                        self.log.error(f"Error during file read: {error}")
+                        callback(timestamps)
+
+                enumerator.next_files_async(10, GLib.PRIORITY_DEFAULT, None, on_next_file, None)
+            except Exception as error:
+                self.log.error("Error during enumeration: {error}")
+                callback({})  # Return empty dict on failure
+
+        # Query info first to ensure it's a directory
+        gfile.query_info_async(
+            'standard::*',
+            Gio.FileQueryInfoFlags.NONE,
+            GLib.PRIORITY_HIGH_IDLE,
+            None,
+            on_query_info,
+            None
+        )
 
     def set_path(self, dirpath: str):
         """Set a directory to watch"""
@@ -80,7 +133,7 @@ class MiAZWatcher(GObject.GObject):
         """Return if the watcher is active or not"""
         return self.active
 
-    def watch(self):
+    def watch(self, after):
         """
         Monitor changes in a directory. It checks for added, removed,
         and modified files and logs these changes. If any changes are
@@ -94,7 +147,7 @@ class MiAZWatcher(GObject.GObject):
         if self.dirpath is None:
             return False
 
-        after = self.__files_with_timestamp(self.dirpath)
+        # ~ after = self.__files_with_timestamp(self.dirpath)
 
         added = [f for f in after.keys() if f not in self.before.keys()]
         removed = [f for f in self.before.keys() if f not in after.keys()]
