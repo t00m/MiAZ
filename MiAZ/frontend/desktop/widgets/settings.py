@@ -324,7 +324,7 @@ class MiAZRepoSettings(MiAZCustomWindow):
                 configview.update_views()
             except Exception as error:
                 # FIXME: investigate this error
-                self.log.warning(error)
+                pass
         # ~ self.log.debug("Repository UI updated according to current settings")
 
 
