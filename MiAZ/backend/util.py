@@ -14,13 +14,14 @@ import ast
 import sys
 import glob
 import json
+import time
 import shutil
 import tempfile
+import threading
 import requests
 import mimetypes
 import zipfile
 from datetime import datetime, timedelta
-# ~ from dateutil.parser import parse as dateparser
 
 from gi.repository import Gio
 from gi.repository import GObject
@@ -441,6 +442,33 @@ class MiAZUtil(GObject.GObject):
         except Exception as e:
             print(f"Warning: Could not determine if file is remote: {e}")
             return False
+
+    def check_remote_directory_sync(self, path, timeout_seconds=5):
+        file = Gio.File.new_for_path(path)  # Use new_for_uri() for "sftp://..."
+        cancellable = Gio.Cancellable()
+        result = {"success": False, "error": None}
+
+        def worker():
+            try:
+                info = file.query_info("standard::type", Gio.FileQueryInfoFlags.NONE, cancellable)
+                result["success"] = True
+            except GLib.Error as e:
+                if cancellable.is_cancelled():
+                    result["error"] = "Timeout"
+                else:
+                    result["error"] = str(e)
+
+        thread = threading.Thread(target=worker)
+        thread.start()
+
+        # Wait with timeout
+        thread.join(timeout_seconds)
+
+        if thread.is_alive():
+            cancellable.cancel()  # Cancel the operation
+            thread.join()  # Wait for cleanup
+
+        return result["success"], result["error"]
 
 def which(program):
     """
