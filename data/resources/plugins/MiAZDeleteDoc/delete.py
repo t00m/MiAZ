@@ -100,9 +100,11 @@ class MiAZDeleteItemPlugin(GObject.GObject, Peas.Activatable):
     def _on_document_delete_response(self, dialog, response, items):
         parent = self.app.get_widget('window')
         if response == 'apply':
+            filepaths = set()
             for item in items:
                 filepath = os.path.join(self.repository.docs, item.id)
-                self.util.filename_delete(filepath)
+                filepaths.add(filepath)
+            self.util.filename_delete(filepaths)
             title = _('Repository management')
             body = _('{num_docs} documents deleted from repository').format(num_docs=len(items))
             self.srvdlg.show_warning(title=title, body=body, parent=parent)
