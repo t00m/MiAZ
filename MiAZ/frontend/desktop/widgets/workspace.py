@@ -216,6 +216,9 @@ class MiAZWorkspace(Gtk.Box):
     def _on_workspace_update(self, *args):
         GLib.idle_add(self.update)
 
+    def is_loaded(self):
+        return self.workspace_loaded
+
     def unselect_items(self):
         self.selected_items = []
 
@@ -230,16 +233,20 @@ class MiAZWorkspace(Gtk.Box):
                                     none_value=True)
 
     def show_pending_documents(self, *args):
-        sidebar = self.app.get_widget('sidebar')
         togglebutton = self.app.get_widget('workspace-togglebutton-pending-docs')
-        sidebar.clear_filters()
         self.review = togglebutton.get_active()
+
+        # Clear filters
+        sidebar = self.app.get_widget('sidebar')
+        sidebar.clear_filters()
+
+        # Show all documents in review mode
         i_type = Date.__gtype_name__
         dropdowns = self.app.get_widget('ws-dropdowns')
         if self.review:
             dropdowns[i_type].set_selected(9)
-        else:
-            dropdowns[i_type].set_selected(0)
+        # ~ else:
+            # ~ dropdowns[i_type].set_selected(0)
 
     def _update_dropdown_date(self):
         util = self.app.get_service('util')
@@ -383,7 +390,10 @@ class MiAZWorkspace(Gtk.Box):
 
         # No update while app is bussy
         if self.app.get_status() == MiAZStatus.BUSY:
+            self.log.warning("App is busy. Workspace not updated")
             return
+
+        self.app.set_status(MiAZStatus.BUSY)
 
         # No update is no repository is loaded
         repository = self.app.get_service('repo')
@@ -531,7 +541,6 @@ class MiAZWorkspace(Gtk.Box):
             # ~ dropdowns = self.app.get_widget('ws-dropdowns')
             # ~ dropdowns[i_type].set_selected(self.last_period_selected)
         self.review = togglebutton.get_active()
-        self.app.set_status(MiAZStatus.RUNNING)
 
         # Measure performance (end timestamp and result)
         de = datetime.now()
@@ -539,6 +548,7 @@ class MiAZWorkspace(Gtk.Box):
         self.log.debug(f"Workspace updated in {dt}s")
 
         self.emit('workspace-view-updated')
+        self.app.set_status(MiAZStatus.RUNNING)
         return False
 
     def _do_eval_cond_matches_freetext(self, item):
