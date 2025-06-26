@@ -253,16 +253,18 @@ class MiAZSidebar(Adw.Bin):
         return button
 
     def clear_filters(self, *args):
-        search_entry = self.app.get_widget('searchentry')
-        search_entry.set_text('')
-        search_entry.emit("activate")
-        dropdowns = self.app.get_widget('ws-dropdowns')
-        for ddId in dropdowns:
-            dropdowns[ddId].set_selected(0)
-        workspace_view = self.app.get_widget('workspace-view')
-        if workspace_view is not None:
-            workspace_view.refilter()
-            self.log.debug("All filters cleared")
+        workspace = self.app.get_widget('workspace')
+        if workspace.is_loaded():
+            search_entry = self.app.get_widget('searchentry')
+            search_entry.set_text('')
+            search_entry.emit("activate")
+            dropdowns = self.app.get_widget('ws-dropdowns')
+            for ddId in dropdowns:
+                dropdowns[ddId].set_selected(0)
+            workspace_view = self.app.get_widget('workspace-view')
+            if workspace_view is not None:
+                workspace_view.refilter()
+                self.log.debug("All filters cleared")
 
     def set_title(self, title: str=''):
         sidebar_title = self.app.get_widget('sidebar-title')
