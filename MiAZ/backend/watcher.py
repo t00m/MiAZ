@@ -18,6 +18,7 @@ from gi.repository import GLib
 from gi.repository import GObject
 
 from MiAZ.backend.log import MiAZLog
+from MiAZ.backend.status import MiAZStatus
 
 
 class MiAZWatcher(GObject.GObject):
@@ -28,6 +29,8 @@ class MiAZWatcher(GObject.GObject):
     __gtype_name__ = 'MiAZWatcher'
     before = {}
     active = False
+    status = MiAZStatus.RUNNING
+    updated = False
 
     def __init__(self, dirpath: str = None, remote=False):
         """
@@ -38,10 +41,9 @@ class MiAZWatcher(GObject.GObject):
         self.dirpath = dirpath
         self.remote = remote
         if remote:
-            seconds = 15
+            seconds = 4
         else:
             seconds = 2
-
         self.log.debug(f"Watching repository: {dirpath}")
         self.log.debug(f"Remote repository? {remote}")
         self.log.debug(f"Timeout set to: {seconds}")
@@ -50,15 +52,22 @@ class MiAZWatcher(GObject.GObject):
             GObject.GObject.__init__(self)
             GObject.signal_new('repository-updated', MiAZWatcher, GObject.SignalFlags.RUN_LAST, None, ())
             self.set_path(dirpath)
-            GLib.timeout_add_seconds(seconds, self.files_with_timestamp_async, dirpath, self.watch)
-            self.log.debug(f"Watcher initialized. Watching every {seconds} seconds")
+            GLib.timeout_add_seconds(seconds, self.monitor, dirpath, self.watch)
+            self.log.debug(f"Watcher initialized")
 
     def files_with_timestamp_async(self, path, callback):
         """
         Asynchronously fetches {file_path: mtime} from a directory.
         'callback' is a function receiving the dictionary once ready.
         """
-        self.log.debug(f"Checking files for directory: {path}")
+        if self.status == MiAZStatus.BUSY:
+            # ~ self.log.warning("App is busy now. Trying later")
+            return
+        else:
+            # ~ self.log.info("Watcher is active")
+            pass
+
+        # ~ self.log.debug(f"Checking files for directory: {path}")
         gfile = Gio.File.new_for_path(path)
 
         def on_query_info(fileobj, res, user_data):
@@ -109,6 +118,9 @@ class MiAZWatcher(GObject.GObject):
                 self.log.error("Error during enumeration: {error}")
                 callback({})  # Return empty dict on failure
 
+        # Set app as busy to block
+        self.status = MiAZStatus.BUSY
+
         # Query info first to ensure it's a directory
         gfile.query_info_async(
             'standard::*',
@@ -140,7 +152,7 @@ class MiAZWatcher(GObject.GObject):
         detected, it emits an event indicating that the repository has
         been updated.
         """
-        updated = False
+        self.updated = False
         if not self.active:
             return False
 
@@ -155,22 +167,30 @@ class MiAZWatcher(GObject.GObject):
 
         for f in self.before.keys():
             if f not in removed:
-                if os.path.getmtime(f) != self.before.get(f):
-                    modified.append(f)
+                try:
+                    if os.path.getmtime(f) != self.before.get(f):
+                        modified.append(f)
+                except FileNotFoundError:
+                    pass
 
         if added:
             self.log.debug(f"Watcher > {len(added)} files added")
-            updated |= True
+            self.updated |= True
         if removed:
             self.log.debug(f"Watcher > {len(removed)} files removed")
-            updated |= True
+            self.updated |= True
         if modified:
             self.log.debug(f"Watcher > {len(modified)} files modified")
-            updated |= True
+            self.updated |= True
 
-        if updated:
+        if self.updated:
             self.log.debug("Repository updated")
             self.emit('repository-updated')
 
         self.before = after
+        self.status = MiAZStatus.RUNNING
+        return True
+
+    def monitor(self, path, callback):
+        self.files_with_timestamp_async(path, callback)
         return True
