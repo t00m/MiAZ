@@ -267,11 +267,13 @@ class MiAZUtil(GObject.GObject):
             pass
         return rename
 
-    def filename_delete(self, filepath):
+    def filename_delete(self, filepaths: set):
         try:
-            os.unlink(filepath)
-            self.log.debug(f"File deleted: {filepath}")
-            self.emit('filename-deleted', filepath)
+            cmd = f"rm {' '.join(filepaths)}"
+            os.system(cmd)
+            # ~ os.unlink(filepath)
+            self.log.debug(f"{len(filepaths)} files deleted")
+            self.emit('filename-deleted', filepaths)
         except IsADirectoryError as error:
             self.log.error(error)
 
