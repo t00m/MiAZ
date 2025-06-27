@@ -40,10 +40,7 @@ class MiAZWatcher(GObject.GObject):
         self.log = MiAZLog('MiAZ.Watcher')
         self.dirpath = dirpath
         self.remote = remote
-        if remote:
-            seconds = 4
-        else:
-            seconds = 2
+        seconds = 2
         self.log.debug(f"Watching repository: {dirpath}")
         self.log.debug(f"Remote repository? {remote}")
         self.log.debug(f"Timeout set to: {seconds}")
@@ -61,7 +58,7 @@ class MiAZWatcher(GObject.GObject):
         'callback' is a function receiving the dictionary once ready.
         """
         if self.status == MiAZStatus.BUSY:
-            # ~ self.log.warning("App is busy now. Trying later")
+            self.log.warning("Watcher is busy now. Trying later")
             return
         else:
             # ~ self.log.info("Watcher is active")
