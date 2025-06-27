@@ -67,7 +67,7 @@ class MiAZWorkspace(Gtk.Box):
         self._setup_workspace()
         self._setup_logic()
         self.review = False
-        self.last_period_selected = 0
+        self.last_period_selected = 1
 
         # Allow plug-ins to make their job
         self.connect('workspace-view-updated', self._on_filter_selected)
@@ -134,6 +134,7 @@ class MiAZWorkspace(Gtk.Box):
         dd_date = dropdowns[i_type]
         self._update_dropdown_date()
         dd_date.set_selected(1)
+        self.last_period_selected = 1
         dd_date.connect("notify::selected-item", self.update)
 
         # ~ ## Dropdown Projects
@@ -250,8 +251,8 @@ class MiAZWorkspace(Gtk.Box):
         dropdowns = self.app.get_widget('ws-dropdowns')
         if self.review:
             dropdowns[i_type].set_selected(9)
-        # ~ else:
-            # ~ dropdowns[i_type].set_selected(0)
+        else:
+            dropdowns[i_type].set_selected(self.last_period_selected)
 
     def _update_dropdown_date(self):
         util = self.app.get_service('util')
@@ -533,14 +534,16 @@ class MiAZWorkspace(Gtk.Box):
 
         togglebutton = self.app.get_widget('workspace-togglebutton-pending-docs')
         togglebutton.set_label(f"Review ({review})")
+        togglebutton.get_style_context().add_class(class_name='flat')
         if show_pending:
             self.log.debug("There are pending documents. Displaying warning button")
         togglebutton.set_visible(show_pending)
 
         if not show_pending:
             togglebutton.set_active(False)
-            # ~ i_type = Date.__gtype_name__
-            # ~ dropdowns = self.app.get_widget('ws-dropdowns')
+            i_type = Date.__gtype_name__
+            dropdowns = self.app.get_widget('ws-dropdowns')
+            self.last_period_selected = dropdowns[i_type].get_selected()
             # ~ dropdowns[i_type].set_selected(self.last_period_selected)
         self.review = togglebutton.get_active()
 
