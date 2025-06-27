@@ -65,12 +65,12 @@ class MiAZWorkspaceToggleViewPlugin(GObject.GObject, Peas.Activatable):
             # No menu item for plugin
 
             # ToggleButton
-            hdb_right = self.app.get_widget('headerbar-right-box')
+            hdb_left = self.app.get_widget('headerbar-left-box')
             tgbWSToggleView = self.app.get_widget('workspace-togglebutton-view')
             if tgbWSToggleView is None:
                 tgbWSToggleView = self.factory.create_button_toggle('io.github.t00m.MiAZ-view-details', callback=self.toggle_workspace_view)
                 self.app.add_widget('workspace-togglebutton-view', tgbWSToggleView)
-                tgbWSToggleView.set_tooltip_text("Show sidebar and filters")
+                tgbWSToggleView.set_tooltip_text(_("Show documents raw names"))
                 tgbWSToggleView.set_active(False)
                 tgbWSToggleView.set_hexpand(False)
                 visible = self.plugin.get_config_key('icon_visible')
@@ -78,7 +78,7 @@ class MiAZWorkspaceToggleViewPlugin(GObject.GObject, Peas.Activatable):
                     visible = True
                     self.plugin.set_config_key('icon_visible', True)
                 tgbWSToggleView.set_visible(visible)
-                hdb_right.append(tgbWSToggleView)
+                hdb_left.append(tgbWSToggleView)
 
                 evk = self.app.get_widget('window-event-controller')
                 evk.connect("key-pressed", self._on_key_press)
