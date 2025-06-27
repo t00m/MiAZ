@@ -248,12 +248,13 @@ class MiAZSidebar(Adw.Bin):
         actions = self.app.get_service('actions')
         factory = self.app.get_service('factory')
         button = factory.create_button(icon_name='io.github.t00m.MiAZ-emblem-system-symbolic', tooltip=_('Repository management'), css_classes=['flat'], callback=actions.show_repository_settings)
-        self.app.add_widget('headerbar-button-clear-filters', button)
+        self.app.add_widget('headerbar-button-repo-settings', button)
 
         return button
 
     def clear_filters(self, *args):
         workspace = self.app.get_widget('workspace')
+        self.log.debug(f"Workspace loaded? {workspace.is_loaded()}")
         if workspace.is_loaded():
             search_entry = self.app.get_widget('searchentry')
             search_entry.set_text('')
