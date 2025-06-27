@@ -161,6 +161,7 @@ class MiAZMainWindow(Gtk.Box):
             actions.show_stack_page_by_name('workspace')
             widget_workspace.connect('workspace-view-selection-changed', self._on_workspace_menu_update)
             widget_workspace.connect('workspace-view-filtered', self._on_workspace_menu_update)
+            widget_workspace.connect('workspace-view-updated', self._on_workspace_menu_update)
         return widget_workspace
 
     def _on_workspace_menu_update(self, *args):
