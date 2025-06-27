@@ -35,7 +35,6 @@ MiAZ/frontend/desktop/services/actions.py
 MiAZ/frontend/desktop/widgets/__init__.py
 MiAZ/frontend/desktop/widgets/about.py
 MiAZ/frontend/desktop/widgets/button.py
-MiAZ/frontend/desktop/widgets/filechooser.py
 MiAZ/frontend/desktop/widgets/pages.py
 MiAZ/frontend/desktop/widgets/searchbar.py
 MiAZ/frontend/desktop/widgets/statusbar.py
