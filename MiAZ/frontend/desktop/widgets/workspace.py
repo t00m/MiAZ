@@ -530,13 +530,18 @@ class MiAZWorkspace(Gtk.Box):
         for item in items:
             if not item.active:
                 review += 1
+
         togglebutton = self.app.get_widget('workspace-togglebutton-pending-docs')
-        togglebutton.get_style_context().add_class(class_name='error')
-        label = _('Review') + f' ({review})'
-        togglebutton.set_label(label)
+        togglebutton.set_label(f"Review ({review})")
         if show_pending:
             self.log.debug("There are pending documents. Displaying warning button")
         togglebutton.set_visible(show_pending)
+
+        if not show_pending:
+            togglebutton.set_active(False)
+            # ~ i_type = Date.__gtype_name__
+            # ~ dropdowns = self.app.get_widget('ws-dropdowns')
+            # ~ dropdowns[i_type].set_selected(self.last_period_selected)
         self.review = togglebutton.get_active()
 
         # Measure performance (end timestamp and result)
