@@ -74,6 +74,11 @@ class MiAZWorkspace(Gtk.Box):
         self.app.connect('application-started', self._on_finish_configuration)
         self.app.connect('application-finished', self._on_application_finished)
 
+        self.connect('workspace-loaded', self._on_loaded)
+
+    def _on_loaded(self, *args):
+        pass
+
     def initialize_caches(self):
         repo = self.app.get_service('repo')
         util = self.app.get_service('util')
@@ -175,7 +180,7 @@ class MiAZWorkspace(Gtk.Box):
         self.workspace_loaded = True
 
     def _on_finish_configuration(self, *args):
-        self.log.debug("Finish loading workspace")
+        self.log.debug("Finishing loading workspace")
         window = self.app.get_widget('window')
         window.present()
         workflow = self.app.get_service('workflow')
@@ -507,9 +512,9 @@ class MiAZWorkspace(Gtk.Box):
         ENV['CACHE']['CONCEPTS']['ACTIVE'] = sorted(concepts_active)
         ENV['CACHE']['CONCEPTS']['INACTIVE'] = sorted(concepts_inactive)
 
+        # Update workspace view
         GLib.idle_add(self.view.update, items)
-        # ~ self._on_filter_selected()
-        # ~ self.view.select_first_item()
+
         renamed = 0
         for filename in invalid:
             source = os.path.join(repository.docs, filename)
@@ -520,8 +525,6 @@ class MiAZWorkspace(Gtk.Box):
                 renamed += 1
         if renamed > 0:
             self.log.debug(f"Documents renamed: {renamed}")
-
-        # ~ self.selected_items = []
 
         review = 0
         for item in items:
@@ -534,12 +537,6 @@ class MiAZWorkspace(Gtk.Box):
         if show_pending:
             self.log.debug("There are pending documents. Displaying warning button")
         togglebutton.set_visible(show_pending)
-
-        if not show_pending:
-            togglebutton.set_active(False)
-            # ~ i_type = Date.__gtype_name__
-            # ~ dropdowns = self.app.get_widget('ws-dropdowns')
-            # ~ dropdowns[i_type].set_selected(self.last_period_selected)
         self.review = togglebutton.get_active()
 
         # Measure performance (end timestamp and result)
@@ -547,6 +544,10 @@ class MiAZWorkspace(Gtk.Box):
         dt = de - ds
         self.log.debug(f"Workspace updated in {dt}s")
 
+        model = self.view.cv.get_model() # nº items in current view
+        self._num_selected_items = len(self.selected_items) # num. items selected
+        self._num_displayed_items = len(model) # num. items in view
+        self._num_total_items = len(util.get_files(repository.docs)) # num total items
         self.emit('workspace-view-updated')
         self.app.set_status(MiAZStatus.RUNNING)
         return False
@@ -616,6 +617,7 @@ class MiAZWorkspace(Gtk.Box):
         return item.active
 
     def _do_filter_view(self, item, filter_list_model):
+        model = self.view.cv.get_model() # nº items in current view
         show_item = True
         lresults = []
         for name in self._workspace_filters:
