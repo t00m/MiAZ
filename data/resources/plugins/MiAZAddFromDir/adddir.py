@@ -19,7 +19,7 @@ from MiAZ.backend.status import MiAZStatus
 
 plugin_info = {
         'Module':        'adddir',
-        'Name':          'MiAZImportFromDirectory',
+        'Name':          'MiAZAddFromDir',
         'Loader':        'Python3',
         'Description':   _('Add documents from directory'),
         'Authors':       'Tomás Vírseda <tomasvirseda@gmail.com>',
@@ -122,3 +122,4 @@ class MiAZAddDirectoryPlugin(GObject.GObject, Peas.Activatable):
             watcher = self.app.get_service('watcher')
             watcher.set_active(True)
             self.app.set_status(MiAZStatus.RUNNING)
+            self.srvdlg.show_info(title='Import directory', body=_('All documents imported successfully'))
