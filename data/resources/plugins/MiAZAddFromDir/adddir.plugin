@@ -1,12 +1,12 @@
 [Plugin]
 Module=adddir
-Name=MiAZImportFromDirectory
+Name=MiAZAddFromDir
 Loader=Python3
-Description=Import directory
+Description=Add documents from directory
 Authors=Tomás Vírseda <tomasvirseda@gmail.com>
 Copyright=Copyright © 2025 Tomás Vírseda
 Website=http://github.com/t00m/MiAZ
 Help=http://github.com/t00m/MiAZ/README.adoc
-Version=0.4
+Version=0.5
 Category=Data Management
 Subcategory=Import

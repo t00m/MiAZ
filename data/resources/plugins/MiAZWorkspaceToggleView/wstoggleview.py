@@ -8,24 +8,31 @@
 # Description: Scan plugin
 """
 
-import os
-import re
-import glob
-
 from gi.repository import Adw
 from gi.repository import Gdk
-from gi.repository import Gio
 from gi.repository import GObject
 from gi.repository import Peas
 
 from MiAZ.frontend.desktop.services.pluginsystem import MiAZPlugin
 
+plugin_info = {
+        'Module':        'wstoggleview',
+        'Name':          'MiAZWSToggleView',
+        'Loader':        'Python3',
+        'Description':   _('Toggle Workspace view'),
+        'Authors':       'Tomás Vírseda <tomasvirseda@gmail.com>',
+        'Copyright':     'Copyright © 2025 Tomás Vírseda',
+        'Website':       'http://github.com/t00m/MiAZ',
+        'Help':          'http://github.com/t00m/MiAZ/README.adoc',
+        'Version':       '0.6',
+        'Category':      _('Customisation and Personalisation'),
+        'Subcategory':   _('User Interface')
+    }
 
 class MiAZWorkspaceToggleViewPlugin(GObject.GObject, Peas.Activatable):
     __gtype_name__ = 'MiAZWorkspaceToggleViewPlugin'
     object = GObject.Property(type=GObject.Object)
     plugin = None
-    file = __file__.replace('.py', '.plugin')
 
     def do_activate(self):
         """Plugin activation"""
@@ -35,14 +42,17 @@ class MiAZWorkspaceToggleViewPlugin(GObject.GObject, Peas.Activatable):
         self.plugin = MiAZPlugin(self.app)
 
         ## Initialize plugin
-        self.plugin.register(self.file, self)
+        self.plugin.register(self, plugin_info)
 
         ## Get logger
         self.log = self.plugin.get_logger()
 
+        ## Get services
+        self.factory = self.app.get_service('factory')
+
         # Connect signals to startup
-        workspace = self.app.get_widget('workspace')
-        workspace.connect('workspace-loaded', self.startup)
+        self.workspace = self.app.get_widget('workspace')
+        self.workspace.connect('workspace-loaded', self.startup)
 
     def do_deactivate(self):
         self.log.error("Plugin deactivated")
@@ -52,20 +62,15 @@ class MiAZWorkspaceToggleViewPlugin(GObject.GObject, Peas.Activatable):
 
     def startup(self, *args):
         if not self.plugin.started():
-            # Create menu item for plugin
-            menuitem = self.plugin.get_menu_item(callback=None)
-
-            # Add plugin to its default (sub)category
-            self.plugin.install_menu_entry(menuitem)
+            # No menu item for plugin
 
             # ToggleButton
-            factory = self.app.get_service('factory')
-            hdb_right = self.app.get_widget('headerbar-right-box')
+            hdb_left = self.app.get_widget('headerbar-left-box')
             tgbWSToggleView = self.app.get_widget('workspace-togglebutton-view')
             if tgbWSToggleView is None:
-                tgbWSToggleView = factory.create_button_toggle('io.github.t00m.MiAZ-view-details', callback=self.toggle_workspace_view)
+                tgbWSToggleView = self.factory.create_button_toggle('io.github.t00m.MiAZ-view-details', callback=self.toggle_workspace_view)
                 self.app.add_widget('workspace-togglebutton-view', tgbWSToggleView)
-                tgbWSToggleView.set_tooltip_text("Show sidebar and filters")
+                tgbWSToggleView.set_tooltip_text(_("Show documents raw names"))
                 tgbWSToggleView.set_active(False)
                 tgbWSToggleView.set_hexpand(False)
                 visible = self.plugin.get_config_key('icon_visible')
@@ -73,7 +78,7 @@ class MiAZWorkspaceToggleViewPlugin(GObject.GObject, Peas.Activatable):
                     visible = True
                     self.plugin.set_config_key('icon_visible', True)
                 tgbWSToggleView.set_visible(visible)
-                hdb_right.append(tgbWSToggleView)
+                hdb_left.append(tgbWSToggleView)
 
                 evk = self.app.get_widget('window-event-controller')
                 evk.connect("key-pressed", self._on_key_press)
@@ -83,7 +88,6 @@ class MiAZWorkspaceToggleViewPlugin(GObject.GObject, Peas.Activatable):
 
     def toggle_workspace_view(self, *args):
         """ Sidebar not visible when active = False"""
-        workspace = self.app.get_widget('workspace')
         wsview = self.app.get_widget('workspace-view')
         tgbWSToggleView = self.app.get_widget('workspace-togglebutton-view')
         active = tgbWSToggleView.get_active()
@@ -99,7 +103,7 @@ class MiAZWorkspaceToggleViewPlugin(GObject.GObject, Peas.Activatable):
             wsview.column_sentto.set_visible(False)
             wsview.column_date.set_visible(False)
         else:
-            workspace.set_default_columnview_attrs()
+            self.workspace.set_default_columnview_attrs()
 
     def _on_key_press(self, event, keyval, keycode, state):
         keyname = Gdk.keyval_name(keyval)
@@ -118,8 +122,6 @@ class MiAZWorkspaceToggleViewPlugin(GObject.GObject, Peas.Activatable):
         self.plugin.set_config_key('icon_visible', visible)
 
     def show_settings(self, widget):
-        util = self.app.get_service('util')
-
         # Build preferences dialog
         dialog = Adw.PreferencesDialog()
         desc = self.plugin.get_plugin_info_key('Description')

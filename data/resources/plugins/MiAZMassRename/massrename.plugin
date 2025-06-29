@@ -2,11 +2,11 @@
 Module=massrename
 Name=MiAZMassRename
 Loader=Python3
-Description=Mass renaming of items
+Description=Mass renaming of documents
 Authors=Tomás Vírseda <tomasvirseda@gmail.com>
 Copyright=Copyright © 2025 Tomás Vírseda
 Website=http://github.com/t00m/MiAZ
 Help=http://github.com/t00m/MiAZ/README.adoc
 Version=0.5
 Category=Data Management
-Subcategory=Batch update
+Subcategory=Batch mode

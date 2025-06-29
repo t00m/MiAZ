@@ -6,7 +6,6 @@
 
 import os
 import sys
-import glob
 import pathlib
 import zipfile
 from gettext import gettext as _
@@ -16,12 +15,10 @@ from gi.repository import Adw
 from gi.repository import Gtk
 
 from MiAZ.backend.log import MiAZLog
-from MiAZ.backend.models import File, Group, Country, Purpose, SentBy, SentTo, Date, Repository
+from MiAZ.backend.models import Group, Country, Purpose, SentBy, SentTo, Date, Repository
 from MiAZ.frontend.desktop.widgets.configview import MiAZCountries, MiAZGroups, MiAZPurposes, MiAZPeopleSentBy, MiAZPeopleSentTo
-from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewMassDelete
 from MiAZ.frontend.desktop.widgets.settings import MiAZAppSettings
 from MiAZ.frontend.desktop.widgets.settings import MiAZRepoSettings
-from MiAZ.frontend.desktop.services.help import MiAZShortcutsWindow
 
 # Conversion Item type to Field Number
 Field = {}
@@ -79,9 +76,9 @@ class MiAZActions(GObject.GObject):
 
         model.remove_all()
         if any_value:
-            model.append(item_type(id='Any', title=_(f'Any {i_title.lower()}')))
+            model.append(item_type(id='Any', title=_('Any'))) # {i_title.lower()}')))
         if none_value:
-            model.append(item_type(id='None', title=_(f'No {i_title.lower()}')))
+            model.append(item_type(id='None', title=_('None'))) # {i_title.lower()}')))
 
         for key in items:
             accepted = True
@@ -116,8 +113,8 @@ class MiAZActions(GObject.GObject):
         # FIXME: Implement import config
         srvdlg = self.app.get_service('dialogs')
         window = button.get_root()
-        title = "Action not implemented yet"
-        body = "Import the configuration hasn't been implemented yet"
+        title = _("Action not implemented yet")
+        body = _("Import the configuration hasn't been implemented yet")
         srvdlg.show_error(title=title, body=body, parent=window)
         return
 
@@ -158,6 +155,7 @@ class MiAZActions(GObject.GObject):
                         self.log.error(f"This is not a config file for {i_title_plural.lower()}")
 
         window = self.app.get_widget('window')
+        # FIXME: use the new filechooser
         filechooser = factory.create_filechooser(
                     title=_(f'Import a configuration file for {i_title_plural.lower()}'),
                     target = 'FILE',
@@ -173,8 +171,8 @@ class MiAZActions(GObject.GObject):
         # FIXME: Implement export config
         srvdlg = self.app.get_service('dialogs')
         window = button.get_root()
-        title = "Action not implemented yet"
-        body = "Export the configuration hasn't been implemented yet"
+        title = _("Action not implemented yet")
+        body = ("Export the configuration hasn't been implemented yet")
         srvdlg.show_error(title=title, body=body, parent=window)
         return
 
@@ -216,6 +214,7 @@ class MiAZActions(GObject.GObject):
                     self.show_repository_settings()
 
         window = self.app.get_widget('window')
+        # FIXME: use the new filechooser
         filechooser = factory.create_filechooser(
                     title=_(f'Export the configuration for {i_title_plural.lower()}'),
                     target = 'FOLDER',
@@ -245,12 +244,22 @@ class MiAZActions(GObject.GObject):
         self.emit('settings-loaded', dialog_app_settings)
 
     def show_repository_settings(self, *args):
-        window_main = self.app.get_widget('window')
-        window_repoconfig = MiAZRepoSettings(self.app)
-        window_repoconfig.set_transient_for(window_main)
-        window_repoconfig.set_modal(True)
-        window_repoconfig.update()
-        window_repoconfig.present()
+        try:
+            # Continue if a default repository exists
+            appconf = self.app.get_config('App')
+            repo_id = appconf.get('current').replace('_', ' ')
+            window_main = self.app.get_widget('window')
+            window_repoconfig = MiAZRepoSettings(self.app)
+            window_repoconfig.set_transient_for(window_main)
+            window_repoconfig.set_modal(True)
+            window_repoconfig.update()
+            window_repoconfig.present()
+        except AttributeError:
+            srvdlg = self.app.get_service('dialogs')
+            parent = self.app.get_widget('window')
+            title = _("Repository management")
+            body = _("There aren't repositories configured.\nPlease, create one.")
+            srvdlg.show_error(title=title, body=body, parent=parent)
 
     def show_app_about(self, *args):
         # FIXME: App icon not displayed in local installation
@@ -262,9 +271,9 @@ class MiAZActions(GObject.GObject):
         about.set_version(ENV['APP']['VERSION'])
         author = f"{ENV['APP']['author']}"
         about.set_developer_name(author)
-        artists = ['Flags borrowed from FlagKit project https://github.com/madebybowtie/FlagKit']
-        artists.append('Some icons borrowed from GNOME contributors https://www.gnome.org')
-        artists.append("MiAZ app icon based on Collection Business Duotone Icons with license 'CC Attribution License' by 'cataicon' https://www.svgrepo.com/svg/391994/binder-business-finance-management-marketing-office")
+        artists = [_('Flags borrowed from FlagKit project https://github.com/madebybowtie/FlagKit')]
+        artists.append(_('Some icons borrowed from GNOME contributors https://www.gnome.org'))
+        artists.append(_("MiAZ app icon based on Collection Business Duotone Icons with license 'CC Attribution License' by 'cataicon' https://www.svgrepo.com/svg/391994/binder-business-finance-management-marketing-office"))
         about.set_artists(artists)
         about.set_license_type(Gtk.License.GPL_3_0_ONLY)
         about.set_copyright(f"© 2019-2025 {ENV['APP']['author']}")
@@ -312,7 +321,7 @@ class MiAZActions(GObject.GObject):
             if widget is None:
                 widget = self.app.get_widget('workspace')
             parent = widget.get_root()
-            body = 'You must select at least one document'
+            body = _('You must select at least one document')
             title = _('Action ignored')
             srvdlg.show_error(title=title, body=body, parent=parent)
             stop = True
