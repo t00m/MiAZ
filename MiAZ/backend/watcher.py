@@ -189,5 +189,7 @@ class MiAZWatcher(GObject.GObject):
         return True
 
     def monitor(self, path, callback):
-        self.files_with_timestamp_async(path, callback)
+        # ~ self.log.debug(f"Watcher active? {self.active}")
+        if self.active:
+            self.files_with_timestamp_async(path, callback)
         return True
