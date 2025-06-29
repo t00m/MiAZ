@@ -261,7 +261,7 @@ class SentBy(Person):
     __gtype_name__ = 'SentBy'
     __title__ = _('Sender')
     __title_plural__ = _('Senders')
-    __config_name__ = 'people'
+    __config_name__ = 'senders'
     __config_name_available__ = 'people'
     __config_name_used__ = 'senders'
 

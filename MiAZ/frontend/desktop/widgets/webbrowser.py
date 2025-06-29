@@ -5,11 +5,9 @@
 # Description: Webbrowser widget
 
 import gi
-gi.require_version("Gtk", "4.0")
-gi.require_version("Adw", "1")
 gi.require_version("WebKit", "6.0")
 
-from gi.repository import Gtk, Adw, WebKit, Gio
+from gi.repository import Gtk, WebKit
 
 from MiAZ.backend.log import MiAZLog
 

@@ -6,11 +6,11 @@
 
 from gettext import gettext as _
 
-from gi.repository import Adw, Gdk, Gio, GObject, Gtk
+from gi.repository import Adw
+from gi.repository import Gio
+from gi.repository import Gtk
 
 from MiAZ.backend.log import MiAZLog
-from MiAZ.backend.models import MiAZItem, Group, Country, Purpose, SentBy, SentTo, Date
-from MiAZ.frontend.desktop.services.pluginsystem import plugin_categories
 from MiAZ.frontend.desktop.widgets.pages import MiAZWelcome
 from MiAZ.frontend.desktop.widgets.pages import MiAZPageNotFound
 from MiAZ.frontend.desktop.widgets.webbrowser import MiAZWebBrowser
@@ -161,6 +161,7 @@ class MiAZMainWindow(Gtk.Box):
             actions.show_stack_page_by_name('workspace')
             widget_workspace.connect('workspace-view-selection-changed', self._on_workspace_menu_update)
             widget_workspace.connect('workspace-view-filtered', self._on_workspace_menu_update)
+            widget_workspace.connect('workspace-view-updated', self._on_workspace_menu_update)
         return widget_workspace
 
     def _on_workspace_menu_update(self, *args):
@@ -176,9 +177,9 @@ class MiAZMainWindow(Gtk.Box):
         label_text = f"<small>{s}</small> / {v} / <big>{t}</big>"
         label.set_markup(label_text)
         tooltip = ""
-        tooltip += f"{s} documents selected\n"
-        tooltip += f"{v} documents in this view\n"
-        tooltip += f"{t} documents in this repository"
+        tooltip += _('{ns} documents selected\n').format(ns=s)
+        tooltip += _('{nv} documents in this view\n').format(nv=v)
+        tooltip += _('{nr} documents in this repository').format(nr=t)
         workspace_menu.set_tooltip_markup(tooltip)
         # ~ self.log.debug(f"filter selected: {s}/{v}/{t}")
         searchentry = self.app.get_widget('searchentry')
@@ -195,9 +196,11 @@ class MiAZMainWindow(Gtk.Box):
 
         # Workspace Menu
         hbox = factory.create_box_horizontal(margin=0, spacing=6, hexpand=False)
+        hbox.set_homogeneous(True)
         popovermenu = self._setup_menu_selection()
         label = Gtk.Label()
         btnDocsSel  = Gtk.MenuButton()
+        btnDocsSel.get_style_context().add_class(class_name='accent')
         self.app.add_widget('workspace-menu', btnDocsSel)
         btnDocsSel .set_always_show_arrow(True)
         btnDocsSel .set_child(label)
@@ -209,8 +212,8 @@ class MiAZMainWindow(Gtk.Box):
 
         # Pending documents toggle button
         button = factory.create_button_toggle( icon_name='io.github.t00m.MiAZ-rename',
-                                        title='Review',
-                                        tooltip='There are documents pending of review'
+                                        title=_('Review'),
+                                        tooltip=_('There are documents pending of review')
                                     )
         self.app.add_widget('workspace-togglebutton-pending-docs', button)
         button.set_has_frame(True)

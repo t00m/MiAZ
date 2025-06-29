@@ -52,6 +52,8 @@ class MiAZDialog:
         self.app = app
         self.log = MiAZLog('MiAZ.Dialogs')
 
+        self.factory = self.app.get_service('factory')
+
     def create( self,
                 dtype: str = '',
                 title: str = '',
@@ -62,9 +64,6 @@ class MiAZDialog:
                 width: int = -1,
                 height: int = -1,
         ):
-
-        factory = self.app.get_service('factory')
-        icm = self.app.get_service('icons')
 
         dialog = Adw.AlertDialog.new()
         dialog.set_body_use_markup(True)
@@ -85,7 +84,7 @@ class MiAZDialog:
         label.get_style_context().add_class(class_name=miaz_dialog[dtype]['class_name'])
 
         # Add custom widget
-        box = factory.create_box_vertical(hexpand=True, vexpand=True)
+        box = self.factory.create_box_vertical(hexpand=True, vexpand=True)
         if widget is not None:
             box.append(widget)
         dialog.set_extra_child(box)
@@ -205,14 +204,14 @@ class MiAZDialogAdd:
         self.log = MiAZLog('MiAZDialogAdd')
         self.app = app
 
-        factory = self.app.get_service('factory')
-        srvdlg = self.app.get_service('dialogs')
+        self.factory = self.app.get_service('factory')
+        self.srvdlg = self.app.get_service('dialogs')
 
         self.title = ''
         self.key1 = ''
         self.key2 = ''
 
-        self.boxKey1 = factory.create_box_vertical(spacing=6)
+        self.boxKey1 = self.factory.create_box_vertical(spacing=6)
         self.lblKey1 = Gtk.Label()
         self.lblKey1.set_xalign(0.0)
         self.lblKey1.set_hexpand(False)
@@ -220,17 +219,17 @@ class MiAZDialogAdd:
         self.etyValue1.set_hexpand(False)
         # ~ self.etyValue1.connect('activate', self.on_dialog_save)
 
-        self.boxKey2 = factory.create_box_vertical(spacing=6)
+        self.boxKey2 = self.factory.create_box_vertical(spacing=6)
         self.boxKey2.set_hexpand(True)
         self.lblKey2 = Gtk.Label()
         self.lblKey2.set_xalign(0.0)
         self.etyValue2 = Gtk.Entry()
         # ~ self.etyValue2.connect('activate', self.on_dialog_save)
 
-        self.fields = factory.create_box_horizontal(spacing=6)
+        self.fields = self.factory.create_box_horizontal(spacing=6)
         self.fields.set_margin_bottom(margin=12)
 
-        self.widget = factory.create_box_vertical(spacing=6)
+        self.widget = self.factory.create_box_vertical(spacing=6)
         self.widget.set_margin_top(margin=12)
         self.widget.set_margin_end(margin=12)
         self.widget.set_margin_start(margin=12)
@@ -242,8 +241,6 @@ class MiAZDialogAdd:
                 key2: str,
                 width: int=-1,
                 height: int=-1):
-
-        srvdlg = self.app.get_service('dialogs')
 
         self.title = title
         self.key1 = key1
@@ -266,7 +263,7 @@ class MiAZDialogAdd:
         self.widget.append(self.fields)
 
         # Create dialog
-        self.dialog = srvdlg.show_action(title=title, widget=self.widget)
+        self.dialog = self.srvdlg.show_action(title=title, widget=self.widget)
         return self.dialog
 
     def get_label_key1(self):
@@ -322,6 +319,9 @@ class MiAZDialogAddRepo(MiAZDialogAdd):
         super(MiAZDialogAdd, self).__init__()
         super().__init__(app)
 
+        self.factory = self.app.get_service('factory')
+        self.srvdlg = self.app.get_service('dialogs')
+
         self.title = ''
         self.key1 = ''
         self.key2 = ''
@@ -333,8 +333,6 @@ class MiAZDialogAddRepo(MiAZDialogAdd):
                 width: int = -1,
                 height: int = -1):
 
-        factory = self.app.get_service('factory')
-        srvdlg = self.app.get_service('dialogs')
         self.title = title
 
         if len(key2.strip()) == 0:
@@ -343,9 +341,9 @@ class MiAZDialogAddRepo(MiAZDialogAdd):
         # Repository key
         self.key1 = key1
         self.lblKey1.set_markup(f"<b>{self.key1}</b>")
-        vbox = factory.create_box_vertical(spacing=12, vexpand=True)
+        vbox = self.factory.create_box_vertical(spacing=12, vexpand=True)
         self.boxKey1.append(vbox)
-        hbox = factory.create_box_horizontal()
+        hbox = self.factory.create_box_horizontal()
         hbox.append(self.lblKey1)
         hbox.append(self.etyValue1)
         self.etyValue1.connect('changed', self._check_user_input_key)
@@ -364,7 +362,7 @@ class MiAZDialogAddRepo(MiAZDialogAdd):
         self.widget.append(self.fields)
 
         # Create dialog
-        self.dialog = srvdlg.show_action(title=title, widget=self.widget)
+        self.dialog = self.srvdlg.show_action(title=title, widget=self.widget)
         self.dialog.set_response_enabled('apply', False)
         return self.dialog
 
@@ -382,15 +380,7 @@ class MiAZDialogAddRepo(MiAZDialogAdd):
         else:
             folder = Gio.File.new_for_path(dirpath)
         button.set_label(dirpath)
-
-        dialog = Gtk.FileDialog.new()
-        dialog.set_initial_folder(folder)
-        dialog_filter = Gtk.FileFilter()
-        dialog_filter.set_name("Folders")
-        dialog_filter.add_mime_type("inode/directory")  # Accept only directories
-        dialog.set_default_filter(dialog_filter)
-        parent = self.app.get_widget('window')
-        dialog.select_folder(parent, None, self.on_folder_selected)
+        dialog = self.factory.create_filechooser_for_directories(callback=self.on_folder_selected, dirpath=dirpath, parent=button.get_root())
 
     def on_folder_selected(self, dialog, result):
         try:
@@ -411,7 +401,6 @@ class MiAZDialogAddRepo(MiAZDialogAdd):
 
         self.dialog.set_response_enabled('apply', user_input_valid)
 
-
     def get_entry_key1(self):
         return  self.etyValue1
 
@@ -422,7 +411,6 @@ class MiAZDialogAddRepo(MiAZDialogAdd):
         self.etyValue1.set_text(value)
 
     def get_value2(self):
-        # ~ folder = dialog.select_folder_finish(result)
         return self.button.get_label()
 
     def set_value2(self, value):
