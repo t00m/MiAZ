@@ -12,7 +12,6 @@ from gi.repository import Pango
 
 from MiAZ.backend.log import MiAZLog
 from MiAZ.frontend.desktop.widgets.button import MiAZPopoverButton
-from MiAZ.frontend.desktop.widgets.filechooser import MiAZFileChooserDialog
 
 
 def get_children(obj: Gtk.Widget) -> list[Gtk.Widget]:
@@ -68,15 +67,15 @@ class MiAZFactory:
             child = child.get_next_sibling()
         return children
 
-    def create_filechooser_for_directories(self, callback, initial_folder: str = '', parent: Gtk.Widget = None) -> Gtk.FileDialog:
+    def create_filechooser_for_directories(self, callback, dirpath: str = '', parent: Gtk.Widget = None) -> Gtk.FileDialog:
         """
         Create a new FileDialog for selecting directories
         """
         # FIXME: Integrate this widget in service dialogs
         # Set default values
-        if len(initial_folder) == 0:
+        if len(dirpath) == 0:
             dirpath = GLib.get_user_special_dir(GLib.UserDirectory.DIRECTORY_DOCUMENTS)
-            initial_folder = Gio.File.new_for_path(dirpath)
+        initial_folder = Gio.File.new_for_path(dirpath)
         if parent is None:
             parent = self.app.get_widget('window')
 
@@ -84,22 +83,25 @@ class MiAZFactory:
         dialog = Gtk.FileDialog.new()
         dialog.set_title("Select folder")
         dialog.set_initial_folder(initial_folder)
-        dialog_filter = Gtk.FileFilter()
-        dialog_filter.set_name("Folders")
-        dialog_filter.add_mime_type("inode/directory")  # Accept only directories
-        dialog.set_default_filter(dialog_filter)
+
+        # If the filter is enabled, only directories are shown.
+        # The user might want to see files too, though.
+        # ~ dialog_filter = Gtk.FileFilter()
+        # ~ dialog_filter.set_name("Folders")
+        # ~ dialog_filter.add_mime_type("inode/directory")  # Accept only directories
+        # ~ dialog.set_default_filter(dialog_filter)
         dialog.select_folder(parent, None, callback)
         return dialog
 
-    def create_filechooser_for_files(self, callback, initial_folder: str = '', parent: Gtk.Widget = None) -> Gtk.FileDialog:
+    def create_filechooser_for_files(self, callback, dirpath: str = '', parent: Gtk.Widget = None) -> Gtk.FileDialog:
         """
         Create a new FileDialog for selecting multiple files
         """
         # FIXME: Integrate this widget in service dialogs
         # Set default values
-        if len(initial_folder) == 0:
+        if len(dirpath) == 0:
             dirpath = GLib.get_user_special_dir(GLib.UserDirectory.DIRECTORY_DOCUMENTS)
-            initial_folder = Gio.File.new_for_path(dirpath)
+        initial_folder = Gio.File.new_for_path(dirpath)
         if parent is None:
             parent = self.app.get_widget('window')
 
@@ -415,9 +417,6 @@ class MiAZFactory:
 
         return dropdown
 
-    def create_filechooser(self, title, target, callback, data=None):
-        return MiAZFileChooserDialog(self.app, title, target, callback, data)
-
     def create_frame(self, title:str = None, margin: int = 3, hexpand: bool = False, vexpand: bool = False) -> Gtk.Frame:
         frame = Gtk.Frame()
         frame.set_margin_top(margin)
@@ -446,7 +445,7 @@ class MiAZFactory:
         if shortcuts:
             self.app.set_accels_for_action(f'app.{name}', shortcuts)
 
-    def create_menuitem(self, name, label, callback, data, shortcuts):
+    def create_menuitem(self, name, label, callback, data=None, shortcuts=None):
         menuitem = Gio.MenuItem.new()
         menuitem.set_label(label=label)
         action = Gio.SimpleAction.new(name, None)

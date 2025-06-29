@@ -9,6 +9,7 @@
 
 import os
 import shutil
+from gettext import gettext as _
 
 from gi.repository import GObject
 
@@ -295,7 +296,7 @@ class MiAZConfigApp(MiAZConfig):
         super().__init__(
             app=app,
             log=MiAZLog('MiAZ.Config.App'),
-            config_for='App',
+            config_for=_('App'),
             available=ENV['FILE']['CONF'],
             used=ENV['FILE']['CONF'],
             default=None,
@@ -320,7 +321,7 @@ class MiAZConfigRepositories(MiAZConfig):
         super().__init__(
             app=app,
             log=MiAZLog('MiAZ.Config.Repos'),
-            config_for='Repositories',
+            config_for=_('Repositories'),
             available=os.path.join(dir_conf, 'repos-available.json'),
             used=os.path.join(dir_conf, 'repos-used.json'),
             default=None,
@@ -337,7 +338,7 @@ class MiAZConfigCountries(MiAZConfig):
         super().__init__(
             app=app,
             log=MiAZLog('MiAZ.Config.Countries'),
-            config_for='Countries',
+            config_for=_('Countries'),
             available=os.path.join(dir_conf, 'countries-available.json'),
             used=os.path.join(dir_conf, 'countries-used.json'),
             default=os.path.join(ENV['GPATH']['CONF'], 'MiAZ-countries.json'),
@@ -354,7 +355,7 @@ class MiAZConfigGroups(MiAZConfig):
         super().__init__(
             app=app,
             log=MiAZLog('MiAZ.Config.Groups'),
-            config_for='Groups',
+            config_for=_('Groups'),
             used=os.path.join(dir_conf, 'groups-used.json'),
             available=os.path.join(dir_conf, 'groups-available.json'),
             default=os.path.join(ENV['GPATH']['CONF'], 'MiAZ-groups.json'),
@@ -369,7 +370,7 @@ class MiAZConfigPurposes(MiAZConfig):
         super().__init__(
             app=app,
             log=MiAZLog('MiAZ.Config.Purposes'),
-            config_for='Purposes',
+            config_for=_('Purposes'),
             used=os.path.join(dir_conf, 'purposes-used.json'),
             available=os.path.join(dir_conf, 'purposes-available.json'),
             default=os.path.join(ENV['GPATH']['CONF'], 'MiAZ-purposes.json'),
@@ -383,7 +384,7 @@ class MiAZConfigConcepts(MiAZConfig):
         super().__init__(
             app=app,
             log=MiAZLog('MiAZ.Config.Concepts'),
-            config_for='Concepts',
+            config_for=_('Concepts'),
             used=os.path.join(dir_conf, 'concepts-used.json'),
             available=os.path.join(dir_conf, 'concepts-available.json'),
             default=None,
@@ -399,7 +400,7 @@ class MiAZConfigPeople(MiAZConfig):
         super().__init__(
             app=app,
             log=MiAZLog('MiAZ.Config.People'),
-            config_for='Person',
+            config_for=_('Person'),
             used=os.path.join(dir_conf, 'people-used.json'),
             available=os.path.join(dir_conf, 'people-available.json'),
             default=os.path.join(ENV['GPATH']['CONF'], 'MiAZ-people.json'),
@@ -417,7 +418,7 @@ class MiAZConfigSentBy(MiAZConfig):
         super().__init__(
             app=app,
             log=MiAZLog('MiAZ.Config.SentBy'),
-            config_for='SentBy',
+            config_for=_('Sent by'),
             used=os.path.join(dir_conf, f'{config_name_used}-used.json'),
             available=os.path.join(dir_conf, f'{config_name_available}-available.json'),
             default=os.path.join(ENV['GPATH']['CONF'], 'MiAZ-people.json'),
@@ -433,7 +434,7 @@ class MiAZConfigSentTo(MiAZConfig):
         super().__init__(
             app=app,
             log=MiAZLog('MiAZ.Config.SentTo'),
-            config_for='SentTo',
+            config_for=_('Sent to'),
             used=os.path.join(dir_conf, f'{SentTo.__config_name_used__}-used.json'),
             available=os.path.join(dir_conf, f'{SentTo.__config_name_available__}-available.json'),
             default=os.path.join(ENV['GPATH']['CONF'], 'MiAZ-people.json'),
@@ -447,7 +448,7 @@ class MiAZConfigUserPlugins(MiAZConfig):
         super().__init__(
             app=app,
             log=MiAZLog('MiAZ.Config.UserPlugins'),
-            config_for='UserPlugin',
+            config_for=_('UserPlugin'),
             used=os.path.join(dir_conf, 'plugins-used.json'),
             available=os.path.join(dir_conf, 'plugins-available.json'),
             default=None,

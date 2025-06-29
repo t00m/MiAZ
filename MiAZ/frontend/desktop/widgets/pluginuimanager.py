@@ -1,17 +1,14 @@
-import os
-import json
-import base64
-import pprint
-import requests
-from pathlib import Path
-from datetime import datetime, timedelta
+#!/usr/bin/python3
+# File: pluginuimangager.py
+# Author: Tomás Vírseda
+# License: GPL v3
+# Description: Plugin UI Manager
+
 from gettext import gettext as _
 
 from gi.repository import Adw
 from gi.repository import Gtk
-from gi.repository import GObject
 
-from MiAZ.env import ENV
 from MiAZ.backend.log import MiAZLog
 from MiAZ.backend.models import Plugin
 from MiAZ.frontend.desktop.services.pluginsystem import MiAZPluginType
@@ -31,8 +28,8 @@ class MiAZPluginUIManager(Gtk.Box):
 
     def _build_ui(self):
         box = self.factory.create_box_vertical(spacing=6, hexpand=True, vexpand=True)
-        title = "These system plugins are always enabled for any repository"
-        title += "\n\n<small>Check your repository preferences to manage user plugins</small>"
+        title = _("These system plugins are always enabled for any repository")
+        title += _("\n\n<small>Check your repository preferences to manage user plugins</small>")
         banner = Adw.Banner.new(title)
         banner.set_use_markup(True)
         banner.set_revealed(True)
@@ -64,7 +61,7 @@ class MiAZPluginUIManager(Gtk.Box):
             if pm.get_plugin_type(plugin) == MiAZPluginType.SYSTEM:
                 pid = plugin.get_name()
                 title = plugin.get_description()
-                items.append(item_type(id=pid, title=title))
+                items.append(item_type(id=pid, title=_(title)))
         view.update(items)
 
         # Action to be done when selecting an used plugin
@@ -111,10 +108,14 @@ class MiAZPluginUIManager(Gtk.Box):
         selected_plugin = view.get_selected()
         if selected_plugin is None:
             return
+
+        # If no repository is loaded, plugins aren't loaded either
         plugin_module = self.app.get_widget(f'plugin-{selected_plugin.id}')
-        plugin_info = plugin_module.plugin.get_plugin_info_dict()
+        if plugin_module is None:
+            return
 
         # Build info dialog
+        plugin_info = plugin_module.plugin.get_plugin_info_dict()
         dialog = Adw.PreferencesDialog()
         dialog.set_title('Plugin info')
         page_title = _('Properties')
@@ -127,8 +128,9 @@ class MiAZPluginUIManager(Gtk.Box):
 
         # Add plugin info as key/value rows
         for key in plugin_info:
-            row = Adw.ActionRow(title=_(f'<b>{key}</b>'))
-            label = Gtk.Label.new(plugin_info[key])
+            lblkey = _(key)
+            row = Adw.ActionRow(title=f'<b>{lblkey}</b>')
+            label = Gtk.Label.new(_(plugin_info[key]))
             row.add_suffix(label)
             group.add(row)
         dialog.set_presentation_mode(Adw.DialogPresentationMode.BOTTOM_SHEET)
@@ -171,7 +173,7 @@ class MiAZPluginUIManager(Gtk.Box):
             user_plugins = plugin_system.get_user_plugins()
             plugin_list = []
             for pid in plugin_index:
-                desc = plugin_index[pid]['Description']
+                desc = _(plugin_index[pid]['Description'])
                 url_plugin = url_plugin_base % (source, pid)
                 self.log.info(url_plugin)
                 added = util.download_and_unzip(url_plugin, user_plugins_dir)

@@ -354,7 +354,7 @@ class MiAZApp(Adw.Application):
         # ~ category_submenu.append_submenu(subcategory, subcategory_submenu)
         subcategory_submenu = self.get_plugin_subcategory_submenu(category, subcategory)
         if entry is None:
-            main_menu.append_submenu(subcategory, subcategory_submenu)
+            main_menu.append_submenu(_(subcategory), subcategory_submenu)
         return subcategory_submenu
 
     def exit(self, *args):

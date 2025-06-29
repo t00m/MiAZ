@@ -4,7 +4,6 @@
 # License: GPL v3
 # Description: Manage App and Repository settings
 
-import os
 from gettext import gettext as _
 
 from gi.repository import Adw
@@ -66,7 +65,7 @@ class MiAZAppSettings(Adw.PreferencesDialog):
             n += 1
 
     def _build_ui(self):
-        self.set_title('Application settings')
+        self.set_title(_('Application settings'))
         self.set_search_enabled(False)
         self._build_ui_page_preferences()
         # ~ self._build_ui_page_aspect()
@@ -81,7 +80,7 @@ class MiAZAppSettings(Adw.PreferencesDialog):
 
         ## Group UI
         group = Adw.PreferencesGroup()
-        group.set_title('User interface')
+        group.set_title(_('User interface'))
         page.add(group)
         self.app.add_widget('window-preferences-page-aspect-group-ui', group)
 
@@ -96,7 +95,7 @@ class MiAZAppSettings(Adw.PreferencesDialog):
 
         ## Group Repositories
         group = Adw.PreferencesGroup()
-        group.set_title('Repositories')
+        group.set_title(_('Repositories'))
         page.add(group)
 
         ### Row Repositories
@@ -131,7 +130,7 @@ class MiAZAppSettings(Adw.PreferencesDialog):
 
         ## Group plugins
         group = Adw.PreferencesGroup()
-        group.set_title('Plugins')
+        group.set_title(_('Plugins'))
         # ~ FIXME: Add plugins back revamped.
         page.add(group)
 
@@ -147,7 +146,7 @@ class MiAZAppSettings(Adw.PreferencesDialog):
         srvdlg = self.app.get_service('dialogs')
         window = self.app.get_widget('window')
         widget = MiAZPluginUIManager(self.app)
-        dialog = srvdlg.show_noop(title='Plugin Manager', body='', widget=widget, width=800, height=600)
+        dialog = srvdlg.show_noop(title=_('Plugin Manager'), body='', widget=widget, width=800, height=600)
 
         dialog.present(self)
 
@@ -181,8 +180,10 @@ class MiAZAppSettings(Adw.PreferencesDialog):
         if repo is None:
             return
 
-        title = "Repository management"
-        body = f"Would you like to set the repository {repo.id} as default?\n\nPlease, note that the app will be restarted upon confirmation"
+        title = _('Repository management')
+        body1 = _('Would you like to set the repository {repository} as default?').format(repository=repo.id)
+        body2 = _('Please, note that the app will be restarted upon confirmation')
+        body = body1 + '\n\n' + body2
         parent = self.app.get_widget('window')
         srvdlg = self.app.get_service('dialogs')
         dialog = srvdlg.show_question(title=title, body=body, callback=self._on_use_repo_response, data=repo)
@@ -195,7 +196,7 @@ class MiAZAppSettings(Adw.PreferencesDialog):
 
         if response == 'apply':
             config['App'].set('current', repo.id)
-            self.log.debug(f"Repository {repo.id} enabled")
+            self.log.debug(_('Repository %s enabled' % repo.id))
             # ~ srvdlg.show_info("Repostory management", body="Repository {repo.id} switched.\nApplication will be restarted now.", parent=dialog)
             actions = self.app.get_service('actions')
             actions.application_restart()
@@ -217,12 +218,12 @@ class MiAZAppSettings(Adw.PreferencesDialog):
             ## Unblock signal "dd_repo > notify::selected-item"
             dd_repo.handler_unblock(signal)
 
-            srvdlg.show_error("Repository management", body="Action canceled. Repository not switched", parent=dialog)
+            srvdlg.show_error(_('Repository management'), body=_('Action canceled. Repository not switched'), parent=dialog)
 
     def _on_manage_repositories(self, *args):
         widget = self._create_widget_for_repositories()
         window = self
-        title = "Manage repositories"
+        title = _('Repository management')
         body = "" # "Add, edit, delete and (de)activate repositories"
         dialog = self.srvdlg.show_noop(title=title, body=body, widget=widget, width=800, height=600)
         dialog.present(window)
@@ -248,16 +249,6 @@ class MiAZAppSettings(Adw.PreferencesDialog):
     def is_repo_set(self):
         return self.repo_is_set
 
-    def show_filechooser_source(self, *args):
-        window = self.app.get_widget('window')
-        filechooser = self.factory.create_filechooser(
-                    title=_('Choose target directory'),
-                    target = 'FOLDER',
-                    callback = self.on_filechooser_response_source,
-                    data = None
-                    )
-        filechooser.show()
-
     def on_filechooser_response_source(self, dialog, response, data):
                 return
 
@@ -271,7 +262,7 @@ class MiAZRepoSettings(MiAZCustomWindow):
         self.name = 'repo-settings'
         appconf = self.app.get_config('App')
         repo_id = appconf.get('current').replace('_', ' ')
-        self.title = f"Settings for repository {repo_id}"
+        self.title = _('Settings for repository') + ' ' + repo_id
         super().__init__(app, self.name, self.title, **kwargs)
         # ~ self.connect('notify::visible', self.update)
 
@@ -284,7 +275,9 @@ class MiAZRepoSettings(MiAZCustomWindow):
 
         def create_tab(item_type):
             i_type = item_type.__gtype_name__
-            i_title = _(item_type.__title_plural__)
+            i_id = item_type.__config_name__
+            i_title = item_type.__title__
+            i_title_plural = _(item_type.__title_plural__)
             page = Gtk.CenterBox(orientation=Gtk.Orientation.VERTICAL)
             page.set_vexpand(True)
             page.set_hexpand(True)
@@ -297,10 +290,12 @@ class MiAZRepoSettings(MiAZCustomWindow):
             page.set_start_widget(box)
             wdgLabel = self.factory.create_box_horizontal()
             wdgLabel.get_style_context().add_class(class_name='caption')
-            icon = self.icman.get_image_by_name(f"io.github.t00m.MiAZ-res-{i_title.lower()}")
+            icon_name = f"io.github.t00m.MiAZ-res-{i_id.lower()}"
+            icon = self.icman.get_image_by_name(icon_name)
             icon.set_hexpand(False)
-            icon.set_pixel_size(24)
-            label = self.factory.create_label(f"<b>{i_title}</b>")
+            icon.set_pixel_size(16)
+            title = _(i_title_plural)
+            label = self.factory.create_label(f"<b>{title}</b>")
             label.set_xalign(0.0)
             label.set_hexpand(True)
             wdgLabel.append(icon)
@@ -321,10 +316,15 @@ class MiAZRepoSettings(MiAZCustomWindow):
 
         # FIXME: User plugins disabled temporary
         for item_type in [Country, Group, Purpose, SentBy, SentTo, Plugin]:
-            i_title = item_type.__title_plural__
-            widget_title = f"configview-{i_title}"
-            configview = self.app.get_widget(widget_title)
-            configview.update_config()
-            configview.update_views()
+            try:
+                i_title = item_type.__title_plural__
+                widget_title = f"configview-{i_title}"
+                configview = self.app.get_widget(widget_title)
+                configview.update_config()
+                configview.update_views()
+            except Exception as error:
+                # FIXME: investigate this error
+                pass
         # ~ self.log.debug("Repository UI updated according to current settings")
+
 

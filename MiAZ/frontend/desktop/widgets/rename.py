@@ -8,7 +8,6 @@ import os
 from datetime import datetime
 from gettext import gettext as _
 
-from gi.repository import Gdk
 from gi.repository import Gtk
 from gi.repository import GLib
 from gi.repository import Pango
@@ -256,32 +255,32 @@ class MiAZRenameDialog(Gtk.Box):
         self.entry_date.set_text(f"{y}{m}{d}")
 
     def __create_field_1_country(self):
-        self.rowCountry, self.btnCountry, self.dpdCountry = self.__create_actionrow(Country.__title__, Country, 'countries')
+        self.rowCountry, self.btnCountry, self.dpdCountry = self.__create_actionrow(_(Country.__title__), Country, 'countries')
         self.dropdown['Country'] = self.dpdCountry
         self.btnCountry.connect('clicked', self.actions.manage_resource, MiAZCountries(self.app))
         self.dpdCountry.connect("notify::selected-item", self._on_changed_entry)
 
     def __create_field_2_group(self):
-        self.rowGroup, self.btnGroup, self.dpdGroup = self.__create_actionrow(Group.__title__, Group, 'groups')
+        self.rowGroup, self.btnGroup, self.dpdGroup = self.__create_actionrow(_(Group.__title__), Group, 'groups')
         self.dropdown['Group'] = self.dpdGroup
         self.btnGroup.connect('clicked', self.actions.manage_resource, MiAZGroups(self.app))
         self.dpdGroup.connect("notify::selected-item", self._on_changed_entry)
 
     def __create_field_4_sentby(self):
-        self.rowSentBy, self.btnSentBy, self.dpdSentBy = self.__create_actionrow(SentBy.__title__, SentBy, 'Sentby')
+        self.rowSentBy, self.btnSentBy, self.dpdSentBy = self.__create_actionrow(_(SentBy.__title__), SentBy, 'Sentby')
         self.dropdown['SentBy'] = self.dpdSentBy
         self.btnSentBy.connect('clicked', self.actions.manage_resource, MiAZPeopleSentBy(self.app))
         self.dpdSentBy.connect("notify::selected-item", self._on_changed_entry)
 
     def __create_field_5_purpose(self):
-        self.rowPurpose, self.btnPurpose, self.dpdPurpose = self.__create_actionrow(Purpose.__title__, Purpose, 'purposes')
+        self.rowPurpose, self.btnPurpose, self.dpdPurpose = self.__create_actionrow(_(Purpose.__title__), Purpose, 'purposes')
         self.btnPurpose.connect('clicked', self.actions.manage_resource, MiAZPurposes(self.app))
         self.dropdown['Purpose'] = self.dpdPurpose
         self.dpdPurpose.connect("notify::selected-item", self._on_changed_entry)
 
     def __create_field_6_concept(self):
         """Field 6. Concept"""
-        title = Concept.__title__
+        title = _(Concept.__title__)
         icm = self.app.get_service('icons')
         icon_name = 'io.github.t00m.MiAZ-res-concept'
         prefix = icm.get_image_by_name(icon_name)
@@ -297,7 +296,7 @@ class MiAZRenameDialog(Gtk.Box):
         self.entry_concept.connect('changed', self._on_changed_entry)
 
     def __create_field_7_sentto(self):
-        self.rowSentTo, self.btnSentTo, self.dpdSentTo = self.__create_actionrow(SentTo.__title__, SentTo, 'SentTo')
+        self.rowSentTo, self.btnSentTo, self.dpdSentTo = self.__create_actionrow(_(SentTo.__title__), SentTo, 'SentTo')
         self.dropdown['SentTo'] = self.dpdSentTo
         self.btnSentTo.connect('clicked', self.actions.manage_resource, MiAZPeopleSentTo(self.app))
         self.dpdSentTo.connect("notify::selected-item", self._on_changed_entry)
@@ -440,7 +439,6 @@ class MiAZRenameDialog(Gtk.Box):
         return self.result
 
     def on_rename_cancel(self, *args):
-        self.log.debug(f"on_rename_cancel: {args}")
         self.log.info("Rename canceled by user")
 
     def _on_document_display(self, *args):
