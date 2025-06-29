@@ -84,6 +84,7 @@ class MiAZ:
                 log.debug(f"\t\t{envvar} = {self.env[section][envvar]}")
         self.setup_environment()
         self.log = MiAZLog('MiAZ')
+
         self.log.info(f"{ENV['APP']['shortname']} v{ENV['APP']['VERSION']} - Start")
 
     def setup_environment(self):
