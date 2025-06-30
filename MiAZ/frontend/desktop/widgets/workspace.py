@@ -178,10 +178,7 @@ class MiAZWorkspace(Gtk.Box):
         self.emit('workspace-loaded')
 
     def _on_repo_switch(self, *args):
-        sidebar = self.app.get_widget('sidebar')
         self.selected_items = []
-        sidebar.clear_filters()
-        self.view.refilter()
         self.update()
 
     def _update_dropdowns(self, *args):

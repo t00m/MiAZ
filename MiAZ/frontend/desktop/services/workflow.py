@@ -85,7 +85,7 @@ class MiAZWorkflow(GObject.GObject):
             parent = self.app.get_widget('window')
             title = _("Repository management")
             body = repository.get_error()
-            self.srvdlg.show_error(title=title, body=body, parent=parent)
+            self.srvdlg.show_error(title=title, body=body, parent=parent, width=400)
 
         return repo_loaded
 
