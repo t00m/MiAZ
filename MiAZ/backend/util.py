@@ -269,7 +269,11 @@ class MiAZUtil(GObject.GObject):
 
     def filename_delete(self, filepaths: set):
         try:
-            cmd = f"rm {' '.join(filepaths)}"
+            safepaths = ""
+            for filepath in filepaths:
+                safepaths += f"'{filepath}' "
+            cmd = f"rm {safepaths}"
+            self.log.debug(f"Deleting the following documents: {safepaths}")
             os.system(cmd)
             # ~ os.unlink(filepath)
             self.log.debug(f"{len(filepaths)} files deleted")

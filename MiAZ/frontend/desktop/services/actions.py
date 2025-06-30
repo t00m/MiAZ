@@ -45,7 +45,6 @@ class MiAZActions(GObject.GObject):
         self.app = app
         self.factory = self.app.get_service('factory')
         self.util = self.app.get_service('util')
-        self.repository = self.app.get_service('repo')
         self.srvdlg = self.app.get_service('dialogs')
         GObject.signal_new('settings-loaded',
                             MiAZActions,
@@ -54,7 +53,8 @@ class MiAZActions(GObject.GObject):
 
     def document_display(self, doc):
         self.log.debug(f"Displaying {doc}")
-        filepath = os.path.join(self.repository.docs, doc)
+        repository = self.app.get_service('repo')
+        filepath = os.path.join(repository.docs, doc)
         self.util.filename_display(filepath)
 
     def dropdown_populate(self, config, dropdown, item_type, any_value=True, none_value=False, only_include: list = [], only_exclude: list = []):
