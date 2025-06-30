@@ -17,6 +17,7 @@ from gi.repository import Gtk
 from MiAZ.backend.log import MiAZLog
 from MiAZ.backend.models import Group, Country, Purpose, SentBy, SentTo, Date, Repository
 from MiAZ.frontend.desktop.widgets.configview import MiAZCountries, MiAZGroups, MiAZPurposes, MiAZPeopleSentBy, MiAZPeopleSentTo
+from MiAZ.frontend.desktop.widgets.configview import MiAZRepositories
 from MiAZ.frontend.desktop.widgets.settings import MiAZAppSettings
 from MiAZ.frontend.desktop.widgets.settings import MiAZRepoSettings
 
@@ -42,17 +43,19 @@ class MiAZActions(GObject.GObject):
         super().__init__()
         self.log = MiAZLog('MiAZ.Actions')
         self.app = app
+        self.factory = self.app.get_service('factory')
+        self.util = self.app.get_service('util')
+        self.repository = self.app.get_service('repo')
+        self.srvdlg = self.app.get_service('dialogs')
         GObject.signal_new('settings-loaded',
                             MiAZActions,
                             GObject.SignalFlags.RUN_LAST,
                             GObject.TYPE_PYOBJECT, (GObject.TYPE_PYOBJECT,))
 
     def document_display(self, doc):
-        srvutl = self.app.get_service('util')
-        srvrepo = self.app.get_service('repo')
         self.log.debug(f"Displaying {doc}")
-        filepath = os.path.join(srvrepo.docs, doc)
-        srvutl.filename_display(filepath)
+        filepath = os.path.join(self.repository.docs, doc)
+        self.util.filename_display(filepath)
 
     def dropdown_populate(self, config, dropdown, item_type, any_value=True, none_value=False, only_include: list = [], only_exclude: list = []):
         # FIXME: THIS METHOD DIDN'T TAKE INTO ACCOUNT CUSTOM MODELS
@@ -133,18 +136,18 @@ class MiAZActions(GObject.GObject):
                 gfile = filechooser.get_file()
                 if gfile is not None:
                     filepath = gfile.get_path()
-                    files = srvutl.zip_list(filepath)
+                    files = self.util.zip_list(filepath)
                     available_exists = file_available in files
                     self.log.debug(f"{file_available} exists? {available_exists}")
                     used_exists = file_used in files
                     self.log.debug(f"{file_used} exists? {used_exists}")
                     if available_exists and used_exists:
                         ENV = self.app.get_env()
-                        srvutl.unzip(filepath, ENV['LPATH']['TMP'])
+                        self.util.unzip(filepath, ENV['LPATH']['TMP'])
                         target_a = os.path.join(ENV['LPATH']['TMP'], file_available)
                         target_u = os.path.join(ENV['LPATH']['TMP'], file_used)
-                        available = srvutl.json_load(target_a)
-                        used = srvutl.json_load(target_u)
+                        available = self.util.json_load(target_a)
+                        used = self.util.json_load(target_u)
                         config = self.app.get_config_dict()
                         config_item = config[i_title]
                         config_item.add_used_batch(used.items())
@@ -202,7 +205,7 @@ class MiAZActions(GObject.GObject):
                     config_file_used = pathlib.Path(os.path.join(repository.docs, '.conf', config_name_used))
                     filenames.append(config_file_available)
                     filenames.append(config_file_used)
-                    target_filename = f"miaz-{i_title_plural.lower()}-config-{srvutl.timestamp()}.zip"
+                    target_filename = f"miaz-{i_title_plural.lower()}-config-{self.util.timestamp()}.zip"
                     target_filepath = os.path.join(target_directory, target_filename)
                     with zipfile.ZipFile(target_filepath, mode="w") as zip_archive:
                         for file_path in filenames:
@@ -260,6 +263,20 @@ class MiAZActions(GObject.GObject):
             title = _("Repository management")
             body = _("There aren't repositories configured.\nPlease, create one.")
             srvdlg.show_error(title=title, body=body, parent=parent)
+
+    def show_repository_manager(self, *args):
+        widget = self.factory.create_box_vertical(hexpand=True, vexpand=True)
+        configview = MiAZRepositories(self.app)
+        configview.set_hexpand(True)
+        configview.set_vexpand(True)
+        configview.update_views()
+        widget.append(configview)
+        window = self.app.get_widget('window')
+        title = _('Repository management')
+        body = ""
+        srvdlg = self.app.get_service('dialogs')
+        dialog = srvdlg.show_noop(title=title, body=body, widget=widget, width=800, height=600)
+        dialog.present(window)
 
     def show_app_about(self, *args):
         # FIXME: App icon not displayed in local installation
