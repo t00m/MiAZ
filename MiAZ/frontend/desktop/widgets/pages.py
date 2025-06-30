@@ -38,7 +38,7 @@ class MiAZWelcome(Gtk.Box):
         button = self.factory.create_button(title='Manage repositories')
         button.set_valign(Gtk.Align.CENTER)
         button.set_halign(Gtk.Align.CENTER)
-        button.connect('clicked', self.actions.show_app_settings)
+        button.connect('clicked', self.actions.show_repository_manager)
         vbox.append(button)
 
 
