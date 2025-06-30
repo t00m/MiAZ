@@ -83,11 +83,8 @@ class MiAZSidebar(Adw.Bin):
         repo_id = config['App'].get('current')
         title = f"<big><b>{repo_id}</b></big>"
         self.set_title(title)
-        self.clear_filters()
         self.setup_custom_filters()
         row = self.app.get_widget('sidebar-box-custom-filters')
-        workspace = self.app.get_widget('workspace')
-        workspace.update()
         self.log.debug(f"Switched to repository {repo_id} > Sidebar updated")
 
         # Connect signals to repository config
