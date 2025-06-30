@@ -231,8 +231,9 @@ class MiAZRepositories(MiAZConfigView):
         title = self.dialog_title
 
         dd_repo = self.app.get_widget('window-settings-dropdown-repository-active')
-        signal = self.app.get_widget('signal-dd_repo')
-        dd_repo.handler_block(signal)
+        if dd_repo is not None:
+            signal = self.app.get_widget('signal-dd_repo')
+            dd_repo.handler_block(signal)
         items_used = self.config.load_used()
         selected_item = self.viewAv.get_selected()
         if selected_item is None:
@@ -250,7 +251,8 @@ class MiAZRepositories(MiAZConfigView):
         else:
             body = f"{i_title} {selected_item.id} is already being used"
             self.log.debug(body)
-        dd_repo.handler_unblock(signal)
+        if dd_repo is not None:
+            dd_repo.handler_unblock(signal)
 
         if len(self.config.load_used()) == 1:
             config = self.app.get_config_dict()

@@ -160,13 +160,13 @@ class MiAZAppSettings(Adw.PreferencesDialog):
         page.add(group)
 
     def _create_widget_for_repositories(self):
-        row = self.factory.create_box_vertical(hexpand=True, vexpand=True)
+        box = self.factory.create_box_vertical(hexpand=True, vexpand=True)
         configview = MiAZRepositories(self.app)
         configview.set_hexpand(True)
         configview.set_vexpand(True)
         configview.update_views()
-        row.append(configview)
-        return row
+        box.append(configview)
+        return box
 
     def _on_use_repo(self, dropdown, gparam):
         """
