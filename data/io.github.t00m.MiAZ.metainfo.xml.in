@@ -11,6 +11,9 @@
     <p>A little effort means: scan letters, donwload attachments from emails, place it in the right MiAZ repository directory, and edit the filename according to a set of fixed rules, like choosing the country, date, group, purpose, sender and receiver.</p>
     <p>MiAZ helps you comply with these rules effortlessly.</p>
   </description>
+  <developer id="io.github.t00m">
+      <name>Tomás Vírseda</name>
+  </developer>
   <url type="homepage">https://github.com/t00m/MiAZ</url>
   <url type="bugtracker">https://github.com/t00m/MiAZ/issues</url>
   <url type="vcs-browser">https://github.com/t00m/MiAZ</url>
@@ -42,22 +45,6 @@
     <screenshot type="default">
       <image type="source">https://raw.githubusercontent.com/t00m/miaz/main/data/docs/screenshots/MiAZ-Workspace-menu.png</image>
       <caption>One menu for all tasks</caption>
-    </screenshot>
-    <screenshot type="default">
-      <image type="source">https://raw.githubusercontent.com/t00m/miaz/main/data/docs/screenshots/MiAZ-Workspace-menu-plugins.png</image>
-      <caption>Plugins submenu</caption>
-    </screenshot>
-    <screenshot type="default">
-      <image type="source">https://raw.githubusercontent.com/t00m/miaz/main/data/docs/screenshots/MiAZ-repository-settings-countries.png</image>
-      <caption>Control your repository metadata</caption>
-    </screenshot>
-    <screenshot type="default">
-      <image type="source">https://raw.githubusercontent.com/t00m/miaz/main/data/docs/screenshots/MiAZ-repository-settings-group-edit.png</image>
-      <caption>Add new metadata</caption>
-    </screenshot>
-    <screenshot type="default">
-      <image type="source">https://raw.githubusercontent.com/t00m/miaz/main/data/docs/screenshots/MiAZ-settings-plugins.png</image>
-      <caption>MiAZ comes with plugin capabilities</caption>
     </screenshot>
   </screenshots>
   <releases>
