@@ -1,5 +1,5 @@
 project('MiAZ',
-         version : '0.1.18+build.45',
+         version : '0.1.18+build.46',
     meson_version: '>= 1.5.1',
   default_options: [ 'warning_level=2',
                    ],
