@@ -302,8 +302,8 @@ class MiAZWorkspace(Gtk.Box):
         css_provider = Gtk.CssProvider()
         css_provider.load_from_data(b"""
             .custom-font {
-                font-family: 'Arial', sans-serif;
-                font-size: 24px;
+                font-family: 'Monospace';
+                font-size: 12px;
             }
         """)
 
