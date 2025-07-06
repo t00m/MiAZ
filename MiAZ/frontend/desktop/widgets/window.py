@@ -47,6 +47,7 @@ class MiAZCustomWindow(Adw.Window):
 
     def _on_key_press(self, event, keyval, keycode, state):
         keyname = Gdk.keyval_name(keyval)
+        self.log.debug(f"Key pressed: {keyname}")
         if keyname == 'Escape':
             self.close()
             pass
