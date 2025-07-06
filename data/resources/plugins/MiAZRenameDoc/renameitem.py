@@ -78,7 +78,7 @@ class MiAZToolbarRenameItemPlugin(GObject.GObject, Peas.Activatable):
         if not self.plugin.started():
             # Create menu item for plugin
             mnuItemName = self.plugin.get_menu_item_name()
-            menuitem = self.factory.create_menuitem(name=mnuItemName, label=_('Edit selected document'), callback=self.document_rename)
+            menuitem = self.factory.create_menuitem(name=mnuItemName, label=_('Edit selected document'), callback=self.document_rename, shortcuts=['BackSpace'])
 
             # Add plugin to its default (sub)category
             self.plugin.install_menu_entry(menuitem)
@@ -96,11 +96,11 @@ class MiAZToolbarRenameItemPlugin(GObject.GObject, Peas.Activatable):
             self.plugin.set_started(started=True)
 
     def document_rename(self, *args):
-        try:
-            item = self.workspace.get_selected_items()[0]
-            self.document_rename_single(item.id)
-        except IndexError:
-            self.log.debug("No item selected")
+        if self.actions.stop_if_no_items():
+            self.log.debug("No items selected")
+            return
+        item = self.workspace.get_selected_items()[0]
+        self.document_rename_single(item.id)
 
     def document_rename_single(self, doc):
         rename_widget = self.app.add_widget('rename-widget', MiAZRenameDialog(self.app))

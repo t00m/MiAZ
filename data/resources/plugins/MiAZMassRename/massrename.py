@@ -203,7 +203,8 @@ class MiAZMassRenamingPlugin(GObject.GObject, Peas.Activatable):
                 self.app.set_status(MiAZStatus.RUNNING)
 
         items = self.workspace.get_selected_items()
-        if self.actions.stop_if_no_items(items):
+        if self.actions.stop_if_no_items():
+            self.log.debug("No items selected")
             return
 
         if item_type != Date:
