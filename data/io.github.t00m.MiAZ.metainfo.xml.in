@@ -11,6 +11,11 @@
     <p>A little effort means: scan letters, donwload attachments from emails, place it in the right MiAZ repository directory, and edit the filename according to a set of fixed rules, like choosing the country, date, group, purpose, sender and receiver.</p>
     <p>MiAZ helps you comply with these rules effortlessly.</p>
   </description>
+  <categories>
+    <category>Office</category>
+    <category>Database</category>
+    <category>GNOME</category>
+  </categories>
   <developer id="io.github.t00m">
       <name>Tomás Vírseda</name>
   </developer>
@@ -20,8 +25,13 @@
   <update_contact>tomas.virseda@gmail.com</update_contact>
   <content_rating type="oars-1.1" />
   <launchable type="desktop-id">io.github.t00m.MiAZ.desktop</launchable>
+  <translation type="gettext">miaz</translation>
+  <requires>
+    <internet>offline-only</internet>
+  </requires>
   <provides>
     <binary>miaz</binary>
+    <python3>miaz</python3>
   </provides>
   <branding>
     <color type="primary" scheme_preference="light">#a9a9da</color>
@@ -48,15 +58,7 @@
     </screenshot>
   </screenshots>
   <releases>
-    <release version="0.1.7" date="2025-03-22">
-      <description translatable="no">
-        <p>Pre-release</p>
-      </description>
-    </release>
-    <release version="0.0.48" date="2024-07-12">
-      <description translatable="no">
-        <p>Pre-release</p>
-      </description>
-    </release>
+    <release version="0.1.7" date="2025-03-22" urgency="low" />
+    <release version="0.0.48" date="2024-07-12" urgency="low" />
   </releases>
 </component>
