@@ -297,6 +297,26 @@ class MiAZWorkspace(Gtk.Box):
         self._workspace_filters['main'] = self._do_filter_view_main
         self.view.set_filter(self._do_filter_view)
         frame.set_child(self.view)
+
+        # Create a CSS provider
+        css_provider = Gtk.CssProvider()
+        css_provider.load_from_data(b"""
+            .custom-font {
+                font-family: 'Arial', sans-serif;
+                font-size: 24px;
+            }
+        """)
+
+        # Add the provider to the display
+        Gtk.StyleContext.add_provider_for_display(
+            self.get_display(),
+            css_provider,
+            Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION
+        )
+
+        # Apply the CSS class to the ColumnView
+        self.view.add_css_class("custom-font")
+
         return frame
 
     def register_filter_view(self, name: str, callback):
