@@ -298,25 +298,6 @@ class MiAZWorkspace(Gtk.Box):
         self.view.set_filter(self._do_filter_view)
         frame.set_child(self.view)
 
-        # Create a CSS provider
-        css_provider = Gtk.CssProvider()
-        css_provider.load_from_data(b"""
-            .custom-font {
-                font-family: 'Monospace';
-                font-size: 12px;
-            }
-        """)
-
-        # Add the provider to the display
-        Gtk.StyleContext.add_provider_for_display(
-            self.get_display(),
-            css_provider,
-            Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION
-        )
-
-        # Apply the CSS class to the ColumnView
-        self.view.add_css_class("custom-font")
-
         return frame
 
     def register_filter_view(self, name: str, callback):
