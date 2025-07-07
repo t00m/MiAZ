@@ -228,7 +228,7 @@ class MiAZFactory:
         box.set_vexpand(vexpand)
         return box
 
-    def create_button_content(self, icon_name='', title='', callback=None, size=16, css_classes=[''], data=None):
+    def create_button_content(self, icon_name='', title='', callback=None, size=16, data=None):
         hbox = self.create_box_horizontal(spacing=0, margin=0, hexpand=False, vexpand=False)
         if len(icon_name.strip()) > 0:
             icon = self.icons.get_image_by_name(icon_name, size=size)
@@ -241,9 +241,6 @@ class MiAZFactory:
             label.set_markup(title)
             label.set_valign(Gtk.Align.CENTER)
             hbox.append(label)
-
-        for css_class in css_classes:
-            hbox.get_style_context().add_class(class_name=css_class)
 
         return hbox
 
