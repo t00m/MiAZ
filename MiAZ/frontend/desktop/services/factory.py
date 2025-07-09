@@ -414,6 +414,36 @@ class MiAZFactory:
 
         return dropdown
 
+    def create_dropdown(self, item_type):
+        def _on_factory_setup(factory, list_item):
+            box = Gtk.Box(spacing=6, orientation=Gtk.Orientation.HORIZONTAL)
+            label = Gtk.Label()
+            label.set_property('ellipsize', Pango.EllipsizeMode.MIDDLE)
+            box.append(label)
+            list_item.set_child(box)
+
+        def _on_factory_bind(factory, list_item):
+            box = list_item.get_child()
+            label = box.get_last_child()
+            item = list_item.get_item()
+            label.set_markup(f'{item.title}')
+
+        # Set up the factory
+        factory = Gtk.SignalListItemFactory()
+        factory.connect("setup", _on_factory_setup)
+        factory.connect("bind", _on_factory_bind)
+
+        # Create the model
+        model = Gio.ListStore(item_type=item_type)
+        sort_model  = Gtk.SortListModel(model=model) # FIXME: Gtk.Sorter?
+        filter_model = Gtk.FilterListModel(model=sort_model)
+
+        # Create dropdown
+        dropdown = Gtk.DropDown(model=filter_model, factory=factory, hexpand=True)
+        dropdown.set_show_arrow(True)
+
+        return dropdown
+
     def create_frame(self, title:str = None, margin: int = 3, hexpand: bool = False, vexpand: bool = False) -> Gtk.Frame:
         frame = Gtk.Frame()
         frame.set_margin_top(margin)
