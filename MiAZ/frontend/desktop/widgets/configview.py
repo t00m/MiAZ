@@ -433,6 +433,7 @@ class MiAZUserPlugins(MiAZConfigView):
                                 GObject.SignalFlags.RUN_LAST, None, ())
         boxopers = self.app.get_widget('selector-box-operations')
         factory = self.app.get_service('factory')
+        util = self.app.get_service('util')
 
         # Available view buttons
         btnInfo = factory.create_button(icon_name='io.github.t00m.MiAZ-dialog-information-symbolic', callback=self._show_plugin_info, css_classes=['linked'])
@@ -450,9 +451,74 @@ class MiAZUserPlugins(MiAZConfigView):
         # ~ self.btnConfig.set_visible(False)
         self.toolbar_buttons_Sl.append(self.btnConfig)
 
+        boxFilters = factory.create_box_vertical()
+        self.dpdCats = factory.create_dropdown(item_type=Plugin)
+        self.dpdSubcats = factory.create_dropdown(item_type=Plugin)
+        boxFilters.append(self.dpdCats)
+        boxFilters.append(self.dpdSubcats)
+        self.boxLeft.prepend(boxFilters)
+
+        self.dpdCats.connect("notify::selected-item", self._on_plugin_category_selected)
+
         # Action to be done when selecting an used plugin
         # ~ selection_model = self.viewSl.cv.get_model()
         # ~ selection_model.connect('selection-changed', self._on_plugin_used_selected)
+
+        # ~ self._update_view_available()
+        ENV = self.app.get_env()
+        try:
+            self.user_plugins = util.json_load(ENV['APP']['PLUGINS']['USER_INDEX'])
+        except Exception:
+            self.user_plugins = {}
+
+        cat_items = []
+        model_filter = self.dpdCats.get_model()
+        model_sort = model_filter.get_model()
+        model_cats = model_sort.get_model()
+        model_cats.remove_all()
+        set_cats = set()
+        for plugin in self.user_plugins:
+            category = self.user_plugins[plugin]['Category']
+            if category not in set_cats:
+                model_cats.append(Plugin(id=category, title=_(category)))
+                set_cats.add(category)
+            subcategory = self.user_plugins[plugin]['Subcategory']
+
+        self.dpdCats.connect("notify::selected-item", self._on_plugin_category_selected)
+        self.dpdSubcats.connect("notify::selected-item", self._on_plugin_subcategory_selected)
+        self.dpdCats.set_selected(0)
+
+    def _on_plugin_category_selected(self, *args):
+        selected_category = self.dpdCats.get_selected_item()
+        subcat_items = []
+        model_filter = self.dpdSubcats.get_model()
+        model_sort = model_filter.get_model()
+        model_subcats = model_sort.get_model()
+        model_subcats.remove_all()
+
+        set_subcats = set()
+        for plugin in self.user_plugins:
+            category = self.user_plugins[plugin]['Category']
+            if category == selected_category.id:
+                subcategory = self.user_plugins[plugin]['Subcategory']
+                if subcategory not in set_subcats:
+                    model_subcats.append(Plugin(id=subcategory, title=_(subcategory)))
+                    set_subcats.add(subcategory)
+
+    def _on_plugin_subcategory_selected(self, *args):
+        items = []
+        try:
+            selected_subcategory = self.dpdSubcats.get_selected_item()
+            for plugin in self.user_plugins:
+                subcategory = self.user_plugins[plugin]['Subcategory']
+                if subcategory == selected_subcategory.id:
+                    name = self.user_plugins[plugin]['Name']
+                    vers = self.user_plugins[plugin]['Version']
+                    desc = self.user_plugins[plugin]['Description']
+                    items.append(Plugin(id=name, title=desc))
+            self.viewAv.update(items=items)
+        except AttributeError as warning:
+            self.log.warning(warning)
 
     def _on_item_available_add(self, *args):
         factory = self.app.get_service('factory')
@@ -618,7 +684,7 @@ class MiAZUserPlugins(MiAZConfigView):
             banner.set_button_label('Restart')
             pluginsystem = self.app.get_service('plugin-system')
             pluginsystem.create_user_plugin_index()
-            self.update_user_plugins()
+            # ~ self.update_user_plugins()
             body = "Plugins updated"
             self.log.info(body)
             srvdlg.show_info(title=title, body=body, parent=self)
