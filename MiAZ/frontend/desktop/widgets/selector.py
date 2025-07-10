@@ -361,11 +361,10 @@ class MiAZSelector(Gtk.Box):
         item = model.get_item(pos)
         self._on_item_available_rename(item)
 
-    def _update_view_available(self, items=None):
+    def _update_view_available(self):
         items_available = []
         item_type = self.config.model
-        if items is None:
-            items = self.config.load_available()
+        items = self.config.load_available()
         for key in items:
             items_available.append(item_type(id=key, title=_(items[key])))
         self.viewAv.update(items_available)
@@ -374,8 +373,7 @@ class MiAZSelector(Gtk.Box):
     def _update_view_used(self, items=None):
         items_used = []
         item_type = self.config.model
-        if items is None:
-            items = self.config.load_used()
+        items = self.config.load_used()
         for key in items:
             items_used.append(item_type(id=key, title=_(items[key])))
         self.viewSl.update(items_used)

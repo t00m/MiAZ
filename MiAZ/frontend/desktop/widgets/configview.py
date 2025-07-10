@@ -12,6 +12,7 @@ import threading
 import requests
 
 from gi.repository import Adw
+from gi.repository import Gio
 from gi.repository import GLib
 from gi.repository import GObject
 from gi.repository import Gtk
@@ -451,6 +452,7 @@ class MiAZUserPlugins(MiAZConfigView):
         # ~ self.btnConfig.set_visible(False)
         self.toolbar_buttons_Sl.append(self.btnConfig)
 
+        # Setup plugin (sub)categories dropdowns
         boxFilters = factory.create_box_vertical()
         self.dpdCats = factory.create_dropdown(item_type=Plugin)
         self.dpdSubcats = factory.create_dropdown(item_type=Plugin)
@@ -458,13 +460,13 @@ class MiAZUserPlugins(MiAZConfigView):
         boxFilters.append(self.dpdSubcats)
         self.boxLeft.prepend(boxFilters)
 
-        self.dpdCats.connect("notify::selected-item", self._on_plugin_category_selected)
+        # ~ self.dpdCats.connect("notify::selected-item", self._on_plugin_category_selected)
 
         # Action to be done when selecting an used plugin
         # ~ selection_model = self.viewSl.cv.get_model()
         # ~ selection_model.connect('selection-changed', self._on_plugin_used_selected)
 
-        # ~ self._update_view_available()
+        # Fill-in dropdowns
         ENV = self.app.get_env()
         try:
             self.user_plugins = util.json_load(ENV['APP']['PLUGINS']['USER_INDEX'])
@@ -477,19 +479,55 @@ class MiAZUserPlugins(MiAZConfigView):
         model_cats = model_sort.get_model()
         model_cats.remove_all()
         set_cats = set()
+        model_cats.append(Plugin(id='all', title=_('All categories')))
         for plugin in self.user_plugins:
             category = self.user_plugins[plugin]['Category']
             if category not in set_cats:
                 model_cats.append(Plugin(id=category, title=_(category)))
                 set_cats.add(category)
-            subcategory = self.user_plugins[plugin]['Subcategory']
 
         self.dpdCats.connect("notify::selected-item", self._on_plugin_category_selected)
         self.dpdSubcats.connect("notify::selected-item", self._on_plugin_subcategory_selected)
-        self.dpdCats.set_selected(0)
+
+        if len(set_cats) > 0:
+            self.dpdCats.set_selected(0)
+            self.log.debug(f"Select first category")
+            self._on_plugin_category_selected()
+
+    def _do_filter_view(self, item, filter_list_model):
+        plugin = item.id
+        selected_cat = self.dpdCats.get_selected_item()
+        selected_subcat = self.dpdSubcats.get_selected_item()
+        category = self.user_plugins[plugin]['Category']
+        subcategory = self.user_plugins[plugin]['Subcategory']
+        chunk = self.searchentry.get_text().upper()
+        string = f"{item.id}-{item.title}"
+
+        # Check filters
+        text_filter = chunk in string.upper()
+
+        if selected_cat is None:
+            cat_matches = True
+        elif selected_cat.id == 'all':
+            cat_matches = True
+        else:
+            cat_matches = category == selected_cat.id
+
+        if  selected_subcat is None:
+            subcat_matches = True
+        elif selected_subcat.id == 'all':
+            subcat_matches = True
+        else:
+            subcat_matches = subcategory == selected_subcat.id
+
+        match = text_filter and cat_matches and subcat_matches
+        return match
 
     def _on_plugin_category_selected(self, *args):
         selected_category = self.dpdCats.get_selected_item()
+        if selected_category is None:
+            self.log.warning("No category selected")
+            return
         subcat_items = []
         model_filter = self.dpdSubcats.get_model()
         model_sort = model_filter.get_model()
@@ -497,28 +535,21 @@ class MiAZUserPlugins(MiAZConfigView):
         model_subcats.remove_all()
 
         set_subcats = set()
+        model_subcats.append(Plugin(id='all', title=_('All subcategories')))
         for plugin in self.user_plugins:
             category = self.user_plugins[plugin]['Category']
             if category == selected_category.id:
                 subcategory = self.user_plugins[plugin]['Subcategory']
                 if subcategory not in set_subcats:
-                    model_subcats.append(Plugin(id=subcategory, title=_(subcategory)))
+                    item = Plugin(id=subcategory, title=_(subcategory))
+                    model_subcats.append(item)
                     set_subcats.add(subcategory)
+        self.dpdSubcats.set_selected(0)
+        self._on_plugin_subcategory_selected()
 
     def _on_plugin_subcategory_selected(self, *args):
-        items = []
-        try:
-            selected_subcategory = self.dpdSubcats.get_selected_item()
-            for plugin in self.user_plugins:
-                subcategory = self.user_plugins[plugin]['Subcategory']
-                if subcategory == selected_subcategory.id:
-                    name = self.user_plugins[plugin]['Name']
-                    vers = self.user_plugins[plugin]['Version']
-                    desc = self.user_plugins[plugin]['Description']
-                    items.append(Plugin(id=name, title=desc))
-            self.viewAv.update(items=items)
-        except AttributeError as warning:
-            self.log.warning(warning)
+        self.viewAv.refilter()
+        self.viewSl.refilter()
 
     def _on_item_available_add(self, *args):
         factory = self.app.get_service('factory')
