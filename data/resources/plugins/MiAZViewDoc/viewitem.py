@@ -75,7 +75,7 @@ class MiAZToolbarViewItemPlugin(GObject.GObject, Peas.Activatable):
         if not self.plugin.started():
             # Create menu item for plugin
             mnuItemName = self.plugin.get_menu_item_name()
-            menuitem = self.factory.create_menuitem(name=mnuItemName, label=_('Display document'), callback=self.document_display)
+            menuitem = self.factory.create_menuitem(name=mnuItemName, label=_('Display document'), callback=self.document_display, shortcuts=['Return'])
 
             # Add plugin to its default (sub)category
             self.plugin.install_menu_entry(menuitem)
@@ -92,8 +92,10 @@ class MiAZToolbarViewItemPlugin(GObject.GObject, Peas.Activatable):
             self.plugin.set_started(started=True)
 
     def document_display(self, *args):
-        try:
-            item = self.workspace.get_selected_items()[0]
-            self.actions.document_display(item.id)
-        except IndexError:
-            self.log.debug("No item selected")
+        if self.actions.stop_if_no_items():
+            self.log.debug("No items selected")
+            return
+        item = self.workspace.get_selected_items()[0]
+        self.actions.document_display(item.id)
+
+

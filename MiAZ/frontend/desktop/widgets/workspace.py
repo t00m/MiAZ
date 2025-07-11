@@ -180,6 +180,9 @@ class MiAZWorkspace(Gtk.Box):
     def _on_repo_switch(self, *args):
         self.selected_items = []
         self.update()
+        for node in self.config:
+            self.config[node].connect('used-updated', self.update)
+            self.config[node].connect('available-updated', self.update)
 
     def _update_dropdowns(self, *args):
         actions = self.app.get_service('actions')
@@ -297,6 +300,7 @@ class MiAZWorkspace(Gtk.Box):
         self._workspace_filters['main'] = self._do_filter_view_main
         self.view.set_filter(self._do_filter_view)
         frame.set_child(self.view)
+
         return frame
 
     def register_filter_view(self, name: str, callback):
