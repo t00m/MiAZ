@@ -453,7 +453,7 @@ class MiAZUserPlugins(MiAZConfigView):
         self.toolbar_buttons_Sl.append(self.btnConfig)
 
         # Setup plugin (sub)categories dropdowns
-        boxFilters = factory.create_box_vertical()
+        boxFilters = factory.create_box_vertical(margin=0, spacing=6)
         self.dpdCats = factory.create_dropdown(item_type=Plugin)
         self.dpdSubcats = factory.create_dropdown(item_type=Plugin)
         boxFilters.append(self.dpdCats)
@@ -498,8 +498,18 @@ class MiAZUserPlugins(MiAZConfigView):
         plugin = item.id
         selected_cat = self.dpdCats.get_selected_item()
         selected_subcat = self.dpdSubcats.get_selected_item()
-        category = self.user_plugins[plugin]['Category']
-        subcategory = self.user_plugins[plugin]['Subcategory']
+
+
+        try:
+            category = self.user_plugins[plugin]['Category']
+        except KeyError:
+            selected_cat = None
+
+        try:
+            subcategory = self.user_plugins[plugin]['Subcategory']
+        except KeyError:
+            selected_subcat = None
+
         chunk = self.searchentry.get_text().upper()
         string = f"{item.id}-{item.title}"
 
