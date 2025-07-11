@@ -180,6 +180,9 @@ class MiAZWorkspace(Gtk.Box):
     def _on_repo_switch(self, *args):
         self.selected_items = []
         self.update()
+        for node in self.config:
+            self.config[node].connect('used-updated', self.update)
+            self.config[node].connect('available-updated', self.update)
 
     def _update_dropdowns(self, *args):
         actions = self.app.get_service('actions')
