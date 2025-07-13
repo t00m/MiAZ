@@ -320,7 +320,7 @@ class MiAZFactory:
     def create_button_menu(self, icon_name: str = '', title:str = '', css_classes: list = None, menu: Gio.Menu = None)-> Gtk.MenuButton:
         if css_classes is None:
             css_classes = []
-        child=self.create_button_content(icon_name=icon_name, title=title, css_classes=css_classes)
+        child=self.create_button_content(icon_name=icon_name, title=title)
         button = Gtk.MenuButton()
         button.set_child(child)
         popover = Gtk.PopoverMenu.new_from_model(menu)
