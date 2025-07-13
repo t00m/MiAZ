@@ -209,7 +209,7 @@ class MiAZRenameDialog(Gtk.Box):
         self.boxMain.append(self.rowDate)
         self.calendar = Gtk.Calendar()
         self.calendar.connect('day-selected', self.calendar_day_selected)
-        button_content = self.factory.create_button_content(icon_name=icon_name, css_classes=['flat'])
+        button_content = self.factory.create_button_content(icon_name=icon_name)
         button = Gtk.MenuButton(child=button_content)
         popover = Gtk.Popover()
         popover.set_child(self.calendar)
