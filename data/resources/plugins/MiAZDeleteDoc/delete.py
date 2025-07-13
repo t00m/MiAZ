@@ -70,7 +70,7 @@ class MiAZDeleteItemPlugin(GObject.GObject, Peas.Activatable):
         if not self.plugin.started():
             # Create menu item for plugin
             mnuItemName = self.plugin.get_menu_item_name()
-            menuitem = self.factory.create_menuitem(name=mnuItemName, label=_('Delete selected documents'), callback=self.document_delete, shortcuts=['Delete', 'KP_Delete'])
+            menuitem = self.factory.create_menuitem(name=mnuItemName, label=_('Delete selected documents'), callback=self.document_delete, shortcuts=['<Control>Delete', '<Control>KP_Delete'])
 
             # Add plugin to its default (sub)category
             self.plugin.install_menu_entry(menuitem)
