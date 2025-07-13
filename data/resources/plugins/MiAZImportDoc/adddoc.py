@@ -5,7 +5,7 @@
 # File: export2csv.py
 # Author: Tomás Vírseda
 # License: GPL v3
-# Description: Plugin for exporting items to CSV
+# Description: Plugin for importing documents from filesystem
 """
 
 import os
@@ -35,8 +35,6 @@ class MiAZAddDocumentPlugin(GObject.GObject, Peas.Activatable):
     __gtype_name__ = 'MiAZAddDocumentPlugin'
     object = GObject.Property(type=GObject.Object)
     plugin = None
-    name = 'AddDocs'     # Plugin internal name
-    desc = '... document(s)'   # Plugin menuitem entry
 
     def do_activate(self):
         """Plugin activation"""
@@ -68,10 +66,12 @@ class MiAZAddDocumentPlugin(GObject.GObject, Peas.Activatable):
         if not self.plugin.started():
             # Create menu item for plugin
             mnuItemName = self.plugin.get_menu_item_name()
-            menuitem = self.factory.create_menuitem(name=mnuItemName, label=_('Add new document(s)'), callback=self.import_files, shortcuts=['Insert'])
+            menuitem = self.factory.create_menuitem(name=mnuItemName, label=_('Add new document(s)'), callback=self.import_files, shortcuts=['<Control>Insert'])
 
+            self.log.error("Start")
             # Add plugin to its default (sub)category
             self.plugin.install_menu_entry(menuitem)
+            self.log.error("End")
 
             # Plugin configured
             self.plugin.set_started(started=True)

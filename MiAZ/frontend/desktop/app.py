@@ -345,11 +345,14 @@ class MiAZApp(Adw.Application):
     def install_plugin_menu(self, category, subcategory):
         """
         """
+        self.log.error(f"C[{category}] S[{subcategory}]")
         main_menu = self.app.get_widget('workspace-menu-selection')
         cid = category.lower().replace(' ', '-')
         sid = subcategory.lower().replace(' ', '-')
         key = f"workspace-menu-plugins-{cid}-{sid}"
+        self.log.error(f"Plugin key: {key}")
         entry = self.app.get_widget(key)
+        self.log.error(f"PLUGIN ENTRY: {entry}")
         category_submenu = self.get_plugin_category_submenu(category)
         # ~ category_submenu.append_submenu(subcategory, subcategory_submenu)
         subcategory_submenu = self.get_plugin_subcategory_submenu(category, subcategory)
