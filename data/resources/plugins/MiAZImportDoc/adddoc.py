@@ -26,8 +26,8 @@ plugin_info = {
         'Website':       'http://github.com/t00m/MiAZ',
         'Help':          'http://github.com/t00m/MiAZ/README.adoc',
         'Version':       '0.6',
-        'Category':      _('Data Management'),
-        'Subcategory':   _('Import')
+        'Category':      'Data Management',
+        'Subcategory':   'Import'
     }
 
 
@@ -68,10 +68,8 @@ class MiAZAddDocumentPlugin(GObject.GObject, Peas.Activatable):
             mnuItemName = self.plugin.get_menu_item_name()
             menuitem = self.factory.create_menuitem(name=mnuItemName, label=_('Add new document(s)'), callback=self.import_files, shortcuts=['<Control>Insert'])
 
-            self.log.error("Start")
             # Add plugin to its default (sub)category
             self.plugin.install_menu_entry(menuitem)
-            self.log.error("End")
 
             # Plugin configured
             self.plugin.set_started(started=True)

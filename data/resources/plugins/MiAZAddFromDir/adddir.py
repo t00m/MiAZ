@@ -27,8 +27,8 @@ plugin_info = {
         'Website':       'http://github.com/t00m/MiAZ',
         'Help':          'http://github.com/t00m/MiAZ/README.adoc',
         'Version':       '0.5',
-        'Category':      _('Data Management'),
-        'Subcategory':   _('Import')
+        'Category':      'Data Management',
+        'Subcategory':   'Import'
     }
 
 
@@ -68,7 +68,7 @@ class MiAZAddDirectoryPlugin(GObject.GObject, Peas.Activatable):
         if not self.plugin.started():
             # Create menu item for plugin
             mnuItemName = self.plugin.get_menu_item_name()
-            menuitem = self.factory.create_menuitem(name=mnuItemName, label=_('Add documents from directory'), callback=self.select_directory, shortcuts=['<Control>Insert'])
+            menuitem = self.factory.create_menuitem(name=mnuItemName, label=_('Add documents from directory'), callback=self.select_directory, shortcuts=['<Control><Alt>Insert'])
 
             # Add plugin to its default (sub)category
             self.plugin.install_menu_entry(menuitem)

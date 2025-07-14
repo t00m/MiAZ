@@ -25,8 +25,8 @@ plugin_info = {
         'Website':       'http://github.com/t00m/MiAZ',
         'Help':          'http://github.com/t00m/MiAZ/README.adoc',
         'Version':       '0.6',
-        'Category':      _('Visualisation and Diagrams'),
-        'Subcategory':   _('Document Viewers')
+        'Category':      'Visualisation and Diagrams',
+        'Subcategory':   'Document Viewers'
     }
 
 
