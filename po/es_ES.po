@@ -8,7 +8,7 @@ msgstr ""
 "Project-Id-Version: 0.1\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2025-07-14 15:10+0200\n"
-"PO-Revision-Date: 2025-07-14 15:14+0200\n"
+"PO-Revision-Date: 2025-07-14 18:01+0200\n"
 "Last-Translator: Tomás Vírseda <tomas.virseda@gmail.com>\n"
 "Language-Team: Spanish\n"
 "Language: es\n"
@@ -131,7 +131,7 @@ msgstr "Añadir nuevo(s) documento(s)"
 #: data/resources/plugins/MiAZAddFromDir/adddir.py:24
 #: data/resources/plugins/MiAZAddFromDir/adddir.py:71
 msgid "Add documents from directory"
-msgstr "Importar documentos de un directorio"
+msgstr "Importar documentos desde un directorio"
 
 #: data/resources/plugins/MiAZAddFromDir/adddir.py:125
 #, fuzzy
