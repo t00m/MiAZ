@@ -68,7 +68,7 @@ class MiAZAddDirectoryPlugin(GObject.GObject, Peas.Activatable):
         if not self.plugin.started():
             # Create menu item for plugin
             mnuItemName = self.plugin.get_menu_item_name()
-            menuitem = self.factory.create_menuitem(name=mnuItemName, label=_('Add documents from directory'), callback=self.select_directory, shortcuts=['<Control><Alt>Insert'])
+            menuitem = self.factory.create_menuitem(name=mnuItemName, label=_('Add documents from directory'), callback=self.select_directory, shortcuts=['<Shift>Insert'])
 
             # Add plugin to its default (sub)category
             self.plugin.install_menu_entry(menuitem)
