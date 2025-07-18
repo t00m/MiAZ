@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 0.1\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-06-28 00:53+0200\n"
-"PO-Revision-Date: 2025-06-17 15:27+0200\n"
+"POT-Creation-Date: 2025-07-14 15:10+0200\n"
+"PO-Revision-Date: 2025-07-14 18:01+0200\n"
 "Last-Translator: Tomás Vírseda <tomas.virseda@gmail.com>\n"
 "Language-Team: Spanish\n"
 "Language: es\n"
@@ -19,12 +19,12 @@ msgstr ""
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
 #: data/io.github.t00m.MiAZ.desktop.in:2
-#: data/io.github.t00m.MiAZ.metainfo.xml.in:6
+#: data/io.github.t00m.MiAZ.metainfo.xml.in:7
 msgid "MiAZ"
 msgstr "MiAZ"
 
 #: data/io.github.t00m.MiAZ.desktop.in:3
-#: data/io.github.t00m.MiAZ.metainfo.xml.in:7
+#: data/io.github.t00m.MiAZ.metainfo.xml.in:8
 msgid "Personal Document Organizer"
 msgstr "Organizador Personal de Documentos"
 
@@ -32,7 +32,7 @@ msgstr "Organizador Personal de Documentos"
 msgid "Productivity;Personal;Documents;Organizer"
 msgstr "Productividad;Personal;Documentos;Organizador"
 
-#: data/io.github.t00m.MiAZ.metainfo.xml.in:9
+#: data/io.github.t00m.MiAZ.metainfo.xml.in:10
 msgid ""
 "Sometimes, it is quite a challenge to keep the documentation of the family, "
 "schools, administration, billing, etc... well organized in terms of "
@@ -42,7 +42,7 @@ msgstr ""
 "colegios, la administración, la facturación, etc... bien organizada en "
 "términos de clasificación, espacio en disco, tiempo para hacerlo y esfuerzo."
 
-#: data/io.github.t00m.MiAZ.metainfo.xml.in:10
+#: data/io.github.t00m.MiAZ.metainfo.xml.in:11
 msgid ""
 "MiAZ app aims to solve this problem: with minimal effort, it is possible to "
 "have all paperwork organized."
@@ -50,7 +50,7 @@ msgstr ""
 "La aplicación MiAZ pretende resolver este problema: con un mínimo esfuerzo, "
 "es posible tener todo el papeleo organizado."
 
-#: data/io.github.t00m.MiAZ.metainfo.xml.in:11
+#: data/io.github.t00m.MiAZ.metainfo.xml.in:12
 msgid ""
 "A little effort means: scan letters, donwload attachments from emails, place "
 "it in the right MiAZ repository directory, and edit the filename according "
@@ -63,63 +63,32 @@ msgstr ""
 "reglas fijas, como elegir el país, la fecha, el grupo, el propósito, el "
 "remitente y el destinatario."
 
-#: data/io.github.t00m.MiAZ.metainfo.xml.in:12
+#: data/io.github.t00m.MiAZ.metainfo.xml.in:13
 msgid "MiAZ helps you comply with these rules effortlessly."
 msgstr "MiAZ te ayuda a cumplir con estas reglas sin esfuerzo."
 
-#: data/io.github.t00m.MiAZ.metainfo.xml.in:36
+#: data/io.github.t00m.MiAZ.metainfo.xml.in:21
+msgid "Tomás Vírseda"
+msgstr ""
+
+#: data/io.github.t00m.MiAZ.metainfo.xml.in:50
 msgid "MiAZ about dialog"
 msgstr "Diálogo Acerca de de MiAZ"
 
-#: data/io.github.t00m.MiAZ.metainfo.xml.in:40
+#: data/io.github.t00m.MiAZ.metainfo.xml.in:54
 msgid "Filter and search capabilities"
 msgstr "Capacidades de búsqueda y filtrado"
 
-#: data/io.github.t00m.MiAZ.metainfo.xml.in:44
+#: data/io.github.t00m.MiAZ.metainfo.xml.in:58
 msgid "One menu for all tasks"
 msgstr "Un menú para todas las tareas"
-
-#: data/io.github.t00m.MiAZ.metainfo.xml.in:48
-msgid "Plugins submenu"
-msgstr "Submenu de plugins"
-
-#: data/io.github.t00m.MiAZ.metainfo.xml.in:52
-msgid "Control your repository metadata"
-msgstr "Controla los metadatos de tu repositorio"
-
-#: data/io.github.t00m.MiAZ.metainfo.xml.in:56
-msgid "Add new metadata"
-msgstr "Añadir nuevos metadatos"
-
-#: data/io.github.t00m.MiAZ.metainfo.xml.in:60
-msgid "MiAZ comes with plugin capabilities"
-msgstr "MiAZ tiene soporte para plugins"
-
-#: data/io.github.t00m.MiAZ.metainfo.xml.in:66
-#: data/io.github.t00m.MiAZ.metainfo.xml.in:71
-msgid "Pre-release"
-msgstr "Pre-release"
 
 #: data/resources/plugins/MiAZDeleteDoc/delete.py:26
 #: data/resources/plugins/MiAZDeleteDoc/delete.py:73
 msgid "Delete selected documents"
 msgstr "Borrar los documentos seleccionados"
 
-#: data/resources/plugins/MiAZDeleteDoc/delete.py:32
-#: data/resources/plugins/MiAZImportDoc/adddoc.py:29
-#: data/resources/plugins/MiAZImportFromDirectory/adddir.py:27
-#: data/resources/plugins/MiAZMassRename/massrename.py:41
-#: data/resources/plugins/MiAZRenameDoc/renameitem.py:30
-#: MiAZ/frontend/desktop/services/pluginsystem.py:41
-msgid "Data Management"
-msgstr "Gestión de datos"
-
-#: data/resources/plugins/MiAZDeleteDoc/delete.py:33
-#: MiAZ/frontend/desktop/services/pluginsystem.py:50
-msgid "Deletion"
-msgstr "Borrado"
-
-#: data/resources/plugins/MiAZDeleteDoc/delete.py:95
+#: data/resources/plugins/MiAZDeleteDoc/delete.py:96
 msgid ""
 "<b>Are you sure?</b>\n"
 "\n"
@@ -129,58 +98,53 @@ msgstr ""
 "\n"
 "Los siguientes documentos serán borrados:"
 
-#: data/resources/plugins/MiAZDeleteDoc/delete.py:96
+#: data/resources/plugins/MiAZDeleteDoc/delete.py:97
 msgid "Mass deletion"
 msgstr "Borrado masivo"
 
-#: data/resources/plugins/MiAZDeleteDoc/delete.py:108
-#: data/resources/plugins/MiAZDeleteDoc/delete.py:112
+#: data/resources/plugins/MiAZDeleteDoc/delete.py:109
+#: data/resources/plugins/MiAZDeleteDoc/delete.py:113
 #: MiAZ/frontend/desktop/services/workflow.py:86
-#: MiAZ/frontend/desktop/services/actions.py:260
+#: MiAZ/frontend/desktop/services/actions.py:263
+#: MiAZ/frontend/desktop/services/actions.py:275
 #: MiAZ/frontend/desktop/widgets/settings.py:183
 #: MiAZ/frontend/desktop/widgets/settings.py:221
 #: MiAZ/frontend/desktop/widgets/settings.py:226
-#: MiAZ/frontend/desktop/widgets/sidebar.py:250
+#: MiAZ/frontend/desktop/widgets/sidebar.py:247
 msgid "Repository management"
 msgstr "Gestión de repositorios"
 
-#: data/resources/plugins/MiAZDeleteDoc/delete.py:109
+#: data/resources/plugins/MiAZDeleteDoc/delete.py:110
 #, python-brace-format
 msgid "{num_docs} documents deleted from repository"
 msgstr "{num_docs} documentos borrados del repositorio"
 
-#: data/resources/plugins/MiAZDeleteDoc/delete.py:113
+#: data/resources/plugins/MiAZDeleteDoc/delete.py:114
 msgid "Action canceled by user"
 msgstr "Acción cancelada por el usuario"
 
 #: data/resources/plugins/MiAZImportDoc/adddoc.py:23
-#: data/resources/plugins/MiAZImportDoc/adddoc.py:71
+#: data/resources/plugins/MiAZImportDoc/adddoc.py:69
 msgid "Add new document(s)"
 msgstr "Añadir nuevo(s) documento(s)"
 
-#: data/resources/plugins/MiAZImportDoc/adddoc.py:30
-#: data/resources/plugins/MiAZImportFromDirectory/adddir.py:28
-#: MiAZ/frontend/desktop/services/pluginsystem.py:42
-msgid "Import"
-msgstr "Importar"
-
-#: data/resources/plugins/MiAZImportFromDirectory/adddir.py:21
-#: data/resources/plugins/MiAZImportFromDirectory/adddir.py:68
+#: data/resources/plugins/MiAZAddFromDir/adddir.py:24
+#: data/resources/plugins/MiAZAddFromDir/adddir.py:71
 msgid "Add documents from directory"
-msgstr "Importar documentos de un directorio"
+msgstr "Importar documentos desde un directorio"
+
+#: data/resources/plugins/MiAZAddFromDir/adddir.py:125
+#, fuzzy
+msgid "All documents imported successfully"
+msgstr "Plugin {plugin_name} v{plugin_version} importado satisfactoriamente"
 
 #: data/resources/plugins/MiAZMassRename/massrename.py:35
 msgid "Mass renaming of documents"
 msgstr "Renombrado masivo de documentos"
 
-#: data/resources/plugins/MiAZMassRename/massrename.py:42
-#: MiAZ/frontend/desktop/services/pluginsystem.py:47
-msgid "Batch mode"
-msgstr "Procesamiento por lotes"
-
 #: data/resources/plugins/MiAZMassRename/massrename.py:108
-#: data/resources/plugins/MiAZMassRename/massrename.py:235
-#: data/resources/plugins/MiAZMassRename/massrename.py:260
+#: data/resources/plugins/MiAZMassRename/massrename.py:236
+#: data/resources/plugins/MiAZMassRename/massrename.py:261
 msgid "Mass renaming"
 msgstr "Renombrado masivo"
 
@@ -192,11 +156,6 @@ msgstr "... de {title}"
 #: data/resources/plugins/MiAZRenameDoc/renameitem.py:24
 msgid "Rename a single document"
 msgstr "Renombrar un solo documento"
-
-#: data/resources/plugins/MiAZRenameDoc/renameitem.py:31
-#: MiAZ/frontend/desktop/services/pluginsystem.py:46
-msgid "Single mode"
-msgstr "Procesamiento individual"
 
 #: data/resources/plugins/MiAZRenameDoc/renameitem.py:81
 msgid "Edit selected document"
@@ -231,16 +190,6 @@ msgstr "Otro documento con el mismo nombre ya existe en este repositorio"
 msgid "Display document"
 msgstr "Mostrar documento"
 
-#: data/resources/plugins/MiAZViewDoc/viewitem.py:28
-#: MiAZ/frontend/desktop/services/pluginsystem.py:57
-msgid "Visualisation and Diagrams"
-msgstr "Visualización y diagramas"
-
-#: data/resources/plugins/MiAZViewDoc/viewitem.py:29
-#: MiAZ/frontend/desktop/services/pluginsystem.py:61
-msgid "Document Viewers"
-msgstr "Visor de documentos"
-
 #: data/resources/plugins/MiAZViewDoc/viewitem.py:86
 msgid "View document"
 msgstr "Ver documento"
@@ -249,19 +198,9 @@ msgstr "Ver documento"
 msgid "Toggle Workspace view"
 msgstr "Alternar la vista del área de trabajo"
 
-#: data/resources/plugins/MiAZWorkspaceToggleView/wstoggleview.py:28
-#: MiAZ/frontend/desktop/services/pluginsystem.py:78
-msgid "Customisation and Personalisation"
-msgstr "Personalización"
-
-#: data/resources/plugins/MiAZWorkspaceToggleView/wstoggleview.py:29
-msgid "User Interface"
-msgstr "Interfaz de usuario"
-
 #: data/resources/plugins/MiAZWorkspaceToggleView/wstoggleview.py:73
-#, fuzzy
 msgid "Show documents raw names"
-msgstr "No se han encontrado documentos"
+msgstr "Mostrar los nombres en bruto de los documentos"
 
 #. Row for option "Display Workspace toggle view button?"
 #: data/resources/plugins/MiAZWorkspaceToggleView/wstoggleview.py:137
@@ -337,7 +276,7 @@ msgstr "País"
 
 #: MiAZ/backend/models.py:190 MiAZ/frontend/desktop/widgets/rename.py:202
 #: MiAZ/frontend/desktop/widgets/views.py:74
-#: MiAZ/frontend/desktop/widgets/sidebar.py:201
+#: MiAZ/frontend/desktop/widgets/sidebar.py:198
 msgid "Date"
 msgstr "Fecha"
 
@@ -416,26 +355,24 @@ msgid "Plugins"
 msgstr "Plug-ins"
 
 #: MiAZ/backend/repository.py:69
-#, python-brace-format
-msgid "Repository path '{path}' not valid.\n"
-msgstr ""
-
-#: MiAZ/backend/repository.py:70
-msgid "Probably, no repository is loaded yet or defined\n"
-msgstr ""
+msgid "No repositories found."
+msgstr "No se ha encontrado ningún repositorio."
 
 #: MiAZ/backend/repository.py:71
-#, fuzzy, python-brace-format
 msgid ""
-"Exception error: {error}\n"
+"Please, create a new repository, if none exists yet.\n"
 "\n"
-msgstr "Error: {error}"
+msgstr ""
+"Por favor, crea un nuevo repositorio si todavía no existe uno.\n"
+"\n"
 
 #: MiAZ/backend/repository.py:72
 msgid ""
-"Ignore this error if no repository has been defined yet or the path to the "
-"repository doesn't exist"
+"Otherwise, check if the directory exists (local repository) or if the server "
+"is accessible (remote repository)."
 msgstr ""
+"En caso contrario, comprueba si el directorio existe (repositorio local) o "
+"si el servidor es accesible (repositorio remoto)."
 
 #: MiAZ/frontend/desktop/services/help.py:18
 msgid "Main Window"
@@ -516,6 +453,14 @@ msgstr "Categoría"
 msgid "Subcategory"
 msgstr "Subcategoría"
 
+#: MiAZ/frontend/desktop/services/pluginsystem.py:41
+msgid "Data Management"
+msgstr "Gestión de datos"
+
+#: MiAZ/frontend/desktop/services/pluginsystem.py:42
+msgid "Import"
+msgstr "Importar"
+
 #: MiAZ/frontend/desktop/services/pluginsystem.py:42
 msgid "Plugins for importing documents"
 msgstr "Plugin para importar documentos"
@@ -545,8 +490,16 @@ msgid "Plugins for restoring backups"
 msgstr "Plugins para restaurar copias de seguridad"
 
 #: MiAZ/frontend/desktop/services/pluginsystem.py:46
+msgid "Single mode"
+msgstr "Procesamiento individual"
+
+#: MiAZ/frontend/desktop/services/pluginsystem.py:46
 msgid "Plugins for manipulating data for a single document"
 msgstr "Plugins para manipular datos en un solo documento"
+
+#: MiAZ/frontend/desktop/services/pluginsystem.py:47
+msgid "Batch mode"
+msgstr "Procesamiento por lotes"
 
 #: MiAZ/frontend/desktop/services/pluginsystem.py:47
 msgid "Plugins for bulk data manipulation"
@@ -568,6 +521,10 @@ msgstr "Migración"
 #: MiAZ/frontend/desktop/services/pluginsystem.py:49
 msgid "Plugins for transferring data between different platforms or systems"
 msgstr "Plugins para transferir datos entre diferentes plataformas o systemas"
+
+#: MiAZ/frontend/desktop/services/pluginsystem.py:50
+msgid "Deletion"
+msgstr "Borrado"
 
 #: MiAZ/frontend/desktop/services/pluginsystem.py:50
 msgid "Plugins for securely removing documents or data from the repository"
@@ -602,6 +559,10 @@ msgstr "Gestión de metadatos"
 msgid "Plugins for adding, editing, or viewing document metadata"
 msgstr "Plugin para añadir, editar o ver los metadatos de un documento"
 
+#: MiAZ/frontend/desktop/services/pluginsystem.py:57
+msgid "Visualisation and Diagrams"
+msgstr "Visualización y diagramas"
+
 #: MiAZ/frontend/desktop/services/pluginsystem.py:58
 msgid "Diagram Creation"
 msgstr "Creación de diagramas"
@@ -630,6 +591,10 @@ msgid "Plugins that provide a summary of key information in a dashboard format"
 msgstr ""
 "Plugins que proporcionan un resumen de la información clave en formato de "
 "panel de control"
+
+#: MiAZ/frontend/desktop/services/pluginsystem.py:61
+msgid "Document Viewers"
+msgstr "Visor de documentos"
 
 #: MiAZ/frontend/desktop/services/pluginsystem.py:61
 msgid "Plugins for displaying documents in their native formats"
@@ -735,6 +700,10 @@ msgid "Plugins for email, messaging, or social media integration"
 msgstr ""
 "Plugins para la integración con correo electrónico, mensajería o redes "
 "sociales"
+
+#: MiAZ/frontend/desktop/services/pluginsystem.py:78
+msgid "Customisation and Personalisation"
+msgstr "Personalización"
 
 #: MiAZ/frontend/desktop/services/pluginsystem.py:79
 msgid "Themes and UI Customisation"
@@ -1049,40 +1018,40 @@ msgstr "Miscelánea"
 msgid "Plugins not fitting in another category"
 msgstr "que no encajan en otra categoría"
 
-#: MiAZ/frontend/desktop/services/pluginsystem.py:274
+#: MiAZ/frontend/desktop/services/pluginsystem.py:275
 msgid "user"
 msgstr "usuario"
 
-#: MiAZ/frontend/desktop/services/pluginsystem.py:276
+#: MiAZ/frontend/desktop/services/pluginsystem.py:277
 msgid "system"
 msgstr "sistema"
 
-#: MiAZ/frontend/desktop/services/actions.py:79
+#: MiAZ/frontend/desktop/services/actions.py:82
 msgid "Any"
 msgstr "Cualquiera"
 
-#: MiAZ/frontend/desktop/services/actions.py:81
+#: MiAZ/frontend/desktop/services/actions.py:84
 msgid "None"
 msgstr "Ninguno"
 
-#: MiAZ/frontend/desktop/services/actions.py:108
+#: MiAZ/frontend/desktop/services/actions.py:111
 msgid "No data"
 msgstr "Sin datos"
 
-#: MiAZ/frontend/desktop/services/actions.py:110
+#: MiAZ/frontend/desktop/services/actions.py:113
 msgid "No repositories found"
 msgstr "Ningún repositorio encontrado"
 
-#: MiAZ/frontend/desktop/services/actions.py:116
-#: MiAZ/frontend/desktop/services/actions.py:174
+#: MiAZ/frontend/desktop/services/actions.py:119
+#: MiAZ/frontend/desktop/services/actions.py:177
 msgid "Action not implemented yet"
 msgstr "Esta acción no ha sido implementada todavía"
 
-#: MiAZ/frontend/desktop/services/actions.py:117
+#: MiAZ/frontend/desktop/services/actions.py:120
 msgid "Import the configuration hasn't been implemented yet"
 msgstr "La importación de la configuración no ha sido implementada todavía"
 
-#: MiAZ/frontend/desktop/services/actions.py:261
+#: MiAZ/frontend/desktop/services/actions.py:264
 msgid ""
 "There aren't repositories configured.\n"
 "Please, create one."
@@ -1090,27 +1059,27 @@ msgstr ""
 "No hay repositorios configurados.\n"
 "Por favor, crea uno."
 
-#: MiAZ/frontend/desktop/services/actions.py:274
+#: MiAZ/frontend/desktop/services/actions.py:291
 msgid ""
 "Flags borrowed from FlagKit project https://github.com/madebybowtie/FlagKit"
 msgstr ""
 
-#: MiAZ/frontend/desktop/services/actions.py:275
+#: MiAZ/frontend/desktop/services/actions.py:292
 msgid "Some icons borrowed from GNOME contributors https://www.gnome.org"
 msgstr ""
 
-#: MiAZ/frontend/desktop/services/actions.py:276
+#: MiAZ/frontend/desktop/services/actions.py:293
 msgid ""
 "MiAZ app icon based on Collection Business Duotone Icons with license 'CC "
 "Attribution License' by 'cataicon' https://www.svgrepo.com/svg/391994/binder-"
 "business-finance-management-marketing-office"
 msgstr ""
 
-#: MiAZ/frontend/desktop/services/actions.py:324
+#: MiAZ/frontend/desktop/services/actions.py:343
 msgid "You must select at least one document"
 msgstr "Debes seleccionar al menos un documento"
 
-#: MiAZ/frontend/desktop/services/actions.py:325
+#: MiAZ/frontend/desktop/services/actions.py:344
 msgid "Action ignored"
 msgstr "Acción ignorada"
 
@@ -1257,11 +1226,11 @@ msgstr "Escribe aquí para filtrar"
 #: MiAZ/frontend/desktop/widgets/selector.py:332
 #: MiAZ/frontend/desktop/widgets/selector.py:341
 #: MiAZ/frontend/desktop/widgets/selector.py:426
-#: MiAZ/frontend/desktop/widgets/configview.py:150
-#: MiAZ/frontend/desktop/widgets/configview.py:197
-#: MiAZ/frontend/desktop/widgets/configview.py:224
-#: MiAZ/frontend/desktop/widgets/configview.py:481
-#: MiAZ/frontend/desktop/widgets/configview.py:513
+#: MiAZ/frontend/desktop/widgets/configview.py:151
+#: MiAZ/frontend/desktop/widgets/configview.py:198
+#: MiAZ/frontend/desktop/widgets/configview.py:225
+#: MiAZ/frontend/desktop/widgets/configview.py:590
+#: MiAZ/frontend/desktop/widgets/configview.py:622
 msgid "<b>Action not possible</b>"
 msgstr "<b>Acción no posible</b>"
 
@@ -1317,7 +1286,7 @@ msgstr ""
 "El renombrado no es posible. Ambas descripciones de {title} son idénticas"
 
 #: MiAZ/frontend/desktop/widgets/selector.py:320
-#: MiAZ/frontend/desktop/widgets/configview.py:504
+#: MiAZ/frontend/desktop/widgets/configview.py:613
 #, python-brace-format
 msgid ""
 "You are about to delete <i>{title} {desc}</i>.\n"
@@ -1529,38 +1498,43 @@ msgstr "Desde hace diez años"
 msgid "All documents"
 msgstr "Todos los documentos"
 
-#: MiAZ/frontend/desktop/widgets/configview.py:58
+#: MiAZ/frontend/desktop/widgets/workspace.py:510
+#, python-brace-format
+msgid "Review ({review})"
+msgstr "Revisar ({review})"
+
+#: MiAZ/frontend/desktop/widgets/configview.py:59
 msgid "Enable "
 msgstr "Habiltar "
 
-#: MiAZ/frontend/desktop/widgets/configview.py:60
+#: MiAZ/frontend/desktop/widgets/configview.py:61
 msgid "Disable "
 msgstr "Deshabiltar "
 
-#: MiAZ/frontend/desktop/widgets/configview.py:62
+#: MiAZ/frontend/desktop/widgets/configview.py:63
 #, python-brace-format
 msgid "{item_types} management"
 msgstr "Gestión de {item_types}"
 
-#: MiAZ/frontend/desktop/widgets/configview.py:126
+#: MiAZ/frontend/desktop/widgets/configview.py:127
 msgid " : Add"
 msgstr " : Añadir"
 
-#: MiAZ/frontend/desktop/widgets/configview.py:127
-#: MiAZ/frontend/desktop/widgets/configview.py:164
+#: MiAZ/frontend/desktop/widgets/configview.py:128
+#: MiAZ/frontend/desktop/widgets/configview.py:165
 msgid "<b>Repository name</b>"
 msgstr "<b>Nombre del repositorio</b>"
 
-#: MiAZ/frontend/desktop/widgets/configview.py:128
-#: MiAZ/frontend/desktop/widgets/configview.py:165
+#: MiAZ/frontend/desktop/widgets/configview.py:129
+#: MiAZ/frontend/desktop/widgets/configview.py:166
 msgid "Select target folder"
 msgstr "Seleccionar el directorio destino"
 
-#: MiAZ/frontend/desktop/widgets/configview.py:145
+#: MiAZ/frontend/desktop/widgets/configview.py:146
 msgid "Repository added to list of available repositories"
 msgstr "Repositorio añadido a la lista de repositorios disponible"
 
-#: MiAZ/frontend/desktop/widgets/configview.py:151
+#: MiAZ/frontend/desktop/widgets/configview.py:152
 msgid ""
 "No repository added. Invalid input.\n"
 "\n"
@@ -1571,53 +1545,61 @@ msgstr ""
 "Inténtalo otra vez seleccionando un directorio de destino y un nombre de "
 "repositorio válidos,"
 
-#: MiAZ/frontend/desktop/widgets/configview.py:163
+#: MiAZ/frontend/desktop/widgets/configview.py:164
 msgid " : Edit"
 msgstr " : Editar"
 
-#: MiAZ/frontend/desktop/widgets/configview.py:194
+#: MiAZ/frontend/desktop/widgets/configview.py:195
 msgid "Repository target folder updated"
 msgstr "Se ha actualizado el directorio destino para el repositorio "
 
-#: MiAZ/frontend/desktop/widgets/configview.py:198
+#: MiAZ/frontend/desktop/widgets/configview.py:199
 msgid "Repository target folder not updated"
 msgstr "No se ha actualizado el directorio destino para el repositorio "
 
-#: MiAZ/frontend/desktop/widgets/configview.py:219
+#: MiAZ/frontend/desktop/widgets/configview.py:220
 #, python-brace-format
 msgid "{title} {id} removed from de list of available items"
 msgstr "{title} {id} eliminado de la lista de items disponibles"
 
-#: MiAZ/frontend/desktop/widgets/configview.py:225
+#: MiAZ/frontend/desktop/widgets/configview.py:226
 #, python-brace-format
 msgid "{title} {id} is still being used"
 msgstr "{title} {id} todavía está siendo usado"
 
-#: MiAZ/frontend/desktop/widgets/configview.py:248
+#: MiAZ/frontend/desktop/widgets/configview.py:250
 #, python-brace-format
 msgid "{title} {item} ready to be used"
 msgstr "{title} {item} listo para ser usado"
 
-#: MiAZ/frontend/desktop/widgets/configview.py:261
+#: MiAZ/frontend/desktop/widgets/configview.py:264
 #, python-brace-format
 msgid "{title} {item} set as default"
 msgstr "{title} {item} establecido como valor por defecto"
 
-#: MiAZ/frontend/desktop/widgets/configview.py:476
+#: MiAZ/frontend/desktop/widgets/configview.py:482
+msgid "All categories"
+msgstr "Todas las categorías"
+
+#: MiAZ/frontend/desktop/widgets/configview.py:548
+msgid "All subcategories"
+msgstr "Todas las subcategorías"
+
+#: MiAZ/frontend/desktop/widgets/configview.py:585
 msgid "<b>Import plugin</b>"
 msgstr "<b>Importar plugin</b>"
 
-#: MiAZ/frontend/desktop/widgets/configview.py:477
+#: MiAZ/frontend/desktop/widgets/configview.py:586
 #, python-brace-format
 msgid "Plugin {plugin_name} v{plugin_version} imported successfully"
 msgstr "Plugin {plugin_name} v{plugin_version} importado satisfactoriamente"
 
-#: MiAZ/frontend/desktop/widgets/configview.py:482
+#: MiAZ/frontend/desktop/widgets/configview.py:591
 #, python-brace-format
 msgid "Error: {error}"
 msgstr "Error: {error}"
 
-#: MiAZ/frontend/desktop/widgets/configview.py:514
+#: MiAZ/frontend/desktop/widgets/configview.py:623
 #, python-brace-format
 msgid ""
 "{title} <i>{desc}</i> is still enabled.\n"
@@ -1626,18 +1608,18 @@ msgstr ""
 "{title} <i>{desc}</i> todavía está habilitado\n"
 "Por favor, deshabilítalo primero antes de borrarlo."
 
-#: MiAZ/frontend/desktop/widgets/configview.py:536
+#: MiAZ/frontend/desktop/widgets/configview.py:645
 #, python-brace-format
 msgid "{title} {desc}  removed from de list of available {item_types}"
 msgstr "{title} {desc} eliminado de la lista de {item_types} disponibles"
 
-#: MiAZ/frontend/desktop/widgets/configview.py:539
+#: MiAZ/frontend/desktop/widgets/configview.py:648
 #, python-brace-format
 msgid "{title} {desc}  not removed from de list of available {item_types}"
 msgstr ""
 "{title} {desc} no fue eliminado de la lista de {item_types} disponibles"
 
-#: MiAZ/frontend/desktop/widgets/configview.py:738
+#: MiAZ/frontend/desktop/widgets/configview.py:847
 #: MiAZ/frontend/desktop/widgets/pluginuimanager.py:121
 msgid "Properties"
 msgstr "Propiedades"
@@ -1658,13 +1640,37 @@ msgstr ""
 "<small>Revisa las preferencias de tu repositorio para gestionar plugins de "
 "usuario</small>"
 
-#: MiAZ/frontend/desktop/widgets/sidebar.py:190
+#: MiAZ/frontend/desktop/widgets/sidebar.py:187
 msgid "Filter by free text"
 msgstr "Filtrar por texto"
 
-#: MiAZ/frontend/desktop/widgets/sidebar.py:242
+#: MiAZ/frontend/desktop/widgets/sidebar.py:239
 msgid "Clear all filters"
 msgstr "Limpiar todos los filtros"
+
+#~ msgid "Plugins submenu"
+#~ msgstr "Submenu de plugins"
+
+#~ msgid "Control your repository metadata"
+#~ msgstr "Controla los metadatos de tu repositorio"
+
+#~ msgid "Add new metadata"
+#~ msgstr "Añadir nuevos metadatos"
+
+#~ msgid "MiAZ comes with plugin capabilities"
+#~ msgstr "MiAZ tiene soporte para plugins"
+
+#~ msgid "Pre-release"
+#~ msgstr "Pre-release"
+
+#~ msgid "User Interface"
+#~ msgstr "Interfaz de usuario"
+
+#, fuzzy, python-brace-format
+#~ msgid ""
+#~ "Exception error: {error}\n"
+#~ "\n"
+#~ msgstr "Error: {error}"
 
 #~ msgid "Accept"
 #~ msgstr "Aceptar"

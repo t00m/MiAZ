@@ -10,6 +10,7 @@ import glob
 from gettext import gettext as _
 import threading
 
+import gi
 from gi.repository import GLib
 from gi.repository import GObject
 from gi.repository import Peas
@@ -27,8 +28,8 @@ plugin_info = {
         'Website':       'http://github.com/t00m/MiAZ',
         'Help':          'http://github.com/t00m/MiAZ/README.adoc',
         'Version':       '0.5',
-        'Category':      _('Data Management'),
-        'Subcategory':   _('Import')
+        'Category':      'Data Management',
+        'Subcategory':   'Import'
     }
 
 
@@ -68,7 +69,7 @@ class MiAZAddDirectoryPlugin(GObject.GObject, Peas.Activatable):
         if not self.plugin.started():
             # Create menu item for plugin
             mnuItemName = self.plugin.get_menu_item_name()
-            menuitem = self.factory.create_menuitem(name=mnuItemName, label=_('Add documents from directory'), callback=self.select_directory)
+            menuitem = self.factory.create_menuitem(name=mnuItemName, label=_('Add documents from directory'), callback=self.select_directory, shortcuts=['<Shift>Insert'])
 
             # Add plugin to its default (sub)category
             self.plugin.install_menu_entry(menuitem)
@@ -86,16 +87,9 @@ class MiAZAddDirectoryPlugin(GObject.GObject, Peas.Activatable):
             self.app.set_status(MiAZStatus.BUSY)
 
             threading.Thread(target=self.import_directory(filepaths), daemon=True).start()
-
-            # ~ for source in filepaths:
-                # ~ btarget = self.util.filename_normalize(source)
-                # ~ target = os.path.join(self.repository.docs, btarget)
-                # ~ self.util.filename_import(source, target)
-            # ~ self.srvdlg.show_info(title='Import directory', body=f'{len(filepaths)} documents imported successfully')
-        except Exception as error:
-            self.srvdlg.show_error(title='Error selecting files', body=error)
-            self.log.error(f"Error selecting files: {error}")
-            raise
+        except GLib.Error as err:
+            self.srvdlg.show_error(title='Error selecting files', body=err.message)
+            self.log.error(f"{err.domain} > {err.message}")
 
     def import_directory(self, filepaths):
         total_files = len(filepaths)

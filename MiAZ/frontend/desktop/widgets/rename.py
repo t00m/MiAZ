@@ -170,7 +170,7 @@ class MiAZRenameDialog(Gtk.Box):
         return button
 
     def __create_actionrow(self, title, item_type, conf) -> Gtk.Widget:
-        i_title = item_type.__title_plural__
+        i_title = item_type.__config_name__
         icon_name = f"io.github.t00m.MiAZ-res-{i_title.lower().replace(' ', '')}"
         icon = self.icons.get_image_by_name(name=icon_name)
         boxValue = self.__create_box_value()
@@ -209,7 +209,7 @@ class MiAZRenameDialog(Gtk.Box):
         self.boxMain.append(self.rowDate)
         self.calendar = Gtk.Calendar()
         self.calendar.connect('day-selected', self.calendar_day_selected)
-        button_content = self.factory.create_button_content(icon_name=icon_name, css_classes=['flat'])
+        button_content = self.factory.create_button_content(icon_name=icon_name)
         button = Gtk.MenuButton(child=button_content)
         popover = Gtk.Popover()
         popover.set_child(self.calendar)

@@ -3,7 +3,7 @@ data/io.github.t00m.MiAZ.metainfo.xml.in
 data/io.github.t00m.MiAZ.gschema.xml
 data/resources/plugins/MiAZDeleteDoc/delete.py
 data/resources/plugins/MiAZImportDoc/adddoc.py
-data/resources/plugins/MiAZImportFromDirectory/adddir.py
+data/resources/plugins/MiAZAddFromDir/adddir.py
 data/resources/plugins/MiAZMassRename/massrename.py
 data/resources/plugins/MiAZRenameDoc/renameitem.py
 data/resources/plugins/MiAZViewDoc/viewitem.py

@@ -525,12 +525,6 @@ class MiAZPluginSystem(GObject.GObject):
                     plugin_info[key.strip()] = _(value.strip())
         return plugin_info
 
-    # ~ # Example usage
-    # ~ file_path = "/path/to/your/module.py"
-    # ~ variable_name = "plugin_info"
-    # ~ result = extract_variable_from_module(file_path, variable_name)
-    # ~ print(result)  # Will print the dictionary if found
-
     def create_user_plugin_index(self, *args):
         """Parse plugins info file and recreate index on runtime"""
         self.log.info("Creating user plugin index during runtime")
@@ -548,19 +542,6 @@ class MiAZPluginSystem(GObject.GObject):
                 plugin_index[plugin_name] = plugin_info
                 plugin_list.append((plugin_name, plugin_desc))
                 self.log.info(f" - Adding user plugin {plugin_name} to plugin index")
-
-            # ~ self.log.error(f"{module_file}: {plugin_info}")
-        # ~ if not plugin_files:
-            # ~ self.log.warning(f"No .plugin files found in {plugins_dir}")
-
-        # ~ plugin_list = []
-        # ~ for plugin_file in plugin_files:
-            # ~ plugin_info = self.get_plugin_attributes(plugin_file)
-            # ~ plugin_name = plugin_info['Name']
-            # ~ plugin_desc = plugin_info['Description']
-            # ~ plugin_index[plugin_name] = plugin_info
-            # ~ plugin_list.append((plugin_name, plugin_desc))
-            # ~ self.log.info(f" - Adding user plugin {plugin_name} to plugin index")
 
         with open(ENV['APP']['PLUGINS']['USER_INDEX'], 'w') as fp:
             json.dump(plugin_index, fp, sort_keys=False, indent=4)
@@ -593,30 +574,7 @@ class MiAZPluginSystem(GObject.GObject):
                 plugin_index[plugin_name] = plugin_info
                 plugin_list.append((plugin_name, plugin_desc))
                 self.log.info(f" - Adding system plugin {plugin_name} to plugin index")
-            # ~ self.log.error(f"{module_file}: {plugin_info}")
-        # ~ if not plugin_files:
-            # ~ self.log.warning(f"No .plugin files found in {plugins_dir}")
-
-        # ~ plugin_list = []
-        # ~ for plugin_file in plugin_files:
-            # ~ plugin_info = self.get_plugin_attributes(plugin_file)
-            # ~ plugin_name = plugin_info['Name']
-            # ~ plugin_desc = plugin_info['Description']
-            # ~ plugin_index[plugin_name] = plugin_info
-            # ~ plugin_list.append((plugin_name, plugin_desc))
-            # ~ self.log.info(f" - Adding system plugin {plugin_name} to plugin index")
-
 
         with open(ENV['APP']['PLUGINS']['SYSTEM_INDEX'], 'w') as fp:
             json.dump(plugin_index, fp, sort_keys=False, indent=4)
             self.log.info(f"File index-system-plugins.json generated with {len(plugin_index)} plugins")
-
-        # ~ try:
-            # ~ config = self.app.get_config_dict()
-            # ~ repo_id = config['App'].get('current')
-            # ~ config_plugins = self.app.get_config('Plugin')
-            # ~ config_plugins.remove_all()
-            # ~ config_plugins.add_available_batch(plugin_list)
-            # ~ self.log.info(f"Plugins available updated successfully for repository {repo_id}")
-        # ~ except AttributeError:
-            # ~ self.log.warning("Skip. Plugin config not ready yet")

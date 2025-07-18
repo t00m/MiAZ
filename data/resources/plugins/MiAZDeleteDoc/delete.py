@@ -29,8 +29,8 @@ plugin_info = {
         'Website':       'http://github.com/t00m/MiAZ',
         'Help':          'http://github.com/t00m/MiAZ/README.adoc',
         'Version':       '0.5',
-        'Category':      _('Data Management'),
-        'Subcategory':   _('Deletion')
+        'Category':      'Data Management',
+        'Subcategory':   'Deletion'
     }
 
 
@@ -70,7 +70,7 @@ class MiAZDeleteItemPlugin(GObject.GObject, Peas.Activatable):
         if not self.plugin.started():
             # Create menu item for plugin
             mnuItemName = self.plugin.get_menu_item_name()
-            menuitem = self.factory.create_menuitem(name=mnuItemName, label=_('Delete selected documents'), callback=self.document_delete)
+            menuitem = self.factory.create_menuitem(name=mnuItemName, label=_('Delete selected documents'), callback=self.document_delete, shortcuts=['<Control>Delete', '<Control>KP_Delete'])
 
             # Add plugin to its default (sub)category
             self.plugin.install_menu_entry(menuitem)
@@ -80,7 +80,8 @@ class MiAZDeleteItemPlugin(GObject.GObject, Peas.Activatable):
 
     def document_delete(self, *args):
         items = self.workspace.get_selected_items()
-        if self.actions.stop_if_no_items(items):
+        if self.actions.stop_if_no_items():
+            self.log.debug("No items selected")
             return
 
         frame = Gtk.Frame()

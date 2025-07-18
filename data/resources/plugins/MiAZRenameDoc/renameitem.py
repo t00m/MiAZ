@@ -27,8 +27,8 @@ plugin_info = {
         'Website':       'http://github.com/t00m/MiAZ',
         'Help':          'http://github.com/t00m/MiAZ/README.adoc',
         'Version':       '0.6',
-        'Category':      _('Data Management'),
-        'Subcategory':   _('Single mode')
+        'Category':      'Data Management',
+        'Subcategory':   'Single mode'
     }
 
 class MiAZToolbarRenameItemPlugin(GObject.GObject, Peas.Activatable):
@@ -78,7 +78,7 @@ class MiAZToolbarRenameItemPlugin(GObject.GObject, Peas.Activatable):
         if not self.plugin.started():
             # Create menu item for plugin
             mnuItemName = self.plugin.get_menu_item_name()
-            menuitem = self.factory.create_menuitem(name=mnuItemName, label=_('Edit selected document'), callback=self.document_rename)
+            menuitem = self.factory.create_menuitem(name=mnuItemName, label=_('Edit selected document'), callback=self.document_rename, shortcuts=['<Control>BackSpace'])
 
             # Add plugin to its default (sub)category
             self.plugin.install_menu_entry(menuitem)
@@ -96,11 +96,11 @@ class MiAZToolbarRenameItemPlugin(GObject.GObject, Peas.Activatable):
             self.plugin.set_started(started=True)
 
     def document_rename(self, *args):
-        try:
-            item = self.workspace.get_selected_items()[0]
-            self.document_rename_single(item.id)
-        except IndexError:
-            self.log.debug("No item selected")
+        if self.actions.stop_if_no_items():
+            self.log.debug("No items selected")
+            return
+        item = self.workspace.get_selected_items()[0]
+        self.document_rename_single(item.id)
 
     def document_rename_single(self, doc):
         rename_widget = self.app.add_widget('rename-widget', MiAZRenameDialog(self.app))
@@ -108,7 +108,7 @@ class MiAZToolbarRenameItemPlugin(GObject.GObject, Peas.Activatable):
         window = self.app.get_widget('window')
         title = _('Rename document')
         body = '' # _(f'<big>{i_title} {selected_item.id} is still being used</big>')
-        dialog = self.srvdlg.show_question(title=title, body=body, widget=rename_widget)
+        dialog = self.srvdlg.show_question(title=title, body=body, widget=rename_widget,width=1024)
         dialog.add_response("preview", _("Preview"))
         dialog.set_response_enabled("preview", True)
         self.app.add_widget('dialog-rename', dialog)
