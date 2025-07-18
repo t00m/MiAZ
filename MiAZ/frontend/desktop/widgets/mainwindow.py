@@ -240,7 +240,7 @@ class MiAZMainWindow(Gtk.Box):
         section_common.append_item(menuitem)
         # ~ menuitem = factory.create_menuitem('app-help', _('Help'), actions.show_app_help, None, ['<Control>h'])
         # ~ section_common.append_item(menuitem)
-        menuitem = factory.create_menuitem('app-about', _('About'), actions.show_app_about, None, ['<Control>a'])
+        menuitem = factory.create_menuitem('app-about', _('About'), actions.show_app_about, None, ['<Control>b'])
         section_common.append_item(menuitem)
         menuitem = factory.create_menuitem('app-quit', _('Exit'), actions.exit_app, None, ['<Control>q'])
         section_bottom.append_item(menuitem)

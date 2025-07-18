@@ -71,7 +71,7 @@ class MiAZDialog:
         dialog.set_heading(f"{title}")
         dialog.set_body(f"{body}")
         dialog.set_size_request(width, height)
-        dialog.set_presentation_mode(Adw.DialogPresentationMode.BOTTOM_SHEET)
+        # ~ dialog.set_presentation_mode(Adw.DialogPresentationMode.BOTTOM_SHEET)
 
         # Trick to reduce body_label size
         adwgizmo = dialog.get_child()
@@ -152,6 +152,8 @@ class MiAZDialog:
             parent = self.app.get_widget('window')
         dialog = self.create(title=title, body=body, dtype='error', widget=widget, callback=callback, data=data, width=width, height=height)
         dialog.get_style_context().add_class(class_name='error')
+        dialog.set_default_response('close')
+        dialog.set_close_response('close')
         dialog.present(parent)
 
     def show_action(self,
