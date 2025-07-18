@@ -108,7 +108,7 @@ class MiAZToolbarRenameItemPlugin(GObject.GObject, Peas.Activatable):
         window = self.app.get_widget('window')
         title = _('Rename document')
         body = '' # _(f'<big>{i_title} {selected_item.id} is still being used</big>')
-        dialog = self.srvdlg.show_question(title=title, body=body, widget=rename_widget)
+        dialog = self.srvdlg.show_question(title=title, body=body, widget=rename_widget,width=1024)
         dialog.add_response("preview", _("Preview"))
         dialog.set_response_enabled("preview", True)
         self.app.add_widget('dialog-rename', dialog)
