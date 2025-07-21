@@ -54,11 +54,16 @@
       <caption>Filter and search capabilities</caption>
     </screenshot>
     <screenshot type="default">
-      <image type="source">https://raw.githubusercontent.com/t00m/miaz/main/data/docs/screenshots/MiAZ-Workspace-menu.png</image>
-      <caption>One menu for all tasks</caption>
+      <image type="source">https://raw.githubusercontent.com/t00m/miaz/main/data/docs/screenshots/MiAZ-repository-settings.png</image>
+      <caption>Repository settings</caption>
+    </screenshot>
+    <screenshot type="default">
+      <image type="source">https://raw.githubusercontent.com/t00m/miaz/main/data/docs/screenshots/MiAZ-repository-plugins.png</image>
+      <caption>Manage repository plugins</caption>
     </screenshot>
   </screenshots>
   <releases>
+    <release version="0.1.8" date="2025-07-21" urgency="low" />
     <release version="0.1.7" date="2025-03-22" urgency="low" />
     <release version="0.0.48" date="2024-07-12" urgency="low" />
   </releases>
