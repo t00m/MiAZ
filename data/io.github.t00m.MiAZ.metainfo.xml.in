@@ -46,19 +46,19 @@
   </recommends>
   <screenshots>
     <screenshot type="default">
-      <image type="source">https://raw.githubusercontent.com/t00m/miaz/main/data/docs/screenshots/MiAZ-About.png</image>
+      <image type="source">https://raw.githubusercontent.com/t00m/miaz/dev/data/docs/screenshots/MiAZ-About.png</image>
       <caption>MiAZ about dialog</caption>
     </screenshot>
     <screenshot type="default">
-      <image type="source">https://raw.githubusercontent.com/t00m/miaz/main/data/docs/screenshots/MiAZ-Workspace-filters.png</image>
+      <image type="source">https://raw.githubusercontent.com/t00m/miaz/dev/data/docs/screenshots/MiAZ-Workspace-filters.png</image>
       <caption>Filter and search capabilities</caption>
     </screenshot>
     <screenshot type="default">
-      <image type="source">https://raw.githubusercontent.com/t00m/miaz/main/data/docs/screenshots/MiAZ-repository-settings.png</image>
+      <image type="source">https://raw.githubusercontent.com/t00m/miaz/dev/data/docs/screenshots/MiAZ-repository-settings.png</image>
       <caption>Repository settings</caption>
     </screenshot>
     <screenshot type="default">
-      <image type="source">https://raw.githubusercontent.com/t00m/miaz/main/data/docs/screenshots/MiAZ-repository-plugins.png</image>
+      <image type="source">https://raw.githubusercontent.com/t00m/miaz/dev/data/docs/screenshots/MiAZ-repository-plugins.png</image>
       <caption>Manage repository plugins</caption>
     </screenshot>
   </screenshots>
