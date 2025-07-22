@@ -410,10 +410,15 @@ class MiAZDialogAddRepo(MiAZDialogAdd):
         return self.etyValue1.get_text()
 
     def set_value1(self, value):
+        if value is None:
+            value = ''
         self.etyValue1.set_text(value)
 
     def get_value2(self):
         return self.button.get_label()
 
     def set_value2(self, value):
+        if value is None:
+            value = ''
         self.button.set_label(value)
+
