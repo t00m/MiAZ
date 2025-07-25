@@ -38,8 +38,8 @@ plugin_info = {
         'Website':       'http://github.com/t00m/MiAZ',
         'Help':          'http://github.com/t00m/MiAZ/README.adoc',
         'Version':       '0.5',
-        'Category':      _('Data Management'),
-        'Subcategory':   _('Batch mode')
+        'Category':      'Data Management',
+        'Subcategory':   'Batch mode'
     }
 
 Field = {}
@@ -203,7 +203,8 @@ class MiAZMassRenamingPlugin(GObject.GObject, Peas.Activatable):
                 self.app.set_status(MiAZStatus.RUNNING)
 
         items = self.workspace.get_selected_items()
-        if self.actions.stop_if_no_items(items):
+        if self.actions.stop_if_no_items():
+            self.log.debug("No items selected")
             return
 
         if item_type != Date:

@@ -90,26 +90,26 @@ class MiAZSelector(Gtk.Box):
         centerbox.set_end_widget(self.toolbar_buttons_Sl)
 
         # Views
-        boxViews = factory.create_box_horizontal(margin=0, spacing=0, hexpand=True, vexpand=True)
-        boxViews.get_style_context().add_class(class_name='toolbar')
-        boxViews.set_homogeneous(True)
-        boxLeft = factory.create_box_vertical(margin=0, spacing=0, hexpand=True, vexpand=True)
-        boxRight = factory.create_box_vertical(margin=0, spacing=0, hexpand=True, vexpand=True)
-        boxViews.append(boxLeft)
-        boxViews.append(boxRight)
-        self.append(boxViews)
+        self.boxViews = factory.create_box_horizontal(margin=0, spacing=0, hexpand=True, vexpand=True)
+        self.boxViews.get_style_context().add_class(class_name='toolbar')
+        self.boxViews.set_homogeneous(True)
+        self.boxLeft = factory.create_box_vertical(margin=0, spacing=6, hexpand=True, vexpand=True)
+        self.boxRight = factory.create_box_vertical(margin=0, spacing=6, hexpand=True, vexpand=True)
+        self.boxViews.append(self.boxLeft)
+        self.boxViews.append(self.boxRight)
+        self.append(self.boxViews)
 
         ## Available view
         boxViewAv = factory.create_box_vertical(margin=0, spacing=0, hexpand=True, vexpand=True)
         self.frmViewAv = Gtk.Frame()
         boxViewAv.append(self.frmViewAv)
-        boxLeft.append(boxViewAv)
+        self.boxLeft.append(boxViewAv)
 
         ## Used view
         boxViewSl = factory.create_box_vertical(margin=0, spacing=0, hexpand=True, vexpand=True)
         self.frmViewSl = Gtk.Frame()
         boxViewSl.append(self.frmViewSl)
-        boxRight.append(boxViewSl)
+        self.boxRight.append(boxViewSl)
 
     def _on_restart_clicked(self, *args):
         actions = self.app.get_service('actions')
@@ -370,7 +370,7 @@ class MiAZSelector(Gtk.Box):
         self.viewAv.update(items_available)
         self.log.debug(f"Update available view {self.config.config_for} with {len(items)} items")
 
-    def _update_view_used(self):
+    def _update_view_used(self, items=None):
         items_used = []
         item_type = self.config.model
         items = self.config.load_used()

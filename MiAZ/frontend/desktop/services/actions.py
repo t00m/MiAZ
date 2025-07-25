@@ -45,7 +45,6 @@ class MiAZActions(GObject.GObject):
         self.app = app
         self.factory = self.app.get_service('factory')
         self.util = self.app.get_service('util')
-        self.repository = self.app.get_service('repo')
         self.srvdlg = self.app.get_service('dialogs')
         GObject.signal_new('settings-loaded',
                             MiAZActions,
@@ -54,7 +53,8 @@ class MiAZActions(GObject.GObject):
 
     def document_display(self, doc):
         self.log.debug(f"Displaying {doc}")
-        filepath = os.path.join(self.repository.docs, doc)
+        repository = self.app.get_service('repo')
+        filepath = os.path.join(repository.docs, doc)
         self.util.filename_display(filepath)
 
     def dropdown_populate(self, config, dropdown, item_type, any_value=True, none_value=False, only_include: list = [], only_exclude: list = []):
@@ -296,8 +296,8 @@ class MiAZActions(GObject.GObject):
         about.set_copyright(f"© 2019-2025 {ENV['APP']['author']}")
         about.set_website('https://github.com/t00m/MiAZ')
         about.set_comments(ENV['APP']['description'])
-        README = open(ENV['FILE']['README'], 'r').read()
-        about.set_comments(README)
+        # ~ README = open(ENV['FILE']['README'], 'r').read()
+        # ~ about.set_comments(README)
         about.present(window)
 
     def show_app_help(self, *args):
@@ -331,8 +331,10 @@ class MiAZActions(GObject.GObject):
         self.app.emit("application-finished")
         self.app.quit()
 
-    def stop_if_no_items(self, items: [], widget: Gtk.Widget = None):
+    def stop_if_no_items(self, widget: Gtk.Widget = None):
+        workspace = self.app.get_widget('workspace')
         stop = False
+        items = workspace.get_selected_items()
         if len(items) == 0:
             srvdlg = self.app.get_service('dialogs')
             if widget is None:

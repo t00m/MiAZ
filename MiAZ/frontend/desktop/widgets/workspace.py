@@ -178,11 +178,11 @@ class MiAZWorkspace(Gtk.Box):
         self.emit('workspace-loaded')
 
     def _on_repo_switch(self, *args):
-        sidebar = self.app.get_widget('sidebar')
         self.selected_items = []
-        sidebar.clear_filters()
-        self.view.refilter()
         self.update()
+        for node in self.config:
+            self.config[node].connect('used-updated', self.update)
+            self.config[node].connect('available-updated', self.update)
 
     def _update_dropdowns(self, *args):
         actions = self.app.get_service('actions')
@@ -300,6 +300,7 @@ class MiAZWorkspace(Gtk.Box):
         self._workspace_filters['main'] = self._do_filter_view_main
         self.view.set_filter(self._do_filter_view)
         frame.set_child(self.view)
+
         return frame
 
     def register_filter_view(self, name: str, callback):
@@ -506,7 +507,7 @@ class MiAZWorkspace(Gtk.Box):
                 review += 1
 
         togglebutton = self.app.get_widget('workspace-togglebutton-pending-docs')
-        togglebutton.set_label(f"Review ({review})")
+        togglebutton.set_label(_("Review ({review})").format(review=review))
         togglebutton.get_style_context().add_class(class_name='flat')
         if show_pending:
             self.log.debug("There are pending documents. Displaying warning button")

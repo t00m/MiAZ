@@ -1,4 +1,11 @@
-{
+#!/usr/bin/env python3
+import subprocess
+
+p = subprocess.Popen(['git', 'rev-parse', '--abbrev-ref', 'HEAD'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+stdout, sterr = p.communicate()
+branch_name = stdout.decode().strip()
+
+MANIFEST = """{
     "app-id" : "io.github.t00m.MiAZ",
     "runtime" : "org.gnome.Platform",
     "runtime-version" : "47",
@@ -15,7 +22,8 @@
         "--socket=cups",
         "--socket=gpg-agent",
         "--socket=pulseaudio",
-        "--socket=ssh-auth"
+        "--socket=ssh-auth",
+        "--filesystem=host"
     ],
     "cleanup" : [
         "/include",
@@ -54,7 +62,7 @@
             "name": "python3-requests",
             "buildsystem": "simple",
             "build-commands": [
-                "pip3 install --verbose --exists-action=i --no-index --find-links=\"file://${PWD}\" --prefix=${FLATPAK_DEST} \"requests\" --no-build-isolation"
+                "pip3 install --verbose --exists-action=i --no-index --find-links=\\\"file://${PWD}\\\" --prefix=${FLATPAK_DEST} \\\"requests\\\" --no-build-isolation"
             ],
             "sources": [
                 {
@@ -92,9 +100,11 @@
                 {
                     "type" : "git",
                     "url" : "https://github.com/t00m/MiAZ.git",
-                    "tag" : "dev"
+                    "tag" : "%s"
                 }
             ]
         }
     ]
-}
+}"""
+
+print(MANIFEST % branch_name)

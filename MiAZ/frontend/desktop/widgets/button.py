@@ -19,7 +19,6 @@ class MiAZPopoverButton(Gtk.Box):
         self.title = title
         self.css_classes = css_classes
         self.widgets = widgets
-        self.factory = self.app.get_service('factory')
         self.build_ui()
 
     def build_ui(self):
@@ -37,7 +36,9 @@ class MiAZPopoverButton(Gtk.Box):
         self.popover = Gtk.Popover()
         self.popover.set_child(vbox)
         self.popover.present()
-        self.button = Gtk.MenuButton(child=self.factory.create_button_content(icon_name=self.icon_name, title=self.title, css_classes=self.css_classes))
+        self.button = Gtk.MenuButton(child=self.factory.create_button_content(icon_name=self.icon_name, title=self.title))
+        for css_class in self.css_classes:
+            self.button.get_style_context().add_class(class_name=css_class)
         self.button.set_popover(self.popover)
         self.append(self.button)
 
@@ -49,3 +50,4 @@ class MiAZPopoverButton(Gtk.Box):
 
     def set_has_frame(self, has_frame: bool = False):
         self.button.set_has_frame(has_frame)
+
