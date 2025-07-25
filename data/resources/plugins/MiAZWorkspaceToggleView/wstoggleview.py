@@ -25,8 +25,8 @@ plugin_info = {
         'Website':       'http://github.com/t00m/MiAZ',
         'Help':          'http://github.com/t00m/MiAZ/README.adoc',
         'Version':       '0.6',
-        'Category':      _('Customisation and Personalisation'),
-        'Subcategory':   _('User Interface')
+        'Category':      'Customisation and Personalisation',
+        'Subcategory':   'User Interface'
     }
 
 class MiAZWorkspaceToggleViewPlugin(GObject.GObject, Peas.Activatable):

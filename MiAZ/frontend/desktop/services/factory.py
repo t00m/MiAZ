@@ -228,7 +228,7 @@ class MiAZFactory:
         box.set_vexpand(vexpand)
         return box
 
-    def create_button_content(self, icon_name='', title='', callback=None, size=16, css_classes=[''], data=None):
+    def create_button_content(self, icon_name='', title='', callback=None, size=16, data=None):
         hbox = self.create_box_horizontal(spacing=0, margin=0, hexpand=False, vexpand=False)
         if len(icon_name.strip()) > 0:
             icon = self.icons.get_image_by_name(icon_name, size=size)
@@ -241,9 +241,6 @@ class MiAZFactory:
             label.set_markup(title)
             label.set_valign(Gtk.Align.CENTER)
             hbox.append(label)
-
-        for css_class in css_classes:
-            hbox.get_style_context().add_class(class_name=css_class)
 
         return hbox
 
@@ -323,7 +320,7 @@ class MiAZFactory:
     def create_button_menu(self, icon_name: str = '', title:str = '', css_classes: list = None, menu: Gio.Menu = None)-> Gtk.MenuButton:
         if css_classes is None:
             css_classes = []
-        child=self.create_button_content(icon_name=icon_name, title=title, css_classes=css_classes)
+        child=self.create_button_content(icon_name=icon_name, title=title)
         button = Gtk.MenuButton()
         button.set_child(child)
         popover = Gtk.PopoverMenu.new_from_model(menu)
@@ -414,6 +411,36 @@ class MiAZFactory:
         # ~ text_widget.set_extra_menu(menu_dropdown)
         # ~ menuitem = self.create_menuitem(name='clear', label='Clear dropdown', callback=_clear_dropdown, data=dropdown, shortcuts=[])
         # ~ menu_dropdown.append_item(menuitem)
+
+        return dropdown
+
+    def create_dropdown(self, item_type):
+        def _on_factory_setup(factory, list_item):
+            box = Gtk.Box(spacing=6, orientation=Gtk.Orientation.HORIZONTAL)
+            label = Gtk.Label()
+            label.set_property('ellipsize', Pango.EllipsizeMode.MIDDLE)
+            box.append(label)
+            list_item.set_child(box)
+
+        def _on_factory_bind(factory, list_item):
+            box = list_item.get_child()
+            label = box.get_last_child()
+            item = list_item.get_item()
+            label.set_markup(f'{item.title}')
+
+        # Set up the factory
+        factory = Gtk.SignalListItemFactory()
+        factory.connect("setup", _on_factory_setup)
+        factory.connect("bind", _on_factory_bind)
+
+        # Create the model
+        model = Gio.ListStore(item_type=item_type)
+        sort_model  = Gtk.SortListModel(model=model) # FIXME: Gtk.Sorter?
+        filter_model = Gtk.FilterListModel(model=sort_model)
+
+        # Create dropdown
+        dropdown = Gtk.DropDown(model=filter_model, factory=factory, hexpand=True)
+        dropdown.set_show_arrow(True)
 
         return dropdown
 
