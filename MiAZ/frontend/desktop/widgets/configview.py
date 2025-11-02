@@ -270,7 +270,8 @@ class MiAZRepositories(MiAZConfigView):
         ## Block signal "dd_repo > notify::selected-item"
         dd_repo = self.app.get_widget('window-settings-dropdown-repository-active')
         signal = self.app.get_widget('signal-dd_repo')
-        dd_repo.handler_block(signal)
+        if signal is not None:
+            dd_repo.handler_block(signal)
 
         items_available = self.config.load_available()
         items_used = self.config.load_used()
@@ -288,7 +289,8 @@ class MiAZRepositories(MiAZConfigView):
         self.config.save_available(items=items_available)
         self.update_views()
         ## Unblock signal "dd_repo > notify::selected-item"
-        dd_repo.handler_unblock(signal)
+        if signal is not None:
+            dd_repo.handler_unblock(signal)
 
 
 class MiAZCountries(MiAZConfigView):
