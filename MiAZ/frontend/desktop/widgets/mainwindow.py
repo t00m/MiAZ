@@ -72,7 +72,7 @@ class MiAZMainWindow(Gtk.Box):
             self._setup_page_404()
 
         # Page WebBrowser
-        page = self.app.get_widget('page-webbroser')
+        page = self.app.get_widget('page-webbrowser')
         if page is None:
             self._setup_webbrowser()
 

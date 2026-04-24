@@ -9,6 +9,13 @@ from gettext import gettext as _
 from gi.repository import Adw
 from gi.repository import Gtk
 
+try:
+    import requests
+    from requests.exceptions import HTTPError
+    _REQUESTS_AVAILABLE = True
+except ImportError:
+    _REQUESTS_AVAILABLE = False
+
 from MiAZ.backend.log import MiAZLog
 from MiAZ.backend.models import Plugin
 from MiAZ.frontend.desktop.services.pluginsystem import MiAZPluginType
@@ -157,6 +164,9 @@ class MiAZPluginUIManager(Gtk.Box):
                 self.log.info(f"Plugin {selected_plugin.id} doesn't have a settings dialog")
 
     def _refresh_index_plugin_file(self, *args):
+        if not _REQUESTS_AVAILABLE:
+            self.log.error("Cannot refresh plugin index: 'requests' library is not installed")
+            return
         ENV = self.app.get_env()
         source = ENV['APP']['PLUGINS']['SOURCE']
         url_base = ENV['APP']['PLUGINS']['REMOTE_INDEX']
@@ -181,8 +191,7 @@ class MiAZPluginUIManager(Gtk.Box):
                     plugin_list.append((pid, desc))
             # Recreate index plugin again (useful for devel purposes)
             plugin_system.create_plugin_index()
-
-            self.update_user_plugins()
+            self.log.info("Plugin index refreshed. Restart the application to apply changes.")
 
         except HTTPError as http_error:
             self.log.error(f"HTTP error occurred: {http_error}")

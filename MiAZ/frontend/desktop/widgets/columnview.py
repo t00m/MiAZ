@@ -218,12 +218,13 @@ class MiAZColumnView(Gtk.Box):
         self.log.debug(item.id)
 
     def _on_sort_string_func(self, item1, item2, prop):
-        if eval(f"item1.{prop}.upper()") > eval(f"item2.{prop}.upper()"):
+        v1 = getattr(item1, prop, '').upper()
+        v2 = getattr(item2, prop, '').upper()
+        if v1 > v2:
             return Gtk.Ordering.LARGER
-        elif eval(f"item1.{prop}.upper()") < eval(f"item2.{prop}.upper()"):
+        elif v1 < v2:
             return Gtk.Ordering.SMALLER
-        else:
-            return Gtk.Ordering.EQUAL
+        return Gtk.Ordering.EQUAL
 
 
 class MiAZColumnViewSelector(Gtk.Box):
@@ -404,9 +405,10 @@ class MiAZColumnViewSelector(Gtk.Box):
         self.log.debug(item.id)
 
     def _on_sort_string_func(self, item1, item2, prop):
-        if eval(f"item1.{prop}.upper()") > eval(f"item2.{prop}.upper()"):
+        v1 = getattr(item1, prop, '').upper()
+        v2 = getattr(item2, prop, '').upper()
+        if v1 > v2:
             return Gtk.Ordering.LARGER
-        elif eval(f"item1.{prop}.upper()") < eval(f"item2.{prop}.upper()"):
+        elif v1 < v2:
             return Gtk.Ordering.SMALLER
-        else:
-            return Gtk.Ordering.EQUAL
+        return Gtk.Ordering.EQUAL

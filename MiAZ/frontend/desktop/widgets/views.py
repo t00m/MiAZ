@@ -134,14 +134,16 @@ class MiAZColumnViewWorkspace(MiAZColumnView):
 
     def _on_factory_setup_active(self, factory, list_item):
         box = ColCheck()
+        button = box.get_first_child()
+        button._handler_id = button.connect('toggled', self._on_button_toggled)
         list_item.set_child(box)
 
     def _on_factory_bind_active(self, factory, list_item):
         box = list_item.get_child()
         item = list_item.get_item()
         button = box.get_first_child()
-        button.connect('toggled', self._on_button_toggled)
-        button.set_active(item.active)
+        with button.handler_block(button._handler_id):
+            button.set_active(item.active)
 
     def _on_factory_setup_icon(self, factory, list_item):
         box = ColIcon()

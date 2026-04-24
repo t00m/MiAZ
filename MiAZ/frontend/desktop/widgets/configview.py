@@ -9,7 +9,12 @@ import glob
 from gettext import gettext as _
 import threading
 
-import requests
+try:
+    import requests
+    from requests.exceptions import HTTPError
+    _REQUESTS_AVAILABLE = True
+except ImportError:
+    _REQUESTS_AVAILABLE = False
 
 from gi.repository import Adw
 from gi.repository import Gio
@@ -424,16 +429,14 @@ class MiAZUserPlugins(MiAZConfigView):
     Only display User plugins found in ENV['APP']['PLUGINS']['USER_INDEX']
     """
     __gtype_name__ = 'MiAZUserPlugins'
+    __gsignals__ = {
+        'plugins-downloaded': (GObject.SignalFlags.RUN_LAST, None, ()),
+    }
     current = None
 
     def __init__(self, app):
         super(MiAZConfigView, self).__init__(app, edit=True)
         super().__init__(app, 'Plugin')
-        sid_u = GObject.signal_lookup('plugins-downloaded', MiAZUserPlugins)
-        if sid_u == 0:
-            GObject.signal_new('plugins-downloaded',
-                                MiAZUserPlugins,
-                                GObject.SignalFlags.RUN_LAST, None, ())
         boxopers = self.app.get_widget('selector-box-operations')
         factory = self.app.get_service('factory')
         util = self.app.get_service('util')
@@ -663,6 +666,9 @@ class MiAZUserPlugins(MiAZConfigView):
         threading.Thread(target=self.download_plugins, daemon=True).start()
 
     def download_plugins(self):
+        if not _REQUESTS_AVAILABLE:
+            self.log.error("Cannot download plugins: 'requests' library is not installed")
+            return
         # FIXME: set toolbar sensitivity to False
         banner = self.app.get_widget('repository-settings-banner')
         banner.set_revealed(True)

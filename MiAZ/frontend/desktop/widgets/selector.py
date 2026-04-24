@@ -25,6 +25,7 @@ class MiAZSelector(Gtk.Box):
         self.config = None
         self.viewAv = None
         self.viewSl = None
+        self._cached_filter_text = ''
         self._build_ui()
 
     def _build_ui(self):
@@ -380,15 +381,13 @@ class MiAZSelector(Gtk.Box):
         self.log.debug(f"Update used view {self.config.config_for} with {len(items)} items")
 
     def _on_filter_selected(self, *args):
+        self._cached_filter_text = self.searchentry.get_text().upper()
         self.viewAv.refilter()
         self.viewSl.refilter()
 
     def _do_filter_view(self, item, filter_list_model):
-        chunk = self.searchentry.get_text().upper()
-        string = f"{item.id}-{item.title}"
-        if chunk in string.upper():
-            return True
-        return False
+        string = f"{item.id}-{item.title}".upper()
+        return self._cached_filter_text in string
 
     def _on_config_import(self, *args):
         pass

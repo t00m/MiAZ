@@ -148,7 +148,7 @@ class MiAZSidebar(Adw.Bin):
 
     def update_repo_status(self, *args):
         repo_status = self.app.get_widget('sidebar-status-repo')
-        repository = self.app.get_service('repository')
+        repository = self.app.get_service('repo')
         workspace = self.app.get_widget('workspace')
         num_docs = len(workspace.get_selected_items())
         config = self.app.get_config_dict()
