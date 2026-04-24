@@ -65,15 +65,13 @@ class MiAZRepository(GObject.GObject):
                         except Exception as error:
                             self.log.error(error)
             self.log.debug(f"Repository {conf_file} valid? {valid}")
+        # ~ except KeyError as keyerror:
+            # ~ pass
         except Exception as error:
-            errmsg = _("No repositories found.")
-
-            errmsg = _("Please, create a new repository, if none exists yet.\n\n")
+            errmsg = _("No repositories found.\n")
+            errmsg += _("Please, create a new repository, if none exists yet.\n\n")
             errmsg += _("Otherwise, check if the directory exists (local repository) or if the server is accessible (remote repository).")
-            # ~ errmsg += _("Exception error: {error}\n\n").format(error=error)
-            # ~ errmsg += _("Repository path '{path}' not valid.\n").format(path=path)
             self.log.error(errmsg)
-            self.set_error(errmsg)
         return valid
 
     def init(self, path):
