@@ -153,7 +153,7 @@ class MiAZSidebar(Adw.Bin):
         num_docs = len(workspace.get_selected_items())
         config = self.app.get_config_dict()
         repo_id = config['App'].get('current')
-        description = _(f"<big>Repository {repo_id}\n<b>{num_docs} documents</b></big>")
+        description = _("<big>Repository {repo_id}\n<b>{num_docs} documents</b></big>").format(repo_id=repo_id, num_docs=num_docs)
         repo_status.set_description(description)
         self.log.debug(description)
 
@@ -230,9 +230,9 @@ class MiAZSidebar(Adw.Bin):
             self.app.add_widget('sidebar-box-custom-filters', row)
             body.append(row)
             widget.append(body)
-            page_custom_fiters = viewstack.add_titled(widget, 'custom-filters', '') # _('Custom filters'))
-            page_custom_fiters.set_icon_name('io.github.t00m.MiAZ-filter-custom-symbolic')
-            page_custom_fiters.set_visible(True)
+            page_custom_filters = viewstack.add_titled(widget, 'custom-filters', '') # _('Custom filters'))
+            page_custom_filters.set_icon_name('io.github.t00m.MiAZ-filter-custom-symbolic')
+            page_custom_filters.set_visible(True)
 
     def _setup_clear_filters_button(self):
         factory = self.app.get_service('factory')

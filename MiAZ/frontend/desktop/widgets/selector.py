@@ -290,15 +290,13 @@ class MiAZSelector(Gtk.Box):
         self.log.debug(f"{view} > {item_id}")
         model = view.get_model_filter()
         selection = view.get_selection()
-        n = 0
-        for item in model:
+        for n, item in enumerate(model):
             if item.id == item_id:
                 self.log.debug(item)
                 selection.unselect_all()
                 selection.set_selected(n)
                 self._on_item_used_remove()
                 break
-            n += 1
 
     def _on_item_available_remove(self, *args):
         repository = self.app.get_service('repo')

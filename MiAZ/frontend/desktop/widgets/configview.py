@@ -86,27 +86,6 @@ class MiAZConfigView(MiAZSelector):
 
     def _add_config_menubutton(self, name: str):
         return
-        actions = self.app.get_service('actions')
-        factory = self.app.get_service('factory')
-        widgets = []
-        btnConfigImport = factory.create_button(icon_name='io.github.t00m.MiAZ-document-open-symbolic',
-                                                     title=f'Import config for {self.config.config_for.lower()}',
-                                                     callback=actions.import_config,
-                                                     data=self.config.model,
-                                                     css_classes=['flat'])
-        widgets.append(btnConfigImport)
-        btnConfigImport = factory.create_button(icon_name='io.github.t00m.MiAZ-document-save-symbolic',
-                                                     title=f'Export config for {self.config.config_for.lower()}',
-                                                     callback=actions.export_config,
-                                                     data=self.config.model,
-                                                     css_classes=['flat'])
-        widgets.append(btnConfigImport)
-        button = factory.create_button_popover(icon_name='io.github.t00m.MiAZ-emblem-system-symbolic',
-                                                    title='',
-                                                    widgets=widgets)
-
-        boxEmpty = factory.create_box_horizontal(hexpand=True)
-        self.boxOper.append(boxEmpty)
 
 
 class MiAZRepositories(MiAZConfigView):
@@ -491,6 +470,8 @@ class MiAZUserPlugins(MiAZConfigView):
                 model_cats.append(Plugin(id=category, title=_(category)))
                 set_cats.add(category)
 
+        self._cached_selected_cat = None
+        self._cached_selected_subcat = None
         self.dpdCats.connect("notify::selected-item", self._on_plugin_category_selected)
         self.dpdSubcats.connect("notify::selected-item", self._on_plugin_subcategory_selected)
 
@@ -501,9 +482,8 @@ class MiAZUserPlugins(MiAZConfigView):
 
     def _do_filter_view(self, item, filter_list_model):
         plugin = item.id
-        selected_cat = self.dpdCats.get_selected_item()
-        selected_subcat = self.dpdSubcats.get_selected_item()
-
+        selected_cat = self._cached_selected_cat
+        selected_subcat = self._cached_selected_subcat
 
         try:
             category = self.user_plugins[plugin]['Category']
@@ -515,7 +495,7 @@ class MiAZUserPlugins(MiAZConfigView):
         except KeyError:
             selected_subcat = None
 
-        chunk = self.searchentry.get_text().upper()
+        chunk = self._cached_filter_text
         string = f"{item.id}-{item.title}"
 
         # Check filters
@@ -563,6 +543,8 @@ class MiAZUserPlugins(MiAZConfigView):
         self._on_plugin_subcategory_selected()
 
     def _on_plugin_subcategory_selected(self, *args):
+        self._cached_selected_cat = self.dpdCats.get_selected_item()
+        self._cached_selected_subcat = self.dpdSubcats.get_selected_item()
         self.viewAv.refilter()
         self.viewSl.refilter()
 
@@ -862,7 +844,7 @@ class MiAZUserPlugins(MiAZConfigView):
 
         # Add plugin info as key/value rows
         for key in plugin_info:
-            row = Adw.ActionRow(title=_(f'<b>{key}</b>'))
+            row = Adw.ActionRow(title=f'<b>{_(key)}</b>')
             label = Gtk.Label.new(plugin_info[key])
             row.add_suffix(label)
             group.add(row)

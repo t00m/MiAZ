@@ -166,8 +166,7 @@ class MiAZColumnView(Gtk.Box):
 
     def update(self, items):
         self.selected_items = []
-        self.store.remove_all()
-        self.store.splice(0, 0, items)
+        self.store.splice(0, self.store.get_n_items(), items)
 
     def _on_selection_changed(self, selection, position, n_items):
         self.selected_items = []
@@ -203,14 +202,6 @@ class MiAZColumnView(Gtk.Box):
         label.set_property('ellipsize', Pango.EllipsizeMode.MIDDLE)
         tooltip = f"<big>{item.id}</big>\n<b>{item.title}</b>"
         label.set_tooltip_markup(tooltip)
-
-    def _on_filter_view(self, item, filter_list_model):
-        must_filter = False
-        text = self.etyFilter.get_text().upper()
-        if text in item.filepath.upper():
-            self.displayed += 1
-            must_filter = True
-        return must_filter
 
     def _on_selected_item_notify(self, colview, pos):
         model = colview.get_model()
@@ -305,24 +296,13 @@ class MiAZColumnViewSelector(Gtk.Box):
         return model.get_item(pos)
 
     def get_selected(self):
-        # get selection
-        selected_items = []
-
-        for i in range(self.store.get_n_items()):
-            if self.cv.get_model().is_selected(i):
-                selected_items.append(self.cv.get_model().get_item(i))
-        try:
-            return selected_items[0]
-        except IndexError:
-            return None
+        return self.selection.get_selected_item()
 
     def set_selected(self, item):
-        # set selection
-        for i in range(self.store.get_n_items()):
-            value = self.cv.get_model().get_item(i)
-            if item.id == value.id:
-                self.cv.get_model().select_item(i, False)
-                self.log.debug(f"{item.id} == {value.id}? {item.id == value.id}")
+        for i in range(self.filter_model.get_n_items()):
+            if self.filter_model.get_item(i).id == item.id:
+                self.selection.set_selected(i)
+                break
 
     def get_selected_items(self):
         return self.selected_items
@@ -353,8 +333,7 @@ class MiAZColumnViewSelector(Gtk.Box):
 
     def update(self, items):
         self.selected_items = []
-        self.store.remove_all()
-        self.store.splice(0, 0, items)
+        self.store.splice(0, self.store.get_n_items(), items)
 
     def _on_selection_changed(self, selection, position, n_items):
         self.selected_items = []
@@ -390,14 +369,6 @@ class MiAZColumnViewSelector(Gtk.Box):
         label.set_property('ellipsize', Pango.EllipsizeMode.MIDDLE)
         tooltip = f"<big>{item.id}</big>\n<b>{item.title}</b>"
         label.set_tooltip_markup(tooltip)
-
-    def _on_filter_view(self, item, filter_list_model):
-        must_filter = False
-        text = self.etyFilter.get_text().upper()
-        if text in item.filepath.upper():
-            self.displayed += 1
-            must_filter = True
-        return must_filter
 
     def _on_selected_item_notify(self, colview, pos):
         model = colview.get_model()

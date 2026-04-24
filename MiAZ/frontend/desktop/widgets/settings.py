@@ -228,19 +228,6 @@ class MiAZAppSettings(Adw.PreferencesDialog):
         dialog = self.srvdlg.show_noop(title=title, body=body, widget=widget, width=800, height=600)
         dialog.present(window)
 
-    def _on_selected_repo(self, dropdown, gparamobj):
-        try:
-            repo_id = dropdown.get_selected_item().id
-            repo_dir = dropdown.get_selected_item().title
-            self.log.debug(f"ON_SELECTED_REPO: Repository selected: {repo_id}[{repo_dir}]")
-            self.config['App'].set('current', repo_id)
-            # ~ self.app.switch()
-            actions = self.app.get_service('actions')
-            # ~ actions.application_restart()
-        except AttributeError:
-            # Probably the repository was removed from used view
-            pass
-
     def _update_action_row_repo_source(self, name, dirpath):
         self.row_repo_source.set_title(name)
         self.row_repo_source.set_subtitle(dirpath)
@@ -248,9 +235,6 @@ class MiAZAppSettings(Adw.PreferencesDialog):
 
     def is_repo_set(self):
         return self.repo_is_set
-
-    def on_filechooser_response_source(self, dialog, response, data):
-                return
 
 
 class MiAZRepoSettings(MiAZCustomWindow):
@@ -323,8 +307,7 @@ class MiAZRepoSettings(MiAZCustomWindow):
                 configview.update_config()
                 configview.update_views()
             except Exception as error:
-                # FIXME: investigate this error
-                pass
+                self.log.error(f"Failed to update {widget_title}: {error}")
         # ~ self.log.debug("Repository UI updated according to current settings")
 
 

@@ -17,8 +17,7 @@ class MiAZWebBrowser(Gtk.Box):
         self.app = app
         self.log = MiAZLog('MiAZ.WebBrowser')
         self._build_ui()
-        self.log.debug(f"{__class__.__name__} initialited")
-        self.app.add_widget('webbrowser', self)
+        self.log.debug(f"{__class__.__name__} initialized")
 
     def _build_ui(self):
         self.webview = self.app.add_widget('webbrowser-view', WebKit.WebView())

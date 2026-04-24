@@ -18,7 +18,7 @@ class SearchBar(Gtk.SearchBar):
         box.set_spacing(24)
 
         # Add SearchEntry
-        entry = self.app.add_widget('searchbar_entry', Gtk.SearchEntry())
+        entry = self.app.add_widget('searchentry', Gtk.SearchEntry())
         entry.set_hexpand(True)
         box.append(entry)
         self.set_child(box)
@@ -38,5 +38,5 @@ class SearchBar(Gtk.SearchBar):
 
     def set_callback(self, callback):
         """ Connect the search entry activate to an callback handler"""
-        entry = self.app.get_widget('searchbar_entry')
+        entry = self.app.get_widget('searchentry')
         entry.connect('changed', callback)
