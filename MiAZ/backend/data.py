@@ -8,6 +8,9 @@
 """
 
 
+# TODO: These classes are unimplemented placeholders. Wire them into the
+# application when backup/restore functionality is added.
+
 class MiAZData:
     def __init__(self):
         pass

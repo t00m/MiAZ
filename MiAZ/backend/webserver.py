@@ -1,5 +1,6 @@
 import http.server
 import socketserver
+import functools
 import threading
 import os
 import sys
@@ -8,6 +9,11 @@ import socket
 import random
 
 from MiAZ.backend.log import MiAZLog
+
+
+class _ReusingTCPServer(socketserver.TCPServer):
+    allow_reuse_address = True
+
 
 class MiAZHTTPServer:
     def __init__(self, ENV):
@@ -34,16 +40,14 @@ class MiAZHTTPServer:
         return self.port
 
     def start(self):
-        handler = http.server.SimpleHTTPRequestHandler
-        os.chdir(self.directory)  # Serve from this directory
-
-        if self.is_port_in_use():
+        while self.is_port_in_use():
             self.port = random.randint(65000, 65535)
             self.log.warning(f"Previous port was in use. Binding now to port {self.port}")
-            self.start()
+
+        handler = functools.partial(http.server.SimpleHTTPRequestHandler, directory=self.directory)
 
         try:
-            self.httpd = socketserver.TCPServer((self.host, self.port), handler)
+            self.httpd = _ReusingTCPServer((self.host, self.port), handler)
             self.thread = threading.Thread(target=self.httpd.serve_forever, daemon=True)
             self.thread.start()
             self.log.info(f"Serving at http://{self.host}:{self.port}/")
@@ -56,7 +60,7 @@ class MiAZHTTPServer:
             # 2. Use a random port
             # Using both approachs for safeguarding connections
             self.log.error(error)
-            self.log.warning("Sleeping 5 seconds")
+            self.log.warning("Sleeping 3 seconds")
             time.sleep(3)
             self.stop()
             python = sys.executable

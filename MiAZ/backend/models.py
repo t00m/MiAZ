@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 
 """
-# File: watcher.py
+# File: models.py
 # Author: Tomás Vírseda
 # License: GPL v3
 # Description: Custom models for working with Columnviews
