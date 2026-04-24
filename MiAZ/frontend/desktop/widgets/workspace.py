@@ -55,6 +55,7 @@ class MiAZWorkspace(Gtk.Box):
     dates = {}
     cache = {}
     used_signals = {} # Signals ids for Dropdowns connected to config
+    _repo_switch_signals = {} # Signal ids for per-node update handlers; disconnected on each repo switch
     uncategorized = False
     pending = False
 
@@ -67,6 +68,12 @@ class MiAZWorkspace(Gtk.Box):
         self._setup_workspace()
         self._setup_logic()
         self.review = False
+        self._cached_dropdowns = None
+        self._cached_search_text = ''
+        self._cached_date_ll = 'All'
+        self._cached_date_ul = 'All'
+        self._cached_date_start = None
+        self._cached_date_end = None
 
         # Allow plug-ins to make their job
         self.connect('workspace-view-updated', self._on_filter_selected)
@@ -80,21 +87,12 @@ class MiAZWorkspace(Gtk.Box):
 
     def initialize_caches(self):
         repo = self.app.get_service('repo')
-        util = self.app.get_service('util')
 
         self.datetimes = {}
 
-        # Load/Initialize rest of caches
         if repo.conf is None:
             return
         self.fcache = os.path.join(repo.conf, 'cache.json')
-        try:
-            self.cache = util.json_load(self.fcache)
-            self.log.debug(f"Loading cache from '{self.fcache}'")
-        except Exception:
-            util.json_save(self.fcache, {})
-            self.log.debug(f"New cache created in '{self.fcache}'")
-
         self.cache = {}
         for cache in ['Date', 'Country', 'Group', 'SentBy', 'SentTo', 'Purpose']:
             self.cache[cache] = {}
@@ -181,8 +179,13 @@ class MiAZWorkspace(Gtk.Box):
         self.selected_items = []
         self.update()
         for node in self.config:
-            self.config[node].connect('used-updated', self.update)
-            self.config[node].connect('available-updated', self.update)
+            if node in self._repo_switch_signals:
+                sid_used, sid_avail = self._repo_switch_signals[node]
+                self.config[node].disconnect(sid_used)
+                self.config[node].disconnect(sid_avail)
+            sid_used = self.config[node].connect('used-updated', self.update)
+            sid_avail = self.config[node].connect('available-updated', self.update)
+            self._repo_switch_signals[node] = (sid_used, sid_avail)
 
     def _update_dropdowns(self, *args):
         actions = self.app.get_service('actions')
@@ -487,7 +490,8 @@ class MiAZWorkspace(Gtk.Box):
         ENV['CACHE']['CONCEPTS']['ACTIVE'] = sorted(concepts_active)
         ENV['CACHE']['CONCEPTS']['INACTIVE'] = sorted(concepts_inactive)
 
-        # Update workspace view
+        # Update workspace view — refresh filter cache before handing off to the view
+        self._refresh_filter_cache()
         GLib.idle_add(self.view.update, items)
 
         renamed = 0
@@ -525,18 +529,38 @@ class MiAZWorkspace(Gtk.Box):
         model = self.view.cv.get_model() # nº items in current view
         self._num_selected_items = len(self.selected_items) # num. items selected
         self._num_displayed_items = len(model) # num. items in view
-        self._num_total_items = len(util.get_files(repository.docs)) # num total items
+        self._num_total_items = len(docs)
         self.emit('workspace-view-updated')
         self.app.set_status(MiAZStatus.RUNNING)
         return False
 
-    def _do_eval_cond_matches_freetext(self, item):
+    def _refresh_filter_cache(self):
+        """Pre-compute per-filter-pass constants so per-item callbacks are cheap."""
+        util = self.app.get_service('util')
+        self._cached_dropdowns = self.app.get_widget('ws-dropdowns')
         entry = self.app.get_widget('searchentry')
-        left = entry.get_text()
-        right = item.search_text
-        if left.upper() in right.upper():
-            return True
-        return False
+        self._cached_search_text = entry.get_text()
+
+        dd_date = self._cached_dropdowns[Date.__gtype_name__]
+        selected = dd_date.get_selected_item()
+        if selected is None:
+            self._cached_date_ll = 'All'
+            self._cached_date_ul = 'All'
+            self._cached_date_start = None
+            self._cached_date_end = None
+        else:
+            ll, ul = selected.id.split('-')
+            self._cached_date_ll = ll
+            self._cached_date_ul = ul
+            if ll not in ('All', 'None') and ul not in ('All', 'None'):
+                self._cached_date_start = util.string_to_datetime(ll)
+                self._cached_date_end = util.string_to_datetime(ul)
+            else:
+                self._cached_date_start = None
+                self._cached_date_end = None
+
+    def _do_eval_cond_matches_freetext(self, item):
+        return self._cached_search_text.upper() in item.search_text.upper()
 
     def _do_eval_cond_matches(self, dropdown, id):
         item = dropdown.get_selected_item()
@@ -552,50 +576,27 @@ class MiAZWorkspace(Gtk.Box):
             return item.id.upper() == id.upper()
 
     def _do_eval_cond_matches_date(self, item):
-        util = self.app.get_service('util')
-        # Convert timestamp to timedate object and cache it
         try:
             item_dt = self.datetimes[item.date]
         except KeyError:
+            util = self.app.get_service('util')
             item_dt = util.string_to_datetime(item.date)
             self.datetimes[item.date] = item_dt
-        # ~ self.log.warning(f"\t\tItem dt? {item_dt}") # DEBUG FILTERS
 
-        # Check if the date belongs to the lower/upper limit
-        dropdowns = self.app.get_widget('ws-dropdowns')
-        dd_date = dropdowns[Date.__gtype_name__]
-        selected = dd_date.get_selected_item()
-        if selected is None:
-            # ~ FIXME: Dropdown {dd_date} with selected item '{selected}' shouldn't be None"
-            return True
-        period = selected.id
-        ll, ul = period.split('-')
-
+        ll, ul = self._cached_date_ll, self._cached_date_ul
         if ll == 'All' and ul == 'All':
-            matches = True
+            return True
         elif ll == 'None' and ul == 'None':
-            if item_dt is None:
-                matches = True
-            else:
-                matches = False
+            return item_dt is None
         elif item_dt is None:
-                matches = False
-        else:
-            start = util.string_to_datetime(ll)
-            end = util.string_to_datetime(ul)
-            if item_dt >= start and item_dt <= end:
-                matches = True
-            else:
-                matches = False
-        # ~ self.log.warning(f"\t\tPeriod {period}: {ll} - {ul} matches? {matches}") # DEBUG FILTERS
-        return matches
+            return False
+        return self._cached_date_start <= item_dt <= self._cached_date_end
 
     def _do_eval_cond_matches_active(self, item):
         # ~ self.log.warning(f"\t\t{item.id} active? {item.active}") # DEBUG FILTERS
         return item.active
 
     def _do_filter_view(self, item, filter_list_model):
-        model = self.view.cv.get_model() # nº items in current view
         show_item = True
         lresults = []
         for name in self._workspace_filters:
@@ -609,9 +610,8 @@ class MiAZWorkspace(Gtk.Box):
         return show_item
 
     def _do_filter_view_main(self, item, filter_list_model):
-        # ~ self.log.info(f"- {item.id}") # DEBUG FILTERS
         show_item = False
-        dropdowns = self.app.get_widget('ws-dropdowns')
+        dropdowns = self._cached_dropdowns
         c0 = self._do_eval_cond_matches_freetext(item)
         ca = self._do_eval_cond_matches_active(item)
         cd = self._do_eval_cond_matches_date(item)
@@ -640,28 +640,20 @@ class MiAZWorkspace(Gtk.Box):
         selection.connect('selection-changed', self._on_selection_changed)
 
     def _on_filter_selected(self, *args):
-        workspace_menu = self.app.get_widget('workspace-menu')
-        app_status = self.app.get_status()
-        util = self.app.get_service('util')
         repository = self.app.get_service('repo')
 
         if repository.conf is None:
             return
 
-        status = self.app.get_status()
-        if status == MiAZStatus.BUSY:
+        if self.app.get_status() == MiAZStatus.BUSY:
             return
 
         if self.workspace_loaded:
+            self._refresh_filter_cache()
             self.view.refilter()
-            model = self.view.cv.get_model() # nº items in current view
+            model = self.view.cv.get_model()
             self._num_selected_items = len(self.selected_items)
             self._num_displayed_items = len(model)
-            self._num_total_items = len(util.get_files(repository.docs)) # nº total items
-
-            i_type = Date.__gtype_name__
-            dropdowns = self.app.get_widget('ws-dropdowns')
-
             self.emit('workspace-view-filtered')
 
     def _on_selection_changed(self, selection, position, n_items):

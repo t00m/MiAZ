@@ -28,7 +28,7 @@ class MiAZProject(GObject.GObject):
         self.log = MiAZLog('MiAZ.Projects')
         self.app = app
         conf = self.app.get_config_dict()
-        self.config = conf['Project']
+        self.config = conf.get('Project')  # None until a MiAZConfigProject is registered
         repository = self.app.get_service('repo')
         util = self.app.get_service('util')
         repo_dir_conf = repository.get('dir_conf')
@@ -81,14 +81,9 @@ class MiAZProject(GObject.GObject):
             self.add(project, doc)
         self.save()
 
-    def remove(self, project: str, doc: str) -> None:
-        """
-        Remove a document from a project
-        """
+    def _remove_nosave(self, project: str, doc: str) -> bool:
         found = False
         if len(project) == 0:
-            # If no project is given, it deletes all references in any
-            # project it was assigned to
             for prj in self.projects:
                 docs = self.projects[prj]
                 if doc in docs:
@@ -97,7 +92,6 @@ class MiAZProject(GObject.GObject):
                     self.log.debug(f"Removed '{doc}' from project '{prj}'")
                     self.projects[prj] = docs
         else:
-            # Delete document for a given project
             try:
                 docs = self.projects[project]
                 if doc in docs:
@@ -107,6 +101,13 @@ class MiAZProject(GObject.GObject):
                     self.projects[project] = docs
             except KeyError:
                 self.log.warning(f"Project '{project}' doesn't exist")
+        return found
+
+    def remove(self, project: str, doc: str) -> None:
+        """
+        Remove a document from a project
+        """
+        found = self._remove_nosave(project, doc)
         if found:
             self.save()
         else:
@@ -117,7 +118,7 @@ class MiAZProject(GObject.GObject):
         C0116: Missing function or method docstring (missing-function-docstring)
         """
         for doc in docs:
-            self.remove(project, doc)
+            self._remove_nosave(project, doc)
         self.save()
 
     def exists(self, project, doc):
@@ -178,12 +179,14 @@ class MiAZProject(GObject.GObject):
         """
         C0116: Missing function or method docstring (missing-function-docstring)
         """
+        if self.config is None:
+            return pid
         try:
             description = self.config.get(pid)
-            if len(description) == 0:
+            if not description:
                 description = pid
-        except KeyError as error:
-            description = error
+        except Exception:
+            description = pid
         return description
 
     def _on_filename_renamed(self, util, source, target):
@@ -208,4 +211,5 @@ class MiAZProject(GObject.GObject):
         document from assigned projects when documents are deleted.
         """
         self.log.debug("Document delete event triggered")
-        self.remove(project='', doc=os.path.basename(target))
+        for filepath in target:
+            self.remove(project='', doc=os.path.basename(filepath))

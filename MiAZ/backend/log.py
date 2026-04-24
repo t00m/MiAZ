@@ -50,9 +50,9 @@ class MiAZLog(logging.getLoggerClass()):
     """
     C0115: Missing class docstring (missing-class-docstring)
     """
-    counter = 0
     logger_initialized = False
     stdout_handler = None
+    file_handler = None
 
     def __init__(self, name='MiAZ', log_dir=None):
         """
@@ -127,6 +127,8 @@ class MiAZLog(logging.getLoggerClass()):
         """
         C0116: Missing function or method docstring (missing-function-docstring)
         """
+        if self.file_handler is None:
+            return
         if self.has_file_handler():
             return
         self.addHandler(self.file_handler)
@@ -135,6 +137,8 @@ class MiAZLog(logging.getLoggerClass()):
         """
         C0116: Missing function or method docstring (missing-function-docstring)
         """
+        # Strict type equality (not isinstance) intentionally excludes FileHandler,
+        # which is a StreamHandler subclass.
         return len([h for h in self.handlers if type(h) == logging.StreamHandler]) > 0
 
     def has_file_handler(self):

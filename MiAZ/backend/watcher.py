@@ -27,10 +27,9 @@ class MiAZWatcher(GObject.GObject):
     and emit the signal 'repository-updated' when it happens.
     """
     __gtype_name__ = 'MiAZWatcher'
-    before = {}
-    active = False
-    status = MiAZStatus.RUNNING
-    updated = False
+    __gsignals__ = {
+        'repository-updated': (GObject.SignalFlags.RUN_LAST, None, ()),
+    }
 
     def __init__(self, dirpath: str = None, remote=False):
         """
@@ -40,17 +39,17 @@ class MiAZWatcher(GObject.GObject):
         self.log = MiAZLog('MiAZ.Watcher')
         self.dirpath = dirpath
         self.remote = remote
+        self.before = {}
+        self.active = False
+        self.status = MiAZStatus.RUNNING
+        self.updated = False
         seconds = 2
         self.log.debug(f"Watching repository: {dirpath}")
         self.log.debug(f"Remote repository? {remote}")
         self.log.debug(f"Timeout set to: {seconds}")
-        sid = GObject.signal_lookup('repository-updated', MiAZWatcher)
-        if sid == 0:
-            GObject.GObject.__init__(self)
-            GObject.signal_new('repository-updated', MiAZWatcher, GObject.SignalFlags.RUN_LAST, None, ())
-            self.set_path(dirpath)
-            GLib.timeout_add_seconds(seconds, self.monitor, dirpath, self.watch)
-            self.log.debug(f"Watcher initialized")
+        self.set_path(dirpath)
+        GLib.timeout_add_seconds(seconds, self.monitor, dirpath, self.watch)
+        self.log.debug("Watcher initialized")
 
     def files_with_timestamp_async(self, path, callback):
         """
@@ -110,9 +109,9 @@ class MiAZWatcher(GObject.GObject):
                         self.log.error(f"Error during file read: {error}")
                         callback(timestamps)
 
-                enumerator.next_files_async(10, GLib.PRIORITY_DEFAULT, None, on_next_file, None)
+                enumerator.next_files_async(100, GLib.PRIORITY_DEFAULT, None, on_next_file, None)
             except Exception as error:
-                self.log.error("Error during enumeration: {error}")
+                self.log.error(f"Error during enumeration: {error}")
                 callback({})  # Return empty dict on failure
 
         # Set app as busy to block

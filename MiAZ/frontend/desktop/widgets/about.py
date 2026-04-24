@@ -12,7 +12,7 @@ class MiAZAbout(Gtk.Box):
     About class
     """
     def __init__(self, app):
-        super(Gtk.Box, self).__init__(spacing=12, orientation=Gtk.Orientation.VERTICAL)
+        super().__init__(spacing=12, orientation=Gtk.Orientation.VERTICAL)
         ENV = app.get_env()
         label = Gtk.Label()
         label.set_markup(f"{ENV['APP']['shortname']} {ENV['APP']['VERSION']}")

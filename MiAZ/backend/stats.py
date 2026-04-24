@@ -31,14 +31,13 @@ class MiAZStats(GObject.GObject):
     __gsignals__ = {
         "stats-updated": (GObject.SignalFlags.RUN_LAST, None, ()),
     }
-    stats = {}
-
     def __init__(self, app):
         super().__init__()
         self.app = app
         self.log = MiAZLog('MiAZStats')
         self.util = self.app.get_service('util')
         self.repository = self.app.get_service('repo')
+        self.stats = {}
 
     def _build(self, *args):
         self.stats = {}
@@ -57,6 +56,8 @@ class MiAZStats(GObject.GObject):
 
             # Date
             adate = self.util.string_to_datetime(fields[0])
+            if adate is None:
+                continue
             year = str(adate.year)
             month = '%s%02d' % (year, adate.month)
             day = '%s%02d' % (month, adate.day)
@@ -88,5 +89,6 @@ class MiAZStats(GObject.GObject):
         self.emit('stats-updated')
 
     def get(self):
-        self._build()
+        if not self.stats:
+            self._build()
         return self.stats

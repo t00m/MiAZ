@@ -19,9 +19,12 @@ from MiAZ.backend.models import MiAZModel, Group, Person, Country, Purpose, Conc
 
 class MiAZConfig(GObject.GObject):
     """ MiAZ Config class"""
+    __gsignals__ = {
+        'available-updated': (GObject.SignalFlags.RUN_LAST, None, ()),
+        'used-updated': (GObject.SignalFlags.RUN_LAST, None, ()),
+    }
     used = None
     default = None
-    cache = {}
 
     def __init__(self, app, log, config_for, used=None, available=None, default=None, model=MiAZModel, must_copy=True, foreign=False):
         super().__init__()
@@ -34,21 +37,8 @@ class MiAZConfig(GObject.GObject):
         self.model = model
         self.must_copy = must_copy
         self.foreign = foreign
+        self.cache = {}
         self.setup()
-
-        sid_a = GObject.signal_lookup('available-updated', MiAZConfig)
-        sid_u = GObject.signal_lookup('used-updated', MiAZConfig)
-        if sid_a == 0:
-            GObject.GObject.__init__(self)
-            GObject.signal_new('available-updated',
-                                MiAZConfig,
-                                GObject.SignalFlags.RUN_LAST, None, ())
-        if sid_u == 0:
-            GObject.GObject.__init__(self)
-            GObject.signal_new('used-updated',
-                                MiAZConfig,
-                                GObject.SignalFlags.RUN_LAST, None, ())
-        # ~ self.log.debug(f"Config for {self.config_for} initialited")
 
     def __repr__(self):
         return __class__.__name__
@@ -112,8 +102,9 @@ class MiAZConfig(GObject.GObject):
                 self.cache[filepath]['changed'] = False
                 self.cache[filepath]['items'] = items
                 # ~ self.log.debug(f"In-memory config data updated for '{filepath}'")
-            except Exception:
-                items = []
+            except Exception as error:
+                self.log.error(f"Failed to load config from {filepath}: {error}")
+                items = {}
             return items
         else:
             # ~ self.log.debug(f"Loading {self.config_for} items from cache ({filepath})")
@@ -146,13 +137,19 @@ class MiAZConfig(GObject.GObject):
             # ~ self.log.debug(f"Cache update for '{filepath}'")
         return saved
 
-    def save_available(self, items: dict = {}) -> bool:
+    def save_available(self, items: dict = None) -> bool:
+        if items is None:
+            items = {}
         return self.save(self.available, items)
 
-    def save_used(self, items: dict = {}) -> bool:
+    def save_used(self, items: dict = None) -> bool:
+        if items is None:
+            items = {}
         return self.save(self.used, items)
 
-    def save_data(self, filepath: str = '', items: dict = {}) -> bool:
+    def save_data(self, filepath: str = '', items: dict = None) -> bool:
+        if items is None:
+            items = {}
         util = self.app.get_service('util')
         if filepath == '':
             filepath = self.used
@@ -167,18 +164,11 @@ class MiAZConfig(GObject.GObject):
     def get(self, key: str) -> str:
         config = self.load(self.used)
         try:
-            # return description, if it exists
             return config[key]
         except KeyError:
-            if key in config:
-                # otherwise, return the key
-                self.log.debug(f"Description not found for {self.config_for}[{key}]. Return {key} as description instead")
-                return key
-            else:
-                # if no key (and no description) return None
-                return None
+            return None
 
-    def set(self, key: str, value: str) -> None:
+    def set(self, key: str, value: str) -> bool:
         items = self.load(self.used)
         items[key] = value
         return self.save(items=items)
@@ -232,6 +222,7 @@ class MiAZConfig(GObject.GObject):
         added = True
         if len(key.strip()) == 0:
             self.log.warning('Key is None or empty. Add skipped')
+            return False
         items = self.load(filepath)
         if key not in items:
             key = util.valid_key(key)
@@ -276,6 +267,7 @@ class MiAZConfig(GObject.GObject):
         removed = False
         if key is None or key.strip() == '':
             self.log.warning('Key is None or empty. Remove skipped')
+            return False
         items = self.load(filepath)
         if key in items:
             del items[key]
@@ -286,13 +278,13 @@ class MiAZConfig(GObject.GObject):
 
 
 class MiAZConfigApp(MiAZConfig):
+    __gsignals__ = {
+        'repo-settings-updated-app': (GObject.SignalFlags.RUN_LAST, None, ()),
+    }
+
     def __init__(self, app):
         self.app = app
         ENV = self.app.get_env()
-        GObject.GObject.__init__(self)
-        GObject.signal_new('repo-settings-updated-app',
-                            MiAZConfigApp,
-                            GObject.SignalFlags.RUN_LAST, None, ())
         super().__init__(
             app=app,
             log=MiAZLog('MiAZ.Config.App'),
@@ -307,7 +299,9 @@ class MiAZConfigApp(MiAZConfig):
         config = self.load(self.used)
         return key in config
 
-    def save(self, filepath: str = '', items: dict = {}) -> bool:
+    def save(self, filepath: str = '', items: dict = None) -> bool:
+        if items is None:
+            items = {}
         saved = self.save_data(filepath, items)
         if saved:
             self.emit('repo-settings-updated-app')

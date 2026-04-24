@@ -9,7 +9,12 @@ import glob
 from gettext import gettext as _
 import threading
 
-import requests
+try:
+    import requests
+    from requests.exceptions import HTTPError
+    _REQUESTS_AVAILABLE = True
+except ImportError:
+    _REQUESTS_AVAILABLE = False
 
 from gi.repository import Adw
 from gi.repository import Gio
@@ -81,27 +86,6 @@ class MiAZConfigView(MiAZSelector):
 
     def _add_config_menubutton(self, name: str):
         return
-        actions = self.app.get_service('actions')
-        factory = self.app.get_service('factory')
-        widgets = []
-        btnConfigImport = factory.create_button(icon_name='io.github.t00m.MiAZ-document-open-symbolic',
-                                                     title=f'Import config for {self.config.config_for.lower()}',
-                                                     callback=actions.import_config,
-                                                     data=self.config.model,
-                                                     css_classes=['flat'])
-        widgets.append(btnConfigImport)
-        btnConfigImport = factory.create_button(icon_name='io.github.t00m.MiAZ-document-save-symbolic',
-                                                     title=f'Export config for {self.config.config_for.lower()}',
-                                                     callback=actions.export_config,
-                                                     data=self.config.model,
-                                                     css_classes=['flat'])
-        widgets.append(btnConfigImport)
-        button = factory.create_button_popover(icon_name='io.github.t00m.MiAZ-emblem-system-symbolic',
-                                                    title='',
-                                                    widgets=widgets)
-
-        boxEmpty = factory.create_box_horizontal(hexpand=True)
-        self.boxOper.append(boxEmpty)
 
 
 class MiAZRepositories(MiAZConfigView):
@@ -270,7 +254,8 @@ class MiAZRepositories(MiAZConfigView):
         ## Block signal "dd_repo > notify::selected-item"
         dd_repo = self.app.get_widget('window-settings-dropdown-repository-active')
         signal = self.app.get_widget('signal-dd_repo')
-        dd_repo.handler_block(signal)
+        if signal is not None:
+            dd_repo.handler_block(signal)
 
         items_available = self.config.load_available()
         items_used = self.config.load_used()
@@ -288,7 +273,8 @@ class MiAZRepositories(MiAZConfigView):
         self.config.save_available(items=items_available)
         self.update_views()
         ## Unblock signal "dd_repo > notify::selected-item"
-        dd_repo.handler_unblock(signal)
+        if signal is not None:
+            dd_repo.handler_unblock(signal)
 
 
 class MiAZCountries(MiAZConfigView):
@@ -422,16 +408,14 @@ class MiAZUserPlugins(MiAZConfigView):
     Only display User plugins found in ENV['APP']['PLUGINS']['USER_INDEX']
     """
     __gtype_name__ = 'MiAZUserPlugins'
+    __gsignals__ = {
+        'plugins-downloaded': (GObject.SignalFlags.RUN_LAST, None, ()),
+    }
     current = None
 
     def __init__(self, app):
         super(MiAZConfigView, self).__init__(app, edit=True)
         super().__init__(app, 'Plugin')
-        sid_u = GObject.signal_lookup('plugins-downloaded', MiAZUserPlugins)
-        if sid_u == 0:
-            GObject.signal_new('plugins-downloaded',
-                                MiAZUserPlugins,
-                                GObject.SignalFlags.RUN_LAST, None, ())
         boxopers = self.app.get_widget('selector-box-operations')
         factory = self.app.get_service('factory')
         util = self.app.get_service('util')
@@ -486,6 +470,8 @@ class MiAZUserPlugins(MiAZConfigView):
                 model_cats.append(Plugin(id=category, title=_(category)))
                 set_cats.add(category)
 
+        self._cached_selected_cat = None
+        self._cached_selected_subcat = None
         self.dpdCats.connect("notify::selected-item", self._on_plugin_category_selected)
         self.dpdSubcats.connect("notify::selected-item", self._on_plugin_subcategory_selected)
 
@@ -496,9 +482,8 @@ class MiAZUserPlugins(MiAZConfigView):
 
     def _do_filter_view(self, item, filter_list_model):
         plugin = item.id
-        selected_cat = self.dpdCats.get_selected_item()
-        selected_subcat = self.dpdSubcats.get_selected_item()
-
+        selected_cat = self._cached_selected_cat
+        selected_subcat = self._cached_selected_subcat
 
         try:
             category = self.user_plugins[plugin]['Category']
@@ -510,7 +495,7 @@ class MiAZUserPlugins(MiAZConfigView):
         except KeyError:
             selected_subcat = None
 
-        chunk = self.searchentry.get_text().upper()
+        chunk = self._cached_filter_text
         string = f"{item.id}-{item.title}"
 
         # Check filters
@@ -558,6 +543,8 @@ class MiAZUserPlugins(MiAZConfigView):
         self._on_plugin_subcategory_selected()
 
     def _on_plugin_subcategory_selected(self, *args):
+        self._cached_selected_cat = self.dpdCats.get_selected_item()
+        self._cached_selected_subcat = self.dpdSubcats.get_selected_item()
         self.viewAv.refilter()
         self.viewSl.refilter()
 
@@ -661,6 +648,9 @@ class MiAZUserPlugins(MiAZConfigView):
         threading.Thread(target=self.download_plugins, daemon=True).start()
 
     def download_plugins(self):
+        if not _REQUESTS_AVAILABLE:
+            self.log.error("Cannot download plugins: 'requests' library is not installed")
+            return
         # FIXME: set toolbar sensitivity to False
         banner = self.app.get_widget('repository-settings-banner')
         banner.set_revealed(True)
@@ -854,7 +844,7 @@ class MiAZUserPlugins(MiAZConfigView):
 
         # Add plugin info as key/value rows
         for key in plugin_info:
-            row = Adw.ActionRow(title=_(f'<b>{key}</b>'))
+            row = Adw.ActionRow(title=f'<b>{_(key)}</b>')
             label = Gtk.Label.new(plugin_info[key])
             row.add_suffix(label)
             group.add(row)

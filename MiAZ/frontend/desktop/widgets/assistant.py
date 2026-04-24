@@ -48,7 +48,6 @@ class MiAZAssistantRepo(MiAZAssistant):
     current = None
 
     def __init__(self, app):
-        super(MiAZAssistant, self).__init__()
         super().__init__(app)
         self.app = app
         ENV = self.app.get_env()
@@ -66,7 +65,7 @@ class MiAZAssistantRepo(MiAZAssistant):
         # Page 0 - Welcome
         page = self.get_nth_page(0)
         lblWelcome = Gtk.Label.new(str=_(f"{ENV['APP']['shortname']} repository assistant"))
-        lblWelcome.get_style_context().add_class(class_name='title-1')
+        lblWelcome.add_css_class('title-1')
         lblWelcome.set_margin_top(24)
         imgWelcome = Gtk.Image.new_from_icon_name('io.github.t00m.MiAZ')
         imgWelcome.set_pixel_size(128)
@@ -82,7 +81,7 @@ class MiAZAssistantRepo(MiAZAssistant):
         box = self.factory.create_box_vertical(spacing=12)
         lblTitle = Gtk.Label()
         lblTitle.set_markup(_('Select a directory'))
-        lblTitle.get_style_context().add_class(class_name='title-2')
+        lblTitle.add_css_class('title-2')
         box.append(lblTitle)
         listbox = Gtk.ListBox()
         btnRepoSource = self.factory.create_button('document-edit-symbolic', '', self.show_filechooser_source, css_classes=['flat'])
@@ -98,7 +97,7 @@ class MiAZAssistantRepo(MiAZAssistant):
         box = self.factory.create_box_vertical(spacing=12, vexpand=True, hexpand=True)
         lblTitle = Gtk.Label()
         lblTitle.set_markup(_('Summary'))
-        lblTitle.get_style_context().add_class(class_name='title-2')
+        lblTitle.add_css_class('title-2')
         box.append(lblTitle)
         page.set_start_widget(box)
         self.set_page_type(page, Gtk.AssistantPageType.SUMMARY)
@@ -181,7 +180,6 @@ class MiAZAssistantRepoSettings(MiAZAssistant):
     current = None
 
     def __init__(self, app):
-        super(MiAZAssistant, self).__init__()
         super().__init__(app)
 
         self.connect('cancel', self.on_assistant_cancel)
@@ -201,7 +199,7 @@ class MiAZAssistantRepoSettings(MiAZAssistant):
         # Page Welcome
         page = self.get_nth_page(PAGE.WELCOME)
         lblWelcome = Gtk.Label.new(_('Repository settings assistant'))
-        lblWelcome.get_style_context().add_class(class_name='title-1')
+        lblWelcome.add_css_class('title-1')
         lblWelcome.set_margin_top(24)
         imgWelcome = Gtk.Image.new_from_icon_name('io.github.t00m.MiAZ')
         imgWelcome.set_pixel_size(128)
@@ -307,7 +305,7 @@ class MiAZAssistantRepoSettings(MiAZAssistant):
         box = self.factory.create_box_vertical(spacing=12, vexpand=True, hexpand=True)
         lblTitle = Gtk.Label()
         lblTitle.set_markup(_('You are set!'))
-        lblTitle.get_style_context().add_class(class_name='title-2')
+        lblTitle.add_css_class('title-2')
         box.append(lblTitle)
         page.set_start_widget(box)
         text = _('You can continue using the application now')

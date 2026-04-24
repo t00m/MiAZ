@@ -130,18 +130,20 @@ class MiAZColumnViewWorkspace(MiAZColumnView):
             label.set_markup(f"<b>{item.subtitle}</b>")
         else:
             label.set_markup(f"<span color='red'><b>{item.subtitle}</b></span>")
-            label.get_style_context().add_class(class_name='destructive-action')
+            label.add_css_class('destructive-action')
 
     def _on_factory_setup_active(self, factory, list_item):
         box = ColCheck()
+        button = box.get_first_child()
+        button._handler_id = button.connect('toggled', self._on_button_toggled)
         list_item.set_child(box)
 
     def _on_factory_bind_active(self, factory, list_item):
         box = list_item.get_child()
         item = list_item.get_item()
         button = box.get_first_child()
-        button.connect('toggled', self._on_button_toggled)
-        button.set_active(item.active)
+        with button.handler_block(button._handler_id):
+            button.set_active(item.active)
 
     def _on_factory_setup_icon(self, factory, list_item):
         box = ColIcon()
@@ -207,7 +209,6 @@ class MiAZColumnViewWorkspace(MiAZColumnView):
         label = box.get_first_child()
         group = item.group_dsc
         label.set_markup(group)
-        label.set_tooltip_text(group)
         label.set_ellipsize(True)
         tooltip = f"{item.group}\n<b>{item.group_dsc}</b>"
         label.set_tooltip_markup(tooltip)

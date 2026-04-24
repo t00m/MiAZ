@@ -72,7 +72,7 @@ class MiAZMainWindow(Gtk.Box):
             self._setup_page_404()
 
         # Page WebBrowser
-        page = self.app.get_widget('page-webbroser')
+        page = self.app.get_widget('page-webbrowser')
         if page is None:
             self._setup_webbrowser()
 
@@ -102,7 +102,7 @@ class MiAZMainWindow(Gtk.Box):
         factory = self.app.get_service('factory')
         headerbar = self.app.get_widget('headerbar')
         hbox = factory.create_box_horizontal(margin=0, spacing=0)
-        hbox.get_style_context().add_class(class_name='linked')
+        hbox.add_css_class('linked')
         self.app.add_widget('headerbar-right-box', hbox)
         headerbar.pack_end(hbox)
 
@@ -135,7 +135,6 @@ class MiAZMainWindow(Gtk.Box):
         if widget_notfound is None:
             widget_notfound = self.app.add_widget('page-404', MiAZPageNotFound(self.app))
             page_not_found = stack.add_titled(widget_notfound, 'page-404', 'MiAZ')
-            self.app.add_widget('page-404', page_not_found)
             page_not_found.set_icon_name('io.github.t00m.MiAZ-dialog-warning-symbolic')
             page_not_found.set_visible(True)
 
@@ -200,7 +199,7 @@ class MiAZMainWindow(Gtk.Box):
         popovermenu = self._setup_menu_selection()
         label = Gtk.Label()
         btnDocsSel  = Gtk.MenuButton()
-        btnDocsSel.get_style_context().add_class(class_name='accent')
+        btnDocsSel.add_css_class('accent')
         self.app.add_widget('workspace-menu', btnDocsSel)
         btnDocsSel .set_always_show_arrow(True)
         btnDocsSel .set_child(label)
@@ -247,7 +246,7 @@ class MiAZMainWindow(Gtk.Box):
 
         menubutton = Gtk.MenuButton(child=factory.create_button_content(icon_name='io.github.t00m.MiAZ'))
         menubutton.set_has_frame(False)
-        menubutton.get_style_context().add_class(class_name='flat')
+        menubutton.add_css_class('flat')
         menubutton.set_valign(Gtk.Align.CENTER)
         popover = Gtk.PopoverMenu()
         popover.set_menu_model(menu)

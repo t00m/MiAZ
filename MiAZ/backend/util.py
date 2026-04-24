@@ -18,17 +18,23 @@ import time
 import shutil
 import tempfile
 import threading
-import requests
+import subprocess
 import mimetypes
 import zipfile
 from datetime import datetime, timedelta
+
+try:
+    import requests
+    _REQUESTS_AVAILABLE = True
+except ImportError:
+    _REQUESTS_AVAILABLE = False
 
 from gi.repository import Gio
 from gi.repository import GObject
 
 from MiAZ.backend.log import MiAZLog
 from MiAZ.backend.models import Group, Country
-from MiAZ.backend.models import Purpose, SentBy
+from MiAZ.backend.models import Purpose, Concept, SentBy
 from MiAZ.backend.models import SentTo, Date
 
 mimetypes.init()
@@ -39,6 +45,7 @@ Field[Country] = 1
 Field[Group] = 2
 Field[SentBy] = 3
 Field[Purpose] = 4
+Field[Concept] = 5
 Field[SentTo] = 6
 
 REMOTE_SCHEMES = {
@@ -76,23 +83,21 @@ class SafeDictExtractor(ast.NodeVisitor):
 class MiAZUtil(GObject.GObject):
     """Backend class"""
     __gtype_name__ = 'MiAZUtil'
+    __gsignals__ = {
+        'filename-added':   (GObject.SignalFlags.RUN_LAST, GObject.TYPE_PYOBJECT, (GObject.TYPE_PYOBJECT,)),
+        'filename-deleted': (GObject.SignalFlags.RUN_LAST, GObject.TYPE_PYOBJECT, (GObject.TYPE_PYOBJECT,)),
+        'filename-renamed': (GObject.SignalFlags.RUN_LAST, GObject.TYPE_PYOBJECT, (GObject.TYPE_PYOBJECT, GObject.TYPE_PYOBJECT)),
+    }
 
     def __init__(self, app):
-        GObject.GObject.__init__(self)
-        GObject.signal_new('filename-added',
-                            MiAZUtil,
-                            GObject.SignalFlags.RUN_LAST,
-                            GObject.TYPE_PYOBJECT, (GObject.TYPE_PYOBJECT,))
-        GObject.signal_new('filename-deleted',
-                            MiAZUtil,
-                            GObject.SignalFlags.RUN_LAST,
-                            GObject.TYPE_PYOBJECT, (GObject.TYPE_PYOBJECT,))
-        GObject.signal_new('filename-renamed',
-                            MiAZUtil,
-                            GObject.SignalFlags.RUN_LAST,
-                            GObject.TYPE_PYOBJECT, (GObject.TYPE_PYOBJECT, GObject.TYPE_PYOBJECT,))
+        super().__init__()
         self.log = MiAZLog('MiAZ.Backend.Util')
         self.app = app
+        self._field_index = {}
+        self._field_index_dir = None
+        self.connect('filename-added', self._invalidate_field_index)
+        self.connect('filename-deleted', self._invalidate_field_index)
+        self.connect('filename-renamed', self._invalidate_field_index)
 
     def extract_variable_from_python_module(self, filepath, variable_name):
         with open(filepath, "r") as f:
@@ -109,11 +114,11 @@ class MiAZUtil(GObject.GObject):
 
     def directory_open(self, dirpath: str):
         if sys.platform in ['linux', 'linux2']:
-            os.system(f"xdg-open '{dirpath}'")
+            subprocess.Popen(['xdg-open', dirpath])
+        elif sys.platform == 'darwin':
+            subprocess.Popen(['open', dirpath])
         elif sys.platform in ['win32', 'cygwin', 'msys']:
             os.startfile(dirpath)
-
-
         self.log.debug(f"Directory {dirpath} opened in file browser")
 
     def directory_remove(self, dirpath: str):
@@ -135,17 +140,28 @@ class MiAZUtil(GObject.GObject):
         with open(filepath, 'w') as fout:
             json.dump(adict, fout, sort_keys=True, indent=4)
 
-    def field_used(self, repo_dir, item_type, value):
-        used = False
-        docs = []
+    def _invalidate_field_index(self, *args):
+        self._field_index_dir = None
+
+    def _build_field_index(self, repo_dir):
+        self._field_index_dir = repo_dir
+        self._field_index = {ft: {} for ft in Field}
         for doc in self.get_files(repo_dir):
             fields = self.get_fields(doc)
-            fn = Field[item_type]
-            if fields[fn] == value:
-                docs.append(doc)
-        if len(docs) > 0:
-            used = True
-        return used, docs
+            if len(fields) < 7:
+                continue
+            for field_type, idx in Field.items():
+                val = fields[idx]
+                bucket = self._field_index[field_type]
+                if val not in bucket:
+                    bucket[val] = []
+                bucket[val].append(doc)
+
+    def field_used(self, repo_dir, item_type, value):
+        if self._field_index_dir != repo_dir:
+            self._build_field_index(repo_dir)
+        docs = self._field_index.get(item_type, {}).get(value, [])
+        return len(docs) > 0, docs
 
     def get_mimetype(self, filename: str) -> str:
         if sys.platform == 'win32':
@@ -174,35 +190,18 @@ class MiAZUtil(GObject.GObject):
 
     def get_files(self, dirpath: str) -> []:
         """Get all files from a given directory."""
-        # ~ FIXME: validate root_dir
-        return glob.glob(os.path.join(dirpath, '*'))
+        return sorted(f for f in glob.glob(os.path.join(dirpath, '*')) if os.path.isfile(f))
 
     def get_files_recursively(self, root_dir: str) -> []:
         """Get documents from a given directory recursively
         Avoid hidden documents and documents from hidden directories.
         """
         documents = set()
-        hidden = set()
-        subdirs = set()
-
-        subdirs.add(os.path.abspath(root_dir))
-        for root, _dirs, files in os.walk(os.path.abspath(root_dir)):
-            thisdir = os.path.abspath(root)
-            if os.path.basename(thisdir).startswith('.'):
-                hidden.add(thisdir)
-            else:
-                found = False
-                for hidden_dir in hidden:
-                    if hidden_dir in thisdir:
-                        found = True
-                if not found:
-                    subdirs.add(thisdir)
-        for directory in subdirs:
-            files = glob.glob(os.path.join(directory, '*'))
-            for thisfile in files:
-                if not os.path.isdir(thisfile):
-                    if not os.path.basename(thisfile).startswith('.'):
-                        documents.add(thisfile)
+        for root, dirs, files in os.walk(os.path.abspath(root_dir), topdown=True):
+            dirs[:] = [d for d in dirs if not d.startswith('.')]
+            for f in files:
+                if not f.startswith('.'):
+                    documents.add(os.path.join(root, f))
         return documents
 
     def filename_get_creation_date(self, filepath: str) -> datetime:
@@ -210,7 +209,7 @@ class MiAZUtil(GObject.GObject):
         return datetime.fromtimestamp(lastmod)
 
     def filename_get_mimetype(self, filepath: str) -> str:
-        mimetype, val = Gio.content_type_guess(f"filename={filepath}", data=None)
+        mimetype, val = Gio.content_type_guess(filepath, data=None)
         return mimetype
 
     def filename_details(self, filepath: str):
@@ -230,6 +229,9 @@ class MiAZUtil(GObject.GObject):
         except Exception:
             return False
 
+    def filename_validate(self, doc: str) -> bool:
+        return self.filename_is_normalized(doc)
+
     def filename_normalize(self, filename: str) -> str:
         name, ext = self.filename_details(filename)
         if not self.filename_is_normalized(name):
@@ -241,8 +243,7 @@ class MiAZUtil(GObject.GObject):
         return filename
 
     def valid_key(self, key: str) -> str:
-        key = str(key).strip().replace('-', '_')
-        key = str(key).strip().replace(' ', '_')
+        key = str(key).strip().replace('-', '_').replace(' ', '_')
         return re.sub(r'(?u)[^-\w.]', '', key)
 
     def filename_rename(self, source, target) -> bool:
@@ -268,18 +269,14 @@ class MiAZUtil(GObject.GObject):
         return rename
 
     def filename_delete(self, filepaths: set):
-        try:
-            safepaths = ""
-            for filepath in filepaths:
-                safepaths += f"'{filepath}' "
-            cmd = f"rm {safepaths}"
-            self.log.debug(f"Deleting the following documents: {safepaths}")
-            os.system(cmd)
-            # ~ os.unlink(filepath)
-            self.log.debug(f"{len(filepaths)} files deleted")
-            self.emit('filename-deleted', filepaths)
-        except IsADirectoryError as error:
-            self.log.error(error)
+        self.log.debug(f"Deleting {len(filepaths)} documents")
+        for filepath in filepaths:
+            try:
+                os.unlink(filepath)
+                self.log.debug(f"Deleted: {filepath}")
+            except OSError as error:
+                self.log.error(f"Could not delete {filepath}: {error}")
+        self.emit('filename-deleted', filepaths)
 
     def filename_import(self, source: str, target: str):
         """Import file into repository
@@ -324,16 +321,12 @@ class MiAZUtil(GObject.GObject):
         return date_dsc
 
     def filename_display(self, filepath):
-        # ~ self.log.debug(f"OS Platform: {sys.platform}")
         if sys.platform in ['linux', 'linux2']:
-            os.system(f"xdg-open \"{filepath}\"")
+            subprocess.Popen(['xdg-open', filepath])
+        elif sys.platform == 'darwin':
+            subprocess.Popen(['open', filepath])
         elif sys.platform in ['win32', 'cygwin', 'msys']:
             os.startfile(filepath)
-
-    def filename_validate(self, doc: str) -> bool:
-        if len(doc.split('-')) == 7:
-            return True
-        return False
 
     def since_date_this_year(self, adate: datetime) -> datetime:
         year = adate.year
@@ -355,7 +348,7 @@ class MiAZUtil(GObject.GObject):
         return (adate - timedelta(days=30 * nm)).replace(day=1)
 
     def since_date_last_six_months(self, adate: datetime) -> datetime:
-        return (adate - timedelta(days=30 * 6)).replace(day=1).date()
+        return (adate - timedelta(days=30 * 6)).replace(day=1)
 
     def datetime_to_string(self, adate: datetime) -> str:
         return adate.strftime("%Y%m%d")
@@ -398,23 +391,21 @@ class MiAZUtil(GObject.GObject):
         return zip_archive
 
     def zip_list(self, filepath: str) -> []:
-        zip_archive = zipfile.ZipFile(filepath, "r")
-        return zip_archive.namelist()
+        with zipfile.ZipFile(filepath, "r") as z:
+            return z.namelist()
 
-    def download_and_unzip(self, url:str, extract_to:str):
+    def download_and_unzip(self, url: str, extract_to: str):
         """
         Download a zip file from a URL and extract it to a directory.
-
-        Args:
-            url (str): URL of the zip file to download
-            extract_to (str): Directory to extract the files to (defaults to current directory)
         """
+        if not _REQUESTS_AVAILABLE:
+            self.log.error("Cannot download: 'requests' library is not installed")
+            return False
         try:
             self.log.debug(f"Downloading zip file from {url}")
             response = requests.get(url, stream=True)
-            response.raise_for_status()  # Raise an error for bad status codes
+            response.raise_for_status()
 
-            # Open the zip file from bytes
             with zipfile.ZipFile(io.BytesIO(response.content)) as zip_ref:
                 self.log.debug(f"Extracting files to {extract_to}")
                 zip_ref.extractall(extract_to)
@@ -458,7 +449,7 @@ class MiAZUtil(GObject.GObject):
             try:
                 info = file.query_info("standard::type", Gio.FileQueryInfoFlags.NONE, cancellable)
                 result["success"] = True
-            except GLib.Error as e:
+            except Exception as e:
                 if cancellable.is_cancelled():
                     result["error"] = "Timeout"
                 else:
@@ -477,26 +468,5 @@ class MiAZUtil(GObject.GObject):
         return result["success"], result["error"]
 
 def which(program):
-    """
-    Check if a program is available in $PATH
-    """
-    if sys.platform == 'win32':
-        program = program + '.exe'
-
-    def is_exe(fpath):
-        """
-        Missing method docstring (missing-docstring)
-        """
-        return os.path.isfile(fpath) and os.access(fpath, os.X_OK)
-
-    # ~ fpath, fname = os.path.split(program)
-    # ~ if fpath:
-        # ~ if is_exe(program):
-            # ~ return program
-    # ~ else:
-        # ~ for path in os.environ["PATH"].split(os.pathsep):
-            # ~ path = path.strip('"')
-            # ~ exe_file = os.path.join(path, program)
-            # ~ if is_exe(exe_file):
-                # ~ return exe_file
-    # ~ return None
+    """Check if a program is available in $PATH."""
+    return shutil.which(program)

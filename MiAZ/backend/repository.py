@@ -26,19 +26,17 @@ from MiAZ.backend.config import MiAZConfigUserPlugins
 
 class MiAZRepository(GObject.GObject):
     __gtype_name__ = 'MiAZRepository'
-    _errmsg = None
-
+    __gsignals__ = {
+        'repository-switched': (GObject.SignalFlags.RUN_LAST, None, ()),
+    }
     def __init__(self, app):
-        sid = GObject.signal_lookup('repository-switched', MiAZRepository)
-        if sid == 0:
-            super().__init__()
-            GObject.signal_new('repository-switched',
-                                MiAZRepository,
-                                GObject.SignalFlags.RUN_LAST, None, ())
+        super().__init__()
         self.app = app
         self.log = MiAZLog('MiAZ.Repository')
         self.config = self.app.get_config_dict()
-        self.log.info("Repository class initialited")
+        self._errmsg = None
+        self._conf_cache = None
+        self.log.info("Repository class initialized")
 
     @property
     def docs(self):
@@ -66,14 +64,10 @@ class MiAZRepository(GObject.GObject):
                             self.log.error(error)
             self.log.debug(f"Repository {conf_file} valid? {valid}")
         except Exception as error:
-            errmsg = _("No repositories found.")
-
-            errmsg = _("Please, create a new repository, if none exists yet.\n\n")
+            errmsg = _("No repositories found.\n")
+            errmsg += _("Please, create a new repository, if none exists yet.\n\n")
             errmsg += _("Otherwise, check if the directory exists (local repository) or if the server is accessible (remote repository).")
-            # ~ errmsg += _("Exception error: {error}\n\n").format(error=error)
-            # ~ errmsg += _("Repository path '{path}' not valid.\n").format(path=path)
             self.log.error(errmsg)
-            self.set_error(errmsg)
         return valid
 
     def init(self, path):
@@ -85,7 +79,7 @@ class MiAZRepository(GObject.GObject):
         with open(conf_file, 'w') as fout:
             json.dump(repoconf, fout, sort_keys=True, indent=4)
         self.config['App'].set('source', path)
-        self.log.debug(f"Repository initialited: '{conf_file}'")
+        self.log.debug(f"Repository initialized: '{conf_file}'")
 
     def setup(self, repo_id: str = None):
         conf = {}
@@ -111,7 +105,8 @@ class MiAZRepository(GObject.GObject):
                     self.set_error(error)
         return conf
 
-    def load(self, path):
+    def load(self, path=None):
+        self._conf_cache = None
         repo_dir_conf = self.get('dir_conf')
         self.config['Country'] = MiAZConfigCountries(self.app, repo_dir_conf)
         self.config['Group'] = MiAZConfigGroups(self.app, repo_dir_conf)
@@ -126,9 +121,10 @@ class MiAZRepository(GObject.GObject):
 
     def get(self, key: str) -> str:
         try:
-            repoconf = self.setup()
-            return repoconf[key]
-        except Exception as error:
+            if self._conf_cache is None:
+                self._conf_cache = self.setup()
+            return self._conf_cache[key]
+        except Exception:
             self.log.warning(f"Repository Configuration Key '{key}' not found")
 
     def get_error(self):

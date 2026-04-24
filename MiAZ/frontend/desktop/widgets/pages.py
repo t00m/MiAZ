@@ -14,7 +14,7 @@ class MiAZWelcome(Gtk.Box):
     About class
     """
     def __init__(self, app):
-        super(Gtk.Box, self).__init__(spacing=12, orientation=Gtk.Orientation.VERTICAL)
+        super().__init__(spacing=12, orientation=Gtk.Orientation.VERTICAL)
         self.app = app
         self.factory = self.app.get_service('factory')
         self.actions = self.app.get_service('actions')
@@ -27,11 +27,11 @@ class MiAZWelcome(Gtk.Box):
         vbox = self.factory.create_box_vertical(spacing=24, hexpand=True, vexpand=False)
         centerbox.set_center_widget(vbox)
 
-        label = Gtk.Label.new(_(f"Welcome to {ENV['APP']['shortname']}!"))
-        label.get_style_context().add_class(class_name='title-1')
+        label = Gtk.Label.new(_("Welcome to {shortname}!").format(shortname=ENV['APP']['shortname']))
+        label.add_css_class('title-1')
         vbox.append(label)
         label = Gtk.Label()
-        label.get_style_context().add_class(class_name='title-3')
+        label.add_css_class('title-3')
         label.set_markup(_('No active repositories have been found\n'))
         vbox.append(label)
 
@@ -47,14 +47,14 @@ class MiAZPageNotFound(Gtk.Box):
     Page displayed when no docs are available in current view
     """
     def __init__(self, app):
-        super(Gtk.Box, self).__init__(spacing=12, orientation=Gtk.Orientation.VERTICAL)
+        super().__init__(spacing=12, orientation=Gtk.Orientation.VERTICAL)
         self.app = app
         self.factory = self.app.get_service('factory')
         self.actions = self.app.get_service('actions')
 
         status_page = Adw.StatusPage(
             title=_("No documents found"),
-            description=_(f"<big>Try a different search, reset filters or add new documents</big>"),
+            description=_("<big>Try a different search, reset filters or add new documents</big>"),
             icon_name="io.github.t00m.MiAZ-edit-find-symbolic",
             vexpand=True,
         )

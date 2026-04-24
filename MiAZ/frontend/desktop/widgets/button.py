@@ -10,7 +10,7 @@ from gi.repository import Gtk
 class MiAZPopoverButton(Gtk.Box):
     """Custom Popover Button"""
     def __init__(self, app, icon_name: str = '', title: str = '', css_classes: list = None, widgets: list = None):
-        super(Gtk.Box, self).__init__(spacing=0, orientation=Gtk.Orientation.VERTICAL)
+        super().__init__(spacing=0, orientation=Gtk.Orientation.VERTICAL)
         css_classes = css_classes if css_classes is not None else []
         widgets = widgets if widgets is not None else []
         self.app = app
@@ -35,10 +35,9 @@ class MiAZPopoverButton(Gtk.Box):
         vbox.append(child=self.listbox)
         self.popover = Gtk.Popover()
         self.popover.set_child(vbox)
-        self.popover.present()
         self.button = Gtk.MenuButton(child=self.factory.create_button_content(icon_name=self.icon_name, title=self.title))
         for css_class in self.css_classes:
-            self.button.get_style_context().add_class(class_name=css_class)
+            self.button.add_css_class(css_class)
         self.button.set_popover(self.popover)
         self.append(self.button)
 

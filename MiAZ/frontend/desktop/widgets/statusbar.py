@@ -16,12 +16,9 @@ class MiAZStatusbar(Gtk.Box):
         self.set_margin_bottom(margin=6)
         self.set_margin_start(margin=6)
         self.set_margin_end(margin=6)
-        self.get_style_context().add_class(class_name='linked')
-        # ~ self.get_style_context().add_class(class_name='osd')
-        self.get_style_context().add_class(class_name='caption')
-        self.get_style_context().add_class(class_name='monospace')
-        # ~ self.get_style_context().add_class(class_name='toolbar')
-        self.get_style_context().add_class(class_name='linked')
+        self.add_css_class('linked')
+        self.add_css_class('caption')
+        self.add_css_class('monospace')
 
         # Separator
         separator = Gtk.Separator.new(orientation=Gtk.Orientation.HORIZONTAL)
