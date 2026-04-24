@@ -19,6 +19,10 @@ from MiAZ.backend.models import MiAZModel, Group, Person, Country, Purpose, Conc
 
 class MiAZConfig(GObject.GObject):
     """ MiAZ Config class"""
+    __gsignals__ = {
+        'available-updated': (GObject.SignalFlags.RUN_LAST, None, ()),
+        'used-updated': (GObject.SignalFlags.RUN_LAST, None, ()),
+    }
     used = None
     default = None
     cache = {}
@@ -35,20 +39,6 @@ class MiAZConfig(GObject.GObject):
         self.must_copy = must_copy
         self.foreign = foreign
         self.setup()
-
-        sid_a = GObject.signal_lookup('available-updated', MiAZConfig)
-        sid_u = GObject.signal_lookup('used-updated', MiAZConfig)
-        if sid_a == 0:
-            GObject.GObject.__init__(self)
-            GObject.signal_new('available-updated',
-                                MiAZConfig,
-                                GObject.SignalFlags.RUN_LAST, None, ())
-        if sid_u == 0:
-            GObject.GObject.__init__(self)
-            GObject.signal_new('used-updated',
-                                MiAZConfig,
-                                GObject.SignalFlags.RUN_LAST, None, ())
-        # ~ self.log.debug(f"Config for {self.config_for} initialited")
 
     def __repr__(self):
         return __class__.__name__
@@ -286,13 +276,13 @@ class MiAZConfig(GObject.GObject):
 
 
 class MiAZConfigApp(MiAZConfig):
+    __gsignals__ = {
+        'repo-settings-updated-app': (GObject.SignalFlags.RUN_LAST, None, ()),
+    }
+
     def __init__(self, app):
         self.app = app
         ENV = self.app.get_env()
-        GObject.GObject.__init__(self)
-        GObject.signal_new('repo-settings-updated-app',
-                            MiAZConfigApp,
-                            GObject.SignalFlags.RUN_LAST, None, ())
         super().__init__(
             app=app,
             log=MiAZLog('MiAZ.Config.App'),

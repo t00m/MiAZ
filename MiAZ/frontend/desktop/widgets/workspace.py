@@ -55,6 +55,7 @@ class MiAZWorkspace(Gtk.Box):
     dates = {}
     cache = {}
     used_signals = {} # Signals ids for Dropdowns connected to config
+    _repo_switch_signals = {} # Signal ids for per-node update handlers; disconnected on each repo switch
     uncategorized = False
     pending = False
 
@@ -181,8 +182,13 @@ class MiAZWorkspace(Gtk.Box):
         self.selected_items = []
         self.update()
         for node in self.config:
-            self.config[node].connect('used-updated', self.update)
-            self.config[node].connect('available-updated', self.update)
+            if node in self._repo_switch_signals:
+                sid_used, sid_avail = self._repo_switch_signals[node]
+                self.config[node].disconnect(sid_used)
+                self.config[node].disconnect(sid_avail)
+            sid_used = self.config[node].connect('used-updated', self.update)
+            sid_avail = self.config[node].connect('available-updated', self.update)
+            self._repo_switch_signals[node] = (sid_used, sid_avail)
 
     def _update_dropdowns(self, *args):
         actions = self.app.get_service('actions')

@@ -26,19 +26,17 @@ from MiAZ.backend.config import MiAZConfigUserPlugins
 
 class MiAZRepository(GObject.GObject):
     __gtype_name__ = 'MiAZRepository'
+    __gsignals__ = {
+        'repository-switched': (GObject.SignalFlags.RUN_LAST, None, ()),
+    }
     _errmsg = None
 
     def __init__(self, app):
-        sid = GObject.signal_lookup('repository-switched', MiAZRepository)
-        if sid == 0:
-            super().__init__()
-            GObject.signal_new('repository-switched',
-                                MiAZRepository,
-                                GObject.SignalFlags.RUN_LAST, None, ())
+        super().__init__()
         self.app = app
         self.log = MiAZLog('MiAZ.Repository')
         self.config = self.app.get_config_dict()
-        self.log.info("Repository class initialited")
+        self.log.info("Repository class initialized")
 
     @property
     def docs(self):
