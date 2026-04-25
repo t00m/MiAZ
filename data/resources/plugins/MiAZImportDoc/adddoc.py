@@ -2,7 +2,7 @@
 # pylint: disable=E1101
 
 """
-# File: export2csv.py
+# File: adddoc.py
 # Author: Tomás Vírseda
 # License: GPL v3
 # Description: Plugin for importing documents from filesystem
@@ -60,7 +60,7 @@ class MiAZAddDocumentPlugin(GObject.GObject, Peas.Activatable):
         workspace.connect('workspace-loaded', self.startup)
 
     def do_deactivate(self):
-        self.log.debug("Plugin deactivation not implemented")
+        self.plugin.set_started(False)
 
     def startup(self, *args):
         if not self.plugin.started():
@@ -88,8 +88,11 @@ class MiAZAddDocumentPlugin(GObject.GObject, Peas.Activatable):
                     target = os.path.join(self.repository.docs, btarget)
                     self.util.filename_import(source, target)
                 parent = self.app.get_widget('window')
-                self.srvdlg.show_info(title='Import documents', body=f'{len(filepaths)} documents imported successfully', parent=parent)
+                self.srvdlg.show_info(
+                    title=_('Import documents'),
+                    body=_('{count} documents imported successfully').format(count=len(filepaths)),
+                    parent=parent)
         except Exception as error:
-            self.srvdlg.show_error(title='Error selecting files', body=error)
+            self.srvdlg.show_error(title='Error selecting files', body=str(error))
             self.log.error(f"Error selecting files: {error}")
 

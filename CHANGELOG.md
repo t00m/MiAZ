@@ -11,6 +11,60 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 
+#### Plugins
+
+- **adddir**: Fixed `threading.Thread(target=self.import_directory(filepaths))` — function
+  was called immediately and its return value (`None`) passed as target; import ran on
+  the main GTK thread and the spawned thread was a no-op. Fixed to pass `target` and
+  `args` separately.
+- **adddir**: Fixed `TypeError` — `dialog.select_folder_finish()` returns `Gio.File`, not
+  a path string; `os.path.join(Gio.File, '*')` crashed immediately. Added `folder.get_path()`.
+- **adddir**: Fixed file I/O (`filename_import`) scheduled via `GLib.idle_add` from the
+  background thread, which queued it back onto the main GTK thread. I/O now runs directly
+  in the thread; only the progress callback uses `idle_add`.
+- **adddir**: Fixed watcher staying permanently disabled when an import was cancelled or
+  raised — `watcher.set_active(False)` had no corresponding re-activation on error paths.
+  Added `try/finally` to guarantee restoration.
+- **adddoc**: Fixed `show_error(body=error)` passing an `Exception` object to the dialog
+  instead of a string. Changed to `body=str(error)`.
+- **adddoc**: Fixed untranslatable `title='Import documents'` and `body=f'...'` strings;
+  both are now wrapped with `_()` using `.format()` for the dynamic value.
+- **massrename**: Fixed `dropdown.get_selected_item()` returning `None` when no item is
+  selected; `.id` access raised `AttributeError`, silently swallowed by a FIXME catch-all.
+  Added explicit `None` guard with `continue`.
+- **massrename**: Fixed `_(f'Rename {len(items)} ... <b>{i_title}</b> ...')` — an f-string
+  inside `_()` is invisible to xgettext. Changed to `_('...{count}...{field}...').format(...)`.
+- **renameitem**: Fixed `view.get_selection()` called in `do_activate()` before
+  `'workspace-loaded'` fires — if the workspace view is not yet registered, `view` is
+  `None` and the plugin fails to load. Moved the `selection.connect()` call into
+  `startup()` with a `None` guard.
+- **viewitem**: Fixed `view.cv.connect("activate", ...)` and `view.get_selection().connect()`
+  called in `do_activate()` before the workspace was loaded. Moved both into `startup()`
+  with `None` and `hasattr` guards.
+- **wstoggleview**: Fixed `NameError` at module load — `_()` was used in the `plugin_info`
+  dict before `_` was imported. Added `from gettext import gettext as _`.
+- **wstoggleview**: Fixed bare `except:` in `show_settings()` catching `SystemExit` and
+  `KeyboardInterrupt`. Changed to `except KeyError:`.
+- **wstoggleview**: Removed dead `check_plugin()` method that referenced `self.plugin_info`
+  (never assigned) — would `AttributeError` if called.
+- **wstoggleview**: Fixed `do_deactivate()` logging at `error` level for normal deactivation.
+  Changed to `self.log.debug(...)`.
+- **All 7 plugins**: Fixed `do_deactivate()` not implemented — disabling a plugin left
+  orphaned UI elements and duplicate signal handlers on re-enable; `plugin.started()` was
+  still `True` so re-activation did nothing. All plugins now call
+  `self.plugin.set_started(False)` in `do_deactivate()`.
+
+#### Low quality (plugins)
+
+- **adddir**: Fixed typo "Importing file file {i+1}/..." — "file" was doubled.
+- **massrename**: Added `Field[Concept] = 5` — the local `Field` dict was missing index 5,
+  inconsistent with the 7-field model and a latent `KeyError`.
+- **massrename**: Removed commented-out deprecated `get_style_context().add_class()` call.
+- **renameitem**: Removed dead comment referencing undefined `selected_item` and `i_title`.
+- **adddoc, massrename, viewitem**: Fixed `# File: export2csv.py` copy-paste artefact in
+  module docstrings.
+- **wstoggleview**: Fixed `# File: hello.py` copy-paste artefact in module docstring.
+
 #### Backend
 
 - **projects**: Fixed crash on startup — `conf['Project']` key does not exist in the

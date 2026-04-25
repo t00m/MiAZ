@@ -2,11 +2,13 @@
 # pylint: disable=E1101
 
 """
-# File: hello.py
+# File: wstoggleview.py
 # Author: Tomás Vírseda
 # License: GPL v3
 # Description: Scan plugin
 """
+
+from gettext import gettext as _
 
 from gi.repository import Adw
 from gi.repository import Gdk
@@ -55,10 +57,8 @@ class MiAZWorkspaceToggleViewPlugin(GObject.GObject, Peas.Activatable):
         self.workspace.connect('workspace-loaded', self.startup)
 
     def do_deactivate(self):
-        self.log.error("Plugin deactivated")
-
-    def check_plugin(self, *args):
-        self.log.info(f"Plugin loaded? {self.plugin_info.is_loaded()}")
+        self.log.debug("Plugin deactivated")
+        self.plugin.set_started(False)
 
     def startup(self, *args):
         if not self.plugin.started():
@@ -140,7 +140,7 @@ class MiAZWorkspaceToggleViewPlugin(GObject.GObject, Peas.Activatable):
         config = self.plugin.get_config_data()
         try:
             visible = config['icon_visible']
-        except:
+        except KeyError:
             visible = config['icon_visible'] = True
             self.plugin.set_config_data(config)
 
