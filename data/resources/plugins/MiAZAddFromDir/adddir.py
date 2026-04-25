@@ -63,7 +63,7 @@ class MiAZAddDirectoryPlugin(GObject.GObject, Peas.Activatable):
 
 
     def do_deactivate(self):
-        self.log.debug("Plugin deactivation not implemented")
+        self.plugin.set_started(False)
 
     def startup(self, *args):
         if not self.plugin.started():
@@ -83,10 +83,10 @@ class MiAZAddDirectoryPlugin(GObject.GObject, Peas.Activatable):
     def _on_filechooser_response(self, dialog, result):
         try:
             folder = dialog.select_folder_finish(result)
-            filepaths = glob.glob(os.path.join(folder, '*'))
+            dirpath = folder.get_path()
+            filepaths = glob.glob(os.path.join(dirpath, '*'))
             self.app.set_status(MiAZStatus.BUSY)
-
-            threading.Thread(target=self.import_directory(filepaths), daemon=True).start()
+            threading.Thread(target=self.import_directory, args=(filepaths,), daemon=True).start()
         except GLib.Error as err:
             self.srvdlg.show_error(title='Error selecting files', body=err.message)
             self.log.error(f"{err.domain} > {err.message}")
@@ -95,25 +95,23 @@ class MiAZAddDirectoryPlugin(GObject.GObject, Peas.Activatable):
         total_files = len(filepaths)
         watcher = self.app.get_service('watcher')
         watcher.set_active(False)
+        try:
+            for i, filepath in enumerate(filepaths):
+                if hasattr(self, 'cancelled') and self.cancelled:
+                    break
 
-        for i, filepath in enumerate(filepaths):
-            if hasattr(self, 'cancelled') and self.cancelled:
-                break
+                progress = (i + 1) / total_files
+                self.log.debug(f"Importing file from {filepath}")
+                GLib.idle_add(self.update_progress, progress, f"Importing file {i+1}/{total_files}")
 
-            # Update progress
-            progress = (i + 1) / total_files
-            self.log.debug(f"Importing file from {filepath}")
-            GLib.idle_add(self.update_progress, progress, f"Importing file file {i+1}/{total_files}")
-
-            # Import file
-            btarget = self.util.filename_normalize(filepath)
-            target = os.path.join(self.repository.docs, btarget)
-            GLib.idle_add(self.util.filename_import,filepath, target)
+                btarget = self.util.filename_normalize(filepath)
+                target = os.path.join(self.repository.docs, btarget)
+                self.util.filename_import(filepath, target)
+        finally:
+            GLib.idle_add(watcher.set_active, True)
+            GLib.idle_add(self.app.set_status, MiAZStatus.RUNNING)
 
     def update_progress(self, fraction, text):
         self.log.info(f"{fraction} {text}")
         if fraction >= 1.0:
-            watcher = self.app.get_service('watcher')
-            watcher.set_active(True)
-            self.app.set_status(MiAZStatus.RUNNING)
             self.srvdlg.show_info(title='Import directory', body=_('All documents imported successfully'))

@@ -2,7 +2,7 @@
 # pylint: disable=E1101, R0914
 
 """
-# File: export2csv.py
+# File: massrename.py
 # Author: Tomás Vírseda
 # License: GPL v3
 # Description: Plugin for exporting items to CSV
@@ -20,7 +20,7 @@ from gi.repository import Peas
 
 from MiAZ.backend.status import MiAZStatus
 from MiAZ.frontend.desktop.services.pluginsystem import MiAZPlugin
-from MiAZ.backend.models import File, Group, Country, Purpose, SentBy, SentTo, Date
+from MiAZ.backend.models import File, Group, Country, Purpose, SentBy, SentTo, Date, Concept
 from MiAZ.frontend.desktop.widgets.configview import MiAZCountries
 from MiAZ.frontend.desktop.widgets.configview import MiAZGroups
 from MiAZ.frontend.desktop.widgets.configview import MiAZPurposes
@@ -48,6 +48,7 @@ Field[Country] = 1
 Field[Group] = 2
 Field[SentBy] = 3
 Field[Purpose] = 4
+Field[Concept] = 5
 Field[SentTo] = 6
 
 Configview = {}
@@ -90,7 +91,7 @@ class MiAZMassRenamingPlugin(GObject.GObject, Peas.Activatable):
         self.workspace.connect('workspace-loaded', self.startup)
 
     def do_deactivate(self):
-        self.log.debug("Plugin deactivation not implemented")
+        self.plugin.set_started(False)
 
     def startup(self, *args):
         if not self.plugin.started():
@@ -132,21 +133,19 @@ class MiAZMassRenamingPlugin(GObject.GObject, Peas.Activatable):
             self.util = self.app.get_service('util')
             citems = []
             for item in items:
-                try:
-                    source = item.id
-                    name, ext = self.util.filename_details(source)
-                    n = Field[item_type]
-                    tmpfile = name.split('-')
-                    tmpfile[n] = dropdown.get_selected_item().id
-                    filename = f"{'-'.join(tmpfile)}.{ext}"
-                    target = os.path.join(os.path.dirname(source), filename)
-                    txtId = os.path.basename(source)
-                    txtTitle = os.path.basename(target)
-                    citems.append(File(id=txtId, title=txtTitle))
-                except AttributeError as error:
-                    # FIXME: AtributeError: 'NoneType' object has no attribute 'id'
-                    # It happens when managing resources from inside the dialog
-                    self.log.error(error)
+                selected = dropdown.get_selected_item()
+                if selected is None:
+                    continue
+                source = item.id
+                name, ext = self.util.filename_details(source)
+                n = Field[item_type]
+                tmpfile = name.split('-')
+                tmpfile[n] = selected.id
+                filename = f"{'-'.join(tmpfile)}.{ext}"
+                target = os.path.join(os.path.dirname(source), filename)
+                txtId = os.path.basename(source)
+                txtTitle = os.path.basename(target)
+                citems.append(File(id=txtId, title=txtTitle))
             columnview.update(citems)
 
         def calendar_day_selected(calendar, label, columnview, items):
@@ -212,7 +211,9 @@ class MiAZMassRenamingPlugin(GObject.GObject, Peas.Activatable):
             i_title = item_type.__title__
             i_title_plural = item_type.__title_plural__
             box = self.factory.create_box_vertical(spacing=6, vexpand=True, hexpand=True)
-            label = self.factory.create_label(_(f'Rename {len(items)} files by setting the field <b>{i_title}</b> to:\n'))
+            label = self.factory.create_label(
+                _('Rename {count} files by setting the field <b>{field}</b> to:\n')
+                .format(count=len(items), field=i_title))
             dropdown = self.factory.create_dropdown_generic(item_type)
             icon_name = f'io.github.t00m.MiAZ-res-{i_title_plural.lower()}'
             self.log.debug(icon_name)
@@ -246,7 +247,6 @@ class MiAZMassRenamingPlugin(GObject.GObject, Peas.Activatable):
             hbox.append(label)
             frame = Gtk.Frame()
             cv = MiAZColumnViewMassRename(self.app)
-            # ~ cv.get_style_context().add_class(class_name='caption')
             cv.set_hexpand(True)
             cv.set_vexpand(True)
             frame.set_child(cv)

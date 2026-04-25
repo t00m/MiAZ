@@ -64,7 +64,7 @@ class MiAZDeleteItemPlugin(GObject.GObject, Peas.Activatable):
         self.workspace.connect('workspace-loaded', self.startup)
 
     def do_deactivate(self):
-        self.log.debug("Plugin deactivation not implemented")
+        self.plugin.set_started(False)
 
     def startup(self, *args):
         if not self.plugin.started():

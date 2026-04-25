@@ -60,12 +60,9 @@ class MiAZToolbarRenameItemPlugin(GObject.GObject, Peas.Activatable):
         # Connect signals to startup
         self.workspace.connect('workspace-loaded', self.startup)
         self.workspace.connect('workspace-view-updated', self._on_selection_changed)
-        view = self.app.get_widget('workspace-view')
-        selection = view.get_selection()
-        selection.connect('selection-changed', self._on_selection_changed)
 
     def do_deactivate(self):
-        self.log.debug("Plugin deactivation not implemented")
+        self.plugin.set_started(False)
 
     def _on_selection_changed(self, *args):
         items = self.workspace.get_selected_items()
@@ -83,6 +80,10 @@ class MiAZToolbarRenameItemPlugin(GObject.GObject, Peas.Activatable):
             # Add plugin to its default (sub)category
             self.plugin.install_menu_entry(menuitem)
 
+            # Connect selection signal now that workspace is loaded
+            view = self.app.get_widget('workspace-view')
+            if view is not None:
+                view.get_selection().connect('selection-changed', self._on_selection_changed)
 
             # Button
             if self.app.get_widget('toolbar-top-button-rename') is None:
@@ -107,8 +108,7 @@ class MiAZToolbarRenameItemPlugin(GObject.GObject, Peas.Activatable):
         rename_widget.set_data(doc)
         window = self.app.get_widget('window')
         title = _('Rename document')
-        body = '' # _(f'<big>{i_title} {selected_item.id} is still being used</big>')
-        dialog = self.srvdlg.show_question(title=title, body=body, widget=rename_widget,width=1024)
+        dialog = self.srvdlg.show_question(title=title, body='', widget=rename_widget, width=1024)
         dialog.add_response("preview", _("Preview"))
         dialog.set_response_enabled("preview", True)
         self.app.add_widget('dialog-rename', dialog)

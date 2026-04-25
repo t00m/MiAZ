@@ -2,7 +2,7 @@
 # pylint: disable=E1101
 
 """
-# File: export2csv.py
+# File: viewitem.py
 # Author: Tomás Vírseda
 # License: GPL v3
 # Description: Plugin for exporting items to CSV
@@ -56,13 +56,9 @@ class MiAZToolbarViewItemPlugin(GObject.GObject, Peas.Activatable):
         self.workspace = self.app.get_widget('workspace')
         self.workspace.connect('workspace-loaded', self.startup)
         self.workspace.connect('workspace-view-updated', self._on_selection_changed)
-        view = self.app.get_widget('workspace-view')
-        view.cv.connect("activate", self.document_display)
-        selection = view.get_selection()
-        selection.connect('selection-changed', self._on_selection_changed)
 
     def do_deactivate(self):
-        self.log.debug("Plugin deactivation not implemented")
+        self.plugin.set_started(False)
 
     def _on_selection_changed(self, *args):
         items = self.workspace.get_selected_items()
@@ -79,6 +75,13 @@ class MiAZToolbarViewItemPlugin(GObject.GObject, Peas.Activatable):
 
             # Add plugin to its default (sub)category
             self.plugin.install_menu_entry(menuitem)
+
+            # Connect view signals now that workspace is loaded
+            view = self.app.get_widget('workspace-view')
+            if view is not None:
+                if hasattr(view, 'cv'):
+                    view.cv.connect("activate", self.document_display)
+                view.get_selection().connect('selection-changed', self._on_selection_changed)
 
             # Button
             if self.app.get_widget('toolbar-top-button-view') is None:
