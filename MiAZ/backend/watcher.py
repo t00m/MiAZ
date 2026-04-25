@@ -10,7 +10,6 @@
 # A modified version found on StackOverflow:
 # https://stackoverflow.com/questions/182197/how-do-i-watch-a-file-for-changes
 
-import os
 import glob
 
 from gi.repository import Gio
@@ -163,11 +162,8 @@ class MiAZWatcher(GObject.GObject):
 
         for f in self.before.keys():
             if f not in removed:
-                try:
-                    if os.path.getmtime(f) != self.before.get(f):
-                        modified.append(f)
-                except FileNotFoundError:
-                    pass
+                if after.get(f) != self.before.get(f):
+                    modified.append(f)
 
         if added:
             self.log.debug(f"Watcher > {len(added)} files added")
