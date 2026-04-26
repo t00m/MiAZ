@@ -172,18 +172,22 @@ class MiAZApp(Adw.Application):
                     ptype = plugin_manager.get_plugin_type(plugin)
                     if not plugin.is_loaded():
                         if ptype == MiAZPluginType.SYSTEM:
-                            # Always load system plugins
-                            plugin_manager.load_plugin(plugin)
-                            # ~ self.log.debug(f"System Plugin {plugin_name} loaded")
-                            ns += 1
-                            na += 1
+                            # Load system plugin unless the user has explicitly disabled it
+                            config_disabled = self.get_config('SystemPlugin')
+                            is_disabled = (config_disabled is not None
+                                           and config_disabled.exists_used(plugin_name))
+                            if is_disabled:
+                                self.log.info(f"System Plugin {plugin_name} skipped (disabled by user)")
+                            else:
+                                plugin_manager.load_plugin(plugin)
+                                ns += 1
+                                na += 1
                         else:
                             # Check if plugin must be loaded for selected repository
                             config_plugins = self.get_config('Plugin')
                             plugins_used = config_plugins.load_used().keys()
                             if plugin_name in plugins_used:
                                 plugin_manager.load_plugin(plugin)
-                                # ~ self.log.debug(f"User Plugin {plugin_name} loaded because it is used in current repository")
                                 nu += 1
                                 na += 1
                             else:

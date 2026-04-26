@@ -22,6 +22,7 @@ from MiAZ.backend.config import MiAZConfigPeople
 from MiAZ.backend.config import MiAZConfigSentBy
 from MiAZ.backend.config import MiAZConfigSentTo
 from MiAZ.backend.config import MiAZConfigUserPlugins
+from MiAZ.backend.config import MiAZConfigSystemPlugins
 
 
 class MiAZRepository(GObject.GObject):
@@ -116,6 +117,7 @@ class MiAZRepository(GObject.GObject):
         self.config['SentTo'] = MiAZConfigSentTo(self.app, repo_dir_conf)
         self.config['Person'] = MiAZConfigPeople(self.app, repo_dir_conf)
         self.config['Plugin'] = MiAZConfigUserPlugins(self.app, repo_dir_conf)
+        self.config['SystemPlugin'] = MiAZConfigSystemPlugins(self.app, repo_dir_conf)
         self.log.debug(f"Repository configuration loaded correctly from: {repo_dir_conf}")
         self.emit('repository-switched')
 

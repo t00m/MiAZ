@@ -403,7 +403,17 @@ class MiAZPluginSystem(GObject.GObject):
             pname = plugin.get_name()
             pvers = plugin.get_version()
             self.engine.unload_plugin(plugin)
-            self.log.info(f"Plugin  {pname} v{pvers} ({ptype}) unloaded")
+            self.log.info(f"Plugin {pname} v{pvers} ({ptype}) unloaded")
+
+            # Persist disabled state so the plugin is not reloaded on next run
+            if ptype == MiAZPluginType.SYSTEM:
+                config_disabled = self.app.get_config('SystemPlugin')
+                if config_disabled is not None and not config_disabled.exists_used(pname):
+                    disabled = config_disabled.load_used()
+                    disabled[pname] = ''
+                    config_disabled.save_used(disabled)
+                    self.log.info(f"System plugin {pname} marked as disabled")
+
             self.emit('plugins-updated')
         except Exception as error:
             self.log.error(error)
