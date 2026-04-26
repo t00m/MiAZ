@@ -76,7 +76,9 @@ class MiAZMainWindow(Gtk.Box):
         if page is None:
             self._setup_webbrowser()
 
-        self.append(vmainbox)
+        toast_overlay = self.app.add_widget('toast-overlay', Adw.ToastOverlay())
+        toast_overlay.set_child(vmainbox)
+        self.append(toast_overlay)
 
     def _setup_event_listener(self):
         """Setup an event listener for mainwindow"""
