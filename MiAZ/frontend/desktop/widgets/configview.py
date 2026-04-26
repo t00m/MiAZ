@@ -7,15 +7,6 @@
 import os
 import glob
 from gettext import gettext as _
-import threading
-
-try:
-    import requests
-    from requests.exceptions import HTTPError
-    _REQUESTS_AVAILABLE = True
-except ImportError:
-    _REQUESTS_AVAILABLE = False
-
 from gi.repository import Adw
 from gi.repository import Gio
 from gi.repository import GLib
@@ -425,11 +416,6 @@ class MiAZUserPlugins(MiAZConfigView):
         btnInfo.set_valign(Gtk.Align.CENTER)
         self.toolbar_buttons_Av.append(btnInfo)
 
-        btnRefresh = factory.create_button(icon_name='io.github.t00m.MiAZ-view-refresh-symbolic', callback=self._refresh_index_plugin_file, css_classes=['linked'])
-        btnRefresh.set_valign(Gtk.Align.CENTER)
-        self.app.add_widget('repository-settings-plugins-av-btnRefresh', btnRefresh)
-        self.toolbar_buttons_Av.append(btnRefresh)
-
         # Used view buttons
         self.btnConfig = factory.create_button(icon_name='io.github.t00m.MiAZ-config-symbolic', callback=self._configure_plugin_options)
         self.btnConfig.set_valign(Gtk.Align.CENTER)
@@ -643,82 +629,6 @@ class MiAZUserPlugins(MiAZConfigView):
         if plugin is not None:
             has_settings = hasattr(plugin, 'show_settings') and callable(getattr(plugin, 'show_settings'))
         self.btnConfig.set_visible(has_settings)
-
-    def _refresh_index_plugin_file(self, *args):
-        threading.Thread(target=self.download_plugins, daemon=True).start()
-
-    def download_plugins(self):
-        if not _REQUESTS_AVAILABLE:
-            self.log.error("Cannot download plugins: 'requests' library is not installed")
-            return
-        # FIXME: set toolbar sensitivity to False
-        banner = self.app.get_widget('repository-settings-banner')
-        banner.set_revealed(True)
-        banner.set_button_label('')
-        banner.set_title("")
-
-        util = self.app.get_service('util')
-        ENV = self.app.get_env()
-        source = ENV['APP']['PLUGINS']['SOURCE']
-        url_base = ENV['APP']['PLUGINS']['REMOTE_INDEX']
-        url = url_base % source
-        url_plugin_base = ENV['APP']['PLUGINS']['DOWNLOAD']
-        user_plugins_dir = ENV['LPATH']['PLUGINS']
-
-        try:
-            response = requests.get(url)
-            response.raise_for_status()
-            plugin_index = response.json()
-            util.json_save(ENV['APP']['PLUGINS']['USER_INDEX'], plugin_index)
-            plugin_system = self.app.get_service('plugin-system')
-            user_plugins = plugin_system.get_user_plugins()
-        except Exception as error:
-            # FIXME: display error dialog
-            self.log.error(error)
-            return
-
-        urls = []
-        plugin_list = []
-        for pid in plugin_index:
-            url_plugin = url_plugin_base % (source, pid)
-            urls.append(url_plugin)
-            self.log.debug(f"Appending plugin {url_plugin}")
-        total_files = len(urls)
-
-        for i, url_plugin in enumerate(urls):
-            if hasattr(self, 'cancelled') and self.cancelled:
-                break
-
-            # Update progress
-            progress = (i + 1) / total_files
-            self.log.debug(f"Downloading plugin from {url_plugin}")
-            GLib.idle_add(self.update_progress, progress, f"Downloading file {i+1}/{total_files}")
-
-            try:
-                util.download_and_unzip(url_plugin, user_plugins_dir)
-                # ~ time.sleep(1) # Comment above line and disable this one for testing
-            except HTTPError as http_error:
-                self.log.error(f"HTTP error occurred: {http_error}")
-            except Exception as error:
-                self.log.error(f"Another error occurred: {error}")
-
-    def update_progress(self, fraction, text):
-        srvdlg = self.app.get_service('dialogs')
-        title = "Plugin management"
-        percentage = int(fraction*100)
-        banner = self.app.get_widget('repository-settings-banner')
-        banner.set_title(f"{text} ({percentage}%) done")
-        if fraction == 1.0:
-            banner = self.app.get_widget('repository-settings-banner')
-            banner.set_revealed(True)
-            banner.set_title("One or more plugins were updated. Application restart needed")
-            banner.set_button_label('Restart')
-            pluginsystem = self.app.get_service('plugin-system')
-            pluginsystem.create_user_plugin_index()
-            # ~ self.update_user_plugins()
-            body = "Plugins updated"
-            self.log.info(body)
-            srvdlg.show_info(title=title, body=body, parent=self)
 
     def _configure_plugin_options(self, *args):
         srvdlg = self.app.get_service('dialogs')
