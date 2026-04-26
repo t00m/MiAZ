@@ -85,6 +85,9 @@ class MiAZMainWindow(Gtk.Box):
         evk = Gtk.EventControllerKey.new()
         self.app.add_widget('window-event-controller', evk)
         self.win.add_controller(evk)
+        plugin_system = self.app.get_service('plugin-system')
+        if plugin_system is not None:
+            plugin_system.connect('plugins-updated', self._on_plugins_updated)
 
     def _setup_headerbar_left(self):
         factory = self.app.get_service('factory')
@@ -164,6 +167,38 @@ class MiAZMainWindow(Gtk.Box):
             widget_workspace.connect('workspace-view-filtered', self._on_workspace_menu_update)
             widget_workspace.connect('workspace-view-updated', self._on_workspace_menu_update)
         return widget_workspace
+
+    def _on_plugins_updated(self, *args):
+        """Rebuild workspace-menu-selection whenever plugins are loaded or unloaded."""
+        workspace = self.app.get_widget('workspace')
+        if workspace is None:
+            return
+
+        main_menu = self.app.get_widget('workspace-menu-selection')
+        if main_menu is None:
+            return
+
+        # Clear menu model and all cached plugin submenu objects
+        main_menu.remove_all()
+        self.app.remove_widgets_with_prefix('workspace-menu-plugins-')
+
+        # For every currently loaded plugin, reset its started flag then call startup()
+        # directly so it reinstalls its menu entry without waiting for workspace-loaded
+        plugin_manager = self.app.get_service('plugin-system')
+        for plugin_info in plugin_manager.plugins:
+            if not plugin_info.is_loaded():
+                continue
+            plugin_name = plugin_info.get_name()
+            plugin_obj = self.app.get_widget(f'plugin-{plugin_name}')
+            if plugin_obj is None:
+                continue
+            if hasattr(plugin_obj, 'plugin'):
+                plugin_obj.plugin.set_started(False)
+            if hasattr(plugin_obj, 'startup') and callable(plugin_obj.startup):
+                try:
+                    plugin_obj.startup()
+                except Exception as error:
+                    self.log.error(f"Error rebuilding menu for plugin {plugin_name}: {error}")
 
     def _on_workspace_menu_update(self, *args):
         stack = self.app.get_widget('stack')

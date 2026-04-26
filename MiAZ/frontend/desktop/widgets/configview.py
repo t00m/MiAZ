@@ -395,8 +395,9 @@ class MiAZPurposes(MiAZConfigView):
 
 class MiAZUserPlugins(MiAZConfigView):
     """
-    Manage user plugins from Repo Settings. Edit disabled
-    Only display User plugins found in ENV['APP']['PLUGINS']['USER_INDEX']
+    Manage system plugins from Repo Settings.
+    Displays plugins from ENV['APP']['PLUGINS']['SYSTEM_INDEX'].
+    System plugins are enabled by default; disabling adds them to a per-repo denylist.
     """
     __gtype_name__ = 'MiAZUserPlugins'
     __gsignals__ = {
@@ -439,7 +440,7 @@ class MiAZUserPlugins(MiAZConfigView):
         # Fill-in dropdowns
         ENV = self.app.get_env()
         try:
-            self.user_plugins = util.json_load(ENV['APP']['PLUGINS']['USER_INDEX'])
+            self.user_plugins = util.json_load(ENV['APP']['PLUGINS']['SYSTEM_INDEX'])
         except Exception:
             self.user_plugins = {}
 
@@ -465,6 +466,35 @@ class MiAZUserPlugins(MiAZConfigView):
             self.dpdCats.set_selected(0)
             self.log.debug(f"Select first category")
             self._on_plugin_category_selected()
+
+    def _update_view_available(self):
+        ENV = self.app.get_env()
+        util = self.app.get_service('util')
+        try:
+            system_plugins = util.json_load(ENV['APP']['PLUGINS']['SYSTEM_INDEX'])
+        except Exception:
+            system_plugins = {}
+        items = []
+        for plugin_id, info in system_plugins.items():
+            title = info.get('Description', plugin_id)
+            items.append(Plugin(id=plugin_id, title=_(title)))
+        self.viewAv.update(items)
+
+    def _update_view_used(self, items=None):
+        ENV = self.app.get_env()
+        util = self.app.get_service('util')
+        config_enabled = self.app.get_config('SystemPlugin')
+        try:
+            system_plugins = util.json_load(ENV['APP']['PLUGINS']['SYSTEM_INDEX'])
+        except Exception:
+            system_plugins = {}
+        enabled = config_enabled.load_used() if config_enabled else {}
+        enabled_items = []
+        for plugin_id, info in system_plugins.items():
+            if plugin_id in enabled:
+                title = info.get('Description', plugin_id)
+                enabled_items.append(Plugin(id=plugin_id, title=_(title)))
+        self.viewSl.update(enabled_items)
 
     def _do_filter_view(self, item, filter_list_model):
         plugin = item.id
@@ -639,8 +669,6 @@ class MiAZUserPlugins(MiAZConfigView):
         self.log.debug(f"Open configuration dialog for plugin {selected_plugin.id}")
         ENV = self.app.get_env()
         util = self.app.get_service('util')
-        plugin_system = self.app.get_service('plugin-system')
-        user_plugins = util.json_load(ENV['APP']['PLUGINS']['USER_INDEX'])
         plugin_id = f"plugin-{selected_plugin.id}"
         plugin = self.app.get_widget(plugin_id)
         if plugin is not None:
@@ -694,52 +722,75 @@ class MiAZUserPlugins(MiAZConfigView):
             return
 
         ENV = self.app.get_env()
-        ENV['APP']['STATUS']['RESTART_NEEDED'] = True
-        self.config.remove_used(selected_plugin.id)
-        banner = self.app.get_widget('repository-settings-banner')
-        banner.set_revealed(True)
+        util = self.app.get_service('util')
+        plugin_manager = self.app.get_service('plugin-system')
+        system_plugins = {}
+        try:
+            system_plugins = util.json_load(ENV['APP']['PLUGINS']['SYSTEM_INDEX'])
+        except Exception:
+            pass
+        plugin_info = system_plugins.get(selected_plugin.id)
+        if plugin_info is None:
+            return
+        plugin_module = plugin_info['Module']
+        plugin = plugin_manager.get_plugin_info(plugin_module)
+        if plugin is not None and plugin.is_loaded():
+            plugin_manager.unload_plugin(plugin)
+        config_enabled = self.app.get_config('SystemPlugin')
+        if config_enabled:
+            config_enabled.remove_used(selected_plugin.id)
+        self.log.debug(f"Plugin '{selected_plugin.id}' disabled")
         self.update_views()
 
     def _on_item_used_add(self, *args):
-        workflow = self.app.get_service('workflow')
         plugin_manager = self.app.get_service('plugin-system')
-        plugins_used = self.config.load_used()
+        util = self.app.get_service('util')
+        ENV = self.app.get_env()
         selected_plugin = self.viewAv.get_selected()
         if selected_plugin is None:
             return
 
-        plugin_used = self.config.exists_used(selected_plugin.id)
-        item_type = self.config.model
-        i_title = item_type.__title__
-        if not plugin_used:
-            util = self.app.get_service('util')
-            ENV = self.app.get_env()
-            user_plugins = util.json_load(ENV['APP']['PLUGINS']['USER_INDEX'])
-            try:
-                plugin_module = user_plugins[selected_plugin.id]['Module']
-            except KeyError as key:
-                self.log.error(f"Plugin {key} not found in {ENV['APP']['PLUGINS']['USER_INDEX']}")
-                return
-            plugins_used[selected_plugin.id] = selected_plugin.title
-            plugin = plugin_manager.get_plugin_info(plugin_module)
+        config_enabled = self.app.get_config('SystemPlugin')
+        is_enabled = config_enabled and config_enabled.exists_used(selected_plugin.id)
+        if is_enabled:
+            self.log.warning(f"Plugin '{selected_plugin.id}' is already enabled. Nothing to do")
+            self.update_views()
+            return
+
+        system_plugins = {}
+        try:
+            system_plugins = util.json_load(ENV['APP']['PLUGINS']['SYSTEM_INDEX'])
+        except Exception:
+            pass
+        plugin_info = system_plugins.get(selected_plugin.id)
+        if plugin_info is None:
+            self.log.error(f"Plugin '{selected_plugin.id}' not found in system index")
+            return
+        plugin_module = plugin_info['Module']
+        plugin = plugin_manager.get_plugin_info(plugin_module)
+        if plugin is not None:
             if not plugin.is_loaded():
                 plugin_manager.load_plugin(plugin)
-                self.config.save_used(items=plugins_used)
-                self.log.debug(f"{i_title} {selected_plugin.id} activated")
-                workflow.switch_start()
-        else:
-            self.log.warning(f"{i_title} '{selected_plugin.id}' was already activated. Nothing to do")
+            if config_enabled:
+                enabled = config_enabled.load_used()
+                enabled[selected_plugin.id] = selected_plugin.title
+                config_enabled.save_used(enabled)
+            self.log.debug(f"Plugin '{selected_plugin.id}' enabled")
         self.update_views()
 
     def _show_plugin_info(self, *args):
         util = self.app.get_service('util')
         ENV = self.app.get_env()
-        plugin_system = self.app.get_service('plugin-system')
         selected_plugin = self.viewAv.get_selected()
         if selected_plugin is None:
             return
-        user_plugins = util.json_load(ENV['APP']['PLUGINS']['USER_INDEX'])
-        plugin_info = user_plugins[selected_plugin.id]
+        try:
+            system_plugins = util.json_load(ENV['APP']['PLUGINS']['SYSTEM_INDEX'])
+        except Exception:
+            return
+        plugin_info = system_plugins.get(selected_plugin.id)
+        if plugin_info is None:
+            return
 
         # Build info dialog
         dialog = Adw.PreferencesDialog()

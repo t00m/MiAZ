@@ -382,6 +382,7 @@ class MiAZPluginSystem(GObject.GObject):
 
             if plugin.is_loaded():
                 self.log.info(f"{str(ptype).title()} Plugin {pname} v{pvers} ({ptype}) loaded")
+                self.emit('plugins-updated')
                 return True
             else:
                 self.log.error(f"Plugin {pname} v{pvers} ({ptype}) couldn't be loaded")
@@ -395,7 +396,6 @@ class MiAZPluginSystem(GObject.GObject):
             self.log.error(f"Plugin {pname} v{pvers} ({ptype}) couldn't be loaded")
             self.log.error(f"Reason: {error}")
             return False
-        self.emit('plugins-updated')
 
     def unload_plugin(self, plugin: Peas.PluginInfo):
         try:
@@ -404,16 +404,6 @@ class MiAZPluginSystem(GObject.GObject):
             pvers = plugin.get_version()
             self.engine.unload_plugin(plugin)
             self.log.info(f"Plugin {pname} v{pvers} ({ptype}) unloaded")
-
-            # Persist disabled state so the plugin is not reloaded on next run
-            if ptype == MiAZPluginType.SYSTEM:
-                config_disabled = self.app.get_config('SystemPlugin')
-                if config_disabled is not None and not config_disabled.exists_used(pname):
-                    disabled = config_disabled.load_used()
-                    disabled[pname] = ''
-                    config_disabled.save_used(disabled)
-                    self.log.info(f"System plugin {pname} marked as disabled")
-
             self.emit('plugins-updated')
         except Exception as error:
             self.log.error(error)

@@ -172,16 +172,16 @@ class MiAZApp(Adw.Application):
                     ptype = plugin_manager.get_plugin_type(plugin)
                     if not plugin.is_loaded():
                         if ptype == MiAZPluginType.SYSTEM:
-                            # Load system plugin unless the user has explicitly disabled it
-                            config_disabled = self.get_config('SystemPlugin')
-                            is_disabled = (config_disabled is not None
-                                           and config_disabled.exists_used(plugin_name))
-                            if is_disabled:
-                                self.log.info(f"System Plugin {plugin_name} skipped (disabled by user)")
-                            else:
+                            # Only load system plugins explicitly enabled by the user
+                            config_enabled = self.get_config('SystemPlugin')
+                            is_enabled = (config_enabled is not None
+                                          and config_enabled.exists_used(plugin_name))
+                            if is_enabled:
                                 plugin_manager.load_plugin(plugin)
                                 ns += 1
                                 na += 1
+                            else:
+                                self.log.info(f"System Plugin {plugin_name} skipped (not enabled for this repository)")
                         else:
                             # Check if plugin must be loaded for selected repository
                             config_plugins = self.get_config('Plugin')
@@ -253,6 +253,13 @@ class MiAZApp(Adw.Application):
         except KeyError:
             self.log.error(f"Widget '{name}' doesn't exists")
         return deleted
+
+    def remove_widgets_with_prefix(self, prefix: str) -> int:
+        """Remove all widgets whose key starts with prefix. Returns count removed."""
+        keys = [k for k in list(self._miazobjs['widgets']) if k.startswith(prefix)]
+        for key in keys:
+            del self._miazobjs['widgets'][key]
+        return len(keys)
 
     def get_logger(self):
         return self.log

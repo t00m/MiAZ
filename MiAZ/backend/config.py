@@ -452,16 +452,16 @@ class MiAZConfigUserPlugins(MiAZConfig):
 
 
 class MiAZConfigSystemPlugins(MiAZConfig):
-    """Tracks explicitly disabled system plugins per repository.
-    Keys present in the 'used' file are disabled; absent means enabled."""
+    """Tracks explicitly enabled system plugins per repository (opt-in).
+    Keys present in the 'used' file are enabled; absent means disabled."""
     def __init__(self, app, dir_conf):
-        disabled_file = os.path.join(dir_conf, 'plugins-system-disabled.json')
+        enabled_file = os.path.join(dir_conf, 'plugins-system-enabled.json')
         super().__init__(
             app=app,
             log=MiAZLog('MiAZ.Config.SystemPlugins'),
             config_for=_('SystemPlugin'),
-            used=disabled_file,
-            available=disabled_file,
+            used=enabled_file,
+            available=enabled_file,
             default=None,
             model=Plugin,
             must_copy=False
