@@ -112,6 +112,19 @@ class MiAZSelector(Gtk.Box):
         boxViewSl.append(self.frmViewSl)
         self.boxRight.append(boxViewSl)
 
+    def _show_toast(self, message: str):
+        overlay = None
+        widget = self.get_parent()
+        while widget is not None:
+            if isinstance(widget, Adw.ToastOverlay):
+                overlay = widget
+                break
+            widget = widget.get_parent()
+        if overlay is None:
+            overlay = self.app.get_widget('toast-overlay')
+        if overlay is not None:
+            overlay.add_toast(Adw.Toast(title=message))
+
     def _on_restart_clicked(self, *args):
         actions = self.app.get_service('actions')
         actions.application_restart()
@@ -122,9 +135,6 @@ class MiAZSelector(Gtk.Box):
         columnview.cv.connect("activate", self._on_selected_item_available_notify)
         self.frmViewAv.set_child(columnview)
         columnview.cv.sort_by_column(columnview.column_id, Gtk.SortType.ASCENDING)
-        filter_model = columnview.get_model_filter()
-        selection = Gtk.SingleSelection.new(filter_model)
-        columnview.cv.set_model(selection)
 
     def _on_selection_change(self, *args):
         self.log.debug(args)
@@ -134,9 +144,6 @@ class MiAZSelector(Gtk.Box):
         columnview.column_title.set_expand(True)
         self.frmViewSl.set_child(columnview)
         columnview.cv.sort_by_column(columnview.column_id, Gtk.SortType.ASCENDING)
-        filter_model = columnview.get_model_filter()
-        selection = Gtk.SingleSelection.new(filter_model)
-        columnview.cv.set_model(selection)
 
     def _setup_view_finish(self, *args):
         self.log.debug(f"Setup selector for {self.config_for}")
@@ -195,9 +202,7 @@ class MiAZSelector(Gtk.Box):
             self.config.add_available(selected_item.id, selected_item.title)
             self.config.remove_used(selected_item.id)
             self.update_views()
-            title = self.dialog_title
-            body = _('{title} {desc} disabled').format(title=i_title, desc=item_dsc)
-            self.srvdlg.show_warning(title=title, body=body, parent=self)
+            self._show_toast(_('{title} {desc} disabled').format(title=i_title, desc=item_dsc))
 
     def _on_item_available_add(self, *args):
         if self.edit:
@@ -225,9 +230,7 @@ class MiAZSelector(Gtk.Box):
             if len(key) > 0 and len(value) > 0:
                 self.config.add_available(key.upper(), value)
                 self.update_views()
-                title = self.dialog_title
-                body = _('{title} {value} added to list of available {item_types}').format(title=i_title, value=value, item_types=item_type.__title_plural__.lower())
-                self.srvdlg.show_info(title=title, body=body, parent=parent)
+                self._show_toast(_('{title} {value} added to list of available {item_types}').format(title=i_title, value=value, item_types=item_type.__title_plural__.lower()))
             else:
                 title = self.dialog_title
                 body1 = _('<b>Action not possible</b>')
@@ -278,8 +281,7 @@ class MiAZSelector(Gtk.Box):
                 items_available[oldkey] = newval
                 self.config.save_available(items_available)
                 self.update_views()
-                body = _('{title} <i>{old}</i> renamed to <i>{new}</i> globally').format(title=i_title, old=oldval, new=newval)
-                self.srvdlg.show_info(title=title, body=body, parent=parent)
+                self._show_toast(_('{title} {old} renamed to {new} globally').format(title=i_title, old=oldval, new=newval))
             else:
                 body1 = _('<b>Action not possible</b>')
                 body2 = _('Rename not possible. Both {title} descriptions are the same').format(title=i_title.lower())
@@ -400,11 +402,9 @@ class MiAZSelector(Gtk.Box):
             self.config.remove_available(selected_item.id)
             self.searchentry.set_text('')
             self.searchentry.activate()
-            body = _('{title} {desc} removed from de list of available {item_types}').format(title=i_title, desc=item_dsc, item_types=item_type.__title_plural__.lower())
-            self.srvdlg.show_warning(title=title, body=body, parent=self)
+            self._show_toast(_('{title} {desc} removed from the list of available {item_types}').format(title=i_title, desc=item_dsc, item_types=item_type.__title_plural__.lower()))
         else:
-            body = _('{title} {desc} not deleted from de list of available {item_types}').format(title=i_title, desc=item_dsc, item_types=item_type.__title_plural__.lower())
-            self.srvdlg.show_info(title=title, body=body, parent=self)
+            self._show_toast(_('{title} {desc} not deleted').format(title=i_title, desc=item_dsc))
 
     def _on_item_used_add(self, *args):
         items_used = self.config.load_used()
@@ -417,8 +417,7 @@ class MiAZSelector(Gtk.Box):
             items_used[selected_item.id] = selected_item.title
             self.config.save_used(items=items_used)
             self.update_views()
-            body = _('{title} {item} has been enabled').format(title=i_title, item=selected_item.title)
-            self.srvdlg.show_info(title=title, body=body, parent=self)
+            self._show_toast(_('{title} {item} has been enabled').format(title=i_title, item=selected_item.title))
         else:
             body1 = _('<b>Action not possible</b>')
             body2 = _('{title} {item} is already enabled').format(title=i_title, item=selected_item.title)
