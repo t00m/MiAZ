@@ -54,8 +54,6 @@ class MiAZWorkspace(Gtk.Box):
     selected_items = []
     dates = {}
     cache = {}
-    used_signals = {} # Signals ids for Dropdowns connected to config
-    _repo_switch_signals = {} # Signal ids for per-node update handlers; disconnected on each repo switch
     uncategorized = False
     pending = False
 
@@ -65,6 +63,9 @@ class MiAZWorkspace(Gtk.Box):
         self.log.debug("Initializing widget Workspace!!")
         self.app = app
         self.config = self.app.get_config_dict()
+        self.used_signals = {}
+        self._repo_switch_signals = {}
+        self._finish_config_done = False
         self._setup_workspace()
         self._setup_logic()
         self.review = False
@@ -165,14 +166,15 @@ class MiAZWorkspace(Gtk.Box):
         self.log.debug("Finishing loading workspace")
         window = self.app.get_widget('window')
         window.present()
-        workflow = self.app.get_service('workflow')
-        srvutl = self.app.get_service('util')
-        srvutl.connect('filename-renamed', self.update)
-        srvutl.connect('filename-deleted', self.update)
-        srvutl.connect('filename-added', self.update)
-        workflow.connect('repository-switch-started', self._on_repo_switch)
+        if not self._finish_config_done:
+            self._finish_config_done = True
+            workflow = self.app.get_service('workflow')
+            srvutl = self.app.get_service('util')
+            srvutl.connect('filename-renamed', self.update)
+            srvutl.connect('filename-deleted', self.update)
+            srvutl.connect('filename-added', self.update)
+            workflow.connect('repository-switch-started', self._on_repo_switch)
         self._on_repo_switch()
-
         self.emit('workspace-loaded')
 
     def _on_repo_switch(self, *args):
@@ -180,12 +182,13 @@ class MiAZWorkspace(Gtk.Box):
         self.update()
         for node in self.config:
             if node in self._repo_switch_signals:
-                sid_used, sid_avail = self._repo_switch_signals[node]
-                self.config[node].disconnect(sid_used)
-                self.config[node].disconnect(sid_avail)
+                prev_obj, sid_used, sid_avail = self._repo_switch_signals[node]
+                if prev_obj is self.config[node]:
+                    prev_obj.disconnect(sid_used)
+                    prev_obj.disconnect(sid_avail)
             sid_used = self.config[node].connect('used-updated', self.update)
             sid_avail = self.config[node].connect('available-updated', self.update)
-            self._repo_switch_signals[node] = (sid_used, sid_avail)
+            self._repo_switch_signals[node] = (self.config[node], sid_used, sid_avail)
 
     def _update_dropdowns(self, *args):
         actions = self.app.get_service('actions')
