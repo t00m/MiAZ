@@ -196,8 +196,9 @@ class MiAZPeriodicityPlugin(GObject.GObject, Peas.Activatable):
             self.config.connect('used-updated', self.actions.dropdown_populate, dropdown, item_type, True, True)
             self.actions.dropdown_populate(self.config, dropdown, item_type, True, True)
             dropdown.set_hexpand(True)
-            boxDropdown = self.factory.create_box_filter(f'{i_title}', dropdown)
-            row = self.app.get_widget('sidebar-box-custom-filters')
+            size_group = self.app.get_widget('sidebar-filter-size-group')
+            boxDropdown = self.factory.create_box_filter(f'{i_title}', dropdown, size_group)
+            row = self.app.get_widget('sidebar-box-main-filters')
             row.append(boxDropdown)
 
             self.workspace.register_filter_view(f'{i_title}', self._do_filter_view)

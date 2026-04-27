@@ -164,11 +164,11 @@ class MiAZSidebar(Adw.Bin):
         body.set_margin_top(margin=6)
         body.set_margin_start(margin=12)
         body.set_margin_end(margin=12)
-        row = factory.create_box_vertical(margin=3, spacing=6, hexpand=True, vexpand=True)
+        row = self.app.add_widget('sidebar-box-main-filters', factory.create_box_vertical(margin=3, spacing=6, hexpand=True, vexpand=True))
         body.append(row)
         box_filters.append(body)
 
-        label_size_group = Gtk.SizeGroup(mode=Gtk.SizeGroupMode.HORIZONTAL)
+        label_size_group = self.app.add_widget('sidebar-filter-size-group', Gtk.SizeGroup(mode=Gtk.SizeGroupMode.HORIZONTAL))
 
         ## Search box
         searchentry = self.app.add_widget('searchentry', Gtk.SearchEntry())
