@@ -160,6 +160,7 @@ class MiAZSidebar(Adw.Bin):
         factory = self.app.get_service('factory')
 
         label_size_group = self.app.add_widget('sidebar-filter-size-group', Gtk.SizeGroup(mode=Gtk.SizeGroupMode.HORIZONTAL))
+        self.app.add_widget('plugin-dropdowns', [])
 
         box_filters = factory.create_box_vertical(margin=3, spacing=6, hexpand=True, vexpand=True)
         body = factory.create_box_vertical(margin=3, spacing=6, hexpand=True, vexpand=True)
@@ -233,16 +234,8 @@ class MiAZSidebar(Adw.Bin):
         workspace = self.app.get_widget('workspace')
         self.log.debug(f"Workspace loaded? {workspace.is_loaded()}")
         if workspace.is_loaded():
-            search_entry = self.app.get_widget('searchentry')
-            search_entry.set_text('')
-            search_entry.emit("activate")
-            dropdowns = self.app.get_widget('ws-dropdowns')
-            for ddId in dropdowns:
-                dropdowns[ddId].set_selected(0)
-            workspace_view = self.app.get_widget('workspace-view')
-            if workspace_view is not None:
-                workspace_view.refilter()
-                self.log.debug("All filters cleared")
+            workspace.clear_filters()
+            self.log.debug("All filters cleared")
 
     def set_title(self, title: str=''):
         sidebar_title = self.app.get_widget('sidebar-title')

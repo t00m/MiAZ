@@ -66,6 +66,7 @@ class MiAZWorkspace(Gtk.Box):
         self.used_signals = {}
         self._repo_switch_signals = {}
         self._finish_config_done = False
+        self._clearing_filters = False
         self._setup_workspace()
         self._setup_logic()
         self.review = False
@@ -368,8 +369,30 @@ class MiAZWorkspace(Gtk.Box):
     def get_selected_items(self):
         return self.selected_items
 
+    def clear_filters(self):
+        """Reset every filter control atomically, then refilter once."""
+        search_entry = self.app.get_widget('searchentry')
+        dropdowns = self.app.get_widget('ws-dropdowns') or {}
+        plugin_dropdowns = self.app.get_widget('plugin-dropdowns') or []
+
+        self._clearing_filters = True
+        try:
+            search_entry.set_text('')
+            for dd in dropdowns.values():
+                dd.set_selected(0)
+            for dd in plugin_dropdowns:
+                dd.set_selected(0)
+        finally:
+            self._clearing_filters = False
+
+        self._refresh_filter_cache()
+        self.view.refilter()
+        self.emit('workspace-view-filtered')
+
     def update(self, *args):
         """Update Workspace columnview"""
+        if self._clearing_filters:
+            return
 
         #Load necessary services
         util = self.app.get_service('util')
@@ -649,6 +672,9 @@ class MiAZWorkspace(Gtk.Box):
         selection.connect('selection-changed', self._on_selection_changed)
 
     def _on_filter_selected(self, *args):
+        if self._clearing_filters:
+            return
+
         repository = self.app.get_service('repo')
 
         if repository.conf is None:

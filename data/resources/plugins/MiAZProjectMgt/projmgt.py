@@ -352,6 +352,7 @@ class MiAZProjectMgt(GObject.GObject, Peas.Activatable):
                 if dropdown is None:
                     dropdown = self.factory.create_dropdown_generic(item_type=item_type, ellipsize=True, enable_search=True)
                     self.app.add_widget(f'plugin-{plugin_name}-dropdown', dropdown)
+                    self.app.get_widget('plugin-dropdowns').append(dropdown)
                     dropdown.connect("notify::selected-item", self.workspace.update)
                     self.config.connect('used-updated', self.actions.dropdown_populate, dropdown, item_type, True, True)
                     self.actions.dropdown_populate(self.config, dropdown, item_type, True, True)
