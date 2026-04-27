@@ -11,7 +11,6 @@
 import os
 from gettext import gettext as _
 
-
 from gi.repository import Gio
 from gi.repository import GObject
 from gi.repository import Gtk
@@ -55,13 +54,140 @@ item_type = Project
 i_title = item_type.__title__
 i_confname = item_type.__config_name__
 
+
+class MiAZProject(GObject.GObject):
+    """Service that manages document-to-project assignments.
+    Merged from MiAZ.backend.projects into the plugin so the plugin
+    owns its full data lifecycle."""
+    __gtype_name__ = 'MiAZProject'
+
+    def __init__(self, app):
+        super().__init__()
+        self.log = MiAZLog('MiAZ.Projects')
+        self.app = app
+        repository = self.app.get_service('repo')
+        util = self.app.get_service('util')
+        repo_dir_conf = repository.get('dir_conf')
+        self.cnfprj = os.path.join(repo_dir_conf, 'projects.json')
+        self.projects = {}
+        if not os.path.exists(self.cnfprj):
+            self.save()
+            self.log.debug("Created new config file for projects")
+        self.projects = self.load()
+        self.check()
+        util.connect('filename-renamed', self._on_filename_renamed)
+        util.connect('filename-deleted', self._on_filename_deleted)
+
+    def check(self):
+        repository = self.app.get_service('repo')
+        to_delete = []
+        for project in self.projects:
+            for doc in self.docs_in_project(project):
+                docpath = os.path.join(repository.docs, doc)
+                if not os.path.exists(docpath):
+                    to_delete.append((doc, project))
+        for doc, project in to_delete:
+            self.remove(project, doc)
+            self.log.warning(f"Document '{doc}' not found; removed from project '{project}'")
+        self.log.debug("Projects consistency checked")
+
+    def add(self, project: str, doc: str):
+        try:
+            docs = self.projects[project]
+            if doc not in docs:
+                docs.append(doc)
+                self.projects[project] = docs
+        except KeyError:
+            self.projects[project] = [doc]
+        self.log.debug(f"Added '{doc}' to project '{project}'")
+
+    def add_batch(self, project: str, docs: list) -> None:
+        for doc in docs:
+            self.add(project, doc)
+        self.save()
+
+    def _remove_nosave(self, project: str, doc: str) -> bool:
+        found = False
+        if len(project) == 0:
+            for prj in self.projects:
+                docs = self.projects[prj]
+                if doc in docs:
+                    found = True
+                    docs.remove(doc)
+                    self.projects[prj] = docs
+                    self.log.debug(f"Removed '{doc}' from project '{prj}'")
+        else:
+            try:
+                docs = self.projects[project]
+                if doc in docs:
+                    found = True
+                    docs.remove(doc)
+                    self.projects[project] = docs
+                    self.log.debug(f"Removed '{doc}' from project '{project}'")
+            except KeyError:
+                self.log.warning(f"Project '{project}' doesn't exist")
+        return found
+
+    def remove(self, project: str, doc: str) -> None:
+        found = self._remove_nosave(project, doc)
+        if found:
+            self.save()
+        else:
+            self.log.debug(f"Document '{doc}' does not belong to project '{project}'")
+
+    def remove_batch(self, project: str, docs: list) -> None:
+        for doc in docs:
+            self._remove_nosave(project, doc)
+        self.save()
+
+    def exists(self, project, doc):
+        try:
+            return doc in self.projects[project]
+        except KeyError:
+            return False
+
+    def assigned_to(self, doc) -> list:
+        return [prj for prj, docs in self.projects.items() if doc in docs]
+
+    def docs_in_project(self, project):
+        try:
+            return self.projects[project]
+        except KeyError:
+            return []
+
+    def list_all(self):
+        for project, docs in self.projects.items():
+            self.log.debug(f"Project: {project}")
+            for doc in docs:
+                self.log.debug(f"\tDoc: {doc}")
+
+    def save(self) -> None:
+        util = self.app.get_service('util')
+        util.json_save(self.cnfprj, self.projects)
+
+    def load(self) -> dict:
+        util = self.app.get_service('util')
+        return util.json_load(self.cnfprj)
+
+    def _on_filename_renamed(self, util, source, target):
+        source = os.path.basename(source)
+        target = os.path.basename(target)
+        for project in self.assigned_to(source):
+            self.remove(project, source)
+            self.add(project, target)
+            self.log.debug(f"P[{project}]: {source} -> {target}")
+
+    def _on_filename_deleted(self, util, target):
+        for filepath in target:
+            self.remove(project='', doc=os.path.basename(filepath))
+
+
 # Configuration
 class MiAZConfigProjects(MiAZConfig):
     def __init__(self, app, plugin):
         self.plugin = plugin
         config_dir = self.plugin.get_config_dir()
         config_file_setup = self.plugin.get_config_file_default_available_data()
-        ENV = app.get_env()
         super().__init__(
             app=app,
             log=MiAZLog(f'MiAZ.Config.{i_title}'),
@@ -72,6 +198,7 @@ class MiAZConfigProjects(MiAZConfig):
             model=item_type,
             must_copy=False
         )
+
 
 # Columnview
 class MiAZColumnViewProject(MiAZColumnViewSelector):
@@ -91,6 +218,7 @@ class MiAZColumnViewProject(MiAZColumnViewSelector):
             title = _('{title} enabled').format(title=item_type.__title_plural__)
         self.column_title.set_title(title)
 
+
 # Configuration view
 class MiAZProjectsView(MiAZConfigView):
     """Manage projects from Repo Settings"""
@@ -109,7 +237,6 @@ class MiAZProjectsView(MiAZConfigView):
         super().__init__(app, config_name=f'{i_confname}', custom_config=config)
 
     def _setup_view_finish(self):
-        # Setup Available and Used Columns Views
         self.viewAv = MiAZColumnViewProject(self.app)
         self._add_columnview_available(self.viewAv)
         self.viewSl = MiAZColumnViewProject(self.app, available=False)
@@ -139,7 +266,6 @@ class MiAZProjectsView(MiAZConfigView):
             title = _('{i_title} management').format(i_title=i_title)
             body = _('{i_title} {item_desc} disabled').format(i_title=i_title, item_desc=item_desc)
             self.srvdlg.show_warning(title=title, body=body, parent=self)
-
         else:
             text = _('{i_title} {item_desc} is still being used by {count} documents').format(
                 i_title=i_title, item_desc=item_desc, count=len(docs))
@@ -153,7 +279,7 @@ class MiAZProjectsView(MiAZConfigView):
             view.update(items)
             widget = Gtk.Frame()
             widget.set_child(view)
-            self.srvdlg.show_error(title=title, body=text, widget=widget, width=600, height=480, parent=window)
+            srvdlg.show_error(title=title, body=text, widget=widget, width=600, height=480, parent=window)
 
 
 class MiAZProjectMgt(GObject.GObject, Peas.Activatable):
@@ -163,24 +289,14 @@ class MiAZProjectMgt(GObject.GObject, Peas.Activatable):
 
     def do_activate(self):
         """Plugin activation"""
-        # Setup plugin
-        ## Get pointer to app
         self.app = self.object.app
         self.plugin = MiAZPlugin(self.app)
-
-        ## Initialize plugin
         self.plugin.register(self, plugin_info)
-
-        ## Get logger
         self.log = self.plugin.get_logger()
-
-        ## Get services
         self.actions = self.app.get_service('actions')
         self.factory = self.app.get_service('factory')
         self.srvdlg = self.app.get_service('dialogs')
         self.util = self.app.get_service('util')
-
-        # Connect signals to startup
         self.workspace = self.app.get_widget('workspace')
         self.workspace.connect('workspace-loaded', self.startup)
 
@@ -190,10 +306,8 @@ class MiAZProjectMgt(GObject.GObject, Peas.Activatable):
 
     def startup(self, *args):
         if not self.plugin.started():
-            # Get submenu for this plugin (subcategory)
+            # Always reinstall workspace menu entries (cleared by _on_plugins_updated)
             submenu = self.plugin.install_menu_entry()
-
-            # Install plugin submenu
             plugin_menu = Gio.Menu()
             menuitem = self.factory.create_menuitem(
                 f'{i_confname}-add',
@@ -212,56 +326,62 @@ class MiAZProjectMgt(GObject.GObject, Peas.Activatable):
             plugin_menu.append_item(menuitem)
             submenu.append_submenu(f"{i_title}", plugin_menu)
 
-            ## Set factory data
-            filepath = self.plugin.get_config_file_default_available_data()
-            self.util.json_save(filepath, default_available_data)
-
-            # Get config
-            self.config = MiAZConfigProjects(self.app, self.plugin)
-
-            # Dropdown for custom filters
+            # One-time setup guarded by the dropdown widget sentinel.
+            # When _on_plugins_updated calls startup() a second time the dropdown
+            # already exists, so we skip re-creating config/service/sidebar widgets
+            # and only re-sync self.srvprj to the already-registered service.
             plugin_name = self.plugin.get_name()
-            dropdown = self.factory.create_dropdown_generic(item_type=item_type, ellipsize=True, enable_search=True)
-            self.app.add_widget(f'plugin-{plugin_name}-dropdown', dropdown)
-            dropdown.connect("notify::selected-item", self.workspace.update)
-            self.config.connect('used-updated', self.actions.dropdown_populate, dropdown, item_type, True, True)
-            self.actions.dropdown_populate(self.config, dropdown, item_type, True, True)
-            dropdown.set_hexpand(True)
-            boxDropdown = self.factory.create_box_filter(f'{i_title}', dropdown)
-            row = self.app.get_widget('sidebar-box-custom-filters')
-            row.append(boxDropdown)
+            if self.app.get_widget(f'plugin-{plugin_name}-dropdown') is None:
+                # Write factory data for config
+                filepath = self.plugin.get_config_file_default_available_data()
+                self.util.json_save(filepath, default_available_data)
 
-            self.workspace.register_filter_view(f'{i_title}', self._do_filter_view)
+                # Initialise configuration
+                self.config = MiAZConfigProjects(self.app, self.plugin)
 
-            # Load plugin data
-            self._get_data()
+                # Initialise project service and register it for other components to use
+                existing = self.app.get_service('Projects')
+                if existing is None:
+                    self.srvprj = MiAZProject(self.app)
+                    self.app.set_service('Projects', self.srvprj)
+                else:
+                    self.srvprj = existing
 
-            # Plugin configured
+                # Dropdown for custom filters
+                dropdown = self.app.get_widget(f'plugin-{plugin_name}-dropdown')
+                if dropdown is None:
+                    dropdown = self.factory.create_dropdown_generic(item_type=item_type, ellipsize=True, enable_search=True)
+                    self.app.add_widget(f'plugin-{plugin_name}-dropdown', dropdown)
+                    dropdown.connect("notify::selected-item", self.workspace.update)
+                    self.config.connect('used-updated', self.actions.dropdown_populate, dropdown, item_type, True, True)
+                    self.actions.dropdown_populate(self.config, dropdown, item_type, True, True)
+                    dropdown.set_hexpand(True)
+                    boxDropdown = self.factory.create_box_filter(f'{i_title}', dropdown)
+                    row = self.app.get_widget('sidebar-box-custom-filters')
+                    row.append(boxDropdown)
+                    self.workspace.register_filter_view(f'{i_title}', self._do_filter_view)
+            else:
+                # Sidebar already set up — re-sync self.srvprj with the registered
+                # service so _set_property_real and _on_item_used_remove both operate
+                # on the same MiAZProject instance.
+                self.srvprj = self.app.get_service('Projects')
+
             self.plugin.set_started(started=True)
 
     def _do_filter_view(self, item, filter_list_model):
-        display = False         # set display to false
-        doc_id = item.id         # Document to display (or not)
+        doc_id = item.id
         plugin_name = self.plugin.get_name()
         dropdown = self.app.get_widget(f'plugin-{plugin_name}-dropdown')
-        selected_item = dropdown.get_selected_item()    # Property key selected to filter
+        selected_item = dropdown.get_selected_item()
         if selected_item is None:
             return True
 
         pid = selected_item.id
-
         if pid == 'Any':
-            display = True
-        elif pid == 'None':
-            display = False
-        else:
-            try:
-                docs = self.data[f'{i_confname}'][pid]
-                if doc_id in docs:
-                    display = True
-            except KeyError:
-                display = False
-        return display
+            return True
+        if pid == 'None':
+            return False
+        return doc_id in self.srvprj.docs_in_project(pid)
 
     def _set_property(self, *args):
         selected_items = self.workspace.get_selected_items()
@@ -281,28 +401,11 @@ class MiAZProjectMgt(GObject.GObject, Peas.Activatable):
             body = body1 + '\n' + body2
             self.srvdlg.show_error(title=title, body=body, parent=parent)
 
-    def _get_data(self):
-        datafile = self.plugin.get_data_file()
-        try:
-            self.data = self.util.json_load(filepath=datafile)
-        except FileNotFoundError:
-            self.log.debug(f"Creating new data file in {datafile}")
-            self.data = {}
-            self.data['documents'] = {}
-            self.data[f'{i_confname}'] = {}
-            self.util.json_save(filepath=datafile, adict=self.data)
-
     def _on_set_property_response(self, dialog, response, dropdown):
         if response == 'apply':
-            selected_documents = []
-            for item in self.workspace.get_selected_items():
-                selected_documents.append(item.id)
+            selected_documents = [item.id for item in self.workspace.get_selected_items()]
             config_item = dropdown.get_selected_item()
-
-            # Unset documents property first
             self._unset_property_real(selected_documents)
-
-            # Set property to selected documents
             change = self._set_property_real(selected_documents, config_item.id)
             if change:
                 self.workspace.update()
@@ -313,103 +416,46 @@ class MiAZProjectMgt(GObject.GObject, Peas.Activatable):
                 self.srvdlg.show_info(title=title, body=body, parent=dialog.get_root())
 
     def _set_property_real(self, selected_documents, pid):
-        change = False
-        documents = self.data['documents']
-        config_data = self.data[f'{i_confname}']
-
-        for doc_id in selected_documents:
-            self.log.debug(f"Request to set {i_confname} '{pid}' for document '{doc_id}'")
-            documents[doc_id] = pid
-            if pid in config_data:
-                s = set(config_data[pid])
-                s.add(doc_id)
-                config_data[pid] = list(s)
-            else:
-                config_data[pid] = [doc_id]
-            change = True
-            self.log.debug(f"{i_title} for document '{doc_id}' set to '{pid}'")
-
-        # Save data
-        if change:
-            self.data['documents'] = documents
-            self.data[f'{i_confname}'] = config_data
-            datafile = self.plugin.get_data_file()
-            self.util.json_save(datafile, self.data)
-        return change
+        if not selected_documents:
+            return False
+        self.srvprj.add_batch(pid, selected_documents)
+        self.log.debug(f"{i_title} for {len(selected_documents)} documents set to '{pid}'")
+        return True
 
     def _unset_property(self, *args):
-        selected_documents = []
-        for item in self.workspace.get_selected_items():
-            selected_documents.append(item.id)
+        selected_documents = [item.id for item in self.workspace.get_selected_items()]
         self._unset_property_real(selected_documents)
         title = _('{i_title} management').format(i_title=i_title)
         body = _('Removed {i_confname} for selected documents').format(i_confname=i_confname)
         self.srvdlg.show_info(title=title, body=body, parent=self.workspace.get_root())
 
     def _unset_property_real(self, selected_documents):
-        change = False
-        documents = self.data['documents']
-        config_data = self.data[f'{i_confname}']
-
-        for doc_id in selected_documents:
-            self.log.debug(f"Request to unset any {i_confname} for document '{doc_id}'")
-            if doc_id in self.data.get("documents", {}):
-                # Get the config key before deleting the document
-                pid = self.data["documents"][doc_id]
-                del self.data["documents"][doc_id]
-
-                # Remove from config_data if the config key exists
-                if pid in self.data.get(f'{i_confname}', {}):
-                    # Remove all occurrences of the doc_id from the config_data list
-                    doc_list = self.data[f'{i_confname}'][pid]
-                    while doc_id in doc_list:
-                        doc_list.remove(doc_id)
-                change = True
-                self.log.debug(f"{i_title} '{pid}' unset for document '{doc_id}'")
-
-            # Additionally, check all other keys in case the document exists there
-            # even if it wasn't in the documents dictionary
-            for pid, doc_list in self.data.get(f'{i_confname}', {}).items():
-                while doc_id in doc_list:
-                    doc_list.remove(doc_id)
-                    change = True
-
-        # Save data
-        if change:
-            datafile = self.plugin.get_data_file()
-            self.util.json_save(datafile, self.data)
-            self.log.debug(f"{i_title} for {len(selected_documents)} documents removed")
-            self.workspace.update()
-        else:
-            self.log.debug(f"No changes detected for {i_confname} for {len(selected_documents)}")
-        return change
+        if not selected_documents:
+            return False
+        self.srvprj.remove_batch('', selected_documents)
+        self.workspace.update()
+        self.log.debug(f"{i_title} unset for {len(selected_documents)} documents")
+        return True
 
     def project_view(self, *args):
         def _on_selected_project(dropdown, gparamobject, cv):
             srvprj = self.app.get_service('Projects')
             pid = dropdown.get_selected_item().id
             docs = srvprj.docs_in_project(pid)
-            items = []
-            for doc in docs:
-                items.append(File(id=doc, title=doc))
+            items = [File(id=doc, title=doc) for doc in docs]
             cv.update(items)
-            self.log.warning(f"{len(docs)} documents in project {pid}")
+            self.log.debug(f"{len(docs)} documents in project {pid}")
 
-        # Documents columnview
         frame = Gtk.Frame()
         cv = MiAZColumnViewDocuments(self.app)
         frame.set_child(cv)
         cv.set_hexpand(True)
         cv.set_vexpand(True)
 
-        # Get projects
-        item_type = Project
-        config = self.app.get_config_dict()
         dropdown = self.factory.create_dropdown_generic(Project)
         dropdown.connect('notify::selected-item', _on_selected_project, cv)
         self.actions.dropdown_populate(self.config, dropdown, Project, any_value=False)
 
-        # dialog
         box = self.factory.create_box_vertical(hexpand=True, vexpand=True)
         box.add_css_class('toolbar')
         box.append(dropdown)
@@ -422,7 +468,6 @@ class MiAZProjectMgt(GObject.GObject, Peas.Activatable):
         self.show_settings(widget=parent)
 
     def show_settings(self, widget: Gtk.Widget = None):
-        config_dir = self.plugin.get_config_dir()
         configview = MiAZProjectsView(self.app, plugin=self.plugin, config=self.config)
         configview.update_views()
         dialog = self.srvdlg.show_noop(

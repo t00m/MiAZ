@@ -174,12 +174,17 @@ class MiAZMainWindow(Gtk.Box):
         if workspace is None:
             return
 
-        main_menu = self.app.get_widget('workspace-menu-selection')
-        if main_menu is None:
-            return
+        # Replace the menu model with a fresh Gio.Menu so that the Gtk.PopoverMenu
+        # fully re-initialises its internal GtkStack — calling remove_all() on the
+        # existing model leaves stale pages in the stack, causing duplicate-name warnings.
+        new_main_menu = Gio.Menu.new()
+        self.app.add_widget('workspace-menu-selection', new_main_menu)
+        btn_workspace_menu = self.app.get_widget('workspace-menu')
+        if btn_workspace_menu is not None:
+            popover = btn_workspace_menu.get_popover()
+            if popover is not None:
+                popover.set_menu_model(new_main_menu)
 
-        # Clear menu model and all cached plugin submenu objects
-        main_menu.remove_all()
         self.app.remove_widgets_with_prefix('workspace-menu-plugins-')
 
         # For every currently loaded plugin, reset its started flag then call startup()
