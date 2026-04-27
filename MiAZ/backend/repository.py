@@ -50,6 +50,8 @@ class MiAZRepository(GObject.GObject):
         return self.get('dir_conf')
 
     def validate(self, path: str) -> bool:
+        if not path:
+            return False
         valid = False
         try:
             conf_dir = os.path.join(path, '.conf')
@@ -65,11 +67,12 @@ class MiAZRepository(GObject.GObject):
                             self.log.error(error)
             self.log.debug(f"Repository {conf_file} valid? {valid}")
         except Exception as error:
-            errmsg = _("No repositories found.\n")
-            errmsg += _("Please, create a new repository, if none exists yet.\n\n")
-            errmsg += _("Otherwise, check if the directory exists (local repository) or if the server is accessible (remote repository).")
-            self.log.error(errmsg)
+            self.log.error(error)
         return valid
+
+    def reset(self):
+        """Invalidate the conf cache so the next access triggers a fresh setup()."""
+        self._conf_cache = None
 
     def init(self, path):
         repoconf = {}

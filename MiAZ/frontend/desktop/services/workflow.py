@@ -43,6 +43,7 @@ class MiAZWorkflow(GObject.GObject):
         """Switch from one repository to another."""
         self.log.debug("Repository switch requested")
         repository = self.app.get_service('repo')
+        repository.reset()
         try:
             self.app.set_status(MiAZStatus.BUSY)
             appconf = self.app.get_config('App')
@@ -82,10 +83,10 @@ class MiAZWorkflow(GObject.GObject):
         else:
             self.actions.show_stack_page_by_name('welcome')
             sidebar.set_visible(False)
-            parent = self.app.get_widget('window')
-            title = _("Repository management")
-            body = repository.get_error()
-            self.srvdlg.show_error(title=title, body=body, parent=parent, width=400)
+            # ~ parent = self.app.get_widget('window')
+            # ~ title = _("Repository management")
+            # ~ body = repository.get_error()
+            # ~ self.srvdlg.show_error(title=title, body=body, parent=parent, width=400)
 
         return repo_loaded
 
