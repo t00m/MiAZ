@@ -159,22 +159,32 @@ class MiAZSidebar(Adw.Bin):
     def _setup_toolbar_filters(self):
         factory = self.app.get_service('factory')
 
+        label_size_group = self.app.add_widget('sidebar-filter-size-group', Gtk.SizeGroup(mode=Gtk.SizeGroupMode.HORIZONTAL))
+
         box_filters = factory.create_box_vertical(margin=3, spacing=6, hexpand=True, vexpand=True)
         body = factory.create_box_vertical(margin=3, spacing=6, hexpand=True, vexpand=True)
         body.set_margin_top(margin=6)
         body.set_margin_start(margin=12)
         body.set_margin_end(margin=12)
-        row = self.app.add_widget('sidebar-box-main-filters', factory.create_box_vertical(margin=3, spacing=6, hexpand=True, vexpand=True))
-        body.append(row)
         box_filters.append(body)
 
-        label_size_group = self.app.add_widget('sidebar-filter-size-group', Gtk.SizeGroup(mode=Gtk.SizeGroupMode.HORIZONTAL))
+        # Plugin filter section (top) — project and other plugin-contributed filters land here
+        plugin_row = self.app.add_widget('sidebar-box-plugin-filters', factory.create_box_vertical(margin=0, spacing=6, hexpand=True, vexpand=False))
+        body.append(plugin_row)
+
+        separator = Gtk.Separator(orientation=Gtk.Orientation.HORIZONTAL)
+        separator.set_margin_top(3)
+        separator.set_margin_bottom(3)
+        body.append(separator)
+
+        # Main filter section (bottom) — text search and field dropdowns
+        main_row = self.app.add_widget('sidebar-box-main-filters', factory.create_box_vertical(margin=0, spacing=6, hexpand=True, vexpand=True))
+        body.append(main_row)
 
         ## Search box
         searchentry = self.app.add_widget('searchentry', Gtk.SearchEntry())
         searchentry.set_hexpand(True)
-        boxDropdown = factory.create_box_filter(_('Filter text'), searchentry, label_size_group)
-        row.append(boxDropdown)
+        main_row.append(factory.create_box_filter(_('Filter text'), searchentry, label_size_group))
 
         ## Dropdowns
         self.dropdowns = self.app.add_widget('ws-dropdowns', {})
@@ -184,16 +194,14 @@ class MiAZSidebar(Adw.Bin):
         dd_date = factory.create_dropdown_generic(item_type=Date, ellipsize=False, enable_search=True)
         dd_date.set_hexpand(True)
         self.dropdowns[i_type] = dd_date
-        boxDropdown = factory.create_box_filter(_('Date'), dd_date, label_size_group)
-        row.append(boxDropdown)
+        main_row.append(factory.create_box_filter(_('Date'), dd_date, label_size_group))
 
-        ### Rest of filters dropdowns
+        ### Field dropdowns
         for item_type in [Country, Group, SentBy, Purpose, SentTo]:
             i_type = item_type.__gtype_name__
-            i_title = _(item_type.__title__)
             dropdown = factory.create_dropdown_generic(item_type=item_type)
-            boxDropdown = factory.create_box_filter(i_title, dropdown, label_size_group)
-            row.append(boxDropdown)
+            dropdown.set_hexpand(True)
+            main_row.append(factory.create_box_filter(_(item_type.__title__), dropdown, label_size_group))
             self.dropdowns[i_type] = dropdown
 
         return box_filters

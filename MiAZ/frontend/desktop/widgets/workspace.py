@@ -623,8 +623,14 @@ class MiAZWorkspace(Gtk.Box):
         c4 = self._do_eval_cond_matches(dropdowns['SentBy'], item.sentby_id)
         c5 = self._do_eval_cond_matches(dropdowns['Purpose'], item.purpose)
         c6 = self._do_eval_cond_matches(dropdowns['SentTo'], item.sentto_id)
-        # ~ self.log.warning( # DEBUG FILTERSf"\t\tReview mode? {self.review}")
-        # If workspace is in review mode, filter results. Dates don't mind
+
+        # When a specific project is selected, date is irrelevant
+        project_dd = self.app.get_widget('plugin-MiAZProjectMgt-dropdown')
+        if project_dd is not None:
+            sel = project_dd.get_selected_item()
+            if sel is not None and sel.id not in ('Any', 'None'):
+                cd = True
+
         if self.review:
             show_item = not ca and c0 and c1 and c2 and c4 and c5 and c6
         else:

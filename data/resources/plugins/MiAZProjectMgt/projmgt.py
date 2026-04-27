@@ -358,7 +358,7 @@ class MiAZProjectMgt(GObject.GObject, Peas.Activatable):
                     dropdown.set_hexpand(True)
                     size_group = self.app.get_widget('sidebar-filter-size-group')
                     boxDropdown = self.factory.create_box_filter(f'{i_title}', dropdown, size_group)
-                    row = self.app.get_widget('sidebar-box-main-filters')
+                    row = self.app.get_widget('sidebar-box-plugin-filters')
                     row.append(boxDropdown)
                     self.workspace.register_filter_view(f'{i_title}', self._do_filter_view)
             else:
