@@ -114,4 +114,4 @@ class MiAZAddDirectoryPlugin(GObject.GObject, Peas.Activatable):
     def update_progress(self, fraction, text):
         self.log.info(f"{fraction} {text}")
         if fraction >= 1.0:
-            self.srvdlg.show_info(title='Import directory', body=_('All documents imported successfully'))
+            self.srvdlg.show_toast(_('All documents imported successfully'))

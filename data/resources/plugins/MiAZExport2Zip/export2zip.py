@@ -121,7 +121,7 @@ class Export2Zip(GObject.GObject, Peas.Activatable):
                 title = _('Export successful')
                 body = _('Check your default file browser')
                 parent = self.workspace.get_root()
-                self.srvdlg.show_info(title=title, body=body, parent=parent)
+                self.srvdlg.show_toast(body)
 
         except Exception as error:
             self.srvdlg.show_error(title=_('Export error'), body=str(error))

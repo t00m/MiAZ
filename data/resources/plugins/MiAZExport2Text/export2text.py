@@ -92,4 +92,4 @@ class Export2Text(GObject.GObject, Peas.Activatable):
         self.util.filename_display(filepath)
         title = _('Export successful')
         body = _('Check your default text editor')
-        self.srvdlg.show_info(title=title, body=body, parent=parent)
+        self.srvdlg.show_toast(body)

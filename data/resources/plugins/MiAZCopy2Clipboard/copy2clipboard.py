@@ -88,4 +88,4 @@ class Copy2Clipboard(GObject.GObject, Peas.Activatable):
         self.workspace.get_clipboard().set(text.strip())
         body = ''
         parent = self.workspace.get_root()
-        self.srvdlg.show_info(title=title, body=body, parent=parent)
+        self.srvdlg.show_toast(title)

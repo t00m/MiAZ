@@ -272,7 +272,7 @@ class MiAZPeriodicityPlugin(GObject.GObject, Peas.Activatable):
                 self.log.debug(f"{i_title} {config_item.title} set to {len(selected_documents)} documents")
                 body = _('{i_title} {title} set to {count} documents').format(
                     i_title=i_title, title=config_item.title, count=len(selected_documents))
-                self.srvdlg.show_info(title=_('{i_title} management').format(i_title=i_title), body=body, parent=parent)
+                self.srvdlg.show_toast(body)
 
     def _set_property_real(self, selected_documents, pid):
         change = False
@@ -306,10 +306,7 @@ class MiAZPeriodicityPlugin(GObject.GObject, Peas.Activatable):
         for item in self.workspace.get_selected_items():
             selected_documents.append(item.id)
         self._unset_property_real(selected_documents)
-        self.srvdlg.show_info(
-            title=_('{i_title} management').format(i_title=i_title),
-            body=_('Removed {i_confname} for selected documents').format(i_confname=i_confname),
-            parent=parent)
+        self.srvdlg.show_toast(_('Removed {i_confname} for selected documents').format(i_confname=i_confname))
 
     def _unset_property_real(self, selected_documents):
         change = False

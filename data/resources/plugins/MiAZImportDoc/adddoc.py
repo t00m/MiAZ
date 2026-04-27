@@ -88,10 +88,7 @@ class MiAZAddDocumentPlugin(GObject.GObject, Peas.Activatable):
                     target = os.path.join(self.repository.docs, btarget)
                     self.util.filename_import(source, target)
                 parent = self.app.get_widget('window')
-                self.srvdlg.show_info(
-                    title=_('Import documents'),
-                    body=_('{count} documents imported successfully').format(count=len(filepaths)),
-                    parent=parent)
+                self.srvdlg.show_toast(_('{count} documents imported successfully').format(count=len(filepaths)))
         except Exception as error:
             self.srvdlg.show_error(title='Error selecting files', body=str(error))
             self.log.error(f"Error selecting files: {error}")

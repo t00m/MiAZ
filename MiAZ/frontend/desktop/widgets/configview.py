@@ -121,7 +121,7 @@ class MiAZRepositories(MiAZConfigView):
                 body = _('Repository added to list of available repositories')
                 self.log.debug(body)
                 self.update_views()
-                srvdlg.show_info(title=title, body=body, parent=parent)
+                srvdlg.show_toast(body)
             else:
                 body1 = _('<b>Action not possible</b>')
                 body2 = _('No repository added. Invalid input.\n\nTry again by setting a repository name and a valid target directory')
@@ -168,7 +168,7 @@ class MiAZRepositories(MiAZConfigView):
                 self.config.save_available(items_available)
                 self.update_views()
                 body = _('Repository target folder updated')
-                self.srvdlg.show_info(title=title, body=body, parent=parent)
+                self.srvdlg.show_toast(body)
             else:
                 body1 = _('<b>Action not possible</b>')
                 body2 = _('Repository target folder not updated')
@@ -238,7 +238,7 @@ class MiAZRepositories(MiAZConfigView):
             workflow.switch_start()
             body=_('{title} {item} set as default').format(title=i_title, item=selected_item.id)
             self.log.info(body)
-        srvdlg.show_info(title=title, body=body, parent=self)
+        srvdlg.show_toast(body)
 
     def _on_item_used_remove(self, *args):
         # Trick to avoid restart app when repos are enabled/disabled
@@ -585,10 +585,8 @@ class MiAZUserPlugins(MiAZConfigView):
             plugin_info = pluginsystem.get_plugin_attributes(plugin_path)
             plugin_name = plugin_info['Name']
             plugin_version = plugin_info['Version']
-            body1 = _('<b>Import plugin</b>')
             body2 = _('Plugin {plugin_name} v{plugin_version} imported successfully').format(plugin_name=plugin_name, plugin_version=plugin_version)
-            body = body1 + '\n' + body2
-            self.srvdlg.show_info(title='Import plugin', body=body, parent=self)
+            self.srvdlg.show_toast(body2)
         except Exception as error:
             body1 = _('<b>Action not possible</b>')
             body2 = _('Error: {error}').format(error=error)
@@ -649,7 +647,7 @@ class MiAZUserPlugins(MiAZConfigView):
             self.srvdlg.show_warning(title=title, body=body, parent=self)
         else:
             body = _('{title} {desc}  not removed from de list of available {item_types}').format(title=i_title, desc=item_dsc, item_types=item_type.__title_plural__.lower())
-            self.srvdlg.show_info(title=title, body=body, parent=self)
+            self.srvdlg.show_toast(body)
 
     def _on_plugin_used_selected(self, selection_model, position, n_items):
         selected_plugin = selection_model.get_selected_item()

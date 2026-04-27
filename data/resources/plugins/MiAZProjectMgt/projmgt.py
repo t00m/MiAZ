@@ -413,7 +413,7 @@ class MiAZProjectMgt(GObject.GObject, Peas.Activatable):
                 title = _('{i_title} management').format(i_title=i_title)
                 body = _('{i_title} {title} set to {count} documents').format(
                     i_title=i_title, title=config_item.title, count=len(selected_documents))
-                self.srvdlg.show_info(title=title, body=body, parent=dialog.get_root())
+                self.srvdlg.show_toast(body)
 
     def _set_property_real(self, selected_documents, pid):
         if not selected_documents:
@@ -427,7 +427,7 @@ class MiAZProjectMgt(GObject.GObject, Peas.Activatable):
         self._unset_property_real(selected_documents)
         title = _('{i_title} management').format(i_title=i_title)
         body = _('Removed {i_confname} for selected documents').format(i_confname=i_confname)
-        self.srvdlg.show_info(title=title, body=body, parent=self.workspace.get_root())
+        self.srvdlg.show_toast(body)
 
     def _unset_property_real(self, selected_documents):
         if not selected_documents:
@@ -461,7 +461,8 @@ class MiAZProjectMgt(GObject.GObject, Peas.Activatable):
         box.append(dropdown)
         box.append(frame)
         window = self.app.get_widget('window')
-        self.srvdlg.show_info(title=_('Documents per project'), widget=box, width=800, height=600, parent=window)
+        dialog = self.srvdlg.show_noop(title=_('Documents per project'), widget=box, width=800, height=600)
+        dialog.present(window)
 
     def _manage_properties(self, *args):
         parent = self.app.get_widget('window')
