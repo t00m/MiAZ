@@ -21,6 +21,7 @@ log = MiAZLog('MiAZ')
 ENV['DESKTOP'] = {}
 try:
     import gi
+    gi.require_version("GIRepository", "3.0")
 except:
     sys.exit("No support for Python GObject")
 
