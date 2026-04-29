@@ -12,9 +12,8 @@ import os
 from gettext import gettext as _
 
 from gi.repository import GObject
-from gi.repository import Peas
 
-from MiAZ.frontend.desktop.services.pluginsystem import MiAZPlugin
+from MiAZ.frontend.desktop.services.pluginsystem import MiAZExtension, MiAZPlugin
 from MiAZ.frontend.desktop.widgets.rename import MiAZRenameDialog
 
 plugin_info = {
@@ -31,9 +30,8 @@ plugin_info = {
         'Subcategory':   'Single mode'
     }
 
-class MiAZToolbarRenameItemPlugin(GObject.GObject, Peas.Activatable):
+class MiAZToolbarRenameItemPlugin(MiAZExtension):
     __gtype_name__ = 'MiAZToolbarRenameItemPlugin'
-    object = GObject.Property(type=GObject.Object)
     plugin = None
 
     def do_activate(self):

@@ -1,7 +1,7 @@
 [Plugin]
 Module=scan
 Name=MiAZImportFromScan
-Loader=Python3
+Loader=python
 Description=Import document from scanner
 Authors=Tomás Vírseda <tomasvirseda@gmail.com>
 Copyright=Copyright © 2025 Tomás Vírseda

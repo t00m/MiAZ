@@ -1,7 +1,7 @@
 [Plugin]
 Module=reposwitcher
 Name=MiAZSidebarRepoSwitcher
-Loader=Python3
+Loader=python
 Description=Sidebar Repository switcher
 Authors=Tomás Vírseda <tomasvirseda@gmail.com>
 Copyright=Copyright © 2025 Tomás Vírseda

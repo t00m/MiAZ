@@ -11,9 +11,8 @@
 from gettext import gettext as _
 
 from gi.repository import GObject
-from gi.repository import Peas
 
-from MiAZ.frontend.desktop.services.pluginsystem import MiAZPlugin
+from MiAZ.frontend.desktop.services.pluginsystem import MiAZExtension, MiAZPlugin
 
 plugin_info = {
         'Module':        'copy2clipboard',
@@ -29,9 +28,8 @@ plugin_info = {
         'Subcategory':   'Export'
     }
 
-class Copy2Clipboard(GObject.GObject, Peas.Activatable):
+class Copy2Clipboard(MiAZExtension):
     __gtype_name__ = 'MiAZCopy2ClipboardPlugin'
-    object = GObject.Property(type=GObject.Object)
     plugin = None
 
     def do_activate(self):

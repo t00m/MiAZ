@@ -12,9 +12,8 @@ from gettext import gettext as _
 
 from gi.repository import Gtk
 from gi.repository import GObject
-from gi.repository import Peas
 
-from MiAZ.frontend.desktop.services.pluginsystem import MiAZPlugin
+from MiAZ.frontend.desktop.services.pluginsystem import MiAZExtension, MiAZPlugin
 from MiAZ.backend.models import Repository
 from MiAZ.backend.config import MiAZConfigRepositories
 
@@ -32,9 +31,8 @@ plugin_info = {
         'Subcategory':   'User Interface'
     }
 
-class MiAZSidebarRepoSwitcher(GObject.GObject, Peas.Activatable):
+class MiAZSidebarRepoSwitcher(MiAZExtension):
     __gtype_name__ = 'MiAZSidebarRepoSwitcherPlugin'
-    object = GObject.Property(type=GObject.Object)
     plugin = None
 
     def do_activate(self):

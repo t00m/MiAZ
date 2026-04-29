@@ -14,14 +14,13 @@ from gettext import gettext as _
 from gi.repository import Gtk
 from gi.repository import Gio
 from gi.repository import GObject
-from gi.repository import Peas
 
 from MiAZ.backend.log import MiAZLog
 from MiAZ.backend.models import MiAZModel
 from MiAZ.backend.config import MiAZConfig
 from MiAZ.frontend.desktop.widgets.configview import MiAZConfigView
 from MiAZ.frontend.desktop.widgets.columnview import MiAZColumnViewSelector
-from MiAZ.frontend.desktop.services.pluginsystem import MiAZPlugin
+from MiAZ.frontend.desktop.services.pluginsystem import MiAZExtension, MiAZPlugin
 
 plugin_info = {
         'Module':        'periodicity',
@@ -132,9 +131,8 @@ class MiAZPeriodicityView(MiAZConfigView):
         self.update_views()
 
 # Plugin
-class MiAZPeriodicityPlugin(GObject.GObject, Peas.Activatable):
+class MiAZPeriodicityPlugin(MiAZExtension):
     __gtype_name__ = 'MiAZPeriodicityPlugin'
-    object = GObject.Property(type=GObject.Object)
     plugin = None
 
     def do_activate(self):

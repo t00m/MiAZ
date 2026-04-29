@@ -44,3 +44,4 @@ gnome.post_install(
   update_desktop_database: true,
 )
 meson.add_install_script('build-aux/meson/postinstall.py')
+

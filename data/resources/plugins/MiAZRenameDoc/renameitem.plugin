@@ -1,7 +1,7 @@
 [Plugin]
 Module=renameitem
 Name=MiAZRenameDoc
-Loader=Python3
+Loader=python
 Description=Rename a single document
 Authors=Tomás Vírseda <tomasvirseda@gmail.com>
 Copyright=Copyright © 2025 Tomás Vírseda

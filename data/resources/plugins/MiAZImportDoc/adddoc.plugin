@@ -1,7 +1,7 @@
 [Plugin]
 Module=adddoc
 Name=MiAZImportDoc
-Loader=Python3
+Loader=python
 Description=Add new document(s)
 Authors=Tomás Vírseda <tomasvirseda@gmail.com>
 Copyright=Copyright © 2025 Tomás Vírseda

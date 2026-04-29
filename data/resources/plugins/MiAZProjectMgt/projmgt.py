@@ -14,13 +14,12 @@ from gettext import gettext as _
 from gi.repository import Gio
 from gi.repository import GObject
 from gi.repository import Gtk
-from gi.repository import Peas
 
 from MiAZ.backend.config import MiAZConfig
 from MiAZ.backend.log import MiAZLog
 from MiAZ.backend.models import File
 from MiAZ.backend.models import MiAZModel
-from MiAZ.frontend.desktop.services.pluginsystem import MiAZPlugin
+from MiAZ.frontend.desktop.services.pluginsystem import MiAZExtension, MiAZPlugin
 from MiAZ.frontend.desktop.widgets.columnview import MiAZColumnViewSelector
 from MiAZ.frontend.desktop.widgets.configview import MiAZConfigView
 from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewDocuments
@@ -282,9 +281,8 @@ class MiAZProjectsView(MiAZConfigView):
             srvdlg.show_error(title=title, body=text, widget=widget, width=600, height=480, parent=window)
 
 
-class MiAZProjectMgt(GObject.GObject, Peas.Activatable):
+class MiAZProjectMgt(MiAZExtension):
     __gtype_name__ = 'MiAZProjectMgt'
-    object = GObject.Property(type=GObject.Object)
     plugin = None
 
     def do_activate(self):

@@ -15,9 +15,8 @@ from gettext import gettext as _
 from gi.repository import Adw
 from gi.repository import GObject
 from gi.repository import Gtk
-from gi.repository import Peas
 
-from MiAZ.frontend.desktop.services.pluginsystem import MiAZPlugin
+from MiAZ.frontend.desktop.services.pluginsystem import MiAZExtension, MiAZPlugin
 from MiAZ.backend.models import Country, Date, Group
 from MiAZ.backend.models import Purpose, SentBy, SentTo
 
@@ -54,11 +53,10 @@ Patterns = {
     'T': _('Sent to'),
 }
 
-class Export2Dir(GObject.GObject, Peas.Activatable):
+class Export2Dir(MiAZExtension):
     """Export selected documents to a directory"""
 
     __gtype_name__ = 'MiAZExport2DirPlugin'
-    object = GObject.Property(type=GObject.Object)
     plugin = None
 
     def do_activate(self):

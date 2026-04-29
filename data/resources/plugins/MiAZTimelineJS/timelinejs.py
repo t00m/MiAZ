@@ -12,9 +12,8 @@ import shutil
 from gettext import gettext as _
 
 from gi.repository import GObject
-from gi.repository import Peas
 
-from MiAZ.frontend.desktop.services.pluginsystem import MiAZPlugin
+from MiAZ.frontend.desktop.services.pluginsystem import MiAZExtension, MiAZPlugin
 
 plugin_info = {
         'Module':        'timelinejs',
@@ -32,9 +31,8 @@ plugin_info = {
 
 
 
-class MiAZTimelineJSPlugin(GObject.GObject, Peas.Activatable):
+class MiAZTimelineJSPlugin(MiAZExtension):
     __gtype_name__ = 'MiAZTimelineJSPlugin'
-    object = GObject.Property(type=GObject.Object)
     plugin = None
 
     def do_activate(self):

@@ -12,9 +12,8 @@ import tempfile
 from gettext import gettext as _
 
 from gi.repository import GObject
-from gi.repository import Peas
 
-from MiAZ.frontend.desktop.services.pluginsystem import MiAZPlugin
+from MiAZ.frontend.desktop.services.pluginsystem import MiAZExtension, MiAZPlugin
 
 plugin_info = {
         'Module':        'export2text',
@@ -31,9 +30,8 @@ plugin_info = {
     }
 
 
-class Export2Text(GObject.GObject, Peas.Activatable):
+class Export2Text(MiAZExtension):
     __gtype_name__ = 'MiAZExport2TextPlugin'
-    object = GObject.Property(type=GObject.Object)
     plugin = None
 
     def do_activate(self):

@@ -13,9 +13,8 @@ import tempfile
 from gettext import gettext as _
 
 from gi.repository import GObject
-from gi.repository import Peas
 
-from MiAZ.frontend.desktop.services.pluginsystem import MiAZPlugin
+from MiAZ.frontend.desktop.services.pluginsystem import MiAZExtension, MiAZPlugin
 
 plugin_info = {
         'Module':        'export2csv',
@@ -32,9 +31,8 @@ plugin_info = {
     }
 
 
-class Export2CSV(GObject.GObject, Peas.Activatable):
+class Export2CSV(MiAZExtension):
     __gtype_name__ = 'MiAZExport2CSVPlugin'
-    object = GObject.Property(type=GObject.Object)
     plugin = None
 
     def do_activate(self):

@@ -13,9 +13,8 @@ import shutil
 from gettext import gettext as _
 
 from gi.repository import GObject
-from gi.repository import Peas
 
-from MiAZ.frontend.desktop.services.pluginsystem import MiAZPlugin
+from MiAZ.frontend.desktop.services.pluginsystem import MiAZExtension, MiAZPlugin
 from MiAZ.backend.models import Country, Date, Group
 from MiAZ.backend.models import Purpose, SentBy, SentTo
 
@@ -42,9 +41,8 @@ Field[Purpose] = 4
 Field[SentTo] = 6
 
 
-class Export2Zip(GObject.GObject, Peas.Activatable):
+class Export2Zip(MiAZExtension):
     __gtype_name__ = 'MiAZExport2ZipPlugin'
-    object = GObject.Property(type=GObject.Object)
     plugin = None
 
     def do_activate(self):

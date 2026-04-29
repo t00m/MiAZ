@@ -12,9 +12,8 @@ import os
 from gettext import gettext as _
 
 from gi.repository import GObject
-from gi.repository import Peas
 
-from MiAZ.frontend.desktop.services.pluginsystem import MiAZPlugin
+from MiAZ.frontend.desktop.services.pluginsystem import MiAZExtension, MiAZPlugin
 
 plugin_info = {
         'Module':        'adddoc',
@@ -31,9 +30,8 @@ plugin_info = {
     }
 
 
-class MiAZAddDocumentPlugin(GObject.GObject, Peas.Activatable):
+class MiAZAddDocumentPlugin(MiAZExtension):
     __gtype_name__ = 'MiAZAddDocumentPlugin'
-    object = GObject.Property(type=GObject.Object)
     plugin = None
 
     def do_activate(self):

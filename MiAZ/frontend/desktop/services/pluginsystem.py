@@ -14,15 +14,33 @@ import sys
 import glob
 import json
 import zipfile
+import inspect
+import importlib.util
 from enum import IntEnum
 from gettext import gettext as _
 
 import gi
-gi.require_version("GIRepository", "3.0")
-gi.require_version('Peas', '1.0')
+gi.require_version('Peas', '2')
 from gi.repository import GObject, Peas
 
 from MiAZ.backend.log import MiAZLog
+
+
+class MiAZExtension(GObject.GObject):
+    """Base class for all MiAZ plugins.
+
+    Inherits from GObject.GObject only — no Peas.ExtensionBase, no ExtensionSet.
+    Plugin instances are managed manually after engine.load_plugin() by
+    scanning sys.modules for a MiAZExtension subclass.
+    """
+    __gtype_name__ = 'MiAZExtension'
+    object = GObject.Property(type=GObject.GObject)
+
+    def do_activate(self):
+        pass
+
+    def do_deactivate(self):
+        pass
 
 plugin_info_template = {
         _('Module'):        '',
@@ -292,11 +310,11 @@ class MiAZPluginSystem(GObject.GObject):
         self.plugin_info_list = []
 
         self.engine = Peas.Engine.get_default()
-        for loader in ("python3", ):
+        for loader in ("python", ):
             self.engine.enable_loader(loader)
 
+        self._extension_instances = {}
         self._setup_plugins_dir()
-        self._setup_extension_set()
         self.create_user_plugin_index()
         self.create_system_plugin_index()
         self.log.info("Plugin system initialited")
@@ -374,6 +392,39 @@ class MiAZPluginSystem(GObject.GObject):
             # Plugin system not initialized yet
             pass
 
+    def _direct_import_plugin(self, plugin: Peas.PluginInfo) -> bool:
+        """Import a Python plugin directly when libpeas Python loader is unavailable.
+
+        Fedora (and possibly other distros) ships libpeas 2.x without the Python loader
+        RPM, so engine.load_plugin() silently fails. This method uses importlib to load
+        the .py file by searching the plugin directories (plugin.get_data_dir() in
+        libpeas 2.x returns a synthetic path based on module name, not the real path).
+        """
+        module_name = plugin.get_module_name()
+        if module_name in sys.modules:
+            return True
+        ENV = self.app.get_env()
+        module_file = None
+        for search_dir in (ENV['GPATH']['PLUGINS'], ENV['LPATH']['PLUGINS']):
+            matches = glob.glob(os.path.join(search_dir, '**', f'{module_name}.py'), recursive=True)
+            if matches:
+                module_file = matches[0]
+                break
+        if module_file is None:
+            self.log.error(f"Python module '{module_name}.py' not found in plugin directories")
+            return False
+        try:
+            spec = importlib.util.spec_from_file_location(module_name, module_file)
+            module = importlib.util.module_from_spec(spec)
+            sys.modules[module_name] = module
+            spec.loader.exec_module(module)
+            self.log.debug(f"Direct-imported plugin module '{module_name}' from {module_file}")
+            return True
+        except Exception as error:
+            self.log.error(f"Direct import of '{module_name}' failed: {error}")
+            sys.modules.pop(module_name, None)
+            return False
+
     def load_plugin(self, plugin: Peas.PluginInfo) -> bool:
         try:
             ptype = self.get_plugin_type(plugin)
@@ -381,13 +432,16 @@ class MiAZPluginSystem(GObject.GObject):
             pvers = plugin.get_version()
             self.engine.load_plugin(plugin)
 
-            if plugin.is_loaded():
-                self.log.info(f"{str(ptype).title()} Plugin {pname} v{pvers} ({ptype}) loaded")
-                self.emit('plugins-updated')
-                return True
-            else:
-                self.log.error(f"Plugin {pname} v{pvers} ({ptype}) couldn't be loaded")
-                return False
+            if not plugin.is_loaded():
+                # libpeas Python loader may not be installed on the host; try direct import
+                if not self._direct_import_plugin(plugin):
+                    self.log.error(f"Plugin {pname} v{pvers} ({ptype}) couldn't be loaded")
+                    return False
+
+            self._activate_plugin_instance(plugin)
+            self.log.info(f"{str(ptype).title()} Plugin {pname} v{pvers} ({ptype}) loaded")
+            self.emit('plugins-updated')
+            return True
         except AttributeError as error:
             self.log.error(f"Plugin {pname} v{pvers} ({ptype}) couldn't be loaded")
             self.log.error(f"Reason: {error}")
@@ -403,6 +457,7 @@ class MiAZPluginSystem(GObject.GObject):
             ptype = self.get_plugin_type(plugin)
             pname = plugin.get_name()
             pvers = plugin.get_version()
+            self._deactivate_plugin_instance(plugin)
             self.engine.unload_plugin(plugin)
             self.log.info(f"Plugin {pname} v{pvers} ({ptype}) unloaded")
             self.emit('plugins-updated')
@@ -414,8 +469,8 @@ class MiAZPluginSystem(GObject.GObject):
 
     @property
     def plugins(self):
-        """Gets the engine's plugin list"""
-        return self.engine.get_plugin_list()
+        """Gets the engine's plugin list (libpeas 2.x: Engine is a Gio.ListModel)"""
+        return list(self.engine)
 
     def get_user_plugins(self):
         self.rescan_plugins()
@@ -440,17 +495,8 @@ class MiAZPluginSystem(GObject.GObject):
             return MiAZPluginType.SYSTEM
 
     def get_extension(self, module_name: str):
-        """Gets the extension identified by the specified name.
-        Args:
-            module_name (str): The name of the extension.
-        Returns:
-            The extension if exists. Otherwise, `None`.
-        """
-        plugin = self.get_plugin_info(module_name)
-        if not plugin:
-            return None
-
-        return self.extension_set.get_extension(plugin)
+        """Gets the active extension instance for the given module name."""
+        return self._extension_instances.get(module_name)
 
     def get_plugin_info(self, module_name: str):
         """Gets the plugin info for the specified plugin name.
@@ -464,18 +510,33 @@ class MiAZPluginSystem(GObject.GObject):
                 return plugin
         return None
 
-    def _setup_extension_set(self):
-        plugin_iface = MiAZAPI(self.app)
+    def _activate_plugin_instance(self, plugin: Peas.PluginInfo):
+        """Instantiate and activate the plugin class found in sys.modules."""
+        module_name = plugin.get_module_name()
+        module = sys.modules.get(module_name)
+        if module is None:
+            self.log.error(f"Module '{module_name}' not in sys.modules after load")
+            return None
+        for _name, cls in inspect.getmembers(module, inspect.isclass):
+            if issubclass(cls, MiAZExtension) and cls is not MiAZExtension:
+                instance = cls()
+                instance.props.object = MiAZAPI(self.app)
+                instance.do_activate()
+                self._extension_instances[module_name] = instance
+                self.log.debug(f"Activated plugin class '{_name}' for module '{module_name}'")
+                return instance
+        self.log.error(f"No MiAZExtension subclass found in module '{module_name}'")
+        return None
 
-        self.extension_set = Peas.ExtensionSet.new(self.engine,
-                                                   Peas.Activatable,
-                                                   ["object"],
-                                                   [plugin_iface])
-        self.extension_set.connect("extension-removed",
-                                   self.__extension_removed_cb)
-
-        self.extension_set.connect("extension-added",
-                                   self.__extension_added_cb)
+    def _deactivate_plugin_instance(self, plugin: Peas.PluginInfo):
+        """Deactivate and remove the plugin instance."""
+        module_name = plugin.get_module_name()
+        instance = self._extension_instances.pop(module_name, None)
+        if instance is not None:
+            try:
+                instance.do_deactivate()
+            except Exception as error:
+                self.log.error(f"Error deactivating '{module_name}': {error}")
 
     def _setup_plugins_dir(self):
         """Set System and User plugins directories"""
@@ -499,14 +560,6 @@ class MiAZPluginSystem(GObject.GObject):
             os.makedirs(ENV['LPATH']['PLUGINS'], exist_ok=True)
         self.engine.add_search_path(ENV['LPATH']['PLUGINS'])
         self.log.debug(f"Added user plugins dir: {ENV['LPATH']['PLUGINS']}")
-
-    @staticmethod
-    def __extension_removed_cb(unused_set, unused_plugin_info, extension):
-        extension.deactivate()
-
-    @staticmethod
-    def __extension_added_cb(unused_set, unused_plugin_info, extension):
-        extension.activate()
 
     def get_plugin_attributes(self, plugin_file: str):
         """Get plugin attributes from `plugin_module`.plugin file"""

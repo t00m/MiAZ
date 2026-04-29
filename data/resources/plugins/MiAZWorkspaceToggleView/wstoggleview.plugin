@@ -1,7 +1,7 @@
 [Plugin]
 Module=wstoggleview
 Name=MiAZWSToggleView
-Loader=Python3
+Loader=python
 Description=Toggle Workspace view
 Authors=Tomás Vírseda <tomasvirseda@gmail.com>
 Copyright=Copyright © 2025 Tomás Vírseda

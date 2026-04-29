@@ -13,9 +13,8 @@ from gettext import gettext as _
 from gi.repository import Adw
 from gi.repository import Gdk
 from gi.repository import GObject
-from gi.repository import Peas
 
-from MiAZ.frontend.desktop.services.pluginsystem import MiAZPlugin
+from MiAZ.frontend.desktop.services.pluginsystem import MiAZExtension, MiAZPlugin
 
 plugin_info = {
         'Module':        'sidebartgb',
@@ -32,9 +31,8 @@ plugin_info = {
     }
 
 
-class MiAZSidebarTBPlugin(GObject.GObject, Peas.Activatable):
+class MiAZSidebarTBPlugin(MiAZExtension):
     __gtype_name__ = 'MiAZSidebarTBPlugin'
-    object = GObject.Property(type=GObject.Object)
     plugin = None
 
     def do_activate(self):

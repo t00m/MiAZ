@@ -1,7 +1,7 @@
 [Plugin]
 Module=copy2clipboard
 Name=MiAZCopy2Clipboard
-Loader=Python3
+Loader=python
 Description=Copy to clipboard
 Authors=Tomás Vírseda <tomasvirseda@gmail.com>
 Copyright=Copyright © 2025 Tomás Vírseda
