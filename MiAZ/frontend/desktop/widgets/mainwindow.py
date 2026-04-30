@@ -174,6 +174,11 @@ class MiAZMainWindow(Gtk.Box):
         if workspace is None:
             return
 
+        # During initial batch loading each plugin handles its own startup(); skip the full
+        # rebuild loop to avoid calling startup() on already-started plugins on every load.
+        if not self.app.get_plugins_loaded():
+            return
+
         # Replace the menu model with a fresh Gio.Menu so that the Gtk.PopoverMenu
         # fully re-initialises its internal GtkStack — calling remove_all() on the
         # existing model leaves stale pages in the stack, causing duplicate-name warnings.
