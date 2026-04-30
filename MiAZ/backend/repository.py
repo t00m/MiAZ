@@ -84,6 +84,23 @@ class MiAZRepository(GObject.GObject):
             json.dump(repoconf, fout, sort_keys=True, indent=4)
         self.config['App'].set('source', path)
         self.log.debug(f"Repository initialized: '{conf_file}'")
+        self._init_default_plugins(dir_conf)
+
+    def _init_default_plugins(self, dir_conf):
+        """Write the default system-plugin enabled list for a brand-new repository."""
+        default_plugins = {
+            "MiAZAddFromDir": "Add documents from directory",
+            "MiAZDeleteDoc": "Delete selected documents",
+            "MiAZImportDoc": "Add new document(s)",
+            "MiAZProjectMgt": "Project management",
+            "MiAZRenameDoc": "Rename a single document",
+            "MiAZViewItem": "Display document",
+        }
+        enabled_file = os.path.join(dir_conf, 'plugins-system-enabled.json')
+        if not os.path.exists(enabled_file):
+            with open(enabled_file, 'w') as fout:
+                json.dump(default_plugins, fout, sort_keys=True, indent=4)
+            self.log.debug(f"Default system plugins written to: '{enabled_file}'")
 
     def setup(self, repo_id: str = None):
         conf = {}

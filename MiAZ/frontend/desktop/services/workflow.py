@@ -6,6 +6,7 @@
 
 from gettext import gettext as _
 
+from gi.repository import GLib
 from gi.repository import GObject
 
 from MiAZ.backend.log import MiAZLog
@@ -80,6 +81,7 @@ class MiAZWorkflow(GObject.GObject):
             sidebar.set_visible(True)
             self.actions.show_stack_page_by_name('workspace')
             self.app.emit('application-started')
+            GLib.idle_add(self._check_repo_config)
         else:
             self.actions.show_stack_page_by_name('welcome')
             sidebar.set_visible(False)
@@ -89,6 +91,31 @@ class MiAZWorkflow(GObject.GObject):
             # ~ self.srvdlg.show_error(title=title, body=body, parent=parent, width=400)
 
         return repo_loaded
+
+    def _check_repo_config(self):
+        """Open Repository Management if any required config section has no used items."""
+        required = ('Country', 'Group', 'SentBy', 'Purpose', 'SentTo', 'Plugin')
+        missing = None
+        for key in required:
+            config = self.app.get_config(key)
+            if config is not None and not config.load_used():
+                missing = key
+                break
+        if missing is None:
+            return False
+        self.log.info(f"Repository config '{missing}' has no used entries — opening settings")
+        repo_settings = self.app.get_widget('settings-repo')
+        if repo_settings is None:
+            self.log.error("settings-repo widget not found; cannot auto-open repository settings")
+            return False
+        window_main = self.app.get_widget('window')
+        try:
+            repo_settings.set_transient_for(window_main)
+            repo_settings.set_modal(True)
+            repo_settings.present()
+        except Exception as error:
+            self.log.error(f"Failed to present repository settings: {error}")
+        return False
 
     def switch_finish(self, *args):
         """Finish switch repository operation"""
