@@ -191,7 +191,7 @@ class MiAZMainWindow(Gtk.Box):
         # directly so it reinstalls its menu entry without waiting for workspace-loaded
         plugin_manager = self.app.get_service('plugin-system')
         for plugin_info in plugin_manager.plugins:
-            if not plugin_info.is_loaded():
+            if not plugin_manager.is_plugin_loaded(plugin_info):
                 continue
             plugin_name = plugin_info.get_name()
             plugin_obj = self.app.get_widget(f'plugin-{plugin_name}')

@@ -732,7 +732,7 @@ class MiAZUserPlugins(MiAZConfigView):
             return
         plugin_module = plugin_info['Module']
         plugin = plugin_manager.get_plugin_info(plugin_module)
-        if plugin is not None and plugin.is_loaded():
+        if plugin is not None and plugin_manager.is_plugin_loaded(plugin):
             plugin_manager.unload_plugin(plugin)
         config_enabled = self.app.get_config('SystemPlugin')
         if config_enabled:
@@ -767,7 +767,7 @@ class MiAZUserPlugins(MiAZConfigView):
         plugin_module = plugin_info['Module']
         plugin = plugin_manager.get_plugin_info(plugin_module)
         if plugin is not None:
-            if not plugin.is_loaded():
+            if not plugin_manager.is_plugin_loaded(plugin):
                 plugin_manager.load_plugin(plugin)
             if config_enabled:
                 enabled = config_enabled.load_used()

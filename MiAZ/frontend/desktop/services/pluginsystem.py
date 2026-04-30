@@ -376,8 +376,9 @@ class MiAZPluginSystem(GObject.GObject):
             plugin_body = os.path.join(ENV['LPATH']['PLUGINS'], f'{module}.py')
             os.unlink(plugin_head)
             os.unlink(plugin_body)
-            plugin_res = os.path.join(ENV['LPATH']['PLUGRES'], module)
-            utils.directory_remove(plugin_res)
+            plugin_res = os.path.join(ENV['LPATH']['PLUGINS'], 'resources', module)
+            if os.path.exists(plugin_res):
+                utils.directory_remove(plugin_res)
             config.remove_available(key=module)
             return True
         else:
@@ -425,7 +426,13 @@ class MiAZPluginSystem(GObject.GObject):
             sys.modules.pop(module_name, None)
             return False
 
+    def is_plugin_loaded(self, plugin: Peas.PluginInfo) -> bool:
+        """True if the plugin is active — via libpeas or our direct-import fallback."""
+        return plugin.get_module_name() in self._extension_instances or plugin.is_loaded()
+
     def load_plugin(self, plugin: Peas.PluginInfo) -> bool:
+        if self.is_plugin_loaded(plugin):
+            return True
         try:
             ptype = self.get_plugin_type(plugin)
             pname = plugin.get_name()
