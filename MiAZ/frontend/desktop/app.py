@@ -151,7 +151,7 @@ class MiAZApp(Adw.Application):
         return self._plugins_loaded
 
     def set_plugins_loaded(self, loaded=True):
-        return self._plugins_loaded
+        self._plugins_loaded = loaded
 
     def load_plugins(self):
         workspace = self.get_widget('workspace')
@@ -170,7 +170,7 @@ class MiAZApp(Adw.Application):
                 plugin_module = plugin.get_module_name()
                 try:
                     ptype = plugin_manager.get_plugin_type(plugin)
-                    if not plugin.is_loaded():
+                    if not plugin_manager.is_plugin_loaded(plugin):
                         if ptype == MiAZPluginType.SYSTEM:
                             # Only load system plugins explicitly enabled by the user
                             config_enabled = self.get_config('SystemPlugin')

@@ -317,7 +317,7 @@ class MiAZWorkspace(Gtk.Box):
             self.log.debug(f"Added new workspace filter: {name}")
             registered = True
         else:
-            self.log.error(f"Workspace filter {name} already registerd. Skip.")
+            self.log.error(f"Workspace filter {name} already registered. Skip.")
         return registered
 
     def unregister_filter_view(self, name):
@@ -326,7 +326,7 @@ class MiAZWorkspace(Gtk.Box):
             del(self._workspace_filters[name])
             unregistered = True
         else:
-            self.log.error(f"Workspace filter {name} was not registerd. Skip.")
+            self.log.error(f"Workspace filter {name} was not registered. Skip.")
         return unregistered
 
     def _setup_workspace(self):
@@ -397,9 +397,10 @@ class MiAZWorkspace(Gtk.Box):
         #Load necessary services
         util = self.app.get_service('util')
 
-        # No update while app is bussy
+        # No update while app is busy (expected during startup/plugin loading)
         if self.app.get_status() == MiAZStatus.BUSY:
-            self.log.warning("App is busy. Workspace not updated")
+            if self.app.get_plugins_loaded():
+                self.log.warning("App is busy. Workspace not updated")
             return
 
         self.app.set_status(MiAZStatus.BUSY)
