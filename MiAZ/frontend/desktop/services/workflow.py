@@ -69,7 +69,6 @@ class MiAZWorkflow(GObject.GObject):
             repo_settings = self.app.get_widget('settings-repo')
             if repo_settings is None:
                 repo_settings = self.app.add_widget('settings-repo', MiAZRepoSettings(self.app))
-                repo_settings.update()
             workspace = self.app.get_widget('workspace')
             workspace.initialize_caches()
             tgbPendingDocs = self.app.get_widget('workspace-togglebutton-pending-docs')

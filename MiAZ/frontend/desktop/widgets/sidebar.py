@@ -13,7 +13,7 @@ from MiAZ.backend.models import Group, Country, Purpose, SentBy, SentTo, Date
 
 
 class MiAZSidebar(Adw.Bin):
-    """Main Sidebar built around Adw.Sidebar for filter controls."""
+    """Main Sidebar built around Adw.Sidebar."""
     __gtype_name__ = 'MiAZSidebar'
 
     def __init__(self, app) -> None:
@@ -28,8 +28,8 @@ class MiAZSidebar(Adw.Bin):
 
     def _on_repo_switch(self, *args):
         config = self.app.get_config_dict()
-        repo_id = config['App'].get('current')
-        self.set_title(f"<big><b>{repo_id}</b></big>")
+        repo_id = config['App'].get('current') or 'MiAZ'
+        self.set_title(repo_id)
         self.setup_custom_filters()
         self.log.debug(f"Switched to repository {repo_id} > Sidebar updated")
 
@@ -45,7 +45,6 @@ class MiAZSidebar(Adw.Bin):
                 none_value=True)
 
     def __build_ui(self) -> None:
-        factory = self.app.get_service('factory')
         config = self.app.get_config_dict()
 
         button_clear = self._setup_clear_filters_button()
@@ -53,55 +52,58 @@ class MiAZSidebar(Adw.Bin):
         button_settings = self._setup_repo_settings_button()
         self.app.add_widget('sidebar-button-repo-settings', button_settings)
 
-        repo_id = config['App'].get('current')
-        lbl_title = Gtk.Label()
-        lbl_title.set_markup(f"<big><b>{repo_id}</b></big>")
-        self.app.add_widget('sidebar-title', lbl_title)
+        repo_id = config['App'].get('current') or 'MiAZ'
+        adw_sidebar = self._setup_adw_sidebar(repo_id, button_settings, button_clear)
+        self.set_child(adw_sidebar)
 
-        searchentry = self.app.add_widget('searchentry', Gtk.SearchEntry())
-        searchentry.set_hexpand(True)
-        searchentry.set_margin_start(6)
-        searchentry.set_margin_end(6)
-        searchentry.set_margin_top(4)
-        searchentry.set_margin_bottom(4)
-
-        headerbar = Adw.HeaderBar()
-        headerbar.set_show_back_button(False)
-        headerbar.set_show_end_title_buttons(False)
-        headerbar.set_title_widget(lbl_title)
-        headerbar.pack_start(button_settings)
-        headerbar.pack_end(button_clear)
-
-        adw_sidebar = self._setup_adw_sidebar()
-
-        toolbar_view = Adw.ToolbarView()
-        toolbar_view.add_top_bar(headerbar)
-        toolbar_view.add_top_bar(searchentry)
-        toolbar_view.set_content(adw_sidebar)
-
-        self.set_child(toolbar_view)
-
-    def _setup_adw_sidebar(self) -> Adw.Sidebar:
+    def _setup_adw_sidebar(self, repo_id, button_settings, button_clear) -> Adw.Sidebar:
         factory = self.app.get_service('factory')
 
         self.dropdowns = self.app.add_widget('ws-dropdowns', {})
         self.app.add_widget('plugin-dropdowns', [])
 
+        # Size group keeps all filter widgets at the same width.
+        dd_size_group = self.app.add_widget(
+            'sidebar-dropdown-size-group',
+            Gtk.SizeGroup(mode=Gtk.SizeGroupMode.HORIZONTAL))
+
         adw_sidebar = Adw.Sidebar()
 
-        # Plugin section — plugins append Adw.SidebarItem objects here
+        # --- Section 1: repository header (title + action buttons) ---
+        header_section = Adw.SidebarSection()
+        btn_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=3)
+        btn_box.append(button_settings)
+        btn_box.append(button_clear)
+        header_item = Adw.SidebarItem(
+            title=repo_id,
+            icon_name='io.github.t00m.MiAZ',
+            suffix=btn_box)
+        self.app.add_widget('sidebar-header-item', header_item)
+        header_section.append(header_item)
+        header_item.set_visible(False)
+        adw_sidebar.append(header_section)
+
+        # --- Section 2: plugin-contributed filters ---
         plugin_section = self.app.add_widget(
             'sidebar-plugin-section', Adw.SidebarSection())
         adw_sidebar.append(plugin_section)
 
-        # Main filters section
+        # --- Section 3: main filters ---
         main_section = Adw.SidebarSection()
+
+        # Search entry
+        searchentry = self.app.add_widget('searchentry', Gtk.SearchEntry())
+        searchentry.set_size_request(190, -1)
+        dd_size_group.add_widget(searchentry)
+        main_section.append(
+            Adw.SidebarItem(title=_('Filter text'), suffix=searchentry))
 
         # Date dropdown
         i_type = Date.__gtype_name__
         dd_date = factory.create_dropdown_generic(
             item_type=Date, ellipsize=False, enable_search=True)
-        dd_date.set_hexpand(True)
+        dd_date.set_size_request(190, -1)
+        dd_size_group.add_widget(dd_date)
         self.dropdowns[i_type] = dd_date
         main_section.append(Adw.SidebarItem(title=_('Date'), suffix=dd_date))
 
@@ -109,7 +111,8 @@ class MiAZSidebar(Adw.Bin):
         for item_type in [Country, Group, SentBy, Purpose, SentTo]:
             i_type = item_type.__gtype_name__
             dropdown = factory.create_dropdown_generic(item_type=item_type)
-            dropdown.set_hexpand(True)
+            dropdown.set_size_request(190, -1)
+            dd_size_group.add_widget(dropdown)
             self.dropdowns[i_type] = dropdown
             main_section.append(
                 Adw.SidebarItem(title=_(item_type.__title__), suffix=dropdown))
@@ -154,5 +157,6 @@ class MiAZSidebar(Adw.Bin):
             self.log.debug("All filters cleared")
 
     def set_title(self, title: str = ''):
-        sidebar_title = self.app.get_widget('sidebar-title')
-        sidebar_title.set_markup(title.replace('_', ' '))
+        header_item = self.app.get_widget('sidebar-header-item')
+        if header_item is not None:
+            header_item.set_title(title.replace('_', ' '))

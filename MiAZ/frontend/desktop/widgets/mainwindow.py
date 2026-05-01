@@ -51,15 +51,21 @@ class MiAZMainWindow(Gtk.Box):
 
         ## Stack & Stack.Switcher
         vmainbox = factory.create_box_vertical(margin=0, spacing=0, hexpand=True, vexpand=True)
-        hmainbox = factory.create_box_horizontal(margin=0, spacing=0, hexpand=True, vexpand=True)
         content = self._setup_stack()
         content.set_hexpand(True)
+        content.set_vexpand(True)
         sidebar = MiAZSidebar(self.app)
-        sidebar.set_hexpand(False)
+
+        paned = self.app.add_widget('main-paned', Gtk.Paned(orientation=Gtk.Orientation.HORIZONTAL, hexpand=True, vexpand=True))
+        paned.set_start_child(sidebar)
+        paned.set_end_child(content)
+        paned.set_position(320)
+        paned.set_resize_start_child(False)
+        paned.set_shrink_start_child(False)
+        paned.set_shrink_end_child(False)
+
         vmainbox.append(headerbar)
-        vmainbox.append(hmainbox)
-        hmainbox.append(sidebar)
-        hmainbox.append(content)
+        vmainbox.append(paned)
 
         # Welcome page
         page_welcome = self.app.get_widget('welcome')
@@ -210,6 +216,8 @@ class MiAZMainWindow(Gtk.Box):
                 except Exception as error:
                     self.log.error(f"Error rebuilding menu for plugin {plugin_name}: {error}")
 
+        self._append_repo_management_section(new_main_menu)
+
     def _on_workspace_menu_update(self, *args):
         stack = self.app.get_widget('stack')
         workspace = self. app.get_widget('workspace')
@@ -271,8 +279,21 @@ class MiAZMainWindow(Gtk.Box):
 
     def _setup_menu_selection(self):
         """Create workspace menu"""
+        menu = self.app.add_widget('workspace-menu-selection', Gio.Menu.new())
+        self._append_repo_management_section(menu)
+        return menu
 
-        return self.app.add_widget('workspace-menu-selection', Gio.Menu.new())
+    def _append_repo_management_section(self, menu):
+        """Append a separator + Repository Management entry at the bottom of menu."""
+        factory = self.app.get_service('factory')
+        actions = self.app.get_service('actions')
+        section = Gio.Menu.new()
+        section.append_item(factory.create_menuitem(
+            'show-repo-management',
+            _('Repository Management'),
+            actions.show_repository_settings,
+            None, []))
+        menu.append_section(None, section)
 
     def _setup_menu_system(self):
         actions = self.app.get_service('actions')

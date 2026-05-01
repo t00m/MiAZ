@@ -201,7 +201,6 @@ class MiAZSelector(Gtk.Box):
         else:
             self.config.add_available(selected_item.id, selected_item.title)
             self.config.remove_used(selected_item.id)
-            self.update_views()
             self._show_toast(_('{title} {desc} disabled').format(title=i_title, desc=item_dsc))
 
     def _on_item_available_add(self, *args):
@@ -416,7 +415,6 @@ class MiAZSelector(Gtk.Box):
         if not is_used:
             items_used[selected_item.id] = selected_item.title
             self.config.save_used(items=items_used)
-            self.update_views()
             self._show_toast(_('{title} {item} has been enabled').format(title=i_title, item=selected_item.title))
         else:
             body1 = _('<b>Action not possible</b>')

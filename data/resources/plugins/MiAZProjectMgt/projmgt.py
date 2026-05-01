@@ -355,7 +355,10 @@ class MiAZProjectMgt(MiAZExtension):
                     dropdown.connect("notify::selected-item", self.workspace.update)
                     self.config.connect('used-updated', self.actions.dropdown_populate, dropdown, item_type, True, True)
                     self.actions.dropdown_populate(self.config, dropdown, item_type, True, True)
-                    dropdown.set_hexpand(True)
+                    dropdown.set_size_request(190, -1)
+                    dd_size_group = self.app.get_widget('sidebar-dropdown-size-group')
+                    if dd_size_group is not None:
+                        dd_size_group.add_widget(dropdown)
                     section = self.app.get_widget('sidebar-plugin-section')
                     section.append(Adw.SidebarItem(title=i_title, suffix=dropdown))
                     self.workspace.register_filter_view(f'{i_title}', self._do_filter_view)

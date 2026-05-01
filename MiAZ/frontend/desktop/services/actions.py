@@ -255,7 +255,6 @@ class MiAZActions(GObject.GObject):
             window_repoconfig = MiAZRepoSettings(self.app)
             window_repoconfig.set_transient_for(window_main)
             window_repoconfig.set_modal(True)
-            window_repoconfig.update()
             window_repoconfig.present()
         except AttributeError:
             srvdlg = self.app.get_service('dialogs')

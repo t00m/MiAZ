@@ -120,7 +120,6 @@ class MiAZRepositories(MiAZConfigView):
                 self.config.add_available(repo_name, repo_path)
                 body = _('Repository added to list of available repositories')
                 self.log.debug(body)
-                self.update_views()
                 srvdlg.show_toast(body)
             else:
                 body1 = _('<b>Action not possible</b>')
@@ -166,7 +165,6 @@ class MiAZRepositories(MiAZConfigView):
                 items_available = self.config.load_available()
                 items_available[oldkey] = newval
                 self.config.save_available(items_available)
-                self.update_views()
                 body = _('Repository target folder updated')
                 self.srvdlg.show_toast(body)
             else:
@@ -221,7 +219,6 @@ class MiAZRepositories(MiAZConfigView):
         if not is_used:
             items_used[selected_item.id] = selected_item.title
             self.config.save_used(items=items_used)
-            self.update_views()
             body = _('{title} {item} ready to be used').format(title=i_title, item=selected_item.id)
             self.log.debug(body)
         else:
@@ -262,7 +259,6 @@ class MiAZRepositories(MiAZConfigView):
         self.log.debug(f"{i_title} {selected_item.id} removed from de list of used items")
         self.config.save_used(items=items_used)
         self.config.save_available(items=items_available)
-        self.update_views()
         ## Unblock signal "dd_repo > notify::selected-item"
         if signal is not None:
             dd_repo.handler_unblock(signal)
