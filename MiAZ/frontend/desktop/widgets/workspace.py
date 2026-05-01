@@ -5,7 +5,7 @@
 # Description: The central place to manage the AZ
 
 import os
-from datetime import datetime
+from datetime import datetime, timedelta
 from gettext import gettext as _
 
 from gi.repository import Gtk
@@ -234,7 +234,14 @@ class MiAZWorkspace(Gtk.Box):
         i_type = Date.__gtype_name__
         dropdowns = self.app.get_widget('ws-dropdowns')
         if self.review:
-            dropdowns[i_type].set_selected(9)
+            dd = dropdowns[i_type]
+            model = dd.get_model()
+            for i in range(model.get_n_items()):
+                self.log.error(f"key {model.get_item(i)} in position {i}")
+                if model.get_item(i).id == 'All-All':
+                    self.log.error(f"Found 'All-All' key in position {i}")
+                    dd.set_selected(i)
+                    break
 
     def _update_dropdown_date(self):
         util = self.app.get_service('util')
@@ -294,6 +301,11 @@ class MiAZWorkspace(Gtk.Box):
         ll = util.since_date_past_n_years_ago(now, 10) # lower limit
         key = f"{dt2str(ll)}-{dt2str(ul)}"
         model.append(Date(id=key, title=_('Since ten years ago')))
+
+        ## Future (tomorrow onwards)
+        ll = now + timedelta(days=1)
+        key = f"{dt2str(ll)}-99991231"
+        model.append(Date(id=key, title=_('Future')))
 
         ## All documents
         key = "All-All"
@@ -519,7 +531,8 @@ class MiAZWorkspace(Gtk.Box):
 
         # Update workspace view — refresh filter cache before handing off to the view
         self._refresh_filter_cache()
-        GLib.idle_add(self.view.update, items)
+        self._num_total_items = len(docs)
+        GLib.idle_add(self._idle_view_update, items)
 
         renamed = 0
         for filename in invalid:
@@ -553,12 +566,16 @@ class MiAZWorkspace(Gtk.Box):
         dt = de - ds
         self.log.debug(f"Workspace updated in {dt}s")
 
-        model = self.view.cv.get_model() # nº items in current view
-        self._num_selected_items = len(self.selected_items) # num. items selected
-        self._num_displayed_items = len(model) # num. items in view
-        self._num_total_items = len(docs)
-        self.emit('workspace-view-updated')
         self.app.set_status(MiAZStatus.RUNNING)
+        return False
+
+    def _idle_view_update(self, items):
+        """Apply the store splice and emit the updated signal with correct post-filter counts."""
+        self.view.update(items)
+        model = self.view.cv.get_model()
+        self._num_selected_items = len(self.selected_items)
+        self._num_displayed_items = len(model)
+        self.emit('workspace-view-updated')
         return False
 
     def _refresh_filter_cache(self):
@@ -631,9 +648,10 @@ class MiAZWorkspace(Gtk.Box):
             result = filter_func(item, filter_list_model)
             lresults.append(f"{name}[{result}]")
             show_item = show_item and result
+        # DEBUG FILTERS
         # ~ msg = '\t\t' + ' and '.join(lresults) # DEBUG FILTERS
         # ~ msg += f" = {show_item}" # DEBUG FILTERS
-        # ~ self.log.error(msg)  # DEBUG FILTERS
+        # ~ self.log.error(msg)
         return show_item
 
     def _do_filter_view_main(self, item, filter_list_model):
@@ -648,19 +666,22 @@ class MiAZWorkspace(Gtk.Box):
         c5 = self._do_eval_cond_matches(dropdowns['Purpose'], item.purpose)
         c6 = self._do_eval_cond_matches(dropdowns['SentTo'], item.sentto_id)
 
-        # When a specific project is selected, date is irrelevant
+        # When a specific project is selected, bypass the date and active checks:
+        # project members may have unrecognised field values (ca=False) or any date.
         project_dd = self.app.get_widget('plugin-MiAZProjectMgt-dropdown')
         if project_dd is not None:
             sel = project_dd.get_selected_item()
             if sel is not None and sel.id not in ('Any', 'None'):
                 cd = True
+                ca = True
 
         if self.review:
             show_item = not ca and c0 and c1 and c2 and c4 and c5 and c6
         else:
             show_item = ca and c0 and c1 and c2 and c4 and c5 and c6 and cd
 
-        # ~ self.log.warning(f"\t\tc0[{c0}] ca[{ca}] cd[{cd}] c1[{c1}] c2[{c2}] c4[{c4}] c5[{c5}] c6[{c6}] = {show_item}") # DEBUG FILTERS
+        # DEBUG FILTERS
+        # ~ self.log.warning(f"{item.id}: prj[{sel.id}]\tc0[{c0}] ca[{ca}] cd[{cd}] c1[{c1}] c2[{c2}] c4[{c4}] c5[{c5}] c6[{c6}] = {show_item}") # DEBUG FILTERS
         return show_item
 
     def _do_connect_filter_signals(self):
