@@ -437,31 +437,14 @@ class MiAZConfigSentTo(MiAZConfig):
         )
 
 
-class MiAZConfigUserPlugins(MiAZConfig):
+class MiAZConfigPlugins(MiAZConfig):
     def __init__(self, app, dir_conf):
         super().__init__(
             app=app,
-            log=MiAZLog('MiAZ.Config.UserPlugins'),
-            config_for=_('UserPlugin'),
+            log=MiAZLog('MiAZ.Config.Plugins'),
+            config_for=_('Plugin'),
             used=os.path.join(dir_conf, 'plugins-used.json'),
             available=os.path.join(dir_conf, 'plugins-available.json'),
-            default=None,
-            model=Plugin,
-            must_copy=False
-        )
-
-
-class MiAZConfigSystemPlugins(MiAZConfig):
-    """Tracks explicitly enabled system plugins per repository (opt-in).
-    Keys present in the 'used' file are enabled; absent means disabled."""
-    def __init__(self, app, dir_conf):
-        enabled_file = os.path.join(dir_conf, 'plugins-used.json')
-        super().__init__(
-            app=app,
-            log=MiAZLog('MiAZ.Config.SystemPlugins'),
-            config_for=_('SystemPlugin'),
-            used=enabled_file,
-            available=enabled_file,
             default=None,
             model=Plugin,
             must_copy=False

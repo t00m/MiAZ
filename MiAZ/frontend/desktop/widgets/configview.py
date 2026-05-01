@@ -15,7 +15,6 @@ from gi.repository import Gtk
 
 from MiAZ.backend.log import MiAZLog
 from MiAZ.backend.models import Plugin
-from MiAZ.frontend.desktop.services.pluginsystem import MiAZPluginType
 from MiAZ.frontend.desktop.widgets.selector import MiAZSelector
 from MiAZ.frontend.desktop.widgets.columnview import MiAZColumnView
 from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewCountry
@@ -389,13 +388,9 @@ class MiAZPurposes(MiAZConfigView):
         self._add_columnview_used(self.viewSl)
         self._add_config_menubutton(self.config.config_for)
 
-class MiAZUserPlugins(MiAZConfigView):
-    """
-    Manage system plugins from Repo Settings.
-    Displays plugins from ENV['APP']['PLUGINS']['SYSTEM_INDEX'].
-    System plugins are enabled by default; disabling adds them to a per-repo denylist.
-    """
-    __gtype_name__ = 'MiAZUserPlugins'
+class MiAZPlugins(MiAZConfigView):
+    """Manage plugins from Repo Settings."""
+    __gtype_name__ = 'MiAZPlugins'
     __gsignals__ = {
         'plugins-downloaded': (GObject.SignalFlags.RUN_LAST, None, ()),
     }
@@ -436,7 +431,7 @@ class MiAZUserPlugins(MiAZConfigView):
         # Fill-in dropdowns
         ENV = self.app.get_env()
         try:
-            self.user_plugins = util.json_load(ENV['APP']['PLUGINS']['SYSTEM_INDEX'])
+            self.user_plugins = util.json_load(ENV['APP']['PLUGINS']['INDEX'])
         except Exception:
             self.user_plugins = {}
 
@@ -467,7 +462,7 @@ class MiAZUserPlugins(MiAZConfigView):
         ENV = self.app.get_env()
         util = self.app.get_service('util')
         try:
-            system_plugins = util.json_load(ENV['APP']['PLUGINS']['SYSTEM_INDEX'])
+            system_plugins = util.json_load(ENV['APP']['PLUGINS']['INDEX'])
         except Exception:
             system_plugins = {}
         items = []
@@ -479,14 +474,13 @@ class MiAZUserPlugins(MiAZConfigView):
     def _update_view_used(self, items=None):
         ENV = self.app.get_env()
         util = self.app.get_service('util')
-        config_enabled = self.app.get_config('SystemPlugin')
         try:
-            system_plugins = util.json_load(ENV['APP']['PLUGINS']['SYSTEM_INDEX'])
+            all_plugins = util.json_load(ENV['APP']['PLUGINS']['INDEX'])
         except Exception:
-            system_plugins = {}
-        enabled = config_enabled.load_used() if config_enabled else {}
+            all_plugins = {}
+        enabled = self.config.load_used()
         enabled_items = []
-        for plugin_id, info in system_plugins.items():
+        for plugin_id, info in all_plugins.items():
             if plugin_id in enabled:
                 title = info.get('Description', plugin_id)
                 enabled_items.append(Plugin(id=plugin_id, title=_(title)))
@@ -573,7 +567,7 @@ class MiAZUserPlugins(MiAZConfigView):
             filepath = dialog.open_finish(result)
             plugin_file = filepath.get_path()
             zip_archive = util.unzip(plugin_file, ENV['LPATH']['PLUGINS'])
-            pluginsystem.create_user_plugin_index()
+            pluginsystem.create_plugin_index()
             self.searchentry.set_text('')
             self.searchentry.activate()
             plugin_dirname = zip_archive.namelist()[0]
@@ -683,21 +677,8 @@ class MiAZUserPlugins(MiAZConfigView):
             srvdlg.show_error(title=title, body=body, parent=self)
 
     def update_user_plugins(self):
-        ENV = self.app.get_env()
         plugin_system = self.app.get_service('plugin-system')
         plugin_system.rescan_plugins()
-        view = self.app.get_widget('app-settings-plugins-user-view')
-        items = []
-        item_type = Plugin
-        for plugin in plugin_system.plugins:
-            ptype = plugin_system.get_plugin_type(plugin)
-            if ptype == MiAZPluginType.USER:
-                base_dir = plugin.get_name()
-                module_name = plugin.get_module_name()
-                plugin_path = os.path.join(ENV['LPATH']['PLUGINS'], base_dir, f"{module_name}.plugin")
-                if os.path.exists(plugin_path):
-                    title = plugin.get_description()
-                    items.append(item_type(id=module_name, title=_(title)))
         self.update_views()
 
     def plugins_updated(self, *args):
@@ -718,21 +699,19 @@ class MiAZUserPlugins(MiAZConfigView):
         ENV = self.app.get_env()
         util = self.app.get_service('util')
         plugin_manager = self.app.get_service('plugin-system')
-        system_plugins = {}
+        all_plugins = {}
         try:
-            system_plugins = util.json_load(ENV['APP']['PLUGINS']['SYSTEM_INDEX'])
+            all_plugins = util.json_load(ENV['APP']['PLUGINS']['INDEX'])
         except Exception:
             pass
-        plugin_info = system_plugins.get(selected_plugin.id)
+        plugin_info = all_plugins.get(selected_plugin.id)
         if plugin_info is None:
             return
         plugin_module = plugin_info['Module']
         plugin = plugin_manager.get_plugin_info(plugin_module)
         if plugin is not None and plugin_manager.is_plugin_loaded(plugin):
             plugin_manager.unload_plugin(plugin)
-        config_enabled = self.app.get_config('SystemPlugin')
-        if config_enabled:
-            config_enabled.remove_used(selected_plugin.id)
+        self.config.remove_used(selected_plugin.id)
         self.log.debug(f"Plugin '{selected_plugin.id}' disabled")
         self.update_views()
 
@@ -744,31 +723,28 @@ class MiAZUserPlugins(MiAZConfigView):
         if selected_plugin is None:
             return
 
-        config_enabled = self.app.get_config('SystemPlugin')
-        is_enabled = config_enabled and config_enabled.exists_used(selected_plugin.id)
-        if is_enabled:
+        if self.config.exists_used(selected_plugin.id):
             self.log.warning(f"Plugin '{selected_plugin.id}' is already enabled. Nothing to do")
             self.update_views()
             return
 
-        system_plugins = {}
+        all_plugins = {}
         try:
-            system_plugins = util.json_load(ENV['APP']['PLUGINS']['SYSTEM_INDEX'])
+            all_plugins = util.json_load(ENV['APP']['PLUGINS']['INDEX'])
         except Exception:
             pass
-        plugin_info = system_plugins.get(selected_plugin.id)
+        plugin_info = all_plugins.get(selected_plugin.id)
         if plugin_info is None:
-            self.log.error(f"Plugin '{selected_plugin.id}' not found in system index")
+            self.log.error(f"Plugin '{selected_plugin.id}' not found in plugin index")
             return
         plugin_module = plugin_info['Module']
         plugin = plugin_manager.get_plugin_info(plugin_module)
         if plugin is not None:
             if not plugin_manager.is_plugin_loaded(plugin):
                 plugin_manager.load_plugin(plugin)
-            if config_enabled:
-                enabled = config_enabled.load_used()
-                enabled[selected_plugin.id] = selected_plugin.title
-                config_enabled.save_used(enabled)
+            enabled = self.config.load_used()
+            enabled[selected_plugin.id] = selected_plugin.title
+            self.config.save_used(enabled)
             self.log.debug(f"Plugin '{selected_plugin.id}' enabled")
         self.update_views()
 
@@ -779,7 +755,7 @@ class MiAZUserPlugins(MiAZConfigView):
         if selected_plugin is None:
             return
         try:
-            system_plugins = util.json_load(ENV['APP']['PLUGINS']['SYSTEM_INDEX'])
+            system_plugins = util.json_load(ENV['APP']['PLUGINS']['INDEX'])
         except Exception:
             return
         plugin_info = system_plugins.get(selected_plugin.id)

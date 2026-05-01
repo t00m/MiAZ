@@ -16,7 +16,6 @@ import json
 import zipfile
 import inspect
 import importlib.util
-from enum import IntEnum
 from gettext import gettext as _
 
 import gi
@@ -282,19 +281,6 @@ class MiAZPlugin(GObject.GObject):
         return subcategory_submenu
 
 
-class MiAZPluginType(IntEnum):
-    """Types of plugins depending on their directory location"""
-
-    SYSTEM = 1
-    USER = 2
-
-    def __str__(self):
-        if self.value == MiAZPluginType.USER:
-            return _("user")
-        elif self.value == MiAZPluginType.SYSTEM:
-            return _("system")
-
-
 class MiAZPluginSystem(GObject.GObject):
     def __init__(self, app):
         super().__init__()
@@ -315,11 +301,10 @@ class MiAZPluginSystem(GObject.GObject):
 
         self._extension_instances = {}
         self._setup_plugins_dir()
-        self.create_user_plugin_index()
-        self.create_system_plugin_index()
+        self.create_plugin_index()
         self.log.info("Plugin system initialited")
         srvrepo = self.app.get_service('repo')
-        srvrepo.connect('repository-switched', self.create_user_plugin_index)
+        srvrepo.connect('repository-switched', self.create_plugin_index)
 
     def import_plugin(self, plugin_path):
         """
@@ -433,40 +418,35 @@ class MiAZPluginSystem(GObject.GObject):
     def load_plugin(self, plugin: Peas.PluginInfo) -> bool:
         if self.is_plugin_loaded(plugin):
             return True
+        pname = plugin.get_name()
+        pvers = plugin.get_version()
         try:
-            ptype = self.get_plugin_type(plugin)
-            pname = plugin.get_name()
-            pvers = plugin.get_version()
             self.engine.load_plugin(plugin)
 
             if not plugin.is_loaded():
                 # libpeas Python loader may not be installed on the host; try direct import
                 if not self._direct_import_plugin(plugin):
-                    self.log.error(f"Plugin {pname} v{pvers} ({ptype}) couldn't be loaded")
+                    self.log.error(f"Plugin {pname} v{pvers} couldn't be loaded")
                     return False
 
             self._activate_plugin_instance(plugin)
-            self.log.info(f"{str(ptype).title()} Plugin {pname} v{pvers} ({ptype}) loaded")
+            self.log.info(f"Plugin {pname} v{pvers} loaded")
             self.emit('plugins-updated')
             return True
         except AttributeError as error:
-            self.log.error(f"Plugin {pname} v{pvers} ({ptype}) couldn't be loaded")
-            self.log.error(f"Reason: {error}")
+            self.log.error(f"Plugin {pname} v{pvers} couldn't be loaded: {error}")
             return False
         except Exception as error:
-            self.log.error(error)
-            self.log.error(f"Plugin {pname} v{pvers} ({ptype}) couldn't be loaded")
-            self.log.error(f"Reason: {error}")
+            self.log.error(f"Plugin {pname} v{pvers} couldn't be loaded: {error}")
             return False
 
     def unload_plugin(self, plugin: Peas.PluginInfo):
+        pname = plugin.get_name()
+        pvers = plugin.get_version()
         try:
-            ptype = self.get_plugin_type(plugin)
-            pname = plugin.get_name()
-            pvers = plugin.get_version()
             self._deactivate_plugin_instance(plugin)
             self.engine.unload_plugin(plugin)
-            self.log.info(f"Plugin {pname} v{pvers} ({ptype}) unloaded")
+            self.log.info(f"Plugin {pname} v{pvers} unloaded")
             self.emit('plugins-updated')
         except Exception as error:
             self.log.error(error)
@@ -478,28 +458,6 @@ class MiAZPluginSystem(GObject.GObject):
     def plugins(self):
         """Gets the engine's plugin list (libpeas 2.x: Engine is a Gio.ListModel)"""
         return list(self.engine)
-
-    def get_user_plugins(self):
-        self.rescan_plugins()
-        user_plugins = []
-        for plugin in self.plugins:
-            ptype = self.get_plugin_type(plugin)
-            if ptype == MiAZPluginType.USER:
-                plugin_name = plugin.get_name()
-                user_plugins.append(plugin_name)
-        return user_plugins
-
-
-    def get_plugin_type(self, plugin_info):
-        """Gets the PluginType for the specified Peas.PluginInfo"""
-        ENV = self.app.get_env()
-        PLUGIN_DIR = os.path.dirname(plugin_info.get_data_dir())
-        plugin_name = plugin_info.get_name()
-        is_plugin_user_dir = PLUGIN_DIR == ENV['LPATH']['PLUGINS']
-        if is_plugin_user_dir:
-            return MiAZPluginType.USER
-        else:
-            return MiAZPluginType.SYSTEM
 
     def get_extension(self, module_name: str):
         """Gets the active extension instance for the given module name."""
@@ -586,27 +544,26 @@ class MiAZPluginSystem(GObject.GObject):
                     plugin_info[key.strip()] = _(value.strip())
         return plugin_info
 
-    def create_user_plugin_index(self, *args):
-        """Parse plugins info file and recreate index on runtime"""
-        self.log.info("Creating user plugin index during runtime")
+    def create_plugin_index(self, *args):
+        """Scan both bundled and user plugin directories and write a unified index."""
+        self.log.info("Creating plugin index during runtime")
         plugin_index = {}
-        ENV = self.app.get_env()
-        plugins_dir = ENV['LPATH']['PLUGINS']
-        plugin_files = glob.glob(os.path.join(plugins_dir, '*', '*.plugin'))
-        module_files = glob.glob(os.path.join(plugins_dir, '*', '*.py'))
         plugin_list = []
-        for module_file in module_files:
-            plugin_info = self.util.extract_variable_from_python_module(module_file, 'plugin_info')
-            if plugin_info is not None:
-                plugin_name = plugin_info['Name']
-                plugin_desc = plugin_info['Description']
-                plugin_index[plugin_name] = plugin_info
-                plugin_list.append((plugin_name, plugin_desc))
-                self.log.info(f" - Adding user plugin {plugin_name} to plugin index")
+        ENV = self.app.get_env()
+        for plugins_dir in (ENV['GPATH']['PLUGINS'], ENV['LPATH']['PLUGINS']):
+            module_files = glob.glob(os.path.join(plugins_dir, '*', '*.py'), recursive=False)
+            for module_file in module_files:
+                plugin_info = self.util.extract_variable_from_python_module(module_file, 'plugin_info')
+                if plugin_info is not None:
+                    plugin_name = plugin_info['Name']
+                    plugin_desc = plugin_info['Description']
+                    plugin_index[plugin_name] = plugin_info
+                    plugin_list.append((plugin_name, plugin_desc))
+                    self.log.info(f" - Adding plugin {plugin_name} to plugin index")
 
-        with open(ENV['APP']['PLUGINS']['USER_INDEX'], 'w') as fp:
+        with open(ENV['APP']['PLUGINS']['INDEX'], 'w') as fp:
             json.dump(plugin_index, fp, sort_keys=False, indent=4)
-            self.log.info(f"File index-user-plugins.json generated with {len(plugin_index)} plugins")
+            self.log.info(f"File index-plugins.json generated with {len(plugin_index)} plugins")
 
         try:
             config = self.app.get_config_dict()
@@ -617,25 +574,3 @@ class MiAZPluginSystem(GObject.GObject):
             self.log.info(f"Plugins available updated successfully for repository {repo_id}")
         except AttributeError:
             self.log.warning("Skip. Plugin config not ready yet")
-
-    def create_system_plugin_index(self, *args):
-        """Parse plugins info file and recreate index on runtime"""
-        self.log.info("Creating system plugin index during runtime")
-        plugin_index = {}
-        ENV = self.app.get_env()
-        plugins_dir = ENV['GPATH']['PLUGINS']
-        plugin_files = glob.glob(os.path.join(plugins_dir, '*', '*.plugin'))
-        module_files = glob.glob(os.path.join(plugins_dir, '*', '*.py'))
-        plugin_list = []
-        for module_file in module_files:
-            plugin_info = self.util.extract_variable_from_python_module(module_file, 'plugin_info')
-            if plugin_info is not None:
-                plugin_name = plugin_info['Name']
-                plugin_desc = plugin_info['Description']
-                plugin_index[plugin_name] = plugin_info
-                plugin_list.append((plugin_name, plugin_desc))
-                self.log.info(f" - Adding system plugin {plugin_name} to plugin index")
-
-        with open(ENV['APP']['PLUGINS']['SYSTEM_INDEX'], 'w') as fp:
-            json.dump(plugin_index, fp, sort_keys=False, indent=4)
-            self.log.info(f"File index-system-plugins.json generated with {len(plugin_index)} plugins")

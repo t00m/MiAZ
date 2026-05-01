@@ -20,7 +20,7 @@ from MiAZ.frontend.desktop.widgets.configview import MiAZCountries
 from MiAZ.frontend.desktop.widgets.configview import MiAZPeopleSentBy
 from MiAZ.frontend.desktop.widgets.configview import MiAZPeopleSentTo
 from MiAZ.frontend.desktop.widgets.configview import MiAZRepositories
-from MiAZ.frontend.desktop.widgets.configview import MiAZUserPlugins
+from MiAZ.frontend.desktop.widgets.configview import MiAZPlugins
 from MiAZ.frontend.desktop.widgets.window import MiAZCustomWindow
 from MiAZ.frontend.desktop.widgets.pluginuimanager import MiAZPluginUIManager
 
@@ -30,7 +30,7 @@ Configview['Group'] = MiAZGroups
 Configview['Purpose'] = MiAZPurposes
 Configview['SentBy'] = MiAZPeopleSentBy
 Configview['SentTo'] = MiAZPeopleSentTo
-Configview['Plugin'] = MiAZUserPlugins
+Configview['Plugin'] = MiAZPlugins
 # ~ Configview['Date'] = Gtk.Calendar
 
 
