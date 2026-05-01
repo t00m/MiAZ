@@ -95,27 +95,36 @@ class MiAZSidebar(Adw.Bin):
         searchentry = self.app.add_widget('searchentry', Gtk.SearchEntry())
         searchentry.set_size_request(190, -1)
         dd_size_group.add_widget(searchentry)
-        main_section.append(
-            Adw.SidebarItem(title=_('Filter text'), suffix=searchentry))
+        main_section.append(Adw.SidebarItem(
+            icon_name='io.github.t00m.MiAZ-edit-find-symbolic',
+            title='',
+            suffix=searchentry))
 
-        # Date dropdown
+        # Date dropdown — icon is res-date (not res-dates)
         i_type = Date.__gtype_name__
         dd_date = factory.create_dropdown_generic(
             item_type=Date, ellipsize=False, enable_search=True)
         dd_date.set_size_request(190, -1)
         dd_size_group.add_widget(dd_date)
         self.dropdowns[i_type] = dd_date
-        main_section.append(Adw.SidebarItem(title=_('Date'), suffix=dd_date))
+        main_section.append(Adw.SidebarItem(
+            icon_name='io.github.t00m.MiAZ-res-date',
+            title='',
+            suffix=dd_date))
 
         # Field dropdowns
         for item_type in [Country, Group, SentBy, Purpose, SentTo]:
             i_type = item_type.__gtype_name__
+            i_conf = item_type.__config_name__
+            icon_name = f"io.github.t00m.MiAZ-res-{i_conf.lower()}"
             dropdown = factory.create_dropdown_generic(item_type=item_type)
             dropdown.set_size_request(190, -1)
             dd_size_group.add_widget(dropdown)
             self.dropdowns[i_type] = dropdown
-            main_section.append(
-                Adw.SidebarItem(title=_(item_type.__title__), suffix=dropdown))
+            main_section.append(Adw.SidebarItem(
+                icon_name=icon_name,
+                title='',
+                suffix=dropdown))
 
         adw_sidebar.append(main_section)
         return adw_sidebar
