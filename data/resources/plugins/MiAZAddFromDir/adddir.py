@@ -13,9 +13,8 @@ import threading
 import gi
 from gi.repository import GLib
 from gi.repository import GObject
-from gi.repository import Peas
 
-from MiAZ.frontend.desktop.services.pluginsystem import MiAZPlugin
+from MiAZ.frontend.desktop.services.pluginsystem import MiAZExtension, MiAZPlugin
 from MiAZ.backend.status import MiAZStatus
 
 plugin_info = {
@@ -33,9 +32,8 @@ plugin_info = {
     }
 
 
-class MiAZAddDirectoryPlugin(GObject.GObject, Peas.Activatable):
+class MiAZAddDirectoryPlugin(MiAZExtension):
     __gtype_name__ = 'MiAZAddDirectoryPlugin'
-    object = GObject.Property(type=GObject.Object)
     plugin = None
 
     def do_activate(self):
@@ -114,4 +112,4 @@ class MiAZAddDirectoryPlugin(GObject.GObject, Peas.Activatable):
     def update_progress(self, fraction, text):
         self.log.info(f"{fraction} {text}")
         if fraction >= 1.0:
-            self.srvdlg.show_info(title='Import directory', body=_('All documents imported successfully'))
+            self.srvdlg.show_toast(_('All documents imported successfully'))

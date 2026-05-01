@@ -79,9 +79,9 @@ class MiAZActions(GObject.GObject):
 
         model.remove_all()
         if any_value:
-            model.append(item_type(id='Any', title=_('Any'))) # {i_title.lower()}')))
+            model.append(item_type(id='Any', title=_('Any') + ' ' + i_title.lower()))
         if none_value:
-            model.append(item_type(id='None', title=_('None'))) # {i_title.lower()}')))
+            model.append(item_type(id='None', title=_('None') + ' ' + i_title.lower()))
 
         for key in items:
             accepted = True
@@ -255,7 +255,6 @@ class MiAZActions(GObject.GObject):
             window_repoconfig = MiAZRepoSettings(self.app)
             window_repoconfig.set_transient_for(window_main)
             window_repoconfig.set_modal(True)
-            window_repoconfig.update()
             window_repoconfig.present()
         except AttributeError:
             srvdlg = self.app.get_service('dialogs')

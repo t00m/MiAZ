@@ -28,6 +28,7 @@ try:
     gi.require_version('Gtk', '4.0')
     from gi.repository import Gtk
     from gi.repository import GLib
+    from gi.repository import GLibUnix
     ENV['DESKTOP']['GTK_VERSION'] = (Gtk.MAJOR_VERSION, Gtk.MINOR_VERSION, Gtk.MICRO_VERSION)
     ENV['DESKTOP']['GTK_SUPPORT'] = Gtk.MAJOR_VERSION >= 4 and Gtk.MINOR_VERSION >= 6
 except (ValueError, ModuleNotFoundError):
@@ -106,7 +107,7 @@ class MiAZ:
         app.set_env(ENV)
 
         # Set up the signal handler for CONTROL-C
-        GLib.unix_signal_add(GLib.PRIORITY_DEFAULT, signal.SIGINT, app.exit)
+        GLibUnix.signal_add(GLib.PRIORITY_DEFAULT, signal.SIGINT, app.exit)
 
         try:
             app.run()

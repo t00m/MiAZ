@@ -7,15 +7,6 @@
 import os
 import glob
 from gettext import gettext as _
-import threading
-
-try:
-    import requests
-    from requests.exceptions import HTTPError
-    _REQUESTS_AVAILABLE = True
-except ImportError:
-    _REQUESTS_AVAILABLE = False
-
 from gi.repository import Adw
 from gi.repository import Gio
 from gi.repository import GLib
@@ -24,7 +15,6 @@ from gi.repository import Gtk
 
 from MiAZ.backend.log import MiAZLog
 from MiAZ.backend.models import Plugin
-from MiAZ.frontend.desktop.services.pluginsystem import MiAZPluginType
 from MiAZ.frontend.desktop.widgets.selector import MiAZSelector
 from MiAZ.frontend.desktop.widgets.columnview import MiAZColumnView
 from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewCountry
@@ -129,8 +119,7 @@ class MiAZRepositories(MiAZConfigView):
                 self.config.add_available(repo_name, repo_path)
                 body = _('Repository added to list of available repositories')
                 self.log.debug(body)
-                self.update_views()
-                srvdlg.show_info(title=title, body=body, parent=parent)
+                srvdlg.show_toast(body)
             else:
                 body1 = _('<b>Action not possible</b>')
                 body2 = _('No repository added. Invalid input.\n\nTry again by setting a repository name and a valid target directory')
@@ -175,9 +164,8 @@ class MiAZRepositories(MiAZConfigView):
                 items_available = self.config.load_available()
                 items_available[oldkey] = newval
                 self.config.save_available(items_available)
-                self.update_views()
                 body = _('Repository target folder updated')
-                self.srvdlg.show_info(title=title, body=body, parent=parent)
+                self.srvdlg.show_toast(body)
             else:
                 body1 = _('<b>Action not possible</b>')
                 body2 = _('Repository target folder not updated')
@@ -230,7 +218,6 @@ class MiAZRepositories(MiAZConfigView):
         if not is_used:
             items_used[selected_item.id] = selected_item.title
             self.config.save_used(items=items_used)
-            self.update_views()
             body = _('{title} {item} ready to be used').format(title=i_title, item=selected_item.id)
             self.log.debug(body)
         else:
@@ -247,7 +234,7 @@ class MiAZRepositories(MiAZConfigView):
             workflow.switch_start()
             body=_('{title} {item} set as default').format(title=i_title, item=selected_item.id)
             self.log.info(body)
-        srvdlg.show_info(title=title, body=body, parent=self)
+        srvdlg.show_toast(body)
 
     def _on_item_used_remove(self, *args):
         # Trick to avoid restart app when repos are enabled/disabled
@@ -271,7 +258,6 @@ class MiAZRepositories(MiAZConfigView):
         self.log.debug(f"{i_title} {selected_item.id} removed from de list of used items")
         self.config.save_used(items=items_used)
         self.config.save_available(items=items_available)
-        self.update_views()
         ## Unblock signal "dd_repo > notify::selected-item"
         if signal is not None:
             dd_repo.handler_unblock(signal)
@@ -402,12 +388,9 @@ class MiAZPurposes(MiAZConfigView):
         self._add_columnview_used(self.viewSl)
         self._add_config_menubutton(self.config.config_for)
 
-class MiAZUserPlugins(MiAZConfigView):
-    """
-    Manage user plugins from Repo Settings. Edit disabled
-    Only display User plugins found in ENV['APP']['PLUGINS']['USER_INDEX']
-    """
-    __gtype_name__ = 'MiAZUserPlugins'
+class MiAZPlugins(MiAZConfigView):
+    """Manage plugins from Repo Settings."""
+    __gtype_name__ = 'MiAZPlugins'
     __gsignals__ = {
         'plugins-downloaded': (GObject.SignalFlags.RUN_LAST, None, ()),
     }
@@ -424,11 +407,6 @@ class MiAZUserPlugins(MiAZConfigView):
         btnInfo = factory.create_button(icon_name='io.github.t00m.MiAZ-dialog-information-symbolic', callback=self._show_plugin_info, css_classes=['linked'])
         btnInfo.set_valign(Gtk.Align.CENTER)
         self.toolbar_buttons_Av.append(btnInfo)
-
-        btnRefresh = factory.create_button(icon_name='io.github.t00m.MiAZ-view-refresh-symbolic', callback=self._refresh_index_plugin_file, css_classes=['linked'])
-        btnRefresh.set_valign(Gtk.Align.CENTER)
-        self.app.add_widget('repository-settings-plugins-av-btnRefresh', btnRefresh)
-        self.toolbar_buttons_Av.append(btnRefresh)
 
         # Used view buttons
         self.btnConfig = factory.create_button(icon_name='io.github.t00m.MiAZ-config-symbolic', callback=self._configure_plugin_options)
@@ -453,7 +431,7 @@ class MiAZUserPlugins(MiAZConfigView):
         # Fill-in dropdowns
         ENV = self.app.get_env()
         try:
-            self.user_plugins = util.json_load(ENV['APP']['PLUGINS']['USER_INDEX'])
+            self.user_plugins = util.json_load(ENV['APP']['PLUGINS']['INDEX'])
         except Exception:
             self.user_plugins = {}
 
@@ -479,6 +457,34 @@ class MiAZUserPlugins(MiAZConfigView):
             self.dpdCats.set_selected(0)
             self.log.debug(f"Select first category")
             self._on_plugin_category_selected()
+
+    def _update_view_available(self):
+        ENV = self.app.get_env()
+        util = self.app.get_service('util')
+        try:
+            system_plugins = util.json_load(ENV['APP']['PLUGINS']['INDEX'])
+        except Exception:
+            system_plugins = {}
+        items = []
+        for plugin_id, info in system_plugins.items():
+            title = info.get('Description', plugin_id)
+            items.append(Plugin(id=plugin_id, title=_(title)))
+        self.viewAv.update(items)
+
+    def _update_view_used(self, items=None):
+        ENV = self.app.get_env()
+        util = self.app.get_service('util')
+        try:
+            all_plugins = util.json_load(ENV['APP']['PLUGINS']['INDEX'])
+        except Exception:
+            all_plugins = {}
+        enabled = self.config.load_used()
+        enabled_items = []
+        for plugin_id, info in all_plugins.items():
+            if plugin_id in enabled:
+                title = info.get('Description', plugin_id)
+                enabled_items.append(Plugin(id=plugin_id, title=_(title)))
+        self.viewSl.update(enabled_items)
 
     def _do_filter_view(self, item, filter_list_model):
         plugin = item.id
@@ -561,7 +567,7 @@ class MiAZUserPlugins(MiAZConfigView):
             filepath = dialog.open_finish(result)
             plugin_file = filepath.get_path()
             zip_archive = util.unzip(plugin_file, ENV['LPATH']['PLUGINS'])
-            pluginsystem.create_user_plugin_index()
+            pluginsystem.create_plugin_index()
             self.searchentry.set_text('')
             self.searchentry.activate()
             plugin_dirname = zip_archive.namelist()[0]
@@ -569,10 +575,8 @@ class MiAZUserPlugins(MiAZConfigView):
             plugin_info = pluginsystem.get_plugin_attributes(plugin_path)
             plugin_name = plugin_info['Name']
             plugin_version = plugin_info['Version']
-            body1 = _('<b>Import plugin</b>')
             body2 = _('Plugin {plugin_name} v{plugin_version} imported successfully').format(plugin_name=plugin_name, plugin_version=plugin_version)
-            body = body1 + '\n' + body2
-            self.srvdlg.show_info(title='Import plugin', body=body, parent=self)
+            self.srvdlg.show_toast(body2)
         except Exception as error:
             body1 = _('<b>Action not possible</b>')
             body2 = _('Error: {error}').format(error=error)
@@ -633,7 +637,7 @@ class MiAZUserPlugins(MiAZConfigView):
             self.srvdlg.show_warning(title=title, body=body, parent=self)
         else:
             body = _('{title} {desc}  not removed from de list of available {item_types}').format(title=i_title, desc=item_dsc, item_types=item_type.__title_plural__.lower())
-            self.srvdlg.show_info(title=title, body=body, parent=self)
+            self.srvdlg.show_toast(body)
 
     def _on_plugin_used_selected(self, selection_model, position, n_items):
         selected_plugin = selection_model.get_selected_item()
@@ -644,82 +648,6 @@ class MiAZUserPlugins(MiAZConfigView):
             has_settings = hasattr(plugin, 'show_settings') and callable(getattr(plugin, 'show_settings'))
         self.btnConfig.set_visible(has_settings)
 
-    def _refresh_index_plugin_file(self, *args):
-        threading.Thread(target=self.download_plugins, daemon=True).start()
-
-    def download_plugins(self):
-        if not _REQUESTS_AVAILABLE:
-            self.log.error("Cannot download plugins: 'requests' library is not installed")
-            return
-        # FIXME: set toolbar sensitivity to False
-        banner = self.app.get_widget('repository-settings-banner')
-        banner.set_revealed(True)
-        banner.set_button_label('')
-        banner.set_title("")
-
-        util = self.app.get_service('util')
-        ENV = self.app.get_env()
-        source = ENV['APP']['PLUGINS']['SOURCE']
-        url_base = ENV['APP']['PLUGINS']['REMOTE_INDEX']
-        url = url_base % source
-        url_plugin_base = ENV['APP']['PLUGINS']['DOWNLOAD']
-        user_plugins_dir = ENV['LPATH']['PLUGINS']
-
-        try:
-            response = requests.get(url)
-            response.raise_for_status()
-            plugin_index = response.json()
-            util.json_save(ENV['APP']['PLUGINS']['USER_INDEX'], plugin_index)
-            plugin_system = self.app.get_service('plugin-system')
-            user_plugins = plugin_system.get_user_plugins()
-        except Exception as error:
-            # FIXME: display error dialog
-            self.log.error(error)
-            return
-
-        urls = []
-        plugin_list = []
-        for pid in plugin_index:
-            url_plugin = url_plugin_base % (source, pid)
-            urls.append(url_plugin)
-            self.log.debug(f"Appending plugin {url_plugin}")
-        total_files = len(urls)
-
-        for i, url_plugin in enumerate(urls):
-            if hasattr(self, 'cancelled') and self.cancelled:
-                break
-
-            # Update progress
-            progress = (i + 1) / total_files
-            self.log.debug(f"Downloading plugin from {url_plugin}")
-            GLib.idle_add(self.update_progress, progress, f"Downloading file {i+1}/{total_files}")
-
-            try:
-                util.download_and_unzip(url_plugin, user_plugins_dir)
-                # ~ time.sleep(1) # Comment above line and disable this one for testing
-            except HTTPError as http_error:
-                self.log.error(f"HTTP error occurred: {http_error}")
-            except Exception as error:
-                self.log.error(f"Another error occurred: {error}")
-
-    def update_progress(self, fraction, text):
-        srvdlg = self.app.get_service('dialogs')
-        title = "Plugin management"
-        percentage = int(fraction*100)
-        banner = self.app.get_widget('repository-settings-banner')
-        banner.set_title(f"{text} ({percentage}%) done")
-        if fraction == 1.0:
-            banner = self.app.get_widget('repository-settings-banner')
-            banner.set_revealed(True)
-            banner.set_title("One or more plugins were updated. Application restart needed")
-            banner.set_button_label('Restart')
-            pluginsystem = self.app.get_service('plugin-system')
-            pluginsystem.create_user_plugin_index()
-            # ~ self.update_user_plugins()
-            body = "Plugins updated"
-            self.log.info(body)
-            srvdlg.show_info(title=title, body=body, parent=self)
-
     def _configure_plugin_options(self, *args):
         srvdlg = self.app.get_service('dialogs')
         title = 'Plugin management'
@@ -729,8 +657,6 @@ class MiAZUserPlugins(MiAZConfigView):
         self.log.debug(f"Open configuration dialog for plugin {selected_plugin.id}")
         ENV = self.app.get_env()
         util = self.app.get_service('util')
-        plugin_system = self.app.get_service('plugin-system')
-        user_plugins = util.json_load(ENV['APP']['PLUGINS']['USER_INDEX'])
         plugin_id = f"plugin-{selected_plugin.id}"
         plugin = self.app.get_widget(plugin_id)
         if plugin is not None:
@@ -751,21 +677,8 @@ class MiAZUserPlugins(MiAZConfigView):
             srvdlg.show_error(title=title, body=body, parent=self)
 
     def update_user_plugins(self):
-        ENV = self.app.get_env()
         plugin_system = self.app.get_service('plugin-system')
         plugin_system.rescan_plugins()
-        view = self.app.get_widget('app-settings-plugins-user-view')
-        items = []
-        item_type = Plugin
-        for plugin in plugin_system.plugins:
-            ptype = plugin_system.get_plugin_type(plugin)
-            if ptype == MiAZPluginType.USER:
-                base_dir = plugin.get_name()
-                module_name = plugin.get_module_name()
-                plugin_path = os.path.join(ENV['LPATH']['PLUGINS'], base_dir, f"{module_name}.plugin")
-                if os.path.exists(plugin_path):
-                    title = plugin.get_description()
-                    items.append(item_type(id=module_name, title=_(title)))
         self.update_views()
 
     def plugins_updated(self, *args):
@@ -784,52 +697,70 @@ class MiAZUserPlugins(MiAZConfigView):
             return
 
         ENV = self.app.get_env()
-        ENV['APP']['STATUS']['RESTART_NEEDED'] = True
+        util = self.app.get_service('util')
+        plugin_manager = self.app.get_service('plugin-system')
+        all_plugins = {}
+        try:
+            all_plugins = util.json_load(ENV['APP']['PLUGINS']['INDEX'])
+        except Exception:
+            pass
+        plugin_info = all_plugins.get(selected_plugin.id)
+        if plugin_info is None:
+            return
+        plugin_module = plugin_info['Module']
+        plugin = plugin_manager.get_plugin_info(plugin_module)
+        if plugin is not None and plugin_manager.is_plugin_loaded(plugin):
+            plugin_manager.unload_plugin(plugin)
         self.config.remove_used(selected_plugin.id)
-        banner = self.app.get_widget('repository-settings-banner')
-        banner.set_revealed(True)
+        self.log.debug(f"Plugin '{selected_plugin.id}' disabled")
         self.update_views()
 
     def _on_item_used_add(self, *args):
-        workflow = self.app.get_service('workflow')
         plugin_manager = self.app.get_service('plugin-system')
-        plugins_used = self.config.load_used()
+        util = self.app.get_service('util')
+        ENV = self.app.get_env()
         selected_plugin = self.viewAv.get_selected()
         if selected_plugin is None:
             return
 
-        plugin_used = self.config.exists_used(selected_plugin.id)
-        item_type = self.config.model
-        i_title = item_type.__title__
-        if not plugin_used:
-            util = self.app.get_service('util')
-            ENV = self.app.get_env()
-            user_plugins = util.json_load(ENV['APP']['PLUGINS']['USER_INDEX'])
-            try:
-                plugin_module = user_plugins[selected_plugin.id]['Module']
-            except KeyError as key:
-                self.log.error(f"Plugin {key} not found in {ENV['APP']['PLUGINS']['USER_INDEX']}")
-                return
-            plugins_used[selected_plugin.id] = selected_plugin.title
-            plugin = plugin_manager.get_plugin_info(plugin_module)
-            if not plugin.is_loaded():
+        if self.config.exists_used(selected_plugin.id):
+            self.log.warning(f"Plugin '{selected_plugin.id}' is already enabled. Nothing to do")
+            self.update_views()
+            return
+
+        all_plugins = {}
+        try:
+            all_plugins = util.json_load(ENV['APP']['PLUGINS']['INDEX'])
+        except Exception:
+            pass
+        plugin_info = all_plugins.get(selected_plugin.id)
+        if plugin_info is None:
+            self.log.error(f"Plugin '{selected_plugin.id}' not found in plugin index")
+            return
+        plugin_module = plugin_info['Module']
+        plugin = plugin_manager.get_plugin_info(plugin_module)
+        if plugin is not None:
+            if not plugin_manager.is_plugin_loaded(plugin):
                 plugin_manager.load_plugin(plugin)
-                self.config.save_used(items=plugins_used)
-                self.log.debug(f"{i_title} {selected_plugin.id} activated")
-                workflow.switch_start()
-        else:
-            self.log.warning(f"{i_title} '{selected_plugin.id}' was already activated. Nothing to do")
+            enabled = self.config.load_used()
+            enabled[selected_plugin.id] = selected_plugin.title
+            self.config.save_used(enabled)
+            self.log.debug(f"Plugin '{selected_plugin.id}' enabled")
         self.update_views()
 
     def _show_plugin_info(self, *args):
         util = self.app.get_service('util')
         ENV = self.app.get_env()
-        plugin_system = self.app.get_service('plugin-system')
         selected_plugin = self.viewAv.get_selected()
         if selected_plugin is None:
             return
-        user_plugins = util.json_load(ENV['APP']['PLUGINS']['USER_INDEX'])
-        plugin_info = user_plugins[selected_plugin.id]
+        try:
+            system_plugins = util.json_load(ENV['APP']['PLUGINS']['INDEX'])
+        except Exception:
+            return
+        plugin_info = system_plugins.get(selected_plugin.id)
+        if plugin_info is None:
+            return
 
         # Build info dialog
         dialog = Adw.PreferencesDialog()

@@ -1,0 +1,12 @@
+[Plugin]
+Module=copy2clipboard
+Name=MiAZCopy2Clipboard
+Loader=python
+Description=Copy to clipboard
+Authors=Tomás Vírseda <tomasvirseda@gmail.com>
+Copyright=Copyright © 2025 Tomás Vírseda
+Website=http://github.com/t00m/MiAZ
+Help=http://github.com/t00m/MiAZ/README.adoc
+Version=0.6
+Category=Data Management
+Subcategory=Export

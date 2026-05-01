@@ -13,10 +13,9 @@ from gettext import gettext as _
 
 from gi.repository import Gtk
 from gi.repository import GObject
-from gi.repository import Peas
 
 from MiAZ.backend.models import File
-from MiAZ.frontend.desktop.services.pluginsystem import MiAZPlugin
+from MiAZ.frontend.desktop.services.pluginsystem import MiAZExtension, MiAZPlugin
 from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewMassDelete
 
 plugin_info = {
@@ -34,9 +33,8 @@ plugin_info = {
     }
 
 
-class MiAZDeleteItemPlugin(GObject.GObject, Peas.Activatable):
+class MiAZDeleteItemPlugin(MiAZExtension):
     __gtype_name__ = 'MiAZDeleteItemPlugin'
-    object = GObject.Property(type=GObject.Object)
     plugin = None
 
     def do_activate(self):

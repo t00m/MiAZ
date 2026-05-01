@@ -1,0 +1,12 @@
+[Plugin]
+Module=helloworld
+Name=HelloWorld
+Loader=python
+Description=Hello World Example Plugin
+Authors=Tomás Vírseda <tomasvirseda@gmail.com>
+Copyright=Copyright © 2025 Tomás Vírseda
+Website=http://github.com/t00m/MiAZ
+Help=http://github.com/t00m/MiAZ/README.adoc
+Version=0.5
+Category=Support and Help
+Subcategory=Guides and Tutorials

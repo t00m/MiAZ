@@ -154,7 +154,13 @@ class MiAZWatcher(GObject.GObject):
         if self.dirpath is None:
             return False
 
-        # ~ after = self.__files_with_timestamp(self.dirpath)
+        if not self.before:
+            # First poll: establish baseline. All files look "added" because
+            # before is empty, but they were already loaded by the workspace
+            # on startup — emitting here would cause a redundant update.
+            self.before = after
+            self.status = MiAZStatus.RUNNING
+            return True
 
         added = [f for f in after.keys() if f not in self.before.keys()]
         removed = [f for f in self.before.keys() if f not in after.keys()]

@@ -24,10 +24,10 @@ dnf install -y flatpak
 info "Adding Flathub repository (if not already added)..."
 flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
 
-info "Installing org.gnome.Sdk version 47..."
-flatpak install -y flathub org.gnome.Sdk//47
+info "Installing org.gnome.Sdk version 49..."
+flatpak install -y flathub org.gnome.Sdk//49
 
-info "Installing org.gnome.Platform version 47..."
-flatpak install -y flathub org.gnome.Platform//47
+info "Installing org.gnome.Platform version 49..."
+flatpak install -y flathub org.gnome.Platform//49
 
 info "Installation completed successfully!"

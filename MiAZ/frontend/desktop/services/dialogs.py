@@ -40,7 +40,7 @@ miaz_dialog = {
         },
     'noop': {
         'icon': '',
-        'responses': [],
+        'responses': [('close', _('Close'))],
         'class_name': 'accent'
         }
 }
@@ -121,6 +121,13 @@ class MiAZDialog:
         dialog = self.create(title=title, body=body, dtype='noop', widget=widget, callback=callback, data=data, width=width, height=height)
         dialog.get_style_context().add_class(class_name='success')
         return dialog
+
+    def show_toast(self, message: str, timeout: int = 5):
+        overlay = self.app.get_widget('toast-overlay')
+        if overlay is not None:
+            toast = Adw.Toast(title=message)
+            toast.set_timeout(timeout)
+            overlay.add_toast(toast)
 
     def show_info(  self,
                     title: str = '',

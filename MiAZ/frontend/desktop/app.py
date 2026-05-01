@@ -14,7 +14,7 @@ from gi.repository import Gtk
 
 
 from MiAZ.backend.log import MiAZLog
-from MiAZ.frontend.desktop.services.pluginsystem import MiAZPluginSystem, MiAZPluginType
+from MiAZ.frontend.desktop.services.pluginsystem import MiAZPluginSystem
 from MiAZ.backend.webserver import MiAZHTTPServer
 from MiAZ.frontend.desktop.services.icm import MiAZIconManager
 from MiAZ.frontend.desktop.services.factory import MiAZFactory
@@ -151,53 +151,34 @@ class MiAZApp(Adw.Application):
         return self._plugins_loaded
 
     def set_plugins_loaded(self, loaded=True):
-        return self._plugins_loaded
+        self._plugins_loaded = loaded
 
     def load_plugins(self):
         workspace = self.get_widget('workspace')
         workspace_loaded = workspace is not None
 
-        # Load system and user plugins
         if workspace_loaded and not self.get_plugins_loaded():
             self.log.debug("Loading plugins...")
             plugin_manager = self.get_service('plugin-system')
-            ns = 0  # Number of system plugins
-            nu = 0  # Number of user plugins
-            na = 0  # Number of plugins activated
-            nt = 0  # Number of plugins in total
+            config_plugins = self.get_config('Plugin')
+            na = 0  # activated
+            nt = 0  # total
             for plugin in plugin_manager.plugins:
                 plugin_name = plugin.get_name()
-                plugin_module = plugin.get_module_name()
                 try:
-                    ptype = plugin_manager.get_plugin_type(plugin)
-                    if not plugin.is_loaded():
-                        if ptype == MiAZPluginType.SYSTEM:
-                            # Always load system plugins
+                    if not plugin_manager.is_plugin_loaded(plugin):
+                        plugins_used = config_plugins.load_used().keys() if config_plugins else []
+                        if plugin_name in plugins_used:
                             plugin_manager.load_plugin(plugin)
-                            # ~ self.log.debug(f"System Plugin {plugin_name} loaded")
-                            ns += 1
                             na += 1
                         else:
-                            # Check if plugin must be loaded for selected repository
-                            config_plugins = self.get_config('Plugin')
-                            plugins_used = config_plugins.load_used().keys()
-                            if plugin_name in plugins_used:
-                                plugin_manager.load_plugin(plugin)
-                                # ~ self.log.debug(f"User Plugin {plugin_name} loaded because it is used in current repository")
-                                nu += 1
-                                na += 1
-                            else:
-                                self.log.warning(f"User Plugin {plugin_name} NOT loaded because it is not used in current repository")
+                            self.log.info(f"Plugin {plugin_name} skipped (not enabled for this repository)")
                     else:
-                        if ptype == MiAZPluginType.SYSTEM:
-                            ns += 1
-                        else:
-                            nu += 1
                         na += 1
                 except Exception as error:
                     self.log.error(error)
                 nt += 1
-            self.log.info(f"Plugins activated: System[{ns}] User[{nu}] ({na} of {nt})")
+            self.log.info(f"Plugins activated: {na} of {nt}")
             self.set_plugins_loaded(True)
 
     def get_config(self, name: str):
@@ -249,6 +230,13 @@ class MiAZApp(Adw.Application):
         except KeyError:
             self.log.error(f"Widget '{name}' doesn't exists")
         return deleted
+
+    def remove_widgets_with_prefix(self, prefix: str) -> int:
+        """Remove all widgets whose key starts with prefix. Returns count removed."""
+        keys = [k for k in list(self._miazobjs['widgets']) if k.startswith(prefix)]
+        for key in keys:
+            del self._miazobjs['widgets'][key]
+        return len(keys)
 
     def get_logger(self):
         return self.log

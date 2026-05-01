@@ -51,15 +51,21 @@ class MiAZMainWindow(Gtk.Box):
 
         ## Stack & Stack.Switcher
         vmainbox = factory.create_box_vertical(margin=0, spacing=0, hexpand=True, vexpand=True)
-        hmainbox = factory.create_box_horizontal(margin=0, spacing=0, hexpand=True, vexpand=True)
         content = self._setup_stack()
         content.set_hexpand(True)
+        content.set_vexpand(True)
         sidebar = MiAZSidebar(self.app)
-        sidebar.set_hexpand(False)
+
+        paned = self.app.add_widget('main-paned', Gtk.Paned(orientation=Gtk.Orientation.HORIZONTAL, hexpand=True, vexpand=True))
+        paned.set_start_child(sidebar)
+        paned.set_end_child(content)
+        paned.set_position(320)
+        paned.set_resize_start_child(False)
+        paned.set_shrink_start_child(False)
+        paned.set_shrink_end_child(False)
+
         vmainbox.append(headerbar)
-        vmainbox.append(hmainbox)
-        hmainbox.append(sidebar)
-        hmainbox.append(content)
+        vmainbox.append(paned)
 
         # Welcome page
         page_welcome = self.app.get_widget('welcome')
@@ -85,6 +91,9 @@ class MiAZMainWindow(Gtk.Box):
         evk = Gtk.EventControllerKey.new()
         self.app.add_widget('window-event-controller', evk)
         self.win.add_controller(evk)
+        plugin_system = self.app.get_service('plugin-system')
+        if plugin_system is not None:
+            plugin_system.connect('plugins-updated', self._on_plugins_updated)
 
     def _setup_headerbar_left(self):
         factory = self.app.get_service('factory')
@@ -165,6 +174,50 @@ class MiAZMainWindow(Gtk.Box):
             widget_workspace.connect('workspace-view-updated', self._on_workspace_menu_update)
         return widget_workspace
 
+    def _on_plugins_updated(self, *args):
+        """Rebuild workspace-menu-selection whenever plugins are loaded or unloaded."""
+        workspace = self.app.get_widget('workspace')
+        if workspace is None:
+            return
+
+        # During initial batch loading each plugin handles its own startup(); skip the full
+        # rebuild loop to avoid calling startup() on already-started plugins on every load.
+        if not self.app.get_plugins_loaded():
+            return
+
+        # Replace the menu model with a fresh Gio.Menu so that the Gtk.PopoverMenu
+        # fully re-initialises its internal GtkStack — calling remove_all() on the
+        # existing model leaves stale pages in the stack, causing duplicate-name warnings.
+        new_main_menu = Gio.Menu.new()
+        self.app.add_widget('workspace-menu-selection', new_main_menu)
+        btn_workspace_menu = self.app.get_widget('workspace-menu')
+        if btn_workspace_menu is not None:
+            popover = btn_workspace_menu.get_popover()
+            if popover is not None:
+                popover.set_menu_model(new_main_menu)
+
+        self.app.remove_widgets_with_prefix('workspace-menu-plugins-')
+
+        # For every currently loaded plugin, reset its started flag then call startup()
+        # directly so it reinstalls its menu entry without waiting for workspace-loaded
+        plugin_manager = self.app.get_service('plugin-system')
+        for plugin_info in plugin_manager.plugins:
+            if not plugin_manager.is_plugin_loaded(plugin_info):
+                continue
+            plugin_name = plugin_info.get_name()
+            plugin_obj = self.app.get_widget(f'plugin-{plugin_name}')
+            if plugin_obj is None:
+                continue
+            if hasattr(plugin_obj, 'plugin'):
+                plugin_obj.plugin.set_started(False)
+            if hasattr(plugin_obj, 'startup') and callable(plugin_obj.startup):
+                try:
+                    plugin_obj.startup()
+                except Exception as error:
+                    self.log.error(f"Error rebuilding menu for plugin {plugin_name}: {error}")
+
+        self._append_repo_management_section(new_main_menu)
+
     def _on_workspace_menu_update(self, *args):
         stack = self.app.get_widget('stack')
         workspace = self. app.get_widget('workspace')
@@ -226,8 +279,21 @@ class MiAZMainWindow(Gtk.Box):
 
     def _setup_menu_selection(self):
         """Create workspace menu"""
+        menu = self.app.add_widget('workspace-menu-selection', Gio.Menu.new())
+        self._append_repo_management_section(menu)
+        return menu
 
-        return self.app.add_widget('workspace-menu-selection', Gio.Menu.new())
+    def _append_repo_management_section(self, menu):
+        """Append a separator + Repository Management entry at the bottom of menu."""
+        factory = self.app.get_service('factory')
+        actions = self.app.get_service('actions')
+        section = Gio.Menu.new()
+        section.append_item(factory.create_menuitem(
+            'show-repo-management',
+            _('Repository Management'),
+            actions.show_repository_settings,
+            None, []))
+        menu.append_section(None, section)
 
     def _setup_menu_system(self):
         actions = self.app.get_service('actions')

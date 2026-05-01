@@ -1,3 +1,7 @@
+#!/bin/bash
+
+set -e
+
 # Extract the version
 PROJECT_VERSION=$(grep -oP "version\s*:\s*'\K[0-9]+\.[0-9]+\.[0-9]+(\+build\.[0-9]+)?" meson.build)
 echo "Building flatpak bundle for MiAZ $PROJECT_VERSION"

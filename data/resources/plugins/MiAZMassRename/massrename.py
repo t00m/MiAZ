@@ -16,10 +16,9 @@ from gi.repository import Gio
 from gi.repository import GLib
 from gi.repository import GObject
 from gi.repository import Gtk
-from gi.repository import Peas
 
 from MiAZ.backend.status import MiAZStatus
-from MiAZ.frontend.desktop.services.pluginsystem import MiAZPlugin
+from MiAZ.frontend.desktop.services.pluginsystem import MiAZExtension, MiAZPlugin
 from MiAZ.backend.models import File, Group, Country, Purpose, SentBy, SentTo, Date, Concept
 from MiAZ.frontend.desktop.widgets.configview import MiAZCountries
 from MiAZ.frontend.desktop.widgets.configview import MiAZGroups
@@ -60,9 +59,8 @@ Configview['SentTo'] = MiAZPeopleSentTo
 Configview['Date'] = Gtk.Calendar
 
 
-class MiAZMassRenamingPlugin(GObject.GObject, Peas.Activatable):
+class MiAZMassRenamingPlugin(MiAZExtension):
     __gtype_name__ = 'MiAZMassRenamingPlugin'
-    object = GObject.Property(type=GObject.Object)
     plugin = None
 
     def do_activate(self):

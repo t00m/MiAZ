@@ -21,7 +21,7 @@ from MiAZ.backend.config import MiAZConfigConcepts
 from MiAZ.backend.config import MiAZConfigPeople
 from MiAZ.backend.config import MiAZConfigSentBy
 from MiAZ.backend.config import MiAZConfigSentTo
-from MiAZ.backend.config import MiAZConfigUserPlugins
+from MiAZ.backend.config import MiAZConfigPlugins
 
 
 class MiAZRepository(GObject.GObject):
@@ -49,6 +49,8 @@ class MiAZRepository(GObject.GObject):
         return self.get('dir_conf')
 
     def validate(self, path: str) -> bool:
+        if not path:
+            return False
         valid = False
         try:
             conf_dir = os.path.join(path, '.conf')
@@ -64,11 +66,12 @@ class MiAZRepository(GObject.GObject):
                             self.log.error(error)
             self.log.debug(f"Repository {conf_file} valid? {valid}")
         except Exception as error:
-            errmsg = _("No repositories found.\n")
-            errmsg += _("Please, create a new repository, if none exists yet.\n\n")
-            errmsg += _("Otherwise, check if the directory exists (local repository) or if the server is accessible (remote repository).")
-            self.log.error(errmsg)
+            self.log.error(error)
         return valid
+
+    def reset(self):
+        """Invalidate the conf cache so the next access triggers a fresh setup()."""
+        self._conf_cache = None
 
     def init(self, path):
         repoconf = {}
@@ -80,6 +83,23 @@ class MiAZRepository(GObject.GObject):
             json.dump(repoconf, fout, sort_keys=True, indent=4)
         self.config['App'].set('source', path)
         self.log.debug(f"Repository initialized: '{conf_file}'")
+        self._init_default_plugins(dir_conf)
+
+    def _init_default_plugins(self, dir_conf):
+        """Write the default system-plugin enabled list for a brand-new repository."""
+        default_plugins = {
+            "MiAZAddFromDir": "Add documents from directory",
+            "MiAZDeleteDoc": "Delete selected documents",
+            "MiAZImportDoc": "Add new document(s)",
+            "MiAZProjectMgt": "Project management",
+            "MiAZRenameDoc": "Rename a single document",
+            "MiAZViewItem": "Display document",
+        }
+        enabled_file = os.path.join(dir_conf, 'plugins-used.json')
+        if not os.path.exists(enabled_file):
+            with open(enabled_file, 'w') as fout:
+                json.dump(default_plugins, fout, sort_keys=True, indent=4)
+            self.log.debug(f"Default system plugins written to: '{enabled_file}'")
 
     def setup(self, repo_id: str = None):
         conf = {}
@@ -115,7 +135,7 @@ class MiAZRepository(GObject.GObject):
         self.config['SentBy'] = MiAZConfigSentBy(self.app, repo_dir_conf)
         self.config['SentTo'] = MiAZConfigSentTo(self.app, repo_dir_conf)
         self.config['Person'] = MiAZConfigPeople(self.app, repo_dir_conf)
-        self.config['Plugin'] = MiAZConfigUserPlugins(self.app, repo_dir_conf)
+        self.config['Plugin'] = MiAZConfigPlugins(self.app, repo_dir_conf)
         self.log.debug(f"Repository configuration loaded correctly from: {repo_dir_conf}")
         self.emit('repository-switched')
 
