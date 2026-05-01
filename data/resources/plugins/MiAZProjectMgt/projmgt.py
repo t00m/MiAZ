@@ -11,6 +11,7 @@
 import os
 from gettext import gettext as _
 
+from gi.repository import Adw
 from gi.repository import Gio
 from gi.repository import GObject
 from gi.repository import Gtk
@@ -355,10 +356,8 @@ class MiAZProjectMgt(MiAZExtension):
                     self.config.connect('used-updated', self.actions.dropdown_populate, dropdown, item_type, True, True)
                     self.actions.dropdown_populate(self.config, dropdown, item_type, True, True)
                     dropdown.set_hexpand(True)
-                    size_group = self.app.get_widget('sidebar-filter-size-group')
-                    boxDropdown = self.factory.create_box_filter(f'{i_title}', dropdown, size_group)
-                    row = self.app.get_widget('sidebar-box-plugin-filters')
-                    row.append(boxDropdown)
+                    section = self.app.get_widget('sidebar-plugin-section')
+                    section.append(Adw.SidebarItem(title=i_title, suffix=dropdown))
                     self.workspace.register_filter_view(f'{i_title}', self._do_filter_view)
             else:
                 # Sidebar already set up — re-sync self.srvprj with the registered
