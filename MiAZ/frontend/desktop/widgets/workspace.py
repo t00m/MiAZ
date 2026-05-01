@@ -70,6 +70,7 @@ class MiAZWorkspace(Gtk.Box):
         self._setup_workspace()
         self._setup_logic()
         self.review = False
+        self._was_pending = None
         self._cached_dropdowns = None
         self._cached_search_text = ''
         self._cached_date_ll = 'All'
@@ -552,9 +553,19 @@ class MiAZWorkspace(Gtk.Box):
 
         togglebutton = self.app.get_widget('workspace-togglebutton-pending-docs')
         togglebutton.set_label(_("Review ({review})").format(review=review))
-        togglebutton.get_style_context().add_class(class_name='flat')
+        style_ctx = togglebutton.get_style_context()
         if show_pending:
-            self.log.debug("There are pending documents. Displaying warning button")
+            style_ctx.add_class('destructive-action')
+            style_ctx.remove_class('flat')
+        else:
+            style_ctx.remove_class('destructive-action')
+            style_ctx.add_class('flat')
+        if show_pending != self._was_pending:
+            if show_pending:
+                self.log.debug("Pending documents detected — showing Review button")
+            else:
+                self.log.debug("No pending documents — hiding Review button")
+            self._was_pending = show_pending
         togglebutton.set_visible(show_pending)
 
         if not show_pending:
