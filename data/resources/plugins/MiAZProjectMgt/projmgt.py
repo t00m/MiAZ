@@ -352,9 +352,9 @@ class MiAZProjectMgt(MiAZExtension):
                     dropdown = self.factory.create_dropdown_generic(item_type=item_type, ellipsize=True, enable_search=True)
                     self.app.add_widget(f'plugin-{plugin_name}-dropdown', dropdown)
                     self.app.get_widget('plugin-dropdowns').append(dropdown)
-                    dropdown.connect("notify::selected-item", self.workspace.update)
                     self.config.connect('used-updated', self.actions.dropdown_populate, dropdown, item_type, True, True)
                     self.actions.dropdown_populate(self.config, dropdown, item_type, True, True)
+                    dropdown.connect("notify::selected-item", self.workspace.update)
                     dropdown.set_size_request(190, -1)
                     dd_size_group = self.app.get_widget('sidebar-dropdown-size-group')
                     if dd_size_group is not None:
