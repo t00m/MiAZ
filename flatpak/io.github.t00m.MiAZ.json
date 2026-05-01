@@ -92,7 +92,7 @@
                 {
                     "type" : "git",
                     "url" : "https://github.com/t00m/MiAZ.git",
-                    "branch" : "0.1.23"
+                    "branch" : "0.1.25"
                 }
             ]
         }
