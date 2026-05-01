@@ -92,8 +92,9 @@ class MiAZSidebar(Adw.Bin):
         main_section = Adw.SidebarSection()
 
         # Search entry
-        searchentry = self.app.add_widget('searchentry', Gtk.SearchEntry())
+        searchentry = self.app.add_widget('searchentry', Gtk.Entry())
         searchentry.set_size_request(190, -1)
+        searchentry.set_hexpand(True)
         dd_size_group.add_widget(searchentry)
         main_section.append(Adw.SidebarItem(
             icon_name='io.github.t00m.MiAZ-edit-find-symbolic',
