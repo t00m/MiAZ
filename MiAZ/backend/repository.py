@@ -96,7 +96,7 @@ class MiAZRepository(GObject.GObject):
             "MiAZRenameDoc": "Rename a single document",
             "MiAZViewItem": "Display document",
         }
-        enabled_file = os.path.join(dir_conf, 'plugins-system-enabled.json')
+        enabled_file = os.path.join(dir_conf, 'plugins-used.json')
         if not os.path.exists(enabled_file):
             with open(enabled_file, 'w') as fout:
                 json.dump(default_plugins, fout, sort_keys=True, indent=4)
