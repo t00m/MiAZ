@@ -272,6 +272,25 @@ class MiAZPlugin(GObject.GObject):
         self.util.json_save(config_file, config_data)
         self.log.debug(f"Plugin config for {self.name} updated: [{key}] = {value}")
 
+    def get_source_dir(self):
+        ENV = self.app.get_env()
+        module_name = self.info.get('Module', self.name)
+        for base_dir in (ENV['GPATH']['PLUGINS'], ENV['LPATH']['PLUGINS']):
+            candidate = os.path.join(base_dir, module_name)
+            if os.path.exists(candidate):
+                return candidate
+        return None
+
+    def get_icon_path(self):
+        source_dir = self.get_source_dir()
+        if source_dir is None:
+            return None
+        for ext in ('svg', 'png'):
+            path = os.path.join(source_dir, f'icon.{ext}')
+            if os.path.exists(path):
+                return path
+        return None
+
     def install_menu_entry(self, menuitem = None):
         category = self.info['Category']
         subcategory = self.info['Subcategory']

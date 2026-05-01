@@ -360,7 +360,17 @@ class MiAZProjectMgt(MiAZExtension):
                     if dd_size_group is not None:
                         dd_size_group.add_widget(dropdown)
                     section = self.app.get_widget('sidebar-plugin-section')
-                    section.append(Adw.SidebarItem(title=i_title, suffix=dropdown))
+                    icon_path = self.plugin.get_icon_path()
+                    if icon_path:
+                        img = Gtk.Image.new_from_file(icon_path)
+                        img.set_pixel_size(16)
+                        img.set_valign(Gtk.Align.CENTER)
+                        suffix_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
+                        suffix_box.append(img)
+                        suffix_box.append(dropdown)
+                        section.append(Adw.SidebarItem(title='', suffix=suffix_box))
+                    else:
+                        section.append(Adw.SidebarItem(title=i_title, suffix=dropdown))
                     self.workspace.register_filter_view(f'{i_title}', self._do_filter_view)
             else:
                 # Sidebar already set up — re-sync self.srvprj with the registered
