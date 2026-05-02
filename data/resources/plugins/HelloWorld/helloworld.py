@@ -83,10 +83,11 @@ class HelloWorld(MiAZExtension):
         test = PluginTest(self.app)
 
     def _on_settings_loaded(self, *args):
-        group = self.app.get_widget('window-preferences-page-aspect-group-ui')
-        row = Adw.SwitchRow(title=_("Hello world!"), subtitle=_('Plugin HelloWorld'))
-        row.connect('notify::active', self._on_activate_setting)
-        group.add(row)
+        pass
+        # ~ group = self.app.get_widget('window-preferences-page-aspect-group-ui')
+        # ~ row = Adw.SwitchRow(title=_("Hello world!"), subtitle=_('Plugin HelloWorld'))
+        # ~ row.connect('notify::active', self._on_activate_setting)
+        # ~ group.add(row)
 
     def _on_activate_setting(self, row, gparam):
         active = row.get_active()
