@@ -8,6 +8,7 @@ from gettext import gettext as _
 
 from gi.repository import Adw
 from gi.repository import Gio
+from gi.repository import GLib
 from gi.repository import Gtk
 
 from MiAZ.backend.log import MiAZLog
@@ -94,6 +95,8 @@ class MiAZMainWindow(Gtk.Box):
         plugin_system = self.app.get_service('plugin-system')
         if plugin_system is not None:
             plugin_system.connect('plugins-updated', self._on_plugins_updated)
+        self._footer_menu_appended_to = None
+        self.app.connect('application-started', self._on_application_started)
 
     def _setup_headerbar_left(self):
         factory = self.app.get_service('factory')
@@ -174,6 +177,17 @@ class MiAZMainWindow(Gtk.Box):
             widget_workspace.connect('workspace-view-updated', self._on_workspace_menu_update)
         return widget_workspace
 
+    def _on_application_started(self, *args):
+        GLib.idle_add(self._append_footer_menu_deferred)
+
+    def _append_footer_menu_deferred(self):
+        menu = self.app.get_widget('workspace-menu-selection')
+        if menu is not None and menu is not self._footer_menu_appended_to:
+            self._prepend_repo_title_section(menu)
+            self._append_repo_management_section(menu)
+            self._footer_menu_appended_to = menu
+        return GLib.SOURCE_REMOVE
+
     def _on_plugins_updated(self, *args):
         """Rebuild workspace-menu-selection whenever plugins are loaded or unloaded."""
         workspace = self.app.get_widget('workspace')
@@ -190,6 +204,9 @@ class MiAZMainWindow(Gtk.Box):
         # existing model leaves stale pages in the stack, causing duplicate-name warnings.
         new_main_menu = Gio.Menu.new()
         self.app.add_widget('workspace-menu-selection', new_main_menu)
+        new_plugins_section = Gio.Menu.new()
+        self.app.add_widget('workspace-plugins-section', new_plugins_section)
+        new_main_menu.append_section(None, new_plugins_section)
         btn_workspace_menu = self.app.get_widget('workspace-menu')
         if btn_workspace_menu is not None:
             popover = btn_workspace_menu.get_popover()
@@ -216,7 +233,9 @@ class MiAZMainWindow(Gtk.Box):
                 except Exception as error:
                     self.log.error(f"Error rebuilding menu for plugin {plugin_name}: {error}")
 
+        self._prepend_repo_title_section(new_main_menu)
         self._append_repo_management_section(new_main_menu)
+        self._footer_menu_appended_to = new_main_menu
 
     def _on_workspace_menu_update(self, *args):
         stack = self.app.get_widget('stack')
@@ -278,22 +297,38 @@ class MiAZMainWindow(Gtk.Box):
         return hbox
 
     def _setup_menu_selection(self):
-        """Create workspace menu"""
+        """Create workspace menu with a dedicated section for plugin entries."""
         menu = self.app.add_widget('workspace-menu-selection', Gio.Menu.new())
-        self._append_repo_management_section(menu)
+        plugins_section = self.app.add_widget('workspace-plugins-section', Gio.Menu.new())
+        menu.append_section(None, plugins_section)
         return menu
+
+    def _prepend_repo_title_section(self, menu):
+        """Prepend the current repository name as the first section of menu."""
+        actions = self.app.get_service('actions')
+        factory = self.app.get_service('factory')
+        repo_id = self.app.get_config('App').get('current') or 'MiAZ'
+        repo_name = repo_id.replace('_', ' ')
+        section = Gio.Menu.new()
+        section.append_item(factory.create_menuitem(
+            'show-repo-title',
+            _('Repository {name}').format(name=repo_name),
+            actions.show_repository_settings,
+            None, []))
+        menu.prepend_section(None, section)
 
     def _append_repo_management_section(self, menu):
         """Append a separator + Repository Management entry at the bottom of menu."""
-        factory = self.app.get_service('factory')
-        actions = self.app.get_service('actions')
-        section = Gio.Menu.new()
-        section.append_item(factory.create_menuitem(
-            'show-repo-management',
-            _('Repository Management'),
-            actions.show_repository_settings,
-            None, []))
-        menu.append_section(None, section)
+        pass # Disabled
+        # ~ factory = self.app.get_service('factory')
+        # ~ actions = self.app.get_service('actions')
+        # ~ section = Gio.Menu.new()
+        # ~ section.append_item(factory.create_menuitem(
+            # ~ 'show-repo-management',
+            # ~ _('Repository Management'),
+            # ~ actions.show_repository_settings,
+            # ~ None, []))
+        # ~ menu.append_section(None, section)
 
     def _setup_menu_system(self):
         actions = self.app.get_service('actions')

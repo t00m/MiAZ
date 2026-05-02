@@ -107,7 +107,17 @@ class MiAZ:
         app.set_env(ENV)
 
         # Set up the signal handler for CONTROL-C
-        GLibUnix.signal_add(GLib.PRIORITY_DEFAULT, signal.SIGINT, app.exit)
+        # GLibUnix.signal_add is preferred but not available in all runtimes
+        # (e.g. some Flatpak PyGObject builds expose GLibUnix without signal_add).
+        # Fall back to GLib.unix_signal_add; if that too is absent, the
+        # signal.signal(SIGINT, SIG_DFL) set above ensures Ctrl-C still works.
+        try:
+            GLibUnix.signal_add(GLib.PRIORITY_DEFAULT, signal.SIGINT, app.exit)
+        except AttributeError:
+            try:
+                GLib.unix_signal_add(GLib.PRIORITY_DEFAULT, signal.SIGINT, app.exit)
+            except AttributeError:
+                log.warning("Could not register GLib SIGINT handler; relying on default signal handling")
 
         try:
             app.run()

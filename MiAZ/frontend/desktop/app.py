@@ -333,7 +333,6 @@ class MiAZApp(Adw.Application):
     def install_plugin_menu(self, category, subcategory):
         """
         """
-        main_menu = self.app.get_widget('workspace-menu-selection')
         cid = category.lower().replace(' ', '-')
         sid = subcategory.lower().replace(' ', '-')
         key = f"workspace-menu-plugins-{cid}-{sid}"
@@ -344,7 +343,9 @@ class MiAZApp(Adw.Application):
         if entry is None:
             # ~ title = _("{category} > {subcategory}").format(category=_(category), subcategory=_(subcategory))
             title = _(subcategory)
-            main_menu.append_submenu(title, subcategory_submenu)
+            plugins_section = self.app.get_widget('workspace-plugins-section')
+            target = plugins_section if plugins_section is not None else self.app.get_widget('workspace-menu-selection')
+            target.append_submenu(title, subcategory_submenu)
         return subcategory_submenu
 
     def exit(self, *args):

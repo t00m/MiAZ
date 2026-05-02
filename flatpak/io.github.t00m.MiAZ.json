@@ -1,7 +1,7 @@
 {
     "app-id" : "io.github.t00m.MiAZ",
     "runtime" : "org.gnome.Platform",
-    "runtime-version" : "49",
+    "runtime-version" : "50",
     "sdk" : "org.gnome.Sdk",
     "command" : "miaz",
     "finish-args" : [
@@ -9,13 +9,7 @@
         "--device=dri",
         "--socket=fallback-x11",
         "--socket=wayland",
-        "--socket=pulseaudio",
-        "--share=network",
-        "--allow=bluetooth",
-        "--socket=cups",
-        "--socket=gpg-agent",
-        "--socket=pulseaudio",
-        "--socket=ssh-auth"
+        "--filesystem=home"
     ],
     "cleanup" : [
         "/include",
@@ -92,7 +86,7 @@
                 {
                     "type" : "git",
                     "url" : "https://github.com/t00m/MiAZ.git",
-                    "branch" : "0.1.23"
+                    "branch" : "main"
                 }
             ]
         }

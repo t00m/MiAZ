@@ -167,7 +167,6 @@ class MiAZSelector(Gtk.Box):
         i_title = _(item_type.__title__)
         item_dsc = selected_item.title.replace('_', ' ')
         items_used = self.config.load_used()
-        items_available = self.config.load_available()
         try:
             is_used, docs = util.field_used(repository.docs, self.config.model, selected_item.id)
         except KeyError:
@@ -306,10 +305,8 @@ class MiAZSelector(Gtk.Box):
         if selected_item is None:
             return
 
-        items_available = self.config.load_available()
         item_type = self.config.model
         i_title = item_type.__title__
-        item_id = selected_item.id.replace('_', ' ')
         item_dsc = selected_item.title
 
         items_used = self.config.load_used()
@@ -323,8 +320,6 @@ class MiAZSelector(Gtk.Box):
             dialog.present(self)
         else:
             value_used, docs = util.field_used(repository.docs, self.config.model, selected_item.id)
-            item_type = self.config.model
-            i_title = item_type.__title__
             window = self.viewAv.get_root()
             item_desc = selected_item.title.replace('_', ' ')
 
@@ -385,8 +380,9 @@ class MiAZSelector(Gtk.Box):
         self.viewSl.refilter()
 
     def _do_filter_view(self, item, filter_list_model):
-        string = f"{item.id}-{item.title}".upper()
-        return self._cached_filter_text in string
+        if not self._cached_filter_text:
+            return True
+        return self._cached_filter_text in f"{item.id}-{item.title}".upper()
 
     def _on_config_import(self, *args):
         pass

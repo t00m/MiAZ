@@ -406,6 +406,8 @@ class MiAZPlugins(MiAZConfigView):
         # Available view buttons
         btnInfo = factory.create_button(icon_name='io.github.t00m.MiAZ-dialog-information-symbolic', callback=self._show_plugin_info, css_classes=['linked'])
         btnInfo.set_valign(Gtk.Align.CENTER)
+        for child in factory.get_children(self.toolbar_buttons_Av):
+            self.toolbar_buttons_Av.remove(child)
         self.toolbar_buttons_Av.append(btnInfo)
 
         # Used view buttons
@@ -455,7 +457,6 @@ class MiAZPlugins(MiAZConfigView):
 
         if len(set_cats) > 0:
             self.dpdCats.set_selected(0)
-            self.log.debug(f"Select first category")
             self._on_plugin_category_selected()
 
     def _update_view_available(self):

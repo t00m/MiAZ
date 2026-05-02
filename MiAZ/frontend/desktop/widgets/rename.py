@@ -20,10 +20,6 @@ from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewConcept
 
 
 class MiAZRenameDialog(Gtk.Box):
-    result = ''
-    new_values = []
-    dropdown = {}
-
     def __init__(self, app) -> Gtk.Widget:
         super(MiAZRenameDialog, self).__init__(orientation=Gtk.Orientation.VERTICAL, spacing=3, hexpand=True, vexpand=True)
         self.app = app
@@ -35,6 +31,16 @@ class MiAZRenameDialog(Gtk.Box):
         self.util = self.app.get_service('util')
         self.srvdlg = self.app.get_service('dialogs')
         self.log = MiAZLog('Miaz.Rename')
+        self.result = ''
+        self.new_values = []
+        self.dropdown = {}
+        self._last_date_str = None
+        self._last_date_valid = False
+        self._cfg_country = self.app.get_config('Country')
+        self._cfg_group = self.app.get_config('Group')
+        self._cfg_sentby = self.app.get_config('SentBy')
+        self._cfg_purpose = self.app.get_config('Purpose')
+        self._cfg_sentto = self.app.get_config('SentTo')
 
         # Box to be inserted as contents
         self.boxMain = Gtk.ListBox.new()
@@ -135,12 +141,8 @@ class MiAZRenameDialog(Gtk.Box):
             view.refilter()
 
         def do_filter_view(item, filter_list_model):
-            entry = self.app.get_widget('window-rename-searchentry-concepts')
-            left = entry.get_text()
-            right = item.title
-            if left.upper() in right.upper():
-                return True
-            return False
+            left = searchentry.get_text()
+            return left.upper() in item.title.upper()
 
 
         widget = self.factory.create_box_vertical(hexpand=True, vexpand=True)
@@ -184,17 +186,13 @@ class MiAZRenameDialog(Gtk.Box):
         return row, button, dropdown
 
     def _set_suggestion(self, dropdown, suggestion):
-        found = False
-        if len(suggestion) > 0:
+        if suggestion:
             model = dropdown.get_model()
-            n = 0
-            for item in model:
+            for n, item in enumerate(model):
                 if item.id == suggestion:
                     dropdown.set_selected(n)
-                    found = True
-                n += 1
-        if not found:
-            dropdown.set_selected(0)
+                    return
+        dropdown.set_selected(0)
 
     def __create_field_0_date(self):
         """Field 0. Date"""
@@ -340,96 +338,83 @@ class MiAZRenameDialog(Gtk.Box):
         self.row_new_filename = self.factory.create_actionrow(title=title, suffix=self.lblFilenameNew)
         self.boxMain.append(self.row_new_filename)
 
+    @staticmethod
+    def _success_or_error(widget, valid):
+        ctx = widget.get_style_context()
+        ctx.remove_class('warning')
+        if valid:
+            ctx.remove_class('error')
+            ctx.add_class('success')
+        else:
+            ctx.remove_class('success')
+            ctx.add_class('error')
+
+    @staticmethod
+    def _success_or_warning(widget, valid):
+        ctx = widget.get_style_context()
+        if valid:
+            ctx.remove_class('warning')
+            ctx.remove_class('error')
+            ctx.add_class('success')
+        else:
+            ctx.remove_class('error')
+            ctx.remove_class('success')
+            ctx.add_class('warning')
+
+    @staticmethod
+    def _dropdown_get_id(dropdown):
+        item = dropdown.get_selected_item()
+        return item.id if item is not None else 'Any'
+
     def _on_changed_entry(self, *args):
-        def success_or_error(widget, valid):
-            if valid:
-                widget.get_style_context().remove_class(class_name='warning')
-                widget.get_style_context().remove_class(class_name='error')
-                widget.get_style_context().add_class(class_name='success')
-            else:
-                widget.get_style_context().remove_class(class_name='warning')
-                widget.get_style_context().remove_class(class_name='success')
-                widget.get_style_context().add_class(class_name='error')
-
-        def success_or_warning(widget, valid):
-            if valid:
-                widget.get_style_context().remove_class(class_name='warning')
-                widget.get_style_context().remove_class(class_name='error')
-                widget.get_style_context().add_class(class_name='success')
-            else:
-                widget.get_style_context().remove_class(class_name='error')
-                widget.get_style_context().remove_class(class_name='success')
-                widget.get_style_context().add_class(class_name='warning')
-
-        def dropdown_get_selected_item(dropdown):
-            try:
-                item = dropdown.get_selected_item().id
-            except AttributeError:
-                item = 'Any'
-            return item
-
         try:
-            fields = []
             adate = self.entry_date.get_text()
-            acountry = dropdown_get_selected_item(self.dpdCountry)
-            agroup = dropdown_get_selected_item(self.dpdGroup)
-            asentby = dropdown_get_selected_item(self.dpdSentBy)
-            apurpose = dropdown_get_selected_item(self.dpdPurpose)
+            acountry = self._dropdown_get_id(self.dpdCountry)
+            agroup = self._dropdown_get_id(self.dpdGroup)
+            asentby = self._dropdown_get_id(self.dpdSentBy)
+            apurpose = self._dropdown_get_id(self.dpdPurpose)
             aconcept = self.util.valid_key(self.entry_concept.get_text().upper())
-            asentto = dropdown_get_selected_item(self.dpdSentTo)
+            asentto = self._dropdown_get_id(self.dpdSentTo)
             aextension = self.lblExt.get_text()
-            fields.append(adate)        # 0. Date
-            fields.append(acountry)     # 1. Country
-            fields.append(agroup)       # 2. Group
-            fields.append(asentby)       # 4. SentBy
-            fields.append(apurpose)     # 5. Purpose
-            fields.append(aconcept)     # 6. Concept
-            fields.append(asentto)       # 7. SentTo
-            self.result = f"{'-'.join(fields)}.{aextension}"
+
+            self.result = f"{adate}-{acountry}-{agroup}-{asentby}-{apurpose}-{aconcept}-{asentto}.{aextension}"
             self.lblFilenameNew.set_markup(self.result)
             self.lblFilenameNew.set_tooltip_text(self.result)
 
-            sentby = self.app.get_config('SentBy')
-            sentto = self.app.get_config('SentTo')
-            countries = self.app.get_config('Country')
-            groups = self.app.get_config('Group')
-            purposes = self.app.get_config('Purpose')
             v_date = self.validate_date(adate)
-            v_group = groups.exists_used(agroup)
-            v_cty = countries.exists_used(acountry)
-            v_sentby = sentby.exists_used(asentby)
-            v_purp = purposes.exists_used(apurpose)
+            v_group = self._cfg_group.exists_used(agroup)
+            v_cty = self._cfg_country.exists_used(acountry)
+            v_sentby = self._cfg_sentby.exists_used(asentby)
+            v_purp = self._cfg_purpose.exists_used(apurpose)
             v_cnpt = len(aconcept) > 0
-            v_sentto = sentto.exists_used(asentto)
+            v_sentto = self._cfg_sentto.exists_used(asentto)
 
-            if v_group:
-                success_or_warning(self.rowGroup, groups.exists_used(agroup))
-            else:
-                success_or_error(self.rowGroup, v_group)
-
-            if v_purp:
-                success_or_warning(self.rowPurpose, purposes.exists_used(apurpose))
-            else:
-                success_or_error(self.rowPurpose, v_purp)
-
-            success_or_error(self.rowDate, v_date)
-            success_or_error(self.rowCountry, v_cty)
-            success_or_error(self.rowSentBy, v_sentby)
-            success_or_error(self.rowConcept, v_cnpt)
-            success_or_error(self.rowSentTo, v_sentto)
+            self._success_or_error(self.rowDate, v_date)
+            self._success_or_error(self.rowCountry, v_cty)
+            self._success_or_warning(self.rowGroup, v_group)
+            self._success_or_error(self.rowSentBy, v_sentby)
+            self._success_or_warning(self.rowPurpose, v_purp)
+            self._success_or_error(self.rowConcept, v_cnpt)
+            self._success_or_error(self.rowSentTo, v_sentto)
         except Exception as error:
             self.log.error(error)
             self.result = ''
             raise
 
     def validate_date(self, sdate: str) -> bool:
+        if sdate == self._last_date_str:
+            return self._last_date_valid
         try:
             adate = datetime.strptime(sdate, '%Y%m%d')
             iso8601 = f"{sdate}T00:00:00Z"
             self.calendar.select_day(GLib.DateTime.new_from_iso8601(iso8601))
             self.label_date.set_markup(adate.strftime("%A, %B %d %Y"))
+            self._last_date_str = sdate
+            self._last_date_valid = True
             return True
         except Exception:
+            self._last_date_str = sdate
+            self._last_date_valid = False
             return False
 
     def get_filepath_source(self) -> str:

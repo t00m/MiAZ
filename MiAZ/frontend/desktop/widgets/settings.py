@@ -22,7 +22,7 @@ from MiAZ.frontend.desktop.widgets.configview import MiAZPeopleSentTo
 from MiAZ.frontend.desktop.widgets.configview import MiAZRepositories
 from MiAZ.frontend.desktop.widgets.configview import MiAZPlugins
 from MiAZ.frontend.desktop.widgets.window import MiAZCustomWindow
-from MiAZ.frontend.desktop.widgets.pluginuimanager import MiAZPluginUIManager
+# ~ from MiAZ.frontend.desktop.widgets.pluginuimanager import MiAZPluginUIManager
 
 Configview = {}
 Configview['Country'] = MiAZCountries
@@ -128,37 +128,6 @@ class MiAZAppSettings(Adw.PreferencesDialog):
         btnManageRepos.set_valign(Gtk.Align.CENTER)
         row.add_prefix(btnManageRepos)
 
-        ## Group plugins
-        group = Adw.PreferencesGroup()
-        group.set_title(_('Plugins'))
-        # ~ FIXME: Add plugins back revamped.
-        page.add(group)
-
-        ### Row Plugins
-        #### Manage plugins
-        row = Adw.ActionRow(title=_('Manage plugins'))
-        group.add(row)
-        button = self.factory.create_button(icon_name='io.github.t00m.MiAZ-res-plugins', callback=self._on_manage_plugins, tooltip="Manage plugins")
-        button.set_valign(Gtk.Align.CENTER)
-        row.add_prefix(button)
-
-    def _on_manage_plugins(self, *args):
-        srvdlg = self.app.get_service('dialogs')
-        window = self.app.get_widget('window')
-        widget = MiAZPluginUIManager(self.app)
-        dialog = srvdlg.show_noop(title=_('Plugin Manager'), body='', widget=widget, width=800, height=600)
-
-        dialog.present(self)
-
-    def _build_ui_page_plugins(self):
-        # Plugins page
-        group = self.app.add_widget('dialog-settings-plugins', Adw.PreferencesGroup())
-        page_title = _("Plugins")
-        page_icon = "io.github.t00m.MiAZ-res-plugins"
-        page = self.app.add_widget('dialog-settings-page-plugins', Adw.PreferencesPage(title=page_title, icon_name=page_icon))
-        self.add(page)
-        page.add(group)
-
     def _create_widget_for_repositories(self):
         box = self.factory.create_box_vertical(hexpand=True, vexpand=True)
         configview = MiAZRepositories(self.app)
@@ -175,7 +144,6 @@ class MiAZAppSettings(Adw.PreferencesDialog):
         Then, the  user is asked if enabled repo should be the default one.
         If yes, the app is restarted.
         """
-        # ~ dd_repo = self.app.get_widget('window-settings-dropdown-repository-active')
         repo = dropdown.get_selected_item()
         if repo is None:
             return
@@ -197,7 +165,6 @@ class MiAZAppSettings(Adw.PreferencesDialog):
         if response == 'apply':
             config['App'].set('current', repo.id)
             self.log.debug(_('Repository %s enabled' % repo.id))
-            # ~ srvdlg.show_info("Repostory management", body="Repository {repo.id} switched.\nApplication will be restarted now.", parent=dialog)
             actions = self.app.get_service('actions')
             actions.application_restart()
         else:
@@ -248,7 +215,6 @@ class MiAZRepoSettings(MiAZCustomWindow):
         repo_id = appconf.get('current').replace('_', ' ')
         self.title = _('Settings for repository') + ' ' + repo_id
         super().__init__(app, self.name, self.title, **kwargs)
-        # ~ self.connect('notify::visible', self.update)
 
     def _build_ui(self):
         self.set_default_size(1024, 728)
@@ -287,7 +253,6 @@ class MiAZRepoSettings(MiAZCustomWindow):
             wdgLabel.set_hexpand(True)
             return page, wdgLabel
 
-        # FIXME: User plugins disabled temporary
         for item_type in [Country, Group, Purpose, SentBy, SentTo, Plugin]:
             page, label = create_tab(item_type)
             notebook.append_page(page, label)
@@ -298,7 +263,6 @@ class MiAZRepoSettings(MiAZCustomWindow):
         title = f"Settings for repository {repo_id}"
         self.set_title(title)
 
-        # FIXME: User plugins disabled temporary
         for item_type in [Country, Group, Purpose, SentBy, SentTo, Plugin]:
             i_title = item_type.__title__
             widget_title = f"configview-{i_title}"
@@ -308,6 +272,3 @@ class MiAZRepoSettings(MiAZCustomWindow):
                 continue
             configview.update_config()
             configview.update_views()
-        # ~ self.log.debug("Repository UI updated according to current settings")
-
-

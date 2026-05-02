@@ -238,9 +238,7 @@ class MiAZWorkspace(Gtk.Box):
             dd = dropdowns[i_type]
             model = dd.get_model()
             for i in range(model.get_n_items()):
-                self.log.error(f"key {model.get_item(i)} in position {i}")
                 if model.get_item(i).id == 'All-All':
-                    self.log.error(f"Found 'All-All' key in position {i}")
                     dd.set_selected(i)
                     break
 
