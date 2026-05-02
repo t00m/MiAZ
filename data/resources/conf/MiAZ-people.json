@@ -1,1 +1,10 @@
-{"NBY": "Nobody", "EBY": "Everybody", "FAM": "Family", "OWN": "Owner(s)", "CHD": "Children", "PRT": "Parents", "OTH": "Others", "SCH": "School"}
+{
+    "CHD": "Children",
+    "EBY": "Everybody",
+    "FAM": "Family",
+    "NBY": "Nobody",
+    "OTH": "Others",
+    "OWN": "Owner(s)",
+    "PRT": "Parents",
+    "SCH": "School"
+}
