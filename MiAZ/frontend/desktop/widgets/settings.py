@@ -128,19 +128,19 @@ class MiAZAppSettings(Adw.PreferencesDialog):
         btnManageRepos.set_valign(Gtk.Align.CENTER)
         row.add_prefix(btnManageRepos)
 
-        ## Group plugins
-        group = Adw.PreferencesGroup()
-        group.set_title(_('Plugins'))
+        # ~ ## Group plugins
+        # ~ group = Adw.PreferencesGroup()
+        # ~ group.set_title(_('Plugins'))
         # ~ FIXME: Add plugins back revamped.
-        page.add(group)
+        # ~ page.add(group)
 
-        ### Row Plugins
-        #### Manage plugins
-        row = Adw.ActionRow(title=_('Manage plugins'))
-        group.add(row)
-        button = self.factory.create_button(icon_name='io.github.t00m.MiAZ-res-plugins', callback=self._on_manage_plugins, tooltip="Manage plugins")
-        button.set_valign(Gtk.Align.CENTER)
-        row.add_prefix(button)
+        # ~ ### Row Plugins
+        # ~ #### Manage plugins
+        # ~ row = Adw.ActionRow(title=_('Manage plugins'))
+        # ~ group.add(row)
+        # ~ button = self.factory.create_button(icon_name='io.github.t00m.MiAZ-res-plugins', callback=self._on_manage_plugins, tooltip="Manage plugins")
+        # ~ button.set_valign(Gtk.Align.CENTER)
+        # ~ row.add_prefix(button)
 
     def _on_manage_plugins(self, *args):
         srvdlg = self.app.get_service('dialogs')
