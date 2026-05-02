@@ -54,7 +54,7 @@ class MiAZFactory:
         self.log = MiAZLog('MiAZ.Factory')
         self.icons = self.app.get_service('icons')
 
-    def get_children(obj: Gtk.Widget) -> list[Gtk.Widget]:
+    def get_children(self, obj: Gtk.Widget) -> list[Gtk.Widget]:
         """
         Get list of widget's children
         """
