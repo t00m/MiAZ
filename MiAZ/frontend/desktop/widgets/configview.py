@@ -455,7 +455,6 @@ class MiAZPlugins(MiAZConfigView):
 
         if len(set_cats) > 0:
             self.dpdCats.set_selected(0)
-            self.log.debug(f"Select first category")
             self._on_plugin_category_selected()
 
     def _update_view_available(self):
