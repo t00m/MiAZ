@@ -6,10 +6,18 @@
   <name>MiAZ</name>
   <summary>Personal Document Organizer</summary>
   <description>
-    <p>Sometimes, it is quite a challenge to keep the documentation of the family, schools, administration, billing, etc... well organized in terms of classification, disk space, time to do it and effort.</p>
-    <p>MiAZ app aims to solve this problem: with minimal effort, it is possible to have all paperwork organized.</p>
-    <p>A little effort means: scan letters, donwload attachments from emails, place it in the right MiAZ repository directory, and edit the filename according to a set of fixed rules, like choosing the country, date, group, purpose, sender and receiver.</p>
-    <p>MiAZ helps you comply with these rules effortlessly.</p>
+    <p>Keeping family records, school files, invoices, and administrative paperwork organised is a constant challenge — especially when documents come in from many different countries and institutions.</p>
+    <p>MiAZ solves this with a simple, consistent file-naming convention of seven fields: date, country, group, sender, purpose, concept, and recipient. Scan a letter, download an email attachment, drop it into your MiAZ repository, and the app guides you through naming it correctly.</p>
+    <p>Key features:</p>
+    <ul>
+      <li>Multiple independent document repositories</li>
+      <li>No database — the directory is the database</li>
+      <li>Fast workspace that handles thousands of documents</li>
+      <li>Powerful sidebar with filters for every field</li>
+      <li>Single and mass renaming of documents</li>
+      <li>Project management: group related documents into named projects</li>
+      <li>Plugin system for extending functionality</li>
+    </ul>
   </description>
   <categories>
     <category>Office</category>
@@ -17,51 +25,66 @@
     <category>GNOME</category>
   </categories>
   <developer id="io.github.t00m">
-      <name>Tomás Vírseda</name>
+    <name>Tomás Vírseda</name>
   </developer>
   <url type="homepage">https://github.com/t00m/MiAZ</url>
   <url type="bugtracker">https://github.com/t00m/MiAZ/issues</url>
   <url type="vcs-browser">https://github.com/t00m/MiAZ</url>
-  <update_contact>tomas.virseda@gmail.com</update_contact>
+  <update_contact>tomasvirseda_AT_gmail.com</update_contact>
   <content_rating type="oars-1.1" />
   <launchable type="desktop-id">io.github.t00m.MiAZ.desktop</launchable>
   <translation type="gettext">miaz</translation>
   <requires>
     <internet>offline-only</internet>
   </requires>
-  <provides>
-    <binary>miaz</binary>
-    <python3>miaz</python3>
-  </provides>
+  <recommends>
+    <control>keyboard</control>
+    <control>pointing</control>
+  </recommends>
   <branding>
     <color type="primary" scheme_preference="light">#a9a9da</color>
     <color type="primary" scheme_preference="dark">#45457c</color>
   </branding>
-  <translation type="gettext">miaz</translation>
-  <recommends>
-    <control>keyboard</control>
-    <control>pointing</control>
-    <internet>always</internet>
-  </recommends>
   <screenshots>
     <screenshot type="default">
-      <image type="source">https://raw.githubusercontent.com/t00m/miaz/dev/data/docs/screenshots/MiAZ-About.png</image>
-      <caption>MiAZ about dialog</caption>
+      <image type="source">https://raw.githubusercontent.com/t00m/MiAZ/main/data/docs/screenshots/MiAZ-Worskpace.png</image>
+      <caption>Main workspace showing the document list and sidebar filters</caption>
     </screenshot>
-    <screenshot type="default">
-      <image type="source">https://raw.githubusercontent.com/t00m/miaz/dev/data/docs/screenshots/MiAZ-Workspace-filters.png</image>
+    <screenshot>
+      <image type="source">https://raw.githubusercontent.com/t00m/MiAZ/main/data/docs/screenshots/MiAZ-Workspace-filters.png</image>
       <caption>Filter and search capabilities</caption>
     </screenshot>
-    <screenshot type="default">
-      <image type="source">https://raw.githubusercontent.com/t00m/miaz/dev/data/docs/screenshots/MiAZ-repository-settings.png</image>
+    <screenshot>
+      <image type="source">https://raw.githubusercontent.com/t00m/MiAZ/main/data/docs/screenshots/MiAZ-Workspace-menu.png</image>
+      <caption>Document actions menu</caption>
+    </screenshot>
+    <screenshot>
+      <image type="source">https://raw.githubusercontent.com/t00m/MiAZ/main/data/docs/screenshots/MiAZ-repository-settings.png</image>
       <caption>Repository settings</caption>
     </screenshot>
-    <screenshot type="default">
-      <image type="source">https://raw.githubusercontent.com/t00m/miaz/dev/data/docs/screenshots/MiAZ-repository-plugins.png</image>
+    <screenshot>
+      <image type="source">https://raw.githubusercontent.com/t00m/MiAZ/main/data/docs/screenshots/MiAZ-repository-plugins.png</image>
       <caption>Manage repository plugins</caption>
+    </screenshot>
+    <screenshot>
+      <image type="source">https://raw.githubusercontent.com/t00m/MiAZ/main/data/docs/screenshots/MiAZ-About.png</image>
+      <caption>About MiAZ</caption>
     </screenshot>
   </screenshots>
   <releases>
+    <release version="0.1.25" date="2025-05-02" urgency="medium">
+      <description>
+        <p>Sidebar redesign, unified plugin system, and startup fixes.</p>
+        <ul>
+          <li>Sidebar rebuilt with Adw.Sidebar — icon-only filter rows and resizable pane</li>
+          <li>Plugin system unified: no more system/user distinction</li>
+          <li>Plugin sidebar filters now show the plugin icon</li>
+          <li>Review button turns red when pending documents exist</li>
+          <li>Eliminated spurious workspace updates on startup</li>
+          <li>Dropdowns now show "Any country", "Any group", etc.</li>
+        </ul>
+      </description>
+    </release>
     <release version="0.1.8" date="2025-07-21" urgency="low" />
     <release version="0.1.7" date="2025-03-22" urgency="low" />
     <release version="0.0.48" date="2024-07-12" urgency="low" />
