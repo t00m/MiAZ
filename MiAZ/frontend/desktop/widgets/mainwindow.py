@@ -8,6 +8,7 @@ from gettext import gettext as _
 
 from gi.repository import Adw
 from gi.repository import Gio
+from gi.repository import GLib
 from gi.repository import Gtk
 
 from MiAZ.backend.log import MiAZLog
@@ -94,6 +95,8 @@ class MiAZMainWindow(Gtk.Box):
         plugin_system = self.app.get_service('plugin-system')
         if plugin_system is not None:
             plugin_system.connect('plugins-updated', self._on_plugins_updated)
+        self._footer_menu_appended_to = None
+        self.app.connect('application-started', self._on_application_started)
 
     def _setup_headerbar_left(self):
         factory = self.app.get_service('factory')
@@ -174,6 +177,16 @@ class MiAZMainWindow(Gtk.Box):
             widget_workspace.connect('workspace-view-updated', self._on_workspace_menu_update)
         return widget_workspace
 
+    def _on_application_started(self, *args):
+        GLib.idle_add(self._append_footer_menu_deferred)
+
+    def _append_footer_menu_deferred(self):
+        menu = self.app.get_widget('workspace-menu-selection')
+        if menu is not None and menu is not self._footer_menu_appended_to:
+            self._append_repo_management_section(menu)
+            self._footer_menu_appended_to = menu
+        return GLib.SOURCE_REMOVE
+
     def _on_plugins_updated(self, *args):
         """Rebuild workspace-menu-selection whenever plugins are loaded or unloaded."""
         workspace = self.app.get_widget('workspace')
@@ -217,6 +230,7 @@ class MiAZMainWindow(Gtk.Box):
                     self.log.error(f"Error rebuilding menu for plugin {plugin_name}: {error}")
 
         self._append_repo_management_section(new_main_menu)
+        self._footer_menu_appended_to = new_main_menu
 
     def _on_workspace_menu_update(self, *args):
         stack = self.app.get_widget('stack')
@@ -280,7 +294,6 @@ class MiAZMainWindow(Gtk.Box):
     def _setup_menu_selection(self):
         """Create workspace menu"""
         menu = self.app.add_widget('workspace-menu-selection', Gio.Menu.new())
-        self._append_repo_management_section(menu)
         return menu
 
     def _append_repo_management_section(self, menu):
