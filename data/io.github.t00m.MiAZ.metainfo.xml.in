@@ -46,13 +46,9 @@
     <color type="primary" scheme_preference="dark">#45457c</color>
   </branding>
   <screenshots>
-    <screenshot type="default">
-      <image type="source">https://raw.githubusercontent.com/t00m/MiAZ/main/data/docs/screenshots/MiAZ-Worskpace.png</image>
-      <caption>Main workspace showing the document list and sidebar filters</caption>
-    </screenshot>
     <screenshot>
-      <image type="source">https://raw.githubusercontent.com/t00m/MiAZ/main/data/docs/screenshots/MiAZ-Workspace-filters.png</image>
-      <caption>Filter and search capabilities</caption>
+      <image type="default">https://raw.githubusercontent.com/t00m/MiAZ/main/data/docs/screenshots/MiAZ-Workspace-filters.png</image>
+      <caption>Main workspace displaying the document list and sidebar filters in action</caption>
     </screenshot>
     <screenshot>
       <image type="source">https://raw.githubusercontent.com/t00m/MiAZ/main/data/docs/screenshots/MiAZ-Workspace-menu.png</image>
