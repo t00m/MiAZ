@@ -106,8 +106,10 @@ class MiAZAddDirectoryPlugin(MiAZExtension):
                 target = os.path.join(self.repository.docs, btarget)
                 self.util.filename_import(filepath, target)
         finally:
+            workspace = self.app.get_widget('workspace')
             GLib.idle_add(watcher.set_active, True)
             GLib.idle_add(self.app.set_status, MiAZStatus.RUNNING)
+            GLib.idle_add(workspace.update)
 
     def update_progress(self, fraction, text):
         self.log.info(f"{fraction} {text}")

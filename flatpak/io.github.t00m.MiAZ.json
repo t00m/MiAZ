@@ -9,7 +9,9 @@
         "--device=dri",
         "--socket=fallback-x11",
         "--socket=wayland",
-        "--filesystem=home"
+        "--filesystem=home",
+        "--talk-name=org.freedesktop.Notifications",
+        "--talk-name=org.freedesktop.Flatpak"
     ],
     "cleanup" : [
         "/include",

@@ -1,0 +1,31 @@
+Source: miaz
+Section: utils
+Priority: optional
+Maintainer: Tomás Vírseda <tomasvirseda@gmail.com>
+Build-Depends: debhelper-compat (= 13),
+               meson (>= 1.5.1),
+               ninja-build,
+               python3,
+               gettext,
+               desktop-file-utils,
+               appstream-util
+Standards-Version: 4.7.0
+Homepage: https://github.com/t00m/MiAZ
+Rules-Requires-Root: no
+
+Package: miaz
+Architecture: all
+Depends: ${misc:Depends},
+         python3 (>= 3.9),
+         python3-gi,
+         python3-gi-cairo,
+         gir1.2-gtk-4.0,
+         gir1.2-adw-1,
+         libgtk-4-1,
+         libadwaita-1-0
+Description: Personal Document Organizer
+ MiAZ is a GTK4/Libadwaita desktop application that organises personal
+ documents by enforcing a strict 7-field filename convention:
+ {date}-{country}-{group}-{sentby}-{purpose}-{concept}-{sentto}
+ .
+ The directory is the database — no external database required.
