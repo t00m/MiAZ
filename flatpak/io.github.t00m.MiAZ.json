@@ -85,8 +85,8 @@
                 {
                     "type" : "git",
                     "url" : "https://github.com/t00m/MiAZ.git",
-                    "tag": "v0.1.25",
-                    "commit": "b4fa0756ff3227d53121905c479b38f73a00a86a"
+                    "tag": "v0.1.25-fix1",
+                    "commit": "3f331ab9d646b96127ab2bc32d4094bd4b208f26"
                 }
             ]
         }
