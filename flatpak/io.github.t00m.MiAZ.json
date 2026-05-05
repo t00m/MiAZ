@@ -8,10 +8,7 @@
         "--share=ipc",
         "--device=dri",
         "--socket=fallback-x11",
-        "--socket=wayland",
-        "--filesystem=home",
-        "--talk-name=org.freedesktop.Notifications",
-        "--talk-name=org.freedesktop.Flatpak"
+        "--socket=wayland"
     ],
     "cleanup" : [
         "/include",
@@ -88,7 +85,8 @@
                 {
                     "type" : "git",
                     "url" : "https://github.com/t00m/MiAZ.git",
-                    "branch" : "main"
+                    "tag": "v0.1.25",
+                    "commit": "b4fa0756ff3227d53121905c479b38f73a00a86a"
                 }
             ]
         }

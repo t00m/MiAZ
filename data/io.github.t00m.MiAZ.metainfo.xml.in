@@ -46,8 +46,8 @@
     <color type="primary" scheme_preference="dark">#45457c</color>
   </branding>
   <screenshots>
-    <screenshot>
-      <image type="default">https://raw.githubusercontent.com/t00m/MiAZ/main/data/docs/screenshots/MiAZ-Workspace-filters.png</image>
+    <screenshot type="default">
+      <image type="source">https://raw.githubusercontent.com/t00m/MiAZ/main/data/docs/screenshots/MiAZ-Workspace-filters.png</image>
       <caption>Main workspace displaying the document list and sidebar filters in action</caption>
     </screenshot>
     <screenshot>
