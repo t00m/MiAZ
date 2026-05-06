@@ -60,12 +60,13 @@ mkdir -p "$OUTPUT_DIR"
 SPEC_FILE="$OUTPUT_DIR/${NAME}.spec"
 log "Writing PyInstaller spec: $SPEC_FILE"
 
-python3 - "$REPO_ROOT" "$OUTPUT_DIR" "$VERSION" <<'PYEOF'
+python3 - "$REPO_ROOT" "$OUTPUT_DIR" "$VERSION" "$APP_NAME" <<'PYEOF'
 import sys, os
 
-root    = sys.argv[1]
-out_dir = sys.argv[2]
-version = sys.argv[3]
+root     = sys.argv[1]
+out_dir  = sys.argv[2]
+version  = sys.argv[3]
+app_name = sys.argv[4]
 
 # Locate the best available icon
 icon = None
@@ -82,9 +83,9 @@ icon_line = f"    icon={icon!r}," if icon else ""
 # Collect data dirs that actually exist
 datas = []
 for src, dest in [
-    (os.path.join(root, 'data'),                'data'),
-    (os.path.join(root, 'MiAZ', 'plugins'),    'MiAZ/plugins'),
-    (os.path.join(root, 'po'),                  'po'),
+    (os.path.join(root, 'data'),                          'data'),
+    (os.path.join(root, 'data', 'resources', 'plugins'), 'data/resources/plugins'),
+    (os.path.join(root, 'po'),                            'po'),
 ]:
     if os.path.exists(src):
         datas.append(f"        ({src!r}, {dest!r}),")
@@ -99,7 +100,7 @@ from pathlib import Path
 ROOT = Path({root!r})
 
 a = Analysis(
-    [str(ROOT / 'MiAZ' / 'main.py')],
+    [str(ROOT / 'MiAZ' / 'miaz.py')],
     pathex=[str(ROOT)],
     binaries=[],
     datas=[
@@ -115,11 +116,12 @@ a = Analysis(
         'gi.repository.Pango',
         'gi.repository.cairo',
         'MiAZ',
-        'MiAZ.main',
-        'MiAZ.app',
+        'MiAZ.miaz',
         'MiAZ.backend',
         'MiAZ.frontend',
-        'MiAZ.plugins',
+        'MiAZ.frontend.desktop',
+        'MiAZ.frontend.desktop.widgets',
+        'MiAZ.frontend.console',
     ],
     hookspath=[],
     runtime_hooks=[],
@@ -134,7 +136,7 @@ exe = EXE(
     a.scripts,
     [],
     exclude_binaries=True,
-    name='{APP_NAME}',
+    name='{app_name}',
     debug=False,
     strip=False,
     upx=True,
@@ -150,7 +152,7 @@ coll = COLLECT(
     strip=False,
     upx=True,
     upx_exclude=[],
-    name='{APP_NAME}',
+    name='{app_name}',
 )
 """
 
@@ -167,7 +169,13 @@ pyinstaller "$SPEC_FILE" \
     --workpath "$OUTPUT_DIR/build" \
     --noconfirm
 
-EXE_PATH="$OUTPUT_DIR/dist/$APP_NAME/$APP_NAME.exe"
+# On Windows/MSYS2 PyInstaller produces APP_NAME.exe; on Linux it has no extension.
+if [[ "$(uname -s)" =~ ^(MSYS|MINGW|CYGWIN) ]]; then
+    EXE_EXT=".exe"
+else
+    EXE_EXT=""
+fi
+EXE_PATH="$OUTPUT_DIR/dist/$APP_NAME/$APP_NAME$EXE_EXT"
 [[ -f "$EXE_PATH" ]] || die "PyInstaller finished but $EXE_PATH not found."
 log "Executable: $EXE_PATH"
 
