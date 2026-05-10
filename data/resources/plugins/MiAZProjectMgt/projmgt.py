@@ -66,7 +66,8 @@ class MiAZProject(GObject.GObject):
         self.log = MiAZLog('MiAZ.Projects')
         self.app = app
         repository = self.app.get_service('repo')
-        util = self.app.get_service('util')
+        self.util = self.app.get_service('util')
+        self.srvdlg = self.app.get_service('dialogs')
         repo_dir_conf = repository.get('dir_conf')
         self.cnfprj = os.path.join(repo_dir_conf, 'projects.json')
         self.projects = {}
@@ -75,8 +76,8 @@ class MiAZProject(GObject.GObject):
             self.log.debug("Created new config file for projects")
         self.projects = self.load()
         self.check()
-        util.connect('filename-renamed', self._on_filename_renamed)
-        util.connect('filename-deleted', self._on_filename_deleted)
+        self.util.connect('filename-renamed', self._on_filename_renamed)
+        self.util.connect('filename-deleted', self._on_filename_deleted)
 
     def check(self):
         repository = self.app.get_service('repo')
@@ -88,8 +89,11 @@ class MiAZProject(GObject.GObject):
                     to_delete.append((doc, project))
         for doc, project in to_delete:
             self.remove(project, doc)
-            self.log.warning(f"Document '{doc}' not found; removed from project '{project}'")
-        self.log.debug("Projects consistency checked")
+            message = f"Document '{doc}' not found; removed from project '{project}'"
+            self.log.warning(message)
+            self.srvdlg.show_toast(message)
+        self.log.debug("Projects consistency successfully checked")
+        self.srvdlg.show_toast("Projects consistency successfully checked")
 
     def add(self, project: str, doc: str):
         try:
@@ -99,7 +103,9 @@ class MiAZProject(GObject.GObject):
                 self.projects[project] = docs
         except KeyError:
             self.projects[project] = [doc]
-        self.log.debug(f"Added '{doc}' to project '{project}'")
+        message = f"Added '{doc}' to project '{project}'"
+        self.log.debug(message)
+        self.srvdlg.show_toast(message)
 
     def add_batch(self, project: str, docs: list) -> None:
         for doc in docs:
@@ -115,7 +121,9 @@ class MiAZProject(GObject.GObject):
                     found = True
                     docs.remove(doc)
                     self.projects[prj] = docs
-                    self.log.debug(f"Removed '{doc}' from project '{prj}'")
+                    message = f"Removed '{doc}' from project '{prj}'"
+                    self.log.debug(message)
+                    self.srvdlg.show_toast(message)
         else:
             try:
                 docs = self.projects[project]
@@ -123,7 +131,9 @@ class MiAZProject(GObject.GObject):
                     found = True
                     docs.remove(doc)
                     self.projects[project] = docs
-                    self.log.debug(f"Removed '{doc}' from project '{project}'")
+                    message = f"Removed '{doc}' from project '{project}'"
+                    self.log.debug(message)
+                    self.srvdlg.show_toast(message)
             except KeyError:
                 self.log.warning(f"Project '{project}' doesn't exist")
         return found
@@ -157,29 +167,30 @@ class MiAZProject(GObject.GObject):
 
     def list_all(self):
         for project, docs in self.projects.items():
-            self.log.debug(f"Project: {project}")
             for doc in docs:
-                self.log.debug(f"\tDoc: {doc}")
+                self.log.debug(f"Project: {project} > Doc: {doc}")
 
     def save(self) -> None:
         util = self.app.get_service('util')
         util.json_save(self.cnfprj, self.projects)
 
     def load(self) -> dict:
-        util = self.app.get_service('util')
-        return util.json_load(self.cnfprj)
+        return self.util.json_load(self.cnfprj)
 
     def _on_filename_renamed(self, util, source, target):
         source = os.path.basename(source)
         target = os.path.basename(target)
-        for project in self.assigned_to(source):
-            self.remove(project, source)
+        projects = self.assigned_to(source)
+        for project in projects:
+            self._remove_nosave(project, source)
             self.add(project, target)
             self.log.debug(f"P[{project}]: {source} -> {target}")
+        if projects:
+            self.save()
 
     def _on_filename_deleted(self, util, target):
-        for filepath in target:
-            self.remove(project='', doc=os.path.basename(filepath))
+        docs = [os.path.basename(fp) for fp in target]
+        self.remove_batch('', docs)
 
 
 # Configuration
@@ -421,32 +432,23 @@ class MiAZProjectMgt(MiAZExtension):
             change = self._set_property_real(selected_documents, config_item.id)
             if change:
                 self.workspace.update()
-                self.log.debug(f"{i_title} {config_item.title} set to {len(selected_documents)} documents")
-                title = _('{i_title} management').format(i_title=i_title)
-                body = _('{i_title} {title} set to {count} documents').format(
-                    i_title=i_title, title=config_item.title, count=len(selected_documents))
-                self.srvdlg.show_toast(body)
 
     def _set_property_real(self, selected_documents, pid):
         if not selected_documents:
             return False
         self.srvprj.add_batch(pid, selected_documents)
-        self.log.debug(f"{i_title} for {len(selected_documents)} documents set to '{pid}'")
         return True
 
     def _unset_property(self, *args):
+        # FIXME: somehow the user should decide from which projects
         selected_documents = [item.id for item in self.workspace.get_selected_items()]
         self._unset_property_real(selected_documents)
-        title = _('{i_title} management').format(i_title=i_title)
-        body = _('Removed {i_confname} for selected documents').format(i_confname=i_confname)
-        self.srvdlg.show_toast(body)
 
     def _unset_property_real(self, selected_documents):
         if not selected_documents:
             return False
         self.srvprj.remove_batch('', selected_documents)
         self.workspace.update()
-        self.log.debug(f"{i_title} unset for {len(selected_documents)} documents")
         return True
 
     def project_view(self, *args):
@@ -456,7 +458,9 @@ class MiAZProjectMgt(MiAZExtension):
             docs = srvprj.docs_in_project(pid)
             items = [File(id=doc, title=doc) for doc in docs]
             cv.update(items)
-            self.log.debug(f"{len(docs)} documents in project {pid}")
+            message = f"{len(docs)} documents in project {pid}"
+            self.log.debug(message)
+            self.srvdlg.show_toast(message)
 
         frame = Gtk.Frame()
         cv = MiAZColumnViewDocuments(self.app)

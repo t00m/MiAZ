@@ -122,7 +122,7 @@ class MiAZDialog:
         dialog.get_style_context().add_class(class_name='success')
         return dialog
 
-    def show_toast(self, message: str, timeout: int = 5):
+    def show_toast(self, message: str, timeout: int = 3):
         overlay = self.app.get_widget('toast-overlay')
         if overlay is not None:
             toast = Adw.Toast(title=message)

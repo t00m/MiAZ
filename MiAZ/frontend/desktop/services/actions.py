@@ -336,12 +336,8 @@ class MiAZActions(GObject.GObject):
         items = workspace.get_selected_items()
         if len(items) == 0:
             srvdlg = self.app.get_service('dialogs')
-            if widget is None:
-                widget = self.app.get_widget('workspace')
-            parent = widget.get_root()
-            body = _('You must select at least one document')
-            title = _('Action ignored')
-            srvdlg.show_error(title=title, body=body, parent=parent)
+            title = _('Action ignored. You must select at least one document')
+            srvdlg.show_toast(message=title)
             stop = True
         return stop
 

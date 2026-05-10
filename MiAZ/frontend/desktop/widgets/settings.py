@@ -185,7 +185,7 @@ class MiAZAppSettings(Adw.PreferencesDialog):
             ## Unblock signal "dd_repo > notify::selected-item"
             dd_repo.handler_unblock(signal)
 
-            srvdlg.show_error(_('Repository management'), body=_('Action canceled. Repository not switched'), parent=dialog)
+            srvdlg.show_toast(_('Action canceled. Repository not switched'))
 
     def _on_manage_repositories(self, *args):
         widget = self._create_widget_for_repositories()

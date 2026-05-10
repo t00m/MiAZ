@@ -7,6 +7,7 @@
 import os
 from gettext import gettext as _
 
+from gi.repository import Gdk
 from gi.repository import Gtk
 from gi.repository import Pango
 
@@ -114,6 +115,28 @@ class MiAZColumnViewWorkspace(MiAZColumnView):
 
         # Default sorting by date
         self.cv.sort_by_column(self.column_date, Gtk.SortType.DESCENDING)
+
+        # Right-click context menu (reuses the top-bar plugins menu model)
+        self._context_popover = Gtk.PopoverMenu()
+        self._context_popover.set_parent(self.cv)
+        self._context_popover.set_has_arrow(False)
+        gesture_click = Gtk.GestureClick.new()
+        gesture_click.set_button(3)
+        gesture_click.connect('pressed', self._on_right_click)
+        self.cv.add_controller(gesture_click)
+
+    def _on_right_click(self, gesture, n_press, x, y):
+        menu_model = self.app.get_widget('workspace-menu-selection')
+        if menu_model is None:
+            return
+        self._context_popover.set_menu_model(menu_model)
+        rect = Gdk.Rectangle()
+        rect.x = int(x)
+        rect.y = int(y)
+        rect.width = 0
+        rect.height = 0
+        self._context_popover.set_pointing_to(rect)
+        self._context_popover.popup()
 
     def _on_factory_setup_subtitle(self, factory, list_item):
         box = ColLabel()
