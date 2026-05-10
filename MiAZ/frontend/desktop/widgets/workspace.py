@@ -67,9 +67,12 @@ class MiAZWorkspace(Gtk.Box):
         self._repo_switch_signals = {}
         self._finish_config_done = False
         self._clearing_filters = False
+        self._updating_dropdowns = False
+        self._filter_in_progress = False
+        self._dropdown_update_pending = False
         self._setup_workspace()
         self._setup_logic()
-        self.review = False
+        self._review = False
         self._was_pending = None
         self._cached_dropdowns = None
         self._cached_search_text = ''
@@ -225,7 +228,7 @@ class MiAZWorkspace(Gtk.Box):
 
     def show_pending_documents(self, *args):
         togglebutton = self.app.get_widget('workspace-togglebutton-pending-docs')
-        self.review = togglebutton.get_active()
+        self._review = togglebutton.get_active()
 
         # Clear filters
         sidebar = self.app.get_widget('sidebar')
@@ -234,7 +237,7 @@ class MiAZWorkspace(Gtk.Box):
         # Show all documents in review mode
         i_type = Date.__gtype_name__
         dropdowns = self.app.get_widget('ws-dropdowns')
-        if self.review:
+        if self._review:
             dd = dropdowns[i_type]
             model = dd.get_model()
             for i in range(model.get_n_items()):
@@ -399,6 +402,7 @@ class MiAZWorkspace(Gtk.Box):
         self._refresh_filter_cache()
         self.view.refilter()
         self.emit('workspace-view-filtered')
+        self._update_dropdowns_after_filter()
 
     def update(self, *args):
         """Update Workspace columnview"""
@@ -568,7 +572,7 @@ class MiAZWorkspace(Gtk.Box):
 
         if not show_pending:
             togglebutton.set_active(False)
-        self.review = togglebutton.get_active()
+        self._review = togglebutton.get_active()
 
         # Measure performance (end timestamp and result)
         de = datetime.now()
@@ -684,7 +688,7 @@ class MiAZWorkspace(Gtk.Box):
                 cd = True
                 ca = True
 
-        if self.review:
+        if self._review:
             show_item = not ca and c0 and c1 and c2 and c4 and c5 and c6
         else:
             show_item = ca and c0 and c1 and c2 and c4 and c5 and c6 and cd
@@ -702,25 +706,109 @@ class MiAZWorkspace(Gtk.Box):
         selection = self.view.get_selection()
         selection.connect('selection-changed', self._on_selection_changed)
 
+    def _update_dropdowns_after_filter(self):
+        """Rebuild the five field dropdowns to contain only values
+        present in the current workspace view"""
+        if self._clearing_filters or self._updating_dropdowns:
+            return
+
+        self._updating_dropdowns = True
+        try:
+            filter_model = self.view.filter_model
+            n = filter_model.get_n_items()
+
+            field_values = {
+                Country: {},
+                Group: {},
+                SentBy: {},
+                Purpose: {},
+                SentTo: {},
+            }
+
+            for i in range(n):
+                item = filter_model.get_item(i)
+                if item.country:
+                    field_values[Country][item.country] = item.country_dsc or item.country
+                if item.group:
+                    field_values[Group][item.group] = item.group_dsc or item.group
+                if item.sentby_id:
+                    field_values[SentBy][item.sentby_id] = item.sentby_dsc or item.sentby_id
+                if item.purpose:
+                    field_values[Purpose][item.purpose] = item.purpose_dsc or item.purpose
+                if item.sentto_id:
+                    field_values[SentTo][item.sentto_id] = item.sentto_dsc or item.sentto_id
+
+            dropdowns = self.app.get_widget('ws-dropdowns')
+            for item_type, values in field_values.items():
+                i_type = item_type.__gtype_name__
+                dropdown = dropdowns[i_type]
+                i_title = _(item_type.__title__)
+
+                selected_item = dropdown.get_selected_item()
+                selected_id = selected_item.id if selected_item else 'Any'
+
+                # Model chain: FilterListModel → SortListModel → ListStore
+                model_filter = dropdown.get_model()
+                model_sort = model_filter.get_model()
+                model = model_sort.get_model()
+
+                new_items = [
+                    item_type(id='Any', title=_('Any') + ' ' + i_title.lower()),
+                    item_type(id='None', title=_('None') + ' ' + i_title.lower()),
+                ]
+                for key in sorted(values.keys()):
+                    title = values[key]
+                    new_items.append(item_type(id=key, title=title if title else key))
+                model.splice(0, model.get_n_items(), new_items)
+
+                n_dd = model_filter.get_n_items()
+                reselected = False
+                for pos in range(n_dd):
+                    dd_item = model_filter.get_item(pos)
+                    if dd_item and dd_item.id == selected_id:
+                        dropdown.set_selected(pos)
+                        reselected = True
+                        break
+                if not reselected:
+                    dropdown.set_selected(0)
+        finally:
+            self._updating_dropdowns = False
+
+    def _idle_update_dropdowns(self):
+        self._dropdown_update_pending = False
+        # When a filter changes, update values of the others
+        self._update_dropdowns_after_filter()
+        return False
+
     def _on_filter_selected(self, *args):
-        if self._clearing_filters:
+        # Do nothing if filters are being updated
+        if self._clearing_filters or self._updating_dropdowns or self._filter_in_progress:
             return
 
         repository = self.app.get_service('repo')
 
+        # Do nothing if no repository is loaded
         if repository.conf is None:
             return
 
+        # Do nothing if MiAZ is busy updating workspace
         if self.app.get_status() == MiAZStatus.BUSY:
             return
 
-        if self.workspace_loaded:
-            self._refresh_filter_cache()
-            self.view.refilter()
-            model = self.view.cv.get_model()
-            self._num_selected_items = len(self.selected_items)
-            self._num_displayed_items = len(model)
-            self.emit('workspace-view-filtered')
+        self._filter_in_progress = True
+        try:
+            if self.workspace_loaded:
+                self._refresh_filter_cache()
+                self.view.refilter()
+                model = self.view.cv.get_model()
+                self._num_selected_items = len(self.selected_items)
+                self._num_displayed_items = len(model)
+                if not self._dropdown_update_pending:
+                    self._dropdown_update_pending = True
+                    GLib.idle_add(self._idle_update_dropdowns)
+                self.emit('workspace-view-filtered')
+        finally:
+            self._filter_in_progress = False
 
     def _on_selection_changed(self, selection, position, n_items):
         repository = self.app.get_service('repo')

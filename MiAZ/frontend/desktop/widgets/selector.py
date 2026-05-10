@@ -404,6 +404,8 @@ class MiAZSelector(Gtk.Box):
     def _on_item_used_add(self, *args):
         items_used = self.config.load_used()
         selected_item = self.viewAv.get_selected()
+        if selected_item is None:
+            return
         is_used = selected_item.id in items_used
         item_type = self.config.model
         i_title = item_type.__title__

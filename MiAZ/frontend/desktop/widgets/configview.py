@@ -204,63 +204,65 @@ class MiAZRepositories(MiAZConfigView):
         title = self.dialog_title
 
         dd_repo = self.app.get_widget('window-settings-dropdown-repository-active')
-        if dd_repo is not None:
-            signal = self.app.get_widget('signal-dd_repo')
+        signal = self.app.get_widget('signal-dd_repo') if dd_repo is not None else None
+        if dd_repo is not None and signal is not None:
             dd_repo.handler_block(signal)
-        items_used = self.config.load_used()
-        selected_item = self.viewAv.get_selected()
-        if selected_item is None:
-            return
+        try:
+            items_used = self.config.load_used()
+            selected_item = self.viewAv.get_selected()
+            if selected_item is None:
+                return
 
-        is_used = selected_item.id in items_used
-        item_type = self.config.model
-        i_title = item_type.__title__
-        if not is_used:
-            items_used[selected_item.id] = selected_item.title
-            self.config.save_used(items=items_used)
-            body = _('{title} {item} ready to be used').format(title=i_title, item=selected_item.id)
-            self.log.debug(body)
-        else:
-            body = f"{i_title} {selected_item.id} is already being used"
-            self.log.debug(body)
-        if dd_repo is not None:
-            dd_repo.handler_unblock(signal)
+            is_used = selected_item.id in items_used
+            item_type = self.config.model
+            i_title = item_type.__title__
+            if not is_used:
+                items_used[selected_item.id] = selected_item.title
+                self.config.save_used(items=items_used)
+                body = _('{title} {item} ready to be used').format(title=i_title, item=selected_item.id)
+                self.log.debug(body)
+            else:
+                body = f"{i_title} {selected_item.id} is already being used"
+                self.log.debug(body)
 
-        if len(self.config.load_used()) == 1:
-            config = self.app.get_config_dict()
-            config['App'].set('current', selected_item.id)
-            self.log.debug(f"Repository {selected_item.id} enabled")
-            workflow = self.app.get_service('workflow')
-            workflow.switch_start()
-            body=_('{title} {item} set as default').format(title=i_title, item=selected_item.id)
-            self.log.info(body)
-        srvdlg.show_toast(body)
+            if len(self.config.load_used()) == 1:
+                config = self.app.get_config_dict()
+                config['App'].set('current', selected_item.id)
+                self.log.debug(f"Repository {selected_item.id} enabled")
+                workflow = self.app.get_service('workflow')
+                workflow.switch_start()
+                body = _('{title} {item} set as default').format(title=i_title, item=selected_item.id)
+                self.log.info(body)
+            srvdlg.show_toast(body)
+        finally:
+            if dd_repo is not None and signal is not None:
+                dd_repo.handler_unblock(signal)
 
     def _on_item_used_remove(self, *args):
         # Trick to avoid restart app when repos are enabled/disabled
-        ## Block signal "dd_repo > notify::selected-item"
         dd_repo = self.app.get_widget('window-settings-dropdown-repository-active')
         signal = self.app.get_widget('signal-dd_repo')
         if signal is not None:
             dd_repo.handler_block(signal)
+        try:
+            items_available = self.config.load_available()
+            items_used = self.config.load_used()
+            selected_item = self.viewSl.get_selected()
+            if selected_item is None:
+                return
 
-        items_available = self.config.load_available()
-        items_used = self.config.load_used()
-        selected_item = self.viewSl.get_selected()
-        if selected_item is None:
-            return
-
-        item_type = self.config.model
-        i_title = item_type.__title__
-        items_available[selected_item.id] = selected_item.title
-        self.log.debug(f"{i_title} {selected_item.id} added back to the list of available items")
-        del items_used[selected_item.id]
-        self.log.debug(f"{i_title} {selected_item.id} removed from de list of used items")
-        self.config.save_used(items=items_used)
-        self.config.save_available(items=items_available)
-        ## Unblock signal "dd_repo > notify::selected-item"
-        if signal is not None:
-            dd_repo.handler_unblock(signal)
+            item_type = self.config.model
+            i_title = item_type.__title__
+            items_available[selected_item.id] = selected_item.title
+            self.log.debug(f"{i_title} {selected_item.id} added back to the list of available items")
+            del items_used[selected_item.id]
+            self.log.debug(f"{i_title} {selected_item.id} removed from de list of used items")
+            self.config.save_used(items=items_used)
+            self.config.save_available(items=items_available)
+            self.srvdlg.show_toast(f"{i_title} {selected_item.id} removed from de list of used items")
+        finally:
+            if signal is not None:
+                dd_repo.handler_unblock(signal)
 
 
 class MiAZCountries(MiAZConfigView):
