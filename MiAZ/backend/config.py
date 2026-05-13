@@ -173,38 +173,27 @@ class MiAZConfig(GObject.GObject):
         config = self.load(self.available)
         return key in config
 
-    def add_available_batch(self, keysvalues: list):
+    def _add_batch(self, filepath: str, keysvalues: list):
         util = self.app.get_service('util')
-        filepath = self.available
         items = self.load(filepath)
         saved = 0
         for key, value in keysvalues:
             if len(key.strip()) != 0:
-                # ~ if key not in items:
                 key = util.valid_key(key)
                 items[key] = value
                 saved += 1
         if saved > 0:
             self.save(filepath, items=items)
             self.log.info(f"{self.config_for} - Added {saved} keys to {filepath}")
+
+    def add_available_batch(self, keysvalues: list):
+        self._add_batch(self.available, keysvalues)
 
     def add_available(self, key: str, value: str = ''):
         self.add(self.available, key, value)
 
     def add_used_batch(self, keysvalues: list):
-        util = self.app.get_service('util')
-        filepath = self.used
-        items = self.load(filepath)
-        saved = 0
-        for key, value in keysvalues:
-            if len(key.strip()) != 0:
-                # ~ if key not in items:
-                key = util.valid_key(key)
-                items[key] = value
-                saved += 1
-        if saved > 0:
-            self.save(filepath, items=items)
-            self.log.info(f"{self.config_for} - Added {saved} keys to {filepath}")
+        self._add_batch(self.used, keysvalues)
 
     def add_used(self, key: str, value: str = '') -> bool:
         return self.add(self.used, key, value)
