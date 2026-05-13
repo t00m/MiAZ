@@ -20,7 +20,6 @@ MiAZ/backend/config.py
 MiAZ/backend/models.py
 MiAZ/backend/repository.py
 MiAZ/backend/util.py
-MiAZ/backend/webserver.py
 MiAZ/frontend/__init__.py
 MiAZ/frontend/console/__init__.py
 MiAZ/frontend/console/app.py

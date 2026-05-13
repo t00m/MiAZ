@@ -15,7 +15,6 @@ from gi.repository import Gtk
 
 from MiAZ.backend.log import MiAZLog
 from MiAZ.frontend.desktop.services.pluginsystem import MiAZPluginSystem
-from MiAZ.backend.webserver import MiAZHTTPServer
 from MiAZ.frontend.desktop.services.icm import MiAZIconManager
 from MiAZ.frontend.desktop.services.factory import MiAZFactory
 from MiAZ.frontend.desktop.services.actions import MiAZActions
@@ -104,8 +103,6 @@ class MiAZApp(Adw.Application):
         """
         workflow = self.get_service('workflow')
         self.set_service('plugin-system', MiAZPluginSystem(self))
-        webserver = self.set_service('webserver', MiAZHTTPServer(self.get_env()))
-        webserver.start()
         self._setup_ui()
         workflow.switch_start()
         self.log.debug("Executing MiAZ Desktop mode")
