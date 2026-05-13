@@ -9,6 +9,8 @@ import argparse
 import signal
 import locale
 import gettext
+import fcntl
+import atexit
 
 sys.path.insert(1, '@pkgdatadir@')
 
@@ -84,9 +86,35 @@ class MiAZ:
             for envvar in self.env[section]:
                 log.debug(f"\t\t{envvar} = {self.env[section][envvar]}")
         self.setup_environment()
+        self._acquire_lock()
         self.log = MiAZLog('MiAZ')
 
         self.log.info(f"{ENV['APP']['shortname']} v{ENV['APP']['VERSION']} - Start")
+
+    def _acquire_lock(self):
+        lock_dir = self.env['LPATH']['VAR']
+        os.makedirs(lock_dir, exist_ok=True)
+        lock_path = os.path.join(lock_dir, 'miaz.lock')
+        self._lock_fd = open(lock_path, 'w')
+        try:
+            fcntl.lockf(self._lock_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except IOError:
+            msg = f"MiAZ is already running. Exiting."
+            log.warning(msg)
+            sys.exit(1)
+        self._lock_fd.write(str(os.getpid()) + '\n')
+        self._lock_fd.flush()
+        atexit.register(self._release_lock)
+
+    def _release_lock(self):
+        try:
+            fcntl.lockf(self._lock_fd, fcntl.LOCK_UN)
+        except Exception:
+            pass
+        try:
+            self._lock_fd.close()
+        except Exception:
+            pass
 
     def setup_environment(self):
         """Set up MiAZ user environment."""
