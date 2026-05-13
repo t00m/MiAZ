@@ -170,7 +170,13 @@ class MiAZUtil(GObject.GObject):
         dot = filename.rfind('.')
         if dot > 0:
             filename = filename[:dot]
-        return filename.split('-')
+        parts = filename.split('-')
+        if len(parts) > 7:
+            # Excess parts most likely contain hyphens in Concept or SentTo;
+            # merge them back into the last field (SentTo)
+            parts[6] = '-'.join(parts[6:])
+            parts = parts[:7]
+        return parts
 
     def get_files(self, dirpath: str) -> []:
         """Get all files from a given directory."""
