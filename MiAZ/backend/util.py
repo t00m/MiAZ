@@ -421,6 +421,4 @@ class MiAZUtil(GObject.GObject):
 
         return result["success"], result["error"]
 
-def which(program):
-    """Check if a program is available in $PATH."""
-    return shutil.which(program)
+

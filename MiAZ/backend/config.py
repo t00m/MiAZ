@@ -43,14 +43,6 @@ class MiAZConfig(GObject.GObject):
     def __repr__(self):
         return __class__.__name__
 
-    def test(self):
-        self.log.debug(f"Test for Config {self}")
-        self.log.debug(f"\tModel: {self.model}")
-        self.log.debug(f"\tConfig for: {self.config_for}")
-        self.log.debug(f"\tConfig for used: {self.used}")
-        self.log.debug(f"\tConfig for available: {self.available}")
-
-
     def setup(self):
         if not os.path.exists(self.available):
             if self.default is not None:
