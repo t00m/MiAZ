@@ -28,7 +28,7 @@ from MiAZ.backend.log import MiAZLog
 class MiAZExtension(GObject.GObject):
     """Base class for all MiAZ plugins.
 
-    Inherits from GObject.GObject only — no Peas.ExtensionBase, no ExtensionSet.
+    Inherits from GObject.GObject only: no Peas.ExtensionBase, no ExtensionSet.
     Plugin instances are managed manually after engine.load_plugin() by
     scanning sys.modules for a MiAZExtension subclass.
     """
@@ -431,7 +431,7 @@ class MiAZPluginSystem(GObject.GObject):
             return False
 
     def is_plugin_loaded(self, plugin: Peas.PluginInfo) -> bool:
-        """True if the plugin is active — via libpeas or our direct-import fallback."""
+        """True if the plugin is active: via libpeas or our direct-import fallback."""
         return plugin.get_module_name() in self._extension_instances or plugin.is_loaded()
 
     def load_plugin(self, plugin: Peas.PluginInfo) -> bool:

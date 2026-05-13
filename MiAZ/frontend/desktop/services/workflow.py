@@ -102,7 +102,8 @@ class MiAZWorkflow(GObject.GObject):
                 break
         if missing is None:
             return False
-        self.log.info(f"Repository config '{missing}' has no used entries — opening settings")
+        message = f"Repository config for '{missing}' has no used entries: open settings dialog"
+        self.log.warning(msg)
         repo_settings = self.app.get_widget('settings-repo')
         if repo_settings is None:
             self.log.error("settings-repo widget not found; cannot auto-open repository settings")

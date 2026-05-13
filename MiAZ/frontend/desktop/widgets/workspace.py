@@ -532,7 +532,7 @@ class MiAZWorkspace(Gtk.Box):
         ENV['CACHE']['CONCEPTS']['ACTIVE'] = sorted(concepts_active)
         ENV['CACHE']['CONCEPTS']['INACTIVE'] = sorted(concepts_inactive)
 
-        # Update workspace view — refresh filter cache before handing off to the view
+        # Update workspace view 
         self._refresh_filter_cache()
         self._num_total_items = len(docs)
         GLib.idle_add(self._idle_view_update, items)
@@ -564,9 +564,9 @@ class MiAZWorkspace(Gtk.Box):
             style_ctx.add_class('flat')
         if show_pending != self._was_pending:
             if show_pending:
-                self.log.debug("Pending documents detected — showing Review button")
+                self.log.debug("Pending documents detected: showing Review button")
             else:
-                self.log.debug("No pending documents — hiding Review button")
+                self.log.debug("No pending documents: hiding Review button")
             self._was_pending = show_pending
         togglebutton.set_visible(show_pending)
 

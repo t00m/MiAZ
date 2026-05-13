@@ -199,9 +199,7 @@ class MiAZMainWindow(Gtk.Box):
         if not self.app.get_plugins_loaded():
             return
 
-        # Replace the menu model with a fresh Gio.Menu so that the Gtk.PopoverMenu
-        # fully re-initialises its internal GtkStack — calling remove_all() on the
-        # existing model leaves stale pages in the stack, causing duplicate-name warnings.
+        # Replace the menu model with a fresh Gio.Menu 
         new_main_menu = Gio.Menu.new()
         self.app.add_widget('workspace-menu-selection', new_main_menu)
         new_plugins_section = Gio.Menu.new()

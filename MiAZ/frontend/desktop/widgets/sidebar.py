@@ -101,7 +101,7 @@ class MiAZSidebar(Adw.Bin):
             title='',
             suffix=searchentry))
 
-        # Date dropdown — icon is res-date (not res-dates)
+        # Date dropdown 
         i_type = Date.__gtype_name__
         dd_date = factory.create_dropdown_generic(
             item_type=Date, ellipsize=False, enable_search=True)
