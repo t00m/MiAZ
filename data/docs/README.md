@@ -52,12 +52,24 @@ Fields are separated by hyphens. The date-first order means files sort chronolog
 
 ## Installation
 
-### Flatpak (recommended)
+### RPM (Fedora, RHEL, openSUSE)
+
+Download the `.rpm` package from the [latest release](https://github.com/t00m/MiAZ/releases) and install:
 
 ```bash
-flatpak install flathub io.github.t00m.MiAZ
-flatpak run io.github.t00m.MiAZ
+sudo dnf install ./miaz-*.rpm
 ```
+
+### DEB (Debian, Ubuntu, derivatives)
+
+Download the `.deb` package from the [latest release](https://github.com/t00m/MiAZ/releases) and install:
+
+```bash
+sudo dpkg -i ./miaz_*.deb
+sudo apt-get install -f   # resolve any missing dependencies
+```
+
+> **Flatpak is deprecated.** Because the application runs inside a sandbox, it does not have access to certain system resources and applications (e.g. scanner software), which negatively impacts the user experience.
 
 ### From source
 
