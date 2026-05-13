@@ -60,7 +60,6 @@ class MiAZApp(Adw.Application):
         repository.connect('repository-switched', workflow.switch_finish)
         self._env = None
         self.conf = None
-        self.app = None
 
     def get_status(self):
         """Return current app status.
@@ -103,7 +102,6 @@ class MiAZApp(Adw.Application):
         As soon as the the application become active, the app workflow
         is started.
         """
-        self.app = app
         workflow = self.get_service('workflow')
         self.set_service('plugin-system', MiAZPluginSystem(self))
         webserver = self.set_service('webserver', MiAZHTTPServer(self.get_env()))
@@ -143,9 +141,6 @@ class MiAZApp(Adw.Application):
         self.log.debug("Close application requested")
         actions = self.get_service('actions')
         actions.exit_app()
-
-    def _finish_configuration(self, *args):
-        self.log.debug("Finish loading app")
 
     def get_plugins_loaded(self):
         return self._plugins_loaded
@@ -217,15 +212,11 @@ class MiAZApp(Adw.Application):
             return None
 
     def remove_widget(self, name: str):
-        """
-        Remove widget from dictionary.
-
-        They widget is not destroyed. It must be done by the developer.
-        This method is mostly useful during plugins unloading.
-        """
+        """Remove widget from dictionary and dispose it."""
         deleted = False
         try:
-            del self._miazobjs['widgets'][name]
+            widget = self._miazobjs['widgets'].pop(name)
+            widget.dispose()
             deleted = True
         except KeyError:
             self.log.error(f"Widget '{name}' doesn't exists")
@@ -235,7 +226,8 @@ class MiAZApp(Adw.Application):
         """Remove all widgets whose key starts with prefix. Returns count removed."""
         keys = [k for k in list(self._miazobjs['widgets']) if k.startswith(prefix)]
         for key in keys:
-            del self._miazobjs['widgets'][key]
+            widget = self._miazobjs['widgets'].pop(key)
+            widget.dispose()
         return len(keys)
 
     def get_logger(self):
@@ -287,47 +279,23 @@ class MiAZApp(Adw.Application):
 
         return None
 
-    def find_widget_by_name(self, parent, name):
-        self.log.error(f"Looking for {name} in {parent}")
-        # Start with the first child
-        child = parent.get_first_child()
-        self.log.error(f"\tchild {child}")
-
-        # Iterate through all children
-        while child is not None:
-            # Check if the current child has the desired name
-            self.log.error(f"\t{child.get_name()}")
-            if child.get_name() == name:
-                return child
-
-            # Recursively search in the child's children (if it's a container)
-            result = self.find_widget_by_name(child, name)
-            if result is not None:
-                return result
-
-            # Move to the next sibling
-            child = child.get_next_sibling()
-
-        # If no matching widget is found, return None
-        return None
-
     def get_plugin_category_submenu(self, category: str):
         cid = category.lower().replace(' ', '-')
         key = f"workspace-menu-plugins-{cid}"
-        category_submenu = self.app.get_widget(key)
+        category_submenu = self.get_widget(key)
         if category_submenu is None:
             category_submenu = Gio.Menu()
-            self.app.add_widget(key, category_submenu)
+            self.add_widget(key, category_submenu)
         return category_submenu
 
     def get_plugin_subcategory_submenu(self, category: str, subcategory: str):
         cid = category.lower().replace(' ', '-')
         sid = subcategory.lower().replace(' ', '-')
         key = f"workspace-menu-plugins-{cid}-{sid}"
-        subcategory_submenu = self.app.get_widget(key)
+        subcategory_submenu = self.get_widget(key)
         if subcategory_submenu is None:
             subcategory_submenu = Gio.Menu()
-            self.app.add_widget(key, subcategory_submenu)
+            self.add_widget(key, subcategory_submenu)
         return subcategory_submenu
 
     def install_plugin_menu(self, category, subcategory):
@@ -336,15 +304,15 @@ class MiAZApp(Adw.Application):
         cid = category.lower().replace(' ', '-')
         sid = subcategory.lower().replace(' ', '-')
         key = f"workspace-menu-plugins-{cid}-{sid}"
-        entry = self.app.get_widget(key)
+        entry = self.get_widget(key)
         category_submenu = self.get_plugin_category_submenu(category)
         # ~ category_submenu.append_submenu(subcategory, subcategory_submenu)
         subcategory_submenu = self.get_plugin_subcategory_submenu(category, subcategory)
         if entry is None:
             # ~ title = _("{category} > {subcategory}").format(category=_(category), subcategory=_(subcategory))
             title = _(subcategory)
-            plugins_section = self.app.get_widget('workspace-plugins-section')
-            target = plugins_section if plugins_section is not None else self.app.get_widget('workspace-menu-selection')
+            plugins_section = self.get_widget('workspace-plugins-section')
+            target = plugins_section if plugins_section is not None else self.get_widget('workspace-menu-selection')
             target.append_submenu(title, subcategory_submenu)
         return subcategory_submenu
 
