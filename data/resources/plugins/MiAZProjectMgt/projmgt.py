@@ -322,17 +322,17 @@ class MiAZProjectMgt(MiAZExtension):
             menuitem = self.factory.create_menuitem(
                 f'{i_confname}-add',
                 _('Assign document(s) to {i_confname}').format(i_confname=i_confname),
-                self._set_property, None, [])
+                self._set_property, None, ['<Control>p'])
             plugin_menu.append_item(menuitem)
             menuitem = self.factory.create_menuitem(
                 f'{i_confname}-del',
                 _('Unassign document(s) from any {i_confname}').format(i_confname=i_confname),
-                self._unset_property, None, [])
+                self._unset_property, None, ['<Control><Shift>p'])
             plugin_menu.append_item(menuitem)
             menuitem = self.factory.create_menuitem(
                 f'{i_confname}-mgt',
                 _('Manage {i_confname}').format(i_confname=i_confname),
-                self._manage_properties, None, [])
+                self._manage_properties, None, ['<Control><Alt>p'])
             plugin_menu.append_item(menuitem)
             submenu.append_submenu(f"{i_title}", plugin_menu)
 
