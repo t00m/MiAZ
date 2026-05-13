@@ -17,6 +17,7 @@ MiAZ/backend/status.py
 MiAZ/backend/watcher.py
 MiAZ/backend/projects.py
 MiAZ/backend/config.py
+MiAZ/backend/dr.py
 MiAZ/backend/models.py
 MiAZ/backend/repository.py
 MiAZ/backend/util.py
@@ -49,6 +50,7 @@ MiAZ/frontend/desktop/widgets/settings.py
 MiAZ/frontend/desktop/widgets/views.py
 MiAZ/frontend/desktop/widgets/workspace.py
 MiAZ/frontend/desktop/widgets/configview.py
+MiAZ/frontend/desktop/widgets/dr.py
 MiAZ/frontend/desktop/widgets/pluginuimanager.py
 MiAZ/frontend/desktop/widgets/sidebar.py
 MiAZ/frontend/desktop/app.py

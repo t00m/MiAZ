@@ -22,6 +22,7 @@ from MiAZ.frontend.desktop.widgets.configview import MiAZPeopleSentTo
 from MiAZ.frontend.desktop.widgets.configview import MiAZRepositories
 from MiAZ.frontend.desktop.widgets.configview import MiAZPlugins
 from MiAZ.frontend.desktop.widgets.window import MiAZCustomWindow
+from MiAZ.frontend.desktop.widgets.dr import MiAZDRPage
 # ~ from MiAZ.frontend.desktop.widgets.pluginuimanager import MiAZPluginUIManager
 
 Configview = {}
@@ -68,7 +69,12 @@ class MiAZAppSettings(Adw.PreferencesDialog):
         self.set_title(_('Application settings'))
         self.set_search_enabled(False)
         self._build_ui_page_preferences()
+        self._build_ui_page_dr()
         # ~ self._build_ui_page_aspect()
+
+    def _build_ui_page_dr(self):
+        page = MiAZDRPage(self.app)
+        self.add(page)
 
     def _build_ui_page_aspect(self):
         # Create preferences page

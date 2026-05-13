@@ -27,6 +27,7 @@ from MiAZ.backend.config import MiAZConfigApp
 from MiAZ.backend.repository import MiAZRepository
 from MiAZ.backend.config import MiAZConfigRepositories
 from MiAZ.backend.status import MiAZStatus
+from MiAZ.backend.dr import MiAZDR
 
 
 class MiAZApp(Adw.Application):
@@ -55,6 +56,7 @@ class MiAZApp(Adw.Application):
         self.set_service('actions', MiAZActions(self))
         self.set_service('dialogs', MiAZDialog(self))
         workflow = self.set_service('workflow', MiAZWorkflow(self))
+        self.set_service('dr', MiAZDR(self))
         repository = self.set_service('repo', MiAZRepository(self))
         repository.connect('repository-switched', workflow.switch_finish)
         self._env = None
