@@ -77,10 +77,7 @@ class MiAZItem(MiAZModel):
         self._valid = valid
         self._icon = icon
         self._extension = extension
-        self.search_text =  self.id + ' ' + date + ' ' + date_dsc + ' ' + group + ' ' + group_dsc + ' ' + \
-                            country + ' ' + country_dsc + ' ' + purpose + ' ' + purpose_dsc + ' ' + \
-                            sentby_id + ' ' + sentby_dsc + ' ' + title + ' ' + subtitle + ' ' + \
-                            sentto_id + ' ' + sentto_dsc + ' ' + extension
+
 
     @GObject.Property
     def date(self):
@@ -157,6 +154,14 @@ class MiAZItem(MiAZModel):
     @GObject.Property
     def icon(self):
         return self._icon
+
+    @GObject.Property
+    def search_text(self):
+        return ' '.join([self.id, self._date, self._date_dsc, self._group,
+                         self._group_dsc, self._country, self._country_dsc,
+                         self._purpose, self._purpose_dsc, self._sentby_id,
+                         self._sentby_dsc, self._title, self._subtitle,
+                         self._sentto_id, self._sentto_dsc, self._extension])
 
 
 class Concept(MiAZModel):
