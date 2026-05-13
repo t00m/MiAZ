@@ -26,20 +26,11 @@ from gi.repository import Gio
 from gi.repository import GObject
 
 from MiAZ.backend.log import MiAZLog
-from MiAZ.backend.models import Group, Country
+from MiAZ.backend.models import Field, Group, Country
 from MiAZ.backend.models import Purpose, Concept, SentBy
 from MiAZ.backend.models import SentTo, Date
 
 mimetypes.init()
-
-Field = {}
-Field[Date] = 0
-Field[Country] = 1
-Field[Group] = 2
-Field[SentBy] = 3
-Field[Purpose] = 4
-Field[Concept] = 5
-Field[SentTo] = 6
 
 REMOTE_SCHEMES = {
     "sftp", "smb", "ftp", "http", "https", "dav", "davs", "afp", "mtp", "obex", "ssh"
@@ -217,10 +208,7 @@ class MiAZUtil(GObject.GObject):
         return name, ext
 
     def filename_is_normalized(self, name: str) -> bool:
-        try:
-            return len(name.split('-')) == 7
-        except Exception:
-            return False
+        return len(name.split('-')) == 7
 
     def filename_validate(self, doc: str) -> bool:
         return self.filename_is_normalized(doc)
@@ -403,7 +391,7 @@ class MiAZUtil(GObject.GObject):
             return info.get_attribute_boolean('filesystem::remote')
 
         except Exception as e:
-            print(f"Warning: Could not determine if file is remote: {e}")
+            self.log.warning(f"Could not determine if file is remote: {e}")
             return False
 
     def check_remote_directory_sync(self, path, timeout_seconds=5):

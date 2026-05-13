@@ -58,11 +58,15 @@ class MiAZWatcher(GObject.GObject):
         if self.status == MiAZStatus.BUSY:
             self.log.warning("Watcher is busy now. Trying later")
             return
-        else:
-            # ~ self.log.info("Watcher is active")
-            pass
 
-        # ~ self.log.debug(f"Checking files for directory: {path}")
+        # Guarantee the callback always resets the BUSY status,
+        # even if the async chain errors out (GIO cancellation, etc.)
+        def _done(result):
+            try:
+                callback(result)
+            finally:
+                self.status = MiAZStatus.RUNNING
+
         gfile = Gio.File.new_for_path(path)
 
         def on_query_info(fileobj, res, user_data):
@@ -70,10 +74,9 @@ class MiAZWatcher(GObject.GObject):
                 info = fileobj.query_info_finish(res)
                 if info.get_file_type() != Gio.FileType.DIRECTORY:
                     self.log.warning(f"Not a directory: {path}")
-                    callback({})
+                    _done({})
                     return
 
-                # Proceed with enumeration
                 fileobj.enumerate_children_async(
                     'standard::name,standard::type,time::modified',
                     Gio.FileQueryInfoFlags.NONE,
@@ -84,7 +87,7 @@ class MiAZWatcher(GObject.GObject):
                 )
             except Exception as error:
                 self.log.error(f"Failed to query info: {error}")
-                callback({})
+                _done({})
 
         def on_enumerate_ready(fileobj, res, user_data):
             timestamps = {}
@@ -95,7 +98,7 @@ class MiAZWatcher(GObject.GObject):
                     try:
                         infos = enum.next_files_finish(res2)
                         if not infos:
-                            callback(timestamps)
+                            _done(timestamps)
                             return
                         for i in infos:
                             if i.get_file_type() == Gio.FileType.REGULAR:
@@ -106,17 +109,15 @@ class MiAZWatcher(GObject.GObject):
                         enum.next_files_async(100, GLib.PRIORITY_DEFAULT, None, on_next_file, None)
                     except Exception as error:
                         self.log.error(f"Error during file read: {error}")
-                        callback(timestamps)
+                        _done(timestamps)
 
                 enumerator.next_files_async(100, GLib.PRIORITY_DEFAULT, None, on_next_file, None)
             except Exception as error:
                 self.log.error(f"Error during enumeration: {error}")
-                callback({})  # Return empty dict on failure
+                _done({})
 
-        # Set app as busy to block
         self.status = MiAZStatus.BUSY
 
-        # Query info first to ensure it's a directory
         gfile.query_info_async(
             'standard::*',
             Gio.FileQueryInfoFlags.NONE,
@@ -155,9 +156,7 @@ class MiAZWatcher(GObject.GObject):
             return False
 
         if not self.before:
-            # First poll: establish baseline. All files look "added" because
-            # before is empty, but they were already loaded by the workspace
-            # on startup — emitting here would cause a redundant update.
+            # First poll
             self.before = after
             self.status = MiAZStatus.RUNNING
             return True

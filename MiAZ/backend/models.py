@@ -282,3 +282,15 @@ class Plugin(MiAZModel):
     __config_name__ = 'plugins'
     __config_name_available__ = 'plugins'
     __config_name_used__ = 'plugins'
+
+
+# Field index mapping: model → position in 7-field filename
+Field = {
+    Date: 0,
+    Country: 1,
+    Group: 2,
+    SentBy: 3,
+    Purpose: 4,
+    Concept: 5,
+    SentTo: 6,
+}
