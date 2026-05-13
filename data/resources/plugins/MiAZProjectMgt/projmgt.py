@@ -403,7 +403,7 @@ class MiAZProjectMgt(MiAZExtension):
         if pid == 'Any':
             return True
         if pid == 'None':
-            return False
+            return len(self.srvprj.assigned_to(doc_id)) == 0
         return doc_id in self.srvprj.docs_in_project(pid)
 
     def _set_property(self, *args):

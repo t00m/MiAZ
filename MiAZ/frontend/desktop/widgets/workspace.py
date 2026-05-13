@@ -684,7 +684,7 @@ class MiAZWorkspace(Gtk.Box):
         project_dd = self.app.get_widget('plugin-MiAZProjectMgt-dropdown')
         if project_dd is not None:
             sel = project_dd.get_selected_item()
-            if sel is not None and sel.id not in ('Any', 'None'):
+            if sel is not None and sel.id != 'Any':
                 cd = True
                 ca = True
 
