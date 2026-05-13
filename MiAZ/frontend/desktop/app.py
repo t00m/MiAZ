@@ -213,7 +213,8 @@ class MiAZApp(Adw.Application):
         deleted = False
         try:
             widget = self._miazobjs['widgets'].pop(name)
-            widget.dispose()
+            if hasattr(widget, 'dispose'):
+                widget.dispose()
             deleted = True
         except KeyError:
             self.log.error(f"Widget '{name}' doesn't exists")
@@ -224,7 +225,8 @@ class MiAZApp(Adw.Application):
         keys = [k for k in list(self._miazobjs['widgets']) if k.startswith(prefix)]
         for key in keys:
             widget = self._miazobjs['widgets'].pop(key)
-            widget.dispose()
+            if hasattr(widget, 'dispose'):
+                widget.dispose()
         return len(keys)
 
     def get_logger(self):
