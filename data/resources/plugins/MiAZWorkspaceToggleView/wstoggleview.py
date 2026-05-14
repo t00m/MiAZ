@@ -52,10 +52,22 @@ class MiAZWorkspaceToggleViewPlugin(MiAZExtension):
 
         # Connect signals to startup
         self.workspace = self.app.get_widget('workspace')
-        self.workspace.connect('workspace-loaded', self.startup)
+        if self.workspace.is_loaded():
+            self.startup()
+        else:
+            self._startup_handler = self.workspace.connect('workspace-loaded', self.startup)
 
     def do_deactivate(self):
-        self.log.debug("Plugin deactivated")
+        tgb = self.app.get_widget('workspace-togglebutton-view')
+        if tgb is not None:
+            parent = tgb.get_parent()
+            if parent is not None:
+                parent.remove(tgb)
+        evk = self.app.get_widget('window-event-controller')
+        if hasattr(self, '_key_handler'):
+            evk.disconnect(self._key_handler)
+        if hasattr(self, '_startup_handler'):
+            self.workspace.disconnect(self._startup_handler)
         self.plugin.set_started(False)
 
     def startup(self, *args):
@@ -79,7 +91,7 @@ class MiAZWorkspaceToggleViewPlugin(MiAZExtension):
                 hdb_left.append(tgbWSToggleView)
 
                 evk = self.app.get_widget('window-event-controller')
-                evk.connect("key-pressed", self._on_key_press)
+                self._key_handler = evk.connect("key-pressed", self._on_key_press)
 
             # Plugin configured
             self.plugin.set_started(started=True)

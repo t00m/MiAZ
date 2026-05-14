@@ -86,9 +86,14 @@ class MiAZMassRenamingPlugin(MiAZExtension):
         self.srvdlg = self.app.get_service('dialogs')
 
         ## Connect signals
-        self.workspace.connect('workspace-loaded', self.startup)
+        if self.workspace.is_loaded():
+            self.startup()
+        else:
+            self._startup_handler = self.workspace.connect('workspace-loaded', self.startup)
 
     def do_deactivate(self):
+        if hasattr(self, '_startup_handler'):
+            self.workspace.disconnect(self._startup_handler)
         self.plugin.set_started(False)
 
     def startup(self, *args):

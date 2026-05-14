@@ -77,10 +77,14 @@ class MiAZImportFromScanPlugin(MiAZExtension):
         scanapp = self._search_scan_app()
         saved_app = self.plugin.get_config_key('scanner_app')
         if scanapp is not None or saved_app:
-            self.workspace.connect('workspace-loaded', self.startup)
+            if self.workspace.is_loaded():
+                self.startup()
+            else:
+                self._startup_handler = self.workspace.connect('workspace-loaded', self.startup)
 
     def do_deactivate(self):
-        self.log.warning("Deactivation not implemented")
+        if hasattr(self, '_startup_handler'):
+            self.workspace.disconnect(self._startup_handler)
         self.plugin.set_started(False)
 
     def startup(self, *args):

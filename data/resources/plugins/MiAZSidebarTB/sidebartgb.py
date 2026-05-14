@@ -53,10 +53,22 @@ class MiAZSidebarTBPlugin(MiAZExtension):
 
         # Connect signals to startup
         self.workspace = self.app.get_widget('workspace')
-        self.workspace.connect('workspace-loaded', self.startup)
+        if self.workspace.is_loaded():
+            self.startup()
+        else:
+            self._startup_handler = self.workspace.connect('workspace-loaded', self.startup)
 
     def do_deactivate(self):
-        self.log.warning("Deactivation not implemented")
+        tgb = self.app.get_widget('workspace-togglebutton-sidebar')
+        if tgb is not None:
+            parent = tgb.get_parent()
+            if parent is not None:
+                parent.remove(tgb)
+        evk = self.app.get_widget('window-event-controller')
+        if hasattr(self, '_key_handler'):
+            evk.disconnect(self._key_handler)
+        if hasattr(self, '_startup_handler'):
+            self.workspace.disconnect(self._startup_handler)
         self.plugin.set_started(False)
 
     def startup(self, *args):
@@ -83,7 +95,7 @@ class MiAZSidebarTBPlugin(MiAZExtension):
                 hdb_left.append(tgbSidebar)
 
                 evk = self.app.get_widget('window-event-controller')
-                evk.connect("key-pressed", self._on_key_press)
+                self._key_handler = evk.connect("key-pressed", self._on_key_press)
 
                 self.log.debug("Plugin sidebartgb activated")
 

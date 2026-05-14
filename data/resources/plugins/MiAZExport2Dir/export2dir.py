@@ -72,10 +72,6 @@ class Export2Dir(MiAZExtension):
         ## Get logger
         self.log = self.plugin.get_logger()
 
-        # Connect startup signals
-        self.workspace = self.app.get_widget('workspace')
-        self.workspace.connect('workspace-loaded', self.startup)
-
         # Get services
         self.actions = self.app.get_service('actions')
         self.factory = self.app.get_service('factory')
@@ -83,8 +79,16 @@ class Export2Dir(MiAZExtension):
         self.util = self.app.get_service('util')
         self.srvdlg = self.app.get_service('dialogs')
 
+        # Connect startup signals
+        self.workspace = self.app.get_widget('workspace')
+        if self.workspace.is_loaded():
+            self.startup()
+        else:
+            self._startup_handler = self.workspace.connect('workspace-loaded', self.startup)
+
     def do_deactivate(self):
-        self.log.warning("Deactivation not implemented")
+        if hasattr(self, '_startup_handler'):
+            self.workspace.disconnect(self._startup_handler)
         self.plugin.set_started(False)
 
     def startup(self, *args):

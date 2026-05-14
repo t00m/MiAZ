@@ -49,18 +49,23 @@ class MiAZAddDirectoryPlugin(MiAZExtension):
         ## Get logger
         self.log = self.plugin.get_logger()
 
-        # Connect signals to startup
-        workspace = self.app.get_widget('workspace')
-        workspace.connect('workspace-loaded', self.startup)
-
         # Load other services
         self.factory = self.app.get_service('factory')
         self.repository = self.app.get_service('repo')
         self.util = self.app.get_service('util')
         self.srvdlg = self.app.get_service('dialogs')
 
+        # Connect signals to startup
+        self.workspace = self.app.get_widget('workspace')
+        if self.workspace.is_loaded():
+            self.startup()
+        else:
+            self._startup_handler = self.workspace.connect('workspace-loaded', self.startup)
+
 
     def do_deactivate(self):
+        if hasattr(self, '_startup_handler'):
+            self.workspace.disconnect(self._startup_handler)
         self.plugin.set_started(False)
 
     def startup(self, *args):

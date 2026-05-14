@@ -52,10 +52,28 @@ class MiAZToolbarViewItemPlugin(MiAZExtension):
 
         ## Connect signals
         self.workspace = self.app.get_widget('workspace')
-        self.workspace.connect('workspace-loaded', self.startup)
-        self.workspace.connect('workspace-view-updated', self._on_selection_changed)
+        if self.workspace.is_loaded():
+            self.startup()
+        else:
+            self._startup_handler = self.workspace.connect('workspace-loaded', self.startup)
+        self._view_updated_handler = self.workspace.connect('workspace-view-updated', self._on_selection_changed)
 
     def do_deactivate(self):
+        button = self.app.get_widget('toolbar-top-button-view')
+        if button is not None:
+            parent = button.get_parent()
+            if parent is not None:
+                parent.remove(button)
+        view = self.app.get_widget('workspace-view')
+        if view is not None:
+            if hasattr(self, '_cv_activate_handler') and hasattr(view, 'cv'):
+                view.cv.disconnect(self._cv_activate_handler)
+            if hasattr(self, '_selection_changed_handler'):
+                view.get_selection().disconnect(self._selection_changed_handler)
+        if hasattr(self, '_view_updated_handler'):
+            self.workspace.disconnect(self._view_updated_handler)
+        if hasattr(self, '_startup_handler'):
+            self.workspace.disconnect(self._startup_handler)
         self.plugin.set_started(False)
 
     def _on_selection_changed(self, *args):
@@ -78,8 +96,8 @@ class MiAZToolbarViewItemPlugin(MiAZExtension):
             view = self.app.get_widget('workspace-view')
             if view is not None:
                 if hasattr(view, 'cv'):
-                    view.cv.connect("activate", self.document_display)
-                view.get_selection().connect('selection-changed', self._on_selection_changed)
+                    self._cv_activate_handler = view.cv.connect("activate", self.document_display)
+                self._selection_changed_handler = view.get_selection().connect('selection-changed', self._on_selection_changed)
 
             # Button
             if self.app.get_widget('toolbar-top-button-view') is None:

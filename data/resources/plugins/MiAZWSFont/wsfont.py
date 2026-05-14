@@ -55,10 +55,21 @@ class MiAZWSFontPlugin(MiAZExtension):
 
         # Connect signals to startup
         self.workspace = self.app.get_widget('workspace')
-        self.workspace.connect('workspace-loaded', self.startup)
+        if self.workspace.is_loaded():
+            self.startup()
+        else:
+            self._startup_handler = self.workspace.connect('workspace-loaded', self.startup)
 
     def do_deactivate(self):
-        self.log.warning("Deactivation not implemented")
+        button = self.app.get_widget('workspace-button-font')
+        if button is not None:
+            parent = button.get_parent()
+            if parent is not None:
+                parent.remove(button)
+        if hasattr(self, '_value_changed_handler'):
+            self.spinbutton.disconnect(self._value_changed_handler)
+        if hasattr(self, '_startup_handler'):
+            self.workspace.disconnect(self._startup_handler)
         self.plugin.set_started(False)
 
     def startup(self, *args):
@@ -88,7 +99,7 @@ class MiAZWSFontPlugin(MiAZExtension):
                     self.log.debug(f"Font size from config is: {font_size}")
                 self.spinbutton.set_value(font_size)
                 self._on_change_font_properties()
-                self.spinbutton.connect('value-changed', self._on_change_font_properties)
+                self._value_changed_handler = self.spinbutton.connect('value-changed', self._on_change_font_properties)
                 hdb_left.append(self.button)
                 self.log.debug("Plugin WSFont activated")
 

@@ -156,17 +156,46 @@ class MiAZPeriodicityPlugin(MiAZExtension):
 
         # Connect signals to startup
         self.workspace = self.app.get_widget('workspace')
-        self.workspace.connect('workspace-loaded', self.startup)
-        self.util.connect('filename-renamed', self._on_filename_renamed)
-        self.util.connect('filename-deleted', self._on_filename_deleted)
+        if self.workspace.is_loaded():
+            self.startup()
+        else:
+            self._startup_handler = self.workspace.connect('workspace-loaded', self.startup)
+        self._filename_renamed_handler = self.util.connect('filename-renamed', self._on_filename_renamed)
+        self._filename_deleted_handler = self.util.connect('filename-deleted', self._on_filename_deleted)
 
     def do_deactivate(self):
-        self.log.warning("Deactivation not implemented")
+        plugin_name = self.plugin.get_name()
+        dropdown = self.app.get_widget(f'plugin-{plugin_name}-dropdown')
+        if dropdown is not None:
+            dd_parent = dropdown.get_parent()
+            if dd_parent is not None:
+                dd_parent.remove(dropdown)
+            dd_size_group = self.app.get_widget('sidebar-dropdown-size-group')
+            if dd_size_group is not None:
+                dd_size_group.remove_widget(dropdown)
+            plugin_dropdowns = self.app.get_widget('plugin-dropdowns')
+            if plugin_dropdowns is not None and dropdown in plugin_dropdowns:
+                plugin_dropdowns.remove(dropdown)
+            self.app.remove_widget(f'plugin-{plugin_name}-dropdown')
+        section = self.app.get_widget('sidebar-plugin-section')
+        if section is not None and hasattr(self, '_sidebar_item'):
+            section.remove(self._sidebar_item)
+        self.workspace.unregister_filter_view(f'{i_title}')
+        if hasattr(self, '_used_updated_handler'):
+            self.config.disconnect(self._used_updated_handler)
+        if hasattr(self, '_selected_item_handler') and dropdown is not None:
+            dropdown.disconnect(self._selected_item_handler)
+        if hasattr(self, '_filename_renamed_handler'):
+            self.util.disconnect(self._filename_renamed_handler)
+        if hasattr(self, '_filename_deleted_handler'):
+            self.util.disconnect(self._filename_deleted_handler)
+        if hasattr(self, '_startup_handler'):
+            self.workspace.disconnect(self._startup_handler)
         self.plugin.set_started(False)
 
     def startup(self, *args):
         if not self.plugin.started():
-            # Get submenu for this plugin (subcategory)
+            # Always reinstall workspace menu entries (cleared by _on_plugins_updated)
             submenu = self.plugin.install_menu_entry()
 
             # Install plugin submenu
@@ -179,39 +208,43 @@ class MiAZPeriodicityPlugin(MiAZExtension):
             plugin_menu.append_item(menuitem)
             submenu.append_submenu(_('{i_title}').format(i_title=i_title), plugin_menu)
 
-            ## Set factory data
-            filepath = self.plugin.get_config_file_default_available_data()
-            self.util.json_save(filepath, default_available_data)
-
-            # Get config
-            self.config = MiAZConfigPeriodicity(self.app, self.plugin)
-
-            # Dropdown for custom filters
+            # One-time setup guarded by the dropdown widget sentinel
             plugin_name = self.plugin.get_name()
-            dropdown = self.factory.create_dropdown_generic(item_type=item_type, ellipsize=True, enable_search=True)
-            self.app.add_widget(f'plugin-{plugin_name}-dropdown', dropdown)
-            self.app.get_widget('plugin-dropdowns').append(dropdown)
-            self.config.connect('used-updated', self.actions.dropdown_populate, dropdown, item_type, True, True)
-            self.actions.dropdown_populate(self.config, dropdown, item_type, True, True)
-            dropdown.connect("notify::selected-item", self.workspace.update)
-            dropdown.set_size_request(190, -1)
-            dd_size_group = self.app.get_widget('sidebar-dropdown-size-group')
-            if dd_size_group is not None:
-                dd_size_group.add_widget(dropdown)
-            section = self.app.get_widget('sidebar-plugin-section')
-            icon_path = self.plugin.get_icon_path()
-            if icon_path:
-                img = Gtk.Image.new_from_file(icon_path)
-                img.set_pixel_size(16)
-                img.set_valign(Gtk.Align.CENTER)
-                suffix_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
-                suffix_box.append(img)
-                suffix_box.append(dropdown)
-                section.append(Adw.SidebarItem(title='', suffix=suffix_box))
-            else:
-                section.append(Adw.SidebarItem(title=i_title, suffix=dropdown))
+            if self.app.get_widget(f'plugin-{plugin_name}-dropdown') is None:
+                ## Set factory data
+                filepath = self.plugin.get_config_file_default_available_data()
+                self.util.json_save(filepath, default_available_data)
 
-            self.workspace.register_filter_view(f'{i_title}', self._do_filter_view)
+                # Get config
+                self.config = MiAZConfigPeriodicity(self.app, self.plugin)
+
+                # Dropdown for custom filters
+                dropdown = self.factory.create_dropdown_generic(item_type=item_type, ellipsize=True, enable_search=True)
+                self.app.add_widget(f'plugin-{plugin_name}-dropdown', dropdown)
+                self.app.get_widget('plugin-dropdowns').append(dropdown)
+                self._used_updated_handler = self.config.connect('used-updated', self.actions.dropdown_populate, dropdown, item_type, True, True)
+                self.actions.dropdown_populate(self.config, dropdown, item_type, True, True)
+                self._selected_item_handler = dropdown.connect("notify::selected-item", self.workspace.update)
+                dropdown.set_size_request(190, -1)
+                dd_size_group = self.app.get_widget('sidebar-dropdown-size-group')
+                if dd_size_group is not None:
+                    dd_size_group.add_widget(dropdown)
+                section = self.app.get_widget('sidebar-plugin-section')
+                icon_path = self.plugin.get_icon_path()
+                if icon_path:
+                    img = Gtk.Image.new_from_file(icon_path)
+                    img.set_pixel_size(16)
+                    img.set_valign(Gtk.Align.CENTER)
+                    suffix_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
+                    suffix_box.append(img)
+                    suffix_box.append(dropdown)
+                    self._sidebar_item = Adw.SidebarItem(title='', suffix=suffix_box)
+                    section.append(self._sidebar_item)
+                else:
+                    self._sidebar_item = Adw.SidebarItem(title=i_title, suffix=dropdown)
+                    section.append(self._sidebar_item)
+                self.workspace.register_filter_view(f'{i_title}', self._do_filter_view)
+                self.log.info(f"Plugin {plugin_name} fully initialized")
 
             # Plugin configured
             self.plugin.set_started(started=True)

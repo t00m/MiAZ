@@ -306,10 +306,36 @@ class MiAZProjectMgt(MiAZExtension):
         self.srvdlg = self.app.get_service('dialogs')
         self.util = self.app.get_service('util')
         self.workspace = self.app.get_widget('workspace')
-        self.workspace.connect('workspace-loaded', self.startup)
+        if self.workspace.is_loaded():
+            self.startup()
+        else:
+            self._startup_handler = self.workspace.connect('workspace-loaded', self.startup)
 
     def do_deactivate(self):
-        self.log.debug("Plugin deactivation not implemented")
+        plugin_name = self.plugin.get_name()
+        dropdown = self.app.get_widget(f'plugin-{plugin_name}-dropdown')
+        if dropdown is not None:
+            dd_parent = dropdown.get_parent()
+            if dd_parent is not None:
+                dd_parent.remove(dropdown)
+            dd_size_group = self.app.get_widget('sidebar-dropdown-size-group')
+            if dd_size_group is not None:
+                dd_size_group.remove_widget(dropdown)
+            plugin_dropdowns = self.app.get_widget('plugin-dropdowns')
+            if plugin_dropdowns is not None and dropdown in plugin_dropdowns:
+                plugin_dropdowns.remove(dropdown)
+            self.app.remove_widget(f'plugin-{plugin_name}-dropdown')
+        section = self.app.get_widget('sidebar-plugin-section')
+        if section is not None and hasattr(self, '_sidebar_item'):
+            section.remove(self._sidebar_item)
+        self.workspace.unregister_filter_view(f'{i_title}')
+        if hasattr(self, '_used_updated_handler'):
+            self.config.disconnect(self._used_updated_handler)
+        if hasattr(self, '_selected_item_handler') and dropdown is not None:
+            dropdown.disconnect(self._selected_item_handler)
+        if hasattr(self, '_startup_handler'):
+            self.workspace.disconnect(self._startup_handler)
+        self.app.set_service('Projects', None)
         self.plugin.set_started(False)
 
     def startup(self, *args):
@@ -361,9 +387,9 @@ class MiAZProjectMgt(MiAZExtension):
                     dropdown = self.factory.create_dropdown_generic(item_type=item_type, ellipsize=True, enable_search=True)
                     self.app.add_widget(f'plugin-{plugin_name}-dropdown', dropdown)
                     self.app.get_widget('plugin-dropdowns').append(dropdown)
-                    self.config.connect('used-updated', self.actions.dropdown_populate, dropdown, item_type, True, True)
+                    self._used_updated_handler = self.config.connect('used-updated', self.actions.dropdown_populate, dropdown, item_type, True, True)
                     self.actions.dropdown_populate(self.config, dropdown, item_type, True, True)
-                    dropdown.connect("notify::selected-item", self.workspace.update)
+                    self._selected_item_handler = dropdown.connect("notify::selected-item", self.workspace.update)
                     dropdown.set_size_request(190, -1)
                     dd_size_group = self.app.get_widget('sidebar-dropdown-size-group')
                     if dd_size_group is not None:
@@ -377,9 +403,11 @@ class MiAZProjectMgt(MiAZExtension):
                         suffix_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
                         suffix_box.append(img)
                         suffix_box.append(dropdown)
-                        section.append(Adw.SidebarItem(title='', suffix=suffix_box))
+                        self._sidebar_item = Adw.SidebarItem(title='', suffix=suffix_box)
+                        section.append(self._sidebar_item)
                     else:
-                        section.append(Adw.SidebarItem(title=i_title, suffix=dropdown))
+                        self._sidebar_item = Adw.SidebarItem(title=i_title, suffix=dropdown)
+                        section.append(self._sidebar_item)
                     self.workspace.register_filter_view(f'{i_title}', self._do_filter_view)
             else:
                 # Sidebar already set up
