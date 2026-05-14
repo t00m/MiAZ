@@ -37,7 +37,7 @@ class MiAZDRPage(Adw.PreferencesPage):
 
     def _build_ui(self):
         self.set_title(_('Backup & Restore'))
-        self.set_icon_name('io.github.t00m.MiAZ-emblem-system-symbolic')
+        self.set_icon_name('io.github.t00m.MiAZ-backup-restore-symbolic')
         self._build_group_repository()
         self._build_group_operation()
         self._build_group_scope()

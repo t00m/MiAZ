@@ -382,9 +382,7 @@ class MiAZProjectMgt(MiAZExtension):
                         section.append(Adw.SidebarItem(title=i_title, suffix=dropdown))
                     self.workspace.register_filter_view(f'{i_title}', self._do_filter_view)
             else:
-                # Sidebar already set up — re-sync self.srvprj with the registered
-                # service so _set_property_real and _on_item_used_remove both operate
-                # on the same MiAZProject instance.
+                # Sidebar already set up
                 self.srvprj = self.app.get_service('Projects')
 
             self.plugin.set_started(started=True)
