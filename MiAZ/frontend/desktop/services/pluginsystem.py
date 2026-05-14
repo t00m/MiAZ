@@ -258,7 +258,7 @@ class MiAZPlugin(GObject.GObject):
         config_data = self.get_config_data()
         try:
             return config_data[key]
-        except:
+        except Exception:
             return None
 
     def set_config_data(self, config_data: {}):
@@ -588,8 +588,10 @@ class MiAZPluginSystem(GObject.GObject):
             config = self.app.get_config_dict()
             repo_id = config['App'].get('current')
             config_plugins = self.app.get_config('Plugin')
-            config_plugins.remove_all()
             config_plugins.add_available_batch(plugin_list)
+            old_keys = set(config_plugins.load_available().keys()) - {p[0] for p in plugin_list}
+            for key in old_keys:
+                config_plugins.remove_available(key)
             self.log.info(f"Plugins available updated successfully for repository {repo_id}")
         except AttributeError:
             self.log.warning("Skip. Plugin config not ready yet")

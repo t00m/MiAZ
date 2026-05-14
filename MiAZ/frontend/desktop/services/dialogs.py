@@ -4,6 +4,8 @@
 # License: GPL v3
 # Description: Custom dialogs for MiAZ
 
+from gettext import gettext as _
+
 from gi.repository import Adw
 from gi.repository import Gio
 from gi.repository import GLib
@@ -290,8 +292,8 @@ class MiAZDialogAdd:
     def on_dialog_save(self, *args):
         self.log.error(f"FIXME: {args}")
 
-    def on_dialog_cancel(self, dialog, respone):
-        self.log.error(f"FIXME: {args}")
+    def on_dialog_cancel(self, dialog, response):
+        self.log.error(f"FIXME: {response}")
 
     def get_boxKey1(self):
         return self.boxKey1
@@ -325,7 +327,6 @@ class MiAZDialogAddRepo(MiAZDialogAdd):
     def __init__(self, app):
         self.log = MiAZLog('MiAZDialogAdd')
         self.app = app
-        super(MiAZDialogAdd, self).__init__()
         super().__init__(app)
 
         self.factory = self.app.get_service('factory')

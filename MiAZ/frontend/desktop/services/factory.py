@@ -26,9 +26,6 @@ def get_children(obj: Gtk.Widget) -> list[Gtk.Widget]:
     return children
 
 from typing import Callable
-from gi.repository import Gtk  # type:ignore
-
-from MiAZ.frontend.desktop.services.factory import get_children
 
 
 class MiAZBox(Gtk.Box):

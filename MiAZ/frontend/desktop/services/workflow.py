@@ -1,5 +1,5 @@
 #!/usr/bin/python
-# File: icm.py
+# File: workflow.py
 # Author: Tomás Vírseda
 # License: GPL v3
 # Description: Workflow module
@@ -103,7 +103,7 @@ class MiAZWorkflow(GObject.GObject):
         if missing is None:
             return False
         message = f"Repository config for '{missing}' has no used entries: open settings dialog"
-        self.log.warning(msg)
+        self.log.warning(message)
         repo_settings = self.app.get_widget('settings-repo')
         if repo_settings is None:
             self.log.error("settings-repo widget not found; cannot auto-open repository settings")
@@ -133,6 +133,9 @@ class MiAZWorkflow(GObject.GObject):
             self.log.info(f"Remote directory '{repository.docs}' is NOT available. Reason: {error}")
             return
 
+        old_watcher = self.app.get_service('watcher')
+        if old_watcher is not None:
+            old_watcher.set_active(False)
         watcher = MiAZWatcher(dirpath=repository.docs, remote=remote)
         watcher.set_active(active=True)
         self.app.set_service('watcher', watcher)

@@ -76,8 +76,6 @@ class MiAZActions(GObject.GObject):
         model_sort = model_filter.get_model()
         model = model_sort.get_model()
         model.remove_all()
-
-        model.remove_all()
         if any_value:
             model.append(item_type(id='Any', title=_('Any') + ' ' + i_title.lower()))
         if none_value:
@@ -85,15 +83,10 @@ class MiAZActions(GObject.GObject):
 
         for key in items:
             accepted = True
-            if len(only_include) > 0 and key in only_include:
-                accepted = True
-            else:
+            if len(only_include) > 0 and key not in only_include:
                 accepted = False
-
             if len(only_exclude) > 0 and key in only_exclude:
                 accepted = False
-            else:
-                accepted = True
 
             if accepted:
                 title = items[key]
@@ -101,9 +94,6 @@ class MiAZActions(GObject.GObject):
                     title = key
                 if item_type == Repository:
                     title = key.replace('_', ' ')
-                else:
-                    # ~ title = f"{key} - {title}"
-                    title = f"{title}"
                 model.append(item_type(id=key, title=title))
 
         if len(model) == 0:
@@ -119,56 +109,6 @@ class MiAZActions(GObject.GObject):
         title = _("Action not implemented yet")
         body = _("Import the configuration hasn't been implemented yet")
         srvdlg.show_error(title=title, body=body, parent=window)
-        return
-
-        factory = self.app.get_service('factory')
-        i_title = item_type.__title__
-        i_title_plural = item_type.__title_plural__
-        file_available = f'{i_title_plural.lower()}-available.json'
-        file_used = f'{i_title_plural.lower()}-used.json'
-
-        def filechooser_response(dialog, response, data):
-            if response == 'apply':
-                srvutl = self.app.get_service('util')
-                content_area = dialog.get_content_area()
-                box = content_area.get_first_child()
-                filechooser = box.get_first_child()
-                gfile = filechooser.get_file()
-                if gfile is not None:
-                    filepath = gfile.get_path()
-                    files = self.util.zip_list(filepath)
-                    available_exists = file_available in files
-                    self.log.debug(f"{file_available} exists? {available_exists}")
-                    used_exists = file_used in files
-                    self.log.debug(f"{file_used} exists? {used_exists}")
-                    if available_exists and used_exists:
-                        ENV = self.app.get_env()
-                        self.util.unzip(filepath, ENV['LPATH']['TMP'])
-                        target_a = os.path.join(ENV['LPATH']['TMP'], file_available)
-                        target_u = os.path.join(ENV['LPATH']['TMP'], file_used)
-                        available = self.util.json_load(target_a)
-                        used = self.util.json_load(target_u)
-                        config = self.app.get_config_dict()
-                        config_item = config[i_title]
-                        config_item.add_used_batch(used.items())
-                        config_item.add_available_batch(available.items())
-                        self.show_repository_settings()
-                        self.log.info(f"{i_title_plural} imported successfully")
-                    else:
-                        self.log.error(f"This is not a config file for {i_title_plural.lower()}")
-
-        window = self.app.get_widget('window')
-        # FIXME: use the new filechooser
-        filechooser = factory.create_filechooser(
-                    title=_(f'Import a configuration file for {i_title_plural.lower()}'),
-                    target = 'FILE',
-                    callback = filechooser_response,
-                    data = None)
-        config_filter = Gtk.FileFilter()
-        config_filter.add_pattern('*.zip')
-        filechooser_widget = filechooser.get_filechooser_widget()
-        filechooser_widget.set_filter(config_filter)
-        filechooser.show()
 
     def export_config(self, button, item_type):
         # FIXME: Implement export config
@@ -177,53 +117,6 @@ class MiAZActions(GObject.GObject):
         title = _("Action not implemented yet")
         body = ("Export the configuration hasn't been implemented yet")
         srvdlg.show_error(title=title, body=body, parent=window)
-        return
-
-        # ~ i_title = item_type.__title__
-        # ~ file_available = '%s-available.json' % i_title_plural.lower()
-        # ~ file_used = '%s-used.json' % i_title_plural.lower()
-        factory = self.app.get_service('factory')
-        i_title_plural = item_type.__title_plural__
-        name_available = item_type.__config_name_available__
-        name_used = item_type.__config_name_used__
-
-        def filechooser_response(dialog, response, data):
-            srvutl = self.app.get_service('util')
-            repository = self.app.get_service('repo')
-            if response == 'apply':
-                content_area = dialog.get_content_area()
-                box = content_area.get_first_child()
-                filechooser = box.get_first_child()
-                gfile = filechooser.get_file()
-                if gfile is not None:
-                    target_directory = gfile.get_path()
-                    source_directory = pathlib.Path(os.path.join(repository.docs, '.conf'))
-                    config_name_available = f"{name_available}-available.json"
-                    config_name_used = f"{name_used}-used.json"
-                    filenames = []
-                    config_file_available = pathlib.Path(os.path.join(repository.docs, '.conf', config_name_available))
-                    config_file_used = pathlib.Path(os.path.join(repository.docs, '.conf', config_name_used))
-                    filenames.append(config_file_available)
-                    filenames.append(config_file_used)
-                    target_filename = f"miaz-{i_title_plural.lower()}-config-{self.util.timestamp()}.zip"
-                    target_filepath = os.path.join(target_directory, target_filename)
-                    with zipfile.ZipFile(target_filepath, mode="w") as zip_archive:
-                        for file_path in filenames:
-                            zip_archive.write(
-                                file_path,
-                                arcname=file_path.relative_to(source_directory)
-                            )
-                    self.log.info(f"{i_title_plural} exported successfully to {target_filepath}")
-                    self.show_repository_settings()
-
-        window = self.app.get_widget('window')
-        # FIXME: use the new filechooser
-        filechooser = factory.create_filechooser(
-                    title=_(f'Export the configuration for {i_title_plural.lower()}'),
-                    target = 'FOLDER',
-                    callback = filechooser_response,
-                    data = None)
-        filechooser.show()
 
     def manage_resource(self, widget: Gtk.Widget, selector: Gtk.Widget):
         factory = self.app.get_service('factory')
@@ -344,5 +237,5 @@ class MiAZActions(GObject.GObject):
         python = sys.executable
         script = ENV['APP']['RUNTIME']['EXEC']
         self.app.emit('application-finished')
-        self.log.info("Application restart: {python} {script} {sys.argv[1:]}")
+        self.log.info(f"Application restart: {python} {script} {sys.argv[1:]}")
         os.execv(python, [python, script] + sys.argv[1:])
