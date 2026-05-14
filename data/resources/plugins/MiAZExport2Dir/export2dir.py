@@ -186,13 +186,13 @@ class Export2Dir(MiAZExtension):
                     for item in self.items:
                         thispath = []
                         thispath.append(self.target_dir)
+                        source = os.path.join(self.repository.docs, item.id)
                         try:
                             paths = get_pattern_paths(item)
                             for key in keys:
                                 thispath.append(paths[key])
                             target = os.path.join(*thispath)
                             os.makedirs(target, exist_ok=True)
-                            source = os.path.join(self.repository.docs, item.id)
                             self.util.filename_export(source, target)
                         except ValueError as error:
                             self.log.error(f"{os.path.basename(source)} couldn't be exported.")

@@ -146,16 +146,16 @@ class MiAZWSFontPlugin(MiAZExtension):
 
     def _on_settings_loaded(self, *args):
         group = self.app.get_widget('window-preferences-page-aspect-group-ui')
-        row = Adw.SwitchRow(title=_("Display sidebar toggle button?"))
+        row = Adw.SwitchRow(title=_("Display workspace font button?"))
         row.connect('notify::active', self._on_activate_setting)
-        tgbSidebar = self.app.get_widget('workspace-togglebutton-sidebar')
-        visible = tgbSidebar.get_visible()
+        font_button = self.app.get_widget('workspace-button-font')
+        visible = font_button.get_visible()
         row.set_active(visible)
         group.add(row)
 
     def _on_activate_setting(self, row, gparam):
         # Set togglebutton status
-        togglebutton = self.app.get_widget('workspace-togglebutton-sidebar')
+        togglebutton = self.app.get_widget('workspace-button-font')
         visible = row.get_active()
         togglebutton.set_visible(visible)
 

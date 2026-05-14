@@ -18,7 +18,7 @@ from gi.repository import Adw
 from MiAZ.frontend.desktop.services.pluginsystem import MiAZExtension, MiAZPlugin
 
 path = os.path.join(os.path.abspath(__file__), 'example')
-sys.path.insert(1, os.path.abspath(__file__))
+sys.path.insert(1, os.path.dirname(os.path.abspath(__file__)))
 from example.test import PluginTest
 
 plugin_info = {

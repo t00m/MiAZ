@@ -85,6 +85,7 @@ class Export2Text(MiAZExtension):
         for item in items:
             text += f"{item.id}\n"
         fp, filepath = tempfile.mkstemp(dir=ENV['LPATH']['TMP'], suffix='.txt')
+        os.close(fp)
         with open(filepath, 'w') as temp:
             temp.write(text)
         self.util.filename_display(filepath)

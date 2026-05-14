@@ -109,10 +109,9 @@ class Export2Zip(MiAZExtension):
                 basename = os.path.basename(dir_zip)
                 zip_file = f"{basename}.zip"
                 zip_target = os.path.join(ENV['LPATH']['TMP'], zip_file)
-                source = zip_target
                 target = os.path.join(self.target_dir, zip_file)
-                self.util.zip(target, dir_zip)
-                self.util.filename_rename(source, target)
+                self.util.zip(zip_target, dir_zip)
+                self.util.filename_rename(zip_target, target)
                 shutil.rmtree(dir_zip)
                 self.util.directory_open(self.target_dir)
 

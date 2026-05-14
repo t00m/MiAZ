@@ -87,6 +87,7 @@ class Export2CSV(MiAZExtension):
             row.append(ext)
             rows.append(row)
         fp, filepath = tempfile.mkstemp(dir=ENV['LPATH']['TMP'], suffix='.csv')
+        os.close(fp)
         with open(filepath, 'w', newline='') as csvfile:
             csvwriter = csv.writer(csvfile)
             csvwriter.writerow(fields)

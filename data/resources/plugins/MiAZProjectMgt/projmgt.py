@@ -93,7 +93,6 @@ class MiAZProject(GObject.GObject):
             self.log.warning(message)
             self.srvdlg.show_toast(message)
         self.log.debug("Projects consistency successfully checked")
-        self.srvdlg.show_toast("Projects consistency successfully checked")
 
     def add(self, project: str, doc: str):
         try:
@@ -243,8 +242,7 @@ class MiAZProjectsView(MiAZConfigView):
         self.data_dir = self.plugin.get_data_dir()
         self.data_file = self.plugin.get_data_file()
         if self.config_dir is None:
-            raise
-        super(MiAZConfigView, self).__init__(app, edit=True)
+            raise RuntimeError("MiAZProjectsView: config_dir is None")
         super().__init__(app, config_name=f'{i_confname}', custom_config=config)
 
     def _setup_view_finish(self):

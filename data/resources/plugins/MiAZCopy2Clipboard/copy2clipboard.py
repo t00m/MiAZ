@@ -10,6 +10,7 @@
 
 from gettext import gettext as _
 
+from gi.repository import Gdk
 from gi.repository import GObject
 
 from MiAZ.frontend.desktop.services.pluginsystem import MiAZExtension, MiAZPlugin
@@ -83,7 +84,7 @@ class Copy2Clipboard(MiAZExtension):
         text = ""
         for item in items:
             text += _('{item}\n').format(item=item.id)
-        self.workspace.get_clipboard().set(text.strip())
+        self.workspace.get_display().get_clipboard().set(text.strip())
         body = ''
         parent = self.workspace.get_root()
         self.srvdlg.show_toast(title)
