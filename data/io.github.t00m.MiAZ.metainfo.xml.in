@@ -6,12 +6,12 @@
   <name>MiAZ</name>
   <summary>Personal Document Organizer</summary>
   <description>
-    <p>Keeping family records, school files, invoices, and administrative paperwork organised is a constant challenge — especially when documents come in from many different countries and institutions.</p>
+    <p>Keeping family records, school files, invoices, and administrative paperwork organised is a constant challenge, especially when documents come in from many different countries and institutions.</p>
     <p>MiAZ solves this with a simple, consistent file-naming convention of seven fields: date, country, group, sender, purpose, concept, and recipient. Scan a letter, download an email attachment, drop it into your MiAZ repository, and the app guides you through naming it correctly.</p>
     <p>Key features:</p>
     <ul>
       <li>Multiple independent document repositories</li>
-      <li>No database — the directory is the database</li>
+      <li>No database. The directory is the database</li>
       <li>Fast workspace that handles thousands of documents</li>
       <li>Powerful sidebar with filters for every field</li>
       <li>Single and mass renaming of documents</li>
@@ -71,7 +71,7 @@
       <description>
         <p>Sidebar redesign, unified plugin system, performance improvements and startup fixes.</p>
         <ul>
-          <li>Sidebar rebuilt with Adw.Sidebar — icon-only filter rows and resizable pane</li>
+          <li>Sidebar rebuilt with Adw.Sidebar (icon-only filter rows and resizable pane)</li>
           <li>Plugin system unified: no more system/user distinction</li>
           <li>Plugin sidebar filters now show the plugin icon</li>
           <li>Review button turns red when pending documents exist</li>
