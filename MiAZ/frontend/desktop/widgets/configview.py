@@ -291,8 +291,10 @@ class MiAZCountries(MiAZConfigView):
         items = []
         item_type = self.config.model
         countries = self.config.load_available()
+        used = self.config.load_used()
         for code in countries:
-            items.append(item_type(id=code, title=countries[code], icon=f'{code}.svg'))
+            if code not in used:
+                items.append(item_type(id=code, title=countries[code], icon=f'{code}.svg'))
         self.viewAv.update(items)
 
     def _update_view_used(self):
@@ -468,10 +470,12 @@ class MiAZPlugins(MiAZConfigView):
             system_plugins = util.json_load(ENV['APP']['PLUGINS']['INDEX'])
         except Exception:
             system_plugins = {}
+        used = self.config.load_used()
         items = []
         for plugin_id, info in system_plugins.items():
-            title = info.get('Description', plugin_id)
-            items.append(Plugin(id=plugin_id, title=_(title)))
+            if plugin_id not in used:
+                title = info.get('Description', plugin_id)
+                items.append(Plugin(id=plugin_id, title=_(title)))
         self.viewAv.update(items)
 
     def _update_view_used(self, items=None):
