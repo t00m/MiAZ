@@ -32,7 +32,7 @@ class MiAZConfigView(MiAZSelector):
     config_for = None
 
     def __init__(self, app, config_name=None, custom_config=None):
-        # ~ super(MiAZSelector, self).__init__(spacing=0, orientation=Gtk.Orientation.VERTICAL)
+        super().__init__(app)
         self.app = app
         self.log = MiAZLog('MiAZConfigView')
         self.repository = self.app.get_service('repo')
@@ -84,8 +84,6 @@ class MiAZRepositories(MiAZConfigView):
     current = None
 
     def __init__(self, app):
-        self.app = app
-        super(MiAZConfigView, self).__init__(app, edit=True)
         super().__init__(app, 'Repository')
 
     def _setup_view_finish(self):
@@ -271,7 +269,6 @@ class MiAZCountries(MiAZConfigView):
     current = None
 
     def __init__(self, app):
-        super(MiAZConfigView, self).__init__(app, edit=True)
         super().__init__(app, 'Country')
 
     def _setup_view_finish(self):
@@ -311,7 +308,6 @@ class MiAZGroups(MiAZConfigView):
     __gtype_name__ = 'MiAZGroups'
 
     def __init__(self, app):
-        super(MiAZConfigView, self).__init__(app, edit=True)
         super().__init__(app, 'Group')
 
     def _setup_view_finish(self):
@@ -327,7 +323,6 @@ class MiAZPeople(MiAZConfigView):
     __gtype_name__ = 'MiAZPeople'
 
     def __init__(self, app):
-        super(MiAZConfigView, self).__init__(app, edit=True)
         super().__init__(app, 'People')
 
     def _setup_view_finish(self):
@@ -343,7 +338,6 @@ class MiAZPeopleSentBy(MiAZConfigView):
     __gtype_name__ = 'MiAZSentBy'
 
     def __init__(self, app):
-        super(MiAZConfigView, self).__init__(app, edit=True)
         super().__init__(app, 'SentBy')
         # Trick to keep People sync for SentBy/SentTo
         self.config_paired = self.conf['SentTo']
@@ -362,7 +356,6 @@ class MiAZPeopleSentTo(MiAZConfigView):
     __gtype_name__ = 'MiAZSentTo'
 
     def __init__(self, app):
-        super(MiAZConfigView, self).__init__(app, edit=True)
         super().__init__(app, 'SentTo')
         # Trick to keep People sync for SentBy/SentTo
         self.config_paired = self.conf['SentBy']
@@ -381,7 +374,6 @@ class MiAZPurposes(MiAZConfigView):
     __gtype_name__ = 'MiAZPurposes'
 
     def __init__(self, app):
-        super(MiAZConfigView, self).__init__(app, edit=True)
         super().__init__(app, 'Purpose')
 
     def _setup_view_finish(self):
@@ -401,7 +393,6 @@ class MiAZPlugins(MiAZConfigView):
     current = None
 
     def __init__(self, app):
-        super(MiAZConfigView, self).__init__(app, edit=True)
         super().__init__(app, 'Plugin')
         boxopers = self.app.get_widget('selector-box-operations')
         factory = self.app.get_service('factory')

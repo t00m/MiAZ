@@ -20,14 +20,6 @@ from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewWorkspace
 from MiAZ.frontend.desktop.widgets.configview import MiAZCountries, MiAZGroups, MiAZPurposes, MiAZPeopleSentBy, MiAZPeopleSentTo
 from MiAZ.backend.status import MiAZStatus
 
-# Conversion Item type to Field Number
-Field = {}
-Field[Country] = 1
-Field[Group] = 2
-Field[SentBy] = 3
-Field[Purpose] = 4
-Field[SentTo] = 6
-
 Configview = {}
 Configview['Country'] = MiAZCountries
 Configview['Group'] = MiAZGroups

@@ -319,7 +319,7 @@ class MiAZAssistantRepoSettings(MiAZAssistant):
             self.log.debug('Configuration finished sucessfully')
             self.destroy()
             window = self.app.get_widget('window')
-            window.win.present()
+            window.present()
         else:
             self.log.debug('Settings assistant canceled by user')
             self.destroy()

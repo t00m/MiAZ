@@ -1,5 +1,5 @@
 #!/usr/bin/python3
-# File: about.py
+# File: pages.py
 # Author: Tomás Vírseda
 # License: GPL v3
 # Description: Welcome widget
