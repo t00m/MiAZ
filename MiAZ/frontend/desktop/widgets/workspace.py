@@ -8,6 +8,7 @@ import os
 from datetime import datetime, timedelta
 from gettext import gettext as _
 
+from gi.repository import Adw
 from gi.repository import Gtk
 from gi.repository import GLib
 from gi.repository import GObject
@@ -50,7 +51,7 @@ class MiAZWorkspace(Gtk.Box):
     pending = False
 
     def __init__(self, app):
-        super().__init__(orientation=Gtk.Orientation.HORIZONTAL)
+        super().__init__(orientation=Gtk.Orientation.VERTICAL)
         self.log = MiAZLog('MiAZ.Workspace')
         self.log.debug("Initializing widget Workspace!!")
         self.app = app
@@ -336,19 +337,24 @@ class MiAZWorkspace(Gtk.Box):
         return unregistered
 
     def _setup_workspace(self):
-        factory = self.app.get_service('factory')
-        widget = factory.create_box_vertical(margin=0, spacing=0, hexpand=True, vexpand=True)
-        head = factory.create_box_vertical(margin=0, spacing=0, hexpand=True)
-        body = factory.create_box_vertical(margin=0, spacing=0, hexpand=True, vexpand=True)
-        foot = factory.create_box_vertical(margin=0, spacing=0, hexpand=False, vexpand=False)
-        widget.append(head)
-        widget.append(body)
-        widget.append(foot)
+        # ViewStack for workspace-internal pages
+        self._stack = Adw.ViewStack()
+        self._stack.set_hexpand(True)
+        self._stack.set_vexpand(True)
 
-        # Documents columnview
+        # Documents columnview as first page
         frmView = self._setup_columnview()
-        body.append(frmView)
-        self.append(widget)
+        page_content = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, hexpand=True, vexpand=True)
+        page_content.append(frmView)
+        self._stack.add_titled(page_content, 'workspace-default', _('Documents'))
+
+        # InlineViewSwitcher linked to the stack
+        self._switcher = Adw.InlineViewSwitcher()
+        self._switcher.set_stack(self._stack)
+        self.app.add_widget('workspace-view-switcher', self._switcher)
+
+        self.append(self._switcher)
+        self.append(self._stack)
         self.set_default_columnview_attrs()
         self.get_style_context().add_class(class_name='toolbar')
 
@@ -368,6 +374,20 @@ class MiAZWorkspace(Gtk.Box):
         self.view.column_sentby.set_expand(False)
         self.view.column_date.set_visible(True)
         self.view.column_extension.set_visible(False)
+
+    def get_stack(self):
+        return self._stack
+
+    def get_view_switcher(self):
+        return self._switcher
+
+    def add_stack_page(self, widget, name, title, icon_name=None):
+        page = self._stack.add_titled(widget, name, title)
+        if icon_name is not None:
+            page.set_icon_name(icon_name)
+
+    def show_stack_page(self, name):
+        self._stack.set_visible_child_name(name)
 
     def get_workspace_view(self):
         return self.view

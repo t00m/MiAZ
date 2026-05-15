@@ -299,6 +299,11 @@ class MiAZPlugin(GObject.GObject):
             subcategory_submenu.append_item(menuitem)
         return subcategory_submenu
 
+    def add_workspace_page(self, widget, name, title, icon_name=None):
+        workspace = self.app.get_widget('workspace')
+        if workspace is not None:
+            workspace.add_stack_page(widget, name, title, icon_name)
+
 
 class MiAZPluginSystem(GObject.GObject):
     def __init__(self, app):

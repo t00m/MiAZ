@@ -116,6 +116,29 @@ Field = {Date: 0, Country: 1, Group: 2, SentBy: 3, Purpose: 4, Concept: 5, SentT
 **Workflow signals**: `repository-switch-started`, `repository-switch-finished`
 **Workspace signals**: `workspace-loaded`, `workspace-view-updated`, `workspace-view-selection-changed`, `workspace-view-filtered`
 
+### Workspace layout
+
+`MiAZWorkspace` (`Gtk.Box VERTICAL`) contains an `Adw.InlineViewSwitcher` + `Adw.ViewStack`:
+
+```
+MiAZWorkspace (Gtk.Box VERTICAL)
+├── Adw.InlineViewSwitcher        ← tab bar (registered as 'workspace-view-switcher')
+└── Adw.ViewStack                  ← page area (get_stack())
+    ├── [page 'workspace-default'] ← Documents columnview (always present)
+    └── [page ...]                 ← plugin-added pages
+```
+
+**Public API on MiAZWorkspace:**
+- `get_stack()` → `Adw.ViewStack`
+- `get_view_switcher()` → `Adw.InlineViewSwitcher`
+- `add_stack_page(widget, name, title, icon_name=None)` → registers a new page
+- `show_stack_page(name)` → switches to page by name
+
+**Plugin helper on MiAZPlugin:**
+```python
+self.plugin.add_workspace_page(my_widget, 'my-view', _('My View'), 'my-icon')
+```
+
 ### Startup flow
 
 1. `MiAZ.miaz.py:MiAZ.run()` → creates `MiAZApp(Adw.Application)` → `app.set_env(ENV)`
