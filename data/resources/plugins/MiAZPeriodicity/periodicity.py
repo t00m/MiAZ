@@ -11,7 +11,6 @@
 import os
 from gettext import gettext as _
 
-from gi.repository import Adw
 from gi.repository import Gtk
 from gi.repository import Gio
 from gi.repository import GObject
@@ -230,18 +229,19 @@ class MiAZPeriodicityPlugin(MiAZExtension):
                 if dd_size_group is not None:
                     dd_size_group.add_widget(dropdown)
                 section = self.app.get_widget('sidebar-plugin-section')
-                icon_path = self.plugin.get_icon_path()
-                if icon_path:
-                    img = Gtk.Image.new_from_file(icon_path)
-                    img.set_pixel_size(16)
-                    img.set_valign(Gtk.Align.CENTER)
-                    suffix_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
-                    suffix_box.append(img)
-                    suffix_box.append(dropdown)
-                    self._sidebar_item = Adw.SidebarItem(title='', suffix=suffix_box)
-                    section.append(self._sidebar_item)
-                else:
-                    self._sidebar_item = Adw.SidebarItem(title=i_title, suffix=dropdown)
+                if section is not None:
+                    icon_path = self.plugin.get_icon_path()
+                    if icon_path:
+                        img = Gtk.Image.new_from_file(icon_path)
+                        img.set_pixel_size(16)
+                        img.set_valign(Gtk.Align.CENTER)
+                        box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
+                        box.set_hexpand(True)
+                        box.append(img)
+                        box.append(dropdown)
+                        self._sidebar_item = box
+                    else:
+                        self._sidebar_item = self.factory.create_box_filter(i_title, dropdown)
                     section.append(self._sidebar_item)
                 self.workspace.register_filter_view(f'{i_title}', self._do_filter_view)
                 self.log.info(f"Plugin {plugin_name} fully initialized")
