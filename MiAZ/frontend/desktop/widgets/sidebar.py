@@ -123,6 +123,12 @@ class MiAZSidebar(Adw.Bin):
             self.dropdowns[i_type] = dropdown
             filters_box.append(factory.create_box_filter(i_title, dropdown))
 
+        # Concept entry (free text, filters only by Concept field)
+        searchentry_concept = self.app.add_widget('searchentry-concept', Gtk.Entry())
+        searchentry_concept.set_hexpand(True)
+        dd_size_group.add_widget(searchentry_concept)
+        filters_box.append(factory.create_box_filter(_('Concept'), searchentry_concept))
+
         # Plugin section — plugins append their own filter rows here
         plugin_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
         self.app.add_widget('sidebar-plugin-section', plugin_box)

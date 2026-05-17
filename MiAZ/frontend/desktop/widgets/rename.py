@@ -466,7 +466,7 @@ class MiAZRenameDialog(Gtk.Box):
         conf_obj.add_available(key, value)
         conf_obj.add_used(key, value)
         # Re-populate is triggered automatically by the 'used-updated' signal
-        # (connected in __init__) — we just need to select the new value.
+        # (connected in __init__). It just needs to select the new value.
         self._select_value(item_type, key)
         self._on_changed_entry()
 

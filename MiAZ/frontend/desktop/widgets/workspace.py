@@ -404,6 +404,9 @@ class MiAZWorkspace(Gtk.Box):
         self._clearing_filters = True
         try:
             search_entry.set_text('')
+            concept_entry = self.app.get_widget('searchentry-concept')
+            if concept_entry is not None:
+                concept_entry.set_text('')
             for dd in dropdowns.values():
                 dd.set_selected(0)
             for dd in plugin_dropdowns:
@@ -610,6 +613,9 @@ class MiAZWorkspace(Gtk.Box):
         entry = self.app.get_widget('searchentry')
         self._cached_search_text = entry.get_text()
 
+        entry_concept = self.app.get_widget('searchentry-concept')
+        self._cached_concept_text = entry_concept.get_text() if entry_concept is not None else ''
+
         dd_date = self._cached_dropdowns[Date.__gtype_name__]
         selected = dd_date.get_selected_item()
         if selected is None:
@@ -661,6 +667,11 @@ class MiAZWorkspace(Gtk.Box):
             return False
         return self._cached_date_start <= item_dt <= self._cached_date_end
 
+    def _do_eval_cond_matches_concept(self, item):
+        if not self._cached_concept_text:
+            return True
+        return self._cached_concept_text.upper() in item.subtitle.upper()
+
     def _do_eval_cond_matches_active(self, item):
         # ~ self.log.warning(f"\t\t{item.id} active? {item.active}") # DEBUG FILTERS
         return item.active
@@ -690,6 +701,7 @@ class MiAZWorkspace(Gtk.Box):
         c4 = self._do_eval_cond_matches(dropdowns['SentBy'], item.sentby_id)
         c5 = self._do_eval_cond_matches(dropdowns['Purpose'], item.purpose)
         c6 = self._do_eval_cond_matches(dropdowns['SentTo'], item.sentto_id)
+        cc = self._do_eval_cond_matches_concept(item)
 
         # When a specific project is selected, bypass the date and active checks:
         # project members may have unrecognised field values (ca=False) or any date.
@@ -701,9 +713,9 @@ class MiAZWorkspace(Gtk.Box):
                 ca = True
 
         if self._review:
-            show_item = not ca and c0 and c1 and c2 and c4 and c5 and c6
+            show_item = not ca and c0 and c1 and c2 and c4 and c5 and c6 and cc
         else:
-            show_item = ca and c0 and c1 and c2 and c4 and c5 and c6 and cd
+            show_item = ca and c0 and c1 and c2 and c4 and c5 and c6 and cd and cc
 
         # DEBUG FILTERS
         # ~ self.log.warning(f"{item.id}: prj[{sel.id}]\tc0[{c0}] ca[{ca}] cd[{cd}] c1[{c1}] c2[{c2}] c4[{c4}] c5[{c5}] c6[{c6}] = {show_item}") # DEBUG FILTERS
@@ -712,6 +724,9 @@ class MiAZWorkspace(Gtk.Box):
     def _do_connect_filter_signals(self):
         searchentry = self.app.get_widget('searchentry')
         searchentry.connect('changed', self._on_filter_selected)
+        concept_entry = self.app.get_widget('searchentry-concept')
+        if concept_entry is not None:
+            concept_entry.connect('changed', self._on_filter_selected)
         dropdowns = self.app.get_widget('ws-dropdowns')
         for dropdown in dropdowns:
             dropdowns[dropdown].connect("notify::selected-item", self._on_filter_selected)
