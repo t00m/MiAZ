@@ -170,7 +170,7 @@ class MiAZAppSettings(Adw.PreferencesDialog):
 
         if response == 'apply':
             config['App'].set('current', repo.id)
-            self.log.debug(_('Repository %s enabled' % repo.id))
+            self.log.debug('Repository %s enabled', repo.id)
             actions = self.app.get_service('actions')
             actions.application_restart()
         else:

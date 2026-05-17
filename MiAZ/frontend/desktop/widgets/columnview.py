@@ -4,6 +4,8 @@
 # License: GPL v3
 # Description: Custom Gtk.Columnview widget for displaying info
 
+from gettext import gettext as _
+
 from gi.repository import Gio
 from gi.repository import Gtk
 from gi.repository import Pango
@@ -99,9 +101,9 @@ class MiAZColumnView(Gtk.Box):
         self.prop_title_sorter = Gtk.CustomSorter.new(sort_func=self._on_sort_string_func, user_data='title')
 
         # Setup columnview columns
-        self.column_id = Gtk.ColumnViewColumn.new("Id", factory_id)
+        self.column_id = Gtk.ColumnViewColumn.new(_('Id'), factory_id)
         self.column_id.set_sorter(self.prop_id_sorter)
-        self.column_title = Gtk.ColumnViewColumn.new("Title", factory_title)
+        self.column_title = Gtk.ColumnViewColumn.new(_('Title'), factory_title)
         self.column_title.set_sorter(self.prop_title_sorter)
 
         # Setup models

@@ -91,7 +91,7 @@ class MiAZAddDirectoryPlugin(MiAZExtension):
             self.app.set_status(MiAZStatus.BUSY)
             threading.Thread(target=self.import_directory, args=(filepaths,), daemon=True).start()
         except GLib.Error as err:
-            self.srvdlg.show_error(title='Error selecting files', body=err.message)
+            self.srvdlg.show_error(title=_('Error selecting files'), body=err.message)
             self.log.error(f"{err.domain} > {err.message}")
 
     def import_directory(self, filepaths):

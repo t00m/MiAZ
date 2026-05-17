@@ -81,7 +81,7 @@ class MiAZSidebarTBPlugin(MiAZExtension):
             if tgbSidebar is None:
                 tgbSidebar = self.factory.create_button_toggle('io.github.t00m.MiAZ-sidebar-show-left-symbolic', callback=self.toggle_sidebar)
                 self.app.add_widget('workspace-togglebutton-sidebar', tgbSidebar)
-                tgbSidebar.set_tooltip_text("Show sidebar and filters")
+                tgbSidebar.set_tooltip_text(_('Show sidebar and filters'))
                 tgbSidebar.set_active(True)
                 tgbSidebar.set_hexpand(False)
                 tgbSidebar.add_css_class('dimmed')
@@ -143,7 +143,7 @@ class MiAZSidebarTBPlugin(MiAZExtension):
         page = Adw.PreferencesPage(title=page_title, icon_name=page_icon)
         dialog.add(page)
         group = Adw.PreferencesGroup()
-        group.set_title('User interface')
+        group.set_title(_('User interface'))
         page.add(group)
 
         # Row for option "Display Sidebar Togglebutton?"

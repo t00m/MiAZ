@@ -64,7 +64,7 @@ class MiAZAssistantRepo(MiAZAssistant):
 
         # Page 0 - Welcome
         page = self.get_nth_page(0)
-        lblWelcome = Gtk.Label.new(str=_(f"{ENV['APP']['shortname']} repository assistant"))
+        lblWelcome = Gtk.Label.new(str=_('%s repository assistant') % ENV['APP']['shortname'])
         lblWelcome.add_css_class('title-1')
         lblWelcome.set_margin_top(24)
         imgWelcome = Gtk.Image.new_from_icon_name('io.github.t00m.MiAZ')

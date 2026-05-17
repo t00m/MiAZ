@@ -140,7 +140,7 @@ class MiAZWorkspaceToggleViewPlugin(MiAZExtension):
         page = Adw.PreferencesPage(title=page_title, icon_name=page_icon)
         dialog.add(page)
         group = Adw.PreferencesGroup()
-        group.set_title('User interface')
+        group.set_title(_('User interface'))
         page.add(group)
 
         # Row for option "Display Workspace toggle view button?"

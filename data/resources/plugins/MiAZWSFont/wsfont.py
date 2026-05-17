@@ -88,7 +88,7 @@ class MiAZWSFontPlugin(MiAZExtension):
                     widgets=widgets,
                     css_classes=['flat']
                 )
-                self.button.set_tooltip_text('Workspace font size')
+                self.button.set_tooltip_text(_('Workspace font size'))
                 self.app.add_widget('workspace-button-font', self.button)
                 self.button.set_visible(True)
                 font_size = self.plugin.get_config_key('font-size')
@@ -128,7 +128,7 @@ class MiAZWSFontPlugin(MiAZExtension):
             self.log.debug(f"Font size from config is: {font_size}")
         spinbutton.set_value(font_size)
         spinbutton.connect('value-changed', _update_main_spin_button)
-        dialog = srvdlg.show_action(title='Modify Workspace font size', widget=spinbutton)
+        dialog = srvdlg.show_action(title=_('Modify Workspace font size'), widget=spinbutton)
         dialog.present(self.workspace)
 
     def _on_font_changed(self, *args):

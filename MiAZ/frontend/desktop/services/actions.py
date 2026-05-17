@@ -200,7 +200,7 @@ class MiAZActions(GObject.GObject):
         srvdlg = self.app.get_service('dialogs')
         window = button.get_root()
         title = _("Action not implemented yet")
-        body = ("Export the configuration hasn't been implemented yet")
+        body = _("Export the configuration hasn't been implemented yet")
         srvdlg.show_error(title=title, body=body, parent=window)
 
     def manage_resource(self, widget: Gtk.Widget, selector: Gtk.Widget):
@@ -213,7 +213,7 @@ class MiAZActions(GObject.GObject):
         config_for = selector.get_config_for()
         selector.set_vexpand(True)
         selector.update_views()
-        title = _(f'Manage {config_for}')
+        title = _('Manage %s') % config_for
         dialog = srvdlg.show_action(title=title, widget=box, width=800, height=600)
         dialog.present(parent)
 

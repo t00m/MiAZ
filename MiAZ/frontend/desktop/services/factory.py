@@ -4,6 +4,8 @@
 # License: GPL v3
 # Description: Custom widgets widely used
 
+from gettext import gettext as _
+
 from gi.repository import Gio
 from gi.repository import GLib
 from gi.repository import Gtk
@@ -77,7 +79,7 @@ class MiAZFactory:
 
         # Create dialog
         dialog = Gtk.FileDialog.new()
-        dialog.set_title("Select folder")
+        dialog.set_title(_('Select folder'))
         dialog.set_initial_folder(initial_folder)
 
         # If the filter is enabled, only directories are shown.
@@ -103,7 +105,7 @@ class MiAZFactory:
 
         # Create dialog
         dialog = Gtk.FileDialog.new()
-        dialog.set_title("Select documents")
+        dialog.set_title(_('Select documents'))
         dialog.set_initial_folder(initial_folder)
         dialog_filter = Gtk.FileFilter()
         dialog_filter.set_name("Documents")
@@ -127,7 +129,7 @@ class MiAZFactory:
 
         # Create dialog
         dialog = Gtk.FileDialog.new()
-        dialog.set_title("Select documents")
+        dialog.set_title(_('Select documents'))
         dialog.set_initial_folder(initial_folder)
         dialog_filter = Gtk.FileFilter()
         dialog_filter.set_name("MiAZ plugins")
@@ -381,7 +383,7 @@ class MiAZFactory:
         # ~ search_entry.set_placeholder_text("Type %s" % item_type.__title__)
         image = search_entry.get_first_child()
         text_widget = image.get_next_sibling()
-        text_widget.set_placeholder_text(f"Type {item_type.__title__}")
+        text_widget.set_placeholder_text(_('Type %s') % item_type.__title__)
         # Enable context menu
         # FIXME: This code insert a new entry in the context menu
         # Apparently, it works. But it doesn't. It always chooses

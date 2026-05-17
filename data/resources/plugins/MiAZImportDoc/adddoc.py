@@ -93,6 +93,6 @@ class MiAZAddDocumentPlugin(MiAZExtension):
                 parent = self.app.get_widget('window')
                 self.srvdlg.show_toast(_('{count} documents imported successfully').format(count=len(filepaths)))
         except Exception as error:
-            self.srvdlg.show_error(title='Error selecting files', body=str(error))
+            self.srvdlg.show_error(title=_('Error selecting files'), body=str(error))
             self.log.error(f"Error selecting files: {error}")
 

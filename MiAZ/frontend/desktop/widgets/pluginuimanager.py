@@ -101,13 +101,13 @@ class MiAZPluginUIManager(Gtk.Box):
         # Build info dialog
         plugin_info = plugin_module.plugin.get_plugin_info_dict()
         dialog = Adw.PreferencesDialog()
-        dialog.set_title('Plugin info')
+        dialog.set_title(_('Plugin info'))
         page_title = _('Properties')
         page_icon = "io.github.t00m.MiAZ-dialog-information-symbolic"
         page = Adw.PreferencesPage(title=page_title, icon_name=page_icon)
         dialog.add(page)
         group = Adw.PreferencesGroup()
-        group.set_title('Data Sheet')
+        group.set_title(_('Data Sheet'))
         page.add(group)
 
         # Add plugin info as key/value rows
