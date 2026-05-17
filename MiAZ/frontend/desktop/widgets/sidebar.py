@@ -81,13 +81,19 @@ class MiAZSidebar(Adw.Bin):
         title_bar.append(button_settings)
         title_bar.append(button_clear)
         separator = Gtk.Separator(orientation=Gtk.Orientation.HORIZONTAL)
+        box_frame = factory.create_box_vertical(margin=6, spacing=6, hexpand=True, vexpand=True)
+        frame = Gtk.Frame()
+        box_frame.append(frame)
+        box_filters = factory.create_box_vertical(margin=0, spacing=6, hexpand=True, vexpand=True)
         scroll = Gtk.ScrolledWindow()
         scroll.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
         scroll.set_vexpand(True)
+        box_filters.append(scroll)
+        frame.set_child(box_filters)
 
         filters_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
-        filters_box.set_margin_start(12)
-        filters_box.set_margin_end(12)
+        filters_box.set_margin_start(6)
+        filters_box.set_margin_end(6)
         filters_box.set_margin_top(6)
         filters_box.set_margin_bottom(6)
 
@@ -130,8 +136,8 @@ class MiAZSidebar(Adw.Bin):
         filters_box.append(plugin_box)
         scroll.set_child(filters_box)
         main_box.append(title_bar)
-        main_box.append(separator)
-        main_box.append(scroll)
+        # ~ main_box.append(separator)
+        main_box.append(box_frame)
         self.set_child(main_box)
 
     def setup_custom_filters(self, *args):

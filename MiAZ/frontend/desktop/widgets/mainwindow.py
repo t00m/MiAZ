@@ -248,7 +248,7 @@ class MiAZMainWindow(Gtk.Box):
         if not self.app.get_plugins_loaded():
             return
 
-        # Replace the menu model with a fresh Gio.Menu 
+        # Replace the menu model with a fresh Gio.Menu
         new_main_menu = Gio.Menu.new()
         self.app.add_widget('workspace-menu-selection', new_main_menu)
         new_plugins_section = Gio.Menu.new()
