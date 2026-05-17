@@ -67,7 +67,21 @@
     </screenshot>
   </screenshots>
   <releases>
-    <release version="0.1.25" date="2025-05-02" urgency="medium">
+    <release version="0.1.26" date="2026-05-16" urgency="medium">
+      <description>
+        <p>AI-assisted renaming, document notes, column visibility, and rename dialog improvements.</p>
+        <ul>
+          <li>New plugin MiAZAIAssistant: propose all seven filename fields via Claude, OpenAI, Gemini, or Ollama</li>
+          <li>New plugin MiAZNotes: attach Markdown notes to any document with faceted filtering and backup/restore</li>
+          <li>New plugin MiAZColumnVisibility: toggle workspace column visibility</li>
+          <li>Rename dialog: inline Add buttons on restricted-vocabulary rows</li>
+          <li>Rename dialog: Concept autocomplete via difflib-backed popover</li>
+          <li>Workspace: Adw.InlineViewSwitcher for workspace view switching</li>
+          <li>Backend: filename_guess_date() probes PDF metadata, EXIF, and file mtime</li>
+        </ul>
+      </description>
+    </release>
+    <release version="0.1.25" date="2026-05-05" urgency="medium">
       <description>
         <p>Sidebar redesign, unified plugin system, performance improvements and startup fixes.</p>
         <ul>
@@ -80,7 +94,6 @@
         </ul>
       </description>
     </release>
-    <release version="0.1.25" date="2026-05-05" urgency="low" />
     <release version="0.1.8" date="2025-07-21" urgency="low" />
     <release version="0.1.7" date="2025-03-22" urgency="low" />
     <release version="0.0.48" date="2024-07-12" urgency="low" />

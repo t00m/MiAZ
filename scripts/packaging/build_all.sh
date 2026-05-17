@@ -12,7 +12,8 @@ log_err() { echo "[build_all] FAILED: $*" >&2; }
 die()     { echo "[build_all] ERROR: $*" >&2; exit 1; }
 
 VERSION=$(grep -m1 "version" "$REPO_ROOT/meson.build" \
-    | sed "s/.*version.*: *'\([^']*\)'.*/\1/")
+    | sed "s/.*version.*: *'\([^']*\)'.*/\1/" \
+    | sed "s/+.*//")
 [[ -n "$VERSION" ]] || die "Could not read version from meson.build"
 log "Version: $VERSION"
 
@@ -56,22 +57,22 @@ else
 fi
 
 # ── Flatpak ───────────────────────────────────────────────────────────────────
-log "--- Building Flatpak package ---"
-cd "$REPO_ROOT"
-FLATPAK_BUNDLE="$REPO_ROOT/miaz-${VERSION}.flatpak"
-if "$SCRIPT_DIR/flatpak/create_flatpak.sh"; then
+#log "--- Building Flatpak package ---"
+#cd "$REPO_ROOT"
+#FLATPAK_BUNDLE="$REPO_ROOT/miaz-${VERSION}.flatpak"
+#if "$SCRIPT_DIR/flatpak/create_flatpak.sh"; then
     # create_flatpak.sh builds and installs but does not produce a bundle file.
     # Export the build result into a local repo and create a distributable bundle.
-    log "Exporting flatpak build to local repo..."
-    flatpak build-export "$REPO_ROOT/repo" "$REPO_ROOT/builddir_flatpak"
-    log "Creating bundle $(basename "$FLATPAK_BUNDLE") ..."
-    flatpak build-bundle "$REPO_ROOT/repo" "$FLATPAK_BUNDLE" io.github.t00m.MiAZ
-    cp "$FLATPAK_BUNDLE" "$DIST_DIR/"
-    log_ok "$(basename "$FLATPAK_BUNDLE") -> dist/"
-else
-    log_err "Flatpak build failed"
-    ERRORS=$(( ERRORS + 1 ))
-fi
+#    log "Exporting flatpak build to local repo..."
+#    flatpak build-export "$REPO_ROOT/repo" "$REPO_ROOT/builddir_flatpak"
+#    log "Creating bundle $(basename "$FLATPAK_BUNDLE") ..."
+#    flatpak build-bundle "$REPO_ROOT/repo" "$FLATPAK_BUNDLE" io.github.t00m.MiAZ
+#    cp "$FLATPAK_BUNDLE" "$DIST_DIR/"
+#    log_ok "$(basename "$FLATPAK_BUNDLE") -> dist/"
+#else
+#    log_err "Flatpak build failed"
+#    ERRORS=$(( ERRORS + 1 ))
+#fi
 
 # ── Windows EXE / Installer ───────────────────────────────────────────────────
 log "--- Building Windows executable ---"
@@ -96,6 +97,41 @@ if "$SCRIPT_DIR/win/create_exe.sh"; then
 else
     log_err "Windows build failed"
     ERRORS=$(( ERRORS + 1 ))
+fi
+
+# ── AppImage ─────────────────────────────────────────────────────────────────
+log "--- Building AppImage package ---"
+if "$SCRIPT_DIR/AppImage/build_appimage.sh"; then
+    FOUND=0
+    while IFS= read -r pkg; do
+        cp "$pkg" "$DIST_DIR/"
+        log_ok "$(basename "$pkg") -> dist/"
+        FOUND=1
+    done < <(find "$REPO_ROOT" -maxdepth 1 -name "MiAZ-${VERSION}*.AppImage" 2>/dev/null | sort)
+    [[ $FOUND -eq 1 ]] || log_err "AppImage built but no output file found"
+else
+    log_err "AppImage build failed"
+    ERRORS=$(( ERRORS + 1 ))
+fi
+
+# ── Snap ──────────────────────────────────────────────────────────────────────
+log "--- Building Snap package ---"
+if command -v snapcraft &>/dev/null; then
+    if (cd "$REPO_ROOT" && snapcraft); then
+        FOUND=0
+        while IFS= read -r pkg; do
+            cp "$pkg" "$DIST_DIR/"
+            log_ok "$(basename "$pkg") -> dist/"
+            FOUND=1
+        done < <(find "$REPO_ROOT" -maxdepth 1 -name "miaz_${VERSION}_*.snap" 2>/dev/null | sort)
+        [[ $FOUND -eq 1 ]] || log_err "Snap built but no output file found"
+    else
+        log_err "Snap build failed"
+        ERRORS=$(( ERRORS + 1 ))
+    fi
+else
+    log "snapcraft not found — skipping Snap build."
+    log "  Install with: sudo snap install snapcraft --classic"
 fi
 
 # ── Summary ───────────────────────────────────────────────────────────────────

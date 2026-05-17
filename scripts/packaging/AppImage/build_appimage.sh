@@ -25,7 +25,8 @@ require() {
 
 # ── version ──────────────────────────────────────────────────────────────────
 VERSION=$(grep -m1 "version" "$REPO_ROOT/meson.build" \
-    | sed "s/.*version.*: *'\([^']*\)'.*/\1/")
+    | sed "s/.*version.*: *'\([^']*\)'.*/\1/" \
+    | sed "s/+.*//")
 [[ -n "$VERSION" ]] || die "Could not read version from meson.build"
 log "Version: $VERSION"
 
@@ -62,8 +63,15 @@ meson setup builddir_appimage --prefix=/usr -Dprofile=release --wipe
 ninja -C builddir_appimage
 DESTDIR="$REPO_ROOT/AppDir" ninja -C builddir_appimage install
 
-# Ensure AppRun is executable (linuxdeploy will create its own if absent,
-# but we provide a custom one that sets PYTHONPATH correctly)
+# Copy the canonical AppRun from the packaging scripts directory.
+# The meson DESTDIR install does not create AppRun; it lives in the repo
+# at scripts/packaging/AppImage/AppRun and is copied here each build.
+APPRUN_SRC="$SCRIPT_DIR/AppRun"
+[[ -f "$APPRUN_SRC" ]] || die "AppRun source not found at $APPRUN_SRC"
+cp "$APPRUN_SRC" "$REPO_ROOT/AppDir/AppRun"
+chmod +x "$REPO_ROOT/AppDir/AppRun"
+log "AppRun installed to AppDir/AppRun"
+
 [[ -x "$REPO_ROOT/AppDir/AppRun" ]] || die "AppDir/AppRun missing or not executable"
 
 # ── linuxdeploy ───────────────────────────────────────────────────────────────

@@ -1,3 +1,15 @@
+miaz (0.1.26-1) unstable; urgency=medium
+
+  * New plugin MiAZAIAssistant: AI-powered field suggestions via Claude, OpenAI, Gemini, Ollama.
+  * New plugin MiAZNotes: attach Markdown notes to documents with backup/restore.
+  * New plugin MiAZColumnVisibility: toggle workspace column visibility.
+  * Rename dialog: inline Add buttons on restricted-vocabulary rows.
+  * Rename dialog: Concept autocomplete via difflib popover.
+  * Workspace: Adw.InlineViewSwitcher for workspace views.
+  * Backend: filename_guess_date() helper for smart date detection.
+
+ -- Tomás Vírseda <tomasvirseda@gmail.com>  Sat, 16 May 2026 00:00:00 +0000
+
 miaz (0.1.25-1) unstable; urgency=medium
 
   * Initial Debian packaging (meson build system).
