@@ -15,11 +15,13 @@ from gi.repository import Adw
 from gi.repository import Gtk
 
 from MiAZ.backend.log import MiAZLog
-from MiAZ.backend.models import Group, Country, Purpose, SentBy, SentTo, Date, Repository
+from MiAZ.backend.models import Group, Country, Purpose, SentBy, SentTo, Date, Repository, File
 from MiAZ.frontend.desktop.widgets.configview import MiAZCountries, MiAZGroups, MiAZPurposes, MiAZPeopleSentBy, MiAZPeopleSentTo
 from MiAZ.frontend.desktop.widgets.configview import MiAZRepositories
+from MiAZ.frontend.desktop.widgets.rename import MiAZRenameDialog
 from MiAZ.frontend.desktop.widgets.settings import MiAZAppSettings
 from MiAZ.frontend.desktop.widgets.settings import MiAZRepoSettings
+from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewMassDelete
 
 # Conversion Item type to Field Number
 Field = {}
@@ -50,12 +52,95 @@ class MiAZActions(GObject.GObject):
                             MiAZActions,
                             GObject.SignalFlags.RUN_LAST,
                             GObject.TYPE_PYOBJECT, (GObject.TYPE_PYOBJECT,))
+        GObject.signal_new('rename-dialog-built',
+                            MiAZActions,
+                            GObject.SignalFlags.RUN_LAST,
+                            None, (GObject.TYPE_PYOBJECT, GObject.TYPE_PYOBJECT))
 
     def document_display(self, doc):
         self.log.debug(f"Displaying {doc}")
         repository = self.app.get_service('repo')
         filepath = os.path.join(repository.docs, doc)
         self.util.filename_display(filepath)
+
+    def document_display_selected(self, *args):
+        if self.stop_if_no_items():
+            return
+        workspace = self.app.get_widget('workspace')
+        item = workspace.get_selected_items()[0]
+        self.document_display(item.id)
+
+    def document_delete(self, *args):
+        if self.stop_if_no_items():
+            return
+        workspace = self.app.get_widget('workspace')
+        repository = self.app.get_service('repo')
+        items = workspace.get_selected_items()
+        box, view = self.factory.create_view(MiAZColumnViewMassDelete)
+        citems = [File(id=item.id, title=os.path.basename(item.id)) for item in items]
+        view.update(citems)
+        window = self.app.get_widget('window')
+        body = _("<b>Are you sure?</b>\n\nThe following documents will be deleted:")
+        dialog = self.srvdlg.show_question(title=_('Mass deletion'), body=body, widget=box, width=600, height=480)
+        dialog.connect('response', self._on_document_delete_response, items)
+        dialog.present(window)
+
+    def _on_document_delete_response(self, dialog, response, items):
+        if response == 'apply':
+            repository = self.app.get_service('repo')
+            filepaths = {os.path.join(repository.docs, item.id) for item in items}
+            self.util.filename_delete(filepaths)
+            body = _('{num_docs} documents deleted from repository').format(num_docs=len(items))
+            self.srvdlg.show_toast(body)
+
+    def document_rename(self, *args):
+        if self.stop_if_no_items():
+            return
+        workspace = self.app.get_widget('workspace')
+        item = workspace.get_selected_items()[0]
+        self._document_rename_single(item.id)
+
+    def _document_rename_single(self, doc):
+        rename_widget = self.app.add_widget('rename-widget', MiAZRenameDialog(self.app))
+        rename_widget.set_data(doc)
+        window = self.app.get_widget('window')
+        dialog = self.srvdlg.show_question(title=_('Rename document'), body='', widget=rename_widget, width=1024)
+        dialog.add_response("preview", _("Preview"))
+        dialog.set_response_enabled("preview", True)
+        self.app.add_widget('dialog-rename', dialog)
+        self.emit('rename-dialog-built', dialog, rename_widget)
+        dialog.connect('response', self._on_rename_response, rename_widget)
+        dialog.present(window)
+
+    def _on_rename_response(self, dialog, response, rename_widget):
+        if response == 'apply':
+            window = self.app.get_widget('window')
+            body = _('You are about to rename this document.\nAre you sure?')
+            dialog_confirm = self.srvdlg.show_question(
+                title=_('Rename document'), body=body,
+                callback=self._on_answer_question_rename,
+                data=(rename_widget, dialog))
+            dialog_confirm.present(window)
+        elif response == 'preview':
+            doc = rename_widget.get_filepath_source()
+            self.document_display(doc)
+            dialog.present(window)
+
+    def _on_answer_question_rename(self, dialog, response, data):
+        rename_widget, parent_dialog = data
+        if response == 'apply':
+            repository = self.app.get_service('repo')
+            bsource = rename_widget.get_filepath_source()
+            source = os.path.join(repository.docs, bsource)
+            btarget = rename_widget.get_filepath_target()
+            target = os.path.join(repository.docs, btarget)
+            renamed = self.util.filename_rename(source, target)
+            if not renamed:
+                self.srvdlg.show_error(
+                    title=_('Rename document'),
+                    body=_('Another document with the same name already exists in this repository'))
+        else:
+            parent_dialog.present(self.app.get_widget('window'))
 
     def dropdown_populate(self, config, dropdown, item_type, any_value=True, none_value=False, only_include: list = [], only_exclude: list = []):
         # FIXME: THIS METHOD DIDN'T TAKE INTO ACCOUNT CUSTOM MODELS

@@ -7,6 +7,7 @@
 from gettext import gettext as _
 
 from gi.repository import Adw
+from gi.repository import Gdk
 from gi.repository import Gio
 from gi.repository import GLib
 from gi.repository import Gtk
@@ -90,6 +91,7 @@ class MiAZMainWindow(Gtk.Box):
     def _setup_event_listener(self):
         """Setup an event listener for mainwindow"""
         evk = Gtk.EventControllerKey.new()
+        evk.connect('key-pressed', self._on_key_pressed)
         self.app.add_widget('window-event-controller', evk)
         self.win.add_controller(evk)
         plugin_system = self.app.get_service('plugin-system')
@@ -97,6 +99,20 @@ class MiAZMainWindow(Gtk.Box):
             plugin_system.connect('plugins-updated', self._on_plugins_updated)
         self._footer_menu_appended_to = None
         self.app.connect('application-started', self._on_application_started)
+
+    def _on_key_pressed(self, controller, keyval, keycode, state):
+        actions = self.app.get_service('actions')
+        ctrl = state & Gdk.ModifierType.CONTROL_MASK
+        if keyval == Gdk.KEY_Return:
+            actions.document_display_selected()
+            return True
+        if ctrl and keyval == Gdk.KEY_BackSpace:
+            actions.document_rename()
+            return True
+        if ctrl and keyval in (Gdk.KEY_Delete, Gdk.KEY_KP_Delete):
+            actions.document_delete()
+            return True
+        return False
 
     def _setup_headerbar_left(self):
         factory = self.app.get_service('factory')
@@ -114,11 +130,40 @@ class MiAZMainWindow(Gtk.Box):
 
     def _setup_headerbar_right(self):
         factory = self.app.get_service('factory')
+        actions = self.app.get_service('actions')
         headerbar = self.app.get_widget('headerbar')
         hbox = factory.create_box_horizontal(margin=0, spacing=0)
         hbox.add_css_class('linked')
         self.app.add_widget('headerbar-right-box', hbox)
         headerbar.pack_end(hbox)
+
+        # View document button (visible when exactly 1 item selected)
+        btn_view = factory.create_button(
+            icon_name='io.github.t00m.MiAZ-view-document',
+            tooltip=_('View document'),
+            callback=actions.document_display_selected)
+        btn_view.set_visible(False)
+        self.app.add_widget('headerbar-button-view', btn_view)
+        hbox.append(btn_view)
+
+        # Rename document button (visible when exactly 1 item selected)
+        btn_rename = factory.create_button(
+            icon_name='io.github.t00m.MiAZ-rename',
+            tooltip=_('Rename document'),
+            callback=actions.document_rename)
+        btn_rename.set_visible(False)
+        self.app.add_widget('headerbar-button-rename', btn_rename)
+        hbox.append(btn_rename)
+
+        # Delete document button (visible when at least 1 item selected)
+        btn_delete = factory.create_button(
+            icon_name='io.github.t00m.MiAZ-edit-delete-symbolic',
+            tooltip=_('Delete documents'),
+            callback=actions.document_delete)
+        btn_delete.add_css_class('destructive-action')
+        btn_delete.set_visible(False)
+        self.app.add_widget('headerbar-button-delete', btn_delete)
+        hbox.append(btn_delete)
 
     def _setup_headerbar_center(self):
         pass
@@ -175,6 +220,10 @@ class MiAZMainWindow(Gtk.Box):
             widget_workspace.connect('workspace-view-selection-changed', self._on_workspace_menu_update)
             widget_workspace.connect('workspace-view-filtered', self._on_workspace_menu_update)
             widget_workspace.connect('workspace-view-updated', self._on_workspace_menu_update)
+            # Double-click on a row → view document
+            view = self.app.get_widget('workspace-view')
+            if view is not None and hasattr(view, 'cv'):
+                view.cv.connect('activate', lambda cv, pos: actions.document_display_selected())
         return widget_workspace
 
     def _on_application_started(self, *args):
@@ -252,7 +301,18 @@ class MiAZMainWindow(Gtk.Box):
         tooltip += _('{nv} documents in this view\n').format(nv=v)
         tooltip += _('{nr} documents in this repository').format(nr=t)
         workspace_menu.set_tooltip_markup(tooltip)
-        # ~ self.log.debug(f"filter selected: {s}/{v}/{t}")
+
+        # Toggle headerbar button visibility based on selection
+        btn_view = self.app.get_widget('headerbar-button-view')
+        if btn_view is not None:
+            btn_view.set_visible(s == 1)
+        btn_rename = self.app.get_widget('headerbar-button-rename')
+        if btn_rename is not None:
+            btn_rename.set_visible(s == 1)
+        btn_delete = self.app.get_widget('headerbar-button-delete')
+        if btn_delete is not None:
+            btn_delete.set_visible(s >= 1)
+
         searchentry = self.app.get_widget('searchentry')
         if v > 0:
             stack.set_visible_child_name('workspace')

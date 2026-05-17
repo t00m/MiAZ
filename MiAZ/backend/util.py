@@ -202,6 +202,63 @@ class MiAZUtil(GObject.GObject):
         mimetype, val = Gio.content_type_guess(filepath, data=None)
         return mimetype
 
+    def filename_guess_date(self, filepath: str, concept_hint: str = '') -> str:
+        """Return a YYYYMMDD string guessed from the file or empty.
+
+        Order: (1) 8-digit run in concept hint that parses as %Y%m%d;
+        (2) PDF /CreationDate from the PDF Info dictionary;
+        (3) image EXIF DateTimeOriginal; (4) file mtime.
+        """
+        for chunk in (concept_hint or '').split('_'):
+            if len(chunk) == 8:
+                try:
+                    datetime.strptime(chunk, '%Y%m%d')
+                    return chunk
+                except ValueError:
+                    pass
+        mime = self.filename_get_mimetype(filepath) or ''
+        if mime == 'application/pdf':
+            guess = self._guess_date_from_pdf(filepath)
+            if guess:
+                return guess
+        if mime.startswith('image/'):
+            guess = self._guess_date_from_image_exif(filepath)
+            if guess:
+                return guess
+        return self.filename_get_creation_date(filepath).strftime('%Y%m%d')
+
+    def _guess_date_from_pdf(self, filepath: str) -> str:
+        try:
+            from pypdf import PdfReader
+        except ImportError:
+            return ''
+        try:
+            reader = PdfReader(filepath)
+            raw = reader.metadata.creation_date if reader.metadata else None
+            if raw:
+                return raw.strftime('%Y%m%d')
+        except Exception as error:
+            self.log.debug(f"PDF date probe failed for {filepath}: {error}")
+        return ''
+
+    def _guess_date_from_image_exif(self, filepath: str) -> str:
+        try:
+            from PIL import Image, ExifTags
+        except ImportError:
+            return ''
+        try:
+            with Image.open(filepath) as img:
+                exif = img.getexif()
+                if not exif:
+                    return ''
+                for tag_id, value in exif.items():
+                    tag = ExifTags.TAGS.get(tag_id, tag_id)
+                    if tag == 'DateTimeOriginal' and isinstance(value, str):
+                        return datetime.strptime(value, '%Y:%m:%d %H:%M:%S').strftime('%Y%m%d')
+        except Exception as error:
+            self.log.debug(f"EXIF date probe failed for {filepath}: {error}")
+        return ''
+
     def filename_details(self, filepath: str):
         basename = os.path.basename(filepath)
         dot = basename.rfind('.')

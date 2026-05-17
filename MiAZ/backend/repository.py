@@ -89,11 +89,8 @@ class MiAZRepository(GObject.GObject):
         """Write the default system-plugin enabled list for a brand-new repository."""
         default_plugins = {
             "MiAZAddFromDir": "Add documents from directory",
-            "MiAZDeleteDoc": "Delete selected documents",
             "MiAZImportDoc": "Add new document(s)",
             "MiAZProjectMgt": "Project management",
-            "MiAZRenameDoc": "Rename a single document",
-            "MiAZViewItem": "Display document",
         }
         enabled_file = os.path.join(dir_conf, 'plugins-used.json')
         if not os.path.exists(enabled_file):

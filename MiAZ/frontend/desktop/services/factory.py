@@ -486,6 +486,7 @@ class MiAZFactory:
         view.get_style_context().add_class(class_name='caption')
         view.set_hexpand(True)
         view.set_vexpand(True)
+        box.append(view)
         if len(title) > 0:
             label = self.create_label(title)
             box.append(label)
