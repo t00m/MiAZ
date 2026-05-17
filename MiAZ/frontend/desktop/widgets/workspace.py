@@ -547,7 +547,7 @@ class MiAZWorkspace(Gtk.Box):
         ENV['CACHE']['CONCEPTS']['ACTIVE'] = sorted(concepts_active)
         ENV['CACHE']['CONCEPTS']['INACTIVE'] = sorted(concepts_inactive)
 
-        # Update workspace view 
+        # Update workspace view
         self._refresh_filter_cache()
         self._num_total_items = len(docs)
         GLib.idle_add(self._idle_view_update, items)
@@ -668,6 +668,7 @@ class MiAZWorkspace(Gtk.Box):
         return self._cached_date_start <= item_dt <= self._cached_date_end
 
     def _do_eval_cond_matches_concept(self, item):
+        # Check this
         if not self._cached_concept_text:
             return True
         return self._cached_concept_text.upper() in item.subtitle.upper()

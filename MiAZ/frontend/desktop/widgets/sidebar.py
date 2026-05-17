@@ -61,10 +61,7 @@ class MiAZSidebar(Adw.Bin):
             'sidebar-dropdown-size-group',
             Gtk.SizeGroup(mode=Gtk.SizeGroupMode.HORIZONTAL))
 
-        # ── main container ─────────────────────────────────────────────
         main_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
-
-        # ── title bar ───────────────────────────────────────────────────
         repo_id = config['App'].get('current') or 'MiAZ'
         title_bar = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
         title_bar.set_margin_top(6)
@@ -83,11 +80,7 @@ class MiAZSidebar(Adw.Bin):
         title_bar.append(lbl_title)
         title_bar.append(button_settings)
         title_bar.append(button_clear)
-
-        # ── separator ───────────────────────────────────────────────────
         separator = Gtk.Separator(orientation=Gtk.Orientation.HORIZONTAL)
-
-        # ── scrolled filter area ────────────────────────────────────────
         scroll = Gtk.ScrolledWindow()
         scroll.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
         scroll.set_vexpand(True)
@@ -133,10 +126,7 @@ class MiAZSidebar(Adw.Bin):
         plugin_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
         self.app.add_widget('sidebar-plugin-section', plugin_box)
         filters_box.append(plugin_box)
-
         scroll.set_child(filters_box)
-
-        # ── assemble ────────────────────────────────────────────────────
         main_box.append(title_bar)
         main_box.append(separator)
         main_box.append(scroll)
