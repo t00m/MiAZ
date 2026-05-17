@@ -406,7 +406,7 @@ class MiAZProjectMgt(MiAZExtension):
                             box.append(dropdown)
                             self._sidebar_item = box
                         else:
-                            self._sidebar_item = self.factory.create_box_filter(i_title, dropdown)
+                            self._sidebar_item = dropdown
                         section.append(self._sidebar_item)
                     self.workspace.register_filter_view(f'{i_title}', self._do_filter_view)
             else:

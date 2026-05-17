@@ -94,8 +94,9 @@ class MiAZSidebar(Adw.Bin):
         # Search entry
         searchentry = self.app.add_widget('searchentry', Gtk.Entry())
         searchentry.set_hexpand(True)
+        searchentry.set_placeholder_text(_('Search in all fields'))
         dd_size_group.add_widget(searchentry)
-        filters_box.append(factory.create_box_filter(_('Free text'), searchentry))
+        filters_box.append(searchentry)
 
         # Date dropdown
         i_type = Date.__gtype_name__
@@ -104,7 +105,7 @@ class MiAZSidebar(Adw.Bin):
         dd_date.set_size_request(190, -1)
         dd_size_group.add_widget(dd_date)
         self.dropdowns[i_type] = dd_date
-        filters_box.append(factory.create_box_filter(_('Date'), dd_date))
+        filters_box.append(dd_date)
 
         # Field dropdowns
         for item_type in [Country, Group, SentBy, Purpose, SentTo]:
@@ -114,15 +115,16 @@ class MiAZSidebar(Adw.Bin):
             dropdown.set_size_request(190, -1)
             dd_size_group.add_widget(dropdown)
             self.dropdowns[i_type] = dropdown
-            filters_box.append(factory.create_box_filter(i_title, dropdown))
+            filters_box.append(dropdown)
 
         # Concept entry (free text, filters only by Concept field)
         searchentry_concept = self.app.add_widget('searchentry-concept', Gtk.Entry())
         searchentry_concept.set_hexpand(True)
+        searchentry_concept.set_placeholder_text(_('Search in Concept field'))
         dd_size_group.add_widget(searchentry_concept)
-        filters_box.append(factory.create_box_filter(_('Concept'), searchentry_concept))
+        filters_box.append(searchentry_concept)
 
-        # Plugin section — plugins append their own filter rows here
+        # Plugin section: plugins append their own filter rows here
         plugin_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
         self.app.add_widget('sidebar-plugin-section', plugin_box)
         filters_box.append(plugin_box)
