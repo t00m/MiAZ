@@ -37,7 +37,11 @@ plugin_info = {
     }
 
 
+# Default value assigned to documents without an explicit periodicity
+DEFAULT_PERIODICITY = 'OD'
+
 default_available_data = {
+    'OD': _('On demand'),
     '1D': _('Daily'),
     '1W': _('Weekly'),
     '1M': _('Monthly'),
@@ -159,6 +163,7 @@ class MiAZPeriodicityPlugin(MiAZExtension):
             self.startup()
         else:
             self._startup_handler = self.workspace.connect('workspace-loaded', self.startup)
+        self._filename_added_handler = self.util.connect('filename-added', self._on_filename_added)
         self._filename_renamed_handler = self.util.connect('filename-renamed', self._on_filename_renamed)
         self._filename_deleted_handler = self.util.connect('filename-deleted', self._on_filename_deleted)
 
@@ -184,6 +189,8 @@ class MiAZPeriodicityPlugin(MiAZExtension):
             self.config.disconnect(self._used_updated_handler)
         if hasattr(self, '_selected_item_handler') and dropdown is not None:
             dropdown.disconnect(self._selected_item_handler)
+        if hasattr(self, '_filename_added_handler'):
+            self.util.disconnect(self._filename_added_handler)
         if hasattr(self, '_filename_renamed_handler'):
             self.util.disconnect(self._filename_renamed_handler)
         if hasattr(self, '_filename_deleted_handler'):
@@ -217,12 +224,17 @@ class MiAZPeriodicityPlugin(MiAZExtension):
                 # Get config
                 self.config = MiAZConfigPeriodicity(self.app, self.plugin)
 
+                # Ensure the default value exists and assign it to every
+                # document that has no periodicity yet (transparent to the user)
+                self._ensure_default_value()
+                self._apply_default_assignments()
+
                 # Dropdown for custom filters
                 dropdown = self.factory.create_dropdown_generic(item_type=item_type, ellipsize=True, enable_search=True)
                 self.app.add_widget(f'plugin-{plugin_name}-dropdown', dropdown)
                 self.app.get_widget('plugin-dropdowns').append(dropdown)
-                self._used_updated_handler = self.config.connect('used-updated', self.actions.dropdown_populate, dropdown, item_type, True, True)
-                self.actions.dropdown_populate(self.config, dropdown, item_type, True, True)
+                self._used_updated_handler = self.config.connect('used-updated', self.actions.dropdown_populate, dropdown, item_type, True, False)
+                self.actions.dropdown_populate(self.config, dropdown, item_type, True, False)
                 self._selected_item_handler = dropdown.connect("notify::selected-item", self.workspace.update)
                 dropdown.set_size_request(190, -1)
                 dd_size_group = self.app.get_widget('sidebar-dropdown-size-group')
@@ -264,7 +276,7 @@ class MiAZPeriodicityPlugin(MiAZExtension):
         if pid == 'Any':
             display = True
         elif pid == 'None':
-            display = False
+            display = doc_id not in data.get('documents', {})
         else:
             try:
                 docs = data[f'{i_confname}'][pid]
@@ -344,13 +356,41 @@ class MiAZPeriodicityPlugin(MiAZExtension):
             self.util.json_save(datafile, data)
         return change
 
+    def _ensure_default_value(self):
+        """Make sure the default periodicity value is both available and used."""
+        title = _('On demand')
+        if not self.config.exists_available(DEFAULT_PERIODICITY):
+            self.config.add_available(DEFAULT_PERIODICITY, title)
+        if not self.config.exists_used(DEFAULT_PERIODICITY):
+            self.config.add_used(DEFAULT_PERIODICITY, title)
+
+    def _apply_default_assignments(self):
+        """Assign the default periodicity to every repository document that has
+        none. Runs on activation, transparent to the user, debug-logged only."""
+        repository = self.app.get_service('repo')
+        try:
+            docs = self.util.get_files(repository.docs)
+        except Exception:
+            docs = []
+        unassigned = [os.path.basename(fp) for fp in docs
+                      if self._get_pid(os.path.basename(fp)) is None]
+        if unassigned:
+            self._set_property_real(unassigned, DEFAULT_PERIODICITY)
+            self.log.debug(
+                f"{i_title}: default '{DEFAULT_PERIODICITY}' applied to "
+                f"{len(unassigned)} document(s) without periodicity")
+
     def _unset_property(self, *args):
         parent = self.workspace.get_root()
         selected_documents = []
         for item in self.workspace.get_selected_items():
             selected_documents.append(item.id)
         self._unset_property_real(selected_documents)
-        self.srvdlg.show_toast(_('Removed {i_confname} for selected documents').format(i_confname=i_confname))
+        # Documents must always keep a periodicity: fall back to the default
+        if selected_documents:
+            self._set_property_real(selected_documents, DEFAULT_PERIODICITY)
+            self.workspace.update()
+        self.srvdlg.show_toast(_('Reset {i_confname} to default for selected documents').format(i_confname=i_confname))
 
     def _unset_property_real(self, selected_documents):
         change = False
@@ -421,6 +461,12 @@ class MiAZPeriodicityPlugin(MiAZExtension):
             return documents[doc_id]
         except KeyError:
             return None
+
+    def _on_filename_added(self, util, fp_target):
+        target = os.path.basename(fp_target)
+        if self._get_pid(target) is None:
+            self._set_property_real([target], DEFAULT_PERIODICITY)
+            self.log.debug(f"{i_title}: default '{DEFAULT_PERIODICITY}' assigned to new document '{target}'")
 
     def _on_filename_renamed(self, util, fp_source, fp_target):
         source = os.path.basename(fp_source)
