@@ -38,6 +38,11 @@ plugin_info = {
         'Subcategory':   'Tagging and Classification'
     }
 
+# Virtual project bucket holding documents not belonging to any real project.
+# It is never a real config key: it is shown as the first filter option in the
+# sidebar (next to 'Any') and stored only in the assignment map (projects.json).
+DEFAULT_PROJECT = 'None'
+
 default_available_data = {}
 
 # Model
@@ -75,6 +80,8 @@ class MiAZProject(GObject.GObject):
             self.log.debug("Created new config file for projects")
         self.projects = self.load()
         self.check()
+        self.apply_defaults(DEFAULT_PROJECT)
+        self.util.connect('filename-added', self._on_filename_added)
         self.util.connect('filename-renamed', self._on_filename_renamed)
         self.util.connect('filename-deleted', self._on_filename_deleted)
 
@@ -93,22 +100,50 @@ class MiAZProject(GObject.GObject):
             self.srvdlg.show_toast(message)
         self.log.debug("Projects consistency successfully checked")
 
-    def add(self, project: str, doc: str):
+    def _add_nosave(self, project: str, doc: str, notify: bool = True) -> bool:
+        added = False
         try:
             docs = self.projects[project]
             if doc not in docs:
                 docs.append(doc)
                 self.projects[project] = docs
+                added = True
         except KeyError:
             self.projects[project] = [doc]
-        message = f"Added '{doc}' to project '{project}'"
-        self.log.debug(message)
-        self.srvdlg.show_toast(message)
+            added = True
+        if added:
+            message = f"Added '{doc}' to project '{project}'"
+            self.log.debug(message)
+            if notify:
+                self.srvdlg.show_toast(message)
+        return added
 
-    def add_batch(self, project: str, docs: list) -> None:
+    def add(self, project: str, doc: str):
+        self._add_nosave(project, doc, notify=True)
+
+    def add_batch(self, project: str, docs: list, notify: bool = True) -> None:
         for doc in docs:
-            self.add(project, doc)
+            self._add_nosave(project, doc, notify=notify)
         self.save()
+
+    def apply_defaults(self, default_project: str) -> None:
+        """Assign the default project to every repository document that does not
+        belong to any project. Runs on activation, transparent to the user
+        (no toasts), debug-logged only."""
+        repository = self.app.get_service('repo')
+        try:
+            docs = self.util.get_files(repository.docs)
+        except Exception:
+            docs = []
+        unassigned = [os.path.basename(fp) for fp in docs
+                      if len(self.assigned_to(os.path.basename(fp))) == 0]
+        for doc in unassigned:
+            self._add_nosave(default_project, doc, notify=False)
+        if unassigned:
+            self.save()
+            self.log.debug(
+                f"Default project '{default_project}' applied to "
+                f"{len(unassigned)} document(s) without project")
 
     def _remove_nosave(self, project: str, doc: str) -> bool:
         found = False
@@ -174,6 +209,13 @@ class MiAZProject(GObject.GObject):
 
     def load(self) -> dict:
         return self.util.json_load(self.cnfprj)
+
+    def _on_filename_added(self, util, target):
+        doc = os.path.basename(target)
+        if len(self.assigned_to(doc)) == 0:
+            self._add_nosave(DEFAULT_PROJECT, doc, notify=False)
+            self.save()
+            self.log.debug(f"Default project '{DEFAULT_PROJECT}' assigned to new document '{doc}'")
 
     def _on_filename_renamed(self, util, source, target):
         source = os.path.basename(source)
@@ -372,6 +414,11 @@ class MiAZProjectMgt(MiAZExtension):
                 # Initialise configuration
                 self.config = MiAZConfigProjects(self.app, self.plugin)
 
+                # 'None' is a virtual filter option (injected first in the
+                # dropdown via none_value=True), never a real config key. Drop
+                # it from the registries if an earlier version persisted it.
+                self._purge_default_value()
+
                 # Initialise project service and register it for other components to use
                 existing = self.app.get_service('Projects')
                 if existing is None:
@@ -426,8 +473,8 @@ class MiAZProjectMgt(MiAZExtension):
         pid = selected_item.id
         if pid == 'Any':
             return True
-        if pid == 'None':
-            return len(self.srvprj.assigned_to(doc_id)) == 0
+        # 'None' is a virtual filter option, but unassigned documents live in the
+        # 'None' bucket of the assignment map, so the regular path handles it too.
         return doc_id in self.srvprj.docs_in_project(pid)
 
     def _set_property(self, *args):
@@ -463,10 +510,23 @@ class MiAZProjectMgt(MiAZExtension):
         self.srvprj.add_batch(pid, selected_documents)
         return True
 
+    def _purge_default_value(self):
+        """The 'None' bucket must never be a real config key: it is rendered as
+        the first filter option (next to 'Any') via none_value=True. Remove it
+        from the available/used registries if an earlier version stored it."""
+        if self.config.exists_used(DEFAULT_PROJECT):
+            self.config.remove_used(DEFAULT_PROJECT)
+        if self.config.exists_available(DEFAULT_PROJECT):
+            self.config.remove_available(DEFAULT_PROJECT)
+
     def _unset_property(self, *args):
         # FIXME: somehow the user should decide from which projects
         selected_documents = [item.id for item in self.workspace.get_selected_items()]
         self._unset_property_real(selected_documents)
+        # Documents must always belong to a project: fall back to the default
+        if selected_documents:
+            self.srvprj.add_batch(DEFAULT_PROJECT, selected_documents, notify=False)
+            self.workspace.update()
 
     def _unset_property_real(self, selected_documents):
         if not selected_documents:
