@@ -170,6 +170,22 @@ class MiAZColumnView(Gtk.Box):
         self.selected_items = []
         self.store.splice(0, self.store.get_n_items(), items)
 
+    def update_incremental(self, changes):
+        for action, item in changes:
+            if action == 'add':
+                self.store.append(item)
+            elif action == 'remove':
+                for pos in range(self.store.get_n_items()):
+                    if self.store.get_item(pos).id == item.id:
+                        self.store.remove(pos)
+                        break
+            elif action == 'update':
+                for pos in range(self.store.get_n_items()):
+                    if self.store.get_item(pos).id == item.id:
+                        self.store.remove(pos)
+                        self.store.insert(pos, item)
+                        break
+
     def _on_selection_changed(self, selection, position, n_items):
         self.selected_items = []
         model = selection.get_model()

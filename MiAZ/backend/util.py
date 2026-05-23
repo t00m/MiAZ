@@ -17,6 +17,7 @@ import time
 import shutil
 import tempfile
 import threading
+import functools
 import subprocess
 import mimetypes
 import zipfile
@@ -397,6 +398,7 @@ class MiAZUtil(GObject.GObject):
     def datetime_to_string(self, adate: datetime) -> str:
         return adate.strftime("%Y%m%d")
 
+    @functools.lru_cache(maxsize=4096)
     def string_to_datetime(self, adate: str) -> datetime:
         try:
             return datetime.strptime(adate, "%Y%m%d").date()
