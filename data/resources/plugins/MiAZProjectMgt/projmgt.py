@@ -94,13 +94,15 @@ class MiAZProject(GObject.GObject):
                 if not os.path.exists(docpath):
                     to_delete.append((doc, project))
         for doc, project in to_delete:
-            self.remove(project, doc)
-            message = _("Document '{doc}' not found; removed from project '{project}'").format(doc=doc, project=project)
+            self._remove_nosave(project, doc)
+        if to_delete:
+            self.save()
+            message = _("{count} documents removed from projects (no longer in the repository)").format(count=len(to_delete))
             self.log.warning(message)
             self.srvdlg.show_toast(message)
         self.log.debug("Projects consistency successfully checked")
 
-    def _add_nosave(self, project: str, doc: str, notify: bool = True) -> bool:
+    def _add_nosave(self, project: str, doc: str) -> bool:
         added = False
         try:
             docs = self.projects[project]
@@ -112,19 +114,24 @@ class MiAZProject(GObject.GObject):
             self.projects[project] = [doc]
             added = True
         if added:
-            message = _("Added '{doc}' to project '{project}'").format(doc=doc, project=project)
-            self.log.debug(message)
-            if notify:
-                self.srvdlg.show_toast(message)
+            self.log.debug(f"Added '{doc}' to project '{project}'")
         return added
 
     def add(self, project: str, doc: str):
-        self._add_nosave(project, doc, notify=True)
+        if self._add_nosave(project, doc):
+            self.save()
+            self.srvdlg.show_toast(_("Document assigned to project '{project}'").format(project=project))
 
     def add_batch(self, project: str, docs: list, notify: bool = True) -> None:
+        added = 0
         for doc in docs:
-            self._add_nosave(project, doc, notify=notify)
+            if self._add_nosave(project, doc):
+                added += 1
         self.save()
+        if notify and added > 0:
+            message = _("{count} documents assigned to project '{project}'").format(count=added, project=project)
+            self.log.debug(message)
+            self.srvdlg.show_toast(message)
 
     def apply_defaults(self, default_project: str) -> None:
         """Assign the default project to every repository document that does not
@@ -138,7 +145,7 @@ class MiAZProject(GObject.GObject):
         unassigned = [os.path.basename(fp) for fp in docs
                       if len(self.assigned_to(os.path.basename(fp))) == 0]
         for doc in unassigned:
-            self._add_nosave(default_project, doc, notify=False)
+            self._add_nosave(default_project, doc)
         if unassigned:
             self.save()
             self.log.debug(
@@ -154,9 +161,7 @@ class MiAZProject(GObject.GObject):
                     found = True
                     docs.remove(doc)
                     self.projects[prj] = docs
-                    message = _("Removed '{doc}' from project '{project}'").format(doc=doc, project=prj)
-                    self.log.debug(message)
-                    self.srvdlg.show_toast(message)
+                    self.log.debug(f"Removed '{doc}' from project '{prj}'")
         else:
             try:
                 docs = self.projects[project]
@@ -164,9 +169,7 @@ class MiAZProject(GObject.GObject):
                     found = True
                     docs.remove(doc)
                     self.projects[project] = docs
-                    message = _("Removed '{doc}' from project '{project}'").format(doc=doc, project=project)
-                    self.log.debug(message)
-                    self.srvdlg.show_toast(message)
+                    self.log.debug(f"Removed '{doc}' from project '{project}'")
             except KeyError:
                 self.log.warning(f"Project '{project}' doesn't exist")
         return found
@@ -175,13 +178,20 @@ class MiAZProject(GObject.GObject):
         found = self._remove_nosave(project, doc)
         if found:
             self.save()
+            self.srvdlg.show_toast(_("Document removed from project"))
         else:
             self.log.debug(f"Document '{doc}' does not belong to project '{project}'")
 
-    def remove_batch(self, project: str, docs: list) -> None:
+    def remove_batch(self, project: str, docs: list, notify: bool = True) -> None:
+        removed = 0
         for doc in docs:
-            self._remove_nosave(project, doc)
+            if self._remove_nosave(project, doc):
+                removed += 1
         self.save()
+        if notify and removed > 0:
+            message = _("{count} documents removed from projects").format(count=removed)
+            self.log.debug(message)
+            self.srvdlg.show_toast(message)
 
     def exists(self, project, doc):
         try:
@@ -213,7 +223,7 @@ class MiAZProject(GObject.GObject):
     def _on_filename_added(self, util, target):
         doc = os.path.basename(target)
         if len(self.assigned_to(doc)) == 0:
-            self._add_nosave(DEFAULT_PROJECT, doc, notify=False)
+            self._add_nosave(DEFAULT_PROJECT, doc)
             self.save()
             self.log.debug(f"Default project '{DEFAULT_PROJECT}' assigned to new document '{doc}'")
 
@@ -223,14 +233,14 @@ class MiAZProject(GObject.GObject):
         projects = self.assigned_to(source)
         for project in projects:
             self._remove_nosave(project, source)
-            self.add(project, target)
+            self._add_nosave(project, target)
             self.log.debug(f"P[{project}]: {source} -> {target}")
         if projects:
             self.save()
 
     def _on_filename_deleted(self, util, target):
         docs = [os.path.basename(fp) for fp in target]
-        self.remove_batch('', docs)
+        self.remove_batch('', docs, notify=False)
 
 
 # Configuration
@@ -527,11 +537,13 @@ class MiAZProjectMgt(MiAZExtension):
         if selected_documents:
             self.srvprj.add_batch(DEFAULT_PROJECT, selected_documents, notify=False)
             self.workspace.update()
+            message = _("{count} documents unassigned").format(count=len(selected_documents))
+            self.srvdlg.show_toast(message)
 
     def _unset_property_real(self, selected_documents):
         if not selected_documents:
             return False
-        self.srvprj.remove_batch('', selected_documents)
+        self.srvprj.remove_batch('', selected_documents, notify=False)
         self.workspace.update()
         return True
 
