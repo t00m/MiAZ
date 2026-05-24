@@ -223,19 +223,12 @@ class MiAZConfig(GObject.GObject):
         self.remove_batch(self.used, keys)
 
     def remove_available(self, key: str):
-        updated = self.remove(self.available, key)
-        if updated:
-            self.emit('available-updated')
-        return updated
+        return self.remove(self.available, key)
 
     def remove_used(self, key: str) -> bool:
-        updated = self.remove(self.used, key)
-        if updated:
-            self.emit('used-updated')
-        return updated
+        return self.remove(self.used, key)
 
     def remove_batch(self, filepath: str, keys: list):
-        # FIXME: check del operation
         items = self.load(filepath)
         for key in keys:
             if key in items:
@@ -244,7 +237,6 @@ class MiAZConfig(GObject.GObject):
         self.save(filepath=filepath, items=items)
 
     def remove(self, filepath: str, key: str) -> bool:
-        # FIXME: check del operation
         removed = False
         if key is None or key.strip() == '':
             self.log.warning('Key is None or empty. Remove skipped')
