@@ -43,7 +43,7 @@ class MiAZSelector(Gtk.Box):
 
         # Toolbar
         toolbar = factory.create_box_horizontal(margin=0, spacing=0, hexpand=True, vexpand=False)
-        toolbar.get_style_context().add_class(class_name='toolbar')
+        toolbar.add_css_class('toolbar')
         centerbox = Gtk.CenterBox()
         centerbox.set_hexpand(True)
         toolbar.append(centerbox)
@@ -51,7 +51,7 @@ class MiAZSelector(Gtk.Box):
 
         # Left
         self.toolbar_buttons_Av = factory.create_box_horizontal(margin=0, spacing=0, vexpand=False, hexpand=True)
-        self.toolbar_buttons_Av.get_style_context().add_class(class_name='linked')
+        self.toolbar_buttons_Av.add_css_class('linked')
         if self.edit:
             self.toolbar_buttons_Av.set_hexpand(False)
             self.btnAvAdd = factory.create_button(icon_name='io.github.t00m.MiAZ-list-add-symbolic', title='', callback=self._on_item_available_add)
@@ -64,7 +64,7 @@ class MiAZSelector(Gtk.Box):
 
         # Center
         self.toolbar_buttons_center = factory.create_box_horizontal(margin=0, spacing=0, vexpand=False, hexpand=False)
-        self.toolbar_buttons_center.get_style_context().add_class(class_name='linked')
+        self.toolbar_buttons_center.add_css_class('linked')
         centerbox.set_center_widget(self.toolbar_buttons_center)
 
         ## Add to used
@@ -85,14 +85,14 @@ class MiAZSelector(Gtk.Box):
 
         # Right
         self.toolbar_buttons_Sl = factory.create_box_horizontal(margin=0, spacing=0, vexpand=False, hexpand=True)
-        self.toolbar_buttons_Sl.get_style_context().add_class(class_name='linked')
+        self.toolbar_buttons_Sl.add_css_class('linked')
         self.app.add_widget('settings-repository-toolbar-av', toolbar)
         self.toolbar_buttons_Sl.set_halign(Gtk.Align.END)
         centerbox.set_end_widget(self.toolbar_buttons_Sl)
 
         # Views
         self.boxViews = factory.create_box_horizontal(margin=0, spacing=0, hexpand=True, vexpand=True)
-        self.boxViews.get_style_context().add_class(class_name='toolbar')
+        self.boxViews.add_css_class('toolbar')
         self.boxViews.set_homogeneous(True)
         self.boxLeft = factory.create_box_vertical(margin=0, spacing=6, hexpand=True, vexpand=True)
         self.boxRight = factory.create_box_vertical(margin=0, spacing=6, hexpand=True, vexpand=True)
