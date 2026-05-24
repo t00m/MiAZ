@@ -384,14 +384,6 @@ class MiAZFactory:
         image = search_entry.get_first_child()
         text_widget = image.get_next_sibling()
         text_widget.set_placeholder_text(_('Type %s') % item_type.__title__)
-        # Enable context menu
-        # FIXME: This code insert a new entry in the context menu
-        # Apparently, it works. But it doesn't. It always chooses
-        # the last dropdown created ¿?
-        # ~ menu_dropdown = Gio.Menu.new()
-        # ~ text_widget.set_extra_menu(menu_dropdown)
-        # ~ menuitem = self.create_menuitem(name='clear', label='Clear dropdown', callback=_clear_dropdown, data=dropdown, shortcuts=[])
-        # ~ menu_dropdown.append_item(menuitem)
 
         return dropdown
 
@@ -484,8 +476,8 @@ class MiAZFactory:
     def create_view(self, customview: Gtk.Widget, title=''):
         box = self.create_box_vertical(spacing=6, vexpand=True, hexpand=True)
         view = customview(self.app)
-        view.get_style_context().add_class(class_name='monospace')
-        view.get_style_context().add_class(class_name='caption')
+        view.add_css_class('monospace')
+        view.add_css_class('caption')
         view.set_hexpand(True)
         view.set_vexpand(True)
         box.append(view)
