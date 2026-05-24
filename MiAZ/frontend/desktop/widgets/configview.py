@@ -579,7 +579,7 @@ class MiAZPlugins(MiAZConfigView):
             body1 = _('<b>Action not possible</b>')
             body2 = _('Error: {error}').format(error=error)
             body = body1 + '\n' + body2
-            self.srvdlg.show_error(title=title, body=error, parent=self)
+            self.srvdlg.show_error(title=title, body=body, parent=self)
             self.log.error(f"Error import plugin: {error}")
 
     def _on_item_available_remove(self, *args):
@@ -648,7 +648,7 @@ class MiAZPlugins(MiAZConfigView):
 
     def _configure_plugin_options(self, *args):
         srvdlg = self.app.get_service('dialogs')
-        title = 'Plugin management'
+        title = _('Plugin management')
         selected_plugin = self.viewSl.get_selected()
         if selected_plugin is None:
             return
@@ -662,15 +662,15 @@ class MiAZPlugins(MiAZConfigView):
                 try:
                     plugin.show_settings(widget=self)
                 except Exception as error:
-                    body = error
+                    body = _('Error: {error}').format(error=error)
                     self.log.error(error)
                     srvdlg.show_error(title=title, body=body, parent=self)
             else:
-                body = f"Plugin {selected_plugin.id} doesn't have a settings dialog"
+                body = _("Plugin {plugin} doesn't have a settings dialog").format(plugin=selected_plugin.id)
                 self.log.warning(body)
                 srvdlg.show_warning(title=title, body=body, parent=self)
         else:
-            body = f"Can't find plugin object for {plugin_id}!!"
+            body = _("Can't find plugin object for {plugin_id}!!").format(plugin_id=plugin_id)
             self.log.error(body)
             srvdlg.show_error(title=title, body=body, parent=self)
 
