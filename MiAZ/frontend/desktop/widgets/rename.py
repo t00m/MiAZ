@@ -440,10 +440,7 @@ class MiAZRenameDialog(Gtk.Box):
             self.result = ''
             raise
 
-    # ------------------------------------------------------------------
     # Inline "+ Add" for restricted-vocabulary rows
-    # ------------------------------------------------------------------
-
     def _on_inline_add_value(self, _button, item_type, conf_obj):
         i_title = _(item_type.__title__)
         parent = self.get_root()
@@ -480,10 +477,7 @@ class MiAZRenameDialog(Gtk.Box):
                 dropdown.set_selected(n)
                 return
 
-    # ------------------------------------------------------------------
     # Concept autocomplete
-    # ------------------------------------------------------------------
-
     @staticmethod
     def _concept_factory_setup(_factory, list_item):
         label = Gtk.Label(xalign=0.0)

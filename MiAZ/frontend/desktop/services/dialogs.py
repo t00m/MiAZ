@@ -48,7 +48,7 @@ miaz_dialog = {
 }
 
 class MiAZDialog:
-    # FIXME: to be replace by Gtk.Window in order to allow
+    # FIXME: to be replaced by Gtk.Window to let
     # Gtk.FileDialog have the proper parent
     def __init__(self, app):
         self.app = app
