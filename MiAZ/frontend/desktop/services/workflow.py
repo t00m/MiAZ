@@ -53,7 +53,6 @@ class MiAZWorkflow(GObject.GObject):
                 repository.load(repository.docs)
                 repo_loaded = True
         except Exception as error:
-            #FIXME
             self.log.error(error)
             repo_loaded = False
 
