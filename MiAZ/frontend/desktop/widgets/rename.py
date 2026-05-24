@@ -228,7 +228,7 @@ class MiAZRenameDialog(Gtk.Box):
         popover.present()
         button.set_popover(popover)
         self.label_date = Gtk.Label()
-        self.label_date.get_style_context().add_class(class_name='caption')
+        self.label_date.add_css_class('caption')
         self.entry_date = Gtk.Entry()
         self.entry_date.set_visible(False)
         self.entry_date.set_max_length(8)
@@ -359,8 +359,8 @@ class MiAZRenameDialog(Gtk.Box):
         # Current filename
         title = _('Current filename')
         self.lblFilenameCur = Gtk.Label()
-        self.lblFilenameCur.get_style_context().add_class(class_name='monospace')
-        self.lblFilenameCur.get_style_context().add_class(class_name='error')
+        self.lblFilenameCur.add_css_class('monospace')
+        self.lblFilenameCur.add_css_class('error')
         self.row_cur_filename = self.factory.create_actionrow(title=title, suffix=self.lblFilenameCur)
         self.boxMain.append(self.row_cur_filename)
         self.lblFilenameCur.set_ellipsize(True)
@@ -369,8 +369,8 @@ class MiAZRenameDialog(Gtk.Box):
         # New filename
         title = _('<b>New filename</b>')
         self.lblFilenameNew = Gtk.Label()
-        self.lblFilenameNew.get_style_context().add_class(class_name='monospace')
-        self.lblFilenameNew.get_style_context().add_class(class_name='success')
+        self.lblFilenameNew.add_css_class('monospace')
+        self.lblFilenameNew.add_css_class('success')
         self.lblFilenameNew.set_ellipsize(True)
         self.lblFilenameNew.set_property('ellipsize', Pango.EllipsizeMode.MIDDLE)
 
@@ -379,26 +379,24 @@ class MiAZRenameDialog(Gtk.Box):
 
     @staticmethod
     def _success_or_error(widget, valid):
-        ctx = widget.get_style_context()
-        ctx.remove_class('warning')
+        widget.remove_css_class('warning')
         if valid:
-            ctx.remove_class('error')
-            ctx.add_class('success')
+            widget.remove_css_class('error')
+            widget.add_css_class('success')
         else:
-            ctx.remove_class('success')
-            ctx.add_class('error')
+            widget.remove_css_class('success')
+            widget.add_css_class('error')
 
     @staticmethod
     def _success_or_warning(widget, valid):
-        ctx = widget.get_style_context()
         if valid:
-            ctx.remove_class('warning')
-            ctx.remove_class('error')
-            ctx.add_class('success')
+            widget.remove_css_class('warning')
+            widget.remove_css_class('error')
+            widget.add_css_class('success')
         else:
-            ctx.remove_class('error')
-            ctx.remove_class('success')
-            ctx.add_class('warning')
+            widget.remove_css_class('error')
+            widget.remove_css_class('success')
+            widget.add_css_class('warning')
 
     @staticmethod
     def _dropdown_get_id(dropdown):
