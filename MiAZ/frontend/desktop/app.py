@@ -115,7 +115,16 @@ class MiAZApp(Adw.Application):
 
         # Main MiAZ Window
         window = self.add_widget('window', Adw.ApplicationWindow(application=self))
-        window.set_default_size(1280, 800)
+        try:
+            _settings = Gio.Settings(schema_id='io.github.t00m.MiAZ')
+            window.set_default_size(
+                _settings.get_int('window-width'),
+                _settings.get_int('window-height')
+            )
+            if _settings.get_boolean('window-maximized'):
+                window.maximize()
+        except Exception:
+            window.set_default_size(1280, 800)
         window.set_icon_name('io.github.t00m.MiAZ')
         window.connect('close-request', self._on_window_close_request)
         window.set_default_icon_name('io.github.t00m.MiAZ')
@@ -138,6 +147,14 @@ class MiAZApp(Adw.Application):
 
     def _on_window_close_request(self, *args):
         self.log.debug("Close application requested")
+        try:
+            _settings = Gio.Settings(schema_id='io.github.t00m.MiAZ')
+            window = self.get_widget('window')
+            _settings.set_int('window-width', window.get_width())
+            _settings.set_int('window-height', window.get_height())
+            _settings.set_boolean('window-maximized', window.is_maximized())
+        except Exception:
+            pass
         actions = self.get_service('actions')
         actions.exit_app()
 
@@ -219,7 +236,7 @@ class MiAZApp(Adw.Application):
                 widget.dispose()
             deleted = True
         except KeyError:
-            self.log.error(f"Widget '{name}' doesn't exists")
+            self.log.debug(f"Widget '{name}' doesn't exists")
         return deleted
 
     def remove_widgets_with_prefix(self, prefix: str) -> int:
