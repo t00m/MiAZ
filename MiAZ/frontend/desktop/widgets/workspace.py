@@ -16,8 +16,7 @@ from gi.repository import GObject
 
 from MiAZ.env import ENV
 from MiAZ.backend.log import MiAZLog
-from MiAZ.backend.models import MiAZItem, Group, Country, Purpose, SentBy, SentTo, Date
-from MiAZ.frontend.desktop.widgets.assistant import MiAZAssistantRepoSettings
+from MiAZ.backend.models import MiAZItem, Field, Group, Country, Purpose, SentBy, SentTo, Date
 from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewWorkspace
 from MiAZ.frontend.desktop.widgets.configview import MiAZCountries, MiAZGroups, MiAZPurposes, MiAZPeopleSentBy, MiAZPeopleSentTo
 from MiAZ.backend.status import MiAZStatus
@@ -99,19 +98,6 @@ class MiAZWorkspace(Gtk.Box):
         for cache in ['Date', 'Country', 'Group', 'SentBy', 'SentTo', 'Purpose']:
             self.cache[cache] = {}
         self.log.debug("Caches initialized")
-
-    def _check_first_time(self):
-        """
-        Execute Repository Assistant if no countries have been
-        defined yet.
-        """
-        conf = self.config['Country']
-        countries = conf.load(conf.used)
-        if len(countries) == 0:
-            window = self.app.get_widget('window')
-            self.log.debug("Executing Assistant")
-            assistant = MiAZAssistantRepoSettings(self.app)
-            assistant.present(window)
 
     def _on_config_used_updated(self, *args):
         # FIXME
@@ -327,7 +313,7 @@ class MiAZWorkspace(Gtk.Box):
         frame = Gtk.Frame()
         self.view = MiAZColumnViewWorkspace(self.app)
         self.app.add_widget('workspace-view', self.view)
-        self.view.get_style_context().add_class(class_name='monospace')
+        self.view.add_css_class('monospace')
         self._workspace_filters['main'] = self._do_filter_view_main
         self.view.set_filter(self._do_filter_view)
         frame.set_child(self.view)
@@ -373,7 +359,7 @@ class MiAZWorkspace(Gtk.Box):
         self.append(self._switcher)
         self.append(self._stack)
         self.set_default_columnview_attrs()
-        self.get_style_context().add_class(class_name='toolbar')
+        self.add_css_class('toolbar')
 
     def set_default_columnview_attrs(self):
         # Setup columnview
@@ -549,11 +535,27 @@ class MiAZWorkspace(Gtk.Box):
         ENV['CACHE']['CONCEPTS']['ACTIVE'] = sorted(concepts_active)
         ENV['CACHE']['CONCEPTS']['INACTIVE'] = sorted(concepts_inactive)
 
+        # Build the field index from the same file list so field_used()
+        # never needs to re-scan from disk on the main thread.
+        field_index = {ft: {} for ft in Field}
+        for filename in docs:
+            file_fields = util.get_fields(filename)
+            if len(file_fields) < 7:
+                continue
+            for field_type, idx in Field.items():
+                val = file_fields[idx]
+                bucket = field_index[field_type]
+                if val not in bucket:
+                    bucket[val] = []
+                bucket[val].append(filename)
+
         result_dict['docs'] = docs
         result_dict['items'] = items
         result_dict['invalid'] = invalid
         result_dict['show_pending'] = show_pending
         result_dict['cache_updates'] = cache_updates
+        result_dict['field_index'] = field_index
+        result_dict['_repo_docs'] = repo_docs
 
         # The scan is done. Hand the results back to the main program so it
         # can safely update the screen.
@@ -574,6 +576,10 @@ class MiAZWorkspace(Gtk.Box):
 
         repository = self.app.get_service('repo')
         util = self.app.get_service('util')
+
+        # Install the pre-built field index so field_used() hits a warm cache.
+        util._field_index = result_dict['field_index']
+        util._field_index_dir = result_dict['_repo_docs']
         ds = result_dict.get('_ds', datetime.now())
 
         # Update workspace view
@@ -600,13 +606,12 @@ class MiAZWorkspace(Gtk.Box):
 
         togglebutton = self.app.get_widget('workspace-togglebutton-pending-docs')
         togglebutton.set_label(_("Review ({review})").format(review=review))
-        style_ctx = togglebutton.get_style_context()
         if show_pending:
-            style_ctx.add_class('destructive-action')
-            style_ctx.remove_class('flat')
+            togglebutton.add_css_class('destructive-action')
+            togglebutton.remove_css_class('flat')
         else:
-            style_ctx.remove_class('destructive-action')
-            style_ctx.add_class('flat')
+            togglebutton.remove_css_class('destructive-action')
+            togglebutton.add_css_class('flat')
         if show_pending != self._was_pending:
             if show_pending:
                 self.log.debug("Pending documents detected: showing Review button")
