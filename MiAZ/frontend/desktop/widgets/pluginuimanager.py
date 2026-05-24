@@ -33,13 +33,13 @@ class MiAZPluginUIManager(Gtk.Box):
 
     def _create_view_plugins(self):
         box = self.factory.create_box_horizontal(margin=0, spacing=0, hexpand=True, vexpand=True)
-        box.get_style_context().add_class(class_name='toolbar')
+        box.add_css_class('toolbar')
         frame_view = Gtk.Frame()
         viewbox = self._create_plugin_view()
         frame_view.set_child(viewbox)
 
         toolbar = self._create_plugin_view_toolbar()
-        toolbar.get_style_context().add_class(class_name='linked')
+        toolbar.add_css_class('linked')
         box.append(frame_view)
         box.append(toolbar)
 
