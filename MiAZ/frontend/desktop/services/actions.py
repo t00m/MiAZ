@@ -213,7 +213,7 @@ class MiAZActions(GObject.GObject):
         config_for = selector.get_config_for()
         selector.set_vexpand(True)
         selector.update_views()
-        title = _('Manage %s') % config_for
+        title = _('Manage {item}').format(item=config_for)
         dialog = srvdlg.show_action(title=title, widget=box, width=800, height=600)
         dialog.present(parent)
 
