@@ -52,7 +52,6 @@ class MiAZMainWindow(Gtk.Box):
         headerbar.set_title_widget(toolbar)
 
         ## Stack & Stack.Switcher
-        vmainbox = factory.create_box_vertical(margin=0, spacing=0, hexpand=True, vexpand=True)
         content = self._setup_stack()
         content.set_hexpand(True)
         content.set_vexpand(True)
@@ -61,13 +60,14 @@ class MiAZMainWindow(Gtk.Box):
         paned = self.app.add_widget('main-paned', Gtk.Paned(orientation=Gtk.Orientation.HORIZONTAL, hexpand=True, vexpand=True))
         paned.set_start_child(sidebar)
         paned.set_end_child(content)
-        paned.set_position(320)
+        try:
+            _settings = Gio.Settings(schema_id='io.github.t00m.MiAZ')
+            _settings.bind('sidebar-width', paned, 'position', Gio.SettingsBindFlags.DEFAULT)
+        except Exception:
+            paned.set_position(320)
         paned.set_resize_start_child(False)
         paned.set_shrink_start_child(False)
         paned.set_shrink_end_child(False)
-
-        vmainbox.append(headerbar)
-        vmainbox.append(paned)
 
         # Welcome page
         page_welcome = self.app.get_widget('welcome')
@@ -84,8 +84,12 @@ class MiAZMainWindow(Gtk.Box):
         if page is None:
             self._setup_webbrowser()
 
+        toolbar_view = Adw.ToolbarView()
+        toolbar_view.add_top_bar(headerbar)
+        toolbar_view.set_content(paned)
+
         toast_overlay = self.app.add_widget('toast-overlay', Adw.ToastOverlay())
-        toast_overlay.set_child(vmainbox)
+        toast_overlay.set_child(toolbar_view)
         self.append(toast_overlay)
 
     def _setup_event_listener(self):
@@ -323,7 +327,7 @@ class MiAZMainWindow(Gtk.Box):
         factory = self.app.get_service('factory')
         hdb_left = self.app.get_widget('headerbar-left-box')
         hdb_right = self.app.get_widget('headerbar-right-box')
-        hdb_right.get_style_context().add_class(class_name='linked')
+        hdb_right.add_css_class('linked')
 
         # Workspace Menu
         hbox = factory.create_box_horizontal(margin=0, spacing=6, hexpand=False)
@@ -398,8 +402,8 @@ class MiAZMainWindow(Gtk.Box):
         menu.append_section(None, section_bottom)
         menuitem = factory.create_menuitem('app-settings', _('Settings'), actions.show_app_settings, None, ['<Control>s'])
         section_common.append_item(menuitem)
-        # ~ menuitem = factory.create_menuitem('app-help', _('Help'), actions.show_app_help, None, ['<Control>h'])
-        # ~ section_common.append_item(menuitem)
+        menuitem = factory.create_menuitem('app-help', _('Help'), actions.show_app_help, None, ['F1', '<Control>h'])
+        section_common.append_item(menuitem)
         menuitem = factory.create_menuitem('app-about', _('About'), actions.show_app_about, None, ['<Control>b'])
         section_common.append_item(menuitem)
         menuitem = factory.create_menuitem('app-quit', _('Exit'), actions.exit_app, None, ['<Control>q'])

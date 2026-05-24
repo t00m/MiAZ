@@ -39,7 +39,7 @@ class ColButton(Gtk.Box):
     def __init__(self):
         super().__init__()
         button = Gtk.Button()
-        button.get_style_context().add_class(class_name='flat')
+        button.add_css_class('flat')
         self.append(button)
 
 class ColMenuButton(Gtk.Box):
@@ -51,7 +51,7 @@ class ColMenuButton(Gtk.Box):
         popover = Gtk.Popover()
         button = Gtk.MenuButton()
         button.set_popover(popover)
-        button.get_style_context().add_class(class_name='flat')
+        button.add_css_class('flat')
         self.append(button)
 
 class ColCheck(Gtk.Box):
@@ -141,19 +141,6 @@ class MiAZColumnView(Gtk.Box):
 
     def get_selected_items(self):
         return self.selected_items
-
-    def select_first_item(self):
-        # ~ self.viewport.set_scroll_to_focus(False)
-        # FIXME: code works (it selects the item) but not as expected
-        # it is not displayed (Grabbing focus? How?)
-        selection = self.get_selection()
-        model = selection.get_model()
-        pos = len(model)
-        if pos > 0:
-            selection.select_item(pos - 1, True) # Last item
-            selection.select_item(0, True) # First item
-        # ~ self.viewport.set_scroll_to_focus(True)
-        # In any case, the scrollbar doesn't move
 
     def scroll_begin(self, *args):
         self.log.debug(args)
@@ -245,7 +232,7 @@ class MiAZColumnViewSelector(MiAZColumnView):
         self.log = MiAZLog('MiAZColumnViewSelector')
         self.factory = self.app.get_service('factory')
         self.actions = self.app.get_service('actions')
-        self.cv.get_style_context().add_class(class_name='monospace')
+        self.cv.add_css_class('monospace')
         self.selection = Gtk.SingleSelection.new(self.filter_model)
         self.cv.set_model(self.selection)
         self.selection.connect('selection-changed', self._on_selection_changed)
