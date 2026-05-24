@@ -113,8 +113,8 @@ class MiAZActions(GObject.GObject):
         dialog.present(window)
 
     def _on_rename_response(self, dialog, response, rename_widget):
+        window = self.app.get_widget('window')
         if response == 'apply':
-            window = self.app.get_widget('window')
             body = _('You are about to rename this document.\nAre you sure?')
             dialog_confirm = self.srvdlg.show_question(
                 title=_('Rename document'), body=body,
