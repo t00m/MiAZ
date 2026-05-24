@@ -44,10 +44,14 @@ class MiAZConfigView(MiAZSelector):
         except Exception as error:
             self.config = custom_config
         self._setup_view_finish()
-        self.config.connect('used-updated', self.update_views)
-        self.config.connect('available-updated', self.update_views)
+        self._sid_used = None
+        self._sid_avail = None
+        self._update_views_pending = False
+        # Connect signals only while the widget is on screen so stale instances
+        # opened from previous settings windows don't keep firing updates.
+        self.connect('map', self._on_configview_mapped)
+        self.connect('unmap', self._on_configview_unmapped)
         self.set_vexpand(True)
-        # ~ self.log.debug(f"Configview for {config_name} initialited")
         item_type = self.config.model
         i_title = _(item_type.__title__)
         i_title_plural = _(item_type.__title_plural__)
@@ -56,6 +60,31 @@ class MiAZConfigView(MiAZSelector):
         tooltip=_('Disable ') + i_title.lower()
         self.btnRemoveFromUsed.set_tooltip_markup(tooltip)
         self.dialog_title = _('{item_types} management').format(item_types=i_title_plural)
+
+    def _on_configview_mapped(self, *args):
+        if self._sid_used is None:
+            self._sid_used = self.config.connect('used-updated', self._schedule_update_views)
+        if self._sid_avail is None:
+            self._sid_avail = self.config.connect('available-updated', self._schedule_update_views)
+        self.update_views()
+
+    def _on_configview_unmapped(self, *args):
+        if self._sid_used is not None:
+            self.config.disconnect(self._sid_used)
+            self._sid_used = None
+        if self._sid_avail is not None:
+            self.config.disconnect(self._sid_avail)
+            self._sid_avail = None
+
+    def _schedule_update_views(self, *args):
+        if not self._update_views_pending:
+            self._update_views_pending = True
+            GLib.idle_add(self._deferred_update_views)
+
+    def _deferred_update_views(self):
+        self._update_views_pending = False
+        self.update_views()
+        return False
 
     def update_config(self):
         self.config = self.conf[self.config_name]
