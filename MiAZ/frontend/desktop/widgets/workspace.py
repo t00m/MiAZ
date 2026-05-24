@@ -901,8 +901,6 @@ class MiAZWorkspace(Gtk.Box):
             self._filter_in_progress = False
 
     def _on_selection_changed(self, selection, position, n_items):
-        repository = self.app.get_service('repo')
-        util = self.app.get_service('util')
         self.selected_items = []
         model = selection.get_model()
         bitset = selection.get_selection()
@@ -910,7 +908,8 @@ class MiAZWorkspace(Gtk.Box):
             pos = bitset.get_nth(index)
             item = model.get_item(pos)
             self.selected_items.append(item)
-        self._on_filter_selected()
+        self._num_selected_items = len(self.selected_items)
+        self.emit('workspace-view-selection-changed')
 
     def get_num_selected_items(self):
         return self._num_selected_items
