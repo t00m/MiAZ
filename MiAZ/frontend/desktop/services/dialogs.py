@@ -81,9 +81,9 @@ class MiAZDialog:
         label = self.app.find_widget(windowhandle, Gtk.Label, 'body_label')
         if label is not None:
             label.set_vexpand(False)
-            label.get_style_context().add_class(class_name='toolbar')
+            label.add_css_class('toolbar')
         # And change color
-        label.get_style_context().add_class(class_name=miaz_dialog[dtype]['class_name'])
+        label.add_css_class(miaz_dialog[dtype]['class_name'])
 
         # Add custom widget
         box = self.factory.create_box_vertical(hexpand=True, vexpand=True)
@@ -121,7 +121,7 @@ class MiAZDialog:
                 ):
         """Create a new dialog of type info"""
         dialog = self.create(title=title, body=body, dtype='noop', widget=widget, callback=callback, data=data, width=width, height=height)
-        dialog.get_style_context().add_class(class_name='success')
+        dialog.add_css_class('success')
         return dialog
 
     def show_toast(self, message: str, timeout: int = 3):
@@ -143,7 +143,7 @@ class MiAZDialog:
                 ):
         """Create a new dialog of type info"""
         dialog = self.create(title=title, body=body, dtype='info', widget=widget, callback=callback, data=data, width=width, height=height)
-        dialog.get_style_context().add_class(class_name='success')
+        dialog.add_css_class('success')
         dialog.present(parent)
 
     def show_error( self,
@@ -160,7 +160,7 @@ class MiAZDialog:
         if parent is None:
             parent = self.app.get_widget('window')
         dialog = self.create(title=title, body=body, dtype='error', widget=widget, callback=callback, data=data, width=width, height=height)
-        dialog.get_style_context().add_class(class_name='error')
+        dialog.add_css_class('error')
         dialog.set_default_response('close')
         dialog.set_close_response('close')
         dialog.present(parent)
@@ -191,7 +191,7 @@ class MiAZDialog:
                 ):
         """Create a new dialog of type error"""
         dialog = self.create(title=title, body=body, dtype='warning', widget=widget, callback=callback, data=data, width=width, height=height)
-        dialog.get_style_context().add_class(class_name='warning')
+        dialog.add_css_class('warning')
         dialog.present(parent)
 
     def show_question(self,
@@ -228,14 +228,12 @@ class MiAZDialogAdd:
         self.lblKey1.set_hexpand(False)
         self.etyValue1 = Gtk.Entry()
         self.etyValue1.set_hexpand(False)
-        # ~ self.etyValue1.connect('activate', self.on_dialog_save)
 
         self.boxKey2 = self.factory.create_box_vertical(spacing=6)
         self.boxKey2.set_hexpand(True)
         self.lblKey2 = Gtk.Label()
         self.lblKey2.set_xalign(0.0)
         self.etyValue2 = Gtk.Entry()
-        # ~ self.etyValue2.connect('activate', self.on_dialog_save)
 
         self.fields = self.factory.create_box_horizontal(spacing=6)
         self.fields.set_margin_bottom(margin=12)
@@ -288,12 +286,6 @@ class MiAZDialogAdd:
 
     def get_entry_key2(self):
         return  self.etyValue2
-
-    def on_dialog_save(self, *args):
-        self.log.error(f"FIXME: {args}")
-
-    def on_dialog_cancel(self, dialog, response):
-        self.log.error(f"FIXME: {response}")
 
     def get_boxKey1(self):
         return self.boxKey1
