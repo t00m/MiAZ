@@ -33,9 +33,9 @@ class MiAZSelector(Gtk.Box):
         ENV = self.app.get_env()
 
         # Banner
-        title = "One or more plugins were disabled. Application restart needed."
+        title = _("One or more plugins were disabled. Application restart needed.")
         banner = self.app.add_widget('repository-settings-banner', Adw.Banner.new(title))
-        banner.set_button_label('restart')
+        banner.set_button_label(_('restart'))
         banner.connect('button-clicked', self._on_restart_clicked)
         restart_needed = ENV['APP']['STATUS']['RESTART_NEEDED']
         banner.set_revealed(restart_needed)

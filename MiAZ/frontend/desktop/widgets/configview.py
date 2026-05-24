@@ -220,7 +220,7 @@ class MiAZRepositories(MiAZConfigView):
                 body = _('{title} {item} ready to be used').format(title=i_title, item=selected_item.id)
                 self.log.debug(body)
             else:
-                body = f"{i_title} {selected_item.id} is already being used"
+                body = _('{title} {item} is already being used').format(title=i_title, item=selected_item.id)
                 self.log.debug(body)
 
             if len(self.config.load_used()) == 1:
@@ -257,7 +257,7 @@ class MiAZRepositories(MiAZConfigView):
             self.log.debug(f"{i_title} {selected_item.id} removed from de list of used items")
             self.config.save_used(items=items_used)
             self.config.save_available(items=items_available)
-            self.srvdlg.show_toast(f"{i_title} {selected_item.id} removed from de list of used items")
+            self.srvdlg.show_toast(_('{title} {item} removed from de list of used items').format(title=i_title, item=selected_item.id))
         finally:
             if signal is not None:
                 dd_repo.handler_unblock(signal)

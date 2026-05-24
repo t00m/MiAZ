@@ -95,7 +95,7 @@ class MiAZProject(GObject.GObject):
                     to_delete.append((doc, project))
         for doc, project in to_delete:
             self.remove(project, doc)
-            message = f"Document '{doc}' not found; removed from project '{project}'"
+            message = _("Document '{doc}' not found; removed from project '{project}'").format(doc=doc, project=project)
             self.log.warning(message)
             self.srvdlg.show_toast(message)
         self.log.debug("Projects consistency successfully checked")
@@ -112,7 +112,7 @@ class MiAZProject(GObject.GObject):
             self.projects[project] = [doc]
             added = True
         if added:
-            message = f"Added '{doc}' to project '{project}'"
+            message = _("Added '{doc}' to project '{project}'").format(doc=doc, project=project)
             self.log.debug(message)
             if notify:
                 self.srvdlg.show_toast(message)
@@ -154,7 +154,7 @@ class MiAZProject(GObject.GObject):
                     found = True
                     docs.remove(doc)
                     self.projects[prj] = docs
-                    message = f"Removed '{doc}' from project '{prj}'"
+                    message = _("Removed '{doc}' from project '{project}'").format(doc=doc, project=prj)
                     self.log.debug(message)
                     self.srvdlg.show_toast(message)
         else:
@@ -164,7 +164,7 @@ class MiAZProject(GObject.GObject):
                     found = True
                     docs.remove(doc)
                     self.projects[project] = docs
-                    message = f"Removed '{doc}' from project '{project}'"
+                    message = _("Removed '{doc}' from project '{project}'").format(doc=doc, project=project)
                     self.log.debug(message)
                     self.srvdlg.show_toast(message)
             except KeyError:
@@ -542,7 +542,7 @@ class MiAZProjectMgt(MiAZExtension):
             docs = srvprj.docs_in_project(pid)
             items = [File(id=doc, title=doc) for doc in docs]
             cv.update(items)
-            message = f"{len(docs)} documents in project {pid}"
+            message = _("{count} documents in project {pid}").format(count=len(docs), pid=pid)
             self.log.debug(message)
             self.srvdlg.show_toast(message)
 
