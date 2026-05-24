@@ -245,7 +245,7 @@ class MiAZRepoSettings(MiAZCustomWindow):
             box.append(selector)
             page.set_start_widget(box)
             wdgLabel = self.factory.create_box_horizontal()
-            wdgLabel.get_style_context().add_class(class_name='caption')
+            wdgLabel.add_css_class('caption')
             icon_name = f"io.github.t00m.MiAZ-res-{i_id.lower()}"
             icon = self.icman.get_image_by_name(icon_name)
             icon.set_hexpand(False)
