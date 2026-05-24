@@ -143,13 +143,8 @@ class MiAZActions(GObject.GObject):
             parent_dialog.present(self.app.get_widget('window'))
 
     def dropdown_populate(self, config, dropdown, item_type, any_value=True, none_value=False, only_include: list = [], only_exclude: list = []):
-        # FIXME: THIS METHOD DIDN'T TAKE INTO ACCOUNT CUSTOM MODELS
-        #        IT HAS BEEN MODIFIED TO DETECT WHEN A MODEL IS STANDARD
-        #        OR CUSTOM.
-        # INFO: This method can be called as a reaction to the signal 'used-updated' or directly.
-        # When reacting to a signal, config parameter is set in first place automatically.
-        # When the method is called directly, config parameter must be passed.
-        # In any case, config parameter is not used. Config is got from item_type
+        # Can be called from a 'used-updated' signal handler or directly.
+        # When called from the signal, config is the emitting object; item_type overrides it.
         i_type = item_type.__gtype_name__
         config_standard = self.app.get_config(i_type)
         if config_standard is not None:
@@ -157,14 +152,11 @@ class MiAZActions(GObject.GObject):
         items = config.load(config.used)
         i_title = _(item_type.__title__)
 
-        model_filter = dropdown.get_model()
-        model_sort = model_filter.get_model()
-        model = model_sort.get_model()
-        model.remove_all()
+        new_items = []
         if any_value:
-            model.append(item_type(id='Any', title=_('Any') + ' ' + i_title.lower()))
+            new_items.append(item_type(id='Any', title=_('Any') + ' ' + i_title.lower()))
         if none_value:
-            model.append(item_type(id='None', title=_('None') + ' ' + i_title.lower()))
+            new_items.append(item_type(id='None', title=_('None') + ' ' + i_title.lower()))
 
         for key in items:
             accepted = True
@@ -179,16 +171,21 @@ class MiAZActions(GObject.GObject):
                     title = key
                 if item_type == Repository:
                     title = key.replace('_', ' ')
-                model.append(item_type(id=key, title=title))
+                new_items.append(item_type(id=key, title=title))
 
-        if len(model) == 0:
+        if len(new_items) == 0:
             if item_type != Repository:
-                model.append(item_type(id='None', title=_('No data')))
+                new_items.append(item_type(id='None', title=_('No data')))
             else:
-                model.append(item_type(id='None', title=_('No repositories found')))
+                new_items.append(item_type(id='None', title=_('No repositories found')))
+
+        model_filter = dropdown.get_model()
+        model_sort = model_filter.get_model()
+        model = model_sort.get_model()
+        model.splice(0, model.get_n_items(), new_items)
 
     def import_config(self, button, item_type):
-        # FIXME: Implement import config
+        # See: https://github.com/t00m/MiAZ/issues/NEW
         srvdlg = self.app.get_service('dialogs')
         window = button.get_root()
         title = _("Action not implemented yet")
@@ -196,7 +193,7 @@ class MiAZActions(GObject.GObject):
         srvdlg.show_error(title=title, body=body, parent=window)
 
     def export_config(self, button, item_type):
-        # FIXME: Implement export config
+        # See: https://github.com/t00m/MiAZ/issues/NEW
         srvdlg = self.app.get_service('dialogs')
         window = button.get_root()
         title = _("Action not implemented yet")
@@ -256,7 +253,7 @@ class MiAZActions(GObject.GObject):
         dialog.present(window)
 
     def show_app_about(self, *args):
-        # FIXME: App icon not displayed in local installation
+        # See: https://github.com/t00m/MiAZ/issues/NEW
         window = self.app.get_widget('window')
         ENV = self.app.get_env()
         about = Adw.AboutDialog()
@@ -278,12 +275,101 @@ class MiAZActions(GObject.GObject):
         about.present(window)
 
     def show_app_help(self, *args):
-        pass
-        # ~ shwin = self.app.get_widget('shortcutswindow')
-        # ~ if shwin is None:
-            # ~ shwin = MiAZShortcutsWindow()
-            # ~ self.app.add_widget('shortcutswindow', shwin)
-        # ~ shwin.present()
+        window = self.app.get_widget('window')
+        shwin = self.app.get_widget('shortcutswindow')
+        if shwin is None:
+            xml = """<?xml version="1.0" encoding="UTF-8"?>
+<interface>
+  <object class="GtkShortcutsWindow" id="shortcuts-window">
+    <property name="modal">1</property>
+    <child>
+      <object class="GtkShortcutsSection">
+        <property name="section-name">general</property>
+        <child>
+          <object class="GtkShortcutsGroup">
+            <property name="title" translatable="yes">Application</property>
+            <child>
+              <object class="GtkShortcutsShortcut">
+                <property name="title" translatable="yes">Settings</property>
+                <property name="accelerator">&lt;Control&gt;s</property>
+              </object>
+            </child>
+            <child>
+              <object class="GtkShortcutsShortcut">
+                <property name="title" translatable="yes">About</property>
+                <property name="accelerator">&lt;Control&gt;b</property>
+              </object>
+            </child>
+            <child>
+              <object class="GtkShortcutsShortcut">
+                <property name="title" translatable="yes">Quit</property>
+                <property name="accelerator">&lt;Control&gt;q</property>
+              </object>
+            </child>
+            <child>
+              <object class="GtkShortcutsShortcut">
+                <property name="title" translatable="yes">Help</property>
+                <property name="accelerator">F1</property>
+              </object>
+            </child>
+          </object>
+        </child>
+        <child>
+          <object class="GtkShortcutsGroup">
+            <property name="title" translatable="yes">Workspace</property>
+            <child>
+              <object class="GtkShortcutsShortcut">
+                <property name="title" translatable="yes">Refresh workspace</property>
+                <property name="accelerator">F5</property>
+              </object>
+            </child>
+            <child>
+              <object class="GtkShortcutsShortcut">
+                <property name="title" translatable="yes">Focus search</property>
+                <property name="accelerator">&lt;Control&gt;f</property>
+              </object>
+            </child>
+          </object>
+        </child>
+        <child>
+          <object class="GtkShortcutsGroup">
+            <property name="title" translatable="yes">Documents</property>
+            <child>
+              <object class="GtkShortcutsShortcut">
+                <property name="title" translatable="yes">Add document</property>
+                <property name="accelerator">&lt;Control&gt;Insert</property>
+              </object>
+            </child>
+            <child>
+              <object class="GtkShortcutsShortcut">
+                <property name="title" translatable="yes">Rename document</property>
+                <property name="accelerator">&lt;Control&gt;BackSpace</property>
+              </object>
+            </child>
+            <child>
+              <object class="GtkShortcutsShortcut">
+                <property name="title" translatable="yes">Delete documents</property>
+                <property name="accelerator">&lt;Control&gt;Delete</property>
+              </object>
+            </child>
+            <child>
+              <object class="GtkShortcutsShortcut">
+                <property name="title" translatable="yes">View document</property>
+                <property name="accelerator">Return</property>
+              </object>
+            </child>
+          </object>
+        </child>
+      </object>
+    </child>
+  </object>
+</interface>"""
+            builder = Gtk.Builder.new_from_string(xml, -1)
+            shwin = builder.get_object('shortcuts-window')
+            shwin.set_hide_on_close(True)
+            self.app.add_widget('shortcutswindow', shwin)
+        shwin.set_transient_for(window)
+        shwin.present()
 
     def get_stack_page_by_name(self, name: str) -> Gtk.Stack:
         stack = self.app.get_widget('stack')
