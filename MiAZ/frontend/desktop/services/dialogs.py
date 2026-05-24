@@ -82,8 +82,10 @@ class MiAZDialog:
         if label is not None:
             label.set_vexpand(False)
             label.add_css_class('toolbar')
-        # And change color
-        label.add_css_class(miaz_dialog[dtype]['class_name'])
+            # And change color
+            class_name = miaz_dialog[dtype]['class_name']
+            if class_name:
+                label.add_css_class(class_name)
 
         # Add custom widget
         box = self.factory.create_box_vertical(hexpand=True, vexpand=True)
