@@ -5,12 +5,16 @@ install:
 	sudo rm -rf builddir_system
 	sudo meson builddir_system --prefix=/usr
 	sudo meson setup builddir_system --prefix=/usr --wipe
+	# Wipe bundled plugins first (install_subdir only merges); see `user` target.
+	sudo rm -rf /usr/share/MiAZ/resources/plugins
 	sudo ninja -C builddir_system install
 
 install_msys2:
 	rm -rf builddir_system
 	meson builddir_system --prefix=/usr
 	meson setup builddir_system --prefix=/usr --wipe
+	# Wipe bundled plugins first (install_subdir only merges); see `user` target.
+	rm -rf /usr/share/MiAZ/resources/plugins
 	ninja -C builddir_system install
 
 uninstall:
@@ -22,6 +26,10 @@ uninstall_msys2:
 user:
 	rm -rf builddir_user
 	meson setup builddir_user --prefix=~/.local --reconfigure --buildtype=debugoptimized --wipe
+	# Wipe the bundled-plugins dir first: install_subdir only merges, so plugins
+	# removed from the repo (or stray user copies) would otherwise linger and
+	# shadow the ones in ~/.MiAZ/opt/plugins.
+	rm -rf ~/.local/share/MiAZ/resources/plugins
 	ninja -C builddir_user install
 
 user_uninstall:
