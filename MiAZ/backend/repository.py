@@ -14,6 +14,7 @@ from gettext import gettext as _
 from gi.repository import GObject
 
 from MiAZ.backend.log import MiAZLog
+from MiAZ.backend.models import MiAZItem
 from MiAZ.backend.config import MiAZConfigCountries
 from MiAZ.backend.config import MiAZConfigGroups
 from MiAZ.backend.config import MiAZConfigPurposes
@@ -150,3 +151,31 @@ class MiAZRepository(GObject.GObject):
     def set_error(self, msg):
         """Last repository error"""
         self._errmsg = msg
+
+    def simulate_rename(self, source_path: str, new_fields: list) -> MiAZItem:
+        """Return a MiAZItem representing the document after renaming, without moving it."""
+        util = self.app.get_service('util')
+        name, ext = util.filename_details(source_path)
+        new_name = "-".join(new_fields)
+        new_filename = f"{new_name}.{ext}"
+
+        item = MiAZItem(
+            id=new_filename,
+            date=new_fields[0],
+            country=new_fields[1],
+            group=new_fields[2],
+            sentby_id=new_fields[3],
+            purpose=new_fields[4],
+            title=new_fields[5],
+            sentto_id=new_fields[6],
+            extension=ext
+        )
+        item.valid = util.filename_validate(new_filename)
+        return item
+
+    def simulate_import(self, source_path: str) -> MiAZItem:
+        """Return a MiAZItem representing how a file would look if imported now."""
+        util = self.app.get_service('util')
+        target_filename = util.filename_normalize(source_path)
+        fields = util.get_fields(target_filename)
+        return self.simulate_rename(target_filename, fields)

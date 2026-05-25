@@ -144,6 +144,8 @@ class MiAZPeriodicityPlugin(MiAZExtension):
         ## Get pointer to app
         self.app = self.object.app
         self.plugin = MiAZPlugin(self.app)
+        self._data = None
+        self._data_file = None
 
         ## Initialize plugin
         self.plugin.register(self, plugin_info)
@@ -262,8 +264,6 @@ class MiAZPeriodicityPlugin(MiAZExtension):
             self.plugin.set_started(started=True)
 
     def _do_filter_view(self, item, filter_list_model):
-        display = False         # set display to false
-        doc_id = item.id         # Document to display (or not)
         plugin_name = self.plugin.get_name()
         dropdown = self.app.get_widget(f'plugin-{plugin_name}-dropdown')
         selected_item = dropdown.get_selected_item()    # Property key selected to filter
@@ -271,20 +271,20 @@ class MiAZPeriodicityPlugin(MiAZExtension):
             return True
 
         pid = selected_item.id
-        data = self._get_data()
-
+        # Inactive filter: skip reading the data file. This runs once per
+        # document on every refilter, so returning early keeps free-text
+        # search instant when no periodicity is selected.
         if pid == 'Any':
-            display = True
-        elif pid == 'None':
-            display = doc_id not in data.get('documents', {})
-        else:
-            try:
-                docs = data[f'{i_confname}'][pid]
-                if doc_id in docs:
-                    display = True
-            except KeyError:
-                display = False
-        return display
+            return True
+
+        doc_id = item.id
+        data = self._get_data()
+        if pid == 'None':
+            return doc_id not in data.get('documents', {})
+        try:
+            return doc_id in data[f'{i_confname}'][pid]
+        except KeyError:
+            return False
 
     def _set_property(self, *args):
         parent = self.workspace.get_root()
@@ -299,7 +299,12 @@ class MiAZPeriodicityPlugin(MiAZExtension):
             self.srvdlg.show_error(title=_('Action ignored'), body=_('You must select at least one document'), parent=parent)
 
     def _get_data(self):
+        # Cache the parsed data file and reuse it until the active repository
+        # (and therefore the data file path) changes. Writers mutate this same
+        # object in place before saving, so the cache stays current.
         datafile = self.plugin.get_data_file()
+        if self._data is not None and self._data_file == datafile:
+            return self._data
         try:
             data = self.util.json_load(filepath=datafile)
         except FileNotFoundError:
@@ -308,6 +313,8 @@ class MiAZPeriodicityPlugin(MiAZExtension):
             data['documents'] = {}
             data[f'{i_confname}'] = {}
             self.util.json_save(filepath=datafile, adict=data)
+        self._data = data
+        self._data_file = datafile
         return data
 
     def _on_set_property_response(self, dialog, response, dropdown):
