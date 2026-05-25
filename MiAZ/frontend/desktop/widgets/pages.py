@@ -10,36 +10,30 @@ from gi.repository import Gtk
 from gi.repository import Adw
 
 class MiAZWelcome(Gtk.Box):
-    """
-    About class
-    """
+    """Welcome / empty state shown when no active repository is available."""
     def __init__(self, app):
-        super().__init__(spacing=12, orientation=Gtk.Orientation.VERTICAL)
+        super().__init__(orientation=Gtk.Orientation.VERTICAL)
         self.app = app
         self.factory = self.app.get_service('factory')
         self.actions = self.app.get_service('actions')
         ENV = self.app.get_env()
-        centerbox = Gtk.CenterBox(orientation=Gtk.Orientation.VERTICAL)
-        centerbox.set_vexpand(True)
-        centerbox.set_hexpand(True)
-        self.append(centerbox)
 
-        vbox = self.factory.create_box_vertical(spacing=24, hexpand=True, vexpand=False)
-        centerbox.set_center_widget(vbox)
+        status_page = Adw.StatusPage(
+            icon_name='io.github.t00m.MiAZ',
+            title=_("Welcome to {shortname}").format(shortname=ENV['APP']['shortname']),
+            description=_("No active repositories have been found"),
+            vexpand=True,
+            hexpand=True,
+        )
 
-        label = Gtk.Label.new(_("Welcome to {shortname}!").format(shortname=ENV['APP']['shortname']))
-        label.add_css_class('title-1')
-        vbox.append(label)
-        label = Gtk.Label()
-        label.add_css_class('title-3')
-        label.set_markup(_('No active repositories have been found\n'))
-        vbox.append(label)
-
-        button = self.factory.create_button(title='Manage repositories')
-        button.set_valign(Gtk.Align.CENTER)
+        button = self.factory.create_button(title=_('Manage Repositories'))
         button.set_halign(Gtk.Align.CENTER)
+        button.add_css_class('suggested-action')
+        button.add_css_class('pill')
         button.connect('clicked', self.actions.show_repository_manager)
-        vbox.append(button)
+        status_page.set_child(button)
+
+        self.append(status_page)
 
 
 class MiAZPageNotFound(Gtk.Box):

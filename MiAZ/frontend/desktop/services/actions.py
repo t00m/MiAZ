@@ -274,6 +274,9 @@ class MiAZActions(GObject.GObject):
         # ~ about.set_comments(README)
         about.present(window)
 
+    def show_app_shortcuts(self, *args):
+        self.show_app_help(*args)
+
     def show_app_help(self, *args):
         window = self.app.get_widget('window')
         shwin = self.app.get_widget('shortcutswindow')
@@ -296,7 +299,13 @@ class MiAZActions(GObject.GObject):
             </child>
             <child>
               <object class="GtkShortcutsShortcut">
-                <property name="title" translatable="yes">About</property>
+                <property name="title" translatable="yes">Keyboard shortcuts</property>
+                <property name="accelerator">&lt;Control&gt;question</property>
+              </object>
+            </child>
+            <child>
+              <object class="GtkShortcutsShortcut">
+                <property name="title" translatable="yes">About MiAZ</property>
                 <property name="accelerator">&lt;Control&gt;b</property>
               </object>
             </child>
@@ -316,30 +325,7 @@ class MiAZActions(GObject.GObject):
         </child>
         <child>
           <object class="GtkShortcutsGroup">
-            <property name="title" translatable="yes">Workspace</property>
-            <child>
-              <object class="GtkShortcutsShortcut">
-                <property name="title" translatable="yes">Refresh workspace</property>
-                <property name="accelerator">F5</property>
-              </object>
-            </child>
-            <child>
-              <object class="GtkShortcutsShortcut">
-                <property name="title" translatable="yes">Focus search</property>
-                <property name="accelerator">&lt;Control&gt;f</property>
-              </object>
-            </child>
-          </object>
-        </child>
-        <child>
-          <object class="GtkShortcutsGroup">
             <property name="title" translatable="yes">Documents</property>
-            <child>
-              <object class="GtkShortcutsShortcut">
-                <property name="title" translatable="yes">Add document</property>
-                <property name="accelerator">&lt;Control&gt;Insert</property>
-              </object>
-            </child>
             <child>
               <object class="GtkShortcutsShortcut">
                 <property name="title" translatable="yes">Rename document</property>
