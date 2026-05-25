@@ -102,6 +102,18 @@ class MiAZDialog:
             elif respid in ['cancel', 'no']:
                 dialog.set_response_appearance(respid, Adw.ResponseAppearance.DESTRUCTIVE)
 
+        # Enter triggers the primary action, Escape/dismiss the cancel one, so
+        # add/edit/delete dialogs can be confirmed from the keyboard.
+        response_ids = [pair[0] for pair in responses]
+        for candidate in ('apply', 'close'):
+            if candidate in response_ids:
+                dialog.set_default_response(candidate)
+                break
+        for candidate in ('cancel', 'no', 'close'):
+            if candidate in response_ids:
+                dialog.set_close_response(candidate)
+                break
+
         if callback is None:
             dialog.connect('response', self.close)
         else:
@@ -230,12 +242,14 @@ class MiAZDialogAdd:
         self.lblKey1.set_hexpand(False)
         self.etyValue1 = Gtk.Entry()
         self.etyValue1.set_hexpand(False)
+        self.etyValue1.set_activates_default(True)
 
         self.boxKey2 = self.factory.create_box_vertical(spacing=6)
         self.boxKey2.set_hexpand(True)
         self.lblKey2 = Gtk.Label()
         self.lblKey2.set_xalign(0.0)
         self.etyValue2 = Gtk.Entry()
+        self.etyValue2.set_activates_default(True)
 
         self.fields = self.factory.create_box_horizontal(spacing=6)
         self.fields.set_margin_bottom(margin=12)

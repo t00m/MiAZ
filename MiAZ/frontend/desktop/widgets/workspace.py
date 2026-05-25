@@ -129,7 +129,7 @@ class MiAZWorkspace(Gtk.Box):
                                         dropdown=dropdowns[i_type],
                                         item_type=item_type,
                                         any_value=True,
-                                        none_value=True)
+                                        none_value=False)
             dropdown.connect("notify::selected-item", self._on_filter_selected)
             self.used_signals[i_type] = self.config[i_type].connect('used-updated', self.update_dropdown_filter, item_type)
 
@@ -187,7 +187,7 @@ class MiAZWorkspace(Gtk.Box):
                                     dropdown=dropdowns[i_type],
                                     item_type=item_type,
                                     any_value=True,
-                                    none_value=True)
+                                    none_value=False)
 
     def _on_workspace_update(self, *args):
         self._schedule_update()
@@ -220,7 +220,7 @@ class MiAZWorkspace(Gtk.Box):
                                     dropdown=dropdowns[i_type],
                                     item_type=item_type,
                                     any_value=True,
-                                    none_value=True)
+                                    none_value=False)
 
     def show_pending_documents(self, *args):
         togglebutton = self.app.get_widget('workspace-togglebutton-pending-docs')
@@ -848,7 +848,6 @@ class MiAZWorkspace(Gtk.Box):
 
                 new_items = [
                     item_type(id='Any', title=_('Any') + ' ' + i_title.lower()),
-                    item_type(id='None', title=_('None') + ' ' + i_title.lower()),
                 ]
                 for key in sorted(values.keys()):
                     title = values[key]

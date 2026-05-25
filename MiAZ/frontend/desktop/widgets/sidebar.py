@@ -43,7 +43,7 @@ class MiAZSidebar(Adw.Bin):
                 dropdown=self.dropdowns[i_type],
                 item_type=item_type,
                 any_value=True,
-                none_value=True)
+                none_value=False)
 
     def __build_ui(self) -> None:
         factory = self.app.get_service('factory')
