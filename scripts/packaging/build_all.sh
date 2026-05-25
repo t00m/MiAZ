@@ -74,30 +74,31 @@ fi
 #    ERRORS=$(( ERRORS + 1 ))
 #fi
 
-# ── Windows EXE / Installer ───────────────────────────────────────────────────
-log "--- Building Windows executable ---"
-WIN_BUILD_DIR="$REPO_ROOT/builddir_win"
-WIN_INSTALLER="$WIN_BUILD_DIR/MiAZ-${VERSION}-setup.exe"
-WIN_PORTABLE_DIR="$WIN_BUILD_DIR/dist/MiAZ"
-WIN_PORTABLE_ZIP="$DIST_DIR/miaz-${VERSION}-win-portable.zip"
-
-if "$SCRIPT_DIR/win/create_exe.sh"; then
-    FOUND=0
-    if [[ -f "$WIN_INSTALLER" ]]; then
-        cp "$WIN_INSTALLER" "$DIST_DIR/"
-        log_ok "$(basename "$WIN_INSTALLER") -> dist/"
-        FOUND=1
-    fi
-    if [[ $FOUND -eq 0 && -d "$WIN_PORTABLE_DIR" ]]; then
-        (cd "$WIN_BUILD_DIR/dist" && zip -r "$WIN_PORTABLE_ZIP" "MiAZ/")
-        log_ok "$(basename "$WIN_PORTABLE_ZIP") -> dist/"
-        FOUND=1
-    fi
-    [[ $FOUND -eq 1 ]] || log_err "Windows build succeeded but no output file found"
-else
-    log_err "Windows build failed"
-    ERRORS=$(( ERRORS + 1 ))
-fi
+# ── Windows EXE / Installer (DISABLED) ────────────────────────────────────────
+# Windows packaging is disabled for now. Re-enable by uncommenting this block.
+#log "--- Building Windows executable ---"
+#WIN_BUILD_DIR="$REPO_ROOT/builddir_win"
+#WIN_INSTALLER="$WIN_BUILD_DIR/MiAZ-${VERSION}-setup.exe"
+#WIN_PORTABLE_DIR="$WIN_BUILD_DIR/dist/MiAZ"
+#WIN_PORTABLE_ZIP="$DIST_DIR/miaz-${VERSION}-win-portable.zip"
+#
+#if "$SCRIPT_DIR/win/create_exe.sh"; then
+#    FOUND=0
+#    if [[ -f "$WIN_INSTALLER" ]]; then
+#        cp "$WIN_INSTALLER" "$DIST_DIR/"
+#        log_ok "$(basename "$WIN_INSTALLER") -> dist/"
+#        FOUND=1
+#    fi
+#    if [[ $FOUND -eq 0 && -d "$WIN_PORTABLE_DIR" ]]; then
+#        (cd "$WIN_BUILD_DIR/dist" && zip -r "$WIN_PORTABLE_ZIP" "MiAZ/")
+#        log_ok "$(basename "$WIN_PORTABLE_ZIP") -> dist/"
+#        FOUND=1
+#    fi
+#    [[ $FOUND -eq 1 ]] || log_err "Windows build succeeded but no output file found"
+#else
+#    log_err "Windows build failed"
+#    ERRORS=$(( ERRORS + 1 ))
+#fi
 
 # ── AppImage ─────────────────────────────────────────────────────────────────
 log "--- Building AppImage package ---"
