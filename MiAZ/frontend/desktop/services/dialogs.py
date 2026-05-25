@@ -223,6 +223,7 @@ class MiAZDialog:
     def show_confirmation(self,
                     title: str = '',
                     body: str = '',
+                    widget: Gtk.Widget = None,
                     confirm_label: str = None,
                     confirm_id: str = 'apply',
                     callback = None,
@@ -241,6 +242,10 @@ class MiAZDialog:
         dialog.set_body(f"{body}")
         if width > 0 or height > 0:
             dialog.set_size_request(width, height)
+        if widget is not None:
+            box = self.factory.create_box_vertical(hexpand=True, vexpand=True)
+            box.append(widget)
+            dialog.set_extra_child(box)
         dialog.add_response('cancel', _('Cancel'))
         dialog.add_response(confirm_id, confirm_label)
         dialog.set_response_appearance(confirm_id, Adw.ResponseAppearance.DESTRUCTIVE)

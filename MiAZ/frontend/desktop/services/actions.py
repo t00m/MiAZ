@@ -80,8 +80,11 @@ class MiAZActions(GObject.GObject):
         citems = [File(id=item.id, title=os.path.basename(item.id)) for item in items]
         view.update(citems)
         window = self.app.get_widget('window')
-        body = _("<b>Are you sure?</b>\n\nThe following documents will be deleted:")
-        dialog = self.srvdlg.show_question(title=_('Mass deletion'), body=body, widget=box, width=600, height=480)
+        title = _('Delete {count} documents?').format(count=len(items))
+        body = _('The following documents will be permanently deleted:')
+        dialog = self.srvdlg.show_confirmation(
+            title=title, body=body, widget=box, confirm_label=_('Delete'),
+            width=600, height=480)
         dialog.connect('response', self._on_document_delete_response, items)
         dialog.present(window)
 

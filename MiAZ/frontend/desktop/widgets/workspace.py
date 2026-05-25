@@ -10,9 +10,11 @@ from datetime import datetime, timedelta
 from gettext import gettext as _
 
 from gi.repository import Adw
+from gi.repository import Gdk
 from gi.repository import Gtk
 from gi.repository import GLib
 from gi.repository import GObject
+from gi.repository import Pango
 
 from MiAZ.env import ENV
 from MiAZ.backend.log import MiAZLog
@@ -44,6 +46,17 @@ class MiAZWorkspace(Gtk.Box):
     _num_displayed_items = 0
     _num_total_items = 0
     workspace_loaded = False
+    _filter_tag_css_installed = False
+    # Fixed light colour per default filter so each tag is visually distinct and
+    # identical across sessions (deterministic, keyed by the field gtype name).
+    _FILTER_TAG_COLORS = {
+        'Date':    '#cfe3ff',  # light blue
+        'Country': '#d6f5d6',  # light green
+        'Group':   '#fff2c2',  # light yellow
+        'SentBy':  '#ffd9e3',  # light pink
+        'Purpose': '#e7dbff',  # light lavender
+        'SentTo':  '#ffe2c7',  # light peach
+    }
     selected_items = []
     dates = {}
     cache = {}
@@ -82,6 +95,12 @@ class MiAZWorkspace(Gtk.Box):
         self.app.connect('application-finished', self._on_application_finished)
 
         self.connect('workspace-loaded', self._on_loaded)
+
+        # Keep the active-filter tags banner in sync with the filter state.
+        # Field dropdowns emit 'workspace-view-filtered'; the date dropdown
+        # triggers a full reload that only emits 'workspace-view-updated'.
+        self.connect('workspace-view-filtered', self._update_filter_tags)
+        self.connect('workspace-view-updated', self._update_filter_tags)
 
     def _on_loaded(self, *args):
         pass
@@ -357,9 +376,120 @@ class MiAZWorkspace(Gtk.Box):
         self.app.add_widget('workspace-view-switcher', self._switcher)
 
         self.append(self._switcher)
+        self.append(self._setup_filter_tags_bar())
         self.append(self._stack)
         self.set_default_columnview_attrs()
         self.add_css_class('toolbar')
+
+    def _setup_filter_tags_bar(self):
+        """Banner shown above the document list with the currently active
+        sidebar filters rendered as removable tags."""
+        self._install_filter_tag_css()
+
+        flowbox = Gtk.FlowBox()
+        flowbox.set_selection_mode(Gtk.SelectionMode.NONE)
+        flowbox.set_max_children_per_line(100)
+        flowbox.set_column_spacing(6)
+        flowbox.set_row_spacing(6)
+        flowbox.set_halign(Gtk.Align.START)
+        flowbox.set_margin_top(6)
+        flowbox.set_margin_bottom(6)
+        flowbox.set_margin_start(6)
+        flowbox.set_margin_end(6)
+
+        revealer = Gtk.Revealer()
+        revealer.set_transition_type(Gtk.RevealerTransitionType.SLIDE_DOWN)
+        revealer.set_reveal_child(False)
+        revealer.set_child(flowbox)
+
+        self._filter_tags_flowbox = flowbox
+        self._filter_tags_revealer = revealer
+        self.app.add_widget('workspace-filter-tags', flowbox)
+        self.app.add_widget('workspace-filter-tags-revealer', revealer)
+        return revealer
+
+    def _install_filter_tag_css(self):
+        if MiAZWorkspace._filter_tag_css_installed:
+            return
+        display = Gdk.Display.get_default()
+        if display is None:
+            return
+        parts = [
+            ".miaz-filter-tag {"
+            " min-height: 0;"
+            " padding: 2px 4px 2px 12px;"
+            " border-radius: 999px;"
+            " color: #2b2b2b; }",
+            ".miaz-filter-tag:hover {"
+            " background-image: image(alpha(currentColor, 0.10)); }",
+        ]
+        for key, color in self._FILTER_TAG_COLORS.items():
+            parts.append(f".miaz-filter-tag-{key} {{ background-color: {color}; }}")
+        css = "".join(parts)
+        provider = Gtk.CssProvider()
+        provider.load_from_data(css.encode('utf-8'))
+        Gtk.StyleContext.add_provider_for_display(
+            display, provider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
+        MiAZWorkspace._filter_tag_css_installed = True
+
+    def _create_filter_tag(self, dropdown_key, field_title, value_title):
+        button = Gtk.Button()
+        button.add_css_class('miaz-filter-tag')
+        button.add_css_class(f'miaz-filter-tag-{dropdown_key}')
+        button.add_css_class('flat')
+        button.set_tooltip_text(_('Remove filter: {field}').format(field=field_title))
+        box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
+        field = GLib.markup_escape_text(field_title)
+        value = GLib.markup_escape_text(value_title)
+        label = Gtk.Label()
+        label.set_markup(f"<span alpha='65%'>{field}:</span> {value}")
+        label.set_ellipsize(Pango.EllipsizeMode.END)
+        label.set_max_width_chars(36)
+        icon = Gtk.Image.new_from_icon_name('window-close-symbolic')
+        icon.set_pixel_size(12)
+        box.append(label)
+        box.append(icon)
+        button.set_child(box)
+        button.connect('clicked', self._on_filter_tag_clicked, dropdown_key)
+        return button
+
+    def _on_filter_tag_clicked(self, button, dropdown_key):
+        dropdowns = self.app.get_widget('ws-dropdowns') or {}
+        dropdown = dropdowns.get(dropdown_key)
+        if dropdown is not None:
+            dropdown.set_selected(0)
+
+    def _update_filter_tags(self, *args):
+        """Rebuild the active-filter tags banner from the current dropdown state.
+        Date is always filtering (its neutral entry 'This month' is still a date
+        range), so a date tag is always shown; the field filters show a tag only
+        when their selection is not the neutral 'Any' first entry."""
+        flowbox = getattr(self, '_filter_tags_flowbox', None)
+        if flowbox is None:
+            return
+
+        while True:
+            child = flowbox.get_first_child()
+            if child is None:
+                break
+            flowbox.remove(child)
+
+        dropdowns = self.app.get_widget('ws-dropdowns') or {}
+        count = 0
+        for item_type in [Date, Country, Group, SentBy, Purpose, SentTo]:
+            i_type = item_type.__gtype_name__
+            dropdown = dropdowns.get(i_type)
+            if dropdown is None:
+                continue
+            if item_type is not Date and dropdown.get_selected() == 0:
+                continue
+            item = dropdown.get_selected_item()
+            if item is None:
+                continue
+            field_title = _(item_type.__title__)
+            flowbox.append(self._create_filter_tag(i_type, field_title, item.title))
+            count += 1
+        self._filter_tags_revealer.set_reveal_child(count > 0)
 
     def set_default_columnview_attrs(self):
         # Setup columnview
@@ -867,6 +997,7 @@ class MiAZWorkspace(Gtk.Box):
                     dropdown.set_selected(0)
         finally:
             self._updating_dropdowns = False
+        self._update_filter_tags()
 
     def _idle_update_dropdowns(self):
         self._dropdown_update_pending = False
