@@ -125,12 +125,11 @@ class MiAZRepositories(MiAZConfigView):
 
     def _on_item_available_add(self, *args):
         window = self.viewSl.get_root()
-        title = self.dialog_title + _(' : Add')
-        key1 = _('<b>Repository name</b>')
-        key2 = _('Select target folder')
-        # ~ search_term = self.entry.get_text()
+        title = _('Add repository')
+        key1 = _('Repository name')
+        key2 = _('Location')
         this_repo = MiAZDialogAddRepo(self.app)
-        dialog = this_repo.create(title=title, key1=key1, key2=key2)
+        dialog = this_repo.create(title=title, key1=key1, key2=key2, action_label=_('Add'))
         this_repo.set_value1('')
         this_repo.set_value2(GLib.get_user_special_dir(GLib.UserDirectory.DIRECTORY_DOCUMENTS))
         dialog.connect('response', self._on_response_item_available_add, this_repo, window)
@@ -161,11 +160,11 @@ class MiAZRepositories(MiAZConfigView):
         item_type = self.config.model
         i_title = item_type.__title__
         parent = self.viewSl.get_root()
-        title = self.dialog_title + _(' : Edit')
-        key1 = _('<b>Repository name</b>')
-        key2 = _('Select target folder')
+        title = _('Edit repository')
+        key1 = _('Repository name')
+        key2 = _('Location')
         this_repo = MiAZDialogAddRepo(self.app)
-        dialog = this_repo.create(title=title, key1=key1, key2=key2)
+        dialog = this_repo.create(title=title, key1=key1, key2=key2, action_label=_('Save'))
         this_repo.disable_key1()
         this_repo.set_value1(item.id)
         this_repo.set_value2(item.title)
@@ -628,8 +627,9 @@ class MiAZPlugins(MiAZConfigView):
         self.log.debug(f"Is '{selected_item.id}' used? {is_used}")
         title = self.dialog_title
         if not is_used:
-            body = _('You are about to delete <i>{title} {desc}</i>.\n\nAre you sure?').format(title=i_title.lower(), desc=item_dsc)
-            dialog = self.srvdlg.show_question(title=title, body=body)
+            heading = _('Delete {title}?').format(title=i_title.lower())
+            body = _('<i>{desc}</i> will be permanently removed.').format(desc=item_dsc)
+            dialog = self.srvdlg.show_confirmation(title=heading, body=body, confirm_label=_('Delete'))
             dialog.connect('response', self._on_item_available_remove_response, selected_item)
             dialog.present(self)
         else:

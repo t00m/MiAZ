@@ -7,10 +7,9 @@
 from gettext import gettext as _
 
 from gi.repository import Adw
-from gi.repository import Gio
 from gi.repository import GLib
+from gi.repository import GObject
 from gi.repository import Gtk
-from gi.repository import Pango
 
 from MiAZ.backend.log import MiAZLog
 
@@ -221,220 +220,233 @@ class MiAZDialog:
         dialog = self.create(title=title, body=body, dtype='question', widget=widget, callback=callback, data=data, width=width, height=height)
         return dialog
 
-class MiAZDialogAdd:
-    """ MiAZ Doc Browser Widget"""
+    def show_confirmation(self,
+                    title: str = '',
+                    body: str = '',
+                    confirm_label: str = None,
+                    confirm_id: str = 'apply',
+                    callback = None,
+                    data = None,
+                    width: int = -1,
+                    height: int = -1
+                ):
+        """HIG destructive confirmation: Cancel is the default and the
+        confirm button is styled as destructive (so Enter does not destroy)."""
+        if confirm_label is None:
+            confirm_label = _('Delete')
+        dialog = Adw.AlertDialog.new()
+        dialog.set_heading_use_markup(True)
+        dialog.set_body_use_markup(True)
+        dialog.set_heading(f"{title}")
+        dialog.set_body(f"{body}")
+        if width > 0 or height > 0:
+            dialog.set_size_request(width, height)
+        dialog.add_response('cancel', _('Cancel'))
+        dialog.add_response(confirm_id, confirm_label)
+        dialog.set_response_appearance(confirm_id, Adw.ResponseAppearance.DESTRUCTIVE)
+        dialog.set_default_response('cancel')
+        dialog.set_close_response('cancel')
+        if callback is not None:
+            dialog.connect('response', callback, data)
+        return dialog
+
+class MiAZDialogAdd(Adw.Dialog):
+    """HIG-compliant input dialog (Adw.Dialog) to create or edit a
+    key + description pair. Emits 'response' with 'apply' or 'cancel' so
+    existing callers keep working."""
     __gtype_name__ = 'MiAZDialogAdd'
+    __gsignals__ = {
+        'response': (GObject.SignalFlags.RUN_LAST, None, (str,)),
+    }
 
     def __init__(self, app):
+        super().__init__()
         self.log = MiAZLog('MiAZDialogAdd')
         self.app = app
-
         self.factory = self.app.get_service('factory')
         self.srvdlg = self.app.get_service('dialogs')
+        self._action_id = 'apply'
+        self._responded = False
+        self.connect('closed', self._on_closed)
 
-        self.title = ''
-        self.key1 = ''
-        self.key2 = ''
+    def create(self, parent=None, title='', key1='', key2='',
+               width=-1, height=-1, action_label=None):
+        if action_label is None:
+            action_label = _('Apply')
+        self.set_title(title)
+        self.set_content_width(width if width > 0 else 420)
+        if height > 0:
+            self.set_content_height(height)
 
-        self.boxKey1 = self.factory.create_box_vertical(spacing=6)
-        self.lblKey1 = Gtk.Label()
-        self.lblKey1.set_xalign(0.0)
-        self.lblKey1.set_hexpand(False)
-        self.etyValue1 = Gtk.Entry()
-        self.etyValue1.set_hexpand(False)
-        self.etyValue1.set_activates_default(True)
+        toolbar_view = Adw.ToolbarView()
+        headerbar = Adw.HeaderBar()
+        headerbar.set_show_start_title_buttons(False)
+        headerbar.set_show_end_title_buttons(False)
 
-        self.boxKey2 = self.factory.create_box_vertical(spacing=6)
-        self.boxKey2.set_hexpand(True)
-        self.lblKey2 = Gtk.Label()
-        self.lblKey2.set_xalign(0.0)
-        self.etyValue2 = Gtk.Entry()
-        self.etyValue2.set_activates_default(True)
+        btn_cancel = Gtk.Button(label=_('Cancel'))
+        btn_cancel.connect('clicked', self._on_cancel_clicked)
+        headerbar.pack_start(btn_cancel)
 
-        self.fields = self.factory.create_box_horizontal(spacing=6)
-        self.fields.set_margin_bottom(margin=12)
+        self.btn_action = Gtk.Button(label=action_label)
+        self.btn_action.add_css_class('suggested-action')
+        self.btn_action.connect('clicked', self._on_action_clicked)
+        headerbar.pack_end(self.btn_action)
+        toolbar_view.add_top_bar(headerbar)
 
-        self.widget = self.factory.create_box_vertical(spacing=6)
-        self.widget.set_margin_top(margin=12)
-        self.widget.set_margin_end(margin=12)
-        self.widget.set_margin_start(margin=12)
+        group = Adw.PreferencesGroup()
+        group.set_margin_top(12)
+        group.set_margin_bottom(12)
+        group.set_margin_start(12)
+        group.set_margin_end(12)
+        self.row_key = Adw.EntryRow(title=key1)
+        self.row_value = Adw.EntryRow(title=key2)
+        self.row_key.connect('entry-activated', self._on_action_clicked)
+        self.row_value.connect('entry-activated', self._on_action_clicked)
+        group.add(self.row_key)
+        group.add(self.row_value)
 
-    def create( self,
-                parent: Gtk.Window,
-                title: str,
-                key1: str,
-                key2: str,
-                width: int=-1,
-                height: int=-1):
+        clamp = Adw.Clamp()
+        clamp.set_maximum_size(400)
+        clamp.set_child(group)
+        toolbar_view.set_content(clamp)
+        self.set_child(toolbar_view)
+        return self
 
-        self.title = title
-        self.key1 = key1
-        self.key2 = key2
+    # Response plumbing
+    def _on_cancel_clicked(self, *args):
+        self._respond('cancel')
 
-        # Widget
-        self.boxKey1.append(self.lblKey1)
-        self.boxKey1.append(self.etyValue1)
-        self.boxKey2.append(self.lblKey2)
-        self.boxKey2.append(self.etyValue2)
+    def _on_action_clicked(self, *args):
+        if not self.btn_action.get_sensitive():
+            return
+        self._respond(self._action_id)
 
-        ## Box Key 1
-        self.lblKey1.set_markup(f"<b>{self.key1}</b>")
+    def _respond(self, response_id):
+        if self._responded:
+            return
+        self._responded = True
+        self.emit('response', response_id)
+        self.close()
 
-        ## Box Key 2
-        self.lblKey2.set_markup(f"<b>{self.key2}</b>")
+    def _on_closed(self, *args):
+        # Escape or any other dismissal counts as cancel.
+        if not self._responded:
+            self._responded = True
+            self.emit('response', 'cancel')
 
-        self.fields.append(self.boxKey1)
-        self.fields.append(self.boxKey2)
-        self.widget.append(self.fields)
-
-        # Create dialog
-        self.dialog = self.srvdlg.show_action(title=title, widget=self.widget)
-        return self.dialog
-
-    def get_label_key1(self):
-        return self.lblKey1
-
-    def get_label_key2(self):
-        return self.lblKey2
-
-    def get_entry_key1(self):
-        return  self.etyValue1
-
-    def get_entry_key2(self):
-        return  self.etyValue2
-
-    def get_boxKey1(self):
-        return self.boxKey1
-
-    def get_boxKey2(self):
-        return self.boxKey2
-
-    def get_value1(self):
-        return self.etyValue1.get_text()
-
-    def get_value1_widget(self):
-        return self.etyValue1
-
+    # Value accessors (kept compatible with the previous API)
     def set_value1(self, value):
-        self.etyValue1.set_text(value)
-
-    def get_value2(self):
-        return self.etyValue2.get_text()
+        self.row_key.set_text(value or '')
 
     def set_value2(self, value):
-        self.etyValue2.set_text(value)
+        self.row_value.set_text(value or '')
 
-    def get_value2_widget(self):
-        return self.etyValue2
+    def get_value1(self):
+        return self.row_key.get_text()
+
+    def get_value2(self):
+        return self.row_value.get_text()
+
+    def get_entry_key1(self):
+        return self.row_key
+
+    def set_response_enabled(self, response_id, enabled):
+        self.btn_action.set_sensitive(enabled)
 
 
 class MiAZDialogAddRepo(MiAZDialogAdd):
-    """ MiAZ Doc Browser Widget"""
+    """Add/edit a repository: name (EntryRow) + location (folder chooser)."""
     __gtype_name__ = 'MiAZDialogAddRepo'
 
-    def __init__(self, app):
-        self.log = MiAZLog('MiAZDialogAdd')
-        self.app = app
-        super().__init__(app)
-
-        self.factory = self.app.get_service('factory')
-        self.srvdlg = self.app.get_service('dialogs')
-
-        self.title = ''
-        self.key1 = ''
-        self.key2 = ''
-
-    def create( self,
-                title: str='',
-                key1: str='',
-                key2: str='',
-                width: int = -1,
-                height: int = -1):
-
-        self.title = title
-
+    def create(self, title='', key1='', key2='',
+               width=-1, height=-1, action_label=None):
+        if action_label is None:
+            action_label = _('Apply')
         if len(key2.strip()) == 0:
-            key2 = GLib.get_home_dir()
+            key2 = _('Location')
+        self._folder = GLib.get_home_dir()
 
-        # Repository key
-        self.key1 = key1
-        self.lblKey1.set_markup(f"<b>{self.key1}</b>")
-        vbox = self.factory.create_box_vertical(spacing=12, vexpand=True)
-        self.boxKey1.append(vbox)
-        hbox = self.factory.create_box_horizontal()
-        hbox.append(self.lblKey1)
-        hbox.append(self.etyValue1)
-        self.etyValue1.connect('changed', self._check_user_input_key)
-        vbox.append(hbox)
+        self.set_title(title)
+        self.set_content_width(width if width > 0 else 460)
+        if height > 0:
+            self.set_content_height(height)
 
-        # Repository directory
-        self.key2 = key2
-        self.button = Gtk.Button()
-        self.button.set_label(self.key2)
-        label = self.button.get_child()
-        label.set_property('ellipsize', Pango.EllipsizeMode.MIDDLE)
-        self.button.connect("clicked", self.on_open_file)
-        vbox.append(self.button)
+        toolbar_view = Adw.ToolbarView()
+        headerbar = Adw.HeaderBar()
+        headerbar.set_show_start_title_buttons(False)
+        headerbar.set_show_end_title_buttons(False)
 
-        self.fields.append(self.boxKey1)
-        self.widget.append(self.fields)
+        btn_cancel = Gtk.Button(label=_('Cancel'))
+        btn_cancel.connect('clicked', self._on_cancel_clicked)
+        headerbar.pack_start(btn_cancel)
 
-        # Create dialog
-        self.dialog = self.srvdlg.show_action(title=title, widget=self.widget)
-        self.dialog.set_response_enabled('apply', False)
-        return self.dialog
+        self.btn_action = Gtk.Button(label=action_label)
+        self.btn_action.add_css_class('suggested-action')
+        self.btn_action.connect('clicked', self._on_action_clicked)
+        headerbar.pack_end(self.btn_action)
+        toolbar_view.add_top_bar(headerbar)
+
+        group = Adw.PreferencesGroup()
+        group.set_margin_top(12)
+        group.set_margin_bottom(12)
+        group.set_margin_start(12)
+        group.set_margin_end(12)
+
+        self.row_key = Adw.EntryRow(title=key1)
+        self.row_key.connect('changed', self._check_user_input_key)
+        self.row_key.connect('entry-activated', self._on_action_clicked)
+        group.add(self.row_key)
+
+        self.row_folder = Adw.ActionRow(title=key2)
+        self.row_folder.set_subtitle(self._folder)
+        btn_folder = Gtk.Button(icon_name='folder-symbolic')
+        btn_folder.set_valign(Gtk.Align.CENTER)
+        btn_folder.add_css_class('flat')
+        btn_folder.connect('clicked', self.on_open_file)
+        self.row_folder.add_suffix(btn_folder)
+        self.row_folder.set_activatable_widget(btn_folder)
+        group.add(self.row_folder)
+
+        clamp = Adw.Clamp()
+        clamp.set_maximum_size(440)
+        clamp.set_child(group)
+        toolbar_view.set_content(clamp)
+        self.set_child(toolbar_view)
+
+        self.btn_action.set_sensitive(False)
+        return self
 
     def disable_key1(self):
-        self.etyValue1.set_sensitive(False)
+        self.row_key.set_sensitive(False)
 
-    def hide_key1(self):
-        self.etyValue1.set_visible(False)
+    def set_value1(self, value):
+        self.row_key.set_text(value or '')
+
+    def get_value1(self):
+        return self.row_key.get_text()
+
+    def set_value2(self, value):
+        self._folder = value or GLib.get_home_dir()
+        self.row_folder.set_subtitle(self._folder)
+
+    def get_value2(self):
+        return self._folder
 
     def on_open_file(self, button):
-        dirpath = button.get_label()
-        if len(dirpath.strip()) == 0 or dirpath is None:
-            dirpath = GLib.get_home_dir()
-            folder = Gio.File.new_for_path(dirpath)
-        else:
-            folder = Gio.File.new_for_path(dirpath)
-        button.set_label(dirpath)
-        dialog = self.factory.create_filechooser_for_directories(callback=self.on_folder_selected, dirpath=dirpath, parent=button.get_root())
+        dirpath = self._folder or GLib.get_home_dir()
+        self.factory.create_filechooser_for_directories(
+            callback=self.on_folder_selected, dirpath=dirpath,
+            parent=button.get_root())
 
     def on_folder_selected(self, dialog, result):
         try:
             folder = dialog.select_folder_finish(result)
-            self.button.set_label(folder.get_path())
+            self._folder = folder.get_path()
+            self.row_folder.set_subtitle(self._folder)
         except GLib.Error as e:
             self.log.error(f"Selection cancelled or failed: {e.message}")
 
     def _check_user_input_key(self, entry):
         key = entry.get_text()
-        key_valid = len(key) > 1
-        dir_valid = True
-
-        if key_valid and dir_valid:
-            user_input_valid = True
-        else:
-            user_input_valid = False
-
-        self.dialog.set_response_enabled('apply', user_input_valid)
-
-    def get_entry_key1(self):
-        return  self.etyValue1
-
-    def get_value1(self):
-        return self.etyValue1.get_text()
-
-    def set_value1(self, value):
-        if value is None:
-            value = ''
-        self.etyValue1.set_text(value)
-
-    def get_value2(self):
-        return self.button.get_label()
-
-    def set_value2(self, value):
-        if value is None:
-            value = ''
-        self.button.set_label(value)
+        self.btn_action.set_sensitive(len(key) > 1)
 

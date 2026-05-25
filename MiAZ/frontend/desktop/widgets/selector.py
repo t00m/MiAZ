@@ -209,11 +209,10 @@ class MiAZSelector(Gtk.Box):
             i_title = _(item_type.__title__)
             this_item = MiAZDialogAdd(self.app)
             parent = self.searchentry.get_root()
-            title = self.dialog_title
-            title = _('<b>Add new {title}</b>').format(title=i_title.lower())
-            key1 = _('<b>{title} key</b>').format(title=i_title.title())
-            key2 = _('<b>Description</b>')
-            dialog = this_item.create(parent=parent, title=title, key1=key1, key2=key2)
+            title = _('Add {title}').format(title=i_title.lower())
+            key1 = _('{title} key').format(title=i_title.title())
+            key2 = _('Description')
+            dialog = this_item.create(parent=parent, title=title, key1=key1, key2=key2, action_label=_('Add'))
             dialog.connect('response', self._on_item_available_add_response, this_item, parent)
             this_item.set_value1(search_term)
             dialog.present(parent)
@@ -243,12 +242,11 @@ class MiAZSelector(Gtk.Box):
             i_title = _(item_type.__title__)
             if item_type not in [Country, Plugin]:
                 parent = self.get_root()
-                title = self.dialog_title
-                # ~ title = _('Change {title} description').format(title=i_title.lower())
-                key1 = _('<b>{title} key</b>').format(title=i_title.title())
-                key2 = _('<b>Description</b>')
+                title = _('Edit {title}').format(title=i_title.lower())
+                key1 = _('{title} key').format(title=i_title.title())
+                key2 = _('Description')
                 this_item = MiAZDialogAdd(self.app)
-                dialog = this_item.create(parent=parent, title=title, key1=key1, key2=key2)
+                dialog = this_item.create(parent=parent, title=title, key1=key1, key2=key2, action_label=_('Save'))
                 entry1 = this_item.get_entry_key1()
                 entry1.set_sensitive(False)
                 if item is not None:
@@ -314,8 +312,9 @@ class MiAZSelector(Gtk.Box):
         self.log.debug(f"Is '{selected_item.id}' used? {is_used}")
         title = self.dialog_title
         if not is_used:
-            body = _('You are about to delete <i>{title} {desc}</i>.\n\nAre you sure?').format(title=i_title.lower(), desc=item_dsc)
-            dialog = self.srvdlg.show_question(title=title, body=body)
+            heading = _('Delete {title}?').format(title=i_title.lower())
+            body = _('<i>{desc}</i> will be permanently removed.').format(desc=item_dsc)
+            dialog = self.srvdlg.show_confirmation(title=heading, body=body, confirm_label=_('Delete'))
             dialog.connect('response', self._on_item_available_remove_response, selected_item)
             dialog.present(self)
         else:
