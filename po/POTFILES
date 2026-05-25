@@ -45,7 +45,6 @@ MiAZ/frontend/desktop/widgets/about.py
 MiAZ/frontend/desktop/widgets/button.py
 MiAZ/frontend/desktop/widgets/pages.py
 MiAZ/frontend/desktop/widgets/searchbar.py
-MiAZ/frontend/desktop/widgets/statusbar.py
 MiAZ/frontend/desktop/widgets/window.py
 MiAZ/frontend/desktop/widgets/assistant.py
 MiAZ/frontend/desktop/widgets/columnview.py
