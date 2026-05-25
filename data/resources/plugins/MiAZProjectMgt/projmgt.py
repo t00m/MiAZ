@@ -75,6 +75,7 @@ class MiAZProject(GObject.GObject):
         repo_dir_conf = repository.get('dir_conf')
         self.cnfprj = os.path.join(repo_dir_conf, 'projects.json')
         self.projects = {}
+        self.revision = 0
         if not os.path.exists(self.cnfprj):
             self.save()
             self.log.debug("Created new config file for projects")
@@ -216,8 +217,10 @@ class MiAZProject(GObject.GObject):
     def save(self) -> None:
         util = self.app.get_service('util')
         util.json_save(self.cnfprj, self.projects)
+        self.revision += 1
 
     def load(self) -> dict:
+        self.revision += 1
         return self.util.json_load(self.cnfprj)
 
     def _on_filename_added(self, util, target):
@@ -350,6 +353,8 @@ class MiAZProjectMgt(MiAZExtension):
         """Plugin activation"""
         self.app = self.object.app
         self.plugin = MiAZPlugin(self.app)
+        self._filter_cache_key = None
+        self._filter_cache_set = set()
         self.plugin.register(self, plugin_info)
         self.log = self.plugin.get_logger()
         self.actions = self.app.get_service('actions')
@@ -473,7 +478,6 @@ class MiAZProjectMgt(MiAZExtension):
             self.plugin.set_started(started=True)
 
     def _do_filter_view(self, item, filter_list_model):
-        doc_id = item.id
         plugin_name = self.plugin.get_name()
         dropdown = self.app.get_widget(f'plugin-{plugin_name}-dropdown')
         selected_item = dropdown.get_selected_item()
@@ -483,9 +487,15 @@ class MiAZProjectMgt(MiAZExtension):
         pid = selected_item.id
         if pid == 'Any':
             return True
-        # 'None' is a virtual filter option, but unassigned documents live in the
-        # 'None' bucket of the assignment map, so the regular path handles it too.
-        return doc_id in self.srvprj.docs_in_project(pid)
+        # Build the membership set once per filter pass instead of once per
+        # document. The (pid, revision) key rebuilds it only when the selection
+        # or the project assignments change. ('None' is a virtual filter option,
+        # but unassigned docs live in the 'None' bucket, so this path covers it.)
+        cache_key = (pid, self.srvprj.revision)
+        if self._filter_cache_key != cache_key:
+            self._filter_cache_key = cache_key
+            self._filter_cache_set = set(self.srvprj.docs_in_project(pid))
+        return item.id in self._filter_cache_set
 
     def _set_property(self, *args):
         selected_items = self.workspace.get_selected_items()
