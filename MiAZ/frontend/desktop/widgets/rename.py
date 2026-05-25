@@ -4,7 +4,6 @@
 # License: GPL v3
 # Description: Rename widget for single items
 
-import difflib
 import os
 from datetime import datetime
 from gettext import gettext as _
@@ -105,7 +104,7 @@ class MiAZRenameDialog(Gtk.Box):
         self._set_suggestion(self.dpdSentBy, self.suggested[3])
         self._set_suggestion(self.dpdPurpose, self.suggested[4])
         if len(self.suggested[5]) > 0:
-            self.entry_concept.set_text(self.suggested[5])
+            self._set_concept_text(self.suggested[5])
         self._set_suggestion(self.dpdSentTo, self.suggested[6])
         self.lblExt.set_text(self.extension)
         self.lblFilenameCur.set_markup(os.path.basename(self.doc))
@@ -136,7 +135,7 @@ class MiAZRenameDialog(Gtk.Box):
                 view = self.app.get_widget('window-rename-view-concepts')
                 try:
                     item = view.get_selected()
-                    self.entry_concept.set_text(item.title)
+                    self._set_concept_text(item.title)
                 except IndexError as error:
                     self.log.error(error)
 
@@ -317,7 +316,7 @@ class MiAZRenameDialog(Gtk.Box):
         self._concept_popover.set_child(scroll)
 
         self._concept_throttle_id = 0
-        self._concept_suppress_next = False
+        self._concept_loading = False
         self.entry_concept.connect('changed', self._on_concept_entry_changed)
         self.entry_concept.connect('changed', self._on_changed_entry)
 
@@ -489,7 +488,24 @@ class MiAZRenameDialog(Gtk.Box):
         item = list_item.get_item()
         label.set_label(item.title if item is not None else '')
 
+    def _set_concept_text(self, text):
+        """Set the concept entry without opening the autocomplete popover.
+
+        set_text() emits 'changed' synchronously, so _concept_loading is read
+        before this returns. Used for programmatic fills (window opening, or
+        reusing an existing concept) so completions appear only while typing.
+        """
+        self._concept_loading = True
+        if self._concept_throttle_id:
+            GLib.source_remove(self._concept_throttle_id)
+            self._concept_throttle_id = 0
+        self.entry_concept.set_text(text)
+        self._concept_loading = False
+
     def _on_concept_entry_changed(self, entry):
+        # Only react to keystrokes typed by the user, not programmatic fills.
+        if self._concept_loading:
+            return
         if self._concept_throttle_id:
             GLib.source_remove(self._concept_throttle_id)
         self._concept_throttle_id = GLib.timeout_add(
@@ -497,13 +513,6 @@ class MiAZRenameDialog(Gtk.Box):
 
     def _refilter_concepts(self, query):
         self._concept_throttle_id = 0
-        # If we just accepted a suggestion, the 'changed' signal we caused
-        # by set_text(...) would otherwise re-open the popover on an exact
-        # match. Swallow exactly one refresh after a pick.
-        if self._concept_suppress_next:
-            self._concept_suppress_next = False
-            self._concept_popover.popdown()
-            return False
         self._concept_list_store.remove_all()
         query_u = (query or '').strip().upper()
         if not query_u:
@@ -513,9 +522,10 @@ class MiAZRenameDialog(Gtk.Box):
             vocab = list(ENV['CACHE']['CONCEPTS']['ACTIVE'])
         except Exception:
             vocab = []
-        matches = difflib.get_close_matches(query_u, vocab, n=8, cutoff=0.4)
-        for token in matches:
-            self._concept_list_store.append(Concept(id=token, title=token))
+        # Show every concept from existing documents that contains the typed text.
+        for concept in vocab:
+            if query_u in concept.upper():
+                self._concept_list_store.append(Concept(id=concept, title=concept))
         if self._concept_list_store.get_n_items() > 0:
             self._concept_popover.popup()
         else:
@@ -526,8 +536,7 @@ class MiAZRenameDialog(Gtk.Box):
         item = self._concept_list_store.get_item(position)
         if item is None:
             return
-        self._concept_suppress_next = True
-        self.entry_concept.set_text(item.title)
+        self._set_concept_text(item.title)
         self._concept_popover.popdown()
 
     def _on_concept_key_pressed(self, _ctrl, keyval, _keycode, _state):
