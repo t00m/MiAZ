@@ -10,6 +10,7 @@
 # A modified version found on StackOverflow:
 # https://stackoverflow.com/questions/182197/how-do-i-watch-a-file-for-changes
 
+import os
 import glob
 
 from gi.repository import Gio
@@ -42,13 +43,52 @@ class MiAZWatcher(GObject.GObject):
         self.active = False
         self.status = MiAZStatus.RUNNING
         self.updated = False
+        self._monitor = None
+        self._debounce_id = 0
+        self._timeout_id = 0
         seconds = 2
         self.log.debug(f"Watching repository: {dirpath}")
         self.log.debug(f"Remote repository? {remote}")
         self.log.debug(f"Timeout set to: {seconds}")
         self.set_path(dirpath)
-        GLib.timeout_add_seconds(seconds, self.monitor, dirpath, self.watch)
+        
+        if self.remote:
+            self._timeout_id = GLib.timeout_add_seconds(seconds, self.monitor, dirpath, self.watch)
+        
         self.log.debug("Watcher initialized")
+
+    def _setup_file_monitor(self):
+        if self._monitor:
+            self._monitor.cancel()
+            self._monitor = None
+        
+        if self.dirpath and os.path.exists(self.dirpath):
+            gfile = Gio.File.new_for_path(self.dirpath)
+            try:
+                self._monitor = gfile.monitor_directory(Gio.FileMonitorFlags.NONE, None)
+                self._monitor.connect('changed', self._on_monitor_changed)
+                self.log.debug(f"FileMonitor started for {self.dirpath}")
+            except Exception as e:
+                self.log.error(f"Could not setup FileMonitor: {e}")
+
+    def _on_monitor_changed(self, monitor, file, other_file, event_type):
+        if not self.active:
+            return
+        
+        # We ignore some event types if needed, but usually any change is relevant
+        # self.log.debug(f"FileMonitor event: {event_type} on {file.get_path()}")
+        
+        if self._debounce_id > 0:
+            GLib.source_remove(self._debounce_id)
+        
+        self._debounce_id = GLib.timeout_add(500, self._emit_updated)
+
+    def _emit_updated(self):
+        self._debounce_id = 0
+        if self.active:
+            self.log.debug("Repository updated (notified by FileMonitor)")
+            self.emit('repository-updated')
+        return False
 
     def files_with_timestamp_async(self, path, callback):
         """
@@ -132,6 +172,8 @@ class MiAZWatcher(GObject.GObject):
         if dirpath is not None:
             self.dirpath = dirpath
             self.log.info(f"Watcher monitoring '{self.dirpath}'")
+            if not self.remote:
+                self._setup_file_monitor()
 
     def set_active(self, active: bool = True) -> None:
         """Set current watcher as active"""

@@ -275,7 +275,31 @@ class MiAZUtil(GObject.GObject):
         return len(name.split('-')) == 7
 
     def filename_validate(self, doc: str) -> bool:
-        return self.filename_is_normalized(doc)
+        if not self.filename_is_normalized(doc):
+            return False
+
+        fields = self.get_fields(doc)
+
+        # 1. Date validation (YYYYMMDD)
+        try:
+            datetime.strptime(fields[0], '%Y%m%d')
+        except (ValueError, IndexError):
+            return False
+
+        # 2. Country validation (ISO-3166)
+        # We check against the list of available countries if possible
+        config = self.app.get_config('Country')
+        if config:
+            countries = config.load_available()
+            if fields[1] not in countries:
+                return False
+        else:
+            # Fallback if config service is unavailable (e.g. basic tests)
+            # Ensure it is at least 2 uppercase letters
+            if not (len(fields[1]) == 2 and fields[1].isupper() and fields[1].isalpha()):
+                return False
+
+        return True
 
     def filename_normalize(self, filename: str) -> str:
         name, ext = self.filename_details(filename)
