@@ -103,11 +103,17 @@ class MiAZSidebarTBPlugin(MiAZExtension):
             self.plugin.set_started(started=True)
 
     def toggle_sidebar(self, *args):
-        """ Sidebar not visible when active = False"""
-        sidebar = self.app.get_widget('sidebar')
+        """Show/hide the whole sidebar pane via the split view.
+
+        The sidebar lives inside an Adw.OverlaySplitView, so its visibility is
+        controlled by the split view's 'show-sidebar' property. Hiding the
+        sidebar widget directly would only clear the pane's contents, leaving
+        an empty pane allocated.
+        """
         tgbSidebar = self.app.get_widget('workspace-togglebutton-sidebar')
-        active = tgbSidebar.get_active()
-        sidebar.set_visible(active)
+        split_view = self.app.get_widget('main-split-view')
+        if split_view is not None:
+            split_view.set_show_sidebar(tgbSidebar.get_active())
 
     def _on_key_press(self, event, keyval, keycode, state):
         keyname = Gdk.keyval_name(keyval)
