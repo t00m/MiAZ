@@ -18,10 +18,18 @@ install_msys2:
 	ninja -C builddir_system install
 
 uninstall:
-	cd builddir_system && sudo ninja uninstall
+	@if [ -d builddir_system ]; then \
+		cd builddir_system && sudo ninja uninstall; \
+	else \
+		echo "builddir_system not found; run: sudo ./scripts/uninstall/uninstall_system.sh"; \
+	fi
 
 uninstall_msys2:
-	cd builddir_system && ninja uninstall
+	@if [ -d builddir_system ]; then \
+		cd builddir_system && ninja uninstall; \
+	else \
+		echo "builddir_system not found; run: ./scripts/uninstall/uninstall_system.sh"; \
+	fi
 
 user:
 	rm -rf builddir_user
@@ -33,7 +41,11 @@ user:
 	ninja -C builddir_user install
 
 user_uninstall:
-	cd builddir_user && ninja uninstall
+	@if [ -d builddir_user ]; then \
+		cd builddir_user && ninja uninstall; \
+	else \
+		echo "builddir_user not found; nothing to uninstall via Meson."; \
+	fi
 
 # ── Source tarball (required by rpm and deb targets) ──────────────────────────
 dist:
