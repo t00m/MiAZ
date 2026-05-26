@@ -1,4 +1,4 @@
-# MiAZ — Personal Document Organizer
+# MiAZ,  Personal Document Organizer
 
 > App ID: `io.github.t00m.MiAZ` | License: GPL v3 | Repo: https://github.com/t00m/MiAZ
 
@@ -12,7 +12,7 @@ GTK4/Libadwaita desktop app that organises personal documents by enforcing a str
 
 Example: `20240315-ES-HOU-BANKNAME-INV-Q1invoice-JOHNDOE.pdf`
 
-**The directory is the database** — no SQLite, no external DB.
+**The directory is the database**,  no SQLite, no external DB.
 
 ## Tech stack
 
@@ -22,22 +22,24 @@ Example: `20240315-ES-HOU-BANKNAME-INV-Q1invoice-JOHNDOE.pdf`
 | GUI toolkit | GTK | 4.10 |
 | GNOME style | Libadwaita | 1.6 |
 | Python–GTK bindings | PyGObject | 3.50 |
-| Build system | Meson + Ninja | — |
-| Distribution | Flatpak | — |
-| i18n | gettext | — |
+| Embedded web | WebKitGTK | 6.0 |
+| Build system | Meson + Ninja | 1.5.1 |
+| Distribution | Flatpak | GNOME 50 runtime |
+| i18n | gettext |,  |
 
 ## Repository layout
 
 ```
 MiAZ/
 ├── AGENTS.md                     ← This file (AI context, read first)
-├── CLAUDE.md                     ← Legacy project instructions
+├── CLAUDE.md                     ← Condensed companion (signal map, conventions)
 ├── MiAZ/                         ← Python package
 │   ├── __init__.py               ← Package marker
 │   ├── miaz.py                   ← Entry point (MiAZ class, main)
 │   ├── env.in                    ← Environment template → env.py (meson-generated)
 │   ├── backend/                  ← Business logic (NO GTK imports)
 │   │   ├── config.py             ← MiAZConfig + 10 subclasses (App, Repo, Country, etc.)
+│   │   ├── data.py               ← Placeholder (package marker)
 │   │   ├── dr.py                 ← MiAZDR (disaster recovery / backup)
 │   │   ├── log.py                ← MiAZLog (colored logging)
 │   │   ├── models.py             ← MiAZItem, Country, Group, etc. (GObject models)
@@ -58,19 +60,19 @@ MiAZ/
 │           │   ├── pluginsystem.py ← MiAZExtension, MiAZPlugin, MiAZPluginSystem
 │           │   └── workflow.py   ← MiAZWorkflow (repo switching lifecycle)
 │           └── widgets/
-│               ├── about.py, assistant.py, button.py, columnview.py
-│               ├── configview.py, dr.py, mainwindow.py, pages.py
-│               ├── pluginuimanager.py, rename.py, searchbar.py
-│               ├── selector.py, settings.py, sidebar.py, statusbar.py
-│               ├── views.py, webbrowser.py, window.py, workspace.py
+│               ├── about.py, button.py, columnview.py, configview.py
+│               ├── dr.py, mainwindow.py, pages.py, pluginuimanager.py
+│               ├── rename.py, searchbar.py, selector.py, settings.py
+│               ├── sidebar.py, views.py, webbrowser.py, window.py
+│               └── workspace.py
 ├── data/
 │   └── resources/
-│       ├── plugins/              ← Built-in Peas plugins (19 total)
-│       ├── icons/                ← App icons (hicolor)
-│       ├── conf/                 ← Default config JSON files
+│       ├── plugins/              ← Built-in Peas plugins (17 total)
+│       ├── icons/                ← App icons (64 scalable + 257 flag SVGs)
+│       ├── conf/                 ← 6 default config JSON files
 │       ├── *.desktop.in          ← Desktop entry template
 │       ├── *.metainfo.xml.in     ← AppStream metadata
-│       └── *.gschema.xml         ← GSettings schema (empty, app uses JSON)
+│       └── *.gschema.xml         ← GSettings schema (5 keys, unused at runtime; app uses JSON)
 ├── po/                           ← Translations
 ├── meson.build                   ← Root Meson build file
 ├── meson_options.txt
@@ -100,6 +102,7 @@ Field = {Date: 0, Country: 1, Group: 2, SentBy: 3, Purpose: 4, Concept: 5, SentT
 ### Layered: Backend (no GTK) → Services (GTK-aware) → Widgets (GTK/Adw)
 
 **Backend** (`MiAZ/backend/`): Zero GTK imports. File I/O, config, models, logging, util.
+- `MiAZConfig` signals: `available-updated`, `used-updated`
 - `MiAZUtil` signals: `filename-added`, `filename-deleted`, `filename-renamed`
 - `MiAZRepository` signals: `repository-switched`
 - `MiAZWatcher` signals: `repository-updated`
@@ -113,6 +116,9 @@ Field = {Date: 0, Country: 1, Group: 2, SentBy: 3, Purpose: 4, Concept: 5, SentT
 **Widgets** (`MiAZ/frontend/desktop/widgets/`): All GTK4+Adw widgets.
 
 **App signals** (`MiAZApp`): `application-started`, `application-finished`
+**Actions signals** (`MiAZActions`): `settings-loaded`, `rename-dialog-built`
+**Settings signals** (`MiAZAppSettings`): `settings-loaded`
+**PluginSystem signals** (`MiAZPluginSystem`): `plugins-updated`
 **Workflow signals**: `repository-switch-started`, `repository-switch-finished`
 **Workspace signals**: `workspace-loaded`, `workspace-view-updated`, `workspace-view-selection-changed`, `workspace-view-filtered`
 
@@ -133,11 +139,22 @@ MiAZWorkspace (Gtk.Box VERTICAL)
 - `get_view_switcher()` → `Adw.InlineViewSwitcher`
 - `add_stack_page(widget, name, title, icon_name=None)` → registers a new page
 - `show_stack_page(name)` → switches to page by name
+- `is_loaded()` → `bool`, true after workspace is configured
 
 **Plugin helper on MiAZPlugin:**
 ```python
 self.plugin.add_workspace_page(my_widget, 'my-view', _('My View'), 'my-icon')
 ```
+
+**Workspace page lifecycle (activate / deactivate / reactivate):**
+
+PluginSystem creates a **fresh plugin instance** per activation. Pages added to the workspace stack must survive across cycles:
+
+1. **Activation** → `startup()`: call `stack.get_child_by_name('notes-all')` to detect a hidden page from a prior instance. If found, reuse it (`page.set_visible(True)`, update `store`/`backup` refs). If not, create and add via `add_workspace_page()`.
+2. **Deactivation** → `do_deactivate()`: hide the page via `page.set_visible(False)`,  it stays in the `Adw.ViewStack` but disappears from the `InlineViewSwitcher`.
+3. **Reactivation** → same as activation: the hidden page is found by name and shown again.
+
+This avoids the "duplicate child name in AdwViewStack" warning.
 
 ### Startup flow
 
@@ -149,7 +166,7 @@ self.plugin.add_workspace_page(my_widget, 'my-view', _('My View'), 'my-icon')
 ## Plugin system
 
 ### Location
-- **System** (bundled): `~/.local/share/MiAZ/resources/plugins/` (19 plugins)
+- **System** (bundled): `~/.local/share/MiAZ/resources/plugins/` (17 plugins)
 - **User** (imported): `~/.MiAZ/opt/plugins/`
 
 ### Discovery
@@ -238,18 +255,25 @@ class MyPlugin(MiAZExtension):
 ```
 
 **`MiAZPlugin` helper key methods:**
-- `register(plugin_obj, info_dict)` — stores widget reference, creates `conf/` and `data/` dirs
+- `register(plugin_obj, info_dict)`,  stores widget reference, creates `conf/` and `data/` dirs
 - `get_config_dir()` → `<repo>/.conf/plugins/<Name>/conf/`
 - `get_data_dir()` → `<repo>/.conf/plugins/<Name>/data/`
-- `get_config_key(key)` / `set_config_key(key, value)` — JSON config persistence
+- `get_config_key(key)` / `set_config_key(key, value)`,  JSON config persistence
 - `get_menu_item(callback)` → `Gio.MenuItem` (registered as app action)
-- `install_menu_entry(menuitem)` — appends to workspace menu under category/subcategory
+- `install_menu_entry(menuitem)`,  appends to workspace menu under category/subcategory
+- `add_workspace_page(widget, name, title, icon_name=None)`,  registers a page on the workspace's `Adw.ViewStack`
 - `get_logger()` → named logger `Plugin.<Name>`
+- `get_name()` → plugin name string
+- `get_widget_name()` → `plugin-<Module>` identifier
+- `get_plugin_info_dict()` → full plugin info `dict`
+- `get_plugin_info_key(key)` → specific info key value
+- `menu_item_loaded()` → `bool`, checks if menu item is registered
+- `set_started(True/False)` / `started()` → toggle/query started state
 
 ## Environment paths
 
 | Variable | Path |
-|---|---|
+|---|---|---|
 | `GPATH['ROOT']` | `~/.local/share/MiAZ` |
 | `GPATH['PLUGINS']` | `~/.local/share/MiAZ/resources/plugins` |
 | `LPATH['ROOT']` | `~/.MiAZ` |
@@ -257,14 +281,19 @@ class MyPlugin(MiAZExtension):
 | `LPATH['CACHE']` | `~/.MiAZ/var/cache` |
 | `LPATH['LOG']` | `~/.MiAZ/var/log` |
 | `LPATH['VAR']` | `~/.MiAZ/var` |
+| `LPATH['CONF']` | `~/.MiAZ/etc` |
+| `LPATH['REPOS']` | `~/.MiAZ/var/repos` |
+| `LPATH['DB']` | `~/.MiAZ/var/db` |
+| `LPATH['TMP']` | `~/.MiAZ/var/tmp` |
+| `LPATH['REPO']` | `repository root` |
 
 ## Coding conventions
 
-- **Python 3.9+ compatible** — no `X | Y` union syntax in annotations
+- **Python 3.9+ compatible**,  no `X | Y` union syntax in annotations
 - **PEP 8**: `snake_case` methods/vars, `PascalCase` classes, `_` prefix for private
 - **Signal handlers**: `_on_<widget>_<signal>`
-- **No bare `except:`** — always catch `Exception as e` or specific types
-- **No `print()`** — use `logging.getLogger(__name__)`
+- **No bare `except:`**,  always catch `Exception as e` or specific types
+- **No `print()`**,  use `logging.getLogger(__name__)`
 - **Backend**: no GTK imports, no side-effects on import
 - **Frontend**: no direct file I/O, always call backend APIs
 - **Threading**: `threading.Thread` + `GLib.idle_add()` for UI marshal
@@ -289,26 +318,24 @@ ninja -C _build install
 PYTHONPATH=. python -m MiAZ.miaz
 ```
 
-## Existing plugins (19)
+## Existing plugins (17)
 
 | Plugin | Category | Purpose |
-|---|---|---|
-| HelloWorld | Support/Guides | Example plugin |
-| MiAZAddFromDir | Data/Import | Import all files from a directory |
-| MiAZColumnVisibility | Customisation/UI | Toggle column visibility |
-| MiAZCopy2Clipboard | Data/Single | Copy file info to clipboard |
-| MiAZDeleteDoc | Data/Deletion | Delete documents |
-| MiAZExport2CSV | Data/Export | Export to CSV |
-| MiAZExport2Dir | Data/Export | Export to directory |
-| MiAZExport2Text | Data/Export | Export to text file |
-| MiAZExport2Zip | Data/Export | Export to ZIP archive |
-| MiAZImportDoc | Data/Import | Import single document |
-| MiAZImportFromScan | Data/Import | Import from scanner |
-| MiAZMassRename | Data/Batch | Batch rename documents |
-| MiAZPeriodicity | Data/... | Periodicity analysis |
-| MiAZProjectMgt | ... | Project management |
-| MiAZRenameDoc | Data/Single | Rename single document |
-| MiAZSidebarTB | Customisation/UI | Sidebar toolbar |
-| MiAZViewDoc | Visualisation/Viewers | View document content |
-| MiAZWSFont | Customisation/UI | Workspace font settings |
-| MiAZWorkspaceToggleView | Customisation/UI | Toggle workspace view |
+|---|---|---|---|
+| HelloWorld | Support and Help / Guides and Tutorials | Example plugin |
+| MiAZAddFromDir | Data Management / Import | Import all files from a directory |
+| MiAZColumnVisibility | Customisation and Personalisation / User Interface | Toggle column visibility |
+| MiAZCopy2Clipboard | Data Management / Export | Copy file info to clipboard |
+| MiAZExport2CSV | Data Management / Export | Export to CSV |
+| MiAZExport2Dir | Data Management / Export | Export to directory |
+| MiAZExport2Text | Data Management / Export | Export to text file |
+| MiAZExport2Zip | Data Management / Export | Export to ZIP archive |
+| MiAZImportDoc | Data Management / Import | Import single document |
+| MiAZImportFromScan | Data Management / Import | Import from scanner |
+| MiAZImportFromZip | Data Management / Import | Import from ZIP file |
+| MiAZMassRename | Data Management / Batch mode | Batch rename documents |
+| MiAZPeriodicity | Content Organisation / Tagging and Classification | Periodicity analysis |
+| MiAZProjectMgt | Content Organisation / Tagging and Classification | Project management |
+| MiAZSidebarTB | Customisation and Personalisation / User Interface | Sidebar toolbar |
+| MiAZWSFont | Customisation and Personalisation / User Interface | Workspace font settings |
+| MiAZWorkspaceToggleView | Customisation and Personalisation / User Interface | Toggle workspace view |
