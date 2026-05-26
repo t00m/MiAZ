@@ -30,7 +30,6 @@ class MiAZSidebar(Adw.Bin):
     def _on_repo_switch(self, *args):
         config = self.app.get_config_dict()
         repo_id = config['App'].get('current') or 'MiAZ'
-        self.set_title(repo_id)
         self.setup_custom_filters()
         self.log.debug(f"Switched to repository {repo_id} > Sidebar updated")
 
@@ -62,22 +61,17 @@ class MiAZSidebar(Adw.Bin):
             Gtk.SizeGroup(mode=Gtk.SizeGroupMode.HORIZONTAL))
 
         main_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
-        repo_id = config['App'].get('current') or 'MiAZ'
+        # Top row: workspace-menu and pending-docs toggle (prepended by
+        # mainwindow once those widgets are built) followed by settings and
+        # clear-filters. Registered as 'sidebar-top-row' so mainwindow can
+        # reach into it.
         title_bar = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
         title_bar.set_margin_top(6)
         title_bar.set_margin_bottom(6)
         title_bar.set_margin_start(6)
         title_bar.set_margin_end(6)
+        self.app.add_widget('sidebar-top-row', title_bar)
 
-        lbl_title = Gtk.Label()
-        lbl_title.set_markup(f"<big><b>{repo_id}</b></big>")
-        lbl_title.set_hexpand(True)
-        lbl_title.set_halign(Gtk.Align.START)
-        lbl_title.set_valign(Gtk.Align.CENTER)
-        lbl_title.set_ellipsize(3)
-        self.app.add_widget('sidebar-title', lbl_title)
-
-        title_bar.append(lbl_title)
         title_bar.append(button_settings)
         title_bar.append(button_clear)
         separator = Gtk.Separator(orientation=Gtk.Orientation.HORIZONTAL)
@@ -173,8 +167,3 @@ class MiAZSidebar(Adw.Bin):
         if workspace.is_loaded():
             workspace.clear_filters()
             self.log.debug("All filters cleared")
-
-    def set_title(self, title: str = ''):
-        lbl_title = self.app.get_widget('sidebar-title')
-        if lbl_title is not None:
-            lbl_title.set_markup(f"<big><b>{title.replace('_', ' ')}</b></big>")

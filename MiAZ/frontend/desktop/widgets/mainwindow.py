@@ -41,6 +41,7 @@ class MiAZMainWindow(Gtk.Box):
         content.set_hexpand(True)
         content.set_vexpand(True)
         sidebar = MiAZSidebar(self.app)
+        self._setup_sidebar_top_row()
 
         split_view = self.app.add_widget('main-split-view', Adw.OverlaySplitView())
         split_view.set_sidebar(sidebar)
@@ -136,17 +137,25 @@ class MiAZMainWindow(Gtk.Box):
         self.app.add_widget('headerbar-left-box', hbox)
         headerbar.pack_start(hbox)
 
+    def _setup_sidebar_top_row(self):
+        """Build the workspace document-count menu and pending-docs toggle
+        and prepend them into the sidebar's top row, replacing what used to
+        be the repository-title slot.
+        """
+        factory = self.app.get_service('factory')
+        top_row = self.app.get_widget('sidebar-top-row')
+
         # Workspace document-count menu button
         label = Gtk.Label()
         btnDocsSel = Gtk.MenuButton()
         btnDocsSel.add_css_class('accent')
+        btnDocsSel.set_hexpand(True)
         self.app.add_widget('workspace-menu', btnDocsSel)
         btnDocsSel.set_always_show_arrow(True)
         btnDocsSel.set_child(label)
         popDocsSel = Gtk.PopoverMenu()
         popDocsSel.set_menu_model(self._setup_menu_selection())
         btnDocsSel.set_popover(popover=popDocsSel)
-        hbox.append(btnDocsSel)
 
         # Pending documents toggle button
         button = factory.create_button_toggle(
@@ -157,7 +166,11 @@ class MiAZMainWindow(Gtk.Box):
         button.set_has_frame(True)
         button.set_visible(False)
         button.set_active(False)
-        hbox.append(button)
+
+        # Prepended in reverse so the final order is:
+        # [workspace-menu, pending-docs, settings, clear-filters].
+        top_row.prepend(button)
+        top_row.prepend(btnDocsSel)
 
     def _setup_headerbar_end(self):
         factory = self.app.get_service('factory')
