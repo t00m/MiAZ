@@ -153,6 +153,14 @@ class MiAZAppSettings(Adw.PreferencesDialog):
         btnManageRepos.set_valign(Gtk.Align.CENTER)
         row.add_prefix(btnManageRepos)
 
+        ## Group User Interface
+        # Plugins whose Subcategory is "User Interface" register their rows
+        # here via the 'settings-loaded' signal on MiAZActions.
+        ui_group = Adw.PreferencesGroup()
+        ui_group.set_title(_('User Interface'))
+        page.add(ui_group)
+        self.app.add_widget('window-preferences-page-ui-group', ui_group)
+
     def _create_widget_for_repositories(self):
         box = self.factory.create_box_vertical(hexpand=True, vexpand=True)
         configview = MiAZRepositories(self.app)
