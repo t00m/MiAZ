@@ -372,14 +372,37 @@ class MiAZColumnViewRepo(MiAZColumnViewSelector):
         item_type=Repository
         super().__init__(app, item_type=item_type)
         self.cv.append_column(self.column_id)
+        # Gtk.ColumnViewColumn.set_expand only distributes *extra* space
+        # beyond a column's natural width. Repo paths are long and not
+        # ellipsized, so the path column eats all the available width and
+        # leaves no extra for the id column. Force a comfortable default
+        # width on the id column and let the user resize either column.
         self.column_id.set_expand(True)
+        self.column_id.set_resizable(True)
+        self.column_id.set_fixed_width(280)
         if available:
             title = _(item_type.__title_plural__) + ' ' + _('available')
         else:
             title = _(item_type.__title_plural__) + ' ' + _('enabled')
         self.cv.append_column(self.column_title)
-        self.column_title.set_title(_('Directory'))
-        self.column_title.set_visible(False)
+        self.column_title.set_title(_('Path'))
+        self.column_title.set_expand(True)
+        self.column_title.set_resizable(True)
+        self.column_title.set_visible(True)
+        # Repository paths can be long; let the column show them in full
+        # and rely on the surrounding ScrolledWindow for horizontal scroll.
+        self.scrwin.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.AUTOMATIC)
+
+    def _on_factory_bind_title(self, factory, list_item):
+        box = list_item.get_child()
+        item = list_item.get_item()
+        label = box.get_first_child()
+        label.set_markup(item.title)
+        label.set_ellipsize(False)
+        label.set_property('ellipsize', Pango.EllipsizeMode.NONE)
+        label.set_xalign(0.0)
+        tooltip = f"<big>{item.id}</big>\n<b>{item.title}</b>"
+        label.set_tooltip_markup(tooltip)
 
 
 class MiAZColumnViewGroup(MiAZColumnViewSelector):

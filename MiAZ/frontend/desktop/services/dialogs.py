@@ -4,6 +4,7 @@
 # License: GPL v3
 # Description: Custom dialogs for MiAZ
 
+import re
 from gettext import gettext as _
 
 from gi.repository import Adw
@@ -452,6 +453,20 @@ class MiAZDialogAddRepo(MiAZDialogAdd):
             self.log.error(f"Selection cancelled or failed: {e.message}")
 
     def _check_user_input_key(self, entry):
-        key = entry.get_text()
-        self.btn_action.set_sensitive(len(key) > 1)
+        raw = entry.get_text()
+        sanitized = self._sanitize_repo_id(raw)
+        if sanitized != raw:
+            pos = entry.get_position() if hasattr(entry, 'get_position') else len(sanitized)
+            entry.set_text(sanitized)
+            if hasattr(entry, 'set_position'):
+                entry.set_position(min(pos, len(sanitized)))
+        self.btn_action.set_sensitive(len(sanitized) > 1)
+
+    @staticmethod
+    def _sanitize_repo_id(value: str) -> str:
+        # Mirrors MiAZUtil.valid_key: collapse whitespace/hyphens to '_' and
+        # strip characters disallowed in repo identifiers, so the user sees
+        # the canonical id as they type instead of after submit.
+        cleaned = value.strip().replace('-', '_').replace(' ', '_')
+        return re.sub(r'(?u)[^-\w.]', '', cleaned)
 

@@ -64,6 +64,23 @@ class MiAZAppSettings(Adw.PreferencesDialog):
             if repo_id ==  repo.id:
                 dd_repo.set_selected(n)
             n += 1
+        self._update_active_repo_subtitle()
+
+    def _update_active_repo_subtitle(self, *args):
+        # dropdown_populate() rewrites Repository.title to a prettified name
+        # (id with underscores turned into spaces), so the model item no
+        # longer carries the path. Look up the absolute path in the repo
+        # config by id.
+        row = self.app.get_widget('window-setting-row-active-repository')
+        dd_repo = self.app.get_widget('window-settings-dropdown-repository-active')
+        if row is None or dd_repo is None:
+            return
+        repo = dd_repo.get_selected_item()
+        path = ''
+        if repo is not None:
+            repos_used = self.config_repos.load_used()
+            path = repos_used.get(repo.id, '')
+        row.set_subtitle(path)
 
     def _build_ui(self):
         self.set_title(_('Application settings'))
@@ -127,7 +144,9 @@ class MiAZAppSettings(Adw.PreferencesDialog):
         self.config_repos.connect('used-updated', self.actions.dropdown_populate, dd_repo, Repository, False, False)
         signal = dd_repo.connect("notify::selected-item", self._on_use_repo)
         self.app.add_widget('signal-dd_repo', signal)
+        dd_repo.connect("notify::selected-item", self._update_active_repo_subtitle)
         row.add_suffix(dd_repo)
+        self._update_active_repo_subtitle()
 
         #### Manage repositories
         btnManageRepos = self.factory.create_button(icon_name='io.github.t00m.MiAZ-study-symbolic', callback=self._on_manage_repositories, tooltip="Manage repositories")
