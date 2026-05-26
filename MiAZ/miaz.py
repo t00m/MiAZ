@@ -30,7 +30,11 @@ try:
     gi.require_version('Gtk', '4.0')
     from gi.repository import Gtk
     from gi.repository import GLib
-    from gi.repository import GLibUnix
+    try:
+        gi.require_version('GLibUnix', '2.0')
+        from gi.repository import GLibUnix
+    except (ValueError, ImportError):
+        GLibUnix = None
     ENV['DESKTOP']['GTK_VERSION'] = (Gtk.MAJOR_VERSION, Gtk.MINOR_VERSION, Gtk.MICRO_VERSION)
     ENV['DESKTOP']['GTK_SUPPORT'] = Gtk.MAJOR_VERSION >= 4 and Gtk.MINOR_VERSION >= 6
 except (ValueError, ModuleNotFoundError):

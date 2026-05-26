@@ -115,16 +115,15 @@ class MiAZApp(Adw.Application):
 
         # Main MiAZ Window
         window = self.add_widget('window', Adw.ApplicationWindow(application=self))
-        try:
-            _settings = Gio.Settings(schema_id='io.github.t00m.MiAZ')
+        window.set_default_size(1280, 800)
+        _settings = self._get_window_settings()
+        if _settings is not None:
             window.set_default_size(
                 _settings.get_int('window-width'),
                 _settings.get_int('window-height')
             )
             if _settings.get_boolean('window-maximized'):
                 window.maximize()
-        except Exception:
-            window.set_default_size(1280, 800)
         window.set_icon_name('io.github.t00m.MiAZ')
         window.connect('close-request', self._on_window_close_request)
         window.set_default_icon_name('io.github.t00m.MiAZ')
@@ -147,16 +146,32 @@ class MiAZApp(Adw.Application):
 
     def _on_window_close_request(self, *args):
         self.log.debug("Close application requested")
-        try:
-            _settings = Gio.Settings(schema_id='io.github.t00m.MiAZ')
+        _settings = self._get_window_settings()
+        if _settings is not None:
             window = self.get_widget('window')
             _settings.set_int('window-width', window.get_width())
             _settings.set_int('window-height', window.get_height())
             _settings.set_boolean('window-maximized', window.is_maximized())
-        except Exception:
-            pass
         actions = self.get_service('actions')
         actions.exit_app()
+
+    def _get_window_settings(self):
+        # GLib aborts the process when reading a missing key, so the schema
+        # and every required key must be verified before constructing
+        # Gio.Settings. Older installs may have a stale compiled schema.
+        required = ('window-width', 'window-height', 'window-maximized')
+        source = Gio.SettingsSchemaSource.get_default()
+        if source is None:
+            return None
+        schema = source.lookup('io.github.t00m.MiAZ', True)
+        if schema is None:
+            self.log.warning("GSettings schema 'io.github.t00m.MiAZ' not found; using window defaults")
+            return None
+        missing = [k for k in required if not schema.has_key(k)]
+        if missing:
+            self.log.warning(f"GSettings schema missing keys {missing}; run 'glib-compile-schemas' on the install prefix")
+            return None
+        return Gio.Settings(schema_id='io.github.t00m.MiAZ')
 
     def get_plugins_loaded(self):
         return self._plugins_loaded
