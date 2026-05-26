@@ -6,10 +6,14 @@
     "command" : "miaz",
     "finish-args" : [
         "--share=ipc",
-        "--device=dri",
+        "--share=network",
+        "--device=all",
         "--socket=fallback-x11",
         "--socket=wayland",
-        "--filesystem=home"
+        "--socket=session-bus",
+        "--filesystem=host",
+        "--allow=devel",
+        "--talk-name=org.freedesktop.portal.FileChooser"
     ],
     "cleanup" : [
         "/include",

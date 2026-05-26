@@ -46,23 +46,23 @@
   </branding>
   <screenshots>
     <screenshot type="default">
-      <image type="source">https://raw.githubusercontent.com/t00m/MiAZ/main/data/docs/screenshots/MiAZ-Workspace-filters.png</image>
+      <image type="source" width="1330" height="850">https://raw.githubusercontent.com/t00m/MiAZ/main/data/docs/screenshots/MiAZ-Workspace-filters.png</image>
       <caption>Main workspace displaying the document list and sidebar filters in action</caption>
     </screenshot>
     <screenshot>
-      <image type="source">https://raw.githubusercontent.com/t00m/MiAZ/main/data/docs/screenshots/MiAZ-Workspace-menu.png</image>
-      <caption>Document actions menu</caption>
-    </screenshot>
-    <screenshot>
-      <image type="source">https://raw.githubusercontent.com/t00m/MiAZ/main/data/docs/screenshots/MiAZ-repository-settings.png</image>
+      <image type="source" width="1074" height="778">https://raw.githubusercontent.com/t00m/MiAZ/main/data/docs/screenshots/MiAZ-repository-settings.png</image>
       <caption>Repository settings</caption>
     </screenshot>
     <screenshot>
-      <image type="source">https://raw.githubusercontent.com/t00m/MiAZ/main/data/docs/screenshots/MiAZ-repository-plugins.png</image>
+      <image type="source" width="1074" height="778">https://raw.githubusercontent.com/t00m/MiAZ/main/data/docs/screenshots/MiAZ-repository-plugins.png</image>
       <caption>Manage repository plugins</caption>
     </screenshot>
     <screenshot>
-      <image type="source">https://raw.githubusercontent.com/t00m/MiAZ/main/data/docs/screenshots/MiAZ-About.png</image>
+      <image type="source" width="464" height="341">https://raw.githubusercontent.com/t00m/MiAZ/main/data/docs/screenshots/MiAZ-Workspace-menu.png</image>
+      <caption>Document actions menu</caption>
+    </screenshot>
+    <screenshot>
+      <image type="source" width="375" height="528">https://raw.githubusercontent.com/t00m/MiAZ/main/data/docs/screenshots/MiAZ-About.png</image>
       <caption>About MiAZ</caption>
     </screenshot>
   </screenshots>

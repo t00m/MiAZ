@@ -125,11 +125,23 @@ def _read_dev_version(repo_root):
 
 try:
     from MiAZ import _buildconfig as _bc
+    # The Meson-generated PKGDATADIR / LOCALEDIR are absolute paths anchored
+    # to the configure-time --prefix. They are correct for in-place system
+    # installs and wrong the moment the install tree is relocated, mounted
+    # or bundled (AppImage FUSE mount, portable per-user installs, Snap,
+    # chroot, etc). Re-anchor them to this _buildconfig.py file's actual
+    # on-disk location, which always lives at
+    # <pkgdatadir>/MiAZ/_buildconfig.py — so two dirname() calls yield the
+    # real pkgdatadir, and locales sit at <prefix>/share/locale one level
+    # further up.
+    _bc_dir = os.path.dirname(os.path.abspath(_bc.__file__))
+    _pkgdatadir = os.path.dirname(_bc_dir)
+    _localedir = os.path.join(os.path.dirname(_pkgdatadir), 'locale')
     ENV = _build_env(
         app_id=_bc.APP_ID,
         version=_bc.VERSION,
-        pkgdatadir=_bc.PKGDATADIR,
-        localedir=_bc.LOCALEDIR,
+        pkgdatadir=_pkgdatadir,
+        localedir=_localedir,
         profile=_bc.PROFILE,
     )
 except ImportError:
