@@ -89,6 +89,8 @@ class MiAZ:
             log.debug(f"\t[{section}]")
             for envvar in self.env[section]:
                 log.debug(f"\t\t{envvar} = {self.env[section][envvar]}")
+        from MiAZ.backend.util import MiAZUtil
+        log.debug(f"MiAZ install mode: {MiAZUtil.get_install_mode()}")
         self.setup_environment()
         self._acquire_lock()
         self.log = MiAZLog('MiAZ')
@@ -168,7 +170,6 @@ if __name__ == "__main__":
     """
     This is the entry point when the program is installed via Meson
     """
-    log.debug("MiAZ installation done via Meson!")
     args = parse_arguments()
     app = MiAZ(ENV)
     app.run(sys.argv)
