@@ -368,11 +368,15 @@ class MiAZWorkspace(Gtk.Box):
         frmView = self._setup_columnview()
         page_content = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, hexpand=True, vexpand=True)
         page_content.append(frmView)
-        self._stack.add_titled(page_content, 'workspace-default', _('Documents'))
+        documents_page = self._stack.add_titled(page_content, 'workspace-default', _('Documents'))
+        documents_page.set_icon_name('io.github.t00m.MiAZ')
 
         # InlineViewSwitcher linked to the stack
         self._switcher = Adw.InlineViewSwitcher()
         self._switcher.set_stack(self._stack)
+        self._switcher.set_display_mode(Adw.InlineViewSwitcherDisplayMode.BOTH)
+        self._switcher.set_halign(Gtk.Align.CENTER)
+        self._switcher.set_homogeneous(True)
         self.app.add_widget('workspace-view-switcher', self._switcher)
 
         self.append(self._switcher)
