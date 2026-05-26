@@ -11,9 +11,9 @@
 from gettext import gettext as _
 
 from gi.repository import Adw
-from gi.repository import Gdk
 from gi.repository import GObject
 from gi.repository import Gtk
+from gi.repository import Pango
 
 from MiAZ.frontend.desktop.services.pluginsystem import MiAZExtension, MiAZPlugin
 
@@ -31,6 +31,12 @@ plugin_info = {
         'Subcategory':   'User Interface'
     }
 
+DEFAULT_FONT_FAMILY = 'Monospace'
+DEFAULT_FONT_SIZE = 12
+MIN_FONT_SIZE = 8
+MAX_FONT_SIZE = 48
+UI_GROUP_WIDGET_ID = 'window-preferences-page-ui-group'
+
 
 class MiAZWSFontPlugin(MiAZExtension):
     __gtype_name__ = 'MiAZWSFontPlugin'
@@ -38,137 +44,129 @@ class MiAZWSFontPlugin(MiAZExtension):
 
     def do_activate(self):
         """Plugin activation"""
-        # Setup plugin
-        ## Get pointer to app
         self.app = self.object.app
         self.plugin = MiAZPlugin(self.app)
-
-        ## Initialize plugin
         self.plugin.register(self, plugin_info)
-
-        ## Get logger
         self.log = self.plugin.get_logger()
-
-        ## Get services
         self.actions = self.app.get_service('actions')
         self.factory = self.app.get_service('factory')
-
-        # Connect signals to startup
         self.workspace = self.app.get_widget('workspace')
+        self._css_provider = None
+        self._startup_handler = None
+        self._settings_handler = self.actions.connect(
+            'settings-loaded', self._on_settings_loaded)
+
         if self.workspace.is_loaded():
             self.startup()
         else:
-            self._startup_handler = self.workspace.connect('workspace-loaded', self.startup)
+            self._startup_handler = self.workspace.connect(
+                'workspace-loaded', self.startup)
 
     def do_deactivate(self):
-        button = self.app.get_widget('workspace-button-font')
-        if button is not None:
-            parent = button.get_parent()
-            if parent is not None:
-                parent.remove(button)
-        if hasattr(self, '_value_changed_handler'):
-            self.spinbutton.disconnect(self._value_changed_handler)
-        if hasattr(self, '_startup_handler'):
+        if self._css_provider is not None and self.workspace is not None:
+            display = self.workspace.get_display()
+            try:
+                Gtk.StyleContext.remove_provider_for_display(
+                    display, self._css_provider)
+            except Exception:
+                pass
+            wsview = self.workspace.get_workspace_view()
+            if wsview is not None:
+                wsview.remove_css_class('custom-font')
+            self._css_provider = None
+        if self._startup_handler is not None:
             self.workspace.disconnect(self._startup_handler)
+            self._startup_handler = None
+        if self._settings_handler is not None:
+            self.actions.disconnect(self._settings_handler)
+            self._settings_handler = None
         self.plugin.set_started(False)
 
     def startup(self, *args):
         if not self.plugin.started():
-            sidebar = self.app.get_widget('sidebar')
-            hdb_left = self.app.get_widget('headerbar-left-box')
+            family, size = self._read_font_config()
+            self._apply_font(family, size)
+            self.plugin.set_started(True)
 
-            widgets = []
-            self.spinbutton = Gtk.SpinButton.new_with_range(8, 48, 2)
-            widgets.append(self.spinbutton)
-            self.button = self.app.get_widget('workspace-button-font')
-            if self.button is None:
-                self.button = self.factory.create_button_popover(
-                    icon_name='org.gnome.font-viewer-symbolic',
-                    title='',
-                    widgets=widgets,
-                    css_classes=['flat']
-                )
-                self.button.set_tooltip_text(_('Workspace font size'))
-                self.app.add_widget('workspace-button-font', self.button)
-                self.button.set_visible(True)
-                font_size = self.plugin.get_config_key('font-size')
-                if font_size is None:
-                    font_size = 12
-                    self.plugin.set_config_key('font-size', font_size)
-                else:
-                    self.log.debug(f"Font size from config is: {font_size}")
-                self.spinbutton.set_value(font_size)
-                self._on_change_font_properties()
-                self._value_changed_handler = self.spinbutton.connect('value-changed', self._on_change_font_properties)
-                hdb_left.append(self.button)
-                self.log.debug("Plugin WSFont activated")
+    def _read_font_config(self):
+        family = self.plugin.get_config_key('font-family')
+        if not family:
+            family = DEFAULT_FONT_FAMILY
+        size = self.plugin.get_config_key('font-size')
+        try:
+            size = int(size)
+        except (TypeError, ValueError):
+            size = DEFAULT_FONT_SIZE
+        if size < MIN_FONT_SIZE or size > MAX_FONT_SIZE:
+            size = DEFAULT_FONT_SIZE
+        return family, size
 
-            # Create menu item for plugin
-            mnuItemName = self.plugin.get_menu_item_name()
-            menuitem = self.factory.create_menuitem(name=mnuItemName, label=_('Modify Workspace font name and size'), callback=self._on_show_action_dialog, shortcuts=['<Control>f'])
-
-            # Add plugin to its default (sub)category
-            self.plugin.install_menu_entry(menuitem)
-
-            # Plugin configured
-            self.plugin.set_started(started=True)
-
-    def _on_show_action_dialog(self, *args):
-        def _update_main_spin_button(spinbutton):
-            new_value = spinbutton.get_value()
-            self.spinbutton.set_value(new_value)
-
-        srvdlg = self.app.get_service('dialogs')
-        spinbutton = Gtk.SpinButton.new_with_range(8, 48, 2)
-        font_size = self.plugin.get_config_key('font-size')
-        if font_size is None:
-            font_size = 12
-            self.plugin.set_config_key('font-size', font_size)
-        else:
-            self.log.debug(f"Font size from config is: {font_size}")
-        spinbutton.set_value(font_size)
-        spinbutton.connect('value-changed', _update_main_spin_button)
-        dialog = srvdlg.show_action(title=_('Modify Workspace font size'), widget=spinbutton)
-        dialog.present(self.workspace)
-
-    def _on_font_changed(self, *args):
-        self.log.debug("Font changed: %s", args)
-
-    def _on_change_font_properties(self, *args):
+    def _apply_font(self, family, size):
         wsview = self.workspace.get_workspace_view()
-        font_name = 'Monospace'
-        font_size = self.spinbutton.get_value()
-        self.spinbutton.set_tooltip_text(f'Current Workspace font size is {font_size}px')
-        self.plugin.set_config_key('font-size', font_size)
-        css_class= """
-            .custom-font {
-                font-family: '%s';
-                font-size: %dpx;
-            }
-        """ % (font_name, font_size)
-        css_provider = Gtk.CssProvider()
-        css_provider.load_from_data(css_class.encode())
-        Gtk.StyleContext.add_provider_for_display(
-            self.workspace.get_display(),
-            css_provider,
-            Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION
+        if wsview is None:
+            return
+        safe_family = family.replace("'", "\\'")
+        css = (
+            ".custom-font {\n"
+            "    font-family: '%s';\n"
+            "    font-size: %dpx;\n"
+            "}\n" % (safe_family, size)
         )
-        wsview.add_css_class("custom-font")
+        if self._css_provider is None:
+            self._css_provider = Gtk.CssProvider()
+            Gtk.StyleContext.add_provider_for_display(
+                self.workspace.get_display(),
+                self._css_provider,
+                Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION
+            )
+        self._css_provider.load_from_data(css.encode())
+        wsview.add_css_class('custom-font')
+        self.plugin.set_config_key('font-family', family)
+        self.plugin.set_config_key('font-size', size)
 
-    def _on_settings_loaded(self, *args):
-        group = self.app.get_widget('window-preferences-page-aspect-group-ui')
-        row = Adw.SwitchRow(title=_("Display workspace font button?"))
-        row.connect('notify::active', self._on_activate_setting)
-        font_button = self.app.get_widget('workspace-button-font')
-        visible = font_button.get_visible()
-        row.set_active(visible)
-        group.add(row)
+    def _on_settings_loaded(self, actions, dialog_app_settings):
+        group = self.app.get_widget(UI_GROUP_WIDGET_ID)
+        if group is None:
+            self.log.warning(
+                "User Interface preferences group not found; "
+                "skipping workspace-font rows")
+            return
+        family, size = self._read_font_config()
 
-    def _on_activate_setting(self, row, gparam):
-        # Set togglebutton status
-        togglebutton = self.app.get_widget('workspace-button-font')
-        visible = row.get_active()
-        togglebutton.set_visible(visible)
+        row_family = Adw.ActionRow(title=_('Workspace font family'))
+        font_dialog = Gtk.FontDialog()
+        font_dialog.set_title(_('Choose workspace font family'))
+        font_button = Gtk.FontDialogButton(dialog=font_dialog)
+        font_button.set_level(Gtk.FontLevel.FAMILY)
+        font_button.set_valign(Gtk.Align.CENTER)
+        font_button.set_font_desc(Pango.FontDescription.from_string(family))
+        font_button.connect('notify::font-desc', self._on_family_changed)
+        row_family.add_suffix(font_button)
+        row_family.set_activatable_widget(font_button)
+        group.add(row_family)
 
-        # Update plugin config
-        self.plugin.set_config_key('icon_visible', visible)
+        adj = Gtk.Adjustment(
+            value=size,
+            lower=MIN_FONT_SIZE,
+            upper=MAX_FONT_SIZE,
+            step_increment=1,
+            page_increment=2,
+        )
+        row_size = Adw.SpinRow(
+            title=_('Workspace font size'),
+            adjustment=adj,
+            digits=0,
+        )
+        row_size.connect('notify::value', self._on_size_changed)
+        group.add(row_size)
+
+    def _on_family_changed(self, button, gparam):
+        desc = button.get_font_desc()
+        family = (desc.get_family() if desc is not None else None) or DEFAULT_FONT_FAMILY
+        _f, size = self._read_font_config()
+        self._apply_font(family, size)
+
+    def _on_size_changed(self, row, gparam):
+        size = int(row.get_value())
+        family, _s = self._read_font_config()
+        self._apply_font(family, size)
