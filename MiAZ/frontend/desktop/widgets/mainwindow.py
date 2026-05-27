@@ -41,7 +41,6 @@ class MiAZMainWindow(Gtk.Box):
         content.set_hexpand(True)
         content.set_vexpand(True)
         sidebar = MiAZSidebar(self.app)
-        self._setup_sidebar_top_row()
 
         split_view = self.app.add_widget('main-split-view', Adw.OverlaySplitView())
         split_view.set_sidebar(sidebar)
@@ -52,13 +51,24 @@ class MiAZMainWindow(Gtk.Box):
 
         # HeaderBar
         headerbar = self.app.add_widget('headerbar', Adw.HeaderBar())
+
+        # ~ self._window_title = self.app.add_widget(
+        # ~     'headerbar-window-title',
+        # ~     Adw.WindowTitle(title=ENV['APP']['shortname'], subtitle=''))
+        # ~ headerbar.pack_start(self._window_title)
+        # ~ self._update_window_title()
+
+        # App icon as the first widget on the header bar's left side.
+        # Packed before _setup_headerbar_start so it precedes the sidebar
+        # toggle and the plugin-controls box.
+        headerbar_app_icon = Gtk.Image.new_from_icon_name('io.github.t00m.MiAZ')
+        headerbar_app_icon.set_pixel_size(24)
+        self.app.add_widget('headerbar-app-icon', headerbar_app_icon)
+        headerbar.pack_start(headerbar_app_icon)
+
         self._setup_headerbar_start(split_view)
+        self._setup_headerbar_center()
         self._setup_headerbar_end()
-        self._window_title = self.app.add_widget(
-            'headerbar-window-title',
-            Adw.WindowTitle(title=ENV['APP']['shortname'], subtitle=''))
-        headerbar.set_title_widget(self._window_title)
-        self._update_window_title()
 
         # Welcome page
         page_welcome = self.app.get_widget('welcome')
@@ -137,19 +147,17 @@ class MiAZMainWindow(Gtk.Box):
         self.app.add_widget('headerbar-left-box', hbox)
         headerbar.pack_start(hbox)
 
-    def _setup_sidebar_top_row(self):
-        """Build the workspace document-count menu and pending-docs toggle
-        and prepend them into the sidebar's top row, replacing what used to
-        be the repository-title slot.
+    def _setup_headerbar_center(self):
+        """Build the workspace document-count menu and the pending-docs
+        toggle and install them as the header bar's centered title widget.
         """
         factory = self.app.get_service('factory')
-        top_row = self.app.get_widget('sidebar-top-row')
+        headerbar = self.app.get_widget('headerbar')
 
         # Workspace document-count menu button
         label = Gtk.Label()
         btnDocsSel = Gtk.MenuButton()
-        btnDocsSel.add_css_class('accent')
-        btnDocsSel.set_hexpand(True)
+        btnDocsSel.add_css_class('flat')
         self.app.add_widget('workspace-menu', btnDocsSel)
         btnDocsSel.set_always_show_arrow(True)
         btnDocsSel.set_child(label)
@@ -167,10 +175,12 @@ class MiAZMainWindow(Gtk.Box):
         button.set_visible(False)
         button.set_active(False)
 
-        # Prepended in reverse so the final order is:
-        # [workspace-menu, pending-docs, settings, clear-filters].
-        top_row.prepend(button)
-        top_row.prepend(btnDocsSel)
+        # Combine both widgets into one horizontal box and use that as the
+        # header bar's centered title widget.
+        center_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
+        center_box.append(btnDocsSel)
+        center_box.append(button)
+        headerbar.set_title_widget(center_box)
 
     def _setup_headerbar_end(self):
         factory = self.app.get_service('factory')
@@ -416,8 +426,8 @@ class MiAZMainWindow(Gtk.Box):
         section_common.append_item(menuitem)
         menuitem = factory.create_menuitem('app-shortcuts', _('Keyboard Shortcuts'), actions.show_app_shortcuts, None, ['<Control>question'])
         section_common.append_item(menuitem)
-        menuitem = factory.create_menuitem('app-help', _('Help'), actions.show_app_help, None, ['F1', '<Control>h'])
-        section_common.append_item(menuitem)
+        # ~ menuitem = factory.create_menuitem('app-help', _('Help'), actions.show_app_help, None, ['F1', '<Control>h'])
+        # ~ section_common.append_item(menuitem)
         menuitem = factory.create_menuitem('app-about', _('About MiAZ'), actions.show_app_about, None, ['<Control>b'])
         section_common.append_item(menuitem)
         menuitem = factory.create_menuitem('app-quit', _('Quit'), actions.exit_app, None, ['<Control>q'])

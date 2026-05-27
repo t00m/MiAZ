@@ -61,20 +61,15 @@ class MiAZSidebar(Adw.Bin):
             Gtk.SizeGroup(mode=Gtk.SizeGroupMode.HORIZONTAL))
 
         main_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
-        # Top row: workspace-menu and pending-docs toggle (prepended by
-        # mainwindow once those widgets are built) followed by settings and
-        # clear-filters. Registered as 'sidebar-top-row' so mainwindow can
-        # reach into it.
-        title_bar = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
-        title_bar.set_margin_top(6)
-        title_bar.set_margin_bottom(6)
-        title_bar.set_margin_start(6)
-        title_bar.set_margin_end(6)
-        self.app.add_widget('sidebar-top-row', title_bar)
-
-        title_bar.append(button_settings)
-        title_bar.append(button_clear)
-        separator = Gtk.Separator(orientation=Gtk.Orientation.HORIZONTAL)
+        # The previous top row hosted the workspace-menu, the pending-docs
+        # toggle, the repository-management gear and the clear-filters
+        # button. The first two have moved to the header bar's centered
+        # title widget; the clear-filters button is rendered at the bottom
+        # of the filters list (see further down); the repository-management
+        # button is intentionally not attached anywhere (see below).
+        # ~ Repository management button kept in code but not shown:
+        # ~ title_bar = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
+        # ~ title_bar.append(button_settings)
         box_frame = factory.create_box_vertical(margin=6, spacing=6, hexpand=True, vexpand=True)
         # ~ frame = Gtk.Frame()
         # ~ box_frame.append(frame)
@@ -124,14 +119,35 @@ class MiAZSidebar(Adw.Bin):
         dd_size_group.add_widget(searchentry_concept)
         filters_box.append(searchentry_concept)
 
+        # Visual divider between the built-in filters and the
+        # plugin-provided custom filters.
+        filters_box.append(Gtk.Separator(orientation=Gtk.Orientation.HORIZONTAL))
+
         # Plugin section: plugins append their own filter rows here
         plugin_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
         self.app.add_widget('sidebar-plugin-section', plugin_box)
         filters_box.append(plugin_box)
+
+        # Clear-all-filters button at the bottom of the filters column,
+        # with a top margin so there is breathing room between it and the
+        # last filter (built-in or custom).
+        button_clear.set_margin_top(12)
+        button_clear.set_halign(Gtk.Align.CENTER)
+        filters_box.append(button_clear)
+
         scroll.set_child(filters_box)
-        main_box.append(title_bar)
-        # ~ main_box.append(separator)
         main_box.append(box_frame)
+
+        # App icon at the bottom centre of the sidebar. box_frame already
+        # carries vexpand=True, so it claims the slack and the icon stays
+        # pinned to the bottom edge regardless of window height.
+        # ~ app_icon = Gtk.Image.new_from_icon_name('io.github.t00m.MiAZ')
+        # ~ app_icon.set_pixel_size(96)
+        # ~ app_icon.set_halign(Gtk.Align.CENTER)
+        # ~ app_icon.set_margin_bottom(12)
+        # ~ self.app.add_widget('sidebar-app-icon', app_icon)
+        # ~ main_box.append(app_icon)
+
         self.set_child(main_box)
 
     def setup_custom_filters(self, *args):
@@ -144,6 +160,7 @@ class MiAZSidebar(Adw.Bin):
         factory = self.app.get_service('factory')
         button = factory.create_button(
             icon_name='io.github.t00m.MiAZ-entry_clear',
+            title=_('Clear all filters'),
             tooltip=_('Clear all filters'),
             css_classes=['flat'],
             callback=self.clear_filters)
@@ -166,4 +183,5 @@ class MiAZSidebar(Adw.Bin):
         self.log.debug(f"Workspace loaded? {workspace.is_loaded()}")
         if workspace.is_loaded():
             workspace.clear_filters()
-            self.log.debug("All filters cleared")
+            workspace.update()
+            self.log.debug("All filters cleared and workspace refreshed")

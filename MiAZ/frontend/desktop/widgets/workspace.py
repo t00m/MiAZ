@@ -377,6 +377,7 @@ class MiAZWorkspace(Gtk.Box):
         self._switcher.set_display_mode(Adw.InlineViewSwitcherDisplayMode.BOTH)
         self._switcher.set_halign(Gtk.Align.CENTER)
         self._switcher.set_homogeneous(True)
+        self._switcher.set_visible(False)
         self.app.add_widget('workspace-view-switcher', self._switcher)
 
         self.append(self._switcher)
