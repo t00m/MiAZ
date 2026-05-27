@@ -1,11 +1,15 @@
-# Generate MiAZ environment module
+# Generate build-time configuration (paths/version injected by Meson).
+# Consumed by the committed env.py when running an installed build.
 configure_file(
-  input: 'env.in',
-  output: 'env.py',
+  input: '_buildconfig.py.in',
+  output: '_buildconfig.py',
   configuration: conf,
   install: true,
   install_dir: moduledir
 )
+
+# Install the self-locating environment module
+install_data('env.py', install_dir: moduledir)
 
 # Generate MiAZ binary module
 configure_file(

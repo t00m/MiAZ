@@ -1,5 +1,5 @@
 Name:           miaz
-Version:        0.1.25
+Version:        0.1.26
 Release:        1%{?dist}
 Summary:        Personal Document Organizer
 
@@ -19,6 +19,7 @@ Requires:       python3 >= 3.9
 Requires:       python3-gobject
 Requires:       gtk4
 Requires:       libadwaita
+Requires:       libpeas2
 
 %description
 MiAZ is a GTK4/Libadwaita desktop application that organises personal
@@ -59,7 +60,7 @@ gtk-update-icon-cache %{_datadir}/icons/hicolor &> /dev/null || :
 
 %files -f miaz.lang
 %license data/docs/LICENSE
-%doc README.md CHANGELOG.md
+%doc README CHANGELOG.md
 %{_bindir}/miaz
 %{_datadir}/MiAZ/
 %{_datadir}/applications/io.github.t00m.MiAZ.desktop
@@ -68,6 +69,15 @@ gtk-update-icon-cache %{_datadir}/icons/hicolor &> /dev/null || :
 %{_datadir}/metainfo/io.github.t00m.MiAZ.metainfo.xml
 
 %changelog
+* Sat May 16 2026 Tomás Vírseda <tomasvirseda@gmail.com> - 0.1.26-1
+- New plugin MiAZAIAssistant: AI-powered field suggestions via Claude, OpenAI, Gemini, Ollama
+- New plugin MiAZNotes: attach Markdown notes to documents with faceted filtering and backup/restore
+- New plugin MiAZColumnVisibility: toggle workspace column visibility
+- Rename dialog: inline Add buttons on restricted-vocabulary rows
+- Rename dialog: Concept autocomplete via difflib-backed Gtk.Popover
+- Workspace: Adw.InlineViewSwitcher for workspace view switching
+- Backend: filename_guess_date() helper probing PDF metadata, EXIF, and file mtime
+
 * Tue May 05 2026 Tomás Vírseda <tomasvirseda@gmail.com> - 0.1.25-1
 - Features:
     - Plugin system: Migrated libpeas 1.x → 2.x (Loader=python, Peas 2.0, GNOME 49 runtime)

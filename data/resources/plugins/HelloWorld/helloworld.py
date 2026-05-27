@@ -18,7 +18,7 @@ from gi.repository import Adw
 from MiAZ.frontend.desktop.services.pluginsystem import MiAZExtension, MiAZPlugin
 
 path = os.path.join(os.path.abspath(__file__), 'example')
-sys.path.insert(1, os.path.abspath(__file__))
+sys.path.insert(1, os.path.dirname(os.path.abspath(__file__)))
 from example.test import PluginTest
 
 plugin_info = {
@@ -58,14 +58,20 @@ class HelloWorld(MiAZExtension):
 
         ## Listen to 'workspace-loaded' signal to start up the plugin
         self.workspace = self.app.get_widget('workspace')
-        self.workspace.connect('workspace-loaded', self.startup)
+        if self.workspace.is_loaded():
+            self.startup()
+        else:
+            self._startup_handler = self.workspace.connect('workspace-loaded', self.startup)
 
         ## Listen to 'settings-loaded' signal to add custom settings
-        self.actions.connect('settings-loaded', self._on_settings_loaded)
+        self._settings_handler = self.actions.connect('settings-loaded', self._on_settings_loaded)
 
     def do_deactivate(self):
         """Plugin deactivation"""
-        self.log.warning("Deactivation not implemented. Restart app to disable plugins.")
+        if hasattr(self, '_startup_handler'):
+            self.workspace.disconnect(self._startup_handler)
+        if hasattr(self, '_settings_handler'):
+            self.actions.disconnect(self._settings_handler)
         self.plugin.set_started(False)
 
     def startup(self, *args):

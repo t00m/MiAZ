@@ -33,9 +33,9 @@ class MiAZSelector(Gtk.Box):
         ENV = self.app.get_env()
 
         # Banner
-        title = "One or more plugins were disabled. Application restart needed."
+        title = _("One or more plugins were disabled. Application restart needed.")
         banner = self.app.add_widget('repository-settings-banner', Adw.Banner.new(title))
-        banner.set_button_label('restart')
+        banner.set_button_label(_('restart'))
         banner.connect('button-clicked', self._on_restart_clicked)
         restart_needed = ENV['APP']['STATUS']['RESTART_NEEDED']
         banner.set_revealed(restart_needed)
@@ -43,7 +43,7 @@ class MiAZSelector(Gtk.Box):
 
         # Toolbar
         toolbar = factory.create_box_horizontal(margin=0, spacing=0, hexpand=True, vexpand=False)
-        toolbar.get_style_context().add_class(class_name='toolbar')
+        toolbar.add_css_class('toolbar')
         centerbox = Gtk.CenterBox()
         centerbox.set_hexpand(True)
         toolbar.append(centerbox)
@@ -51,7 +51,7 @@ class MiAZSelector(Gtk.Box):
 
         # Left
         self.toolbar_buttons_Av = factory.create_box_horizontal(margin=0, spacing=0, vexpand=False, hexpand=True)
-        self.toolbar_buttons_Av.get_style_context().add_class(class_name='linked')
+        self.toolbar_buttons_Av.add_css_class('linked')
         if self.edit:
             self.toolbar_buttons_Av.set_hexpand(False)
             self.btnAvAdd = factory.create_button(icon_name='io.github.t00m.MiAZ-list-add-symbolic', title='', callback=self._on_item_available_add)
@@ -64,7 +64,7 @@ class MiAZSelector(Gtk.Box):
 
         # Center
         self.toolbar_buttons_center = factory.create_box_horizontal(margin=0, spacing=0, vexpand=False, hexpand=False)
-        self.toolbar_buttons_center.get_style_context().add_class(class_name='linked')
+        self.toolbar_buttons_center.add_css_class('linked')
         centerbox.set_center_widget(self.toolbar_buttons_center)
 
         ## Add to used
@@ -85,14 +85,14 @@ class MiAZSelector(Gtk.Box):
 
         # Right
         self.toolbar_buttons_Sl = factory.create_box_horizontal(margin=0, spacing=0, vexpand=False, hexpand=True)
-        self.toolbar_buttons_Sl.get_style_context().add_class(class_name='linked')
+        self.toolbar_buttons_Sl.add_css_class('linked')
         self.app.add_widget('settings-repository-toolbar-av', toolbar)
         self.toolbar_buttons_Sl.set_halign(Gtk.Align.END)
         centerbox.set_end_widget(self.toolbar_buttons_Sl)
 
         # Views
         self.boxViews = factory.create_box_horizontal(margin=0, spacing=0, hexpand=True, vexpand=True)
-        self.boxViews.get_style_context().add_class(class_name='toolbar')
+        self.boxViews.add_css_class('toolbar')
         self.boxViews.set_homogeneous(True)
         self.boxLeft = factory.create_box_vertical(margin=0, spacing=6, hexpand=True, vexpand=True)
         self.boxRight = factory.create_box_vertical(margin=0, spacing=6, hexpand=True, vexpand=True)
@@ -209,11 +209,10 @@ class MiAZSelector(Gtk.Box):
             i_title = _(item_type.__title__)
             this_item = MiAZDialogAdd(self.app)
             parent = self.searchentry.get_root()
-            title = self.dialog_title
-            title = _('<b>Add new {title}</b>').format(title=i_title.lower())
-            key1 = _('<b>{title} key</b>').format(title=i_title.title())
-            key2 = _('<b>Description</b>')
-            dialog = this_item.create(parent=parent, title=title, key1=key1, key2=key2)
+            title = _('Add {title}').format(title=i_title.lower())
+            key1 = _('{title} key').format(title=i_title.title())
+            key2 = _('Description')
+            dialog = this_item.create(parent=parent, title=title, key1=key1, key2=key2, action_label=_('Add'))
             dialog.connect('response', self._on_item_available_add_response, this_item, parent)
             this_item.set_value1(search_term)
             dialog.present(parent)
@@ -243,12 +242,11 @@ class MiAZSelector(Gtk.Box):
             i_title = _(item_type.__title__)
             if item_type not in [Country, Plugin]:
                 parent = self.get_root()
-                title = self.dialog_title
-                # ~ title = _('Change {title} description').format(title=i_title.lower())
-                key1 = _('<b>{title} key</b>').format(title=i_title.title())
-                key2 = _('<b>Description</b>')
+                title = _('Edit {title}').format(title=i_title.lower())
+                key1 = _('{title} key').format(title=i_title.title())
+                key2 = _('Description')
                 this_item = MiAZDialogAdd(self.app)
-                dialog = this_item.create(parent=parent, title=title, key1=key1, key2=key2)
+                dialog = this_item.create(parent=parent, title=title, key1=key1, key2=key2, action_label=_('Save'))
                 entry1 = this_item.get_entry_key1()
                 entry1.set_sensitive(False)
                 if item is not None:
@@ -314,8 +312,9 @@ class MiAZSelector(Gtk.Box):
         self.log.debug(f"Is '{selected_item.id}' used? {is_used}")
         title = self.dialog_title
         if not is_used:
-            body = _('You are about to delete <i>{title} {desc}</i>.\n\nAre you sure?').format(title=i_title.lower(), desc=item_dsc)
-            dialog = self.srvdlg.show_question(title=title, body=body)
+            heading = _('Delete {title}?').format(title=i_title.lower())
+            body = _('<i>{desc}</i> will be permanently removed.').format(desc=item_dsc)
+            dialog = self.srvdlg.show_confirmation(title=heading, body=body, confirm_label=_('Delete'))
             dialog.connect('response', self._on_item_available_remove_response, selected_item)
             dialog.present(self)
         else:
@@ -360,10 +359,12 @@ class MiAZSelector(Gtk.Box):
         items_available = []
         item_type = self.config.model
         items = self.config.load_available()
+        used = self.config.load_used()
         for key in items:
-            items_available.append(item_type(id=key, title=_(items[key])))
+            if key not in used:
+                items_available.append(item_type(id=key, title=_(items[key])))
         self.viewAv.update(items_available)
-        self.log.debug(f"Update available view {self.config.config_for} with {len(items)} items")
+        self.log.debug(f"Update available view {self.config.config_for} with {len(items_available)} items (filtered {len(items) - len(items_available)} used)")
 
     def _update_view_used(self, items=None):
         items_used = []
@@ -404,6 +405,8 @@ class MiAZSelector(Gtk.Box):
     def _on_item_used_add(self, *args):
         items_used = self.config.load_used()
         selected_item = self.viewAv.get_selected()
+        if selected_item is None:
+            return
         is_used = selected_item.id in items_used
         item_type = self.config.model
         i_title = item_type.__title__

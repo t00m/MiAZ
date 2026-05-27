@@ -2,5 +2,25 @@
 <schemalist gettext-domain="miaz">
     <!-- Global Settings -->
     <schema id="io.github.t00m.MiAZ" path="/io/github/t00m/MiAZ/">
+        <key name="window-width" type="i">
+            <default>1280</default>
+            <summary>Window width</summary>
+        </key>
+        <key name="window-height" type="i">
+            <default>800</default>
+            <summary>Window height</summary>
+        </key>
+        <key name="window-maximized" type="b">
+            <default>false</default>
+            <summary>Window maximized state</summary>
+        </key>
+        <key name="sidebar-width" type="i">
+            <default>320</default>
+            <summary>Sidebar panel width</summary>
+        </key>
+        <key name="last-repository" type="s">
+            <default>""</default>
+            <summary>Last used repository identifier</summary>
+        </key>
     </schema>
 </schemalist>

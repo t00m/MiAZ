@@ -55,10 +55,14 @@ class Export2CSV(MiAZExtension):
 
         # Connect signals
         self.workspace = self.app.get_widget('workspace')
-        self.workspace.connect('workspace-loaded', self.startup)
+        if self.workspace.is_loaded():
+            self.startup()
+        else:
+            self._startup_handler = self.workspace.connect('workspace-loaded', self.startup)
 
     def do_deactivate(self):
-        self.log.debug("Plugin deactivation not implemented")
+        if hasattr(self, '_startup_handler'):
+            self.workspace.disconnect(self._startup_handler)
         self.plugin.set_started(False)
 
     def startup(self, *args):
@@ -87,6 +91,7 @@ class Export2CSV(MiAZExtension):
             row.append(ext)
             rows.append(row)
         fp, filepath = tempfile.mkstemp(dir=ENV['LPATH']['TMP'], suffix='.csv')
+        os.close(fp)
         with open(filepath, 'w', newline='') as csvfile:
             csvwriter = csv.writer(csvfile)
             csvwriter.writerow(fields)

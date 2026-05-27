@@ -22,7 +22,9 @@ Depends: ${misc:Depends},
          gir1.2-gtk-4.0,
          gir1.2-adw-1,
          libgtk-4-1,
-         libadwaita-1-0
+         libadwaita-1-0,
+         libpeas-2-0,
+         gir1.2-peas-2
 Description: Personal Document Organizer
  MiAZ is a GTK4/Libadwaita desktop application that organises personal
  documents by enforcing a strict 7-field filename convention:

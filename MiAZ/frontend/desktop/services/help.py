@@ -31,7 +31,9 @@ class MiAZHelp(Gtk.Box):
     Help class
     """
     def __init__(self, app):
-        super(Gtk.Box, self).__init__(spacing=12, orientation=Gtk.Orientation.VERTICAL, hexpand=True, vexpand=True)
+        super().__init__(spacing=12, orientation=Gtk.Orientation.VERTICAL)
+        self.set_hexpand(True)
+        self.set_vexpand(True)
         box = Gtk.CenterBox()
         section = Gtk.ShortcutsSection()
         section.show()

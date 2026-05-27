@@ -50,23 +50,18 @@ class MiAZLog(logging.getLoggerClass()):
     """
     C0115: Missing class docstring (missing-class-docstring)
     """
-    logger_initialized = False
-    stdout_handler = None
-    file_handler = None
 
     def __init__(self, name='MiAZ', log_dir=None):
         """
         C0116: Missing function or method docstring (missing-function-docstring)
         """
         super().__init__(name)
+        self.file_handler = None
 
         # Create stream handler for logging to stdout (log all five levels)
-        if self.stdout_handler is None:
-            self.stdout_handler = logging.StreamHandler(sys.stdout)
-            self.stdout_handler.setFormatter(ColorFormatter())
-            self.enable_console_output()
-
-        self.logger_initialized = True
+        self._stream_handler = logging.StreamHandler(sys.stdout)
+        self._stream_handler.setFormatter(ColorFormatter())
+        self.enable_console_output()
 
 
     def add_file_handler(self, name, log_dir):
@@ -105,7 +100,7 @@ class MiAZLog(logging.getLoggerClass()):
         """
         if not self.has_console_handler():
             return
-        self.removeHandler(self.stdout_handler)
+        self.removeHandler(self._stream_handler)
 
     def enable_console_output(self):
         """
@@ -113,7 +108,7 @@ class MiAZLog(logging.getLoggerClass()):
         """
         if self.has_console_handler():
             return
-        self.addHandler(self.stdout_handler)
+        self.addHandler(self._stream_handler)
 
     def disable_file_output(self):
         """

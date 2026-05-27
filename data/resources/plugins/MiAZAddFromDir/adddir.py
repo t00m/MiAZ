@@ -13,6 +13,7 @@ import threading
 import gi
 from gi.repository import GLib
 from gi.repository import GObject
+from gi.repository import Gtk
 
 from MiAZ.frontend.desktop.services.pluginsystem import MiAZExtension, MiAZPlugin
 from MiAZ.backend.status import MiAZStatus
@@ -49,18 +50,23 @@ class MiAZAddDirectoryPlugin(MiAZExtension):
         ## Get logger
         self.log = self.plugin.get_logger()
 
-        # Connect signals to startup
-        workspace = self.app.get_widget('workspace')
-        workspace.connect('workspace-loaded', self.startup)
-
         # Load other services
         self.factory = self.app.get_service('factory')
         self.repository = self.app.get_service('repo')
         self.util = self.app.get_service('util')
         self.srvdlg = self.app.get_service('dialogs')
 
+        # Connect signals to startup
+        self.workspace = self.app.get_widget('workspace')
+        if self.workspace.is_loaded():
+            self.startup()
+        else:
+            self._startup_handler = self.workspace.connect('workspace-loaded', self.startup)
+
 
     def do_deactivate(self):
+        if hasattr(self, '_startup_handler'):
+            self.workspace.disconnect(self._startup_handler)
         self.plugin.set_started(False)
 
     def startup(self, *args):
@@ -81,13 +87,27 @@ class MiAZAddDirectoryPlugin(MiAZExtension):
     def _on_filechooser_response(self, dialog, result):
         try:
             folder = dialog.select_folder_finish(result)
-            dirpath = folder.get_path()
-            filepaths = glob.glob(os.path.join(dirpath, '*'))
-            self.app.set_status(MiAZStatus.BUSY)
-            threading.Thread(target=self.import_directory, args=(filepaths,), daemon=True).start()
         except GLib.Error as err:
-            self.srvdlg.show_error(title='Error selecting files', body=err.message)
-            self.log.error(f"{err.domain} > {err.message}")
+            # Closing the folder chooser is a normal action, not an error.
+            dismissed = (
+                err.matches(Gtk.DialogError.quark(), Gtk.DialogError.DISMISSED)
+                or err.matches(Gtk.DialogError.quark(), Gtk.DialogError.CANCELLED)
+            )
+            if dismissed:
+                self.log.debug("Directory import cancelled by the user")
+                self.srvdlg.show_toast(_('Document import cancelled'))
+                return
+            self.log.error(f"Could not open the folder chooser: {err.message}")
+            self.srvdlg.show_error(
+                title=_('Could not open folder'),
+                body=_('The folder chooser could not be opened.\n\n{error}').format(
+                    error=err.message))
+            return
+
+        dirpath = folder.get_path()
+        filepaths = glob.glob(os.path.join(dirpath, '*'))
+        self.app.set_status(MiAZStatus.BUSY)
+        threading.Thread(target=self.import_directory, args=(filepaths,), daemon=True).start()
 
     def import_directory(self, filepaths):
         total_files = len(filepaths)

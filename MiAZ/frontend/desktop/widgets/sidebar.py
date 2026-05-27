@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 # File: sidebar.py
 # Author: Tomás Vírseda
 # License: GPL v3
@@ -13,7 +13,8 @@ from MiAZ.backend.models import Group, Country, Purpose, SentBy, SentTo, Date
 
 
 class MiAZSidebar(Adw.Bin):
-    """Main Sidebar built around Adw.Sidebar."""
+    """Main Sidebar built with Gtk.Box (no Adw.Sidebar, compatible with
+    Libadwaita < 1.7 / Debian 13)."""
     __gtype_name__ = 'MiAZSidebar'
 
     def __init__(self, app) -> None:
@@ -29,7 +30,6 @@ class MiAZSidebar(Adw.Bin):
     def _on_repo_switch(self, *args):
         config = self.app.get_config_dict()
         repo_id = config['App'].get('current') or 'MiAZ'
-        self.set_title(repo_id)
         self.setup_custom_filters()
         self.log.debug(f"Switched to repository {repo_id} > Sidebar updated")
 
@@ -42,9 +42,10 @@ class MiAZSidebar(Adw.Bin):
                 dropdown=self.dropdowns[i_type],
                 item_type=item_type,
                 any_value=True,
-                none_value=True)
+                none_value=False)
 
     def __build_ui(self) -> None:
+        factory = self.app.get_service('factory')
         config = self.app.get_config_dict()
 
         button_clear = self._setup_clear_filters_button()
@@ -52,87 +53,104 @@ class MiAZSidebar(Adw.Bin):
         button_settings = self._setup_repo_settings_button()
         self.app.add_widget('sidebar-button-repo-settings', button_settings)
 
-        repo_id = config['App'].get('current') or 'MiAZ'
-        adw_sidebar = self._setup_adw_sidebar(repo_id, button_settings, button_clear)
-        self.set_child(adw_sidebar)
-
-    def _setup_adw_sidebar(self, repo_id, button_settings, button_clear) -> Adw.Sidebar:
-        factory = self.app.get_service('factory')
-
         self.dropdowns = self.app.add_widget('ws-dropdowns', {})
         self.app.add_widget('plugin-dropdowns', [])
 
-        # Size group keeps all filter widgets at the same width.
         dd_size_group = self.app.add_widget(
             'sidebar-dropdown-size-group',
             Gtk.SizeGroup(mode=Gtk.SizeGroupMode.HORIZONTAL))
 
-        adw_sidebar = Adw.Sidebar()
+        main_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
+        # The previous top row hosted the workspace-menu, the pending-docs
+        # toggle, the repository-management gear and the clear-filters
+        # button. The first two have moved to the header bar's centered
+        # title widget; the clear-filters button is rendered at the bottom
+        # of the filters list (see further down); the repository-management
+        # button is intentionally not attached anywhere (see below).
+        # ~ Repository management button kept in code but not shown:
+        # ~ title_bar = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
+        # ~ title_bar.append(button_settings)
+        box_frame = factory.create_box_vertical(margin=6, spacing=6, hexpand=True, vexpand=True)
+        # ~ frame = Gtk.Frame()
+        # ~ box_frame.append(frame)
+        box_filters = factory.create_box_vertical(margin=0, spacing=6, hexpand=True, vexpand=True)
+        scroll = Gtk.ScrolledWindow()
+        scroll.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
+        scroll.set_vexpand(True)
+        box_filters.append(scroll)
+        box_frame.append(box_filters)
 
-        # --- Section 1: repository header (title + action buttons) ---
-        header_section = Adw.SidebarSection()
-        btn_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=3)
-        btn_box.append(button_settings)
-        btn_box.append(button_clear)
-        header_item = Adw.SidebarItem(
-            title=repo_id,
-            icon_name='io.github.t00m.MiAZ',
-            suffix=btn_box)
-        self.app.add_widget('sidebar-header-item', header_item)
-        header_section.append(header_item)
-        header_item.set_visible(False)
-        adw_sidebar.append(header_section)
-
-        # --- Section 2: plugin-contributed filters ---
-        plugin_section = self.app.add_widget(
-            'sidebar-plugin-section', Adw.SidebarSection())
-        adw_sidebar.append(plugin_section)
-
-        # --- Section 3: main filters ---
-        main_section = Adw.SidebarSection()
+        filters_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
+        filters_box.set_margin_start(6)
+        filters_box.set_margin_end(6)
+        filters_box.set_margin_top(6)
+        filters_box.set_margin_bottom(6)
 
         # Search entry
         searchentry = self.app.add_widget('searchentry', Gtk.Entry())
-        searchentry.set_size_request(190, -1)
         searchentry.set_hexpand(True)
+        searchentry.set_placeholder_text(_('Search in all fields'))
         dd_size_group.add_widget(searchentry)
-        main_section.append(Adw.SidebarItem(
-            icon_name='io.github.t00m.MiAZ-edit-find-symbolic',
-            title='',
-            suffix=searchentry))
+        filters_box.append(searchentry)
 
-        # Date dropdown — icon is res-date (not res-dates)
+        # Date dropdown
         i_type = Date.__gtype_name__
         dd_date = factory.create_dropdown_generic(
             item_type=Date, ellipsize=False, enable_search=True)
         dd_date.set_size_request(190, -1)
         dd_size_group.add_widget(dd_date)
         self.dropdowns[i_type] = dd_date
-        main_section.append(Adw.SidebarItem(
-            icon_name='io.github.t00m.MiAZ-res-date',
-            title='',
-            suffix=dd_date))
+        filters_box.append(dd_date)
 
         # Field dropdowns
         for item_type in [Country, Group, SentBy, Purpose, SentTo]:
             i_type = item_type.__gtype_name__
-            i_conf = item_type.__config_name__
-            icon_name = f"io.github.t00m.MiAZ-res-{i_conf.lower()}"
+            i_title = _(item_type.__title__)
             dropdown = factory.create_dropdown_generic(item_type=item_type)
             dropdown.set_size_request(190, -1)
             dd_size_group.add_widget(dropdown)
             self.dropdowns[i_type] = dropdown
-            main_section.append(Adw.SidebarItem(
-                icon_name=icon_name,
-                title='',
-                suffix=dropdown))
+            filters_box.append(dropdown)
 
-        adw_sidebar.append(main_section)
-        return adw_sidebar
+        # Concept entry (free text, filters only by Concept field)
+        searchentry_concept = self.app.add_widget('searchentry-concept', Gtk.Entry())
+        searchentry_concept.set_hexpand(True)
+        searchentry_concept.set_placeholder_text(_('Search in Concept field'))
+        dd_size_group.add_widget(searchentry_concept)
+        filters_box.append(searchentry_concept)
+
+        # Visual divider between the built-in filters and the
+        # plugin-provided custom filters.
+        filters_box.append(Gtk.Separator(orientation=Gtk.Orientation.HORIZONTAL))
+
+        # Plugin section: plugins append their own filter rows here
+        plugin_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
+        self.app.add_widget('sidebar-plugin-section', plugin_box)
+        filters_box.append(plugin_box)
+
+        # Clear-all-filters button at the bottom of the filters column,
+        # with a top margin so there is breathing room between it and the
+        # last filter (built-in or custom).
+        button_clear.set_margin_top(12)
+        button_clear.set_halign(Gtk.Align.CENTER)
+        filters_box.append(button_clear)
+
+        scroll.set_child(filters_box)
+        main_box.append(box_frame)
+
+        # App icon at the bottom centre of the sidebar. box_frame already
+        # carries vexpand=True, so it claims the slack and the icon stays
+        # pinned to the bottom edge regardless of window height.
+        # ~ app_icon = Gtk.Image.new_from_icon_name('io.github.t00m.MiAZ')
+        # ~ app_icon.set_pixel_size(96)
+        # ~ app_icon.set_halign(Gtk.Align.CENTER)
+        # ~ app_icon.set_margin_bottom(12)
+        # ~ self.app.add_widget('sidebar-app-icon', app_icon)
+        # ~ main_box.append(app_icon)
+
+        self.set_child(main_box)
 
     def setup_custom_filters(self, *args):
-        # Register a detached widget so legacy plugins that append to
-        # 'sidebar-box-custom-filters' don't crash.
         if self.app.get_widget('sidebar-box-custom-filters') is None:
             factory = self.app.get_service('factory')
             row = factory.create_box_vertical(margin=3, spacing=6, hexpand=True)
@@ -142,6 +160,7 @@ class MiAZSidebar(Adw.Bin):
         factory = self.app.get_service('factory')
         button = factory.create_button(
             icon_name='io.github.t00m.MiAZ-entry_clear',
+            title=_('Clear all filters'),
             tooltip=_('Clear all filters'),
             css_classes=['flat'],
             callback=self.clear_filters)
@@ -164,9 +183,5 @@ class MiAZSidebar(Adw.Bin):
         self.log.debug(f"Workspace loaded? {workspace.is_loaded()}")
         if workspace.is_loaded():
             workspace.clear_filters()
-            self.log.debug("All filters cleared")
-
-    def set_title(self, title: str = ''):
-        header_item = self.app.get_widget('sidebar-header-item')
-        if header_item is not None:
-            header_item.set_title(title.replace('_', ' '))
+            workspace.update()
+            self.log.debug("All filters cleared and workspace refreshed")

@@ -28,7 +28,7 @@ from MiAZ.backend.log import MiAZLog
 class MiAZExtension(GObject.GObject):
     """Base class for all MiAZ plugins.
 
-    Inherits from GObject.GObject only — no Peas.ExtensionBase, no ExtensionSet.
+    Inherits from GObject.GObject only: no Peas.ExtensionBase, no ExtensionSet.
     Plugin instances are managed manually after engine.load_plugin() by
     scanning sys.modules for a MiAZExtension subclass.
     """
@@ -258,7 +258,7 @@ class MiAZPlugin(GObject.GObject):
         config_data = self.get_config_data()
         try:
             return config_data[key]
-        except:
+        except Exception:
             return None
 
     def set_config_data(self, config_data: {}):
@@ -298,6 +298,11 @@ class MiAZPlugin(GObject.GObject):
         if menuitem is not None:
             subcategory_submenu.append_item(menuitem)
         return subcategory_submenu
+
+    def add_workspace_page(self, widget, name, title, icon_name=None):
+        workspace = self.app.get_widget('workspace')
+        if workspace is not None:
+            workspace.add_stack_page(widget, name, title, icon_name)
 
 
 class MiAZPluginSystem(GObject.GObject):
@@ -431,7 +436,7 @@ class MiAZPluginSystem(GObject.GObject):
             return False
 
     def is_plugin_loaded(self, plugin: Peas.PluginInfo) -> bool:
-        """True if the plugin is active — via libpeas or our direct-import fallback."""
+        """True if the plugin is active: via libpeas or our direct-import fallback."""
         return plugin.get_module_name() in self._extension_instances or plugin.is_loaded()
 
     def load_plugin(self, plugin: Peas.PluginInfo) -> bool:
@@ -531,11 +536,9 @@ class MiAZPluginSystem(GObject.GObject):
             self.engine.add_search_path(ENV['GPATH']['PLUGINS'])
             self.log.debug(f"Added System plugin dir: {ENV['GPATH']['PLUGINS']}")
         else:
-            self.log.error("System plugins directory doesn not exist!")
-            self.log.error(f"{ENV['GPATH']['PLUGINS']}")
-            self.log.error("Make sure the installation is correct")
-            self.log.error("MiAZ will exit now!")
-            sys.exit()
+            self.log.warning("System plugins directory does not exist:")
+            self.log.warning(f"{ENV['GPATH']['PLUGINS']}")
+            self.log.warning("Continuing without system plugins")
 
         # User plugins
         # All user space plugins are available for all repositories
@@ -588,8 +591,10 @@ class MiAZPluginSystem(GObject.GObject):
             config = self.app.get_config_dict()
             repo_id = config['App'].get('current')
             config_plugins = self.app.get_config('Plugin')
-            config_plugins.remove_all()
             config_plugins.add_available_batch(plugin_list)
+            old_keys = set(config_plugins.load_available().keys()) - {p[0] for p in plugin_list}
+            for key in old_keys:
+                config_plugins.remove_available(key)
             self.log.info(f"Plugins available updated successfully for repository {repo_id}")
         except AttributeError:
             self.log.warning("Skip. Plugin config not ready yet")

@@ -10,6 +10,7 @@
 
 from gettext import gettext as _
 
+from gi.repository import Gdk
 from gi.repository import GObject
 
 from MiAZ.frontend.desktop.services.pluginsystem import MiAZExtension, MiAZPlugin
@@ -54,11 +55,14 @@ class Copy2Clipboard(MiAZExtension):
         self.workspace = self.app.get_widget('workspace')
 
         # Connect signals to startup
-        workspace = self.app.get_widget('workspace')
-        workspace.connect('workspace-loaded', self.startup)
+        if self.workspace.is_loaded():
+            self.startup()
+        else:
+            self._startup_handler = self.workspace.connect('workspace-loaded', self.startup)
 
     def do_deactivate(self):
-        self.log.warning("Deactivation not implemented")
+        if hasattr(self, '_startup_handler'):
+            self.workspace.disconnect(self._startup_handler)
         self.plugin.set_started(False)
 
     def startup(self, *args):
@@ -83,7 +87,7 @@ class Copy2Clipboard(MiAZExtension):
         text = ""
         for item in items:
             text += _('{item}\n').format(item=item.id)
-        self.workspace.get_clipboard().set(text.strip())
+        self.workspace.get_display().get_clipboard().set(text.strip())
         body = ''
         parent = self.workspace.get_root()
         self.srvdlg.show_toast(title)

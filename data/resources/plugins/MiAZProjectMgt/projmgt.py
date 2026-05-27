@@ -11,7 +11,6 @@
 import os
 from gettext import gettext as _
 
-from gi.repository import Adw
 from gi.repository import Gio
 from gi.repository import GObject
 from gi.repository import Gtk
@@ -38,6 +37,11 @@ plugin_info = {
         'Category':      'Content Organisation',
         'Subcategory':   'Tagging and Classification'
     }
+
+# Virtual project bucket holding documents not belonging to any real project.
+# It is never a real config key: it is shown as the first filter option in the
+# sidebar (next to 'Any') and stored only in the assignment map (projects.json).
+DEFAULT_PROJECT = 'None'
 
 default_available_data = {}
 
@@ -66,17 +70,21 @@ class MiAZProject(GObject.GObject):
         self.log = MiAZLog('MiAZ.Projects')
         self.app = app
         repository = self.app.get_service('repo')
-        util = self.app.get_service('util')
+        self.util = self.app.get_service('util')
+        self.srvdlg = self.app.get_service('dialogs')
         repo_dir_conf = repository.get('dir_conf')
         self.cnfprj = os.path.join(repo_dir_conf, 'projects.json')
         self.projects = {}
+        self.revision = 0
         if not os.path.exists(self.cnfprj):
             self.save()
             self.log.debug("Created new config file for projects")
         self.projects = self.load()
         self.check()
-        util.connect('filename-renamed', self._on_filename_renamed)
-        util.connect('filename-deleted', self._on_filename_deleted)
+        self.apply_defaults(DEFAULT_PROJECT)
+        self.util.connect('filename-added', self._on_filename_added)
+        self.util.connect('filename-renamed', self._on_filename_renamed)
+        self.util.connect('filename-deleted', self._on_filename_deleted)
 
     def check(self):
         repository = self.app.get_service('repo')
@@ -87,24 +95,63 @@ class MiAZProject(GObject.GObject):
                 if not os.path.exists(docpath):
                     to_delete.append((doc, project))
         for doc, project in to_delete:
-            self.remove(project, doc)
-            self.log.warning(f"Document '{doc}' not found; removed from project '{project}'")
-        self.log.debug("Projects consistency checked")
+            self._remove_nosave(project, doc)
+        if to_delete:
+            self.save()
+            message = _("{count} documents removed from projects (no longer in the repository)").format(count=len(to_delete))
+            self.log.warning(message)
+            self.srvdlg.show_toast(message)
+        self.log.debug("Projects consistency successfully checked")
 
-    def add(self, project: str, doc: str):
+    def _add_nosave(self, project: str, doc: str) -> bool:
+        added = False
         try:
             docs = self.projects[project]
             if doc not in docs:
                 docs.append(doc)
                 self.projects[project] = docs
+                added = True
         except KeyError:
             self.projects[project] = [doc]
-        self.log.debug(f"Added '{doc}' to project '{project}'")
+            added = True
+        if added:
+            self.log.debug(f"Added '{doc}' to project '{project}'")
+        return added
 
-    def add_batch(self, project: str, docs: list) -> None:
+    def add(self, project: str, doc: str):
+        if self._add_nosave(project, doc):
+            self.save()
+            self.srvdlg.show_toast(_("Document assigned to project '{project}'").format(project=project))
+
+    def add_batch(self, project: str, docs: list, notify: bool = True) -> None:
+        added = 0
         for doc in docs:
-            self.add(project, doc)
+            if self._add_nosave(project, doc):
+                added += 1
         self.save()
+        if notify and added > 0:
+            message = _("{count} documents assigned to project '{project}'").format(count=added, project=project)
+            self.log.debug(message)
+            self.srvdlg.show_toast(message)
+
+    def apply_defaults(self, default_project: str) -> None:
+        """Assign the default project to every repository document that does not
+        belong to any project. Runs on activation, transparent to the user
+        (no toasts), debug-logged only."""
+        repository = self.app.get_service('repo')
+        try:
+            docs = self.util.get_files(repository.docs)
+        except Exception:
+            docs = []
+        unassigned = [os.path.basename(fp) for fp in docs
+                      if len(self.assigned_to(os.path.basename(fp))) == 0]
+        for doc in unassigned:
+            self._add_nosave(default_project, doc)
+        if unassigned:
+            self.save()
+            self.log.debug(
+                f"Default project '{default_project}' applied to "
+                f"{len(unassigned)} document(s) without project")
 
     def _remove_nosave(self, project: str, doc: str) -> bool:
         found = False
@@ -132,13 +179,20 @@ class MiAZProject(GObject.GObject):
         found = self._remove_nosave(project, doc)
         if found:
             self.save()
+            self.srvdlg.show_toast(_("Document removed from project"))
         else:
             self.log.debug(f"Document '{doc}' does not belong to project '{project}'")
 
-    def remove_batch(self, project: str, docs: list) -> None:
+    def remove_batch(self, project: str, docs: list, notify: bool = True) -> None:
+        removed = 0
         for doc in docs:
-            self._remove_nosave(project, doc)
+            if self._remove_nosave(project, doc):
+                removed += 1
         self.save()
+        if notify and removed > 0:
+            message = _("{count} documents removed from projects").format(count=removed)
+            self.log.debug(message)
+            self.srvdlg.show_toast(message)
 
     def exists(self, project, doc):
         try:
@@ -157,29 +211,39 @@ class MiAZProject(GObject.GObject):
 
     def list_all(self):
         for project, docs in self.projects.items():
-            self.log.debug(f"Project: {project}")
             for doc in docs:
-                self.log.debug(f"\tDoc: {doc}")
+                self.log.debug(f"Project: {project} > Doc: {doc}")
 
     def save(self) -> None:
         util = self.app.get_service('util')
         util.json_save(self.cnfprj, self.projects)
+        self.revision += 1
 
     def load(self) -> dict:
-        util = self.app.get_service('util')
-        return util.json_load(self.cnfprj)
+        self.revision += 1
+        return self.util.json_load(self.cnfprj)
+
+    def _on_filename_added(self, util, target):
+        doc = os.path.basename(target)
+        if len(self.assigned_to(doc)) == 0:
+            self._add_nosave(DEFAULT_PROJECT, doc)
+            self.save()
+            self.log.debug(f"Default project '{DEFAULT_PROJECT}' assigned to new document '{doc}'")
 
     def _on_filename_renamed(self, util, source, target):
         source = os.path.basename(source)
         target = os.path.basename(target)
-        for project in self.assigned_to(source):
-            self.remove(project, source)
-            self.add(project, target)
+        projects = self.assigned_to(source)
+        for project in projects:
+            self._remove_nosave(project, source)
+            self._add_nosave(project, target)
             self.log.debug(f"P[{project}]: {source} -> {target}")
+        if projects:
+            self.save()
 
     def _on_filename_deleted(self, util, target):
-        for filepath in target:
-            self.remove(project='', doc=os.path.basename(filepath))
+        docs = [os.path.basename(fp) for fp in target]
+        self.remove_batch('', docs, notify=False)
 
 
 # Configuration
@@ -232,8 +296,7 @@ class MiAZProjectsView(MiAZConfigView):
         self.data_dir = self.plugin.get_data_dir()
         self.data_file = self.plugin.get_data_file()
         if self.config_dir is None:
-            raise
-        super(MiAZConfigView, self).__init__(app, edit=True)
+            raise RuntimeError("MiAZProjectsView: config_dir is None")
         super().__init__(app, config_name=f'{i_confname}', custom_config=config)
 
     def _setup_view_finish(self):
@@ -290,6 +353,8 @@ class MiAZProjectMgt(MiAZExtension):
         """Plugin activation"""
         self.app = self.object.app
         self.plugin = MiAZPlugin(self.app)
+        self._filter_cache_key = None
+        self._filter_cache_set = set()
         self.plugin.register(self, plugin_info)
         self.log = self.plugin.get_logger()
         self.actions = self.app.get_service('actions')
@@ -297,10 +362,36 @@ class MiAZProjectMgt(MiAZExtension):
         self.srvdlg = self.app.get_service('dialogs')
         self.util = self.app.get_service('util')
         self.workspace = self.app.get_widget('workspace')
-        self.workspace.connect('workspace-loaded', self.startup)
+        if self.workspace.is_loaded():
+            self.startup()
+        else:
+            self._startup_handler = self.workspace.connect('workspace-loaded', self.startup)
 
     def do_deactivate(self):
-        self.log.debug("Plugin deactivation not implemented")
+        plugin_name = self.plugin.get_name()
+        dropdown = self.app.get_widget(f'plugin-{plugin_name}-dropdown')
+        if dropdown is not None:
+            dd_parent = dropdown.get_parent()
+            if dd_parent is not None:
+                dd_parent.remove(dropdown)
+            dd_size_group = self.app.get_widget('sidebar-dropdown-size-group')
+            if dd_size_group is not None:
+                dd_size_group.remove_widget(dropdown)
+            plugin_dropdowns = self.app.get_widget('plugin-dropdowns')
+            if plugin_dropdowns is not None and dropdown in plugin_dropdowns:
+                plugin_dropdowns.remove(dropdown)
+            self.app.remove_widget(f'plugin-{plugin_name}-dropdown')
+        section = self.app.get_widget('sidebar-plugin-section')
+        if section is not None and hasattr(self, '_sidebar_item'):
+            section.remove(self._sidebar_item)
+        self.workspace.unregister_filter_view(f'{i_title}')
+        if hasattr(self, '_used_updated_handler'):
+            self.config.disconnect(self._used_updated_handler)
+        if hasattr(self, '_selected_item_handler') and dropdown is not None:
+            dropdown.disconnect(self._selected_item_handler)
+        if hasattr(self, '_startup_handler'):
+            self.workspace.disconnect(self._startup_handler)
+        self.app.set_service('Projects', None)
         self.plugin.set_started(False)
 
     def startup(self, *args):
@@ -311,17 +402,17 @@ class MiAZProjectMgt(MiAZExtension):
             menuitem = self.factory.create_menuitem(
                 f'{i_confname}-add',
                 _('Assign document(s) to {i_confname}').format(i_confname=i_confname),
-                self._set_property, None, [])
+                self._set_property, None, ['<Control>p'])
             plugin_menu.append_item(menuitem)
             menuitem = self.factory.create_menuitem(
                 f'{i_confname}-del',
                 _('Unassign document(s) from any {i_confname}').format(i_confname=i_confname),
-                self._unset_property, None, [])
+                self._unset_property, None, ['<Control><Shift>p'])
             plugin_menu.append_item(menuitem)
             menuitem = self.factory.create_menuitem(
                 f'{i_confname}-mgt',
                 _('Manage {i_confname}').format(i_confname=i_confname),
-                self._manage_properties, None, [])
+                self._manage_properties, None, ['<Control><Alt>p'])
             plugin_menu.append_item(menuitem)
             submenu.append_submenu(f"{i_title}", plugin_menu)
 
@@ -338,6 +429,11 @@ class MiAZProjectMgt(MiAZExtension):
                 # Initialise configuration
                 self.config = MiAZConfigProjects(self.app, self.plugin)
 
+                # 'None' is a virtual filter option (injected first in the
+                # dropdown via none_value=True), never a real config key. Drop
+                # it from the registries if an earlier version persisted it.
+                self._purge_default_value()
+
                 # Initialise project service and register it for other components to use
                 existing = self.app.get_service('Projects')
                 if existing is None:
@@ -352,36 +448,36 @@ class MiAZProjectMgt(MiAZExtension):
                     dropdown = self.factory.create_dropdown_generic(item_type=item_type, ellipsize=True, enable_search=True)
                     self.app.add_widget(f'plugin-{plugin_name}-dropdown', dropdown)
                     self.app.get_widget('plugin-dropdowns').append(dropdown)
-                    self.config.connect('used-updated', self.actions.dropdown_populate, dropdown, item_type, True, True)
+                    self._used_updated_handler = self.config.connect('used-updated', self.actions.dropdown_populate, dropdown, item_type, True, True)
                     self.actions.dropdown_populate(self.config, dropdown, item_type, True, True)
-                    dropdown.connect("notify::selected-item", self.workspace.update)
+                    self._selected_item_handler = dropdown.connect("notify::selected-item", self.workspace.update)
                     dropdown.set_size_request(190, -1)
                     dd_size_group = self.app.get_widget('sidebar-dropdown-size-group')
                     if dd_size_group is not None:
                         dd_size_group.add_widget(dropdown)
                     section = self.app.get_widget('sidebar-plugin-section')
-                    icon_path = self.plugin.get_icon_path()
-                    if icon_path:
-                        img = Gtk.Image.new_from_file(icon_path)
-                        img.set_pixel_size(16)
-                        img.set_valign(Gtk.Align.CENTER)
-                        suffix_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
-                        suffix_box.append(img)
-                        suffix_box.append(dropdown)
-                        section.append(Adw.SidebarItem(title='', suffix=suffix_box))
-                    else:
-                        section.append(Adw.SidebarItem(title=i_title, suffix=dropdown))
+                    if section is not None:
+                        icon_path = self.plugin.get_icon_path()
+                        if icon_path:
+                            img = Gtk.Image.new_from_file(icon_path)
+                            img.set_pixel_size(16)
+                            img.set_valign(Gtk.Align.CENTER)
+                            box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
+                            box.set_hexpand(True)
+                            box.append(img)
+                            box.append(dropdown)
+                            self._sidebar_item = box
+                        else:
+                            self._sidebar_item = dropdown
+                        section.append(self._sidebar_item)
                     self.workspace.register_filter_view(f'{i_title}', self._do_filter_view)
             else:
-                # Sidebar already set up — re-sync self.srvprj with the registered
-                # service so _set_property_real and _on_item_used_remove both operate
-                # on the same MiAZProject instance.
+                # Sidebar already set up
                 self.srvprj = self.app.get_service('Projects')
 
             self.plugin.set_started(started=True)
 
     def _do_filter_view(self, item, filter_list_model):
-        doc_id = item.id
         plugin_name = self.plugin.get_name()
         dropdown = self.app.get_widget(f'plugin-{plugin_name}-dropdown')
         selected_item = dropdown.get_selected_item()
@@ -391,9 +487,15 @@ class MiAZProjectMgt(MiAZExtension):
         pid = selected_item.id
         if pid == 'Any':
             return True
-        if pid == 'None':
-            return False
-        return doc_id in self.srvprj.docs_in_project(pid)
+        # Build the membership set once per filter pass instead of once per
+        # document. The (pid, revision) key rebuilds it only when the selection
+        # or the project assignments change. ('None' is a virtual filter option,
+        # but unassigned docs live in the 'None' bucket, so this path covers it.)
+        cache_key = (pid, self.srvprj.revision)
+        if self._filter_cache_key != cache_key:
+            self._filter_cache_key = cache_key
+            self._filter_cache_set = set(self.srvprj.docs_in_project(pid))
+        return item.id in self._filter_cache_set
 
     def _set_property(self, *args):
         selected_items = self.workspace.get_selected_items()
@@ -421,32 +523,38 @@ class MiAZProjectMgt(MiAZExtension):
             change = self._set_property_real(selected_documents, config_item.id)
             if change:
                 self.workspace.update()
-                self.log.debug(f"{i_title} {config_item.title} set to {len(selected_documents)} documents")
-                title = _('{i_title} management').format(i_title=i_title)
-                body = _('{i_title} {title} set to {count} documents').format(
-                    i_title=i_title, title=config_item.title, count=len(selected_documents))
-                self.srvdlg.show_toast(body)
 
     def _set_property_real(self, selected_documents, pid):
         if not selected_documents:
             return False
         self.srvprj.add_batch(pid, selected_documents)
-        self.log.debug(f"{i_title} for {len(selected_documents)} documents set to '{pid}'")
         return True
 
+    def _purge_default_value(self):
+        """The 'None' bucket must never be a real config key: it is rendered as
+        the first filter option (next to 'Any') via none_value=True. Remove it
+        from the available/used registries if an earlier version stored it."""
+        if self.config.exists_used(DEFAULT_PROJECT):
+            self.config.remove_used(DEFAULT_PROJECT)
+        if self.config.exists_available(DEFAULT_PROJECT):
+            self.config.remove_available(DEFAULT_PROJECT)
+
     def _unset_property(self, *args):
+        # FIXME: somehow the user should decide from which projects
         selected_documents = [item.id for item in self.workspace.get_selected_items()]
         self._unset_property_real(selected_documents)
-        title = _('{i_title} management').format(i_title=i_title)
-        body = _('Removed {i_confname} for selected documents').format(i_confname=i_confname)
-        self.srvdlg.show_toast(body)
+        # Documents must always belong to a project: fall back to the default
+        if selected_documents:
+            self.srvprj.add_batch(DEFAULT_PROJECT, selected_documents, notify=False)
+            self.workspace.update()
+            message = _("{count} documents unassigned").format(count=len(selected_documents))
+            self.srvdlg.show_toast(message)
 
     def _unset_property_real(self, selected_documents):
         if not selected_documents:
             return False
-        self.srvprj.remove_batch('', selected_documents)
+        self.srvprj.remove_batch('', selected_documents, notify=False)
         self.workspace.update()
-        self.log.debug(f"{i_title} unset for {len(selected_documents)} documents")
         return True
 
     def project_view(self, *args):
@@ -456,7 +564,9 @@ class MiAZProjectMgt(MiAZExtension):
             docs = srvprj.docs_in_project(pid)
             items = [File(id=doc, title=doc) for doc in docs]
             cv.update(items)
-            self.log.debug(f"{len(docs)} documents in project {pid}")
+            message = _("{count} documents in project {pid}").format(count=len(docs), pid=pid)
+            self.log.debug(message)
+            self.srvdlg.show_toast(message)
 
         frame = Gtk.Frame()
         cv = MiAZColumnViewDocuments(self.app)

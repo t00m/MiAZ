@@ -33,9 +33,11 @@ class MiAZCustomWindow(Adw.Window):
     def _setup_window(self):
         headerbar = self.app.add_widget(f'window-{self.name}-headerbar', Adw.HeaderBar())
         self.mainbox = self.factory.create_box_vertical(margin=0, spacing=0, hexpand=True, vexpand=True)
-        self.mainbox.append(headerbar)
+        toolbar_view = Adw.ToolbarView()
+        toolbar_view.add_top_bar(headerbar)
+        toolbar_view.set_content(self.mainbox)
         toast_overlay = Adw.ToastOverlay()
-        toast_overlay.set_child(self.mainbox)
+        toast_overlay.set_child(toolbar_view)
         self.set_content(toast_overlay)
 
     def _get_services(self):

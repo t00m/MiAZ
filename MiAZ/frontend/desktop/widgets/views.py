@@ -7,6 +7,7 @@
 import os
 from gettext import gettext as _
 
+from gi.repository import Gdk
 from gi.repository import Gtk
 from gi.repository import Pango
 
@@ -73,8 +74,8 @@ class MiAZColumnViewWorkspace(MiAZColumnView):
         self.column_purpose = Gtk.ColumnViewColumn.new(_('Purpose'), self.factory_purpose)
         self.column_date = Gtk.ColumnViewColumn.new(_('Date'), self.factory_date)
         self.column_flag = Gtk.ColumnViewColumn.new(_('Country'), self.factory_flag)
-        self.column_country = Gtk.ColumnViewColumn.new("Country", self.factory_country)
-        self.column_extension = Gtk.ColumnViewColumn.new("Ext.", self.factory_extension)
+        self.column_country = Gtk.ColumnViewColumn.new(_('Country'), self.factory_country)
+        self.column_extension = Gtk.ColumnViewColumn.new(_('Ext.'), self.factory_extension)
 
         self.cv.append_column(self.column_date)
         self.cv.append_column(self.column_country)
@@ -114,6 +115,28 @@ class MiAZColumnViewWorkspace(MiAZColumnView):
 
         # Default sorting by date
         self.cv.sort_by_column(self.column_date, Gtk.SortType.DESCENDING)
+
+        # Right-click context menu (reuses the top-bar plugins menu model)
+        self._context_popover = Gtk.PopoverMenu()
+        self._context_popover.set_parent(self.cv)
+        self._context_popover.set_has_arrow(False)
+        gesture_click = Gtk.GestureClick.new()
+        gesture_click.set_button(3)
+        gesture_click.connect('pressed', self._on_right_click)
+        self.cv.add_controller(gesture_click)
+
+    def _on_right_click(self, gesture, n_press, x, y):
+        menu_model = self.app.get_widget('workspace-menu-selection')
+        if menu_model is None:
+            return
+        self._context_popover.set_menu_model(menu_model)
+        rect = Gdk.Rectangle()
+        rect.x = int(x)
+        rect.y = int(y)
+        rect.width = 0
+        rect.height = 0
+        self._context_popover.set_pointing_to(rect)
+        self._context_popover.popup()
 
     def _on_factory_setup_subtitle(self, factory, list_item):
         box = ColLabel()
@@ -349,14 +372,37 @@ class MiAZColumnViewRepo(MiAZColumnViewSelector):
         item_type=Repository
         super().__init__(app, item_type=item_type)
         self.cv.append_column(self.column_id)
+        # Gtk.ColumnViewColumn.set_expand only distributes *extra* space
+        # beyond a column's natural width. Repo paths are long and not
+        # ellipsized, so the path column eats all the available width and
+        # leaves no extra for the id column. Force a comfortable default
+        # width on the id column and let the user resize either column.
         self.column_id.set_expand(True)
+        self.column_id.set_resizable(True)
+        self.column_id.set_fixed_width(280)
         if available:
             title = _(item_type.__title_plural__) + ' ' + _('available')
         else:
             title = _(item_type.__title_plural__) + ' ' + _('enabled')
         self.cv.append_column(self.column_title)
-        self.column_title.set_title(_('Directory'))
-        self.column_title.set_visible(False)
+        self.column_title.set_title(_('Path'))
+        self.column_title.set_expand(True)
+        self.column_title.set_resizable(True)
+        self.column_title.set_visible(True)
+        # Repository paths can be long; let the column show them in full
+        # and rely on the surrounding ScrolledWindow for horizontal scroll.
+        self.scrwin.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.AUTOMATIC)
+
+    def _on_factory_bind_title(self, factory, list_item):
+        box = list_item.get_child()
+        item = list_item.get_item()
+        label = box.get_first_child()
+        label.set_markup(item.title)
+        label.set_ellipsize(False)
+        label.set_property('ellipsize', Pango.EllipsizeMode.NONE)
+        label.set_xalign(0.0)
+        tooltip = f"<big>{item.id}</big>\n<b>{item.title}</b>"
+        label.set_tooltip_markup(tooltip)
 
 
 class MiAZColumnViewGroup(MiAZColumnViewSelector):

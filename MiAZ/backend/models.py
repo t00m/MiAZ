@@ -77,10 +77,11 @@ class MiAZItem(MiAZModel):
         self._valid = valid
         self._icon = icon
         self._extension = extension
-        self.search_text =  self.id + ' ' + date + ' ' + date_dsc + ' ' + group + ' ' + group_dsc + ' ' + \
-                            country + ' ' + country_dsc + ' ' + purpose + ' ' + purpose_dsc + ' ' + \
-                            sentby_id + ' ' + sentby_dsc + ' ' + title + ' ' + subtitle + ' ' + \
-                            sentto_id + ' ' + sentto_dsc + ' ' + extension
+        self._search_text = ' '.join([id, date, date_dsc, group, group_dsc,
+                                      country, country_dsc, purpose, purpose_dsc,
+                                      sentby_id, sentby_dsc, title, subtitle,
+                                      sentto_id, sentto_dsc, extension])
+        self._search_text_upper = self._search_text.upper()
 
     @GObject.Property
     def date(self):
@@ -157,6 +158,14 @@ class MiAZItem(MiAZModel):
     @GObject.Property
     def icon(self):
         return self._icon
+
+    @GObject.Property
+    def search_text(self):
+        return self._search_text
+
+    @GObject.Property
+    def search_text_upper(self):
+        return self._search_text_upper
 
 
 class Concept(MiAZModel):
@@ -282,3 +291,15 @@ class Plugin(MiAZModel):
     __config_name__ = 'plugins'
     __config_name_available__ = 'plugins'
     __config_name_used__ = 'plugins'
+
+
+# Field index mapping: model → position in 7-field filename
+Field = {
+    Date: 0,
+    Country: 1,
+    Group: 2,
+    SentBy: 3,
+    Purpose: 4,
+    Concept: 5,
+    SentTo: 6,
+}

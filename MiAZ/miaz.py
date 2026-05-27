@@ -9,6 +9,8 @@ import argparse
 import signal
 import locale
 import gettext
+import fcntl
+import atexit
 
 sys.path.insert(1, '@pkgdatadir@')
 
@@ -28,7 +30,11 @@ try:
     gi.require_version('Gtk', '4.0')
     from gi.repository import Gtk
     from gi.repository import GLib
-    from gi.repository import GLibUnix
+    try:
+        gi.require_version('GLibUnix', '2.0')
+        from gi.repository import GLibUnix
+    except (ValueError, ImportError):
+        GLibUnix = None
     ENV['DESKTOP']['GTK_VERSION'] = (Gtk.MAJOR_VERSION, Gtk.MINOR_VERSION, Gtk.MICRO_VERSION)
     ENV['DESKTOP']['GTK_SUPPORT'] = Gtk.MAJOR_VERSION >= 4 and Gtk.MINOR_VERSION >= 6
 except (ValueError, ModuleNotFoundError):
@@ -83,10 +89,38 @@ class MiAZ:
             log.debug(f"\t[{section}]")
             for envvar in self.env[section]:
                 log.debug(f"\t\t{envvar} = {self.env[section][envvar]}")
+        from MiAZ.backend.util import MiAZUtil
+        log.debug(f"MiAZ install mode: {MiAZUtil.get_install_mode()}")
         self.setup_environment()
+        self._acquire_lock()
         self.log = MiAZLog('MiAZ')
 
         self.log.info(f"{ENV['APP']['shortname']} v{ENV['APP']['VERSION']} - Start")
+
+    def _acquire_lock(self):
+        lock_dir = self.env['LPATH']['VAR']
+        os.makedirs(lock_dir, exist_ok=True)
+        lock_path = os.path.join(lock_dir, 'miaz.lock')
+        self._lock_fd = open(lock_path, 'w')
+        try:
+            fcntl.lockf(self._lock_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except IOError:
+            msg = f"MiAZ is already running. Exiting."
+            log.warning(msg)
+            sys.exit(1)
+        self._lock_fd.write(str(os.getpid()) + '\n')
+        self._lock_fd.flush()
+        atexit.register(self._release_lock)
+
+    def _release_lock(self):
+        try:
+            fcntl.lockf(self._lock_fd, fcntl.LOCK_UN)
+        except Exception:
+            pass
+        try:
+            self._lock_fd.close()
+        except Exception:
+            pass
 
     def setup_environment(self):
         """Set up MiAZ user environment."""
@@ -136,7 +170,6 @@ if __name__ == "__main__":
     """
     This is the entry point when the program is installed via Meson
     """
-    log.debug("MiAZ installation done via Meson!")
     args = parse_arguments()
     app = MiAZ(ENV)
     app.run(sys.argv)

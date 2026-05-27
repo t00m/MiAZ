@@ -12,11 +12,15 @@ log_err() { echo "[build_all] FAILED: $*" >&2; }
 die()     { echo "[build_all] ERROR: $*" >&2; exit 1; }
 
 VERSION=$(grep -m1 "version" "$REPO_ROOT/meson.build" \
-    | sed "s/.*version.*: *'\([^']*\)'.*/\1/")
+    | sed "s/.*version.*: *'\([^']*\)'.*/\1/" \
+    | sed "s/+.*//")
 [[ -n "$VERSION" ]] || die "Could not read version from meson.build"
 log "Version: $VERSION"
 
 mkdir -p "$DIST_DIR"
+# Wipe previous artifacts so dist/ only contains packages from this run.
+log "Cleaning $DIST_DIR/ ..."
+find "$DIST_DIR" -mindepth 1 -delete
 
 ERRORS=0
 
@@ -62,6 +66,13 @@ FLATPAK_BUNDLE="$REPO_ROOT/miaz-${VERSION}.flatpak"
 if "$SCRIPT_DIR/flatpak/create_flatpak.sh"; then
     # create_flatpak.sh builds and installs but does not produce a bundle file.
     # Export the build result into a local repo and create a distributable bundle.
+    # flatpak build-export refuses to open a partially-initialised OSTree repo
+    # (missing config/objects), so re-init it from scratch in that case.
+    if [[ ! -f "$REPO_ROOT/repo/config" || ! -d "$REPO_ROOT/repo/objects" ]]; then
+        log "Re-initialising OSTree repo at $REPO_ROOT/repo ..."
+        rm -rf "$REPO_ROOT/repo"
+        ostree --repo="$REPO_ROOT/repo" init --mode=archive-z2
+    fi
     log "Exporting flatpak build to local repo..."
     flatpak build-export "$REPO_ROOT/repo" "$REPO_ROOT/builddir_flatpak"
     log "Creating bundle $(basename "$FLATPAK_BUNDLE") ..."
@@ -73,30 +84,131 @@ else
     ERRORS=$(( ERRORS + 1 ))
 fi
 
-# ── Windows EXE / Installer ───────────────────────────────────────────────────
-log "--- Building Windows executable ---"
-WIN_BUILD_DIR="$REPO_ROOT/builddir_win"
-WIN_INSTALLER="$WIN_BUILD_DIR/MiAZ-${VERSION}-setup.exe"
-WIN_PORTABLE_DIR="$WIN_BUILD_DIR/dist/MiAZ"
-WIN_PORTABLE_ZIP="$DIST_DIR/miaz-${VERSION}-win-portable.zip"
+# ── Windows EXE / Installer (DISABLED) ────────────────────────────────────────
+# Windows packaging is disabled for now. Re-enable by uncommenting this block.
+#log "--- Building Windows executable ---"
+#WIN_BUILD_DIR="$REPO_ROOT/builddir_win"
+#WIN_INSTALLER="$WIN_BUILD_DIR/MiAZ-${VERSION}-setup.exe"
+#WIN_PORTABLE_DIR="$WIN_BUILD_DIR/dist/MiAZ"
+#WIN_PORTABLE_ZIP="$DIST_DIR/miaz-${VERSION}-win-portable.zip"
+#
+#if "$SCRIPT_DIR/win/create_exe.sh"; then
+#    FOUND=0
+#    if [[ -f "$WIN_INSTALLER" ]]; then
+#        cp "$WIN_INSTALLER" "$DIST_DIR/"
+#        log_ok "$(basename "$WIN_INSTALLER") -> dist/"
+#        FOUND=1
+#    fi
+#    if [[ $FOUND -eq 0 && -d "$WIN_PORTABLE_DIR" ]]; then
+#        (cd "$WIN_BUILD_DIR/dist" && zip -r "$WIN_PORTABLE_ZIP" "MiAZ/")
+#        log_ok "$(basename "$WIN_PORTABLE_ZIP") -> dist/"
+#        FOUND=1
+#    fi
+#    [[ $FOUND -eq 1 ]] || log_err "Windows build succeeded but no output file found"
+#else
+#    log_err "Windows build failed"
+#    ERRORS=$(( ERRORS + 1 ))
+#fi
 
-if "$SCRIPT_DIR/win/create_exe.sh"; then
+# ── AppImage ─────────────────────────────────────────────────────────────────
+log "--- Building AppImage package ---"
+if "$SCRIPT_DIR/AppImage/build_appimage.sh"; then
     FOUND=0
-    if [[ -f "$WIN_INSTALLER" ]]; then
-        cp "$WIN_INSTALLER" "$DIST_DIR/"
-        log_ok "$(basename "$WIN_INSTALLER") -> dist/"
+    while IFS= read -r pkg; do
+        cp "$pkg" "$DIST_DIR/"
+        log_ok "$(basename "$pkg") -> dist/"
         FOUND=1
-    fi
-    if [[ $FOUND -eq 0 && -d "$WIN_PORTABLE_DIR" ]]; then
-        (cd "$WIN_BUILD_DIR/dist" && zip -r "$WIN_PORTABLE_ZIP" "MiAZ/")
-        log_ok "$(basename "$WIN_PORTABLE_ZIP") -> dist/"
-        FOUND=1
-    fi
-    [[ $FOUND -eq 1 ]] || log_err "Windows build succeeded but no output file found"
+    done < <(find "$REPO_ROOT" -maxdepth 1 -name "MiAZ-${VERSION}*.AppImage" 2>/dev/null | sort)
+    [[ $FOUND -eq 1 ]] || log_err "AppImage built but no output file found"
 else
-    log_err "Windows build failed"
+    log_err "AppImage build failed"
     ERRORS=$(( ERRORS + 1 ))
 fi
+
+# ── Snap ──────────────────────────────────────────────────────────────────────
+log "--- Building Snap package ---"
+if command -v snapcraft &>/dev/null; then
+    if (cd "$REPO_ROOT" && snapcraft); then
+        FOUND=0
+        while IFS= read -r pkg; do
+            cp "$pkg" "$DIST_DIR/"
+            log_ok "$(basename "$pkg") -> dist/"
+            FOUND=1
+        done < <(find "$REPO_ROOT" -maxdepth 1 -name "miaz_${VERSION}_*.snap" 2>/dev/null | sort)
+        [[ $FOUND -eq 1 ]] || log_err "Snap built but no output file found"
+    else
+        log_err "Snap build failed"
+        ERRORS=$(( ERRORS + 1 ))
+    fi
+else
+    log "snapcraft not found — skipping Snap build."
+    log "  Install with: sudo snap install snapcraft --classic"
+fi
+
+# ── Install report ────────────────────────────────────────────────────────────
+# Emit per-package install instructions for whatever made it into dist/.
+write_install_report() {
+    local report="$DIST_DIR/INSTALL.txt"
+    local rpm deb flatpak appimage snap
+
+    rpm=$(find "$DIST_DIR" -maxdepth 1 -name 'miaz-*.rpm' ! -name '*.src.rpm' -printf '%f\n' | sort | head -n1)
+    deb=$(find "$DIST_DIR" -maxdepth 1 -name 'miaz_*.deb' -printf '%f\n' | sort | head -n1)
+    flatpak=$(find "$DIST_DIR" -maxdepth 1 -name 'miaz-*.flatpak' -printf '%f\n' | sort | head -n1)
+    appimage=$(find "$DIST_DIR" -maxdepth 1 -iname 'miaz-*.appimage' -printf '%f\n' | sort | head -n1)
+    snap=$(find "$DIST_DIR" -maxdepth 1 -name 'miaz_*.snap' -printf '%f\n' | sort | head -n1)
+
+    {
+        echo "MiAZ ${VERSION}, installation instructions"
+        echo "Generated: $(date '+%Y-%m-%d %H:%M:%S')"
+        echo
+        echo "This file lists install commands for the packages produced in this"
+        echo "directory. Run each command from inside dist/."
+        echo
+
+        if [[ -n "$rpm" ]]; then
+            echo "RPM (${rpm})"
+            echo "    Fedora / RHEL:   sudo dnf install ./${rpm}"
+            echo "    openSUSE:        sudo zypper install ./${rpm}"
+            echo "    Generic:         sudo rpm -i ${rpm}"
+            echo "    Uninstall:       sudo rpm -e miaz"
+            echo
+        fi
+        if [[ -n "$deb" ]]; then
+            echo "DEB (${deb})"
+            echo "    Debian / Ubuntu: sudo apt install ./${deb}"
+            echo "    Generic:         sudo dpkg -i ${deb} && sudo apt-get -f install"
+            echo "    Uninstall:       sudo apt remove miaz"
+            echo
+        fi
+        if [[ -n "$flatpak" ]]; then
+            echo "Flatpak (${flatpak})"
+            echo "    Install:         flatpak install --user ${flatpak}"
+            echo "    Run:             flatpak run io.github.t00m.MiAZ"
+            echo "    Uninstall:       flatpak uninstall --user io.github.t00m.MiAZ"
+            echo
+        fi
+        if [[ -n "$appimage" ]]; then
+            echo "AppImage (${appimage})"
+            echo "    Make executable: chmod +x ${appimage}"
+            echo "    Run:             ./${appimage}"
+            echo "    Uninstall:       rm ${appimage}"
+            echo
+        fi
+        if [[ -n "$snap" ]]; then
+            echo "Snap (${snap})"
+            echo "    Install:         sudo snap install --dangerous ${snap}"
+            echo "    Run:             snap run miaz   (or just: miaz)"
+            echo "    Uninstall:       sudo snap remove miaz"
+            echo
+        fi
+
+        if [[ -z "$rpm$deb$flatpak$appimage$snap" ]]; then
+            echo "No packages were produced in this run."
+        fi
+    } > "$report"
+    log_ok "Wrote install report -> $(basename "$report")"
+}
+write_install_report
 
 # ── Summary ───────────────────────────────────────────────────────────────────
 log ""

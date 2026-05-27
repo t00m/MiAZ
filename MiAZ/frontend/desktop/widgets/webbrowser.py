@@ -1,5 +1,5 @@
-#!/usr/bin/python
-# File: icm.py
+#!/usr/bin/python3
+# File: webbrowser.py
 # Author: Tomás Vírseda
 # License: GPL v3
 # Description: Webbrowser widget

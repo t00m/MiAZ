@@ -7,8 +7,10 @@
 from gettext import gettext as _
 
 from gi.repository import Adw
+from gi.repository import Gdk
 from gi.repository import Gio
 from gi.repository import GLib
+from gi.repository import GObject
 from gi.repository import Gtk
 
 from MiAZ.backend.log import MiAZLog
@@ -32,41 +34,41 @@ class MiAZMainWindow(Gtk.Box):
         self.app.add_widget('mainwindow', self)
 
     def _setup_ui(self):
-        factory = self.app.get_service('factory')
+        ENV = self.app.get_env()
 
-        # Widgets
-        ## HeaderBar
-        headerbar = self.app.add_widget('headerbar', Adw.HeaderBar())
-
-        # Hide back button
-        # https://gnome.pages.gitlab.gnome.org/libadwaita/doc/main/method.HeaderBar.set_show_back_button.html
-        # Button doesn't behave as expected. When sidebar is uncollpased, it takes the whole page. Content is gone.
-        headerbar.set_show_back_button(False) # This is ugly. FIXME
-        self._setup_headerbar_left()
-        self._setup_headerbar_center()
-        self._setup_headerbar_right()
-
-        # header toolbar
-        toolbar = self._setup_toolbar_top()
-        headerbar.set_title_widget(toolbar)
-
-        ## Stack & Stack.Switcher
-        vmainbox = factory.create_box_vertical(margin=0, spacing=0, hexpand=True, vexpand=True)
+        # Content (ViewStack) + sidebar inside an adaptive split view
         content = self._setup_stack()
         content.set_hexpand(True)
         content.set_vexpand(True)
         sidebar = MiAZSidebar(self.app)
 
-        paned = self.app.add_widget('main-paned', Gtk.Paned(orientation=Gtk.Orientation.HORIZONTAL, hexpand=True, vexpand=True))
-        paned.set_start_child(sidebar)
-        paned.set_end_child(content)
-        paned.set_position(320)
-        paned.set_resize_start_child(False)
-        paned.set_shrink_start_child(False)
-        paned.set_shrink_end_child(False)
+        split_view = self.app.add_widget('main-split-view', Adw.OverlaySplitView())
+        split_view.set_sidebar(sidebar)
+        split_view.set_content(content)
+        split_view.set_min_sidebar_width(300)
+        split_view.set_max_sidebar_width(360)
+        split_view.set_sidebar_width_fraction(0.25)
 
-        vmainbox.append(headerbar)
-        vmainbox.append(paned)
+        # HeaderBar
+        headerbar = self.app.add_widget('headerbar', Adw.HeaderBar())
+
+        # ~ self._window_title = self.app.add_widget(
+        # ~     'headerbar-window-title',
+        # ~     Adw.WindowTitle(title=ENV['APP']['shortname'], subtitle=''))
+        # ~ headerbar.pack_start(self._window_title)
+        # ~ self._update_window_title()
+
+        # App icon as the first widget on the header bar's left side.
+        # Packed before _setup_headerbar_start so it precedes the sidebar
+        # toggle and the plugin-controls box.
+        headerbar_app_icon = Gtk.Image.new_from_icon_name('io.github.t00m.MiAZ')
+        headerbar_app_icon.set_pixel_size(24)
+        self.app.add_widget('headerbar-app-icon', headerbar_app_icon)
+        headerbar.pack_start(headerbar_app_icon)
+
+        self._setup_headerbar_start(split_view)
+        self._setup_headerbar_center()
+        self._setup_headerbar_end()
 
         # Welcome page
         page_welcome = self.app.get_widget('welcome')
@@ -83,13 +85,23 @@ class MiAZMainWindow(Gtk.Box):
         if page is None:
             self._setup_webbrowser()
 
+        toolbar_view = Adw.ToolbarView()
+        toolbar_view.add_top_bar(headerbar)
+        toolbar_view.set_content(split_view)
+
         toast_overlay = self.app.add_widget('toast-overlay', Adw.ToastOverlay())
-        toast_overlay.set_child(vmainbox)
+        toast_overlay.set_child(toolbar_view)
         self.append(toast_overlay)
+
+        # Adaptive: collapse the sidebar into an overlay on narrow widths
+        breakpoint_ = Adw.Breakpoint.new(Adw.BreakpointCondition.parse("max-width: 720sp"))
+        breakpoint_.add_setter(split_view, "collapsed", True)
+        self.win.add_breakpoint(breakpoint_)
 
     def _setup_event_listener(self):
         """Setup an event listener for mainwindow"""
         evk = Gtk.EventControllerKey.new()
+        evk.connect('key-pressed', self._on_key_pressed)
         self.app.add_widget('window-event-controller', evk)
         self.win.add_controller(evk)
         plugin_system = self.app.get_service('plugin-system')
@@ -97,36 +109,130 @@ class MiAZMainWindow(Gtk.Box):
             plugin_system.connect('plugins-updated', self._on_plugins_updated)
         self._footer_menu_appended_to = None
         self.app.connect('application-started', self._on_application_started)
+        workflow = self.app.get_service('workflow')
+        if workflow is not None:
+            workflow.connect('repository-switch-finished', self._update_window_title)
 
-    def _setup_headerbar_left(self):
+    def _on_key_pressed(self, controller, keyval, keycode, state):
+        actions = self.app.get_service('actions')
+        ctrl = state & Gdk.ModifierType.CONTROL_MASK
+        if keyval == Gdk.KEY_Return:
+            actions.document_display_selected()
+            return True
+        if ctrl and keyval == Gdk.KEY_BackSpace:
+            actions.document_rename()
+            return True
+        if ctrl and keyval in (Gdk.KEY_Delete, Gdk.KEY_KP_Delete):
+            actions.document_delete()
+            return True
+        return False
+
+    def _setup_headerbar_start(self, split_view):
         factory = self.app.get_service('factory')
         headerbar = self.app.get_widget('headerbar')
 
-        # Box for filters button and search entry
+        # Sidebar toggle, shown only when the split view is collapsed (narrow)
+        sidebar_toggle = Gtk.ToggleButton(icon_name='sidebar-show-symbolic')
+        sidebar_toggle.set_tooltip_text(_('Toggle sidebar'))
+        split_view.bind_property(
+            'show-sidebar', sidebar_toggle, 'active',
+            GObject.BindingFlags.SYNC_CREATE | GObject.BindingFlags.BIDIRECTIONAL)
+        split_view.bind_property(
+            'collapsed', sidebar_toggle, 'visible', GObject.BindingFlags.SYNC_CREATE)
+        self.app.add_widget('headerbar-button-sidebar-toggle', sidebar_toggle)
+        headerbar.pack_start(sidebar_toggle)
+
+        # Plugin/workspace controls box (plugins append their buttons here)
         hbox = factory.create_box_horizontal(margin=0, spacing=6)
         self.app.add_widget('headerbar-left-box', hbox)
         headerbar.pack_start(hbox)
 
-        # Setup system menu
-        menubutton = self._setup_menu_system()
-        hbox.append(menubutton)
-
-
-    def _setup_headerbar_right(self):
+    def _setup_headerbar_center(self):
+        """Build the workspace document-count menu and the pending-docs
+        toggle and install them as the header bar's centered title widget.
+        """
         factory = self.app.get_service('factory')
         headerbar = self.app.get_widget('headerbar')
-        hbox = factory.create_box_horizontal(margin=0, spacing=0)
-        hbox.add_css_class('linked')
+
+        # Workspace document-count menu button
+        label = Gtk.Label()
+        btnDocsSel = Gtk.MenuButton()
+        btnDocsSel.add_css_class('flat')
+        self.app.add_widget('workspace-menu', btnDocsSel)
+        btnDocsSel.set_always_show_arrow(True)
+        btnDocsSel.set_child(label)
+        popDocsSel = Gtk.PopoverMenu()
+        popDocsSel.set_menu_model(self._setup_menu_selection())
+        btnDocsSel.set_popover(popover=popDocsSel)
+
+        # Pending documents toggle button
+        button = factory.create_button_toggle(
+            icon_name='io.github.t00m.MiAZ-rename',
+            title=_('Review'),
+            tooltip=_('There are documents pending of review'))
+        self.app.add_widget('workspace-togglebutton-pending-docs', button)
+        button.set_has_frame(True)
+        button.set_visible(False)
+        button.set_active(False)
+
+        # Combine both widgets into one horizontal box and use that as the
+        # header bar's centered title widget.
+        center_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
+        center_box.append(btnDocsSel)
+        center_box.append(button)
+        headerbar.set_title_widget(center_box)
+
+    def _setup_headerbar_end(self):
+        factory = self.app.get_service('factory')
+        actions = self.app.get_service('actions')
+        headerbar = self.app.get_widget('headerbar')
+
+        # Primary menu (rightmost)
+        menubutton = self._setup_menu_system()
+        headerbar.pack_end(menubutton)
+
+        # Per-selection action buttons (placed to the left of the primary menu)
+        hbox = factory.create_box_horizontal(margin=0, spacing=6)
         self.app.add_widget('headerbar-right-box', hbox)
         headerbar.pack_end(hbox)
 
-    def _setup_headerbar_center(self):
-        pass
+        # View document button (visible when exactly 1 item selected)
+        btn_view = factory.create_button(
+            icon_name='io.github.t00m.MiAZ-view-document',
+            tooltip=_('View document'),
+            callback=actions.document_display_selected)
+        btn_view.set_visible(False)
+        self.app.add_widget('headerbar-button-view', btn_view)
+        hbox.append(btn_view)
+
+        # Rename document button (visible when exactly 1 item selected)
+        btn_rename = factory.create_button(
+            icon_name='io.github.t00m.MiAZ-rename',
+            tooltip=_('Rename document'),
+            callback=actions.document_rename)
+        btn_rename.set_visible(False)
+        self.app.add_widget('headerbar-button-rename', btn_rename)
+        hbox.append(btn_rename)
+
+        # Delete document button (visible when at least 1 item selected)
+        btn_delete = factory.create_button(
+            icon_name='io.github.t00m.MiAZ-edit-delete-symbolic',
+            tooltip=_('Delete documents'),
+            callback=actions.document_delete)
+        btn_delete.add_css_class('destructive-action')
+        btn_delete.set_visible(False)
+        self.app.add_widget('headerbar-button-delete', btn_delete)
+        hbox.append(btn_delete)
+
+    def _update_window_title(self, *args):
+        cfg = self.app.get_config('App')
+        repo_id = cfg.get('current') if cfg is not None else None
+        subtitle = repo_id.replace('_', ' ') if repo_id else ''
+        if getattr(self, '_window_title', None) is not None:
+            self._window_title.set_subtitle(subtitle)
 
     def _setup_stack(self):
         viewstack = self.app.add_widget('stack', Adw.ViewStack())
-        switcher = self.app.add_widget('switcher', Adw.ViewSwitcher())
-        switcher.set_stack(viewstack)
         viewstack.set_vexpand(True)
         return viewstack
 
@@ -175,6 +281,10 @@ class MiAZMainWindow(Gtk.Box):
             widget_workspace.connect('workspace-view-selection-changed', self._on_workspace_menu_update)
             widget_workspace.connect('workspace-view-filtered', self._on_workspace_menu_update)
             widget_workspace.connect('workspace-view-updated', self._on_workspace_menu_update)
+            # Double-click on a row → view document
+            view = self.app.get_widget('workspace-view')
+            if view is not None and hasattr(view, 'cv'):
+                view.cv.connect('activate', lambda cv, pos: actions.document_display_selected())
         return widget_workspace
 
     def _on_application_started(self, *args):
@@ -199,9 +309,7 @@ class MiAZMainWindow(Gtk.Box):
         if not self.app.get_plugins_loaded():
             return
 
-        # Replace the menu model with a fresh Gio.Menu so that the Gtk.PopoverMenu
-        # fully re-initialises its internal GtkStack — calling remove_all() on the
-        # existing model leaves stale pages in the stack, causing duplicate-name warnings.
+        # Replace the menu model with a fresh Gio.Menu
         new_main_menu = Gio.Menu.new()
         self.app.add_widget('workspace-menu-selection', new_main_menu)
         new_plugins_section = Gio.Menu.new()
@@ -254,47 +362,23 @@ class MiAZMainWindow(Gtk.Box):
         tooltip += _('{nv} documents in this view\n').format(nv=v)
         tooltip += _('{nr} documents in this repository').format(nr=t)
         workspace_menu.set_tooltip_markup(tooltip)
-        # ~ self.log.debug(f"filter selected: {s}/{v}/{t}")
+
+        # Toggle headerbar button visibility based on selection
+        btn_view = self.app.get_widget('headerbar-button-view')
+        if btn_view is not None:
+            btn_view.set_visible(s == 1)
+        btn_rename = self.app.get_widget('headerbar-button-rename')
+        if btn_rename is not None:
+            btn_rename.set_visible(s == 1)
+        btn_delete = self.app.get_widget('headerbar-button-delete')
+        if btn_delete is not None:
+            btn_delete.set_visible(s >= 1)
+
         searchentry = self.app.get_widget('searchentry')
         if v > 0:
             stack.set_visible_child_name('workspace')
         else:
             stack.set_visible_child_name('page-404')
-
-    def _setup_toolbar_top(self):
-        factory = self.app.get_service('factory')
-        hdb_left = self.app.get_widget('headerbar-left-box')
-        hdb_right = self.app.get_widget('headerbar-right-box')
-        hdb_right.get_style_context().add_class(class_name='linked')
-
-        # Workspace Menu
-        hbox = factory.create_box_horizontal(margin=0, spacing=6, hexpand=False)
-        hbox.set_homogeneous(True)
-        popovermenu = self._setup_menu_selection()
-        label = Gtk.Label()
-        btnDocsSel  = Gtk.MenuButton()
-        btnDocsSel.add_css_class('accent')
-        self.app.add_widget('workspace-menu', btnDocsSel)
-        btnDocsSel .set_always_show_arrow(True)
-        btnDocsSel .set_child(label)
-        popDocsSel = Gtk.PopoverMenu()
-        popDocsSel.set_menu_model(popovermenu)
-        btnDocsSel .set_popover(popover=popDocsSel)
-        btnDocsSel .set_sensitive(True)
-        hbox.append(btnDocsSel)
-
-        # Pending documents toggle button
-        button = factory.create_button_toggle( icon_name='io.github.t00m.MiAZ-rename',
-                                        title=_('Review'),
-                                        tooltip=_('There are documents pending of review')
-                                    )
-        self.app.add_widget('workspace-togglebutton-pending-docs', button)
-        button.set_has_frame(True)
-        button.set_visible(False)
-        button.set_active(False)
-        hbox.append(button)
-
-        return hbox
 
     def _setup_menu_selection(self):
         """Create workspace menu with a dedicated section for plugin entries."""
@@ -340,15 +424,18 @@ class MiAZMainWindow(Gtk.Box):
         menu.append_section(None, section_bottom)
         menuitem = factory.create_menuitem('app-settings', _('Settings'), actions.show_app_settings, None, ['<Control>s'])
         section_common.append_item(menuitem)
-        # ~ menuitem = factory.create_menuitem('app-help', _('Help'), actions.show_app_help, None, ['<Control>h'])
-        # ~ section_common.append_item(menuitem)
-        menuitem = factory.create_menuitem('app-about', _('About'), actions.show_app_about, None, ['<Control>b'])
+        menuitem = factory.create_menuitem('app-shortcuts', _('Keyboard Shortcuts'), actions.show_app_shortcuts, None, ['<Control>question'])
         section_common.append_item(menuitem)
-        menuitem = factory.create_menuitem('app-quit', _('Exit'), actions.exit_app, None, ['<Control>q'])
+        # ~ menuitem = factory.create_menuitem('app-help', _('Help'), actions.show_app_help, None, ['F1', '<Control>h'])
+        # ~ section_common.append_item(menuitem)
+        menuitem = factory.create_menuitem('app-about', _('About MiAZ'), actions.show_app_about, None, ['<Control>b'])
+        section_common.append_item(menuitem)
+        menuitem = factory.create_menuitem('app-quit', _('Quit'), actions.exit_app, None, ['<Control>q'])
         section_bottom.append_item(menuitem)
 
-        menubutton = Gtk.MenuButton(child=factory.create_button_content(icon_name='io.github.t00m.MiAZ'))
-        menubutton.set_has_frame(False)
+        menubutton = Gtk.MenuButton()
+        menubutton.set_icon_name('open-menu-symbolic')
+        menubutton.set_tooltip_text(_('Main Menu'))
         menubutton.add_css_class('flat')
         menubutton.set_valign(Gtk.Align.CENTER)
         popover = Gtk.PopoverMenu()

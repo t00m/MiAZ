@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 # File: icm.py
 # Author: Tomás Vírseda
 # License: GPL v3
@@ -19,8 +19,6 @@ class MiAZIconManager(GObject.GObject):
 
     It helps to retrieve (custom) icons
     """
-
-    gicondict = {}
 
     def __init__(self, app):
         """
@@ -48,15 +46,7 @@ class MiAZIconManager(GObject.GObject):
         image.set_pixel_size(size)
         return image
 
-    def get_mimetype_icon(self, filename: str) -> Gio.Icon:
-        """
-        Get mimetype icon for a given file.
-
-        :param filename: file name
-        :type filename: str
-        return: an icon
-        rtype: Gio.ThemedIcon (GIcon)
-        """
+    def get_mimetype_icon(self, filename: str) -> Gio.Icon | None:
         repository = self.app.get_service('repo')
         basedir = repository.docs
         filepath = os.path.join(basedir, filename)
@@ -65,3 +55,4 @@ class MiAZIconManager(GObject.GObject):
             info = gfile.query_info(Gio.FILE_ATTRIBUTE_STANDARD_ICON, Gio.FileQueryInfoFlags.NONE, None)
             gicon = info.get_icon()
             return gicon
+        return None

@@ -17,6 +17,7 @@ import time
 import shutil
 import tempfile
 import threading
+import functools
 import subprocess
 import mimetypes
 import zipfile
@@ -26,20 +27,11 @@ from gi.repository import Gio
 from gi.repository import GObject
 
 from MiAZ.backend.log import MiAZLog
-from MiAZ.backend.models import Group, Country
+from MiAZ.backend.models import Field, Group, Country
 from MiAZ.backend.models import Purpose, Concept, SentBy
 from MiAZ.backend.models import SentTo, Date
 
 mimetypes.init()
-
-Field = {}
-Field[Date] = 0
-Field[Country] = 1
-Field[Group] = 2
-Field[SentBy] = 3
-Field[Purpose] = 4
-Field[Concept] = 5
-Field[SentTo] = 6
 
 REMOTE_SCHEMES = {
     "sftp", "smb", "ftp", "http", "https", "dav", "davs", "afp", "mtp", "obex", "ssh"
@@ -179,7 +171,13 @@ class MiAZUtil(GObject.GObject):
         dot = filename.rfind('.')
         if dot > 0:
             filename = filename[:dot]
-        return filename.split('-')
+        parts = filename.split('-')
+        if len(parts) > 7:
+            # Excess parts most likely contain hyphens in Concept or SentTo;
+            # merge them back into the last field (SentTo)
+            parts[6] = '-'.join(parts[6:])
+            parts = parts[:7]
+        return parts
 
     def get_files(self, dirpath: str) -> []:
         """Get all files from a given directory."""
@@ -205,6 +203,63 @@ class MiAZUtil(GObject.GObject):
         mimetype, val = Gio.content_type_guess(filepath, data=None)
         return mimetype
 
+    def filename_guess_date(self, filepath: str, concept_hint: str = '') -> str:
+        """Return a YYYYMMDD string guessed from the file or empty.
+
+        Order: (1) 8-digit run in concept hint that parses as %Y%m%d;
+        (2) PDF /CreationDate from the PDF Info dictionary;
+        (3) image EXIF DateTimeOriginal; (4) file mtime.
+        """
+        for chunk in (concept_hint or '').split('_'):
+            if len(chunk) == 8:
+                try:
+                    datetime.strptime(chunk, '%Y%m%d')
+                    return chunk
+                except ValueError:
+                    pass
+        mime = self.filename_get_mimetype(filepath) or ''
+        if mime == 'application/pdf':
+            guess = self._guess_date_from_pdf(filepath)
+            if guess:
+                return guess
+        if mime.startswith('image/'):
+            guess = self._guess_date_from_image_exif(filepath)
+            if guess:
+                return guess
+        return self.filename_get_creation_date(filepath).strftime('%Y%m%d')
+
+    def _guess_date_from_pdf(self, filepath: str) -> str:
+        try:
+            from pypdf import PdfReader
+        except ImportError:
+            return ''
+        try:
+            reader = PdfReader(filepath)
+            raw = reader.metadata.creation_date if reader.metadata else None
+            if raw:
+                return raw.strftime('%Y%m%d')
+        except Exception as error:
+            self.log.debug(f"PDF date probe failed for {filepath}: {error}")
+        return ''
+
+    def _guess_date_from_image_exif(self, filepath: str) -> str:
+        try:
+            from PIL import Image, ExifTags
+        except ImportError:
+            return ''
+        try:
+            with Image.open(filepath) as img:
+                exif = img.getexif()
+                if not exif:
+                    return ''
+                for tag_id, value in exif.items():
+                    tag = ExifTags.TAGS.get(tag_id, tag_id)
+                    if tag == 'DateTimeOriginal' and isinstance(value, str):
+                        return datetime.strptime(value, '%Y:%m:%d %H:%M:%S').strftime('%Y%m%d')
+        except Exception as error:
+            self.log.debug(f"EXIF date probe failed for {filepath}: {error}")
+        return ''
+
     def filename_details(self, filepath: str):
         basename = os.path.basename(filepath)
         dot = basename.rfind('.')
@@ -217,13 +272,34 @@ class MiAZUtil(GObject.GObject):
         return name, ext
 
     def filename_is_normalized(self, name: str) -> bool:
-        try:
-            return len(name.split('-')) == 7
-        except Exception:
-            return False
+        return len(name.split('-')) == 7
 
     def filename_validate(self, doc: str) -> bool:
-        return self.filename_is_normalized(doc)
+        if not self.filename_is_normalized(doc):
+            return False
+
+        fields = self.get_fields(doc)
+
+        # 1. Date validation (YYYYMMDD)
+        try:
+            datetime.strptime(fields[0], '%Y%m%d')
+        except (ValueError, IndexError):
+            return False
+
+        # 2. Country validation (ISO-3166)
+        # We check against the list of available countries if possible
+        config = self.app.get_config('Country')
+        if config:
+            countries = config.load_available()
+            if fields[1] not in countries:
+                return False
+        else:
+            # Fallback if config service is unavailable (e.g. basic tests)
+            # Ensure it is at least 2 uppercase letters
+            if not (len(fields[1]) == 2 and fields[1].isupper() and fields[1].isalpha()):
+                return False
+
+        return True
 
     def filename_normalize(self, filename: str) -> str:
         name, ext = self.filename_details(filename)
@@ -346,6 +422,7 @@ class MiAZUtil(GObject.GObject):
     def datetime_to_string(self, adate: datetime) -> str:
         return adate.strftime("%Y%m%d")
 
+    @functools.lru_cache(maxsize=4096)
     def string_to_datetime(self, adate: str) -> datetime:
         try:
             return datetime.strptime(adate, "%Y%m%d").date()
@@ -387,6 +464,45 @@ class MiAZUtil(GObject.GObject):
         with zipfile.ZipFile(filepath, "r") as z:
             return z.namelist()
 
+    @staticmethod
+    def get_install_mode() -> str:
+        """Return how this MiAZ instance is being run.
+
+        One of:
+          'flatpak'  : inside a Flatpak sandbox
+          'snap'     : inside a Snap confinement
+          'appimage' : from an AppImage FUSE mount
+          'system'   : installed under /usr or /opt (system-wide)
+          'user'     : installed under the user's home (e.g. ~/.local)
+          'source'   : running from a source checkout (development)
+        """
+        if os.environ.get('FLATPAK_ID') or os.path.exists('/.flatpak-info'):
+            return 'flatpak'
+        if os.environ.get('SNAP') or os.environ.get('SNAP_NAME'):
+            return 'snap'
+        if os.environ.get('APPIMAGE') or os.environ.get('APPDIR'):
+            return 'appimage'
+
+        # _buildconfig.py is generated by Meson at install time, so its
+        # absence means we are running from a source checkout.
+        try:
+            from MiAZ import _buildconfig  # noqa: F401
+        except ImportError:
+            return 'source'
+
+        try:
+            from MiAZ.env import ENV
+            pkgdatadir = os.path.realpath(ENV['APP'].get('PGKDATADIR', '') or '')
+        except Exception:
+            pkgdatadir = ''
+        home = os.path.realpath(os.path.expanduser('~'))
+
+        if pkgdatadir.startswith(('/usr/', '/opt/')):
+            return 'system'
+        if home and pkgdatadir.startswith(home + os.sep):
+            return 'user'
+        return 'source'
+
     def is_remote_path(self, path_or_uri: str) -> bool:
         # Convert to Gio.File using path or URI
         is_uri = "://" in path_or_uri
@@ -403,7 +519,7 @@ class MiAZUtil(GObject.GObject):
             return info.get_attribute_boolean('filesystem::remote')
 
         except Exception as e:
-            print(f"Warning: Could not determine if file is remote: {e}")
+            self.log.warning(f"Could not determine if file is remote: {e}")
             return False
 
     def check_remote_directory_sync(self, path, timeout_seconds=5):
@@ -433,6 +549,4 @@ class MiAZUtil(GObject.GObject):
 
         return result["success"], result["error"]
 
-def which(program):
-    """Check if a program is available in $PATH."""
-    return shutil.which(program)
+

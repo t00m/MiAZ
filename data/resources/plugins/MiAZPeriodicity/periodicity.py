@@ -11,7 +11,6 @@
 import os
 from gettext import gettext as _
 
-from gi.repository import Adw
 from gi.repository import Gtk
 from gi.repository import Gio
 from gi.repository import GObject
@@ -38,7 +37,11 @@ plugin_info = {
     }
 
 
+# Default value assigned to documents without an explicit periodicity
+DEFAULT_PERIODICITY = 'OD'
+
 default_available_data = {
+    'OD': _('On demand'),
     '1D': _('Daily'),
     '1W': _('Weekly'),
     '1M': _('Monthly'),
@@ -118,8 +121,7 @@ class MiAZPeriodicityView(MiAZConfigView):
         self.data_dir = self.plugin.get_data_dir()
         self.data_file = self.plugin.get_data_file()
         if self.config_dir is None:
-            raise
-        super(MiAZConfigView, self).__init__(app, edit=True)
+            raise RuntimeError("MiAZPeriodicity: config_dir is None")
         super().__init__(app, config_name=f'{i_confname}', custom_config=config)
 
     def _setup_view_finish(self):
@@ -142,6 +144,8 @@ class MiAZPeriodicityPlugin(MiAZExtension):
         ## Get pointer to app
         self.app = self.object.app
         self.plugin = MiAZPlugin(self.app)
+        self._data = None
+        self._data_file = None
 
         ## Initialize plugin
         self.plugin.register(self, plugin_info)
@@ -157,17 +161,49 @@ class MiAZPeriodicityPlugin(MiAZExtension):
 
         # Connect signals to startup
         self.workspace = self.app.get_widget('workspace')
-        self.workspace.connect('workspace-loaded', self.startup)
-        self.util.connect('filename-renamed', self._on_filename_renamed)
-        self.util.connect('filename-deleted', self._on_filename_deleted)
+        if self.workspace.is_loaded():
+            self.startup()
+        else:
+            self._startup_handler = self.workspace.connect('workspace-loaded', self.startup)
+        self._filename_added_handler = self.util.connect('filename-added', self._on_filename_added)
+        self._filename_renamed_handler = self.util.connect('filename-renamed', self._on_filename_renamed)
+        self._filename_deleted_handler = self.util.connect('filename-deleted', self._on_filename_deleted)
 
     def do_deactivate(self):
-        self.log.warning("Deactivation not implemented")
+        plugin_name = self.plugin.get_name()
+        dropdown = self.app.get_widget(f'plugin-{plugin_name}-dropdown')
+        if dropdown is not None:
+            dd_parent = dropdown.get_parent()
+            if dd_parent is not None:
+                dd_parent.remove(dropdown)
+            dd_size_group = self.app.get_widget('sidebar-dropdown-size-group')
+            if dd_size_group is not None:
+                dd_size_group.remove_widget(dropdown)
+            plugin_dropdowns = self.app.get_widget('plugin-dropdowns')
+            if plugin_dropdowns is not None and dropdown in plugin_dropdowns:
+                plugin_dropdowns.remove(dropdown)
+            self.app.remove_widget(f'plugin-{plugin_name}-dropdown')
+        section = self.app.get_widget('sidebar-plugin-section')
+        if section is not None and hasattr(self, '_sidebar_item'):
+            section.remove(self._sidebar_item)
+        self.workspace.unregister_filter_view(f'{i_title}')
+        if hasattr(self, '_used_updated_handler'):
+            self.config.disconnect(self._used_updated_handler)
+        if hasattr(self, '_selected_item_handler') and dropdown is not None:
+            dropdown.disconnect(self._selected_item_handler)
+        if hasattr(self, '_filename_added_handler'):
+            self.util.disconnect(self._filename_added_handler)
+        if hasattr(self, '_filename_renamed_handler'):
+            self.util.disconnect(self._filename_renamed_handler)
+        if hasattr(self, '_filename_deleted_handler'):
+            self.util.disconnect(self._filename_deleted_handler)
+        if hasattr(self, '_startup_handler'):
+            self.workspace.disconnect(self._startup_handler)
         self.plugin.set_started(False)
 
     def startup(self, *args):
         if not self.plugin.started():
-            # Get submenu for this plugin (subcategory)
+            # Always reinstall workspace menu entries (cleared by _on_plugins_updated)
             submenu = self.plugin.install_menu_entry()
 
             # Install plugin submenu
@@ -180,46 +216,54 @@ class MiAZPeriodicityPlugin(MiAZExtension):
             plugin_menu.append_item(menuitem)
             submenu.append_submenu(_('{i_title}').format(i_title=i_title), plugin_menu)
 
-            ## Set factory data
-            filepath = self.plugin.get_config_file_default_available_data()
-            self.util.json_save(filepath, default_available_data)
-
-            # Get config
-            self.config = MiAZConfigPeriodicity(self.app, self.plugin)
-
-            # Dropdown for custom filters
+            # One-time setup guarded by the dropdown widget sentinel
             plugin_name = self.plugin.get_name()
-            dropdown = self.factory.create_dropdown_generic(item_type=item_type, ellipsize=True, enable_search=True)
-            self.app.add_widget(f'plugin-{plugin_name}-dropdown', dropdown)
-            self.app.get_widget('plugin-dropdowns').append(dropdown)
-            self.config.connect('used-updated', self.actions.dropdown_populate, dropdown, item_type, True, True)
-            self.actions.dropdown_populate(self.config, dropdown, item_type, True, True)
-            dropdown.connect("notify::selected-item", self.workspace.update)
-            dropdown.set_size_request(190, -1)
-            dd_size_group = self.app.get_widget('sidebar-dropdown-size-group')
-            if dd_size_group is not None:
-                dd_size_group.add_widget(dropdown)
-            section = self.app.get_widget('sidebar-plugin-section')
-            icon_path = self.plugin.get_icon_path()
-            if icon_path:
-                img = Gtk.Image.new_from_file(icon_path)
-                img.set_pixel_size(16)
-                img.set_valign(Gtk.Align.CENTER)
-                suffix_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
-                suffix_box.append(img)
-                suffix_box.append(dropdown)
-                section.append(Adw.SidebarItem(title='', suffix=suffix_box))
-            else:
-                section.append(Adw.SidebarItem(title=i_title, suffix=dropdown))
+            if self.app.get_widget(f'plugin-{plugin_name}-dropdown') is None:
+                ## Set factory data
+                filepath = self.plugin.get_config_file_default_available_data()
+                self.util.json_save(filepath, default_available_data)
 
-            self.workspace.register_filter_view(f'{i_title}', self._do_filter_view)
+                # Get config
+                self.config = MiAZConfigPeriodicity(self.app, self.plugin)
+
+                # Ensure the default value exists and assign it to every
+                # document that has no periodicity yet (transparent to the user)
+                self._ensure_default_value()
+                self._apply_default_assignments()
+
+                # Dropdown for custom filters
+                dropdown = self.factory.create_dropdown_generic(item_type=item_type, ellipsize=True, enable_search=True)
+                self.app.add_widget(f'plugin-{plugin_name}-dropdown', dropdown)
+                self.app.get_widget('plugin-dropdowns').append(dropdown)
+                self._used_updated_handler = self.config.connect('used-updated', self.actions.dropdown_populate, dropdown, item_type, True, False)
+                self.actions.dropdown_populate(self.config, dropdown, item_type, True, False)
+                self._selected_item_handler = dropdown.connect("notify::selected-item", self.workspace.update)
+                dropdown.set_size_request(190, -1)
+                dd_size_group = self.app.get_widget('sidebar-dropdown-size-group')
+                if dd_size_group is not None:
+                    dd_size_group.add_widget(dropdown)
+                section = self.app.get_widget('sidebar-plugin-section')
+                if section is not None:
+                    icon_path = self.plugin.get_icon_path()
+                    if icon_path:
+                        img = Gtk.Image.new_from_file(icon_path)
+                        img.set_pixel_size(16)
+                        img.set_valign(Gtk.Align.CENTER)
+                        box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
+                        box.set_hexpand(True)
+                        box.append(img)
+                        box.append(dropdown)
+                        self._sidebar_item = box
+                    else:
+                        self._sidebar_item = dropdown
+                    section.append(self._sidebar_item)
+                self.workspace.register_filter_view(f'{i_title}', self._do_filter_view)
+                self.log.info(f"Plugin {plugin_name} fully initialized")
 
             # Plugin configured
             self.plugin.set_started(started=True)
 
     def _do_filter_view(self, item, filter_list_model):
-        display = False         # set display to false
-        doc_id = item.id         # Document to display (or not)
         plugin_name = self.plugin.get_name()
         dropdown = self.app.get_widget(f'plugin-{plugin_name}-dropdown')
         selected_item = dropdown.get_selected_item()    # Property key selected to filter
@@ -227,20 +271,20 @@ class MiAZPeriodicityPlugin(MiAZExtension):
             return True
 
         pid = selected_item.id
-        data = self._get_data()
-
+        # Inactive filter: skip reading the data file. This runs once per
+        # document on every refilter, so returning early keeps free-text
+        # search instant when no periodicity is selected.
         if pid == 'Any':
-            display = True
-        elif pid == 'None':
-            display = False
-        else:
-            try:
-                docs = data[f'{i_confname}'][pid]
-                if doc_id in docs:
-                    display = True
-            except KeyError:
-                display = False
-        return display
+            return True
+
+        doc_id = item.id
+        data = self._get_data()
+        if pid == 'None':
+            return doc_id not in data.get('documents', {})
+        try:
+            return doc_id in data[f'{i_confname}'][pid]
+        except KeyError:
+            return False
 
     def _set_property(self, *args):
         parent = self.workspace.get_root()
@@ -255,7 +299,12 @@ class MiAZPeriodicityPlugin(MiAZExtension):
             self.srvdlg.show_error(title=_('Action ignored'), body=_('You must select at least one document'), parent=parent)
 
     def _get_data(self):
+        # Cache the parsed data file and reuse it until the active repository
+        # (and therefore the data file path) changes. Writers mutate this same
+        # object in place before saving, so the cache stays current.
         datafile = self.plugin.get_data_file()
+        if self._data is not None and self._data_file == datafile:
+            return self._data
         try:
             data = self.util.json_load(filepath=datafile)
         except FileNotFoundError:
@@ -264,6 +313,8 @@ class MiAZPeriodicityPlugin(MiAZExtension):
             data['documents'] = {}
             data[f'{i_confname}'] = {}
             self.util.json_save(filepath=datafile, adict=data)
+        self._data = data
+        self._data_file = datafile
         return data
 
     def _on_set_property_response(self, dialog, response, dropdown):
@@ -312,13 +363,41 @@ class MiAZPeriodicityPlugin(MiAZExtension):
             self.util.json_save(datafile, data)
         return change
 
+    def _ensure_default_value(self):
+        """Make sure the default periodicity value is both available and used."""
+        title = _('On demand')
+        if not self.config.exists_available(DEFAULT_PERIODICITY):
+            self.config.add_available(DEFAULT_PERIODICITY, title)
+        if not self.config.exists_used(DEFAULT_PERIODICITY):
+            self.config.add_used(DEFAULT_PERIODICITY, title)
+
+    def _apply_default_assignments(self):
+        """Assign the default periodicity to every repository document that has
+        none. Runs on activation, transparent to the user, debug-logged only."""
+        repository = self.app.get_service('repo')
+        try:
+            docs = self.util.get_files(repository.docs)
+        except Exception:
+            docs = []
+        unassigned = [os.path.basename(fp) for fp in docs
+                      if self._get_pid(os.path.basename(fp)) is None]
+        if unassigned:
+            self._set_property_real(unassigned, DEFAULT_PERIODICITY)
+            self.log.debug(
+                f"{i_title}: default '{DEFAULT_PERIODICITY}' applied to "
+                f"{len(unassigned)} document(s) without periodicity")
+
     def _unset_property(self, *args):
         parent = self.workspace.get_root()
         selected_documents = []
         for item in self.workspace.get_selected_items():
             selected_documents.append(item.id)
         self._unset_property_real(selected_documents)
-        self.srvdlg.show_toast(_('Removed {i_confname} for selected documents').format(i_confname=i_confname))
+        # Documents must always keep a periodicity: fall back to the default
+        if selected_documents:
+            self._set_property_real(selected_documents, DEFAULT_PERIODICITY)
+            self.workspace.update()
+        self.srvdlg.show_toast(_('Reset {i_confname} to default for selected documents').format(i_confname=i_confname))
 
     def _unset_property_real(self, selected_documents):
         change = False
@@ -389,6 +468,12 @@ class MiAZPeriodicityPlugin(MiAZExtension):
             return documents[doc_id]
         except KeyError:
             return None
+
+    def _on_filename_added(self, util, fp_target):
+        target = os.path.basename(fp_target)
+        if self._get_pid(target) is None:
+            self._set_property_real([target], DEFAULT_PERIODICITY)
+            self.log.debug(f"{i_title}: default '{DEFAULT_PERIODICITY}' assigned to new document '{target}'")
 
     def _on_filename_renamed(self, util, fp_source, fp_target):
         source = os.path.basename(fp_source)

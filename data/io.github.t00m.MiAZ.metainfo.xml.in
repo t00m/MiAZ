@@ -6,12 +6,12 @@
   <name>MiAZ</name>
   <summary>Personal Document Organizer</summary>
   <description>
-    <p>Keeping family records, school files, invoices, and administrative paperwork organised is a constant challenge — especially when documents come in from many different countries and institutions.</p>
+    <p>Keeping family records, school files, invoices, and administrative paperwork organised is a constant challenge, especially when documents come in from many different countries and institutions.</p>
     <p>MiAZ solves this with a simple, consistent file-naming convention of seven fields: date, country, group, sender, purpose, concept, and recipient. Scan a letter, download an email attachment, drop it into your MiAZ repository, and the app guides you through naming it correctly.</p>
     <p>Key features:</p>
     <ul>
       <li>Multiple independent document repositories</li>
-      <li>No database — the directory is the database</li>
+      <li>No database. The directory is the database</li>
       <li>Fast workspace that handles thousands of documents</li>
       <li>Powerful sidebar with filters for every field</li>
       <li>Single and mass renaming of documents</li>
@@ -46,32 +46,46 @@
   </branding>
   <screenshots>
     <screenshot type="default">
-      <image type="source">https://raw.githubusercontent.com/t00m/MiAZ/main/data/docs/screenshots/MiAZ-Workspace-filters.png</image>
+      <image type="source" width="1330" height="850">https://raw.githubusercontent.com/t00m/MiAZ/main/data/docs/screenshots/MiAZ-Workspace-filters.png</image>
       <caption>Main workspace displaying the document list and sidebar filters in action</caption>
     </screenshot>
     <screenshot>
-      <image type="source">https://raw.githubusercontent.com/t00m/MiAZ/main/data/docs/screenshots/MiAZ-Workspace-menu.png</image>
-      <caption>Document actions menu</caption>
-    </screenshot>
-    <screenshot>
-      <image type="source">https://raw.githubusercontent.com/t00m/MiAZ/main/data/docs/screenshots/MiAZ-repository-settings.png</image>
+      <image type="source" width="1074" height="778">https://raw.githubusercontent.com/t00m/MiAZ/main/data/docs/screenshots/MiAZ-repository-settings.png</image>
       <caption>Repository settings</caption>
     </screenshot>
     <screenshot>
-      <image type="source">https://raw.githubusercontent.com/t00m/MiAZ/main/data/docs/screenshots/MiAZ-repository-plugins.png</image>
+      <image type="source" width="1074" height="778">https://raw.githubusercontent.com/t00m/MiAZ/main/data/docs/screenshots/MiAZ-repository-plugins.png</image>
       <caption>Manage repository plugins</caption>
     </screenshot>
     <screenshot>
-      <image type="source">https://raw.githubusercontent.com/t00m/MiAZ/main/data/docs/screenshots/MiAZ-About.png</image>
+      <image type="source" width="464" height="341">https://raw.githubusercontent.com/t00m/MiAZ/main/data/docs/screenshots/MiAZ-Workspace-menu.png</image>
+      <caption>Document actions menu</caption>
+    </screenshot>
+    <screenshot>
+      <image type="source" width="375" height="528">https://raw.githubusercontent.com/t00m/MiAZ/main/data/docs/screenshots/MiAZ-About.png</image>
       <caption>About MiAZ</caption>
     </screenshot>
   </screenshots>
   <releases>
-    <release version="0.1.25" date="2025-05-02" urgency="medium">
+    <release version="0.1.26" date="2026-05-16" urgency="medium">
+      <description>
+        <p>AI-assisted renaming, document notes, column visibility, and rename dialog improvements.</p>
+        <ul>
+          <li>New plugin MiAZAIAssistant: propose all seven filename fields via Claude, OpenAI, Gemini, or Ollama</li>
+          <li>New plugin MiAZNotes: attach Markdown notes to any document with faceted filtering and backup/restore</li>
+          <li>New plugin MiAZColumnVisibility: toggle workspace column visibility</li>
+          <li>Rename dialog: inline Add buttons on restricted-vocabulary rows</li>
+          <li>Rename dialog: Concept autocomplete via difflib-backed popover</li>
+          <li>Workspace: Adw.InlineViewSwitcher for workspace view switching</li>
+          <li>Backend: filename_guess_date() probes PDF metadata, EXIF, and file mtime</li>
+        </ul>
+      </description>
+    </release>
+    <release version="0.1.25" date="2026-05-05" urgency="medium">
       <description>
         <p>Sidebar redesign, unified plugin system, performance improvements and startup fixes.</p>
         <ul>
-          <li>Sidebar rebuilt with Adw.Sidebar — icon-only filter rows and resizable pane</li>
+          <li>Sidebar rebuilt with Adw.Sidebar (icon-only filter rows and resizable pane)</li>
           <li>Plugin system unified: no more system/user distinction</li>
           <li>Plugin sidebar filters now show the plugin icon</li>
           <li>Review button turns red when pending documents exist</li>
@@ -80,7 +94,6 @@
         </ul>
       </description>
     </release>
-    <release version="0.1.25" date="2026-05-05" urgency="low" />
     <release version="0.1.8" date="2025-07-21" urgency="low" />
     <release version="0.1.7" date="2025-03-22" urgency="low" />
     <release version="0.0.48" date="2024-07-12" urgency="low" />

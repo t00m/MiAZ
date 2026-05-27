@@ -32,7 +32,7 @@ class MiAZConfigView(MiAZSelector):
     config_for = None
 
     def __init__(self, app, config_name=None, custom_config=None):
-        # ~ super(MiAZSelector, self).__init__(spacing=0, orientation=Gtk.Orientation.VERTICAL)
+        super().__init__(app)
         self.app = app
         self.log = MiAZLog('MiAZConfigView')
         self.repository = self.app.get_service('repo')
@@ -44,10 +44,14 @@ class MiAZConfigView(MiAZSelector):
         except Exception as error:
             self.config = custom_config
         self._setup_view_finish()
-        self.config.connect('used-updated', self.update_views)
-        self.config.connect('available-updated', self.update_views)
+        self._sid_used = None
+        self._sid_avail = None
+        self._update_views_pending = False
+        # Connect signals only while the widget is on screen so stale instances
+        # opened from previous settings windows don't keep firing updates.
+        self.connect('map', self._on_configview_mapped)
+        self.connect('unmap', self._on_configview_unmapped)
         self.set_vexpand(True)
-        # ~ self.log.debug(f"Configview for {config_name} initialited")
         item_type = self.config.model
         i_title = _(item_type.__title__)
         i_title_plural = _(item_type.__title_plural__)
@@ -56,6 +60,31 @@ class MiAZConfigView(MiAZSelector):
         tooltip=_('Disable ') + i_title.lower()
         self.btnRemoveFromUsed.set_tooltip_markup(tooltip)
         self.dialog_title = _('{item_types} management').format(item_types=i_title_plural)
+
+    def _on_configview_mapped(self, *args):
+        if self._sid_used is None:
+            self._sid_used = self.config.connect('used-updated', self._schedule_update_views)
+        if self._sid_avail is None:
+            self._sid_avail = self.config.connect('available-updated', self._schedule_update_views)
+        self.update_views()
+
+    def _on_configview_unmapped(self, *args):
+        if self._sid_used is not None:
+            self.config.disconnect(self._sid_used)
+            self._sid_used = None
+        if self._sid_avail is not None:
+            self.config.disconnect(self._sid_avail)
+            self._sid_avail = None
+
+    def _schedule_update_views(self, *args):
+        if not self._update_views_pending:
+            self._update_views_pending = True
+            GLib.idle_add(self._deferred_update_views)
+
+    def _deferred_update_views(self):
+        self._update_views_pending = False
+        self.update_views()
+        return False
 
     def update_config(self):
         self.config = self.conf[self.config_name]
@@ -84,8 +113,6 @@ class MiAZRepositories(MiAZConfigView):
     current = None
 
     def __init__(self, app):
-        self.app = app
-        super(MiAZConfigView, self).__init__(app, edit=True)
         super().__init__(app, 'Repository')
 
     def _setup_view_finish(self):
@@ -98,12 +125,11 @@ class MiAZRepositories(MiAZConfigView):
 
     def _on_item_available_add(self, *args):
         window = self.viewSl.get_root()
-        title = self.dialog_title + _(' : Add')
-        key1 = _('<b>Repository name</b>')
-        key2 = _('Select target folder')
-        # ~ search_term = self.entry.get_text()
+        title = _('Add repository')
+        key1 = _('Repository name')
+        key2 = _('Location')
         this_repo = MiAZDialogAddRepo(self.app)
-        dialog = this_repo.create(title=title, key1=key1, key2=key2)
+        dialog = this_repo.create(title=title, key1=key1, key2=key2, action_label=_('Add'))
         this_repo.set_value1('')
         this_repo.set_value2(GLib.get_user_special_dir(GLib.UserDirectory.DIRECTORY_DOCUMENTS))
         dialog.connect('response', self._on_response_item_available_add, this_repo, window)
@@ -134,11 +160,11 @@ class MiAZRepositories(MiAZConfigView):
         item_type = self.config.model
         i_title = item_type.__title__
         parent = self.viewSl.get_root()
-        title = self.dialog_title + _(' : Edit')
-        key1 = _('<b>Repository name</b>')
-        key2 = _('Select target folder')
+        title = _('Edit repository')
+        key1 = _('Repository name')
+        key2 = _('Location')
         this_repo = MiAZDialogAddRepo(self.app)
-        dialog = this_repo.create(title=title, key1=key1, key2=key2)
+        dialog = this_repo.create(title=title, key1=key1, key2=key2, action_label=_('Save'))
         this_repo.disable_key1()
         this_repo.set_value1(item.id)
         this_repo.set_value2(item.title)
@@ -204,63 +230,65 @@ class MiAZRepositories(MiAZConfigView):
         title = self.dialog_title
 
         dd_repo = self.app.get_widget('window-settings-dropdown-repository-active')
-        if dd_repo is not None:
-            signal = self.app.get_widget('signal-dd_repo')
+        signal = self.app.get_widget('signal-dd_repo') if dd_repo is not None else None
+        if dd_repo is not None and signal is not None:
             dd_repo.handler_block(signal)
-        items_used = self.config.load_used()
-        selected_item = self.viewAv.get_selected()
-        if selected_item is None:
-            return
+        try:
+            items_used = self.config.load_used()
+            selected_item = self.viewAv.get_selected()
+            if selected_item is None:
+                return
 
-        is_used = selected_item.id in items_used
-        item_type = self.config.model
-        i_title = item_type.__title__
-        if not is_used:
-            items_used[selected_item.id] = selected_item.title
-            self.config.save_used(items=items_used)
-            body = _('{title} {item} ready to be used').format(title=i_title, item=selected_item.id)
-            self.log.debug(body)
-        else:
-            body = f"{i_title} {selected_item.id} is already being used"
-            self.log.debug(body)
-        if dd_repo is not None:
-            dd_repo.handler_unblock(signal)
+            is_used = selected_item.id in items_used
+            item_type = self.config.model
+            i_title = item_type.__title__
+            if not is_used:
+                items_used[selected_item.id] = selected_item.title
+                self.config.save_used(items=items_used)
+                body = _('{title} {item} ready to be used').format(title=i_title, item=selected_item.id)
+                self.log.debug(body)
+            else:
+                body = _('{title} {item} is already being used').format(title=i_title, item=selected_item.id)
+                self.log.debug(body)
 
-        if len(self.config.load_used()) == 1:
-            config = self.app.get_config_dict()
-            config['App'].set('current', selected_item.id)
-            self.log.debug(f"Repository {selected_item.id} enabled")
-            workflow = self.app.get_service('workflow')
-            workflow.switch_start()
-            body=_('{title} {item} set as default').format(title=i_title, item=selected_item.id)
-            self.log.info(body)
-        srvdlg.show_toast(body)
+            if len(self.config.load_used()) == 1:
+                config = self.app.get_config_dict()
+                config['App'].set('current', selected_item.id)
+                self.log.debug(f"Repository {selected_item.id} enabled")
+                workflow = self.app.get_service('workflow')
+                workflow.switch_start()
+                body = _('{title} {item} set as default').format(title=i_title, item=selected_item.id)
+                self.log.info(body)
+            srvdlg.show_toast(body)
+        finally:
+            if dd_repo is not None and signal is not None:
+                dd_repo.handler_unblock(signal)
 
     def _on_item_used_remove(self, *args):
         # Trick to avoid restart app when repos are enabled/disabled
-        ## Block signal "dd_repo > notify::selected-item"
         dd_repo = self.app.get_widget('window-settings-dropdown-repository-active')
         signal = self.app.get_widget('signal-dd_repo')
         if signal is not None:
             dd_repo.handler_block(signal)
+        try:
+            items_available = self.config.load_available()
+            items_used = self.config.load_used()
+            selected_item = self.viewSl.get_selected()
+            if selected_item is None:
+                return
 
-        items_available = self.config.load_available()
-        items_used = self.config.load_used()
-        selected_item = self.viewSl.get_selected()
-        if selected_item is None:
-            return
-
-        item_type = self.config.model
-        i_title = item_type.__title__
-        items_available[selected_item.id] = selected_item.title
-        self.log.debug(f"{i_title} {selected_item.id} added back to the list of available items")
-        del items_used[selected_item.id]
-        self.log.debug(f"{i_title} {selected_item.id} removed from de list of used items")
-        self.config.save_used(items=items_used)
-        self.config.save_available(items=items_available)
-        ## Unblock signal "dd_repo > notify::selected-item"
-        if signal is not None:
-            dd_repo.handler_unblock(signal)
+            item_type = self.config.model
+            i_title = item_type.__title__
+            items_available[selected_item.id] = selected_item.title
+            self.log.debug(f"{i_title} {selected_item.id} added back to the list of available items")
+            del items_used[selected_item.id]
+            self.log.debug(f"{i_title} {selected_item.id} removed from de list of used items")
+            self.config.save_used(items=items_used)
+            self.config.save_available(items=items_available)
+            self.srvdlg.show_toast(_('{title} {item} removed from de list of used items').format(title=i_title, item=selected_item.id))
+        finally:
+            if signal is not None:
+                dd_repo.handler_unblock(signal)
 
 
 class MiAZCountries(MiAZConfigView):
@@ -269,7 +297,6 @@ class MiAZCountries(MiAZConfigView):
     current = None
 
     def __init__(self, app):
-        super(MiAZConfigView, self).__init__(app, edit=True)
         super().__init__(app, 'Country')
 
     def _setup_view_finish(self):
@@ -289,8 +316,10 @@ class MiAZCountries(MiAZConfigView):
         items = []
         item_type = self.config.model
         countries = self.config.load_available()
+        used = self.config.load_used()
         for code in countries:
-            items.append(item_type(id=code, title=countries[code], icon=f'{code}.svg'))
+            if code not in used:
+                items.append(item_type(id=code, title=countries[code], icon=f'{code}.svg'))
         self.viewAv.update(items)
 
     def _update_view_used(self):
@@ -307,7 +336,6 @@ class MiAZGroups(MiAZConfigView):
     __gtype_name__ = 'MiAZGroups'
 
     def __init__(self, app):
-        super(MiAZConfigView, self).__init__(app, edit=True)
         super().__init__(app, 'Group')
 
     def _setup_view_finish(self):
@@ -323,7 +351,6 @@ class MiAZPeople(MiAZConfigView):
     __gtype_name__ = 'MiAZPeople'
 
     def __init__(self, app):
-        super(MiAZConfigView, self).__init__(app, edit=True)
         super().__init__(app, 'People')
 
     def _setup_view_finish(self):
@@ -339,7 +366,6 @@ class MiAZPeopleSentBy(MiAZConfigView):
     __gtype_name__ = 'MiAZSentBy'
 
     def __init__(self, app):
-        super(MiAZConfigView, self).__init__(app, edit=True)
         super().__init__(app, 'SentBy')
         # Trick to keep People sync for SentBy/SentTo
         self.config_paired = self.conf['SentTo']
@@ -358,7 +384,6 @@ class MiAZPeopleSentTo(MiAZConfigView):
     __gtype_name__ = 'MiAZSentTo'
 
     def __init__(self, app):
-        super(MiAZConfigView, self).__init__(app, edit=True)
         super().__init__(app, 'SentTo')
         # Trick to keep People sync for SentBy/SentTo
         self.config_paired = self.conf['SentBy']
@@ -377,7 +402,6 @@ class MiAZPurposes(MiAZConfigView):
     __gtype_name__ = 'MiAZPurposes'
 
     def __init__(self, app):
-        super(MiAZConfigView, self).__init__(app, edit=True)
         super().__init__(app, 'Purpose')
 
     def _setup_view_finish(self):
@@ -397,7 +421,6 @@ class MiAZPlugins(MiAZConfigView):
     current = None
 
     def __init__(self, app):
-        super(MiAZConfigView, self).__init__(app, edit=True)
         super().__init__(app, 'Plugin')
         boxopers = self.app.get_widget('selector-box-operations')
         factory = self.app.get_service('factory')
@@ -466,10 +489,12 @@ class MiAZPlugins(MiAZConfigView):
             system_plugins = util.json_load(ENV['APP']['PLUGINS']['INDEX'])
         except Exception:
             system_plugins = {}
+        used = self.config.load_used()
         items = []
         for plugin_id, info in system_plugins.items():
-            title = info.get('Description', plugin_id)
-            items.append(Plugin(id=plugin_id, title=_(title)))
+            if plugin_id not in used:
+                title = info.get('Description', plugin_id)
+                items.append(Plugin(id=plugin_id, title=_(title)))
         self.viewAv.update(items)
 
     def _update_view_used(self, items=None):
@@ -582,7 +607,7 @@ class MiAZPlugins(MiAZConfigView):
             body1 = _('<b>Action not possible</b>')
             body2 = _('Error: {error}').format(error=error)
             body = body1 + '\n' + body2
-            self.srvdlg.show_error(title=title, body=error, parent=self)
+            self.srvdlg.show_error(title=title, body=body, parent=self)
             self.log.error(f"Error import plugin: {error}")
 
     def _on_item_available_remove(self, *args):
@@ -602,8 +627,9 @@ class MiAZPlugins(MiAZConfigView):
         self.log.debug(f"Is '{selected_item.id}' used? {is_used}")
         title = self.dialog_title
         if not is_used:
-            body = _('You are about to delete <i>{title} {desc}</i>.\n\nAre you sure?').format(title=i_title.lower(), desc=item_dsc)
-            dialog = self.srvdlg.show_question(title=title, body=body)
+            heading = _('Delete {title}?').format(title=i_title.lower())
+            body = _('<i>{desc}</i> will be permanently removed.').format(desc=item_dsc)
+            dialog = self.srvdlg.show_confirmation(title=heading, body=body, confirm_label=_('Delete'))
             dialog.connect('response', self._on_item_available_remove_response, selected_item)
             dialog.present(self)
         else:
@@ -651,7 +677,7 @@ class MiAZPlugins(MiAZConfigView):
 
     def _configure_plugin_options(self, *args):
         srvdlg = self.app.get_service('dialogs')
-        title = 'Plugin management'
+        title = _('Plugin management')
         selected_plugin = self.viewSl.get_selected()
         if selected_plugin is None:
             return
@@ -665,15 +691,15 @@ class MiAZPlugins(MiAZConfigView):
                 try:
                     plugin.show_settings(widget=self)
                 except Exception as error:
-                    body = error
+                    body = _('Error: {error}').format(error=error)
                     self.log.error(error)
                     srvdlg.show_error(title=title, body=body, parent=self)
             else:
-                body = f"Plugin {selected_plugin.id} doesn't have a settings dialog"
+                body = _("Plugin {plugin} doesn't have a settings dialog").format(plugin=selected_plugin.id)
                 self.log.warning(body)
                 srvdlg.show_warning(title=title, body=body, parent=self)
         else:
-            body = f"Can't find plugin object for {plugin_id}!!"
+            body = _("Can't find plugin object for {plugin_id}!!").format(plugin_id=plugin_id)
             self.log.error(body)
             srvdlg.show_error(title=title, body=body, parent=self)
 
@@ -765,13 +791,13 @@ class MiAZPlugins(MiAZConfigView):
 
         # Build info dialog
         dialog = Adw.PreferencesDialog()
-        dialog.set_title('Plugin info')
+        dialog.set_title(_('Plugin info'))
         page_title = _('Properties')
         page_icon = "io.github.t00m.MiAZ-dialog-information-symbolic"
         page = Adw.PreferencesPage(title=page_title, icon_name=page_icon)
         dialog.add(page)
         group = Adw.PreferencesGroup()
-        group.set_title('Data Sheet')
+        group.set_title(_('Data Sheet'))
         page.add(group)
 
         # Add plugin info as key/value rows

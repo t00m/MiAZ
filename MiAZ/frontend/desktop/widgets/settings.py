@@ -22,6 +22,7 @@ from MiAZ.frontend.desktop.widgets.configview import MiAZPeopleSentTo
 from MiAZ.frontend.desktop.widgets.configview import MiAZRepositories
 from MiAZ.frontend.desktop.widgets.configview import MiAZPlugins
 from MiAZ.frontend.desktop.widgets.window import MiAZCustomWindow
+from MiAZ.frontend.desktop.widgets.dr import MiAZDRPage
 # ~ from MiAZ.frontend.desktop.widgets.pluginuimanager import MiAZPluginUIManager
 
 Configview = {}
@@ -63,12 +64,34 @@ class MiAZAppSettings(Adw.PreferencesDialog):
             if repo_id ==  repo.id:
                 dd_repo.set_selected(n)
             n += 1
+        self._update_active_repo_subtitle()
+
+    def _update_active_repo_subtitle(self, *args):
+        # dropdown_populate() rewrites Repository.title to a prettified name
+        # (id with underscores turned into spaces), so the model item no
+        # longer carries the path. Look up the absolute path in the repo
+        # config by id.
+        row = self.app.get_widget('window-setting-row-active-repository')
+        dd_repo = self.app.get_widget('window-settings-dropdown-repository-active')
+        if row is None or dd_repo is None:
+            return
+        repo = dd_repo.get_selected_item()
+        path = ''
+        if repo is not None:
+            repos_used = self.config_repos.load_used()
+            path = repos_used.get(repo.id, '')
+        row.set_subtitle(path)
 
     def _build_ui(self):
         self.set_title(_('Application settings'))
         self.set_search_enabled(False)
         self._build_ui_page_preferences()
+        self._build_ui_page_dr()
         # ~ self._build_ui_page_aspect()
+
+    def _build_ui_page_dr(self):
+        page = MiAZDRPage(self.app)
+        self.add(page)
 
     def _build_ui_page_aspect(self):
         # Create preferences page
@@ -121,12 +144,22 @@ class MiAZAppSettings(Adw.PreferencesDialog):
         self.config_repos.connect('used-updated', self.actions.dropdown_populate, dd_repo, Repository, False, False)
         signal = dd_repo.connect("notify::selected-item", self._on_use_repo)
         self.app.add_widget('signal-dd_repo', signal)
+        dd_repo.connect("notify::selected-item", self._update_active_repo_subtitle)
         row.add_suffix(dd_repo)
+        self._update_active_repo_subtitle()
 
         #### Manage repositories
         btnManageRepos = self.factory.create_button(icon_name='io.github.t00m.MiAZ-study-symbolic', callback=self._on_manage_repositories, tooltip="Manage repositories")
         btnManageRepos.set_valign(Gtk.Align.CENTER)
         row.add_prefix(btnManageRepos)
+
+        ## Group User Interface
+        # Plugins whose Subcategory is "User Interface" register their rows
+        # here via the 'settings-loaded' signal on MiAZActions.
+        ui_group = Adw.PreferencesGroup()
+        ui_group.set_title(_('User Interface'))
+        page.add(ui_group)
+        self.app.add_widget('window-preferences-page-ui-group', ui_group)
 
     def _create_widget_for_repositories(self):
         box = self.factory.create_box_vertical(hexpand=True, vexpand=True)
@@ -164,7 +197,7 @@ class MiAZAppSettings(Adw.PreferencesDialog):
 
         if response == 'apply':
             config['App'].set('current', repo.id)
-            self.log.debug(_('Repository %s enabled' % repo.id))
+            self.log.debug('Repository %s enabled', repo.id)
             actions = self.app.get_service('actions')
             actions.application_restart()
         else:
@@ -185,7 +218,7 @@ class MiAZAppSettings(Adw.PreferencesDialog):
             ## Unblock signal "dd_repo > notify::selected-item"
             dd_repo.handler_unblock(signal)
 
-            srvdlg.show_error(_('Repository management'), body=_('Action canceled. Repository not switched'), parent=dialog)
+            srvdlg.show_toast(_('Action canceled. Repository not switched'))
 
     def _on_manage_repositories(self, *args):
         widget = self._create_widget_for_repositories()
@@ -239,7 +272,7 @@ class MiAZRepoSettings(MiAZCustomWindow):
             box.append(selector)
             page.set_start_widget(box)
             wdgLabel = self.factory.create_box_horizontal()
-            wdgLabel.get_style_context().add_class(class_name='caption')
+            wdgLabel.add_css_class('caption')
             icon_name = f"io.github.t00m.MiAZ-res-{i_id.lower()}"
             icon = self.icman.get_image_by_name(icon_name)
             icon.set_hexpand(False)

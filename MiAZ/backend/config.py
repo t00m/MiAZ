@@ -43,14 +43,6 @@ class MiAZConfig(GObject.GObject):
     def __repr__(self):
         return __class__.__name__
 
-    def test(self):
-        self.log.debug(f"Test for Config {self}")
-        self.log.debug(f"\tModel: {self.model}")
-        self.log.debug(f"\tConfig for: {self.config_for}")
-        self.log.debug(f"\tConfig for used: {self.used}")
-        self.log.debug(f"\tConfig for available: {self.available}")
-
-
     def setup(self):
         if not os.path.exists(self.available):
             if self.default is not None:
@@ -181,38 +173,27 @@ class MiAZConfig(GObject.GObject):
         config = self.load(self.available)
         return key in config
 
-    def add_available_batch(self, keysvalues: list):
+    def _add_batch(self, filepath: str, keysvalues: list):
         util = self.app.get_service('util')
-        filepath = self.available
         items = self.load(filepath)
         saved = 0
         for key, value in keysvalues:
             if len(key.strip()) != 0:
-                # ~ if key not in items:
                 key = util.valid_key(key)
                 items[key] = value
                 saved += 1
         if saved > 0:
             self.save(filepath, items=items)
             self.log.info(f"{self.config_for} - Added {saved} keys to {filepath}")
+
+    def add_available_batch(self, keysvalues: list):
+        self._add_batch(self.available, keysvalues)
 
     def add_available(self, key: str, value: str = ''):
         self.add(self.available, key, value)
 
     def add_used_batch(self, keysvalues: list):
-        util = self.app.get_service('util')
-        filepath = self.used
-        items = self.load(filepath)
-        saved = 0
-        for key, value in keysvalues:
-            if len(key.strip()) != 0:
-                # ~ if key not in items:
-                key = util.valid_key(key)
-                items[key] = value
-                saved += 1
-        if saved > 0:
-            self.save(filepath, items=items)
-            self.log.info(f"{self.config_for} - Added {saved} keys to {filepath}")
+        self._add_batch(self.used, keysvalues)
 
     def add_used(self, key: str, value: str = '') -> bool:
         return self.add(self.used, key, value)
@@ -242,19 +223,12 @@ class MiAZConfig(GObject.GObject):
         self.remove_batch(self.used, keys)
 
     def remove_available(self, key: str):
-        updated = self.remove(self.available, key)
-        if updated:
-            self.emit('available-updated')
-        return updated
+        return self.remove(self.available, key)
 
     def remove_used(self, key: str) -> bool:
-        updated = self.remove(self.used, key)
-        if updated:
-            self.emit('used-updated')
-        return updated
+        return self.remove(self.used, key)
 
     def remove_batch(self, filepath: str, keys: list):
-        # FIXME: check del operation
         items = self.load(filepath)
         for key in keys:
             if key in items:
@@ -263,7 +237,6 @@ class MiAZConfig(GObject.GObject):
         self.save(filepath=filepath, items=items)
 
     def remove(self, filepath: str, key: str) -> bool:
-        # FIXME: check del operation
         removed = False
         if key is None or key.strip() == '':
             self.log.warning('Key is None or empty. Remove skipped')

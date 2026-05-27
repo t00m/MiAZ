@@ -8,6 +8,8 @@ import os
 from datetime import datetime
 from gettext import gettext as _
 
+from gi.repository import Gdk
+from gi.repository import Gio
 from gi.repository import Gtk
 from gi.repository import GLib
 from gi.repository import Pango
@@ -15,6 +17,7 @@ from gi.repository import Pango
 from MiAZ.env import ENV
 from MiAZ.backend.log import MiAZLog
 from MiAZ.backend.models import Group, Country, Purpose, Concept, SentBy, SentTo
+from MiAZ.frontend.desktop.services.dialogs import MiAZDialogAdd
 from MiAZ.frontend.desktop.widgets.configview import MiAZCountries, MiAZGroups, MiAZPurposes, MiAZPeopleSentBy, MiAZPeopleSentTo
 from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewConcept
 
@@ -101,7 +104,7 @@ class MiAZRenameDialog(Gtk.Box):
         self._set_suggestion(self.dpdSentBy, self.suggested[3])
         self._set_suggestion(self.dpdPurpose, self.suggested[4])
         if len(self.suggested[5]) > 0:
-            self.entry_concept.set_text(self.suggested[5])
+            self._set_concept_text(self.suggested[5])
         self._set_suggestion(self.dpdSentTo, self.suggested[6])
         self.lblExt.set_text(self.extension)
         self.lblFilenameCur.set_markup(os.path.basename(self.doc))
@@ -132,7 +135,7 @@ class MiAZRenameDialog(Gtk.Box):
                 view = self.app.get_widget('window-rename-view-concepts')
                 try:
                     item = view.get_selected()
-                    self.entry_concept.set_text(item.title)
+                    self._set_concept_text(item.title)
                 except IndexError as error:
                     self.log.error(error)
 
@@ -171,15 +174,25 @@ class MiAZRenameDialog(Gtk.Box):
         button.connect('clicked', choose_concept, widget, self)
         return button
 
-    def __create_actionrow(self, title, item_type, conf) -> Gtk.Widget:
+    def __create_actionrow(self, title, item_type, conf, conf_obj=None) -> Gtk.Widget:
         i_title = item_type.__config_name__
         icon_name = f"io.github.t00m.MiAZ-res-{i_title.lower().replace(' ', '')}"
         icon = self.icons.get_image_by_name(name=icon_name)
         boxValue = self.__create_box_value()
+        btn_add = self.factory.create_button(
+            icon_name='list-add-symbolic',
+            tooltip=_('Add a new {title} to this repository').format(title=i_title.lower()),
+            css_classes=['flat'],
+        )
+        if conf_obj is not None:
+            btn_add.connect('clicked', self._on_inline_add_value, item_type, conf_obj)
+        else:
+            btn_add.set_sensitive(False)
         button = self.factory.create_button(icon_name=icon_name, title='')
         dropdown = self.factory.create_dropdown_generic(item_type, ellipsize=False) #, item)
         self.actions.dropdown_populate(conf, dropdown, item_type)
         boxValue.append(dropdown)
+        boxValue.append(btn_add)
         boxValue.append(button)
         row = self.factory.create_actionrow(title, prefix=icon, suffix=boxValue)
         self.boxMain.append(row)
@@ -214,7 +227,7 @@ class MiAZRenameDialog(Gtk.Box):
         popover.present()
         button.set_popover(popover)
         self.label_date = Gtk.Label()
-        self.label_date.get_style_context().add_class(class_name='caption')
+        self.label_date.add_css_class('caption')
         self.entry_date = Gtk.Entry()
         self.entry_date.set_visible(False)
         self.entry_date.set_max_length(8)
@@ -228,22 +241,7 @@ class MiAZRenameDialog(Gtk.Box):
         self.entry_date.connect('changed', self._on_changed_entry)
 
     def guess_date_if_empty(self, concept: str, filepath: str):
-        adate = ''
-        found = False
-        chunks = concept.split('_')
-        for chunk in chunks:
-            if len(chunk) == 8:
-                try:
-                    datetime.strptime(chunk, "%Y%m%d")
-                    adate = chunk
-                    found = True
-                    break
-                except Exception:
-                    pass
-        if not found:
-            ddate = self.util.filename_get_creation_date(filepath)
-            adate = ddate.strftime("%Y%m%d")
-        return adate
+        return self.util.filename_guess_date(filepath, concept_hint=concept)
 
     def calendar_day_selected(self, calendar):
         adate = calendar.get_date()
@@ -253,25 +251,25 @@ class MiAZRenameDialog(Gtk.Box):
         self.entry_date.set_text(f"{y}{m}{d}")
 
     def __create_field_1_country(self):
-        self.rowCountry, self.btnCountry, self.dpdCountry = self.__create_actionrow(_(Country.__title__), Country, 'countries')
+        self.rowCountry, self.btnCountry, self.dpdCountry = self.__create_actionrow(_(Country.__title__), Country, 'countries', self._cfg_country)
         self.dropdown['Country'] = self.dpdCountry
         self.btnCountry.connect('clicked', self.actions.manage_resource, MiAZCountries(self.app))
         self.dpdCountry.connect("notify::selected-item", self._on_changed_entry)
 
     def __create_field_2_group(self):
-        self.rowGroup, self.btnGroup, self.dpdGroup = self.__create_actionrow(_(Group.__title__), Group, 'groups')
+        self.rowGroup, self.btnGroup, self.dpdGroup = self.__create_actionrow(_(Group.__title__), Group, 'groups', self._cfg_group)
         self.dropdown['Group'] = self.dpdGroup
         self.btnGroup.connect('clicked', self.actions.manage_resource, MiAZGroups(self.app))
         self.dpdGroup.connect("notify::selected-item", self._on_changed_entry)
 
     def __create_field_4_sentby(self):
-        self.rowSentBy, self.btnSentBy, self.dpdSentBy = self.__create_actionrow(_(SentBy.__title__), SentBy, 'Sentby')
+        self.rowSentBy, self.btnSentBy, self.dpdSentBy = self.__create_actionrow(_(SentBy.__title__), SentBy, 'Sentby', self._cfg_sentby)
         self.dropdown['SentBy'] = self.dpdSentBy
         self.btnSentBy.connect('clicked', self.actions.manage_resource, MiAZPeopleSentBy(self.app))
         self.dpdSentBy.connect("notify::selected-item", self._on_changed_entry)
 
     def __create_field_5_purpose(self):
-        self.rowPurpose, self.btnPurpose, self.dpdPurpose = self.__create_actionrow(_(Purpose.__title__), Purpose, 'purposes')
+        self.rowPurpose, self.btnPurpose, self.dpdPurpose = self.__create_actionrow(_(Purpose.__title__), Purpose, 'purposes', self._cfg_purpose)
         self.btnPurpose.connect('clicked', self.actions.manage_resource, MiAZPurposes(self.app))
         self.dropdown['Purpose'] = self.dpdPurpose
         self.dpdPurpose.connect("notify::selected-item", self._on_changed_entry)
@@ -288,13 +286,53 @@ class MiAZRenameDialog(Gtk.Box):
         button = self.__setup_button_suggest_concept()
         self.entry_concept = Gtk.Entry()
         self.entry_concept.set_width_chars(41)
-        self.entry_concept.set_placeholder_text(_('Type anything here...'))
+        self.entry_concept.set_placeholder_text(_('Type to filter existing concepts…'))
         boxValue.append(self.entry_concept)
         boxValue.append(button)
+
+        # Autocomplete popover anchored to the concept entry.
+        # autohide=False keeps the entry focused while the popover is up
+        # (otherwise the popover would steal keystrokes). Closing paths
+        # are explicit: pick a row, press Escape, leave focus, clear entry.
+        self._concept_popover = Gtk.Popover()
+        self._concept_popover.set_parent(self.entry_concept)
+        self._concept_popover.set_autohide(False)
+        self._concept_popover.set_has_arrow(False)
+        self._concept_popover.set_position(Gtk.PositionType.BOTTOM)
+        self._concept_list_store = Gio.ListStore(item_type=Concept)
+        self._concept_selection = Gtk.SingleSelection.new(self._concept_list_store)
+        self._concept_list_view = Gtk.ListView(model=self._concept_selection)
+        self._concept_list_view.set_single_click_activate(True)
+        factory = Gtk.SignalListItemFactory()
+        factory.connect('setup', self._concept_factory_setup)
+        factory.connect('bind', self._concept_factory_bind)
+        self._concept_list_view.set_factory(factory)
+        self._concept_list_view.connect('activate', self._on_concept_picked)
+
+        scroll = Gtk.ScrolledWindow()
+        scroll.set_min_content_width(300)
+        scroll.set_min_content_height(200)
+        scroll.set_child(self._concept_list_view)
+        self._concept_popover.set_child(scroll)
+
+        self._concept_throttle_id = 0
+        self._concept_loading = False
+        self.entry_concept.connect('changed', self._on_concept_entry_changed)
         self.entry_concept.connect('changed', self._on_changed_entry)
 
+        # Escape closes the popover.
+        key_ctrl = Gtk.EventControllerKey()
+        key_ctrl.connect('key-pressed', self._on_concept_key_pressed)
+        self.entry_concept.add_controller(key_ctrl)
+
+        # Focus-leave closes it too, with a small grace period so that
+        # clicks landing on a popover row register first.
+        focus_ctrl = Gtk.EventControllerFocus()
+        focus_ctrl.connect('leave', self._on_concept_focus_leave)
+        self.entry_concept.add_controller(focus_ctrl)
+
     def __create_field_7_sentto(self):
-        self.rowSentTo, self.btnSentTo, self.dpdSentTo = self.__create_actionrow(_(SentTo.__title__), SentTo, 'SentTo')
+        self.rowSentTo, self.btnSentTo, self.dpdSentTo = self.__create_actionrow(_(SentTo.__title__), SentTo, 'SentTo', self._cfg_sentto)
         self.dropdown['SentTo'] = self.dpdSentTo
         self.btnSentTo.connect('clicked', self.actions.manage_resource, MiAZPeopleSentTo(self.app))
         self.dpdSentTo.connect("notify::selected-item", self._on_changed_entry)
@@ -320,8 +358,8 @@ class MiAZRenameDialog(Gtk.Box):
         # Current filename
         title = _('Current filename')
         self.lblFilenameCur = Gtk.Label()
-        self.lblFilenameCur.get_style_context().add_class(class_name='monospace')
-        self.lblFilenameCur.get_style_context().add_class(class_name='error')
+        self.lblFilenameCur.add_css_class('monospace')
+        self.lblFilenameCur.add_css_class('error')
         self.row_cur_filename = self.factory.create_actionrow(title=title, suffix=self.lblFilenameCur)
         self.boxMain.append(self.row_cur_filename)
         self.lblFilenameCur.set_ellipsize(True)
@@ -330,8 +368,8 @@ class MiAZRenameDialog(Gtk.Box):
         # New filename
         title = _('<b>New filename</b>')
         self.lblFilenameNew = Gtk.Label()
-        self.lblFilenameNew.get_style_context().add_class(class_name='monospace')
-        self.lblFilenameNew.get_style_context().add_class(class_name='success')
+        self.lblFilenameNew.add_css_class('monospace')
+        self.lblFilenameNew.add_css_class('success')
         self.lblFilenameNew.set_ellipsize(True)
         self.lblFilenameNew.set_property('ellipsize', Pango.EllipsizeMode.MIDDLE)
 
@@ -340,26 +378,24 @@ class MiAZRenameDialog(Gtk.Box):
 
     @staticmethod
     def _success_or_error(widget, valid):
-        ctx = widget.get_style_context()
-        ctx.remove_class('warning')
+        widget.remove_css_class('warning')
         if valid:
-            ctx.remove_class('error')
-            ctx.add_class('success')
+            widget.remove_css_class('error')
+            widget.add_css_class('success')
         else:
-            ctx.remove_class('success')
-            ctx.add_class('error')
+            widget.remove_css_class('success')
+            widget.add_css_class('error')
 
     @staticmethod
     def _success_or_warning(widget, valid):
-        ctx = widget.get_style_context()
         if valid:
-            ctx.remove_class('warning')
-            ctx.remove_class('error')
-            ctx.add_class('success')
+            widget.remove_css_class('warning')
+            widget.remove_css_class('error')
+            widget.add_css_class('success')
         else:
-            ctx.remove_class('error')
-            ctx.remove_class('success')
-            ctx.add_class('warning')
+            widget.remove_css_class('error')
+            widget.remove_css_class('success')
+            widget.add_css_class('warning')
 
     @staticmethod
     def _dropdown_get_id(dropdown):
@@ -400,6 +436,122 @@ class MiAZRenameDialog(Gtk.Box):
             self.log.error(error)
             self.result = ''
             raise
+
+    # Inline "+ Add" for restricted-vocabulary rows
+    def _on_inline_add_value(self, _button, item_type, conf_obj):
+        i_title = _(item_type.__title__)
+        parent = self.get_root()
+        helper = MiAZDialogAdd(self.app)
+        title = _('Add {title}').format(title=i_title.lower())
+        key1 = _('{title} key').format(title=i_title.title())
+        key2 = _('Description')
+        dialog = helper.create(parent=parent, title=title, key1=key1, key2=key2, action_label=_('Add'))
+        dialog.connect('response', self._on_inline_add_response,
+                       helper, item_type, conf_obj)
+        dialog.present(parent)
+
+    def _on_inline_add_response(self, _dialog, response, helper, item_type, conf_obj):
+        if response != 'apply':
+            return
+        key = helper.get_value1().strip().upper()
+        value = helper.get_value2().strip()
+        if not key or not value:
+            return
+        conf_obj.add_available(key, value)
+        conf_obj.add_used(key, value)
+        # Re-populate is triggered automatically by the 'used-updated' signal
+        # (connected in __init__). It just needs to select the new value.
+        self._select_value(item_type, key)
+        self._on_changed_entry()
+
+    def _select_value(self, item_type, key):
+        dropdown = self.dropdown.get(item_type.__gtype_name__)
+        if dropdown is None:
+            return
+        model = dropdown.get_model()
+        for n, item in enumerate(model):
+            if item.id == key:
+                dropdown.set_selected(n)
+                return
+
+    # Concept autocomplete
+    @staticmethod
+    def _concept_factory_setup(_factory, list_item):
+        label = Gtk.Label(xalign=0.0)
+        label.set_margin_start(6)
+        label.set_margin_end(6)
+        list_item.set_child(label)
+
+    @staticmethod
+    def _concept_factory_bind(_factory, list_item):
+        label = list_item.get_child()
+        item = list_item.get_item()
+        label.set_label(item.title if item is not None else '')
+
+    def _set_concept_text(self, text):
+        """Set the concept entry without opening the autocomplete popover.
+
+        set_text() emits 'changed' synchronously, so _concept_loading is read
+        before this returns. Used for programmatic fills (window opening, or
+        reusing an existing concept) so completions appear only while typing.
+        """
+        self._concept_loading = True
+        if self._concept_throttle_id:
+            GLib.source_remove(self._concept_throttle_id)
+            self._concept_throttle_id = 0
+        self.entry_concept.set_text(text)
+        self._concept_loading = False
+
+    def _on_concept_entry_changed(self, entry):
+        # Only react to keystrokes typed by the user, not programmatic fills.
+        if self._concept_loading:
+            return
+        if self._concept_throttle_id:
+            GLib.source_remove(self._concept_throttle_id)
+        self._concept_throttle_id = GLib.timeout_add(
+            150, self._refilter_concepts, entry.get_text())
+
+    def _refilter_concepts(self, query):
+        self._concept_throttle_id = 0
+        self._concept_list_store.remove_all()
+        query_u = (query or '').strip().upper()
+        if not query_u:
+            self._concept_popover.popdown()
+            return False
+        try:
+            vocab = list(ENV['CACHE']['CONCEPTS']['ACTIVE'])
+        except Exception:
+            vocab = []
+        # Show every concept from existing documents that contains the typed text.
+        for concept in vocab:
+            if query_u in concept.upper():
+                self._concept_list_store.append(Concept(id=concept, title=concept))
+        if self._concept_list_store.get_n_items() > 0:
+            self._concept_popover.popup()
+        else:
+            self._concept_popover.popdown()
+        return False
+
+    def _on_concept_picked(self, _view, position):
+        item = self._concept_list_store.get_item(position)
+        if item is None:
+            return
+        self._set_concept_text(item.title)
+        self._concept_popover.popdown()
+
+    def _on_concept_key_pressed(self, _ctrl, keyval, _keycode, _state):
+        if keyval == Gdk.KEY_Escape and self._concept_popover.get_visible():
+            self._concept_popover.popdown()
+            return True
+        return False
+
+    def _on_concept_focus_leave(self, _ctrl):
+        # Defer so that clicks landing on a popover row register first.
+        GLib.timeout_add(120, self._popdown_concept_popover)
+
+    def _popdown_concept_popover(self):
+        self._concept_popover.popdown()
+        return False
 
     def validate_date(self, sdate: str) -> bool:
         if sdate == self._last_date_str:

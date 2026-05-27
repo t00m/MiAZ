@@ -72,10 +72,6 @@ class Export2Dir(MiAZExtension):
         ## Get logger
         self.log = self.plugin.get_logger()
 
-        # Connect startup signals
-        self.workspace = self.app.get_widget('workspace')
-        self.workspace.connect('workspace-loaded', self.startup)
-
         # Get services
         self.actions = self.app.get_service('actions')
         self.factory = self.app.get_service('factory')
@@ -83,8 +79,16 @@ class Export2Dir(MiAZExtension):
         self.util = self.app.get_service('util')
         self.srvdlg = self.app.get_service('dialogs')
 
+        # Connect startup signals
+        self.workspace = self.app.get_widget('workspace')
+        if self.workspace.is_loaded():
+            self.startup()
+        else:
+            self._startup_handler = self.workspace.connect('workspace-loaded', self.startup)
+
     def do_deactivate(self):
-        self.log.warning("Deactivation not implemented")
+        if hasattr(self, '_startup_handler'):
+            self.workspace.disconnect(self._startup_handler)
         self.plugin.set_started(False)
 
     def startup(self, *args):
@@ -112,7 +116,7 @@ class Export2Dir(MiAZExtension):
         ## Pattern row
         self.chkPattern = self.factory.create_button_check(title=_('Export with pattern'), callback=None)
         self.chkPattern.set_valign(Gtk.Align.CENTER)
-        self.chkPattern.set_tooltip_text('Check this box to activate the pattern.\nOtherwise, all documents will be exported in the same folder.')
+        self.chkPattern.set_tooltip_text(_('Check this box to activate the pattern.\nOtherwise, all documents will be exported in the same folder.'))
         self.app.add_widget('plugin-export2dir-chkpattern', self.chkPattern)
         self.etyPattern = self.app.add_widget('plugin-export2dir-etypattern', Gtk.Entry())
         self.etyPattern.set_valign(Gtk.Align.CENTER)
@@ -138,7 +142,7 @@ class Export2Dir(MiAZExtension):
         ## Target directory
         button = Gtk.Button()
         button.set_valign(Gtk.Align.CENTER)
-        button.set_label('Select folder')
+        button.set_label(_('Select folder'))
         button.connect('clicked', self._on_select_folder)
         self.row_target = Adw.ActionRow(title=_('Select target folder'))
         self.row_target.set_subtitle(_('No target folder set yet'))
@@ -161,7 +165,7 @@ class Export2Dir(MiAZExtension):
             self.target_dir = folder.get_path()
             self.row_target.set_subtitle(self.target_dir)
         except Exception as error:
-            self.srvdlg.show_error(title='Error selecting files', body=str(error))
+            self.srvdlg.show_error(title=_('Error selecting files'), body=str(error))
             self.log.error(f"Error selecting files: {error}")
 
     def _on_dialog_response(self, dialog, response, data):
@@ -186,13 +190,13 @@ class Export2Dir(MiAZExtension):
                     for item in self.items:
                         thispath = []
                         thispath.append(self.target_dir)
+                        source = os.path.join(self.repository.docs, item.id)
                         try:
                             paths = get_pattern_paths(item)
                             for key in keys:
                                 thispath.append(paths[key])
                             target = os.path.join(*thispath)
                             os.makedirs(target, exist_ok=True)
-                            source = os.path.join(self.repository.docs, item.id)
                             self.util.filename_export(source, target)
                         except ValueError as error:
                             self.log.error(f"{os.path.basename(source)} couldn't be exported.")

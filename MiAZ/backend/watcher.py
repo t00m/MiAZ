@@ -10,6 +10,7 @@
 # A modified version found on StackOverflow:
 # https://stackoverflow.com/questions/182197/how-do-i-watch-a-file-for-changes
 
+import os
 import glob
 
 from gi.repository import Gio
@@ -42,13 +43,52 @@ class MiAZWatcher(GObject.GObject):
         self.active = False
         self.status = MiAZStatus.RUNNING
         self.updated = False
+        self._monitor = None
+        self._debounce_id = 0
+        self._timeout_id = 0
         seconds = 2
         self.log.debug(f"Watching repository: {dirpath}")
         self.log.debug(f"Remote repository? {remote}")
         self.log.debug(f"Timeout set to: {seconds}")
         self.set_path(dirpath)
-        GLib.timeout_add_seconds(seconds, self.monitor, dirpath, self.watch)
+        
+        if self.remote:
+            self._timeout_id = GLib.timeout_add_seconds(seconds, self.monitor, dirpath, self.watch)
+        
         self.log.debug("Watcher initialized")
+
+    def _setup_file_monitor(self):
+        if self._monitor:
+            self._monitor.cancel()
+            self._monitor = None
+        
+        if self.dirpath and os.path.exists(self.dirpath):
+            gfile = Gio.File.new_for_path(self.dirpath)
+            try:
+                self._monitor = gfile.monitor_directory(Gio.FileMonitorFlags.NONE, None)
+                self._monitor.connect('changed', self._on_monitor_changed)
+                self.log.debug(f"FileMonitor started for {self.dirpath}")
+            except Exception as e:
+                self.log.error(f"Could not setup FileMonitor: {e}")
+
+    def _on_monitor_changed(self, monitor, file, other_file, event_type):
+        if not self.active:
+            return
+        
+        # We ignore some event types if needed, but usually any change is relevant
+        # self.log.debug(f"FileMonitor event: {event_type} on {file.get_path()}")
+        
+        if self._debounce_id > 0:
+            GLib.source_remove(self._debounce_id)
+        
+        self._debounce_id = GLib.timeout_add(500, self._emit_updated)
+
+    def _emit_updated(self):
+        self._debounce_id = 0
+        if self.active:
+            self.log.debug("Repository updated (notified by FileMonitor)")
+            self.emit('repository-updated')
+        return False
 
     def files_with_timestamp_async(self, path, callback):
         """
@@ -58,11 +98,15 @@ class MiAZWatcher(GObject.GObject):
         if self.status == MiAZStatus.BUSY:
             self.log.warning("Watcher is busy now. Trying later")
             return
-        else:
-            # ~ self.log.info("Watcher is active")
-            pass
 
-        # ~ self.log.debug(f"Checking files for directory: {path}")
+        # Guarantee the callback always resets the BUSY status,
+        # even if the async chain errors out (GIO cancellation, etc.)
+        def _done(result):
+            try:
+                callback(result)
+            finally:
+                self.status = MiAZStatus.RUNNING
+
         gfile = Gio.File.new_for_path(path)
 
         def on_query_info(fileobj, res, user_data):
@@ -70,10 +114,9 @@ class MiAZWatcher(GObject.GObject):
                 info = fileobj.query_info_finish(res)
                 if info.get_file_type() != Gio.FileType.DIRECTORY:
                     self.log.warning(f"Not a directory: {path}")
-                    callback({})
+                    _done({})
                     return
 
-                # Proceed with enumeration
                 fileobj.enumerate_children_async(
                     'standard::name,standard::type,time::modified',
                     Gio.FileQueryInfoFlags.NONE,
@@ -84,7 +127,7 @@ class MiAZWatcher(GObject.GObject):
                 )
             except Exception as error:
                 self.log.error(f"Failed to query info: {error}")
-                callback({})
+                _done({})
 
         def on_enumerate_ready(fileobj, res, user_data):
             timestamps = {}
@@ -95,7 +138,7 @@ class MiAZWatcher(GObject.GObject):
                     try:
                         infos = enum.next_files_finish(res2)
                         if not infos:
-                            callback(timestamps)
+                            _done(timestamps)
                             return
                         for i in infos:
                             if i.get_file_type() == Gio.FileType.REGULAR:
@@ -106,17 +149,15 @@ class MiAZWatcher(GObject.GObject):
                         enum.next_files_async(100, GLib.PRIORITY_DEFAULT, None, on_next_file, None)
                     except Exception as error:
                         self.log.error(f"Error during file read: {error}")
-                        callback(timestamps)
+                        _done(timestamps)
 
                 enumerator.next_files_async(100, GLib.PRIORITY_DEFAULT, None, on_next_file, None)
             except Exception as error:
                 self.log.error(f"Error during enumeration: {error}")
-                callback({})  # Return empty dict on failure
+                _done({})
 
-        # Set app as busy to block
         self.status = MiAZStatus.BUSY
 
-        # Query info first to ensure it's a directory
         gfile.query_info_async(
             'standard::*',
             Gio.FileQueryInfoFlags.NONE,
@@ -131,6 +172,8 @@ class MiAZWatcher(GObject.GObject):
         if dirpath is not None:
             self.dirpath = dirpath
             self.log.info(f"Watcher monitoring '{self.dirpath}'")
+            if not self.remote:
+                self._setup_file_monitor()
 
     def set_active(self, active: bool = True) -> None:
         """Set current watcher as active"""
@@ -155,9 +198,7 @@ class MiAZWatcher(GObject.GObject):
             return False
 
         if not self.before:
-            # First poll: establish baseline. All files look "added" because
-            # before is empty, but they were already loaded by the workspace
-            # on startup — emitting here would cause a redundant update.
+            # First poll
             self.before = after
             self.status = MiAZStatus.RUNNING
             return True

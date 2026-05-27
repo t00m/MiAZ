@@ -1,0 +1,24 @@
+#!/bin/bash
+# AppRun for MiAZ AppImage, sets up the runtime environment and launches miaz.
+# Copied into AppDir/ by build_appimage.sh after the meson DESTDIR install.
+#
+# The GTK stack (GTK4, libadwaita, GLib, PyGObject) is intentionally NOT
+# bundled, see build_appimage.sh for the rationale. We rely on the host
+# Python and host GTK libraries, and only point the runtime at MiAZ's
+# own assets shipped inside AppDir.
+#
+# NOTE on the ${VAR:+:$VAR} idiom: a trailing colon in PYTHONPATH (and
+# similar PATH-style vars) is interpreted by Python as an empty entry,
+# which Python expands to the current directory. If the AppImage is
+# launched from a directory containing a MiAZ/ package (e.g. the repo
+# checkout itself), Python imports that shadowing copy and the bundled
+# code is ignored. The conditional append below avoids the trailing
+# colon when the parent value is empty.
+HERE="$(dirname "$(readlink -f "${0}")")"
+
+export PYTHONPATH="${HERE}/usr/share/MiAZ${PYTHONPATH:+:$PYTHONPATH}"
+export GSETTINGS_SCHEMA_DIR="${HERE}/usr/share/glib-2.0/schemas${GSETTINGS_SCHEMA_DIR:+:$GSETTINGS_SCHEMA_DIR}"
+export XDG_DATA_DIRS="${HERE}/usr/share:${XDG_DATA_DIRS:-/usr/local/share:/usr/share}"
+export GDK_BACKEND="${GDK_BACKEND:-wayland,x11}"
+
+exec "${HERE}/usr/bin/miaz" "$@"

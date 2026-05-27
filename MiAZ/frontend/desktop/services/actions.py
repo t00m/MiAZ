@@ -15,11 +15,13 @@ from gi.repository import Adw
 from gi.repository import Gtk
 
 from MiAZ.backend.log import MiAZLog
-from MiAZ.backend.models import Group, Country, Purpose, SentBy, SentTo, Date, Repository
+from MiAZ.backend.models import Group, Country, Purpose, SentBy, SentTo, Date, Repository, File
 from MiAZ.frontend.desktop.widgets.configview import MiAZCountries, MiAZGroups, MiAZPurposes, MiAZPeopleSentBy, MiAZPeopleSentTo
 from MiAZ.frontend.desktop.widgets.configview import MiAZRepositories
+from MiAZ.frontend.desktop.widgets.rename import MiAZRenameDialog
 from MiAZ.frontend.desktop.widgets.settings import MiAZAppSettings
 from MiAZ.frontend.desktop.widgets.settings import MiAZRepoSettings
+from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewMassDelete
 
 # Conversion Item type to Field Number
 Field = {}
@@ -50,6 +52,10 @@ class MiAZActions(GObject.GObject):
                             MiAZActions,
                             GObject.SignalFlags.RUN_LAST,
                             GObject.TYPE_PYOBJECT, (GObject.TYPE_PYOBJECT,))
+        GObject.signal_new('rename-dialog-built',
+                            MiAZActions,
+                            GObject.SignalFlags.RUN_LAST,
+                            None, (GObject.TYPE_PYOBJECT, GObject.TYPE_PYOBJECT))
 
     def document_display(self, doc):
         self.log.debug(f"Displaying {doc}")
@@ -57,14 +63,91 @@ class MiAZActions(GObject.GObject):
         filepath = os.path.join(repository.docs, doc)
         self.util.filename_display(filepath)
 
+    def document_display_selected(self, *args):
+        if self.stop_if_no_items():
+            return
+        workspace = self.app.get_widget('workspace')
+        item = workspace.get_selected_items()[0]
+        self.document_display(item.id)
+
+    def document_delete(self, *args):
+        if self.stop_if_no_items():
+            return
+        workspace = self.app.get_widget('workspace')
+        repository = self.app.get_service('repo')
+        items = workspace.get_selected_items()
+        box, view = self.factory.create_view(MiAZColumnViewMassDelete)
+        citems = [File(id=item.id, title=os.path.basename(item.id)) for item in items]
+        view.update(citems)
+        window = self.app.get_widget('window')
+        title = _('Delete {count} documents?').format(count=len(items))
+        body = _('The following documents will be permanently deleted:')
+        dialog = self.srvdlg.show_confirmation(
+            title=title, body=body, widget=box, confirm_label=_('Delete'),
+            width=600, height=480)
+        dialog.connect('response', self._on_document_delete_response, items)
+        dialog.present(window)
+
+    def _on_document_delete_response(self, dialog, response, items):
+        if response == 'apply':
+            repository = self.app.get_service('repo')
+            filepaths = {os.path.join(repository.docs, item.id) for item in items}
+            self.util.filename_delete(filepaths)
+            body = _('{num_docs} documents deleted from repository').format(num_docs=len(items))
+            self.srvdlg.show_toast(body)
+
+    def document_rename(self, *args):
+        if self.stop_if_no_items():
+            return
+        workspace = self.app.get_widget('workspace')
+        item = workspace.get_selected_items()[0]
+        self._document_rename_single(item.id)
+
+    def _document_rename_single(self, doc):
+        rename_widget = self.app.add_widget('rename-widget', MiAZRenameDialog(self.app))
+        rename_widget.set_data(doc)
+        window = self.app.get_widget('window')
+        dialog = self.srvdlg.show_question(title=_('Rename document'), body='', widget=rename_widget, width=1024)
+        dialog.add_response("preview", _("Preview"))
+        dialog.set_response_enabled("preview", True)
+        self.app.add_widget('dialog-rename', dialog)
+        self.emit('rename-dialog-built', dialog, rename_widget)
+        dialog.connect('response', self._on_rename_response, rename_widget)
+        dialog.present(window)
+
+    def _on_rename_response(self, dialog, response, rename_widget):
+        window = self.app.get_widget('window')
+        if response == 'apply':
+            body = _('You are about to rename this document.\nAre you sure?')
+            dialog_confirm = self.srvdlg.show_question(
+                title=_('Rename document'), body=body,
+                callback=self._on_answer_question_rename,
+                data=(rename_widget, dialog))
+            dialog_confirm.present(window)
+        elif response == 'preview':
+            doc = rename_widget.get_filepath_source()
+            self.document_display(doc)
+            dialog.present(window)
+
+    def _on_answer_question_rename(self, dialog, response, data):
+        rename_widget, parent_dialog = data
+        if response == 'apply':
+            repository = self.app.get_service('repo')
+            bsource = rename_widget.get_filepath_source()
+            source = os.path.join(repository.docs, bsource)
+            btarget = rename_widget.get_filepath_target()
+            target = os.path.join(repository.docs, btarget)
+            renamed = self.util.filename_rename(source, target)
+            if not renamed:
+                self.srvdlg.show_error(
+                    title=_('Rename document'),
+                    body=_('Another document with the same name already exists in this repository'))
+        else:
+            parent_dialog.present(self.app.get_widget('window'))
+
     def dropdown_populate(self, config, dropdown, item_type, any_value=True, none_value=False, only_include: list = [], only_exclude: list = []):
-        # FIXME: THIS METHOD DIDN'T TAKE INTO ACCOUNT CUSTOM MODELS
-        #        IT HAS BEEN MODIFIED TO DETECT WHEN A MODEL IS STANDARD
-        #        OR CUSTOM.
-        # INFO: This method can be called as a reaction to the signal 'used-updated' or directly.
-        # When reacting to a signal, config parameter is set in first place automatically.
-        # When the method is called directly, config parameter must be passed.
-        # In any case, config parameter is not used. Config is got from item_type
+        # Can be called from a 'used-updated' signal handler or directly.
+        # When called from the signal, config is the emitting object; item_type overrides it.
         i_type = item_type.__gtype_name__
         config_standard = self.app.get_config(i_type)
         if config_standard is not None:
@@ -72,28 +155,18 @@ class MiAZActions(GObject.GObject):
         items = config.load(config.used)
         i_title = _(item_type.__title__)
 
-        model_filter = dropdown.get_model()
-        model_sort = model_filter.get_model()
-        model = model_sort.get_model()
-        model.remove_all()
-
-        model.remove_all()
+        new_items = []
         if any_value:
-            model.append(item_type(id='Any', title=_('Any') + ' ' + i_title.lower()))
+            new_items.append(item_type(id='Any', title=_('Any') + ' ' + i_title.lower()))
         if none_value:
-            model.append(item_type(id='None', title=_('None') + ' ' + i_title.lower()))
+            new_items.append(item_type(id='None', title=_('None') + ' ' + i_title.lower()))
 
         for key in items:
             accepted = True
-            if len(only_include) > 0 and key in only_include:
-                accepted = True
-            else:
+            if len(only_include) > 0 and key not in only_include:
                 accepted = False
-
             if len(only_exclude) > 0 and key in only_exclude:
                 accepted = False
-            else:
-                accepted = True
 
             if accepted:
                 title = items[key]
@@ -101,129 +174,34 @@ class MiAZActions(GObject.GObject):
                     title = key
                 if item_type == Repository:
                     title = key.replace('_', ' ')
-                else:
-                    # ~ title = f"{key} - {title}"
-                    title = f"{title}"
-                model.append(item_type(id=key, title=title))
+                new_items.append(item_type(id=key, title=title))
 
-        if len(model) == 0:
+        if len(new_items) == 0:
             if item_type != Repository:
-                model.append(item_type(id='None', title=_('No data')))
+                new_items.append(item_type(id='None', title=_('No data')))
             else:
-                model.append(item_type(id='None', title=_('No repositories found')))
+                new_items.append(item_type(id='None', title=_('No repositories found')))
+
+        model_filter = dropdown.get_model()
+        model_sort = model_filter.get_model()
+        model = model_sort.get_model()
+        model.splice(0, model.get_n_items(), new_items)
 
     def import_config(self, button, item_type):
-        # FIXME: Implement import config
+        # See: https://github.com/t00m/MiAZ/issues/NEW
         srvdlg = self.app.get_service('dialogs')
         window = button.get_root()
         title = _("Action not implemented yet")
         body = _("Import the configuration hasn't been implemented yet")
         srvdlg.show_error(title=title, body=body, parent=window)
-        return
-
-        factory = self.app.get_service('factory')
-        i_title = item_type.__title__
-        i_title_plural = item_type.__title_plural__
-        file_available = f'{i_title_plural.lower()}-available.json'
-        file_used = f'{i_title_plural.lower()}-used.json'
-
-        def filechooser_response(dialog, response, data):
-            if response == 'apply':
-                srvutl = self.app.get_service('util')
-                content_area = dialog.get_content_area()
-                box = content_area.get_first_child()
-                filechooser = box.get_first_child()
-                gfile = filechooser.get_file()
-                if gfile is not None:
-                    filepath = gfile.get_path()
-                    files = self.util.zip_list(filepath)
-                    available_exists = file_available in files
-                    self.log.debug(f"{file_available} exists? {available_exists}")
-                    used_exists = file_used in files
-                    self.log.debug(f"{file_used} exists? {used_exists}")
-                    if available_exists and used_exists:
-                        ENV = self.app.get_env()
-                        self.util.unzip(filepath, ENV['LPATH']['TMP'])
-                        target_a = os.path.join(ENV['LPATH']['TMP'], file_available)
-                        target_u = os.path.join(ENV['LPATH']['TMP'], file_used)
-                        available = self.util.json_load(target_a)
-                        used = self.util.json_load(target_u)
-                        config = self.app.get_config_dict()
-                        config_item = config[i_title]
-                        config_item.add_used_batch(used.items())
-                        config_item.add_available_batch(available.items())
-                        self.show_repository_settings()
-                        self.log.info(f"{i_title_plural} imported successfully")
-                    else:
-                        self.log.error(f"This is not a config file for {i_title_plural.lower()}")
-
-        window = self.app.get_widget('window')
-        # FIXME: use the new filechooser
-        filechooser = factory.create_filechooser(
-                    title=_(f'Import a configuration file for {i_title_plural.lower()}'),
-                    target = 'FILE',
-                    callback = filechooser_response,
-                    data = None)
-        config_filter = Gtk.FileFilter()
-        config_filter.add_pattern('*.zip')
-        filechooser_widget = filechooser.get_filechooser_widget()
-        filechooser_widget.set_filter(config_filter)
-        filechooser.show()
 
     def export_config(self, button, item_type):
-        # FIXME: Implement export config
+        # See: https://github.com/t00m/MiAZ/issues/NEW
         srvdlg = self.app.get_service('dialogs')
         window = button.get_root()
         title = _("Action not implemented yet")
-        body = ("Export the configuration hasn't been implemented yet")
+        body = _("Export the configuration hasn't been implemented yet")
         srvdlg.show_error(title=title, body=body, parent=window)
-        return
-
-        # ~ i_title = item_type.__title__
-        # ~ file_available = '%s-available.json' % i_title_plural.lower()
-        # ~ file_used = '%s-used.json' % i_title_plural.lower()
-        factory = self.app.get_service('factory')
-        i_title_plural = item_type.__title_plural__
-        name_available = item_type.__config_name_available__
-        name_used = item_type.__config_name_used__
-
-        def filechooser_response(dialog, response, data):
-            srvutl = self.app.get_service('util')
-            repository = self.app.get_service('repo')
-            if response == 'apply':
-                content_area = dialog.get_content_area()
-                box = content_area.get_first_child()
-                filechooser = box.get_first_child()
-                gfile = filechooser.get_file()
-                if gfile is not None:
-                    target_directory = gfile.get_path()
-                    source_directory = pathlib.Path(os.path.join(repository.docs, '.conf'))
-                    config_name_available = f"{name_available}-available.json"
-                    config_name_used = f"{name_used}-used.json"
-                    filenames = []
-                    config_file_available = pathlib.Path(os.path.join(repository.docs, '.conf', config_name_available))
-                    config_file_used = pathlib.Path(os.path.join(repository.docs, '.conf', config_name_used))
-                    filenames.append(config_file_available)
-                    filenames.append(config_file_used)
-                    target_filename = f"miaz-{i_title_plural.lower()}-config-{self.util.timestamp()}.zip"
-                    target_filepath = os.path.join(target_directory, target_filename)
-                    with zipfile.ZipFile(target_filepath, mode="w") as zip_archive:
-                        for file_path in filenames:
-                            zip_archive.write(
-                                file_path,
-                                arcname=file_path.relative_to(source_directory)
-                            )
-                    self.log.info(f"{i_title_plural} exported successfully to {target_filepath}")
-                    self.show_repository_settings()
-
-        window = self.app.get_widget('window')
-        # FIXME: use the new filechooser
-        filechooser = factory.create_filechooser(
-                    title=_(f'Export the configuration for {i_title_plural.lower()}'),
-                    target = 'FOLDER',
-                    callback = filechooser_response,
-                    data = None)
-        filechooser.show()
 
     def manage_resource(self, widget: Gtk.Widget, selector: Gtk.Widget):
         factory = self.app.get_service('factory')
@@ -235,7 +213,7 @@ class MiAZActions(GObject.GObject):
         config_for = selector.get_config_for()
         selector.set_vexpand(True)
         selector.update_views()
-        title = _(f'Manage {config_for}')
+        title = _('Manage {item}').format(item=config_for)
         dialog = srvdlg.show_action(title=title, widget=box, width=800, height=600)
         dialog.present(parent)
 
@@ -278,7 +256,7 @@ class MiAZActions(GObject.GObject):
         dialog.present(window)
 
     def show_app_about(self, *args):
-        # FIXME: App icon not displayed in local installation
+        # See: https://github.com/t00m/MiAZ/issues/NEW
         window = self.app.get_widget('window')
         ENV = self.app.get_env()
         about = Adw.AboutDialog()
@@ -299,13 +277,88 @@ class MiAZActions(GObject.GObject):
         # ~ about.set_comments(README)
         about.present(window)
 
+    def show_app_shortcuts(self, *args):
+        self.show_app_help(*args)
+
     def show_app_help(self, *args):
-        pass
-        # ~ shwin = self.app.get_widget('shortcutswindow')
-        # ~ if shwin is None:
-            # ~ shwin = MiAZShortcutsWindow()
-            # ~ self.app.add_widget('shortcutswindow', shwin)
-        # ~ shwin.present()
+        window = self.app.get_widget('window')
+        shwin = self.app.get_widget('shortcutswindow')
+        if shwin is None:
+            xml = """<?xml version="1.0" encoding="UTF-8"?>
+<interface>
+  <object class="GtkShortcutsWindow" id="shortcuts-window">
+    <property name="modal">1</property>
+    <child>
+      <object class="GtkShortcutsSection">
+        <property name="section-name">general</property>
+        <child>
+          <object class="GtkShortcutsGroup">
+            <property name="title" translatable="yes">Application</property>
+            <child>
+              <object class="GtkShortcutsShortcut">
+                <property name="title" translatable="yes">Settings</property>
+                <property name="accelerator">&lt;Control&gt;s</property>
+              </object>
+            </child>
+            <child>
+              <object class="GtkShortcutsShortcut">
+                <property name="title" translatable="yes">Keyboard shortcuts</property>
+                <property name="accelerator">&lt;Control&gt;question</property>
+              </object>
+            </child>
+            <child>
+              <object class="GtkShortcutsShortcut">
+                <property name="title" translatable="yes">About MiAZ</property>
+                <property name="accelerator">&lt;Control&gt;b</property>
+              </object>
+            </child>
+            <child>
+              <object class="GtkShortcutsShortcut">
+                <property name="title" translatable="yes">Quit</property>
+                <property name="accelerator">&lt;Control&gt;q</property>
+              </object>
+            </child>
+            <child>
+              <object class="GtkShortcutsShortcut">
+                <property name="title" translatable="yes">Help</property>
+                <property name="accelerator">F1</property>
+              </object>
+            </child>
+          </object>
+        </child>
+        <child>
+          <object class="GtkShortcutsGroup">
+            <property name="title" translatable="yes">Documents</property>
+            <child>
+              <object class="GtkShortcutsShortcut">
+                <property name="title" translatable="yes">Rename document</property>
+                <property name="accelerator">&lt;Control&gt;BackSpace</property>
+              </object>
+            </child>
+            <child>
+              <object class="GtkShortcutsShortcut">
+                <property name="title" translatable="yes">Delete documents</property>
+                <property name="accelerator">&lt;Control&gt;Delete</property>
+              </object>
+            </child>
+            <child>
+              <object class="GtkShortcutsShortcut">
+                <property name="title" translatable="yes">View document</property>
+                <property name="accelerator">Return</property>
+              </object>
+            </child>
+          </object>
+        </child>
+      </object>
+    </child>
+  </object>
+</interface>"""
+            builder = Gtk.Builder.new_from_string(xml, -1)
+            shwin = builder.get_object('shortcuts-window')
+            shwin.set_hide_on_close(True)
+            self.app.add_widget('shortcutswindow', shwin)
+        shwin.set_transient_for(window)
+        shwin.present()
 
     def get_stack_page_by_name(self, name: str) -> Gtk.Stack:
         stack = self.app.get_widget('stack')
@@ -325,8 +378,6 @@ class MiAZActions(GObject.GObject):
 
     def exit_app(self, *args):
         self.log.debug('Closing MiAZ')
-        webserver = self.app.get_service('webserver')
-        webserver.stop()
         self.app.emit("application-finished")
         self.app.quit()
 
@@ -336,12 +387,8 @@ class MiAZActions(GObject.GObject):
         items = workspace.get_selected_items()
         if len(items) == 0:
             srvdlg = self.app.get_service('dialogs')
-            if widget is None:
-                widget = self.app.get_widget('workspace')
-            parent = widget.get_root()
-            body = _('You must select at least one document')
-            title = _('Action ignored')
-            srvdlg.show_error(title=title, body=body, parent=parent)
+            title = _('Action ignored. You must select at least one document')
+            srvdlg.show_toast(message=title)
             stop = True
         return stop
 
@@ -350,5 +397,5 @@ class MiAZActions(GObject.GObject):
         python = sys.executable
         script = ENV['APP']['RUNTIME']['EXEC']
         self.app.emit('application-finished')
-        self.log.info("Application restart: {python} {script} {sys.argv[1:]}")
+        self.log.info(f"Application restart: {python} {script} {sys.argv[1:]}")
         os.execv(python, [python, script] + sys.argv[1:])

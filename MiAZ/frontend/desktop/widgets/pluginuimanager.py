@@ -33,13 +33,13 @@ class MiAZPluginUIManager(Gtk.Box):
 
     def _create_view_plugins(self):
         box = self.factory.create_box_horizontal(margin=0, spacing=0, hexpand=True, vexpand=True)
-        box.get_style_context().add_class(class_name='toolbar')
+        box.add_css_class('toolbar')
         frame_view = Gtk.Frame()
         viewbox = self._create_plugin_view()
         frame_view.set_child(viewbox)
 
         toolbar = self._create_plugin_view_toolbar()
-        toolbar.get_style_context().add_class(class_name='linked')
+        toolbar.add_css_class('linked')
         box.append(frame_view)
         box.append(toolbar)
 
@@ -101,13 +101,13 @@ class MiAZPluginUIManager(Gtk.Box):
         # Build info dialog
         plugin_info = plugin_module.plugin.get_plugin_info_dict()
         dialog = Adw.PreferencesDialog()
-        dialog.set_title('Plugin info')
+        dialog.set_title(_('Plugin info'))
         page_title = _('Properties')
         page_icon = "io.github.t00m.MiAZ-dialog-information-symbolic"
         page = Adw.PreferencesPage(title=page_title, icon_name=page_icon)
         dialog.add(page)
         group = Adw.PreferencesGroup()
-        group.set_title('Data Sheet')
+        group.set_title(_('Data Sheet'))
         page.add(group)
 
         # Add plugin info as key/value rows

@@ -11,7 +11,9 @@
 import os
 from gettext import gettext as _
 
+from gi.repository import GLib
 from gi.repository import GObject
+from gi.repository import Gtk
 
 from MiAZ.frontend.desktop.services.pluginsystem import MiAZExtension, MiAZPlugin
 
@@ -54,10 +56,15 @@ class MiAZAddDocumentPlugin(MiAZExtension):
         self.srvdlg = self.app.get_service('dialogs')
 
         ## Connect signals to startup
-        workspace = self.app.get_widget('workspace')
-        workspace.connect('workspace-loaded', self.startup)
+        self.workspace = self.app.get_widget('workspace')
+        if self.workspace.is_loaded():
+            self.startup()
+        else:
+            self._startup_handler = self.workspace.connect('workspace-loaded', self.startup)
 
     def do_deactivate(self):
+        if hasattr(self, '_startup_handler'):
+            self.workspace.disconnect(self._startup_handler)
         self.plugin.set_started(False)
 
     def startup(self, *args):
@@ -78,16 +85,45 @@ class MiAZAddDocumentPlugin(MiAZExtension):
     def _on_filechooser_response(self, dialog, result):
         try:
             files = dialog.open_multiple_finish(result)
-            if files:
+        except GLib.Error as error:
+            # Closing the file chooser is a normal action, not an error.
+            dismissed = (
+                error.matches(Gtk.DialogError.quark(), Gtk.DialogError.DISMISSED)
+                or error.matches(Gtk.DialogError.quark(), Gtk.DialogError.CANCELLED)
+            )
+            if dismissed:
+                self.log.debug("Document import cancelled by the user")
+                self.srvdlg.show_toast(_('Document import cancelled'))
+                return
+            self.log.error(f"Could not open the file chooser: {error.message}")
+            self.srvdlg.show_error(
+                title=_('Could not open files'),
+                body=_('The file chooser could not be opened.\n\n{error}').format(
+                    error=error.message))
+            return
 
-                filepaths = [file.get_path() for file in files]
-                for source in filepaths:
-                    btarget = self.util.filename_normalize(source)
-                    target = os.path.join(self.repository.docs, btarget)
-                    self.util.filename_import(source, target)
-                parent = self.app.get_widget('window')
-                self.srvdlg.show_toast(_('{count} documents imported successfully').format(count=len(filepaths)))
-        except Exception as error:
-            self.srvdlg.show_error(title='Error selecting files', body=str(error))
-            self.log.error(f"Error selecting files: {error}")
+        if not files:
+            return
+
+        imported = 0
+        failed = []
+        for file in files:
+            source = file.get_path()
+            try:
+                btarget = self.util.filename_normalize(source)
+                target = os.path.join(self.repository.docs, btarget)
+                self.util.filename_import(source, target)
+                imported += 1
+            except Exception as error:
+                failed.append(os.path.basename(source))
+                self.log.error(f"Could not import '{source}': {error}")
+
+        if imported > 0:
+            self.srvdlg.show_toast(
+                _('{count} documents imported successfully').format(count=imported))
+        if failed:
+            self.srvdlg.show_error(
+                title=_('Some documents could not be imported'),
+                body=_('These documents could not be imported:\n\n{items}').format(
+                    items='\n'.join(failed)))
 
