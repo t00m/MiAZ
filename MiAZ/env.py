@@ -61,6 +61,7 @@ def _build_env(app_id, version, pkgdatadir, localedir, profile):
     ENV['LPATH']['REPO'] = os.path.join(ENV['LPATH']['TMP'], 'repo')
     ENV['LPATH']['OPT'] = os.path.join(ENV['LPATH']['ROOT'], 'opt')
     ENV['LPATH']['PLUGINS'] = os.path.join(ENV['LPATH']['OPT'], 'plugins')
+    ENV['LPATH']['WWW'] = os.path.join(ENV['LPATH']['VAR'], 'www', 'html')
 
     # Global paths
     ENV['GPATH'] = {}
