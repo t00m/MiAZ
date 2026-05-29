@@ -19,6 +19,7 @@ from gi.repository import Pango
 from MiAZ.env import ENV
 from MiAZ.backend.log import MiAZLog
 from MiAZ.backend.models import MiAZItem, Field, Group, Country, Purpose, SentBy, SentTo, Date
+from MiAZ.frontend.desktop.widgets.browserpage import MiAZBrowserPage
 from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewWorkspace
 from MiAZ.frontend.desktop.widgets.configview import MiAZCountries, MiAZGroups, MiAZPurposes, MiAZPeopleSentBy, MiAZPeopleSentTo
 from MiAZ.backend.status import MiAZStatus
@@ -371,13 +372,19 @@ class MiAZWorkspace(Gtk.Box):
         documents_page = self._stack.add_titled(page_content, 'workspace-default', _('Documents'))
         documents_page.set_icon_name('io.github.t00m.MiAZ')
 
+        # Browser page
+        browser_widget = MiAZBrowserPage(self.app)
+        browser_page = self._stack.add_titled(browser_widget, 'workspace-browser', _('Browser'))
+        browser_page.set_icon_name('io.github.t00m.MiAZ-webbrowser')
+        self.app.add_widget('workspace-browser', browser_widget)
+
         # InlineViewSwitcher linked to the stack
         self._switcher = Adw.InlineViewSwitcher()
         self._switcher.set_stack(self._stack)
         self._switcher.set_display_mode(Adw.InlineViewSwitcherDisplayMode.BOTH)
         self._switcher.set_halign(Gtk.Align.CENTER)
         self._switcher.set_homogeneous(True)
-        self._switcher.set_visible(False)
+        self._switcher.set_visible(True)
         self.app.add_widget('workspace-view-switcher', self._switcher)
 
         self.append(self._switcher)
@@ -385,6 +392,8 @@ class MiAZWorkspace(Gtk.Box):
         self.append(self._stack)
         self.set_default_columnview_attrs()
         self.add_css_class('toolbar')
+        self._stack.connect('notify::visible-child-name', self._on_stack_page_changed)
+        self._on_stack_page_changed(self._stack, None)
 
     def _setup_filter_tags_bar(self):
         """Banner shown above the document list with the currently active
@@ -540,6 +549,15 @@ class MiAZWorkspace(Gtk.Box):
 
     def show_stack_page(self, name):
         self._stack.set_visible_child_name(name)
+
+    def _on_stack_page_changed(self, stack, _pspec):
+        # The filter-tags revealer applies only to the Documents view.
+        # Hide it outright when any other stack page is active so its
+        # animated reveal_child state is preserved for when we return.
+        revealer = getattr(self, '_filter_tags_revealer', None)
+        if revealer is None:
+            return
+        revealer.set_visible(stack.get_visible_child_name() == 'workspace-default')
 
     def get_workspace_view(self):
         return self.view
