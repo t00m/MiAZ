@@ -132,7 +132,7 @@ try:
     # or bundled (AppImage FUSE mount, portable per-user installs, Snap,
     # chroot, etc). Re-anchor them to this _buildconfig.py file's actual
     # on-disk location, which always lives at
-    # <pkgdatadir>/MiAZ/_buildconfig.py — so two dirname() calls yield the
+    # <pkgdatadir>/MiAZ/_buildconfig.py - so two dirname() calls yield the
     # real pkgdatadir, and locales sit at <prefix>/share/locale one level
     # further up.
     _bc_dir = os.path.dirname(os.path.abspath(_bc.__file__))

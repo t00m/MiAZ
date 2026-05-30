@@ -19,6 +19,7 @@ from MiAZ.frontend.desktop.services.icm import MiAZIconManager
 from MiAZ.frontend.desktop.services.factory import MiAZFactory
 from MiAZ.frontend.desktop.services.actions import MiAZActions
 from MiAZ.frontend.desktop.services.dialogs import MiAZDialog
+from MiAZ.frontend.desktop.services.crash import MiAZCrashHandler
 from MiAZ.frontend.desktop.services.workflow import MiAZWorkflow
 from MiAZ.frontend.desktop.widgets.mainwindow import MiAZMainWindow
 
@@ -51,6 +52,9 @@ class MiAZApp(Adw.Application):
         self._miazobjs['services'] = {}
         self._miazobjs['actions'] = {}
         self.log = MiAZLog("MiAZ.App")
+        # Install the desktop crash handler early so it can report failures
+        # raised while the rest of the services are being set up.
+        self.set_service('crash', MiAZCrashHandler(self)).install()
         self.set_service('util', MiAZUtil(self))
         self.set_service('icons', MiAZIconManager(self))
         self.set_service('factory', MiAZFactory(self))

@@ -15,7 +15,8 @@ import atexit
 sys.path.insert(1, '@pkgdatadir@')
 
 from MiAZ.env import ENV
-from MiAZ.backend.log import MiAZLog
+from MiAZ.backend.log import MiAZLog, enable_file_logging
+from MiAZ.backend.crash import install_backend_excepthook
 
 log = MiAZLog('MiAZ')
 
@@ -92,10 +93,15 @@ class MiAZ:
         from MiAZ.backend.util import MiAZUtil
         log.debug(f"MiAZ install mode: {MiAZUtil.get_install_mode()}")
         self.setup_environment()
+        # Enable persistent file logging now that the directories exist, then
+        # install the console/log crash handler so any later failure is logged.
+        log_file = enable_file_logging(ENV['FILE']['LOG'])
         self._acquire_lock()
         self.log = MiAZLog('MiAZ')
+        install_backend_excepthook(self.log, ENV)
 
         self.log.info(f"{ENV['APP']['shortname']} v{ENV['APP']['VERSION']} - Start")
+        self.log.info(f"Logging to {log_file}")
 
     def _acquire_lock(self):
         lock_dir = self.env['LPATH']['VAR']
