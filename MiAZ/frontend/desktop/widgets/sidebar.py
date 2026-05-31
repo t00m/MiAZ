@@ -53,6 +53,7 @@ class MiAZSidebar(Adw.Bin):
         self.app.add_widget('sidebar-button-clear-filters', button_clear)
         button_settings = self._setup_repo_settings_button()
         self.app.add_widget('sidebar-button-repo-settings', button_settings)
+        button_review = self._setup_pending_docs_button()
 
         self.dropdowns = self.app.add_widget('ws-dropdowns', {})
         self.app.add_widget('plugin-dropdowns', [])
@@ -63,8 +64,8 @@ class MiAZSidebar(Adw.Bin):
 
         main_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
 
-        # Sidebar header: repository-settings button (left), repository
-        # title (center) and clear-filters button (right).
+        # Sidebar header: repository-settings button (left), Review
+        # toggle button (center) and clear-filters button (right).
         header = Gtk.CenterBox()
         header.add_css_class('toolbar')
         header.set_margin_start(6)
@@ -72,15 +73,19 @@ class MiAZSidebar(Adw.Bin):
         header.set_margin_top(6)
         header.set_margin_bottom(6)
         header.set_start_widget(button_settings)
+        header.set_center_widget(button_review)
+        header.set_end_widget(button_clear)
+        main_box.append(header)
+
+        # Repository title label, kept for use at the bottom of the sidebar
+        # (above the document-count label).
         self.title_label = Gtk.Label()
         self.title_label.add_css_class('heading')
         self.title_label.set_ellipsize(True)
+        self.title_label.set_halign(Gtk.Align.CENTER)
         repo_id = config['App'].get('current') or 'MiAZ'
         self.title_label.set_text(repo_id.replace('_', ' '))
         self.app.add_widget('sidebar-title-label', self.title_label)
-        header.set_center_widget(self.title_label)
-        header.set_end_widget(button_clear)
-        main_box.append(header)
 
         box_frame = factory.create_box_vertical(margin=6, spacing=6, hexpand=True, vexpand=True)
         # ~ frame = Gtk.Frame()
@@ -143,15 +148,21 @@ class MiAZSidebar(Adw.Bin):
         scroll.set_child(filters_box)
         main_box.append(box_frame)
 
-        # App icon at the bottom centre of the sidebar. box_frame already
-        # carries vexpand=True, so it claims the slack and the icon stays
-        # pinned to the bottom edge regardless of window height.
-        # ~ app_icon = Gtk.Image.new_from_icon_name('io.github.t00m.MiAZ')
-        # ~ app_icon.set_pixel_size(96)
-        # ~ app_icon.set_halign(Gtk.Align.CENTER)
-        # ~ app_icon.set_margin_bottom(12)
-        # ~ self.app.add_widget('sidebar-app-icon', app_icon)
-        # ~ main_box.append(app_icon)
+        # Document-count label at the bottom centre of the sidebar. box_frame
+        # already carries vexpand=True, so it claims the slack and the label
+        # stays pinned to the bottom edge regardless of window height. It shows
+        # "selected / in view / total" and is updated from
+        # _on_workspace_menu_update (formerly the headerbar menu button label).
+        self.title_label.set_margin_top(6)
+        main_box.append(self.title_label)
+
+        doc_count_label = Gtk.Label()
+        doc_count_label.add_css_class('title-1')
+        doc_count_label.set_halign(Gtk.Align.CENTER)
+        doc_count_label.set_margin_top(6)
+        doc_count_label.set_margin_bottom(12)
+        self.app.add_widget('sidebar-doc-count-label', doc_count_label)
+        main_box.append(doc_count_label)
 
         self.set_child(main_box)
 
@@ -169,6 +180,18 @@ class MiAZSidebar(Adw.Bin):
             css_classes=['flat'],
             callback=self.clear_filters)
         self.app.add_widget('headerbar-button-clear-filters', button)
+        return button
+
+    def _setup_pending_docs_button(self):
+        factory = self.app.get_service('factory')
+        button = factory.create_button_toggle(
+            icon_name='io.github.t00m.MiAZ-rename',
+            title=_('Review'),
+            tooltip=_('There are documents pending of review'))
+        self.app.add_widget('workspace-togglebutton-pending-docs', button)
+        button.set_has_frame(True)
+        button.set_visible(False)
+        button.set_active(False)
         return button
 
     def _setup_repo_settings_button(self):

@@ -159,26 +159,23 @@ class MiAZMainWindow(Gtk.Box):
         factory = self.app.get_service('factory')
         headerbar = self.app.get_widget('headerbar')
 
-        # Workspace document-count menu button
-        label = Gtk.Label()
-        btnDocsSel = Gtk.MenuButton()
-        btnDocsSel.add_css_class('flat')
-        self.app.add_widget('workspace-menu', btnDocsSel)
-        btnDocsSel.set_always_show_arrow(True)
-        btnDocsSel.set_child(label)
-        popDocsSel = Gtk.PopoverMenu()
-        popDocsSel.set_menu_model(self._setup_menu_selection())
-        btnDocsSel.set_popover(popover=popDocsSel)
+        # Workspace document-count menu button. Disabled for now: the
+        # document-count label now lives at the bottom centre of the sidebar
+        # (see sidebar.py and _on_workspace_menu_update). The menu model is
+        # still built so the columnview right-click context menu keeps working.
+        self._setup_menu_selection()
+        # ~ label = Gtk.Label()
+        # ~ btnDocsSel = Gtk.MenuButton()
+        # ~ btnDocsSel.add_css_class('flat')
+        # ~ self.app.add_widget('workspace-menu', btnDocsSel)
+        # ~ btnDocsSel.set_always_show_arrow(True)
+        # ~ btnDocsSel.set_child(label)
+        # ~ popDocsSel = Gtk.PopoverMenu()
+        # ~ popDocsSel.set_menu_model(self._setup_menu_selection())
+        # ~ btnDocsSel.set_popover(popover=popDocsSel)
 
-        # Pending documents toggle button
-        button = factory.create_button_toggle(
-            icon_name='io.github.t00m.MiAZ-rename',
-            title=_('Review'),
-            tooltip=_('There are documents pending of review'))
-        self.app.add_widget('workspace-togglebutton-pending-docs', button)
-        button.set_has_frame(True)
-        button.set_visible(False)
-        button.set_active(False)
+        # Pending documents toggle button now lives in the sidebar header
+        # (see sidebar.py _setup_pending_docs_button).
 
         # Workspace view switcher, placed next to the title widgets.
         # On narrow widths it collapses to icons-only (see breakpoint setter
@@ -193,8 +190,7 @@ class MiAZMainWindow(Gtk.Box):
         # Combine all widgets into one horizontal box and use that as the
         # header bar's centered title widget.
         center_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
-        center_box.append(btnDocsSel)
-        center_box.append(button)
+        # ~ center_box.append(btnDocsSel)
         center_box.append(switcher)
         headerbar.set_title_widget(center_box)
 
@@ -263,7 +259,8 @@ class MiAZMainWindow(Gtk.Box):
             headerbar = self.app.get_widget('headerbar')
             headerbar.set_visible(True)
             btnWorkspace = self.app.get_widget('workspace-menu')
-            btnWorkspace.set_visible(False)
+            if btnWorkspace is not None:
+                btnWorkspace.set_visible(False)
             switcher = self.app.get_widget('workspace-view-switcher')
             if switcher is not None:
                 switcher.set_visible(False)
@@ -367,20 +364,22 @@ class MiAZMainWindow(Gtk.Box):
     def _on_workspace_menu_update(self, *args):
         stack = self.app.get_widget('stack')
         workspace = self. app.get_widget('workspace')
-        workspace_menu = self.app.get_widget('workspace-menu')
 
         s = workspace.get_num_selected_items() # Items selected
         v = workspace.get_num_displayed_items() # Items in view
         t = workspace.get_num_total_items() # Items in repository
 
-        label = workspace_menu.get_child()
+        # Document count is shown at the bottom centre of the sidebar
+        # (the headerbar menu button is disabled for now).
+        label = self.app.get_widget('sidebar-doc-count-label')
         label_text = f"<small>{s}</small> / {v} / <big>{t}</big>"
-        label.set_markup(label_text)
         tooltip = ""
         tooltip += _('{ns} documents selected\n').format(ns=s)
         tooltip += _('{nv} documents in this view\n').format(nv=v)
         tooltip += _('{nr} documents in this repository').format(nr=t)
-        workspace_menu.set_tooltip_markup(tooltip)
+        if label is not None:
+            label.set_markup(label_text)
+            label.set_tooltip_markup(tooltip)
 
         # Toggle headerbar button visibility based on selection
         btn_view = self.app.get_widget('headerbar-button-view')
