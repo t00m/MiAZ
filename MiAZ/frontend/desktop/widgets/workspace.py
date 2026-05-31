@@ -378,16 +378,12 @@ class MiAZWorkspace(Gtk.Box):
         browser_page.set_icon_name('io.github.t00m.MiAZ-webbrowser')
         self.app.add_widget('workspace-browser', browser_widget)
 
-        # InlineViewSwitcher linked to the stack
-        self._switcher = Adw.InlineViewSwitcher()
-        self._switcher.set_stack(self._stack)
-        self._switcher.set_display_mode(Adw.InlineViewSwitcherDisplayMode.BOTH)
-        self._switcher.set_halign(Gtk.Align.CENTER)
-        self._switcher.set_homogeneous(True)
-        self._switcher.set_visible(True)
-        self.app.add_widget('workspace-view-switcher', self._switcher)
+        # InlineViewSwitcher lives in the header bar (created by the main
+        # window). Link it to this stack instead of building a local one.
+        self._switcher = self.app.get_widget('workspace-view-switcher')
+        if self._switcher is not None:
+            self._switcher.set_stack(self._stack)
 
-        self.append(self._switcher)
         self.append(self._setup_filter_tags_bar())
         self.append(self._stack)
         self.set_default_columnview_attrs()

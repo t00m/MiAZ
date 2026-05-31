@@ -30,6 +30,7 @@ class MiAZSidebar(Adw.Bin):
     def _on_repo_switch(self, *args):
         config = self.app.get_config_dict()
         repo_id = config['App'].get('current') or 'MiAZ'
+        self.title_label.set_text(repo_id.replace('_', ' '))
         self.setup_custom_filters()
         self.log.debug(f"Switched to repository {repo_id} > Sidebar updated")
 
@@ -61,15 +62,26 @@ class MiAZSidebar(Adw.Bin):
             Gtk.SizeGroup(mode=Gtk.SizeGroupMode.HORIZONTAL))
 
         main_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
-        # The previous top row hosted the workspace-menu, the pending-docs
-        # toggle, the repository-management gear and the clear-filters
-        # button. The first two have moved to the header bar's centered
-        # title widget; the clear-filters button is rendered at the bottom
-        # of the filters list (see further down); the repository-management
-        # button is intentionally not attached anywhere (see below).
-        # ~ Repository management button kept in code but not shown:
-        # ~ title_bar = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
-        # ~ title_bar.append(button_settings)
+
+        # Sidebar header: repository-settings button (left), repository
+        # title (center) and clear-filters button (right).
+        header = Gtk.CenterBox()
+        header.add_css_class('toolbar')
+        header.set_margin_start(6)
+        header.set_margin_end(6)
+        header.set_margin_top(6)
+        header.set_margin_bottom(6)
+        header.set_start_widget(button_settings)
+        self.title_label = Gtk.Label()
+        self.title_label.add_css_class('heading')
+        self.title_label.set_ellipsize(True)
+        repo_id = config['App'].get('current') or 'MiAZ'
+        self.title_label.set_text(repo_id.replace('_', ' '))
+        self.app.add_widget('sidebar-title-label', self.title_label)
+        header.set_center_widget(self.title_label)
+        header.set_end_widget(button_clear)
+        main_box.append(header)
+
         box_frame = factory.create_box_vertical(margin=6, spacing=6, hexpand=True, vexpand=True)
         # ~ frame = Gtk.Frame()
         # ~ box_frame.append(frame)
@@ -128,13 +140,6 @@ class MiAZSidebar(Adw.Bin):
         self.app.add_widget('sidebar-plugin-section', plugin_box)
         filters_box.append(plugin_box)
 
-        # Clear-all-filters button at the bottom of the filters column,
-        # with a top margin so there is breathing room between it and the
-        # last filter (built-in or custom).
-        button_clear.set_margin_top(12)
-        button_clear.set_halign(Gtk.Align.CENTER)
-        filters_box.append(button_clear)
-
         scroll.set_child(filters_box)
         main_box.append(box_frame)
 
@@ -160,7 +165,6 @@ class MiAZSidebar(Adw.Bin):
         factory = self.app.get_service('factory')
         button = factory.create_button(
             icon_name='io.github.t00m.MiAZ-entry_clear',
-            title=_('Clear all filters'),
             tooltip=_('Clear all filters'),
             css_classes=['flat'],
             callback=self.clear_filters)

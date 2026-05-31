@@ -150,5 +150,8 @@ class MiAZWorkflow(GObject.GObject):
         headerbar.set_visible(True)
         btnWorkspace = self.app.get_widget('workspace-menu')
         btnWorkspace.set_visible(True)
+        switcher = self.app.get_widget('workspace-view-switcher')
+        if switcher is not None:
+            switcher.set_visible(True)
 
         self.emit("repository-switch-finished")

@@ -93,9 +93,14 @@ class MiAZMainWindow(Gtk.Box):
         toast_overlay.set_child(toolbar_view)
         self.append(toast_overlay)
 
-        # Adaptive: collapse the sidebar into an overlay on narrow widths
+        # Adaptive: collapse the sidebar into an overlay on narrow widths and
+        # show only icons in the workspace view switcher.
         breakpoint_ = Adw.Breakpoint.new(Adw.BreakpointCondition.parse("max-width: 720sp"))
         breakpoint_.add_setter(split_view, "collapsed", True)
+        switcher = self.app.get_widget('workspace-view-switcher')
+        if switcher is not None:
+            breakpoint_.add_setter(
+                switcher, "display-mode", Adw.InlineViewSwitcherDisplayMode.ICONS)
         self.win.add_breakpoint(breakpoint_)
 
     def _setup_event_listener(self):
@@ -175,11 +180,22 @@ class MiAZMainWindow(Gtk.Box):
         button.set_visible(False)
         button.set_active(False)
 
-        # Combine both widgets into one horizontal box and use that as the
+        # Workspace view switcher, placed next to the title widgets.
+        # On narrow widths it collapses to icons-only (see breakpoint setter
+        # in _setup_ui); on wide widths it shows icons and labels.
+        switcher = Adw.InlineViewSwitcher()
+        switcher.set_display_mode(Adw.InlineViewSwitcherDisplayMode.BOTH)
+        switcher.set_homogeneous(True)
+        switcher.set_valign(Gtk.Align.CENTER)
+        switcher.set_visible(False)
+        self.app.add_widget('workspace-view-switcher', switcher)
+
+        # Combine all widgets into one horizontal box and use that as the
         # header bar's centered title widget.
         center_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
         center_box.append(btnDocsSel)
         center_box.append(button)
+        center_box.append(switcher)
         headerbar.set_title_widget(center_box)
 
     def _setup_headerbar_end(self):
@@ -248,6 +264,9 @@ class MiAZMainWindow(Gtk.Box):
             headerbar.set_visible(True)
             btnWorkspace = self.app.get_widget('workspace-menu')
             btnWorkspace.set_visible(False)
+            switcher = self.app.get_widget('workspace-view-switcher')
+            if switcher is not None:
+                switcher.set_visible(False)
 
     def _setup_page_404(self):
         stack = self.app.get_widget('stack')
