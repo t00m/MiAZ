@@ -718,22 +718,134 @@ class MiAZPlugins(MiAZConfigView):
         self.viewSl = MiAZColumnViewPlugin(self.app)
         self._add_columnview_used(self.viewSl)
 
+    def _load_plugin_index(self):
+        """Return the runtime plugin index keyed by plugin Name."""
+        ENV = self.app.get_env()
+        util = self.app.get_service('util')
+        try:
+            return util.json_load(ENV['APP']['PLUGINS']['INDEX'])
+        except Exception:
+            return {}
+
+    def _parse_dependencies(self, plugin_info):
+        """Return the list of plugin Names declared as dependencies.
+
+        Dependencies are stored as a comma-separated string in the
+        `Dependencies` key of the plugin_info dict. Missing or empty means
+        no dependencies.
+        """
+        if plugin_info is None:
+            return []
+        raw = plugin_info.get('Dependencies', '')
+        return [dep.strip() for dep in raw.split(',') if dep.strip()]
+
+    def _resolve_required_chain(self, plugin_id, all_plugins):
+        """Resolve the full dependency chain for `plugin_id`.
+
+        Post-order depth-first walk so a dependency always lands before the
+        plugin that needs it. Returns a tuple (to_enable, missing) where:
+        - to_enable: topologically ordered list of installed-but-disabled
+          dependency Names (dependencies first).
+        - missing: list of dependency Names not present in the index.
+        """
+        to_enable = []
+        missing = []
+        done = set()
+        visiting = set()
+
+        def visit(pid):
+            for dep in self._parse_dependencies(all_plugins.get(pid)):
+                if dep in done or dep in visiting:
+                    continue
+                if dep not in all_plugins:
+                    if dep not in missing:
+                        missing.append(dep)
+                    done.add(dep)
+                    continue
+                visiting.add(dep)
+                visit(dep)
+                visiting.discard(dep)
+                done.add(dep)
+                if not self.config.exists_used(dep) and dep not in to_enable:
+                    to_enable.append(dep)
+
+        visiting.add(plugin_id)
+        visit(plugin_id)
+        return to_enable, missing
+
+    def _find_dependents(self, plugin_id, all_plugins):
+        """Return enabled plugin Names whose dependency chain needs `plugin_id`."""
+        dependents = []
+        for enabled_id in self.config.load_used():
+            if enabled_id == plugin_id:
+                continue
+            if self._chain_contains(enabled_id, plugin_id, all_plugins):
+                dependents.append(enabled_id)
+        return dependents
+
+    def _chain_contains(self, plugin_id, target_id, all_plugins):
+        """Return True if `target_id` is anywhere in `plugin_id`'s dependency chain."""
+        visited = set()
+        pending = list(self._parse_dependencies(all_plugins.get(plugin_id)))
+        while pending:
+            dep = pending.pop(0)
+            if dep in visited:
+                continue
+            visited.add(dep)
+            if dep == target_id:
+                return True
+            pending.extend(self._parse_dependencies(all_plugins.get(dep)))
+        return False
+
+    def _enable_single(self, plugin_id, all_plugins):
+        """Load and record a single plugin as enabled. Returns True on success."""
+        plugin_manager = self.app.get_service('plugin-system')
+        plugin_info = all_plugins.get(plugin_id)
+        if plugin_info is None:
+            self.log.error(f"Plugin '{plugin_id}' not found in plugin index")
+            return False
+        if self.config.exists_used(plugin_id):
+            return True
+        plugin_module = plugin_info['Module']
+        plugin = plugin_manager.get_plugin_info(plugin_module)
+        if plugin is None:
+            self.log.error(f"Plugin '{plugin_id}' could not be resolved by the engine")
+            return False
+        if not plugin_manager.is_plugin_loaded(plugin):
+            if not plugin_manager.load_plugin(plugin):
+                # Activation was refused (e.g. a plugin whose required external
+                # tools are missing vetoed its do_activate). The plugin is
+                # responsible for telling the user why; do not persist it as
+                # enabled.
+                self.log.warning(f"Plugin '{plugin_id}' was not enabled (activation refused)")
+                return False
+        enabled = self.config.load_used()
+        enabled[plugin_id] = plugin_info.get('Name', plugin_id)
+        self.config.save_used(enabled)
+        self.log.debug(f"Plugin '{plugin_id}' enabled")
+        return True
+
     def _on_item_used_remove(self, *args):
         selected_plugin = self.viewSl.get_selected()
         if selected_plugin is None:
             return
 
-        ENV = self.app.get_env()
-        util = self.app.get_service('util')
         plugin_manager = self.app.get_service('plugin-system')
-        all_plugins = {}
-        try:
-            all_plugins = util.json_load(ENV['APP']['PLUGINS']['INDEX'])
-        except Exception:
-            pass
+        all_plugins = self._load_plugin_index()
         plugin_info = all_plugins.get(selected_plugin.id)
         if plugin_info is None:
             return
+
+        # Warn and block: refuse to disable a plugin other enabled plugins need
+        dependents = self._find_dependents(selected_plugin.id, all_plugins)
+        if dependents:
+            title = _('Cannot disable plugin')
+            body = _("Plugin <b>{plugin}</b> is required by the following enabled "
+                     "plugin(s):\n\n{deps}\n\nDisable them first.").format(
+                         plugin=selected_plugin.id, deps='\n'.join(dependents))
+            self.srvdlg.show_error(title=title, body=body, parent=self)
+            return
+
         plugin_module = plugin_info['Module']
         plugin = plugin_manager.get_plugin_info(plugin_module)
         if plugin is not None and plugin_manager.is_plugin_loaded(plugin):
@@ -743,9 +855,6 @@ class MiAZPlugins(MiAZConfigView):
         self.update_views()
 
     def _on_item_used_add(self, *args):
-        plugin_manager = self.app.get_service('plugin-system')
-        util = self.app.get_service('util')
-        ENV = self.app.get_env()
         selected_plugin = self.viewAv.get_selected()
         if selected_plugin is None:
             return
@@ -755,24 +864,45 @@ class MiAZPlugins(MiAZConfigView):
             self.update_views()
             return
 
-        all_plugins = {}
-        try:
-            all_plugins = util.json_load(ENV['APP']['PLUGINS']['INDEX'])
-        except Exception:
-            pass
+        all_plugins = self._load_plugin_index()
         plugin_info = all_plugins.get(selected_plugin.id)
         if plugin_info is None:
             self.log.error(f"Plugin '{selected_plugin.id}' not found in plugin index")
             return
-        plugin_module = plugin_info['Module']
-        plugin = plugin_manager.get_plugin_info(plugin_module)
-        if plugin is not None:
-            if not plugin_manager.is_plugin_loaded(plugin):
-                plugin_manager.load_plugin(plugin)
-            enabled = self.config.load_used()
-            enabled[selected_plugin.id] = selected_plugin.title
-            self.config.save_used(enabled)
-            self.log.debug(f"Plugin '{selected_plugin.id}' enabled")
+
+        to_enable, missing = self._resolve_required_chain(selected_plugin.id, all_plugins)
+
+        if missing:
+            title = _('Missing plugin dependencies')
+            body = _("Plugin <b>{plugin}</b> requires the following plugin(s) "
+                     "which are not installed:\n\n{deps}").format(
+                         plugin=selected_plugin.id, deps='\n'.join(missing))
+            self.srvdlg.show_error(title=title, body=body, parent=self)
+            return
+
+        if to_enable:
+            title = _('Enable required plugins')
+            body = _("Plugin <b>{plugin}</b> requires the following plugin(s) "
+                     "which are not enabled:\n\n{deps}\n\nEnable them now?").format(
+                         plugin=selected_plugin.id, deps='\n'.join(to_enable))
+            dialog = self.srvdlg.show_confirmation(title=title, body=body,
+                                                   confirm_label=_('Enable'),
+                                                   confirm_id='enable')
+            data = (selected_plugin.id, to_enable, all_plugins)
+            dialog.connect('response', self._on_enable_dependencies_response, data)
+            dialog.present(self)
+            return
+
+        self._enable_single(selected_plugin.id, all_plugins)
+        self.update_views()
+
+    def _on_enable_dependencies_response(self, dialog, response, data):
+        if response != 'enable':
+            return
+        plugin_id, to_enable, all_plugins = data
+        for dep_id in to_enable:
+            self._enable_single(dep_id, all_plugins)
+        self._enable_single(plugin_id, all_plugins)
         self.update_views()
 
     def _show_plugin_info(self, *args):

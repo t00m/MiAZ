@@ -457,11 +457,17 @@ class MiAZPluginSystem(GObject.GObject):
             self.log.info(f"Plugin {pname} v{pvers} loaded")
             self.emit('plugins-updated')
             return True
-        except AttributeError as error:
-            self.log.error(f"Plugin {pname} v{pvers} couldn't be loaded: {error}")
-            return False
         except Exception as error:
+            # do_activate() may raise to veto its own activation (e.g. a plugin
+            # whose required external tools are not installed). Clean up the
+            # half-loaded engine state so the plugin does not read back as
+            # loaded, and report failure to the caller.
             self.log.error(f"Plugin {pname} v{pvers} couldn't be loaded: {error}")
+            try:
+                if plugin.is_loaded():
+                    self.engine.unload_plugin(plugin)
+            except Exception as cleanup_error:
+                self.log.debug(f"Cleanup after failed load of {pname}: {cleanup_error}")
             return False
 
     def unload_plugin(self, plugin: Peas.PluginInfo):
@@ -510,7 +516,14 @@ class MiAZPluginSystem(GObject.GObject):
             if issubclass(cls, MiAZExtension) and cls is not MiAZExtension:
                 instance = cls()
                 instance.props.object = MiAZAPI(self.app)
-                instance.do_activate()
+                try:
+                    instance.do_activate()
+                except Exception as error:
+                    # A plugin may raise from do_activate() to refuse activation
+                    # (e.g. missing external tools). Propagate so load_plugin
+                    # cleans up and reports the failure; do not register it.
+                    self.log.warning(f"Plugin '{module_name}' vetoed its activation: {error}")
+                    raise
                 self._extension_instances[module_name] = instance
                 self.log.debug(f"Activated plugin class '{_name}' for module '{module_name}'")
                 return instance
