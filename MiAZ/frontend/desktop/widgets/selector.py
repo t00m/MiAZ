@@ -62,14 +62,9 @@ class MiAZSelector(Gtk.Box):
             self.toolbar_buttons_Av.append(self.btnAvEdit)
         centerbox.set_start_widget(self.toolbar_buttons_Av)
 
-        # Center
+        # Center: only the search entry
         self.toolbar_buttons_center = factory.create_box_horizontal(margin=0, spacing=0, vexpand=False, hexpand=False)
-        self.toolbar_buttons_center.add_css_class('linked')
         centerbox.set_center_widget(self.toolbar_buttons_center)
-
-        ## Add to used
-        self.btnAddToUsed = factory.create_button('io.github.t00m.MiAZ-selector-add', callback=self._on_item_used_add, reverse=True)
-        self.toolbar_buttons_center.append(self.btnAddToUsed)
 
         ## Search entry
         self.searchentry = Gtk.SearchEntry()
@@ -78,10 +73,6 @@ class MiAZSelector(Gtk.Box):
         self.searchentry.connect('search-started', self._on_filter_selected)
         self.searchentry.connect('activate', self._on_item_available_add, self.config_for)
         self.toolbar_buttons_center.append(self.searchentry)
-
-        # Remove from used
-        self.btnRemoveFromUsed = factory.create_button('io.github.t00m.MiAZ-selector-remove', tooltip='disable', callback=self._on_item_used_remove)
-        self.toolbar_buttons_center.append(self.btnRemoveFromUsed)
 
         # Right
         self.toolbar_buttons_Sl = factory.create_box_horizontal(margin=0, spacing=0, vexpand=False, hexpand=True)
@@ -93,10 +84,21 @@ class MiAZSelector(Gtk.Box):
         # Views
         self.boxViews = factory.create_box_horizontal(margin=0, spacing=0, hexpand=True, vexpand=True)
         self.boxViews.add_css_class('toolbar')
-        self.boxViews.set_homogeneous(True)
+        self.boxViews.set_homogeneous(False)
         self.boxLeft = factory.create_box_vertical(margin=0, spacing=6, hexpand=True, vexpand=True)
         self.boxRight = factory.create_box_vertical(margin=0, spacing=6, hexpand=True, vexpand=True)
+
+        ## Center controls: enable ('>') / disable ('<') selected items
+        boxControls = factory.create_box_vertical(margin=6, spacing=0, hexpand=False, vexpand=True)
+        boxControls.add_css_class('linked')
+        boxControls.set_valign(Gtk.Align.CENTER)
+        self.btnAddToUsed = factory.create_button('io.github.t00m.MiAZ-selector-add', tooltip='enable', callback=self._on_item_used_add)
+        self.btnRemoveFromUsed = factory.create_button('io.github.t00m.MiAZ-selector-remove', tooltip='disable', callback=self._on_item_used_remove)
+        boxControls.append(self.btnAddToUsed)
+        boxControls.append(self.btnRemoveFromUsed)
+
         self.boxViews.append(self.boxLeft)
+        self.boxViews.append(boxControls)
         self.boxViews.append(self.boxRight)
         self.append(self.boxViews)
 
@@ -159,48 +161,56 @@ class MiAZSelector(Gtk.Box):
         # Others like Projects need their own implementation
         repository = self.app.get_service('repo')
         util = self.app.get_service('util')
-        selected_item = self.viewSl.get_selected()
-        if selected_item is None:
+        selected_items = self.viewSl.get_selected_items()
+        if len(selected_items) == 0:
             return
 
         item_type = self.config.model
         i_title = _(item_type.__title__)
-        item_dsc = selected_item.title.replace('_', ' ')
-        items_used = self.config.load_used()
-        try:
-            is_used, docs = util.field_used(repository.docs, self.config.model, selected_item.id)
-        except KeyError:
-            # FIXME
-            # Above call works out only for MiAZ standard fields.
-            # For plugins, find another solution
-            self.log.warning(f"Custom model for {self.config.config_for} returns False")
-            is_used = False
-        if is_used:
+
+        to_disable = []
+        blocked = []  # (item, docs) still referenced by documents
+        for item in selected_items:
+            try:
+                is_used, docs = util.field_used(repository.docs, self.config.model, item.id)
+            except KeyError:
+                # FIXME
+                # Above call works out only for MiAZ standard fields.
+                # For plugins, find another solution
+                self.log.warning(f"Custom model for {self.config.config_for} returns False")
+                is_used = False
+                docs = []
+            if is_used:
+                blocked.append((item, docs))
+            else:
+                to_disable.append(item)
+
+        if len(to_disable) > 0:
+            self.config.add_available_batch([(item.id, item.title) for item in to_disable])
+            self.config.remove_used_batch([item.id for item in to_disable])
+            self._show_toast(_('{num} {title} disabled').format(num=len(to_disable), title=i_title))
+
+        if len(blocked) > 0:
             window = self.viewSl.get_root()
             title = self.dialog_title
             body1 = _('<b>Action not possible</b>')
-            body2 = _('{title} {desc} is still being used by {num_docs} documents').format(title=i_title, desc=item_dsc, num_docs=len(docs))
-            body = body1 + '\n' + body2
-            if len(docs) > 0:
-                items = []
+            lines = [body1]
+            items = []
+            for item, docs in blocked:
+                item_dsc = item.title.replace('_', ' ')
+                lines.append(_('{title} {desc} is still being used by {num_docs} documents').format(title=i_title, desc=item_dsc, num_docs=len(docs)))
                 for doc in docs:
                     items.append(File(id=doc, title=os.path.basename(doc)))
+            body = '\n'.join(lines)
+            if len(items) > 0:
                 view = MiAZColumnViewDocuments(self.app)
                 view.update(items)
-            else:
-                view = None
-
-            if view is not None:
                 widget = Gtk.Frame()
                 widget.set_child(view)
             else:
-                widget = view
+                widget = None
             srvdlg = self.app.get_service('dialogs')
             srvdlg.show_error(title=title, body=body, widget=widget, width=600, height=480, parent=window)
-        else:
-            self.config.add_available(selected_item.id, selected_item.title)
-            self.config.remove_used(selected_item.id)
-            self._show_toast(_('{title} {desc} disabled').format(title=i_title, desc=item_dsc))
 
     def _on_item_available_add(self, *args):
         if self.edit:
@@ -292,7 +302,7 @@ class MiAZSelector(Gtk.Box):
             if item.id == item_id:
                 self.log.debug(item)
                 selection.unselect_all()
-                selection.set_selected(n)
+                selection.select_item(n, True)
                 self._on_item_used_remove()
                 break
 
@@ -403,20 +413,15 @@ class MiAZSelector(Gtk.Box):
             self._show_toast(_('{title} {desc} not deleted').format(title=i_title, desc=item_dsc))
 
     def _on_item_used_add(self, *args):
-        items_used = self.config.load_used()
-        selected_item = self.viewAv.get_selected()
-        if selected_item is None:
+        selected_items = self.viewAv.get_selected_items()
+        if len(selected_items) == 0:
             return
-        is_used = selected_item.id in items_used
+
         item_type = self.config.model
         i_title = item_type.__title__
-        title = self.dialog_title
-        if not is_used:
-            items_used[selected_item.id] = selected_item.title
-            self.config.save_used(items=items_used)
-            self._show_toast(_('{title} {item} has been enabled').format(title=i_title, item=selected_item.title))
-        else:
-            body1 = _('<b>Action not possible</b>')
-            body2 = _('{title} {item} is already enabled').format(title=i_title, item=selected_item.title)
-            body = body1 + '\n' + body2
-            self.srvdlg.show_error(title=title, body=body, parent=self)
+        items_used = self.config.load_used()
+        to_enable = [(item.id, item.title) for item in selected_items if item.id not in items_used]
+        if len(to_enable) > 0:
+            self.config.add_used_batch(to_enable)
+            self.config.remove_available_batch([key for key, value in to_enable])
+            self._show_toast(_('{num} {title} enabled').format(num=len(to_enable), title=i_title))

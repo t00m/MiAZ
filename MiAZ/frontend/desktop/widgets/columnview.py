@@ -233,15 +233,17 @@ class MiAZColumnViewSelector(MiAZColumnView):
         self.factory = self.app.get_service('factory')
         self.actions = self.app.get_service('actions')
         self.cv.add_css_class('monospace')
-        self.selection = Gtk.SingleSelection.new(self.filter_model)
+        self.selection = Gtk.MultiSelection.new(self.filter_model)
         self.cv.set_model(self.selection)
         self.selection.connect('selection-changed', self._on_selection_changed)
 
     def get_selected(self):
-        return self.selection.get_selected_item()
+        # Backward-compatible single-item access: return the first selected
+        # item so existing single-row callers keep working with MultiSelection.
+        return self.selected_items[0] if self.selected_items else None
 
     def set_selected(self, item):
         for i in range(self.filter_model.get_n_items()):
             if self.filter_model.get_item(i).id == item.id:
-                self.selection.set_selected(i)
+                self.selection.select_item(i, True)
                 break
