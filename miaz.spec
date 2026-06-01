@@ -20,6 +20,7 @@ Requires:       python3-gobject
 Requires:       gtk4
 Requires:       libadwaita
 Requires:       libpeas2
+Requires:       webkitgtk6.0
 
 %description
 MiAZ is a GTK4/Libadwaita desktop application that organises personal

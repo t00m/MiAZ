@@ -393,6 +393,17 @@ class MiAZColumnViewRepo(MiAZColumnViewSelector):
         # and rely on the surrounding ScrolledWindow for horizontal scroll.
         self.scrwin.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.AUTOMATIC)
 
+        # Description column
+        self.factory_description = Gtk.SignalListItemFactory()
+        self.factory_description.connect('setup', self._on_factory_setup_description)
+        self.factory_description.connect('bind', self._on_factory_bind_description)
+        self.column_description = Gtk.ColumnViewColumn.new(_('Description'), self.factory_description)
+        self.column_description.set_expand(True)
+        self.column_description.set_resizable(True)
+        self.prop_description_sorter = Gtk.CustomSorter.new(sort_func=self._on_sort_string_func, user_data='description')
+        self.column_description.set_sorter(self.prop_description_sorter)
+        self.cv.append_column(self.column_description)
+
     def _on_factory_bind_title(self, factory, list_item):
         box = list_item.get_child()
         item = list_item.get_item()
@@ -403,6 +414,17 @@ class MiAZColumnViewRepo(MiAZColumnViewSelector):
         label.set_xalign(0.0)
         tooltip = f"<big>{item.id}</big>\n<b>{item.title}</b>"
         label.set_tooltip_markup(tooltip)
+
+    def _on_factory_setup_description(self, factory, list_item):
+        box = ColLabel()
+        list_item.set_child(box)
+
+    def _on_factory_bind_description(self, factory, list_item):
+        box = list_item.get_child()
+        item = list_item.get_item()
+        label = box.get_first_child()
+        label.set_markup(item.description or '')
+        label.set_xalign(0.0)
 
 
 class MiAZColumnViewGroup(MiAZColumnViewSelector):

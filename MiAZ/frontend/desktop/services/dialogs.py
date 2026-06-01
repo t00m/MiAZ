@@ -413,6 +413,10 @@ class MiAZDialogAddRepo(MiAZDialogAdd):
         self.row_folder.set_activatable_widget(btn_folder)
         group.add(self.row_folder)
 
+        self.row_description = Adw.EntryRow(title=_('Description'))
+        self.row_description.connect('entry-activated', self._on_action_clicked)
+        group.add(self.row_description)
+
         clamp = Adw.Clamp()
         clamp.set_maximum_size(440)
         clamp.set_child(group)
@@ -437,6 +441,12 @@ class MiAZDialogAddRepo(MiAZDialogAdd):
 
     def get_value2(self):
         return self._folder
+
+    def set_value3(self, value):
+        self.row_description.set_text(value or '')
+
+    def get_value3(self):
+        return self.row_description.get_text()
 
     def on_open_file(self, button):
         dirpath = self._folder or GLib.get_home_dir()

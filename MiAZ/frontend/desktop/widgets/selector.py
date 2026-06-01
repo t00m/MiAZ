@@ -77,6 +77,9 @@ class MiAZSelector(Gtk.Box):
         # Right
         self.toolbar_buttons_Sl = factory.create_box_horizontal(margin=0, spacing=0, vexpand=False, hexpand=True)
         self.toolbar_buttons_Sl.add_css_class('linked')
+        if self.edit:
+            self.btnSlEdit = factory.create_button(icon_name='io.github.t00m.MiAZ-list-edit-symbolic', title='', callback=self._on_item_used_edit)
+            self.toolbar_buttons_Sl.append(self.btnSlEdit)
         self.app.add_widget('settings-repository-toolbar-av', toolbar)
         self.toolbar_buttons_Sl.set_halign(Gtk.Align.END)
         centerbox.set_end_widget(self.toolbar_buttons_Sl)
@@ -246,26 +249,35 @@ class MiAZSelector(Gtk.Box):
                 self.srvdlg.show_error(title=title, body=body, parent=parent)
 
     def _on_item_available_edit(self, *args):
-        try:
-            item = self.viewAv.get_selected()
-            item_type = self.config.model
-            i_title = _(item_type.__title__)
-            if item_type not in [Country, Plugin]:
-                parent = self.get_root()
-                title = _('Edit {title}').format(title=i_title.lower())
-                key1 = _('{title} key').format(title=i_title.title())
-                key2 = _('Description')
-                this_item = MiAZDialogAdd(self.app)
-                dialog = this_item.create(parent=parent, title=title, key1=key1, key2=key2, action_label=_('Save'))
-                entry1 = this_item.get_entry_key1()
-                entry1.set_sensitive(False)
-                if item is not None:
-                    this_item.set_value1(item.id)
-                    this_item.set_value2(item.title)
-                dialog.connect('response', self._on_item_available_edit_description, item, this_item, parent)
-                dialog.present(parent)
-        except IndexError:
+        self._edit_item_description(self.viewAv)
+
+    def _on_item_used_edit(self, *args):
+        self._edit_item_description(self.viewSl)
+
+    def _edit_item_description(self, view):
+        # Edit the description of the selected item from either the available
+        # or the used view. The change is applied globally (both lists) by
+        # _on_item_available_edit_description. Plugins/Countries are excluded.
+        item = view.get_selected()
+        if item is None:
             self.log.debug("No item selected. Cancel operation")
+            return
+
+        item_type = self.config.model
+        i_title = _(item_type.__title__)
+        if item_type not in [Country, Plugin]:
+            parent = self.get_root()
+            title = _('Edit {title}').format(title=i_title.lower())
+            key1 = _('{title} key').format(title=i_title.title())
+            key2 = _('Description')
+            this_item = MiAZDialogAdd(self.app)
+            dialog = this_item.create(parent=parent, title=title, key1=key1, key2=key2, action_label=_('Save'))
+            entry1 = this_item.get_entry_key1()
+            entry1.set_sensitive(False)
+            this_item.set_value1(item.id)
+            this_item.set_value2(item.title)
+            dialog.connect('response', self._on_item_available_edit_description, item, this_item, parent)
+            dialog.present(parent)
 
     def _on_item_available_edit_description(self, dialog, response, item, this_item, parent):
         item_type = self.config.model
@@ -279,13 +291,18 @@ class MiAZSelector(Gtk.Box):
             newval = this_item.get_value2()
             self.log.debug(f"{oldval} == {newval}? {newval != oldval}")
             if newval != oldval:
+                # Apply the new description to whichever list(s) hold the key.
+                # Available and used are disjoint (enabling an item removes it
+                # from available), so guard each write to avoid re-adding a
+                # stale orphan entry to the other list.
                 items_used = self.config.load_used()
                 if oldkey in items_used:
                     items_used[oldkey] = newval
                     self.config.save_used(items_used)
                 items_available = self.config.load_available()
-                items_available[oldkey] = newval
-                self.config.save_available(items_available)
+                if oldkey in items_available:
+                    items_available[oldkey] = newval
+                    self.config.save_available(items_available)
                 self.update_views()
                 self._show_toast(_('{title} {old} renamed to {new} globally').format(title=i_title, old=oldval, new=newval))
             else:

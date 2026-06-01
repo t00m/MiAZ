@@ -146,8 +146,7 @@ class MiAZDRPage(Adw.PreferencesPage):
         return item
 
     def _get_repo_dirs(self, repo_item):
-        repos_used = self.app.get_config('Repository').load_used()
-        repo_path = repos_used.get(repo_item.id)
+        repo_path = self.app.get_config('Repository').get_path(repo_item.id, used=True)
         if not repo_path:
             self.srvdlg.show_toast(_('Repository path not found'))
             return None, None

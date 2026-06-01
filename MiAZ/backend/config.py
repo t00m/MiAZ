@@ -297,6 +297,65 @@ class MiAZConfigRepositories(MiAZConfig):
             foreign=True
         )
 
+    @staticmethod
+    def _normalize_items(items: dict):
+        """Convert the legacy {key: path} shape into the current
+        {key: {'path': path, 'description': desc}} shape.
+        """
+        changed = False
+        normalized = {}
+        for key, value in items.items():
+            if isinstance(value, dict):
+                path = value.get('path', '')
+                desc = value.get('description', '')
+                normalized[key] = {'path': path, 'description': desc}
+                if 'path' not in value or 'description' not in value:
+                    changed = True
+            else:
+                # Legacy format: the value is the repository path string
+                normalized[key] = {'path': value or '', 'description': ''}
+                changed = True
+        return normalized, changed
+
+    def load(self, filepath: str) -> dict:
+        items = super().load(filepath)
+        normalized, changed = self._normalize_items(items)
+        if changed:
+            # Migrate in place. Write directly with the util service instead of
+            # self.save() so we don't emit available-updated/used-updated in the
+            # middle of a read (which would trigger redundant view refreshes).
+            util = self.app.get_service('util')
+            util.json_save(filepath, normalized)
+            self.cache[filepath] = {'changed': False, 'items': normalized}
+            self.log.debug(f"Migrated repository config to new format: {filepath}")
+        return normalized
+
+    def get_path(self, key: str, used: bool = True) -> str:
+        items = self.load(self.used if used else self.available)
+        entry = items.get(key)
+        if isinstance(entry, dict):
+            return entry.get('path', '')
+        return entry or ''
+
+    def get_description(self, key: str, used: bool = True) -> str:
+        items = self.load(self.used if used else self.available)
+        entry = items.get(key)
+        if isinstance(entry, dict):
+            return entry.get('description', '')
+        return ''
+
+    def set_repo(self, key: str, path: str, description: str = '', used: bool = True) -> bool:
+        filepath = self.used if used else self.available
+        items = self.load(filepath)
+        items[key] = {'path': path or '', 'description': description or ''}
+        return self.save(filepath, items)
+
+    def set_repo_available(self, key: str, path: str, description: str = '') -> bool:
+        return self.set_repo(key, path, description, used=False)
+
+    def set_repo_used(self, key: str, path: str, description: str = '') -> bool:
+        return self.set_repo(key, path, description, used=True)
+
 
 class MiAZConfigCountries(MiAZConfig):
     def __init__(self, app, dir_conf):

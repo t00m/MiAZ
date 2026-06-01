@@ -14,7 +14,7 @@ from gi.repository import GObject
 from gi.repository import Gtk
 
 from MiAZ.backend.log import MiAZLog
-from MiAZ.backend.models import Plugin
+from MiAZ.backend.models import Plugin, Repository
 from MiAZ.frontend.desktop.widgets.selector import MiAZSelector
 from MiAZ.frontend.desktop.widgets.columnview import MiAZColumnView
 from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewCountry
@@ -123,6 +123,32 @@ class MiAZRepositories(MiAZConfigView):
         self._add_columnview_used(self.viewSl)
         self._add_config_menubutton(self.config.config_for)
 
+    def _update_view_available(self):
+        # Repository values are dicts ({'path': ..., 'description': ...}), so the
+        # generic base implementation (title=_(items[key])) does not apply here.
+        items_available = []
+        items = self.config.load_available()
+        used = self.config.load_used()
+        for key in items:
+            if key not in used:
+                entry = items[key]
+                items_available.append(Repository(
+                    id=key,
+                    title=entry.get('path', ''),
+                    description=entry.get('description', '')))
+        self.viewAv.update(items_available)
+
+    def _update_view_used(self, items=None):
+        items_used = []
+        items = self.config.load_used()
+        for key in items:
+            entry = items[key]
+            items_used.append(Repository(
+                id=key,
+                title=entry.get('path', ''),
+                description=entry.get('description', '')))
+        self.viewSl.update(items_used)
+
     def _on_item_available_add(self, *args):
         window = self.viewSl.get_root()
         title = _('Add repository')
@@ -141,8 +167,9 @@ class MiAZRepositories(MiAZConfigView):
         if response == 'apply':
             repo_name = this_repo.get_value1()
             repo_path = this_repo.get_value2()
+            repo_desc = this_repo.get_value3()
             if len(repo_name) > 0 and os.path.exists(repo_path):
-                self.config.add_available(repo_name, repo_path)
+                self.config.set_repo_available(repo_name, repo_path, repo_desc)
                 body = _('Repository added to list of available repositories')
                 self.log.debug(body)
                 srvdlg.show_toast(body)
@@ -168,6 +195,7 @@ class MiAZRepositories(MiAZConfigView):
         this_repo.disable_key1()
         this_repo.set_value1(item.id)
         this_repo.set_value2(item.title)
+        this_repo.set_value3(item.description)
         dialog.connect('response', self._on_item_available_edit_description, item, this_repo, parent)
         dialog.present(parent)
 
@@ -177,24 +205,21 @@ class MiAZRepositories(MiAZConfigView):
 
         if response == 'apply':
             oldkey = item.id
-            oldval = item.title
-            newkey = this_item.get_value1()
-            newval = this_item.get_value2()
-            self.log.debug(f"{oldval} == {newval}? {newval != oldval}")
+            oldpath = item.title
+            olddesc = item.description
+            newpath = this_item.get_value2()
+            newdesc = this_item.get_value3()
+            self.log.debug(f"path {oldpath} -> {newpath}; desc {olddesc} -> {newdesc}")
             title = self.dialog_title
-            if newval != oldval:
-                items_used = self.config.load_used()
-                if oldkey in items_used:
-                    items_used[oldkey] = newval
-                    self.config.save_used(items_used)
-                items_available = self.config.load_available()
-                items_available[oldkey] = newval
-                self.config.save_available(items_available)
-                body = _('Repository target folder updated')
+            if newpath != oldpath or newdesc != olddesc:
+                if self.config.exists_used(oldkey):
+                    self.config.set_repo_used(oldkey, newpath, newdesc)
+                self.config.set_repo_available(oldkey, newpath, newdesc)
+                body = _('Repository updated')
                 self.srvdlg.show_toast(body)
             else:
                 body1 = _('<b>Action not possible</b>')
-                body2 = _('Repository target folder not updated')
+                body2 = _('Repository not updated')
                 body = body1 + '\n' + body2
                 self.srvdlg.show_error(title=title, body=body, parent=parent)
 
@@ -243,8 +268,7 @@ class MiAZRepositories(MiAZConfigView):
             item_type = self.config.model
             i_title = item_type.__title__
             if not is_used:
-                items_used[selected_item.id] = selected_item.title
-                self.config.save_used(items=items_used)
+                self.config.set_repo_used(selected_item.id, selected_item.title, selected_item.description)
                 body = _('{title} {item} ready to be used').format(title=i_title, item=selected_item.id)
                 self.log.debug(body)
             else:
@@ -279,7 +303,9 @@ class MiAZRepositories(MiAZConfigView):
 
             item_type = self.config.model
             i_title = item_type.__title__
-            items_available[selected_item.id] = selected_item.title
+            items_available[selected_item.id] = {
+                'path': selected_item.title,
+                'description': selected_item.description}
             self.log.debug(f"{i_title} {selected_item.id} added back to the list of available items")
             del items_used[selected_item.id]
             self.log.debug(f"{i_title} {selected_item.id} removed from de list of used items")
@@ -311,6 +337,8 @@ class MiAZCountries(MiAZConfigView):
         self.btnAvAdd.set_visible(False)
         self.btnAvRemove.set_visible(False)
         self.btnAvEdit.set_visible(False)
+        if hasattr(self, 'btnSlEdit'):
+            self.btnSlEdit.set_visible(False)
 
     def _update_view_available(self):
         items = []
@@ -433,7 +461,10 @@ class MiAZPlugins(MiAZConfigView):
             self.toolbar_buttons_Av.remove(child)
         self.toolbar_buttons_Av.append(btnInfo)
 
-        # Used view buttons
+        # Used view buttons. Plugins have no editable description, so drop the
+        # edit button inherited from MiAZSelector and keep only the config one.
+        if hasattr(self, 'btnSlEdit'):
+            self.toolbar_buttons_Sl.remove(self.btnSlEdit)
         self.btnConfig = factory.create_button(icon_name='io.github.t00m.MiAZ-config-symbolic', callback=self._configure_plugin_options)
         self.btnConfig.set_valign(Gtk.Align.CENTER)
         # ~ self.btnConfig.set_visible(False)

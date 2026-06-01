@@ -324,20 +324,29 @@ class MiAZFactory:
             pass
 
         def _on_factory_setup(factory, list_item, ellipsize):
-            box = Gtk.Box(spacing=6, orientation=Gtk.Orientation.HORIZONTAL)
-            label = Gtk.Label()
+            box = Gtk.Box(spacing=2, orientation=Gtk.Orientation.VERTICAL)
+            label = Gtk.Label(xalign=0)
+            sublabel = Gtk.Label(xalign=0)
+            sublabel.add_css_class('dim-label')
+            sublabel.add_css_class('caption')
             if ellipsize:
                 label.set_property('ellipsize', Pango.EllipsizeMode.MIDDLE)
+                sublabel.set_property('ellipsize', Pango.EllipsizeMode.END)
             box.append(label)
+            box.append(sublabel)
             list_item.set_child(box)
 
         def _on_factory_bind(factory, list_item):
             box = list_item.get_child()
-            label = box.get_last_child()
+            label = box.get_first_child()
+            sublabel = box.get_last_child()
             item = list_item.get_item()
             label.set_markup(f'{item.title}')
-            # ~ label.get_style_context().add_class(class_name='caption')
-            # ~ label.get_style_context().add_class(class_name='monospace')
+            # Optional subtitle: only item types with a description (e.g.
+            # Repository) show it; others get an empty, hidden second line.
+            desc = getattr(item, 'description', '')
+            sublabel.set_text(desc or '')
+            sublabel.set_visible(bool(desc))
 
         def _on_search_changed(search_entry, item_filter):
             item_filter.changed(Gtk.FilterChange.DIFFERENT)

@@ -114,7 +114,7 @@ class MiAZRepository(GObject.GObject):
             # ~ self.log.debug(f"Number of repositories in use: {len(repos_used)}")
             if len(repos_used) > 0:
                 try:
-                    repo_path = repos_used[repo_id]
+                    repo_path = self.config['Repository'].get_path(repo_id, used=True)
                     conf['dir_docs'] = repo_path
                     conf['dir_conf'] = os.path.join(conf['dir_docs'], '.conf')
                     if not os.path.exists(conf['dir_conf']):

@@ -169,12 +169,21 @@ class MiAZActions(GObject.GObject):
                 accepted = False
 
             if accepted:
-                title = items[key]
-                if len(title) == 0:
-                    title = key
+                value = items[key]
                 if item_type == Repository:
+                    # Repository values are dicts ({'path':..., 'description':...});
+                    # show a prettified key as title and carry the description.
+                    if isinstance(value, dict):
+                        desc = value.get('description', '')
+                    else:
+                        desc = ''
                     title = key.replace('_', ' ')
-                new_items.append(item_type(id=key, title=title))
+                    new_items.append(Repository(id=key, title=title, description=desc))
+                else:
+                    title = value
+                    if len(title) == 0:
+                        title = key
+                    new_items.append(item_type(id=key, title=title))
 
         if len(new_items) == 0:
             if item_type != Repository:

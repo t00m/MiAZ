@@ -78,8 +78,7 @@ class MiAZAppSettings(Adw.PreferencesDialog):
         repo = dd_repo.get_selected_item()
         path = ''
         if repo is not None:
-            repos_used = self.config_repos.load_used()
-            path = repos_used.get(repo.id, '')
+            path = self.config_repos.get_path(repo.id, used=True)
         row.set_subtitle(path)
 
     def _build_ui(self):
@@ -245,9 +244,15 @@ class MiAZRepoSettings(MiAZCustomWindow):
         self.log = MiAZLog('MiAZ.RepoSettings')
         self.name = 'repo-settings'
         appconf = self.app.get_config('App')
-        repo_id = appconf.get('current').replace('_', ' ')
-        self.title = _('Settings for repository') + ' ' + repo_id
+        self.title = _('Settings for repository') + ' ' + self._repo_label(appconf.get('current'))
         super().__init__(app, self.name, self.title, **kwargs)
+
+    def _repo_label(self, repo_id):
+        # Prefer the repository description; fall back to the prettified key.
+        if repo_id is None:
+            return ''
+        description = self.app.get_config('Repository').get_description(repo_id, used=True)
+        return description or repo_id.replace('_', ' ')
 
     def _build_ui(self):
         self.set_default_size(1024, 728)
@@ -292,8 +297,7 @@ class MiAZRepoSettings(MiAZCustomWindow):
 
     def update(self, *args):
         appconf = self.app.get_config('App')
-        repo_id = appconf.get('current')
-        title = f"Settings for repository {repo_id}"
+        title = _('Settings for repository') + ' ' + self._repo_label(appconf.get('current'))
         self.set_title(title)
 
         for item_type in [Country, Group, Purpose, SentBy, SentTo, Plugin]:

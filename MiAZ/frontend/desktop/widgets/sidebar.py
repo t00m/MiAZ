@@ -27,10 +27,17 @@ class MiAZSidebar(Adw.Bin):
         workflow = self.app.get_service('workflow')
         workflow.connect("repository-switch-finished", self._on_repo_switch)
 
+    def _repo_label(self, repo_id):
+        # Show the repository description; fall back to the prettified key when
+        # no description is set.
+        config = self.app.get_config_dict()
+        description = config['Repository'].get_description(repo_id, used=True)
+        return description or repo_id.replace('_', ' ')
+
     def _on_repo_switch(self, *args):
         config = self.app.get_config_dict()
         repo_id = config['App'].get('current') or 'MiAZ'
-        self.title_label.set_text(repo_id.replace('_', ' '))
+        self.title_label.set_text(self._repo_label(repo_id))
         self.setup_custom_filters()
         self.log.debug(f"Switched to repository {repo_id} > Sidebar updated")
 
@@ -84,7 +91,7 @@ class MiAZSidebar(Adw.Bin):
         self.title_label.set_ellipsize(True)
         self.title_label.set_halign(Gtk.Align.CENTER)
         repo_id = config['App'].get('current') or 'MiAZ'
-        self.title_label.set_text(repo_id.replace('_', ' '))
+        self.title_label.set_text(self._repo_label(repo_id))
         self.app.add_widget('sidebar-title-label', self.title_label)
 
         box_frame = factory.create_box_vertical(margin=6, spacing=6, hexpand=True, vexpand=True)
