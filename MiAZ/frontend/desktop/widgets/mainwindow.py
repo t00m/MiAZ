@@ -49,6 +49,20 @@ class MiAZMainWindow(Gtk.Box):
         split_view.set_max_sidebar_width(360)
         split_view.set_sidebar_width_fraction(0.25)
 
+        # Sidebar visibility is core behaviour (formerly the MiAZSidebarTB
+        # plugin). On first run the sidebar starts hidden; afterwards the last
+        # state is remembered. The headerbar reveal button and the Escape key
+        # both toggle it (see _setup_headerbar_start and _on_key_pressed).
+        appconf = self.app.get_config('App')
+        if appconf is not None and appconf.exists('sidebar-visible'):
+            show_sidebar = bool(appconf.get('sidebar-visible'))
+        else:
+            show_sidebar = False
+            if appconf is not None:
+                appconf.set('sidebar-visible', False)
+        split_view.set_show_sidebar(show_sidebar)
+        split_view.connect('notify::show-sidebar', self._on_sidebar_visibility_changed)
+
         # HeaderBar
         headerbar = self.app.add_widget('headerbar', Adw.HeaderBar())
 
@@ -130,20 +144,46 @@ class MiAZMainWindow(Gtk.Box):
         if ctrl and keyval in (Gdk.KEY_Delete, Gdk.KEY_KP_Delete):
             actions.document_delete()
             return True
+        if keyval == Gdk.KEY_Escape:
+            # Toggle the sidebar without consuming the event, so Escape keeps
+            # working for other widgets (search entry, popovers).
+            split_view = self.app.get_widget('main-split-view')
+            if split_view is not None:
+                split_view.set_show_sidebar(not split_view.get_show_sidebar())
+            return False
         return False
+
+    def _on_sidebar_visibility_changed(self, split_view, gparam):
+        """Persist sidebar visibility so it is remembered across runs."""
+        appconf = self.app.get_config('App')
+        if appconf is not None:
+            appconf.set('sidebar-visible', split_view.get_show_sidebar())
 
     def _setup_headerbar_start(self, split_view):
         factory = self.app.get_service('factory')
         headerbar = self.app.get_widget('headerbar')
 
-        # Sidebar toggle, shown only when the split view is collapsed (narrow)
-        sidebar_toggle = Gtk.ToggleButton(icon_name='sidebar-show-symbolic')
-        sidebar_toggle.set_tooltip_text(_('Toggle sidebar'))
+        # Sidebar reveal toggle (core behaviour, formerly the MiAZSidebarTB
+        # plugin). Always available; its visibility is governed by the
+        # "Display sidebar toggle button" UI setting. The tooltip teaches the
+        # Escape shortcut and points the user at that setting.
+        sidebar_toggle = Gtk.ToggleButton(
+            icon_name='io.github.t00m.MiAZ-sidebar-show-left-symbolic')
+        sidebar_toggle.add_css_class('flat')
+        sidebar_toggle.set_tooltip_text(_(
+            'Show or hide the sidebar.\n'
+            'Press Escape to toggle it.\n'
+            'You can hide this button in Settings ▸ User Interface.'))
         split_view.bind_property(
             'show-sidebar', sidebar_toggle, 'active',
             GObject.BindingFlags.SYNC_CREATE | GObject.BindingFlags.BIDIRECTIONAL)
-        split_view.bind_property(
-            'collapsed', sidebar_toggle, 'visible', GObject.BindingFlags.SYNC_CREATE)
+        appconf = self.app.get_config('App')
+        button_visible = appconf.get('sidebar-button-visible') if appconf is not None else None
+        if button_visible is None:
+            button_visible = True
+            if appconf is not None:
+                appconf.set('sidebar-button-visible', True)
+        sidebar_toggle.set_visible(bool(button_visible))
         self.app.add_widget('headerbar-button-sidebar-toggle', sidebar_toggle)
         headerbar.pack_start(sidebar_toggle)
 

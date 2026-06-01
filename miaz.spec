@@ -19,7 +19,8 @@ Requires:       python3 >= 3.9
 Requires:       python3-gobject
 Requires:       gtk4
 Requires:       libadwaita
-Requires:       libpeas2
+Requires:       libpeas
+Requires:       libpeas-loader-python
 Requires:       webkitgtk6.0
 
 %description

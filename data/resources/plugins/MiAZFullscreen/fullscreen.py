@@ -50,7 +50,7 @@ class MiAZFullscreenPlugin(MiAZExtension):
         self.factory = self.app.get_service('factory')
 
         # Add a row in the User Interface preferences group whenever the
-        # Preferences dialog is opened (same pattern as MiAZSidebarTB).
+        # Preferences dialog is opened (same pattern as MiAZWSFont).
         self._settings_handler = self.actions.connect(
             'settings-loaded', self._on_settings_loaded)
 
