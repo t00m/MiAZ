@@ -243,6 +243,20 @@ class MiAZMainWindow(Gtk.Box):
         menubutton = self._setup_menu_system()
         headerbar.pack_end(menubutton)
 
+        # "Add" menu. Aggregates every Import-category plugin action so the user
+        # can add or import documents even when the current filter shows no rows
+        # (the "No documents found" page has no right-click menu). Import plugins
+        # register here through MiAZPlugin.install_menu_entry.
+        add_menu = self.app.add_widget('headerbar-add-menu', Gio.Menu.new())
+        btn_add = Gtk.MenuButton()
+        btn_add.set_tooltip_text(_('Add or import documents'))
+        btn_add.set_child(Adw.ButtonContent(icon_name='list-add-symbolic', label=_('Add')))
+        btn_add.set_menu_model(add_menu)
+        # Hidden until at least one Import plugin registers an entry.
+        btn_add.set_visible(False)
+        self.app.add_widget('headerbar-button-add', btn_add)
+        headerbar.pack_end(btn_add)
+
         # Per-selection action buttons (placed to the left of the primary menu)
         hbox = factory.create_box_horizontal(margin=0, spacing=6)
         self.app.add_widget('headerbar-right-box', hbox)
@@ -352,7 +366,51 @@ class MiAZMainWindow(Gtk.Box):
             self._prepend_repo_title_section(menu)
             self._append_repo_management_section(menu)
             self._footer_menu_appended_to = menu
+        # Import plugins have registered their entries by now; build the
+        # headerbar Add menu from them.
+        self._populate_add_menu()
         return GLib.SOURCE_REMOVE
+
+    def _populate_add_menu(self):
+        """Build the headerbar Add menu from every loaded Import plugin.
+
+        Kept in the UI layer so the plugin system stays free of any header bar
+        knowledge. Each plugin registers its menu item under
+        'plugin-menuitem-<name>' when it installs its workspace entry; here we
+        mirror the items of Import-subcategory plugins into the Add menu.
+        append_item copies the item, so it can live in both menus and still
+        trigger the one shared app action.
+        """
+        add_menu = self.app.get_widget('headerbar-add-menu')
+        if add_menu is None:
+            return
+        add_menu.remove_all()
+        plugin_manager = self.app.get_service('plugin-system')
+        if plugin_manager is not None:
+            for plugin_info in plugin_manager.plugins:
+                if not plugin_manager.is_plugin_loaded(plugin_info):
+                    continue
+                plugin_name = plugin_info.get_name()
+                plugin_obj = self.app.get_widget(f'plugin-{plugin_name}')
+                if plugin_obj is None or not hasattr(plugin_obj, 'plugin'):
+                    continue
+                try:
+                    subcategory = plugin_obj.plugin.get_plugin_info_key('Subcategory')
+                except Exception:
+                    continue
+                if subcategory != 'Import':
+                    continue
+                menuitem = self.app.get_widget(f'plugin-menuitem-{plugin_name}')
+                if menuitem is not None:
+                    add_menu.append_item(menuitem)
+        self._update_add_button_visibility()
+
+    def _update_add_button_visibility(self):
+        """Show the headerbar Add button only when an Import plugin registered."""
+        btn_add = self.app.get_widget('headerbar-button-add')
+        add_menu = self.app.get_widget('headerbar-add-menu')
+        if btn_add is not None and add_menu is not None:
+            btn_add.set_visible(add_menu.get_n_items() > 0)
 
     def _on_plugins_updated(self, *args):
         """Rebuild workspace-menu-selection whenever plugins are loaded or unloaded."""
@@ -400,6 +458,7 @@ class MiAZMainWindow(Gtk.Box):
         self._prepend_repo_title_section(new_main_menu)
         self._append_repo_management_section(new_main_menu)
         self._footer_menu_appended_to = new_main_menu
+        self._populate_add_menu()
 
     def _on_workspace_menu_update(self, *args):
         stack = self.app.get_widget('stack')

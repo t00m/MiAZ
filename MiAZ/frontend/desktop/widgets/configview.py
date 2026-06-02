@@ -45,6 +45,11 @@ class MiAZConfigView(MiAZSelector):
         self._setup_view_finish()
         self._sid_used = None
         self._sid_avail = None
+        # A sibling config that shares this one's available pool (SentBy and
+        # SentTo both use people-available.json). Subclasses set it; the base
+        # connects to its 'available-updated' so both views refresh together.
+        self.config_paired = None
+        self._sid_paired = None
         self._update_views_pending = False
         # Connect signals only while the widget is on screen so stale instances
         # opened from previous settings windows don't keep firing updates.
@@ -65,6 +70,10 @@ class MiAZConfigView(MiAZSelector):
             self._sid_used = self.config.connect('used-updated', self._schedule_update_views)
         if self._sid_avail is None:
             self._sid_avail = self.config.connect('available-updated', self._schedule_update_views)
+        # Refresh this view when the paired config changes the shared available
+        # pool, so a person added under Sender shows up under Recipient and back.
+        if self.config_paired is not None and self._sid_paired is None:
+            self._sid_paired = self.config_paired.connect('available-updated', self._schedule_update_views)
         self.update_views()
 
     def _on_configview_unmapped(self, *args):
@@ -74,6 +83,9 @@ class MiAZConfigView(MiAZSelector):
         if self._sid_avail is not None:
             self.config.disconnect(self._sid_avail)
             self._sid_avail = None
+        if self._sid_paired is not None:
+            self.config_paired.disconnect(self._sid_paired)
+            self._sid_paired = None
 
     def _schedule_update_views(self, *args):
         if not self._update_views_pending:
@@ -394,9 +406,9 @@ class MiAZPeopleSentBy(MiAZConfigView):
 
     def __init__(self, app):
         super().__init__(app, 'SentBy')
-        # Trick to keep People sync for SentBy/SentTo
+        # SentBy and SentTo share the people-available.json pool; pairing keeps
+        # both views in sync (the base class connects to its available-updated).
         self.config_paired = self.conf['SentTo']
-        # ~ self.config_paired.connect('available-updated', self.update_views)
 
     def _setup_view_finish(self):
         # Setup Available and Used Columns Views
@@ -412,9 +424,9 @@ class MiAZPeopleSentTo(MiAZConfigView):
 
     def __init__(self, app):
         super().__init__(app, 'SentTo')
-        # Trick to keep People sync for SentBy/SentTo
+        # SentBy and SentTo share the people-available.json pool; pairing keeps
+        # both views in sync (the base class connects to its available-updated).
         self.config_paired = self.conf['SentBy']
-        # ~ self.config_paired.connect('available-updated', self.update_views)
 
     def _setup_view_finish(self):
         # Setup Available and Used Columns Views

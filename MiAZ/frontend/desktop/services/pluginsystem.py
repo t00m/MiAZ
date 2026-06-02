@@ -297,6 +297,9 @@ class MiAZPlugin(GObject.GObject):
         subcategory_submenu = self.app.install_plugin_menu(category, subcategory)
         if menuitem is not None:
             subcategory_submenu.append_item(menuitem)
+            # Register the item under its canonical key so other layers (the UI)
+            # can reuse it without the plugin system knowing about any widget.
+            self.app.add_widget(self.get_menu_item_name(), menuitem)
         return subcategory_submenu
 
     def add_workspace_page(self, widget, name, title, icon_name=None):

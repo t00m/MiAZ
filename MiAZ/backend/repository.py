@@ -133,8 +133,29 @@ class MiAZRepository(GObject.GObject):
         self.config['SentTo'] = MiAZConfigSentTo(self.app, repo_dir_conf)
         self.config['Person'] = MiAZConfigPeople(self.app, repo_dir_conf)
         self.config['Plugin'] = MiAZConfigPlugins(self.app, repo_dir_conf)
+        self._reconcile_people_available()
         self.log.debug(f"Repository configuration loaded correctly from: {repo_dir_conf}")
         self.emit('repository-switched')
+
+    def _reconcile_people_available(self):
+        """Ensure every used sender and recipient is in the shared people pool.
+
+        Senders and recipients take their available items from the same
+        people-available.json. A used person missing from that pool would not
+        appear as available on the other side. Add any such people here, so the
+        available list stays consistent (and heals entries left orphaned by the
+        earlier per-instance cache bug).
+        """
+        people = self.config['Person']
+        available = people.load_available()
+        missing = {}
+        for config_name in ('SentBy', 'SentTo'):
+            for key, value in self.config[config_name].load_used().items():
+                if key not in available and key not in missing:
+                    missing[key] = value
+        if missing:
+            people.add_available_batch(list(missing.items()))
+            self.log.info(f"Reconciled {len(missing)} used people into the available pool")
 
     def get(self, key: str) -> str:
         try:

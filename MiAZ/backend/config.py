@@ -25,6 +25,12 @@ class MiAZConfig(GObject.GObject):
     }
     used = None
     default = None
+    # Shared across all config instances, keyed by absolute filepath. SentBy,
+    # SentTo and People all point their "available" pool at people-available.json,
+    # so they must read and write one consistent cache. A per-instance cache let
+    # them hold divergent copies: one instance saving its stale copy dropped
+    # entries another instance had just added.
+    cache = {}
 
     def __init__(self, app, log, config_for, used=None, available=None, default=None, model=MiAZModel, must_copy=True, foreign=False):
         super().__init__()
@@ -37,7 +43,6 @@ class MiAZConfig(GObject.GObject):
         self.model = model
         self.must_copy = must_copy
         self.foreign = foreign
-        self.cache = {}
         self.setup()
 
     def __repr__(self):
