@@ -13,7 +13,6 @@ import ast
 import sys
 import glob
 import json
-import time
 import shutil
 import tempfile
 import threading
@@ -27,9 +26,7 @@ from gi.repository import Gio
 from gi.repository import GObject
 
 from MiAZ.backend.log import MiAZLog
-from MiAZ.backend.models import Field, Group, Country
-from MiAZ.backend.models import Purpose, Concept, SentBy
-from MiAZ.backend.models import SentTo, Date
+from MiAZ.backend.models import Field
 
 mimetypes.init()
 
@@ -85,7 +82,7 @@ class MiAZUtil(GObject.GObject):
         self.connect('filename-renamed', self._invalidate_field_index)
 
     def extract_variable_from_python_module(self, filepath, variable_name):
-        with open(filepath, "r") as f:
+        with open(filepath, "r", encoding='utf-8') as f:
             tree = ast.parse(f.read(), filename=filepath)
         extractor = SafeDictExtractor(variable_name)
         extractor.visit(tree)
@@ -116,13 +113,13 @@ class MiAZUtil(GObject.GObject):
 
     def json_load(self, filepath: str) -> {}:
         """Load into a dictionary a file in json format"""
-        with open(filepath) as fin:
+        with open(filepath, encoding='utf-8') as fin:
             adict = json.load(fin)
         return adict
 
     def json_save(self, filepath: str, adict: {}) -> {}:
         """Save dictionary into a file in json format"""
-        with open(filepath, 'w') as fout:
+        with open(filepath, 'w', encoding='utf-8') as fout:
             json.dump(adict, fout, sort_keys=True, indent=4)
 
     def _invalidate_field_index(self, *args):

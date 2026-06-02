@@ -12,7 +12,6 @@ import os
 import shutil
 from gettext import gettext as _
 
-from gi.repository import GObject
 
 from MiAZ.frontend.desktop.services.pluginsystem import MiAZExtension, MiAZPlugin
 from MiAZ.backend.models import Country, Date, Group

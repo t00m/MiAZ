@@ -24,7 +24,7 @@ log = MiAZLog('MiAZ')
 ENV['DESKTOP'] = {}
 try:
     import gi
-except:
+except ImportError:
     sys.exit("No support for Python GObject")
 
 try:
@@ -107,11 +107,11 @@ class MiAZ:
         lock_dir = self.env['LPATH']['VAR']
         os.makedirs(lock_dir, exist_ok=True)
         lock_path = os.path.join(lock_dir, 'miaz.lock')
-        self._lock_fd = open(lock_path, 'w')
+        self._lock_fd = open(lock_path, 'w', encoding='utf-8')
         try:
             fcntl.lockf(self._lock_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
         except IOError:
-            msg = f"MiAZ is already running. Exiting."
+            msg = "MiAZ is already running. Exiting."
             log.warning(msg)
             sys.exit(1)
         self._lock_fd.write(str(os.getpid()) + '\n')

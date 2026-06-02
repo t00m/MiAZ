@@ -8,11 +8,10 @@
 # Description: Plugin for exporting items to CSV
 """
 
+import os
 import csv
 import tempfile
 from gettext import gettext as _
-
-from gi.repository import GObject
 
 from MiAZ.frontend.desktop.services.pluginsystem import MiAZExtension, MiAZPlugin
 
@@ -32,6 +31,11 @@ plugin_info = {
 
 
 class Export2CSV(MiAZExtension):
+    """Export the selected documents to a CSV file.
+
+    Adds a workspace menu entry. Each selected document becomes one CSV row,
+    with the seven filename fields split into columns plus the extension.
+    """
     __gtype_name__ = 'MiAZExport2CSVPlugin'
     plugin = None
 
@@ -77,6 +81,13 @@ class Export2CSV(MiAZExtension):
             self.plugin.set_started(started=True)
 
     def export(self, *args):
+        """Write the selected documents to a CSV file and open it.
+
+        Each selected item becomes one row, with its seven filename fields
+        split into columns plus the file extension. The file is created in the
+        repository temp dir and opened with the default spreadsheet
+        application. Does nothing when no items are selected.
+        """
         ENV = self.app.get_env()
         fields = [_('Date'), _('Country'), _('Group'), _('Send by'), _('Purpose'), _('Concept'), _('Send to'), _('Extension')]
         items = self.workspace.get_selected_items()
@@ -90,14 +101,14 @@ class Export2CSV(MiAZExtension):
             row = name.split('-')
             row.append(ext)
             rows.append(row)
+
+        # mkstemp returns an open file descriptor we do not use; close it and
+        # reopen the path with the csv writer.
         fp, filepath = tempfile.mkstemp(dir=ENV['LPATH']['TMP'], suffix='.csv')
         os.close(fp)
-        with open(filepath, 'w', newline='') as csvfile:
+        with open(filepath, 'w', newline='', encoding='utf-8') as csvfile:
             csvwriter = csv.writer(csvfile)
             csvwriter.writerow(fields)
             csvwriter.writerows(rows)
         self.util.filename_display(filepath)
-        title = _('Export successful')
-        body = _("Check your default spreadsheet application")
-        parent = self.workspace.get_root()
-        self.srvdlg.show_toast(body)
+        self.srvdlg.show_toast(_("Check your default spreadsheet application"))

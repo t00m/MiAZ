@@ -4,7 +4,6 @@
 # License: GPL v3
 # Description: Workflow module
 
-from gettext import gettext as _
 
 from gi.repository import GLib
 from gi.repository import GObject

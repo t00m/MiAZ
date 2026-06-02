@@ -243,7 +243,7 @@ class MiAZPlugin(GObject.GObject):
         return os.path.join(self.get_config_dir(), f"Plugin-{self.name}.json")
 
     def get_config_file_default_available_data(self):
-        return os.path.join(self.get_config_dir(), f"default_available_data.json")
+        return os.path.join(self.get_config_dir(), "default_available_data.json")
 
     def get_config_data(self):
         config_file = self.get_config_file()
@@ -564,7 +564,7 @@ class MiAZPluginSystem(GObject.GObject):
     def get_plugin_attributes(self, plugin_file: str):
         """Get plugin attributes from `plugin_module`.plugin file"""
         plugin_info = {}
-        with open(plugin_file, 'r') as file:
+        with open(plugin_file, 'r', encoding='utf-8') as file:
             # Skip the first line (assuming it's [Plugin])
             next(file)
 
@@ -596,7 +596,7 @@ class MiAZPluginSystem(GObject.GObject):
                     plugin_list.append((plugin_name, plugin_desc))
                     self.log.info(f" - Adding plugin {plugin_name} to plugin index")
 
-        with open(ENV['APP']['PLUGINS']['INDEX'], 'w') as fp:
+        with open(ENV['APP']['PLUGINS']['INDEX'], 'w', encoding='utf-8') as fp:
             json.dump(plugin_index, fp, sort_keys=False, indent=4)
             self.log.info(f"File index-plugins.json generated with {len(plugin_index)} plugins")
 

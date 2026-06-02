@@ -8,10 +8,9 @@
 # Description: Plugin for exporting items filenames to plain text
 """
 
+import os
 import tempfile
 from gettext import gettext as _
-
-from gi.repository import GObject
 
 from MiAZ.frontend.desktop.services.pluginsystem import MiAZExtension, MiAZPlugin
 
@@ -31,6 +30,11 @@ plugin_info = {
 
 
 class Export2Text(MiAZExtension):
+    """Export the selected document filenames to a plain text file.
+
+    Adds a workspace menu entry. Writes one filename per line and opens the
+    file with the default text editor.
+    """
     __gtype_name__ = 'MiAZExport2TextPlugin'
     plugin = None
 
@@ -78,8 +82,13 @@ class Export2Text(MiAZExtension):
             self.plugin.set_started(started=True)
 
     def export(self, *args):
+        """Write the selected document filenames to a text file and open it.
+
+        One filename per line. The file is created in the repository temp dir
+        and opened with the default text editor. Does nothing when no items
+        are selected.
+        """
         ENV = self.app.get_env()
-        parent = self.workspace.get_root()
         items = self.workspace.get_selected_items()
         if self.actions.stop_if_no_items():
             self.log.debug("No items selected")
@@ -88,11 +97,12 @@ class Export2Text(MiAZExtension):
         text = ""
         for item in items:
             text += f"{item.id}\n"
+
+        # mkstemp returns an open file descriptor we do not use; close it and
+        # reopen the path for writing.
         fp, filepath = tempfile.mkstemp(dir=ENV['LPATH']['TMP'], suffix='.txt')
         os.close(fp)
-        with open(filepath, 'w') as temp:
+        with open(filepath, 'w', encoding='utf-8') as temp:
             temp.write(text)
         self.util.filename_display(filepath)
-        title = _('Export successful')
-        body = _('Check your default text editor')
-        self.srvdlg.show_toast(body)
+        self.srvdlg.show_toast(_('Check your default text editor'))

@@ -13,7 +13,6 @@ from gettext import gettext as _
 
 from gi.repository import Gtk
 from gi.repository import Gio
-from gi.repository import GObject
 
 from MiAZ.backend.log import MiAZLog
 from MiAZ.backend.models import MiAZModel

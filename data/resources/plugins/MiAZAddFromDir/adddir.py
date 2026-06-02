@@ -10,9 +10,7 @@ import glob
 from gettext import gettext as _
 import threading
 
-import gi
 from gi.repository import GLib
-from gi.repository import GObject
 from gi.repository import Gtk
 
 from MiAZ.frontend.desktop.services.pluginsystem import MiAZExtension, MiAZPlugin

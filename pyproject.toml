@@ -2,3 +2,32 @@
 name = "MiAZ"
 version = "0.1.1"
 requires-python = ">=3.9"
+
+[tool.ruff]
+target-version = "py39"
+line-length = 100
+# Build artifacts and vendored trees, not source we maintain.
+extend-exclude = [
+    "_build",
+    "builddir_*",
+    "AppDir",
+    "linuxdeploy-x86_64.AppDir",
+    ".flatpak-builder",
+    "tmp",
+    "repo",
+]
+
+[tool.ruff.lint]
+# Focus on correctness, not cosmetics. F catches the real bug class we just
+# fixed (F821 undefined name). E7/E9 catch bad statements and syntax errors.
+# Line length and whitespace are left to the developer for now.
+select = ["F", "E7", "E9"]
+ignore = [
+    # gi.require_version() must run before the matching gi.repository import,
+    # so module imports are intentionally not all at the top.
+    "E402",
+    # 43 pre-existing unused locals, mostly in configview.py. Remove them
+    # incrementally, then drop this ignore to enforce the rule.
+    "F841",
+]
+

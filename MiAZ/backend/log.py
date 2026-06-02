@@ -189,9 +189,9 @@ class MiAZLog(logging.getLoggerClass()):
         """
         C0116: Missing function or method docstring (missing-function-docstring)
         """
-        # Strict type equality (not isinstance) intentionally excludes FileHandler,
+        # Strict type identity (not isinstance) intentionally excludes FileHandler,
         # which is a StreamHandler subclass.
-        return len([h for h in self.handlers if type(h) == logging.StreamHandler]) > 0
+        return len([h for h in self.handlers if type(h) is logging.StreamHandler]) > 0
 
     def has_file_handler(self):
         """
