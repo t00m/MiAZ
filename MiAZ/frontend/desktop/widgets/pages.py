@@ -26,12 +26,25 @@ class MiAZWelcome(Gtk.Box):
             hexpand=True,
         )
 
-        button = self.factory.create_button(title=_('Manage Repositories'))
-        button.set_halign(Gtk.Align.CENTER)
-        button.add_css_class('suggested-action')
-        button.add_css_class('pill')
-        button.connect('clicked', self.actions.show_repository_manager)
-        status_page.set_child(button)
+        box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=12)
+        box.set_halign(Gtk.Align.CENTER)
+
+        # Primary action: the guided first-run assistant.
+        button_setup = self.factory.create_button(title=_('Set up a repository'))
+        button_setup.set_halign(Gtk.Align.CENTER)
+        button_setup.add_css_class('suggested-action')
+        button_setup.add_css_class('pill')
+        button_setup.connect('clicked', self.actions.show_repository_assistant)
+        box.append(button_setup)
+
+        # Secondary action: the advanced repository manager.
+        button_manage = self.factory.create_button(title=_('Manage repositories'))
+        button_manage.set_halign(Gtk.Align.CENTER)
+        button_manage.add_css_class('flat')
+        button_manage.connect('clicked', self.actions.show_repository_manager)
+        box.append(button_manage)
+
+        status_page.set_child(box)
 
         self.append(status_page)
 

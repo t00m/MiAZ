@@ -82,12 +82,27 @@ class MiAZWorkflow(GObject.GObject):
         else:
             self.actions.show_stack_page_by_name('welcome')
             sidebar.set_visible(False)
+            self._maybe_launch_assistant()
             # ~ parent = self.app.get_widget('window')
             # ~ title = _("Repository management")
             # ~ body = repository.get_error()
             # ~ self.srvdlg.show_error(title=title, body=body, parent=parent, width=400)
 
         return repo_loaded
+
+    def _maybe_launch_assistant(self):
+        """On a fresh install (no repository configured at all), open the
+        first-run assistant on top of the welcome page. If a repository is
+        configured but failed to load, keep the welcome page so the existing
+        setup is not shadowed.
+        """
+        repos_cfg = self.app.get_config('Repository')
+        has_repo = repos_cfg is not None and len(repos_cfg.load_used()) > 0
+        if has_repo:
+            return
+        if self.app.get_widget('window-repo-assistant') is not None:
+            return
+        self.actions.show_repository_assistant()
 
     def _check_repo_config(self):
         """Open Repository Management if any required config section has no used items."""

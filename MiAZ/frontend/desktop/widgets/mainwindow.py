@@ -163,6 +163,20 @@ class MiAZMainWindow(Gtk.Box):
         factory = self.app.get_service('factory')
         headerbar = self.app.get_widget('headerbar')
 
+        # Review (pending documents) toggle, placed right after the app icon.
+        # Visible only when documents are pending review; its 'toggled' signal
+        # is connected in MiAZWorkflow.switch_start. Formerly in the sidebar
+        # header, now the first control on the header bar's left side.
+        btn_review = factory.create_button_toggle(
+            icon_name='io.github.t00m.MiAZ-rename',
+            title=_('Review'),
+            tooltip=_('There are documents pending of review'))
+        btn_review.set_has_frame(True)
+        btn_review.set_visible(False)
+        btn_review.set_active(False)
+        self.app.add_widget('workspace-togglebutton-pending-docs', btn_review)
+        headerbar.pack_start(btn_review)
+
         # Sidebar reveal toggle (core behaviour, formerly the MiAZSidebarTB
         # plugin). Always available; its visibility is governed by the
         # "Display sidebar toggle button" UI setting. The tooltip teaches the
@@ -214,8 +228,8 @@ class MiAZMainWindow(Gtk.Box):
         # ~ popDocsSel.set_menu_model(self._setup_menu_selection())
         # ~ btnDocsSel.set_popover(popover=popDocsSel)
 
-        # Pending documents toggle button now lives in the sidebar header
-        # (see sidebar.py _setup_pending_docs_button).
+        # Pending documents ("Review") toggle button lives on the header bar's
+        # left side, next to the app icon (see _setup_headerbar_start).
 
         # Workspace view switcher, placed next to the title widgets.
         # On narrow widths it collapses to icons-only (see breakpoint setter

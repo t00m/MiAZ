@@ -440,5 +440,15 @@ class MiAZSelector(Gtk.Box):
         to_enable = [(item.id, item.title) for item in selected_items if item.id not in items_used]
         if len(to_enable) > 0:
             self.config.add_used_batch(to_enable)
-            self.config.remove_available_batch([key for key, value in to_enable])
+            # Only prune the available pool when it is private to this config.
+            # SentBy and SentTo share people-available.json (their
+            # __config_name_available__ is 'people'), so removing an enabled
+            # sender from that pool would also drop it from the recipients'
+            # available list, and vice versa. The available view already hides
+            # items present in this config's own used list, so keeping the
+            # shared pool intact is both correct and sufficient.
+            shared_pool = (item_type.__config_name_available__ !=
+                           item_type.__config_name_used__)
+            if not shared_pool:
+                self.config.remove_available_batch([key for key, value in to_enable])
             self._show_toast(_('{num} {title} enabled').format(num=len(to_enable), title=i_title))

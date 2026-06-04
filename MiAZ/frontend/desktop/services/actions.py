@@ -248,6 +248,19 @@ class MiAZActions(GObject.GObject):
             body = _("There aren't repositories configured.\nPlease, create one.")
             srvdlg.show_error(title=title, body=body, parent=parent)
 
+    def show_repository_assistant(self, *args):
+        """Open the guided first-run assistant to create and configure a repo."""
+        from MiAZ.frontend.desktop.widgets.assistant import MiAZRepoAssistant
+        existing = self.app.get_widget('window-repo-assistant')
+        if existing is not None:
+            existing.present()
+            return existing
+        window = self.app.get_widget('window')
+        assistant = MiAZRepoAssistant(self.app)
+        assistant.set_transient_for(window)
+        assistant.present()
+        return assistant
+
     def show_repository_manager(self, *args):
         widget = self.factory.create_box_vertical(hexpand=True, vexpand=True)
         configview = MiAZRepositories(self.app)

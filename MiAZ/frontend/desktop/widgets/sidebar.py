@@ -60,7 +60,6 @@ class MiAZSidebar(Adw.Bin):
         self.app.add_widget('sidebar-button-clear-filters', button_clear)
         button_settings = self._setup_repo_settings_button()
         self.app.add_widget('sidebar-button-repo-settings', button_settings)
-        button_review = self._setup_pending_docs_button()
 
         self.dropdowns = self.app.add_widget('ws-dropdowns', {})
         self.app.add_widget('plugin-dropdowns', [])
@@ -71,8 +70,9 @@ class MiAZSidebar(Adw.Bin):
 
         main_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
 
-        # Sidebar header: repository-settings button (left), Review
-        # toggle button (center) and clear-filters button (right).
+        # Sidebar header: repository-settings button (left) and clear-filters
+        # button (right). The Review toggle now lives on the main header bar
+        # (see mainwindow._setup_headerbar_start).
         header = Gtk.CenterBox()
         header.add_css_class('toolbar')
         header.set_margin_start(6)
@@ -80,7 +80,6 @@ class MiAZSidebar(Adw.Bin):
         header.set_margin_top(6)
         header.set_margin_bottom(6)
         header.set_start_widget(button_settings)
-        header.set_center_widget(button_review)
         header.set_end_widget(button_clear)
         main_box.append(header)
 
@@ -187,18 +186,6 @@ class MiAZSidebar(Adw.Bin):
             css_classes=['flat'],
             callback=self.clear_filters)
         self.app.add_widget('headerbar-button-clear-filters', button)
-        return button
-
-    def _setup_pending_docs_button(self):
-        factory = self.app.get_service('factory')
-        button = factory.create_button_toggle(
-            icon_name='io.github.t00m.MiAZ-rename',
-            title=_('Review'),
-            tooltip=_('There are documents pending of review'))
-        self.app.add_widget('workspace-togglebutton-pending-docs', button)
-        button.set_has_frame(True)
-        button.set_visible(False)
-        button.set_active(False)
         return button
 
     def _setup_repo_settings_button(self):

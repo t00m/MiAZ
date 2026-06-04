@@ -8,11 +8,12 @@
 
 import html
 import os
+import urllib.parse
 
 import gi
 gi.require_version('WebKit', '6.0')
 
-from gi.repository import Gio, GLib, Gtk, WebKit
+from gi.repository import Gdk, Gio, GLib, Gtk, WebKit
 
 from MiAZ.backend.log import MiAZLog
 
@@ -42,6 +43,11 @@ class MiAZBrowserPage(Gtk.Box):
     def _build_ui(self):
         header = Gtk.HeaderBar()
         header.set_show_title_buttons(False)
+        # Quiet the topbar: '.flat' drops the headerbar's own background and
+        # bottom shadow so it blends with the content instead of standing out.
+        # Adwaita named colors switch with the theme, so this stays muted in
+        # both light and dark mode.
+        header.add_css_class('flat')
 
         center = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
 
@@ -70,6 +76,13 @@ class MiAZBrowserPage(Gtk.Box):
         self._webview.set_vexpand(True)
         self._webview.connect('context-menu', self._on_context_menu)
         self._webview.connect('load-changed', self._on_load_changed)
+        self._webview.connect('decide-policy', self._on_decide_policy)
+        # Ctrl+C copies the current selection. WebKitGTK usually does this on
+        # its own, but a controller on the view makes it work regardless of the
+        # window-level key handling.
+        key_controller = Gtk.EventControllerKey()
+        key_controller.connect('key-pressed', self._on_key_pressed)
+        self._webview.add_controller(key_controller)
         self.append(self._webview)
 
     # Page enumeration
@@ -163,25 +176,45 @@ class MiAZBrowserPage(Gtk.Box):
         app_info = env.get('APP', {})
         name = html.escape(str(app_info.get('name', 'MiAZ')))
         version = html.escape(str(app_info.get('VERSION', '')))
+        # Muted palette so the empty page blends with the (also muted) topbar.
+        # Light and dark variants follow the app theme.
+        dark = self._prefers_dark()
+        if dark:
+            page_bg, card_bg = '#242424', '#303030'
+            title_fg, version_fg, hint_fg = '#e0e0e0', '#b0b0b0', '#909090'
+            shadow = 'rgba(0,0,0,0.30)'
+        else:
+            page_bg, card_bg = '#f0f0f0', '#fafafa'
+            title_fg, version_fg, hint_fg = '#2e2e2e', '#5e5e5e', '#777777'
+            shadow = 'rgba(0,0,0,0.06)'
         body = (
             "<!doctype html><html><head><meta charset='utf-8'>"
             "<title>" + name + "</title>"
             "<style>"
             " html,body{height:100%;margin:0;font-family:sans-serif;"
             "  display:flex;align-items:center;justify-content:center;"
-            "  background:#fafafa;color:#222;}"
+            f"  background:transparent;color:{title_fg};}}"
             " .card{text-align:center;padding:2.5em 3em;border-radius:12px;"
-            "  background:white;box-shadow:0 2px 12px rgba(0,0,0,0.06);}"
+            f"  background:transparent;" #box-shadow:0 2px 12px {shadow};}}"
             " h1{margin:0 0 .25em 0;font-weight:300;font-size:2.2em;}"
-            " .version{color:#666;margin:.25em 0 1.5em 0;}"
-            " .hint{color:#888;font-size:.9em;}"
+            f" .version{{color:{version_fg};margin:.25em 0 1.5em 0;}}"
+            f" .hint{{color:{hint_fg};font-size:.9em;}}"
             "</style></head><body>"
             f"<div class='card'><h1>{name}</h1>"
-            f"<div class='version'>v{version}</div>"
-            "<div class='hint'>No plugin pages are available.</div>"
+            f"<div class='version'><h5>v{version}</h5></div>"
+            "<div class='hint'>No pages are available.</div>"
             "</div></body></html>"
         )
         self._webview.load_html(body, None)
+
+    def _prefers_dark(self):
+        """True when the app is using a dark theme, so the welcome page can
+        match it. Falls back to light if Adwaita's style manager is unavailable."""
+        try:
+            from gi.repository import Adw
+            return Adw.StyleManager.get_default().get_dark()
+        except Exception:
+            return False
 
     # Signal handlers
 
@@ -202,8 +235,49 @@ class MiAZBrowserPage(Gtk.Box):
             return
         self._load_page(dropdown.get_selected())
 
-    def _on_context_menu(self, _webview, _menu, _hit):
+    def _on_context_menu(self, _webview, context_menu, _hit):
+        # Read-only viewer: replace the default menu (back/reload/download/...)
+        # with just Copy and Select All so text on any page can be copied.
+        context_menu.remove_all()
+        context_menu.append(
+            WebKit.ContextMenuItem.new_from_stock_action(WebKit.ContextMenuAction.COPY))
+        context_menu.append(
+            WebKit.ContextMenuItem.new_from_stock_action(WebKit.ContextMenuAction.SELECT_ALL))
+        return False
+
+    def _on_key_pressed(self, _controller, keyval, _keycode, state):
+        if (state & Gdk.ModifierType.CONTROL_MASK) and keyval in (Gdk.KEY_c, Gdk.KEY_C):
+            self._webview.execute_editing_command(WebKit.EDITING_COMMAND_COPY)
+            return True
+        return False
+
+    def _on_decide_policy(self, _webview, decision, decision_type):
+        # A served page can ask MiAZ to open a repository document by linking to
+        # `miazdoc:<filename>`. We intercept the click, open the file with the
+        # system handler, and cancel the navigation so the view stays put. Any
+        # other link (e.g. a plugin page's internal navigation) is left alone.
+        if decision_type != WebKit.PolicyDecisionType.NAVIGATION_ACTION:
+            return False
+        action = decision.get_navigation_action()
+        if action.get_navigation_type() != WebKit.NavigationType.LINK_CLICKED:
+            return False
+        uri = action.get_request().get_uri()
+        if not uri.startswith('miazdoc:'):
+            return False
+        decision.ignore()
+        name = urllib.parse.unquote(uri[len('miazdoc:'):]).lstrip('/')
+        if name:
+            GLib.idle_add(self._open_document, name)
         return True
+
+    def _open_document(self, name):
+        actions = self.app.get_service('actions')
+        if actions is not None:
+            try:
+                actions.document_display(name)
+            except Exception as error:
+                self.log.error(f"Could not open document '{name}': {error}")
+        return False
 
     def _on_load_changed(self, webview, _event):
         self._back_button.set_sensitive(webview.can_go_back())
