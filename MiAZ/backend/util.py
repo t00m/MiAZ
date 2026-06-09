@@ -272,31 +272,24 @@ class MiAZUtil(GObject.GObject):
         return len(name.split('-')) == 7
 
     def filename_validate(self, doc: str) -> bool:
-        if not self.filename_is_normalized(doc):
-            return False
-
+        # Structural check only: a MiAZ filename has exactly 7 non-empty
+        # fields. Field-value validity is intentionally NOT checked here.
+        #
+        # The value of each field is repo-relative and changes over time:
+        # countries can be invented and enabled, dates may follow several
+        # patterns, and groups/senders/purposes/recipients are user-defined.
+        # Those checks live in the Workspace parser (_parse_files_worker),
+        # which decides per field whether a value is known/enabled and, if
+        # not, flags the document for Review. Re-checking them here against
+        # a fixed format (e.g. YYYYMMDD) or a fixed set (e.g. ISO-3166)
+        # would be redundant and would wrongly reject valid documents once
+        # those assumptions are relaxed.
+        #
+        # get_fields strips path and extension and merges hyphenated tail
+        # fields back into SentTo, so names with hyphens in Concept/SentTo
+        # and full paths are handled consistently.
         fields = self.get_fields(doc)
-
-        # 1. Date validation (YYYYMMDD)
-        try:
-            datetime.strptime(fields[0], '%Y%m%d')
-        except (ValueError, IndexError):
-            return False
-
-        # 2. Country validation (ISO-3166)
-        # We check against the list of available countries if possible
-        config = self.app.get_config('Country')
-        if config:
-            countries = config.load_available()
-            if fields[1] not in countries:
-                return False
-        else:
-            # Fallback if config service is unavailable (e.g. basic tests)
-            # Ensure it is at least 2 uppercase letters
-            if not (len(fields[1]) == 2 and fields[1].isupper() and fields[1].isalpha()):
-                return False
-
-        return True
+        return len(fields) == 7 and all(field for field in fields)
 
     def filename_normalize(self, filename: str) -> str:
         name, ext = self.filename_details(filename)
