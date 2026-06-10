@@ -599,14 +599,20 @@ class MiAZWorkspace(Gtk.Box):
         concepts_inactive = set()
         show_pending = False
         cache_updates = {}
-        desc = {}
 
         key_fields = [('Date', 0), ('Country', 1), ('Group', 2), ('SentBy', 3), ('Purpose', 4), ('Concept', 5), ('SentTo', 6)]
 
         for filename in docs:
+            # Reset per file. Otherwise an invalid filename (which skips the
+            # block below) would inherit the descriptions of the previous valid
+            # file and show another document's fields in the Pending view.
+            desc = {}
             doc, ext = util.filename_details(filename)
-            fields = doc.split('-')
-            if util.filename_validate(doc):
+            # Derive fields and validate from the full filename. get_fields
+            # strips the extension at the real (last) dot, so field values
+            # that contain a dot stay intact.
+            fields = util.get_fields(filename)
+            if util.filename_validate(filename):
                 active = True
                 for skey, nkey in key_fields:
                     config = self.app.get_config(skey)
