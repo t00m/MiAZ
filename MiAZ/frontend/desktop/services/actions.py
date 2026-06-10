@@ -16,6 +16,7 @@ from MiAZ.backend.log import MiAZLog
 from MiAZ.backend.models import Group, Country, Purpose, SentBy, SentTo, Date, Repository, File
 from MiAZ.frontend.desktop.widgets.configview import MiAZCountries, MiAZGroups, MiAZPurposes, MiAZPeopleSentBy, MiAZPeopleSentTo
 from MiAZ.frontend.desktop.widgets.configview import MiAZRepositories
+from MiAZ.frontend.desktop.services.dialogs import MiAZWindowDialog
 from MiAZ.frontend.desktop.widgets.rename import MiAZRenameDialog
 from MiAZ.frontend.desktop.widgets.settings import MiAZAppSettings
 from MiAZ.frontend.desktop.widgets.settings import MiAZRepoSettings
@@ -105,27 +106,46 @@ class MiAZActions(GObject.GObject):
         rename_widget = self.app.add_widget('rename-widget', MiAZRenameDialog(self.app))
         rename_widget.set_data(doc)
         window = self.app.get_widget('window')
-        dialog = self.srvdlg.show_question(title=_('Rename document'), body='', widget=rename_widget, width=1024)
-        dialog.add_response("preview", _("Preview"))
-        dialog.set_response_enabled("preview", True)
+        # A real top-level window (not Adw.AlertDialog, which is an in-window
+        # overlay) so the rename dialog moves freely, even to another monitor.
+        # It is transient for the main window so it stays above it, but it is
+        # deliberately NOT set_modal(True): GNOME's "attach-modal-dialogs"
+        # glues a modal+transient window to the parent titlebar so it moves
+        # with the parent, which is exactly what we want to avoid. Instead we
+        # disable the main window while the dialog is open, so the user cannot
+        # work in it, and re-enable it when the dialog closes.
+        dialog = MiAZWindowDialog(self.app, title=_('Rename document'),
+                                  widget=rename_widget, width=1024, height=640)
+        dialog.add_response('cancel', _('Cancel'))
+        dialog.add_response('preview', _('Preview'))
+        dialog.add_response('apply', _('Rename'))
+        dialog.set_response_appearance('apply', Adw.ResponseAppearance.SUGGESTED)
+        dialog.set_response_enabled('preview', True)
+        dialog.set_default_response('apply')
+        dialog.set_close_response('cancel')
+        dialog.set_transient_for(window)
+        window.set_sensitive(False)
+        dialog.connect('closed', lambda *_a: window.set_sensitive(True))
         self.app.add_widget('dialog-rename', dialog)
         self.emit('rename-dialog-built', dialog, rename_widget)
         dialog.connect('response', self._on_rename_response, rename_widget)
-        dialog.present(window)
+        dialog.present()
 
     def _on_rename_response(self, dialog, response, rename_widget):
-        window = self.app.get_widget('window')
-        if response == 'apply':
+        if response == 'cancel':
+            dialog.close()
+        elif response == 'apply':
             body = _('You are about to rename this document.\nAre you sure?')
             dialog_confirm = self.srvdlg.show_question(
                 title=_('Rename document'), body=body,
                 callback=self._on_answer_question_rename,
                 data=(rename_widget, dialog))
-            dialog_confirm.present(window)
+            # Overlay the confirmation on the rename window, not the main one.
+            dialog_confirm.present(dialog)
         elif response == 'preview':
             doc = rename_widget.get_filepath_source()
             self.document_display(doc)
-            dialog.present(window)
+            # The rename window stays open underneath; nothing to re-present.
 
     def _on_answer_question_rename(self, dialog, response, data):
         rename_widget, parent_dialog = data
@@ -140,8 +160,9 @@ class MiAZActions(GObject.GObject):
                 self.srvdlg.show_error(
                     title=_('Rename document'),
                     body=_('Another document with the same name already exists in this repository'))
-        else:
-            parent_dialog.present(self.app.get_widget('window'))
+            else:
+                parent_dialog.close()
+        # On 'no' the rename window stays open so the user can amend the fields.
 
     def dropdown_populate(self, config, dropdown, item_type, any_value=True, none_value=False, only_include: list = [], only_exclude: list = []):
         # Can be called from a 'used-updated' signal handler or directly.

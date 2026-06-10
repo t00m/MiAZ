@@ -8,6 +8,7 @@ import re
 from gettext import gettext as _
 
 from gi.repository import Adw
+from gi.repository import Gdk
 from gi.repository import GLib
 from gi.repository import GObject
 from gi.repository import Gtk
@@ -255,6 +256,133 @@ class MiAZDialog:
         if callback is not None:
             dialog.connect('response', callback, data)
         return dialog
+
+
+class MiAZWindowDialog(Adw.Window):
+    """A movable, top-level replacement for Adw.AlertDialog.
+
+    Since libadwaita 1.5 Adw.AlertDialog (and Adw.Dialog) render as an overlay
+    inside the parent window's surface, so the user cannot drag them and they
+    cannot leave the window. This is a real top-level Adw.Window: set it
+    transient for the main window and it floats above the main window while
+    staying freely movable by its header bar, even onto another monitor.
+
+    Do NOT pair transient_for with set_modal(True): GNOME's
+    "attach-modal-dialogs" then glues the window to the parent titlebar so it
+    moves with the parent. To block the parent while this dialog is open,
+    disable the parent (parent.set_sensitive(False)) and re-enable it on the
+    'closed' signal instead.
+
+    It mirrors the slice of the AlertDialog API the rename flow and the
+    MiAZAutoScan plugin rely on: add_response(), set_response_appearance(),
+    set_response_enabled(), set_default_response(), set_close_response(), the
+    'response' signal, and the 'closed' signal. Unlike AlertDialog it does not
+    auto-dismiss when a response fires; the handler decides whether to close().
+    """
+    __gtype_name__ = 'MiAZWindowDialog'
+    __gsignals__ = {
+        'response': (GObject.SignalFlags.RUN_LAST, None, (str,)),
+        'closed': (GObject.SignalFlags.RUN_LAST, None, ()),
+    }
+
+    def __init__(self, app, title='', body='', widget=None, width=-1, height=-1):
+        super().__init__()
+        self.app = app
+        self.log = MiAZLog('MiAZ.WindowDialog')
+        self.factory = self.app.get_service('factory')
+        self._buttons = {}
+        self._close_response = None
+        self.set_title(title)
+        self.set_destroy_with_parent(True)
+        self.set_default_size(width if width > 0 else 600,
+                              height if height > 0 else 480)
+
+        headerbar = Adw.HeaderBar()
+        headerbar.set_title_widget(Adw.WindowTitle(title=title, subtitle=''))
+
+        self._action_bar = Gtk.ActionBar()
+
+        content = self.factory.create_box_vertical(
+            margin=12, spacing=12, hexpand=True, vexpand=True)
+        if body:
+            label = Gtk.Label()
+            label.set_use_markup(True)
+            label.set_markup(body)
+            label.set_wrap(True)
+            label.set_xalign(0)
+            content.append(label)
+        if widget is not None:
+            content.append(widget)
+
+        toolbar_view = Adw.ToolbarView()
+        toolbar_view.add_top_bar(headerbar)
+        toolbar_view.set_content(content)
+        toolbar_view.add_bottom_bar(self._action_bar)
+        self.set_content(toolbar_view)
+
+        evk = Gtk.EventControllerKey.new()
+        self.add_controller(evk)
+        evk.connect('key-pressed', self._on_key_pressed)
+        self.connect('close-request', self._on_close_request)
+
+    # AlertDialog-compatible API
+
+    def add_response(self, response_id, label):
+        button = Gtk.Button(label=label)
+        button.connect('clicked', self._on_button_clicked, response_id)
+        self._buttons[response_id] = button
+        # Dismiss-style actions on the left, affirmative ones on the right.
+        if response_id in ('cancel', 'no', 'close'):
+            self._action_bar.pack_start(button)
+        else:
+            self._action_bar.pack_end(button)
+        return button
+
+    def set_response_appearance(self, response_id, appearance):
+        button = self._buttons.get(response_id)
+        if button is None:
+            return
+        if appearance == Adw.ResponseAppearance.SUGGESTED:
+            button.add_css_class('suggested-action')
+        elif appearance == Adw.ResponseAppearance.DESTRUCTIVE:
+            button.add_css_class('destructive-action')
+
+    def set_response_enabled(self, response_id, enabled):
+        button = self._buttons.get(response_id)
+        if button is not None:
+            button.set_sensitive(enabled)
+
+    def set_default_response(self, response_id):
+        button = self._buttons.get(response_id)
+        if button is not None:
+            self.set_default_widget(button)
+
+    def set_close_response(self, response_id):
+        self._close_response = response_id
+
+    def present(self, parent=None):
+        # Adw.AlertDialog.present() takes the parent; accept it here so the
+        # existing call sites keep working and use it as the transient parent.
+        if parent is not None and self.get_transient_for() is None:
+            self.set_transient_for(parent)
+            self.set_modal(True)
+        super().present()
+
+    # Signal handlers
+
+    def _on_button_clicked(self, _button, response_id):
+        self.emit('response', response_id)
+
+    def _on_key_pressed(self, _controller, keyval, _keycode, _state):
+        if keyval == Gdk.KEY_Escape and self._close_response is not None:
+            self.emit('response', self._close_response)
+            return True
+        return False
+
+    def _on_close_request(self, _window):
+        self.emit('closed')
+        return False
+
 
 class MiAZDialogAdd(Adw.Dialog):
     """HIG-compliant input dialog (Adw.Dialog) to create or edit a

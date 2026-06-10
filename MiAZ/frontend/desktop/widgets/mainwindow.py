@@ -75,10 +75,10 @@ class MiAZMainWindow(Gtk.Box):
         # App icon as the first widget on the header bar's left side.
         # Packed before _setup_headerbar_start so it precedes the sidebar
         # toggle and the plugin-controls box.
-        headerbar_app_icon = Gtk.Image.new_from_icon_name('io.github.t00m.MiAZ')
-        headerbar_app_icon.set_pixel_size(24)
-        self.app.add_widget('headerbar-app-icon', headerbar_app_icon)
-        headerbar.pack_start(headerbar_app_icon)
+        # ~ headerbar_app_icon = Gtk.Image.new_from_icon_name('io.github.t00m.MiAZ')
+        # ~ headerbar_app_icon.set_pixel_size(24)
+        # ~ self.app.add_widget('headerbar-app-icon', headerbar_app_icon)
+        # ~ headerbar.pack_start(headerbar_app_icon)
 
         self._setup_headerbar_start(split_view)
         self._setup_headerbar_center()
