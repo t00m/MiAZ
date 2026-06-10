@@ -1,5 +1,5 @@
 /* ============================================================================
-   The MiAZ Times — Newspaper stylesheet
+   The MiAZ Times: Newspaper stylesheet
    A classic broadsheet skin for the MiAZNewspaper plugin (WebKit.WebView).
 
    ── FONTS ──────────────────────────────────────────────────────────────────
@@ -12,7 +12,7 @@
      Body ............ PT Serif
    ========================================================================== */
 
-/* ── PRODUCTION (offline) — fonts vendored locally in ../fonts/ ───────────── */
+/* ── PRODUCTION (offline): fonts vendored locally in ../fonts/ ───────────── */
 @font-face { font-family:'UnifrakturCook';      src:url('../fonts/UnifrakturCook-Bold.woff2') format('woff2');           font-weight:700; font-display:swap; }
 @font-face { font-family:'Libre Caslon Display'; src:url('../fonts/LibreCaslonDisplay-Regular.woff2') format('woff2');    font-weight:400; font-display:swap; }
 @font-face { font-family:'Libre Caslon Text';   src:url('../fonts/LibreCaslonText-Regular.woff2') format('woff2');       font-weight:400; font-style:normal; font-display:swap; }
@@ -57,7 +57,7 @@ body {
 }
 a { color: inherit; text-decoration: none; }
 
-/* page frame — the printed sheet */
+/* page frame: the printed sheet */
 .sheet {
   max-width: var(--measure);
   margin: 0 auto;
@@ -197,7 +197,7 @@ a { color: inherit; text-decoration: none; }
 .lead__byline .sep { color: var(--ink-faint); }
 .lead__byline .to { color: var(--ink-soft); font-style: italic; text-transform: none; letter-spacing: 0.04em; }
 
-/* lead body — two deterministic columns (grid, not multicol), drop cap */
+/* lead body: two deterministic columns (grid, not multicol), drop cap */
 .lead__body {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -230,7 +230,7 @@ a { color: inherit; text-decoration: none; }
 }
 
 /* ============================================================================
-   EDITION GRID — main stream + sidebar
+   EDITION GRID: main stream + sidebar
    ========================================================================== */
 .edition {
   display: grid;
@@ -329,7 +329,7 @@ a { color: inherit; text-decoration: none; }
 .story:hover .story__headline { text-decoration: underline; text-underline-offset: 3px; text-decoration-thickness: 1px; }
 .story:hover .story__read { border-bottom-color: var(--ink); }
 
-/* featured (larger) story inside the stream — spans both columns at top */
+/* featured (larger) story inside the stream: spans both columns at top */
 .story--feature {
   column-span: all;
   border-bottom: 2px solid var(--rule);

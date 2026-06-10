@@ -154,10 +154,14 @@ class MiAZNewspaperPlugin(MiAZExtension):
                 callback=self._on_menu_clicked,
             )
             self.plugin.install_menu_entry(menuitem)
-            # Reprint live while the paper is on screen and filters change.
-            handler = self.workspace.connect(
-                'workspace-view-filtered', self._on_view_filtered)
-            self._signal_handlers.append((self.workspace, handler))
+            # Reprint live while the paper is on screen. Both the filter/sort
+            # and the selection feed the edition: filtering decides which
+            # documents appear on the front page, and the selection decides
+            # whether we show the front page or a single-document article.
+            for signal in ('workspace-view-filtered',
+                           'workspace-view-selection-changed'):
+                handler = self.workspace.connect(signal, self._schedule_rebuild)
+                self._signal_handlers.append((self.workspace, handler))
             self.plugin.set_started(True)
 
         self._render()
@@ -171,10 +175,11 @@ class MiAZNewspaperPlugin(MiAZExtension):
             except Exception as error:
                 self.log.debug(f"MiAZNewspaper: could not show Browser page: {error}")
 
-    def _on_view_filtered(self, *_args):
-        # Only auto-reprint the front page; leave a single-article read intact.
-        if self._mode != 'front':
-            return
+    def _schedule_rebuild(self, *_args):
+        # Debounce: filtering and selection can fire in quick bursts, so we
+        # coalesce them into a single reprint. _render() recomputes the mode
+        # (front page vs single article) from the live selection every time,
+        # so the paper always reflects the current Workspace state.
         if self._rebuild_timeout_id:
             GLib.source_remove(self._rebuild_timeout_id)
         self._rebuild_timeout_id = GLib.timeout_add(
