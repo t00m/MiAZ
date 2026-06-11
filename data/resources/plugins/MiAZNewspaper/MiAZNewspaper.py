@@ -5,29 +5,14 @@
 # File: MiAZNewspaper.py
 # Author: Tomás Vírseda
 # License: GPL v3
-# Description: Present the documents shown in the Workspace as a classic
-#              broadsheet newspaper, "The MiAZ Times". The edition is published
-#              as a self-contained HTML site to the WWW root so it shows up in
-#              the integrated MiAZ Browser dropdown; the plugin no longer hosts
-#              its own WebView. Every story is built from a document's seven
-#              filing fields and links back to the original file.
-#
-# How it works:
-#   - The edition is built from the documents CURRENTLY VISIBLE in the Workspace
-#     (after the active filters and sort), read from the view's filter model, so
-#     the paper reflects exactly what the user is looking at.
-#   - The HTML and its assets (static/newspaper.css + fonts/) are written to
-#     $HOME/.MiAZ/var/www/html/MiAZNewspaper/index.html. The Browser monitors
-#     the WWW root and lists the page in its dropdown automatically.
-#   - Clicking any story links to `miazdoc:<filename>`; the Browser intercepts
-#     that scheme and opens the underlying document with the system handler.
-#
-# View selection (documented decision, see IMPLEMENTATION_PLAN.md §4/§5):
-#   - With 0 or 2+ documents (or no single selection): the FRONT PAGE is shown,
-#     built from every visible document.
-#   - With exactly ONE document selected in the Workspace: that document is
-#     shown as a full ARTICLE (article.html), exercising the reading view.
+# Description: Show the Workspace documents as a newspaper, "The MiAZ Times".
 """
+
+# The edition is built from the documents currently visible in the Workspace.
+# It is published as an HTML site under the WWW root, so the MiAZ Browser lists
+# it in its dropdown. Stories link to 'miazdoc:<filename>', which the Browser
+# opens with the system handler. The front page shows every visible document.
+# The "Open as Newspaper" menu shows a single selected document as an article.
 
 import os
 import html
@@ -62,18 +47,17 @@ REBUILD_DEBOUNCE_MS = 800
 
 
 def esc(value):
-    """HTML-escape a field value (concepts and names are user data)."""
+    # HTML-escape a field value. Concepts and names are user data.
     return html.escape(value or '')
 
 
 def href(filename):
-    """Link a story to its document through the Browser's `miazdoc:` scheme.
-    The filename is URL-encoded so spaces/accents survive in the href."""
+    # Link a story to its document via the Browser 'miazdoc:' scheme, URL-encoded.
     return 'miazdoc:' + urllib.parse.quote(filename or '')
 
 
 def roman(number):
-    """Roman numeral for the edition year (plain fallback handled by caller)."""
+    # Roman numeral for the edition year. The caller handles the plain fallback.
     if not number:
         return ''
     table = [(1000, 'M'), (900, 'CM'), (500, 'D'), (400, 'CD'), (100, 'C'),
@@ -154,21 +138,20 @@ class MiAZNewspaperPlugin(MiAZExtension):
                 callback=self._on_menu_clicked,
             )
             self.plugin.install_menu_entry(menuitem)
-            # Reprint live while the paper is on screen. Both the filter/sort
-            # and the selection feed the edition: filtering decides which
-            # documents appear on the front page, and the selection decides
-            # whether we show the front page or a single-document article.
+            # Reprint only when the view changes: filter, sort or content reload.
+            # Selection is not a trigger; clicking a document must not reprint.
             for signal in ('workspace-view-filtered',
-                           'workspace-view-selection-changed'):
+                           'workspace-view-updated'):
                 handler = self.workspace.connect(signal, self._schedule_rebuild)
                 self._signal_handlers.append((self.workspace, handler))
             self.plugin.set_started(True)
 
-        self._render()
+        # First print is always the front page of the current view.
+        self._render(honor_selection=False)
 
     def _on_menu_clicked(self, *_args):
-        # The paper lives in the Browser tab; reprint and bring that tab forward.
-        self._render()
+        # Reprint honouring the selection, then bring the Browser tab forward.
+        self._render(honor_selection=True)
         if self.workspace is not None:
             try:
                 self.workspace.show_stack_page('workspace-browser')
@@ -176,10 +159,7 @@ class MiAZNewspaperPlugin(MiAZExtension):
                 self.log.debug(f"MiAZNewspaper: could not show Browser page: {error}")
 
     def _schedule_rebuild(self, *_args):
-        # Debounce: filtering and selection can fire in quick bursts, so we
-        # coalesce them into a single reprint. _render() recomputes the mode
-        # (front page vs single article) from the live selection every time,
-        # so the paper always reflects the current Workspace state.
+        # Debounce bursts of filter and reload events into one reprint.
         if self._rebuild_timeout_id:
             GLib.source_remove(self._rebuild_timeout_id)
         self._rebuild_timeout_id = GLib.timeout_add(
@@ -187,13 +167,14 @@ class MiAZNewspaperPlugin(MiAZExtension):
 
     def _rebuild_tick(self):
         self._rebuild_timeout_id = 0
-        self._render()
+        # A view change always reprints the front page, never an article.
+        self._render(honor_selection=False)
         return False
 
     # Data
 
     def _visible_items(self):
-        """Documents currently shown in the Workspace, in display order."""
+        # Documents currently shown in the Workspace, in display order.
         view = self.workspace.get_workspace_view()
         model = view.filter_model
         items = []
@@ -205,7 +186,7 @@ class MiAZNewspaperPlugin(MiAZExtension):
 
     @staticmethod
     def _doc(item):
-        """Map a MiAZItem to a dict of resolved (and raw) field values."""
+        # Map a MiAZItem to a dict of resolved and raw field values.
         return {
             'filename': item.id,
             'date': item.date or '',
@@ -223,14 +204,17 @@ class MiAZNewspaperPlugin(MiAZExtension):
             'extension': item.extension or '',
         }
 
-    def _render(self, *_args):
-        """Build the edition from the current view (main thread) and publish it
-        to the WWW root off the GTK main loop."""
+    def _render(self, *_args, honor_selection=False):
+        # Build the edition from the current view, publish it off the main loop.
+        # honor_selection True (menu action) shows one selected doc as an article.
+        # View-change reprints pass False, so selection never alters the edition.
         items = self._visible_items()
-        try:
-            selected = self.workspace.get_selected_items() or []
-        except Exception:
-            selected = []
+        selected = []
+        if honor_selection:
+            try:
+                selected = self.workspace.get_selected_items() or []
+            except Exception:
+                selected = []
 
         if len(selected) == 1:
             self._mode = 'article'
@@ -253,9 +237,8 @@ class MiAZNewspaperPlugin(MiAZExtension):
             self.log.error(f"MiAZNewspaper build failed: {error}")
 
     def _publish(self, html_body):
-        """Write index.html plus the CSS and fonts into the WWW page directory.
-        We rebuild the directory from scratch so the Browser's WWW monitor (which
-        watches for created/deleted entries, not in-place edits) refreshes."""
+        # Write index.html, CSS and fonts into the WWW page directory.
+        # Rebuild the dir from scratch so the Browser monitor sees the change.
         target = self._target_dir()
         if not target:
             return
@@ -332,7 +315,7 @@ class MiAZNewspaperPlugin(MiAZExtension):
         return f'{dateline} {sentence}'
 
     def _lede(self, doc):
-        """Two factual sentences naming section, sender, recipient, date, concept."""
+        # Two sentences naming section, sender, recipient, date and concept.
         p1 = _('The {group} section of the archive receives {concept} from {sender}, dated {date}, addressed to {recipient}.').format(
             group=esc(doc['group_dsc']),
             concept=esc(doc['concept'].lower()) or _('a new filing'),
