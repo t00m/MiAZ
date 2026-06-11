@@ -16,7 +16,6 @@ from gi.repository import Gio
 from gi.repository import GLib
 from gi.repository import Gtk
 
-from MiAZ.backend.status import MiAZStatus
 from MiAZ.frontend.desktop.services.pluginsystem import MiAZExtension, MiAZPlugin
 from MiAZ.backend.models import File, Group, Country, Purpose, SentBy, SentTo, Date, Concept
 from MiAZ.frontend.desktop.widgets.configview import MiAZCountries
@@ -171,18 +170,30 @@ class MiAZMassRenamingPlugin(MiAZExtension):
 
         def dialog_response(dialog, response, dropdown, item_type, items):
             if response == 'apply':
-                self.app.set_status(MiAZStatus.BUSY)
+                selected = dropdown.get_selected_item()
+                if selected is None:
+                    return
+                # Do NOT toggle the app status to BUSY here. The workspace
+                # skips its update while BUSY, and if any item in the batch
+                # raised mid-loop the RUNNING reset would be missed, stranding
+                # the app in BUSY and freezing every later view refresh. Each
+                # filename_rename emits 'filename-renamed', which the workspace
+                # already debounces into a single update, like the single
+                # rename path. Skip files that cannot be renamed so one bad
+                # name does not abort the rest of the batch.
+                n = Field[item_type]
                 for item in items:
                     bsource = item.id
                     name, ext = self.util.filename_details(bsource)
-                    n = Field[item_type]
                     tmpfile = name.split('-')
-                    tmpfile[n] = dropdown.get_selected_item().id
+                    if n >= len(tmpfile):
+                        self.log.warning(f"Skipping '{bsource}': not enough fields to set {item_type.__gtype_name__}")
+                        continue
+                    tmpfile[n] = selected.id
                     btarget = f"{'-'.join(tmpfile)}.{ext}"
                     source = os.path.join(self.repository.docs, bsource)
                     target = os.path.join(self.repository.docs, btarget)
                     self.util.filename_rename(source, target)
-                self.app.set_status(MiAZStatus.RUNNING)
 
         def dialog_response_date(dialog, response, calendar, items):
             if response == 'apply':
@@ -191,17 +202,19 @@ class MiAZMassRenamingPlugin(MiAZExtension):
                 m = f"{adate.get_month():02d}"
                 d = f"{adate.get_day_of_month():02d}"
                 sdate = f"{y}{m}{d}"
-                self.app.set_status(MiAZStatus.BUSY)
+                # See dialog_response: no BUSY juggling. The debounced
+                # 'filename-renamed' signal refreshes the workspace once.
                 for item in items:
                     bsource = os.path.basename(item.id)
                     name, ext = self.util.filename_details(bsource)
                     lname = name.split('-')
+                    if not lname:
+                        continue
                     lname[0] = sdate
                     btarget = f"{'-'.join(lname)}.{ext}"
                     source = os.path.join(self.repository.docs, bsource)
                     target = os.path.join(self.repository.docs, btarget)
                     self.util.filename_rename(source, target)
-                self.app.set_status(MiAZStatus.RUNNING)
 
         items = self.workspace.get_selected_items()
         if self.actions.stop_if_no_items():

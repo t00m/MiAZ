@@ -272,22 +272,7 @@ class MiAZUtil(GObject.GObject):
         return len(name.split('-')) == 7
 
     def filename_validate(self, doc: str) -> bool:
-        # Structural check only: a MiAZ filename has exactly 7 non-empty
-        # fields. Field-value validity is intentionally NOT checked here.
-        #
-        # The value of each field is repo-relative and changes over time:
-        # countries can be invented and enabled, dates may follow several
-        # patterns, and groups/senders/purposes/recipients are user-defined.
-        # Those checks live in the Workspace parser (_parse_files_worker),
-        # which decides per field whether a value is known/enabled and, if
-        # not, flags the document for Review. Re-checking them here against
-        # a fixed format (e.g. YYYYMMDD) or a fixed set (e.g. ISO-3166)
-        # would be redundant and would wrongly reject valid documents once
-        # those assumptions are relaxed.
-        #
-        # get_fields strips path and extension and merges hyphenated tail
-        # fields back into SentTo, so names with hyphens in Concept/SentTo
-        # and full paths are handled consistently.
+        # A MiAZ filename has exactly 7 non-empty fields.
         fields = self.get_fields(doc)
         return len(fields) == 7 and all(field for field in fields)
 
@@ -338,11 +323,7 @@ class MiAZUtil(GObject.GObject):
         self.emit('filename-deleted', filepaths)
 
     def filename_import(self, source: str, target: str):
-        """Import file into repository
-
-        Normally, only the source filename would be necessary, but
-        as it is renamed according MiAZ rules, target is also needed.
-        """
+        """Import file into repository"""
         self.filename_copy(source, target)
         self.emit('filename-added', target)
 
@@ -538,5 +519,3 @@ class MiAZUtil(GObject.GObject):
             thread.join()  # Wait for cleanup
 
         return result["success"], result["error"]
-
-

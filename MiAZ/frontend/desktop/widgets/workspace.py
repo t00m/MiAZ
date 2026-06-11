@@ -48,8 +48,7 @@ class MiAZWorkspace(Gtk.Box):
     _num_total_items = 0
     workspace_loaded = False
     _filter_tag_css_installed = False
-    # Fixed light colour per default filter so each tag is visually distinct and
-    # identical across sessions (deterministic, keyed by the field gtype name).
+    # Tags colors
     _FILTER_TAG_COLORS = {
         'Date':    '#cfe3ff',  # light blue
         'Country': '#d6f5d6',  # light green
@@ -94,12 +93,7 @@ class MiAZWorkspace(Gtk.Box):
         self.connect('workspace-view-updated', self._on_filter_selected)
         self.app.connect('application-started', self._on_finish_configuration)
         self.app.connect('application-finished', self._on_application_finished)
-
         self.connect('workspace-loaded', self._on_loaded)
-
-        # Keep the active-filter tags banner in sync with the filter state.
-        # Field dropdowns emit 'workspace-view-filtered'; the date dropdown
-        # triggers a full reload that only emits 'workspace-view-updated'.
         self.connect('workspace-view-filtered', self._update_filter_tags)
         self.connect('workspace-view-updated', self._update_filter_tags)
 
@@ -378,8 +372,7 @@ class MiAZWorkspace(Gtk.Box):
         browser_page.set_icon_name('io.github.t00m.MiAZ-webbrowser')
         self.app.add_widget('workspace-browser', browser_widget)
 
-        # InlineViewSwitcher lives in the header bar (created by the main
-        # window). Link it to this stack instead of building a local one.
+        # InlineViewSwitcher
         self._switcher = self.app.get_widget('workspace-view-switcher')
         if self._switcher is not None:
             self._switcher.set_stack(self._stack)
@@ -470,10 +463,7 @@ class MiAZWorkspace(Gtk.Box):
             dropdown.set_selected(0)
 
     def _update_filter_tags(self, *args):
-        """Rebuild the active-filter tags banner from the current dropdown state.
-        Date is always filtering (its neutral entry 'This month' is still a date
-        range), so a date tag is always shown; the field filters show a tag only
-        when their selection is not the neutral 'Any' first entry."""
+        """Rebuild the active-filter tags banner from the current dropdown state."""
         flowbox = getattr(self, '_filter_tags_flowbox', None)
         if flowbox is None:
             return
@@ -548,8 +538,6 @@ class MiAZWorkspace(Gtk.Box):
 
     def _on_stack_page_changed(self, stack, _pspec):
         # The filter-tags revealer applies only to the Documents view.
-        # Hide it outright when any other stack page is active so its
-        # animated reveal_child state is preserved for when we return.
         revealer = getattr(self, '_filter_tags_revealer', None)
         if revealer is None:
             return
@@ -562,7 +550,7 @@ class MiAZWorkspace(Gtk.Box):
         return self.selected_items
 
     def clear_filters(self):
-        """Reset every filter control atomically, then refilter once."""
+        """Reset every filter"""
         search_entry = self.app.get_widget('searchentry')
         dropdowns = self.app.get_widget('ws-dropdowns') or {}
         plugin_dropdowns = self.app.get_widget('plugin-dropdowns') or []
@@ -603,42 +591,44 @@ class MiAZWorkspace(Gtk.Box):
         key_fields = [('Date', 0), ('Country', 1), ('Group', 2), ('SentBy', 3), ('Purpose', 4), ('Concept', 5), ('SentTo', 6)]
 
         for filename in docs:
-            # Reset per file. Otherwise an invalid filename (which skips the
-            # block below) would inherit the descriptions of the previous valid
-            # file and show another document's fields in the Pending view.
-            desc = {}
+            # Reset per file.
+            # Concept.
+            desc = {skey: '' for skey, nkey in key_fields}
             doc, ext = util.filename_details(filename)
-            # Derive fields and validate from the full filename. get_fields
-            # strips the extension at the real (last) dot, so field values
-            # that contain a dot stay intact.
             fields = util.get_fields(filename)
-            if util.filename_validate(filename):
-                active = True
+            valid = util.filename_validate(filename)
+            if not valid:
+                invalid.append(filename)
+            active = valid
+            if len(fields) == 7:
                 for skey, nkey in key_fields:
                     config = self.app.get_config(skey)
                     key = fields[nkey]
+                    if nkey == 5:
+                        continue
+                    if not key:
+                        # Empty field. Document cannot be active.
+                        active = False
+                        continue
                     if nkey == 0:
-                        key = fields[nkey]
                         try:
                             desc[skey] = self.cache[skey][key]
                         except KeyError:
-                            desc[skey] = util.filename_date_human_simple(key)
-                            if desc[skey] is None:
-                                active &= False
+                            human = util.filename_date_human_simple(key)
+                            if human is None:
+                                active = False
                                 desc[skey] = ''
                             else:
+                                desc[skey] = human
                                 if skey not in cache_updates:
                                     cache_updates[skey] = {}
-                                cache_updates[skey][key] = desc[skey]
-                    elif nkey != 5:
+                                cache_updates[skey][key] = human
+                    else:
                         description = config.get(key)
                         if description is None:
                             description = key
                         desc[skey] = description
                         active &= config.exists_used(key=key)
-            else:
-                invalid.append(filename)
-                active = False
 
             show_pending |= not active
 
@@ -690,8 +680,7 @@ class MiAZWorkspace(Gtk.Box):
         ENV['CACHE']['CONCEPTS']['ACTIVE'] = sorted(concepts_active)
         ENV['CACHE']['CONCEPTS']['INACTIVE'] = sorted(concepts_inactive)
 
-        # Build the field index from the same file list so field_used()
-        # never needs to re-scan from disk on the main thread.
+        # Build the field index
         field_index = {ft: {} for ft in Field}
         for filename in docs:
             file_fields = util.get_fields(filename)
@@ -712,8 +701,7 @@ class MiAZWorkspace(Gtk.Box):
         result_dict['field_index'] = field_index
         result_dict['_repo_docs'] = repo_docs
 
-        # The scan is done. Hand the results back to the main program so it
-        # can safely update the screen.
+        # The scan is done. Update the screen.
         GLib.idle_add(self._apply_parse_results, result_dict)
 
     def _apply_parse_results(self, result_dict):
@@ -732,7 +720,7 @@ class MiAZWorkspace(Gtk.Box):
         repository = self.app.get_service('repo')
         util = self.app.get_service('util')
 
-        # Install the pre-built field index so field_used() hits a warm cache.
+        # Pre-built field index
         util._field_index = result_dict['field_index']
         util._field_index_dir = result_dict['_repo_docs']
         ds = result_dict.get('_ds', datetime.now())
@@ -795,8 +783,7 @@ class MiAZWorkspace(Gtk.Box):
         if self.app.get_status() == MiAZStatus.BUSY:
             if self.app.get_plugins_loaded():
                 self.log.warning("App is busy. Workspace update deferred")
-            # A previous scan is still running. Ask to try this update again
-            # in a moment, so we don't lose it.
+            # A previous scan is still running. Try update again
             self._schedule_update()
             return
 
@@ -1009,7 +996,7 @@ class MiAZWorkspace(Gtk.Box):
                     new_items.append(item_type(id=key, title=title if title else key))
                 model.splice(0, model.get_n_items(), new_items)
 
-                # O(1) selection preservation using dict lookup
+                # Selection preservation
                 pos_map = {}
                 n_dd = model_filter.get_n_items()
                 for pos in range(n_dd):
