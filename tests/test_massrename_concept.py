@@ -57,3 +57,41 @@ def test_remove_tokens_drops_positions():
 
 def test_remove_tokens_custom_separator():
     assert concept_ops.remove_tokens('a-b-c', '2', sep='-') == 'a-c'
+
+
+def test_add_prefix():
+    assert concept_ops.add_prefix('202508', 'PAYSLIP') == 'PAYSLIP_202508'
+
+
+def test_add_prefix_empty_text_noop():
+    assert concept_ops.add_prefix('202508', '') == '202508'
+
+
+def test_add_suffix():
+    assert concept_ops.add_suffix('salary', 'final') == 'salary_final'
+
+
+def test_find_replace():
+    assert concept_ops.find_replace('salary_slip', 'slip', 'doc') == 'salary_doc'
+
+
+def test_find_replace_delete():
+    assert concept_ops.find_replace('a_b_a', 'a', '') == '_b_'
+
+
+def test_change_case():
+    assert concept_ops.change_case('Salary_Slip', 'lower') == 'salary_slip'
+    assert concept_ops.change_case('salary', 'upper') == 'SALARY'
+
+
+def test_set_value():
+    assert concept_ops.set_value('whatever', 'fixed') == 'fixed'
+
+
+def test_apply_dispatch_keep():
+    params = {'positions': '2-3', 'sep': '_'}
+    assert concept_ops.apply('keep', '12_salary_slip_202508', params) == 'salary_slip'
+
+
+def test_apply_unknown_op_returns_concept():
+    assert concept_ops.apply('nope', 'abc', {}) == 'abc'
