@@ -25,6 +25,10 @@ from MiAZ.frontend.desktop.widgets.configview import MiAZPeopleSentBy
 from MiAZ.frontend.desktop.widgets.configview import MiAZPeopleSentTo
 from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewMassRename
 
+import sys
+sys.path.insert(1, os.path.dirname(os.path.abspath(__file__)))
+import concept_ops
+
 plugin_info = {
         'Module':        'massrename',
         'Name':          'MiAZMassRename',
@@ -119,6 +123,16 @@ class MiAZMassRenamingPlugin(MiAZExtension):
                     name = f'rename_{i_type.lower()}'
                     menuitem = self.factory.create_menuitem(name=name, label=label, callback=self.document_rename_multiple, data=item_type, shortcuts=None)
                     submenu_massrename.append_item(menuitem)
+
+                # Concept is free-form, so it gets a transform tool instead of
+                # a vocabulary dropdown.
+                concept_item = self.factory.create_menuitem(
+                    name='rename_concept',
+                    label=_('... of concept'),
+                    callback=self.document_rename_concept,
+                    data=Concept,
+                    shortcuts=None)
+                submenu_massrename.append_item(concept_item)
 
                 # Attach plugin submenu to root submenu
                 submenu.append_item(menu_massrename)
@@ -276,4 +290,146 @@ class MiAZMassRenamingPlugin(MiAZExtension):
             dialog = self.srvdlg.show_action(title=_('Mass renaming'), widget=box, width=640, height=480)
             dialog.connect('response', dialog_response_date, calendar, items)
             dialog.present(window)
+
+    def document_rename_concept(self, action, data, item_type):
+        """Transform the free-form concept field of the selected documents."""
+        items = self.workspace.get_selected_items()
+        if self.actions.stop_if_no_items():
+            self.log.debug("No items selected")
+            return
+
+        n = Field[Concept]
+        op_keys = ['keep', 'remove', 'prefix', 'suffix', 'replace', 'case', 'set']
+        op_labels = [_('Keep token(s)'), _('Remove token(s)'), _('Add prefix'),
+                     _('Add suffix'), _('Find & replace'), _('Change case'),
+                     _('Set value')]
+        case_modes = ['upper', 'lower', 'title']
+
+        entry_sep = Gtk.Entry(text='_')
+        entry_positions = Gtk.Entry()
+        entry_positions.set_placeholder_text(_('e.g. 2-3'))
+        entry_text = Gtk.Entry()
+        entry_find = Gtk.Entry()
+        entry_find.set_placeholder_text(_('find'))
+        entry_replace = Gtk.Entry()
+        entry_replace.set_placeholder_text(_('replace with'))
+        entry_value = Gtk.Entry()
+        dd_case = Gtk.DropDown.new_from_strings([_('upper'), _('lower'), _('title')])
+        dd_op = Gtk.DropDown.new_from_strings(op_labels)
+
+        def labeled(text, widget):
+            hbox = self.factory.create_box_horizontal(spacing=6)
+            hbox.append(Gtk.Label(label=text))
+            hbox.append(widget)
+            return hbox
+
+        box_positions = labeled(_('Positions'), entry_positions)
+        box_sep = labeled(_('Separator'), entry_sep)
+        box_text = labeled(_('Text'), entry_text)
+        box_find = labeled(_('Find'), entry_find)
+        box_replace = labeled(_('Replace'), entry_replace)
+        box_case = labeled(_('Case'), dd_case)
+        box_value = labeled(_('Value'), entry_value)
+
+        def current_op():
+            return op_keys[dd_op.get_selected()]
+
+        def current_params():
+            return {
+                'sep': entry_sep.get_text() or '_',
+                'positions': entry_positions.get_text(),
+                'text': entry_text.get_text(),
+                'find': entry_find.get_text(),
+                'replace': entry_replace.get_text(),
+                'mode': case_modes[dd_case.get_selected()],
+                'value': entry_value.get_text(),
+            }
+
+        def target_basename(bsource, op, params):
+            name, ext = self.util.filename_details(bsource)
+            fields = name.split('-')
+            if len(fields) != 7:
+                return None
+            new_concept = concept_ops.apply(op, fields[n], params)
+            new_concept = self.util.valid_key(new_concept)
+            if not new_concept:
+                return None
+            fields[n] = new_concept
+            return f"{'-'.join(fields)}.{ext}"
+
+        def update_visibility(*_a):
+            op = current_op()
+            box_positions.set_visible(op in ('keep', 'remove'))
+            box_sep.set_visible(op in ('keep', 'remove', 'prefix', 'suffix'))
+            box_text.set_visible(op in ('prefix', 'suffix'))
+            box_find.set_visible(op == 'replace')
+            box_replace.set_visible(op == 'replace')
+            box_case.set_visible(op == 'case')
+            box_value.set_visible(op == 'set')
+
+        def refresh_preview(*_a):
+            op = current_op()
+            params = current_params()
+            citems = []
+            for item in items:
+                bsource = item.id
+                btarget = target_basename(bsource, op, params)
+                title = btarget if btarget is not None else bsource
+                citems.append(File(id=bsource, title=title))
+            cv.update(citems)
+
+        def dialog_response_concept(dialog, response):
+            if response != 'apply':
+                return
+            op = current_op()
+            params = current_params()
+            renamed = 0
+            skipped = 0
+            for item in items:
+                bsource = item.id
+                btarget = target_basename(bsource, op, params)
+                if btarget is None or btarget == bsource:
+                    skipped += 1
+                    continue
+                source = os.path.join(self.repository.docs, bsource)
+                target = os.path.join(self.repository.docs, btarget)
+                if self.util.filename_rename(source, target):
+                    renamed += 1
+                else:
+                    skipped += 1
+            self.srvdlg.show_toast(
+                _('Renamed {r}, skipped {s}').format(r=renamed, s=skipped))
+
+        box = self.factory.create_box_vertical(spacing=6, vexpand=True, hexpand=True)
+        label = self.factory.create_label(
+            _('Transform the <b>concept</b> of {count} files:\n')
+            .format(count=len(items)))
+        params_box = self.factory.create_box_horizontal(spacing=12)
+        for child in (box_positions, box_sep, box_text, box_find,
+                      box_replace, box_case, box_value):
+            params_box.append(child)
+        frame = Gtk.Frame()
+        cv = MiAZColumnViewMassRename(self.app)
+        cv.set_hexpand(True)
+        cv.set_vexpand(True)
+        frame.set_child(cv)
+        box.append(label)
+        box.append(dd_op)
+        box.append(params_box)
+        box.append(frame)
+
+        dd_op.connect('notify::selected', update_visibility)
+        dd_op.connect('notify::selected', refresh_preview)
+        dd_case.connect('notify::selected', refresh_preview)
+        for entry in (entry_sep, entry_positions, entry_text, entry_find,
+                      entry_replace, entry_value):
+            entry.connect('changed', refresh_preview)
+
+        update_visibility()
+        refresh_preview()
+        window = self.app.get_widget('window')
+        dialog = self.srvdlg.show_action(
+            title=_('Mass renaming: concept'), widget=box, width=1024, height=600)
+        dialog.connect('response', dialog_response_concept)
+        dialog.present(window)
 
