@@ -350,10 +350,17 @@ class MiAZMassRenamingPlugin(MiAZExtension):
             fields = name.split('-')
             if len(fields) != 7:
                 return None
-            new_concept = concept_ops.apply(op, fields[n], params)
-            new_concept = self.util.valid_key(new_concept)
+            old_concept = fields[n]
+            new_concept = self.util.valid_key(concept_ops.apply(op, old_concept, params))
             if not new_concept:
                 return None
+            # Decide unchanged by comparing the concept, not the rebuilt
+            # basename: filename_details lowercases the extension, so a file
+            # with an uppercase extension would otherwise look like a rename
+            # even when the concept did not change. Return the original
+            # basename so the preview and apply both treat it as a no-op.
+            if new_concept == old_concept:
+                return bsource
             fields[n] = new_concept
             return f"{'-'.join(fields)}.{ext}"
 

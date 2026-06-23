@@ -95,3 +95,8 @@ def test_apply_dispatch_keep():
 
 def test_apply_unknown_op_returns_concept():
     assert concept_ops.apply('nope', 'abc', {}) == 'abc'
+
+
+def test_keep_tokens_preserves_order_not_spec_order():
+    # parse_positions sorts indices, so an out-of-order spec keeps file order.
+    assert concept_ops.keep_tokens('a_b_c', '3,1') == 'a_c'
