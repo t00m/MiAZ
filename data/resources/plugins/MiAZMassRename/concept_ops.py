@@ -27,3 +27,15 @@ def parse_positions(spec, count):
             if 1 <= pos <= count:
                 indices.add(pos - 1)
     return sorted(indices)
+
+
+def keep_tokens(concept, spec, sep='_'):
+    tokens = concept.split(sep)
+    keep = parse_positions(spec, len(tokens))
+    return sep.join(tokens[i] for i in keep)
+
+
+def remove_tokens(concept, spec, sep='_'):
+    tokens = concept.split(sep)
+    drop = set(parse_positions(spec, len(tokens)))
+    return sep.join(t for i, t in enumerate(tokens) if i not in drop)

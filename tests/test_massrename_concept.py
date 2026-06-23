@@ -34,3 +34,26 @@ def test_parse_positions_invalid_ignored():
 
 def test_parse_positions_empty():
     assert concept_ops.parse_positions('', 5) == []
+
+
+def test_keep_tokens_range():
+    concept = '12_salary_slip_202508_00017381_20250827'
+    assert concept_ops.keep_tokens(concept, '2-3') == 'salary_slip'
+
+
+def test_keep_tokens_single():
+    assert concept_ops.keep_tokens('a_b_c', '2') == 'b'
+
+
+def test_keep_tokens_out_of_range_returns_empty():
+    assert concept_ops.keep_tokens('a_b', '5') == ''
+
+
+def test_remove_tokens_drops_positions():
+    concept = '12_salary_slip_202508_00017381_20250827'
+    # Drop the leading sequence number (1) and the trailing id+date (5-6).
+    assert concept_ops.remove_tokens(concept, '1,5-6') == 'salary_slip_202508'
+
+
+def test_remove_tokens_custom_separator():
+    assert concept_ops.remove_tokens('a-b-c', '2', sep='-') == 'a-c'
