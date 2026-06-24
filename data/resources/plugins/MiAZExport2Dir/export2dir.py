@@ -206,8 +206,6 @@ class Export2Dir(MiAZExtension):
                         target = os.path.join(self.target_dir, os.path.basename(item.id))
                         self.util.filename_export(source, target)
                 self.util.directory_open(self.target_dir)
-                window = self.workspace.get_root()
-                body = _('<big>Check your default file browser</big>')
-                self.srvdlg.create(dtype='info', title=_('Export successful'), body=body).present()
+                self.srvdlg.show_toast(_('Check your default file browser'))
         else:
             self.srvdlg.show_error(title=_('Action canceled'), body=_('No documents exported'))
