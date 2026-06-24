@@ -537,3 +537,49 @@ class MiAZColumnViewPlugin(MiAZColumnViewSelector):
         self.cv.append_column(self.column_title)
         self.column_title.set_title(_('Plugin'))
         self.column_title.set_expand(True)
+
+
+class MiAZColumnViewSuggestion(MiAZColumnViewSelector):
+    """ColumnView listing distinct metadata combinations (Country, Group,
+    Purpose, Sent By, Sent To) used by documents that share a concept.
+    Backed by MiAZItem so it reuses the already-parsed descriptions."""
+    __gtype_name__ = 'MiAZColumnViewSuggestion'
+
+    # (column title, value property, tooltip-id property)
+    _COLUMNS = [
+        (_('Country'), 'country_dsc', 'country'),
+        (_('Group'),   'group_dsc',   'group'),
+        (_('Purpose'), 'purpose_dsc', 'purpose'),
+        (_('Sent By'), 'sentby_dsc',  'sentby_id'),
+        (_('Sent To'), 'sentto_dsc',  'sentto_id'),
+    ]
+
+    def __init__(self, app):
+        super().__init__(app, item_type=MiAZItem)
+        # The inherited id/title columns are irrelevant here.
+        self.column_id.set_visible(False)
+        self.column_title.set_visible(False)
+        for title, prop, prop_id in self._COLUMNS:
+            factory = Gtk.SignalListItemFactory()
+            factory.connect('setup', self._on_factory_setup_value)
+            factory.connect('bind', self._on_factory_bind_value, prop, prop_id)
+            column = Gtk.ColumnViewColumn.new(title, factory)
+            column.set_expand(True)
+            sorter = Gtk.CustomSorter.new(sort_func=self._on_sort_string_func, user_data=prop)
+            column.set_sorter(sorter)
+            self.cv.append_column(column)
+
+    def _on_factory_setup_value(self, factory, list_item):
+        list_item.set_child(ColLabel())
+
+    def _on_factory_bind_value(self, factory, list_item, prop, prop_id):
+        box = list_item.get_child()
+        item = list_item.get_item()
+        label = box.get_first_child()
+        value = getattr(item, prop, '') or ''
+        key = getattr(item, prop_id, '') or ''
+        label.set_markup(value)
+        label.set_xalign(0.0)
+        label.set_ellipsize(True)
+        label.set_property('ellipsize', Pango.EllipsizeMode.END)
+        label.set_tooltip_markup(f"<big>{key}</big>\n<b>{value}</b>")
