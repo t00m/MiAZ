@@ -16,10 +16,11 @@ from gi.repository import Pango
 
 from MiAZ.env import ENV
 from MiAZ.backend.log import MiAZLog
-from MiAZ.backend.models import Group, Country, Purpose, Concept, SentBy, SentTo
+from MiAZ.backend.models import MiAZItem, Group, Country, Purpose, Concept, SentBy, SentTo
 from MiAZ.frontend.desktop.services.dialogs import MiAZDialogAdd
 from MiAZ.frontend.desktop.widgets.configview import MiAZCountries, MiAZGroups, MiAZPurposes, MiAZPeopleSentBy, MiAZPeopleSentTo
 from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewConcept
+from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewSuggestion
 
 
 class MiAZRenameDialog(Gtk.Box):
@@ -206,6 +207,94 @@ class MiAZRenameDialog(Gtk.Box):
                     dropdown.set_selected(n)
                     return
         dropdown.set_selected(0)
+
+    # Suggest metadata from documents sharing the typed concept
+    def _collect_metadata_suggestions(self, concept_text):
+        """Return one representative MiAZItem per distinct metadata combination
+        (country, group, purpose, sentby, sentto) among every document in the
+        repository whose concept contains the typed text.
+
+        The whole repository is scanned directly (not the workspace view, which
+        may be filtered). Matching is done on the canonical concept token:
+        valid_key turns spaces and hyphens into underscores, the same transform
+        the filename uses, so typing "RNR 31046" matches "RNR_31046_...".
+        """
+        needle = self.util.valid_key(concept_text or '').upper()
+        if not needle:
+            return []
+        try:
+            docs = self.util.get_files(self.repository.docs)
+        except (KeyError, OSError):
+            docs = []
+
+        cfg = {
+            1: self._cfg_country,
+            2: self._cfg_group,
+            3: self._cfg_sentby,
+            4: self._cfg_purpose,
+            6: self._cfg_sentto,
+        }
+
+        suggestions = []
+        seen = set()
+        for filename in docs:
+            fields = self.util.get_fields(filename)
+            if len(fields) < 7:
+                continue
+            if needle not in fields[5].upper():
+                continue
+            combo = (fields[1], fields[2], fields[4], fields[3], fields[6])
+            if combo in seen:
+                continue
+            seen.add(combo)
+
+            def describe(idx):
+                key = fields[idx]
+                if not key:
+                    return ''
+                description = cfg[idx].get(key)
+                return description if description is not None else key
+
+            suggestions.append(MiAZItem(
+                id=os.path.basename(filename),
+                country=fields[1], country_dsc=describe(1),
+                group=fields[2], group_dsc=describe(2),
+                sentby_id=fields[3], sentby_dsc=describe(3),
+                purpose=fields[4], purpose_dsc=describe(4),
+                sentto_id=fields[6], sentto_dsc=describe(6),
+                title=os.path.basename(filename),
+                subtitle=fields[5].replace('_', ' '),
+            ))
+        return suggestions
+
+    def on_suggest_metadata(self):
+        items = self._collect_metadata_suggestions(self.entry_concept.get_text())
+        if not items:
+            self.srvdlg.show_info(
+                title=_('No suggestions'),
+                body=_('No other documents share this concept yet.'))
+            return
+        view = MiAZColumnViewSuggestion(self.app)
+        self.app.add_widget('rename-view-suggestions', view)
+        view.update(items)
+        dialog = self.srvdlg.show_question(
+            title=_('Suggested metadata'), body='', widget=view, width=720, height=480)
+        dialog.connect('response', self._on_suggestion_response)
+        dialog.present(self.get_root())
+
+    def _on_suggestion_response(self, dialog, response):
+        if response != 'apply':
+            return
+        view = self.app.get_widget('rename-view-suggestions')
+        item = view.get_selected()
+        if item is None:
+            return
+        self._set_suggestion(self.dpdCountry, item.country)
+        self._set_suggestion(self.dpdGroup, item.group)
+        self._set_suggestion(self.dpdSentBy, item.sentby_id)
+        self._set_suggestion(self.dpdPurpose, item.purpose)
+        self._set_suggestion(self.dpdSentTo, item.sentto_id)
+        self._on_changed_entry()
 
     def __create_field_0_date(self):
         """Field 0. Date"""
