@@ -66,9 +66,10 @@ class MiAZUtil(GObject.GObject):
     """Backend class"""
     __gtype_name__ = 'MiAZUtil'
     __gsignals__ = {
-        'filename-added':   (GObject.SignalFlags.RUN_LAST, GObject.TYPE_PYOBJECT, (GObject.TYPE_PYOBJECT,)),
-        'filename-deleted': (GObject.SignalFlags.RUN_LAST, GObject.TYPE_PYOBJECT, (GObject.TYPE_PYOBJECT,)),
-        'filename-renamed': (GObject.SignalFlags.RUN_LAST, GObject.TYPE_PYOBJECT, (GObject.TYPE_PYOBJECT, GObject.TYPE_PYOBJECT)),
+        'filename-added':    (GObject.SignalFlags.RUN_LAST, GObject.TYPE_PYOBJECT, (GObject.TYPE_PYOBJECT,)),
+        'filename-deleted':  (GObject.SignalFlags.RUN_LAST, GObject.TYPE_PYOBJECT, (GObject.TYPE_PYOBJECT,)),
+        'filename-renamed':  (GObject.SignalFlags.RUN_LAST, GObject.TYPE_PYOBJECT, (GObject.TYPE_PYOBJECT, GObject.TYPE_PYOBJECT)),
+        'filename-imported': (GObject.SignalFlags.RUN_LAST, GObject.TYPE_PYOBJECT, (GObject.TYPE_PYOBJECT, GObject.TYPE_PYOBJECT)),
     }
 
     def __init__(self, app):
@@ -322,9 +323,21 @@ class MiAZUtil(GObject.GObject):
                 self.log.error(f"Could not delete {filepath}: {error}")
         self.emit('filename-deleted', filepaths)
 
-    def filename_import(self, source: str, target: str):
-        """Import file into repository"""
+    def filename_import(self, source: str, target: str, origin=None):
+        """Import file into repository.
+
+        'origin' is an optional provenance descriptor (a dict with a 'type'
+        key) telling where the document came from. When omitted it defaults to
+        the source file. Importers that copy from a temporary file (scanner,
+        zip extraction, future email attachments) should pass a real origin so
+        the change journal keeps the true provenance, not the temp path.
+        """
         self.filename_copy(source, target)
+        if origin is None:
+            origin = {'type': 'file', 'path': os.path.abspath(source)}
+        # Emit the import signal first so listeners can pair the provenance
+        # with the (normalized) target before filename-added fires.
+        self.emit('filename-imported', origin, target)
         self.emit('filename-added', target)
 
     def filename_export(self, source: str, target: str):
