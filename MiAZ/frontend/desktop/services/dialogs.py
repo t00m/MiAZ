@@ -299,6 +299,7 @@ class MiAZWindowDialog(Adw.Window):
 
         headerbar = Adw.HeaderBar()
         headerbar.set_title_widget(Adw.WindowTitle(title=title, subtitle=''))
+        self.headerbar = headerbar
 
         self._action_bar = Gtk.ActionBar()
 
@@ -337,6 +338,29 @@ class MiAZWindowDialog(Adw.Window):
         else:
             self._action_bar.pack_end(button)
         return button
+
+    def pack_header_end(self, widget):
+        # Place a widget on the right side of the header bar (e.g. a
+        # suggested action that is not part of the bottom response buttons).
+        self.headerbar.pack_end(widget)
+
+    def pack_header_start(self, widget):
+        # Place a widget on the left side of the header bar.
+        self.headerbar.pack_start(widget)
+
+    def pack_action_end(self, widget):
+        # Place a widget on the right side of the bottom action bar, next to
+        # the affirmative response buttons.
+        self._action_bar.pack_end(widget)
+
+    def pack_action_start(self, widget):
+        # Place a widget on the left side of the bottom action bar.
+        self._action_bar.pack_start(widget)
+
+    def set_show_close_button(self, visible):
+        # Toggle the window-control buttons (including close) in the header bar.
+        self.headerbar.set_show_start_title_buttons(visible)
+        self.headerbar.set_show_end_title_buttons(visible)
 
     def set_response_appearance(self, response_id, appearance):
         button = self._buttons.get(response_id)
