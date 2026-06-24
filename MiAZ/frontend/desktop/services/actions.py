@@ -116,17 +116,54 @@ class MiAZActions(GObject.GObject):
         # work in it, and re-enable it when the dialog closes.
         dialog = MiAZWindowDialog(self.app, title=_('Rename document'),
                                   widget=rename_widget, width=1024, height=640)
-        dialog.add_response('cancel', _('Cancel'))
-        dialog.add_response('preview', _('Preview'))
+        # "Rename" is the primary action and must be the first button on the
         dialog.add_response('apply', _('Rename'))
         dialog.set_response_appearance('apply', Adw.ResponseAppearance.SUGGESTED)
-        dialog.set_response_enabled('preview', True)
         dialog.set_default_response('apply')
         dialog.set_close_response('cancel')
+        dialog.set_show_close_button(False)
         dialog.set_transient_for(window)
         window.set_sensitive(False)
         dialog.connect('closed', lambda *_a: window.set_sensitive(True))
         self.app.add_widget('dialog-rename', dialog)
+
+        # "Cancel" lives on the left of the header bar, styled as destructive.
+        btn_cancel = self.factory.create_button(
+            title=_('Cancel'),
+            tooltip=_('Cancel renaming'),
+            css_classes=['destructive-action'],
+        )
+        btn_cancel.connect('clicked', lambda *_a: dialog.emit('response', 'cancel'))
+        dialog.pack_header_start(btn_cancel)
+
+        # "Suggest" fills the five metadata drop-downs from documents that share
+        # the typed concept. It sits next to Rename on the bottom and is enabled
+        # only once the concept (the match key) is at least two characters long.
+        btn_suggest = self.factory.create_button(
+            icon_name='io.github.t00m.MiAZ-edit-paste-symbolic',
+            title=_('Suggest'),
+            tooltip=_('Suggest metadata from documents sharing this concept'),
+        )
+        btn_suggest.connect('clicked', lambda *_a: rename_widget.on_suggest_metadata())
+
+        # "Preview" opens the source document. It sits next to Suggest.
+        btn_preview = self.factory.create_button(
+            icon_name='io.github.t00m.MiAZ-preview',
+            title=_('Preview'),
+            tooltip=_('Preview this document'),
+        )
+        btn_preview.connect(
+            'clicked',
+            lambda *_a: self.document_display(rename_widget.get_filepath_source()))
+
+        dialog.pack_action_end(btn_suggest)
+        dialog.pack_action_end(btn_preview)
+
+        def _update_suggest_sensitive(*_a):
+            btn_suggest.set_sensitive(len(rename_widget.entry_concept.get_text().strip()) >= 2)
+        rename_widget.entry_concept.connect('changed', _update_suggest_sensitive)
+        _update_suggest_sensitive()
+
         self.emit('rename-dialog-built', dialog, rename_widget)
         dialog.connect('response', self._on_rename_response, rename_widget)
         dialog.present()
@@ -142,10 +179,6 @@ class MiAZActions(GObject.GObject):
                 data=(rename_widget, dialog))
             # Overlay the confirmation on the rename window, not the main one.
             dialog_confirm.present(dialog)
-        elif response == 'preview':
-            doc = rename_widget.get_filepath_source()
-            self.document_display(doc)
-            # The rename window stays open underneath; nothing to re-present.
 
     def _on_answer_question_rename(self, dialog, response, data):
         rename_widget, parent_dialog = data
@@ -157,9 +190,12 @@ class MiAZActions(GObject.GObject):
             target = os.path.join(repository.docs, btarget)
             renamed = self.util.filename_rename(source, target)
             if not renamed:
+                # Present the error on the rename window (which is on top), not
+                # the disabled main window, otherwise it would be hidden behind.
                 self.srvdlg.show_error(
                     title=_('Rename document'),
-                    body=_('Another document with the same name already exists in this repository'))
+                    body=_('Another document with the same name already exists in this repository'),
+                    parent=parent_dialog)
             else:
                 parent_dialog.close()
         # On 'no' the rename window stays open so the user can amend the fields.
@@ -191,7 +227,6 @@ class MiAZActions(GObject.GObject):
                 value = items[key]
                 if item_type == Repository:
                     # Repository values are dicts ({'path':..., 'description':...});
-                    # show a prettified key as title and carry the description.
                     if isinstance(value, dict):
                         desc = value.get('description', '')
                     else:
@@ -216,7 +251,7 @@ class MiAZActions(GObject.GObject):
         model.splice(0, model.get_n_items(), new_items)
 
     def import_config(self, button, item_type):
-        # See: https://github.com/t00m/MiAZ/issues/NEW
+        # FIXME
         srvdlg = self.app.get_service('dialogs')
         window = button.get_root()
         title = _("Action not implemented yet")
@@ -224,7 +259,7 @@ class MiAZActions(GObject.GObject):
         srvdlg.show_error(title=title, body=body, parent=window)
 
     def export_config(self, button, item_type):
-        # See: https://github.com/t00m/MiAZ/issues/NEW
+        # FIXME
         srvdlg = self.app.get_service('dialogs')
         window = button.get_root()
         title = _("Action not implemented yet")
@@ -297,7 +332,6 @@ class MiAZActions(GObject.GObject):
         dialog.present(window)
 
     def show_app_about(self, *args):
-        # See: https://github.com/t00m/MiAZ/issues/NEW
         window = self.app.get_widget('window')
         ENV = self.app.get_env()
         about = Adw.AboutDialog()
