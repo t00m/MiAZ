@@ -11,6 +11,28 @@ log_ok()  { echo "[build_all] OK: $*"; }
 log_err() { echo "[build_all] FAILED: $*" >&2; }
 die()     { echo "[build_all] ERROR: $*" >&2; exit 1; }
 
+# Snap installs its binaries under /var/lib/snapd/snap/bin (with /snap/bin as a
+# symlink). On Fedora that directory is added to PATH by
+# /etc/profile.d/snapd.sh, which only runs for login shells, so snapcraft is
+# invisible to non-login shells (and to this script) even when installed. Add
+# the snap bin dirs here so `command -v snapcraft` finds it.
+for snap_bin in /var/lib/snapd/snap/bin /snap/bin; do
+    if [[ -d "$snap_bin" && ":$PATH:" != *":$snap_bin:"* ]]; then
+        PATH="$PATH:$snap_bin"
+    fi
+done
+export PATH
+
+# True only when every given command is on PATH. Used to skip a package format
+# whose toolchain is not installed, instead of attempting it and failing.
+have() {
+    local cmd
+    for cmd in "$@"; do
+        command -v "$cmd" &>/dev/null || return 1
+    done
+    return 0
+}
+
 VERSION=$(grep -m1 "version" "$REPO_ROOT/meson.build" \
     | sed "s/.*version.*: *'\([^']*\)'.*/\1/" \
     | sed "s/+.*//")
@@ -26,7 +48,9 @@ ERRORS=0
 
 # ── RPM ───────────────────────────────────────────────────────────────────────
 log "--- Building RPM package ---"
-if "$SCRIPT_DIR/rpm/create_rpm.sh"; then
+if ! have rpmbuild; then
+    log "rpmbuild not found, skipping RPM build."
+elif "$SCRIPT_DIR/rpm/create_rpm.sh"; then
     FOUND=0
     while IFS= read -r pkg; do
         cp "$pkg" "$DIST_DIR/"
@@ -42,7 +66,9 @@ fi
 
 # ── DEB ───────────────────────────────────────────────────────────────────────
 log "--- Building DEB package ---"
-if "$SCRIPT_DIR/deb/create_deb.sh"; then
+if ! have dpkg-buildpackage && ! have dpkg-deb; then
+    log "dpkg-buildpackage and dpkg-deb not found, skipping DEB build."
+elif "$SCRIPT_DIR/deb/create_deb.sh"; then
     FOUND=0
     # Manual strategy: output lands in repo root
     # Native strategy: output lands one level above repo root
@@ -63,7 +89,9 @@ fi
 log "--- Building Flatpak package ---"
 cd "$REPO_ROOT"
 FLATPAK_BUNDLE="$REPO_ROOT/miaz-${VERSION}.flatpak"
-if "$SCRIPT_DIR/flatpak/create_flatpak.sh"; then
+if ! have flatpak flatpak-builder ostree; then
+    log "flatpak, flatpak-builder or ostree not found, skipping Flatpak build."
+elif "$SCRIPT_DIR/flatpak/create_flatpak.sh"; then
     # create_flatpak.sh builds and installs but does not produce a bundle file.
     # Export the build result into a local repo and create a distributable bundle.
     # flatpak build-export refuses to open a partially-initialised OSTree repo
@@ -112,7 +140,9 @@ fi
 
 # ── AppImage ─────────────────────────────────────────────────────────────────
 log "--- Building AppImage package ---"
-if "$SCRIPT_DIR/AppImage/build_appimage.sh"; then
+if ! have meson ninja patchelf wget; then
+    log "meson, ninja, patchelf or wget not found, skipping AppImage build."
+elif "$SCRIPT_DIR/AppImage/build_appimage.sh"; then
     FOUND=0
     while IFS= read -r pkg; do
         cp "$pkg" "$DIST_DIR/"
@@ -128,20 +158,24 @@ fi
 # ── Snap ──────────────────────────────────────────────────────────────────────
 log "--- Building Snap package ---"
 if command -v snapcraft &>/dev/null; then
-    if (cd "$REPO_ROOT" && snapcraft); then
-        FOUND=0
-        while IFS= read -r pkg; do
+    if (cd "$REPO_ROOT" && snapcraft pack); then
+        # Copy the freshly built snap. snapcraft names the file from the
+        # version in snap/snapcraft.yaml, which can lag meson.build, so match
+        # any miaz_*.snap and take the newest rather than globbing on $VERSION.
+        pkg=$(find "$REPO_ROOT" -maxdepth 1 -name 'miaz_*.snap' -printf '%T@ %p\n' 2>/dev/null \
+            | sort -nr | head -n1 | cut -d' ' -f2-)
+        if [[ -n "$pkg" ]]; then
             cp "$pkg" "$DIST_DIR/"
             log_ok "$(basename "$pkg") -> dist/"
-            FOUND=1
-        done < <(find "$REPO_ROOT" -maxdepth 1 -name "miaz_${VERSION}_*.snap" 2>/dev/null | sort)
-        [[ $FOUND -eq 1 ]] || log_err "Snap built but no output file found"
+        else
+            log_err "Snap built but no output file found"
+        fi
     else
         log_err "Snap build failed"
         ERRORS=$(( ERRORS + 1 ))
     fi
 else
-    log "snapcraft not found — skipping Snap build."
+    log "snapcraft not found, skipping Snap build."
     log "  Install with: sudo snap install snapcraft --classic"
 fi
 
@@ -177,6 +211,9 @@ write_install_report() {
             echo "DEB (${deb})"
             echo "    Debian / Ubuntu: sudo apt install ./${deb}"
             echo "    Generic:         sudo dpkg -i ${deb} && sudo apt-get -f install"
+            echo "    Helper script:   scripts/packaging/deb/install_deb.sh"
+            echo "                     (installs dependencies, then the latest .deb)"
+            echo "    Run:             miaz"
             echo "    Uninstall:       sudo apt remove miaz"
             echo
         fi
@@ -216,6 +253,6 @@ log "Packages in $DIST_DIR/:"
 ls -1 "$DIST_DIR/" | while read -r f; do log "  $f"; done
 
 if [[ $ERRORS -gt 0 ]]; then
-    die "$ERRORS package build(s) failed — see output above."
+    die "$ERRORS package build(s) failed, see output above."
 fi
 log "All packages built successfully."
