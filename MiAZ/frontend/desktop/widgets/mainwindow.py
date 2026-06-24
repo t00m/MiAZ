@@ -230,7 +230,8 @@ class MiAZMainWindow(Gtk.Box):
         btn_view = factory.create_button(
             icon_name='io.github.t00m.MiAZ-view-document',
             tooltip=_('View document'),
-            callback=actions.document_display_selected)
+            callback=actions.document_display_selected,
+            css_classes=['flat'])
         btn_view.set_visible(False)
         self.app.add_widget('headerbar-button-view', btn_view)
         hbox.append(btn_view)
@@ -239,10 +240,25 @@ class MiAZMainWindow(Gtk.Box):
         btn_rename = factory.create_button(
             icon_name='io.github.t00m.MiAZ-rename',
             tooltip=_('Rename document'),
-            callback=actions.document_rename)
+            callback=actions.document_rename,
+            css_classes=['flat'])
         btn_rename.set_visible(False)
         self.app.add_widget('headerbar-button-rename', btn_rename)
         hbox.append(btn_rename)
+
+        # Mass rename menu button (visible when 2+ items selected). It uses the
+        # same icon as single rename and its menu lists every mass-rename
+        # function (date, country, group, purpose, concept, sent by, sent to).
+        btn_massrename = Gtk.MenuButton()
+        btn_massrename.set_icon_name('io.github.t00m.MiAZ-rename')
+        btn_massrename.set_tooltip_text(_('Mass rename documents'))
+        btn_massrename.add_css_class('flat')
+        massrename_menu = self.app.get_widget('massrename-menu')
+        if massrename_menu is not None:
+            btn_massrename.set_menu_model(massrename_menu)
+        btn_massrename.set_visible(False)
+        self.app.add_widget('headerbar-button-massrename', btn_massrename)
+        hbox.append(btn_massrename)
 
         # Delete document button (visible when at least 1 item selected)
         btn_delete = factory.create_button(
@@ -250,6 +266,7 @@ class MiAZMainWindow(Gtk.Box):
             tooltip=_('Delete documents'),
             callback=actions.document_delete)
         btn_delete.add_css_class('destructive-action')
+        btn_delete.add_css_class('flat')
         btn_delete.set_visible(False)
         self.app.add_widget('headerbar-button-delete', btn_delete)
         hbox.append(btn_delete)
@@ -383,6 +400,7 @@ class MiAZMainWindow(Gtk.Box):
         new_plugins_section = Gio.Menu.new()
         self.app.add_widget('workspace-plugins-section', new_plugins_section)
         new_main_menu.append_section(None, new_plugins_section)
+        self._append_massrename_submenu(new_main_menu)
         btn_workspace_menu = self.app.get_widget('workspace-menu')
         if btn_workspace_menu is not None:
             popover = btn_workspace_menu.get_popover()
@@ -438,6 +456,9 @@ class MiAZMainWindow(Gtk.Box):
         btn_rename = self.app.get_widget('headerbar-button-rename')
         if btn_rename is not None:
             btn_rename.set_visible(s == 1)
+        btn_massrename = self.app.get_widget('headerbar-button-massrename')
+        if btn_massrename is not None:
+            btn_massrename.set_visible(s > 1)
         btn_delete = self.app.get_widget('headerbar-button-delete')
         if btn_delete is not None:
             btn_delete.set_visible(s >= 1)
@@ -453,7 +474,16 @@ class MiAZMainWindow(Gtk.Box):
         menu = self.app.add_widget('workspace-menu-selection', Gio.Menu.new())
         plugins_section = self.app.add_widget('workspace-plugins-section', Gio.Menu.new())
         menu.append_section(None, plugins_section)
+        self._append_massrename_submenu(menu)
         return menu
+
+    def _append_massrename_submenu(self, menu):
+        """Add the core 'Mass renaming' submenu (built by the massrename
+        service) to a workspace selection menu. The menu is rebuilt on plugin
+        changes, so this is called from both setup paths."""
+        massrename_menu = self.app.get_widget('massrename-menu')
+        if massrename_menu is not None:
+            menu.append_submenu(_('Mass renaming'), massrename_menu)
 
     def _prepend_repo_title_section(self, menu):
         """Prepend the current repository name as the first section of menu."""
