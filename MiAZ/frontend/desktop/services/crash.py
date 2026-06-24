@@ -67,6 +67,21 @@ class MiAZCrashHandler(GObject.GObject):
             self.log.error(f"Could not display crash dialog: {error}")
         return GLib.SOURCE_REMOVE
 
+    def _present_target(self, fallback):
+        """Return the window the user is currently interacting with, so the
+        crash dialog appears on top of it. A crash may surface while a separate
+        top-level (e.g. the rename window) is above the main window; presenting
+        against the main window would leave the dialog hidden behind it."""
+        try:
+            toplevels = Gtk.Window.get_toplevels()
+            for i in range(toplevels.get_n_items()):
+                win = toplevels.get_item(i)
+                if win is not None and win.get_visible() and win.is_active():
+                    return win
+        except Exception as error:
+            self.log.debug(f"Could not resolve active window: {error}")
+        return fallback
+
     def _build_and_present(self, summary, report):
         window = self.app.get_widget('window')
 
@@ -132,7 +147,7 @@ class MiAZCrashHandler(GObject.GObject):
         dialog.set_default_response(default)
         dialog.set_close_response(default)
         dialog.connect('response', self._on_response)
-        dialog.present(window)
+        dialog.present(self._present_target(window))
 
     def _on_response(self, dialog, response):
         self._dialog_open = False
