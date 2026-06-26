@@ -1,0 +1,9 @@
+[Plugin]
+Module=miazaichat
+Name=MiAZAIChat
+Loader=python
+Description=Ask questions about the selected document and get answers in a chat
+Authors=Tomás Vírseda <tomasvirseda@gmail.com>
+Version=0.1.0
+Category=Artificial Intelligence
+Subcategory=AI Assistants
