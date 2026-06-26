@@ -14,6 +14,7 @@ import glob
 import subprocess
 import threading
 import shutil
+import time
 from datetime import datetime
 from gettext import gettext as _
 
@@ -47,6 +48,32 @@ _FORMATS = ['pdf', 'tiff', 'png', 'jpeg']
 # Programs needed to detect the scanner and its sources. They are shipped by
 # the SANE project (package sane-utils or sane-backends, depending on distro).
 _REQUIRED_TOOLS = ['scanimage']
+
+# Serialise every scanimage call that opens the scanner. eSCL/airscan network
+# scanners (for example Brother MFC devices) allow a single session at a time:
+# a second open while one is active fails with "open of device ... failed:
+# Invalid argument". MiAZ opens the device from two places (its source probe
+# and the scan itself), so without this lock a probe and a scan can collide.
+_SCANNER_LOCK = threading.Lock()
+
+# How many times to retry a scanimage command whose device open failed
+# transiently, and how long to wait between attempts.
+_SCAN_OPEN_RETRIES = 1
+_SCAN_RETRY_DELAY = 2.0
+
+
+def _is_transient_open_error(stderr):
+    """True when scanimage failed to open the device for a transient reason.
+
+    The open fails before any page is scanned, so retrying the whole command is
+    safe (no risk of double-feeding a page). A single-session scanner that is
+    momentarily held reports "open of device ... failed: Invalid argument" or a
+    busy message.
+    """
+    text = (stderr or '').lower()
+    if 'open of device' not in text:
+        return False
+    return 'invalid argument' in text or 'busy' in text
 
 
 class MiAZAutoScanPlugin(MiAZExtension):
@@ -178,13 +205,16 @@ class MiAZAutoScanPlugin(MiAZExtension):
 
     def _list_sources(self, device):
         """Return the source types reported by the scanner (Flatbed, ADF...)."""
+        # Reading the options opens the device, so take the same lock the scan
+        # uses: probing while a scan is running would fail the scan's open.
         try:
-            result = subprocess.run(
-                ['scanimage', '--help', '--device-name', device],
-                capture_output=True,
-                text=True,
-                timeout=30,
-            )
+            with _SCANNER_LOCK:
+                result = subprocess.run(
+                    ['scanimage', '--help', '--device-name', device],
+                    capture_output=True,
+                    text=True,
+                    timeout=30,
+                )
             for line in result.stdout.splitlines():
                 stripped = line.strip()
                 if not stripped.startswith('--source'):
@@ -292,9 +322,7 @@ class MiAZAutoScanPlugin(MiAZExtension):
         ]
         self.log.debug(f"Running: {' '.join(cmd)}")
         try:
-            result = subprocess.run(
-                cmd, capture_output=True, text=True, timeout=120)
-            self._log_result('single', cmd, result)
+            result = self._run_scanimage('single', cmd, timeout=120)
             if result.returncode != 0:
                 msg = result.stderr.strip() or result.stdout.strip()
                 GLib.idle_add(self._on_scan_error, msg)
@@ -336,9 +364,7 @@ class MiAZAutoScanPlugin(MiAZExtension):
         ]
         self.log.debug(f"Running: {' '.join(cmd)}")
         try:
-            result = subprocess.run(
-                cmd, capture_output=True, text=True, timeout=300)
-            self._log_result('batch', cmd, result)
+            result = self._run_scanimage('batch', cmd, timeout=300)
             # Two ADF realities make stdout and the exit code unreliable:
             #  - --batch-print emits nothing on some backends (eSCL/airscan),
             #    so result.stdout is empty even though pages were written.
@@ -360,6 +386,31 @@ class MiAZAutoScanPlugin(MiAZExtension):
                           _('Scan timed out after 300 seconds'))
         except Exception as error:
             GLib.idle_add(self._on_scan_error, str(error))
+
+    def _run_scanimage(self, mode, cmd, timeout):
+        """Run a scanimage device command, serialised and with one retry.
+
+        Holds _SCANNER_LOCK so MiAZ never opens the scanner from two processes
+        at once. When the open fails transiently (the device is briefly held by
+        another client), the command is retried once after a short delay. Each
+        attempt is logged. Raises subprocess.TimeoutExpired like subprocess.run.
+        """
+        with _SCANNER_LOCK:
+            attempt = 0
+            while True:
+                result = subprocess.run(
+                    cmd, capture_output=True, text=True, timeout=timeout)
+                self._log_result(mode, cmd, result)
+                if result.returncode == 0:
+                    return result
+                if (attempt >= _SCAN_OPEN_RETRIES
+                        or not _is_transient_open_error(result.stderr)):
+                    return result
+                attempt += 1
+                self.log.warning(
+                    f"[{mode}] device open failed transiently; retrying in "
+                    f"{_SCAN_RETRY_DELAY}s (attempt {attempt}/{_SCAN_OPEN_RETRIES})")
+                time.sleep(_SCAN_RETRY_DELAY)
 
     def _log_result(self, mode, cmd, result):
         """Dump the full scanimage invocation and its output to the console."""
