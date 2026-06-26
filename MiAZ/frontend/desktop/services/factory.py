@@ -360,42 +360,22 @@ class MiAZFactory:
         sort_model  = Gtk.SortListModel(model=model) # FIXME: Gtk.Sorter?
         filter_model = Gtk.FilterListModel(model=sort_model)
 
-        # Create dropdown
-        dropdown = Gtk.DropDown(model=filter_model, factory=factory, hexpand=True)
+        # Create dropdown. The factory is assigned *after* the search
+        # expression on purpose (see below), so it is not passed here.
+        dropdown = Gtk.DropDown(model=filter_model, hexpand=True)
         dropdown.set_show_arrow(True)
 
-        # Enable search using GTK's built-in DropDown search. On this GTK the
-        # search expression also drives what the DropDown renders (it takes
-        # over from the factory), so the expression returns exactly the text to
-        # show: the human description (title), plus the optional secondary
-        # description (e.g. repositories) so it stays visible and searchable.
-        # The DropDown's internal Gtk.StringFilter defaults to ignore-case, and
-        # SUBSTRING match mode matches anywhere in the string, not just a
-        # prefix. The expression must be set before enabling search.
-        def _search_text(item):
-            desc = getattr(item, 'description', '')
-            if desc:
-                return f'{item.title} ({desc})'
-            return item.title
-
+        # Enable search using GTK's built-in DropDown search.
         expression = Gtk.ClosureExpression.new(
             GObject.TYPE_STRING,
-            _search_text,
+            lambda item: f'{item.id} {item.title}',
             None)
         dropdown.set_expression(expression)
         dropdown.set_enable_search(enable_search)
         dropdown.set_search_match_mode(Gtk.StringFilterMatchMode.SUBSTRING)
+        dropdown.set_factory(factory)
         search_entry = _get_search_entry_widget(dropdown)
 
-        # Enable clear button by brute force
-        # ~ box = search_entry.get_parent()
-        # ~ button = self.create_button(icon_name='io.github.t00m.MiAZ-entry_clear', css_classes=['flat'], tooltip='Clear this filter', callback=_clear_dropdown, data=dropdown)
-        # ~ button.set_margin_start(3)
-        # ~ box.append(button)
-
-        # Enable placeholder text by brute force too...
-        # 'set_placeholder_text' doesn't work with lower Gtk4 versions
-        # ~ search_entry.set_placeholder_text("Type %s" % item_type.__title__)
         image = search_entry.get_first_child()
         text_widget = image.get_next_sibling()
         text_widget.set_placeholder_text(_('Type %s') % item_type.__title__)
