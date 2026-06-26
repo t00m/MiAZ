@@ -269,6 +269,17 @@ class MiAZUtil(GObject.GObject):
             ext = ''
         return name, ext
 
+    def filename_upper(self, filename: str) -> str:
+        """Uppercase a filename's name part, keeping the extension lowercase.
+
+        MiAZ stores document filenames with the seven fields in uppercase and a
+        lowercase extension. This enforces that casing for any rename target.
+        """
+        name, ext = self.filename_details(filename)
+        if ext:
+            return f"{name.upper()}.{ext}"
+        return name.upper()
+
     def filename_is_normalized(self, name: str) -> bool:
         return len(name.split('-')) == 7
 
@@ -291,7 +302,14 @@ class MiAZUtil(GObject.GObject):
         key = str(key).strip().replace('-', '_').replace(' ', '_')
         return re.sub(r'(?u)[^-\w.]', '', key)
 
-    def filename_rename(self, source, target) -> bool:
+    def filename_rename(self, source, target, upper=True) -> bool:
+        # MiAZ stores document filenames uppercase (with a lowercase extension),
+        # so every rename forces the target to that casing. Callers that rename
+        # a non-document file (e.g. a zip export) pass upper=False to opt out.
+        if upper:
+            directory = os.path.dirname(target)
+            target = os.path.join(
+                directory, self.filename_upper(os.path.basename(target)))
         rename = False
         if source != target:
             if not os.path.exists(target):

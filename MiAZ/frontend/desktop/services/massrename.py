@@ -207,7 +207,7 @@ class MiAZMassRename(GObject.GObject):
                 filename = f"{'-'.join(tmpfile)}.{ext}"
                 target = os.path.join(os.path.dirname(source), filename)
                 citems.append(File(id=os.path.basename(source),
-                                   title=os.path.basename(target)))
+                                   title=self.util.filename_upper(os.path.basename(target))))
             columnview.update(citems)
 
         def dialog_response(dialog, response, dropdown, item_type, items):
@@ -307,7 +307,7 @@ class MiAZMassRename(GObject.GObject):
                 lname = name.split('-')
                 lname[0] = date_for(item, sdate)
                 target = f"{'-'.join(lname)}.{ext}"
-                citems.append(File(id=source, title=target))
+                citems.append(File(id=source, title=self.util.filename_upper(target)))
             cv.update(citems)
 
         def dialog_response_date(dialog, response):
@@ -446,7 +446,7 @@ class MiAZMassRename(GObject.GObject):
             for item in items:
                 bsource = item.id
                 btarget = target_basename(bsource, op, params)
-                title = btarget if btarget is not None else bsource
+                title = self.util.filename_upper(btarget) if btarget is not None else bsource
                 citems.append(File(id=bsource, title=title))
             cv.update(citems)
 
