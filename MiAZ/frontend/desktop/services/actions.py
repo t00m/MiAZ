@@ -210,12 +210,15 @@ class MiAZActions(GObject.GObject):
         items = config.load(config.used)
         i_title = _(item_type.__title__)
 
-        new_items = []
+        # Special entries ('Any'/'None') stay pinned on top; real values are
+        # sorted alphabetically below, ignoring case.
+        special_items = []
         if any_value:
-            new_items.append(item_type(id='Any', title=_('Any') + ' ' + i_title.lower()))
+            special_items.append(item_type(id='Any', title=_('Any') + ' ' + i_title.lower()))
         if none_value:
-            new_items.append(item_type(id='None', title=_('None') + ' ' + i_title.lower()))
+            special_items.append(item_type(id='None', title=_('None') + ' ' + i_title.lower()))
 
+        value_items = []
         for key in items:
             accepted = True
             if len(only_include) > 0 and key not in only_include:
@@ -232,12 +235,15 @@ class MiAZActions(GObject.GObject):
                     else:
                         desc = ''
                     title = key.replace('_', ' ')
-                    new_items.append(Repository(id=key, title=title, description=desc))
+                    value_items.append(Repository(id=key, title=title, description=desc))
                 else:
                     title = value
                     if len(title) == 0:
                         title = key
-                    new_items.append(item_type(id=key, title=title))
+                    value_items.append(item_type(id=key, title=title))
+
+        value_items.sort(key=lambda item: item.title.casefold())
+        new_items = special_items + value_items
 
         if len(new_items) == 0:
             if item_type != Repository:

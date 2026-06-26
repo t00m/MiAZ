@@ -8,6 +8,7 @@ from gettext import gettext as _
 
 from gi.repository import Gio
 from gi.repository import GLib
+from gi.repository import GObject
 from gi.repository import Gtk
 from gi.repository import Pango
 
@@ -320,9 +321,6 @@ class MiAZFactory:
             search_entry = box2.get_first_child() # Gtk.SearchEntry
             return search_entry
 
-        def _on_search_widget_changed(search_entry):
-            pass
-
         def _on_factory_setup(factory, list_item, ellipsize):
             box = Gtk.Box(spacing=2, orientation=Gtk.Orientation.VERTICAL)
             label = Gtk.Label(xalign=0)
@@ -348,14 +346,6 @@ class MiAZFactory:
             sublabel.set_text(desc or '')
             sublabel.set_visible(bool(desc))
 
-        def _on_search_changed(search_entry, item_filter):
-            item_filter.changed(Gtk.FilterChange.DIFFERENT)
-
-        def _do_filter(item, filter_list_model, search_entry):
-            text = search_entry.get_text()
-            name = f'{item.id} {item.title}'
-            return text.upper() in name.upper()
-
         def _clear_dropdown(button, dropdown):
             # ~ model = dropdown.get_model()
             dropdown.set_selected(0)
@@ -374,12 +364,28 @@ class MiAZFactory:
         dropdown = Gtk.DropDown(model=filter_model, factory=factory, hexpand=True)
         dropdown.set_show_arrow(True)
 
-        # Enable search
+        # Enable search using GTK's built-in DropDown search. On this GTK the
+        # search expression also drives what the DropDown renders (it takes
+        # over from the factory), so the expression returns exactly the text to
+        # show: the human description (title), plus the optional secondary
+        # description (e.g. repositories) so it stays visible and searchable.
+        # The DropDown's internal Gtk.StringFilter defaults to ignore-case, and
+        # SUBSTRING match mode matches anywhere in the string, not just a
+        # prefix. The expression must be set before enabling search.
+        def _search_text(item):
+            desc = getattr(item, 'description', '')
+            if desc:
+                return f'{item.title} ({desc})'
+            return item.title
+
+        expression = Gtk.ClosureExpression.new(
+            GObject.TYPE_STRING,
+            _search_text,
+            None)
+        dropdown.set_expression(expression)
         dropdown.set_enable_search(enable_search)
+        dropdown.set_search_match_mode(Gtk.StringFilterMatchMode.SUBSTRING)
         search_entry = _get_search_entry_widget(dropdown)
-        item_filter = Gtk.CustomFilter.new(_do_filter, filter_model, search_entry)
-        filter_model.set_filter(item_filter)
-        search_entry.connect('search-changed', _on_search_changed, item_filter)
 
         # Enable clear button by brute force
         # ~ box = search_entry.get_parent()
