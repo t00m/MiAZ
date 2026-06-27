@@ -13,7 +13,6 @@ import ast
 import sys
 import glob
 import json
-import time
 import shutil
 import tempfile
 import threading
@@ -27,9 +26,7 @@ from gi.repository import Gio
 from gi.repository import GObject
 
 from MiAZ.backend.log import MiAZLog
-from MiAZ.backend.models import Field, Group, Country
-from MiAZ.backend.models import Purpose, Concept, SentBy
-from MiAZ.backend.models import SentTo, Date
+from MiAZ.backend.models import Field
 
 mimetypes.init()
 
@@ -69,9 +66,10 @@ class MiAZUtil(GObject.GObject):
     """Backend class"""
     __gtype_name__ = 'MiAZUtil'
     __gsignals__ = {
-        'filename-added':   (GObject.SignalFlags.RUN_LAST, GObject.TYPE_PYOBJECT, (GObject.TYPE_PYOBJECT,)),
-        'filename-deleted': (GObject.SignalFlags.RUN_LAST, GObject.TYPE_PYOBJECT, (GObject.TYPE_PYOBJECT,)),
-        'filename-renamed': (GObject.SignalFlags.RUN_LAST, GObject.TYPE_PYOBJECT, (GObject.TYPE_PYOBJECT, GObject.TYPE_PYOBJECT)),
+        'filename-added':    (GObject.SignalFlags.RUN_LAST, GObject.TYPE_PYOBJECT, (GObject.TYPE_PYOBJECT,)),
+        'filename-deleted':  (GObject.SignalFlags.RUN_LAST, GObject.TYPE_PYOBJECT, (GObject.TYPE_PYOBJECT,)),
+        'filename-renamed':  (GObject.SignalFlags.RUN_LAST, GObject.TYPE_PYOBJECT, (GObject.TYPE_PYOBJECT, GObject.TYPE_PYOBJECT)),
+        'filename-imported': (GObject.SignalFlags.RUN_LAST, GObject.TYPE_PYOBJECT, (GObject.TYPE_PYOBJECT, GObject.TYPE_PYOBJECT)),
     }
 
     def __init__(self, app):
@@ -85,7 +83,7 @@ class MiAZUtil(GObject.GObject):
         self.connect('filename-renamed', self._invalidate_field_index)
 
     def extract_variable_from_python_module(self, filepath, variable_name):
-        with open(filepath, "r") as f:
+        with open(filepath, "r", encoding='utf-8') as f:
             tree = ast.parse(f.read(), filename=filepath)
         extractor = SafeDictExtractor(variable_name)
         extractor.visit(tree)
@@ -116,13 +114,13 @@ class MiAZUtil(GObject.GObject):
 
     def json_load(self, filepath: str) -> {}:
         """Load into a dictionary a file in json format"""
-        with open(filepath) as fin:
+        with open(filepath, encoding='utf-8') as fin:
             adict = json.load(fin)
         return adict
 
     def json_save(self, filepath: str, adict: {}) -> {}:
         """Save dictionary into a file in json format"""
-        with open(filepath, 'w') as fout:
+        with open(filepath, 'w', encoding='utf-8') as fout:
             json.dump(adict, fout, sort_keys=True, indent=4)
 
     def _invalidate_field_index(self, *args):
@@ -271,35 +269,24 @@ class MiAZUtil(GObject.GObject):
             ext = ''
         return name, ext
 
+    def filename_upper(self, filename: str) -> str:
+        """Uppercase a filename's name part, keeping the extension lowercase.
+
+        MiAZ stores document filenames with the seven fields in uppercase and a
+        lowercase extension. This enforces that casing for any rename target.
+        """
+        name, ext = self.filename_details(filename)
+        if ext:
+            return f"{name.upper()}.{ext}"
+        return name.upper()
+
     def filename_is_normalized(self, name: str) -> bool:
         return len(name.split('-')) == 7
 
     def filename_validate(self, doc: str) -> bool:
-        if not self.filename_is_normalized(doc):
-            return False
-
+        # A MiAZ filename has exactly 7 non-empty fields.
         fields = self.get_fields(doc)
-
-        # 1. Date validation (YYYYMMDD)
-        try:
-            datetime.strptime(fields[0], '%Y%m%d')
-        except (ValueError, IndexError):
-            return False
-
-        # 2. Country validation (ISO-3166)
-        # We check against the list of available countries if possible
-        config = self.app.get_config('Country')
-        if config:
-            countries = config.load_available()
-            if fields[1] not in countries:
-                return False
-        else:
-            # Fallback if config service is unavailable (e.g. basic tests)
-            # Ensure it is at least 2 uppercase letters
-            if not (len(fields[1]) == 2 and fields[1].isupper() and fields[1].isalpha()):
-                return False
-
-        return True
+        return len(fields) == 7 and all(field for field in fields)
 
     def filename_normalize(self, filename: str) -> str:
         name, ext = self.filename_details(filename)
@@ -315,7 +302,14 @@ class MiAZUtil(GObject.GObject):
         key = str(key).strip().replace('-', '_').replace(' ', '_')
         return re.sub(r'(?u)[^-\w.]', '', key)
 
-    def filename_rename(self, source, target) -> bool:
+    def filename_rename(self, source, target, upper=True) -> bool:
+        # MiAZ stores document filenames uppercase (with a lowercase extension),
+        # so every rename forces the target to that casing. Callers that rename
+        # a non-document file (e.g. a zip export) pass upper=False to opt out.
+        if upper:
+            directory = os.path.dirname(target)
+            target = os.path.join(
+                directory, self.filename_upper(os.path.basename(target)))
         rename = False
         if source != target:
             if not os.path.exists(target):
@@ -347,13 +341,21 @@ class MiAZUtil(GObject.GObject):
                 self.log.error(f"Could not delete {filepath}: {error}")
         self.emit('filename-deleted', filepaths)
 
-    def filename_import(self, source: str, target: str):
-        """Import file into repository
+    def filename_import(self, source: str, target: str, origin=None):
+        """Import file into repository.
 
-        Normally, only the source filename would be necessary, but
-        as it is renamed according MiAZ rules, target is also needed.
+        'origin' is an optional provenance descriptor (a dict with a 'type'
+        key) telling where the document came from. When omitted it defaults to
+        the source file. Importers that copy from a temporary file (scanner,
+        zip extraction, future email attachments) should pass a real origin so
+        the change journal keeps the true provenance, not the temp path.
         """
         self.filename_copy(source, target)
+        if origin is None:
+            origin = {'type': 'file', 'path': os.path.abspath(source)}
+        # Emit the import signal first so listeners can pair the provenance
+        # with the (normalized) target before filename-added fires.
+        self.emit('filename-imported', origin, target)
         self.emit('filename-added', target)
 
     def filename_export(self, source: str, target: str):
@@ -548,5 +550,3 @@ class MiAZUtil(GObject.GObject):
             thread.join()  # Wait for cleanup
 
         return result["success"], result["error"]
-
-

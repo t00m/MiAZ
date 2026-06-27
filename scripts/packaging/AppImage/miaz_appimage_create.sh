@@ -1,5 +1,5 @@
 #!/bin/bash
-# Convenience wrapper — delegates to build_appimage.sh.
+# Convenience wrapper. Delegates to build_appimage.sh.
 # Kept for backwards compatibility with any existing automation.
 set -euo pipefail
 

@@ -11,6 +11,15 @@ import os
 import sys
 import datetime
 import logging
+import logging.handlers
+import weakref
+
+# Every MiAZ component creates its own MiAZLog instance, so the loggers are
+# independent and do not share handlers through the root logger. To capture a
+# complete log file we keep a registry of live instances and a single shared
+# file handler that is attached to all of them (existing and future).
+_SHARED_FILE_HANDLER = None
+_LOGGERS = weakref.WeakSet()
 
 # Define colors
 GREY = "\x1b[38;20m"
@@ -46,6 +55,48 @@ class ColorFormatter(logging.Formatter):
         return FORMATTERS[record.levelno].format(record)
 
 
+def enable_file_logging(log_file, max_bytes=1048576, backup_count=5):
+    """
+    Enable persistent file logging for the whole application.
+
+    A single rolling file (`log_file`) is used with rotation. The handler is
+    attached to every MiAZLog instance already created and to any created
+    afterwards. Returns the path of the active log file.
+    """
+    global _SHARED_FILE_HANDLER
+    if _SHARED_FILE_HANDLER is not None:
+        return _SHARED_FILE_HANDLER.baseFilename
+
+    log_dir = os.path.dirname(log_file)
+    try:
+        if log_dir and not os.path.exists(log_dir):
+            os.makedirs(log_dir)
+    except Exception:
+        log_dir = '/tmp' if sys.platform.startswith('linux') else '.'
+        log_file = os.path.join(log_dir, os.path.basename(log_file))
+        print(f"MiAZLog: cannot create log directory, defaulting to {log_dir}",
+              file=sys.stderr)
+
+    fmt = '%(asctime)s | %(levelname)8s | %(name)-25s | %(filename)s:%(lineno)d | %(message)s'
+    handler = logging.handlers.RotatingFileHandler(
+        log_file, maxBytes=max_bytes, backupCount=backup_count, encoding='utf-8')
+    handler.setLevel(logging.DEBUG)
+    handler.setFormatter(logging.Formatter(fmt))
+    _SHARED_FILE_HANDLER = handler
+
+    # Retrofit loggers created before file logging was enabled.
+    for logger in list(_LOGGERS):
+        logger.addHandler(handler)
+    return handler.baseFilename
+
+
+def get_log_file():
+    """Return the path of the active log file, or None if not enabled yet."""
+    if _SHARED_FILE_HANDLER is not None:
+        return _SHARED_FILE_HANDLER.baseFilename
+    return None
+
+
 class MiAZLog(logging.getLoggerClass()):
     """
     C0115: Missing class docstring (missing-class-docstring)
@@ -62,6 +113,12 @@ class MiAZLog(logging.getLoggerClass()):
         self._stream_handler = logging.StreamHandler(sys.stdout)
         self._stream_handler.setFormatter(ColorFormatter())
         self.enable_console_output()
+
+        # Register instance and attach the shared file handler if persistent
+        # logging is already enabled (see enable_file_logging).
+        _LOGGERS.add(self)
+        if _SHARED_FILE_HANDLER is not None:
+            self.addHandler(_SHARED_FILE_HANDLER)
 
 
     def add_file_handler(self, name, log_dir):
@@ -132,9 +189,9 @@ class MiAZLog(logging.getLoggerClass()):
         """
         C0116: Missing function or method docstring (missing-function-docstring)
         """
-        # Strict type equality (not isinstance) intentionally excludes FileHandler,
+        # Strict type identity (not isinstance) intentionally excludes FileHandler,
         # which is a StreamHandler subclass.
-        return len([h for h in self.handlers if type(h) == logging.StreamHandler]) > 0
+        return len([h for h in self.handlers if type(h) is logging.StreamHandler]) > 0
 
     def has_file_handler(self):
         """

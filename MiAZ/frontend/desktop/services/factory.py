@@ -8,6 +8,7 @@ from gettext import gettext as _
 
 from gi.repository import Gio
 from gi.repository import GLib
+from gi.repository import GObject
 from gi.repository import Gtk
 from gi.repository import Pango
 
@@ -320,32 +321,30 @@ class MiAZFactory:
             search_entry = box2.get_first_child() # Gtk.SearchEntry
             return search_entry
 
-        def _on_search_widget_changed(search_entry):
-            pass
-
         def _on_factory_setup(factory, list_item, ellipsize):
-            box = Gtk.Box(spacing=6, orientation=Gtk.Orientation.HORIZONTAL)
-            label = Gtk.Label()
+            box = Gtk.Box(spacing=2, orientation=Gtk.Orientation.VERTICAL)
+            label = Gtk.Label(xalign=0)
+            sublabel = Gtk.Label(xalign=0)
+            sublabel.add_css_class('dim-label')
+            sublabel.add_css_class('caption')
             if ellipsize:
                 label.set_property('ellipsize', Pango.EllipsizeMode.MIDDLE)
+                sublabel.set_property('ellipsize', Pango.EllipsizeMode.END)
             box.append(label)
+            box.append(sublabel)
             list_item.set_child(box)
 
         def _on_factory_bind(factory, list_item):
             box = list_item.get_child()
-            label = box.get_last_child()
+            label = box.get_first_child()
+            sublabel = box.get_last_child()
             item = list_item.get_item()
             label.set_markup(f'{item.title}')
-            # ~ label.get_style_context().add_class(class_name='caption')
-            # ~ label.get_style_context().add_class(class_name='monospace')
-
-        def _on_search_changed(search_entry, item_filter):
-            item_filter.changed(Gtk.FilterChange.DIFFERENT)
-
-        def _do_filter(item, filter_list_model, search_entry):
-            text = search_entry.get_text()
-            name = f'{item.id} {item.title}'
-            return text.upper() in name.upper()
+            # Optional subtitle: only item types with a description (e.g.
+            # Repository) show it; others get an empty, hidden second line.
+            desc = getattr(item, 'description', '')
+            sublabel.set_text(desc or '')
+            sublabel.set_visible(bool(desc))
 
         def _clear_dropdown(button, dropdown):
             # ~ model = dropdown.get_model()
@@ -361,26 +360,22 @@ class MiAZFactory:
         sort_model  = Gtk.SortListModel(model=model) # FIXME: Gtk.Sorter?
         filter_model = Gtk.FilterListModel(model=sort_model)
 
-        # Create dropdown
-        dropdown = Gtk.DropDown(model=filter_model, factory=factory, hexpand=True)
+        # Create dropdown. The factory is assigned *after* the search
+        # expression on purpose (see below), so it is not passed here.
+        dropdown = Gtk.DropDown(model=filter_model, hexpand=True)
         dropdown.set_show_arrow(True)
 
-        # Enable search
+        # Enable search using GTK's built-in DropDown search.
+        expression = Gtk.ClosureExpression.new(
+            GObject.TYPE_STRING,
+            lambda item: f'{item.id} {item.title}',
+            None)
+        dropdown.set_expression(expression)
         dropdown.set_enable_search(enable_search)
+        dropdown.set_search_match_mode(Gtk.StringFilterMatchMode.SUBSTRING)
+        dropdown.set_factory(factory)
         search_entry = _get_search_entry_widget(dropdown)
-        item_filter = Gtk.CustomFilter.new(_do_filter, filter_model, search_entry)
-        filter_model.set_filter(item_filter)
-        search_entry.connect('search-changed', _on_search_changed, item_filter)
 
-        # Enable clear button by brute force
-        # ~ box = search_entry.get_parent()
-        # ~ button = self.create_button(icon_name='io.github.t00m.MiAZ-entry_clear', css_classes=['flat'], tooltip='Clear this filter', callback=_clear_dropdown, data=dropdown)
-        # ~ button.set_margin_start(3)
-        # ~ box.append(button)
-
-        # Enable placeholder text by brute force too...
-        # 'set_placeholder_text' doesn't work with lower Gtk4 versions
-        # ~ search_entry.set_placeholder_text("Type %s" % item_type.__title__)
         image = search_entry.get_first_child()
         text_widget = image.get_next_sibling()
         text_widget.set_placeholder_text(_('Type %s') % item_type.__title__)

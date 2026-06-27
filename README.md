@@ -13,6 +13,7 @@ your files are fully portable and readable in any file manager.
 
 MiAZ solves this with a simple, consistent file-naming convention of seven fields. Scan a letter, download an email attachment, drop it into your MiAZ repository, and the app guides you through naming it correctly with minimal effort.
 
+
 ## Features
 
 - **Multiple repositories**: keep work, home, and archive documents separate
@@ -60,7 +61,7 @@ Fields are separated by hyphens. The date-first order means files sort chronolog
 Download the `.deb` package from the [latest release](https://github.com/t00m/MiAZ/releases) and install:
 
 - From file browser: double click in the `.deb` package. The Software Manager should let you install it.
-- From command line: 
+- From command line:
 
 ```bash
 sudo dpkg -i ./miaz_*.deb
@@ -78,7 +79,7 @@ Download the `.rpm` package from the [latest release](https://github.com/t00m/Mi
 sudo dnf install ./miaz-*.rpm
 ```
 
-### Flatpak 
+### Flatpak
 
 Package provided but not recommended. Because the application runs inside a sandbox, it does not have access to certain system resources and applications (e.g. scanner software), which negatively impacts the user experience.
 
@@ -91,11 +92,11 @@ Download the `.flatpak` package from the [latest release](https://github.com/t00
 sudo dnf install ./miaz-*.rpm
 ```
 
-## AppImage
+### AppImage
 
 Download the `.AppImage` package from the [latest release](https://github.com/t00m/MiAZ/releases) and install:
 
-- From file browser: 
+- From file browser:
     - Open the file properties and activate the option `Executable as Program`
     - Double click in the `.AppImage` package. MiAZ
 - From command line:
@@ -143,6 +144,14 @@ Bug reports and feature requests: [GitHub Issues](https://github.com/t00m/MiAZ/i
 My name is Tomás Vírseda. Originally from Spain, currently working in Luxembourg as (SAP Basis) System Adminstrator/Consultant and living in Germany. Having fun with Linux and Free Software/Software Libre since 1997.
 
 Feel free to reach out: tomasvirseda@gmail.com
+
+## About AI usage in this app
+
+First public commit of this application started in September, 2022. It's been improved from time to time until 2026.
+Because of lack of time (work and family), I was about to stop the development.
+
+On April, 2026 I had a chance to test AI capabilities. In a few minutes, it solved a big performance issue that I was unable to determine. Since then, I've used to fix many other issues (plugin integrations and other core stuff).
+Check CLAUDE.md and AGENTS.md for more info.
 
 ## License
 

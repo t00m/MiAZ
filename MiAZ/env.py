@@ -61,6 +61,7 @@ def _build_env(app_id, version, pkgdatadir, localedir, profile):
     ENV['LPATH']['REPO'] = os.path.join(ENV['LPATH']['TMP'], 'repo')
     ENV['LPATH']['OPT'] = os.path.join(ENV['LPATH']['ROOT'], 'opt')
     ENV['LPATH']['PLUGINS'] = os.path.join(ENV['LPATH']['OPT'], 'plugins')
+    ENV['LPATH']['WWW'] = os.path.join(ENV['LPATH']['VAR'], 'www', 'html')
 
     # Global paths
     ENV['GPATH'] = {}
@@ -131,7 +132,7 @@ try:
     # or bundled (AppImage FUSE mount, portable per-user installs, Snap,
     # chroot, etc). Re-anchor them to this _buildconfig.py file's actual
     # on-disk location, which always lives at
-    # <pkgdatadir>/MiAZ/_buildconfig.py — so two dirname() calls yield the
+    # <pkgdatadir>/MiAZ/_buildconfig.py - so two dirname() calls yield the
     # real pkgdatadir, and locales sit at <prefix>/share/locale one level
     # further up.
     _bc_dir = os.path.dirname(os.path.abspath(_bc.__file__))

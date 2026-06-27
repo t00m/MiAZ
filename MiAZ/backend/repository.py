@@ -9,7 +9,6 @@
 
 import os
 import json
-from gettext import gettext as _
 
 from gi.repository import GObject
 
@@ -59,7 +58,7 @@ class MiAZRepository(GObject.GObject):
             self.log.debug(f"Validating repository '{conf_file}'")
             if os.path.exists(conf_dir):
                 if os.path.exists(conf_file):
-                    with open(conf_file, 'r') as fin:
+                    with open(conf_file, 'r', encoding='utf-8') as fin:
                         try:
                             json.load(fin)
                             valid = True
@@ -80,7 +79,7 @@ class MiAZRepository(GObject.GObject):
         dir_conf = os.path.join(path, '.conf')
         os.makedirs(dir_conf, exist_ok=True)
         conf_file = os.path.join(dir_conf, 'repo.json')
-        with open(conf_file, 'w') as fout:
+        with open(conf_file, 'w', encoding='utf-8') as fout:
             json.dump(repoconf, fout, sort_keys=True, indent=4)
         self.config['App'].set('source', path)
         self.log.debug(f"Repository initialized: '{conf_file}'")
@@ -95,7 +94,7 @@ class MiAZRepository(GObject.GObject):
         }
         enabled_file = os.path.join(dir_conf, 'plugins-used.json')
         if not os.path.exists(enabled_file):
-            with open(enabled_file, 'w') as fout:
+            with open(enabled_file, 'w', encoding='utf-8') as fout:
                 json.dump(default_plugins, fout, sort_keys=True, indent=4)
             self.log.debug(f"Default system plugins written to: '{enabled_file}'")
 
@@ -114,7 +113,7 @@ class MiAZRepository(GObject.GObject):
             # ~ self.log.debug(f"Number of repositories in use: {len(repos_used)}")
             if len(repos_used) > 0:
                 try:
-                    repo_path = repos_used[repo_id]
+                    repo_path = self.config['Repository'].get_path(repo_id, used=True)
                     conf['dir_docs'] = repo_path
                     conf['dir_conf'] = os.path.join(conf['dir_docs'], '.conf')
                     if not os.path.exists(conf['dir_conf']):
@@ -134,8 +133,29 @@ class MiAZRepository(GObject.GObject):
         self.config['SentTo'] = MiAZConfigSentTo(self.app, repo_dir_conf)
         self.config['Person'] = MiAZConfigPeople(self.app, repo_dir_conf)
         self.config['Plugin'] = MiAZConfigPlugins(self.app, repo_dir_conf)
+        self._reconcile_people_available()
         self.log.debug(f"Repository configuration loaded correctly from: {repo_dir_conf}")
         self.emit('repository-switched')
+
+    def _reconcile_people_available(self):
+        """Ensure every used sender and recipient is in the shared people pool.
+
+        Senders and recipients take their available items from the same
+        people-available.json. A used person missing from that pool would not
+        appear as available on the other side. Add any such people here, so the
+        available list stays consistent (and heals entries left orphaned by the
+        earlier per-instance cache bug).
+        """
+        people = self.config['Person']
+        available = people.load_available()
+        missing = {}
+        for config_name in ('SentBy', 'SentTo'):
+            for key, value in self.config[config_name].load_used().items():
+                if key not in available and key not in missing:
+                    missing[key] = value
+        if missing:
+            people.add_available_batch(list(missing.items()))
+            self.log.info(f"Reconciled {len(missing)} used people into the available pool")
 
     def get(self, key: str) -> str:
         try:

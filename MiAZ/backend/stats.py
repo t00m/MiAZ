@@ -14,7 +14,7 @@ from gi.repository import GObject
 
 from MiAZ.backend.log import MiAZLog
 from MiAZ.backend.models import Field, Group, Country
-from MiAZ.backend.models import Purpose, Concept, SentBy
+from MiAZ.backend.models import Purpose, SentBy
 from MiAZ.backend.models import SentTo, Date
 
 

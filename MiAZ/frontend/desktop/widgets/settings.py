@@ -78,8 +78,7 @@ class MiAZAppSettings(Adw.PreferencesDialog):
         repo = dd_repo.get_selected_item()
         path = ''
         if repo is not None:
-            repos_used = self.config_repos.load_used()
-            path = repos_used.get(repo.id, '')
+            path = self.config_repos.get_path(repo.id, used=True)
         row.set_subtitle(path)
 
     def _build_ui(self):
@@ -160,6 +159,32 @@ class MiAZAppSettings(Adw.PreferencesDialog):
         ui_group.set_title(_('User Interface'))
         page.add(ui_group)
         self.app.add_widget('window-preferences-page-ui-group', ui_group)
+
+        # Sidebar toggle button visibility (core behaviour, formerly the
+        # MiAZSidebarTB plugin).
+        self._build_sidebar_toggle_row(ui_group)
+
+    def _build_sidebar_toggle_row(self, group):
+        appconf = self.app.get_config('App')
+        visible = appconf.get('sidebar-button-visible') if appconf is not None else None
+        if visible is None:
+            visible = True
+        row = Adw.SwitchRow(title=_('Display sidebar toggle button'))
+        row.set_subtitle(_('Show the headerbar icon that reveals or hides the '
+                           'sidebar. The sidebar can also be toggled with the '
+                           'Escape key.'))
+        row.set_active(bool(visible))
+        row.connect('notify::active', self._on_sidebar_toggle_visibility)
+        group.add(row)
+
+    def _on_sidebar_toggle_visibility(self, row, gparam):
+        visible = row.get_active()
+        appconf = self.app.get_config('App')
+        if appconf is not None:
+            appconf.set('sidebar-button-visible', visible)
+        button = self.app.get_widget('headerbar-button-sidebar-toggle')
+        if button is not None:
+            button.set_visible(visible)
 
     def _create_widget_for_repositories(self):
         box = self.factory.create_box_vertical(hexpand=True, vexpand=True)
@@ -245,9 +270,15 @@ class MiAZRepoSettings(MiAZCustomWindow):
         self.log = MiAZLog('MiAZ.RepoSettings')
         self.name = 'repo-settings'
         appconf = self.app.get_config('App')
-        repo_id = appconf.get('current').replace('_', ' ')
-        self.title = _('Settings for repository') + ' ' + repo_id
+        self.title = _('Settings for repository') + ' ' + self._repo_label(appconf.get('current'))
         super().__init__(app, self.name, self.title, **kwargs)
+
+    def _repo_label(self, repo_id):
+        # Prefer the repository description; fall back to the prettified key.
+        if repo_id is None:
+            return ''
+        description = self.app.get_config('Repository').get_description(repo_id, used=True)
+        return description or repo_id.replace('_', ' ')
 
     def _build_ui(self):
         self.set_default_size(1024, 728)
@@ -292,8 +323,7 @@ class MiAZRepoSettings(MiAZCustomWindow):
 
     def update(self, *args):
         appconf = self.app.get_config('App')
-        repo_id = appconf.get('current')
-        title = f"Settings for repository {repo_id}"
+        title = _('Settings for repository') + ' ' + self._repo_label(appconf.get('current'))
         self.set_title(title)
 
         for item_type in [Country, Group, Purpose, SentBy, SentTo, Plugin]:

@@ -27,9 +27,17 @@ class MiAZSidebar(Adw.Bin):
         workflow = self.app.get_service('workflow')
         workflow.connect("repository-switch-finished", self._on_repo_switch)
 
+    def _repo_label(self, repo_id):
+        # Show the repository description; fall back to the prettified key when
+        # no description is set.
+        config = self.app.get_config_dict()
+        description = config['Repository'].get_description(repo_id, used=True)
+        return description or repo_id.replace('_', ' ')
+
     def _on_repo_switch(self, *args):
         config = self.app.get_config_dict()
         repo_id = config['App'].get('current') or 'MiAZ'
+        self.title_label.set_text(self._repo_label(repo_id))
         self.setup_custom_filters()
         self.log.debug(f"Switched to repository {repo_id} > Sidebar updated")
 
@@ -61,15 +69,30 @@ class MiAZSidebar(Adw.Bin):
             Gtk.SizeGroup(mode=Gtk.SizeGroupMode.HORIZONTAL))
 
         main_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
-        # The previous top row hosted the workspace-menu, the pending-docs
-        # toggle, the repository-management gear and the clear-filters
-        # button. The first two have moved to the header bar's centered
-        # title widget; the clear-filters button is rendered at the bottom
-        # of the filters list (see further down); the repository-management
-        # button is intentionally not attached anywhere (see below).
-        # ~ Repository management button kept in code but not shown:
-        # ~ title_bar = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
-        # ~ title_bar.append(button_settings)
+
+        # Sidebar header: repository-settings button (left) and clear-filters
+        # button (right). The Review toggle now lives on the main header bar
+        # (see mainwindow._setup_headerbar_start).
+        header = Gtk.CenterBox()
+        header.add_css_class('toolbar')
+        header.set_margin_start(6)
+        header.set_margin_end(6)
+        header.set_margin_top(6)
+        header.set_margin_bottom(6)
+        header.set_start_widget(button_settings)
+        header.set_end_widget(button_clear)
+        main_box.append(header)
+
+        # Repository title label, kept for use at the bottom of the sidebar
+        # (above the document-count label).
+        self.title_label = Gtk.Label()
+        self.title_label.add_css_class('heading')
+        self.title_label.set_ellipsize(True)
+        self.title_label.set_halign(Gtk.Align.CENTER)
+        repo_id = config['App'].get('current') or 'MiAZ'
+        self.title_label.set_text(self._repo_label(repo_id))
+        self.app.add_widget('sidebar-title-label', self.title_label)
+
         box_frame = factory.create_box_vertical(margin=6, spacing=6, hexpand=True, vexpand=True)
         # ~ frame = Gtk.Frame()
         # ~ box_frame.append(frame)
@@ -128,25 +151,24 @@ class MiAZSidebar(Adw.Bin):
         self.app.add_widget('sidebar-plugin-section', plugin_box)
         filters_box.append(plugin_box)
 
-        # Clear-all-filters button at the bottom of the filters column,
-        # with a top margin so there is breathing room between it and the
-        # last filter (built-in or custom).
-        button_clear.set_margin_top(12)
-        button_clear.set_halign(Gtk.Align.CENTER)
-        filters_box.append(button_clear)
-
         scroll.set_child(filters_box)
         main_box.append(box_frame)
 
-        # App icon at the bottom centre of the sidebar. box_frame already
-        # carries vexpand=True, so it claims the slack and the icon stays
-        # pinned to the bottom edge regardless of window height.
-        # ~ app_icon = Gtk.Image.new_from_icon_name('io.github.t00m.MiAZ')
-        # ~ app_icon.set_pixel_size(96)
-        # ~ app_icon.set_halign(Gtk.Align.CENTER)
-        # ~ app_icon.set_margin_bottom(12)
-        # ~ self.app.add_widget('sidebar-app-icon', app_icon)
-        # ~ main_box.append(app_icon)
+        # Document-count label at the bottom centre of the sidebar. box_frame
+        # already carries vexpand=True, so it claims the slack and the label
+        # stays pinned to the bottom edge regardless of window height. It shows
+        # "selected / in view / total" and is updated from
+        # _on_workspace_menu_update (formerly the headerbar menu button label).
+        self.title_label.set_margin_top(6)
+        main_box.append(self.title_label)
+
+        doc_count_label = Gtk.Label()
+        doc_count_label.add_css_class('title-1')
+        doc_count_label.set_halign(Gtk.Align.CENTER)
+        doc_count_label.set_margin_top(6)
+        doc_count_label.set_margin_bottom(12)
+        self.app.add_widget('sidebar-doc-count-label', doc_count_label)
+        main_box.append(doc_count_label)
 
         self.set_child(main_box)
 
@@ -160,7 +182,6 @@ class MiAZSidebar(Adw.Bin):
         factory = self.app.get_service('factory')
         button = factory.create_button(
             icon_name='io.github.t00m.MiAZ-entry_clear',
-            title=_('Clear all filters'),
             tooltip=_('Clear all filters'),
             css_classes=['flat'],
             callback=self.clear_filters)

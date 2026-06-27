@@ -45,7 +45,7 @@ else
 fi
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Strategy A — native dpkg-buildpackage
+# Strategy A: native dpkg-buildpackage
 # ─────────────────────────────────────────────────────────────────────────────
 build_native() {
     require dpkg-buildpackage dh meson ninja desktop-file-validate
@@ -61,7 +61,7 @@ build_native() {
         DEBEMAIL="${DEBEMAIL:-tomasvirseda@gmail.com}" \
         dch --newversion "$DEB_VERSION" --distribution unstable \
             "Update to ${VERSION}" 2>/dev/null \
-            || log "WARNING: dch not available — update debian/changelog manually if needed."
+            || log "WARNING: dch not available. Update debian/changelog manually if needed."
     fi
 
     cd "$REPO_ROOT"
@@ -79,7 +79,7 @@ build_native() {
 }
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Strategy B — meson DESTDIR + dpkg-deb
+# Strategy B: meson DESTDIR + dpkg-deb
 # ─────────────────────────────────────────────────────────────────────────────
 build_manual() {
     require meson ninja dpkg-deb
@@ -113,7 +113,7 @@ Description: Personal Document Organizer
  documents by enforcing a strict 7-field filename convention:
  {date}-{country}-{group}-{sentby}-{purpose}-{concept}-{sentto}
  .
- The directory is the database — no external database required.
+ The directory is the database, no external database required.
 EOF
 
     # Write md5sums

@@ -1,0 +1,9 @@
+[Plugin]
+Module=miazaiassistant
+Name=MiAZAIAssistant
+Loader=python
+Description=Suggest filename fields from document content using an AI provider
+Authors=Tomás Vírseda <tomasvirseda@gmail.com>
+Version=0.1.0
+Category=Artificial Intelligence
+Subcategory=AI Assistants

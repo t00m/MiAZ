@@ -12,7 +12,6 @@ import os
 import shutil
 from gettext import gettext as _
 
-from gi.repository import GObject
 
 from MiAZ.frontend.desktop.services.pluginsystem import MiAZExtension, MiAZPlugin
 from MiAZ.backend.models import Country, Date, Group
@@ -115,7 +114,9 @@ class Export2Zip(MiAZExtension):
                 zip_target = os.path.join(ENV['LPATH']['TMP'], zip_file)
                 target = os.path.join(self.target_dir, zip_file)
                 self.util.zip(zip_target, dir_zip)
-                self.util.filename_rename(zip_target, target)
+                # This renames the exported zip archive, not a repository
+                # document, so keep its name as-is (no uppercase enforcement).
+                self.util.filename_rename(zip_target, target, upper=False)
                 shutil.rmtree(dir_zip)
                 self.util.directory_open(self.target_dir)
 

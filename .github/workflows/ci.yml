@@ -1,0 +1,105 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Tests, lint and metadata
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y \
+            python3-gi \
+            python3-gi-cairo \
+            gir1.2-gtk-4.0 \
+            gir1.2-adw-1 \
+            appstream-util \
+            desktop-file-utils \
+            libpeas-2-dev \
+            gir1.2-peas-2 \
+            gir1.2-webkit-6.0
+
+      - name: Install Python tooling
+        run: |
+          python -m pip install --upgrade pip
+          pip install pytest ruff
+
+      - name: Lint with ruff
+        run: ruff check MiAZ data/resources/plugins
+
+      - name: Run pytest
+        env:
+          DISPLAY: ""
+          GDK_BACKEND: headless
+        run: python -m pytest tests/ -v
+
+      - name: Validate AppStream metainfo
+        run: appstream-util validate --nonet data/io.github.t00m.MiAZ.metainfo.xml.in
+
+      - name: Validate desktop file
+        run: desktop-file-validate data/io.github.t00m.MiAZ.desktop.in
+
+  build-meson:
+    name: Meson build and install
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update -y
+          # A direct (non-DESTDIR) meson install runs glib-compile-schemas,
+          # gtk4-update-icon-cache and update-desktop-database, so pull the
+          # packages that provide them (libglib2.0-bin, libgtk-4-bin,
+          # desktop-file-utils).
+          sudo apt-get install -y \
+            ninja-build gettext desktop-file-utils appstream-util \
+            libglib2.0-bin libgtk-4-bin
+          # meson.build requires >= 1.5.1; Ubuntu apt ships an older one, so
+          # install meson from pip.
+          python -m pip install --upgrade pip
+          pip install "meson>=1.5.1"
+
+      - name: Configure (release profile)
+        run: meson setup builddir --prefix="$GITHUB_WORKSPACE/_inst" -Dprofile=release
+
+      - name: Compile
+        run: meson compile -C builddir
+
+      - name: Install
+        run: meson install -C builddir
+
+      - name: Verify install tree
+        run: |
+          test -f "_inst/bin/miaz" || { echo "launcher _inst/bin/miaz missing"; exit 1; }
+          test -d "_inst/share/MiAZ" || { echo "pkgdatadir _inst/share/MiAZ missing"; exit 1; }
+          test -f "_inst/share/glib-2.0/schemas/io.github.t00m.MiAZ.gschema.xml" \
+            || { echo "gschema not installed"; exit 1; }
+          echo "Install tree looks good."

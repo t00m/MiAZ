@@ -10,11 +10,13 @@
 
 from gettext import gettext as _
 
+from gi.repository import Adw
 from gi.repository import Gdk
-from gi.repository import GObject
 from gi.repository import Gtk
 
 from MiAZ.frontend.desktop.services.pluginsystem import MiAZExtension, MiAZPlugin
+
+UI_GROUP_WIDGET_ID = 'window-preferences-page-ui-group'
 
 plugin_info = {
     'Module':        'colvis',
@@ -55,7 +57,10 @@ class MiAZColumnVisibilityPlugin(MiAZExtension):
         self.plugin.register(self, plugin_info)
         self.log = self.plugin.get_logger()
         self.factory = self.app.get_service('factory')
+        self.actions = self.app.get_service('actions')
         self.workspace = self.app.get_widget('workspace')
+        # Add a configuration entry under App Settings > User Interface.
+        self._settings_handler = self.actions.connect('settings-loaded', self._on_settings_loaded)
         if self.workspace.is_loaded():
             self.startup()
         else:
@@ -69,6 +74,9 @@ class MiAZColumnVisibilityPlugin(MiAZExtension):
             self.popover = None
         if hasattr(self, '_startup_handler'):
             self.workspace.disconnect(self._startup_handler)
+        if getattr(self, '_settings_handler', None) is not None:
+            self.actions.disconnect(self._settings_handler)
+            self._settings_handler = None
         self.plugin.set_started(False)
 
     def startup(self, *args):
@@ -140,10 +148,43 @@ class MiAZColumnVisibilityPlugin(MiAZExtension):
         self.popover.popup()
 
     def _on_toggle_column(self, check, attr):
+        self._set_column_visible(attr, check.get_active())
+
+    def _set_column_visible(self, attr, active):
+        """Apply and persist the visibility of a single column."""
         wsview = self.workspace.get_workspace_view()
+        if wsview is None:
+            return
         column = getattr(wsview, attr, None)
         if column is not None:
-            column.set_visible(check.get_active())
+            column.set_visible(active)
             config = self.plugin.get_config_data()
-            config[attr] = check.get_active()
+            config[attr] = active
             self.plugin.set_config_data(config)
+
+    def _on_settings_loaded(self, actions, dialog_app_settings):
+        """Add column visibility switches to App Settings > User Interface."""
+        group = self.app.get_widget(UI_GROUP_WIDGET_ID)
+        if group is None:
+            self.log.warning(
+                "User Interface preferences group not found; "
+                "skipping column-visibility rows")
+            return
+        wsview = self.workspace.get_workspace_view()
+        if wsview is None:
+            return
+
+        expander = Adw.ExpanderRow(title=_('Workspace columns'))
+        expander.set_subtitle(_('Show or hide columns in the Documents view'))
+        for attr, label_text in COLUMNS.items():
+            column = getattr(wsview, attr, None)
+            if column is None:
+                continue
+            row = Adw.SwitchRow(title=label_text)
+            row.set_active(column.get_visible())
+            row.connect('notify::active', self._on_column_switch, attr)
+            expander.add_row(row)
+        group.add(expander)
+
+    def _on_column_switch(self, row, gparam, attr):
+        self._set_column_visible(attr, row.get_active())

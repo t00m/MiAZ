@@ -19,15 +19,19 @@ from MiAZ.frontend.desktop.services.icm import MiAZIconManager
 from MiAZ.frontend.desktop.services.factory import MiAZFactory
 from MiAZ.frontend.desktop.services.actions import MiAZActions
 from MiAZ.frontend.desktop.services.dialogs import MiAZDialog
+from MiAZ.frontend.desktop.services.crash import MiAZCrashHandler
 from MiAZ.frontend.desktop.services.workflow import MiAZWorkflow
 from MiAZ.frontend.desktop.widgets.mainwindow import MiAZMainWindow
 
 from MiAZ.backend.util import MiAZUtil
 from MiAZ.backend.config import MiAZConfigApp
 from MiAZ.backend.repository import MiAZRepository
+from MiAZ.backend.history import MiAZHistory
+from MiAZ.frontend.desktop.services.massrename import MiAZMassRename
 from MiAZ.backend.config import MiAZConfigRepositories
 from MiAZ.backend.status import MiAZStatus
 from MiAZ.backend.dr import MiAZDR
+from MiAZ.backend.webserver import MiAZWebServer
 
 
 class MiAZApp(Adw.Application):
@@ -50,6 +54,9 @@ class MiAZApp(Adw.Application):
         self._miazobjs['services'] = {}
         self._miazobjs['actions'] = {}
         self.log = MiAZLog("MiAZ.App")
+        # Install the desktop crash handler early so it can report failures
+        # raised while the rest of the services are being set up.
+        self.set_service('crash', MiAZCrashHandler(self)).install()
         self.set_service('util', MiAZUtil(self))
         self.set_service('icons', MiAZIconManager(self))
         self.set_service('factory', MiAZFactory(self))
@@ -57,8 +64,11 @@ class MiAZApp(Adw.Application):
         self.set_service('actions', MiAZActions(self))
         workflow = self.set_service('workflow', MiAZWorkflow(self))
         self.set_service('dr', MiAZDR(self))
+        self.set_service('webserver', MiAZWebServer(self))
         repository = self.set_service('repo', MiAZRepository(self))
         repository.connect('repository-switched', workflow.switch_finish)
+        self.set_service('history', MiAZHistory(self))
+        self.set_service('massrename', MiAZMassRename(self))
         self._env = None
         self.conf = None
 
@@ -105,6 +115,7 @@ class MiAZApp(Adw.Application):
         """
         workflow = self.get_service('workflow')
         self.set_service('plugin-system', MiAZPluginSystem(self))
+        self.get_service('webserver').start()
         self._setup_ui()
         workflow.switch_start()
         self.log.debug("Executing MiAZ Desktop mode")

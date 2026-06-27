@@ -243,7 +243,7 @@ class MiAZPlugin(GObject.GObject):
         return os.path.join(self.get_config_dir(), f"Plugin-{self.name}.json")
 
     def get_config_file_default_available_data(self):
-        return os.path.join(self.get_config_dir(), f"default_available_data.json")
+        return os.path.join(self.get_config_dir(), "default_available_data.json")
 
     def get_config_data(self):
         config_file = self.get_config_file()
@@ -297,6 +297,9 @@ class MiAZPlugin(GObject.GObject):
         subcategory_submenu = self.app.install_plugin_menu(category, subcategory)
         if menuitem is not None:
             subcategory_submenu.append_item(menuitem)
+            # Register the item under its canonical key so other layers (the UI)
+            # can reuse it without the plugin system knowing about any widget.
+            self.app.add_widget(self.get_menu_item_name(), menuitem)
         return subcategory_submenu
 
     def add_workspace_page(self, widget, name, title, icon_name=None):
@@ -457,11 +460,17 @@ class MiAZPluginSystem(GObject.GObject):
             self.log.info(f"Plugin {pname} v{pvers} loaded")
             self.emit('plugins-updated')
             return True
-        except AttributeError as error:
-            self.log.error(f"Plugin {pname} v{pvers} couldn't be loaded: {error}")
-            return False
         except Exception as error:
+            # do_activate() may raise to veto its own activation (e.g. a plugin
+            # whose required external tools are not installed). Clean up the
+            # half-loaded engine state so the plugin does not read back as
+            # loaded, and report failure to the caller.
             self.log.error(f"Plugin {pname} v{pvers} couldn't be loaded: {error}")
+            try:
+                if plugin.is_loaded():
+                    self.engine.unload_plugin(plugin)
+            except Exception as cleanup_error:
+                self.log.debug(f"Cleanup after failed load of {pname}: {cleanup_error}")
             return False
 
     def unload_plugin(self, plugin: Peas.PluginInfo):
@@ -510,7 +519,14 @@ class MiAZPluginSystem(GObject.GObject):
             if issubclass(cls, MiAZExtension) and cls is not MiAZExtension:
                 instance = cls()
                 instance.props.object = MiAZAPI(self.app)
-                instance.do_activate()
+                try:
+                    instance.do_activate()
+                except Exception as error:
+                    # A plugin may raise from do_activate() to refuse activation
+                    # (e.g. missing external tools). Propagate so load_plugin
+                    # cleans up and reports the failure; do not register it.
+                    self.log.warning(f"Plugin '{module_name}' vetoed its activation: {error}")
+                    raise
                 self._extension_instances[module_name] = instance
                 self.log.debug(f"Activated plugin class '{_name}' for module '{module_name}'")
                 return instance
@@ -551,7 +567,7 @@ class MiAZPluginSystem(GObject.GObject):
     def get_plugin_attributes(self, plugin_file: str):
         """Get plugin attributes from `plugin_module`.plugin file"""
         plugin_info = {}
-        with open(plugin_file, 'r') as file:
+        with open(plugin_file, 'r', encoding='utf-8') as file:
             # Skip the first line (assuming it's [Plugin])
             next(file)
 
@@ -583,7 +599,7 @@ class MiAZPluginSystem(GObject.GObject):
                     plugin_list.append((plugin_name, plugin_desc))
                     self.log.info(f" - Adding plugin {plugin_name} to plugin index")
 
-        with open(ENV['APP']['PLUGINS']['INDEX'], 'w') as fp:
+        with open(ENV['APP']['PLUGINS']['INDEX'], 'w', encoding='utf-8') as fp:
             json.dump(plugin_index, fp, sort_keys=False, indent=4)
             self.log.info(f"File index-plugins.json generated with {len(plugin_index)} plugins")
 

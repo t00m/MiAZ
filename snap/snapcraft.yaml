@@ -1,13 +1,19 @@
 name: miaz
 base: core24
-version: "0.1.26"
+version: "0.1.27"
 summary: Personal Document Organizer
+title: MiAZ
+license: GPL-3.0-only
+contact: https://github.com/t00m/MiAZ/issues
+issues: https://github.com/t00m/MiAZ/issues
+source-code: https://github.com/t00m/MiAZ
+website: https://github.com/t00m/MiAZ
 description: |
   MiAZ is a GTK4/Libadwaita desktop application that organises personal
   documents by enforcing a strict 7-field filename convention:
   {date}-{country}-{group}-{sentby}-{purpose}-{concept}-{sentto}
 
-  The directory is the database — no external database required.
+  The directory is the database: no external database required.
 
   Key features:
   - Multiple independent document repositories
@@ -20,10 +26,10 @@ description: |
 grade: stable
 confinement: strict
 
-# The gnome extension provides GTK4 from the gnome-46-2404 content snap,
-# plus desktop-launch helpers, portal integration, and Wayland/X11 support.
-# libadwaita and libpeas are built from source because core24 ships adw 1.5
-# (MiAZ requires >= 1.6) and peas 1.x (MiAZ requires peas 2.x).
+# The gnome extension provides GTK4 and libadwaita (1.7.x, which satisfies the
+# >= 1.6 requirement) from the gnome-46-2404 content snap, plus desktop-launch,
+# portal integration, and Wayland/X11 support. Only libpeas is built from
+# source: the platform ships libpeas 1.x but MiAZ needs peas 2.x.
 
 apps:
   miaz:
@@ -38,39 +44,28 @@ apps:
       GI_TYPELIB_PATH: $SNAP/usr/lib/$CRAFT_ARCH_TRIPLET_BUILD_FOR/girepository-1.0:$SNAP/usr/lib/girepository-1.0
       GSETTINGS_SCHEMA_DIR: $SNAP/usr/share/glib-2.0/schemas
       LD_LIBRARY_PATH: $SNAP/usr/lib/$CRAFT_ARCH_TRIPLET_BUILD_FOR:$SNAP/usr/lib
+      # Put the bundled interpreter first so the launcher's
+      # '#!/usr/bin/env python3' shebang resolves to $SNAP/usr/bin/python3
+      # (the strict-confinement base has no /usr/bin/python3).
+      PATH: $SNAP/usr/bin:$PATH
 
 parts:
-  libadwaita:
-    plugin: meson
-    source: https://gitlab.gnome.org/GNOME/libadwaita.git
-    source-tag: "1.7.4"
-    source-type: git
-    meson-parameters:
-      - -Dtests=false
-      - -Dexamples=false
-      - -Dvapi=false
-      - -Dgtk_doc=false
-    build-packages:
-      - libgtk-4-dev
-      - libglib2.0-dev
-      - libglib2.0-bin
-      - sassc
-      - gettext
-      - libfribidi-dev
-      - libpango1.0-dev
-      - libcairo2-dev
-      - gobject-introspection
-      - libgirepository1.0-dev
-    prime:
-      - usr/lib/*/libadwaita*
-      - usr/lib/*/girepository-1.0/Adw*
-
   libpeas:
     plugin: meson
     source: https://gitlab.gnome.org/GNOME/libpeas.git
     source-tag: "2.0.7"
     source-type: git
     meson-parameters:
+      # meson's default prefix is /usr/local; without this the library, the
+      # Peas-2 typelib and the python loader install outside the paths the
+      # runtime environment (GI_TYPELIB_PATH/LD_LIBRARY_PATH) looks in.
+      - --prefix=/usr
+      # libpeas compiles with -Werror=format=2 / -Werror=format-security, which
+      # core24's GCC 14 trips on inside glibc fortify macros (__va_arg_pack ->
+      # format-nonliteral). In GCC those are their own diagnostics, so the exact
+      # names must be cancelled (a plain -Wno-error does not work); c_args is
+      # appended after the project args, so these win.
+      - "-Dc_args=-Wno-error=format-nonliteral -Wno-error=format-security"
       - -Dlua51=false
       - -Dgjs=false
       - -Dpython3=true
@@ -82,11 +77,8 @@ parts:
       - libgirepository1.0-dev
     stage-packages:
       - python3-gi
-    prime:
-      - usr/lib/*/libpeas*
-      - usr/lib/*/girepository-1.0/Peas*
-    after:
-      - libadwaita
+    # No prime filter: keep the whole libpeas install (libpeas-2 library, the
+    # Peas-2 typelib, and the python3 plugin loader) so the runtime finds them.
 
   miaz:
     plugin: meson
@@ -107,8 +99,11 @@ parts:
       - gir1.2-gtk-4.0
       - gir1.2-glib-2.0
     after:
-      - libadwaita
       - libpeas
     override-prime: |
       craftctl default
       glib-compile-schemas $SNAPCRAFT_PRIME/usr/share/glib-2.0/schemas/
+      # meson bakes the build-time interpreter path (/usr/bin/python3) into the
+      # launcher shebang, which does not exist in the strict-confinement base.
+      # Rewrite it to use the bundled python via env + PATH (set above).
+      sed -i '1s|^#!.*|#!/usr/bin/env python3|' $SNAPCRAFT_PRIME/usr/bin/miaz

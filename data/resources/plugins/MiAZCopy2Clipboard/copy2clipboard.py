@@ -10,8 +10,6 @@
 
 from gettext import gettext as _
 
-from gi.repository import Gdk
-from gi.repository import GObject
 
 from MiAZ.frontend.desktop.services.pluginsystem import MiAZExtension, MiAZPlugin
 

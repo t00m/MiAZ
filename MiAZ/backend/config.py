@@ -25,6 +25,12 @@ class MiAZConfig(GObject.GObject):
     }
     used = None
     default = None
+    # Shared across all config instances, keyed by absolute filepath. SentBy,
+    # SentTo and People all point their "available" pool at people-available.json,
+    # so they must read and write one consistent cache. A per-instance cache let
+    # them hold divergent copies: one instance saving its stale copy dropped
+    # entries another instance had just added.
+    cache = {}
 
     def __init__(self, app, log, config_for, used=None, available=None, default=None, model=MiAZModel, must_copy=True, foreign=False):
         super().__init__()
@@ -37,7 +43,6 @@ class MiAZConfig(GObject.GObject):
         self.model = model
         self.must_copy = must_copy
         self.foreign = foreign
-        self.cache = {}
         self.setup()
 
     def __repr__(self):
@@ -296,6 +301,65 @@ class MiAZConfigRepositories(MiAZConfig):
             must_copy=False,
             foreign=True
         )
+
+    @staticmethod
+    def _normalize_items(items: dict):
+        """Convert the legacy {key: path} shape into the current
+        {key: {'path': path, 'description': desc}} shape.
+        """
+        changed = False
+        normalized = {}
+        for key, value in items.items():
+            if isinstance(value, dict):
+                path = value.get('path', '')
+                desc = value.get('description', '')
+                normalized[key] = {'path': path, 'description': desc}
+                if 'path' not in value or 'description' not in value:
+                    changed = True
+            else:
+                # Legacy format: the value is the repository path string
+                normalized[key] = {'path': value or '', 'description': ''}
+                changed = True
+        return normalized, changed
+
+    def load(self, filepath: str) -> dict:
+        items = super().load(filepath)
+        normalized, changed = self._normalize_items(items)
+        if changed:
+            # Migrate in place. Write directly with the util service instead of
+            # self.save() so we don't emit available-updated/used-updated in the
+            # middle of a read (which would trigger redundant view refreshes).
+            util = self.app.get_service('util')
+            util.json_save(filepath, normalized)
+            self.cache[filepath] = {'changed': False, 'items': normalized}
+            self.log.debug(f"Migrated repository config to new format: {filepath}")
+        return normalized
+
+    def get_path(self, key: str, used: bool = True) -> str:
+        items = self.load(self.used if used else self.available)
+        entry = items.get(key)
+        if isinstance(entry, dict):
+            return entry.get('path', '')
+        return entry or ''
+
+    def get_description(self, key: str, used: bool = True) -> str:
+        items = self.load(self.used if used else self.available)
+        entry = items.get(key)
+        if isinstance(entry, dict):
+            return entry.get('description', '')
+        return ''
+
+    def set_repo(self, key: str, path: str, description: str = '', used: bool = True) -> bool:
+        filepath = self.used if used else self.available
+        items = self.load(filepath)
+        items[key] = {'path': path or '', 'description': description or ''}
+        return self.save(filepath, items)
+
+    def set_repo_available(self, key: str, path: str, description: str = '') -> bool:
+        return self.set_repo(key, path, description, used=False)
+
+    def set_repo_used(self, key: str, path: str, description: str = '') -> bool:
+        return self.set_repo(key, path, description, used=True)
 
 
 class MiAZConfigCountries(MiAZConfig):

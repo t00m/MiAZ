@@ -265,6 +265,19 @@ class Repository(MiAZModel):
     __config_name_available__ = 'repositories'
     __config_name_used__ = 'repositories'
 
+    def __init__(self, id: str, title: str = '', description: str = ''):
+        # title carries the repository path; description is a free-text label
+        super().__init__(id, title)
+        self._description = description or ''
+
+    @GObject.Property
+    def description(self):
+        return self._description
+
+    @description.setter
+    def description(self, value):
+        self._description = value or ''
+
 
 class SentBy(Person):
     __gtype_name__ = 'SentBy'

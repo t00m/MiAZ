@@ -49,23 +49,22 @@ class MiAZMainWindow(Gtk.Box):
         split_view.set_max_sidebar_width(360)
         split_view.set_sidebar_width_fraction(0.25)
 
+        # Sidebar visibility is core behaviour (formerly the MiAZSidebarTB
+        # plugin). On first run the sidebar starts hidden; afterwards the last
+        # state is remembered. The headerbar reveal button and the Escape key
+        # both toggle it (see _setup_headerbar_start and _on_key_pressed).
+        appconf = self.app.get_config('App')
+        if appconf is not None and appconf.exists('sidebar-visible'):
+            show_sidebar = bool(appconf.get('sidebar-visible'))
+        else:
+            show_sidebar = False
+            if appconf is not None:
+                appconf.set('sidebar-visible', False)
+        split_view.set_show_sidebar(show_sidebar)
+        split_view.connect('notify::show-sidebar', self._on_sidebar_visibility_changed)
+
         # HeaderBar
         headerbar = self.app.add_widget('headerbar', Adw.HeaderBar())
-
-        # ~ self._window_title = self.app.add_widget(
-        # ~     'headerbar-window-title',
-        # ~     Adw.WindowTitle(title=ENV['APP']['shortname'], subtitle=''))
-        # ~ headerbar.pack_start(self._window_title)
-        # ~ self._update_window_title()
-
-        # App icon as the first widget on the header bar's left side.
-        # Packed before _setup_headerbar_start so it precedes the sidebar
-        # toggle and the plugin-controls box.
-        headerbar_app_icon = Gtk.Image.new_from_icon_name('io.github.t00m.MiAZ')
-        headerbar_app_icon.set_pixel_size(24)
-        self.app.add_widget('headerbar-app-icon', headerbar_app_icon)
-        headerbar.pack_start(headerbar_app_icon)
-
         self._setup_headerbar_start(split_view)
         self._setup_headerbar_center()
         self._setup_headerbar_end()
@@ -93,9 +92,14 @@ class MiAZMainWindow(Gtk.Box):
         toast_overlay.set_child(toolbar_view)
         self.append(toast_overlay)
 
-        # Adaptive: collapse the sidebar into an overlay on narrow widths
+        # Adaptive: collapse the sidebar into an overlay
+        # show only icons in the workspace view switcher.
         breakpoint_ = Adw.Breakpoint.new(Adw.BreakpointCondition.parse("max-width: 720sp"))
         breakpoint_.add_setter(split_view, "collapsed", True)
+        switcher = self.app.get_widget('workspace-view-switcher')
+        if switcher is not None:
+            breakpoint_.add_setter(
+                switcher, "display-mode", Adw.InlineViewSwitcherDisplayMode.ICONS)
         self.win.add_breakpoint(breakpoint_)
 
     def _setup_event_listener(self):
@@ -125,20 +129,54 @@ class MiAZMainWindow(Gtk.Box):
         if ctrl and keyval in (Gdk.KEY_Delete, Gdk.KEY_KP_Delete):
             actions.document_delete()
             return True
+        if keyval == Gdk.KEY_Escape:
+            # Toggle the sidebar without consuming the event, so Escape keeps
+            # working for other widgets (search entry, popovers).
+            split_view = self.app.get_widget('main-split-view')
+            if split_view is not None:
+                split_view.set_show_sidebar(not split_view.get_show_sidebar())
+            return False
         return False
+
+    def _on_sidebar_visibility_changed(self, split_view, gparam):
+        """Persist sidebar visibility so it is remembered across runs."""
+        appconf = self.app.get_config('App')
+        if appconf is not None:
+            appconf.set('sidebar-visible', split_view.get_show_sidebar())
 
     def _setup_headerbar_start(self, split_view):
         factory = self.app.get_service('factory')
         headerbar = self.app.get_widget('headerbar')
 
-        # Sidebar toggle, shown only when the split view is collapsed (narrow)
-        sidebar_toggle = Gtk.ToggleButton(icon_name='sidebar-show-symbolic')
-        sidebar_toggle.set_tooltip_text(_('Toggle sidebar'))
+        # Review (pending documents) toggle.
+        btn_review = factory.create_button_toggle(
+            icon_name='io.github.t00m.MiAZ-rename',
+            title=_('Review'),
+            tooltip=_('There are documents pending of review'))
+        btn_review.set_has_frame(True)
+        btn_review.set_visible(False)
+        btn_review.set_active(False)
+        self.app.add_widget('workspace-togglebutton-pending-docs', btn_review)
+        headerbar.pack_start(btn_review)
+
+        # Sidebar reveal toggle
+        sidebar_toggle = Gtk.ToggleButton(
+            icon_name='io.github.t00m.MiAZ-sidebar-show-left-symbolic')
+        sidebar_toggle.add_css_class('flat')
+        sidebar_toggle.set_tooltip_text(_(
+            'Show or hide the sidebar.\n'
+            'Press Escape to toggle it.\n'
+            'You can hide this button in Settings ▸ User Interface.'))
         split_view.bind_property(
             'show-sidebar', sidebar_toggle, 'active',
             GObject.BindingFlags.SYNC_CREATE | GObject.BindingFlags.BIDIRECTIONAL)
-        split_view.bind_property(
-            'collapsed', sidebar_toggle, 'visible', GObject.BindingFlags.SYNC_CREATE)
+        appconf = self.app.get_config('App')
+        button_visible = appconf.get('sidebar-button-visible') if appconf is not None else None
+        if button_visible is None:
+            button_visible = True
+            if appconf is not None:
+                appconf.set('sidebar-button-visible', True)
+        sidebar_toggle.set_visible(bool(button_visible))
         self.app.add_widget('headerbar-button-sidebar-toggle', sidebar_toggle)
         headerbar.pack_start(sidebar_toggle)
 
@@ -153,33 +191,15 @@ class MiAZMainWindow(Gtk.Box):
         """
         factory = self.app.get_service('factory')
         headerbar = self.app.get_widget('headerbar')
-
-        # Workspace document-count menu button
-        label = Gtk.Label()
-        btnDocsSel = Gtk.MenuButton()
-        btnDocsSel.add_css_class('flat')
-        self.app.add_widget('workspace-menu', btnDocsSel)
-        btnDocsSel.set_always_show_arrow(True)
-        btnDocsSel.set_child(label)
-        popDocsSel = Gtk.PopoverMenu()
-        popDocsSel.set_menu_model(self._setup_menu_selection())
-        btnDocsSel.set_popover(popover=popDocsSel)
-
-        # Pending documents toggle button
-        button = factory.create_button_toggle(
-            icon_name='io.github.t00m.MiAZ-rename',
-            title=_('Review'),
-            tooltip=_('There are documents pending of review'))
-        self.app.add_widget('workspace-togglebutton-pending-docs', button)
-        button.set_has_frame(True)
-        button.set_visible(False)
-        button.set_active(False)
-
-        # Combine both widgets into one horizontal box and use that as the
-        # header bar's centered title widget.
+        self._setup_menu_selection()
+        switcher = Adw.InlineViewSwitcher()
+        switcher.set_display_mode(Adw.InlineViewSwitcherDisplayMode.BOTH)
+        switcher.set_homogeneous(True)
+        switcher.set_valign(Gtk.Align.CENTER)
+        switcher.set_visible(False)
+        self.app.add_widget('workspace-view-switcher', switcher)
         center_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
-        center_box.append(btnDocsSel)
-        center_box.append(button)
+        center_box.append(switcher)
         headerbar.set_title_widget(center_box)
 
     def _setup_headerbar_end(self):
@@ -191,6 +211,16 @@ class MiAZMainWindow(Gtk.Box):
         menubutton = self._setup_menu_system()
         headerbar.pack_end(menubutton)
 
+        # "Add" menu. Aggregates every Import-category plugin actions
+        add_menu = self.app.add_widget('headerbar-add-menu', Gio.Menu.new())
+        btn_add = Gtk.MenuButton()
+        btn_add.set_tooltip_text(_('Add or import documents'))
+        btn_add.set_child(Adw.ButtonContent(icon_name='list-add-symbolic', label=_('Add')))
+        btn_add.set_menu_model(add_menu)
+        btn_add.set_visible(False)
+        self.app.add_widget('headerbar-button-add', btn_add)
+        headerbar.pack_end(btn_add)
+
         # Per-selection action buttons (placed to the left of the primary menu)
         hbox = factory.create_box_horizontal(margin=0, spacing=6)
         self.app.add_widget('headerbar-right-box', hbox)
@@ -200,7 +230,8 @@ class MiAZMainWindow(Gtk.Box):
         btn_view = factory.create_button(
             icon_name='io.github.t00m.MiAZ-view-document',
             tooltip=_('View document'),
-            callback=actions.document_display_selected)
+            callback=actions.document_display_selected,
+            css_classes=['flat'])
         btn_view.set_visible(False)
         self.app.add_widget('headerbar-button-view', btn_view)
         hbox.append(btn_view)
@@ -209,10 +240,25 @@ class MiAZMainWindow(Gtk.Box):
         btn_rename = factory.create_button(
             icon_name='io.github.t00m.MiAZ-rename',
             tooltip=_('Rename document'),
-            callback=actions.document_rename)
+            callback=actions.document_rename,
+            css_classes=['flat'])
         btn_rename.set_visible(False)
         self.app.add_widget('headerbar-button-rename', btn_rename)
         hbox.append(btn_rename)
+
+        # Mass rename menu button (visible when 2+ items selected). It uses the
+        # same icon as single rename and its menu lists every mass-rename
+        # function (date, country, group, purpose, concept, sent by, sent to).
+        btn_massrename = Gtk.MenuButton()
+        btn_massrename.set_icon_name('io.github.t00m.MiAZ-rename')
+        btn_massrename.set_tooltip_text(_('Mass rename documents'))
+        btn_massrename.add_css_class('flat')
+        massrename_menu = self.app.get_widget('massrename-menu')
+        if massrename_menu is not None:
+            btn_massrename.set_menu_model(massrename_menu)
+        btn_massrename.set_visible(False)
+        self.app.add_widget('headerbar-button-massrename', btn_massrename)
+        hbox.append(btn_massrename)
 
         # Delete document button (visible when at least 1 item selected)
         btn_delete = factory.create_button(
@@ -220,6 +266,7 @@ class MiAZMainWindow(Gtk.Box):
             tooltip=_('Delete documents'),
             callback=actions.document_delete)
         btn_delete.add_css_class('destructive-action')
+        btn_delete.add_css_class('flat')
         btn_delete.set_visible(False)
         self.app.add_widget('headerbar-button-delete', btn_delete)
         hbox.append(btn_delete)
@@ -247,7 +294,11 @@ class MiAZMainWindow(Gtk.Box):
             headerbar = self.app.get_widget('headerbar')
             headerbar.set_visible(True)
             btnWorkspace = self.app.get_widget('workspace-menu')
-            btnWorkspace.set_visible(False)
+            if btnWorkspace is not None:
+                btnWorkspace.set_visible(False)
+            switcher = self.app.get_widget('workspace-view-switcher')
+            if switcher is not None:
+                switcher.set_visible(False)
 
     def _setup_page_404(self):
         stack = self.app.get_widget('stack')
@@ -296,7 +347,43 @@ class MiAZMainWindow(Gtk.Box):
             self._prepend_repo_title_section(menu)
             self._append_repo_management_section(menu)
             self._footer_menu_appended_to = menu
+        # Import plugins have registered their entries by now; build the
+        # headerbar Add menu from them.
+        self._populate_add_menu()
         return GLib.SOURCE_REMOVE
+
+    def _populate_add_menu(self):
+        """Build the headerbar Add menu from every loaded Import plugin."""
+        add_menu = self.app.get_widget('headerbar-add-menu')
+        if add_menu is None:
+            return
+        add_menu.remove_all()
+        plugin_manager = self.app.get_service('plugin-system')
+        if plugin_manager is not None:
+            for plugin_info in plugin_manager.plugins:
+                if not plugin_manager.is_plugin_loaded(plugin_info):
+                    continue
+                plugin_name = plugin_info.get_name()
+                plugin_obj = self.app.get_widget(f'plugin-{plugin_name}')
+                if plugin_obj is None or not hasattr(plugin_obj, 'plugin'):
+                    continue
+                try:
+                    subcategory = plugin_obj.plugin.get_plugin_info_key('Subcategory')
+                except Exception:
+                    continue
+                if subcategory != 'Import':
+                    continue
+                menuitem = self.app.get_widget(f'plugin-menuitem-{plugin_name}')
+                if menuitem is not None:
+                    add_menu.append_item(menuitem)
+        self._update_add_button_visibility()
+
+    def _update_add_button_visibility(self):
+        """Show the headerbar Add button only when an Import plugin registered."""
+        btn_add = self.app.get_widget('headerbar-button-add')
+        add_menu = self.app.get_widget('headerbar-add-menu')
+        if btn_add is not None and add_menu is not None:
+            btn_add.set_visible(add_menu.get_n_items() > 0)
 
     def _on_plugins_updated(self, *args):
         """Rebuild workspace-menu-selection whenever plugins are loaded or unloaded."""
@@ -304,8 +391,6 @@ class MiAZMainWindow(Gtk.Box):
         if workspace is None:
             return
 
-        # During initial batch loading each plugin handles its own startup(); skip the full
-        # rebuild loop to avoid calling startup() on already-started plugins on every load.
         if not self.app.get_plugins_loaded():
             return
 
@@ -315,6 +400,7 @@ class MiAZMainWindow(Gtk.Box):
         new_plugins_section = Gio.Menu.new()
         self.app.add_widget('workspace-plugins-section', new_plugins_section)
         new_main_menu.append_section(None, new_plugins_section)
+        self._append_massrename_submenu(new_main_menu)
         btn_workspace_menu = self.app.get_widget('workspace-menu')
         if btn_workspace_menu is not None:
             popover = btn_workspace_menu.get_popover()
@@ -323,8 +409,6 @@ class MiAZMainWindow(Gtk.Box):
 
         self.app.remove_widgets_with_prefix('workspace-menu-plugins-')
 
-        # For every currently loaded plugin, reset its started flag then call startup()
-        # directly so it reinstalls its menu entry without waiting for workspace-loaded
         plugin_manager = self.app.get_service('plugin-system')
         for plugin_info in plugin_manager.plugins:
             if not plugin_manager.is_plugin_loaded(plugin_info):
@@ -344,24 +428,26 @@ class MiAZMainWindow(Gtk.Box):
         self._prepend_repo_title_section(new_main_menu)
         self._append_repo_management_section(new_main_menu)
         self._footer_menu_appended_to = new_main_menu
+        self._populate_add_menu()
 
     def _on_workspace_menu_update(self, *args):
         stack = self.app.get_widget('stack')
         workspace = self. app.get_widget('workspace')
-        workspace_menu = self.app.get_widget('workspace-menu')
 
         s = workspace.get_num_selected_items() # Items selected
         v = workspace.get_num_displayed_items() # Items in view
         t = workspace.get_num_total_items() # Items in repository
 
-        label = workspace_menu.get_child()
+        # Document count is shown at the bottom centre of the sidebar
+        label = self.app.get_widget('sidebar-doc-count-label')
         label_text = f"<small>{s}</small> / {v} / <big>{t}</big>"
-        label.set_markup(label_text)
         tooltip = ""
         tooltip += _('{ns} documents selected\n').format(ns=s)
         tooltip += _('{nv} documents in this view\n').format(nv=v)
         tooltip += _('{nr} documents in this repository').format(nr=t)
-        workspace_menu.set_tooltip_markup(tooltip)
+        if label is not None:
+            label.set_markup(label_text)
+            label.set_tooltip_markup(tooltip)
 
         # Toggle headerbar button visibility based on selection
         btn_view = self.app.get_widget('headerbar-button-view')
@@ -370,6 +456,9 @@ class MiAZMainWindow(Gtk.Box):
         btn_rename = self.app.get_widget('headerbar-button-rename')
         if btn_rename is not None:
             btn_rename.set_visible(s == 1)
+        btn_massrename = self.app.get_widget('headerbar-button-massrename')
+        if btn_massrename is not None:
+            btn_massrename.set_visible(s > 1)
         btn_delete = self.app.get_widget('headerbar-button-delete')
         if btn_delete is not None:
             btn_delete.set_visible(s >= 1)
@@ -385,7 +474,16 @@ class MiAZMainWindow(Gtk.Box):
         menu = self.app.add_widget('workspace-menu-selection', Gio.Menu.new())
         plugins_section = self.app.add_widget('workspace-plugins-section', Gio.Menu.new())
         menu.append_section(None, plugins_section)
+        self._append_massrename_submenu(menu)
         return menu
+
+    def _append_massrename_submenu(self, menu):
+        """Add the core 'Mass renaming' submenu (built by the massrename
+        service) to a workspace selection menu. The menu is rebuilt on plugin
+        changes, so this is called from both setup paths."""
+        massrename_menu = self.app.get_widget('massrename-menu')
+        if massrename_menu is not None:
+            menu.append_submenu(_('Mass renaming'), massrename_menu)
 
     def _prepend_repo_title_section(self, menu):
         """Prepend the current repository name as the first section of menu."""
@@ -403,16 +501,7 @@ class MiAZMainWindow(Gtk.Box):
 
     def _append_repo_management_section(self, menu):
         """Append a separator + Repository Management entry at the bottom of menu."""
-        pass # Disabled
-        # ~ factory = self.app.get_service('factory')
-        # ~ actions = self.app.get_service('actions')
-        # ~ section = Gio.Menu.new()
-        # ~ section.append_item(factory.create_menuitem(
-            # ~ 'show-repo-management',
-            # ~ _('Repository Management'),
-            # ~ actions.show_repository_settings,
-            # ~ None, []))
-        # ~ menu.append_section(None, section)
+        pass
 
     def _setup_menu_system(self):
         actions = self.app.get_service('actions')

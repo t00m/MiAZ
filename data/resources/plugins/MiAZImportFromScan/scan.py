@@ -16,7 +16,6 @@ from gettext import gettext as _
 
 from gi.repository import Adw
 from gi.repository import Gio
-from gi.repository import GObject
 from gi.repository import Gtk
 
 from MiAZ.frontend.desktop.services.pluginsystem import MiAZExtension, MiAZPlugin

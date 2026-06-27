@@ -11,7 +11,6 @@
 # https://stackoverflow.com/questions/182197/how-do-i-watch-a-file-for-changes
 
 import os
-import glob
 
 from gi.repository import Gio
 from gi.repository import GLib
