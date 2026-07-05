@@ -1,5 +1,5 @@
 Name:           miaz
-Version:        0.1.26
+Version:        0.1.28
 Release:        1%{?dist}
 Summary:        Personal Document Organizer
 
@@ -71,6 +71,17 @@ gtk-update-icon-cache %{_datadir}/icons/hicolor &> /dev/null || :
 %{_datadir}/metainfo/io.github.t00m.MiAZ.metainfo.xml
 
 %changelog
+* Sat Jun 27 2026 Tomás Vírseda <tomasvirseda@gmail.com> - 0.1.28-1
+- New plugin MiAZAIChat: chat about a document via Claude, OpenAI, Gemini, or Ollama
+- Mass rename is now a core feature with a guided Concept transform dialog
+- Per-repository change journal records every add, rename, and delete with import provenance
+- New plugins: MiAZNewspaper, MiAZYearReport, MiAZOCR, MiAZFullscreen, MiAZColumnVisibility
+- MiAZNotes renders the note body as Markdown in view mode
+- Embedded localhost web server with a built-in Browser page
+- Global crash handling with a log file and an error dialog
+- Rename: filenames forced to uppercase; Suggest metadata from documents sharing the concept
+- Sidebar filters: case-insensitive substring search with sorted entries
+
 * Sat May 16 2026 Tomás Vírseda <tomasvirseda@gmail.com> - 0.1.26-1
 - New plugin MiAZAIAssistant: AI-powered field suggestions via Claude, OpenAI, Gemini, Ollama
 - New plugin MiAZNotes: attach Markdown notes to documents with faceted filtering and backup/restore

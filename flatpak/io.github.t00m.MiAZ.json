@@ -52,10 +52,8 @@
             "config-opts": ["-Dprofile=release"],
             "sources" : [
                 {
-                    "type" : "git",
-                    "url" : "https://github.com/t00m/MiAZ.git",
-                    "branch": "0.1.26",
-                    "commit": "bde3a46c7cd60be9bf6d5f7d076c6171bf2fcd2c"
+                    "type" : "dir",
+                    "path" : ".."
                 }
             ]
         }
