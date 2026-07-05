@@ -77,7 +77,7 @@ MiAZ/
 │       ├── conf/                 ← 6 default config JSON files (countries, extensions,
 │       │                            groups, languages, people, purposes)
 │       └── ...
-├── data/io.github.t00m.MiAZ.gschema.xml  ← GSettings schema (empty at runtime; app uses JSON)
+├── data/io.github.t00m.MiAZ.gschema.xml  ← GSettings schema (window geometry; repo config stays in JSON)
 ├── data/io.github.t00m.MiAZ.metainfo.xml.in
 ├── flatpak/io.github.t00m.MiAZ.json      ← Flatpak manifest (+ .local.json for local builds)
 ├── scripts/packaging/            ← AppImage, deb, rpm, win, flatpak build scripts + build_all.sh

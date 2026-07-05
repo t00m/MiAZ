@@ -79,6 +79,8 @@ Translation files in `po/`. Update with `ninja -C _build miaz-update-po`.
 
 ## GSettings
 
-Schema is **empty**,  the app uses JSON configuration files in `<repo>/.conf/`.
+The schema (`data/io.github.t00m.MiAZ.gschema.xml`) stores desktop window state. `frontend/desktop/app.py` reads and writes `window-width`, `window-height`, and `window-maximized` through `Gio.Settings`. The schema also declares `sidebar-width` and `last-repository`, which are not wired up yet.
+
+Document and repository configuration does **not** use GSettings. It lives in JSON files in `<repo>/.conf/`.
 
 
