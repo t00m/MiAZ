@@ -67,6 +67,11 @@
     </screenshot>
   </screenshots>
   <releases>
+    <release version="0.1.29" date="2026-07-06" urgency="medium">
+      <description>
+        <p>See CHANGELOG.md for details.</p>
+      </description>
+    </release>
     <release version="0.1.28" date="2026-06-27" urgency="medium">
       <description>
         <p>AI chat, mass rename as a core feature, a per-repository change journal, and several new plugins.</p>

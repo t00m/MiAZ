@@ -16,6 +16,7 @@ from gi.repository import Pango
 
 from MiAZ.env import ENV
 from MiAZ.backend.log import MiAZLog
+from MiAZ.backend.util import humanize_value
 from MiAZ.backend.models import MiAZItem, Group, Country, Purpose, Concept, SentBy, SentTo
 from MiAZ.frontend.desktop.services.dialogs import MiAZDialogAdd
 from MiAZ.frontend.desktop.widgets.configview import MiAZCountries, MiAZGroups, MiAZPurposes, MiAZPeopleSentBy, MiAZPeopleSentTo
@@ -248,12 +249,15 @@ class MiAZRenameDialog(Gtk.Box):
                 continue
             seen.add(combo)
 
+            idx_field = {1: 'Country', 2: 'Group', 3: 'SentBy', 4: 'Purpose', 6: 'SentTo'}
+
             def describe(idx):
                 key = fields[idx]
                 if not key:
                     return ''
                 description = cfg[idx].get(key)
-                return description if description is not None else key
+                description = description if description is not None else key
+                return humanize_value(idx_field.get(idx, ''), description)
 
             suggestions.append(MiAZItem(
                 id=os.path.basename(filename),

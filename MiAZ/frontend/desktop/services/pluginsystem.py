@@ -270,7 +270,8 @@ class MiAZPlugin(GObject.GObject):
         config_data = self.get_config_data()
         config_data[key] = value
         self.util.json_save(config_file, config_data)
-        self.log.debug(f"Plugin config for {self.name} updated: [{key}] = {value}")
+        # Log the key name only, never the value: plugin config can hold secrets.
+        self.log.debug(f"Plugin config for {self.name} updated: key '{key}' set")
 
     def get_source_dir(self):
         ENV = self.app.get_env()

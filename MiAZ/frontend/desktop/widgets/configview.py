@@ -13,6 +13,7 @@ from gi.repository import GObject
 from gi.repository import Gtk
 
 from MiAZ.backend.log import MiAZLog
+from MiAZ.backend.util import humanize_value
 from MiAZ.backend.models import Plugin, Repository
 from MiAZ.frontend.desktop.widgets.selector import MiAZSelector
 from MiAZ.frontend.desktop.widgets.columnview import MiAZColumnView
@@ -111,11 +112,75 @@ class MiAZConfigView(MiAZSelector):
         frmView.set_child(self.view)
         return selector
 
-    def _on_config_import(self, *args):
-        self.log.debug(f"Import configuration for '{self.config.config_for}'")
-
     def _add_config_menubutton(self, name: str):
-        return
+        """Add an Export/Import menu button to the available-items toolbar.
+
+        Export writes the available pool of this configuration type to a JSON
+        file; import merges a JSON file back into it. Available to every config
+        type because each subclass calls this from _setup_view_finish.
+        """
+        factory = self.app.get_service('factory')
+        btn_export = factory.create_button(
+            icon_name='document-save-symbolic', title=_('Export…'),
+            callback=self._on_config_export)
+        btn_import = factory.create_button(
+            icon_name='document-open-symbolic', title=_('Import…'),
+            callback=self._on_config_import)
+        menubutton = factory.create_button_popover(
+            icon_name='open-menu-symbolic', widgets=[btn_export, btn_import])
+        self.toolbar_buttons_Av.append(menubutton)
+
+    def _on_config_export(self, *args):
+        parent = self.get_root()
+        dialog = Gtk.FileDialog.new()
+        dialog.set_title(_('Export {name} configuration').format(name=self.config.config_for))
+        dialog.set_initial_name(f'{self.config.config_for}.json')
+        dialog.save(parent, None, self._on_config_export_selected)
+
+    def _on_config_export_selected(self, dialog, result):
+        srvdlg = self.app.get_service('dialogs')
+        try:
+            gfile = dialog.save_finish(result)
+        except GLib.Error:
+            return  # cancelled
+        path = gfile.get_path()
+        try:
+            self.app.get_service('util').json_save(path, self.config.load_available())
+            srvdlg.show_toast(_('Configuration exported: {name}').format(
+                name=os.path.basename(path)))
+        except Exception as error:
+            self.log.error(f"Config export failed: {error}")
+            srvdlg.show_toast(_('Export failed: ') + str(error))
+
+    def _on_config_import(self, *args):
+        parent = self.get_root()
+        dialog = Gtk.FileDialog.new()
+        dialog.set_title(_('Import {name} configuration').format(name=self.config.config_for))
+        dialog.open(parent, None, self._on_config_import_selected)
+
+    def _on_config_import_selected(self, dialog, result):
+        srvdlg = self.app.get_service('dialogs')
+        try:
+            gfile = dialog.open_finish(result)
+        except GLib.Error:
+            return  # cancelled
+        path = gfile.get_path()
+        try:
+            imported = self.app.get_service('util').json_load(path)
+        except Exception as error:
+            self.log.error(f"Config import failed to read {path}: {error}")
+            srvdlg.show_toast(_('Import failed: could not read the file'))
+            return
+        if not isinstance(imported, dict):
+            srvdlg.show_toast(_('Import failed: unexpected file format'))
+            return
+        # Merge into the existing pool rather than replacing it, so an import
+        # adds entries without dropping the ones already configured.
+        available = self.config.load_available()
+        available.update(imported)
+        self.config.save_available(items=available)
+        srvdlg.show_toast(_('Imported {n} {name} items').format(
+            n=len(imported), name=self.config.config_for))
 
 
 class MiAZRepositories(MiAZConfigView):
@@ -344,7 +409,11 @@ class MiAZCountries(MiAZConfigView):
         self._add_columnview_used(self.viewSl)
         self._add_config_menubutton(self.config.config_for)
 
-        # FIXME: allow Countries CRUD operations on demand
+        # Countries are a fixed ISO 3166-1 alpha-2 vocabulary, and each entry
+        # renders a bundled flag SVG (icon=f'{code}.svg'). The available pool is
+        # the full ISO list; users only choose which countries they use, they do
+        # not add, remove or rename them. Adding a custom code would produce an
+        # entry with no flag, so the pool-editing buttons stay hidden by design.
         self.btnAvAdd.set_visible(False)
         self.btnAvRemove.set_visible(False)
         self.btnAvEdit.set_visible(False)
@@ -358,7 +427,7 @@ class MiAZCountries(MiAZConfigView):
         used = self.config.load_used()
         for code in countries:
             if code not in used:
-                items.append(item_type(id=code, title=countries[code], icon=f'{code}.svg'))
+                items.append(item_type(id=code, title=humanize_value('Country', countries[code]), icon=f'{code}.svg'))
         self.viewAv.update(items)
 
     def _update_view_used(self):
@@ -366,7 +435,7 @@ class MiAZCountries(MiAZConfigView):
         item_type = self.config.model
         countries = self.config.load_used()
         for code in countries:
-            items.append(item_type(id=code, title=countries[code], icon=f'{code}.svg'))
+            items.append(item_type(id=code, title=humanize_value('Country', countries[code]), icon=f'{code}.svg'))
         self.viewSl.update(items)
 
 

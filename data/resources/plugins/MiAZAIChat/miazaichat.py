@@ -49,7 +49,8 @@ class MiAZAIChatPlugin(MiAZExtension):
         self.repository = self.app.get_service('repo')
         self.factory = self.app.get_service('factory')
 
-        self.registry = build_registry(self.plugin, self.log)
+        self.secrets = self.app.get_service('secrets')
+        self.registry = build_registry(self.plugin, self.log, self.secrets)
         self._settings_dialog = AIChatSettings(
             self.app, self.plugin, self.registry, self.log)
 

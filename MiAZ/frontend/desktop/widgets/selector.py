@@ -11,6 +11,7 @@ from gi.repository import Adw
 from gi.repository import Gtk
 
 from MiAZ.backend.log import MiAZLog
+from MiAZ.backend.util import humanize_value
 from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewDocuments
 from MiAZ.frontend.desktop.services.dialogs import MiAZDialogAdd
 from MiAZ.backend.models import Country, Plugin, File
@@ -54,11 +55,11 @@ class MiAZSelector(Gtk.Box):
         self.toolbar_buttons_Av.add_css_class('linked')
         if self.edit:
             self.toolbar_buttons_Av.set_hexpand(False)
-            self.btnAvAdd = factory.create_button(icon_name='io.github.t00m.MiAZ-list-add-symbolic', title='', callback=self._on_item_available_add)
+            self.btnAvAdd = factory.create_button(icon_name='io.github.t00m.MiAZ-list-add-symbolic', title='', tooltip=_('Add'), callback=self._on_item_available_add)
             self.toolbar_buttons_Av.append(self.btnAvAdd)
-            self.btnAvRemove = factory.create_button(icon_name='io.github.t00m.MiAZ-list-remove-symbolic', title='', callback=self._on_item_available_remove)
+            self.btnAvRemove = factory.create_button(icon_name='io.github.t00m.MiAZ-list-remove-symbolic', title='', tooltip=_('Remove'), callback=self._on_item_available_remove)
             self.toolbar_buttons_Av.append(self.btnAvRemove)
-            self.btnAvEdit = factory.create_button(icon_name='io.github.t00m.MiAZ-list-edit-symbolic', title='', callback=self._on_item_available_edit)
+            self.btnAvEdit = factory.create_button(icon_name='io.github.t00m.MiAZ-list-edit-symbolic', title='', tooltip=_('Edit'), callback=self._on_item_available_edit)
             self.toolbar_buttons_Av.append(self.btnAvEdit)
         centerbox.set_start_widget(self.toolbar_buttons_Av)
 
@@ -78,7 +79,7 @@ class MiAZSelector(Gtk.Box):
         self.toolbar_buttons_Sl = factory.create_box_horizontal(margin=0, spacing=0, vexpand=False, hexpand=True)
         self.toolbar_buttons_Sl.add_css_class('linked')
         if self.edit:
-            self.btnSlEdit = factory.create_button(icon_name='io.github.t00m.MiAZ-list-edit-symbolic', title='', callback=self._on_item_used_edit)
+            self.btnSlEdit = factory.create_button(icon_name='io.github.t00m.MiAZ-list-edit-symbolic', title='', tooltip=_('Edit'), callback=self._on_item_used_edit)
             self.toolbar_buttons_Sl.append(self.btnSlEdit)
         self.app.add_widget('settings-repository-toolbar-av', toolbar)
         self.toolbar_buttons_Sl.set_halign(Gtk.Align.END)
@@ -95,8 +96,8 @@ class MiAZSelector(Gtk.Box):
         boxControls = factory.create_box_vertical(margin=6, spacing=0, hexpand=False, vexpand=True)
         boxControls.add_css_class('linked')
         boxControls.set_valign(Gtk.Align.CENTER)
-        self.btnAddToUsed = factory.create_button('io.github.t00m.MiAZ-selector-add', tooltip='enable', callback=self._on_item_used_add)
-        self.btnRemoveFromUsed = factory.create_button('io.github.t00m.MiAZ-selector-remove', tooltip='disable', callback=self._on_item_used_remove)
+        self.btnAddToUsed = factory.create_button('io.github.t00m.MiAZ-selector-add', tooltip=_('Enable'), callback=self._on_item_used_add)
+        self.btnRemoveFromUsed = factory.create_button('io.github.t00m.MiAZ-selector-remove', tooltip=_('Disable'), callback=self._on_item_used_remove)
         boxControls.append(self.btnAddToUsed)
         boxControls.append(self.btnRemoveFromUsed)
 
@@ -389,7 +390,7 @@ class MiAZSelector(Gtk.Box):
         used = self.config.load_used()
         for key in items:
             if key not in used:
-                items_available.append(item_type(id=key, title=_(items[key])))
+                items_available.append(item_type(id=key, title=humanize_value(item_type.__gtype_name__, items[key])))
         self.viewAv.update(items_available)
         self.log.debug(f"Update available view {self.config.config_for} with {len(items_available)} items (filtered {len(items) - len(items_available)} used)")
 
@@ -398,7 +399,7 @@ class MiAZSelector(Gtk.Box):
         item_type = self.config.model
         items = self.config.load_used()
         for key in items:
-            items_used.append(item_type(id=key, title=_(items[key])))
+            items_used.append(item_type(id=key, title=humanize_value(item_type.__gtype_name__, items[key])))
         self.viewSl.update(items_used)
         self.log.debug(f"Update used view {self.config.config_for} with {len(items)} items")
 

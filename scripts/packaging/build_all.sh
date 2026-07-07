@@ -1,5 +1,5 @@
 #!/bin/bash
-# Build RPM, DEB, and Flatpak packages for MiAZ and copy them to ./dist.
+# Build RPM, DEB, Flatpak and AppImage packages for MiAZ and copy them to ./dist.
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -10,18 +10,6 @@ log()     { echo "[build_all] $*"; }
 log_ok()  { echo "[build_all] OK: $*"; }
 log_err() { echo "[build_all] FAILED: $*" >&2; }
 die()     { echo "[build_all] ERROR: $*" >&2; exit 1; }
-
-# Snap installs its binaries under /var/lib/snapd/snap/bin (with /snap/bin as a
-# symlink). On Fedora that directory is added to PATH by
-# /etc/profile.d/snapd.sh, which only runs for login shells, so snapcraft is
-# invisible to non-login shells (and to this script) even when installed. Add
-# the snap bin dirs here so `command -v snapcraft` finds it.
-for snap_bin in /var/lib/snapd/snap/bin /snap/bin; do
-    if [[ -d "$snap_bin" && ":$PATH:" != *":$snap_bin:"* ]]; then
-        PATH="$PATH:$snap_bin"
-    fi
-done
-export PATH
 
 # True only when every given command is on PATH. Used to skip a package format
 # whose toolchain is not installed, instead of attempting it and failing.
@@ -112,32 +100,6 @@ else
     ERRORS=$(( ERRORS + 1 ))
 fi
 
-# ── Windows EXE / Installer (DISABLED) ────────────────────────────────────────
-# Windows packaging is disabled for now. Re-enable by uncommenting this block.
-#log "--- Building Windows executable ---"
-#WIN_BUILD_DIR="$REPO_ROOT/builddir_win"
-#WIN_INSTALLER="$WIN_BUILD_DIR/MiAZ-${VERSION}-setup.exe"
-#WIN_PORTABLE_DIR="$WIN_BUILD_DIR/dist/MiAZ"
-#WIN_PORTABLE_ZIP="$DIST_DIR/miaz-${VERSION}-win-portable.zip"
-#
-#if "$SCRIPT_DIR/win/create_exe.sh"; then
-#    FOUND=0
-#    if [[ -f "$WIN_INSTALLER" ]]; then
-#        cp "$WIN_INSTALLER" "$DIST_DIR/"
-#        log_ok "$(basename "$WIN_INSTALLER") -> dist/"
-#        FOUND=1
-#    fi
-#    if [[ $FOUND -eq 0 && -d "$WIN_PORTABLE_DIR" ]]; then
-#        (cd "$WIN_BUILD_DIR/dist" && zip -r "$WIN_PORTABLE_ZIP" "MiAZ/")
-#        log_ok "$(basename "$WIN_PORTABLE_ZIP") -> dist/"
-#        FOUND=1
-#    fi
-#    [[ $FOUND -eq 1 ]] || log_err "Windows build succeeded but no output file found"
-#else
-#    log_err "Windows build failed"
-#    ERRORS=$(( ERRORS + 1 ))
-#fi
-
 # ── AppImage ─────────────────────────────────────────────────────────────────
 log "--- Building AppImage package ---"
 if ! have meson ninja patchelf wget; then
@@ -155,41 +117,16 @@ else
     ERRORS=$(( ERRORS + 1 ))
 fi
 
-# ── Snap ──────────────────────────────────────────────────────────────────────
-log "--- Building Snap package ---"
-if command -v snapcraft &>/dev/null; then
-    if (cd "$REPO_ROOT" && snapcraft pack); then
-        # Copy the freshly built snap. snapcraft names the file from the
-        # version in snap/snapcraft.yaml, which can lag meson.build, so match
-        # any miaz_*.snap and take the newest rather than globbing on $VERSION.
-        pkg=$(find "$REPO_ROOT" -maxdepth 1 -name 'miaz_*.snap' -printf '%T@ %p\n' 2>/dev/null \
-            | sort -nr | head -n1 | cut -d' ' -f2-)
-        if [[ -n "$pkg" ]]; then
-            cp "$pkg" "$DIST_DIR/"
-            log_ok "$(basename "$pkg") -> dist/"
-        else
-            log_err "Snap built but no output file found"
-        fi
-    else
-        log_err "Snap build failed"
-        ERRORS=$(( ERRORS + 1 ))
-    fi
-else
-    log "snapcraft not found, skipping Snap build."
-    log "  Install with: sudo snap install snapcraft --classic"
-fi
-
 # ── Install report ────────────────────────────────────────────────────────────
 # Emit per-package install instructions for whatever made it into dist/.
 write_install_report() {
     local report="$DIST_DIR/INSTALL.txt"
-    local rpm deb flatpak appimage snap
+    local rpm deb flatpak appimage
 
     rpm=$(find "$DIST_DIR" -maxdepth 1 -name 'miaz-*.rpm' ! -name '*.src.rpm' -printf '%f\n' | sort | head -n1)
     deb=$(find "$DIST_DIR" -maxdepth 1 -name 'miaz_*.deb' -printf '%f\n' | sort | head -n1)
     flatpak=$(find "$DIST_DIR" -maxdepth 1 -name 'miaz-*.flatpak' -printf '%f\n' | sort | head -n1)
     appimage=$(find "$DIST_DIR" -maxdepth 1 -iname 'miaz-*.appimage' -printf '%f\n' | sort | head -n1)
-    snap=$(find "$DIST_DIR" -maxdepth 1 -name 'miaz_*.snap' -printf '%f\n' | sort | head -n1)
 
     {
         echo "MiAZ ${VERSION}, installation instructions"
@@ -231,15 +168,7 @@ write_install_report() {
             echo "    Uninstall:       rm ${appimage}"
             echo
         fi
-        if [[ -n "$snap" ]]; then
-            echo "Snap (${snap})"
-            echo "    Install:         sudo snap install --dangerous ${snap}"
-            echo "    Run:             snap run miaz   (or just: miaz)"
-            echo "    Uninstall:       sudo snap remove miaz"
-            echo
-        fi
-
-        if [[ -z "$rpm$deb$flatpak$appimage$snap" ]]; then
+        if [[ -z "$rpm$deb$flatpak$appimage" ]]; then
             echo "No packages were produced in this run."
         fi
     } > "$report"

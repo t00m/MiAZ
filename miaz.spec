@@ -1,5 +1,5 @@
 Name:           miaz
-Version:        0.1.28
+Version:        0.1.29
 Release:        1%{?dist}
 Summary:        Personal Document Organizer
 
@@ -22,6 +22,9 @@ Requires:       libadwaita
 Requires:       libpeas
 Requires:       libpeas-loader-python
 Requires:       webkitgtk6.0
+Requires:       libsecret
+Requires:       iso-codes
+Recommends:     python3-keyring
 
 %description
 MiAZ is a GTK4/Libadwaita desktop application that organises personal
@@ -71,6 +74,9 @@ gtk-update-icon-cache %{_datadir}/icons/hicolor &> /dev/null || :
 %{_datadir}/metainfo/io.github.t00m.MiAZ.metainfo.xml
 
 %changelog
+* Mon Jul 06 2026 Tomás Vírseda <tomasvirseda@gmail.com> - 0.1.29-1
+- New release. See CHANGELOG.md for details.
+
 * Sat Jun 27 2026 Tomás Vírseda <tomasvirseda@gmail.com> - 0.1.28-1
 - New plugin MiAZAIChat: chat about a document via Claude, OpenAI, Gemini, or Ollama
 - Mass rename is now a core feature with a guided Concept transform dialog

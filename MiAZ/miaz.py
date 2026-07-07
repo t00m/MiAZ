@@ -69,6 +69,14 @@ try:
 except Exception:
     log.error('Cannot set locale.')
 
+# Bind the iso-codes country-name catalog so util.humanize_value() can localize
+# country descriptions. It is a system domain, installed at /usr/share/locale on
+# a normal system and in the GNOME Flatpak runtime alike.
+try:
+    gettext.bindtextdomain('iso_3166-1', '/usr/share/locale')
+except Exception:
+    log.error('Cannot bind iso-codes locale for country names.')
+
 try:
     gettext.bindtextdomain('miaz', ENV['APP']['LOCALEDIR'])
     gettext.textdomain('miaz')

@@ -12,8 +12,6 @@ import os
 import sys
 from gettext import gettext as _
 
-from gi.repository import GObject
-
 from MiAZ.frontend.desktop.services.pluginsystem import MiAZExtension, MiAZPlugin
 
 sys.path.insert(1, os.path.dirname(os.path.abspath(__file__)))
@@ -50,7 +48,8 @@ class MiAZAIAssistantPlugin(MiAZExtension):
         self.factory = self.app.get_service('factory')
         self.dialogs = self.app.get_service('dialogs')
 
-        self.registry = build_registry(self.plugin, self.log)
+        self.secrets = self.app.get_service('secrets')
+        self.registry = build_registry(self.plugin, self.log, self.secrets)
         self._settings_dialog = AIAssistantSettings(
             self.app, self.plugin, self.registry, self.log)
 

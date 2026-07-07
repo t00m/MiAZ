@@ -13,6 +13,7 @@ from gi.repository import Adw
 from gi.repository import Gtk
 
 from MiAZ.backend.log import MiAZLog
+from MiAZ.backend.util import humanize_value
 from MiAZ.backend.models import Group, Country, Purpose, SentBy, SentTo, Date, Repository, File
 from MiAZ.frontend.desktop.widgets.configview import MiAZCountries, MiAZGroups, MiAZPurposes, MiAZPeopleSentBy, MiAZPeopleSentTo
 from MiAZ.frontend.desktop.widgets.configview import MiAZRepositories
@@ -237,7 +238,7 @@ class MiAZActions(GObject.GObject):
                     title = key.replace('_', ' ')
                     value_items.append(Repository(id=key, title=title, description=desc))
                 else:
-                    title = value
+                    title = humanize_value(i_type, value)
                     if len(title) == 0:
                         title = key
                     value_items.append(item_type(id=key, title=title))
@@ -255,22 +256,6 @@ class MiAZActions(GObject.GObject):
         model_sort = model_filter.get_model()
         model = model_sort.get_model()
         model.splice(0, model.get_n_items(), new_items)
-
-    def import_config(self, button, item_type):
-        # FIXME
-        srvdlg = self.app.get_service('dialogs')
-        window = button.get_root()
-        title = _("Action not implemented yet")
-        body = _("Import the configuration hasn't been implemented yet")
-        srvdlg.show_error(title=title, body=body, parent=window)
-
-    def export_config(self, button, item_type):
-        # FIXME
-        srvdlg = self.app.get_service('dialogs')
-        window = button.get_root()
-        title = _("Action not implemented yet")
-        body = _("Export the configuration hasn't been implemented yet")
-        srvdlg.show_error(title=title, body=body, parent=window)
 
     def manage_resource(self, widget: Gtk.Widget, selector: Gtk.Widget):
         factory = self.app.get_service('factory')
@@ -362,84 +347,32 @@ class MiAZActions(GObject.GObject):
         self.show_app_help(*args)
 
     def show_app_help(self, *args):
+        # Adw.ShortcutsDialog (libadwaita 1.8+) replaces the deprecated
+        # Gtk.ShortcutsWindow. It is adaptive and matches the app dialog style.
         window = self.app.get_widget('window')
-        shwin = self.app.get_widget('shortcutswindow')
-        if shwin is None:
-            xml = """<?xml version="1.0" encoding="UTF-8"?>
-<interface>
-  <object class="GtkShortcutsWindow" id="shortcuts-window">
-    <property name="modal">1</property>
-    <child>
-      <object class="GtkShortcutsSection">
-        <property name="section-name">general</property>
-        <child>
-          <object class="GtkShortcutsGroup">
-            <property name="title" translatable="yes">Application</property>
-            <child>
-              <object class="GtkShortcutsShortcut">
-                <property name="title" translatable="yes">Settings</property>
-                <property name="accelerator">&lt;Control&gt;s</property>
-              </object>
-            </child>
-            <child>
-              <object class="GtkShortcutsShortcut">
-                <property name="title" translatable="yes">Keyboard shortcuts</property>
-                <property name="accelerator">&lt;Control&gt;question</property>
-              </object>
-            </child>
-            <child>
-              <object class="GtkShortcutsShortcut">
-                <property name="title" translatable="yes">About MiAZ</property>
-                <property name="accelerator">&lt;Control&gt;b</property>
-              </object>
-            </child>
-            <child>
-              <object class="GtkShortcutsShortcut">
-                <property name="title" translatable="yes">Quit</property>
-                <property name="accelerator">&lt;Control&gt;q</property>
-              </object>
-            </child>
-            <child>
-              <object class="GtkShortcutsShortcut">
-                <property name="title" translatable="yes">Help</property>
-                <property name="accelerator">F1</property>
-              </object>
-            </child>
-          </object>
-        </child>
-        <child>
-          <object class="GtkShortcutsGroup">
-            <property name="title" translatable="yes">Documents</property>
-            <child>
-              <object class="GtkShortcutsShortcut">
-                <property name="title" translatable="yes">Rename document</property>
-                <property name="accelerator">&lt;Control&gt;BackSpace</property>
-              </object>
-            </child>
-            <child>
-              <object class="GtkShortcutsShortcut">
-                <property name="title" translatable="yes">Delete documents</property>
-                <property name="accelerator">&lt;Control&gt;Delete</property>
-              </object>
-            </child>
-            <child>
-              <object class="GtkShortcutsShortcut">
-                <property name="title" translatable="yes">View document</property>
-                <property name="accelerator">Return</property>
-              </object>
-            </child>
-          </object>
-        </child>
-      </object>
-    </child>
-  </object>
-</interface>"""
-            builder = Gtk.Builder.new_from_string(xml, -1)
-            shwin = builder.get_object('shortcuts-window')
-            shwin.set_hide_on_close(True)
-            self.app.add_widget('shortcutswindow', shwin)
-        shwin.set_transient_for(window)
-        shwin.present()
+        dialog = Adw.ShortcutsDialog()
+
+        app_section = Adw.ShortcutsSection(title=_('Application'))
+        for title, accelerator in (
+            (_('Settings'), '<Control>s'),
+            (_('Keyboard shortcuts'), '<Control>question'),
+            (_('About MiAZ'), '<Control>b'),
+            (_('Quit'), '<Control>q'),
+            (_('Help'), 'F1'),
+        ):
+            app_section.add(Adw.ShortcutsItem(title=title, accelerator=accelerator))
+        dialog.add(app_section)
+
+        docs_section = Adw.ShortcutsSection(title=_('Documents'))
+        for title, accelerator in (
+            (_('Rename document'), '<Control>BackSpace'),
+            (_('Delete documents'), '<Control>Delete'),
+            (_('View document'), 'Return'),
+        ):
+            docs_section.add(Adw.ShortcutsItem(title=title, accelerator=accelerator))
+        dialog.add(docs_section)
+
+        dialog.present(window)
 
     def get_stack_page_by_name(self, name: str) -> Gtk.Stack:
         stack = self.app.get_widget('stack')

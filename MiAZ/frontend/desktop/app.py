@@ -31,6 +31,7 @@ from MiAZ.frontend.desktop.services.massrename import MiAZMassRename
 from MiAZ.backend.config import MiAZConfigRepositories
 from MiAZ.backend.status import MiAZStatus
 from MiAZ.backend.dr import MiAZDR
+from MiAZ.backend.secrets import MiAZSecretStore
 from MiAZ.backend.webserver import MiAZWebServer
 
 
@@ -64,6 +65,7 @@ class MiAZApp(Adw.Application):
         self.set_service('actions', MiAZActions(self))
         workflow = self.set_service('workflow', MiAZWorkflow(self))
         self.set_service('dr', MiAZDR(self))
+        self.set_service('secrets', MiAZSecretStore())
         self.set_service('webserver', MiAZWebServer(self))
         repository = self.set_service('repo', MiAZRepository(self))
         repository.connect('repository-switched', workflow.switch_finish)

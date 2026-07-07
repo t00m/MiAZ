@@ -20,7 +20,7 @@ Example: `20240315-ES-HOU-BANKNAME-INV-Q1invoice-JOHNDOE.pdf`
 
 ### Layered: Backend (no GTK) → Services (GTK-aware) → Widgets (GTK/Adw)
 
-**Backend** (`MiAZ/backend/`): Zero GTK imports. File I/O, config, models, logging, util.
+**Backend** (`MiAZ/backend/`): No GTK/Adw/Gdk widget imports. File I/O, config, models, logging, util. `GObject`/`GLib`/`Gio` are allowed and used on purpose: the backend exposes its events through GObject signals (see the signals table below), which is the backend/frontend contract.
 **Services** (`MiAZ/frontend/desktop/services/`): GTK-aware, app lifecycle. Access via `app.get_service('name')`.
 **Widgets** (`MiAZ/frontend/desktop/widgets/`): All GTK4+Adw widgets.
 
@@ -79,7 +79,7 @@ Translation files in `po/`. Update with `ninja -C _build miaz-update-po`.
 
 ## GSettings
 
-The schema (`data/io.github.t00m.MiAZ.gschema.xml`) stores desktop window state. `frontend/desktop/app.py` reads and writes `window-width`, `window-height`, and `window-maximized` through `Gio.Settings`. The schema also declares `sidebar-width` and `last-repository`, which are not wired up yet.
+The schema (`data/io.github.t00m.MiAZ.gschema.xml`) stores desktop window state only: `frontend/desktop/app.py` reads and writes `window-width`, `window-height`, and `window-maximized` through `Gio.Settings`. Everything else (the active repository, sidebar visibility, document/repo config) lives in JSON files in `<repo>/.conf/`, not in GSettings.
 
 Document and repository configuration does **not** use GSettings. It lives in JSON files in `<repo>/.conf/`.
 

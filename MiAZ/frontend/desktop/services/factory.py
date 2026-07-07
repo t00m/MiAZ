@@ -157,13 +157,18 @@ class MiAZFactory:
         vbox = self.create_box_vertical(hexpand=True, vexpand=False)
         if len(title) > 0:
             lblTitle = Gtk.Label()
-            lblTitle.set_markup(f"<b>{title}</b>")
+            lblTitle.set_text(title)
+            # Theme-correct emphasis instead of <b> markup.
+            lblTitle.add_css_class('heading')
             lblTitle.set_xalign(0.0)
             vbox.append(lblTitle)
 
         if len(subtitle) > 0:
             lblSubtitle = Gtk.Label()
-            lblSubtitle.set_markup(f"<small>{subtitle}</small>")
+            lblSubtitle.set_text(subtitle)
+            # Theme-correct small dim text instead of <small> markup.
+            lblSubtitle.add_css_class('caption')
+            lblSubtitle.add_css_class('dim-label')
             lblSubtitle.set_xalign(0.0)
             vbox.append(lblSubtitle)
 
@@ -180,7 +185,8 @@ class MiAZFactory:
 
     def create_box_filter(self, title, widget: Gtk.Widget, size_group: Gtk.SizeGroup = None) -> Gtk.Box:
         box = Gtk.Box.new(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
-        lblTitle = self.create_label(f"<small>{title}</small>")
+        lblTitle = self.create_label(title)
+        lblTitle.add_css_class('caption')
         lblTitle.set_xalign(0.0)
         lblTitle.set_valign(Gtk.Align.CENTER)
         if size_group is not None:
@@ -339,7 +345,7 @@ class MiAZFactory:
             label = box.get_first_child()
             sublabel = box.get_last_child()
             item = list_item.get_item()
-            label.set_markup(f'{item.title}')
+            label.set_text(item.title)
             # Optional subtitle: only item types with a description (e.g.
             # Repository) show it; others get an empty, hidden second line.
             desc = getattr(item, 'description', '')
@@ -394,7 +400,7 @@ class MiAZFactory:
             box = list_item.get_child()
             label = box.get_last_child()
             item = list_item.get_item()
-            label.set_markup(f'{item.title}')
+            label.set_text(item.title)
 
         # Set up the factory
         factory = Gtk.SignalListItemFactory()
@@ -457,7 +463,8 @@ class MiAZFactory:
         hbox = self.create_box_horizontal()
         icon = self.icons.get_image_by_name(icon_name)
         label = Gtk.Label()
-        label.set_markup(f'<b>{title}</b>')
+        label.set_text(title)
+        label.add_css_class('heading')
         hbox.append(icon)
         hbox.append(label)
         return hbox

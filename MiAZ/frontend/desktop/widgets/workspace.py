@@ -6,8 +6,12 @@
 
 import os
 import threading
+from collections import namedtuple
 from datetime import datetime, timedelta
 from gettext import gettext as _
+
+# Minimal object for removing a store item by id (MiAZColumnView matches on .id).
+_ItemRef = namedtuple('_ItemRef', ['id'])
 
 from gi.repository import Adw
 from gi.repository import Gdk
@@ -18,6 +22,7 @@ from gi.repository import Pango
 
 from MiAZ.env import ENV
 from MiAZ.backend.log import MiAZLog
+from MiAZ.backend.util import humanize_value
 from MiAZ.backend.models import MiAZItem, Field, Group, Country, Purpose, SentBy, SentTo, Date
 from MiAZ.frontend.desktop.widgets.browserpage import MiAZBrowserPage
 from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewWorkspace
@@ -88,6 +93,9 @@ class MiAZWorkspace(Gtk.Box):
         self._cached_date_end = None
         self._update_pending = False
         self._update_timeout_id = None
+        # Set by the incremental handler so the trailing full re-scan is skipped
+        # when a per-file update already covered the change.
+        self._skip_next_full_update = False
 
         # Allow plug-ins to make their job
         self.connect('workspace-view-updated', self._on_filter_selected)
@@ -147,8 +155,12 @@ class MiAZWorkspace(Gtk.Box):
             dropdown.connect("notify::selected-item", self._on_filter_selected)
             self.used_signals[i_type] = self.config[i_type].connect('used-updated', self.update_dropdown_filter, item_type)
 
-        # Connect Watcher service
+        # Connect Watcher service. 'repository-changed' carries the changed path
+        # for a targeted, incremental update; 'repository-updated' is the full
+        # re-scan, kept as the safety net and skipped when the incremental path
+        # already handled the change.
         watcher = self.app.get_service('watcher')
+        watcher.connect('repository-changed', self._on_repository_item_changed)
         watcher.connect('repository-updated', self._on_workspace_update)
 
         # Connect Repository
@@ -204,6 +216,12 @@ class MiAZWorkspace(Gtk.Box):
                                     none_value=False)
 
     def _on_workspace_update(self, *args):
+        # The watcher emits 'repository-changed' (handled incrementally) right
+        # before this full-refresh signal. If the incremental path fully applied
+        # the change, skip the O(N) re-scan; otherwise fall back to it.
+        if self._skip_next_full_update:
+            self._skip_next_full_update = False
+            return
         self._schedule_update()
 
     def _schedule_update(self, *args):
@@ -219,6 +237,133 @@ class MiAZWorkspace(Gtk.Box):
             self._update_pending = False
             self.update()
         return False
+
+    def _on_repository_item_changed(self, watcher, path, other, event):
+        """Apply a single-file change without re-scanning the whole repository.
+
+        Sets the skip flag only when the change was fully applied, so the
+        trailing 'repository-updated' full re-scan (which does a complete
+        splice-replace) is skipped. On any doubt it does nothing and lets that
+        full re-scan produce the correct view, so an imperfect incremental path
+        can never corrupt the list, only cost a redundant re-scan.
+        """
+        try:
+            if self._apply_incremental(path, other, event):
+                self._skip_next_full_update = True
+        except Exception as error:
+            self.log.warning(f"Incremental update failed for '{path}': {error}")
+
+    def _apply_incremental(self, path, other, event):
+        """Return True if the single-file change was fully applied to the view."""
+        repository = self.app.get_service('repo')
+        if repository.conf is None or repository.docs is None:
+            return False
+        docs_dir = os.path.normpath(repository.docs)
+        basename = os.path.basename(path)
+        # Only documents that live directly in the repository root, never hidden.
+        if basename.startswith('.') or os.path.dirname(path) != docs_dir:
+            return False
+
+        if event in ('changed', 'attribute-changed'):
+            # The row is derived from the filename, so a content or attribute
+            # change does not alter the list. Nothing to do.
+            return True
+
+        if event in ('deleted', 'moved-out'):
+            self.view.update_incremental([('remove', _ItemRef(id=basename))])
+            self._num_total_items = max(0, self._num_total_items - 1)
+            self.emit('workspace-view-updated')
+            return True
+
+        if event == 'renamed':
+            if not other:
+                return False
+            new_item, _valid = self._build_item_for_file(other)
+            if new_item is None:
+                return False
+            self.view.update_incremental([
+                ('remove', _ItemRef(id=basename)),
+                ('add', new_item),
+            ])
+            self.emit('workspace-view-updated')
+            return True
+
+        if event in ('created', 'moved-in', 'changes-done-hint'):
+            item, _valid = self._build_item_for_file(path)
+            if item is None:
+                return False
+            if self._store_has_id(item.id):
+                self.view.update_incremental([('update', item)])
+            else:
+                self.view.update_incremental([('add', item)])
+                self._num_total_items += 1
+            self.emit('workspace-view-updated')
+            return True
+
+        return False
+
+    def _store_has_id(self, item_id):
+        store = self.view.store
+        for pos in range(store.get_n_items()):
+            if store.get_item(pos).id == item_id:
+                return True
+        return False
+
+    def _build_item_for_file(self, filename):
+        """Build a MiAZItem for a single document, mirroring the parse worker.
+
+        Returns (item, True) for a valid, fully-named document; (None, False)
+        for anything else (invalid or pending names), so the caller falls back
+        to the full re-scan, which also handles pending-name normalization.
+        """
+        util = self.app.get_service('util')
+        if not util.filename_validate(filename):
+            return None, False
+        fields = util.get_fields(filename)
+        if len(fields) != 7:
+            return None, False
+        doc, ext = util.filename_details(filename)
+        key_fields = [('Date', 0), ('Country', 1), ('Group', 2), ('SentBy', 3),
+                      ('Purpose', 4), ('Concept', 5), ('SentTo', 6)]
+        desc = {skey: '' for skey, nkey in key_fields}
+        active = True
+        for skey, nkey in key_fields:
+            if nkey == 5:
+                continue
+            config = self.app.get_config(skey)
+            key = fields[nkey]
+            if not key:
+                active = False
+                continue
+            if nkey == 0:
+                try:
+                    desc[skey] = self.cache[skey][key]
+                except KeyError:
+                    human = util.filename_date_human_simple(key)
+                    if human is None:
+                        active = False
+                        desc[skey] = ''
+                    else:
+                        desc[skey] = human
+                        self.cache[skey][key] = human
+            else:
+                description = config.get(key)
+                if description is None:
+                    description = key
+                desc[skey] = humanize_value(skey, description)
+                active &= config.exists_used(key=key)
+        item = MiAZItem(
+            id=os.path.basename(filename),
+            date=fields[0], date_dsc=desc['Date'],
+            country=fields[1], country_dsc=desc['Country'],
+            group=fields[2], group_dsc=desc['Group'],
+            sentby_id=fields[3], sentby_dsc=desc['SentBy'],
+            purpose=fields[4], purpose_dsc=desc['Purpose'],
+            title=doc, subtitle=fields[5].replace('_', ' '),
+            sentto_id=fields[6], sentto_dsc=desc['SentTo'],
+            extension=filename[filename.rfind('.') + 1:],
+            active=active)
+        return item, True
 
     def is_loaded(self):
         return self.workspace_loaded
@@ -627,7 +772,7 @@ class MiAZWorkspace(Gtk.Box):
                         description = config.get(key)
                         if description is None:
                             description = key
-                        desc[skey] = description
+                        desc[skey] = humanize_value(skey, description)
                         active &= config.exists_used(key=key)
 
             show_pending |= not active
