@@ -55,7 +55,13 @@ jobs:
         run: appstream-util validate --nonet data/io.github.t00m.MiAZ.metainfo.xml.in
 
       - name: Validate desktop file
-        run: desktop-file-validate data/io.github.t00m.MiAZ.desktop.in
+        # desktop-file-validate requires a .desktop extension; the source is a
+        # plain (placeholder-free) .desktop.in template that meson merges into
+        # the real file, so validate a copy with the correct extension.
+        run: |
+          tmp="$(mktemp -d)"
+          cp data/io.github.t00m.MiAZ.desktop.in "$tmp/io.github.t00m.MiAZ.desktop"
+          desktop-file-validate "$tmp/io.github.t00m.MiAZ.desktop"
 
   build-meson:
     name: Meson build and install
