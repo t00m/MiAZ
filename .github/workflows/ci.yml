@@ -15,53 +15,41 @@ concurrency:
 
 jobs:
   test:
-    name: Tests, lint and metadata (py${{ matrix.python-version }})
+    name: Tests, lint and metadata
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        # The PyGObject bindings come from the system (apt) and follow the
-        # runner's Python, so the runtime tests cover the versions the runner
-        # ships. The project's floor is 3.9 (requires-python), and 3.9/3.10
-        # syntax compatibility is enforced statically by ruff's
-        # target-version = "py39" in pyproject.toml.
-        python-version: ["3.11", "3.12"]
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v5
-        with:
-          python-version: ${{ matrix.python-version }}
-
+      # PyGObject (gi) is provided by the system apt packages and is bound to
+      # the system Python, so the tests run against the runner's system Python.
+      # actions/setup-python installs a separate interpreter that cannot see the
+      # apt bindings, which is why it is not used here. The project floor is 3.9
+      # (requires-python); 3.9/3.10 syntax compatibility is enforced statically
+      # by ruff's target-version = "py39" in pyproject.toml.
       - name: Install system dependencies
         run: |
           sudo apt-get update -y
           sudo apt-get install -y \
-            python3-gi \
-            python3-gi-cairo \
-            gir1.2-gtk-4.0 \
-            gir1.2-adw-1 \
-            appstream-util \
-            desktop-file-utils \
-            libpeas-2-dev \
-            gir1.2-peas-2 \
-            gir1.2-webkit-6.0
+            python3 python3-venv python3-gi python3-gi-cairo \
+            gir1.2-gtk-4.0 gir1.2-adw-1 gir1.2-peas-2 gir1.2-webkit-6.0 \
+            appstream-util desktop-file-utils
 
       - name: Install Python tooling
+        # A venv created with --system-site-packages can import the system gi
+        # while keeping pytest/ruff isolated from the system Python.
         run: |
-          python -m pip install --upgrade pip
-          pip install pytest ruff pytest-cov
+          python3 -m venv --system-site-packages .venv
+          .venv/bin/pip install --upgrade pip
+          .venv/bin/pip install pytest ruff pytest-cov
 
       - name: Lint with ruff
-        run: ruff check MiAZ data/resources/plugins tests
+        run: .venv/bin/ruff check MiAZ data/resources/plugins tests
 
       - name: Run pytest
         env:
-          DISPLAY: ""
           GDK_BACKEND: headless
-        run: python -m pytest tests/ -v --cov=MiAZ --cov-report=term-missing
+        run: .venv/bin/python -m pytest tests/ -v --cov=MiAZ --cov-report=term-missing
 
       - name: Validate AppStream metainfo
         run: appstream-util validate --nonet data/io.github.t00m.MiAZ.metainfo.xml.in
