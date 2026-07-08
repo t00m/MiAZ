@@ -98,23 +98,46 @@ build_manual() {
 
     # Write DEBIAN/control
     mkdir -p "$STAGING/DEBIAN"
-    cat > "$STAGING/DEBIAN/control" <<EOF
-Package: miaz
-Version: $DEB_VERSION
-Architecture: $ARCH
-Maintainer: Tomás Vírseda <tomasvirseda@gmail.com>
-Installed-Size: $INSTALLED_KB
-Depends: python3 (>= 3.9), python3-gi, python3-gi-cairo, gir1.2-gtk-4.0, gir1.2-adw-1
-Section: utils
-Priority: optional
-Homepage: https://github.com/t00m/MiAZ
-Description: Personal Document Organizer
- MiAZ is a GTK4/Libadwaita desktop application that organises personal
- documents by enforcing a strict 7-field filename convention:
- {date}-{country}-{group}-{sentby}-{purpose}-{concept}-{sentto}
- .
- The directory is the database, no external database required.
-EOF
+
+    # Derive runtime dependencies from debian/control, the single source of
+    # truth, so this cross-distro strategy stays in sync with the native
+    # dpkg-buildpackage build. dpkg-deb does not expand ${misc:Depends}, so it
+    # is dropped. Without this the .deb shipped an incomplete Depends line and
+    # the app failed to start on a clean Ubuntu (missing gir1.2-peas-2,
+    # gir1.2-webkit-6.0, and others).
+    control_field() {
+        python3 - "$REPO_ROOT/debian/control" "$1" <<'PYEOF'
+import re, sys
+path, name = sys.argv[1], sys.argv[2]
+text = open(path).read()
+m = re.search(rf'^{name}:(.*?)(?=^\S+:|\Z)', text, re.M | re.S)
+if m:
+    parts = [d.strip() for d in m.group(1).replace('\n', ' ').split(',')]
+    print(', '.join(d for d in parts if d and 'misc:Depends' not in d))
+PYEOF
+    }
+    MIAZ_DEPENDS="$(control_field Depends)"
+    MIAZ_RECOMMENDS="$(control_field Recommends)"
+    [ -n "$MIAZ_DEPENDS" ] || die "Could not derive Depends from debian/control"
+
+    {
+        echo "Package: miaz"
+        echo "Version: $DEB_VERSION"
+        echo "Architecture: $ARCH"
+        echo "Maintainer: Tomás Vírseda <tomasvirseda@gmail.com>"
+        echo "Installed-Size: $INSTALLED_KB"
+        echo "Depends: $MIAZ_DEPENDS"
+        [ -n "$MIAZ_RECOMMENDS" ] && echo "Recommends: $MIAZ_RECOMMENDS"
+        echo "Section: utils"
+        echo "Priority: optional"
+        echo "Homepage: https://github.com/t00m/MiAZ"
+        echo "Description: Personal Document Organizer"
+        echo " MiAZ is a GTK4/Libadwaita desktop application that organises personal"
+        echo " documents by enforcing a strict 7-field filename convention:"
+        echo " {date}-{country}-{group}-{sentby}-{purpose}-{concept}-{sentto}"
+        echo " ."
+        echo " The directory is the database, no external database required."
+    } > "$STAGING/DEBIAN/control"
 
     # Write md5sums
     log "Computing md5sums ..."
