@@ -13,7 +13,7 @@ import urllib.parse
 import gi
 gi.require_version('WebKit', '6.0')
 
-from gi.repository import Gdk, Gio, GLib, Gtk, WebKit
+from gi.repository import Gdk, Gio, GLib, GObject, Gtk, WebKit
 
 from MiAZ.backend.log import MiAZLog
 
@@ -21,6 +21,12 @@ from MiAZ.backend.log import MiAZLog
 class MiAZBrowserPage(Gtk.Box):
     """Workspace page with a header bar (back, page dropdown, refresh) and a WebKit view."""
     __gtype_name__ = 'MiAZBrowserPage'
+    __gsignals__ = {
+        # Emitted whenever the set of available browser pages changes; carries
+        # the current page count so the workspace can hide the Browser tab when
+        # nothing is registered to load.
+        'pages-updated': (GObject.SignalFlags.RUN_LAST, None, (int,)),
+    }
 
     def __init__(self, app):
         super().__init__(orientation=Gtk.Orientation.VERTICAL)
@@ -116,9 +122,14 @@ class MiAZBrowserPage(Gtk.Box):
                 pages.append((name, self._plugin_description(name)))
         return pages
 
+    def has_pages(self):
+        """True when at least one browser page is available to load."""
+        return len(self._pages) > 0
+
     def _refresh_pages(self):
         pages = self._scan_pages()
         self._pages = pages
+        self.emit('pages-updated', len(pages))
 
         self._suppress_change = True
         try:

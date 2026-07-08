@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 0.1\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-07-07 14:03+0200\n"
+"POT-Creation-Date: 2026-07-08 11:42+0200\n"
 "PO-Revision-Date: 2026-05-24 11:01+0200\n"
 "Last-Translator: Tomás Vírseda <tomasvirseda@gmail.com>\n"
 "Language-Team: Spanish\n"
@@ -15,8 +15,8 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Generator: Gtranslator 50.0\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"X-Generator: Gtranslator 50.0\n"
 
 #: data/io.github.t00m.MiAZ.desktop.in:2
 #: data/io.github.t00m.MiAZ.metainfo.xml.in:6
@@ -34,13 +34,13 @@ msgstr "Productividad;Personal;Documentos;Organizador"
 
 #: data/io.github.t00m.MiAZ.metainfo.xml.in:9
 msgid ""
-"Keeping family records, school files, invoices, and administrative paperwork "
-"organised is a constant challenge, especially when documents come in from "
+"Keeping family records, school files, invoices, and administrative paperwork"
+" organised is a constant challenge, especially when documents come in from "
 "many different countries and institutions."
 msgstr ""
 "Mantener registros familiares, archivos escolares, facturas y documentación "
-"administrativa organizados es un desafío constante, especialmente cuando los "
-"documentos provienen de muchos países e instituciones diferentes."
+"administrativa organizados es un desafío constante, especialmente cuando los"
+" documentos provienen de muchos países e instituciones diferentes."
 
 #: data/io.github.t00m.MiAZ.metainfo.xml.in:10
 msgid ""
@@ -108,7 +108,8 @@ msgstr "Gestionar plugins para este repositorio"
 msgid "Document actions menu"
 msgstr "Menú de acciones para documentos"
 
-#. ~ menuitem = factory.create_menuitem('app-help', _('Help'), actions.show_app_help, None, ['F1', '<Control>h'])
+#. ~ menuitem = factory.create_menuitem('app-help', _('Help'),
+#. actions.show_app_help, None, ['F1', '<Control>h'])
 #. ~ section_common.append_item(menuitem)
 #: data/io.github.t00m.MiAZ.metainfo.xml.in:66
 #: MiAZ/frontend/desktop/services/actions.py:359
@@ -118,61 +119,73 @@ msgstr "Acerca de MiAZ"
 
 #: data/io.github.t00m.MiAZ.metainfo.xml.in:72
 msgid "See CHANGELOG.md for details."
-msgstr ""
+msgstr "Consulta CHANGELOG.md para más detalles."
 
 #: data/io.github.t00m.MiAZ.metainfo.xml.in:77
 msgid ""
-"AI chat, mass rename as a core feature, a per-repository change journal, and "
-"several new plugins."
+"AI chat, mass rename as a core feature, a per-repository change journal, and"
+" several new plugins."
 msgstr ""
+"Chat con IA, renombrado masivo como función principal, un registro de "
+"cambios por repositorio y varios plugins nuevos."
 
 #: data/io.github.t00m.MiAZ.metainfo.xml.in:79
-#, fuzzy
 msgid ""
 "New plugin MiAZAIChat: chat about a document via Claude, OpenAI, Gemini, or "
 "Ollama"
 msgstr ""
-"Nuevo plugin MiAZAIAssistant: proponer los siete campos de nombre de archivo "
-"a través de Claude, OpenAI, Gemini u Ollama"
+"Nuevo plugin MiAZAIChat: conversa sobre un documento mediante Claude, "
+"OpenAI, Gemini u Ollama"
 
 #: data/io.github.t00m.MiAZ.metainfo.xml.in:80
 msgid ""
 "Mass rename is now a core feature with a guided Concept transform dialog"
 msgstr ""
+"El renombrado masivo es ahora una función principal, con un diálogo guiado "
+"para transformar el concepto"
 
 #: data/io.github.t00m.MiAZ.metainfo.xml.in:81
 msgid ""
 "Per-repository change journal records every add, rename, and delete with "
 "import provenance"
 msgstr ""
+"El registro de cambios por repositorio anota cada alta, renombrado y "
+"borrado, con la procedencia de la importación"
 
 #: data/io.github.t00m.MiAZ.metainfo.xml.in:82
 msgid ""
 "New plugins: MiAZNewspaper, MiAZYearReport, MiAZOCR, MiAZFullscreen, "
 "MiAZColumnVisibility"
 msgstr ""
+"Nuevos plugins: MiAZNewspaper, MiAZYearReport, MiAZOCR, MiAZFullscreen, "
+"MiAZColumnVisibility"
 
 #: data/io.github.t00m.MiAZ.metainfo.xml.in:83
 msgid "MiAZNotes renders the note body as Markdown in view mode"
-msgstr ""
+msgstr "MiAZNotes muestra el cuerpo de la nota como Markdown en modo lectura"
 
 #: data/io.github.t00m.MiAZ.metainfo.xml.in:84
 msgid "Embedded localhost web server with a built-in Browser page"
-msgstr ""
+msgstr "Servidor web local integrado con una página de navegador incorporada"
 
 #: data/io.github.t00m.MiAZ.metainfo.xml.in:85
 msgid "Global crash handling with a log file and an error dialog"
 msgstr ""
+"Gestión global de errores con un archivo de registro y un diálogo de error"
 
 #: data/io.github.t00m.MiAZ.metainfo.xml.in:86
 msgid ""
 "Rename: filenames forced to uppercase, and Suggest metadata from documents "
 "sharing the concept"
 msgstr ""
+"Renombrado: los nombres de archivo se fuerzan a mayúsculas y se sugieren "
+"metadatos a partir de documentos que comparten el concepto"
 
 #: data/io.github.t00m.MiAZ.metainfo.xml.in:87
 msgid "Sidebar filters: case-insensitive substring search with sorted entries"
 msgstr ""
+"Filtros de la barra lateral: búsqueda de subcadenas sin distinguir "
+"mayúsculas y entradas ordenadas"
 
 #: data/io.github.t00m.MiAZ.metainfo.xml.in:93
 msgid ""
@@ -187,8 +200,8 @@ msgid ""
 "New plugin MiAZAIAssistant: propose all seven filename fields via Claude, "
 "OpenAI, Gemini, or Ollama"
 msgstr ""
-"Nuevo plugin MiAZAIAssistant: proponer los siete campos de nombre de archivo "
-"a través de Claude, OpenAI, Gemini u Ollama"
+"Nuevo plugin MiAZAIAssistant: proponer los siete campos de nombre de archivo"
+" a través de Claude, OpenAI, Gemini u Ollama"
 
 #: data/io.github.t00m.MiAZ.metainfo.xml.in:96
 msgid ""
@@ -201,8 +214,8 @@ msgstr ""
 #: data/io.github.t00m.MiAZ.metainfo.xml.in:97
 msgid "New plugin MiAZColumnVisibility: toggle workspace column visibility"
 msgstr ""
-"Nuevo plugin MiAZColumnVisibility: alternar visibilidad de columnas del área "
-"de trabajo"
+"Nuevo plugin MiAZColumnVisibility: alternar visibilidad de columnas del área"
+" de trabajo"
 
 #: data/io.github.t00m.MiAZ.metainfo.xml.in:98
 msgid "Rename dialog: inline Add buttons on restricted-vocabulary rows"
@@ -268,15 +281,15 @@ msgstr ""
 
 #: data/io.github.t00m.MiAZ.gschema.xml:7
 msgid "Window width"
-msgstr ""
+msgstr "Ancho de la ventana"
 
 #: data/io.github.t00m.MiAZ.gschema.xml:11
 msgid "Window height"
-msgstr ""
+msgstr "Alto de la ventana"
 
 #: data/io.github.t00m.MiAZ.gschema.xml:15
 msgid "Window maximized state"
-msgstr ""
+msgstr "Estado maximizado de la ventana"
 
 #: MiAZ/backend/config.py:269
 msgid "App"
@@ -372,7 +385,7 @@ msgid "Document"
 msgstr "Documento"
 
 #: MiAZ/backend/models.py:209 MiAZ/frontend/desktop/services/actions.py:366
-#: MiAZ/frontend/desktop/widgets/workspace.py:367
+#: MiAZ/frontend/desktop/widgets/workspace.py:511
 #: data/resources/plugins/MiAZNewspaper/MiAZNewspaper.py:523
 #: data/resources/plugins/MiAZYearReport/MiAZYearReport.py:397
 #: data/resources/plugins/MiAZYearReport/MiAZYearReport.py:443
@@ -466,299 +479,303 @@ msgid "day"
 msgstr "día"
 
 #: MiAZ/backend/vocabulary.py:22
-msgid "Billing"
-msgstr ""
+msgid "Banking"
+msgstr "Banca"
 
 #: MiAZ/backend/vocabulary.py:23
 msgid "Civil Status"
-msgstr ""
+msgstr "Estado civil"
 
 #: MiAZ/backend/vocabulary.py:24
-#, fuzzy
-msgid "Configuration"
-msgstr "Configuración de copia de seguridad"
+msgid "Education"
+msgstr "Educación"
 
 #: MiAZ/backend/vocabulary.py:25
-#, fuzzy
-msgid "Education"
-msgstr "Salir de la aplicación"
+#: data/resources/plugins/MiAZNotes/lib/model.py:20
+msgid "Finance"
+msgstr "Finanzas"
 
 #: MiAZ/backend/vocabulary.py:26
-msgid "Employment"
-msgstr ""
+#: data/resources/plugins/MiAZNotes/lib/model.py:22
+msgid "Health"
+msgstr "Salud"
 
 #: MiAZ/backend/vocabulary.py:27
-#, fuzzy
-msgid "Financial"
-msgstr "Cancelar"
+msgid "Health Insurance"
+msgstr "Seguro de salud"
 
 #: MiAZ/backend/vocabulary.py:28
-msgid "Housing"
-msgstr ""
+msgid "Home Insurance"
+msgstr "Seguro de hogar"
 
 #: MiAZ/backend/vocabulary.py:29
-#, fuzzy
-msgid "Insurance"
-msgstr "Cancelar"
+msgid "Housing"
+msgstr "Vivienda"
 
 #: MiAZ/backend/vocabulary.py:30
-#: data/resources/plugins/MiAZNotes/lib/model.py:21
-msgid "Legal"
-msgstr ""
+msgid "Investments"
+msgstr "Inversiones"
 
 #: MiAZ/backend/vocabulary.py:31
-msgid "Leisure"
-msgstr ""
+#: data/resources/plugins/MiAZNotes/lib/model.py:21
+msgid "Legal"
+msgstr "Legal"
 
 #: MiAZ/backend/vocabulary.py:32
-msgid "Loans"
-msgstr ""
+msgid "Leisure"
+msgstr "Ocio"
 
 #: MiAZ/backend/vocabulary.py:33
-msgid "Medical"
-msgstr ""
+msgid "Loans"
+msgstr "Préstamos"
 
 #: MiAZ/backend/vocabulary.py:34
-#, fuzzy
 msgid "Miscellaneous"
 msgstr "Miscelánea"
 
 #: MiAZ/backend/vocabulary.py:35
-#: data/resources/plugins/MiAZNotes/lib/model.py:18
-#, fuzzy
-msgid "Personal"
-msgstr "Persona"
+msgid "Mortgage"
+msgstr "Hipoteca"
 
 #: MiAZ/backend/vocabulary.py:36
-msgid "Public Administration"
-msgstr ""
+msgid "Pension"
+msgstr "Pensión"
 
 #: MiAZ/backend/vocabulary.py:37
-#, fuzzy
-msgid "Services"
-msgstr "Comando del escáner"
+#: data/resources/plugins/MiAZNotes/lib/model.py:18
+msgid "Personal"
+msgstr "Personal"
 
 #: MiAZ/backend/vocabulary.py:38
-msgid "Shopping"
-msgstr ""
+msgid "Prescription"
+msgstr "Receta médica"
 
 #: MiAZ/backend/vocabulary.py:39
-msgid "Social Security"
-msgstr ""
+msgid "Public Administration"
+msgstr "Administración pública"
 
 #: MiAZ/backend/vocabulary.py:40
-msgid "Taxes"
-msgstr ""
+msgid "Rent"
+msgstr "Alquiler"
 
 #: MiAZ/backend/vocabulary.py:41
-msgid "Travel"
-msgstr ""
+msgid "Services"
+msgstr "Servicios"
 
 #: MiAZ/backend/vocabulary.py:42
-msgid "Utilities"
-msgstr ""
+msgid "Shopping"
+msgstr "Compras"
 
 #: MiAZ/backend/vocabulary.py:43
-msgid "Vehicle"
-msgstr ""
+msgid "Social Security"
+msgstr "Seguridad Social"
 
 #: MiAZ/backend/vocabulary.py:44
-#: data/resources/plugins/MiAZNotes/lib/model.py:19
-#, fuzzy
-msgid "Work"
-msgstr "Área de trabajo"
+msgid "Taxes"
+msgstr "Impuestos"
+
+#: MiAZ/backend/vocabulary.py:45
+msgid "Travel"
+msgstr "Viajes"
+
+#: MiAZ/backend/vocabulary.py:46
+msgid "Travel Insurance"
+msgstr "Seguro de viaje"
+
+#: MiAZ/backend/vocabulary.py:47
+msgid "Utilities"
+msgstr "Suministros"
 
 #: MiAZ/backend/vocabulary.py:48
-msgid "Agreement"
-msgstr ""
+msgid "Vehicle"
+msgstr "Vehículo"
 
 #: MiAZ/backend/vocabulary.py:49
-#, fuzzy
-msgid "Analysis"
-msgstr "Análisis de texto"
+msgid "Vehicle Insurance"
+msgstr "Seguro de vehículo"
 
 #: MiAZ/backend/vocabulary.py:50
-msgid "Appointment"
-msgstr ""
+msgid "Vehicle Maintenance"
+msgstr "Mantenimiento del vehículo"
 
 #: MiAZ/backend/vocabulary.py:51
-#, fuzzy
-msgid "Authorization"
-msgstr "Automatización de tareas"
-
-#: MiAZ/backend/vocabulary.py:52
-msgid "Budget"
-msgstr ""
-
-#: MiAZ/backend/vocabulary.py:53
-#, fuzzy
-msgid "Cancellation"
-msgstr "Cancelar"
-
-#: MiAZ/backend/vocabulary.py:54
-#, fuzzy
-msgid "Certification"
-msgstr "Sistemas de notificaciones"
+#: data/resources/plugins/MiAZNotes/lib/model.py:19
+msgid "Work"
+msgstr "Trabajo"
 
 #: MiAZ/backend/vocabulary.py:55
-msgid "Claim"
-msgstr ""
+msgid "Agreement"
+msgstr "Acuerdo"
 
 #: MiAZ/backend/vocabulary.py:56
-#, fuzzy
-msgid "Confirmation"
-msgstr "Migración"
+msgid "Analysis"
+msgstr "Análisis"
 
 #: MiAZ/backend/vocabulary.py:57
-msgid "Contract"
-msgstr ""
+msgid "Appointment"
+msgstr "Cita"
 
 #: MiAZ/backend/vocabulary.py:58
-msgid "Curriculum Vitae"
-msgstr ""
+msgid "Authorization"
+msgstr "Autorización"
 
 #: MiAZ/backend/vocabulary.py:59
-#, fuzzy
-msgid "Declaration"
-msgstr "Borrado"
+msgid "Budget"
+msgstr "Presupuesto"
 
 #: MiAZ/backend/vocabulary.py:60
-msgid "Email"
-msgstr ""
+msgid "Cancellation"
+msgstr "Cancelación"
 
 #: MiAZ/backend/vocabulary.py:61
-msgid "Form"
-msgstr ""
+msgid "Certification"
+msgstr "Certificación"
 
 #: MiAZ/backend/vocabulary.py:62
-msgid "Identification"
-msgstr ""
+msgid "Claim"
+msgstr "Reclamación"
 
 #: MiAZ/backend/vocabulary.py:63
-#, fuzzy
-msgid "Information"
-msgstr "Transformación de datos"
+msgid "Confirmation"
+msgstr "Confirmación"
 
 #: MiAZ/backend/vocabulary.py:64
-msgid "Invoice"
-msgstr ""
+msgid "Contract"
+msgstr "Contrato"
 
 #: MiAZ/backend/vocabulary.py:65
-msgid "Letter"
-msgstr ""
+msgid "Curriculum Vitae"
+msgstr "Currículum"
 
 #: MiAZ/backend/vocabulary.py:66
-msgid "Manual"
-msgstr ""
+msgid "Declaration"
+msgstr "Declaración"
 
 #: MiAZ/backend/vocabulary.py:67
-#, fuzzy
-msgid "Minutes"
-msgstr "Cada minuto"
+msgid "Email"
+msgstr "Correo electrónico"
 
 #: MiAZ/backend/vocabulary.py:68
-#, fuzzy
-msgid "Notification"
-msgstr "Sistemas de notificaciones"
+msgid "Form"
+msgstr "Formulario"
 
 #: MiAZ/backend/vocabulary.py:69
-msgid "Order"
-msgstr ""
+msgid "Identification"
+msgstr "Identificación"
 
 #: MiAZ/backend/vocabulary.py:70
-msgid "Payment"
-msgstr ""
+msgid "Information"
+msgstr "Información"
 
 #: MiAZ/backend/vocabulary.py:71
-msgid "Payslip"
-msgstr ""
+msgid "Invoice"
+msgstr "Factura"
 
 #: MiAZ/backend/vocabulary.py:72
-#, fuzzy
-msgid "Picture"
-msgstr "Futuro"
+msgid "Letter"
+msgstr "Carta"
 
 #: MiAZ/backend/vocabulary.py:73
-msgid "Plan"
-msgstr ""
+msgid "Manual"
+msgstr "Manual"
 
 #: MiAZ/backend/vocabulary.py:74
-msgid "Policy"
-msgstr ""
+msgid "Minutes"
+msgstr "Acta"
 
 #: MiAZ/backend/vocabulary.py:75
+msgid "Notification"
+msgstr "Notificación"
+
+#: MiAZ/backend/vocabulary.py:76
+msgid "Order"
+msgstr "Pedido"
+
+#: MiAZ/backend/vocabulary.py:77
+msgid "Payment"
+msgstr "Pago"
+
+#: MiAZ/backend/vocabulary.py:78
+msgid "Payslip"
+msgstr "Nómina"
+
+#: MiAZ/backend/vocabulary.py:79
+msgid "Picture"
+msgstr "Imagen"
+
+#: MiAZ/backend/vocabulary.py:80
+msgid "Plan"
+msgstr "Plan"
+
+#: MiAZ/backend/vocabulary.py:81
+msgid "Policy"
+msgstr "Póliza"
+
+#: MiAZ/backend/vocabulary.py:82
 #: data/resources/plugins/MiAZProjectMgt/projmgt.py:51
 msgid "Project"
 msgstr "Proyecto"
 
-#: MiAZ/backend/vocabulary.py:76
-msgid "Proof"
-msgstr ""
-
-#: MiAZ/backend/vocabulary.py:77
-msgid "Receipt"
-msgstr ""
-
-#: MiAZ/backend/vocabulary.py:78
-#, fuzzy
-msgid "Reminder"
-msgstr "Remitente"
-
-#: MiAZ/backend/vocabulary.py:79
-#, fuzzy
-msgid "Report"
-msgstr "Importar"
-
-#: MiAZ/backend/vocabulary.py:80
-msgid "Request"
-msgstr ""
-
-#: MiAZ/backend/vocabulary.py:81
-msgid "Schedule"
-msgstr ""
-
-#: MiAZ/backend/vocabulary.py:82
-msgid "Statement"
-msgstr ""
-
 #: MiAZ/backend/vocabulary.py:83
-msgid "Task"
-msgstr ""
+msgid "Proof"
+msgstr "Justificante"
 
 #: MiAZ/backend/vocabulary.py:84
-#, fuzzy
-msgid "Template"
-msgstr "Plantillas"
+msgid "Receipt"
+msgstr "Recibo"
 
 #: MiAZ/backend/vocabulary.py:85
-msgid "Transfer"
-msgstr ""
+msgid "Reminder"
+msgstr "Recordatorio"
 
 #: MiAZ/backend/vocabulary.py:86
+msgid "Report"
+msgstr "Informe"
+
+#: MiAZ/backend/vocabulary.py:87
+msgid "Request"
+msgstr "Solicitud"
+
+#: MiAZ/backend/vocabulary.py:88
+msgid "Schedule"
+msgstr "Calendario"
+
+#: MiAZ/backend/vocabulary.py:89
+msgid "Statement"
+msgstr "Extracto"
+
+#: MiAZ/backend/vocabulary.py:90
+msgid "Task"
+msgstr "Tarea"
+
+#: MiAZ/backend/vocabulary.py:91
+msgid "Template"
+msgstr "Plantilla"
+
+#: MiAZ/backend/vocabulary.py:92
+msgid "Transfer"
+msgstr "Transferencia"
+
+#: MiAZ/backend/vocabulary.py:93
 msgid "Warning"
-msgstr ""
+msgstr "Aviso"
 
 #: MiAZ/frontend/desktop/services/actions.py:83
-#, fuzzy, python-brace-format
+#, python-brace-format
 msgid "Delete {count} documents?"
-msgstr "Borrar los documentos seleccionados"
+msgstr "¿Borrar {count} documentos?"
 
 #: MiAZ/frontend/desktop/services/actions.py:84
-#, fuzzy
 msgid "The following documents will be permanently deleted:"
-msgstr ""
-"<b>¿Estás seguro?</b>\n"
-"\n"
-"Los siguientes documentos serán borrados:"
+msgstr "Los siguientes documentos se borrarán de forma permanente:"
 
 #: MiAZ/frontend/desktop/services/actions.py:86
 #: MiAZ/frontend/desktop/services/dialogs.py:239
 #: MiAZ/frontend/desktop/widgets/configview.py:743
 #: MiAZ/frontend/desktop/widgets/selector.py:345
 #: data/resources/plugins/MiAZNotes/lib/editor.py:140
-#, fuzzy
 msgid "Delete"
-msgstr "Borrado"
+msgstr "Borrar"
 
 #: MiAZ/frontend/desktop/services/actions.py:96
 #, python-brace-format
@@ -783,9 +800,8 @@ msgstr "Renombrar documento"
 
 #. "Rename" is the primary action and must be the first button on the
 #: MiAZ/frontend/desktop/services/actions.py:121
-#, fuzzy
 msgid "Rename"
-msgstr "Nombre de fichero"
+msgstr "Renombrar"
 
 #: MiAZ/frontend/desktop/services/actions.py:133
 #: MiAZ/frontend/desktop/services/dialogs.py:21
@@ -798,26 +814,24 @@ msgid "Cancel"
 msgstr "Cancelar"
 
 #: MiAZ/frontend/desktop/services/actions.py:134
-#, fuzzy
 msgid "Cancel renaming"
-msgstr "Renombrado masivo"
+msgstr "Cancelar el renombrado"
 
 #: MiAZ/frontend/desktop/services/actions.py:145
 msgid "Suggest"
-msgstr ""
+msgstr "Sugerir"
 
 #: MiAZ/frontend/desktop/services/actions.py:146
 msgid "Suggest metadata from documents sharing this concept"
-msgstr ""
+msgstr "Sugerir metadatos a partir de documentos que comparten este concepto"
 
 #: MiAZ/frontend/desktop/services/actions.py:153
 msgid "Preview"
 msgstr "Previsualizar"
 
 #: MiAZ/frontend/desktop/services/actions.py:154
-#, fuzzy
 msgid "Preview this document"
-msgstr "Ver documento"
+msgstr "Previsualizar este documento"
 
 #: MiAZ/frontend/desktop/services/actions.py:176
 msgid ""
@@ -832,7 +846,7 @@ msgid "Another document with the same name already exists in this repository"
 msgstr "Otro documento con el mismo nombre ya existe en este repositorio"
 
 #: MiAZ/frontend/desktop/services/actions.py:218
-#: MiAZ/frontend/desktop/widgets/workspace.py:993
+#: MiAZ/frontend/desktop/widgets/workspace.py:1137
 msgid "Any"
 msgstr "Cualquier"
 
@@ -873,7 +887,8 @@ msgstr ""
 msgid ""
 "Flags borrowed from FlagKit project https://github.com/madebybowtie/FlagKit"
 msgstr ""
-"Banderas tomadas del proyecto FlagKit https://github.com/madebybowtie/FlagKit"
+"Banderas tomadas del proyecto FlagKit "
+"https://github.com/madebybowtie/FlagKit"
 
 #: MiAZ/frontend/desktop/services/actions.py:335
 msgid "Some icons borrowed from GNOME contributors https://www.gnome.org"
@@ -883,19 +898,19 @@ msgstr ""
 #: MiAZ/frontend/desktop/services/actions.py:336
 msgid ""
 "MiAZ app icon based on Collection Business Duotone Icons with license 'CC "
-"Attribution License' by 'cataicon' https://www.svgrepo.com/svg/391994/binder-"
-"business-finance-management-marketing-office"
+"Attribution License' by 'cataicon' "
+"https://www.svgrepo.com/svg/391994/binder-business-finance-management-"
+"marketing-office"
 msgstr ""
-"Icono de aplicación MiAZ basado en Iconos empresariales de colección Duotone "
-"con licencia \"CC Attribution License\" por \"cataicon\" https://"
-"www.svgrepo.com/svg/391994/binder-business-finance-management-marketing-"
-"office"
+"Icono de aplicación MiAZ basado en Iconos empresariales de colección Duotone"
+" con licencia \"CC Attribution License\" por \"cataicon\" "
+"https://www.svgrepo.com/svg/391994/binder-business-finance-management-"
+"marketing-office"
 
 #: MiAZ/frontend/desktop/services/actions.py:355
 #: data/resources/plugins/MiAZImportFromScan/scan.py:221
-#, fuzzy
 msgid "Application"
-msgstr "Salir de la aplicación"
+msgstr "Aplicación"
 
 #: MiAZ/frontend/desktop/services/actions.py:357
 #: MiAZ/frontend/desktop/widgets/mainwindow.py:514
@@ -904,12 +919,12 @@ msgstr "Ajustes"
 
 #: MiAZ/frontend/desktop/services/actions.py:358
 msgid "Keyboard shortcuts"
-msgstr ""
+msgstr "Atajos de teclado"
 
 #: MiAZ/frontend/desktop/services/actions.py:360
 #: MiAZ/frontend/desktop/widgets/mainwindow.py:522
 msgid "Quit"
-msgstr ""
+msgstr "Salir"
 
 #: MiAZ/frontend/desktop/services/actions.py:361
 #: MiAZ/frontend/desktop/services/pluginsystem.py:52
@@ -918,9 +933,8 @@ msgstr "Ayuda"
 
 #: MiAZ/frontend/desktop/services/actions.py:369
 #: MiAZ/frontend/desktop/widgets/mainwindow.py:266
-#, fuzzy
 msgid "Delete documents"
-msgstr "Borrar los documentos seleccionados"
+msgstr "Borrar documentos"
 
 #: MiAZ/frontend/desktop/services/actions.py:370
 #: MiAZ/frontend/desktop/widgets/mainwindow.py:232
@@ -933,54 +947,53 @@ msgstr "Acción ignorada. Debes seleccionar al menos un documento."
 
 #: MiAZ/frontend/desktop/services/crash.py:91
 msgid "MiAZ encountered an unexpected error"
-msgstr ""
+msgstr "MiAZ ha encontrado un error inesperado"
 
 #: MiAZ/frontend/desktop/services/crash.py:92
 msgid ""
 "The application ran into a problem. You can help fix it by reporting the "
 "error below."
 msgstr ""
+"La aplicación tuvo un problema. Puedes ayudar a solucionarlo informando del "
+"error que aparece abajo."
 
 #. Link to the issue tracker.
 #: MiAZ/frontend/desktop/services/crash.py:105
 msgid "Report an issue"
-msgstr ""
+msgstr "Informar de un problema"
 
 #. Expandable full traceback in a read-only monospace view.
 #: MiAZ/frontend/desktop/services/crash.py:110
 msgid "Technical details"
-msgstr ""
+msgstr "Detalles técnicos"
 
 #: MiAZ/frontend/desktop/services/crash.py:127
-#, fuzzy
 msgid "Copy"
-msgstr "Derechos de autor"
+msgstr "Copiar"
 
 #: MiAZ/frontend/desktop/services/crash.py:129
 msgid "Save…"
-msgstr ""
+msgstr "Guardar…"
 
 #: MiAZ/frontend/desktop/services/crash.py:140
 msgid "Try to Continue"
-msgstr ""
+msgstr "Intentar continuar"
 
 #: MiAZ/frontend/desktop/services/crash.py:143
-#, fuzzy
 msgid "Close MiAZ"
-msgstr "Cerrar"
+msgstr "Cerrar MiAZ"
 
 #: MiAZ/frontend/desktop/services/crash.py:165
-#, fuzzy
 msgid "Error report copied to clipboard"
-msgstr "{num_docs} documentos copiados al portapapeles"
+msgstr "Informe de error copiado al portapapeles"
 
 #: MiAZ/frontend/desktop/services/crash.py:172
 msgid "Save error report"
-msgstr ""
+msgstr "Guardar informe de error"
 
 #: MiAZ/frontend/desktop/services/crash.py:181
 msgid "Error report saved"
-msgstr ""
+msgstr "Informe de error guardado"
 
 #: MiAZ/frontend/desktop/services/dialogs.py:21
 #: MiAZ/frontend/desktop/services/dialogs.py:433
@@ -1004,12 +1017,11 @@ msgid "No"
 msgstr "No"
 
 #: MiAZ/frontend/desktop/services/dialogs.py:524
-#: MiAZ/frontend/desktop/widgets/assistant.py:246
+#: MiAZ/frontend/desktop/widgets/assistant.py:247
 #: MiAZ/frontend/desktop/widgets/configview.py:232
 #: MiAZ/frontend/desktop/widgets/configview.py:268
-#, fuzzy
 msgid "Location"
-msgstr "Salir de la aplicación"
+msgstr "Ubicación"
 
 #: MiAZ/frontend/desktop/services/dialogs.py:568
 #: MiAZ/frontend/desktop/services/pluginsystem.py:48
@@ -1023,9 +1035,8 @@ msgstr "Descripción"
 
 #: MiAZ/frontend/desktop/services/factory.py:83
 #: data/resources/plugins/MiAZExport2Dir/export2dir.py:144
-#, fuzzy
 msgid "Select folder"
-msgstr "Seleccionar el directorio destino"
+msgstr "Seleccionar carpeta"
 
 #: MiAZ/frontend/desktop/services/factory.py:109
 #: MiAZ/frontend/desktop/services/factory.py:133
@@ -1038,9 +1049,9 @@ msgid "Type %s"
 msgstr "Tipo %s"
 
 #: MiAZ/frontend/desktop/services/massrename.py:241
-#, fuzzy, python-brace-format
+#, python-brace-format
 msgid "Rename {count} files by setting the field <b>{field}</b> to:\n"
-msgstr "Renombrar %d ficheros poniendo el campo <b>%s</b> a:\n"
+msgstr "Renombrar {count} archivos estableciendo el campo <b>{field}</b> a:\n"
 
 #: MiAZ/frontend/desktop/services/massrename.py:263
 #: MiAZ/frontend/desktop/services/massrename.py:360
@@ -1050,110 +1061,107 @@ msgstr "Renombrado masivo"
 
 #: MiAZ/frontend/desktop/services/massrename.py:300
 msgid "Date detected from each file"
-msgstr ""
+msgstr "Fecha detectada en cada archivo"
 
 #: MiAZ/frontend/desktop/services/massrename.py:330
 msgid "Detect date from each file"
-msgstr ""
+msgstr "Detectar la fecha de cada archivo"
 
 #: MiAZ/frontend/desktop/services/massrename.py:372
 msgid "Keep token(s)"
-msgstr ""
+msgstr "Conservar elemento(s)"
 
 #: MiAZ/frontend/desktop/services/massrename.py:372
 msgid "Remove token(s)"
-msgstr ""
+msgstr "Eliminar elemento(s)"
 
 #: MiAZ/frontend/desktop/services/massrename.py:372
 msgid "Add prefix"
-msgstr ""
+msgstr "Añadir prefijo"
 
 #: MiAZ/frontend/desktop/services/massrename.py:373
 msgid "Add suffix"
-msgstr ""
+msgstr "Añadir sufijo"
 
 #: MiAZ/frontend/desktop/services/massrename.py:373
 msgid "Find & replace"
-msgstr ""
+msgstr "Buscar y reemplazar"
 
 #: MiAZ/frontend/desktop/services/massrename.py:373
 msgid "Change case"
-msgstr ""
+msgstr "Cambiar mayúsculas/minúsculas"
 
 #: MiAZ/frontend/desktop/services/massrename.py:374
 msgid "Set value"
-msgstr ""
+msgstr "Establecer valor"
 
 #: MiAZ/frontend/desktop/services/massrename.py:379
 msgid "e.g. 2-3"
-msgstr ""
+msgstr "p. ej. 2-3"
 
 #: MiAZ/frontend/desktop/services/massrename.py:382
 msgid "find"
-msgstr ""
+msgstr "buscar"
 
 #: MiAZ/frontend/desktop/services/massrename.py:384
 msgid "replace with"
-msgstr ""
+msgstr "reemplazar por"
 
 #: MiAZ/frontend/desktop/services/massrename.py:386
 msgid "upper"
-msgstr ""
+msgstr "mayúsculas"
 
 #: MiAZ/frontend/desktop/services/massrename.py:386
 msgid "lower"
-msgstr ""
+msgstr "minúsculas"
 
 #: MiAZ/frontend/desktop/services/massrename.py:386
-#, fuzzy
 msgid "title"
-msgstr "Título"
+msgstr "título"
 
 #: MiAZ/frontend/desktop/services/massrename.py:395
-#, fuzzy
 msgid "Positions"
-msgstr "Descripción"
+msgstr "Posiciones"
 
 #: MiAZ/frontend/desktop/services/massrename.py:396
 msgid "Separator"
-msgstr ""
+msgstr "Separador"
 
 #: MiAZ/frontend/desktop/services/massrename.py:397
 msgid "Text"
-msgstr ""
+msgstr "Texto"
 
 #: MiAZ/frontend/desktop/services/massrename.py:398
 msgid "Find"
-msgstr ""
+msgstr "Buscar"
 
 #: MiAZ/frontend/desktop/services/massrename.py:399
 #: data/resources/plugins/MiAZNotes/lib/allview.py:409
 #: data/resources/plugins/MiAZNotes/lib/listview.py:360
 msgid "Replace"
-msgstr ""
+msgstr "Reemplazar"
 
 #: MiAZ/frontend/desktop/services/massrename.py:400
 msgid "Case"
-msgstr ""
+msgstr "Mayúsculas/minúsculas"
 
 #: MiAZ/frontend/desktop/services/massrename.py:401
 msgid "Value"
-msgstr ""
+msgstr "Valor"
 
 #: MiAZ/frontend/desktop/services/massrename.py:473
 #, python-brace-format
 msgid "Renamed {r}, skipped {s}"
-msgstr ""
+msgstr "Renombrados {r}, omitidos {s}"
 
 #: MiAZ/frontend/desktop/services/massrename.py:477
 #, python-brace-format
 msgid "Transform the <b>concept</b> of {count} files:\n"
-msgstr ""
+msgstr "Transformar el <b>concepto</b> de {count} archivos:\n"
 
 #: MiAZ/frontend/desktop/services/massrename.py:504
-#, fuzzy
 msgid "Mass renaming: concept"
-msgstr "Renombrado masivo de documentos"
+msgstr "Renombrado masivo: concepto"
 
 #: MiAZ/frontend/desktop/services/pluginsystem.py:45
 msgid "Module"
@@ -1275,7 +1283,8 @@ msgstr "Borrado"
 
 #: MiAZ/frontend/desktop/services/pluginsystem.py:68
 msgid "Plugins for securely removing documents or data from the repository"
-msgstr "Plugins para borrar con seguridad documentos o datos de un repositorio"
+msgstr ""
+"Plugins para borrar con seguridad documentos o datos de un repositorio"
 
 #: MiAZ/frontend/desktop/services/pluginsystem.py:70
 msgid "Content Organisation"
@@ -1334,7 +1343,8 @@ msgid "Dashboard Widgets"
 msgstr "Widgets del panel de control"
 
 #: MiAZ/frontend/desktop/services/pluginsystem.py:78
-msgid "Plugins that provide a summary of key information in a dashboard format"
+msgid ""
+"Plugins that provide a summary of key information in a dashboard format"
 msgstr ""
 "Plugins que proporcionan un resumen de la información clave en formato de "
 "panel de control"
@@ -1521,8 +1531,8 @@ msgid ""
 "Plugins that enable multiple users to work on the same document "
 "simultaneously"
 msgstr ""
-"Complementos que permiten que varios usuarios trabajen en el mismo documento "
-"simultáneamente"
+"Complementos que permiten que varios usuarios trabajen en el mismo documento"
+" simultáneamente"
 
 #: MiAZ/frontend/desktop/services/pluginsystem.py:108
 msgid "Version Control"
@@ -1560,7 +1570,8 @@ msgstr "Herramientas de formato"
 
 #: MiAZ/frontend/desktop/services/pluginsystem.py:113
 msgid ""
-"Plugins for applying or automating specific formatting rules across documents"
+"Plugins for applying or automating specific formatting rules across "
+"documents"
 msgstr ""
 "Plugins para aplicar o automatizar reglas de formato específicas en todos "
 "los documentos"
@@ -1650,7 +1661,8 @@ msgstr "Extracción de datos"
 msgid ""
 "Plugins for extracting data from various sources (APIs, databases, files)"
 msgstr ""
-"Plugins para extraer datos de varias fuentes (APIs, bases de datos, ficheros)"
+"Plugins para extraer datos de varias fuentes (APIs, bases de datos, "
+"ficheros)"
 
 #: MiAZ/frontend/desktop/services/pluginsystem.py:128
 msgid "Data Transformation"
@@ -1700,8 +1712,8 @@ msgid ""
 "Plugins for NLP tasks like summarization, sentiment analysis, or entity "
 "recognition"
 msgstr ""
-"Plugins para tareas de PLN como el resumen, el análisis de sentimientos o el "
-"reconocimiento de entidades."
+"Plugins para tareas de PLN como el resumen, el análisis de sentimientos o el"
+" reconocimiento de entidades."
 
 #: MiAZ/frontend/desktop/services/pluginsystem.py:135
 msgid "Document AI"
@@ -1770,35 +1782,45 @@ msgid ""
 "Enable the countries you exchange documents with. Move them from the left "
 "list to the right one."
 msgstr ""
+"Habilita los países con los que intercambias documentos. Muévelos de la "
+"lista de la izquierda a la de la derecha."
 
 #: MiAZ/frontend/desktop/widgets/assistant.py:38
 msgid ""
 "Groups classify documents by area, for example banking, health or work. "
 "Enable the ones you need; you can add your own."
 msgstr ""
+"Los grupos clasifican los documentos por área, por ejemplo banca, salud o "
+"trabajo. Habilita los que necesites; puedes añadir los tuyos."
 
 #: MiAZ/frontend/desktop/widgets/assistant.py:40
 msgid ""
 "The purpose says what a document is for, for example invoice, contract or "
 "report. Enable the ones you use; you can add more."
 msgstr ""
+"El propósito indica para qué sirve un documento, por ejemplo factura, "
+"contrato o informe. Habilita los que uses; puedes añadir más."
 
 #: MiAZ/frontend/desktop/widgets/assistant.py:42
 msgid ""
 "Senders are the people or organisations that send you documents. Enable the "
 "ones you have; you can add your own."
 msgstr ""
+"Los remitentes son las personas u organizaciones que te envían documentos. "
+"Habilita los que tengas; puedes añadir los tuyos."
 
 #: MiAZ/frontend/desktop/widgets/assistant.py:44
 msgid ""
-"Recipients are the people or organisations you send documents to. Enable the "
-"ones you have; you can add your own."
+"Recipients are the people or organisations you send documents to. Enable the"
+" ones you have; you can add your own."
 msgstr ""
+"Los destinatarios son las personas u organizaciones a las que envías "
+"documentos. Habilita los que tengas; puedes añadir los tuyos."
 
 #: MiAZ/frontend/desktop/widgets/assistant.py:72
-#, fuzzy, python-brace-format
+#, python-brace-format
 msgid "Set up {shortname}"
-msgstr "¡Bienvenido a {shortname}!"
+msgstr "Configurar {shortname}"
 
 #. The two pages that exist before a repository is created.
 #: MiAZ/frontend/desktop/widgets/assistant.py:107
@@ -1806,39 +1828,41 @@ msgid "Welcome"
 msgstr "Bienvenido"
 
 #: MiAZ/frontend/desktop/widgets/assistant.py:108
-#, fuzzy
+#: MiAZ/frontend/desktop/widgets/assistant.py:224
 msgid "Create a repository"
-msgstr "Repositorio activo"
+msgstr "Crear un repositorio"
 
 #: MiAZ/frontend/desktop/widgets/assistant.py:112
-#, fuzzy
 msgid "Back"
-msgstr "Copia de seguridad"
+msgstr "Atrás"
 
 #: MiAZ/frontend/desktop/widgets/assistant.py:114
-#: MiAZ/frontend/desktop/widgets/assistant.py:343
+#: MiAZ/frontend/desktop/widgets/assistant.py:345
 msgid "Next"
-msgstr ""
+msgstr "Siguiente"
 
-#: MiAZ/frontend/desktop/widgets/assistant.py:151
+#: MiAZ/frontend/desktop/widgets/assistant.py:152
 #, python-brace-format
-msgid "<big><b>Welcome to {name}</b></big>"
-msgstr ""
+msgid "Welcome to {name}"
+msgstr "Te damos la bienvenida a {name}"
 
 #: MiAZ/frontend/desktop/widgets/assistant.py:161
 msgid ""
 "MiAZ organises your personal documents by renaming them with a consistent, "
-"meaningful name. There is no database: the directory itself is the database, "
-"and everything is derived from the filenames."
+"meaningful name. There is no database: the directory itself is the database,"
+" and everything is derived from the filenames."
 msgstr ""
+"MiAZ organiza tus documentos personales renombrándolos con un nombre "
+"coherente y significativo. No hay base de datos: el propio directorio es la "
+"base de datos y todo se deriva de los nombres de archivo."
 
 #: MiAZ/frontend/desktop/widgets/assistant.py:176
 msgid "Each document is named with seven fields:"
-msgstr ""
+msgstr "Cada documento se nombra con siete campos:"
 
 #: MiAZ/frontend/desktop/widgets/assistant.py:192
 msgid "For example:"
-msgstr ""
+msgstr "Por ejemplo:"
 
 #: MiAZ/frontend/desktop/widgets/assistant.py:209
 msgid ""
@@ -1846,99 +1870,93 @@ msgid ""
 "values you want for each field. You can go back at any time to change your "
 "choices."
 msgstr ""
+"Este asistente te ayudará a crear tu primer repositorio y a habilitar los "
+"valores que quieras para cada campo. Puedes volver atrás en cualquier "
+"momento para cambiar tus elecciones."
 
-#: MiAZ/frontend/desktop/widgets/assistant.py:223
-msgid "<big><b>Create a repository</b></big>"
-msgstr ""
-
-#: MiAZ/frontend/desktop/widgets/assistant.py:231
+#: MiAZ/frontend/desktop/widgets/assistant.py:232
 msgid ""
 "A repository is the folder where your documents live. Give it a name and "
 "choose the folder that will hold the files. The name can be anything you "
 "like; MiAZ derives the repository key from it."
 msgstr ""
+"Un repositorio es la carpeta donde viven tus documentos. Dale un nombre y "
+"elige la carpeta que contendrá los archivos. El nombre puede ser el que "
+"quieras; MiAZ deriva de él la clave del repositorio."
 
 #. Free text: this is the human-readable name, stored as the repository
 #. description. The repository key is derived from it with util.valid_key
 #. at creation time. The row subtitle previews that key as the user types.
-#: MiAZ/frontend/desktop/widgets/assistant.py:242
+#: MiAZ/frontend/desktop/widgets/assistant.py:243
 #: MiAZ/frontend/desktop/widgets/configview.py:231
 #: MiAZ/frontend/desktop/widgets/configview.py:267
-#, fuzzy
 msgid "Repository name"
-msgstr "Gestión de repositorios"
+msgstr "Nombre del repositorio"
 
-#: MiAZ/frontend/desktop/widgets/assistant.py:283
-#, fuzzy, python-brace-format
-msgid "<big><b>{title}</b></big>"
-msgstr "<b>Clave de {title}</b>"
-
-#: MiAZ/frontend/desktop/widgets/assistant.py:306
-msgid "<big><b>Summary</b></big>"
-msgstr ""
-
-#: MiAZ/frontend/desktop/widgets/assistant.py:314
-msgid ""
-"Review your setup. Use Back to change anything, or finish to open your "
-"repository."
-msgstr ""
-
-#: MiAZ/frontend/desktop/widgets/assistant.py:343
-msgid "Finish"
-msgstr ""
-
-#: MiAZ/frontend/desktop/widgets/assistant.py:352
-#, python-brace-format
-msgid "Step {x} of {y}"
-msgstr ""
-
-#: MiAZ/frontend/desktop/widgets/assistant.py:383
-#, python-brace-format
-msgid "Repository key: <tt>{key}</tt>"
-msgstr ""
-
-#: MiAZ/frontend/desktop/widgets/assistant.py:410
-msgid "Please enter a valid repository name"
-msgstr ""
-
-#: MiAZ/frontend/desktop/widgets/assistant.py:413
-msgid "Please choose an existing folder"
-msgstr ""
-
-#: MiAZ/frontend/desktop/widgets/assistant.py:420
-#, python-brace-format
-msgid "A repository with key \"{key}\" already exists"
-msgstr ""
-
-#: MiAZ/frontend/desktop/widgets/assistant.py:432
-#, fuzzy
-msgid "repository validation failed"
-msgstr "Error al restaurar configuración: "
-
-#: MiAZ/frontend/desktop/widgets/assistant.py:436
-msgid "Could not create the repository"
-msgstr ""
-
-#: MiAZ/frontend/desktop/widgets/assistant.py:444
-#, python-brace-format
-msgid "Repository created at <tt>{path}</tt>"
-msgstr ""
-
-#: MiAZ/frontend/desktop/widgets/assistant.py:456
+#: MiAZ/frontend/desktop/widgets/assistant.py:308
+#: MiAZ/frontend/desktop/widgets/assistant.py:458
 #: data/resources/plugins/MiAZNotes/lib/allview.py:157
 #: data/resources/plugins/MiAZNotes/lib/listview.py:113
 msgid "Summary"
 msgstr "Sumario"
 
-#: MiAZ/frontend/desktop/widgets/assistant.py:475
+#: MiAZ/frontend/desktop/widgets/assistant.py:316
+msgid ""
+"Review your setup. Use Back to change anything, or finish to open your "
+"repository."
+msgstr ""
+"Revisa tu configuración. Usa Atrás para cambiar algo, o finaliza para abrir "
+"tu repositorio."
+
+#: MiAZ/frontend/desktop/widgets/assistant.py:345
+msgid "Finish"
+msgstr "Finalizar"
+
+#: MiAZ/frontend/desktop/widgets/assistant.py:354
+#, python-brace-format
+msgid "Step {x} of {y}"
+msgstr "Paso {x} de {y}"
+
+#: MiAZ/frontend/desktop/widgets/assistant.py:385
+#, python-brace-format
+msgid "Repository key: <tt>{key}</tt>"
+msgstr "Clave del repositorio: <tt>{key}</tt>"
+
+#: MiAZ/frontend/desktop/widgets/assistant.py:412
+msgid "Please enter a valid repository name"
+msgstr "Introduce un nombre de repositorio válido"
+
+#: MiAZ/frontend/desktop/widgets/assistant.py:415
+msgid "Please choose an existing folder"
+msgstr "Elige una carpeta existente"
+
+#: MiAZ/frontend/desktop/widgets/assistant.py:422
+#, python-brace-format
+msgid "A repository with key \"{key}\" already exists"
+msgstr "Ya existe un repositorio con la clave «{key}»"
+
+#: MiAZ/frontend/desktop/widgets/assistant.py:434
+msgid "repository validation failed"
+msgstr "la validación del repositorio ha fallado"
+
+#: MiAZ/frontend/desktop/widgets/assistant.py:438
+msgid "Could not create the repository"
+msgstr "No se pudo crear el repositorio"
+
+#: MiAZ/frontend/desktop/widgets/assistant.py:446
+#, python-brace-format
+msgid "Repository created at <tt>{path}</tt>"
+msgstr "Repositorio creado en <tt>{path}</tt>"
+
+#: MiAZ/frontend/desktop/widgets/assistant.py:477
 #, python-brace-format
 msgid "Key: {key} · {path}"
-msgstr ""
+msgstr "Clave: {key} · {path}"
 
-#: MiAZ/frontend/desktop/widgets/assistant.py:483
-#, fuzzy, python-brace-format
+#: MiAZ/frontend/desktop/widgets/assistant.py:485
+#, python-brace-format
 msgid "{n} enabled"
-msgstr "en uso"
+msgstr "{n} habilitado(s)"
 
 #. Setup columnview columns
 #: MiAZ/frontend/desktop/widgets/columnview.py:104
@@ -1963,61 +1981,56 @@ msgid "{item_types} management"
 msgstr "Gestión de {item_types}"
 
 #: MiAZ/frontend/desktop/widgets/configview.py:124
-#, fuzzy
 msgid "Export…"
-msgstr "Exportar"
+msgstr "Exportar…"
 
 #: MiAZ/frontend/desktop/widgets/configview.py:127
-#, fuzzy
 msgid "Import…"
-msgstr "Importar"
+msgstr "Importar…"
 
 #: MiAZ/frontend/desktop/widgets/configview.py:136
-#, fuzzy, python-brace-format
+#, python-brace-format
 msgid "Export {name} configuration"
-msgstr "Restaurar configuración"
+msgstr "Exportar la configuración de {name}"
 
 #: MiAZ/frontend/desktop/widgets/configview.py:149
-#, fuzzy, python-brace-format
+#, python-brace-format
 msgid "Configuration exported: {name}"
-msgstr "Plugin {plugin_name} v{plugin_version} importado satisfactoriamente"
+msgstr "Configuración exportada: {name}"
 
 #: MiAZ/frontend/desktop/widgets/configview.py:153
-#, fuzzy
 msgid "Export failed: "
-msgstr "Copia de seguridad fallida: "
+msgstr "La exportación ha fallado: "
 
 #: MiAZ/frontend/desktop/widgets/configview.py:158
-#, fuzzy, python-brace-format
+#, python-brace-format
 msgid "Import {name} configuration"
-msgstr "Restaurar configuración"
+msgstr "Importar la configuración de {name}"
 
 #: MiAZ/frontend/desktop/widgets/configview.py:172
 msgid "Import failed: could not read the file"
-msgstr ""
+msgstr "La importación ha fallado: no se pudo leer el archivo"
 
 #: MiAZ/frontend/desktop/widgets/configview.py:175
 msgid "Import failed: unexpected file format"
-msgstr ""
+msgstr "La importación ha fallado: formato de archivo inesperado"
 
 #: MiAZ/frontend/desktop/widgets/configview.py:182
 #, python-brace-format
 msgid "Imported {n} {name} items"
-msgstr ""
+msgstr "Se importaron {n} elementos de {name}"
 
 #: MiAZ/frontend/desktop/widgets/configview.py:230
-#, fuzzy
 msgid "Add repository"
-msgstr "Repositorio activo"
+msgstr "Añadir repositorio"
 
 #: MiAZ/frontend/desktop/widgets/configview.py:234
 #: MiAZ/frontend/desktop/widgets/mainwindow.py:218
 #: MiAZ/frontend/desktop/widgets/rename.py:541
 #: MiAZ/frontend/desktop/widgets/selector.py:58
 #: MiAZ/frontend/desktop/widgets/selector.py:229
-#, fuzzy
 msgid "Add"
-msgstr " : Añadir"
+msgstr "Añadir"
 
 #: MiAZ/frontend/desktop/widgets/configview.py:249
 msgid "Repository added to list of available repositories"
@@ -2044,29 +2057,25 @@ msgid ""
 msgstr ""
 "No se ha añadido el repositorio. Datos no válidos.\n"
 "\n"
-"Inténtalo otra vez seleccionando un directorio de destino y un nombre de "
-"repositorio válidos,"
+"Inténtalo otra vez seleccionando un directorio de destino y un nombre de repositorio válidos,"
 
 #: MiAZ/frontend/desktop/widgets/configview.py:266
-#, fuzzy
 msgid "Edit repository"
-msgstr "Repositorio activo"
+msgstr "Editar repositorio"
 
 #: MiAZ/frontend/desktop/widgets/configview.py:270
 #: MiAZ/frontend/desktop/widgets/selector.py:275
 #: data/resources/plugins/MiAZNotes/lib/editor.py:149
 msgid "Save"
-msgstr ""
+msgstr "Guardar"
 
 #: MiAZ/frontend/desktop/widgets/configview.py:294
-#, fuzzy
 msgid "Repository updated"
-msgstr "Gestión de repositorios"
+msgstr "Repositorio actualizado"
 
 #: MiAZ/frontend/desktop/widgets/configview.py:298
-#, fuzzy
 msgid "Repository not updated"
-msgstr "No se ha actualizado el directorio destino para el repositorio "
+msgstr "Repositorio no actualizado"
 
 #: MiAZ/frontend/desktop/widgets/configview.py:319
 #, python-brace-format
@@ -2084,9 +2093,9 @@ msgid "{title} {item} ready to be used"
 msgstr "{title} {item} listo para ser usado"
 
 #: MiAZ/frontend/desktop/widgets/configview.py:351
-#, fuzzy, python-brace-format
+#, python-brace-format
 msgid "{title} {item} is already being used"
-msgstr "{title} {item} ya está habilitado"
+msgstr "{title} {item} ya está en uso"
 
 #: MiAZ/frontend/desktop/widgets/configview.py:360
 #, python-brace-format
@@ -2094,9 +2103,9 @@ msgid "{title} {item} set as default"
 msgstr "{title} {item} establecido como valor por defecto"
 
 #: MiAZ/frontend/desktop/widgets/configview.py:390
-#, fuzzy, python-brace-format
+#, python-brace-format
 msgid "{title} {item} removed from de list of used items"
-msgstr "{title} {id} eliminado de la lista de items disponibles"
+msgstr "{title} {item} eliminado de la lista de elementos en uso"
 
 #: MiAZ/frontend/desktop/widgets/configview.py:580
 #: data/resources/plugins/MiAZNotes/lib/allview.py:24
@@ -2122,13 +2131,13 @@ msgstr "Error: {error}"
 #: MiAZ/frontend/desktop/widgets/selector.py:343
 #, python-brace-format
 msgid "Delete {title}?"
-msgstr ""
+msgstr "¿Borrar {title}?"
 
 #: MiAZ/frontend/desktop/widgets/configview.py:742
 #: MiAZ/frontend/desktop/widgets/selector.py:344
 #, python-brace-format
 msgid "<i>{desc}</i> will be permanently removed."
-msgstr ""
+msgstr "<i>{desc}</i> se eliminará de forma permanente."
 
 #: MiAZ/frontend/desktop/widgets/configview.py:752
 #, python-brace-format
@@ -2166,7 +2175,7 @@ msgstr "¡No se puede encontrar el objeto plugin para {plugin_id}!!"
 
 #: MiAZ/frontend/desktop/widgets/configview.py:953
 msgid "Cannot disable plugin"
-msgstr ""
+msgstr "No se puede deshabilitar el plugin"
 
 #: MiAZ/frontend/desktop/widgets/configview.py:954
 #, python-brace-format
@@ -2177,47 +2186,55 @@ msgid ""
 "\n"
 "Disable them first."
 msgstr ""
+"El plugin <b>{plugin}</b> es necesario para los siguientes plugins habilitados:\n"
+"\n"
+"{deps}\n"
+"\n"
+"Deshabilítalos primero."
 
 #: MiAZ/frontend/desktop/widgets/configview.py:987
 msgid "Missing plugin dependencies"
-msgstr ""
+msgstr "Faltan dependencias de plugins"
 
 #: MiAZ/frontend/desktop/widgets/configview.py:988
 #, python-brace-format
 msgid ""
-"Plugin <b>{plugin}</b> requires the following plugin(s) which are not "
-"installed:\n"
+"Plugin <b>{plugin}</b> requires the following plugin(s) which are not installed:\n"
 "\n"
 "{deps}"
 msgstr ""
+"El plugin <b>{plugin}</b> necesita los siguientes plugins, que no están instalados:\n"
+"\n"
+"{deps}"
 
 #: MiAZ/frontend/desktop/widgets/configview.py:995
-#, fuzzy
 msgid "Enable required plugins"
-msgstr "Gestionar plugins para este repositorio"
+msgstr "Habilitar los plugins necesarios"
 
 #: MiAZ/frontend/desktop/widgets/configview.py:996
 #, python-brace-format
 msgid ""
-"Plugin <b>{plugin}</b> requires the following plugin(s) which are not "
-"enabled:\n"
+"Plugin <b>{plugin}</b> requires the following plugin(s) which are not enabled:\n"
 "\n"
 "{deps}\n"
 "\n"
 "Enable them now?"
 msgstr ""
+"El plugin <b>{plugin}</b> necesita los siguientes plugins, que no están habilitados:\n"
+"\n"
+"{deps}\n"
+"\n"
+"¿Habilitarlos ahora?"
 
 #: MiAZ/frontend/desktop/widgets/configview.py:1000
 #: MiAZ/frontend/desktop/widgets/selector.py:99
-#, fuzzy
 msgid "Enable"
-msgstr "Habiltar "
+msgstr "Habilitar"
 
 #: MiAZ/frontend/desktop/widgets/configview.py:1035
 #: MiAZ/frontend/desktop/widgets/pluginuimanager.py:104
-#, fuzzy
 msgid "Plugin info"
-msgstr "Plug-in"
+msgstr "Información del plugin"
 
 #: MiAZ/frontend/desktop/widgets/configview.py:1036
 #: MiAZ/frontend/desktop/widgets/pluginuimanager.py:105
@@ -2226,19 +2243,16 @@ msgstr "Propiedades"
 
 #: MiAZ/frontend/desktop/widgets/configview.py:1041
 #: MiAZ/frontend/desktop/widgets/pluginuimanager.py:110
-#, fuzzy
 msgid "Data Sheet"
-msgstr "Gestión de datos"
+msgstr "Ficha de datos"
 
 #: MiAZ/frontend/desktop/widgets/dr.py:38
-#, fuzzy
 msgid "Backup & Restore"
-msgstr "Restaurar"
+msgstr "Copia de seguridad y restauración"
 
 #: MiAZ/frontend/desktop/widgets/dr.py:50
-#, fuzzy
 msgid "Target repository"
-msgstr "Repositorio activo"
+msgstr "Repositorio de destino"
 
 #: MiAZ/frontend/desktop/widgets/dr.py:67
 msgid "Operation type"
@@ -2246,9 +2260,8 @@ msgstr "Tipo de operación"
 
 #: MiAZ/frontend/desktop/widgets/dr.py:89
 #: MiAZ/frontend/desktop/widgets/dr.py:110
-#, fuzzy
 msgid "Backup files"
-msgstr "Copia de seguridad"
+msgstr "Copia de seguridad de archivos"
 
 #: MiAZ/frontend/desktop/widgets/dr.py:90
 #: MiAZ/frontend/desktop/widgets/dr.py:115
@@ -2257,23 +2270,20 @@ msgstr "Configuración de copia de seguridad"
 
 #: MiAZ/frontend/desktop/widgets/dr.py:91
 #: MiAZ/frontend/desktop/widgets/dr.py:120
-#, fuzzy
 msgid "Backup repository"
-msgstr "Repositorio activo"
+msgstr "Copia de seguridad del repositorio"
 
 #: MiAZ/frontend/desktop/widgets/dr.py:95
-#, fuzzy
 msgid "Restore files"
-msgstr "Restaurar"
+msgstr "Restaurar archivos"
 
 #: MiAZ/frontend/desktop/widgets/dr.py:96
 msgid "Restore configuration"
 msgstr "Restaurar configuración"
 
 #: MiAZ/frontend/desktop/widgets/dr.py:97
-#, fuzzy
 msgid "Restore repository"
-msgstr "Repositorio activo"
+msgstr "Restaurar repositorio"
 
 #: MiAZ/frontend/desktop/widgets/dr.py:105
 msgid "What to process"
@@ -2284,19 +2294,16 @@ msgid "Proceed"
 msgstr "Proceder"
 
 #: MiAZ/frontend/desktop/widgets/dr.py:143
-#, fuzzy
 msgid "Select a repository first"
-msgstr "Seleccionar un directorio"
+msgstr "Selecciona antes un repositorio"
 
 #: MiAZ/frontend/desktop/widgets/dr.py:150
-#, fuzzy
 msgid "Repository path not found"
-msgstr "No se ha actualizado el directorio destino para el repositorio "
+msgstr "No se ha encontrado la ruta del repositorio"
 
 #: MiAZ/frontend/desktop/widgets/dr.py:174
-#, fuzzy
 msgid "Select backup destination folder"
-msgstr "Seleccionar el directorio destino"
+msgstr "Selecciona la carpeta de destino de la copia de seguridad"
 
 #: MiAZ/frontend/desktop/widgets/dr.py:180
 msgid "Select folder with files to restore"
@@ -2328,9 +2335,8 @@ msgstr "Restauración de archivos fallida: "
 
 #: MiAZ/frontend/desktop/widgets/dr.py:243
 #: MiAZ/frontend/desktop/widgets/dr.py:287
-#, fuzzy
 msgid "Destructive operation"
-msgstr "Descripción"
+msgstr "Operación destructiva"
 
 #: MiAZ/frontend/desktop/widgets/dr.py:244
 msgid ""
@@ -2353,9 +2359,8 @@ msgid "Zip archives"
 msgstr "Archivos ZIP"
 
 #: MiAZ/frontend/desktop/widgets/dr.py:280
-#, fuzzy
 msgid "Configuration restored successfully"
-msgstr "Plugin {plugin_name} v{plugin_version} importado satisfactoriamente"
+msgstr "Configuración restaurada correctamente"
 
 #: MiAZ/frontend/desktop/widgets/dr.py:284
 msgid "Restore configuration failed: "
@@ -2374,14 +2379,12 @@ msgid "Select repository backup file"
 msgstr "Selecciona archivo de copia de seguridad del repositorio"
 
 #: MiAZ/frontend/desktop/widgets/dr.py:324
-#, fuzzy
 msgid "Repository restored successfully"
-msgstr "Plugin {plugin_name} v{plugin_version} importado satisfactoriamente"
+msgstr "Repositorio restaurado correctamente"
 
 #: MiAZ/frontend/desktop/widgets/dr.py:328
-#, fuzzy
 msgid "Restore repository failed: "
-msgstr "Repositorio %s habilitado"
+msgstr "La restauración del repositorio ha fallado: "
 
 #: MiAZ/frontend/desktop/widgets/mainwindow.py:154
 #: data/resources/plugins/MiAZNotes/lib/model.py:36
@@ -2398,14 +2401,15 @@ msgid ""
 "Press Escape to toggle it.\n"
 "You can hide this button in Settings ▸ User Interface."
 msgstr ""
+"Mostrar u ocultar la barra lateral.\n"
+"Pulsa Escape para alternarla.\n"
+"Puedes ocultar este botón en Ajustes ▸ Interfaz de usuario."
 
 #: MiAZ/frontend/desktop/widgets/mainwindow.py:217
-#, fuzzy
 msgid "Add or import documents"
-msgstr "Plugin para importar documentos"
+msgstr "Añadir o importar documentos"
 
 #: MiAZ/frontend/desktop/widgets/mainwindow.py:254
-#, fuzzy
 msgid "Mass rename documents"
 msgstr "Renombrado masivo de documentos"
 
@@ -2425,82 +2429,74 @@ msgid "{nr} documents in this repository"
 msgstr "{nr} documentos en este repositorio"
 
 #: MiAZ/frontend/desktop/widgets/mainwindow.py:497
-#, fuzzy, python-brace-format
+#, python-brace-format
 msgid "Repository {name}"
-msgstr "Gestión de repositorios"
+msgstr "Repositorio {name}"
 
 #: MiAZ/frontend/desktop/widgets/mainwindow.py:516
 msgid "Keyboard Shortcuts"
-msgstr ""
+msgstr "Atajos de teclado"
 
 #: MiAZ/frontend/desktop/widgets/mainwindow.py:527
-#, fuzzy
 msgid "Main Menu"
-msgstr "Pantalla principal"
+msgstr "Menú principal"
 
 #: MiAZ/frontend/desktop/widgets/pages.py:23
-#, fuzzy, python-brace-format
+#, python-brace-format
 msgid "Welcome to {shortname}"
-msgstr "¡Bienvenido a {shortname}!"
+msgstr "Te damos la bienvenida a {shortname}"
 
 #: MiAZ/frontend/desktop/widgets/pages.py:24
-#, fuzzy
 msgid "No active repositories have been found"
-msgstr "No se ha encontrado ningún repositorio activo\n"
+msgstr "No se ha encontrado ningún repositorio activo"
 
 #. Primary action: the guided first-run assistant.
 #: MiAZ/frontend/desktop/widgets/pages.py:33
-#, fuzzy
 msgid "Set up a repository"
-msgstr "Seleccionar un directorio"
+msgstr "Configurar un repositorio"
 
 #. Secondary action: the advanced repository manager.
 #: MiAZ/frontend/desktop/widgets/pages.py:41
-#, fuzzy
 msgid "Manage repositories"
-msgstr "Gestionar plugins para este repositorio"
+msgstr "Gestionar repositorios"
 
 #: MiAZ/frontend/desktop/widgets/pages.py:63
 msgid "No documents found"
 msgstr "No se han encontrado documentos"
 
 #: MiAZ/frontend/desktop/widgets/pages.py:64
-#, fuzzy
 msgid "Try a different search, reset filters or add new documents"
 msgstr ""
-"<big>Prueba una búsqueda diferente, restablece los filtros o añade nuevos "
-"documentos</big><big>Prueba buscando algo diferente, limpiando los filtros o "
-"añadiendo nuvos documentos</big>"
+"Prueba otra búsqueda, restablece los filtros o añade nuevos documentos"
 
 #: MiAZ/frontend/desktop/widgets/rename.py:131
 msgid "Choose a concept"
 msgstr "Elige un concepto"
 
 #: MiAZ/frontend/desktop/widgets/rename.py:186
-#, fuzzy, python-brace-format
+#, python-brace-format
 msgid "Add a new {title} to this repository"
-msgstr "Repositorio activo"
+msgstr "Añadir un nuevo {title} a este repositorio"
 
 #: MiAZ/frontend/desktop/widgets/rename.py:278
 msgid "No suggestions"
-msgstr ""
+msgstr "Sin sugerencias"
 
 #: MiAZ/frontend/desktop/widgets/rename.py:279
 msgid "No other documents share this concept yet."
-msgstr ""
+msgstr "Todavía no hay otros documentos que compartan este concepto."
 
 #: MiAZ/frontend/desktop/widgets/rename.py:285
 msgid "Suggested metadata"
-msgstr ""
+msgstr "Metadatos sugeridos"
 
 #: MiAZ/frontend/desktop/widgets/rename.py:329
 msgid "YYYYmmdd"
 msgstr "AAAAmmdd"
 
 #: MiAZ/frontend/desktop/widgets/rename.py:382
-#, fuzzy
 msgid "Type to filter existing concepts…"
-msgstr "Escribe aquí para filtrar"
+msgstr "Escribe para filtrar los conceptos existentes…"
 
 #. Current filename
 #: MiAZ/frontend/desktop/widgets/rename.py:452
@@ -2514,17 +2510,17 @@ msgstr "<b>Nuevo nombre de fichero</b>"
 
 #: MiAZ/frontend/desktop/widgets/rename.py:538
 #: MiAZ/frontend/desktop/widgets/selector.py:226
-#, fuzzy, python-brace-format
+#, python-brace-format
 msgid "Add {title}"
-msgstr "{i_title}"
+msgstr "Añadir {title}"
 
 #: MiAZ/frontend/desktop/widgets/rename.py:539
 #: MiAZ/frontend/desktop/widgets/selector.py:227
 #: MiAZ/frontend/desktop/widgets/selector.py:272
 #: data/resources/plugins/MiAZAIAssistant/miazai/ui/dialog.py:187
-#, fuzzy, python-brace-format
+#, python-brace-format
 msgid "{title} key"
-msgstr "Id {title}"
+msgstr "Clave de {title}"
 
 #. Banner
 #: MiAZ/frontend/desktop/widgets/selector.py:37
@@ -2539,28 +2535,26 @@ msgstr "reiniciar"
 
 #: MiAZ/frontend/desktop/widgets/selector.py:60
 msgid "Remove"
-msgstr ""
+msgstr "Eliminar"
 
 #: MiAZ/frontend/desktop/widgets/selector.py:62
 #: MiAZ/frontend/desktop/widgets/selector.py:82
 #: data/resources/plugins/MiAZNotes/lib/editor.py:147
-#, fuzzy
 msgid "Edit"
-msgstr " : Editar"
+msgstr "Editar"
 
 #: MiAZ/frontend/desktop/widgets/selector.py:72
 msgid "Type here for filtering entries"
 msgstr "Escribe aquí para filtrar"
 
 #: MiAZ/frontend/desktop/widgets/selector.py:100
-#, fuzzy
 msgid "Disable"
-msgstr "Deshabiltar "
+msgstr "Deshabilitar"
 
 #: MiAZ/frontend/desktop/widgets/selector.py:195
-#, fuzzy, python-brace-format
+#, python-brace-format
 msgid "{num} {title} disabled"
-msgstr "{title} {desc} deshabilitado"
+msgstr "{num} {title} deshabilitado(s)"
 
 #: MiAZ/frontend/desktop/widgets/selector.py:205
 #: MiAZ/frontend/desktop/widgets/selector.py:355
@@ -2581,14 +2575,14 @@ msgstr ""
 "revisa."
 
 #: MiAZ/frontend/desktop/widgets/selector.py:271
-#, fuzzy, python-brace-format
+#, python-brace-format
 msgid "Edit {title}"
-msgstr "{i_title}"
+msgstr "Editar {title}"
 
 #: MiAZ/frontend/desktop/widgets/selector.py:308
-#, fuzzy, python-brace-format
+#, python-brace-format
 msgid "{title} {old} renamed to {new} globally"
-msgstr "{title} <i>{old}</i> renombrado a <i>{new}</i> globalmente"
+msgstr "{title} {old} renombrado a {new} globalmente"
 
 #: MiAZ/frontend/desktop/widgets/selector.py:311
 #, python-brace-format
@@ -2612,19 +2606,19 @@ msgstr ""
 "Por favor, deshabilítalo antes de borrarlo."
 
 #: MiAZ/frontend/desktop/widgets/selector.py:429
-#, fuzzy, python-brace-format
+#, python-brace-format
 msgid "{title} {desc} removed from the list of available {item_types}"
 msgstr "{title} {desc} eliminado de la lista de {item_types} disponibles"
 
 #: MiAZ/frontend/desktop/widgets/selector.py:431
-#, fuzzy, python-brace-format
+#, python-brace-format
 msgid "{title} {desc} not deleted"
-msgstr "{title} {desc} deshabilitado"
+msgstr "{title} {desc} no eliminado"
 
 #: MiAZ/frontend/desktop/widgets/selector.py:455
-#, fuzzy, python-brace-format
+#, python-brace-format
 msgid "{num} {title} enabled"
-msgstr "{title} habilitado"
+msgstr "{num} {title} habilitado(s)"
 
 #: MiAZ/frontend/desktop/widgets/settings.py:85
 msgid "Application settings"
@@ -2651,20 +2645,20 @@ msgid "Active repository"
 msgstr "Repositorio activo"
 
 #: MiAZ/frontend/desktop/widgets/settings.py:159
-#, fuzzy
 msgid "User Interface"
-msgstr "Interface de usuario"
+msgstr "Interfaz de usuario"
 
 #: MiAZ/frontend/desktop/widgets/settings.py:172
-#, fuzzy
 msgid "Display sidebar toggle button"
-msgstr "¿Mostrar el botón de Workspace?"
+msgstr "Mostrar el botón de la barra lateral"
 
 #: MiAZ/frontend/desktop/widgets/settings.py:173
 msgid ""
 "Show the headerbar icon that reveals or hides the sidebar. The sidebar can "
 "also be toggled with the Escape key."
 msgstr ""
+"Muestra el icono de la barra de cabecera que revela u oculta la barra "
+"lateral. La barra lateral también se puede alternar con la tecla Escape."
 
 #: MiAZ/frontend/desktop/widgets/settings.py:210
 #, python-brace-format
@@ -2686,9 +2680,8 @@ msgid "Settings for repository"
 msgstr "Ajustes del repositorio"
 
 #: MiAZ/frontend/desktop/widgets/sidebar.py:115
-#, fuzzy
 msgid "Search in all fields"
-msgstr "Limpiar todos los filtros"
+msgstr "Buscar en todos los campos"
 
 #: MiAZ/frontend/desktop/widgets/sidebar.py:141
 msgid "Search in Concept field"
@@ -2737,7 +2730,7 @@ msgstr "en uso"
 
 #: MiAZ/frontend/desktop/widgets/views.py:388
 msgid "Path"
-msgstr ""
+msgstr "Ruta"
 
 #: MiAZ/frontend/desktop/widgets/views.py:438
 msgid "Group Id"
@@ -2773,69 +2766,67 @@ msgid "Plugin Id"
 msgstr "Plug-in"
 
 #: MiAZ/frontend/desktop/widgets/views.py:553
-#, fuzzy
 msgid "Sent By"
 msgstr "Enviado por"
 
 #: MiAZ/frontend/desktop/widgets/views.py:554
-#, fuzzy
 msgid "Sent To"
 msgstr "Enviado a"
 
-#: MiAZ/frontend/desktop/widgets/workspace.py:275
+#: MiAZ/frontend/desktop/widgets/workspace.py:419
 msgid "This month"
 msgstr "Este mes"
 
-#: MiAZ/frontend/desktop/widgets/workspace.py:281
+#: MiAZ/frontend/desktop/widgets/workspace.py:425
 msgid "Since past month"
 msgstr "Desde hace un mes"
 
-#: MiAZ/frontend/desktop/widgets/workspace.py:286
+#: MiAZ/frontend/desktop/widgets/workspace.py:430
 msgid "Since last 3 months"
 msgstr "Desde hace tres meses"
 
-#: MiAZ/frontend/desktop/widgets/workspace.py:291
+#: MiAZ/frontend/desktop/widgets/workspace.py:435
 msgid "Since last 6 months"
 msgstr "Desde hace seis meses"
 
-#: MiAZ/frontend/desktop/widgets/workspace.py:296
+#: MiAZ/frontend/desktop/widgets/workspace.py:440
 msgid "Since last year"
 msgstr "Desde hace dos años"
 
-#: MiAZ/frontend/desktop/widgets/workspace.py:301
+#: MiAZ/frontend/desktop/widgets/workspace.py:445
 msgid "Since two years ago"
 msgstr "Desde hace dos años"
 
-#: MiAZ/frontend/desktop/widgets/workspace.py:306
+#: MiAZ/frontend/desktop/widgets/workspace.py:450
 msgid "Since three years ago"
 msgstr "Desde hace tres años"
 
-#: MiAZ/frontend/desktop/widgets/workspace.py:311
+#: MiAZ/frontend/desktop/widgets/workspace.py:455
 msgid "Since five years ago"
 msgstr "Desde hace cinco años"
 
-#: MiAZ/frontend/desktop/widgets/workspace.py:316
+#: MiAZ/frontend/desktop/widgets/workspace.py:460
 msgid "Since ten years ago"
 msgstr "Desde hace diez años"
 
-#: MiAZ/frontend/desktop/widgets/workspace.py:321
+#: MiAZ/frontend/desktop/widgets/workspace.py:465
 msgid "Future"
 msgstr "Futuro"
 
-#: MiAZ/frontend/desktop/widgets/workspace.py:325
+#: MiAZ/frontend/desktop/widgets/workspace.py:469
 msgid "All documents"
 msgstr "Todos los documentos"
 
-#: MiAZ/frontend/desktop/widgets/workspace.py:372
+#: MiAZ/frontend/desktop/widgets/workspace.py:516
 msgid "Browser"
-msgstr ""
+msgstr "Navegador"
 
-#: MiAZ/frontend/desktop/widgets/workspace.py:444
-#, fuzzy, python-brace-format
+#: MiAZ/frontend/desktop/widgets/workspace.py:588
+#, python-brace-format
 msgid "Remove filter: {field}"
-msgstr "Restauración de archivos fallida: "
+msgstr "Quitar filtro: {field}"
 
-#: MiAZ/frontend/desktop/widgets/workspace.py:752
+#: MiAZ/frontend/desktop/widgets/workspace.py:896
 #, python-brace-format
 msgid "Review ({review})"
 msgstr "Revisar ({review})"
@@ -2856,13 +2847,12 @@ msgstr "Importar documentos desde un directorio"
 
 #: data/resources/plugins/MiAZAddFromDir/adddir.py:96
 #: data/resources/plugins/MiAZImportDoc/adddoc.py:95
-#, fuzzy
 msgid "Document import cancelled"
-msgstr "Todos los documentos fueron importados satisfactoriamente"
+msgstr "Importación de documentos cancelada"
 
 #: data/resources/plugins/MiAZAddFromDir/adddir.py:100
 msgid "Could not open folder"
-msgstr ""
+msgstr "No se pudo abrir la carpeta"
 
 #: data/resources/plugins/MiAZAddFromDir/adddir.py:101
 #, python-brace-format
@@ -2871,6 +2861,9 @@ msgid ""
 "\n"
 "{error}"
 msgstr ""
+"No se pudo abrir el selector de carpetas.\n"
+"\n"
+"{error}"
 
 #: data/resources/plugins/MiAZAddFromDir/adddir.py:135
 msgid "All documents imported successfully"
@@ -2879,334 +2872,334 @@ msgstr "Todos los documentos fueron importados satisfactoriamente"
 #: data/resources/plugins/MiAZAIAssistant/miazaiassistant.py:27
 msgid "Suggest filename fields from document content using an AI provider"
 msgstr ""
+"Sugerir los campos del nombre de archivo a partir del contenido del "
+"documento con un proveedor de IA"
 
 #: data/resources/plugins/MiAZAIAssistant/miazaiassistant.py:69
-#, fuzzy
 msgid "Suggest filename…"
-msgstr "Nombre de fichero actual"
+msgstr "Sugerir nombre de archivo…"
 
 #: data/resources/plugins/MiAZAIAssistant/miazai/ui/dialog.py:31
 #: data/resources/plugins/MiAZAIAssistant/miazai/ui/dialog.py:129
 msgid "Suggest with AI"
-msgstr ""
+msgstr "Sugerir con IA"
 
 #: data/resources/plugins/MiAZAIAssistant/miazai/ui/dialog.py:33
 msgid "Ask AI to propose filename fields"
-msgstr ""
+msgstr "Pedir a la IA que proponga los campos del nombre de archivo"
 
 #: data/resources/plugins/MiAZAIAssistant/miazai/ui/dialog.py:44
 msgid "Choose another model…"
-msgstr ""
+msgstr "Elegir otro modelo…"
 
 #: data/resources/plugins/MiAZAIAssistant/miazai/ui/dialog.py:78
 #: data/resources/plugins/MiAZAIChat/miazaic/ui/chat.py:219
 #: data/resources/plugins/MiAZAIChat/miazaic/ui/chat.py:237
 msgid "Thinking…"
-msgstr ""
+msgstr "Pensando…"
 
 #: data/resources/plugins/MiAZAIAssistant/miazai/ui/dialog.py:97
 #, python-brace-format
 msgid ""
-"No extractable text found and provider \"{p}\" does not support file upload. "
-"Install pdftotext or tesseract."
+"No extractable text found and provider \"{p}\" does not support file upload."
+" Install pdftotext or tesseract."
 msgstr ""
+"No se encontró texto extraíble y el proveedor «{p}» no admite la subida de "
+"archivos. Instala pdftotext o tesseract."
 
 #: data/resources/plugins/MiAZAIAssistant/miazai/ui/dialog.py:132
 #, python-brace-format
 msgid "AI suggestion failed: {err}"
-msgstr ""
+msgstr "La sugerencia de IA ha fallado: {err}"
 
 #: data/resources/plugins/MiAZAIAssistant/miazai/ui/dialog.py:186
-#, fuzzy, python-brace-format
+#, python-brace-format
 msgid "Add new {title}"
-msgstr "<b>Añadir nuevo {title}</b>"
+msgstr "Añadir nuevo {title}"
 
 #: data/resources/plugins/MiAZAIAssistant/miazai/ui/settings.py:41
-#, fuzzy
 msgid "AI Assistant"
-msgstr "Asistente IA"
+msgstr "Asistente de IA"
 
 #: data/resources/plugins/MiAZAIAssistant/miazai/ui/settings.py:46
 #: data/resources/plugins/MiAZAIChat/miazaic/ui/settings.py:46
 #: data/resources/plugins/MiAZNotes/lib/model.py:17
 msgid "General"
-msgstr ""
+msgstr "General"
 
 #: data/resources/plugins/MiAZAIAssistant/miazai/ui/settings.py:48
 #: data/resources/plugins/MiAZAIChat/miazaic/ui/settings.py:48
-#, fuzzy
 msgid "Active provider"
-msgstr "Repositorio activo"
+msgstr "Proveedor activo"
 
 #: data/resources/plugins/MiAZAIAssistant/miazai/ui/settings.py:53
 #: data/resources/plugins/MiAZAIChat/miazaic/ui/settings.py:53
 msgid "Provider"
-msgstr ""
+msgstr "Proveedor"
 
 #: data/resources/plugins/MiAZAIAssistant/miazai/ui/settings.py:77
 #: data/resources/plugins/MiAZAIChat/miazaic/ui/settings.py:77
 msgid "API key"
-msgstr ""
+msgstr "Clave de API"
 
 #. The last entry is a sentinel that reveals a free-text row, so any
 #. model can be entered even when it is not in the prefilled list.
 #: data/resources/plugins/MiAZAIAssistant/miazai/ui/settings.py:91
 #: data/resources/plugins/MiAZAIChat/miazaic/ui/settings.py:91
 msgid "Custom…"
-msgstr ""
+msgstr "Personalizado…"
 
 #: data/resources/plugins/MiAZAIAssistant/miazai/ui/settings.py:96
 #: data/resources/plugins/MiAZAIChat/miazaic/ui/settings.py:96
 msgid "Model"
-msgstr ""
+msgstr "Modelo"
 
 #: data/resources/plugins/MiAZAIAssistant/miazai/ui/settings.py:99
 #: data/resources/plugins/MiAZAIChat/miazaic/ui/settings.py:99
-#, fuzzy
 msgid "Custom model"
-msgstr "Informes personalizados"
+msgstr "Modelo personalizado"
 
 #: data/resources/plugins/MiAZAIAssistant/miazai/ui/settings.py:123
 #: data/resources/plugins/MiAZAIChat/miazaic/ui/settings.py:123
 msgid "Base URL"
-msgstr ""
+msgstr "URL base"
 
 #: data/resources/plugins/MiAZAIAssistant/miazai/ui/settings.py:163
 #: data/resources/plugins/MiAZAIChat/miazaic/ui/settings.py:163
 msgid "No system keyring available. The API key is stored unencrypted."
 msgstr ""
+"No hay ningún llavero del sistema disponible. La clave de API se guarda sin "
+"cifrar."
 
 #: data/resources/plugins/MiAZAIChat/miazaichat.py:28
 msgid "Ask questions about the selected document and get answers in a chat"
 msgstr ""
+"Haz preguntas sobre el documento seleccionado y recibe respuestas en un chat"
 
 #: data/resources/plugins/MiAZAIChat/miazaichat.py:69
-#, fuzzy
 msgid "Chat with document…"
-msgstr "Escanear un documento"
+msgstr "Conversar con el documento…"
 
 #: data/resources/plugins/MiAZAIChat/miazaic/ui/chat.py:40
 #, python-brace-format
 msgid "Chat: {doc}"
-msgstr ""
+msgstr "Chat: {doc}"
 
 #: data/resources/plugins/MiAZAIChat/miazaic/ui/chat.py:47
-#, fuzzy
 msgid "Chat with document"
-msgstr "Escanear un documento"
+msgstr "Conversar con el documento"
 
 #: data/resources/plugins/MiAZAIChat/miazaic/ui/chat.py:55
 msgid "Ask something about this document…"
-msgstr ""
+msgstr "Pregunta algo sobre este documento…"
 
 #: data/resources/plugins/MiAZAIChat/miazaic/ui/chat.py:57
 #: data/resources/plugins/MiAZAIChat/miazaic/ui/chat.py:219
-#, fuzzy
 msgid "Send"
-msgstr "Remitente"
+msgstr "Enviar"
 
 #: data/resources/plugins/MiAZAIChat/miazaic/ui/chat.py:78
-#, fuzzy
 msgid "Loading document…"
-msgstr "Escanear un documento"
+msgstr "Cargando documento…"
 
 #: data/resources/plugins/MiAZAIChat/miazaic/ui/chat.py:100
 msgid "Document loaded. Ask your questions."
-msgstr ""
+msgstr "Documento cargado. Haz tus preguntas."
 
 #: data/resources/plugins/MiAZAIChat/miazaic/ui/chat.py:104
 msgid "No text was extracted; the file will be sent to the provider."
-msgstr ""
+msgstr "No se extrajo texto; el archivo se enviará al proveedor."
 
 #: data/resources/plugins/MiAZAIChat/miazaic/ui/chat.py:108
 msgid ""
 "No text could be extracted and this provider cannot read files directly. "
-"Install pdftotext or tesseract, or pick a provider that supports file upload "
-"in the plugin settings."
+"Install pdftotext or tesseract, or pick a provider that supports file upload"
+" in the plugin settings."
 msgstr ""
+"No se pudo extraer texto y este proveedor no puede leer archivos "
+"directamente. Instala pdftotext o tesseract, o elige un proveedor que admita"
+" la subida de archivos en los ajustes del plugin."
 
 #: data/resources/plugins/MiAZAIChat/miazaic/ui/chat.py:141
 #: data/resources/plugins/MiAZAIChat/miazaic/ui/chat.py:232
 msgid "Saved to notes"
-msgstr ""
+msgstr "Guardado en las notas"
 
 #: data/resources/plugins/MiAZAIChat/miazaic/ui/chat.py:144
 msgid "Could not save the note"
-msgstr ""
+msgstr "No se pudo guardar la nota"
 
 #: data/resources/plugins/MiAZAIChat/miazaic/ui/chat.py:177
 msgid "(no answer)"
-msgstr ""
+msgstr "(sin respuesta)"
 
 #: data/resources/plugins/MiAZAIChat/miazaic/ui/chat.py:206
-#, fuzzy, python-brace-format
+#, python-brace-format
 msgid "Error: {err}"
-msgstr "Error: {error}"
+msgstr "Error: {err}"
 
 #: data/resources/plugins/MiAZAIChat/miazaic/ui/chat.py:208
-#, fuzzy, python-brace-format
+#, python-brace-format
 msgid "Chat failed: {err}"
-msgstr "Copia de seguridad fallida: "
+msgstr "El chat ha fallado: {err}"
 
 #: data/resources/plugins/MiAZAIChat/miazaic/ui/chat.py:227
 msgid "You"
-msgstr ""
+msgstr "Tú"
 
 #: data/resources/plugins/MiAZAIChat/miazaic/ui/chat.py:234
 msgid "Save to notes"
-msgstr ""
+msgstr "Guardar en las notas"
 
 #: data/resources/plugins/MiAZAIChat/miazaic/ui/settings.py:41
 msgid "AI Chat"
-msgstr ""
+msgstr "Chat con IA"
 
 #: data/resources/plugins/MiAZAutoScan/autoscan.py:33
-#, fuzzy
 msgid ""
 "Scan documents in background and import them directly into the repository"
 msgstr ""
-"{count} documentos removidos de proyectos (ya no están en el repositorio)"
+"Escanear documentos en segundo plano e importarlos directamente al "
+"repositorio"
 
 #: data/resources/plugins/MiAZAutoScan/autoscan.py:123
 #: data/resources/plugins/MiAZAutoScan/autoscan.py:157
 #: data/resources/plugins/MiAZAutoScan/autoscan.py:180
 msgid "Scan and import (auto)"
-msgstr ""
+msgstr "Escanear e importar (automático)"
 
 #: data/resources/plugins/MiAZAutoScan/autoscan.py:199
 msgid "Scanner tools not installed"
-msgstr ""
+msgstr "Herramientas de escáner no instaladas"
 
 #: data/resources/plugins/MiAZAutoScan/autoscan.py:200
 #, python-brace-format
 msgid ""
-"These programs are needed to detect the scanner but were not found: {tools}. "
-"Install the SANE package that provides them (for example sane-utils or sane-"
-"backends) and restart MiAZ."
+"These programs are needed to detect the scanner but were not found: {tools}."
+" Install the SANE package that provides them (for example sane-utils or "
+"sane-backends) and restart MiAZ."
 msgstr ""
+"Estos programas son necesarios para detectar el escáner, pero no se "
+"encontraron: {tools}. Instala el paquete de SANE que los proporciona (por "
+"ejemplo sane-utils o sane-backends) y reinicia MiAZ."
 
 #: data/resources/plugins/MiAZAutoScan/autoscan.py:276
 msgid ""
 "No scanner device detected. Check your scanner connection and SANE "
 "configuration."
 msgstr ""
+"No se detectó ningún escáner. Comprueba la conexión del escáner y la "
+"configuración de SANE."
 
 #: data/resources/plugins/MiAZAutoScan/autoscan.py:332
 msgid "Scan completed but no output file was created"
-msgstr ""
+msgstr "El escaneo terminó pero no se creó ningún archivo de salida"
 
 #: data/resources/plugins/MiAZAutoScan/autoscan.py:337
 msgid "Scan timed out after 120 seconds"
-msgstr ""
+msgstr "El escaneo agotó el tiempo de espera tras 120 segundos"
 
 #: data/resources/plugins/MiAZAutoScan/autoscan.py:380
 msgid "Scan completed but no output files were created"
-msgstr ""
+msgstr "El escaneo terminó pero no se creó ningún archivo de salida"
 
 #: data/resources/plugins/MiAZAutoScan/autoscan.py:386
 msgid "Scan timed out after 300 seconds"
-msgstr ""
+msgstr "El escaneo agotó el tiempo de espera tras 300 segundos"
 
 #: data/resources/plugins/MiAZAutoScan/autoscan.py:467
-#, fuzzy
 msgid "1 document scanned and imported"
-msgstr "No se han encontrado documentos"
+msgstr "1 documento escaneado e importado"
 
 #: data/resources/plugins/MiAZAutoScan/autoscan.py:469
-#, fuzzy, python-brace-format
+#, python-brace-format
 msgid "{count} documents scanned and imported"
-msgstr "{count} documentos desasignados"
+msgstr "{count} documentos escaneados e importados"
 
 #: data/resources/plugins/MiAZAutoScan/autoscan.py:477
 #: data/resources/plugins/MiAZImportDoc/adddoc.py:125
-#, fuzzy
 msgid "Some documents could not be imported"
-msgstr "No se han encontrado documentos"
+msgstr "Algunos documentos no se pudieron importar"
 
 #: data/resources/plugins/MiAZAutoScan/autoscan.py:507
-#, fuzzy
 msgid "Scan failed"
-msgstr "Copia de seguridad fallida: "
+msgstr "El escaneo ha fallado"
 
 #: data/resources/plugins/MiAZAutoScan/autoscan.py:519
-#, fuzzy
 msgid "Scanner settings"
-msgstr "Ajustes de la aplicación"
+msgstr "Ajustes del escáner"
 
 #: data/resources/plugins/MiAZAutoScan/autoscan.py:520
 msgid "Configure the scanner device and scan parameters"
-msgstr ""
+msgstr "Configurar el dispositivo de escáner y los parámetros de escaneo"
 
 #: data/resources/plugins/MiAZAutoScan/autoscan.py:532
 #: data/resources/plugins/MiAZAutoScan/autoscan.py:551
-#, fuzzy
 msgid "Scanner device"
-msgstr "Comando del escáner"
+msgstr "Dispositivo de escáner"
 
 #: data/resources/plugins/MiAZAutoScan/autoscan.py:533
 msgid "SANE device to use for scanning"
-msgstr ""
+msgstr "Dispositivo SANE que se usará para escanear"
 
 #: data/resources/plugins/MiAZAutoScan/autoscan.py:563
-#, fuzzy
 msgid "Resolution"
-msgstr "Borrado"
+msgstr "Resolución"
 
 #: data/resources/plugins/MiAZAutoScan/autoscan.py:564
 msgid "Scan resolution in DPI"
-msgstr ""
+msgstr "Resolución de escaneo en PPP"
 
 #: data/resources/plugins/MiAZAutoScan/autoscan.py:572
 msgid "Color mode"
-msgstr ""
+msgstr "Modo de color"
 
 #: data/resources/plugins/MiAZAutoScan/autoscan.py:573
 msgid "Color or grayscale scan"
-msgstr ""
+msgstr "Escaneo en color o escala de grises"
 
 #: data/resources/plugins/MiAZAutoScan/autoscan.py:582
 msgid "Flatbed or Automatic Document Feeder"
-msgstr ""
+msgstr "Plano o alimentador automático de documentos"
 
 #: data/resources/plugins/MiAZAutoScan/autoscan.py:590
 msgid "Format"
-msgstr ""
+msgstr "Formato"
 
 #: data/resources/plugins/MiAZAutoScan/autoscan.py:591
 msgid "Output file format"
-msgstr ""
+msgstr "Formato del archivo de salida"
 
 #: data/resources/plugins/MiAZAutoScan/autoscan.py:599
-#, fuzzy
 msgid "Default filename fields"
-msgstr "Limpiar todos los filtros"
+msgstr "Campos de nombre de archivo por defecto"
 
 #: data/resources/plugins/MiAZAutoScan/autoscan.py:600
 msgid ""
 "Default values for the 7-field document name. Leave empty to omit a field."
 msgstr ""
+"Valores por defecto para el nombre de documento de 7 campos. Déjalo vacío "
+"para omitir un campo."
 
 #: data/resources/plugins/MiAZAutoScan/autoscan.py:625
 msgid "Select a default value or leave empty"
-msgstr ""
+msgstr "Selecciona un valor por defecto o déjalo vacío"
 
 #: data/resources/plugins/MiAZColumnVisibility/colvis.py:25
-#, fuzzy
 msgid "Toggle workspace column visibility"
-msgstr "Alternar la vista del área de trabajo"
+msgstr "Alternar la visibilidad de las columnas del área de trabajo"
 
 #: data/resources/plugins/MiAZColumnVisibility/colvis.py:117
 msgid "Column visibility"
 msgstr "Visibilidad de columnas"
 
 #: data/resources/plugins/MiAZColumnVisibility/colvis.py:177
-#, fuzzy
 msgid "Workspace columns"
-msgstr "Área de trabajo"
+msgstr "Columnas del área de trabajo"
 
 #: data/resources/plugins/MiAZColumnVisibility/colvis.py:178
 msgid "Show or hide columns in the Documents view"
-msgstr ""
+msgstr "Mostrar u ocultar columnas en la vista de Documentos"
 
 #: data/resources/plugins/MiAZCopy2Clipboard/copy2clipboard.py:20
 msgid "Copy to clipboard"
@@ -3219,7 +3212,7 @@ msgstr "Copiar nombres de documentos"
 #: data/resources/plugins/MiAZCopy2Clipboard/copy2clipboard.py:84
 #, python-brace-format
 msgid "{num_items} documents copied to clipboard"
-msgstr "{num_docs} documentos copiados al portapapeles"
+msgstr "{num_items} documentos copiados al portapapeles"
 
 #: data/resources/plugins/MiAZCopy2Clipboard/copy2clipboard.py:87
 #, python-brace-format
@@ -3245,23 +3238,20 @@ msgstr "Consulte su aplicación de hoja de cálculo predeterminada"
 #: data/resources/plugins/MiAZExport2Dir/export2dir.py:26
 #: data/resources/plugins/MiAZExport2Dir/export2dir.py:97
 #: data/resources/plugins/MiAZExport2Dir/export2dir.py:154
-#, fuzzy
 msgid "Export to directory"
-msgstr "Importar un directorio"
+msgstr "Exportar a un directorio"
 
 #: data/resources/plugins/MiAZExport2Dir/export2dir.py:45
 msgid "Year"
 msgstr "Año"
 
 #: data/resources/plugins/MiAZExport2Dir/export2dir.py:46
-#, fuzzy
 msgid "Month"
-msgstr "mes"
+msgstr "Mes"
 
 #: data/resources/plugins/MiAZExport2Dir/export2dir.py:47
-#, fuzzy
 msgid "Day"
-msgstr "día"
+msgstr "Día"
 
 #. # Pattern row
 #: data/resources/plugins/MiAZExport2Dir/export2dir.py:116
@@ -3281,18 +3271,16 @@ msgid "Each letter represent a directory:\n"
 msgstr "Cada letra representa un directorio:\n"
 
 #: data/resources/plugins/MiAZExport2Dir/export2dir.py:137
-#, fuzzy
 msgid "Select pattern"
-msgstr "Seleccionar el directorio destino"
+msgstr "Seleccionar patrón"
 
 #: data/resources/plugins/MiAZExport2Dir/export2dir.py:146
 msgid "Select target folder"
 msgstr "Seleccionar el directorio destino"
 
 #: data/resources/plugins/MiAZExport2Dir/export2dir.py:147
-#, fuzzy
 msgid "No target folder set yet"
-msgstr "Se ha actualizado el directorio destino para el repositorio "
+msgstr "Aún no se ha definido una carpeta de destino"
 
 #: data/resources/plugins/MiAZExport2Dir/export2dir.py:167
 msgid "Error selecting files"
@@ -3304,29 +3292,25 @@ msgid "Check your default file browser"
 msgstr "Consulte su navegador de archivos predeterminado"
 
 #: data/resources/plugins/MiAZExport2Dir/export2dir.py:211
-#, fuzzy
 msgid "Action canceled"
-msgstr "Acción cancelada por el usuario"
+msgstr "Acción cancelada"
 
 #: data/resources/plugins/MiAZExport2Dir/export2dir.py:211
-#, fuzzy
 msgid "No documents exported"
-msgstr "No se han encontrado documentos"
+msgstr "No se exportó ningún documento"
 
 #: data/resources/plugins/MiAZExport2Text/export2text.py:21
 #: data/resources/plugins/MiAZExport2Text/export2text.py:76
-#, fuzzy
 msgid "Export to text editor"
-msgstr "Exportar con este patrón"
+msgstr "Exportar a un editor de texto"
 
 #: data/resources/plugins/MiAZExport2Text/export2text.py:108
 msgid "Check your default text editor"
 msgstr "Consulte su editor de texto predeterminado"
 
 #: data/resources/plugins/MiAZExport2Zip/export2zip.py:24
-#, fuzzy
 msgid "Compress documents into a ZIP file"
-msgstr "Exportar los documentos seleccionados a un fichero Zip"
+msgstr "Comprimir documentos en un archivo ZIP"
 
 #: data/resources/plugins/MiAZExport2Zip/export2zip.py:83
 msgid "Create a ZIP file"
@@ -3337,27 +3321,25 @@ msgid "Export successful"
 msgstr "Exportación realizada correctamente"
 
 #: data/resources/plugins/MiAZExport2Zip/export2zip.py:129
-#, fuzzy
 msgid "Export error"
-msgstr "Error: {error}"
+msgstr "Error de exportación"
 
 #: data/resources/plugins/MiAZFullscreen/fullscreen.py:23
 msgid "Toggle fullscreen"
-msgstr ""
+msgstr "Alternar pantalla completa"
 
 #: data/resources/plugins/MiAZFullscreen/fullscreen.py:95
 #: data/resources/plugins/MiAZFullscreen/fullscreen.py:147
 msgid "Enter fullscreen"
-msgstr ""
+msgstr "Entrar en pantalla completa"
 
 #: data/resources/plugins/MiAZFullscreen/fullscreen.py:147
 msgid "Leave fullscreen"
-msgstr ""
+msgstr "Salir de pantalla completa"
 
 #: data/resources/plugins/MiAZFullscreen/fullscreen.py:167
-#, fuzzy
 msgid "Display fullscreen toggle button"
-msgstr "¿Mostrar el botón de Workspace?"
+msgstr "Mostrar el botón de pantalla completa"
 
 #: data/resources/plugins/MiAZImportDoc/adddoc.py:23
 #: data/resources/plugins/MiAZImportDoc/adddoc.py:73
@@ -3366,7 +3348,7 @@ msgstr "Añadir nuevo(s) documento(s)"
 
 #: data/resources/plugins/MiAZImportDoc/adddoc.py:99
 msgid "Could not open files"
-msgstr ""
+msgstr "No se pudieron abrir los archivos"
 
 #: data/resources/plugins/MiAZImportDoc/adddoc.py:100
 #, python-brace-format
@@ -3375,11 +3357,14 @@ msgid ""
 "\n"
 "{error}"
 msgstr ""
+"No se pudo abrir el selector de archivos.\n"
+"\n"
+"{error}"
 
 #: data/resources/plugins/MiAZImportDoc/adddoc.py:122
-#, fuzzy, python-brace-format
+#, python-brace-format
 msgid "{count} documents imported successfully"
-msgstr "Plugin {plugin_name} v{plugin_version} importado satisfactoriamente"
+msgstr "{count} documentos importados correctamente"
 
 #: data/resources/plugins/MiAZImportDoc/adddoc.py:126
 #, python-brace-format
@@ -3388,11 +3373,13 @@ msgid ""
 "\n"
 "{items}"
 msgstr ""
+"Estos documentos no se pudieron importar:\n"
+"\n"
+"{items}"
 
 #: data/resources/plugins/MiAZImportFromScan/scan.py:41
-#, fuzzy
 msgid "Import document from scanner"
-msgstr "Importar documento"
+msgstr "Importar documento desde el escáner"
 
 #: data/resources/plugins/MiAZImportFromScan/scan.py:93
 msgid "Scan a document"
@@ -3430,18 +3417,16 @@ msgstr "Usuario"
 
 #: data/resources/plugins/MiAZImportFromScan/scan.py:114
 #: data/resources/plugins/MiAZImportFromScan/scan.py:115
-#, fuzzy
 msgid "System"
-msgstr "sistema"
+msgstr "Sistema"
 
 #: data/resources/plugins/MiAZImportFromScan/scan.py:120
 msgid "Unknown"
 msgstr "Desconocido"
 
 #: data/resources/plugins/MiAZImportFromScan/scan.py:204
-#, fuzzy
 msgid "Scanner application"
-msgstr "Salir de la aplicación"
+msgstr "Aplicación de escáner"
 
 #: data/resources/plugins/MiAZImportFromScan/scan.py:222
 msgid "Scanner application to launch"
@@ -3461,61 +3446,55 @@ msgid "Enter the command used to launch your scanner software"
 msgstr "Ingrese el comando utilizado para lanzar su software de escáner"
 
 #: data/resources/plugins/MiAZImportFromZip/importfromzip.py:24
-#, fuzzy
 msgid "Import documents from a ZIP file"
-msgstr "Exportar los documentos seleccionados a un fichero Zip"
+msgstr "Importar documentos desde un archivo ZIP"
 
 #: data/resources/plugins/MiAZImportFromZip/importfromzip.py:66
-#, fuzzy
 msgid "Import documents from ZIP"
-msgstr "Importar documento"
+msgstr "Importar documentos desde ZIP"
 
 #: data/resources/plugins/MiAZImportFromZip/importfromzip.py:77
-#, fuzzy
 msgid "Select a ZIP file"
-msgstr "Crear un archivo ZIP"
+msgstr "Seleccionar un archivo ZIP"
 
 #: data/resources/plugins/MiAZImportFromZip/importfromzip.py:80
-#, fuzzy
 msgid "ZIP archives"
 msgstr "Archivos ZIP"
 
 #: data/resources/plugins/MiAZImportFromZip/importfromzip.py:139
-#, fuzzy
 msgid "Import error"
-msgstr "Error: {error}"
+msgstr "Error de importación"
 
 #: data/resources/plugins/MiAZImportFromZip/importfromzip.py:149
-#, fuzzy, python-brace-format
+#, python-brace-format
 msgid "{count} documents imported from ZIP"
-msgstr "Plugin {plugin_name} v{plugin_version} importado satisfactoriamente"
+msgstr "{count} documentos importados desde ZIP"
 
 #: data/resources/plugins/MiAZNewspaper/MiAZNewspaper.py:34
 msgid "MiAZ Newspaper"
-msgstr ""
+msgstr "Periódico MiAZ"
 
 #: data/resources/plugins/MiAZNewspaper/MiAZNewspaper.py:137
 msgid "Open as Newspaper"
-msgstr ""
+msgstr "Abrir como periódico"
 
 #: data/resources/plugins/MiAZNewspaper/MiAZNewspaper.py:288
 #: data/resources/plugins/MiAZNewspaper/MiAZNewspaper.py:289
 msgid "issues"
-msgstr ""
+msgstr "números"
 
 #: data/resources/plugins/MiAZNewspaper/MiAZNewspaper.py:288
 msgid "requests"
-msgstr ""
+msgstr "solicitudes"
 
 #: data/resources/plugins/MiAZNewspaper/MiAZNewspaper.py:289
 msgid "posts"
-msgstr ""
+msgstr "publicaciones"
 
 #: data/resources/plugins/MiAZNewspaper/MiAZNewspaper.py:289
 #: data/resources/plugins/MiAZNewspaper/MiAZNewspaper.py:290
-#, fuzzy
 msgid "files"
-msgstr "Ficheros"
+msgstr "archivos"
 
 #: data/resources/plugins/MiAZNewspaper/MiAZNewspaper.py:295
 #, python-brace-format
@@ -3523,46 +3502,48 @@ msgid ""
 "A new invoice has been filed to the {group} ledger and now awaits your "
 "review."
 msgstr ""
+"Se ha archivado una nueva factura en el libro de {group} y ahora espera tu "
+"revisión."
 
 #: data/resources/plugins/MiAZNewspaper/MiAZNewspaper.py:296
 #, python-brace-format
 msgid "A request has been recorded and filed to the {group} section."
 msgstr ""
+"Se ha registrado una solicitud y se ha archivado en la sección de {group}."
 
 #: data/resources/plugins/MiAZNewspaper/MiAZNewspaper.py:297
 #, python-brace-format
 msgid "A statement has arrived and joined the {group} record."
-msgstr ""
+msgstr "Ha llegado un extracto y se ha incorporado al registro de {group}."
 
 #: data/resources/plugins/MiAZNewspaper/MiAZNewspaper.py:298
 #, python-brace-format
 msgid "An informative note has been posted to the {group} section."
-msgstr ""
+msgstr "Se ha publicado una nota informativa en la sección de {group}."
 
 #: data/resources/plugins/MiAZNewspaper/MiAZNewspaper.py:299
 #, python-brace-format
 msgid "A contract has been filed to the {group} section."
-msgstr ""
+msgstr "Se ha archivado un contrato en la sección de {group}."
 
 #: data/resources/plugins/MiAZNewspaper/MiAZNewspaper.py:300
 #, python-brace-format
 msgid "A ticket has been issued and filed to the {group} section."
-msgstr ""
+msgstr "Se ha emitido un ticket y se ha archivado en la sección de {group}."
 
 #: data/resources/plugins/MiAZNewspaper/MiAZNewspaper.py:305
 #, python-brace-format
 msgid "A {purpose} has been filed to the {group} section."
-msgstr ""
+msgstr "Se ha archivado un/a {purpose} en la sección de {group}."
 
 #: data/resources/plugins/MiAZNewspaper/MiAZNewspaper.py:306
-#, fuzzy
 msgid "document"
-msgstr "Documento"
+msgstr "documento"
 
 #: data/resources/plugins/MiAZNewspaper/MiAZNewspaper.py:309
 #, python-brace-format
 msgid "{sender} {verb} {concept}, filed {date}."
-msgstr ""
+msgstr "{sender} {verb} {concept}, archivado el {date}."
 
 #. Two sentences naming section, sender, recipient, date and concept.
 #: data/resources/plugins/MiAZNewspaper/MiAZNewspaper.py:319
@@ -3571,218 +3552,216 @@ msgid ""
 "The {group} section of the archive receives {concept} from {sender}, dated "
 "{date}, addressed to {recipient}."
 msgstr ""
+"La sección de {group} del archivo recibe {concept} de {sender}, con fecha "
+"{date}, dirigido a {recipient}."
 
 #: data/resources/plugins/MiAZNewspaper/MiAZNewspaper.py:321
 msgid "a new filing"
-msgstr ""
+msgstr "un nuevo archivado"
 
 #: data/resources/plugins/MiAZNewspaper/MiAZNewspaper.py:325
 #, python-brace-format
 msgid ""
-"Classified as {a_purpose}, the document joins the permanent record, where it "
-"can be retrieved, renamed, or assigned to a project at any time."
+"Classified as {a_purpose}, the document joins the permanent record, where it"
+" can be retrieved, renamed, or assigned to a project at any time."
 msgstr ""
+"Clasificado como {a_purpose}, el documento se une al registro permanente, "
+"donde se puede recuperar, renombrar o asignar a un proyecto en cualquier "
+"momento."
 
 #: data/resources/plugins/MiAZNewspaper/MiAZNewspaper.py:326
 msgid "a filing"
-msgstr ""
+msgstr "un archivado"
 
 #: data/resources/plugins/MiAZNewspaper/MiAZNewspaper.py:346
 msgid "Unfiled"
-msgstr ""
+msgstr "Sin archivar"
 
 #: data/resources/plugins/MiAZNewspaper/MiAZNewspaper.py:437
 #: data/resources/plugins/MiAZNewspaper/MiAZNewspaper.py:502
 msgid "From"
-msgstr ""
+msgstr "De"
 
 #: data/resources/plugins/MiAZNewspaper/MiAZNewspaper.py:439
 #: data/resources/plugins/MiAZNewspaper/MiAZNewspaper.py:503
 msgid "to"
-msgstr ""
+msgstr "a"
 
 #: data/resources/plugins/MiAZNewspaper/MiAZNewspaper.py:469
 msgid ""
-"As with every entry in The MiAZ Times, this report is composed entirely from "
-"the document’s seven filing fields and links directly to the original held "
+"As with every entry in The MiAZ Times, this report is composed entirely from"
+" the document’s seven filing fields and links directly to the original held "
 "in your repository."
 msgstr ""
+"Como en cada entrada de The MiAZ Times, este reportaje se compone "
+"íntegramente a partir de los siete campos de archivado del documento y "
+"enlaza directamente con el original guardado en tu repositorio."
 
 #: data/resources/plugins/MiAZNewspaper/MiAZNewspaper.py:524
-#, fuzzy
 msgid "Sections"
-msgstr "Descripción"
+msgstr "Secciones"
 
 #: data/resources/plugins/MiAZNewspaper/MiAZNewspaper.py:525
 msgid "“Every paper in its place.”"
-msgstr ""
+msgstr "«Cada papel en su sitio.»"
 
 #: data/resources/plugins/MiAZNewspaper/MiAZNewspaper.py:526
 msgid "Generated by MiAZ"
-msgstr ""
+msgstr "Generado por MiAZ"
 
 #: data/resources/plugins/MiAZNewspaper/MiAZNewspaper.py:527
-#, fuzzy
 msgid "Read the document →"
-msgstr "Renombrar documento"
+msgstr "Leer el documento →"
 
 #: data/resources/plugins/MiAZNewspaper/MiAZNewspaper.py:528
 msgid "Latest Filings"
-msgstr ""
+msgstr "Últimos archivados"
 
 #: data/resources/plugins/MiAZNewspaper/MiAZNewspaper.py:529
 msgid "In This Edition"
-msgstr ""
+msgstr "En esta edición"
 
 #: data/resources/plugins/MiAZNewspaper/MiAZNewspaper.py:530
 msgid "Off the Press"
-msgstr ""
+msgstr "Recién salido"
 
 #: data/resources/plugins/MiAZNewspaper/MiAZNewspaper.py:531
 msgid ""
 "is set from your document repository and printed by the MiAZNewspaper "
 "plugin. Every story links to its file in the archive."
 msgstr ""
+"se compone a partir de tu repositorio de documentos y lo imprime el plugin "
+"MiAZNewspaper. Cada noticia enlaza con su archivo en el repositorio."
 
 #: data/resources/plugins/MiAZNewspaper/MiAZNewspaper.py:532
 msgid ""
 "— composed from the filing record. Open the document to read the original."
 msgstr ""
+"— compuesto a partir del registro de archivado. Abre el documento para leer "
+"el original."
 
 #: data/resources/plugins/MiAZNewspaper/MiAZNewspaper.py:533
 msgid "On the Record"
-msgstr ""
+msgstr "Para que conste"
 
 #: data/resources/plugins/MiAZNewspaper/MiAZNewspaper.py:534
-#, fuzzy
 msgid "Open document"
-msgstr "Renombrar documento"
+msgstr "Abrir documento"
 
 #: data/resources/plugins/MiAZNewspaper/MiAZNewspaper.py:535
-#, fuzzy
 msgid "Document preview"
-msgstr "Visor de documentos"
+msgstr "Vista previa del documento"
 
 #: data/resources/plugins/MiAZNewspaper/MiAZNewspaper.py:536
-#, fuzzy
 msgid "No documents in this edition."
-msgstr "{nr} documentos en este repositorio"
+msgstr "No hay documentos en esta edición."
 
 #: data/resources/plugins/MiAZNotes/lib/allview.py:22
-#, fuzzy
 msgid "All statuses"
-msgstr "Todas las subcategorías"
+msgstr "Todos los estados"
 
 #: data/resources/plugins/MiAZNotes/lib/allview.py:23
-#, fuzzy
 msgid "All priorities"
-msgstr "Todas las categorías"
+msgstr "Todas las prioridades"
 
 #: data/resources/plugins/MiAZNotes/lib/allview.py:66
 #: data/resources/plugins/MiAZNotes/lib/listview.py:81
 msgid "Refresh"
-msgstr ""
+msgstr "Actualizar"
 
 #: data/resources/plugins/MiAZNotes/lib/allview.py:82
 #: data/resources/plugins/MiAZNotes/lib/listview.py:83
-#, fuzzy
 msgid "Backup notes…"
-msgstr "Copia de seguridad"
+msgstr "Copia de seguridad de notas…"
 
 #: data/resources/plugins/MiAZNotes/lib/allview.py:83
 #: data/resources/plugins/MiAZNotes/lib/listview.py:84
-#, fuzzy
 msgid "Restore notes…"
-msgstr "Restaurar"
+msgstr "Restaurar notas…"
 
 #: data/resources/plugins/MiAZNotes/lib/allview.py:85
 msgid "Notes menu"
-msgstr ""
+msgstr "Menú de notas"
 
 #: data/resources/plugins/MiAZNotes/lib/allview.py:107
 msgid "Filter notes"
-msgstr ""
+msgstr "Filtrar notas"
 
 #: data/resources/plugins/MiAZNotes/lib/allview.py:115
 msgid "Filter by status"
-msgstr ""
+msgstr "Filtrar por estado"
 
 #: data/resources/plugins/MiAZNotes/lib/allview.py:121
 #: data/resources/plugins/MiAZNotes/lib/model.py:35
 msgid "In Progress"
-msgstr ""
+msgstr "En curso"
 
 #: data/resources/plugins/MiAZNotes/lib/allview.py:129
 msgid "Filter by priority"
-msgstr ""
+msgstr "Filtrar por prioridad"
 
 #: data/resources/plugins/MiAZNotes/lib/allview.py:134
-#, fuzzy
 msgid "Filter by category"
-msgstr "Subcategoría"
+msgstr "Filtrar por categoría"
 
 #: data/resources/plugins/MiAZNotes/lib/allview.py:154
 #: data/resources/plugins/MiAZNotes/lib/editor.py:92
 #: data/resources/plugins/MiAZNotes/lib/listview.py:111
 msgid "Status"
-msgstr ""
+msgstr "Estado"
 
 #: data/resources/plugins/MiAZNotes/lib/allview.py:155
 #: data/resources/plugins/MiAZNotes/lib/editor.py:88
 #: data/resources/plugins/MiAZNotes/lib/listview.py:112
 msgid "Priority"
-msgstr ""
+msgstr "Prioridad"
 
 #: data/resources/plugins/MiAZNotes/lib/allview.py:166
 msgid "No notes"
-msgstr ""
+msgstr "Sin notas"
 
 #: data/resources/plugins/MiAZNotes/lib/allview.py:167
 msgid "Notes you attach to documents will appear here."
-msgstr ""
+msgstr "Aquí aparecerán las notas que adjuntes a los documentos."
 
 #: data/resources/plugins/MiAZNotes/lib/allview.py:203
-#, fuzzy
 msgid "Document is missing in the repository"
-msgstr "{nr} documentos en este repositorio"
+msgstr "El documento no está en el repositorio"
 
 #: data/resources/plugins/MiAZNotes/lib/allview.py:237
 #: data/resources/plugins/MiAZNotes/lib/allview.py:261
-#, fuzzy
 msgid "All Notes"
-msgstr "Todos los documentos"
+msgstr "Todas las notas"
 
 #: data/resources/plugins/MiAZNotes/lib/allview.py:258
 #, python-brace-format
 msgid "<b>{n}</b> orphan note(s)"
-msgstr ""
+msgstr "<b>{n}</b> nota(s) huérfana(s)"
 
 #: data/resources/plugins/MiAZNotes/lib/allview.py:363
 #: data/resources/plugins/MiAZNotes/lib/listview.py:317
 #: data/resources/plugins/MiAZNotes/notes.py:318
 #: data/resources/plugins/MiAZNotes/notes.py:765
-#, fuzzy
 msgid "Backup notes"
-msgstr "Copia de seguridad"
+msgstr "Copia de seguridad de notas"
 
 #: data/resources/plugins/MiAZNotes/lib/allview.py:378
 #: data/resources/plugins/MiAZNotes/lib/listview.py:331
 #: data/resources/plugins/MiAZNotes/notes.py:689
 #, python-brace-format
 msgid "Backed up {count} notes"
-msgstr ""
+msgstr "Copia de seguridad de {count} notas"
 
 #: data/resources/plugins/MiAZNotes/lib/allview.py:384
 #: data/resources/plugins/MiAZNotes/lib/listview.py:335
 #: data/resources/plugins/MiAZNotes/notes.py:772
 msgid "Restore notes from backup"
-msgstr ""
+msgstr "Restaurar notas desde la copia de seguridad"
 
 #: data/resources/plugins/MiAZNotes/lib/allview.py:404
 #: data/resources/plugins/MiAZNotes/lib/listview.py:355
-#, fuzzy
 msgid "Restore mode"
-msgstr "Restaurar"
+msgstr "Modo de restauración"
 
 #: data/resources/plugins/MiAZNotes/lib/allview.py:405
 #: data/resources/plugins/MiAZNotes/lib/listview.py:356
@@ -3790,200 +3769,188 @@ msgid ""
 "Merge keeps existing notes and overwrites collisions.\n"
 "Replace moves existing notes aside before extracting."
 msgstr ""
+"Combinar conserva las notas existentes y sobrescribe las coincidencias.\n"
+"Reemplazar aparta las notas existentes antes de extraer."
 
 #: data/resources/plugins/MiAZNotes/lib/allview.py:410
 #: data/resources/plugins/MiAZNotes/lib/listview.py:361
 msgid "Merge"
-msgstr ""
+msgstr "Combinar"
 
 #: data/resources/plugins/MiAZNotes/lib/allview.py:421
 #: data/resources/plugins/MiAZNotes/lib/listview.py:372
 #: data/resources/plugins/MiAZNotes/notes.py:705
-#, fuzzy, python-brace-format
+#, python-brace-format
 msgid "Restored {count} notes"
-msgstr "{n} archivos restaurados"
+msgstr "Se restauraron {count} notas"
 
 #: data/resources/plugins/MiAZNotes/lib/editor.py:22
-#, fuzzy
 msgid "Other…"
-msgstr "Otros"
+msgstr "Otros…"
 
 #. Details are collapsed by default so the Markdown viewer below gets
 #. most of the vertical space. The user expands this row to edit them.
 #: data/resources/plugins/MiAZNotes/lib/editor.py:61
 msgid "Details"
-msgstr ""
+msgstr "Detalles"
 
 #: data/resources/plugins/MiAZNotes/lib/editor.py:65
-#, fuzzy
 msgid "Author"
-msgstr "Autores"
+msgstr "Autor"
 
 #: data/resources/plugins/MiAZNotes/lib/editor.py:76
 msgid "Delete this custom category"
-msgstr ""
+msgstr "Borrar esta categoría personalizada"
 
 #: data/resources/plugins/MiAZNotes/lib/editor.py:84
 msgid "New category name"
-msgstr ""
+msgstr "Nombre de la nueva categoría"
 
 #. Body
 #: data/resources/plugins/MiAZNotes/lib/editor.py:99
 msgid "Note (Markdown)"
-msgstr ""
+msgstr "Nota (Markdown)"
 
 #: data/resources/plugins/MiAZNotes/lib/editor.py:148
 msgid "Discard"
-msgstr ""
+msgstr "Descartar"
 
 #: data/resources/plugins/MiAZNotes/lib/listview.py:41
 #: data/resources/plugins/MiAZNotes/notes.py:722
-#, fuzzy, python-brace-format
+#, python-brace-format
 msgid "Notes - {document}"
-msgstr "Borrar los documentos seleccionados"
+msgstr "Notas: {document}"
 
 #: data/resources/plugins/MiAZNotes/lib/listview.py:64
 #: data/resources/plugins/MiAZNotes/lib/listview.py:125
 msgid "Add note"
-msgstr ""
+msgstr "Añadir nota"
 
 #: data/resources/plugins/MiAZNotes/lib/listview.py:88
-#, fuzzy
 msgid "Main menu"
-msgstr "Pantalla principal"
+msgstr "Menú principal"
 
 #: data/resources/plugins/MiAZNotes/lib/listview.py:123
 msgid "No notes yet"
-msgstr ""
+msgstr "Aún no hay notas"
 
 #: data/resources/plugins/MiAZNotes/lib/listview.py:124
 msgid "Create the first note for this document."
-msgstr ""
+msgstr "Crea la primera nota para este documento."
 
 #: data/resources/plugins/MiAZNotes/lib/listview.py:265
 msgid "Note created"
-msgstr ""
+msgstr "Nota creada"
 
 #: data/resources/plugins/MiAZNotes/lib/listview.py:269
 msgid "Note saved"
-msgstr ""
+msgstr "Nota guardada"
 
 #: data/resources/plugins/MiAZNotes/lib/listview.py:297
-#, fuzzy, python-brace-format
+#, python-brace-format
 msgid "Delete {count} note(s)?"
-msgstr "Borrar los documentos seleccionados"
+msgstr "¿Borrar {count} nota(s)?"
 
 #: data/resources/plugins/MiAZNotes/lib/listview.py:298
 msgid "This action cannot be undone. Use Backup to keep a copy first."
 msgstr ""
+"Esta acción no se puede deshacer. Usa la copia de seguridad para conservar "
+"una copia primero."
 
 #: data/resources/plugins/MiAZNotes/lib/listview.py:306
-#, fuzzy, python-brace-format
+#, python-brace-format
 msgid "Deleted {count} note(s)"
-msgstr "Borrar los documentos seleccionados"
-
-#: data/resources/plugins/MiAZNotes/lib/model.py:20
-#, fuzzy
-msgid "Finance"
-msgstr "Cancelar"
-
-#: data/resources/plugins/MiAZNotes/lib/model.py:22
-msgid "Health"
-msgstr ""
+msgstr "Se borró {count} nota(s)"
 
 #: data/resources/plugins/MiAZNotes/lib/model.py:23
-#, fuzzy
 msgid "Reference"
-msgstr "Preferencias"
+msgstr "Referencia"
 
 #: data/resources/plugins/MiAZNotes/lib/model.py:27
 msgid "Low"
-msgstr ""
+msgstr "Baja"
 
 #: data/resources/plugins/MiAZNotes/lib/model.py:28
 msgid "Medium"
-msgstr ""
+msgstr "Media"
 
 #: data/resources/plugins/MiAZNotes/lib/model.py:29
 msgid "High"
-msgstr ""
+msgstr "Alta"
 
 #: data/resources/plugins/MiAZNotes/lib/model.py:30
 msgid "Critical"
-msgstr ""
+msgstr "Crítica"
 
 #: data/resources/plugins/MiAZNotes/lib/model.py:34
 msgid "Draft"
-msgstr ""
+msgstr "Borrador"
 
 #: data/resources/plugins/MiAZNotes/lib/model.py:37
 msgid "Done"
-msgstr ""
+msgstr "Hecho"
 
 #: data/resources/plugins/MiAZNotes/lib/model.py:38
-#, fuzzy
 msgid "Archived"
-msgstr "Archivos ZIP"
+msgstr "Archivado"
 
 #: data/resources/plugins/MiAZNotes/lib/postit.py:89
 msgid "Open notes…"
-msgstr ""
+msgstr "Abrir notas…"
 
 #: data/resources/plugins/MiAZNotes/lib/postit.py:108
 #, python-brace-format
 msgid "{n} note(s) · {doc}"
-msgstr ""
+msgstr "{n} nota(s) · {doc}"
 
 #: data/resources/plugins/MiAZNotes/lib/postit.py:123
 msgid "(empty note)"
-msgstr ""
+msgstr "(nota vacía)"
 
 #: data/resources/plugins/MiAZNotes/notes.py:78
 msgid "Take Markdown notes linked to documents"
-msgstr ""
+msgstr "Toma notas en Markdown vinculadas a los documentos"
 
 #: data/resources/plugins/MiAZNotes/notes.py:274
 msgid "Notes…"
-msgstr ""
+msgstr "Notas…"
 
 #: data/resources/plugins/MiAZNotes/notes.py:303
 msgid "Notes"
-msgstr ""
+msgstr "Notas"
 
 #: data/resources/plugins/MiAZNotes/notes.py:310
 msgid "All Notes…"
-msgstr ""
+msgstr "Todas las notas…"
 
 #: data/resources/plugins/MiAZNotes/notes.py:323
-#, fuzzy
 msgid "Restore notes"
-msgstr "Restaurar"
+msgstr "Restaurar notas"
 
 #: data/resources/plugins/MiAZNotes/notes.py:504
-#, fuzzy
 msgid "Show only documents that have notes"
-msgstr "Mostrar los nombres en bruto de los documentos"
+msgstr "Mostrar solo los documentos que tienen notas"
 
 #: data/resources/plugins/MiAZNotes/notes.py:510
 msgid "Only with notes"
-msgstr ""
+msgstr "Solo con notas"
 
 #: data/resources/plugins/MiAZNotes/notes.py:626
-#, fuzzy, python-brace-format
+#, python-brace-format
 msgid "{n} note(s) for this document"
-msgstr "Plugin para importar documentos"
+msgstr "{n} nota(s) para este documento"
 
 #: data/resources/plugins/MiAZOCR/ocr.py:31
 msgid "Extract text from PDF documents with OCR and save it as a note"
-msgstr ""
+msgstr "Extraer texto de documentos PDF con OCR y guardarlo como nota"
 
 #: data/resources/plugins/MiAZOCR/ocr.py:86
 msgid "Extract text (OCR)…"
-msgstr ""
+msgstr "Extraer texto (OCR)…"
 
 #: data/resources/plugins/MiAZOCR/ocr.py:109
 msgid "OCR tools not installed"
-msgstr ""
+msgstr "Herramientas de OCR no instaladas"
 
 #: data/resources/plugins/MiAZOCR/ocr.py:111
 #, python-brace-format
@@ -3998,64 +3965,72 @@ msgid ""
 "• Debian/Ubuntu: <tt>sudo apt install ocrmypdf poppler-utils</tt>\n"
 "• Arch: <tt>sudo pacman -S ocrmypdf poppler</tt>"
 msgstr ""
+"MiAZOCR necesita las siguientes herramientas de línea de comandos, que no están instaladas:\n"
+"\n"
+"<b>{tools}</b>\n"
+"\n"
+"Instálalas y vuelve a habilitar el plugin:\n"
+"\n"
+"• Fedora: <tt>sudo dnf install ocrmypdf poppler-utils</tt>\n"
+"• Debian/Ubuntu: <tt>sudo apt install ocrmypdf poppler-utils</tt>\n"
+"• Arch: <tt>sudo pacman -S ocrmypdf poppler</tt>"
 
 #: data/resources/plugins/MiAZOCR/ocr.py:170
 #: data/resources/plugins/MiAZOCR/ocr.py:320
 msgid "OCR"
-msgstr ""
+msgstr "OCR"
 
 #: data/resources/plugins/MiAZOCR/ocr.py:171
-#, fuzzy
 msgid "Select at least one document"
-msgstr "Debes seleccionar al menos un documento"
+msgstr "Selecciona al menos un documento"
 
 #: data/resources/plugins/MiAZOCR/ocr.py:179
-#, fuzzy
 msgid "No documents to process"
-msgstr "No se han encontrado documentos"
+msgstr "No hay documentos que procesar"
 
 #: data/resources/plugins/MiAZOCR/ocr.py:180
 msgid ""
 "OCR runs only on reviewed PDF documents. Documents still pending review and "
 "non-PDF files are skipped."
 msgstr ""
+"El OCR solo se ejecuta en documentos PDF revisados. Se omiten los documentos"
+" pendientes de revisión y los archivos que no son PDF."
 
 #: data/resources/plugins/MiAZOCR/ocr.py:198
 #: data/resources/plugins/MiAZOCR/ocr.py:329
-#, fuzzy
 msgid "Document language"
-msgstr "Documento AI"
+msgstr "Idioma del documento"
 
 #: data/resources/plugins/MiAZOCR/ocr.py:199
 msgid "Language used by the OCR engine"
-msgstr ""
+msgstr "Idioma que usa el motor de OCR"
 
 #: data/resources/plugins/MiAZOCR/ocr.py:205
 msgid "Force OCR"
-msgstr ""
+msgstr "Forzar OCR"
 
 #: data/resources/plugins/MiAZOCR/ocr.py:206
 msgid "Ignore any existing text layer and OCR every page"
-msgstr ""
+msgstr "Ignorar cualquier capa de texto existente y aplicar OCR a cada página"
 
 #: data/resources/plugins/MiAZOCR/ocr.py:210
 msgid "OCR options"
-msgstr ""
+msgstr "Opciones de OCR"
 
 #: data/resources/plugins/MiAZOCR/ocr.py:238
 #, python-brace-format
 msgid "OCR finished: {doc}"
-msgstr ""
+msgstr "OCR finalizado: {doc}"
 
 #: data/resources/plugins/MiAZOCR/ocr.py:243
 #, python-brace-format
 msgid "OCR found no text: {doc}"
-msgstr ""
+msgstr "El OCR no encontró texto: {doc}"
 
 #: data/resources/plugins/MiAZOCR/ocr.py:248
 #, python-brace-format
 msgid "OCR failed: {doc}"
-msgstr ""
+msgstr "El OCR ha fallado: {doc}"
 
 #: data/resources/plugins/MiAZOCR/ocr.py:287
 #, python-brace-format
@@ -4066,39 +4041,43 @@ msgid ""
 "\n"
 "{text}"
 msgstr ""
+"# Extracción por OCR\n"
+"\n"
+"Idioma: {lang}\n"
+"\n"
+"{text}"
 
 #: data/resources/plugins/MiAZOCR/ocr.py:305
 #, python-brace-format
 msgid "{n} note(s) created"
-msgstr ""
+msgstr "{n} nota(s) creada(s)"
 
 #: data/resources/plugins/MiAZOCR/ocr.py:307
 #, python-brace-format
 msgid "{n} failed"
-msgstr ""
+msgstr "{n} con error"
 
 #: data/resources/plugins/MiAZOCR/ocr.py:309
 #, python-brace-format
 msgid "{n} skipped"
-msgstr ""
+msgstr "{n} omitida(s)"
 
 #: data/resources/plugins/MiAZOCR/ocr.py:310
 #, python-brace-format
 msgid "OCR finished: {summary}"
-msgstr ""
+msgstr "OCR finalizado: {summary}"
 
 #: data/resources/plugins/MiAZOCR/ocr.py:323
 msgid "Default language"
-msgstr ""
+msgstr "Idioma por defecto"
 
 #: data/resources/plugins/MiAZOCR/ocr.py:330
 msgid "Default language used by the OCR engine"
-msgstr ""
+msgstr "Idioma por defecto que usa el motor de OCR"
 
 #: data/resources/plugins/MiAZPeriodicity/periodicity.py:28
-#, fuzzy
 msgid "Set document periodicity"
-msgstr "Importar documentos desde un directorio"
+msgstr "Establecer la periodicidad del documento"
 
 #: data/resources/plugins/MiAZPeriodicity/periodicity.py:43
 #: data/resources/plugins/MiAZPeriodicity/periodicity.py:367
@@ -4114,9 +4093,8 @@ msgid "Weekly"
 msgstr "Semanal"
 
 #: data/resources/plugins/MiAZPeriodicity/periodicity.py:46
-#, fuzzy
 msgid "Monthly"
-msgstr "mes"
+msgstr "Mensual"
 
 #: data/resources/plugins/MiAZPeriodicity/periodicity.py:47
 msgid "Quarterly"
@@ -4282,7 +4260,8 @@ msgstr "{i_title} {item_desc} deshabilitado"
 #: data/resources/plugins/MiAZProjectMgt/projmgt.py:333
 #, python-brace-format
 msgid "{i_title} {item_desc} is still being used by {count} documents"
-msgstr "{i_title} {item_desc} todavía está siendo usado por {count} documentos"
+msgstr ""
+"{i_title} {item_desc} todavía está siendo usado por {count} documentos"
 
 #: data/resources/plugins/MiAZProjectMgt/projmgt.py:337
 msgid "Action not possible"
@@ -4317,98 +4296,113 @@ msgid "Modify Workspace font name and size"
 msgstr "Modificar nombre y tamaño de la fuente del área de trabajo"
 
 #: data/resources/plugins/MiAZWSFont/wsfont.py:135
-#, fuzzy
 msgid "Workspace font family"
-msgstr "Área de trabajo"
+msgstr "Tipo de letra del área de trabajo"
 
 #: data/resources/plugins/MiAZWSFont/wsfont.py:137
-#, fuzzy
 msgid "Choose workspace font family"
-msgstr "Área de trabajo"
+msgstr "Elegir el tipo de letra del área de trabajo"
 
 #: data/resources/plugins/MiAZWSFont/wsfont.py:155
-#, fuzzy
 msgid "Workspace font size"
-msgstr "Área de trabajo"
+msgstr "Tamaño de letra del área de trabajo"
 
 #: data/resources/plugins/MiAZYearReport/MiAZYearReport.py:47
 msgid "Printable yearly summary report"
-msgstr ""
+msgstr "Informe anual resumido para imprimir"
 
 #: data/resources/plugins/MiAZYearReport/MiAZYearReport.py:181
 msgid "Open year report"
-msgstr ""
+msgstr "Abrir el informe anual"
 
 #: data/resources/plugins/MiAZYearReport/MiAZYearReport.py:343
 #: data/resources/plugins/MiAZYearReport/MiAZYearReport.py:349
 #: data/resources/plugins/MiAZYearReport/MiAZYearReport.py:419
 #: data/resources/plugins/MiAZYearReport/MiAZYearReport.py:425
 msgid "Year report"
-msgstr ""
+msgstr "Informe anual"
 
 #: data/resources/plugins/MiAZYearReport/MiAZYearReport.py:345
-#, fuzzy
 msgid "No normalized documents to report yet."
-msgstr "No se han encontrado documentos"
+msgstr "Aún no hay documentos normalizados que informar."
 
 #: data/resources/plugins/MiAZYearReport/MiAZYearReport.py:382
 msgid "no prior year"
-msgstr ""
+msgstr "sin año anterior"
 
 #: data/resources/plugins/MiAZYearReport/MiAZYearReport.py:399
 msgid "Distinct senders"
-msgstr ""
+msgstr "Remitentes distintos"
 
 #: data/resources/plugins/MiAZYearReport/MiAZYearReport.py:401
-#, fuzzy
 msgid "Busiest month"
-msgstr "Este mes"
+msgstr "Mes con más actividad"
 
 #: data/resources/plugins/MiAZYearReport/MiAZYearReport.py:403
-#, fuzzy
 msgid "Leading purpose"
-msgstr "Gestionar propósitos"
+msgstr "Propósito principal"
 
 #: data/resources/plugins/MiAZYearReport/MiAZYearReport.py:405
-#, fuzzy
 msgid "documents"
-msgstr "Documentos"
+msgstr "documentos"
 
 #: data/resources/plugins/MiAZYearReport/MiAZYearReport.py:418
 msgid "Print / Save as PDF"
-msgstr ""
+msgstr "Imprimir / Guardar como PDF"
 
 #: data/resources/plugins/MiAZYearReport/MiAZYearReport.py:423
 msgid "Generated"
-msgstr ""
+msgstr "Generado"
 
 #: data/resources/plugins/MiAZYearReport/MiAZYearReport.py:441
 msgid "Counts by sender"
-msgstr ""
+msgstr "Recuento por remitente"
 
 #: data/resources/plugins/MiAZYearReport/MiAZYearReport.py:460
-#, fuzzy
 msgid "Top concepts"
-msgstr "Conceptos"
+msgstr "Conceptos más frecuentes"
 
 #: data/resources/plugins/MiAZYearReport/MiAZYearReport.py:481
-#, fuzzy
 msgid "Biggest purpose"
-msgstr "Gestionar propósitos"
+msgstr "Propósito más frecuente"
 
 #: data/resources/plugins/MiAZYearReport/MiAZYearReport.py:482
 msgid "Ranked by document count (the filename scheme carries no amount)."
 msgstr ""
+"Ordenado por número de documentos (el esquema de nombres no incluye "
+"importes)."
 
 #: data/resources/plugins/MiAZYearReport/MiAZYearReport.py:497
 #, python-brace-format
 msgid "Average {avg:.1f} documents per active month · busiest {busy} · {yoy}"
 msgstr ""
+"Media de {avg:.1f} documentos por mes activo · más activo {busy} · {yoy}"
 
 #: data/resources/plugins/MiAZYearReport/MiAZYearReport.py:500
-#, fuzzy
 msgid "Document velocity"
-msgstr "Documentos por proyecto"
+msgstr "Ritmo de documentos"
+
+#~ msgid "Billing"
+#~ msgstr "Facturación"
+
+#~ msgid "Configuration"
+#~ msgstr "Configuración"
+
+#~ msgid "Employment"
+#~ msgstr "Empleo"
+
+#~ msgid "Insurance"
+#~ msgstr "Seguros"
+
+#~ msgid "Financial"
+#~ msgstr "Finanzas"
+
+#~ msgid "Medical"
+#~ msgstr "Sanidad"
+
+#, fuzzy, python-brace-format
+#~ msgid "<big><b>{title}</b></big>"
+#~ msgstr "<b>Clave de {title}</b>"
 
 #~ msgid "Main Window"
 #~ msgstr "Pantalla principal"

@@ -511,11 +511,15 @@ class MiAZWorkspace(Gtk.Box):
         documents_page = self._stack.add_titled(page_content, 'workspace-default', _('Documents'))
         documents_page.set_icon_name('io.github.t00m.MiAZ')
 
-        # Browser page
+        # Browser page. Hidden from the view switcher when no plugin registers a
+        # page to load, so only the Documents tab shows in that case.
         browser_widget = MiAZBrowserPage(self.app)
         browser_page = self._stack.add_titled(browser_widget, 'workspace-browser', _('Browser'))
         browser_page.set_icon_name('io.github.t00m.MiAZ-webbrowser')
         self.app.add_widget('workspace-browser', browser_widget)
+        self._browser_page = browser_page
+        browser_page.set_visible(browser_widget.has_pages())
+        browser_widget.connect('pages-updated', self._on_browser_pages_updated)
 
         # InlineViewSwitcher
         self._switcher = self.app.get_widget('workspace-view-switcher')
@@ -687,6 +691,16 @@ class MiAZWorkspace(Gtk.Box):
         if revealer is None:
             return
         revealer.set_visible(stack.get_visible_child_name() == 'workspace-default')
+
+    def _on_browser_pages_updated(self, _browser, count):
+        # Show the Browser tab only when at least one page is available. If it
+        # gets hidden while selected, fall back to the Documents view.
+        page = getattr(self, '_browser_page', None)
+        if page is None:
+            return
+        page.set_visible(count > 0)
+        if count == 0 and self._stack.get_visible_child_name() == 'workspace-browser':
+            self._stack.set_visible_child_name('workspace-default')
 
     def get_workspace_view(self):
         return self.view

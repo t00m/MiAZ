@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: miaz\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-07-07 14:03+0200\n"
+"POT-Creation-Date: 2026-07-08 11:42+0200\n"
 "PO-Revision-Date: 2026-07-06 19:59+0200\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -334,7 +334,7 @@ msgid "Document"
 msgstr ""
 
 #: MiAZ/backend/models.py:209 MiAZ/frontend/desktop/services/actions.py:366
-#: MiAZ/frontend/desktop/widgets/workspace.py:367
+#: MiAZ/frontend/desktop/widgets/workspace.py:511
 #: data/resources/plugins/MiAZNewspaper/MiAZNewspaper.py:523
 #: data/resources/plugins/MiAZYearReport/MiAZYearReport.py:397
 #: data/resources/plugins/MiAZYearReport/MiAZYearReport.py:443
@@ -428,7 +428,7 @@ msgid "day"
 msgstr ""
 
 #: MiAZ/backend/vocabulary.py:22
-msgid "Billing"
+msgid "Banking"
 msgstr ""
 
 #: MiAZ/backend/vocabulary.py:23
@@ -436,44 +436,46 @@ msgid "Civil Status"
 msgstr ""
 
 #: MiAZ/backend/vocabulary.py:24
-msgid "Configuration"
-msgstr ""
-
-#: MiAZ/backend/vocabulary.py:25
 msgid "Education"
 msgstr ""
 
+#: MiAZ/backend/vocabulary.py:25
+#: data/resources/plugins/MiAZNotes/lib/model.py:20
+msgid "Finance"
+msgstr ""
+
 #: MiAZ/backend/vocabulary.py:26
-msgid "Employment"
+#: data/resources/plugins/MiAZNotes/lib/model.py:22
+msgid "Health"
 msgstr ""
 
 #: MiAZ/backend/vocabulary.py:27
-msgid "Financial"
+msgid "Health Insurance"
 msgstr ""
 
 #: MiAZ/backend/vocabulary.py:28
-msgid "Housing"
+msgid "Home Insurance"
 msgstr ""
 
 #: MiAZ/backend/vocabulary.py:29
-msgid "Insurance"
+msgid "Housing"
 msgstr ""
 
 #: MiAZ/backend/vocabulary.py:30
+msgid "Investments"
+msgstr ""
+
+#: MiAZ/backend/vocabulary.py:31
 #: data/resources/plugins/MiAZNotes/lib/model.py:21
 msgid "Legal"
 msgstr ""
 
-#: MiAZ/backend/vocabulary.py:31
+#: MiAZ/backend/vocabulary.py:32
 msgid "Leisure"
 msgstr ""
 
-#: MiAZ/backend/vocabulary.py:32
-msgid "Loans"
-msgstr ""
-
 #: MiAZ/backend/vocabulary.py:33
-msgid "Medical"
+msgid "Loans"
 msgstr ""
 
 #: MiAZ/backend/vocabulary.py:34
@@ -481,201 +483,229 @@ msgid "Miscellaneous"
 msgstr ""
 
 #: MiAZ/backend/vocabulary.py:35
+msgid "Mortgage"
+msgstr ""
+
+#: MiAZ/backend/vocabulary.py:36
+msgid "Pension"
+msgstr ""
+
+#: MiAZ/backend/vocabulary.py:37
 #: data/resources/plugins/MiAZNotes/lib/model.py:18
 msgid "Personal"
 msgstr ""
 
-#: MiAZ/backend/vocabulary.py:36
-msgid "Public Administration"
-msgstr ""
-
-#: MiAZ/backend/vocabulary.py:37
-msgid "Services"
-msgstr ""
-
 #: MiAZ/backend/vocabulary.py:38
-msgid "Shopping"
+msgid "Prescription"
 msgstr ""
 
 #: MiAZ/backend/vocabulary.py:39
-msgid "Social Security"
+msgid "Public Administration"
 msgstr ""
 
 #: MiAZ/backend/vocabulary.py:40
-msgid "Taxes"
+msgid "Rent"
 msgstr ""
 
 #: MiAZ/backend/vocabulary.py:41
-msgid "Travel"
+msgid "Services"
 msgstr ""
 
 #: MiAZ/backend/vocabulary.py:42
-msgid "Utilities"
+msgid "Shopping"
 msgstr ""
 
 #: MiAZ/backend/vocabulary.py:43
-msgid "Vehicle"
+msgid "Social Security"
 msgstr ""
 
 #: MiAZ/backend/vocabulary.py:44
+msgid "Taxes"
+msgstr ""
+
+#: MiAZ/backend/vocabulary.py:45
+msgid "Travel"
+msgstr ""
+
+#: MiAZ/backend/vocabulary.py:46
+msgid "Travel Insurance"
+msgstr ""
+
+#: MiAZ/backend/vocabulary.py:47
+msgid "Utilities"
+msgstr ""
+
+#: MiAZ/backend/vocabulary.py:48
+msgid "Vehicle"
+msgstr ""
+
+#: MiAZ/backend/vocabulary.py:49
+msgid "Vehicle Insurance"
+msgstr ""
+
+#: MiAZ/backend/vocabulary.py:50
+msgid "Vehicle Maintenance"
+msgstr ""
+
+#: MiAZ/backend/vocabulary.py:51
 #: data/resources/plugins/MiAZNotes/lib/model.py:19
 msgid "Work"
 msgstr ""
 
-#: MiAZ/backend/vocabulary.py:48
+#: MiAZ/backend/vocabulary.py:55
 msgid "Agreement"
 msgstr ""
 
-#: MiAZ/backend/vocabulary.py:49
+#: MiAZ/backend/vocabulary.py:56
 msgid "Analysis"
 msgstr ""
 
-#: MiAZ/backend/vocabulary.py:50
+#: MiAZ/backend/vocabulary.py:57
 msgid "Appointment"
 msgstr ""
 
-#: MiAZ/backend/vocabulary.py:51
+#: MiAZ/backend/vocabulary.py:58
 msgid "Authorization"
 msgstr ""
 
-#: MiAZ/backend/vocabulary.py:52
+#: MiAZ/backend/vocabulary.py:59
 msgid "Budget"
 msgstr ""
 
-#: MiAZ/backend/vocabulary.py:53
+#: MiAZ/backend/vocabulary.py:60
 msgid "Cancellation"
 msgstr ""
 
-#: MiAZ/backend/vocabulary.py:54
+#: MiAZ/backend/vocabulary.py:61
 msgid "Certification"
 msgstr ""
 
-#: MiAZ/backend/vocabulary.py:55
+#: MiAZ/backend/vocabulary.py:62
 msgid "Claim"
 msgstr ""
 
-#: MiAZ/backend/vocabulary.py:56
+#: MiAZ/backend/vocabulary.py:63
 msgid "Confirmation"
 msgstr ""
 
-#: MiAZ/backend/vocabulary.py:57
+#: MiAZ/backend/vocabulary.py:64
 msgid "Contract"
 msgstr ""
 
-#: MiAZ/backend/vocabulary.py:58
+#: MiAZ/backend/vocabulary.py:65
 msgid "Curriculum Vitae"
 msgstr ""
 
-#: MiAZ/backend/vocabulary.py:59
+#: MiAZ/backend/vocabulary.py:66
 msgid "Declaration"
 msgstr ""
 
-#: MiAZ/backend/vocabulary.py:60
+#: MiAZ/backend/vocabulary.py:67
 msgid "Email"
 msgstr ""
 
-#: MiAZ/backend/vocabulary.py:61
+#: MiAZ/backend/vocabulary.py:68
 msgid "Form"
 msgstr ""
 
-#: MiAZ/backend/vocabulary.py:62
+#: MiAZ/backend/vocabulary.py:69
 msgid "Identification"
 msgstr ""
 
-#: MiAZ/backend/vocabulary.py:63
+#: MiAZ/backend/vocabulary.py:70
 msgid "Information"
 msgstr ""
 
-#: MiAZ/backend/vocabulary.py:64
+#: MiAZ/backend/vocabulary.py:71
 msgid "Invoice"
 msgstr ""
 
-#: MiAZ/backend/vocabulary.py:65
+#: MiAZ/backend/vocabulary.py:72
 msgid "Letter"
 msgstr ""
 
-#: MiAZ/backend/vocabulary.py:66
+#: MiAZ/backend/vocabulary.py:73
 msgid "Manual"
 msgstr ""
 
-#: MiAZ/backend/vocabulary.py:67
+#: MiAZ/backend/vocabulary.py:74
 msgid "Minutes"
 msgstr ""
 
-#: MiAZ/backend/vocabulary.py:68
+#: MiAZ/backend/vocabulary.py:75
 msgid "Notification"
 msgstr ""
 
-#: MiAZ/backend/vocabulary.py:69
+#: MiAZ/backend/vocabulary.py:76
 msgid "Order"
 msgstr ""
 
-#: MiAZ/backend/vocabulary.py:70
+#: MiAZ/backend/vocabulary.py:77
 msgid "Payment"
 msgstr ""
 
-#: MiAZ/backend/vocabulary.py:71
+#: MiAZ/backend/vocabulary.py:78
 msgid "Payslip"
 msgstr ""
 
-#: MiAZ/backend/vocabulary.py:72
+#: MiAZ/backend/vocabulary.py:79
 msgid "Picture"
 msgstr ""
 
-#: MiAZ/backend/vocabulary.py:73
+#: MiAZ/backend/vocabulary.py:80
 msgid "Plan"
 msgstr ""
 
-#: MiAZ/backend/vocabulary.py:74
+#: MiAZ/backend/vocabulary.py:81
 msgid "Policy"
 msgstr ""
 
-#: MiAZ/backend/vocabulary.py:75
+#: MiAZ/backend/vocabulary.py:82
 #: data/resources/plugins/MiAZProjectMgt/projmgt.py:51
 msgid "Project"
 msgstr ""
 
-#: MiAZ/backend/vocabulary.py:76
+#: MiAZ/backend/vocabulary.py:83
 msgid "Proof"
 msgstr ""
 
-#: MiAZ/backend/vocabulary.py:77
+#: MiAZ/backend/vocabulary.py:84
 msgid "Receipt"
 msgstr ""
 
-#: MiAZ/backend/vocabulary.py:78
+#: MiAZ/backend/vocabulary.py:85
 msgid "Reminder"
 msgstr ""
 
-#: MiAZ/backend/vocabulary.py:79
+#: MiAZ/backend/vocabulary.py:86
 msgid "Report"
 msgstr ""
 
-#: MiAZ/backend/vocabulary.py:80
+#: MiAZ/backend/vocabulary.py:87
 msgid "Request"
 msgstr ""
 
-#: MiAZ/backend/vocabulary.py:81
+#: MiAZ/backend/vocabulary.py:88
 msgid "Schedule"
 msgstr ""
 
-#: MiAZ/backend/vocabulary.py:82
+#: MiAZ/backend/vocabulary.py:89
 msgid "Statement"
 msgstr ""
 
-#: MiAZ/backend/vocabulary.py:83
+#: MiAZ/backend/vocabulary.py:90
 msgid "Task"
 msgstr ""
 
-#: MiAZ/backend/vocabulary.py:84
+#: MiAZ/backend/vocabulary.py:91
 msgid "Template"
 msgstr ""
 
-#: MiAZ/backend/vocabulary.py:85
+#: MiAZ/backend/vocabulary.py:92
 msgid "Transfer"
 msgstr ""
 
-#: MiAZ/backend/vocabulary.py:86
+#: MiAZ/backend/vocabulary.py:93
 msgid "Warning"
 msgstr ""
 
@@ -763,7 +793,7 @@ msgid "Another document with the same name already exists in this repository"
 msgstr ""
 
 #: MiAZ/frontend/desktop/services/actions.py:218
-#: MiAZ/frontend/desktop/widgets/workspace.py:993
+#: MiAZ/frontend/desktop/widgets/workspace.py:1137
 msgid "Any"
 msgstr ""
 
@@ -922,7 +952,7 @@ msgid "No"
 msgstr ""
 
 #: MiAZ/frontend/desktop/services/dialogs.py:524
-#: MiAZ/frontend/desktop/widgets/assistant.py:246
+#: MiAZ/frontend/desktop/widgets/assistant.py:247
 #: MiAZ/frontend/desktop/widgets/configview.py:232
 #: MiAZ/frontend/desktop/widgets/configview.py:268
 msgid "Location"
@@ -1672,6 +1702,7 @@ msgid "Welcome"
 msgstr ""
 
 #: MiAZ/frontend/desktop/widgets/assistant.py:108
+#: MiAZ/frontend/desktop/widgets/assistant.py:224
 msgid "Create a repository"
 msgstr ""
 
@@ -1680,13 +1711,13 @@ msgid "Back"
 msgstr ""
 
 #: MiAZ/frontend/desktop/widgets/assistant.py:114
-#: MiAZ/frontend/desktop/widgets/assistant.py:343
+#: MiAZ/frontend/desktop/widgets/assistant.py:345
 msgid "Next"
 msgstr ""
 
-#: MiAZ/frontend/desktop/widgets/assistant.py:151
+#: MiAZ/frontend/desktop/widgets/assistant.py:152
 #, python-brace-format
-msgid "<big><b>Welcome to {name}</b></big>"
+msgid "Welcome to {name}"
 msgstr ""
 
 #: MiAZ/frontend/desktop/widgets/assistant.py:161
@@ -1711,11 +1742,7 @@ msgid ""
 "choices."
 msgstr ""
 
-#: MiAZ/frontend/desktop/widgets/assistant.py:223
-msgid "<big><b>Create a repository</b></big>"
-msgstr ""
-
-#: MiAZ/frontend/desktop/widgets/assistant.py:231
+#: MiAZ/frontend/desktop/widgets/assistant.py:232
 msgid ""
 "A repository is the folder where your documents live. Give it a name and "
 "choose the folder that will hold the files. The name can be anything you "
@@ -1725,79 +1752,71 @@ msgstr ""
 #. Free text: this is the human-readable name, stored as the repository
 #. description. The repository key is derived from it with util.valid_key
 #. at creation time. The row subtitle previews that key as the user types.
-#: MiAZ/frontend/desktop/widgets/assistant.py:242
+#: MiAZ/frontend/desktop/widgets/assistant.py:243
 #: MiAZ/frontend/desktop/widgets/configview.py:231
 #: MiAZ/frontend/desktop/widgets/configview.py:267
 msgid "Repository name"
 msgstr ""
 
-#: MiAZ/frontend/desktop/widgets/assistant.py:283
-#, python-brace-format
-msgid "<big><b>{title}</b></big>"
-msgstr ""
-
-#: MiAZ/frontend/desktop/widgets/assistant.py:306
-msgid "<big><b>Summary</b></big>"
-msgstr ""
-
-#: MiAZ/frontend/desktop/widgets/assistant.py:314
-msgid ""
-"Review your setup. Use Back to change anything, or finish to open your "
-"repository."
-msgstr ""
-
-#: MiAZ/frontend/desktop/widgets/assistant.py:343
-msgid "Finish"
-msgstr ""
-
-#: MiAZ/frontend/desktop/widgets/assistant.py:352
-#, python-brace-format
-msgid "Step {x} of {y}"
-msgstr ""
-
-#: MiAZ/frontend/desktop/widgets/assistant.py:383
-#, python-brace-format
-msgid "Repository key: <tt>{key}</tt>"
-msgstr ""
-
-#: MiAZ/frontend/desktop/widgets/assistant.py:410
-msgid "Please enter a valid repository name"
-msgstr ""
-
-#: MiAZ/frontend/desktop/widgets/assistant.py:413
-msgid "Please choose an existing folder"
-msgstr ""
-
-#: MiAZ/frontend/desktop/widgets/assistant.py:420
-#, python-brace-format
-msgid "A repository with key \"{key}\" already exists"
-msgstr ""
-
-#: MiAZ/frontend/desktop/widgets/assistant.py:432
-msgid "repository validation failed"
-msgstr ""
-
-#: MiAZ/frontend/desktop/widgets/assistant.py:436
-msgid "Could not create the repository"
-msgstr ""
-
-#: MiAZ/frontend/desktop/widgets/assistant.py:444
-#, python-brace-format
-msgid "Repository created at <tt>{path}</tt>"
-msgstr ""
-
-#: MiAZ/frontend/desktop/widgets/assistant.py:456
+#: MiAZ/frontend/desktop/widgets/assistant.py:308
+#: MiAZ/frontend/desktop/widgets/assistant.py:458
 #: data/resources/plugins/MiAZNotes/lib/allview.py:157
 #: data/resources/plugins/MiAZNotes/lib/listview.py:113
 msgid "Summary"
 msgstr ""
 
-#: MiAZ/frontend/desktop/widgets/assistant.py:475
+#: MiAZ/frontend/desktop/widgets/assistant.py:316
+msgid ""
+"Review your setup. Use Back to change anything, or finish to open your "
+"repository."
+msgstr ""
+
+#: MiAZ/frontend/desktop/widgets/assistant.py:345
+msgid "Finish"
+msgstr ""
+
+#: MiAZ/frontend/desktop/widgets/assistant.py:354
+#, python-brace-format
+msgid "Step {x} of {y}"
+msgstr ""
+
+#: MiAZ/frontend/desktop/widgets/assistant.py:385
+#, python-brace-format
+msgid "Repository key: <tt>{key}</tt>"
+msgstr ""
+
+#: MiAZ/frontend/desktop/widgets/assistant.py:412
+msgid "Please enter a valid repository name"
+msgstr ""
+
+#: MiAZ/frontend/desktop/widgets/assistant.py:415
+msgid "Please choose an existing folder"
+msgstr ""
+
+#: MiAZ/frontend/desktop/widgets/assistant.py:422
+#, python-brace-format
+msgid "A repository with key \"{key}\" already exists"
+msgstr ""
+
+#: MiAZ/frontend/desktop/widgets/assistant.py:434
+msgid "repository validation failed"
+msgstr ""
+
+#: MiAZ/frontend/desktop/widgets/assistant.py:438
+msgid "Could not create the repository"
+msgstr ""
+
+#: MiAZ/frontend/desktop/widgets/assistant.py:446
+#, python-brace-format
+msgid "Repository created at <tt>{path}</tt>"
+msgstr ""
+
+#: MiAZ/frontend/desktop/widgets/assistant.py:477
 #, python-brace-format
 msgid "Key: {key} · {path}"
 msgstr ""
 
-#: MiAZ/frontend/desktop/widgets/assistant.py:483
+#: MiAZ/frontend/desktop/widgets/assistant.py:485
 #, python-brace-format
 msgid "{n} enabled"
 msgstr ""
@@ -2579,60 +2598,60 @@ msgstr ""
 msgid "Sent To"
 msgstr ""
 
-#: MiAZ/frontend/desktop/widgets/workspace.py:275
+#: MiAZ/frontend/desktop/widgets/workspace.py:419
 msgid "This month"
 msgstr ""
 
-#: MiAZ/frontend/desktop/widgets/workspace.py:281
+#: MiAZ/frontend/desktop/widgets/workspace.py:425
 msgid "Since past month"
 msgstr ""
 
-#: MiAZ/frontend/desktop/widgets/workspace.py:286
+#: MiAZ/frontend/desktop/widgets/workspace.py:430
 msgid "Since last 3 months"
 msgstr ""
 
-#: MiAZ/frontend/desktop/widgets/workspace.py:291
+#: MiAZ/frontend/desktop/widgets/workspace.py:435
 msgid "Since last 6 months"
 msgstr ""
 
-#: MiAZ/frontend/desktop/widgets/workspace.py:296
+#: MiAZ/frontend/desktop/widgets/workspace.py:440
 msgid "Since last year"
 msgstr ""
 
-#: MiAZ/frontend/desktop/widgets/workspace.py:301
+#: MiAZ/frontend/desktop/widgets/workspace.py:445
 msgid "Since two years ago"
 msgstr ""
 
-#: MiAZ/frontend/desktop/widgets/workspace.py:306
+#: MiAZ/frontend/desktop/widgets/workspace.py:450
 msgid "Since three years ago"
 msgstr ""
 
-#: MiAZ/frontend/desktop/widgets/workspace.py:311
+#: MiAZ/frontend/desktop/widgets/workspace.py:455
 msgid "Since five years ago"
 msgstr ""
 
-#: MiAZ/frontend/desktop/widgets/workspace.py:316
+#: MiAZ/frontend/desktop/widgets/workspace.py:460
 msgid "Since ten years ago"
 msgstr ""
 
-#: MiAZ/frontend/desktop/widgets/workspace.py:321
+#: MiAZ/frontend/desktop/widgets/workspace.py:465
 msgid "Future"
 msgstr ""
 
-#: MiAZ/frontend/desktop/widgets/workspace.py:325
+#: MiAZ/frontend/desktop/widgets/workspace.py:469
 msgid "All documents"
 msgstr ""
 
-#: MiAZ/frontend/desktop/widgets/workspace.py:372
+#: MiAZ/frontend/desktop/widgets/workspace.py:516
 msgid "Browser"
 msgstr ""
 
-#: MiAZ/frontend/desktop/widgets/workspace.py:444
+#: MiAZ/frontend/desktop/widgets/workspace.py:588
 #, python-brace-format
 msgid "Remove filter: {field}"
 msgstr ""
 
-#: MiAZ/frontend/desktop/widgets/workspace.py:752
+#: MiAZ/frontend/desktop/widgets/workspace.py:896
 #, python-brace-format
 msgid "Review ({review})"
 msgstr ""
@@ -3617,14 +3636,6 @@ msgstr ""
 #: data/resources/plugins/MiAZNotes/lib/listview.py:306
 #, python-brace-format
 msgid "Deleted {count} note(s)"
-msgstr ""
-
-#: data/resources/plugins/MiAZNotes/lib/model.py:20
-msgid "Finance"
-msgstr ""
-
-#: data/resources/plugins/MiAZNotes/lib/model.py:22
-msgid "Health"
 msgstr ""
 
 #: data/resources/plugins/MiAZNotes/lib/model.py:23
