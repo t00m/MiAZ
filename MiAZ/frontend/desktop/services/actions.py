@@ -259,7 +259,6 @@ class MiAZActions(GObject.GObject):
 
     def manage_resource(self, widget: Gtk.Widget, selector: Gtk.Widget):
         factory = self.app.get_service('factory')
-        srvdlg = self.app.get_service('dialogs')
         parent = widget.get_root() # wonderful
 
         box = factory.create_box_vertical(spacing=0, vexpand=True, hexpand=True)
@@ -268,7 +267,13 @@ class MiAZActions(GObject.GObject):
         selector.set_vexpand(True)
         selector.update_views()
         title = _('Manage {item}').format(item=config_for)
-        dialog = srvdlg.show_action(title=title, widget=box, width=800, height=600)
+        # This is an immediate-apply management view: the selector persists every
+        # enable/disable change live, so there is nothing to Cancel or Apply. A
+        # window with the standard headerbar close button (and Escape) is the
+        # right close affordance; no bottom Cancel/Apply buttons.
+        dialog = MiAZWindowDialog(self.app, title=title, widget=box,
+                                  width=800, height=600)
+        dialog.set_show_close_button(True)
         dialog.present(parent)
 
     def show_app_settings(self, *args):

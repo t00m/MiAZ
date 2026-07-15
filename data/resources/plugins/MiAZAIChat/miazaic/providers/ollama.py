@@ -2,7 +2,7 @@
 
 from typing import Optional
 
-from .base import Provider
+from .base import Provider, MissingDependencyError
 from miazaic.usage import make_usage
 
 _DEFAULT_MODEL = 'llama3.1:8b'
@@ -20,7 +20,7 @@ class OllamaProvider(Provider):
         try:
             import ollama
         except ImportError:
-            raise RuntimeError('ollama package not installed; run: pip install ollama')
+            raise MissingDependencyError('ollama')
 
         model = self.config.get('model', _DEFAULT_MODEL)
         host = self.config.get('base_url', _DEFAULT_BASE_URL)

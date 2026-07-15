@@ -2,7 +2,7 @@
 
 from typing import Optional
 
-from .base import Provider
+from .base import Provider, MissingDependencyError
 from miazaic.usage import make_usage
 
 _DEFAULT_MODEL = 'gpt-4o-mini'
@@ -23,7 +23,7 @@ class OpenAIProvider(Provider):
         try:
             from openai import OpenAI
         except ImportError:
-            raise RuntimeError('openai package not installed; run: pip install openai')
+            raise MissingDependencyError('openai')
         self._client = OpenAI(api_key=self.config.get('api_key', ''))
 
     def chat(self, *, messages, system_prompt,

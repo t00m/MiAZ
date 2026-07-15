@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 
-from .base import Provider
+from .base import Provider, MissingDependencyError as MissingDependencyError
 from .claude import ClaudeProvider
 from .openai import OpenAIProvider
 from .gemini import GeminiProvider
@@ -37,6 +37,23 @@ def build_registry(plugin, log, secrets):
     return registry
 
 
+def effective_active_pid(plugin, registry) -> str:
+    """Provider id that should be used for a request.
+
+    An explicit choice in the 'Active provider' selector always wins. When none
+    is set yet, use the first provider whose API key is already configured, so
+    configuring a provider (for example Claude) is enough to use it without also
+    changing the selector. Fall back to a keyless provider (ollama) when nothing
+    is configured.
+    """
+    pid = plugin.get_config_key('active_provider')
+    if pid and pid in registry:
+        return pid
+    for candidate, provider in registry.items():
+        if provider.requires_api_key and provider.healthcheck()[0]:
+            return candidate
+    return 'ollama' if 'ollama' in registry else next(iter(registry))
+
+
 def active_provider(plugin, registry) -> Provider:
-    pid = plugin.get_config_key('active_provider') or 'ollama'
-    return registry.get(pid) or registry['ollama']
+    return registry[effective_active_pid(plugin, registry)]

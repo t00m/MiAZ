@@ -302,6 +302,9 @@ class MiAZWindowDialog(Adw.Window):
         self.headerbar = headerbar
 
         self._action_bar = Gtk.ActionBar()
+        # Only shown once it has content, so a close-only window (headerbar close
+        # button, no responses) does not carry an empty bottom bar.
+        self._action_bar.set_revealed(False)
 
         content = self.factory.create_box_vertical(
             margin=12, spacing=12, hexpand=True, vexpand=True)
@@ -337,6 +340,7 @@ class MiAZWindowDialog(Adw.Window):
             self._action_bar.pack_start(button)
         else:
             self._action_bar.pack_end(button)
+        self._action_bar.set_revealed(True)
         return button
 
     def pack_header_end(self, widget):
@@ -352,10 +356,12 @@ class MiAZWindowDialog(Adw.Window):
         # Place a widget on the right side of the bottom action bar, next to
         # the affirmative response buttons.
         self._action_bar.pack_end(widget)
+        self._action_bar.set_revealed(True)
 
     def pack_action_start(self, widget):
         # Place a widget on the left side of the bottom action bar.
         self._action_bar.pack_start(widget)
+        self._action_bar.set_revealed(True)
 
     def set_show_close_button(self, visible):
         # Toggle the window-control buttons (including close) in the header bar.
@@ -398,8 +404,13 @@ class MiAZWindowDialog(Adw.Window):
         self.emit('response', response_id)
 
     def _on_key_pressed(self, _controller, keyval, _keycode, _state):
-        if keyval == Gdk.KEY_Escape and self._close_response is not None:
-            self.emit('response', self._close_response)
+        if keyval == Gdk.KEY_Escape:
+            if self._close_response is not None:
+                self.emit('response', self._close_response)
+            else:
+                # No response buttons (e.g. a close-only management window):
+                # Escape just closes.
+                self.close()
             return True
         return False
 
@@ -460,6 +471,11 @@ class MiAZDialogAdd(Adw.Dialog):
         self.row_value = Adw.EntryRow(title=key2)
         self.row_key.connect('entry-activated', self._on_action_clicked)
         self.row_value.connect('entry-activated', self._on_action_clicked)
+        # Both fields are mandatory: the action stays disabled until the key and
+        # the value are both non-empty, so no field can be created with a blank
+        # key or a blank description.
+        self.row_key.connect('changed', self._validate_inputs)
+        self.row_value.connect('changed', self._validate_inputs)
         group.add(self.row_key)
         group.add(self.row_value)
 
@@ -468,7 +484,13 @@ class MiAZDialogAdd(Adw.Dialog):
         clamp.set_child(group)
         toolbar_view.set_content(clamp)
         self.set_child(toolbar_view)
+        self._validate_inputs()
         return self
+
+    def _validate_inputs(self, *args):
+        key = self.row_key.get_text().strip()
+        value = self.row_value.get_text().strip()
+        self.btn_action.set_sensitive(bool(key) and bool(value))
 
     # Response plumbing
     def _on_cancel_clicked(self, *args):

@@ -4,6 +4,8 @@ from gettext import gettext as _
 
 from gi.repository import Adw, Gtk
 
+from miazaic.providers import effective_active_pid
+
 PROVIDER_LABELS = {
     'claude': 'Claude (Anthropic)',
     'openai': 'OpenAI / OpenCode',
@@ -49,7 +51,7 @@ class AIChatSettings:
 
         ids = list(PROVIDER_LABELS.keys())
         labels = [PROVIDER_LABELS[i] for i in ids]
-        active = self.plugin.get_config_key('active_provider') or 'ollama'
+        active = effective_active_pid(self.plugin, self.registry)
         combo = Adw.ComboRow(title=_('Provider'))
         combo.set_model(Gtk.StringList.new(labels))
         combo.set_selected(ids.index(active) if active in ids else ids.index('ollama'))

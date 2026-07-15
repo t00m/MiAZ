@@ -25,6 +25,7 @@ Requires:       webkitgtk6.0
 Requires:       libsecret
 Requires:       iso-codes
 Recommends:     python3-keyring
+Recommends:     python3-pip
 
 %description
 MiAZ is a GTK4/Libadwaita desktop application that organises personal

@@ -1,0 +1,7 @@
+# External Python libraries this plugin needs, one provider SDK per line.
+# MiAZ installs them into a per-user virtualenv (~/.MiAZ/opt/venv) only when the
+# user enables external libraries. The app never touches the system Python.
+anthropic
+openai
+google-genai
+ollama

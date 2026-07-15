@@ -8,7 +8,7 @@ from gi.repository import Adw, GLib, Gtk
 
 from MiAZ.frontend.desktop.widgets.markdownview import MiAZMarkdownView
 
-from miazaic.providers import active_provider
+from miazaic.providers import active_provider, MissingDependencyError
 from miazaic.extractor import extract
 from miazaic.prompt import system_prompt
 
@@ -120,6 +120,9 @@ class MiAZAIChatDialog(Adw.Window):
         return None
 
     def _on_command(self, command):
+        if command == 'enablelibs':
+            self.app.get_service('extlibs').install(self)
+            return False
         if command.startswith('save:'):
             try:
                 idx = int(command[len('save:'):])
@@ -167,7 +170,8 @@ class MiAZAIChatDialog(Adw.Window):
                                        document_text=doc_text, file_path=file_path)
             except Exception as exc:
                 self.log.error(f'AI chat failed: {exc}')
-                GLib.idle_add(self._on_error, str(exc))
+                needs_libs = isinstance(exc, MissingDependencyError)
+                GLib.idle_add(self._on_error, str(exc), needs_libs)
                 return
             GLib.idle_add(self._on_answer, question, result)
 
@@ -198,12 +202,15 @@ class MiAZAIChatDialog(Adw.Window):
                           f'(token usage not reported)')
         return False
 
-    def _on_error(self, message):
+    def _on_error(self, message, needs_libs=False):
         self._awaiting = False
         self._set_input_enabled(True)
         # Error turn carries no idx, so no save link is rendered for it.
-        self.turns.append({'role': 'assistant',
-                           'content': _('Error: {err}').format(err=message)})
+        content = _('Error: {err}').format(err=message)
+        if needs_libs:
+            content += ('\n\n[' + _('Enable external libraries…')
+                        + '](miazcmd:enablelibs)')
+        self.turns.append({'role': 'assistant', 'content': content})
         self._rerender()
         self._toast(_('Chat failed: {err}').format(err=message))
         return False

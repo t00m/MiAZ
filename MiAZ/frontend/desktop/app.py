@@ -21,6 +21,7 @@ from MiAZ.frontend.desktop.services.actions import MiAZActions
 from MiAZ.frontend.desktop.services.dialogs import MiAZDialog
 from MiAZ.frontend.desktop.services.crash import MiAZCrashHandler
 from MiAZ.frontend.desktop.services.workflow import MiAZWorkflow
+from MiAZ.frontend.desktop.services.extlibs import MiAZExtLibs
 from MiAZ.frontend.desktop.widgets.mainwindow import MiAZMainWindow
 
 from MiAZ.backend.util import MiAZUtil
@@ -32,6 +33,7 @@ from MiAZ.backend.config import MiAZConfigRepositories
 from MiAZ.backend.status import MiAZStatus
 from MiAZ.backend.dr import MiAZDR
 from MiAZ.backend.secrets import MiAZSecretStore
+from MiAZ.backend.venv import MiAZVenv
 from MiAZ.backend.webserver import MiAZWebServer
 
 
@@ -66,6 +68,8 @@ class MiAZApp(Adw.Application):
         workflow = self.set_service('workflow', MiAZWorkflow(self))
         self.set_service('dr', MiAZDR(self))
         self.set_service('secrets', MiAZSecretStore())
+        self.set_service('venv', MiAZVenv(self))
+        self.set_service('extlibs', MiAZExtLibs(self))
         self.set_service('webserver', MiAZWebServer(self))
         repository = self.set_service('repo', MiAZRepository(self))
         repository.connect('repository-switched', workflow.switch_finish)
@@ -116,11 +120,22 @@ class MiAZApp(Adw.Application):
         is started.
         """
         workflow = self.get_service('workflow')
+        # Put the optional external-libraries venv on sys.path before plugins
+        # load, so a plugin can import its libraries (for example the AI SDKs).
+        self.get_service('venv').ensure_on_syspath()
         self.set_service('plugin-system', MiAZPluginSystem(self))
         self.get_service('webserver').start()
         self._setup_ui()
+        # Offer the optional external-libraries download once, after the active
+        # repository's plugins have loaded. 'application-started' fires after
+        # load_plugins(), so enabled plugins are known here; 'repository-switch-
+        # finished' fires earlier, before plugins load. Guarded to show once.
+        self.connect('application-started', self._on_app_started_extlibs)
         workflow.switch_start()
         self.log.debug("Executing MiAZ Desktop mode")
+
+    def _on_app_started_extlibs(self, *_args):
+        self.get_service('extlibs').maybe_prompt_first_run()
 
     def _setup_ui(self):
         """Set up main application window."""

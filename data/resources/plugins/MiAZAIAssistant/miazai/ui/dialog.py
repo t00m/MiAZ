@@ -4,7 +4,7 @@ import pathlib
 import threading
 from gettext import gettext as _
 
-from gi.repository import Adw, GLib, Gtk
+from gi.repository import Adw, Gdk, GLib, Gtk
 
 
 def inject_suggest_button(app, registry, repository, util, log):
@@ -64,7 +64,7 @@ def _on_open_settings(button, app, dialog, popover):
 
 
 def _on_suggest(button, app, rename_widget, registry, repository, util, log):
-    from miazai.providers import active_provider
+    from miazai.providers import active_provider, MissingDependencyError
     from miazai.extractor import extract
     from miazai.vocab import load_vocabulary
     import miazai.prompt as P
@@ -107,7 +107,9 @@ def _on_suggest(button, app, rename_widget, registry, repository, util, log):
             )
         except Exception as exc:
             log.error(f'AI provider failed: {exc}')
-            GLib.idle_add(_finish, button, None, str(exc), app, rename_widget)
+            needs_libs = isinstance(exc, MissingDependencyError)
+            GLib.idle_add(_finish, button, None, str(exc), needs_libs,
+                          app, rename_widget)
             return
         usage = getattr(suggestion, 'usage', {}) or {}
         if usage:
@@ -119,28 +121,100 @@ def _on_suggest(button, app, rename_widget, registry, repository, util, log):
         else:
             log.info(f'AI suggest done: provider={provider.name} model={model} '
                      f'(token usage not reported)')
-        GLib.idle_add(_finish, button, suggestion, None, app, rename_widget)
+        GLib.idle_add(_finish, button, suggestion, None, False,
+                      app, rename_widget)
 
     threading.Thread(target=_run, daemon=True).start()
 
 
-def _finish(button, suggestion, error, app, rename_widget):
+def _finish(button, suggestion, error, needs_libs, app, rename_widget):
     button.set_sensitive(True)
     button.set_label(_('Suggest with AI'))
     if error:
-        app.get_service('dialogs').show_toast(
-            _('AI suggestion failed: {err}').format(
-                err=GLib.markup_escape_text(str(error))))
+        _show_error_dialog(app, rename_widget, str(error), needs_libs)
         return False
     _apply_suggestion(rename_widget, suggestion, app)
     return False
 
 
+def _show_error_dialog(app, rename_widget, details, needs_libs=False):
+    """Report a provider failure with the full, selectable error text.
+
+    The message is shown in a scrollable, selectable label so the user can read
+    long errors and copy them for a bug report. A Copy button copies without
+    closing the dialog. When the failure is a missing Python library, an
+    'Enable external libraries…' button installs it into the venv.
+    """
+    parent = rename_widget.get_root()
+    if needs_libs:
+        body = _('This provider needs an external library that is not '
+                 'installed. Enable external libraries to install it.')
+    else:
+        body = _('The AI provider could not complete the request. '
+                 'Full error details are below.')
+    dialog = Adw.AlertDialog(heading=_('AI suggestion failed'), body=body)
+
+    box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
+
+    copy_btn = Gtk.Button(label=_('Copy details'))
+    copy_btn.add_css_class('flat')
+    copy_btn.set_halign(Gtk.Align.END)
+    copy_btn.connect('clicked', _on_copy_details, app, details)
+    box.append(copy_btn)
+
+    scrolled = Gtk.ScrolledWindow()
+    scrolled.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.AUTOMATIC)
+    scrolled.set_min_content_height(120)
+    scrolled.set_max_content_height(320)
+    scrolled.add_css_class('card')
+
+    label = Gtk.Label(label=details)
+    label.set_selectable(True)
+    label.set_wrap(True)
+    label.set_xalign(0.0)
+    label.set_yalign(0.0)
+    label.add_css_class('monospace')
+    label.set_margin_top(8)
+    label.set_margin_bottom(8)
+    label.set_margin_start(8)
+    label.set_margin_end(8)
+    scrolled.set_child(label)
+    box.append(scrolled)
+
+    dialog.set_extra_child(box)
+    if needs_libs:
+        dialog.add_response('enable', _('Enable external libraries…'))
+        dialog.set_response_appearance('enable', Adw.ResponseAppearance.SUGGESTED)
+    dialog.add_response('close', _('Close'))
+    dialog.set_default_response('enable' if needs_libs else 'close')
+    dialog.set_close_response('close')
+    if needs_libs:
+        dialog.connect('response', _on_error_response, app, rename_widget)
+    dialog.present(parent)
+
+
+def _on_error_response(dialog, response, app, rename_widget):
+    if response == 'enable':
+        app.get_service('extlibs').install(rename_widget.get_root())
+
+
+def _on_copy_details(button, app, details):
+    try:
+        Gdk.Display.get_default().get_clipboard().set(details)
+        app.get_service('dialogs').show_toast(_('Error details copied'))
+    except Exception:
+        pass
+
+
 def _apply_suggestion(rename_widget, suggestion, app):
     from MiAZ.backend.models import Country, Group, SentBy, Purpose, SentTo
 
-    if suggestion.date:
-        rename_widget.entry_date.set_text(suggestion.date)
+    util = rename_widget.util
+    # Only accept an 8-digit date. The model may return a placeholder such as
+    # "<UNKNOWN>" that must never reach the filename.
+    date = (suggestion.date or '').strip()
+    if date.isdigit() and len(date) == 8:
+        rename_widget.entry_date.set_text(date)
 
     field_map = [
         ('country', rename_widget.dpdCountry,  rename_widget._cfg_country,  Country),
@@ -151,12 +225,21 @@ def _apply_suggestion(rename_widget, suggestion, app):
     ]
 
     for key, dropdown, cfg, item_type in field_map:
-        value = getattr(suggestion, key, '').strip().upper()
+        # Sanitize the suggested value the same way keys are stored, so a
+        # placeholder or stray character ("<UNKNOWN>") becomes a clean key
+        # ("UNKNOWN") before it is matched, enabled or added.
+        value = util.valid_key(getattr(suggestion, key, '')).upper()
         if not value:
             continue
         if _select_in_dropdown(dropdown, value):
             continue
-        _ask_to_add(app, rename_widget, item_type, cfg, value)
+        # The value is not enabled for this repository. If it already exists in
+        # the available pool (for example a valid ISO country like DE), offer to
+        # enable it and keep its description; only truly new values are added.
+        if cfg.exists_available(value):
+            _ask_to_enable(app, rename_widget, item_type, cfg, value)
+        else:
+            _ask_to_add(app, rename_widget, item_type, cfg, value)
 
     if suggestion.concept:
         rename_widget.entry_concept.set_text(suggestion.concept)
@@ -195,11 +278,44 @@ def _ask_to_add(app, rename_widget, item_type, cfg, value):
 def _on_add_response(_dialog, response, helper, item_type, cfg, rename_widget):
     if response != 'apply':
         return
-    key = helper.get_value1().strip().upper()
+    # Sanitize whatever the user accepted: strip characters that are not valid
+    # in a filename field, so "<UNKNOWN>" becomes "UNKNOWN".
+    key = rename_widget.util.valid_key(helper.get_value1()).upper()
     value = helper.get_value2().strip()
-    if not key:
+    if not key or not value:
         return
     cfg.add_available(key, value)
     cfg.add_used(key, value)
     rename_widget._select_value(item_type, key)
+    rename_widget._on_changed_entry()
+
+
+def _ask_to_enable(app, rename_widget, item_type, cfg, value):
+    from gettext import gettext as _
+    from MiAZ.backend.util import humanize_value
+
+    description = cfg.load_available().get(value, '')
+    name = humanize_value(item_type.__gtype_name__, description) or value
+    i_title = _(item_type.__title__)
+    parent = rename_widget.get_root()
+    dialog = Adw.AlertDialog(
+        heading=_('Enable {title}?').format(title=i_title.lower()),
+        body=_('"{name}" ({key}) already exists but is not enabled for this '
+               'repository. Enable it?').format(name=name, key=value))
+    dialog.add_response('cancel', _('Cancel'))
+    dialog.add_response('enable', _('Enable'))
+    dialog.set_response_appearance('enable', Adw.ResponseAppearance.SUGGESTED)
+    dialog.set_default_response('enable')
+    dialog.set_close_response('cancel')
+    dialog.connect('response', _on_enable_response,
+                   item_type, cfg, value, description, rename_widget)
+    dialog.present(parent)
+
+
+def _on_enable_response(_dialog, response, item_type, cfg, value, description, rename_widget):
+    if response != 'enable':
+        return
+    # Preserve the existing description; do not overwrite it with an empty value.
+    cfg.add_used(value, description)
+    rename_widget._select_value(item_type, value)
     rename_widget._on_changed_entry()

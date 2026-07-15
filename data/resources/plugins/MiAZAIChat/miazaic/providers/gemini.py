@@ -2,7 +2,7 @@
 
 from typing import Optional
 
-from .base import Provider
+from .base import Provider, MissingDependencyError
 from miazaic.usage import make_usage
 
 _DEFAULT_MODEL = 'gemini-2.0-flash'
@@ -23,7 +23,7 @@ class GeminiProvider(Provider):
         try:
             from google import genai
         except ImportError:
-            raise RuntimeError('google-genai package not installed; run: pip install google-genai')
+            raise MissingDependencyError('google-genai')
         self._client = genai.Client(api_key=self.config.get('api_key', ''))
 
     def chat(self, *, messages, system_prompt,
