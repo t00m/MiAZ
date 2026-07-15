@@ -5,7 +5,7 @@ import pathlib
 from dataclasses import replace
 from typing import Optional
 
-from .base import Provider
+from .base import Provider, MissingDependencyError
 from miazai.suggestion import Suggestion, make_usage
 from miazai.vocab import Vocabulary
 
@@ -25,7 +25,7 @@ class OllamaProvider(Provider):
         try:
             import ollama
         except ImportError:
-            raise RuntimeError('ollama package not installed; run: pip install ollama')
+            raise MissingDependencyError('ollama')
 
         model = self.config.get('model', _DEFAULT_MODEL)
         host = self.config.get('base_url', _DEFAULT_BASE_URL)

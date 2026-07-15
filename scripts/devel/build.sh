@@ -7,6 +7,9 @@ rm -f logs/MiAZ-BUILD-*
 # Increase version build numver
 ./scripts/devel/increase_meson_version.sh build
 
+# Propagate the meson.build version to the packaging metadata files
+./scripts/devel/sync_versions.sh
+
 # Execute the script to get the app version
 app_version=$(./scripts/devel/increase_meson_version.sh)
 

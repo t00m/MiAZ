@@ -14,6 +14,7 @@ from gi.repository import GObject
 
 from MiAZ.backend.log import MiAZLog
 from MiAZ.backend.models import MiAZItem
+from MiAZ.backend.util import atomic_json_save
 from MiAZ.backend.config import MiAZConfigCountries
 from MiAZ.backend.config import MiAZConfigGroups
 from MiAZ.backend.config import MiAZConfigPurposes
@@ -79,8 +80,7 @@ class MiAZRepository(GObject.GObject):
         dir_conf = os.path.join(path, '.conf')
         os.makedirs(dir_conf, exist_ok=True)
         conf_file = os.path.join(dir_conf, 'repo.json')
-        with open(conf_file, 'w', encoding='utf-8') as fout:
-            json.dump(repoconf, fout, sort_keys=True, indent=4)
+        atomic_json_save(conf_file, repoconf)
         self.config['App'].set('source', path)
         self.log.debug(f"Repository initialized: '{conf_file}'")
         self._init_default_plugins(dir_conf)
@@ -94,8 +94,7 @@ class MiAZRepository(GObject.GObject):
         }
         enabled_file = os.path.join(dir_conf, 'plugins-used.json')
         if not os.path.exists(enabled_file):
-            with open(enabled_file, 'w', encoding='utf-8') as fout:
-                json.dump(default_plugins, fout, sort_keys=True, indent=4)
+            atomic_json_save(enabled_file, default_plugins)
             self.log.debug(f"Default system plugins written to: '{enabled_file}'")
 
     def setup(self, repo_id: str = None):

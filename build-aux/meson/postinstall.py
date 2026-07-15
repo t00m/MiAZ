@@ -18,7 +18,9 @@ if not destdir:
     print('Compiling GSettings schemas...')
     call(['glib-compile-schemas', path.join(datadir, 'glib-2.0', 'schemas')])
 
-bindir = path.join(prefix, 'bin')
-binprg = path.join(bindir, 'miaz')
-print('Set the right permissions for MiAZ executable')
-call(['chmod', 'a+x', binprg])
+    # meson already installs the launcher executable (install_mode rwxrwxr-x),
+    # so this is a redundant safety net on a live install. Skip it during a
+    # package build (DESTDIR set), where /usr/bin/miaz does not exist yet and the
+    # chmod only prints a scary "cannot access" warning.
+    print('Set the right permissions for MiAZ executable')
+    call(['chmod', 'a+x', path.join(prefix, 'bin', 'miaz')])

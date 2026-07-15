@@ -36,7 +36,7 @@ MiAZ/
 │   ├── __init__.py               ← Package marker
 │   ├── miaz.py                   ← Entry point (MiAZ class, main)
 │   ├── env.in                    ← Environment template → env.py (meson-generated)
-│   ├── backend/                  ← Business logic (NO GTK imports)
+│   ├── backend/                  ← Business logic (no GTK/Adw widgets; GObject signals OK)
 │   │   ├── config.py             ← MiAZConfig + subclasses (App, Repo, Country, etc.)
 │   │   ├── crash.py              ← console/log-only excepthook (install_backend_excepthook)
 │   │   ├── data.py               ← Placeholder (package marker)
@@ -77,7 +77,7 @@ MiAZ/
 │       ├── conf/                 ← 6 default config JSON files (countries, extensions,
 │       │                            groups, languages, people, purposes)
 │       └── ...
-├── data/io.github.t00m.MiAZ.gschema.xml  ← GSettings schema (empty at runtime; app uses JSON)
+├── data/io.github.t00m.MiAZ.gschema.xml  ← GSettings schema (window geometry; repo config stays in JSON)
 ├── data/io.github.t00m.MiAZ.metainfo.xml.in
 ├── flatpak/io.github.t00m.MiAZ.json      ← Flatpak manifest (+ .local.json for local builds)
 ├── scripts/packaging/            ← AppImage, deb, rpm, win, flatpak build scripts + build_all.sh
@@ -127,7 +127,7 @@ against the enabled config (`config.exists_used`) or, for dates,
 
 ### Layered: Backend (no GTK) → Services (GTK-aware) → Widgets (GTK/Adw)
 
-**Backend** (`MiAZ/backend/`): Zero GTK imports. File I/O, config, models, logging, util.
+**Backend** (`MiAZ/backend/`): No GTK/Adw/Gdk widget imports. File I/O, config, models, logging, util. `GObject`/`GLib`/`Gio` are allowed and used on purpose: the backend exposes its events through GObject signals, which is the backend/frontend contract.
 - `MiAZConfig` signals: `available-updated`, `used-updated`
 - `MiAZUtil` signals: `filename-added`, `filename-deleted`, `filename-renamed`
 - `MiAZRepository` signals: `repository-switched`
@@ -475,7 +475,7 @@ activation (with install instructions) when `ocrmypdf` is not on `PATH`.
 - **Signal handlers**: `_on_<widget>_<signal>`
 - **No bare `except:`**,  always catch `Exception as e` or specific types
 - **No `print()`**,  use `logging.getLogger(__name__)`
-- **Backend**: no GTK imports, no side-effects on import
+- **Backend**: no GTK/Adw/Gdk widget imports (GObject/GLib/Gio signals are fine), no side-effects on import
 - **Frontend**: no direct file I/O, always call backend APIs
 - **Threading**: `threading.Thread` + `GLib.idle_add()` for UI marshal
 - **GTK4 list-model chain** (Workspace, `widgets/columnview.py`): `Gio.ListStore` → `Gtk.SortListModel` → `Gtk.FilterListModel` → `Gtk.MultiSelection` → `Gtk.ColumnView`

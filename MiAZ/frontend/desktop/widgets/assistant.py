@@ -148,8 +148,8 @@ class MiAZRepoAssistant(Adw.Window):
 
         title = Gtk.Label()
         title.set_xalign(0.0)
-        title.set_markup(_('<big><b>Welcome to {name}</b></big>').format(
-            name=ENV['APP']['name']))
+        title.add_css_class('title-1')
+        title.set_text(_('Welcome to {name}').format(name=ENV['APP']['name']))
         body.append(title)
 
         intro = Gtk.Label()
@@ -220,7 +220,8 @@ class MiAZRepoAssistant(Adw.Window):
                                                 hexpand=True, vexpand=True)
         heading = Gtk.Label()
         heading.set_xalign(0.0)
-        heading.set_markup(_('<big><b>Create a repository</b></big>'))
+        heading.add_css_class('title-1')
+        heading.set_text(_('Create a repository'))
         page.append(heading)
 
         subtitle = Gtk.Label()
@@ -279,8 +280,8 @@ class MiAZRepoAssistant(Adw.Window):
                                                 hexpand=True, vexpand=True)
         heading = Gtk.Label()
         heading.set_xalign(0.0)
-        heading.set_markup(
-            _('<big><b>{title}</b></big>').format(title=_(model.__title_plural__)))
+        heading.add_css_class('title-1')
+        heading.set_text(_(model.__title_plural__))
         page.append(heading)
 
         help_text = PROPERTY_HELP.get(name, '')
@@ -303,7 +304,8 @@ class MiAZRepoAssistant(Adw.Window):
                                                 hexpand=True, vexpand=True)
         heading = Gtk.Label()
         heading.set_xalign(0.0)
-        heading.set_markup(_('<big><b>Summary</b></big>'))
+        heading.add_css_class('title-1')
+        heading.set_text(_('Summary'))
         page.append(heading)
 
         subtitle = Gtk.Label()

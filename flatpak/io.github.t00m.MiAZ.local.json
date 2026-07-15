@@ -13,7 +13,8 @@
         "--socket=session-bus",
         "--filesystem=host",
         "--allow=devel",
-        "--talk-name=org.freedesktop.portal.FileChooser"
+        "--talk-name=org.freedesktop.portal.FileChooser",
+        "--talk-name=org.freedesktop.secrets"
     ],
     "cleanup" : [
         "/include",

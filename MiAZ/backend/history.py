@@ -103,8 +103,12 @@ class MiAZHistory(GObject.GObject):
             month = datetime.datetime.now().strftime('%Y%m')
             fpath = os.path.join(history_dir, f'{month}.jsonl')
             line = json.dumps(record, ensure_ascii=False)
+            # Write the whole record in one call and flush it to disk. A crash
+            # can at worst leave a torn final line, which iter_records skips.
             with open(fpath, 'a', encoding='utf-8') as handler:
                 handler.write(line + '\n')
+                handler.flush()
+                os.fsync(handler.fileno())
         except Exception as error:
             self.log.error(f"Could not write change journal: {error}")
 

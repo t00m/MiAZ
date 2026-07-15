@@ -2,7 +2,7 @@
 
 from typing import Optional
 
-from .base import Provider
+from .base import Provider, MissingDependencyError
 from miazaic.usage import make_usage
 
 _DEFAULT_MODEL = 'claude-haiku-4-5-20251001'
@@ -39,7 +39,7 @@ class ClaudeProvider(Provider):
         try:
             from anthropic import Anthropic
         except ImportError:
-            raise RuntimeError('anthropic package not installed; run: pip install anthropic')
+            raise MissingDependencyError('anthropic')
         self._client = Anthropic(api_key=self.config.get('api_key', ''))
 
     def chat(self, *, messages, system_prompt,

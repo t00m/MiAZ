@@ -5,7 +5,7 @@ import pathlib
 from dataclasses import replace
 from typing import Optional
 
-from .base import Provider
+from .base import Provider, MissingDependencyError
 from miazai.suggestion import Suggestion, make_usage
 from miazai.vocab import Vocabulary
 
@@ -28,7 +28,7 @@ class OpenAIProvider(Provider):
         try:
             from openai import OpenAI
         except ImportError:
-            raise RuntimeError('openai package not installed; run: pip install openai')
+            raise MissingDependencyError('openai')
         self._client = OpenAI(api_key=self.config.get('api_key', ''))
 
     def suggest(self, *, text: Optional[str], file_path: Optional[pathlib.Path],

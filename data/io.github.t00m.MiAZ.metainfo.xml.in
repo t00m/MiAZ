@@ -47,7 +47,7 @@
   <screenshots>
     <screenshot type="default">
       <image type="source" width="1330" height="850">https://raw.githubusercontent.com/t00m/MiAZ/main/data/docs/screenshots/MiAZ-Workspace-filters.png</image>
-      <caption>Main workspace displaying the document list and sidebar filters in action</caption>
+      <caption>Main workspace with document list and filters</caption>
     </screenshot>
     <screenshot>
       <image type="source" width="1074" height="778">https://raw.githubusercontent.com/t00m/MiAZ/main/data/docs/screenshots/MiAZ-repository-settings.png</image>
@@ -67,6 +67,32 @@
     </screenshot>
   </screenshots>
   <releases>
+    <release version="0.1.30" date="2026-07-08" urgency="medium">
+      <description>
+        <p>See CHANGELOG.md for details.</p>
+      </description>
+    </release>
+    <release version="0.1.29" date="2026-07-06" urgency="medium">
+      <description>
+        <p>See CHANGELOG.md for details.</p>
+      </description>
+    </release>
+    <release version="0.1.28" date="2026-06-27" urgency="medium">
+      <description>
+        <p>AI chat, mass rename as a core feature, a per-repository change journal, and several new plugins.</p>
+        <ul>
+          <li>New plugin MiAZAIChat: chat about a document via Claude, OpenAI, Gemini, or Ollama</li>
+          <li>Mass rename is now a core feature with a guided Concept transform dialog</li>
+          <li>Per-repository change journal records every add, rename, and delete with import provenance</li>
+          <li>New plugins: MiAZNewspaper, MiAZYearReport, MiAZOCR, MiAZFullscreen, MiAZColumnVisibility</li>
+          <li>MiAZNotes renders the note body as Markdown in view mode</li>
+          <li>Embedded localhost web server with a built-in Browser page</li>
+          <li>Global crash handling with a log file and an error dialog</li>
+          <li>Rename: filenames forced to uppercase, and Suggest metadata from documents sharing the concept</li>
+          <li>Sidebar filters: case-insensitive substring search with sorted entries</li>
+        </ul>
+      </description>
+    </release>
     <release version="0.1.26" date="2026-05-16" urgency="medium">
       <description>
         <p>AI-assisted renaming, document notes, column visibility, and rename dialog improvements.</p>

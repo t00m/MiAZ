@@ -27,8 +27,20 @@ class MiAZWatcher(GObject.GObject):
     """
     __gtype_name__ = 'MiAZWatcher'
     __gsignals__ = {
+        # Full-refresh notification (unchanged): "something changed, re-scan".
         'repository-updated': (GObject.SignalFlags.RUN_LAST, None, ()),
+        # Per-file notification for incremental updates: (path, other_path, event).
+        # other_path is only set for renames; event is a FileMonitor nick such
+        # as 'created', 'deleted', 'renamed', 'changes-done-hint'.
+        'repository-changed': (GObject.SignalFlags.RUN_LAST, None, (str, str, str)),
     }
+
+    # A change touching more files than this in one burst is applied as a full
+    # re-scan rather than many per-file updates.
+    _BULK_THRESHOLD = 25
+
+    # Gio.FileMonitorEvent to a stable string nick.
+    _EVENT_NICKS = None
 
     def __init__(self, dirpath: str = None, remote=False):
         """
@@ -45,6 +57,8 @@ class MiAZWatcher(GObject.GObject):
         self._monitor = None
         self._debounce_id = 0
         self._timeout_id = 0
+        # Per-path events accumulated during a burst: {path: (other_path, nick)}.
+        self._pending = {}
         seconds = 2
         self.log.debug(f"Watching repository: {dirpath}")
         self.log.debug(f"Remote repository? {remote}")
@@ -70,23 +84,62 @@ class MiAZWatcher(GObject.GObject):
             except Exception as e:
                 self.log.error(f"Could not setup FileMonitor: {e}")
 
+    def _event_nick(self, event_type):
+        """Map a Gio.FileMonitorEvent to a stable string nick."""
+        if MiAZWatcher._EVENT_NICKS is None:
+            E = Gio.FileMonitorEvent
+            MiAZWatcher._EVENT_NICKS = {
+                E.CHANGED: 'changed',
+                E.CHANGES_DONE_HINT: 'changes-done-hint',
+                E.DELETED: 'deleted',
+                E.CREATED: 'created',
+                E.ATTRIBUTE_CHANGED: 'attribute-changed',
+                E.RENAMED: 'renamed',
+                E.MOVED_IN: 'moved-in',
+                E.MOVED_OUT: 'moved-out',
+            }
+        return MiAZWatcher._EVENT_NICKS.get(event_type, 'changed')
+
     def _on_monitor_changed(self, monitor, file, other_file, event_type):
         if not self.active:
             return
-        
-        # We ignore some event types if needed, but usually any change is relevant
-        # self.log.debug(f"FileMonitor event: {event_type} on {file.get_path()}")
-        
+
+        # Accumulate the latest event per path; a burst (temp writes, etc.)
+        # collapses to one settled event per file. The 500 ms debounce lets the
+        # operation finish before we act on it.
+        path = file.get_path() if file is not None else None
+        if path is None:
+            return
+        other = other_file.get_path() if other_file is not None else ''
+        self._pending[path] = (other, self._event_nick(event_type))
+
         if self._debounce_id > 0:
             GLib.source_remove(self._debounce_id)
-        
-        self._debounce_id = GLib.timeout_add(500, self._emit_updated)
+        self._debounce_id = GLib.timeout_add(500, self._flush_changes)
 
-    def _emit_updated(self):
+    def _flush_changes(self):
         self._debounce_id = 0
-        if self.active:
-            self.log.debug("Repository updated (notified by FileMonitor)")
+        if not self.active:
+            self._pending = {}
+            return False
+        pending = self._pending
+        self._pending = {}
+        if not pending:
+            return False
+
+        # Too many files at once: a single full re-scan is cheaper and simpler
+        # than many per-file updates.
+        if len(pending) > MiAZWatcher._BULK_THRESHOLD:
+            self.log.debug(f"Repository updated ({len(pending)} paths, full re-scan)")
             self.emit('repository-updated')
+            return False
+
+        # Emit one per-file signal for incremental consumers, then the
+        # full-refresh signal for consumers that do not handle paths (they can
+        # choose to skip it when the per-file updates already covered the change).
+        for path, (other, nick) in pending.items():
+            self.emit('repository-changed', path, other, nick)
+        self.emit('repository-updated')
         return False
 
     def files_with_timestamp_async(self, path, callback):

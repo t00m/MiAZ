@@ -16,6 +16,7 @@ from gi.repository import Pango
 
 from MiAZ.env import ENV
 from MiAZ.backend.log import MiAZLog
+from MiAZ.backend.util import humanize_value
 from MiAZ.backend.models import MiAZItem, Group, Country, Purpose, Concept, SentBy, SentTo
 from MiAZ.frontend.desktop.services.dialogs import MiAZDialogAdd
 from MiAZ.frontend.desktop.widgets.configview import MiAZCountries, MiAZGroups, MiAZPurposes, MiAZPeopleSentBy, MiAZPeopleSentTo
@@ -108,9 +109,9 @@ class MiAZRenameDialog(Gtk.Box):
             self._set_concept_text(self.suggested[5])
         self._set_suggestion(self.dpdSentTo, self.suggested[6])
         self.lblExt.set_text(self.extension)
-        self.lblFilenameCur.set_markup(os.path.basename(self.doc))
+        self.lblFilenameCur.set_text(os.path.basename(self.doc))
         self.lblFilenameCur.set_selectable(True)
-        self.lblFilenameNew.set_markup(self.result)
+        self.lblFilenameNew.set_text(self.result)
         self.lblFilenameNew.set_selectable(True)
         self._on_changed_entry()
 
@@ -248,12 +249,15 @@ class MiAZRenameDialog(Gtk.Box):
                 continue
             seen.add(combo)
 
+            idx_field = {1: 'Country', 2: 'Group', 3: 'SentBy', 4: 'Purpose', 6: 'SentTo'}
+
             def describe(idx):
                 key = fields[idx]
                 if not key:
                     return ''
                 description = cfg[idx].get(key)
-                return description if description is not None else key
+                description = description if description is not None else key
+                return humanize_value(idx_field.get(idx, ''), description)
 
             suggestions.append(MiAZItem(
                 id=os.path.basename(filename),
@@ -455,7 +459,7 @@ class MiAZRenameDialog(Gtk.Box):
         self.lblFilenameCur.set_property('ellipsize', Pango.EllipsizeMode.MIDDLE)
 
         # New filename
-        title = _('<b>New filename</b>')
+        title = _('New filename')
         self.lblFilenameNew = Gtk.Label()
         self.lblFilenameNew.add_css_class('monospace')
         self.lblFilenameNew.add_css_class('success')
@@ -503,7 +507,10 @@ class MiAZRenameDialog(Gtk.Box):
             aextension = self.lblExt.get_text()
 
             self.result = f"{adate}-{acountry}-{agroup}-{asentby}-{apurpose}-{aconcept}-{asentto}.{aextension}"
-            self.lblFilenameNew.set_markup(self.result)
+            # The result is a plain filename, not markup. set_markup would parse
+            # '&', '<' and '>' (common in AI-suggested values) and raise, which
+            # left the preview stale.
+            self.lblFilenameNew.set_text(self.result)
             self.lblFilenameNew.set_tooltip_text(self.result)
 
             v_date = self.validate_date(adate)
@@ -522,9 +529,11 @@ class MiAZRenameDialog(Gtk.Box):
             self._success_or_error(self.rowConcept, v_cnpt)
             self._success_or_error(self.rowSentTo, v_sentto)
         except Exception as error:
+            # Never re-raise from the live-preview handler: it is driven by
+            # signals and by the AI suggestion flow, and a crash here left the
+            # dialog broken and the preview frozen.
             self.log.error(error)
             self.result = ''
-            raise
 
     # Inline "+ Add" for restricted-vocabulary rows
     def _on_inline_add_value(self, _button, item_type, conf_obj):
@@ -542,7 +551,8 @@ class MiAZRenameDialog(Gtk.Box):
     def _on_inline_add_response(self, _dialog, response, helper, item_type, conf_obj):
         if response != 'apply':
             return
-        key = helper.get_value1().strip().upper()
+        # Sanitize the key: strip characters not valid in a filename field.
+        key = self.util.valid_key(helper.get_value1()).upper()
         value = helper.get_value2().strip()
         if not key or not value:
             return

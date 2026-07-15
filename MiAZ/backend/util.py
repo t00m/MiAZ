@@ -13,6 +13,7 @@ import ast
 import sys
 import glob
 import json
+import gettext
 import shutil
 import tempfile
 import threading
@@ -33,6 +34,57 @@ mimetypes.init()
 REMOTE_SCHEMES = {
     "sftp", "smb", "ftp", "http", "https", "dav", "davs", "afp", "mtp", "obex", "ssh"
 }
+
+
+def humanize_value(gtype_name: str, description: str) -> str:
+    """Return the localized display label for a controlled-vocabulary value.
+
+    The stored value and the on-disk filename keep the original code; only the
+    label shown to the user is translated:
+
+      - Country: through the iso-codes 'iso_3166-1' gettext domain, so every
+        language iso-codes ships is covered with no per-language work here.
+      - Group / Purpose: through the app 'miaz' catalog (their default labels
+        are listed in vocabulary.py so they are extracted for translation).
+      - Anything else (user-typed values like people or concepts): unchanged.
+
+    The original string is always the fallback, so untranslated or user
+    customized values display as-is.
+    """
+    if not description:
+        return description
+    if gtype_name == 'Country':
+        return gettext.dgettext('iso_3166-1', description)
+    if gtype_name in ('Group', 'Purpose'):
+        return gettext.dgettext('miaz', description)
+    return description
+
+
+def atomic_json_save(filepath: str, adict: dict) -> None:
+    """Write adict as JSON to filepath atomically.
+
+    Write to a temporary file in the same directory, flush it to disk, then
+    os.replace() it onto the target. os.replace is atomic on the same
+    filesystem, so a crash mid-write never leaves a half-written file. Module
+    level so callers without the util service (e.g. repository bootstrap) can
+    reuse the same implementation.
+    """
+    dirpath = os.path.dirname(filepath) or '.'
+    fd, tmppath = tempfile.mkstemp(dir=dirpath, prefix='.tmp-', suffix='.json')
+    try:
+        with os.fdopen(fd, 'w', encoding='utf-8') as fout:
+            json.dump(adict, fout, sort_keys=True, indent=4)
+            fout.flush()
+            os.fsync(fout.fileno())
+        os.replace(tmppath, filepath)
+    except BaseException:
+        # Never leave the temp file behind on failure.
+        try:
+            os.unlink(tmppath)
+        except OSError:
+            pass
+        raise
+
 
 class SafeDictExtractor(ast.NodeVisitor):
     def __init__(self, variable_name):
@@ -119,9 +171,8 @@ class MiAZUtil(GObject.GObject):
         return adict
 
     def json_save(self, filepath: str, adict: {}) -> {}:
-        """Save dictionary into a file in json format"""
-        with open(filepath, 'w', encoding='utf-8') as fout:
-            json.dump(adict, fout, sort_keys=True, indent=4)
+        """Save dictionary into a file in json format, atomically."""
+        atomic_json_save(filepath, adict)
 
     def _invalidate_field_index(self, *args):
         self._field_index_dir = None
@@ -321,14 +372,17 @@ class MiAZUtil(GObject.GObject):
                 except Exception as error:
                     self.log.error(f"Renaming doc from '{source}' to {target}' not possible. Error: {error}")
             else:
-                # FIXME
-                # ~ self.log.error(f"Renaming doc from '{source}' to {target}' not possible. Target already exist")
-                pass
+                # Target already exists. Do not overwrite it silently; the
+                # caller sees rename=False and surfaces the skip (mass rename
+                # counts skipped files in a toast).
+                self.log.warning(
+                    f"Rename skipped: target already exists: '{target}'")
         else:
-            # FIXME
-            # ~ self.log.warning("FIXME: this might not be true in Windows systems")
-            # ~ self.log.warning(f"Renaming doc from '{source}' to {target}' skipped. Source and target are the same")
-            pass
+            # Source and target are identical, so there is nothing to do. On
+            # Linux the comparison is case-sensitive, which is what we want;
+            # MiAZ targets Linux for the 0.2 release.
+            self.log.debug(
+                f"Rename skipped: source and target are the same: '{source}'")
         return rename
 
     def filename_delete(self, filepaths: set):

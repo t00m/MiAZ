@@ -1,7 +1,12 @@
 [project]
 name = "MiAZ"
-version = "0.1.1"
+version = "0.1.30"
 requires-python = ">=3.9"
+
+[project.optional-dependencies]
+# API keys are stored with the system libsecret (a runtime OS package) when
+# available. 'keyring' is the cross-platform fallback backend.
+keyring = ["keyring"]
 
 [tool.ruff]
 target-version = "py39"

@@ -110,7 +110,7 @@ class MiAZSidebar(Adw.Bin):
         filters_box.set_margin_bottom(6)
 
         # Search entry
-        searchentry = self.app.add_widget('searchentry', Gtk.Entry())
+        searchentry = self.app.add_widget('searchentry', Gtk.SearchEntry())
         searchentry.set_hexpand(True)
         searchentry.set_placeholder_text(_('Search in all fields'))
         dd_size_group.add_widget(searchentry)
@@ -136,7 +136,7 @@ class MiAZSidebar(Adw.Bin):
             filters_box.append(dropdown)
 
         # Concept entry (free text, filters only by Concept field)
-        searchentry_concept = self.app.add_widget('searchentry-concept', Gtk.Entry())
+        searchentry_concept = self.app.add_widget('searchentry-concept', Gtk.SearchEntry())
         searchentry_concept.set_hexpand(True)
         searchentry_concept.set_placeholder_text(_('Search in Concept field'))
         dd_size_group.add_widget(searchentry_concept)

@@ -82,11 +82,13 @@ class MiAZDR(GObject.GObject):
 
     def restore_config(self, repo_conf_dir: str, zip_path: str):
         """Replace the .conf directory with contents from a zip archive."""
+        # Defined before the try so the rollback below can reference it even if
+        # unzip fails before we get to move anything.
+        old_conf = repo_conf_dir + '.old'
         tmpdir = tempfile.mkdtemp()
         try:
             self.util.unzip(zip_path, tmpdir)
 
-            old_conf = repo_conf_dir + '.old'
             if os.path.exists(old_conf):
                 shutil.rmtree(old_conf)
 
@@ -106,22 +108,30 @@ class MiAZDR(GObject.GObject):
                 shutil.rmtree(old_conf)
 
             self.log.info(f"Restore config: replaced {repo_conf_dir} from {zip_path}")
-        except Exception:
-            if os.path.exists(old_conf):
-                if os.path.exists(repo_conf_dir):
-                    shutil.rmtree(repo_conf_dir)
-                shutil.move(old_conf, repo_conf_dir)
+        except Exception as error:
+            self.log.error(f"Restore config failed, rolling back: {error}")
+            # A failure during rollback must not mask the original error, so it
+            # is logged and swallowed while the original exception re-raises.
+            try:
+                if os.path.exists(old_conf):
+                    if os.path.exists(repo_conf_dir):
+                        shutil.rmtree(repo_conf_dir)
+                    shutil.move(old_conf, repo_conf_dir)
+            except OSError as rollback_error:
+                self.log.error(f"Rollback of {repo_conf_dir} failed: {rollback_error}")
             raise
         finally:
             shutil.rmtree(tmpdir, ignore_errors=True)
 
     def restore_repository(self, repo_dir: str, zip_path: str):
         """Replace the entire repository with contents from a zip archive."""
+        # Defined before the try so the rollback below can reference it even if
+        # unzip fails before we get to move anything.
+        old_repo = repo_dir + '.old'
         tmpdir = tempfile.mkdtemp()
         try:
             self.util.unzip(zip_path, tmpdir)
 
-            old_repo = repo_dir + '.old'
             if os.path.exists(old_repo):
                 shutil.rmtree(old_repo)
 
@@ -141,11 +151,17 @@ class MiAZDR(GObject.GObject):
                 shutil.rmtree(old_repo)
 
             self.log.info(f"Restore repository: replaced {repo_dir} from {zip_path}")
-        except Exception:
-            if os.path.exists(old_repo):
-                if os.path.exists(repo_dir):
-                    shutil.rmtree(repo_dir)
-                shutil.move(old_repo, repo_dir)
+        except Exception as error:
+            self.log.error(f"Restore repository failed, rolling back: {error}")
+            # A failure during rollback must not mask the original error, so it
+            # is logged and swallowed while the original exception re-raises.
+            try:
+                if os.path.exists(old_repo):
+                    if os.path.exists(repo_dir):
+                        shutil.rmtree(repo_dir)
+                    shutil.move(old_repo, repo_dir)
+            except OSError as rollback_error:
+                self.log.error(f"Rollback of {repo_dir} failed: {rollback_error}")
             raise
         finally:
             shutil.rmtree(tmpdir, ignore_errors=True)

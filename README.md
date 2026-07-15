@@ -60,19 +60,37 @@ Fields are separated by hyphens. The date-first order means files sort chronolog
 
 Download the `.deb` package from the [latest release](https://github.com/t00m/MiAZ/releases) and install:
 
-- From file browser: double click in the `.deb` package. The Software Manager should let you install it.
-- From command line:
+- From file browser: double click the `.deb` package. The Software Manager should let you install it.
+- From command line, use `apt` with a path to the file so it resolves and installs every dependency:
 
 ```bash
-sudo dpkg -i ./miaz_*.deb
-sudo apt-get install -f   # resolve any missing dependencies
+sudo apt install ./miaz_<version>_all.deb
+```
+
+The leading `./` matters. It tells `apt` the argument is a local file, not a package name in the repositories. `apt` then pulls the runtime dependencies from the distribution repositories:
+
+```
+Installing:
+  miaz
+
+Installing dependencies:
+  gir1.2-javascriptcoregtk-6.0  gir1.2-webkit-6.0  libpeas-2-common  python3-jaraco.classes  python3-keyring
+  gir1.2-peas-2                 libpeas-2-0        python3-gi-cairo   python3-jeepney         python3-secretstorage
+
+Continue? [Y/n]
+```
+
+`dpkg -i` does not resolve dependencies, it installs only the package and reports the rest as missing. If you already ran `sudo dpkg -i ./miaz_<version>_all.deb`, fix the missing dependencies with:
+
+```bash
+sudo apt-get install -f
 ```
 
 ### RPM (Fedora, RHEL, openSUSE)
 
 Download the `.rpm` package from the [latest release](https://github.com/t00m/MiAZ/releases) and install:
 
-- From file browser: double click in the `.deb` package. The Software Manager should let you install it.
+- From file browser: double click the `.rpm` package. The Software Manager should let you install it.
 - From command line:
 
 ```bash
@@ -85,11 +103,11 @@ Package provided but not recommended. Because the application runs inside a sand
 
 Download the `.flatpak` package from the [latest release](https://github.com/t00m/MiAZ/releases) and install:
 
-- From file browser: double click in the `.deb` package. The Software Manager should let you install it.
+- From file browser: double click the `.flatpak` package. The Software Manager should let you install it.
 - From command line:
 
 ```bash
-sudo dnf install ./miaz-*.rpm
+flatpak install ./miaz-*.flatpak
 ```
 
 ### AppImage

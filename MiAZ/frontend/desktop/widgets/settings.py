@@ -7,6 +7,7 @@
 from gettext import gettext as _
 
 from gi.repository import Adw
+from gi.repository import Gio
 from gi.repository import Gtk
 from gi.repository import GObject
 
@@ -163,6 +164,98 @@ class MiAZAppSettings(Adw.PreferencesDialog):
         # Sidebar toggle button visibility (core behaviour, formerly the
         # MiAZSidebarTB plugin).
         self._build_sidebar_toggle_row(ui_group)
+
+        # Optional external libraries (per-user venv for plugin dependencies).
+        self._build_external_libraries_group(page)
+
+    def _build_external_libraries_group(self, page):
+        group = Adw.PreferencesGroup()
+        group.set_title(_('External libraries'))
+        group.set_description(_('Optional Python libraries some plugins need '
+                                '(for example AI providers). MiAZ installs them '
+                                'in a private virtualenv in your home directory, '
+                                'never into the system Python.'))
+        page.add(group)
+
+        # Collapsible: collapsed it shows only a status summary; expanded it
+        # lists one row per installed library, so a long list never floods the
+        # settings page.
+        row = Adw.ExpanderRow(title=_('External libraries'))
+        self.app.add_widget('window-setting-row-extlibs', row)
+        self._extlibs_lib_rows = []
+        group.add(row)
+
+        btn_install = self.factory.create_button(
+            title=_('Install / Update'), callback=self._on_extlibs_install)
+        btn_install.set_valign(Gtk.Align.CENTER)
+        row.add_suffix(btn_install)
+
+        btn_remove = self.factory.create_button(
+            title=_('Remove'), callback=self._on_extlibs_remove)
+        btn_remove.set_valign(Gtk.Align.CENTER)
+        row.add_suffix(btn_remove)
+
+        self._update_extlibs_row()
+
+    # Packages the venv tooling itself brings along; not user libraries.
+    _EXTLIBS_BOOTSTRAP = frozenset({'pip', 'setuptools', 'wheel'})
+
+    def _update_extlibs_row(self):
+        row = self.app.get_widget('window-setting-row-extlibs')
+        if row is None:
+            return
+        for lib_row in self._extlibs_lib_rows:
+            row.remove(lib_row)
+        self._extlibs_lib_rows = []
+
+        venv = self.app.get_service('venv')
+        if not venv.exists():
+            row.set_subtitle(_('Not installed. Install to download them.'))
+            row.set_expanded(False)
+            row.set_enable_expansion(False)
+            return
+        if venv.stale():
+            row.set_subtitle(_('Installed for a different Python version. '
+                               'Reinstall to rebuild.'))
+            row.set_expanded(False)
+            row.set_enable_expansion(False)
+            return
+
+        libs = {name: version
+                for name, version in venv.installed_details().items()
+                if name not in self._EXTLIBS_BOOTSTRAP}
+        count = len(libs)
+        row.set_subtitle(_('{count} libraries installed').format(count=count))
+        row.set_enable_expansion(count > 0)
+        by_lib = self.app.get_service('extlibs').plugins_by_library()
+        for name in sorted(libs):
+            plugins = by_lib.get(name)
+            if plugins:
+                subtitle = _('{version}, required by {plugins}').format(
+                    version=libs[name], plugins=', '.join(plugins))
+            else:
+                subtitle = libs[name]
+            lib_row = Adw.ActionRow(title=name, subtitle=subtitle)
+            # Activating the row opens the library's project page in the browser.
+            lib_row.set_activatable(True)
+            lib_row.add_suffix(Gtk.Image.new_from_icon_name(
+                'adw-external-link-symbolic'))
+            lib_row.connect('activated', self._on_extlib_open,
+                            venv.distribution_url(name))
+            row.add_row(lib_row)
+            self._extlibs_lib_rows.append(lib_row)
+
+    def _on_extlib_open(self, _row, url):
+        Gio.AppInfo.launch_default_for_uri(url, None)
+
+    def _on_extlibs_install(self, *args):
+        self.app.get_service('extlibs').install(
+            self, on_done=lambda ok: self._update_extlibs_row())
+
+    def _on_extlibs_remove(self, *args):
+        self.app.get_service('venv').remove()
+        self._update_extlibs_row()
+        self.app.get_service('dialogs').show_toast(_('External libraries removed'))
 
     def _build_sidebar_toggle_row(self, group):
         appconf = self.app.get_config('App')

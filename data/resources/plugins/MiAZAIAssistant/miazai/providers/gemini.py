@@ -5,7 +5,7 @@ import pathlib
 from dataclasses import replace
 from typing import Optional
 
-from .base import Provider
+from .base import Provider, MissingDependencyError
 from miazai.suggestion import Suggestion, make_usage
 from miazai.vocab import Vocabulary
 
@@ -28,7 +28,7 @@ class GeminiProvider(Provider):
         try:
             from google import genai
         except ImportError:
-            raise RuntimeError('google-genai package not installed; run: pip install google-genai')
+            raise MissingDependencyError('google-genai')
         self._client = genai.Client(api_key=self.config.get('api_key', ''))
 
     def suggest(self, *, text: Optional[str], file_path: Optional[pathlib.Path],

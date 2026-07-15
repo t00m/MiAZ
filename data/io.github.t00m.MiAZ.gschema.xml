@@ -14,13 +14,5 @@
             <default>false</default>
             <summary>Window maximized state</summary>
         </key>
-        <key name="sidebar-width" type="i">
-            <default>320</default>
-            <summary>Sidebar panel width</summary>
-        </key>
-        <key name="last-repository" type="s">
-            <default>""</default>
-            <summary>Last used repository identifier</summary>
-        </key>
     </schema>
 </schemalist>

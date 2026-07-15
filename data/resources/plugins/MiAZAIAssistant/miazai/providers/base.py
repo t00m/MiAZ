@@ -8,6 +8,16 @@ from miazai.suggestion import Suggestion
 from miazai.vocab import Vocabulary
 
 
+class MissingDependencyError(Exception):
+    """A provider's Python library is not installed in the venv.
+
+    Carries the pip package name so the UI can offer to install it.
+    """
+    def __init__(self, package: str):
+        self.package = package
+        super().__init__(f'The Python library "{package}" is not installed.')
+
+
 class Provider(abc.ABC):
     name: str
     requires_api_key: bool

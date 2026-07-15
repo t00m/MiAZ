@@ -4,7 +4,7 @@ import pathlib
 from dataclasses import replace
 from typing import Optional
 
-from .base import Provider
+from .base import Provider, MissingDependencyError
 from miazai.suggestion import Suggestion, make_usage
 from miazai.vocab import Vocabulary
 
@@ -43,7 +43,7 @@ class ClaudeProvider(Provider):
         try:
             from anthropic import Anthropic
         except ImportError:
-            raise RuntimeError('anthropic package not installed; run: pip install anthropic')
+            raise MissingDependencyError('anthropic')
         self._client = Anthropic(api_key=self.config.get('api_key', ''))
 
     def suggest(self, *, text: Optional[str], file_path: Optional[pathlib.Path],

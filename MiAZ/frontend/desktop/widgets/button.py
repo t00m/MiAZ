@@ -7,10 +7,16 @@
 from gi.repository import Gtk
 
 
-class MiAZPopoverButton(Gtk.Box):
-    """Custom Popover Button"""
+class MiAZPopoverButton(Gtk.MenuButton):
+    """Menu button that opens a popover holding a list of action widgets.
+
+    It subclasses Gtk.MenuButton instead of wrapping one inside a Gtk.Box so
+    that it is a real button. A wrapping box is not a button, so the Adwaita
+    '.linked' style skips it and the button renders detached from its toolbar
+    siblings. As a direct button it links with them as expected.
+    """
     def __init__(self, app, icon_name: str = '', title: str = '', css_classes: list = None, widgets: list = None):
-        super().__init__(spacing=0, orientation=Gtk.Orientation.VERTICAL)
+        super().__init__()
         css_classes = css_classes if css_classes is not None else []
         widgets = widgets if widgets is not None else []
         self.app = app
@@ -22,10 +28,6 @@ class MiAZPopoverButton(Gtk.Box):
         self.build_ui()
 
     def build_ui(self):
-        self.set_margin_start(0)
-        self.set_margin_end(0)
-        self.set_margin_top(0)
-        self.set_margin_bottom(0)
         self.listbox = Gtk.ListBox.new()
         self.listbox.set_activate_on_single_click(True)
         self.listbox.set_selection_mode(Gtk.SelectionMode.NONE)
@@ -35,18 +37,14 @@ class MiAZPopoverButton(Gtk.Box):
         vbox.append(child=self.listbox)
         self.popover = Gtk.Popover()
         self.popover.set_child(vbox)
-        self.button = Gtk.MenuButton(child=self.factory.create_button_content(icon_name=self.icon_name, title=self.title))
+        self.set_child(self.factory.create_button_content(icon_name=self.icon_name, title=self.title))
         for css_class in self.css_classes:
-            self.button.add_css_class(css_class)
-        self.button.set_popover(self.popover)
-        self.append(self.button)
+            self.add_css_class(css_class)
+        self.set_popover(self.popover)
 
     def add_widget(self, widget: Gtk.Widget):
         self.listbox.append(child=widget)
 
     def remove_widget(self, widget: Gtk.Widget):
         self.listbox.remove(child=widget)
-
-    def set_has_frame(self, has_frame: bool = False):
-        self.button.set_has_frame(has_frame)
 

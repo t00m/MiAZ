@@ -5,13 +5,11 @@ Tests for MiAZ.backend.repository — validate() and init() — using tmp_path.
 Runs without a display (GObject only, no GTK/Adw).
 """
 
-import os
 import json
 
 import gi
 gi.require_version('GLib', '2.0')
 
-import pytest
 from MiAZ.backend.repository import MiAZRepository
 
 

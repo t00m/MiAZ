@@ -449,7 +449,7 @@ class MiAZConfigSentBy(MiAZConfig):
         super().__init__(
             app=app,
             log=MiAZLog('MiAZ.Config.SentBy'),
-            config_for=_('Sent by'),
+            config_for=_('Senders'),
             used=os.path.join(dir_conf, f'{config_name_used}-used.json'),
             available=os.path.join(dir_conf, f'{config_name_available}-available.json'),
             default=os.path.join(ENV['GPATH']['CONF'], 'MiAZ-people.json'),
@@ -465,7 +465,7 @@ class MiAZConfigSentTo(MiAZConfig):
         super().__init__(
             app=app,
             log=MiAZLog('MiAZ.Config.SentTo'),
-            config_for=_('Sent to'),
+            config_for=_('Recipients'),
             used=os.path.join(dir_conf, f'{SentTo.__config_name_used__}-used.json'),
             available=os.path.join(dir_conf, f'{SentTo.__config_name_available__}-available.json'),
             default=os.path.join(ENV['GPATH']['CONF'], 'MiAZ-people.json'),

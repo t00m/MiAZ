@@ -270,7 +270,8 @@ class MiAZPlugin(GObject.GObject):
         config_data = self.get_config_data()
         config_data[key] = value
         self.util.json_save(config_file, config_data)
-        self.log.debug(f"Plugin config for {self.name} updated: [{key}] = {value}")
+        # Log the key name only, never the value: plugin config can hold secrets.
+        self.log.debug(f"Plugin config for {self.name} updated: key '{key}' set")
 
     def get_source_dir(self):
         ENV = self.app.get_env()
@@ -458,6 +459,7 @@ class MiAZPluginSystem(GObject.GObject):
 
             self._activate_plugin_instance(plugin)
             self.log.info(f"Plugin {pname} v{pvers} loaded")
+            self._install_plugin_requirements(plugin)
             self.emit('plugins-updated')
             return True
         except Exception as error:
@@ -472,6 +474,26 @@ class MiAZPluginSystem(GObject.GObject):
             except Exception as cleanup_error:
                 self.log.debug(f"Cleanup after failed load of {pname}: {cleanup_error}")
             return False
+
+    def _install_plugin_requirements(self, plugin: Peas.PluginInfo):
+        """Install a plugin's external libraries when the feature is enabled.
+
+        Only acts when the external-libraries venv already exists; if the user
+        never enabled it, nothing happens here and the AI error dialog offers to
+        enable it at first use. Already-satisfied plugins install nothing.
+        """
+        try:
+            venv = self.app.get_service('venv')
+            if venv is None or not venv.exists():
+                return
+            pdir = plugin.get_module_dir()
+            missing = venv.missing(venv.requirements_for([pdir])) if pdir else []
+            if not missing:
+                return
+            self.app.get_service('extlibs').install(
+                self.app.get_widget('window'), requirements=missing)
+        except Exception as error:
+            self.log.warning(f"Could not install plugin requirements: {error}")
 
     def unload_plugin(self, plugin: Peas.PluginInfo):
         pname = plugin.get_name()

@@ -15,7 +15,6 @@ import gi
 gi.require_version('GLib', '2.0')
 gi.require_version('Gio', '2.0')
 
-import pytest
 from MiAZ.backend.config import MiAZConfig
 from MiAZ.backend.util import MiAZUtil
 from MiAZ.backend.log import MiAZLog

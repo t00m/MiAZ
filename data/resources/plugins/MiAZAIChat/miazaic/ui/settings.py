@@ -4,6 +4,8 @@ from gettext import gettext as _
 
 from gi.repository import Adw, Gtk
 
+from miazaic.providers import effective_active_pid
+
 PROVIDER_LABELS = {
     'claude': 'Claude (Anthropic)',
     'openai': 'OpenAI / OpenCode',
@@ -49,7 +51,7 @@ class AIChatSettings:
 
         ids = list(PROVIDER_LABELS.keys())
         labels = [PROVIDER_LABELS[i] for i in ids]
-        active = self.plugin.get_config_key('active_provider') or 'ollama'
+        active = effective_active_pid(self.plugin, self.registry)
         combo = Adw.ComboRow(title=_('Provider'))
         combo.set_model(Gtk.StringList.new(labels))
         combo.set_selected(ids.index(active) if active in ids else ids.index('ollama'))
@@ -72,9 +74,16 @@ class AIChatSettings:
         group = Adw.PreferencesGroup(title=label)
 
         if provider.requires_api_key:
+            account = f'{self.plugin.name}/{pid}'
+            secrets = self.app.get_service('secrets')
             row_key = Adw.PasswordEntryRow(title=_('API key'))
-            row_key.set_text(cfg.get('api_key', ''))
-            row_key.connect('changed', self._on_key_changed, pid)
+            # Prefer the securely stored key; fall back to a legacy plaintext
+            # value that has not been migrated yet.
+            row_key.set_text(secrets.lookup(account) or cfg.get('api_key', ''))
+            # Store on apply, not on every keystroke, so the keyring is written
+            # once when the user confirms the value.
+            row_key.set_show_apply_button(True)
+            row_key.connect('apply', self._on_key_apply, pid)
             group.add(row_key)
 
         predefined = list(PROVIDER_MODELS.get(pid, []))
@@ -126,11 +135,34 @@ class AIChatSettings:
         idx = combo.get_selected()
         self.plugin.set_config_key('active_provider', ids[idx])
 
-    def _on_key_changed(self, row, pid):
+    def _on_key_apply(self, row, pid):
+        text = row.get_text()
+        account = f'{self.plugin.name}/{pid}'
+        secrets = self.app.get_service('secrets')
         cfg = self.plugin.get_config_key(f'provider_{pid}') or {}
-        cfg['api_key'] = row.get_text()
-        self.plugin.set_config_key(f'provider_{pid}', cfg)
-        self.registry[pid].config = cfg
+
+        if not text:
+            # Cleared: drop it from both the secure store and any plaintext copy.
+            secrets.clear(account)
+            if 'api_key' in cfg:
+                cfg.pop('api_key', None)
+                self.plugin.set_config_key(f'provider_{pid}', cfg)
+            self.registry[pid].config = cfg
+            return
+
+        if secrets.store(account, text):
+            # Stored securely; make sure no plaintext copy is left behind.
+            if 'api_key' in cfg:
+                cfg.pop('api_key', None)
+                self.plugin.set_config_key(f'provider_{pid}', cfg)
+            self.registry[pid].config = {**cfg, 'api_key': text}
+        else:
+            # No secure backend: keep it in the JSON config and warn the user.
+            cfg['api_key'] = text
+            self.plugin.set_config_key(f'provider_{pid}', cfg)
+            self.registry[pid].config = cfg
+            self.app.get_service('dialogs').show_toast(
+                _('No system keyring available. The API key is stored unencrypted.'))
 
     def _on_model_selected(self, combo, _pspec, pid, choices, custom_index, row_custom):
         idx = combo.get_selected()
