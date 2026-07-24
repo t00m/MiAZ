@@ -13,6 +13,7 @@ import os
 import sys
 import glob
 import json
+import shutil
 import zipfile
 import inspect
 import importlib.util
@@ -536,10 +537,36 @@ class MiAZPluginSystem(GObject.GObject):
         try:
             self._deactivate_plugin_instance(plugin)
             self.engine.unload_plugin(plugin)
+            self._remove_plugin_www(plugin)
             self.log.info(f"Plugin {pname} v{pvers} unloaded")
             self.emit('plugins-updated')
         except Exception as error:
             self.log.error(error)
+
+    def _remove_plugin_www(self, plugin: Peas.PluginInfo):
+        """Remove a plugin's published web directory when it is unloaded.
+
+        Plugins that publish to the MiAZ Browser write to
+        LPATH/WWW/<plugin directory basename> (the convention the bundled
+        MiAZNewspaper and MiAZYearReport follow through their PLUGIN_DIR_NAME).
+        Removing it here, centrally, means disabling or uninstalling any such
+        plugin (bundled or user-space) drops its content from the Browser,
+        without each plugin having to clean up after itself. A plugin that
+        publishes under a different name than its folder is not covered here and
+        must clean up in its own do_deactivate.
+        """
+        try:
+            module_dir = plugin.get_module_dir()
+            if not module_dir:
+                return
+            name = os.path.basename(module_dir)
+            ENV = self.app.get_env()
+            www = os.path.join(ENV['LPATH']['WWW'], name)
+            if os.path.isdir(www):
+                shutil.rmtree(www)
+                self.log.debug(f"Removed web content for plugin '{name}': {www}")
+        except Exception as error:
+            self.log.warning(f"Could not remove web content for plugin: {error}")
 
     def get_engine(self):
         return self.engine

@@ -158,13 +158,9 @@ class MiAZYearReportPlugin(MiAZExtension):
             except Exception:
                 pass
         self._signal_handlers = []
-        # Remove the published site so it disappears from the Browser dropdown.
-        try:
-            target = self._target_dir()
-            if target and os.path.isdir(target):
-                shutil.rmtree(target)
-        except Exception as error:
-            self.log.warning(f"MiAZYearReport cleanup failed: {error}")
+        # The published site under LPATH/WWW is removed centrally by the plugin
+        # manager (unload_plugin -> _remove_plugin_www) when the plugin is
+        # disabled or uninstalled, so no per-plugin cleanup is needed here.
         self.plugin.set_started(False)
 
     # Setup
