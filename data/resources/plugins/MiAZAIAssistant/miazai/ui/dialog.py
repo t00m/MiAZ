@@ -101,8 +101,8 @@ def _on_suggest(button, app, rename_widget, registry, repository, util, log):
                 text=text,
                 file_path=file_arg,
                 vocab=vocab,
-                system_prompt=P.system_prompt(vocab),
-                user_prompt=P.user_prompt(),
+                system_prompt=P.suggest_system_prompt(vocab),
+                user_prompt=P.suggest_user_prompt(),
                 schema=P.schema(),
             )
         except Exception as exc:

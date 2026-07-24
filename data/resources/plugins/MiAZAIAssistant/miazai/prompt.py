@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 
 
-def system_prompt(vocab) -> str:
+def suggest_system_prompt(vocab) -> str:
     return (
         "You are a filing assistant for MiAZ. Documents are renamed "
         "to follow the strict 7-field convention:\n\n"
@@ -17,16 +17,27 @@ def system_prompt(vocab) -> str:
         "Prefer values from the repository's existing vocabulary "
         "(provided below) when they fit. Otherwise propose a NEW value "
         "and the user will be asked to confirm it.\n\n"
-        f"Existing vocabulary (key → description):\n{_format_vocab(vocab)}\n\n"
+        f"Existing vocabulary (key description):\n{_format_vocab(vocab)}\n\n"
         "Return your answer via the propose_filename tool."
     )
 
 
-def user_prompt() -> str:
+def suggest_user_prompt() -> str:
     return (
         "Please propose values for all seven fields based on the "
         "document content. Also return a per-field confidence "
         "between 0 and 1 in the 'confidence' object."
+    )
+
+
+def chat_system_prompt(document_name: str) -> str:
+    return (
+        "You are a helpful assistant answering questions about a single "
+        "document.\n"
+        f"The document is named '{document_name}'.\n"
+        "Answer using only the content of that document. If the answer is not "
+        "in the document, say clearly that you cannot find it. Be concise and "
+        "quote the relevant part of the document when it helps."
     )
 
 

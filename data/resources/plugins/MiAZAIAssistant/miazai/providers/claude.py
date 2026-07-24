@@ -5,7 +5,8 @@ from dataclasses import replace
 from typing import Optional
 
 from .base import Provider, MissingDependencyError
-from miazai.suggestion import Suggestion, make_usage
+from miazai.suggestion import Suggestion
+from miazai.usage import make_usage
 from miazai.vocab import Vocabulary
 
 _DEFAULT_MODEL = 'claude-haiku-4-5-20251001'
@@ -88,6 +89,58 @@ class ClaudeProvider(Provider):
             if block.type == 'tool_use' and block.name == 'propose_filename':
                 return replace(_from_dict(block.input), usage=usage)
         return Suggestion(usage=usage)
+
+    def chat(self, *, messages, system_prompt,
+             document_text: Optional[str] = None,
+             file_path: Optional[str] = None) -> dict:
+        self._ensure_client()
+        model = _resolve_model(self.config.get('model', ''))
+        api_messages = self._build_messages(messages, document_text, file_path)
+
+        resp = self._client.messages.create(
+            model=model,
+            max_tokens=1024,
+            system=system_prompt,
+            messages=api_messages,
+        )
+        usage = {}
+        try:
+            u = resp.usage
+            usage = make_usage(u.input_tokens, u.output_tokens)
+        except Exception:
+            pass
+        text = ''.join(b.text for b in resp.content if b.type == 'text')
+        return {'text': text, 'usage': usage}
+
+    def _build_messages(self, messages, document_text, file_path):
+        # Claude requires the first message to be a user turn. Prepend the
+        # document as a leading user/assistant exchange so the conversation
+        # that follows keeps alternating correctly.
+        history = [dict(m) for m in messages]
+        if document_text:
+            lead = [
+                {'role': 'user',
+                 'content': 'Document to answer questions about:\n\n' + document_text},
+                {'role': 'assistant',
+                 'content': 'Understood. Ask your questions about this document.'},
+            ]
+            return lead + history
+        if file_path is not None:
+            with open(file_path, 'rb') as fh:
+                uploaded = self._client.beta.files.upload(file=fh)
+            lead = [
+                {'role': 'user',
+                 'content': [
+                     {'type': 'document',
+                      'source': {'type': 'file', 'file_id': uploaded.id}},
+                     {'type': 'text',
+                      'text': 'This is the document to answer questions about.'},
+                 ]},
+                {'role': 'assistant',
+                 'content': 'Understood. Ask your questions about this document.'},
+            ]
+            return lead + history
+        return history
 
 
 def _from_dict(d: dict) -> Suggestion:

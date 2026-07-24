@@ -6,7 +6,8 @@ from dataclasses import replace
 from typing import Optional
 
 from .base import Provider, MissingDependencyError
-from miazai.suggestion import Suggestion, make_usage
+from miazai.suggestion import Suggestion
+from miazai.usage import make_usage
 from miazai.vocab import Vocabulary
 
 _DEFAULT_MODEL = 'gemini-2.0-flash'
@@ -70,6 +71,39 @@ class GeminiProvider(Provider):
         except Exception:
             return Suggestion(usage=usage)
         return replace(_from_dict(d), usage=usage)
+
+    def chat(self, *, messages, system_prompt,
+             document_text: Optional[str] = None,
+             file_path: Optional[str] = None) -> dict:
+        self._ensure_client()
+        model = self.config.get('model', _DEFAULT_MODEL)
+
+        # Gemini generate_content is single-shot, so flatten the system prompt,
+        # the document text and the running transcript into one prompt.
+        parts = [system_prompt]
+        if document_text:
+            parts.append('Document:\n\n' + document_text)
+        transcript = []
+        for m in messages:
+            who = 'User' if m['role'] == 'user' else 'Assistant'
+            transcript.append(f"{who}: {m['content']}")
+        parts.append('\n'.join(transcript))
+        contents = ['\n\n'.join(parts)]
+
+        if document_text is None and file_path is not None:
+            uploaded = self._client.files.upload(file=str(file_path))
+            contents.append(uploaded)
+
+        resp = self._client.models.generate_content(model=model, contents=contents)
+        usage = {}
+        try:
+            um = resp.usage_metadata
+            usage = make_usage(um.prompt_token_count,
+                               um.candidates_token_count,
+                               um.total_token_count)
+        except Exception:
+            pass
+        return {'text': resp.text or '', 'usage': usage}
 
 
 def _from_dict(d: dict) -> Suggestion:

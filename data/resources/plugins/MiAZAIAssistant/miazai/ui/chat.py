@@ -8,9 +8,9 @@ from gi.repository import Adw, GLib, Gtk
 
 from MiAZ.frontend.desktop.widgets.markdownview import MiAZMarkdownView
 
-from miazaic.providers import active_provider, MissingDependencyError
-from miazaic.extractor import extract
-from miazaic.prompt import system_prompt
+from miazai.providers import active_provider, MissingDependencyError
+from miazai.extractor import extract
+from miazai.prompt import chat_system_prompt
 
 
 class MiAZAIChatDialog(Adw.Window):
@@ -161,7 +161,7 @@ class MiAZAIChatDialog(Adw.Window):
         provider = self.provider
         doc_text = self.document_text
         file_path = self.file_path
-        sysp = system_prompt(self.document_id)
+        sysp = chat_system_prompt(self.document_id)
         snapshot = list(self.history)
 
         def _work():
