@@ -16,13 +16,34 @@ import json
 import zipfile
 import inspect
 import importlib.util
-from gettext import gettext as _
+from gettext import gettext as _, ngettext
 
 import gi
 gi.require_version('Peas', '2')
 from gi.repository import GObject, Peas
 
 from MiAZ.backend.log import MiAZLog
+
+
+def format_load_failure_toast(count: int) -> str:
+    """Summary toast text for `count` plugins that failed to load."""
+    return ngettext(
+        '{n} plugin failed to load. See Settings > Plugins.',
+        '{n} plugins failed to load. See Settings > Plugins.',
+        count).format(n=count)
+
+
+def format_load_failure_banner(failures: dict) -> str:
+    """One line naming each failed plugin and its reason, joined by '; '.
+
+    `failures` is the dict returned by MiAZPluginSystem.get_load_failures():
+    {module_name: {'name': <plugin name>, 'reason': <error text>}}.
+    """
+    parts = []
+    for entry in failures.values():
+        parts.append(_('{name} failed to load: {reason}').format(
+            name=entry['name'], reason=entry['reason']))
+    return '; '.join(parts)
 
 
 class MiAZExtension(GObject.GObject):
@@ -328,6 +349,7 @@ class MiAZPluginSystem(GObject.GObject):
             self.engine.enable_loader(loader)
 
         self._extension_instances = {}
+        self._load_failures = {}
         self._setup_plugins_dir()
         self.create_plugin_index()
         self.log.info("Plugin system initialited")
@@ -437,11 +459,21 @@ class MiAZPluginSystem(GObject.GObject):
         except Exception as error:
             self.log.error(f"Direct import of '{module_name}' failed: {error}")
             sys.modules.pop(module_name, None)
+            self._load_failures[module_name] = {
+                'name': plugin.get_name(), 'reason': str(error)}
             return False
 
     def is_plugin_loaded(self, plugin: Peas.PluginInfo) -> bool:
         """True if the plugin is active: via libpeas or our direct-import fallback."""
         return plugin.get_module_name() in self._extension_instances or plugin.is_loaded()
+
+    def get_load_failures(self) -> dict:
+        """Copy of the current load failures: {module_name: {'name', 'reason'}}."""
+        return dict(self._load_failures)
+
+    def get_load_error(self, module_name: str):
+        entry = self._load_failures.get(module_name)
+        return entry['reason'] if entry else None
 
     def load_plugin(self, plugin: Peas.PluginInfo) -> bool:
         if self.is_plugin_loaded(plugin):
@@ -458,6 +490,7 @@ class MiAZPluginSystem(GObject.GObject):
                     return False
 
             self._activate_plugin_instance(plugin)
+            self._load_failures.pop(plugin.get_module_name(), None)
             self.log.info(f"Plugin {pname} v{pvers} loaded")
             self._install_plugin_requirements(plugin)
             self.emit('plugins-updated')
@@ -468,6 +501,8 @@ class MiAZPluginSystem(GObject.GObject):
             # half-loaded engine state so the plugin does not read back as
             # loaded, and report failure to the caller.
             self.log.error(f"Plugin {pname} v{pvers} couldn't be loaded: {error}")
+            self._load_failures[plugin.get_module_name()] = {
+                'name': pname, 'reason': str(error)}
             try:
                 if plugin.is_loaded():
                     self.engine.unload_plugin(plugin)
@@ -607,6 +642,7 @@ class MiAZPluginSystem(GObject.GObject):
     def create_plugin_index(self, *args):
         """Scan both bundled and user plugin directories and write a unified index."""
         self.log.info("Creating plugin index during runtime")
+        self._load_failures = {}
         plugin_index = {}
         plugin_list = []
         ENV = self.app.get_env()

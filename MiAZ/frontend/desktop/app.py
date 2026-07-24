@@ -15,6 +15,7 @@ from gi.repository import Gtk
 
 from MiAZ.backend.log import MiAZLog
 from MiAZ.frontend.desktop.services.pluginsystem import MiAZPluginSystem
+from MiAZ.frontend.desktop.services.pluginsystem import format_load_failure_toast
 from MiAZ.frontend.desktop.services.icm import MiAZIconManager
 from MiAZ.frontend.desktop.services.factory import MiAZFactory
 from MiAZ.frontend.desktop.services.actions import MiAZActions
@@ -223,8 +224,8 @@ class MiAZApp(Adw.Application):
                     if not plugin_manager.is_plugin_loaded(plugin):
                         plugins_used = config_plugins.load_used().keys() if config_plugins else []
                         if plugin_name in plugins_used:
-                            plugin_manager.load_plugin(plugin)
-                            na += 1
+                            if plugin_manager.load_plugin(plugin):
+                                na += 1
                         else:
                             self.log.info(f"Plugin {plugin_name} skipped (not enabled for this repository)")
                     else:
@@ -234,6 +235,17 @@ class MiAZApp(Adw.Application):
                 nt += 1
             self.log.info(f"Plugins activated: {na} of {nt}")
             self.set_plugins_loaded(True)
+            failures = plugin_manager.get_load_failures()
+            if failures:
+                GLib.idle_add(self._notify_plugin_load_failures, len(failures))
+
+    def _notify_plugin_load_failures(self, count):
+        """Show one summary toast for plugins that failed to load. Runs on idle
+        so the toast overlay exists. Returns False so GLib does not repeat it."""
+        dialogs = self.get_service('dialogs')
+        if dialogs is not None:
+            dialogs.show_toast(format_load_failure_toast(count), timeout=5)
+        return False
 
     def get_config(self, name: str):
         try:
