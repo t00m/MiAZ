@@ -41,7 +41,6 @@ MiAZ/
 │   │   ├── crash.py              ← console/log-only excepthook (install_backend_excepthook)
 │   │   ├── data.py               ← Placeholder (package marker)
 │   │   ├── dr.py                 ← MiAZDR (disaster recovery / backup)
-│   │   ├── history.py            ← MiAZHistory (per-repo change journal)
 │   │   ├── log.py                ← MiAZLog (colored logging)
 │   │   ├── models.py             ← MiAZItem, Country, Group, etc. (GObject models)
 │   │   ├── repository.py         ← MiAZRepository (CRUD on file-based repo)
@@ -154,7 +153,7 @@ against the enabled config (`config.exists_used`) or, for dates,
 | `MiAZWorkspace` (workspace.py) | `workspace-loaded`, `workspace-view-updated`, `workspace-view-selection-changed`, `workspace-view-filtered` |
 | `MiAZConfig` (config.py) | `available-updated`, `used-updated` |
 | `MiAZConfigApp` (config.py) | `repo-settings-updated-app` |
-| `MiAZUtil` (util.py) | `filename-added`, `filename-deleted`, `filename-renamed`, `filename-imported` |
+| `MiAZUtil` (util.py) | `filename-added`, `filename-deleted`, `filename-renamed` |
 | `MiAZWatcher` (watcher.py) | `repository-updated` |
 | `MiAZRepository` (repository.py) | `repository-switched` |
 | `MiAZStats` (stats.py) | `stats-updated` |
@@ -293,17 +292,6 @@ A `Gtk.MenuButton` (`headerbar-button-add`) with a persistent `Gio.Menu` (`heade
 `MiAZCrashHandler` (`services/crash.py`, the first service installed) sets `sys.excepthook` and `threading.excepthook` to show a GUI crash dialog. `backend/crash.py` provides a console/log-only excepthook (`install_backend_excepthook`) for headless/backend contexts.
 
 The dialog is presented over the window the user is currently using, not always the main window. `_present_target` walks `Gtk.Window.get_toplevels()` and returns the visible, `is_active()` top-level, falling back to the main window when none is active. This keeps the dialog on top when a crash fires while a separate top-level (for example the rename window, `MiAZWindowDialog`) is in front. The "Try to Continue" response is offered only when the main window exists; a crash at startup shows "Close MiAZ" only.
-
-### Change journal
-
-`MiAZHistory` (`backend/history.py`, service `history`) keeps an append-only record of every document change MiAZ makes in a repository. It connects to `MiAZUtil`'s `filename-added`, `filename-renamed`, `filename-deleted` and `filename-imported` signals and writes one JSON object per line.
-
-- Storage: `<repo>/.history/<YYYYMM>.jsonl`, one file per month. The directory is dot-prefixed, so the document scanner (`get_files`, `get_files_recursively`) ignores it and it never appears as a document.
-- Record fields: `ts` (local time with offset), `event` (`added` / `renamed` / `deleted`), `origin` (`app`), and the path(s): `path` for add/delete, `source` + `target` for rename.
-- Import provenance: importing a file copies it under a normalized name, which is a single operation, not a rename, so it produces no `filename-renamed`. `filename_import(source, target, origin=None)` emits `filename-imported` (origin, target) just before `filename-added`. `origin` is a structured provenance object `{'type': ..., ...}`; it defaults to `{'type': 'file', 'path': <abs source>}`. `MiAZHistory` pairs the two signals (`_pending_imports`) so the `added` record carries that object verbatim under `source`. Importers that copy from a temporary file pass their own origin so the real provenance is kept, not the temp path: `MiAZImportFromZip` passes `{'type': 'zip', 'archive': <abs zip>, 'entry': <path inside the zip>}`, `MiAZAutoScan` passes `{'type': 'scan'}`. A future email importer would pass `{'type': 'email', ...}`. A plain `added` with no preceding `filename-imported` has no `source`.
-- Paths are stored relative to the repository root, so the journal stays valid when the repository is moved, copied or synced. A path that resolves outside the repository is kept absolute and flagged with `<key>_absolute: true`.
-- Reading back: `MiAZHistory.iter_records(root=None)` yields parsed records in chronological order (oldest month first), defaulting to the active repository.
-- Scope is app changes only. External edits (the watcher's `repository-updated`) are not journaled; the `origin` field leaves room to add them later.
 
 ### Mass rename
 

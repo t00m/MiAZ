@@ -28,7 +28,6 @@ from MiAZ.frontend.desktop.widgets.mainwindow import MiAZMainWindow
 from MiAZ.backend.util import MiAZUtil
 from MiAZ.backend.config import MiAZConfigApp
 from MiAZ.backend.repository import MiAZRepository
-from MiAZ.backend.history import MiAZHistory
 from MiAZ.frontend.desktop.services.massrename import MiAZMassRename
 from MiAZ.backend.config import MiAZConfigRepositories
 from MiAZ.backend.status import MiAZStatus
@@ -74,7 +73,6 @@ class MiAZApp(Adw.Application):
         self.set_service('webserver', MiAZWebServer(self))
         repository = self.set_service('repo', MiAZRepository(self))
         repository.connect('repository-switched', workflow.switch_finish)
-        self.set_service('history', MiAZHistory(self))
         self.set_service('massrename', MiAZMassRename(self))
         self._env = None
         self.conf = None

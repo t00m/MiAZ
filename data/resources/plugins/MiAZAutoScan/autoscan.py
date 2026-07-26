@@ -448,10 +448,7 @@ class MiAZAutoScanPlugin(MiAZExtension):
                 try:
                     btarget = self.util.filename_normalize(filepath)
                     target = os.path.join(self.repository.docs, btarget)
-                    # The source is a temporary scan file, so record the
-                    # scanner as the provenance instead of that temp path.
-                    self.util.filename_import(filepath, target,
-                                              origin={'type': 'scan'})
+                    self.util.filename_import(filepath, target)
                     imported.append(btarget)
                 except Exception as error:
                     failed.append(os.path.basename(filepath))

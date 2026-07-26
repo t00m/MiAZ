@@ -29,7 +29,7 @@ Example: `20240315-ES-HOU-BANKNAME-INV-Q1invoice-JOHNDOE.pdf`
 | File | Signals |
 |---|---|
 | `backend/config.py` | `available-updated`, `used-updated`; `MiAZConfigApp`: `repo-settings-updated-app` |
-| `backend/util.py` | `filename-added`, `filename-deleted`, `filename-renamed`, `filename-imported` |
+| `backend/util.py` | `filename-added`, `filename-deleted`, `filename-renamed` |
 | `backend/watcher.py` | `repository-updated` |
 | `backend/stats.py` | `stats-updated` |
 | `backend/repository.py` | `repository-switched` |
@@ -50,7 +50,6 @@ Example: `20240315-ES-HOU-BANKNAME-INV-Q1invoice-JOHNDOE.pdf`
 - **Python 3.9+**: no `X | Y` union syntax in annotations
 - **Filechooser**: use `Gtk.FileDialog` (async, GTK4 API,  not `Gtk.FileChooserDialog`)
 - **Markdown view**: `MiAZMarkdownView` (`frontend/desktop/widgets/markdownview.py`) renders Markdown as themed HTML in a read-only `WebKit.WebView`. `set_markdown(text)` to update; `on_command` callback handles `miazcmd:` links. Used by MiAZNotes (view mode) and MiAZAIChat. Reuse it for any read-only Markdown display.
-- **Change journal**: `MiAZHistory` (`backend/history.py`, service `history`) appends document changes to `<repo>/.history/<YYYYMM>.jsonl` (JSON Lines), driven by `MiAZUtil`'s `filename-*` signals. Paths are stored relative to the repo root. On import, `filename-imported` carries a structured provenance object (`{'type': 'file'|'zip'|'scan'|...}`) that the `added` record keeps under `source`; `filename_import(source, target, origin=...)` lets importers (zip, scan, future email) declare the real origin instead of a temp path. Read back with `iter_records()`.
 - **Mass rename**: core service `MiAZMassRename` (`frontend/desktop/services/massrename.py`, service `massrename`, formerly a plugin) sets one filename field across the selection. `build_menu` registers seven `massrename-*` actions and a shared `Gio.Menu`. The workspace headerbar shows the single-rename button for one selected document and a same-icon `Gtk.MenuButton` (the seven functions: Date, Country, Group, Purpose, Concept, Sent by, Sent to) for two or more; the same submenu is in the right-click selection menu. Concept uses a guided transform whose pure ops are module-level functions in that file; the Date dialog has a "Detect date from each file" checkbox (reuses `util.filename_guess_date`).
 
 ## Plugin system
