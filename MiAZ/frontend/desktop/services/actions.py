@@ -11,6 +11,7 @@ from gettext import gettext as _
 from gi.repository import GObject
 from gi.repository import Adw
 from gi.repository import Gtk
+from gi.repository import Gdk
 
 from MiAZ.backend.log import MiAZLog
 from MiAZ.backend.util import humanize_value
@@ -165,6 +166,24 @@ class MiAZActions(GObject.GObject):
         rename_widget.entry_concept.connect('changed', _update_suggest_sensitive)
         _update_suggest_sensitive()
 
+        # Focus the first field that needs attention when the dialog is shown.
+        rename_widget.connect('map', rename_widget.focus_first_field)
+
+        # Ctrl+Enter always applies, from any field. Capture phase so it fires
+        # before an entry or dropdown can consume the key.
+        accel = Gtk.EventControllerKey()
+        accel.set_propagation_phase(Gtk.PropagationPhase.CAPTURE)
+
+        def _on_apply_accel(_c, keyval, _kc, state):
+            if (state & Gdk.ModifierType.CONTROL_MASK) and keyval in (
+                    Gdk.KEY_Return, Gdk.KEY_KP_Enter):
+                dialog.emit('response', 'apply')
+                return True
+            return False
+
+        accel.connect('key-pressed', _on_apply_accel)
+        dialog.add_controller(accel)
+
         self.emit('rename-dialog-built', dialog, rename_widget)
         dialog.connect('response', self._on_rename_response, rename_widget)
         dialog.present()
@@ -173,6 +192,11 @@ class MiAZActions(GObject.GObject):
         if response == 'cancel':
             dialog.close()
         elif response == 'apply':
+            if not rename_widget.is_valid():
+                # Refuse to build an invalid filename. Keep the dialog open and
+                # point the user at the first field that needs fixing.
+                rename_widget.focus_first_field()
+                return
             body = _('You are about to rename this document.\nAre you sure?')
             dialog_confirm = self.srvdlg.show_question(
                 title=_('Rename document'), body=body,

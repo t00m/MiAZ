@@ -115,6 +115,38 @@ class MiAZRenameDialog(Gtk.Box):
         self.lblFilenameNew.set_selectable(True)
         self._on_changed_entry()
 
+    def is_valid(self) -> bool:
+        """True when the required fields form a valid filename. Group and
+        Purpose are advisory (warnings in the live preview) and do not block;
+        Date, Country, Sent by, Concept and Sent to must be valid."""
+        return (
+            self.validate_date(self.entry_date.get_text())
+            and self._cfg_country.exists_used(self._dropdown_get_id(self.dpdCountry))
+            and self._cfg_sentby.exists_used(self._dropdown_get_id(self.dpdSentBy))
+            and len(self.util.valid_key(self.entry_concept.get_text().upper())) > 0
+            and self._cfg_sentto.exists_used(self._dropdown_get_id(self.dpdSentTo))
+        )
+
+    def focus_first_field(self, *args):
+        """Focus the first field that needs attention (empty or invalid) in
+        filename order; if all are valid, focus the concept entry. Returns False
+        so it can be used directly as a 'map' signal handler."""
+        checks = [
+            (self.validate_date(self.entry_date.get_text()), self.entry_date),
+            (self._cfg_country.exists_used(self._dropdown_get_id(self.dpdCountry)), self.dpdCountry),
+            (self._cfg_group.exists_used(self._dropdown_get_id(self.dpdGroup)), self.dpdGroup),
+            (self._cfg_sentby.exists_used(self._dropdown_get_id(self.dpdSentBy)), self.dpdSentBy),
+            (self._cfg_purpose.exists_used(self._dropdown_get_id(self.dpdPurpose)), self.dpdPurpose),
+            (len(self.util.valid_key(self.entry_concept.get_text().upper())) > 0, self.entry_concept),
+            (self._cfg_sentto.exists_used(self._dropdown_get_id(self.dpdSentTo)), self.dpdSentTo),
+        ]
+        for valid, widget in checks:
+            if not valid:
+                widget.grab_focus()
+                return False
+        self.entry_concept.grab_focus()
+        return False
+
     def get_filename_widget(self):
         return self.lblFilenameCur
 
@@ -322,7 +354,7 @@ class MiAZRenameDialog(Gtk.Box):
         self.label_date = Gtk.Label()
         self.label_date.add_css_class('caption')
         self.entry_date = Gtk.Entry()
-        self.entry_date.set_visible(False)
+        self.entry_date.set_activates_default(True)
         self.entry_date.set_max_length(8)
         self.entry_date.set_max_width_chars(8)
         self.entry_date.set_width_chars(8)
@@ -378,6 +410,7 @@ class MiAZRenameDialog(Gtk.Box):
         self.boxMain.append(self.rowConcept)
         button = self.__setup_button_suggest_concept()
         self.entry_concept = Gtk.Entry()
+        self.entry_concept.set_activates_default(True)
         self.entry_concept.set_width_chars(41)
         self.entry_concept.set_placeholder_text(_('Type to filter existing concepts…'))
         boxValue.append(self.entry_concept)
@@ -413,8 +446,12 @@ class MiAZRenameDialog(Gtk.Box):
         self.entry_concept.connect('changed', self._on_concept_entry_changed)
         self.entry_concept.connect('changed', self._on_changed_entry)
 
-        # Escape closes the popover.
+        # Escape closes the popover; Enter picks the highlighted concept when
+        # the popover is open. Capture phase so this runs before the entry's
+        # internal GtkText, which otherwise consumes Return for its own
+        # activate (firing the dialog default) before it can reach us.
         key_ctrl = Gtk.EventControllerKey()
+        key_ctrl.set_propagation_phase(Gtk.PropagationPhase.CAPTURE)
         key_ctrl.connect('key-pressed', self._on_concept_key_pressed)
         self.entry_concept.add_controller(key_ctrl)
 
@@ -639,9 +676,17 @@ class MiAZRenameDialog(Gtk.Box):
         self._concept_popover.popdown()
 
     def _on_concept_key_pressed(self, _ctrl, keyval, _keycode, _state):
-        if keyval == Gdk.KEY_Escape and self._concept_popover.get_visible():
-            self._concept_popover.popdown()
-            return True
+        if self._concept_popover.get_visible():
+            if keyval == Gdk.KEY_Escape:
+                self._concept_popover.popdown()
+                return True
+            if keyval in (Gdk.KEY_Return, Gdk.KEY_KP_Enter):
+                pos = self._concept_selection.get_selected()
+                if pos != Gtk.INVALID_LIST_POSITION:
+                    self._on_concept_picked(self._concept_list_view, pos)
+                else:
+                    self._concept_popover.popdown()
+                return True
         return False
 
     def _on_concept_focus_leave(self, _ctrl):
