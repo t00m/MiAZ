@@ -142,6 +142,26 @@ class MiAZ:
         for entry in ENV['LPATH']:
             if not os.path.exists(ENV['LPATH'][entry]):
                 os.makedirs(ENV['LPATH'][entry])
+        self._ensure_tool_path()
+
+    def _ensure_tool_path(self):
+        """Guarantee the standard system tool directories are on PATH.
+
+        Launched from a GNOME .desktop icon, MiAZ can start with an empty or
+        stripped PATH, so shutil.which and subprocess do not find the system
+        tools plugins depend on (ocrmypdf, scanimage, pdftotext, ...), even
+        though they live in /usr/bin. Running from a shell works because the
+        shell PATH is rich. Append any missing standard directory so tool
+        detection and execution behave the same regardless of how MiAZ started.
+        """
+        standard = ['/usr/local/bin', '/usr/bin', '/bin',
+                    '/usr/local/sbin', '/usr/sbin', '/sbin',
+                    os.path.expanduser('~/.local/bin')]
+        parts = [p for p in os.environ.get('PATH', '').split(os.pathsep) if p]
+        for directory in standard:
+            if directory not in parts and os.path.isdir(directory):
+                parts.append(directory)
+        os.environ['PATH'] = os.pathsep.join(parts)
 
     def run(self, params):
         """Execute MiAZ in desktop or console mode."""
