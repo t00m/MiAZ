@@ -81,6 +81,13 @@ class MiAZWorkspace(Gtk.Box):
         self._updating_dropdowns = False
         self._filter_in_progress = False
         self._dropdown_update_pending = False
+        # Must exist before _setup_logic(), which builds the date presets and
+        # reads these. The presets encode absolute days derived from "now";
+        # _date_presets_day tracks the day they were built for (so update() can
+        # rebuild them on rollover) and _sid_date_selected lets the rebuild block
+        # re-entry via the selection signal.
+        self._date_presets_day = None
+        self._sid_date_selected = None
         self._setup_workspace()
         self._setup_logic()
         self._review = False
@@ -91,10 +98,6 @@ class MiAZWorkspace(Gtk.Box):
         self._cached_date_ul = 'All'
         self._cached_date_start = None
         self._cached_date_end = None
-        # The date presets encode absolute days derived from "now"; remember the
-        # day they were built for so update() can rebuild them when it rolls over.
-        self._date_presets_day = None
-        self._sid_date_selected = None
         self._update_pending = False
         self._update_timeout_id = None
         # Set by the incremental handler so the trailing full re-scan is skipped
