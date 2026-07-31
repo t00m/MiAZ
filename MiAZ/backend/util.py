@@ -458,10 +458,19 @@ class MiAZUtil(GObject.GObject):
         return datetime.strptime("%4d%02d%02d" % (adate.year, adate.month, adate.day), "%Y%m%d")
 
     def since_date_last_n_months(self, adate: datetime, nm: int) -> datetime:
-        return (adate - timedelta(days=30 * nm)).replace(day=1)
+        # First day of the month nm calendar months before adate. A fixed
+        # 30-day delta drifts at month boundaries: on the 31st, 30 days back
+        # stays in the same month (so "past month" on Jul 31 wrongly landed on
+        # Jul 1 and hid June). Compute the month directly instead.
+        month = adate.month - nm
+        year = adate.year
+        while month <= 0:
+            month += 12
+            year -= 1
+        return datetime.strptime("%04d%02d01" % (year, month), "%Y%m%d")
 
     def since_date_last_six_months(self, adate: datetime) -> datetime:
-        return (adate - timedelta(days=30 * 6)).replace(day=1)
+        return self.since_date_last_n_months(adate, 6)
 
     def datetime_to_string(self, adate: datetime) -> str:
         return adate.strftime("%Y%m%d")
