@@ -91,6 +91,10 @@ class MiAZWorkspace(Gtk.Box):
         self._cached_date_ul = 'All'
         self._cached_date_start = None
         self._cached_date_end = None
+        # The date presets encode absolute days derived from "now"; remember the
+        # day they were built for so update() can rebuild them when it rolls over.
+        self._date_presets_day = None
+        self._sid_date_selected = None
         self._update_pending = False
         self._update_timeout_id = None
         # Set by the incremental handler so the trailing full re-scan is skipped
@@ -140,7 +144,7 @@ class MiAZWorkspace(Gtk.Box):
         dd_date = dropdowns[i_type]
         self._update_dropdown_date()
         dd_date.set_selected(0)
-        dd_date.connect("notify::selected-item", self.update)
+        self._sid_date_selected = dd_date.connect("notify::selected-item", self.update)
 
         ## Rest of dropdowns
         for item_type in [Country, Group, SentBy, Purpose, SentTo]:
@@ -409,6 +413,16 @@ class MiAZWorkspace(Gtk.Box):
         model_filter = dd_date.get_model()
         model_sort = model_filter.get_model()
         model = model_sort.get_model()
+
+        # Preserve the selected preset across the rebuild by its title: the key
+        # encodes the day and changes when the day rolls over, so it cannot be
+        # matched by key. Block update() while the model is torn down and rebuilt
+        # so the transient empty selection does not re-enter the filter pass.
+        selected = dd_date.get_selected_item()
+        selected_title = selected.title if selected is not None else None
+        if self._sid_date_selected is not None:
+            dd_date.handler_block(self._sid_date_selected)
+
         model.remove_all()
 
         # Since...
@@ -467,6 +481,20 @@ class MiAZWorkspace(Gtk.Box):
         ## All documents
         key = "All-All"
         model.append(Date(id=key, title=_('All documents')))
+
+        self._date_presets_day = now
+
+        # Reselect the same preset by title (default to the first one), then
+        # unblock update().
+        target = 0
+        if selected_title is not None:
+            for i in range(model.get_n_items()):
+                if model.get_item(i).title == selected_title:
+                    target = i
+                    break
+        dd_date.set_selected(target)
+        if self._sid_date_selected is not None:
+            dd_date.handler_unblock(self._sid_date_selected)
 
     def _setup_columnview(self):
         frame = Gtk.Frame()
@@ -952,6 +980,13 @@ class MiAZWorkspace(Gtk.Box):
         if repository.conf is None:
             self.app.set_status(MiAZStatus.RUNNING)
             return
+
+        # Rebuild the relative date presets if the calendar day rolled over since
+        # they were built (the app left running past midnight). Otherwise a
+        # document dated today falls outside the today bounded ranges and only
+        # appears under "Future". Preserves the selected preset.
+        if self._date_presets_day != datetime.now().date():
+            self._update_dropdown_date()
 
         ds = datetime.now()
 
