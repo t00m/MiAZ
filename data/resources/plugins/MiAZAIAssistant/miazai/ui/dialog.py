@@ -8,6 +8,12 @@ from gi.repository import Adw, Gdk, GLib, Gtk
 
 
 def inject_suggest_button(app, registry, repository, util, log):
+    # Idempotent: drop any handler installed by a previous call before
+    # connecting a new one. Only the latest (actions, handler_id) pair is tracked
+    # in 'miazai-rename-handler', so connecting again without disconnecting first
+    # would leak the earlier handler and stack a duplicate 'Suggest with AI'
+    # button on every rename dialog.
+    remove_suggest_button(app)
     actions = app.get_service('actions')
     handler_id = actions.connect(
         'rename-dialog-built',
@@ -25,6 +31,9 @@ def remove_suggest_button(app):
             obj.disconnect(handler_id)
         except Exception:
             pass
+        # Clear the slot so a later inject/remove cannot re-read a stale,
+        # already-disconnected handler id.
+        app.add_widget('miazai-rename-handler', None)
 
 
 def _add_button(app, dialog, rename_widget, registry, repository, util, log):
