@@ -38,6 +38,49 @@ Configview['SentTo'] = MiAZPeopleSentTo
 Configview['Date'] = Gtk.Calendar
 
 
+def pick_date_preset(current_index, item_dates, presets):
+    """Choose the date preset to select so the workspace is not shown empty.
+
+    `presets` is the dropdown list, in order, of `(kind, start, end)` where kind
+    is 'bounded', 'future' or 'all'; `start`/`end` are inclusive `datetime.date`
+    bounds for 'bounded' and `None` otherwise. `item_dates` is a list of
+    `datetime.date`, one per document. `current_index` is the selected preset.
+
+    If the current preset already contains a document it is kept. Otherwise the
+    presets are walked from `current_index` towards wider windows (the bounded
+    chain is nested, so the nearest non-empty preset is always wider), skipping
+    any 'future' preset, and the first 'bounded' preset that contains a document
+    is returned. If none does, the 'all' preset is returned when it has
+    documents. When nothing matches (empty repository) `current_index` is
+    returned unchanged.
+    """
+    def contains(preset):
+        kind, start, end = preset
+        if kind == 'all':
+            return bool(item_dates)
+        if kind == 'future':
+            return start is not None and any(d >= start for d in item_dates)
+        return any(start <= d <= end for d in item_dates)
+
+    if not presets or not (0 <= current_index < len(presets)):
+        return current_index
+    if contains(presets[current_index]):
+        return current_index
+    all_index = None
+    for i in range(current_index, len(presets)):
+        kind = presets[i][0]
+        if kind == 'future':
+            continue
+        if kind == 'all':
+            all_index = i
+            continue
+        if contains(presets[i]):
+            return i
+    if all_index is not None and contains(presets[all_index]):
+        return all_index
+    return current_index
+
+
 class MiAZWorkspace(Gtk.Box):
     """Workspace"""
     __gtype_name__ = 'MiAZWorkspace'
@@ -88,6 +131,9 @@ class MiAZWorkspace(Gtk.Box):
         # re-entry via the selection signal.
         self._date_presets_day = None
         self._sid_date_selected = None
+        # Armed at load / repo switch / rollover so _apply_parse_results picks the
+        # nearest non-empty date preset once (never overriding a manual choice).
+        self._auto_date_pending = False
         self._setup_workspace()
         self._setup_logic()
         self._review = False
@@ -199,6 +245,9 @@ class MiAZWorkspace(Gtk.Box):
 
     def _on_repo_switch(self, *args):
         self.selected_items = []
+        # A fresh repository (also the initial load): let the next parse pick the
+        # nearest non-empty date preset instead of showing an empty workspace.
+        self._auto_date_pending = True
         self.update()
         for node in self.config:
             if node in self._repo_switch_signals:
@@ -498,6 +547,11 @@ class MiAZWorkspace(Gtk.Box):
         dd_date.set_selected(target)
         if self._sid_date_selected is not None:
             dd_date.handler_unblock(self._sid_date_selected)
+
+        # The presets were (re)built (initial load or a day/month rollover): let
+        # the next parse pick the nearest non-empty preset if the default is now
+        # empty.
+        self._auto_date_pending = True
 
     def _setup_columnview(self):
         frame = Gtk.Frame()
@@ -915,7 +969,12 @@ class MiAZWorkspace(Gtk.Box):
         util._field_index_dir = result_dict['_repo_docs']
         ds = result_dict.get('_ds', datetime.now())
 
-        # Update workspace view
+        # Update workspace view. When armed (load / repo switch / rollover),
+        # switch an empty default date filter to the nearest non-empty preset
+        # before the filter cache is read, so the view is built once against it.
+        if self._auto_date_pending:
+            self._auto_date_pending = False
+            self._auto_select_date_preset(items)
         self._refresh_filter_cache()
         self._num_total_items = len(docs)
         GLib.idle_add(self._idle_view_update, items)
@@ -1011,6 +1070,49 @@ class MiAZWorkspace(Gtk.Box):
         self._num_displayed_items = len(model)
         self.emit('workspace-view-updated')
         return False
+
+    def _auto_select_date_preset(self, items):
+        """Switch an empty default date filter to the nearest preset that
+        contains documents (see pick_date_preset). Runs only when armed; the
+        selection signal is blocked so it does not re-enter the filter pass."""
+        dropdowns = self.app.get_widget('ws-dropdowns')
+        dd_date = dropdowns[Date.__gtype_name__]
+        model = dd_date.get_model()
+        if model is None:
+            return
+        util = self.app.get_service('util')
+        today = datetime.now().date()
+
+        presets = []
+        for i in range(model.get_n_items()):
+            pid = model.get_item(i).id
+            if pid == 'All-All':
+                presets.append(('all', None, None))
+                continue
+            parts = pid.split('-')
+            start = util.string_to_datetime(parts[0]) if len(parts) == 2 else None
+            end = util.string_to_datetime(parts[1]) if len(parts) == 2 else None
+            if start is None or end is None:
+                # Unparseable id: make it a no-op that the walk skips.
+                presets.append(('future', None, None))
+                continue
+            kind = 'future' if start > today else 'bounded'
+            presets.append((kind, start, end))
+
+        item_dates = []
+        for item in items:
+            adate = util.string_to_datetime(item.date) if item.date else None
+            if adate is not None:
+                item_dates.append(adate)
+
+        current = dd_date.get_selected()
+        target = pick_date_preset(current, item_dates, presets)
+        if target != current and 0 <= target < model.get_n_items():
+            if self._sid_date_selected is not None:
+                dd_date.handler_block(self._sid_date_selected)
+            dd_date.set_selected(target)
+            if self._sid_date_selected is not None:
+                dd_date.handler_unblock(self._sid_date_selected)
 
     def _refresh_filter_cache(self):
         """Pre-compute per-filter-pass constants so per-item callbacks are cheap."""

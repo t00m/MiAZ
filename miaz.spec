@@ -1,5 +1,5 @@
 Name:           miaz
-Version:        0.1.30
+Version:        0.1.40
 Release:        1%{?dist}
 Summary:        Personal Document Organizer
 
@@ -75,6 +75,9 @@ gtk-update-icon-cache %{_datadir}/icons/hicolor &> /dev/null || :
 %{_datadir}/metainfo/io.github.t00m.MiAZ.metainfo.xml
 
 %changelog
+* Sun Aug 02 2026 Tomás Vírseda <tomasvirseda@gmail.com> - 0.1.40-1
+- New release. See CHANGELOG.md for details.
+
 * Wed Jul 08 2026 Tomás Vírseda <tomasvirseda@gmail.com> - 0.1.30-1
 - New release. See CHANGELOG.md for details.
 
