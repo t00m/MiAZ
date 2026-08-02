@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Deprecated
+
+- Flatpak packaging is deprecated on purpose and no longer built by default. A Flatpak runs sandboxed on `org.gnome.Platform`, which cannot see or run the host command line tools that plugins depend on (`ocrmypdf` for OCR, `scanimage` for the scanner), so those features never work in a Flatpak build and users saw "OCR tools not installed" even with the tool present on the host. MiAZ is a native desktop app; use the deb, rpm or AppImage package instead. The Flatpak build code is kept for reference and is gated behind `MIAZ_ALLOW_FLATPAK=1` in `build_all.sh` and `create_flatpak.sh`. 
+
 ### Removed
 
 - Removed the per-repository change journal (`MiAZHistory`, `backend/history.py`, service `history`). It appended every add, rename and delete to `<repo>/.history/<YYYYMM>.jsonl`, but nothing read it back and the feature was unused, so it was dropped along with its `app.py` service registration and its tests. MiAZ is a curated tool for a small set of documents, not an archive of record, so change tracking, undo and recovery are not part of its scope. Git-based repository tracking may return later as an optional `MiAZGit` plugin. The `filename-imported` signal and the `origin` provenance argument on `util.filename_import`, which existed only to feed this journal, were removed as well: `filename_import(source, target)` now just copies and emits `filename-added`, and the ZIP and scan importers no longer build provenance objects.
