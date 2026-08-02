@@ -53,17 +53,6 @@ NOTES_CSS = b"""
 .miaz-postit-prio-high { border-top: 3px solid #e08600; }
 .miaz-postit-prio-critical { border-top: 3px solid #c0392b; }
 .miaz-note-count { font-size: 0.72em; font-weight: bold; }
-.miaz-has-notes {
-  border: 1px solid black;
-  background-color: rgba(255, 235, 59, 0.28);
-  background-image: url('/home/t00m/Documents/devel/github/MiAZ/data/resources/icons/hicolor/scalable/io.github.t00m.MiAZ-view-pin-symbolic.svg');
-  background-repeat: no-repeat;
-  background-position: right center;
-  background-size: auto; /* or contain, cover, specific size */
-}
-columnview row:selected .miaz-has-notes {
-  background-color: transparent;
-}
 """
 
 # Name of the workspace filter that restricts the view to documents with notes.
@@ -116,8 +105,11 @@ class MiAZNotesPlugin(MiAZExtension):
         self._only_notes_switch = None
         self._only_notes_active = False
         self._docs_with_notes = set()
-        # Row-highlight bind handlers (factory, handler-id) pairs.
-        self._hl_handlers = []
+        # {document id: note count} for the notes column cell, and the runtime
+        # column added to the workspace view on activation.
+        self._note_counts = {}
+        self._notes_column = None
+        self._notes_factory = None
         self._install_css()
 
         self.workspace = self.app.get_widget('workspace')
@@ -243,14 +235,16 @@ class MiAZNotesPlugin(MiAZExtension):
             except Exception as error:
                 self.log.debug(f"Remove notes filter row: {error}")
 
-        # Disconnect the row-highlight bind handlers. Removing the CSS provider
-        # below makes any class still set on recycled cell widgets harmless.
-        for factory, handler in getattr(self, '_hl_handlers', []):
+        # Remove the notes column added on activation, so it disappears when the
+        # plugin is disabled.
+        wsview = self.app.get_widget('workspace-view')
+        if wsview is not None and self._notes_column is not None:
             try:
-                factory.disconnect(handler)
+                wsview.cv.remove_column(self._notes_column)
             except Exception as error:
-                self.log.debug(f"Disconnect highlight handler: {error}")
-        self._hl_handlers = []
+                self.log.debug(f"Remove notes column: {error}")
+        self._notes_column = None
+        self._notes_factory = None
 
         if self.workspace is not None:
             try:
@@ -366,48 +360,62 @@ class MiAZNotesPlugin(MiAZExtension):
         self._h_view_filtered = self.workspace.connect(
             'workspace-view-filtered', self._on_workspace_view_changed)
 
-        # Highlight the Concept cell of documents that have notes. The set is
-        # computed up front and kept current by _notes_changed(); the Concept
-        # factory tags its own cell on bind (see _on_highlight_bind).
+        # Add a leftmost column showing a pin icon and note count for documents
+        # that have notes. The counts are computed up front and kept current by
+        # _refresh_notes_filter(); the column cell reads self._note_counts.
         self._docs_with_notes = self._compute_docs_with_notes()
-        self._install_row_highlight()
-        # Force a re-bind so the highlight applies immediately when the plugin
-        # is enabled while the workspace is already populated.
+        self._install_notes_column()
+        # Force a re-bind so the column populates immediately when the plugin is
+        # enabled while the workspace is already populated.
         self.workspace.update()
 
         self.plugin.set_started(True)
         self._on_workspace_view_changed()
 
     # Concept-cell highlight (documents with notes)
-    def _install_row_highlight(self):
-        self._hl_handlers = []
-        wsview = self.workspace.get_workspace_view() \
-            if hasattr(self.workspace, 'get_workspace_view') else None
-        if wsview is None:
+    def _install_notes_column(self):
+        """Add a leftmost workspace column that shows a pin icon and note count
+        for documents that have notes. The column belongs to this plugin and is
+        removed again on do_deactivate."""
+        wsview = self.app.get_widget('workspace-view')
+        if wsview is None or self._notes_column is not None:
             return
-        # Highlight only the Concept cell (factory_subtitle) rather than every
-        # column, so just that field gets the light-yellow background.
-        factory = getattr(wsview, 'factory_subtitle', None)
-        if factory is None:
-            return
-        handler = factory.connect('bind', self._on_highlight_bind)
-        self._hl_handlers.append((factory, handler))
+        factory = Gtk.SignalListItemFactory()
+        factory.connect('setup', self._on_notes_cell_setup)
+        factory.connect('bind', self._on_notes_cell_bind)
+        column = Gtk.ColumnViewColumn.new(_('Notes'), factory)
+        column.set_resizable(False)
+        wsview.cv.insert_column(0, column)
+        self._notes_factory = factory
+        self._notes_column = column
 
-    def _on_highlight_bind(self, factory, list_item):
-        # Style only the cell's own child widget (a Col* Gtk.Box that the
-        # ColumnView stretches to fill the cell). Never touch the ancestor
-        # row/cell widgets that GTK manages: mutating them mid-bind corrupts
-        # the widget tree. This mirrors what the core bind handlers already do
-        # (e.g. add_css_class on a cell label).
-        child = list_item.get_child()
+    def _on_notes_cell_setup(self, factory, list_item):
+        box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=4)
+        box.set_halign(Gtk.Align.CENTER)
+        icon = Gtk.Image.new_from_icon_name('io.github.t00m.MiAZ-view-pin-symbolic')
+        label = Gtk.Label()
+        label.add_css_class('miaz-note-count')
+        box.append(icon)
+        box.append(label)
+        list_item.set_child(box)
+
+    def _on_notes_cell_bind(self, factory, list_item):
+        box = list_item.get_child()
         item = list_item.get_item()
-        if child is None or item is None:
+        if box is None or item is None:
             return
-        if getattr(item, 'id', None) in self._docs_with_notes:
-            child.add_css_class('miaz-has-notes')
+        icon = box.get_first_child()
+        label = box.get_last_child()
+        count = self._note_counts.get(getattr(item, 'id', None), 0)
+        if count > 0:
+            icon.set_visible(True)
+            label.set_text(str(count))
+            label.set_visible(True)
         else:
-            # Clear stale state on recycled cells.
-            child.remove_css_class('miaz-has-notes')
+            # Reset recycled cells so empty rows show nothing.
+            icon.set_visible(False)
+            label.set_visible(False)
+            label.set_text('')
 
     # Public API (for other plugins, e.g. MiAZOCR)
     def add_note(self, document_id, body, category='General',
@@ -528,16 +536,18 @@ class MiAZNotesPlugin(MiAZExtension):
         return False  # let the switch update its visual state
 
     def _compute_docs_with_notes(self) -> set:
-        """Set of document ids that currently have at least one note."""
-        ids = set()
+        """Documents with at least one note. Also refreshes self._note_counts,
+        the {document id: note count} map the notes column cell reads."""
+        counts = {}
         try:
             for note_path in self.store.list_all():
                 doc_id = self.store.document_id_of(note_path)
                 if doc_id:
-                    ids.add(doc_id)
+                    counts[doc_id] = counts.get(doc_id, 0) + 1
         except Exception as error:
             self.log.debug(f"Could not compute documents with notes: {error}")
-        return ids
+        self._note_counts = counts
+        return set(counts)
 
     def _do_filter_notes(self, item, _filter_list_model) -> bool:
         if not self._only_notes_active:
