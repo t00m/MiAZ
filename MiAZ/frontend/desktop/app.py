@@ -29,6 +29,7 @@ from MiAZ.backend.util import MiAZUtil
 from MiAZ.backend.config import MiAZConfigApp
 from MiAZ.backend.repository import MiAZRepository
 from MiAZ.frontend.desktop.services.massrename import MiAZMassRename
+from MiAZ.frontend.desktop.services.importdoc import MiAZImportDoc
 from MiAZ.backend.config import MiAZConfigRepositories
 from MiAZ.backend.status import MiAZStatus
 from MiAZ.backend.dr import MiAZDR
@@ -74,6 +75,7 @@ class MiAZApp(Adw.Application):
         repository = self.set_service('repo', MiAZRepository(self))
         repository.connect('repository-switched', workflow.switch_finish)
         self.set_service('massrename', MiAZMassRename(self))
+        self.set_service('importdoc', MiAZImportDoc(self))
         self._env = None
         self.conf = None
 

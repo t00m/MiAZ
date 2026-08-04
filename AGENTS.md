@@ -60,6 +60,7 @@ MiAZ/
 │           │   ├── factory.py    ← MiAZFactory (widget factory)
 │           │   ├── help.py       ← MiAZHelp, MiAZShortcutsWindow
 │           │   ├── icm.py        ← MiAZIconManager
+│           │   ├── importdoc.py  ← MiAZImportDoc (core add-document service + menu item)
 │           │   ├── pluginsystem.py ← MiAZExtension, MiAZPlugin, MiAZPluginSystem
 │           │   └── workflow.py   ← MiAZWorkflow (repo switching lifecycle)
 │           └── widgets/
@@ -136,7 +137,7 @@ against the enabled config (`config.exists_used`) or, for dates,
 **Services** (`MiAZ/frontend/desktop/services/`): GTK-aware, app lifecycle.
 - Registered via `app.set_service('name', instance)` in `MiAZApp._on_activate` (returns the instance)
 - Access via `app.get_service('name')`
-- Registration order: `crash`, `util`, `icons`, `factory`, `dialogs`, `actions`, `workflow`, `dr`, `webserver`, `repo`, `history`, `massrename` (early); then `plugin-system` and `theme` (`Gtk.IconTheme`) once the window exists. `history` is registered after `repo` because it listens to `util`'s `filename-*` signals and needs the repository to resolve the journal path. `massrename` is registered before the window is built because its `build_menu` (run in `__init__`) registers the `massrename-*` app actions and stores the `massrename-menu` widget that the headerbar and the right-click selection menu both consume.
+- Registration order: `crash`, `util`, `icons`, `factory`, `dialogs`, `actions`, `workflow`, `dr`, `secrets`, `venv`, `extlibs`, `webserver`, `repo`, `massrename`, `importdoc` (early); then `plugin-system` and `theme` (`Gtk.IconTheme`) once the window exists. `massrename` and `importdoc` are registered before the window is built because each builds its menu item(s) in `__init__` (`massrename-menu` widget; `importdoc.menuitem`) that the headerbar consumes when it is constructed.
 
 **Widgets** (`MiAZ/frontend/desktop/widgets/`): All GTK4+Adw widgets.
 
@@ -285,7 +286,7 @@ Vendor third-party JS inside the plugin to keep resources local; fall back to a 
 
 ### Header bar "Add" menu (`widgets/mainwindow.py`)
 
-A `Gtk.MenuButton` (`headerbar-button-add`) with a persistent `Gio.Menu` (`headerbar-add-menu`) aggregates every **Import**-subcategory plugin action, so documents can be added even when filters leave the workspace empty (the "No documents found" page has no context menu). Built in `_populate_add_menu` by reusing each plugin's `plugin-menuitem-<name>` item; visibility kept in sync by `_update_add_button_visibility`; rebuilt on `plugins-updated`.
+A `Gtk.MenuButton` (`headerbar-button-add`) with a persistent `Gio.Menu` (`headerbar-add-menu`) aggregates the core `importdoc` action plus every **Import**-subcategory plugin action, so documents can be added even when filters leave the workspace empty (the "No documents found" page has no context menu). Built in `_populate_add_menu`, which always appends the core service's `importdoc.menuitem` first, then reuses each loaded Import plugin's `plugin-menuitem-<name>` item; visibility kept in sync by `_update_add_button_visibility` (always visible now that a core entry always exists); rebuilt on `plugins-updated`.
 
 ### Crash handling
 
@@ -300,6 +301,10 @@ The dialog is presented over the window the user is currently using, not always 
 The menu is exposed from two places, both reusing the one stored `massrename-menu` (rebuilding it would re-register the actions and fail):
 - The workspace headerbar (`widgets/mainwindow.py`): a `Gtk.MenuButton` (`headerbar-button-massrename`) with the same `io.github.t00m.MiAZ-rename` icon as single rename. `_on_workspace_menu_update` shows the single-rename button when exactly one document is selected and this menu button when two or more are selected.
 - The right-click selection menu: `_append_massrename_submenu` adds a "Mass renaming" submenu, called from both `_setup_menu_selection` and `_on_plugins_updated` (which rebuilds the menu).
+
+### Add documents
+
+`MiAZImportDoc` (`services/importdoc.py`, service `importdoc`) adds documents to the repository from the local filesystem via `Gtk.FileDialog`. It was the `MiAZImportDoc` plugin and is now core, because every repository needs a way to add its first document and that action should not be behind an optional, togglable plugin. `__init__` builds its `Gio.MenuItem` once (`factory.create_menuitem`, action `import-doc`, shortcut `<Control>Insert`) and stores it as `self.menuitem`; `import_files`/`_on_filechooser_response` do the actual copy (`util.filename_normalize` + `util.filename_import`), reporting successes and failures via toast/error dialog.
 
 ## Plugin system
 
@@ -488,7 +493,7 @@ ninja -C _build install
 PYTHONPATH=. python -m MiAZ.miaz
 ```
 
-## Existing plugins (20 with `.plugin` metadata)
+## Existing plugins (19 with `.plugin` metadata)
 
 | Plugin | Category / Subcategory | Purpose |
 |---|---|---|
@@ -502,7 +507,6 @@ PYTHONPATH=. python -m MiAZ.miaz
 | MiAZExport2Text | Data Management / Export | Export to text editor |
 | MiAZExport2Zip | Data Management / Export | Compress documents into a ZIP file |
 | MiAZFullscreen | Customisation and Personalisation / User Interface | Toggle fullscreen |
-| MiAZImportDoc | Data Management / Import | Add new document(s) |
 | MiAZImportFromScan | Data Management / Import | Import document from scanner |
 | MiAZImportFromZip | Data Management / Import | Import documents from a ZIP file |
 | MiAZNewspaper | Data Management / Visualization | Publishes the workspace as a "MiAZ Times" broadsheet HTML site in the Browser page |
