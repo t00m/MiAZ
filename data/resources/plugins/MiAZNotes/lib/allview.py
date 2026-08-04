@@ -113,14 +113,7 @@ class NotesAllView(Gtk.Box):
         self.dd_status = Gtk.DropDown.new_from_strings(
             [ALL_STATUSES, *STATUSES])
         self.dd_status.set_tooltip_text(_('Filter by status'))
-        # Start the All Notes view filtered on the "In Progress" status, so
-        # the user sees the work-in-progress notes first. Set the selection
-        # before connecting the handler to avoid a premature filter change;
-        # refresh() applies the filter once the model is ready.
-        try:
-            self.dd_status.set_selected(STATUSES.index(_('In Progress')) + 1)
-        except ValueError:
-            pass
+        self.dd_status.set_selected(0)
         self.dd_status.connect('notify::selected', self._on_facet_changed)
         filter_row.append(self.dd_status)
 
