@@ -11,7 +11,6 @@ import os
 import re
 import ast
 import sys
-import glob
 import json
 import gettext
 import shutil
@@ -228,8 +227,14 @@ class MiAZUtil(GObject.GObject):
         return parts
 
     def get_files(self, dirpath: str) -> []:
-        """Get all files from a given directory."""
-        return sorted(f for f in glob.glob(os.path.join(dirpath, '*')) if os.path.isfile(f))
+        """Get all files from a given directory.
+
+        os.scandir's entry.is_file() uses the directory-entry type reported by
+        the OS (d_type) when available, so most files skip a separate stat()
+        syscall; glob.glob + os.path.isfile always stats every entry.
+        """
+        with os.scandir(dirpath) as it:
+            return sorted(e.path for e in it if not e.name.startswith('.') and e.is_file())
 
     def get_files_recursively(self, root_dir: str) -> []:
         """Get documents from a given directory recursively

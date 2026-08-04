@@ -4,8 +4,6 @@
 # License: GPL v3
 # Description: Icon manager
 
-import os
-
 from gi.repository import Gtk
 from gi.repository import Gio
 from gi.repository import GObject
@@ -30,6 +28,7 @@ class MiAZIconManager(GObject.GObject):
         super().__init__()
         self.app = app
         self.log = MiAZLog('MiAZ.IconManager')
+        self._mimetype_icon_cache = {}
 
     def get_image_by_name(self, name: str, size: int = 24) -> Gtk.Image:
         """
@@ -46,13 +45,20 @@ class MiAZIconManager(GObject.GObject):
         image.set_pixel_size(size)
         return image
 
-    def get_mimetype_icon(self, filename: str) -> Gio.Icon | None:
-        repository = self.app.get_service('repo')
-        basedir = repository.docs
-        filepath = os.path.join(basedir, filename)
-        if os.path.exists(filepath):
-            gfile = Gio.File.new_for_path(filepath)
-            info = gfile.query_info(Gio.FILE_ATTRIBUTE_STANDARD_ICON, Gio.FileQueryInfoFlags.NONE, None)
-            gicon = info.get_icon()
+    def get_mimetype_icon_for_extension(self, extension: str):
+        """Return the themed icon for a file extension, without touching disk.
+
+        Resolved from the extension alone (Gio.content_type_guess needs no
+        real file) and cached, since a repository only ever has a handful of
+        distinct extensions. Used by the workspace Type column, whose cell is
+        rebound every time a row scrolls back into view: a per-row disk stat
+        there would repeat on every scroll.
+        """
+        extension = extension.lower()
+        try:
+            return self._mimetype_icon_cache[extension]
+        except KeyError:
+            content_type, _uncertain = Gio.content_type_guess(f'file.{extension}', None)
+            gicon = Gio.content_type_get_icon(content_type)
+            self._mimetype_icon_cache[extension] = gicon
             return gicon
-        return None

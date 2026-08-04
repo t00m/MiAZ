@@ -144,6 +144,7 @@ class MiAZWorkspace(Gtk.Box):
         self._cached_date_ul = 'All'
         self._cached_date_start = None
         self._cached_date_end = None
+        self._cached_project_bypass = False
         self._update_pending = False
         self._update_timeout_id = None
         # Set by the incremental handler so the trailing full re-scan is skipped
@@ -373,10 +374,8 @@ class MiAZWorkspace(Gtk.Box):
         to the full re-scan, which also handles pending-name normalization.
         """
         util = self.app.get_service('util')
-        if not util.filename_validate(filename):
-            return None, False
         fields = util.get_fields(filename)
-        if len(fields) != 7:
+        if len(fields) != 7 or not all(fields):
             return None, False
         doc, ext = util.filename_details(filename)
         key_fields = [('Date', 0), ('Country', 1), ('Group', 2), ('SentBy', 3),
@@ -403,10 +402,14 @@ class MiAZWorkspace(Gtk.Box):
                         desc[skey] = human
                         self.cache[skey][key] = human
             else:
-                description = config.get(key)
-                if description is None:
-                    description = key
-                desc[skey] = humanize_value(skey, description)
+                try:
+                    desc[skey] = self.cache[skey][key]
+                except KeyError:
+                    description = config.get(key)
+                    if description is None:
+                        description = key
+                    desc[skey] = humanize_value(skey, description)
+                    self.cache[skey][key] = desc[skey]
                 active &= config.exists_used(key=key)
         item = MiAZItem(
             id=os.path.basename(filename),
@@ -445,7 +448,11 @@ class MiAZWorkspace(Gtk.Box):
         sidebar = self.app.get_widget('sidebar')
         sidebar.clear_filters()
 
-        # Show all documents in review mode
+        # Show all documents in review mode. sidebar.clear_filters() already
+        # triggered one full rescan; this only needs to change which date
+        # range is visible, so the Date dropdown's rescan-triggering signal
+        # is blocked here (its separate refilter-only signal stays connected
+        # and applies the new range to the already-loaded items).
         i_type = Date.__gtype_name__
         dropdowns = self.app.get_widget('ws-dropdowns')
         if self._review:
@@ -453,7 +460,11 @@ class MiAZWorkspace(Gtk.Box):
             model = dd.get_model()
             for i in range(model.get_n_items()):
                 if model.get_item(i).id == 'All-All':
+                    if self._sid_date_selected is not None:
+                        dd.handler_block(self._sid_date_selected)
                     dd.set_selected(i)
+                    if self._sid_date_selected is not None:
+                        dd.handler_unblock(self._sid_date_selected)
                     break
 
     def _update_dropdown_date(self):
@@ -831,6 +842,7 @@ class MiAZWorkspace(Gtk.Box):
         concepts_inactive = set()
         show_pending = False
         cache_updates = {}
+        field_index = {ft: {} for ft in Field}
 
         key_fields = [('Date', 0), ('Country', 1), ('Group', 2), ('SentBy', 3), ('Purpose', 4), ('Concept', 5), ('SentTo', 6)]
 
@@ -840,11 +852,15 @@ class MiAZWorkspace(Gtk.Box):
             desc = {skey: '' for skey, nkey in key_fields}
             doc, ext = util.filename_details(filename)
             fields = util.get_fields(filename)
-            valid = util.filename_validate(filename)
+            # Equivalent to util.filename_validate(filename), inlined to reuse
+            # the fields already split above instead of parsing them again.
+            valid = len(fields) == 7 and all(fields)
             if not valid:
                 invalid.append(filename)
             active = valid
             if len(fields) == 7:
+                for field_type, idx in Field.items():
+                    field_index[field_type].setdefault(fields[idx], []).append(filename)
                 for skey, nkey in key_fields:
                     config = self.app.get_config(skey)
                     key = fields[nkey]
@@ -868,10 +884,17 @@ class MiAZWorkspace(Gtk.Box):
                                     cache_updates[skey] = {}
                                 cache_updates[skey][key] = human
                     else:
-                        description = config.get(key)
-                        if description is None:
-                            description = key
-                        desc[skey] = humanize_value(skey, description)
+                        try:
+                            desc[skey] = self.cache[skey][key]
+                        except KeyError:
+                            description = config.get(key)
+                            if description is None:
+                                description = key
+                            human = humanize_value(skey, description)
+                            desc[skey] = human
+                            if skey not in cache_updates:
+                                cache_updates[skey] = {}
+                            cache_updates[skey][key] = human
                         active &= config.exists_used(key=key)
 
             show_pending |= not active
@@ -924,19 +947,6 @@ class MiAZWorkspace(Gtk.Box):
         ENV['CACHE']['CONCEPTS']['ACTIVE'] = sorted(concepts_active)
         ENV['CACHE']['CONCEPTS']['INACTIVE'] = sorted(concepts_inactive)
 
-        # Build the field index
-        field_index = {ft: {} for ft in Field}
-        for filename in docs:
-            file_fields = util.get_fields(filename)
-            if len(file_fields) < 7:
-                continue
-            for field_type, idx in Field.items():
-                val = file_fields[idx]
-                bucket = field_index[field_type]
-                if val not in bucket:
-                    bucket[val] = []
-                bucket[val].append(filename)
-
         result_dict['docs'] = docs
         result_dict['items'] = items
         result_dict['invalid'] = invalid
@@ -977,7 +987,7 @@ class MiAZWorkspace(Gtk.Box):
             self._auto_select_date_preset(items)
         self._refresh_filter_cache()
         self._num_total_items = len(docs)
-        GLib.idle_add(self._idle_view_update, items)
+        GLib.idle_add(self._idle_view_update, items, ds)
 
         # Rename invalid files (rare, stays on main thread)
         renamed = 0
@@ -1015,10 +1025,6 @@ class MiAZWorkspace(Gtk.Box):
         if not show_pending:
             togglebutton.set_active(False)
         self._review = togglebutton.get_active()
-
-        de = datetime.now()
-        dt = de - ds
-        self.log.debug(f"Workspace updated in {dt}s")
 
         self.app.set_status(MiAZStatus.RUNNING)
         self.selected_items = []
@@ -1062,12 +1068,14 @@ class MiAZWorkspace(Gtk.Box):
         )
         thread.start()
 
-    def _idle_view_update(self, items):
+    def _idle_view_update(self, items, ds):
         """Apply the store splice and emit the updated signal with correct post-filter counts."""
         self.view.update(items)
         model = self.view.cv.get_model()
         self._num_selected_items = len(self.selected_items)
         self._num_displayed_items = len(model)
+        dt = datetime.now() - ds
+        self.log.debug(f"Workspace updated in {dt}s ({self._num_displayed_items} documents displayed)")
         self.emit('workspace-view-updated')
         return False
 
@@ -1142,6 +1150,16 @@ class MiAZWorkspace(Gtk.Box):
                 self._cached_date_start = None
                 self._cached_date_end = None
 
+        # When a specific project is selected, the date and active checks are
+        # bypassed for every item (project members may have unrecognised field
+        # values or any date). Resolved once per pass instead of once per item.
+        project_dd = self.app.get_widget('plugin-MiAZProjectMgt-dropdown')
+        self._cached_project_bypass = False
+        if project_dd is not None:
+            sel = project_dd.get_selected_item()
+            if sel is not None and sel.id != 'Any':
+                self._cached_project_bypass = True
+
     def _do_eval_cond_matches_freetext(self, item):
         return self._cached_search_text.upper() in item.search_text_upper
 
@@ -1214,12 +1232,9 @@ class MiAZWorkspace(Gtk.Box):
 
         # When a specific project is selected, bypass the date and active checks:
         # project members may have unrecognised field values (ca=False) or any date.
-        project_dd = self.app.get_widget('plugin-MiAZProjectMgt-dropdown')
-        if project_dd is not None:
-            sel = project_dd.get_selected_item()
-            if sel is not None and sel.id != 'Any':
-                cd = True
-                ca = True
+        if self._cached_project_bypass:
+            cd = True
+            ca = True
 
         if self._review:
             show_item = not ca and c0 and c1 and c2 and c4 and c5 and c6 and cc
