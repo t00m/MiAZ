@@ -1,9 +1,9 @@
 #!/usr/bin/python3
 
 """
-Regression guard for the MiAZYearReport plugin.
+Regression guard for the MiAZInsights plugin.
 
-The `yearreport` package lives under the plugin directory, which is not on the
+The `insights` package lives under the plugin directory, which is not on the
 default path, so the test inserts it the same way the plugin does at runtime.
 Both modules are pure Python: no GTK, no application services, no file I/O.
 """
@@ -16,7 +16,7 @@ import pytest
 
 PLUGIN_DIR = os.path.join(
     os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-    'data', 'resources', 'plugins', 'MiAZYearReport')
+    'data', 'resources', 'plugins', 'MiAZInsights')
 
 
 @pytest.fixture(autouse=True)
@@ -33,7 +33,7 @@ def record(date, sentby='BANK', purpose='INV', concept='rent',
 # Aggregation
 
 def test_build_stats_counts_per_year_and_month():
-    from yearreport.aggregate import build_stats
+    from insights.aggregate import build_stats
     years = build_stats([
         record('20240115'), record('20240220'), record('20250301'),
     ])
@@ -45,7 +45,7 @@ def test_build_stats_counts_per_year_and_month():
 
 
 def test_build_stats_skips_unusable_records():
-    from yearreport.aggregate import build_stats
+    from insights.aggregate import build_stats
     years = build_stats([
         record('20240115'),
         ['20240115', 'ES', 'HOU'],          # too few fields
@@ -58,7 +58,7 @@ def test_build_stats_skips_unusable_records():
 
 
 def test_build_stats_tracks_span_and_its_senders():
-    from yearreport.aggregate import build_stats
+    from insights.aggregate import build_stats
     years = build_stats([
         record('20240620', sentby='MIDDLE'),
         record('20240115', sentby='FIRST'),
@@ -72,7 +72,7 @@ def test_build_stats_tracks_span_and_its_senders():
 
 
 def test_month_index():
-    from yearreport.aggregate import month_index
+    from insights.aggregate import month_index
     assert month_index('20240101') == 0
     assert month_index('20241231') == 11
     assert month_index('20240001') is None
@@ -83,14 +83,14 @@ def test_month_index():
 # Derived figures
 
 def test_year_delta():
-    from yearreport.aggregate import year_delta
+    from insights.aggregate import year_delta
     assert year_delta(150, 100) == {'diff': 50, 'pct': 50.0}
     assert year_delta(50, 100) == {'diff': -50, 'pct': -50.0}
     assert year_delta(10, 0) is None
 
 
 def test_busiest_and_active_months():
-    from yearreport.aggregate import active_months, busiest_month
+    from insights.aggregate import active_months, busiest_month
     months = [0, 3, 0, 7, 0, 0, 0, 0, 0, 0, 0, 1]
     assert busiest_month(months) == (3, 7)
     assert active_months(months) == 3
@@ -98,7 +98,7 @@ def test_busiest_and_active_months():
 
 
 def test_longest_streak_crosses_the_year_boundary():
-    from yearreport.aggregate import build_stats, longest_streak
+    from insights.aggregate import build_stats, longest_streak
     years = build_stats([
         record('20241105'), record('20241205'),
         record('20250105'), record('20250205'),
@@ -111,18 +111,18 @@ def test_longest_streak_crosses_the_year_boundary():
 
 
 def test_longest_streak_ignores_empty_years_in_between():
-    from yearreport.aggregate import build_stats, longest_streak
+    from insights.aggregate import build_stats, longest_streak
     years = build_stats([record('20200105'), record('20230105')])
     assert longest_streak(years)['months'] == 1
 
 
 def test_longest_streak_without_data():
-    from yearreport.aggregate import longest_streak
+    from insights.aggregate import longest_streak
     assert longest_streak({}) is None
 
 
 def test_first_seen_and_new_in_year():
-    from yearreport.aggregate import build_stats, first_seen, new_in_year
+    from insights.aggregate import build_stats, first_seen, new_in_year
     years = build_stats([
         record('20240101', sentby='OLD'),
         record('20250101', sentby='OLD'),
@@ -134,7 +134,7 @@ def test_first_seen_and_new_in_year():
 
 
 def test_rank_movers_classifies_movement():
-    from yearreport.aggregate import build_stats, rank_movers
+    from insights.aggregate import build_stats, rank_movers
     records = []
     # 2024: A leads with 3, B has 2, GONE has 1
     records += [record('20240101', sentby='A')] * 3
@@ -150,13 +150,13 @@ def test_rank_movers_classifies_movement():
 
 
 def test_rank_movers_single_year_marks_everything_new():
-    from yearreport.aggregate import build_stats, rank_movers
+    from insights.aggregate import build_stats, rank_movers
     years = build_stats([record('20250101', sentby='ONLY')])
     assert rank_movers(years, 'sender')[0]['movement'] == 'new'
 
 
 def test_gone_quiet_lists_senders_missing_from_the_latest_year():
-    from yearreport.aggregate import build_stats, gone_quiet
+    from insights.aggregate import build_stats, gone_quiet
     years = build_stats([
         record('20240101', sentby='LEFT'),
         record('20240101', sentby='STAYED'),
@@ -166,7 +166,7 @@ def test_gone_quiet_lists_senders_missing_from_the_latest_year():
 
 
 def test_gone_quiet_only_looks_one_year_back():
-    from yearreport.aggregate import build_stats, gone_quiet
+    from insights.aggregate import build_stats, gone_quiet
     years = build_stats([
         record('20230101', sentby='ANCIENT'),
         record('20240101', sentby='RECENT'),
@@ -178,7 +178,7 @@ def test_gone_quiet_only_looks_one_year_back():
 
 
 def test_milestones():
-    from yearreport.aggregate import build_stats, milestones
+    from insights.aggregate import build_stats, milestones
     years = build_stats([
         record('20240115'), record('20240220'), record('20250301'),
     ])
@@ -193,7 +193,7 @@ def test_milestones():
 # Ranges and periods
 
 def test_bucket_keys_switch_from_months_to_years():
-    from yearreport.aggregate import bucket_keys, month_span
+    from insights.aggregate import bucket_keys, month_span
     assert month_span('20250101', '20250301') == 3
     keys, unit = bucket_keys('20251101', '20260215')
     assert unit == 'month'
@@ -204,7 +204,7 @@ def test_bucket_keys_switch_from_months_to_years():
 
 
 def test_build_range_stats_counts_only_the_window():
-    from yearreport.aggregate import build_range_stats
+    from insights.aggregate import build_range_stats
     block = build_range_stats([
         record('20241231', sentby='BEFORE'),
         record('20250115', sentby='INSIDE'),
@@ -220,7 +220,7 @@ def test_build_range_stats_counts_only_the_window():
 
 
 def test_build_range_stats_buckets_long_windows_by_year():
-    from yearreport.aggregate import build_range_stats
+    from insights.aggregate import build_range_stats
     block = build_range_stats([record('20200105'), record('20230105'), record('20230210')],
                               '20200101', '20260805')
     assert block['unit'] == 'year'
@@ -230,7 +230,7 @@ def test_build_range_stats_buckets_long_windows_by_year():
 
 
 def test_busiest_and_active_buckets():
-    from yearreport.aggregate import active_buckets, busiest_bucket
+    from insights.aggregate import active_buckets, busiest_bucket
     buckets = [{'key': '202501', 'count': 0}, {'key': '202502', 'count': 4},
                {'key': '202503', 'count': 1}]
     assert busiest_bucket(buckets) == ({'key': '202502', 'count': 4}, 4)
@@ -239,7 +239,7 @@ def test_busiest_and_active_buckets():
 
 
 def test_previous_window_is_the_same_length_right_before():
-    from yearreport.aggregate import previous_window
+    from insights.aggregate import previous_window
     # Equal length in days, ending the day before the window starts: the second
     # quarter (91 days) is compared against the 91 days that precede it.
     assert previous_window('20250401', '20250630') == ('20241231', '20250331')
@@ -261,7 +261,7 @@ SAMPLE_NAMES = {'sender': {'BANK': 'My Bank', 'UTIL': 'Water Co'},
 
 
 def sample_payload(periods=()):
-    from yearreport.render import build_payload
+    from insights.render import build_payload
     meta = {'repo': 'Test', 'app': 'MiAZ', 'version': '0.1', 'generated': 'now', 'locale': 'en_GB'}
     return build_payload(SAMPLE_RECORDS, SAMPLE_NAMES, meta, periods)
 
@@ -284,7 +284,7 @@ def test_payload_resolves_display_names():
 
 
 def test_payload_folds_the_purpose_tail_into_other():
-    from yearreport.render import build_payload
+    from insights.render import build_payload
     records = [record('20250101', purpose='TOP')] * 10
     for index in range(18):
         records.append(record('20250101', purpose=f"P{index:02d}"))
@@ -297,7 +297,7 @@ def test_payload_folds_the_purpose_tail_into_other():
 
 
 def test_payload_new_this_year_covers_senders_and_purposes():
-    from yearreport.render import build_payload
+    from insights.render import build_payload
     payload = build_payload([
         record('20240101', sentby='OLD', purpose='INV'),
         record('20250101', sentby='OLD', purpose='INV'),
@@ -349,7 +349,7 @@ def test_payload_carries_country_counts_for_the_map():
 
 
 def test_payload_without_documents():
-    from yearreport.render import build_payload
+    from insights.render import build_payload
     payload = build_payload([], {}, {'repo': 'Empty'})
     assert payload['years'] == []
     assert payload['periods'] == []
@@ -358,7 +358,7 @@ def test_payload_without_documents():
 
 
 def test_render_page_is_self_contained():
-    from yearreport.render import render_page
+    from insights.render import render_page
     page = render_page(sample_payload(), 'body{color:red}', 'var x = 1;')
     assert page.startswith('<!DOCTYPE html>')
     assert 'body{color:red}' in page
@@ -368,7 +368,7 @@ def test_render_page_is_self_contained():
 
 
 def test_render_page_escapes_markup_in_the_payload():
-    from yearreport.render import render_page
+    from insights.render import render_page
     payload = sample_payload()
     payload['meta']['repo'] = '</script><img src=x>'
     page = render_page(payload, '', '')

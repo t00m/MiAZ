@@ -1,5 +1,5 @@
 /* ===========================================================================
-   MiAZYearReport view layer
+   MiAZInsights view layer
 
    The Python side publishes every aggregated number as one JSON payload
    (window.__MIAZ_REPORT__) and this file renders it. Switching years swaps the

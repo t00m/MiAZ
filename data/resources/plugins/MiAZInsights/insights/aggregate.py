@@ -2,7 +2,7 @@
 # File: aggregate.py
 # Author: Tomás Vírseda
 # License: GPL v3
-# Description: Pure aggregation for the year report. No GTK, no file I/O, no
+# Description: Pure aggregation for the insights page. No GTK, no file I/O, no
 #              translation: callers pass the seven filename fields they already
 #              parsed and get back the report model. Keeping the arithmetic here
 #              makes it testable without a running application.

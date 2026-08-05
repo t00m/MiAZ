@@ -2,10 +2,10 @@
 # pylint: disable=E1101
 
 """
-# File: MiAZYearReport.py
+# File: MiAZInsights.py
 # Author: Tomás Vírseda
 # License: GPL v3
-# Description: Yearly summary of the active repository, published to the WWW
+# Description: Insights into the active repository, published to the WWW
 #              root as one self-contained page so it shows up in the integrated
 #              MiAZ Browser dropdown.
 #
@@ -17,7 +17,7 @@
 # single output file.
 #
 # Output:
-#   $HOME/.MiAZ/var/www/html/MiAZYearReport/index.html
+#   $HOME/.MiAZ/var/www/html/MiAZInsights/index.html
 #
 # Triggers (debounced rebuild):
 #   workspace-loaded             initial build + menu install
@@ -40,14 +40,14 @@ from MiAZ.frontend.desktop.services.pluginsystem import MiAZExtension, MiAZPlugi
 # The support package sits next to this file, which is not on the default path.
 sys.path.insert(1, os.path.dirname(os.path.abspath(__file__)))
 
-from yearreport import render  # noqa: E402
+from insights import render  # noqa: E402
 
 
 plugin_info = {
-    'Module':       'MiAZYearReport',
-    'Name':         'MiAZYearReport',
+    'Module':       'MiAZInsights',
+    'Name':         'MiAZInsights',
     'Loader':       'Python3',
-    'Description':  _('Yearly summary report'),
+    'Description':  _('Insights into your documents'),
     'Authors':      'Tomás Vírseda <tomasvirseda@gmail.com>',
     'Copyright':    'Copyright © 2026 Tomás Vírseda',
     'Website':      'https://github.com/t00m/MiAZ',
@@ -57,7 +57,7 @@ plugin_info = {
     'Subcategory':  'Custom Reports',
 }
 
-PLUGIN_DIR_NAME = 'MiAZYearReport'
+PLUGIN_DIR_NAME = 'MiAZInsights'
 REBUILD_DEBOUNCE_MS = 1500
 
 # Repository configuration holding the display name of each field value.
@@ -70,8 +70,8 @@ NAME_CONFIGS = (
 )
 
 
-class MiAZYearReportPlugin(MiAZExtension):
-    __gtype_name__ = 'MiAZYearReportPlugin'
+class MiAZInsightsPlugin(MiAZExtension):
+    __gtype_name__ = 'MiAZInsightsPlugin'
     plugin = None
 
     def do_activate(self):
@@ -122,7 +122,7 @@ class MiAZYearReportPlugin(MiAZExtension):
         if not self.plugin.started():
             menuitem = self.factory.create_menuitem(
                 name=self.plugin.get_menu_item_name(),
-                label=_('Open year report'),
+                label=_('Open insights'),
                 callback=self._on_menu_clicked,
             )
             self.plugin.install_menu_entry(menuitem)
@@ -130,12 +130,12 @@ class MiAZYearReportPlugin(MiAZExtension):
         self._schedule_rebuild()
 
     def _on_menu_clicked(self, *_args):
-        # The report lives in the Browser tab; bring that tab forward.
+        # The page lives in the Browser tab; bring that tab forward.
         if self.workspace is not None:
             try:
                 self.workspace.show_stack_page('workspace-browser')
             except Exception as error:
-                self.log.debug(f"MiAZYearReport: could not show Browser page: {error}")
+                self.log.debug(f"MiAZInsights: could not show Browser page: {error}")
 
     def _on_repo_changed(self, *_args):
         self._schedule_rebuild()
@@ -165,7 +165,7 @@ class MiAZYearReportPlugin(MiAZExtension):
 
     def _kick_rebuild(self):
         self._rebuild_timeout_id = 0
-        threading.Thread(target=self._rebuild_worker, name='MiAZYearReport-build', daemon=True).start()
+        threading.Thread(target=self._rebuild_worker, name='MiAZInsights-build', daemon=True).start()
         return False
 
     def _rebuild_worker(self):
@@ -176,7 +176,7 @@ class MiAZYearReportPlugin(MiAZExtension):
                                       self._asset('report.js'), self._asset('worldmap.svg'))
             self._write_page(page)
         except Exception as error:
-            self.log.error(f"MiAZYearReport build failed: {error}")
+            self.log.error(f"MiAZInsights build failed: {error}")
 
     def _write_page(self, page):
         target = self._target_dir()
@@ -189,7 +189,7 @@ class MiAZYearReportPlugin(MiAZExtension):
         os.makedirs(target, exist_ok=True)
         with open(os.path.join(target, 'index.html'), 'w', encoding='utf-8') as fh:
             fh.write(page)
-        self.log.debug(f"MiAZYearReport: wrote the report to {target}")
+        self.log.debug(f"MiAZInsights: wrote the page to {target}")
 
     # Data
 

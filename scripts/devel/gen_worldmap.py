@@ -2,7 +2,7 @@
 # File: gen_worldmap.py
 # Author: Tomás Vírseda
 # License: GPL v3
-# Description: Regenerates the world map used by the MiAZYearReport plugin.
+# Description: Regenerates the world map used by the MiAZInsights plugin.
 #
 # The report is a self-contained page: it cannot fetch anything at load time, so
 # the map ships as a small SVG with one path per country, keyed by its ISO
@@ -26,7 +26,7 @@ SOURCE = ('https://raw.githubusercontent.com/nvkelso/natural-earth-vector/'
 
 TARGET = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(
     os.path.abspath(__file__)))), 'data', 'resources', 'plugins',
-    'MiAZYearReport', 'static', 'worldmap.svg')
+    'MiAZInsights', 'static', 'worldmap.svg')
 
 # Natural Earth leaves ISO_A2 as "-99" for a handful of entries. ISO_A2_EH
 # covers most of them; the rest are patched by name.

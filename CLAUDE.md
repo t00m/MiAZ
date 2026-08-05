@@ -56,7 +56,7 @@ Example: `20240315-ES-HOU-BANKNAME-INV-Q1invoice-JOHNDOE.pdf`
 ## Plugin system
 
 Uses **libpeas** (`Peas.Engine`) with two search paths:
-- System: `~/.local/share/MiAZ/resources/plugins/` (20 built-in with `.plugin` metadata)
+- System: `~/.local/share/MiAZ/resources/plugins/` (19 built-in with `.plugin` metadata)
 - User: `~/.MiAZ/opt/plugins/` (imported ZIPs)
 
 Plugin contract: `MiAZExtension` subclass with `do_activate()` / `do_deactivate()`. See `AGENTS.md`.

@@ -71,7 +71,6 @@ data/resources/plugins/MiAZExport2Zip/export2zip.py
 data/resources/plugins/MiAZFullscreen/fullscreen.py
 data/resources/plugins/MiAZImportFromScan/scan.py
 data/resources/plugins/MiAZImportFromZip/importfromzip.py
-data/resources/plugins/MiAZNewspaper/MiAZNewspaper.py
 data/resources/plugins/MiAZNotes/lib/allview.py
 data/resources/plugins/MiAZNotes/lib/categories.py
 data/resources/plugins/MiAZNotes/lib/dr.py
@@ -85,5 +84,5 @@ data/resources/plugins/MiAZOCR/ocr.py
 data/resources/plugins/MiAZPeriodicity/periodicity.py
 data/resources/plugins/MiAZProjectMgt/projmgt.py
 data/resources/plugins/MiAZWSFont/wsfont.py
-data/resources/plugins/MiAZYearReport/MiAZYearReport.py
-data/resources/plugins/MiAZYearReport/yearreport/render.py
+data/resources/plugins/MiAZInsights/MiAZInsights.py
+data/resources/plugins/MiAZInsights/insights/render.py

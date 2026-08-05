@@ -14,7 +14,7 @@ from . import aggregate as agg
 
 TOP_N = agg.TOP_N
 
-# Translators: three-letter month abbreviations used in the year report charts.
+# Translators: three-letter month abbreviations used in the insights charts.
 MONTH_NAMES = [_('Jan'), _('Feb'), _('Mar'), _('Apr'), _('May'), _('Jun'),
                _('Jul'), _('Aug'), _('Sep'), _('Oct'), _('Nov'), _('Dec')]
 
@@ -81,8 +81,7 @@ def labels():
         'show_table': _('Show the numbers'),
         'silent_in': _('Silent in {year}'),
         'streak': _('Longest streak'),
-        'title_all': _('Year report'),
-        'title_year': _('Year report {year}'),
+        'title_all': _('Insights'),
         'top_note': _('The names behind the documents in this selection.'),
         'total': _('Total'),
         'vs_previous': _('Year over year'),
@@ -330,7 +329,7 @@ def render_page(payload, css, js, worldmap=''):
     # '<' is escaped inside the JSON so no value can close the script element.
     data = json.dumps(payload, ensure_ascii=False).replace('<', '\\u003c')
     meta = payload['meta']
-    title = f"{_('Year report')} · {meta.get('repo', '')}"
+    title = f"{_('Insights')} · {meta.get('repo', '')}"
     return f"""<!DOCTYPE html>
 <html lang="{meta.get('lang', 'en')}">
 <head>
@@ -345,7 +344,7 @@ def render_page(payload, css, js, worldmap=''):
 <div class="wrap">
   <header class="masthead">
     <div>
-      <h1>{_escape(_('Year report'))} <span class="scope" id="scope"></span></h1>
+      <h1>{_escape(_('Insights'))} <span class="scope" id="scope"></span></h1>
       <div class="repo">{_escape(meta.get('repo', ''))}</div>
     </div>
     <div class="tools no-print">

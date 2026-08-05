@@ -121,7 +121,7 @@ against the enabled config (`config.exists_used`) or, for dates,
 `filename_date_human_simple`; anything unknown flags the document for **Review**
 (Pending). Helpers:
 - `util.get_fields(filename)` → `[date, country, group, sentby, purpose, concept, sentto]`. Strips path + extension at the last dot and **merges hyphenated tail parts back into SentTo** (so a hyphen inside Concept/SentTo and directory hyphens are tolerated).
-- `util.filename_is_normalized(name)` → `len(name.split('-')) == 7` (cheap stem check; still used by `MiAZYearReport` and `filename_normalize`).
+- `util.filename_is_normalized(name)` → `len(name.split('-')) == 7` (cheap stem check; still used by `MiAZInsights` and `filename_normalize`).
 
 ## Architecture
 
@@ -238,7 +238,7 @@ This avoids the "duplicate child name in AdwViewStack" warning.
 
 ## Embedded web (webserver + Browser page)
 
-MiAZ ships a **minimal static-file HTTP server** and a built-in WebKit page so plugins can publish browsable HTML (reports, dashboards, newspapers) without bundling a server each.
+MiAZ ships a **minimal static-file HTTP server** and a built-in WebKit page so plugins can publish browsable HTML (reports, dashboards, summaries) without bundling a server each.
 
 > **Note:** there is no request-routing, action bridge (`miaz.invoke`), per-run token, or `run_on_main_loop` in the webserver. Earlier revisions of this file documented such an API; it does not exist in the code. `webserver.py` is ~130 lines of static serving only.
 
@@ -257,7 +257,7 @@ MiAZ ships a **minimal static-file HTTP server** and a built-in WebKit page so p
 
 ### WWW root and publishing convention
 
-The serving root is `ENV['LPATH']['WWW']` = `~/.MiAZ/var/www/html`. A plugin publishes a site by writing files to `<WWW>/<PluginName>/`, with an `index.html` at its top. The directory name is the page key; the matching plugin `Description` becomes its dropdown label. To make the Browser refresh, rewrite the page **directory** (the WWW monitor watches created/deleted/moved entries, not in-place edits): the `MiAZNewspaper` plugin `rmtree`s and recreates its dir on every republish for exactly this reason.
+The serving root is `ENV['LPATH']['WWW']` = `~/.MiAZ/var/www/html`. A plugin publishes a site by writing files to `<WWW>/<PluginName>/`, with an `index.html` at its top. The directory name is the page key; the matching plugin `Description` becomes its dropdown label. To make the Browser refresh, rewrite the page **directory** (the WWW monitor watches created/deleted/moved entries, not in-place edits): the `MiAZInsights` plugin `rmtree`s and recreates its dir on every republish for exactly this reason.
 
 ### Built-in Browser page (`MiAZBrowserPage`, `widgets/browserpage.py`)
 
@@ -309,7 +309,7 @@ The menu is exposed from two places, both reusing the one stored `massrename-men
 ## Plugin system
 
 ### Location
-- **System** (bundled): `~/.local/share/MiAZ/resources/plugins/` (20 plugins with `.plugin` metadata)
+- **System** (bundled): `~/.local/share/MiAZ/resources/plugins/` (19 plugins with `.plugin` metadata)
 - **User** (imported): `~/.MiAZ/opt/plugins/`
 
 ### Discovery
@@ -574,14 +574,13 @@ PYTHONPATH=. python -m MiAZ.miaz
 | MiAZFullscreen | Customisation and Personalisation / User Interface | Toggle fullscreen |
 | MiAZImportFromScan | Data Management / Import | Import document from scanner |
 | MiAZImportFromZip | Data Management / Import | Import documents from a ZIP file |
-| MiAZNewspaper | Data Management / Visualization | Publishes the workspace as a "MiAZ Times" broadsheet HTML site in the Browser page |
+| MiAZInsights | Analytics and Reporting / Custom Reports | Insights into the repository (totals, activity heatmap, rank movers, country map) published to the Browser page |
 | MiAZNotes | Collaboration / Comments and Annotations | Take Markdown notes linked to documents (adds a workspace page) |
 | MiAZOCR | Artificial Intelligence / Document AI | Extract text from PDFs with OCR and save as a note (depends on MiAZNotes; vetoes activation if `ocrmypdf` is missing) |
 | MiAZPeriodicity | Content Organisation / Tagging and Classification | Set document periodicity |
 | MiAZProjectMgt | Content Organisation / Tagging and Classification | Project management |
 | MiAZWSFont | Customisation and Personalisation / User Interface | Modify workspace font name and size |
-| MiAZYearReport | Analytics and Reporting / Custom Reports | Printable yearly summary report published to the Browser page |
 
 WIP plugin directories without a `.plugin` file yet (not loaded): `MiAZDeleteDoc`, `MiAZRenameDoc`, `MiAZViewDoc`, `MiAZWorkspaceToggleView`.
 
-`MiAZNewspaper` and `MiAZYearReport` are the reference examples for the WWW-publish + Browser-page pattern; `MiAZAutoScan` and `MiAZOCR` show background-thread work and vetoable activation.
+`MiAZInsights` is the reference example for the WWW-publish + Browser-page pattern; `MiAZAutoScan` and `MiAZOCR` show background-thread work and vetoable activation.

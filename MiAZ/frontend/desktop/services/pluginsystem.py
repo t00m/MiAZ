@@ -610,7 +610,7 @@ class MiAZPluginSystem(GObject.GObject):
 
         Plugins that publish to the MiAZ Browser write to
         LPATH/WWW/<plugin directory basename> (the convention the bundled
-        MiAZNewspaper and MiAZYearReport follow through their PLUGIN_DIR_NAME).
+        MiAZInsights follows through its PLUGIN_DIR_NAME).
         Removing it here, centrally, means disabling or uninstalling any such
         plugin (bundled or user-space) drops its content from the Browser,
         without each plugin having to clean up after itself. A plugin that
