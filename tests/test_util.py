@@ -240,3 +240,40 @@ def test_since_date_last_n_months_mid_month(util):
 
 def test_since_date_last_six_months_delegates(util):
     assert _ymd(util.since_date_last_six_months(date(2026, 7, 31))) == '20260101'
+
+
+# ---------------------------------------------------------------------------
+# filename_rename_needed
+# ---------------------------------------------------------------------------
+
+DOC = '20240115-ES-HOU-BANK-INV-RENT-JOHN.pdf'
+
+
+def test_rename_not_needed_when_the_name_is_unchanged(util):
+    # The rename dialog leans on this: a document can be opened only to edit
+    # what a plugin tab holds, leaving every filename field alone.
+    assert util.filename_rename_needed(DOC, DOC) is False
+
+
+def test_rename_not_needed_when_only_the_casing_differs(util):
+    # filename_rename uppercases the target, so a lowercase target that
+    # uppercases back to the source is not a rename either.
+    assert util.filename_rename_needed(DOC, DOC.lower()) is False
+    assert util.filename_rename_needed(DOC, '20240115-es-hou-bank-inv-rent-john.PDF') is False
+
+
+def test_rename_needed_when_a_field_changes(util):
+    target = '20240115-ES-HOU-BANK-INV-Q1INVOICE-JOHN.pdf'
+    assert util.filename_rename_needed(DOC, target) is True
+
+
+def test_rename_needed_compares_full_paths(util):
+    assert util.filename_rename_needed(f'/docs/{DOC}', f'/docs/{DOC}') is False
+    assert util.filename_rename_needed(f'/docs/{DOC}', f'/other/{DOC}') is True
+
+
+def test_rename_needed_without_uppercasing(util):
+    # upper=False (zip exports and other non-document files): the target is
+    # compared as given.
+    assert util.filename_rename_needed(DOC, DOC.lower(), upper=False) is True
+    assert util.filename_rename_needed(DOC, DOC, upper=False) is False

@@ -357,14 +357,29 @@ class MiAZUtil(GObject.GObject):
         key = str(key).strip().replace('-', '_').replace(' ', '_')
         return re.sub(r'(?u)[^-\w.]', '', key)
 
+    def _rename_target(self, target: str, upper=True) -> str:
+        """The path filename_rename would really move to.
+
+        MiAZ stores document filenames uppercase (with a lowercase extension),
+        so every rename forces the target to that casing. Callers that rename a
+        non-document file (e.g. a zip export) pass upper=False to opt out.
+        """
+        if not upper:
+            return target
+        directory = os.path.dirname(target)
+        return os.path.join(directory, self.filename_upper(os.path.basename(target)))
+
+    def filename_rename_needed(self, source, target, upper=True) -> bool:
+        """False when source and target name the same file.
+
+        Callers use this to tell "nothing to rename" apart from a rename that
+        failed: filename_rename returns False for both, and the difference
+        matters to anything that has work to do alongside the rename.
+        """
+        return source != self._rename_target(target, upper)
+
     def filename_rename(self, source, target, upper=True) -> bool:
-        # MiAZ stores document filenames uppercase (with a lowercase extension),
-        # so every rename forces the target to that casing. Callers that rename
-        # a non-document file (e.g. a zip export) pass upper=False to opt out.
-        if upper:
-            directory = os.path.dirname(target)
-            target = os.path.join(
-                directory, self.filename_upper(os.path.basename(target)))
+        target = self._rename_target(target, upper)
         rename = False
         if source != target:
             if not os.path.exists(target):

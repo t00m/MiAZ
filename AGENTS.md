@@ -406,6 +406,10 @@ class MyPlugin(MiAZExtension):
 - `get_menu_item(callback)` → `Gio.MenuItem` (registered as app action)
 - `install_menu_entry(menuitem)`,  appends to workspace menu under category/subcategory
 - `add_workspace_page(widget, name, title, icon_name=None)`,  registers a page on the workspace's `Adw.ViewStack`
+- `register_document_tab(name, title, factory, icon_name=None, weight=100)` / `unregister_document_tabs()`,  contributes a tab to the single-document rename dialog (see below)
+- `get_source_dir()` → the plugin folder, looked up by `Name` then by `Module`
+- `get_icon_path()` → `<source_dir>/icon.svg` or `icon.png`, or `None`
+- `get_icon_name()` → themed icon name, the plugin's own icon or the generic MiAZ plugin icon; never empty
 - `get_logger()` → named logger `Plugin.<Name>`
 - `get_name()` → plugin name string
 - `get_widget_name()` → `plugin-<Module>` identifier
@@ -413,6 +417,67 @@ class MyPlugin(MiAZExtension):
 - `get_plugin_info_key(key)` → specific info key value
 - `menu_item_loaded()` → `bool`, checks if menu item is registered
 - `set_started(True/False)` / `started()` → toggle/query started state
+
+### Document tabs (rename dialog)
+
+The single-document rename dialog is an `Adw.ViewStack`. Its first page,
+**Fields**, holds the seven filename fields; plugins add further pages through
+the `document-tabs` service (`frontend/desktop/services/doctabs.py`). With no
+tab registered, the view switcher is not installed and the dialog looks as it
+always did.
+
+```python
+# in startup()
+self.plugin.register_document_tab(
+    name='projects', title=_('Projects'),
+    factory=lambda app: MiAZProjectTab(app, self.config),
+    weight=100)
+
+# in do_deactivate()
+self.plugin.unregister_document_tabs()
+```
+
+`factory(app)` is called once per dialog and returns a `Gtk.Widget`. Tabs are
+ordered by `(weight, title)`; Fields is always first. Registering a name twice
+replaces it, and `MiAZPluginSystem.unload_plugin` drops a plugin's tabs even if
+it forgets to.
+
+**Icons.** Leave `icon_name` unset and the tab wears the plugin's own icon.
+Every plugin has one: ship `icon.svg` or `icon.png` next to the module and it is
+exported into `~/.MiAZ/opt/icons` as `miaz-plugin-<module>`, which the icon
+theme resolves; a plugin without an icon file gets the generic MiAZ plugin icon.
+`MiAZPlugin.get_icon_name()` returns that name and never an empty value, so it
+suits anything taking an icon name.
+
+The widget answers a duck-typed contract:
+
+| Method | When | Required |
+|---|---|---|
+| `set_document(doc_id)` | once, when the dialog opens | yes |
+| `apply(old_id, new_id)` | after the rename succeeded | yes |
+| `is_valid()` | before renaming; `False` vetoes and shows the tab | no |
+| `discard()` | on Cancel | no |
+
+`apply` should return `True` when it actually wrote something, so the dialog can
+tell an empty apply from a real one (it shows a toast when only tab edits were
+saved).
+
+**Hold the edits.** A tab must not write anything while the user edits it. The
+dialog calls `apply(old_id, new_id)` only after the rename went through, so
+Cancel discards tab edits the same way it discards field changes. By then
+`filename-renamed` has already fired, so plugin data has moved to the new name
+and `apply` writes against `new_id`. Every call is wrapped in try/except by the
+dialog: a failing tab logs and never blocks the rename.
+
+**A document can be opened here without renaming it.** When every filename field
+is left alone (the user came only to set a project or a periodicity), there is
+nothing to rename: `util.filename_rename` would return `False`, which also means
+"the rename failed". The dialog checks `util.filename_rename_needed(source,
+target)` first and, when no rename is due, skips the confirmation, calls
+`apply(doc_id, doc_id)` with the unchanged name and closes.
+
+For header-bar additions rather than a tab (the AI "Suggest" button), connect to
+the `rename-dialog-built` signal on the `actions` service instead.
 
 ### Plugin dependencies
 

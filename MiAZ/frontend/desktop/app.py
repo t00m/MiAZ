@@ -30,6 +30,7 @@ from MiAZ.backend.config import MiAZConfigApp
 from MiAZ.backend.repository import MiAZRepository
 from MiAZ.frontend.desktop.services.massrename import MiAZMassRename
 from MiAZ.frontend.desktop.services.importdoc import MiAZImportDoc
+from MiAZ.frontend.desktop.services.doctabs import MiAZDocumentTabs
 from MiAZ.backend.config import MiAZConfigRepositories
 from MiAZ.backend.status import MiAZStatus
 from MiAZ.backend.dr import MiAZDR
@@ -76,6 +77,7 @@ class MiAZApp(Adw.Application):
         repository.connect('repository-switched', workflow.switch_finish)
         self.set_service('massrename', MiAZMassRename(self))
         self.set_service('importdoc', MiAZImportDoc(self))
+        self.set_service('document-tabs', MiAZDocumentTabs(self))
         self._env = None
         self.conf = None
 
@@ -163,6 +165,8 @@ class MiAZApp(Adw.Application):
         self.log.debug(f"Add ENV['GPATH']['ICONS'] ({ENV['GPATH']['ICONS']}) to the theme search path")
         theme.add_search_path(ENV['GPATH']['FLAGS'])
         self.log.debug(f"Add ENV['GPATH']['FLAGS'] ({ENV['GPATH']['FLAGS']}) to the theme search path")
+        theme.add_search_path(ENV['LPATH']['ICONS'])
+        self.log.debug(f"Add ENV['LPATH']['ICONS'] ({ENV['LPATH']['ICONS']}) to the theme search path")
         self.log.debug(f"MiAZ custom icons in: {ENV['GPATH']['ICONS']}")
 
         # Setup main window contents

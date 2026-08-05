@@ -61,6 +61,9 @@ def _build_env(app_id, version, pkgdatadir, localedir, profile):
     ENV['LPATH']['REPO'] = os.path.join(ENV['LPATH']['TMP'], 'repo')
     ENV['LPATH']['OPT'] = os.path.join(ENV['LPATH']['ROOT'], 'opt')
     ENV['LPATH']['PLUGINS'] = os.path.join(ENV['LPATH']['OPT'], 'plugins')
+    # Icons exported from plugins so the icon theme, which resolves names and
+    # not paths, can find them. Added to the theme search path at startup.
+    ENV['LPATH']['ICONS'] = os.path.join(ENV['LPATH']['OPT'], 'icons')
     ENV['LPATH']['VENV'] = os.path.join(ENV['LPATH']['OPT'], 'venv')
     ENV['LPATH']['WWW'] = os.path.join(ENV['LPATH']['VAR'], 'www', 'html')
 

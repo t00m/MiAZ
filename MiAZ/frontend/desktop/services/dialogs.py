@@ -358,6 +358,11 @@ class MiAZWindowDialog(Adw.Window):
         # Place a widget on the left side of the header bar.
         self.headerbar.pack_start(widget)
 
+    def set_title_widget(self, widget):
+        # Replace the window title in the header bar, for a dialog that shows
+        # something else there (a view switcher, for instance).
+        self.headerbar.set_title_widget(widget)
+
     def pack_action_end(self, widget):
         # Place a widget on the right side of the bottom action bar, next to
         # the affirmative response buttons.

@@ -165,6 +165,10 @@ plugin_categories = {
     }
 }
 
+# Shown for a plugin that ships no icon of its own, so every plugin has one.
+PLUGIN_DEFAULT_ICON = 'io.github.t00m.MiAZ-res-plugins'
+
+
 class MiAZAPI(GObject.GObject):
     def __init__(self, app):
         GObject.Object.__init__(self)
@@ -178,6 +182,11 @@ class MiAZPlugin(GObject.GObject):
         self.app = app
         self.log = MiAZLog('MiAZPlugin')
         self.util = self.app.get_service('util')
+        # Filled in by register(). Defaulted here so anything reading them
+        # early (an icon lookup, a log line) finds an empty value, not an
+        # AttributeError.
+        self.info = {}
+        self.name = ''
 
     def get_plugin_attributes(self, plugin_file):
         plugin_system = self.app.get_service('plugin-system')
@@ -296,12 +305,23 @@ class MiAZPlugin(GObject.GObject):
         self.log.debug(f"Plugin config for {self.name} updated: key '{key}' set")
 
     def get_source_dir(self):
+        """Directory the plugin was loaded from, or None.
+
+        A plugin folder is named after the plugin Name (MiAZProjectMgt) while
+        its Module is the python module inside it (projmgt), and the two match
+        only sometimes. Looking for the Module alone therefore found nothing
+        for most bundled plugins, which is why their icons never showed up, so
+        both names are tried, system directory first.
+        """
         ENV = self.app.get_env()
-        module_name = self.info.get('Module', self.name)
+        names = [self.info.get('Name'), self.info.get('Module'), self.name]
         for base_dir in (ENV['GPATH']['PLUGINS'], ENV['LPATH']['PLUGINS']):
-            candidate = os.path.join(base_dir, module_name)
-            if os.path.exists(candidate):
-                return candidate
+            for name in names:
+                if not name:
+                    continue
+                candidate = os.path.join(base_dir, name)
+                if os.path.isdir(candidate):
+                    return candidate
         return None
 
     def get_icon_path(self):
@@ -313,6 +333,25 @@ class MiAZPlugin(GObject.GObject):
             if os.path.exists(path):
                 return path
         return None
+
+    def get_icon_name(self):
+        """Themed icon name for this plugin. Never empty.
+
+        A plugin ships its icon as icon.svg or icon.png next to its module.
+        Widgets take icon names rather than paths, so the file is exported once
+        into the user icon directory under a name unique to this plugin. A
+        plugin without an icon file, or whose icon cannot be exported, gets the
+        generic MiAZ plugin icon: every plugin has an icon to show.
+        """
+        icon_path = self.get_icon_path()
+        if icon_path:
+            icons = self.app.get_service('icons')
+            if icons is not None:
+                module = self.info.get('Module', self.name)
+                name = icons.register_file_icon(f"miaz-plugin-{module.lower()}", icon_path)
+                if name:
+                    return name
+        return PLUGIN_DEFAULT_ICON
 
     def install_menu_entry(self, menuitem = None):
         category = self.info['Category']
@@ -329,6 +368,28 @@ class MiAZPlugin(GObject.GObject):
         workspace = self.app.get_widget('workspace')
         if workspace is not None:
             workspace.add_stack_page(widget, name, title, icon_name)
+
+    def register_document_tab(self, name, title, factory, icon_name=None, weight=100):
+        """Contribute a tab to the single-document rename dialog.
+
+        `factory` is called with the app once per dialog and must return a
+        Gtk.Widget answering set_document(doc_id) and apply(old_id, new_id).
+        See the plugin contract in AGENTS.md.
+
+        Without an explicit icon_name the tab wears the plugin's own icon, so a
+        plugin gets a recognisable tab without doing anything about it.
+        """
+        tabs = self.app.get_service('document-tabs')
+        if tabs is None:
+            return
+        tabs.register(owner=self.get_name(), name=name, title=title,
+                      factory=factory, icon_name=icon_name or self.get_icon_name(),
+                      weight=weight)
+
+    def unregister_document_tabs(self):
+        tabs = self.app.get_service('document-tabs')
+        if tabs is not None:
+            tabs.unregister_all(owner=self.get_name())
 
 
 class MiAZPluginSystem(GObject.GObject):
@@ -538,6 +599,7 @@ class MiAZPluginSystem(GObject.GObject):
             self._deactivate_plugin_instance(plugin)
             self.engine.unload_plugin(plugin)
             self._remove_plugin_www(plugin)
+            self._remove_plugin_document_tabs(plugin)
             self.log.info(f"Plugin {pname} v{pvers} unloaded")
             self.emit('plugins-updated')
         except Exception as error:
@@ -567,6 +629,21 @@ class MiAZPluginSystem(GObject.GObject):
                 self.log.debug(f"Removed web content for plugin '{name}': {www}")
         except Exception as error:
             self.log.warning(f"Could not remove web content for plugin: {error}")
+
+    def _remove_plugin_document_tabs(self, plugin: Peas.PluginInfo):
+        """Drop the rename-dialog tabs of a plugin when it is unloaded.
+
+        Plugins are expected to call unregister_document_tabs() in their
+        do_deactivate; doing it here too means one that forgets cannot leave a
+        tab whose factory no longer exists.
+        """
+        tabs = self.app.get_service('document-tabs')
+        if tabs is None:
+            return
+        try:
+            tabs.unregister_all(owner=plugin.get_name())
+        except Exception as error:
+            self.log.warning(f"Could not remove document tabs for plugin: {error}")
 
     def get_engine(self):
         return self.engine
