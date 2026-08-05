@@ -86,3 +86,4 @@ data/resources/plugins/MiAZPeriodicity/periodicity.py
 data/resources/plugins/MiAZProjectMgt/projmgt.py
 data/resources/plugins/MiAZWSFont/wsfont.py
 data/resources/plugins/MiAZYearReport/MiAZYearReport.py
+data/resources/plugins/MiAZYearReport/yearreport/render.py
