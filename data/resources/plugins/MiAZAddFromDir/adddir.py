@@ -14,7 +14,6 @@ from gi.repository import GLib
 from gi.repository import Gtk
 
 from MiAZ.frontend.desktop.services.pluginsystem import MiAZExtension, MiAZPlugin
-from MiAZ.backend.status import MiAZStatus
 
 plugin_info = {
         'Module':        'adddir',
@@ -104,10 +103,12 @@ class MiAZAddDirectoryPlugin(MiAZExtension):
 
         dirpath = folder.get_path()
         filepaths = glob.glob(os.path.join(dirpath, '*'))
-        self.app.set_status(MiAZStatus.BUSY)
-        threading.Thread(target=self.import_directory, args=(filepaths,), daemon=True).start()
+        workspace = self.app.get_widget('workspace')
+        suspend = workspace.suspend_updates()
+        threading.Thread(target=self.import_directory,
+                         args=(filepaths, suspend), daemon=True).start()
 
-    def import_directory(self, filepaths):
+    def import_directory(self, filepaths, suspend=None):
         total_files = len(filepaths)
         watcher = self.app.get_service('watcher')
         watcher.set_active(False)
@@ -126,8 +127,11 @@ class MiAZAddDirectoryPlugin(MiAZExtension):
         finally:
             workspace = self.app.get_widget('workspace')
             GLib.idle_add(watcher.set_active, True)
-            GLib.idle_add(self.app.set_status, MiAZStatus.RUNNING)
+            # Ask while still suspended: the gate records the request and runs
+            # one refresh when the last holder releases.
             GLib.idle_add(workspace.update)
+            if suspend is not None:
+                GLib.idle_add(suspend.release)
 
     def update_progress(self, fraction, text):
         self.log.info(f"{fraction} {text}")

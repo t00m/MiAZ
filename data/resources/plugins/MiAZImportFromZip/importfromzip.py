@@ -15,7 +15,6 @@ from gi.repository import GLib
 from gi.repository import Gtk
 
 from MiAZ.frontend.desktop.services.pluginsystem import MiAZExtension, MiAZPlugin
-from MiAZ.backend.status import MiAZStatus
 
 plugin_info = {
     'Module':      'importfromzip',
@@ -87,7 +86,7 @@ class MiAZImportFromZipPlugin(MiAZExtension):
         try:
             file = dialog.open_finish(result)
             zip_path = file.get_path()
-            self.app.set_status(MiAZStatus.BUSY)
+            self._suspend = self.app.get_widget('workspace').suspend_updates()
             threading.Thread(
                 target=self._import_zip,
                 args=(zip_path,),
@@ -135,8 +134,12 @@ class MiAZImportFromZipPlugin(MiAZExtension):
         for target in targets:
             self.util.emit('filename-added', target)
         watcher.set_active(True)
-        self.app.set_status(MiAZStatus.RUNNING)
+        # Ask while still suspended, then release: the gate turns however many
+        # requests came in during the import into one refresh.
         self.app.get_widget('workspace').update()
+        if getattr(self, '_suspend', None) is not None:
+            self._suspend.release()
+            self._suspend = None
         if targets:
             msg = _('{count} documents imported from ZIP').format(count=len(targets))
             self.srvdlg.show_toast(msg)

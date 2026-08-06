@@ -1,5 +1,5 @@
 Name:           miaz
-Version:        0.1.40
+Version:        0.1.50
 Release:        1%{?dist}
 Summary:        Personal Document Organizer
 
@@ -75,6 +75,9 @@ gtk-update-icon-cache %{_datadir}/icons/hicolor &> /dev/null || :
 %{_datadir}/metainfo/io.github.t00m.MiAZ.metainfo.xml
 
 %changelog
+* Thu Aug 06 2026 Tomás Vírseda <tomasvirseda@gmail.com> - 0.1.50-1
+- New release. See CHANGELOG.md for details.
+
 * Wed Aug 05 2026 Tomás Vírseda <tomasvirseda@gmail.com> - 0.1.40-1
 - AI provider API keys are stored in the system keyring instead of plain text
 - Country, Group and Purpose labels are shown in the user's language; French and German catalogues added

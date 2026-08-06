@@ -22,7 +22,6 @@ from gi.repository import GObject  # noqa: F401
 from gi.repository import Gtk
 
 from MiAZ.frontend.desktop.services.pluginsystem import MiAZExtension, MiAZPlugin
-from MiAZ.backend.status import MiAZStatus
 
 plugin_info = {
         'Module':        'ocr',
@@ -220,7 +219,7 @@ class MiAZOCRPlugin(MiAZExtension):
         lang = langs[idx] if 0 <= idx < len(langs) else 'eng'
         self.plugin.set_config_key('lang', lang)
         force = force_row.get_active()
-        self.app.set_status(MiAZStatus.BUSY)
+        self._suspend = self.app.get_widget('workspace').suspend_updates()
         threading.Thread(target=self._process,
                          args=(eligible, lang, force, skipped),
                          daemon=True).start()
@@ -301,7 +300,9 @@ class MiAZOCRPlugin(MiAZExtension):
             return False
 
     def _finish(self, created, failed, skipped):
-        self.app.set_status(MiAZStatus.RUNNING)
+        if getattr(self, '_suspend', None) is not None:
+            self._suspend.release()
+            self._suspend = None
         parts = [_('{n} note(s) created').format(n=created)]
         if failed:
             parts.append(_('{n} failed').format(n=failed))

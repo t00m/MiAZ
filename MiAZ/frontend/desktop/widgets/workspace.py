@@ -5,7 +5,6 @@
 # Description: The central place to manage the AZ
 
 import os
-import threading
 from collections import namedtuple
 from datetime import datetime, timedelta
 from gettext import gettext as _
@@ -22,8 +21,10 @@ from gi.repository import Pango
 
 from MiAZ.env import ENV
 from MiAZ.backend.log import MiAZLog
-from MiAZ.backend.util import humanize_value
-from MiAZ.backend.models import MiAZItem, Field, Group, Country, Purpose, SentBy, SentTo, Date
+from MiAZ.backend.models import Group, Country, Purpose, SentBy, SentTo, Date
+from MiAZ.backend.gate import UpdateGate
+from MiAZ.backend.query import ANY, DATE_NONE, DATE_RANGE, DocumentQuery
+from MiAZ.backend.tasks import run_in_background
 from MiAZ.frontend.desktop.widgets.browserpage import MiAZBrowserPage
 from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewWorkspace
 from MiAZ.frontend.desktop.widgets.configview import MiAZCountries, MiAZGroups, MiAZPurposes, MiAZPeopleSentBy, MiAZPeopleSentTo
@@ -134,17 +135,21 @@ class MiAZWorkspace(Gtk.Box):
         # Armed at load / repo switch / rollover so _apply_parse_results picks the
         # nearest non-empty date preset once (never overriding a manual choice).
         self._auto_date_pending = False
+        # What the view is filtered by. Rebuilt from the filter widgets once per
+        # pass by _read_query, then read per item by _do_filter_view_main. Set
+        # before the setup calls below, which install the filter and can run it.
+        self._review = False
+        self._query = DocumentQuery()
+        self._query_hooks = {}
+        # Holds back refreshes while something does bulk work, and coalesces
+        # them into one when the last holder releases. See suspend_updates().
+        self._gate = UpdateGate(self.update)
+        # True from the moment a scan is handed to a worker until its result
+        # comes back. Guards re-entry only; it is not a global app state.
+        self._scan_in_flight = False
         self._setup_workspace()
         self._setup_logic()
-        self._review = False
         self._was_pending = None
-        self._cached_dropdowns = None
-        self._cached_search_text = ''
-        self._cached_date_ll = 'All'
-        self._cached_date_ul = 'All'
-        self._cached_date_start = None
-        self._cached_date_end = None
-        self._cached_project_bypass = False
         self._update_pending = False
         self._update_timeout_id = None
         # Set by the incremental handler so the trailing full re-scan is skipped
@@ -165,20 +170,17 @@ class MiAZWorkspace(Gtk.Box):
     def initialize_caches(self):
         repo = self.app.get_service('repo')
 
-        self.datetimes = {}
-
         if repo.conf is None:
             return
         self.fcache = os.path.join(repo.conf, 'cache.json')
-        self.cache = {}
-        for cache in ['Date', 'Country', 'Group', 'SentBy', 'SentTo', 'Purpose']:
-            self.cache[cache] = {}
+        self.app.get_service('index').invalidate_cache()
         self.log.debug("Caches initialized")
 
     def _on_config_used_updated(self, *args):
-        # FIXME
-        # Right now, there is no way to know which config item has been
-        # updated, therefore, the whole cache must be invalidated :/
+        # The 'used-updated' signal carries no payload, so there is still no way
+        # to know which value changed. The index can drop a single entry
+        # (invalidate_cache(config, key)); wire that up once the signal says
+        # what it changed.
         self.initialize_caches()
 
     def _setup_logic(self):
@@ -216,6 +218,11 @@ class MiAZWorkspace(Gtk.Box):
         watcher = self.app.get_service('watcher')
         watcher.connect('repository-changed', self._on_repository_item_changed)
         watcher.connect('repository-updated', self._on_workspace_update)
+
+        # The index turns a filesystem event into store operations. A full
+        # reload emits 'index-loaded' instead, so this never double-applies.
+        index = self.app.get_service('index')
+        index.connect('index-changed', self._on_index_changed)
 
         # Connect Repository
         repository = self.app.get_service('repo')
@@ -311,118 +318,32 @@ class MiAZWorkspace(Gtk.Box):
             self.log.warning(f"Incremental update failed for '{path}': {error}")
 
     def _apply_incremental(self, path, other, event):
-        """Return True if the single-file change was fully applied to the view."""
+        """Return True if the single-file change was fully applied to the view.
+
+        The index decides what the change means; this only translates its
+        operations into store splices.
+        """
         repository = self.app.get_service('repo')
         if repository.conf is None or repository.docs is None:
             return False
-        docs_dir = os.path.normpath(repository.docs)
-        basename = os.path.basename(path)
-        # Only documents that live directly in the repository root, never hidden.
-        if basename.startswith('.') or os.path.dirname(path) != docs_dir:
-            return False
 
-        if event in ('changed', 'attribute-changed'):
-            # The row is derived from the filename, so a content or attribute
-            # change does not alter the list. Nothing to do.
-            return True
+        index = self.app.get_service('index')
+        return index.apply_change(path, event, other=other)
 
-        if event in ('deleted', 'moved-out'):
-            self.view.update_incremental([('remove', _ItemRef(id=basename))])
-            self._num_total_items = max(0, self._num_total_items - 1)
-            self.emit('workspace-view-updated')
-            return True
-
-        if event == 'renamed':
-            if not other:
-                return False
-            new_item, _valid = self._build_item_for_file(other)
-            if new_item is None:
-                return False
-            self.view.update_incremental([
-                ('remove', _ItemRef(id=basename)),
-                ('add', new_item),
-            ])
-            self.emit('workspace-view-updated')
-            return True
-
-        if event in ('created', 'moved-in', 'changes-done-hint'):
-            item, _valid = self._build_item_for_file(path)
-            if item is None:
-                return False
-            if self._store_has_id(item.id):
-                self.view.update_incremental([('update', item)])
+    def _on_index_changed(self, index, ops):
+        """Translate the index operations into store splices."""
+        splices = []
+        for action, payload in ops:
+            if action == 'remove':
+                splices.append(('remove', _ItemRef(id=payload)))
+                self._num_total_items = max(0, self._num_total_items - 1)
             else:
-                self.view.update_incremental([('add', item)])
-                self._num_total_items += 1
-            self.emit('workspace-view-updated')
-            return True
-
-        return False
-
-    def _store_has_id(self, item_id):
-        store = self.view.store
-        for pos in range(store.get_n_items()):
-            if store.get_item(pos).id == item_id:
-                return True
-        return False
-
-    def _build_item_for_file(self, filename):
-        """Build a MiAZItem for a single document, mirroring the parse worker.
-
-        Returns (item, True) for a valid, fully-named document; (None, False)
-        for anything else (invalid or pending names), so the caller falls back
-        to the full re-scan, which also handles pending-name normalization.
-        """
-        util = self.app.get_service('util')
-        fields = util.get_fields(filename)
-        if len(fields) != 7 or not all(fields):
-            return None, False
-        doc, ext = util.filename_details(filename)
-        key_fields = [('Date', 0), ('Country', 1), ('Group', 2), ('SentBy', 3),
-                      ('Purpose', 4), ('Concept', 5), ('SentTo', 6)]
-        desc = {skey: '' for skey, nkey in key_fields}
-        active = True
-        for skey, nkey in key_fields:
-            if nkey == 5:
-                continue
-            config = self.app.get_config(skey)
-            key = fields[nkey]
-            if not key:
-                active = False
-                continue
-            if nkey == 0:
-                try:
-                    desc[skey] = self.cache[skey][key]
-                except KeyError:
-                    human = util.filename_date_human_simple(key)
-                    if human is None:
-                        active = False
-                        desc[skey] = ''
-                    else:
-                        desc[skey] = human
-                        self.cache[skey][key] = human
-            else:
-                try:
-                    desc[skey] = self.cache[skey][key]
-                except KeyError:
-                    description = config.get(key)
-                    if description is None:
-                        description = key
-                    desc[skey] = humanize_value(skey, description)
-                    self.cache[skey][key] = desc[skey]
-                active &= config.exists_used(key=key)
-        item = MiAZItem(
-            id=os.path.basename(filename),
-            date=fields[0], date_dsc=desc['Date'],
-            country=fields[1], country_dsc=desc['Country'],
-            group=fields[2], group_dsc=desc['Group'],
-            sentby_id=fields[3], sentby_dsc=desc['SentBy'],
-            purpose=fields[4], purpose_dsc=desc['Purpose'],
-            title=doc, subtitle=fields[5].replace('_', ' '),
-            sentto_id=fields[6], sentto_dsc=desc['SentTo'],
-            extension=filename[filename.rfind('.') + 1:],
-            active=active)
-        return item, True
+                splices.append((action, payload))
+                if action == 'add':
+                    self._num_total_items += 1
+        self.view.update_incremental(splices)
+        self._publish_concepts(index)
+        self.emit('workspace-view-updated')
 
     def is_loaded(self):
         return self.workspace_loaded
@@ -829,153 +750,41 @@ class MiAZWorkspace(Gtk.Box):
         self._update_dropdowns_after_filter()
 
     def _parse_files_worker(self, repo_docs, result_dict):
-        """Run in a background thread: list files and create MiAZItem objects."""
-        util = self.app.get_service('util')
-        try:
-            docs = util.get_files(repo_docs)
-        except KeyError:
-            docs = []
+        """Run in a background thread: rebuild the index and hand back its items.
 
-        items = []
-        invalid = []
-        concepts_active = set()
-        concepts_inactive = set()
-        show_pending = False
-        cache_updates = {}
-        field_index = {ft: {} for ft in Field}
+        The parse itself lives in MiAZDocumentIndex, so the full scan and the
+        single-file update share one implementation. Everything here is the
+        thread marshalling the index does not do.
+        """
+        index = self.app.get_service('index')
+        index.reload()
+        self._publish_concepts(index)
 
-        key_fields = [('Date', 0), ('Country', 1), ('Group', 2), ('SentBy', 3), ('Purpose', 4), ('Concept', 5), ('SentTo', 6)]
-
-        for filename in docs:
-            # Reset per file.
-            # Concept.
-            desc = {skey: '' for skey, nkey in key_fields}
-            doc, ext = util.filename_details(filename)
-            fields = util.get_fields(filename)
-            # Equivalent to util.filename_validate(filename), inlined to reuse
-            # the fields already split above instead of parsing them again.
-            valid = len(fields) == 7 and all(fields)
-            if not valid:
-                invalid.append(filename)
-            active = valid
-            if len(fields) == 7:
-                for field_type, idx in Field.items():
-                    field_index[field_type].setdefault(fields[idx], []).append(filename)
-                for skey, nkey in key_fields:
-                    config = self.app.get_config(skey)
-                    key = fields[nkey]
-                    if nkey == 5:
-                        continue
-                    if not key:
-                        # Empty field. Document cannot be active.
-                        active = False
-                        continue
-                    if nkey == 0:
-                        try:
-                            desc[skey] = self.cache[skey][key]
-                        except KeyError:
-                            human = util.filename_date_human_simple(key)
-                            if human is None:
-                                active = False
-                                desc[skey] = ''
-                            else:
-                                desc[skey] = human
-                                if skey not in cache_updates:
-                                    cache_updates[skey] = {}
-                                cache_updates[skey][key] = human
-                    else:
-                        try:
-                            desc[skey] = self.cache[skey][key]
-                        except KeyError:
-                            description = config.get(key)
-                            if description is None:
-                                description = key
-                            human = humanize_value(skey, description)
-                            desc[skey] = human
-                            if skey not in cache_updates:
-                                cache_updates[skey] = {}
-                            cache_updates[skey][key] = human
-                        active &= config.exists_used(key=key)
-
-            show_pending |= not active
-
-            try:
-                items.append(MiAZItem(
-                    id=os.path.basename(filename),
-                    date=fields[0],
-                    date_dsc=desc['Date'],
-                    country=fields[1],
-                    country_dsc=desc['Country'],
-                    group=fields[2],
-                    group_dsc=desc['Group'],
-                    sentby_id=fields[3],
-                    sentby_dsc=desc['SentBy'],
-                    purpose=fields[4],
-                    purpose_dsc=desc['Purpose'],
-                    title=doc,
-                    subtitle=fields[5].replace('_', ' '),
-                    sentto_id=fields[6],
-                    sentto_dsc=desc['SentTo'],
-                    extension=filename[filename.rfind('.') + 1:],
-                    active=active
-                ))
-                if active:
-                    concepts_active.add(fields[5].replace('_', ' '))
-                else:
-                    concepts_inactive.add(fields[5].replace('_', ' '))
-            except (IndexError, KeyError):
-                items.append(MiAZItem(
-                    id=os.path.basename(filename),
-                    date='',
-                    date_dsc='',
-                    country='',
-                    country_dsc='',
-                    group='',
-                    group_dsc='',
-                    sentby_id='',
-                    sentby_dsc='',
-                    purpose='',
-                    purpose_dsc='',
-                    title=doc,
-                    subtitle='_'.join(fields),
-                    sentto_id='',
-                    sentto_dsc='',
-                    extension=filename[filename.rfind('.') + 1:],
-                    active=active
-                ))
-
-        ENV['CACHE']['CONCEPTS']['ACTIVE'] = sorted(concepts_active)
-        ENV['CACHE']['CONCEPTS']['INACTIVE'] = sorted(concepts_inactive)
-
-        result_dict['docs'] = docs
-        result_dict['items'] = items
-        result_dict['invalid'] = invalid
-        result_dict['show_pending'] = show_pending
-        result_dict['cache_updates'] = cache_updates
-        result_dict['field_index'] = field_index
+        result_dict['items'] = index.documents()
+        result_dict['invalid'] = index.invalid()
+        result_dict['show_pending'] = len(index.pending()) > 0
         result_dict['_repo_docs'] = repo_docs
+        return result_dict
 
-        # The scan is done. Update the screen.
-        GLib.idle_add(self._apply_parse_results, result_dict)
+    def _publish_concepts(self, index):
+        """Expose the concept vocabulary the rename dialog completes against."""
+        active, inactive = index.concepts()
+        ENV['CACHE']['CONCEPTS']['ACTIVE'] = active
+        ENV['CACHE']['CONCEPTS']['INACTIVE'] = inactive
 
     def _apply_parse_results(self, result_dict):
         """Apply parsed results on the main thread."""
-        docs = result_dict['docs']
         items = result_dict['items']
         invalid = result_dict['invalid']
         show_pending = result_dict['show_pending']
-        cache_updates = result_dict['cache_updates']
-
-        # Apply cache updates
-        for skey, updates in cache_updates.items():
-            for key, value in updates.items():
-                self.cache[skey][key] = value
 
         repository = self.app.get_service('repo')
         util = self.app.get_service('util')
+        index = self.app.get_service('index')
 
-        # Pre-built field index
-        util._field_index = result_dict['field_index']
+        # Reuse the index's field index instead of letting util rebuild its own
+        # by rescanning the directory.
+        util._field_index = index.field_index()
         util._field_index_dir = result_dict['_repo_docs']
         ds = result_dict.get('_ds', datetime.now())
 
@@ -986,7 +795,7 @@ class MiAZWorkspace(Gtk.Box):
             self._auto_date_pending = False
             self._auto_select_date_preset(items)
         self._refresh_filter_cache()
-        self._num_total_items = len(docs)
+        self._num_total_items = len(items)
         GLib.idle_add(self._idle_view_update, items, ds)
 
         # Rename invalid files (rare, stays on main thread)
@@ -1026,28 +835,53 @@ class MiAZWorkspace(Gtk.Box):
             togglebutton.set_active(False)
         self._review = togglebutton.get_active()
 
-        self.app.set_status(MiAZStatus.RUNNING)
+        self._scan_in_flight = False
         self.selected_items = []
         return False
+
+    def suspend_updates(self):
+        """Hold back workspace refreshes until the returned handle is released.
+
+        Nestable and safe to overlap: the view refreshes once, after the last
+        holder lets go, and only if something asked for a refresh meanwhile.
+
+            with workspace.suspend_updates():
+                for path in files:
+                    util.filename_import(path, target)
+
+        Work that finishes on another thread keeps the handle and releases it
+        from the main loop instead:
+
+            handle = workspace.suspend_updates()
+            GLib.idle_add(handle.release)
+        """
+        return self._gate.suspend()
 
     def update(self, *args):
         """Update Workspace columnview"""
         if self._clearing_filters:
             return
 
+        # Something is doing bulk work. The gate remembers that a refresh is due
+        # and runs this once when the last holder releases.
+        if not self._gate.request():
+            return
+
         if self.app.get_status() == MiAZStatus.BUSY:
-            if self.app.get_plugins_loaded():
-                self.log.warning("App is busy. Workspace update deferred")
-            # A previous scan is still running. Try update again
+            # A repository switch is in progress; it triggers its own update.
             self._schedule_update()
             return
 
-        self.app.set_status(MiAZStatus.BUSY)
+        if self._scan_in_flight:
+            # A previous scan has not come back yet. Try again shortly.
+            self._schedule_update()
+            return
 
         repository = self.app.get_service('repo')
         if repository.conf is None:
-            self.app.set_status(MiAZStatus.RUNNING)
             return
+
+        self._scan_in_flight = True
 
         # Rebuild the relative date presets if the calendar day rolled over since
         # they were built (the app left running past midnight). Otherwise a
@@ -1059,14 +893,21 @@ class MiAZWorkspace(Gtk.Box):
         ds = datetime.now()
 
         # Read and process the files in the background so the window does not
-        # freeze. When it finishes it will update the screen by itself.
-        result_dict = {'_ds': ds}
-        thread = threading.Thread(
-            target=self._parse_files_worker,
-            args=(repository.docs, result_dict),
-            daemon=True
-        )
-        thread.start()
+        # freeze. The result comes back on the main loop.
+        run_in_background(
+            lambda: self._parse_files_worker(repository.docs, {'_ds': ds}),
+            on_done=self._apply_parse_results,
+            on_error=self._on_scan_failed,
+            name='workspace-scan')
+
+    def _on_scan_failed(self, error):
+        """Let the next scan through when this one could not finish.
+
+        Only the success path used to clear the flag, so a worker that raised
+        blocked every later update for the life of the process.
+        """
+        self.log.error(f"Workspace scan failed: {error}")
+        self._scan_in_flight = False
 
     def _idle_view_update(self, items, ds):
         """Apply the store splice and emit the updated signal with correct post-filter counts."""
@@ -1123,85 +964,85 @@ class MiAZWorkspace(Gtk.Box):
                 dd_date.handler_unblock(self._sid_date_selected)
 
     def _refresh_filter_cache(self):
-        """Pre-compute per-filter-pass constants so per-item callbacks are cheap."""
-        util = self.app.get_service('util')
-        self._cached_dropdowns = self.app.get_widget('ws-dropdowns')
+        """Read the filter widgets into a DocumentQuery, once per filter pass.
+
+        The query is what actually filters. Reading the widgets here rather than
+        per item is the same optimisation the previous _cached_* attributes
+        were, expressed as a value the rest of the app can hold on to.
+        """
+        self._query = self._read_query()
+
+    def _read_query(self):
+        """Build the query the filter widgets currently describe."""
+        dropdowns = self.app.get_widget('ws-dropdowns')
         entry = self.app.get_widget('searchentry')
-        self._cached_search_text = entry.get_text()
-
         entry_concept = self.app.get_widget('searchentry-concept')
-        self._cached_concept_text = entry_concept.get_text() if entry_concept is not None else ''
 
-        dd_date = self._cached_dropdowns[Date.__gtype_name__]
-        selected = dd_date.get_selected_item()
+        query = DocumentQuery(
+            search=entry.get_text(),
+            concept=entry_concept.get_text() if entry_concept is not None else '',
+            country=self._selected_id(dropdowns, Country.__gtype_name__),
+            group=self._selected_id(dropdowns, Group.__gtype_name__),
+            sentby=self._selected_id(dropdowns, SentBy.__gtype_name__),
+            purpose=self._selected_id(dropdowns, Purpose.__gtype_name__),
+            sentto=self._selected_id(dropdowns, SentTo.__gtype_name__),
+            only_pending=self._review)
+        self._read_date_range(dropdowns, query)
+
+        # A plugin filtering on something the repository config knows nothing
+        # about (project membership, for one) lifts the checks that would hide
+        # its documents. The core filter does not know which plugins exist.
+        for name, hook in list(self._query_hooks.items()):
+            try:
+                hook(query)
+            except Exception as error:
+                self.log.error(f"Query hook '{name}' failed: {error}")
+        return query
+
+    @staticmethod
+    def _selected_id(dropdowns, gtype_name):
+        """The selected item id, or 'Any' when the dropdown has no selection."""
+        selected = dropdowns[gtype_name].get_selected_item()
+        return ANY if selected is None else selected.id
+
+    def _read_date_range(self, dropdowns, query):
+        """Translate the date preset into a mode and, for a range, its bounds."""
+        util = self.app.get_service('util')
+        selected = dropdowns[Date.__gtype_name__].get_selected_item()
         if selected is None:
-            self._cached_date_ll = 'All'
-            self._cached_date_ul = 'All'
-            self._cached_date_start = None
-            self._cached_date_end = None
-        else:
-            ll, ul = selected.id.split('-')
-            self._cached_date_ll = ll
-            self._cached_date_ul = ul
-            if ll not in ('All', 'None') and ul not in ('All', 'None'):
-                self._cached_date_start = util.string_to_datetime(ll)
-                self._cached_date_end = util.string_to_datetime(ul)
-            else:
-                self._cached_date_start = None
-                self._cached_date_end = None
+            return
+        ll, ul = selected.id.split('-')
+        if ll == 'None' and ul == 'None':
+            query.date_mode = DATE_NONE
+        elif ll != 'All' and ul != 'All':
+            query.date_mode = DATE_RANGE
+            query.date_since = util.string_to_datetime(ll)
+            query.date_until = util.string_to_datetime(ul)
 
-        # When a specific project is selected, the date and active checks are
-        # bypassed for every item (project members may have unrecognised field
-        # values or any date). Resolved once per pass instead of once per item.
-        project_dd = self.app.get_widget('plugin-MiAZProjectMgt-dropdown')
-        self._cached_project_bypass = False
-        if project_dd is not None:
-            sel = project_dd.get_selected_item()
-            if sel is not None and sel.id != 'Any':
-                self._cached_project_bypass = True
+    def get_query(self):
+        """The DocumentQuery the view is currently filtered by."""
+        return self._query
 
-    def _do_eval_cond_matches_freetext(self, item):
-        return self._cached_search_text.upper() in item.search_text_upper
+    def set_query(self, query):
+        """Filter the view by a query built elsewhere (a plugin, a saved search).
 
-    def _do_eval_cond_matches(self, dropdown, id):
-        item = dropdown.get_selected_item()
-        if item is None:
-            return True
+        The filter widgets are not rewritten to match, so the next widget change
+        rebuilds the query from them. Use clear_filters() first for a clean base.
+        """
+        self._query = query
+        self.view.refilter()
+        self.emit('workspace-view-filtered')
 
-        if item.id == 'Any':
-            return True
-        elif item.id == 'None':
-            if len(id) == 0:
-                return True
-        else:
-            return item.id.upper() == id.upper()
+    def register_query_hook(self, name: str, callback):
+        """Let a component adjust the query after it is read from the widgets.
 
-    def _do_eval_cond_matches_date(self, item):
-        try:
-            item_dt = self.datetimes[item.date]
-        except KeyError:
-            util = self.app.get_service('util')
-            item_dt = util.string_to_datetime(item.date)
-            self.datetimes[item.date] = item_dt
+        The callback takes the DocumentQuery and may set any of its fields; the
+        usual use is switching off ignore_date / ignore_active.
+        """
+        self._query_hooks[name] = callback
 
-        ll, ul = self._cached_date_ll, self._cached_date_ul
-        if ll == 'All' and ul == 'All':
-            return True
-        elif ll == 'None' and ul == 'None':
-            return item_dt is None
-        elif item_dt is None:
-            return False
-        return self._cached_date_start <= item_dt <= self._cached_date_end
-
-    def _do_eval_cond_matches_concept(self, item):
-        # Check this
-        if not self._cached_concept_text:
-            return True
-        return self._cached_concept_text.upper() in item.subtitle.upper()
-
-    def _do_eval_cond_matches_active(self, item):
-        # ~ self.log.warning(f"\t\t{item.id} active? {item.active}") # DEBUG FILTERS
-        return item.active
+    def unregister_query_hook(self, name: str):
+        self._query_hooks.pop(name, None)
 
     def _do_filter_view(self, item, filter_list_model):
         show_item = True
@@ -1218,32 +1059,7 @@ class MiAZWorkspace(Gtk.Box):
         return show_item
 
     def _do_filter_view_main(self, item, filter_list_model):
-        show_item = False
-        dropdowns = self._cached_dropdowns
-        c0 = self._do_eval_cond_matches_freetext(item)
-        ca = self._do_eval_cond_matches_active(item)
-        cd = self._do_eval_cond_matches_date(item)
-        c1 = self._do_eval_cond_matches(dropdowns['Country'], item.country)
-        c2 = self._do_eval_cond_matches(dropdowns['Group'], item.group)
-        c4 = self._do_eval_cond_matches(dropdowns['SentBy'], item.sentby_id)
-        c5 = self._do_eval_cond_matches(dropdowns['Purpose'], item.purpose)
-        c6 = self._do_eval_cond_matches(dropdowns['SentTo'], item.sentto_id)
-        cc = self._do_eval_cond_matches_concept(item)
-
-        # When a specific project is selected, bypass the date and active checks:
-        # project members may have unrecognised field values (ca=False) or any date.
-        if self._cached_project_bypass:
-            cd = True
-            ca = True
-
-        if self._review:
-            show_item = not ca and c0 and c1 and c2 and c4 and c5 and c6 and cc
-        else:
-            show_item = ca and c0 and c1 and c2 and c4 and c5 and c6 and cd and cc
-
-        # DEBUG FILTERS
-        # ~ self.log.warning(f"{item.id}: prj[{sel.id}]\tc0[{c0}] ca[{ca}] cd[{cd}] c1[{c1}] c2[{c2}] c4[{c4}] c5[{c5}] c6[{c6}] = {show_item}") # DEBUG FILTERS
-        return show_item
+        return self._query.matches(item)
 
     def _do_connect_filter_signals(self):
         searchentry = self.app.get_widget('searchentry')
@@ -1342,8 +1158,9 @@ class MiAZWorkspace(Gtk.Box):
         if repository.conf is None:
             return
 
-        # Do nothing if MiAZ is busy updating workspace
-        if self.app.get_status() == MiAZStatus.BUSY:
+        # Do nothing while the repository is being switched or a scan is out:
+        # both replace the store, and this pass would be thrown away.
+        if self.app.get_status() == MiAZStatus.BUSY or self._scan_in_flight:
             return
 
         self._filter_in_progress = True
@@ -1391,7 +1208,8 @@ class MiAZWorkspace(Gtk.Box):
 
     def _on_application_finished(self, *args):
         util = self.app.get_service('util')
-        util.json_save(self.fcache, self.cache)
+        index = self.app.get_service('index')
+        util.json_save(self.fcache, index.cache)
         self.log.debug(f"Workspace cache saved to {self.fcache}")
 
     def get_workspace_filters(self):

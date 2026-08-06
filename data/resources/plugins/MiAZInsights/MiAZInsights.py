@@ -29,12 +29,12 @@
 import os
 import sys
 import shutil
-import threading
 from datetime import datetime
 from gettext import gettext as _
 
 from gi.repository import GLib
 
+from MiAZ.backend.tasks import run_in_background
 from MiAZ.frontend.desktop.services.pluginsystem import MiAZExtension, MiAZPlugin
 
 # The support package sits next to this file, which is not on the default path.
@@ -165,18 +165,17 @@ class MiAZInsightsPlugin(MiAZExtension):
 
     def _kick_rebuild(self):
         self._rebuild_timeout_id = 0
-        threading.Thread(target=self._rebuild_worker, name='MiAZInsights-build', daemon=True).start()
+        run_in_background(self._rebuild_worker, name='MiAZInsights-build')
         return False
 
     def _rebuild_worker(self):
-        try:
-            payload = render.build_payload(self._records(), self._names(), self._meta(),
-                                           self._periods())
-            page = render.render_page(payload, self._asset('report.css'),
-                                      self._asset('report.js'), self._asset('worldmap.svg'))
-            self._write_page(page)
-        except Exception as error:
-            self.log.error(f"MiAZInsights build failed: {error}")
+        """Runs off the main loop. run_in_background logs a failure with its
+        traceback, which the local try/except here used to swallow."""
+        payload = render.build_payload(self._records(), self._names(), self._meta(),
+                                       self._periods())
+        page = render.render_page(payload, self._asset('report.css'),
+                                  self._asset('report.js'), self._asset('worldmap.svg'))
+        self._write_page(page)
 
     def _write_page(self, page):
         target = self._target_dir()

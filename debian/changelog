@@ -1,3 +1,9 @@
+miaz (0.1.50-1) unstable; urgency=medium
+
+  * New release. See CHANGELOG.md for details.
+
+ -- Tomás Vírseda <tomasvirseda@gmail.com>  Thu, 06 Aug 2026 17:09:03 +0200
+
 miaz (0.1.40-1) unstable; urgency=medium
 
   * AI provider API keys are stored in the system keyring instead of plain text.

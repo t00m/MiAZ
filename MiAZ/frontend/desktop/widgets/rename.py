@@ -848,11 +848,10 @@ class MiAZRenameDialog(Gtk.Box):
     def on_answer_question_delete(self, dialog, response):
         filepath = self.get_filepath_source()
         if response == 'apply':
-            try:
-                os.unlink(filepath)
-                self.log.debug(f"Document deleted: {filepath}")
-            except FileNotFoundError as error:
-                self.log.error(f"Something went wrong: {error}")
-                raise
+            # Through the util service, not os.unlink: it emits
+            # 'filename-deleted', which is how the index and the workspace
+            # learn the document is gone. Deleting it here directly left both
+            # holding an entry until the next full re-scan.
+            self.util.filename_delete({filepath})
         else:
             self.actions.show_stack_page_by_name('workspace')

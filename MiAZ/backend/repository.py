@@ -15,14 +15,7 @@ from gi.repository import GObject
 from MiAZ.backend.log import MiAZLog
 from MiAZ.backend.models import MiAZItem
 from MiAZ.backend.util import atomic_json_save
-from MiAZ.backend.config import MiAZConfigCountries
-from MiAZ.backend.config import MiAZConfigGroups
-from MiAZ.backend.config import MiAZConfigPurposes
-from MiAZ.backend.config import MiAZConfigConcepts
-from MiAZ.backend.config import MiAZConfigPeople
-from MiAZ.backend.config import MiAZConfigSentBy
-from MiAZ.backend.config import MiAZConfigSentTo
-from MiAZ.backend.config import MiAZConfigPlugins
+from MiAZ.backend.config import MiAZConfigStore
 
 
 class MiAZRepository(GObject.GObject):
@@ -37,6 +30,7 @@ class MiAZRepository(GObject.GObject):
         self.config = self.app.get_config_dict()
         self._errmsg = None
         self._conf_cache = None
+        self._store = None
         self.log.info("Repository class initialized")
 
     @property
@@ -123,17 +117,20 @@ class MiAZRepository(GObject.GObject):
     def load(self, path=None):
         self._conf_cache = None
         repo_dir_conf = self.get('dir_conf')
-        self.config['Country'] = MiAZConfigCountries(self.app, repo_dir_conf)
-        self.config['Group'] = MiAZConfigGroups(self.app, repo_dir_conf)
-        self.config['Purpose'] = MiAZConfigPurposes(self.app, repo_dir_conf)
-        self.config['Concept'] = MiAZConfigConcepts(self.app, repo_dir_conf)
-        self.config['SentBy'] = MiAZConfigSentBy(self.app, repo_dir_conf)
-        self.config['SentTo'] = MiAZConfigSentTo(self.app, repo_dir_conf)
-        self.config['Person'] = MiAZConfigPeople(self.app, repo_dir_conf)
-        self.config['Plugin'] = MiAZConfigPlugins(self.app, repo_dir_conf)
+        # One store per repository. Disposing the previous one drops its cached
+        # copies, so the repository being loaded is read from disk rather than
+        # from whatever the last one left behind.
+        if self._store is not None:
+            self._store.dispose()
+        self._store = MiAZConfigStore(self.app, repo_dir_conf)
+        self.config.update(self._store.as_dict())
         self._reconcile_people_available()
         self.log.debug(f"Repository configuration loaded correctly from: {repo_dir_conf}")
         self.emit('repository-switched')
+
+    def get_config_store(self):
+        """The MiAZConfigStore of the active repository, or None."""
+        return self._store
 
     def _reconcile_people_available(self):
         """Ensure every used sender and recipient is in the shared people pool.

@@ -24,7 +24,6 @@ from gi.repository import GLib
 from gi.repository import Gtk
 
 from MiAZ.frontend.desktop.services.pluginsystem import MiAZExtension, MiAZPlugin
-from MiAZ.backend.status import MiAZStatus
 
 plugin_info = {
     'Module':      'autoscan',
@@ -255,7 +254,7 @@ class MiAZAutoScanPlugin(MiAZExtension):
         self._start_scan(source)
 
     def _start_scan(self, source_override):
-        self.app.set_status(MiAZStatus.BUSY)
+        self._suspend = self.workspace.suspend_updates()
         threading.Thread(
             target=self._do_scan,
             kwargs={'source_override': source_override},
@@ -456,8 +455,10 @@ class MiAZAutoScanPlugin(MiAZExtension):
                         f"Could not import '{filepath}': {error}")
         finally:
             GLib.idle_add(watcher.set_active, True)
-            GLib.idle_add(self.app.set_status, MiAZStatus.RUNNING)
+            # Ask while still suspended, then let go: the gate collapses every
+            # request made during the scan into one refresh.
             GLib.idle_add(self.workspace.update)
+            GLib.idle_add(self._release_suspend)
 
         if imported:
             if len(imported) == 1:
@@ -498,9 +499,17 @@ class MiAZAutoScanPlugin(MiAZExtension):
                 'closed',
                 lambda *_a: self._open_next_rename_dialog(actions, pending))
 
+    def _release_suspend(self):
+        """Let the workspace refresh again. Safe to reach twice: a failed scan
+        goes through _on_scan_error as well as the finally block."""
+        suspend = getattr(self, '_suspend', None)
+        if suspend is not None:
+            suspend.release()
+        return False
+
     def _on_scan_error(self, error_msg):
         self.log.error(f"Scan failed: {error_msg}")
-        self.app.set_status(MiAZStatus.RUNNING)
+        self._release_suspend()
         self.srvdlg.show_error(_('Scan failed'), error_msg)
 
     def show_settings(self, widget):

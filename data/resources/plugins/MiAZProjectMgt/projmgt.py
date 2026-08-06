@@ -476,6 +476,7 @@ class MiAZProjectMgt(MiAZExtension):
         if section is not None and hasattr(self, '_sidebar_item'):
             section.remove(self._sidebar_item)
         self.workspace.unregister_filter_view(f'{i_title}')
+        self.workspace.unregister_query_hook(f'{i_title}')
         if hasattr(self, '_used_updated_handler'):
             self.config.disconnect(self._used_updated_handler)
         if hasattr(self, '_selected_item_handler') and dropdown is not None:
@@ -563,6 +564,7 @@ class MiAZProjectMgt(MiAZExtension):
                             self._sidebar_item = dropdown
                         section.append(self._sidebar_item)
                     self.workspace.register_filter_view(f'{i_title}', self._do_filter_view)
+                    self.workspace.register_query_hook(f'{i_title}', self._adjust_query)
             else:
                 # Sidebar already set up
                 self.srvprj = self.app.get_service('Projects')
@@ -575,6 +577,29 @@ class MiAZProjectMgt(MiAZExtension):
                 weight=100)
 
             self.plugin.set_started(started=True)
+
+    def _project_selected(self):
+        """The selected project id, or None when the dropdown says 'Any'."""
+        plugin_name = self.plugin.get_name()
+        dropdown = self.app.get_widget(f'plugin-{plugin_name}-dropdown')
+        if dropdown is None:
+            return None
+        selected_item = dropdown.get_selected_item()
+        if selected_item is None or selected_item.id == 'Any':
+            return None
+        return selected_item.id
+
+    def _adjust_query(self, query):
+        """Lift the date and active checks while a project is selected.
+
+        Project members may carry field values the repository config does not
+        recognise, or any date at all, and the user still wants to see the whole
+        project. The workspace used to hardcode this bypass by looking up this
+        plugin's dropdown by name.
+        """
+        if self._project_selected() is not None:
+            query.ignore_date = True
+            query.ignore_active = True
 
     def _do_filter_view(self, item, filter_list_model):
         plugin_name = self.plugin.get_name()

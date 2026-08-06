@@ -1,6 +1,6 @@
 [project]
 name = "MiAZ"
-version = "0.1.40"
+version = "0.1.50"
 requires-python = ">=3.9"
 
 [project.optional-dependencies]
