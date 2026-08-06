@@ -99,7 +99,9 @@ class MiAZColumnViewWorkspace(MiAZColumnView):
         self.prop_sentby_sorter = Gtk.CustomSorter.new(sort_func=self._on_sort_string_func, user_data='sentby_dsc')
         self.prop_concept_sorter = Gtk.CustomSorter.new(sort_func=self._on_sort_string_func, user_data='subtitle')
         self.prop_sentto_sorter = Gtk.CustomSorter.new(sort_func=self._on_sort_string_func, user_data='sentto_dsc')
-        self.prop_date_sorter = Gtk.CustomSorter.new(sort_func=self._on_sort_string_func, user_data='date')
+        # Date is always YYYYMMDD digits, so case-folding it on every
+        # comparison is pure overhead: use a dedicated, case-free sort func.
+        self.prop_date_sorter = Gtk.CustomSorter.new(sort_func=self._on_sort_date_func)
         self.prop_flag_sorter = Gtk.CustomSorter.new(sort_func=self._on_sort_string_func, user_data='country')
         self.prop_country_sorter = Gtk.CustomSorter.new(sort_func=self._on_sort_string_func, user_data='country')
         self.prop_extension_sorter = Gtk.CustomSorter.new(sort_func=self._on_sort_string_func, user_data='extension')
@@ -124,6 +126,14 @@ class MiAZColumnViewWorkspace(MiAZColumnView):
         gesture_click.set_button(3)
         gesture_click.connect('pressed', self._on_right_click)
         self.cv.add_controller(gesture_click)
+
+    def _on_sort_date_func(self, item1, item2, user_data):
+        v1, v2 = item1.date, item2.date
+        if v1 > v2:
+            return Gtk.Ordering.LARGER
+        elif v1 < v2:
+            return Gtk.Ordering.SMALLER
+        return Gtk.Ordering.EQUAL
 
     def _on_right_click(self, gesture, n_press, x, y):
         menu_model = self.app.get_widget('workspace-menu-selection')
@@ -188,10 +198,9 @@ class MiAZColumnViewWorkspace(MiAZColumnView):
         box = list_item.get_child()
         icon = box.get_first_child()
         item = list_item.get_item()
-        gicon = self.srvicm.get_mimetype_icon(item.id)
-        if gicon is not None:
-            icon.set_from_gicon(gicon)
-            icon.set_pixel_size(24)
+        gicon = self.srvicm.get_mimetype_icon_for_extension(item.extension)
+        icon.set_from_gicon(gicon)
+        icon.set_pixel_size(24)
 
     def _on_factory_setup_country(self, factory, list_item):
         box = ColLabel()

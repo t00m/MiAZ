@@ -97,18 +97,9 @@ Download the `.rpm` package from the [latest release](https://github.com/t00m/Mi
 sudo dnf install ./miaz-*.rpm
 ```
 
-### Flatpak
+### Flatpak (deprecated)
 
-Package provided but not recommended. Because the application runs inside a sandbox, it does not have access to certain system resources and applications (e.g. scanner software), which negatively impacts the user experience.
-
-Download the `.flatpak` package from the [latest release](https://github.com/t00m/MiAZ/releases) and install:
-
-- From file browser: double click the `.flatpak` package. The Software Manager should let you install it.
-- From command line:
-
-```bash
-flatpak install ./miaz-*.flatpak
-```
+Flatpak is no longer provided. The sandbox cannot reach the host command line tools that MiAZ shells out to (`ocrmypdf` for OCR, `scanimage` for the scanner), so those features do not work in a Flatpak build. Use the deb, rpm or AppImage package instead. 
 
 ### AppImage
 

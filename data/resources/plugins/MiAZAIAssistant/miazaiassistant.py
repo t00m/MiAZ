@@ -17,7 +17,8 @@ from MiAZ.frontend.desktop.services.pluginsystem import MiAZExtension, MiAZPlugi
 sys.path.insert(1, os.path.dirname(os.path.abspath(__file__)))
 
 from miazai.providers import build_registry
-from miazai.ui.settings import AIAssistantSettings
+from miazai.ui.settings import AISettings
+from miazai.ui.chat import MiAZAIChatDialog
 from miazai.ui.dialog import inject_suggest_button, remove_suggest_button
 
 plugin_info = {
@@ -47,10 +48,11 @@ class MiAZAIAssistantPlugin(MiAZExtension):
         self.repository = self.app.get_service('repo')
         self.factory = self.app.get_service('factory')
         self.dialogs = self.app.get_service('dialogs')
+        self.actions = self.app.get_service('actions')
 
         self.secrets = self.app.get_service('secrets')
         self.registry = build_registry(self.plugin, self.log, self.secrets)
-        self._settings_dialog = AIAssistantSettings(
+        self._settings_dialog = AISettings(
             self.app, self.plugin, self.registry, self.log)
 
         self.workspace = self.app.get_widget('workspace')
@@ -64,12 +66,19 @@ class MiAZAIAssistantPlugin(MiAZExtension):
         if self.plugin.started():
             return
 
-        mnu = self.factory.create_menuitem(
-            name=self.plugin.get_menu_item_name(),
+        mnu_suggest = self.factory.create_menuitem(
+            name=self.plugin.get_menu_item_name() + '-suggest',
             label=_('Suggest filename…'),
             callback=self._on_suggest_clicked,
         )
-        self.plugin.install_menu_entry(mnu)
+        self.plugin.install_menu_entry(mnu_suggest)
+
+        mnu_chat = self.factory.create_menuitem(
+            name=self.plugin.get_menu_item_name() + '-chat',
+            label=_('Chat with document…'),
+            callback=self._on_chat,
+        )
+        self.plugin.install_menu_entry(mnu_chat)
 
         inject_suggest_button(
             self.app, self.registry, self.repository, self.util, self.log)
@@ -79,6 +88,18 @@ class MiAZAIAssistantPlugin(MiAZExtension):
     def _on_suggest_clicked(self, *_args):
         actions = self.app.get_service('actions')
         actions.document_rename()
+
+    def _on_chat(self, *_args):
+        items = self.workspace.get_selected_items()
+        if self.actions.stop_if_no_items():
+            self.log.debug('No items selected')
+            return
+        # Chat is per document: use the first selected one.
+        item = items[0]
+        dialog = MiAZAIChatDialog(
+            self.app, item.id, self.registry, self.plugin, self.log)
+        dialog.set_transient_for(self.workspace.get_root())
+        dialog.present()
 
     def show_settings(self, widget=None):
         parent = widget if widget is not None else self.app.get_widget('window')

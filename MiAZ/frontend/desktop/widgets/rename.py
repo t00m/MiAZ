@@ -8,6 +8,7 @@ import os
 from datetime import datetime
 from gettext import gettext as _
 
+from gi.repository import Adw
 from gi.repository import Gdk
 from gi.repository import Gio
 from gi.repository import Gtk
@@ -61,7 +62,6 @@ class MiAZRenameDialog(Gtk.Box):
         self.__create_field_6_concept() # Field 6. Concept
         self.__create_field_7_sentto() # Field 7. Sent to
         self.__create_field_8_extension() # Field 8. Extension
-        self.__create_field_9_result() # Result filename
 
         frmMain = Gtk.Frame()
         frmMain.set_margin_top(margin=6)
@@ -69,7 +69,25 @@ class MiAZRenameDialog(Gtk.Box):
         frmMain.set_margin_bottom(margin=6)
         frmMain.set_margin_start(margin=6)
         frmMain.set_child(self.boxMain)
-        self.append(frmMain)
+
+        # The fields are the first page of a view stack. Plugins contribute the
+        # rest through the 'document-tabs' registry; with none registered the
+        # switcher is never installed and the dialog looks as it always did.
+        self.stack = Adw.ViewStack()
+        self.stack.set_vexpand(True)
+        self.stack.set_hexpand(True)
+        page = self.stack.add_titled(frmMain, 'fields', _('Fields'))
+        # Plugin tabs carry their plugin's icon, so the first page needs one too
+        # or the switcher shows a bare label next to icons.
+        page.set_icon_name('io.github.t00m.MiAZ-rename')
+        self.append(self.stack)
+        self.plugin_tabs = []
+        self.switcher = None
+        self.__create_plugin_tabs()
+
+        # The filename preview is the outcome of the dialog, so it sits under
+        # the stack and stays visible whatever tab is open.
+        self.__create_filename_footer()
 
         self.config['Country'].connect('used-updated', self.update_dropdown, Country)
         self.config['Group'].connect('used-updated', self.update_dropdown, Group)
@@ -114,6 +132,40 @@ class MiAZRenameDialog(Gtk.Box):
         self.lblFilenameNew.set_text(self.result)
         self.lblFilenameNew.set_selectable(True)
         self._on_changed_entry()
+        for _name, _result in self._each_tab('set_document', os.path.basename(doc)):
+            pass
+
+    def is_valid(self) -> bool:
+        """True when the required fields form a valid filename. Group and
+        Purpose are advisory (warnings in the live preview) and do not block;
+        Date, Country, Sent by, Concept and Sent to must be valid."""
+        return (
+            self.validate_date(self.entry_date.get_text())
+            and self._cfg_country.exists_used(self._dropdown_get_id(self.dpdCountry))
+            and self._cfg_sentby.exists_used(self._dropdown_get_id(self.dpdSentBy))
+            and len(self.util.valid_key(self.entry_concept.get_text().upper())) > 0
+            and self._cfg_sentto.exists_used(self._dropdown_get_id(self.dpdSentTo))
+        )
+
+    def focus_first_field(self, *args):
+        """Focus the first field that needs attention (empty or invalid) in
+        filename order; if all are valid, focus the concept entry. Returns False
+        so it can be used directly as a 'map' signal handler."""
+        checks = [
+            (self.validate_date(self.entry_date.get_text()), self.entry_date),
+            (self._cfg_country.exists_used(self._dropdown_get_id(self.dpdCountry)), self.dpdCountry),
+            (self._cfg_group.exists_used(self._dropdown_get_id(self.dpdGroup)), self.dpdGroup),
+            (self._cfg_sentby.exists_used(self._dropdown_get_id(self.dpdSentBy)), self.dpdSentBy),
+            (self._cfg_purpose.exists_used(self._dropdown_get_id(self.dpdPurpose)), self.dpdPurpose),
+            (len(self.util.valid_key(self.entry_concept.get_text().upper())) > 0, self.entry_concept),
+            (self._cfg_sentto.exists_used(self._dropdown_get_id(self.dpdSentTo)), self.dpdSentTo),
+        ]
+        for valid, widget in checks:
+            if not valid:
+                widget.grab_focus()
+                return False
+        self.entry_concept.grab_focus()
+        return False
 
     def get_filename_widget(self):
         return self.lblFilenameCur
@@ -322,10 +374,10 @@ class MiAZRenameDialog(Gtk.Box):
         self.label_date = Gtk.Label()
         self.label_date.add_css_class('caption')
         self.entry_date = Gtk.Entry()
-        self.entry_date.set_visible(False)
+        self.entry_date.set_activates_default(True)
         self.entry_date.set_max_length(8)
-        self.entry_date.set_max_width_chars(8)
-        self.entry_date.set_width_chars(8)
+        self.entry_date.set_max_width_chars(12)
+        self.entry_date.set_width_chars(12)
         self.entry_date.set_placeholder_text(_('YYYYmmdd'))
         self.entry_date.set_alignment(1.0)
         boxValue.append(self.label_date)
@@ -378,6 +430,7 @@ class MiAZRenameDialog(Gtk.Box):
         self.boxMain.append(self.rowConcept)
         button = self.__setup_button_suggest_concept()
         self.entry_concept = Gtk.Entry()
+        self.entry_concept.set_activates_default(True)
         self.entry_concept.set_width_chars(41)
         self.entry_concept.set_placeholder_text(_('Type to filter existing concepts…'))
         boxValue.append(self.entry_concept)
@@ -413,8 +466,12 @@ class MiAZRenameDialog(Gtk.Box):
         self.entry_concept.connect('changed', self._on_concept_entry_changed)
         self.entry_concept.connect('changed', self._on_changed_entry)
 
-        # Escape closes the popover.
+        # Escape closes the popover; Enter picks the highlighted concept when
+        # the popover is open. Capture phase so this runs before the entry's
+        # internal GtkText, which otherwise consumes Return for its own
+        # activate (firing the dialog default) before it can reach us.
         key_ctrl = Gtk.EventControllerKey()
+        key_ctrl.set_propagation_phase(Gtk.PropagationPhase.CAPTURE)
         key_ctrl.connect('key-pressed', self._on_concept_key_pressed)
         self.entry_concept.add_controller(key_ctrl)
 
@@ -446,15 +503,18 @@ class MiAZRenameDialog(Gtk.Box):
         boxValue.append(self.lblExt)
         boxValue.append(button)
 
-    def __create_field_9_result(self, *args):
-        """Field 7. extension"""
+    def __create_filename_footer(self, *args):
+        """Current and new filename, shown under every tab."""
+        listbox = Gtk.ListBox.new()
+        listbox.set_hexpand(True)
+
         # Current filename
         title = _('Current filename')
         self.lblFilenameCur = Gtk.Label()
         self.lblFilenameCur.add_css_class('monospace')
         self.lblFilenameCur.add_css_class('error')
         self.row_cur_filename = self.factory.create_actionrow(title=title, suffix=self.lblFilenameCur)
-        self.boxMain.append(self.row_cur_filename)
+        listbox.append(self.row_cur_filename)
         self.lblFilenameCur.set_ellipsize(True)
         self.lblFilenameCur.set_property('ellipsize', Pango.EllipsizeMode.MIDDLE)
 
@@ -467,7 +527,90 @@ class MiAZRenameDialog(Gtk.Box):
         self.lblFilenameNew.set_property('ellipsize', Pango.EllipsizeMode.MIDDLE)
 
         self.row_new_filename = self.factory.create_actionrow(title=title, suffix=self.lblFilenameNew)
-        self.boxMain.append(self.row_new_filename)
+        listbox.append(self.row_new_filename)
+
+        frame = Gtk.Frame()
+        frame.set_margin_top(margin=0)
+        frame.set_margin_end(margin=6)
+        frame.set_margin_bottom(margin=6)
+        frame.set_margin_start(margin=6)
+        frame.set_child(listbox)
+        self.append(frame)
+
+    # Plugin tabs
+    def __create_plugin_tabs(self):
+        """Build one widget per registered tab and add it to the stack.
+
+        A plugin whose factory raises is skipped with a log line: a broken tab
+        must not stop the user from renaming a document.
+        """
+        registry = self.app.get_service('document-tabs')
+        if registry is None:
+            return
+        for registration in registry.get_registrations():
+            name = registration['name']
+            try:
+                widget = registration['factory'](self.app)
+            except Exception as error:
+                self.log.error(f"Document tab '{name}' could not be built: {error}")
+                continue
+            if widget is None:
+                continue
+            page = self.stack.add_titled(widget, name, registration['title'])
+            if registration.get('icon_name'):
+                page.set_icon_name(registration['icon_name'])
+            self.plugin_tabs.append((name, widget))
+
+        if self.plugin_tabs:
+            self.switcher = Adw.ViewSwitcher()
+            self.switcher.set_stack(self.stack)
+            self.switcher.set_policy(Adw.ViewSwitcherPolicy.WIDE)
+
+    def get_switcher(self):
+        """The view switcher, or None when no plugin contributed a tab."""
+        return self.switcher
+
+    def _each_tab(self, method, *args):
+        """Call a method on every plugin tab that implements it.
+
+        Errors are logged and swallowed: whatever a plugin does here, renaming
+        the document has to keep working.
+        """
+        for name, widget in self.plugin_tabs:
+            handler = getattr(widget, method, None)
+            if handler is None:
+                continue
+            try:
+                yield name, handler(*args)
+            except Exception as error:
+                self.log.error(f"Document tab '{name}': {method} failed: {error}")
+
+    def tabs_valid(self):
+        """(True, None) when every tab accepts the rename, else (False, name)."""
+        for name, valid in self._each_tab('is_valid'):
+            if valid is False:
+                return False, name
+        return True, None
+
+    def focus_tab(self, name):
+        page = self.stack.get_child_by_name(name)
+        if page is not None:
+            self.stack.set_visible_child(page)
+
+    def commit_tabs(self, old_id, new_id):
+        """Write the tab edits, once the rename itself succeeded.
+
+        Returns True when at least one tab reported that it changed something,
+        so the caller can tell an empty apply from a real one.
+        """
+        changed = False
+        for _name, result in self._each_tab('apply', old_id, new_id):
+            changed = changed or bool(result)
+        return changed
+
+    def discard_tabs(self):
+        for _name, _result in self._each_tab('discard'):
+            pass
 
     @staticmethod
     def _success_or_error(widget, valid):
@@ -639,9 +782,17 @@ class MiAZRenameDialog(Gtk.Box):
         self._concept_popover.popdown()
 
     def _on_concept_key_pressed(self, _ctrl, keyval, _keycode, _state):
-        if keyval == Gdk.KEY_Escape and self._concept_popover.get_visible():
-            self._concept_popover.popdown()
-            return True
+        if self._concept_popover.get_visible():
+            if keyval == Gdk.KEY_Escape:
+                self._concept_popover.popdown()
+                return True
+            if keyval in (Gdk.KEY_Return, Gdk.KEY_KP_Enter):
+                pos = self._concept_selection.get_selected()
+                if pos != Gtk.INVALID_LIST_POSITION:
+                    self._on_concept_picked(self._concept_list_view, pos)
+                else:
+                    self._concept_popover.popdown()
+                return True
         return False
 
     def _on_concept_focus_leave(self, _ctrl):
@@ -673,6 +824,19 @@ class MiAZRenameDialog(Gtk.Box):
 
     def get_filepath_target(self) -> str:
         return self.result
+
+    def name_changes(self) -> bool:
+        """True when applying would really rename the file.
+
+        A document can be opened here only to edit what a plugin tab holds, with
+        every filename field left alone. In that case there is nothing to rename
+        and the tab edits still have to be written, so the caller needs to tell
+        the two situations apart. The target is compared after the same
+        uppercasing filename_rename applies.
+        """
+        return self.util.filename_rename_needed(
+            os.path.basename(self.get_filepath_source()),
+            os.path.basename(self.get_filepath_target()))
 
     def on_rename_cancel(self, *args):
         self.log.info("Rename canceled by user")

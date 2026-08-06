@@ -6,7 +6,8 @@ from dataclasses import replace
 from typing import Optional
 
 from .base import Provider, MissingDependencyError
-from miazai.suggestion import Suggestion, make_usage
+from miazai.suggestion import Suggestion
+from miazai.usage import make_usage
 from miazai.vocab import Vocabulary
 
 _DEFAULT_MODEL = 'llama3.1:8b'
@@ -56,6 +57,38 @@ class OllamaProvider(Provider):
         except Exception:
             return Suggestion(usage=usage)
         return replace(_from_dict(d), usage=usage)
+
+    def chat(self, *, messages, system_prompt,
+             document_text: Optional[str] = None,
+             file_path: Optional[str] = None) -> dict:
+        try:
+            import ollama
+        except ImportError:
+            raise MissingDependencyError('ollama')
+
+        model = self.config.get('model', _DEFAULT_MODEL)
+        host = self.config.get('base_url', _DEFAULT_BASE_URL)
+
+        if not document_text:
+            raise RuntimeError(
+                'Ollama cannot read the document directly. Install pdftotext or '
+                'tesseract for local text extraction, or pick a provider that '
+                'supports file upload.')
+
+        system_content = system_prompt + '\n\nDocument:\n\n' + document_text
+        api = [{'role': 'system', 'content': system_content}]
+        api += [{'role': m['role'], 'content': m['content']} for m in messages]
+
+        resp = ollama.chat(model=model, host=host, messages=api)
+        if isinstance(resp, dict):
+            text = resp['message']['content']
+            prompt_tokens = resp.get('prompt_eval_count')
+            output_tokens = resp.get('eval_count')
+        else:
+            text = resp.message.content
+            prompt_tokens = getattr(resp, 'prompt_eval_count', None)
+            output_tokens = getattr(resp, 'eval_count', None)
+        return {'text': text, 'usage': make_usage(prompt_tokens, output_tokens)}
 
     def healthcheck(self) -> tuple:
         try:

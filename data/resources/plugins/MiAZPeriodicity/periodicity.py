@@ -132,6 +132,76 @@ class MiAZPeriodicityView(MiAZConfigView):
         self._add_config_menubutton(self.config.config_for)
         self.update_views()
 
+# Rename dialog tab
+class MiAZPeriodicityTab(Gtk.Box):
+    """Periodicity of a single document, shown as a tab in the rename dialog.
+
+    The dropdown only holds the choice; the value is written by apply(), which
+    the dialog calls after the rename went through, so cancelling changes
+    nothing.
+    """
+    __gtype_name__ = 'MiAZPeriodicityTab'
+
+    def __init__(self, app, plugin_ext):
+        super().__init__(orientation=Gtk.Orientation.VERTICAL, spacing=6,
+                         hexpand=True, vexpand=True)
+        self.app = app
+        self.ext = plugin_ext
+        self.log = MiAZLog('MiAZ.PeriodicityTab')
+        self.factory = self.app.get_service('factory')
+        self.actions = self.app.get_service('actions')
+        self.doc_id = None
+
+        self.set_margin_top(6)
+        self.set_margin_bottom(6)
+        self.set_margin_start(6)
+        self.set_margin_end(6)
+
+        label = Gtk.Label()
+        label.set_xalign(0.0)
+        label.add_css_class('dim-label')
+        label.set_text(_('How often this document is expected to arrive'))
+        self.append(label)
+
+        self.dropdown = self.factory.create_dropdown_generic(
+            item_type=item_type, ellipsize=True, enable_search=True)
+        self.actions.dropdown_populate(self.ext.config, self.dropdown, item_type, False, False)
+
+        listbox = Gtk.ListBox.new()
+        icm = self.app.get_service('icons')
+        icon = icm.get_image_by_name('io.github.t00m.MiAZ-res-date')
+        row = self.factory.create_actionrow(title=i_title, prefix=icon, suffix=self.dropdown)
+        listbox.append(row)
+        frame = Gtk.Frame()
+        frame.set_child(listbox)
+        self.append(frame)
+
+    def _select(self, pid):
+        model = self.dropdown.get_model()
+        for position, item in enumerate(model):
+            if item.id == pid:
+                self.dropdown.set_selected(position)
+                return
+        self.dropdown.set_selected(0)
+
+    # Document tab contract
+    def set_document(self, doc_id):
+        self.doc_id = doc_id
+        pid = self.ext._get_pid(doc_id)
+        self._select(pid if pid is not None else DEFAULT_PERIODICITY)
+
+    def apply(self, old_id, new_id):
+        """Write the chosen periodicity. True when something actually changed."""
+        item = self.dropdown.get_selected_item()
+        if item is None:
+            return False
+        if self.ext._get_pid(new_id) == item.id:
+            return False
+        self.ext._unset_property_real([new_id])
+        self.ext._set_property_real([new_id], item.id)
+        return True
+
+
 # Plugin
 class MiAZPeriodicityPlugin(MiAZExtension):
     __gtype_name__ = 'MiAZPeriodicityPlugin'
@@ -198,6 +268,7 @@ class MiAZPeriodicityPlugin(MiAZExtension):
             self.util.disconnect(self._filename_deleted_handler)
         if hasattr(self, '_startup_handler'):
             self.workspace.disconnect(self._startup_handler)
+        self.plugin.unregister_document_tabs()
         self.plugin.set_started(False)
 
     def startup(self, *args):
@@ -258,6 +329,13 @@ class MiAZPeriodicityPlugin(MiAZExtension):
                     section.append(self._sidebar_item)
                 self.workspace.register_filter_view(f'{i_title}', self._do_filter_view)
                 self.log.info(f"Plugin {plugin_name} fully initialized")
+
+            # Periodicity of the document being renamed, as a tab in that dialog.
+            self.plugin.register_document_tab(
+                name='periodicity',
+                title=i_title,
+                factory=lambda app: MiAZPeriodicityTab(app, self),
+                weight=200)
 
             # Plugin configured
             self.plugin.set_started(started=True)

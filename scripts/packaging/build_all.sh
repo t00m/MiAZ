@@ -119,10 +119,17 @@ else
 fi
 
 # ── Flatpak ───────────────────────────────────────────────────────────────────
-log "--- Building Flatpak package ---"
+# Flatpak packaging is deprecated on purpose (see
+# docs/PACKAGING-FLATPAK-DEPRECATED.md): the sandbox cannot reach the host CLI
+# tools that plugins need (ocrmypdf for OCR, scanimage for the scanner), so
+# those features do not work in a Flatpak build. The build steps are kept below
+# for reference; set MIAZ_ALLOW_FLATPAK=1 to force it, otherwise it is skipped.
+log "--- Flatpak package (deprecated, skipped) ---"
 cd "$REPO_ROOT"
 FLATPAK_BUNDLE="$REPO_ROOT/miaz-${VERSION}.flatpak"
-if ! have flatpak flatpak-builder ostree; then
+if [[ -z "${MIAZ_ALLOW_FLATPAK:-}" ]]; then
+    log "Flatpak build is deprecated on purpose and skipped. Set MIAZ_ALLOW_FLATPAK=1 to force it."
+elif ! have flatpak flatpak-builder ostree; then
     log "flatpak, flatpak-builder or ostree not found, skipping Flatpak build."
 elif "$SCRIPT_DIR/flatpak/create_flatpak.sh" 2>&1 | tee "$LOG_DIR/flatpak.log"; then
     # create_flatpak.sh builds and installs but does not produce a bundle file.

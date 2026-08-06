@@ -21,6 +21,7 @@ MiAZ/frontend/desktop/services/crash.py
 MiAZ/frontend/desktop/services/dialogs.py
 MiAZ/frontend/desktop/services/factory.py
 MiAZ/frontend/desktop/services/icm.py
+MiAZ/frontend/desktop/services/importdoc.py
 MiAZ/frontend/desktop/services/massrename.py
 MiAZ/frontend/desktop/services/pluginsystem.py
 MiAZ/frontend/desktop/services/workflow.py
@@ -68,10 +69,8 @@ data/resources/plugins/MiAZExport2Dir/export2dir.py
 data/resources/plugins/MiAZExport2Text/export2text.py
 data/resources/plugins/MiAZExport2Zip/export2zip.py
 data/resources/plugins/MiAZFullscreen/fullscreen.py
-data/resources/plugins/MiAZImportDoc/adddoc.py
 data/resources/plugins/MiAZImportFromScan/scan.py
 data/resources/plugins/MiAZImportFromZip/importfromzip.py
-data/resources/plugins/MiAZNewspaper/MiAZNewspaper.py
 data/resources/plugins/MiAZNotes/lib/allview.py
 data/resources/plugins/MiAZNotes/lib/categories.py
 data/resources/plugins/MiAZNotes/lib/dr.py
@@ -85,4 +84,5 @@ data/resources/plugins/MiAZOCR/ocr.py
 data/resources/plugins/MiAZPeriodicity/periodicity.py
 data/resources/plugins/MiAZProjectMgt/projmgt.py
 data/resources/plugins/MiAZWSFont/wsfont.py
-data/resources/plugins/MiAZYearReport/MiAZYearReport.py
+data/resources/plugins/MiAZInsights/MiAZInsights.py
+data/resources/plugins/MiAZInsights/insights/render.py

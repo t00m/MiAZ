@@ -38,6 +38,49 @@ Configview['SentTo'] = MiAZPeopleSentTo
 Configview['Date'] = Gtk.Calendar
 
 
+def pick_date_preset(current_index, item_dates, presets):
+    """Choose the date preset to select so the workspace is not shown empty.
+
+    `presets` is the dropdown list, in order, of `(kind, start, end)` where kind
+    is 'bounded', 'future' or 'all'; `start`/`end` are inclusive `datetime.date`
+    bounds for 'bounded' and `None` otherwise. `item_dates` is a list of
+    `datetime.date`, one per document. `current_index` is the selected preset.
+
+    If the current preset already contains a document it is kept. Otherwise the
+    presets are walked from `current_index` towards wider windows (the bounded
+    chain is nested, so the nearest non-empty preset is always wider), skipping
+    any 'future' preset, and the first 'bounded' preset that contains a document
+    is returned. If none does, the 'all' preset is returned when it has
+    documents. When nothing matches (empty repository) `current_index` is
+    returned unchanged.
+    """
+    def contains(preset):
+        kind, start, end = preset
+        if kind == 'all':
+            return bool(item_dates)
+        if kind == 'future':
+            return start is not None and any(d >= start for d in item_dates)
+        return any(start <= d <= end for d in item_dates)
+
+    if not presets or not (0 <= current_index < len(presets)):
+        return current_index
+    if contains(presets[current_index]):
+        return current_index
+    all_index = None
+    for i in range(current_index, len(presets)):
+        kind = presets[i][0]
+        if kind == 'future':
+            continue
+        if kind == 'all':
+            all_index = i
+            continue
+        if contains(presets[i]):
+            return i
+    if all_index is not None and contains(presets[all_index]):
+        return all_index
+    return current_index
+
+
 class MiAZWorkspace(Gtk.Box):
     """Workspace"""
     __gtype_name__ = 'MiAZWorkspace'
@@ -81,6 +124,16 @@ class MiAZWorkspace(Gtk.Box):
         self._updating_dropdowns = False
         self._filter_in_progress = False
         self._dropdown_update_pending = False
+        # Must exist before _setup_logic(), which builds the date presets and
+        # reads these. The presets encode absolute days derived from "now";
+        # _date_presets_day tracks the day they were built for (so update() can
+        # rebuild them on rollover) and _sid_date_selected lets the rebuild block
+        # re-entry via the selection signal.
+        self._date_presets_day = None
+        self._sid_date_selected = None
+        # Armed at load / repo switch / rollover so _apply_parse_results picks the
+        # nearest non-empty date preset once (never overriding a manual choice).
+        self._auto_date_pending = False
         self._setup_workspace()
         self._setup_logic()
         self._review = False
@@ -91,6 +144,7 @@ class MiAZWorkspace(Gtk.Box):
         self._cached_date_ul = 'All'
         self._cached_date_start = None
         self._cached_date_end = None
+        self._cached_project_bypass = False
         self._update_pending = False
         self._update_timeout_id = None
         # Set by the incremental handler so the trailing full re-scan is skipped
@@ -140,7 +194,7 @@ class MiAZWorkspace(Gtk.Box):
         dd_date = dropdowns[i_type]
         self._update_dropdown_date()
         dd_date.set_selected(0)
-        dd_date.connect("notify::selected-item", self.update)
+        self._sid_date_selected = dd_date.connect("notify::selected-item", self.update)
 
         ## Rest of dropdowns
         for item_type in [Country, Group, SentBy, Purpose, SentTo]:
@@ -192,6 +246,9 @@ class MiAZWorkspace(Gtk.Box):
 
     def _on_repo_switch(self, *args):
         self.selected_items = []
+        # A fresh repository (also the initial load): let the next parse pick the
+        # nearest non-empty date preset instead of showing an empty workspace.
+        self._auto_date_pending = True
         self.update()
         for node in self.config:
             if node in self._repo_switch_signals:
@@ -317,10 +374,8 @@ class MiAZWorkspace(Gtk.Box):
         to the full re-scan, which also handles pending-name normalization.
         """
         util = self.app.get_service('util')
-        if not util.filename_validate(filename):
-            return None, False
         fields = util.get_fields(filename)
-        if len(fields) != 7:
+        if len(fields) != 7 or not all(fields):
             return None, False
         doc, ext = util.filename_details(filename)
         key_fields = [('Date', 0), ('Country', 1), ('Group', 2), ('SentBy', 3),
@@ -347,10 +402,14 @@ class MiAZWorkspace(Gtk.Box):
                         desc[skey] = human
                         self.cache[skey][key] = human
             else:
-                description = config.get(key)
-                if description is None:
-                    description = key
-                desc[skey] = humanize_value(skey, description)
+                try:
+                    desc[skey] = self.cache[skey][key]
+                except KeyError:
+                    description = config.get(key)
+                    if description is None:
+                        description = key
+                    desc[skey] = humanize_value(skey, description)
+                    self.cache[skey][key] = desc[skey]
                 active &= config.exists_used(key=key)
         item = MiAZItem(
             id=os.path.basename(filename),
@@ -389,7 +448,11 @@ class MiAZWorkspace(Gtk.Box):
         sidebar = self.app.get_widget('sidebar')
         sidebar.clear_filters()
 
-        # Show all documents in review mode
+        # Show all documents in review mode. sidebar.clear_filters() already
+        # triggered one full rescan; this only needs to change which date
+        # range is visible, so the Date dropdown's rescan-triggering signal
+        # is blocked here (its separate refilter-only signal stays connected
+        # and applies the new range to the already-loaded items).
         i_type = Date.__gtype_name__
         dropdowns = self.app.get_widget('ws-dropdowns')
         if self._review:
@@ -397,7 +460,11 @@ class MiAZWorkspace(Gtk.Box):
             model = dd.get_model()
             for i in range(model.get_n_items()):
                 if model.get_item(i).id == 'All-All':
+                    if self._sid_date_selected is not None:
+                        dd.handler_block(self._sid_date_selected)
                     dd.set_selected(i)
+                    if self._sid_date_selected is not None:
+                        dd.handler_unblock(self._sid_date_selected)
                     break
 
     def _update_dropdown_date(self):
@@ -409,6 +476,16 @@ class MiAZWorkspace(Gtk.Box):
         model_filter = dd_date.get_model()
         model_sort = model_filter.get_model()
         model = model_sort.get_model()
+
+        # Preserve the selected preset across the rebuild by its title: the key
+        # encodes the day and changes when the day rolls over, so it cannot be
+        # matched by key. Block update() while the model is torn down and rebuilt
+        # so the transient empty selection does not re-enter the filter pass.
+        selected = dd_date.get_selected_item()
+        selected_title = selected.title if selected is not None else None
+        if self._sid_date_selected is not None:
+            dd_date.handler_block(self._sid_date_selected)
+
         model.remove_all()
 
         # Since...
@@ -467,6 +544,25 @@ class MiAZWorkspace(Gtk.Box):
         ## All documents
         key = "All-All"
         model.append(Date(id=key, title=_('All documents')))
+
+        self._date_presets_day = now
+
+        # Reselect the same preset by title (default to the first one), then
+        # unblock update().
+        target = 0
+        if selected_title is not None:
+            for i in range(model.get_n_items()):
+                if model.get_item(i).title == selected_title:
+                    target = i
+                    break
+        dd_date.set_selected(target)
+        if self._sid_date_selected is not None:
+            dd_date.handler_unblock(self._sid_date_selected)
+
+        # The presets were (re)built (initial load or a day/month rollover): let
+        # the next parse pick the nearest non-empty preset if the default is now
+        # empty.
+        self._auto_date_pending = True
 
     def _setup_columnview(self):
         frame = Gtk.Frame()
@@ -746,6 +842,7 @@ class MiAZWorkspace(Gtk.Box):
         concepts_inactive = set()
         show_pending = False
         cache_updates = {}
+        field_index = {ft: {} for ft in Field}
 
         key_fields = [('Date', 0), ('Country', 1), ('Group', 2), ('SentBy', 3), ('Purpose', 4), ('Concept', 5), ('SentTo', 6)]
 
@@ -755,11 +852,15 @@ class MiAZWorkspace(Gtk.Box):
             desc = {skey: '' for skey, nkey in key_fields}
             doc, ext = util.filename_details(filename)
             fields = util.get_fields(filename)
-            valid = util.filename_validate(filename)
+            # Equivalent to util.filename_validate(filename), inlined to reuse
+            # the fields already split above instead of parsing them again.
+            valid = len(fields) == 7 and all(fields)
             if not valid:
                 invalid.append(filename)
             active = valid
             if len(fields) == 7:
+                for field_type, idx in Field.items():
+                    field_index[field_type].setdefault(fields[idx], []).append(filename)
                 for skey, nkey in key_fields:
                     config = self.app.get_config(skey)
                     key = fields[nkey]
@@ -783,10 +884,17 @@ class MiAZWorkspace(Gtk.Box):
                                     cache_updates[skey] = {}
                                 cache_updates[skey][key] = human
                     else:
-                        description = config.get(key)
-                        if description is None:
-                            description = key
-                        desc[skey] = humanize_value(skey, description)
+                        try:
+                            desc[skey] = self.cache[skey][key]
+                        except KeyError:
+                            description = config.get(key)
+                            if description is None:
+                                description = key
+                            human = humanize_value(skey, description)
+                            desc[skey] = human
+                            if skey not in cache_updates:
+                                cache_updates[skey] = {}
+                            cache_updates[skey][key] = human
                         active &= config.exists_used(key=key)
 
             show_pending |= not active
@@ -839,19 +947,6 @@ class MiAZWorkspace(Gtk.Box):
         ENV['CACHE']['CONCEPTS']['ACTIVE'] = sorted(concepts_active)
         ENV['CACHE']['CONCEPTS']['INACTIVE'] = sorted(concepts_inactive)
 
-        # Build the field index
-        field_index = {ft: {} for ft in Field}
-        for filename in docs:
-            file_fields = util.get_fields(filename)
-            if len(file_fields) < 7:
-                continue
-            for field_type, idx in Field.items():
-                val = file_fields[idx]
-                bucket = field_index[field_type]
-                if val not in bucket:
-                    bucket[val] = []
-                bucket[val].append(filename)
-
         result_dict['docs'] = docs
         result_dict['items'] = items
         result_dict['invalid'] = invalid
@@ -884,10 +979,15 @@ class MiAZWorkspace(Gtk.Box):
         util._field_index_dir = result_dict['_repo_docs']
         ds = result_dict.get('_ds', datetime.now())
 
-        # Update workspace view
+        # Update workspace view. When armed (load / repo switch / rollover),
+        # switch an empty default date filter to the nearest non-empty preset
+        # before the filter cache is read, so the view is built once against it.
+        if self._auto_date_pending:
+            self._auto_date_pending = False
+            self._auto_select_date_preset(items)
         self._refresh_filter_cache()
         self._num_total_items = len(docs)
-        GLib.idle_add(self._idle_view_update, items)
+        GLib.idle_add(self._idle_view_update, items, ds)
 
         # Rename invalid files (rare, stays on main thread)
         renamed = 0
@@ -926,10 +1026,6 @@ class MiAZWorkspace(Gtk.Box):
             togglebutton.set_active(False)
         self._review = togglebutton.get_active()
 
-        de = datetime.now()
-        dt = de - ds
-        self.log.debug(f"Workspace updated in {dt}s")
-
         self.app.set_status(MiAZStatus.RUNNING)
         self.selected_items = []
         return False
@@ -953,6 +1049,13 @@ class MiAZWorkspace(Gtk.Box):
             self.app.set_status(MiAZStatus.RUNNING)
             return
 
+        # Rebuild the relative date presets if the calendar day rolled over since
+        # they were built (the app left running past midnight). Otherwise a
+        # document dated today falls outside the today bounded ranges and only
+        # appears under "Future". Preserves the selected preset.
+        if self._date_presets_day != datetime.now().date():
+            self._update_dropdown_date()
+
         ds = datetime.now()
 
         # Read and process the files in the background so the window does not
@@ -965,14 +1068,59 @@ class MiAZWorkspace(Gtk.Box):
         )
         thread.start()
 
-    def _idle_view_update(self, items):
+    def _idle_view_update(self, items, ds):
         """Apply the store splice and emit the updated signal with correct post-filter counts."""
         self.view.update(items)
         model = self.view.cv.get_model()
         self._num_selected_items = len(self.selected_items)
         self._num_displayed_items = len(model)
+        dt = datetime.now() - ds
+        self.log.debug(f"Workspace updated in {dt}s ({self._num_displayed_items} documents displayed)")
         self.emit('workspace-view-updated')
         return False
+
+    def _auto_select_date_preset(self, items):
+        """Switch an empty default date filter to the nearest preset that
+        contains documents (see pick_date_preset). Runs only when armed; the
+        selection signal is blocked so it does not re-enter the filter pass."""
+        dropdowns = self.app.get_widget('ws-dropdowns')
+        dd_date = dropdowns[Date.__gtype_name__]
+        model = dd_date.get_model()
+        if model is None:
+            return
+        util = self.app.get_service('util')
+        today = datetime.now().date()
+
+        presets = []
+        for i in range(model.get_n_items()):
+            pid = model.get_item(i).id
+            if pid == 'All-All':
+                presets.append(('all', None, None))
+                continue
+            parts = pid.split('-')
+            start = util.string_to_datetime(parts[0]) if len(parts) == 2 else None
+            end = util.string_to_datetime(parts[1]) if len(parts) == 2 else None
+            if start is None or end is None:
+                # Unparseable id: make it a no-op that the walk skips.
+                presets.append(('future', None, None))
+                continue
+            kind = 'future' if start > today else 'bounded'
+            presets.append((kind, start, end))
+
+        item_dates = []
+        for item in items:
+            adate = util.string_to_datetime(item.date) if item.date else None
+            if adate is not None:
+                item_dates.append(adate)
+
+        current = dd_date.get_selected()
+        target = pick_date_preset(current, item_dates, presets)
+        if target != current and 0 <= target < model.get_n_items():
+            if self._sid_date_selected is not None:
+                dd_date.handler_block(self._sid_date_selected)
+            dd_date.set_selected(target)
+            if self._sid_date_selected is not None:
+                dd_date.handler_unblock(self._sid_date_selected)
 
     def _refresh_filter_cache(self):
         """Pre-compute per-filter-pass constants so per-item callbacks are cheap."""
@@ -1001,6 +1149,16 @@ class MiAZWorkspace(Gtk.Box):
             else:
                 self._cached_date_start = None
                 self._cached_date_end = None
+
+        # When a specific project is selected, the date and active checks are
+        # bypassed for every item (project members may have unrecognised field
+        # values or any date). Resolved once per pass instead of once per item.
+        project_dd = self.app.get_widget('plugin-MiAZProjectMgt-dropdown')
+        self._cached_project_bypass = False
+        if project_dd is not None:
+            sel = project_dd.get_selected_item()
+            if sel is not None and sel.id != 'Any':
+                self._cached_project_bypass = True
 
     def _do_eval_cond_matches_freetext(self, item):
         return self._cached_search_text.upper() in item.search_text_upper
@@ -1074,12 +1232,9 @@ class MiAZWorkspace(Gtk.Box):
 
         # When a specific project is selected, bypass the date and active checks:
         # project members may have unrecognised field values (ca=False) or any date.
-        project_dd = self.app.get_widget('plugin-MiAZProjectMgt-dropdown')
-        if project_dd is not None:
-            sel = project_dd.get_selected_item()
-            if sel is not None and sel.id != 'Any':
-                cd = True
-                ca = True
+        if self._cached_project_bypass:
+            cd = True
+            ca = True
 
         if self._review:
             show_item = not ca and c0 and c1 and c2 and c4 and c5 and c6 and cc

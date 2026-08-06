@@ -1,5 +1,5 @@
 Name:           miaz
-Version:        0.1.30
+Version:        0.1.40
 Release:        1%{?dist}
 Summary:        Personal Document Organizer
 
@@ -75,6 +75,22 @@ gtk-update-icon-cache %{_datadir}/icons/hicolor &> /dev/null || :
 %{_datadir}/metainfo/io.github.t00m.MiAZ.metainfo.xml
 
 %changelog
+* Wed Aug 05 2026 Tomás Vírseda <tomasvirseda@gmail.com> - 0.1.40-1
+- AI provider API keys are stored in the system keyring instead of plain text
+- Country, Group and Purpose labels are shown in the user's language; French and German catalogues added
+- Plugins can add tabs to the rename dialog: set a project or a periodicity while renaming
+- Rename dialog is keyboard-friendly: typeable date, Ctrl+Enter to apply, Esc to cancel, invalid names refused
+- Faster workspace on large repositories: single file changes update one row, and scans no longer touch the disk per row
+- New MiAZInsights plugin page: all-years overview, period selector, activity heatmap, rank movers and a world map
+- One AI plugin: MiAZAIChat merged into MiAZAIAssistant, so providers are configured once
+- Adding documents is always available: it moved from an optional plugin into the app
+- Optional third-party libraries install into a private virtualenv, never into the system Python
+- Failed plugins are reported in the app instead of only the log, and every plugin now has an icon
+- Config files are written atomically, so a crash cannot leave a half-written repository
+- Fixed date filters that hid documents at month boundaries and past midnight
+- Flatpak packaging is deprecated: a sandboxed build cannot reach host tools such as ocrmypdf and scanimage
+- Removed the unused change journal and the MiAZNewspaper plugin
+
 * Wed Jul 08 2026 Tomás Vírseda <tomasvirseda@gmail.com> - 0.1.30-1
 - New release. See CHANGELOG.md for details.
 

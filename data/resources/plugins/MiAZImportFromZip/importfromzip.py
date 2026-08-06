@@ -119,12 +119,7 @@ class MiAZImportFromZipPlugin(MiAZExtension):
                 btarget = self.util.filename_normalize(filepath)
                 target = os.path.join(self.repository.docs, btarget)
                 self.util.filename_copy(filepath, target)
-                # Keep the real provenance: the zip archive and the entry
-                # inside it, not the temporary extraction path.
-                origin = {'type': 'zip',
-                          'archive': os.path.abspath(zip_path),
-                          'entry': os.path.relpath(filepath, extract_dir)}
-                copied_targets.append((target, origin))
+                copied_targets.append(target)
         except Exception as error:
             self.log.error(f"Error importing ZIP '{zip_path}': {error}")
             error_msg = str(error)
@@ -137,10 +132,7 @@ class MiAZImportFromZipPlugin(MiAZExtension):
         watcher = self.app.get_service('watcher')
         if error_msg:
             self.srvdlg.show_error(title=_('Import error'), body=error_msg)
-        for target, origin in targets:
-            # Emit filename-imported first so the journal can pair provenance
-            # with the target before filename-added fires.
-            self.util.emit('filename-imported', origin, target)
+        for target in targets:
             self.util.emit('filename-added', target)
         watcher.set_active(True)
         self.app.set_status(MiAZStatus.RUNNING)

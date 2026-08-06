@@ -6,7 +6,8 @@ from dataclasses import replace
 from typing import Optional
 
 from .base import Provider, MissingDependencyError
-from miazai.suggestion import Suggestion, make_usage
+from miazai.suggestion import Suggestion
+from miazai.usage import make_usage
 from miazai.vocab import Vocabulary
 
 _DEFAULT_MODEL = 'gpt-4o-mini'
@@ -78,6 +79,41 @@ class OpenAIProvider(Provider):
         except Exception:
             return Suggestion(usage=usage)
         return replace(_from_dict(d), usage=usage)
+
+    def chat(self, *, messages, system_prompt,
+             document_text: Optional[str] = None,
+             file_path: Optional[str] = None) -> dict:
+        self._ensure_client()
+        model = self.config.get('model', _DEFAULT_MODEL)
+
+        api = [{'role': 'system', 'content': system_prompt}]
+        if document_text:
+            api.append({'role': 'user',
+                        'content': 'Document to answer questions about:\n\n' + document_text})
+            api.append({'role': 'assistant',
+                        'content': 'Understood. Ask your questions about this document.'})
+        elif file_path is not None:
+            with open(file_path, 'rb') as fh:
+                uploaded = self._client.files.create(file=fh, purpose='assistants')
+            api.append({'role': 'user',
+                        'content': [
+                            {'type': 'text',
+                             'text': 'This is the document to answer questions about.'},
+                            {'type': 'file', 'file': {'file_id': uploaded.id}},
+                        ]})
+            api.append({'role': 'assistant',
+                        'content': 'Understood. Ask your questions about this document.'})
+        api += [{'role': m['role'], 'content': m['content']} for m in messages]
+
+        resp = self._client.chat.completions.create(model=model, messages=api)
+        usage = {}
+        try:
+            u = resp.usage
+            usage = make_usage(u.prompt_tokens, u.completion_tokens, u.total_tokens)
+        except Exception:
+            pass
+        text = resp.choices[0].message.content or ''
+        return {'text': text, 'usage': usage}
 
 
 def _from_dict(d: dict) -> Suggestion:

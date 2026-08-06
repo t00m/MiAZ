@@ -11,6 +11,7 @@ from gettext import gettext as _
 from gi.repository import GObject
 from gi.repository import Adw
 from gi.repository import Gtk
+from gi.repository import Gdk
 
 from MiAZ.backend.log import MiAZLog
 from MiAZ.backend.util import humanize_value
@@ -123,6 +124,11 @@ class MiAZActions(GObject.GObject):
         dialog.set_default_response('apply')
         dialog.set_close_response('cancel')
         dialog.set_show_close_button(False)
+        # With plugin tabs registered, the header bar carries the view switcher
+        # instead of the window title.
+        switcher = rename_widget.get_switcher()
+        if switcher is not None:
+            dialog.set_title_widget(switcher)
         dialog.set_transient_for(window)
         window.set_sensitive(False)
         dialog.connect('closed', lambda *_a: window.set_sensitive(True))
@@ -165,14 +171,55 @@ class MiAZActions(GObject.GObject):
         rename_widget.entry_concept.connect('changed', _update_suggest_sensitive)
         _update_suggest_sensitive()
 
+        # Focus the first field that needs attention when the dialog is shown.
+        rename_widget.connect('map', rename_widget.focus_first_field)
+
+        # Ctrl+Enter always applies, from any field. Capture phase so it fires
+        # before an entry or dropdown can consume the key.
+        accel = Gtk.EventControllerKey()
+        accel.set_propagation_phase(Gtk.PropagationPhase.CAPTURE)
+
+        def _on_apply_accel(_c, keyval, _kc, state):
+            if (state & Gdk.ModifierType.CONTROL_MASK) and keyval in (
+                    Gdk.KEY_Return, Gdk.KEY_KP_Enter):
+                dialog.emit('response', 'apply')
+                return True
+            return False
+
+        accel.connect('key-pressed', _on_apply_accel)
+        dialog.add_controller(accel)
+
         self.emit('rename-dialog-built', dialog, rename_widget)
         dialog.connect('response', self._on_rename_response, rename_widget)
         dialog.present()
 
     def _on_rename_response(self, dialog, response, rename_widget):
         if response == 'cancel':
+            # Plugin tabs hold their edits until the rename goes through, so
+            # cancelling drops them the same way it drops the field changes.
+            rename_widget.discard_tabs()
             dialog.close()
         elif response == 'apply':
+            if not rename_widget.is_valid():
+                # Refuse to build an invalid filename. Keep the dialog open and
+                # point the user at the first field that needs fixing.
+                rename_widget.focus_first_field()
+                return
+            valid, tab_name = rename_widget.tabs_valid()
+            if not valid:
+                # A plugin tab refuses the rename: show it so the user can see why.
+                rename_widget.focus_tab(tab_name)
+                return
+            if not rename_widget.name_changes():
+                # Every filename field was left alone: the document was opened
+                # to edit what a plugin tab holds (a project, a periodicity).
+                # There is nothing to rename, and nothing destructive to
+                # confirm, so the tab edits are written and the dialog closes.
+                doc = os.path.basename(rename_widget.get_filepath_source())
+                if rename_widget.commit_tabs(doc, doc):
+                    self.srvdlg.show_toast(_('Document properties saved'))
+                dialog.close()
+                return
             body = _('You are about to rename this document.\nAre you sure?')
             dialog_confirm = self.srvdlg.show_question(
                 title=_('Rename document'), body=body,
@@ -198,6 +245,11 @@ class MiAZActions(GObject.GObject):
                     body=_('Another document with the same name already exists in this repository'),
                     parent=parent_dialog)
             else:
+                # The rename emitted 'filename-renamed', so plugins have already
+                # moved their per-document data to the new name. Only now do the
+                # tabs write what the user changed, against that new name.
+                rename_widget.commit_tabs(os.path.basename(bsource),
+                                          os.path.basename(btarget))
                 parent_dialog.close()
         # On 'no' the rename window stays open so the user can amend the fields.
 

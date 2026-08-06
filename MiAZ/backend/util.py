@@ -11,7 +11,6 @@ import os
 import re
 import ast
 import sys
-import glob
 import json
 import gettext
 import shutil
@@ -121,7 +120,6 @@ class MiAZUtil(GObject.GObject):
         'filename-added':    (GObject.SignalFlags.RUN_LAST, GObject.TYPE_PYOBJECT, (GObject.TYPE_PYOBJECT,)),
         'filename-deleted':  (GObject.SignalFlags.RUN_LAST, GObject.TYPE_PYOBJECT, (GObject.TYPE_PYOBJECT,)),
         'filename-renamed':  (GObject.SignalFlags.RUN_LAST, GObject.TYPE_PYOBJECT, (GObject.TYPE_PYOBJECT, GObject.TYPE_PYOBJECT)),
-        'filename-imported': (GObject.SignalFlags.RUN_LAST, GObject.TYPE_PYOBJECT, (GObject.TYPE_PYOBJECT, GObject.TYPE_PYOBJECT)),
     }
 
     def __init__(self, app):
@@ -229,8 +227,14 @@ class MiAZUtil(GObject.GObject):
         return parts
 
     def get_files(self, dirpath: str) -> []:
-        """Get all files from a given directory."""
-        return sorted(f for f in glob.glob(os.path.join(dirpath, '*')) if os.path.isfile(f))
+        """Get all files from a given directory.
+
+        os.scandir's entry.is_file() uses the directory-entry type reported by
+        the OS (d_type) when available, so most files skip a separate stat()
+        syscall; glob.glob + os.path.isfile always stats every entry.
+        """
+        with os.scandir(dirpath) as it:
+            return sorted(e.path for e in it if not e.name.startswith('.') and e.is_file())
 
     def get_files_recursively(self, root_dir: str) -> []:
         """Get documents from a given directory recursively
@@ -353,14 +357,29 @@ class MiAZUtil(GObject.GObject):
         key = str(key).strip().replace('-', '_').replace(' ', '_')
         return re.sub(r'(?u)[^-\w.]', '', key)
 
+    def _rename_target(self, target: str, upper=True) -> str:
+        """The path filename_rename would really move to.
+
+        MiAZ stores document filenames uppercase (with a lowercase extension),
+        so every rename forces the target to that casing. Callers that rename a
+        non-document file (e.g. a zip export) pass upper=False to opt out.
+        """
+        if not upper:
+            return target
+        directory = os.path.dirname(target)
+        return os.path.join(directory, self.filename_upper(os.path.basename(target)))
+
+    def filename_rename_needed(self, source, target, upper=True) -> bool:
+        """False when source and target name the same file.
+
+        Callers use this to tell "nothing to rename" apart from a rename that
+        failed: filename_rename returns False for both, and the difference
+        matters to anything that has work to do alongside the rename.
+        """
+        return source != self._rename_target(target, upper)
+
     def filename_rename(self, source, target, upper=True) -> bool:
-        # MiAZ stores document filenames uppercase (with a lowercase extension),
-        # so every rename forces the target to that casing. Callers that rename
-        # a non-document file (e.g. a zip export) pass upper=False to opt out.
-        if upper:
-            directory = os.path.dirname(target)
-            target = os.path.join(
-                directory, self.filename_upper(os.path.basename(target)))
+        target = self._rename_target(target, upper)
         rename = False
         if source != target:
             if not os.path.exists(target):
@@ -395,21 +414,10 @@ class MiAZUtil(GObject.GObject):
                 self.log.error(f"Could not delete {filepath}: {error}")
         self.emit('filename-deleted', filepaths)
 
-    def filename_import(self, source: str, target: str, origin=None):
-        """Import file into repository.
-
-        'origin' is an optional provenance descriptor (a dict with a 'type'
-        key) telling where the document came from. When omitted it defaults to
-        the source file. Importers that copy from a temporary file (scanner,
-        zip extraction, future email attachments) should pass a real origin so
-        the change journal keeps the true provenance, not the temp path.
-        """
+    def filename_import(self, source: str, target: str):
+        """Import a file into the repository: copy it under the normalized
+        target name, then announce it with filename-added."""
         self.filename_copy(source, target)
-        if origin is None:
-            origin = {'type': 'file', 'path': os.path.abspath(source)}
-        # Emit the import signal first so listeners can pair the provenance
-        # with the (normalized) target before filename-added fires.
-        self.emit('filename-imported', origin, target)
         self.emit('filename-added', target)
 
     def filename_export(self, source: str, target: str):
@@ -470,10 +478,19 @@ class MiAZUtil(GObject.GObject):
         return datetime.strptime("%4d%02d%02d" % (adate.year, adate.month, adate.day), "%Y%m%d")
 
     def since_date_last_n_months(self, adate: datetime, nm: int) -> datetime:
-        return (adate - timedelta(days=30 * nm)).replace(day=1)
+        # First day of the month nm calendar months before adate. A fixed
+        # 30-day delta drifts at month boundaries: on the 31st, 30 days back
+        # stays in the same month (so "past month" on Jul 31 wrongly landed on
+        # Jul 1 and hid June). Compute the month directly instead.
+        month = adate.month - nm
+        year = adate.year
+        while month <= 0:
+            month += 12
+            year -= 1
+        return datetime.strptime("%04d%02d01" % (year, month), "%Y%m%d")
 
     def since_date_last_six_months(self, adate: datetime) -> datetime:
-        return (adate - timedelta(days=30 * 6)).replace(day=1)
+        return self.since_date_last_n_months(adate, 6)
 
     def datetime_to_string(self, adate: datetime) -> str:
         return adate.strftime("%Y%m%d")

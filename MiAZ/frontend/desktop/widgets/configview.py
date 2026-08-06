@@ -24,6 +24,7 @@ from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewPerson
 from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewRepo
 from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewPlugin
 from MiAZ.frontend.desktop.services.dialogs import MiAZDialogAddRepo
+from MiAZ.frontend.desktop.services.pluginsystem import format_load_failure_banner
 
 
 class MiAZConfigView(MiAZSelector):
@@ -534,6 +535,16 @@ class MiAZPlugins(MiAZConfigView):
         factory = self.app.get_service('factory')
         util = self.app.get_service('util')
 
+        # Load-failure banner: shown at the top of the Plugins view when one or
+        # more enabled plugins failed to load. It lives here (not in the shared
+        # columnview) so plugin-specific state stays out of the generic row
+        # rendering used by every configuration view.
+        self.banner_load_failures = Adw.Banner.new('')
+        self.banner_load_failures.set_revealed(False)
+        self.prepend(self.banner_load_failures)
+        self._sid_plugins_updated = None
+        self._refresh_load_failures()
+
         # Available view buttons
         btnInfo = factory.create_button(icon_name='io.github.t00m.MiAZ-dialog-information-symbolic', callback=self._show_plugin_info, css_classes=['linked'])
         btnInfo.set_valign(Gtk.Align.CENTER)
@@ -592,6 +603,32 @@ class MiAZPlugins(MiAZConfigView):
         if len(set_cats) > 0:
             self.dpdCats.set_selected(0)
             self._on_plugin_category_selected()
+
+    def _on_configview_mapped(self, *args):
+        super()._on_configview_mapped(*args)
+        if self._sid_plugins_updated is None:
+            plugin_manager = self.app.get_service('plugin-system')
+            self._sid_plugins_updated = plugin_manager.connect(
+                'plugins-updated', self._refresh_load_failures)
+        self._refresh_load_failures()
+
+    def _on_configview_unmapped(self, *args):
+        super()._on_configview_unmapped(*args)
+        if self._sid_plugins_updated is not None:
+            plugin_manager = self.app.get_service('plugin-system')
+            plugin_manager.disconnect(self._sid_plugins_updated)
+            self._sid_plugins_updated = None
+
+    def _refresh_load_failures(self, *_args):
+        """Reveal the banner and set its text from the plugin manager's current
+        load failures. Hide it when there are none."""
+        plugin_manager = self.app.get_service('plugin-system')
+        failures = plugin_manager.get_load_failures()
+        if failures:
+            self.banner_load_failures.set_title(format_load_failure_banner(failures))
+            self.banner_load_failures.set_revealed(True)
+        else:
+            self.banner_load_failures.set_revealed(False)
 
     def _update_view_available(self):
         ENV = self.app.get_env()

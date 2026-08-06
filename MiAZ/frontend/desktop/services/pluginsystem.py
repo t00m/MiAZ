@@ -13,16 +13,38 @@ import os
 import sys
 import glob
 import json
+import shutil
 import zipfile
 import inspect
 import importlib.util
-from gettext import gettext as _
+from gettext import gettext as _, ngettext
 
 import gi
 gi.require_version('Peas', '2')
 from gi.repository import GObject, Peas
 
 from MiAZ.backend.log import MiAZLog
+
+
+def format_load_failure_toast(count: int) -> str:
+    """Summary toast text for `count` plugins that failed to load."""
+    return ngettext(
+        '{n} plugin failed to load. See Settings > Plugins.',
+        '{n} plugins failed to load. See Settings > Plugins.',
+        count).format(n=count)
+
+
+def format_load_failure_banner(failures: dict) -> str:
+    """One line naming each failed plugin and its reason, joined by '; '.
+
+    `failures` is the dict returned by MiAZPluginSystem.get_load_failures():
+    {module_name: {'name': <plugin name>, 'reason': <error text>}}.
+    """
+    parts = []
+    for entry in failures.values():
+        parts.append(_('{name} failed to load: {reason}').format(
+            name=entry['name'], reason=entry['reason']))
+    return '; '.join(parts)
 
 
 class MiAZExtension(GObject.GObject):
@@ -143,6 +165,10 @@ plugin_categories = {
     }
 }
 
+# Shown for a plugin that ships no icon of its own, so every plugin has one.
+PLUGIN_DEFAULT_ICON = 'io.github.t00m.MiAZ-res-plugins'
+
+
 class MiAZAPI(GObject.GObject):
     def __init__(self, app):
         GObject.Object.__init__(self)
@@ -156,6 +182,11 @@ class MiAZPlugin(GObject.GObject):
         self.app = app
         self.log = MiAZLog('MiAZPlugin')
         self.util = self.app.get_service('util')
+        # Filled in by register(). Defaulted here so anything reading them
+        # early (an icon lookup, a log line) finds an empty value, not an
+        # AttributeError.
+        self.info = {}
+        self.name = ''
 
     def get_plugin_attributes(self, plugin_file):
         plugin_system = self.app.get_service('plugin-system')
@@ -274,12 +305,23 @@ class MiAZPlugin(GObject.GObject):
         self.log.debug(f"Plugin config for {self.name} updated: key '{key}' set")
 
     def get_source_dir(self):
+        """Directory the plugin was loaded from, or None.
+
+        A plugin folder is named after the plugin Name (MiAZProjectMgt) while
+        its Module is the python module inside it (projmgt), and the two match
+        only sometimes. Looking for the Module alone therefore found nothing
+        for most bundled plugins, which is why their icons never showed up, so
+        both names are tried, system directory first.
+        """
         ENV = self.app.get_env()
-        module_name = self.info.get('Module', self.name)
+        names = [self.info.get('Name'), self.info.get('Module'), self.name]
         for base_dir in (ENV['GPATH']['PLUGINS'], ENV['LPATH']['PLUGINS']):
-            candidate = os.path.join(base_dir, module_name)
-            if os.path.exists(candidate):
-                return candidate
+            for name in names:
+                if not name:
+                    continue
+                candidate = os.path.join(base_dir, name)
+                if os.path.isdir(candidate):
+                    return candidate
         return None
 
     def get_icon_path(self):
@@ -291,6 +333,25 @@ class MiAZPlugin(GObject.GObject):
             if os.path.exists(path):
                 return path
         return None
+
+    def get_icon_name(self):
+        """Themed icon name for this plugin. Never empty.
+
+        A plugin ships its icon as icon.svg or icon.png next to its module.
+        Widgets take icon names rather than paths, so the file is exported once
+        into the user icon directory under a name unique to this plugin. A
+        plugin without an icon file, or whose icon cannot be exported, gets the
+        generic MiAZ plugin icon: every plugin has an icon to show.
+        """
+        icon_path = self.get_icon_path()
+        if icon_path:
+            icons = self.app.get_service('icons')
+            if icons is not None:
+                module = self.info.get('Module', self.name)
+                name = icons.register_file_icon(f"miaz-plugin-{module.lower()}", icon_path)
+                if name:
+                    return name
+        return PLUGIN_DEFAULT_ICON
 
     def install_menu_entry(self, menuitem = None):
         category = self.info['Category']
@@ -307,6 +368,28 @@ class MiAZPlugin(GObject.GObject):
         workspace = self.app.get_widget('workspace')
         if workspace is not None:
             workspace.add_stack_page(widget, name, title, icon_name)
+
+    def register_document_tab(self, name, title, factory, icon_name=None, weight=100):
+        """Contribute a tab to the single-document rename dialog.
+
+        `factory` is called with the app once per dialog and must return a
+        Gtk.Widget answering set_document(doc_id) and apply(old_id, new_id).
+        See the plugin contract in AGENTS.md.
+
+        Without an explicit icon_name the tab wears the plugin's own icon, so a
+        plugin gets a recognisable tab without doing anything about it.
+        """
+        tabs = self.app.get_service('document-tabs')
+        if tabs is None:
+            return
+        tabs.register(owner=self.get_name(), name=name, title=title,
+                      factory=factory, icon_name=icon_name or self.get_icon_name(),
+                      weight=weight)
+
+    def unregister_document_tabs(self):
+        tabs = self.app.get_service('document-tabs')
+        if tabs is not None:
+            tabs.unregister_all(owner=self.get_name())
 
 
 class MiAZPluginSystem(GObject.GObject):
@@ -328,6 +411,7 @@ class MiAZPluginSystem(GObject.GObject):
             self.engine.enable_loader(loader)
 
         self._extension_instances = {}
+        self._load_failures = {}
         self._setup_plugins_dir()
         self.create_plugin_index()
         self.log.info("Plugin system initialited")
@@ -437,11 +521,21 @@ class MiAZPluginSystem(GObject.GObject):
         except Exception as error:
             self.log.error(f"Direct import of '{module_name}' failed: {error}")
             sys.modules.pop(module_name, None)
+            self._load_failures[module_name] = {
+                'name': plugin.get_name(), 'reason': str(error)}
             return False
 
     def is_plugin_loaded(self, plugin: Peas.PluginInfo) -> bool:
         """True if the plugin is active: via libpeas or our direct-import fallback."""
         return plugin.get_module_name() in self._extension_instances or plugin.is_loaded()
+
+    def get_load_failures(self) -> dict:
+        """Copy of the current load failures: {module_name: {'name', 'reason'}}."""
+        return dict(self._load_failures)
+
+    def get_load_error(self, module_name: str):
+        entry = self._load_failures.get(module_name)
+        return entry['reason'] if entry else None
 
     def load_plugin(self, plugin: Peas.PluginInfo) -> bool:
         if self.is_plugin_loaded(plugin):
@@ -458,6 +552,7 @@ class MiAZPluginSystem(GObject.GObject):
                     return False
 
             self._activate_plugin_instance(plugin)
+            self._load_failures.pop(plugin.get_module_name(), None)
             self.log.info(f"Plugin {pname} v{pvers} loaded")
             self._install_plugin_requirements(plugin)
             self.emit('plugins-updated')
@@ -468,6 +563,8 @@ class MiAZPluginSystem(GObject.GObject):
             # half-loaded engine state so the plugin does not read back as
             # loaded, and report failure to the caller.
             self.log.error(f"Plugin {pname} v{pvers} couldn't be loaded: {error}")
+            self._load_failures[plugin.get_module_name()] = {
+                'name': pname, 'reason': str(error)}
             try:
                 if plugin.is_loaded():
                     self.engine.unload_plugin(plugin)
@@ -501,10 +598,52 @@ class MiAZPluginSystem(GObject.GObject):
         try:
             self._deactivate_plugin_instance(plugin)
             self.engine.unload_plugin(plugin)
+            self._remove_plugin_www(plugin)
+            self._remove_plugin_document_tabs(plugin)
             self.log.info(f"Plugin {pname} v{pvers} unloaded")
             self.emit('plugins-updated')
         except Exception as error:
             self.log.error(error)
+
+    def _remove_plugin_www(self, plugin: Peas.PluginInfo):
+        """Remove a plugin's published web directory when it is unloaded.
+
+        Plugins that publish to the MiAZ Browser write to
+        LPATH/WWW/<plugin directory basename> (the convention the bundled
+        MiAZInsights follows through its PLUGIN_DIR_NAME).
+        Removing it here, centrally, means disabling or uninstalling any such
+        plugin (bundled or user-space) drops its content from the Browser,
+        without each plugin having to clean up after itself. A plugin that
+        publishes under a different name than its folder is not covered here and
+        must clean up in its own do_deactivate.
+        """
+        try:
+            module_dir = plugin.get_module_dir()
+            if not module_dir:
+                return
+            name = os.path.basename(module_dir)
+            ENV = self.app.get_env()
+            www = os.path.join(ENV['LPATH']['WWW'], name)
+            if os.path.isdir(www):
+                shutil.rmtree(www)
+                self.log.debug(f"Removed web content for plugin '{name}': {www}")
+        except Exception as error:
+            self.log.warning(f"Could not remove web content for plugin: {error}")
+
+    def _remove_plugin_document_tabs(self, plugin: Peas.PluginInfo):
+        """Drop the rename-dialog tabs of a plugin when it is unloaded.
+
+        Plugins are expected to call unregister_document_tabs() in their
+        do_deactivate; doing it here too means one that forgets cannot leave a
+        tab whose factory no longer exists.
+        """
+        tabs = self.app.get_service('document-tabs')
+        if tabs is None:
+            return
+        try:
+            tabs.unregister_all(owner=plugin.get_name())
+        except Exception as error:
+            self.log.warning(f"Could not remove document tabs for plugin: {error}")
 
     def get_engine(self):
         return self.engine
@@ -607,6 +746,7 @@ class MiAZPluginSystem(GObject.GObject):
     def create_plugin_index(self, *args):
         """Scan both bundled and user plugin directories and write a unified index."""
         self.log.info("Creating plugin index during runtime")
+        self._load_failures = {}
         plugin_index = {}
         plugin_list = []
         ENV = self.app.get_env()

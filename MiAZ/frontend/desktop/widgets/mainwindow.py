@@ -353,11 +353,15 @@ class MiAZMainWindow(Gtk.Box):
         return GLib.SOURCE_REMOVE
 
     def _populate_add_menu(self):
-        """Build the headerbar Add menu from every loaded Import plugin."""
+        """Build the headerbar Add menu from the core import action plus
+        every loaded Import plugin."""
         add_menu = self.app.get_widget('headerbar-add-menu')
         if add_menu is None:
             return
         add_menu.remove_all()
+        importdoc = self.app.get_service('importdoc')
+        if importdoc is not None:
+            add_menu.append_item(importdoc.menuitem)
         plugin_manager = self.app.get_service('plugin-system')
         if plugin_manager is not None:
             for plugin_info in plugin_manager.plugins:

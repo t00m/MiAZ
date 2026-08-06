@@ -11,6 +11,8 @@ import gi
 gi.require_version('GLib', '2.0')
 gi.require_version('Gio', '2.0')
 
+from datetime import date
+
 import pytest
 from MiAZ.backend.util import MiAZUtil
 
@@ -201,3 +203,77 @@ def test_filename_normalize_unnormalized_puts_name_in_field5(util):
 def test_filename_normalize_preserves_extension(util):
     result = util.filename_normalize('fakefile.docx')
     assert result.endswith('.docx')
+
+
+# ---------------------------------------------------------------------------
+# since_date_last_n_months: first day of the month N calendar months back.
+# A fixed 30-day delta used to drift at month boundaries, which hid documents
+# from the previous month in the "Since past month" date filter.
+# ---------------------------------------------------------------------------
+
+def _ymd(dt):
+    return dt.strftime('%Y%m%d')
+
+
+def test_since_date_last_n_months_past_month_from_month_end(util):
+    # The reported bug: on Jul 31, "past month" (n=1) must be Jun 1, not Jul 1.
+    assert _ymd(util.since_date_last_n_months(date(2026, 7, 31), 1)) == '20260601'
+
+
+def test_since_date_last_n_months_three_from_month_end(util):
+    assert _ymd(util.since_date_last_n_months(date(2026, 7, 31), 3)) == '20260401'
+
+
+def test_since_date_last_n_months_six_from_month_end(util):
+    assert _ymd(util.since_date_last_n_months(date(2026, 7, 31), 6)) == '20260101'
+
+
+def test_since_date_last_n_months_crosses_year_boundary(util):
+    assert _ymd(util.since_date_last_n_months(date(2026, 1, 15), 1)) == '20251201'
+    assert _ymd(util.since_date_last_n_months(date(2026, 3, 31), 6)) == '20250901'
+
+
+def test_since_date_last_n_months_mid_month(util):
+    # Day of adate is irrelevant; the result is always the first of the month.
+    assert _ymd(util.since_date_last_n_months(date(2026, 6, 10), 1)) == '20260501'
+
+
+def test_since_date_last_six_months_delegates(util):
+    assert _ymd(util.since_date_last_six_months(date(2026, 7, 31))) == '20260101'
+
+
+# ---------------------------------------------------------------------------
+# filename_rename_needed
+# ---------------------------------------------------------------------------
+
+DOC = '20240115-ES-HOU-BANK-INV-RENT-JOHN.pdf'
+
+
+def test_rename_not_needed_when_the_name_is_unchanged(util):
+    # The rename dialog leans on this: a document can be opened only to edit
+    # what a plugin tab holds, leaving every filename field alone.
+    assert util.filename_rename_needed(DOC, DOC) is False
+
+
+def test_rename_not_needed_when_only_the_casing_differs(util):
+    # filename_rename uppercases the target, so a lowercase target that
+    # uppercases back to the source is not a rename either.
+    assert util.filename_rename_needed(DOC, DOC.lower()) is False
+    assert util.filename_rename_needed(DOC, '20240115-es-hou-bank-inv-rent-john.PDF') is False
+
+
+def test_rename_needed_when_a_field_changes(util):
+    target = '20240115-ES-HOU-BANK-INV-Q1INVOICE-JOHN.pdf'
+    assert util.filename_rename_needed(DOC, target) is True
+
+
+def test_rename_needed_compares_full_paths(util):
+    assert util.filename_rename_needed(f'/docs/{DOC}', f'/docs/{DOC}') is False
+    assert util.filename_rename_needed(f'/docs/{DOC}', f'/other/{DOC}') is True
+
+
+def test_rename_needed_without_uppercasing(util):
+    # upper=False (zip exports and other non-document files): the target is
+    # compared as given.
+    assert util.filename_rename_needed(DOC, DOC.lower(), upper=False) is True
+    assert util.filename_rename_needed(DOC, DOC, upper=False) is False

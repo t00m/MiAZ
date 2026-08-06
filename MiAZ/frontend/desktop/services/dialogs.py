@@ -82,6 +82,12 @@ class MiAZDialog:
         label = self.app.find_widget(windowhandle, Gtk.Label, 'body_label')
         if label is not None:
             label.set_vexpand(False)
+            # Let the user select and copy the body text (for example a command
+            # to run or an error message), and align it to the left instead of
+            # the AlertDialog default centre.
+            label.set_selectable(True)
+            label.set_xalign(0)
+            label.set_justify(Gtk.Justification.LEFT)
             label.add_css_class('toolbar')
             # And change color
             class_name = miaz_dialog[dtype]['class_name']
@@ -351,6 +357,11 @@ class MiAZWindowDialog(Adw.Window):
     def pack_header_start(self, widget):
         # Place a widget on the left side of the header bar.
         self.headerbar.pack_start(widget)
+
+    def set_title_widget(self, widget):
+        # Replace the window title in the header bar, for a dialog that shows
+        # something else there (a view switcher, for instance).
+        self.headerbar.set_title_widget(widget)
 
     def pack_action_end(self, widget):
         # Place a widget on the right side of the bottom action bar, next to

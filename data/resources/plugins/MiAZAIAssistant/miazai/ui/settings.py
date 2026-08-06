@@ -25,7 +25,7 @@ PROVIDER_MODELS = {
 }
 
 
-class AIAssistantSettings:
+class AISettings:
     def __init__(self, app, plugin, registry, log):
         self.app = app
         self.plugin = plugin

@@ -324,7 +324,6 @@ msgstr "Persona"
 #: data/resources/plugins/MiAZAutoScan/autoscan.py:608
 #: data/resources/plugins/MiAZColumnVisibility/colvis.py:44
 #: data/resources/plugins/MiAZExport2Dir/export2dir.py:51
-#: data/resources/plugins/MiAZNewspaper/MiAZNewspaper.py:541
 msgid "Sent by"
 msgstr "Enviado por"
 
@@ -332,7 +331,6 @@ msgstr "Enviado por"
 #: data/resources/plugins/MiAZAutoScan/autoscan.py:610
 #: data/resources/plugins/MiAZColumnVisibility/colvis.py:45
 #: data/resources/plugins/MiAZExport2Dir/export2dir.py:52
-#: data/resources/plugins/MiAZNewspaper/MiAZNewspaper.py:543
 msgid "Sent to"
 msgstr "Enviado a"
 
@@ -347,8 +345,7 @@ msgstr "Plug-in"
 #: data/resources/plugins/MiAZAutoScan/autoscan.py:641
 #: data/resources/plugins/MiAZColumnVisibility/colvis.py:43
 #: data/resources/plugins/MiAZExport2CSV/export2csv.py:92
-#: data/resources/plugins/MiAZNewspaper/MiAZNewspaper.py:542
-#: data/resources/plugins/MiAZYearReport/MiAZYearReport.py:461
+#: data/resources/plugins/MiAZInsights/MiAZInsights.py:461
 msgid "Concept"
 msgstr "Concepto"
 
@@ -359,7 +356,6 @@ msgstr "Concepto"
 #: data/resources/plugins/MiAZColumnVisibility/colvis.py:37
 #: data/resources/plugins/MiAZExport2CSV/export2csv.py:92
 #: data/resources/plugins/MiAZExport2Dir/export2dir.py:48
-#: data/resources/plugins/MiAZNewspaper/MiAZNewspaper.py:538
 msgid "Country"
 msgstr "País"
 
@@ -367,7 +363,6 @@ msgstr "País"
 #: MiAZ/frontend/desktop/widgets/views.py:75
 #: data/resources/plugins/MiAZColumnVisibility/colvis.py:36
 #: data/resources/plugins/MiAZExport2CSV/export2csv.py:92
-#: data/resources/plugins/MiAZNewspaper/MiAZNewspaper.py:537
 #: data/resources/plugins/MiAZNotes/lib/allview.py:153
 #: data/resources/plugins/MiAZNotes/lib/editor.py:68
 #: data/resources/plugins/MiAZNotes/lib/listview.py:109
@@ -386,11 +381,10 @@ msgstr "Documento"
 
 #: MiAZ/backend/models.py:209 MiAZ/frontend/desktop/services/actions.py:366
 #: MiAZ/frontend/desktop/widgets/workspace.py:511
-#: data/resources/plugins/MiAZNewspaper/MiAZNewspaper.py:523
-#: data/resources/plugins/MiAZYearReport/MiAZYearReport.py:397
-#: data/resources/plugins/MiAZYearReport/MiAZYearReport.py:443
-#: data/resources/plugins/MiAZYearReport/MiAZYearReport.py:462
-#: data/resources/plugins/MiAZYearReport/MiAZYearReport.py:484
+#: data/resources/plugins/MiAZInsights/MiAZInsights.py:397
+#: data/resources/plugins/MiAZInsights/MiAZInsights.py:443
+#: data/resources/plugins/MiAZInsights/MiAZInsights.py:462
+#: data/resources/plugins/MiAZInsights/MiAZInsights.py:484
 msgid "Documents"
 msgstr "Documentos"
 
@@ -418,7 +412,6 @@ msgstr "Ficheros"
 #: data/resources/plugins/MiAZColumnVisibility/colvis.py:40
 #: data/resources/plugins/MiAZExport2CSV/export2csv.py:92
 #: data/resources/plugins/MiAZExport2Dir/export2dir.py:49
-#: data/resources/plugins/MiAZNewspaper/MiAZNewspaper.py:539
 msgid "Group"
 msgstr "Grupo"
 
@@ -436,8 +429,7 @@ msgstr "Personas/Entidades"
 #: data/resources/plugins/MiAZColumnVisibility/colvis.py:41
 #: data/resources/plugins/MiAZExport2CSV/export2csv.py:92
 #: data/resources/plugins/MiAZExport2Dir/export2dir.py:50
-#: data/resources/plugins/MiAZNewspaper/MiAZNewspaper.py:540
-#: data/resources/plugins/MiAZYearReport/MiAZYearReport.py:483
+#: data/resources/plugins/MiAZInsights/MiAZInsights.py:483
 msgid "Purpose"
 msgstr "Propósito"
 
@@ -446,7 +438,7 @@ msgid "Repository"
 msgstr "Repositorio"
 
 #: MiAZ/backend/models.py:284
-#: data/resources/plugins/MiAZYearReport/MiAZYearReport.py:442
+#: data/resources/plugins/MiAZInsights/MiAZInsights.py:442
 msgid "Sender"
 msgstr "Remitente"
 
@@ -3470,192 +3462,6 @@ msgstr "Error de importación"
 msgid "{count} documents imported from ZIP"
 msgstr "{count} documentos importados desde ZIP"
 
-#: data/resources/plugins/MiAZNewspaper/MiAZNewspaper.py:34
-msgid "MiAZ Newspaper"
-msgstr "Periódico MiAZ"
-
-#: data/resources/plugins/MiAZNewspaper/MiAZNewspaper.py:137
-msgid "Open as Newspaper"
-msgstr "Abrir como periódico"
-
-#: data/resources/plugins/MiAZNewspaper/MiAZNewspaper.py:288
-#: data/resources/plugins/MiAZNewspaper/MiAZNewspaper.py:289
-msgid "issues"
-msgstr "números"
-
-#: data/resources/plugins/MiAZNewspaper/MiAZNewspaper.py:288
-msgid "requests"
-msgstr "solicitudes"
-
-#: data/resources/plugins/MiAZNewspaper/MiAZNewspaper.py:289
-msgid "posts"
-msgstr "publicaciones"
-
-#: data/resources/plugins/MiAZNewspaper/MiAZNewspaper.py:289
-#: data/resources/plugins/MiAZNewspaper/MiAZNewspaper.py:290
-msgid "files"
-msgstr "archivos"
-
-#: data/resources/plugins/MiAZNewspaper/MiAZNewspaper.py:295
-#, python-brace-format
-msgid ""
-"A new invoice has been filed to the {group} ledger and now awaits your "
-"review."
-msgstr ""
-"Se ha archivado una nueva factura en el libro de {group} y ahora espera tu "
-"revisión."
-
-#: data/resources/plugins/MiAZNewspaper/MiAZNewspaper.py:296
-#, python-brace-format
-msgid "A request has been recorded and filed to the {group} section."
-msgstr ""
-"Se ha registrado una solicitud y se ha archivado en la sección de {group}."
-
-#: data/resources/plugins/MiAZNewspaper/MiAZNewspaper.py:297
-#, python-brace-format
-msgid "A statement has arrived and joined the {group} record."
-msgstr "Ha llegado un extracto y se ha incorporado al registro de {group}."
-
-#: data/resources/plugins/MiAZNewspaper/MiAZNewspaper.py:298
-#, python-brace-format
-msgid "An informative note has been posted to the {group} section."
-msgstr "Se ha publicado una nota informativa en la sección de {group}."
-
-#: data/resources/plugins/MiAZNewspaper/MiAZNewspaper.py:299
-#, python-brace-format
-msgid "A contract has been filed to the {group} section."
-msgstr "Se ha archivado un contrato en la sección de {group}."
-
-#: data/resources/plugins/MiAZNewspaper/MiAZNewspaper.py:300
-#, python-brace-format
-msgid "A ticket has been issued and filed to the {group} section."
-msgstr "Se ha emitido un ticket y se ha archivado en la sección de {group}."
-
-#: data/resources/plugins/MiAZNewspaper/MiAZNewspaper.py:305
-#, python-brace-format
-msgid "A {purpose} has been filed to the {group} section."
-msgstr "Se ha archivado un/a {purpose} en la sección de {group}."
-
-#: data/resources/plugins/MiAZNewspaper/MiAZNewspaper.py:306
-msgid "document"
-msgstr "documento"
-
-#: data/resources/plugins/MiAZNewspaper/MiAZNewspaper.py:309
-#, python-brace-format
-msgid "{sender} {verb} {concept}, filed {date}."
-msgstr "{sender} {verb} {concept}, archivado el {date}."
-
-#. Two sentences naming section, sender, recipient, date and concept.
-#: data/resources/plugins/MiAZNewspaper/MiAZNewspaper.py:319
-#, python-brace-format
-msgid ""
-"The {group} section of the archive receives {concept} from {sender}, dated "
-"{date}, addressed to {recipient}."
-msgstr ""
-"La sección de {group} del archivo recibe {concept} de {sender}, con fecha "
-"{date}, dirigido a {recipient}."
-
-#: data/resources/plugins/MiAZNewspaper/MiAZNewspaper.py:321
-msgid "a new filing"
-msgstr "un nuevo archivado"
-
-#: data/resources/plugins/MiAZNewspaper/MiAZNewspaper.py:325
-#, python-brace-format
-msgid ""
-"Classified as {a_purpose}, the document joins the permanent record, where it"
-" can be retrieved, renamed, or assigned to a project at any time."
-msgstr ""
-"Clasificado como {a_purpose}, el documento se une al registro permanente, "
-"donde se puede recuperar, renombrar o asignar a un proyecto en cualquier "
-"momento."
-
-#: data/resources/plugins/MiAZNewspaper/MiAZNewspaper.py:326
-msgid "a filing"
-msgstr "un archivado"
-
-#: data/resources/plugins/MiAZNewspaper/MiAZNewspaper.py:346
-msgid "Unfiled"
-msgstr "Sin archivar"
-
-#: data/resources/plugins/MiAZNewspaper/MiAZNewspaper.py:437
-#: data/resources/plugins/MiAZNewspaper/MiAZNewspaper.py:502
-msgid "From"
-msgstr "De"
-
-#: data/resources/plugins/MiAZNewspaper/MiAZNewspaper.py:439
-#: data/resources/plugins/MiAZNewspaper/MiAZNewspaper.py:503
-msgid "to"
-msgstr "a"
-
-#: data/resources/plugins/MiAZNewspaper/MiAZNewspaper.py:469
-msgid ""
-"As with every entry in The MiAZ Times, this report is composed entirely from"
-" the document’s seven filing fields and links directly to the original held "
-"in your repository."
-msgstr ""
-"Como en cada entrada de The MiAZ Times, este reportaje se compone "
-"íntegramente a partir de los siete campos de archivado del documento y "
-"enlaza directamente con el original guardado en tu repositorio."
-
-#: data/resources/plugins/MiAZNewspaper/MiAZNewspaper.py:524
-msgid "Sections"
-msgstr "Secciones"
-
-#: data/resources/plugins/MiAZNewspaper/MiAZNewspaper.py:525
-msgid "“Every paper in its place.”"
-msgstr "«Cada papel en su sitio.»"
-
-#: data/resources/plugins/MiAZNewspaper/MiAZNewspaper.py:526
-msgid "Generated by MiAZ"
-msgstr "Generado por MiAZ"
-
-#: data/resources/plugins/MiAZNewspaper/MiAZNewspaper.py:527
-msgid "Read the document →"
-msgstr "Leer el documento →"
-
-#: data/resources/plugins/MiAZNewspaper/MiAZNewspaper.py:528
-msgid "Latest Filings"
-msgstr "Últimos archivados"
-
-#: data/resources/plugins/MiAZNewspaper/MiAZNewspaper.py:529
-msgid "In This Edition"
-msgstr "En esta edición"
-
-#: data/resources/plugins/MiAZNewspaper/MiAZNewspaper.py:530
-msgid "Off the Press"
-msgstr "Recién salido"
-
-#: data/resources/plugins/MiAZNewspaper/MiAZNewspaper.py:531
-msgid ""
-"is set from your document repository and printed by the MiAZNewspaper "
-"plugin. Every story links to its file in the archive."
-msgstr ""
-"se compone a partir de tu repositorio de documentos y lo imprime el plugin "
-"MiAZNewspaper. Cada noticia enlaza con su archivo en el repositorio."
-
-#: data/resources/plugins/MiAZNewspaper/MiAZNewspaper.py:532
-msgid ""
-"— composed from the filing record. Open the document to read the original."
-msgstr ""
-"— compuesto a partir del registro de archivado. Abre el documento para leer "
-"el original."
-
-#: data/resources/plugins/MiAZNewspaper/MiAZNewspaper.py:533
-msgid "On the Record"
-msgstr "Para que conste"
-
-#: data/resources/plugins/MiAZNewspaper/MiAZNewspaper.py:534
-msgid "Open document"
-msgstr "Abrir documento"
-
-#: data/resources/plugins/MiAZNewspaper/MiAZNewspaper.py:535
-msgid "Document preview"
-msgstr "Vista previa del documento"
-
-#: data/resources/plugins/MiAZNewspaper/MiAZNewspaper.py:536
-msgid "No documents in this edition."
-msgstr "No hay documentos en esta edición."
-
 #: data/resources/plugins/MiAZNotes/lib/allview.py:22
 msgid "All statuses"
 msgstr "Todos los estados"
@@ -4307,78 +4113,76 @@ msgstr "Elegir el tipo de letra del área de trabajo"
 msgid "Workspace font size"
 msgstr "Tamaño de letra del área de trabajo"
 
-#: data/resources/plugins/MiAZYearReport/MiAZYearReport.py:47
-msgid "Printable yearly summary report"
-msgstr "Informe anual resumido para imprimir"
-
-#: data/resources/plugins/MiAZYearReport/MiAZYearReport.py:181
-msgid "Open year report"
+#: data/resources/plugins/MiAZInsights/MiAZInsights.py:181
+#, fuzzy
+msgid "Open insights"
 msgstr "Abrir el informe anual"
 
-#: data/resources/plugins/MiAZYearReport/MiAZYearReport.py:343
-#: data/resources/plugins/MiAZYearReport/MiAZYearReport.py:349
-#: data/resources/plugins/MiAZYearReport/MiAZYearReport.py:419
-#: data/resources/plugins/MiAZYearReport/MiAZYearReport.py:425
-msgid "Year report"
+#: data/resources/plugins/MiAZInsights/MiAZInsights.py:343
+#: data/resources/plugins/MiAZInsights/MiAZInsights.py:349
+#: data/resources/plugins/MiAZInsights/MiAZInsights.py:419
+#: data/resources/plugins/MiAZInsights/MiAZInsights.py:425
+#, fuzzy
+msgid "Insights"
 msgstr "Informe anual"
 
-#: data/resources/plugins/MiAZYearReport/MiAZYearReport.py:345
+#: data/resources/plugins/MiAZInsights/MiAZInsights.py:345
 msgid "No normalized documents to report yet."
 msgstr "Aún no hay documentos normalizados que informar."
 
-#: data/resources/plugins/MiAZYearReport/MiAZYearReport.py:382
+#: data/resources/plugins/MiAZInsights/MiAZInsights.py:382
 msgid "no prior year"
 msgstr "sin año anterior"
 
-#: data/resources/plugins/MiAZYearReport/MiAZYearReport.py:399
+#: data/resources/plugins/MiAZInsights/MiAZInsights.py:399
 msgid "Distinct senders"
 msgstr "Remitentes distintos"
 
-#: data/resources/plugins/MiAZYearReport/MiAZYearReport.py:401
+#: data/resources/plugins/MiAZInsights/MiAZInsights.py:401
 msgid "Busiest month"
 msgstr "Mes con más actividad"
 
-#: data/resources/plugins/MiAZYearReport/MiAZYearReport.py:403
+#: data/resources/plugins/MiAZInsights/MiAZInsights.py:403
 msgid "Leading purpose"
 msgstr "Propósito principal"
 
-#: data/resources/plugins/MiAZYearReport/MiAZYearReport.py:405
+#: data/resources/plugins/MiAZInsights/MiAZInsights.py:405
 msgid "documents"
 msgstr "documentos"
 
-#: data/resources/plugins/MiAZYearReport/MiAZYearReport.py:418
+#: data/resources/plugins/MiAZInsights/MiAZInsights.py:418
 msgid "Print / Save as PDF"
 msgstr "Imprimir / Guardar como PDF"
 
-#: data/resources/plugins/MiAZYearReport/MiAZYearReport.py:423
+#: data/resources/plugins/MiAZInsights/MiAZInsights.py:423
 msgid "Generated"
 msgstr "Generado"
 
-#: data/resources/plugins/MiAZYearReport/MiAZYearReport.py:441
+#: data/resources/plugins/MiAZInsights/MiAZInsights.py:441
 msgid "Counts by sender"
 msgstr "Recuento por remitente"
 
-#: data/resources/plugins/MiAZYearReport/MiAZYearReport.py:460
+#: data/resources/plugins/MiAZInsights/MiAZInsights.py:460
 msgid "Top concepts"
 msgstr "Conceptos más frecuentes"
 
-#: data/resources/plugins/MiAZYearReport/MiAZYearReport.py:481
+#: data/resources/plugins/MiAZInsights/MiAZInsights.py:481
 msgid "Biggest purpose"
 msgstr "Propósito más frecuente"
 
-#: data/resources/plugins/MiAZYearReport/MiAZYearReport.py:482
+#: data/resources/plugins/MiAZInsights/MiAZInsights.py:482
 msgid "Ranked by document count (the filename scheme carries no amount)."
 msgstr ""
 "Ordenado por número de documentos (el esquema de nombres no incluye "
 "importes)."
 
-#: data/resources/plugins/MiAZYearReport/MiAZYearReport.py:497
+#: data/resources/plugins/MiAZInsights/MiAZInsights.py:497
 #, python-brace-format
 msgid "Average {avg:.1f} documents per active month · busiest {busy} · {yoy}"
 msgstr ""
 "Media de {avg:.1f} documentos por mes activo · más activo {busy} · {yoy}"
 
-#: data/resources/plugins/MiAZYearReport/MiAZYearReport.py:500
+#: data/resources/plugins/MiAZInsights/MiAZInsights.py:500
 msgid "Document velocity"
 msgstr "Ritmo de documentos"
 

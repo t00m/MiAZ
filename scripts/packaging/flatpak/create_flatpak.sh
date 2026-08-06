@@ -9,6 +9,17 @@
 # this only re-runs our own module builds.
 set -euo pipefail
 
+# Flatpak packaging is deprecated on purpose: the sandbox cannot reach the host
+# CLI tools that MiAZ plugins need (ocrmypdf for OCR, scanimage for the
+# scanner), so those features do not work in a Flatpak build. This script is
+# kept for reference. See docs/PACKAGING-FLATPAK-DEPRECATED.md. Set
+# MIAZ_ALLOW_FLATPAK=1 to run it anyway.
+if [[ -z "${MIAZ_ALLOW_FLATPAK:-}" ]]; then
+    echo "Flatpak packaging is deprecated on purpose and disabled."
+    echo "See docs/PACKAGING-FLATPAK-DEPRECATED.md. Set MIAZ_ALLOW_FLATPAK=1 to force it."
+    exit 0
+fi
+
 flatpak-builder \
     --force-clean \
     --disable-cache \

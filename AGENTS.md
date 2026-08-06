@@ -24,7 +24,7 @@ Example: `20240315-ES-HOU-BANKNAME-INV-Q1invoice-JOHNDOE.pdf`
 | Python–GTK bindings | PyGObject | 3.50 |
 | Embedded web | WebKitGTK | 6.0 |
 | Build system | Meson + Ninja | 1.5.1 |
-| Distribution | Flatpak (GNOME 50 runtime), plus deb / rpm / AppImage / win scripts | — |
+| Distribution | deb / rpm / AppImage (native). Flatpak is deprecated | — |
 | i18n | gettext | — |
 
 ## Repository layout
@@ -41,7 +41,6 @@ MiAZ/
 │   │   ├── crash.py              ← console/log-only excepthook (install_backend_excepthook)
 │   │   ├── data.py               ← Placeholder (package marker)
 │   │   ├── dr.py                 ← MiAZDR (disaster recovery / backup)
-│   │   ├── history.py            ← MiAZHistory (per-repo change journal)
 │   │   ├── log.py                ← MiAZLog (colored logging)
 │   │   ├── models.py             ← MiAZItem, Country, Group, etc. (GObject models)
 │   │   ├── repository.py         ← MiAZRepository (CRUD on file-based repo)
@@ -61,6 +60,7 @@ MiAZ/
 │           │   ├── factory.py    ← MiAZFactory (widget factory)
 │           │   ├── help.py       ← MiAZHelp, MiAZShortcutsWindow
 │           │   ├── icm.py        ← MiAZIconManager
+│           │   ├── importdoc.py  ← MiAZImportDoc (core add-document service + menu item)
 │           │   ├── pluginsystem.py ← MiAZExtension, MiAZPlugin, MiAZPluginSystem
 │           │   └── workflow.py   ← MiAZWorkflow (repo switching lifecycle)
 │           └── widgets/
@@ -121,7 +121,7 @@ against the enabled config (`config.exists_used`) or, for dates,
 `filename_date_human_simple`; anything unknown flags the document for **Review**
 (Pending). Helpers:
 - `util.get_fields(filename)` → `[date, country, group, sentby, purpose, concept, sentto]`. Strips path + extension at the last dot and **merges hyphenated tail parts back into SentTo** (so a hyphen inside Concept/SentTo and directory hyphens are tolerated).
-- `util.filename_is_normalized(name)` → `len(name.split('-')) == 7` (cheap stem check; still used by `MiAZYearReport` and `filename_normalize`).
+- `util.filename_is_normalized(name)` → `len(name.split('-')) == 7` (cheap stem check; still used by `MiAZInsights` and `filename_normalize`).
 
 ## Architecture
 
@@ -137,7 +137,7 @@ against the enabled config (`config.exists_used`) or, for dates,
 **Services** (`MiAZ/frontend/desktop/services/`): GTK-aware, app lifecycle.
 - Registered via `app.set_service('name', instance)` in `MiAZApp._on_activate` (returns the instance)
 - Access via `app.get_service('name')`
-- Registration order: `crash`, `util`, `icons`, `factory`, `dialogs`, `actions`, `workflow`, `dr`, `webserver`, `repo`, `history`, `massrename` (early); then `plugin-system` and `theme` (`Gtk.IconTheme`) once the window exists. `history` is registered after `repo` because it listens to `util`'s `filename-*` signals and needs the repository to resolve the journal path. `massrename` is registered before the window is built because its `build_menu` (run in `__init__`) registers the `massrename-*` app actions and stores the `massrename-menu` widget that the headerbar and the right-click selection menu both consume.
+- Registration order: `crash`, `util`, `icons`, `factory`, `dialogs`, `actions`, `workflow`, `dr`, `secrets`, `venv`, `extlibs`, `webserver`, `repo`, `massrename`, `importdoc` (early); then `plugin-system` and `theme` (`Gtk.IconTheme`) once the window exists. `massrename` and `importdoc` are registered before the window is built because each builds its menu item(s) in `__init__` (`massrename-menu` widget; `importdoc.menuitem`) that the headerbar consumes when it is constructed.
 
 **Widgets** (`MiAZ/frontend/desktop/widgets/`): All GTK4+Adw widgets.
 
@@ -154,7 +154,7 @@ against the enabled config (`config.exists_used`) or, for dates,
 | `MiAZWorkspace` (workspace.py) | `workspace-loaded`, `workspace-view-updated`, `workspace-view-selection-changed`, `workspace-view-filtered` |
 | `MiAZConfig` (config.py) | `available-updated`, `used-updated` |
 | `MiAZConfigApp` (config.py) | `repo-settings-updated-app` |
-| `MiAZUtil` (util.py) | `filename-added`, `filename-deleted`, `filename-renamed`, `filename-imported` |
+| `MiAZUtil` (util.py) | `filename-added`, `filename-deleted`, `filename-renamed` |
 | `MiAZWatcher` (watcher.py) | `repository-updated` |
 | `MiAZRepository` (repository.py) | `repository-switched` |
 | `MiAZStats` (stats.py) | `stats-updated` |
@@ -238,7 +238,7 @@ This avoids the "duplicate child name in AdwViewStack" warning.
 
 ## Embedded web (webserver + Browser page)
 
-MiAZ ships a **minimal static-file HTTP server** and a built-in WebKit page so plugins can publish browsable HTML (reports, dashboards, newspapers) without bundling a server each.
+MiAZ ships a **minimal static-file HTTP server** and a built-in WebKit page so plugins can publish browsable HTML (reports, dashboards, summaries) without bundling a server each.
 
 > **Note:** there is no request-routing, action bridge (`miaz.invoke`), per-run token, or `run_on_main_loop` in the webserver. Earlier revisions of this file documented such an API; it does not exist in the code. `webserver.py` is ~130 lines of static serving only.
 
@@ -257,7 +257,7 @@ MiAZ ships a **minimal static-file HTTP server** and a built-in WebKit page so p
 
 ### WWW root and publishing convention
 
-The serving root is `ENV['LPATH']['WWW']` = `~/.MiAZ/var/www/html`. A plugin publishes a site by writing files to `<WWW>/<PluginName>/`, with an `index.html` at its top. The directory name is the page key; the matching plugin `Description` becomes its dropdown label. To make the Browser refresh, rewrite the page **directory** (the WWW monitor watches created/deleted/moved entries, not in-place edits): the `MiAZNewspaper` plugin `rmtree`s and recreates its dir on every republish for exactly this reason.
+The serving root is `ENV['LPATH']['WWW']` = `~/.MiAZ/var/www/html`. A plugin publishes a site by writing files to `<WWW>/<PluginName>/`, with an `index.html` at its top. The directory name is the page key; the matching plugin `Description` becomes its dropdown label. To make the Browser refresh, rewrite the page **directory** (the WWW monitor watches created/deleted/moved entries, not in-place edits): the `MiAZInsights` plugin `rmtree`s and recreates its dir on every republish for exactly this reason.
 
 ### Built-in Browser page (`MiAZBrowserPage`, `widgets/browserpage.py`)
 
@@ -286,24 +286,13 @@ Vendor third-party JS inside the plugin to keep resources local; fall back to a 
 
 ### Header bar "Add" menu (`widgets/mainwindow.py`)
 
-A `Gtk.MenuButton` (`headerbar-button-add`) with a persistent `Gio.Menu` (`headerbar-add-menu`) aggregates every **Import**-subcategory plugin action, so documents can be added even when filters leave the workspace empty (the "No documents found" page has no context menu). Built in `_populate_add_menu` by reusing each plugin's `plugin-menuitem-<name>` item; visibility kept in sync by `_update_add_button_visibility`; rebuilt on `plugins-updated`.
+A `Gtk.MenuButton` (`headerbar-button-add`) with a persistent `Gio.Menu` (`headerbar-add-menu`) aggregates the core `importdoc` action plus every **Import**-subcategory plugin action, so documents can be added even when filters leave the workspace empty (the "No documents found" page has no context menu). Built in `_populate_add_menu`, which always appends the core service's `importdoc.menuitem` first, then reuses each loaded Import plugin's `plugin-menuitem-<name>` item; visibility kept in sync by `_update_add_button_visibility` (always visible now that a core entry always exists); rebuilt on `plugins-updated`.
 
 ### Crash handling
 
 `MiAZCrashHandler` (`services/crash.py`, the first service installed) sets `sys.excepthook` and `threading.excepthook` to show a GUI crash dialog. `backend/crash.py` provides a console/log-only excepthook (`install_backend_excepthook`) for headless/backend contexts.
 
 The dialog is presented over the window the user is currently using, not always the main window. `_present_target` walks `Gtk.Window.get_toplevels()` and returns the visible, `is_active()` top-level, falling back to the main window when none is active. This keeps the dialog on top when a crash fires while a separate top-level (for example the rename window, `MiAZWindowDialog`) is in front. The "Try to Continue" response is offered only when the main window exists; a crash at startup shows "Close MiAZ" only.
-
-### Change journal
-
-`MiAZHistory` (`backend/history.py`, service `history`) keeps an append-only record of every document change MiAZ makes in a repository. It connects to `MiAZUtil`'s `filename-added`, `filename-renamed`, `filename-deleted` and `filename-imported` signals and writes one JSON object per line.
-
-- Storage: `<repo>/.history/<YYYYMM>.jsonl`, one file per month. The directory is dot-prefixed, so the document scanner (`get_files`, `get_files_recursively`) ignores it and it never appears as a document.
-- Record fields: `ts` (local time with offset), `event` (`added` / `renamed` / `deleted`), `origin` (`app`), and the path(s): `path` for add/delete, `source` + `target` for rename.
-- Import provenance: importing a file copies it under a normalized name, which is a single operation, not a rename, so it produces no `filename-renamed`. `filename_import(source, target, origin=None)` emits `filename-imported` (origin, target) just before `filename-added`. `origin` is a structured provenance object `{'type': ..., ...}`; it defaults to `{'type': 'file', 'path': <abs source>}`. `MiAZHistory` pairs the two signals (`_pending_imports`) so the `added` record carries that object verbatim under `source`. Importers that copy from a temporary file pass their own origin so the real provenance is kept, not the temp path: `MiAZImportFromZip` passes `{'type': 'zip', 'archive': <abs zip>, 'entry': <path inside the zip>}`, `MiAZAutoScan` passes `{'type': 'scan'}`. A future email importer would pass `{'type': 'email', ...}`. A plain `added` with no preceding `filename-imported` has no `source`.
-- Paths are stored relative to the repository root, so the journal stays valid when the repository is moved, copied or synced. A path that resolves outside the repository is kept absolute and flagged with `<key>_absolute: true`.
-- Reading back: `MiAZHistory.iter_records(root=None)` yields parsed records in chronological order (oldest month first), defaulting to the active repository.
-- Scope is app changes only. External edits (the watcher's `repository-updated`) are not journaled; the `origin` field leaves room to add them later.
 
 ### Mass rename
 
@@ -313,10 +302,14 @@ The menu is exposed from two places, both reusing the one stored `massrename-men
 - The workspace headerbar (`widgets/mainwindow.py`): a `Gtk.MenuButton` (`headerbar-button-massrename`) with the same `io.github.t00m.MiAZ-rename` icon as single rename. `_on_workspace_menu_update` shows the single-rename button when exactly one document is selected and this menu button when two or more are selected.
 - The right-click selection menu: `_append_massrename_submenu` adds a "Mass renaming" submenu, called from both `_setup_menu_selection` and `_on_plugins_updated` (which rebuilds the menu).
 
+### Add documents
+
+`MiAZImportDoc` (`services/importdoc.py`, service `importdoc`) adds documents to the repository from the local filesystem via `Gtk.FileDialog`. It was the `MiAZImportDoc` plugin and is now core, because every repository needs a way to add its first document and that action should not be behind an optional, togglable plugin. `__init__` builds its `Gio.MenuItem` once (`factory.create_menuitem`, action `import-doc`, shortcut `<Control>Insert`) and stores it as `self.menuitem`; `import_files`/`_on_filechooser_response` do the actual copy (`util.filename_normalize` + `util.filename_import`), reporting successes and failures via toast/error dialog.
+
 ## Plugin system
 
 ### Location
-- **System** (bundled): `~/.local/share/MiAZ/resources/plugins/` (20 plugins with `.plugin` metadata)
+- **System** (bundled): `~/.local/share/MiAZ/resources/plugins/` (19 plugins with `.plugin` metadata)
 - **User** (imported): `~/.MiAZ/opt/plugins/`
 
 ### Discovery
@@ -413,6 +406,10 @@ class MyPlugin(MiAZExtension):
 - `get_menu_item(callback)` → `Gio.MenuItem` (registered as app action)
 - `install_menu_entry(menuitem)`,  appends to workspace menu under category/subcategory
 - `add_workspace_page(widget, name, title, icon_name=None)`,  registers a page on the workspace's `Adw.ViewStack`
+- `register_document_tab(name, title, factory, icon_name=None, weight=100)` / `unregister_document_tabs()`,  contributes a tab to the single-document rename dialog (see below)
+- `get_source_dir()` → the plugin folder, looked up by `Name` then by `Module`
+- `get_icon_path()` → `<source_dir>/icon.svg` or `icon.png`, or `None`
+- `get_icon_name()` → themed icon name, the plugin's own icon or the generic MiAZ plugin icon; never empty
 - `get_logger()` → named logger `Plugin.<Name>`
 - `get_name()` → plugin name string
 - `get_widget_name()` → `plugin-<Module>` identifier
@@ -420,6 +417,67 @@ class MyPlugin(MiAZExtension):
 - `get_plugin_info_key(key)` → specific info key value
 - `menu_item_loaded()` → `bool`, checks if menu item is registered
 - `set_started(True/False)` / `started()` → toggle/query started state
+
+### Document tabs (rename dialog)
+
+The single-document rename dialog is an `Adw.ViewStack`. Its first page,
+**Fields**, holds the seven filename fields; plugins add further pages through
+the `document-tabs` service (`frontend/desktop/services/doctabs.py`). With no
+tab registered, the view switcher is not installed and the dialog looks as it
+always did.
+
+```python
+# in startup()
+self.plugin.register_document_tab(
+    name='projects', title=_('Projects'),
+    factory=lambda app: MiAZProjectTab(app, self.config),
+    weight=100)
+
+# in do_deactivate()
+self.plugin.unregister_document_tabs()
+```
+
+`factory(app)` is called once per dialog and returns a `Gtk.Widget`. Tabs are
+ordered by `(weight, title)`; Fields is always first. Registering a name twice
+replaces it, and `MiAZPluginSystem.unload_plugin` drops a plugin's tabs even if
+it forgets to.
+
+**Icons.** Leave `icon_name` unset and the tab wears the plugin's own icon.
+Every plugin has one: ship `icon.svg` or `icon.png` next to the module and it is
+exported into `~/.MiAZ/opt/icons` as `miaz-plugin-<module>`, which the icon
+theme resolves; a plugin without an icon file gets the generic MiAZ plugin icon.
+`MiAZPlugin.get_icon_name()` returns that name and never an empty value, so it
+suits anything taking an icon name.
+
+The widget answers a duck-typed contract:
+
+| Method | When | Required |
+|---|---|---|
+| `set_document(doc_id)` | once, when the dialog opens | yes |
+| `apply(old_id, new_id)` | after the rename succeeded | yes |
+| `is_valid()` | before renaming; `False` vetoes and shows the tab | no |
+| `discard()` | on Cancel | no |
+
+`apply` should return `True` when it actually wrote something, so the dialog can
+tell an empty apply from a real one (it shows a toast when only tab edits were
+saved).
+
+**Hold the edits.** A tab must not write anything while the user edits it. The
+dialog calls `apply(old_id, new_id)` only after the rename went through, so
+Cancel discards tab edits the same way it discards field changes. By then
+`filename-renamed` has already fired, so plugin data has moved to the new name
+and `apply` writes against `new_id`. Every call is wrapped in try/except by the
+dialog: a failing tab logs and never blocks the rename.
+
+**A document can be opened here without renaming it.** When every filename field
+is left alone (the user came only to set a project or a periodicity), there is
+nothing to rename: `util.filename_rename` would return `False`, which also means
+"the rename failed". The dialog checks `util.filename_rename_needed(source,
+target)` first and, when no rename is due, skips the confirmation, calls
+`apply(doc_id, doc_id)` with the unchanged name and closes.
+
+For header-bar additions rather than a tab (the AI "Suggest" button), connect to
+the `rename-dialog-built` signal on the `actions` service instead.
 
 ### Plugin dependencies
 
@@ -500,7 +558,7 @@ ninja -C _build install
 PYTHONPATH=. python -m MiAZ.miaz
 ```
 
-## Existing plugins (20 with `.plugin` metadata)
+## Existing plugins (19 with `.plugin` metadata)
 
 | Plugin | Category / Subcategory | Purpose |
 |---|---|---|
@@ -514,17 +572,15 @@ PYTHONPATH=. python -m MiAZ.miaz
 | MiAZExport2Text | Data Management / Export | Export to text editor |
 | MiAZExport2Zip | Data Management / Export | Compress documents into a ZIP file |
 | MiAZFullscreen | Customisation and Personalisation / User Interface | Toggle fullscreen |
-| MiAZImportDoc | Data Management / Import | Add new document(s) |
 | MiAZImportFromScan | Data Management / Import | Import document from scanner |
 | MiAZImportFromZip | Data Management / Import | Import documents from a ZIP file |
-| MiAZNewspaper | Data Management / Visualization | Publishes the workspace as a "MiAZ Times" broadsheet HTML site in the Browser page |
+| MiAZInsights | Analytics and Reporting / Custom Reports | Insights into the repository (totals, activity heatmap, rank movers, country map) published to the Browser page |
 | MiAZNotes | Collaboration / Comments and Annotations | Take Markdown notes linked to documents (adds a workspace page) |
 | MiAZOCR | Artificial Intelligence / Document AI | Extract text from PDFs with OCR and save as a note (depends on MiAZNotes; vetoes activation if `ocrmypdf` is missing) |
 | MiAZPeriodicity | Content Organisation / Tagging and Classification | Set document periodicity |
 | MiAZProjectMgt | Content Organisation / Tagging and Classification | Project management |
 | MiAZWSFont | Customisation and Personalisation / User Interface | Modify workspace font name and size |
-| MiAZYearReport | Analytics and Reporting / Custom Reports | Printable yearly summary report published to the Browser page |
 
 WIP plugin directories without a `.plugin` file yet (not loaded): `MiAZDeleteDoc`, `MiAZRenameDoc`, `MiAZViewDoc`, `MiAZWorkspaceToggleView`.
 
-`MiAZNewspaper` and `MiAZYearReport` are the reference examples for the WWW-publish + Browser-page pattern; `MiAZAutoScan` and `MiAZOCR` show background-thread work and vetoable activation.
+`MiAZInsights` is the reference example for the WWW-publish + Browser-page pattern; `MiAZAutoScan` and `MiAZOCR` show background-thread work and vetoable activation.

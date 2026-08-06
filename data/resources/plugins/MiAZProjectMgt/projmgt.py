@@ -345,6 +345,97 @@ class MiAZProjectsView(MiAZConfigView):
             srvdlg.show_error(title=title, body=text, widget=widget, width=600, height=480, parent=window)
 
 
+# Rename dialog tab
+class MiAZProjectTab(Gtk.Box):
+    """Projects of a single document, shown as a tab in the rename dialog.
+
+    Nothing is written while the user ticks boxes: the rename dialog calls
+    apply() only after the document has actually been renamed, so cancelling
+    leaves the assignments untouched.
+    """
+    __gtype_name__ = 'MiAZProjectTab'
+
+    def __init__(self, app, config):
+        super().__init__(orientation=Gtk.Orientation.VERTICAL, spacing=6,
+                         hexpand=True, vexpand=True)
+        self.app = app
+        self.config = config
+        self.log = MiAZLog('MiAZ.ProjectTab')
+        self.factory = self.app.get_service('factory')
+        self.doc_id = None
+        self.checks = {}
+
+        self.set_margin_top(6)
+        self.set_margin_bottom(6)
+        self.set_margin_start(6)
+        self.set_margin_end(6)
+
+        label = Gtk.Label()
+        label.set_xalign(0.0)
+        label.add_css_class('dim-label')
+        label.set_text(_('Projects this document belongs to'))
+        self.append(label)
+
+        self.listbox = Gtk.ListBox.new()
+        self.listbox.set_hexpand(True)
+        frame = Gtk.Frame()
+        frame.set_child(self.listbox)
+        scroll = Gtk.ScrolledWindow()
+        scroll.set_vexpand(True)
+        scroll.set_hexpand(True)
+        scroll.set_child(frame)
+        self.append(scroll)
+
+        self.empty = Gtk.Label()
+        self.empty.set_xalign(0.0)
+        self.empty.add_css_class('dim-label')
+        self.empty.set_text(_('No projects available yet. Create one from Projects management.'))
+        self.empty.set_visible(False)
+        self.append(self.empty)
+
+        self._build_rows()
+
+    def _build_rows(self):
+        projects = self.config.load_used()
+        self.checks = {}
+        for pid in sorted(projects, key=lambda key: projects[key].lower()):
+            check = self.factory.create_button_check(title='', active=False)
+            check.set_valign(Gtk.Align.CENTER)
+            row = self.factory.create_actionrow(title=projects[pid], suffix=check)
+            self.listbox.append(row)
+            self.checks[pid] = check
+        self.empty.set_visible(len(self.checks) == 0)
+
+    # Document tab contract
+    def set_document(self, doc_id):
+        self.doc_id = doc_id
+        srvprj = self.app.get_service('Projects')
+        assigned = set(srvprj.assigned_to(doc_id)) if srvprj is not None else set()
+        for pid, check in self.checks.items():
+            check.set_active(pid in assigned)
+
+    def apply(self, old_id, new_id):
+        """Write the ticked projects. True when something actually changed."""
+        srvprj = self.app.get_service('Projects')
+        if srvprj is None:
+            return False
+        wanted = {pid for pid, check in self.checks.items() if check.get_active()}
+        if wanted == set(srvprj.assigned_to(new_id)):
+            return False
+        # Same order as the workspace action: clear every assignment, then add
+        # the chosen ones. A document always belongs somewhere, so an empty
+        # selection falls back to the default bucket.
+        srvprj.remove_batch('', [new_id], notify=False)
+        for pid in wanted:
+            srvprj.add_batch(pid, [new_id], notify=False)
+        if not wanted:
+            srvprj.add_batch(DEFAULT_PROJECT, [new_id], notify=False)
+        workspace = self.app.get_widget('workspace')
+        if workspace is not None:
+            workspace.update()
+        return True
+
+
 class MiAZProjectMgt(MiAZExtension):
     __gtype_name__ = 'MiAZProjectMgt'
     plugin = None
@@ -391,6 +482,7 @@ class MiAZProjectMgt(MiAZExtension):
             dropdown.disconnect(self._selected_item_handler)
         if hasattr(self, '_startup_handler'):
             self.workspace.disconnect(self._startup_handler)
+        self.plugin.unregister_document_tabs()
         self.app.set_service('Projects', None)
         self.plugin.set_started(False)
 
@@ -474,6 +566,13 @@ class MiAZProjectMgt(MiAZExtension):
             else:
                 # Sidebar already set up
                 self.srvprj = self.app.get_service('Projects')
+
+            # Projects of the document being renamed, as a tab in that dialog.
+            self.plugin.register_document_tab(
+                name='projects',
+                title=item_type.__title_plural__,
+                factory=lambda app: MiAZProjectTab(app, self.config),
+                weight=100)
 
             self.plugin.set_started(started=True)
 

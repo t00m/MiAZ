@@ -1,0 +1,602 @@
+/* ===========================================================================
+   MiAZInsights stylesheet
+
+   Inlined into index.html at build time, so it never fetches anything: the
+   published page has to work over file:// inside the WebKit view and print
+   without a network.
+
+   Colour roles follow the MiAZ data-viz palette. Light and dark are two
+   selected sets of steps, not an automatic flip. The dark values are declared
+   twice on purpose: the media query follows the OS/app setting, the
+   [data-theme] scope follows the in-page toggle, and the toggle must win in
+   both directions.
+   ========================================================================== */
+
+:root {
+  color-scheme: light;
+
+  --plane:        #f9f9f7;
+  --surface:      #fcfcfb;
+  --ink:          #0b0b0b;
+  --ink-2:        #52514e;
+  --ink-3:        #898781;
+  --grid:         #e1e0d9;
+  --axis:         #c3c2b7;
+  --border:       rgba(11, 11, 11, 0.10);
+  --shadow:       0 1px 2px rgba(11, 11, 11, 0.04), 0 8px 24px rgba(11, 11, 11, 0.04);
+  --accent:       #2a78d6;
+  --accent-ink:   #ffffff;
+  --accent-wash:  rgba(42, 120, 214, 0.08);
+
+  /* Sequential blue, near-zero first. On the light surface magnitude gets
+     darker; the dark theme flips the direction so magnitude always moves away
+     from the surface. */
+  --seq-1: #cde2fb;
+  --seq-2: #9ec5f4;
+  --seq-3: #5598e7;
+  --seq-4: #2a78d6;
+  --seq-5: #184f95;
+  --cell-empty: #eceae4;
+  /* De-emphasised column, so the peak of the year reads as the peak. It has to
+     recede from the surface in each theme, which means lighter on light and
+     darker on dark. */
+  --stem-quiet: #9ec5f4;
+
+  --radius:   12px;
+  --radius-s: 8px;
+  --measure:  1040px;
+  --sans: system-ui, -apple-system, "Cantarell", "Segoe UI", Roboto, sans-serif;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:where(:not([data-theme="light"])) {
+    color-scheme: dark;
+    --plane:       #0d0d0d;
+    --surface:     #1a1a19;
+    --ink:         #ffffff;
+    --ink-2:       #c3c2b7;
+    --ink-3:       #898781;
+    --grid:        #2c2c2a;
+    --axis:        #383835;
+    --border:      rgba(255, 255, 255, 0.10);
+    --shadow:      none;
+    --accent:      #3987e5;
+    --accent-ink:  #06121f;
+    --accent-wash: rgba(57, 135, 229, 0.14);
+    --seq-1: #184f95;
+    --seq-2: #256abf;
+    --seq-3: #3987e5;
+    --seq-4: #6da7ec;
+    --seq-5: #9ec5f4;
+    --cell-empty: #242422;
+    --stem-quiet: #184f95;
+  }
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --plane:       #0d0d0d;
+  --surface:     #1a1a19;
+  --ink:         #ffffff;
+  --ink-2:       #c3c2b7;
+  --ink-3:       #898781;
+  --grid:        #2c2c2a;
+  --axis:        #383835;
+  --border:      rgba(255, 255, 255, 0.10);
+  --shadow:      none;
+  --accent:      #3987e5;
+  --accent-ink:  #06121f;
+  --accent-wash: rgba(57, 135, 229, 0.14);
+  --seq-1: #184f95;
+  --seq-2: #256abf;
+  --seq-3: #3987e5;
+  --seq-4: #6da7ec;
+  --seq-5: #9ec5f4;
+  --cell-empty: #242422;
+  --stem-quiet: #184f95;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html, body { margin: 0; padding: 0; }
+
+body {
+  background: var(--plane);
+  color: var(--ink);
+  font-family: var(--sans);
+  font-size: 15px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+.wrap { max-width: var(--measure); margin: 0 auto; padding: 20px 24px 56px; }
+
+/* ── header ──────────────────────────────────────────────────────────────── */
+
+.masthead {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  padding-bottom: 14px;
+}
+
+.masthead h1 {
+  margin: 0;
+  font-size: 21px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+/* On screen the selected pill says which view this is. On paper there are no
+   pills, so the heading carries it. */
+.masthead .scope { display: none; }
+
+.masthead .repo {
+  color: var(--ink-2);
+  font-size: 13px;
+  margin-top: 2px;
+}
+
+.tools { display: flex; gap: 8px; align-items: center; }
+
+.tools button {
+  font: inherit;
+  font-size: 13px;
+  color: var(--ink-2);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 6px 14px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.tools button:hover { background: var(--accent-wash); color: var(--ink); }
+.tools button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* ── scope selectors ─────────────────────────────────────────────────────── */
+
+.scopebar {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 18px;
+  background: var(--plane);
+  border-bottom: 1px solid var(--border);
+  padding: 10px 0 12px;
+  margin-bottom: 22px;
+}
+
+.scopebar .field { display: inline-flex; align-items: center; gap: 8px; }
+
+.scopebar .field > span {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--ink-3);
+}
+
+.scopebar select {
+  font: inherit;
+  font-size: 13px;
+  color: var(--ink);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 5px 10px;
+  min-width: 11em;
+  cursor: pointer;
+}
+
+.scopebar select:hover { border-color: var(--accent); }
+.scopebar select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.scopebar select:disabled { color: var(--ink-3); cursor: default; }
+
+/* ── sections and cards ──────────────────────────────────────────────────── */
+
+section {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 20px 22px;
+  margin-bottom: 18px;
+}
+
+section > h2 {
+  margin: 0 0 2px;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+section > .note {
+  margin: 0 0 16px;
+  color: var(--ink-3);
+  font-size: 12.5px;
+}
+
+section > h2 + :not(.note) { margin-top: 16px; }
+
+/* hero: exactly one per view */
+.hero { display: flex; flex-wrap: wrap; align-items: baseline; gap: 10px 14px; }
+.hero .figure { font-size: 52px; font-weight: 650; line-height: 1; letter-spacing: -0.02em; }
+.hero .figure-label { font-size: 15px; color: var(--ink-2); }
+.hero .span { margin-left: auto; color: var(--ink-3); font-size: 13px; text-align: right; }
+
+.tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.tile {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-s);
+  padding: 12px 14px;
+  background: var(--surface);
+}
+
+.tile .label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--ink-3);
+}
+
+.tile .value { font-size: 26px; font-weight: 600; line-height: 1.2; margin-top: 4px; word-break: break-word; }
+.tile .value.small { font-size: 19px; }
+.tile .hint { font-size: 12px; color: var(--ink-2); margin-top: 3px; }
+
+/* ── ranked bars ─────────────────────────────────────────────────────────── */
+
+.rank { display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; align-items: center; }
+.rank.numbered { grid-template-columns: auto auto 1fr; }
+
+.rank .idx {
+  font-size: 12px;
+  color: var(--ink-3);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  min-width: 1.4em;
+}
+
+.rank .name {
+  font-size: 13.5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 22ch;
+}
+
+/* The bar plus its value, on one line. Used by the ranked lists and by the
+   per-year trend, so it is not scoped to either. */
+.track { display: flex; align-items: center; gap: 10px; padding: 3px 0; min-width: 0; }
+
+/* The bar lives in its own flexible cell, so its width is a share of the plot
+   area and never of whatever is left after the value labels. */
+.plot { flex: 1 1 auto; min-width: 0; }
+
+.bar {
+  height: 14px;
+  min-width: 3px;
+  background: var(--accent);
+  border-radius: 0 4px 4px 0;
+  transform-origin: left center;
+}
+
+.bar.quiet { background: var(--stem-quiet); }
+
+.reveal .bar { animation: grow 420ms cubic-bezier(0.22, 0.8, 0.3, 1) both; }
+
+@keyframes grow { from { transform: scaleX(0.02); } to { transform: scaleX(1); } }
+
+.rank .count {
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-2);
+  min-width: 3.5ch;
+}
+
+.rank .share { font-size: 12px; color: var(--ink-3); font-variant-numeric: tabular-nums; }
+
+/* ── year trend (overview) ───────────────────────────────────────────────── */
+
+.trend { display: grid; grid-template-columns: auto 1fr; gap: 2px 12px; align-items: center; }
+
+.trend .yr {
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-2);
+  background: none;
+  border: 0;
+  padding: 2px 4px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.trend .yr:hover { color: var(--ink); background: var(--accent-wash); }
+.trend .yr:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+.delta {
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-3);
+  white-space: nowrap;
+  min-width: 6ch;
+}
+
+/* ── month columns (year view) ───────────────────────────────────────────── */
+
+.columns {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 8px;
+  align-items: end;
+  height: 168px;
+  border-bottom: 1px solid var(--axis);
+  padding-bottom: 0;
+}
+
+.col { display: flex; flex-direction: column; align-items: center; justify-content: flex-end; height: 100%; gap: 6px; }
+.col .cap { font-size: 11.5px; color: var(--ink-2); font-variant-numeric: tabular-nums; height: 14px; }
+
+.col .stem {
+  width: 100%;
+  max-width: 24px;
+  background: var(--accent);
+  border-radius: 4px 4px 0 0;
+  min-height: 2px;
+  transform-origin: bottom center;
+}
+
+.col.quiet .stem { background: var(--stem-quiet); }
+.reveal .col .stem { animation: rise 460ms cubic-bezier(0.22, 0.8, 0.3, 1) both; }
+
+@keyframes rise { from { transform: scaleY(0.02); } to { transform: scaleY(1); } }
+
+.month-axis { display: grid; grid-template-columns: repeat(12, 1fr); gap: 8px; margin-top: 7px; }
+.month-axis div { text-align: center; font-size: 11.5px; color: var(--ink-3); }
+
+/* ── heatmap ─────────────────────────────────────────────────────────────── */
+
+.heat { display: grid; gap: 4px; }
+.heat-row { display: grid; grid-template-columns: 4.2em repeat(12, minmax(0, 1fr)) 3.5em; gap: 4px; align-items: center; }
+
+.heat-row .yr {
+  font-size: 12.5px;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-2);
+  background: none;
+  border: 0;
+  padding: 0;
+  text-align: left;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.heat-row .yr:hover { color: var(--ink); text-decoration: underline; }
+.heat-row .yr:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.heat-row .sum { font-size: 12.5px; font-variant-numeric: tabular-nums; color: var(--ink-2); text-align: right; }
+
+/* Fixed height, flexible width: twelve square-ish cells per row would be
+   chunky blocks on a wide window. */
+.cell { height: 20px; border-radius: 3px; background: var(--cell-empty); }
+.cell.s1 { background: var(--seq-1); }
+.cell.s2 { background: var(--seq-2); }
+.cell.s3 { background: var(--seq-3); }
+.cell.s4 { background: var(--seq-4); }
+.cell.s5 { background: var(--seq-5); }
+.reveal .cell { animation: fade 520ms ease both; }
+
+@keyframes fade { from { opacity: 0; } to { opacity: 1; } }
+
+.heat-head { display: grid; grid-template-columns: 4.2em repeat(12, minmax(0, 1fr)) 3.5em; gap: 4px; margin-bottom: 6px; }
+.heat-head div { font-size: 11px; color: var(--ink-3); text-align: center; }
+.heat-head div:first-child, .heat-head div:last-child { text-align: left; }
+
+.legend { display: flex; align-items: center; gap: 6px; margin-top: 14px; font-size: 11.5px; color: var(--ink-3); }
+.legend .swatch { width: 13px; height: 13px; border-radius: 3px; }
+
+/* ── world map ───────────────────────────────────────────────────────────── */
+
+.mapwrap { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(220px, 1fr); gap: 24px; align-items: start; }
+
+@media (max-width: 760px) {
+  .mapwrap { grid-template-columns: minmax(0, 1fr); }
+}
+
+.mapbox svg { width: 100%; height: auto; display: block; }
+
+/* Countries with nothing in the selection stay in the empty tone; the surface
+   coloured hairline is what separates neighbours, the same job the 2px gap does
+   between bars. */
+.mapbox path {
+  fill: var(--grid);
+  stroke: var(--surface);
+  stroke-width: 0.5;
+  vector-effect: non-scaling-stroke;
+}
+
+.mapbox path.here.s1 { fill: var(--seq-1); }
+.mapbox path.here.s2 { fill: var(--seq-2); }
+.mapbox path.here.s3 { fill: var(--seq-3); }
+.mapbox path.here.s4 { fill: var(--seq-4); }
+.mapbox path.here.s5 { fill: var(--seq-5); }
+
+/* Marker for countries too small to see at this scale. Hidden until the
+   country actually holds documents. */
+.mapbox circle.pin { display: none; }
+
+.mapbox circle.pin.on {
+  display: inline;
+  stroke: var(--surface);
+  stroke-width: 1.5;
+  vector-effect: non-scaling-stroke;
+}
+
+.mapbox circle.pin.on.s1 { fill: var(--seq-1); }
+.mapbox circle.pin.on.s2 { fill: var(--seq-2); }
+.mapbox circle.pin.on.s3 { fill: var(--seq-3); }
+.mapbox circle.pin.on.s4 { fill: var(--seq-4); }
+.mapbox circle.pin.on.s5 { fill: var(--seq-5); }
+
+/* ── movers ──────────────────────────────────────────────────────────────── */
+
+.movers, .duo { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 22px 30px; }
+.movers h3 { margin: 0 0 10px; font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-3); font-weight: 600; }
+.movers ol { list-style: none; margin: 0; padding: 0; }
+
+.movers li {
+  display: grid;
+  grid-template-columns: 1.6em 1fr auto auto;
+  gap: 10px;
+  align-items: center;
+  padding: 5px 0;
+  border-bottom: 1px solid var(--grid);
+  font-size: 13.5px;
+}
+
+.movers li:last-child { border-bottom: 0; }
+.movers .idx { color: var(--ink-3); font-size: 12px; font-variant-numeric: tabular-nums; text-align: right; }
+.movers .name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.movers .total { font-variant-numeric: tabular-nums; color: var(--ink-2); font-size: 13px; }
+
+.chip {
+  font-size: 11px;
+  border-radius: 999px;
+  padding: 2px 8px;
+  border: 1px solid var(--border);
+  color: var(--ink-2);
+  white-space: nowrap;
+}
+
+.chip.up { border-color: rgba(12, 163, 12, 0.35); }
+.chip.down { border-color: rgba(208, 59, 59, 0.35); }
+.chip.new { background: var(--accent-wash); border-color: transparent; color: var(--ink); }
+.chip.gone { color: var(--ink-3); }
+
+/* ── milestones ──────────────────────────────────────────────────────────── */
+
+.facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 14px 26px; }
+.facts .fact { border-left: 2px solid var(--accent); padding-left: 12px; }
+.facts .k { font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-3); }
+.facts .v { font-size: 15px; margin-top: 2px; }
+.facts .s { font-size: 12.5px; color: var(--ink-2); }
+
+/* ── tag lists (new this year) ───────────────────────────────────────────── */
+
+.tags { display: flex; flex-wrap: wrap; gap: 6px; }
+
+.tags span {
+  font-size: 12.5px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 3px 11px;
+  color: var(--ink-2);
+}
+
+.tags .rest { border-style: dashed; color: var(--ink-3); }
+.tags.empty-note { color: var(--ink-3); font-size: 12.5px; }
+
+.subhead { font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-3); font-weight: 600; margin: 0 0 8px; }
+.stack > * + * { margin-top: 18px; }
+
+/* ── data tables (the non-visual reading of every chart) ─────────────────── */
+
+details.data { margin-top: 16px; }
+
+details.data > summary {
+  font-size: 12px;
+  color: var(--ink-3);
+  cursor: pointer;
+  list-style: none;
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+}
+
+details.data > summary::-webkit-details-marker { display: none; }
+details.data > summary::before { content: "▸"; font-size: 10px; }
+details.data[open] > summary::before { content: "▾"; }
+details.data > summary:hover { color: var(--ink-2); }
+
+table { width: 100%; border-collapse: collapse; font-size: 12.5px; margin-top: 10px; }
+th, td { text-align: right; padding: 4px 6px; border-bottom: 1px solid var(--grid); font-variant-numeric: tabular-nums; }
+th:first-child, td:first-child { text-align: left; }
+th { color: var(--ink-3); font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; }
+
+/* ── tooltip ─────────────────────────────────────────────────────────────── */
+
+#tip {
+  position: fixed;
+  z-index: 40;
+  pointer-events: none;
+  opacity: 0;
+  transform: translate(-50%, -125%);
+  transition: opacity 90ms ease;
+  background: var(--ink);
+  color: var(--plane);
+  font-size: 12px;
+  line-height: 1.35;
+  padding: 5px 9px;
+  border-radius: 6px;
+  white-space: nowrap;
+  max-width: 60ch;
+}
+
+#tip.on { opacity: 1; }
+
+/* ── footer, empty state, view transition ────────────────────────────────── */
+
+footer {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  color: var(--ink-3);
+  font-size: 12px;
+  padding-top: 6px;
+}
+
+.empty { padding: 90px 20px; text-align: center; color: var(--ink-3); }
+
+#view { animation: enter 220ms ease both; }
+
+@keyframes enter { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+@media (prefers-reduced-motion: reduce) {
+  #view, .reveal .bar, .reveal .col .stem, .reveal .cell { animation: none; }
+  * { transition: none !important; }
+}
+
+/* ── print ───────────────────────────────────────────────────────────────── */
+
+@media print {
+  :root {
+    color-scheme: light;
+    --plane: #ffffff;
+    --surface: #ffffff;
+    --ink: #0b0b0b;
+    --ink-2: #52514e;
+    --ink-3: #6d6b66;
+    --shadow: none;
+  }
+  .no-print { display: none !important; }
+  .masthead .scope { display: inline; color: var(--ink-2); font-weight: 400; }
+  .wrap { max-width: none; padding: 0; }
+  body { font-size: 11.5px; }
+  section { break-inside: avoid; page-break-inside: avoid; border-color: #d8d6d0; }
+  #view { animation: none; }
+  /* Tooltips do not print, so the tables carry the values on paper. The JS
+     opens every <details> before printing. */
+  details.data > summary { display: none; }
+  * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}
+
+@page { size: A4; margin: 14mm; }

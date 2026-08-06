@@ -15,6 +15,7 @@ from gi.repository import Gtk
 
 from MiAZ.backend.log import MiAZLog
 from MiAZ.frontend.desktop.services.pluginsystem import MiAZPluginSystem
+from MiAZ.frontend.desktop.services.pluginsystem import format_load_failure_toast
 from MiAZ.frontend.desktop.services.icm import MiAZIconManager
 from MiAZ.frontend.desktop.services.factory import MiAZFactory
 from MiAZ.frontend.desktop.services.actions import MiAZActions
@@ -27,8 +28,9 @@ from MiAZ.frontend.desktop.widgets.mainwindow import MiAZMainWindow
 from MiAZ.backend.util import MiAZUtil
 from MiAZ.backend.config import MiAZConfigApp
 from MiAZ.backend.repository import MiAZRepository
-from MiAZ.backend.history import MiAZHistory
 from MiAZ.frontend.desktop.services.massrename import MiAZMassRename
+from MiAZ.frontend.desktop.services.importdoc import MiAZImportDoc
+from MiAZ.frontend.desktop.services.doctabs import MiAZDocumentTabs
 from MiAZ.backend.config import MiAZConfigRepositories
 from MiAZ.backend.status import MiAZStatus
 from MiAZ.backend.dr import MiAZDR
@@ -73,8 +75,9 @@ class MiAZApp(Adw.Application):
         self.set_service('webserver', MiAZWebServer(self))
         repository = self.set_service('repo', MiAZRepository(self))
         repository.connect('repository-switched', workflow.switch_finish)
-        self.set_service('history', MiAZHistory(self))
         self.set_service('massrename', MiAZMassRename(self))
+        self.set_service('importdoc', MiAZImportDoc(self))
+        self.set_service('document-tabs', MiAZDocumentTabs(self))
         self._env = None
         self.conf = None
 
@@ -162,6 +165,8 @@ class MiAZApp(Adw.Application):
         self.log.debug(f"Add ENV['GPATH']['ICONS'] ({ENV['GPATH']['ICONS']}) to the theme search path")
         theme.add_search_path(ENV['GPATH']['FLAGS'])
         self.log.debug(f"Add ENV['GPATH']['FLAGS'] ({ENV['GPATH']['FLAGS']}) to the theme search path")
+        theme.add_search_path(ENV['LPATH']['ICONS'])
+        self.log.debug(f"Add ENV['LPATH']['ICONS'] ({ENV['LPATH']['ICONS']}) to the theme search path")
         self.log.debug(f"MiAZ custom icons in: {ENV['GPATH']['ICONS']}")
 
         # Setup main window contents
@@ -223,8 +228,8 @@ class MiAZApp(Adw.Application):
                     if not plugin_manager.is_plugin_loaded(plugin):
                         plugins_used = config_plugins.load_used().keys() if config_plugins else []
                         if plugin_name in plugins_used:
-                            plugin_manager.load_plugin(plugin)
-                            na += 1
+                            if plugin_manager.load_plugin(plugin):
+                                na += 1
                         else:
                             self.log.info(f"Plugin {plugin_name} skipped (not enabled for this repository)")
                     else:
@@ -234,6 +239,17 @@ class MiAZApp(Adw.Application):
                 nt += 1
             self.log.info(f"Plugins activated: {na} of {nt}")
             self.set_plugins_loaded(True)
+            failures = plugin_manager.get_load_failures()
+            if failures:
+                GLib.idle_add(self._notify_plugin_load_failures, len(failures))
+
+    def _notify_plugin_load_failures(self, count):
+        """Show one summary toast for plugins that failed to load. Runs on idle
+        so the toast overlay exists. Returns False so GLib does not repeat it."""
+        dialogs = self.get_service('dialogs')
+        if dialogs is not None:
+            dialogs.show_toast(format_load_failure_toast(count), timeout=5)
+        return False
 
     def get_config(self, name: str):
         try:
