@@ -224,7 +224,10 @@ class MiAZInsightsPlugin(MiAZExtension):
             ('past-month', _('Since past month'), util.since_date_last_n_months(now, 1)),
             ('last-3-months', _('Since last 3 months'), util.since_date_last_n_months(now, 3)),
             ('last-6-months', _('Since last 6 months'), util.since_date_last_n_months(now, 6)),
-            ('this-year', _('Since last year'), util.since_date_this_year(now)),
+            # The last twelve months, matching the workspace date filter. Both
+            # used since_date_this_year, so the label said "last year" while the
+            # window was the calendar year to date.
+            ('last-12-months', _('Since last year'), util.since_date_last_n_months(now, 12)),
             ('two-years', _('Since two years ago'), util.since_date_past_n_years_ago(now, 2)),
             ('three-years', _('Since three years ago'), util.since_date_past_n_years_ago(now, 3)),
             ('five-years', _('Since five years ago'), util.since_date_past_n_years_ago(now, 5)),

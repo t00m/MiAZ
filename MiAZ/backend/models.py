@@ -202,6 +202,17 @@ class Date(MiAZModel):
     __config_name_available__ = 'dates'
     __config_name_used__ = 'dates'
 
+    def __init__(self, id: str, title: str = '', preset: str = ''):
+        super().__init__(id, title)
+        # Which sidebar date entry this is, as a stable token (see
+        # backend/query.py). The id holds today's resolved range and the title
+        # is translated, so neither can identify the entry later.
+        self._preset = preset
+
+    @GObject.Property
+    def preset(self):
+        return self._preset
+
 
 class Document(MiAZModel):
     __gtype_name__ = 'Document'

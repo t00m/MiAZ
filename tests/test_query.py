@@ -15,7 +15,8 @@ gi.require_version('GLib', '2.0')
 
 from MiAZ.backend.models import MiAZItem
 from MiAZ.backend.query import (
-    ANY, DATE_ALL, DATE_NONE, DATE_RANGE, NONE, DocumentQuery, parse_date)
+    ANY, DATE_ALL, DATE_NONE, DATE_PRESET_ALL, DATE_PRESET_THIS_MONTH,
+    DATE_PRESETS, DATE_RANGE, NONE, DocumentQuery, parse_date)
 
 
 def item(**kwargs):
@@ -369,3 +370,56 @@ def test_from_dict_ignores_unknown_keys():
     """A saved search written by a newer version must not crash an older one."""
     restored = DocumentQuery.from_dict({'country': 'ES', 'nonexistent': 1})
     assert restored.country == 'ES'
+
+
+# ---------------------------------------------------------------------------
+# Date presets: what a saved search should remember instead of raw dates
+# ---------------------------------------------------------------------------
+
+def test_a_query_has_no_date_preset_by_default():
+    assert DocumentQuery().date_preset == ''
+
+
+def test_a_query_can_carry_a_date_preset():
+    query = DocumentQuery(date_preset=DATE_PRESET_THIS_MONTH)
+    assert query.date_preset == 'this-month'
+
+
+def test_the_preset_does_not_decide_what_matches():
+    """The preset says which sidebar entry produced the range. Filtering still
+    reads date_mode and the bounds, so a stale preset cannot hide a document.
+    """
+    query = DocumentQuery(
+        date_preset=DATE_PRESET_THIS_MONTH,
+        date_mode=DATE_RANGE,
+        date_since=date(2024, 1, 1),
+        date_until=date(2024, 12, 31))
+    assert query.matches(item()) is True
+
+
+def test_a_preset_round_trips_through_a_dict():
+    query = DocumentQuery(date_preset=DATE_PRESET_THIS_MONTH,
+                          date_mode=DATE_RANGE,
+                          date_since=date(2024, 1, 1),
+                          date_until=date(2024, 12, 31))
+    assert DocumentQuery.from_dict(query.to_dict()) == query
+
+
+def test_the_preset_survives_without_bounds():
+    """What a saved search stores: the preset alone. The bounds are resolved
+    from the sidebar when the search is applied, so 'this month' means the month
+    it is opened in, not the month it was saved in.
+    """
+    restored = DocumentQuery.from_dict({'date_preset': DATE_PRESET_THIS_MONTH})
+    assert restored.date_preset == DATE_PRESET_THIS_MONTH
+    assert restored.date_since is None
+
+
+def test_every_preset_token_is_unique():
+    assert len(DATE_PRESETS) == len(set(DATE_PRESETS))
+
+
+def test_the_all_documents_preset_is_a_token_too():
+    """Selecting "All documents" is a choice, not the absence of one, so it has
+    to survive a round trip like the others."""
+    assert DATE_PRESET_ALL in DATE_PRESETS

@@ -23,7 +23,12 @@ from MiAZ.env import ENV
 from MiAZ.backend.log import MiAZLog
 from MiAZ.backend.models import Group, Country, Purpose, SentBy, SentTo, Date
 from MiAZ.backend.gate import UpdateGate
-from MiAZ.backend.query import ANY, DATE_NONE, DATE_RANGE, DocumentQuery
+from MiAZ.backend.query import (
+    ANY, DATE_ALL, DATE_NONE, DATE_RANGE, DocumentQuery,
+    DATE_PRESET_THIS_MONTH, DATE_PRESET_PAST_MONTH, DATE_PRESET_LAST_3_MONTHS,
+    DATE_PRESET_LAST_6_MONTHS, DATE_PRESET_LAST_12_MONTHS, DATE_PRESET_2_YEARS,
+    DATE_PRESET_3_YEARS, DATE_PRESET_5_YEARS, DATE_PRESET_10_YEARS,
+    DATE_PRESET_FUTURE, DATE_PRESET_ALL)
 from MiAZ.backend.tasks import run_in_background
 from MiAZ.frontend.desktop.widgets.browserpage import MiAZBrowserPage
 from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewWorkspace
@@ -409,62 +414,47 @@ class MiAZWorkspace(Gtk.Box):
 
         model.remove_all()
 
-        # Since...
+        # Each entry carries a stable token as well as its resolved range. The
+        # id holds today's dates and the title is translated, so the token is
+        # the only thing that still identifies an entry tomorrow, or in another
+        # language. set_query() writes a query back to this dropdown by token.
         ul = now                                  # upper limit
-        ## this month
-        ll = util.since_date_this_month(now) # lower limit
-        key = f"{dt2str(ll)}-{dt2str(ul)}"
-        model.append(Date(id=key, title=_('This month')))
-
-        ul = now                                  # upper limit
-        ## past month
-        ll = util.since_date_last_n_months(now, 1) # lower limit
-        key = f"{dt2str(ll)}-{dt2str(ul)}"
-        model.append(Date(id=key, title=_('Since past month')))
-
-        ## Last 3 months
-        ll = util.since_date_last_n_months(now, 3) # lower limit
-        key = f"{dt2str(ll)}-{dt2str(ul)}"
-        model.append(Date(id=key, title=_('Since last 3 months')))
-
-        ## Last six months
-        ll = util.since_date_last_n_months(now, 6) # lower limit
-        key = f"{dt2str(ll)}-{dt2str(ul)}"
-        model.append(Date(id=key, title=_('Since last 6 months')))
-
-        ## This year
-        ll = util.since_date_this_year(now) # lower limit
-        key = f"{dt2str(ll)}-{dt2str(ul)}"
-        model.append(Date(id=key, title=_('Since last year')))
-
-        ## Two years ago
-        ll = util.since_date_past_n_years_ago(now, 2) # lower limit
-        key = f"{dt2str(ll)}-{dt2str(ul)}"
-        model.append(Date(id=key, title=_('Since two years ago')))
-
-        ## Three years ago
-        ll = util.since_date_past_n_years_ago(now, 3) # lower limit
-        key = f"{dt2str(ll)}-{dt2str(ul)}"
-        model.append(Date(id=key, title=_('Since three years ago')))
-
-        ## Five years ago
-        ll = util.since_date_past_n_years_ago(now, 5) # lower limit
-        key = f"{dt2str(ll)}-{dt2str(ul)}"
-        model.append(Date(id=key, title=_('Since five years ago')))
-
-        ## Ten years ago
-        ll = util.since_date_past_n_years_ago(now, 10) # lower limit
-        key = f"{dt2str(ll)}-{dt2str(ul)}"
-        model.append(Date(id=key, title=_('Since ten years ago')))
+        presets = [
+            (DATE_PRESET_THIS_MONTH, _('This month'),
+             util.since_date_this_month(now)),
+            (DATE_PRESET_PAST_MONTH, _('Since past month'),
+             util.since_date_last_n_months(now, 1)),
+            (DATE_PRESET_LAST_3_MONTHS, _('Since last 3 months'),
+             util.since_date_last_n_months(now, 3)),
+            (DATE_PRESET_LAST_6_MONTHS, _('Since last 6 months'),
+             util.since_date_last_n_months(now, 6)),
+            # The last twelve months. This used to resolve through
+            # since_date_this_year, so the label said "last year" while the
+            # range was the calendar year to date: seven months on 7 August,
+            # and two days on 2 January.
+            (DATE_PRESET_LAST_12_MONTHS, _('Since last year'),
+             util.since_date_last_n_months(now, 12)),
+            (DATE_PRESET_2_YEARS, _('Since two years ago'),
+             util.since_date_past_n_years_ago(now, 2)),
+            (DATE_PRESET_3_YEARS, _('Since three years ago'),
+             util.since_date_past_n_years_ago(now, 3)),
+            (DATE_PRESET_5_YEARS, _('Since five years ago'),
+             util.since_date_past_n_years_ago(now, 5)),
+            (DATE_PRESET_10_YEARS, _('Since ten years ago'),
+             util.since_date_past_n_years_ago(now, 10)),
+        ]
+        for token, title, ll in presets:
+            model.append(Date(id=f"{dt2str(ll)}-{dt2str(ul)}", title=title,
+                              preset=token))
 
         ## Future (tomorrow onwards)
         ll = now + timedelta(days=1)
-        key = f"{dt2str(ll)}-99991231"
-        model.append(Date(id=key, title=_('Future')))
+        model.append(Date(id=f"{dt2str(ll)}-99991231", title=_('Future'),
+                          preset=DATE_PRESET_FUTURE))
 
         ## All documents
-        key = "All-All"
-        model.append(Date(id=key, title=_('All documents')))
+        model.append(Date(id="All-All", title=_('All documents'),
+                          preset=DATE_PRESET_ALL))
 
         self._date_presets_day = now
 
@@ -1025,6 +1015,7 @@ class MiAZWorkspace(Gtk.Box):
         selected = dropdowns[Date.__gtype_name__].get_selected_item()
         if selected is None:
             return
+        query.date_preset = selected.preset
         ll, ul = selected.id.split('-')
         if ll == 'None' and ul == 'None':
             query.date_mode = DATE_NONE
@@ -1040,12 +1031,121 @@ class MiAZWorkspace(Gtk.Box):
     def set_query(self, query):
         """Filter the view by a query built elsewhere (a plugin, a saved search).
 
-        The filter widgets are not rewritten to match, so the next widget change
-        rebuilds the query from them. Use clear_filters() first for a clean base.
+        The filter widgets are set to match, then the query is read back from
+        them, so the sidebar and the view always agree and the next widget
+        change builds on this query instead of discarding it.
+
+        Reading back is also what resolves a date preset: a saved search stores
+        'this month' rather than the dates it meant when it was saved, and the
+        sidebar entry supplies the range for today.
+
+        Returns the query fields it could not represent in the sidebar, empty
+        when everything was applied.
         """
-        self._query = query
+        unrepresented = self._write_widgets(query)
+        self._query = self._read_query()
         self.view.refilter()
         self.emit('workspace-view-filtered')
+        # Narrow the dropdowns back to the visible values on idle, the way a
+        # normal filter change does. Doing it inline runs it against a filter
+        # model that has not caught up yet, so the value just selected looks
+        # absent and the dropdown resets itself to "Any".
+        if not self._dropdown_update_pending:
+            self._dropdown_update_pending = True
+            GLib.idle_add(self._idle_update_dropdowns)
+        if unrepresented:
+            self.log.warning(
+                f"Query applied without {', '.join(unrepresented)}: "
+                f"the sidebar has no control for it")
+        return unrepresented
+
+    def _write_widgets(self, query):
+        """Set every filter control to what the query says.
+
+        Returns the names of the fields with no control to hold them. Signals
+        are muted throughout, so the whole query lands in one refilter instead
+        of one per control.
+        """
+        dropdowns = self.app.get_widget('ws-dropdowns') or {}
+        search_entry = self.app.get_widget('searchentry')
+        concept_entry = self.app.get_widget('searchentry-concept')
+        togglebutton = self.app.get_widget('workspace-togglebutton-pending-docs')
+        unrepresented = []
+
+        self._clearing_filters = True
+        try:
+            if search_entry is not None:
+                search_entry.set_text(query.search)
+            if concept_entry is not None:
+                concept_entry.set_text(query.concept)
+            # Refill the field dropdowns from the repository vocabulary first.
+            # Between filter passes they hold only the values the visible
+            # documents use, so a query naming anything outside the current
+            # view had nothing to select. The trailing
+            # _update_dropdowns_after_filter narrows them again, keeping the
+            # selection made here.
+            self._repopulate_field_dropdowns(dropdowns)
+            for item_type, value in (
+                    (Country, query.country),
+                    (Group, query.group),
+                    (SentBy, query.sentby),
+                    (Purpose, query.purpose),
+                    (SentTo, query.sentto)):
+                dropdown = dropdowns.get(item_type.__gtype_name__)
+                if not self._select_by_id(dropdown, value):
+                    unrepresented.append(f'{item_type.__gtype_name__}={value}')
+            if not self._select_date_preset(dropdowns.get(Date.__gtype_name__),
+                                            query):
+                unrepresented.append('date')
+            if togglebutton is not None:
+                togglebutton.set_active(query.only_pending)
+                self._review = query.only_pending
+        finally:
+            self._clearing_filters = False
+        return unrepresented
+
+    def _repopulate_field_dropdowns(self, dropdowns):
+        """Put every enabled value back in the five field dropdowns."""
+        actions = self.app.get_service('actions')
+        for item_type in (Country, Group, SentBy, Purpose, SentTo):
+            dropdown = dropdowns.get(item_type.__gtype_name__)
+            if dropdown is None:
+                continue
+            actions.dropdown_populate(
+                config=self.app.get_config(item_type.__gtype_name__),
+                dropdown=dropdown, item_type=item_type,
+                any_value=True, none_value=False)
+
+    @staticmethod
+    def _select_by_id(dropdown, value):
+        """Select the entry whose id is `value`. False when there is none."""
+        if dropdown is None:
+            return False
+        model = dropdown.get_model()
+        for pos in range(model.get_n_items()):
+            if model.get_item(pos).id == value:
+                dropdown.set_selected(pos)
+                return True
+        return False
+
+    def _select_date_preset(self, dropdown, query):
+        """Select the date entry the query names, by token.
+
+        A query carrying raw bounds and no token came from somewhere other than
+        this sidebar, so there may be no entry that means it; the range is left
+        as the query gave it and the caller is told.
+        """
+        if dropdown is None:
+            return False
+        if not query.date_preset:
+            # No preset: representable only if it asks for everything.
+            return query.date_mode == DATE_ALL
+        model = dropdown.get_model()
+        for pos in range(model.get_n_items()):
+            if model.get_item(pos).preset == query.date_preset:
+                dropdown.set_selected(pos)
+                return True
+        return False
 
     def register_query_hook(self, name: str, callback):
         """Let a component adjust the query after it is read from the widgets.
