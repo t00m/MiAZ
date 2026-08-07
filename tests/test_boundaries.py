@@ -14,8 +14,6 @@ way to silence the test: adding one should feel like a change worth explaining.
 import ast
 import os
 
-import pytest
-
 BACKEND = os.path.join('MiAZ', 'backend')
 FRONTEND = os.path.join('MiAZ', 'frontend')
 

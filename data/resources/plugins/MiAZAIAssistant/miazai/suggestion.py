@@ -2,7 +2,13 @@
 
 from dataclasses import dataclass, field
 
-from miazai.usage import make_usage  # re-export: single definition lives in usage.py
+from miazai.usage import make_usage
+
+# make_usage is re-exported here, not defined here: the single definition lives
+# in usage.py. Naming it in __all__ says the re-export is deliberate, so a
+# linter does not read it as a stray import and offer to delete it.
+# tests/test_ai_plugin.py asserts both names resolve to the same object.
+__all__ = ['Suggestion', 'make_usage']
 
 
 @dataclass(frozen=True)

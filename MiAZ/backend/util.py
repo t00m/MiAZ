@@ -20,7 +20,7 @@ import functools
 import subprocess
 import mimetypes
 import zipfile
-from datetime import datetime, timedelta
+from datetime import datetime
 
 from gi.repository import Gio
 from gi.repository import GObject
