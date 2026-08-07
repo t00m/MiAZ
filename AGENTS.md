@@ -246,8 +246,8 @@ MiAZWorkspace (Gtk.Box VERTICAL)
 **Public API on MiAZWorkspace:**
 - `get_stack()` → `Adw.ViewStack`
 - `get_view_switcher()` → `Adw.InlineViewSwitcher`
-- `add_stack_page(widget, name, title, icon_name=None)` → registers a new page (reuses an existing page of the same name if present)
-- `get_stack_page(name)` / `remove_stack_page(name)` (hides via `set_visible(False)`)
+- `add_stack_page(widget, name, title, icon_name=None)` → adds a page, replacing any other child already holding that name
+- `get_stack_page(name)` / `remove_stack_page(name)` → takes the page out of the stack, freeing its name
 - `show_stack_page(name)` → switches to page by name
 - `clear_filters()` → resets every filter control (search, concept, all dropdowns) and refilters once
 - `get_workspace_view()` → the `MiAZColumnView` (also reachable as `workspace.view`)
@@ -314,15 +314,46 @@ workspace.show_stack_page('workspace-default')
 self.plugin.add_workspace_page(my_widget, 'my-view', _('My View'), 'my-icon')
 ```
 
-**Workspace page lifecycle (activate / deactivate / reactivate):**
+**Workspace page lifecycle: the plugin system owns the page.**
 
-PluginSystem creates a **fresh plugin instance** per activation. Pages added to the workspace stack must survive across cycles:
+PluginSystem creates a fresh plugin instance per activation, so a plugin cannot remember what it added last time. It does not need to. `add_workspace_page` records the page against the plugin, and `unload_plugin` removes it, next to where it already removes that plugin's web content and rename-dialog tabs.
 
-1. **Activation** → `startup()`: call `stack.get_child_by_name('notes-all')` to detect a hidden page from a prior instance. If found, reuse it (`page.set_visible(True)`, update `store`/`backup` refs). If not, create and add via `add_workspace_page()`.
-2. **Deactivation** → `do_deactivate()`: hide the page via `page.set_visible(False)`,  it stays in the `Adw.ViewStack` but disappears from the `InlineViewSwitcher`.
-3. **Reactivation** → same as activation: the hidden page is found by name and shown again.
+So a page-adding plugin builds a page in `startup()` and does nothing about it in `do_deactivate()`:
 
-This avoids the "duplicate child name in AdwViewStack" warning.
+```python
+def startup(self, *args):
+    self._page = MyView(self.app)
+    self.plugin.add_workspace_page(self._page, 'my-view', _('My View'), 'my-icon')
+
+def do_deactivate(self):
+    self._page = None          # the plugin system removes the page itself
+```
+
+Earlier versions required the plugin to hide the page on deactivate and find it by name on the way back, to dodge a "duplicate child name in AdwViewStack" warning. That is gone: `remove_stack_page` now removes the child instead of hiding it, so the name is free and adding a fresh page just works. Guard any late-firing handler with `if self._page is not None`.
+
+This is a helper, not a restriction. `workspace.get_stack()` still returns the real `Adw.ViewStack`, and a plugin that wants to manage its own pages there can.
+
+**Contributing to the sidebar and the header bar** works the same way. The plugin system detaches whatever these hand it, so `do_deactivate` has nothing to undo:
+
+```python
+# A row in the sidebar's plugin section.
+self.plugin.add_sidebar_widget(row, widget_key=MY_ROW_ID)
+
+# A button in the header bar; position is 'left' or 'right'.
+self.plugin.add_headerbar_widget(button, position='left', widget_key=MY_BUTTON_ID)
+
+# A filter dropdown, wired the way the built-in ones are: sized, joined to the
+# shared size group, appended to the 'plugin-dropdowns' list the workspace
+# filter pass reads, registered under 'plugin-<Name>-dropdown', and shown
+# behind the plugin's icon.
+self.plugin.add_sidebar_dropdown(dropdown)
+```
+
+Pass `widget_key` whenever the plugin looks the widget up later. The key is unregistered on unload along with the widget: detaching a widget but leaving its key is a trap, because the next activation finds the old widget, concludes it has nothing to do, and never re-attaches anything. `MiAZFullscreen` had exactly that bug, and its button did not come back after a disable/enable cycle.
+
+Reaching `sidebar-plugin-section`, `headerbar-left-box` and friends directly still works. These only save writing the teardown.
+
+**Verifying it**: `PYTHONPATH=. python scripts/devel/check_plugin_ui.py [PluginName ...]` drives a real disable/enable cycle in the running app and reports what every shared container held at each step. It cannot be a unit test, since it needs a display and a loaded repository.
 
 ### Startup flow
 

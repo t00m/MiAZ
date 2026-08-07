@@ -681,20 +681,34 @@ class MiAZWorkspace(Gtk.Box):
         return self._switcher
 
     def add_stack_page(self, widget, name, title, icon_name=None):
+        """Add a page, replacing any child already holding that name.
+
+        Adw.ViewStack keys its children by name and warns on a duplicate, so a
+        leftover page from an earlier owner is removed rather than reused. The
+        caller passed a widget and expects to see that widget.
+        """
         existing = self._stack.get_child_by_name(name)
         if existing is not None:
-            page = existing
-            page.set_visible(True)
-        else:
-            page = self._stack.add_titled(widget, name, title)
-            if icon_name is not None:
-                page.set_icon_name(icon_name)
+            if existing is widget:
+                page = self._stack.get_page(widget)
+                page.set_visible(True)
+                return page
+            self._stack.remove(existing)
+        page = self._stack.add_titled(widget, name, title)
+        if icon_name is not None:
+            page.set_icon_name(icon_name)
         return page
 
     def remove_stack_page(self, name):
-        page = self._stack.get_child_by_name(name)
-        if page is not None:
-            page.set_visible(False)
+        """Take a page out of the stack, freeing its name.
+
+        This used to only hide the child, so the name stayed taken for the life
+        of the process and a plugin re-adding its page had to find the hidden
+        one and adopt it instead.
+        """
+        child = self._stack.get_child_by_name(name)
+        if child is not None:
+            self._stack.remove(child)
 
     def get_stack_page(self, name):
         return self._stack.get_child_by_name(name)

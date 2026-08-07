@@ -239,22 +239,11 @@ class MiAZPeriodicityPlugin(MiAZExtension):
         self._filename_deleted_handler = self.util.connect('filename-deleted', self._on_filename_deleted)
 
     def do_deactivate(self):
+        # The sidebar dropdown, its size group, the plugin-dropdowns entry and
+        # the widget key are all taken back by the plugin system, which owns
+        # what add_sidebar_dropdown handed it.
         plugin_name = self.plugin.get_name()
         dropdown = self.app.get_widget(f'plugin-{plugin_name}-dropdown')
-        if dropdown is not None:
-            dd_parent = dropdown.get_parent()
-            if dd_parent is not None:
-                dd_parent.remove(dropdown)
-            dd_size_group = self.app.get_widget('sidebar-dropdown-size-group')
-            if dd_size_group is not None:
-                dd_size_group.remove_widget(dropdown)
-            plugin_dropdowns = self.app.get_widget('plugin-dropdowns')
-            if plugin_dropdowns is not None and dropdown in plugin_dropdowns:
-                plugin_dropdowns.remove(dropdown)
-            self.app.remove_widget(f'plugin-{plugin_name}-dropdown')
-        section = self.app.get_widget('sidebar-plugin-section')
-        if section is not None and hasattr(self, '_sidebar_item'):
-            section.remove(self._sidebar_item)
         self.workspace.unregister_filter_view(f'{i_title}')
         if hasattr(self, '_used_updated_handler'):
             self.config.disconnect(self._used_updated_handler)
@@ -303,30 +292,12 @@ class MiAZPeriodicityPlugin(MiAZExtension):
 
                 # Dropdown for custom filters
                 dropdown = self.factory.create_dropdown_generic(item_type=item_type, ellipsize=True, enable_search=True)
-                self.app.add_widget(f'plugin-{plugin_name}-dropdown', dropdown)
-                self.app.get_widget('plugin-dropdowns').append(dropdown)
                 self._used_updated_handler = self.config.connect('used-updated', self.actions.dropdown_populate, dropdown, item_type, True, False)
                 self.actions.dropdown_populate(self.config, dropdown, item_type, True, False)
                 self._selected_item_handler = dropdown.connect("notify::selected-item", self.workspace.update)
-                dropdown.set_size_request(190, -1)
-                dd_size_group = self.app.get_widget('sidebar-dropdown-size-group')
-                if dd_size_group is not None:
-                    dd_size_group.add_widget(dropdown)
-                section = self.app.get_widget('sidebar-plugin-section')
-                if section is not None:
-                    icon_path = self.plugin.get_icon_path()
-                    if icon_path:
-                        img = Gtk.Image.new_from_file(icon_path)
-                        img.set_pixel_size(16)
-                        img.set_valign(Gtk.Align.CENTER)
-                        box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
-                        box.set_hexpand(True)
-                        box.append(img)
-                        box.append(dropdown)
-                        self._sidebar_item = box
-                    else:
-                        self._sidebar_item = dropdown
-                    section.append(self._sidebar_item)
+                # Sizing, the shared size group, the plugin-dropdowns list, the
+                # widget key and the icon row: all of it, and its teardown.
+                self.plugin.add_sidebar_dropdown(dropdown)
                 self.workspace.register_filter_view(f'{i_title}', self._do_filter_view)
                 self.log.info(f"Plugin {plugin_name} fully initialized")
 
