@@ -1,11 +1,11 @@
 #!/usr/bin/python3
 
 import pathlib
-import threading
 from gettext import gettext as _
 
 from gi.repository import Adw, GLib, Gtk
 
+from MiAZ.backend.tasks import run_in_background
 from MiAZ.frontend.desktop.widgets.markdownview import MiAZMarkdownView
 
 from miazai.providers import active_provider, MissingDependencyError
@@ -83,15 +83,20 @@ class MiAZAIChatDialog(Adw.Window):
         path = pathlib.Path(self.repository.docs) / self.document_id
 
         def _work():
-            text = None
-            try:
-                result = extract(path)
-                text = result.text if result.is_useful else None
-            except Exception as error:
-                self.log.error(f"Could not extract text: {error}")
-            GLib.idle_add(self._set_document, text, str(path))
+            result = extract(path)
+            return result.text if result.is_useful else None
 
-        threading.Thread(target=_work, daemon=True).start()
+        def _failed(error):
+            # Not fatal: _set_document with no text falls back to sending the
+            # file itself, or explains why that is not possible.
+            self.log.error(f"Could not extract text: {error}")
+            self._set_document(None, str(path))
+
+        run_in_background(
+            _work,
+            on_done=lambda text: self._set_document(text, str(path)),
+            on_error=_failed,
+            name='miazai-chat-extract')
 
     def _set_document(self, text, path):
         self.document_text = text
@@ -110,7 +115,6 @@ class MiAZAIChatDialog(Adw.Window):
                   'that supports file upload in the plugin settings.'))
         self._set_input_enabled(True)
         self._entry.grab_focus()
-        return False
 
     # Notes integration (optional)
     def _get_notes_plugin(self):
@@ -165,17 +169,20 @@ class MiAZAIChatDialog(Adw.Window):
         snapshot = list(self.history)
 
         def _work():
-            try:
-                result = provider.chat(messages=snapshot, system_prompt=sysp,
-                                       document_text=doc_text, file_path=file_path)
-            except Exception as exc:
-                self.log.error(f'AI chat failed: {exc}')
-                needs_libs = isinstance(exc, MissingDependencyError)
-                GLib.idle_add(self._on_error, str(exc), needs_libs)
-                return
-            GLib.idle_add(self._on_answer, question, result)
+            return provider.chat(messages=snapshot, system_prompt=sysp,
+                                 document_text=doc_text, file_path=file_path)
 
-        threading.Thread(target=_work, daemon=True).start()
+        def _failed(exc):
+            # _on_error re-enables the entry, so any failure has to reach it or
+            # the chat is stuck waiting for an answer that will never arrive.
+            self.log.error(f'AI chat failed: {exc}')
+            self._on_error(str(exc), isinstance(exc, MissingDependencyError))
+
+        run_in_background(
+            _work,
+            on_done=lambda result: self._on_answer(question, result),
+            on_error=_failed,
+            name='miazai-chat-send')
 
     def _on_answer(self, question, result):
         text = (result.get('text') or '').strip() or _('(no answer)')
@@ -200,7 +207,6 @@ class MiAZAIChatDialog(Adw.Window):
         else:
             self.log.info(f'AI chat: provider={self.provider.name} model={model} '
                           f'(token usage not reported)')
-        return False
 
     def _on_error(self, message, needs_libs=False):
         self._awaiting = False
@@ -213,7 +219,6 @@ class MiAZAIChatDialog(Adw.Window):
         self.turns.append({'role': 'assistant', 'content': content})
         self._rerender()
         self._toast(_('Chat failed: {err}').format(err=message))
-        return False
 
     # Rendering
     def _set_status(self, text):

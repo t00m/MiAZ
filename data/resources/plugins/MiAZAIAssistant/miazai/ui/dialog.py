@@ -1,10 +1,11 @@
 #!/usr/bin/python3
 
 import pathlib
-import threading
 from gettext import gettext as _
 
-from gi.repository import Adw, Gdk, GLib, Gtk
+from gi.repository import Adw, Gdk, Gtk
+
+from MiAZ.backend.tasks import run_in_background
 
 
 def inject_suggest_button(app, registry, repository, util, log):
@@ -97,29 +98,22 @@ def _on_suggest(button, app, rename_widget, registry, repository, util, log):
              f'model={model} document={doc}')
 
     def _run():
-        try:
-            extracted = extract(abs_path)
-            text = extracted.text if extracted.is_useful else None
-            file_arg = None if text else abs_path
-            if not text and not provider.supports_files:
-                raise RuntimeError(
-                    _('No extractable text found and provider "{p}" does not '
-                      'support file upload. Install pdftotext or tesseract.').format(
-                        p=provider.name))
-            suggestion = provider.suggest(
-                text=text,
-                file_path=file_arg,
-                vocab=vocab,
-                system_prompt=P.suggest_system_prompt(vocab),
-                user_prompt=P.suggest_user_prompt(),
-                schema=P.schema(),
-            )
-        except Exception as exc:
-            log.error(f'AI provider failed: {exc}')
-            needs_libs = isinstance(exc, MissingDependencyError)
-            GLib.idle_add(_finish, button, None, str(exc), needs_libs,
-                          app, rename_widget)
-            return
+        extracted = extract(abs_path)
+        text = extracted.text if extracted.is_useful else None
+        file_arg = None if text else abs_path
+        if not text and not provider.supports_files:
+            raise RuntimeError(
+                _('No extractable text found and provider "{p}" does not '
+                  'support file upload. Install pdftotext or tesseract.').format(
+                    p=provider.name))
+        suggestion = provider.suggest(
+            text=text,
+            file_path=file_arg,
+            vocab=vocab,
+            system_prompt=P.suggest_system_prompt(vocab),
+            user_prompt=P.suggest_user_prompt(),
+            schema=P.schema(),
+        )
         usage = getattr(suggestion, 'usage', {}) or {}
         if usage:
             log.info(
@@ -130,10 +124,21 @@ def _on_suggest(button, app, rename_widget, registry, repository, util, log):
         else:
             log.info(f'AI suggest done: provider={provider.name} model={model} '
                      f'(token usage not reported)')
-        GLib.idle_add(_finish, button, suggestion, None, False,
-                      app, rename_widget)
+        return suggestion
 
-    threading.Thread(target=_run, daemon=True).start()
+    def _done(suggestion):
+        _finish(button, suggestion, None, False, app, rename_widget)
+
+    def _failed(exc):
+        # Every failure lands here, including the one raised above for a
+        # document with no text. The button has to be restored whatever went
+        # wrong, or it stays greyed out reading 'Thinking…' forever.
+        log.error(f'AI provider failed: {exc}')
+        _finish(button, None, str(exc), isinstance(exc, MissingDependencyError),
+                app, rename_widget)
+
+    run_in_background(_run, on_done=_done, on_error=_failed,
+                      name='miazai-suggest')
 
 
 def _finish(button, suggestion, error, needs_libs, app, rename_widget):
@@ -141,9 +146,8 @@ def _finish(button, suggestion, error, needs_libs, app, rename_widget):
     button.set_label(_('Suggest with AI'))
     if error:
         _show_error_dialog(app, rename_widget, str(error), needs_libs)
-        return False
+        return
     _apply_suggestion(rename_widget, suggestion, app)
-    return False
 
 
 def _show_error_dialog(app, rename_widget, details, needs_libs=False):

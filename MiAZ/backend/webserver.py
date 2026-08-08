@@ -99,6 +99,9 @@ class MiAZWebServer(GObject.GObject):
             self._httpd = None
             return
         self._host, self._port = self._httpd.server_address[:2]
+        # A plain thread on purpose, not tasks.run_in_background: this is a
+        # serve loop that lives until stop() joins it, not a task that produces
+        # a result for the main loop.
         self._thread = threading.Thread(
             target=self._httpd.serve_forever,
             name='MiAZ-WebServer',

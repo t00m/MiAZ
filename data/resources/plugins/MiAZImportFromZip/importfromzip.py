@@ -7,13 +7,13 @@
 
 import os
 import shutil
-import threading
 from gettext import gettext as _
 
 from gi.repository import Gio
 from gi.repository import GLib
 from gi.repository import Gtk
 
+from MiAZ.backend.tasks import run_in_background
 from MiAZ.frontend.desktop.services.pluginsystem import MiAZExtension, MiAZPlugin
 
 plugin_info = {
@@ -85,20 +85,29 @@ class MiAZImportFromZipPlugin(MiAZExtension):
     def _on_filechooser_response(self, dialog, result):
         try:
             file = dialog.open_finish(result)
-            zip_path = file.get_path()
-            self._suspend = self.app.get_widget('workspace').suspend_updates()
-            threading.Thread(
-                target=self._import_zip,
-                args=(zip_path,),
-                daemon=True
-            ).start()
         except GLib.Error as err:
             self.log.debug(f"ZIP file selection cancelled or failed: {err.message}")
+            return
+
+        zip_path = file.get_path()
+        # Suspend on the main loop before the worker starts, so there is no
+        # window where the watcher is still live and reacting to the copies.
+        self._suspend = self.app.get_widget('workspace').suspend_updates()
+        self.app.get_service('watcher').set_active(False)
+        run_in_background(
+            lambda: self._import_zip(zip_path),
+            on_done=self._finish_import,
+            on_error=self._on_import_crashed,
+            name='importfromzip')
 
     def _import_zip(self, zip_path):
-        # Background thread: I/O only. Signal emission happens on main thread.
-        watcher = self.app.get_service('watcher')
-        watcher.set_active(False)
+        """Unzip and copy the documents. Returns (targets, error message or None).
+
+        Runs off the main loop, so it does I/O only: the signals go out in
+        _finish_import. A failure part way through still returns the documents
+        already copied, because those files are on disk and their
+        'filename-added' has to be emitted or nothing will know about them.
+        """
         extract_dir = self.util.get_temp_dir()
         copied_targets = []
         error_msg = None
@@ -124,10 +133,21 @@ class MiAZImportFromZipPlugin(MiAZExtension):
             error_msg = str(error)
         finally:
             shutil.rmtree(extract_dir, ignore_errors=True)
-            GLib.idle_add(self._finish_import, copied_targets, error_msg)
+        return copied_targets, error_msg
 
-    def _finish_import(self, targets, error_msg):
+    def _on_import_crashed(self, error):
+        """The worker died before it could return anything.
+
+        The watcher and the update gate are turned off before the thread
+        starts, so something has to turn them back on. Without this the
+        workspace would stop refreshing for the rest of the session.
+        """
+        self.log.error(f"ZIP import failed: {error}")
+        self._finish_import(([], str(error)))
+
+    def _finish_import(self, result):
         # Main thread: emit signals and update UI.
+        targets, error_msg = result
         watcher = self.app.get_service('watcher')
         if error_msg:
             self.srvdlg.show_error(title=_('Import error'), body=error_msg)
@@ -143,4 +163,3 @@ class MiAZImportFromZipPlugin(MiAZExtension):
         if targets:
             msg = _('{count} documents imported from ZIP').format(count=len(targets))
             self.srvdlg.show_toast(msg)
-        return False
