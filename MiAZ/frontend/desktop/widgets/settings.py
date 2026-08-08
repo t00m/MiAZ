@@ -141,7 +141,7 @@ class MiAZAppSettings(Adw.PreferencesDialog):
         # However, if a repository is loaded automatically, plugins too
         # Right now, the load/unload plugin procedure is not working well
         # Therefore, the app is restarted.
-        self.config_repos.connect('used-updated', self.actions.dropdown_populate, dd_repo, Repository, False, False)
+        self.config_repos.connect('used-updated', self.actions.dropdown_repopulate, dd_repo, Repository, False, False)
         signal = dd_repo.connect("notify::selected-item", self._on_use_repo)
         self.app.add_widget('signal-dd_repo', signal)
         dd_repo.connect("notify::selected-item", self._update_active_repo_subtitle)

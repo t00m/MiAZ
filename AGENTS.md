@@ -132,7 +132,7 @@ against the enabled config (`config.exists_used`) or, for dates,
 ### Layered: Backend (no GTK) → Services (GTK-aware) → Widgets (GTK/Adw)
 
 **Backend** (`MiAZ/backend/`): No GTK/Adw/Gdk widget imports. File I/O, config, models, logging, util. `GObject`/`GLib`/`Gio` are allowed and used on purpose: the backend exposes its events through GObject signals, which is the backend/frontend contract.
-- `MiAZConfig` signals: `available-updated`, `used-updated`
+- `MiAZConfig` signals: `available-updated`, `used-updated` (both carry the set of keys that changed, or `None` when the previous contents could not be read)
 - `MiAZUtil` signals: `filename-added`, `filename-deleted`, `filename-renamed`
 - `MiAZRepository` signals: `repository-switched`
 - `MiAZWatcher` signals: `repository-updated`
@@ -180,7 +180,7 @@ loop must marshal the result back itself.
 | `MiAZPlugins` config view (configview.py) | `plugins-downloaded` |
 | `MiAZWorkflow` (workflow.py) | `repository-switch-started`, `repository-switch-finished` |
 | `MiAZWorkspace` (workspace.py) | `workspace-loaded`, `workspace-view-updated`, `workspace-view-selection-changed`, `workspace-view-filtered` |
-| `MiAZConfig` (config.py) | `available-updated`, `used-updated` |
+| `MiAZConfig` (config.py) | `available-updated` (set), `used-updated` (set) |
 | `MiAZConfigApp` (config.py) | `repo-settings-updated-app` |
 | `MiAZUtil` (util.py) | `filename-added`, `filename-deleted`, `filename-renamed` |
 | `MiAZWatcher` (watcher.py) | `repository-updated` |

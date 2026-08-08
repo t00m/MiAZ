@@ -250,7 +250,7 @@ class MiAZMassRename(GObject.GObject):
         cv.set_hexpand(True)
         cv.set_vexpand(True)
         dropdown.connect("notify::selected-item", update_columnview, cv, item_type, items)
-        self.config[i_type].connect('used-updated', self.actions.dropdown_populate, dropdown, item_type, False)
+        self.config[i_type].connect('used-updated', self.actions.dropdown_repopulate, dropdown, item_type, False)
         self.actions.dropdown_populate(self.config[i_type], dropdown, item_type, any_value=False)
         frame.set_child(cv)
         box.append(label)

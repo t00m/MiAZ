@@ -17,11 +17,25 @@ from MiAZ.backend.log import MiAZLog
 from MiAZ.backend.models import MiAZModel, Group, Person, Country, Purpose, Concept, SentBy, SentTo, Repository, Plugin
 
 
+def changed_keys(old: dict, new: dict) -> set:
+    """The keys that differ between two versions of a config file.
+
+    A key counts as changed when it was added, removed, or kept with a
+    different description. Nothing else about the two dicts matters.
+    """
+    keys = set(old) ^ set(new)
+    keys.update(k for k in set(old) & set(new) if old[k] != new[k])
+    return keys
+
+
 class MiAZConfig(GObject.GObject):
     """ MiAZ Config class"""
     __gsignals__ = {
-        'available-updated': (GObject.SignalFlags.RUN_LAST, None, ()),
-        'used-updated': (GObject.SignalFlags.RUN_LAST, None, ()),
+        # Both carry the set of keys that changed, so a listener can drop one
+        # cache entry instead of the whole cache. None means the previous
+        # contents could not be read, so the receiver must assume everything.
+        'available-updated': (GObject.SignalFlags.RUN_LAST, None, (object,)),
+        'used-updated': (GObject.SignalFlags.RUN_LAST, None, (object,)),
     }
     used = None
     default = None
@@ -128,15 +142,37 @@ class MiAZConfig(GObject.GObject):
         # signal at all.
         if not filepath:
             filepath = self.used
+        # Read the previous contents before overwriting them. The diff cannot be
+        # taken against self.cache: load() hands out the cached dict itself and
+        # callers mutate it in place (set() does), so by now the cached copy is
+        # already the new one.
+        previous = self._read_from_disk(filepath)
         saved = self.save_data(filepath, items)
         if saved:
             self._invalidate(filepath)
+            changed = None if previous is None else changed_keys(previous, items)
             if filepath == self.available:
-                self.emit('available-updated')
+                self.emit('available-updated', changed)
             elif filepath == self.used:
                 self.log.debug(f"Signal emitted after saving used config for {self.config_for}")
-                self.emit('used-updated')
+                self.emit('used-updated', changed)
         return saved
+
+    def _read_from_disk(self, filepath: str):
+        """The file as it is on disk right now, or None when it cannot be read.
+
+        A missing file is not a failure: it means every key in what is about to
+        be written is new. None is reserved for a read that went wrong, which
+        the signal passes on so listeners fall back to clearing everything.
+        """
+        if not filepath or not os.path.exists(filepath):
+            return {}
+        util = self.app.get_service('util')
+        try:
+            return util.json_load(filepath)
+        except Exception as error:
+            self.log.warning(f"Could not read {filepath} before saving: {error}")
+            return None
 
     def _invalidate(self, filepath: str):
         """Mark the on-disk copy as newer than the cached one."""

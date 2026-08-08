@@ -527,7 +527,7 @@ class MiAZProjectMgt(MiAZExtension):
                 dropdown = self.app.get_widget(f'plugin-{plugin_name}-dropdown')
                 if dropdown is None:
                     dropdown = self.factory.create_dropdown_generic(item_type=item_type, ellipsize=True, enable_search=True)
-                    self._used_updated_handler = self.config.connect('used-updated', self.actions.dropdown_populate, dropdown, item_type, True, True)
+                    self._used_updated_handler = self.config.connect('used-updated', self.actions.dropdown_repopulate, dropdown, item_type, True, True)
                     self.actions.dropdown_populate(self.config, dropdown, item_type, True, True)
                     self._selected_item_handler = dropdown.connect("notify::selected-item", self.workspace.update)
                     # Sizing, the shared size group, the plugin-dropdowns list,

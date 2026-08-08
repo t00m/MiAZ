@@ -103,7 +103,9 @@ class MiAZRenameDialog(Gtk.Box):
             config = self.config[i_type]
             self.actions.dropdown_populate(config, self.dropdown[i_type], item_type, False, False)
 
-    def update_dropdown(self, config, item_type):
+    def update_dropdown(self, config, changed, item_type):
+        # 'changed' is the key set the config signal carries. Repopulating reads
+        # the whole file, so it is not needed here.
         title = item_type.__gtype_name__
         self.actions.dropdown_populate(config, self.dropdown[title], item_type)
         self._on_changed_entry()

@@ -181,12 +181,27 @@ class MiAZWorkspace(Gtk.Box):
         self.app.get_service('index').invalidate_cache()
         self.log.debug("Caches initialized")
 
-    def _on_config_used_updated(self, *args):
-        # The 'used-updated' signal carries no payload, so there is still no way
-        # to know which value changed. The index can drop a single entry
-        # (invalidate_cache(config, key)); wire that up once the signal says
-        # what it changed.
-        self.initialize_caches()
+    def _on_config_used_updated(self, config, changed):
+        """Drop the description cache entries for the keys that changed.
+
+        Renaming one country used to clear the whole cache, so every document
+        in the view had its six field descriptions rebuilt. The signal now says
+        which keys moved, and only those go.
+
+        'changed' is None when the config could not read its previous contents,
+        which is the one case that still has to clear everything.
+        """
+        index = self.app.get_service('index')
+        if changed is None:
+            index.invalidate_cache()
+            return
+        model = getattr(config, 'model', None)
+        name = getattr(model, '__gtype_name__', None)
+        if name is None:
+            index.invalidate_cache()
+            return
+        for key in changed:
+            index.invalidate_cache(name, key)
 
     def _setup_logic(self):
         actions = self.app.get_service('actions')
@@ -356,7 +371,9 @@ class MiAZWorkspace(Gtk.Box):
     def unselect_items(self):
         self.selected_items = []
 
-    def update_dropdown_filter(self, config, item_type):
+    def update_dropdown_filter(self, config, changed, item_type):
+        # 'changed' is the key set the config signal carries. Repopulating reads
+        # the whole file, so it is not needed here.
         actions = self.app.get_service('actions')
         dropdowns = self.app.get_widget('ws-dropdowns')
         i_type = item_type.__gtype_name__

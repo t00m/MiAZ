@@ -15,7 +15,7 @@ import gi
 gi.require_version('GLib', '2.0')
 gi.require_version('Gio', '2.0')
 
-from MiAZ.backend.config import MiAZConfig
+from MiAZ.backend.config import MiAZConfig, changed_keys
 from MiAZ.backend.util import MiAZUtil
 from MiAZ.backend.log import MiAZLog
 
@@ -240,3 +240,95 @@ def test_configs_can_share_one_cache_on_purpose(tmp_path):
     cfg_b = make_config(tmp_path, subdir='shared_cfg', cache=shared)
     cfg_a.add_used('sharedkey', 'value-a')
     assert cfg_b.exists_used('sharedkey') is True
+
+
+# ---------------------------------------------------------------------------
+# The update signals say which keys changed
+# ---------------------------------------------------------------------------
+
+def test_changed_keys_reports_additions_removals_and_edits():
+    old = {'A': 'one', 'B': 'two', 'C': 'three'}
+    new = {'A': 'one', 'B': 'CHANGED', 'D': 'four'}
+    assert changed_keys(old, new) == {'B', 'C', 'D'}
+
+
+def test_changed_keys_of_identical_dicts_is_empty():
+    items = {'A': 'one', 'B': 'two'}
+    assert changed_keys(items, dict(items)) == set()
+
+
+def test_used_updated_carries_only_the_edited_key(tmp_path):
+    """The point of the payload: renaming one country must not tell every
+    listener to throw away everything it derived from the other countries.
+    """
+    cfg = make_config(tmp_path)
+    cfg.save_used({'ES': 'Spain', 'FR': 'France'})
+    seen = []
+    cfg.connect('used-updated', lambda _c, changed: seen.append(changed))
+    cfg.save_used({'ES': 'Kingdom of Spain', 'FR': 'France'})
+    assert seen == [{'ES'}]
+
+
+def test_used_updated_reports_an_added_key(tmp_path):
+    cfg = make_config(tmp_path)
+    cfg.save_used({'ES': 'Spain'})
+    seen = []
+    cfg.connect('used-updated', lambda _c, changed: seen.append(changed))
+    cfg.add_used('FR', 'France')
+    assert seen == [{'FR'}]
+
+
+def test_used_updated_reports_a_removed_key(tmp_path):
+    cfg = make_config(tmp_path)
+    cfg.save_used({'ES': 'Spain', 'FR': 'France'})
+    seen = []
+    cfg.connect('used-updated', lambda _c, changed: seen.append(changed))
+    cfg.remove_used('FR')
+    assert seen == [{'FR'}]
+
+
+def test_a_first_save_reports_every_key_as_changed(tmp_path):
+    """There is no previous file, so nothing about the new one can be assumed
+    to be already known.
+    """
+    cfg = make_config(tmp_path)
+    seen = []
+    cfg.connect('used-updated', lambda _c, changed: seen.append(changed))
+    cfg.save_used({'ES': 'Spain', 'FR': 'France'})
+    assert seen == [{'ES', 'FR'}]
+
+
+def test_the_diff_is_taken_against_disk_not_the_cache(tmp_path):
+    """load() hands out the cached dict itself and set() mutates it in place, so
+    a diff against the cache would always come back empty.
+    """
+    cfg = make_config(tmp_path)
+    cfg.save_used({'ES': 'Spain'})
+    cfg.load_used()
+    seen = []
+    cfg.connect('used-updated', lambda _c, changed: seen.append(changed))
+    cfg.set('ES', 'Kingdom of Spain')
+    assert seen == [{'ES'}]
+
+
+def test_an_unreadable_previous_file_reports_unknown(tmp_path):
+    """None means "assume everything changed". Silently reporting an empty set
+    would leave stale entries in every listener's cache.
+    """
+    cfg = make_config(tmp_path)
+    cfg.save_used({'ES': 'Spain'})
+    with open(cfg.used, 'w', encoding='utf-8') as fout:
+        fout.write('{ not json')
+    seen = []
+    cfg.connect('used-updated', lambda _c, changed: seen.append(changed))
+    cfg.save_used({'ES': 'Spain', 'FR': 'France'})
+    assert seen == [None]
+
+
+def test_available_updated_carries_its_own_diff(tmp_path):
+    cfg = make_config(tmp_path)
+    cfg.save_available({'ES': 'Spain'})
+    seen = []
+    cfg.connect('available-updated', lambda _c, changed: seen.append(changed))
+    cfg.save_available({'ES': 'Spain', 'FR': 'France'})
+    assert seen == [{'FR'}]

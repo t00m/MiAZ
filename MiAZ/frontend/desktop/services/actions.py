@@ -253,9 +253,19 @@ class MiAZActions(GObject.GObject):
                 parent_dialog.close()
         # On 'no' the rename window stays open so the user can amend the fields.
 
+    def dropdown_repopulate(self, config, changed, dropdown, item_type,
+                            any_value=True, none_value=False):
+        """Signal adapter for 'used-updated' and 'available-updated'.
+
+        Both signals pass the set of keys that changed. Rebuilding a dropdown
+        reads the whole file anyway, so the payload is dropped here rather than
+        threaded through dropdown_populate, which is also called directly.
+        """
+        self.dropdown_populate(config, dropdown, item_type, any_value, none_value)
+
     def dropdown_populate(self, config, dropdown, item_type, any_value=True, none_value=False, only_include: list = [], only_exclude: list = []):
-        # Can be called from a 'used-updated' signal handler or directly.
-        # When called from the signal, config is the emitting object; item_type overrides it.
+        # Called directly, or through dropdown_repopulate from a config signal.
+        # From the signal, config is the emitting object; item_type overrides it.
         i_type = item_type.__gtype_name__
         config_standard = self.app.get_config(i_type)
         if config_standard is not None:

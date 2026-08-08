@@ -179,8 +179,8 @@ class MiAZDocumentIndex(GObject.GObject):
         """Drop cached descriptions.
 
         With no arguments every entry goes. With a config name only that config
-        is cleared. With both, one entry. The old workspace could only do the
-        first, because 'used-updated' carried no payload.
+        is cleared. With both, one entry. The workspace uses the last form: the
+        'used-updated' signal says which keys changed, so only those go.
         """
         if config_name is None:
             for entries in self.cache.values():

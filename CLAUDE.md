@@ -28,7 +28,7 @@ Example: `20240315-ES-HOU-BANKNAME-INV-Q1invoice-JOHNDOE.pdf`
 
 | File | Signals |
 |---|---|
-| `backend/config.py` | `available-updated`, `used-updated`; `MiAZConfigApp`: `repo-settings-updated-app` |
+| `backend/config.py` | `available-updated`, `used-updated` (both carry the set of changed keys, `None` if unknown); `MiAZConfigApp`: `repo-settings-updated-app` |
 | `backend/util.py` | `filename-added`, `filename-deleted`, `filename-renamed` |
 | `backend/watcher.py` | `repository-updated` |
 | `backend/stats.py` | `stats-updated` |
