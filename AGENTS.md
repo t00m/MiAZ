@@ -180,6 +180,7 @@ loop must marshal the result back itself.
 | `MiAZPlugins` config view (configview.py) | `plugins-downloaded` |
 | `MiAZWorkflow` (workflow.py) | `repository-switch-started`, `repository-switch-finished` |
 | `MiAZWorkspace` (workspace.py) | `workspace-loaded`, `workspace-view-updated`, `workspace-view-selection-changed`, `workspace-view-filtered` |
+| `MiAZRenameDialog` (rename.py) | `fields-changed` |
 | `MiAZConfig` (config.py) | `available-updated` (set), `used-updated` (set) |
 | `MiAZConfigApp` (config.py) | `repo-settings-updated-app` |
 | `MiAZUtil` (util.py) | `filename-added`, `filename-deleted`, `filename-renamed` |

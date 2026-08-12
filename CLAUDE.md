@@ -39,6 +39,7 @@ Example: `20240315-ES-HOU-BANKNAME-INV-Q1invoice-JOHNDOE.pdf`
 | `frontend/services/pluginsystem.py` | `plugins-updated` |
 | `frontend/services/dialogs.py` | `MiAZWindowDialog`: `response`, `closed`; `MiAZDialogAdd`/`MiAZDialogAddRepo`: `response` |
 | `frontend/widgets/workspace.py` | `workspace-loaded`, `workspace-view-updated`, `workspace-view-selection-changed`, `workspace-view-filtered` |
+| `frontend/widgets/rename.py` | `MiAZRenameDialog`: `fields-changed` |
 | `frontend/widgets/configview.py` | `MiAZPlugins`: `plugins-downloaded` |
 | `frontend/widgets/settings.py` | `settings-loaded` |
 

@@ -1,4 +1,3 @@
-#!/usr/bin/python3
 
 """
 # File: query.py

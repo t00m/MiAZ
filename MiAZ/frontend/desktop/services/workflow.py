@@ -1,4 +1,3 @@
-#!/usr/bin/python
 # File: workflow.py
 # Author: Tomás Vírseda
 # License: GPL v3

@@ -1,4 +1,3 @@
-#!/usr/bin/python3
 # File: doctabs.py
 # Author: Tomás Vírseda
 # License: GPL v3

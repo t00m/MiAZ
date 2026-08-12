@@ -1,4 +1,3 @@
-#!/usr/bin/python3
 # File: selector.py
 # Author: Tomás Vírseda
 # License: GPL v3

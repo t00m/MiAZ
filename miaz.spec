@@ -32,7 +32,7 @@ MiAZ is a GTK4/Libadwaita desktop application that organises personal
 documents by enforcing a strict 7-field filename convention:
 {date}-{country}-{group}-{sentby}-{purpose}-{concept}-{sentto}
 
-The directory is the database — no external database required.
+The directory is the database, no external database required.
 
 %prep
 %autosetup
@@ -66,7 +66,7 @@ gtk-update-icon-cache %{_datadir}/icons/hicolor &> /dev/null || :
 
 %files -f miaz.lang
 %license data/docs/LICENSE
-%doc README CHANGELOG.md
+%doc data/docs/README CHANGELOG.md
 %{_bindir}/miaz
 %{_datadir}/MiAZ/
 %{_datadir}/applications/io.github.t00m.MiAZ.desktop

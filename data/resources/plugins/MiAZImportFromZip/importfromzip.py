@@ -1,4 +1,3 @@
-#!/usr/bin/python3
 # pylint: disable=E1101
 # File: importfromzip.py
 # Author: Tomás Vírseda

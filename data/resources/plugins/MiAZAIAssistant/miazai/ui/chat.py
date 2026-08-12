@@ -1,4 +1,3 @@
-#!/usr/bin/python3
 
 import pathlib
 from gettext import gettext as _

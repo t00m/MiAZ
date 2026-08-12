@@ -1,4 +1,3 @@
-#!/usr/bin/python3
 # pylint: disable=E1101
 
 """
@@ -355,13 +354,16 @@ class MiAZProjectTab(Gtk.Box):
     """
     __gtype_name__ = 'MiAZProjectTab'
 
-    def __init__(self, app, config):
+    def __init__(self, app, config, show_manager=None):
         super().__init__(orientation=Gtk.Orientation.VERTICAL, spacing=6,
                          hexpand=True, vexpand=True)
         self.app = app
         self.config = config
         self.log = MiAZLog('MiAZ.ProjectTab')
         self.factory = self.app.get_service('factory')
+        # Opens the project manager. The tab only offers the button; the plugin
+        # owns the dialog, which is also reachable from the workspace menu.
+        self.show_manager = show_manager
         self.doc_id = None
         self.checks = {}
 
@@ -370,11 +372,22 @@ class MiAZProjectTab(Gtk.Box):
         self.set_margin_start(6)
         self.set_margin_end(6)
 
+        header = self.factory.create_box_horizontal(spacing=6, hexpand=True)
         label = Gtk.Label()
         label.set_xalign(0.0)
+        label.set_hexpand(True)
         label.add_css_class('dim-label')
         label.set_text(_('Projects this document belongs to'))
-        self.append(label)
+        header.append(label)
+        if show_manager is not None:
+            button = self.factory.create_button(
+                icon_name='io.github.t00m.MiAZ-config-symbolic',
+                title=_('Manage {i_confname}').format(i_confname=i_confname),
+                tooltip=_('Create, rename or delete {i_confname}').format(i_confname=i_confname),
+                callback=self._on_manage_clicked)
+            button.set_valign(Gtk.Align.CENTER)
+            header.append(button)
+        self.append(header)
 
         self.listbox = Gtk.ListBox.new()
         self.listbox.set_hexpand(True)
@@ -389,7 +402,7 @@ class MiAZProjectTab(Gtk.Box):
         self.empty = Gtk.Label()
         self.empty.set_xalign(0.0)
         self.empty.add_css_class('dim-label')
-        self.empty.set_text(_('No projects available yet. Create one from Projects management.'))
+        self.empty.set_text(_('No projects available yet. Create one with the Manage projects button.'))
         self.empty.set_visible(False)
         self.append(self.empty)
 
@@ -405,6 +418,29 @@ class MiAZProjectTab(Gtk.Box):
             self.listbox.append(row)
             self.checks[pid] = check
         self.empty.set_visible(len(self.checks) == 0)
+
+    def _on_manage_clicked(self, *args):
+        """Open the project manager over the rename window."""
+        dialog = self.show_manager(widget=self)
+        if dialog is not None:
+            dialog.connect('closed', self._on_manager_closed)
+
+    def _on_manager_closed(self, *args):
+        """Show the projects the manager left behind, ticks included.
+
+        Nothing is written until the rename goes through, so what the user has
+        ticked so far has to survive the rebuild. Projects created in the
+        manager come in unticked.
+        """
+        ticked = {pid for pid, check in self.checks.items() if check.get_active()}
+        row = self.listbox.get_first_child()
+        while row is not None:
+            following = row.get_next_sibling()
+            self.listbox.remove(row)
+            row = following
+        self._build_rows()
+        for pid, check in self.checks.items():
+            check.set_active(pid in ticked)
 
     # Document tab contract
     def set_document(self, doc_id):
@@ -543,7 +579,7 @@ class MiAZProjectMgt(MiAZExtension):
             self.plugin.register_document_tab(
                 name='projects',
                 title=item_type.__title_plural__,
-                factory=lambda app: MiAZProjectTab(app, self.config),
+                factory=lambda app: MiAZProjectTab(app, self.config, self.show_settings),
                 weight=100)
 
             self.plugin.set_started(started=True)
@@ -685,9 +721,15 @@ class MiAZProjectMgt(MiAZExtension):
         self.show_settings(widget=parent)
 
     def show_settings(self, widget: Gtk.Widget = None):
+        """Open the project manager over the window holding `widget`.
+
+        The dialog is returned so a caller that has to react to what the user
+        did there (the rename dialog tab rebuilds its list) can connect to it.
+        """
         configview = MiAZProjectsView(self.app, plugin=self.plugin, config=self.config)
         configview.update_views()
         dialog = self.srvdlg.show_noop(
             title=_('Manage {i_confname}').format(i_confname=i_confname),
             widget=configview, width=800, height=600)
         dialog.present(widget.get_root())
+        return dialog

@@ -1,4 +1,3 @@
-#!/usr/bin/python3
 # File: render.py
 # Author: Tomás Vírseda
 # License: GPL v3

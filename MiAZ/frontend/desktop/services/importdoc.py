@@ -1,4 +1,3 @@
-#!/usr/bin/python3
 # File: importdoc.py
 # Author: Tomás Vírseda
 # License: GPL v3

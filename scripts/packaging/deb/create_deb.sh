@@ -21,11 +21,15 @@ require() {
     done
 }
 
-# ── version ──────────────────────────────────────────────────────────────────
-VERSION=$(grep -m1 "version" "$REPO_ROOT/meson.build" \
-    | sed "s/.*version.*: *'\([^']*\)'.*/\1/")
+# ── source ───────────────────────────────────────────────────────────────────
+# Everything below reads from the export, never from the working tree: the
+# sources, debian/ and the version all come from one commit, the same one the
+# .rpm is built from. See ../lib/source_export.sh.
+source "$SCRIPT_DIR/../lib/source_export.sh"
+miaz_prepare_source "$REPO_ROOT" "deb"
+
+VERSION="$MIAZ_SRC_VERSION"
 [[ -n "$VERSION" ]] || die "Could not read version from meson.build"
-log "Version: $VERSION"
 
 DEB_VERSION="${VERSION}-1"
 ARCH="all"
@@ -50,31 +54,37 @@ fi
 build_native() {
     require dpkg-buildpackage dh meson ninja desktop-file-validate
 
-    [[ -d "$REPO_ROOT/debian" ]] || die "debian/ directory not found under $REPO_ROOT"
+    [[ -d "$MIAZ_SRC_DIR/debian" ]] || die "debian/ directory not found in the exported source"
 
-    # Keep debian/changelog version in sync
-    DEB_CHANGELOG="$REPO_ROOT/debian/changelog"
+    # Keep debian/changelog version in sync. This edits the export, not the
+    # repository: the working tree is never written to by a build.
+    DEB_CHANGELOG="$MIAZ_SRC_DIR/debian/changelog"
     DEB_CUR_VER=$(head -1 "$DEB_CHANGELOG" | sed 's/.*(\(.*\)).*/\1/' | cut -d- -f1)
     if [[ "$DEB_CUR_VER" != "$VERSION" ]]; then
-        log "Updating debian/changelog: $DEB_CUR_VER -> $VERSION"
-        DEBFULLNAME="${DEBFULLNAME:-Tomás Vírseda}" \
-        DEBEMAIL="${DEBEMAIL:-tomasvirseda@gmail.com}" \
-        dch --newversion "$DEB_VERSION" --distribution unstable \
-            "Update to ${VERSION}" 2>/dev/null \
-            || log "WARNING: dch not available. Update debian/changelog manually if needed."
+        log "Updating debian/changelog in the export: $DEB_CUR_VER -> $VERSION"
+        ( cd "$MIAZ_SRC_DIR" && \
+          DEBFULLNAME="${DEBFULLNAME:-Tomás Vírseda}" \
+          DEBEMAIL="${DEBEMAIL:-tomasvirseda@gmail.com}" \
+          dch --newversion "$DEB_VERSION" --distribution unstable \
+              "Update to ${VERSION}" 2>/dev/null ) \
+            || log "WARNING: dch not available. debian/changelog keeps version $DEB_CUR_VER."
     fi
 
-    cd "$REPO_ROOT"
+    cd "$MIAZ_SRC_DIR"
     dpkg-buildpackage -us -uc -b
 
-    PARENT_DIR="$(dirname "$REPO_ROOT")"
-    log "Done. Package(s) in $PARENT_DIR/:"
-    find "$PARENT_DIR" -maxdepth 1 -name "miaz_${VERSION}*.deb" | sort | while read -r pkg; do
-        log "  $pkg"
-    done
+    # dpkg-buildpackage writes next to the source tree, which is the export.
+    # Move the result where the manual strategy puts it, so callers find the
+    # package in one place whichever strategy ran.
+    local built
+    built=$(find "$(dirname "$MIAZ_SRC_DIR")" -maxdepth 1 -name "miaz_${VERSION}*.deb" | sort | head -1)
+    [[ -n "$built" ]] || die "dpkg-buildpackage produced no .deb"
+    mv "$built" "$REPO_ROOT/$OUTPUT_NAME"
+
+    log "Done: $REPO_ROOT/$OUTPUT_NAME"
     log ""
     log "Install with:"
-    log "  sudo dpkg -i \$(find $PARENT_DIR -maxdepth 1 -name 'miaz_${VERSION}*.deb' | head -1)"
+    log "  sudo dpkg -i $REPO_ROOT/$OUTPUT_NAME"
     log "  sudo apt-get install -f   # resolve any missing dependencies"
 }
 
@@ -84,14 +94,34 @@ build_native() {
 build_manual() {
     require meson ninja dpkg-deb
 
-    STAGING="$REPO_ROOT/builddir_deb_staging"
+    # Build and stage inside the export, so nothing here can pick a file up
+    # from the working tree and no build directory is left in the repository.
+    STAGING="$MIAZ_SRC_DIR/_staging"
+    BUILDDIR="$MIAZ_SRC_DIR/_build"
     OUTPUT="$REPO_ROOT/$OUTPUT_NAME"
 
     log "Installing into staging dir: $STAGING"
-    rm -rf "$STAGING" "$REPO_ROOT/builddir_deb"
-    meson setup "$REPO_ROOT/builddir_deb" --prefix=/usr -Dprofile=release --wipe
-    ninja -C "$REPO_ROOT/builddir_deb"
-    DESTDIR="$STAGING" ninja -C "$REPO_ROOT/builddir_deb" install
+    rm -rf "$STAGING" "$BUILDDIR"
+    meson setup "$BUILDDIR" "$MIAZ_SRC_DIR" --prefix=/usr -Dprofile=release
+    ninja -C "$BUILDDIR"
+    DESTDIR="$STAGING" ninja -C "$BUILDDIR" install
+
+    # debhelper does this in the native build. Strategy B uses plain dpkg-deb,
+    # so the two files Policy requires (12.5 copyright, 12.7 changelog) have to
+    # be installed by hand. Both have to land before the installed size and the
+    # md5sums are computed, otherwise they are missing from both.
+    DOCDIR="$STAGING/usr/share/doc/miaz"
+    mkdir -p "$DOCDIR"
+    install -m 0644 "$MIAZ_SRC_DIR/debian/copyright" "$DOCDIR/copyright"
+    gzip -9nc "$MIAZ_SRC_DIR/debian/changelog" > "$DOCDIR/changelog.Debian.gz"
+    chmod 0644 "$DOCDIR/changelog.Debian.gz"
+
+    # install_subdir copies the source directories as they are, so a working
+    # tree that has been run from carries its __pycache__ into the package. The
+    # bytecode is built by the host interpreter and is useless on the target
+    # anyway. Pruning happens before the size and the md5sums are computed.
+    find "$STAGING" -type d -name '__pycache__' -prune -exec rm -rf {} +
+    find "$STAGING" -type f -name '*.pyc' -delete
 
     # Compute installed size in KB
     INSTALLED_KB=$(du -sk "$STAGING" | cut -f1)
@@ -106,7 +136,7 @@ build_manual() {
     # the app failed to start on a clean Ubuntu (missing gir1.2-peas-2,
     # gir1.2-webkit-6.0, and others).
     control_field() {
-        python3 - "$REPO_ROOT/debian/control" "$1" <<'PYEOF'
+        python3 - "$MIAZ_SRC_DIR/debian/control" "$1" <<'PYEOF'
 import re, sys
 path, name = sys.argv[1], sys.argv[2]
 text = open(path).read()
@@ -165,8 +195,8 @@ EOF
     log "Building $OUTPUT_NAME ..."
     dpkg-deb --root-owner-group --build "$STAGING" "$OUTPUT"
 
-    rm -rf "$STAGING" "$REPO_ROOT/builddir_deb"
-
+    # The staging and build directories live inside the export, which its owner
+    # removes, so there is nothing to clean up in the repository.
     log "Done: $OUTPUT"
     log ""
     log "Install with:"

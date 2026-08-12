@@ -1,4 +1,3 @@
-#!/usr/bin/python3
 # File: rename.py
 # Author: Tomás Vírseda
 # License: GPL v3
@@ -11,6 +10,7 @@ from gettext import gettext as _
 from gi.repository import Adw
 from gi.repository import Gdk
 from gi.repository import Gio
+from gi.repository import GObject
 from gi.repository import Gtk
 from gi.repository import GLib
 from gi.repository import Pango
@@ -26,6 +26,13 @@ from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewSuggestion
 
 
 class MiAZRenameDialog(Gtk.Box):
+    __gtype_name__ = 'MiAZRenameDialog'
+    __gsignals__ = {
+        # Any filename field changed. Carries nothing: what a receiver needs is
+        # is_valid(), which reads the fields anyway.
+        'fields-changed': (GObject.SignalFlags.RUN_LAST, None, ()),
+    }
+
     def __init__(self, app) -> Gtk.Widget:
         super(MiAZRenameDialog, self).__init__(orientation=Gtk.Orientation.VERTICAL, spacing=3, hexpand=True, vexpand=True)
         self.app = app
@@ -679,6 +686,9 @@ class MiAZRenameDialog(Gtk.Box):
             # dialog broken and the preview frozen.
             self.log.error(error)
             self.result = ''
+        # Outside the try: a failed preview is still a change, and the Rename
+        # button has to go insensitive rather than stay on a stale verdict.
+        self.emit('fields-changed')
 
     # Inline "+ Add" for restricted-vocabulary rows
     def _on_inline_add_value(self, _button, item_type, conf_obj):

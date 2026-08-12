@@ -1,4 +1,3 @@
-#!/usr/bin/python3
 
 
 def suggest_system_prompt(vocab) -> str:

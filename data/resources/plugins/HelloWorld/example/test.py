@@ -1,4 +1,3 @@
-#!/usr/bin/python3
 
 class PluginTest:
     def __init__(self, app):
