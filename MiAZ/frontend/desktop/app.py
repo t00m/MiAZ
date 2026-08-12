@@ -1,4 +1,3 @@
-#!/usr/bin/python3
 # File: app.py
 # Author: Tomás Vírseda
 # License: GPL v3
@@ -26,6 +25,7 @@ from MiAZ.frontend.desktop.services.extlibs import MiAZExtLibs
 from MiAZ.frontend.desktop.widgets.mainwindow import MiAZMainWindow
 
 from MiAZ.backend.util import MiAZUtil
+from MiAZ.backend.index import MiAZDocumentIndex
 from MiAZ.backend.config import MiAZConfigApp
 from MiAZ.backend.repository import MiAZRepository
 from MiAZ.frontend.desktop.services.massrename import MiAZMassRename
@@ -75,6 +75,9 @@ class MiAZApp(Adw.Application):
         self.set_service('webserver', MiAZWebServer(self))
         repository = self.set_service('repo', MiAZRepository(self))
         repository.connect('repository-switched', workflow.switch_finish)
+        # Owns the parse from filename to MiAZItem. Registered after 'repo'
+        # because it reads the repository directory through it.
+        self.set_service('index', MiAZDocumentIndex(self))
         self.set_service('massrename', MiAZMassRename(self))
         self.set_service('importdoc', MiAZImportDoc(self))
         self.set_service('document-tabs', MiAZDocumentTabs(self))
@@ -92,8 +95,11 @@ class MiAZApp(Adw.Application):
         """
         Set current application status.
 
-        RUNNING: Normal status. Do update the workspace view.
-        BUSY: Used to avoid updating the workspace view.
+        BUSY means a repository is being loaded or switched, and only
+        MiAZWorkflow sets it. It is not a general "do not refresh" flag: to hold
+        the workspace still while doing bulk work, take a handle from
+        workspace.suspend_updates(), which counts holders and coalesces the
+        refreshes instead of racing other callers through one global.
         """
         self._status = status
 

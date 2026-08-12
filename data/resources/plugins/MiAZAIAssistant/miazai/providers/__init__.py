@@ -1,4 +1,3 @@
-#!/usr/bin/python3
 
 from .base import Provider, MissingDependencyError as MissingDependencyError
 from .claude import ClaudeProvider

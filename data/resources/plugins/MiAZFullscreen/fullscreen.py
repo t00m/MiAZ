@@ -1,4 +1,3 @@
-#!/usr/bin/python3
 # pylint: disable=E1101
 
 """
@@ -62,11 +61,8 @@ class MiAZFullscreenPlugin(MiAZExtension):
                 'workspace-loaded', self.startup)
 
     def do_deactivate(self):
-        button = self.app.get_widget(BUTTON_WIDGET_ID)
-        if button is not None:
-            parent = button.get_parent()
-            if parent is not None:
-                parent.remove(button)
+        # The header bar button is detached by the plugin system, which owns
+        # what add_headerbar_widget handed it.
         window = self.app.get_widget('window')
         if window is not None and hasattr(self, '_fullscreen_handler'):
             window.disconnect(self._fullscreen_handler)
@@ -84,9 +80,8 @@ class MiAZFullscreenPlugin(MiAZExtension):
         if self.plugin.started():
             return
 
-        hdb_left = self.app.get_widget('headerbar-left-box')
         button = self.app.get_widget(BUTTON_WIDGET_ID)
-        if button is None and hdb_left is not None:
+        if button is None:
             button = Gtk.ToggleButton()
             button.set_icon_name(ICON_ENTER)
             button.set_has_frame(False)
@@ -94,14 +89,17 @@ class MiAZFullscreenPlugin(MiAZExtension):
             button.set_hexpand(False)
             button.set_tooltip_text(_('Enter fullscreen'))
             self._toggled_handler = button.connect('toggled', self._on_toggle)
-            self.app.add_widget(BUTTON_WIDGET_ID, button)
 
             visible = self.plugin.get_config_key('icon_visible')
             if visible is None:
                 visible = True
                 self.plugin.set_config_key('icon_visible', True)
             button.set_visible(visible)
-            hdb_left.append(button)
+            # The plugin system detaches the button and drops its widget key
+            # when this plugin is unloaded, so the next activation builds a
+            # fresh one instead of finding a stale key and doing nothing.
+            self.plugin.add_headerbar_widget(
+                button, position='left', widget_key=BUTTON_WIDGET_ID)
 
             # Keep the button in sync when fullscreen is toggled elsewhere
             # (window manager, F11) and reflect the current window state.

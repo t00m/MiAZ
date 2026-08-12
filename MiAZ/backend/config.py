@@ -1,4 +1,3 @@
-#!/usr/bin/python3
 
 """
 # File: config.py
@@ -17,22 +16,30 @@ from MiAZ.backend.log import MiAZLog
 from MiAZ.backend.models import MiAZModel, Group, Person, Country, Purpose, Concept, SentBy, SentTo, Repository, Plugin
 
 
+def changed_keys(old: dict, new: dict) -> set:
+    """The keys that differ between two versions of a config file.
+
+    A key counts as changed when it was added, removed, or kept with a
+    different description. Nothing else about the two dicts matters.
+    """
+    keys = set(old) ^ set(new)
+    keys.update(k for k in set(old) & set(new) if old[k] != new[k])
+    return keys
+
+
 class MiAZConfig(GObject.GObject):
     """ MiAZ Config class"""
     __gsignals__ = {
-        'available-updated': (GObject.SignalFlags.RUN_LAST, None, ()),
-        'used-updated': (GObject.SignalFlags.RUN_LAST, None, ()),
+        # Both carry the set of keys that changed, so a listener can drop one
+        # cache entry instead of the whole cache. None means the previous
+        # contents could not be read, so the receiver must assume everything.
+        'available-updated': (GObject.SignalFlags.RUN_LAST, None, (object,)),
+        'used-updated': (GObject.SignalFlags.RUN_LAST, None, (object,)),
     }
     used = None
     default = None
-    # Shared across all config instances, keyed by absolute filepath. SentBy,
-    # SentTo and People all point their "available" pool at people-available.json,
-    # so they must read and write one consistent cache. A per-instance cache let
-    # them hold divergent copies: one instance saving its stale copy dropped
-    # entries another instance had just added.
-    cache = {}
 
-    def __init__(self, app, log, config_for, used=None, available=None, default=None, model=MiAZModel, must_copy=True, foreign=False):
+    def __init__(self, app, log, config_for, used=None, available=None, default=None, model=MiAZModel, must_copy=True, foreign=False, cache=None):
         super().__init__()
         self.app = app
         self.log = log
@@ -43,6 +50,15 @@ class MiAZConfig(GObject.GObject):
         self.model = model
         self.must_copy = must_copy
         self.foreign = foreign
+        # In-memory copies keyed by absolute filepath. The owner passes the dict
+        # in: MiAZConfigStore hands the same one to every config of a repository,
+        # because SentBy, SentTo and People all point their "available" pool at
+        # people-available.json and must not hold divergent copies of it. It used
+        # to be a class attribute, which fixed that but tied the cache lifetime
+        # to the process rather than to the repository, so entries from a
+        # repository switched away from stayed and were read again on the way
+        # back.
+        self.cache = {} if cache is None else cache
         self.setup()
 
     def __repr__(self):
@@ -119,20 +135,47 @@ class MiAZConfig(GObject.GObject):
     def save(self, filepath: str = '', items: dict = None) -> bool:
         if items is None:
             items = {}
+        # Resolve the default here rather than only inside save_data. It used to
+        # be resolved there alone, so a caller passing no filepath (set() did)
+        # wrote the right file but invalidated self.cache[''] and emitted no
+        # signal at all.
+        if not filepath:
+            filepath = self.used
+        # Read the previous contents before overwriting them. The diff cannot be
+        # taken against self.cache: load() hands out the cached dict itself and
+        # callers mutate it in place (set() does), so by now the cached copy is
+        # already the new one.
+        previous = self._read_from_disk(filepath)
         saved = self.save_data(filepath, items)
         if saved:
+            self._invalidate(filepath)
+            changed = None if previous is None else changed_keys(previous, items)
             if filepath == self.available:
-                self.emit('available-updated')
+                self.emit('available-updated', changed)
             elif filepath == self.used:
                 self.log.debug(f"Signal emitted after saving used config for {self.config_for}")
-                self.emit('used-updated')
-            try:
-                self.cache[filepath]['changed'] = True
-            except KeyError:
-                self.cache[filepath] = {}
-                self.cache[filepath]['changed'] = True
-            # ~ self.log.debug(f"Cache update for '{filepath}'")
+                self.emit('used-updated', changed)
         return saved
+
+    def _read_from_disk(self, filepath: str):
+        """The file as it is on disk right now, or None when it cannot be read.
+
+        A missing file is not a failure: it means every key in what is about to
+        be written is new. None is reserved for a read that went wrong, which
+        the signal passes on so listeners fall back to clearing everything.
+        """
+        if not filepath or not os.path.exists(filepath):
+            return {}
+        util = self.app.get_service('util')
+        try:
+            return util.json_load(filepath)
+        except Exception as error:
+            self.log.warning(f"Could not read {filepath} before saving: {error}")
+            return None
+
+    def _invalidate(self, filepath: str):
+        """Mark the on-disk copy as newer than the cached one."""
+        self.cache.setdefault(filepath, {})['changed'] = True
 
     def save_available(self, items: dict = None) -> bool:
         if items is None:
@@ -168,7 +211,7 @@ class MiAZConfig(GObject.GObject):
     def set(self, key: str, value: str) -> bool:
         items = self.load(self.used)
         items[key] = value
-        return self.save(items=items)
+        return self.save(self.used, items=items)
 
     def exists_used(self, key: str) -> bool:
         config = self.load(self.used)
@@ -280,8 +323,14 @@ class MiAZConfigApp(MiAZConfig):
     def save(self, filepath: str = '', items: dict = None) -> bool:
         if items is None:
             items = {}
+        if not filepath:
+            filepath = self.used
         saved = self.save_data(filepath, items)
         if saved:
+            # The base class emits available-updated / used-updated; this config
+            # points both at the same file and announces itself instead. The
+            # cache still has to be invalidated, which this override used to skip.
+            self._invalidate(filepath)
             self.emit('repo-settings-updated-app')
         return saved
 
@@ -363,7 +412,7 @@ class MiAZConfigRepositories(MiAZConfig):
 
 
 class MiAZConfigCountries(MiAZConfig):
-    def __init__(self, app, dir_conf):
+    def __init__(self, app, dir_conf, cache=None):
 
         ENV = app.get_env()
         super().__init__(
@@ -375,12 +424,13 @@ class MiAZConfigCountries(MiAZConfig):
             default=os.path.join(ENV['GPATH']['CONF'], 'MiAZ-countries.json'),
             model=Country,
             must_copy=False,
-            foreign=True
+            foreign=True,
+            cache=cache
         )
 
 
 class MiAZConfigGroups(MiAZConfig):
-    def __init__(self, app, dir_conf):
+    def __init__(self, app, dir_conf, cache=None):
 
         ENV = app.get_env()
         super().__init__(
@@ -391,12 +441,13 @@ class MiAZConfigGroups(MiAZConfig):
             available=os.path.join(dir_conf, 'groups-available.json'),
             default=os.path.join(ENV['GPATH']['CONF'], 'MiAZ-groups.json'),
             model=Group,
-            must_copy=True
+            must_copy=True,
+            cache=cache
         )
 
 
 class MiAZConfigPurposes(MiAZConfig):
-    def __init__(self, app, dir_conf):
+    def __init__(self, app, dir_conf, cache=None):
         ENV = app.get_env()
         super().__init__(
             app=app,
@@ -406,12 +457,13 @@ class MiAZConfigPurposes(MiAZConfig):
             available=os.path.join(dir_conf, 'purposes-available.json'),
             default=os.path.join(ENV['GPATH']['CONF'], 'MiAZ-purposes.json'),
             model=Purpose,
-            must_copy=True
+            must_copy=True,
+            cache=cache
         )
 
 
 class MiAZConfigConcepts(MiAZConfig):
-    def __init__(self, app, dir_conf):
+    def __init__(self, app, dir_conf, cache=None):
         super().__init__(
             app=app,
             log=MiAZLog('MiAZ.Config.Concepts'),
@@ -420,12 +472,13 @@ class MiAZConfigConcepts(MiAZConfig):
             available=os.path.join(dir_conf, 'concepts-available.json'),
             default=None,
             model=Concept,
-            must_copy=False
+            must_copy=False,
+            cache=cache
         )
 
 
 class MiAZConfigPeople(MiAZConfig):
-    def __init__(self, app, dir_conf):
+    def __init__(self, app, dir_conf, cache=None):
 
         ENV = app.get_env()
         super().__init__(
@@ -436,12 +489,13 @@ class MiAZConfigPeople(MiAZConfig):
             available=os.path.join(dir_conf, 'people-available.json'),
             default=os.path.join(ENV['GPATH']['CONF'], 'MiAZ-people.json'),
             model=Person,
-            must_copy=True
+            must_copy=True,
+            cache=cache
         )
 
 
 class MiAZConfigSentBy(MiAZConfig):
-    def __init__(self, app, dir_conf):
+    def __init__(self, app, dir_conf, cache=None):
 
         ENV = app.get_env()
         config_name_available = SentBy.__config_name_available__
@@ -454,12 +508,13 @@ class MiAZConfigSentBy(MiAZConfig):
             available=os.path.join(dir_conf, f'{config_name_available}-available.json'),
             default=os.path.join(ENV['GPATH']['CONF'], 'MiAZ-people.json'),
             model=SentBy,
-            must_copy=False
+            must_copy=False,
+            cache=cache
         )
 
 
 class MiAZConfigSentTo(MiAZConfig):
-    def __init__(self, app, dir_conf):
+    def __init__(self, app, dir_conf, cache=None):
 
         ENV = app.get_env()
         super().__init__(
@@ -470,12 +525,13 @@ class MiAZConfigSentTo(MiAZConfig):
             available=os.path.join(dir_conf, f'{SentTo.__config_name_available__}-available.json'),
             default=os.path.join(ENV['GPATH']['CONF'], 'MiAZ-people.json'),
             model=SentTo,
-            must_copy=False
+            must_copy=False,
+            cache=cache
         )
 
 
 class MiAZConfigPlugins(MiAZConfig):
-    def __init__(self, app, dir_conf):
+    def __init__(self, app, dir_conf, cache=None):
         super().__init__(
             app=app,
             log=MiAZLog('MiAZ.Config.Plugins'),
@@ -484,5 +540,60 @@ class MiAZConfigPlugins(MiAZConfig):
             available=os.path.join(dir_conf, 'plugins-available.json'),
             default=None,
             model=Plugin,
-            must_copy=False
+            must_copy=False,
+            cache=cache
         )
+
+
+# Every configuration a repository owns, by the name the rest of the app uses
+# with app.get_config(name).
+REPO_CONFIGS = (
+    ('Country', MiAZConfigCountries),
+    ('Group', MiAZConfigGroups),
+    ('Purpose', MiAZConfigPurposes),
+    ('Concept', MiAZConfigConcepts),
+    ('SentBy', MiAZConfigSentBy),
+    ('SentTo', MiAZConfigSentTo),
+    ('Person', MiAZConfigPeople),
+    ('Plugin', MiAZConfigPlugins),
+)
+
+
+class MiAZConfigStore:
+    """Owns every configuration of one repository, and their shared cache.
+
+    One store per repository, disposed when the repository is switched away
+    from. The cache used to be a class attribute on MiAZConfig: shared by every
+    instance in the process, which is what the configs of a repository need
+    (SentBy, SentTo and Person all read people-available.json), but keyed by
+    absolute filepath and never emptied, so entries survived the switch and were
+    read again on the way back.
+    """
+
+    def __init__(self, app, dir_conf):
+        self.app = app
+        self.dir_conf = dir_conf
+        self.log = MiAZLog('MiAZ.Config.Store')
+        self.cache = {}
+        self._configs = {}
+        for name, klass in REPO_CONFIGS:
+            self._configs[name] = klass(app, dir_conf, cache=self.cache)
+        self.log.debug(f"Configuration loaded for repository: {dir_conf}")
+
+    def get(self, name: str):
+        """One configuration by name, or None."""
+        return self._configs.get(name)
+
+    def names(self):
+        """The names this store holds."""
+        return list(self._configs)
+
+    def as_dict(self) -> dict:
+        """The configs keyed by name, for publishing into the app registry."""
+        return dict(self._configs)
+
+    def dispose(self):
+        """Drop the cache and the configs. Called on a repository switch."""
+        self.cache.clear()
+        self._configs.clear()
+        self.log.debug(f"Configuration disposed for repository: {self.dir_conf}")

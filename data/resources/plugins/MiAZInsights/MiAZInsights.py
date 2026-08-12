@@ -1,4 +1,3 @@
-#!/usr/bin/python3
 # pylint: disable=E1101
 
 """
@@ -29,12 +28,12 @@
 import os
 import sys
 import shutil
-import threading
 from datetime import datetime
 from gettext import gettext as _
 
 from gi.repository import GLib
 
+from MiAZ.backend.tasks import run_in_background
 from MiAZ.frontend.desktop.services.pluginsystem import MiAZExtension, MiAZPlugin
 
 # The support package sits next to this file, which is not on the default path.
@@ -165,18 +164,17 @@ class MiAZInsightsPlugin(MiAZExtension):
 
     def _kick_rebuild(self):
         self._rebuild_timeout_id = 0
-        threading.Thread(target=self._rebuild_worker, name='MiAZInsights-build', daemon=True).start()
+        run_in_background(self._rebuild_worker, name='MiAZInsights-build')
         return False
 
     def _rebuild_worker(self):
-        try:
-            payload = render.build_payload(self._records(), self._names(), self._meta(),
-                                           self._periods())
-            page = render.render_page(payload, self._asset('report.css'),
-                                      self._asset('report.js'), self._asset('worldmap.svg'))
-            self._write_page(page)
-        except Exception as error:
-            self.log.error(f"MiAZInsights build failed: {error}")
+        """Runs off the main loop. run_in_background logs a failure with its
+        traceback, which the local try/except here used to swallow."""
+        payload = render.build_payload(self._records(), self._names(), self._meta(),
+                                       self._periods())
+        page = render.render_page(payload, self._asset('report.css'),
+                                  self._asset('report.js'), self._asset('worldmap.svg'))
+        self._write_page(page)
 
     def _write_page(self, page):
         target = self._target_dir()
@@ -225,7 +223,10 @@ class MiAZInsightsPlugin(MiAZExtension):
             ('past-month', _('Since past month'), util.since_date_last_n_months(now, 1)),
             ('last-3-months', _('Since last 3 months'), util.since_date_last_n_months(now, 3)),
             ('last-6-months', _('Since last 6 months'), util.since_date_last_n_months(now, 6)),
-            ('this-year', _('Since last year'), util.since_date_this_year(now)),
+            # The last twelve months, matching the workspace date filter. Both
+            # used since_date_this_year, so the label said "last year" while the
+            # window was the calendar year to date.
+            ('last-12-months', _('Since last year'), util.since_date_last_n_months(now, 12)),
             ('two-years', _('Since two years ago'), util.since_date_past_n_years_ago(now, 2)),
             ('three-years', _('Since three years ago'), util.since_date_past_n_years_ago(now, 3)),
             ('five-years', _('Since five years ago'), util.since_date_past_n_years_ago(now, 5)),

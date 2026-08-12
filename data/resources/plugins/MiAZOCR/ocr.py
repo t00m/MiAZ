@@ -1,4 +1,3 @@
-#!/usr/bin/python3
 # pylint: disable=E1101
 
 """
@@ -12,7 +11,6 @@
 import os
 import shutil
 import tempfile
-import threading
 import subprocess
 from gettext import gettext as _
 
@@ -21,8 +19,8 @@ from gi.repository import GLib
 from gi.repository import GObject  # noqa: F401
 from gi.repository import Gtk
 
+from MiAZ.backend.tasks import run_in_background
 from MiAZ.frontend.desktop.services.pluginsystem import MiAZExtension, MiAZPlugin
-from MiAZ.backend.status import MiAZStatus
 
 plugin_info = {
         'Module':        'ocr',
@@ -220,13 +218,27 @@ class MiAZOCRPlugin(MiAZExtension):
         lang = langs[idx] if 0 <= idx < len(langs) else 'eng'
         self.plugin.set_config_key('lang', lang)
         force = force_row.get_active()
-        self.app.set_status(MiAZStatus.BUSY)
-        threading.Thread(target=self._process,
-                         args=(eligible, lang, force, skipped),
-                         daemon=True).start()
+        self._suspend = self.app.get_widget('workspace').suspend_updates()
+        run_in_background(
+            lambda: self._process(eligible, lang, force, skipped),
+            on_done=self._finish,
+            on_error=self._on_process_crashed,
+            name='ocr-process')
+
+    def _on_process_crashed(self, error):
+        """The OCR run died outside the per-document try block.
+
+        _finish is what releases the update gate, so without this the workspace
+        would stop refreshing for the rest of the session. It reports an error
+        rather than a summary: no counts survived the failure.
+        """
+        self.log.error(f"OCR run failed: {error}")
+        self._release_suspend()
+        self.srvdlg.show_error(title=_('OCR failed'), body=str(error))
 
     # Background processing
     def _process(self, items, lang, force, skipped):
+        """OCR every document. Returns (created, failed, skipped) for _finish."""
         created = 0
         failed = 0
         for item in items:
@@ -246,7 +258,7 @@ class MiAZOCRPlugin(MiAZExtension):
                 self.log.error(f"OCR failed for '{item.id}': {error}")
                 GLib.idle_add(self.srvdlg.show_toast,
                               _('OCR failed: {doc}').format(doc=item.id))
-        GLib.idle_add(self._finish, created, failed, skipped)
+        return created, failed, skipped
 
     def _extract_text(self, item, lang, force):
         source = os.path.join(self.repository.docs, item.id)
@@ -300,15 +312,21 @@ class MiAZOCRPlugin(MiAZExtension):
             self.log.error(f"Could not create note for '{doc_id}': {error}")
             return False
 
-    def _finish(self, created, failed, skipped):
-        self.app.set_status(MiAZStatus.RUNNING)
+    def _release_suspend(self):
+        """Let the workspace refresh again. Safe to reach twice."""
+        if getattr(self, '_suspend', None) is not None:
+            self._suspend.release()
+            self._suspend = None
+
+    def _finish(self, counts):
+        created, failed, skipped = counts
+        self._release_suspend()
         parts = [_('{n} note(s) created').format(n=created)]
         if failed:
             parts.append(_('{n} failed').format(n=failed))
         if skipped:
             parts.append(_('{n} skipped').format(n=skipped))
         self.srvdlg.show_toast(_('OCR finished: {summary}').format(summary=', '.join(parts)))
-        return False
 
     # Settings
     def show_settings(self, widget):

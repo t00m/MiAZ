@@ -1,0 +1,15 @@
+# rpmlint configuration for MiAZ.
+#
+# Two tags do not apply to this package and are filtered here rather than
+# worked around in the spec.
+#
+# explicit-lib-dependency: rpmlint assumes the library requirements come from
+# automatic dependency generation. MiAZ is noarch and ships no ELF objects, so
+# nothing is generated. Dropping the explicit Requires would produce a package
+# that installs and then fails to start.
+#
+# spelling-error: 'organises' is British spelling, 'sentby' and 'sentto' are
+# field names of the filename convention.
+
+addFilter(r"explicit-lib-dependency (libadwaita|libpeas|libsecret)")
+addFilter(r"spelling-error .*(organises|sentby|sentto)")

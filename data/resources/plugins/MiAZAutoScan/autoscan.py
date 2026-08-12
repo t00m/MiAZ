@@ -1,4 +1,3 @@
-#!/usr/bin/python3
 # pylint: disable=E1101
 
 """
@@ -23,8 +22,8 @@ from gi.repository import Gio
 from gi.repository import GLib
 from gi.repository import Gtk
 
+from MiAZ.backend.tasks import run_in_background
 from MiAZ.frontend.desktop.services.pluginsystem import MiAZExtension, MiAZPlugin
-from MiAZ.backend.status import MiAZStatus
 
 plugin_info = {
     'Module':      'autoscan',
@@ -130,7 +129,11 @@ class MiAZAutoScanPlugin(MiAZExtension):
         # Detect the scanner sources in a background thread: querying the
         # device wakes it up and can take several seconds. The menu is built
         # back on the main thread once detection finishes.
-        threading.Thread(target=self._detect_sources, daemon=True).start()
+        run_in_background(
+            self._detect_sources,
+            on_done=self._build_source_menu,
+            on_error=self._on_detect_failed,
+            name='autoscan-detect')
 
     def _detect_sources(self):
         devices = self._list_devices()
@@ -143,7 +146,17 @@ class MiAZAutoScanPlugin(MiAZExtension):
             sources = self._list_sources(device)
             if not sources:
                 sources = list(_SOURCES)
-        GLib.idle_add(self._build_source_menu, sources)
+        return sources
+
+    def _on_detect_failed(self, error):
+        """Detection blew up, so install the plain entry anyway.
+
+        With no menu entry the plugin is simply invisible: no way to scan and
+        no hint that anything went wrong. The entry runs the normal scan flow,
+        which reports whatever the real problem turns out to be.
+        """
+        self.log.error(f"Could not detect the scanner sources: {error}")
+        self._build_source_menu([])
 
     def _build_source_menu(self, sources):
         base = self.plugin.get_menu_item_name()
@@ -159,7 +172,7 @@ class MiAZAutoScanPlugin(MiAZExtension):
             )
             self.plugin.install_menu_entry(menuitem)
             self._refresh_add_menu()
-            return False
+            return
 
         sources_menu = Gio.Menu()
         for source in sources:
@@ -180,7 +193,6 @@ class MiAZAutoScanPlugin(MiAZExtension):
             _('Scan and import (auto)'), sources_menu)
         self.plugin.install_menu_entry(submenu_item)
         self._refresh_add_menu()
-        return False
 
     def _refresh_add_menu(self):
         """Rebuild the headerbar Add menu so it picks up our entry.
@@ -255,12 +267,21 @@ class MiAZAutoScanPlugin(MiAZExtension):
         self._start_scan(source)
 
     def _start_scan(self, source_override):
-        self.app.set_status(MiAZStatus.BUSY)
-        threading.Thread(
-            target=self._do_scan,
-            kwargs={'source_override': source_override},
-            daemon=True,
-        ).start()
+        self._suspend = self.workspace.suspend_updates()
+        run_in_background(
+            lambda: self._do_scan(source_override=source_override),
+            on_error=self._on_scan_crashed,
+            name='autoscan-scan')
+
+    def _on_scan_crashed(self, error):
+        """The scan died outside its own error handling.
+
+        _do_scan prepares the temp directory and the filename before handing
+        over to the scan methods, which have their own try blocks. A failure in
+        that preamble used to kill the worker silently and leave _suspend held,
+        so the workspace stopped refreshing until the next restart.
+        """
+        self._on_scan_error(str(error))
 
     def _do_scan(self, source_override=None):
         env = self.app.get_env()
@@ -456,8 +477,10 @@ class MiAZAutoScanPlugin(MiAZExtension):
                         f"Could not import '{filepath}': {error}")
         finally:
             GLib.idle_add(watcher.set_active, True)
-            GLib.idle_add(self.app.set_status, MiAZStatus.RUNNING)
+            # Ask while still suspended, then let go: the gate collapses every
+            # request made during the scan into one refresh.
             GLib.idle_add(self.workspace.update)
+            GLib.idle_add(self._release_suspend)
 
         if imported:
             if len(imported) == 1:
@@ -498,9 +521,17 @@ class MiAZAutoScanPlugin(MiAZExtension):
                 'closed',
                 lambda *_a: self._open_next_rename_dialog(actions, pending))
 
+    def _release_suspend(self):
+        """Let the workspace refresh again. Safe to reach twice: a failed scan
+        goes through _on_scan_error as well as the finally block."""
+        suspend = getattr(self, '_suspend', None)
+        if suspend is not None:
+            suspend.release()
+        return False
+
     def _on_scan_error(self, error_msg):
         self.log.error(f"Scan failed: {error_msg}")
-        self.app.set_status(MiAZStatus.RUNNING)
+        self._release_suspend()
         self.srvdlg.show_error(_('Scan failed'), error_msg)
 
     def show_settings(self, widget):

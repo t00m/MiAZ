@@ -1,4 +1,3 @@
-#!/usr/bin/python3
 
 
 def make_usage(input_tokens=None, output_tokens=None, total_tokens=None):

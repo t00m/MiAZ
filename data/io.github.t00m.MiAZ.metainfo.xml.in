@@ -67,6 +67,11 @@
     </screenshot>
   </screenshots>
   <releases>
+    <release version="0.1.50" date="2026-08-06" urgency="medium">
+      <description>
+        <p>See CHANGELOG.md for details.</p>
+      </description>
+    </release>
     <release version="0.1.40" date="2026-08-05" urgency="medium">
       <description>
         <p>Secrets in the system keyring, a localized interface, a faster workspace, and a rename dialog plugins can extend.</p>

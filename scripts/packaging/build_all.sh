@@ -1,5 +1,14 @@
 #!/bin/bash
 # Build RPM, DEB, Flatpak and AppImage packages for MiAZ and copy them to ./dist.
+#
+# Every format is built from one export of one commit, so the packages of a run
+# always carry the same version and the same files.
+#
+# Usage:
+#   build_all.sh                 build the current commit (HEAD)
+#   build_all.sh --pushed        fetch, then build the last commit pushed to the
+#                                branch this one tracks
+#   build_all.sh --ref REF       build any tag, branch or SHA
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -51,14 +60,38 @@ clean_build_tree() {
         "$parent"/miaz_*.tar.*
 }
 
-VERSION_FULL=$(grep -m1 "version" "$REPO_ROOT/meson.build" \
-    | sed "s/.*version.*: *'\([^']*\)'.*/\1/")
+# ── arguments ────────────────────────────────────────────────────────────────
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --pushed)  export MIAZ_BUILD_REF="pushed"; shift ;;
+        --ref)     export MIAZ_BUILD_REF="$2"; shift 2 ;;
+        -h|--help) sed -n '2,11p' "$0"; exit 0 ;;
+        *)         die "Unknown option: $1" ;;
+    esac
+done
+
+# ── one export for every format ──────────────────────────────────────────────
+# The individual build scripts each export their own commit when run alone.
+# Here they are handed one shared export instead, which is what guarantees that
+# the .rpm and the .deb of a single run come from the same tree.
+source "$SCRIPT_DIR/lib/source_export.sh"
+miaz_prepare_source "$REPO_ROOT" "build_all"
+export MIAZ_SOURCE_DIR="$MIAZ_SRC_DIR"
+export MIAZ_SOURCE_COMMIT="$MIAZ_SRC_COMMIT"
+
+VERSION_FULL="$MIAZ_SRC_VERSION"
 [[ -n "$VERSION_FULL" ]] || die "Could not read version from meson.build"
-# VERSION_FULL includes the build number (e.g. 0.1.30+build.21) and matches the
-# RPM/DEB filenames. VERSION drops the +build.N suffix and matches the
-# AppImage/Flatpak filenames. Using VERSION_FULL for the RPM/DEB copy avoids
-# picking up stale build.N packages left in ~/rpmbuild from earlier runs.
+# VERSION_FULL includes the build counter (e.g. 0.1.50+build.12) and matches the
+# DEB filename. VERSION drops the suffix and matches the AppImage and Flatpak
+# filenames. The rpm splits the two, so its artifacts are matched by
+# VERSION-BUILD_COUNTER: matching on the version alone would copy every release
+# of it left in ~/rpmbuild from earlier runs, newest or not.
 VERSION="${VERSION_FULL%%+*}"
+if [[ "$VERSION_FULL" == *"+build."* ]]; then
+    BUILD_COUNTER="${VERSION_FULL##*+build.}"
+else
+    BUILD_COUNTER="1"
+fi
 log "Version: $VERSION_FULL"
 
 mkdir -p "$DIST_DIR"
@@ -71,11 +104,11 @@ clean_build_tree
 LOG_DIR="$DIST_DIR/logs"
 mkdir -p "$LOG_DIR"
 
-# Refresh the plugin external-libraries manifest so packages ship it in sync
-# with each plugin's requirements.txt.
-log "Collecting plugin requirements ..."
-python3 "$REPO_ROOT/scripts/devel/collect_plugin_requirements.py" \
-    || log_err "Could not collect plugin requirements"
+# The plugin requirements manifest used to be refreshed here. It is no longer
+# installed into the packages (nothing reads it; the app collects requirements
+# from each plugin's own requirements.txt), and a build must not write into the
+# working tree. Run scripts/devel/collect_plugin_requirements.py by hand if you
+# want the local copy refreshed.
 
 FAILED=()
 
@@ -90,7 +123,7 @@ elif "$SCRIPT_DIR/rpm/create_rpm.sh" 2>&1 | tee "$LOG_DIR/rpm.log"; then
         log_ok "$(basename "$pkg") -> dist/"
         FOUND=1
     done < <(find "$HOME/rpmbuild/RPMS" "$HOME/rpmbuild/SRPMS" \
-                  -name "miaz*${VERSION_FULL}*" 2>/dev/null | sort)
+                  -name "miaz-${VERSION}-${BUILD_COUNTER}.*" 2>/dev/null | sort)
     [[ $FOUND -eq 1 ]] || { log_err "RPM built but no output file found"; FAILED+=("RPM"); }
 else
     log_err "RPM build failed, see $LOG_DIR/rpm.log"
@@ -243,4 +276,14 @@ if [[ ${#FAILED[@]} -gt 0 ]]; then
     log_err "Failed package(s): ${FAILED[*]}"
     die "${#FAILED[@]} package build(s) failed (${FAILED[*]}), see output above."
 fi
+
+# ── Verification ──────────────────────────────────────────────────────────────
+# Built is not the same as correct. --no-container keeps this to a few seconds;
+# run scripts/checks/verify_packages.sh by hand before a release to add lintian
+# and the dependency resolution against Debian and Ubuntu.
+log ""
+log "Verifying packages ..."
+"$REPO_ROOT/scripts/checks/verify_packages.sh" --no-container "$DIST_DIR" \
+    || die "Package verification failed, see output above."
+
 log "All packages built successfully."

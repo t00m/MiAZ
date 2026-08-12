@@ -1,4 +1,3 @@
-#!/usr/bin/python3
 
 import pathlib
 from dataclasses import replace

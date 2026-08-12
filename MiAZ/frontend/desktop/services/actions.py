@@ -1,4 +1,3 @@
-#!/usr/bin/python3
 # File: actions.py
 # Author: Tomás Vírseda
 # License: GPL v3
@@ -119,7 +118,7 @@ class MiAZActions(GObject.GObject):
         dialog = MiAZWindowDialog(self.app, title=_('Rename document'),
                                   widget=rename_widget, width=1024, height=640)
         # "Rename" is the primary action and must be the first button on the
-        dialog.add_response('apply', _('Rename'))
+        btn_rename = dialog.add_response('apply', _('Rename'))
         dialog.set_response_appearance('apply', Adw.ResponseAppearance.SUGGESTED)
         dialog.set_default_response('apply')
         dialog.set_close_response('cancel')
@@ -170,6 +169,20 @@ class MiAZActions(GObject.GObject):
             btn_suggest.set_sensitive(len(rename_widget.entry_concept.get_text().strip()) >= 2)
         rename_widget.entry_concept.connect('changed', _update_suggest_sensitive)
         _update_suggest_sensitive()
+
+        # "Rename" stays insensitive while the fields cannot make a valid
+        # filename. Clicking it used to do nothing visible: the handler refused
+        # the rename and focused the offending field, which reads as a dead
+        # button. Group and Purpose are advisory and do not block, so they are
+        # not part of the condition (see MiAZRenameDialog.is_valid).
+        def _update_rename_sensitive(*_a):
+            valid = rename_widget.is_valid()
+            dialog.set_response_enabled('apply', valid)
+            btn_rename.set_tooltip_text(
+                _('Rename this document') if valid
+                else _('Fill in date, country, sent by, concept and sent to first'))
+        rename_widget.connect('fields-changed', _update_rename_sensitive)
+        _update_rename_sensitive()
 
         # Focus the first field that needs attention when the dialog is shown.
         rename_widget.connect('map', rename_widget.focus_first_field)
@@ -253,9 +266,19 @@ class MiAZActions(GObject.GObject):
                 parent_dialog.close()
         # On 'no' the rename window stays open so the user can amend the fields.
 
+    def dropdown_repopulate(self, config, changed, dropdown, item_type,
+                            any_value=True, none_value=False):
+        """Signal adapter for 'used-updated' and 'available-updated'.
+
+        Both signals pass the set of keys that changed. Rebuilding a dropdown
+        reads the whole file anyway, so the payload is dropped here rather than
+        threaded through dropdown_populate, which is also called directly.
+        """
+        self.dropdown_populate(config, dropdown, item_type, any_value, none_value)
+
     def dropdown_populate(self, config, dropdown, item_type, any_value=True, none_value=False, only_include: list = [], only_exclude: list = []):
-        # Can be called from a 'used-updated' signal handler or directly.
-        # When called from the signal, config is the emitting object; item_type overrides it.
+        # Called directly, or through dropdown_repopulate from a config signal.
+        # From the signal, config is the emitting object; item_type overrides it.
         i_type = item_type.__gtype_name__
         config_standard = self.app.get_config(i_type)
         if config_standard is not None:

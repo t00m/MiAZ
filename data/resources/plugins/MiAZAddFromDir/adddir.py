@@ -1,4 +1,3 @@
-#!/usr/bin/python3
 # pylint: disable=E1101
 # File: adddir.py
 # Author: Tomás Vírseda
@@ -8,13 +7,12 @@
 import os
 import glob
 from gettext import gettext as _
-import threading
 
 from gi.repository import GLib
 from gi.repository import Gtk
 
+from MiAZ.backend.tasks import run_in_background
 from MiAZ.frontend.desktop.services.pluginsystem import MiAZExtension, MiAZPlugin
-from MiAZ.backend.status import MiAZStatus
 
 plugin_info = {
         'Module':        'adddir',
@@ -104,10 +102,27 @@ class MiAZAddDirectoryPlugin(MiAZExtension):
 
         dirpath = folder.get_path()
         filepaths = glob.glob(os.path.join(dirpath, '*'))
-        self.app.set_status(MiAZStatus.BUSY)
-        threading.Thread(target=self.import_directory, args=(filepaths,), daemon=True).start()
+        workspace = self.app.get_widget('workspace')
+        suspend = workspace.suspend_updates()
+        run_in_background(
+            lambda: self.import_directory(filepaths, suspend),
+            on_error=self._on_import_failed,
+            name='adddir-import')
 
-    def import_directory(self, filepaths):
+    def _on_import_failed(self, error):
+        """Report an import that died halfway.
+
+        import_directory releases the watcher and the update gate in its finally
+        block, so by the time this runs the workspace is usable again. What was
+        missing was any sign that the import stopped early.
+        """
+        self.log.error(f"Directory import failed: {error}")
+        self.srvdlg.show_error(
+            title=_('Could not import the directory'),
+            body=_('The import stopped before finishing.\n\n{error}').format(
+                error=error))
+
+    def import_directory(self, filepaths, suspend=None):
         total_files = len(filepaths)
         watcher = self.app.get_service('watcher')
         watcher.set_active(False)
@@ -126,8 +141,11 @@ class MiAZAddDirectoryPlugin(MiAZExtension):
         finally:
             workspace = self.app.get_widget('workspace')
             GLib.idle_add(watcher.set_active, True)
-            GLib.idle_add(self.app.set_status, MiAZStatus.RUNNING)
+            # Ask while still suspended: the gate records the request and runs
+            # one refresh when the last holder releases.
             GLib.idle_add(workspace.update)
+            if suspend is not None:
+                GLib.idle_add(suspend.release)
 
     def update_progress(self, fraction, text):
         self.log.info(f"{fraction} {text}")

@@ -1,4 +1,3 @@
-#!/usr/bin/python3
 
 """
 # File: util.py
@@ -20,7 +19,7 @@ import functools
 import subprocess
 import mimetypes
 import zipfile
-from datetime import datetime, timedelta
+from datetime import datetime
 
 from gi.repository import Gio
 from gi.repository import GObject
@@ -381,6 +380,10 @@ class MiAZUtil(GObject.GObject):
     def filename_rename(self, source, target, upper=True) -> bool:
         target = self._rename_target(target, upper)
         rename = False
+        # Identical source and target mean there is nothing to do, and that is
+        # common enough (a rename dialog closed without a field change) not to
+        # be worth logging. On Linux the comparison is case-sensitive, which is
+        # what we want; MiAZ targets Linux for the 0.2 release.
         if source != target:
             if not os.path.exists(target):
                 try:
@@ -396,12 +399,6 @@ class MiAZUtil(GObject.GObject):
                 # counts skipped files in a toast).
                 self.log.warning(
                     f"Rename skipped: target already exists: '{target}'")
-        else:
-            # Source and target are identical, so there is nothing to do. On
-            # Linux the comparison is case-sensitive, which is what we want;
-            # MiAZ targets Linux for the 0.2 release.
-            self.log.debug(
-                f"Rename skipped: source and target are the same: '{source}'")
         return rename
 
     def filename_delete(self, filepaths: set):

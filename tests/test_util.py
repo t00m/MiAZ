@@ -277,3 +277,25 @@ def test_rename_needed_without_uppercasing(util):
     # compared as given.
     assert util.filename_rename_needed(DOC, DOC.lower(), upper=False) is True
     assert util.filename_rename_needed(DOC, DOC, upper=False) is False
+
+
+# "Since last year" means the last twelve months, not since January 1st.
+# It used to resolve through since_date_this_year, so on 7 August it covered
+# seven months, and on 2 January it covered two days.
+
+def test_since_date_last_n_months_twelve_is_one_year_back(util):
+    assert _ymd(util.since_date_last_n_months(date(2026, 8, 7), 12)) == '20250801'
+
+
+def test_since_date_last_n_months_twelve_from_january(util):
+    """The case the old range got most wrong: on 2 January it covered two days."""
+    assert _ymd(util.since_date_last_n_months(date(2026, 1, 2), 12)) == '20250101'
+
+
+def test_since_date_last_n_months_twelve_from_december(util):
+    assert _ymd(util.since_date_last_n_months(date(2026, 12, 31), 12)) == '20251201'
+
+
+def test_since_date_this_year_still_means_january_first(util):
+    """Kept for anything that genuinely wants the calendar year to date."""
+    assert _ymd(util.since_date_this_year(date(2026, 8, 7))) == '20260101'

@@ -1,4 +1,3 @@
-#!/usr/bin/python3
 
 """
 # File: pluginsystem.py
@@ -21,7 +20,8 @@ from gettext import gettext as _, ngettext
 
 import gi
 gi.require_version('Peas', '2')
-from gi.repository import GObject, Peas
+gi.require_version('Gtk', '4.0')
+from gi.repository import GObject, Gtk, Peas
 
 from MiAZ.backend.log import MiAZLog
 
@@ -173,6 +173,68 @@ class MiAZAPI(GObject.GObject):
     def __init__(self, app):
         GObject.Object.__init__(self)
         self.app = app
+
+
+class PluginPageRegistry:
+    """Which workspace pages each plugin contributed.
+
+    The loader builds a fresh plugin instance on every activation, so a plugin
+    cannot remember across a disable/enable cycle what it added last time. This
+    can, which is what lets unload_plugin take the pages away and lets plugins
+    stop hiding a page and re-adopting it by name on the way back.
+    """
+
+    def __init__(self):
+        self._pages = {}
+
+    def add(self, owner: str, name: str):
+        """Record a page. Recording it twice still means one page."""
+        names = self._pages.setdefault(owner, [])
+        if name not in names:
+            names.append(name)
+
+    def names(self, owner: str) -> list:
+        """The pages this plugin currently has in the workspace."""
+        return list(self._pages.get(owner, []))
+
+    def pop_all(self, owner: str) -> list:
+        """The pages of this plugin, forgetting them as they are handed over."""
+        return self._pages.pop(owner, [])
+
+
+class PluginWidgetRegistry:
+    """How to take back the widgets a plugin put into a shared container.
+
+    The sidebar and the headerbar are boxes every plugin appends to. Detaching
+    a widget again takes several steps (drop it from the box, from the size
+    group, from the dropdown list, from the widget registry), and each plugin
+    was writing its own version of them. Recording an undo step at the moment of
+    the contribution keeps the two halves together and lets unload_plugin run
+    them, so a plugin that forgets cannot leave a widget behind.
+    """
+
+    def __init__(self):
+        self._undo = {}
+        self.log = MiAZLog('MiAZ.PluginWidgets')
+
+    def add(self, owner: str, undo):
+        """Record one step that undoes one contribution."""
+        self._undo.setdefault(owner, []).append(undo)
+
+    def count(self, owner: str) -> int:
+        return len(self._undo.get(owner, []))
+
+    def undo_all(self, owner: str):
+        """Run every step of this plugin, most recent first.
+
+        A step that raises is logged and skipped: one widget that is already
+        detached must not leave the rest of them attached.
+        """
+        for undo in reversed(self._undo.pop(owner, [])):
+            try:
+                undo()
+            except Exception as error:
+                self.log.warning(f"Could not undo a contribution of '{owner}': {error}")
 
 
 class MiAZPlugin(GObject.GObject):
@@ -365,9 +427,127 @@ class MiAZPlugin(GObject.GObject):
         return subcategory_submenu
 
     def add_workspace_page(self, widget, name, title, icon_name=None):
+        """Add a page to the workspace stack, owned by this plugin.
+
+        The plugin system removes it when the plugin is unloaded, so there is
+        nothing to clean up in do_deactivate and nothing to re-adopt on the way
+        back. A plugin that would rather manage the stack itself still can:
+        workspace.get_stack() hands over the real Adw.ViewStack.
+        """
         workspace = self.app.get_widget('workspace')
-        if workspace is not None:
-            workspace.add_stack_page(widget, name, title, icon_name)
+        if workspace is None:
+            return
+        workspace.add_stack_page(widget, name, title, icon_name)
+        system = self.app.get_service('plugin-system')
+        if system is not None:
+            system.pages.add(self.get_name(), name)
+
+    def _widget_registry(self):
+        system = self.app.get_service('plugin-system')
+        return None if system is None else system.widgets
+
+    def _register_widget_key(self, widget_key, widget):
+        """Register a widget under a key and arrange for the key to go too.
+
+        Detaching a widget but leaving its key registered is a trap: the plugin
+        looks the key up on its next activation, finds the old widget, decides
+        it has nothing to do, and never re-attaches anything.
+        """
+        if widget_key is None:
+            return
+        self.app.add_widget(widget_key, widget)
+        registry = self._widget_registry()
+        if registry is not None:
+            registry.add(self.get_name(), lambda: self.app.remove_widget(widget_key))
+
+    def add_sidebar_widget(self, widget, widget_key: str = None):
+        """Put a widget in the sidebar's plugin section, owned by this plugin.
+
+        The plugin system detaches it on unload, so there is nothing to remove
+        in do_deactivate. Pass `widget_key` to have it registered (and later
+        unregistered) with the app widget registry as well. Reaching the section
+        directly through app.get_widget('sidebar-plugin-section') still works
+        and is fine; this only saves writing the teardown.
+        """
+        section = self.app.get_widget('sidebar-plugin-section')
+        if section is None:
+            self.log.warning("No sidebar plugin section to add a widget to")
+            return False
+        section.append(widget)
+        registry = self._widget_registry()
+        if registry is not None:
+            registry.add(self.get_name(), lambda: section.remove(widget))
+        self._register_widget_key(widget_key, widget)
+        return True
+
+    def add_headerbar_widget(self, widget, position: str = 'right',
+                             widget_key: str = None):
+        """Put a widget in the header bar, owned by this plugin.
+
+        `position` is 'left' or 'right'. Removed on unload, as above.
+        """
+        key = 'headerbar-left-box' if position == 'left' else 'headerbar-right-box'
+        box = self.app.get_widget(key)
+        if box is None:
+            self.log.warning(f"No '{key}' to add a widget to")
+            return False
+        box.append(widget)
+        registry = self._widget_registry()
+        if registry is not None:
+            registry.add(self.get_name(), lambda: box.remove(widget))
+        self._register_widget_key(widget_key, widget)
+        return True
+
+    def add_sidebar_dropdown(self, dropdown, widget_key: str = None,
+                             width: int = 190, with_icon: bool = True):
+        """Put a filter dropdown in the sidebar, wired the way the others are.
+
+        One call replaces four steps that each needed undoing: join the shared
+        size group so every dropdown lines up, join the 'plugin-dropdowns' list
+        the workspace filter pass reads, register under `widget_key`, and append
+        to the plugin section behind the plugin's icon.
+
+        `widget_key` defaults to 'plugin-<Name>-dropdown', which is where the
+        rest of the app looks for a plugin's filter dropdown.
+        """
+        registry = self._widget_registry()
+        owner = self.get_name()
+        if widget_key is None:
+            widget_key = f'plugin-{owner}-dropdown'
+
+        dropdown.set_size_request(width, -1)
+
+        size_group = self.app.get_widget('sidebar-dropdown-size-group')
+        if size_group is not None:
+            size_group.add_widget(dropdown)
+            if registry is not None:
+                registry.add(owner, lambda: size_group.remove_widget(dropdown))
+
+        dropdowns = self.app.get_widget('plugin-dropdowns')
+        if dropdowns is not None:
+            dropdowns.append(dropdown)
+            if registry is not None:
+                registry.add(owner, lambda: dropdowns.remove(dropdown))
+
+        row = self._sidebar_row(dropdown) if with_icon else dropdown
+        # The key names the dropdown, not the row around it: callers look the
+        # key up to read the selection.
+        self._register_widget_key(widget_key, dropdown)
+        return self.add_sidebar_widget(row)
+
+    def _sidebar_row(self, widget):
+        """The plugin's icon next to its widget, or the widget on its own."""
+        icon_path = self.get_icon_path()
+        if not icon_path:
+            return widget
+        image = Gtk.Image.new_from_file(icon_path)
+        image.set_pixel_size(16)
+        image.set_valign(Gtk.Align.CENTER)
+        row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
+        row.set_hexpand(True)
+        row.append(image)
+        row.append(widget)
+        return row
 
     def register_document_tab(self, name, title, factory, icon_name=None, weight=100):
         """Contribute a tab to the single-document rename dialog.
@@ -412,6 +592,10 @@ class MiAZPluginSystem(GObject.GObject):
 
         self._extension_instances = {}
         self._load_failures = {}
+        # What plugins contributed to shared UI, so unload_plugin can take it
+        # away the same way it already does web content and dialog tabs.
+        self.pages = PluginPageRegistry()
+        self.widgets = PluginWidgetRegistry()
         self._setup_plugins_dir()
         self.create_plugin_index()
         self.log.info("Plugin system initialited")
@@ -600,6 +784,8 @@ class MiAZPluginSystem(GObject.GObject):
             self.engine.unload_plugin(plugin)
             self._remove_plugin_www(plugin)
             self._remove_plugin_document_tabs(plugin)
+            self._remove_plugin_pages(plugin)
+            self.widgets.undo_all(plugin.get_name())
             self.log.info(f"Plugin {pname} v{pvers} unloaded")
             self.emit('plugins-updated')
         except Exception as error:
@@ -644,6 +830,24 @@ class MiAZPluginSystem(GObject.GObject):
             tabs.unregister_all(owner=plugin.get_name())
         except Exception as error:
             self.log.warning(f"Could not remove document tabs for plugin: {error}")
+
+    def _remove_plugin_pages(self, plugin: Peas.PluginInfo):
+        """Take back the workspace pages of a plugin when it is unloaded.
+
+        Pages used to stay in the Adw.ViewStack for the life of the process,
+        hidden, because re-adding one under a name already in the stack warns.
+        Removing it here frees the name, so the plugin just builds a fresh page
+        next time it is activated.
+        """
+        workspace = self.app.get_widget('workspace')
+        if workspace is None:
+            return
+        for name in self.pages.pop_all(plugin.get_name()):
+            try:
+                workspace.remove_stack_page(name)
+                self.log.debug(f"Removed workspace page '{name}'")
+            except Exception as error:
+                self.log.warning(f"Could not remove workspace page '{name}': {error}")
 
     def get_engine(self):
         return self.engine

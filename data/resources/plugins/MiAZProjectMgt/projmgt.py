@@ -1,4 +1,3 @@
-#!/usr/bin/python3
 # pylint: disable=E1101
 
 """
@@ -355,13 +354,16 @@ class MiAZProjectTab(Gtk.Box):
     """
     __gtype_name__ = 'MiAZProjectTab'
 
-    def __init__(self, app, config):
+    def __init__(self, app, config, show_manager=None):
         super().__init__(orientation=Gtk.Orientation.VERTICAL, spacing=6,
                          hexpand=True, vexpand=True)
         self.app = app
         self.config = config
         self.log = MiAZLog('MiAZ.ProjectTab')
         self.factory = self.app.get_service('factory')
+        # Opens the project manager. The tab only offers the button; the plugin
+        # owns the dialog, which is also reachable from the workspace menu.
+        self.show_manager = show_manager
         self.doc_id = None
         self.checks = {}
 
@@ -370,11 +372,22 @@ class MiAZProjectTab(Gtk.Box):
         self.set_margin_start(6)
         self.set_margin_end(6)
 
+        header = self.factory.create_box_horizontal(spacing=6, hexpand=True)
         label = Gtk.Label()
         label.set_xalign(0.0)
+        label.set_hexpand(True)
         label.add_css_class('dim-label')
         label.set_text(_('Projects this document belongs to'))
-        self.append(label)
+        header.append(label)
+        if show_manager is not None:
+            button = self.factory.create_button(
+                icon_name='io.github.t00m.MiAZ-config-symbolic',
+                title=_('Manage {i_confname}').format(i_confname=i_confname),
+                tooltip=_('Create, rename or delete {i_confname}').format(i_confname=i_confname),
+                callback=self._on_manage_clicked)
+            button.set_valign(Gtk.Align.CENTER)
+            header.append(button)
+        self.append(header)
 
         self.listbox = Gtk.ListBox.new()
         self.listbox.set_hexpand(True)
@@ -389,7 +402,7 @@ class MiAZProjectTab(Gtk.Box):
         self.empty = Gtk.Label()
         self.empty.set_xalign(0.0)
         self.empty.add_css_class('dim-label')
-        self.empty.set_text(_('No projects available yet. Create one from Projects management.'))
+        self.empty.set_text(_('No projects available yet. Create one with the Manage projects button.'))
         self.empty.set_visible(False)
         self.append(self.empty)
 
@@ -405,6 +418,29 @@ class MiAZProjectTab(Gtk.Box):
             self.listbox.append(row)
             self.checks[pid] = check
         self.empty.set_visible(len(self.checks) == 0)
+
+    def _on_manage_clicked(self, *args):
+        """Open the project manager over the rename window."""
+        dialog = self.show_manager(widget=self)
+        if dialog is not None:
+            dialog.connect('closed', self._on_manager_closed)
+
+    def _on_manager_closed(self, *args):
+        """Show the projects the manager left behind, ticks included.
+
+        Nothing is written until the rename goes through, so what the user has
+        ticked so far has to survive the rebuild. Projects created in the
+        manager come in unticked.
+        """
+        ticked = {pid for pid, check in self.checks.items() if check.get_active()}
+        row = self.listbox.get_first_child()
+        while row is not None:
+            following = row.get_next_sibling()
+            self.listbox.remove(row)
+            row = following
+        self._build_rows()
+        for pid, check in self.checks.items():
+            check.set_active(pid in ticked)
 
     # Document tab contract
     def set_document(self, doc_id):
@@ -459,23 +495,12 @@ class MiAZProjectMgt(MiAZExtension):
             self._startup_handler = self.workspace.connect('workspace-loaded', self.startup)
 
     def do_deactivate(self):
+        # The sidebar dropdown and everything it was wired into are taken back
+        # by the plugin system, which owns what add_sidebar_dropdown handed it.
         plugin_name = self.plugin.get_name()
         dropdown = self.app.get_widget(f'plugin-{plugin_name}-dropdown')
-        if dropdown is not None:
-            dd_parent = dropdown.get_parent()
-            if dd_parent is not None:
-                dd_parent.remove(dropdown)
-            dd_size_group = self.app.get_widget('sidebar-dropdown-size-group')
-            if dd_size_group is not None:
-                dd_size_group.remove_widget(dropdown)
-            plugin_dropdowns = self.app.get_widget('plugin-dropdowns')
-            if plugin_dropdowns is not None and dropdown in plugin_dropdowns:
-                plugin_dropdowns.remove(dropdown)
-            self.app.remove_widget(f'plugin-{plugin_name}-dropdown')
-        section = self.app.get_widget('sidebar-plugin-section')
-        if section is not None and hasattr(self, '_sidebar_item'):
-            section.remove(self._sidebar_item)
         self.workspace.unregister_filter_view(f'{i_title}')
+        self.workspace.unregister_query_hook(f'{i_title}')
         if hasattr(self, '_used_updated_handler'):
             self.config.disconnect(self._used_updated_handler)
         if hasattr(self, '_selected_item_handler') and dropdown is not None:
@@ -538,31 +563,14 @@ class MiAZProjectMgt(MiAZExtension):
                 dropdown = self.app.get_widget(f'plugin-{plugin_name}-dropdown')
                 if dropdown is None:
                     dropdown = self.factory.create_dropdown_generic(item_type=item_type, ellipsize=True, enable_search=True)
-                    self.app.add_widget(f'plugin-{plugin_name}-dropdown', dropdown)
-                    self.app.get_widget('plugin-dropdowns').append(dropdown)
-                    self._used_updated_handler = self.config.connect('used-updated', self.actions.dropdown_populate, dropdown, item_type, True, True)
+                    self._used_updated_handler = self.config.connect('used-updated', self.actions.dropdown_repopulate, dropdown, item_type, True, True)
                     self.actions.dropdown_populate(self.config, dropdown, item_type, True, True)
                     self._selected_item_handler = dropdown.connect("notify::selected-item", self.workspace.update)
-                    dropdown.set_size_request(190, -1)
-                    dd_size_group = self.app.get_widget('sidebar-dropdown-size-group')
-                    if dd_size_group is not None:
-                        dd_size_group.add_widget(dropdown)
-                    section = self.app.get_widget('sidebar-plugin-section')
-                    if section is not None:
-                        icon_path = self.plugin.get_icon_path()
-                        if icon_path:
-                            img = Gtk.Image.new_from_file(icon_path)
-                            img.set_pixel_size(16)
-                            img.set_valign(Gtk.Align.CENTER)
-                            box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
-                            box.set_hexpand(True)
-                            box.append(img)
-                            box.append(dropdown)
-                            self._sidebar_item = box
-                        else:
-                            self._sidebar_item = dropdown
-                        section.append(self._sidebar_item)
+                    # Sizing, the shared size group, the plugin-dropdowns list,
+                    # the widget key and the icon row, teardown included.
+                    self.plugin.add_sidebar_dropdown(dropdown)
                     self.workspace.register_filter_view(f'{i_title}', self._do_filter_view)
+                    self.workspace.register_query_hook(f'{i_title}', self._adjust_query)
             else:
                 # Sidebar already set up
                 self.srvprj = self.app.get_service('Projects')
@@ -571,10 +579,33 @@ class MiAZProjectMgt(MiAZExtension):
             self.plugin.register_document_tab(
                 name='projects',
                 title=item_type.__title_plural__,
-                factory=lambda app: MiAZProjectTab(app, self.config),
+                factory=lambda app: MiAZProjectTab(app, self.config, self.show_settings),
                 weight=100)
 
             self.plugin.set_started(started=True)
+
+    def _project_selected(self):
+        """The selected project id, or None when the dropdown says 'Any'."""
+        plugin_name = self.plugin.get_name()
+        dropdown = self.app.get_widget(f'plugin-{plugin_name}-dropdown')
+        if dropdown is None:
+            return None
+        selected_item = dropdown.get_selected_item()
+        if selected_item is None or selected_item.id == 'Any':
+            return None
+        return selected_item.id
+
+    def _adjust_query(self, query):
+        """Lift the date and active checks while a project is selected.
+
+        Project members may carry field values the repository config does not
+        recognise, or any date at all, and the user still wants to see the whole
+        project. The workspace used to hardcode this bypass by looking up this
+        plugin's dropdown by name.
+        """
+        if self._project_selected() is not None:
+            query.ignore_date = True
+            query.ignore_active = True
 
     def _do_filter_view(self, item, filter_list_model):
         plugin_name = self.plugin.get_name()
@@ -690,9 +721,15 @@ class MiAZProjectMgt(MiAZExtension):
         self.show_settings(widget=parent)
 
     def show_settings(self, widget: Gtk.Widget = None):
+        """Open the project manager over the window holding `widget`.
+
+        The dialog is returned so a caller that has to react to what the user
+        did there (the rename dialog tab rebuilds its list) can connect to it.
+        """
         configview = MiAZProjectsView(self.app, plugin=self.plugin, config=self.config)
         configview.update_views()
         dialog = self.srvdlg.show_noop(
             title=_('Manage {i_confname}').format(i_confname=i_confname),
             widget=configview, width=800, height=600)
         dialog.present(widget.get_root())
+        return dialog

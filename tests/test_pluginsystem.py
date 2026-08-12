@@ -155,3 +155,153 @@ def test_icon_name_exports_the_plugin_icon(dirs, tmp_path):
     plugin = make_plugin(app)
     assert plugin.get_icon_name() == 'miaz-plugin-projmgt'
     assert os.path.isfile(exported / 'miaz-plugin-projmgt.svg')
+
+
+# ---------------------------------------------------------------------------
+# Workspace pages contributed by plugins
+# ---------------------------------------------------------------------------
+
+def test_a_new_registry_knows_about_nothing():
+    registry = ps.PluginPageRegistry()
+    assert registry.names('MiAZNotes') == []
+
+
+def test_a_page_is_recorded_against_its_plugin():
+    registry = ps.PluginPageRegistry()
+    registry.add('MiAZNotes', 'notes-all')
+    assert registry.names('MiAZNotes') == ['notes-all']
+
+
+def test_pages_of_other_plugins_are_not_returned():
+    registry = ps.PluginPageRegistry()
+    registry.add('MiAZNotes', 'notes-all')
+    assert registry.names('MiAZProjectMgt') == []
+
+
+def test_a_plugin_can_contribute_several_pages():
+    registry = ps.PluginPageRegistry()
+    registry.add('MiAZNotes', 'notes-all')
+    registry.add('MiAZNotes', 'notes-archive')
+    assert registry.names('MiAZNotes') == ['notes-all', 'notes-archive']
+
+
+def test_adding_the_same_page_twice_records_it_once():
+    """A plugin re-activated without a clean unload must not queue two removals
+    for one page."""
+    registry = ps.PluginPageRegistry()
+    registry.add('MiAZNotes', 'notes-all')
+    registry.add('MiAZNotes', 'notes-all')
+    assert registry.names('MiAZNotes') == ['notes-all']
+
+
+def test_pop_all_returns_the_pages_and_forgets_them():
+    registry = ps.PluginPageRegistry()
+    registry.add('MiAZNotes', 'notes-all')
+    assert registry.pop_all('MiAZNotes') == ['notes-all']
+    assert registry.names('MiAZNotes') == []
+
+
+def test_pop_all_leaves_other_plugins_alone():
+    registry = ps.PluginPageRegistry()
+    registry.add('MiAZNotes', 'notes-all')
+    registry.add('MiAZProjectMgt', 'projects')
+    registry.pop_all('MiAZNotes')
+    assert registry.names('MiAZProjectMgt') == ['projects']
+
+
+def test_pop_all_for_an_unknown_plugin_is_empty():
+    registry = ps.PluginPageRegistry()
+    assert registry.pop_all('NeverSeen') == []
+
+
+def test_a_plugin_toggled_off_and_on_records_its_page_once():
+    """The disable/enable cycle: unload pops the page, activation adds it back."""
+    registry = ps.PluginPageRegistry()
+    registry.add('MiAZNotes', 'notes-all')
+    registry.pop_all('MiAZNotes')
+    registry.add('MiAZNotes', 'notes-all')
+    assert registry.names('MiAZNotes') == ['notes-all']
+
+
+# ---------------------------------------------------------------------------
+# Widgets contributed to shared containers (sidebar, headerbar)
+# ---------------------------------------------------------------------------
+
+def test_a_new_widget_registry_holds_nothing():
+    registry = ps.PluginWidgetRegistry()
+    assert registry.count('MiAZNotes') == 0
+
+
+def test_an_undo_step_is_recorded_against_its_plugin():
+    registry = ps.PluginWidgetRegistry()
+    registry.add('MiAZNotes', lambda: None)
+    assert registry.count('MiAZNotes') == 1
+    assert registry.count('MiAZFullscreen') == 0
+
+
+def test_undo_all_runs_the_steps():
+    registry = ps.PluginWidgetRegistry()
+    ran = []
+    registry.add('MiAZNotes', lambda: ran.append('a'))
+    registry.undo_all('MiAZNotes')
+    assert ran == ['a']
+
+
+def test_undo_all_runs_the_steps_in_reverse():
+    """Teardown mirrors setup: the last thing added comes out first."""
+    registry = ps.PluginWidgetRegistry()
+    ran = []
+    registry.add('MiAZNotes', lambda: ran.append('first'))
+    registry.add('MiAZNotes', lambda: ran.append('second'))
+    registry.undo_all('MiAZNotes')
+    assert ran == ['second', 'first']
+
+
+def test_undo_all_forgets_what_it_ran():
+    registry = ps.PluginWidgetRegistry()
+    ran = []
+    registry.add('MiAZNotes', lambda: ran.append('a'))
+    registry.undo_all('MiAZNotes')
+    registry.undo_all('MiAZNotes')
+    assert ran == ['a']
+    assert registry.count('MiAZNotes') == 0
+
+
+def test_undo_all_leaves_other_plugins_alone():
+    registry = ps.PluginWidgetRegistry()
+    ran = []
+    registry.add('MiAZNotes', lambda: ran.append('notes'))
+    registry.add('MiAZFullscreen', lambda: ran.append('fullscreen'))
+    registry.undo_all('MiAZNotes')
+    assert ran == ['notes']
+    assert registry.count('MiAZFullscreen') == 1
+
+
+def test_one_failing_step_does_not_strand_the_others():
+    """A widget already detached must not leave the rest attached."""
+    registry = ps.PluginWidgetRegistry()
+    ran = []
+
+    def boom():
+        raise RuntimeError('already gone')
+
+    registry.add('MiAZNotes', lambda: ran.append('first'))
+    registry.add('MiAZNotes', boom)
+    registry.add('MiAZNotes', lambda: ran.append('third'))
+    registry.undo_all('MiAZNotes')
+    assert ran == ['third', 'first']
+
+
+def test_undo_all_for_an_unknown_plugin_does_nothing():
+    registry = ps.PluginWidgetRegistry()
+    registry.undo_all('NeverSeen')
+    assert registry.count('NeverSeen') == 0
+
+
+def test_a_toggled_plugin_does_not_accumulate_undo_steps():
+    """Disable and enable repeatedly: one contribution, one undo step."""
+    registry = ps.PluginWidgetRegistry()
+    for _ in range(3):
+        registry.add('MiAZFullscreen', lambda: None)
+        registry.undo_all('MiAZFullscreen')
+    assert registry.count('MiAZFullscreen') == 0

@@ -37,11 +37,15 @@ MiAZ/
 │   ├── miaz.py                   ← Entry point (MiAZ class, main)
 │   ├── env.in                    ← Environment template → env.py (meson-generated)
 │   ├── backend/                  ← Business logic (no GTK/Adw widgets; GObject signals OK)
-│   │   ├── config.py             ← MiAZConfig + subclasses (App, Repo, Country, etc.)
+│   │   ├── config.py             ← MiAZConfig + subclasses, MiAZConfigStore (per repo)
+│   │   ├── gate.py               ← UpdateGate (reference-counted refresh suspension)
 │   │   ├── crash.py              ← console/log-only excepthook (install_backend_excepthook)
 │   │   ├── data.py               ← Placeholder (package marker)
 │   │   ├── dr.py                 ← MiAZDR (disaster recovery / backup)
+│   │   ├── index.py              ← MiAZDocumentIndex (the parse: filename → MiAZItem)
 │   │   ├── log.py                ← MiAZLog (colored logging)
+│   │   ├── query.py              ← DocumentQuery (the workspace filter, as a value)
+│   │   ├── tasks.py              ← run_in_background (thread + GLib.idle_add)
 │   │   ├── models.py             ← MiAZItem, Country, Group, etc. (GObject models)
 │   │   ├── repository.py         ← MiAZRepository (CRUD on file-based repo)
 │   │   ├── stats.py              ← MiAZStats (document statistics)
@@ -128,16 +132,40 @@ against the enabled config (`config.exists_used`) or, for dates,
 ### Layered: Backend (no GTK) → Services (GTK-aware) → Widgets (GTK/Adw)
 
 **Backend** (`MiAZ/backend/`): No GTK/Adw/Gdk widget imports. File I/O, config, models, logging, util. `GObject`/`GLib`/`Gio` are allowed and used on purpose: the backend exposes its events through GObject signals, which is the backend/frontend contract.
-- `MiAZConfig` signals: `available-updated`, `used-updated`
+- `MiAZConfig` signals: `available-updated`, `used-updated` (both carry the set of keys that changed, or `None` when the previous contents could not be read)
 - `MiAZUtil` signals: `filename-added`, `filename-deleted`, `filename-renamed`
 - `MiAZRepository` signals: `repository-switched`
 - `MiAZWatcher` signals: `repository-updated`
 - `MiAZStats` signals: `stats-updated`
+- `MiAZDocumentIndex` signals: `index-loaded`, `index-changed`
+
+**The document index** (`backend/index.py`, service `index`) owns the only path
+from a filename to a `MiAZItem`. `build_item(filename)` is that path; `reload()`
+runs it over the whole repository and `apply_change(path, event, other=None)`
+over one file, so the full scan and the incremental update cannot disagree
+(`tests/test_index.py::test_incremental_and_full_scan_agree` enforces it). It
+also owns the description cache, the field index, the invalid list and the
+pending set. Read documents from here, not from `workspace.view.store`:
+
+```python
+index = app.get_service('index')
+for item in index.documents():      # every MiAZItem, unfiltered
+    ...
+index.pending()                     # flagged for review
+index.document('20240315-ES-...pdf')
+```
+
+`index-changed` carries `[(action, payload), ...]` where `action` is `add`,
+`update` or `remove`; payload is a `MiAZItem` for the first two and a filename
+for `remove`. `apply_change` returns `False` when the caller must fall back to a
+full `reload()`, which is the case for a name that still has to be normalized on
+disk. `reload()` emits on the calling thread, so a caller running it off the main
+loop must marshal the result back itself.
 
 **Services** (`MiAZ/frontend/desktop/services/`): GTK-aware, app lifecycle.
 - Registered via `app.set_service('name', instance)` in `MiAZApp._on_activate` (returns the instance)
 - Access via `app.get_service('name')`
-- Registration order: `crash`, `util`, `icons`, `factory`, `dialogs`, `actions`, `workflow`, `dr`, `secrets`, `venv`, `extlibs`, `webserver`, `repo`, `massrename`, `importdoc` (early); then `plugin-system` and `theme` (`Gtk.IconTheme`) once the window exists. `massrename` and `importdoc` are registered before the window is built because each builds its menu item(s) in `__init__` (`massrename-menu` widget; `importdoc.menuitem`) that the headerbar consumes when it is constructed.
+- Registration order: `crash`, `util`, `icons`, `factory`, `dialogs`, `actions`, `workflow`, `dr`, `secrets`, `venv`, `extlibs`, `webserver`, `repo`, `index`, `massrename`, `importdoc` (early); then `plugin-system` and `theme` (`Gtk.IconTheme`) once the window exists. `massrename` and `importdoc` are registered before the window is built because each builds its menu item(s) in `__init__` (`massrename-menu` widget; `importdoc.menuitem`) that the headerbar consumes when it is constructed.
 
 **Widgets** (`MiAZ/frontend/desktop/widgets/`): All GTK4+Adw widgets.
 
@@ -152,7 +180,8 @@ against the enabled config (`config.exists_used`) or, for dates,
 | `MiAZPlugins` config view (configview.py) | `plugins-downloaded` |
 | `MiAZWorkflow` (workflow.py) | `repository-switch-started`, `repository-switch-finished` |
 | `MiAZWorkspace` (workspace.py) | `workspace-loaded`, `workspace-view-updated`, `workspace-view-selection-changed`, `workspace-view-filtered` |
-| `MiAZConfig` (config.py) | `available-updated`, `used-updated` |
+| `MiAZRenameDialog` (rename.py) | `fields-changed` |
+| `MiAZConfig` (config.py) | `available-updated` (set), `used-updated` (set) |
 | `MiAZConfigApp` (config.py) | `repo-settings-updated-app` |
 | `MiAZUtil` (util.py) | `filename-added`, `filename-deleted`, `filename-renamed` |
 | `MiAZWatcher` (watcher.py) | `repository-updated` |
@@ -160,6 +189,46 @@ against the enabled config (`config.exists_used`) or, for dates,
 | `MiAZStats` (stats.py) | `stats-updated` |
 | `MiAZWindowDialog` (dialogs.py) | `response` (str), `closed` |
 | `MiAZDialogAdd` / `MiAZDialogAddRepo` (dialogs.py) | `response` (str) |
+
+### Holding the workspace still during bulk work
+
+Importing twenty documents should refresh the view once, not twenty times. Take a handle from `workspace.suspend_updates()`; every `update()` asked for meanwhile is collapsed into a single refresh when the last holder releases.
+
+```python
+with workspace.suspend_updates():
+    for path in files:
+        util.filename_import(path, target)
+    workspace.update()          # recorded, runs once on exit
+```
+
+Work that finishes on another thread keeps the handle and releases it from the main loop:
+
+```python
+suspend = workspace.suspend_updates()
+threading.Thread(target=self._import, args=(paths, suspend), daemon=True).start()
+# ...at the end of the worker:
+GLib.idle_add(workspace.update)     # ask while still suspended
+GLib.idle_add(suspend.release)
+```
+
+It is reference counted (`backend/gate.py`), so two plugins working at once do not reopen the gate on each other, and `release()` is idempotent. This replaced `app.set_status(MiAZStatus.BUSY)`, which was one process-wide flag reset unconditionally by all six of its setters.
+
+**`MiAZStatus` now means one thing only**: `BUSY` says a repository is being loaded or switched, and only `MiAZWorkflow` sets it. Do not use it to suppress refreshes. (`MiAZWatcher` keeps a separate `self.status` for its own internal state; same enum, unrelated.)
+
+### Configuration ownership
+
+A repository's eight configurations (`Country`, `Group`, `Purpose`, `Concept`, `SentBy`, `SentTo`, `Person`, `Plugin`) belong to a **`MiAZConfigStore`** (`backend/config.py`), built by `repository.load()` and disposed when another repository is loaded. Read them the usual way:
+
+```python
+config = app.get_config('Country')                    # unchanged; the store publishes here
+store = app.get_service('repo').get_config_store()    # when you want the store itself
+```
+
+The store also owns the in-memory cache the configs read through, and hands the *same* dict to all eight. That matters because `SentBy`, `SentTo` and `Person` all point their available pool at `people-available.json`, so divergent copies drop each other's entries. It used to be a class attribute on `MiAZConfig`, which shared correctly but never expired, so a repository switched away from was read from the copy cached before the switch. `dispose()` is what ends that lifetime.
+
+`App` and `Repository` are app-scoped, not repo-scoped: they are built in `MiAZApp.set_env()` and keep their own caches.
+
+A plugin subclassing `MiAZConfig` for its own vocabulary (`MiAZProjectMgt`, `MiAZPeriodicity`) gets a fresh per-instance cache, which is right: the plugin is re-activated on a repository switch, so its config is rebuilt with it.
 
 ### Workspace layout
 
@@ -178,8 +247,8 @@ MiAZWorkspace (Gtk.Box VERTICAL)
 **Public API on MiAZWorkspace:**
 - `get_stack()` → `Adw.ViewStack`
 - `get_view_switcher()` → `Adw.InlineViewSwitcher`
-- `add_stack_page(widget, name, title, icon_name=None)` → registers a new page (reuses an existing page of the same name if present)
-- `get_stack_page(name)` / `remove_stack_page(name)` (hides via `set_visible(False)`)
+- `add_stack_page(widget, name, title, icon_name=None)` → adds a page, replacing any other child already holding that name
+- `get_stack_page(name)` / `remove_stack_page(name)` → takes the page out of the stack, freeing its name
 - `show_stack_page(name)` → switches to page by name
 - `clear_filters()` → resets every filter control (search, concept, all dropdowns) and refilters once
 - `get_workspace_view()` → the `MiAZColumnView` (also reachable as `workspace.view`)
@@ -187,7 +256,34 @@ MiAZWorkspace (Gtk.Box VERTICAL)
 
 ### Filtering the Documents view (programmatic)
 
-The Documents page is a `Gtk.ColumnView` fed by `Gio.ListStore` → `Gtk.FilterListModel` with a single composite filter callback (`_do_filter_view`). Filters are driven by widgets registered in the app's widget registry, so any service or plugin can steer them:
+The active filter is a **`DocumentQuery`** (`backend/query.py`), a dataclass whose `matches(item)` is pure: no widget access, no app access. `MiAZWorkspace._read_query()` builds one from the filter widgets once per pass and `_do_filter_view_main` just calls `matches`. Prefer it over poking the widgets:
+
+```python
+from MiAZ.backend.query import ANY, DATE_RANGE, DocumentQuery
+
+workspace = app.get_widget('workspace')
+query = DocumentQuery(sentby='BANKNAME', concept='invoice')
+workspace.set_query(query)                 # refilters and emits workspace-view-filtered
+workspace.show_stack_page('workspace-default')
+```
+
+`set_query` does not rewrite the filter widgets, so the next widget change rebuilds the query from them; call `clear_filters()` first for a clean base. `get_query()` returns the current one. `to_dict()` / `from_dict()` round-trip through JSON.
+
+To adjust the query the widgets produced rather than replace it, register a hook:
+
+```python
+def _adjust_query(self, query):
+    if self._project_selected() is not None:
+        query.ignore_date = True      # show members whatever their date
+        query.ignore_active = True    # ...and whatever their field values
+
+self.workspace.register_query_hook('projects', self._adjust_query)
+# in do_deactivate: self.workspace.unregister_query_hook('projects')
+```
+
+Use `register_filter_view(name, callback)` when you need an extra condition ANDed in per item, and `register_query_hook` when you need to relax one of the built-in checks. `MiAZProjectMgt` uses both.
+
+The Documents page itself is a `Gtk.ColumnView` fed by `Gio.ListStore` → `Gtk.FilterListModel` with a single composite filter callback (`_do_filter_view`). The filter widgets stay registered in the app's widget registry:
 
 - `app.get_widget('searchentry')` → free-text search across all fields.
 - `app.get_widget('searchentry-concept')` → substring filter on the Concept field; `set_text(...)` triggers a refilter (connected to `changed`).
@@ -219,15 +315,46 @@ workspace.show_stack_page('workspace-default')
 self.plugin.add_workspace_page(my_widget, 'my-view', _('My View'), 'my-icon')
 ```
 
-**Workspace page lifecycle (activate / deactivate / reactivate):**
+**Workspace page lifecycle: the plugin system owns the page.**
 
-PluginSystem creates a **fresh plugin instance** per activation. Pages added to the workspace stack must survive across cycles:
+PluginSystem creates a fresh plugin instance per activation, so a plugin cannot remember what it added last time. It does not need to. `add_workspace_page` records the page against the plugin, and `unload_plugin` removes it, next to where it already removes that plugin's web content and rename-dialog tabs.
 
-1. **Activation** → `startup()`: call `stack.get_child_by_name('notes-all')` to detect a hidden page from a prior instance. If found, reuse it (`page.set_visible(True)`, update `store`/`backup` refs). If not, create and add via `add_workspace_page()`.
-2. **Deactivation** → `do_deactivate()`: hide the page via `page.set_visible(False)`,  it stays in the `Adw.ViewStack` but disappears from the `InlineViewSwitcher`.
-3. **Reactivation** → same as activation: the hidden page is found by name and shown again.
+So a page-adding plugin builds a page in `startup()` and does nothing about it in `do_deactivate()`:
 
-This avoids the "duplicate child name in AdwViewStack" warning.
+```python
+def startup(self, *args):
+    self._page = MyView(self.app)
+    self.plugin.add_workspace_page(self._page, 'my-view', _('My View'), 'my-icon')
+
+def do_deactivate(self):
+    self._page = None          # the plugin system removes the page itself
+```
+
+Earlier versions required the plugin to hide the page on deactivate and find it by name on the way back, to dodge a "duplicate child name in AdwViewStack" warning. That is gone: `remove_stack_page` now removes the child instead of hiding it, so the name is free and adding a fresh page just works. Guard any late-firing handler with `if self._page is not None`.
+
+This is a helper, not a restriction. `workspace.get_stack()` still returns the real `Adw.ViewStack`, and a plugin that wants to manage its own pages there can.
+
+**Contributing to the sidebar and the header bar** works the same way. The plugin system detaches whatever these hand it, so `do_deactivate` has nothing to undo:
+
+```python
+# A row in the sidebar's plugin section.
+self.plugin.add_sidebar_widget(row, widget_key=MY_ROW_ID)
+
+# A button in the header bar; position is 'left' or 'right'.
+self.plugin.add_headerbar_widget(button, position='left', widget_key=MY_BUTTON_ID)
+
+# A filter dropdown, wired the way the built-in ones are: sized, joined to the
+# shared size group, appended to the 'plugin-dropdowns' list the workspace
+# filter pass reads, registered under 'plugin-<Name>-dropdown', and shown
+# behind the plugin's icon.
+self.plugin.add_sidebar_dropdown(dropdown)
+```
+
+Pass `widget_key` whenever the plugin looks the widget up later. The key is unregistered on unload along with the widget: detaching a widget but leaving its key is a trap, because the next activation finds the old widget, concludes it has nothing to do, and never re-attaches anything. `MiAZFullscreen` had exactly that bug, and its button did not come back after a disable/enable cycle.
+
+Reaching `sidebar-plugin-section`, `headerbar-left-box` and friends directly still works. These only save writing the teardown.
+
+**Verifying it**: `PYTHONPATH=. python scripts/devel/check_plugin_ui.py [PluginName ...]` drives a real disable/enable cycle in the running app and reports what every shared container held at each step. It cannot be a unit test, since it needs a display and a loaded repository.
 
 ### Startup flow
 
@@ -535,7 +662,16 @@ activation (with install instructions) when `ocrmypdf` is not on `PATH`.
 - **No `print()`**,  use `logging.getLogger(__name__)`
 - **Backend**: no GTK/Adw/Gdk widget imports (GObject/GLib/Gio signals are fine), no side-effects on import
 - **Frontend**: no direct file I/O, always call backend APIs
-- **Threading**: `threading.Thread` + `GLib.idle_add()` for UI marshal
+- **Threading**: `run_in_background(fn, on_done, on_error, name)` from `backend/tasks.py`, not a raw `threading.Thread`. It marshals the callbacks back with `GLib.idle_add` and, with no `on_error`, logs the failure with its traceback instead of letting it die in the worker:
+  ```python
+  from MiAZ.backend.tasks import run_in_background
+
+  run_in_background(lambda: self._scan(path),
+                    on_done=self._apply,          # runs on the main loop
+                    on_error=self._release_busy,  # optional; logged either way
+                    name='workspace-scan')
+  ```
+- **Architectural rules are tested**, not just written here: `tests/test_boundaries.py` fails the build when the backend imports a GUI toolkit, or when a frontend module calls `os.unlink` / `shutil.copy` and friends instead of the util service. Exemptions go in `FS_ALLOWED` with a reason, and a third test removes them once they stop being needed.
 - **GTK4 list-model chain** (Workspace, `widgets/columnview.py`): `Gio.ListStore` → `Gtk.SortListModel` → `Gtk.FilterListModel` → `Gtk.MultiSelection` → `Gtk.ColumnView`
 - **No GTK3**: no `GtkListStore`, `GtkTreeView`, `GtkDialog` subclassing
 - **Filechooser**: `Gtk.FileDialog` (async GTK4 API), not `Gtk.FileChooserDialog`

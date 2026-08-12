@@ -97,3 +97,28 @@ def test_model_parametrize_id_title(item_id, item_title):
     obj = MiAZModel(id=item_id, title=item_title)
     assert obj.id == item_id
     assert obj.title == item_title
+
+
+# ---------------------------------------------------------------------------
+# Date carries the sidebar preset token
+# ---------------------------------------------------------------------------
+
+def test_date_has_no_preset_by_default():
+    from MiAZ.backend.models import Date
+    assert Date(id='All-All', title='All documents').preset == ''
+
+
+def test_date_keeps_the_preset_it_was_given():
+    """The id encodes today's resolved range and the title is translated, so
+    neither identifies which sidebar entry this is. The token does.
+    """
+    from MiAZ.backend.models import Date
+    entry = Date(id='20260801-20260807', title='This month', preset='this-month')
+    assert entry.preset == 'this-month'
+
+
+def test_date_still_takes_id_and_title_positionally():
+    from MiAZ.backend.models import Date
+    entry = Date('20260801-20260807', 'This month')
+    assert entry.id == '20260801-20260807'
+    assert entry.title == 'This month'

@@ -1,4 +1,3 @@
-#!/usr/bin/python3
 """
 # File: venv.py
 # Author: Tomás Vírseda
@@ -20,11 +19,11 @@ import sys
 import glob
 import shutil
 import subprocess
-import threading
 
 from gi.repository import GLib, GObject
 
 from MiAZ.backend.log import MiAZLog
+from MiAZ.backend.tasks import run_in_background
 
 MARKER = 'miaz-python'
 
@@ -231,48 +230,48 @@ class MiAZVenv(GObject.GObject):
             return
         self._busy = True
         self.emit('install-started')
-        threading.Thread(target=self._install_worker,
-                         args=(list(requirements),), daemon=True).start()
+        run_in_background(
+            lambda: self._install_worker(list(requirements)),
+            on_error=lambda error: self._finish(False, str(error)),
+            name='venv-install')
 
     def _emit_idle(self, name, *args):
         GLib.idle_add(self.emit, name, *args)
 
     def _install_worker(self, requirements):
-        try:
-            if self.stale():
-                self._emit_idle('install-progress', 'Rebuilding virtualenv…')
-                shutil.rmtree(self.path(), ignore_errors=True)
-            if not self.exists():
-                self._emit_idle('install-progress', 'Creating virtualenv…')
-                self.create()
-            self.ensure_on_syspath()
-            if not requirements:
-                self._finish(True, 'No libraries required.')
+        """Runs off the main loop. A failure here reaches the on_error passed to
+        run_in_background, which reports it through install-finished."""
+        if self.stale():
+            self._emit_idle('install-progress', 'Rebuilding virtualenv…')
+            shutil.rmtree(self.path(), ignore_errors=True)
+        if not self.exists():
+            self._emit_idle('install-progress', 'Creating virtualenv…')
+            self.create()
+        self.ensure_on_syspath()
+        if not requirements:
+            self._finish(True, 'No libraries required.')
+            return
+        # Install one requirement per pip call. pip prints no percentages
+        # through a pipe (its progress bars need a TTY), so the package
+        # boundary is the honest unit of progress for a determinate bar.
+        total = len(requirements)
+        for done, req in enumerate(requirements):
+            self._emit_idle('install-progress',
+                            f'Installing {req} ({done + 1}/{total})…')
+            proc = subprocess.Popen(
+                [self.python_bin(), '-m', 'pip', 'install', '--upgrade', req],
+                stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+            for raw in proc.stdout:
+                line = raw.rstrip()
+                if line:
+                    self._emit_idle('install-progress', line)
+            proc.wait()
+            if proc.returncode != 0:
+                self._finish(False, f'pip failed installing "{req}" '
+                                    f'(exit code {proc.returncode}).')
                 return
-            # Install one requirement per pip call. pip prints no percentages
-            # through a pipe (its progress bars need a TTY), so the package
-            # boundary is the honest unit of progress for a determinate bar.
-            total = len(requirements)
-            for done, req in enumerate(requirements):
-                self._emit_idle('install-progress',
-                                f'Installing {req} ({done + 1}/{total})…')
-                proc = subprocess.Popen(
-                    [self.python_bin(), '-m', 'pip', 'install', '--upgrade', req],
-                    stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
-                for raw in proc.stdout:
-                    line = raw.rstrip()
-                    if line:
-                        self._emit_idle('install-progress', line)
-                proc.wait()
-                if proc.returncode != 0:
-                    self._finish(False, f'pip failed installing "{req}" '
-                                        f'(exit code {proc.returncode}).')
-                    return
-                self._emit_idle('install-fraction', (done + 1) / total)
-            self._finish(True, 'Libraries installed.')
-        except Exception as error:
-            self.log.error(f'venv install failed: {error}')
-            self._finish(False, str(error))
+            self._emit_idle('install-fraction', (done + 1) / total)
+        self._finish(True, 'Libraries installed.')
 
     def _finish(self, ok, message):
         self._busy = False

@@ -1,4 +1,3 @@
-#!/usr/bin/python3
 # File: rename.py
 # Author: Tomás Vírseda
 # License: GPL v3
@@ -11,6 +10,7 @@ from gettext import gettext as _
 from gi.repository import Adw
 from gi.repository import Gdk
 from gi.repository import Gio
+from gi.repository import GObject
 from gi.repository import Gtk
 from gi.repository import GLib
 from gi.repository import Pango
@@ -26,6 +26,13 @@ from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewSuggestion
 
 
 class MiAZRenameDialog(Gtk.Box):
+    __gtype_name__ = 'MiAZRenameDialog'
+    __gsignals__ = {
+        # Any filename field changed. Carries nothing: what a receiver needs is
+        # is_valid(), which reads the fields anyway.
+        'fields-changed': (GObject.SignalFlags.RUN_LAST, None, ()),
+    }
+
     def __init__(self, app) -> Gtk.Widget:
         super(MiAZRenameDialog, self).__init__(orientation=Gtk.Orientation.VERTICAL, spacing=3, hexpand=True, vexpand=True)
         self.app = app
@@ -103,7 +110,9 @@ class MiAZRenameDialog(Gtk.Box):
             config = self.config[i_type]
             self.actions.dropdown_populate(config, self.dropdown[i_type], item_type, False, False)
 
-    def update_dropdown(self, config, item_type):
+    def update_dropdown(self, config, changed, item_type):
+        # 'changed' is the key set the config signal carries. Repopulating reads
+        # the whole file, so it is not needed here.
         title = item_type.__gtype_name__
         self.actions.dropdown_populate(config, self.dropdown[title], item_type)
         self._on_changed_entry()
@@ -677,6 +686,9 @@ class MiAZRenameDialog(Gtk.Box):
             # dialog broken and the preview frozen.
             self.log.error(error)
             self.result = ''
+        # Outside the try: a failed preview is still a change, and the Rename
+        # button has to go insensitive rather than stay on a stale verdict.
+        self.emit('fields-changed')
 
     # Inline "+ Add" for restricted-vocabulary rows
     def _on_inline_add_value(self, _button, item_type, conf_obj):
@@ -848,11 +860,10 @@ class MiAZRenameDialog(Gtk.Box):
     def on_answer_question_delete(self, dialog, response):
         filepath = self.get_filepath_source()
         if response == 'apply':
-            try:
-                os.unlink(filepath)
-                self.log.debug(f"Document deleted: {filepath}")
-            except FileNotFoundError as error:
-                self.log.error(f"Something went wrong: {error}")
-                raise
+            # Through the util service, not os.unlink: it emits
+            # 'filename-deleted', which is how the index and the workspace
+            # learn the document is gone. Deleting it here directly left both
+            # holding an entry until the next full re-scan.
+            self.util.filename_delete({filepath})
         else:
             self.actions.show_stack_page_by_name('workspace')

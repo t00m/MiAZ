@@ -1,4 +1,3 @@
-#!/usr/bin/python3
 # pylint: disable=E1101
 
 """
@@ -186,17 +185,9 @@ class MiAZNotesPlugin(MiAZExtension):
 
         self._close_windows()
 
-        # Hide the all-notes workspace page (keep it in the stack for reuse)
-        if getattr(self, '_all_notes', None) is not None and self.workspace is not None:
-            try:
-                stack = self.workspace.get_stack()
-                page = stack.get_page(self._all_notes)
-                if page is not None:
-                    page.set_visible(False)
-                    self._all_notes.store = None
-                    self._all_notes.backup = None
-            except Exception as error:
-                self.log.debug(f"Hide all-notes page: {error}")
+        # The all-notes workspace page is removed by the plugin system, which
+        # owns what add_workspace_page handed it.
+        self._all_notes = None
 
         if self._postit_board is not None:
             try:
@@ -205,15 +196,7 @@ class MiAZNotesPlugin(MiAZExtension):
                 self.log.debug(f"Unparent post-it board: {error}")
             self._postit_board = None
 
-        button = self.app.get_widget('headerbar-button-notes-indicator')
-        if button is not None:
-            parent = button.get_parent()
-            if parent is not None:
-                parent.remove(button)
-            try:
-                self.app.remove_widget('headerbar-button-notes-indicator')
-            except Exception as error:
-                self.log.debug(f"Remove indicator widget: {error}")
+        # The header bar indicator is detached by the plugin system.
         self._indicator_count = None
 
         # Remove the "only with notes" filter and its sidebar switch, then
@@ -225,15 +208,7 @@ class MiAZNotesPlugin(MiAZExtension):
                 self.workspace.unregister_filter_view(ONLY_NOTES_FILTER)
             except Exception as error:
                 self.log.debug(f"Unregister notes filter: {error}")
-        row = self.app.get_widget(ONLY_NOTES_ROW_ID)
-        if row is not None:
-            parent = row.get_parent()
-            if parent is not None:
-                parent.remove(row)
-            try:
-                self.app.remove_widget(ONLY_NOTES_ROW_ID)
-            except Exception as error:
-                self.log.debug(f"Remove notes filter row: {error}")
+        # The sidebar switch is detached by the plugin system too.
 
         # Remove the notes column added on activation, so it disappears when the
         # plugin is disabled.
@@ -271,32 +246,20 @@ class MiAZNotesPlugin(MiAZExtension):
         )
         self.plugin.install_menu_entry(mnu_doc)
 
-        # All notes workspace page - reuse hidden page or create new
-        stack = self.workspace.get_stack()
-        existing = stack.get_child_by_name('notes-all')
-        if existing is not None:
-            self._all_notes = existing
-            self._all_notes.store = self.store
-            self._all_notes.backup = self.backup
-            page = stack.get_page(existing)
-            if page is not None:
-                page.set_visible(True)
-            self._all_notes.set_compute_existing_document_ids(self._existing_document_ids)
-            self._all_notes.set_compute_visible_document_ids(self._visible_document_ids)
-            self._all_notes.refresh()
-        else:
-            self._all_notes = NotesAllView(
-                self.app, self.store, self.backup, self.log,
-                on_open_document=self._open_doc_window,
-                existing_document_ids=self._existing_document_ids(),
-                compute_existing_document_ids=self._existing_document_ids,
-                compute_visible_document_ids=self._visible_document_ids,
-            )
-            self._all_notes.refresh()
-            self.plugin.add_workspace_page(
-                self._all_notes, 'notes-all', _('Notes'),
-                'accessories-text-editor-symbolic',
-            )
+        # All notes workspace page. The plugin system removes it on unload, so
+        # this always builds a fresh one rather than adopting a leftover.
+        self._all_notes = NotesAllView(
+            self.app, self.store, self.backup, self.log,
+            on_open_document=self._open_doc_window,
+            existing_document_ids=self._existing_document_ids(),
+            compute_existing_document_ids=self._existing_document_ids,
+            compute_visible_document_ids=self._visible_document_ids,
+        )
+        self._all_notes.refresh()
+        self.plugin.add_workspace_page(
+            self._all_notes, 'notes-all', _('Notes'),
+            'accessories-text-editor-symbolic',
+        )
 
         # All notes menu entry
         mnu_all = self.factory.create_menuitem(
@@ -327,21 +290,17 @@ class MiAZNotesPlugin(MiAZExtension):
         # Headerbar pushpin indicator: visible only when the single selected
         # document actually has notes. Clicking it shows the post-it board.
         if self.app.get_widget('headerbar-button-notes-indicator') is None:
-            toolbar = self.app.get_widget('headerbar-right-box')
-            if toolbar is not None:
-                button = self._build_indicator_button()
-                button.set_visible(False)
-                self.app.add_widget('headerbar-button-notes-indicator', button)
-                toolbar.append(button)
+            button = self._build_indicator_button()
+            button.set_visible(False)
+            self.plugin.add_headerbar_widget(
+                button, position='right',
+                widget_key='headerbar-button-notes-indicator')
 
         # Sidebar toggle: "Only documents with notes". Registers a workspace
         # filter that is a no-op until the switch is turned on.
         if self.app.get_widget(ONLY_NOTES_ROW_ID) is None:
-            section = self.app.get_widget('sidebar-plugin-section')
-            if section is not None:
-                row = self._build_only_notes_row()
-                self.app.add_widget(ONLY_NOTES_ROW_ID, row)
-                section.append(row)
+            row = self._build_only_notes_row()
+            if self.plugin.add_sidebar_widget(row, widget_key=ONLY_NOTES_ROW_ID):
                 self.workspace.register_filter_view(
                     ONLY_NOTES_FILTER, self._do_filter_notes)
 

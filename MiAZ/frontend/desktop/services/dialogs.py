@@ -1,4 +1,3 @@
-#!/usr/bin/python3
 # File: dialogs.py
 # Author: Tomás Vírseda
 # License: GPL v3
@@ -89,6 +88,13 @@ class MiAZDialog:
             label.set_xalign(0)
             label.set_justify(Gtk.Justification.LEFT)
             label.add_css_class('toolbar')
+            # A selectable label selects all its text the first time it takes
+            # the focus, and the dialog hands it the focus while opening: the
+            # body came up fully highlighted. Drop that first selection, and
+            # only that one, so selecting by hand still works.
+            focus = Gtk.EventControllerFocus()
+            focus.connect('enter', self._clear_initial_selection, label)
+            label.add_controller(focus)
             # And change color
             class_name = miaz_dialog[dtype]['class_name']
             if class_name:
@@ -127,6 +133,19 @@ class MiAZDialog:
             dialog.connect('response', callback, data)
 
         return dialog
+
+    def _clear_initial_selection(self, controller, label):
+        """Undo the select-all a selectable label does when it gets the focus.
+
+        The clearing runs one idle later because the select-all happens after
+        the focus change, so doing it here would be undone. The controller goes
+        with it: from then on the label behaves like any selectable text.
+        """
+        def clear():
+            label.select_region(0, 0)
+            label.remove_controller(controller)
+            return GLib.SOURCE_REMOVE
+        GLib.idle_add(clear)
 
     def close(self, dialog, response):
         pass

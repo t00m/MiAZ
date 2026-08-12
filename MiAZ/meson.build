@@ -18,7 +18,7 @@ configure_file(
   configuration: conf,
   install: true,
   install_dir: get_option('bindir'),
-  install_mode: 'rwxrwxr-x'
+  install_mode: 'rwxr-xr-x'
 )
 
 # Python sources

@@ -1,4 +1,3 @@
-#!/usr/bin/python3
 # File: pluginuimangager.py
 # Author: Tomás Vírseda
 # License: GPL v3

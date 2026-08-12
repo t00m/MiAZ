@@ -1,5 +1,5 @@
 Name:           miaz
-Version:        0.1.40
+Version:        0.1.50
 Release:        1%{?dist}
 Summary:        Personal Document Organizer
 
@@ -32,7 +32,7 @@ MiAZ is a GTK4/Libadwaita desktop application that organises personal
 documents by enforcing a strict 7-field filename convention:
 {date}-{country}-{group}-{sentby}-{purpose}-{concept}-{sentto}
 
-The directory is the database — no external database required.
+The directory is the database, no external database required.
 
 %prep
 %autosetup
@@ -66,7 +66,7 @@ gtk-update-icon-cache %{_datadir}/icons/hicolor &> /dev/null || :
 
 %files -f miaz.lang
 %license data/docs/LICENSE
-%doc README CHANGELOG.md
+%doc data/docs/README CHANGELOG.md
 %{_bindir}/miaz
 %{_datadir}/MiAZ/
 %{_datadir}/applications/io.github.t00m.MiAZ.desktop
@@ -75,6 +75,9 @@ gtk-update-icon-cache %{_datadir}/icons/hicolor &> /dev/null || :
 %{_datadir}/metainfo/io.github.t00m.MiAZ.metainfo.xml
 
 %changelog
+* Thu Aug 06 2026 Tomás Vírseda <tomasvirseda@gmail.com> - 0.1.50-1
+- New release. See CHANGELOG.md for details.
+
 * Wed Aug 05 2026 Tomás Vírseda <tomasvirseda@gmail.com> - 0.1.40-1
 - AI provider API keys are stored in the system keyring instead of plain text
 - Country, Group and Purpose labels are shown in the user's language; French and German catalogues added
