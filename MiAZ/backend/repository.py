@@ -29,6 +29,10 @@ class MiAZRepository(GObject.GObject):
         self.config = self.app.get_config_dict()
         self._errmsg = None
         self._conf_cache = None
+        self._active_id = None
+        # Whether use() pointed this instance somewhere. Distinct from
+        # _active_id being None, which is also what a bare path leaves behind.
+        self._active_pinned = False
         self._store = None
         self.log.info("Repository class initialized")
 
@@ -66,6 +70,21 @@ class MiAZRepository(GObject.GObject):
     def reset(self):
         """Invalidate the conf cache so the next access triggers a fresh setup()."""
         self._conf_cache = None
+        self._active_id = None
+        self._active_pinned = False
+
+    def get_active_id(self):
+        """The id of the repository being shown, or None if there is none.
+
+        Not always the default one: a switch that does not set the default
+        points this instance elsewhere while 'current' still names what MiAZ
+        opens on the next start. Anything naming the repository to the user
+        (window title, sidebar, settings) asks here rather than reading
+        'current', which would name the one that is not on screen.
+        """
+        if self._active_pinned:
+            return self._active_id
+        return self.config['App'].get('current')
 
     def use(self, repo_id: str = None, path: str = None) -> bool:
         """Point this instance at a repository without changing the default.
@@ -80,6 +99,7 @@ class MiAZRepository(GObject.GObject):
         """
         if path:
             conf = {'dir_docs': path, 'dir_conf': os.path.join(path, '.conf')}
+            repo_id = None  # a bare path carries no registered name
         else:
             if not repo_id:
                 return False
@@ -93,6 +113,8 @@ class MiAZRepository(GObject.GObject):
         if not conf.get('dir_docs'):
             return False
         self._conf_cache = conf
+        self._active_id = repo_id
+        self._active_pinned = True
         return True
 
     def init(self, path):

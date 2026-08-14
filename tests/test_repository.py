@@ -307,3 +307,53 @@ def test_use_survives_load(tmp_path):
     repo.load(repo.docs)
     assert repo.docs == str(tmp_path / 'repo_b')
     assert repo.conf == confs['repo_b']
+
+
+# ---------------------------------------------------------------------------
+# get_active_id(): which repository is being shown right now
+#
+# It is not always the default one. Switching without setting the default
+# points the repository elsewhere while 'current' still names what MiAZ opens
+# on the next start, and the window title, the sidebar and the settings all
+# have to name the one on screen.
+# ---------------------------------------------------------------------------
+
+def test_active_id_is_the_default_when_nothing_else_was_chosen(tmp_path):
+    repo, _confs = make_repository(tmp_path, 'repo_a', 'repo_b')
+    assert repo.get_active_id() == 'repo_a'
+
+
+def test_active_id_follows_use(tmp_path):
+    repo, _confs = make_repository(tmp_path, 'repo_a', 'repo_b')
+    repo.use('repo_b')
+    assert repo.get_active_id() == 'repo_b'
+    assert repo.app.get_config_dict()['App'].get('current') == 'repo_a'
+
+
+def test_active_id_survives_load(tmp_path):
+    repo, _confs = make_repository(tmp_path, 'repo_a', 'repo_b')
+    repo.use('repo_b')
+    repo.load(repo.docs)
+    assert repo.get_active_id() == 'repo_b'
+
+
+def test_active_id_falls_back_to_the_default_after_reset(tmp_path):
+    repo, _confs = make_repository(tmp_path, 'repo_a', 'repo_b')
+    repo.use('repo_b')
+    repo.reset()
+    assert repo.get_active_id() == 'repo_a'
+
+
+def test_active_id_of_a_path_without_a_name(tmp_path):
+    """use(path=...) has no registered name, so the default one is not claimed."""
+    repo, _confs = make_repository(tmp_path, 'repo_a')
+    somewhere = tmp_path / 'usb'
+    (somewhere / '.conf').mkdir(parents=True)
+    repo.use(path=str(somewhere))
+    assert repo.get_active_id() is None
+
+
+def test_active_id_when_no_repository_is_configured(tmp_path):
+    app = StoreApp()
+    repo = MiAZRepository(app)
+    assert repo.get_active_id() is None

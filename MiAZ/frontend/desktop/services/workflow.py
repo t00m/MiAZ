@@ -36,16 +36,60 @@ class MiAZWorkflow(GObject.GObject):
         self.actions = self.app.get_service('actions')
         self.util = self.app.get_service('util')
         self.srvdlg = self.app.get_service('dialogs')
+        self._sid_pending_docs = None
         self.log.debug("Service Workflow initialized")
 
-    def switch_start(self, *args):
-        """Switch from one repository to another."""
-        self.log.debug("Repository switch requested")
+    def _unload_plugins(self):
+        """Take down the plugins of the repository being left.
+
+        The enabled set is per repository (plugins-used.json lives in the
+        repository .conf), so a switch has to unload before it loads: without
+        this the second repository kept the first one's plugins and ignored its
+        own list. Clearing the loaded flag is what lets app.load_plugins() run
+        again for the repository being opened.
+        """
+        plugin_manager = self.app.get_service('plugin-system')
+        if plugin_manager is None:
+            # Startup: the plugin system is registered after the first switch.
+            return
+        plugin_manager.unload_all()
+        self.app.set_plugins_loaded(False)
+
+    def switch_start(self, *args, repo_id=None):
+        """Switch from one repository to another, in place.
+
+        With no repo_id the default repository ('current') is loaded, which is
+        what happens at startup. Passing repo_id opens that repository without
+        touching 'current', so the user can look at another one without
+        changing what MiAZ opens next time. Writing the default is the caller's
+        decision, taken before calling here.
+
+        Returns whether a repository ended up loaded.
+        """
+        self.log.debug(f"Repository switch requested (repo_id={repo_id})")
         repository = self.app.get_service('repo')
-        repository.reset()
+
+        # Resolve the target before anything is torn down: an unknown id must
+        # leave the repository on screen exactly as it was.
+        if repo_id is not None:
+            config_repos = self.app.get_config('Repository')
+            if config_repos is None or not config_repos.get_path(repo_id, used=True):
+                self.log.error(f"Repository '{repo_id}' is not one of the repositories in use")
+                return False
+
+        self.emit("repository-switch-started")
+
+        # The enabled plugin set lives in the repository being left, so its
+        # plugins go before the new configuration replaces it. Their teardown
+        # runs while their own repository is still the current one.
+        self._unload_plugins()
+
+        if repo_id is not None:
+            repository.use(repo_id=repo_id)
+        else:
+            repository.reset()
         try:
             self.app.set_status(MiAZStatus.BUSY)
-            appconf = self.app.get_config('App')
             repo_loaded = False
             if repository.validate(repository.docs):
                 repository.load(repository.docs)
@@ -54,8 +98,8 @@ class MiAZWorkflow(GObject.GObject):
             self.log.error(error)
             repo_loaded = False
 
-        repo_id = appconf.get('current')
-        self.log.debug(f"Repository '{repo_id}' loaded? {repo_loaded}")
+        active_id = repository.get_active_id()
+        self.log.debug(f"Repository '{active_id}' loaded? {repo_loaded}")
         self.log.debug(f"Repository error: {repository.get_error()}")
 
         window = self.app.get_widget('window')
@@ -63,13 +107,22 @@ class MiAZWorkflow(GObject.GObject):
         sidebar = self.app.get_widget('sidebar')
         if repo_loaded:
             self.log.info(f"Repo Working directory: '{repository.docs}'")
-            repo_settings = self.app.get_widget('settings-repo')
-            if repo_settings is None:
-                repo_settings = self.app.add_widget('settings-repo', MiAZRepoSettings(self.app))
+            # Built against the repository being opened. The one from the
+            # previous repository shows that repository's vocabularies, so it
+            # is replaced rather than reused, and closed if it was on screen.
+            previous = self.app.get_widget('settings-repo')
+            if previous is not None:
+                previous.close()
+            self.app.add_widget('settings-repo', MiAZRepoSettings(self.app))
             workspace = self.app.get_widget('workspace')
             workspace.initialize_caches()
             tgbPendingDocs = self.app.get_widget('workspace-togglebutton-pending-docs')
-            tgbPendingDocs.connect('toggled', workspace.show_pending_documents)
+            if self._sid_pending_docs is None:
+                # Connected once for the life of the button. Connecting on
+                # every switch left one handler per switch, so the pending
+                # filter ran as many times as repositories had been opened.
+                self._sid_pending_docs = tgbPendingDocs.connect(
+                    'toggled', workspace.show_pending_documents)
             if not self.app.get_plugins_loaded():
                 self.app.load_plugins()
             self.app.set_status(MiAZStatus.RUNNING)

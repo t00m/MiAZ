@@ -791,6 +791,28 @@ class MiAZPluginSystem(GObject.GObject):
         except Exception as error:
             self.log.error(error)
 
+    def unload_all(self) -> int:
+        """Unload every loaded plugin. Returns how many were unloaded.
+
+        Used when the repository changes: the enabled set is per repository
+        (plugins-used.json lives in the repository's .conf), so the plugins of
+        the one being left have to go before those of the one being opened
+        arrive. Each unload runs the same teardown a manual disable does, so a
+        plugin cannot leave a page, a rename tab or a header bar button behind.
+
+        One plugin that fails to unload does not stop the rest: unload_plugin
+        already logs and swallows, and the caller is in the middle of a switch
+        that has to finish either way.
+        """
+        unloaded = 0
+        for plugin in self.plugins:
+            if self.is_plugin_loaded(plugin):
+                self.unload_plugin(plugin)
+                unloaded += 1
+        if unloaded:
+            self.log.info(f"Plugins unloaded: {unloaded}")
+        return unloaded
+
     def _remove_plugin_www(self, plugin: Peas.PluginInfo):
         """Remove a plugin's published web directory when it is unloaded.
 

@@ -271,8 +271,7 @@ class MiAZMainWindow(Gtk.Box):
         hbox.append(btn_delete)
 
     def _update_window_title(self, *args):
-        cfg = self.app.get_config('App')
-        repo_id = cfg.get('current') if cfg is not None else None
+        repo_id = self.app.get_service('repo').get_active_id()
         subtitle = repo_id.replace('_', ' ') if repo_id else ''
         if getattr(self, '_window_title', None) is not None:
             self._window_title.set_subtitle(subtitle)
@@ -492,7 +491,7 @@ class MiAZMainWindow(Gtk.Box):
         """Prepend the current repository name as the first section of menu."""
         actions = self.app.get_service('actions')
         factory = self.app.get_service('factory')
-        repo_id = self.app.get_config('App').get('current') or 'MiAZ'
+        repo_id = self.app.get_service('repo').get_active_id() or 'MiAZ'
         repo_name = repo_id.replace('_', ' ')
         section = Gio.Menu.new()
         section.append_item(factory.create_menuitem(

@@ -56,8 +56,7 @@ class MiAZAppSettings(Adw.PreferencesDialog):
         self.emit('settings-loaded')
 
     def _on_update_repos_available(self, *args):
-        config = self.app.get_config_dict()
-        repo_id = config['App'].get('current')
+        repo_id = self.app.get_service('repo').get_active_id()
         n = 0
         dd_repo = self.app.get_widget('window-settings-dropdown-repository-active')
         for repo in dd_repo.get_model():
@@ -136,10 +135,10 @@ class MiAZAppSettings(Adw.PreferencesDialog):
         #### Select active repository
         self._on_update_repos_available()
 
-        # DOC: By enabling this signal, repos are loaded automatically without pressing the button:
-        # However, if a repository is loaded automatically, plugins too
-        # Right now, the load/unload plugin procedure is not working well
-        # Therefore, the app is restarted.
+        # Selecting a repository here asks to switch to it. The switch happens
+        # in place: MiAZWorkflow.switch_start unloads the plugins of the
+        # repository being left before loading the new configuration, so the
+        # restart this used to need is gone.
         self.config_repos.connect('used-updated', self.actions.dropdown_repopulate, dd_repo, Repository, False, False)
         signal = dd_repo.connect("notify::selected-item", self._on_use_repo)
         self.app.add_widget('signal-dd_repo', signal)
@@ -288,54 +287,78 @@ class MiAZAppSettings(Adw.PreferencesDialog):
         return box
 
     def _on_use_repo(self, dropdown, gparam):
-        """
-        Load repository automatically whenever is selected.
-        Once loaded, it is set as the default in the app config.
-        Then, the  user is asked if enabled repo should be the default one.
-        If yes, the app is restarted.
+        """Ask before switching to the repository just selected.
+
+        The switch happens in place, with no restart: the documents, the
+        vocabularies and the plugins of the repository being opened replace
+        the ones on screen. The checkbox decides the other half, whether this
+        repository also becomes the one MiAZ opens next time.
         """
         repo = dropdown.get_selected_item()
         if repo is None:
             return
 
+        repository = self.app.get_service('repo')
+        if repo.id == repository.get_active_id():
+            # Already the repository on screen, so there is nothing to confirm.
+            return
+
         title = _('Repository management')
-        body1 = _('Would you like to set the repository {repository} as default?').format(repository=repo.id)
-        body2 = _('Please, note that the app will be restarted upon confirmation')
+        body1 = _('Would you like to switch to the repository {repository}?').format(repository=repo.id)
+        body2 = _('Its documents, vocabularies and plugins replace the ones in use.')
         body = body1 + '\n\n' + body2
+        check = Gtk.CheckButton(label=_('Set as the default repository'))
+        check.set_active(True)
+        check.set_tooltip_text(_('The repository MiAZ opens the next time it starts'))
         parent = self.app.get_widget('window')
         srvdlg = self.app.get_service('dialogs')
-        dialog = srvdlg.show_question(title=title, body=body, callback=self._on_use_repo_response, data=repo)
+        dialog = srvdlg.show_question(title=title, body=body, widget=check,
+                                      callback=self._on_use_repo_response,
+                                      data=(repo, check))
         dialog.present(parent)
 
-    def _on_use_repo_response(self, dialog, response, repo):
+    def _on_use_repo_response(self, dialog, response, data):
+        repo, check = data
         srvdlg = self.app.get_service('dialogs')
         config = self.app.get_config_dict()
-        default_repo = config['App'].get('current')
 
         if response == 'apply':
-            config['App'].set('current', repo.id)
-            self.log.debug('Repository %s enabled', repo.id)
-            actions = self.app.get_service('actions')
-            actions.application_restart()
+            set_default = check.get_active()
+            if set_default:
+                config['App'].set('current', repo.id)
+            workflow = self.app.get_service('workflow')
+            if workflow.switch_start(repo_id=repo.id):
+                self.log.info(f"Switched to repository {repo.id} (default: {set_default})")
+                self._update_active_repo_subtitle()
+                if set_default:
+                    srvdlg.show_toast(_('Switched to {repository}, now the default one').format(repository=repo.id))
+                else:
+                    srvdlg.show_toast(_('Switched to {repository}').format(repository=repo.id))
+            else:
+                self.log.error(f"Repository {repo.id} could not be loaded")
+                self._select_active_repo()
+                srvdlg.show_toast(_('{repository} could not be loaded').format(repository=repo.id))
         else:
-            # Trick to avoid restart app when repos are enabled/disabled
-            ## Block signal "dd_repo > notify::selected-item"
-            dd_repo = self.app.get_widget('window-settings-dropdown-repository-active')
-            signal = self.app.get_widget('signal-dd_repo')
-            dd_repo.handler_block(signal)
-
-            # Set default report back again
-            model = dd_repo.get_model()
-            n = 0
-            for item in model:
-                if item.id == default_repo:
-                    dd_repo.set_selected(n)
-                n += 1
-
-            ## Unblock signal "dd_repo > notify::selected-item"
-            dd_repo.handler_unblock(signal)
-
+            self._select_active_repo()
             srvdlg.show_toast(_('Action canceled. Repository not switched'))
+
+    def _select_active_repo(self):
+        """Put the dropdown back on the repository actually in use.
+
+        Selecting in the dropdown is what asks for a switch, so writing the
+        selection back has to happen with that signal blocked, or the dialog
+        opens again for the repository the user just declined.
+        """
+        dd_repo = self.app.get_widget('window-settings-dropdown-repository-active')
+        signal = self.app.get_widget('signal-dd_repo')
+        if dd_repo is None or signal is None:
+            return
+        active_id = self.app.get_service('repo').get_active_id()
+        dd_repo.handler_block(signal)
+        for position, item in enumerate(dd_repo.get_model()):
+            if item.id == active_id:
+                dd_repo.set_selected(position)
+        dd_repo.handler_unblock(signal)
 
     def _on_manage_repositories(self, *args):
         widget = self._create_widget_for_repositories()
@@ -361,8 +384,7 @@ class MiAZRepoSettings(MiAZCustomWindow):
         self.app = app
         self.log = MiAZLog('MiAZ.RepoSettings')
         self.name = 'repo-settings'
-        appconf = self.app.get_config('App')
-        self.title = _('Settings for repository') + ' ' + self._repo_label(appconf.get('current'))
+        self.title = _('Settings for repository') + ' ' + self._repo_label(app.get_service('repo').get_active_id())
         super().__init__(app, self.name, self.title, **kwargs)
 
     def _repo_label(self, repo_id):
@@ -414,8 +436,7 @@ class MiAZRepoSettings(MiAZCustomWindow):
             notebook.append_page(page, label)
 
     def update(self, *args):
-        appconf = self.app.get_config('App')
-        title = _('Settings for repository') + ' ' + self._repo_label(appconf.get('current'))
+        title = _('Settings for repository') + ' ' + self._repo_label(self.app.get_service('repo').get_active_id())
         self.set_title(title)
 
         for item_type in [Country, Group, Purpose, SentBy, SentTo, Plugin]:

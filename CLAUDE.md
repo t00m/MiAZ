@@ -45,6 +45,7 @@ Example: `20240315-ES-HOU-BANKNAME-INV-Q1invoice-JOHNDOE.pdf`
 
 ## Key patterns
 
+- **Repository switching**: `MiAZWorkflow.switch_start(repo_id=None)`, in place, no restart. It unloads the plugins of the repository being left (the enabled set is per repository), resolves the target with `repository.use()` (which does **not** write `App.current`), loads the new configuration and reloads the workspace on `application-started`. Setting the default is a separate decision, taken by the checkbox in the Settings confirmation dialog. Anything naming the repository to the user calls `repository.get_active_id()`, never `App.current`: they differ after a switch that did not set the default. See `AGENTS.md` for the full order.
 - **CLI**: `frontend/console/` is a headless command line (`miaz search`, `miaz repos`). `MiAZConsoleApp` registers only `util`, `repo` and `index`; filtering is `DocumentQuery.matches`, never a condition written twice; repository selection uses `MiAZRepository.use()`, which does not rewrite `current`. It must never import GTK or `frontend.desktop` (enforced by `tests/test_boundaries.py`). Results go to stdout, diagnostics to stderr. The console shows INFO and above; the log file keeps DEBUG, one file per run with the previous one as `MiAZ.last.log`. `MIAZ_DEBUG=1` shows DEBUG on the console.
 - **Threading**: `threading.Thread` + `GLib.idle_add()` for UI marshal
 - **List model (GTK4 MVC)**: Workspace chain is `Gio.ListStore` → `Gtk.SortListModel` → `Gtk.FilterListModel` → `Gtk.MultiSelection` → `Gtk.ColumnView` (`widgets/columnview.py`)

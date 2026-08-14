@@ -205,9 +205,21 @@ automated UI suite.
       repository's vocabulary, not the previous one's.
 - [ ] **8.3 [N] [A]** Edit a value in repository A, switch to B, switch back. Your
       edit is there, and B never showed A's values.
-- [ ] **8.4** Restart the app. It opens the repository you were last in.
-- [ ] **8.5** Point a repository at a directory that no longer exists. The error
-      is explained and the app stays usable.
+- [ ] **8.4 [N] [A]** The plugins follow the switch. Enable a plugin in A only,
+      switch to B: its button or page is gone. Switch back: it is there again.
+- [ ] **8.5 [N] [A]** Confirm the dialog with **Set as the default repository**
+      ticked. The workspace switches and this repository becomes the default.
+- [ ] **8.6 [N] [A]** Confirm it with the checkbox unticked. The workspace
+      switches, and Settings still shows the previous one as the default.
+- [ ] **8.7 [N] [A]** Cancel the dialog. Nothing switches and the dropdown goes
+      back to the repository in use.
+- [ ] **8.8 [N]** Nothing restarts. The window stays open through all of the
+      above, the Settings dialog stays open behind the confirmation, and a
+      toast names the repository switched to.
+- [ ] **8.9** Restart the app. It opens the repository last set as the default,
+      which is not necessarily the last one you looked at (8.6).
+- [ ] **8.10** Point a repository at a directory that no longer exists. The
+      error is explained and the app stays usable.
 
 ## 9. Settings
 

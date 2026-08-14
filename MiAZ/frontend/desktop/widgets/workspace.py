@@ -261,12 +261,15 @@ class MiAZWorkspace(Gtk.Box):
         window.present()
         if not self._finish_config_done:
             self._finish_config_done = True
-            workflow = self.app.get_service('workflow')
             srvutl = self.app.get_service('util')
             srvutl.connect('filename-renamed', self._schedule_update)
             srvutl.connect('filename-deleted', self._schedule_update)
             srvutl.connect('filename-added', self._schedule_update)
-            workflow.connect('repository-switch-started', self._on_repo_switch)
+        # Every switch reaches here: switch_start emits 'application-started'
+        # once the new repository is loaded and its caches are fresh, which is
+        # the only point where reconnecting to the configurations picks up the
+        # new objects rather than the ones being replaced. Listening to
+        # 'repository-switch-started' instead would run this before the swap.
         self._on_repo_switch()
         self.emit('workspace-loaded')
 
@@ -785,11 +788,25 @@ class MiAZWorkspace(Gtk.Box):
 
     def _apply_parse_results(self, result_dict):
         """Apply parsed results on the main thread."""
+        repository = self.app.get_service('repo')
+
+        # A scan that started before a repository switch comes back after it,
+        # holding the documents of the repository that was left. Applying it
+        # would show the previous repository's documents in the new one and,
+        # worse, spend the armed date-preset selection on them, leaving the new
+        # repository filtered by a range that predates it (an empty view). The
+        # switch already asked for its own scan, so this one is dropped.
+        scanned = result_dict.get('_repo_docs')
+        if scanned is not None and scanned != repository.docs:
+            self.log.debug(f"Discarding scan of '{scanned}': the repository is now '{repository.docs}'")
+            self._scan_in_flight = False
+            self._schedule_update()
+            return False
+
         items = result_dict['items']
         invalid = result_dict['invalid']
         show_pending = result_dict['show_pending']
 
-        repository = self.app.get_service('repo')
         util = self.app.get_service('util')
         index = self.app.get_service('index')
 

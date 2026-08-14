@@ -361,8 +361,7 @@ class MiAZActions(GObject.GObject):
     def show_repository_settings(self, *args):
         try:
             # Continue if a default repository exists
-            appconf = self.app.get_config('App')
-            repo_id = appconf.get('current').replace('_', ' ')
+            repo_id = self.app.get_service('repo').get_active_id().replace('_', ' ')
             window_main = self.app.get_widget('window')
             window_repoconfig = MiAZRepoSettings(self.app)
             window_repoconfig.set_transient_for(window_main)

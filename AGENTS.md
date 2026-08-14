@@ -394,6 +394,23 @@ Reaching `sidebar-plugin-section`, `headerbar-left-box` and friends directly sti
 3. `switch_start()` → `repository.load()` → `app.load_plugins()` → `switch_finish()`
 4. `switch_finish()` → creates `MiAZWatcher`, sets up workspace page
 
+### Switching repository
+
+`MiAZWorkflow.switch_start(repo_id=None)` is the one way in, at startup and for every later switch. **It never restarts the application.** In order:
+
+1. An unknown `repo_id` is rejected before anything is torn down, and the repository on screen is left alone (returns `False`).
+2. `repository-switch-started` is emitted, then every loaded plugin is unloaded (`pluginsystem.unload_all()`) and `app.set_plugins_loaded(False)`. The enabled set is per repository (`plugins-used.json` lives in the repository `.conf`), so the plugins of the one being left have to go before the new list is read.
+3. The target is resolved: `repository.use(repo_id=...)` for a named one, `repository.reset()` for the default. `use()` does **not** write `App.current`, so a switch and a change of default are two separate decisions.
+4. `repository.load()` disposes the previous `MiAZConfigStore` and publishes the new configurations, then emits `repository-switched` → `switch_finish()` (re-points the watcher with `set_path()`, shows the workspace page, emits `repository-switch-finished`).
+5. `MiAZRepoSettings` is rebuilt, `app.load_plugins()` loads what the new repository enables, and `application-started` is emitted, which is where `MiAZWorkspace._on_finish_configuration` reloads the view and reconnects to the new configuration objects.
+
+Two rules follow from that order:
+
+- **Anything naming the repository to the user calls `repository.get_active_id()`**, not `App.current`. They differ whenever a switch did not set the default, and `current` then names a repository that is not on screen.
+- **Reload work belongs after the configurations are swapped**, so listen to `repository-switch-finished` or `application-started`. `repository-switch-started` fires before the swap and means "teardown is beginning"; a handler that repopulates there binds to the objects being replaced.
+
+A scan already in flight when a switch happens is discarded on arrival: `_apply_parse_results` compares `_repo_docs` with the current `repository.docs` and drops what belongs to the repository that was left.
+
 ## Embedded web (webserver + Browser page)
 
 MiAZ ships a **minimal static-file HTTP server** and a built-in WebKit page so plugins can publish browsable HTML (reports, dashboards, summaries) without bundling a server each.

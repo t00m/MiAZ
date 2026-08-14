@@ -65,6 +65,15 @@ DEFAULT_PLUGINS = {
 }
 
 
+# Beta enables a different set on purpose: the plugins are per repository, so
+# switching has to unload what Alpha had and load what Beta asks for. With the
+# same list in both, a switch that ignored the list entirely would still pass.
+BETA_PLUGINS = {
+    'MiAZAddFromDir': 'Add documents from directory',
+    'MiAZFullscreen': 'Fullscreen',
+}
+
+
 def describe(code):
     return DESCRIPTIONS.get(code, code.title())
 
@@ -74,7 +83,7 @@ def _write(path, payload):
         json.dump(payload, handler)
 
 
-def _make_repository(root, documents):
+def _make_repository(root, documents, plugins=None):
     """A repository whose configuration knows the values its documents use.
 
     Without this the workspace hides everything, exactly as it does for a real
@@ -103,7 +112,8 @@ def _make_repository(root, documents):
     people.update(recipients)
     _write(os.path.join(conf, 'people-available.json'), people)
     _write(os.path.join(conf, 'people-used.json'), people)
-    _write(os.path.join(conf, 'plugins-used.json'), DEFAULT_PLUGINS)
+    _write(os.path.join(conf, 'plugins-used.json'),
+           DEFAULT_PLUGINS if plugins is None else plugins)
 
     for name in documents:
         with open(os.path.join(root, name), 'w', encoding='utf-8') as handler:
@@ -118,7 +128,8 @@ def sandbox():
     alpha = _make_repository(os.path.join(home, 'Alpha'), ALPHA_DOCS)
     with open(os.path.join(alpha, UNKNOWN_DOC), 'w', encoding='utf-8') as handler:
         handler.write('document')
-    beta = _make_repository(os.path.join(home, 'Beta'), BETA_DOCS)
+    beta = _make_repository(os.path.join(home, 'Beta'), BETA_DOCS,
+                            plugins=BETA_PLUGINS)
 
     etc = os.path.join(home, '.MiAZ', 'etc')
     os.makedirs(etc, exist_ok=True)
