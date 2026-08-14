@@ -14,7 +14,9 @@ gi.require_version('Gio', '2.0')
 from datetime import date
 
 import pytest
-from MiAZ.backend.util import MiAZUtil
+import shutil
+
+from MiAZ.backend.util import MiAZUtil, clean_temp_dir
 
 
 class MockApp:
@@ -299,3 +301,55 @@ def test_since_date_last_n_months_twelve_from_december(util):
 def test_since_date_this_year_still_means_january_first(util):
     """Kept for anything that genuinely wants the calendar year to date."""
     assert _ymd(util.since_date_this_year(date(2026, 8, 7))) == '20260101'
+
+
+# ---------------------------------------------------------------------------
+# clean_temp_dir: var/tmp is emptied on every startup
+# ---------------------------------------------------------------------------
+
+def test_clean_temp_dir_removes_files_and_subdirs(tmp_path):
+    (tmp_path / 'scan.pdf').write_bytes(b'%PDF-1.4')
+    (tmp_path / 'export').mkdir()
+    (tmp_path / 'export' / 'data.csv').write_text('a,b\n')
+
+    removed = clean_temp_dir(str(tmp_path))
+
+    assert removed == 2
+    assert tmp_path.is_dir()
+    assert list(tmp_path.iterdir()) == []
+
+
+def test_clean_temp_dir_missing_directory_is_not_an_error(tmp_path):
+    assert clean_temp_dir(str(tmp_path / 'nope')) == 0
+
+
+def test_clean_temp_dir_unlinks_symlink_without_touching_target(tmp_path):
+    outside = tmp_path / 'outside'
+    outside.mkdir()
+    (outside / 'keep.txt').write_text('keep')
+    tmpdir = tmp_path / 'tmp'
+    tmpdir.mkdir()
+    (tmpdir / 'link').symlink_to(outside, target_is_directory=True)
+
+    assert clean_temp_dir(str(tmpdir)) == 1
+    assert list(tmpdir.iterdir()) == []
+    assert (outside / 'keep.txt').read_text() == 'keep'
+
+
+def test_clean_temp_dir_skips_what_it_cannot_remove(tmp_path, monkeypatch):
+    """One undeletable leftover must not stop MiAZ from starting."""
+    (tmp_path / 'stuck').mkdir()
+    (tmp_path / 'ok.txt').write_text('x')
+
+    real_rmtree = shutil.rmtree
+
+    def fail_on_stuck(path, *args, **kwargs):
+        if path.endswith('stuck'):
+            raise PermissionError(path)
+        return real_rmtree(path, *args, **kwargs)
+
+    monkeypatch.setattr('MiAZ.backend.util.shutil.rmtree', fail_on_stuck)
+
+    assert clean_temp_dir(str(tmp_path)) == 1
+    assert (tmp_path / 'stuck').is_dir()
+    assert not (tmp_path / 'ok.txt').exists()

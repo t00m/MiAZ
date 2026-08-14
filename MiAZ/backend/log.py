@@ -7,6 +7,7 @@
 """
 
 import os
+import shutil
 import sys
 import logging
 import logging.handlers
@@ -20,6 +21,11 @@ import logging.handlers
 # has configured on the Python root logger, MiAZ diagnostics are not duplicated
 # into it.
 ROOT = 'MiAZ'
+
+# What the console shows unless something says otherwise. DEBUG is written to
+# the log file and kept out of the terminal, where it buries the lines a user
+# can act on. MIAZ_DEBUG=1 puts it back on screen.
+DEFAULT_CONSOLE_LEVEL = logging.DEBUG if os.environ.get('MIAZ_DEBUG') else logging.INFO
 
 _SHARED_FILE_HANDLER = None
 
@@ -94,9 +100,12 @@ def _build_root():
     stdout, and log lines mixed into them would break every pipe.
     """
     root = logging.getLogger(ROOT)
+    # The root passes everything through; each handler decides its own floor,
+    # so the file can keep DEBUG while the console starts at INFO.
     root.setLevel(logging.DEBUG)
     root.propagate = False
     handler = logging.StreamHandler(sys.stderr)
+    handler.setLevel(DEFAULT_CONSOLE_LEVEL)
     handler.setFormatter(ColorFormatter(color=supports_color(sys.stderr)))
     root.addHandler(handler)
     return root, handler
@@ -144,6 +153,33 @@ def set_console_level(level):
     _CONSOLE_HANDLER.setLevel(level)
 
 
+def previous_log_file(log_file):
+    """Where the run before this one is kept: MiAZ.log -> MiAZ.last.log."""
+    stem, extension = os.path.splitext(log_file)
+    return f'{stem}.last{extension or ".log"}'
+
+
+def _keep_previous_run(log_file):
+    """Move the last run aside and leave an empty file for this one.
+
+    One run back, not a rotation history: when something goes wrong the file
+    you want is almost always the run that just failed, and the one before it
+    for comparison.
+
+    The truncation is done here rather than by opening the handler with
+    mode='w', because RotatingFileHandler ignores that and forces append
+    whenever rotation is enabled, which it is.
+    """
+    if not os.path.exists(log_file):
+        return
+    try:
+        shutil.copy2(log_file, previous_log_file(log_file))
+        with open(log_file, 'w', encoding='utf-8'):
+            pass
+    except OSError as error:
+        print(f'MiAZLog: cannot keep the previous log: {error}', file=sys.stderr)
+
+
 def enable_file_logging(log_file, max_bytes=1048576, backup_count=5):
     """
     Enable persistent file logging for the whole application.
@@ -167,7 +203,11 @@ def enable_file_logging(log_file, max_bytes=1048576, backup_count=5):
         print(f"MiAZLog: cannot create log directory, defaulting to {log_dir}",
               file=sys.stderr)
 
+    _keep_previous_run(log_file)
+
     fmt = '%(asctime)s | %(levelname)8s | %(name)-25s | %(filename)s:%(lineno)d | %(message)s'
+    # The file is already empty (see _keep_previous_run); rotation caps a single
+    # runaway run on top of that.
     handler = logging.handlers.RotatingFileHandler(
         log_file, maxBytes=max_bytes, backupCount=backup_count, encoding='utf-8')
     handler.setLevel(logging.DEBUG)

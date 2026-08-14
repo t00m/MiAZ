@@ -145,12 +145,21 @@ class MiAZWorkflow(GObject.GObject):
             self.log.info(f"Remote directory '{repository.docs}' is NOT available. Reason: {error}")
             return
 
-        old_watcher = self.app.get_service('watcher')
-        if old_watcher is not None:
-            old_watcher.set_active(False)
-        watcher = MiAZWatcher(dirpath=repository.docs, remote=remote)
+        # Re-point the existing watcher rather than building another one. The
+        # workspace connects to the watcher service once, when it is built, so
+        # replacing the object left it listening to a deactivated watcher: after
+        # the first repository switch, files added or removed outside the app
+        # stopped reaching the view until a restart. set_path() rebuilds the
+        # file monitor for the new directory, which is all that has to change.
+        watcher = self.app.get_service('watcher')
+        if watcher is None:
+            watcher = MiAZWatcher(dirpath=repository.docs, remote=remote)
+            self.app.set_service('watcher', watcher)
+        else:
+            watcher.set_active(False)
+            watcher.remote = remote
+            watcher.set_path(repository.docs)
         watcher.set_active(active=True)
-        self.app.set_service('watcher', watcher)
         self.log.debug("Repository switch finished")
 
         # Setup stack pages

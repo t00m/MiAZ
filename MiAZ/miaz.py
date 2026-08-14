@@ -116,6 +116,7 @@ class MiAZ:
         self._acquire_lock()
         self.log = MiAZLog('MiAZ')
         install_backend_excepthook(self.log, ENV)
+        self.clean_temp_directory()
 
         self.log.info(f"{ENV['APP']['shortname']} v{ENV['APP']['VERSION']} - Start")
         self.log.info(f"Logging to {log_file}")
@@ -152,6 +153,25 @@ class MiAZ:
             if not os.path.exists(ENV['LPATH'][entry]):
                 os.makedirs(ENV['LPATH'][entry])
         self._ensure_tool_path()
+
+    def clean_temp_directory(self):
+        """Empty var/tmp so every run starts with no leftovers.
+
+        Scans waiting to be imported, exports being built and unzipped bundles
+        are written there and only matter while the session that created them
+        is running. It runs after the lock is taken, so a second instance never
+        deletes files the running one is still using, and it recreates the
+        subdirectories the environment expects afterwards.
+        """
+        from MiAZ.backend.util import clean_temp_dir
+        tmp_dir = self.env['LPATH']['TMP']
+        removed = clean_temp_dir(tmp_dir)
+        if removed:
+            self.log.info(f"Temporary directory cleaned: {removed} entries deleted from {tmp_dir}")
+        for entry in self.env['LPATH']:
+            path = self.env['LPATH'][entry]
+            if path.startswith(tmp_dir + os.sep):
+                os.makedirs(path, exist_ok=True)
 
     def _ensure_tool_path(self):
         """Guarantee the standard system tool directories are on PATH.

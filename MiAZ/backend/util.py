@@ -84,6 +84,43 @@ def atomic_json_save(filepath: str, adict: dict) -> None:
         raise
 
 
+def clean_temp_dir(dirpath: str) -> int:
+    """Delete everything inside dirpath, keeping the directory itself.
+
+    var/tmp holds files that only make sense while the session that wrote them
+    is running: scans waiting to be imported, exports being built, unzipped
+    plugin bundles. Anything still there at startup is a leftover from a crash
+    or from a workflow the user abandoned, so the directory is emptied.
+
+    An entry that cannot be removed is logged and skipped: a locked or
+    read-only leftover must never stop the application from starting. A
+    missing directory is not an error either, it is created right after.
+    Returns the number of entries removed.
+    """
+    log = MiAZLog('MiAZ.Util')
+    removed = 0
+    try:
+        entries = list(os.scandir(dirpath))
+    except FileNotFoundError:
+        return 0
+    except OSError as error:
+        log.warning(f"Could not read temporary directory {dirpath}: {error}")
+        return 0
+
+    for entry in entries:
+        try:
+            # follow_symlinks=False: a symlink to a directory is unlinked, its
+            # target is left alone.
+            if entry.is_dir(follow_symlinks=False):
+                shutil.rmtree(entry.path)
+            else:
+                os.unlink(entry.path)
+            removed += 1
+        except OSError as error:
+            log.warning(f"Could not delete temporary entry {entry.path}: {error}")
+    return removed
+
+
 class SafeDictExtractor(ast.NodeVisitor):
     def __init__(self, variable_name):
         self.variable_name = variable_name

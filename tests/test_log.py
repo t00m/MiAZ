@@ -11,8 +11,8 @@ and escape codes in a redirected file.
 import io
 import logging
 
-from MiAZ.backend.log import (ColorFormatter, MiAZLog, set_console_level,
-                              supports_color)
+from MiAZ.backend.log import (DEFAULT_CONSOLE_LEVEL, ColorFormatter, MiAZLog,
+                              set_console_level, supports_color)
 
 
 def record(level=logging.INFO, message='hello'):
@@ -102,7 +102,7 @@ def test_set_console_level_raises_the_bar_for_everyone():
     try:
         assert console_handler().level == logging.WARNING
     finally:
-        set_console_level(logging.NOTSET)
+        set_console_level(DEFAULT_CONSOLE_LEVEL)
 
 
 def test_set_console_level_filters_what_a_child_prints():
@@ -135,7 +135,7 @@ def test_the_file_handler_keeps_everything(tmp_path, monkeypatch):
         file_handler.flush()
         assert 'written anyway' in path.read_text()
     finally:
-        set_console_level(logging.NOTSET)
+        set_console_level(DEFAULT_CONSOLE_LEVEL)
         logging.getLogger('MiAZ').removeHandler(file_handler)
         file_handler.close()
 
@@ -213,3 +213,85 @@ def test_miaz_logs_do_not_reach_the_python_root():
     """Whatever the embedding application configures on the root logger, our
     diagnostics are not duplicated into it."""
     assert logging.getLogger('MiAZ').propagate is False
+
+
+# ---------------------------------------------------------------------------
+# What reaches the console, and what reaches the file
+# ---------------------------------------------------------------------------
+
+def test_the_console_starts_at_info():
+    """DEBUG is for the log file. The terminal shows what a user can act on."""
+    assert console_handler().level == logging.INFO
+
+
+def test_debug_does_not_reach_the_console_but_does_reach_the_file(tmp_path, monkeypatch):
+    import MiAZ.backend.log as logmod
+    monkeypatch.setattr(logmod, '_SHARED_FILE_HANDLER', None)
+    stream = io.StringIO()
+    console = logging.StreamHandler(stream)
+    console.setLevel(logging.INFO)
+    root = logging.getLogger('MiAZ')
+    root.addHandler(console)
+    path = tmp_path / 'MiAZ.log'
+    logmod.enable_file_logging(str(path))
+    file_handler = root.handlers[-1]
+    try:
+        log = MiAZLog('probe.levels')
+        log.debug('debug line')
+        log.info('info line')
+        file_handler.flush()
+        assert 'debug line' not in stream.getvalue()
+        assert 'info line' in stream.getvalue()
+        written = path.read_text()
+        assert 'debug line' in written
+        assert 'info line' in written
+    finally:
+        root.removeHandler(console)
+        root.removeHandler(file_handler)
+        file_handler.close()
+
+
+# ---------------------------------------------------------------------------
+# One previous run is kept
+# ---------------------------------------------------------------------------
+
+def enable_fresh(tmp_path, monkeypatch, message):
+    """Start file logging as a new run would, write a line, and close it."""
+    import MiAZ.backend.log as logmod
+    monkeypatch.setattr(logmod, '_SHARED_FILE_HANDLER', None)
+    path = tmp_path / 'MiAZ.log'
+    logmod.enable_file_logging(str(path))
+    root = logging.getLogger('MiAZ')
+    handler = root.handlers[-1]
+    MiAZLog('probe.runs').info(message)
+    handler.flush()
+    root.removeHandler(handler)
+    handler.close()
+    return path
+
+
+def test_the_first_run_leaves_no_previous_copy(tmp_path, monkeypatch):
+    enable_fresh(tmp_path, monkeypatch, 'first run')
+    assert not (tmp_path / 'MiAZ.last.log').exists()
+
+
+def test_the_previous_run_is_kept_as_last_log(tmp_path, monkeypatch):
+    enable_fresh(tmp_path, monkeypatch, 'first run')
+    enable_fresh(tmp_path, monkeypatch, 'second run')
+
+    assert 'first run' in (tmp_path / 'MiAZ.last.log').read_text()
+    current = (tmp_path / 'MiAZ.log').read_text()
+    assert 'second run' in current
+    assert 'first run' not in current, 'each run starts a fresh log'
+
+
+def test_only_one_previous_run_is_kept(tmp_path, monkeypatch):
+    """Two runs back is gone: this keeps the current one and the one before."""
+    enable_fresh(tmp_path, monkeypatch, 'oldest')
+    enable_fresh(tmp_path, monkeypatch, 'middle')
+    enable_fresh(tmp_path, monkeypatch, 'newest')
+
+    previous = (tmp_path / 'MiAZ.last.log').read_text()
+    assert 'middle' in previous
+    assert 'oldest' not in previous
+    assert 'newest' in (tmp_path / 'MiAZ.log').read_text()

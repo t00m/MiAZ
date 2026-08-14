@@ -45,7 +45,7 @@ Example: `20240315-ES-HOU-BANKNAME-INV-Q1invoice-JOHNDOE.pdf`
 
 ## Key patterns
 
-- **CLI**: `frontend/console/` is a headless command line (`miaz search`, `miaz repos`). `MiAZConsoleApp` registers only `util`, `repo` and `index`; filtering is `DocumentQuery.matches`, never a condition written twice; repository selection uses `MiAZRepository.use()`, which does not rewrite `current`. It must never import GTK or `frontend.desktop` (enforced by `tests/test_boundaries.py`). Results go to stdout, diagnostics to stderr.
+- **CLI**: `frontend/console/` is a headless command line (`miaz search`, `miaz repos`). `MiAZConsoleApp` registers only `util`, `repo` and `index`; filtering is `DocumentQuery.matches`, never a condition written twice; repository selection uses `MiAZRepository.use()`, which does not rewrite `current`. It must never import GTK or `frontend.desktop` (enforced by `tests/test_boundaries.py`). Results go to stdout, diagnostics to stderr. The console shows INFO and above; the log file keeps DEBUG, one file per run with the previous one as `MiAZ.last.log`. `MIAZ_DEBUG=1` shows DEBUG on the console.
 - **Threading**: `threading.Thread` + `GLib.idle_add()` for UI marshal
 - **List model (GTK4 MVC)**: Workspace chain is `Gio.ListStore` → `Gtk.SortListModel` → `Gtk.FilterListModel` → `Gtk.MultiSelection` → `Gtk.ColumnView` (`widgets/columnview.py`)
 - **No GTK3**: no `GtkListStore`, `GtkTreeView`, `GtkDialog` subclassing

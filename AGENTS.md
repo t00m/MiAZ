@@ -163,9 +163,12 @@ Choosing a repository goes through `MiAZRepository.use(repo_id=None, path=None)`
 which points the instance at a repository **without** writing `current` into the
 application configuration. Writing it is how the desktop app switches, and a
 command that did the same would change which repository the window opens next
-time. Diagnostics go to stderr (never stdout, which carries results), and
-`log.set_console_level()` raises the console level so a command prints results
-rather than a startup narration; `MIAZ_DEBUG=1` restores it.
+time. Diagnostics go to stderr (never stdout, which carries results). The console
+shows INFO and above; DEBUG goes only to the log file, which keeps everything.
+`MIAZ_DEBUG=1` puts DEBUG back on the console, and `log.set_console_level()`
+raises the bar further, which is how a command prints results rather than a
+startup narration. Each run starts a fresh `~/.MiAZ/var/log/MiAZ.log` and keeps
+the run before it as `MiAZ.last.log`.
 
 **The document index** (`backend/index.py`, service `index`) owns the only path
 from a filename to a `MiAZItem`. `build_item(filename)` is that path; `reload()`
