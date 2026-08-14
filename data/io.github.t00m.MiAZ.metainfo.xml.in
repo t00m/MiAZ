@@ -67,6 +67,11 @@
     </screenshot>
   </screenshots>
   <releases>
+    <release version="0.1.60" date="2026-08-14" urgency="medium">
+      <description>
+        <p>See CHANGELOG.md for details.</p>
+      </description>
+    </release>
     <release version="0.1.50" date="2026-08-06" urgency="medium">
       <description>
         <p>See CHANGELOG.md for details.</p>

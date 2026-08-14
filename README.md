@@ -131,6 +131,33 @@ To uninstall:
 ./scripts/uninstall/uninstall_user.sh
 ```
 
+## Command line
+
+Searching works without a display, so it runs over SSH and in scripts.
+
+```bash
+miaz repos                                  # repositories, current one marked
+miaz search invoice                         # search the current repository
+miaz search invoice --repo Work --long      # another one, as a table
+miaz search --since last-6-months --json    # structured output
+```
+
+Results are one filename per line, so they pipe straight into other tools:
+
+```bash
+miaz search --since this-month | xargs -d '\n' ls -lh
+miaz search --json | jq -r '.[].concept'
+```
+
+Filters map onto the same fields the workspace sidebar uses: `--country`,
+`--group`, `--sentby`, `--purpose`, `--sentto`, `--concept`, `--since` or
+`--from` and `--to`, `--pending`, `--all` and `--limit`.
+
+Exit codes: 0 results, 1 no results, 2 wrong arguments, 3 repository problem.
+Set `MIAZ_DEBUG=1` to see the usual logging.
+
+Running `miaz` with no arguments opens the window as always.
+
 ## Requirements
 
 - Debian 13.5

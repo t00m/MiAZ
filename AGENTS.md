@@ -54,6 +54,9 @@ MiAZ/
 │   │   ├── watcher.py            ← MiAZWatcher (filesystem monitor)
 │   │   └── webserver.py          ← MiAZWebServer (minimal static localhost HTTP server)
 │   └── frontend/
+│       ├── console/              ← Headless command line (no GTK, ever)
+│       │   ├── app.py            ← MiAZConsoleApp (util + repo + index, nothing else)
+│       │   └── cli.py            ← argparse, search and repos, three renderers
 │       └── desktop/
 │           ├── app.py            ← MiAZApp(Adw.Application)
 │           └── services/
@@ -138,6 +141,31 @@ against the enabled config (`config.exists_used`) or, for dates,
 - `MiAZWatcher` signals: `repository-updated`
 - `MiAZStats` signals: `stats-updated`
 - `MiAZDocumentIndex` signals: `index-loaded`, `index-changed`
+
+**The command line** (`MiAZ/frontend/console/`) is the proof that the layering is
+real. `MiAZConsoleApp` (`console/app.py`) provides the six things the backend
+asks of an application object (`get_service`, `get_env`, `get_config`,
+`get_config_dict`, `connect`, service registration) and registers three
+services: `util`, `repo` and `index`. No factory, no dialogs, no plugin system,
+no window. `console/cli.py` holds argparse, the `search` and `repos` commands and
+the three output renderers.
+
+Two rules keep it honest, both enforced by `tests/test_boundaries.py`:
+
+- Nothing under `frontend/console/` may import Gtk, Adw, Gdk, Pango, GdkPixbuf,
+  WebKit or `MiAZ.frontend.desktop`. The command line has to run where there is
+  no display.
+- The command line writes no filter conditions of its own. Flags map onto
+  `DocumentQuery` fields and filtering is `query.matches(item)`, the same call
+  the workspace makes, so the two cannot disagree about what a search means.
+
+Choosing a repository goes through `MiAZRepository.use(repo_id=None, path=None)`,
+which points the instance at a repository **without** writing `current` into the
+application configuration. Writing it is how the desktop app switches, and a
+command that did the same would change which repository the window opens next
+time. Diagnostics go to stderr (never stdout, which carries results), and
+`log.set_console_level()` raises the console level so a command prints results
+rather than a startup narration; `MIAZ_DEBUG=1` restores it.
 
 **The document index** (`backend/index.py`, service `index`) owns the only path
 from a filename to a `MiAZItem`. `build_item(filename)` is that path; `reload()`

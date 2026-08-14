@@ -120,9 +120,9 @@ def test_on_done_is_not_called_when_the_work_raises():
 class RecordingHandler(logging.Handler):
     """Captures records straight off the tasks logger.
 
-    pytest's caplog attaches to the root logger, which never sees these:
-    MiAZLog subclasses Logger and is constructed directly rather than through
-    logging.getLogger, so instances have no parent to propagate to.
+    pytest's caplog attaches to the Python root logger, which never sees
+    these: MiAZ loggers hang off the 'MiAZ' root, and that root does not
+    propagate any further on purpose.
     """
 
     def __init__(self):

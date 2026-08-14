@@ -6,6 +6,7 @@
 import os
 import sys
 import argparse
+import logging
 import signal
 import locale
 import gettext
@@ -14,8 +15,16 @@ import atexit
 
 sys.path.insert(1, '@pkgdatadir@')
 
-from MiAZ.env import ENV
-from MiAZ.backend.log import MiAZLog, enable_file_logging
+from MiAZ.backend.log import MiAZLog, enable_file_logging, set_console_level
+
+# A bare first argument means a subcommand, so this is the command line and not
+# the window. Silence the startup logging before it happens: the environment
+# dump and the banner are written while importing MiAZ.env, below. MIAZ_DEBUG=1
+# brings them back.
+if len(sys.argv) > 1 and not sys.argv[1].startswith('-') and not os.environ.get('MIAZ_DEBUG'):
+    set_console_level(logging.WARNING)
+
+from MiAZ.env import ENV  # noqa: E402  (must follow the silencing above)
 from MiAZ.backend.crash import install_backend_excepthook
 
 log = MiAZLog('MiAZ')
@@ -167,10 +176,23 @@ class MiAZ:
         """Execute MiAZ in desktop or console mode."""
         self.log.info(f"Params: {params}")
         ENV = self.env
-        if ENV['DESKTOP']['ENABLED']:
-            from MiAZ.frontend.desktop.app import MiAZApp
-        else:
-            from MiAZ.frontend.console.app import MiAZApp
+
+        # A known subcommand means the command line, not the window. Anything
+        # else, including no arguments and --version, starts the desktop app
+        # exactly as before, so the .desktop launcher is unaffected.
+        from MiAZ.frontend.console.cli import COMMANDS, main
+        if len(params) > 1 and params[1] in COMMANDS:
+            sys.exit(main(params[1:], sys.stdout, sys.stderr, env=ENV))
+
+        if not ENV['DESKTOP']['ENABLED']:
+            # No usable GTK and no subcommand either. There is no window to
+            # open, so point at what does work here rather than failing on an
+            # import.
+            sys.stderr.write("GTK is not available. Try 'miaz search' or "
+                             "'miaz repos'.\n")
+            sys.exit(2)
+
+        from MiAZ.frontend.desktop.app import MiAZApp
         app = MiAZApp(application_id=ENV['APP']['ID'])
         app.set_env(ENV)
 
@@ -195,6 +217,19 @@ class MiAZ:
         self.log.info(f"{ENV['APP']['shortname']} v{ENV['APP']['VERSION']} - End")
 
 def parse_arguments():
+    # Subcommands belong to the console parser (frontend/console/cli.py). This
+    # one only knows the options the window takes and would reject 'search' as
+    # an unrecognised argument before run() ever sees it.
+    from MiAZ.frontend.console.cli import COMMANDS
+    if len(sys.argv) > 1 and sys.argv[1] in COMMANDS:
+        # Silence here rather than in main(): the environment dump and the
+        # startup banner are logged while this module is imported, long before
+        # a command runs. MIAZ_DEBUG=1 brings them back.
+        if not os.environ.get('MIAZ_DEBUG'):
+            from MiAZ.backend.log import set_console_level
+            set_console_level(logging.WARNING)
+        return None
+
     parser = argparse.ArgumentParser(description=ENV['APP']['description'])
     parser.add_argument('--version', action='version', version=ENV['APP']['VERSION'], help='Show version number and exit.')
     return parser.parse_args()

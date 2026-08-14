@@ -67,6 +67,34 @@ class MiAZRepository(GObject.GObject):
         """Invalidate the conf cache so the next access triggers a fresh setup()."""
         self._conf_cache = None
 
+    def use(self, repo_id: str = None, path: str = None) -> bool:
+        """Point this instance at a repository without changing the default.
+
+        setup() already resolves a repository id to its directories, but get()
+        always calls it with no argument, so every lookup falls back to the
+        'current' repository. Callers that want another one (the command line,
+        given --repo) come through here instead of writing 'current', which
+        would change the repository the desktop app opens next time.
+
+        Returns whether the repository resolved. The caller validates it.
+        """
+        if path:
+            conf = {'dir_docs': path, 'dir_conf': os.path.join(path, '.conf')}
+        else:
+            if not repo_id:
+                return False
+            # Resolve before calling setup(): for an unknown id it returns an
+            # empty path, and setup() would then take '' for a new repository
+            # and init() it, creating a .conf directory wherever the process
+            # happens to be running.
+            if not self.config['Repository'].get_path(repo_id, used=True):
+                return False
+            conf = self.setup(repo_id)
+        if not conf.get('dir_docs'):
+            return False
+        self._conf_cache = conf
+        return True
+
     def init(self, path):
         repoconf = {}
         repoconf['FORMAT'] = 1
@@ -114,7 +142,10 @@ class MiAZRepository(GObject.GObject):
         return conf
 
     def load(self, path=None):
-        self._conf_cache = None
+        # The cache is not cleared here. Invalidating is the caller's job
+        # (reset(), which every caller already calls before validating), and
+        # clearing it at this point threw away a repository chosen with use():
+        # the next get() resolved 'current' again and loaded the wrong one.
         repo_dir_conf = self.get('dir_conf')
         # One store per repository. Disposing the previous one drops its cached
         # copies, so the repository being loaded is read from disk rather than

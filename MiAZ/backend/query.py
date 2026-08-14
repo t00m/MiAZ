@@ -8,7 +8,7 @@
 
 import functools
 from dataclasses import asdict, dataclass, fields
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Optional
 
 # Dropdown sentinels. They travel from the dropdown item ids straight into the
@@ -61,6 +61,56 @@ def parse_date(value: str):
         return datetime.strptime(value, "%Y%m%d").date()
     except ValueError:
         return None
+
+
+# How many months or years back each preset reaches. Kept as data so a new
+# preset is one entry here and one token above, not a new branch.
+_PRESET_MONTHS = {
+    DATE_PRESET_PAST_MONTH: 1,
+    DATE_PRESET_LAST_3_MONTHS: 3,
+    DATE_PRESET_LAST_6_MONTHS: 6,
+    DATE_PRESET_LAST_12_MONTHS: 12,
+}
+_PRESET_YEARS = {
+    DATE_PRESET_2_YEARS: 2,
+    DATE_PRESET_3_YEARS: 3,
+    DATE_PRESET_5_YEARS: 5,
+    DATE_PRESET_10_YEARS: 10,
+}
+
+
+def _as_date(value):
+    """Bounds are compared against parse_date(), which returns date objects.
+
+    The util helpers return datetime, and datetime cannot be compared with
+    date, so everything leaving here is normalised.
+    """
+    return value.date() if isinstance(value, datetime) else value
+
+
+def resolve_preset(token: str, now: datetime, util):
+    """The date range a preset token means, resolved against `now`.
+
+    This used to live in MiAZWorkspace, inside the loop that builds the sidebar
+    entries, so anything else wanting the same answer had to copy the table.
+    The labels stay in the widget, where they belong; the arithmetic lives here,
+    next to the tokens it explains.
+
+    Returns (since, until), or (None, None) for 'all documents' and for a token
+    with no meaning. `util` is the MiAZUtil service, which owns the date
+    helpers.
+    """
+    if token == DATE_PRESET_THIS_MONTH:
+        since = util.since_date_this_month(now)
+    elif token in _PRESET_MONTHS:
+        since = util.since_date_last_n_months(now, _PRESET_MONTHS[token])
+    elif token in _PRESET_YEARS:
+        since = util.since_date_past_n_years_ago(now, _PRESET_YEARS[token])
+    elif token == DATE_PRESET_FUTURE:
+        return _as_date(now + timedelta(days=1)), _as_date(datetime(9999, 12, 31))
+    else:
+        return None, None
+    return _as_date(since), _as_date(now)
 
 
 @dataclass

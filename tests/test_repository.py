@@ -249,3 +249,61 @@ def test_load_disposes_the_previous_store(tmp_path):
 def test_get_config_store_is_none_before_any_load(tmp_path):
     repo, _confs = make_repository(tmp_path, 'repo')
     assert repo.get_config_store() is None
+
+
+# ---------------------------------------------------------------------------
+# use()
+# ---------------------------------------------------------------------------
+
+def test_use_named_repository(tmp_path):
+    repo, confs = make_repository(tmp_path, 'repo_a', 'repo_b')
+    assert repo.use('repo_b') is True
+    assert repo.docs == str(tmp_path / 'repo_b')
+    assert repo.conf == confs['repo_b']
+
+
+def test_use_does_not_change_the_current_repository(tmp_path):
+    """Reading another repository must not move the one the app opens."""
+    repo, _confs = make_repository(tmp_path, 'repo_a', 'repo_b')
+    repo.use('repo_b')
+    assert repo.app.get_config_dict()['App'].get('current') == 'repo_a'
+
+
+def test_use_unknown_name(tmp_path):
+    repo, _confs = make_repository(tmp_path, 'repo_a')
+    assert repo.use('nope') is False
+
+
+def test_use_unknown_name_creates_nothing(tmp_path, monkeypatch):
+    """An unresolved name must not reach init(), which would makedirs('.conf')."""
+    monkeypatch.chdir(tmp_path)
+    repo, _confs = make_repository(tmp_path, 'repo_a')
+    repo.use('nope')
+    assert not (tmp_path / '.conf').exists()
+
+
+def test_use_path(tmp_path):
+    repo, _confs = make_repository(tmp_path, 'repo_a')
+    somewhere = tmp_path / 'usb'
+    (somewhere / '.conf').mkdir(parents=True)
+    assert repo.use(path=str(somewhere)) is True
+    assert repo.docs == str(somewhere)
+    assert repo.conf == str(somewhere / '.conf')
+
+
+def test_use_nothing(tmp_path):
+    repo, _confs = make_repository(tmp_path, 'repo_a')
+    assert repo.use() is False
+
+
+def test_use_survives_load(tmp_path):
+    """load() must not re-resolve the repository the caller chose.
+
+    It used to clear the conf cache on entry, so the next lookup fell back to
+    'current' and loaded a different repository than the one requested.
+    """
+    repo, confs = make_repository(tmp_path, 'repo_a', 'repo_b')
+    repo.use('repo_b')
+    repo.load(repo.docs)
+    assert repo.docs == str(tmp_path / 'repo_b')
+    assert repo.conf == confs['repo_b']
