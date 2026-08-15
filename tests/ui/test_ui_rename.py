@@ -132,3 +132,95 @@ def pick_first_real_value(dropdown):
             dropdown.set_selected(position)
             return
     raise AssertionError('the dropdown offers no real value')
+
+
+# ---------------------------------------------------------------------------
+# 4.6: the date field
+# ---------------------------------------------------------------------------
+
+def test_an_impossible_date_is_refused_and_kept(rename_dialog):
+    """4.6: 20261301 has no month 13.
+
+    Refused means the field keeps what was typed, so the user can see and fix
+    it, and Rename stays insensitive. Replacing it with a valid date is the
+    one thing that must not happen: the dialog would then be ready to rename
+    the document to a date nobody chose.
+    """
+    driver, dialog, widget = rename_dialog
+
+    widget.entry_date.set_text('20261301')
+    driver.pump(0.4)
+
+    assert widget.entry_date.get_text() == '20261301'
+    assert widget.validate_date('20261301') is False
+    assert rename_button(dialog).get_sensitive() is False
+    # And nothing next to the field may still read as a real date.
+    assert 'not a date' in widget.label_date.get_text()
+
+
+def test_a_valid_date_typed_by_hand_is_accepted(rename_dialog):
+    driver, dialog, widget = rename_dialog
+
+    widget.entry_date.set_text('20260301')
+    driver.pump(0.4)
+
+    assert widget.entry_date.get_text() == '20260301'
+    assert '2026' in widget.label_date.get_text()
+    assert rename_button(dialog).get_sensitive() is True
+
+
+def test_a_half_typed_date_does_not_become_a_real_one(rename_dialog):
+    """Typing goes through incomplete states. None of them may be completed
+    for the user: '2026' is not 2026-01-01."""
+    driver, dialog, widget = rename_dialog
+
+    for text in ('2', '20', '202', '2026', '20261', '202613'):
+        widget.entry_date.set_text(text)
+        driver.pump(0.15)
+        assert widget.entry_date.get_text() == text
+
+
+# ---------------------------------------------------------------------------
+# 4.9: the manage button next to a restricted field
+# ---------------------------------------------------------------------------
+
+def open_manage(driver, widget, button):
+    """Click a field's manage button and return the window it opens."""
+    driver.app.add_widget('dialog-manage-resource', None)
+    button.emit('clicked')
+    driver.wait_until(
+        lambda: driver.widget('dialog-manage-resource') is not None,
+        message='the manage window')
+    driver.pump(0.3)
+    return driver.widget('dialog-manage-resource')
+
+
+def test_the_manage_window_is_populated_every_time(rename_dialog):
+    """4.9: it used to come up empty from the second click on.
+
+    The selector was built once, when the button was connected, and the first
+    window took ownership of it. The second window packed a widget that was
+    already spoken for, so it showed nothing until the rename dialog itself
+    was closed and rebuilt.
+    """
+    driver, _dialog, widget = rename_dialog
+
+    for attempt in ('first', 'second'):
+        window = open_manage(driver, widget, widget.btnCountry)
+        # The window holds the configuration view: it must have rows both times.
+        views = [child for child in _walk(window) if hasattr(child, 'get_config_for')]
+        assert views, f'{attempt} opening has no configuration view'
+        view = views[0]
+        assert len(view.viewSl.get_model_filter()) > 0, \
+            f'{attempt} opening shows an empty list'
+        window.close()
+        driver.pump(0.3)
+
+
+def _walk(widget):
+    """Every widget under this one, itself included."""
+    yield widget
+    child = widget.get_first_child() if hasattr(widget, 'get_first_child') else None
+    while child is not None:
+        yield from _walk(child)
+        child = child.get_next_sibling()

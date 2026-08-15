@@ -7,6 +7,7 @@ Runs without a display (GObject only, no GTK/Adw).
 
 import json
 import os
+import shutil
 
 import gi
 gi.require_version('GLib', '2.0')
@@ -357,3 +358,57 @@ def test_active_id_when_no_repository_is_configured(tmp_path):
     app = StoreApp()
     repo = MiAZRepository(app)
     assert repo.get_active_id() is None
+
+
+# ---------------------------------------------------------------------------
+# setup(): a repository whose directory is gone
+#
+# Renaming or unmounting a repository directory used to be silent: setup()
+# initialised whatever path was configured, and os.makedirs recreated the
+# directory itself, so MiAZ opened an empty repository with empty
+# configuration where the documents used to be.
+# ---------------------------------------------------------------------------
+
+def test_setup_does_not_recreate_a_missing_repository_directory(tmp_path):
+    repo, _confs = make_repository(tmp_path, 'repo_a')
+    gone = tmp_path / 'repo_a'
+    shutil.rmtree(gone)
+
+    repo.reset()
+    repo.setup()
+
+    assert not gone.exists(), 'the repository directory was recreated'
+
+
+def test_setup_reports_a_missing_repository_directory(tmp_path):
+    repo, _confs = make_repository(tmp_path, 'repo_a')
+    shutil.rmtree(tmp_path / 'repo_a')
+
+    repo.reset()
+    repo.setup()
+
+    error = repo.get_error()
+    assert error is not None
+    assert 'repo_a' in str(error) or str(tmp_path / 'repo_a') in str(error)
+
+
+def test_a_missing_repository_does_not_validate(tmp_path):
+    repo, _confs = make_repository(tmp_path, 'repo_a')
+    shutil.rmtree(tmp_path / 'repo_a')
+
+    repo.reset()
+    assert repo.validate(repo.docs) is False
+
+
+def test_setup_still_initialises_an_existing_directory(tmp_path):
+    """A repository added through the assistant points at a folder that
+    exists and has no .conf yet. That one is still set up here."""
+    app = StoreApp()
+    docs = tmp_path / 'brand_new'
+    docs.mkdir()
+    app.get_config_dict()['Repository'].add('brand_new', str(docs))
+    app.get_config_dict()['App'].set('current', 'brand_new')
+
+    repo = MiAZRepository(app)
+    assert repo.validate(repo.docs) is True
+    assert (docs / '.conf' / 'repo.json').exists()

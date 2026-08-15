@@ -385,7 +385,18 @@ Pass `widget_key` whenever the plugin looks the widget up later. The key is unre
 
 Reaching `sidebar-plugin-section`, `headerbar-left-box` and friends directly still works. These only save writing the teardown.
 
-**Verifying it**: `PYTHONPATH=. python scripts/devel/check_plugin_ui.py [PluginName ...]` drives a real disable/enable cycle in the running app and reports what every shared container held at each step. It cannot be a unit test, since it needs a display and a loaded repository.
+**Menu entries are recorded, not rebuilt by rerunning startup.** `install_menu_entry(menuitem, category=None, subcategory=None)` appends the item and remembers it against the plugin. `install_menu_submenu(title, menu)` does the same for a plugin that hangs several actions under its entry (assign, unassign, manage). The workspace menu is thrown away and rebuilt whenever plugins change, and the rebuild replays those records.
+
+It did not always. The rebuild used to clear every loaded plugin's `started` flag and call its `startup()` again, so each plugin ran its whole setup once per load or unload of **any** plugin: another gesture on the column view, another background probe of the scanner, another handler. One of those extra gestures is what made a right click crash after the plugin was disabled. Two rules follow:
+
+- **Never append to a shared menu directly.** `app.install_plugin_menu(...)` followed by `append_item` leaves the entry unrecorded, and the next rebuild drops it. That is what happened to the notes backup and restore entries. Pass the category and subcategory to `install_menu_entry` instead.
+- **`startup()` runs once per activation.** Guarding its expensive half with a sentinel widget is no longer needed, though it does no harm.
+
+**Contributions are refused once the plugin is unloaded.** `MiAZPlugin.is_active()` goes false before `do_deactivate` runs, and every contribution helper (menu entry, submenu, workspace page, sidebar widget, header bar widget, sidebar dropdown, document tab) returns early when it is false. Background work that finishes late cannot add UI for a plugin that is gone: `MiAZAutoScan` builds its source menu when the scanner answers, which can easily be after the user disabled it.
+
+**A plugin that registers a service must take it away.** `app.set_service(name, None)` removes it, and `set_service` replaces rather than ignoring, which it used to do. `MiAZProjectMgt` registers `Projects`; its `do_deactivate` calls `dispose()` on it (disconnecting the file signals it took) and then removes it. Leaving it registered meant a disabled plugin's service kept reacting to every file change, and, because it holds the path to one repository's `projects.json`, kept writing to the repository the user had switched away from.
+
+**Verifying it**: `tests/ui/test_ui_plugin_cycle.py` loads, unloads and reloads every plugin twice and compares pages, menu entries, sidebar and header bar contents and rename tabs. `tests/ui/test_ui_plugin_signals.py` counts the handlers on every long-lived emitter around a cycle, which is the only way to see a handler that was never disconnected. `PYTHONPATH=. python scripts/devel/check_plugin_ui.py [PluginName ...]` remains for looking at one plugin by hand.
 
 ### Startup flow
 

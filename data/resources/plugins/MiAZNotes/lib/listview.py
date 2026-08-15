@@ -248,13 +248,17 @@ class NotesListView(Adw.Window):
         self.editor.load(header, body, editable=False)
 
     def _on_new_clicked(self, _button):
+        # Clear the selection before loading the draft. Unselecting fires
+        # _on_selection_changed, which empties the editor and turns it off, so
+        # doing it last wiped the draft that had just been loaded: the button
+        # had to be pressed a second time to get an editable note.
+        self.selection.unselect_all()
         header = self.store.default_header()
         self._draft_path = None
         self._original_header = dict(header)
         self._original_body = ''
         self.editor.load(header, '', editable=True)
         self.editor.set_sensitive(True)
-        self.selection.unselect_all()
 
     def _on_save_requested(self, _editor):
         header = self.editor.header()

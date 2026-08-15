@@ -265,13 +265,19 @@ class MiAZApp(Adw.Application):
             return None
 
     def set_service(self, name: str, service: GObject.GObject) -> GObject.GObject:
-        """Add a service to internal MiAZ objects dictionary."""
-        srv = self.get_service(name)
-        if srv is None:
-            self._miazobjs['services'][name] = service
-            srv = service
-            # ~ self.log.debug(f"Adding new service: {name}")
-        return srv
+        """Register a service, replace it, or with None take it away.
+
+        It used to keep the first one registered and ignore every later call,
+        which meant a service could never be removed: a plugin setting its
+        service to None on deactivate left it in place, still connected to the
+        signals it took and still writing to the repository it was built for.
+        The core services are each registered once at startup, so replacing is
+        the same thing for them and honest for everyone else.
+        """
+        if service is None:
+            return self._miazobjs['services'].pop(name, None)
+        self._miazobjs['services'][name] = service
+        return service
 
     def get_service(self, name):
         """Return a service from the MiAZ objects dictionary."""

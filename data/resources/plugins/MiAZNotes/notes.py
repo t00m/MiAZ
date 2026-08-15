@@ -280,12 +280,12 @@ class MiAZNotesPlugin(MiAZExtension):
             label=_('Restore notes'),
             callback=self._on_menu_restore,
         )
-        backup_menu = self.app.install_plugin_menu(_('Data Management'), _('Backup'))
-        if backup_menu is not None:
-            backup_menu.append_item(mnu_backup)
-        restore_menu = self.app.install_plugin_menu(_('Data Management'), _('Restore'))
-        if restore_menu is not None:
-            restore_menu.append_item(mnu_restore)
+        # Through the plugin, not through the app: an entry appended straight
+        # into a menu is not recorded, and the next menu rebuild drops it.
+        self.plugin.install_menu_entry(
+            mnu_backup, category=_('Data Management'), subcategory=_('Backup'))
+        self.plugin.install_menu_entry(
+            mnu_restore, category=_('Data Management'), subcategory=_('Restore'))
 
         # Headerbar pushpin indicator: visible only when the single selected
         # document actually has notes. Clicking it shows the post-it board.

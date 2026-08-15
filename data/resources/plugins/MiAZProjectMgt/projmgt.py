@@ -45,6 +45,38 @@ DEFAULT_PROJECT = 'None'
 default_available_data = {}
 
 # Model
+def is_total_wipe(to_delete: int, assigned: int, documents_in_repo: int) -> bool:
+    """Would this consistency pass delete every assignment there is?
+
+    check() removes the assignments of documents it cannot find. Finding none
+    of them, while the repository is full of documents, does not mean the user
+    deleted everything: it means this service and the repository on screen
+    disagree about which repository is open. That is what emptied a real
+    repository's projects on 14 August 2026.
+
+    A repository that really is empty is a different thing, and clearing its
+    assignments is correct.
+    """
+    if to_delete == 0 or assigned == 0:
+        return False
+    return to_delete >= assigned and documents_in_repo > 0
+
+
+def writes_to_the_active_repository(own_conf: str, active_conf: str) -> bool:
+    """Whether this service still belongs to the repository that is open.
+
+    The service resolves the path to one repository's projects.json when it is
+    built. Writing after the application moved to another repository puts one
+    repository's assignments into another one's file.
+
+    An active repository that cannot be resolved (shutdown, a failed load) is
+    not a mismatch, and refusing there would drop a legitimate save.
+    """
+    if not active_conf:
+        return True
+    return os.path.normpath(own_conf) == os.path.normpath(active_conf)
+
+
 class Project(MiAZModel):
     __gtype_name__ = 'Project'
     __title__ = _('Project')
@@ -72,6 +104,9 @@ class MiAZProject(GObject.GObject):
         self.util = self.app.get_service('util')
         self.srvdlg = self.app.get_service('dialogs')
         repo_dir_conf = repository.get('dir_conf')
+        # Kept so save() can tell whether the repository is still the one this
+        # service was built for.
+        self.conf_dir = repo_dir_conf
         self.cnfprj = os.path.join(repo_dir_conf, 'projects.json')
         self.projects = {}
         self.revision = 0
@@ -81,9 +116,23 @@ class MiAZProject(GObject.GObject):
         self.projects = self.load()
         self.check()
         self.apply_defaults(DEFAULT_PROJECT)
-        self.util.connect('filename-added', self._on_filename_added)
-        self.util.connect('filename-renamed', self._on_filename_renamed)
-        self.util.connect('filename-deleted', self._on_filename_deleted)
+        # Kept so dispose() can give them back. This service outlives a single
+        # activation only if nobody takes it away, and it must not: it holds
+        # the path to one repository's projects.json.
+        self._handlers = [
+            self.util.connect('filename-added', self._on_filename_added),
+            self.util.connect('filename-renamed', self._on_filename_renamed),
+            self.util.connect('filename-deleted', self._on_filename_deleted),
+        ]
+
+    def dispose(self):
+        """Stop listening. Called when the plugin that owns this is unloaded."""
+        for handler_id in getattr(self, '_handlers', []):
+            try:
+                self.util.disconnect(handler_id)
+            except (TypeError, ValueError):
+                pass
+        self._handlers = []
 
     def check(self):
         repository = self.app.get_service('repo')
@@ -93,6 +142,19 @@ class MiAZProject(GObject.GObject):
                 docpath = os.path.join(repository.docs, doc)
                 if not os.path.exists(docpath):
                     to_delete.append((doc, project))
+        assigned = sum(len(docs) for docs in self.projects.values())
+        try:
+            documents_in_repo = len(self.util.get_files(repository.docs))
+        except Exception:
+            documents_in_repo = 0
+        if is_total_wipe(len(to_delete), assigned, documents_in_repo):
+            self.log.error(
+                f"Refusing to drop all {assigned} project assignments: none of "
+                f"them was found in '{repository.docs}', which holds "
+                f"{documents_in_repo} documents. This service belongs to "
+                f"'{self.cnfprj}'. Nothing was changed.")
+            return
+
         for doc, project in to_delete:
             self._remove_nosave(project, doc)
         if to_delete:
@@ -152,46 +214,63 @@ class MiAZProject(GObject.GObject):
                 f"Default project '{default_project}' applied to "
                 f"{len(unassigned)} document(s) without project")
 
-    def _remove_nosave(self, project: str, doc: str) -> bool:
-        found = False
+    def _remove_nosave(self, project: str, doc: str) -> list:
+        """Take a document out of one project, or out of all of them.
+
+        Returns the names of the projects it was removed from. An empty list
+        means it belonged to none, which is the old False. Callers use the
+        names to say what happened: "unassigned" on its own left the user
+        guessing which project they had just left.
+        """
+        removed = []
         if len(project) == 0:
             for prj in self.projects:
                 docs = self.projects[prj]
                 if doc in docs:
-                    found = True
                     docs.remove(doc)
                     self.projects[prj] = docs
+                    removed.append(prj)
                     self.log.debug(f"Removed '{doc}' from project '{prj}'")
         else:
             try:
                 docs = self.projects[project]
                 if doc in docs:
-                    found = True
                     docs.remove(doc)
                     self.projects[project] = docs
+                    removed.append(project)
                     self.log.debug(f"Removed '{doc}' from project '{project}'")
             except KeyError:
                 self.log.warning(f"Project '{project}' doesn't exist")
-        return found
+        return removed
 
     def remove(self, project: str, doc: str) -> None:
         found = self._remove_nosave(project, doc)
         if found:
             self.save()
-            self.srvdlg.show_toast(_("Document removed from project"))
+            self.srvdlg.show_toast(
+                _("Document removed from project {projects}").format(
+                    projects=', '.join(found)))
         else:
             self.log.debug(f"Document '{doc}' does not belong to project '{project}'")
 
-    def remove_batch(self, project: str, docs: list, notify: bool = True) -> None:
+    def remove_batch(self, project: str, docs: list, notify: bool = True) -> list:
+        """Remove several documents and return the projects that lost one."""
         removed = 0
+        projects = []
         for doc in docs:
-            if self._remove_nosave(project, doc):
+            names = self._remove_nosave(project, doc)
+            if names:
                 removed += 1
+                for name in names:
+                    if name not in projects:
+                        projects.append(name)
         self.save()
         if notify and removed > 0:
-            message = _("{count} documents removed from projects").format(count=removed)
+            message = _("{count} documents removed from {projects}").format(
+                count=removed, projects=', '.join(projects))
             self.log.debug(message)
             self.srvdlg.show_toast(message)
+        return projects
 
     def exists(self, project, doc):
         try:
@@ -214,6 +293,18 @@ class MiAZProject(GObject.GObject):
                 self.log.debug(f"Project: {project} > Doc: {doc}")
 
     def save(self) -> None:
+        # Refuse to write into a repository that is no longer the one open.
+        # This service resolves its file once, when it is built, so a copy that
+        # outlives a repository switch would otherwise put these assignments
+        # into the repository the user left.
+        repository = self.app.get_service('repo')
+        active_conf = repository.conf if repository is not None else None
+        if not writes_to_the_active_repository(self.conf_dir, active_conf):
+            self.log.error(
+                f"Refusing to write '{self.cnfprj}': the open repository is "
+                f"'{active_conf}'. This service belongs to a repository that "
+                f"is no longer the active one.")
+            return
         util = self.app.get_service('util')
         util.json_save(self.cnfprj, self.projects)
         self.revision += 1
@@ -508,13 +599,22 @@ class MiAZProjectMgt(MiAZExtension):
         if hasattr(self, '_startup_handler'):
             self.workspace.disconnect(self._startup_handler)
         self.plugin.unregister_document_tabs()
+        # Take the service down rather than leaving it registered: it listens
+        # to the file signals and writes the projects file of the repository
+        # it was built for. Kept across a repository switch it wrote project
+        # assignments into the repository that was left.
+        srvprj = self.app.get_service('Projects')
+        if srvprj is not None:
+            srvprj.dispose()
         self.app.set_service('Projects', None)
         self.plugin.set_started(False)
 
     def startup(self, *args):
         if not self.plugin.started():
             # Always reinstall workspace menu entries (cleared by _on_plugins_updated)
-            submenu = self.plugin.install_menu_entry()
+            # No item of its own: this call creates the plugin's entry in the
+            # menu, and the submenu below hangs under it.
+            self.plugin.install_menu_entry()
             plugin_menu = Gio.Menu()
             menuitem = self.factory.create_menuitem(
                 f'{i_confname}-add',
@@ -531,7 +631,7 @@ class MiAZProjectMgt(MiAZExtension):
                 _('Manage {i_confname}').format(i_confname=i_confname),
                 self._manage_properties, None, ['<Control><Alt>p'])
             plugin_menu.append_item(menuitem)
-            submenu.append_submenu(f"{i_title}", plugin_menu)
+            self.plugin.install_menu_submenu(f"{i_title}", plugin_menu)
 
             # One-time setup guarded by the dropdown widget sentinel.
             # When _on_plugins_updated calls startup() a second time the dropdown
@@ -672,20 +772,29 @@ class MiAZProjectMgt(MiAZExtension):
     def _unset_property(self, *args):
         # FIXME: somehow the user should decide from which projects
         selected_documents = [item.id for item in self.workspace.get_selected_items()]
-        self._unset_property_real(selected_documents)
+        projects = self._unset_property_real(selected_documents)
         # Documents must always belong to a project: fall back to the default
         if selected_documents:
             self.srvprj.add_batch(DEFAULT_PROJECT, selected_documents, notify=False)
             self.workspace.update()
-            message = _("{count} documents unassigned").format(count=len(selected_documents))
+            # Name the projects. The shortcut removes the documents from every
+            # project they were in, and a toast reading "3 documents
+            # unassigned" left the user with no idea which ones those were.
+            if projects:
+                message = _("{count} documents removed from {projects}").format(
+                    count=len(selected_documents), projects=', '.join(projects))
+            else:
+                message = _("{count} documents belonged to no project").format(
+                    count=len(selected_documents))
             self.srvdlg.show_toast(message)
 
     def _unset_property_real(self, selected_documents):
+        """Remove the selection from every project. Returns the ones touched."""
         if not selected_documents:
-            return False
-        self.srvprj.remove_batch('', selected_documents, notify=False)
+            return []
+        projects = self.srvprj.remove_batch('', selected_documents, notify=False)
         self.workspace.update()
-        return True
+        return projects
 
     def project_view(self, *args):
         def _on_selected_project(dropdown, gparamobject, cv):

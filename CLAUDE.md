@@ -64,6 +64,8 @@ Uses **libpeas** (`Peas.Engine`) with two search paths:
 
 Plugin contract: `MiAZExtension` subclass with `do_activate()` / `do_deactivate()`. See `AGENTS.md`.
 
+Unload and reload has to be exact, since a repository switch unloads every plugin and loads the new repository's set. Three rules carry that: menu entries go through `plugin.install_menu_entry()` / `install_menu_submenu()` so a menu rebuild can replay them (never append to a shared menu directly, and `startup()` is not re-run to rebuild menus any more); every contribution helper refuses to act once `plugin.is_active()` is false, so a late background callback cannot add UI for a plugin that is gone; and a plugin registering a service removes it on deactivate with `app.set_service(name, None)`, which now really removes. Covered by `tests/ui/test_ui_plugin_cycle.py` (containers and menus across two cycles) and `tests/ui/test_ui_plugin_signals.py` (handler counts across a cycle).
+
 ## Build & install
 
 ```bash

@@ -157,7 +157,17 @@ class MiAZRepository(GObject.GObject):
                     repo_path = self.config['Repository'].get_path(repo_id, used=True)
                     conf['dir_docs'] = repo_path
                     conf['dir_conf'] = os.path.join(conf['dir_docs'], '.conf')
-                    if not os.path.exists(conf['dir_conf']):
+                    if not os.path.isdir(repo_path):
+                        # The directory is gone: renamed, deleted, or on a
+                        # drive that is not mounted. init() would recreate it
+                        # empty (os.makedirs makes the whole path) and MiAZ
+                        # would open an empty repository with empty
+                        # configuration where the documents used to be. A
+                        # repository is only ever created on purpose, and the
+                        # flows that do it check the folder exists first.
+                        self.set_error(f"Repository '{repo_id}' directory not found: {repo_path}")
+                        self.log.error(self.get_error())
+                    elif not os.path.exists(conf['dir_conf']):
                         self.init(conf['dir_docs'])
                 except Exception as error:
                     self.set_error(error)

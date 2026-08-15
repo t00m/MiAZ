@@ -332,9 +332,23 @@ class MiAZActions(GObject.GObject):
         model = model_sort.get_model()
         model.splice(0, model.get_n_items(), new_items)
 
-    def manage_resource(self, widget: Gtk.Widget, selector: Gtk.Widget):
+    def manage_resource(self, widget: Gtk.Widget, view):
+        """Open a management view for one vocabulary.
+
+        `view` is normally the class. It used to be an instance, built once
+        when the button was connected and packed into a new dialog on every
+        click: the first dialog took ownership of it, so the second one showed
+        an empty box until the whole rename dialog was closed and rebuilt.
+        Building it here means every click gets a live view. An instance is
+        still accepted, and taken back from its previous dialog first, so a
+        plugin passing one keeps working.
+        """
         factory = self.app.get_service('factory')
         parent = widget.get_root() # wonderful
+
+        selector = view(self.app) if isinstance(view, type) else view
+        if selector.get_parent() is not None:
+            selector.unparent()
 
         box = factory.create_box_vertical(spacing=0, vexpand=True, hexpand=True)
         box.append(selector)
@@ -349,7 +363,9 @@ class MiAZActions(GObject.GObject):
         dialog = MiAZWindowDialog(self.app, title=title, widget=box,
                                   width=800, height=600)
         dialog.set_show_close_button(True)
+        self.app.add_widget('dialog-manage-resource', dialog)
         dialog.present(parent)
+        return dialog
 
     def show_app_settings(self, *args):
         window = self.app.get_widget('window')
@@ -437,7 +453,7 @@ class MiAZActions(GObject.GObject):
             (_('Keyboard shortcuts'), '<Control>question'),
             (_('About MiAZ'), '<Control>b'),
             (_('Quit'), '<Control>q'),
-            (_('Help'), 'F1'),
+            (_('Help (this window)'), 'F1'),
         ):
             app_section.add(Adw.ShortcutsItem(title=title, accelerator=accelerator))
         dialog.add(app_section)

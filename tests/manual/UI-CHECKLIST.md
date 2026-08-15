@@ -31,7 +31,7 @@ Three ways to run the rest, depending on how much time you have:
 - **Full:** all of it. Do this before a release you announce.
 
 Markers: **[S]** smoke, **[N]** changed this release, **[A]** covered by the
-automated UI suite.
+automated UI suite, **[K]** needs a paid API key (skip unless you have one).
 
 ## Before you start
 
@@ -121,13 +121,17 @@ automated UI suite.
 - [ ] **4.4 [N] [A]** Clear the concept. The button goes insensitive again.
 - [ ] **4.5 [A]** Leave Group and Purpose as "Any". The button stays sensitive:
       those two are advisory.
-- [ ] **4.6** Type a date directly in the date field. Valid `YYYYMMDD` is
-      accepted, anything else is refused.
+- [ ] **4.6 [A]** Type a date directly in the date field. Valid `YYYYMMDD` is
+      accepted. Type `20261301`: the field keeps exactly what you typed, the
+      row is marked wrong, the label next to it reads "not a date" rather than
+      showing an unrelated valid date, and Rename stays insensitive.
 - [ ] **4.7** Open the calendar popover and pick a day. The field updates.
 - [ ] **4.8** Type two characters in the concept field. The autocomplete popover
       offers matching concepts, and picking one fills the field.
-- [ ] **4.9** Use the inline Add button on a restricted row. The add dialog
-      appears, the new value is saved and selected.
+- [ ] **4.9 [A]** Use the inline Add button on a restricted row. The add
+      dialog appears, the new value is saved and selected. Open the manage
+      window next to it twice without closing the rename dialog: it is
+      populated both times.
 - [ ] **4.10 [A]** Watch the filename preview as you edit. It updates on every
       change and matches what will be written.
 - [ ] **4.11 [S]** Click Rename. The confirmation dialog appears.
@@ -136,8 +140,9 @@ automated UI suite.
 - [ ] **4.13** Confirm. The file is renamed on disk and the row updates in place.
 - [ ] **4.14** Rename to a name that already exists. The error explains the
       clash and the dialog stays open.
-- [ ] **4.15** Press `Ctrl+Enter` from any field. It applies, same as clicking
-      Rename.
+- [ ] **4.15** With every field valid, press `Enter` from the date or concept
+      field. It renames, same as clicking Rename. (There is no `Ctrl+Enter`:
+      the fields activate the dialog's default button.)
 - [ ] **4.16 [A]** Press `Escape`, and separately click Cancel. Both close without
       renaming and without writing anything.
 - [ ] **4.17** Click Preview. The document opens in the system viewer and the
@@ -259,30 +264,41 @@ automated UI suite.
 - [ ] **10.6** Import a plugin from a ZIP. It appears in the list and can be
       enabled.
 - [ ] **10.7** A plugin that fails to load is reported in the plugin manager,
-      not only in the log.
+      not only in the log. Setup: add a broken import to a bundled plugin,
+      `sed -i '1i import nosuchmodule' ~/.local/share/MiAZ/resources/plugins/MiAZWSFont/wsfont.py`,
+      enable it, then undo the edit.
 
 ### Plugin by plugin
 
-- [ ] **10.8** MiAZAddFromDir: import a directory. Progress is shown, the
-      documents arrive, and the workspace is usable while it runs.
-- [ ] **10.9 [N]** MiAZAddFromDir: cancel or point it at an unreadable
-      directory. It reports the failure instead of ending in silence, and the
-      workspace still refreshes afterwards.
-- [ ] **10.10** MiAZImportFromZip: import a ZIP. Same three checks.
+- [ ] **10.8** MiAZAddFromDir: import a directory. The documents arrive, the
+      workspace stays usable while it runs, and a toast reports the result.
+      (There is no progress bar and no cancel button. Progress goes to the log
+      only.)
+- [ ] **10.9 [N]** MiAZAddFromDir: point it at an unreadable directory
+      (`mkdir /tmp/locked && chmod 000 /tmp/locked`). It reports the failure
+      instead of ending in silence, and the workspace still refreshes
+      afterwards.
+- [ ] **10.10** MiAZImportFromZip: import a ZIP. Same checks as 10.8.
 - [ ] **10.11 [N]** MiAZImportFromZip: with a broken ZIP, the failure is
       reported and the workspace does not freeze for the rest of the session.
+      Setup: `printf 'not a zip' > /tmp/broken.zip`.
 - [ ] **10.12** MiAZAutoScan: the Add menu entry is present. With no scanner
-      connected it still appears and explains the problem when used.
+      connected it still appears and explains the problem when used. No
+      scanner needed: unplug it, or run MiAZ with `PATH=/nonexistent:$PATH`
+      so `scanimage` cannot be found.
 - [ ] **10.13** MiAZOCR: run OCR on a scanned PDF. Progress is shown and the
       text layer is added.
 - [ ] **10.14 [N]** MiAZOCR: with `ocrmypdf` missing, the failure is reported
-      and later workspace updates still happen.
-- [ ] **10.15** MiAZAIAssistant: configure a provider key, then Suggest in the
-      rename dialog. Fields are filled.
+      and later workspace updates still happen. Setup: start MiAZ from a shell
+      with `PATH=/usr/bin:/bin` and `ocrmypdf` temporarily renamed, or run it
+      in a container without the package.
+- [ ] **10.15 [K]** MiAZAIAssistant: configure a provider key, then Suggest in
+      the rename dialog. Fields are filled.
 - [ ] **10.16 [N]** MiAZAIAssistant: with an invalid key, the button recovers
-      instead of staying greyed out reading "Thinking".
-- [ ] **10.17** MiAZAIAssistant: the chat answers about a document, and a failed
-      request does not hang the dialog.
+      instead of staying greyed out reading "Thinking". Setup: no real key
+      needed, type any nonsense as the API key and Suggest.
+- [ ] **10.17 [K]** MiAZAIAssistant: the chat answers about a document, and a
+      failed request does not hang the dialog.
 - [ ] **10.18** MiAZNotes: write a note, save it, reopen it. Markdown renders in
       view mode, and the All notes page lists it.
 - [ ] **10.19** MiAZInsights: the page renders, the year selector works, the

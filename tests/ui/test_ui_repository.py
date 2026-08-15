@@ -131,3 +131,22 @@ def test_an_unknown_repository_changes_nothing(miaz):
     assert miaz.service('workflow').switch_start(repo_id='Nope') is False
     assert miaz.service('repo').docs == before
     assert 'MiAZNotes' in loaded_plugins(miaz)
+
+
+def test_a_repository_whose_directory_is_gone(miaz, sandbox, back_to_alpha):
+    """8.10: renaming a repository directory away must not recreate it.
+
+    setup() used to init() whatever path was configured, and os.makedirs
+    creates the whole path, so MiAZ opened an empty repository with empty
+    configuration exactly where the documents used to be.
+    """
+    missing = os.path.join(sandbox['home'], 'Ghost')
+    repos = miaz.app.get_config('Repository')
+    repos.set_repo_used('Ghost', missing, 'Ghost')
+    miaz.pump(0.3)
+
+    assert miaz.service('workflow').switch_start(repo_id='Ghost') is False
+    miaz.pump(0.5)
+
+    assert not os.path.exists(missing), 'the missing directory was recreated'
+    assert 'not found' in str(miaz.service('repo').get_error())

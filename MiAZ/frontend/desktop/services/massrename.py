@@ -243,7 +243,7 @@ class MiAZMassRename(GObject.GObject):
         icon_name = f'io.github.t00m.MiAZ-res-{i_title_plural.lower()}'
         btnManage = self.factory.create_button(icon_name=icon_name, title='')
         btnManage.connect('clicked', self.actions.manage_resource,
-                          Configview[i_type](self.app))
+                          Configview[i_type])
         frame = Gtk.Frame()
         cv = MiAZColumnViewMassRename(self.app)
         cv.set_hexpand(True)

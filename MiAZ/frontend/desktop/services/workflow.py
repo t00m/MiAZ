@@ -3,6 +3,8 @@
 # License: GPL v3
 # Description: Workflow module
 
+import os
+from gettext import gettext as _
 
 from gi.repository import GLib
 from gi.repository import GObject
@@ -132,15 +134,49 @@ class MiAZWorkflow(GObject.GObject):
             self.app.emit('application-started')
             GLib.idle_add(self._check_repo_config)
         else:
+            self.app.set_status(MiAZStatus.RUNNING)
             self.actions.show_stack_page_by_name('welcome')
             sidebar.set_visible(False)
             self._maybe_launch_assistant()
-            # ~ parent = self.app.get_widget('window')
-            # ~ title = _("Repository management")
-            # ~ body = repository.get_error()
-            # ~ self.srvdlg.show_error(title=title, body=body, parent=parent, width=400)
+            GLib.idle_add(self._report_load_failure, repository, active_id)
 
         return repo_loaded
+
+    def _report_load_failure(self, repository, repo_id):
+        """Say why the configured repository could not be opened.
+
+        Silence here was the worst case in the app: a repository directory that
+        had been renamed, deleted or left on an unmounted drive took the user
+        to the welcome page with no explanation, and the repository looked
+        empty rather than absent. Runs on idle so the window is up first.
+
+        Nothing is said when no repository is configured at all: that is a
+        first run, and the assistant is already on screen.
+        """
+        repos_cfg = self.app.get_config('Repository')
+        if repos_cfg is None or not repos_cfg.load_used():
+            return False
+
+        path = repos_cfg.get_path(repo_id, used=True) if repo_id else ''
+        title = _('Repository management')
+        body = _('The repository <b>{repository}</b> could not be opened.').format(
+            repository=repo_id or _('configured'))
+        if path and not os.path.isdir(path):
+            body += '\n\n' + _('Its directory no longer exists:')
+            body += f'\n<tt>{path}</tt>'
+            body += '\n\n' + _('It may have been renamed or moved, or it may be '
+                               'on a drive that is not connected. MiAZ has not '
+                               'changed anything. Reconnect it, or point the '
+                               'repository somewhere else in Settings, '
+                               'Repositories.')
+        else:
+            detail = repository.get_error()
+            if detail:
+                body += '\n\n' + str(detail)
+
+        parent = self.app.get_widget('window')
+        self.srvdlg.show_error(title=title, body=body, parent=parent, width=480)
+        return False
 
     def _maybe_launch_assistant(self):
         """On a fresh install (no repository configured at all), open the
