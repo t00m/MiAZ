@@ -15,6 +15,7 @@ from gi.repository import Gtk
 
 from MiAZ.backend.log import MiAZLog
 from MiAZ.backend.models import File, Group, Country, Purpose, SentBy, SentTo, Date, Concept
+from MiAZ.backend.util import UNKNOWN_DATE
 from MiAZ.frontend.desktop.widgets.configview import MiAZCountries
 from MiAZ.frontend.desktop.widgets.configview import MiAZGroups
 from MiAZ.frontend.desktop.widgets.configview import MiAZPurposes
@@ -295,18 +296,26 @@ class MiAZMassRename(GObject.GObject):
 
         def refresh_preview(*_a):
             sdate = current_sdate()
-            if chk_detect.get_active():
-                label.set_text(_('Date detected from each file'))
-            else:
-                label.set_text(datetime.strptime(sdate, '%Y%m%d').strftime('%A, %B %d %Y'))
             citems = []
+            read = 0
             for item in items:
                 source = os.path.basename(item.id)
                 name, ext = self.util.filename_details(source)
                 lname = name.split('-')
                 lname[0] = date_for(item, sdate)
+                if lname[0] != UNKNOWN_DATE:
+                    read += 1
                 target = f"{'-'.join(lname)}.{ext}"
                 citems.append(File(id=source, title=self.util.filename_upper(target)))
+            if chk_detect.get_active():
+                # Say how many dates were really read. The count is what tells a
+                # working detection from one that found nothing and wrote the
+                # unknown date everywhere.
+                label.set_text(
+                    _('Date read from {read} of {total} files, the rest set to {unknown}')
+                    .format(read=read, total=len(items), unknown=UNKNOWN_DATE))
+            else:
+                label.set_text(datetime.strptime(sdate, '%Y%m%d').strftime('%A, %B %d %Y'))
             cv.update(citems)
 
         def dialog_response_date(dialog, response):

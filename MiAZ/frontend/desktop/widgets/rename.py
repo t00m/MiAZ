@@ -17,7 +17,7 @@ from gi.repository import Pango
 
 from MiAZ.env import ENV
 from MiAZ.backend.log import MiAZLog
-from MiAZ.backend.util import humanize_value
+from MiAZ.backend.util import humanize_value, UNKNOWN_DATE
 from MiAZ.backend.models import MiAZItem, Group, Country, Purpose, Concept, SentBy, SentTo
 from MiAZ.frontend.desktop.services.dialogs import MiAZDialogAdd
 from MiAZ.frontend.desktop.widgets.configview import MiAZCountries, MiAZGroups, MiAZPurposes, MiAZPeopleSentBy, MiAZPeopleSentTo
@@ -45,6 +45,7 @@ class MiAZRenameDialog(Gtk.Box):
         self.srvdlg = self.app.get_service('dialogs')
         self.log = MiAZLog('Miaz.Rename')
         self.result = ''
+        self.doc = None
         self.new_values = []
         self.dropdown = {}
         self._last_date_str = None
@@ -380,6 +381,11 @@ class MiAZRenameDialog(Gtk.Box):
         popover.set_child(self.calendar)
         popover.present()
         button.set_popover(popover)
+        self.btnDetectDate = self.factory.create_button(
+            icon_name='io.github.t00m.MiAZ-edit-find-symbolic',
+            tooltip=_('Read the date from the document: from the concept field '
+                      'first, then the PDF or image metadata'),
+            callback=self._on_detect_date)
         self.label_date = Gtk.Label()
         self.label_date.add_css_class('caption')
         self.entry_date = Gtk.Entry()
@@ -391,11 +397,28 @@ class MiAZRenameDialog(Gtk.Box):
         self.entry_date.set_alignment(1.0)
         boxValue.append(self.label_date)
         boxValue.append(self.entry_date)
+        boxValue.append(self.btnDetectDate)
         boxValue.append(button)
         self.entry_date.connect('changed', self._on_changed_entry)
 
     def guess_date_if_empty(self, concept: str, filepath: str):
         return self.util.filename_guess_date(filepath, concept_hint=concept)
+
+    def _on_detect_date(self, *args):
+        """Read the date again, on demand.
+
+        set_data only reads it when the document arrives with an empty date
+        field, which left no way to ask for it afterwards: not for a document
+        already filed under a wrong date, and not after editing the concept,
+        which is where the original filename is kept and where the date is
+        usually written.
+        """
+        if self.doc is None:
+            return
+        filepath = os.path.join(self.repository.docs, os.path.basename(self.doc))
+        adate = self.util.filename_guess_date(
+            filepath, concept_hint=self.entry_concept.get_text())
+        self.entry_date.set_text(adate)
 
     def calendar_day_selected(self, calendar):
         # validate_date moves the calendar to whatever parses, and the calendar
@@ -827,7 +850,12 @@ class MiAZRenameDialog(Gtk.Box):
             adate = datetime.strptime(sdate, '%Y%m%d')
             iso8601 = f"{sdate}T00:00:00Z"
             self.calendar.select_day(GLib.DateTime.new_from_iso8601(iso8601))
-            self.label_date.set_markup(adate.strftime("%A, %B %d %Y"))
+            if sdate == UNKNOWN_DATE:
+                # A real date, so nothing downstream needs a special case, but
+                # "Friday, December 31 9999" reads as a date somebody chose.
+                self.label_date.set_markup(f"<i>{_('date not known')}</i>")
+            else:
+                self.label_date.set_markup(adate.strftime("%A, %B %d %Y"))
             self._last_date_str = sdate
             self._last_date_valid = True
             return True

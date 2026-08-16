@@ -11,12 +11,16 @@ import gi
 gi.require_version('GLib', '2.0')
 gi.require_version('Gio', '2.0')
 
-from datetime import date
+from datetime import date, datetime
 
+import os
 import pytest
 import shutil
+import struct
+import zipfile
+import zlib
 
-from MiAZ.backend.util import MiAZUtil, clean_temp_dir
+from MiAZ.backend.util import MiAZUtil, clean_temp_dir, UNKNOWN_DATE
 
 
 class MockApp:
@@ -353,3 +357,300 @@ def test_clean_temp_dir_skips_what_it_cannot_remove(tmp_path, monkeypatch):
     assert clean_temp_dir(str(tmp_path)) == 1
     assert (tmp_path / 'stuck').is_dir()
     assert not (tmp_path / 'ok.txt').exists()
+
+
+# ---------------------------------------------------------------------------
+# dates_from_text / filename_guess_date
+# ---------------------------------------------------------------------------
+
+@pytest.mark.parametrize('text, expected', [
+    # ISO order, any separator or none: the year comes first, nothing to guess.
+    ('Factura_20240315', '20240315'),
+    ('Factura_2024_03_15', '20240315'),
+    ('Factura_2024-03-15', '20240315'),
+    ('Factura_2024.03.15', '20240315'),
+    ('2024_03_15_nomina', '20240315'),
+    ('Recibo20240315', '20240315'),
+    # A camera or scanner run of digits: the leading 8 are the date.
+    ('IMG20240315123456', '20240315'),
+    ('SCAN_20240315_0001', '20240315'),
+    # Year last, and the day is over 12, so only one reading is a date.
+    ('Factura_15_03_2024', '20240315'),
+    ('Factura_15-03-2024', '20240315'),
+    ('Factura_15032024', '20240315'),
+    # Year last, month over 12 in the first position: month-first reading.
+    ('Factura_03_15_2024', '20240315'),
+])
+def test_dates_from_text_reads_unambiguous_dates(util, text, expected):
+    assert util.dates_from_text(text)[0] == expected
+
+
+@pytest.mark.parametrize('text', [
+    'Factura_03_04_2024',      # 3 April or 4 March, no way to tell
+    'Factura_03042024',        # same, without separators
+    'Factura_01_02_2024',
+])
+def test_dates_from_text_skips_ambiguous_dates(util, text):
+    assert util.dates_from_text(text) == []
+
+
+@pytest.mark.parametrize('text', [
+    'Factura_240315',          # two digit year, century unknown
+    'Factura_202403',          # year and month, no day
+    'Presupuesto_12345678',    # not a date in any order
+    'Importe_1234',
+    'Factura_2024_13_45',      # out of range
+    'Factura_1503_2024',       # year 1503 is outside the accepted range
+    '',
+])
+def test_dates_from_text_finds_nothing(util, text):
+    assert util.dates_from_text(text) == []
+
+
+def test_dates_from_text_keeps_order_of_appearance(util):
+    assert util.dates_from_text('20240315_a_20231114') == ['20240315', '20231114']
+
+
+def test_filename_guess_date_reads_the_concept(util, tmp_path):
+    doc = tmp_path / 'x.txt'
+    doc.write_text('x')
+    os.utime(doc, (1700000000, 1700000000))    # mtime is 2023-11-14
+    assert util.filename_guess_date(str(doc), 'Factura_15_03_2024') == '20240315'
+
+
+def test_filename_guess_date_returns_the_unknown_date_instead_of_the_mtime(util, tmp_path):
+    """No date in the name means MiAZ says so, rather than passing off the file
+    date as the document date: for a document downloaded today that read as
+    today, every time."""
+    doc = tmp_path / 'x.txt'
+    doc.write_text('x')
+    os.utime(doc, (1700000000, 1700000000))
+    assert util.filename_guess_date(str(doc), 'Factura_del_banco') == UNKNOWN_DATE
+
+
+def test_filename_guess_date_returns_the_unknown_date_for_an_ambiguous_one(util, tmp_path):
+    doc = tmp_path / 'x.txt'
+    doc.write_text('x')
+    assert util.filename_guess_date(str(doc), 'Factura_03_04_2024') == UNKNOWN_DATE
+
+
+def test_unknown_date_parses_as_a_date(util):
+    """Everything downstream (the entry validator, the calendar, sorting) takes
+    it as an ordinary date, so nothing has to special-case it."""
+    assert datetime.strptime(UNKNOWN_DATE, '%Y%m%d').year == 9999
+
+
+# ---------------------------------------------------------------------------
+# dates_from_metadata: the document's own dates, with no third-party library
+# ---------------------------------------------------------------------------
+
+def make_pdf(tmp_path, body: bytes, name='doc.pdf'):
+    path = tmp_path / name
+    path.write_bytes(b'%PDF-1.4\n' + body + b'\n%%EOF\n')
+    return str(path)
+
+
+def make_jpeg_with_exif(tmp_path, stamp=b'2025:01:16 04:20:15', name='photo.jpg'):
+    """A JPEG carrying one EXIF DateTimeOriginal and nothing else.
+
+    Built by hand rather than with Pillow: Pillow is exactly the dependency the
+    reader under test must not need.
+    """
+    stamp = stamp + b'\x00'
+    # TIFF block, little endian, offsets counted from its own start.
+    ifd0 = struct.pack('<H', 1)                          # one entry
+    ifd0 += struct.pack('<HHII', 0x8769, 4, 1, 8 + len(ifd0) + 12 + 4)
+    ifd0 += struct.pack('<I', 0)                         # no IFD1
+    exif_ifd = struct.pack('<H', 1)
+    stamp_at = 8 + len(ifd0) + len(exif_ifd) + 12 + 4
+    exif_ifd += struct.pack('<HHII', 0x9003, 2, len(stamp), stamp_at)
+    exif_ifd += struct.pack('<I', 0)
+    tiff = b'II' + struct.pack('<HI', 42, 8) + ifd0 + exif_ifd + stamp
+    app1 = b'Exif\x00\x00' + tiff
+    path = tmp_path / name
+    path.write_bytes(b'\xff\xd8'
+                     + b'\xff\xe1' + struct.pack('>H', len(app1) + 2) + app1
+                     + b'\xff\xd9')
+    return str(path)
+
+
+def test_pdf_creation_date_is_read_from_the_info_dictionary(util, tmp_path):
+    """The case that started this: an invoice whose name carries no date, whose
+    mtime is the day it was downloaded, and whose PDF metadata says January."""
+    doc = make_pdf(tmp_path, b"<< /Title (x) /CreationDate (D:20250116042015+01'00') >>")
+    assert util.dates_from_metadata(doc) == ['20250116']
+
+
+def test_pdf_creation_date_is_read_without_the_d_prefix(util, tmp_path):
+    doc = make_pdf(tmp_path, b'<< /CreationDate (20250116042015) >>')
+    assert util.dates_from_metadata(doc) == ['20250116']
+
+
+def test_pdf_xmp_creation_date_is_read(util, tmp_path):
+    """Plenty of PDFs carry the date only in the XMP packet."""
+    doc = make_pdf(tmp_path, b'<x:xmpmeta><xmp:CreateDate>2025-01-16T04:20:15+01:00'
+                             b'</xmp:CreateDate></x:xmpmeta>')
+    assert util.dates_from_metadata(doc) == ['20250116']
+
+
+def test_pdf_date_is_read_out_of_a_compressed_stream(util, tmp_path):
+    """The XMP packet is normally Flate compressed, so it is not in the plain
+    bytes. Nothing is decoded until the plain scan comes back empty."""
+    packet = zlib.compress(b'<x:xmpmeta><xmp:CreateDate>2025-01-16T04:20:15Z'
+                           b'</xmp:CreateDate></x:xmpmeta>')
+    doc = make_pdf(tmp_path, b'5 0 obj << /Subtype /XML /Filter /FlateDecode >> stream\n'
+                             + packet + b'\nendstream endobj')
+    assert util.dates_from_metadata(doc) == ['20250116']
+
+
+def test_pdf_modification_date_is_not_a_creation_date(util, tmp_path):
+    doc = make_pdf(tmp_path, b"<< /ModDate (D:20260816130000+02'00') >>")
+    assert util.dates_from_metadata(doc) == []
+
+
+def test_pdf_with_no_metadata_date_reads_nothing(util, tmp_path):
+    doc = make_pdf(tmp_path, b'<< /Title (an invoice) /Producer (something) >>')
+    assert util.dates_from_metadata(doc) == []
+
+
+def test_pdf_rubbish_date_is_rejected(util, tmp_path):
+    doc = make_pdf(tmp_path, b'<< /CreationDate (D:20259931000000) >>')
+    assert util.dates_from_metadata(doc) == []
+
+
+def test_pdf_keeps_the_earliest_creation_date(util, tmp_path):
+    """An incrementally updated PDF carries one Info dictionary per revision.
+    The document was created on the earliest of them."""
+    doc = make_pdf(tmp_path, b'<< /CreationDate (D:20250116042015) >>\n'
+                             b'<< /CreationDate (D:20260410090000) >>')
+    assert util.dates_from_metadata(doc) == ['20250116']
+
+
+def test_jpeg_exif_original_date_is_read(util, tmp_path):
+    photo = make_jpeg_with_exif(tmp_path)
+    assert util.dates_from_metadata(photo) == ['20250116']
+
+
+def test_a_file_with_no_metadata_of_its_own_reads_nothing(util, tmp_path):
+    doc = tmp_path / 'notes.txt'
+    doc.write_text('20250116 is written in the body, which is not metadata')
+    assert util.dates_from_metadata(str(doc)) == []
+
+
+def test_filename_guess_date_falls_back_to_the_metadata(util, tmp_path):
+    """The concept holds an invoice number, not a date. The answer must be the
+    date in the file rather than the unknown date, and never the mtime."""
+    doc = make_pdf(tmp_path, b"<< /CreationDate (D:20250116042015+01'00') >>")
+    os.utime(doc, (1700000000, 1700000000))
+    assert util.filename_guess_date(doc, 'RG151038433387') == '20250116'
+
+
+def test_filename_guess_date_prefers_the_metadata_over_the_name(util, tmp_path):
+    """A CreationDate field holds a date or holds nothing. A filename holds
+    whatever the sender put there."""
+    doc = make_pdf(tmp_path, b'<< /CreationDate (D:20250116042015) >>')
+    assert util.filename_guess_date(doc, 'Factura_15_03_2024') == '20250116'
+
+
+def test_an_invoice_number_does_not_beat_the_metadata(util, tmp_path):
+    """RG151119905140 is a real 1&1 invoice number, and 15111990 inside it is a
+    real date: 15 November 1990. Reading the name first filed that invoice 36
+    years early. The metadata says when the PDF was actually made."""
+    doc = make_pdf(tmp_path, b'<< /CreationDate (D:20260116042015) >>')
+    assert util.dates_from_text('RG151119905140') == ['19901115']
+    assert util.filename_guess_date(doc, 'RG151119905140') == '20260116'
+
+
+def test_the_name_is_still_read_when_the_file_carries_no_date(util, tmp_path):
+    doc = make_pdf(tmp_path, b'<< /Title (an invoice) >>')
+    assert util.filename_guess_date(doc, 'Factura_15_03_2024') == '20240315'
+
+
+def test_filename_guess_date_is_unknown_when_the_metadata_has_no_date(util, tmp_path):
+    doc = make_pdf(tmp_path, b'<< /Title (an invoice) >>')
+    os.utime(doc, (1700000000, 1700000000))
+    assert util.filename_guess_date(doc, 'RG151038433387') == UNKNOWN_DATE
+
+
+def make_zip_document(tmp_path, member, body: bytes, name='doc.docx'):
+    path = tmp_path / name
+    with zipfile.ZipFile(path, 'w') as zf:
+        zf.writestr(member, body)
+    return str(path)
+
+
+def test_ooxml_creation_date_is_read(util, tmp_path):
+    doc = make_zip_document(
+        tmp_path, 'docProps/core.xml',
+        b'<cp:coreProperties><dcterms:created xsi:type="dcterms:W3CDTF">'
+        b'2021-05-27T10:00:00Z</dcterms:created></cp:coreProperties>')
+    assert util.dates_from_metadata(doc) == ['20210527']
+
+
+def test_opendocument_creation_date_is_read(util, tmp_path):
+    doc = make_zip_document(
+        tmp_path, 'meta.xml',
+        b'<office:meta><meta:creation-date>2023-03-12T09:14:00'
+        b'</meta:creation-date></office:meta>', name='doc.odt')
+    assert util.dates_from_metadata(doc) == ['20230312']
+
+
+def test_a_zip_that_is_not_an_office_document_reads_nothing(util, tmp_path):
+    archive = make_zip_document(tmp_path, 'readme.txt', b'20210527', name='files.zip')
+    assert util.dates_from_metadata(archive) == []
+
+
+def test_a_corrupt_zip_does_not_stop_a_rename(util, tmp_path):
+    doc = tmp_path / 'broken.docx'
+    doc.write_bytes(b'PK\x03\x04 and then rubbish')
+    assert util.dates_from_metadata(str(doc)) == []
+
+
+# ---------------------------------------------------------------------------
+# The precedence itself, pinned in one place: metadata, then the name, then
+# UNKNOWN_DATE, and the file mtime never at all.
+# ---------------------------------------------------------------------------
+
+WITH_DATE = b"<< /Title (invoice) /CreationDate (D:20250116042015+01'00') >>"
+WITHOUT_DATE = b'<< /Title (invoice) /Producer (something) >>'
+MTIME_2023 = (1700000000, 1700000000)
+
+
+@pytest.mark.parametrize('label, body, concept, expected', [
+    ('metadata beats the name', WITH_DATE, 'Factura_15_03_2024', '20250116'),
+    ('metadata alone', WITH_DATE, 'RG151038433387', '20250116'),
+    ('the name is read when the file carries no date',
+     WITHOUT_DATE, 'Factura_15_03_2024', '20240315'),
+    ('neither source has one', WITHOUT_DATE, 'RG151038433387', UNKNOWN_DATE),
+    ('an invoice number never beats the metadata',
+     WITH_DATE, 'RG151119905140', '20250116'),
+])
+def test_the_date_precedence_is_metadata_then_name_then_unknown(
+        util, tmp_path, label, body, concept, expected):
+    doc = make_pdf(tmp_path, body, name=f'{abs(hash(label))}.pdf')
+    os.utime(doc, MTIME_2023)
+    assert util.filename_guess_date(doc, concept) == expected, label
+
+
+def test_the_file_mtime_is_never_the_answer(util, tmp_path):
+    """Whatever the document and the name hold, the day the file happens to
+    carry on disk is not a fact about the document and must not appear."""
+    for index, (body, concept) in enumerate([
+            (WITH_DATE, 'Factura_15_03_2024'),
+            (WITH_DATE, 'RG151038433387'),
+            (WITHOUT_DATE, 'Factura_15_03_2024'),
+            (WITHOUT_DATE, 'RG151038433387')]):
+        doc = make_pdf(tmp_path, body, name=f'mtime{index}.pdf')
+        os.utime(doc, MTIME_2023)
+        assert util.filename_guess_date(doc, concept) != '20231114'
+
+
+def test_filename_get_modification_date_reads_the_mtime(util, tmp_path):
+    """Renamed from filename_get_creation_date. The old name claimed something
+    the code never did, and filename_guess_date ending its chain here is what
+    filed every dateless document under the day it was imported."""
+    doc = tmp_path / 'x.txt'
+    doc.write_text('x')
+    os.utime(doc, MTIME_2023)
+    assert util.filename_get_modification_date(str(doc)).strftime('%Y%m%d') == '20231114'
+    assert not hasattr(util, 'filename_get_creation_date')

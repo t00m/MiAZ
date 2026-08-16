@@ -2,7 +2,10 @@
 
 """UI: the rename dialog. Checklist sections 4 and 11."""
 
+import os
 import pytest
+
+from MiAZ.backend.util import UNKNOWN_DATE
 
 DOCUMENT = '20260612-ES-FIN-BANKX-INV-mortgage-JOHNDOE.pdf'
 # Its sender is not in the configuration, which is what makes the dialog open
@@ -224,3 +227,83 @@ def _walk(widget):
     while child is not None:
         yield from _walk(child)
         child = child.get_next_sibling()
+
+
+# ---------------------------------------------------------------------------
+# The detect-date button (checklist 4.7b, 4.7c)
+# ---------------------------------------------------------------------------
+
+def test_detect_reads_the_date_out_of_the_concept(rename_dialog):
+    """4.7b: the date can be asked for at any point, not only when the document
+    arrives without one. Here the field already holds a date and detect must
+    still replace it."""
+    driver, _dialog, widget = rename_dialog
+    assert widget.entry_date.get_text() == '20260612'
+    widget.entry_concept.set_text('FACTURA_15_03_2024')
+    driver.pump(0.3)
+    widget.btnDetectDate.emit('clicked')
+    driver.pump(0.3)
+    assert widget.entry_date.get_text() == '20240315'
+
+
+def test_detect_reads_the_concept_as_it_stands_now(rename_dialog):
+    """4.7c: the concept is where the original filename is kept, and the user
+    may have just corrected it. Detect must read the entry, not the name the
+    file still has on disk."""
+    driver, _dialog, widget = rename_dialog
+    widget.entry_concept.set_text('IMG20231114093000')
+    driver.pump(0.3)
+    widget.btnDetectDate.emit('clicked')
+    driver.pump(0.3)
+    assert widget.entry_date.get_text() == '20231114'
+
+
+def test_detect_says_it_does_not_know_rather_than_guessing(rename_dialog):
+    """No date in the concept and none in the file metadata. The old code
+    answered with the file mtime, which for a document imported today read as
+    today; the answer now is the unknown date."""
+    driver, _dialog, widget = rename_dialog
+    widget.entry_concept.set_text('MORTGAGE')
+    driver.pump(0.3)
+    widget.btnDetectDate.emit('clicked')
+    driver.pump(0.3)
+    assert widget.entry_date.get_text() == UNKNOWN_DATE
+    # It is still a valid date, so the rename is not blocked by it.
+    assert widget.validate_date(UNKNOWN_DATE) is True
+
+
+def test_detect_declines_an_ambiguous_date(rename_dialog):
+    """03/04/2024 is 3 April or 4 March depending on where the document came
+    from, and the name does not say. Reporting the unknown date is right; both
+    readings would be wrong half the time."""
+    driver, _dialog, widget = rename_dialog
+    widget.entry_concept.set_text('FACTURA_03_04_2024')
+    driver.pump(0.3)
+    widget.btnDetectDate.emit('clicked')
+    driver.pump(0.3)
+    assert widget.entry_date.get_text() == UNKNOWN_DATE
+
+
+def test_detect_reads_the_date_out_of_the_pdf_metadata(rename_dialog):
+    """4.7d: the concept holds an invoice number, so the answer has to come from
+    the document's own metadata. This is the case that was silently broken: the
+    PDF probe sat behind `except ImportError` on a library MiAZ does not depend
+    on, so it never ran and the date fell through to the file mtime."""
+    driver, _dialog, widget = rename_dialog
+    repository = driver.service('repo')
+    path = os.path.join(repository.docs, DOCUMENT)
+    with open(path, 'rb') as handler:
+        original = handler.read()
+    try:
+        with open(path, 'wb') as handler:
+            handler.write(b"%PDF-1.4\n<< /Title (invoice) "
+                          b"/CreationDate (D:20250116042015+01'00') >>\n%%EOF\n")
+        widget.entry_concept.set_text('RG151038433387')
+        driver.pump(0.3)
+        widget.btnDetectDate.emit('clicked')
+        driver.pump(0.3)
+        assert widget.entry_date.get_text() == '20250116'
+    finally:
+        with open(path, 'wb') as handler:
+            handler.write(original)
+        driver.pump(0.3)

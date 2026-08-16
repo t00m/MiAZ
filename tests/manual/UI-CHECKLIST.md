@@ -126,6 +126,20 @@ automated UI suite, **[K]** needs a paid API key (skip unless you have one).
       row is marked wrong, the label next to it reads "not a date" rather than
       showing an unrelated valid date, and Rename stays insensitive.
 - [ ] **4.7** Open the calendar popover and pick a day. The field updates.
+- [ ] **4.7b** Click the detect button next to the date field on a document whose
+      concept holds a date, such as `FACTURA_15_03_2024`. The field is set to
+      `20240315`, whatever it held before. On a concept with no date it is set
+      to `99991231`.
+- [ ] **4.7c** Edit the concept to add a date, then click detect again. It reads
+      the concept as it is now, not as the file was named on disk.
+- [ ] **4.7d** Click detect on a PDF whose concept holds no date but whose PDF
+      properties show a creation date (check with `pdfinfo` or a viewer). The
+      field is set to that date, not to today. This works with no `pypdf` and no
+      `Pillow` installed, which is the normal case.
+- [ ] **4.7e** Click detect on a document that has both: a creation date in its
+      properties and a digit run in its concept that looks like a date, such as
+      the invoice number `RG151119905140`. The metadata date wins. The concept
+      is only read when the file itself carries no date.
 - [ ] **4.8** Type two characters in the concept field. The autocomplete popover
       offers matching concepts, and picking one fills the field.
 - [ ] **4.9 [A]** Use the inline Add button on a restricted row. The add
@@ -179,7 +193,11 @@ automated UI suite, **[K]** needs a paid API key (skip unless you have one).
       with its new name, and applying renames all of them.
 - [ ] **6.4** Use Date with a calendar date. All selected files take it.
 - [ ] **6.5** Use Date with "Detect date from each file" ticked. Each file gets
-      its own detected date, and files with no detectable date are reported.
+      its own detected date, the label says how many dates were read out of how
+      many files, and files with no readable date get 99991231.
+- [ ] **6.5b** Include a file whose concept holds a date the app cannot resolve
+      on its own, such as `03_04_2024` (3 April or 4 March, no way to tell). It
+      gets 99991231 rather than one of the two readings.
 - [ ] **6.6** Use the Concept transform. The guided dialog previews the result
       before applying.
 - [ ] **6.7** Include a document whose target name already exists. It is skipped,
