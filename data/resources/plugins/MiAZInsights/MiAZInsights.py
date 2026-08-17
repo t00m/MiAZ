@@ -50,7 +50,7 @@ plugin_info = {
     'Authors':      'Tomás Vírseda <tomasvirseda@gmail.com>',
     'Copyright':    'Copyright © 2026 Tomás Vírseda',
     'Website':      'https://github.com/t00m/MiAZ',
-    'Help':         'https://github.com/t00m/MiAZ/README.adoc',
+    'Help':         'https://github.com/t00m/MiAZ/blob/main/README.md',
     'Version':      '0.2.0',
     'Category':     'Analytics and Reporting',
     'Subcategory':  'Custom Reports',

@@ -66,7 +66,7 @@ gtk-update-icon-cache %{_datadir}/icons/hicolor &> /dev/null || :
 
 %files -f miaz.lang
 %license data/docs/LICENSE
-%doc data/docs/README CHANGELOG.md
+%doc README.md CHANGELOG.md
 %{_bindir}/miaz
 %{_datadir}/MiAZ/
 %{_datadir}/applications/io.github.t00m.MiAZ.desktop

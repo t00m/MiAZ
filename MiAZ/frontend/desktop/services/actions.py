@@ -434,8 +434,6 @@ class MiAZActions(GObject.GObject):
         about.set_copyright(f"© 2019-2025 {ENV['APP']['author']}")
         about.set_website('https://github.com/t00m/MiAZ')
         about.set_comments(ENV['APP']['description'])
-        # ~ README = open(ENV['FILE']['README'], 'r').read()
-        # ~ about.set_comments(README)
         about.present(window)
 
     def show_app_shortcuts(self, *args):

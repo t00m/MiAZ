@@ -25,7 +25,7 @@ plugin_info = {
     'Authors':       'Tomas Virseda <tomasvirseda@gmail.com>',
     'Copyright':     'Copyright © 2025 Tomas Virseda',
     'Website':       'http://github.com/t00m/MiAZ',
-    'Help':          'http://github.com/t00m/MiAZ/README.adoc',
+    'Help':          'https://github.com/t00m/MiAZ/blob/main/README.md',
     'Version':       '0.1.26',
     'Category':      'Customisation and Personalisation',
     'Subcategory':   'User Interface'

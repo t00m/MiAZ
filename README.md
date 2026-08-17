@@ -13,16 +13,19 @@ your files are fully portable and readable in any file manager.
 
 MiAZ solves this with a simple, consistent file-naming convention of seven fields. Scan a letter, download an email attachment, drop it into your MiAZ repository, and the app guides you through naming it correctly with minimal effort.
 
-
 ## Features
 
-- **Multiple repositories**: keep work, home, and archive documents separate
 - **No database**: the directory is the database; files are always portable
+- **Multiple repositories**: keep work, home, and archive documents separate, and switch between them without restarting
 - **Workspace**: fast, filterable list that handles thousands of documents
 - **Sidebar filters**: per-field dropdowns for date, country, group, sender, purpose, and recipient
-- **Single and mass renaming**: fix one document or rename many at once
-- **Project management**: group related documents into named projects
-- **Plugin system**: extend functionality with plugins
+- **Review queue**: documents that do not match the convention yet are listed apart, so filing is a task you can finish
+- **Automatic date detection**: reads the date out of the document instead of guessing
+- **Single and mass renaming**: fix one document, or set a field across a whole selection
+- **Projects**: group related documents under a name
+- **Notes**: keep Markdown notes attached to a document
+- **Command line**: search the repository without a display
+- **Plugins**: 19 built-in, plus your own
 
 ## File-naming convention
 
@@ -43,6 +46,31 @@ Every document managed by MiAZ follows this seven-field scheme:
 | SentTo | Free text (no hyphens) | `JOHNDOE` |
 
 Fields are separated by hyphens. The date-first order means files sort chronologically in any file browser.
+
+## How filing works
+
+Drop a file into the repository directory. MiAZ notices it and renames it to the seven-field shape straight away, leaving every field empty except the concept, which keeps the original filename. The document then shows up under **Review**, because a name with empty fields is not a finished name.
+
+Open it with `Ctrl+BackSpace` and fill in the fields. The dialog refuses to enable **Rename** until date, country, sender, concept and recipient make a valid name. Group and purpose are advisory: it warns, it does not block.
+
+### Where the date comes from
+
+Typing a date for every document is the slowest part of filing, so MiAZ reads one where it can. It tries two sources, in order:
+
+1. **The document's own metadata.** PDF `CreationDate` and the XMP packet, EXIF `DateTimeOriginal` for photos, and the creation date inside Word, Excel and OpenDocument files. No extra Python package is needed for any of this.
+2. **The filename**, which is where the original name is kept after import. Only dates whose field order the text settles by itself are read: `2024-03-15` and `15_03_2024` are read, `03_04_2024` is not, because it is 3 April in most of the world and 4 March in the United States and nothing in the name says which.
+
+When neither source has an answer, the date is set to **`99991231`**. That is deliberate. It is a real date, so nothing downstream needs a special case, and it sorts last, so documents whose date is unknown group at the end of the workspace instead of hiding among documents genuinely filed that day.
+
+The file modification time is never used. A bank statement downloaded today has today's mtime, which says when you downloaded it, not when it was written.
+
+The date row in the rename dialog has a button to read the date again on demand, which is useful after correcting the concept, or for a document already filed under a wrong date.
+
+### Renaming many at once
+
+Select two or more documents and the rename button becomes a menu with seven functions: date, country, group, purpose, concept, sent by and sent to. Each one previews every new name before it touches the disk.
+
+The date function detects a date per file by default, and says how many it managed to read. The concept function is a guided transform: keep or remove tokens, add a prefix or suffix, find and replace, change case, or set a value outright.
 
 ## Screenshots
 
@@ -99,7 +127,7 @@ sudo dnf install ./miaz-*.rpm
 
 ### Flatpak (deprecated)
 
-Flatpak is no longer provided. The sandbox cannot reach the host command line tools that MiAZ shells out to (`ocrmypdf` for OCR, `scanimage` for the scanner), so those features do not work in a Flatpak build. Use the deb, rpm or AppImage package instead. 
+Flatpak is no longer provided. The sandbox cannot reach the host command line tools that MiAZ shells out to (`ocrmypdf` for OCR, `scanimage` for the scanner), so those features do not work in a Flatpak build. Use the deb, rpm or AppImage package instead.
 
 ### AppImage
 
@@ -153,10 +181,61 @@ Filters map onto the same fields the workspace sidebar uses: `--country`,
 `--group`, `--sentby`, `--purpose`, `--sentto`, `--concept`, `--since` or
 `--from` and `--to`, `--pending`, `--all` and `--limit`.
 
+Values for `--since`: `this-month`, `past-month`, `last-3-months`,
+`last-6-months`, `last-12-months`, `2-years`, `3-years`, `5-years`, `10-years`,
+`future`.
+
 Exit codes: 0 results, 1 no results, 2 wrong arguments, 3 repository problem.
 Set `MIAZ_DEBUG=1` to see the usual logging.
 
+`--repo` reads another repository without changing which one the window opens
+next time.
+
 Running `miaz` with no arguments opens the window as always.
+
+## Keyboard shortcuts
+
+| Shortcut | Action |
+|---|---|
+| `Ctrl+BackSpace` | Rename the selected document |
+| `Ctrl+Delete` | Delete the selected documents |
+| `Return` | View the selected document |
+| `Ctrl+Insert` | Import documents |
+| `Ctrl+s` | Settings |
+| `Ctrl+?` | Keyboard shortcuts |
+| `Ctrl+b` | About |
+| `Ctrl+q` | Quit |
+| `F1` | Help |
+
+## Plugins
+
+Plugins are enabled per repository, from the repository settings. Switching repository unloads the plugins of the one you leave and loads the ones the new one enables. Nineteen ship with the app:
+
+| Plugin | What it does |
+|---|---|
+| MiAZAddFromDir | Add documents from a directory |
+| MiAZImportFromScan | Import a document from a scanner |
+| MiAZAutoScan | Scan in the background and import straight into the repository |
+| MiAZImportFromZip | Import documents from a ZIP file |
+| MiAZExport2CSV | Export to CSV |
+| MiAZExport2Dir | Export to a directory |
+| MiAZExport2Text | Export to a text editor |
+| MiAZExport2Zip | Compress documents into a ZIP file |
+| MiAZCopy2Clipboard | Copy to clipboard |
+| MiAZProjectMgt | Group documents into projects |
+| MiAZPeriodicity | Set how often a document is expected |
+| MiAZNotes | Markdown notes attached to a document |
+| MiAZInsights | Charts and a world map over your documents |
+| MiAZOCR | Extract text from PDFs with OCR and save it as a note |
+| MiAZAIAssistant | Suggest filename fields from the document content |
+| MiAZColumnVisibility | Show and hide workspace columns |
+| MiAZWSFont | Change the workspace font |
+| MiAZFullscreen | Toggle fullscreen |
+| HelloWorld | Example plugin to start from |
+
+Some plugins need Python packages that MiAZ does not depend on, the AI providers in particular. The **External libraries** group in the application settings installs them into a private virtualenv in your home directory, never into the system Python. MiAZOCR also needs `ocrmypdf` and MiAZAutoScan needs `scanimage` from your distribution.
+
+Your own plugins go in `~/.MiAZ/opt/plugins/`, and can be imported as a ZIP from the plugin settings.
 
 ## Requirements
 
@@ -174,6 +253,15 @@ Running `miaz` with no arguments opens the window as always.
 ## Contributing
 
 Bug reports and feature requests: [GitHub Issues](https://github.com/t00m/MiAZ/issues)
+
+Tests:
+
+```bash
+python -m pytest tests/ --ignore=tests/ui   # unit tests, no display needed
+./scripts/checks/run_ui_tests.sh            # drives the real application
+```
+
+`tests/manual/UI-CHECKLIST.md` covers what a machine cannot judge, and is the release gate.
 
 ## About the author
 

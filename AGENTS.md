@@ -24,8 +24,8 @@ Example: `20240315-ES-HOU-BANKNAME-INV-Q1invoice-JOHNDOE.pdf`
 | Python–GTK bindings | PyGObject | 3.50 |
 | Embedded web | WebKitGTK | 6.0 |
 | Build system | Meson + Ninja | 1.5.1 |
-| Distribution | deb / rpm / AppImage (native). Flatpak is deprecated | — |
-| i18n | gettext | — |
+| Distribution | deb / rpm / AppImage (native). Flatpak is deprecated | n/a |
+| i18n | gettext | n/a |
 
 ## Repository layout
 
