@@ -294,14 +294,14 @@ class MiAZFactory:
         button = Gtk.Switch()
         button.set_active(active)
         if callback is not None:
-            button.connect('activate', callback)
+            button.connect('notify::active', callback)
         return button
 
     def create_button_check(self, title: str = '', active: bool = False, callback=None) -> Gtk.CheckButton:
         button = Gtk.CheckButton()
         button.set_active(active)
         if callback is not None:
-            button.connect('activate', callback)
+            button.connect('toggled', callback)
         return button
 
     def create_button_menu(self, icon_name: str = '', title:str = '', css_classes: list = None, menu: Gio.Menu = None)-> Gtk.MenuButton:
@@ -315,7 +315,7 @@ class MiAZFactory:
         button.set_sensitive(True)
         return button
 
-    def create_button_popover(self, icon_name: str = '', title: str = '', css_classes: list = [], widgets: list = []) -> Gtk.MenuButton:
+    def create_button_popover(self, icon_name: str = '', title: str = '', css_classes=None, widgets=None) -> Gtk.MenuButton:
         return MiAZPopoverButton(self.app, icon_name=icon_name, title=title, css_classes=css_classes, widgets=widgets)
 
     def create_dropdown_generic(self, item_type, ellipsize=True, enable_search=True):

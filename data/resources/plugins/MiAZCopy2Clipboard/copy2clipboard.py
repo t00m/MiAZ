@@ -66,7 +66,7 @@ class Copy2Clipboard(MiAZExtension):
         if not self.plugin.started():
             # Create menu item for plugin
             mnuItemName = self.plugin.get_menu_item_name()
-            menuitem = self.factory.create_menuitem(name=mnuItemName, label=_('Copy document names'), callback=self.export, shortcuts=['<Control>c'])
+            menuitem = self.factory.create_menuitem(name=mnuItemName, label=_('Copy document names'), callback=self.export, shortcuts=['<Control><Shift>c'])
 
             # Add plugin to its default (sub)category
             self.plugin.install_menu_entry(menuitem)
@@ -85,6 +85,4 @@ class Copy2Clipboard(MiAZExtension):
         for item in items:
             text += _('{item}\n').format(item=item.id)
         self.workspace.get_display().get_clipboard().set(text.strip())
-        body = ''
-        parent = self.workspace.get_root()
         self.srvdlg.show_toast(title)

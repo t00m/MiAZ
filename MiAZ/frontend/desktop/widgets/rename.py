@@ -97,13 +97,23 @@ class MiAZRenameDialog(Gtk.Box):
         # the stack and stays visible whatever tab is open.
         self.__create_filename_footer()
 
-        self.config['Country'].connect('used-updated', self.update_dropdown, Country)
-        self.config['Group'].connect('used-updated', self.update_dropdown, Group)
-        self.config['SentBy'].connect('used-updated', self.update_dropdown, SentBy)
-        self.config['Purpose'].connect('used-updated', self.update_dropdown, Purpose)
-        self.config['SentTo'].connect('used-updated', self.update_dropdown, SentTo)
         repository = self.app.get_service('repo')
-        repository.connect('repository-switched', self._update_dropdowns)
+        self._signal_handler_ids = [
+            (self.config['Country'], self.config['Country'].connect('used-updated', self.update_dropdown, Country)),
+            (self.config['Group'], self.config['Group'].connect('used-updated', self.update_dropdown, Group)),
+            (self.config['SentBy'], self.config['SentBy'].connect('used-updated', self.update_dropdown, SentBy)),
+            (self.config['Purpose'], self.config['Purpose'].connect('used-updated', self.update_dropdown, Purpose)),
+            (self.config['SentTo'], self.config['SentTo'].connect('used-updated', self.update_dropdown, SentTo)),
+            (repository, repository.connect('repository-switched', self._update_dropdowns)),
+        ]
+
+    def dispose(self):
+        for emitter, handler_id in self._signal_handler_ids:
+            try:
+                emitter.disconnect(handler_id)
+            except Exception:
+                pass
+        self._signal_handler_ids.clear()
 
     def _update_dropdowns(self, *args):
         for item_type in [Country, Group, SentBy, Purpose, SentTo]:

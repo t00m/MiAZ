@@ -210,7 +210,11 @@ class MiAZMassRename(GObject.GObject):
                                    title=self.util.filename_upper(os.path.basename(target))))
             columnview.update(citems)
 
-        def dialog_response(dialog, response, dropdown, item_type, items):
+        def dialog_response(dialog, response, dropdown, item_type, items, cfg_handler_id):
+            try:
+                self.config[item_type.__gtype_name__].disconnect(cfg_handler_id)
+            except Exception:
+                pass
             if response != 'apply':
                 return
             selected = dropdown.get_selected_item()
@@ -250,7 +254,7 @@ class MiAZMassRename(GObject.GObject):
         cv.set_hexpand(True)
         cv.set_vexpand(True)
         dropdown.connect("notify::selected-item", update_columnview, cv, item_type, items)
-        self.config[i_type].connect('used-updated', self.actions.dropdown_repopulate, dropdown, item_type, False)
+        cfg_handler_id = self.config[i_type].connect('used-updated', self.actions.dropdown_repopulate, dropdown, item_type, False)
         self.actions.dropdown_populate(self.config[i_type], dropdown, item_type, any_value=False)
         frame.set_child(cv)
         box.append(label)
@@ -261,7 +265,7 @@ class MiAZMassRename(GObject.GObject):
         box.append(frame)
         window = self.app.get_widget('window')
         dialog = self.srvdlg.show_action(title=_('Mass renaming'), widget=box, width=1024, height=600)
-        dialog.connect('response', dialog_response, dropdown, item_type, items)
+        dialog.connect('response', dialog_response, dropdown, item_type, items, cfg_handler_id)
         dialog.present(window)
 
     def rename_date(self, action, data, item_type):

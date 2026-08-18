@@ -484,7 +484,7 @@ class MiAZConfigPeople(MiAZConfig):
         super().__init__(
             app=app,
             log=MiAZLog('MiAZ.Config.People'),
-            config_for=_('Person'),
+            config_for=_('People'),
             used=os.path.join(dir_conf, 'people-used.json'),
             available=os.path.join(dir_conf, 'people-available.json'),
             default=os.path.join(ENV['GPATH']['CONF'], 'MiAZ-people.json'),

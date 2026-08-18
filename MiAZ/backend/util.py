@@ -399,7 +399,7 @@ class MiAZUtil(GObject.GObject):
         with os.scandir(dirpath) as it:
             return sorted(e.path for e in it if not e.name.startswith('.') and e.is_file())
 
-    def get_files_recursively(self, root_dir: str) -> []:
+    def get_files_recursively(self, root_dir: str) -> set:
         """Get documents from a given directory recursively
         Avoid hidden documents and documents from hidden directories.
         """
@@ -834,6 +834,11 @@ class MiAZUtil(GObject.GObject):
         Unzip file to a given dir
         """
         zip_archive = zipfile.ZipFile(target, "r")
+        for member in zip_archive.namelist():
+            member_path = os.path.realpath(os.path.join(install_dir, member))
+            target_path = os.path.realpath(install_dir)
+            if not member_path.startswith(target_path + os.sep) and member_path != target_path:
+                raise RuntimeError(f"Refusing to extract '{member}' outside target directory")
         zip_archive.extractall(path=install_dir)
         zip_archive.close()
         return zip_archive

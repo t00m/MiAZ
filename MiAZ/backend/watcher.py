@@ -223,7 +223,13 @@ class MiAZWatcher(GObject.GObject):
         if dirpath is not None:
             self.dirpath = dirpath
             self.log.info(f"Watcher monitoring '{self.dirpath}'")
-            if not self.remote:
+            if self.remote:
+                if self._timeout_id > 0:
+                    GLib.source_remove(self._timeout_id)
+                    self._timeout_id = 0
+                seconds = 2
+                self._timeout_id = GLib.timeout_add_seconds(seconds, self.monitor, self.dirpath, self.watch)
+            else:
                 self._setup_file_monitor()
 
     def set_active(self, active: bool = True) -> None:

@@ -104,6 +104,9 @@ class MiAZActions(GObject.GObject):
         self._document_rename_single(item.id)
 
     def _document_rename_single(self, doc):
+        old = self.app.get_widget('rename-widget')
+        if old is not None and hasattr(old, 'dispose'):
+            old.dispose()
         rename_widget = self.app.add_widget('rename-widget', MiAZRenameDialog(self.app))
         rename_widget.set_data(doc)
         window = self.app.get_widget('window')
@@ -276,9 +279,13 @@ class MiAZActions(GObject.GObject):
         """
         self.dropdown_populate(config, dropdown, item_type, any_value, none_value)
 
-    def dropdown_populate(self, config, dropdown, item_type, any_value=True, none_value=False, only_include: list = [], only_exclude: list = []):
+    def dropdown_populate(self, config, dropdown, item_type, any_value=True, none_value=False, only_include=None, only_exclude=None):
         # Called directly, or through dropdown_repopulate from a config signal.
         # From the signal, config is the emitting object; item_type overrides it.
+        if only_include is None:
+            only_include = []
+        if only_exclude is None:
+            only_exclude = []
         i_type = item_type.__gtype_name__
         config_standard = self.app.get_config(i_type)
         if config_standard is not None:

@@ -219,8 +219,9 @@ class MiAZRepository(GObject.GObject):
             if self._conf_cache is None:
                 self._conf_cache = self.setup()
             return self._conf_cache[key]
-        except Exception:
+        except KeyError:
             self.log.warning(f"Repository Configuration Key '{key}' not found")
+            return None
 
     def get_error(self):
         return self._errmsg
