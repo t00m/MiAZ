@@ -170,6 +170,7 @@ class MiAZApp(Adw.Application):
         theme.add_search_path(ENV['GPATH']['ICONS'])
         self.log.debug(f"Add ENV['GPATH']['ICONS'] ({ENV['GPATH']['ICONS']}) to the theme search path")
         theme.add_search_path(ENV['GPATH']['FLAGS'])
+        theme.add_search_path(ENV['GPATH']['ICONS48'])
         self.log.debug(f"Add ENV['GPATH']['FLAGS'] ({ENV['GPATH']['FLAGS']}) to the theme search path")
         theme.add_search_path(ENV['LPATH']['ICONS'])
         self.log.debug(f"Add ENV['LPATH']['ICONS'] ({ENV['LPATH']['ICONS']}) to the theme search path")

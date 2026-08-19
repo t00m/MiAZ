@@ -20,6 +20,7 @@ from MiAZ.backend.log import MiAZLog
 from MiAZ.backend.util import humanize_value, UNKNOWN_DATE
 from MiAZ.backend.models import MiAZItem, Group, Country, Purpose, Concept, SentBy, SentTo
 from MiAZ.frontend.desktop.services.dialogs import MiAZDialogAdd
+from MiAZ.frontend.desktop.services.factory import calendar_select_date
 from MiAZ.frontend.desktop.widgets.configview import MiAZCountries, MiAZGroups, MiAZPurposes, MiAZPeopleSentBy, MiAZPeopleSentTo
 from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewConcept
 from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewSuggestion
@@ -858,8 +859,7 @@ class MiAZRenameDialog(Gtk.Box):
             return self._last_date_valid
         try:
             adate = datetime.strptime(sdate, '%Y%m%d')
-            iso8601 = f"{sdate}T00:00:00Z"
-            self.calendar.select_day(GLib.DateTime.new_from_iso8601(iso8601))
+            calendar_select_date(self.calendar, adate.year, adate.month, adate.day)
             if sdate == UNKNOWN_DATE:
                 # A real date, so nothing downstream needs a special case, but
                 # "Friday, December 31 9999" reads as a date somebody chose.

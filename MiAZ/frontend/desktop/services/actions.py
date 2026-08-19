@@ -492,8 +492,44 @@ class MiAZActions(GObject.GObject):
 
     def exit_app(self, *args):
         self.log.debug('Closing MiAZ')
+        self._close_all_webviews()
         self.app.emit("application-finished")
         self.app.quit()
+
+    def _close_webviews(self, widget):
+        """Stop every WebKit web process under this widget before quitting.
+
+        WebKit runs each view in its own subprocess holding a D-Bus name. Quit
+        without stopping them and the bus connection goes first, so the child
+        complains on the way out:
+
+            Error releasing name ...WebProcess-<uuid>: The connection is closed
+
+        try_close() alone does not prevent it: it asks the page to close, runs
+        beforeunload and returns immediately, so the process is still up when
+        the main loop stops. terminate_web_process() is the one that ends the
+        subprocess there and then. The warning comes from the child, so the
+        parent can never catch it, only avoid causing it.
+        """
+        if widget.__gtype__.name == 'WebKitWebView':
+            for method in ('try_close', 'terminate_web_process'):
+                action = getattr(widget, method, None)
+                if action is None:
+                    continue
+                try:
+                    action()
+                except Exception as error:
+                    self.log.debug(f"WebView {method} failed: {error}")
+        if hasattr(widget, 'get_first_child'):
+            child = widget.get_first_child()
+            while child is not None:
+                nxt = child.get_next_sibling()
+                self._close_webviews(child)
+                child = nxt
+
+    def _close_all_webviews(self):
+        for window in Gtk.Window.get_toplevels():
+            self._close_webviews(window)
 
     def stop_if_no_items(self, widget: Gtk.Widget = None):
         workspace = self.app.get_widget('workspace')
@@ -510,6 +546,7 @@ class MiAZActions(GObject.GObject):
         ENV = self.app.get_env()
         python = sys.executable
         script = ENV['APP']['RUNTIME']['EXEC']
+        self._close_all_webviews()
         self.app.emit('application-finished')
         self.log.info(f"Application restart: {python} {script} {sys.argv[1:]}")
         os.execv(python, [python, script] + sys.argv[1:])

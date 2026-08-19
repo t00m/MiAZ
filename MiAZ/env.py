@@ -74,6 +74,12 @@ def _build_env(app_id, version, pkgdatadir, localedir, profile):
     ENV['GPATH']['DOCS'] = os.path.join(ENV['GPATH']['DATA'], 'docs')
     ENV['GPATH']['ICONS'] = os.path.join(ENV['GPATH']['DATA'], 'icons', 'hicolor', 'scalable')
     ENV['GPATH']['FLAGS'] = os.path.join(ENV['GPATH']['ICONS'], 'flags')
+    # A few icons are raster, which does not belong under 'scalable'. They sit
+    # in the sized directory the icon spec asks for, and it needs its own
+    # search path because these paths point at icon directories, not at a
+    # theme root GTK would walk by itself.
+    ENV['GPATH']['ICONS48'] = os.path.join(
+        ENV['GPATH']['DATA'], 'icons', 'hicolor', '48x48', 'apps')
     ENV['GPATH']['LOCALE'] = os.path.join(ENV['GPATH']['DATA'], 'po')
     ENV['GPATH']['PLUGINS'] = os.path.join(ENV['GPATH']['DATA'], 'plugins')
     ENV['GPATH']['CONF'] = os.path.join(ENV['GPATH']['DATA'], 'conf')

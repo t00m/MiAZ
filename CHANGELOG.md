@@ -8,6 +8,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.60] - 2026-08-19
+
+### Fixed
+
+- Quitting no longer leaves a WebKit warning behind. Each WebKit view runs in its own subprocess holding a D-Bus name, and quitting without stopping them closed the bus connection first, so the child complained on the way out with `Error releasing name ...WebProcess-<uuid>: The connection is closed`. Every view under every window is now stopped before the main loop ends. `try_close()` alone is not enough: it asks the page to close and returns immediately, so the process is still running when the loop stops; `terminate_web_process()` is what actually ends it. The warning is printed by the child process, so the parent can never catch it, only avoid causing it.
+- `Gtk.Calendar.select_day()` is deprecated since GTK 4.10 and warned on every keystroke in the rename date field, since validating a date moves the calendar. Both callers use the current setters through one `calendar_select_date()` helper, which also isolates the trap that `set_month()` counts from 0 while every other date API here counts from 1.
+- Three raster icons sat in the `scalable` icon directory, which is what both the deb and the rpm policy checks complained about. `res-projects.png` was referenced nowhere and is gone; the other two moved to `48x48/apps`, where a 48-pixel PNG belongs, with that directory added to the icon search path.
+
 ### Added
 
 - A command line that runs without a display: `miaz search` finds documents in any repository and `miaz repos` lists the repositories it can search. Results are one filename per line so they pipe into `xargs` and `grep`, `--long` prints a table with the expanded labels, and `--json` prints flat records (`jq -r '.[].concept'` works without digging). Filters map one to one onto `DocumentQuery`, the same object the workspace filter uses, so the two cannot drift apart: the command line contains no search logic of its own, and a test asserts that a query built from flags equals one built by hand. Exit codes are 0 results, 1 no results (so `if miaz search x; then` behaves like `grep`), 2 wrong arguments, 3 repository problem. An empty result on a repository whose documents all fail validation says so on stderr instead of printing nothing, since the workspace hides those documents too. Bare `miaz` still opens the window, and `--version` is unchanged.

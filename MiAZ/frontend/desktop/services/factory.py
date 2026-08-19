@@ -47,6 +47,19 @@ class MiAZBox(Gtk.Box):
             func(child)
 
 
+def calendar_select_date(calendar, year: int, month: int, day: int) -> None:
+    """Move a Gtk.Calendar to a date, without the deprecated select_day().
+
+    Gtk.Calendar.select_day() takes a GLib.DateTime and is deprecated since GTK
+    4.10, so it warns on every keystroke in the rename date field. The setters
+    that replace it count months from 0, while every other date API in this
+    project counts from 1, so the conversion lives here and nowhere else.
+    """
+    calendar.set_year(year)
+    calendar.set_month(month - 1)
+    calendar.set_day(day)
+
+
 class MiAZFactory:
     def __init__(self, app):
         self.app = app

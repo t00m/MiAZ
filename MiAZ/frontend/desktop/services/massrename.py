@@ -9,7 +9,6 @@ from datetime import datetime
 from gettext import gettext as _
 
 from gi.repository import Gio
-from gi.repository import GLib
 from gi.repository import GObject
 from gi.repository import Gtk
 
@@ -21,6 +20,7 @@ from MiAZ.frontend.desktop.widgets.configview import MiAZGroups
 from MiAZ.frontend.desktop.widgets.configview import MiAZPurposes
 from MiAZ.frontend.desktop.widgets.configview import MiAZPeopleSentBy
 from MiAZ.frontend.desktop.widgets.configview import MiAZPeopleSentTo
+from MiAZ.frontend.desktop.services.factory import calendar_select_date
 from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewMassRename
 
 # Field index in the 7-field filename convention
@@ -357,9 +357,8 @@ class MiAZMassRename(GObject.GObject):
         box.append(chk_detect)
         box.append(hbox)
         box.append(frame)
-        sdate = datetime.strftime(datetime.now(), '%Y%m%d')
-        iso8601 = f"{sdate}T00:00:00Z"
-        calendar.select_day(GLib.DateTime.new_from_iso8601(iso8601))
+        today = datetime.now()
+        calendar_select_date(calendar, today.year, today.month, today.day)
         calendar.connect('day-selected', refresh_preview)
 
         def on_toggle(*_a):
