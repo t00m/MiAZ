@@ -80,3 +80,80 @@ def test_pending_cleared_after_flush():
     w._pending = {'/repo/doc.pdf': ('', 'created')}
     w._flush_changes()
     assert w._pending == {}
+
+
+def test_a_remote_watcher_schedules_exactly_one_poll(monkeypatch):
+    """A remote repository has no Gio.FileMonitor, so it is polled instead.
+
+    __init__ used to call set_path(), which schedules the poll, and then
+    schedule a second one itself, overwriting _timeout_id with the new source.
+    The first source kept running with its id lost, so nothing could ever stop
+    it: the repository was polled at twice the intended rate and every watcher
+    built leaked one source.
+    """
+    import MiAZ.backend.watcher as watcher_module
+
+    scheduled = []
+    real_add = watcher_module.GLib.timeout_add_seconds
+
+    def spy_add(seconds, callback, *args):
+        source_id = real_add(seconds, callback, *args)
+        scheduled.append(source_id)
+        return source_id
+
+    removed = []
+    real_remove = watcher_module.GLib.source_remove
+
+    def spy_remove(source_id):
+        removed.append(source_id)
+        return real_remove(source_id)
+
+    monkeypatch.setattr(watcher_module.GLib, 'timeout_add_seconds', spy_add)
+    monkeypatch.setattr(watcher_module.GLib, 'source_remove', spy_remove)
+
+    w = MiAZWatcher(dirpath='/tmp', remote=True)
+    try:
+        assert len(scheduled) == 1, f'{len(scheduled)} polls scheduled, expected 1'
+        # Whatever is running has to be the source the watcher can still name.
+        orphans = [s for s in scheduled if s not in removed and s != w._timeout_id]
+        assert orphans == [], f'poll sources running with their id lost: {orphans}'
+    finally:
+        if w._timeout_id > 0:
+            real_remove(w._timeout_id)
+
+
+def test_setting_a_new_path_replaces_the_remote_poll(monkeypatch):
+    """Pointing a remote watcher somewhere else must not leave the old poll
+    running alongside the new one."""
+    import MiAZ.backend.watcher as watcher_module
+
+    scheduled = []
+    real_add = watcher_module.GLib.timeout_add_seconds
+    monkeypatch.setattr(
+        watcher_module.GLib, 'timeout_add_seconds',
+        lambda s, cb, *a: scheduled.append(real_add(s, cb, *a)) or scheduled[-1])
+
+    w = MiAZWatcher(dirpath='/tmp', remote=True)
+    try:
+        w.set_path('/var/tmp')
+        assert len(scheduled) == 2
+        # The first source must be gone, only the second still armed.
+        assert w._timeout_id == scheduled[-1]
+        assert watcher_module.GLib.main_context_default().find_source_by_id(scheduled[0]) is None
+    finally:
+        if w._timeout_id > 0:
+            watcher_module.GLib.source_remove(w._timeout_id)
+
+
+def test_a_local_watcher_schedules_no_poll(monkeypatch):
+    """A local repository uses a Gio.FileMonitor and must never poll."""
+    import MiAZ.backend.watcher as watcher_module
+
+    scheduled = []
+    real_add = watcher_module.GLib.timeout_add_seconds
+    monkeypatch.setattr(
+        watcher_module.GLib, 'timeout_add_seconds',
+        lambda s, cb, *a: scheduled.append(real_add(s, cb, *a)) or scheduled[-1])
+
+    MiAZWatcher(dirpath='/tmp', remote=False)
+    assert scheduled == []

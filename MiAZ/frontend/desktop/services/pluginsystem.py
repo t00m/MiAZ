@@ -707,10 +707,12 @@ class MiAZPluginSystem(GObject.GObject):
         self.widgets = PluginWidgetRegistry()
         self.menus = PluginMenuRegistry()
         self._setup_plugins_dir()
-        self.create_plugin_index()
+        self._plugin_list = []
+        self.scan_plugin_index()
         self.log.info("Plugin system initialited")
         srvrepo = self.app.get_service('repo')
-        srvrepo.connect('repository-switched', self.create_plugin_index)
+        # Only the per-repository half. What is on disk has not changed.
+        srvrepo.connect('repository-switched', self._on_repository_switched)
 
     def import_plugin(self, plugin_path):
         """
@@ -733,19 +735,21 @@ class MiAZPluginSystem(GObject.GObject):
                     └── noprint.css
         """
         utils = self.app.get_service('util')
-        valid = False
-        azip = zipfile.ZipFile(plugin_path)
         plugin_name, plugin_ext = utils.filename_details(plugin_path)
         plugin_code = f"{plugin_name}.py"
         plugin_meta = f"{plugin_name}.plugin"
-        plugin_code_exist = plugin_code in azip.namelist()
-        plugin_meta_exist = plugin_meta in azip.namelist()
-        if plugin_code_exist and plugin_meta_exist:
-             valid = True
+        # Read the listing under 'with': an archive that fails validation used
+        # to be left open.
+        with zipfile.ZipFile(plugin_path) as azip:
+            names = azip.namelist()
+        valid = plugin_code in names and plugin_meta in names
 
         if valid:
             ENV = self.app.get_env()
-            azip.extractall(ENV['LPATH']['PLUGINS'])
+            # Through util.unzip, not extractall: that is where the "stay
+            # inside the target directory" check lives, and this is the same
+            # untrusted archive the plugin settings import handles.
+            utils.unzip(plugin_path, ENV['LPATH']['PLUGINS'])
             self.engine.rescan_plugins()
             config = self.app.get_config('Plugin')
             config.add_available(key=plugin_name)
@@ -1086,8 +1090,30 @@ class MiAZPluginSystem(GObject.GObject):
                     plugin_info[key.strip()] = _(value.strip())
         return plugin_info
 
+    def _on_repository_switched(self, *_args):
+        # Not update_available_plugins directly: the signal hands the emitter
+        # to its handler, which would arrive as the plugin list.
+        self.update_available_plugins()
+
     def create_plugin_index(self, *args):
-        """Scan both bundled and user plugin directories and write a unified index."""
+        """Scan both plugin directories, write the index, update the repository.
+
+        Kept as one entry point for callers that really did change what is on
+        disk, such as importing a plugin from a ZIP.
+        """
+        plugin_list = self.scan_plugin_index()
+        self.update_available_plugins(plugin_list)
+        return plugin_list
+
+    def scan_plugin_index(self, *args):
+        """Scan both plugin directories and write index-plugins.json.
+
+        What is on disk does not depend on which repository is open, so this
+        runs once at startup and again only when a plugin is added or removed.
+        It used to be bolted onto the per-repository update below, which meant
+        a full rescan, 19 Python modules parsed with ast, on every repository
+        switch, and one wasted scan at startup whose result was thrown away.
+        """
         self.log.info("Creating plugin index during runtime")
         self._load_failures = {}
         plugin_index = {}
@@ -1107,15 +1133,27 @@ class MiAZPluginSystem(GObject.GObject):
         with open(ENV['APP']['PLUGINS']['INDEX'], 'w', encoding='utf-8') as fp:
             json.dump(plugin_index, fp, sort_keys=False, indent=4)
             self.log.info(f"File index-plugins.json generated with {len(plugin_index)} plugins")
+        self._plugin_list = plugin_list
+        return plugin_list
 
-        try:
-            config = self.app.get_config_dict()
-            repo_id = config['App'].get('current')
-            config_plugins = self.app.get_config('Plugin')
-            config_plugins.add_available_batch(plugin_list)
-            old_keys = set(config_plugins.load_available().keys()) - {p[0] for p in plugin_list}
-            for key in old_keys:
-                config_plugins.remove_available(key)
-            self.log.info(f"Plugins available updated successfully for repository {repo_id}")
-        except AttributeError:
-            self.log.warning("Skip. Plugin config not ready yet")
+    def update_available_plugins(self, plugin_list=None, *args):
+        """Write the scanned plugins into the open repository's available set.
+
+        This is the half that needs a repository, so it is what a repository
+        switch runs. Before a repository is open there is no plugin config to
+        write to, which is not a problem worth a warning: the switch that
+        follows does the work.
+        """
+        if plugin_list is None:
+            plugin_list = getattr(self, '_plugin_list', None) or self.scan_plugin_index()
+        config_plugins = self.app.get_config('Plugin')
+        if config_plugins is None:
+            self.log.debug("No repository open yet, available plugins not written")
+            return
+        config = self.app.get_config_dict()
+        repo_id = config['App'].get('current')
+        config_plugins.add_available_batch(plugin_list)
+        old_keys = set(config_plugins.load_available().keys()) - {p[0] for p in plugin_list}
+        for key in old_keys:
+            config_plugins.remove_available(key)
+        self.log.info(f"Plugins available updated successfully for repository {repo_id}")

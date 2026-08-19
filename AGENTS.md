@@ -488,6 +488,18 @@ Measured on a 1257-document repository: 1094 dates from metadata, 19 from the na
 
 Both rename paths use it. The single rename (`widgets/rename.py`) prefills the date in `set_data` when field 0 is empty, and the date row carries a **detect button** (`btnDetectDate`, `_on_detect_date`) that reads it again on demand from the *current* concept entry text, so it also works for a document already filed under a wrong date. The mass rename Date dialog reads per file when its checkbox is ticked and reports how many dates it really read.
 
+### Plugin index
+
+`scan_plugin_index()` reads both plugin directories and writes `index-plugins.json`. `update_available_plugins()` writes the scanned set into the open repository's available plugins. They are separate because only the second one needs a repository: the constructor scans once, `repository-switched` updates only, and `create_plugin_index()` still does both for the one caller that really changed what is on disk (importing a plugin ZIP). Do not put them back together; that is what made the constructor scan, fail on the repository half, warn, and then have the first switch redo the whole thing.
+
+### Archive extraction
+
+`util.check_zip_members(names, install_dir)` is the one place that decides whether an archive may be unpacked. It raises `RuntimeError` for any member that would land outside `install_dir`. It is a **module-level** function, not a method, so callers without the app object can reach it: `MiAZNotes/lib/dr.py` builds its own `ZipFile` and has no service registry.
+
+Three callers, and there must not be a fourth that skips it: `util.unzip` (which every `util.unzip` caller inherits), `pluginsystem.install_plugin` (goes through `util.unzip`, **not** `extractall`), and the `MiAZNotes` restore.
+
+Note what this check is and is not. CPython's `zipfile` already strips `..` and leading separators, so a member named `../evil` is quietly rewritten to sit inside the target rather than escaping: nothing gets out today. The check exists so that case is refused out loud instead of silently relocating a file, and so the guard is already in place if extraction ever moves to `tarfile`, which sanitises nothing. Do not describe it as fixing a live traversal escape.
+
 ### First-run repository assistant (`widgets/assistant.py`)
 
 `MiAZRepoAssistant(Adw.Window)` is a guided wizard shown when **no repository is configured** (triggered from `MiAZWorkflow._maybe_launch_assistant`; also reachable via `actions.show_repository_assistant`). Pages: welcome, create-repository (free-text name → derived key via `util.valid_key`, location), one page per filing property (Countries/Groups/Purposes/Senders/Recipients embedding the config selectors), and a summary. It initialises the repo before building the selector pages and runs the normal workspace load through `MiAZWorkflow.switch_start` on finish.

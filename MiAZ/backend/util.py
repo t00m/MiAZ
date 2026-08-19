@@ -161,6 +161,25 @@ def _as_unambiguous_date(first: int, second: int, year: int) -> str:
     return day_first or month_first
 
 
+def check_zip_members(names, install_dir: str) -> None:
+    """Raise RuntimeError if any member would be written outside install_dir.
+
+    CPython's zipfile already strips '..' and leading separators, so a member
+    named '../evil' is quietly rewritten to sit inside the target rather than
+    escaping. Nothing is written outside either way, but the file lands
+    somewhere the archive did not ask for and nobody is told. Refusing says so.
+
+    It is also the check that has to exist if extraction ever moves to tarfile,
+    which does not sanitise anything and really does escape.
+    """
+    target_path = os.path.realpath(install_dir)
+    for member in names:
+        member_path = os.path.realpath(os.path.join(install_dir, member))
+        if member_path != target_path and not member_path.startswith(target_path + os.sep):
+            raise RuntimeError(
+                f"Refusing to extract '{member}' outside target directory")
+
+
 def humanize_value(gtype_name: str, description: str) -> str:
     """Return the localized display label for a controlled-vocabulary value.
 
@@ -830,17 +849,14 @@ class MiAZUtil(GObject.GObject):
                                              now.hour, now.minute, now.second)
 
     def unzip(self, target: str, install_dir) -> zipfile.ZipFile:
+        """Extract an archive into install_dir, refusing anything that would
+        land outside it. See check_zip_members for why.
+
+        Returns the (closed) ZipFile, because callers read namelist() off it.
         """
-        Unzip file to a given dir
-        """
-        zip_archive = zipfile.ZipFile(target, "r")
-        for member in zip_archive.namelist():
-            member_path = os.path.realpath(os.path.join(install_dir, member))
-            target_path = os.path.realpath(install_dir)
-            if not member_path.startswith(target_path + os.sep) and member_path != target_path:
-                raise RuntimeError(f"Refusing to extract '{member}' outside target directory")
-        zip_archive.extractall(path=install_dir)
-        zip_archive.close()
+        with zipfile.ZipFile(target, "r") as zip_archive:
+            check_zip_members(zip_archive.namelist(), install_dir)
+            zip_archive.extractall(path=install_dir)
         return zip_archive
 
     def zip_list(self, filepath: str) -> []:

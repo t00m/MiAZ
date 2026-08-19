@@ -654,3 +654,81 @@ def test_filename_get_modification_date_reads_the_mtime(util, tmp_path):
     os.utime(doc, MTIME_2023)
     assert util.filename_get_modification_date(str(doc)).strftime('%Y%m%d') == '20231114'
     assert not hasattr(util, 'filename_get_creation_date')
+
+
+# Archive extraction must stay inside the target directory
+
+def make_zip(tmp_path, members, name='archive.zip'):
+    path = tmp_path / name
+    with zipfile.ZipFile(path, 'w') as archive:
+        for member, payload in members.items():
+            archive.writestr(member, payload)
+    return str(path)
+
+
+@pytest.mark.parametrize('member', [
+    '../escaped.txt',
+    '../../escaped.txt',
+    'inner/../../escaped.txt',
+    '/tmp/miaz-absolute-escape.txt',
+])
+def test_unzip_refuses_a_member_outside_the_target(util, tmp_path, member):
+    """CPython's zipfile quietly rewrites such a member to sit inside the
+    target, so nothing escapes, but the file still lands somewhere the archive
+    did not ask for. Refusing is honest, and it is the behaviour to keep if
+    extraction ever moves to tarfile, which really does escape."""
+    dest = tmp_path / 'dest'
+    dest.mkdir()
+    archive = make_zip(tmp_path, {member: 'payload'})
+    with pytest.raises(RuntimeError):
+        util.unzip(archive, str(dest))
+
+
+def test_unzip_extracts_an_ordinary_archive(util, tmp_path):
+    dest = tmp_path / 'dest'
+    dest.mkdir()
+    archive = make_zip(tmp_path, {'plugin/code.py': 'x', 'plugin/meta.plugin': 'y'})
+    util.unzip(archive, str(dest))
+    assert (dest / 'plugin' / 'code.py').read_text() == 'x'
+    assert (dest / 'plugin' / 'meta.plugin').read_text() == 'y'
+
+
+def test_unzip_writes_nothing_when_it_refuses(util, tmp_path):
+    """The check runs over the whole namelist before extracting, so one bad
+    member rejects the archive instead of leaving it half unpacked."""
+    dest = tmp_path / 'dest'
+    dest.mkdir()
+    archive = make_zip(tmp_path, {'good.txt': 'x', '../escaped.txt': 'y'})
+    with pytest.raises(RuntimeError):
+        util.unzip(archive, str(dest))
+    assert list(dest.iterdir()) == []
+
+
+def test_unzip_closes_the_archive_when_it_refuses(util, tmp_path):
+    dest = tmp_path / 'dest'
+    dest.mkdir()
+    archive = make_zip(tmp_path, {'../escaped.txt': 'y'})
+    opened = []
+    real_zipfile = zipfile.ZipFile
+
+    class Recording(real_zipfile):
+        def __init__(self, *args, **kwargs):
+            super().__init__(*args, **kwargs)
+            opened.append(self)
+
+    zipfile.ZipFile = Recording
+    try:
+        with pytest.raises(RuntimeError):
+            util.unzip(archive, str(dest))
+    finally:
+        zipfile.ZipFile = real_zipfile
+    assert opened and all(z.fp is None for z in opened), 'archive left open'
+
+
+def test_zip_members_are_safe_reports_the_offender(util, tmp_path):
+    dest = tmp_path / 'dest'
+    dest.mkdir()
+    archive = make_zip(tmp_path, {'../escaped.txt': 'y'})
+    with pytest.raises(RuntimeError) as excinfo:
+        util.unzip(archive, str(dest))
+    assert '../escaped.txt' in str(excinfo.value)
