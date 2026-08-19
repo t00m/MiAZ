@@ -79,6 +79,17 @@ newest() { ls -t "$PKG_DIR"/$1 2>/dev/null | grep -Ev "${2:-^$}" | head -1; }
 
 [[ -n "$RPM_FILE$DEB_FILE" ]] || die "No .rpm or .deb found in $PKG_DIR"
 
+# Absolute from here on. A relative path is handed to 'podman -v' further down,
+# where it is read as a named volume rather than a directory, so /pkg is mounted
+# empty: lintian sees no package and apt reports the file as unsupported. The
+# rpm payload extraction fails the same way once the script is not in the
+# directory the caller was in.
+abspath() { [[ -z "$1" ]] && return 0; readlink -f -- "$1"; }
+RPM_FILE="$(abspath "$RPM_FILE")"
+DEB_FILE="$(abspath "$DEB_FILE")"
+[[ -n "$RPM_FILE" && ! -f "$RPM_FILE" ]] && die "Not a file: $RPM_FILE"
+[[ -n "$DEB_FILE" && ! -f "$DEB_FILE" ]] && die "Not a file: $DEB_FILE"
+
 WORK="$(mktemp -d)"
 trap 'rm -rf "$WORK"' EXIT
 
@@ -338,10 +349,22 @@ check_deb() {
              lintian --tag-display-limit 0 /pkg/$(basename "$DEB_FILE") 2>&1" \
             | grep -E '^[EWI]: ')
     else
-        skip "lintian (not installed, no container engine)"
+        lintian_out="__skipped__"
+        if [[ $USE_CONTAINER -eq 0 ]]; then
+            skip "lintian (--no-container; run without it to include lintian)"
+        else
+            skip "lintian (not installed, and no podman or docker to run it in)"
+        fi
     fi
 
-    if [[ -n "$lintian_out" ]]; then
+    if [[ "$lintian_out" == "__skipped__" ]]; then
+        :
+    elif [[ -z "$lintian_out" ]]; then
+        # lintian always says something about a package it read. Silence means
+        # it never ran, and reporting nothing at all would let a release gate
+        # pass a check it did not perform.
+        fail "lintian produced no output, so it did not inspect the package"
+    else
         local errors warnings
         errors=$(echo "$lintian_out" | grep -c '^E: ')
         warnings=$(echo "$lintian_out" | grep -c '^W: ')
@@ -407,7 +430,11 @@ check_resolution() {
     section "dependency resolution"
 
     if [[ -z "$CONTAINER" ]]; then
-        skip "no container engine (podman or docker) available"
+        if [[ $USE_CONTAINER -eq 0 ]]; then
+            skip "dependency resolution (--no-container; run without it to include this)"
+        else
+            skip "dependency resolution (no podman or docker available)"
+        fi
         return
     fi
 

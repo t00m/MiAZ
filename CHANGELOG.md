@@ -8,6 +8,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- The package verifier could report success for a check it had not run. `lintian` writes something about any package it reads, so silence means it never inspected one, but the verifier only printed a result when the output was non-empty: an empty run produced no PASS, no FAIL and no SKIP, and the summary still said everything passed. Empty output is now a failure.
+- The package verifier only worked when given an absolute directory. A relative one reached `podman -v`, which reads a relative source as a named volume and mounts an empty directory, so lintian saw no package and apt called the file unsupported; the rpm payload extraction failed the same way. Paths are resolved on entry, and a package path that is not a file is reported instead of being carried into a container. `scripts/checks/verify_packages.sh dist` now gives the same answer as the absolute form.
+- A skipped container check says which of the two reasons applied. `--no-container`, which `build_all.sh` passes deliberately to keep the build short, reported "no container engine available" on hosts that had one, which reads like a broken machine rather than a deliberate choice.
+
 ## [0.1.60] - 2026-08-19
 
 ### Added

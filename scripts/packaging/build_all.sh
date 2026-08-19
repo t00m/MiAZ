@@ -278,9 +278,13 @@ if [[ ${#FAILED[@]} -gt 0 ]]; then
 fi
 
 # ── Verification ──────────────────────────────────────────────────────────────
-# Built is not the same as correct. --no-container keeps this to a few seconds;
-# run scripts/checks/verify_packages.sh by hand before a release to add lintian
-# and the dependency resolution against Debian and Ubuntu.
+# Built is not the same as correct. --no-container keeps this to a few seconds.
+# Before a release run the full set, which adds lintian and the dependency
+# resolution against real Debian and Ubuntu archives, in a container:
+#
+#     scripts/checks/verify_packages.sh "$PWD/dist"
+#
+# Neither lintian nor a Debian archive has to be installed on the build host.
 log ""
 log "Verifying packages ..."
 "$REPO_ROOT/scripts/checks/verify_packages.sh" --no-container "$DIST_DIR" \
