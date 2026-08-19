@@ -69,12 +69,35 @@
   <releases>
     <release version="0.1.60" date="2026-08-19" urgency="medium">
       <description>
-        <p>See CHANGELOG.md for details.</p>
+        <p>A command line that works without a display, repository switching without a restart, and dates read from the document instead of guessed.</p>
+        <ul>
+          <li>New command line: miaz search finds documents in any repository and miaz repos lists them, so searching works over SSH and in scripts</li>
+          <li>Switch repository without restarting the application, and choose separately whether it becomes the default</li>
+          <li>The filing date is read from the document itself: PDF creation date, XMP, image EXIF and Office metadata, with no extra libraries needed</li>
+          <li>A date that cannot be read is filed as 99991231 and sorts to the end, instead of being silently filed under today</li>
+          <li>Ambiguous dates such as 03/04/2024 are refused rather than guessed, and document metadata is trusted over digits in a filename</li>
+          <li>The rename dialog has a button to read the date again on demand</li>
+          <li>Plugins unload completely and start clean, which fixes a crash on right click after disabling a plugin</li>
+          <li>The projects file can no longer be emptied when the app and the workspace disagree about which repository is open</li>
+          <li>Faster, quieter startup: the plugin directories are scanned once instead of twice, and the browser page no longer reloads once per plugin</li>
+          <li>First automated interface test suite, plus a manual checklist used as the release gate</li>
+        </ul>
       </description>
     </release>
-    <release version="0.1.50" date="2026-08-06" urgency="medium">
+    <release version="0.1.50" date="2026-08-12" urgency="medium">
       <description>
-        <p>See CHANGELOG.md for details.</p>
+        <p>Groundwork release: the workspace filter, the document index and the configuration each became a thing of their own, and both packages are now verified before release.</p>
+        <ul>
+          <li>The document parse moved into a new index, so it exists once instead of twice and can be tested without a display</li>
+          <li>The workspace filter became a value that can be saved, restored and compared, which is what saved searches will need</li>
+          <li>Each repository owns its configuration, so switching no longer reads settings left behind by the previous one</li>
+          <li>Background work runs through one helper that reports its failures, instead of eight hand-rolled threads that swallowed them</li>
+          <li>A failed background operation no longer freezes the workspace for the rest of the session</li>
+          <li>Plugins can contribute sidebar and header bar widgets through helpers that clean up after themselves on unload</li>
+          <li>The rename dialog refuses to apply a name that is not valid, and gained a Manage projects button</li>
+          <li>The .deb and the .rpm are built from one export of one commit and checked against distribution policy before release</li>
+          <li>Fixed the "Since last year" date filter, which covered the wrong period</li>
+        </ul>
       </description>
     </release>
     <release version="0.1.40" date="2026-08-05" urgency="medium">
