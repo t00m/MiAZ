@@ -9,17 +9,18 @@ from datetime import datetime
 from gettext import gettext as _
 
 from gi.repository import Gio
-from gi.repository import GLib
 from gi.repository import GObject
 from gi.repository import Gtk
 
 from MiAZ.backend.log import MiAZLog
 from MiAZ.backend.models import File, Group, Country, Purpose, SentBy, SentTo, Date, Concept
+from MiAZ.backend.util import UNKNOWN_DATE
 from MiAZ.frontend.desktop.widgets.configview import MiAZCountries
 from MiAZ.frontend.desktop.widgets.configview import MiAZGroups
 from MiAZ.frontend.desktop.widgets.configview import MiAZPurposes
 from MiAZ.frontend.desktop.widgets.configview import MiAZPeopleSentBy
 from MiAZ.frontend.desktop.widgets.configview import MiAZPeopleSentTo
+from MiAZ.frontend.desktop.services.factory import calendar_select_date
 from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewMassRename
 
 # Field index in the 7-field filename convention
@@ -209,7 +210,11 @@ class MiAZMassRename(GObject.GObject):
                                    title=self.util.filename_upper(os.path.basename(target))))
             columnview.update(citems)
 
-        def dialog_response(dialog, response, dropdown, item_type, items):
+        def dialog_response(dialog, response, dropdown, item_type, items, cfg_handler_id):
+            try:
+                self.config[item_type.__gtype_name__].disconnect(cfg_handler_id)
+            except Exception:
+                pass
             if response != 'apply':
                 return
             selected = dropdown.get_selected_item()
@@ -243,13 +248,13 @@ class MiAZMassRename(GObject.GObject):
         icon_name = f'io.github.t00m.MiAZ-res-{i_title_plural.lower()}'
         btnManage = self.factory.create_button(icon_name=icon_name, title='')
         btnManage.connect('clicked', self.actions.manage_resource,
-                          Configview[i_type](self.app))
+                          Configview[i_type])
         frame = Gtk.Frame()
         cv = MiAZColumnViewMassRename(self.app)
         cv.set_hexpand(True)
         cv.set_vexpand(True)
         dropdown.connect("notify::selected-item", update_columnview, cv, item_type, items)
-        self.config[i_type].connect('used-updated', self.actions.dropdown_repopulate, dropdown, item_type, False)
+        cfg_handler_id = self.config[i_type].connect('used-updated', self.actions.dropdown_repopulate, dropdown, item_type, False)
         self.actions.dropdown_populate(self.config[i_type], dropdown, item_type, any_value=False)
         frame.set_child(cv)
         box.append(label)
@@ -260,7 +265,7 @@ class MiAZMassRename(GObject.GObject):
         box.append(frame)
         window = self.app.get_widget('window')
         dialog = self.srvdlg.show_action(title=_('Mass renaming'), widget=box, width=1024, height=600)
-        dialog.connect('response', dialog_response, dropdown, item_type, items)
+        dialog.connect('response', dialog_response, dropdown, item_type, items, cfg_handler_id)
         dialog.present(window)
 
     def rename_date(self, action, data, item_type):
@@ -295,18 +300,26 @@ class MiAZMassRename(GObject.GObject):
 
         def refresh_preview(*_a):
             sdate = current_sdate()
-            if chk_detect.get_active():
-                label.set_text(_('Date detected from each file'))
-            else:
-                label.set_text(datetime.strptime(sdate, '%Y%m%d').strftime('%A, %B %d %Y'))
             citems = []
+            read = 0
             for item in items:
                 source = os.path.basename(item.id)
                 name, ext = self.util.filename_details(source)
                 lname = name.split('-')
                 lname[0] = date_for(item, sdate)
+                if lname[0] != UNKNOWN_DATE:
+                    read += 1
                 target = f"{'-'.join(lname)}.{ext}"
                 citems.append(File(id=source, title=self.util.filename_upper(target)))
+            if chk_detect.get_active():
+                # Say how many dates were really read. The count is what tells a
+                # working detection from one that found nothing and wrote the
+                # unknown date everywhere.
+                label.set_text(
+                    _('Date read from {read} of {total} files, the rest set to {unknown}')
+                    .format(read=read, total=len(items), unknown=UNKNOWN_DATE))
+            else:
+                label.set_text(datetime.strptime(sdate, '%Y%m%d').strftime('%A, %B %d %Y'))
             cv.update(citems)
 
         def dialog_response_date(dialog, response):
@@ -344,9 +357,8 @@ class MiAZMassRename(GObject.GObject):
         box.append(chk_detect)
         box.append(hbox)
         box.append(frame)
-        sdate = datetime.strftime(datetime.now(), '%Y%m%d')
-        iso8601 = f"{sdate}T00:00:00Z"
-        calendar.select_day(GLib.DateTime.new_from_iso8601(iso8601))
+        today = datetime.now()
+        calendar_select_date(calendar, today.year, today.month, today.day)
         calendar.connect('day-selected', refresh_preview)
 
         def on_toggle(*_a):

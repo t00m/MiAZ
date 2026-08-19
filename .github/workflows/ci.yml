@@ -51,6 +51,16 @@ jobs:
           GDK_BACKEND: headless
         run: .venv/bin/python -m pytest tests/ -v --cov=MiAZ --cov-report=term-missing
 
+      - name: Run the UI tests
+        # These start the real application against a throwaway repository, so
+        # they need a display and the plugin loader. Xvfb provides the first;
+        # the runner sandboxes HOME so nothing here touches a real one.
+        run: |
+          sudo apt-get install -y xvfb libpeas-2-0 gir1.2-secret-1
+          PYTEST=.venv/bin/python \
+            xvfb-run -a --server-args="-screen 0 1280x1024x24" \
+            scripts/checks/run_ui_tests.sh -q
+
       - name: Validate AppStream metainfo
         run: appstream-util validate --nonet data/io.github.t00m.MiAZ.metainfo.xml.in
 

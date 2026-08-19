@@ -104,6 +104,9 @@ class MiAZActions(GObject.GObject):
         self._document_rename_single(item.id)
 
     def _document_rename_single(self, doc):
+        old = self.app.get_widget('rename-widget')
+        if old is not None and hasattr(old, 'dispose'):
+            old.dispose()
         rename_widget = self.app.add_widget('rename-widget', MiAZRenameDialog(self.app))
         rename_widget.set_data(doc)
         window = self.app.get_widget('window')
@@ -276,9 +279,13 @@ class MiAZActions(GObject.GObject):
         """
         self.dropdown_populate(config, dropdown, item_type, any_value, none_value)
 
-    def dropdown_populate(self, config, dropdown, item_type, any_value=True, none_value=False, only_include: list = [], only_exclude: list = []):
+    def dropdown_populate(self, config, dropdown, item_type, any_value=True, none_value=False, only_include=None, only_exclude=None):
         # Called directly, or through dropdown_repopulate from a config signal.
         # From the signal, config is the emitting object; item_type overrides it.
+        if only_include is None:
+            only_include = []
+        if only_exclude is None:
+            only_exclude = []
         i_type = item_type.__gtype_name__
         config_standard = self.app.get_config(i_type)
         if config_standard is not None:
@@ -332,9 +339,23 @@ class MiAZActions(GObject.GObject):
         model = model_sort.get_model()
         model.splice(0, model.get_n_items(), new_items)
 
-    def manage_resource(self, widget: Gtk.Widget, selector: Gtk.Widget):
+    def manage_resource(self, widget: Gtk.Widget, view):
+        """Open a management view for one vocabulary.
+
+        `view` is normally the class. It used to be an instance, built once
+        when the button was connected and packed into a new dialog on every
+        click: the first dialog took ownership of it, so the second one showed
+        an empty box until the whole rename dialog was closed and rebuilt.
+        Building it here means every click gets a live view. An instance is
+        still accepted, and taken back from its previous dialog first, so a
+        plugin passing one keeps working.
+        """
         factory = self.app.get_service('factory')
         parent = widget.get_root() # wonderful
+
+        selector = view(self.app) if isinstance(view, type) else view
+        if selector.get_parent() is not None:
+            selector.unparent()
 
         box = factory.create_box_vertical(spacing=0, vexpand=True, hexpand=True)
         box.append(selector)
@@ -349,7 +370,9 @@ class MiAZActions(GObject.GObject):
         dialog = MiAZWindowDialog(self.app, title=title, widget=box,
                                   width=800, height=600)
         dialog.set_show_close_button(True)
+        self.app.add_widget('dialog-manage-resource', dialog)
         dialog.present(parent)
+        return dialog
 
     def show_app_settings(self, *args):
         window = self.app.get_widget('window')
@@ -361,8 +384,7 @@ class MiAZActions(GObject.GObject):
     def show_repository_settings(self, *args):
         try:
             # Continue if a default repository exists
-            appconf = self.app.get_config('App')
-            repo_id = appconf.get('current').replace('_', ' ')
+            repo_id = self.app.get_service('repo').get_active_id().replace('_', ' ')
             window_main = self.app.get_widget('window')
             window_repoconfig = MiAZRepoSettings(self.app)
             window_repoconfig.set_transient_for(window_main)
@@ -419,8 +441,6 @@ class MiAZActions(GObject.GObject):
         about.set_copyright(f"© 2019-2025 {ENV['APP']['author']}")
         about.set_website('https://github.com/t00m/MiAZ')
         about.set_comments(ENV['APP']['description'])
-        # ~ README = open(ENV['FILE']['README'], 'r').read()
-        # ~ about.set_comments(README)
         about.present(window)
 
     def show_app_shortcuts(self, *args):
@@ -438,7 +458,7 @@ class MiAZActions(GObject.GObject):
             (_('Keyboard shortcuts'), '<Control>question'),
             (_('About MiAZ'), '<Control>b'),
             (_('Quit'), '<Control>q'),
-            (_('Help'), 'F1'),
+            (_('Help (this window)'), 'F1'),
         ):
             app_section.add(Adw.ShortcutsItem(title=title, accelerator=accelerator))
         dialog.add(app_section)
@@ -472,8 +492,44 @@ class MiAZActions(GObject.GObject):
 
     def exit_app(self, *args):
         self.log.debug('Closing MiAZ')
+        self._close_all_webviews()
         self.app.emit("application-finished")
         self.app.quit()
+
+    def _close_webviews(self, widget):
+        """Stop every WebKit web process under this widget before quitting.
+
+        WebKit runs each view in its own subprocess holding a D-Bus name. Quit
+        without stopping them and the bus connection goes first, so the child
+        complains on the way out:
+
+            Error releasing name ...WebProcess-<uuid>: The connection is closed
+
+        try_close() alone does not prevent it: it asks the page to close, runs
+        beforeunload and returns immediately, so the process is still up when
+        the main loop stops. terminate_web_process() is the one that ends the
+        subprocess there and then. The warning comes from the child, so the
+        parent can never catch it, only avoid causing it.
+        """
+        if widget.__gtype__.name == 'WebKitWebView':
+            for method in ('try_close', 'terminate_web_process'):
+                action = getattr(widget, method, None)
+                if action is None:
+                    continue
+                try:
+                    action()
+                except Exception as error:
+                    self.log.debug(f"WebView {method} failed: {error}")
+        if hasattr(widget, 'get_first_child'):
+            child = widget.get_first_child()
+            while child is not None:
+                nxt = child.get_next_sibling()
+                self._close_webviews(child)
+                child = nxt
+
+    def _close_all_webviews(self):
+        for window in Gtk.Window.get_toplevels():
+            self._close_webviews(window)
 
     def stop_if_no_items(self, widget: Gtk.Widget = None):
         workspace = self.app.get_widget('workspace')
@@ -490,6 +546,7 @@ class MiAZActions(GObject.GObject):
         ENV = self.app.get_env()
         python = sys.executable
         script = ENV['APP']['RUNTIME']['EXEC']
+        self._close_all_webviews()
         self.app.emit('application-finished')
         self.log.info(f"Application restart: {python} {script} {sys.argv[1:]}")
         os.execv(python, [python, script] + sys.argv[1:])

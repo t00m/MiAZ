@@ -34,8 +34,7 @@ class MiAZSidebar(Adw.Bin):
         return description or repo_id.replace('_', ' ')
 
     def _on_repo_switch(self, *args):
-        config = self.app.get_config_dict()
-        repo_id = config['App'].get('current') or 'MiAZ'
+        repo_id = self.app.get_service('repo').get_active_id() or 'MiAZ'
         self.title_label.set_text(self._repo_label(repo_id))
         self.setup_custom_filters()
         self.log.debug(f"Switched to repository {repo_id} > Sidebar updated")
@@ -88,7 +87,7 @@ class MiAZSidebar(Adw.Bin):
         self.title_label.add_css_class('heading')
         self.title_label.set_ellipsize(True)
         self.title_label.set_halign(Gtk.Align.CENTER)
-        repo_id = config['App'].get('current') or 'MiAZ'
+        repo_id = self.app.get_service('repo').get_active_id() or 'MiAZ'
         self.title_label.set_text(self._repo_label(repo_id))
         self.app.add_widget('sidebar-title-label', self.title_label)
 

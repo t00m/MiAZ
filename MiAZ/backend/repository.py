@@ -29,6 +29,10 @@ class MiAZRepository(GObject.GObject):
         self.config = self.app.get_config_dict()
         self._errmsg = None
         self._conf_cache = None
+        self._active_id = None
+        # Whether use() pointed this instance somewhere. Distinct from
+        # _active_id being None, which is also what a bare path leaves behind.
+        self._active_pinned = False
         self._store = None
         self.log.info("Repository class initialized")
 
@@ -66,6 +70,52 @@ class MiAZRepository(GObject.GObject):
     def reset(self):
         """Invalidate the conf cache so the next access triggers a fresh setup()."""
         self._conf_cache = None
+        self._active_id = None
+        self._active_pinned = False
+
+    def get_active_id(self):
+        """The id of the repository being shown, or None if there is none.
+
+        Not always the default one: a switch that does not set the default
+        points this instance elsewhere while 'current' still names what MiAZ
+        opens on the next start. Anything naming the repository to the user
+        (window title, sidebar, settings) asks here rather than reading
+        'current', which would name the one that is not on screen.
+        """
+        if self._active_pinned:
+            return self._active_id
+        return self.config['App'].get('current')
+
+    def use(self, repo_id: str = None, path: str = None) -> bool:
+        """Point this instance at a repository without changing the default.
+
+        setup() already resolves a repository id to its directories, but get()
+        always calls it with no argument, so every lookup falls back to the
+        'current' repository. Callers that want another one (the command line,
+        given --repo) come through here instead of writing 'current', which
+        would change the repository the desktop app opens next time.
+
+        Returns whether the repository resolved. The caller validates it.
+        """
+        if path:
+            conf = {'dir_docs': path, 'dir_conf': os.path.join(path, '.conf')}
+            repo_id = None  # a bare path carries no registered name
+        else:
+            if not repo_id:
+                return False
+            # Resolve before calling setup(): for an unknown id it returns an
+            # empty path, and setup() would then take '' for a new repository
+            # and init() it, creating a .conf directory wherever the process
+            # happens to be running.
+            if not self.config['Repository'].get_path(repo_id, used=True):
+                return False
+            conf = self.setup(repo_id)
+        if not conf.get('dir_docs'):
+            return False
+        self._conf_cache = conf
+        self._active_id = repo_id
+        self._active_pinned = True
+        return True
 
     def init(self, path):
         repoconf = {}
@@ -107,14 +157,27 @@ class MiAZRepository(GObject.GObject):
                     repo_path = self.config['Repository'].get_path(repo_id, used=True)
                     conf['dir_docs'] = repo_path
                     conf['dir_conf'] = os.path.join(conf['dir_docs'], '.conf')
-                    if not os.path.exists(conf['dir_conf']):
+                    if not os.path.isdir(repo_path):
+                        # The directory is gone: renamed, deleted, or on a
+                        # drive that is not mounted. init() would recreate it
+                        # empty (os.makedirs makes the whole path) and MiAZ
+                        # would open an empty repository with empty
+                        # configuration where the documents used to be. A
+                        # repository is only ever created on purpose, and the
+                        # flows that do it check the folder exists first.
+                        self.set_error(f"Repository '{repo_id}' directory not found: {repo_path}")
+                        self.log.error(self.get_error())
+                    elif not os.path.exists(conf['dir_conf']):
                         self.init(conf['dir_docs'])
                 except Exception as error:
                     self.set_error(error)
         return conf
 
     def load(self, path=None):
-        self._conf_cache = None
+        # The cache is not cleared here. Invalidating is the caller's job
+        # (reset(), which every caller already calls before validating), and
+        # clearing it at this point threw away a repository chosen with use():
+        # the next get() resolved 'current' again and loaded the wrong one.
         repo_dir_conf = self.get('dir_conf')
         # One store per repository. Disposing the previous one drops its cached
         # copies, so the repository being loaded is read from disk rather than
@@ -156,8 +219,9 @@ class MiAZRepository(GObject.GObject):
             if self._conf_cache is None:
                 self._conf_cache = self.setup()
             return self._conf_cache[key]
-        except Exception:
+        except KeyError:
             self.log.warning(f"Repository Configuration Key '{key}' not found")
+            return None
 
     def get_error(self):
         return self._errmsg

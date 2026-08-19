@@ -7,6 +7,7 @@ Runs without a display (GObject only, no GTK/Adw).
 
 import json
 import os
+import shutil
 
 import gi
 gi.require_version('GLib', '2.0')
@@ -249,3 +250,165 @@ def test_load_disposes_the_previous_store(tmp_path):
 def test_get_config_store_is_none_before_any_load(tmp_path):
     repo, _confs = make_repository(tmp_path, 'repo')
     assert repo.get_config_store() is None
+
+
+# ---------------------------------------------------------------------------
+# use()
+# ---------------------------------------------------------------------------
+
+def test_use_named_repository(tmp_path):
+    repo, confs = make_repository(tmp_path, 'repo_a', 'repo_b')
+    assert repo.use('repo_b') is True
+    assert repo.docs == str(tmp_path / 'repo_b')
+    assert repo.conf == confs['repo_b']
+
+
+def test_use_does_not_change_the_current_repository(tmp_path):
+    """Reading another repository must not move the one the app opens."""
+    repo, _confs = make_repository(tmp_path, 'repo_a', 'repo_b')
+    repo.use('repo_b')
+    assert repo.app.get_config_dict()['App'].get('current') == 'repo_a'
+
+
+def test_use_unknown_name(tmp_path):
+    repo, _confs = make_repository(tmp_path, 'repo_a')
+    assert repo.use('nope') is False
+
+
+def test_use_unknown_name_creates_nothing(tmp_path, monkeypatch):
+    """An unresolved name must not reach init(), which would makedirs('.conf')."""
+    monkeypatch.chdir(tmp_path)
+    repo, _confs = make_repository(tmp_path, 'repo_a')
+    repo.use('nope')
+    assert not (tmp_path / '.conf').exists()
+
+
+def test_use_path(tmp_path):
+    repo, _confs = make_repository(tmp_path, 'repo_a')
+    somewhere = tmp_path / 'usb'
+    (somewhere / '.conf').mkdir(parents=True)
+    assert repo.use(path=str(somewhere)) is True
+    assert repo.docs == str(somewhere)
+    assert repo.conf == str(somewhere / '.conf')
+
+
+def test_use_nothing(tmp_path):
+    repo, _confs = make_repository(tmp_path, 'repo_a')
+    assert repo.use() is False
+
+
+def test_use_survives_load(tmp_path):
+    """load() must not re-resolve the repository the caller chose.
+
+    It used to clear the conf cache on entry, so the next lookup fell back to
+    'current' and loaded a different repository than the one requested.
+    """
+    repo, confs = make_repository(tmp_path, 'repo_a', 'repo_b')
+    repo.use('repo_b')
+    repo.load(repo.docs)
+    assert repo.docs == str(tmp_path / 'repo_b')
+    assert repo.conf == confs['repo_b']
+
+
+# ---------------------------------------------------------------------------
+# get_active_id(): which repository is being shown right now
+#
+# It is not always the default one. Switching without setting the default
+# points the repository elsewhere while 'current' still names what MiAZ opens
+# on the next start, and the window title, the sidebar and the settings all
+# have to name the one on screen.
+# ---------------------------------------------------------------------------
+
+def test_active_id_is_the_default_when_nothing_else_was_chosen(tmp_path):
+    repo, _confs = make_repository(tmp_path, 'repo_a', 'repo_b')
+    assert repo.get_active_id() == 'repo_a'
+
+
+def test_active_id_follows_use(tmp_path):
+    repo, _confs = make_repository(tmp_path, 'repo_a', 'repo_b')
+    repo.use('repo_b')
+    assert repo.get_active_id() == 'repo_b'
+    assert repo.app.get_config_dict()['App'].get('current') == 'repo_a'
+
+
+def test_active_id_survives_load(tmp_path):
+    repo, _confs = make_repository(tmp_path, 'repo_a', 'repo_b')
+    repo.use('repo_b')
+    repo.load(repo.docs)
+    assert repo.get_active_id() == 'repo_b'
+
+
+def test_active_id_falls_back_to_the_default_after_reset(tmp_path):
+    repo, _confs = make_repository(tmp_path, 'repo_a', 'repo_b')
+    repo.use('repo_b')
+    repo.reset()
+    assert repo.get_active_id() == 'repo_a'
+
+
+def test_active_id_of_a_path_without_a_name(tmp_path):
+    """use(path=...) has no registered name, so the default one is not claimed."""
+    repo, _confs = make_repository(tmp_path, 'repo_a')
+    somewhere = tmp_path / 'usb'
+    (somewhere / '.conf').mkdir(parents=True)
+    repo.use(path=str(somewhere))
+    assert repo.get_active_id() is None
+
+
+def test_active_id_when_no_repository_is_configured(tmp_path):
+    app = StoreApp()
+    repo = MiAZRepository(app)
+    assert repo.get_active_id() is None
+
+
+# ---------------------------------------------------------------------------
+# setup(): a repository whose directory is gone
+#
+# Renaming or unmounting a repository directory used to be silent: setup()
+# initialised whatever path was configured, and os.makedirs recreated the
+# directory itself, so MiAZ opened an empty repository with empty
+# configuration where the documents used to be.
+# ---------------------------------------------------------------------------
+
+def test_setup_does_not_recreate_a_missing_repository_directory(tmp_path):
+    repo, _confs = make_repository(tmp_path, 'repo_a')
+    gone = tmp_path / 'repo_a'
+    shutil.rmtree(gone)
+
+    repo.reset()
+    repo.setup()
+
+    assert not gone.exists(), 'the repository directory was recreated'
+
+
+def test_setup_reports_a_missing_repository_directory(tmp_path):
+    repo, _confs = make_repository(tmp_path, 'repo_a')
+    shutil.rmtree(tmp_path / 'repo_a')
+
+    repo.reset()
+    repo.setup()
+
+    error = repo.get_error()
+    assert error is not None
+    assert 'repo_a' in str(error) or str(tmp_path / 'repo_a') in str(error)
+
+
+def test_a_missing_repository_does_not_validate(tmp_path):
+    repo, _confs = make_repository(tmp_path, 'repo_a')
+    shutil.rmtree(tmp_path / 'repo_a')
+
+    repo.reset()
+    assert repo.validate(repo.docs) is False
+
+
+def test_setup_still_initialises_an_existing_directory(tmp_path):
+    """A repository added through the assistant points at a folder that
+    exists and has no .conf yet. That one is still set up here."""
+    app = StoreApp()
+    docs = tmp_path / 'brand_new'
+    docs.mkdir()
+    app.get_config_dict()['Repository'].add('brand_new', str(docs))
+    app.get_config_dict()['App'].set('current', 'brand_new')
+
+    repo = MiAZRepository(app)
+    assert repo.validate(repo.docs) is True
+    assert (docs / '.conf' / 'repo.json').exists()

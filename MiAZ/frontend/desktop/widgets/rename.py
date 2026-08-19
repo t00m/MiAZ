@@ -17,9 +17,10 @@ from gi.repository import Pango
 
 from MiAZ.env import ENV
 from MiAZ.backend.log import MiAZLog
-from MiAZ.backend.util import humanize_value
+from MiAZ.backend.util import humanize_value, UNKNOWN_DATE
 from MiAZ.backend.models import MiAZItem, Group, Country, Purpose, Concept, SentBy, SentTo
 from MiAZ.frontend.desktop.services.dialogs import MiAZDialogAdd
+from MiAZ.frontend.desktop.services.factory import calendar_select_date
 from MiAZ.frontend.desktop.widgets.configview import MiAZCountries, MiAZGroups, MiAZPurposes, MiAZPeopleSentBy, MiAZPeopleSentTo
 from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewConcept
 from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewSuggestion
@@ -45,6 +46,7 @@ class MiAZRenameDialog(Gtk.Box):
         self.srvdlg = self.app.get_service('dialogs')
         self.log = MiAZLog('Miaz.Rename')
         self.result = ''
+        self.doc = None
         self.new_values = []
         self.dropdown = {}
         self._last_date_str = None
@@ -96,13 +98,23 @@ class MiAZRenameDialog(Gtk.Box):
         # the stack and stays visible whatever tab is open.
         self.__create_filename_footer()
 
-        self.config['Country'].connect('used-updated', self.update_dropdown, Country)
-        self.config['Group'].connect('used-updated', self.update_dropdown, Group)
-        self.config['SentBy'].connect('used-updated', self.update_dropdown, SentBy)
-        self.config['Purpose'].connect('used-updated', self.update_dropdown, Purpose)
-        self.config['SentTo'].connect('used-updated', self.update_dropdown, SentTo)
         repository = self.app.get_service('repo')
-        repository.connect('repository-switched', self._update_dropdowns)
+        self._signal_handler_ids = [
+            (self.config['Country'], self.config['Country'].connect('used-updated', self.update_dropdown, Country)),
+            (self.config['Group'], self.config['Group'].connect('used-updated', self.update_dropdown, Group)),
+            (self.config['SentBy'], self.config['SentBy'].connect('used-updated', self.update_dropdown, SentBy)),
+            (self.config['Purpose'], self.config['Purpose'].connect('used-updated', self.update_dropdown, Purpose)),
+            (self.config['SentTo'], self.config['SentTo'].connect('used-updated', self.update_dropdown, SentTo)),
+            (repository, repository.connect('repository-switched', self._update_dropdowns)),
+        ]
+
+    def dispose(self):
+        for emitter, handler_id in self._signal_handler_ids:
+            try:
+                emitter.disconnect(handler_id)
+            except Exception:
+                pass
+        self._signal_handler_ids.clear()
 
     def _update_dropdowns(self, *args):
         for item_type in [Country, Group, SentBy, Purpose, SentTo]:
@@ -380,6 +392,11 @@ class MiAZRenameDialog(Gtk.Box):
         popover.set_child(self.calendar)
         popover.present()
         button.set_popover(popover)
+        self.btnDetectDate = self.factory.create_button(
+            icon_name='io.github.t00m.MiAZ-edit-find-symbolic',
+            tooltip=_('Read the date from the document: from the concept field '
+                      'first, then the PDF or image metadata'),
+            callback=self._on_detect_date)
         self.label_date = Gtk.Label()
         self.label_date.add_css_class('caption')
         self.entry_date = Gtk.Entry()
@@ -391,13 +408,35 @@ class MiAZRenameDialog(Gtk.Box):
         self.entry_date.set_alignment(1.0)
         boxValue.append(self.label_date)
         boxValue.append(self.entry_date)
+        boxValue.append(self.btnDetectDate)
         boxValue.append(button)
         self.entry_date.connect('changed', self._on_changed_entry)
 
     def guess_date_if_empty(self, concept: str, filepath: str):
         return self.util.filename_guess_date(filepath, concept_hint=concept)
 
+    def _on_detect_date(self, *args):
+        """Read the date again, on demand.
+
+        set_data only reads it when the document arrives with an empty date
+        field, which left no way to ask for it afterwards: not for a document
+        already filed under a wrong date, and not after editing the concept,
+        which is where the original filename is kept and where the date is
+        usually written.
+        """
+        if self.doc is None:
+            return
+        filepath = os.path.join(self.repository.docs, os.path.basename(self.doc))
+        adate = self.util.filename_guess_date(
+            filepath, concept_hint=self.entry_concept.get_text())
+        self.entry_date.set_text(adate)
+
     def calendar_day_selected(self, calendar):
+        # validate_date moves the calendar to whatever parses, and the calendar
+        # answers by writing the date back here. While the user is typing in
+        # the field, that write would replace what they are half way through.
+        if self.entry_date.has_focus():
+            return
         adate = calendar.get_date()
         y = "%04d" % adate.get_year()
         m = "%02d" % adate.get_month()
@@ -407,24 +446,24 @@ class MiAZRenameDialog(Gtk.Box):
     def __create_field_1_country(self):
         self.rowCountry, self.btnCountry, self.dpdCountry = self.__create_actionrow(_(Country.__title__), Country, 'countries', self._cfg_country)
         self.dropdown['Country'] = self.dpdCountry
-        self.btnCountry.connect('clicked', self.actions.manage_resource, MiAZCountries(self.app))
+        self.btnCountry.connect('clicked', self.actions.manage_resource, MiAZCountries)
         self.dpdCountry.connect("notify::selected-item", self._on_changed_entry)
 
     def __create_field_2_group(self):
         self.rowGroup, self.btnGroup, self.dpdGroup = self.__create_actionrow(_(Group.__title__), Group, 'groups', self._cfg_group)
         self.dropdown['Group'] = self.dpdGroup
-        self.btnGroup.connect('clicked', self.actions.manage_resource, MiAZGroups(self.app))
+        self.btnGroup.connect('clicked', self.actions.manage_resource, MiAZGroups)
         self.dpdGroup.connect("notify::selected-item", self._on_changed_entry)
 
     def __create_field_4_sentby(self):
         self.rowSentBy, self.btnSentBy, self.dpdSentBy = self.__create_actionrow(_(SentBy.__title__), SentBy, 'Sentby', self._cfg_sentby)
         self.dropdown['SentBy'] = self.dpdSentBy
-        self.btnSentBy.connect('clicked', self.actions.manage_resource, MiAZPeopleSentBy(self.app))
+        self.btnSentBy.connect('clicked', self.actions.manage_resource, MiAZPeopleSentBy)
         self.dpdSentBy.connect("notify::selected-item", self._on_changed_entry)
 
     def __create_field_5_purpose(self):
         self.rowPurpose, self.btnPurpose, self.dpdPurpose = self.__create_actionrow(_(Purpose.__title__), Purpose, 'purposes', self._cfg_purpose)
-        self.btnPurpose.connect('clicked', self.actions.manage_resource, MiAZPurposes(self.app))
+        self.btnPurpose.connect('clicked', self.actions.manage_resource, MiAZPurposes)
         self.dropdown['Purpose'] = self.dpdPurpose
         self.dpdPurpose.connect("notify::selected-item", self._on_changed_entry)
 
@@ -493,7 +532,7 @@ class MiAZRenameDialog(Gtk.Box):
     def __create_field_7_sentto(self):
         self.rowSentTo, self.btnSentTo, self.dpdSentTo = self.__create_actionrow(_(SentTo.__title__), SentTo, 'SentTo', self._cfg_sentto)
         self.dropdown['SentTo'] = self.dpdSentTo
-        self.btnSentTo.connect('clicked', self.actions.manage_resource, MiAZPeopleSentTo(self.app))
+        self.btnSentTo.connect('clicked', self.actions.manage_resource, MiAZPeopleSentTo)
         self.dpdSentTo.connect("notify::selected-item", self._on_changed_entry)
 
     def __create_field_8_extension(self):
@@ -820,13 +859,22 @@ class MiAZRenameDialog(Gtk.Box):
             return self._last_date_valid
         try:
             adate = datetime.strptime(sdate, '%Y%m%d')
-            iso8601 = f"{sdate}T00:00:00Z"
-            self.calendar.select_day(GLib.DateTime.new_from_iso8601(iso8601))
-            self.label_date.set_markup(adate.strftime("%A, %B %d %Y"))
+            calendar_select_date(self.calendar, adate.year, adate.month, adate.day)
+            if sdate == UNKNOWN_DATE:
+                # A real date, so nothing downstream needs a special case, but
+                # "Friday, December 31 9999" reads as a date somebody chose.
+                self.label_date.set_markup(f"<i>{_('date not known')}</i>")
+            else:
+                self.label_date.set_markup(adate.strftime("%A, %B %d %Y"))
             self._last_date_str = sdate
             self._last_date_valid = True
             return True
         except Exception:
+            # Say the date is not one. The label used to keep the last date
+            # that parsed, so typing 20261301 left a valid, unrelated date
+            # sitting next to the field: it read as if MiAZ had accepted the
+            # input and picked a date of its own.
+            self.label_date.set_markup(f"<i>{_('not a date')}</i>")
             self._last_date_str = sdate
             self._last_date_valid = False
             return False

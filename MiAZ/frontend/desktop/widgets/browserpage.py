@@ -35,6 +35,8 @@ class MiAZBrowserPage(Gtk.Box):
         self._suppress_change = False
         self._www_monitor = None
         self._www_debounce_id = 0
+        self._plugins_debounce_id = 0
+        self._loaded_key = None
         self._build_ui()
         self._refresh_pages()
         self._setup_www_monitor()
@@ -125,7 +127,7 @@ class MiAZBrowserPage(Gtk.Box):
         """True when at least one browser page is available to load."""
         return len(self._pages) > 0
 
-    def _refresh_pages(self):
+    def _refresh_pages(self, force_reload=False):
         pages = self._scan_pages()
         self._pages = pages
         self.emit('pages-updated', len(pages))
@@ -141,6 +143,7 @@ class MiAZBrowserPage(Gtk.Box):
 
         if not pages:
             self._dropdown.set_sensitive(False)
+            self._loaded_key = None
             self._show_welcome()
             return
 
@@ -158,7 +161,11 @@ class MiAZBrowserPage(Gtk.Box):
             self._dropdown.set_selected(next_index)
         finally:
             self._suppress_change = False
-        self._load_page(next_index)
+        # Reloading the view throws away scroll position and any state the page
+        # holds, so only do it when the page really changed. The caller asks for
+        # a reload when the content on disk changed under the same page.
+        if force_reload or pages[next_index][0] != self._loaded_key:
+            self._load_page(next_index)
 
     def _current_key(self):
         idx = self._dropdown.get_selected()
@@ -179,6 +186,7 @@ class MiAZBrowserPage(Gtk.Box):
             path = os.path.join(self._www_root(), key, 'index.html')
             url = GLib.filename_to_uri(path, None)
         self.log.debug(f"Loading {url}")
+        self._loaded_key = key
         self._webview.load_uri(url)
 
     def _show_welcome(self):
@@ -295,7 +303,18 @@ class MiAZBrowserPage(Gtk.Box):
     def _on_plugins_updated(self, *_args):
         # Plugin set changed (load/unload); the description column may need to
         # be refreshed even if WWW directories did not change.
+        #
+        # Debounced because the signal is emitted once per plugin, so loading a
+        # repository's 18 plugins asked for 18 directory scans of the same
+        # directory in a third of a second.
+        if self._plugins_debounce_id > 0:
+            GLib.source_remove(self._plugins_debounce_id)
+        self._plugins_debounce_id = GLib.timeout_add(150, self._flush_plugins_refresh)
+
+    def _flush_plugins_refresh(self):
+        self._plugins_debounce_id = 0
         self._refresh_pages()
+        return False
 
     # WWW directory monitor
 
@@ -332,5 +351,5 @@ class MiAZBrowserPage(Gtk.Box):
 
     def _flush_www_refresh(self):
         self._www_debounce_id = 0
-        self._refresh_pages()
+        self._refresh_pages(force_reload=True)
         return False

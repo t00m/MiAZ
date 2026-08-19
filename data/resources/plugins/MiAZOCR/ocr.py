@@ -30,7 +30,7 @@ plugin_info = {
         'Authors':       'Tomás Vírseda <tomasvirseda@gmail.com>',
         'Copyright':     'Copyright © 2026 Tomás Vírseda',
         'Website':       'http://github.com/t00m/MiAZ',
-        'Help':          'http://github.com/t00m/MiAZ/README.adoc',
+        'Help':          'https://github.com/t00m/MiAZ/blob/main/README.md',
         'Version':       '0.1.0',
         'Category':      'Artificial Intelligence',
         'Subcategory':   'Document AI',

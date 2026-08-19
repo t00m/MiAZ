@@ -175,6 +175,55 @@ class MiAZAPI(GObject.GObject):
         self.app = app
 
 
+class PluginMenuRegistry:
+    """What each plugin contributed to the shared menus.
+
+    The workspace menu is thrown away and rebuilt whenever plugins change. To
+    get the entries back, the rebuild used to reset every plugin's started flag
+    and call its startup() again, which meant a plugin's setup ran once per
+    load or unload of any other plugin: extra gestures on the column view,
+    extra background scans, extra handlers. One of those extra gestures is what
+    made a right click crash after the plugin was disabled.
+
+    Recording the contributions means the rebuild replays data. startup() runs
+    once per activation, which is what a plugin author expects it to do.
+    """
+
+    def __init__(self):
+        self._entries = {}
+
+    def record(self, owner: str, category: str, subcategory: str,
+               kind: str, payload):
+        """Remember one contribution. The same one twice is still one."""
+        entries = self._entries.setdefault(owner, [])
+        entry = (category, subcategory, kind, payload)
+        if entry not in entries:
+            entries.append(entry)
+
+    def entries(self, owner: str) -> list:
+        return list(self._entries.get(owner, []))
+
+    def forget(self, owner: str):
+        self._entries.pop(owner, None)
+
+    def replay(self, owner: str, app):
+        """Put this plugin's entries back into the menus as they are now.
+
+        Gio.Menu copies a menu item when it is appended and references a
+        submenu, so replaying the recorded objects into fresh menus is safe
+        and keeps a live submenu (the scanner sources, say) connected.
+        """
+        for category, subcategory, kind, payload in self.entries(owner):
+            submenu = app.install_plugin_menu(category, subcategory)
+            if submenu is None:
+                continue
+            if kind == 'item':
+                submenu.append_item(payload)
+            elif kind == 'submenu':
+                title, menu = payload
+                submenu.append_submenu(title, menu)
+
+
 class PluginPageRegistry:
     """Which workspace pages each plugin contributed.
 
@@ -255,6 +304,12 @@ class MiAZPlugin(GObject.GObject):
         return plugin_system.get_plugin_attributes(plugin_file)
 
     def register(self, plugin_object, info):
+        # Contributions are accepted from here until the plugin is unloaded.
+        # A background job that finishes later (the scanner probe builds its
+        # menu when the device answers) must not add UI for a plugin that is
+        # already gone: the entry would sit there doing nothing until the next
+        # menu rebuild dropped it.
+        self._active = True
         self.info = info
         self.name = self.info['Name']
         self.desc = self.info['Description']
@@ -415,16 +470,60 @@ class MiAZPlugin(GObject.GObject):
                     return name
         return PLUGIN_DEFAULT_ICON
 
-    def install_menu_entry(self, menuitem = None):
-        category = self.info['Category']
-        subcategory = self.info['Subcategory']
+    def is_active(self) -> bool:
+        """Whether this plugin may still contribute to the interface."""
+        return getattr(self, '_active', True)
+
+    def set_active(self, active: bool):
+        self._active = active
+
+    def install_menu_entry(self, menuitem = None, category = None,
+                           subcategory = None):
+        """Add one item to a menu, and remember it for the next rebuild.
+
+        With no category the plugin's own one is used, which is what almost
+        every caller wants. A plugin whose action belongs somewhere else (the
+        notes backup and restore entries live under Data Management) passes
+        the pair explicitly, rather than reaching for app.install_plugin_menu
+        and leaving the entry unrecorded: those were the entries a menu
+        rebuild used to drop.
+        """
+        if not self.is_active():
+            return None
+        category = category or self.info['Category']
+        subcategory = subcategory or self.info['Subcategory']
         subcategory_submenu = self.app.install_plugin_menu(category, subcategory)
         if menuitem is not None:
             subcategory_submenu.append_item(menuitem)
             # Register the item under its canonical key so other layers (the UI)
             # can reuse it without the plugin system knowing about any widget.
             self.app.add_widget(self.get_menu_item_name(), menuitem)
+            # And record it, so a menu rebuild can put it back without running
+            # this plugin's startup() again.
+            self._menu_registry().record(self.name, category, subcategory,
+                                         'item', menuitem)
         return subcategory_submenu
+
+    def install_menu_submenu(self, title: str, menu):
+        """Add a submenu of this plugin's own items to its menu entry.
+
+        The plugins that offer several actions (assign, unassign, manage) build
+        a Gio.Menu and hang it under their entry. Going through here records it
+        like a single item does, so a menu rebuild restores it without calling
+        startup() again.
+        """
+        if not self.is_active():
+            return None
+        category = self.info['Category']
+        subcategory = self.info['Subcategory']
+        subcategory_submenu = self.app.install_plugin_menu(category, subcategory)
+        subcategory_submenu.append_submenu(title, menu)
+        self._menu_registry().record(self.name, category, subcategory,
+                                     'submenu', (title, menu))
+        return subcategory_submenu
+
+    def _menu_registry(self):
+        return self.app.get_service('plugin-system').menus
 
     def add_workspace_page(self, widget, name, title, icon_name=None):
         """Add a page to the workspace stack, owned by this plugin.
@@ -434,6 +533,8 @@ class MiAZPlugin(GObject.GObject):
         back. A plugin that would rather manage the stack itself still can:
         workspace.get_stack() hands over the real Adw.ViewStack.
         """
+        if not self.is_active():
+            return
         workspace = self.app.get_widget('workspace')
         if workspace is None:
             return
@@ -469,6 +570,8 @@ class MiAZPlugin(GObject.GObject):
         directly through app.get_widget('sidebar-plugin-section') still works
         and is fine; this only saves writing the teardown.
         """
+        if not self.is_active():
+            return False
         section = self.app.get_widget('sidebar-plugin-section')
         if section is None:
             self.log.warning("No sidebar plugin section to add a widget to")
@@ -486,6 +589,8 @@ class MiAZPlugin(GObject.GObject):
 
         `position` is 'left' or 'right'. Removed on unload, as above.
         """
+        if not self.is_active():
+            return False
         key = 'headerbar-left-box' if position == 'left' else 'headerbar-right-box'
         box = self.app.get_widget(key)
         if box is None:
@@ -510,6 +615,8 @@ class MiAZPlugin(GObject.GObject):
         `widget_key` defaults to 'plugin-<Name>-dropdown', which is where the
         rest of the app looks for a plugin's filter dropdown.
         """
+        if not self.is_active():
+            return False
         registry = self._widget_registry()
         owner = self.get_name()
         if widget_key is None:
@@ -559,6 +666,8 @@ class MiAZPlugin(GObject.GObject):
         Without an explicit icon_name the tab wears the plugin's own icon, so a
         plugin gets a recognisable tab without doing anything about it.
         """
+        if not self.is_active():
+            return
         tabs = self.app.get_service('document-tabs')
         if tabs is None:
             return
@@ -596,11 +705,14 @@ class MiAZPluginSystem(GObject.GObject):
         # away the same way it already does web content and dialog tabs.
         self.pages = PluginPageRegistry()
         self.widgets = PluginWidgetRegistry()
+        self.menus = PluginMenuRegistry()
         self._setup_plugins_dir()
-        self.create_plugin_index()
+        self._plugin_list = []
+        self.scan_plugin_index()
         self.log.info("Plugin system initialited")
         srvrepo = self.app.get_service('repo')
-        srvrepo.connect('repository-switched', self.create_plugin_index)
+        # Only the per-repository half. What is on disk has not changed.
+        srvrepo.connect('repository-switched', self._on_repository_switched)
 
     def import_plugin(self, plugin_path):
         """
@@ -623,19 +735,21 @@ class MiAZPluginSystem(GObject.GObject):
                     └── noprint.css
         """
         utils = self.app.get_service('util')
-        valid = False
-        azip = zipfile.ZipFile(plugin_path)
         plugin_name, plugin_ext = utils.filename_details(plugin_path)
         plugin_code = f"{plugin_name}.py"
         plugin_meta = f"{plugin_name}.plugin"
-        plugin_code_exist = plugin_code in azip.namelist()
-        plugin_meta_exist = plugin_meta in azip.namelist()
-        if plugin_code_exist and plugin_meta_exist:
-             valid = True
+        # Read the listing under 'with': an archive that fails validation used
+        # to be left open.
+        with zipfile.ZipFile(plugin_path) as azip:
+            names = azip.namelist()
+        valid = plugin_code in names and plugin_meta in names
 
         if valid:
             ENV = self.app.get_env()
-            azip.extractall(ENV['LPATH']['PLUGINS'])
+            # Through util.unzip, not extractall: that is where the "stay
+            # inside the target directory" check lives, and this is the same
+            # untrusted archive the plugin settings import handles.
+            utils.unzip(plugin_path, ENV['LPATH']['PLUGINS'])
             self.engine.rescan_plugins()
             config = self.app.get_config('Plugin')
             config.add_available(key=plugin_name)
@@ -785,11 +899,34 @@ class MiAZPluginSystem(GObject.GObject):
             self._remove_plugin_www(plugin)
             self._remove_plugin_document_tabs(plugin)
             self._remove_plugin_pages(plugin)
+            self.menus.forget(plugin.get_name())
             self.widgets.undo_all(plugin.get_name())
             self.log.info(f"Plugin {pname} v{pvers} unloaded")
             self.emit('plugins-updated')
         except Exception as error:
             self.log.error(error)
+
+    def unload_all(self) -> int:
+        """Unload every loaded plugin. Returns how many were unloaded.
+
+        Used when the repository changes: the enabled set is per repository
+        (plugins-used.json lives in the repository's .conf), so the plugins of
+        the one being left have to go before those of the one being opened
+        arrive. Each unload runs the same teardown a manual disable does, so a
+        plugin cannot leave a page, a rename tab or a header bar button behind.
+
+        One plugin that fails to unload does not stop the rest: unload_plugin
+        already logs and swallows, and the caller is in the middle of a switch
+        that has to finish either way.
+        """
+        unloaded = 0
+        for plugin in self.plugins:
+            if self.is_plugin_loaded(plugin):
+                self.unload_plugin(plugin)
+                unloaded += 1
+        if unloaded:
+            self.log.info(f"Plugins unloaded: {unloaded}")
+        return unloaded
 
     def _remove_plugin_www(self, plugin: Peas.PluginInfo):
         """Remove a plugin's published web directory when it is unloaded.
@@ -903,6 +1040,12 @@ class MiAZPluginSystem(GObject.GObject):
         module_name = plugin.get_module_name()
         instance = self._extension_instances.pop(module_name, None)
         if instance is not None:
+            # Refuse contributions from here on, before the teardown rather
+            # than after it: a worker finishing mid-unload is exactly the case
+            # this guards against.
+            helper = getattr(instance, 'plugin', None)
+            if helper is not None and hasattr(helper, 'set_active'):
+                helper.set_active(False)
             try:
                 instance.do_deactivate()
             except Exception as error:
@@ -947,8 +1090,30 @@ class MiAZPluginSystem(GObject.GObject):
                     plugin_info[key.strip()] = _(value.strip())
         return plugin_info
 
+    def _on_repository_switched(self, *_args):
+        # Not update_available_plugins directly: the signal hands the emitter
+        # to its handler, which would arrive as the plugin list.
+        self.update_available_plugins()
+
     def create_plugin_index(self, *args):
-        """Scan both bundled and user plugin directories and write a unified index."""
+        """Scan both plugin directories, write the index, update the repository.
+
+        Kept as one entry point for callers that really did change what is on
+        disk, such as importing a plugin from a ZIP.
+        """
+        plugin_list = self.scan_plugin_index()
+        self.update_available_plugins(plugin_list)
+        return plugin_list
+
+    def scan_plugin_index(self, *args):
+        """Scan both plugin directories and write index-plugins.json.
+
+        What is on disk does not depend on which repository is open, so this
+        runs once at startup and again only when a plugin is added or removed.
+        It used to be bolted onto the per-repository update below, which meant
+        a full rescan, 19 Python modules parsed with ast, on every repository
+        switch, and one wasted scan at startup whose result was thrown away.
+        """
         self.log.info("Creating plugin index during runtime")
         self._load_failures = {}
         plugin_index = {}
@@ -968,15 +1133,27 @@ class MiAZPluginSystem(GObject.GObject):
         with open(ENV['APP']['PLUGINS']['INDEX'], 'w', encoding='utf-8') as fp:
             json.dump(plugin_index, fp, sort_keys=False, indent=4)
             self.log.info(f"File index-plugins.json generated with {len(plugin_index)} plugins")
+        self._plugin_list = plugin_list
+        return plugin_list
 
-        try:
-            config = self.app.get_config_dict()
-            repo_id = config['App'].get('current')
-            config_plugins = self.app.get_config('Plugin')
-            config_plugins.add_available_batch(plugin_list)
-            old_keys = set(config_plugins.load_available().keys()) - {p[0] for p in plugin_list}
-            for key in old_keys:
-                config_plugins.remove_available(key)
-            self.log.info(f"Plugins available updated successfully for repository {repo_id}")
-        except AttributeError:
-            self.log.warning("Skip. Plugin config not ready yet")
+    def update_available_plugins(self, plugin_list=None, *args):
+        """Write the scanned plugins into the open repository's available set.
+
+        This is the half that needs a repository, so it is what a repository
+        switch runs. Before a repository is open there is no plugin config to
+        write to, which is not a problem worth a warning: the switch that
+        follows does the work.
+        """
+        if plugin_list is None:
+            plugin_list = getattr(self, '_plugin_list', None) or self.scan_plugin_index()
+        config_plugins = self.app.get_config('Plugin')
+        if config_plugins is None:
+            self.log.debug("No repository open yet, available plugins not written")
+            return
+        config = self.app.get_config_dict()
+        repo_id = config['App'].get('current')
+        config_plugins.add_available_batch(plugin_list)
+        old_keys = set(config_plugins.load_available().keys()) - {p[0] for p in plugin_list}
+        for key in old_keys:
+            config_plugins.remove_available(key)
+        self.log.info(f"Plugins available updated successfully for repository {repo_id}")

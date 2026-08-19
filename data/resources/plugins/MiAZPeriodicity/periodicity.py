@@ -28,7 +28,7 @@ plugin_info = {
         'Authors':       'Tomás Vírseda <tomasvirseda@gmail.com>',
         'Copyright':     'Copyright © 2025 Tomás Vírseda',
         'Website':       'http://github.com/t00m/MiAZ',
-        'Help':          'http://github.com/t00m/MiAZ/README.adoc',
+        'Help':          'https://github.com/t00m/MiAZ/blob/main/README.md',
         'Version':       '0.6',
         'Category':      'Content Organisation',
         'Subcategory':   'Tagging and Classification'
@@ -262,7 +262,9 @@ class MiAZPeriodicityPlugin(MiAZExtension):
     def startup(self, *args):
         if not self.plugin.started():
             # Always reinstall workspace menu entries (cleared by _on_plugins_updated)
-            submenu = self.plugin.install_menu_entry()
+            # No item of its own: this call creates the plugin's entry in the
+            # menu, and the submenu below hangs under it.
+            self.plugin.install_menu_entry()
 
             # Install plugin submenu
             plugin_menu = Gio.Menu()
@@ -272,7 +274,7 @@ class MiAZPeriodicityPlugin(MiAZExtension):
             plugin_menu.append_item(menuitem)
             menuitem = self.factory.create_menuitem(f'{i_confname}-mgt', _('Manage {i_confname}').format(i_confname=i_confname), self.show_settings, None, [])
             plugin_menu.append_item(menuitem)
-            submenu.append_submenu(_('{i_title}').format(i_title=i_title), plugin_menu)
+            self.plugin.install_menu_submenu(_('{i_title}').format(i_title=i_title), plugin_menu)
 
             # One-time setup guarded by the dropdown widget sentinel
             plugin_name = self.plugin.get_name()

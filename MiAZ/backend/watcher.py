@@ -19,6 +19,11 @@ from MiAZ.backend.log import MiAZLog
 from MiAZ.backend.status import MiAZStatus
 
 
+# How often a remote repository is polled. Remote shares have no usable
+# file monitor, so the directory is listed on a timer instead.
+REMOTE_POLL_SECONDS = 2
+
+
 class MiAZWatcher(GObject.GObject):
     """
     Observe a given directory for file changes (added/renamed/deleted)
@@ -58,15 +63,14 @@ class MiAZWatcher(GObject.GObject):
         self._timeout_id = 0
         # Per-path events accumulated during a burst: {path: (other_path, nick)}.
         self._pending = {}
-        seconds = 2
         self.log.debug(f"Watching repository: {dirpath}")
         self.log.debug(f"Remote repository? {remote}")
-        self.log.debug(f"Timeout set to: {seconds}")
+        self.log.debug(f"Timeout set to: {REMOTE_POLL_SECONDS}")
+        # set_path arms the remote poll (or the local file monitor) itself.
+        # Scheduling another one here left the first running with its id
+        # overwritten, so nothing could stop it and the poll ran at twice the
+        # rate for every remote repository.
         self.set_path(dirpath)
-        
-        if self.remote:
-            self._timeout_id = GLib.timeout_add_seconds(seconds, self.monitor, dirpath, self.watch)
-        
         self.log.debug("Watcher initialized")
 
     def _setup_file_monitor(self):
@@ -223,7 +227,13 @@ class MiAZWatcher(GObject.GObject):
         if dirpath is not None:
             self.dirpath = dirpath
             self.log.info(f"Watcher monitoring '{self.dirpath}'")
-            if not self.remote:
+            if self.remote:
+                if self._timeout_id > 0:
+                    GLib.source_remove(self._timeout_id)
+                    self._timeout_id = 0
+                self._timeout_id = GLib.timeout_add_seconds(
+                    REMOTE_POLL_SECONDS, self.monitor, self.dirpath, self.watch)
+            else:
                 self._setup_file_monitor()
 
     def set_active(self, active: bool = True) -> None:

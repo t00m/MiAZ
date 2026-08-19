@@ -14,7 +14,6 @@ from gettext import gettext as _
 
 from MiAZ.frontend.desktop.services.pluginsystem import MiAZExtension, MiAZPlugin
 
-path = os.path.join(os.path.abspath(__file__), 'example')
 sys.path.insert(1, os.path.dirname(os.path.abspath(__file__)))
 from example.test import PluginTest
 
@@ -26,7 +25,7 @@ plugin_info = {
         'Authors':       'Tomás Vírseda <tomasvirseda@gmail.com>',
         'Copyright':     'Copyright © 2025 Tomás Vírseda',
         'Website':       'http://github.com/t00m/MiAZ',
-        'Help':          'http://github.com/t00m/MiAZ/README.adoc',
+        'Help':          'https://github.com/t00m/MiAZ/blob/main/README.md',
         'Version':       '0.5',
         'Category':      'Support and Help',
         'Subcategory':   'Guides and Tutorials'
@@ -49,10 +48,6 @@ class HelloWorld(MiAZExtension):
         ## Get logger
         self.log = self.plugin.get_logger()
 
-        # Get services
-        self.actions = self.app.get_service('actions')
-        self.srvdlg = self.app.get_service('dialogs')
-
         ## Listen to 'workspace-loaded' signal to start up the plugin
         self.workspace = self.app.get_widget('workspace')
         if self.workspace.is_loaded():
@@ -60,15 +55,10 @@ class HelloWorld(MiAZExtension):
         else:
             self._startup_handler = self.workspace.connect('workspace-loaded', self.startup)
 
-        ## Listen to 'settings-loaded' signal to add custom settings
-        self._settings_handler = self.actions.connect('settings-loaded', self._on_settings_loaded)
-
     def do_deactivate(self):
         """Plugin deactivation"""
         if hasattr(self, '_startup_handler'):
             self.workspace.disconnect(self._startup_handler)
-        if hasattr(self, '_settings_handler'):
-            self.actions.disconnect(self._settings_handler)
         self.plugin.set_started(False)
 
     def startup(self, *args):
@@ -84,22 +74,3 @@ class HelloWorld(MiAZExtension):
 
     def _on_menuitem_activate(self, *args):
         test = PluginTest(self.app)
-
-    def _on_settings_loaded(self, *args):
-        pass
-        # ~ group = self.app.get_widget('window-preferences-page-aspect-group-ui')
-        # ~ row = Adw.SwitchRow(title=_("Hello world!"), subtitle=_('Plugin HelloWorld'))
-        # ~ row.connect('notify::active', self._on_activate_setting)
-        # ~ group.add(row)
-
-    def _on_activate_setting(self, row, gparam):
-        active = row.get_active()
-        dtype = "info"
-        title = _('<big>Row active {active}</big>').format(active=active)
-        body = ''
-        window = row.get_root()
-        dialog = self.srvdlg.create(dtype=dtype, title=title, body=body, widget=None)
-        dialog.present(window)
-
-    def show_settings(self):
-        self.log.info("Got it!")

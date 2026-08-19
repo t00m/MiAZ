@@ -25,7 +25,7 @@ plugin_info = {
     'Authors':       'Tomas Virseda <tomasvirseda@gmail.com>',
     'Copyright':     'Copyright © 2025 Tomas Virseda',
     'Website':       'http://github.com/t00m/MiAZ',
-    'Help':          'http://github.com/t00m/MiAZ/README.adoc',
+    'Help':          'https://github.com/t00m/MiAZ/blob/main/README.md',
     'Version':       '0.1.26',
     'Category':      'Customisation and Personalisation',
     'Subcategory':   'User Interface'
@@ -49,6 +49,12 @@ COLUMNS = {
 class MiAZColumnVisibilityPlugin(MiAZExtension):
     __gtype_name__ = 'MiAZColumnVisibilityPlugin'
     plugin = None
+    # Set in startup(), cleared in do_deactivate(). A right click can arrive
+    # in between, so the handler checks it rather than assuming it is there.
+    popover = None
+    gesture = None
+    cv = None
+    _startup_handler = None
 
     def do_activate(self):
         self.app = self.object.app
@@ -66,13 +72,19 @@ class MiAZColumnVisibilityPlugin(MiAZExtension):
             self._startup_handler = self.workspace.connect('workspace-loaded', self.startup)
 
     def do_deactivate(self):
-        if hasattr(self, 'cv') and hasattr(self, 'gesture'):
-            self.cv.remove_controller(self.gesture)
-        if hasattr(self, 'popover'):
+        # Drop the controller and forget it. Keeping the attribute around let a
+        # second deactivate try to remove a controller that is already gone.
+        if getattr(self, 'gesture', None) is not None:
+            if getattr(self, 'cv', None) is not None:
+                self.cv.remove_controller(self.gesture)
+            self.gesture = None
+            self.cv = None
+        if getattr(self, 'popover', None) is not None:
             self.popover.unparent()
             self.popover = None
-        if hasattr(self, '_startup_handler'):
+        if getattr(self, '_startup_handler', None) is not None:
             self.workspace.disconnect(self._startup_handler)
+            self._startup_handler = None
         if getattr(self, '_settings_handler', None) is not None:
             self.actions.disconnect(self._settings_handler)
             self._settings_handler = None
@@ -129,6 +141,13 @@ class MiAZColumnVisibilityPlugin(MiAZExtension):
         return vbox
 
     def _on_right_click(self, gesture, n_press, x, y):
+        # The plugin can be deactivated while this gesture is still attached to
+        # a column view that outlives it (a repository switch unloads every
+        # plugin). Without the popover there is nothing to show or hide, and
+        # the click belongs to whoever is still listening.
+        if self.popover is None:
+            return
+
         # Only handle clicks in the column header area (~top 50px).
         # Row-click right-clicks are left for the existing selection menu.
         if y > 50:

@@ -116,6 +116,10 @@ build_manual() {
     gzip -9nc "$MIAZ_SRC_DIR/debian/changelog" > "$DOCDIR/changelog.Debian.gz"
     chmod 0644 "$DOCDIR/changelog.Debian.gz"
 
+    # The same README the .rpm ships through %doc, so both packages document
+    # themselves in the same place from the same file.
+    install -m 0644 "$MIAZ_SRC_DIR/README.md" "$DOCDIR/README.md"
+
     # install_subdir copies the source directories as they are, so a working
     # tree that has been run from carries its __pycache__ into the package. The
     # bytecode is built by the host interpreter and is useless on the target

@@ -271,8 +271,7 @@ class MiAZMainWindow(Gtk.Box):
         hbox.append(btn_delete)
 
     def _update_window_title(self, *args):
-        cfg = self.app.get_config('App')
-        repo_id = cfg.get('current') if cfg is not None else None
+        repo_id = self.app.get_service('repo').get_active_id()
         subtitle = repo_id.replace('_', ' ') if repo_id else ''
         if getattr(self, '_window_title', None) is not None:
             self._window_title.set_subtitle(subtitle)
@@ -412,21 +411,21 @@ class MiAZMainWindow(Gtk.Box):
 
         self.app.remove_widgets_with_prefix('workspace-menu-plugins-')
 
+        # Put back what each loaded plugin contributed. This used to clear the
+        # plugin's started flag and call startup() again, so every plugin ran
+        # its whole setup once per load or unload of any other plugin: a fresh
+        # gesture on the column view here, another background scan there. The
+        # contributions are recorded when they are made, so the rebuild is a
+        # replay and startup() runs once per activation.
         plugin_manager = self.app.get_service('plugin-system')
         for plugin_info in plugin_manager.plugins:
             if not plugin_manager.is_plugin_loaded(plugin_info):
                 continue
             plugin_name = plugin_info.get_name()
-            plugin_obj = self.app.get_widget(f'plugin-{plugin_name}')
-            if plugin_obj is None:
-                continue
-            if hasattr(plugin_obj, 'plugin'):
-                plugin_obj.plugin.set_started(False)
-            if hasattr(plugin_obj, 'startup') and callable(plugin_obj.startup):
-                try:
-                    plugin_obj.startup()
-                except Exception as error:
-                    self.log.error(f"Error rebuilding menu for plugin {plugin_name}: {error}")
+            try:
+                plugin_manager.menus.replay(plugin_name, self.app)
+            except Exception as error:
+                self.log.error(f"Error rebuilding menu for plugin {plugin_name}: {error}")
 
         self._prepend_repo_title_section(new_main_menu)
         self._append_repo_management_section(new_main_menu)
@@ -492,7 +491,7 @@ class MiAZMainWindow(Gtk.Box):
         """Prepend the current repository name as the first section of menu."""
         actions = self.app.get_service('actions')
         factory = self.app.get_service('factory')
-        repo_id = self.app.get_config('App').get('current') or 'MiAZ'
+        repo_id = self.app.get_service('repo').get_active_id() or 'MiAZ'
         repo_name = repo_id.replace('_', ' ')
         section = Gio.Menu.new()
         section.append_item(factory.create_menuitem(
@@ -518,8 +517,11 @@ class MiAZMainWindow(Gtk.Box):
         section_common.append_item(menuitem)
         menuitem = factory.create_menuitem('app-shortcuts', _('Keyboard Shortcuts'), actions.show_app_shortcuts, None, ['<Control>question'])
         section_common.append_item(menuitem)
-        # ~ menuitem = factory.create_menuitem('app-help', _('Help'), actions.show_app_help, None, ['F1', '<Control>h'])
-        # ~ section_common.append_item(menuitem)
+        # F1 is listed in the shortcuts window, so it has to do something. It
+        # opens that same window: MiAZ has no separate manual, and a shortcut
+        # advertised and bound to nothing is worse than one that is honest.
+        menuitem = factory.create_menuitem('app-help', _('Help'), actions.show_app_help, None, ['F1'])
+        section_common.append_item(menuitem)
         menuitem = factory.create_menuitem('app-about', _('About MiAZ'), actions.show_app_about, None, ['<Control>b'])
         section_common.append_item(menuitem)
         menuitem = factory.create_menuitem('app-quit', _('Quit'), actions.exit_app, None, ['<Control>q'])

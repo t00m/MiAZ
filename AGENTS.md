@@ -24,8 +24,8 @@ Example: `20240315-ES-HOU-BANKNAME-INV-Q1invoice-JOHNDOE.pdf`
 | Python–GTK bindings | PyGObject | 3.50 |
 | Embedded web | WebKitGTK | 6.0 |
 | Build system | Meson + Ninja | 1.5.1 |
-| Distribution | deb / rpm / AppImage (native). Flatpak is deprecated | — |
-| i18n | gettext | — |
+| Distribution | deb / rpm / AppImage (native). Flatpak is deprecated | n/a |
+| i18n | gettext | n/a |
 
 ## Repository layout
 
@@ -54,6 +54,9 @@ MiAZ/
 │   │   ├── watcher.py            ← MiAZWatcher (filesystem monitor)
 │   │   └── webserver.py          ← MiAZWebServer (minimal static localhost HTTP server)
 │   └── frontend/
+│       ├── console/              ← Headless command line (no GTK, ever)
+│       │   ├── app.py            ← MiAZConsoleApp (util + repo + index, nothing else)
+│       │   └── cli.py            ← argparse, search and repos, three renderers
 │       └── desktop/
 │           ├── app.py            ← MiAZApp(Adw.Application)
 │           └── services/
@@ -138,6 +141,34 @@ against the enabled config (`config.exists_used`) or, for dates,
 - `MiAZWatcher` signals: `repository-updated`
 - `MiAZStats` signals: `stats-updated`
 - `MiAZDocumentIndex` signals: `index-loaded`, `index-changed`
+
+**The command line** (`MiAZ/frontend/console/`) is the proof that the layering is
+real. `MiAZConsoleApp` (`console/app.py`) provides the six things the backend
+asks of an application object (`get_service`, `get_env`, `get_config`,
+`get_config_dict`, `connect`, service registration) and registers three
+services: `util`, `repo` and `index`. No factory, no dialogs, no plugin system,
+no window. `console/cli.py` holds argparse, the `search` and `repos` commands and
+the three output renderers.
+
+Two rules keep it honest, both enforced by `tests/test_boundaries.py`:
+
+- Nothing under `frontend/console/` may import Gtk, Adw, Gdk, Pango, GdkPixbuf,
+  WebKit or `MiAZ.frontend.desktop`. The command line has to run where there is
+  no display.
+- The command line writes no filter conditions of its own. Flags map onto
+  `DocumentQuery` fields and filtering is `query.matches(item)`, the same call
+  the workspace makes, so the two cannot disagree about what a search means.
+
+Choosing a repository goes through `MiAZRepository.use(repo_id=None, path=None)`,
+which points the instance at a repository **without** writing `current` into the
+application configuration. Writing it is how the desktop app switches, and a
+command that did the same would change which repository the window opens next
+time. Diagnostics go to stderr (never stdout, which carries results). The console
+shows INFO and above; DEBUG goes only to the log file, which keeps everything.
+`MIAZ_DEBUG=1` puts DEBUG back on the console, and `log.set_console_level()`
+raises the bar further, which is how a command prints results rather than a
+startup narration. Each run starts a fresh `~/.MiAZ/var/log/MiAZ.log` and keeps
+the run before it as `MiAZ.last.log`.
 
 **The document index** (`backend/index.py`, service `index`) owns the only path
 from a filename to a `MiAZItem`. `build_item(filename)` is that path; `reload()`
@@ -354,7 +385,18 @@ Pass `widget_key` whenever the plugin looks the widget up later. The key is unre
 
 Reaching `sidebar-plugin-section`, `headerbar-left-box` and friends directly still works. These only save writing the teardown.
 
-**Verifying it**: `PYTHONPATH=. python scripts/devel/check_plugin_ui.py [PluginName ...]` drives a real disable/enable cycle in the running app and reports what every shared container held at each step. It cannot be a unit test, since it needs a display and a loaded repository.
+**Menu entries are recorded, not rebuilt by rerunning startup.** `install_menu_entry(menuitem, category=None, subcategory=None)` appends the item and remembers it against the plugin. `install_menu_submenu(title, menu)` does the same for a plugin that hangs several actions under its entry (assign, unassign, manage). The workspace menu is thrown away and rebuilt whenever plugins change, and the rebuild replays those records.
+
+It did not always. The rebuild used to clear every loaded plugin's `started` flag and call its `startup()` again, so each plugin ran its whole setup once per load or unload of **any** plugin: another gesture on the column view, another background probe of the scanner, another handler. One of those extra gestures is what made a right click crash after the plugin was disabled. Two rules follow:
+
+- **Never append to a shared menu directly.** `app.install_plugin_menu(...)` followed by `append_item` leaves the entry unrecorded, and the next rebuild drops it. That is what happened to the notes backup and restore entries. Pass the category and subcategory to `install_menu_entry` instead.
+- **`startup()` runs once per activation.** Guarding its expensive half with a sentinel widget is no longer needed, though it does no harm.
+
+**Contributions are refused once the plugin is unloaded.** `MiAZPlugin.is_active()` goes false before `do_deactivate` runs, and every contribution helper (menu entry, submenu, workspace page, sidebar widget, header bar widget, sidebar dropdown, document tab) returns early when it is false. Background work that finishes late cannot add UI for a plugin that is gone: `MiAZAutoScan` builds its source menu when the scanner answers, which can easily be after the user disabled it.
+
+**A plugin that registers a service must take it away.** `app.set_service(name, None)` removes it, and `set_service` replaces rather than ignoring, which it used to do. `MiAZProjectMgt` registers `Projects`; its `do_deactivate` calls `dispose()` on it (disconnecting the file signals it took) and then removes it. Leaving it registered meant a disabled plugin's service kept reacting to every file change, and, because it holds the path to one repository's `projects.json`, kept writing to the repository the user had switched away from.
+
+**Verifying it**: `tests/ui/test_ui_plugin_cycle.py` loads, unloads and reloads every plugin twice and compares pages, menu entries, sidebar and header bar contents and rename tabs. `tests/ui/test_ui_plugin_signals.py` counts the handlers on every long-lived emitter around a cycle, which is the only way to see a handler that was never disconnected. `PYTHONPATH=. python scripts/devel/check_plugin_ui.py [PluginName ...]` remains for looking at one plugin by hand.
 
 ### Startup flow
 
@@ -362,6 +404,23 @@ Reaching `sidebar-plugin-section`, `headerbar-left-box` and friends directly sti
 2. `app._on_activate()` → creates `MiAZPluginSystem` → `_setup_ui()` → `workflow.switch_start()`
 3. `switch_start()` → `repository.load()` → `app.load_plugins()` → `switch_finish()`
 4. `switch_finish()` → creates `MiAZWatcher`, sets up workspace page
+
+### Switching repository
+
+`MiAZWorkflow.switch_start(repo_id=None)` is the one way in, at startup and for every later switch. **It never restarts the application.** In order:
+
+1. An unknown `repo_id` is rejected before anything is torn down, and the repository on screen is left alone (returns `False`).
+2. `repository-switch-started` is emitted, then every loaded plugin is unloaded (`pluginsystem.unload_all()`) and `app.set_plugins_loaded(False)`. The enabled set is per repository (`plugins-used.json` lives in the repository `.conf`), so the plugins of the one being left have to go before the new list is read.
+3. The target is resolved: `repository.use(repo_id=...)` for a named one, `repository.reset()` for the default. `use()` does **not** write `App.current`, so a switch and a change of default are two separate decisions.
+4. `repository.load()` disposes the previous `MiAZConfigStore` and publishes the new configurations, then emits `repository-switched` → `switch_finish()` (re-points the watcher with `set_path()`, shows the workspace page, emits `repository-switch-finished`).
+5. `MiAZRepoSettings` is rebuilt, `app.load_plugins()` loads what the new repository enables, and `application-started` is emitted, which is where `MiAZWorkspace._on_finish_configuration` reloads the view and reconnects to the new configuration objects.
+
+Two rules follow from that order:
+
+- **Anything naming the repository to the user calls `repository.get_active_id()`**, not `App.current`. They differ whenever a switch did not set the default, and `current` then names a repository that is not on screen.
+- **Reload work belongs after the configurations are swapped**, so listen to `repository-switch-finished` or `application-started`. `repository-switch-started` fires before the swap and means "teardown is beginning"; a handler that repopulates there binds to the objects being replaced.
+
+A scan already in flight when a switch happens is discarded on arrival: `_apply_parse_results` compares `_repo_docs` with the current `repository.docs` and drops what belongs to the repository that was left.
 
 ## Embedded web (webserver + Browser page)
 
@@ -407,6 +466,40 @@ Vendor third-party JS inside the plugin to keep resources local; fall back to a 
 
 `document_rename` → `_document_rename_single(doc)` builds the `MiAZRenameDialog` content (`widgets/rename.py`) inside a `MiAZWindowDialog` with responses Cancel / Preview / Rename. Registered as widget `'dialog-rename'` and announced via the `rename-dialog-built` signal. Unlike an AlertDialog it does not auto-dismiss on a response: the handlers close it explicitly on Cancel or a confirmed rename, present the confirmation over the rename window, and leave it open after Preview. `MiAZAutoScan` chains multi-page scans by connecting the dialog's `closed` signal.
 
+### Date detection (`util.filename_guess_date`, `util.dates_from_text`)
+
+`dates_from_text` reads every **unambiguous** date out of a piece of text and returns it as `YYYYMMDD`, in order of appearance. It accepts a year-first date with a separator (`2024_03_15`, `2024-03-15`, `2024.03.15`), a solid eight-digit run even inside a longer one (`IMG20240315123456`), and a year-last date whose order is decided by the text itself (`15_03_2024`, because there is no month 15). It refuses what it would have to guess: `03_04_2024` is 3 April or 4 March depending on the country, so it reads nothing. Two-digit years are refused for the same reason. Years outside 1900..2100 are rejected, which is what keeps an ID or an IBAN from being read as a date.
+
+`dates_from_metadata(filepath)` reads the date the file itself carries, and needs **no third-party library**. For a PDF it scans the raw bytes for `/CreationDate (D:YYYYMMDD…)` and `<xmp:CreateDate>`; only when the plain scan comes back empty does it inflate up to `_PDF_MAX_STREAMS` Flate streams and look again, which is where an XMP-only PDF keeps its packet. For an image it walks the EXIF TIFF block by hand (`_exif_original_date`, tags `0x8769` → `0x9003`) and also scans for an XMP packet. A file starting with the ZIP magic is read as an office document: `docProps/core.xml` `dcterms:created` for OOXML, `meta.xml` `meta:creation-date` for OpenDocument, matched by magic number rather than by listing a dozen mime types. `/ModDate` is deliberately not read, and when several creation dates are present (an incrementally updated PDF carries one Info dictionary per revision) the earliest wins.
+
+Metadata is a claim by whatever wrote the file, not ground truth. An office document made from a template inherits the template's created date, which in this repository is off by years for two files. It is still a date about the document rather than about when it was downloaded, and the rename preview shows it before anything is applied.
+
+This used to go through `pypdf` and `Pillow` behind `except ImportError: return ''`. Neither is a dependency of MiAZ, so on a normal install the whole branch was dead and the date silently fell through to the mtime. Do not reintroduce that shape: an optional import whose failure path is indistinguishable from "no date found" is a feature that is off without saying so.
+
+`filename_guess_date(filepath, concept_hint)` chains: `dates_from_metadata` first, then the first unambiguous date in the concept hint (where `filename_normalize` keeps the original filename), then `UNKNOWN_DATE` (`99991231`, in `backend/util.py`).
+
+**Metadata wins over the name, and the order matters.** A filename is not a reliable place to find a date: invoice numbers, policy numbers and national IDs are digit runs that pass every shape check a date parser can apply. `RG151119905140` is a real 1&1 invoice number, and `15111990` inside it reads as a perfectly valid 15 November 1990; `1979012701107` is a national ID that reads as 27 January 1979. Metadata cannot fail that way, because a field named `CreationDate` holds a date or holds nothing. Measured against 1257 hand-filed documents, the metadata date agreed with the owner's choice 46% of the time and the filename date 26%, and where both existed and disagreed the metadata was right 5 times to 3. End to end the swap moves only 2 documents, because the two sources rarely both fire; it is worth it for the failure mode it removes, not for the aggregate.
+
+`util.filename_get_creation_date` was renamed to `filename_get_modification_date`, since it reads `st_mtime` and the old name claimed something it never delivered. It has no callers; use `dates_from_metadata` for a document date.
+
+There is **no mtime fallback**: a document downloaded today has today's mtime, so the old one filed every dateless document under its import date and looked like "MiAZ always suggests today". `UNKNOWN_DATE` is a real date, so the entry validator, the calendar and the sort order need no special case, and it sorts last so unknown dates group at the end of the workspace.
+
+Measured on a 1257-document repository: 1094 dates from metadata, 19 from the name, 144 unknown, at 1.6 ms per document.
+
+Both rename paths use it. The single rename (`widgets/rename.py`) prefills the date in `set_data` when field 0 is empty, and the date row carries a **detect button** (`btnDetectDate`, `_on_detect_date`) that reads it again on demand from the *current* concept entry text, so it also works for a document already filed under a wrong date. The mass rename Date dialog reads per file when its checkbox is ticked and reports how many dates it really read.
+
+### Plugin index
+
+`scan_plugin_index()` reads both plugin directories and writes `index-plugins.json`. `update_available_plugins()` writes the scanned set into the open repository's available plugins. They are separate because only the second one needs a repository: the constructor scans once, `repository-switched` updates only, and `create_plugin_index()` still does both for the one caller that really changed what is on disk (importing a plugin ZIP). Do not put them back together; that is what made the constructor scan, fail on the repository half, warn, and then have the first switch redo the whole thing.
+
+### Archive extraction
+
+`util.check_zip_members(names, install_dir)` is the one place that decides whether an archive may be unpacked. It raises `RuntimeError` for any member that would land outside `install_dir`. It is a **module-level** function, not a method, so callers without the app object can reach it: `MiAZNotes/lib/dr.py` builds its own `ZipFile` and has no service registry.
+
+Three callers, and there must not be a fourth that skips it: `util.unzip` (which every `util.unzip` caller inherits), `pluginsystem.install_plugin` (goes through `util.unzip`, **not** `extractall`), and the `MiAZNotes` restore.
+
+Note what this check is and is not. CPython's `zipfile` already strips `..` and leading separators, so a member named `../evil` is quietly rewritten to sit inside the target rather than escaping: nothing gets out today. The check exists so that case is refused out loud instead of silently relocating a file, and so the guard is already in place if extraction ever moves to `tarfile`, which sanitises nothing. Do not describe it as fixing a live traversal escape.
+
 ### First-run repository assistant (`widgets/assistant.py`)
 
 `MiAZRepoAssistant(Adw.Window)` is a guided wizard shown when **no repository is configured** (triggered from `MiAZWorkflow._maybe_launch_assistant`; also reachable via `actions.show_repository_assistant`). Pages: welcome, create-repository (free-text name → derived key via `util.valid_key`, location), one page per filing property (Countries/Groups/Purposes/Senders/Recipients embedding the config selectors), and a summary. It initialises the repo before building the selector pages and runs the normal workspace load through `MiAZWorkflow.switch_start` on finish.
@@ -423,7 +516,7 @@ The dialog is presented over the window the user is currently using, not always 
 
 ### Mass rename
 
-`MiAZMassRename` (`services/massrename.py`, service `massrename`) sets a single filename field across the whole selection. It was a plugin and is now core. `build_menu` (called once in `__init__`) registers the seven `massrename-*` app actions and stores a shared `Gio.Menu` as the `massrename-menu` widget. Three dialog builders back the menu: `rename_field` (value dropdown for country/group/purpose/sentby/sentto), `rename_date` (calendar, plus a "Detect date from each file" checkbox, on by default, that sets each file's date per file via `util.filename_guess_date` instead of one shared calendar date), and `rename_concept` (the guided concept transform; the pure ops are module-level functions in the same file, e.g. `parse_positions`, `keep_tokens`, `apply_concept_op`). All three preview with `MiAZColumnViewMassRename` and apply through the shared rename loop (no `MiAZStatus.BUSY` toggling; skip-and-continue; `util.filename_rename` + debounced workspace refresh).
+`MiAZMassRename` (`services/massrename.py`, service `massrename`) sets a single filename field across the whole selection. It was a plugin and is now core. `build_menu` (called once in `__init__`) registers the seven `massrename-*` app actions and stores a shared `Gio.Menu` as the `massrename-menu` widget. Three dialog builders back the menu: `rename_field` (value dropdown for country/group/purpose/sentby/sentto), `rename_date` (calendar, plus a "Detect date from each file" checkbox, on by default, that sets each file's date per file via `util.filename_guess_date` instead of one shared calendar date, and reports how many dates were read against how many got `UNKNOWN_DATE`), and `rename_concept` (the guided concept transform; the pure ops are module-level functions in the same file, e.g. `parse_positions`, `keep_tokens`, `apply_concept_op`). All three preview with `MiAZColumnViewMassRename` and apply through the shared rename loop (no `MiAZStatus.BUSY` toggling; skip-and-continue; `util.filename_rename` + debounced workspace refresh).
 
 The menu is exposed from two places, both reusing the one stored `massrename-menu` (rebuilding it would re-register the actions and fail):
 - The workspace headerbar (`widgets/mainwindow.py`): a `Gtk.MenuButton` (`headerbar-button-massrename`) with the same `io.github.t00m.MiAZ-rename` icon as single rename. `_on_workspace_menu_update` shows the single-rename button when exactly one document is selected and this menu button when two or more are selected.

@@ -423,3 +423,91 @@ def test_the_all_documents_preset_is_a_token_too():
     """Selecting "All documents" is a choice, not the absence of one, so it has
     to survive a round trip like the others."""
     assert DATE_PRESET_ALL in DATE_PRESETS
+
+
+# ---------------------------------------------------------------------------
+# resolve_preset
+# ---------------------------------------------------------------------------
+# The arithmetic behind the preset tokens used to sit in the workspace widget,
+# inside the loop building the sidebar entries, so nothing else could ask what
+# 'last-6-months' means without copying it.
+
+from datetime import datetime, timedelta
+
+from MiAZ.backend.query import (DATE_PRESET_FUTURE, DATE_PRESET_LAST_6_MONTHS,
+                                resolve_preset)
+from MiAZ.backend.util import MiAZUtil
+
+NOW = datetime(2026, 8, 13)
+
+
+class NoServices:
+    def get_service(self, name):
+        return None
+
+
+def util():
+    """MiAZUtil owns the date helpers, and needs nothing from the app here."""
+    return MiAZUtil(NoServices())
+
+
+def test_resolve_this_month_starts_on_the_first():
+    since, until = resolve_preset(DATE_PRESET_THIS_MONTH, NOW, util())
+    assert (since.year, since.month, since.day) == (2026, 8, 1)
+    assert until == NOW.date()
+
+
+def test_resolve_last_6_months_matches_the_util_helper():
+    since, _until = resolve_preset(DATE_PRESET_LAST_6_MONTHS, NOW, util())
+    assert since == util().since_date_last_n_months(NOW, 6).date()
+
+
+def test_resolve_years_start_on_the_first_of_january():
+    since, _until = resolve_preset('2-years', NOW, util())
+    assert (since.year, since.month, since.day) == (2024, 1, 1)
+
+
+def test_resolve_future_starts_tomorrow():
+    since, until = resolve_preset(DATE_PRESET_FUTURE, NOW, util())
+    assert since == (NOW + timedelta(days=1)).date()
+    assert until.year == 9999
+
+
+def test_resolve_all_documents_has_no_bounds():
+    assert resolve_preset(DATE_PRESET_ALL, NOW, util()) == (None, None)
+
+
+def test_resolve_unknown_token_has_no_bounds():
+    assert resolve_preset('last-week', NOW, util()) == (None, None)
+
+
+def test_every_token_resolves():
+    """A preset cannot be added without giving it a meaning."""
+    for token in DATE_PRESETS:
+        since, _until = resolve_preset(token, NOW, util())
+        assert since is not None or token == DATE_PRESET_ALL
+
+
+def test_resolve_returns_dates_not_datetimes():
+    """Bounds are compared against parse_date(), which returns date objects.
+
+    A datetime here raises TypeError inside matches() the moment a --since
+    search runs, which unit tests asserting 'is not None' never noticed.
+    """
+    from datetime import date
+    for token in DATE_PRESETS:
+        since, until = resolve_preset(token, NOW, util())
+        for value in (since, until):
+            if value is not None:
+                assert type(value) is date, f'{token} produced {type(value)}'
+
+
+def test_a_preset_query_actually_filters():
+    """The end to end check the type test exists to protect."""
+    query = DocumentQuery(date_mode=DATE_RANGE, date_preset='last-12-months')
+    query.date_since, query.date_until = resolve_preset(
+        'last-12-months', NOW, util())
+    recent = item(date='20260601')
+    old = item(date='20200101')
+    assert query.matches(recent) is True
+    assert query.matches(old) is False

@@ -12,6 +12,8 @@ import shutil
 import zipfile
 from datetime import datetime
 
+from MiAZ.backend.util import check_zip_members
+
 
 class NotesBackup:
     """Zip/unzip the plugin's notes data directory."""
@@ -65,6 +67,10 @@ class NotesBackup:
         count = 0
         try:
             with zipfile.ZipFile(source_zip, 'r') as zfile:
+                # A restore archive is a file the user picked, so it is as
+                # untrusted as an imported plugin zip. Same check, and it runs
+                # over the whole listing before anything is written.
+                check_zip_members(zfile.namelist(), self.data_dir)
                 for info in zfile.infolist():
                     if info.is_dir():
                         continue

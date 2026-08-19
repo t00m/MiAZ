@@ -5,7 +5,7 @@
 
 import os
 from collections import namedtuple
-from datetime import datetime, timedelta
+from datetime import datetime
 from gettext import gettext as _
 
 # Minimal object for removing a store item by id (MiAZColumnView matches on .id).
@@ -27,7 +27,7 @@ from MiAZ.backend.query import (
     DATE_PRESET_THIS_MONTH, DATE_PRESET_PAST_MONTH, DATE_PRESET_LAST_3_MONTHS,
     DATE_PRESET_LAST_6_MONTHS, DATE_PRESET_LAST_12_MONTHS, DATE_PRESET_2_YEARS,
     DATE_PRESET_3_YEARS, DATE_PRESET_5_YEARS, DATE_PRESET_10_YEARS,
-    DATE_PRESET_FUTURE, DATE_PRESET_ALL)
+    DATE_PRESET_FUTURE, DATE_PRESET_ALL, resolve_preset)
 from MiAZ.backend.tasks import run_in_background
 from MiAZ.frontend.desktop.widgets.browserpage import MiAZBrowserPage
 from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewWorkspace
@@ -261,12 +261,15 @@ class MiAZWorkspace(Gtk.Box):
         window.present()
         if not self._finish_config_done:
             self._finish_config_done = True
-            workflow = self.app.get_service('workflow')
             srvutl = self.app.get_service('util')
             srvutl.connect('filename-renamed', self._schedule_update)
             srvutl.connect('filename-deleted', self._schedule_update)
             srvutl.connect('filename-added', self._schedule_update)
-            workflow.connect('repository-switch-started', self._on_repo_switch)
+        # Every switch reaches here: switch_start emits 'application-started'
+        # once the new repository is loaded and its caches are fresh, which is
+        # the only point where reconnecting to the configurations picks up the
+        # new objects rather than the ones being replaced. Listening to
+        # 'repository-switch-started' instead would run this before the swap.
         self._on_repo_switch()
         self.emit('workspace-loaded')
 
@@ -434,39 +437,30 @@ class MiAZWorkspace(Gtk.Box):
         # id holds today's dates and the title is translated, so the token is
         # the only thing that still identifies an entry tomorrow, or in another
         # language. set_query() writes a query back to this dropdown by token.
-        ul = now                                  # upper limit
-        presets = [
-            (DATE_PRESET_THIS_MONTH, _('This month'),
-             util.since_date_this_month(now)),
-            (DATE_PRESET_PAST_MONTH, _('Since past month'),
-             util.since_date_last_n_months(now, 1)),
-            (DATE_PRESET_LAST_3_MONTHS, _('Since last 3 months'),
-             util.since_date_last_n_months(now, 3)),
-            (DATE_PRESET_LAST_6_MONTHS, _('Since last 6 months'),
-             util.since_date_last_n_months(now, 6)),
+        #
+        # Only the labels live here. What a token means is query.resolve_preset,
+        # so the sidebar and anything else asking the same question (the command
+        # line, for one) cannot drift apart.
+        titles = [
+            (DATE_PRESET_THIS_MONTH, _('This month')),
+            (DATE_PRESET_PAST_MONTH, _('Since past month')),
+            (DATE_PRESET_LAST_3_MONTHS, _('Since last 3 months')),
+            (DATE_PRESET_LAST_6_MONTHS, _('Since last 6 months')),
             # The last twelve months. This used to resolve through
             # since_date_this_year, so the label said "last year" while the
             # range was the calendar year to date: seven months on 7 August,
             # and two days on 2 January.
-            (DATE_PRESET_LAST_12_MONTHS, _('Since last year'),
-             util.since_date_last_n_months(now, 12)),
-            (DATE_PRESET_2_YEARS, _('Since two years ago'),
-             util.since_date_past_n_years_ago(now, 2)),
-            (DATE_PRESET_3_YEARS, _('Since three years ago'),
-             util.since_date_past_n_years_ago(now, 3)),
-            (DATE_PRESET_5_YEARS, _('Since five years ago'),
-             util.since_date_past_n_years_ago(now, 5)),
-            (DATE_PRESET_10_YEARS, _('Since ten years ago'),
-             util.since_date_past_n_years_ago(now, 10)),
+            (DATE_PRESET_LAST_12_MONTHS, _('Since last year')),
+            (DATE_PRESET_2_YEARS, _('Since two years ago')),
+            (DATE_PRESET_3_YEARS, _('Since three years ago')),
+            (DATE_PRESET_5_YEARS, _('Since five years ago')),
+            (DATE_PRESET_10_YEARS, _('Since ten years ago')),
+            (DATE_PRESET_FUTURE, _('Future')),
         ]
-        for token, title, ll in presets:
+        for token, title in titles:
+            ll, ul = resolve_preset(token, now, util)
             model.append(Date(id=f"{dt2str(ll)}-{dt2str(ul)}", title=title,
                               preset=token))
-
-        ## Future (tomorrow onwards)
-        ll = now + timedelta(days=1)
-        model.append(Date(id=f"{dt2str(ll)}-99991231", title=_('Future'),
-                          preset=DATE_PRESET_FUTURE))
 
         ## All documents
         model.append(Date(id="All-All", title=_('All documents'),
@@ -794,11 +788,25 @@ class MiAZWorkspace(Gtk.Box):
 
     def _apply_parse_results(self, result_dict):
         """Apply parsed results on the main thread."""
+        repository = self.app.get_service('repo')
+
+        # A scan that started before a repository switch comes back after it,
+        # holding the documents of the repository that was left. Applying it
+        # would show the previous repository's documents in the new one and,
+        # worse, spend the armed date-preset selection on them, leaving the new
+        # repository filtered by a range that predates it (an empty view). The
+        # switch already asked for its own scan, so this one is dropped.
+        scanned = result_dict.get('_repo_docs')
+        if scanned is not None and scanned != repository.docs:
+            self.log.debug(f"Discarding scan of '{scanned}': the repository is now '{repository.docs}'")
+            self._scan_in_flight = False
+            self._schedule_update()
+            return False
+
         items = result_dict['items']
         invalid = result_dict['invalid']
         show_pending = result_dict['show_pending']
 
-        repository = self.app.get_service('repo')
         util = self.app.get_service('util')
         index = self.app.get_service('index')
 

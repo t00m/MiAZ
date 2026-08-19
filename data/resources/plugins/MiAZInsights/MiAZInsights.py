@@ -50,7 +50,7 @@ plugin_info = {
     'Authors':      'Tomás Vírseda <tomasvirseda@gmail.com>',
     'Copyright':    'Copyright © 2026 Tomás Vírseda',
     'Website':      'https://github.com/t00m/MiAZ',
-    'Help':         'https://github.com/t00m/MiAZ/README.adoc',
+    'Help':         'https://github.com/t00m/MiAZ/blob/main/README.md',
     'Version':      '0.2.0',
     'Category':     'Analytics and Reporting',
     'Subcategory':  'Custom Reports',
@@ -252,8 +252,8 @@ class MiAZInsightsPlugin(MiAZExtension):
     def _meta(self):
         env = self.app.get_env()
         app_info = env['APP'] if env else {}
-        appconf = self.app.get_config('App')
-        repo_id = appconf.get('current') if appconf is not None else None
+        repository = self.app.get_service('repo')
+        repo_id = repository.get_active_id() if repository is not None else None
         language = os.environ.get('LANG', '') or os.environ.get('LANGUAGE', '')
         locale_name = language.split('.')[0] if language else ''
         return {

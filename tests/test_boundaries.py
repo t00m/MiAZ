@@ -16,6 +16,7 @@ import os
 
 BACKEND = os.path.join('MiAZ', 'backend')
 FRONTEND = os.path.join('MiAZ', 'frontend')
+CONSOLE = os.path.join('MiAZ', 'frontend', 'console')
 
 # gi namespaces that mean "this module draws or talks to a display".
 # GObject, GLib and Gio are deliberately allowed: the backend exposes its events
@@ -55,6 +56,19 @@ def python_files(root):
 def parse(path):
     with open(path, 'r', encoding='utf-8') as handler:
         return ast.parse(handler.read(), filename=path)
+
+
+def imports_desktop_frontend(tree):
+    """True when this module imports anything from MiAZ.frontend.desktop."""
+    for node in ast.walk(tree):
+        if isinstance(node, ast.ImportFrom) and node.module:
+            if node.module.startswith('MiAZ.frontend.desktop'):
+                return True
+        elif isinstance(node, ast.Import):
+            for alias in node.names:
+                if alias.name.startswith('MiAZ.frontend.desktop'):
+                    return True
+    return False
 
 
 def gui_namespaces_imported(tree):
@@ -99,6 +113,16 @@ def test_gui_detector_allows_the_backend_gi_namespaces():
     assert gui_namespaces_imported(tree) == set()
 
 
+def test_desktop_detector_finds_an_import():
+    tree = ast.parse('from MiAZ.frontend.desktop.services.factory import X')
+    assert imports_desktop_frontend(tree) is True
+
+
+def test_desktop_detector_allows_the_backend():
+    tree = ast.parse('from MiAZ.backend.query import DocumentQuery')
+    assert imports_desktop_frontend(tree) is False
+
+
 def test_fs_detector_finds_a_direct_call():
     tree = ast.parse('import os\nos.unlink(path)\n')
     assert direct_fs_calls(tree) == [('os.unlink', 2)]
@@ -128,6 +152,30 @@ def test_backend_imports_no_gui_toolkit():
     assert offenders == {}, (
         f"Backend modules importing a GUI toolkit: {offenders}. "
         f"Move the widget code to MiAZ/frontend/desktop/widgets/.")
+
+
+def test_console_frontend_runs_without_a_display():
+    """The command line must work on a machine with no display.
+
+    One convenient import of a desktop helper would make it need one, and the
+    split that makes the command line possible would rot from there. The
+    console package may use the backend and nothing else of the frontend.
+    """
+    offenders = {}
+    checked = 0
+    for path in python_files(CONSOLE):
+        checked += 1
+        tree = parse(path)
+        problems = sorted(gui_namespaces_imported(tree))
+        if imports_desktop_frontend(tree):
+            problems.append('MiAZ.frontend.desktop')
+        if problems:
+            offenders[path] = problems
+    # A rule that walks the wrong directory finds nothing and passes for ever.
+    assert checked >= 2, f'expected the console package under {CONSOLE}'
+    assert offenders == {}, (
+        f"Console modules that need a display: {offenders}. "
+        f"The command line may import MiAZ.backend only.")
 
 
 def test_frontend_does_not_touch_the_filesystem_directly():
