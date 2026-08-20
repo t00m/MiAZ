@@ -29,6 +29,16 @@ from MiAZ.backend.crash import install_backend_excepthook
 
 log = MiAZLog('MiAZ')
 
+# The toolkit versions MiAZ actually calls, not round numbers. Gtk.FileDialog,
+# Gtk.FontDialog and Gtk.DialogError are 4.10. Adw.InlineViewSwitcher is 1.7 and
+# is built while the main window is. Adw.ShortcutsDialog is 1.8 and is the one
+# API used above this floor: it is behind a version check with a fallback (see
+# actions.show_app_help), which is what keeps Debian 13 and its 1.7.6 running.
+# Derived from the APIs the source uses, which tests/test_toolkit_version.py
+# checks against the GIR so these two numbers cannot drift below the code again.
+GTK_MINIMUM = (4, 10)
+ADW_MINIMUM = (1, 7)
+
 # Check Desktop environment
 ENV['DESKTOP'] = {}
 try:
@@ -48,7 +58,7 @@ try:
     except (ValueError, ImportError):
         GLibUnix = None
     ENV['DESKTOP']['GTK_VERSION'] = (Gtk.MAJOR_VERSION, Gtk.MINOR_VERSION, Gtk.MICRO_VERSION)
-    ENV['DESKTOP']['GTK_SUPPORT'] = Gtk.MAJOR_VERSION >= 4 and Gtk.MINOR_VERSION >= 6
+    ENV['DESKTOP']['GTK_SUPPORT'] = (Gtk.MAJOR_VERSION, Gtk.MINOR_VERSION) >= GTK_MINIMUM
 except (ValueError, ModuleNotFoundError):
     ENV['DESKTOP']['GTK_SUPPORT'] = False
 
@@ -56,7 +66,7 @@ try:
     gi.require_version('Adw', '1')
     from gi.repository import Adw
     ENV['DESKTOP']['ADW_VERSION'] = (Adw.MAJOR_VERSION, Adw.MINOR_VERSION, Adw.MICRO_VERSION)
-    ENV['DESKTOP']['ADW_SUPPORT'] = Adw.MAJOR_VERSION >= 1 and Adw.MINOR_VERSION >= 6
+    ENV['DESKTOP']['ADW_SUPPORT'] = (Adw.MAJOR_VERSION, Adw.MINOR_VERSION) >= ADW_MINIMUM
 except (ValueError, ModuleNotFoundError):
     ENV['DESKTOP']['ADW_SUPPORT'] = False
 
@@ -67,7 +77,10 @@ log.debug(f"ADW available ({Adw.MAJOR_VERSION}.{Adw.MINOR_VERSION}.{Adw.MICRO_VE
 log.debug(f"Desktop enabled? {ENV['DESKTOP']['ENABLED']}")
 if not ENV['DESKTOP']['ENABLED']:
     log.error("Desktop dependencies not met to run this app")
-    log.error("Make sure that Gtk version is >= 4.6 and Adw is >= 1.6")
+    log.error("GTK %d.%d found, %d.%d needed" % (
+        Gtk.MAJOR_VERSION, Gtk.MINOR_VERSION, *GTK_MINIMUM))
+    log.error("Adw %d.%d found, %d.%d needed" % (
+        Adw.MAJOR_VERSION, Adw.MINOR_VERSION, *ADW_MINIMUM))
     sys.exit(-1)
 
 

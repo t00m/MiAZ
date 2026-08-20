@@ -67,6 +67,11 @@
     </screenshot>
   </screenshots>
   <releases>
+    <release version="0.2.0" date="2026-08-20" urgency="medium">
+      <description>
+        <p>See CHANGELOG.md for details.</p>
+      </description>
+    </release>
     <release version="0.1.60" date="2026-08-19" urgency="medium">
       <description>
         <p>A command line that works without a display, repository switching without a restart, and dates read from the document instead of guessed.</p>

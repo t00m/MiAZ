@@ -145,7 +145,7 @@ chmod +x ./miaz-*.AppImage
 
 ### From source
 
-Requirements: Python ≥ 3.9, GTK ≥ 4.10, Libadwaita ≥ 1.6, PyGObject ≥ 3.50, meson, ninja.
+Requirements: Python ≥ 3.9, GTK ≥ 4.10, Libadwaita ≥ 1.7, PyGObject ≥ 3.50, meson, ninja.
 
 ```bash
 git clone https://github.com/t00m/MiAZ
@@ -247,7 +247,7 @@ Your own plugins go in `~/.MiAZ/opt/plugins/`, and can be imported as a ZIP from
 |---|---|
 | Python | 3.9 |
 | GTK | 4.10 |
-| Libadwaita | 1.6 |
+| Libadwaita | 1.7 |
 | PyGObject | 3.50 |
 
 ## Contributing

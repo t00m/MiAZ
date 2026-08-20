@@ -4,9 +4,11 @@ on:
   push:
     branches:
       - main
+      - '0.2'
   pull_request:
     branches:
       - main
+      - '0.2'
   workflow_dispatch:
 
 concurrency:
@@ -17,23 +19,36 @@ jobs:
   test:
     name: Tests, lint and metadata
     runs-on: ubuntu-latest
+    # A stalled apt or dnf used to burn the 6 hour ceiling before GitHub killed
+    # the job. Nothing here takes more than ten minutes when it works.
+    timeout-minutes: 30
+    # Not ubuntu-latest's own userland: noble ships libadwaita 1.5 and MiAZ
+    # calls Adw.InlineViewSwitcher (1.7) and Adw.ShortcutsDialog (1.8). On 1.5
+    # the version gate in miaz.py exits before a single test runs, which is how
+    # the whole UI suite came to fail at setup with SystemExit. Fedora 43 ships
+    # 1.8.7. See tests/test_toolkit_version.py for where the floor comes from.
+    container: fedora:43
     steps:
       - name: Checkout repository
         uses: actions/checkout@v5
 
-      # PyGObject (gi) is provided by the system apt packages and is bound to
-      # the system Python, so the tests run against the runner's system Python.
-      # actions/setup-python installs a separate interpreter that cannot see the
-      # apt bindings, which is why it is not used here. The project floor is 3.9
-      # (requires-python); 3.9/3.10 syntax compatibility is enforced statically
-      # by ruff's target-version = "py39" in pyproject.toml.
+      # PyGObject (gi) comes from the system packages and is bound to the
+      # system Python, so the tests run against it. actions/setup-python
+      # installs a separate interpreter that cannot see those bindings, which
+      # is why it is not used here. The project floor is 3.9 (requires-python);
+      # 3.9 syntax compatibility is enforced statically by ruff's
+      # target-version = "py39" in pyproject.toml.
+      #
+      # The -devel packages are here for their GIR files, which is where
+      # test_toolkit_version.py reads the version each API was introduced in.
       - name: Install system dependencies
         run: |
-          sudo apt-get update -y
-          sudo apt-get install -y \
-            python3 python3-venv python3-gi python3-gi-cairo \
-            gir1.2-gtk-4.0 gir1.2-adw-1 gir1.2-peas-2 gir1.2-webkit-6.0 \
-            appstream-util desktop-file-utils
+          dnf install -y --setopt=install_weak_deps=False \
+            python3 python3-pip python3-gobject python3-cairo \
+            gtk4 gtk4-devel libadwaita libadwaita-devel \
+            libpeas libpeas-loader-python webkitgtk6.0 libsecret \
+            libappstream-glib desktop-file-utils \
+            xorg-x11-server-Xvfb git
 
       - name: Install Python tooling
         # A venv created with --system-site-packages can import the system gi
@@ -42,6 +57,18 @@ jobs:
           python3 -m venv --system-site-packages .venv
           .venv/bin/pip install --upgrade pip
           .venv/bin/pip install pytest ruff pytest-cov
+
+      - name: Report the toolkit versions
+        # Printed before anything runs: when a job fails on a version floor,
+        # this is the line that says so in one look.
+        run: |
+          .venv/bin/python -c "
+          import gi
+          gi.require_version('Gtk', '4.0'); gi.require_version('Adw', '1')
+          from gi.repository import Gtk, Adw
+          print('GTK %d.%d.%d' % (Gtk.MAJOR_VERSION, Gtk.MINOR_VERSION, Gtk.MICRO_VERSION))
+          print('Adw %d.%d.%d' % (Adw.MAJOR_VERSION, Adw.MINOR_VERSION, Adw.MICRO_VERSION))
+          "
 
       - name: Lint with ruff
         run: .venv/bin/ruff check MiAZ data/resources/plugins tests
@@ -56,7 +83,6 @@ jobs:
         # they need a display and the plugin loader. Xvfb provides the first;
         # the runner sandboxes HOME so nothing here touches a real one.
         run: |
-          sudo apt-get install -y xvfb libpeas-2-0 gir1.2-secret-1
           PYTEST=.venv/bin/python \
             xvfb-run -a --server-args="-screen 0 1280x1024x24" \
             scripts/checks/run_ui_tests.sh -q
@@ -76,6 +102,13 @@ jobs:
   build-meson:
     name: Meson build and install
     runs-on: ubuntu-latest
+    # This job stalled inside apt-get on 19 August and ran for six hours before
+    # GitHub cancelled it. It takes about three minutes when apt answers.
+    timeout-minutes: 20
+    env:
+      # An apt that stops to ask a question waits for an answer nobody will
+      # give, which is the shape the six hour run had.
+      DEBIAN_FRONTEND: noninteractive
     steps:
       - name: Checkout repository
         uses: actions/checkout@v5
@@ -85,6 +118,8 @@ jobs:
         with:
           python-version: "3.11"
 
+      # This job builds and installs; it never imports the application, so the
+      # toolkit version floor that governs the test job does not apply here.
       - name: Install build dependencies
         run: |
           sudo apt-get update -y

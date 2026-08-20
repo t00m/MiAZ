@@ -23,6 +23,24 @@ from MiAZ.frontend.desktop.widgets.settings import MiAZAppSettings
 from MiAZ.frontend.desktop.widgets.settings import MiAZRepoSettings
 from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewMassDelete
 
+# Adw.ShortcutsDialog is the widget GNOME provides for this and it arrived in
+# libadwaita 1.8. Debian 13, the current stable, ships 1.7.6, so MiAZ builds the
+# same list out of older parts there. Drop _build_shortcuts_fallback and this
+# constant once every distribution MiAZ ships to has 1.8.
+ADW_SHORTCUTS_DIALOG = (1, 8)
+
+
+def accelerator_label(accelerator: str) -> str:
+    """'<Control>s' as the user reads it: 'Ctrl+S'.
+
+    Gtk.accelerator_get_label is what Adw.ShortcutsDialog renders with, and
+    unlike the rest of the Gtk.Shortcuts* family it is not deprecated.
+    """
+    parsed, key, mods = Gtk.accelerator_parse(accelerator)
+    if not parsed:
+        return accelerator
+    return Gtk.accelerator_get_label(key, mods)
+
 # Conversion Item type to Field Number
 Field = {}
 Field[Date] = 0
@@ -446,33 +464,73 @@ class MiAZActions(GObject.GObject):
     def show_app_shortcuts(self, *args):
         self.show_app_help(*args)
 
+    def shortcut_sections(self):
+        """The shortcuts, written once.
+
+        Both builders read this, so the two cannot list different keys. Built
+        on each call rather than at import, so the titles are translated in the
+        language in use rather than the one loaded first.
+        """
+        return (
+            (_('Application'), (
+                (_('Settings'), '<Control>s'),
+                (_('Keyboard shortcuts'), '<Control>question'),
+                (_('About MiAZ'), '<Control>b'),
+                (_('Quit'), '<Control>q'),
+                (_('Help (this window)'), 'F1'),
+            )),
+            (_('Documents'), (
+                (_('Rename document'), '<Control>BackSpace'),
+                (_('Delete documents'), '<Control>Delete'),
+                (_('View document'), 'Return'),
+            )),
+        )
+
     def show_app_help(self, *args):
-        # Adw.ShortcutsDialog (libadwaita 1.8+) replaces the deprecated
-        # Gtk.ShortcutsWindow. It is adaptive and matches the app dialog style.
         window = self.app.get_widget('window')
-        dialog = Adw.ShortcutsDialog()
-
-        app_section = Adw.ShortcutsSection(title=_('Application'))
-        for title, accelerator in (
-            (_('Settings'), '<Control>s'),
-            (_('Keyboard shortcuts'), '<Control>question'),
-            (_('About MiAZ'), '<Control>b'),
-            (_('Quit'), '<Control>q'),
-            (_('Help (this window)'), 'F1'),
-        ):
-            app_section.add(Adw.ShortcutsItem(title=title, accelerator=accelerator))
-        dialog.add(app_section)
-
-        docs_section = Adw.ShortcutsSection(title=_('Documents'))
-        for title, accelerator in (
-            (_('Rename document'), '<Control>BackSpace'),
-            (_('Delete documents'), '<Control>Delete'),
-            (_('View document'), 'Return'),
-        ):
-            docs_section.add(Adw.ShortcutsItem(title=title, accelerator=accelerator))
-        dialog.add(docs_section)
-
+        sections = self.shortcut_sections()
+        if (Adw.MAJOR_VERSION, Adw.MINOR_VERSION) >= ADW_SHORTCUTS_DIALOG:
+            dialog = self._build_shortcuts_dialog(sections)
+        else:
+            dialog = self._build_shortcuts_fallback(sections)
         dialog.present(window)
+
+    def _build_shortcuts_dialog(self, sections):
+        """The native dialog: adaptive, and styled like the rest of the app."""
+        dialog = Adw.ShortcutsDialog()
+        for title, shortcuts in sections:
+            section = Adw.ShortcutsSection(title=title)
+            for label, accelerator in shortcuts:
+                section.add(Adw.ShortcutsItem(title=label, accelerator=accelerator))
+            dialog.add(section)
+        return dialog
+
+    def _build_shortcuts_fallback(self, sections):
+        """The same list on libadwaita older than 1.8.
+
+        Built from Adw.PreferencesPage rather than Gtk.ShortcutsWindow: that
+        whole family is deprecated as of GTK 4.18 and is what MiAZ moved away
+        from in the first place. Everything here exists in 1.4 and earlier.
+        """
+        dialog = Adw.Dialog()
+        dialog.set_title(_('Keyboard shortcuts'))
+        dialog.set_content_width(460)
+        dialog.set_content_height(520)
+        page = Adw.PreferencesPage()
+        for title, shortcuts in sections:
+            group = Adw.PreferencesGroup(title=title)
+            for label, accelerator in shortcuts:
+                row = Adw.ActionRow(title=label)
+                keys = Gtk.Label(label=accelerator_label(accelerator))
+                keys.add_css_class('dim-label')
+                row.add_suffix(keys)
+                group.add(row)
+            page.add(group)
+        toolbar = Adw.ToolbarView()
+        toolbar.add_top_bar(Adw.HeaderBar())
+        toolbar.set_content(page)
+        dialog.set_child(toolbar)
+        return dialog
 
     def get_stack_page_by_name(self, name: str) -> Gtk.Stack:
         stack = self.app.get_widget('stack')
