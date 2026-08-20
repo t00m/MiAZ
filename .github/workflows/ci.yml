@@ -78,19 +78,50 @@ jobs:
           GDK_BACKEND: headless
         run: .venv/bin/python -m pytest tests/ -v --cov=MiAZ --cov-report=term-missing
 
+      # DIAGNOSTIC, temporary. On 20 August the UI step died on the runner with
+      # "Trace/breakpoint trap (core dumped)", exit 133, about six seconds in
+      # and before pytest printed anything. The same image, commands and
+      # toolkit versions (GTK 4.20.4, Adw 1.8.7) pass locally under podman, so
+      # this is something about the runner rather than the code. Collecting
+      # first splits the question in two: if this step crashes the problem is
+      # in importing a test module, and if it passes the problem is in running
+      # one. Drop this step once the cause is known.
+      - name: Collect the UI tests
+        env:
+          PYTHONUNBUFFERED: "1"
+          PYTHONFAULTHANDLER: "1"
+        run: |
+          PYTEST=.venv/bin/python \
+            xvfb-run -a --server-args="-screen 0 1280x1024x24" \
+            scripts/checks/run_ui_tests.sh --collect-only -q
+
       - name: Run the UI tests
         # These start the real application against a throwaway repository, so
         # they need a display and the plugin loader. Xvfb provides the first;
         # the runner sandboxes HOME so nothing here touches a real one.
+        #
+        # -v rather than -q on purpose, for now: a crash takes the process out
+        # mid-run, and the per-test lines are what say how far it got. Python
+        # buffers 8 KiB when its output is a pipe, which is why the failing run
+        # showed nothing at all, so PYTHONUNBUFFERED is what actually makes the
+        # log survive the crash. Put -q back when the runner is quiet again.
+        env:
+          PYTHONUNBUFFERED: "1"
+          PYTHONFAULTHANDLER: "1"
         run: |
           PYTEST=.venv/bin/python \
             xvfb-run -a --server-args="-screen 0 1280x1024x24" \
-            scripts/checks/run_ui_tests.sh -q
+            scripts/checks/run_ui_tests.sh -v
 
+      # These two run even when the UI step failed. They check metadata, which
+      # has nothing to do with the display, and a release is held up by a
+      # broken metainfo just as surely.
       - name: Validate AppStream metainfo
+        if: always()
         run: appstream-util validate --nonet data/io.github.t00m.MiAZ.metainfo.xml.in
 
       - name: Validate desktop file
+        if: always()
         # desktop-file-validate requires a .desktop extension; the source is a
         # plain (placeholder-free) .desktop.in template that meson merges into
         # the real file, so validate a copy with the correct extension.
