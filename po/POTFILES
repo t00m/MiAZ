@@ -4,7 +4,6 @@ data/io.github.t00m.MiAZ.gschema.xml
 MiAZ/backend/config.py
 MiAZ/backend/crash.py
 MiAZ/backend/dr.py
-MiAZ/backend/history.py
 MiAZ/backend/log.py
 MiAZ/backend/models.py
 MiAZ/backend/repository.py
@@ -15,10 +14,12 @@ MiAZ/backend/vocabulary.py
 MiAZ/backend/watcher.py
 MiAZ/backend/webserver.py
 MiAZ/frontend/console/app.py
+MiAZ/frontend/console/cli.py
 MiAZ/frontend/desktop/app.py
 MiAZ/frontend/desktop/services/actions.py
 MiAZ/frontend/desktop/services/crash.py
 MiAZ/frontend/desktop/services/dialogs.py
+MiAZ/frontend/desktop/services/extlibs.py
 MiAZ/frontend/desktop/services/factory.py
 MiAZ/frontend/desktop/services/icm.py
 MiAZ/frontend/desktop/services/importdoc.py
@@ -52,15 +53,9 @@ data/resources/plugins/MiAZAIAssistant/miazai/providers/base.py
 data/resources/plugins/MiAZAIAssistant/miazai/providers/claude.py
 data/resources/plugins/MiAZAIAssistant/miazai/providers/gemini.py
 data/resources/plugins/MiAZAIAssistant/miazai/providers/openai.py
+data/resources/plugins/MiAZAIAssistant/miazai/ui/chat.py
 data/resources/plugins/MiAZAIAssistant/miazai/ui/dialog.py
 data/resources/plugins/MiAZAIAssistant/miazai/ui/settings.py
-data/resources/plugins/MiAZAIChat/miazaichat.py
-data/resources/plugins/MiAZAIChat/miazaic/providers/base.py
-data/resources/plugins/MiAZAIChat/miazaic/providers/claude.py
-data/resources/plugins/MiAZAIChat/miazaic/providers/gemini.py
-data/resources/plugins/MiAZAIChat/miazaic/providers/openai.py
-data/resources/plugins/MiAZAIChat/miazaic/ui/chat.py
-data/resources/plugins/MiAZAIChat/miazaic/ui/settings.py
 data/resources/plugins/MiAZAutoScan/autoscan.py
 data/resources/plugins/MiAZColumnVisibility/colvis.py
 data/resources/plugins/MiAZCopy2Clipboard/copy2clipboard.py

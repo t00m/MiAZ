@@ -20,7 +20,8 @@ import struct
 import zipfile
 import zlib
 
-from MiAZ.backend.util import MiAZUtil, clean_temp_dir, UNKNOWN_DATE
+from MiAZ.backend.util import (MiAZUtil, clean_temp_dir, date_is_valid,
+                               UNKNOWN_DATE)
 
 
 class MockApp:
@@ -732,3 +733,50 @@ def test_zip_members_are_safe_reports_the_offender(util, tmp_path):
     with pytest.raises(RuntimeError) as excinfo:
         util.unzip(archive, str(dest))
     assert '../escaped.txt' in str(excinfo.value)
+
+
+# ---------------------------------------------------------------------------
+# date_is_valid: a filename date is eight digits, not "whatever strptime takes"
+# ---------------------------------------------------------------------------
+
+def test_a_full_eight_digit_date_is_valid():
+    assert date_is_valid('20260301')
+    assert date_is_valid('19000101')
+    assert date_is_valid(UNKNOWN_DATE)
+
+
+def test_a_short_date_is_not_completed_into_a_real_one():
+    """strptime('%Y%m%d') takes one or two digits for month and day, so
+    '202613' reads as 2026-01-03 and '2026131' as 2026-01-31. Typing a date
+    passes through both, and the rename dialog used to accept them and write
+    the completed date back into the field.
+    """
+    for text in ('2', '20', '202', '2026', '20261', '202613', '2026131'):
+        assert not date_is_valid(text), f"{text} was read as a date"
+
+
+def test_a_date_that_is_not_a_day_is_not_valid():
+    assert not date_is_valid('20261301')   # month 13
+    assert not date_is_valid('20260230')   # February 30
+    assert not date_is_valid('20260000')
+
+
+def test_anything_that_is_not_eight_digits_is_not_valid():
+    for text in ('', '   ', '2026-03-01', '2026030a', '202603011', 'abcdefgh'):
+        assert not date_is_valid(text), f"{text} was read as a date"
+
+
+def test_the_human_date_refuses_what_is_not_a_date(util):
+    """filename_date_human is what the workspace shows for a document's date.
+    It parsed as leniently as the dialog did, so a filename carrying '202613'
+    was displayed as a confident 'Saturday, January 03 2026'.
+    """
+    assert util.filename_date_human('20260301') == 'Sunday, March 01 2026'
+    assert util.filename_date_human('202613') == ''
+    assert util.filename_date_human('20261301') == ''
+
+
+def test_the_simple_human_date_refuses_what_is_not_a_date(util):
+    assert util.filename_date_human_simple('20260301') == '01/03/2026'
+    assert util.filename_date_human_simple('202613') is None
+    assert util.filename_date_human_simple('20261301') is None

@@ -38,7 +38,9 @@ except ImportError:
 
 try:
     gi.require_version('Gtk', '4.0')
+    gi.require_version('Gdk', '4.0')
     from gi.repository import Gtk
+    from gi.repository import Gdk
     from gi.repository import GLib
     try:
         gi.require_version('GLibUnix', '2.0')
@@ -210,6 +212,19 @@ class MiAZ:
             # import.
             sys.stderr.write("GTK is not available. Try 'miaz search' or "
                              "'miaz repos'.\n")
+            sys.exit(2)
+
+        # GTK imports fine with nowhere to draw: over SSH without X
+        # forwarding, in a container, on a headless server. Adw.Application
+        # does not refuse to start there. It runs startup, emits activate, and
+        # dies building the first widget, by which time the plugin index is
+        # built and the web server is listening. Ask before doing any of that.
+        # Gtk.init_check() is what opens the default display and it returns
+        # True even when it could not, so the display itself is the answer.
+        Gtk.init_check()
+        if Gdk.Display.get_default() is None:
+            sys.stderr.write("MiAZ found no display to open its window on. "
+                             "Try 'miaz search' or 'miaz repos'.\n")
             sys.exit(2)
 
         from MiAZ.frontend.desktop.app import MiAZApp

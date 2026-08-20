@@ -17,7 +17,7 @@ from gi.repository import Pango
 
 from MiAZ.env import ENV
 from MiAZ.backend.log import MiAZLog
-from MiAZ.backend.util import humanize_value, UNKNOWN_DATE
+from MiAZ.backend.util import date_is_valid, humanize_value, UNKNOWN_DATE
 from MiAZ.backend.models import MiAZItem, Group, Country, Purpose, Concept, SentBy, SentTo
 from MiAZ.frontend.desktop.services.dialogs import MiAZDialogAdd
 from MiAZ.frontend.desktop.services.factory import calendar_select_date
@@ -49,8 +49,9 @@ class MiAZRenameDialog(Gtk.Box):
         self.doc = None
         self.new_values = []
         self.dropdown = {}
-        self._last_date_str = None
-        self._last_date_valid = False
+        # Set while validate_date moves the calendar, so the calendar's
+        # answer is not written back into the field. See calendar_day_selected.
+        self._moving_calendar = False
         self._cfg_country = self.app.get_config('Country')
         self._cfg_group = self.app.get_config('Group')
         self._cfg_sentby = self.app.get_config('SentBy')
@@ -153,6 +154,8 @@ class MiAZRenameDialog(Gtk.Box):
         self.lblFilenameNew.set_text(self.result)
         self.lblFilenameNew.set_selectable(True)
         self._on_changed_entry()
+        # The dialog opens showing what it thinks of the date it was given.
+        self.validate_date(self.entry_date.get_text())
         for _name, _result in self._each_tab('set_document', os.path.basename(doc)):
             pass
 
@@ -161,7 +164,7 @@ class MiAZRenameDialog(Gtk.Box):
         Purpose are advisory (warnings in the live preview) and do not block;
         Date, Country, Sent by, Concept and Sent to must be valid."""
         return (
-            self.validate_date(self.entry_date.get_text())
+            self.has_valid_date()
             and self._cfg_country.exists_used(self._dropdown_get_id(self.dpdCountry))
             and self._cfg_sentby.exists_used(self._dropdown_get_id(self.dpdSentBy))
             and len(self.util.valid_key(self.entry_concept.get_text().upper())) > 0
@@ -411,6 +414,14 @@ class MiAZRenameDialog(Gtk.Box):
         boxValue.append(self.btnDetectDate)
         boxValue.append(button)
         self.entry_date.connect('changed', self._on_changed_entry)
+        # The date is judged when the user is done with the field, not while
+        # they are still filling it in.
+        date_focus = Gtk.EventControllerFocus()
+        date_focus.connect('leave', self._on_date_focus_leave)
+        self.entry_date.add_controller(date_focus)
+
+    def _on_date_focus_leave(self, *args):
+        self.validate_date(self.entry_date.get_text())
 
     def guess_date_if_empty(self, concept: str, filepath: str):
         return self.util.filename_guess_date(filepath, concept_hint=concept)
@@ -430,12 +441,17 @@ class MiAZRenameDialog(Gtk.Box):
         adate = self.util.filename_guess_date(
             filepath, concept_hint=self.entry_concept.get_text())
         self.entry_date.set_text(adate)
+        # MiAZ chose this date, the user did not type it, so there is nothing
+        # half finished to wait for.
+        self.validate_date(adate)
 
     def calendar_day_selected(self, calendar):
         # validate_date moves the calendar to whatever parses, and the calendar
-        # answers by writing the date back here. While the user is typing in
-        # the field, that write would replace what they are half way through.
-        if self.entry_date.has_focus():
+        # answers by writing the date back here. Only a day the user picked in
+        # the popover may do that. The guard used to be "does the entry have
+        # the focus", which held for a person typing and for nobody else: a
+        # date set in code went to the calendar and came back rewritten.
+        if self._moving_calendar:
             return
         adate = calendar.get_date()
         y = "%04d" % adate.get_year()
@@ -704,7 +720,10 @@ class MiAZRenameDialog(Gtk.Box):
             self.lblFilenameNew.set_text(self.result)
             self.lblFilenameNew.set_tooltip_text(self.result)
 
-            v_date = self.validate_date(adate)
+            # Asks without showing: the date row and its label are left
+            # alone until the user leaves the field. The Rename button
+            # still has to know, so the answer is needed here.
+            v_date = date_is_valid(adate)
             v_group = self._cfg_group.exists_used(agroup)
             v_cty = self._cfg_country.exists_used(acountry)
             v_sentby = self._cfg_sentby.exists_used(asentby)
@@ -712,7 +731,6 @@ class MiAZRenameDialog(Gtk.Box):
             v_cnpt = len(aconcept) > 0
             v_sentto = self._cfg_sentto.exists_used(asentto)
 
-            self._success_or_error(self.rowDate, v_date)
             self._success_or_error(self.rowCountry, v_cty)
             self._success_or_warning(self.rowGroup, v_group)
             self._success_or_error(self.rowSentBy, v_sentby)
@@ -854,30 +872,49 @@ class MiAZRenameDialog(Gtk.Box):
         self._concept_popover.popdown()
         return False
 
+    def has_valid_date(self) -> bool:
+        """Whether the date field holds a date, without saying so anywhere.
+
+        No label, no calendar, no row styling, so it is safe to ask on every
+        keystroke. Telling the user is validate_date's job.
+        """
+        return date_is_valid(self.entry_date.get_text())
+
     def validate_date(self, sdate: str) -> bool:
-        if sdate == self._last_date_str:
-            return self._last_date_valid
-        try:
+        """Show the verdict for sdate: the label, the calendar and the row.
+
+        Called when the user is done with the field, not while they are in it:
+        on focus leave, when apply refuses, and when MiAZ writes the date
+        itself. A date is typed one digit at a time and is not a date for most
+        of them, so judging every keystroke made the label flicker through
+        readings nobody asked for.
+        """
+        valid = date_is_valid(sdate)
+        if valid:
             adate = datetime.strptime(sdate, '%Y%m%d')
-            calendar_select_date(self.calendar, adate.year, adate.month, adate.day)
+            self._move_calendar_to(adate)
             if sdate == UNKNOWN_DATE:
                 # A real date, so nothing downstream needs a special case, but
                 # "Friday, December 31 9999" reads as a date somebody chose.
                 self.label_date.set_markup(f"<i>{_('date not known')}</i>")
             else:
                 self.label_date.set_markup(adate.strftime("%A, %B %d %Y"))
-            self._last_date_str = sdate
-            self._last_date_valid = True
-            return True
-        except Exception:
+        else:
             # Say the date is not one. The label used to keep the last date
             # that parsed, so typing 20261301 left a valid, unrelated date
             # sitting next to the field: it read as if MiAZ had accepted the
             # input and picked a date of its own.
             self.label_date.set_markup(f"<i>{_('not a date')}</i>")
-            self._last_date_str = sdate
-            self._last_date_valid = False
-            return False
+        self._success_or_error(self.rowDate, valid)
+        return valid
+
+    def _move_calendar_to(self, adate) -> None:
+        """Move the calendar without it answering back into the field."""
+        self._moving_calendar = True
+        try:
+            calendar_select_date(self.calendar, adate.year, adate.month, adate.day)
+        finally:
+            self._moving_calendar = False
 
     def get_filepath_source(self) -> str:
         return self.filepath
