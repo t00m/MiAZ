@@ -108,6 +108,18 @@ jobs:
         env:
           PYTHONUNBUFFERED: "1"
           PYTHONFAULTHANDLER: "1"
+          # Building the app builds the workspace, which builds MiAZBrowserPage,
+          # which builds a WebKit.WebView. WebKit isolates each view with
+          # bubblewrap, and that needs to create a user namespace, which this
+          # runner's container does not allow: the first test that constructs
+          # the app took a SIGTRAP six seconds in, while the same image passes
+          # under rootless podman, where nested user namespaces are available.
+          # Turning the sandbox off is safe here and only here: the pages are
+          # local files this repository produced, and the container is thrown
+          # away with the job. Never set this for a real user.
+          WEBKIT_DISABLE_SANDBOX_THIS_IS_DANGEROUS: "1"
+          # No GPU on the runner, so keep WebKit off the compositing path.
+          WEBKIT_DISABLE_COMPOSITING_MODE: "1"
         run: |
           PYTEST=.venv/bin/python \
             xvfb-run -a --server-args="-screen 0 1280x1024x24" \
