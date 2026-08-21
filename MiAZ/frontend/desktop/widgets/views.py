@@ -7,6 +7,7 @@ import os
 from gettext import gettext as _
 
 from gi.repository import Gdk
+from gi.repository import GLib
 from gi.repository import Gtk
 from gi.repository import Pango
 
@@ -159,9 +160,10 @@ class MiAZColumnViewWorkspace(MiAZColumnView):
         label.set_ellipsize(True)
         label.set_property('ellipsize', Pango.EllipsizeMode.MIDDLE)
         if item.active:
-            label.set_markup(f"<b>{item.subtitle}</b>")
+            label.set_markup(f"<b>{GLib.markup_escape_text(item.subtitle)}</b>")
         else:
-            label.set_markup(f"<span color='red'><b>{item.subtitle}</b></span>")
+            label.set_markup(
+                f"<span color='red'><b>{GLib.markup_escape_text(item.subtitle)}</b></span>")
             label.add_css_class('destructive-action')
 
     def _on_factory_setup_active(self, factory, list_item):
@@ -210,8 +212,9 @@ class MiAZColumnViewWorkspace(MiAZColumnView):
         item = list_item.get_item()
         label = box.get_first_child()
         country = item.country_dsc
-        label.set_markup(country)
-        tooltip = f"{item.country}\n<b>{item.country_dsc}</b>"
+        label.set_text(country)
+        tooltip = (f"{GLib.markup_escape_text(item.country)}\n"
+                   f"<b>{GLib.markup_escape_text(item.country_dsc)}</b>")
         label.set_tooltip_markup(tooltip)
         label.set_ellipsize(True)
         label.set_property('ellipsize', Pango.EllipsizeMode.MIDDLE)
@@ -225,7 +228,7 @@ class MiAZColumnViewWorkspace(MiAZColumnView):
         item = list_item.get_item()
         label = box.get_first_child()
         extension = item.extension
-        label.set_markup(extension)
+        label.set_text(extension)
         label.set_tooltip_text(extension)
         label.set_ellipsize(True)
         label.set_property('ellipsize', Pango.EllipsizeMode.MIDDLE)
@@ -239,9 +242,10 @@ class MiAZColumnViewWorkspace(MiAZColumnView):
         item = list_item.get_item()
         label = box.get_first_child()
         group = item.group_dsc
-        label.set_markup(group)
+        label.set_text(group)
         label.set_ellipsize(True)
-        tooltip = f"{item.group}\n<b>{item.group_dsc}</b>"
+        tooltip = (f"{GLib.markup_escape_text(item.group)}\n"
+                   f"<b>{GLib.markup_escape_text(item.group_dsc)}</b>")
         label.set_tooltip_markup(tooltip)
         label.set_property('ellipsize', Pango.EllipsizeMode.MIDDLE)
 
@@ -254,7 +258,7 @@ class MiAZColumnViewWorkspace(MiAZColumnView):
         item = list_item.get_item()
         label = box.get_first_child()
         date = item.date_dsc
-        label.set_markup(date)
+        label.set_text(date)
         label.set_tooltip_text(date)
         label.set_ellipsize(True)
         label.set_property('ellipsize', Pango.EllipsizeMode.MIDDLE)
@@ -267,10 +271,11 @@ class MiAZColumnViewWorkspace(MiAZColumnView):
         box = list_item.get_child()
         item = list_item.get_item()
         label = box.get_first_child()
-        label.set_markup(item.sentby_dsc)
+        label.set_text(item.sentby_dsc)
         label.set_ellipsize(True)
         label.set_property('ellipsize', Pango.EllipsizeMode.MIDDLE)
-        tooltip = f"{item.sentby_id}\n<b>{item.sentby_dsc}</b>"
+        tooltip = (f"{GLib.markup_escape_text(item.sentby_id)}\n"
+                   f"<b>{GLib.markup_escape_text(item.sentby_dsc)}</b>")
         label.set_tooltip_markup(tooltip)
 
     def _on_factory_setup_sentto(self, factory, list_item):
@@ -281,10 +286,11 @@ class MiAZColumnViewWorkspace(MiAZColumnView):
         box = list_item.get_child()
         item = list_item.get_item()
         label = box.get_first_child()
-        label.set_markup(item.sentto_dsc)
+        label.set_text(item.sentto_dsc)
         label.set_ellipsize(True)
         label.set_property('ellipsize', Pango.EllipsizeMode.MIDDLE)
-        tooltip = f"<big>{item.sentto_id}</big>\n<b>{item.sentto_dsc}</b>"
+        tooltip = (f"<big>{GLib.markup_escape_text(item.sentto_id)}</big>\n"
+                   f"<b>{GLib.markup_escape_text(item.sentto_dsc)}</b>")
         label.set_tooltip_markup(tooltip)
 
     def _on_factory_setup_purpose(self, factory, list_item):
@@ -296,8 +302,9 @@ class MiAZColumnViewWorkspace(MiAZColumnView):
         item = list_item.get_item()
         label = box.get_first_child()
         purpose = item.purpose_dsc
-        label.set_markup(purpose)
-        tooltip = f"{item.purpose}\n<b>{item.purpose_dsc}</b>"
+        label.set_text(purpose)
+        tooltip = (f"{GLib.markup_escape_text(item.purpose)}\n"
+                   f"<b>{GLib.markup_escape_text(item.purpose_dsc)}</b>")
         label.set_tooltip_markup(tooltip)
         label.set_ellipsize(True)
         label.set_property('ellipsize', Pango.EllipsizeMode.MIDDLE)
@@ -314,7 +321,8 @@ class MiAZColumnViewWorkspace(MiAZColumnView):
         code = item.country
         icon.set_from_icon_name(code)
         icon.set_pixel_size(24)
-        tooltip = f"<big>{item.country}</big>\n<b>{item.country_dsc}</b>"
+        tooltip = (f"<big>{GLib.markup_escape_text(item.country)}</big>\n"
+                   f"<b>{GLib.markup_escape_text(item.country_dsc)}</b>")
         icon.set_tooltip_markup(tooltip)
 
 
@@ -353,7 +361,8 @@ class MiAZColumnViewCountry(MiAZColumnViewSelector):
             flag = os.path.join(ENV['GPATH']['FLAGS'], "__.svg")
         icon.set_from_file(flag)
         icon.set_pixel_size(36)
-        tooltip = f"<big>{country.id}</big>\n<b>{country.title}</b>"
+        tooltip = (f"<big>{GLib.markup_escape_text(country.id)}</big>\n"
+                   f"<b>{GLib.markup_escape_text(country.title)}</b>")
         icon.set_tooltip_markup(tooltip)
 
 
@@ -416,11 +425,12 @@ class MiAZColumnViewRepo(MiAZColumnViewSelector):
         box = list_item.get_child()
         item = list_item.get_item()
         label = box.get_first_child()
-        label.set_markup(item.title)
+        label.set_text(item.title)
         label.set_ellipsize(False)
         label.set_property('ellipsize', Pango.EllipsizeMode.NONE)
         label.set_xalign(0.0)
-        tooltip = f"<big>{item.id}</big>\n<b>{item.title}</b>"
+        tooltip = (f"<big>{GLib.markup_escape_text(item.id)}</big>\n"
+                   f"<b>{GLib.markup_escape_text(item.title)}</b>")
         label.set_tooltip_markup(tooltip)
 
     def _on_factory_setup_description(self, factory, list_item):
@@ -431,7 +441,7 @@ class MiAZColumnViewRepo(MiAZColumnViewSelector):
         box = list_item.get_child()
         item = list_item.get_item()
         label = box.get_first_child()
-        label.set_markup(item.description or '')
+        label.set_text(item.description or '')
         label.set_xalign(0.0)
 
 
@@ -586,8 +596,10 @@ class MiAZColumnViewSuggestion(MiAZColumnViewSelector):
         label = box.get_first_child()
         value = getattr(item, prop, '') or ''
         key = getattr(item, prop_id, '') or ''
-        label.set_markup(value)
+        label.set_text(value)
         label.set_xalign(0.0)
         label.set_ellipsize(True)
         label.set_property('ellipsize', Pango.EllipsizeMode.END)
-        label.set_tooltip_markup(f"<big>{key}</big>\n<b>{value}</b>")
+        label.set_tooltip_markup(
+            f"<big>{GLib.markup_escape_text(key)}</big>\n"
+            f"<b>{GLib.markup_escape_text(value)}</b>")

@@ -17,6 +17,7 @@ from gi.repository import Pango
 
 from MiAZ.env import ENV
 from MiAZ.backend.log import MiAZLog
+from MiAZ.backend.tasks import run_in_background
 from MiAZ.backend.util import date_is_valid, humanize_value, UNKNOWN_DATE
 from MiAZ.backend.models import MiAZItem, Group, Country, Purpose, Concept, SentBy, SentTo
 from MiAZ.frontend.desktop.services.dialogs import MiAZDialogAdd
@@ -93,6 +94,8 @@ class MiAZRenameDialog(Gtk.Box):
         self.append(self.stack)
         self.plugin_tabs = []
         self.switcher = None
+        self._page_action = None
+        self._page_label = None
         self.__create_plugin_tabs()
 
         # The filename preview is the outcome of the dialog, so it sits under
@@ -395,11 +398,6 @@ class MiAZRenameDialog(Gtk.Box):
         popover.set_child(self.calendar)
         popover.present()
         button.set_popover(popover)
-        self.btnDetectDate = self.factory.create_button(
-            icon_name='io.github.t00m.MiAZ-edit-find-symbolic',
-            tooltip=_('Read the date from the document: from the concept field '
-                      'first, then the PDF or image metadata'),
-            callback=self._on_detect_date)
         self.label_date = Gtk.Label()
         self.label_date.add_css_class('caption')
         self.entry_date = Gtk.Entry()
@@ -411,7 +409,6 @@ class MiAZRenameDialog(Gtk.Box):
         self.entry_date.set_alignment(1.0)
         boxValue.append(self.label_date)
         boxValue.append(self.entry_date)
-        boxValue.append(self.btnDetectDate)
         boxValue.append(button)
         self.entry_date.connect('changed', self._on_changed_entry)
         # The date is judged when the user is done with the field, not while
@@ -426,7 +423,7 @@ class MiAZRenameDialog(Gtk.Box):
     def guess_date_if_empty(self, concept: str, filepath: str):
         return self.util.filename_guess_date(filepath, concept_hint=concept)
 
-    def _on_detect_date(self, *args):
+    def detect_date(self, *args):
         """Read the date again, on demand.
 
         set_data only reads it when the document arrives with an empty date
@@ -444,6 +441,114 @@ class MiAZRenameDialog(Gtk.Box):
         # MiAZ chose this date, the user did not type it, so there is nothing
         # half finished to wait for.
         self.validate_date(adate)
+
+    # Field detection (OCR/text extraction, no AI). 'Detect date' above needs
+    # none of this: filename_guess_date reads metadata directly and the
+    # concept hint, no pdftotext/tesseract involved. Country/SentBy/SentTo
+    # match the document's extracted text against this repository's used
+    # vocabulary (backend.extract.match_vocab); Group, Purpose and Concept
+    # are open vocabulary and are not guessed here; a wrong guess there would
+    # be harder to notice than a missing one.
+    _DETECTORS = {
+        'country': ('dpdCountry', '_cfg_country'),
+        'sentby':  ('dpdSentBy',  '_cfg_sentby'),
+        'sentto':  ('dpdSentTo',  '_cfg_sentto'),
+    }
+
+    def _busy_target(self):
+        """The dialog this widget sits in, when it has a busy indicator."""
+        dialog = self.app.get_widget('dialog-rename')
+        return dialog if hasattr(dialog, 'set_busy') else None
+
+    def _detection_message(self, fields):
+        """What the spinner says. One field is named; the whole set is not
+        listed, since it would not fit and 'all fields' is what it means."""
+        if len(fields) > 1:
+            return _('Detecting all fields')
+        titles = {
+            'country': _(Country.__title__),
+            'sentby': _(SentBy.__title__),
+            'sentto': _(SentTo.__title__),
+        }
+        return _('Detecting {field}').format(
+            field=titles.get(fields[0], fields[0]).lower())
+
+    def detect_country(self, *args):
+        self._extract_and_apply(['country'])
+
+    def detect_sentby(self, *args):
+        self._extract_and_apply(['sentby'])
+
+    def detect_sentto(self, *args):
+        self._extract_and_apply(['sentto'])
+
+    def detect_all(self, *args):
+        self.detect_date()
+        self._extract_and_apply(list(self._DETECTORS))
+
+    def _extract_and_apply(self, fields):
+        """Extract the document's text once (pdftotext, falling back to OCR)
+        and match it against the vocabulary of each field in `fields`."""
+        if self.doc is None:
+            return
+        from MiAZ.backend.extract import missing_tools
+        missing = missing_tools()
+        if missing:
+            self._notify_missing_tools(missing)
+            return
+        filepath = os.path.join(self.repository.docs, os.path.basename(self.doc))
+
+        def _run():
+            from MiAZ.backend.extract import extract, match_vocab
+            result = extract(filepath)
+            text = result.text if result.is_useful else ''
+            found = {}
+            for field_name in fields:
+                _dropdown_attr, cfg_attr = self._DETECTORS[field_name]
+                cfg = getattr(self, cfg_attr)
+                found[field_name] = match_vocab(text, cfg.load_used())
+            return found
+
+        dialog = self._busy_target()
+        if dialog is not None:
+            dialog.set_busy(self._detection_message(fields))
+
+        def _done(found):
+            if dialog is not None:
+                dialog.clear_busy()
+            any_found = False
+            for field_name, key in found.items():
+                if not key:
+                    continue
+                any_found = True
+                dropdown_attr, _cfg_attr = self._DETECTORS[field_name]
+                self._set_suggestion(getattr(self, dropdown_attr), key)
+            if any_found:
+                self._on_changed_entry()
+            else:
+                self.srvdlg.show_toast(_('No fields detected in the document text'))
+
+        def _failed(error):
+            # Cleared here too: a spinner left turning after a failure says the
+            # dialog is still working when it has given up.
+            if dialog is not None:
+                dialog.clear_busy()
+            self.log.error(f"Field detection failed: {error}")
+            self.srvdlg.show_toast(_('Field detection failed'))
+
+        run_in_background(_run, on_done=_done, on_error=_failed, name='rename-detect')
+
+    def _notify_missing_tools(self, missing):
+        title = _('OCR tools not installed')
+        body = _(
+            'Detecting fields needs the following command line tool(s), which '
+            'are not installed:\n\n<b>{tools}</b>\n\nInstall them and try '
+            'again:\n\n'
+            '• Fedora: <tt>sudo dnf install poppler-utils tesseract tesseract-langpack-eng</tt>\n'
+            '• Debian/Ubuntu: <tt>sudo apt install poppler-utils tesseract-ocr tesseract-ocr-eng</tt>\n'
+            '• Arch: <tt>sudo pacman -S poppler tesseract tesseract-data-eng</tt>'
+        ).format(tools=', '.join(missing))
+        self.srvdlg.show_error(title=title, body=body, parent=self.get_root())
 
     def calendar_day_selected(self, calendar):
         # validate_date moves the calendar to whatever parses, and the calendar
@@ -626,12 +731,66 @@ class MiAZRenameDialog(Gtk.Box):
             self.plugin_tabs.append((name, widget))
 
         if self.plugin_tabs:
-            self.switcher = Adw.ViewSwitcher()
-            self.switcher.set_stack(self.stack)
-            self.switcher.set_policy(Adw.ViewSwitcherPolicy.WIDE)
+            self.switcher = self._build_page_selector()
+
+    def _build_page_selector(self):
+        """A menu button naming the current page, in place of a row of tabs.
+
+        Adw.ViewSwitcher puts one tab in the header per page, so every plugin
+        that contributes a tab makes the header wider: Fields, Projects and
+        Periodicity already sat there side by side. A menu grows downwards
+        instead, so the dialog stays the same width whatever is installed.
+
+        Fields is first because the stack has it first; the rest follow in the
+        order the document-tabs registry gave them.
+        """
+        action = Gio.SimpleAction.new_stateful(
+            'rename-page', GLib.VariantType.new('s'),
+            GLib.Variant('s', self.stack.get_visible_child_name() or 'fields'))
+        action.connect('activate', self._on_page_chosen)
+        self.app.add_action(action)
+        self._page_action = action
+
+        menu = Gio.Menu.new()
+        page = None
+        for child in self.stack.get_pages():
+            menu.append(child.get_title(), f'app.rename-page::{child.get_name()}')
+            if page is None:
+                page = child
+
+        button = Gtk.MenuButton()
+        self._page_label = Gtk.Label()
+        content = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
+        content.append(self._page_label)
+        content.append(Gtk.Image.new_from_icon_name('pan-down-symbolic'))
+        button.set_child(content)
+        button.set_menu_model(menu)
+        button.add_css_class('flat')
+
+        # The stack can change page without the menu being used (a plugin
+        # focusing its own tab when it refuses a rename), so the label follows
+        # the stack rather than the click.
+        self.stack.connect('notify::visible-child', self._on_page_changed)
+        self._on_page_changed()
+        return button
+
+    def _on_page_chosen(self, action, param):
+        name = param.get_string()
+        self.stack.set_visible_child_name(name)
+        action.set_state(param)
+
+    def _on_page_changed(self, *args):
+        name = self.stack.get_visible_child_name()
+        if name is None:
+            return
+        page = self.stack.get_page(self.stack.get_visible_child())
+        self._page_label.set_text(page.get_title() or name)
+        if self._page_action is not None:
+            self._page_action.set_state(GLib.Variant('s', name))
 
     def get_switcher(self):
-        """The view switcher, or None when no plugin contributed a tab."""
+        """The header-bar page selector, or None when no plugin contributed a
+        tab: with only Fields there is nothing to switch between."""
         return self.switcher
 
     def _each_tab(self, method, *args):

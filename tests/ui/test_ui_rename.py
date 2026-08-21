@@ -5,6 +5,9 @@
 import os
 import pytest
 
+from gi.repository import GLib
+from gi.repository import Gtk
+
 from MiAZ.backend.util import UNKNOWN_DATE
 
 DOCUMENT = '20260612-ES-FIN-BANKX-INV-mortgage-JOHNDOE.pdf'
@@ -293,7 +296,9 @@ def _walk(widget):
 
 
 # ---------------------------------------------------------------------------
-# The detect-date button (checklist 4.7b, 4.7c)
+# Detect date (checklist 4.7b, 4.7c). Triggered through the dialog's grouped
+# 'Detect' menu button (services/actions.py); called directly here since the
+# menu itself is built and owned by MiAZActions, not this widget.
 # ---------------------------------------------------------------------------
 
 def test_detect_reads_the_date_out_of_the_concept(rename_dialog):
@@ -304,7 +309,7 @@ def test_detect_reads_the_date_out_of_the_concept(rename_dialog):
     assert widget.entry_date.get_text() == '20260612'
     widget.entry_concept.set_text('FACTURA_15_03_2024')
     driver.pump(0.3)
-    widget.btnDetectDate.emit('clicked')
+    widget.detect_date()
     driver.pump(0.3)
     assert widget.entry_date.get_text() == '20240315'
 
@@ -316,7 +321,7 @@ def test_detect_reads_the_concept_as_it_stands_now(rename_dialog):
     driver, _dialog, widget = rename_dialog
     widget.entry_concept.set_text('IMG20231114093000')
     driver.pump(0.3)
-    widget.btnDetectDate.emit('clicked')
+    widget.detect_date()
     driver.pump(0.3)
     assert widget.entry_date.get_text() == '20231114'
 
@@ -328,7 +333,7 @@ def test_detect_says_it_does_not_know_rather_than_guessing(rename_dialog):
     driver, _dialog, widget = rename_dialog
     widget.entry_concept.set_text('MORTGAGE')
     driver.pump(0.3)
-    widget.btnDetectDate.emit('clicked')
+    widget.detect_date()
     driver.pump(0.3)
     assert widget.entry_date.get_text() == UNKNOWN_DATE
     # It is still a valid date, so the rename is not blocked by it.
@@ -342,7 +347,7 @@ def test_detect_declines_an_ambiguous_date(rename_dialog):
     driver, _dialog, widget = rename_dialog
     widget.entry_concept.set_text('FACTURA_03_04_2024')
     driver.pump(0.3)
-    widget.btnDetectDate.emit('clicked')
+    widget.detect_date()
     driver.pump(0.3)
     assert widget.entry_date.get_text() == UNKNOWN_DATE
 
@@ -363,10 +368,66 @@ def test_detect_reads_the_date_out_of_the_pdf_metadata(rename_dialog):
                           b"/CreationDate (D:20250116042015+01'00') >>\n%%EOF\n")
         widget.entry_concept.set_text('RG151038433387')
         driver.pump(0.3)
-        widget.btnDetectDate.emit('clicked')
+        widget.detect_date()
         driver.pump(0.3)
         assert widget.entry_date.get_text() == '20250116'
     finally:
         with open(path, 'wb') as handler:
             handler.write(original)
         driver.pump(0.3)
+
+
+# ---------------------------------------------------------------------------
+# The header page selector
+# ---------------------------------------------------------------------------
+
+def menu_labels(menu):
+    return [menu.get_item_attribute_value(i, 'label', None).get_string()
+            for i in range(menu.get_n_items())]
+
+
+def test_the_pages_are_a_menu_not_a_row_of_tabs(rename_dialog):
+    """Adw.ViewSwitcher put one tab in the header per page, so every plugin
+    that contributed one made the dialog wider. A menu grows downwards."""
+    _driver, dialog, widget = rename_dialog
+    selector = widget.get_switcher()
+    assert selector is not None, 'no page selector with plugin tabs registered'
+    assert isinstance(selector, Gtk.MenuButton), type(selector).__name__
+
+    def walk(w):
+        child = w.get_first_child()
+        while child is not None:
+            yield child
+            yield from walk(child)
+            child = child.get_next_sibling()
+    assert not any(type(w).__name__ == 'AdwViewSwitcherButton'
+                   for w in walk(dialog.headerbar)), 'the tab row is still there'
+
+
+def test_fields_comes_first_then_the_plugin_pages(rename_dialog):
+    _driver, _dialog, widget = rename_dialog
+    labels = menu_labels(widget.get_switcher().get_menu_model())
+    assert labels[0] == 'Fields', labels
+    assert len(labels) == 1 + len(widget.plugin_tabs), labels
+
+
+def test_choosing_a_page_switches_the_stack(rename_dialog):
+    driver, _dialog, widget = rename_dialog
+    name = widget.plugin_tabs[0][0]
+    widget._page_action.activate(GLib.Variant('s', name))
+    driver.pump(0.3)
+    assert widget.stack.get_visible_child_name() == name
+
+
+def test_the_button_follows_the_stack_however_the_page_changed(rename_dialog):
+    """A plugin focuses its own tab when it refuses a rename, without going
+    near the menu. The button has to say where the user actually is."""
+    driver, _dialog, widget = rename_dialog
+    name, _tab = widget.plugin_tabs[0]
+    widget.stack.set_visible_child_name(name)
+    driver.pump(0.3)
+    assert widget._page_label.get_text() != 'Fields'
+
+    widget.stack.set_visible_child_name('fields')
+    driver.pump(0.3)
+    assert widget._page_label.get_text() == 'Fields'

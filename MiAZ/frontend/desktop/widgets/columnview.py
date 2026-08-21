@@ -6,6 +6,7 @@
 from gettext import gettext as _
 
 from gi.repository import Gio
+from gi.repository import GLib
 from gi.repository import Gtk
 from gi.repository import Pango
 
@@ -189,7 +190,7 @@ class MiAZColumnView(Gtk.Box):
         box = list_item.get_child()
         item = list_item.get_item()
         label = box.get_first_child()
-        label.set_markup(item.id)
+        label.set_text(item.id)
         label.set_ellipsize(True)
         label.set_property('ellipsize', Pango.EllipsizeMode.MIDDLE)
 
@@ -201,10 +202,11 @@ class MiAZColumnView(Gtk.Box):
         box = list_item.get_child()
         item = list_item.get_item()
         label = box.get_first_child()
-        label.set_markup(item.title)
+        label.set_text(item.title)
         label.set_ellipsize(True)
         label.set_property('ellipsize', Pango.EllipsizeMode.MIDDLE)
-        tooltip = f"<big>{item.id}</big>\n<b>{item.title}</b>"
+        tooltip = (f"<big>{GLib.markup_escape_text(item.id)}</big>\n"
+                   f"<b>{GLib.markup_escape_text(item.title)}</b>")
         label.set_tooltip_markup(tooltip)
 
     def _on_selected_item_notify(self, colview, pos):

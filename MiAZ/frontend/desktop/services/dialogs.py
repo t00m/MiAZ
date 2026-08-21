@@ -11,6 +11,7 @@ from gi.repository import Gdk
 from gi.repository import GLib
 from gi.repository import GObject
 from gi.repository import Gtk
+from gi.repository import Pango
 
 from MiAZ.backend.log import MiAZLog
 
@@ -317,6 +318,12 @@ class MiAZWindowDialog(Adw.Window):
         self.factory = self.app.get_service('factory')
         self._buttons = {}
         self._close_response = None
+        # Attach it to the application, which is what makes the app.* actions
+        # its menus point at resolvable from inside this window. Without it GTK
+        # cannot find them and renders every menu entry insensitive: the whole
+        # Suggest menu and the whole Detect menu came up greyed out, with
+        # nothing in the log to say why.
+        self.set_application(app)
         self.set_title(title)
         self.set_destroy_with_parent(True)
         self.set_default_size(width if width > 0 else 600,
@@ -325,6 +332,21 @@ class MiAZWindowDialog(Adw.Window):
         headerbar = Adw.HeaderBar()
         headerbar.set_title_widget(Adw.WindowTitle(title=title, subtitle=''))
         self.headerbar = headerbar
+
+        # Left of the header: what the dialog is busy doing. Work that reads a
+        # document takes seconds (OCR, a provider call) and said nothing while
+        # it ran, so the dialog looked stuck. Hidden until there is something
+        # to report.
+        self._busy_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
+        self._busy_spinner = Gtk.Spinner()
+        self._busy_label = Gtk.Label()
+        self._busy_label.add_css_class('dim-label')
+        self._busy_label.set_ellipsize(Pango.EllipsizeMode.END)
+        self._busy_label.set_max_width_chars(40)
+        self._busy_box.append(self._busy_spinner)
+        self._busy_box.append(self._busy_label)
+        self._busy_box.set_visible(False)
+        headerbar.pack_start(self._busy_box)
 
         self._action_bar = Gtk.ActionBar()
         # Only shown once it has content, so a close-only window (headerbar close
@@ -392,6 +414,24 @@ class MiAZWindowDialog(Adw.Window):
         # Place a widget on the left side of the bottom action bar.
         self._action_bar.pack_start(widget)
         self._action_bar.set_revealed(True)
+
+    def set_busy(self, message: str):
+        """Show a spinner and a short message at the left of the header bar.
+
+        For work that takes long enough for the user to wonder whether the
+        dialog is doing anything: reading a document, asking a provider.
+        """
+        self._busy_label.set_text(message)
+        self._busy_box.set_visible(True)
+        self._busy_spinner.start()
+
+    def clear_busy(self):
+        """Hide it again. Safe to call when nothing is showing, so it can go in
+        both the success and the failure path without either having to know
+        whether the other ran."""
+        self._busy_spinner.stop()
+        self._busy_box.set_visible(False)
+        self._busy_label.set_text('')
 
     def set_show_close_button(self, visible):
         # Toggle the window-control buttons (including close) in the header bar.

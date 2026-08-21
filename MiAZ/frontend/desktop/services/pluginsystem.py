@@ -680,6 +680,35 @@ class MiAZPlugin(GObject.GObject):
         if tabs is not None:
             tabs.unregister_all(owner=self.get_name())
 
+    def register_suggest_item(self, name, label, callback, section=None):
+        """Contribute an entry to the rename dialog's Suggest menu.
+
+        Everything that proposes values for the filename fields belongs under
+        that one button, so a plugin adds an entry here rather than packing a
+        button of its own into the dialog.
+
+        `name` is the application action name and must be unique; `callback`
+        has the Gio.SimpleAction 'activate' signature and should resolve the
+        current rename widget itself, since the menu outlives any one dialog.
+        `section` is the heading the entry appears under: say what the entry
+        does with the document, because a user deciding between a local guess
+        and one that leaves the machine needs to see the difference before
+        choosing, not after.
+        """
+        if not self.is_active():
+            return
+        actions = self.app.get_service('actions')
+        if actions is None:
+            return
+        actions.register_suggest_item(owner=self.get_name(), name=name,
+                                      label=label, callback=callback,
+                                      section=section)
+
+    def unregister_suggest_items(self):
+        actions = self.app.get_service('actions')
+        if actions is not None:
+            actions.unregister_suggest_items(owner=self.get_name())
+
 
 class MiAZPluginSystem(GObject.GObject):
     def __init__(self, app):

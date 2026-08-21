@@ -27,7 +27,10 @@ Depends: ${misc:Depends},
          gir1.2-peas-2,
          gir1.2-webkit-6.0,
          gir1.2-secret-1,
-         iso-codes
+         iso-codes,
+         poppler-utils,
+         tesseract-ocr,
+         tesseract-ocr-eng
 Recommends: python3-keyring,
             python3-venv
 Description: Personal Document Organizer

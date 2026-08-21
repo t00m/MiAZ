@@ -24,6 +24,9 @@ Requires:       libpeas-loader-python
 Requires:       webkitgtk6.0
 Requires:       libsecret
 Requires:       iso-codes
+Requires:       poppler-utils
+Requires:       tesseract
+Requires:       tesseract-langpack-eng
 Recommends:     python3-keyring
 Recommends:     python3-pip
 

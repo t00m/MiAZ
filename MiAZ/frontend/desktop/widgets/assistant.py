@@ -442,7 +442,8 @@ class MiAZRepoAssistant(Adw.Window):
         self.row_folder.set_sensitive(False)
         self.btn_folder.set_sensitive(False)
         self.lbl_created.set_markup(
-            _('Repository created at <tt>{path}</tt>').format(path=path))
+            _('Repository created at <tt>{path}</tt>').format(
+                path=GLib.markup_escape_text(path)))
         self.lbl_created.set_visible(True)
         self.log.info(f"Repository '{key}' ('{description}') created at '{path}'")
         return True

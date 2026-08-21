@@ -18,7 +18,7 @@ sys.path.insert(1, os.path.dirname(os.path.abspath(__file__)))
 from miazai.providers import build_registry
 from miazai.ui.settings import AISettings
 from miazai.ui.chat import MiAZAIChatDialog
-from miazai.ui.dialog import inject_suggest_button, remove_suggest_button
+from miazai.ui.dialog import register_suggest_items, unregister_suggest_items
 
 plugin_info = {
     'Module':      'miazaiassistant',
@@ -79,8 +79,9 @@ class MiAZAIAssistantPlugin(MiAZExtension):
         )
         self.plugin.install_menu_entry(mnu_chat)
 
-        inject_suggest_button(
-            self.app, self.registry, self.repository, self.util, self.log)
+        register_suggest_items(
+            self.plugin, self.app, self.registry, self.repository,
+            self.util, self.log)
 
         self.plugin.set_started(True)
 
@@ -112,5 +113,5 @@ class MiAZAIAssistantPlugin(MiAZExtension):
                 self.log.debug(f'disconnect startup handler: {exc}')
             del self._startup_handler
 
-        remove_suggest_button(self.app)
+        unregister_suggest_items(self.plugin)
         self.plugin.set_started(False)

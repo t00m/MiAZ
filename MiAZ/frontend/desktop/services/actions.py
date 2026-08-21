@@ -9,6 +9,7 @@ from gettext import gettext as _
 
 from gi.repository import GObject
 from gi.repository import Adw
+from gi.repository import Gio
 from gi.repository import Gtk
 from gi.repository import Gdk
 
@@ -66,6 +67,10 @@ class MiAZActions(GObject.GObject):
         self.factory = self.app.get_service('factory')
         self.util = self.app.get_service('util')
         self.srvdlg = self.app.get_service('dialogs')
+        # The Suggest menu: its actions, created once, and its entries, which
+        # come and go with the plugins that contribute them.
+        self._suggest_actions = {}
+        self._suggest_items = []
         GObject.signal_new('settings-loaded',
                             MiAZActions,
                             GObject.SignalFlags.RUN_LAST,
@@ -121,6 +126,145 @@ class MiAZActions(GObject.GObject):
         item = workspace.get_selected_items()[0]
         self._document_rename_single(item.id)
 
+    def build_suggest_menu(self):
+        """Build (once) the Gio.Menu behind the rename dialog's Suggest button.
+
+        Everything that proposes values for the filename fields is here, in
+        sections, so it is plain which ones read the document on this machine
+        and which ones send it to a model: reading the document, matching
+        against documents already filed, and whatever a plugin adds.
+
+        "Build once, resolve the current rename widget dynamically": the menu
+        is shared by every rename dialog opened, and each callback reads
+        whichever rename widget is current rather than closing over one.
+        """
+        menu = self.app.get_widget('rename-suggest-menu')
+        if menu is not None:
+            return menu
+        menu = Gio.Menu.new()
+        self.app.add_widget('rename-suggest-menu', menu)
+
+        from_document = _('From this document')
+        for name, label, callback in (
+            ('rename-detect-date', _('Date'), self._on_rename_detect_date),
+            ('rename-detect-country', _('Country'), self._on_rename_detect_country),
+            ('rename-detect-sentby', _('Sent by'), self._on_rename_detect_sentby),
+            ('rename-detect-sentto', _('Sent to'), self._on_rename_detect_sentto),
+            ('rename-detect-all', _('Every field'), self._on_rename_detect_all),
+        ):
+            self.register_suggest_item(owner=None, name=name, label=label,
+                                       callback=callback, section=from_document)
+
+        self.register_suggest_item(
+            owner=None,
+            name='rename-suggest-local',
+            label=_('Sharing this concept'),
+            callback=self._on_rename_suggest_local,
+            section=_('From documents already filed'))
+        return menu
+
+    def register_suggest_item(self, owner, name, label, callback, section=None):
+        """Add an entry to the Suggest menu.
+
+        `owner` is the plugin name, or None for a core entry, so a plugin's
+        entries can be taken away again when it unloads. `section` is the
+        heading it appears under, which is what tells the user whether an
+        entry reads the document here or sends it somewhere. The action is
+        created once and kept: the menu is rebuilt by replacing its items, not
+        by re-registering actions the whole application already knows.
+        """
+        if name not in self._suggest_actions:
+            action = Gio.SimpleAction.new(name, None)
+            action.connect('activate', callback, None)
+            self.app.add_action(action)
+            self._suggest_actions[name] = action
+        self._suggest_items = [entry for entry in self._suggest_items
+                               if entry[1] != name]
+        self._suggest_items.append((owner, name, label, section))
+        self._rebuild_suggest_menu()
+
+    def unregister_suggest_items(self, owner):
+        """Drop every entry a plugin contributed, on unload."""
+        before = len(self._suggest_items)
+        self._suggest_items = [entry for entry in self._suggest_items
+                               if entry[0] != owner]
+        if len(self._suggest_items) != before:
+            self._rebuild_suggest_menu()
+
+    def _rebuild_suggest_menu(self):
+        """Replace the menu contents in place, so every button using it
+        updates without being rebuilt itself.
+
+        Entries keep the order they were registered in, grouped under their
+        section heading, which puts the core's own groups first and a plugin's
+        after them.
+        """
+        menu = self.app.get_widget('rename-suggest-menu')
+        if menu is None:
+            return
+        menu.remove_all()
+        headings = []
+        for _owner, _name, _label, heading in self._suggest_items:
+            if heading not in headings:
+                headings.append(heading)
+        for heading in headings:
+            section = Gio.Menu.new()
+            for _owner, name, label, item_heading in self._suggest_items:
+                if item_heading == heading:
+                    section.append(label, f'app.{name}')
+            if section.get_n_items() > 0:
+                menu.append_section(heading, section)
+
+    def set_suggest_item_enabled(self, name: str, enabled: bool):
+        """Enable or disable one entry of the Suggest menu.
+
+        A plugin uses this to grey its own entry out while its suggestion is
+        running: contributing an entry rather than a button of its own means
+        there is no button left to make insensitive.
+        """
+        action = self._suggest_actions.get(name)
+        if action is not None:
+            action.set_enabled(enabled)
+
+    def set_suggest_local_enabled(self, enabled: bool):
+        """The concept is the key the local suggestion matches on, so its entry
+        is dead until there is enough of one to match. A plugin entry is not
+        affected: an AI reads the document, not the concept."""
+        self.set_suggest_item_enabled('rename-suggest-local', enabled)
+
+    def _on_rename_suggest_local(self, action, param, data):
+        widget = self._current_rename_widget()
+        if widget is not None:
+            widget.on_suggest_metadata()
+
+    def _current_rename_widget(self):
+        return self.app.get_widget('rename-widget')
+
+    def _on_rename_detect_date(self, action, param, data):
+        widget = self._current_rename_widget()
+        if widget is not None:
+            widget.detect_date()
+
+    def _on_rename_detect_country(self, action, param, data):
+        widget = self._current_rename_widget()
+        if widget is not None:
+            widget.detect_country()
+
+    def _on_rename_detect_sentby(self, action, param, data):
+        widget = self._current_rename_widget()
+        if widget is not None:
+            widget.detect_sentby()
+
+    def _on_rename_detect_sentto(self, action, param, data):
+        widget = self._current_rename_widget()
+        if widget is not None:
+            widget.detect_sentto()
+
+    def _on_rename_detect_all(self, action, param, data):
+        widget = self._current_rename_widget()
+        if widget is not None:
+            widget.detect_all()
+
     def _document_rename_single(self, doc):
         old = self.app.get_widget('rename-widget')
         if old is not None and hasattr(old, 'dispose'):
@@ -161,17 +305,23 @@ class MiAZActions(GObject.GObject):
             css_classes=['destructive-action'],
         )
         btn_cancel.connect('clicked', lambda *_a: dialog.emit('response', 'cancel'))
-        dialog.pack_header_start(btn_cancel)
+        dialog.pack_action_start(btn_cancel)
 
-        # "Suggest" fills the five metadata drop-downs from documents that share
-        # the typed concept. It sits next to Rename on the bottom and is enabled
-        # only once the concept (the match key) is at least two characters long.
-        btn_suggest = self.factory.create_button(
+        # One button for everything that proposes values for the filename
+        # fields: reading this document, matching documents already filed, and
+        # whatever a plugin contributes. The menu is in sections, so which of
+        # them stay on this machine and which send the document to a model is
+        # visible before choosing one.
+        #
+        # Labelled rather than icon-only: an unlabelled icon among other icons
+        # is not findable, which is how the first version of this went.
+        btn_suggest = Gtk.MenuButton()
+        btn_suggest.set_child(Adw.ButtonContent(
             icon_name='io.github.t00m.MiAZ-edit-paste-symbolic',
-            title=_('Suggest'),
-            tooltip=_('Suggest metadata from documents sharing this concept'),
-        )
-        btn_suggest.connect('clicked', lambda *_a: rename_widget.on_suggest_metadata())
+            label=_('Suggest')))
+        btn_suggest.set_always_show_arrow(True)
+        btn_suggest.set_tooltip_text(_('Suggest values for the filename fields'))
+        btn_suggest.set_menu_model(self.build_suggest_menu())
 
         # "Preview" opens the source document. It sits next to Suggest.
         btn_preview = self.factory.create_button(
@@ -183,11 +333,30 @@ class MiAZActions(GObject.GObject):
             'clicked',
             lambda *_a: self.document_display(rename_widget.get_filepath_source()))
 
-        dialog.pack_action_end(btn_suggest)
+        # Suggest goes to the right of the header bar, where the plugin's own
+        # AI button used to be, so it is the first thing seen rather than
+        # something to hunt for along the bottom edge.
+        # Both menus sit together at the right of the header: Detect reads the
+        # document, Suggest proposes from elsewhere. pack_header_end packs from
+        # the right inwards, so Suggest goes first to end up outermost, with
+        # Detect immediately before it.
+        dialog.pack_header_end(btn_suggest)
+
+        # It belongs to the Fields page: nothing in it proposes a project or a
+        # periodicity, so on a plugin's page it would offer to fill in fields
+        # the user cannot see.
+        def _suggest_visible(*_a):
+            btn_suggest.set_visible(
+                rename_widget.stack.get_visible_child_name() == 'fields')
+        rename_widget.stack.connect('notify::visible-child', _suggest_visible)
+        _suggest_visible()
         dialog.pack_action_end(btn_preview)
 
         def _update_suggest_sensitive(*_a):
-            btn_suggest.set_sensitive(len(rename_widget.entry_concept.get_text().strip()) >= 2)
+            # The menu button stays usable: a plugin entry may not need a
+            # concept. Only the local entry, which matches on it, goes dead.
+            self.set_suggest_local_enabled(
+                len(rename_widget.entry_concept.get_text().strip()) >= 2)
         rename_widget.entry_concept.connect('changed', _update_suggest_sensitive)
         _update_suggest_sensitive()
 
