@@ -69,7 +69,16 @@
   <releases>
     <release version="0.2.0" date="2026-08-20" urgency="medium">
       <description>
-        <p>See CHANGELOG.md for details.</p>
+        <p>Runs on Debian 13, a rename date that waits until you have finished typing it, and a complete Spanish translation.</p>
+        <ul>
+          <li>The keyboard shortcuts window no longer needs libadwaita 1.8, so MiAZ runs on Debian 13</li>
+          <li>The date in the rename dialog is checked when you leave the field or press Rename, not on every keystroke</li>
+          <li>A half-typed date is no longer completed into a date nobody chose</li>
+          <li>Running miaz where there is no display says so and points at the command line, instead of crashing</li>
+          <li>A crash with no display is reported on the console instead of ending in a core dump</li>
+          <li>Spanish is complete again, all 1011 strings</li>
+          <li>The German and French catalogues are gone, neither having ever been translated</li>
+        </ul>
       </description>
     </release>
     <release version="0.1.60" date="2026-08-19" urgency="medium">

@@ -1,6 +1,12 @@
 miaz (0.2.0-1) unstable; urgency=medium
 
-  * New release. See CHANGELOG.md for details.
+  * The keyboard shortcuts window no longer needs libadwaita 1.8, so MiAZ runs on Debian 13
+  * The date in the rename dialog is checked when you leave the field or press Rename, not on every keystroke
+  * A half-typed date is no longer completed into a date nobody chose
+  * Running miaz where there is no display says so and points at the command line, instead of crashing
+  * A crash with no display is reported on the console instead of ending in a core dump
+  * Spanish is complete again, all 1011 strings
+  * The German and French catalogues are gone, neither having ever been translated
 
  -- Tomás Vírseda <tomasvirseda@gmail.com>  Thu, 20 Aug 2026 20:17:48 +0200
 

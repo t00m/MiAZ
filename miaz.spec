@@ -76,7 +76,13 @@ gtk-update-icon-cache %{_datadir}/icons/hicolor &> /dev/null || :
 
 %changelog
 * Thu Aug 20 2026 Tomás Vírseda <tomasvirseda@gmail.com> - 0.2.0-1
-- New release. See CHANGELOG.md for details.
+- The keyboard shortcuts window no longer needs libadwaita 1.8, so MiAZ runs on Debian 13
+- The date in the rename dialog is checked when you leave the field or press Rename, not on every keystroke
+- A half-typed date is no longer completed into a date nobody chose
+- Running miaz where there is no display says so and points at the command line, instead of crashing
+- A crash with no display is reported on the console instead of ending in a core dump
+- Spanish is complete again, all 1011 strings
+- The German and French catalogues are gone, neither having ever been translated
 
 * Fri Aug 14 2026 Tomás Vírseda <tomasvirseda@gmail.com> - 0.1.60-1
 - New release. See CHANGELOG.md for details.

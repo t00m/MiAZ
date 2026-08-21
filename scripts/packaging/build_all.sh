@@ -94,6 +94,21 @@ else
 fi
 log "Version: $VERSION_FULL"
 
+# The release notes live in releases/<version>.md and are rendered into the
+# metainfo, debian/changelog and the spec %changelog. Check before building
+# rather than after shipping: 0.1.50 and 0.1.60 both went out with the
+# placeholder sync_versions.sh writes ("New release. See CHANGELOG.md for
+# details.") still in two of the three, because nobody looked.
+# SKIP_NOTES_CHECK=1 builds anyway, for a test build of something unreleased.
+if [[ "${SKIP_NOTES_CHECK:-0}" != "1" ]]; then
+    if ! "$REPO_ROOT/scripts/devel/render_release_notes.py" --check; then
+        log_err "Release notes for $VERSION are missing or out of date."
+        log_err "Write releases/$VERSION.md, run scripts/devel/render_release_notes.py,"
+        log_err "or set SKIP_NOTES_CHECK=1 for a build you are not going to ship."
+        exit 1
+    fi
+fi
+
 mkdir -p "$DIST_DIR"
 # Wipe previous artifacts so dist/ only contains packages from this run.
 log "Cleaning $DIST_DIR/ and previous build leftovers ..."
@@ -152,11 +167,16 @@ else
 fi
 
 # ── Flatpak ───────────────────────────────────────────────────────────────────
-# Flatpak packaging is deprecated on purpose (see
-# docs/PACKAGING-FLATPAK-DEPRECATED.md): the sandbox cannot reach the host CLI
-# tools that plugins need (ocrmypdf for OCR, scanimage for the scanner), so
-# those features do not work in a Flatpak build. The build steps are kept below
-# for reference; set MIAZ_ALLOW_FLATPAK=1 to force it, otherwise it is skipped.
+# Flatpak packaging is deprecated on purpose: the sandbox cannot reach the host
+# CLI tools that plugins need (ocrmypdf for OCR, scanimage for the scanner), so
+# those features do not work in a Flatpak build. No release ships one.
+#
+# The manifests and the scripts under flatpak/ and scripts/packaging/flatpak/
+# are kept as a legacy option, so a bundle can still be produced by hand if it
+# is ever wanted: set MIAZ_ALLOW_FLATPAK=1. Otherwise this is skipped.
+#
+# (The reason used to point at docs/PACKAGING-FLATPAK-DEPRECATED.md, which no
+# reader can open: docs/ is gitignored, so that file exists on one machine.)
 log "--- Flatpak package (deprecated, skipped) ---"
 cd "$REPO_ROOT"
 FLATPAK_BUNDLE="$REPO_ROOT/miaz-${VERSION}.flatpak"
