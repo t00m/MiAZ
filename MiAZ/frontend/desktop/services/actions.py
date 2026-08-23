@@ -24,10 +24,8 @@ from MiAZ.frontend.desktop.widgets.settings import MiAZAppSettings
 from MiAZ.frontend.desktop.widgets.settings import MiAZRepoSettings
 from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewMassDelete
 
-# Adw.ShortcutsDialog is the widget GNOME provides for this and it arrived in
-# libadwaita 1.8. Debian 13, the current stable, ships 1.7.6, so MiAZ builds the
-# same list out of older parts there. Drop _build_shortcuts_fallback and this
-# constant once every distribution MiAZ ships to has 1.8.
+# Adw.ShortcutsDialog needs libadwaita 1.8; Debian 13 ships 1.7.6. Drop this
+# and _build_shortcuts_fallback once every target distribution has 1.8.
 ADW_SHORTCUTS_DIALOG = (1, 8)
 
 
@@ -307,14 +305,8 @@ class MiAZActions(GObject.GObject):
         btn_cancel.connect('clicked', lambda *_a: dialog.emit('response', 'cancel'))
         dialog.pack_action_start(btn_cancel)
 
-        # One button for everything that proposes values for the filename
-        # fields: reading this document, matching documents already filed, and
-        # whatever a plugin contributes. The menu is in sections, so which of
-        # them stay on this machine and which send the document to a model is
-        # visible before choosing one.
-        #
-        # Labelled rather than icon-only: an unlabelled icon among other icons
-        # is not findable, which is how the first version of this went.
+        # One button for everything that proposes field values, in sections so
+        # a local guess reads differently from one sent to a model.
         btn_suggest = Gtk.MenuButton()
         btn_suggest.set_child(Adw.ButtonContent(
             icon_name='io.github.t00m.MiAZ-edit-paste-symbolic',
@@ -333,18 +325,11 @@ class MiAZActions(GObject.GObject):
             'clicked',
             lambda *_a: self.document_display(rename_widget.get_filepath_source()))
 
-        # Suggest goes to the right of the header bar, where the plugin's own
-        # AI button used to be, so it is the first thing seen rather than
-        # something to hunt for along the bottom edge.
-        # Both menus sit together at the right of the header: Detect reads the
-        # document, Suggest proposes from elsewhere. pack_header_end packs from
-        # the right inwards, so Suggest goes first to end up outermost, with
-        # Detect immediately before it.
+        # Right of the header, where the plugin's own AI button used to be.
         dialog.pack_header_end(btn_suggest)
 
-        # It belongs to the Fields page: nothing in it proposes a project or a
-        # periodicity, so on a plugin's page it would offer to fill in fields
-        # the user cannot see.
+        # Fields page only: it cannot propose a project or a periodicity, so
+        # elsewhere it would offer to fill in fields that are not shown.
         def _suggest_visible(*_a):
             btn_suggest.set_visible(
                 rename_widget.stack.get_visible_child_name() == 'fields')

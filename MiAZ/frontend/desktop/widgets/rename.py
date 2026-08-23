@@ -552,10 +552,8 @@ class MiAZRenameDialog(Gtk.Box):
 
     def calendar_day_selected(self, calendar):
         # validate_date moves the calendar to whatever parses, and the calendar
-        # answers by writing the date back here. Only a day the user picked in
-        # the popover may do that. The guard used to be "does the entry have
-        # the focus", which held for a person typing and for nobody else: a
-        # date set in code went to the calendar and came back rewritten.
+        # answers by writing the date back here. Only a day the user picked
+        # in the popover may do that.
         if self._moving_calendar:
             return
         adate = calendar.get_date()
@@ -767,8 +765,7 @@ class MiAZRenameDialog(Gtk.Box):
         button.set_menu_model(menu)
         button.add_css_class('flat')
 
-        # The stack can change page without the menu being used (a plugin
-        # focusing its own tab when it refuses a rename), so the label follows
+        # A plugin can change the page without the menu, so the label follows
         # the stack rather than the click.
         self.stack.connect('notify::visible-child', self._on_page_changed)
         self._on_page_changed()
@@ -879,9 +876,8 @@ class MiAZRenameDialog(Gtk.Box):
             self.lblFilenameNew.set_text(self.result)
             self.lblFilenameNew.set_tooltip_text(self.result)
 
-            # Asks without showing: the date row and its label are left
-            # alone until the user leaves the field. The Rename button
-            # still has to know, so the answer is needed here.
+            # Asks without showing: the label waits until the field is left.
+            # The Rename button still needs the answer.
             v_date = date_is_valid(adate)
             v_group = self._cfg_group.exists_used(agroup)
             v_cty = self._cfg_country.exists_used(acountry)

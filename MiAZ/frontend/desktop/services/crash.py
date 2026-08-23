@@ -57,12 +57,8 @@ class MiAZCrashHandler(GObject.GObject):
         # A single crash dialog at a time avoids stacking on cascading errors.
         if self._dialog_open:
             return GLib.SOURCE_REMOVE
-        # The handler is installed before the window exists so it can report a
-        # failure during setup, and one of those failures is GTK not having a
-        # display. Building an Adw.AlertDialog then segfaults inside GTK, which
-        # is not an exception, so the except below cannot catch it: the user
-        # loses a readable report and gets a core dump instead. The report is
-        # already on the console and in the log by now.
+        # Building an Adw.AlertDialog with no display segfaults inside GTK,
+        # which no except can catch. The report is already logged by now.
         if Gdk.Display.get_default() is None:
             self.log.error("No display available: crash reported on the "
                            "console and in the log, without a dialog")

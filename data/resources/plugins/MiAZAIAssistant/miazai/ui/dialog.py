@@ -257,9 +257,8 @@ def _apply_suggestion(rename_widget, suggestion, app):
         value = util.valid_key(getattr(suggestion, key, '')).upper()
         if not value:
             continue
-        # The model is asked for an upper-case key, but the repository may
-        # already hold the same name written differently. Suggesting ALLIANZ
-        # where Allianz exists used to add a second sender for one company.
+        # The repository may hold the same name in another case: suggesting
+        # ALLIANZ where Allianz exists used to add a second sender.
         value = _existing_key(cfg, value) or value
         if _select_in_dropdown(dropdown, value):
             continue

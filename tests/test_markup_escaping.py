@@ -27,9 +27,8 @@ WIDGETS = os.path.join(ROOT, 'MiAZ', 'frontend', 'desktop')
 MARKUP_SETTERS = {'set_markup', 'set_tooltip_markup', 'set_label_markup'}
 ESCAPE = 'markup_escape_text'
 
-# Markup built from something the checker cannot prove safe, allowed because a
-# person checked it. Keyed by file and function, since line numbers move. An
-# entry is a decision with a reason attached, not a way to quiet the test.
+# Markup the checker cannot prove safe, allowed because a person checked it.
+# Keyed by file and function, since line numbers move. Each entry needs a reason.
 ALLOWED = {
     ('services/dialogs.py', '__init__'):
         'the body is markup by contract: callers pass their own tags, so '
@@ -132,8 +131,7 @@ def argument_is_safe(node, assigned):
             and node.func.id in {'_', 'N_'}:
         return all(argument_is_safe(arg, assigned) for arg in node.args)
     # '<tt>{path}</tt>'.format(path=escaped): safe when the template is a
-    # literal and every value put into it is escaped. This is how a translated
-    # string carries a value, so it has to be understood rather than refused.
+    # literal and every value in it is escaped. Translated strings do this.
     if (isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute)
             and node.func.attr == 'format'):
         if not argument_is_safe(node.func.value, assigned):

@@ -318,11 +318,8 @@ class MiAZWindowDialog(Adw.Window):
         self.factory = self.app.get_service('factory')
         self._buttons = {}
         self._close_response = None
-        # Attach it to the application, which is what makes the app.* actions
-        # its menus point at resolvable from inside this window. Without it GTK
-        # cannot find them and renders every menu entry insensitive: the whole
-        # Suggest menu and the whole Detect menu came up greyed out, with
-        # nothing in the log to say why.
+        # Without this GTK cannot resolve the app.* actions its menus point
+        # at, and renders every entry insensitive with nothing in the log.
         self.set_application(app)
         self.set_title(title)
         self.set_destroy_with_parent(True)
@@ -333,10 +330,8 @@ class MiAZWindowDialog(Adw.Window):
         headerbar.set_title_widget(Adw.WindowTitle(title=title, subtitle=''))
         self.headerbar = headerbar
 
-        # Left of the header: what the dialog is busy doing. Work that reads a
-        # document takes seconds (OCR, a provider call) and said nothing while
-        # it ran, so the dialog looked stuck. Hidden until there is something
-        # to report.
+        # What the dialog is busy doing. OCR and provider calls take seconds
+        # and said nothing, so the dialog looked stuck. Hidden until needed.
         self._busy_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
         self._busy_spinner = Gtk.Spinner()
         self._busy_label = Gtk.Label()

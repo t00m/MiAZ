@@ -296,9 +296,8 @@ def _walk(widget):
 
 
 # ---------------------------------------------------------------------------
-# Detect date (checklist 4.7b, 4.7c). Triggered through the dialog's grouped
-# 'Detect' menu button (services/actions.py); called directly here since the
-# menu itself is built and owned by MiAZActions, not this widget.
+# Detect date (checklist 4.7b, 4.7c). Called directly: the menu that triggers
+# it is built and owned by MiAZActions, not by this widget.
 # ---------------------------------------------------------------------------
 
 def test_detect_reads_the_date_out_of_the_concept(rename_dialog):

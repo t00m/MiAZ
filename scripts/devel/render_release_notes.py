@@ -42,9 +42,8 @@ MESON = os.path.join(ROOT, 'meson.build')
 # What sync_versions.sh writes when there is nothing to say yet.
 PLACEHOLDER = re.compile(r'^(New release\.\s*)?See CHANGELOG\.md for details\.$')
 
-# &, < and > in a highlight would make the metainfo invalid. They are rare in
-# this text, so escaping is enough and there is no need for an XML writer that
-# would reformat the whole file.
+# &, < and > would make the metainfo invalid. Escaping is enough here, and
+# avoids an XML writer reformatting the whole file.
 XML_ESCAPES = (('&', '&amp;'), ('<', '&lt;'), ('>', '&gt;'))
 
 
@@ -86,9 +85,8 @@ def parse_source(text: str):
     bullets = [line[2:].strip() for line in body.splitlines()
                if line.startswith('- ') and line[2:].strip()]
 
-    # The summary is the first paragraph, not the first line: a sentence long
-    # enough to say anything gets wrapped in the file, and taking one line of
-    # it truncates it mid-clause in every software centre that shows it.
+    # The first paragraph, not the first line: a wrapped summary would be
+    # truncated mid-clause in every software centre that shows it.
     summary_lines = []
     for line in body.splitlines():
         stripped = line.strip()

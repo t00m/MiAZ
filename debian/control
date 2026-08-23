@@ -30,7 +30,8 @@ Depends: ${misc:Depends},
          iso-codes,
          poppler-utils,
          tesseract-ocr,
-         tesseract-ocr-eng
+         tesseract-ocr-eng,
+         ocrmypdf
 Recommends: python3-keyring,
             python3-venv
 Description: Personal Document Organizer

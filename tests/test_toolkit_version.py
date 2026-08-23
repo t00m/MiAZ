@@ -35,11 +35,8 @@ GIR = {
 # The GIR elements that carry a "version" attribute worth reading.
 VERSIONED = ('class', 'enumeration', 'record', 'interface', 'bitfield')
 
-# APIs used above the declared floor on purpose, behind a version check with a
-# fallback for older toolkits. Each entry names the constant the check compares
-# against and why the exemption exists. An entry is a decision with a reason
-# attached, not a way to quiet the test: adding one means having written the
-# fallback, and the tests below check that the guard is really in the file.
+# APIs used above the floor on purpose, behind a version check with a fallback.
+# Each entry names the guard constant and its reason; the tests below verify it.
 VERSION_GUARDED = {
     'Adw.ShortcutsDialog': (
         'ADW_SHORTCUTS_DIALOG',

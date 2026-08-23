@@ -22,25 +22,15 @@ jobs:
     # A stalled apt or dnf used to burn the 6 hour ceiling before GitHub killed
     # the job. Nothing here takes more than ten minutes when it works.
     timeout-minutes: 30
-    # Not ubuntu-latest's own userland: noble ships libadwaita 1.5 and MiAZ
-    # calls Adw.InlineViewSwitcher (1.7) and Adw.ShortcutsDialog (1.8). On 1.5
-    # the version gate in miaz.py exits before a single test runs, which is how
-    # the whole UI suite came to fail at setup with SystemExit. Fedora 43 ships
-    # 1.8.7. See tests/test_toolkit_version.py for where the floor comes from.
+    # ubuntu-latest ships libadwaita 1.5, below the 1.7 floor, so the version
+    # gate exits before any test runs. Fedora 43 ships 1.8.7.
     container: fedora:43
     steps:
       - name: Checkout repository
         uses: actions/checkout@v5
 
-      # PyGObject (gi) comes from the system packages and is bound to the
-      # system Python, so the tests run against it. actions/setup-python
-      # installs a separate interpreter that cannot see those bindings, which
-      # is why it is not used here. The project floor is 3.9 (requires-python);
-      # 3.9 syntax compatibility is enforced statically by ruff's
-      # target-version = "py39" in pyproject.toml.
-      #
-      # The -devel packages are here for their GIR files, which is where
-      # test_toolkit_version.py reads the version each API was introduced in.
+      # gi is bound to the system Python, so no actions/setup-python here.
+      # The -devel packages are for the GIR files test_toolkit_version.py reads.
       - name: Install system dependencies
         run: |
           dnf install -y --setopt=install_weak_deps=False \
@@ -83,22 +73,12 @@ jobs:
         # they need a display and the plugin loader. Xvfb provides the first;
         # the runner sandboxes HOME so nothing here touches a real one.
         #
-        # PYTHONUNBUFFERED stays. Python buffers 8 KiB when its output is a
-        # pipe, so a process killed mid-run loses everything it wrote: that is
-        # why the crash on 20 August left a six second step with no output at
-        # all to read. It costs nothing and it is what makes the next one
-        # legible.
+        # PYTHONUNBUFFERED: Python buffers 8 KiB into a pipe, so a process
+        # killed mid-run loses everything it wrote.
         env:
           PYTHONUNBUFFERED: "1"
-          # Building the app builds the workspace, which builds MiAZBrowserPage,
-          # which builds a WebKit.WebView. WebKit isolates each view with
-          # bubblewrap, and that needs to create a user namespace, which this
-          # runner's container does not allow: the first test that constructs
-          # the app took a SIGTRAP six seconds in, while the same image passes
-          # under rootless podman, where nested user namespaces are available.
-          # Turning the sandbox off is safe here and only here: the pages are
-          # local files this repository produced, and the container is thrown
-          # away with the job. Never set this for a real user.
+          # WebKit sandboxes each view with bubblewrap, which needs a user
+          # namespace this runner denies. Never set this for a real user.
           WEBKIT_DISABLE_SANDBOX_THIS_IS_DANGEROUS: "1"
           # No GPU on the runner, so keep WebKit off the compositing path.
           WEBKIT_DISABLE_COMPOSITING_MODE: "1"
@@ -107,9 +87,8 @@ jobs:
             xvfb-run -a --server-args="-screen 0 1280x1024x24" \
             scripts/checks/run_ui_tests.sh -q
 
-      # These two run even when the UI step failed. They check metadata, which
-      # has nothing to do with the display, and a release is held up by a
-      # broken metainfo just as surely.
+      # Run even when the UI step failed: metadata needs no display, and a
+      # broken metainfo holds up a release just as surely.
       - name: Validate AppStream metainfo
         if: always()
         run: appstream-util validate --nonet data/io.github.t00m.MiAZ.metainfo.xml.in

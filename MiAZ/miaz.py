@@ -29,13 +29,8 @@ from MiAZ.backend.crash import install_backend_excepthook
 
 log = MiAZLog('MiAZ')
 
-# The toolkit versions MiAZ actually calls, not round numbers. Gtk.FileDialog,
-# Gtk.FontDialog and Gtk.DialogError are 4.10. Adw.InlineViewSwitcher is 1.7 and
-# is built while the main window is. Adw.ShortcutsDialog is 1.8 and is the one
-# API used above this floor: it is behind a version check with a fallback (see
-# actions.show_app_help), which is what keeps Debian 13 and its 1.7.6 running.
-# Derived from the APIs the source uses, which tests/test_toolkit_version.py
-# checks against the GIR so these two numbers cannot drift below the code again.
+# The versions the code actually calls: Gtk.FileDialog is 4.10,
+# Adw.InlineViewSwitcher 1.7. tests/test_toolkit_version.py checks both.
 GTK_MINIMUM = (4, 10)
 ADW_MINIMUM = (1, 7)
 
@@ -227,13 +222,8 @@ class MiAZ:
                              "'miaz repos'.\n")
             sys.exit(2)
 
-        # GTK imports fine with nowhere to draw: over SSH without X
-        # forwarding, in a container, on a headless server. Adw.Application
-        # does not refuse to start there. It runs startup, emits activate, and
-        # dies building the first widget, by which time the plugin index is
-        # built and the web server is listening. Ask before doing any of that.
-        # Gtk.init_check() is what opens the default display and it returns
-        # True even when it could not, so the display itself is the answer.
+        # GTK imports fine with nowhere to draw and only fails at the first
+        # widget. init_check() returns True regardless, so ask the display.
         Gtk.init_check()
         if Gdk.Display.get_default() is None:
             sys.stderr.write("MiAZ found no display to open its window on. "

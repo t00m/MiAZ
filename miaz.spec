@@ -27,6 +27,7 @@ Requires:       iso-codes
 Requires:       poppler-utils
 Requires:       tesseract
 Requires:       tesseract-langpack-eng
+Requires:       ocrmypdf
 Recommends:     python3-keyring
 Recommends:     python3-pip
 
