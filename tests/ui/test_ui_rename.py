@@ -365,7 +365,7 @@ def test_detect_reads_the_date_out_of_the_pdf_metadata(rename_dialog):
         with open(path, 'wb') as handler:
             handler.write(b"%PDF-1.4\n<< /Title (invoice) "
                           b"/CreationDate (D:20250116042015+01'00') >>\n%%EOF\n")
-        widget.entry_concept.set_text('RG151038433387')
+        widget.entry_concept.set_text('RG990011223344')
         driver.pump(0.3)
         widget.detect_date()
         driver.pump(0.3)

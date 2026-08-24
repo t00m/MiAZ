@@ -512,11 +512,10 @@ class MiAZUtil(GObject.GObject):
         filename_normalize keeps the original filename.
 
         Metadata comes first because a filename is not a reliable place to find
-        a date. Invoice numbers, policy numbers and national IDs are digit runs
-        that pass every shape check a date parser can apply: RG151119905140 is a
-        1&1 invoice number, and 15111990 inside it reads as a perfectly valid
-        15 November 1990. Metadata cannot fail that way, because a field named
-        CreationDate holds a date or holds nothing.
+        a date. Invoice and policy numbers are digit runs that pass every
+        shape check a date parser can apply: 24071988 inside RG240719880042
+        reads as a perfectly valid 24 July 1988. Metadata cannot fail that way,
+        because a field named CreationDate holds a date or holds nothing.
 
         Measured against 1257 documents whose dates their owner had chosen by
         hand, the metadata date agreed 46% of the time and the filename date

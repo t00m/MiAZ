@@ -35,6 +35,9 @@ class MiAZColumnViewWorkspace(MiAZColumnView):
         # ~ self.factory_icon = Gtk.SignalListItemFactory()
         # ~ self.factory_icon.connect("setup", self._on_factory_setup_icon)
         # ~ self.factory_icon.connect("bind", self._on_factory_bind_icon)
+        self.factory_duplicate = Gtk.SignalListItemFactory()
+        self.factory_duplicate.connect("setup", self._on_factory_setup_duplicate)
+        self.factory_duplicate.connect("bind", self._on_factory_bind_duplicate)
         self.factory_icon_type = Gtk.SignalListItemFactory()
         self.factory_icon_type.connect("setup", self._on_factory_setup_icon_type)
         self.factory_icon_type.connect("bind", self._on_factory_bind_icon_type)
@@ -76,6 +79,10 @@ class MiAZColumnViewWorkspace(MiAZColumnView):
         self.column_flag = Gtk.ColumnViewColumn.new(_('Country'), self.factory_flag)
         self.column_country = Gtk.ColumnViewColumn.new(_('Country'), self.factory_country)
         self.column_extension = Gtk.ColumnViewColumn.new(_('Ext.'), self.factory_extension)
+        self.column_duplicate = Gtk.ColumnViewColumn.new(_('Copy'), self.factory_duplicate)
+        # Shown only once a scan has found something, so the column does not
+        # sit empty for everyone who never opens review mode.
+        self.column_duplicate.set_visible(False)
 
         self.cv.append_column(self.column_date)
         self.cv.append_column(self.column_country)
@@ -88,6 +95,7 @@ class MiAZColumnViewWorkspace(MiAZColumnView):
         self.cv.append_column(self.column_sentby)
         self.cv.append_column(self.column_sentto)
         self.cv.append_column(self.column_extension)
+        self.cv.append_column(self.column_duplicate)
         self.column_sentto.set_expand(False)
         self.column_sentby.set_expand(False)
         self.column_title.set_expand(False)
@@ -105,6 +113,7 @@ class MiAZColumnViewWorkspace(MiAZColumnView):
         self.prop_flag_sorter = Gtk.CustomSorter.new(sort_func=self._on_sort_string_func, user_data='country')
         self.prop_country_sorter = Gtk.CustomSorter.new(sort_func=self._on_sort_string_func, user_data='country')
         self.prop_extension_sorter = Gtk.CustomSorter.new(sort_func=self._on_sort_string_func, user_data='extension')
+        self.prop_duplicate_sorter = Gtk.CustomSorter.new(sort_func=self._on_sort_duplicate_func)
         self.column_group.set_sorter(self.prop_group_sorter)
         self.column_purpose.set_sorter(self.prop_purpose_sorter)
         self.column_sentby.set_sorter(self.prop_sentby_sorter)
@@ -114,6 +123,7 @@ class MiAZColumnViewWorkspace(MiAZColumnView):
         self.column_flag.set_sorter(self.prop_flag_sorter)
         self.column_country.set_sorter(self.prop_country_sorter)
         self.column_extension.set_sorter(self.prop_extension_sorter)
+        self.column_duplicate.set_sorter(self.prop_duplicate_sorter)
 
         # Default sorting by date
         self.cv.sort_by_column(self.column_date, Gtk.SortType.DESCENDING)
@@ -202,6 +212,59 @@ class MiAZColumnViewWorkspace(MiAZColumnView):
         gicon = self.srvicm.get_mimetype_icon_for_extension(item.extension)
         icon.set_from_gicon(gicon)
         icon.set_pixel_size(24)
+
+    def _duplicate_sort_key(self, item):
+        """(group, name), so a group is contiguous and ordered within itself.
+
+        Every member of a group shares the first name in it, which is what puts
+        the copies next to each other: comparing them is the whole point.
+        Documents with no twin take a key that sorts after every filename, so
+        ascending brings the ones worth acting on to the top.
+        """
+        index = self.app.get_service('index')
+        twins = index.duplicates_of(item.id) if index is not None else []
+        if not twins:
+            return ('\uffff', item.id)
+        return (min([item.id] + twins), item.id)
+
+    def _on_sort_duplicate_func(self, item1, item2, _data):
+        key1 = self._duplicate_sort_key(item1)
+        key2 = self._duplicate_sort_key(item2)
+        if key1 > key2:
+            return Gtk.Ordering.LARGER
+        if key1 < key2:
+            return Gtk.Ordering.SMALLER
+        return Gtk.Ordering.EQUAL
+
+    def _on_factory_setup_duplicate(self, factory, list_item):
+        box = ColIcon()
+        list_item.set_child(box)
+
+    def _on_factory_bind_duplicate(self, factory, list_item):
+        """Mark a document whose bytes match another one.
+
+        The tooltip names the twin and says whether it is filed already: which
+        copy to discard depends on that, so the icon alone is not actionable.
+        """
+        box = list_item.get_child()
+        icon = box.get_first_child()
+        item = list_item.get_item()
+        index = self.app.get_service('index')
+        twins = index.duplicates_of(item.id) if index is not None else []
+        if not twins:
+            icon.set_from_icon_name(None)
+            icon.set_tooltip_text(None)
+            return
+        icon.set_from_icon_name('edit-copy-symbolic')
+        icon.set_pixel_size(16)
+        lines = []
+        for twin in twins:
+            other = index.document(twin)
+            state = _('already filed') if other is not None and other.active \
+                else _('also pending')
+            lines.append(f'{twin} ({state})')
+        icon.set_tooltip_text(
+            _('Same content as:') + '\n' + '\n'.join(lines))
 
     def _on_factory_setup_country(self, factory, list_item):
         box = ColLabel()

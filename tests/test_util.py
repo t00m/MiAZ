@@ -543,7 +543,7 @@ def test_filename_guess_date_falls_back_to_the_metadata(util, tmp_path):
     date in the file rather than the unknown date, and never the mtime."""
     doc = make_pdf(tmp_path, b"<< /CreationDate (D:20250116042015+01'00') >>")
     os.utime(doc, (1700000000, 1700000000))
-    assert util.filename_guess_date(doc, 'RG151038433387') == '20250116'
+    assert util.filename_guess_date(doc, 'RG990011223344') == '20250116'
 
 
 def test_filename_guess_date_prefers_the_metadata_over_the_name(util, tmp_path):
@@ -554,12 +554,12 @@ def test_filename_guess_date_prefers_the_metadata_over_the_name(util, tmp_path):
 
 
 def test_an_invoice_number_does_not_beat_the_metadata(util, tmp_path):
-    """RG151119905140 is a real 1&1 invoice number, and 15111990 inside it is a
-    real date: 15 November 1990. Reading the name first filed that invoice 36
-    years early. The metadata says when the PDF was actually made."""
+    """An invoice number shaped like a real one: 24071988 inside it reads as a
+    valid 24 July 1988. Reading the name first files such an invoice decades
+    early. The metadata says when the PDF was actually made."""
     doc = make_pdf(tmp_path, b'<< /CreationDate (D:20260116042015) >>')
-    assert util.dates_from_text('RG151119905140') == ['19901115']
-    assert util.filename_guess_date(doc, 'RG151119905140') == '20260116'
+    assert util.dates_from_text('RG240719880042') == ['19880724']
+    assert util.filename_guess_date(doc, 'RG240719880042') == '20260116'
 
 
 def test_the_name_is_still_read_when_the_file_carries_no_date(util, tmp_path):
@@ -570,7 +570,7 @@ def test_the_name_is_still_read_when_the_file_carries_no_date(util, tmp_path):
 def test_filename_guess_date_is_unknown_when_the_metadata_has_no_date(util, tmp_path):
     doc = make_pdf(tmp_path, b'<< /Title (an invoice) >>')
     os.utime(doc, (1700000000, 1700000000))
-    assert util.filename_guess_date(doc, 'RG151038433387') == UNKNOWN_DATE
+    assert util.filename_guess_date(doc, 'RG990011223344') == UNKNOWN_DATE
 
 
 def make_zip_document(tmp_path, member, body: bytes, name='doc.docx'):
@@ -619,12 +619,12 @@ MTIME_2023 = (1700000000, 1700000000)
 
 @pytest.mark.parametrize('label, body, concept, expected', [
     ('metadata beats the name', WITH_DATE, 'Factura_15_03_2024', '20250116'),
-    ('metadata alone', WITH_DATE, 'RG151038433387', '20250116'),
+    ('metadata alone', WITH_DATE, 'RG990011223344', '20250116'),
     ('the name is read when the file carries no date',
      WITHOUT_DATE, 'Factura_15_03_2024', '20240315'),
-    ('neither source has one', WITHOUT_DATE, 'RG151038433387', UNKNOWN_DATE),
+    ('neither source has one', WITHOUT_DATE, 'RG990011223344', UNKNOWN_DATE),
     ('an invoice number never beats the metadata',
-     WITH_DATE, 'RG151119905140', '20250116'),
+     WITH_DATE, 'RG240719880042', '20250116'),
 ])
 def test_the_date_precedence_is_metadata_then_name_then_unknown(
         util, tmp_path, label, body, concept, expected):
@@ -638,9 +638,9 @@ def test_the_file_mtime_is_never_the_answer(util, tmp_path):
     carry on disk is not a fact about the document and must not appear."""
     for index, (body, concept) in enumerate([
             (WITH_DATE, 'Factura_15_03_2024'),
-            (WITH_DATE, 'RG151038433387'),
+            (WITH_DATE, 'RG990011223344'),
             (WITHOUT_DATE, 'Factura_15_03_2024'),
-            (WITHOUT_DATE, 'RG151038433387')]):
+            (WITHOUT_DATE, 'RG990011223344')]):
         doc = make_pdf(tmp_path, body, name=f'mtime{index}.pdf')
         os.utime(doc, MTIME_2023)
         assert util.filename_guess_date(doc, concept) != '20231114'

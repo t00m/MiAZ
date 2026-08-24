@@ -10,6 +10,7 @@ import os
 
 from gi.repository import GObject
 
+from MiAZ.backend.duplicates import find_duplicates
 from MiAZ.backend.log import MiAZLog
 from MiAZ.backend.models import Field, MiAZItem
 from MiAZ.backend.util import humanize_value
@@ -43,6 +44,7 @@ class MiAZDocumentIndex(GObject.GObject):
     __gsignals__ = {
         'index-loaded': (GObject.SignalFlags.RUN_LAST, None, ()),
         'index-changed': (GObject.SignalFlags.RUN_LAST, None, (object,)),
+        'duplicates-scanned': (GObject.SignalFlags.RUN_LAST, None, ()),
     }
 
     def __init__(self, app):
@@ -53,6 +55,10 @@ class MiAZDocumentIndex(GObject.GObject):
         self._paths = {}
         self._invalid = []
         self._field_index = {ft: {} for ft in Field}
+        # Documents with identical content, filled by scan_duplicates. Not
+        # computed until something asks: the scan reads files, the rest does not.
+        self._duplicates = {}
+        self._duplicates_stale = True
         self.cache = {name: {} for name in CACHED_CONFIGS}
 
     def reload(self):
@@ -71,6 +77,7 @@ class MiAZDocumentIndex(GObject.GObject):
         self._field_index = {ft: {} for ft in Field}
         for path in docs:
             self._add(path)
+        self._invalidate_duplicates()
         self.log.debug(f"Index loaded: {len(self._items)} documents")
         self.emit('index-loaded')
 
@@ -122,13 +129,16 @@ class MiAZDocumentIndex(GObject.GObject):
             return False
 
         if event in ('changed', 'attribute-changed'):
-            # The row is derived from the filename, so a content or attribute
-            # change does not alter it.
+            # The row is derived from the filename, so neither alters it. The
+            # duplicate map is derived from the bytes, so 'changed' does.
+            if event == 'changed':
+                self._invalidate_duplicates()
             return True
 
         if event in ('deleted', 'moved-out'):
             basename = os.path.basename(path)
             if self._remove(basename):
+                self._invalidate_duplicates()
                 self.emit('index-changed', [('remove', basename)])
             return True
 
@@ -140,6 +150,8 @@ class MiAZDocumentIndex(GObject.GObject):
             basename = os.path.basename(path)
             self._remove(basename)
             item = self._add(other)
+            # A rename moves no bytes, so a scan already made is still right.
+            self._rename_duplicate(basename, os.path.basename(other))
             self.emit('index-changed', [('remove', basename), ('add', item)])
             return True
 
@@ -149,6 +161,7 @@ class MiAZDocumentIndex(GObject.GObject):
             basename = os.path.basename(path)
             action = 'update' if self._remove(basename) else 'add'
             item = self._add(path)
+            self._invalidate_duplicates()
             self.emit('index-changed', [(action, item)])
             return True
 
@@ -200,6 +213,49 @@ class MiAZDocumentIndex(GObject.GObject):
     def document(self, item_id):
         """One item by filename, or None."""
         return self._items.get(item_id)
+
+    def scan_duplicates(self):
+        """Find documents with identical content and emit when done.
+
+        Reads every file that shares a size with another, so it belongs in a
+        worker: about 0.9s for 1336 documents. Touches no GTK.
+        """
+        paths = list(self._paths.values())
+        found = find_duplicates(paths)
+        self._duplicates = {
+            os.path.basename(path): sorted(os.path.basename(o) for o in others)
+            for path, others in found.items()
+        }
+        self._duplicates_stale = False
+        self.log.debug(f"Duplicates: {len(self._duplicates)} documents with a twin")
+        self.emit('duplicates-scanned')
+
+    def duplicates_of(self, basename):
+        """Documents with the same content as this one, or [] when there are
+        none, when it is unknown, or when nothing has been scanned yet."""
+        return list(self._duplicates.get(basename, []))
+
+    def duplicates_of_any(self):
+        """True when the last scan found at least one document with a twin."""
+        return bool(self._duplicates)
+
+    def duplicates_stale(self):
+        """True when the map needs rebuilding before it can be trusted."""
+        return self._duplicates_stale
+
+    def _invalidate_duplicates(self):
+        self._duplicates = {}
+        self._duplicates_stale = True
+
+    def _rename_duplicate(self, old, new):
+        """Follow a rename through the map, keeping a scan that is still valid."""
+        if self._duplicates_stale or old not in self._duplicates:
+            return
+        self._duplicates[new] = self._duplicates.pop(old)
+        for others in self._duplicates.values():
+            if old in others:
+                others[others.index(old)] = new
+                others.sort()
 
     def pending(self):
         """Items that fail validation against the enabled config."""

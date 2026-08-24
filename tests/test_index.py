@@ -499,3 +499,120 @@ def test_invalidate_cache_ignores_an_unknown_config(index):
     index.build_item(VALID)
     index.invalidate_cache('Nonexistent', 'X')
     assert 'ES' in index.cache['Country']
+
+
+# ---------------------------------------------------------------------------
+# Duplicate detection
+# ---------------------------------------------------------------------------
+
+TWIN_A = '20240315-ES-HOU-BANK-INV-first-JOHNDOE.pdf'
+TWIN_B = '20240316-ES-HOU-BANK-INV-second-JOHNDOE.pdf'
+LONELY = '20240317-ES-HOU-BANK-INV-alone-JOHNDOE.pdf'
+
+
+def write(tmp_path, name, content):
+    path = tmp_path / name
+    path.write_text(content)
+    return str(path)
+
+
+def loaded_with_twins(index, tmp_path):
+    """A repository holding one duplicate pair and one unique document."""
+    write(tmp_path, TWIN_A, 'identical')
+    write(tmp_path, TWIN_B, 'identical')
+    write(tmp_path, LONELY, 'something else entirely')
+    index.reload()
+    index.scan_duplicates()
+    return index
+
+
+def test_duplicates_are_found_by_content_not_by_name(index, tmp_path):
+    loaded_with_twins(index, tmp_path)
+    assert index.duplicates_of(TWIN_A) == [TWIN_B]
+    assert index.duplicates_of(TWIN_B) == [TWIN_A]
+    assert index.duplicates_of(LONELY) == []
+
+
+def test_a_document_that_is_not_indexed_has_no_duplicates(index, tmp_path):
+    loaded_with_twins(index, tmp_path)
+    assert index.duplicates_of('never-heard-of-it.pdf') == []
+
+
+def test_duplicates_are_stale_until_scanned(index, tmp_path):
+    write(tmp_path, TWIN_A, 'identical')
+    write(tmp_path, TWIN_B, 'identical')
+    index.reload()
+    assert index.duplicates_stale() is True
+    assert index.duplicates_of(TWIN_A) == [], 'answered before scanning'
+    index.scan_duplicates()
+    assert index.duplicates_stale() is False
+
+
+def test_a_reload_makes_them_stale_again(index, tmp_path):
+    loaded_with_twins(index, tmp_path)
+    index.reload()
+    assert index.duplicates_stale() is True
+
+
+def test_adding_a_document_makes_them_stale(index, tmp_path):
+    loaded_with_twins(index, tmp_path)
+    path = write(tmp_path, '20240318-ES-HOU-BANK-INV-new-JOHNDOE.pdf', 'identical')
+    index.apply_change(path, 'created')
+    assert index.duplicates_stale() is True, 'a new file could duplicate anything'
+
+
+def test_deleting_a_document_makes_them_stale(index, tmp_path):
+    loaded_with_twins(index, tmp_path)
+    os.remove(os.path.join(str(tmp_path), TWIN_B))
+    index.apply_change(os.path.join(str(tmp_path), TWIN_B), 'deleted')
+    assert index.duplicates_stale() is True, 'the surviving twin is now unique'
+
+
+def test_a_content_change_makes_them_stale(index, tmp_path):
+    """apply_change treats 'changed' as a no-op because a row is derived from
+    the filename. Duplicates are derived from the bytes, so this one matters.
+    """
+    loaded_with_twins(index, tmp_path)
+    path = write(tmp_path, TWIN_B, 'no longer identical')
+    index.apply_change(path, 'changed')
+    assert index.duplicates_stale() is True
+
+
+def test_an_attribute_change_leaves_them_alone(index, tmp_path):
+    """A chmod or a touch does not alter a byte, so rescanning would be waste."""
+    loaded_with_twins(index, tmp_path)
+    index.apply_change(os.path.join(str(tmp_path), TWIN_A), 'attribute-changed')
+    assert index.duplicates_stale() is False
+
+
+def test_a_rename_keeps_the_pairing_without_rescanning(index, tmp_path):
+    """A rename moves no bytes, so the answer is still known: remap the key
+    rather than throwing away a scan that is still correct."""
+    loaded_with_twins(index, tmp_path)
+    renamed = '20240315-ES-HOU-BANK-INV-renamed-JOHNDOE.pdf'
+    os.rename(os.path.join(str(tmp_path), TWIN_A),
+              os.path.join(str(tmp_path), renamed))
+    index.apply_change(os.path.join(str(tmp_path), TWIN_A), 'renamed',
+                       os.path.join(str(tmp_path), renamed))
+
+    assert index.duplicates_stale() is False, 'a rename does not change content'
+    assert index.duplicates_of(renamed) == [TWIN_B]
+    assert index.duplicates_of(TWIN_B) == [renamed]
+    assert index.duplicates_of(TWIN_A) == []
+
+
+def test_scanning_emits_so_the_view_can_refresh(index, tmp_path):
+    write(tmp_path, TWIN_A, 'identical')
+    write(tmp_path, TWIN_B, 'identical')
+    index.reload()
+    seen = []
+    index.connect('duplicates-scanned', lambda *_a: seen.append(True))
+    index.scan_duplicates()
+    assert seen == [True]
+
+
+def test_scanning_an_empty_repository_is_not_an_error(index):
+    index.reload()
+    index.scan_duplicates()
+    assert index.duplicates_stale() is False
+    assert index.duplicates_of('anything.pdf') == []

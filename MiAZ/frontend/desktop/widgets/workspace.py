@@ -242,6 +242,7 @@ class MiAZWorkspace(Gtk.Box):
         # reload emits 'index-loaded' instead, so this never double-applies.
         index = self.app.get_service('index')
         index.connect('index-changed', self._on_index_changed)
+        index.connect('duplicates-scanned', self._on_duplicates_scanned)
 
         # Connect Repository
         repository = self.app.get_service('repo')
@@ -367,6 +368,17 @@ class MiAZWorkspace(Gtk.Box):
         self._publish_concepts(index)
         self.emit('workspace-view-updated')
 
+    def _on_duplicates_scanned(self, index, *args):
+        """Show the column when there is something in it, and redraw.
+
+        refilter re-binds every visible row, which is what re-runs the
+        duplicate column's bind.
+        """
+        column = getattr(self.view, 'column_duplicate', None)
+        if column is not None:
+            column.set_visible(bool(index.duplicates_of_any()))
+        self.view.refilter()
+
     def is_loaded(self):
         return self.workspace_loaded
 
@@ -411,6 +423,22 @@ class MiAZWorkspace(Gtk.Box):
                     if self._sid_date_selected is not None:
                         dd.handler_unblock(self._sid_date_selected)
                     break
+        if self._review:
+            self._scan_duplicates()
+
+    def _scan_duplicates(self):
+        """Mark documents whose bytes match another one, for review triage.
+
+        Reads files, about 0.9s for 1336 documents, so it runs in a worker and
+        only on entering review mode: a user who never opens it pays nothing.
+        """
+        index = self.app.get_service('index')
+        if index is None or not index.duplicates_stale():
+            return
+        run_in_background(index.scan_duplicates,
+                          on_error=lambda error: self.log.error(
+                              f"Duplicate scan failed: {error}"),
+                          name='workspace-duplicates')
 
     def _update_dropdown_date(self):
         util = self.app.get_service('util')

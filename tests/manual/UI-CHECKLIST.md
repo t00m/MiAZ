@@ -138,7 +138,7 @@ automated UI suite, **[K]** needs a paid API key (skip unless you have one).
       `Pillow` installed, which is the normal case.
 - [ ] **4.7e** Click detect on a document that has both: a creation date in its
       properties and a digit run in its concept that looks like a date, such as
-      the invoice number `RG151119905140`. The metadata date wins. The concept
+      the invoice number `RG240719880042`. The metadata date wins. The concept
       is only read when the file itself carries no date.
 - [ ] **4.8** Type two characters in the concept field. The autocomplete popover
       offers matching concepts, and picking one fills the field.
