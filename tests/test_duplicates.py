@@ -82,17 +82,28 @@ def test_a_unique_size_is_never_opened(tmp_path, monkeypatch):
 
 # One bad file must not lose the scan
 
-def test_an_unreadable_file_is_skipped(tmp_path):
+def test_an_unreadable_file_is_skipped(tmp_path, monkeypatch):
+    """A file the hash pass cannot open is dropped, the rest of the scan stands.
+
+    The failure is injected instead of chmod'ing the file to 0o000: CI runs as
+    root, and root reads a 0o000 file anyway, so the permission bits prove
+    nothing there and the file came back as a duplicate.
+    """
     a = write(tmp_path, 'a.pdf', 'same')
     b = write(tmp_path, 'b.pdf', 'same')
     bad = write(tmp_path, 'bad.pdf', 'same')
-    os.chmod(bad, 0o000)
-    try:
-        found = find_duplicates([a, b, bad])
-        assert found[a] == [b], 'a permission error lost the whole scan'
-        assert bad not in found
-    finally:
-        os.chmod(bad, 0o644)
+
+    real_open = open
+
+    def failing_open(path, *args, **kwargs):
+        if str(path) == bad:
+            raise PermissionError(13, 'Permission denied', bad)
+        return real_open(path, *args, **kwargs)
+
+    monkeypatch.setattr('builtins.open', failing_open)
+    found = find_duplicates([a, b, bad])
+    assert found[a] == [b], 'a permission error lost the whole scan'
+    assert bad not in found
 
 
 def test_a_file_that_disappears_mid_scan_is_skipped(tmp_path):
