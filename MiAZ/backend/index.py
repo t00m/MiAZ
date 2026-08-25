@@ -7,7 +7,9 @@
 """
 
 import os
+import threading
 
+from gi.repository import GLib
 from gi.repository import GObject
 
 from MiAZ.backend.duplicates import find_duplicates
@@ -61,6 +63,29 @@ class MiAZDocumentIndex(GObject.GObject):
         self._duplicates_stale = True
         self.cache = {name: {} for name in CACHED_CONFIGS}
 
+    def _emit_safe(self, name, *args):
+        """Emit on the main loop, whatever thread the caller runs on.
+
+        reload() and scan_duplicates() run in a worker (MiAZ.backend.tasks) and
+        their handlers touch GTK: the workspace refilters the column view when
+        'duplicates-scanned' arrives. Emitting straight from the worker ran that
+        refilter on the worker thread, so two threads walked the column view's
+        list item manager at once and the process dumped core. Nothing here is
+        allowed to reach GTK off the main loop.
+
+        On the main thread it emits inline, so the console, which has no main
+        loop to drain the idle queue, still gets its signals.
+        """
+        if threading.current_thread() is threading.main_thread():
+            self.emit(name, *args)
+            return
+
+        def emit_on_main():
+            self.emit(name, *args)
+            return False
+
+        GLib.idle_add(emit_on_main)
+
     def reload(self):
         """Rescan the repository and rebuild every derived structure."""
         util = self.app.get_service('util')
@@ -79,7 +104,7 @@ class MiAZDocumentIndex(GObject.GObject):
             self._add(path)
         self._invalidate_duplicates()
         self.log.debug(f"Index loaded: {len(self._items)} documents")
-        self.emit('index-loaded')
+        self._emit_safe('index-loaded')
 
     def _add(self, path):
         """Index one document path. Returns the item."""
@@ -228,7 +253,7 @@ class MiAZDocumentIndex(GObject.GObject):
         }
         self._duplicates_stale = False
         self.log.debug(f"Duplicates: {len(self._duplicates)} documents with a twin")
-        self.emit('duplicates-scanned')
+        self._emit_safe('duplicates-scanned')
 
     def duplicates_of(self, basename):
         """Documents with the same content as this one, or [] when there are

@@ -25,7 +25,7 @@ if len(sys.argv) > 1 and not sys.argv[1].startswith('-') and not os.environ.get(
     set_console_level(logging.WARNING)
 
 from MiAZ.env import ENV  # noqa: E402  (must follow the silencing above)
-from MiAZ.backend.crash import install_backend_excepthook
+from MiAZ.backend.crash import install_backend_excepthook, install_fatal_handler
 
 log = MiAZLog('MiAZ')
 
@@ -126,6 +126,9 @@ class MiAZ:
         self._acquire_lock()
         self.log = MiAZLog('MiAZ')
         install_backend_excepthook(self.log, ENV)
+        # A segfault never reaches the excepthook above, so the Python side of
+        # the stack is written by faulthandler instead.
+        install_fatal_handler(log_file)
         self.clean_temp_directory()
 
         self.log.info(f"{ENV['APP']['shortname']} v{ENV['APP']['VERSION']} - Start")

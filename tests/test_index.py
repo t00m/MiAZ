@@ -9,11 +9,13 @@ no tests at all.
 """
 
 import os
+import threading
 
 import gi
 gi.require_version('GLib', '2.0')
 gi.require_version('Gio', '2.0')
 
+from gi.repository import GLib
 import pytest
 
 from MiAZ.backend.index import MiAZDocumentIndex
@@ -616,3 +618,36 @@ def test_scanning_an_empty_repository_is_not_an_error(index):
     index.scan_duplicates()
     assert index.duplicates_stale() is False
     assert index.duplicates_of('anything.pdf') == []
+
+
+def test_a_worker_scan_emits_on_the_main_thread(index, tmp_path):
+    """scan_duplicates runs in a worker, so its signal has to cross back.
+
+    The workspace handler for this signal refilters the column view, and GTK may
+    only be touched from the main loop. Emitting straight from the worker ran
+    that refilter on the worker thread: two threads inside
+    gtk_list_item_manager_model_items_changed_cb on the same list, and the
+    process dumped core (24 Aug 2026, while filtering the workspace).
+    """
+    write(tmp_path, TWIN_A, 'identical')
+    write(tmp_path, TWIN_B, 'identical')
+    index.reload()
+
+    emitted_on = []
+    loop = GLib.MainLoop()
+
+    def on_scanned(*_args):
+        emitted_on.append(threading.current_thread())
+        loop.quit()
+        return False
+
+    index.connect('duplicates-scanned', on_scanned)
+    worker = threading.Thread(target=index.scan_duplicates, name='test-scan')
+    worker.start()
+    # Never hang the suite on a signal that does not arrive.
+    guard = GLib.timeout_add_seconds(5, loop.quit)
+    loop.run()
+    GLib.source_remove(guard)
+    worker.join(timeout=5)
+
+    assert emitted_on == [threading.main_thread()], 'the signal crossed no thread boundary'

@@ -5,6 +5,7 @@
 
 import sys
 import datetime
+import faulthandler
 import threading
 import traceback
 
@@ -12,6 +13,10 @@ from MiAZ.backend.log import get_log_file
 
 # Where users should report problems.
 ISSUE_URL = "https://github.com/t00m/MiAZ/issues"
+
+# faulthandler writes from a signal handler, so its file has to stay open for
+# the life of the process. This holds the only reference to it.
+_FATAL_STREAM = []
 
 
 def format_summary(exc_type, exc_value):
@@ -92,3 +97,30 @@ def install_backend_excepthook(logger, env):
         handle_exception(logger, env, args.exc_type, args.exc_value,
                          args.exc_traceback)
     threading.excepthook = _thread_hook
+
+
+def install_fatal_handler(log_file=None):
+    """Dump a Python traceback of every thread when a fatal signal arrives.
+
+    A segfault inside GTK or WebKit kills the process before any excepthook
+    runs, so the log stops mid-sentence and the only evidence left is a core
+    dump with C frames. faulthandler catches SIGSEGV, SIGBUS, SIGFPE, SIGILL and
+    SIGABRT and writes the Python stack of every thread first, which is what
+    names the widget code that reached the crash and the worker thread that was
+    running at the same time.
+
+    Returns the file the trace is written to, or None when it goes to stderr.
+    """
+    if log_file is None:
+        log_file = get_log_file()
+    if log_file is not None:
+        try:
+            stream = open(log_file, 'a', encoding='utf-8', buffering=1)
+        except OSError:
+            log_file = None
+        else:
+            _FATAL_STREAM.append(stream)
+            faulthandler.enable(file=stream, all_threads=True)
+            return log_file
+    faulthandler.enable(all_threads=True)
+    return None
