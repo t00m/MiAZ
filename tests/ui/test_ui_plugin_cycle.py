@@ -139,12 +139,12 @@ def plugin_names(miaz):
 
 def test_the_sandbox_can_see_every_bundled_plugin(miaz, plugin_names):
     """If this drops, the cycle test below is quietly covering less."""
-    assert len(plugin_names) >= 18
+    assert len(plugin_names) >= 16
 
 
 @pytest.mark.parametrize('plugin_name', [
-    'MiAZAddFromDir', 'MiAZAIAssistant', 'MiAZAutoScan', 'MiAZColumnVisibility',
-    'MiAZCopy2Clipboard', 'MiAZExport2CSV', 'MiAZExport2Dir', 'MiAZExport2Text',
+    'MiAZAIAssistant', 'MiAZAutoScan', 'MiAZColumnVisibility',
+    'MiAZExport2CSV', 'MiAZExport2Dir', 'MiAZExport2Text',
     'MiAZExport2Zip', 'MiAZFullscreen', 'MiAZImportFromScan',
     'MiAZImportFromZip', 'MiAZInsights', 'MiAZNotes', 'MiAZOCR',
     'MiAZPeriodicity', 'MiAZProjectMgt', 'MiAZWSFont',

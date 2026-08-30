@@ -1182,7 +1182,17 @@ class MiAZPluginSystem(GObject.GObject):
         config = self.app.get_config_dict()
         repo_id = config['App'].get('current')
         config_plugins.add_available_batch(plugin_list)
-        old_keys = set(config_plugins.load_available().keys()) - {p[0] for p in plugin_list}
+        scanned = {p[0] for p in plugin_list}
+        old_keys = set(config_plugins.load_available().keys()) - scanned
         for key in old_keys:
             config_plugins.remove_available(key)
+        # A plugin that is gone (retired into the core, or deleted) stays in the
+        # repository's used list forever otherwise: the startup loop walks the
+        # plugins it found, so the name is never visited and never cleaned up,
+        # and Settings goes on listing it as enabled with nothing behind it.
+        retired = set(config_plugins.load_used().keys()) - scanned
+        if retired:
+            config_plugins.remove_used_batch(sorted(retired))
+            self.log.info(f"Plugins no longer shipped, dropped from the used "
+                          f"list: {', '.join(sorted(retired))}")
         self.log.info(f"Plugins available updated successfully for repository {repo_id}")

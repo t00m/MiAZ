@@ -654,8 +654,14 @@ class MiAZNotesPlugin(MiAZExtension):
         if gfile is None:
             return
         path = gfile.get_path()
-        count = self.backup.backup(path)
-        self._toast(_('Backed up {count} notes').format(count=count))
+        backup = self.backup
+
+        def work(report):
+            count = backup.backup(path, progress=report)
+            return _('{count} notes backed up to {name}.').format(
+                count=count, name=os.path.basename(path))
+
+        self._run(work, _('Backing up notes'))
 
     def _on_menu_restore(self, *_args):
         dialog = self._file_dialog_open_zip()
@@ -670,12 +676,20 @@ class MiAZNotesPlugin(MiAZExtension):
         if gfile is None:
             return
         path = gfile.get_path()
-        count = self.backup.restore(path, merge=True)
-        self._toast(_('Restored {count} notes').format(count=count))
-        if self._win_per_doc is not None:
-            self._win_per_doc.refresh()
-        if self._all_notes is not None:
-            self._all_notes.refresh()
+        backup = self.backup
+
+        def work(report):
+            count = backup.restore(path, merge=True, progress=report)
+            return _('{count} notes restored from {name}.').format(
+                count=count, name=os.path.basename(path))
+
+        def done(_ok, _result):
+            if self._win_per_doc is not None:
+                self._win_per_doc.refresh()
+            if self._all_notes is not None:
+                self._all_notes.refresh()
+
+        self._run(work, _('Restoring notes'), on_close=done)
 
     def _on_renamed(self, _util, source, target):
         old_id = os.path.basename(source) if source else ''
@@ -744,6 +758,17 @@ class MiAZNotesPlugin(MiAZExtension):
         zip_filter.add_pattern('*.zip')
         dialog.set_default_filter(zip_filter)
         return dialog
+
+    def _run(self, work, title, on_close=None):
+        """Run a backup or a restore behind the shared progress dialog.
+
+        The UI is held back while it runs and the outcome stays on screen until
+        the user closes it: services/progress.py does both.
+        """
+        progress = self.app.get_service('progress')
+        parent = self.app.get_widget('window')
+        if not progress.run(work, title=title, parent=parent, on_close=on_close):
+            self._toast(_('Another operation is already running'))
 
     def _toast(self, message: str):
         try:

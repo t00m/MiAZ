@@ -162,6 +162,29 @@ class MiAZDRPage(Adw.PreferencesPage):
     def _restart_app(self):
         self.actions.application_restart()
 
+    def _start(self, title, work, restart=False):
+        """Run one backup or restore behind the progress dialog.
+
+        Everything here moves files underneath the running application, so it
+        goes to a worker thread with the UI held back: see services/progress.py.
+        A restore ends in a restart, but only once the user has closed the
+        dialog and read what happened.
+        """
+        progress = self.app.get_service('progress')
+        started = progress.run(
+            work, title=title, parent=self.get_root(),
+            on_close=self._on_restore_closed if restart else None)
+        if not started:
+            self.srvdlg.show_toast(_('Another operation is already running'))
+
+    def _on_restore_closed(self, ok, _result):
+        # The configuration the app is holding describes what was just
+        # replaced, so it is dropped before the restart reads the new one.
+        if not ok:
+            return
+        self.srvrepo.reset()
+        self._restart_app()
+
     def _on_proceed(self, button, data=None):
         repo_item = self._get_selected_repo()
         if repo_item is None:
@@ -198,22 +221,36 @@ class MiAZDRPage(Adw.PreferencesPage):
         if repo_dir is None:
             return
         dest_dir = folder.get_path()
+        scope = self._get_selected_scope()
+        repo_key = repo_item.id.replace(' ', '_')
+        srvdr = self.srvdr
 
-        try:
-            scope = self._get_selected_scope()
-            repo_key = repo_item.id.replace(' ', '_')
-            if scope == 'files':
-                n = self.srvdr.backup_files(repo_dir, dest_dir)
-                self.srvdlg.show_toast(_('Backup completed: {n} files').format(n=n))
-            elif scope == 'config':
-                path = self.srvdr.backup_config(repo_conf, dest_dir, repo_key)
-                self.srvdlg.show_toast(_('Backup completed: {name}').format(name=os.path.basename(path)))
-            elif scope == 'repo':
-                path = self.srvdr.backup_repository(repo_dir, dest_dir, repo_key)
-                self.srvdlg.show_toast(_('Backup completed: {name}').format(name=os.path.basename(path)))
-        except Exception as e:
-            self.log.error(f"Backup failed: {e}")
-            self.srvdlg.show_toast(_('Backup failed: ') + str(e))
+        if scope == 'files':
+            title = _('Backing up documents')
+
+            def work(report):
+                total = srvdr.backup_files(repo_dir, dest_dir, progress=report)
+                return _('{n} documents copied to {path}.').format(
+                    n=total, path=dest_dir)
+        elif scope == 'config':
+            title = _('Backing up the configuration')
+
+            def work(report):
+                path = srvdr.backup_config(repo_conf, dest_dir, repo_key,
+                                           progress=report)
+                return _('Saved as {name} in {path}.').format(
+                    name=os.path.basename(path), path=dest_dir)
+        elif scope == 'repo':
+            title = _('Backing up the repository')
+
+            def work(report):
+                path = srvdr.backup_repository(repo_dir, dest_dir, repo_key,
+                                               progress=report)
+                return _('Saved as {name} in {path}.').format(
+                    name=os.path.basename(path), path=dest_dir)
+        else:
+            return
+        self._start(title, work)
 
     def _on_restore_files_source_selected(self, dialog, result):
         try:
@@ -230,13 +267,15 @@ class MiAZDRPage(Adw.PreferencesPage):
         if repo_dir is None:
             return
 
-        try:
-            n = self.srvdr.restore_files(repo_dir, folder.get_path())
-            self.srvdlg.show_toast(_('Restored {n} files').format(n=n))
-            self._restart_app()
-        except Exception as e:
-            self.log.error(f"Restore files failed: {e}")
-            self.srvdlg.show_toast(_('Restore files failed: ') + str(e))
+        src_dir = folder.get_path()
+        srvdr = self.srvdr
+
+        def work(report):
+            total = srvdr.restore_files(repo_dir, src_dir, progress=report)
+            return _('{n} documents restored from {path}. MiAZ restarts when '
+                     'you close this.').format(n=total, path=src_dir)
+
+        self._start(_('Restoring documents'), work, restart=True)
 
     def _warn_then_restore_config(self):
         title = _('Destructive operation')
@@ -273,14 +312,16 @@ class MiAZDRPage(Adw.PreferencesPage):
         if repo_conf is None:
             return
 
-        try:
-            self.srvdr.restore_config(repo_conf, gfile.get_path())
-            self.srvrepo.reset()
-            self.srvdlg.show_toast(_('Configuration restored successfully'))
-            self._restart_app()
-        except Exception as e:
-            self.log.error(f"Restore config failed: {e}")
-            self.srvdlg.show_toast(_('Restore configuration failed: ') + str(e))
+        zip_path = gfile.get_path()
+        srvdr = self.srvdr
+
+        def work(report):
+            srvdr.restore_config(repo_conf, zip_path, progress=report)
+            return _('The configuration was restored from {name}. MiAZ '
+                     'restarts when you close this.').format(
+                         name=os.path.basename(zip_path))
+
+        self._start(_('Restoring the configuration'), work, restart=True)
 
     def _warn_then_restore_repo(self):
         title = _('Destructive operation')
@@ -317,11 +358,13 @@ class MiAZDRPage(Adw.PreferencesPage):
         if repo_dir is None:
             return
 
-        try:
-            self.srvdr.restore_repository(repo_dir, gfile.get_path())
-            self.srvrepo.reset()
-            self.srvdlg.show_toast(_('Repository restored successfully'))
-            self._restart_app()
-        except Exception as e:
-            self.log.error(f"Restore repo failed: {e}")
-            self.srvdlg.show_toast(_('Restore repository failed: ') + str(e))
+        zip_path = gfile.get_path()
+        srvdr = self.srvdr
+
+        def work(report):
+            srvdr.restore_repository(repo_dir, zip_path, progress=report)
+            return _('The repository was restored from {name}. MiAZ restarts '
+                     'when you close this.').format(
+                         name=os.path.basename(zip_path))
+
+        self._start(_('Restoring the repository'), work, restart=True)

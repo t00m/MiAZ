@@ -16,6 +16,9 @@ BuildRequires:  desktop-file-utils
 BuildRequires:  libappstream-glib
 
 Requires:       python3 >= 3.9
+# Fedora's ensurepip installs from the system pip instead of a bundled wheel,
+# so creating the external-libraries venv needs python3-pip on the host.
+Requires:       python3-pip
 Requires:       python3-gobject
 Requires:       gtk4
 Requires:       libadwaita
@@ -29,7 +32,6 @@ Requires:       tesseract
 Requires:       tesseract-langpack-eng
 Requires:       ocrmypdf
 Recommends:     python3-keyring
-Recommends:     python3-pip
 
 %description
 MiAZ is a GTK4/Libadwaita desktop application that organises personal

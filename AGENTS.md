@@ -67,7 +67,7 @@ MiAZ/
 │           │   ├── factory.py    ← MiAZFactory (widget factory)
 │           │   ├── help.py       ← MiAZHelp, MiAZShortcutsWindow
 │           │   ├── icm.py        ← MiAZIconManager
-│           │   ├── importdoc.py  ← MiAZImportDoc (core add-document service + menu item)
+│           │   ├── importdoc.py  ← MiAZImportDoc (core add-document service + menu items)
 │           │   ├── pluginsystem.py ← MiAZExtension, MiAZPlugin, MiAZPluginSystem
 │           │   └── workflow.py   ← MiAZWorkflow (repo switching lifecycle)
 │           └── widgets/
@@ -196,7 +196,9 @@ loop must marshal the result back itself.
 **Services** (`MiAZ/frontend/desktop/services/`): GTK-aware, app lifecycle.
 - Registered via `app.set_service('name', instance)` in `MiAZApp._on_activate` (returns the instance)
 - Access via `app.get_service('name')`
-- Registration order: `crash`, `util`, `icons`, `factory`, `dialogs`, `actions`, `workflow`, `dr`, `secrets`, `venv`, `extlibs`, `webserver`, `repo`, `index`, `massrename`, `importdoc` (early); then `plugin-system` and `theme` (`Gtk.IconTheme`) once the window exists. `massrename` and `importdoc` are registered before the window is built because each builds its menu item(s) in `__init__` (`massrename-menu` widget; `importdoc.menuitem`) that the headerbar consumes when it is constructed.
+- Registration order: `crash`, `util`, `icons`, `factory`, `dialogs`, `actions`, `workflow`, `dr`, `progress`, `secrets`, `venv`, `extlibs`, `webserver`, `repo`, `index`, `massrename`, `importdoc` (early); then `plugin-system` and `theme` (`Gtk.IconTheme`) once the window exists. `massrename` and `importdoc` are registered before the window is built because each builds its menu item(s) in `__init__` (`massrename-menu` widget; `importdoc.menuitem`) that the headerbar consumes when it is constructed.
+
+- `progress` (`services/progress.py`): runs one long operation at a time behind a modal progress dialog. `run(work, title, message='', parent=None, on_close=None)` sends `work(report)` to a worker thread through `run_in_background`, makes `window-mainbox` insensitive, and presents an `Adw.AlertDialog` whose Close response is disabled (and `can_close` off) until the work ends. `report(text, fraction=None)` may be called from the worker: it marshals with `GLib.idle_add`, and a fraction of `None` pulses the bar. Whatever `work` returns is shown as the outcome; the UI comes back and `on_close(ok, result)` runs when the user closes the dialog, not when the work ends. Returns the dialog, or `None` when one is already running. Only the window *content* is disabled, never the window: libadwaita hosts dialogs beside that content, so disabling the window would disable the dialog too. Used by Backup & Restore (`widgets/dr.py`, six operations) and by MiAZNotes (three entry points). Covered by `tests/ui/test_ui_progress.py`.
 
 **Widgets** (`MiAZ/frontend/desktop/widgets/`): All GTK4+Adw widgets.
 
@@ -270,7 +272,7 @@ MiAZWorkspace (Gtk.Box VERTICAL)
 ├── Adw.InlineViewSwitcher        ← tab bar (registered as 'workspace-view-switcher')
 ├── filter-tags revealer          ← removable chips for the active sidebar filters
 └── Adw.ViewStack                  ← page area (get_stack())
-    ├── [page 'workspace-default'] ← Documents columnview (always present)
+    ├── [page 'workspace-default'] ← Documents columnview (always present, accepts dropped files)
     ├── [page 'workspace-browser'] ← built-in Browser page (MiAZBrowserPage, always present)
     └── [page ...]                 ← plugin-added pages
 ```
@@ -284,6 +286,8 @@ MiAZWorkspace (Gtk.Box VERTICAL)
 - `clear_filters()` → resets every filter control (search, concept, all dropdowns) and refilters once
 - `get_workspace_view()` → the `MiAZColumnView` (also reachable as `workspace.view`)
 - `is_loaded()` → `bool`, true after workspace is configured
+
+**Dropping files on the Documents page:** `_setup_drop_target()` installs a `Gtk.DropTarget` for `Gdk.FileList` / `Gdk.DragAction.COPY` on the documents page content box (registered as `workspace-drop-target`), not on the whole workspace: dropping on the Browser page or anywhere else in the window does nothing, so the gesture means what it looks like. `enter`/`leave` add and remove the `miaz-drop-active` CSS class (installed once, next to the filter-tag CSS); `drop` maps the `Gio.File`s to local paths (a remote URI gives `None`, which the import reports as failed) and hands them to `importdoc.import_dropped()`. See "Add documents".
 
 ### Filtering the Documents view (programmatic)
 
@@ -512,7 +516,7 @@ Note what this check is and is not. CPython's `zipfile` already strips `..` and 
 
 ### First-run repository assistant (`widgets/assistant.py`)
 
-`MiAZRepoAssistant(Adw.Window)` is a guided wizard shown when **no repository is configured** (triggered from `MiAZWorkflow._maybe_launch_assistant`; also reachable via `actions.show_repository_assistant`). Pages: welcome, create-repository (free-text name → derived key via `util.valid_key`, location), one page per filing property (Countries/Groups/Purposes/Senders/Recipients embedding the config selectors), and a summary. It initialises the repo before building the selector pages and runs the normal workspace load through `MiAZWorkflow.switch_start` on finish.
+`MiAZRepoAssistant(Adw.Window)` is a guided wizard shown when **no repository is configured** (triggered from `MiAZWorkflow._maybe_launch_assistant`; also reachable via `actions.show_repository_assistant`). Pages: welcome, create-repository (free-text name → derived key via `util.valid_key`, location), Countries (the config selector), and a summary. Countries is the only field it asks about: `MiAZRepository.init` writes `groups-used.json`, `purposes-used.json`, `senders-used.json` and `recipients-used.json` from the shipped defaults (`MiAZRepository.DEFAULT_VALUES`), so a new repository can file a document immediately, while the country list is the whole ISO set and nobody wants all of it. The summary still reports the enabled count for all five fields (`SUMMARY_PROPERTIES`). It initialises the repo before building the selector pages and runs the normal workspace load through `MiAZWorkflow.switch_start` on finish.
 
 ### Header bar "Add" menu (`widgets/mainwindow.py`)
 
@@ -532,14 +536,22 @@ The menu is exposed from two places, both reusing the one stored `massrename-men
 - The workspace headerbar (`widgets/mainwindow.py`): a `Gtk.MenuButton` (`headerbar-button-massrename`) with the same `io.github.t00m.MiAZ-rename` icon as single rename. `_on_workspace_menu_update` shows the single-rename button when exactly one document is selected and this menu button when two or more are selected.
 - The right-click selection menu: `_append_massrename_submenu` adds a "Mass renaming" submenu, called from both `_setup_menu_selection` and `_on_plugins_updated` (which rebuilds the menu).
 
+### Copy document names
+
+`MiAZActions.document_copy_names()` (`services/actions.py`) puts the selected document names on the clipboard, one per line, in the order the workspace shows them. It was the `MiAZCopy2Clipboard` plugin. The text is composed by the module-level `document_names_text(items)` and the method returns it: on Wayland only a focused client may set the clipboard, so reading the value back tests the compositor rather than MiAZ, and the return value is what `tests/test_actions.py` and `tests/ui/test_ui_import.py` assert on. Its `Gio.MenuItem` (`menuitem_copy_names`, action `copy-document-names`, shortcut `<Control><Shift>c`) is built in `__init__` and appended to the workspace selection menu by `mainwindow._append_clipboard_item`, called from both menu paths the way `_append_massrename_submenu` is, so a plugin-driven menu rebuild puts it back.
+
 ### Add documents
 
-`MiAZImportDoc` (`services/importdoc.py`, service `importdoc`) adds documents to the repository from the local filesystem via `Gtk.FileDialog`. It was the `MiAZImportDoc` plugin and is now core, because every repository needs a way to add its first document and that action should not be behind an optional, togglable plugin. `__init__` builds its `Gio.MenuItem` once (`factory.create_menuitem`, action `import-doc`, shortcut `<Control>Insert`) and stores it as `self.menuitem`; `import_files`/`_on_filechooser_response` do the actual copy (`util.filename_normalize` + `util.filename_import`), reporting successes and failures via toast/error dialog.
+`MiAZImportDoc` (`services/importdoc.py`, service `importdoc`) adds documents to the repository from the local filesystem via `Gtk.FileDialog`. It was the `MiAZImportDoc` plugin and is now core, because every repository needs a way to add its first document and that action should not be behind an optional, togglable plugin. `__init__` builds its `Gio.MenuItem` once (`factory.create_menuitem`, action `import-doc`, shortcut `<Control>Insert`) and stores it as `self.menuitem`; `import_files`/`_on_filechooser_response` resolve the chosen files and hand their paths to `import_paths(paths)`, which does the actual copy (`util.filename_normalize` + `util.filename_import`) and reports successes and failures via toast/error dialog.
+
+`import_directory()` opens a folder chooser and hands the chosen path to `import_dropped()`, so a chosen folder and a dropped one raise the same question about subfolders and answer it once. It has its own menu item (`self.menuitem_dir`, action `import-dir`, shortcut `<Shift>Insert`), appended to the headerbar Add menu right after the first one. It was the `MiAZAddFromDir` plugin, moved into the core for the same reason `MiAZImportDoc` was: adding documents is not optional.
+
+Every entry point goes through `import_paths`, so a document added by dropping it is the same operation, with the same reporting, as one picked from a chooser. Above `BATCH_THRESHOLD` (20) files it takes the batched route instead (`needs_batch`): the workspace is held back with `suspend_updates()`, the watcher is turned off, and the copy runs through `run_in_background`, so a hundred files cause one refresh rather than a hundred. Both are released from the main loop in `_copy_batch`'s `finally`, which is what stops a failure halfway through leaving the workspace suspended for the session. The batched call returns `None`, since it reports later, from the main loop. The drop entry point is `import_dropped(paths)`: plain files are imported straight away; if any dropped path is a folder it asks first, since how many documents a folder means depends on whether its subfolders count. The question dialog (`_ask_recursive`) carries an **Include subfolders** `Gtk.CheckButton` (`import-drop-recursive`) and a label (`import-drop-count`) that recounts on every toggle, so the user sees how many files each answer would import before answering. The counting itself is the module-level, side-effect-free `expand_dropped(paths, recursive=False)`: folders are replaced by the files they hold (direct children, or the whole tree when recursive), everything else is kept as it is (including a path that does not exist, which the import then reports as failed rather than dropping silently), symlinked folders are not followed, order is the order dropped and each file appears once. Covered by `tests/test_importdoc.py` (the expansion) and `tests/ui/test_ui_dnd.py` (the drop target, the dialog and both answers).
 
 ## Plugin system
 
 ### Location
-- **System** (bundled): `~/.local/share/MiAZ/resources/plugins/` (19 plugins with `.plugin` metadata)
+- **System** (bundled): `~/.local/share/MiAZ/resources/plugins/` (17 plugins with `.plugin` metadata)
 - **User** (imported): `~/.MiAZ/opt/plugins/`
 
 ### Discovery
@@ -797,15 +809,13 @@ ninja -C _build install
 PYTHONPATH=. python -m MiAZ.miaz
 ```
 
-## Existing plugins (19 with `.plugin` metadata)
+## Existing plugins (17 with `.plugin` metadata)
 
 | Plugin | Category / Subcategory | Purpose |
 |---|---|---|
 | HelloWorld | Support and Help / Guides and Tutorials | Hello World example plugin |
-| MiAZAddFromDir | Data Management / Import | Add documents from a directory |
 | MiAZAutoScan | Data Management / Import | Scan documents in background (SANE `scanimage`, source submenu) and import them |
 | MiAZColumnVisibility | Customisation and Personalisation / User Interface | Toggle workspace column visibility |
-| MiAZCopy2Clipboard | Data Management / Export | Copy to clipboard |
 | MiAZExport2CSV | Data Management / Export | Export to CSV |
 | MiAZExport2Dir | Data Management / Export | Export to directory |
 | MiAZExport2Text | Data Management / Export | Export to text editor |

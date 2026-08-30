@@ -21,8 +21,8 @@ import pytest
 
 
 PLUGINS = [
-    'MiAZAddFromDir', 'MiAZAIAssistant', 'MiAZAutoScan', 'MiAZColumnVisibility',
-    'MiAZCopy2Clipboard', 'MiAZExport2CSV', 'MiAZExport2Dir', 'MiAZExport2Text',
+    'MiAZAIAssistant', 'MiAZAutoScan', 'MiAZColumnVisibility',
+    'MiAZExport2CSV', 'MiAZExport2Dir', 'MiAZExport2Text',
     'MiAZExport2Zip', 'MiAZFullscreen', 'MiAZImportFromScan',
     'MiAZImportFromZip', 'MiAZInsights', 'MiAZNotes', 'MiAZOCR',
     'MiAZPeriodicity', 'MiAZProjectMgt', 'MiAZWSFont',

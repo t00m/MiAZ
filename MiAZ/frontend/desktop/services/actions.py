@@ -57,6 +57,11 @@ Configview['SentBy'] = MiAZPeopleSentBy
 Configview['SentTo'] = MiAZPeopleSentTo
 Configview['Date'] = Gtk.Calendar
 
+def document_names_text(items) -> str:
+    """The clipboard text for a selection: one document name per line."""
+    return '\n'.join(item.id for item in items)
+
+
 class MiAZActions(GObject.GObject):
     def __init__(self, app):
         super().__init__()
@@ -77,6 +82,11 @@ class MiAZActions(GObject.GObject):
                             MiAZActions,
                             GObject.SignalFlags.RUN_LAST,
                             None, (GObject.TYPE_PYOBJECT, GObject.TYPE_PYOBJECT))
+        # Built here, appended to the workspace selection menu by the main
+        # window, which rebuilds that menu whenever the plugins change.
+        self.menuitem_copy_names = self.factory.create_menuitem(
+            name='copy-document-names', label=_('Copy document names'),
+            callback=self.document_copy_names, shortcuts=['<Control><Shift>c'])
 
     def document_display(self, doc):
         self.log.debug(f"Displaying {doc}")
@@ -90,6 +100,26 @@ class MiAZActions(GObject.GObject):
         workspace = self.app.get_widget('workspace')
         item = workspace.get_selected_items()[0]
         self.document_display(item.id)
+
+    def document_copy_names(self, *args):
+        """Put the names of the selected documents on the clipboard.
+
+        One name per line, in the order the workspace shows them, so a pasted
+        list matches what is on screen.
+        """
+        if self.stop_if_no_items():
+            self.log.debug("No items selected")
+            return
+        workspace = self.app.get_widget('workspace')
+        items = workspace.get_selected_items()
+        text = document_names_text(items)
+        workspace.get_display().get_clipboard().set(text)
+        self.srvdlg.show_toast(
+            _('{num_items} documents copied to clipboard').format(
+                num_items=len(items)))
+        # Returned so a caller (and a test) can see what was copied: reading it
+        # back from the clipboard only works while the window has the focus.
+        return text
 
     def document_delete(self, *args):
         if self.stop_if_no_items():
@@ -634,9 +664,12 @@ class MiAZActions(GObject.GObject):
                 (_('Help (this window)'), 'F1'),
             )),
             (_('Documents'), (
+                (_('Add new document(s)'), '<Control>Insert'),
+                (_('Add documents from a directory'), '<Shift>Insert'),
                 (_('Rename document'), '<Control>BackSpace'),
                 (_('Delete documents'), '<Control>Delete'),
                 (_('View document'), 'Return'),
+                (_('Copy document names'), '<Control><Shift>c'),
             )),
         )
 

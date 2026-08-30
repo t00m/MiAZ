@@ -12,6 +12,10 @@ brought in.
 The tool lists already exist in the code. This checks the packaging against
 them, so adding a tool to a plugin without packaging it fails here rather than
 on a user's machine.
+
+The same applies to the stdlib modules the code runs as "python3 -m <module>":
+the distributions split some of them out, so a plain python3 dependency does not
+bring them in.
 """
 
 import ast
@@ -49,6 +53,35 @@ NOT_PACKAGED = {
         'machines that have no scanner, and the plugin reports the missing '
         'tool with an install command when it is enabled.'),
 }
+
+
+# Modules the code runs as "python3 -m <module>". These are not binaries, so
+# they never appear in a REQUIRED_TOOLS list, and the distributions do not ship
+# them with python3 itself. MiAZ.backend.venv builds the external-libraries
+# virtualenv this way: Debian ships the module in python3-venv, and Fedora's
+# ensurepip installs from the system pip instead of a bundled wheel, so it needs
+# python3-pip on the host. Without them venv creation fails with an error the
+# user cannot fix from inside the app.
+MODULE_RUNNERS = {
+    ('MiAZ/backend/venv.py', 'venv'): {'deb': 'python3-venv', 'rpm': 'python3-pip'},
+}
+
+
+def runs_module(relpath, module):
+    """True when the source builds a "python -m <module>" command line."""
+    path = os.path.join(ROOT, relpath)
+    tree = ast.parse(open(path, encoding='utf-8').read(), path)
+    for node in ast.walk(tree):
+        if not isinstance(node, (ast.List, ast.Tuple)):
+            continue
+        # Keep the positions: the interpreter and the target are calls, not
+        # constants, so only the flags in between are readable.
+        parts = [elt.value if isinstance(elt, ast.Constant) else None
+                 for elt in node.elts]
+        for first, second in zip(parts, parts[1:]):
+            if first == '-m' and second == module:
+                return True
+    return False
 
 
 def declared_tools():
@@ -120,3 +153,27 @@ def test_every_not_packaged_entry_is_still_real():
 def test_every_not_packaged_entry_gives_a_reason():
     empty = [tool for tool, reason in NOT_PACKAGED.items() if not reason.strip()]
     assert empty == [], f'These need a reason: {empty}'
+
+
+@pytest.mark.parametrize('kind, reader', [('deb', deb_dependencies),
+                                          ('rpm', rpm_dependencies)])
+def test_every_module_run_is_packaged(kind, reader):
+    declared = reader()
+    missing = []
+    for (relpath, module), packages in sorted(MODULE_RUNNERS.items()):
+        package = packages[kind]
+        if package not in declared:
+            missing.append(f'python3 -m {module} (run by {relpath}, '
+                           f'provided by {package})')
+    assert missing == [], (
+        f'These modules are run but their {kind} package is not declared: '
+        f'{missing}. A Recommends is not enough: apt skips it with '
+        f'--no-install-recommends and the failure needs root to fix.')
+
+
+def test_every_module_runner_is_still_real():
+    """A dependency kept for a call that no longer exists is dead weight."""
+    stale = [f'{relpath}: python -m {module}'
+             for relpath, module in MODULE_RUNNERS
+             if not runs_module(relpath, module)]
+    assert stale == [], f'Remove these from MODULE_RUNNERS: {stale}'

@@ -25,6 +25,7 @@ MiAZ/frontend/desktop/services/icm.py
 MiAZ/frontend/desktop/services/importdoc.py
 MiAZ/frontend/desktop/services/massrename.py
 MiAZ/frontend/desktop/services/pluginsystem.py
+MiAZ/frontend/desktop/services/progress.py
 MiAZ/frontend/desktop/services/workflow.py
 MiAZ/frontend/desktop/widgets/assistant.py
 MiAZ/frontend/desktop/widgets/browserpage.py
@@ -47,7 +48,6 @@ MiAZ/frontend/desktop/widgets/workspace.py
 MiAZ/miaz.py
 data/resources/plugins/HelloWorld/example/test.py
 data/resources/plugins/HelloWorld/helloworld.py
-data/resources/plugins/MiAZAddFromDir/adddir.py
 data/resources/plugins/MiAZAIAssistant/miazaiassistant.py
 data/resources/plugins/MiAZAIAssistant/miazai/providers/base.py
 data/resources/plugins/MiAZAIAssistant/miazai/providers/claude.py
@@ -58,7 +58,6 @@ data/resources/plugins/MiAZAIAssistant/miazai/ui/dialog.py
 data/resources/plugins/MiAZAIAssistant/miazai/ui/settings.py
 data/resources/plugins/MiAZAutoScan/autoscan.py
 data/resources/plugins/MiAZColumnVisibility/colvis.py
-data/resources/plugins/MiAZCopy2Clipboard/copy2clipboard.py
 data/resources/plugins/MiAZExport2CSV/export2csv.py
 data/resources/plugins/MiAZExport2Dir/export2dir.py
 data/resources/plugins/MiAZExport2Text/export2text.py

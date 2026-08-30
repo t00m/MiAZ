@@ -57,7 +57,6 @@ DESCRIPTIONS = {
 
 # What repository.init() writes into a fresh repository.
 DEFAULT_PLUGINS = {
-    'MiAZAddFromDir': 'Add documents from directory',
     'MiAZProjectMgt': 'Project management',
     'MiAZNotes': 'Notes',
     'MiAZPeriodicity': 'Periodicity',
@@ -69,7 +68,7 @@ DEFAULT_PLUGINS = {
 # switching has to unload what Alpha had and load what Beta asks for. With the
 # same list in both, a switch that ignored the list entirely would still pass.
 BETA_PLUGINS = {
-    'MiAZAddFromDir': 'Add documents from directory',
+    'MiAZColumnVisibility': 'Column visibility',
     'MiAZFullscreen': 'Fullscreen',
 }
 

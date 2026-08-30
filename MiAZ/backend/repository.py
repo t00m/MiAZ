@@ -127,17 +127,52 @@ class MiAZRepository(GObject.GObject):
         self.config['App'].set('source', path)
         self.log.debug(f"Repository initialized: '{conf_file}'")
         self._init_default_plugins(dir_conf)
+        self._init_default_values(dir_conf)
 
     def _init_default_plugins(self, dir_conf):
         """Write the default system-plugin enabled list for a brand-new repository."""
         default_plugins = {
-            "MiAZAddFromDir": "Add documents from directory",
             "MiAZProjectMgt": "Project management",
         }
         enabled_file = os.path.join(dir_conf, 'plugins-used.json')
         if not os.path.exists(enabled_file):
             atomic_json_save(enabled_file, default_plugins)
             self.log.debug(f"Default system plugins written to: '{enabled_file}'")
+
+    # Filename fields whose used list starts full, mapped to the shipped file
+    # the values come from. Countries are deliberately absent: that list is the
+    # whole ISO set, so it is the one the setup assistant still asks about.
+    DEFAULT_VALUES = (
+        ('groups-used.json', 'MiAZ-groups.json'),
+        ('purposes-used.json', 'MiAZ-purposes.json'),
+        ('senders-used.json', 'MiAZ-people.json'),
+        ('recipients-used.json', 'MiAZ-people.json'),
+    )
+
+    def _init_default_values(self, dir_conf):
+        """Enable every shipped group, purpose, sender and recipient.
+
+        These lists are short and curated, and with them all disabled a new
+        repository cannot file a single document until the user has walked four
+        selectors choosing from vocabulary they have not used yet. The same
+        files become the available pool (MiAZConfig.setup copies them), so used
+        never holds a value that is not available. Only written when the file is
+        absent, so an existing repository is never touched.
+        """
+        conf_dir = self.app.get_env()['GPATH']['CONF']
+        for used_name, default_name in self.DEFAULT_VALUES:
+            used_file = os.path.join(dir_conf, used_name)
+            if os.path.exists(used_file):
+                continue
+            default_file = os.path.join(conf_dir, default_name)
+            try:
+                with open(default_file, encoding='utf-8') as fh:
+                    items = json.load(fh)
+            except (OSError, ValueError) as error:
+                self.log.error(f"Cannot read defaults from '{default_file}': {error}")
+                continue
+            atomic_json_save(used_file, items)
+            self.log.debug(f"{len(items)} default values written to '{used_file}'")
 
     def setup(self, repo_id: str = None):
         conf = {}

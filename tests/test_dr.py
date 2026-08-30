@@ -188,3 +188,101 @@ def test_restore_repository_rolls_back_on_failure(dr, tmp_path):
 
     assert _read(repo / 'doc.txt') == 'PRE_RESTORE'
     assert not os.path.exists(str(repo) + '.old')
+
+
+# ---------------------------------------------------------------------------
+# Progress reporting
+#
+# Backup and restore now run in a worker thread behind a modal dialog
+# (frontend/desktop/services/progress.py), and the dialog is only as honest as
+# what these methods report. The callback is optional everywhere: the tests
+# above call them without one.
+# ---------------------------------------------------------------------------
+
+class Recorder:
+    """Collects (message, fraction) the way the progress dialog receives them."""
+
+    def __init__(self):
+        self.updates = []
+
+    def __call__(self, message, fraction=None):
+        self.updates.append((message, fraction))
+
+    @property
+    def fractions(self):
+        return [fraction for _message, fraction in self.updates
+                if fraction is not None]
+
+
+def test_backup_files_reports_one_update_per_file(dr, tmp_path):
+    repo = tmp_path / 'repo'
+    dest = tmp_path / 'dest'
+    repo.mkdir()
+    dest.mkdir()
+    for name in ('a.txt', 'b.txt', 'c.txt'):
+        _write(repo / name, name)
+    _write(repo / '.hidden', 'H')
+    report = Recorder()
+
+    dr.backup_files(str(repo), str(dest), progress=report)
+
+    assert len(report.updates) == 3
+    assert report.fractions == [pytest.approx(1 / 3), pytest.approx(2 / 3), 1.0]
+    assert 'a.txt' in report.updates[0][0]
+
+
+def test_restore_files_reports_one_update_per_file(dr, tmp_path):
+    src = tmp_path / 'backup'
+    repo = tmp_path / 'repo'
+    src.mkdir()
+    repo.mkdir()
+    _write(src / 'doc.txt', 'content')
+    report = Recorder()
+
+    dr.restore_files(str(repo), str(src), progress=report)
+
+    assert report.fractions == [1.0]
+    assert 'doc.txt' in report.updates[0][0]
+
+
+def test_an_empty_backup_reports_nothing_and_does_not_divide_by_zero(dr, tmp_path):
+    repo = tmp_path / 'repo'
+    dest = tmp_path / 'dest'
+    repo.mkdir()
+    dest.mkdir()
+    report = Recorder()
+
+    assert dr.backup_files(str(repo), str(dest), progress=report) == 0
+    assert report.updates == []
+
+
+def test_zipping_reports_without_a_fraction(dr, tmp_path):
+    """shutil and zipfile say nothing while they work, so the bar pulses rather
+    than claiming a percentage it cannot know."""
+    conf = tmp_path / '.conf'
+    dest = tmp_path / 'dest'
+    conf.mkdir()
+    dest.mkdir()
+    _write(conf / 'repo.json', '{}')
+    report = Recorder()
+
+    dr.backup_config(str(conf), str(dest), progress=report)
+
+    assert report.updates
+    assert report.fractions == []
+
+
+def test_restore_repository_reports_its_stages(dr, tmp_path):
+    repo = tmp_path / 'repo'
+    dest = tmp_path / 'dest'
+    repo.mkdir()
+    dest.mkdir()
+    _write(repo / 'doc.txt', 'content')
+    archive = dr.backup_repository(str(repo), str(dest))
+    report = Recorder()
+
+    dr.restore_repository(str(repo), archive, progress=report)
+
+    # Extract, replace, clean up: three stages, none of them measurable.
+    assert len(report.updates) == 3
+    assert report.fractions == []

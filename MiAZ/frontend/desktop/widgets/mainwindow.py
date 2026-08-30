@@ -351,7 +351,7 @@ class MiAZMainWindow(Gtk.Box):
         return GLib.SOURCE_REMOVE
 
     def _populate_add_menu(self):
-        """Build the headerbar Add menu from the core import action plus
+        """Build the headerbar Add menu from the core import actions plus
         every loaded Import plugin."""
         add_menu = self.app.get_widget('headerbar-add-menu')
         if add_menu is None:
@@ -360,6 +360,7 @@ class MiAZMainWindow(Gtk.Box):
         importdoc = self.app.get_service('importdoc')
         if importdoc is not None:
             add_menu.append_item(importdoc.menuitem)
+            add_menu.append_item(importdoc.menuitem_dir)
         plugin_manager = self.app.get_service('plugin-system')
         if plugin_manager is not None:
             for plugin_info in plugin_manager.plugins:
@@ -403,6 +404,7 @@ class MiAZMainWindow(Gtk.Box):
         self.app.add_widget('workspace-plugins-section', new_plugins_section)
         new_main_menu.append_section(None, new_plugins_section)
         self._append_massrename_submenu(new_main_menu)
+        self._append_clipboard_item(new_main_menu)
         btn_workspace_menu = self.app.get_widget('workspace-menu')
         if btn_workspace_menu is not None:
             popover = btn_workspace_menu.get_popover()
@@ -477,6 +479,7 @@ class MiAZMainWindow(Gtk.Box):
         plugins_section = self.app.add_widget('workspace-plugins-section', Gio.Menu.new())
         menu.append_section(None, plugins_section)
         self._append_massrename_submenu(menu)
+        self._append_clipboard_item(menu)
         return menu
 
     def _append_massrename_submenu(self, menu):
@@ -486,6 +489,17 @@ class MiAZMainWindow(Gtk.Box):
         massrename_menu = self.app.get_widget('massrename-menu')
         if massrename_menu is not None:
             menu.append_submenu(_('Mass renaming'), massrename_menu)
+
+    def _append_clipboard_item(self, menu):
+        """Add the core 'Copy document names' entry to a selection menu.
+
+        Built once by the actions service and appended here, the same way the
+        mass-rename submenu is, so a menu rebuild puts it back.
+        """
+        actions = self.app.get_service('actions')
+        menuitem = getattr(actions, 'menuitem_copy_names', None)
+        if menuitem is not None:
+            menu.append_item(menuitem)
 
     def _prepend_repo_title_section(self, menu):
         """Prepend the current repository name as the first section of menu."""

@@ -1513,6 +1513,42 @@ msgstr ""
 msgid "{count} documents imported successfully"
 msgstr "{count} documentos importados correctamente"
 
+#: MiAZ/frontend/desktop/services/importdoc.py:79
+msgid "Add documents from a directory"
+msgstr "Añadir documentos desde un directorio"
+
+#: MiAZ/frontend/desktop/services/importdoc.py:186
+msgid "Could not import the documents"
+msgstr "No se han podido importar los documentos"
+
+#: MiAZ/frontend/desktop/services/importdoc.py:152
+msgid "Include subfolders"
+msgstr "Incluir subcarpetas"
+
+#: MiAZ/frontend/desktop/services/importdoc.py:162
+#, python-brace-format
+msgid "{count} files would be imported"
+msgstr "Se importarían {count} archivos"
+
+#: MiAZ/frontend/desktop/services/importdoc.py:170
+msgid "Import documents"
+msgstr "Importar documentos"
+
+#: MiAZ/frontend/desktop/services/importdoc.py:171
+#, python-brace-format
+msgid ""
+"You dropped these folders:\n"
+"\n"
+"{folders}"
+msgstr ""
+"Has soltado estas carpetas:\n"
+"\n"
+"{folders}"
+
+#: MiAZ/frontend/desktop/services/importdoc.py:186
+msgid "There was nothing to import"
+msgstr "No había nada que importar"
+
 #: MiAZ/frontend/desktop/services/importdoc.py:83
 #: data/resources/plugins/MiAZAutoScan/autoscan.py:497
 msgid "Some documents could not be imported"
@@ -2388,13 +2424,23 @@ msgstr "Por ejemplo:"
 
 #: MiAZ/frontend/desktop/widgets/assistant.py:208
 msgid ""
-"This assistant will help you create your first repository and enable the "
-"values you want for each field. You can go back at any time to change your "
-"choices."
+"This assistant will help you create your first repository and choose the "
+"countries you exchange documents with. Groups, purposes, senders and "
+"recipients start enabled, and everything can be changed later in Settings."
 msgstr ""
-"Este asistente te ayudará a crear tu primer repositorio y a habilitar los "
-"valores que quieras para cada campo. Puedes volver atrás en cualquier "
-"momento para cambiar tus elecciones."
+"Este asistente te ayudará a crear tu primer repositorio y a elegir los "
+"países con los que intercambias documentos. Los grupos, propósitos, "
+"remitentes y destinatarios vienen habilitados, y todo se puede cambiar "
+"después en la configuración."
+
+#: MiAZ/frontend/desktop/widgets/assistant.py:302
+msgid ""
+"Groups, purposes, senders and recipients were enabled for you. Add, remove "
+"or rename any of them in Settings, at any time."
+msgstr ""
+"Los grupos, propósitos, remitentes y destinatarios se han habilitado por ti. "
+"Puedes añadir, quitar o renombrar cualquiera de ellos en la configuración, "
+"cuando quieras."
 
 #: MiAZ/frontend/desktop/widgets/assistant.py:231
 msgid ""
@@ -5305,3 +5351,87 @@ msgstr "Generado"
 
 #~ msgid "Repository target folder updated"
 #~ msgstr "Se ha actualizado el directorio destino para el repositorio "
+
+msgid "Another operation is already running"
+msgstr "Ya hay otra operación en marcha"
+
+msgid "Backing up documents"
+msgstr "Copia de seguridad de los documentos"
+
+msgid "Backing up notes"
+msgstr "Copia de seguridad de las notas"
+
+msgid "Backing up the configuration"
+msgstr "Copia de seguridad de la configuración"
+
+msgid "Backing up the repository"
+msgstr "Copia de seguridad del repositorio"
+
+msgid "Cleaning up…"
+msgstr "Limpiando…"
+
+msgid "Compressing the configuration…"
+msgstr "Comprimiendo la configuración…"
+
+msgid "Compressing the repository…"
+msgstr "Comprimiendo el repositorio…"
+
+msgid "Copying {name}"
+msgstr "Copiando {name}"
+
+msgid "Extracting the archive…"
+msgstr "Extrayendo el archivo…"
+
+msgid "It failed: {error}"
+msgstr "Ha fallado: {error}"
+
+msgid "Replacing the configuration…"
+msgstr "Sustituyendo la configuración…"
+
+msgid "Replacing the repository…"
+msgstr "Sustituyendo el repositorio…"
+
+msgid "Restoring documents"
+msgstr "Restaurando los documentos"
+
+msgid "Restoring notes"
+msgstr "Restaurando las notas"
+
+msgid "Restoring the configuration"
+msgstr "Restaurando la configuración"
+
+msgid "Restoring the repository"
+msgstr "Restaurando el repositorio"
+
+msgid "Restoring {name}"
+msgstr "Restaurando {name}"
+
+msgid "Saved as {name} in {path}."
+msgstr "Guardado como {name} en {path}."
+
+msgid ""
+"The configuration was restored from {name}. MiAZ restarts when you close this."
+msgstr ""
+"La configuración se ha restaurado desde {name}. MiAZ se reiniciará al cerrar esta ventana."
+
+msgid ""
+"The repository was restored from {name}. MiAZ restarts when you close this."
+msgstr ""
+"El repositorio se ha restaurado desde {name}. MiAZ se reiniciará al cerrar esta ventana."
+
+msgid "Working…"
+msgstr "Trabajando…"
+
+msgid "{count} notes backed up to {name}."
+msgstr "{count} notas copiadas a {name}."
+
+msgid "{count} notes restored from {name}."
+msgstr "{count} notas restauradas desde {name}."
+
+msgid "{n} documents copied to {path}."
+msgstr "{n} documentos copiados a {path}."
+
+msgid ""
+"{n} documents restored from {path}. MiAZ restarts when you close this."
+msgstr ""
+"{n} documentos restaurados desde {path}. MiAZ se reiniciará al cerrar esta ventana."
