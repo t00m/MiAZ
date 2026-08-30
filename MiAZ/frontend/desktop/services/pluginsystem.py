@@ -77,93 +77,71 @@ plugin_info_template = {
         _('Subcategory'):   ''
     }
 
+def N_(text: str) -> str:
+    """Mark a string for extraction without translating it here.
+
+    The category names below have to stay English: they are compared against
+    what a .plugin file declares, and a .plugin file is never translated. But
+    they still have to reach po/, because both display sites translate the
+    value they read at runtime, `_(category)` in configview and `_(subcategory)`
+    in app.install_plugin_menu, and gettext only finds a msgid that was
+    extracted from source. This dict is where they are extracted from.
+    """
+    return text
+
+
+# The vocabulary every plugin picks its Category and Subcategory from.
+# Names are one word on purpose: the subcategory is the label of a workspace
+# submenu, sitting next to actions like "Toggle fullscreen".
 plugin_categories = {
-    _('Data Management'): {
-        _('Import'): _('Plugins for importing documents'),
-        _('Export'): _('Plugins for exporting documents'),
-        _('Backup'): _('Plugins for backing up your repository'),
-        _('Restore'): _('Plugins for restoring backups'),
-        _('Single mode'): _('Plugins for manipulating data for a single document'),
-        _('Batch mode'): _('Plugins for bulk data manipulation'),
-        _('Synchronisation'): _('Plugins for syncing data with cloud services or between devices'),
-        _('Migration'): _('Plugins for transferring data between different platforms or systems'),
-        _('Deletion'): _('Plugins for securely removing documents or data from the repository')
+    N_('Documents'): {
+        N_('Import'): 'Bring documents into the repository',
+        N_('Export'): 'Take documents out of the repository',
+        N_('Text'): 'Read the text inside a document',
+        N_('Notes'): 'Write alongside a document',
+        N_('Convert'): 'Turn a document into another format'
     },
-    _('Content Organisation'): {
-        _('Tagging and Classification'): _('Plugins for categorising and tagging documents'),
-        _('Search and Indexing'): _('Plugins that improve search capabilities or indexing methods'),
-        _('Metadata Management'): _('Plugins for adding, editing, or viewing document metadata')
+    N_('Organise'): {
+        N_('Tags'): 'Classify documents',
+        N_('Projects'): 'Group documents into projects',
+        N_('Search'): 'Find documents'
     },
-    _('Visualisation and Diagrams'): {
-        _('Diagram Creation'): _('Plugins for creating flowcharts, mind maps, and other visual representations'),
-        _('Data Visualisation'): _('Plugins that generate graphs, charts, or other visual data summaries'),
-        _('Dashboard Widgets'): _('Plugins that provide a summary of key information in a dashboard format'),
-        _('Document Viewers'): _('Plugins for displaying documents in their native formats')
+    N_('Repository'): {
+        N_('Backup'): 'Copy the repository somewhere safe',
+        N_('Restore'): 'Bring a backup back',
+        N_('Statistics'): 'Measure the whole repository',
+        N_('Sync'): 'Keep repositories in step'
     },
-    _('Security and Privacy'): {
-        _('Encryption/Decryption'): _('Plugins that encrypt or decrypt documents'),
-        _('Access Control'): _('Plugins for managing user permissions and access levels'),
-        _('Audit and Logging'): _('Plugins that track changes and access history')
+    N_('Interface'): {
+        N_('View'): 'Change what the window shows',
+        N_('Fonts'): 'Change how text is drawn',
+        N_('Themes'): 'Change the application appearance'
     },
-    _('Automation and Workflow'): {
-        _('Task Automation'): _('Plugins that automate repetitive tasks, like renaming files or sorting documents'),
-        _('Workflow Management'): _('Plugins for creating and managing document-related workflows'),
-        _('Notification Systems'): _('Plugins for notifying users of specific events or deadlines')
+    N_('AI'): {
+        N_('Assistants'): 'Ask a model about a document',
+        N_('Models'): 'Connect to an AI provider'
     },
-    _('Integration and Interoperability'): {
-        _('API Connectors'): _('Plugins that allow integration with third-party services (e.g., Google Drive, Dropbox, Slack)'),
-        _('Third-Party Service Integration'): _('Plugins for integrating with tools like CRM, ERP, or project management systems'),
-        _('Communication Tools'): _('Plugins for email, messaging, or social media integration')
-    },
-    _('Customisation and Personalisation'): {
-        _('Themes and UI Customisation'): _('Plugins that allow users to change the application appearance'),
-        _('Templates'): _('Pre-defined document templates or layout options'),
-        _('Language Packs'): _('Plugins for multi-language support or localisation')
-    },
-    _('Analytics and Reporting'): {
-        _('Usage Analytics'): _('Plugins that provide insights into how the application is used'),
-        _('Document Statistics'): _('Plugins that analyse and report on document content'),
-        _('Custom Reports'): _('Plugins for generating bespoke reports based on user-defined criteria')
-    },
-    _('Collaboration'): {
-        _('Real-time Collaboration'): _('Plugins that enable multiple users to work on the same document simultaneously'),
-        _('Version Control'): _('Plugins for managing document versions and changes'),
-        _('Comments and Annotations'): _('Plugins for adding comments or annotations to documents')
-    },
-    _('Content Editing and Formatting'): {
-        _('Advanced Editors'): _('Plugins that offer enhanced text, image, or video editing capabilities'),
-        _('Formatting Tools'): _('Plugins for applying or automating specific formatting rules across documents'),
-        _('Conversion Tools'): _('Plugins that convert documents into different formats (e.g., Word to PDF)')
-    },
-    _('Support and Help'): {
-        _('Guides and Tutorials'): _('Plugins that provide user manuals, tutorials, or onboarding guides'),
-        _('Troubleshooting Tools'): _('Plugins for diagnosing and fixing common issues within the application'),
-        _('User Feedback'): _('Plugins that allow users to submit feedback or suggestions')
-    },
-    _('Archiving and Compliance'): {
-        _('Long-Term Archiving'): _('Plugins for storing documents in long-term, secure formats'),
-        _('Compliance Checkers'): _('Plugins that ensure documents meet regulatory or legal standards'),
-        _('Retention Policies'): _('Plugins for setting and enforcing document retention rules')
-    },
-    _('ETL and Data Processing'): {
-        _('Data Extraction'): _('Plugins for extracting data from various sources (APIs, databases, files)'),
-        _('Data Transformation'): _('Plugins for cleaning, enriching, or reformatting extracted data'),
-        _('Data Loading'): _('Plugins for importing processed data into target systems or repositories'),
-        _('Workflow Automation'): _('Plugins for orchestrating multi-step ETL processes'),
-        _('Data Quality'): _('Plugins for validating, deduplicating, or ensuring data consistency')
-    },
-    _('Artificial Intelligence'): {
-        _('Text Analysis'): _('Plugins for NLP tasks like summarization, sentiment analysis, or entity recognition'),
-        _('Document AI'): _('Plugins for intelligent document processing (e.g., OCR, form recognition)'),
-        _('Predictive Analytics'): _('Plugins for forecasting or pattern detection in data'),
-        _('Recommendation Systems'): _('Plugins for suggesting relevant content or actions based on user behavior'),
-        _('AI Assistants'): _('Plugins with chatbot-like interactions or automated task assistance'),
-        _('Model Integration'): _('Plugins for connecting to external AI models (e.g., OpenAI, Hugging Face)')
-    },
-    _('Others'): {
-        _('Miscelanea'): _('Plugins not fitting in another category')
+    N_('Help'): {
+        N_('Examples'): 'Show how a plugin is written',
+        N_('Diagnostics'): 'Report on what the application is doing'
     }
 }
+
+
+def validate_category(category: str, subcategory: str):
+    """Why this pair is not in the vocabulary, or None when it is.
+
+    Nothing used to check this, and three plugins drifted onto a subcategory
+    ('User Interface') that the vocabulary never defined. They kept their
+    translated menu label only because an unrelated file happened to contain
+    the same literal. A warning at registration is what catches the next one.
+    """
+    if category not in plugin_categories:
+        return f"unknown category '{category}'"
+    if subcategory not in plugin_categories[category]:
+        return f"unknown subcategory '{subcategory}' for category '{category}'"
+    return None
+
 
 # Shown for a plugin that ships no icon of its own, so every plugin has one.
 PLUGIN_DEFAULT_ICON = 'io.github.t00m.MiAZ-res-plugins'
@@ -315,6 +293,12 @@ class MiAZPlugin(GObject.GObject):
         self.desc = self.info['Description']
         self.poid = f'plugin-{self.name}'
         self.app.add_widget(self.poid, plugin_object)
+
+        problem = validate_category(self.info.get('Category', ''),
+                                    self.info.get('Subcategory', ''))
+        if problem is not None:
+            self.log.warning(f"Plugin {self.name}: {problem}. Its menu entry "
+                             "will not be translated.")
 
         # Create plugin directories for config and data
         ## Configuration directory and file
@@ -483,15 +467,23 @@ class MiAZPlugin(GObject.GObject):
 
         With no category the plugin's own one is used, which is what almost
         every caller wants. A plugin whose action belongs somewhere else (the
-        notes backup and restore entries live under Data Management) passes
+        notes backup and restore entries live under Repository) passes
         the pair explicitly, rather than reaching for app.install_plugin_menu
         and leaving the entry unrecorded: those were the entries a menu
         rebuild used to drop.
         """
         if not self.is_active():
             return None
+        explicit = category is not None or subcategory is not None
         category = category or self.info['Category']
         subcategory = subcategory or self.info['Subcategory']
+        if explicit:
+            # The plugin's own pair was already checked at registration; this
+            # is the other one, the pair a plugin names to file an action
+            # somewhere else.
+            problem = validate_category(category, subcategory)
+            if problem is not None:
+                self.log.warning(f"Plugin {self.name} menu entry: {problem}")
         subcategory_submenu = self.app.install_plugin_menu(category, subcategory)
         if menuitem is not None:
             subcategory_submenu.append_item(menuitem)

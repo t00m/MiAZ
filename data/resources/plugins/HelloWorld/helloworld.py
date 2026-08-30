@@ -27,8 +27,8 @@ plugin_info = {
         'Website':       'http://github.com/t00m/MiAZ',
         'Help':          'https://github.com/t00m/MiAZ/blob/main/README.md',
         'Version':       '0.5',
-        'Category':      'Support and Help',
-        'Subcategory':   'Guides and Tutorials'
+        'Category':      'Help',
+        'Subcategory':   'Examples'
     }
 
 class HelloWorld(MiAZExtension):

@@ -10,7 +10,6 @@
 import os
 from gettext import gettext as _
 
-from gi.repository import Gio
 from gi.repository import GObject
 from gi.repository import Gtk
 
@@ -33,8 +32,8 @@ plugin_info = {
         'Website':       'http://github.com/t00m/MiAZ',
         'Help':          'https://github.com/t00m/MiAZ/blob/main/README.md',
         'Version':       '0.6',
-        'Category':      'Content Organisation',
-        'Subcategory':   'Tagging and Classification'
+        'Category':      'Organise',
+        'Subcategory':   'Projects'
     }
 
 # Virtual project bucket holding documents not belonging to any real project.
@@ -611,27 +610,24 @@ class MiAZProjectMgt(MiAZExtension):
 
     def startup(self, *args):
         if not self.plugin.started():
-            # Always reinstall workspace menu entries (cleared by _on_plugins_updated)
-            # No item of its own: this call creates the plugin's entry in the
-            # menu, and the submenu below hangs under it.
-            self.plugin.install_menu_entry()
-            plugin_menu = Gio.Menu()
-            menuitem = self.factory.create_menuitem(
+            # Always reinstall workspace menu entries (cleared by
+            # _on_plugins_updated). The three actions go straight into the
+            # plugin's own menu entry. They used to hang off a submenu named
+            # after the plugin, inside the entry already named after the
+            # plugin, so reaching Assign meant Projects then Project then
+            # Assign.
+            self.plugin.install_menu_entry(self.factory.create_menuitem(
                 f'{i_confname}-add',
                 _('Assign document(s) to {i_confname}').format(i_confname=i_confname),
-                self._set_property, None, ['<Control>p'])
-            plugin_menu.append_item(menuitem)
-            menuitem = self.factory.create_menuitem(
+                self._set_property, None, ['<Control>p']))
+            self.plugin.install_menu_entry(self.factory.create_menuitem(
                 f'{i_confname}-del',
                 _('Unassign document(s) from any {i_confname}').format(i_confname=i_confname),
-                self._unset_property, None, ['<Control><Shift>p'])
-            plugin_menu.append_item(menuitem)
-            menuitem = self.factory.create_menuitem(
+                self._unset_property, None, ['<Control><Shift>p']))
+            self.plugin.install_menu_entry(self.factory.create_menuitem(
                 f'{i_confname}-mgt',
                 _('Manage {i_confname}').format(i_confname=i_confname),
-                self._manage_properties, None, ['<Control><Alt>p'])
-            plugin_menu.append_item(menuitem)
-            self.plugin.install_menu_submenu(f"{i_title}", plugin_menu)
+                self._manage_properties, None, ['<Control><Alt>p']))
 
             # One-time setup guarded by the dropdown widget sentinel.
             # When _on_plugins_updated calls startup() a second time the dropdown

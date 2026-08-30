@@ -578,26 +578,34 @@ Authors=Tomás Vírseda <tomasvirseda@gmail.com>
 Copyright=Copyright © 2026 Tomás Vírseda
 Website=http://github.com/t00m/MiAZ
 Version=0.1
-Category=Integration and Interoperability
-Subcategory=API Connectors
+Category=Documents
+Subcategory=Import
 ```
 
-Valid categories (with subcategories):
-- `Data Management`: Import, Export, Backup, Restore, Single mode, Batch mode, Synchronisation, Migration, Deletion
-- `Content Organisation`: Tagging and Classification, Search and Indexing, Metadata Management
-- `Visualisation and Diagrams`: Diagram Creation, Data Visualisation, Dashboard Widgets, Document Viewers
-- `Security and Privacy`: Encryption/Decryption, Access Control, Audit and Logging
-- `Automation and Workflow`: Task Automation, Workflow Management, Notification Systems
-- `Integration and Interoperability`: API Connectors, Third-Party Service Integration, Communication Tools
-- `Customisation and Personalisation`: Themes and UI Customisation, Templates, Language Packs
-- `Analytics and Reporting`: Usage Analytics, Document Statistics, Custom Reports
-- `Collaboration`: Real-time Collaboration, Version Control, Comments and Annotations
-- `Content Editing and Formatting`: Advanced Editors, Formatting Tools, Conversion Tools
-- `Support and Help`: Guides and Tutorials, Troubleshooting Tools, User Feedback
-- `Archiving and Compliance`: Long-Term Archiving, Compliance Checkers, Retention Policies
-- `ETL and Data Processing`: Data Extraction, Data Transformation, Data Loading, Workflow Automation, Data Quality
-- `Artificial Intelligence`: Text Analysis, Document AI, Predictive Analytics, Recommendation Systems, AI Assistants, Model Integration
-- `Others`: Miscelanea
+Valid categories (with subcategories), defined once in `plugin_categories`
+(`frontend/desktop/services/pluginsystem.py`):
+
+- `Documents`: Import, Export, Text, Notes, Convert
+- `Organise`: Tags, Projects, Search
+- `Repository`: Backup, Restore, Statistics, Sync
+- `Interface`: View, Fonts, Themes
+- `AI`: Assistants, Models
+- `Help`: Examples, Diagnostics
+
+Names are one word on purpose: the subcategory is the label of a workspace submenu,
+sitting next to actions like "Toggle fullscreen".
+
+`AI` is its own category so that it means something: it marks a plugin that sends
+document content to an external provider. `MiAZOCR` shells out to `ocrmypdf` and
+`tesseract` with no model involved, so it belongs under `Documents / Text`, not here.
+
+Write the pair in English in both the `.plugin` file and `plugin_info`. It is a
+vocabulary key, translated once at display time by `_(category)` in `configview.py`
+and `_(subcategory)` in `app.install_plugin_menu`. Those lookups only resolve because
+`plugin_categories` marks every name with `N_()` for extraction into `po/`, so a name
+that is not in that dict shows up untranslated. `MiAZPlugin.register()` warns when a
+plugin declares a pair the dict does not define; `install_menu_entry(category=...,
+subcategory=...)` warns for a pair passed explicitly.
 
 **Python file contract:**
 ```python
@@ -813,22 +821,22 @@ PYTHONPATH=. python -m MiAZ.miaz
 
 | Plugin | Category / Subcategory | Purpose |
 |---|---|---|
-| HelloWorld | Support and Help / Guides and Tutorials | Hello World example plugin |
-| MiAZAutoScan | Data Management / Import | Scan documents in background (SANE `scanimage`, source submenu) and import them |
-| MiAZColumnVisibility | Customisation and Personalisation / User Interface | Toggle workspace column visibility |
-| MiAZExport2CSV | Data Management / Export | Export to CSV |
-| MiAZExport2Dir | Data Management / Export | Export to directory |
-| MiAZExport2Text | Data Management / Export | Export to text editor |
-| MiAZExport2Zip | Data Management / Export | Compress documents into a ZIP file |
-| MiAZFullscreen | Customisation and Personalisation / User Interface | Toggle fullscreen |
-| MiAZImportFromScan | Data Management / Import | Import document from scanner |
-| MiAZImportFromZip | Data Management / Import | Import documents from a ZIP file |
-| MiAZInsights | Analytics and Reporting / Custom Reports | Insights into the repository (totals, activity heatmap, rank movers, country map) published to the Browser page |
-| MiAZNotes | Collaboration / Comments and Annotations | Take Markdown notes linked to documents (adds a workspace page) |
-| MiAZOCR | Artificial Intelligence / Document AI | Extract text from PDFs with OCR and save as a note (depends on MiAZNotes; vetoes activation if `ocrmypdf` is missing) |
-| MiAZPeriodicity | Content Organisation / Tagging and Classification | Set document periodicity |
-| MiAZProjectMgt | Content Organisation / Tagging and Classification | Project management |
-| MiAZWSFont | Customisation and Personalisation / User Interface | Modify workspace font name and size |
+| HelloWorld | Help / Examples | Hello World example plugin |
+| MiAZAutoScan | Documents / Import | Scan documents in background (SANE `scanimage`, source submenu) and import them |
+| MiAZColumnVisibility | Interface / View | Toggle workspace column visibility |
+| MiAZExport2CSV | Documents / Export | Export to CSV |
+| MiAZExport2Dir | Documents / Export | Export to directory |
+| MiAZExport2Text | Documents / Export | Export to text editor |
+| MiAZExport2Zip | Documents / Export | Compress documents into a ZIP file |
+| MiAZFullscreen | Interface / View | Toggle fullscreen |
+| MiAZImportFromScan | Documents / Import | Import document from scanner |
+| MiAZImportFromZip | Documents / Import | Import documents from a ZIP file |
+| MiAZInsights | Repository / Statistics | Insights into the repository (totals, activity heatmap, rank movers, country map) published to the Browser page |
+| MiAZNotes | Documents / Notes | Take Markdown notes linked to documents (adds a workspace page) |
+| MiAZOCR | Documents / Text | Extract text from PDFs with OCR and save as a note (depends on MiAZNotes; vetoes activation if `ocrmypdf` is missing) |
+| MiAZPeriodicity | Organise / Tags | Set document periodicity |
+| MiAZProjectMgt | Organise / Projects | Project management |
+| MiAZWSFont | Interface / Fonts | Modify workspace font name and size |
 
 WIP plugin directories without a `.plugin` file yet (not loaded): `MiAZDeleteDoc`, `MiAZRenameDoc`, `MiAZViewDoc`, `MiAZWorkspaceToggleView`.
 
