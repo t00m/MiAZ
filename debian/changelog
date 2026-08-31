@@ -1,3 +1,9 @@
+miaz (0.3.0-1) unstable; urgency=medium
+
+  * New release. See CHANGELOG.md for details.
+
+ -- Tomás Vírseda <tomasvirseda@gmail.com>  Mon, 31 Aug 2026 21:21:32 +0200
+
 miaz (0.2.0-1) unstable; urgency=medium
 
   * The keyboard shortcuts window no longer needs libadwaita 1.8, so MiAZ runs on Debian 13; the startup check now compares toolkit versions correctly against the real floors, GTK 4.10 and libadwaita 1.7

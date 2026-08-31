@@ -1,5 +1,5 @@
 Name:           miaz
-Version:        0.2.0
+Version:        0.3.0
 Release:        1%{?dist}
 Summary:        Personal Document Organizer
 
@@ -81,6 +81,9 @@ gtk-update-icon-cache %{_datadir}/icons/hicolor &> /dev/null || :
 %{_datadir}/metainfo/io.github.t00m.MiAZ.metainfo.xml
 
 %changelog
+* Mon Aug 31 2026 Tomás Vírseda <tomasvirseda@gmail.com> - 0.3.0-1
+- New release. See CHANGELOG.md for details.
+
 * Mon Aug 31 2026 Tomás Vírseda <tomasvirseda@gmail.com> - 0.2.0-1
 - The keyboard shortcuts window no longer needs libadwaita 1.8, so MiAZ runs on Debian 13; the startup check now compares toolkit versions correctly against the real floors, GTK 4.10 and libadwaita 1.7
 - Review mode marks a document whose content matches another one; the column sorts copies next to each other and the tooltip names the twin and says whether it is filed already

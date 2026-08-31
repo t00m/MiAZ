@@ -67,6 +67,11 @@
     </screenshot>
   </screenshots>
   <releases>
+    <release version="0.3.0" date="2026-08-31" urgency="medium">
+      <description>
+        <p>See CHANGELOG.md for details.</p>
+      </description>
+    </release>
     <release version="0.2.0" date="2026-08-31" urgency="medium">
       <description>
         <p>Runs on Debian 13, marks duplicate documents in review mode, gathers every field suggestion under one menu, and speaks complete Spanish again.</p>
