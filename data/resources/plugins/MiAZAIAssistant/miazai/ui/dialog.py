@@ -7,72 +7,83 @@ from gi.repository import Adw, Gdk, Gtk
 from MiAZ.backend.tasks import run_in_background
 
 
-def inject_suggest_button(app, registry, repository, util, log):
-    # Idempotent: drop any handler installed by a previous call before
-    # connecting a new one. Only the latest (actions, handler_id) pair is tracked
-    # in 'miazai-rename-handler', so connecting again without disconnecting first
-    # would leak the earlier handler and stack a duplicate 'Suggest with AI'
-    # button on every rename dialog.
-    remove_suggest_button(app)
-    actions = app.get_service('actions')
-    handler_id = actions.connect(
-        'rename-dialog-built',
-        lambda _src, dialog, rename_widget: _add_button(
-            app, dialog, rename_widget, registry, repository, util, log),
-    )
-    app.add_widget('miazai-rename-handler', (actions, handler_id))
+def register_suggest_items(plugin, app, registry, repository, util, log):
+    """Contribute this plugin's entries to the rename dialog's Suggest menu.
+
+    There used to be an Adw.SplitButton packed into the dialog header, which
+    put two ways of proposing the same fields in two different corners of the
+    same window. The core owns one Suggest menu now and plugins add to it.
+
+    Idempotent: registering the same action name twice replaces the entry
+    rather than stacking a second copy, which is what the old handler-tracking
+    dance existed to prevent.
+    """
+    # Its own section: sending the document to a model is a different thing
+    # from reading it here, and the user chooses before it happens.
+    section = _('With AI')
+    plugin.register_suggest_item(
+        name='miazai-suggest',
+        label=_('Ask the model'),
+        section=section,
+        callback=lambda _action, _param, _data: _suggest_now(
+            app, registry, repository, util, log))
+    plugin.register_suggest_item(
+        name='miazai-choose-model',
+        label=_('Choose another model…'),
+        section=section,
+        callback=lambda _action, _param, _data: _open_settings(app))
 
 
-def remove_suggest_button(app):
-    pair = app.get_widget('miazai-rename-handler')
-    if pair is not None:
-        obj, handler_id = pair
-        try:
-            obj.disconnect(handler_id)
-        except Exception:
-            pass
-        # Clear the slot so a later inject/remove cannot re-read a stale,
-        # already-disconnected handler id.
-        app.add_widget('miazai-rename-handler', None)
+def unregister_suggest_items(plugin):
+    plugin.unregister_suggest_items()
 
 
-def _add_button(app, dialog, rename_widget, registry, repository, util, log):
-    btn = Adw.SplitButton(label=_('Suggest with AI'))
-    btn.add_css_class('suggested-action')
-    btn.set_tooltip_text(_('Ask AI to propose filename fields'))
-    btn.connect('clicked', _on_suggest, app, rename_widget,
-                registry, repository, util, log)
+def _suggest_now(app, registry, repository, util, log):
+    """Run the suggestion against whichever rename dialog is open.
 
-    # Dropdown side: open the plugin settings to pick another model.
-    popover = Gtk.Popover()
-    pbox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=2)
-    pbox.set_margin_top(6)
-    pbox.set_margin_bottom(6)
-    pbox.set_margin_start(6)
-    pbox.set_margin_end(6)
-    settings_btn = Gtk.Button(label=_('Choose another model…'))
-    settings_btn.add_css_class('flat')
-    settings_btn.connect('clicked', _on_open_settings, app, dialog, popover)
-    pbox.append(settings_btn)
-    popover.set_child(pbox)
-    btn.set_popover(popover)
-
-    # Place it on the right of the dialog header bar so it sits apart from
-    # the built-in 'Suggest' button on the bottom action bar.
-    dialog.pack_header_end(btn)
-    app.add_widget('miazai-suggest-button', btn)
+    The menu is shared by every rename dialog, so the widget is resolved when
+    the entry is chosen rather than captured when it is registered.
+    """
+    rename_widget = app.get_widget('rename-widget')
+    if rename_widget is None:
+        return
+    _on_suggest(app, rename_widget, registry, repository, util, log)
 
 
-def _on_open_settings(button, app, dialog, popover):
-    popover.popdown()
+def _open_settings(app):
     plugin = app.get_widget('plugin-MiAZAIAssistant')
     if plugin is None:
         return
     # Present relative to the rename dialog so the settings open on top of it.
-    plugin.show_settings(widget=dialog)
+    plugin.show_settings(widget=app.get_widget('dialog-rename'))
 
 
-def _on_suggest(button, app, rename_widget, registry, repository, util, log):
+def _set_busy(app, message):
+    """Show what the dialog is doing, when the dialog can show it."""
+    dialog = app.get_widget('dialog-rename')
+    if dialog is not None and hasattr(dialog, 'set_busy'):
+        dialog.set_busy(message)
+
+
+def _clear_busy(app):
+    dialog = app.get_widget('dialog-rename')
+    if dialog is not None and hasattr(dialog, 'clear_busy'):
+        dialog.clear_busy()
+
+
+def _set_entry_enabled(app, enabled):
+    """Grey out this plugin's Suggest entry while its request is in flight.
+
+    It used to disable its own button and relabel it 'Thinking…'. There is no
+    button any more, only an entry in the shared Suggest menu, so the action
+    behind the entry is what gets disabled.
+    """
+    actions = app.get_service('actions')
+    if actions is not None:
+        actions.set_suggest_item_enabled('miazai-suggest', enabled)
+
+
+def _on_suggest(app, rename_widget, registry, repository, util, log):
     from miazai.providers import active_provider, MissingDependencyError
     from miazai.extractor import extract
     from miazai.vocab import load_vocabulary
@@ -83,8 +94,7 @@ def _on_suggest(button, app, rename_widget, registry, repository, util, log):
         log.error('MiAZAIAssistant plugin object not found')
         return
 
-    button.set_sensitive(False)
-    button.set_label(_('Thinking…'))
+    _set_entry_enabled(app, False)
 
     doc = rename_widget.get_filepath_source()
     abs_path = pathlib.Path(repository.docs) / doc
@@ -95,6 +105,10 @@ def _on_suggest(button, app, rename_widget, registry, repository, util, log):
     model = (provider.config.get('model') or '').strip() or '(default)'
     log.info(f'AI suggest requested: provider={provider.name} '
              f'model={model} document={doc}')
+
+    # A provider call takes seconds and used to say nothing while it ran. The
+    # model is named because which one answered is the thing worth knowing.
+    _set_busy(app, _('Guessing with AI ({model})').format(model=model))
 
     def _run():
         extracted = extract(abs_path)
@@ -126,23 +140,23 @@ def _on_suggest(button, app, rename_widget, registry, repository, util, log):
         return suggestion
 
     def _done(suggestion):
-        _finish(button, suggestion, None, False, app, rename_widget)
+        _finish(suggestion, None, False, app, rename_widget)
 
     def _failed(exc):
         # Every failure lands here, including the one raised above for a
-        # document with no text. The button has to be restored whatever went
-        # wrong, or it stays greyed out reading 'Thinking…' forever.
+        # document with no text. The entry has to be re-enabled whatever went
+        # wrong, or it stays greyed out for the rest of the session.
         log.error(f'AI provider failed: {exc}')
-        _finish(button, None, str(exc), isinstance(exc, MissingDependencyError),
+        _finish(None, str(exc), isinstance(exc, MissingDependencyError),
                 app, rename_widget)
 
     run_in_background(_run, on_done=_done, on_error=_failed,
                       name='miazai-suggest')
 
 
-def _finish(button, suggestion, error, needs_libs, app, rename_widget):
-    button.set_sensitive(True)
-    button.set_label(_('Suggest with AI'))
+def _finish(suggestion, error, needs_libs, app, rename_widget):
+    _set_entry_enabled(app, True)
+    _clear_busy(app)
     if error:
         _show_error_dialog(app, rename_widget, str(error), needs_libs)
         return
@@ -243,6 +257,9 @@ def _apply_suggestion(rename_widget, suggestion, app):
         value = util.valid_key(getattr(suggestion, key, '')).upper()
         if not value:
             continue
+        # The repository may hold the same name in another case: suggesting
+        # ALLIANZ where Allianz exists used to add a second sender.
+        value = _existing_key(cfg, value) or value
         if _select_in_dropdown(dropdown, value):
             continue
         # The value is not enabled for this repository. If it already exists in
@@ -259,13 +276,40 @@ def _apply_suggestion(rename_widget, suggestion, app):
     rename_widget._on_changed_entry()
 
 
+def _existing_key(cfg, value):
+    """The key this repository already has for `value`, ignoring case.
+
+    Returns None when there is no such key, so the caller can go on to offer
+    adding it. The used values are searched before the available ones: a value
+    already enabled here is the better answer when a repository somehow holds
+    both spellings.
+    """
+    wanted = value.casefold()
+    for load in (cfg.load_used, cfg.load_available):
+        try:
+            entries = load()
+        except Exception:
+            continue
+        for key in entries or {}:
+            if key.casefold() == wanted:
+                return key
+    return None
+
+
 def _select_in_dropdown(dropdown, key) -> bool:
+    """Select the entry whose id is `key`, ignoring case.
+
+    The dropdown lists what the repository actually holds, so comparing
+    exactly would skip past an entry that is there under another spelling and
+    fall through to offering to add it again.
+    """
     model = dropdown.get_model()
     if model is None:
         return False
+    wanted = (key or '').casefold()
     for i in range(model.get_n_items()):
         item = model.get_item(i)
-        if item is not None and item.id == key:
+        if item is not None and (item.id or '').casefold() == wanted:
             dropdown.set_selected(i)
             return True
     return False

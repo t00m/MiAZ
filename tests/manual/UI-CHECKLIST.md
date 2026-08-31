@@ -60,7 +60,9 @@ automated UI suite, **[K]** needs a paid API key (skip unless you have one).
       and position, maximised if it was maximised.
 - [ ] **1.5** Rename `~/.MiAZ` aside and launch. The first-run assistant offers
       to create a repository, creates it, and the app lands on an empty
-      workspace. Restore your `~/.MiAZ` afterwards.
+      workspace. Countries is the only field it asks about; the summary reports
+      every shipped group, purpose, sender and recipient as enabled, and
+      Settings confirms it. Restore your `~/.MiAZ` afterwards.
 - [ ] **1.6** With the app already running, launch it again. The existing window
       is raised rather than a second one opening.
 
@@ -138,7 +140,7 @@ automated UI suite, **[K]** needs a paid API key (skip unless you have one).
       `Pillow` installed, which is the normal case.
 - [ ] **4.7e** Click detect on a document that has both: a creation date in its
       properties and a digit run in its concept that looks like a date, such as
-      the invoice number `RG151119905140`. The metadata date wins. The concept
+      the invoice number `RG240719880042`. The metadata date wins. The concept
       is only read when the file itself carries no date.
 - [ ] **4.8** Type two characters in the concept field. The autocomplete popover
       offers matching concepts, and picking one fills the field.
@@ -219,6 +221,28 @@ automated UI suite, **[K]** needs a paid API key (skip unless you have one).
       and the count matches.
 - [ ] **7.6 [N]** Delete a document from inside the rename dialog. The row
       disappears from the workspace straight away, without a rescan.
+- [ ] **7.7 [S] [N]** Drag files from the file manager onto the document list. The
+      area is highlighted while they hover, and dropping copies them in exactly
+      as Add document does.
+- [ ] **7.8 [N]** Drop on the Browser tab. Nothing is imported: the drop is only
+      accepted on the Documents page.
+- [ ] **7.9 [N]** Drop a folder. A question appears naming it, saying how many files
+      would be imported, and the number changes when Include subfolders is
+      ticked. Answering No imports nothing; answering Yes imports exactly the
+      number that was shown.
+- [ ] **7.10 [N]** Add menu, then Add documents from a directory
+      (`Shift+Insert`). It asks about subfolders exactly as a dropped folder
+      does, the documents arrive, and the workspace stays usable while it runs.
+- [ ] **7.11 [N]** Point it at an unreadable directory
+      (`mkdir /tmp/locked && chmod 000 /tmp/locked`). It reports the failure
+      instead of ending in silence, and the workspace still refreshes
+      afterwards.
+- [ ] **7.12 [N]** Import more than twenty files at once. The window stays
+      responsive, the list refreshes once at the end rather than per file, and
+      the toast counts them all.
+- [ ] **7.13 [N]** Select documents and press `Ctrl+Shift+C`, or use Copy
+      document names in the right-click menu. Paste: one name per line, in the
+      order shown, and a toast says how many.
 
 ## 8. Repository switching
 
@@ -264,11 +288,14 @@ automated UI suite, **[K]** needs a paid API key (skip unless you have one).
 - [ ] **9.9** External libraries: the group lists the libraries, their versions
       and which plugin needs them. Installing one shows progress and finishes.
 - [ ] **9.10** Backup and restore: take a backup, change something, restore it,
-      and confirm the change is undone.
+      and confirm the change is undone. While it runs the window behind is
+      greyed out and a progress dialog reports the files; it cannot be closed
+      until the work ends, then it says what happened and Close gives the UI
+      back. A restore restarts MiAZ on Close, not before.
 
 ## 10. Plugins
 
-- [ ] **10.1 [S] [A]** Settings, Plugins. All 19 are listed, each with an icon and a
+- [ ] **10.1 [S] [A]** Settings, Plugins. All 17 are listed, each with an icon and a
       description, and the enabled ones are ticked.
 - [ ] **10.2 [N] [A]** Disable a plugin that adds a page (MiAZNotes, MiAZInsights).
       Its page disappears from the view switcher.
@@ -288,51 +315,49 @@ automated UI suite, **[K]** needs a paid API key (skip unless you have one).
 
 ### Plugin by plugin
 
-- [ ] **10.8** MiAZAddFromDir: import a directory. The documents arrive, the
-      workspace stays usable while it runs, and a toast reports the result.
-      (There is no progress bar and no cancel button. Progress goes to the log
-      only.)
-- [ ] **10.9 [N]** MiAZAddFromDir: point it at an unreadable directory
-      (`mkdir /tmp/locked && chmod 000 /tmp/locked`). It reports the failure
-      instead of ending in silence, and the workspace still refreshes
-      afterwards.
-- [ ] **10.10** MiAZImportFromZip: import a ZIP. Same checks as 10.8.
-- [ ] **10.11 [N]** MiAZImportFromZip: with a broken ZIP, the failure is
+- [ ] **10.8** MiAZImportFromZip: import a ZIP. Same checks as 7.10.
+- [ ] **10.9 [N]** MiAZImportFromZip: with a broken ZIP, the failure is
       reported and the workspace does not freeze for the rest of the session.
       Setup: `printf 'not a zip' > /tmp/broken.zip`.
-- [ ] **10.12** MiAZAutoScan: the Add menu entry is present. With no scanner
+- [ ] **10.10** MiAZAutoScan: the Add menu entry is present. With no scanner
       connected it still appears and explains the problem when used. No
       scanner needed: unplug it, or run MiAZ with `PATH=/nonexistent:$PATH`
       so `scanimage` cannot be found.
-- [ ] **10.13** MiAZOCR: run OCR on a scanned PDF. Progress is shown and the
+- [ ] **10.11** MiAZOCR: run OCR on a scanned PDF. Progress is shown and the
       text layer is added.
-- [ ] **10.14 [N]** MiAZOCR: with `ocrmypdf` missing, the failure is reported
+- [ ] **10.12 [N]** MiAZOCR: with `ocrmypdf` missing, the failure is reported
       and later workspace updates still happen. Setup: start MiAZ from a shell
       with `PATH=/usr/bin:/bin` and `ocrmypdf` temporarily renamed, or run it
       in a container without the package.
-- [ ] **10.15 [K]** MiAZAIAssistant: configure a provider key, then Suggest in
+- [ ] **10.13 [K]** MiAZAIAssistant: configure a provider key, then Suggest in
       the rename dialog. Fields are filled.
-- [ ] **10.16 [N]** MiAZAIAssistant: with an invalid key, the button recovers
+- [ ] **10.14 [N]** MiAZAIAssistant: with an invalid key, the button recovers
       instead of staying greyed out reading "Thinking". Setup: no real key
       needed, type any nonsense as the API key and Suggest.
-- [ ] **10.17 [K]** MiAZAIAssistant: the chat answers about a document, and a
+- [ ] **10.15 [K]** MiAZAIAssistant: the chat answers about a document, and a
       failed request does not hang the dialog.
-- [ ] **10.18** MiAZNotes: write a note, save it, reopen it. Markdown renders in
+- [ ] **10.16** MiAZNotes: write a note, save it, reopen it. Markdown renders in
       view mode, and the All notes page lists it.
-- [ ] **10.19** MiAZInsights: the page renders, the year selector works, the
+- [ ] **10.16b [A]** The workspace menu Notes entry holds four items: Create a
+      new note, See all notes, Backup notes, Restore notes. There is no Backup
+      or Restore entry of its own.
+- [ ] **10.16c [A]** Select two or more documents and press `Ctrl+N`. The
+      window opens on a blank note, and saving files the same text against
+      every selected document.
+- [ ] **10.17** MiAZInsights: the page renders, the year selector works, the
       heatmap and the world map draw, and the period presets agree with the
       sidebar ones.
-- [ ] **10.20** MiAZProjectMgt: assign (`Ctrl+P`), unassign (`Ctrl+Shift+P`) and
-      manage (`Ctrl+Alt+P`). The sidebar project filter follows.
-- [ ] **10.21** MiAZPeriodicity: set a periodicity and filter by it.
-- [ ] **10.22** MiAZColumnVisibility: hide and show columns. The choice survives
+- [ ] **10.18** MiAZProjectMgt: assign (`Ctrl+P`), unassign (`Ctrl+Shift+P`) and
+      manage (`Ctrl+Alt+P`). The sidebar project filter follows. The three sit
+      directly under the Projects entry, with no submenu in between.
+- [ ] **10.19** MiAZPeriodicity: set a periodicity and filter by it. Set, Unset
+      and Manage sit directly under the Tags entry.
+- [ ] **10.20** MiAZColumnVisibility: hide and show columns. The choice survives
       a restart.
-- [ ] **10.23** MiAZWSFont: change the workspace font. It applies immediately.
-- [ ] **10.24** MiAZCopy2Clipboard: copy a document reference and paste it
-      somewhere.
-- [ ] **10.25** MiAZExport2CSV, 2Dir, 2Text, 2Zip: export a selection with each.
+- [ ] **10.21** MiAZWSFont: change the workspace font. It applies immediately.
+- [ ] **10.22** MiAZExport2CSV, 2Dir, 2Text, 2Zip: export a selection with each.
       The output is written where promised and contains what was selected.
-- [ ] **10.26** MiAZImportFromScan: reachable from the Add menu and behaves like
+- [ ] **10.23** MiAZImportFromScan: reachable from the Add menu and behaves like
       MiAZAutoScan without a scanner.
 
 ## 11. Dialogs and messages

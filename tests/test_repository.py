@@ -5,6 +5,7 @@ Tests for MiAZ.backend.repository — validate() and init() — using tmp_path.
 Runs without a display (GObject only, no GTK/Adw).
 """
 
+import ast
 import json
 import os
 import shutil
@@ -15,8 +16,19 @@ gi.require_version('GLib', '2.0')
 from MiAZ.backend.repository import MiAZRepository
 from MiAZ.backend.util import MiAZUtil
 
-DEFAULTS = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-                        'data', 'resources', 'conf')
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+DEFAULTS = os.path.join(ROOT, 'data', 'resources', 'conf')
+ASSISTANT = os.path.join(ROOT, 'MiAZ', 'frontend', 'desktop', 'widgets', 'assistant.py')
+
+# The used file each filing field is seeded from, so the two halves of the
+# setup decision can be compared: what the assistant asks for, and what init()
+# fills in.
+FIELD_BY_FILE = {
+    'groups-used.json': 'Group',
+    'purposes-used.json': 'Purpose',
+    'senders-used.json': 'SentBy',
+    'recipients-used.json': 'SentTo',
+}
 
 
 class MockAppConfig:
@@ -41,6 +53,10 @@ class MockApp:
 
     def get_config_dict(self):
         return self._config
+
+    def get_env(self):
+        # init() reads the shipped default values from here.
+        return {'GPATH': {'CONF': DEFAULTS}}
 
 
 # ---------------------------------------------------------------------------
@@ -108,6 +124,80 @@ def test_init_creates_default_plugins_file(tmp_path):
         data = json.load(fh)
     assert isinstance(data, dict)
     assert len(data) > 0
+
+
+def test_init_enables_the_shipped_values(tmp_path):
+    """A new repository can file a document without walking four selectors:
+    groups, purposes, senders and recipients start with everything enabled."""
+    repo = MiAZRepository(MockApp())
+    repo.init(str(tmp_path))
+    for used_name, default_name in MiAZRepository.DEFAULT_VALUES:
+        used = json.load(open(tmp_path / '.conf' / used_name))
+        default = json.load(open(os.path.join(DEFAULTS, default_name)))
+        assert used == default, used_name
+        assert len(used) > 0, used_name
+
+
+def test_init_leaves_countries_to_the_user(tmp_path):
+    """The country list is the whole ISO set, so it is the one the assistant
+    still asks about. Enabling it whole would put 250 entries in every
+    dropdown."""
+    repo = MiAZRepository(MockApp())
+    repo.init(str(tmp_path))
+    assert not (tmp_path / '.conf' / 'countries-used.json').exists()
+
+
+def test_init_does_not_overwrite_enabled_values(tmp_path):
+    """init() runs again on a repository whose .conf was removed by hand. A
+    used list that survived must keep the user's choices."""
+    conf = tmp_path / '.conf'
+    conf.mkdir()
+    (conf / 'groups-used.json').write_text('{"FIN": "Finance"}')
+    repo = MiAZRepository(MockApp())
+    repo.init(str(tmp_path))
+    assert json.load(open(conf / 'groups-used.json')) == {'FIN': 'Finance'}
+
+
+def test_init_survives_missing_defaults(tmp_path, monkeypatch):
+    """A dev install with no data/resources/conf still gets a repository."""
+    app = MockApp()
+    monkeypatch.setattr(app, 'get_env',
+                        lambda: {'GPATH': {'CONF': str(tmp_path / 'nowhere')}})
+    repo = MiAZRepository(app)
+    repo.init(str(tmp_path))
+    assert repo.validate(str(tmp_path)) is True
+    assert not (tmp_path / '.conf' / 'groups-used.json').exists()
+
+
+def _assistant_names(list_name):
+    """The field names in one of the assistant's page lists, read from source.
+
+    Parsed rather than imported: this is the unit suite, which runs with no
+    display and no GTK.
+    """
+    tree = ast.parse(open(ASSISTANT, encoding='utf-8').read(), ASSISTANT)
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.Assign):
+            continue
+        if not any(isinstance(t, ast.Name) and t.id == list_name
+                   for t in node.targets):
+            continue
+        return [entry.elts[0].value for entry in node.value.elts]
+    raise AssertionError(f'{list_name} not found in {ASSISTANT}')
+
+
+def test_the_assistant_asks_about_what_init_does_not_seed():
+    """Two halves of one decision: a field is either chosen in the assistant or
+    enabled in full by init(), never both and never neither. Dropping a page
+    without seeding its values would leave a repository that can file nothing."""
+    asked = set(_assistant_names('PROPERTY_PAGES'))
+    seeded = {FIELD_BY_FILE[used_name]
+              for used_name, _default in MiAZRepository.DEFAULT_VALUES}
+    every_field = set(_assistant_names('SUMMARY_PROPERTIES'))
+
+    assert asked == {'Country'}
+    assert asked & seeded == set()
+    assert asked | seeded == every_field
 
 
 def test_init_records_source_path(tmp_path):
@@ -233,6 +323,23 @@ def test_switching_back_re_reads_a_repository_changed_meanwhile(tmp_path):
 
     switch_to(repo, 'repo_a')
     assert repo.get_config_store().get('Country').load_used() == {'PT': 'Portugal'}
+
+
+def test_the_seeded_values_are_all_available_after_load(tmp_path):
+    """used has to be a subset of available or the enabled values never reach a
+    dropdown. Both sides come from the same shipped files; this is what shows
+    they still line up once the config store has read them from disk."""
+    repo, _confs = make_repository(tmp_path, 'repo')
+    repo.init(str(tmp_path / 'repo'))
+    repo.load()
+    store = repo.get_config_store()
+    for name in ('Group', 'Purpose', 'SentBy', 'SentTo'):
+        config = store.get(name)
+        used, available = config.load_used(), config.load_available()
+        assert used, name
+        assert set(used) <= set(available), name
+    # The one field the setup assistant still asks about.
+    assert store.get('Country').load_used() == {}
 
 
 def test_load_disposes_the_previous_store(tmp_path):

@@ -32,8 +32,8 @@ plugin_info = {
         'Website':       'http://github.com/t00m/MiAZ',
         'Help':          'https://github.com/t00m/MiAZ/blob/main/README.md',
         'Version':       '0.1.0',
-        'Category':      'Artificial Intelligence',
-        'Subcategory':   'Document AI',
+        'Category':      'Documents',
+        'Subcategory':   'Text',
         'Dependencies':  'MiAZNotes',
     }
 
@@ -304,7 +304,7 @@ class MiAZOCRPlugin(MiAZExtension):
             else:
                 # Fallback for an older MiAZNotes without the public API: write
                 # the note and marshal the UI refresh to the main loop.
-                notes_ext.store.create(doc_id, {'Category': 'OCR'}, body)
+                notes_ext.store.create(doc_id, {'Category': 'Documents'}, body)
                 if hasattr(notes_ext, '_notes_changed'):
                     GLib.idle_add(notes_ext._notes_changed)
             return True

@@ -163,7 +163,7 @@ class MiAZWorkflow(GObject.GObject):
             repository=repo_id or _('configured'))
         if path and not os.path.isdir(path):
             body += '\n\n' + _('Its directory no longer exists:')
-            body += f'\n<tt>{path}</tt>'
+            body += f'\n<tt>{GLib.markup_escape_text(path)}</tt>'
             body += '\n\n' + _('It may have been renamed or moved, or it may be '
                                'on a drive that is not connected. MiAZ has not '
                                'changed anything. Reconnect it, or point the '
@@ -172,7 +172,7 @@ class MiAZWorkflow(GObject.GObject):
         else:
             detail = repository.get_error()
             if detail:
-                body += '\n\n' + str(detail)
+                body += '\n\n' + GLib.markup_escape_text(str(detail))
 
         parent = self.app.get_widget('window')
         self.srvdlg.show_error(title=title, body=body, parent=parent, width=480)

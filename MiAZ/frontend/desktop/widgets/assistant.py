@@ -13,42 +13,39 @@ from gi.repository import Gtk
 from MiAZ.backend.log import MiAZLog
 from MiAZ.backend.models import Country, Group, Purpose, SentBy, SentTo
 from MiAZ.frontend.desktop.widgets.configview import MiAZCountries
-from MiAZ.frontend.desktop.widgets.configview import MiAZGroups
-from MiAZ.frontend.desktop.widgets.configview import MiAZPurposes
-from MiAZ.frontend.desktop.widgets.configview import MiAZPeopleSentBy
-from MiAZ.frontend.desktop.widgets.configview import MiAZPeopleSentTo
 
 
 # Property pages, built only after the repository exists (their config objects
-# are created by MiAZRepository.load). The order mirrors the filename fields the
-# user is about to configure: country, group, purpose, sender, recipient.
+# are created by MiAZRepository.load). Countries are the only field asked about:
+# the list is the whole ISO set, so nobody wants all of it. Groups, purposes,
+# senders and recipients arrive enabled in full from MiAZRepository.init, since
+# those lists are short, curated, and impossible to choose between before a
+# single document has been filed.
 PROPERTY_PAGES = [
     ('Country', MiAZCountries, Country),
-    ('Group', MiAZGroups, Group),
-    ('Purpose', MiAZPurposes, Purpose),
-    ('SentBy', MiAZPeopleSentBy, SentBy),
-    ('SentTo', MiAZPeopleSentTo, SentTo),
+]
+
+# Every field the summary reports on, chosen here or not.
+SUMMARY_PROPERTIES = [
+    ('Country', Country),
+    ('Group', Group),
+    ('Purpose', Purpose),
+    ('SentBy', SentBy),
+    ('SentTo', SentTo),
 ]
 
 # Short, plain instructions shown above each property selector.
 PROPERTY_HELP = {
     'Country': _('Enable the countries you exchange documents with. '
                  'Move them from the left list to the right one.'),
-    'Group': _('Groups classify documents by area, for example banking, '
-               'health or work. Enable the ones you need; you can add your own.'),
-    'Purpose': _('The purpose says what a document is for, for example invoice, '
-                 'contract or report. Enable the ones you use; you can add more.'),
-    'SentBy': _('Senders are the people or organisations that send you '
-                'documents. Enable the ones you have; you can add your own.'),
-    'SentTo': _('Recipients are the people or organisations you send documents '
-                'to. Enable the ones you have; you can add your own.'),
 }
 
 
 class MiAZRepoAssistant(Adw.Window):
-    """Guided first-run setup: explain MiAZ, create a repository and enable the
-    properties (countries, groups, purposes, senders, recipients) needed to file
-    documents. Pages can be revisited with Back to amend any choice."""
+    """Guided first-run setup: explain MiAZ, create a repository and choose the
+    countries it files documents from. The other fields (groups, purposes,
+    senders, recipients) are enabled in full when the repository is created.
+    Pages can be revisited with Back to amend any choice."""
     __gtype_name__ = 'MiAZRepoAssistant'
 
     def __init__(self, app, **kwargs):
@@ -206,8 +203,9 @@ class MiAZRepoAssistant(Adw.Window):
         steps.set_max_width_chars(64)
         steps.set_markup(_(
             'This assistant will help you create your first repository and '
-            'enable the values you want for each field. You can go back at any '
-            'time to change your choices.'))
+            'choose the countries you exchange documents with. Groups, '
+            'purposes, senders and recipients start enabled, and everything '
+            'can be changed later in Settings.'))
         steps.add_css_class('dim-label')
         body.append(steps)
 
@@ -321,6 +319,15 @@ class MiAZRepoAssistant(Adw.Window):
         self._summary_group = Adw.PreferencesGroup()
         self._summary_group.set_hexpand(True)
         page.append(self._summary_group)
+
+        note = Gtk.Label()
+        note.set_xalign(0.0)
+        note.set_wrap(True)
+        note.add_css_class('dim-label')
+        note.set_text(_('Groups, purposes, senders and recipients were enabled '
+                        'for you. Add, remove or rename any of them in '
+                        'Settings, at any time.'))
+        page.append(note)
         return page
 
     # Navigation -----------------------------------------------------------
@@ -442,7 +449,8 @@ class MiAZRepoAssistant(Adw.Window):
         self.row_folder.set_sensitive(False)
         self.btn_folder.set_sensitive(False)
         self.lbl_created.set_markup(
-            _('Repository created at <tt>{path}</tt>').format(path=path))
+            _('Repository created at <tt>{path}</tt>').format(
+                path=GLib.markup_escape_text(path)))
         self.lbl_created.set_visible(True)
         self.log.info(f"Repository '{key}' ('{description}') created at '{path}'")
         return True
@@ -477,7 +485,7 @@ class MiAZRepoAssistant(Adw.Window):
         self._summary_group.add(row_repo)
         self._summary_rows.append(row_repo)
 
-        for name, _viewcls, model in PROPERTY_PAGES:
+        for name, model in SUMMARY_PROPERTIES:
             cfg = self.app.get_config(name)
             count = len(cfg.load_used()) if cfg is not None else 0
             row = Adw.ActionRow(title=_(model.__title_plural__))

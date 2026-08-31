@@ -17,7 +17,8 @@ from gi.repository import Pango
 
 from MiAZ.env import ENV
 from MiAZ.backend.log import MiAZLog
-from MiAZ.backend.util import humanize_value, UNKNOWN_DATE
+from MiAZ.backend.tasks import run_in_background
+from MiAZ.backend.util import date_is_valid, humanize_value, UNKNOWN_DATE
 from MiAZ.backend.models import MiAZItem, Group, Country, Purpose, Concept, SentBy, SentTo
 from MiAZ.frontend.desktop.services.dialogs import MiAZDialogAdd
 from MiAZ.frontend.desktop.services.factory import calendar_select_date
@@ -49,8 +50,9 @@ class MiAZRenameDialog(Gtk.Box):
         self.doc = None
         self.new_values = []
         self.dropdown = {}
-        self._last_date_str = None
-        self._last_date_valid = False
+        # Set while validate_date moves the calendar, so the calendar's
+        # answer is not written back into the field. See calendar_day_selected.
+        self._moving_calendar = False
         self._cfg_country = self.app.get_config('Country')
         self._cfg_group = self.app.get_config('Group')
         self._cfg_sentby = self.app.get_config('SentBy')
@@ -92,6 +94,8 @@ class MiAZRenameDialog(Gtk.Box):
         self.append(self.stack)
         self.plugin_tabs = []
         self.switcher = None
+        self._page_action = None
+        self._page_label = None
         self.__create_plugin_tabs()
 
         # The filename preview is the outcome of the dialog, so it sits under
@@ -153,6 +157,8 @@ class MiAZRenameDialog(Gtk.Box):
         self.lblFilenameNew.set_text(self.result)
         self.lblFilenameNew.set_selectable(True)
         self._on_changed_entry()
+        # The dialog opens showing what it thinks of the date it was given.
+        self.validate_date(self.entry_date.get_text())
         for _name, _result in self._each_tab('set_document', os.path.basename(doc)):
             pass
 
@@ -161,7 +167,7 @@ class MiAZRenameDialog(Gtk.Box):
         Purpose are advisory (warnings in the live preview) and do not block;
         Date, Country, Sent by, Concept and Sent to must be valid."""
         return (
-            self.validate_date(self.entry_date.get_text())
+            self.has_valid_date()
             and self._cfg_country.exists_used(self._dropdown_get_id(self.dpdCountry))
             and self._cfg_sentby.exists_used(self._dropdown_get_id(self.dpdSentBy))
             and len(self.util.valid_key(self.entry_concept.get_text().upper())) > 0
@@ -392,11 +398,6 @@ class MiAZRenameDialog(Gtk.Box):
         popover.set_child(self.calendar)
         popover.present()
         button.set_popover(popover)
-        self.btnDetectDate = self.factory.create_button(
-            icon_name='io.github.t00m.MiAZ-edit-find-symbolic',
-            tooltip=_('Read the date from the document: from the concept field '
-                      'first, then the PDF or image metadata'),
-            callback=self._on_detect_date)
         self.label_date = Gtk.Label()
         self.label_date.add_css_class('caption')
         self.entry_date = Gtk.Entry()
@@ -408,14 +409,21 @@ class MiAZRenameDialog(Gtk.Box):
         self.entry_date.set_alignment(1.0)
         boxValue.append(self.label_date)
         boxValue.append(self.entry_date)
-        boxValue.append(self.btnDetectDate)
         boxValue.append(button)
         self.entry_date.connect('changed', self._on_changed_entry)
+        # The date is judged when the user is done with the field, not while
+        # they are still filling it in.
+        date_focus = Gtk.EventControllerFocus()
+        date_focus.connect('leave', self._on_date_focus_leave)
+        self.entry_date.add_controller(date_focus)
+
+    def _on_date_focus_leave(self, *args):
+        self.validate_date(self.entry_date.get_text())
 
     def guess_date_if_empty(self, concept: str, filepath: str):
         return self.util.filename_guess_date(filepath, concept_hint=concept)
 
-    def _on_detect_date(self, *args):
+    def detect_date(self, *args):
         """Read the date again, on demand.
 
         set_data only reads it when the document arrives with an empty date
@@ -430,12 +438,123 @@ class MiAZRenameDialog(Gtk.Box):
         adate = self.util.filename_guess_date(
             filepath, concept_hint=self.entry_concept.get_text())
         self.entry_date.set_text(adate)
+        # MiAZ chose this date, the user did not type it, so there is nothing
+        # half finished to wait for.
+        self.validate_date(adate)
+
+    # Field detection (OCR/text extraction, no AI). 'Detect date' above needs
+    # none of this: filename_guess_date reads metadata directly and the
+    # concept hint, no pdftotext/tesseract involved. Country/SentBy/SentTo
+    # match the document's extracted text against this repository's used
+    # vocabulary (backend.extract.match_vocab); Group, Purpose and Concept
+    # are open vocabulary and are not guessed here; a wrong guess there would
+    # be harder to notice than a missing one.
+    _DETECTORS = {
+        'country': ('dpdCountry', '_cfg_country'),
+        'sentby':  ('dpdSentBy',  '_cfg_sentby'),
+        'sentto':  ('dpdSentTo',  '_cfg_sentto'),
+    }
+
+    def _busy_target(self):
+        """The dialog this widget sits in, when it has a busy indicator."""
+        dialog = self.app.get_widget('dialog-rename')
+        return dialog if hasattr(dialog, 'set_busy') else None
+
+    def _detection_message(self, fields):
+        """What the spinner says. One field is named; the whole set is not
+        listed, since it would not fit and 'all fields' is what it means."""
+        if len(fields) > 1:
+            return _('Detecting all fields')
+        titles = {
+            'country': _(Country.__title__),
+            'sentby': _(SentBy.__title__),
+            'sentto': _(SentTo.__title__),
+        }
+        return _('Detecting {field}').format(
+            field=titles.get(fields[0], fields[0]).lower())
+
+    def detect_country(self, *args):
+        self._extract_and_apply(['country'])
+
+    def detect_sentby(self, *args):
+        self._extract_and_apply(['sentby'])
+
+    def detect_sentto(self, *args):
+        self._extract_and_apply(['sentto'])
+
+    def detect_all(self, *args):
+        self.detect_date()
+        self._extract_and_apply(list(self._DETECTORS))
+
+    def _extract_and_apply(self, fields):
+        """Extract the document's text once (pdftotext, falling back to OCR)
+        and match it against the vocabulary of each field in `fields`."""
+        if self.doc is None:
+            return
+        from MiAZ.backend.extract import missing_tools
+        missing = missing_tools()
+        if missing:
+            self._notify_missing_tools(missing)
+            return
+        filepath = os.path.join(self.repository.docs, os.path.basename(self.doc))
+
+        def _run():
+            from MiAZ.backend.extract import extract, match_vocab
+            result = extract(filepath)
+            text = result.text if result.is_useful else ''
+            found = {}
+            for field_name in fields:
+                _dropdown_attr, cfg_attr = self._DETECTORS[field_name]
+                cfg = getattr(self, cfg_attr)
+                found[field_name] = match_vocab(text, cfg.load_used())
+            return found
+
+        dialog = self._busy_target()
+        if dialog is not None:
+            dialog.set_busy(self._detection_message(fields))
+
+        def _done(found):
+            if dialog is not None:
+                dialog.clear_busy()
+            any_found = False
+            for field_name, key in found.items():
+                if not key:
+                    continue
+                any_found = True
+                dropdown_attr, _cfg_attr = self._DETECTORS[field_name]
+                self._set_suggestion(getattr(self, dropdown_attr), key)
+            if any_found:
+                self._on_changed_entry()
+            else:
+                self.srvdlg.show_toast(_('No fields detected in the document text'))
+
+        def _failed(error):
+            # Cleared here too: a spinner left turning after a failure says the
+            # dialog is still working when it has given up.
+            if dialog is not None:
+                dialog.clear_busy()
+            self.log.error(f"Field detection failed: {error}")
+            self.srvdlg.show_toast(_('Field detection failed'))
+
+        run_in_background(_run, on_done=_done, on_error=_failed, name='rename-detect')
+
+    def _notify_missing_tools(self, missing):
+        title = _('OCR tools not installed')
+        body = _(
+            'Detecting fields needs the following command line tool(s), which '
+            'are not installed:\n\n<b>{tools}</b>\n\nInstall them and try '
+            'again:\n\n'
+            '• Fedora: <tt>sudo dnf install poppler-utils tesseract tesseract-langpack-eng</tt>\n'
+            '• Debian/Ubuntu: <tt>sudo apt install poppler-utils tesseract-ocr tesseract-ocr-eng</tt>\n'
+            '• Arch: <tt>sudo pacman -S poppler tesseract tesseract-data-eng</tt>'
+        ).format(tools=', '.join(missing))
+        self.srvdlg.show_error(title=title, body=body, parent=self.get_root())
 
     def calendar_day_selected(self, calendar):
         # validate_date moves the calendar to whatever parses, and the calendar
-        # answers by writing the date back here. While the user is typing in
-        # the field, that write would replace what they are half way through.
-        if self.entry_date.has_focus():
+        # answers by writing the date back here. Only a day the user picked
+        # in the popover may do that.
+        if self._moving_calendar:
             return
         adate = calendar.get_date()
         y = "%04d" % adate.get_year()
@@ -610,12 +729,65 @@ class MiAZRenameDialog(Gtk.Box):
             self.plugin_tabs.append((name, widget))
 
         if self.plugin_tabs:
-            self.switcher = Adw.ViewSwitcher()
-            self.switcher.set_stack(self.stack)
-            self.switcher.set_policy(Adw.ViewSwitcherPolicy.WIDE)
+            self.switcher = self._build_page_selector()
+
+    def _build_page_selector(self):
+        """A menu button naming the current page, in place of a row of tabs.
+
+        Adw.ViewSwitcher puts one tab in the header per page, so every plugin
+        that contributes a tab makes the header wider: Fields, Projects and
+        Periodicity already sat there side by side. A menu grows downwards
+        instead, so the dialog stays the same width whatever is installed.
+
+        Fields is first because the stack has it first; the rest follow in the
+        order the document-tabs registry gave them.
+        """
+        action = Gio.SimpleAction.new_stateful(
+            'rename-page', GLib.VariantType.new('s'),
+            GLib.Variant('s', self.stack.get_visible_child_name() or 'fields'))
+        action.connect('activate', self._on_page_chosen)
+        self.app.add_action(action)
+        self._page_action = action
+
+        menu = Gio.Menu.new()
+        page = None
+        for child in self.stack.get_pages():
+            menu.append(child.get_title(), f'app.rename-page::{child.get_name()}')
+            if page is None:
+                page = child
+
+        button = Gtk.MenuButton()
+        self._page_label = Gtk.Label()
+        content = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
+        content.append(self._page_label)
+        content.append(Gtk.Image.new_from_icon_name('pan-down-symbolic'))
+        button.set_child(content)
+        button.set_menu_model(menu)
+        button.add_css_class('flat')
+
+        # A plugin can change the page without the menu, so the label follows
+        # the stack rather than the click.
+        self.stack.connect('notify::visible-child', self._on_page_changed)
+        self._on_page_changed()
+        return button
+
+    def _on_page_chosen(self, action, param):
+        name = param.get_string()
+        self.stack.set_visible_child_name(name)
+        action.set_state(param)
+
+    def _on_page_changed(self, *args):
+        name = self.stack.get_visible_child_name()
+        if name is None:
+            return
+        page = self.stack.get_page(self.stack.get_visible_child())
+        self._page_label.set_text(page.get_title() or name)
+        if self._page_action is not None:
+            self._page_action.set_state(GLib.Variant('s', name))
 
     def get_switcher(self):
-        """The view switcher, or None when no plugin contributed a tab."""
+        """The header-bar page selector, or None when no plugin contributed a
+        tab: with only Fields there is nothing to switch between."""
         return self.switcher
 
     def _each_tab(self, method, *args):
@@ -704,7 +876,9 @@ class MiAZRenameDialog(Gtk.Box):
             self.lblFilenameNew.set_text(self.result)
             self.lblFilenameNew.set_tooltip_text(self.result)
 
-            v_date = self.validate_date(adate)
+            # Asks without showing: the label waits until the field is left.
+            # The Rename button still needs the answer.
+            v_date = date_is_valid(adate)
             v_group = self._cfg_group.exists_used(agroup)
             v_cty = self._cfg_country.exists_used(acountry)
             v_sentby = self._cfg_sentby.exists_used(asentby)
@@ -712,7 +886,6 @@ class MiAZRenameDialog(Gtk.Box):
             v_cnpt = len(aconcept) > 0
             v_sentto = self._cfg_sentto.exists_used(asentto)
 
-            self._success_or_error(self.rowDate, v_date)
             self._success_or_error(self.rowCountry, v_cty)
             self._success_or_warning(self.rowGroup, v_group)
             self._success_or_error(self.rowSentBy, v_sentby)
@@ -854,30 +1027,49 @@ class MiAZRenameDialog(Gtk.Box):
         self._concept_popover.popdown()
         return False
 
+    def has_valid_date(self) -> bool:
+        """Whether the date field holds a date, without saying so anywhere.
+
+        No label, no calendar, no row styling, so it is safe to ask on every
+        keystroke. Telling the user is validate_date's job.
+        """
+        return date_is_valid(self.entry_date.get_text())
+
     def validate_date(self, sdate: str) -> bool:
-        if sdate == self._last_date_str:
-            return self._last_date_valid
-        try:
+        """Show the verdict for sdate: the label, the calendar and the row.
+
+        Called when the user is done with the field, not while they are in it:
+        on focus leave, when apply refuses, and when MiAZ writes the date
+        itself. A date is typed one digit at a time and is not a date for most
+        of them, so judging every keystroke made the label flicker through
+        readings nobody asked for.
+        """
+        valid = date_is_valid(sdate)
+        if valid:
             adate = datetime.strptime(sdate, '%Y%m%d')
-            calendar_select_date(self.calendar, adate.year, adate.month, adate.day)
+            self._move_calendar_to(adate)
             if sdate == UNKNOWN_DATE:
                 # A real date, so nothing downstream needs a special case, but
                 # "Friday, December 31 9999" reads as a date somebody chose.
                 self.label_date.set_markup(f"<i>{_('date not known')}</i>")
             else:
                 self.label_date.set_markup(adate.strftime("%A, %B %d %Y"))
-            self._last_date_str = sdate
-            self._last_date_valid = True
-            return True
-        except Exception:
+        else:
             # Say the date is not one. The label used to keep the last date
             # that parsed, so typing 20261301 left a valid, unrelated date
             # sitting next to the field: it read as if MiAZ had accepted the
             # input and picked a date of its own.
             self.label_date.set_markup(f"<i>{_('not a date')}</i>")
-            self._last_date_str = sdate
-            self._last_date_valid = False
-            return False
+        self._success_or_error(self.rowDate, valid)
+        return valid
+
+    def _move_calendar_to(self, adate) -> None:
+        """Move the calendar without it answering back into the field."""
+        self._moving_calendar = True
+        try:
+            calendar_select_date(self.calendar, adate.year, adate.month, adate.day)
+        finally:
+            self._moving_calendar = False
 
     def get_filepath_source(self) -> str:
         return self.filepath

@@ -22,6 +22,7 @@ from MiAZ.frontend.desktop.services.dialogs import MiAZDialog
 from MiAZ.frontend.desktop.services.crash import MiAZCrashHandler
 from MiAZ.frontend.desktop.services.workflow import MiAZWorkflow
 from MiAZ.frontend.desktop.services.extlibs import MiAZExtLibs
+from MiAZ.frontend.desktop.services.progress import MiAZProgress
 from MiAZ.frontend.desktop.widgets.mainwindow import MiAZMainWindow
 
 from MiAZ.backend.util import MiAZUtil
@@ -69,6 +70,7 @@ class MiAZApp(Adw.Application):
         self.set_service('actions', MiAZActions(self))
         workflow = self.set_service('workflow', MiAZWorkflow(self))
         self.set_service('dr', MiAZDR(self))
+        self.set_service('progress', MiAZProgress(self))
         self.set_service('secrets', MiAZSecretStore())
         self.set_service('venv', MiAZVenv(self))
         self.set_service('extlibs', MiAZExtLibs(self))

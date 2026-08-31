@@ -7,6 +7,7 @@ import os
 from gettext import gettext as _
 
 from gi.repository import Gdk
+from gi.repository import GLib
 from gi.repository import Gtk
 from gi.repository import Pango
 
@@ -34,6 +35,9 @@ class MiAZColumnViewWorkspace(MiAZColumnView):
         # ~ self.factory_icon = Gtk.SignalListItemFactory()
         # ~ self.factory_icon.connect("setup", self._on_factory_setup_icon)
         # ~ self.factory_icon.connect("bind", self._on_factory_bind_icon)
+        self.factory_duplicate = Gtk.SignalListItemFactory()
+        self.factory_duplicate.connect("setup", self._on_factory_setup_duplicate)
+        self.factory_duplicate.connect("bind", self._on_factory_bind_duplicate)
         self.factory_icon_type = Gtk.SignalListItemFactory()
         self.factory_icon_type.connect("setup", self._on_factory_setup_icon_type)
         self.factory_icon_type.connect("bind", self._on_factory_bind_icon_type)
@@ -75,6 +79,10 @@ class MiAZColumnViewWorkspace(MiAZColumnView):
         self.column_flag = Gtk.ColumnViewColumn.new(_('Country'), self.factory_flag)
         self.column_country = Gtk.ColumnViewColumn.new(_('Country'), self.factory_country)
         self.column_extension = Gtk.ColumnViewColumn.new(_('Ext.'), self.factory_extension)
+        self.column_duplicate = Gtk.ColumnViewColumn.new(_('Copy'), self.factory_duplicate)
+        # Shown only once a scan has found something, so the column does not
+        # sit empty for everyone who never opens review mode.
+        self.column_duplicate.set_visible(False)
 
         self.cv.append_column(self.column_date)
         self.cv.append_column(self.column_country)
@@ -87,6 +95,7 @@ class MiAZColumnViewWorkspace(MiAZColumnView):
         self.cv.append_column(self.column_sentby)
         self.cv.append_column(self.column_sentto)
         self.cv.append_column(self.column_extension)
+        self.cv.append_column(self.column_duplicate)
         self.column_sentto.set_expand(False)
         self.column_sentby.set_expand(False)
         self.column_title.set_expand(False)
@@ -104,6 +113,7 @@ class MiAZColumnViewWorkspace(MiAZColumnView):
         self.prop_flag_sorter = Gtk.CustomSorter.new(sort_func=self._on_sort_string_func, user_data='country')
         self.prop_country_sorter = Gtk.CustomSorter.new(sort_func=self._on_sort_string_func, user_data='country')
         self.prop_extension_sorter = Gtk.CustomSorter.new(sort_func=self._on_sort_string_func, user_data='extension')
+        self.prop_duplicate_sorter = Gtk.CustomSorter.new(sort_func=self._on_sort_duplicate_func)
         self.column_group.set_sorter(self.prop_group_sorter)
         self.column_purpose.set_sorter(self.prop_purpose_sorter)
         self.column_sentby.set_sorter(self.prop_sentby_sorter)
@@ -113,6 +123,7 @@ class MiAZColumnViewWorkspace(MiAZColumnView):
         self.column_flag.set_sorter(self.prop_flag_sorter)
         self.column_country.set_sorter(self.prop_country_sorter)
         self.column_extension.set_sorter(self.prop_extension_sorter)
+        self.column_duplicate.set_sorter(self.prop_duplicate_sorter)
 
         # Default sorting by date
         self.cv.sort_by_column(self.column_date, Gtk.SortType.DESCENDING)
@@ -159,9 +170,10 @@ class MiAZColumnViewWorkspace(MiAZColumnView):
         label.set_ellipsize(True)
         label.set_property('ellipsize', Pango.EllipsizeMode.MIDDLE)
         if item.active:
-            label.set_markup(f"<b>{item.subtitle}</b>")
+            label.set_markup(f"<b>{GLib.markup_escape_text(item.subtitle)}</b>")
         else:
-            label.set_markup(f"<span color='red'><b>{item.subtitle}</b></span>")
+            label.set_markup(
+                f"<span color='red'><b>{GLib.markup_escape_text(item.subtitle)}</b></span>")
             label.add_css_class('destructive-action')
 
     def _on_factory_setup_active(self, factory, list_item):
@@ -201,6 +213,59 @@ class MiAZColumnViewWorkspace(MiAZColumnView):
         icon.set_from_gicon(gicon)
         icon.set_pixel_size(24)
 
+    def _duplicate_sort_key(self, item):
+        """(group, name), so a group is contiguous and ordered within itself.
+
+        Every member of a group shares the first name in it, which is what puts
+        the copies next to each other: comparing them is the whole point.
+        Documents with no twin take a key that sorts after every filename, so
+        ascending brings the ones worth acting on to the top.
+        """
+        index = self.app.get_service('index')
+        twins = index.duplicates_of(item.id) if index is not None else []
+        if not twins:
+            return ('\uffff', item.id)
+        return (min([item.id] + twins), item.id)
+
+    def _on_sort_duplicate_func(self, item1, item2, _data):
+        key1 = self._duplicate_sort_key(item1)
+        key2 = self._duplicate_sort_key(item2)
+        if key1 > key2:
+            return Gtk.Ordering.LARGER
+        if key1 < key2:
+            return Gtk.Ordering.SMALLER
+        return Gtk.Ordering.EQUAL
+
+    def _on_factory_setup_duplicate(self, factory, list_item):
+        box = ColIcon()
+        list_item.set_child(box)
+
+    def _on_factory_bind_duplicate(self, factory, list_item):
+        """Mark a document whose bytes match another one.
+
+        The tooltip names the twin and says whether it is filed already: which
+        copy to discard depends on that, so the icon alone is not actionable.
+        """
+        box = list_item.get_child()
+        icon = box.get_first_child()
+        item = list_item.get_item()
+        index = self.app.get_service('index')
+        twins = index.duplicates_of(item.id) if index is not None else []
+        if not twins:
+            icon.set_from_icon_name(None)
+            icon.set_tooltip_text(None)
+            return
+        icon.set_from_icon_name('edit-copy-symbolic')
+        icon.set_pixel_size(16)
+        lines = []
+        for twin in twins:
+            other = index.document(twin)
+            state = _('already filed') if other is not None and other.active \
+                else _('also pending')
+            lines.append(f'{twin} ({state})')
+        icon.set_tooltip_text(
+            _('Same content as:') + '\n' + '\n'.join(lines))
+
     def _on_factory_setup_country(self, factory, list_item):
         box = ColLabel()
         list_item.set_child(box)
@@ -210,8 +275,9 @@ class MiAZColumnViewWorkspace(MiAZColumnView):
         item = list_item.get_item()
         label = box.get_first_child()
         country = item.country_dsc
-        label.set_markup(country)
-        tooltip = f"{item.country}\n<b>{item.country_dsc}</b>"
+        label.set_text(country)
+        tooltip = (f"{GLib.markup_escape_text(item.country)}\n"
+                   f"<b>{GLib.markup_escape_text(item.country_dsc)}</b>")
         label.set_tooltip_markup(tooltip)
         label.set_ellipsize(True)
         label.set_property('ellipsize', Pango.EllipsizeMode.MIDDLE)
@@ -225,7 +291,7 @@ class MiAZColumnViewWorkspace(MiAZColumnView):
         item = list_item.get_item()
         label = box.get_first_child()
         extension = item.extension
-        label.set_markup(extension)
+        label.set_text(extension)
         label.set_tooltip_text(extension)
         label.set_ellipsize(True)
         label.set_property('ellipsize', Pango.EllipsizeMode.MIDDLE)
@@ -239,9 +305,10 @@ class MiAZColumnViewWorkspace(MiAZColumnView):
         item = list_item.get_item()
         label = box.get_first_child()
         group = item.group_dsc
-        label.set_markup(group)
+        label.set_text(group)
         label.set_ellipsize(True)
-        tooltip = f"{item.group}\n<b>{item.group_dsc}</b>"
+        tooltip = (f"{GLib.markup_escape_text(item.group)}\n"
+                   f"<b>{GLib.markup_escape_text(item.group_dsc)}</b>")
         label.set_tooltip_markup(tooltip)
         label.set_property('ellipsize', Pango.EllipsizeMode.MIDDLE)
 
@@ -254,7 +321,7 @@ class MiAZColumnViewWorkspace(MiAZColumnView):
         item = list_item.get_item()
         label = box.get_first_child()
         date = item.date_dsc
-        label.set_markup(date)
+        label.set_text(date)
         label.set_tooltip_text(date)
         label.set_ellipsize(True)
         label.set_property('ellipsize', Pango.EllipsizeMode.MIDDLE)
@@ -267,10 +334,11 @@ class MiAZColumnViewWorkspace(MiAZColumnView):
         box = list_item.get_child()
         item = list_item.get_item()
         label = box.get_first_child()
-        label.set_markup(item.sentby_dsc)
+        label.set_text(item.sentby_dsc)
         label.set_ellipsize(True)
         label.set_property('ellipsize', Pango.EllipsizeMode.MIDDLE)
-        tooltip = f"{item.sentby_id}\n<b>{item.sentby_dsc}</b>"
+        tooltip = (f"{GLib.markup_escape_text(item.sentby_id)}\n"
+                   f"<b>{GLib.markup_escape_text(item.sentby_dsc)}</b>")
         label.set_tooltip_markup(tooltip)
 
     def _on_factory_setup_sentto(self, factory, list_item):
@@ -281,10 +349,11 @@ class MiAZColumnViewWorkspace(MiAZColumnView):
         box = list_item.get_child()
         item = list_item.get_item()
         label = box.get_first_child()
-        label.set_markup(item.sentto_dsc)
+        label.set_text(item.sentto_dsc)
         label.set_ellipsize(True)
         label.set_property('ellipsize', Pango.EllipsizeMode.MIDDLE)
-        tooltip = f"<big>{item.sentto_id}</big>\n<b>{item.sentto_dsc}</b>"
+        tooltip = (f"<big>{GLib.markup_escape_text(item.sentto_id)}</big>\n"
+                   f"<b>{GLib.markup_escape_text(item.sentto_dsc)}</b>")
         label.set_tooltip_markup(tooltip)
 
     def _on_factory_setup_purpose(self, factory, list_item):
@@ -296,8 +365,9 @@ class MiAZColumnViewWorkspace(MiAZColumnView):
         item = list_item.get_item()
         label = box.get_first_child()
         purpose = item.purpose_dsc
-        label.set_markup(purpose)
-        tooltip = f"{item.purpose}\n<b>{item.purpose_dsc}</b>"
+        label.set_text(purpose)
+        tooltip = (f"{GLib.markup_escape_text(item.purpose)}\n"
+                   f"<b>{GLib.markup_escape_text(item.purpose_dsc)}</b>")
         label.set_tooltip_markup(tooltip)
         label.set_ellipsize(True)
         label.set_property('ellipsize', Pango.EllipsizeMode.MIDDLE)
@@ -314,7 +384,8 @@ class MiAZColumnViewWorkspace(MiAZColumnView):
         code = item.country
         icon.set_from_icon_name(code)
         icon.set_pixel_size(24)
-        tooltip = f"<big>{item.country}</big>\n<b>{item.country_dsc}</b>"
+        tooltip = (f"<big>{GLib.markup_escape_text(item.country)}</big>\n"
+                   f"<b>{GLib.markup_escape_text(item.country_dsc)}</b>")
         icon.set_tooltip_markup(tooltip)
 
 
@@ -353,7 +424,8 @@ class MiAZColumnViewCountry(MiAZColumnViewSelector):
             flag = os.path.join(ENV['GPATH']['FLAGS'], "__.svg")
         icon.set_from_file(flag)
         icon.set_pixel_size(36)
-        tooltip = f"<big>{country.id}</big>\n<b>{country.title}</b>"
+        tooltip = (f"<big>{GLib.markup_escape_text(country.id)}</big>\n"
+                   f"<b>{GLib.markup_escape_text(country.title)}</b>")
         icon.set_tooltip_markup(tooltip)
 
 
@@ -416,11 +488,12 @@ class MiAZColumnViewRepo(MiAZColumnViewSelector):
         box = list_item.get_child()
         item = list_item.get_item()
         label = box.get_first_child()
-        label.set_markup(item.title)
+        label.set_text(item.title)
         label.set_ellipsize(False)
         label.set_property('ellipsize', Pango.EllipsizeMode.NONE)
         label.set_xalign(0.0)
-        tooltip = f"<big>{item.id}</big>\n<b>{item.title}</b>"
+        tooltip = (f"<big>{GLib.markup_escape_text(item.id)}</big>\n"
+                   f"<b>{GLib.markup_escape_text(item.title)}</b>")
         label.set_tooltip_markup(tooltip)
 
     def _on_factory_setup_description(self, factory, list_item):
@@ -431,7 +504,7 @@ class MiAZColumnViewRepo(MiAZColumnViewSelector):
         box = list_item.get_child()
         item = list_item.get_item()
         label = box.get_first_child()
-        label.set_markup(item.description or '')
+        label.set_text(item.description or '')
         label.set_xalign(0.0)
 
 
@@ -586,8 +659,10 @@ class MiAZColumnViewSuggestion(MiAZColumnViewSelector):
         label = box.get_first_child()
         value = getattr(item, prop, '') or ''
         key = getattr(item, prop_id, '') or ''
-        label.set_markup(value)
+        label.set_text(value)
         label.set_xalign(0.0)
         label.set_ellipsize(True)
         label.set_property('ellipsize', Pango.EllipsizeMode.END)
-        label.set_tooltip_markup(f"<big>{key}</big>\n<b>{value}</b>")
+        label.set_tooltip_markup(
+            f"<big>{GLib.markup_escape_text(key)}</big>\n"
+            f"<b>{GLib.markup_escape_text(value)}</b>")

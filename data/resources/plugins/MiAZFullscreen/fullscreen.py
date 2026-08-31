@@ -25,8 +25,8 @@ plugin_info = {
         'Website':       'http://github.com/t00m/MiAZ',
         'Help':          'https://github.com/t00m/MiAZ/blob/main/README.md',
         'Version':       '0.1.26',
-        'Category':      'Customisation and Personalisation',
-        'Subcategory':   'User Interface'
+        'Category':      'Interface',
+        'Subcategory':   'View'
     }
 
 BUTTON_WIDGET_ID = 'headerbar-togglebutton-fullscreen'

@@ -52,8 +52,8 @@ plugin_info = {
     'Website':      'https://github.com/t00m/MiAZ',
     'Help':         'https://github.com/t00m/MiAZ/blob/main/README.md',
     'Version':      '0.2.0',
-    'Category':     'Analytics and Reporting',
-    'Subcategory':  'Custom Reports',
+    'Category':     'Repository',
+    'Subcategory':  'Statistics',
 }
 
 PLUGIN_DIR_NAME = 'MiAZInsights'

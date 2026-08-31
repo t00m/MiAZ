@@ -161,6 +161,27 @@ def _as_unambiguous_date(first: int, second: int, year: int) -> str:
     return day_first or month_first
 
 
+def date_is_valid(value: str) -> bool:
+    """True when value is a date in the eight-digit form a filename carries.
+
+    strptime('%Y%m%d') is not that test. It takes one or two digits for month
+    and for day, so '202613' reads as 3 January 2026 and '2026131' as 31
+    January 2026. Typing a date passes through both, so the rename dialog kept
+    accepting a half-typed one and writing the completed date back into the
+    field the user was still in.
+
+    The check is pure: no widget, no calendar, no message. Callers that have to
+    show the verdict do the showing themselves.
+    """
+    if len(value) != 8 or not value.isdigit():
+        return False
+    try:
+        datetime.strptime(value, '%Y%m%d')
+        return True
+    except ValueError:
+        return False
+
+
 def check_zip_members(names, install_dir: str) -> None:
     """Raise RuntimeError if any member would be written outside install_dir.
 
@@ -491,11 +512,10 @@ class MiAZUtil(GObject.GObject):
         filename_normalize keeps the original filename.
 
         Metadata comes first because a filename is not a reliable place to find
-        a date. Invoice numbers, policy numbers and national IDs are digit runs
-        that pass every shape check a date parser can apply: RG151119905140 is a
-        1&1 invoice number, and 15111990 inside it reads as a perfectly valid
-        15 November 1990. Metadata cannot fail that way, because a field named
-        CreationDate holds a date or holds nothing.
+        a date. Invoice and policy numbers are digit runs that pass every
+        shape check a date parser can apply: 24071988 inside RG240719880042
+        reads as a perfectly valid 24 July 1988. Metadata cannot fail that way,
+        because a field named CreationDate holds a date or holds nothing.
 
         Measured against 1257 documents whose dates their owner had chosen by
         hand, the metadata date agreed 46% of the time and the filename date
@@ -762,20 +782,14 @@ class MiAZUtil(GObject.GObject):
             self.log.error("Source and Target are the same. Skip rename")
 
     def filename_date_human(self, value: str = '') -> str:
-        try:
-            adate = datetime.strptime(value, "%Y%m%d")
-            date_dsc = adate.strftime("%A, %B %d %Y")
-        except ValueError:
-            date_dsc = ''
-        return date_dsc
+        if not date_is_valid(value):
+            return ''
+        return datetime.strptime(value, "%Y%m%d").strftime("%A, %B %d %Y")
 
-    def filename_date_human_simple(self, value: str = '') -> str:
-        try:
-            adate = datetime.strptime(value, "%Y%m%d")
-            date_dsc = adate.strftime("%d/%m/%Y")
-        except ValueError:
-            date_dsc = None
-        return date_dsc
+    def filename_date_human_simple(self, value: str = ''):
+        if not date_is_valid(value):
+            return None
+        return datetime.strptime(value, "%Y%m%d").strftime("%d/%m/%Y")
 
     def filename_display(self, filepath):
         if sys.platform in ['linux', 'linux2']:

@@ -7,6 +7,7 @@
 # Description: Per-document notes window for MiAZNotes
 """
 
+import os
 from gettext import gettext as _
 from typing import Callable, List, Optional
 
@@ -24,20 +25,32 @@ class NotesListView(Adw.Window):
     def __init__(self, app, store, backup, document_id: str, log,
                  select_note: Optional[str] = None,
                  category_store=None,
-                 on_changed: Optional[Callable[[], None]] = None):
+                 on_changed: Optional[Callable[[], None]] = None,
+                 start_new: bool = False,
+                 document_ids: Optional[List[str]] = None):
         super().__init__()
         self.app = app
         self.store = store
         self.backup = backup
         self.category_store = category_store
         self.document_id = document_id
+        # Every document a new note is filed against. It is the one document
+        # for the usual case; the workspace passes the whole selection when
+        # the user asks for a note on several documents at once. The list
+        # below still shows the notes of document_id: a note belongs to one
+        # document, and the same text saved for five of them is five notes.
+        self.document_ids = list(document_ids) if document_ids else [document_id]
         self.log = log
         self._on_changed = on_changed
         self._draft_path = None
         self._original_header = None
         self._original_body = None
 
-        self.set_title(_('Notes - {document}').format(document=document_id))
+        if len(self.document_ids) > 1:
+            self.set_title(_('Notes - {n} documents').format(
+                n=len(self.document_ids)))
+        else:
+            self.set_title(_('Notes - {document}').format(document=document_id))
         self.set_default_size(1000, 640)
         parent = self.app.get_widget('window')
         if parent is not None:
@@ -49,6 +62,9 @@ class NotesListView(Adw.Window):
 
         if select_note:
             self._select_note_by_path(select_note)
+
+        if start_new:
+            self._on_new_clicked(None)
 
     # UI construction
     def _build_ui(self):
@@ -265,7 +281,13 @@ class NotesListView(Adw.Window):
         body = self.editor.body()
         if self._draft_path is None:
             note_path = self.store.create(self.document_id, header, body)
-            self._show_toast(_('Note created'))
+            for document_id in self.document_ids[1:]:
+                self.store.create(document_id, header, body)
+            if len(self.document_ids) > 1:
+                self._show_toast(_('Note created for {n} documents').format(
+                    n=len(self.document_ids)))
+            else:
+                self._show_toast(_('Note created'))
         else:
             note_path = self._draft_path
             self.store.update(note_path, header, body)
@@ -329,9 +351,7 @@ class NotesListView(Adw.Window):
             return
         if gfile is None:
             return
-        path = gfile.get_path()
-        count = self.backup.backup(path)
-        self._show_toast(_('Backed up {count} notes').format(count=count))
+        self._run_backup(gfile.get_path())
 
     def _on_restore_clicked(self, *_args):
         dialog = Gtk.FileDialog.new()
@@ -370,14 +390,44 @@ class NotesListView(Adw.Window):
         def _on_response(_dialog, response):
             if response == 'cancel':
                 return
-            merge = response == 'merge'
-            count = self.backup.restore(zip_path, merge=merge)
-            self._show_toast(_('Restored {count} notes').format(count=count))
-            self.refresh()
-            self._notify_changed()
+            self._run_restore(zip_path, merge=response == 'merge')
 
         dialog.connect('response', _on_response)
         dialog.present(self)
+
+    def _run_backup(self, path):
+        """Zip the notes behind the shared progress dialog.
+
+        The UI is held back while it runs and the outcome stays on screen until
+        the user closes it: services/progress.py does both.
+        """
+        backup = self.backup
+
+        def work(report):
+            count = backup.backup(path, progress=report)
+            return _('{count} notes backed up to {name}.').format(
+                count=count, name=os.path.basename(path))
+
+        self._run(work, _('Backing up notes'))
+
+    def _run_restore(self, zip_path, merge):
+        backup = self.backup
+
+        def work(report):
+            count = backup.restore(zip_path, merge=merge, progress=report)
+            return _('{count} notes restored from {name}.').format(
+                count=count, name=os.path.basename(zip_path))
+
+        def done(_ok, _result):
+            self.refresh()
+            self._notify_changed()
+
+        self._run(work, _('Restoring notes'), on_close=done)
+
+    def _run(self, work, title, on_close=None):
+        progress = self.app.get_service('progress')
+        if not progress.run(work, title=title, parent=self, on_close=on_close):
+            self._show_toast(_('Another operation is already running'))
 
     def _show_toast(self, message: str):
         srvdlg = self.app.get_service('dialogs')

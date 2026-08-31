@@ -1,31 +1,87 @@
+<div align="center">
+
+<picture>
+  <!-- A dark variant can be added here as a second <source> without touching
+       anything else: put it at data/docs/brand/io.github.t00m.MiAZ-brand-dark.png
+       and add a media="(prefers-color-scheme: dark)" source above this one. -->
+  <source media="(prefers-color-scheme: light)" srcset="data/docs/brand/io.github.t00m.MiAZ-brand.png">
+  <img src="data/docs/brand/io.github.t00m.MiAZ-brand.png" alt="MiAZ" width="128" height="128">
+</picture>
+
 # MiAZ Personal Document Organizer
 
-![MiAZ brand](data/docs/brand/io.github.t00m.MiAZ-brand.png)
+**"Consistent names. Effortless order."**
+
+A Linux desktop application that files personal paperwork under a strict seven-field.
+
+<p>
+  <a href="https://github.com/t00m/MiAZ/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/t00m/MiAZ/actions/workflows/ci.yml/badge.svg"></a>
+  <a href="https://github.com/t00m/MiAZ/releases/latest"><img alt="Latest release" src="https://img.shields.io/github/v/release/t00m/MiAZ?label=release&color=brightgreen"></a>
+  <a href="data/docs/LICENSE"><img alt="License GPL v3" src="https://img.shields.io/badge/license-GPL%20v3-blue"></a>
+</p>
+<p>
+  <img alt="Python 3.9+" src="https://img.shields.io/badge/python-3.9%2B-3776AB?logo=python&logoColor=white">
+  <img alt="GTK 4.10+" src="https://img.shields.io/badge/GTK-4.10%2B-4A90D9?logo=gtk&logoColor=white">
+  <img alt="Libadwaita 1.7+" src="https://img.shields.io/badge/libadwaita-1.7%2B-4A86CF">
+  <img alt="Linux: deb, rpm, AppImage" src="https://img.shields.io/badge/Linux-deb%20%7C%20rpm%20%7C%20AppImage-FCC624?logo=linux&logoColor=black">
+</p>
+
+</div>
+
+> [!WARNING]
+> Any file you drop into a MiAZ repository directory is **renamed automatically** to
+> the seven-field shape. Point MiAZ at a copy of your documents until you trust it,
+> and keep a backup either way.
 
 ## About
 
-MiAZ is a personal document organiser for the GNOME desktop. It enforces a strict 7-field filename convention so every document you store is always findable by date, country, group, sender, purpose, concept, and recipient.
+MiAZ is a **personal document organiser** for Linux desktops.
 
 Keeping family records, school files, invoices, and administrative paperwork organised is a constant challenge, especially when documents arrive from many different countries and institutions.
+
+MiAZ solves this with a simple, consistent file-naming convention. Scan a letter, download an email attachment, drop it into your MiAZ repository, and the app guides you through naming it correctly with minimal effort.
+
+It enforces a strict 7-field filename convention so every document you store is always findable by date, country, group, sender, purpose, concept, and recipient.
 
 There is no database: the directory itself is the database. All metadata lives in the filename, which means
 your files are fully portable and readable in any file manager.
 
-MiAZ solves this with a simple, consistent file-naming convention of seven fields. Scan a letter, download an email attachment, drop it into your MiAZ repository, and the app guides you through naming it correctly with minimal effort.
+
 
 ## Features
 
-- **No database**: the directory is the database; files are always portable
-- **Multiple repositories**: keep work, home, and archive documents separate, and switch between them without restarting
-- **Workspace**: fast, filterable list that handles thousands of documents
-- **Sidebar filters**: per-field dropdowns for date, country, group, sender, purpose, and recipient
+Out of the box core capabilities:
+
+**The repository**
+
+- **No database**: the directory is the database. All metadata lives in the filename, so your files stay readable in any file manager and portable to any machine
+- **Multiple repositories**: keep work, home and archive documents apart, and switch between them without restarting. Vocabularies and enabled plugins belong to the repository, not to the app
+
+**Getting documents in**
+
+- **Drag and drop**: drop files from the file manager onto the document list. Drop a folder and MiAZ asks whether its subfolders count, telling you how many files each answer imports
+- **Add menu**: pick one file or many (`Ctrl+Insert`), or a whole directory (`Shift+Insert`), which asks the same question about subfolders. Either way the document is copied in, never moved, and normalised to the seven-field shape. A big import runs in the background, with one refresh at the end instead of one per file
+
+**Filing them**
+
 - **Review queue**: documents that do not match the convention yet are listed apart, so filing is a task you can finish
-- **Automatic date detection**: reads the date out of the document instead of guessing
-- **Single and mass renaming**: fix one document, or set a field across a whole selection
-- **Projects**: group related documents under a name
-- **Notes**: keep Markdown notes attached to a document
-- **Command line**: search the repository without a display
-- **Plugins**: 19 built-in, plus your own
+- **Read from the document**: the date comes out of the file's own metadata, and country, sender and recipient out of its text, with `pdftotext` or OCR when there is no text layer. Values are matched against vocabulary the repository already has, so a guess is never something invented
+- **Single and mass renaming**: fix one document, or set any of the seven fields across a whole selection at once
+- **Duplicate detection**: review marks a document whose bytes match another one, so a copy already filed can be discarded without opening it
+
+**Finding them again**
+
+- **Workspace**: a filterable list that stays fast as the repository grows
+- **Sidebar filters**: one dropdown per field, for date, country, group, sender, purpose and recipient, with the active ones shown as chips you can click off
+- **Search**: type in the search box and the list narrows as you type
+
+**Keeping them**
+
+- **Backup and restore**: back up the documents, the configuration or the whole repository, and restore any of them, from the application settings
+
+
+Beyond that, [several plugins](#plugins) ship with the app, and you can write your own.
+
 
 ## File-naming convention
 
@@ -47,25 +103,6 @@ Every document managed by MiAZ follows this seven-field scheme:
 
 Fields are separated by hyphens. The date-first order means files sort chronologically in any file browser.
 
-## How filing works
-
-Drop a file into the repository directory. MiAZ notices it and renames it to the seven-field shape straight away, leaving every field empty except the concept, which keeps the original filename. The document then shows up under **Review**, because a name with empty fields is not a finished name.
-
-Open it with `Ctrl+BackSpace` and fill in the fields. The dialog refuses to enable **Rename** until date, country, sender, concept and recipient make a valid name. Group and purpose are advisory: it warns, it does not block.
-
-### Where the date comes from
-
-Typing a date for every document is the slowest part of filing, so MiAZ reads one where it can. It tries two sources, in order:
-
-1. **The document's own metadata.** PDF `CreationDate` and the XMP packet, EXIF `DateTimeOriginal` for photos, and the creation date inside Word, Excel and OpenDocument files. No extra Python package is needed for any of this.
-2. **The filename**, which is where the original name is kept after import. Only dates whose field order the text settles by itself are read: `2024-03-15` and `15_03_2024` are read, `03_04_2024` is not, because it is 3 April in most of the world and 4 March in the United States and nothing in the name says which.
-
-When neither source has an answer, the date is set to **`99991231`**. That is deliberate. It is a real date, so nothing downstream needs a special case, and it sorts last, so documents whose date is unknown group at the end of the workspace instead of hiding among documents genuinely filed that day.
-
-The file modification time is never used. A bank statement downloaded today has today's mtime, which says when you downloaded it, not when it was written.
-
-The date row in the rename dialog has a button to read the date again on demand, which is useful after correcting the concept, or for a document already filed under a wrong date.
-
 ### Renaming many at once
 
 Select two or more documents and the rename button becomes a menu with seven functions: date, country, group, purpose, concept, sent by and sent to. Each one previews every new name before it touches the disk.
@@ -74,13 +111,44 @@ The date function detects a date per file by default, and says how many it manag
 
 ## Screenshots
 
-![Workspace](data/docs/screenshots/MiAZ-Worskpace.png)
+<div align="center">
+<picture>
+  <source media="(prefers-color-scheme: light)" srcset="data/docs/screenshots/MiAZ-Worskpace.png">
+  <img src="data/docs/screenshots/MiAZ-Worskpace.png" alt="The workspace: every document, filterable by any field" width="860">
+</picture>
+<br><em>The workspace. Every document, filterable by any of the seven fields.</em>
+</div>
 
-![App Settings](data/docs/screenshots/MiAZ-Settings.png)
+<details>
+<summary><b>More screenshots</b> (filters, plugins, settings)</summary>
+<br>
+<div align="center">
 
-![Repository settings](data/docs/screenshots/MiAZ-repository-settings.png)
+<picture>
+  <img src="data/docs/screenshots/MiAZ-Workspace-filters.png" alt="Sidebar filters, one dropdown per field" width="860">
+</picture>
+<br><em>Sidebar filters: one dropdown per field.</em>
+<br><br>
 
-![Plugins](data/docs/screenshots/MiAZ-repository-plugins.png)
+<picture>
+  <img src="data/docs/screenshots/MiAZ-repository-plugins.png" alt="Plugins are enabled per repository" width="860">
+</picture>
+<br><em>Plugins are enabled per repository, not globally.</em>
+<br><br>
+
+<picture>
+  <img src="data/docs/screenshots/MiAZ-repository-settings.png" alt="Repository settings" width="860">
+</picture>
+<br><em>Repository settings: vocabularies for each field.</em>
+<br><br>
+
+<picture>
+  <img src="data/docs/screenshots/MiAZ-Settings.png" alt="Application settings" width="860">
+</picture>
+<br><em>Application settings.</em>
+
+</div>
+</details>
 
 ## Installation
 
@@ -95,24 +163,8 @@ Download the `.deb` package from the [latest release](https://github.com/t00m/Mi
 sudo apt install ./miaz_<version>_all.deb
 ```
 
-The leading `./` matters. It tells `apt` the argument is a local file, not a package name in the repositories. `apt` then pulls the runtime dependencies from the distribution repositories:
+`apt` then pulls the runtime dependencies from the distribution repositories:
 
-```
-Installing:
-  miaz
-
-Installing dependencies:
-  gir1.2-javascriptcoregtk-6.0  gir1.2-webkit-6.0  libpeas-2-common  python3-jaraco.classes  python3-keyring
-  gir1.2-peas-2                 libpeas-2-0        python3-gi-cairo   python3-jeepney         python3-secretstorage
-
-Continue? [Y/n]
-```
-
-`dpkg -i` does not resolve dependencies, it installs only the package and reports the rest as missing. If you already ran `sudo dpkg -i ./miaz_<version>_all.deb`, fix the missing dependencies with:
-
-```bash
-sudo apt-get install -f
-```
 
 ### RPM (Fedora, RHEL, openSUSE)
 
@@ -127,7 +179,11 @@ sudo dnf install ./miaz-*.rpm
 
 ### Flatpak (deprecated)
 
-Flatpak is no longer provided. The sandbox cannot reach the host command line tools that MiAZ shells out to (`ocrmypdf` for OCR, `scanimage` for the scanner), so those features do not work in a Flatpak build. Use the deb, rpm or AppImage package instead.
+> [!WARNING]
+> No Flatpak is published. The sandbox cannot reach the host command line tools MiAZ
+> shells out to (`ocrmypdf` for OCR, `scanimage` for the scanner), so those features do
+> not work in a Flatpak build. Use the deb, rpm or AppImage package instead. The
+> manifest and build scripts are kept in the tree as a legacy option.
 
 ### AppImage
 
@@ -145,7 +201,7 @@ chmod +x ./miaz-*.AppImage
 
 ### From source
 
-Requirements: Python ≥ 3.9, GTK ≥ 4.10, Libadwaita ≥ 1.6, PyGObject ≥ 3.50, meson, ninja.
+Requirements: Python ≥ 3.9, GTK ≥ 4.10, Libadwaita ≥ 1.7, PyGObject ≥ 3.50, meson, ninja.
 
 ```bash
 git clone https://github.com/t00m/MiAZ
@@ -159,109 +215,86 @@ To uninstall:
 ./scripts/uninstall/uninstall_user.sh
 ```
 
-## Command line
-
-Searching works without a display, so it runs over SSH and in scripts.
-
-```bash
-miaz repos                                  # repositories, current one marked
-miaz search invoice                         # search the current repository
-miaz search invoice --repo Work --long      # another one, as a table
-miaz search --since last-6-months --json    # structured output
-```
-
-Results are one filename per line, so they pipe straight into other tools:
-
-```bash
-miaz search --since this-month | xargs -d '\n' ls -lh
-miaz search --json | jq -r '.[].concept'
-```
-
-Filters map onto the same fields the workspace sidebar uses: `--country`,
-`--group`, `--sentby`, `--purpose`, `--sentto`, `--concept`, `--since` or
-`--from` and `--to`, `--pending`, `--all` and `--limit`.
-
-Values for `--since`: `this-month`, `past-month`, `last-3-months`,
-`last-6-months`, `last-12-months`, `2-years`, `3-years`, `5-years`, `10-years`,
-`future`.
-
-Exit codes: 0 results, 1 no results, 2 wrong arguments, 3 repository problem.
-Set `MIAZ_DEBUG=1` to see the usual logging.
-
-`--repo` reads another repository without changing which one the window opens
-next time.
-
-Running `miaz` with no arguments opens the window as always.
-
-## Keyboard shortcuts
-
-| Shortcut | Action |
-|---|---|
-| `Ctrl+BackSpace` | Rename the selected document |
-| `Ctrl+Delete` | Delete the selected documents |
-| `Return` | View the selected document |
-| `Ctrl+Insert` | Import documents |
-| `Ctrl+s` | Settings |
-| `Ctrl+?` | Keyboard shortcuts |
-| `Ctrl+b` | About |
-| `Ctrl+q` | Quit |
-| `F1` | Help |
-
 ## Plugins
 
-Plugins are enabled per repository, from the repository settings. Switching repository unloads the plugins of the one you leave and loads the ones the new one enables. Nineteen ship with the app:
+Plugins are not part of the core: nothing below is needed to file a document. They
+are enabled **per repository**, from the repository settings, so a work repository
+can scan and export while a personal one stays plain. Switching repository unloads
+the plugins of the one you leave and loads the ones the new one enables.
+
+Seventeen ship with the app.
+
+**More ways in**
 
 | Plugin | What it does |
 |---|---|
-| MiAZAddFromDir | Add documents from a directory |
-| MiAZImportFromScan | Import a document from a scanner |
+| MiAZImportFromZip | Add the documents inside a ZIP file |
+| MiAZImportFromScan | Scan a document and import it |
 | MiAZAutoScan | Scan in the background and import straight into the repository |
-| MiAZImportFromZip | Import documents from a ZIP file |
-| MiAZExport2CSV | Export to CSV |
-| MiAZExport2Dir | Export to a directory |
-| MiAZExport2Text | Export to a text editor |
-| MiAZExport2Zip | Compress documents into a ZIP file |
-| MiAZCopy2Clipboard | Copy to clipboard |
-| MiAZProjectMgt | Group documents into projects |
-| MiAZPeriodicity | Set how often a document is expected |
-| MiAZNotes | Markdown notes attached to a document |
-| MiAZInsights | Charts and a world map over your documents |
-| MiAZOCR | Extract text from PDFs with OCR and save it as a note |
-| MiAZAIAssistant | Suggest filename fields from the document content |
+
+**Ways out**
+
+| Plugin | What it does |
+|---|---|
+| MiAZExport2Dir | Copy the selected documents to a directory |
+| MiAZExport2Zip | Compress the selection into a ZIP file |
+| MiAZExport2CSV | Write the selection's fields as CSV, for a spreadsheet |
+| MiAZExport2Text | Open the selection in a text editor |
+
+**More than a filename**
+
+| Plugin | What it does |
+|---|---|
+| MiAZProjectMgt | Group related documents under a project, and filter the workspace by it. The assignment lives in `projects.json`, never in the filename |
+| MiAZNotes | Markdown notes attached to a document, edited and previewed in the app |
+| MiAZPeriodicity | Record how often a document is expected: monthly, yearly, on demand |
+
+**Reading the document for you**
+
+| Plugin | What it does |
+|---|---|
+| MiAZOCR | Run OCR over a PDF and keep the text as a note, so a scan becomes searchable |
+| MiAZAIAssistant | Ask an AI provider to suggest the filename fields. Your own key, your own choice of provider |
+
+**Looking at the whole collection**
+
+| Plugin | What it does |
+|---|---|
+| MiAZInsights | Totals, a per-year trend, a month-by-year activity heatmap and a world map of where your paperwork comes from |
+
+**The window itself**
+
+| Plugin | What it does |
+|---|---|
 | MiAZColumnVisibility | Show and hide workspace columns |
-| MiAZWSFont | Change the workspace font |
+| MiAZWSFont | Change the workspace font and size |
 | MiAZFullscreen | Toggle fullscreen |
-| HelloWorld | Example plugin to start from |
 
-Some plugins need Python packages that MiAZ does not depend on, the AI providers in particular. The **External libraries** group in the application settings installs them into a private virtualenv in your home directory, never into the system Python. MiAZOCR also needs `ocrmypdf` and MiAZAutoScan needs `scanimage` from your distribution.
+> [!NOTE]
+> Some plugins need Python packages MiAZ does not depend on, the AI providers in
+> particular. The **External libraries** group in the application settings installs
+> them into a private virtualenv in your home directory, **never** into the system
+> Python. MiAZOCR also needs `ocrmypdf`, and MiAZAutoScan needs `scanimage`, from your
+> distribution.
 
-Your own plugins go in `~/.MiAZ/opt/plugins/`, and can be imported as a ZIP from the plugin settings.
+**Writing your own:** `HelloWorld` is a working example to copy and start from. Your own plugins go in `~/.MiAZ/opt/plugins/`, and can be imported as a ZIP from the plugin settings.
 
 ## Requirements
-
-- Debian 13.5
-- Last Ubuntu LTS
-- Last Fedora
 
 | Dependency | Minimum version |
 |---|---|
 | Python | 3.9 |
 | GTK | 4.10 |
-| Libadwaita | 1.6 |
+| Libadwaita | 1.7 |
 | PyGObject | 3.50 |
+
+Tested on current Ubuntu LTS 26.04, and the current Fedora (v44).
+
 
 ## Contributing
 
 Bug reports and feature requests: [GitHub Issues](https://github.com/t00m/MiAZ/issues)
 
-Tests:
-
-```bash
-python -m pytest tests/ --ignore=tests/ui   # unit tests, no display needed
-./scripts/checks/run_ui_tests.sh            # drives the real application
-```
-
-`tests/manual/UI-CHECKLIST.md` covers what a machine cannot judge, and is the release gate.
 
 ## About the author
 
@@ -274,14 +307,21 @@ Feel free to reach out: tomasvirseda@gmail.com
 First public commit of this application started in September, 2022. It's been improved from time to time until 2026.
 Because of lack of time (work and family), I was about to stop the development.
 
-On April, 2026 I had a chance to test AI capabilities. In a few minutes, it solved a big performance issue that I was unable to determine. Since then, I've used to fix many other issues (plugin integrations and other core stuff).
-Check CLAUDE.md and AGENTS.md for more info.
+On April, 2026 I had a chance to test AI capabilities. In a few minutes, it solved a big performance issue that I was unable to determine. Since then, I've used to fix many other issues (plugin integrations and other core stuff) and give shape my ideas.
+Check AGENTS.md for more info.
+
+This decision has also led to the application being banned from the Flathub repositories. The fact that it is not easy to use external utilities has also contributed to the lack of support for Flatpak.
 
 ## License
 
 GPL v3 (see [data/docs/LICENSE](data/docs/LICENSE)).
 
 ## Disclaimer
+
+> [!CAUTION]
+> MiAZ performs real file operations (copy, rename, delete) on your documents, and
+> renames anything placed in a repository directory automatically. It is still in
+> development. Keep a backup.
 
 * **This software application is currently in development and is not yet ready for production use**. The application may contain bugs, errors, or other issues that could cause your computer or device to malfunction or experience other unexpected behaviors. By using this application, you acknowledge and agree that you do so at your own risk, and that the developer and any other parties involved in the development, distribution, or support of this application are not responsible for any damages or losses that may result from its use.*
 

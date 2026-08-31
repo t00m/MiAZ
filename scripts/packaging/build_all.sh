@@ -94,6 +94,17 @@ else
 fi
 log "Version: $VERSION_FULL"
 
+# Refuse to build with placeholder release notes: 0.1.50 and 0.1.60 both
+# shipped with them. SKIP_NOTES_CHECK=1 builds anyway.
+if [[ "${SKIP_NOTES_CHECK:-0}" != "1" ]]; then
+    if ! "$REPO_ROOT/scripts/devel/render_release_notes.py" --check; then
+        log_err "Release notes for $VERSION are missing or out of date."
+        log_err "Write releases/$VERSION.md, run scripts/devel/render_release_notes.py,"
+        log_err "or set SKIP_NOTES_CHECK=1 for a build you are not going to ship."
+        exit 1
+    fi
+fi
+
 mkdir -p "$DIST_DIR"
 # Wipe previous artifacts so dist/ only contains packages from this run.
 log "Cleaning $DIST_DIR/ and previous build leftovers ..."
@@ -152,11 +163,8 @@ else
 fi
 
 # ── Flatpak ───────────────────────────────────────────────────────────────────
-# Flatpak packaging is deprecated on purpose (see
-# docs/PACKAGING-FLATPAK-DEPRECATED.md): the sandbox cannot reach the host CLI
-# tools that plugins need (ocrmypdf for OCR, scanimage for the scanner), so
-# those features do not work in a Flatpak build. The build steps are kept below
-# for reference; set MIAZ_ALLOW_FLATPAK=1 to force it, otherwise it is skipped.
+# Deprecated: the sandbox cannot reach ocrmypdf or scanimage, so no release
+# ships one. Kept as a legacy option, built only with MIAZ_ALLOW_FLATPAK=1.
 log "--- Flatpak package (deprecated, skipped) ---"
 cd "$REPO_ROOT"
 FLATPAK_BUNDLE="$REPO_ROOT/miaz-${VERSION}.flatpak"

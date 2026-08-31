@@ -69,8 +69,8 @@ plugin_info = {
     'Website':     'http://github.com/t00m/MiAZ',
     'Help':        'https://github.com/t00m/MiAZ/blob/main/README.md',
     'Version':     '0.3.0',
-    'Category':    'Collaboration',
-    'Subcategory': 'Comments and Annotations',
+    'Category':    'Documents',
+    'Subcategory': 'Notes',
 }
 
 
@@ -237,11 +237,11 @@ class MiAZNotesPlugin(MiAZExtension):
         if self.plugin.started():
             return
 
-        # Per-document menu entry (Notes…)
+        # Per-document menu entry
         mnu_doc = self.factory.create_menuitem(
             name=self.plugin.get_menu_item_name() + '-doc',
-            label=_('Notes…'),
-            callback=self._on_open_doc_notes,
+            label=_('Create a new note'),
+            callback=self._on_new_doc_note,
             shortcuts=['<Ctrl>N'],
         )
         self.plugin.install_menu_entry(mnu_doc)
@@ -264,12 +264,16 @@ class MiAZNotesPlugin(MiAZExtension):
         # All notes menu entry
         mnu_all = self.factory.create_menuitem(
             name=self.plugin.get_menu_item_name() + '-all',
-            label=_('All Notes…'),
+            label=_('See all notes…'),
             callback=self._on_open_all_notes,
         )
         self.plugin.install_menu_entry(mnu_all)
 
-        # Backup / Restore menu entries under Data Management
+        # Backup / Restore menu entries, under the plugin's own Notes entry:
+        # they act on the notes, so that is where someone looks for them. They
+        # used to hang off Backup and Restore entries of their own, which put
+        # two extra top-level submenus in the workspace menu holding one item
+        # each.
         mnu_backup = self.factory.create_menuitem(
             name=self.plugin.get_menu_item_name() + '-backup',
             label=_('Backup notes'),
@@ -282,10 +286,8 @@ class MiAZNotesPlugin(MiAZExtension):
         )
         # Through the plugin, not through the app: an entry appended straight
         # into a menu is not recorded, and the next menu rebuild drops it.
-        self.plugin.install_menu_entry(
-            mnu_backup, category=_('Data Management'), subcategory=_('Backup'))
-        self.plugin.install_menu_entry(
-            mnu_restore, category=_('Data Management'), subcategory=_('Restore'))
+        self.plugin.install_menu_entry(mnu_backup)
+        self.plugin.install_menu_entry(mnu_restore)
 
         # Headerbar pushpin indicator: visible only when the single selected
         # document actually has notes. Clicking it shows the post-it board.
@@ -551,7 +553,8 @@ class MiAZNotesPlugin(MiAZExtension):
             self.log.debug(f"Could not remove CSS: {error}")
         self._css_provider = None
 
-    def _open_doc_window(self, document_id: str, select_note=None):
+    def _open_doc_window(self, document_id: str, select_note=None,
+                         start_new: bool = False, document_ids=None):
         if not document_id:
             return
         if self._win_per_doc is not None:
@@ -564,7 +567,9 @@ class MiAZNotesPlugin(MiAZExtension):
                             document_id, self.log,
                             select_note=select_note,
                             category_store=self.categories,
-                            on_changed=self._notes_changed)
+                            on_changed=self._notes_changed,
+                            start_new=start_new,
+                            document_ids=document_ids)
         win.connect('close-request', self._on_per_doc_closed)
         self._win_per_doc = win
         win.present()
@@ -624,16 +629,23 @@ class MiAZNotesPlugin(MiAZExtension):
         if getattr(self, '_all_notes', None) is not None:
             self._all_notes.update_visible_documents()
 
-    def _on_open_doc_notes(self, *_args):
+    def _on_new_doc_note(self, *_args):
+        """Open the notes window on a blank note for the selection.
+
+        With more than one document selected the note is written once per
+        document when it is saved: the same text filed against each of them.
+        The action used to return silently unless exactly one document was
+        selected, which looked like a dead menu entry.
+        """
         if self.actions is not None and self.actions.stop_if_no_items():
             return
-        items = self._selected_items()
-        if len(items) != 1:
+        document_ids = [doc_id for doc_id in
+                        (getattr(item, 'id', None) for item in self._selected_items())
+                        if doc_id]
+        if not document_ids:
             return
-        document_id = getattr(items[0], 'id', None)
-        if not document_id:
-            return
-        self._open_doc_window(document_id)
+        self._open_doc_window(document_ids[0], start_new=True,
+                              document_ids=document_ids)
 
     def _on_open_all_notes(self, *_args):
         if self._all_notes is not None:
@@ -654,8 +666,14 @@ class MiAZNotesPlugin(MiAZExtension):
         if gfile is None:
             return
         path = gfile.get_path()
-        count = self.backup.backup(path)
-        self._toast(_('Backed up {count} notes').format(count=count))
+        backup = self.backup
+
+        def work(report):
+            count = backup.backup(path, progress=report)
+            return _('{count} notes backed up to {name}.').format(
+                count=count, name=os.path.basename(path))
+
+        self._run(work, _('Backing up notes'))
 
     def _on_menu_restore(self, *_args):
         dialog = self._file_dialog_open_zip()
@@ -670,12 +688,20 @@ class MiAZNotesPlugin(MiAZExtension):
         if gfile is None:
             return
         path = gfile.get_path()
-        count = self.backup.restore(path, merge=True)
-        self._toast(_('Restored {count} notes').format(count=count))
-        if self._win_per_doc is not None:
-            self._win_per_doc.refresh()
-        if self._all_notes is not None:
-            self._all_notes.refresh()
+        backup = self.backup
+
+        def work(report):
+            count = backup.restore(path, merge=True, progress=report)
+            return _('{count} notes restored from {name}.').format(
+                count=count, name=os.path.basename(path))
+
+        def done(_ok, _result):
+            if self._win_per_doc is not None:
+                self._win_per_doc.refresh()
+            if self._all_notes is not None:
+                self._all_notes.refresh()
+
+        self._run(work, _('Restoring notes'), on_close=done)
 
     def _on_renamed(self, _util, source, target):
         old_id = os.path.basename(source) if source else ''
@@ -744,6 +770,17 @@ class MiAZNotesPlugin(MiAZExtension):
         zip_filter.add_pattern('*.zip')
         dialog.set_default_filter(zip_filter)
         return dialog
+
+    def _run(self, work, title, on_close=None):
+        """Run a backup or a restore behind the shared progress dialog.
+
+        The UI is held back while it runs and the outcome stays on screen until
+        the user closes it: services/progress.py does both.
+        """
+        progress = self.app.get_service('progress')
+        parent = self.app.get_widget('window')
+        if not progress.run(work, title=title, parent=parent, on_close=on_close):
+            self._toast(_('Another operation is already running'))
 
     def _toast(self, message: str):
         try:

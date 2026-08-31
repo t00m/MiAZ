@@ -25,9 +25,14 @@ if len(sys.argv) > 1 and not sys.argv[1].startswith('-') and not os.environ.get(
     set_console_level(logging.WARNING)
 
 from MiAZ.env import ENV  # noqa: E402  (must follow the silencing above)
-from MiAZ.backend.crash import install_backend_excepthook
+from MiAZ.backend.crash import install_backend_excepthook, install_fatal_handler
 
 log = MiAZLog('MiAZ')
+
+# The versions the code actually calls: Gtk.FileDialog is 4.10,
+# Adw.InlineViewSwitcher 1.7. tests/test_toolkit_version.py checks both.
+GTK_MINIMUM = (4, 10)
+ADW_MINIMUM = (1, 7)
 
 # Check Desktop environment
 ENV['DESKTOP'] = {}
@@ -38,7 +43,9 @@ except ImportError:
 
 try:
     gi.require_version('Gtk', '4.0')
+    gi.require_version('Gdk', '4.0')
     from gi.repository import Gtk
+    from gi.repository import Gdk
     from gi.repository import GLib
     try:
         gi.require_version('GLibUnix', '2.0')
@@ -46,7 +53,7 @@ try:
     except (ValueError, ImportError):
         GLibUnix = None
     ENV['DESKTOP']['GTK_VERSION'] = (Gtk.MAJOR_VERSION, Gtk.MINOR_VERSION, Gtk.MICRO_VERSION)
-    ENV['DESKTOP']['GTK_SUPPORT'] = Gtk.MAJOR_VERSION >= 4 and Gtk.MINOR_VERSION >= 6
+    ENV['DESKTOP']['GTK_SUPPORT'] = (Gtk.MAJOR_VERSION, Gtk.MINOR_VERSION) >= GTK_MINIMUM
 except (ValueError, ModuleNotFoundError):
     ENV['DESKTOP']['GTK_SUPPORT'] = False
 
@@ -54,7 +61,7 @@ try:
     gi.require_version('Adw', '1')
     from gi.repository import Adw
     ENV['DESKTOP']['ADW_VERSION'] = (Adw.MAJOR_VERSION, Adw.MINOR_VERSION, Adw.MICRO_VERSION)
-    ENV['DESKTOP']['ADW_SUPPORT'] = Adw.MAJOR_VERSION >= 1 and Adw.MINOR_VERSION >= 6
+    ENV['DESKTOP']['ADW_SUPPORT'] = (Adw.MAJOR_VERSION, Adw.MINOR_VERSION) >= ADW_MINIMUM
 except (ValueError, ModuleNotFoundError):
     ENV['DESKTOP']['ADW_SUPPORT'] = False
 
@@ -65,7 +72,10 @@ log.debug(f"ADW available ({Adw.MAJOR_VERSION}.{Adw.MINOR_VERSION}.{Adw.MICRO_VE
 log.debug(f"Desktop enabled? {ENV['DESKTOP']['ENABLED']}")
 if not ENV['DESKTOP']['ENABLED']:
     log.error("Desktop dependencies not met to run this app")
-    log.error("Make sure that Gtk version is >= 4.6 and Adw is >= 1.6")
+    log.error("GTK %d.%d found, %d.%d needed" % (
+        Gtk.MAJOR_VERSION, Gtk.MINOR_VERSION, *GTK_MINIMUM))
+    log.error("Adw %d.%d found, %d.%d needed" % (
+        Adw.MAJOR_VERSION, Adw.MINOR_VERSION, *ADW_MINIMUM))
     sys.exit(-1)
 
 
@@ -116,6 +126,9 @@ class MiAZ:
         self._acquire_lock()
         self.log = MiAZLog('MiAZ')
         install_backend_excepthook(self.log, ENV)
+        # A segfault never reaches the excepthook above, so the Python side of
+        # the stack is written by faulthandler instead.
+        install_fatal_handler(log_file)
         self.clean_temp_directory()
 
         self.log.info(f"{ENV['APP']['shortname']} v{ENV['APP']['VERSION']} - Start")
@@ -210,6 +223,14 @@ class MiAZ:
             # import.
             sys.stderr.write("GTK is not available. Try 'miaz search' or "
                              "'miaz repos'.\n")
+            sys.exit(2)
+
+        # GTK imports fine with nowhere to draw and only fails at the first
+        # widget. init_check() returns True regardless, so ask the display.
+        Gtk.init_check()
+        if Gdk.Display.get_default() is None:
+            sys.stderr.write("MiAZ found no display to open its window on. "
+                             "Try 'miaz search' or 'miaz repos'.\n")
             sys.exit(2)
 
         from MiAZ.frontend.desktop.app import MiAZApp

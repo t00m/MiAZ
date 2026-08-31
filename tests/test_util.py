@@ -20,7 +20,8 @@ import struct
 import zipfile
 import zlib
 
-from MiAZ.backend.util import MiAZUtil, clean_temp_dir, UNKNOWN_DATE
+from MiAZ.backend.util import (MiAZUtil, clean_temp_dir, date_is_valid,
+                               UNKNOWN_DATE)
 
 
 class MockApp:
@@ -542,7 +543,7 @@ def test_filename_guess_date_falls_back_to_the_metadata(util, tmp_path):
     date in the file rather than the unknown date, and never the mtime."""
     doc = make_pdf(tmp_path, b"<< /CreationDate (D:20250116042015+01'00') >>")
     os.utime(doc, (1700000000, 1700000000))
-    assert util.filename_guess_date(doc, 'RG151038433387') == '20250116'
+    assert util.filename_guess_date(doc, 'RG990011223344') == '20250116'
 
 
 def test_filename_guess_date_prefers_the_metadata_over_the_name(util, tmp_path):
@@ -553,12 +554,12 @@ def test_filename_guess_date_prefers_the_metadata_over_the_name(util, tmp_path):
 
 
 def test_an_invoice_number_does_not_beat_the_metadata(util, tmp_path):
-    """RG151119905140 is a real 1&1 invoice number, and 15111990 inside it is a
-    real date: 15 November 1990. Reading the name first filed that invoice 36
-    years early. The metadata says when the PDF was actually made."""
+    """An invoice number shaped like a real one: 24071988 inside it reads as a
+    valid 24 July 1988. Reading the name first files such an invoice decades
+    early. The metadata says when the PDF was actually made."""
     doc = make_pdf(tmp_path, b'<< /CreationDate (D:20260116042015) >>')
-    assert util.dates_from_text('RG151119905140') == ['19901115']
-    assert util.filename_guess_date(doc, 'RG151119905140') == '20260116'
+    assert util.dates_from_text('RG240719880042') == ['19880724']
+    assert util.filename_guess_date(doc, 'RG240719880042') == '20260116'
 
 
 def test_the_name_is_still_read_when_the_file_carries_no_date(util, tmp_path):
@@ -569,7 +570,7 @@ def test_the_name_is_still_read_when_the_file_carries_no_date(util, tmp_path):
 def test_filename_guess_date_is_unknown_when_the_metadata_has_no_date(util, tmp_path):
     doc = make_pdf(tmp_path, b'<< /Title (an invoice) >>')
     os.utime(doc, (1700000000, 1700000000))
-    assert util.filename_guess_date(doc, 'RG151038433387') == UNKNOWN_DATE
+    assert util.filename_guess_date(doc, 'RG990011223344') == UNKNOWN_DATE
 
 
 def make_zip_document(tmp_path, member, body: bytes, name='doc.docx'):
@@ -618,12 +619,12 @@ MTIME_2023 = (1700000000, 1700000000)
 
 @pytest.mark.parametrize('label, body, concept, expected', [
     ('metadata beats the name', WITH_DATE, 'Factura_15_03_2024', '20250116'),
-    ('metadata alone', WITH_DATE, 'RG151038433387', '20250116'),
+    ('metadata alone', WITH_DATE, 'RG990011223344', '20250116'),
     ('the name is read when the file carries no date',
      WITHOUT_DATE, 'Factura_15_03_2024', '20240315'),
-    ('neither source has one', WITHOUT_DATE, 'RG151038433387', UNKNOWN_DATE),
+    ('neither source has one', WITHOUT_DATE, 'RG990011223344', UNKNOWN_DATE),
     ('an invoice number never beats the metadata',
-     WITH_DATE, 'RG151119905140', '20250116'),
+     WITH_DATE, 'RG240719880042', '20250116'),
 ])
 def test_the_date_precedence_is_metadata_then_name_then_unknown(
         util, tmp_path, label, body, concept, expected):
@@ -637,9 +638,9 @@ def test_the_file_mtime_is_never_the_answer(util, tmp_path):
     carry on disk is not a fact about the document and must not appear."""
     for index, (body, concept) in enumerate([
             (WITH_DATE, 'Factura_15_03_2024'),
-            (WITH_DATE, 'RG151038433387'),
+            (WITH_DATE, 'RG990011223344'),
             (WITHOUT_DATE, 'Factura_15_03_2024'),
-            (WITHOUT_DATE, 'RG151038433387')]):
+            (WITHOUT_DATE, 'RG990011223344')]):
         doc = make_pdf(tmp_path, body, name=f'mtime{index}.pdf')
         os.utime(doc, MTIME_2023)
         assert util.filename_guess_date(doc, concept) != '20231114'
@@ -732,3 +733,50 @@ def test_zip_members_are_safe_reports_the_offender(util, tmp_path):
     with pytest.raises(RuntimeError) as excinfo:
         util.unzip(archive, str(dest))
     assert '../escaped.txt' in str(excinfo.value)
+
+
+# ---------------------------------------------------------------------------
+# date_is_valid: a filename date is eight digits, not "whatever strptime takes"
+# ---------------------------------------------------------------------------
+
+def test_a_full_eight_digit_date_is_valid():
+    assert date_is_valid('20260301')
+    assert date_is_valid('19000101')
+    assert date_is_valid(UNKNOWN_DATE)
+
+
+def test_a_short_date_is_not_completed_into_a_real_one():
+    """strptime('%Y%m%d') takes one or two digits for month and day, so
+    '202613' reads as 2026-01-03 and '2026131' as 2026-01-31. Typing a date
+    passes through both, and the rename dialog used to accept them and write
+    the completed date back into the field.
+    """
+    for text in ('2', '20', '202', '2026', '20261', '202613', '2026131'):
+        assert not date_is_valid(text), f"{text} was read as a date"
+
+
+def test_a_date_that_is_not_a_day_is_not_valid():
+    assert not date_is_valid('20261301')   # month 13
+    assert not date_is_valid('20260230')   # February 30
+    assert not date_is_valid('20260000')
+
+
+def test_anything_that_is_not_eight_digits_is_not_valid():
+    for text in ('', '   ', '2026-03-01', '2026030a', '202603011', 'abcdefgh'):
+        assert not date_is_valid(text), f"{text} was read as a date"
+
+
+def test_the_human_date_refuses_what_is_not_a_date(util):
+    """filename_date_human is what the workspace shows for a document's date.
+    It parsed as leniently as the dialog did, so a filename carrying '202613'
+    was displayed as a confident 'Saturday, January 03 2026'.
+    """
+    assert util.filename_date_human('20260301') == 'Sunday, March 01 2026'
+    assert util.filename_date_human('202613') == ''
+    assert util.filename_date_human('20261301') == ''
+
+
+def test_the_simple_human_date_refuses_what_is_not_a_date(util):
+    assert util.filename_date_human_simple('20260301') == '01/03/2026'
+    assert util.filename_date_human_simple('202613') is None
+    assert util.filename_date_human_simple('20261301') is None

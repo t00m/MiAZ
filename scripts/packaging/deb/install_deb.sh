@@ -25,6 +25,9 @@ DEPENDENCIES=(
     libpeas-2-0
     gir1.2-peas-2
     gir1.2-webkit-6.0
+    poppler-utils
+    tesseract-ocr
+    tesseract-ocr-eng
 )
 
 # Repository root, two levels up from scripts/packaging/deb/.

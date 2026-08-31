@@ -1,5 +1,5 @@
 Name:           miaz
-Version:        0.1.60
+Version:        0.2.0
 Release:        1%{?dist}
 Summary:        Personal Document Organizer
 
@@ -16,6 +16,9 @@ BuildRequires:  desktop-file-utils
 BuildRequires:  libappstream-glib
 
 Requires:       python3 >= 3.9
+# Fedora's ensurepip installs from the system pip instead of a bundled wheel,
+# so creating the external-libraries venv needs python3-pip on the host.
+Requires:       python3-pip
 Requires:       python3-gobject
 Requires:       gtk4
 Requires:       libadwaita
@@ -24,8 +27,11 @@ Requires:       libpeas-loader-python
 Requires:       webkitgtk6.0
 Requires:       libsecret
 Requires:       iso-codes
+Requires:       poppler-utils
+Requires:       tesseract
+Requires:       tesseract-langpack-eng
+Requires:       ocrmypdf
 Recommends:     python3-keyring
-Recommends:     python3-pip
 
 %description
 MiAZ is a GTK4/Libadwaita desktop application that organises personal
@@ -75,6 +81,21 @@ gtk-update-icon-cache %{_datadir}/icons/hicolor &> /dev/null || :
 %{_datadir}/metainfo/io.github.t00m.MiAZ.metainfo.xml
 
 %changelog
+* Mon Aug 31 2026 Tomás Vírseda <tomasvirseda@gmail.com> - 0.2.0-1
+- The keyboard shortcuts window no longer needs libadwaita 1.8, so MiAZ runs on Debian 13; the startup check now compares toolkit versions correctly against the real floors, GTK 4.10 and libadwaita 1.7
+- Review mode marks a document whose content matches another one; the column sorts copies next to each other and the tooltip names the twin and says whether it is filed already
+- One Suggest menu in the rename dialog covers everything that proposes filename values, in sections that say what is read locally and what is sent to an AI
+- The rename dialog says what it is doing while it reads a document, and its pages are a menu instead of a row of tabs that widened with every plugin
+- The date in the rename dialog is checked when you leave the field or press Rename, not on every keystroke, and a half-typed date is no longer completed into a date nobody chose
+- Adding documents from a directory and copying document names are core features now, not plugins, and an import of more than twenty files runs in the background
+- Backup and restore run behind a progress dialog that reports each file, instead of freezing the window
+- The setup assistant asks about countries and nothing else; groups, purposes, senders and recipients start with every shipped value enabled
+- A name containing an ampersand no longer blanks list columns and dialog messages
+- The plugin menus are flatter and the plugin catalogue uses six one-word categories
+- The deb and the rpm declare ocrmypdf and the Python venv tooling, so OCR and the external libraries work on a clean install
+- Running miaz with no display says so and points at the command line, and a crash leaves a Python traceback in the log instead of a core dump
+- Spanish is complete again, all 1011 strings; the never-translated German and French catalogues are gone
+
 * Fri Aug 14 2026 Tomás Vírseda <tomasvirseda@gmail.com> - 0.1.60-1
 - New release. See CHANGELOG.md for details.
 

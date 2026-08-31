@@ -25,7 +25,7 @@ plugin_info = {
     'Website':     'http://github.com/t00m/MiAZ',
     'Help':        'https://github.com/t00m/MiAZ/blob/main/README.md',
     'Version':     '0.1.26',
-    'Category':    'Data Management',
+    'Category':    'Documents',
     'Subcategory': 'Import'
 }
 

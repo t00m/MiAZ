@@ -9,6 +9,7 @@ from gettext import gettext as _
 
 from gi.repository import GObject
 from gi.repository import Adw
+from gi.repository import Gio
 from gi.repository import Gtk
 from gi.repository import Gdk
 
@@ -22,6 +23,22 @@ from MiAZ.frontend.desktop.widgets.rename import MiAZRenameDialog
 from MiAZ.frontend.desktop.widgets.settings import MiAZAppSettings
 from MiAZ.frontend.desktop.widgets.settings import MiAZRepoSettings
 from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewMassDelete
+
+# Adw.ShortcutsDialog needs libadwaita 1.8; Debian 13 ships 1.7.6. Drop this
+# and _build_shortcuts_fallback once every target distribution has 1.8.
+ADW_SHORTCUTS_DIALOG = (1, 8)
+
+
+def accelerator_label(accelerator: str) -> str:
+    """'<Control>s' as the user reads it: 'Ctrl+S'.
+
+    Gtk.accelerator_get_label is what Adw.ShortcutsDialog renders with, and
+    unlike the rest of the Gtk.Shortcuts* family it is not deprecated.
+    """
+    parsed, key, mods = Gtk.accelerator_parse(accelerator)
+    if not parsed:
+        return accelerator
+    return Gtk.accelerator_get_label(key, mods)
 
 # Conversion Item type to Field Number
 Field = {}
@@ -40,6 +57,11 @@ Configview['SentBy'] = MiAZPeopleSentBy
 Configview['SentTo'] = MiAZPeopleSentTo
 Configview['Date'] = Gtk.Calendar
 
+def document_names_text(items) -> str:
+    """The clipboard text for a selection: one document name per line."""
+    return '\n'.join(item.id for item in items)
+
+
 class MiAZActions(GObject.GObject):
     def __init__(self, app):
         super().__init__()
@@ -48,6 +70,10 @@ class MiAZActions(GObject.GObject):
         self.factory = self.app.get_service('factory')
         self.util = self.app.get_service('util')
         self.srvdlg = self.app.get_service('dialogs')
+        # The Suggest menu: its actions, created once, and its entries, which
+        # come and go with the plugins that contribute them.
+        self._suggest_actions = {}
+        self._suggest_items = []
         GObject.signal_new('settings-loaded',
                             MiAZActions,
                             GObject.SignalFlags.RUN_LAST,
@@ -56,6 +82,11 @@ class MiAZActions(GObject.GObject):
                             MiAZActions,
                             GObject.SignalFlags.RUN_LAST,
                             None, (GObject.TYPE_PYOBJECT, GObject.TYPE_PYOBJECT))
+        # Built here, appended to the workspace selection menu by the main
+        # window, which rebuilds that menu whenever the plugins change.
+        self.menuitem_copy_names = self.factory.create_menuitem(
+            name='copy-document-names', label=_('Copy document names'),
+            callback=self.document_copy_names, shortcuts=['<Control><Shift>c'])
 
     def document_display(self, doc):
         self.log.debug(f"Displaying {doc}")
@@ -69,6 +100,26 @@ class MiAZActions(GObject.GObject):
         workspace = self.app.get_widget('workspace')
         item = workspace.get_selected_items()[0]
         self.document_display(item.id)
+
+    def document_copy_names(self, *args):
+        """Put the names of the selected documents on the clipboard.
+
+        One name per line, in the order the workspace shows them, so a pasted
+        list matches what is on screen.
+        """
+        if self.stop_if_no_items():
+            self.log.debug("No items selected")
+            return
+        workspace = self.app.get_widget('workspace')
+        items = workspace.get_selected_items()
+        text = document_names_text(items)
+        workspace.get_display().get_clipboard().set(text)
+        self.srvdlg.show_toast(
+            _('{num_items} documents copied to clipboard').format(
+                num_items=len(items)))
+        # Returned so a caller (and a test) can see what was copied: reading it
+        # back from the clipboard only works while the window has the focus.
+        return text
 
     def document_delete(self, *args):
         if self.stop_if_no_items():
@@ -102,6 +153,145 @@ class MiAZActions(GObject.GObject):
         workspace = self.app.get_widget('workspace')
         item = workspace.get_selected_items()[0]
         self._document_rename_single(item.id)
+
+    def build_suggest_menu(self):
+        """Build (once) the Gio.Menu behind the rename dialog's Suggest button.
+
+        Everything that proposes values for the filename fields is here, in
+        sections, so it is plain which ones read the document on this machine
+        and which ones send it to a model: reading the document, matching
+        against documents already filed, and whatever a plugin adds.
+
+        "Build once, resolve the current rename widget dynamically": the menu
+        is shared by every rename dialog opened, and each callback reads
+        whichever rename widget is current rather than closing over one.
+        """
+        menu = self.app.get_widget('rename-suggest-menu')
+        if menu is not None:
+            return menu
+        menu = Gio.Menu.new()
+        self.app.add_widget('rename-suggest-menu', menu)
+
+        from_document = _('From this document')
+        for name, label, callback in (
+            ('rename-detect-date', _('Date'), self._on_rename_detect_date),
+            ('rename-detect-country', _('Country'), self._on_rename_detect_country),
+            ('rename-detect-sentby', _('Sent by'), self._on_rename_detect_sentby),
+            ('rename-detect-sentto', _('Sent to'), self._on_rename_detect_sentto),
+            ('rename-detect-all', _('Every field'), self._on_rename_detect_all),
+        ):
+            self.register_suggest_item(owner=None, name=name, label=label,
+                                       callback=callback, section=from_document)
+
+        self.register_suggest_item(
+            owner=None,
+            name='rename-suggest-local',
+            label=_('Sharing this concept'),
+            callback=self._on_rename_suggest_local,
+            section=_('From documents already filed'))
+        return menu
+
+    def register_suggest_item(self, owner, name, label, callback, section=None):
+        """Add an entry to the Suggest menu.
+
+        `owner` is the plugin name, or None for a core entry, so a plugin's
+        entries can be taken away again when it unloads. `section` is the
+        heading it appears under, which is what tells the user whether an
+        entry reads the document here or sends it somewhere. The action is
+        created once and kept: the menu is rebuilt by replacing its items, not
+        by re-registering actions the whole application already knows.
+        """
+        if name not in self._suggest_actions:
+            action = Gio.SimpleAction.new(name, None)
+            action.connect('activate', callback, None)
+            self.app.add_action(action)
+            self._suggest_actions[name] = action
+        self._suggest_items = [entry for entry in self._suggest_items
+                               if entry[1] != name]
+        self._suggest_items.append((owner, name, label, section))
+        self._rebuild_suggest_menu()
+
+    def unregister_suggest_items(self, owner):
+        """Drop every entry a plugin contributed, on unload."""
+        before = len(self._suggest_items)
+        self._suggest_items = [entry for entry in self._suggest_items
+                               if entry[0] != owner]
+        if len(self._suggest_items) != before:
+            self._rebuild_suggest_menu()
+
+    def _rebuild_suggest_menu(self):
+        """Replace the menu contents in place, so every button using it
+        updates without being rebuilt itself.
+
+        Entries keep the order they were registered in, grouped under their
+        section heading, which puts the core's own groups first and a plugin's
+        after them.
+        """
+        menu = self.app.get_widget('rename-suggest-menu')
+        if menu is None:
+            return
+        menu.remove_all()
+        headings = []
+        for _owner, _name, _label, heading in self._suggest_items:
+            if heading not in headings:
+                headings.append(heading)
+        for heading in headings:
+            section = Gio.Menu.new()
+            for _owner, name, label, item_heading in self._suggest_items:
+                if item_heading == heading:
+                    section.append(label, f'app.{name}')
+            if section.get_n_items() > 0:
+                menu.append_section(heading, section)
+
+    def set_suggest_item_enabled(self, name: str, enabled: bool):
+        """Enable or disable one entry of the Suggest menu.
+
+        A plugin uses this to grey its own entry out while its suggestion is
+        running: contributing an entry rather than a button of its own means
+        there is no button left to make insensitive.
+        """
+        action = self._suggest_actions.get(name)
+        if action is not None:
+            action.set_enabled(enabled)
+
+    def set_suggest_local_enabled(self, enabled: bool):
+        """The concept is the key the local suggestion matches on, so its entry
+        is dead until there is enough of one to match. A plugin entry is not
+        affected: an AI reads the document, not the concept."""
+        self.set_suggest_item_enabled('rename-suggest-local', enabled)
+
+    def _on_rename_suggest_local(self, action, param, data):
+        widget = self._current_rename_widget()
+        if widget is not None:
+            widget.on_suggest_metadata()
+
+    def _current_rename_widget(self):
+        return self.app.get_widget('rename-widget')
+
+    def _on_rename_detect_date(self, action, param, data):
+        widget = self._current_rename_widget()
+        if widget is not None:
+            widget.detect_date()
+
+    def _on_rename_detect_country(self, action, param, data):
+        widget = self._current_rename_widget()
+        if widget is not None:
+            widget.detect_country()
+
+    def _on_rename_detect_sentby(self, action, param, data):
+        widget = self._current_rename_widget()
+        if widget is not None:
+            widget.detect_sentby()
+
+    def _on_rename_detect_sentto(self, action, param, data):
+        widget = self._current_rename_widget()
+        if widget is not None:
+            widget.detect_sentto()
+
+    def _on_rename_detect_all(self, action, param, data):
+        widget = self._current_rename_widget()
+        if widget is not None:
+            widget.detect_all()
 
     def _document_rename_single(self, doc):
         old = self.app.get_widget('rename-widget')
@@ -143,17 +333,17 @@ class MiAZActions(GObject.GObject):
             css_classes=['destructive-action'],
         )
         btn_cancel.connect('clicked', lambda *_a: dialog.emit('response', 'cancel'))
-        dialog.pack_header_start(btn_cancel)
+        dialog.pack_action_start(btn_cancel)
 
-        # "Suggest" fills the five metadata drop-downs from documents that share
-        # the typed concept. It sits next to Rename on the bottom and is enabled
-        # only once the concept (the match key) is at least two characters long.
-        btn_suggest = self.factory.create_button(
+        # One button for everything that proposes field values, in sections so
+        # a local guess reads differently from one sent to a model.
+        btn_suggest = Gtk.MenuButton()
+        btn_suggest.set_child(Adw.ButtonContent(
             icon_name='io.github.t00m.MiAZ-edit-paste-symbolic',
-            title=_('Suggest'),
-            tooltip=_('Suggest metadata from documents sharing this concept'),
-        )
-        btn_suggest.connect('clicked', lambda *_a: rename_widget.on_suggest_metadata())
+            label=_('Suggest')))
+        btn_suggest.set_always_show_arrow(True)
+        btn_suggest.set_tooltip_text(_('Suggest values for the filename fields'))
+        btn_suggest.set_menu_model(self.build_suggest_menu())
 
         # "Preview" opens the source document. It sits next to Suggest.
         btn_preview = self.factory.create_button(
@@ -165,11 +355,23 @@ class MiAZActions(GObject.GObject):
             'clicked',
             lambda *_a: self.document_display(rename_widget.get_filepath_source()))
 
-        dialog.pack_action_end(btn_suggest)
+        # Right of the header, where the plugin's own AI button used to be.
+        dialog.pack_header_end(btn_suggest)
+
+        # Fields page only: it cannot propose a project or a periodicity, so
+        # elsewhere it would offer to fill in fields that are not shown.
+        def _suggest_visible(*_a):
+            btn_suggest.set_visible(
+                rename_widget.stack.get_visible_child_name() == 'fields')
+        rename_widget.stack.connect('notify::visible-child', _suggest_visible)
+        _suggest_visible()
         dialog.pack_action_end(btn_preview)
 
         def _update_suggest_sensitive(*_a):
-            btn_suggest.set_sensitive(len(rename_widget.entry_concept.get_text().strip()) >= 2)
+            # The menu button stays usable: a plugin entry may not need a
+            # concept. Only the local entry, which matches on it, goes dead.
+            self.set_suggest_local_enabled(
+                len(rename_widget.entry_concept.get_text().strip()) >= 2)
         rename_widget.entry_concept.connect('changed', _update_suggest_sensitive)
         _update_suggest_sensitive()
 
@@ -446,33 +648,76 @@ class MiAZActions(GObject.GObject):
     def show_app_shortcuts(self, *args):
         self.show_app_help(*args)
 
+    def shortcut_sections(self):
+        """The shortcuts, written once.
+
+        Both builders read this, so the two cannot list different keys. Built
+        on each call rather than at import, so the titles are translated in the
+        language in use rather than the one loaded first.
+        """
+        return (
+            (_('Application'), (
+                (_('Settings'), '<Control>s'),
+                (_('Keyboard shortcuts'), '<Control>question'),
+                (_('About MiAZ'), '<Control>b'),
+                (_('Quit'), '<Control>q'),
+                (_('Help (this window)'), 'F1'),
+            )),
+            (_('Documents'), (
+                (_('Add new document(s)'), '<Control>Insert'),
+                (_('Add documents from a directory'), '<Shift>Insert'),
+                (_('Rename document'), '<Control>BackSpace'),
+                (_('Delete documents'), '<Control>Delete'),
+                (_('View document'), 'Return'),
+                (_('Copy document names'), '<Control><Shift>c'),
+            )),
+        )
+
     def show_app_help(self, *args):
-        # Adw.ShortcutsDialog (libadwaita 1.8+) replaces the deprecated
-        # Gtk.ShortcutsWindow. It is adaptive and matches the app dialog style.
         window = self.app.get_widget('window')
-        dialog = Adw.ShortcutsDialog()
-
-        app_section = Adw.ShortcutsSection(title=_('Application'))
-        for title, accelerator in (
-            (_('Settings'), '<Control>s'),
-            (_('Keyboard shortcuts'), '<Control>question'),
-            (_('About MiAZ'), '<Control>b'),
-            (_('Quit'), '<Control>q'),
-            (_('Help (this window)'), 'F1'),
-        ):
-            app_section.add(Adw.ShortcutsItem(title=title, accelerator=accelerator))
-        dialog.add(app_section)
-
-        docs_section = Adw.ShortcutsSection(title=_('Documents'))
-        for title, accelerator in (
-            (_('Rename document'), '<Control>BackSpace'),
-            (_('Delete documents'), '<Control>Delete'),
-            (_('View document'), 'Return'),
-        ):
-            docs_section.add(Adw.ShortcutsItem(title=title, accelerator=accelerator))
-        dialog.add(docs_section)
-
+        sections = self.shortcut_sections()
+        if (Adw.MAJOR_VERSION, Adw.MINOR_VERSION) >= ADW_SHORTCUTS_DIALOG:
+            dialog = self._build_shortcuts_dialog(sections)
+        else:
+            dialog = self._build_shortcuts_fallback(sections)
         dialog.present(window)
+
+    def _build_shortcuts_dialog(self, sections):
+        """The native dialog: adaptive, and styled like the rest of the app."""
+        dialog = Adw.ShortcutsDialog()
+        for title, shortcuts in sections:
+            section = Adw.ShortcutsSection(title=title)
+            for label, accelerator in shortcuts:
+                section.add(Adw.ShortcutsItem(title=label, accelerator=accelerator))
+            dialog.add(section)
+        return dialog
+
+    def _build_shortcuts_fallback(self, sections):
+        """The same list on libadwaita older than 1.8.
+
+        Built from Adw.PreferencesPage rather than Gtk.ShortcutsWindow: that
+        whole family is deprecated as of GTK 4.18 and is what MiAZ moved away
+        from in the first place. Everything here exists in 1.4 and earlier.
+        """
+        dialog = Adw.Dialog()
+        dialog.set_title(_('Keyboard shortcuts'))
+        dialog.set_content_width(460)
+        dialog.set_content_height(520)
+        page = Adw.PreferencesPage()
+        for title, shortcuts in sections:
+            group = Adw.PreferencesGroup(title=title)
+            for label, accelerator in shortcuts:
+                row = Adw.ActionRow(title=label)
+                keys = Gtk.Label(label=accelerator_label(accelerator))
+                keys.add_css_class('dim-label')
+                row.add_suffix(keys)
+                group.add(row)
+            page.add(group)
+        toolbar = Adw.ToolbarView()
+        toolbar.add_top_bar(Adw.HeaderBar())
+        toolbar.set_content(page)
+        dialog.set_child(toolbar)
+        return dialog
 
     def get_stack_page_by_name(self, name: str) -> Gtk.Stack:
         stack = self.app.get_widget('stack')

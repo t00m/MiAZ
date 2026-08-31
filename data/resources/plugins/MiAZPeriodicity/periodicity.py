@@ -11,7 +11,6 @@ import os
 from gettext import gettext as _
 
 from gi.repository import Gtk
-from gi.repository import Gio
 
 from MiAZ.backend.log import MiAZLog
 from MiAZ.backend.models import MiAZModel
@@ -30,8 +29,8 @@ plugin_info = {
         'Website':       'http://github.com/t00m/MiAZ',
         'Help':          'https://github.com/t00m/MiAZ/blob/main/README.md',
         'Version':       '0.6',
-        'Category':      'Content Organisation',
-        'Subcategory':   'Tagging and Classification'
+        'Category':      'Organise',
+        'Subcategory':   'Tags'
     }
 
 
@@ -261,20 +260,22 @@ class MiAZPeriodicityPlugin(MiAZExtension):
 
     def startup(self, *args):
         if not self.plugin.started():
-            # Always reinstall workspace menu entries (cleared by _on_plugins_updated)
-            # No item of its own: this call creates the plugin's entry in the
-            # menu, and the submenu below hangs under it.
-            self.plugin.install_menu_entry()
-
-            # Install plugin submenu
-            plugin_menu = Gio.Menu()
-            menuitem = self.factory.create_menuitem(f'{i_confname}-add', _('Set {i_confname}').format(i_confname=i_confname), self._set_property, None, [])
-            plugin_menu.append_item(menuitem)
-            menuitem = self.factory.create_menuitem(f'{i_confname}-del', _('Unset {i_confname}').format(i_confname=i_confname), self._unset_property, None, [])
-            plugin_menu.append_item(menuitem)
-            menuitem = self.factory.create_menuitem(f'{i_confname}-mgt', _('Manage {i_confname}').format(i_confname=i_confname), self.show_settings, None, [])
-            plugin_menu.append_item(menuitem)
-            self.plugin.install_menu_submenu(_('{i_title}').format(i_title=i_title), plugin_menu)
+            # Always reinstall workspace menu entries (cleared by
+            # _on_plugins_updated). Straight into the plugin's own entry: a
+            # submenu named after the plugin, inside the entry already named
+            # after the plugin, is one level of menu that says nothing.
+            self.plugin.install_menu_entry(self.factory.create_menuitem(
+                f'{i_confname}-add',
+                _('Set {i_confname}').format(i_confname=i_confname),
+                self._set_property, None, []))
+            self.plugin.install_menu_entry(self.factory.create_menuitem(
+                f'{i_confname}-del',
+                _('Unset {i_confname}').format(i_confname=i_confname),
+                self._unset_property, None, []))
+            self.plugin.install_menu_entry(self.factory.create_menuitem(
+                f'{i_confname}-mgt',
+                _('Manage {i_confname}').format(i_confname=i_confname),
+                self.show_settings, None, []))
 
             # One-time setup guarded by the dropdown widget sentinel
             plugin_name = self.plugin.get_name()

@@ -101,6 +101,7 @@ class MiAZWorkspace(Gtk.Box):
     _num_total_items = 0
     workspace_loaded = False
     _filter_tag_css_installed = False
+    _drop_target_css_installed = False
     # Tags colors
     _FILTER_TAG_COLORS = {
         'Date':    '#cfe3ff',  # light blue
@@ -242,6 +243,7 @@ class MiAZWorkspace(Gtk.Box):
         # reload emits 'index-loaded' instead, so this never double-applies.
         index = self.app.get_service('index')
         index.connect('index-changed', self._on_index_changed)
+        index.connect('duplicates-scanned', self._on_duplicates_scanned)
 
         # Connect Repository
         repository = self.app.get_service('repo')
@@ -367,6 +369,17 @@ class MiAZWorkspace(Gtk.Box):
         self._publish_concepts(index)
         self.emit('workspace-view-updated')
 
+    def _on_duplicates_scanned(self, index, *args):
+        """Show the column when there is something in it, and redraw.
+
+        refilter re-binds every visible row, which is what re-runs the
+        duplicate column's bind.
+        """
+        column = getattr(self.view, 'column_duplicate', None)
+        if column is not None:
+            column.set_visible(bool(index.duplicates_of_any()))
+        self.view.refilter()
+
     def is_loaded(self):
         return self.workspace_loaded
 
@@ -411,6 +424,22 @@ class MiAZWorkspace(Gtk.Box):
                     if self._sid_date_selected is not None:
                         dd.handler_unblock(self._sid_date_selected)
                     break
+        if self._review:
+            self._scan_duplicates()
+
+    def _scan_duplicates(self):
+        """Mark documents whose bytes match another one, for review triage.
+
+        Reads files, about 0.9s for 1336 documents, so it runs in a worker and
+        only on entering review mode: a user who never opens it pays nothing.
+        """
+        index = self.app.get_service('index')
+        if index is None or not index.duplicates_stale():
+            return
+        run_in_background(index.scan_duplicates,
+                          on_error=lambda error: self.log.error(
+                              f"Duplicate scan failed: {error}"),
+                          name='workspace-duplicates')
 
     def _update_dropdown_date(self):
         util = self.app.get_service('util')
@@ -527,6 +556,7 @@ class MiAZWorkspace(Gtk.Box):
         page_content.append(frmView)
         documents_page = self._stack.add_titled(page_content, 'workspace-default', _('Documents'))
         documents_page.set_icon_name('io.github.t00m.MiAZ')
+        self._setup_drop_target(page_content)
 
         # Browser page. Hidden from the view switcher when no plugin registers a
         # page to load, so only the Documents tab shows in that case.
@@ -576,6 +606,60 @@ class MiAZWorkspace(Gtk.Box):
         self.app.add_widget('workspace-filter-tags', flowbox)
         self.app.add_widget('workspace-filter-tags-revealer', revealer)
         return revealer
+
+    def _setup_drop_target(self, widget):
+        """Accept files dropped on the documents page.
+
+        Only that page: dropping on the Browser tab, or anywhere else in the
+        window, does nothing, so the gesture means what it looks like, the
+        files join the list you dropped them on.
+        """
+        self._install_drop_target_css()
+        drop = Gtk.DropTarget.new(Gdk.FileList, Gdk.DragAction.COPY)
+        drop.connect('enter', self._on_drop_enter, widget)
+        drop.connect('leave', self._on_drop_leave, widget)
+        drop.connect('drop', self._on_drop, widget)
+        widget.add_controller(drop)
+        self._drop_target = drop
+        self.app.add_widget('workspace-drop-target', drop)
+
+    def _install_drop_target_css(self):
+        if MiAZWorkspace._drop_target_css_installed:
+            return
+        display = Gdk.Display.get_default()
+        if display is None:
+            return
+        css = (
+            ".miaz-drop-active {"
+            " background-image: image(alpha(currentColor, 0.08));"
+            " outline: 2px dashed alpha(currentColor, 0.45);"
+            " outline-offset: -4px; }"
+        )
+        provider = Gtk.CssProvider()
+        provider.load_from_data(css.encode('utf-8'))
+        Gtk.StyleContext.add_provider_for_display(
+            display, provider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
+        MiAZWorkspace._drop_target_css_installed = True
+
+    def _on_drop_enter(self, drop, x, y, widget):
+        widget.add_css_class('miaz-drop-active')
+        return Gdk.DragAction.COPY
+
+    def _on_drop_leave(self, drop, widget):
+        widget.remove_css_class('miaz-drop-active')
+
+    def _on_drop(self, drop, value, x, y, widget):
+        widget.remove_css_class('miaz-drop-active')
+        importdoc = self.app.get_service('importdoc')
+        if importdoc is None:
+            self.log.error("No import service: the dropped files were ignored")
+            return False
+        # A file dropped from a remote location has no local path, and Gio
+        # gives None for it. The import service reports those as failed.
+        paths = [gfile.get_path() for gfile in value.get_files()]
+        self.log.debug(f"{len(paths)} paths dropped on the workspace")
+        importdoc.import_dropped(paths)
+        return True
 
     def _install_filter_tag_css(self):
         if MiAZWorkspace._filter_tag_css_installed:

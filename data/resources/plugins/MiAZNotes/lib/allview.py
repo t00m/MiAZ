@@ -7,6 +7,7 @@
 # Description: Workspace-level "All notes" page for MiAZNotes
 """
 
+import os
 from gettext import gettext as _
 from typing import Callable, List, Optional
 
@@ -365,9 +366,7 @@ class NotesAllView(Gtk.Box):
             return
         if gfile is None:
             return
-        path = gfile.get_path()
-        count = self.backup.backup(path)
-        self._show_toast(_('Backed up {count} notes').format(count=count))
+        self._run_backup(gfile.get_path())
 
     def _on_restore_clicked(self, *_args):
         if self.backup is None:
@@ -408,13 +407,42 @@ class NotesAllView(Gtk.Box):
         def _on_response(_dialog, response):
             if response == 'cancel':
                 return
-            merge = response == 'merge'
-            count = self.backup.restore(zip_path, merge=merge)
-            self._show_toast(_('Restored {count} notes').format(count=count))
-            self.refresh()
+            self._run_restore(zip_path, merge=response == 'merge')
 
         dialog.connect('response', _on_response)
         dialog.present(self.app.get_widget('window'))
+
+    def _run_backup(self, path):
+        """Zip the notes behind the shared progress dialog.
+
+        The UI is held back while it runs and the outcome stays on screen until
+        the user closes it: services/progress.py does both.
+        """
+        backup = self.backup
+
+        def work(report):
+            count = backup.backup(path, progress=report)
+            return _('{count} notes backed up to {name}.').format(
+                count=count, name=os.path.basename(path))
+
+        self._run(work, _('Backing up notes'))
+
+    def _run_restore(self, zip_path, merge):
+        backup = self.backup
+
+        def work(report):
+            count = backup.restore(zip_path, merge=merge, progress=report)
+            return _('{count} notes restored from {name}.').format(
+                count=count, name=os.path.basename(zip_path))
+
+        self._run(work, _('Restoring notes'),
+                  on_close=lambda _ok, _result: self.refresh())
+
+    def _run(self, work, title, on_close=None):
+        progress = self.app.get_service('progress')
+        parent = self.app.get_widget('window')
+        if not progress.run(work, title=title, parent=parent, on_close=on_close):
+            self._show_toast(_('Another operation is already running'))
 
     def _show_toast(self, message: str):
         try:
