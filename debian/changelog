@@ -14,7 +14,7 @@ miaz (0.2.0-1) unstable; urgency=medium
   * Running miaz with no display says so and points at the command line, and a crash leaves a Python traceback in the log instead of a core dump
   * Spanish is complete again, all 1011 strings; the never-translated German and French catalogues are gone
 
- -- Tomás Vírseda <tomasvirseda@gmail.com>  Thu, 20 Aug 2026 20:17:48 +0200
+ -- Tomás Vírseda <tomasvirseda@gmail.com>  Mon, 31 Aug 2026 20:00:00 +0200
 
 miaz (0.1.60-1) unstable; urgency=medium
 

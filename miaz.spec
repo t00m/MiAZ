@@ -81,7 +81,7 @@ gtk-update-icon-cache %{_datadir}/icons/hicolor &> /dev/null || :
 %{_datadir}/metainfo/io.github.t00m.MiAZ.metainfo.xml
 
 %changelog
-* Thu Aug 20 2026 Tomás Vírseda <tomasvirseda@gmail.com> - 0.2.0-1
+* Mon Aug 31 2026 Tomás Vírseda <tomasvirseda@gmail.com> - 0.2.0-1
 - The keyboard shortcuts window no longer needs libadwaita 1.8, so MiAZ runs on Debian 13; the startup check now compares toolkit versions correctly against the real floors, GTK 4.10 and libadwaita 1.7
 - Review mode marks a document whose content matches another one; the column sorts copies next to each other and the tooltip names the twin and says whether it is filed already
 - One Suggest menu in the rename dialog covers everything that proposes filename values, in sections that say what is read locally and what is sent to an AI
