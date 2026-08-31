@@ -10,10 +10,9 @@
 
 # MiAZ Personal Document Organizer
 
-**Your documents, named so well you never need to search for them.**
+**"Consistent names. Effortless order."**
 
-A GNOME desktop application that files personal paperwork under a strict seven-field
-filename. No database, no index to rebuild, no lock-in: the directory *is* the database.
+A Linux desktop application that files personal paperwork under a strict seven-field.
 
 <p>
   <a href="https://github.com/t00m/MiAZ/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/t00m/MiAZ/actions/workflows/ci.yml/badge.svg"></a>
@@ -36,65 +35,53 @@ filename. No database, no index to rebuild, no lock-in: the directory *is* the d
 
 ## About
 
-MiAZ is a personal document organiser for the GNOME desktop. It enforces a strict 7-field filename convention so every document you store is always findable by date, country, group, sender, purpose, concept, and recipient.
+MiAZ is a **personal document organiser** for Linux desktops.
 
 Keeping family records, school files, invoices, and administrative paperwork organised is a constant challenge, especially when documents arrive from many different countries and institutions.
+
+MiAZ solves this with a simple, consistent file-naming convention. Scan a letter, download an email attachment, drop it into your MiAZ repository, and the app guides you through naming it correctly with minimal effort.
+
+It enforces a strict 7-field filename convention so every document you store is always findable by date, country, group, sender, purpose, concept, and recipient.
 
 There is no database: the directory itself is the database. All metadata lives in the filename, which means
 your files are fully portable and readable in any file manager.
 
-MiAZ solves this with a simple, consistent file-naming convention of seven fields. Scan a letter, download an email attachment, drop it into your MiAZ repository, and the app guides you through naming it correctly with minimal effort.
+
 
 ## Features
 
-- **No database**: the directory is the database; files are always portable
-- **Multiple repositories**: keep work, home, and archive documents separate, and switch between them without restarting
-- **Workspace**: fast, filterable list that handles thousands of documents
-- **Sidebar filters**: per-field dropdowns for date, country, group, sender, purpose, and recipient
+Out of the box core capabilities:
+
+**The repository**
+
+- **No database**: the directory is the database. All metadata lives in the filename, so your files stay readable in any file manager and portable to any machine
+- **Multiple repositories**: keep work, home and archive documents apart, and switch between them without restarting. Vocabularies and enabled plugins belong to the repository, not to the app
+
+**Getting documents in**
+
+- **Drag and drop**: drop files from the file manager onto the document list. Drop a folder and MiAZ asks whether its subfolders count, telling you how many files each answer imports
+- **Add menu**: pick one file or many (`Ctrl+Insert`), or a whole directory (`Shift+Insert`), which asks the same question about subfolders. Either way the document is copied in, never moved, and normalised to the seven-field shape. A big import runs in the background, with one refresh at the end instead of one per file
+
+**Filing them**
+
 - **Review queue**: documents that do not match the convention yet are listed apart, so filing is a task you can finish
-- **Automatic date detection**: reads the date out of the document instead of guessing
-- **Single and mass renaming**: fix one document, or set a field across a whole selection
-- **Projects**: group related documents under a name
-- **Notes**: keep Markdown notes attached to a document
-- **Command line**: search the repository without a display
-- **Plugins**: 19 built-in, plus your own
+- **Read from the document**: the date comes out of the file's own metadata, and country, sender and recipient out of its text, with `pdftotext` or OCR when there is no text layer. Values are matched against vocabulary the repository already has, so a guess is never something invented
+- **Single and mass renaming**: fix one document, or set any of the seven fields across a whole selection at once
+- **Duplicate detection**: review marks a document whose bytes match another one, so a copy already filed can be discarded without opening it
 
-## How it fits together
+**Finding them again**
 
-The layering has one rule behind it: the backend never touches a GUI toolkit, so
-everything that decides *what* happens can run, and be tested, without a display.
-That is what makes `miaz search` possible over SSH.
+- **Workspace**: a filterable list that stays fast as the repository grows
+- **Sidebar filters**: one dropdown per field, for date, country, group, sender, purpose and recipient, with the active ones shown as chips you can click off
+- **Search**: type in the search box and the list narrows as you type
 
-```mermaid
-flowchart TD
-    plugins["<b>Plugins</b><br/>libpeas · 19 built-in · plus your own"]
-    widgets["<b>Widgets</b> · GTK4 + Libadwaita<br/>workspace · rename · sidebar · settings"]
-    services["<b>Services</b> · application lifecycle<br/>actions · dialogs · workflow · pluginsystem"]
-    console["<b>Command line</b> · no display needed<br/>miaz search · miaz repos"]
-    backend["<b>Backend</b> · no GTK widgets<br/>index · query · config · util · watcher"]
-    disk[("<b>Your repository directory</b><br/>one file per document<br/>every field lives in the filename")]
+**Keeping them**
 
-    plugins <--> services
-    widgets <--> services
-    services --> backend
-    console --> backend
-    backend -. "GObject signals" .-> services
-    backend <--> disk
+- **Backup and restore**: back up the documents, the configuration or the whole repository, and restore any of them, from the application settings
 
-    classDef ui fill:#dbeafe,stroke:#1e40af,color:#0b1324
-    classDef core fill:#dcfce7,stroke:#15803d,color:#0b1324
-    classDef ext fill:#fef3c7,stroke:#b45309,color:#0b1324
-    classDef store fill:#f3e8ff,stroke:#6d28d9,color:#0b1324
-    class widgets,services ui
-    class backend,console core
-    class plugins ext
-    class disk store
-```
 
-> [!NOTE]
-> The command line never imports GTK, and never reaches into the desktop frontend.
-> That is not a convention anybody has to remember: `tests/test_boundaries.py` fails
-> the build if it happens.
+Beyond that, [several plugins](#plugins) ship with the app, and you can write your own.
+
 
 ## File-naming convention
 
@@ -115,50 +102,6 @@ Every document managed by MiAZ follows this seven-field scheme:
 | SentTo | Free text (no hyphens) | `JOHNDOE` |
 
 Fields are separated by hyphens. The date-first order means files sort chronologically in any file browser.
-
-## How filing works
-
-Drop a file into the repository directory. MiAZ notices it and renames it to the seven-field shape straight away, leaving every field empty except the concept, which keeps the original filename. The document then shows up under **Review**, because a name with empty fields is not a finished name.
-
-```mermaid
-flowchart LR
-    drop["📄 You drop a file<br/><i>Scan_0042.pdf</i>"]
-    auto["MiAZ renames it at once<br/><i>--------Scan_0042-.pdf</i>"]
-    review["🔍 <b>Review</b><br/>a name with empty<br/>fields is not finished"]
-    dialog["Ctrl+BackSpace<br/>fill in the fields"]
-    filed["✅ <b>Filed</b><br/><i>20240315-ES-HOU-BANKNAME-<br/>INV-Q1invoice-JOHNDOE.pdf</i>"]
-
-    drop --> auto --> review --> dialog --> filed
-    dialog -. "date, country, sender, concept<br/>or recipient still missing" .-> review
-
-    classDef start fill:#e0e7ff,stroke:#4338ca,color:#0b1324
-    classDef work fill:#fef3c7,stroke:#b45309,color:#0b1324
-    classDef good fill:#dcfce7,stroke:#15803d,color:#0b1324
-    class drop,auto start
-    class review,dialog work
-    class filed good
-```
-
-Open it with `Ctrl+BackSpace` and fill in the fields. The dialog refuses to enable **Rename** until date, country, sender, concept and recipient make a valid name. Group and purpose are advisory: it warns, it does not block.
-
-### Where the date comes from
-
-Typing a date for every document is the slowest part of filing, so MiAZ reads one where it can. It tries two sources, in order:
-
-1. **The document's own metadata.** PDF `CreationDate` and the XMP packet, EXIF `DateTimeOriginal` for photos, and the creation date inside Word, Excel and OpenDocument files. No extra Python package is needed for any of this.
-2. **The filename**, which is where the original name is kept after import. Only dates whose field order the text settles by itself are read: `2024-03-15` and `15_03_2024` are read, `03_04_2024` is not, because it is 3 April in most of the world and 4 March in the United States and nothing in the name says which.
-
-> [!NOTE]
-> When neither source has an answer the date becomes **`99991231`**, on purpose. It is
-> a real date, so nothing downstream needs a special case, and it sorts last, so
-> documents with an unknown date gather at the end of the workspace instead of hiding
-> among documents genuinely filed today.
-
-The file modification time is never used. A bank statement downloaded today has today's mtime, which says when you downloaded it, not when it was written.
-
-> [!TIP]
-> The date row in the rename dialog has a button that reads the date again on demand.
-> Useful after correcting the concept, or for a document already filed under a wrong date.
 
 ### Renaming many at once
 
@@ -220,31 +163,8 @@ Download the `.deb` package from the [latest release](https://github.com/t00m/Mi
 sudo apt install ./miaz_<version>_all.deb
 ```
 
-> [!IMPORTANT]
-> The leading `./` matters. It tells `apt` the argument is a local file rather than a
-> package name in the repositories.
-
 `apt` then pulls the runtime dependencies from the distribution repositories:
 
-```
-Installing:
-  miaz
-
-Installing dependencies:
-  gir1.2-javascriptcoregtk-6.0  gir1.2-webkit-6.0  libpeas-2-common  python3-jaraco.classes  python3-keyring
-  gir1.2-peas-2                 libpeas-2-0        python3-gi-cairo   python3-jeepney         python3-secretstorage
-
-Continue? [Y/n]
-```
-
-> [!CAUTION]
-> `dpkg -i` does not resolve dependencies. It installs the package alone and reports
-> the rest as missing. If you already ran `sudo dpkg -i ./miaz_<version>_all.deb`,
-> repair it with the command below.
-
-```bash
-sudo apt-get install -f
-```
 
 ### RPM (Fedora, RHEL, openSUSE)
 
@@ -295,79 +215,60 @@ To uninstall:
 ./scripts/uninstall/uninstall_user.sh
 ```
 
-## Command line
-
-Searching works without a display, so it runs over SSH and in scripts.
-
-```bash
-miaz repos                                  # repositories, current one marked
-miaz search invoice                         # search the current repository
-miaz search invoice --repo Work --long      # another one, as a table
-miaz search --since last-6-months --json    # structured output
-```
-
-Results are one filename per line, so they pipe straight into other tools:
-
-```bash
-miaz search --since this-month | xargs -d '\n' ls -lh
-miaz search --json | jq -r '.[].concept'
-```
-
-Filters map onto the same fields the workspace sidebar uses: `--country`,
-`--group`, `--sentby`, `--purpose`, `--sentto`, `--concept`, `--since` or
-`--from` and `--to`, `--pending`, `--all` and `--limit`.
-
-Values for `--since`: `this-month`, `past-month`, `last-3-months`,
-`last-6-months`, `last-12-months`, `2-years`, `3-years`, `5-years`, `10-years`,
-`future`.
-
-Exit codes: 0 results, 1 no results, 2 wrong arguments, 3 repository problem.
-Set `MIAZ_DEBUG=1` to see the usual logging.
-
-`--repo` reads another repository without changing which one the window opens
-next time.
-
-Running `miaz` with no arguments opens the window as always.
-
-## Keyboard shortcuts
-
-| Shortcut | Action |
-|---|---|
-| `Ctrl+BackSpace` | Rename the selected document |
-| `Ctrl+Delete` | Delete the selected documents |
-| `Return` | View the selected document |
-| `Ctrl+Insert` | Import documents |
-| `Ctrl+s` | Settings |
-| `Ctrl+?` | Keyboard shortcuts |
-| `Ctrl+b` | About |
-| `Ctrl+q` | Quit |
-| `F1` | Help |
-
 ## Plugins
 
-Plugins are enabled per repository, from the repository settings. Switching repository unloads the plugins of the one you leave and loads the ones the new one enables. Nineteen ship with the app:
+Plugins are not part of the core: nothing below is needed to file a document. They
+are enabled **per repository**, from the repository settings, so a work repository
+can scan and export while a personal one stays plain. Switching repository unloads
+the plugins of the one you leave and loads the ones the new one enables.
+
+Seventeen ship with the app.
+
+**More ways in**
 
 | Plugin | What it does |
 |---|---|
-| MiAZAddFromDir | Add documents from a directory |
-| MiAZImportFromScan | Import a document from a scanner |
+| MiAZImportFromZip | Add the documents inside a ZIP file |
+| MiAZImportFromScan | Scan a document and import it |
 | MiAZAutoScan | Scan in the background and import straight into the repository |
-| MiAZImportFromZip | Import documents from a ZIP file |
-| MiAZExport2CSV | Export to CSV |
-| MiAZExport2Dir | Export to a directory |
-| MiAZExport2Text | Export to a text editor |
-| MiAZExport2Zip | Compress documents into a ZIP file |
-| MiAZCopy2Clipboard | Copy to clipboard |
-| MiAZProjectMgt | Group documents into projects |
-| MiAZPeriodicity | Set how often a document is expected |
-| MiAZNotes | Markdown notes attached to a document |
-| MiAZInsights | Charts and a world map over your documents |
-| MiAZOCR | Extract text from PDFs with OCR and save it as a note |
-| MiAZAIAssistant | Suggest filename fields from the document content |
+
+**Ways out**
+
+| Plugin | What it does |
+|---|---|
+| MiAZExport2Dir | Copy the selected documents to a directory |
+| MiAZExport2Zip | Compress the selection into a ZIP file |
+| MiAZExport2CSV | Write the selection's fields as CSV, for a spreadsheet |
+| MiAZExport2Text | Open the selection in a text editor |
+
+**More than a filename**
+
+| Plugin | What it does |
+|---|---|
+| MiAZProjectMgt | Group related documents under a project, and filter the workspace by it. The assignment lives in `projects.json`, never in the filename |
+| MiAZNotes | Markdown notes attached to a document, edited and previewed in the app |
+| MiAZPeriodicity | Record how often a document is expected: monthly, yearly, on demand |
+
+**Reading the document for you**
+
+| Plugin | What it does |
+|---|---|
+| MiAZOCR | Run OCR over a PDF and keep the text as a note, so a scan becomes searchable |
+| MiAZAIAssistant | Ask an AI provider to suggest the filename fields. Your own key, your own choice of provider |
+
+**Looking at the whole collection**
+
+| Plugin | What it does |
+|---|---|
+| MiAZInsights | Totals, a per-year trend, a month-by-year activity heatmap and a world map of where your paperwork comes from |
+
+**The window itself**
+
+| Plugin | What it does |
+|---|---|
 | MiAZColumnVisibility | Show and hide workspace columns |
-| MiAZWSFont | Change the workspace font |
+| MiAZWSFont | Change the workspace font and size |
 | MiAZFullscreen | Toggle fullscreen |
-| HelloWorld | Example plugin to start from |
 
 > [!NOTE]
 > Some plugins need Python packages MiAZ does not depend on, the AI providers in
@@ -376,41 +277,24 @@ Plugins are enabled per repository, from the repository settings. Switching repo
 > Python. MiAZOCR also needs `ocrmypdf`, and MiAZAutoScan needs `scanimage`, from your
 > distribution.
 
-Your own plugins go in `~/.MiAZ/opt/plugins/`, and can be imported as a ZIP from the plugin settings.
+**Writing your own:** `HelloWorld` is a working example to copy and start from. Your own plugins go in `~/.MiAZ/opt/plugins/`, and can be imported as a ZIP from the plugin settings.
 
 ## Requirements
 
-| Dependency | Minimum version | Why this floor |
-|---|---|---|
-| Python | 3.9 | the oldest interpreter the code is written against |
-| GTK | 4.10 | `Gtk.FileDialog`, `Gtk.FontDialog` |
-| Libadwaita | 1.7 | `Adw.InlineViewSwitcher`, built with the main window |
-| PyGObject | 3.50 | |
+| Dependency | Minimum version |
+|---|---|
+| Python | 3.9 |
+| GTK | 4.10 |
+| Libadwaita | 1.7 |
+| PyGObject | 3.50 |
 
-Tested on Debian 13, the current Ubuntu LTS, and the current Fedora.
+Tested on current Ubuntu LTS 26.04, and the current Fedora (v44).
 
-> [!WARNING]
-> Ubuntu 24.04 LTS ships libadwaita 1.5 and MiAZ will refuse to start on it, saying so
-> rather than crashing. Ubuntu 25.10 and later, and Debian 13, are fine.
 
 ## Contributing
 
 Bug reports and feature requests: [GitHub Issues](https://github.com/t00m/MiAZ/issues)
 
-Tests:
-
-```bash
-python -m pytest tests/ --ignore=tests/ui   # unit tests, no display needed
-./scripts/checks/run_ui_tests.sh            # drives the real application
-```
-
-`tests/manual/UI-CHECKLIST.md` covers what a machine cannot judge, and is the release gate.
-
-> [!TIP]
-> The unit tests need no display and run in seconds. The UI suite starts the real
-> application against a throwaway repository and takes several minutes, so run the one
-> file that covers your change while you work:
-> `./scripts/checks/run_ui_tests.sh tests/ui/test_ui_rename.py`
 
 ## About the author
 
@@ -423,8 +307,10 @@ Feel free to reach out: tomasvirseda@gmail.com
 First public commit of this application started in September, 2022. It's been improved from time to time until 2026.
 Because of lack of time (work and family), I was about to stop the development.
 
-On April, 2026 I had a chance to test AI capabilities. In a few minutes, it solved a big performance issue that I was unable to determine. Since then, I've used to fix many other issues (plugin integrations and other core stuff).
-Check CLAUDE.md and AGENTS.md for more info.
+On April, 2026 I had a chance to test AI capabilities. In a few minutes, it solved a big performance issue that I was unable to determine. Since then, I've used to fix many other issues (plugin integrations and other core stuff) and give shape my ideas.
+Check AGENTS.md for more info.
+
+This decision has also led to the application being banned from the Flathub repositories. The fact that it is not easy to use external utilities has also contributed to the lack of support for Flatpak.
 
 ## License
 
