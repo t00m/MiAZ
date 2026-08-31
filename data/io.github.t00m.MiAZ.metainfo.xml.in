@@ -69,15 +69,21 @@
   <releases>
     <release version="0.2.0" date="2026-08-20" urgency="medium">
       <description>
-        <p>Runs on Debian 13, a rename date that waits until you have finished typing it, and a complete Spanish translation.</p>
+        <p>Runs on Debian 13, marks duplicate documents in review mode, gathers every field suggestion under one menu, and speaks complete Spanish again.</p>
         <ul>
-          <li>The keyboard shortcuts window no longer needs libadwaita 1.8, so MiAZ runs on Debian 13</li>
-          <li>The date in the rename dialog is checked when you leave the field or press Rename, not on every keystroke</li>
-          <li>A half-typed date is no longer completed into a date nobody chose</li>
-          <li>Running miaz where there is no display says so and points at the command line, instead of crashing</li>
-          <li>A crash with no display is reported on the console instead of ending in a core dump</li>
-          <li>Spanish is complete again, all 1011 strings</li>
-          <li>The German and French catalogues are gone, neither having ever been translated</li>
+          <li>The keyboard shortcuts window no longer needs libadwaita 1.8, so MiAZ runs on Debian 13; the startup check now compares toolkit versions correctly against the real floors, GTK 4.10 and libadwaita 1.7</li>
+          <li>Review mode marks a document whose content matches another one; the column sorts copies next to each other and the tooltip names the twin and says whether it is filed already</li>
+          <li>One Suggest menu in the rename dialog covers everything that proposes filename values, in sections that say what is read locally and what is sent to an AI</li>
+          <li>The rename dialog says what it is doing while it reads a document, and its pages are a menu instead of a row of tabs that widened with every plugin</li>
+          <li>The date in the rename dialog is checked when you leave the field or press Rename, not on every keystroke, and a half-typed date is no longer completed into a date nobody chose</li>
+          <li>Adding documents from a directory and copying document names are core features now, not plugins, and an import of more than twenty files runs in the background</li>
+          <li>Backup and restore run behind a progress dialog that reports each file, instead of freezing the window</li>
+          <li>The setup assistant asks about countries and nothing else; groups, purposes, senders and recipients start with every shipped value enabled</li>
+          <li>A name containing an ampersand no longer blanks list columns and dialog messages</li>
+          <li>The plugin menus are flatter and the plugin catalogue uses six one-word categories</li>
+          <li>The deb and the rpm declare ocrmypdf and the Python venv tooling, so OCR and the external libraries work on a clean install</li>
+          <li>Running miaz with no display says so and points at the command line, and a crash leaves a Python traceback in the log instead of a core dump</li>
+          <li>Spanish is complete again, all 1011 strings; the never-translated German and French catalogues are gone</li>
         </ul>
       </description>
     </release>

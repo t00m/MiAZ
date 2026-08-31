@@ -6,7 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-## [0.2.0] - Unreleased
+## [0.2.0] - 2026-08-31
 
 ### Changed
 
@@ -228,7 +228,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Deprecated
 
-- Flatpak packaging is deprecated on purpose and no longer built by default. A Flatpak runs sandboxed on `org.gnome.Platform`, which cannot see or run the host command line tools that plugins depend on (`ocrmypdf` for OCR, `scanimage` for the scanner), so those features never work in a Flatpak build and users saw "OCR tools not installed" even with the tool present on the host. MiAZ is a native desktop app; use the deb, rpm or AppImage package instead. The Flatpak build code is kept for reference and is gated behind `MIAZ_ALLOW_FLATPAK=1` in `build_all.sh` and `create_flatpak.sh`. 
+- Flatpak packaging is deprecated on purpose and no longer built by default. A Flatpak runs sandboxed on `org.gnome.Platform`, which cannot see or run the host command line tools that plugins depend on (`ocrmypdf` for OCR, `scanimage` for the scanner), so those features never work in a Flatpak build and users saw "OCR tools not installed" even with the tool present on the host. MiAZ is a native desktop app; use the deb, rpm or AppImage package instead. The Flatpak build code is kept for reference and is gated behind `MIAZ_ALLOW_FLATPAK=1` in `build_all.sh` and `create_flatpak.sh`.
 
 ### Removed
 

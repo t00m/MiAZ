@@ -9,10 +9,6 @@ menus the moment the window is built, and the actions do what the plugins did.
 
 import os
 
-import gi
-gi.require_version('Gtk', '4.0')
-from gi.repository import Gtk
-
 
 def _write(path, text='document'):
     with open(path, 'w', encoding='utf-8') as handler:
