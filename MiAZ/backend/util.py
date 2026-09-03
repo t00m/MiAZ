@@ -764,22 +764,30 @@ class MiAZUtil(GObject.GObject):
         self.filename_copy(source, target)
         self.emit('filename-added', target)
 
-    def filename_export(self, source: str, target: str):
-        self.filename_copy(source, target)
+    def filename_export(self, source: str, target: str) -> bool:
+        return self.filename_copy(source, target)
 
-    def filename_copy(self, source, target, overwrite=True):
-        if source != target:
-            if overwrite:
-                try:
-                    # preserve metadata
-                    shutil.copy2(source, target)
-                    self.log.info(f"{source} copied to {target}")
-                except Exception as error:
-                    self.log.error(error)
-            else:
-                self.log.debug(f"Target file {target} exists. Copy operation skipped")
-        else:
-            self.log.error("Source and Target are the same. Skip rename")
+    def filename_copy(self, source, target, overwrite=True) -> bool:
+        """Copy source to target. True when the file was written.
+
+        The return value is what lets a caller count what it exported: a
+        failure used to reach the log and nowhere else, so the export plugin
+        reported success for documents it had never copied.
+        """
+        if source == target:
+            self.log.error("Source and Target are the same. Skip copy")
+            return False
+        if not overwrite and os.path.exists(target):
+            self.log.debug(f"Target file {target} exists. Copy operation skipped")
+            return False
+        try:
+            # preserve metadata
+            shutil.copy2(source, target)
+            self.log.info(f"{source} copied to {target}")
+            return True
+        except Exception as error:
+            self.log.error(error)
+            return False
 
     def filename_date_human(self, value: str = '') -> str:
         if not date_is_valid(value):

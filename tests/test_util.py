@@ -780,3 +780,57 @@ def test_the_simple_human_date_refuses_what_is_not_a_date(util):
     assert util.filename_date_human_simple('20260301') == '01/03/2026'
     assert util.filename_date_human_simple('202613') is None
     assert util.filename_date_human_simple('20261301') is None
+
+
+# ---------------------------------------------------------------------------
+# filename_copy: the caller has to be able to tell a copy from a failure
+# ---------------------------------------------------------------------------
+
+def test_a_copy_that_worked_says_so(util, tmp_path):
+    source = tmp_path / 'source.pdf'
+    source.write_text('x')
+    target = tmp_path / 'target.pdf'
+    assert util.filename_copy(str(source), str(target)) is True
+    assert target.read_text() == 'x'
+
+
+def test_a_copy_that_failed_says_so(util, tmp_path):
+    """The export plugin counts failures to report them. It cannot, if a
+    missing source is only written to the log."""
+    source = tmp_path / 'missing.pdf'
+    target = tmp_path / 'target.pdf'
+    assert util.filename_copy(str(source), str(target)) is False
+    assert not target.exists()
+
+
+def test_copying_a_file_onto_itself_is_not_a_copy(util, tmp_path):
+    source = tmp_path / 'source.pdf'
+    source.write_text('x')
+    assert util.filename_copy(str(source), str(source)) is False
+
+
+def test_without_overwrite_a_missing_target_is_still_copied(util, tmp_path):
+    """overwrite=False used to mean 'never copy': the branch logged a skip
+    without ever looking at whether the target was there."""
+    source = tmp_path / 'source.pdf'
+    source.write_text('x')
+    target = tmp_path / 'target.pdf'
+    assert util.filename_copy(str(source), str(target), overwrite=False) is True
+    assert target.read_text() == 'x'
+
+
+def test_without_overwrite_an_existing_target_is_kept(util, tmp_path):
+    source = tmp_path / 'source.pdf'
+    source.write_text('new')
+    target = tmp_path / 'target.pdf'
+    target.write_text('old')
+    assert util.filename_copy(str(source), str(target), overwrite=False) is False
+    assert target.read_text() == 'old'
+
+
+def test_the_export_passes_the_copy_result_back(util, tmp_path):
+    source = tmp_path / 'source.pdf'
+    source.write_text('x')
+    assert util.filename_export(str(source), str(tmp_path / 'out.pdf')) is True
+    assert util.filename_export(str(tmp_path / 'gone.pdf'),
+                                str(tmp_path / 'out2.pdf')) is False

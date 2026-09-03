@@ -73,6 +73,8 @@ data/resources/plugins/MiAZContacts/contacts/editor.py
 data/resources/plugins/MiAZContacts/contacts/manager.py
 data/resources/plugins/MiAZDoctor/doctor.py
 data/resources/plugins/MiAZExport2CSV/export2csv.py
+data/resources/plugins/MiAZExport2Dir/export/layout.py
+data/resources/plugins/MiAZExport2Dir/export/runner.py
 data/resources/plugins/MiAZExport2Dir/export2dir.py
 data/resources/plugins/MiAZExport2Text/export2text.py
 data/resources/plugins/MiAZExport2Zip/export2zip.py
