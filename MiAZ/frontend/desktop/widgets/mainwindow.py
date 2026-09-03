@@ -23,6 +23,13 @@ from MiAZ.frontend.desktop.widgets.workspace import MiAZWorkspace
 class MiAZMainWindow(Gtk.Box):
     __gtype_name__ = 'MiAZMainWindow'
 
+    # True while the window is too narrow for the desktop layout. One
+    # breakpoint sets it and everything that has to change reads it, so the
+    # width at which MiAZ rearranges itself is written down in one place.
+    narrow = GObject.Property(
+        type=bool, default=False, nick='Narrow layout',
+        blurb='The window is too narrow for the desktop layout')
+
     def __init__(self, app, edit=True):
         self.app = app
         self.log = MiAZLog('MiAZ.MainWindow')
@@ -91,15 +98,18 @@ class MiAZMainWindow(Gtk.Box):
         toast_overlay.set_child(toolbar_view)
         self.append(toast_overlay)
 
-        # Adaptive: collapse the sidebar into an overlay
-        # show only icons in the workspace view switcher.
+        # Adaptive: collapse the sidebar into an overlay, show only icons in
+        # the workspace view switcher, and put the window into narrow mode.
         breakpoint_ = Adw.Breakpoint.new(Adw.BreakpointCondition.parse("max-width: 720sp"))
         breakpoint_.add_setter(split_view, "collapsed", True)
+        breakpoint_.add_setter(self, "narrow", True)
         switcher = self.app.get_widget('workspace-view-switcher')
         if switcher is not None:
             breakpoint_.add_setter(
                 switcher, "display-mode", Adw.InlineViewSwitcherDisplayMode.ICONS)
         self.win.add_breakpoint(breakpoint_)
+        self.connect('notify::narrow', self._on_narrow_changed)
+        self._on_narrow_changed()
 
     def _setup_event_listener(self):
         """Setup an event listener for mainwindow"""
@@ -199,9 +209,15 @@ class MiAZMainWindow(Gtk.Box):
         self.app.add_widget('workspace-view-switcher', switcher)
         center_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
         center_box.append(switcher)
+        # Kept, because a narrow window takes it off the header bar and a wide
+        # one puts it back.
+        self._headerbar_center = center_box
         headerbar.set_title_widget(center_box)
 
     def _setup_headerbar_end(self):
+        # Filled by pack() below, moved onto the workspace toolbar as soon as
+        # there is one: the header bar is built before the workspace exists.
+        self._document_actions = []
         factory = self.app.get_service('factory')
         actions = self.app.get_service('actions')
         headerbar = self.app.get_widget('headerbar')
@@ -209,6 +225,13 @@ class MiAZMainWindow(Gtk.Box):
         # Primary menu (rightmost)
         menubutton = self._setup_menu_system()
         headerbar.pack_end(menubutton)
+
+        # What acts on documents belongs with the documents, not up in the
+        # header bar: the toolbar above the list is where the user is looking.
+        # It falls back to the header bar if there is no workspace yet.
+        def pack(widget):
+            headerbar.pack_end(widget)
+            self._document_actions.append(widget)
 
         # "Add" menu. Aggregates every Import-category plugin actions
         add_menu = self.app.add_widget('headerbar-add-menu', Gio.Menu.new())
@@ -218,12 +241,31 @@ class MiAZMainWindow(Gtk.Box):
         btn_add.set_menu_model(add_menu)
         btn_add.set_visible(False)
         self.app.add_widget('headerbar-button-add', btn_add)
-        headerbar.pack_end(btn_add)
+        pack(btn_add)
 
-        # Per-selection action buttons (placed to the left of the primary menu)
+        # Document preview, off by default. It comes up from the bottom.
+        btn_preview = factory.create_button_toggle(
+            icon_name='image-x-generic-symbolic',
+            tooltip=_('Show the document page'),
+            callback=self._on_toggle_preview)
+        self.app.add_widget('headerbar-button-preview', btn_preview)
+        pack(btn_preview)
+
+        # The same four actions as one menu, for a window too narrow to carry
+        # them as buttons. Only one of the two is ever visible.
+        btn_actions = Gtk.MenuButton()
+        btn_actions.set_icon_name('view-more-symbolic')
+        btn_actions.set_tooltip_text(_('Actions for the selected documents'))
+        btn_actions.add_css_class('flat')
+        btn_actions.set_visible(False)
+        self.app.add_widget('headerbar-button-actions', btn_actions)
+        pack(btn_actions)
+
+        # Per-selection action buttons. Plugins add theirs to this same box,
+        # so the Notes button and the rest travel with it.
         hbox = factory.create_box_horizontal(margin=0, spacing=6)
         self.app.add_widget('headerbar-right-box', hbox)
-        headerbar.pack_end(hbox)
+        pack(hbox)
 
         # View document button (visible when exactly 1 item selected)
         btn_view = factory.create_button(
@@ -269,6 +311,87 @@ class MiAZMainWindow(Gtk.Box):
         btn_delete.set_visible(False)
         self.app.add_widget('headerbar-button-delete', btn_delete)
         hbox.append(btn_delete)
+
+    def _on_narrow_changed(self, *args):
+        """Strip the header bar down to what fits when the window is narrow.
+
+        The buttons that carry a label lose it, and the four per-selection
+        buttons become one menu. Together that is what lets the window reach
+        a phone width; the breakpoint that sets 'narrow' cannot fire at a
+        width the header bar refuses to allow.
+        """
+        narrow = self.get_property('narrow')
+
+        # The Add button keeps its icon and drops the word next to it.
+        btn_add = self.app.get_widget('headerbar-button-add')
+        if btn_add is not None:
+            content = btn_add.get_child()
+            if isinstance(content, Adw.ButtonContent):
+                content.set_label('' if narrow else _('Add'))
+
+        # The Review toggle carries a word and a count; narrow it keeps the
+        # count. The workspace owns that string, so it does the relabelling.
+        workspace = self.app.get_widget('workspace')
+        if workspace is not None:
+            workspace.update_review_button()
+
+        # The page switcher is the widest thing in the header bar. It is taken
+        # out by dropping the title widget rather than by hiding the switcher,
+        # whose own visibility belongs to the repository switch. An empty
+        # Adw.WindowTitle, not None: with no title widget GTK falls back to the
+        # window title, a label that will not ellipsize and costs 69px.
+        headerbar = self.app.get_widget('headerbar')
+        center = getattr(self, '_headerbar_center', None)
+        if headerbar is not None and center is not None:
+            headerbar.set_title_widget(Adw.WindowTitle() if narrow else center)
+
+        # A phone shell draws the window controls itself, and 108px of them is
+        # a third of the screen. Quit stays on Ctrl+Q and in the primary menu.
+        if headerbar is not None:
+            headerbar.set_show_end_title_buttons(not narrow)
+            headerbar.set_show_start_title_buttons(not narrow)
+
+        self._update_selection_widgets()
+
+    @classmethod
+    def _button_label(cls, widget):
+        """The Gtk.Label inside a button, however deep the factory nested it."""
+        child = widget.get_first_child()
+        while child is not None:
+            if isinstance(child, Gtk.Label):
+                return child
+            found = cls._button_label(child)
+            if found is not None:
+                return found
+            child = child.get_next_sibling()
+        return None
+
+    def _build_actions_menu(self, selected):
+        """The per-selection actions as a menu, matching the buttons shown."""
+        actions = self.app.get_service('actions')
+        factory = self.app.get_service('factory')
+        menu = Gio.Menu.new()
+        if selected == 1:
+            menu.append_item(factory.create_menuitem(
+                'narrow-document-view', _('View document'),
+                lambda *_a: actions.document_display_selected()))
+            menu.append_item(factory.create_menuitem(
+                'narrow-document-rename', _('Rename document'),
+                lambda *_a: actions.document_rename()))
+        if selected > 1:
+            massrename_menu = self.app.get_widget('massrename-menu')
+            if massrename_menu is not None:
+                menu.append_submenu(_('Mass renaming'), massrename_menu)
+        if selected >= 1:
+            menu.append_item(factory.create_menuitem(
+                'narrow-document-delete', _('Delete documents'),
+                lambda *_a: actions.document_delete()))
+        return menu
+
+    def _on_toggle_preview(self, button, *args):
+        sheet = self.app.get_widget('workspace-preview-sheet')
+        if sheet is not None:
+            sheet.set_open(button.get_active())
 
     def _update_window_title(self, *args):
         repo_id = self.app.get_service('repo').get_active_id()
@@ -334,7 +457,33 @@ class MiAZMainWindow(Gtk.Box):
             view = self.app.get_widget('workspace-view')
             if view is not None and hasattr(view, 'cv'):
                 view.cv.connect('activate', lambda cv, pos: actions.document_display_selected())
+            self._move_document_actions_to_toolbar()
         return widget_workspace
+
+    def _move_document_actions_to_toolbar(self):
+        """Put what acts on documents onto the toolbar above them.
+
+        They are created with the header bar, which is built before there is a
+        workspace to hold them, so they start there and move across.
+        """
+        center = self.app.get_widget('workspace-toolbar-center')
+        headerbar = self.app.get_widget('headerbar')
+        if center is None or headerbar is None:
+            return
+        for widget in getattr(self, '_document_actions', []):
+            if widget.get_parent() is center:
+                continue
+            headerbar.remove(widget)
+            center.append(widget)
+        # Review goes next to the view buttons: it chooses which documents
+        # are on screen, and that is what the left of the toolbar is for.
+        start = self.app.get_widget('workspace-toolbar-start')
+        btn_review = self.app.get_widget('workspace-togglebutton-pending-docs')
+        # The parent is a box inside the header bar, not the bar itself, so
+        # it is checked against where it is going rather than where it is.
+        if start is not None and btn_review is not None and btn_review.get_parent() is not start:
+            headerbar.remove(btn_review)
+            start.append(btn_review)
 
     def _on_application_started(self, *args):
         GLib.idle_add(self._append_footer_menu_deferred)
@@ -453,25 +602,38 @@ class MiAZMainWindow(Gtk.Box):
             label.set_markup(label_text)
             label.set_tooltip_markup(tooltip)
 
-        # Toggle headerbar button visibility based on selection
-        btn_view = self.app.get_widget('headerbar-button-view')
-        if btn_view is not None:
-            btn_view.set_visible(s == 1)
-        btn_rename = self.app.get_widget('headerbar-button-rename')
-        if btn_rename is not None:
-            btn_rename.set_visible(s == 1)
-        btn_massrename = self.app.get_widget('headerbar-button-massrename')
-        if btn_massrename is not None:
-            btn_massrename.set_visible(s > 1)
-        btn_delete = self.app.get_widget('headerbar-button-delete')
-        if btn_delete is not None:
-            btn_delete.set_visible(s >= 1)
+        self._selected_count = s
+        self._update_selection_widgets()
 
         searchentry = self.app.get_widget('searchentry')
         if v > 0:
             stack.set_visible_child_name('workspace')
         else:
             stack.set_visible_child_name('page-404')
+
+    def _update_selection_widgets(self):
+        """Show the per-selection actions as buttons, or as one menu if narrow.
+
+        Both paths follow the same rule: view and rename need exactly one
+        document, mass rename needs more than one, delete needs at least one.
+        """
+        selected = getattr(self, '_selected_count', 0)
+        narrow = self.get_property('narrow')
+        wide = not narrow
+        for key, visible in (
+            ('headerbar-button-view', selected == 1),
+            ('headerbar-button-rename', selected == 1),
+            ('headerbar-button-massrename', selected > 1),
+            ('headerbar-button-delete', selected >= 1),
+        ):
+            button = self.app.get_widget(key)
+            if button is not None:
+                button.set_visible(wide and visible)
+        btn_actions = self.app.get_widget('headerbar-button-actions')
+        if btn_actions is not None:
+            btn_actions.set_visible(narrow and selected >= 1)
+            if narrow and selected >= 1:
+                btn_actions.set_menu_model(self._build_actions_menu(selected))
 
     def _setup_menu_selection(self):
         """Create workspace menu with a dedicated section for plugin entries."""

@@ -137,6 +137,11 @@ class DocumentQuery:
     # re-resolve it. Filtering never reads it: date_mode and the bounds decide.
     date_preset: str = ''
     only_pending: bool = False
+    # An explicit set of document ids to show, and nothing else. Used to put a
+    # list somebody already worked out in front of the user: the documents a
+    # health check named, a plugin's own selection. None means no restriction;
+    # an empty set means show nothing, which is a real answer and not the same.
+    only_ids: Optional[frozenset] = None
     # Lifted checks. A plugin filtering on its own membership (a project, say)
     # needs documents whose fields or dates the repository config does not
     # recognise, so it can switch off the two checks that would hide them.
@@ -147,6 +152,9 @@ class DocumentQuery:
         """True when the document belongs in the current view."""
         active = True if self.ignore_active else item.active
         in_range = True if self.ignore_date else self._matches_date(item)
+
+        if self.only_ids is not None and item.id not in self.only_ids:
+            return False
 
         conditions = (
             self._matches_search(item),

@@ -16,7 +16,7 @@ log = MiAZLog('MiAZ.Duplicates')
 CHUNK = 1024 * 1024
 
 
-def _digest(path):
+def file_digest(path):
     """The sha256 of a file, or None when it cannot be read.
 
     A file the scan cannot open is skipped rather than raising: one bad file
@@ -61,7 +61,7 @@ def find_duplicates(paths):
         if len(group) < 2:
             continue
         for path in group:
-            digest = _digest(path)
+            digest = file_digest(path)
             if digest is not None:
                 by_hash.setdefault(digest, []).append(path)
 

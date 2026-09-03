@@ -104,7 +104,8 @@ plugin_categories = {
     N_('Organise'): {
         N_('Tags'): 'Classify documents',
         N_('Projects'): 'Group documents into projects',
-        N_('Search'): 'Find documents'
+        N_('Search'): 'Find documents',
+        N_('Contacts'): 'Keep details about senders and recipients'
     },
     N_('Repository'): {
         N_('Backup'): 'Copy the repository somewhere safe',
@@ -227,6 +228,30 @@ class PluginPageRegistry:
     def pop_all(self, owner: str) -> list:
         """The pages of this plugin, forgetting them as they are handed over."""
         return self._pages.pop(owner, [])
+
+
+class PluginViewRegistry:
+    """Which workspace views belong to which plugin.
+
+    A view is removed when its plugin is unloaded, the same deal pages get:
+    the name has to be free again, or the plugin cannot register on the way
+    back in.
+    """
+
+    def __init__(self):
+        self._views = {}
+
+    def add(self, owner: str, name: str):
+        """Record a view. Recording it twice still means one view."""
+        names = self._views.setdefault(owner, [])
+        if name not in names:
+            names.append(name)
+
+    def names(self, owner: str) -> list:
+        return list(self._views.get(owner, []))
+
+    def pop_all(self, owner: str) -> list:
+        return self._views.pop(owner, [])
 
 
 class PluginWidgetRegistry:
@@ -535,6 +560,22 @@ class MiAZPlugin(GObject.GObject):
         if system is not None:
             system.pages.add(self.get_name(), name)
 
+    def add_workspace_view(self, widget, name, icon_name, label):
+        """Add a view to the documents toolbar, owned by this plugin.
+
+        The plugin system removes it when the plugin is unloaded, so there is
+        nothing to undo in do_deactivate and the name is free again next time.
+        """
+        if not self.is_active():
+            return
+        workspace = self.app.get_widget('workspace')
+        if workspace is None:
+            return
+        workspace.add_view(name, icon_name, label, widget)
+        system = self.app.get_service('plugin-system')
+        if system is not None:
+            system.views.add(self.get_name(), name)
+
     def _widget_registry(self):
         system = self.app.get_service('plugin-system')
         return None if system is None else system.widgets
@@ -725,6 +766,7 @@ class MiAZPluginSystem(GObject.GObject):
         # What plugins contributed to shared UI, so unload_plugin can take it
         # away the same way it already does web content and dialog tabs.
         self.pages = PluginPageRegistry()
+        self.views = PluginViewRegistry()
         self.widgets = PluginWidgetRegistry()
         self.menus = PluginMenuRegistry()
         self._setup_plugins_dir()
@@ -920,6 +962,7 @@ class MiAZPluginSystem(GObject.GObject):
             self._remove_plugin_www(plugin)
             self._remove_plugin_document_tabs(plugin)
             self._remove_plugin_pages(plugin)
+            self._remove_plugin_views(plugin)
             self.menus.forget(plugin.get_name())
             self.widgets.undo_all(plugin.get_name())
             self.log.info(f"Plugin {pname} v{pvers} unloaded")
@@ -1006,6 +1049,18 @@ class MiAZPluginSystem(GObject.GObject):
                 self.log.debug(f"Removed workspace page '{name}'")
             except Exception as error:
                 self.log.warning(f"Could not remove workspace page '{name}': {error}")
+
+    def _remove_plugin_views(self, plugin: Peas.PluginInfo):
+        """Take back the workspace views of a plugin when it is unloaded."""
+        workspace = self.app.get_widget('workspace')
+        if workspace is None:
+            return
+        for name in self.views.pop_all(plugin.get_name()):
+            try:
+                workspace.remove_view(name)
+                self.log.debug(f"Removed workspace view '{name}'")
+            except Exception as error:
+                self.log.warning(f"Could not remove workspace view '{name}': {error}")
 
     def get_engine(self):
         return self.engine

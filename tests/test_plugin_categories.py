@@ -105,3 +105,21 @@ def test_every_name_reaches_the_translation_catalogue():
     missing = [n for n in sorted(names)
                if f'msgid "{n}"\n' not in catalogue]
     assert not missing, f"not in {CATALOGUE}: {', '.join(missing)}"
+
+
+def test_the_module_named_in_the_plugin_file_is_the_file_that_exists():
+    """A .plugin naming a module that is not there loads nothing, silently.
+
+    MiAZRelated shipped for a moment with Module=related while the code was in
+    relateddocs.py, and the only symptom was a plugin that never appeared.
+    """
+    missing = []
+    for plugin_file in sorted(glob.glob(os.path.join(PLUGIN_DIR, "*", "*.plugin"))):
+        directory = os.path.dirname(plugin_file)
+        parser = configparser.ConfigParser()
+        parser.read(plugin_file)
+        module = parser.get('Plugin', 'Module', fallback='')
+        if not os.path.exists(os.path.join(directory, f'{module}.py')):
+            missing.append(f"{os.path.basename(plugin_file)} names "
+                           f"Module={module}, but {module}.py is not there")
+    assert missing == [], '\n'.join(missing)

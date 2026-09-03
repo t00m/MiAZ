@@ -1,0 +1,8 @@
+{
+  "miazaiassistant": [
+    "anthropic",
+    "openai",
+    "google-genai",
+    "ollama"
+  ]
+}

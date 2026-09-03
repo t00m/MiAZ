@@ -19,6 +19,7 @@ from MiAZ.backend.models import Group, Country, Purpose, SentBy, SentTo, Date, R
 from MiAZ.frontend.desktop.widgets.configview import MiAZCountries, MiAZGroups, MiAZPurposes, MiAZPeopleSentBy, MiAZPeopleSentTo
 from MiAZ.frontend.desktop.widgets.configview import MiAZRepositories
 from MiAZ.frontend.desktop.services.dialogs import MiAZWindowDialog
+from MiAZ.frontend.desktop.widgets.docpreview import MiAZDocPreview
 from MiAZ.frontend.desktop.widgets.rename import MiAZRenameDialog
 from MiAZ.frontend.desktop.widgets.settings import MiAZAppSettings
 from MiAZ.frontend.desktop.widgets.settings import MiAZRepoSettings
@@ -299,6 +300,23 @@ class MiAZActions(GObject.GObject):
             old.dispose()
         rename_widget = self.app.add_widget('rename-widget', MiAZRenameDialog(self.app))
         rename_widget.set_data(doc)
+        # The preview comes up from the bottom when it is asked for, rather
+        # than sitting beside the fields taking width from them. It reads
+        # nothing until it is opened: most renames never need the page.
+        preview = MiAZDocPreview(self.app)
+        self.app.add_widget('rename-preview', preview)
+        content = Adw.BottomSheet()
+        content.set_hexpand(True)
+        content.set_vexpand(True)
+        content.set_modal(False)
+        content.set_can_close(True)
+        content.set_show_drag_handle(True)
+        content.set_open(False)
+        rename_widget.set_hexpand(True)
+        content.set_content(rename_widget)
+        content.set_sheet(preview)
+        self.app.add_widget('rename-preview-sheet', content)
+        preview.connect('close-requested', lambda *_a: content.set_open(False))
         window = self.app.get_widget('window')
         # A real top-level window (not Adw.AlertDialog, which is an in-window
         # overlay) so the rename dialog moves freely, even to another monitor.
@@ -309,7 +327,7 @@ class MiAZActions(GObject.GObject):
         # disable the main window while the dialog is open, so the user cannot
         # work in it, and re-enable it when the dialog closes.
         dialog = MiAZWindowDialog(self.app, title=_('Rename document'),
-                                  widget=rename_widget, width=1024, height=640)
+                                  widget=content, width=1024, height=700)
         # "Rename" is the primary action and must be the first button on the
         btn_rename = dialog.add_response('apply', _('Rename'))
         dialog.set_response_appearance('apply', Adw.ResponseAppearance.SUGGESTED)
@@ -345,15 +363,28 @@ class MiAZActions(GObject.GObject):
         btn_suggest.set_tooltip_text(_('Suggest values for the filename fields'))
         btn_suggest.set_menu_model(self.build_suggest_menu())
 
-        # "Preview" opens the source document. It sits next to Suggest.
-        btn_preview = self.factory.create_button(
+        # "Preview" raises the page from the bottom. Nothing is read until it
+        # is clicked, so a rename that does not need the page does not pay for
+        # one, and the fields keep the full width of the dialog until then.
+        btn_preview = self.factory.create_button_toggle(
             icon_name='io.github.t00m.MiAZ-preview',
             title=_('Preview'),
-            tooltip=_('Preview this document'),
+            tooltip=_('Show the document page'),
         )
-        btn_preview.connect(
-            'clicked',
-            lambda *_a: self.document_display(rename_widget.get_filepath_source()))
+        self.app.add_widget('rename-button-preview', btn_preview)
+
+        def _on_preview_toggled(button, *_a):
+            showing = button.get_active()
+            content.set_open(showing)
+            if showing and preview.get_document() is None:
+                repository = self.app.get_service('repo')
+                preview.set_document(os.path.join(
+                    repository.docs, os.path.basename(rename_widget.doc)))
+
+        btn_preview.connect('toggled', _on_preview_toggled)
+        # The sheet can be dragged shut, so the button follows the sheet.
+        content.connect('notify::open',
+                        lambda sheet, _p: btn_preview.set_active(sheet.get_open()))
 
         # Right of the header, where the plugin's own AI button used to be.
         dialog.pack_header_end(btn_suggest)

@@ -511,3 +511,34 @@ def test_a_preset_query_actually_filters():
     old = item(date='20200101')
     assert query.matches(recent) is True
     assert query.matches(old) is False
+
+
+def test_only_ids_restricts_the_view_to_an_explicit_list():
+    """Putting a list somebody already worked out in front of the user.
+
+    A health check names the documents it found; the view has to be able to
+    show exactly those, whatever the dropdowns say.
+    """
+    wanted = item(id='a.pdf')
+    unwanted = item(id='b.pdf')
+    query = DocumentQuery(only_ids=frozenset({'a.pdf'}),
+                          ignore_date=True, ignore_active=True)
+    assert query.matches(wanted) is True
+    assert query.matches(unwanted) is False
+
+
+def test_no_restriction_is_not_the_same_as_an_empty_one():
+    """None means every document; an empty set means none, and both are real."""
+    document = item(id='a.pdf')
+    assert DocumentQuery(ignore_date=True,
+                         ignore_active=True).matches(document) is True
+    assert DocumentQuery(only_ids=frozenset(), ignore_date=True,
+                         ignore_active=True).matches(document) is False
+
+
+def test_only_ids_still_obeys_the_other_filters():
+    """It narrows the view, it does not override what else is being asked."""
+    document = item(id='a.pdf', country='ES')
+    query = DocumentQuery(only_ids=frozenset({'a.pdf'}), country='DE',
+                          ignore_date=True, ignore_active=True)
+    assert query.matches(document) is False
