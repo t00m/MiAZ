@@ -26,9 +26,7 @@ FIELDS = ['20260904', 'ES', 'FIN', 'BANKX', 'INV', 'mortgage', 'JOHNDOE']
 LABELS = ['', 'Spain', 'Finance', 'Bank X', 'Invoice', 'mortgage', 'John Doe']
 
 
-# ---------------------------------------------------------------------------
 # pattern validation
-# ---------------------------------------------------------------------------
 
 def test_every_documented_letter_is_valid():
     from export.layout import PATTERNS, invalid_keys
@@ -45,9 +43,7 @@ def test_an_unknown_letter_is_reported_once():
     assert invalid_keys('xx') == ['x']
 
 
-# ---------------------------------------------------------------------------
 # directory_parts
-# ---------------------------------------------------------------------------
 
 def test_the_pattern_letters_become_directories_in_order():
     from export.layout import directory_parts
@@ -108,9 +104,7 @@ def test_the_month_stays_a_number_even_with_labels():
     assert directory_parts(FIELDS, 'Ym', LABELS) == ['2026', '09']
 
 
-# ---------------------------------------------------------------------------
 # readable_name
-# ---------------------------------------------------------------------------
 
 def test_the_readable_name_uses_the_descriptions_and_a_human_date():
     from export.layout import readable_name
@@ -149,9 +143,7 @@ def test_the_readable_name_works_without_an_extension():
         '2026-09-04 - ES - FIN - BANKX - INV - mortgage - JOHNDOE')
 
 
-# ---------------------------------------------------------------------------
 # unique_target
-# ---------------------------------------------------------------------------
 
 def test_a_free_name_is_left_alone():
     from export.layout import unique_target
@@ -169,9 +161,7 @@ def test_the_counter_climbs_until_the_name_is_free():
     assert unique_target('/tmp/a.pdf', taken) == '/tmp/a (4).pdf'
 
 
-# ---------------------------------------------------------------------------
 # export_documents: what reaches the target, and what is reported back
-# ---------------------------------------------------------------------------
 
 def document(doc_id=None, fields=None, labels=None, extension='pdf'):
     fields = list(FIELDS if fields is None else fields)

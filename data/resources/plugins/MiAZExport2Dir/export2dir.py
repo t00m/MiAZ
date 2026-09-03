@@ -97,9 +97,7 @@ class Export2Dir(MiAZExtension):
             # Plugin configured
             self.plugin.set_started(started=True)
 
-    # -----------------------------------------------------------------
     # Settings: the folder and the pattern survive between exports
-    # -----------------------------------------------------------------
 
     def get_settings(self) -> dict:
         """What the last export used. Defaults when there is nothing yet."""
@@ -126,9 +124,7 @@ class Export2Dir(MiAZExtension):
         except Exception as error:
             self.log.warning(f"Could not save the export settings: {error}")
 
-    # -----------------------------------------------------------------
     # The dialog
-    # -----------------------------------------------------------------
 
     def export(self, *args):
         from export.layout import PATTERNS
@@ -214,9 +210,7 @@ class Export2Dir(MiAZExtension):
             self.srvdlg.show_error(title=_('Error selecting files'), body=str(error))
             self.log.error(f"Error selecting files: {error}")
 
-    # -----------------------------------------------------------------
     # The export itself
-    # -----------------------------------------------------------------
 
     def _on_dialog_response(self, dialog, response, data):
         from export.layout import invalid_keys

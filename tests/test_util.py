@@ -782,9 +782,7 @@ def test_the_simple_human_date_refuses_what_is_not_a_date(util):
     assert util.filename_date_human_simple('20261301') is None
 
 
-# ---------------------------------------------------------------------------
 # filename_copy: the caller has to be able to tell a copy from a failure
-# ---------------------------------------------------------------------------
 
 def test_a_copy_that_worked_says_so(util, tmp_path):
     source = tmp_path / 'source.pdf'
