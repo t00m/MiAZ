@@ -799,6 +799,20 @@ activation (with install instructions) when `ocrmypdf` is not on `PATH`.
 - **No GTK3**: no `GtkListStore`, `GtkTreeView`, `GtkDialog` subclassing
 - **Filechooser**: `Gtk.FileDialog` (async GTK4 API), not `Gtk.FileChooserDialog`
 
+## Git workflow
+
+Rules for any agent working in this repository:
+
+- **Commit freely.** No need to hand the command back to the user or park the message in a file.
+- **One line per commit message.** Subject only, no body. Keep it short and plain, the way the `nonia` skill asks: no filler, no inflated words, no em dash.
+- **Describe the change, not the policy.** A commit message says what the commit does. Never recite these rules in it.
+- **No trailers.** Never add `Co-Authored-By:`, `Claude-Session:` or anything similar.
+- **Never create a branch.** Work on whatever branch is checked out. This covers naming a branch outright, the create flags on checkout and switch, and adding a worktree.
+- **Never push.** Pushing is the user's call.
+- **Never commit `.claude/`.** It holds local tooling config and is gitignored.
+
+Nothing in this repository enforces these. The maintainer's machine runs a hook that denies a push or a branch creation, but it lives under `.claude/` and is not tracked, so a clone gets the rules written here and nothing that stops it breaking them.
+
 ## Build & install
 
 ```bash
