@@ -128,3 +128,34 @@ def test_the_page_disconnects_when_the_dialog_closes(clean_view):
 
     assert page._sid_plugins_updated is None, 'the page is still connected'
     assert count_handlers(plugin_system, 'plugins-updated') == baseline
+
+
+def test_an_interface_plugin_puts_its_settings_here(repo_settings, clean_view):
+    """MiAZFullscreen is enabled in the test repository, and its row used to
+    be in the Application Settings dialog while its value was written to this
+    repository's config."""
+    page = clean_view.widget('repository-settings-page-settings')
+    notebook = clean_view.widget('repository-settings-notebook')
+    notebook.set_current_page(_page_number(notebook, page))
+    clean_view.pump(0.4)
+    titles = row_titles(page)
+    assert 'Display fullscreen toggle button' in titles, titles
+
+
+def test_a_settings_group_goes_away_with_its_plugin(repo_settings, clean_view):
+    system = clean_view.service('plugin-system')
+    info = system.get_plugin_info('fullscreen')
+    if info is None or not system.is_plugin_loaded(info):
+        pytest.skip('MiAZFullscreen is not enabled in this repository')
+    registry = system.settings
+    assert any(owner == 'MiAZFullscreen'
+               for _c, owner, _b in registry.builders())
+    system.unload_plugin(info)
+    clean_view.pump(0.3)
+    assert not any(owner == 'MiAZFullscreen'
+                   for _c, owner, _b in registry.builders())
+    system.load_plugin(info)
+    clean_view.pump(0.3)
+    assert any(owner == 'MiAZFullscreen'
+               for _c, owner, _b in registry.builders()), \
+        'the group did not come back when the plugin was enabled again'

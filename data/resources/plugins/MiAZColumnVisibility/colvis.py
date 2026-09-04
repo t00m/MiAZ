@@ -15,8 +15,6 @@ from gi.repository import Gtk
 
 from MiAZ.frontend.desktop.services.pluginsystem import MiAZExtension, MiAZPlugin
 
-UI_GROUP_WIDGET_ID = 'window-preferences-page-ui-group'
-
 plugin_info = {
     'Module':        'colvis',
     'Name':          'MiAZColumnVisibility',
@@ -62,10 +60,8 @@ class MiAZColumnVisibilityPlugin(MiAZExtension):
         self.plugin.register(self, plugin_info)
         self.log = self.plugin.get_logger()
         self.factory = self.app.get_service('factory')
-        self.actions = self.app.get_service('actions')
         self.workspace = self.app.get_widget('workspace')
-        # Add a configuration entry under App Settings > User Interface.
-        self._settings_handler = self.actions.connect('settings-loaded', self._on_settings_loaded)
+        self.plugin.install_settings_group(self.build_settings)
         if self.workspace.is_loaded():
             self.startup()
         else:
@@ -85,9 +81,6 @@ class MiAZColumnVisibilityPlugin(MiAZExtension):
         if getattr(self, '_startup_handler', None) is not None:
             self.workspace.disconnect(self._startup_handler)
             self._startup_handler = None
-        if getattr(self, '_settings_handler', None) is not None:
-            self.actions.disconnect(self._settings_handler)
-            self._settings_handler = None
         self.plugin.set_started(False)
 
     def startup(self, *args):
@@ -180,18 +173,11 @@ class MiAZColumnVisibilityPlugin(MiAZExtension):
             config[attr] = active
             self.plugin.set_config_data(config)
 
-    def _on_settings_loaded(self, actions, dialog_app_settings):
-        """Add column visibility switches to App Settings > User Interface."""
-        group = self.app.get_widget(UI_GROUP_WIDGET_ID)
-        if group is None:
-            self.log.warning(
-                "User Interface preferences group not found; "
-                "skipping column-visibility rows")
-            return
+    def build_settings(self):
         wsview = self.workspace.get_workspace_view()
         if wsview is None:
-            return
-
+            return None
+        group = Adw.PreferencesGroup(title=_('Workspace columns'))
         expander = Adw.ExpanderRow(title=_('Workspace columns'))
         expander.set_subtitle(_('Show or hide columns in the Documents view'))
         for attr, label_text in COLUMNS.items():
@@ -203,6 +189,7 @@ class MiAZColumnVisibilityPlugin(MiAZExtension):
             row.connect('notify::active', self._on_column_switch, attr)
             expander.add_row(row)
         group.add(expander)
+        return group
 
     def _on_column_switch(self, row, gparam, attr):
         self._set_column_visible(attr, row.get_active())

@@ -30,7 +30,6 @@ plugin_info = {
     }
 
 BUTTON_WIDGET_ID = 'headerbar-togglebutton-fullscreen'
-UI_GROUP_WIDGET_ID = 'window-preferences-page-ui-group'
 ICON_ENTER = 'view-fullscreen-symbolic'
 ICON_LEAVE = 'view-restore-symbolic'
 
@@ -45,13 +44,9 @@ class MiAZFullscreenPlugin(MiAZExtension):
         self.plugin = MiAZPlugin(self.app)
         self.plugin.register(self, plugin_info)
         self.log = self.plugin.get_logger()
-        self.actions = self.app.get_service('actions')
         self.factory = self.app.get_service('factory')
 
-        # Add a row in the User Interface preferences group whenever the
-        # Preferences dialog is opened (same pattern as MiAZWSFont).
-        self._settings_handler = self.actions.connect(
-            'settings-loaded', self._on_settings_loaded)
+        self.plugin.install_settings_group(self.build_settings)
 
         self.workspace = self.app.get_widget('workspace')
         if self.workspace.is_loaded():
@@ -71,9 +66,6 @@ class MiAZFullscreenPlugin(MiAZExtension):
             evk.disconnect(self._key_handler)
         if hasattr(self, '_startup_handler'):
             self.workspace.disconnect(self._startup_handler)
-        if getattr(self, '_settings_handler', None) is not None:
-            self.actions.disconnect(self._settings_handler)
-            self._settings_handler = None
         self.plugin.set_started(False)
 
     def startup(self, *args):
@@ -152,20 +144,16 @@ class MiAZFullscreenPlugin(MiAZExtension):
             return True
         return False
 
-    def _on_settings_loaded(self, actions, dialog_app_settings):
-        group = self.app.get_widget(UI_GROUP_WIDGET_ID)
-        if group is None:
-            self.log.warning(
-                "User Interface preferences group not found; "
-                "skipping fullscreen-toggle row")
-            return
+    def build_settings(self):
         visible = self.plugin.get_config_key('icon_visible')
         if visible is None:
             visible = True
+        group = Adw.PreferencesGroup(title=_('Fullscreen'))
         row = Adw.SwitchRow(title=_('Display fullscreen toggle button'))
         row.set_active(bool(visible))
         row.connect('notify::active', self._on_activate_setting)
         group.add(row)
+        return group
 
     def _on_activate_setting(self, row, gparam):
         visible = row.get_active()

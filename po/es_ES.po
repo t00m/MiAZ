@@ -4372,6 +4372,10 @@ msgstr "Entrar en pantalla completa"
 msgid "Leave fullscreen"
 msgstr "Salir de pantalla completa"
 
+#: data/resources/plugins/MiAZFullscreen/fullscreen.py:151
+msgid "Fullscreen"
+msgstr "Pantalla completa"
+
 #: data/resources/plugins/MiAZFullscreen/fullscreen.py:165
 msgid "Display fullscreen toggle button"
 msgstr "Mostrar el botón de pantalla completa"
@@ -5171,6 +5175,10 @@ msgstr ""
 #: data/resources/plugins/MiAZWSFont/wsfont.py:22
 msgid "Modify Workspace font name and size"
 msgstr "Modificar nombre y tamaño de la fuente del área de trabajo"
+
+#: data/resources/plugins/MiAZWSFont/wsfont.py:122
+msgid "Workspace font"
+msgstr "Fuente del área de trabajo"
 
 #: data/resources/plugins/MiAZWSFont/wsfont.py:134
 msgid "Workspace font family"

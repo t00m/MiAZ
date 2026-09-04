@@ -33,7 +33,6 @@ DEFAULT_FONT_FAMILY = 'Monospace'
 DEFAULT_FONT_SIZE = 12
 MIN_FONT_SIZE = 8
 MAX_FONT_SIZE = 48
-UI_GROUP_WIDGET_ID = 'window-preferences-page-ui-group'
 
 
 class MiAZWSFontPlugin(MiAZExtension):
@@ -46,13 +45,12 @@ class MiAZWSFontPlugin(MiAZExtension):
         self.plugin = MiAZPlugin(self.app)
         self.plugin.register(self, plugin_info)
         self.log = self.plugin.get_logger()
-        self.actions = self.app.get_service('actions')
         self.factory = self.app.get_service('factory')
         self.workspace = self.app.get_widget('workspace')
         self._css_provider = None
         self._startup_handler = None
-        self._settings_handler = self.actions.connect(
-            'settings-loaded', self._on_settings_loaded)
+
+        self.plugin.install_settings_group(self.build_settings)
 
         if self.workspace.is_loaded():
             self.startup()
@@ -75,9 +73,6 @@ class MiAZWSFontPlugin(MiAZExtension):
         if self._startup_handler is not None:
             self.workspace.disconnect(self._startup_handler)
             self._startup_handler = None
-        if self._settings_handler is not None:
-            self.actions.disconnect(self._settings_handler)
-            self._settings_handler = None
         self.plugin.set_started(False)
 
     def startup(self, *args):
@@ -122,14 +117,9 @@ class MiAZWSFontPlugin(MiAZExtension):
         self.plugin.set_config_key('font-family', family)
         self.plugin.set_config_key('font-size', size)
 
-    def _on_settings_loaded(self, actions, dialog_app_settings):
-        group = self.app.get_widget(UI_GROUP_WIDGET_ID)
-        if group is None:
-            self.log.warning(
-                "User Interface preferences group not found; "
-                "skipping workspace-font rows")
-            return
+    def build_settings(self):
         family, size = self._read_font_config()
+        group = Adw.PreferencesGroup(title=_('Workspace font'))
 
         row_family = Adw.ActionRow(title=_('Workspace font family'))
         font_dialog = Gtk.FontDialog()
@@ -157,6 +147,7 @@ class MiAZWSFontPlugin(MiAZExtension):
         )
         row_size.connect('notify::value', self._on_size_changed)
         group.add(row_size)
+        return group
 
     def _on_family_changed(self, button, gparam):
         desc = button.get_font_desc()
