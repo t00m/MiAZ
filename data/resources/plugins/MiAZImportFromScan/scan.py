@@ -91,6 +91,7 @@ class MiAZImportFromScanPlugin(MiAZExtension):
     def startup(self, *args):
         if not self.plugin.started():
             self.plugin.install_menu_entries({'scan': self.exec_scanner})
+            self.plugin.install_settings_group(self.build_settings)
             self.plugin.set_started(started=True)
 
     def _get_origin(self, desktop_path):
@@ -186,8 +187,47 @@ class MiAZImportFromScanPlugin(MiAZExtension):
             if scanapp is not None:
                 scanapp.launch([], None)
 
+    def build_settings(self):
+        """Return the scanner settings as a group, for the Repository Settings tab."""
+        group = Adw.PreferencesGroup(title=_('Scanner application'))
+        scan_apps = self._search_scan_apps()
+        saved_app = self.plugin.get_config_key('scanner_app')
+
+        if not scan_apps:
+            # A row saying why, rather than no group at all: an empty space
+            # does not tell anyone that no scanner application was found.
+            row = Adw.ActionRow(title=_('No scanner application found'))
+            row.set_subtitle(_('Install one, for example Simple Scan'))
+            group.add(row)
+            return group
+
+        app_ids = [app.get_id() for app, _origin in scan_apps]
+        app_names = [f"{app.get_display_name()} ({origin})"
+                     for app, origin in scan_apps]
+
+        string_list = Gtk.StringList()
+        for name in app_names:
+            string_list.append(name)
+
+        combo = Adw.ComboRow(title=_('Application'))
+        combo.set_subtitle(_('Scanner application to launch'))
+        combo.set_model(string_list)
+        if saved_app and saved_app in app_ids:
+            combo.set_selected(app_ids.index(saved_app))
+        else:
+            combo.set_selected(0)
+            self.plugin.set_config_key('scanner_app', app_ids[0])
+
+        combo.connect('notify::selected',
+                      lambda row, _gparam, ids=app_ids:
+                          self.plugin.set_config_key(
+                              'scanner_app', ids[row.get_selected()]))
+        group.add(combo)
+        return group
+
     def show_settings(self, widget):
-        """Display a preferences dialog for choosing the scanner application."""
+        # Kept for the Plugins tab button until Task 7 removes it; wraps the
+        # same group build_settings() contributes to the Settings tab.
         dialog = Adw.PreferencesDialog()
         desc = self.plugin.get_plugin_info_key('Description')
         page = Adw.PreferencesPage(
@@ -195,62 +235,5 @@ class MiAZImportFromScanPlugin(MiAZExtension):
             icon_name='io.github.t00m.MiAZ-config-symbolic'
         )
         dialog.add(page)
-
-        group = Adw.PreferencesGroup(title=_('Scanner application'))
-        page.add(group)
-
-        scan_apps = self._search_scan_apps()
-        saved_app = self.plugin.get_config_key('scanner_app')
-
-        if scan_apps:
-            app_ids = [app.get_id() for app, _origin in scan_apps]
-            app_names = [
-                f"{app.get_display_name()} ({origin})"
-                for app, origin in scan_apps
-            ]
-
-            string_list = Gtk.StringList()
-            for name in app_names:
-                string_list.append(name)
-
-            combo = Adw.ComboRow(title=_('Application'))
-            combo.set_subtitle(_('Scanner application to launch'))
-            combo.set_model(string_list)
-
-            if saved_app and saved_app in app_ids:
-                combo.set_selected(app_ids.index(saved_app))
-            else:
-                combo.set_selected(0)
-                self.plugin.set_config_key('scanner_app', app_ids[0])
-
-            def _on_combo_changed(row, gparam):
-                pos = row.get_selected()
-                if 0 <= pos < len(app_ids):
-                    self.plugin.set_config_key('scanner_app', app_ids[pos])
-                    self.log.debug(f"Scanner app set to: {app_ids[pos]}")
-
-            combo.connect('notify::selected', _on_combo_changed)
-            group.add(combo)
-        else:
-            # No scanner app detected. Let the user type a command
-            entry_row = Adw.EntryRow(title=_('Scanner command'))
-            entry_row.set_text(saved_app or '')
-            entry_row.set_show_apply_button(True)
-
-            def _on_entry_apply(row):
-                cmd = row.get_text().strip()
-                if cmd:
-                    self.plugin.set_config_key('scanner_app', cmd)
-                    self.log.debug(f"Scanner command set to: {cmd}")
-
-            entry_row.connect('apply', _on_entry_apply)
-            group.add(entry_row)
-
-            hint = Adw.ActionRow(
-                title=_('No scanner application detected'),
-                subtitle=_('Enter the command used to launch your scanner software')
-            )
-            hint.set_sensitive(False)
-            group.add(hint)
-
+        page.add(self.build_settings())
         dialog.present(widget.get_root())

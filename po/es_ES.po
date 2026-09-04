@@ -4431,6 +4431,16 @@ msgstr "Desconocido"
 msgid "Scanner application"
 msgstr "Aplicación de escáner"
 
+#. A row saying why, rather than no group at all: an empty space does not
+#. tell anyone that no scanner application was found.
+#: data/resources/plugins/MiAZImportFromScan/scan.py:199
+msgid "No scanner application found"
+msgstr "No se encontró ninguna aplicación de escáner"
+
+#: data/resources/plugins/MiAZImportFromScan/scan.py:200
+msgid "Install one, for example Simple Scan"
+msgstr "Instale una, por ejemplo Simple Scan"
+
 #: data/resources/plugins/MiAZImportFromScan/scan.py:217
 msgid "Scanner application to launch"
 msgstr "Aplicación de escáner a lanzar"

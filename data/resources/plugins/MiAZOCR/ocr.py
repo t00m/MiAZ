@@ -83,6 +83,7 @@ class MiAZOCRPlugin(MiAZExtension):
     def startup(self, *args):
         if not self.plugin.started():
             self.plugin.install_menu_entries({'extract': self._on_ocr})
+            self.plugin.install_settings_group(self.build_settings)
             self.plugin.set_started(started=True)
 
     # Helpers
@@ -328,18 +329,12 @@ class MiAZOCRPlugin(MiAZExtension):
         self.srvdlg.show_toast(_('OCR finished: {summary}').format(summary=', '.join(parts)))
 
     # Settings
-    def show_settings(self, widget):
+    def build_settings(self):
+        """Return the OCR settings as a group, for the Repository Settings tab."""
         langs = self._available_languages()
         default = self._default_language(langs)
 
-        dialog = Adw.PreferencesDialog()
-        page = Adw.PreferencesPage(
-            title=_('OCR'),
-            icon_name='io.github.t00m.MiAZ-config-symbolic')
-        dialog.add(page)
-        group = Adw.PreferencesGroup(title=_('Default language'))
-        page.add(group)
-
+        group = Adw.PreferencesGroup(title=_('OCR'))
         string_list = Gtk.StringList()
         for lang in langs:
             string_list.append(lang)
@@ -356,4 +351,15 @@ class MiAZOCRPlugin(MiAZExtension):
 
         combo.connect('notify::selected', _on_changed)
         group.add(combo)
+        return group
+
+    def show_settings(self, widget):
+        # Kept for the Plugins tab button until Task 7 removes it; wraps the
+        # same group build_settings() contributes to the Settings tab.
+        dialog = Adw.PreferencesDialog()
+        page = Adw.PreferencesPage(
+            title=_('OCR'),
+            icon_name='io.github.t00m.MiAZ-config-symbolic')
+        dialog.add(page)
+        page.add(self.build_settings())
         dialog.present(widget.get_root())

@@ -159,3 +159,34 @@ def test_a_settings_group_goes_away_with_its_plugin(repo_settings, clean_view):
     assert any(owner == 'MiAZFullscreen'
                for _c, owner, _b in registry.builders()), \
         'the group did not come back when the plugin was enabled again'
+
+
+def test_a_plugin_that_had_a_dialog_now_contributes_rows(repo_settings, clean_view):
+    """MiAZOCR's language row used to be reachable only through a button in
+    the Plugins tab, which opened a dialog on top of a dialog.
+
+    MiAZOCR is not in DEFAULT_PLUGINS (it needs ocrmypdf, which is not always
+    installed), so it is loaded on demand here and unloaded again afterwards,
+    leaving the sandbox as this test found it.
+    """
+    system = clean_view.service('plugin-system')
+    info = system.get_plugin_info('ocr')
+    if info is None:
+        pytest.skip('MiAZOCR is not in the plugin index')
+    started_loaded = system.is_plugin_loaded(info)
+    if not started_loaded:
+        if not system.load_plugin(info):
+            pytest.skip('MiAZOCR cannot load here: '
+                        + str(system.get_load_error(info.get_module_name())))
+        clean_view.pump(0.5)
+    try:
+        page = clean_view.widget('repository-settings-page-settings')
+        notebook = clean_view.widget('repository-settings-notebook')
+        notebook.set_current_page(_page_number(notebook, page))
+        clean_view.pump(0.4)
+        titles = row_titles(page)
+        assert 'Document language' in titles, titles
+    finally:
+        if system.is_plugin_loaded(info) != started_loaded:
+            system.unload_plugin(info)
+            clean_view.pump(0.4)
