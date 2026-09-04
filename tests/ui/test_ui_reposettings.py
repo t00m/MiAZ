@@ -10,6 +10,7 @@ Plugins tab, and nothing at all for the rest. These check they arrive in one.
 import gi
 gi.require_version('Gtk', '4.0')
 from gi.repository import Adw
+from gi.repository import GObject
 
 import pytest
 
@@ -75,3 +76,55 @@ def _page_number(notebook, page):
                              and child.get_first_child() is page):
             return number
     raise AssertionError('page is not in the notebook')
+
+
+def count_handlers(obj, signal_name):
+    """How many handlers are connected to this signal right now.
+
+    There is no call that answers this directly. signal_handler_find returns
+    one match at a time, so each one found is blocked to take it out of the
+    running and unblocked again afterwards, which leaves the object exactly
+    as it was. Mirrors the helper tests/ui/test_ui_plugin_signals.py uses for
+    the same question about plugins.
+    """
+    signal_id, detail = GObject.signal_parse_name(signal_name, obj, True)
+    match = GObject.SignalMatchType.ID | GObject.SignalMatchType.UNBLOCKED
+    blocked = []
+    while True:
+        handler_id = GObject.signal_handler_find(
+            obj, match, signal_id, detail, None, None, None)
+        if not handler_id:
+            break
+        GObject.signal_handler_block(obj, handler_id)
+        blocked.append(handler_id)
+    for handler_id in blocked:
+        GObject.signal_handler_unblock(obj, handler_id)
+    return len(blocked)
+
+
+def test_the_page_disconnects_when_the_dialog_closes(clean_view):
+    """A fresh page is built every time the dialog opens. Each one has to let
+    go of the plugin-system signal it took hold of, or repeated open/close
+    leaks a handler and leaves a dead page reacting to plugin changes, the
+    same bug tests/ui/test_ui_plugin_signals.py exists to catch for plugins.
+    """
+    plugin_system = clean_view.service('plugin-system')
+    baseline = count_handlers(plugin_system, 'plugins-updated')
+
+    clean_view.service('actions').show_repository_settings()
+    clean_view.pump(0.5)
+    window = clean_view.widget('window-repo-settings')
+    assert window is not None, 'the repository settings window did not open'
+
+    page = clean_view.widget('repository-settings-page-settings')
+    notebook = clean_view.widget('repository-settings-notebook')
+    notebook.set_current_page(_page_number(notebook, page))
+    clean_view.pump(0.4)
+    assert page._sid_plugins_updated is not None, 'the page never connected'
+    assert count_handlers(plugin_system, 'plugins-updated') == baseline + 1
+
+    window.close()
+    clean_view.pump(0.3)
+
+    assert page._sid_plugins_updated is None, 'the page is still connected'
+    assert count_handlers(plugin_system, 'plugins-updated') == baseline

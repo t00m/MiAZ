@@ -27,10 +27,28 @@ class MiAZRepoSettingsPage(Adw.PreferencesPage):
         self.log = MiAZLog('MiAZ.RepoSettingsPage')
         self._built = False
         self._plugin_groups = []
+        self._sid_plugins_updated = None
         self._build_repository_group()
         self.app.add_widget('repository-settings-page-settings', self)
-        plugin_system = self.app.get_service('plugin-system')
-        plugin_system.connect('plugins-updated', self._on_plugins_updated)
+        # A fresh page is built every time the dialog opens, so the signal
+        # has to be picked up and let go with it, not held for the page's
+        # lifetime: connecting once in __init__ leaks a handler, and a dead
+        # dialog reacting to plugin changes is exactly the bug this project
+        # already keeps a UI test for (test_ui_plugin_signals.py).
+        self.connect('map', self._on_mapped)
+        self.connect('unmap', self._on_unmapped)
+
+    def _on_mapped(self, *args):
+        if self._sid_plugins_updated is None:
+            plugin_system = self.app.get_service('plugin-system')
+            self._sid_plugins_updated = plugin_system.connect(
+                'plugins-updated', self._on_plugins_updated)
+
+    def _on_unmapped(self, *args):
+        if self._sid_plugins_updated is not None:
+            plugin_system = self.app.get_service('plugin-system')
+            plugin_system.disconnect(self._sid_plugins_updated)
+            self._sid_plugins_updated = None
 
     def is_built(self) -> bool:
         """Whether the plugin groups have been built yet."""
