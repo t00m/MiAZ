@@ -116,6 +116,14 @@ class MiAZAutoScanPlugin(MiAZExtension):
             return
         self.plugin.set_started(True)
 
+        # Registered before the background detection below (and before the
+        # missing-tools check) so the Settings tab always has a builder to
+        # call, whether or not the scanner tools are present or the device
+        # ever answers. Building the group is what wakes the scanner, and
+        # that only happens when the Settings tab is shown, never here.
+        self.plugin.install_settings_group(self.build_settings)
+        self.plugin.install_settings_group(self.build_settings_fields)
+
         missing = self._missing_tools()
         if missing:
             self.log.warning(
@@ -535,12 +543,15 @@ class MiAZAutoScanPlugin(MiAZExtension):
             icon_name='io.github.t00m.MiAZ-config-symbolic',
         )
         dialog.add(page)
+        page.add(self.build_settings())
+        page.add(self.build_settings_fields())
+        dialog.present(widget.get_root())
 
-        group_scan = Adw.PreferencesGroup(
+    def build_settings(self):
+        group = Adw.PreferencesGroup(
             title=_('Scanner settings'),
             description=_('Configure the scanner device and scan parameters'),
         )
-        page.add(group_scan)
 
         devices = self._list_devices()
         saved_device = self.plugin.get_config_key('device')
@@ -566,7 +577,7 @@ class MiAZAutoScanPlugin(MiAZExtension):
                     self.plugin.set_config_key(
                         'device', devs[row.get_selected()]),
             )
-            group_scan.add(combo_device)
+            group.add(combo_device)
         else:
             entry_device = Adw.EntryRow(
                 title=_('Scanner device'),
@@ -578,7 +589,7 @@ class MiAZAutoScanPlugin(MiAZExtension):
                 lambda row: self.plugin.set_config_key(
                     'device', row.get_text().strip()),
             )
-            group_scan.add(entry_device)
+            group.add(entry_device)
 
         combo_res = self._make_combo_row(
             title=_('Resolution'),
@@ -587,7 +598,7 @@ class MiAZAutoScanPlugin(MiAZExtension):
             saved_key='resolution',
             default='300',
         )
-        group_scan.add(combo_res)
+        group.add(combo_res)
 
         combo_mode = self._make_combo_row(
             title=_('Color mode'),
@@ -596,7 +607,7 @@ class MiAZAutoScanPlugin(MiAZExtension):
             saved_key='mode',
             default='Color',
         )
-        group_scan.add(combo_mode)
+        group.add(combo_mode)
 
         combo_source = self._make_combo_row(
             title=_('Source'),
@@ -605,7 +616,7 @@ class MiAZAutoScanPlugin(MiAZExtension):
             saved_key='source',
             default='Flatbed',
         )
-        group_scan.add(combo_source)
+        group.add(combo_source)
 
         combo_format = self._make_combo_row(
             title=_('Format'),
@@ -614,14 +625,16 @@ class MiAZAutoScanPlugin(MiAZExtension):
             saved_key='format',
             default='pdf',
         )
-        group_scan.add(combo_format)
+        group.add(combo_format)
 
-        group_fields = Adw.PreferencesGroup(
+        return group
+
+    def build_settings_fields(self):
+        group = Adw.PreferencesGroup(
             title=_('Default filename fields'),
             description=_('Default values for the 7-field document name. '
                           'Leave empty to omit a field.'),
         )
-        page.add(group_fields)
 
         field_configs = [
             ('default_country', _('Country'), 'Country'),
@@ -657,7 +670,7 @@ class MiAZAutoScanPlugin(MiAZExtension):
                 lambda row, _gparam, itms=items, k=key:
                     self.plugin.set_config_key(k, itms[row.get_selected()][0]),
             )
-            group_fields.add(combo)
+            group.add(combo)
 
         entry_concept = Adw.EntryRow(title=_('Concept'))
         saved_concept = self.plugin.get_config_key('default_concept') or 'Autoscan'
@@ -668,9 +681,9 @@ class MiAZAutoScanPlugin(MiAZExtension):
             lambda row: self.plugin.set_config_key(
                 'default_concept', row.get_text().strip()),
         )
-        group_fields.add(entry_concept)
+        group.add(entry_concept)
 
-        dialog.present(widget.get_root())
+        return group
 
     def _make_combo_row(self, title, subtitle, options, saved_key, default):
         string_list = Gtk.StringList()

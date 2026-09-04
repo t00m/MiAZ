@@ -230,3 +230,37 @@ def test_scanner_settings_keep_the_manual_entry_when_no_app_is_found(
         if system.is_plugin_loaded(info) != started_loaded:
             system.unload_plugin(info)
             clean_view.pump(0.4)
+
+
+def test_the_scanner_is_not_probed_to_open_the_dialog(repo_settings, clean_view):
+    """AutoScan builds its group by running SANE, which wakes the device and
+    takes seconds. Opening the dialog must not do that; showing the Settings
+    tab is what does.
+
+    MiAZAutoScan is not in DEFAULT_PLUGINS, so it is loaded on demand here and
+    unloaded again afterwards, leaving the sandbox as this test found it.
+    """
+    system = clean_view.service('plugin-system')
+    info = system.get_plugin_info('autoscan')
+    if info is None:
+        pytest.skip('MiAZAutoScan is not in the plugin index')
+    started_loaded = system.is_plugin_loaded(info)
+    if not started_loaded:
+        if not system.load_plugin(info):
+            pytest.skip('MiAZAutoScan cannot load here: '
+                        + str(system.get_load_error(info.get_module_name())))
+        clean_view.pump(0.5)
+    try:
+        plugin_obj = clean_view.widget('plugin-MiAZAutoScan')
+        calls = []
+        plugin_obj._list_devices = lambda: calls.append(1) or []
+        page = clean_view.widget('repository-settings-page-settings')
+        assert calls == [], 'the device was probed just by opening the dialog'
+        notebook = clean_view.widget('repository-settings-notebook')
+        notebook.set_current_page(_page_number(notebook, page))
+        clean_view.pump(0.4)
+        assert calls != [], 'showing the tab did not build the group'
+    finally:
+        if system.is_plugin_loaded(info) != started_loaded:
+            system.unload_plugin(info)
+            clean_view.pump(0.4)

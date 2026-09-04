@@ -73,6 +73,7 @@ class MiAZAIAssistantPlugin(MiAZExtension):
             'suggest': self._on_suggest_clicked,
             'chat': self._on_chat,
         })
+        self.plugin.install_settings_group(self.build_settings)
 
         register_suggest_items(
             self.plugin, self.app, self.registry, self.repository,
@@ -99,6 +100,9 @@ class MiAZAIAssistantPlugin(MiAZExtension):
     def show_settings(self, widget=None):
         parent = widget if widget is not None else self.app.get_widget('window')
         self._settings_dialog.present(parent)
+
+    def build_settings(self):
+        return self._settings_dialog.build_group()
 
     def do_deactivate(self):
         if hasattr(self, '_startup_handler'):
