@@ -347,9 +347,14 @@ def test_the_dialog_has_three_tabs(repo_settings, clean_view):
 
 
 def test_the_metadata_tab_lists_the_five_built_in_types(repo_settings, clean_view):
+    """The five built-in types come first, in this order. A plugin that owns
+    a vocabulary of its own (MiAZPeriodicity, MiAZProjectMgt in this sandbox)
+    is free to add more after them, so this checks the prefix rather than the
+    whole list; test_a_plugin_vocabulary_joins_the_metadata_list below checks
+    for those two."""
     page = clean_view.widget('repository-settings-page-metadata')
     assert page is not None, 'no Metadata tab'
-    assert page.get_view_names() == [
+    assert page.get_view_names()[:5] == [
         'Country', 'Group', 'Purpose', 'SentBy', 'SentTo']
 
 
@@ -358,3 +363,29 @@ def test_choosing_a_metadata_type_switches_the_stack(repo_settings, clean_view):
     page.show_view('Purpose')
     clean_view.pump(0.2)
     assert page.stack.get_visible_child_name() == 'Purpose'
+
+
+def test_a_plugin_vocabulary_joins_the_metadata_list(repo_settings, clean_view):
+    """MiAZPeriodicity and MiAZProjectMgt own a vocabulary each. Both used to
+    show it in a dialog of their own, reached from a button in the Plugins
+    tab, which put a repository vocabulary two dialogs deep."""
+    page = clean_view.widget('repository-settings-page-metadata')
+    names = page.get_view_names()
+    assert names[:5] == ['Country', 'Group', 'Purpose', 'SentBy', 'SentTo']
+    assert 'Periodicity' in names, names
+    assert 'Projects' in names, names
+
+
+def test_the_manage_menu_entry_opens_the_metadata_tab(clean_view):
+    """Ctrl+Alt+P used to present a second copy of the same view."""
+    plugin_obj = clean_view.widget('plugin-MiAZProjectMgt')
+    if plugin_obj is None:
+        pytest.skip('MiAZProjectMgt is not enabled in this repository')
+    plugin_obj._manage_properties()
+    clean_view.pump(0.5)
+    window = clean_view.widget('window-repo-settings')
+    assert window is not None, 'the repository settings window did not open'
+    page = clean_view.widget('repository-settings-page-metadata')
+    assert page.stack.get_visible_child_name() == 'Projects'
+    window.close()
+    clean_view.pump(0.3)

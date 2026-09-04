@@ -627,6 +627,13 @@ class MiAZProjectMgt(MiAZExtension):
                 'manage': self._manage_properties,
             })
 
+            # The projects vocabulary in the Metadata tab, beside the
+            # built-in ones, rather than behind its own dialog.
+            self.plugin.install_metadata_view(
+                'Projects', _('Projects'),
+                'io.github.t00m.MiAZ-res-projects',
+                self._build_metadata_view)
+
             # One-time setup guarded by the dropdown widget sentinel.
             # When _on_plugins_updated calls startup() a second time the dropdown
             # already exists, so we skip re-creating config/service/sidebar widgets
@@ -673,7 +680,7 @@ class MiAZProjectMgt(MiAZExtension):
             self.plugin.register_document_tab(
                 name='projects',
                 title=item_type.__title_plural__,
-                factory=lambda app: MiAZProjectTab(app, self.config, self.show_settings),
+                factory=lambda app: MiAZProjectTab(app, self.config, self.show_manager),
                 weight=100)
 
             self.plugin.set_started(started=True)
@@ -819,20 +826,32 @@ class MiAZProjectMgt(MiAZExtension):
         dialog = self.srvdlg.show_noop(title=_('Documents per project'), widget=box, width=800, height=600)
         dialog.present(window)
 
-    def _manage_properties(self, *args):
-        parent = self.app.get_widget('window')
-        self.show_settings(widget=parent)
-
-    def show_settings(self, widget: Gtk.Widget = None):
-        """Open the project manager over the window holding `widget`.
-
-        The dialog is returned so a caller that has to react to what the user
-        did there (the rename dialog tab rebuilds its list) can connect to it.
-        """
-        configview = MiAZProjectsView(self.app, plugin=self.plugin, config=self.config)
+    def _build_metadata_view(self):
+        configview = MiAZProjectsView(self.app, plugin=self.plugin,
+                                      config=self.config)
         configview.update_views()
-        dialog = self.srvdlg.show_noop(
-            title=_('Manage {i_confname}').format(i_confname=i_confname),
-            widget=configview, width=800, height=600)
-        dialog.present(widget.get_root())
-        return dialog
+        return configview
+
+    def _manage_properties(self, *args):
+        """Open Repository Settings on this plugin's metadata page.
+
+        The `manage` menu entry's callback. Both this and the Metadata tab
+        used to build a view of their own, so two widgets edited one config
+        file and neither saw the other's edits.
+        """
+        self.show_manager()
+
+    def show_manager(self, *args, widget: Gtk.Widget = None):
+        """Open Repository Settings on this plugin's metadata page.
+
+        Named show_manager, kept rather than dropped: MiAZProjectTab's own
+        manage button and the projects document-tab factory in startup()
+        both hold a reference to it, so removing it breaks the Projects tab
+        of the rename dialog, a different window entirely. `widget` is
+        accepted only because that caller still passes one; it is not needed
+        to reach the dialog, which is not modal over any particular window.
+        """
+        self.app.get_service('actions').show_repository_settings()
+        page = self.app.get_widget('repository-settings-page-metadata')
+        if page is not None:
+            page.show_view('Projects')
