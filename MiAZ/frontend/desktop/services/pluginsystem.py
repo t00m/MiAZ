@@ -225,6 +225,7 @@ class PluginSettingsRegistry:
 
     def __init__(self):
         self._entries = []
+        self._views = []
 
     def add(self, owner: str, category: str, builder):
         """Remember one builder. The same one twice is still one."""
@@ -240,8 +241,20 @@ class PluginSettingsRegistry:
         """
         return sorted(self._entries, key=lambda entry: (entry[0], entry[1]))
 
+    def add_view(self, owner: str, name: str, title: str, icon_name: str,
+                 factory):
+        """Remember one metadata view. The same one twice is still one."""
+        entry = (owner, name, title, icon_name, factory)
+        if entry not in self._views:
+            self._views.append(entry)
+
+    def views(self) -> list:
+        """Every plugin metadata view, alphabetically by title."""
+        return sorted(self._views, key=lambda entry: entry[2])
+
     def forget(self, owner: str):
         self._entries = [entry for entry in self._entries if entry[1] != owner]
+        self._views = [entry for entry in self._views if entry[0] != owner]
 
 
 class PluginPageRegistry:
@@ -681,6 +694,20 @@ class MiAZPlugin(GObject.GObject):
         if not self.is_active():
             return False
         self._settings_registry().add(self.name, self.info['Category'], builder)
+        return True
+
+    def install_metadata_view(self, name, title, icon_name, factory) -> bool:
+        """Add one repository vocabulary to the Metadata tab.
+
+        For a plugin that owns a vocabulary rather than a preference: the
+        periodicities, the projects. `factory` is called with no arguments
+        and returns the widget, and is held rather than called for the same
+        reason a settings builder is.
+        """
+        if not self.is_active():
+            return False
+        self._settings_registry().add_view(self.name, name, title, icon_name,
+                                           factory)
         return True
 
     def _settings_registry(self):

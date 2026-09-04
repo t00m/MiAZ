@@ -60,6 +60,20 @@ class MiAZMetadataPage(Gtk.Box):
         if len(self._names) == 1:
             self.listbox.select_row(row)
 
+    def add_plugin_views(self):
+        """Add the vocabularies plugins own, after the built-in ones."""
+        registry = self.app.get_service('plugin-system').settings
+        for _owner, name, title, icon_name, factory in registry.views():
+            if name in self._names:
+                continue
+            try:
+                widget = factory()
+            except Exception as error:
+                self.log.error(f"Metadata view {name}: {error}")
+                continue
+            if widget is not None:
+                self.add_view(name, title, icon_name, widget)
+
     def get_view_names(self) -> list:
         return list(self._names)
 

@@ -419,3 +419,45 @@ def test_an_unloaded_plugin_installs_nothing():
         return None
     assert plugin.install_settings_group(build) is False
     assert registry.builders() == []
+
+# ---------------------------------------------------------------------------
+# Metadata views contributed by plugins
+# ---------------------------------------------------------------------------
+
+def test_a_metadata_view_is_recorded_against_its_plugin():
+    registry = ps.PluginSettingsRegistry()
+    def factory():
+        return None
+    registry.add_view('MiAZPeriodicity', 'Periodicity', 'Periodicity',
+                      'icon-periodicity', factory)
+    assert registry.views() == [
+        ('MiAZPeriodicity', 'Periodicity', 'Periodicity',
+         'icon-periodicity', factory)]
+
+
+def test_metadata_views_are_ordered_by_title():
+    registry = ps.PluginSettingsRegistry()
+    def factory():
+        return None
+    registry.add_view('MiAZProjectMgt', 'Projects', 'Projects', 'i', factory)
+    registry.add_view('MiAZPeriodicity', 'Periodicity', 'Periodicity', 'i', factory)
+    assert [view[2] for view in registry.views()] == ['Periodicity', 'Projects']
+
+
+def test_forget_takes_the_metadata_views_too():
+    registry = ps.PluginSettingsRegistry()
+    def factory():
+        return None
+    registry.add_view('MiAZPeriodicity', 'Periodicity', 'Periodicity', 'i', factory)
+    registry.forget('MiAZPeriodicity')
+    assert registry.views() == []
+
+
+def test_install_metadata_view_records_it():
+    registry = ps.PluginSettingsRegistry()
+    plugin = a_plugin(registry, name='MiAZPeriodicity')
+    def factory():
+        return None
+    assert plugin.install_metadata_view(
+        'Periodicity', 'Periodicity', 'icon', factory) is True
+    assert registry.views()[0][0] == 'MiAZPeriodicity'

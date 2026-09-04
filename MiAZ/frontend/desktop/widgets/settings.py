@@ -418,6 +418,7 @@ class MiAZRepoSettings(MiAZCustomWindow):
                               _(item_type.__title_plural__),
                               icon_name,
                               create_selector(item_type))
+        metadata.add_plugin_views()
         notebook.append_page(metadata, self._tab_label(
             _('Metadata'), 'io.github.t00m.MiAZ-res-groups'))
 
