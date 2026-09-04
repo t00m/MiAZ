@@ -11,6 +11,10 @@ holding one item each, while its own entry sat elsewhere. MiAZProjectMgt and
 MiAZPeriodicity each put a submenu named after the plugin inside the entry
 already named after the plugin, so reaching Assign meant Projects, then
 Project, then Assign.
+
+The section now has two levels: one submenu per category, and inside each of
+those one per subcategory. A plugin's actions sit at Category > Subcategory >
+action, and nothing else may sit in between.
 """
 
 import gi
@@ -50,10 +54,47 @@ def submenus(menu):
 
 
 @pytest.fixture
-def plugin_menus(miaz):
+def category_menus(miaz):
+    """{category label: Gio.Menu} for the top level of the plugins section."""
     section = miaz.widget('workspace-plugins-section')
     assert section is not None, 'the workspace menu has no plugins section'
-    return submenus(section)
+    found = submenus(section)
+    assert found, 'the plugins section holds no category'
+    return found
+
+
+@pytest.fixture
+def plugin_menus(category_menus):
+    """{subcategory label: Gio.Menu}, gathered from every category.
+
+    The tests below are about what one subcategory holds, not about which
+    category it hangs from, so they get a flat view. The two tests above this
+    fixture are the ones checking the nesting itself.
+    """
+    found = {}
+    for menu in category_menus.values():
+        found.update(submenus(menu))
+    return found
+
+
+def test_the_section_holds_categories_only(category_menus):
+    """Every top-level entry is a category from the plugin vocabulary."""
+    from MiAZ.frontend.desktop.services import pluginsystem as ps
+    unknown = [label for label in category_menus if label not in ps.plugin_categories]
+    assert unknown == [], f'not categories: {unknown}'
+
+
+def test_every_category_holds_its_own_subcategories(category_menus):
+    """A category submenu holds subcategories, and never a bare action."""
+    from MiAZ.frontend.desktop.services import pluginsystem as ps
+    for category, menu in category_menus.items():
+        known = ps.plugin_categories[category]
+        found = submenus(menu)
+        assert found, f'{category} holds no subcategory'
+        for subcategory in found:
+            assert subcategory in known, f'{subcategory} is not under {category}'
+        assert labels(menu) == list(found), \
+            f'{category} holds something that is not a subcategory'
 
 
 def entry(plugin_menus, label, plugin_name):
@@ -63,7 +104,7 @@ def entry(plugin_menus, label, plugin_name):
 
 
 def test_notes_holds_all_four_of_its_actions(plugin_menus):
-    notes = entry(plugin_menus, 'Notes', 'MiAZNotes')
+    notes = entry(plugin_menus, 'Annotation', 'MiAZNotes')
     found = labels(notes)
     assert 'Create a new note' in found
     assert 'See all notes…' in found
@@ -86,10 +127,10 @@ def test_projects_holds_its_actions_directly(plugin_menus):
     assert any(text.startswith('Manage') for text in found), found
 
 
-def test_tags_holds_its_actions_directly(plugin_menus):
-    tags = entry(plugin_menus, 'Tags', 'MiAZPeriodicity')
-    assert submenus(tags) == {}, 'Tags still nests a submenu'
-    found = labels(tags)
+def test_periodicity_holds_its_actions_directly(plugin_menus):
+    periodicity = entry(plugin_menus, 'Periodicity', 'MiAZPeriodicity')
+    assert submenus(periodicity) == {}, 'Periodicity still nests a submenu'
+    found = labels(periodicity)
     assert any(text.startswith('Set ') for text in found), found
     assert any(text.startswith('Unset ') for text in found), found
     assert any(text.startswith('Manage ') for text in found), found

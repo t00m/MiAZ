@@ -53,7 +53,7 @@ plugin_info = {
     'Help':         'https://github.com/t00m/MiAZ/blob/main/README.md',
     'Version':      '0.2.0',
     'Category':     'Repository',
-    'Subcategory':  'Statistics',
+    'Subcategory':  'Stats',
 }
 
 PLUGIN_DIR_NAME = 'MiAZInsights'

@@ -391,21 +391,29 @@ class MiAZApp(Adw.Application):
         return subcategory_submenu
 
     def install_plugin_menu(self, category, subcategory):
-        """
+        """The submenu a plugin's items go in, creating the path to it.
+
+        The plugins section holds one submenu per category, and each category
+        submenu holds one per subcategory, so an action reads as
+        Category > Subcategory > action. Both levels are appended the first
+        time they are asked for and looked up by key after that: a second
+        plugin declaring the same pair lands in the same submenu instead of
+        adding a second entry with the same name.
         """
         cid = category.lower().replace(' ', '-')
         sid = subcategory.lower().replace(' ', '-')
-        key = f"workspace-menu-plugins-{cid}-{sid}"
-        entry = self.get_widget(key)
+        category_key = f"workspace-menu-plugins-{cid}"
+        subcategory_key = f"workspace-menu-plugins-{cid}-{sid}"
+        category_is_new = self.get_widget(category_key) is None
+        subcategory_is_new = self.get_widget(subcategory_key) is None
         category_submenu = self.get_plugin_category_submenu(category)
-        # ~ category_submenu.append_submenu(subcategory, subcategory_submenu)
         subcategory_submenu = self.get_plugin_subcategory_submenu(category, subcategory)
-        if entry is None:
-            # ~ title = _("{category} > {subcategory}").format(category=_(category), subcategory=_(subcategory))
-            title = _(subcategory)
+        if category_is_new:
             plugins_section = self.get_widget('workspace-plugins-section')
             target = plugins_section if plugins_section is not None else self.get_widget('workspace-menu-selection')
-            target.append_submenu(title, subcategory_submenu)
+            target.append_submenu(_(category), category_submenu)
+        if subcategory_is_new:
+            category_submenu.append_submenu(_(subcategory), subcategory_submenu)
         return subcategory_submenu
 
     def exit(self, *args):

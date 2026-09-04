@@ -28,7 +28,7 @@ plugin_info = {
     'Help':          'https://github.com/t00m/MiAZ/blob/main/README.md',
     'Version':       '0.1.26',
     'Category':      'Interface',
-    'Subcategory':   'View'
+    'Subcategory':   'Behavior'
 }
 
 COLUMNS = {

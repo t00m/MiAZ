@@ -33,7 +33,7 @@ plugin_info = {
         'Help':          'https://github.com/t00m/MiAZ/blob/main/README.md',
         'Version':       '0.1.0',
         'Category':      'Documents',
-        'Subcategory':   'Text',
+        'Subcategory':   'Annotation',
         'Dependencies':  'MiAZNotes',
     }
 

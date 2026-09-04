@@ -28,7 +28,7 @@ plugin_info = {
     'Authors':     'Tomás Vírseda <tomasvirseda@gmail.com>',
     'Copyright':   'Copyright © 2026 Tomás Vírseda',
     'Version':     '0.1.0',
-    'Category':    'AI',
+    'Category':    'Documents',
     'Subcategory': 'Assistants',
 }
 

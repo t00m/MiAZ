@@ -338,9 +338,9 @@ automated UI suite, **[K]** needs a paid API key (skip unless you have one).
       failed request does not hang the dialog.
 - [ ] **10.16** MiAZNotes: write a note, save it, reopen it. Markdown renders in
       view mode, and the All notes page lists it.
-- [ ] **10.16b [A]** The workspace menu Notes entry holds four items: Create a
-      new note, See all notes, Backup notes, Restore notes. There is no Backup
-      or Restore entry of its own.
+- [ ] **10.16b [A]** The workspace menu entry Documents > Annotation holds four
+      items: Create a new note, See all notes, Backup notes, Restore notes.
+      There is no Backup or Restore entry of its own.
 - [ ] **10.16c [A]** Select two or more documents and press `Ctrl+N`. The
       window opens on a blank note, and saving files the same text against
       every selected document.
@@ -349,9 +349,9 @@ automated UI suite, **[K]** needs a paid API key (skip unless you have one).
       sidebar ones.
 - [ ] **10.18** MiAZProjectMgt: assign (`Ctrl+P`), unassign (`Ctrl+Shift+P`) and
       manage (`Ctrl+Alt+P`). The sidebar project filter follows. The three sit
-      directly under the Projects entry, with no submenu in between.
+      directly under Documents > Projects, with no submenu in between.
 - [ ] **10.19** MiAZPeriodicity: set a periodicity and filter by it. Set, Unset
-      and Manage sit directly under the Tags entry.
+      and Manage sit directly under Documents > Periodicity.
 - [ ] **10.20** MiAZColumnVisibility: hide and show columns. The choice survives
       a restart.
 - [ ] **10.21** MiAZWSFont: change the workspace font. It applies immediately.

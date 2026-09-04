@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 0.1\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-09-04 06:58+0200\n"
+"POT-Creation-Date: 2026-09-04 16:55+0200\n"
 "PO-Revision-Date: 2026-08-19 23:30+0200\n"
 "Last-Translator: Tomás Vírseda <tomasvirseda@gmail.com>\n"
 "Language-Team: Spanish\n"
@@ -792,7 +792,7 @@ msgid "Document"
 msgstr "Documento"
 
 #: MiAZ/backend/models.py:219 MiAZ/frontend/desktop/services/actions.py:697
-#: MiAZ/frontend/desktop/services/pluginsystem.py:97
+#: MiAZ/frontend/desktop/services/pluginsystem.py:99
 #: MiAZ/frontend/desktop/widgets/workspace.py:601
 #: data/resources/plugins/MiAZInsights/insights/render.py:34
 msgid "Documents"
@@ -851,7 +851,7 @@ msgid "Purpose"
 msgstr "Propósito"
 
 #: MiAZ/backend/models.py:272
-#: MiAZ/frontend/desktop/services/pluginsystem.py:110
+#: MiAZ/frontend/desktop/services/pluginsystem.py:109
 #: MiAZ/frontend/desktop/widgets/dr.py:46
 msgid "Repository"
 msgstr "Repositorio"
@@ -898,6 +898,7 @@ msgid "Finance"
 msgstr "Finanzas"
 
 #: MiAZ/backend/vocabulary.py:25
+#: MiAZ/frontend/desktop/services/pluginsystem.py:110
 #: data/resources/plugins/MiAZNotes/lib/model.py:21
 msgid "Health"
 msgstr "Salud"
@@ -1685,7 +1686,7 @@ msgid "Something went wrong."
 msgstr "Algo ha ido mal."
 
 #: MiAZ/frontend/desktop/services/factory.py:103
-#: data/resources/plugins/MiAZExport2Dir/export2dir.py:181
+#: data/resources/plugins/MiAZExport2Dir/export2dir.py:173
 msgid "Select folder"
 msgstr "Seleccionar carpeta"
 
@@ -1882,7 +1883,6 @@ msgid "Separator"
 msgstr "Separador"
 
 #: MiAZ/frontend/desktop/services/massrename.py:406
-#: MiAZ/frontend/desktop/services/pluginsystem.py:100
 msgid "Text"
 msgstr "Texto"
 
@@ -1960,7 +1960,7 @@ msgstr "Página web"
 #. opens that same window: MiAZ has no separate manual, and a shortcut
 #. advertised and bound to nothing is worse than one that is honest.
 #: MiAZ/frontend/desktop/services/pluginsystem.py:74
-#: MiAZ/frontend/desktop/services/pluginsystem.py:125
+#: MiAZ/frontend/desktop/services/pluginsystem.py:118
 #: MiAZ/frontend/desktop/widgets/mainwindow.py:699
 msgid "Help"
 msgstr "Ayuda"
@@ -1980,103 +1980,68 @@ msgstr "Categoría"
 msgid "Subcategory"
 msgstr "Subcategoría"
 
-#: MiAZ/frontend/desktop/services/pluginsystem.py:98
+#: MiAZ/frontend/desktop/services/pluginsystem.py:100
 #: data/resources/plugins/MiAZContacts/contacts/manager.py:233
 msgid "Import"
 msgstr "Importar"
 
-#: MiAZ/frontend/desktop/services/pluginsystem.py:99
+#: MiAZ/frontend/desktop/services/pluginsystem.py:101
 #: data/resources/plugins/MiAZContacts/contacts/manager.py:234
 msgid "Export"
 msgstr "Exportar"
 
-#: MiAZ/frontend/desktop/services/pluginsystem.py:101
-#: data/resources/plugins/MiAZDoctor/doctor.py:43
-#: data/resources/plugins/MiAZNotes/notes.py:260
-#: data/resources/plugins/MiAZNotes/notes.py:347
-msgid "Notes"
-msgstr "Notas"
-
 #: MiAZ/frontend/desktop/services/pluginsystem.py:102
-msgid "Convert"
-msgstr "Convertir"
+msgid "Annotation"
+msgstr "Anotación"
 
-#: MiAZ/frontend/desktop/services/pluginsystem.py:104
-msgid "Organise"
-msgstr "Organizar"
-
-#: MiAZ/frontend/desktop/services/pluginsystem.py:105
-msgid "Tags"
-msgstr "Etiquetas"
-
-#: MiAZ/frontend/desktop/services/pluginsystem.py:106
-#: data/resources/plugins/MiAZProjectMgt/projmgt.py:82
-msgid "Projects"
-msgstr "Proyectos"
-
-#: MiAZ/frontend/desktop/services/pluginsystem.py:107
-msgid "Search"
-msgstr "Buscar"
-
-#: MiAZ/frontend/desktop/services/pluginsystem.py:108
+#: MiAZ/frontend/desktop/services/pluginsystem.py:103
 #: data/resources/plugins/MiAZContacts/contactbook.py:86
 #: data/resources/plugins/MiAZContacts/contacts/manager.py:245
 msgid "Contacts"
 msgstr "Contactos"
 
-#: MiAZ/frontend/desktop/services/pluginsystem.py:111
-#: MiAZ/frontend/desktop/widgets/dr.py:72
-msgid "Backup"
-msgstr "Copia de seguridad"
+#: MiAZ/frontend/desktop/services/pluginsystem.py:104
+#: data/resources/plugins/MiAZPeriodicity/periodicity.py:60
+#: data/resources/plugins/MiAZPeriodicity/periodicity.py:61
+msgid "Periodicity"
+msgstr "Periodicidad"
 
-#: MiAZ/frontend/desktop/services/pluginsystem.py:112
-#: MiAZ/frontend/desktop/widgets/dr.py:78
-msgid "Restore"
-msgstr "Restaurar"
+#: MiAZ/frontend/desktop/services/pluginsystem.py:105
+#: data/resources/plugins/MiAZProjectMgt/projmgt.py:82
+msgid "Projects"
+msgstr "Proyectos"
 
-#: MiAZ/frontend/desktop/services/pluginsystem.py:113
-msgid "Statistics"
-msgstr "Estadísticas"
+#: MiAZ/frontend/desktop/services/pluginsystem.py:106
+msgid "Search"
+msgstr "Buscar"
 
-#: MiAZ/frontend/desktop/services/pluginsystem.py:114
-msgid "Sync"
-msgstr "Sincronizar"
-
-#: MiAZ/frontend/desktop/services/pluginsystem.py:116
-msgid "Interface"
-msgstr "Interfaz"
-
-#: MiAZ/frontend/desktop/services/pluginsystem.py:117
-msgid "View"
-msgstr "Vista"
-
-#: MiAZ/frontend/desktop/services/pluginsystem.py:118
-msgid "Fonts"
-msgstr "Tipografías"
-
-#: MiAZ/frontend/desktop/services/pluginsystem.py:119
-msgid "Themes"
-msgstr "Temas"
-
-#: MiAZ/frontend/desktop/services/pluginsystem.py:121
-msgid "AI"
-msgstr "IA"
-
-#: MiAZ/frontend/desktop/services/pluginsystem.py:122
+#: MiAZ/frontend/desktop/services/pluginsystem.py:107
 msgid "Assistants"
 msgstr "Asistentes"
 
-#: MiAZ/frontend/desktop/services/pluginsystem.py:123
-msgid "Models"
-msgstr "Modelos"
+#: MiAZ/frontend/desktop/services/pluginsystem.py:111
+msgid "Stats"
+msgstr "Estadísticas"
 
-#: MiAZ/frontend/desktop/services/pluginsystem.py:126
+#: MiAZ/frontend/desktop/services/pluginsystem.py:113
+msgid "Interface"
+msgstr "Interfaz"
+
+#: MiAZ/frontend/desktop/services/pluginsystem.py:114
+msgid "Behavior"
+msgstr "Comportamiento"
+
+#: MiAZ/frontend/desktop/services/pluginsystem.py:115
+msgid "Display"
+msgstr "Visualización"
+
+#: MiAZ/frontend/desktop/services/pluginsystem.py:116
+msgid "Accessibility"
+msgstr "Accesibilidad"
+
+#: MiAZ/frontend/desktop/services/pluginsystem.py:119
 msgid "Examples"
 msgstr "Ejemplos"
-
-#: MiAZ/frontend/desktop/services/pluginsystem.py:127
-msgid "Diagnostics"
-msgstr "Diagnósticos"
 
 #: MiAZ/frontend/desktop/services/progress.py:72
 #: MiAZ/frontend/desktop/services/progress.py:83
@@ -2380,7 +2345,7 @@ msgstr "Editar repositorio"
 
 #: MiAZ/frontend/desktop/widgets/configview.py:270
 #: MiAZ/frontend/desktop/widgets/selector.py:274
-#: data/resources/plugins/MiAZDoctor/doctor.py:256
+#: data/resources/plugins/MiAZDoctor/doctor.py:264
 #: data/resources/plugins/MiAZNotes/lib/editor.py:148
 msgid "Save"
 msgstr "Guardar"
@@ -2672,6 +2637,14 @@ msgstr "Repositorio de destino"
 #: MiAZ/frontend/desktop/widgets/dr.py:66
 msgid "Operation type"
 msgstr "Tipo de operación"
+
+#: MiAZ/frontend/desktop/widgets/dr.py:72
+msgid "Backup"
+msgstr "Copia de seguridad"
+
+#: MiAZ/frontend/desktop/widgets/dr.py:78
+msgid "Restore"
+msgstr "Restaurar"
 
 #: MiAZ/frontend/desktop/widgets/dr.py:88
 #: MiAZ/frontend/desktop/widgets/dr.py:109
@@ -3050,7 +3023,7 @@ msgstr "reiniciar"
 #: MiAZ/frontend/desktop/widgets/selector.py:59
 #: MiAZ/frontend/desktop/widgets/settings.py:192
 #: data/resources/plugins/MiAZContacts/contacts/editor.py:46
-#: data/resources/plugins/MiAZDoctor/doctor.py:243
+#: data/resources/plugins/MiAZDoctor/doctor.py:251
 msgid "Remove"
 msgstr "Eliminar"
 
@@ -3852,7 +3825,7 @@ msgid "Saved {name}"
 msgstr "Establecer {i_confname}"
 
 #: data/resources/plugins/MiAZContacts/contacts/card.py:89
-#: data/resources/plugins/MiAZDoctor/doctor.py:215
+#: data/resources/plugins/MiAZDoctor/doctor.py:223
 msgid "Show"
 msgstr ""
 
@@ -4117,90 +4090,100 @@ msgstr ""
 msgid "Nothing is broken, but the repository is drifting."
 msgstr ""
 
+#: data/resources/plugins/MiAZDoctor/doctor.py:43
+#: data/resources/plugins/MiAZNotes/notes.py:260
+#: data/resources/plugins/MiAZNotes/notes.py:347
+msgid "Notes"
+msgstr "Notas"
+
 #: data/resources/plugins/MiAZDoctor/doctor.py:44
 msgid "Tidying, whenever it suits."
 msgstr ""
 
-#: data/resources/plugins/MiAZDoctor/doctor.py:135
+#: data/resources/plugins/MiAZDoctor/doctor.py:98
+msgid "Run repository health check"
+msgstr "Comprobar el estado del repositorio"
+
+#: data/resources/plugins/MiAZDoctor/doctor.py:143
 #, fuzzy
 msgid "Examining the repository..."
 msgstr "Copia de seguridad del repositorio"
 
-#: data/resources/plugins/MiAZDoctor/doctor.py:143
+#: data/resources/plugins/MiAZDoctor/doctor.py:151
 msgid "Health check failed"
 msgstr ""
 
-#: data/resources/plugins/MiAZDoctor/doctor.py:147
+#: data/resources/plugins/MiAZDoctor/doctor.py:155
 msgid "The repository is in good order"
 msgstr ""
 
-#: data/resources/plugins/MiAZDoctor/doctor.py:156
+#: data/resources/plugins/MiAZDoctor/doctor.py:164
 #, fuzzy
 msgid "Repository health"
 msgstr "Nombre del repositorio"
 
-#: data/resources/plugins/MiAZDoctor/doctor.py:175
+#: data/resources/plugins/MiAZDoctor/doctor.py:183
 #, fuzzy, python-brace-format
 msgid "{count} problem"
 msgid_plural "{count} problems"
 msgstr[0] "y {n} más"
 msgstr[1] "y {n} más"
 
-#: data/resources/plugins/MiAZDoctor/doctor.py:178
+#: data/resources/plugins/MiAZDoctor/doctor.py:186
 #, python-brace-format
 msgid "{count} thing worth cleaning"
 msgid_plural "{count} things worth cleaning"
 msgstr[0] ""
 msgstr[1] ""
 
-#: data/resources/plugins/MiAZDoctor/doctor.py:182
+#: data/resources/plugins/MiAZDoctor/doctor.py:190
 #, fuzzy, python-brace-format
 msgid "{count} note"
 msgid_plural "{count} notes"
 msgstr[0] "y {n} más"
 msgstr[1] "y {n} más"
 
-#: data/resources/plugins/MiAZDoctor/doctor.py:218
+#: data/resources/plugins/MiAZDoctor/doctor.py:226
 #, fuzzy, python-brace-format
 msgid "Show this document in the workspace"
 msgid_plural "Show these {count} documents in the workspace"
 msgstr[0] "Mostrar como mucho N documentos"
 msgstr[1] "Mostrar como mucho N documentos"
 
-#: data/resources/plugins/MiAZDoctor/doctor.py:240
+#: data/resources/plugins/MiAZDoctor/doctor.py:248
 #, fuzzy, python-brace-format
 msgid "{field}, used by {count} documents"
 msgstr "¿Borrar {count} documentos?"
 
-#: data/resources/plugins/MiAZDoctor/doctor.py:241
+#: data/resources/plugins/MiAZDoctor/doctor.py:249
 #, python-brace-format
 msgid "{field}, used by none"
 msgstr ""
 
-#: data/resources/plugins/MiAZDoctor/doctor.py:250
+#: data/resources/plugins/MiAZDoctor/doctor.py:258
 msgid "Describe this value"
 msgstr ""
 
-#: data/resources/plugins/MiAZDoctor/doctor.py:281
+#: data/resources/plugins/MiAZDoctor/doctor.py:289
 #, fuzzy, python-brace-format
 msgid "Saved as \"{description}\""
 msgstr "Guardado como {name} en {path}."
 
-#: data/resources/plugins/MiAZDoctor/doctor.py:290
+#: data/resources/plugins/MiAZDoctor/doctor.py:298
 msgid "Removed from the vocabulary"
 msgstr ""
 
-#: data/resources/plugins/MiAZDoctor/doctor.py:310
+#: data/resources/plugins/MiAZDoctor/doctor.py:318
 #, fuzzy, python-brace-format
 msgid "{code} ({field}), {count} documents"
 msgstr "¿Borrar {count} documentos?"
 
-#: data/resources/plugins/MiAZDoctor/doctor.py:312
+#: data/resources/plugins/MiAZDoctor/doctor.py:320
 #, python-brace-format
 msgid "{code} ({field})"
 msgstr ""
 
-#: data/resources/plugins/MiAZDoctor/doctor.py:319
+#: data/resources/plugins/MiAZDoctor/doctor.py:327
 #, fuzzy, python-brace-format
 msgid "and {count} more"
 msgstr "y {n} más"
@@ -4250,8 +4233,8 @@ msgstr "no se pudo copiar el archivo"
 
 #: data/resources/plugins/MiAZExport2Dir/export2dir.py:24
 #: data/resources/plugins/MiAZExport2Dir/export2dir.py:93
-#: data/resources/plugins/MiAZExport2Dir/export2dir.py:192
-#: data/resources/plugins/MiAZExport2Dir/export2dir.py:286
+#: data/resources/plugins/MiAZExport2Dir/export2dir.py:193
+#: data/resources/plugins/MiAZExport2Dir/export2dir.py:287
 msgid "Export to directory"
 msgstr "Exportar a un directorio"
 
@@ -4263,17 +4246,12 @@ msgstr "Carpetas por fecha"
 msgid "Folders by field"
 msgstr "Carpetas por campo"
 
-#. # Example row: the path the first selected document will take
-#: data/resources/plugins/MiAZExport2Dir/export2dir.py:159
-msgid "Example"
-msgstr "Ejemplo"
-
 #. # Readable names row
-#: data/resources/plugins/MiAZExport2Dir/export2dir.py:167
+#: data/resources/plugins/MiAZExport2Dir/export2dir.py:159
 msgid "Readable names"
 msgstr "Nombres legibles"
 
-#: data/resources/plugins/MiAZExport2Dir/export2dir.py:171
+#: data/resources/plugins/MiAZExport2Dir/export2dir.py:163
 msgid ""
 "Rename the exported copies using the descriptions,\n"
 "for someone who does not know MiAZ filenames."
@@ -4281,63 +4259,68 @@ msgstr ""
 "Renombra las copias exportadas usando las descripciones,\n"
 "para quien no conoce los nombres de archivo de MiAZ."
 
-#: data/resources/plugins/MiAZExport2Dir/export2dir.py:173
+#: data/resources/plugins/MiAZExport2Dir/export2dir.py:165
 msgid "Use readable names"
 msgstr "Usar nombres legibles"
 
-#: data/resources/plugins/MiAZExport2Dir/export2dir.py:174
+#: data/resources/plugins/MiAZExport2Dir/export2dir.py:166
 msgid "The documents in the repository are not renamed"
 msgstr "Los documentos del repositorio no se renombran"
 
-#: data/resources/plugins/MiAZExport2Dir/export2dir.py:183
+#: data/resources/plugins/MiAZExport2Dir/export2dir.py:175
 msgid "Select target folder"
 msgstr "Seleccionar el directorio destino"
 
-#: data/resources/plugins/MiAZExport2Dir/export2dir.py:184
+#: data/resources/plugins/MiAZExport2Dir/export2dir.py:176
 msgid "No target folder set yet"
 msgstr "Aún no se ha definido una carpeta de destino"
 
-#: data/resources/plugins/MiAZExport2Dir/export2dir.py:225
+#. # Example row, last: every row above it feeds the path it shows
+#: data/resources/plugins/MiAZExport2Dir/export2dir.py:181
+msgid "Example"
+msgstr "Ejemplo"
+
+#: data/resources/plugins/MiAZExport2Dir/export2dir.py:226
 msgid "the target folder"
 msgstr "la carpeta de destino"
 
 #. The first selected document is not in MiAZ format. The export
 #. will say so; the example has nothing to show.
-#: data/resources/plugins/MiAZExport2Dir/export2dir.py:238
+#: data/resources/plugins/MiAZExport2Dir/export2dir.py:239
 msgid "This document cannot be exported with folders"
 msgstr "Este documento no se puede exportar con carpetas"
 
-#: data/resources/plugins/MiAZExport2Dir/export2dir.py:253
+#: data/resources/plugins/MiAZExport2Dir/export2dir.py:254
 msgid "Error selecting files"
 msgstr "Error al seleccionar archivos"
 
-#: data/resources/plugins/MiAZExport2Dir/export2dir.py:260
+#: data/resources/plugins/MiAZExport2Dir/export2dir.py:261
 msgid "Action canceled"
 msgstr "Acción cancelada"
 
-#: data/resources/plugins/MiAZExport2Dir/export2dir.py:260
+#: data/resources/plugins/MiAZExport2Dir/export2dir.py:261
 msgid "No documents exported"
 msgstr "No se exportó ningún documento"
 
-#: data/resources/plugins/MiAZExport2Dir/export2dir.py:266
+#: data/resources/plugins/MiAZExport2Dir/export2dir.py:267
 msgid "No target folder"
 msgstr "Sin carpeta de destino"
 
-#: data/resources/plugins/MiAZExport2Dir/export2dir.py:267
+#: data/resources/plugins/MiAZExport2Dir/export2dir.py:268
 msgid "Choose an existing folder before exporting"
 msgstr "Elija una carpeta existente antes de exportar"
 
-#: data/resources/plugins/MiAZExport2Dir/export2dir.py:287
+#: data/resources/plugins/MiAZExport2Dir/export2dir.py:288
 #, python-brace-format
 msgid "Exporting {total} documents…"
 msgstr "Exportando {total} documentos…"
 
-#: data/resources/plugins/MiAZExport2Dir/export2dir.py:326
+#: data/resources/plugins/MiAZExport2Dir/export2dir.py:327
 #, python-brace-format
 msgid "{copied} of {total} documents exported"
 msgstr "{copied} de {total} documentos exportados"
 
-#: data/resources/plugins/MiAZExport2Dir/export2dir.py:333
+#: data/resources/plugins/MiAZExport2Dir/export2dir.py:334
 #, python-brace-format
 msgid "and {rest} more, in the log"
 msgstr "y {rest} más, en el registro"
@@ -4969,11 +4952,6 @@ msgstr "Bimensualmente"
 msgid "Semi-Annual"
 msgstr "Semestral"
 
-#: data/resources/plugins/MiAZPeriodicity/periodicity.py:60
-#: data/resources/plugins/MiAZPeriodicity/periodicity.py:61
-msgid "Periodicity"
-msgstr "Periodicidad"
-
 #: data/resources/plugins/MiAZPeriodicity/periodicity.py:99
 #, python-brace-format
 msgid "{title} Id"
@@ -5535,6 +5513,39 @@ msgstr "Imprimir"
 #: data/resources/plugins/MiAZInsights/insights/render.py:361
 msgid "Generated"
 msgstr "Generado"
+
+#~ msgid "Convert"
+#~ msgstr "Convertir"
+
+#~ msgid "Organise"
+#~ msgstr "Organizar"
+
+#~ msgid "Tags"
+#~ msgstr "Etiquetas"
+
+#~ msgid "Statistics"
+#~ msgstr "Estadísticas"
+
+#~ msgid "Sync"
+#~ msgstr "Sincronizar"
+
+#~ msgid "View"
+#~ msgstr "Vista"
+
+#~ msgid "Fonts"
+#~ msgstr "Tipografías"
+
+#~ msgid "Themes"
+#~ msgstr "Temas"
+
+#~ msgid "AI"
+#~ msgstr "IA"
+
+#~ msgid "Models"
+#~ msgstr "Modelos"
+
+#~ msgid "Diagnostics"
+#~ msgstr "Diagnósticos"
 
 #~ msgid "Export with pattern"
 #~ msgstr "Exportar con este patrón"

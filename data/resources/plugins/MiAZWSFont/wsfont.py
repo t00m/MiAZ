@@ -26,7 +26,7 @@ plugin_info = {
         'Help':          'https://github.com/t00m/MiAZ/blob/main/README.md',
         'Version':       '0.1',
         'Category':      'Interface',
-        'Subcategory':   'Fonts'
+        'Subcategory':   'Accessibility'
     }
 
 DEFAULT_FONT_FAMILY = 'Monospace'

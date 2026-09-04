@@ -91,40 +91,32 @@ def N_(text: str) -> str:
 
 
 # The vocabulary every plugin picks its Category and Subcategory from.
-# Names are one word on purpose: the subcategory is the label of a workspace
-# submenu, sitting next to actions like "Toggle fullscreen".
+# Names are one word on purpose: both are menu labels. The workspace plugins
+# section shows one submenu per category, and each of those shows one submenu
+# per subcategory, so a plugin's actions sit two levels down at Category >
+# Subcategory > action.
 plugin_categories = {
     N_('Documents'): {
         N_('Import'): 'Bring documents into the repository',
         N_('Export'): 'Take documents out of the repository',
-        N_('Text'): 'Read the text inside a document',
-        N_('Notes'): 'Write alongside a document',
-        N_('Convert'): 'Turn a document into another format'
-    },
-    N_('Organise'): {
-        N_('Tags'): 'Classify documents',
+        N_('Annotation'): 'Write and read text alongside a document',
+        N_('Contacts'): 'Keep details about senders and recipients',
+        N_('Periodicity'): 'Say how often a document comes back',
         N_('Projects'): 'Group documents into projects',
         N_('Search'): 'Find documents',
-        N_('Contacts'): 'Keep details about senders and recipients'
+        N_('Assistants'): 'Ask a model about a document'
     },
     N_('Repository'): {
-        N_('Backup'): 'Copy the repository somewhere safe',
-        N_('Restore'): 'Bring a backup back',
-        N_('Statistics'): 'Measure the whole repository',
-        N_('Sync'): 'Keep repositories in step'
+        N_('Health'): 'Check the repository and repair it',
+        N_('Stats'): 'Measure the whole repository'
     },
     N_('Interface'): {
-        N_('View'): 'Change what the window shows',
-        N_('Fonts'): 'Change how text is drawn',
-        N_('Themes'): 'Change the application appearance'
-    },
-    N_('AI'): {
-        N_('Assistants'): 'Ask a model about a document',
-        N_('Models'): 'Connect to an AI provider'
+        N_('Behavior'): 'Change how the window reacts',
+        N_('Display'): 'Change what the window shows',
+        N_('Accessibility'): 'Change how text is drawn'
     },
     N_('Help'): {
-        N_('Examples'): 'Show how a plugin is written',
-        N_('Diagnostics'): 'Report on what the application is doing'
+        N_('Examples'): 'Show how a plugin is written'
     }
 }
 

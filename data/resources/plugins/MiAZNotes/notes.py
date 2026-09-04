@@ -70,7 +70,7 @@ plugin_info = {
     'Help':        'https://github.com/t00m/MiAZ/blob/main/README.md',
     'Version':     '0.3.0',
     'Category':    'Documents',
-    'Subcategory': 'Notes',
+    'Subcategory': 'Annotation',
 }
 
 
