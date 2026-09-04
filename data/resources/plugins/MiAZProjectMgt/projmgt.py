@@ -515,10 +515,15 @@ class MiAZProjectTab(Gtk.Box):
         self.empty.set_visible(len(self.checks) == 0)
 
     def _on_manage_clicked(self, *args):
-        """Open the project manager over the rename window."""
-        dialog = self.show_manager(widget=self)
-        if dialog is not None:
-            dialog.connect('closed', self._on_manager_closed)
+        """Open the project manager over the rename window.
+
+        show_manager opens the Repository Settings window rather than a
+        dialog of its own, so this connects to that window's close-request
+        signal, not the 'closed' an Adw.Dialog would have.
+        """
+        window = self.show_manager(widget=self)
+        if window is not None:
+            window.connect('close-request', self._on_manager_closed)
 
     def _on_manager_closed(self, *args):
         """Show the projects the manager left behind, ticks included.
@@ -526,6 +531,10 @@ class MiAZProjectTab(Gtk.Box):
         Nothing is written until the rename goes through, so what the user has
         ticked so far has to survive the rebuild. Projects created in the
         manager come in unticked.
+
+        Connected to close-request rather than a dialog's 'closed': its
+        return value matters, since True would stop the window from closing,
+        so this always answers False.
         """
         ticked = {pid for pid, check in self.checks.items() if check.get_active()}
         row = self.listbox.get_first_child()
@@ -536,6 +545,7 @@ class MiAZProjectTab(Gtk.Box):
         self._build_rows()
         for pid, check in self.checks.items():
             check.set_active(pid in ticked)
+        return False
 
     # Document tab contract
     def set_document(self, doc_id):
@@ -850,8 +860,15 @@ class MiAZProjectMgt(MiAZExtension):
         of the rename dialog, a different window entirely. `widget` is
         accepted only because that caller still passes one; it is not needed
         to reach the dialog, which is not modal over any particular window.
+
+        Returns the settings window, for the same reason the method this
+        replaced returned its dialog: MiAZProjectTab's manage button reacts
+        to what the user did there by connecting to it, and cannot if this
+        hands back nothing.
         """
         self.app.get_service('actions').show_repository_settings()
+        window = self.app.get_widget('window-repo-settings')
         page = self.app.get_widget('repository-settings-page-metadata')
         if page is not None:
             page.show_view('Projects')
+        return window

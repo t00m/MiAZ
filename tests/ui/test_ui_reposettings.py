@@ -417,3 +417,51 @@ def test_the_manage_menu_entry_opens_the_metadata_tab(clean_view):
     assert page.stack.get_visible_child_name() == 'Projects'
     window.close()
     clean_view.pump(0.3)
+
+
+def test_closing_the_settings_window_refreshes_the_projects_tab(
+        clean_view, monkeypatch):
+    """MiAZProjectTab's manage button used to open a dialog and connect to
+    its 'closed' signal to rebuild the tick list once the user was done.
+    Repository Settings is a window, not a dialog, and has no 'closed'
+    signal, only 'close-request'; a show_manager that returned None (as an
+    early version of it did) or a caller that still connected to 'closed'
+    would both fail exactly this way: the button opens the window, but the
+    tab's own list never refreshes when it closes, silently.
+    """
+    plugin_obj = clean_view.widget('plugin-MiAZProjectMgt')
+    if plugin_obj is None:
+        pytest.skip('MiAZProjectMgt is not enabled in this repository')
+    tabs = clean_view.service('document-tabs')
+    registration = next((reg for reg in tabs.get_registrations()
+                         if reg['name'] == 'projects'), None)
+    if registration is None:
+        pytest.skip('the projects tab is not registered')
+    tab = registration['factory'](clean_view.app)
+
+    # show_manager must hand back the window it opened, not None: the method
+    # it replaced returned its dialog for exactly this reason, and a caller
+    # that gets nothing back has nothing to connect to.
+    first_window = plugin_obj.show_manager(widget=tab)
+    assert first_window is not None, \
+        'show_manager must return the settings window, not None'
+    assert first_window is clean_view.widget('window-repo-settings')
+    first_window.close()
+    clean_view.pump(0.3)
+
+    # The real path: the manage button's own click handler, which is what
+    # silently stopped refreshing the tab when show_manager returned None
+    # and the caller tried to connect 'closed' to a window that has no such
+    # signal.
+    calls = []
+    monkeypatch.setattr(tab, '_build_rows', lambda: calls.append(1))
+    tab._on_manage_clicked()
+    clean_view.pump(0.5)
+    window = clean_view.widget('window-repo-settings')
+    assert window is not None, 'the settings window did not open'
+
+    window.close()
+    clean_view.pump(0.3)
+
+    assert calls, ('closing the settings window did not rebuild the '
+                   'projects tick list')
