@@ -10,6 +10,7 @@ from gettext import gettext as _
 from gi.repository import Gdk
 from gi.repository import GLib
 from gi.repository import Gtk
+from gi.repository import Pango
 
 from MiAZ.env import ENV
 from MiAZ.backend.log import MiAZLog
@@ -25,6 +26,15 @@ GAP_MONTHS = 6
 
 # Width the card thumbnail is rendered at.
 THUMBNAIL_WIDTH = 320
+
+# How much of the concept the headline shows before it is cut. The rest of
+# the card asks for a fixed width (the preview is a fixed box and the field
+# pills cap at 30 characters), so the headline is the one part that could ask
+# for more and drag the card, and the spine beside it, out of line with every
+# other row. This cap keeps its request under the body's, with room to spare:
+# test_a_long_concept_does_not_widen_the_timeline_card is what says so,
+# whatever the two widths become.
+TITLE_MAX_CHARS = 40
 
 # The box the preview is shown in: an A4 page at this height fits it.
 PREVIEW_WIDTH = 136
@@ -106,8 +116,12 @@ class TimelineCard(Gtk.Box):
         self.head.set_hexpand(True)
         self.label_concept = Gtk.Label(xalign=0.5)
         self.label_concept.add_css_class('miaz-timeline-title')
-        self.label_concept.set_wrap(True)
-        self.label_concept.set_justify(Gtk.Justification.CENTER)
+        # Cut rather than wrapped. A wrapping label asks for the whole concept
+        # on one line as its natural width, and for its longest word as its
+        # minimum, so a long concept made its card wider than the others and
+        # left the spine at a different place on every row.
+        self.label_concept.set_ellipsize(Pango.EllipsizeMode.END)
+        self.label_concept.set_max_width_chars(TITLE_MAX_CHARS)
         self.label_date = Gtk.Label(xalign=0.5)
         self.label_date.add_css_class('miaz-timeline-date')
         self.head.append(self.label_concept)
@@ -164,7 +178,10 @@ class TimelineCard(Gtk.Box):
         if year is not None:
             self.marks.append(self._year_separator(year))
 
-        self.label_concept.set_text(item.subtitle or os.path.basename(item.id))
+        concept = item.subtitle or os.path.basename(item.id)
+        self.label_concept.set_text(concept)
+        # The headline is cut, so the whole of it is one hover away.
+        self.label_concept.set_tooltip_text(concept)
         self.label_date.set_text(item.date_dsc)
         self.fields.set_item(item)
 

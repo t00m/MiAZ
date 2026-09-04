@@ -7,6 +7,7 @@ from gi.repository import Gtk
 
 from MiAZ.frontend.desktop.widgets.chip import MiAZChip
 from MiAZ.frontend.desktop.widgets.pills import MiAZFieldTable
+from MiAZ.frontend.desktop.widgets.timelineview import TimelineCard
 
 
 def _tags(driver):
@@ -128,6 +129,40 @@ def test_timeline_page_exists_and_orders_by_date(clean_view):
     dates = [timeline.sort_model.get_item(i).date
              for i in range(timeline.sort_model.get_n_items())]
     assert dates == sorted(dates)
+
+
+def test_a_long_concept_does_not_widen_the_timeline_card(clean_view):
+    """Every card asks for the same width, so the spine sits in one place.
+
+    The headline used to wrap, which meant a card asked for its whole concept
+    on one line: a document called HOURLY LEAVE RATE CORRECTION RETROACTIVE
+    RECALCULATION PAYSLIPS JAN AUG 2025 made its card half as wide again as
+    the one under it, and the rule down the middle stepped sideways at every
+    such row.
+
+    The width is measured rather than the ellipsize setting read, so this
+    still holds if the pills or the preview change size: what matters is that
+    the headline asks for less than the rest of the card, not the number the
+    cap happens to be.
+    """
+    card = TimelineCard()
+    window = Gtk.Window()
+    window.set_child(card)
+    try:
+        widths = []
+        for concept in ('RE 1', 'FM BUCH 2026',
+                        'HOURLY LEAVE RATE CORRECTION RETROACTIVE '
+                        'RECALCULATION PAYSLIPS JAN AUG 2025'):
+            card.label_concept.set_text(concept)
+            card.label_date.set_text('01/09/2025')
+            card.fields.set_fields(['20250901', 'ES', 'FIN', 'BANKX', 'INV',
+                                    'a-concept-of-a-fairly-usual-length',
+                                    'JOHNDOE'])
+            clean_view.pump(0.1)
+            widths.append(card.card.measure(Gtk.Orientation.HORIZONTAL, -1))
+        assert len(set(widths)) == 1, f'the concept changes the card width: {widths}'
+    finally:
+        window.destroy()
 
 
 def test_timeline_is_single_sided_with_many_parties(clean_view):
