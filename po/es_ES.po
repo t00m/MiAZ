@@ -3235,6 +3235,10 @@ msgstr "Acción cancelada. No se ha cambiado de repositorio"
 msgid "Settings for repository"
 msgstr "Ajustes del repositorio"
 
+#: MiAZ/frontend/desktop/widgets/settings.py:422
+msgid "Metadata"
+msgstr "Metadatos"
+
 #: MiAZ/frontend/desktop/widgets/sidebar.py:113
 msgid "Search in all fields"
 msgstr "Buscar en todos los campos"

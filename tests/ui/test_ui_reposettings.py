@@ -339,3 +339,22 @@ def test_a_plugin_with_only_show_settings_still_gets_a_row(repo_settings, clean_
     shown = candidates & set(titles)
     assert shown == expected, (shown, expected)
     assert _('Other plugins') in groups, groups
+
+
+def test_the_dialog_has_three_tabs(repo_settings, clean_view):
+    notebook = clean_view.widget('repository-settings-notebook')
+    assert notebook.get_n_pages() == 3, 'expected Metadata, Plugins, Settings'
+
+
+def test_the_metadata_tab_lists_the_five_built_in_types(repo_settings, clean_view):
+    page = clean_view.widget('repository-settings-page-metadata')
+    assert page is not None, 'no Metadata tab'
+    assert page.get_view_names() == [
+        'Country', 'Group', 'Purpose', 'SentBy', 'SentTo']
+
+
+def test_choosing_a_metadata_type_switches_the_stack(repo_settings, clean_view):
+    page = clean_view.widget('repository-settings-page-metadata')
+    page.show_view('Purpose')
+    clean_view.pump(0.2)
+    assert page.stack.get_visible_child_name() == 'Purpose'

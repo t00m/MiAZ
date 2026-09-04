@@ -24,6 +24,7 @@ from MiAZ.frontend.desktop.widgets.configview import MiAZPlugins
 from MiAZ.frontend.desktop.widgets.window import MiAZCustomWindow
 from MiAZ.frontend.desktop.widgets.dr import MiAZDRPage
 from MiAZ.frontend.desktop.widgets.reposettingspage import MiAZRepoSettingsPage
+from MiAZ.frontend.desktop.widgets.metadatapage import MiAZMetadataPage
 # ~ from MiAZ.frontend.desktop.widgets.pluginuimanager import MiAZPluginUIManager
 
 Configview = {}
@@ -402,55 +403,46 @@ class MiAZRepoSettings(MiAZCustomWindow):
         notebook.set_tab_pos(Gtk.PositionType.TOP)
         self.mainbox.append(notebook)
 
-        def create_tab(item_type):
+        def create_selector(item_type):
             i_type = item_type.__gtype_name__
-            i_id = item_type.__config_name__
-            i_title = item_type.__title__
-            i_title_plural = _(item_type.__title_plural__)
-            page = Gtk.CenterBox(orientation=Gtk.Orientation.VERTICAL)
-            page.set_vexpand(True)
-            page.set_hexpand(True)
-            widget_title = f"configview-{i_title}"
+            widget_title = f"configview-{item_type.__title__}"
             selector = self.app.add_widget(widget_title, Configview[i_type](self.app))
             selector.set_vexpand(True)
             selector.update_views()
-            box = self.factory.create_box_vertical(spacing=12, vexpand=True, hexpand=True)
-            box.append(selector)
-            page.set_start_widget(box)
-            wdgLabel = self.factory.create_box_horizontal()
-            wdgLabel.add_css_class('caption')
-            icon_name = f"io.github.t00m.MiAZ-res-{i_id.lower()}"
-            icon = self.icman.get_image_by_name(icon_name)
-            icon.set_hexpand(False)
-            icon.set_pixel_size(16)
-            title = _(i_title_plural)
-            label = self.factory.create_label(f"<b>{title}</b>")
-            label.set_xalign(0.0)
-            label.set_hexpand(True)
-            wdgLabel.append(icon)
-            wdgLabel.append(label)
-            wdgLabel.set_hexpand(True)
-            return page, wdgLabel
+            return selector
 
-        for item_type in [Country, Group, Purpose, SentBy, SentTo, Plugin]:
-            page, label = create_tab(item_type)
-            notebook.append_page(page, label)
+        metadata = MiAZMetadataPage(self.app)
+        for item_type in [Country, Group, Purpose, SentBy, SentTo]:
+            icon_name = f"io.github.t00m.MiAZ-res-{item_type.__config_name__.lower()}"
+            metadata.add_view(item_type.__gtype_name__,
+                              _(item_type.__title_plural__),
+                              icon_name,
+                              create_selector(item_type))
+        notebook.append_page(metadata, self._tab_label(
+            _('Metadata'), 'io.github.t00m.MiAZ-res-groups'))
+
+        notebook.append_page(create_selector(Plugin), self._tab_label(
+            _('Plugins'), 'io.github.t00m.MiAZ-res-plugins'))
 
         settings_page = MiAZRepoSettingsPage(self.app)
-        wdgLabel = self.factory.create_box_horizontal()
-        wdgLabel.add_css_class('caption')
-        icon = self.icman.get_image_by_name('io.github.t00m.MiAZ-emblem-system-symbolic')
-        icon.set_hexpand(False)
-        icon.set_pixel_size(16)
-        label = self.factory.create_label(f"<b>{_('Settings')}</b>")
-        label.set_xalign(0.0)
-        label.set_hexpand(True)
-        wdgLabel.append(icon)
-        wdgLabel.append(label)
-        notebook.append_page(settings_page, wdgLabel)
+        notebook.append_page(settings_page, self._tab_label(
+            _('Settings'), 'io.github.t00m.MiAZ-emblem-system-symbolic'))
         # Built when it is shown, not when the dialog opens: see the page's
         # docstring for what that saves.
         notebook.connect('switch-page', self._on_switch_page)
+
+    def _tab_label(self, title, icon_name):
+        box = self.factory.create_box_horizontal()
+        box.add_css_class('caption')
+        icon = self.icman.get_image_by_name(icon_name)
+        icon.set_hexpand(False)
+        icon.set_pixel_size(16)
+        label = self.factory.create_label(f"<b>{title}</b>")
+        label.set_xalign(0.0)
+        label.set_hexpand(True)
+        box.append(icon)
+        box.append(label)
+        return box
 
     def _on_switch_page(self, notebook, page, number):
         if isinstance(page, MiAZRepoSettingsPage):

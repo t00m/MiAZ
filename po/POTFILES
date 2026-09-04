@@ -41,6 +41,7 @@ MiAZ/frontend/desktop/widgets/filetypebadge.py
 MiAZ/frontend/desktop/widgets/gridview.py
 MiAZ/frontend/desktop/widgets/mainwindow.py
 MiAZ/frontend/desktop/widgets/markdownview.py
+MiAZ/frontend/desktop/widgets/metadatapage.py
 MiAZ/frontend/desktop/widgets/pages.py
 MiAZ/frontend/desktop/widgets/pills.py
 MiAZ/frontend/desktop/widgets/pluginuimanager.py
