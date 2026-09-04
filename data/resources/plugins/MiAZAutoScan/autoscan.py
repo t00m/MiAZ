@@ -37,6 +37,9 @@ plugin_info = {
     'Version':     '0.1',
     'Category':    'Documents',
     'Subcategory': 'Import',
+    'MenuEntries': [
+        ('scan', _('Scan and import (auto)')),
+    ],
 }
 
 _RESOLUTIONS = ['100', '200', '300', '600']
@@ -117,12 +120,7 @@ class MiAZAutoScanPlugin(MiAZExtension):
         if missing:
             self.log.warning(
                 f"Scanner tools not found on PATH: {', '.join(missing)}")
-            menuitem = self.factory.create_menuitem(
-                name=self.plugin.get_menu_item_name(),
-                label=_('Scan and import (auto)'),
-                callback=self._on_missing_tools,
-            )
-            self.plugin.install_menu_entry(menuitem)
+            self.plugin.install_menu_entries({'scan': self._on_missing_tools})
             self._refresh_add_menu()
             return
 
@@ -159,18 +157,13 @@ class MiAZAutoScanPlugin(MiAZExtension):
         self._build_source_menu([])
 
     def _build_source_menu(self, sources):
-        base = self.plugin.get_menu_item_name()
+        base = self.plugin.get_menu_item_name('scan')
 
         if not sources:
-            # Tools are present but no scanner was detected. Install a single
-            # entry that triggers the normal scan flow, which then reports the
-            # missing scanner.
-            menuitem = self.factory.create_menuitem(
-                name=base,
-                label=_('Scan and import (auto)'),
-                callback=self._on_scan,
-            )
-            self.plugin.install_menu_entry(menuitem)
+            # Tools are present but no scanner was detected. Install the
+            # declared entry, which triggers the normal scan flow and lets it
+            # report the missing scanner.
+            self.plugin.install_menu_entries({'scan': self._on_scan})
             self._refresh_add_menu()
             return
 
@@ -186,11 +179,11 @@ class MiAZAutoScanPlugin(MiAZExtension):
             sources_menu.append_item(menuitem)
 
         # A submenu menu item carries the per-source items into both the
-        # workspace selection menu and the headerbar Add menu. install_menu_entry
-        # registers it under the canonical 'plugin-menuitem-<name>' key, which is
-        # the key the Add menu mirrors.
+        # workspace selection menu and the headerbar Add menu. The sources come
+        # from the device, so this item cannot be declared, but its label is
+        # the declared one: the entry says the same thing either way.
         submenu_item = Gio.MenuItem.new_submenu(
-            _('Scan and import (auto)'), sources_menu)
+            self.plugin.get_menu_entry_label('scan'), sources_menu)
         self.plugin.install_menu_entry(submenu_item)
         self._refresh_add_menu()
 

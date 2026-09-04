@@ -389,7 +389,7 @@ Pass `widget_key` whenever the plugin looks the widget up later. The key is unre
 
 Reaching `sidebar-plugin-section`, `headerbar-left-box` and friends directly still works. These only save writing the teardown.
 
-**Menu entries are recorded, not rebuilt by rerunning startup.** `install_menu_entry(menuitem, category=None, subcategory=None)` appends the item and remembers it against the plugin. `install_menu_submenu(title, menu)` does the same for a plugin that hangs several actions under its entry (assign, unassign, manage). The workspace menu is thrown away and rebuilt whenever plugins change, and the rebuild replays those records.
+**Menu entries are recorded, not rebuilt by rerunning startup.** `install_menu_entries(callbacks)` builds the declared entries and appends each one, remembering it against the plugin; `install_menu_entry(menuitem, category=None, subcategory=None, name=None)` is the single item underneath it. `install_menu_submenu(title, menu)` does the same for a plugin that hangs several actions under its entry (assign, unassign, manage). The workspace menu is thrown away and rebuilt whenever plugins change, and the rebuild replays those records.
 
 It did not always. The rebuild used to clear every loaded plugin's `started` flag and call its `startup()` again, so each plugin ran its whole setup once per load or unload of **any** plugin: another gesture on the column view, another background probe of the scanner, another handler. One of those extra gestures is what made a right click crash after the plugin was disabled. Two rules follow:
 
@@ -580,24 +580,21 @@ Website=http://github.com/t00m/MiAZ
 Version=0.1
 Category=Documents
 Subcategory=Import
+MenuEntry-import=Import documents from ZIP
+MenuEntry-doc=Create a new note|<Ctrl>N
 ```
 
 Valid categories (with subcategories), defined once in `plugin_categories`
 (`frontend/desktop/services/pluginsystem.py`):
 
-- `Documents`: Import, Export, Text, Notes, Convert
-- `Organise`: Tags, Projects, Search
-- `Repository`: Backup, Restore, Statistics, Sync
-- `Interface`: View, Fonts, Themes
-- `AI`: Assistants, Models
-- `Help`: Examples, Diagnostics
+- `Documents`: Import, Export, Annotation, Contacts, Periodicity, Projects, Search, Assistants
+- `Repository`: Health, Stats
+- `Interface`: Behavior, Display, Accessibility
+- `Help`: Examples
 
-Names are one word on purpose: the subcategory is the label of a workspace submenu,
-sitting next to actions like "Toggle fullscreen".
-
-`AI` is its own category so that it means something: it marks a plugin that sends
-document content to an external provider. `MiAZOCR` shells out to `ocrmypdf` and
-`tesseract` with no model involved, so it belongs under `Documents / Text`, not here.
+Names are one word on purpose: both are menu labels. The workspace plugins section
+shows one submenu per category and each of those one per subcategory, so a plugin's
+actions read as `Documents > Annotation > Create a new note`.
 
 Write the pair in English in both the `.plugin` file and `plugin_info`. It is a
 vocabulary key, translated once at display time by `_(category)` in `configview.py`
@@ -614,6 +611,10 @@ plugin_info = {
     'Description': '...', 'Authors': '...', 'Copyright': '...',
     'Website': '...', 'Help': '...', 'Version': '...',
     'Category': '...', 'Subcategory': '...',
+    'MenuEntries': [
+        ('doc', _('Create a new note'), ['<Ctrl>N']),
+        ('all', _('See all notes…')),
+    ],
     'Dependencies': 'MiAZOtherPlugin, MiAZAnotherPlugin'   # optional
 }
 
@@ -643,18 +644,38 @@ class MyPlugin(MiAZExtension):
 
     def startup(self, *args):
         if not self.plugin.started():
-            menuitem = self.plugin.get_menu_item(callback=self._on_activate)
-            self.plugin.install_menu_entry(menuitem)
+            self.plugin.install_menu_entries({
+                'doc': self._on_new_doc_note,
+                'all': self._on_open_all_notes,
+            })
             self.plugin.set_started(True)
 ```
+
+**Menu entries are declared, not built.** `MenuEntries` says which entries the
+plugin has, in what order, under what label and on what shortcut;
+`install_menu_entries` says what each one does, keyed by the id the definition
+gave it. The plugin never names an action, writes a label or passes a shortcut in
+code. Labels go through `_()` in `plugin_info` so they reach `po/`; the `.plugin`
+file carries the same entries untranslated, one `MenuEntry-<id>=` key each, because
+repeated keys are not an INI file. `tests/test_plugin_menu_entries.py` checks the
+two halves agree and that every declared id is wired to a callback.
+
+An entry the definition cannot describe still goes through `install_menu_entry`:
+`MiAZAutoScan` builds a submenu of whatever sources the scanner reports, and asks
+`get_menu_entry_label('scan')` for its label so even that one is written in the
+definition.
 
 **`MiAZPlugin` helper key methods:**
 - `register(plugin_obj, info_dict)`,  stores widget reference, creates `conf/` and `data/` dirs
 - `get_config_dir()` → `<repo>/.conf/plugins/<Name>/conf/`
 - `get_data_dir()` → `<repo>/.conf/plugins/<Name>/data/`
 - `get_config_key(key)` / `set_config_key(key, value)`,  JSON config persistence
-- `get_menu_item(callback)` → `Gio.MenuItem` (registered as app action)
-- `install_menu_entry(menuitem)`,  appends to workspace menu under category/subcategory
+- `install_menu_entries({id: callback})` → `{id: Gio.MenuItem}`, builds and installs every entry the definition declares
+- `get_menu_entries()` → `[(id, label, shortcuts)]` as declared
+- `get_menu_entry_label(id)` → the declared label, for an item the plugin has to build itself
+- `get_menu_item_name(id=None)` → the action name of one entry, which is also its widget key
+- `install_menu_entry(menuitem, category=None, subcategory=None, name=None)`,  appends one item to the workspace menu under category/subcategory
+- `get_menu_item(callback)` → `Gio.MenuItem`, the older single-entry path, kept for out of tree plugins
 - `add_workspace_page(widget, name, title, icon_name=None)`,  registers a page on the workspace's `Adw.ViewStack`
 - `register_document_tab(name, title, factory, icon_name=None, weight=100)` / `unregister_document_tabs()`,  contributes a tab to the single-document rename dialog (see below)
 - `get_source_dir()` → the plugin folder, looked up by `Name` then by `Module`

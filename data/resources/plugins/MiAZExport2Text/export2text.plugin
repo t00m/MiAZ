@@ -10,3 +10,4 @@ Help=https://github.com/t00m/MiAZ/blob/main/README.md
 Version=0.1.26
 Category=Documents
 Subcategory=Export
+MenuEntry-export=Export to text editor

@@ -10,3 +10,7 @@ Help=https://github.com/t00m/MiAZ/blob/main/README.md
 Version=0.3.0
 Category=Documents
 Subcategory=Annotation
+MenuEntry-doc=Create a new note|<Ctrl>N
+MenuEntry-all=See all notes…
+MenuEntry-backup=Backup notes
+MenuEntry-restore=Restore notes

@@ -30,7 +30,12 @@ plugin_info = {
         'Help':          'https://github.com/t00m/MiAZ/blob/main/README.md',
         'Version':       '0.6',
         'Category':      'Documents',
-        'Subcategory':   'Periodicity'
+        'Subcategory':   'Periodicity',
+        'MenuEntries':   [
+            ('set', _('Set periodicity')),
+            ('unset', _('Unset periodicity')),
+            ('manage', _('Manage periodicity')),
+        ]
     }
 
 
@@ -264,18 +269,11 @@ class MiAZPeriodicityPlugin(MiAZExtension):
             # _on_plugins_updated). Straight into the plugin's own entry: a
             # submenu named after the plugin, inside the entry already named
             # after the plugin, is one level of menu that says nothing.
-            self.plugin.install_menu_entry(self.factory.create_menuitem(
-                f'{i_confname}-add',
-                _('Set {i_confname}').format(i_confname=i_confname),
-                self._set_property, None, []))
-            self.plugin.install_menu_entry(self.factory.create_menuitem(
-                f'{i_confname}-del',
-                _('Unset {i_confname}').format(i_confname=i_confname),
-                self._unset_property, None, []))
-            self.plugin.install_menu_entry(self.factory.create_menuitem(
-                f'{i_confname}-mgt',
-                _('Manage {i_confname}').format(i_confname=i_confname),
-                self.show_settings, None, []))
+            self.plugin.install_menu_entries({
+                'set': self._set_property,
+                'unset': self._unset_property,
+                'manage': self.show_settings,
+            })
 
             # One-time setup guarded by the dropdown widget sentinel
             plugin_name = self.plugin.get_name()

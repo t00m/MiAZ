@@ -30,6 +30,10 @@ plugin_info = {
     'Version':     '0.1.0',
     'Category':    'Documents',
     'Subcategory': 'Assistants',
+    'MenuEntries': [
+        ('suggest', _('Suggest filename…')),
+        ('chat', _('Chat with document…')),
+    ],
 }
 
 
@@ -65,19 +69,10 @@ class MiAZAIAssistantPlugin(MiAZExtension):
         if self.plugin.started():
             return
 
-        mnu_suggest = self.factory.create_menuitem(
-            name=self.plugin.get_menu_item_name() + '-suggest',
-            label=_('Suggest filename…'),
-            callback=self._on_suggest_clicked,
-        )
-        self.plugin.install_menu_entry(mnu_suggest)
-
-        mnu_chat = self.factory.create_menuitem(
-            name=self.plugin.get_menu_item_name() + '-chat',
-            label=_('Chat with document…'),
-            callback=self._on_chat,
-        )
-        self.plugin.install_menu_entry(mnu_chat)
+        self.plugin.install_menu_entries({
+            'suggest': self._on_suggest_clicked,
+            'chat': self._on_chat,
+        })
 
         register_suggest_items(
             self.plugin, self.app, self.registry, self.repository,

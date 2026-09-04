@@ -74,8 +74,26 @@ plugin_info_template = {
         _('Help'):          '',
         _('Version'):       '',
         _('Category'):      '',
-        _('Subcategory'):   ''
+        _('Subcategory'):   '',
+        _('MenuEntries'):   []
     }
+
+
+def normalise_menu_entries(entries) -> list:
+    """The declared menu entries as (id, label, shortcuts) triples.
+
+    An entry is written as ('doc', _('Create a new note'), ['<Ctrl>N']), and
+    the shortcuts may be left out when there are none, which is the common
+    case. Anything shorter than a pair is not an entry and is dropped.
+    """
+    normalised = []
+    for entry in entries or []:
+        if len(entry) < 2:
+            continue
+        entry_id, label = entry[0], entry[1]
+        shortcuts = list(entry[2]) if len(entry) > 2 and entry[2] else []
+        normalised.append((entry_id, label, shortcuts))
+    return normalised
 
 def N_(text: str) -> str:
     """Mark a string for extraction without translating it here.
@@ -362,13 +380,92 @@ class MiAZPlugin(GObject.GObject):
         return f'plugin-{module}'
 
     def get_menu_item(self, callback=None):
+        """One menu item for a plugin declaring no entries.
+
+        Bundled plugins declare their entries and go through
+        install_menu_entries. This is what an out of tree plugin written
+        against the older API still calls, so it keeps working; it uses the
+        first declared label when there is one, and the plugin description
+        when there is not, which is a sentence about the plugin rather than
+        a label saying what a click will do.
+        """
         factory = self.app.get_service('factory')
         name = self.get_menu_item_name()
-        menuitem = factory.create_menuitem(name, self.desc, callback, None, [])
-        return self.app.add_widget(f'plugin-menuitem-{self.name}', menuitem)
+        entries = self.get_menu_entries()
+        if entries:
+            label = entries[0][1]
+        else:
+            label = self.desc
+            self.log.warning(f"Plugin {self.name} declares no MenuEntries, so "
+                             "its description is used as the menu label")
+        menuitem = factory.create_menuitem(name, label, callback, None, [])
+        return self.app.add_widget(name, menuitem)
 
-    def get_menu_item_name(self):
-        return f'plugin-menuitem-{self.name}'
+    def get_menu_entries(self) -> list:
+        """What the definition says this plugin's menu entries are."""
+        return normalise_menu_entries(self.info.get('MenuEntries', []))
+
+    def get_menu_entry_label(self, entry_id: str):
+        """The declared label of one entry, or None when it is not declared.
+
+        For the plugin that has to build its own Gio.MenuItem, the scanner
+        with its submenu of sources, and still wants the label written where
+        every other label is.
+        """
+        for declared_id, label, _shortcuts in self.get_menu_entries():
+            if declared_id == entry_id:
+                return label
+        return None
+
+    def get_menu_item_name(self, entry_id: str = None):
+        """The action name of one entry, which is also its widget key.
+
+        Without an id this is the plugin's canonical key, the one the
+        headerbar Add menu mirrors for an Import plugin.
+        """
+        if entry_id is None:
+            return f'plugin-menuitem-{self.name}'
+        return f'plugin-menuitem-{self.name}-{entry_id}'
+
+    def install_menu_entries(self, callbacks: dict) -> dict:
+        """Build the entries the definition declares, and install them.
+
+        The definition owns what the entries are: which ones, in what order,
+        under what label and on what shortcut. This says what each one does,
+        keyed by the id the definition gave it. Returns {id: Gio.MenuItem}
+        for a plugin that has to reach one of its own items later.
+
+        A declared id with no callback, or a callback for an id nothing
+        declares, is an author mistake. Both are logged and skipped: a plugin
+        short of one entry is easier to diagnose than one that fails to load.
+        """
+        if not self.is_active():
+            return {}
+        factory = self.app.get_service('factory')
+        entries = self.get_menu_entries()
+        declared = [entry_id for entry_id, _label, _shortcuts in entries]
+        for entry_id in callbacks:
+            if entry_id not in declared:
+                self.log.warning(f"Plugin {self.name}: '{entry_id}' has a "
+                                 "callback but no entry in the definition")
+        items = {}
+        for entry_id, label, shortcuts in entries:
+            callback = callbacks.get(entry_id)
+            if callback is None:
+                self.log.warning(f"Plugin {self.name}: menu entry "
+                                 f"'{entry_id}' does nothing, so it is left out")
+                continue
+            name = self.get_menu_item_name(entry_id)
+            menuitem = factory.create_menuitem(name, label, callback, None,
+                                               shortcuts)
+            self.install_menu_entry(menuitem, name=name)
+            items[entry_id] = menuitem
+        # The Add menu mirrors one item per Import plugin, and reads it under
+        # the canonical key, so the first entry answers to both names.
+        if items:
+            self.app.add_widget(self.get_menu_item_name(),
+                                next(iter(items.values())))
+        return items
 
     def menu_item_loaded(self):
         name = self.get_menu_item_name()
@@ -479,15 +576,22 @@ class MiAZPlugin(GObject.GObject):
         self._active = active
 
     def install_menu_entry(self, menuitem = None, category = None,
-                           subcategory = None):
+                           subcategory = None, name = None):
         """Add one item to a menu, and remember it for the next rebuild.
 
+        Most plugins reach this through install_menu_entries, which builds the
+        items the definition declares. It is still the way in for an item the
+        definition cannot describe, the scanner's submenu of sources.
+
         With no category the plugin's own one is used, which is what almost
-        every caller wants. A plugin whose action belongs somewhere else (the
-        notes backup and restore entries live under Repository) passes
-        the pair explicitly, rather than reaching for app.install_plugin_menu
-        and leaving the entry unrecorded: those were the entries a menu
-        rebuild used to drop.
+        every caller wants. A plugin whose action belongs somewhere else
+        passes the pair explicitly, rather than reaching for
+        app.install_plugin_menu and leaving the entry unrecorded: those were
+        the entries a menu rebuild used to drop.
+
+        `name` is the widget key the item answers to, and defaults to the
+        plugin's canonical one. A plugin with several entries gives each its
+        own, so its items do not overwrite each other.
         """
         if not self.is_active():
             return None
@@ -504,9 +608,9 @@ class MiAZPlugin(GObject.GObject):
         subcategory_submenu = self.app.install_plugin_menu(category, subcategory)
         if menuitem is not None:
             subcategory_submenu.append_item(menuitem)
-            # Register the item under its canonical key so other layers (the UI)
-            # can reuse it without the plugin system knowing about any widget.
-            self.app.add_widget(self.get_menu_item_name(), menuitem)
+            # Register the item under its key so other layers (the UI) can
+            # reuse it without the plugin system knowing about any widget.
+            self.app.add_widget(name or self.get_menu_item_name(), menuitem)
             # And record it, so a menu rebuild can put it back without running
             # this plugin's startup() again.
             self._menu_registry().record(self.name, category, subcategory,

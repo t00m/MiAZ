@@ -34,6 +34,9 @@ plugin_info = {
         'Version':       '0.1.0',
         'Category':      'Documents',
         'Subcategory':   'Annotation',
+        'MenuEntries':   [
+            ('extract', _('Extract text (OCR)…')),
+        ],
         'Dependencies':  'MiAZNotes',
     }
 
@@ -79,11 +82,7 @@ class MiAZOCRPlugin(MiAZExtension):
 
     def startup(self, *args):
         if not self.plugin.started():
-            name = self.plugin.get_menu_item_name()
-            menuitem = self.factory.create_menuitem(
-                name=name, label=_('Extract text (OCR)…'),
-                callback=self._on_ocr, shortcuts=[])
-            self.plugin.install_menu_entry(menuitem)
+            self.plugin.install_menu_entries({'extract': self._on_ocr})
             self.plugin.set_started(started=True)
 
     # Helpers

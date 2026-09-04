@@ -54,6 +54,9 @@ plugin_info = {
     'Version':      '0.2.0',
     'Category':     'Repository',
     'Subcategory':  'Stats',
+    'MenuEntries':  [
+        ('open', _('Open insights')),
+    ],
 }
 
 PLUGIN_DIR_NAME = 'MiAZInsights'
@@ -81,7 +84,6 @@ class MiAZInsightsPlugin(MiAZExtension):
 
         self.util = self.app.get_service('util')
         self.repo = self.app.get_service('repo')
-        self.factory = self.app.get_service('factory')
 
         self._rebuild_timeout_id = 0
         self._signal_handlers = []
@@ -119,12 +121,7 @@ class MiAZInsightsPlugin(MiAZExtension):
 
     def _on_workspace_loaded(self):
         if not self.plugin.started():
-            menuitem = self.factory.create_menuitem(
-                name=self.plugin.get_menu_item_name(),
-                label=_('Open insights'),
-                callback=self._on_menu_clicked,
-            )
-            self.plugin.install_menu_entry(menuitem)
+            self.plugin.install_menu_entries({'open': self._on_menu_clicked})
             self.plugin.set_started(True)
         self._schedule_rebuild()
 

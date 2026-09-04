@@ -28,7 +28,10 @@ plugin_info = {
         'Help':          'https://github.com/t00m/MiAZ/blob/main/README.md',
         'Version':       '0.5',
         'Category':      'Help',
-        'Subcategory':   'Examples'
+        'Subcategory':   'Examples',
+        'MenuEntries':   [
+            ('hello', _('Hello World Example Plugin')),
+        ]
     }
 
 class HelloWorld(MiAZExtension):
@@ -63,13 +66,9 @@ class HelloWorld(MiAZExtension):
 
     def startup(self, *args):
         if not self.plugin.started():
-            # Create menu item for plugin
-            menuitem = self.plugin.get_menu_item(callback=self._on_menuitem_activate)
-
-            # Add plugin to its default (sub)category
-            self.plugin.install_menu_entry(menuitem)
-
-            # Plugin configured
+            self.plugin.install_menu_entries({
+                'hello': self._on_menuitem_activate,
+            })
             self.plugin.set_started(started=True)
 
     def _on_menuitem_activate(self, *args):

@@ -306,6 +306,9 @@ class SafeDictExtractor(ast.NodeVisitor):
             }
         elif isinstance(node, ast.List):
             return [self._safe_eval(elt) for elt in node.elts]
+        elif isinstance(node, ast.Tuple):
+            # A menu entry is a tuple: ('doc', _('Create a note'), ['<Ctrl>N'])
+            return tuple(self._safe_eval(elt) for elt in node.elts)
         elif isinstance(node, ast.Constant):  # str, int, float, etc.
             return node.value
         elif isinstance(node, ast.Call):

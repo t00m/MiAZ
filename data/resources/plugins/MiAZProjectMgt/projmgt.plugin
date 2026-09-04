@@ -10,3 +10,6 @@ Help=https://github.com/t00m/MiAZ/blob/main/README.md
 Version=0.1.26
 Category=Documents
 Subcategory=Projects
+MenuEntry-assign=Assign document(s) to projects|<Control>p
+MenuEntry-unassign=Unassign document(s) from any projects|<Control><Shift>p
+MenuEntry-manage=Manage projects|<Control><Alt>p

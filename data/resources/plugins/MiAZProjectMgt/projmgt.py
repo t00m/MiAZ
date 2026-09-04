@@ -33,7 +33,12 @@ plugin_info = {
         'Help':          'https://github.com/t00m/MiAZ/blob/main/README.md',
         'Version':       '0.6',
         'Category':      'Documents',
-        'Subcategory':   'Projects'
+        'Subcategory':   'Projects',
+        'MenuEntries':   [
+            ('assign', _('Assign document(s) to projects'), ['<Control>p']),
+            ('unassign', _('Unassign document(s) from any projects'), ['<Control><Shift>p']),
+            ('manage', _('Manage projects'), ['<Control><Alt>p']),
+        ]
     }
 
 # Virtual project bucket holding documents not belonging to any real project.
@@ -616,18 +621,11 @@ class MiAZProjectMgt(MiAZExtension):
             # after the plugin, inside the entry already named after the
             # plugin, so reaching Assign meant Projects then Project then
             # Assign.
-            self.plugin.install_menu_entry(self.factory.create_menuitem(
-                f'{i_confname}-add',
-                _('Assign document(s) to {i_confname}').format(i_confname=i_confname),
-                self._set_property, None, ['<Control>p']))
-            self.plugin.install_menu_entry(self.factory.create_menuitem(
-                f'{i_confname}-del',
-                _('Unassign document(s) from any {i_confname}').format(i_confname=i_confname),
-                self._unset_property, None, ['<Control><Shift>p']))
-            self.plugin.install_menu_entry(self.factory.create_menuitem(
-                f'{i_confname}-mgt',
-                _('Manage {i_confname}').format(i_confname=i_confname),
-                self._manage_properties, None, ['<Control><Alt>p']))
+            self.plugin.install_menu_entries({
+                'assign': self._set_property,
+                'unassign': self._unset_property,
+                'manage': self._manage_properties,
+            })
 
             # One-time setup guarded by the dropdown widget sentinel.
             # When _on_plugins_updated calls startup() a second time the dropdown

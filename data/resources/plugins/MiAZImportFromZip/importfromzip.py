@@ -26,7 +26,10 @@ plugin_info = {
     'Help':        'https://github.com/t00m/MiAZ/blob/main/README.md',
     'Version':     '0.1.26',
     'Category':    'Documents',
-    'Subcategory': 'Import'
+    'Subcategory': 'Import',
+    'MenuEntries': [
+        ('import', _('Import documents from ZIP')),
+    ]
 }
 
 
@@ -40,7 +43,6 @@ class MiAZImportFromZipPlugin(MiAZExtension):
         self.plugin.register(self, plugin_info)
         self.log = self.plugin.get_logger()
 
-        self.factory = self.app.get_service('factory')
         self.repository = self.app.get_service('repo')
         self.util = self.app.get_service('util')
         self.srvdlg = self.app.get_service('dialogs')
@@ -58,13 +60,7 @@ class MiAZImportFromZipPlugin(MiAZExtension):
 
     def startup(self, *args):
         if not self.plugin.started():
-            mnuItemName = self.plugin.get_menu_item_name()
-            menuitem = self.factory.create_menuitem(
-                name=mnuItemName,
-                label=_('Import documents from ZIP'),
-                callback=self.select_zip_file
-            )
-            self.plugin.install_menu_entry(menuitem)
+            self.plugin.install_menu_entries({'import': self.select_zip_file})
             self.plugin.set_started(started=True)
 
     def select_zip_file(self, *args):

@@ -10,3 +10,6 @@ Help=https://github.com/t00m/MiAZ/blob/main/README.md
 Version=0.1.26
 Category=Documents
 Subcategory=Periodicity
+MenuEntry-set=Set periodicity
+MenuEntry-unset=Unset periodicity
+MenuEntry-manage=Manage periodicity

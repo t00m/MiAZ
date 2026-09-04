@@ -44,7 +44,10 @@ plugin_info = {
         'Help':          'https://github.com/t00m/MiAZ/blob/main/README.md',
         'Version':       '0.6',
         'Category':      'Documents',
-        'Subcategory':   'Import'
+        'Subcategory':   'Import',
+        'MenuEntries':   [
+            ('scan', _('Scan a document')),
+        ]
     }
 
 
@@ -87,14 +90,7 @@ class MiAZImportFromScanPlugin(MiAZExtension):
 
     def startup(self, *args):
         if not self.plugin.started():
-            # Create menu item for plugin
-            mnuItemName = self.plugin.get_menu_item_name()
-            menuitem = self.factory.create_menuitem(name=mnuItemName, label=_('Scan a document'), callback=self.exec_scanner)
-
-            # Add plugin to its default (sub)category
-            self.plugin.install_menu_entry(menuitem)
-
-            # Plugin configured
+            self.plugin.install_menu_entries({'scan': self.exec_scanner})
             self.plugin.set_started(started=True)
 
     def _get_origin(self, desktop_path):

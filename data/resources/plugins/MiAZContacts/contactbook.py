@@ -24,7 +24,10 @@ plugin_info = {
     'Help':          'https://github.com/t00m/MiAZ/blob/main/README.md',
     'Version':       '0.3.0',
     'Category':      'Documents',
-    'Subcategory':   'Contacts'
+    'Subcategory':   'Contacts',
+    'MenuEntries':   [
+        ('manage', _('Keep the details of senders and recipients')),
+    ]
 }
 
 # The view this plugin registers on the documents toolbar.
@@ -73,8 +76,7 @@ class Contacts(MiAZExtension):
     def startup(self, *args):
         if self.plugin.started():
             return
-        menuitem = self.plugin.get_menu_item(callback=self.open_manager)
-        self.plugin.install_menu_entry(menuitem)
+        self.plugin.install_menu_entries({'manage': self.open_manager})
         self._add_view()
         self.plugin.set_started(started=True)
 

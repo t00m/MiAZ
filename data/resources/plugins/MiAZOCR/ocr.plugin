@@ -11,3 +11,4 @@ Version=0.1.0
 Category=Documents
 Subcategory=Annotation
 Dependencies=MiAZNotes
+MenuEntry-extract=Extract text (OCR)…

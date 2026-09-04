@@ -31,7 +31,10 @@ plugin_info = {
     'Help':          'https://github.com/t00m/MiAZ/blob/main/README.md',
     'Version':       '0.3.0',
     'Category':      'Repository',
-    'Subcategory':   'Health'
+    'Subcategory':   'Health',
+    'MenuEntries':   [
+        ('run', _('Run repository health check')),
+    ]
 }
 
 # How each severity is shown, and what it means.
@@ -73,7 +76,6 @@ class Doctor(MiAZExtension):
         self.plugin.register(self, plugin_info)
         self.log = self.plugin.get_logger()
         self.util = self.app.get_service('util')
-        self.factory = self.app.get_service('factory')
         self.srvdlg = self.app.get_service('dialogs')
         self.repository = self.app.get_service('repo')
 
@@ -90,15 +92,7 @@ class Doctor(MiAZExtension):
 
     def startup(self, *args):
         if not self.plugin.started():
-            # An explicit label, not the plugin description: the description
-            # says what the plugin does, and a menu item says what the click
-            # will do.
-            menuitem = self.factory.create_menuitem(
-                name=self.plugin.get_menu_item_name(),
-                label=_('Run repository health check'),
-                callback=self.run,
-            )
-            self.plugin.install_menu_entry(menuitem)
+            self.plugin.install_menu_entries({'run': self.run})
             self.plugin.set_started(started=True)
 
     def examine(self):

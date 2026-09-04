@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 0.1\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-09-04 16:55+0200\n"
+"POT-Creation-Date: 2026-09-04 19:27+0200\n"
 "PO-Revision-Date: 2026-08-19 23:30+0200\n"
 "Last-Translator: Tomás Vírseda <tomasvirseda@gmail.com>\n"
 "Language-Team: Spanish\n"
@@ -747,9 +747,9 @@ msgstr "Sustituyendo el repositorio…"
 #: MiAZ/backend/models.py:172 MiAZ/frontend/desktop/widgets/pills.py:19
 #: MiAZ/frontend/desktop/widgets/views.py:70
 #: MiAZ/frontend/desktop/widgets/workspace.py:655
-#: data/resources/plugins/MiAZAutoScan/autoscan.py:669
+#: data/resources/plugins/MiAZAutoScan/autoscan.py:662
 #: data/resources/plugins/MiAZColumnVisibility/colvis.py:42
-#: data/resources/plugins/MiAZExport2CSV/export2csv.py:91
+#: data/resources/plugins/MiAZExport2CSV/export2csv.py:88
 msgid "Concept"
 msgstr "Concepto"
 
@@ -759,10 +759,10 @@ msgstr "Concepto"
 #: MiAZ/frontend/desktop/widgets/views.py:80
 #: MiAZ/frontend/desktop/widgets/views.py:631
 #: MiAZ/frontend/desktop/widgets/workspace.py:650
-#: data/resources/plugins/MiAZAutoScan/autoscan.py:634
+#: data/resources/plugins/MiAZAutoScan/autoscan.py:627
 #: data/resources/plugins/MiAZColumnVisibility/colvis.py:36
 #: data/resources/plugins/MiAZContacts/contacts/editor.py:65
-#: data/resources/plugins/MiAZExport2CSV/export2csv.py:91
+#: data/resources/plugins/MiAZExport2CSV/export2csv.py:88
 #: data/resources/plugins/MiAZExport2Dir/export/layout.py:22
 msgid "Country"
 msgstr "País"
@@ -774,7 +774,7 @@ msgstr "País"
 #: MiAZ/frontend/desktop/widgets/views.py:78
 #: MiAZ/frontend/desktop/widgets/workspace.py:649
 #: data/resources/plugins/MiAZColumnVisibility/colvis.py:35
-#: data/resources/plugins/MiAZExport2CSV/export2csv.py:91
+#: data/resources/plugins/MiAZExport2CSV/export2csv.py:88
 #: data/resources/plugins/MiAZNotes/lib/allview.py:146
 #: data/resources/plugins/MiAZNotes/lib/editor.py:67
 #: data/resources/plugins/MiAZNotes/lib/listview.py:124
@@ -792,7 +792,7 @@ msgid "Document"
 msgstr "Documento"
 
 #: MiAZ/backend/models.py:219 MiAZ/frontend/desktop/services/actions.py:697
-#: MiAZ/frontend/desktop/services/pluginsystem.py:99
+#: MiAZ/frontend/desktop/services/pluginsystem.py:117
 #: MiAZ/frontend/desktop/widgets/workspace.py:601
 #: data/resources/plugins/MiAZInsights/insights/render.py:34
 msgid "Documents"
@@ -801,7 +801,7 @@ msgstr "Documentos"
 #: MiAZ/backend/models.py:227 MiAZ/frontend/desktop/widgets/rename.py:625
 #: MiAZ/frontend/desktop/widgets/workspace.py:658
 #: data/resources/plugins/MiAZColumnVisibility/colvis.py:45
-#: data/resources/plugins/MiAZExport2CSV/export2csv.py:91
+#: data/resources/plugins/MiAZExport2CSV/export2csv.py:88
 msgid "Extension"
 msgstr "Extensión"
 
@@ -823,9 +823,9 @@ msgstr "Ficheros"
 #: MiAZ/frontend/desktop/widgets/views.py:74
 #: MiAZ/frontend/desktop/widgets/views.py:632
 #: MiAZ/frontend/desktop/widgets/workspace.py:653
-#: data/resources/plugins/MiAZAutoScan/autoscan.py:635
+#: data/resources/plugins/MiAZAutoScan/autoscan.py:628
 #: data/resources/plugins/MiAZColumnVisibility/colvis.py:39
-#: data/resources/plugins/MiAZExport2CSV/export2csv.py:91
+#: data/resources/plugins/MiAZExport2CSV/export2csv.py:88
 #: data/resources/plugins/MiAZExport2Dir/export/layout.py:23
 msgid "Group"
 msgstr "Grupo"
@@ -843,15 +843,15 @@ msgstr "Personas/Entidades"
 #: MiAZ/frontend/desktop/widgets/views.py:77
 #: MiAZ/frontend/desktop/widgets/views.py:633
 #: MiAZ/frontend/desktop/widgets/workspace.py:654
-#: data/resources/plugins/MiAZAutoScan/autoscan.py:637
+#: data/resources/plugins/MiAZAutoScan/autoscan.py:630
 #: data/resources/plugins/MiAZColumnVisibility/colvis.py:40
-#: data/resources/plugins/MiAZExport2CSV/export2csv.py:91
+#: data/resources/plugins/MiAZExport2CSV/export2csv.py:88
 #: data/resources/plugins/MiAZExport2Dir/export/layout.py:24
 msgid "Purpose"
 msgstr "Propósito"
 
 #: MiAZ/backend/models.py:272
-#: MiAZ/frontend/desktop/services/pluginsystem.py:109
+#: MiAZ/frontend/desktop/services/pluginsystem.py:127
 #: MiAZ/frontend/desktop/widgets/dr.py:46
 msgid "Repository"
 msgstr "Repositorio"
@@ -898,7 +898,7 @@ msgid "Finance"
 msgstr "Finanzas"
 
 #: MiAZ/backend/vocabulary.py:25
-#: MiAZ/frontend/desktop/services/pluginsystem.py:110
+#: MiAZ/frontend/desktop/services/pluginsystem.py:128
 #: data/resources/plugins/MiAZNotes/lib/model.py:21
 msgid "Health"
 msgstr "Salud"
@@ -1115,7 +1115,7 @@ msgid "Policy"
 msgstr "Póliza"
 
 #: MiAZ/backend/vocabulary.py:81
-#: data/resources/plugins/MiAZProjectMgt/projmgt.py:81
+#: data/resources/plugins/MiAZProjectMgt/projmgt.py:86
 msgid "Project"
 msgstr "Proyecto"
 
@@ -1316,7 +1316,7 @@ msgstr ""
 #: MiAZ/frontend/desktop/widgets/pills.py:17
 #: MiAZ/frontend/desktop/widgets/views.py:75
 #: MiAZ/frontend/desktop/widgets/workspace.py:656
-#: data/resources/plugins/MiAZAutoScan/autoscan.py:636
+#: data/resources/plugins/MiAZAutoScan/autoscan.py:629
 #: data/resources/plugins/MiAZColumnVisibility/colvis.py:43
 #: data/resources/plugins/MiAZExport2Dir/export/layout.py:25
 msgid "Sent by"
@@ -1327,7 +1327,7 @@ msgstr "Enviado por"
 #: MiAZ/frontend/desktop/widgets/pills.py:20
 #: MiAZ/frontend/desktop/widgets/views.py:76
 #: MiAZ/frontend/desktop/widgets/workspace.py:657
-#: data/resources/plugins/MiAZAutoScan/autoscan.py:638
+#: data/resources/plugins/MiAZAutoScan/autoscan.py:631
 #: data/resources/plugins/MiAZColumnVisibility/colvis.py:44
 #: data/resources/plugins/MiAZExport2Dir/export/layout.py:26
 msgid "Sent to"
@@ -1487,7 +1487,7 @@ msgstr ""
 "office"
 
 #: MiAZ/frontend/desktop/services/actions.py:690
-#: data/resources/plugins/MiAZImportFromScan/scan.py:220
+#: data/resources/plugins/MiAZImportFromScan/scan.py:216
 msgid "Application"
 msgstr "Aplicación"
 
@@ -1686,7 +1686,7 @@ msgid "Something went wrong."
 msgstr "Algo ha ido mal."
 
 #: MiAZ/frontend/desktop/services/factory.py:103
-#: data/resources/plugins/MiAZExport2Dir/export2dir.py:173
+#: data/resources/plugins/MiAZExport2Dir/export2dir.py:169
 msgid "Select folder"
 msgstr "Seleccionar carpeta"
 
@@ -1742,7 +1742,7 @@ msgid "{count} documents imported successfully"
 msgstr "{count} documentos importados correctamente"
 
 #: MiAZ/frontend/desktop/services/importdoc.py:195
-#: data/resources/plugins/MiAZAutoScan/autoscan.py:497
+#: data/resources/plugins/MiAZAutoScan/autoscan.py:490
 msgid "Some documents could not be imported"
 msgstr "Algunos documentos no se pudieron importar"
 
@@ -1960,7 +1960,7 @@ msgstr "Página web"
 #. opens that same window: MiAZ has no separate manual, and a shortcut
 #. advertised and bound to nothing is worse than one that is honest.
 #: MiAZ/frontend/desktop/services/pluginsystem.py:74
-#: MiAZ/frontend/desktop/services/pluginsystem.py:118
+#: MiAZ/frontend/desktop/services/pluginsystem.py:136
 #: MiAZ/frontend/desktop/widgets/mainwindow.py:699
 msgid "Help"
 msgstr "Ayuda"
@@ -1980,66 +1980,70 @@ msgstr "Categoría"
 msgid "Subcategory"
 msgstr "Subcategoría"
 
-#: MiAZ/frontend/desktop/services/pluginsystem.py:100
+#: MiAZ/frontend/desktop/services/pluginsystem.py:78
+msgid "MenuEntries"
+msgstr "Entradas de menú"
+
+#: MiAZ/frontend/desktop/services/pluginsystem.py:118
 #: data/resources/plugins/MiAZContacts/contacts/manager.py:233
 msgid "Import"
 msgstr "Importar"
 
-#: MiAZ/frontend/desktop/services/pluginsystem.py:101
+#: MiAZ/frontend/desktop/services/pluginsystem.py:119
 #: data/resources/plugins/MiAZContacts/contacts/manager.py:234
 msgid "Export"
 msgstr "Exportar"
 
-#: MiAZ/frontend/desktop/services/pluginsystem.py:102
+#: MiAZ/frontend/desktop/services/pluginsystem.py:120
 msgid "Annotation"
 msgstr "Anotación"
 
-#: MiAZ/frontend/desktop/services/pluginsystem.py:103
-#: data/resources/plugins/MiAZContacts/contactbook.py:86
+#: MiAZ/frontend/desktop/services/pluginsystem.py:121
+#: data/resources/plugins/MiAZContacts/contactbook.py:88
 #: data/resources/plugins/MiAZContacts/contacts/manager.py:245
 msgid "Contacts"
 msgstr "Contactos"
 
-#: MiAZ/frontend/desktop/services/pluginsystem.py:104
-#: data/resources/plugins/MiAZPeriodicity/periodicity.py:60
-#: data/resources/plugins/MiAZPeriodicity/periodicity.py:61
+#: MiAZ/frontend/desktop/services/pluginsystem.py:122
+#: data/resources/plugins/MiAZPeriodicity/periodicity.py:65
+#: data/resources/plugins/MiAZPeriodicity/periodicity.py:66
 msgid "Periodicity"
 msgstr "Periodicidad"
 
-#: MiAZ/frontend/desktop/services/pluginsystem.py:105
-#: data/resources/plugins/MiAZProjectMgt/projmgt.py:82
+#: MiAZ/frontend/desktop/services/pluginsystem.py:123
+#: data/resources/plugins/MiAZProjectMgt/projmgt.py:87
 msgid "Projects"
 msgstr "Proyectos"
 
-#: MiAZ/frontend/desktop/services/pluginsystem.py:106
+#: MiAZ/frontend/desktop/services/pluginsystem.py:124
 msgid "Search"
 msgstr "Buscar"
 
-#: MiAZ/frontend/desktop/services/pluginsystem.py:107
+#: MiAZ/frontend/desktop/services/pluginsystem.py:125
 msgid "Assistants"
 msgstr "Asistentes"
 
-#: MiAZ/frontend/desktop/services/pluginsystem.py:111
+#: MiAZ/frontend/desktop/services/pluginsystem.py:129
 msgid "Stats"
 msgstr "Estadísticas"
 
-#: MiAZ/frontend/desktop/services/pluginsystem.py:113
+#: MiAZ/frontend/desktop/services/pluginsystem.py:131
 msgid "Interface"
 msgstr "Interfaz"
 
-#: MiAZ/frontend/desktop/services/pluginsystem.py:114
+#: MiAZ/frontend/desktop/services/pluginsystem.py:132
 msgid "Behavior"
 msgstr "Comportamiento"
 
-#: MiAZ/frontend/desktop/services/pluginsystem.py:115
+#: MiAZ/frontend/desktop/services/pluginsystem.py:133
 msgid "Display"
 msgstr "Visualización"
 
-#: MiAZ/frontend/desktop/services/pluginsystem.py:116
+#: MiAZ/frontend/desktop/services/pluginsystem.py:134
 msgid "Accessibility"
 msgstr "Accesibilidad"
 
-#: MiAZ/frontend/desktop/services/pluginsystem.py:119
+#: MiAZ/frontend/desktop/services/pluginsystem.py:137
 msgid "Examples"
 msgstr "Ejemplos"
 
@@ -2345,7 +2349,7 @@ msgstr "Editar repositorio"
 
 #: MiAZ/frontend/desktop/widgets/configview.py:270
 #: MiAZ/frontend/desktop/widgets/selector.py:274
-#: data/resources/plugins/MiAZDoctor/doctor.py:264
+#: data/resources/plugins/MiAZDoctor/doctor.py:258
 #: data/resources/plugins/MiAZNotes/lib/editor.py:148
 msgid "Save"
 msgstr "Guardar"
@@ -2537,7 +2541,7 @@ msgstr "Ficha de datos"
 #: MiAZ/frontend/desktop/widgets/docpreview.py:218
 #: MiAZ/frontend/desktop/widgets/gridview.py:121
 #: MiAZ/frontend/desktop/widgets/timelineview.py:217
-#: data/resources/plugins/MiAZRelated/relateddocs.py:129
+#: data/resources/plugins/MiAZRelated/relateddocs.py:131
 #, fuzzy
 msgid "No date"
 msgstr "Sin datos"
@@ -2692,7 +2696,7 @@ msgstr "No se ha encontrado la ruta del repositorio"
 #: MiAZ/frontend/desktop/widgets/dr.py:178
 #: data/resources/plugins/MiAZNotes/lib/allview.py:445
 #: data/resources/plugins/MiAZNotes/lib/listview.py:430
-#: data/resources/plugins/MiAZNotes/notes.py:783
+#: data/resources/plugins/MiAZNotes/notes.py:764
 msgid "Another operation is already running"
 msgstr "Ya hay otra operación en marcha"
 
@@ -2759,7 +2763,7 @@ msgstr "Selecciona archivo de copia de seguridad de configuración"
 #: MiAZ/frontend/desktop/widgets/dr.py:341
 #: data/resources/plugins/MiAZNotes/lib/allview.py:377
 #: data/resources/plugins/MiAZNotes/lib/listview.py:360
-#: data/resources/plugins/MiAZNotes/notes.py:769
+#: data/resources/plugins/MiAZNotes/notes.py:750
 msgid "Zip archives"
 msgstr "Archivos ZIP"
 
@@ -2960,7 +2964,7 @@ msgid "Field detection failed"
 msgstr ""
 
 #: MiAZ/frontend/desktop/widgets/rename.py:519
-#: data/resources/plugins/MiAZOCR/ocr.py:107
+#: data/resources/plugins/MiAZOCR/ocr.py:106
 msgid "OCR tools not installed"
 msgstr "Herramientas de OCR no instaladas"
 
@@ -3023,7 +3027,7 @@ msgstr "reiniciar"
 #: MiAZ/frontend/desktop/widgets/selector.py:59
 #: MiAZ/frontend/desktop/widgets/settings.py:192
 #: data/resources/plugins/MiAZContacts/contacts/editor.py:46
-#: data/resources/plugins/MiAZDoctor/doctor.py:251
+#: data/resources/plugins/MiAZDoctor/doctor.py:245
 msgid "Remove"
 msgstr "Eliminar"
 
@@ -3316,7 +3320,7 @@ msgid "Initials"
 msgstr "Iniciales"
 
 #: MiAZ/frontend/desktop/widgets/views.py:588
-#: data/resources/plugins/MiAZAutoScan/autoscan.py:609
+#: data/resources/plugins/MiAZAutoScan/autoscan.py:602
 msgid "Source"
 msgstr "Origen"
 
@@ -3341,22 +3345,22 @@ msgid "Sent To"
 msgstr "Enviado a"
 
 #: MiAZ/frontend/desktop/widgets/workspace.py:478
-#: data/resources/plugins/MiAZInsights/MiAZInsights.py:222
+#: data/resources/plugins/MiAZInsights/MiAZInsights.py:219
 msgid "This month"
 msgstr "Este mes"
 
 #: MiAZ/frontend/desktop/widgets/workspace.py:479
-#: data/resources/plugins/MiAZInsights/MiAZInsights.py:223
+#: data/resources/plugins/MiAZInsights/MiAZInsights.py:220
 msgid "Since past month"
 msgstr "Desde hace un mes"
 
 #: MiAZ/frontend/desktop/widgets/workspace.py:480
-#: data/resources/plugins/MiAZInsights/MiAZInsights.py:224
+#: data/resources/plugins/MiAZInsights/MiAZInsights.py:221
 msgid "Since last 3 months"
 msgstr "Desde hace tres meses"
 
 #: MiAZ/frontend/desktop/widgets/workspace.py:481
-#: data/resources/plugins/MiAZInsights/MiAZInsights.py:225
+#: data/resources/plugins/MiAZInsights/MiAZInsights.py:222
 msgid "Since last 6 months"
 msgstr "Desde hace seis meses"
 
@@ -3368,27 +3372,27 @@ msgstr "Desde hace seis meses"
 #. used since_date_this_year, so the label said "last year" while the
 #. window was the calendar year to date.
 #: MiAZ/frontend/desktop/widgets/workspace.py:486
-#: data/resources/plugins/MiAZInsights/MiAZInsights.py:229
+#: data/resources/plugins/MiAZInsights/MiAZInsights.py:226
 msgid "Since last year"
 msgstr "Desde hace dos años"
 
 #: MiAZ/frontend/desktop/widgets/workspace.py:487
-#: data/resources/plugins/MiAZInsights/MiAZInsights.py:230
+#: data/resources/plugins/MiAZInsights/MiAZInsights.py:227
 msgid "Since two years ago"
 msgstr "Desde hace dos años"
 
 #: MiAZ/frontend/desktop/widgets/workspace.py:488
-#: data/resources/plugins/MiAZInsights/MiAZInsights.py:231
+#: data/resources/plugins/MiAZInsights/MiAZInsights.py:228
 msgid "Since three years ago"
 msgstr "Desde hace tres años"
 
 #: MiAZ/frontend/desktop/widgets/workspace.py:489
-#: data/resources/plugins/MiAZInsights/MiAZInsights.py:232
+#: data/resources/plugins/MiAZInsights/MiAZInsights.py:229
 msgid "Since five years ago"
 msgstr "Desde hace cinco años"
 
 #: MiAZ/frontend/desktop/widgets/workspace.py:490
-#: data/resources/plugins/MiAZInsights/MiAZInsights.py:233
+#: data/resources/plugins/MiAZInsights/MiAZInsights.py:230
 msgid "Since ten years ago"
 msgstr "Desde hace diez años"
 
@@ -3454,6 +3458,7 @@ msgid "Review ({review})"
 msgstr "Revisar ({review})"
 
 #: data/resources/plugins/HelloWorld/helloworld.py:24
+#: data/resources/plugins/HelloWorld/helloworld.py:33
 msgid "Hello World Example Plugin"
 msgstr "Plugin de ejemplo Hola Mundo"
 
@@ -3463,11 +3468,11 @@ msgstr ""
 "Sugerir los campos del nombre de archivo a partir del contenido del "
 "documento con un proveedor de IA"
 
-#: data/resources/plugins/MiAZAIAssistant/miazaiassistant.py:70
+#: data/resources/plugins/MiAZAIAssistant/miazaiassistant.py:34
 msgid "Suggest filename…"
 msgstr "Sugerir nombre de archivo…"
 
-#: data/resources/plugins/MiAZAIAssistant/miazaiassistant.py:77
+#: data/resources/plugins/MiAZAIAssistant/miazaiassistant.py:35
 msgid "Chat with document…"
 msgstr "Conversar con el documento…"
 
@@ -3681,17 +3686,15 @@ msgstr ""
 "Escanear documentos en segundo plano e importarlos directamente al "
 "repositorio"
 
-#: data/resources/plugins/MiAZAutoScan/autoscan.py:122
-#: data/resources/plugins/MiAZAutoScan/autoscan.py:170
-#: data/resources/plugins/MiAZAutoScan/autoscan.py:193
+#: data/resources/plugins/MiAZAutoScan/autoscan.py:41
 msgid "Scan and import (auto)"
 msgstr "Escanear e importar (automático)"
 
-#: data/resources/plugins/MiAZAutoScan/autoscan.py:211
+#: data/resources/plugins/MiAZAutoScan/autoscan.py:204
 msgid "Scanner tools not installed"
 msgstr "Herramientas de escáner no instaladas"
 
-#: data/resources/plugins/MiAZAutoScan/autoscan.py:212
+#: data/resources/plugins/MiAZAutoScan/autoscan.py:205
 #, python-brace-format
 msgid ""
 "These programs are needed to detect the scanner but were not found: {tools}. "
@@ -3702,7 +3705,7 @@ msgstr ""
 "encontraron: {tools}. Instala el paquete de SANE que los proporciona (por "
 "ejemplo sane-utils o sane-backends) y reinicia MiAZ."
 
-#: data/resources/plugins/MiAZAutoScan/autoscan.py:297
+#: data/resources/plugins/MiAZAutoScan/autoscan.py:290
 msgid ""
 "No scanner device detected. Check your scanner connection and SANE "
 "configuration."
@@ -3710,92 +3713,92 @@ msgstr ""
 "No se detectó ningún escáner. Comprueba la conexión del escáner y la "
 "configuración de SANE."
 
-#: data/resources/plugins/MiAZAutoScan/autoscan.py:353
+#: data/resources/plugins/MiAZAutoScan/autoscan.py:346
 msgid "Scan completed but no output file was created"
 msgstr "El escaneo terminó pero no se creó ningún archivo de salida"
 
-#: data/resources/plugins/MiAZAutoScan/autoscan.py:358
+#: data/resources/plugins/MiAZAutoScan/autoscan.py:351
 msgid "Scan timed out after 120 seconds"
 msgstr "El escaneo agotó el tiempo de espera tras 120 segundos"
 
-#: data/resources/plugins/MiAZAutoScan/autoscan.py:401
+#: data/resources/plugins/MiAZAutoScan/autoscan.py:394
 msgid "Scan completed but no output files were created"
 msgstr "El escaneo terminó pero no se creó ningún archivo de salida"
 
-#: data/resources/plugins/MiAZAutoScan/autoscan.py:407
+#: data/resources/plugins/MiAZAutoScan/autoscan.py:400
 msgid "Scan timed out after 300 seconds"
 msgstr "El escaneo agotó el tiempo de espera tras 300 segundos"
 
-#: data/resources/plugins/MiAZAutoScan/autoscan.py:487
+#: data/resources/plugins/MiAZAutoScan/autoscan.py:480
 msgid "1 document scanned and imported"
 msgstr "1 documento escaneado e importado"
 
-#: data/resources/plugins/MiAZAutoScan/autoscan.py:489
+#: data/resources/plugins/MiAZAutoScan/autoscan.py:482
 #, python-brace-format
 msgid "{count} documents scanned and imported"
 msgstr "{count} documentos escaneados e importados"
 
-#: data/resources/plugins/MiAZAutoScan/autoscan.py:535
+#: data/resources/plugins/MiAZAutoScan/autoscan.py:528
 msgid "Scan failed"
 msgstr "El escaneo ha fallado"
 
-#: data/resources/plugins/MiAZAutoScan/autoscan.py:547
+#: data/resources/plugins/MiAZAutoScan/autoscan.py:540
 msgid "Scanner settings"
 msgstr "Ajustes del escáner"
 
-#: data/resources/plugins/MiAZAutoScan/autoscan.py:548
+#: data/resources/plugins/MiAZAutoScan/autoscan.py:541
 msgid "Configure the scanner device and scan parameters"
 msgstr "Configurar el dispositivo de escáner y los parámetros de escaneo"
 
-#: data/resources/plugins/MiAZAutoScan/autoscan.py:560
-#: data/resources/plugins/MiAZAutoScan/autoscan.py:579
+#: data/resources/plugins/MiAZAutoScan/autoscan.py:553
+#: data/resources/plugins/MiAZAutoScan/autoscan.py:572
 msgid "Scanner device"
 msgstr "Dispositivo de escáner"
 
-#: data/resources/plugins/MiAZAutoScan/autoscan.py:561
+#: data/resources/plugins/MiAZAutoScan/autoscan.py:554
 msgid "SANE device to use for scanning"
 msgstr "Dispositivo SANE que se usará para escanear"
 
-#: data/resources/plugins/MiAZAutoScan/autoscan.py:591
+#: data/resources/plugins/MiAZAutoScan/autoscan.py:584
 msgid "Resolution"
 msgstr "Resolución"
 
-#: data/resources/plugins/MiAZAutoScan/autoscan.py:592
+#: data/resources/plugins/MiAZAutoScan/autoscan.py:585
 msgid "Scan resolution in DPI"
 msgstr "Resolución de escaneo en PPP"
 
-#: data/resources/plugins/MiAZAutoScan/autoscan.py:600
+#: data/resources/plugins/MiAZAutoScan/autoscan.py:593
 msgid "Color mode"
 msgstr "Modo de color"
 
-#: data/resources/plugins/MiAZAutoScan/autoscan.py:601
+#: data/resources/plugins/MiAZAutoScan/autoscan.py:594
 msgid "Color or grayscale scan"
 msgstr "Escaneo en color o escala de grises"
 
-#: data/resources/plugins/MiAZAutoScan/autoscan.py:610
+#: data/resources/plugins/MiAZAutoScan/autoscan.py:603
 msgid "Flatbed or Automatic Document Feeder"
 msgstr "Plano o alimentador automático de documentos"
 
-#: data/resources/plugins/MiAZAutoScan/autoscan.py:618
+#: data/resources/plugins/MiAZAutoScan/autoscan.py:611
 msgid "Format"
 msgstr "Formato"
 
-#: data/resources/plugins/MiAZAutoScan/autoscan.py:619
+#: data/resources/plugins/MiAZAutoScan/autoscan.py:612
 msgid "Output file format"
 msgstr "Formato del archivo de salida"
 
-#: data/resources/plugins/MiAZAutoScan/autoscan.py:627
+#: data/resources/plugins/MiAZAutoScan/autoscan.py:620
 msgid "Default filename fields"
 msgstr "Campos de nombre de archivo por defecto"
 
-#: data/resources/plugins/MiAZAutoScan/autoscan.py:628
+#: data/resources/plugins/MiAZAutoScan/autoscan.py:621
 msgid ""
 "Default values for the 7-field document name. Leave empty to omit a field."
 msgstr ""
 "Valores por defecto para el nombre de documento de 7 campos. Déjalo vacío "
 "para omitir un campo."
 
-#: data/resources/plugins/MiAZAutoScan/autoscan.py:653
+#: data/resources/plugins/MiAZAutoScan/autoscan.py:646
 msgid "Select a default value or leave empty"
 msgstr "Selecciona un valor por defecto o déjalo vacío"
 
@@ -3816,16 +3819,17 @@ msgid "Show or hide columns in the Documents view"
 msgstr "Mostrar u ocultar columnas en la vista de Documentos"
 
 #: data/resources/plugins/MiAZContacts/contactbook.py:20
+#: data/resources/plugins/MiAZContacts/contactbook.py:29
 msgid "Keep the details of senders and recipients"
 msgstr ""
 
-#: data/resources/plugins/MiAZContacts/contactbook.py:124
+#: data/resources/plugins/MiAZContacts/contactbook.py:126
 #, fuzzy, python-brace-format
 msgid "Saved {name}"
 msgstr "Establecer {i_confname}"
 
 #: data/resources/plugins/MiAZContacts/contacts/card.py:89
-#: data/resources/plugins/MiAZDoctor/doctor.py:223
+#: data/resources/plugins/MiAZDoctor/doctor.py:217
 msgid "Show"
 msgstr ""
 
@@ -4073,134 +4077,135 @@ msgstr[1] "y {n} más"
 msgid "Run every repository health check in one pass and repair the vocabulary"
 msgstr ""
 
-#: data/resources/plugins/MiAZDoctor/doctor.py:39
+#: data/resources/plugins/MiAZDoctor/doctor.py:36
+msgid "Run repository health check"
+msgstr "Comprobar el estado del repositorio"
+
+#: data/resources/plugins/MiAZDoctor/doctor.py:42
 msgid "Problems"
 msgstr ""
 
-#: data/resources/plugins/MiAZDoctor/doctor.py:40
+#: data/resources/plugins/MiAZDoctor/doctor.py:43
 #, fuzzy
 msgid "These stop documents being filed or found."
 msgstr "Hay documentos pendientes de revisión"
 
-#: data/resources/plugins/MiAZDoctor/doctor.py:41
+#: data/resources/plugins/MiAZDoctor/doctor.py:44
 msgid "Worth cleaning"
 msgstr ""
 
-#: data/resources/plugins/MiAZDoctor/doctor.py:42
+#: data/resources/plugins/MiAZDoctor/doctor.py:45
 msgid "Nothing is broken, but the repository is drifting."
 msgstr ""
 
-#: data/resources/plugins/MiAZDoctor/doctor.py:43
-#: data/resources/plugins/MiAZNotes/notes.py:260
-#: data/resources/plugins/MiAZNotes/notes.py:347
+#: data/resources/plugins/MiAZDoctor/doctor.py:46
+#: data/resources/plugins/MiAZNotes/notes.py:269
+#: data/resources/plugins/MiAZNotes/notes.py:328
 msgid "Notes"
 msgstr "Notas"
 
-#: data/resources/plugins/MiAZDoctor/doctor.py:44
+#: data/resources/plugins/MiAZDoctor/doctor.py:47
 msgid "Tidying, whenever it suits."
 msgstr ""
 
-#: data/resources/plugins/MiAZDoctor/doctor.py:98
-msgid "Run repository health check"
-msgstr "Comprobar el estado del repositorio"
-
-#: data/resources/plugins/MiAZDoctor/doctor.py:143
+#: data/resources/plugins/MiAZDoctor/doctor.py:137
 #, fuzzy
 msgid "Examining the repository..."
 msgstr "Copia de seguridad del repositorio"
 
-#: data/resources/plugins/MiAZDoctor/doctor.py:151
+#: data/resources/plugins/MiAZDoctor/doctor.py:145
 msgid "Health check failed"
 msgstr ""
 
-#: data/resources/plugins/MiAZDoctor/doctor.py:155
+#: data/resources/plugins/MiAZDoctor/doctor.py:149
 msgid "The repository is in good order"
 msgstr ""
 
-#: data/resources/plugins/MiAZDoctor/doctor.py:164
+#: data/resources/plugins/MiAZDoctor/doctor.py:158
 #, fuzzy
 msgid "Repository health"
 msgstr "Nombre del repositorio"
 
-#: data/resources/plugins/MiAZDoctor/doctor.py:183
+#: data/resources/plugins/MiAZDoctor/doctor.py:177
 #, fuzzy, python-brace-format
 msgid "{count} problem"
 msgid_plural "{count} problems"
 msgstr[0] "y {n} más"
 msgstr[1] "y {n} más"
 
-#: data/resources/plugins/MiAZDoctor/doctor.py:186
+#: data/resources/plugins/MiAZDoctor/doctor.py:180
 #, python-brace-format
 msgid "{count} thing worth cleaning"
 msgid_plural "{count} things worth cleaning"
 msgstr[0] ""
 msgstr[1] ""
 
-#: data/resources/plugins/MiAZDoctor/doctor.py:190
+#: data/resources/plugins/MiAZDoctor/doctor.py:184
 #, fuzzy, python-brace-format
 msgid "{count} note"
 msgid_plural "{count} notes"
 msgstr[0] "y {n} más"
 msgstr[1] "y {n} más"
 
-#: data/resources/plugins/MiAZDoctor/doctor.py:226
+#: data/resources/plugins/MiAZDoctor/doctor.py:220
 #, fuzzy, python-brace-format
 msgid "Show this document in the workspace"
 msgid_plural "Show these {count} documents in the workspace"
 msgstr[0] "Mostrar como mucho N documentos"
 msgstr[1] "Mostrar como mucho N documentos"
 
-#: data/resources/plugins/MiAZDoctor/doctor.py:248
+#: data/resources/plugins/MiAZDoctor/doctor.py:242
 #, fuzzy, python-brace-format
 msgid "{field}, used by {count} documents"
 msgstr "¿Borrar {count} documentos?"
 
-#: data/resources/plugins/MiAZDoctor/doctor.py:249
+#: data/resources/plugins/MiAZDoctor/doctor.py:243
 #, python-brace-format
 msgid "{field}, used by none"
 msgstr ""
 
-#: data/resources/plugins/MiAZDoctor/doctor.py:258
+#: data/resources/plugins/MiAZDoctor/doctor.py:252
 msgid "Describe this value"
 msgstr ""
 
-#: data/resources/plugins/MiAZDoctor/doctor.py:289
+#: data/resources/plugins/MiAZDoctor/doctor.py:283
 #, fuzzy, python-brace-format
 msgid "Saved as \"{description}\""
 msgstr "Guardado como {name} en {path}."
 
-#: data/resources/plugins/MiAZDoctor/doctor.py:298
+#: data/resources/plugins/MiAZDoctor/doctor.py:292
 msgid "Removed from the vocabulary"
 msgstr ""
 
-#: data/resources/plugins/MiAZDoctor/doctor.py:318
+#: data/resources/plugins/MiAZDoctor/doctor.py:312
 #, fuzzy, python-brace-format
 msgid "{code} ({field}), {count} documents"
 msgstr "¿Borrar {count} documentos?"
 
-#: data/resources/plugins/MiAZDoctor/doctor.py:320
+#: data/resources/plugins/MiAZDoctor/doctor.py:314
 #, python-brace-format
 msgid "{code} ({field})"
 msgstr ""
 
-#: data/resources/plugins/MiAZDoctor/doctor.py:327
+#: data/resources/plugins/MiAZDoctor/doctor.py:321
 #, fuzzy, python-brace-format
 msgid "and {count} more"
 msgstr "y {n} más"
 
 #: data/resources/plugins/MiAZExport2CSV/export2csv.py:21
+#: data/resources/plugins/MiAZExport2CSV/export2csv.py:30
 msgid "Export to CSV"
 msgstr "Exportar a CSV"
 
-#: data/resources/plugins/MiAZExport2CSV/export2csv.py:91
+#: data/resources/plugins/MiAZExport2CSV/export2csv.py:88
 msgid "Send by"
 msgstr "Enviado por"
 
-#: data/resources/plugins/MiAZExport2CSV/export2csv.py:91
+#: data/resources/plugins/MiAZExport2CSV/export2csv.py:88
 msgid "Send to"
 msgstr "Enviado a"
 
-#: data/resources/plugins/MiAZExport2CSV/export2csv.py:113
+#: data/resources/plugins/MiAZExport2CSV/export2csv.py:110
 msgid "Check your default spreadsheet application"
 msgstr "Consulte su aplicación de hoja de cálculo predeterminada"
 
@@ -4232,26 +4237,26 @@ msgid "the file could not be copied"
 msgstr "no se pudo copiar el archivo"
 
 #: data/resources/plugins/MiAZExport2Dir/export2dir.py:24
-#: data/resources/plugins/MiAZExport2Dir/export2dir.py:93
-#: data/resources/plugins/MiAZExport2Dir/export2dir.py:193
-#: data/resources/plugins/MiAZExport2Dir/export2dir.py:287
+#: data/resources/plugins/MiAZExport2Dir/export2dir.py:33
+#: data/resources/plugins/MiAZExport2Dir/export2dir.py:189
+#: data/resources/plugins/MiAZExport2Dir/export2dir.py:283
 msgid "Export to directory"
 msgstr "Exportar a un directorio"
 
-#: data/resources/plugins/MiAZExport2Dir/export2dir.py:155
+#: data/resources/plugins/MiAZExport2Dir/export2dir.py:151
 msgid "Folders by date"
 msgstr "Carpetas por fecha"
 
-#: data/resources/plugins/MiAZExport2Dir/export2dir.py:156
+#: data/resources/plugins/MiAZExport2Dir/export2dir.py:152
 msgid "Folders by field"
 msgstr "Carpetas por campo"
 
 #. # Readable names row
-#: data/resources/plugins/MiAZExport2Dir/export2dir.py:159
+#: data/resources/plugins/MiAZExport2Dir/export2dir.py:155
 msgid "Readable names"
 msgstr "Nombres legibles"
 
-#: data/resources/plugins/MiAZExport2Dir/export2dir.py:163
+#: data/resources/plugins/MiAZExport2Dir/export2dir.py:159
 msgid ""
 "Rename the exported copies using the descriptions,\n"
 "for someone who does not know MiAZ filenames."
@@ -4259,78 +4264,78 @@ msgstr ""
 "Renombra las copias exportadas usando las descripciones,\n"
 "para quien no conoce los nombres de archivo de MiAZ."
 
-#: data/resources/plugins/MiAZExport2Dir/export2dir.py:165
+#: data/resources/plugins/MiAZExport2Dir/export2dir.py:161
 msgid "Use readable names"
 msgstr "Usar nombres legibles"
 
-#: data/resources/plugins/MiAZExport2Dir/export2dir.py:166
+#: data/resources/plugins/MiAZExport2Dir/export2dir.py:162
 msgid "The documents in the repository are not renamed"
 msgstr "Los documentos del repositorio no se renombran"
 
-#: data/resources/plugins/MiAZExport2Dir/export2dir.py:175
+#: data/resources/plugins/MiAZExport2Dir/export2dir.py:171
 msgid "Select target folder"
 msgstr "Seleccionar el directorio destino"
 
-#: data/resources/plugins/MiAZExport2Dir/export2dir.py:176
+#: data/resources/plugins/MiAZExport2Dir/export2dir.py:172
 msgid "No target folder set yet"
 msgstr "Aún no se ha definido una carpeta de destino"
 
 #. # Example row, last: every row above it feeds the path it shows
-#: data/resources/plugins/MiAZExport2Dir/export2dir.py:181
+#: data/resources/plugins/MiAZExport2Dir/export2dir.py:177
 msgid "Example"
 msgstr "Ejemplo"
 
-#: data/resources/plugins/MiAZExport2Dir/export2dir.py:226
+#: data/resources/plugins/MiAZExport2Dir/export2dir.py:222
 msgid "the target folder"
 msgstr "la carpeta de destino"
 
 #. The first selected document is not in MiAZ format. The export
 #. will say so; the example has nothing to show.
-#: data/resources/plugins/MiAZExport2Dir/export2dir.py:239
+#: data/resources/plugins/MiAZExport2Dir/export2dir.py:235
 msgid "This document cannot be exported with folders"
 msgstr "Este documento no se puede exportar con carpetas"
 
-#: data/resources/plugins/MiAZExport2Dir/export2dir.py:254
+#: data/resources/plugins/MiAZExport2Dir/export2dir.py:250
 msgid "Error selecting files"
 msgstr "Error al seleccionar archivos"
 
-#: data/resources/plugins/MiAZExport2Dir/export2dir.py:261
+#: data/resources/plugins/MiAZExport2Dir/export2dir.py:257
 msgid "Action canceled"
 msgstr "Acción cancelada"
 
-#: data/resources/plugins/MiAZExport2Dir/export2dir.py:261
+#: data/resources/plugins/MiAZExport2Dir/export2dir.py:257
 msgid "No documents exported"
 msgstr "No se exportó ningún documento"
 
-#: data/resources/plugins/MiAZExport2Dir/export2dir.py:267
+#: data/resources/plugins/MiAZExport2Dir/export2dir.py:263
 msgid "No target folder"
 msgstr "Sin carpeta de destino"
 
-#: data/resources/plugins/MiAZExport2Dir/export2dir.py:268
+#: data/resources/plugins/MiAZExport2Dir/export2dir.py:264
 msgid "Choose an existing folder before exporting"
 msgstr "Elija una carpeta existente antes de exportar"
 
-#: data/resources/plugins/MiAZExport2Dir/export2dir.py:288
+#: data/resources/plugins/MiAZExport2Dir/export2dir.py:284
 #, python-brace-format
 msgid "Exporting {total} documents…"
 msgstr "Exportando {total} documentos…"
 
-#: data/resources/plugins/MiAZExport2Dir/export2dir.py:327
+#: data/resources/plugins/MiAZExport2Dir/export2dir.py:323
 #, python-brace-format
 msgid "{copied} of {total} documents exported"
 msgstr "{copied} de {total} documentos exportados"
 
-#: data/resources/plugins/MiAZExport2Dir/export2dir.py:334
+#: data/resources/plugins/MiAZExport2Dir/export2dir.py:330
 #, python-brace-format
 msgid "and {rest} more, in the log"
 msgstr "y {rest} más, en el registro"
 
 #: data/resources/plugins/MiAZExport2Text/export2text.py:20
-#: data/resources/plugins/MiAZExport2Text/export2text.py:75
+#: data/resources/plugins/MiAZExport2Text/export2text.py:29
 msgid "Export to text editor"
 msgstr "Exportar a un editor de texto"
 
-#: data/resources/plugins/MiAZExport2Text/export2text.py:107
+#: data/resources/plugins/MiAZExport2Text/export2text.py:103
 msgid "Check your default text editor"
 msgstr "Consulte su editor de texto predeterminado"
 
@@ -4338,19 +4343,19 @@ msgstr "Consulte su editor de texto predeterminado"
 msgid "Compress documents into a ZIP file"
 msgstr "Comprimir documentos en un archivo ZIP"
 
-#: data/resources/plugins/MiAZExport2Zip/export2zip.py:82
+#: data/resources/plugins/MiAZExport2Zip/export2zip.py:32
 msgid "Create a ZIP file"
 msgstr "Crear un archivo ZIP"
 
-#: data/resources/plugins/MiAZExport2Zip/export2zip.py:122
+#: data/resources/plugins/MiAZExport2Zip/export2zip.py:118
 msgid "Export successful"
 msgstr "Exportación realizada correctamente"
 
-#: data/resources/plugins/MiAZExport2Zip/export2zip.py:123
+#: data/resources/plugins/MiAZExport2Zip/export2zip.py:119
 msgid "Check your default file browser"
 msgstr "Consulte su navegador de archivos predeterminado"
 
-#: data/resources/plugins/MiAZExport2Zip/export2zip.py:128
+#: data/resources/plugins/MiAZExport2Zip/export2zip.py:124
 msgid "Export error"
 msgstr "Error de exportación"
 
@@ -4375,67 +4380,67 @@ msgstr "Mostrar el botón de pantalla completa"
 msgid "Import document from scanner"
 msgstr "Importar documento desde el escáner"
 
-#: data/resources/plugins/MiAZImportFromScan/scan.py:92
+#: data/resources/plugins/MiAZImportFromScan/scan.py:49
 msgid "Scan a document"
 msgstr "Escanear un documento"
 
-#: data/resources/plugins/MiAZImportFromScan/scan.py:104
-#: data/resources/plugins/MiAZImportFromScan/scan.py:105
+#: data/resources/plugins/MiAZImportFromScan/scan.py:100
+#: data/resources/plugins/MiAZImportFromScan/scan.py:101
 msgid "Flatpak"
 msgstr "Flatpak"
 
-#: data/resources/plugins/MiAZImportFromScan/scan.py:106
+#: data/resources/plugins/MiAZImportFromScan/scan.py:102
 msgid "Snap"
 msgstr "Snap"
 
-#: data/resources/plugins/MiAZImportFromScan/scan.py:107
+#: data/resources/plugins/MiAZImportFromScan/scan.py:103
 msgid "KDE"
 msgstr "KDE"
 
-#: data/resources/plugins/MiAZImportFromScan/scan.py:108
+#: data/resources/plugins/MiAZImportFromScan/scan.py:104
 msgid "GNOME"
 msgstr "GNOME"
 
-#: data/resources/plugins/MiAZImportFromScan/scan.py:109
+#: data/resources/plugins/MiAZImportFromScan/scan.py:105
 msgid "Third-party"
 msgstr "Terceros"
 
-#: data/resources/plugins/MiAZImportFromScan/scan.py:110
+#: data/resources/plugins/MiAZImportFromScan/scan.py:106
 msgid "Autostart"
 msgstr "Inicio automático"
 
-#: data/resources/plugins/MiAZImportFromScan/scan.py:111
-#: data/resources/plugins/MiAZImportFromScan/scan.py:112
+#: data/resources/plugins/MiAZImportFromScan/scan.py:107
+#: data/resources/plugins/MiAZImportFromScan/scan.py:108
 msgid "User"
 msgstr "Usuario"
 
-#: data/resources/plugins/MiAZImportFromScan/scan.py:113
-#: data/resources/plugins/MiAZImportFromScan/scan.py:114
+#: data/resources/plugins/MiAZImportFromScan/scan.py:109
+#: data/resources/plugins/MiAZImportFromScan/scan.py:110
 msgid "System"
 msgstr "Sistema"
 
-#: data/resources/plugins/MiAZImportFromScan/scan.py:119
+#: data/resources/plugins/MiAZImportFromScan/scan.py:115
 msgid "Unknown"
 msgstr "Desconocido"
 
-#: data/resources/plugins/MiAZImportFromScan/scan.py:203
+#: data/resources/plugins/MiAZImportFromScan/scan.py:199
 msgid "Scanner application"
 msgstr "Aplicación de escáner"
 
-#: data/resources/plugins/MiAZImportFromScan/scan.py:221
+#: data/resources/plugins/MiAZImportFromScan/scan.py:217
 msgid "Scanner application to launch"
 msgstr "Aplicación de escáner a lanzar"
 
 #. No scanner app detected. Let the user type a command
-#: data/resources/plugins/MiAZImportFromScan/scan.py:240
+#: data/resources/plugins/MiAZImportFromScan/scan.py:236
 msgid "Scanner command"
 msgstr "Comando del escáner"
 
-#: data/resources/plugins/MiAZImportFromScan/scan.py:254
+#: data/resources/plugins/MiAZImportFromScan/scan.py:250
 msgid "No scanner application detected"
 msgstr "No se detectó ninguna aplicación de escáner"
 
-#: data/resources/plugins/MiAZImportFromScan/scan.py:255
+#: data/resources/plugins/MiAZImportFromScan/scan.py:251
 msgid "Enter the command used to launch your scanner software"
 msgstr "Ingrese el comando utilizado para lanzar su software de escáner"
 
@@ -4443,23 +4448,23 @@ msgstr "Ingrese el comando utilizado para lanzar su software de escáner"
 msgid "Import documents from a ZIP file"
 msgstr "Importar documentos desde un archivo ZIP"
 
-#: data/resources/plugins/MiAZImportFromZip/importfromzip.py:64
+#: data/resources/plugins/MiAZImportFromZip/importfromzip.py:31
 msgid "Import documents from ZIP"
 msgstr "Importar documentos desde ZIP"
 
-#: data/resources/plugins/MiAZImportFromZip/importfromzip.py:75
+#: data/resources/plugins/MiAZImportFromZip/importfromzip.py:71
 msgid "Select a ZIP file"
 msgstr "Seleccionar un archivo ZIP"
 
-#: data/resources/plugins/MiAZImportFromZip/importfromzip.py:78
+#: data/resources/plugins/MiAZImportFromZip/importfromzip.py:74
 msgid "ZIP archives"
 msgstr "Archivos ZIP"
 
-#: data/resources/plugins/MiAZImportFromZip/importfromzip.py:152
+#: data/resources/plugins/MiAZImportFromZip/importfromzip.py:148
 msgid "Import error"
 msgstr "Error de importación"
 
-#: data/resources/plugins/MiAZImportFromZip/importfromzip.py:163
+#: data/resources/plugins/MiAZImportFromZip/importfromzip.py:159
 #, python-brace-format
 msgid "{count} documents imported from ZIP"
 msgstr "{count} documentos importados desde ZIP"
@@ -4543,14 +4548,14 @@ msgstr "<b>{n}</b> nota(s) huérfana(s)"
 
 #: data/resources/plugins/MiAZNotes/lib/allview.py:356
 #: data/resources/plugins/MiAZNotes/lib/listview.py:342
-#: data/resources/plugins/MiAZNotes/notes.py:279
-#: data/resources/plugins/MiAZNotes/notes.py:760
+#: data/resources/plugins/MiAZNotes/notes.py:77
+#: data/resources/plugins/MiAZNotes/notes.py:741
 msgid "Backup notes"
 msgstr "Copia de seguridad de notas"
 
 #: data/resources/plugins/MiAZNotes/lib/allview.py:375
 #: data/resources/plugins/MiAZNotes/lib/listview.py:358
-#: data/resources/plugins/MiAZNotes/notes.py:767
+#: data/resources/plugins/MiAZNotes/notes.py:748
 msgid "Restore notes from backup"
 msgstr "Restaurar notas desde la copia de seguridad"
 
@@ -4575,27 +4580,27 @@ msgstr "Combinar"
 
 #: data/resources/plugins/MiAZNotes/lib/allview.py:425
 #: data/resources/plugins/MiAZNotes/lib/listview.py:408
-#: data/resources/plugins/MiAZNotes/notes.py:673
+#: data/resources/plugins/MiAZNotes/notes.py:654
 #, python-brace-format
 msgid "{count} notes backed up to {name}."
 msgstr "{count} notas copiadas a {name}."
 
 #: data/resources/plugins/MiAZNotes/lib/allview.py:428
 #: data/resources/plugins/MiAZNotes/lib/listview.py:411
-#: data/resources/plugins/MiAZNotes/notes.py:676
+#: data/resources/plugins/MiAZNotes/notes.py:657
 msgid "Backing up notes"
 msgstr "Copia de seguridad de las notas"
 
 #: data/resources/plugins/MiAZNotes/lib/allview.py:435
 #: data/resources/plugins/MiAZNotes/lib/listview.py:418
-#: data/resources/plugins/MiAZNotes/notes.py:695
+#: data/resources/plugins/MiAZNotes/notes.py:676
 #, python-brace-format
 msgid "{count} notes restored from {name}."
 msgstr "{count} notas restauradas desde {name}."
 
 #: data/resources/plugins/MiAZNotes/lib/allview.py:438
 #: data/resources/plugins/MiAZNotes/lib/listview.py:425
-#: data/resources/plugins/MiAZNotes/notes.py:704
+#: data/resources/plugins/MiAZNotes/notes.py:685
 msgid "Restoring notes"
 msgstr "Restaurando las notas"
 
@@ -4630,7 +4635,7 @@ msgid "Notes - {n} documents"
 msgstr "Notas - {n} documentos"
 
 #: data/resources/plugins/MiAZNotes/lib/listview.py:53
-#: data/resources/plugins/MiAZNotes/notes.py:717
+#: data/resources/plugins/MiAZNotes/notes.py:698
 #, python-brace-format
 msgid "Notes - {document}"
 msgstr "Notas: {document}"
@@ -4730,27 +4735,27 @@ msgstr "(nota vacía)"
 msgid "Take Markdown notes linked to documents"
 msgstr "Toma notas en Markdown vinculadas a los documentos"
 
-#: data/resources/plugins/MiAZNotes/notes.py:243
+#: data/resources/plugins/MiAZNotes/notes.py:75
 msgid "Create a new note"
 msgstr "Crear una nota nueva"
 
-#: data/resources/plugins/MiAZNotes/notes.py:267
+#: data/resources/plugins/MiAZNotes/notes.py:76
 msgid "See all notes…"
 msgstr "Ver todas las notas…"
 
-#: data/resources/plugins/MiAZNotes/notes.py:284
+#: data/resources/plugins/MiAZNotes/notes.py:78
 msgid "Restore notes"
 msgstr "Restaurar notas"
 
-#: data/resources/plugins/MiAZNotes/notes.py:473
+#: data/resources/plugins/MiAZNotes/notes.py:454
 msgid "Show only documents that have notes"
 msgstr "Mostrar solo los documentos que tienen notas"
 
-#: data/resources/plugins/MiAZNotes/notes.py:479
+#: data/resources/plugins/MiAZNotes/notes.py:460
 msgid "Only with notes"
 msgstr "Solo con notas"
 
-#: data/resources/plugins/MiAZNotes/notes.py:600
+#: data/resources/plugins/MiAZNotes/notes.py:581
 #, python-brace-format
 msgid "{n} note(s) for this document"
 msgstr "{n} nota(s) para este documento"
@@ -4759,11 +4764,11 @@ msgstr "{n} nota(s) para este documento"
 msgid "Extract text from PDF documents with OCR and save it as a note"
 msgstr "Extraer texto de documentos PDF con OCR y guardarlo como nota"
 
-#: data/resources/plugins/MiAZOCR/ocr.py:84
+#: data/resources/plugins/MiAZOCR/ocr.py:38
 msgid "Extract text (OCR)…"
 msgstr "Extraer texto (OCR)…"
 
-#: data/resources/plugins/MiAZOCR/ocr.py:109
+#: data/resources/plugins/MiAZOCR/ocr.py:108
 #, python-brace-format
 msgid ""
 "MiAZOCR needs the following command line tool(s) which are not installed:\n"
@@ -4787,20 +4792,20 @@ msgstr ""
 "• Debian/Ubuntu: <tt>sudo apt install ocrmypdf poppler-utils</tt>\n"
 "• Arch: <tt>sudo pacman -S ocrmypdf poppler</tt>"
 
-#: data/resources/plugins/MiAZOCR/ocr.py:168
-#: data/resources/plugins/MiAZOCR/ocr.py:338
+#: data/resources/plugins/MiAZOCR/ocr.py:167
+#: data/resources/plugins/MiAZOCR/ocr.py:337
 msgid "OCR"
 msgstr "OCR"
 
-#: data/resources/plugins/MiAZOCR/ocr.py:169
+#: data/resources/plugins/MiAZOCR/ocr.py:168
 msgid "Select at least one document"
 msgstr "Selecciona al menos un documento"
 
-#: data/resources/plugins/MiAZOCR/ocr.py:177
+#: data/resources/plugins/MiAZOCR/ocr.py:176
 msgid "No documents to process"
 msgstr "No hay documentos que procesar"
 
-#: data/resources/plugins/MiAZOCR/ocr.py:178
+#: data/resources/plugins/MiAZOCR/ocr.py:177
 msgid ""
 "OCR runs only on reviewed PDF documents. Documents still pending review and "
 "non-PDF files are skipped."
@@ -4808,47 +4813,47 @@ msgstr ""
 "El OCR solo se ejecuta en documentos PDF revisados. Se omiten los documentos "
 "pendientes de revisión y los archivos que no son PDF."
 
-#: data/resources/plugins/MiAZOCR/ocr.py:196
-#: data/resources/plugins/MiAZOCR/ocr.py:347
+#: data/resources/plugins/MiAZOCR/ocr.py:195
+#: data/resources/plugins/MiAZOCR/ocr.py:346
 msgid "Document language"
 msgstr "Idioma del documento"
 
-#: data/resources/plugins/MiAZOCR/ocr.py:197
+#: data/resources/plugins/MiAZOCR/ocr.py:196
 msgid "Language used by the OCR engine"
 msgstr "Idioma que usa el motor de OCR"
 
-#: data/resources/plugins/MiAZOCR/ocr.py:203
+#: data/resources/plugins/MiAZOCR/ocr.py:202
 msgid "Force OCR"
 msgstr "Forzar OCR"
 
-#: data/resources/plugins/MiAZOCR/ocr.py:204
+#: data/resources/plugins/MiAZOCR/ocr.py:203
 msgid "Ignore any existing text layer and OCR every page"
 msgstr "Ignorar cualquier capa de texto existente y aplicar OCR a cada página"
 
-#: data/resources/plugins/MiAZOCR/ocr.py:208
+#: data/resources/plugins/MiAZOCR/ocr.py:207
 msgid "OCR options"
 msgstr "Opciones de OCR"
 
-#: data/resources/plugins/MiAZOCR/ocr.py:237
+#: data/resources/plugins/MiAZOCR/ocr.py:236
 msgid "OCR failed"
 msgstr "El OCR ha fallado"
 
-#: data/resources/plugins/MiAZOCR/ocr.py:250
+#: data/resources/plugins/MiAZOCR/ocr.py:249
 #, python-brace-format
 msgid "OCR finished: {doc}"
 msgstr "OCR finalizado: {doc}"
 
-#: data/resources/plugins/MiAZOCR/ocr.py:255
+#: data/resources/plugins/MiAZOCR/ocr.py:254
 #, python-brace-format
 msgid "OCR found no text: {doc}"
 msgstr "El OCR no encontró texto: {doc}"
 
-#: data/resources/plugins/MiAZOCR/ocr.py:260
+#: data/resources/plugins/MiAZOCR/ocr.py:259
 #, python-brace-format
 msgid "OCR failed: {doc}"
 msgstr "El OCR ha fallado: {doc}"
 
-#: data/resources/plugins/MiAZOCR/ocr.py:299
+#: data/resources/plugins/MiAZOCR/ocr.py:298
 #, python-brace-format
 msgid ""
 "# OCR extraction\n"
@@ -4863,31 +4868,31 @@ msgstr ""
 "\n"
 "{text}"
 
-#: data/resources/plugins/MiAZOCR/ocr.py:324
+#: data/resources/plugins/MiAZOCR/ocr.py:323
 #, python-brace-format
 msgid "{n} note(s) created"
 msgstr "{n} nota(s) creada(s)"
 
-#: data/resources/plugins/MiAZOCR/ocr.py:326
+#: data/resources/plugins/MiAZOCR/ocr.py:325
 #, python-brace-format
 msgid "{n} failed"
 msgstr "{n} con error"
 
-#: data/resources/plugins/MiAZOCR/ocr.py:328
+#: data/resources/plugins/MiAZOCR/ocr.py:327
 #, python-brace-format
 msgid "{n} skipped"
 msgstr "{n} omitida(s)"
 
-#: data/resources/plugins/MiAZOCR/ocr.py:329
+#: data/resources/plugins/MiAZOCR/ocr.py:328
 #, python-brace-format
 msgid "OCR finished: {summary}"
 msgstr "OCR finalizado: {summary}"
 
-#: data/resources/plugins/MiAZOCR/ocr.py:341
+#: data/resources/plugins/MiAZOCR/ocr.py:340
 msgid "Default language"
 msgstr "Idioma por defecto"
 
-#: data/resources/plugins/MiAZOCR/ocr.py:348
+#: data/resources/plugins/MiAZOCR/ocr.py:347
 msgid "Default language used by the OCR engine"
 msgstr "Idioma por defecto que usa el motor de OCR"
 
@@ -4895,268 +4900,271 @@ msgstr "Idioma por defecto que usa el motor de OCR"
 msgid "Set document periodicity"
 msgstr "Establecer la periodicidad del documento"
 
-#: data/resources/plugins/MiAZPeriodicity/periodicity.py:41
-#: data/resources/plugins/MiAZPeriodicity/periodicity.py:418
+#: data/resources/plugins/MiAZPeriodicity/periodicity.py:35
+msgid "Set periodicity"
+msgstr "Establecer periodicidad"
+
+#: data/resources/plugins/MiAZPeriodicity/periodicity.py:36
+msgid "Unset periodicity"
+msgstr "Desestablecer periodicidad"
+
+#: data/resources/plugins/MiAZPeriodicity/periodicity.py:37
+msgid "Manage periodicity"
+msgstr "Gestionar periodicidad"
+
+#: data/resources/plugins/MiAZPeriodicity/periodicity.py:46
+#: data/resources/plugins/MiAZPeriodicity/periodicity.py:416
 msgid "On demand"
 msgstr "Bajo demanda"
 
-#: data/resources/plugins/MiAZPeriodicity/periodicity.py:42
+#: data/resources/plugins/MiAZPeriodicity/periodicity.py:47
 msgid "Daily"
 msgstr "Diario"
 
-#: data/resources/plugins/MiAZPeriodicity/periodicity.py:43
+#: data/resources/plugins/MiAZPeriodicity/periodicity.py:48
 msgid "Weekly"
 msgstr "Semanal"
 
-#: data/resources/plugins/MiAZPeriodicity/periodicity.py:44
+#: data/resources/plugins/MiAZPeriodicity/periodicity.py:49
 msgid "Monthly"
 msgstr "Mensual"
 
-#: data/resources/plugins/MiAZPeriodicity/periodicity.py:45
+#: data/resources/plugins/MiAZPeriodicity/periodicity.py:50
 msgid "Quarterly"
 msgstr "Trimestral"
 
-#: data/resources/plugins/MiAZPeriodicity/periodicity.py:46
+#: data/resources/plugins/MiAZPeriodicity/periodicity.py:51
 msgid "Yearly"
 msgstr "Anualmente"
 
-#: data/resources/plugins/MiAZPeriodicity/periodicity.py:47
+#: data/resources/plugins/MiAZPeriodicity/periodicity.py:52
 msgid "Hourly"
 msgstr "Cada hora"
 
-#: data/resources/plugins/MiAZPeriodicity/periodicity.py:48
+#: data/resources/plugins/MiAZPeriodicity/periodicity.py:53
 msgid "Minutely"
 msgstr "Cada minuto"
 
-#: data/resources/plugins/MiAZPeriodicity/periodicity.py:49
+#: data/resources/plugins/MiAZPeriodicity/periodicity.py:54
 msgid "Secondly"
 msgstr "Cada segundo"
 
-#: data/resources/plugins/MiAZPeriodicity/periodicity.py:50
+#: data/resources/plugins/MiAZPeriodicity/periodicity.py:55
 msgid "Business Day"
 msgstr "Día laboral"
 
-#: data/resources/plugins/MiAZPeriodicity/periodicity.py:51
+#: data/resources/plugins/MiAZPeriodicity/periodicity.py:56
 msgid "Weekend"
 msgstr "Fin de semana"
 
-#: data/resources/plugins/MiAZPeriodicity/periodicity.py:52
+#: data/resources/plugins/MiAZPeriodicity/periodicity.py:57
 msgid "Bi-Weekly"
 msgstr "Quincenalmente"
 
-#: data/resources/plugins/MiAZPeriodicity/periodicity.py:53
+#: data/resources/plugins/MiAZPeriodicity/periodicity.py:58
 msgid "Bi-Monthly"
 msgstr "Bimensualmente"
 
-#: data/resources/plugins/MiAZPeriodicity/periodicity.py:54
+#: data/resources/plugins/MiAZPeriodicity/periodicity.py:59
 msgid "Semi-Annual"
 msgstr "Semestral"
 
-#: data/resources/plugins/MiAZPeriodicity/periodicity.py:99
+#: data/resources/plugins/MiAZPeriodicity/periodicity.py:104
 #, python-brace-format
 msgid "{title} Id"
 msgstr "Id {title}"
 
-#: data/resources/plugins/MiAZPeriodicity/periodicity.py:102
-#: data/resources/plugins/MiAZProjectMgt/projmgt.py:369
+#: data/resources/plugins/MiAZPeriodicity/periodicity.py:107
+#: data/resources/plugins/MiAZProjectMgt/projmgt.py:374
 #, python-brace-format
 msgid "{title} available"
 msgstr "{title} disponible"
 
-#: data/resources/plugins/MiAZPeriodicity/periodicity.py:104
-#: data/resources/plugins/MiAZProjectMgt/projmgt.py:371
+#: data/resources/plugins/MiAZPeriodicity/periodicity.py:109
+#: data/resources/plugins/MiAZProjectMgt/projmgt.py:376
 #, python-brace-format
 msgid "{title} enabled"
 msgstr "{title} habilitado"
 
-#: data/resources/plugins/MiAZPeriodicity/periodicity.py:161
+#: data/resources/plugins/MiAZPeriodicity/periodicity.py:166
 msgid "How often this document is expected to arrive"
 msgstr "Cada cuánto se espera que llegue este documento"
 
-#: data/resources/plugins/MiAZPeriodicity/periodicity.py:269
-#, python-brace-format
-msgid "Set {i_confname}"
-msgstr "Establecer {i_confname}"
-
-#: data/resources/plugins/MiAZPeriodicity/periodicity.py:273
-#, python-brace-format
-msgid "Unset {i_confname}"
-msgstr "Desestablecer {i_confname}"
-
-#: data/resources/plugins/MiAZPeriodicity/periodicity.py:277
-#: data/resources/plugins/MiAZPeriodicity/periodicity.py:345
-#: data/resources/plugins/MiAZProjectMgt/projmgt.py:475
-#: data/resources/plugins/MiAZProjectMgt/projmgt.py:629
-#: data/resources/plugins/MiAZProjectMgt/projmgt.py:732
-#: data/resources/plugins/MiAZProjectMgt/projmgt.py:837
+#: data/resources/plugins/MiAZPeriodicity/periodicity.py:343
+#: data/resources/plugins/MiAZProjectMgt/projmgt.py:480
+#: data/resources/plugins/MiAZProjectMgt/projmgt.py:730
+#: data/resources/plugins/MiAZProjectMgt/projmgt.py:835
 #, python-brace-format
 msgid "Manage {i_confname}"
 msgstr "Gestionar {i_confname}"
 
-#: data/resources/plugins/MiAZPeriodicity/periodicity.py:349
-#: data/resources/plugins/MiAZProjectMgt/projmgt.py:739
+#: data/resources/plugins/MiAZPeriodicity/periodicity.py:347
+#: data/resources/plugins/MiAZProjectMgt/projmgt.py:737
 msgid "Action ignored"
 msgstr "Acción ignorada"
 
-#: data/resources/plugins/MiAZPeriodicity/periodicity.py:349
-#: data/resources/plugins/MiAZProjectMgt/projmgt.py:740
+#: data/resources/plugins/MiAZPeriodicity/periodicity.py:347
+#: data/resources/plugins/MiAZProjectMgt/projmgt.py:738
 msgid "You must select at least one document"
 msgstr "Debes seleccionar al menos un documento"
 
-#: data/resources/plugins/MiAZPeriodicity/periodicity.py:386
+#: data/resources/plugins/MiAZPeriodicity/periodicity.py:384
 #, python-brace-format
 msgid "{i_title} {title} set to {count} documents"
 msgstr "{i_title} {title} asignado a {count} documentos"
 
-#: data/resources/plugins/MiAZPeriodicity/periodicity.py:450
+#: data/resources/plugins/MiAZPeriodicity/periodicity.py:448
 #, python-brace-format
 msgid "Reset {i_confname} to default for selected documents"
 msgstr ""
 "Reset {i_confname} to default for selected documents\n"
 "Restaurar {i_confname} al valor por defecto para los documentos seleccionados"
 
-#: data/resources/plugins/MiAZPeriodicity/periodicity.py:509
+#: data/resources/plugins/MiAZPeriodicity/periodicity.py:507
 #, python-brace-format
 msgid "{i_confname} management"
 msgstr "Gestión de {i_confname}"
 
 #: data/resources/plugins/MiAZProjectMgt/projmgt.py:29
-#: data/resources/plugins/MiAZProjectMgt/projmgt.py:738
+#: data/resources/plugins/MiAZProjectMgt/projmgt.py:736
 msgid "Project management"
 msgstr "Gestión de proyectos"
 
-#: data/resources/plugins/MiAZProjectMgt/projmgt.py:161
+#: data/resources/plugins/MiAZProjectMgt/projmgt.py:38
+msgid "Assign document(s) to projects"
+msgstr "Asignar documento(s) a proyectos"
+
+#: data/resources/plugins/MiAZProjectMgt/projmgt.py:39
+msgid "Unassign document(s) from any projects"
+msgstr "Desasignar documento(s) de cualquier proyecto"
+
+#: data/resources/plugins/MiAZProjectMgt/projmgt.py:40
+msgid "Manage projects"
+msgstr "Gestionar proyectos"
+
+#: data/resources/plugins/MiAZProjectMgt/projmgt.py:166
 #, python-brace-format
 msgid "{count} documents removed from projects (no longer in the repository)"
 msgstr ""
 "{count} documentos removidos de proyectos (ya no están en el repositorio)"
 
-#: data/resources/plugins/MiAZProjectMgt/projmgt.py:184
+#: data/resources/plugins/MiAZProjectMgt/projmgt.py:189
 #, python-brace-format
 msgid "Document assigned to project '{project}'"
 msgstr "Documento asignado al proyecto '{project}'"
 
-#: data/resources/plugins/MiAZProjectMgt/projmgt.py:193
+#: data/resources/plugins/MiAZProjectMgt/projmgt.py:198
 #, python-brace-format
 msgid "{count} documents assigned to project '{project}'"
 msgstr "{count} documentos asignados al proyecto '{project}'"
 
-#: data/resources/plugins/MiAZProjectMgt/projmgt.py:250
+#: data/resources/plugins/MiAZProjectMgt/projmgt.py:255
 #, python-brace-format
 msgid "Document removed from project {projects}"
 msgstr "Documento quitado del proyecto {projects}"
 
-#: data/resources/plugins/MiAZProjectMgt/projmgt.py:268
-#: data/resources/plugins/MiAZProjectMgt/projmgt.py:780
+#: data/resources/plugins/MiAZProjectMgt/projmgt.py:273
+#: data/resources/plugins/MiAZProjectMgt/projmgt.py:778
 #, python-brace-format
 msgid "{count} documents removed from {projects}"
 msgstr "{count} documentos quitados de {projects}"
 
-#: data/resources/plugins/MiAZProjectMgt/projmgt.py:366
+#: data/resources/plugins/MiAZProjectMgt/projmgt.py:371
 msgid "Project Id"
 msgstr "Proyecto Id"
 
-#: data/resources/plugins/MiAZProjectMgt/projmgt.py:418
+#: data/resources/plugins/MiAZProjectMgt/projmgt.py:423
 #, python-brace-format
 msgid "{i_title} management"
 msgstr "Gestión de {i_title}"
 
-#: data/resources/plugins/MiAZProjectMgt/projmgt.py:419
+#: data/resources/plugins/MiAZProjectMgt/projmgt.py:424
 #, python-brace-format
 msgid "{i_title} {item_desc} disabled"
 msgstr "{i_title} {item_desc} deshabilitado"
 
-#: data/resources/plugins/MiAZProjectMgt/projmgt.py:422
+#: data/resources/plugins/MiAZProjectMgt/projmgt.py:427
 #, python-brace-format
 msgid "{i_title} {item_desc} is still being used by {count} documents"
 msgstr "{i_title} {item_desc} todavía está siendo usado por {count} documentos"
 
-#: data/resources/plugins/MiAZProjectMgt/projmgt.py:426
+#: data/resources/plugins/MiAZProjectMgt/projmgt.py:431
 msgid "Action not possible"
 msgstr "Acción no posible"
 
-#: data/resources/plugins/MiAZProjectMgt/projmgt.py:470
+#: data/resources/plugins/MiAZProjectMgt/projmgt.py:475
 msgid "Projects this document belongs to"
 msgstr "Proyectos a los que pertenece este documento"
 
-#: data/resources/plugins/MiAZProjectMgt/projmgt.py:476
+#: data/resources/plugins/MiAZProjectMgt/projmgt.py:481
 #, python-brace-format
 msgid "Create, rename or delete {i_confname}"
 msgstr "Crear, renombrar o borrar {i_confname}"
 
-#: data/resources/plugins/MiAZProjectMgt/projmgt.py:495
+#: data/resources/plugins/MiAZProjectMgt/projmgt.py:500
 msgid "No projects available yet. Create one with the Manage projects button."
 msgstr ""
 "Todavía no hay ningún proyecto. Crea uno con el botón Gestionar proyectos."
 
-#: data/resources/plugins/MiAZProjectMgt/projmgt.py:621
-#, python-brace-format
-msgid "Assign document(s) to {i_confname}"
-msgstr "Asignar documento(s) a {i_confname}"
-
-#: data/resources/plugins/MiAZProjectMgt/projmgt.py:625
-#, python-brace-format
-msgid "Unassign document(s) from any {i_confname}"
-msgstr "Desasignar documento(s) de cualquier {i_confname}"
-
-#: data/resources/plugins/MiAZProjectMgt/projmgt.py:783
+#: data/resources/plugins/MiAZProjectMgt/projmgt.py:781
 #, python-brace-format
 msgid "{count} documents belonged to no project"
 msgstr "{count} documentos no pertenecían a ningún proyecto"
 
-#: data/resources/plugins/MiAZProjectMgt/projmgt.py:802
+#: data/resources/plugins/MiAZProjectMgt/projmgt.py:800
 #, python-brace-format
 msgid "{count} documents in project {pid}"
 msgstr "{count} documentos en el proyecto {pid}"
 
-#: data/resources/plugins/MiAZProjectMgt/projmgt.py:821
+#: data/resources/plugins/MiAZProjectMgt/projmgt.py:819
 msgid "Documents per project"
 msgstr "Documentos por proyecto"
 
 #: data/resources/plugins/MiAZRelated/relateddocs.py:23
+#: data/resources/plugins/MiAZRelated/relateddocs.py:32
 #, fuzzy
 msgid "Show the documents belonging to the same case"
 msgstr "{count} documentos no pertenecían a ningún proyecto"
 
-#: data/resources/plugins/MiAZRelated/relateddocs.py:91
+#: data/resources/plugins/MiAZRelated/relateddocs.py:93
 #, fuzzy
 msgid "No other document shares this concept"
 msgstr "Todavía no hay otros documentos que compartan este concepto."
 
-#: data/resources/plugins/MiAZRelated/relateddocs.py:95
+#: data/resources/plugins/MiAZRelated/relateddocs.py:97
 #, fuzzy
 msgid "Documents in this case"
 msgstr "{nv} documentos en esta vista\n"
 
-#: data/resources/plugins/MiAZRelated/relateddocs.py:96
+#: data/resources/plugins/MiAZRelated/relateddocs.py:98
 #, fuzzy, python-brace-format
 msgid "{count} documents share the concept of {document}"
 msgstr "Todavía no hay otros documentos que compartan este concepto."
 
-#: data/resources/plugins/MiAZRelated/relateddocs.py:108
+#: data/resources/plugins/MiAZRelated/relateddocs.py:110
 msgid "The same parties"
 msgstr ""
 
-#: data/resources/plugins/MiAZRelated/relateddocs.py:109
+#: data/resources/plugins/MiAZRelated/relateddocs.py:111
 msgid "The case as one side of it kept it."
 msgstr ""
 
-#: data/resources/plugins/MiAZRelated/relateddocs.py:110
+#: data/resources/plugins/MiAZRelated/relateddocs.py:112
 msgid "Somebody else"
 msgstr ""
 
-#: data/resources/plugins/MiAZRelated/relateddocs.py:111
+#: data/resources/plugins/MiAZRelated/relateddocs.py:113
 msgid ""
 "The same concept involving other parties, which is how a request and its "
 "answer find each other."
 msgstr ""
 
-#: data/resources/plugins/MiAZRelated/relateddocs.py:130
+#: data/resources/plugins/MiAZRelated/relateddocs.py:132
 #, python-brace-format
 msgid "{purpose}, from {sender} to {recipient}"
 msgstr ""
 
-#: data/resources/plugins/MiAZRelated/relateddocs.py:133
+#: data/resources/plugins/MiAZRelated/relateddocs.py:135
 msgid "Open"
 msgstr ""
 
@@ -5180,7 +5188,7 @@ msgstr "Tamaño de letra del área de trabajo"
 msgid "Insights into your documents"
 msgstr "Una mirada a tus documentos"
 
-#: data/resources/plugins/MiAZInsights/MiAZInsights.py:124
+#: data/resources/plugins/MiAZInsights/MiAZInsights.py:58
 msgid "Open insights"
 msgstr "Abrir Insights"
 
@@ -5513,6 +5521,22 @@ msgstr "Imprimir"
 #: data/resources/plugins/MiAZInsights/insights/render.py:361
 msgid "Generated"
 msgstr "Generado"
+
+#, python-brace-format
+#~ msgid "Set {i_confname}"
+#~ msgstr "Establecer {i_confname}"
+
+#, python-brace-format
+#~ msgid "Unset {i_confname}"
+#~ msgstr "Desestablecer {i_confname}"
+
+#, python-brace-format
+#~ msgid "Assign document(s) to {i_confname}"
+#~ msgstr "Asignar documento(s) a {i_confname}"
+
+#, python-brace-format
+#~ msgid "Unassign document(s) from any {i_confname}"
+#~ msgstr "Desasignar documento(s) de cualquier {i_confname}"
 
 #~ msgid "Convert"
 #~ msgstr "Convertir"

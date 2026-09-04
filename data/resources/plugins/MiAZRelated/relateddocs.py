@@ -27,7 +27,10 @@ plugin_info = {
     'Help':          'https://github.com/t00m/MiAZ/blob/main/README.md',
     'Version':       '0.3.0',
     'Category':      'Documents',
-    'Subcategory':   'Search'
+    'Subcategory':   'Search',
+    'MenuEntries':   [
+        ('show', _('Show the documents belonging to the same case')),
+    ]
 }
 
 
@@ -68,8 +71,7 @@ class Related(MiAZExtension):
 
     def startup(self, *args):
         if not self.plugin.started():
-            menuitem = self.plugin.get_menu_item(callback=self.show_related)
-            self.plugin.install_menu_entry(menuitem)
+            self.plugin.install_menu_entries({'show': self.show_related})
             self.plugin.set_started(started=True)
 
     def find_related(self, document):

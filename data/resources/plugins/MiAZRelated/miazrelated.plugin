@@ -10,3 +10,4 @@ Help=https://github.com/t00m/MiAZ/blob/main/README.md
 Version=0.3.0
 Category=Documents
 Subcategory=Search
+MenuEntry-show=Show the documents belonging to the same case

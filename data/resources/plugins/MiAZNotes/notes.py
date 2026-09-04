@@ -71,6 +71,12 @@ plugin_info = {
     'Version':     '0.3.0',
     'Category':    'Documents',
     'Subcategory': 'Annotation',
+    'MenuEntries': [
+        ('doc', _('Create a new note'), ['<Ctrl>N']),
+        ('all', _('See all notes…')),
+        ('backup', _('Backup notes')),
+        ('restore', _('Restore notes')),
+    ],
 }
 
 
@@ -237,14 +243,17 @@ class MiAZNotesPlugin(MiAZExtension):
         if self.plugin.started():
             return
 
-        # Per-document menu entry
-        mnu_doc = self.factory.create_menuitem(
-            name=self.plugin.get_menu_item_name() + '-doc',
-            label=_('Create a new note'),
-            callback=self._on_new_doc_note,
-            shortcuts=['<Ctrl>N'],
-        )
-        self.plugin.install_menu_entry(mnu_doc)
+        # The four entries the definition declares. Backup and Restore sit
+        # under the plugin's own entry: they act on the notes, so that is
+        # where someone looks for them. They used to hang off Backup and
+        # Restore entries of their own, which put two extra top-level
+        # submenus in the workspace menu holding one item each.
+        self.plugin.install_menu_entries({
+            'doc': self._on_new_doc_note,
+            'all': self._on_open_all_notes,
+            'backup': self._on_menu_backup,
+            'restore': self._on_menu_restore,
+        })
 
         # All notes workspace page. The plugin system removes it on unload, so
         # this always builds a fresh one rather than adopting a leftover.
@@ -260,34 +269,6 @@ class MiAZNotesPlugin(MiAZExtension):
             self._all_notes, 'notes-all', _('Notes'),
             'accessories-text-editor-symbolic',
         )
-
-        # All notes menu entry
-        mnu_all = self.factory.create_menuitem(
-            name=self.plugin.get_menu_item_name() + '-all',
-            label=_('See all notes…'),
-            callback=self._on_open_all_notes,
-        )
-        self.plugin.install_menu_entry(mnu_all)
-
-        # Backup / Restore menu entries, under the plugin's own Notes entry:
-        # they act on the notes, so that is where someone looks for them. They
-        # used to hang off Backup and Restore entries of their own, which put
-        # two extra top-level submenus in the workspace menu holding one item
-        # each.
-        mnu_backup = self.factory.create_menuitem(
-            name=self.plugin.get_menu_item_name() + '-backup',
-            label=_('Backup notes'),
-            callback=self._on_menu_backup,
-        )
-        mnu_restore = self.factory.create_menuitem(
-            name=self.plugin.get_menu_item_name() + '-restore',
-            label=_('Restore notes'),
-            callback=self._on_menu_restore,
-        )
-        # Through the plugin, not through the app: an entry appended straight
-        # into a menu is not recorded, and the next menu rebuild drops it.
-        self.plugin.install_menu_entry(mnu_backup)
-        self.plugin.install_menu_entry(mnu_restore)
 
         # Headerbar pushpin indicator: visible only when the single selected
         # document actually has notes. Clicking it shows the post-it board.
