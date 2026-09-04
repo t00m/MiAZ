@@ -446,7 +446,51 @@ def some_items():
 def test_a_party_appears_once_however_often_it_is_named():
     from contacts import parties
     found = parties.parties(some_items())
-    assert [one.key for one in found] == ['JOHNDOE', 'BANKX', 'ACME']
+    assert sorted(one.key for one in found) == ['ACME', 'BANKX', 'JOHNDOE']
+
+
+def test_the_cards_are_in_alphabetical_order():
+    """They used to be in order of how many documents each party was named in,
+    which reads as no order at all once there are more than a screenful."""
+    from contacts import parties
+    found = parties.parties(some_items())
+    assert [one.key for one in found] == ['ACME', 'BANKX', 'JOHNDOE']
+
+
+def test_the_order_folds_case_and_accents():
+    from contacts import parties
+    items = [FakeItem('one.pdf', 'ZEBRA', 'ECOLE'),
+             FakeItem('two.pdf', 'ACME', 'ECOLE')]
+    for item in items:
+        item.sentby_dsc = {'ZEBRA': 'zebra AG', 'ACME': 'ACME'}[item.sentby_id]
+        item.sentto_dsc = 'École Régionale'
+    found = parties.parties(items)
+    assert [one.key for one in found] == ['ACME', 'ECOLE', 'ZEBRA']
+
+
+def test_the_order_follows_the_name_the_card_shows():
+    """A party with a contact record is shown under the name on the record."""
+    from contacts import parties
+    shown = {'ACME': 'Zulu Industries', 'BANKX': 'Bank X', 'JOHNDOE': 'John Doe'}
+    found = parties.parties(some_items(), name_of=lambda one: shown[one.key])
+    assert [one.key for one in found] == ['BANKX', 'JOHNDOE', 'ACME']
+
+
+def test_two_parties_shown_under_one_name_keep_a_stable_order():
+    from contacts import parties
+    found = parties.parties(some_items(), name_of=lambda one: 'Same Name')
+    assert [one.key for one in found] == ['ACME', 'BANKX', 'JOHNDOE']
+
+
+def test_sort_key_folds_case_accents_and_nothing_else():
+    from contacts import parties
+    assert parties.sort_key('École') == parties.sort_key('ecole')
+    assert parties.sort_key('BANK X') == parties.sort_key('bank x')
+    assert parties.sort_key('') == ''
+    assert parties.sort_key(None) == ''
+    # A space is not a letter and is left where it is: "Bank X" sorts before
+    # "Banka", the way a directory of names does.
+    assert parties.sort_key('Bank X') < parties.sort_key('Banka')
 
 
 def test_sent_and_received_are_counted_apart():

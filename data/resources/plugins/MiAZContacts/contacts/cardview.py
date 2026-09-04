@@ -90,8 +90,20 @@ class MiAZContactsView(Gtk.Box):
     def refresh(self):
         """Fold the filtered documents into one entry per party."""
         self.store.remove_all()
-        for party in partieslib.parties(self._items()):
+        for party in partieslib.parties(self._items(), name_of=self.name_of):
             self.store.append(PartyItem(party))
+
+    def name_of(self, party):
+        """What a card calls this party: the contact record, or the documents.
+
+        The cards are in alphabetical order, and this is the text they are in
+        order by. It has to be the same answer the card gives, or the order
+        reads as no order at all.
+        """
+        contact = self.plugin.get_store().get(party.key)
+        if contact is not None:
+            return contact.display_name() or party.description
+        return party.description
 
     def _items(self):
         return [self.model.get_item(index)

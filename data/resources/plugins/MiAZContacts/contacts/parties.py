@@ -3,6 +3,7 @@
 # License: GPL v3
 # Description: The distinct senders and recipients of a set of documents
 
+import unicodedata
 from dataclasses import dataclass
 
 
@@ -19,11 +20,29 @@ class Party:
         return self.sent + self.received
 
 
-def parties(items):
-    """One entry per distinct party, most documents first.
+def sort_key(text):
+    """Alphabetical the way a person reads it.
+
+    Case folded, so Bank X and BANKX sort together rather than every capital
+    coming before every small letter. Accents folded too: Ecole and École are
+    the same word and belong next to each other, not one of them after Z.
+    """
+    decomposed = unicodedata.normalize('NFKD', text or '')
+    unaccented = ''.join(c for c in decomposed if not unicodedata.combining(c))
+    return unaccented.casefold()
+
+
+def parties(items, name_of=None):
+    """One entry per distinct party, in alphabetical order.
 
     A party that both sends and receives is one entry, not two: the cards are
     about people, and a person is not two people for having answered.
+
+    `name_of` says what a card will call the party, so the order matches what
+    is read on screen. A party with a contact record is shown under the name
+    on the record, which is not always the description the documents use, and
+    sorting on the description would then put the cards in an order the names
+    on them do not explain. Without it the description is used.
     """
     found = {}
     for item in items:
@@ -40,7 +59,13 @@ def parties(items):
                 party.sent += 1
             else:
                 party.received += 1
-    return sorted(found.values(), key=lambda one: (-one.total, one.description))
+    if name_of is None:
+        def name_of(party):
+            return party.description
+    # The key breaks a tie between two parties shown under the same name, so
+    # the order is the same on every rebuild rather than however the dict fell.
+    return sorted(found.values(),
+                  key=lambda one: (sort_key(name_of(one)), one.key))
 
 
 def documents_for(key, items):

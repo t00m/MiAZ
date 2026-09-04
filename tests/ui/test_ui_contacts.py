@@ -61,6 +61,21 @@ def test_one_card_per_party_of_the_documents_on_screen(contacts, clean_view):
     assert johndoe.received >= 3
 
 
+def test_the_cards_are_in_alphabetical_order(contacts, clean_view):
+    """And in order by the name each card shows, not by the document count."""
+    workspace = clean_view.workspace
+    view = clean_view.widget('workspace-contacts')
+    workspace.show_view('contacts')
+    clean_view.wait_until(lambda: view.gridview.get_model() is not None,
+                          message='the view takes its model when shown')
+    clean_view.wait_until(lambda: _cards(view) > 0, message='cards are built')
+
+    from contacts.parties import sort_key
+    names = [view.name_of(party) for party in view.get_parties()]
+    assert len(names) > 1, 'need two parties to have an order'
+    assert names == sorted(names, key=sort_key), names
+
+
 def test_the_view_follows_the_filter(contacts, clean_view):
     workspace = clean_view.workspace
     view = clean_view.widget('workspace-contacts')
