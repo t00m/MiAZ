@@ -13,6 +13,7 @@ gi.require_version('Peas', '2')
 gi.require_version('Gtk', '4.0')
 
 from MiAZ.frontend.desktop.services import pluginsystem as ps
+from MiAZ.backend.log import MiAZLog
 
 
 def test_toast_singular():
@@ -372,4 +373,49 @@ def test_forget_takes_one_plugin_away():
 def test_forget_an_unknown_plugin_is_harmless():
     registry = ps.PluginSettingsRegistry()
     registry.forget('NeverSeen')
+    assert registry.builders() == []
+
+# ---------------------------------------------------------------------------
+# MiAZPlugin contribution helpers
+# ---------------------------------------------------------------------------
+
+class FakeAppWithSettingsRegistry:
+    """Enough app for MiAZPlugin's contribution helpers, with no display."""
+
+    def __init__(self, registry):
+        self._registry = registry
+        self._services = {'plugin-system': type('S', (), {'settings': registry})()}
+
+    def get_service(self, name):
+        return self._services.get(name)
+
+
+def a_plugin(registry, category='Documents', name='MiAZOCR'):
+    plugin = ps.MiAZPlugin.__new__(ps.MiAZPlugin)
+    plugin.app = FakeAppWithSettingsRegistry(registry)
+    plugin.name = name
+    plugin.info = {'Name': name, 'Category': category, 'Subcategory': 'Import'}
+    plugin.log = MiAZLog('test')
+    plugin._active = True
+    return plugin
+
+
+def test_install_settings_group_records_it_under_the_plugin_category():
+    registry = ps.PluginSettingsRegistry()
+    plugin = a_plugin(registry)
+    def build():
+        return None
+    assert plugin.install_settings_group(build) is True
+    assert registry.builders() == [('Documents', 'MiAZOCR', build)]
+
+
+def test_an_unloaded_plugin_installs_nothing():
+    """is_active goes false before do_deactivate runs, so a background job
+    finishing late cannot add settings for a plugin that is gone."""
+    registry = ps.PluginSettingsRegistry()
+    plugin = a_plugin(registry)
+    plugin.set_active(False)
+    def build():
+        return None
+    assert plugin.install_settings_group(build) is False
     assert registry.builders() == []

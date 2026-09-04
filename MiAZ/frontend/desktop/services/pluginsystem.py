@@ -666,6 +666,26 @@ class MiAZPlugin(GObject.GObject):
                                      'submenu', (title, menu))
         return subcategory_submenu
 
+    def install_settings_group(self, builder) -> bool:
+        """Offer this plugin's settings to the Repository Settings dialog.
+
+        `builder` is called with no arguments and returns an
+        Adw.PreferencesGroup. It is held rather than called: building a group
+        can be slow (AutoScan asks SANE what devices exist) and the dialog
+        must open without paying for it. The group is filed under the
+        heading this plugin's Category names.
+
+        Returns whether it was recorded, which is False for a plugin already
+        on its way out.
+        """
+        if not self.is_active():
+            return False
+        self._settings_registry().add(self.name, self.info['Category'], builder)
+        return True
+
+    def _settings_registry(self):
+        return self.app.get_service('plugin-system').settings
+
     def _menu_registry(self):
         return self.app.get_service('plugin-system').menus
 
@@ -896,6 +916,7 @@ class MiAZPluginSystem(GObject.GObject):
         self.views = PluginViewRegistry()
         self.widgets = PluginWidgetRegistry()
         self.menus = PluginMenuRegistry()
+        self.settings = PluginSettingsRegistry()
         self._setup_plugins_dir()
         self._plugin_list = []
         self.scan_plugin_index()
@@ -1091,6 +1112,7 @@ class MiAZPluginSystem(GObject.GObject):
             self._remove_plugin_pages(plugin)
             self._remove_plugin_views(plugin)
             self.menus.forget(plugin.get_name())
+            self.settings.forget(plugin.get_name())
             self.widgets.undo_all(plugin.get_name())
             self.log.info(f"Plugin {pname} v{pvers} unloaded")
             self.emit('plugins-updated')
