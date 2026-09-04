@@ -13,6 +13,7 @@ import gi
 gi.require_version('Gtk', '4.0')
 from gi.repository import Adw
 from gi.repository import GObject
+from gi.repository import Gtk
 
 import pytest
 
@@ -347,15 +348,24 @@ def test_the_dialog_has_three_tabs(repo_settings, clean_view):
 
 
 def test_the_metadata_tab_lists_the_five_built_in_types(repo_settings, clean_view):
-    """The five built-in types come first, in this order. A plugin that owns
-    a vocabulary of its own (MiAZPeriodicity, MiAZProjectMgt in this sandbox)
-    is free to add more after them, so this checks the prefix rather than the
-    whole list; test_a_plugin_vocabulary_joins_the_metadata_list below checks
-    for those two."""
+    """The five built-in types come first, in this exact order. A plugin
+    that owns a vocabulary of its own (MiAZPeriodicity, MiAZProjectMgt in
+    this sandbox) is free to add more after them, so this does not require
+    the whole list to be just those five; it does require that whatever
+    else is there is accounted for, by checking every remaining name against
+    the plugin system's own record of who registered a metadata view, rather
+    than only checking the list is no longer than before.
+    test_a_plugin_vocabulary_joins_the_metadata_list below checks that
+    Periodicity and Projects specifically are among them."""
     page = clean_view.widget('repository-settings-page-metadata')
     assert page is not None, 'no Metadata tab'
-    assert page.get_view_names()[:5] == [
-        'Country', 'Group', 'Purpose', 'SentBy', 'SentTo']
+    names = page.get_view_names()
+    assert names[:5] == ['Country', 'Group', 'Purpose', 'SentBy', 'SentTo']
+    registry = clean_view.service('plugin-system').settings
+    registered = {name for _owner, name, _title, _icon, _factory
+                 in registry.views()}
+    extra = names[5:]
+    assert set(extra) <= registered, (extra, registered)
 
 
 def test_choosing_a_metadata_type_switches_the_stack(repo_settings, clean_view):
@@ -374,6 +384,24 @@ def test_a_plugin_vocabulary_joins_the_metadata_list(repo_settings, clean_view):
     assert names[:5] == ['Country', 'Group', 'Purpose', 'SentBy', 'SentTo']
     assert 'Periodicity' in names, names
     assert 'Projects' in names, names
+
+
+def test_a_bogus_icon_name_does_not_show_a_broken_image(repo_settings, clean_view):
+    """install_metadata_view is public API: an out-of-tree plugin can pass
+    any icon_name it likes, and a typo or an asset that was never shipped
+    must not put a broken-image glyph in the list. add_view is called
+    directly here with a name no theme has, rather than going through a
+    plugin, since the point is add_view's own fallback, not a plugin's."""
+    page = clean_view.widget('repository-settings-page-metadata')
+    bogus = 'io.github.t00m.MiAZ-res-does-not-exist'
+    page.add_view('Bogus', 'Bogus', bogus, Gtk.Label())
+    clean_view.pump(0.2)
+    row = page.listbox.get_row_at_index(len(page.get_view_names()) - 1)
+    icon = row.get_child().get_first_child()
+    assert isinstance(icon, Gtk.Image)
+    assert icon.get_icon_name() != bogus, \
+        'the bogus name reached the widget unchanged'
+    assert icon.get_icon_name() == 'io.github.t00m.MiAZ-res-plugins'
 
 
 def test_the_manage_menu_entry_opens_the_metadata_tab(clean_view):

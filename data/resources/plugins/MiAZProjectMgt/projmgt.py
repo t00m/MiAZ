@@ -631,7 +631,7 @@ class MiAZProjectMgt(MiAZExtension):
             # built-in ones, rather than behind its own dialog.
             self.plugin.install_metadata_view(
                 'Projects', _('Projects'),
-                'io.github.t00m.MiAZ-res-projects',
+                'io.github.t00m.MiAZ-res-plugins',
                 self._build_metadata_view)
 
             # One-time setup guarded by the dropdown widget sentinel.

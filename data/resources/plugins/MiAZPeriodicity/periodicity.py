@@ -279,7 +279,7 @@ class MiAZPeriodicityPlugin(MiAZExtension):
             # built-in ones, rather than behind its own dialog.
             self.plugin.install_metadata_view(
                 'Periodicity', _('Periodicity'),
-                'io.github.t00m.MiAZ-res-periodicity',
+                'io.github.t00m.MiAZ-res-date',
                 self._build_metadata_view)
 
             # One-time setup guarded by the dropdown widget sentinel

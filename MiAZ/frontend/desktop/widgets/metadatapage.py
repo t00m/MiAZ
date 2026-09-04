@@ -3,9 +3,10 @@
 # License: GPL v3
 # Description: The Metadata tab of the Repository Settings dialog
 
-from gi.repository import Gtk
+from gi.repository import Gdk, Gtk
 
 from MiAZ.backend.log import MiAZLog
+from MiAZ.frontend.desktop.services.pluginsystem import PLUGIN_DEFAULT_ICON
 
 
 class MiAZMetadataPage(Gtk.Box):
@@ -41,7 +42,13 @@ class MiAZMetadataPage(Gtk.Box):
         self.app.add_widget('repository-settings-page-metadata', self)
 
     def add_view(self, name, title, icon_name, widget):
-        """Add one vocabulary to the list and its view to the stack."""
+        """Add one vocabulary to the list and its view to the stack.
+
+        `icon_name` comes from whatever plugin calls install_metadata_view,
+        in or out of tree, and a typo or an asset that was never shipped
+        should not put a broken-image glyph in the list. _resolve_icon_name
+        checks it against the running icon theme.
+        """
         self.stack.add_titled(widget, name, title)
         row = Gtk.ListBoxRow()
         box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
@@ -49,7 +56,7 @@ class MiAZMetadataPage(Gtk.Box):
         box.set_margin_bottom(6)
         box.set_margin_start(6)
         box.set_margin_end(6)
-        icon = Gtk.Image.new_from_icon_name(icon_name)
+        icon = Gtk.Image.new_from_icon_name(self._resolve_icon_name(icon_name))
         icon.set_pixel_size(16)
         box.append(icon)
         box.append(Gtk.Label(label=title, xalign=0))
@@ -59,6 +66,23 @@ class MiAZMetadataPage(Gtk.Box):
         self._names.append(name)
         if len(self._names) == 1:
             self.listbox.select_row(row)
+
+    def _resolve_icon_name(self, icon_name):
+        """`icon_name` if the running icon theme has it, the generic plugin
+        icon otherwise.
+
+        Mirrors MiAZPlugin.get_icon_name(), which falls back to
+        PLUGIN_DEFAULT_ICON the same way for a plugin's own icon. There is no
+        display in a headless context (an offscreen test run without one),
+        so nothing to check against there; the name is trusted as given.
+        """
+        display = Gdk.Display.get_default()
+        if display is None:
+            return icon_name
+        icon_theme = Gtk.IconTheme.get_for_display(display)
+        if icon_theme.has_icon(icon_name):
+            return icon_name
+        return PLUGIN_DEFAULT_ICON
 
     def add_plugin_views(self):
         """Add the vocabularies plugins own, after the built-in ones."""
