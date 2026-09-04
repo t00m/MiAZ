@@ -305,3 +305,71 @@ def test_a_toggled_plugin_does_not_accumulate_undo_steps():
         registry.add('MiAZFullscreen', lambda: None)
         registry.undo_all('MiAZFullscreen')
     assert registry.count('MiAZFullscreen') == 0
+
+# ---------------------------------------------------------------------------
+# Settings groups contributed by plugins
+# ---------------------------------------------------------------------------
+
+def test_a_new_settings_registry_knows_about_nothing():
+    registry = ps.PluginSettingsRegistry()
+    assert registry.builders() == []
+
+
+def test_a_builder_is_recorded_with_its_category():
+    registry = ps.PluginSettingsRegistry()
+    def build():
+        pass
+    registry.add('MiAZOCR', 'Documents', build)
+    assert registry.builders() == [('Documents', 'MiAZOCR', build)]
+
+
+def test_builders_are_ordered_by_category_then_plugin():
+    """The Settings tab reads them in this order, so it is the registry that
+    decides where each group lands rather than the order plugins loaded in."""
+    registry = ps.PluginSettingsRegistry()
+    registry.add('MiAZWSFont', 'Interface', lambda: None)
+    registry.add('MiAZOCR', 'Documents', lambda: None)
+    registry.add('MiAZAutoScan', 'Documents', lambda: None)
+    assert [(category, owner) for category, owner, _b in registry.builders()] == [
+        ('Documents', 'MiAZAutoScan'),
+        ('Documents', 'MiAZOCR'),
+        ('Interface', 'MiAZWSFont'),
+    ]
+
+
+def test_a_plugin_can_contribute_several_groups():
+    registry = ps.PluginSettingsRegistry()
+    def first():
+        pass
+    def second():
+        pass
+    registry.add('MiAZNotes', 'Documents', first)
+    registry.add('MiAZNotes', 'Documents', second)
+    assert len(registry.builders()) == 2
+
+
+def test_the_same_builder_twice_is_recorded_once():
+    """A plugin re-activated without a clean unload must not show its group
+    twice."""
+    registry = ps.PluginSettingsRegistry()
+    def build():
+        pass
+    registry.add('MiAZNotes', 'Documents', build)
+    registry.add('MiAZNotes', 'Documents', build)
+    assert registry.builders() == [('Documents', 'MiAZNotes', build)]
+
+
+def test_forget_takes_one_plugin_away():
+    registry = ps.PluginSettingsRegistry()
+    def keep():
+        pass
+    registry.add('MiAZNotes', 'Documents', lambda: None)
+    registry.add('MiAZWSFont', 'Interface', keep)
+    registry.forget('MiAZNotes')
+    assert registry.builders() == [('Interface', 'MiAZWSFont', keep)]
+
+
+def test_forget_an_unknown_plugin_is_harmless():
+    registry = ps.PluginSettingsRegistry()
+    registry.forget('NeverSeen')
+    assert registry.builders() == []

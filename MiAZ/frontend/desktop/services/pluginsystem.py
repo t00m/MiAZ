@@ -213,6 +213,37 @@ class PluginMenuRegistry:
                 submenu.append_submenu(title, menu)
 
 
+class PluginSettingsRegistry:
+    """Which settings group each plugin offers, and how to build it.
+
+    A builder, not a group. Building AutoScan's group runs SANE and building
+    the OCR one shells out to tesseract, so nothing is built until the
+    Settings tab is actually looked at. Recording the callable also means a
+    plugin enabled while the dialog is closed still shows its settings the
+    next time it opens, which a signal emitted on dialog open cannot do.
+    """
+
+    def __init__(self):
+        self._entries = []
+
+    def add(self, owner: str, category: str, builder):
+        """Remember one builder. The same one twice is still one."""
+        entry = (category, owner, builder)
+        if entry not in self._entries:
+            self._entries.append(entry)
+
+    def builders(self) -> list:
+        """Every builder as (category, owner, builder), in display order.
+
+        Sorted here rather than at the point of display, so the groups sit in
+        the same order whatever order the plugins happened to load in.
+        """
+        return sorted(self._entries, key=lambda entry: (entry[0], entry[1]))
+
+    def forget(self, owner: str):
+        self._entries = [entry for entry in self._entries if entry[1] != owner]
+
+
 class PluginPageRegistry:
     """Which workspace pages each plugin contributed.
 
