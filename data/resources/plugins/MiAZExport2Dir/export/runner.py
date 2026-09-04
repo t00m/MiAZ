@@ -33,8 +33,13 @@ def export_documents(documents, target_dir, docs_dir, copy,
         if report is not None:
             report(doc_id, number / total)
         try:
-            target = _target_for(doc_id, fields, labels, extension,
-                                 target_dir, pattern, readable, taken)
+            relative = relative_target(fields, labels, extension, doc_id,
+                                       pattern=pattern, readable=readable)
+            target = unique_target(os.path.join(target_dir, relative), taken)
+            if os.path.dirname(relative):
+                # Only the folders the pattern asks for. The target itself was
+                # checked by the dialog and is not this function's to create.
+                os.makedirs(os.path.dirname(target), exist_ok=True)
         except ValueError:
             failures.append((doc_id, _('the name is not in MiAZ format')))
             continue
@@ -53,18 +58,19 @@ def export_documents(documents, target_dir, docs_dir, copy,
     return copied, failures
 
 
-def _target_for(doc_id, fields, labels, extension,
-                target_dir, pattern, readable, taken):
-    """Where this document goes, with its directories already created."""
-    directory = target_dir
+def relative_target(fields, labels, extension, doc_id, pattern='', readable=False):
+    """Where a document goes under the target folder, as a relative path.
+
+    The dialog shows this as its example line and the export copies to it, so
+    what the user is promised and what happens are the same function.
+    """
+    parts = []
     if pattern:
         # Without readable names the directories keep the keys, which is what
         # a pattern is for: short, sortable, the same as the filename.
         parts = directory_parts(fields, pattern, labels if readable else None)
-        directory = os.path.join(target_dir, *parts)
-        os.makedirs(directory, exist_ok=True)
     if readable:
         basename = readable_name(fields, extension, labels)
     else:
         basename = os.path.basename(doc_id)
-    return unique_target(os.path.join(directory, basename), taken)
+    return os.path.join(*parts, basename) if parts else basename

@@ -31,9 +31,10 @@ plugin_info = {
         'Subcategory':   'Export'
     }
 
-# What the dialog starts with the first time, before there is anything
-# remembered: /{target}/{Country}/{Year}/{month}/{Group}/{Purpose}
-DEFAULT_PATTERN = 'CYmGP'
+# The checkboxes, in two rows. The letters are the pattern the export speaks;
+# the order the folders nest in is layout.ORDER, not the order they are ticked.
+DATE_KEYS = 'Ymd'
+FIELD_KEYS = 'CGBPT'
 
 # How many failed documents the closing dialog names before it stops. The rest
 # are in the log; a dialog listing three hundred filenames is not read.
@@ -101,6 +102,8 @@ class Export2Dir(MiAZExtension):
 
     def get_settings(self) -> dict:
         """What the last export used. Defaults when there is nothing yet."""
+        from export.layout import canonical
+
         settings = {}
         configfile = self.plugin.get_config_file()
         if os.path.exists(configfile):
@@ -111,10 +114,16 @@ class Export2Dir(MiAZExtension):
                 # refuse the export: start from the defaults instead.
                 self.log.warning(f"Could not read {configfile}: {error}")
                 settings = {}
+        # A file written before the checkboxes carries the pattern and a
+        # separate switch saying whether it was in use. The switch wins, so an
+        # export that was flat comes back flat, and canonical() throws away
+        # whatever a hand-edited file put in the string.
+        pattern = settings.get('pattern', '')
+        if not settings.get('use_pattern', bool(pattern)):
+            pattern = ''
         return {
             'target_dir': settings.get('target_dir', ''),
-            'pattern': settings.get('pattern', DEFAULT_PATTERN),
-            'use_pattern': settings.get('use_pattern', False),
+            'pattern': canonical(pattern),
             'readable': settings.get('readable', False),
         }
 
@@ -127,8 +136,6 @@ class Export2Dir(MiAZExtension):
     # The dialog
 
     def export(self, *args):
-        from export.layout import PATTERNS
-
         self.items = self.workspace.get_selected_items()
         if self.actions.stop_if_no_items():
             self.log.debug("No items selected")
@@ -142,35 +149,15 @@ class Export2Dir(MiAZExtension):
         frame = Gtk.Frame()
         listbox = Gtk.ListBox.new()
 
-        ## Pattern row
-        self.chkPattern = self.factory.create_button_check(title=_('Export with pattern'), callback=None)
-        self.chkPattern.set_active(settings['use_pattern'])
-        self.chkPattern.set_valign(Gtk.Align.CENTER)
-        self.chkPattern.set_tooltip_text(_('Check this box to activate the pattern.\nOtherwise, all documents will be exported in the same folder.'))
-        self.app.add_widget('plugin-export2dir-chkpattern', self.chkPattern)
-        self.etyPattern = self.app.add_widget('plugin-export2dir-etypattern', Gtk.Entry())
-        self.etyPattern.set_valign(Gtk.Align.CENTER)
-        self.etyPattern.set_text(settings['pattern'])
-        widgets = []
-        label = Gtk.Label.new(_('Each letter represent a directory:\n'))
-        widgets.append(label)
-        for key in PATTERNS:
-            label = Gtk.Label()
-            label.set_markup(f'<b>{key}</b> = {PATTERNS[key]}')
-            label.set_xalign(0.0)
-            widgets.append(label)
-        btpPattern = self.factory.create_button_popover(icon_name='io.github.t00m.MiAZ-dialog-information-symbolic', widgets=widgets)
-        btpPattern.set_valign(Gtk.Align.CENTER)
-        hbox = self.factory.create_box_horizontal()
-        hbox.append(self.chkPattern)
-        hbox.append(self.etyPattern)
-        hbox.append(btpPattern)
-        self.row_pattern = Adw.ActionRow(title=_('Select pattern'))
-        self.row_pattern.add_suffix(hbox)
-        listbox.append(self.row_pattern)
+        ## Folder rows: one checkbox per field, nesting in a fixed order
+        self.checks = {}
+        ticked = settings['pattern']
+        self.row_date = self._add_check_row(listbox, _('Folders by date'), DATE_KEYS, ticked)
+        self.row_field = self._add_check_row(listbox, _('Folders by field'), FIELD_KEYS, ticked)
 
         ## Readable names row
-        self.chkReadable = self.factory.create_button_check(title=_('Readable names'), callback=None)
+        self.chkReadable = self.factory.create_button_check(title=_('Readable names'),
+                                                            callback=self._on_layout_changed)
         self.chkReadable.set_active(settings['readable'])
         self.chkReadable.set_valign(Gtk.Align.CENTER)
         self.chkReadable.set_tooltip_text(_('Rename the exported copies using the descriptions,\nfor someone who does not know MiAZ filenames.'))
@@ -189,13 +176,69 @@ class Export2Dir(MiAZExtension):
         self.row_target.set_subtitle(self.target_dir or _('No target folder set yet'))
         self.row_target.add_suffix(button)
         listbox.append(self.row_target)
+
+        ## Example row, last: every row above it feeds the path it shows
+        self.row_example = Adw.ActionRow(title=_('Example'))
+        self.row_example.set_subtitle_lines(2)
+        # A subtitle is Pango markup by default, and a path is not: a concept
+        # holding an ampersand would be dropped, or worse, break the label.
+        self.row_example.set_use_markup(False)
+        listbox.append(self.row_example)
+
         frame.set_child(listbox)
+        self._on_layout_changed()
 
         # Dialog
         parent = self.app.get_widget('window')
         title = _('Export to directory')
         dialog = self.srvdlg.show_action(title=title, callback=self._on_dialog_response, widget=frame, width=800)
         dialog.present(parent)
+
+    def _add_check_row(self, listbox, title, keys, ticked):
+        """One row of checkboxes, one per pattern letter in keys."""
+        from export.layout import PATTERNS
+
+        box = self.factory.create_box_horizontal(spacing=12)
+        box.set_valign(Gtk.Align.CENTER)
+        for key in keys:
+            check = Gtk.CheckButton(label=PATTERNS[key])
+            check.set_active(key in ticked)
+            check.connect('toggled', self._on_layout_changed)
+            self.app.add_widget(f'plugin-export2dir-check-{key}', check)
+            self.checks[key] = check
+            box.append(check)
+        row = Adw.ActionRow(title=title)
+        row.add_suffix(box)
+        listbox.append(row)
+        return row
+
+    def get_pattern(self) -> str:
+        """The ticked letters, in the order the folders nest."""
+        from export.layout import canonical
+
+        return canonical(key for key, check in self.checks.items() if check.get_active())
+
+    def _on_layout_changed(self, *args):
+        """Redraw the example line. Every widget in the dialog feeds it."""
+        from export.runner import relative_target
+
+        pattern = self.get_pattern()
+        folder = self.target_dir or _('the target folder')
+        document = self._describe(self.items[:1])
+        if not document:
+            self.row_example.set_subtitle('')
+            return
+        doc_id, fields, labels, extension = document[0]
+        try:
+            relative = relative_target(fields, labels, extension, doc_id,
+                                       pattern=pattern,
+                                       readable=self.chkReadable.get_active())
+        except (ValueError, IndexError):
+            # The first selected document is not in MiAZ format. The export
+            # will say so; the example has nothing to show.
+            self.row_example.set_subtitle(_('This document cannot be exported with folders'))
+            return
+        self.row_example.set_subtitle(os.path.join(folder, relative))
 
     def _on_select_folder(self, *args):
         self.factory.create_filechooser_for_directories(self._on_select_folder_response,
@@ -206,6 +249,7 @@ class Export2Dir(MiAZExtension):
             folder = dialog.select_folder_finish(result)
             self.target_dir = folder.get_path()
             self.row_target.set_subtitle(self.target_dir)
+            self._on_layout_changed()
         except Exception as error:
             self.srvdlg.show_error(title=_('Error selecting files'), body=str(error))
             self.log.error(f"Error selecting files: {error}")
@@ -213,8 +257,6 @@ class Export2Dir(MiAZExtension):
     # The export itself
 
     def _on_dialog_response(self, dialog, response, data):
-        from export.layout import invalid_keys
-
         if response != 'apply':
             self.srvdlg.show_error(title=_('Action canceled'), body=_('No documents exported'))
             return
@@ -226,32 +268,21 @@ class Export2Dir(MiAZExtension):
                                    body=_('Choose an existing folder before exporting'))
             return
 
-        use_pattern = self.chkPattern.get_active()
-        pattern = self.etyPattern.get_text().strip()
+        pattern = self.get_pattern()
         readable = self.chkReadable.get_active()
 
-        if use_pattern:
-            unknown = invalid_keys(pattern)
-            if unknown:
-                # An unknown letter used to raise halfway through the copy,
-                # leaving a half-written tree behind.
-                self.srvdlg.show_error(
-                    title=_('Pattern not valid'),
-                    body=_('These letters mean nothing here: {keys}').format(
-                        keys=' '.join(unknown)))
-                return
-            if not pattern:
-                use_pattern = False
-
+        # use_pattern is written for a settings file an older build might read.
+        # Here the ticked boxes are the whole answer: none of them means one
+        # flat folder, so there is nothing left to validate.
         self.save_settings({'target_dir': self.target_dir,
-                            'pattern': pattern or DEFAULT_PATTERN,
-                            'use_pattern': use_pattern,
+                            'pattern': pattern,
+                            'use_pattern': bool(pattern),
                             'readable': readable})
 
         documents = self._describe(self.items)
         target_dir = self.target_dir
         self.srvprg.run(
-            lambda report: self._copy_all(documents, target_dir, pattern if use_pattern else '',
+            lambda report: self._copy_all(documents, target_dir, pattern,
                                           readable, report),
             title=_('Export to directory'),
             message=_('Exporting {total} documents…').format(total=len(documents)),

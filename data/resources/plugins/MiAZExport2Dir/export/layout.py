@@ -26,6 +26,11 @@ PATTERNS = {
     'T': _('Sent to'),
 }
 
+# How the folders nest, whatever order the boxes were ticked in: the date
+# first, then the fields as the filename has them. One fixed order means the
+# dialog can be a row of checkboxes instead of a string to type.
+ORDER = 'YmdCGBPT'
+
 # Position of each pattern letter in the seven filename fields. The date has
 # no entry: Y, m and d are parts of field 0, not fields of their own.
 FIELD = {
@@ -45,13 +50,15 @@ UNKNOWN = '_unknown'
 _UNSAFE = re.compile(r'[\\/\x00-\x1f]')
 
 
-def invalid_keys(pattern: str) -> list:
-    """The letters of the pattern this module does not know, in order."""
-    unknown = []
-    for key in pattern:
-        if key not in PATTERNS and key not in unknown:
-            unknown.append(key)
-    return unknown
+def canonical(keys) -> str:
+    """The ticked letters as a pattern, in ORDER, without what it does not know.
+
+    keys is read once, so an iterator is as good as a string: a generator over
+    the ticked checkboxes was being consumed by the first membership test and
+    every letter after the first was lost.
+    """
+    ticked = set(keys)
+    return ''.join(key for key in ORDER if key in ticked)
 
 
 def sanitize(segment: str) -> str:

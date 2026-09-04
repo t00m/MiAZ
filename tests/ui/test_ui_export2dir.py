@@ -54,14 +54,18 @@ def dialogs_closed(miaz):
         miaz.pump(0.3)
 
 
+def tick(plugin, pattern):
+    """Set the folder checkboxes to exactly the given letters."""
+    for key, check in plugin.checks.items():
+        check.set_active(key in pattern)
+
+
 def run_export(miaz, plugin, target_dir, pattern='', readable=False):
     """Open the dialog, fill it in, and press Apply."""
     plugin.export()
     miaz.pump(0.3)
     plugin.target_dir = target_dir
-    plugin.chkPattern.set_active(bool(pattern))
-    if pattern:
-        plugin.etyPattern.set_text(pattern)
+    tick(plugin, pattern)
     plugin.chkReadable.set_active(readable)
     plugin._on_dialog_response(None, 'apply', None)
     miaz.pump(0.3)
@@ -89,7 +93,9 @@ def test_the_documents_reach_the_target_folder(miaz, export2dir, tmp_path):
         assert name.endswith('.pdf')
 
 
-def test_the_pattern_builds_the_directories(miaz, export2dir, tmp_path):
+def test_the_ticked_boxes_build_the_directories(miaz, export2dir, tmp_path):
+    """Country and Year ticked, and the folders nest the way the filename
+    reads: the year first, whatever order the boxes were ticked in."""
     target = str(tmp_path / 'tree')
     os.makedirs(target)
     selected = len(miaz.workspace.get_selected_items())
@@ -100,9 +106,9 @@ def test_the_pattern_builds_the_directories(miaz, export2dir, tmp_path):
     dialogs_closed(miaz)
 
     for name in exported_files(target):
-        country, year, _basename = name.split(os.sep)
-        assert len(country) == 2, name
+        year, country, _basename = name.split(os.sep)
         assert year.isdigit() and len(year) == 4, name
+        assert len(country) == 2, name
 
 
 def test_readable_names_carry_the_descriptions(miaz, export2dir, tmp_path):
@@ -131,15 +137,42 @@ def test_a_missing_target_folder_stops_the_export(miaz, export2dir):
     dialogs_closed(miaz)
 
 
-def test_a_pattern_letter_that_means_nothing_stops_the_export(miaz, export2dir, tmp_path):
-    """An unknown letter used to raise halfway through the copy."""
-    target = str(tmp_path / 'bad-pattern')
+def test_the_example_says_where_the_first_document_will_go(miaz, export2dir, tmp_path):
+    """The line that replaced the letters: it has to follow every box."""
+    target = str(tmp_path / 'example')
     os.makedirs(target)
 
-    run_export(miaz, export2dir, target, pattern='Cz')
-    miaz.pump(0.5)
-    dialogs_closed(miaz)
+    export2dir.export()
+    miaz.pump(0.3)
+    # Standing in for the folder chooser, which redraws the example itself.
+    # The dialog opens on the last export's settings, so the state every
+    # assertion below starts from is set here rather than assumed.
+    export2dir.target_dir = target
+    tick(export2dir, '')
+    export2dir.chkReadable.set_active(False)
+    export2dir._on_layout_changed()
+    miaz.pump(0.2)
+    flat = export2dir.row_example.get_subtitle()
+    assert flat.startswith(target)
+    assert os.sep not in flat[len(target) + 1:], flat
 
+    tick(export2dir, 'Ym')
+    miaz.pump(0.2)
+    nested = export2dir.row_example.get_subtitle()
+    assert nested != flat
+    assert os.path.relpath(nested, target).split(os.sep)[0].isdigit(), nested
+
+    assert ' - ' not in os.path.basename(nested), nested
+
+    export2dir.chkReadable.set_active(True)
+    miaz.pump(0.2)
+    readable = export2dir.row_example.get_subtitle()
+    assert readable != nested
+    assert ' - ' in os.path.basename(readable), readable
+
+    export2dir._on_dialog_response(None, 'cancel', None)
+    miaz.pump(0.3)
+    dialogs_closed(miaz)
     assert exported_files(target) == []
 
 
@@ -154,15 +187,15 @@ def test_the_folder_and_the_pattern_are_remembered(miaz, export2dir, tmp_path):
     dialogs_closed(miaz)
 
     settings = export2dir.get_settings()
-    assert settings == {'target_dir': target, 'pattern': 'G',
-                        'use_pattern': True, 'readable': True}
+    assert settings == {'target_dir': target, 'pattern': 'G', 'readable': True}
 
-    # And the next dialog opens with them already filled in.
+    # And the next dialog opens with the boxes already ticked.
     export2dir.export()
     miaz.pump(0.3)
     assert export2dir.target_dir == target
-    assert export2dir.etyPattern.get_text() == 'G'
-    assert export2dir.chkPattern.get_active() is True
+    assert export2dir.get_pattern() == 'G'
+    assert export2dir.checks['G'].get_active() is True
+    assert export2dir.checks['C'].get_active() is False
     assert export2dir.chkReadable.get_active() is True
     export2dir._on_dialog_response(None, 'cancel', None)
     miaz.pump(0.3)

@@ -26,23 +26,6 @@ FIELDS = ['20260904', 'ES', 'FIN', 'BANKX', 'INV', 'mortgage', 'JOHNDOE']
 LABELS = ['', 'Spain', 'Finance', 'Bank X', 'Invoice', 'mortgage', 'John Doe']
 
 
-# pattern validation
-
-def test_every_documented_letter_is_valid():
-    from export.layout import PATTERNS, invalid_keys
-    assert invalid_keys(''.join(PATTERNS)) == []
-
-
-def test_an_unknown_letter_is_reported():
-    from export.layout import invalid_keys
-    assert invalid_keys('CYxGz') == ['x', 'z']
-
-
-def test_an_unknown_letter_is_reported_once():
-    from export.layout import invalid_keys
-    assert invalid_keys('xx') == ['x']
-
-
 # directory_parts
 
 def test_the_pattern_letters_become_directories_in_order():
@@ -269,3 +252,83 @@ def test_every_document_is_reported_while_it_is_copied():
     export_documents(documents, '/out', '/repo', copier([]),
                      report=lambda text, fraction: seen.append((text, fraction)))
     assert seen == [('a.pdf', 0.5), ('b.pdf', 1.0)]
+
+
+# canonical: the ticked fields always nest in filename order
+
+def test_the_letters_come_back_in_filename_order():
+    from export.layout import canonical
+    assert canonical('CYmGP') == 'YmCGP'
+
+
+def test_the_date_parts_lead_and_keep_their_own_order():
+    from export.layout import canonical
+    assert canonical('dmY') == 'Ymd'
+
+
+def test_the_parties_sit_where_the_filename_puts_them():
+    from export.layout import canonical
+    assert canonical('TPBGC') == 'CGBPT'
+
+
+def test_a_letter_that_means_nothing_is_dropped():
+    from export.layout import canonical
+    assert canonical('CxYz') == 'YC'
+
+
+def test_a_letter_ticked_twice_appears_once():
+    from export.layout import canonical
+    assert canonical('CC') == 'C'
+
+
+def test_nothing_ticked_is_no_folders():
+    from export.layout import canonical
+    assert canonical('') == ''
+
+
+def test_every_documented_letter_survives_the_ordering():
+    from export.layout import ORDER, PATTERNS, canonical
+    assert sorted(canonical(''.join(PATTERNS))) == sorted(PATTERNS)
+    assert canonical(''.join(PATTERNS)) == ORDER
+
+
+def test_the_order_is_the_one_the_filename_has():
+    """Date first, then the fields as they appear in the name: country, group,
+    sender, purpose, recipient."""
+    from export.layout import ORDER
+    assert ORDER == 'YmdCGBPT'
+
+
+# relative_target: the one answer to "where does this document go", shared by
+# the export and by the example line in the dialog
+
+def test_with_no_pattern_the_document_keeps_its_name():
+    from export.runner import relative_target
+    assert relative_target(FIELDS, None, 'pdf', 'a.pdf') == 'a.pdf'
+
+
+def test_the_pattern_becomes_the_relative_directories():
+    from export.runner import relative_target
+    assert relative_target(FIELDS, None, 'pdf', 'a.pdf', pattern='YmC') == \
+        os.path.join('2026', '09', 'ES', 'a.pdf')
+
+
+def test_readable_renames_the_file_and_the_directories():
+    from export.runner import relative_target
+    assert relative_target(FIELDS, LABELS, 'pdf', 'a.pdf', pattern='C',
+                           readable=True) == os.path.join(
+        'Spain',
+        '2026-09-04 - Spain - Finance - Bank X - Invoice - mortgage - John Doe.pdf')
+
+
+def test_the_directories_keep_the_keys_unless_the_names_are_readable():
+    from export.runner import relative_target
+    assert relative_target(FIELDS, LABELS, 'pdf', 'a.pdf', pattern='C') == \
+        os.path.join('ES', 'a.pdf')
+
+
+def test_the_ticked_letters_can_arrive_as_an_iterator():
+    """The dialog passes a generator over the checkboxes. Reading it twice
+    dropped every letter after the first."""
+    from export.layout import canonical
+    assert canonical(key for key in 'CYmGP') == 'YmCGP'

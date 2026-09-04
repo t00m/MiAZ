@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 0.1\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-09-04 00:19+0200\n"
+"POT-Creation-Date: 2026-09-04 06:58+0200\n"
 "PO-Revision-Date: 2026-08-19 23:30+0200\n"
 "Last-Translator: Tomás Vírseda <tomasvirseda@gmail.com>\n"
 "Language-Team: Spanish\n"
@@ -1685,7 +1685,7 @@ msgid "Something went wrong."
 msgstr "Algo ha ido mal."
 
 #: MiAZ/frontend/desktop/services/factory.py:103
-#: data/resources/plugins/MiAZExport2Dir/export2dir.py:190
+#: data/resources/plugins/MiAZExport2Dir/export2dir.py:181
 msgid "Select folder"
 msgstr "Seleccionar carpeta"
 
@@ -4236,52 +4236,44 @@ msgstr "Mes"
 msgid "Day"
 msgstr "Día"
 
-#: data/resources/plugins/MiAZExport2Dir/export/runner.py:39
+#: data/resources/plugins/MiAZExport2Dir/export/runner.py:44
 msgid "the name is not in MiAZ format"
 msgstr "el nombre no sigue el formato de MiAZ"
 
-#: data/resources/plugins/MiAZExport2Dir/export/runner.py:42
+#: data/resources/plugins/MiAZExport2Dir/export/runner.py:47
 msgid "the name has too few fields"
 msgstr "el nombre tiene menos campos de los necesarios"
 
-#: data/resources/plugins/MiAZExport2Dir/export/runner.py:52
+#: data/resources/plugins/MiAZExport2Dir/export/runner.py:57
 msgid "the file could not be copied"
 msgstr "no se pudo copiar el archivo"
 
 #: data/resources/plugins/MiAZExport2Dir/export2dir.py:24
-#: data/resources/plugins/MiAZExport2Dir/export2dir.py:92
-#: data/resources/plugins/MiAZExport2Dir/export2dir.py:200
-#: data/resources/plugins/MiAZExport2Dir/export2dir.py:262
+#: data/resources/plugins/MiAZExport2Dir/export2dir.py:93
+#: data/resources/plugins/MiAZExport2Dir/export2dir.py:192
+#: data/resources/plugins/MiAZExport2Dir/export2dir.py:286
 msgid "Export to directory"
 msgstr "Exportar a un directorio"
 
-#. # Pattern row
-#: data/resources/plugins/MiAZExport2Dir/export2dir.py:150
-msgid "Export with pattern"
-msgstr "Exportar con este patrón"
+#: data/resources/plugins/MiAZExport2Dir/export2dir.py:155
+msgid "Folders by date"
+msgstr "Carpetas por fecha"
 
-#: data/resources/plugins/MiAZExport2Dir/export2dir.py:153
-msgid ""
-"Check this box to activate the pattern.\n"
-"Otherwise, all documents will be exported in the same folder."
-msgstr ""
-"Marque esta casilla para activar el patrón.\n"
-"De lo contrario, todos los documentos se exportarán en la misma carpeta."
+#: data/resources/plugins/MiAZExport2Dir/export2dir.py:156
+msgid "Folders by field"
+msgstr "Carpetas por campo"
 
+#. # Example row: the path the first selected document will take
 #: data/resources/plugins/MiAZExport2Dir/export2dir.py:159
-msgid "Each letter represent a directory:\n"
-msgstr "Cada letra representa un directorio:\n"
-
-#: data/resources/plugins/MiAZExport2Dir/export2dir.py:172
-msgid "Select pattern"
-msgstr "Seleccionar patrón"
+msgid "Example"
+msgstr "Ejemplo"
 
 #. # Readable names row
-#: data/resources/plugins/MiAZExport2Dir/export2dir.py:177
+#: data/resources/plugins/MiAZExport2Dir/export2dir.py:167
 msgid "Readable names"
 msgstr "Nombres legibles"
 
-#: data/resources/plugins/MiAZExport2Dir/export2dir.py:180
+#: data/resources/plugins/MiAZExport2Dir/export2dir.py:171
 msgid ""
 "Rename the exported copies using the descriptions,\n"
 "for someone who does not know MiAZ filenames."
@@ -4289,62 +4281,63 @@ msgstr ""
 "Renombra las copias exportadas usando las descripciones,\n"
 "para quien no conoce los nombres de archivo de MiAZ."
 
-#: data/resources/plugins/MiAZExport2Dir/export2dir.py:182
+#: data/resources/plugins/MiAZExport2Dir/export2dir.py:173
 msgid "Use readable names"
 msgstr "Usar nombres legibles"
 
-#: data/resources/plugins/MiAZExport2Dir/export2dir.py:183
+#: data/resources/plugins/MiAZExport2Dir/export2dir.py:174
 msgid "The documents in the repository are not renamed"
 msgstr "Los documentos del repositorio no se renombran"
 
-#: data/resources/plugins/MiAZExport2Dir/export2dir.py:192
+#: data/resources/plugins/MiAZExport2Dir/export2dir.py:183
 msgid "Select target folder"
 msgstr "Seleccionar el directorio destino"
 
-#: data/resources/plugins/MiAZExport2Dir/export2dir.py:193
+#: data/resources/plugins/MiAZExport2Dir/export2dir.py:184
 msgid "No target folder set yet"
 msgstr "Aún no se ha definido una carpeta de destino"
 
-#: data/resources/plugins/MiAZExport2Dir/export2dir.py:214
+#: data/resources/plugins/MiAZExport2Dir/export2dir.py:225
+msgid "the target folder"
+msgstr "la carpeta de destino"
+
+#. The first selected document is not in MiAZ format. The export
+#. will say so; the example has nothing to show.
+#: data/resources/plugins/MiAZExport2Dir/export2dir.py:238
+msgid "This document cannot be exported with folders"
+msgstr "Este documento no se puede exportar con carpetas"
+
+#: data/resources/plugins/MiAZExport2Dir/export2dir.py:253
 msgid "Error selecting files"
 msgstr "Error al seleccionar archivos"
 
-#: data/resources/plugins/MiAZExport2Dir/export2dir.py:225
+#: data/resources/plugins/MiAZExport2Dir/export2dir.py:260
 msgid "Action canceled"
 msgstr "Acción cancelada"
 
-#: data/resources/plugins/MiAZExport2Dir/export2dir.py:225
+#: data/resources/plugins/MiAZExport2Dir/export2dir.py:260
 msgid "No documents exported"
 msgstr "No se exportó ningún documento"
 
-#: data/resources/plugins/MiAZExport2Dir/export2dir.py:231
+#: data/resources/plugins/MiAZExport2Dir/export2dir.py:266
 msgid "No target folder"
 msgstr "Sin carpeta de destino"
 
-#: data/resources/plugins/MiAZExport2Dir/export2dir.py:232
+#: data/resources/plugins/MiAZExport2Dir/export2dir.py:267
 msgid "Choose an existing folder before exporting"
 msgstr "Elija una carpeta existente antes de exportar"
 
-#: data/resources/plugins/MiAZExport2Dir/export2dir.py:245
-msgid "Pattern not valid"
-msgstr "Patrón no válido"
-
-#: data/resources/plugins/MiAZExport2Dir/export2dir.py:246
-#, python-brace-format
-msgid "These letters mean nothing here: {keys}"
-msgstr "Estas letras no significan nada aquí: {keys}"
-
-#: data/resources/plugins/MiAZExport2Dir/export2dir.py:263
+#: data/resources/plugins/MiAZExport2Dir/export2dir.py:287
 #, python-brace-format
 msgid "Exporting {total} documents…"
 msgstr "Exportando {total} documentos…"
 
-#: data/resources/plugins/MiAZExport2Dir/export2dir.py:302
+#: data/resources/plugins/MiAZExport2Dir/export2dir.py:326
 #, python-brace-format
 msgid "{copied} of {total} documents exported"
 msgstr "{copied} de {total} documentos exportados"
 
-#: data/resources/plugins/MiAZExport2Dir/export2dir.py:309
+#: data/resources/plugins/MiAZExport2Dir/export2dir.py:333
 #, python-brace-format
 msgid "and {rest} more, in the log"
 msgstr "y {rest} más, en el registro"
@@ -5542,6 +5535,29 @@ msgstr "Imprimir"
 #: data/resources/plugins/MiAZInsights/insights/render.py:361
 msgid "Generated"
 msgstr "Generado"
+
+#~ msgid "Export with pattern"
+#~ msgstr "Exportar con este patrón"
+
+#~ msgid ""
+#~ "Check this box to activate the pattern.\n"
+#~ "Otherwise, all documents will be exported in the same folder."
+#~ msgstr ""
+#~ "Marque esta casilla para activar el patrón.\n"
+#~ "De lo contrario, todos los documentos se exportarán en la misma carpeta."
+
+#~ msgid "Each letter represent a directory:\n"
+#~ msgstr "Cada letra representa un directorio:\n"
+
+#~ msgid "Select pattern"
+#~ msgstr "Seleccionar patrón"
+
+#~ msgid "Pattern not valid"
+#~ msgstr "Patrón no válido"
+
+#, python-brace-format
+#~ msgid "These letters mean nothing here: {keys}"
+#~ msgstr "Estas letras no significan nada aquí: {keys}"
 
 #, python-brace-format
 #~ msgid "Sent to {recipient}"
