@@ -552,13 +552,10 @@ class MiAZPlugins(MiAZConfigView):
         self.toolbar_buttons_Av.append(btnInfo)
 
         # Used view buttons. Plugins have no editable description, so drop the
-        # edit button inherited from MiAZSelector and keep only the config one.
+        # edit button inherited from MiAZSelector. Configuring a plugin is the
+        # Settings tab's job now, not a button here.
         if hasattr(self, 'btnSlEdit'):
             self.toolbar_buttons_Sl.remove(self.btnSlEdit)
-        self.btnConfig = factory.create_button(icon_name='io.github.t00m.MiAZ-config-symbolic', callback=self._configure_plugin_options)
-        self.btnConfig.set_valign(Gtk.Align.CENTER)
-        # ~ self.btnConfig.set_visible(False)
-        self.toolbar_buttons_Sl.append(self.btnConfig)
 
         # Setup plugin (sub)categories dropdowns
         boxFilters = factory.create_box_vertical(margin=0, spacing=6)
@@ -572,7 +569,6 @@ class MiAZPlugins(MiAZConfigView):
 
         # Action to be done when selecting an used plugin
         # ~ selection_model = self.viewSl.cv.get_model()
-        # ~ selection_model.connect('selection-changed', self._on_plugin_used_selected)
 
         # Fill-in dropdowns
         ENV = self.app.get_env()
@@ -812,43 +808,6 @@ class MiAZPlugins(MiAZConfigView):
         else:
             body = _('{title} {desc}  not removed from de list of available {item_types}').format(title=i_title, desc=item_dsc, item_types=item_type.__title_plural__.lower())
             self.srvdlg.show_toast(body)
-
-    def _on_plugin_used_selected(self, selection_model, position, n_items):
-        selected_plugin = selection_model.get_selected_item()
-        plugin_id = f"plugin-{selected_plugin.id}"
-        plugin = self.app.get_widget(plugin_id)
-        has_settings = False
-        if plugin is not None:
-            has_settings = hasattr(plugin, 'show_settings') and callable(getattr(plugin, 'show_settings'))
-        self.btnConfig.set_visible(has_settings)
-
-    def _configure_plugin_options(self, *args):
-        srvdlg = self.app.get_service('dialogs')
-        title = _('Plugin management')
-        selected_plugin = self.viewSl.get_selected()
-        if selected_plugin is None:
-            return
-        self.log.debug(f"Open configuration dialog for plugin {selected_plugin.id}")
-        ENV = self.app.get_env()
-        util = self.app.get_service('util')
-        plugin_id = f"plugin-{selected_plugin.id}"
-        plugin = self.app.get_widget(plugin_id)
-        if plugin is not None:
-            if hasattr(plugin, 'show_settings') and callable(getattr(plugin, 'show_settings')):
-                try:
-                    plugin.show_settings(widget=self)
-                except Exception as error:
-                    body = _('Error: {error}').format(error=error)
-                    self.log.error(error)
-                    srvdlg.show_error(title=title, body=body, parent=self)
-            else:
-                body = _("Plugin {plugin} doesn't have a settings dialog").format(plugin=selected_plugin.id)
-                self.log.warning(body)
-                srvdlg.show_warning(title=title, body=body, parent=self)
-        else:
-            body = _("Can't find plugin object for {plugin_id}!!").format(plugin_id=plugin_id)
-            self.log.error(body)
-            srvdlg.show_error(title=title, body=body, parent=self)
 
     def update_user_plugins(self):
         plugin_system = self.app.get_service('plugin-system')

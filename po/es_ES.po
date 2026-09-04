@@ -3750,6 +3750,14 @@ msgstr "Ajustes del escáner"
 msgid "Configure the scanner device and scan parameters"
 msgstr "Configurar el dispositivo de escáner y los parámetros de escaneo"
 
+#: MiAZ/frontend/desktop/widgets/reposettingspage.py:102
+msgid "Other plugins"
+msgstr "Otros complementos"
+
+#: MiAZ/frontend/desktop/widgets/reposettingspage.py:106
+msgid "Configure"
+msgstr "Configurar"
+
 #: data/resources/plugins/MiAZAutoScan/autoscan.py:553
 #: data/resources/plugins/MiAZAutoScan/autoscan.py:572
 msgid "Scanner device"

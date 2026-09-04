@@ -7,6 +7,8 @@ in the Application Settings dialog, a per-plugin dialog behind a button in the
 Plugins tab, and nothing at all for the rest. These check they arrive in one.
 """
 
+from gettext import gettext as _
+
 import gi
 gi.require_version('Gtk', '4.0')
 from gi.repository import Adw
@@ -264,3 +266,76 @@ def test_the_scanner_is_not_probed_to_open_the_dialog(repo_settings, clean_view)
         if system.is_plugin_loaded(info) != started_loaded:
             system.unload_plugin(info)
             clean_view.pump(0.4)
+
+
+def group_titles(widget):
+    """The title of every Adw.PreferencesGroup anywhere under `widget`.
+
+    Mirrors row_titles, but for groups: build_legacy_rows files its Configure
+    rows under an 'Other plugins' group, and that title is on the group, not
+    on a row.
+    """
+    found = []
+    if isinstance(widget, Adw.PreferencesGroup):
+        found.append(widget.get_title())
+    child = widget.get_first_child()
+    while child is not None:
+        found.extend(group_titles(child))
+        child = child.get_next_sibling()
+    return found
+
+
+def test_the_plugins_tab_has_no_configure_button(repo_settings, clean_view):
+    """The Plugins tab enables and disables plugins. Configuring them is the
+    Settings tab's job, and two buttons for one thing is how they drifted
+    apart in the first place."""
+    plugins_view = clean_view.widget('configview-Plugin')
+    assert not hasattr(plugins_view, 'btnConfig'), 'the config button is still there'
+
+
+def test_a_plugin_with_only_show_settings_still_gets_a_row(repo_settings, clean_view):
+    """The compatibility shim, for a plugin written against the older API
+    (show_settings(), called from a button the Plugins tab used to have).
+
+    Task 3 already gave every bundled plugin with settings a real
+    install_settings_group() builder, so the expected set here is worked out
+    from the running application rather than hardcoded: whatever is loaded,
+    has a callable show_settings(), and is not already offered through the
+    registry is what the shim is for, and that is what must show up as a row.
+    A later task drops show_settings() from the two plugins that still use it
+    today, which would empty this set; computing it keeps the test honest
+    both before and after that happens.
+    """
+    plugin_system = clean_view.service('plugin-system')
+    registry = plugin_system.settings
+    offered = {owner for _category, owner, _builder in registry.builders()}
+
+    candidates = set()
+    expected = set()
+    for plugin_info in plugin_system.plugins:
+        if not plugin_system.is_plugin_loaded(plugin_info):
+            continue
+        name = plugin_info.get_name()
+        candidates.add(name)
+        if name in offered:
+            continue
+        plugin_obj = clean_view.widget(f'plugin-{name}')
+        if plugin_obj is None or not callable(getattr(plugin_obj, 'show_settings', None)):
+            continue
+        expected.add(name)
+
+    page = clean_view.widget('repository-settings-page-settings')
+    notebook = clean_view.widget('repository-settings-notebook')
+    notebook.set_current_page(_page_number(notebook, page))
+    clean_view.pump(0.4)
+    titles = row_titles(page)
+    groups = group_titles(page)
+
+    if not expected:
+        assert _('Other plugins') not in groups, \
+            'a shim group appeared with nothing that needs it: ' + str(groups)
+        return
+
+    shown = candidates & set(titles)
+    assert shown == expected, (shown, expected)
+    assert _('Other plugins') in groups, groups

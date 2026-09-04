@@ -6,6 +6,7 @@
 from gettext import gettext as _
 
 from gi.repository import Adw
+from gi.repository import Gtk
 
 from MiAZ.backend.log import MiAZLog
 
@@ -74,6 +75,40 @@ class MiAZRepoSettingsPage(Adw.PreferencesPage):
                 group.set_title(_(category))
             self.add(group)
             self._plugin_groups.append(group)
+        self.build_legacy_rows()
+
+    def build_legacy_rows(self):
+        """One Configure row per plugin still using show_settings().
+
+        No bundled plugin does. A plugin written against the older API, where
+        the Plugins tab had a button that called show_settings(), keeps
+        working: its dialog is reached from here instead, so the Settings tab
+        is still the one place to look.
+        """
+        registry = self.app.get_service('plugin-system').settings
+        offered = {owner for _category, owner, _builder in registry.builders()}
+        plugin_system = self.app.get_service('plugin-system')
+        group = None
+        for plugin_info in plugin_system.plugins:
+            if not plugin_system.is_plugin_loaded(plugin_info):
+                continue
+            name = plugin_info.get_name()
+            if name in offered:
+                continue
+            plugin_obj = self.app.get_widget(f'plugin-{name}')
+            if plugin_obj is None or not callable(getattr(plugin_obj, 'show_settings', None)):
+                continue
+            if group is None:
+                group = Adw.PreferencesGroup(title=_('Other plugins'))
+                self.add(group)
+                self._plugin_groups.append(group)
+            row = Adw.ActionRow(title=name)
+            button = Gtk.Button(label=_('Configure'))
+            button.set_valign(Gtk.Align.CENTER)
+            button.connect('clicked',
+                           lambda _b, obj=plugin_obj: obj.show_settings(self))
+            row.add_suffix(button)
+            group.add(row)
 
     def _build_repository_group(self):
         repository = self.app.get_service('repo')

@@ -676,6 +676,8 @@ definition.
 - `get_menu_item_name(id=None)` → the action name of one entry, which is also its widget key
 - `install_menu_entry(menuitem, category=None, subcategory=None, name=None)`,  appends one item to the workspace menu under category/subcategory
 - `get_menu_item(callback)` → `Gio.MenuItem`, the older single-entry path, kept for out of tree plugins
+- `install_settings_group(builder)` → `bool`, offers a settings group to the Repository Settings dialog's Settings tab; `builder` is called with no arguments, returns an `Adw.PreferencesGroup`, and is held rather than called immediately, so a slow builder (AutoScan asking SANE what devices exist) is not paid for until the tab is shown
+- `show_settings(widget=None)`,  the older path: a plugin's own settings dialog, opened directly. No bundled plugin still defines it. Kept for out-of-tree plugins written against it; the Plugins tab no longer has a button for it, so `MiAZRepoSettingsPage.build_legacy_rows` reaches it instead, with a Configure row under "Other plugins" for any loaded plugin that has `show_settings` but no `install_settings_group` builder
 - `add_workspace_page(widget, name, title, icon_name=None)`,  registers a page on the workspace's `Adw.ViewStack`
 - `register_document_tab(name, title, factory, icon_name=None, weight=100)` / `unregister_document_tabs()`,  contributes a tab to the single-document rename dialog (see below)
 - `get_source_dir()` → the plugin folder, looked up by `Name` then by `Module`
