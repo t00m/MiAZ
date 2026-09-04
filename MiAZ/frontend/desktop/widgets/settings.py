@@ -23,6 +23,7 @@ from MiAZ.frontend.desktop.widgets.configview import MiAZRepositories
 from MiAZ.frontend.desktop.widgets.configview import MiAZPlugins
 from MiAZ.frontend.desktop.widgets.window import MiAZCustomWindow
 from MiAZ.frontend.desktop.widgets.dr import MiAZDRPage
+from MiAZ.frontend.desktop.widgets.reposettingspage import MiAZRepoSettingsPage
 # ~ from MiAZ.frontend.desktop.widgets.pluginuimanager import MiAZPluginUIManager
 
 Configview = {}
@@ -434,6 +435,26 @@ class MiAZRepoSettings(MiAZCustomWindow):
         for item_type in [Country, Group, Purpose, SentBy, SentTo, Plugin]:
             page, label = create_tab(item_type)
             notebook.append_page(page, label)
+
+        settings_page = MiAZRepoSettingsPage(self.app)
+        wdgLabel = self.factory.create_box_horizontal()
+        wdgLabel.add_css_class('caption')
+        icon = self.icman.get_image_by_name('io.github.t00m.MiAZ-emblem-system-symbolic')
+        icon.set_hexpand(False)
+        icon.set_pixel_size(16)
+        label = self.factory.create_label(f"<b>{_('Settings')}</b>")
+        label.set_xalign(0.0)
+        label.set_hexpand(True)
+        wdgLabel.append(icon)
+        wdgLabel.append(label)
+        notebook.append_page(settings_page, wdgLabel)
+        # Built when it is shown, not when the dialog opens: see the page's
+        # docstring for what that saves.
+        notebook.connect('switch-page', self._on_switch_page)
+
+    def _on_switch_page(self, notebook, page, number):
+        if isinstance(page, MiAZRepoSettingsPage):
+            page.build_plugin_groups()
 
     def update(self, *args):
         title = _('Settings for repository') + ' ' + self._repo_label(self.app.get_service('repo').get_active_id())

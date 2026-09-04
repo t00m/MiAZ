@@ -45,6 +45,7 @@ MiAZ/frontend/desktop/widgets/pages.py
 MiAZ/frontend/desktop/widgets/pills.py
 MiAZ/frontend/desktop/widgets/pluginuimanager.py
 MiAZ/frontend/desktop/widgets/rename.py
+MiAZ/frontend/desktop/widgets/reposettingspage.py
 MiAZ/frontend/desktop/widgets/selector.py
 MiAZ/frontend/desktop/widgets/settings.py
 MiAZ/frontend/desktop/widgets/sidebar.py
