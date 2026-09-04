@@ -190,3 +190,43 @@ def test_a_plugin_that_had_a_dialog_now_contributes_rows(repo_settings, clean_vi
         if system.is_plugin_loaded(info) != started_loaded:
             system.unload_plugin(info)
             clean_view.pump(0.4)
+
+
+def test_scanner_settings_keep_the_manual_entry_when_no_app_is_found(
+        clean_view, monkeypatch):
+    """Regression guard for a dropped branch: an earlier draft of
+    MiAZImportFromScan.build_settings replaced the "type a command by hand"
+    fallback with a static message, silently removing the only way to set up
+    scanning on a machine with no scanner .desktop file.
+
+    This test box has several scanner applications installed (SimpleScan and
+    others), so _search_scan_apps() cannot be relied on to come back empty on
+    its own; going through the real Settings tab would only ever exercise the
+    "apps were found" branch here. Monkeypatching _search_scan_apps on the
+    loaded extension forces the other branch, and build_settings() is called
+    directly (its return value does not depend on being attached to the
+    Settings tab notebook) so the assertions are against the plugin's real
+    method, not a copy of it.
+    """
+    system = clean_view.service('plugin-system')
+    info = system.get_plugin_info('scan')
+    if info is None:
+        pytest.skip('MiAZImportFromScan is not in the plugin index')
+    started_loaded = system.is_plugin_loaded(info)
+    if not started_loaded:
+        if not system.load_plugin(info):
+            pytest.skip('MiAZImportFromScan cannot load here: '
+                        + str(system.get_load_error(info.get_module_name())))
+        clean_view.pump(0.5)
+    try:
+        extension = system.get_extension('scan')
+        assert extension is not None, 'the scan extension is not active'
+        monkeypatch.setattr(extension, '_search_scan_apps', lambda: [])
+        group = extension.build_settings()
+        titles = row_titles(group)
+        assert 'Scanner command' in titles, titles
+        assert 'No scanner application detected' in titles, titles
+    finally:
+        if system.is_plugin_loaded(info) != started_loaded:
+            system.unload_plugin(info)
+            clean_view.pump(0.4)
