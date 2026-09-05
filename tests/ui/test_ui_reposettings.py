@@ -47,6 +47,28 @@ def row_titles(widget):
     return found
 
 
+def test_the_tabs_show_their_names(repo_settings, clean_view):
+    """The three tab labels used to render as an icon and three dots.
+
+    factory.create_label ellipsizes every label it builds, so the label's
+    minimum width was one ellipsis, and a notebook hands a tab its minimum.
+    The width is measured rather than the ellipsize setting read: what matters
+    is that the name is actually legible, however it comes to be.
+    """
+    notebook = clean_view.widget('repository-settings-notebook')
+    assert notebook.get_n_pages() == 3
+    for number in range(notebook.get_n_pages()):
+        box = notebook.get_tab_label(notebook.get_nth_page(number))
+        label = box.get_last_child()
+        text = label.get_text()
+        assert text, f'tab {number} has no label text'
+        # measure() returns four values: the two baselines are not wanted here.
+        minimum, natural = label.measure(Gtk.Orientation.HORIZONTAL, -1)[:2]
+        assert minimum == natural, (
+            f'tab {number} ({text!r}) can shrink to {minimum}px against a '
+            f'natural {natural}px, so the notebook will cut it to an ellipsis')
+
+
 def test_the_settings_tab_is_there(repo_settings, clean_view):
     page = clean_view.widget('repository-settings-page-settings')
     assert page is not None, 'no Settings tab'

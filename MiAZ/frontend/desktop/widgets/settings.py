@@ -437,9 +437,15 @@ class MiAZRepoSettings(MiAZCustomWindow):
         icon = self.icman.get_image_by_name(icon_name)
         icon.set_hexpand(False)
         icon.set_pixel_size(16)
-        label = self.factory.create_label(f"<b>{title}</b>")
-        label.set_xalign(0.0)
-        label.set_hexpand(True)
+        # Not factory.create_label: that ellipsizes every label it builds, and
+        # an ellipsized label asks for the width of one ellipsis as its
+        # minimum. The notebook hands a tab its minimum, so the three tabs
+        # showed an icon and three dots instead of their names.
+        label = Gtk.Label(label=title)
+        # The style class rather than <b> markup: a tab name is plain text,
+        # and building markup around a value is what tests/test_markup_escaping
+        # exists to stop.
+        label.add_css_class('heading')
         box.append(icon)
         box.append(label)
         return box
