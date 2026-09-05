@@ -9,12 +9,38 @@ from gi.repository import Adw
 from gi.repository import Gtk
 
 from MiAZ.backend.log import MiAZLog
+from MiAZ.frontend.desktop.widgets.sidebarstack import MiAZSidebarStack
+
+# The page every repository has, whatever plugins are enabled. Kept apart from
+# the plugin pages because it is never thrown away and rebuilt.
+REPOSITORY_PAGE = 'Repository-self'
+
+# Where a plugin whose settings are reached the older way is listed.
+LEGACY_PAGE = 'Other'
+
+# One icon per category of the plugin vocabulary, plus the two pages that are
+# not categories. Every name here is checked against the icon theme before it
+# is used, so a missing one degrades rather than showing a broken glyph.
+CATEGORY_ICONS = {
+    REPOSITORY_PAGE: 'io.github.t00m.MiAZ-emblem-system-symbolic',
+    LEGACY_PAGE:     'io.github.t00m.MiAZ-res-plugins',
+    'Documents':     'io.github.t00m.MiAZ-res-concept',
+    'Repository':    'io.github.t00m.MiAZ-res-groups',
+    'Interface':     'io.github.t00m.MiAZ-config-symbolic',
+    'Help':          'io.github.t00m.MiAZ-res-plugins',
+}
 
 
-class MiAZRepoSettingsPage(Adw.PreferencesPage):
+class MiAZRepoSettingsPage(MiAZSidebarStack):
     """Every per-repository setting: the repository itself, then the plugins.
 
-    Plugin groups are built the first time this page is shown, not when the
+    One page per category rather than one long scroll. With every plugin
+    enabled the old single page stacked ten groups, and the AI assistant's
+    alone holds an expander per provider. The categories are not invented for
+    this: the registry already hands its builders back sorted by the category
+    each plugin declares.
+
+    Plugin pages are built the first time this tab is shown, not when the
     dialog opens. Building AutoScan's group runs SANE and building the OCR one
     shells out to tesseract, and neither is worth paying for to look at the
     Metadata tab.
@@ -22,14 +48,12 @@ class MiAZRepoSettingsPage(Adw.PreferencesPage):
     __gtype_name__ = 'MiAZRepoSettingsPage'
 
     def __init__(self, app):
-        super().__init__(title=_('Settings'),
-                         icon_name='io.github.t00m.MiAZ-emblem-system-symbolic')
-        self.app = app
+        super().__init__(app)
         self.log = MiAZLog('MiAZ.RepoSettingsPage')
         self._built = False
-        self._plugin_groups = []
+        self._plugin_pages = []
         self._sid_plugins_updated = None
-        self._build_repository_group()
+        self._build_repository_page()
         self.app.add_widget('repository-settings-page-settings', self)
         # A fresh page is built every time the dialog opens, so the signal
         # has to be picked up and let go with it, not held for the page's
@@ -52,11 +76,15 @@ class MiAZRepoSettingsPage(Adw.PreferencesPage):
             self._sid_plugins_updated = None
 
     def is_built(self) -> bool:
-        """Whether the plugin groups have been built yet."""
+        """Whether the plugin pages have been built yet."""
         return self._built
 
     def build_plugin_groups(self):
-        """Ask every enabled plugin for its settings, once."""
+        """Ask every enabled plugin for its settings, once.
+
+        The registry returns builders sorted by category then plugin, so one
+        pass fills each category page in order without sorting again here.
+        """
         if self._built:
             return
         self._built = True
@@ -72,9 +100,8 @@ class MiAZRepoSettingsPage(Adw.PreferencesPage):
             if group is None:
                 continue
             if not group.get_title():
-                group.set_title(_(category))
-            self.add(group)
-            self._plugin_groups.append(group)
+                group.set_title(owner)
+            self._page_for(category).add(group)
         self.build_legacy_rows()
 
     def build_legacy_rows(self):
@@ -100,8 +127,7 @@ class MiAZRepoSettingsPage(Adw.PreferencesPage):
                 continue
             if group is None:
                 group = Adw.PreferencesGroup(title=_('Other plugins'))
-                self.add(group)
-                self._plugin_groups.append(group)
+                self._page_for(LEGACY_PAGE).add(group)
             row = Adw.ActionRow(title=name)
             button = Gtk.Button(label=_('Configure'))
             button.set_valign(Gtk.Align.CENTER)
@@ -110,13 +136,34 @@ class MiAZRepoSettingsPage(Adw.PreferencesPage):
             row.add_suffix(button)
             group.add(row)
 
-    def _build_repository_group(self):
+    def _page_for(self, category):
+        """The Adw.PreferencesPage for one category, added on first use.
+
+        Adding it only when something needs it is what keeps the list to the
+        categories that actually have settings, rather than showing four
+        headings of which two are empty.
+        """
+        page = self.stack.get_child_by_name(category)
+        if page is not None:
+            return page
+        page = Adw.PreferencesPage()
+        title = _('Other plugins') if category == LEGACY_PAGE else _(category)
+        self.add_page(category, title,
+                      CATEGORY_ICONS.get(category, ''), page)
+        self._plugin_pages.append(category)
+        return page
+
+    def _build_repository_page(self):
         repository = self.app.get_service('repo')
         config = self.app.get_config('Repository')
         repo_id = repository.get_active_id()
 
+        page = Adw.PreferencesPage()
+        self.add_page(REPOSITORY_PAGE, _('Repository'),
+                      CATEGORY_ICONS[REPOSITORY_PAGE], page)
+
         group = Adw.PreferencesGroup(title=_('Repository'))
-        self.add(group)
+        page.add(group)
 
         row_name = Adw.EntryRow(title=_('Name'))
         row_name.set_text(config.get_description(repo_id, used=True) or '')
@@ -139,10 +186,14 @@ class MiAZRepoSettingsPage(Adw.PreferencesPage):
         config.set_repo(repo_id, repository.docs, row.get_text(), used=True)
 
     def _on_plugins_updated(self, *args):
-        """Throw the plugin groups away so the next showing rebuilds them."""
-        for group in self._plugin_groups:
-            self.remove(group)
-        self._plugin_groups = []
+        """Throw the plugin pages away so the next showing rebuilds them.
+
+        The repository page stays: it is not a plugin's and rebuilding it
+        would lose whatever the user has half typed into the name row.
+        """
+        for category in self._plugin_pages:
+            self.remove_page(category)
+        self._plugin_pages = []
         self._built = False
         if self.get_mapped():
             self.build_plugin_groups()

@@ -69,6 +69,66 @@ def test_the_tabs_show_their_names(repo_settings, clean_view):
             f'natural {natural}px, so the notebook will cut it to an ellipsis')
 
 
+def test_the_settings_tab_groups_by_category(repo_settings, clean_view):
+    """One page per category, not one scroll of every group.
+
+    With every plugin enabled the single page stacked ten groups, and the AI
+    assistant's alone holds an expander per provider. The categories are the
+    ones the registry already sorts its builders by, so this asserts the list
+    against the registry rather than against a hardcoded set of names.
+    """
+    page = clean_view.widget('repository-settings-page-settings')
+    notebook = clean_view.widget('repository-settings-notebook')
+    notebook.set_current_page(_page_number(notebook, page))
+    clean_view.pump(0.4)
+
+    names = page.get_page_names()
+    assert names[0] == 'Repository-self', (
+        f'the repository page is not first: {names}')
+
+    registry = clean_view.service('plugin-system').settings
+    expected = {category for category, _owner, _builder in registry.builders()}
+    plugin_pages = set(names[1:]) - {'Other'}
+    assert plugin_pages == expected, (
+        f'category pages {plugin_pages} do not match the registry {expected}')
+
+
+def test_an_empty_category_gets_no_page(repo_settings, clean_view):
+    """A page is added on first use, so a category nothing registers under
+    does not appear as an empty heading."""
+    page = clean_view.widget('repository-settings-page-settings')
+    notebook = clean_view.widget('repository-settings-notebook')
+    notebook.set_current_page(_page_number(notebook, page))
+    clean_view.pump(0.4)
+
+    registry = clean_view.service('plugin-system').settings
+    used = {category for category, _owner, _builder in registry.builders()}
+    from MiAZ.frontend.desktop.services import pluginsystem as ps
+    unused = set(ps.plugin_categories) - used
+    assert unused, 'need a category nothing registers under to test this'
+    for category in unused:
+        assert not page.has_page(category), (
+            f'{category} has no settings but got a page anyway')
+
+
+def test_the_repository_page_survives_a_plugin_change(repo_settings, clean_view):
+    """Plugin pages are thrown away and rebuilt when plugins change. The
+    repository page is not a plugin's, and rebuilding it would lose whatever
+    the user has half typed into the name row."""
+    page = clean_view.widget('repository-settings-page-settings')
+    notebook = clean_view.widget('repository-settings-notebook')
+    notebook.set_current_page(_page_number(notebook, page))
+    clean_view.pump(0.4)
+
+    row_name = clean_view.widget('repository-settings-row-name')
+    row_name.set_text('half typed')
+    page._on_plugins_updated()
+    clean_view.pump(0.3)
+
+    assert page.has_page('Repository-self'), 'the repository page went away'
+    assert clean_view.widget('repository-settings-row-name').get_text() == 'half typed'
+
+
 def test_the_settings_tab_is_there(repo_settings, clean_view):
     page = clean_view.widget('repository-settings-page-settings')
     assert page is not None, 'no Settings tab'

@@ -3,92 +3,43 @@
 # License: GPL v3
 # Description: The Metadata tab of the Repository Settings dialog
 
-from gi.repository import Gdk, Gtk
-
 from MiAZ.backend.log import MiAZLog
-from MiAZ.frontend.desktop.services.pluginsystem import PLUGIN_DEFAULT_ICON
+from MiAZ.frontend.desktop.widgets.sidebarstack import MiAZSidebarStack
 
 
-class MiAZMetadataPage(Gtk.Box):
+class MiAZMetadataPage(MiAZSidebarStack):
     """The repository vocabularies, one list on the left and one view shown.
 
     They used to be five tabs across the top of the dialog, which left no room
     for a sixth: the plugins that own a vocabulary of their own had to put it
     behind a button somewhere else. A list takes as many as it is given.
+
+    The list and stack themselves are MiAZSidebarStack, shared with the
+    Settings tab. What is left here is what a vocabulary list adds to that:
+    where the entries come from.
     """
     __gtype_name__ = 'MiAZMetadataPage'
 
     def __init__(self, app):
-        super().__init__(orientation=Gtk.Orientation.HORIZONTAL)
-        self.app = app
+        super().__init__(app)
         self.log = MiAZLog('MiAZ.MetadataPage')
-        self._names = []
-
-        self.listbox = Gtk.ListBox()
-        self.listbox.add_css_class('navigation-sidebar')
-        self.listbox.connect('row-selected', self._on_row_selected)
-        sidebar = Gtk.ScrolledWindow()
-        sidebar.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
-        sidebar.set_child(self.listbox)
-        sidebar.set_size_request(200, -1)
-
-        self.stack = Gtk.Stack()
-        self.stack.set_hexpand(True)
-        self.stack.set_vexpand(True)
-
-        self.append(sidebar)
-        self.append(Gtk.Separator(orientation=Gtk.Orientation.VERTICAL))
-        self.append(self.stack)
         self.app.add_widget('repository-settings-page-metadata', self)
 
     def add_view(self, name, title, icon_name, widget):
-        """Add one vocabulary to the list and its view to the stack.
+        """Add one vocabulary to the list and its view to the stack."""
+        self.add_page(name, title, icon_name, widget)
 
-        `icon_name` comes from whatever plugin calls install_metadata_view,
-        in or out of tree, and a typo or an asset that was never shipped
-        should not put a broken-image glyph in the list. _resolve_icon_name
-        checks it against the running icon theme.
-        """
-        self.stack.add_titled(widget, name, title)
-        row = Gtk.ListBoxRow()
-        box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
-        box.set_margin_top(6)
-        box.set_margin_bottom(6)
-        box.set_margin_start(6)
-        box.set_margin_end(6)
-        icon = Gtk.Image.new_from_icon_name(self._resolve_icon_name(icon_name))
-        icon.set_pixel_size(16)
-        box.append(icon)
-        box.append(Gtk.Label(label=title, xalign=0))
-        row.set_child(box)
-        row._view_name = name
-        self.listbox.append(row)
-        self._names.append(name)
-        if len(self._names) == 1:
-            self.listbox.select_row(row)
+    def get_view_names(self) -> list:
+        return self.get_page_names()
 
-    def _resolve_icon_name(self, icon_name):
-        """`icon_name` if the running icon theme has it, the generic plugin
-        icon otherwise.
-
-        Mirrors MiAZPlugin.get_icon_name(), which falls back to
-        PLUGIN_DEFAULT_ICON the same way for a plugin's own icon. There is no
-        display in a headless context (an offscreen test run without one),
-        so nothing to check against there; the name is trusted as given.
-        """
-        display = Gdk.Display.get_default()
-        if display is None:
-            return icon_name
-        icon_theme = Gtk.IconTheme.get_for_display(display)
-        if icon_theme.has_icon(icon_name):
-            return icon_name
-        return PLUGIN_DEFAULT_ICON
+    def show_view(self, name):
+        self.show_page(name)
 
     def add_plugin_views(self):
         """Add the vocabularies plugins own, after the built-in ones."""
         registry = self.app.get_service('plugin-system').settings
         for _owner, name, title, icon_name, factory in registry.views():
-            if name in self._names:
+            if self.has_page(name):
                 continue
             try:
                 widget = factory()
@@ -97,16 +48,3 @@ class MiAZMetadataPage(Gtk.Box):
                 continue
             if widget is not None:
                 self.add_view(name, title, icon_name, widget)
-
-    def get_view_names(self) -> list:
-        return list(self._names)
-
-    def show_view(self, name):
-        for row in self.listbox:
-            if getattr(row, '_view_name', None) == name:
-                self.listbox.select_row(row)
-                return
-
-    def _on_row_selected(self, listbox, row):
-        if row is not None:
-            self.stack.set_visible_child_name(row._view_name)
