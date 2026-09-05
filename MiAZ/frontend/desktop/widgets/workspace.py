@@ -403,6 +403,12 @@ class MiAZWorkspace(Gtk.Box):
                                     none_value=False)
 
     def show_pending_documents(self, *args):
+        if self._clearing_filters:
+            # Somebody is writing the whole filter state (a saved search, an
+            # explicit list) and set the toggle as part of it. Clearing the
+            # filters here would undo what they just wrote; they refresh once
+            # when they are done.
+            return
         togglebutton = self.app.get_widget('workspace-togglebutton-pending-docs')
         self._review = togglebutton.get_active()
 
@@ -1116,24 +1122,44 @@ class MiAZWorkspace(Gtk.Box):
     def get_selected_items(self):
         return self.selected_items
 
-    def clear_filters(self):
-        """Reset every filter"""
+    def _reset_filter_controls(self, date=True, review=True):
+        """Put the filter controls back to "everything", signals muted.
+
+        `date` and `review` say whether those two go back with the rest.
+        Clearing the filters resets the date range and then picks a preset that
+        holds something, and leaves Review to the handler that is running it.
+        Showing an explicit list is the other way round: the date is ignored
+        while a list is in effect, so it is left as the user had it and comes
+        back when the list is dropped, while Review has to go, because it asks
+        for pending documents only and would hide the whole list.
+        """
         search_entry = self.app.get_widget('searchentry')
+        concept_entry = self.app.get_widget('searchentry-concept')
         dropdowns = self.app.get_widget('ws-dropdowns') or {}
         plugin_dropdowns = self.app.get_widget('plugin-dropdowns') or []
+        togglebutton = self.app.get_widget('workspace-togglebutton-pending-docs')
 
         self._clearing_filters = True
         try:
-            search_entry.set_text('')
-            concept_entry = self.app.get_widget('searchentry-concept')
+            if search_entry is not None:
+                search_entry.set_text('')
             if concept_entry is not None:
                 concept_entry.set_text('')
-            for dd in dropdowns.values():
+            for name, dd in dropdowns.items():
+                if name == Date.__gtype_name__ and not date:
+                    continue
                 dd.set_selected(0)
             for dd in plugin_dropdowns:
                 dd.set_selected(0)
+            if review and togglebutton is not None:
+                togglebutton.set_active(False)
+                self._review = False
         finally:
             self._clearing_filters = False
+
+    def clear_filters(self):
+        """Reset every filter"""
+        self._reset_filter_controls(date=True, review=False)
 
         # The explicit list (Doctor's Show, the "Showing" tag) is a filter
         # like any other, so clearing filters drops it too.
@@ -1570,7 +1596,15 @@ class MiAZWorkspace(Gtk.Box):
         those are exactly the ones the ordinary view hides. The restriction
         appears as a tag in the filter bar, so it is visible and removable
         like any other filter.
+
+        The rest of the filters are cleared first. The list is the whole
+        request, and whatever the sidebar happened to hold would otherwise
+        veto it: a search box with anything in it, or a field narrowed to a
+        value these documents do not use, hides them. Review hides all of
+        them, every time, because it asks for pending documents while the
+        list lifts the pending check.
         """
+        self._reset_filter_controls(date=False, review=True)
         self._only_ids = frozenset(ids)
         self._only_label = label
         self.show_view('details')

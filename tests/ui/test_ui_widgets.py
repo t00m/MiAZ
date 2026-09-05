@@ -910,6 +910,39 @@ def test_showing_documents_the_ordinary_view_hides(clean_view):
                           message='and hidden again afterwards')
 
 
+def test_showing_documents_overrides_the_filters_in_effect(clean_view):
+    """The list is the whole request, so the sidebar cannot veto it.
+
+    A Doctor "Show" with Review on showed nothing at all: Review asks for
+    pending documents, an explicit list lifts the pending check, and the two
+    together match nothing. Anything in the search box, or a field narrowed to
+    a value the named documents do not use, hid them the same way.
+    """
+    workspace = clean_view.workspace
+    review = clean_view.widget('workspace-togglebutton-pending-docs')
+    search = clean_view.widget('searchentry')
+    wanted = ['20260612-ES-FIN-BANKX-INV-mortgage-JOHNDOE.pdf',
+              '20260505-ES-HOU-ACME-INV-electricity-JOHNDOE.pdf']
+    try:
+        clean_view.select_dropdown_value('Country', 'DE')
+        search.set_text('nothing matches this')
+        review.set_active(True)
+        clean_view.pump(0.5)
+
+        workspace.show_documents(wanted, label='A health check')
+        clean_view.wait_until(
+            lambda: sorted(clean_view.displayed()) == sorted(wanted),
+            message='the named documents, whatever the filters said')
+        assert not review.get_active(), 'Review would hide every named document'
+        assert search.get_text() == '', 'the search box is cleared, not ignored'
+        country = clean_view.dropdown('Country').get_selected_item()
+        assert country.id == 'Any', 'the field filters are cleared too'
+    finally:
+        review.set_active(False)
+        workspace.clear_documents()
+        clean_view.pump(0.5)
+
+
 def test_review_toggle_sits_next_to_the_view_buttons(clean_view):
     """Review chooses which documents are on screen, like the view buttons do."""
     start = clean_view.widget('workspace-toolbar-start')
