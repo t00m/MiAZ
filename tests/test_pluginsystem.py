@@ -461,3 +461,17 @@ def test_install_metadata_view_records_it():
     assert plugin.install_metadata_view(
         'Periodicity', 'Periodicity', 'icon', factory) is True
     assert registry.views()[0][0] == 'MiAZPeriodicity'
+
+
+def test_an_unloaded_plugin_installs_no_metadata_view():
+    """Same guard as install_settings_group: is_active goes false before
+    do_deactivate runs, so a background job finishing late cannot add a
+    vocabulary view for a plugin that is gone."""
+    registry = ps.PluginSettingsRegistry()
+    plugin = a_plugin(registry, name='MiAZPeriodicity')
+    plugin.set_active(False)
+    def factory():
+        return None
+    assert plugin.install_metadata_view(
+        'Periodicity', 'Periodicity', 'icon', factory) is False
+    assert registry.views() == []

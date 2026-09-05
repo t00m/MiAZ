@@ -211,10 +211,13 @@ class MiAZImportFromScanPlugin(MiAZExtension):
                 combo.set_selected(0)
                 self.plugin.set_config_key('scanner_app', app_ids[0])
 
-            combo.connect('notify::selected',
-                          lambda row, _gparam, ids=app_ids:
-                              self.plugin.set_config_key(
-                                  'scanner_app', ids[row.get_selected()]))
+            def _on_combo_changed(row, gparam):
+                pos = row.get_selected()
+                if 0 <= pos < len(app_ids):
+                    self.plugin.set_config_key('scanner_app', app_ids[pos])
+                    self.log.debug(f"Scanner app set to: {app_ids[pos]}")
+
+            combo.connect('notify::selected', _on_combo_changed)
             group.add(combo)
         else:
             # No scanner app detected. Let the user type a command
@@ -239,16 +242,3 @@ class MiAZImportFromScanPlugin(MiAZExtension):
             group.add(hint)
 
         return group
-
-    def show_settings(self, widget):
-        # Kept for the Plugins tab button until Task 7 removes it; wraps the
-        # same group build_settings() contributes to the Settings tab.
-        dialog = Adw.PreferencesDialog()
-        desc = self.plugin.get_plugin_info_key('Description')
-        page = Adw.PreferencesPage(
-            title=_(desc),
-            icon_name='io.github.t00m.MiAZ-config-symbolic'
-        )
-        dialog.add(page)
-        page.add(self.build_settings())
-        dialog.present(widget.get_root())

@@ -461,6 +461,7 @@ class MiAZProjectTab(Gtk.Box):
         self.show_manager = show_manager
         self.doc_id = None
         self.checks = {}
+        self._manager_closed_handler = None
 
         self.set_margin_top(6)
         self.set_margin_bottom(6)
@@ -523,9 +524,10 @@ class MiAZProjectTab(Gtk.Box):
         """
         window = self.show_manager(widget=self)
         if window is not None:
-            window.connect('close-request', self._on_manager_closed)
+            self._manager_closed_handler = window.connect(
+                'close-request', self._on_manager_closed)
 
-    def _on_manager_closed(self, *args):
+    def _on_manager_closed(self, window, *args):
         """Show the projects the manager left behind, ticks included.
 
         Nothing is written until the rename goes through, so what the user has
@@ -535,7 +537,14 @@ class MiAZProjectTab(Gtk.Box):
         Connected to close-request rather than a dialog's 'closed': its
         return value matters, since True would stop the window from closing,
         so this always answers False.
+
+        Disconnects itself first: the app keeps a strong reference to
+        window-repo-settings, so a leftover handler here would pin this tab
+        and its rename-dialog subtree for as long as that window exists.
         """
+        if self._manager_closed_handler is not None:
+            window.disconnect(self._manager_closed_handler)
+            self._manager_closed_handler = None
         ticked = {pid for pid, check in self.checks.items() if check.get_active()}
         row = self.listbox.get_first_child()
         while row is not None:

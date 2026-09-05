@@ -25,7 +25,6 @@ from MiAZ.frontend.desktop.widgets.window import MiAZCustomWindow
 from MiAZ.frontend.desktop.widgets.dr import MiAZDRPage
 from MiAZ.frontend.desktop.widgets.reposettingspage import MiAZRepoSettingsPage
 from MiAZ.frontend.desktop.widgets.metadatapage import MiAZMetadataPage
-# ~ from MiAZ.frontend.desktop.widgets.pluginuimanager import MiAZPluginUIManager
 
 Configview = {}
 Configview['Country'] = MiAZCountries

@@ -535,18 +535,6 @@ class MiAZAutoScanPlugin(MiAZExtension):
         self._release_suspend()
         self.srvdlg.show_error(_('Scan failed'), error_msg)
 
-    def show_settings(self, widget):
-        dialog = Adw.PreferencesDialog()
-        desc = self.plugin.get_plugin_info_key('Description')
-        page = Adw.PreferencesPage(
-            title=_(desc),
-            icon_name='io.github.t00m.MiAZ-config-symbolic',
-        )
-        dialog.add(page)
-        page.add(self.build_settings())
-        page.add(self.build_settings_fields())
-        dialog.present(widget.get_root())
-
     def build_settings(self):
         group = Adw.PreferencesGroup(
             title=_('Scanner settings'),

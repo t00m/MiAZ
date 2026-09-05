@@ -701,8 +701,10 @@ class MiAZPlugin(GObject.GObject):
 
         For a plugin that owns a vocabulary rather than a preference: the
         periodicities, the projects. `factory` is called with no arguments
-        and returns the widget, and is held rather than called for the same
-        reason a settings builder is.
+        and returns the widget. Unlike a settings builder, it is not held for
+        later: the Metadata tab calls every registered factory while the
+        dialog is being built, since the dialog is constructed fresh each
+        time it opens and a vocabulary view is cheap to create.
         """
         if not self.is_active():
             return False

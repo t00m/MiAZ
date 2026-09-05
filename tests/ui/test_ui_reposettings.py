@@ -286,6 +286,37 @@ def group_titles(widget):
     return found
 
 
+def find_group(widget, title):
+    """The first Adw.PreferencesGroup anywhere under `widget` with this title.
+
+    Used to scope a row search to one specific group, rather than the whole
+    page: a plugin name and some unrelated row's title could otherwise
+    collide and make a check pass for the wrong reason.
+    """
+    if isinstance(widget, Adw.PreferencesGroup) and widget.get_title() == title:
+        return widget
+    child = widget.get_first_child()
+    while child is not None:
+        found = find_group(child, title)
+        if found is not None:
+            return found
+        child = child.get_next_sibling()
+    return None
+
+
+def find_button_label(widget):
+    """The label of the first Gtk.Button found anywhere under `widget`."""
+    if isinstance(widget, Gtk.Button):
+        return widget.get_label()
+    child = widget.get_first_child()
+    while child is not None:
+        label = find_button_label(child)
+        if label is not None:
+            return label
+        child = child.get_next_sibling()
+    return None
+
+
 def test_the_plugins_tab_has_no_configure_button(repo_settings, clean_view):
     """The Plugins tab enables and disables plugins. Configuring them is the
     Settings tab's job, and two buttons for one thing is how they drifted
@@ -298,26 +329,24 @@ def test_a_plugin_with_only_show_settings_still_gets_a_row(repo_settings, clean_
     """The compatibility shim, for a plugin written against the older API
     (show_settings(), called from a button the Plugins tab used to have).
 
-    Task 3 already gave every bundled plugin with settings a real
-    install_settings_group() builder, so the expected set here is worked out
-    from the running application rather than hardcoded: whatever is loaded,
-    has a callable show_settings(), and is not already offered through the
-    registry is what the shim is for, and that is what must show up as a row.
-    A later task drops show_settings() from the two plugins that still use it
-    today, which would empty this set; computing it keeps the test honest
-    both before and after that happens.
+    Every bundled plugin with settings now has a real install_settings_group()
+    builder, so the expected set here is worked out from the running
+    application rather than hardcoded: whatever is loaded, has a callable
+    show_settings(), and is not already offered through the registry is what
+    the shim is for, and that is what must show up as a row. That set is
+    empty for every bundled plugin today, so this only covers the negative
+    branch, no shim group at all; see
+    test_a_stand_in_plugin_gets_a_configure_row for the positive one.
     """
     plugin_system = clean_view.service('plugin-system')
     registry = plugin_system.settings
     offered = {owner for _category, owner, _builder in registry.builders()}
 
-    candidates = set()
     expected = set()
     for plugin_info in plugin_system.plugins:
         if not plugin_system.is_plugin_loaded(plugin_info):
             continue
         name = plugin_info.get_name()
-        candidates.add(name)
         if name in offered:
             continue
         plugin_obj = clean_view.widget(f'plugin-{name}')
@@ -329,7 +358,6 @@ def test_a_plugin_with_only_show_settings_still_gets_a_row(repo_settings, clean_
     notebook = clean_view.widget('repository-settings-notebook')
     notebook.set_current_page(_page_number(notebook, page))
     clean_view.pump(0.4)
-    titles = row_titles(page)
     groups = group_titles(page)
 
     if not expected:
@@ -337,9 +365,67 @@ def test_a_plugin_with_only_show_settings_still_gets_a_row(repo_settings, clean_
             'a shim group appeared with nothing that needs it: ' + str(groups)
         return
 
-    shown = candidates & set(titles)
+    other_group = find_group(page, _('Other plugins'))
+    assert other_group is not None, 'no Other plugins group appeared: ' + str(groups)
+    # Scoped to the shim's own group, not the whole page: a plugin name
+    # matching some unrelated row's title elsewhere would otherwise pass
+    # for the wrong reason.
+    shown = expected & set(row_titles(other_group))
     assert shown == expected, (shown, expected)
-    assert _('Other plugins') in groups, groups
+
+
+def test_a_stand_in_plugin_gets_a_configure_row(repo_settings, clean_view, monkeypatch):
+    """Positive-path coverage for build_legacy_rows.
+
+    No bundled plugin is in the show_settings()-but-no-builder state any
+    more, so this registers a stand-in to exercise the branch instead of
+    relying on one that happens to qualify.
+
+    plugin_system.plugins is a plain Python property reading the libpeas
+    engine, which only ever lists .plugin files found on disk, so the
+    stand-in is added by patching that property on the class rather than
+    trying to inject a real Peas.PluginInfo. monkeypatch restores the
+    property automatically; the widget registration is removed by hand in
+    the finally block, since that dictionary is on the session-scoped app
+    and would otherwise leak into every test that runs after this one.
+    """
+    plugin_system = clean_view.service('plugin-system')
+
+    class StandInPluginInfo:
+        def get_name(self):
+            return 'StandInLegacyPlugin'
+
+        def get_module_name(self):
+            return 'standinlegacyplugin'
+
+        def is_loaded(self):
+            return True
+
+    class StandInPlugin:
+        def show_settings(self, widget=None):
+            pass
+
+    real_plugins = plugin_system.plugins
+    patched_plugins = real_plugins + [StandInPluginInfo()]
+    monkeypatch.setattr(type(plugin_system), 'plugins',
+                        property(lambda self: patched_plugins))
+    clean_view.app.add_widget('plugin-StandInLegacyPlugin', StandInPlugin())
+    try:
+        page = clean_view.widget('repository-settings-page-settings')
+        notebook = clean_view.widget('repository-settings-notebook')
+        notebook.set_current_page(_page_number(notebook, page))
+        clean_view.pump(0.4)
+
+        groups = group_titles(page)
+        assert _('Other plugins') in groups, groups
+        other_group = find_group(page, _('Other plugins'))
+        assert other_group is not None
+        titles = row_titles(other_group)
+        assert 'StandInLegacyPlugin' in titles, titles
+        assert find_button_label(other_group) == _('Configure'), \
+            'no Configure button in the shim row'
+    finally:
+        clean_view.app.remove_widget('plugin-StandInLegacyPlugin')
 
 
 def test_the_dialog_has_three_tabs(repo_settings, clean_view):

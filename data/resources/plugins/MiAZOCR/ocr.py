@@ -352,14 +352,3 @@ class MiAZOCRPlugin(MiAZExtension):
         combo.connect('notify::selected', _on_changed)
         group.add(combo)
         return group
-
-    def show_settings(self, widget):
-        # Kept for the Plugins tab button until Task 7 removes it; wraps the
-        # same group build_settings() contributes to the Settings tab.
-        dialog = Adw.PreferencesDialog()
-        page = Adw.PreferencesPage(
-            title=_('OCR'),
-            icon_name='io.github.t00m.MiAZ-config-symbolic')
-        dialog.add(page)
-        page.add(self.build_settings())
-        dialog.present(widget.get_root())
