@@ -78,12 +78,18 @@ class Doctor(MiAZExtension):
         self.util = self.app.get_service('util')
         self.srvdlg = self.app.get_service('dialogs')
         self.repository = self.app.get_service('repo')
+        self._autorun_in_flight = False
 
+        self.plugin.install_settings_group(self.build_settings)
+
+        # Connected either way, and not only when the workspace is still
+        # loading: the signal fires again on every repository switch, which is
+        # what lets each repository be checked with its own setting.
         self.workspace = self.app.get_widget('workspace')
+        self._startup_handler = self.workspace.connect('workspace-loaded',
+                                                       self.startup)
         if self.workspace.is_loaded():
             self.startup()
-        else:
-            self._startup_handler = self.workspace.connect('workspace-loaded', self.startup)
 
     def do_deactivate(self):
         if hasattr(self, '_startup_handler'):
@@ -94,6 +100,65 @@ class Doctor(MiAZExtension):
         if not self.plugin.started():
             self.plugin.install_menu_entries({'run': self.run})
             self.plugin.set_started(started=True)
+        self.autorun()
+
+    def build_settings(self):
+        """The one thing there is to configure: check on opening, or not."""
+        group = Adw.PreferencesGroup(
+            title=_('Repository health'),
+            description=_('What happens when this repository is opened'))
+        row = Adw.SwitchRow(
+            title=_('Check the repository when it opens'),
+            subtitle=_('The check runs in the background. The report opens by '
+                       'itself only when something is wrong.'))
+        row.set_active(bool(self.plugin.get_config_key('autorun')))
+        row.connect('notify::active', self._on_autorun_setting)
+        group.add(row)
+        return group
+
+    def _on_autorun_setting(self, row, gparam):
+        self.plugin.set_config_key('autorun', row.get_active())
+
+    def autorun(self, *args):
+        """Run the check the repository asked for when it was opened.
+
+        The setting lives with the repository, so a switch reads the answer of
+        the repository being opened rather than the one being left.
+        """
+        if not self.plugin.get_config_key('autorun'):
+            return
+        if self._autorun_in_flight:
+            # A switch while the previous repository was still being examined.
+            # That answer is about to be discarded, so this one waits for it.
+            return
+        self._autorun_in_flight = True
+        run_in_background(self.examine,
+                          on_done=self._on_autorun_examined,
+                          on_error=self._on_autorun_failed,
+                          name='doctor-autorun')
+
+    def _on_autorun_failed(self, error):
+        self._autorun_in_flight = False
+        # Nobody asked for this one, so it does not get to raise a dialog.
+        self.log.error(f"Startup health check failed: {error}")
+
+    def _on_autorun_examined(self, report):
+        """Show what the startup check found, as loudly as it deserves.
+
+        A problem stops documents being filed or found, so the report opens.
+        Anything else is drift worth cleaning whenever it suits, which is a
+        toast and a button rather than a window in the way of the workspace.
+        """
+        self._autorun_in_flight = False
+        if not report:
+            self.srvdlg.show_toast(_('The repository is in good order'))
+            return
+        if summarise(report)[PROBLEM]:
+            self._show_report(report)
+            return
+        self.srvdlg.show_toast(
+            self._verdict(report), timeout=6, button_label=_('Open'),
+            on_button=lambda: self._show_report(report))
 
     def examine(self):
         """Read the repository and answer every check. Safe off the main loop.
@@ -148,6 +213,11 @@ class Doctor(MiAZExtension):
         if not report:
             self.srvdlg.show_toast(_('The repository is in good order'))
             return
+        self._show_report(report)
+
+    def _show_report(self, report):
+        """Put the report on screen. Asked for from the menu, or offered by
+        the startup check when it found something worth stopping for."""
         window = self.app.get_widget('window')
         # A report of problems is not good news, so it does not get the dialog
         # that congratulates the user. Warning while anything needs doing.
