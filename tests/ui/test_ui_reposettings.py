@@ -317,10 +317,21 @@ def test_scanner_settings_keep_the_manual_entry_when_no_app_is_found(
             clean_view.pump(0.4)
 
 
-def test_the_scanner_is_not_probed_to_open_the_dialog(repo_settings, clean_view):
-    """AutoScan builds its group by running SANE, which wakes the device and
-    takes seconds. Opening the dialog must not do that; showing the Settings
-    tab is what does.
+def test_the_scanner_is_never_probed_by_the_settings_tab(repo_settings, clean_view):
+    """Neither opening the dialog nor showing the Settings tab may run SANE.
+
+    Probing wakes the scanner and took about four seconds on the main loop,
+    which is most of what the tab used to cost to open. The plugin already
+    probes once at startup, on a worker thread, to build its menu, so the
+    settings group reads what that found instead of asking again.
+
+    This asserted the opposite of its second half once: that showing the tab
+    DID probe, as a stand-in for the group being built late rather than early.
+    That the group is built late is pinned by
+    test_nothing_is_built_until_the_tab_is_shown, so this one is free to say
+    the thing it is named for. The group still has to be built, or "nothing
+    was probed" would also be true of doing nothing at all, so that is checked
+    too.
 
     MiAZAutoScan is not in DEFAULT_PLUGINS, so it is loaded on demand here and
     unloaded again afterwards, leaving the sandbox as this test found it.
@@ -344,7 +355,11 @@ def test_the_scanner_is_not_probed_to_open_the_dialog(repo_settings, clean_view)
         notebook = clean_view.widget('repository-settings-notebook')
         notebook.set_current_page(_page_number(notebook, page))
         clean_view.pump(0.4)
-        assert calls != [], 'showing the tab did not build the group'
+        assert calls == [], 'showing the Settings tab probed the scanner'
+        assert page.is_built(), 'the tab was shown but nothing was built'
+        assert 'Scanner settings' in group_titles(page), (
+            'the scanner group is missing, so "nothing was probed" only means '
+            'nothing was built')
     finally:
         if system.is_plugin_loaded(info) != started_loaded:
             system.unload_plugin(info)

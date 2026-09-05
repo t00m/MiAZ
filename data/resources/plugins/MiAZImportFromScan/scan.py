@@ -64,6 +64,8 @@ class MiAZImportFromScanPlugin(MiAZExtension):
 
         ## Initialize plugin
         self.plugin.register(self, plugin_info)
+        # Filled by the first _search_scan_apps call, see why there.
+        self._scan_apps = None
 
         ## Get logger
         self.log = self.plugin.get_logger()
@@ -126,27 +128,32 @@ class MiAZImportFromScanPlugin(MiAZExtension):
                     yield desktop_path, self._get_origin(desktop_path)
 
     def _search_scan_app(self):
-        """Return the first scanner application found, or None."""
-        try:
-            for desktop_path, _origin in self._iter_desktop_files():
-                desktop_name = os.path.basename(desktop_path)
-                try:
-                    appinfo = Gio.DesktopAppInfo.new_from_filename(desktop_path)
-                    if appinfo is None:
-                        continue
-                    categories = appinfo.get_categories()
-                    if categories is not None:
-                        if re.search('scan', categories, re.IGNORECASE):
-                            return appinfo
-                except TypeError as error:
-                    self.log.debug(f"Skipping desktop entry '{desktop_name}': {error}")
-        except AttributeError as error:
-            # Not available in Windows/MSYS2
-            self.log.error(f"Plugin 'scan' couldn't be activated: {error}")
-        return None
+        """Return the first scanner application found, or None.
+
+        Collects them all rather than stopping at the first. Activation walks
+        the desktop files anyway to decide whether this plugin has anything to
+        offer, and the settings group needs the full list; doing it once here
+        means the Settings tab does not repeat a fifth of a second of
+        filesystem work the moment it is opened.
+        """
+        scanapps = self._search_scan_apps()
+        if not scanapps:
+            return None
+        appinfo, _origin = scanapps[0]
+        return appinfo
 
     def _search_scan_apps(self):
-        """Return (appinfo, origin) pairs for all scanner applications found on the system."""
+        """Return (appinfo, origin) pairs for all scanner applications found on the system.
+
+        Answered from memory after the first call. Walking every .desktop file
+        on the system and building a Gio.DesktopAppInfo for each takes about a
+        fifth of a second, which is most of what the Settings tab costs to
+        open, and the set of installed applications does not change while a
+        dialog is on screen. A plugin reload builds a fresh instance and so
+        starts over.
+        """
+        if self._scan_apps is not None:
+            return self._scan_apps
         scanapps = []
         try:
             for desktop_path, origin in self._iter_desktop_files():
@@ -163,6 +170,10 @@ class MiAZImportFromScanPlugin(MiAZExtension):
                     self.log.debug(f"Skipping desktop entry '{desktop_name}': {error}")
         except AttributeError as error:
             self.log.error(f"Could not search scanner apps: {error}")
+            # Not remembered: the walk failed rather than found nothing, and
+            # the next caller deserves a fresh attempt.
+            return scanapps
+        self._scan_apps = scanapps
         return scanapps
 
     def exec_scanner(self, *args):

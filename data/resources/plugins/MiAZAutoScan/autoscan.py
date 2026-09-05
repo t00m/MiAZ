@@ -86,6 +86,8 @@ class MiAZAutoScanPlugin(MiAZExtension):
         self.app = self.object.app
         self.plugin = MiAZPlugin(self.app)
         self.plugin.register(self, plugin_info)
+        # What the background probe found, None until it answers.
+        self._devices = None
         self.log = self.plugin.get_logger()
         self.factory = self.app.get_service('factory')
         self.repository = self.app.get_service('repo')
@@ -143,6 +145,11 @@ class MiAZAutoScanPlugin(MiAZExtension):
 
     def _detect_sources(self):
         devices = self._list_devices()
+        # Kept so the settings group does not run scanimage a second time.
+        # This is the only place the scanner is woken, and it happens on a
+        # worker thread; probing again from build_settings would do it on the
+        # main loop, where it froze the dialog for about four seconds.
+        self._devices = devices
         sources = []
         if devices:
             device = self.plugin.get_config_key('device')
@@ -162,6 +169,7 @@ class MiAZAutoScanPlugin(MiAZExtension):
         which reports whatever the real problem turns out to be.
         """
         self.log.error(f"Could not detect the scanner sources: {error}")
+        self._devices = []
         self._build_source_menu([])
 
     def _build_source_menu(self, sources):
@@ -541,8 +549,18 @@ class MiAZAutoScanPlugin(MiAZExtension):
             description=_('Configure the scanner device and scan parameters'),
         )
 
-        devices = self._list_devices()
+        # None means the background probe has not answered yet, an empty list
+        # means it answered and found nothing. They read the same on screen if
+        # they are not told apart, and the first one is not the user's problem
+        # to solve.
+        devices = self._devices
         saved_device = self.plugin.get_config_key('device')
+
+        if devices is None:
+            group.add(Adw.ActionRow(
+                title=_('Looking for a scanner'),
+                subtitle=_('Close and reopen this tab in a moment')))
+            return group
 
         if devices:
             string_list = Gtk.StringList()
