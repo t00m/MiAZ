@@ -648,3 +648,51 @@ def test_closing_the_settings_window_refreshes_the_projects_tab(
 
     assert calls, ('closing the settings window did not rebuild the '
                    'projects tick list')
+
+
+# ---------------------------------------------------------------------------
+# One person, one description
+# ---------------------------------------------------------------------------
+
+class FakeDialogEntries:
+    """Stands in for MiAZDialogAdd, which is the dialog, not what is tested."""
+
+    def __init__(self, key, description):
+        self._key = key
+        self._description = description
+
+    def get_value1(self):
+        return self._key
+
+    def get_value2(self):
+        return self._description
+
+
+def test_editing_a_sender_description_reaches_the_other_people_files(
+        repo_settings, clean_view):
+    """A person is the same person however a document names them.
+
+    The toast has always said "renamed globally" while the edit wrote one
+    file: a sender renamed here kept its old description in people-available,
+    people-used, and in recipients-used when the same person appears there.
+    """
+    selector = clean_view.widget('configview-Sender')
+    assert selector is not None, 'the Senders view is not built'
+    config = clean_view.app.get_config('SentBy')
+    people = clean_view.app.get_config('Person')
+    key = 'BANKX'
+    original = config.load_used()[key]
+    item = [row for row in selector.viewSl.get_model_filter() if row.id == key]
+    assert item, f'{key} is not among the senders in use'
+
+    try:
+        selector._on_item_available_edit_description(
+            None, 'apply', item[0], FakeDialogEntries(key, 'Bank X Group'),
+            None)
+        clean_view.pump(0.5)
+        assert config.load_used()[key] == 'Bank X Group'
+        assert people.load_available()[key] == 'Bank X Group'
+        assert people.load_used()[key] == 'Bank X Group'
+    finally:
+        config.set_description(key, original)
+        clean_view.pump(0.3)

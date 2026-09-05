@@ -215,3 +215,50 @@ def test_the_group_reaches_the_repository_settings_dialog(miaz, doctor):
     registry = miaz.service('plugin-system').settings
     offered = [(category, owner) for category, owner, _b in registry.builders()]
     assert ('Repository', 'MiAZDoctor') in offered, offered
+
+
+def test_the_inline_form_describes_a_value_that_already_has_a_row(miaz, doctor):
+    """The whole point of the vocabulary rows: a value described by nothing
+    but itself gets a name here.
+
+    The save went through config.add_used, which adds a key and does nothing
+    at all when the key is already there. Every value the check reports as
+    undescribed is already there, so the form never changed anything.
+    """
+    config = miaz.app.get_config('SentBy')
+    people = miaz.app.get_config('Person')
+    key = 'ACME'
+    original = config.load_used()[key]
+    entry = Gtk.Entry()
+    entry.set_text('ACME Corporation')
+    row = Adw.ActionRow()
+    button = Gtk.Button()
+    try:
+        doctor._on_save(button, 'SentBy', key, entry, row)
+        miaz.pump(0.3)
+        assert config.load_used()[key] == 'ACME Corporation'
+        assert people.load_available()[key] == 'ACME Corporation'
+        assert people.load_used()[key] == 'ACME Corporation'
+    finally:
+        config.set_description(key, original)
+        miaz.pump(0.3)
+
+
+def test_the_inline_form_still_adds_a_value_the_vocabulary_lacks(miaz, doctor):
+    """The other half of that row: a value used by documents and unknown to
+    the repository has to be added, not only described."""
+    config = miaz.app.get_config('SentBy')
+    key = 'STRANGER'
+    assert not config.exists_used(key), 'the sandbox keeps this one unknown'
+    entry = Gtk.Entry()
+    entry.set_text('A Stranger')
+    row = Adw.ActionRow()
+    try:
+        doctor._on_save(Gtk.Button(), 'SentBy', key, entry, row)
+        miaz.pump(0.3)
+        assert config.load_used()[key] == 'A Stranger'
+        assert config.load_available()[key] == 'A Stranger'
+    finally:
+        config.remove_used(key)
+        config.remove_available(key)
+        miaz.pump(0.3)

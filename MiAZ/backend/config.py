@@ -38,6 +38,12 @@ class MiAZConfig(GObject.GObject):
     }
     used = None
     default = None
+    # Configurations that describe the same vocabulary under different names.
+    # A person is the same person whether a document was sent by them or to
+    # them, so their description belongs in every file that names them:
+    # people-available, people-used, senders-used and recipients-used. Empty
+    # for a configuration nothing else shares.
+    shared_with = ()
 
     def __init__(self, app, log, config_for, used=None, available=None, default=None, model=MiAZModel, must_copy=True, foreign=False, cache=None):
         super().__init__()
@@ -59,6 +65,10 @@ class MiAZConfig(GObject.GObject):
         # repository switched away from stayed and were read again on the way
         # back.
         self.cache = {} if cache is None else cache
+        # Set by MiAZConfigStore, which is the only thing that knows every
+        # configuration of a repository. None when a config is built on its
+        # own, and then it is the whole family it has.
+        self.store = None
         self.setup()
 
     def __repr__(self):
@@ -212,6 +222,53 @@ class MiAZConfig(GObject.GObject):
         items = self.load(self.used)
         items[key] = value
         return self.save(self.used, items=items)
+
+    def family(self) -> list:
+        """This configuration and the ones sharing its vocabulary, self first.
+
+        Self first so the configuration the caller reached for is the one that
+        writes a shared file, and therefore the one whose signal carries the
+        change to the views built on it.
+        """
+        found = [self]
+        if self.store is None:
+            return found
+        for name in self.shared_with:
+            sibling = self.store.get(name)
+            if sibling is not None and sibling is not self:
+                found.append(sibling)
+        return found
+
+    def set_description(self, key: str, description: str) -> bool:
+        """Give a key its description, everywhere this repository holds it.
+
+        A description says what a key means, not that it is in use, so it is
+        written only where the key already is: naming a person nothing was
+        sent to must not turn them into a recipient. Use add_available or
+        add_used to put a key somewhere it is not.
+
+        Returns whether anything on disk changed.
+        """
+        if not key or not key.strip():
+            return False
+        changed = False
+        for config in self.family():
+            for filepath in (config.used, config.available):
+                changed |= config._describe(filepath, key, description)
+        return changed
+
+    def _describe(self, filepath: str, key: str, description: str) -> bool:
+        """Write one description into one file, when that file holds the key
+        and does not already say this. Configurations sharing a file (the
+        three people ones share people-available.json) therefore write it
+        once, and the rest see it through the shared cache."""
+        if not filepath:
+            return False
+        items = self.load(filepath)
+        if key not in items or items[key] == description:
+            return False
+        items[key] = description
+        return self.save(filepath, items=items)
 
     def exists_used(self, key: str) -> bool:
         config = self.load(self.used)
@@ -478,6 +535,8 @@ class MiAZConfigConcepts(MiAZConfig):
 
 
 class MiAZConfigPeople(MiAZConfig):
+    shared_with = ('Person', 'SentBy', 'SentTo')
+
     def __init__(self, app, dir_conf, cache=None):
 
         ENV = app.get_env()
@@ -495,6 +554,8 @@ class MiAZConfigPeople(MiAZConfig):
 
 
 class MiAZConfigSentBy(MiAZConfig):
+    shared_with = ('Person', 'SentBy', 'SentTo')
+
     def __init__(self, app, dir_conf, cache=None):
 
         ENV = app.get_env()
@@ -514,6 +575,8 @@ class MiAZConfigSentBy(MiAZConfig):
 
 
 class MiAZConfigSentTo(MiAZConfig):
+    shared_with = ('Person', 'SentBy', 'SentTo')
+
     def __init__(self, app, dir_conf, cache=None):
 
         ENV = app.get_env()
@@ -577,7 +640,11 @@ class MiAZConfigStore:
         self.cache = {}
         self._configs = {}
         for name, klass in REPO_CONFIGS:
-            self._configs[name] = klass(app, dir_conf, cache=self.cache)
+            config = klass(app, dir_conf, cache=self.cache)
+            # How a config reaches the ones sharing its vocabulary. The store
+            # is the only thing that holds them all.
+            config.store = self
+            self._configs[name] = config
         self.log.debug(f"Configuration loaded for repository: {dir_conf}")
 
     def get(self, name: str):

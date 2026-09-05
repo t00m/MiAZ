@@ -291,18 +291,12 @@ class MiAZSelector(Gtk.Box):
             newval = this_item.get_value2()
             self.log.debug(f"{oldval} == {newval}? {newval != oldval}")
             if newval != oldval:
-                # Apply the new description to whichever list(s) hold the key.
-                # Available and used are disjoint (enabling an item removes it
-                # from available), so guard each write to avoid re-adding a
-                # stale orphan entry to the other list.
-                items_used = self.config.load_used()
-                if oldkey in items_used:
-                    items_used[oldkey] = newval
-                    self.config.save_used(items_used)
-                items_available = self.config.load_available()
-                if oldkey in items_available:
-                    items_available[oldkey] = newval
-                    self.config.save_available(items_available)
+                # Every file this repository holds the key in, which for a
+                # person is four: people-available, people-used, senders-used
+                # and recipients-used. Writing only this configuration's own
+                # pair is what left the same person described two ways, while
+                # the toast below said the rename was global.
+                self.config.set_description(oldkey, newval)
                 self.update_views()
                 self._show_toast(_('{title} {old} renamed to {new} globally').format(title=i_title, old=oldval, new=newval))
             else:

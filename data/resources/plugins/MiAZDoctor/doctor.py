@@ -349,7 +349,13 @@ class Doctor(MiAZExtension):
             return
         if not config.exists_available(code):
             config.add_available(code, description)
-        config.add_used(code, description)
+        if not config.exists_used(code):
+            config.add_used(code, description)
+        # add_used only adds: it leaves a key that is already there alone, and
+        # every value this form is offered for is already there, described by
+        # nothing but itself. set_description is the one that writes over it,
+        # in every file of the repository that holds the key.
+        config.set_description(code, description)
         row.set_subtitle(_('Saved as "{description}"').format(description=description))
         button.set_sensitive(False)
         entry.set_sensitive(False)
