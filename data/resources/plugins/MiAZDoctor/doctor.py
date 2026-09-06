@@ -374,6 +374,12 @@ class Doctor(MiAZExtension):
         if workspace is None:
             return
         workspace.show_documents(finding.documents, label=_(finding.summary))
+        if finding.check == 'duplicates':
+            # A list of copies is not usable until the copies are told apart.
+            # The workspace has the column that says which document matches
+            # which; only this finding is about content, so only this one asks
+            # for the scan behind it.
+            workspace.show_duplicates()
         dialog = self.app.get_widget('doctor-dialog')
         if dialog is not None:
             dialog.close()

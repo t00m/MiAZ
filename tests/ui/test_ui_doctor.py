@@ -262,3 +262,50 @@ def test_the_inline_form_still_adds_a_value_the_vocabulary_lacks(miaz, doctor):
         config.remove_used(key)
         config.remove_available(key)
         miaz.pump(0.3)
+
+
+def test_showing_the_duplicates_finding_tells_the_copies_apart(clean_view, doctor):
+    """177 documents in date order do not say which is a copy of which.
+
+    The copy column answers that, and it stays hidden until something has been
+    scanned. Showing a group of copies is exactly the moment to ask.
+    """
+    index = clean_view.service('index')
+    view = clean_view.widget('workspace-view')
+    index._invalidate_duplicates()
+    view.column_duplicate.set_visible(False)
+
+    report = doctor.examine()
+    finding = next((f for f in report if f.check == 'duplicates'), None)
+    assert finding is not None, 'the sandbox documents share their content'
+
+    doctor._on_show(Gtk.Button(), finding)
+    clean_view.wait_until(lambda: not index.duplicates_stale(),
+                          message='the duplicate scan')
+    clean_view.pump(0.5)
+    assert view.column_duplicate.get_visible() is True
+    assert sorted(clean_view.displayed()) == sorted(finding.documents)
+    clean_view.workspace.clear_documents()
+    clean_view.pump(0.3)
+
+
+def test_showing_another_finding_leaves_the_copy_column_alone(clean_view, doctor):
+    """Only the finding about copies asks for the scan; the rest are not
+    about content and should not pay 0.9 seconds of reading for it.
+    """
+    index = clean_view.service('index')
+    view = clean_view.widget('workspace-view')
+    index._invalidate_duplicates()
+    view.column_duplicate.set_visible(False)
+
+    report = doctor.examine()
+    finding = next((f for f in report
+                    if f.documents and f.check != 'duplicates'), None)
+    assert finding is not None, 'the sandbox has a finding of another kind'
+
+    doctor._on_show(Gtk.Button(), finding)
+    clean_view.pump(2.0)
+    assert index.duplicates_stale() is True
+    assert view.column_duplicate.get_visible() is False
+    clean_view.workspace.clear_documents()
+    clean_view.pump(0.3)

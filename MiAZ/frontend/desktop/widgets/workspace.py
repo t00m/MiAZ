@@ -150,6 +150,9 @@ class MiAZWorkspace(Gtk.Box):
         # already worked out which ones matter: a health check, a plugin.
         self._only_ids = None
         self._only_label = ''
+        # Set while a duplicate scan is in flight for a caller that asked for
+        # the view in copy order: the sorter reads the map, so it waits.
+        self._sort_by_duplicates_pending = False
         # Holds back refreshes while something does bulk work, and coalesces
         # them into one when the last holder releases. See suspend_updates().
         self._gate = UpdateGate(self.update)
@@ -383,6 +386,9 @@ class MiAZWorkspace(Gtk.Box):
         if column is not None:
             column.set_visible(bool(index.duplicates_of_any()))
         self.view.refilter()
+        if self._sort_by_duplicates_pending:
+            self._sort_by_duplicates_pending = False
+            self._sort_by_duplicates()
 
     def is_loaded(self):
         return self.workspace_loaded
@@ -441,15 +447,46 @@ class MiAZWorkspace(Gtk.Box):
         """Mark documents whose bytes match another one, for review triage.
 
         Reads files, about 0.9s for 1336 documents, so it runs in a worker and
-        only on entering review mode: a user who never opens it pays nothing.
+        only when something asks: review mode, or a caller wanting the copies
+        told apart. A user who does neither pays nothing.
         """
         index = self.app.get_service('index')
         if index is None or not index.duplicates_stale():
-            return
+            return False
         run_in_background(index.scan_duplicates,
                           on_error=lambda error: self.log.error(
                               f"Duplicate scan failed: {error}"),
                           name='workspace-duplicates')
+        return True
+
+    def show_duplicates(self):
+        """Say which of the documents on screen are copies of which.
+
+        A list of copies is not usable until the copies are told apart, and
+        the answer is a column that is hidden until something has been
+        scanned. This scans if the map is stale and puts the view in copy
+        order, so a group's members sit next to each other; the column marks
+        them and its tooltip names the twins.
+
+        The sort waits for the scan when there is one, because the sorter
+        reads the map and would otherwise order the rows against an empty one.
+        """
+        index = self.app.get_service('index')
+        if index is None:
+            return
+        self.show_view('details')
+        if self._scan_duplicates():
+            self._sort_by_duplicates_pending = True
+            return
+        self._sort_by_duplicates()
+
+    def _sort_by_duplicates(self):
+        """Order the view by the copy column, groups first."""
+        column = getattr(self.view, 'column_duplicate', None)
+        if column is None or column.get_sorter() is None:
+            return
+        column.set_visible(True)
+        self.view.cv.sort_by_column(column, Gtk.SortType.ASCENDING)
 
     def _update_dropdown_date(self):
         util = self.app.get_service('util')

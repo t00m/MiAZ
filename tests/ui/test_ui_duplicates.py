@@ -218,3 +218,73 @@ def test_sorting_by_the_column_does_not_break_the_view(clean_view):
     finally:
         open(path, 'wb').write(original)
         leave_review(clean_view)
+
+
+# ---------------------------------------------------------------------------
+# Showing a group of copies without going through review mode
+# ---------------------------------------------------------------------------
+
+def sorted_ids(driver):
+    """The document ids in the order the view is showing them."""
+    view = driver.widget('workspace-view')
+    model = view.get_model_filter()
+    return [model.get_item(position).id for position in range(len(model))]
+
+
+def test_show_duplicates_scans_and_reveals_the_column(clean_view):
+    """The Doctor's Show puts a set of copies on screen, and nothing on that
+    screen said which was a copy of which: the map is only scanned on entering
+    review mode, and the column is only revealed by that scan.
+    """
+    workspace = clean_view.workspace
+    view = clean_view.widget('workspace-view')
+    index = clean_view.service('index')
+    index._invalidate_duplicates()
+    view.column_duplicate.set_visible(False)
+
+    workspace.show_duplicates()
+    clean_view.wait_until(lambda: not index.duplicates_stale(),
+                          message='the duplicate scan')
+    clean_view.pump(0.5)
+    assert view.column_duplicate.get_visible() is True
+
+
+def test_show_duplicates_puts_the_copies_next_to_each_other(clean_view):
+    """Adjacency is the answer to "which of these is a copy of which".
+
+    The sandbox documents all share their content, so one group holds them
+    all: what is asserted is that the view is sorted by the copy column, not
+    that any particular pair ended up together.
+    """
+    workspace = clean_view.workspace
+    view = clean_view.widget('workspace-view')
+
+    workspace.show_duplicates()
+    clean_view.wait_until(lambda: not clean_view.service('index').duplicates_stale(),
+                          message='the duplicate scan')
+    clean_view.pump(0.5)
+
+    shown = sorted_ids(clean_view)
+    expected = sorted(shown, key=lambda name: view._duplicate_sort_key(
+        clean_view.service('index').document(name)))
+    assert shown == expected, 'the view is not in copy order'
+
+
+def test_show_duplicates_does_not_rescan_what_is_already_known(clean_view):
+    """The scan reads every file that shares a size with another one."""
+    index = clean_view.service('index')
+    workspace = clean_view.workspace
+    workspace.show_duplicates()
+    clean_view.wait_until(lambda: not index.duplicates_stale(),
+                          message='the first scan')
+    clean_view.pump(0.4)
+
+    scans = []
+    original = index.scan_duplicates
+    index.scan_duplicates = lambda *args: scans.append(True) or original(*args)
+    try:
+        workspace.show_duplicates()
+        clean_view.pump(1.0)
+        assert scans == [], 'a fresh map was scanned again'
+    finally:
+        index.scan_duplicates = original
