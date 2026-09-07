@@ -77,3 +77,60 @@ def test_a_step_is_named_after_what_the_user_did(miaz, history):
     miaz.pump(0.5)
     newest = history.store.states()[-1]
     assert history.store.subject_of(newest) == 'Added 1 document'
+
+
+def test_a_window_settled_while_recording_is_not_stranded(miaz, history):
+    """A recording started by an earlier window can still be in flight when
+    the next one settles. That window must be rearmed, not dropped: nothing
+    is recorded and its counts wait, rather than sitting with no timer to
+    flush them."""
+    repository = miaz.service('repo').docs
+    before = history.store.count()
+    with open(os.path.join(repository, '20261214-ES-FIN-BANKX-INV-z-JOHNDOE.pdf'),
+              'wb') as document:
+        document.write(b'new')
+    history._counts = {'added': 1}
+    history._recording = True
+    history.settle()
+    assert history._settle_id != 0, 'the window is rearmed rather than dropped'
+    assert history._counts == {'added': 1}, 'the count is kept, waiting its turn'
+    assert history.store.count() == before, 'nothing is recorded while busy'
+
+    history._recording = False
+    history.settle()
+    miaz.pump(0.5)
+    assert history.store.count() == before + 1
+
+
+def test_a_failed_recording_keeps_its_counts_for_the_next_step(miaz, history):
+    """settle() clears self._counts before the background call is known to
+    have succeeded. A recording that fails must not lose that count: it comes
+    back and is carried by the step that does succeed."""
+    repository = miaz.service('repo').docs
+    with open(os.path.join(repository, '20261215-ES-FIN-BANKX-INV-w-JOHNDOE.pdf'),
+              'wb') as document:
+        document.write(b'new')
+
+    original_record = history.store.record
+
+    def failing_record(subject):
+        raise RuntimeError('pretend the disk is full')
+
+    history.store.record = failing_record
+    try:
+        history._counts = {'added': 1}
+        history.settle()
+        miaz.pump(0.5)
+    finally:
+        history.store.record = original_record
+
+    assert history._counts == {'added': 1}, 'the failed count is merged back, not lost'
+
+    with open(os.path.join(repository, '20261216-ES-FIN-BANKX-INV-v-JOHNDOE.pdf'),
+              'wb') as document:
+        document.write(b'new')
+    history._counts['added'] += 1
+    history.settle()
+    miaz.pump(0.5)
+    newest = history.store.states()[-1]
+    assert history.store.subject_of(newest) == 'Added 2 documents'

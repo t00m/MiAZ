@@ -270,7 +270,13 @@ class MiAZHistoryPlugin(MiAZExtension):
         if self._ceiling_id:
             GLib.source_remove(self._ceiling_id)
             self._ceiling_id = 0
-        if not self._ready or self._recording or self._suppressed:
+        if not self._ready or self._suppressed:
+            return
+        if self._recording:
+            # A recording from an earlier window is still in flight. What was
+            # collected since has to wait its turn rather than sit unarmed, so
+            # this window settles again as soon as that recording finishes.
+            self._restart_settle()
             return
 
         from history.summary import subject
@@ -280,17 +286,25 @@ class MiAZHistoryPlugin(MiAZExtension):
         run_in_background(
             lambda: self.store.record(subject(counts)),
             on_done=self._on_recorded,
-            on_error=self._on_record_failed,
+            on_error=lambda error: self._on_record_failed(error, counts),
             name='miazhistory-record')
 
     def _on_recorded(self, _state):
         self._recording = False
         self.refresh_buttons()
 
-    def _on_record_failed(self, error):
-        """A change that could not be recorded is not a change that was lost:
-        everything is staged again next time, so it lands in a later step."""
+    def _on_record_failed(self, error, counts):
+        """The file content is never lost: record() stages everything again
+        on the next attempt. What settle() already cleared is the count of
+        what this window was, so it is merged back into whatever has piled up
+        since, and the next successful step is named after all of it rather
+        than only the part that came after the failure. Nothing is re-armed
+        here: a failure that keeps failing must not spin a timer forever, and
+        the next real signal starts a window the usual way.
+        """
         self._recording = False
+        for key, amount in counts.items():
+            self._counts[key] = self._counts.get(key, 0) + amount
         self.log.error(f"A change could not be recorded: {error}")
         self.srvdlg.show_toast(_('The change could not be recorded'))
 
