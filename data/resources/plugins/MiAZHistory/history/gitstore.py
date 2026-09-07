@@ -221,3 +221,29 @@ class GitStore:
                 except OSError:
                     pass
         return total
+
+    def changes(self, older: str, newer: str) -> list:
+        """[(status, path, other)] between two states.
+
+        Renames are detected rather than reported as a deletion and an
+        addition: "renamed" is what the user did, and two halves would read as
+        a document lost and another gained. The output is NUL separated
+        because a filename may hold anything a filename may hold.
+        """
+        out = self._run('diff', '--name-status', '-M', '-z', older, newer)
+        fields = [field for field in out.split('\0') if field]
+        changes = []
+        position = 0
+        while position < len(fields):
+            status = fields[position][0]
+            if status in ('R', 'C'):
+                changes.append((status, fields[position + 1], fields[position + 2]))
+                position += 3
+            else:
+                changes.append((status, fields[position + 1], ''))
+                position += 2
+        return changes
+
+    def timestamp(self, state: str) -> int:
+        """When a state was made, in seconds since the epoch."""
+        return int(self._run('show', '-s', '--format=%ct', state).strip())

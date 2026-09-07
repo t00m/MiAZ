@@ -344,3 +344,54 @@ def test_what_a_step_back_would_take_away(repository):
     store.step_back('Stepped back')
     assert store.pending_undo() is None
     assert store.pending_redo() == (first, second)
+
+
+def test_an_addition_is_reported_as_one(repository):
+    from history.gitstore import GitStore
+    store = GitStore(str(repository))
+    first = store.init('Everything as it was')
+    (repository / '20260202-ES-FIN-BANKX-INV-water-JOHNDOE.pdf').write_bytes(b'second')
+    second = store.record('Added 1 document')
+    assert store.changes(first, second) == [
+        ('A', '20260202-ES-FIN-BANKX-INV-water-JOHNDOE.pdf', '')]
+
+
+def test_a_rename_is_reported_as_one_change_with_both_names(repository):
+    """Two halves of a rename shown as a delete and an addition would read as
+    losing a document."""
+    from history.gitstore import GitStore
+    store = GitStore(str(repository))
+    first = store.init('Everything as it was')
+    old = repository / '20260101-ES-FIN-BANKX-INV-rent-JOHNDOE.pdf'
+    new = repository / '20260101-ES-FIN-BANKX-INV-mortgage-JOHNDOE.pdf'
+    shutil.move(str(old), str(new))
+    second = store.record('Renamed 1 document')
+    assert store.changes(first, second) == [('R', old.name, new.name)]
+
+
+def test_a_deletion_is_reported_as_one(repository):
+    from history.gitstore import GitStore
+    store = GitStore(str(repository))
+    first = store.init('Everything as it was')
+    document = repository / '20260101-ES-FIN-BANKX-INV-rent-JOHNDOE.pdf'
+    os.unlink(document)
+    second = store.record('Deleted 1 document')
+    assert store.changes(first, second) == [('D', document.name, '')]
+
+
+def test_a_configuration_change_is_reported_with_its_path(repository):
+    from history.gitstore import GitStore
+    store = GitStore(str(repository))
+    first = store.init('Everything as it was')
+    (repository / '.conf' / 'senders-used.json').write_text('{"BANKX": "Bank X"}',
+                                                            encoding='utf-8')
+    second = store.record('Added 1 sender')
+    assert store.changes(first, second) == [('A', '.conf/senders-used.json', '')]
+
+
+def test_a_state_knows_when_it_was_made(repository):
+    import time
+    from history.gitstore import GitStore
+    store = GitStore(str(repository))
+    first = store.init('Everything as it was')
+    assert abs(store.timestamp(first) - time.time()) < 60
