@@ -11,7 +11,7 @@ import os
 import sys
 from gettext import gettext as _
 
-from gi.repository import GLib
+from gi.repository import GLib, Gtk
 
 from MiAZ.backend.tasks import run_in_background
 from MiAZ.frontend.desktop.services.pluginsystem import MiAZExtension, MiAZPlugin
@@ -38,6 +38,10 @@ SETTLE_MS = 1200
 # And how long the settling may be put off. Without a ceiling a long import
 # keeps restarting the timer and nothing is ever recorded.
 CEILING_MS = 30000
+
+BOX_WIDGET_ID = 'headerbar-box-history'
+UNDO_WIDGET_ID = 'headerbar-button-history-undo'
+REDO_WIDGET_ID = 'headerbar-button-history-redo'
 
 
 class MiAZHistoryPlugin(MiAZExtension):
@@ -89,7 +93,35 @@ class MiAZHistoryPlugin(MiAZExtension):
         if self.plugin.started():
             return
         self.plugin.set_started(started=True)
+        self._install_buttons()
         self.prepare()
+
+    def _install_buttons(self):
+        """One pair of buttons, in the header bar, for the whole window.
+
+        They are built insensitive: until prepare() has found or made a
+        history, there is nothing to step through.
+        """
+        box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=0)
+        box.add_css_class('linked')
+        self.button_undo = Gtk.Button()
+        self.button_undo.set_icon_name('edit-undo-symbolic')
+        self.button_undo.set_has_frame(False)
+        self.button_undo.set_valign(Gtk.Align.CENTER)
+        self.button_undo.set_sensitive(False)
+        self.button_undo.connect('clicked', lambda button: self.ask_undo())
+        self.button_redo = Gtk.Button()
+        self.button_redo.set_icon_name('edit-redo-symbolic')
+        self.button_redo.set_has_frame(False)
+        self.button_redo.set_valign(Gtk.Align.CENTER)
+        self.button_redo.set_sensitive(False)
+        self.button_redo.connect('clicked', lambda button: self.ask_redo())
+        box.append(self.button_undo)
+        box.append(self.button_redo)
+        self.app.add_widget(UNDO_WIDGET_ID, self.button_undo)
+        self.app.add_widget(REDO_WIDGET_ID, self.button_redo)
+        self.plugin.add_headerbar_widget(box, position='left',
+                                         widget_key=BOX_WIDGET_ID)
 
     def is_ready(self) -> bool:
         """Whether there is a history to step through."""
@@ -169,6 +201,7 @@ class MiAZHistoryPlugin(MiAZExtension):
 
     def _on_first_snapshot_done(self, _result):
         self._start_recording()
+        self.refresh_buttons()
         self.srvdlg.show_toast(_('Your changes can now be undone'))
 
     def _on_first_snapshot_failed(self, error):
@@ -217,6 +250,7 @@ class MiAZHistoryPlugin(MiAZExtension):
             self._handlers.append((watcher, handler))
 
         self.catch_up()
+        self.refresh_buttons()
 
     def _stop_recording(self):
         for source, handler in self._handlers:
@@ -309,7 +343,114 @@ class MiAZHistoryPlugin(MiAZExtension):
         self.srvdlg.show_toast(_('The change could not be recorded'))
 
     def refresh_buttons(self):
-        """Overridden with real work once the buttons exist."""
+        """Say what each button would do, or grey it out when it would do
+        nothing."""
+        from history.summary import headline, when
+        if not self._ready:
+            return
+        for button, pending, wording in (
+                (self.button_undo, self.store.pending_undo(),
+                 _('Undo: %(what)s (%(when)s)')),
+                (self.button_redo, self.store.pending_redo(),
+                 _('Redo: %(what)s (%(when)s)'))):
+            button.set_sensitive(pending is not None)
+            if pending is None:
+                button.set_tooltip_text('')
+                continue
+            older, newer = pending
+            changes = self.store.changes(older, newer)
+            button.set_tooltip_text(wording % {
+                'what': headline(changes),
+                'when': when(self.store.timestamp(newer))})
+
+    def ask_undo(self):
+        return self._ask('back')
+
+    def ask_redo(self):
+        return self._ask('forward')
+
+    def _ask(self, direction: str):
+        """Show what the step would change, and let the user decide.
+
+        Returns the dialog, so a test can read what the user would read.
+        """
+        from history.summary import body
+        pending = (self.store.pending_undo() if direction == 'back'
+                   else self.store.pending_redo())
+        if pending is None:
+            return None
+        older, newer = pending
+        changes = self.store.changes(older, newer)
+        back = direction == 'back'
+        # show_confirmation rather than show_question: it puts the action on
+        # the button ("Undo") instead of answering "Yes", and it makes Cancel
+        # the default, which is right for something that rewrites files.
+        dialog = self.srvdlg.show_confirmation(
+            title=_('Undo this change?') if back else _('Redo this change?'),
+            body=body(changes, self.store.timestamp(newer)),
+            confirm_label=_('Undo') if back else _('Redo'),
+            callback=self._on_answer, data=direction,
+            width=520, height=420)
+        dialog.present(self.app.get_widget('window'))
+        return dialog
+
+    def _on_answer(self, dialog, response, direction):
+        if response == 'apply':
+            self.apply_step(direction)
+
+    def apply_step(self, direction: str):
+        """Put an earlier or later state of the repository back on disk.
+
+        Recording is suppressed while this runs: the files change, and the
+        file monitor would otherwise report the step as a change the user
+        made.
+        """
+        if not self._ready:
+            return
+        pending = (self.store.pending_undo() if direction == 'back'
+                   else self.store.pending_redo())
+        if pending is None:
+            return
+        # Asked before the step, because afterwards the two states it compares
+        # are no longer the ones either side of where we are.
+        touched_config = any(path.startswith('.conf/') or other.startswith('.conf/')
+                             for _status, path, other
+                             in self.store.changes(pending[0], pending[1]))
+        self._suppressed = True
+        subject = (_('Stepped back') if direction == 'back'
+                   else _('Stepped forward'))
+        step = (self.store.step_back if direction == 'back'
+                else self.store.step_forward)
+        run_in_background(lambda: step(subject),
+                          on_done=lambda state: self._on_step_done(state, touched_config),
+                          on_error=self._on_step_failed,
+                          name=f'miazhistory-step-{direction}')
+
+    def _on_step_done(self, _state, touched_config: bool):
+        self._suppressed = False
+        self._counts = {}
+        self.refresh_buttons()
+        if touched_config:
+            self.reload()
+
+    def _on_step_failed(self, error):
+        self._suppressed = False
+        self.log.error(f"The step could not be applied: {error}")
+        self.srvdlg.show_toast(_('The change could not be undone'))
+
+    def reload(self):
+        """Tell MiAZ to read the configuration that is now on disk.
+
+        Documents alone need nothing: the file monitor repaints the workspace
+        by itself. Configuration does, because every config object holds its
+        file in memory, so the repository is opened again, the same way a
+        repository switch does it. That is the expensive path, which is why it
+        runs only when a step touched .conf.
+        """
+        workflow = self.app.get_service('workflow')
+        if workflow is None:
+            return
+        workflow.switch_start(repo_id=self.repository.get_active_id())
 
     def _repository_size(self) -> int:
         total = 0

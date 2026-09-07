@@ -134,3 +134,77 @@ def test_a_failed_recording_keeps_its_counts_for_the_next_step(miaz, history):
     miaz.pump(0.5)
     newest = history.store.states()[-1]
     assert history.store.subject_of(newest) == 'Added 2 documents'
+
+
+def test_both_buttons_are_in_the_header_bar(miaz, history):
+    assert miaz.widget('headerbar-button-history-undo') is not None
+    assert miaz.widget('headerbar-button-history-redo') is not None
+
+
+def test_a_repository_with_one_state_can_step_nowhere(miaz, history):
+    """Nothing has happened yet, so neither direction leads anywhere.
+
+    The sandbox repository is session scoped and shared with every other UI
+    test file, so walking it back to its oldest state here would strip it of
+    documents those files rely on. The steps back are counted and then undone
+    with the same number of steps forward, in a finally, so the repository
+    ends where it started even if an assertion below fails.
+    """
+    steps_back = 0
+    try:
+        while history.store.can_undo():
+            history.store.step_back('Stepped back')
+            steps_back += 1
+        history.refresh_buttons()
+        miaz.pump(0.2)
+        assert miaz.widget('headerbar-button-history-undo').get_sensitive() is False
+    finally:
+        for _ in range(steps_back):
+            history.store.step_forward('Stepped forward')
+        history.refresh_buttons()
+        miaz.pump(0.2)
+
+
+def test_a_recorded_change_makes_the_undo_button_work(miaz, history):
+    repository = miaz.service('repo').docs
+    with open(os.path.join(repository, '20261214-ES-FIN-BANKX-INV-z-JOHNDOE.pdf'),
+              'wb') as document:
+        document.write(b'new')
+    history._counts = {'added': 1}
+    history.settle()
+    miaz.pump(0.5)
+    assert miaz.widget('headerbar-button-history-undo').get_sensitive() is True
+
+
+def test_the_dialog_names_the_files_and_never_says_git(miaz, history):
+    repository = miaz.service('repo').docs
+    name = '20261215-ES-FIN-BANKX-INV-w-JOHNDOE.pdf'
+    with open(os.path.join(repository, name), 'wb') as document:
+        document.write(b'new')
+    history._counts = {'added': 1}
+    history.settle()
+    miaz.pump(0.5)
+
+    dialog = history.ask_undo()
+    miaz.pump(0.2)
+    body = dialog.get_body()
+    assert name in body
+    for word in ('commit', 'git', 'revert', 'checkout'):
+        assert word not in body.lower()
+    dialog.close()
+    miaz.pump(0.2)
+
+
+def test_stepping_back_takes_the_document_off_the_disk(miaz, history):
+    repository = miaz.service('repo').docs
+    name = '20261216-ES-FIN-BANKX-INV-v-JOHNDOE.pdf'
+    path = os.path.join(repository, name)
+    with open(path, 'wb') as document:
+        document.write(b'new')
+    history._counts = {'added': 1}
+    history.settle()
+    miaz.pump(0.5)
+
+    history.apply_step('back')
+    miaz.wait_until(lambda: not os.path.exists(path), message='the document went away')
+    assert history.store.can_redo() is True
