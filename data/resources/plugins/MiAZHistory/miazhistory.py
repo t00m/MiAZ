@@ -403,9 +403,11 @@ class MiAZHistoryPlugin(MiAZExtension):
 
         Recording is suppressed while this runs: the files change, and the
         file monitor would otherwise report the step as a change the user
-        made.
+        made. The same flag also guards against a second step starting
+        before this one finishes: two of them against the same working tree
+        at once would race.
         """
-        if not self._ready:
+        if not self._ready or self._suppressed:
             return
         pending = (self.store.pending_undo() if direction == 'back'
                    else self.store.pending_redo())
@@ -417,6 +419,8 @@ class MiAZHistoryPlugin(MiAZExtension):
                              for _status, path, other
                              in self.store.changes(pending[0], pending[1]))
         self._suppressed = True
+        self.button_undo.set_sensitive(False)
+        self.button_redo.set_sensitive(False)
         subject = (_('Stepped back') if direction == 'back'
                    else _('Stepped forward'))
         step = (self.store.step_back if direction == 'back'
@@ -437,6 +441,7 @@ class MiAZHistoryPlugin(MiAZExtension):
         self._suppressed = False
         self.log.error(f"The step could not be applied: {error}")
         self.srvdlg.show_toast(_('The change could not be undone'))
+        self.refresh_buttons()
 
     def reload(self):
         """Tell MiAZ to read the configuration that is now on disk.

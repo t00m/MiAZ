@@ -208,3 +208,19 @@ def test_stepping_back_takes_the_document_off_the_disk(miaz, history):
     history.apply_step('back')
     miaz.wait_until(lambda: not os.path.exists(path), message='the document went away')
     assert history.store.can_redo() is True
+
+
+def test_a_step_already_in_flight_blocks_a_second_one(miaz, history):
+    """_suppressed marks a step already running in the background. A second
+    apply_step call made while it is set must not start another one against
+    the same working tree."""
+    before_index = history.store.index()
+    before_count = history.store.count()
+    history._suppressed = True
+    try:
+        history.apply_step('back')
+        miaz.pump(0.2)
+        assert history.store.index() == before_index
+        assert history.store.count() == before_count
+    finally:
+        history._suppressed = False
