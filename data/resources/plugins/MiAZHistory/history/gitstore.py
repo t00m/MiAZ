@@ -112,6 +112,80 @@ class GitStore:
         self._write_state(states, len(states) - 1)
         return commit
 
+    def can_undo(self) -> bool:
+        return self._read_state()['index'] > 0
+
+    def can_redo(self) -> bool:
+        state = self._read_state()
+        return state['index'] < len(state['states']) - 1
+
+    def pending_undo(self):
+        """(older, newer): the change a step back would take away, or None."""
+        state = self._read_state()
+        if state['index'] <= 0:
+            return None
+        return (state['states'][state['index'] - 1], state['states'][state['index']])
+
+    def pending_redo(self):
+        """(older, newer): the change a step forward would bring back, or None."""
+        state = self._read_state()
+        if state['index'] >= len(state['states']) - 1:
+            return None
+        return (state['states'][state['index']], state['states'][state['index'] + 1])
+
+    def step_back(self, subject: str):
+        state = self._read_state()
+        if state['index'] <= 0:
+            return None
+        target = state['states'][state['index'] - 1]
+        self._apply(target, subject)
+        self._write_state(state['states'], state['index'] - 1)
+        return target
+
+    def step_forward(self, subject: str):
+        state = self._read_state()
+        if state['index'] >= len(state['states']) - 1:
+            return None
+        target = state['states'][state['index'] + 1]
+        self._apply(target, subject)
+        self._write_state(state['states'], state['index'] + 1)
+        return target
+
+    def _apply(self, target: str, subject: str):
+        """Put the tree of `target` on disk, and record having done so.
+
+        read-tree writes the index and the working tree in one go, adding,
+        changing and deleting exactly what the difference asks for. It refuses
+        rather than half-applying, so a failure here leaves the repository as
+        it was.
+
+        The result is committed rather than left in place: an uncommitted tree
+        would be picked up by the next settle timer and recorded as though the
+        user had made it.
+        """
+        self._run('read-tree', '--reset', '-u', target)
+        self._keep_plugin_enabled()
+        self._commit(subject, allow_empty=True)
+
+    def _keep_plugin_enabled(self):
+        """Put MiAZHistory back into plugins-used.json when a step removed it.
+
+        The one key under .conf that a step does not restore verbatim. Without
+        this, stepping back past the moment the plugin was enabled would
+        switch off the plugin that holds the redo.
+        """
+        path = os.path.join(self.path, PLUGINS_USED)
+        try:
+            with open(path, encoding='utf-8') as used:
+                plugins = json.load(used)
+        except (OSError, ValueError):
+            return
+        if PLUGIN_NAME in plugins:
+            return
+        plugins[PLUGIN_NAME] = PLUGIN_DESCRIPTION
+        with open(path, 'w', encoding='utf-8') as used:
+            json.dump(plugins, used, indent=4, sort_keys=True)
+
     def _read_state(self) -> dict:
         try:
             with open(self.statefile, encoding='utf-8') as state:

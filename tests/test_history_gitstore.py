@@ -184,3 +184,163 @@ def test_nothing_changed_is_not_a_state(repository):
     store.init('Everything as it was')
     assert store.record('Nothing at all') is None
     assert store.count() == 1
+
+
+def documents(path):
+    return sorted(name for name in os.listdir(path) if name.endswith('.pdf'))
+
+
+def test_stepping_back_puts_the_earlier_state_on_disk(repository):
+    from history.gitstore import GitStore
+    store = GitStore(str(repository))
+    store.init('Everything as it was')
+    (repository / '20260202-ES-FIN-BANKX-INV-water-JOHNDOE.pdf').write_bytes(b'second')
+    store.record('Added 1 document')
+    assert len(documents(repository)) == 2
+
+    store.step_back('Stepped back')
+    assert len(documents(repository)) == 1
+    assert store.index() == 0
+
+
+def test_stepping_forward_puts_it_back(repository):
+    from history.gitstore import GitStore
+    store = GitStore(str(repository))
+    store.init('Everything as it was')
+    (repository / '20260202-ES-FIN-BANKX-INV-water-JOHNDOE.pdf').write_bytes(b'second')
+    store.record('Added 1 document')
+    store.step_back('Stepped back')
+    store.step_forward('Stepped forward')
+    assert len(documents(repository)) == 2
+    assert store.index() == 1
+
+
+def test_a_deleted_document_comes_back_with_its_content(repository):
+    """Deleting in MiAZ is an unlink with no trash, so this is the whole
+    reason content is stored and not only names."""
+    from history.gitstore import GitStore
+    store = GitStore(str(repository))
+    store.init('Everything as it was')
+    document = repository / '20260101-ES-FIN-BANKX-INV-rent-JOHNDOE.pdf'
+    os.unlink(document)
+    store.record('Deleted 1 document')
+    store.step_back('Stepped back')
+    assert document.read_bytes() == b'first'
+
+
+def test_a_renamed_document_goes_back_to_its_old_name(repository):
+    from history.gitstore import GitStore
+    store = GitStore(str(repository))
+    store.init('Everything as it was')
+    old = repository / '20260101-ES-FIN-BANKX-INV-rent-JOHNDOE.pdf'
+    new = repository / '20260101-ES-FIN-BANKX-INV-mortgage-JOHNDOE.pdf'
+    shutil.move(str(old), str(new))
+    store.record('Renamed 1 document')
+    store.step_back('Stepped back')
+    assert documents(repository) == [old.name]
+
+
+def test_the_configuration_goes_back_too(repository):
+    from history.gitstore import GitStore
+    store = GitStore(str(repository))
+    store.init('Everything as it was')
+    senders = repository / '.conf' / 'senders-used.json'
+    senders.write_text('{"BANKX": "Bank X"}', encoding='utf-8')
+    store.record('Added 1 sender')
+    store.step_back('Stepped back')
+    assert not senders.exists()
+
+
+def test_the_oldest_state_cannot_be_stepped_back_from(repository):
+    from history.gitstore import GitStore
+    store = GitStore(str(repository))
+    store.init('Everything as it was')
+    assert store.can_undo() is False
+    assert store.step_back('Stepped back') is None
+
+
+def test_the_newest_state_cannot_be_stepped_forward_from(repository):
+    from history.gitstore import GitStore
+    store = GitStore(str(repository))
+    store.init('Everything as it was')
+    assert store.can_redo() is False
+    assert store.step_forward('Stepped forward') is None
+
+
+def test_three_steps_back_walk_the_states_and_not_the_commits(repository):
+    """The commit chain interleaves the user's changes with the undoing of
+    them. Walking it would give back B, A, then B again."""
+    from history.gitstore import GitStore
+    store = GitStore(str(repository))
+    store.init('Everything as it was')
+    for number in (2, 3):
+        (repository / f'2026020{number}-ES-FIN-BANKX-INV-water-JOHNDOE.pdf').write_bytes(b'x')
+        store.record(f'Added document {number}')
+    assert len(documents(repository)) == 3
+
+    store.step_back('Stepped back')
+    assert len(documents(repository)) == 2
+    store.step_back('Stepped back')
+    assert len(documents(repository)) == 1
+    assert store.can_undo() is False
+
+
+def test_a_change_made_while_stepped_back_drops_what_was_ahead(repository):
+    from history.gitstore import GitStore
+    store = GitStore(str(repository))
+    store.init('Everything as it was')
+    (repository / '20260202-ES-FIN-BANKX-INV-water-JOHNDOE.pdf').write_bytes(b'second')
+    store.record('Added 1 document')
+    store.step_back('Stepped back')
+    assert store.can_redo() is True
+
+    (repository / '20260303-ES-FIN-BANKX-INV-gas-JOHNDOE.pdf').write_bytes(b'third')
+    store.record('Added 1 document')
+    assert store.can_redo() is False
+    assert store.count() == 2
+
+
+def test_a_step_back_never_switches_the_plugin_off(repository):
+    """Undoing past the moment the plugin was enabled would disable the plugin
+    holding the redo, and leave the user with no way forward."""
+    from history.gitstore import GitStore
+    used = repository / '.conf' / 'plugins-used.json'
+    used.write_text(json.dumps({'MiAZDoctor': 'Health check'}), encoding='utf-8')
+    store = GitStore(str(repository))
+    store.init('Everything as it was')
+
+    used.write_text(json.dumps({'MiAZDoctor': 'Health check',
+                                'MiAZHistory': 'Undo and redo changes in this repository'}),
+                    encoding='utf-8')
+    store.record('Changed settings')
+    store.step_back('Stepped back')
+
+    plugins = json.loads(used.read_text(encoding='utf-8'))
+    assert 'MiAZHistory' in plugins
+    assert 'MiAZDoctor' in plugins
+
+
+def test_a_step_leaves_nothing_uncommitted(repository):
+    """A dirty tree after a step would be committed by the next settle timer
+    as if the user had made it."""
+    from history.gitstore import GitStore
+    store = GitStore(str(repository))
+    store.init('Everything as it was')
+    (repository / '20260202-ES-FIN-BANKX-INV-water-JOHNDOE.pdf').write_bytes(b'second')
+    store.record('Added 1 document')
+    store.step_back('Stepped back')
+    assert store.is_dirty() is False
+
+
+def test_what_a_step_back_would_take_away(repository):
+    from history.gitstore import GitStore
+    store = GitStore(str(repository))
+    first = store.init('Everything as it was')
+    (repository / '20260202-ES-FIN-BANKX-INV-water-JOHNDOE.pdf').write_bytes(b'second')
+    second = store.record('Added 1 document')
+    assert store.pending_undo() == (first, second)
+    assert store.pending_redo() is None
+
+    store.step_back('Stepped back')
+    assert store.pending_undo() is None
+    assert store.pending_redo() == (first, second)
