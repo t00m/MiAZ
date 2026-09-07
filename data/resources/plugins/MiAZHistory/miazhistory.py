@@ -11,7 +11,7 @@ import os
 import sys
 from gettext import gettext as _
 
-from gi.repository import GLib, Gtk
+from gi.repository import Adw, GLib, Gtk
 
 from MiAZ.backend.tasks import run_in_background
 from MiAZ.frontend.desktop.services.pluginsystem import MiAZExtension, MiAZPlugin
@@ -75,6 +75,8 @@ class MiAZHistoryPlugin(MiAZExtension):
         source_dir = self.plugin.get_source_dir()
         if source_dir not in sys.path:
             sys.path.insert(0, source_dir)
+
+        self.plugin.install_settings_group(self.build_settings)
 
         self.workspace = self.app.get_widget('workspace')
         if self.workspace.is_loaded():
@@ -456,6 +458,28 @@ class MiAZHistoryPlugin(MiAZExtension):
         if workflow is None:
             return
         workflow.switch_start(repo_id=self.repository.get_active_id())
+
+    def build_settings(self):
+        """What the history holds, and what it costs. Nothing to change here:
+        nothing is pruned, so the size is the one thing worth saying."""
+        from gettext import ngettext
+        group = Adw.PreferencesGroup(
+            title=_('History'),
+            description=_('What can be undone in this repository'))
+        if not self._ready:
+            group.add(Adw.ActionRow(
+                title=_('No history yet'),
+                subtitle=_('Nothing has been recorded for this repository.')))
+            return group
+        count = self.store.count()
+        group.add(Adw.ActionRow(
+            title=_('Changes kept'),
+            subtitle=ngettext('%d change can be undone',
+                              '%d changes can be undone', count) % count))
+        group.add(Adw.ActionRow(
+            title=_('Disk used'),
+            subtitle=readable(self.store.size())))
+        return group
 
     def _repository_size(self) -> int:
         total = 0

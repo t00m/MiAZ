@@ -224,3 +224,15 @@ def test_a_step_already_in_flight_blocks_a_second_one(miaz, history):
         assert history.store.count() == before_count
     finally:
         history._suppressed = False
+
+
+def test_the_settings_say_what_the_history_costs(history):
+    """Nothing is pruned, so the size is the one thing worth showing."""
+    group = history.build_settings()
+    assert group is not None
+    rows = []
+    child = group.get_first_child()
+    while child is not None:
+        rows.append(child)
+        child = child.get_next_sibling()
+    assert rows, 'the settings group has no rows'
