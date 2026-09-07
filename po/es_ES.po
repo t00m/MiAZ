@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 0.1\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-09-07 19:47+0200\n"
+"POT-Creation-Date: 2026-09-07 20:27+0200\n"
 "PO-Revision-Date: 2026-08-19 23:30+0200\n"
 "Last-Translator: Tomás Vírseda <tomasvirseda@gmail.com>\n"
 "Language-Team: Spanish\n"
@@ -2042,9 +2042,9 @@ msgid "Assistants"
 msgstr "Asistentes"
 
 #: MiAZ/frontend/desktop/services/pluginsystem.py:129
-#, fuzzy
+#: data/resources/plugins/MiAZHistory/miazhistory.py:467
 msgid "History"
-msgstr "Directorio"
+msgstr "Historial"
 
 #: MiAZ/frontend/desktop/services/pluginsystem.py:130
 msgid "Stats"
@@ -4431,97 +4431,90 @@ msgid "Display fullscreen toggle button"
 msgstr "Mostrar el botón de pantalla completa"
 
 #: data/resources/plugins/MiAZHistory/history/summary.py:39
-#, fuzzy, python-format
+#, python-format
 msgid "Added %d document"
 msgid_plural "Added %d documents"
-msgstr[0] "Añadir nuevo(s) documento(s)"
-msgstr[1] "Añadir nuevo(s) documento(s)"
+msgstr[0] "%d documento añadido"
+msgstr[1] "%d documentos añadidos"
 
 #: data/resources/plugins/MiAZHistory/history/summary.py:41
-#, fuzzy, python-format
+#, python-format
 msgid "Renamed %d document"
 msgid_plural "Renamed %d documents"
-msgstr[0] "Renombrar documento"
-msgstr[1] "Renombrar documento"
+msgstr[0] "%d documento renombrado"
+msgstr[1] "%d documentos renombrados"
 
 #: data/resources/plugins/MiAZHistory/history/summary.py:43
-#, fuzzy, python-format
+#, python-format
 msgid "Deleted %d document"
 msgid_plural "Deleted %d documents"
-msgstr[0] "Borrar documentos"
-msgstr[1] "Borrar documentos"
+msgstr[0] "%d documento eliminado"
+msgstr[1] "%d documentos eliminados"
 
 #: data/resources/plugins/MiAZHistory/history/summary.py:45
-#, fuzzy
 msgid "Changed settings"
-msgstr "Ajustes del escáner"
+msgstr "Ajustes cambiados"
 
 #: data/resources/plugins/MiAZHistory/history/summary.py:47
-#: data/resources/plugins/MiAZHistory/miazhistory.py:167
-#, fuzzy
+#: data/resources/plugins/MiAZHistory/miazhistory.py:219
 msgid "Changed outside MiAZ"
-msgstr "Cerrar MiAZ"
+msgstr "Cambiado fuera de MiAZ"
 
 #: data/resources/plugins/MiAZHistory/history/summary.py:60
 #, python-format
 msgid "Today at %s"
-msgstr ""
+msgstr "Hoy a las %s"
 
 #: data/resources/plugins/MiAZHistory/history/summary.py:62
 #, python-format
 msgid "Yesterday at %s"
-msgstr ""
+msgstr "Ayer a las %s"
 
 #: data/resources/plugins/MiAZHistory/history/summary.py:63
 #, python-format
 msgid "%(date)s at %(time)s"
-msgstr ""
+msgstr "%(date)s a las %(time)s"
 
 #: data/resources/plugins/MiAZHistory/history/summary.py:73
-#, fuzzy, python-format
+#, python-format
 msgid "%s settings"
-msgstr "Ajustes"
+msgstr "Ajustes de %s"
 
 #: data/resources/plugins/MiAZHistory/history/summary.py:84
 msgid "Added"
-msgstr ""
+msgstr "Añadido"
 
 #: data/resources/plugins/MiAZHistory/history/summary.py:85
-#, fuzzy
 msgid "Renamed"
-msgstr "Renombrar"
+msgstr "Renombrado"
 
 #: data/resources/plugins/MiAZHistory/history/summary.py:86
-#, fuzzy
 msgid "Changed"
-msgstr "Variación"
+msgstr "Cambiado"
 
 #: data/resources/plugins/MiAZHistory/history/summary.py:87
-#, fuzzy
 msgid "Deleted"
-msgstr "Borrar"
+msgstr "Eliminado"
 
 #: data/resources/plugins/MiAZHistory/history/summary.py:102
 #, python-format
 msgid "%(old)s -> %(new)s"
-msgstr ""
+msgstr "%(old)s -> %(new)s"
 
 #: data/resources/plugins/MiAZHistory/history/summary.py:112
-#, fuzzy
 msgid "Configuration"
-msgstr "Confirmación"
+msgstr "Configuración"
 
 #: data/resources/plugins/MiAZHistory/history/summary.py:120
-#, fuzzy, python-format
+#, python-format
 msgid "and %d more"
-msgstr "y {n} más"
+msgstr "y %d más"
 
-#: data/resources/plugins/MiAZHistory/miazhistory.py:21
-#, fuzzy
+#: data/resources/plugins/MiAZHistory/miazhistory.py:23
 msgid "Undo and redo changes in this repository"
-msgstr "{nr} documentos en este repositorio"
+msgstr "Deshacer y rehacer cambios en este repositorio"
 
-#: data/resources/plugins/MiAZHistory/miazhistory.py:109
+#: data/resources/plugins/MiAZHistory/miazhistory.py:160
 #, python-format
 msgid ""
 "MiAZ needs one more program to keep a history of this repository. Install it "
@@ -4529,62 +4522,143 @@ msgid ""
 "\n"
 "<tt>%s</tt>"
 msgstr ""
+"MiAZ necesita un programa más para guardar el historial de este "
+"repositorio. Instálalo con:\n"
+"\n"
+"<tt>%s</tt>"
 
-#: data/resources/plugins/MiAZHistory/miazhistory.py:112
+#: data/resources/plugins/MiAZHistory/miazhistory.py:163
 msgid ""
 "MiAZ needs one more program to keep a history of this repository. Install "
-"the package named git with your distribution package manager."
+"this package with your distribution package manager:\n"
+"\n"
+"<tt>git</tt>"
 msgstr ""
+"MiAZ necesita un programa más para guardar el historial de este "
+"repositorio. Instala este paquete con el gestor de paquetes de tu "
+"distribución:\n"
+"\n"
+"<tt>git</tt>"
 
-#: data/resources/plugins/MiAZHistory/miazhistory.py:116
+#: data/resources/plugins/MiAZHistory/miazhistory.py:167
 msgid "One program is missing"
-msgstr ""
+msgstr "Falta un programa"
 
-#: data/resources/plugins/MiAZHistory/miazhistory.py:124
-#, fuzzy
+#: data/resources/plugins/MiAZHistory/miazhistory.py:175
 msgid "This repository is already being tracked"
-msgstr "El repositorio está en buen estado"
+msgstr "Este repositorio ya tiene un seguimiento"
 
-#: data/resources/plugins/MiAZHistory/miazhistory.py:125
+#: data/resources/plugins/MiAZHistory/miazhistory.py:176
 msgid ""
 "Something else is already keeping a history of this repository, so MiAZ will "
 "not keep another one."
 msgstr ""
+"Algo más ya está guardando un historial de este repositorio, así que MiAZ "
+"no guardará otro."
 
-#: data/resources/plugins/MiAZHistory/miazhistory.py:135
-#, fuzzy
+#: data/resources/plugins/MiAZHistory/miazhistory.py:186
 msgid "Keep a history of this repository?"
-msgstr "Añadir un nuevo {title} a este repositorio"
+msgstr "¿Guardar un historial de este repositorio?"
 
-#: data/resources/plugins/MiAZHistory/miazhistory.py:136
+#: data/resources/plugins/MiAZHistory/miazhistory.py:187
 #, python-format
 msgid ""
 "MiAZ will keep a copy of this repository so your changes can be undone. This "
 "needs about %s of extra disk space, and a few minutes the first time."
 msgstr ""
+"MiAZ guardará una copia de este repositorio para poder deshacer los cambios. "
+"Esto necesita unos %s de espacio adicional en disco, y unos minutos la "
+"primera vez."
 
-#: data/resources/plugins/MiAZHistory/miazhistory.py:146
-#, fuzzy
+#: data/resources/plugins/MiAZHistory/miazhistory.py:197
 msgid "Preparing the history..."
-msgstr "Copia de seguridad del repositorio"
+msgstr "Preparando el historial..."
 
-#: data/resources/plugins/MiAZHistory/miazhistory.py:148
+#: data/resources/plugins/MiAZHistory/miazhistory.py:199
 msgid "Everything as it was"
-msgstr ""
+msgstr "Todo tal como estaba"
 
-#: data/resources/plugins/MiAZHistory/miazhistory.py:155
+#: data/resources/plugins/MiAZHistory/miazhistory.py:207
 msgid "Your changes can now be undone"
-msgstr ""
+msgstr "Ahora se pueden deshacer los cambios"
 
-#: data/resources/plugins/MiAZHistory/miazhistory.py:159
-#, fuzzy
+#: data/resources/plugins/MiAZHistory/miazhistory.py:211
 msgid "The history could not be prepared"
-msgstr "No se ha podido cargar {repository}"
+msgstr "No se pudo preparar el historial"
 
-#: data/resources/plugins/MiAZHistory/miazhistory.py:190
+#: data/resources/plugins/MiAZHistory/miazhistory.py:345
+msgid "The change could not be recorded"
+msgstr "No se pudo registrar el cambio"
+
+#: data/resources/plugins/MiAZHistory/miazhistory.py:355
+#, python-format
+msgid "Undo: %(what)s (%(when)s)"
+msgstr "Deshacer: %(what)s (%(when)s)"
+
+#: data/resources/plugins/MiAZHistory/miazhistory.py:357
+#, python-format
+msgid "Redo: %(what)s (%(when)s)"
+msgstr "Rehacer: %(what)s (%(when)s)"
+
+#: data/resources/plugins/MiAZHistory/miazhistory.py:391
+msgid "Undo this change?"
+msgstr "¿Deshacer este cambio?"
+
+#: data/resources/plugins/MiAZHistory/miazhistory.py:391
+msgid "Redo this change?"
+msgstr "¿Rehacer este cambio?"
+
+#: data/resources/plugins/MiAZHistory/miazhistory.py:393
+msgid "Undo"
+msgstr "Deshacer"
+
+#: data/resources/plugins/MiAZHistory/miazhistory.py:393
+msgid "Redo"
+msgstr "Rehacer"
+
+#: data/resources/plugins/MiAZHistory/miazhistory.py:426
+msgid "Stepped back"
+msgstr "Un paso atrás"
+
+#: data/resources/plugins/MiAZHistory/miazhistory.py:427
+msgid "Stepped forward"
+msgstr "Un paso adelante"
+
+#: data/resources/plugins/MiAZHistory/miazhistory.py:445
+msgid "The change could not be undone"
+msgstr "No se pudo deshacer el cambio"
+
+#: data/resources/plugins/MiAZHistory/miazhistory.py:468
+msgid "What can be undone in this repository"
+msgstr "Lo que se puede deshacer en este repositorio"
+
+#: data/resources/plugins/MiAZHistory/miazhistory.py:471
+msgid "No history yet"
+msgstr "Todavía no hay historial"
+
+#: data/resources/plugins/MiAZHistory/miazhistory.py:472
+msgid "Nothing has been recorded for this repository."
+msgstr "No se ha registrado nada de este repositorio."
+
+#: data/resources/plugins/MiAZHistory/miazhistory.py:476
+msgid "Changes kept"
+msgstr "Cambios guardados"
+
+#: data/resources/plugins/MiAZHistory/miazhistory.py:477
+#, python-format
+msgid "%d change can be undone"
+msgid_plural "%d changes can be undone"
+msgstr[0] "%d cambio se puede deshacer"
+msgstr[1] "%d cambios se pueden deshacer"
+
+#: data/resources/plugins/MiAZHistory/miazhistory.py:480
+msgid "Disk used"
+msgstr "Espacio en disco usado"
+
+#: data/resources/plugins/MiAZHistory/miazhistory.py:502
 #, python-format
 msgid "%d bytes"
-msgstr ""
+msgstr "%d bytes"
 
 #: data/resources/plugins/MiAZImportFromScan/scan.py:40
 msgid "Import document from scanner"
