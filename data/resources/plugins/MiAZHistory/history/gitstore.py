@@ -96,6 +96,22 @@ class GitStore:
         self._run(*args)
         return self._run('rev-parse', 'HEAD').strip()
 
+    def record(self, subject: str):
+        """Record whatever changed as a new state, or None when nothing did.
+
+        A state recorded while stepped back drops everything ahead of it. That
+        is the text-editor rule: a change made after stepping back is a new
+        branch of the user's work, and the states that were waiting to be
+        stepped forward into are not offered again.
+        """
+        if not self.is_dirty():
+            return None
+        commit = self._commit(subject)
+        state = self._read_state()
+        states = state['states'][:state['index'] + 1] + [commit]
+        self._write_state(states, len(states) - 1)
+        return commit
+
     def _read_state(self) -> dict:
         try:
             with open(self.statefile, encoding='utf-8') as state:

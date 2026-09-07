@@ -117,3 +117,70 @@ def test_a_failing_command_raises(repository):
     store = GitStore(str(repository))
     with pytest.raises(GitError):
         store.subject_of('no-such-state')
+
+
+def test_a_change_becomes_a_state(repository):
+    from history.gitstore import GitStore
+    store = GitStore(str(repository))
+    first = store.init('Everything as it was')
+    (repository / '20260202-ES-FIN-BANKX-INV-water-JOHNDOE.pdf').write_bytes(b'second')
+    second = store.record('Added 1 document')
+    assert second is not None
+    assert store.states() == [first, second]
+    assert store.index() == 1
+
+
+def test_everything_in_one_window_is_one_state(repository):
+    """A mass rename is one action, so it is one step, however many files it
+    touched."""
+    from history.gitstore import GitStore
+    store = GitStore(str(repository))
+    store.init('Everything as it was')
+    for number in range(5):
+        (repository / f'2026030{number}-ES-FIN-BANKX-INV-fee-JOHNDOE.pdf').write_bytes(b'x')
+    store.record('Added 5 documents')
+    assert store.count() == 2
+
+
+def test_a_change_to_the_configuration_is_a_state(repository):
+    from history.gitstore import GitStore
+    store = GitStore(str(repository))
+    store.init('Everything as it was')
+    (repository / '.conf' / 'senders-used.json').write_text('{"BANKX": "Bank X"}',
+                                                           encoding='utf-8')
+    assert store.record('Added 1 sender') is not None
+    assert store.count() == 2
+
+
+def test_installing_a_plugin_is_a_state(repository):
+    """Enabling a plugin writes plugins-used.json, which is tracked like
+    anything else under .conf."""
+    from history.gitstore import GitStore
+    store = GitStore(str(repository))
+    store.init('Everything as it was')
+    used = repository / '.conf' / 'plugins-used.json'
+    used.write_text(json.dumps({'MiAZHistory': 'Undo and redo changes in this repository',
+                                'MiAZDoctor': 'Health check'}), encoding='utf-8')
+    assert store.record('Changed settings') is not None
+    assert store.count() == 2
+
+
+def test_a_plugin_setting_is_a_state(repository):
+    from history.gitstore import GitStore
+    store = GitStore(str(repository))
+    store.init('Everything as it was')
+    conf = repository / '.conf' / 'plugins' / 'MiAZDoctor' / 'conf'
+    conf.mkdir(parents=True)
+    (conf / 'Plugin-MiAZDoctor.json').write_text('{"autorun": true}', encoding='utf-8')
+    assert store.record('Changed settings') is not None
+    assert store.count() == 2
+
+
+def test_nothing_changed_is_not_a_state(repository):
+    """The settle timer fires on signals, and a signal that changed no file
+    must not leave an empty step behind."""
+    from history.gitstore import GitStore
+    store = GitStore(str(repository))
+    store.init('Everything as it was')
+    assert store.record('Nothing at all') is None
+    assert store.count() == 1
