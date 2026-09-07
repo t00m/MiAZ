@@ -35,13 +35,12 @@ def subject(counts: dict) -> str:
     means only the file monitor spoke, so the change came from somewhere else.
     """
     parts = []
-    for key, singular, plural in (
-            ('added', _('Added %d document'), _('Added %d documents')),
-            ('renamed', _('Renamed %d document'), _('Renamed %d documents')),
-            ('deleted', _('Deleted %d document'), _('Deleted %d documents'))):
-        number = counts.get(key, 0)
-        if number:
-            parts.append(ngettext(singular, plural, number) % number)
+    if counts.get('added'):
+        parts.append(ngettext('Added %d document', 'Added %d documents', counts['added']) % counts['added'])
+    if counts.get('renamed'):
+        parts.append(ngettext('Renamed %d document', 'Renamed %d documents', counts['renamed']) % counts['renamed'])
+    if counts.get('deleted'):
+        parts.append(ngettext('Deleted %d document', 'Deleted %d documents', counts['deleted']) % counts['deleted'])
     if counts.get('config'):
         parts.append(_('Changed settings'))
     if not parts:
