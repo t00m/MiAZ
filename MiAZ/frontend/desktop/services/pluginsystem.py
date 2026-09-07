@@ -126,6 +126,7 @@ plugin_categories = {
     },
     N_('Repository'): {
         N_('Health'): 'Check the repository and repair it',
+        N_('History'): 'Step back and forward through changes',
         N_('Stats'): 'Measure the whole repository'
     },
     N_('Interface'): {

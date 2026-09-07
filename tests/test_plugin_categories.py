@@ -107,6 +107,12 @@ def test_every_name_reaches_the_translation_catalogue():
     assert not missing, f"not in {CATALOGUE}: {', '.join(missing)}"
 
 
+def test_the_repository_category_offers_a_history():
+    """MiAZHistory files its settings under Repository > History, and a pair
+    that is not in the vocabulary is only warned about at runtime."""
+    assert ps.validate_category('Repository', 'History') is None
+
+
 def test_the_module_named_in_the_plugin_file_is_the_file_that_exists():
     """A .plugin naming a module that is not there loads nothing, silently.
 
