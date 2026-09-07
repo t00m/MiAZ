@@ -110,8 +110,8 @@ class MiAZHistoryPlugin(MiAZExtension):
                      'repository. Install it with:\n\n<tt>%s</tt>') % command
         else:
             body = _('MiAZ needs one more program to keep a history of this '
-                     'repository. Install the package named git with your '
-                     'distribution package manager.')
+                     'repository. Install this package with your '
+                     'distribution package manager:\n\n<tt>git</tt>')
         dialog = self.srvdlg.show_error(
             title=_('One program is missing'), body=body)
         dialog.present(window)
