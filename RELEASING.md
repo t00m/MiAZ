@@ -179,12 +179,16 @@ leaves it alone rather than dating the fresh `Unreleased` as well.
 
 ## Things worth knowing
 
-**CI runs on a listed branch and no other.** `.github/workflows/ci.yml`
-triggers on `main`, `0.2` and `0.3`, in two lists, one for pushes and one for
-pull requests. A branch that is not in both runs no CI at all and says nothing
-about it: the whole 0.3 series ran that way, eighty commits with only the
-checks somebody remembered to run by hand. **When a new series opens, add its
-branch to both lists.**
+**CI matches release branches by name.** `.github/workflows/ci.yml` triggers
+on `main` and on `[0-9]+.[0-9]+`, which covers `0.3`, the series after it, and
+`0.10` and `1.0` when they come. Opening a series needs no change to the
+workflow, as long as the branch is named after its version and nothing else.
+
+Those branches were listed by hand until 2026-09-09, and `0.3` was left off
+both lists, so the whole series ran with no CI: eighty commits checked by
+nothing but what somebody remembered to run. A branch the workflow does not
+cover does not fail, it never runs, so there is nothing to notice. If you name
+a branch something other than `X.Y` and want CI on it, add it explicitly.
 
 **`meson test` runs the unit suite and the three file validations**, in about
 fifteen seconds. The UI tests are deliberately not in it: they need a display
@@ -206,6 +210,6 @@ same commit. The parts most likely to go out of date:
   carries no version, and a test enforces that
 - the steps, whenever `release.sh`, `sync_versions.sh`,
   `render_release_notes.py` or `build_all.sh` grow or lose a stage
-- the CI note above, whenever the workflow's branch lists change
+- the CI note above, whenever the workflow's branch filters change
 
 A release document that is wrong is worse than none: it gets followed.

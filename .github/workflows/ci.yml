@@ -1,21 +1,25 @@
 name: CI
 
-# Release branches are named after the version they build, and every one of
-# them has to be listed here twice. 0.3 was not, so the whole series ran
-# without CI: eighty commits, caught by nothing but whatever was run by hand.
-# Add the new branch to both lists when a series opens. RELEASING.md says so
-# as well, because this is easy to forget and silent when forgotten.
+# Release branches are named after the version they build, so they are matched
+# rather than listed. They used to be listed, and 0.3 was left off both lists:
+# the whole series ran with no CI, eighty commits caught by nothing but what
+# somebody remembered to run by hand. A branch that is not covered does not
+# fail, it simply never runs, so the mistake was invisible.
+#
+# '[0-9]+.[0-9]+' is a GitHub filter pattern, not a regular expression: '+'
+# means one or more of the character class before it, and '.' is literal. It
+# matches 0.2, 0.3 and every series after them, including 0.10 and 1.0. It does
+# not match the old three-part branches (0.1.26), a branch with a suffix
+# (0.1.26-perf-changes), or anything under a prefix (feat/x).
 on:
   push:
     branches:
       - main
-      - '0.2'
-      - '0.3'
+      - '[0-9]+.[0-9]+'
   pull_request:
     branches:
       - main
-      - '0.2'
-      - '0.3'
+      - '[0-9]+.[0-9]+'
   workflow_dispatch:
 
 concurrency:
