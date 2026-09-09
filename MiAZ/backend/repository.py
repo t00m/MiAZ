@@ -16,6 +16,11 @@ from MiAZ.backend.models import MiAZItem
 from MiAZ.backend.util import atomic_json_save
 from MiAZ.backend.config import MiAZConfigStore
 
+# The repository layout this version writes and understands. Bump it when the
+# layout changes in a way an older MiAZ would read wrongly, and validate()
+# will refuse anything newer rather than open it and assume.
+REPO_FORMAT = 1
+
 
 class MiAZRepository(GObject.GObject):
     __gtype_name__ = 'MiAZRepository'
@@ -58,14 +63,33 @@ class MiAZRepository(GObject.GObject):
                 if os.path.exists(conf_file):
                     with open(conf_file, 'r', encoding='utf-8') as fin:
                         try:
-                            json.load(fin)
-                            valid = True
+                            valid = self._format_is_known(json.load(fin))
                         except Exception as error:
                             self.log.error(error)
             self.log.debug(f"Repository {conf_file} valid? {valid}")
         except Exception as error:
             self.log.error(error)
         return valid
+
+    def _format_is_known(self, repoconf) -> bool:
+        """Whether this MiAZ can be trusted with that repository layout.
+
+        A repository written before this check has no FORMAT key. Those are
+        the current layout, so a missing key reads as REPO_FORMAT rather than
+        as a reason to refuse a repository that worked yesterday. Only a
+        format from a later version is refused, and only forwards: guarding
+        backwards would break every repository that exists.
+        """
+        fmt = repoconf.get('FORMAT', REPO_FORMAT)
+        if isinstance(fmt, bool) or not isinstance(fmt, int):
+            self.log.error(f"Repository format {fmt!r} is not a version number")
+            return False
+        if fmt > REPO_FORMAT:
+            self.log.error(
+                f"Repository format {fmt} is newer than this MiAZ understands "
+                f"(format {REPO_FORMAT}). Upgrade MiAZ to open it.")
+            return False
+        return True
 
     def reset(self):
         """Invalidate the conf cache so the next access triggers a fresh setup()."""
@@ -119,7 +143,7 @@ class MiAZRepository(GObject.GObject):
 
     def init(self, path):
         repoconf = {}
-        repoconf['FORMAT'] = 1
+        repoconf['FORMAT'] = REPO_FORMAT
         dir_conf = os.path.join(path, '.conf')
         os.makedirs(dir_conf, exist_ok=True)
         conf_file = os.path.join(dir_conf, 'repo.json')
