@@ -34,21 +34,27 @@ AppStream `<release>` entry for packages that were never built.
 
 ## Where the version ends up
 
-One number, 48 files: six that carry it once, and both halves of each of the
-21 bundled plugins. This is why it is scripted.
+One number, six files. This is why it is scripted.
 
 | Carried in | Written by |
 |---|---|
 | `meson.build` | you, or `scripts/devel/increase_meson_version.sh` |
 | `pyproject.toml`, `miaz.spec` | `scripts/devel/sync_versions.sh` |
 | `debian/changelog`, spec `%changelog`, AppStream `<releases>` | `scripts/devel/sync_versions.sh` |
-| 21 `.plugin` files and their 21 `plugin_info` dicts | `scripts/release.sh` |
 | `CHANGELOG.md` heading | `scripts/release.sh` |
 | the `vX.Y.Z` tag | `scripts/release.sh --tag` |
 
-A bundled plugin is not released separately, so it carries the version of the
-MiAZ it ships in. `tests/test_plugin_categories.py` fails if any plugin drifts
-from `meson.build`, or if a plugin's two halves disagree with each other.
+**The bundled plugins are not on that list, and must not go back on it.** A
+plugin that ships with MiAZ declares no version of its own and takes the
+application's at runtime, through `pluginsystem.plugin_version()`. It used to
+be written into both halves of all 21, forty-two files carrying one number,
+and nine of them had drifted from themselves by the time anything checked.
+`tests/test_plugin_categories.py` now fails if any bundled plugin declares a
+version at all.
+
+An out-of-tree plugin is released on its own schedule, so a `Version=` in its
+`.plugin` file is used as it stands. The fallback only applies to plugins that
+declare none.
 
 ## Before you start
 
@@ -192,8 +198,9 @@ cycle that produced it.
 This describes real scripts. When one of them changes, change this too, in the
 same commit. The parts most likely to go out of date:
 
-- the file count in **Where the version ends up**, whenever something new
-  carries the version or a plugin is added or removed
+- the file list in **Where the version ends up**, whenever something new
+  carries the version. Adding a plugin is not such a change: a bundled plugin
+  carries no version, and a test enforces that
 - the steps, whenever `release.sh`, `sync_versions.sh`,
   `render_release_notes.py` or `build_all.sh` grow or lose a stage
 - the CI note above, once the workflow covers the current branch

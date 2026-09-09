@@ -11,8 +11,11 @@
 #   scripts/devel/render_release_notes.py     releases/X.Y.Z.md -> the three
 #                                             files that show notes to a user
 #
-# and fills the three gaps none of them cover: the bundled plugins, the
-# CHANGELOG heading, and the tag.
+# and fills the two gaps none of them cover: the CHANGELOG heading and the tag.
+#
+# The bundled plugins used to need syncing too, forty-two files carrying the
+# same number. They declare no version now and take the application's at
+# runtime, so there is nothing left to sync.
 #
 # Usage:
 #   scripts/release.sh                 release the version meson.build names
@@ -126,53 +129,11 @@ if [[ $DRY_RUN -eq 1 ]]; then
     log "dry run: nothing below is written"
     echo
     echo "  meson.build       $CURRENT -> $VERSION"
-    # -L, files with no match: the ones whose Version line is not $VERSION.
-    plugin_total=$(ls data/resources/plugins/*/*.plugin 2>/dev/null | wc -l)
-    plugin_stale=$(grep -L "^Version=$VERSION$" data/resources/plugins/*/*.plugin 2>/dev/null | wc -l)
-    echo "  plugins           $plugin_stale of $plugin_total .plugin files carry another version"
     echo "  CHANGELOG.md      $(grep -m1 '^## \[' CHANGELOG.md)"
     echo "  release notes     releases/$VERSION.md $([[ -f "releases/$VERSION.md" ]] && echo exists || echo 'does not exist yet')"
     echo "  tag               v$VERSION would be created with --tag"
     exit 0
 fi
-
-# --- the bundled plugins ---------------------------------------------------
-#
-# A bundled plugin is not released on its own, so it carries the version of the
-# MiAZ it ships in. Both halves of every plugin have to move: libpeas reads the
-# .plugin file, and the plugin info dialog reads the dict.
-# tests/test_plugin_categories.py fails if this misses one.
-
-log "syncing the bundled plugins to $VERSION ..."
-python3 - "$VERSION" <<'PYEOF'
-import glob, os, re, sys
-
-version = sys.argv[1]
-changed = 0
-for plugin_file in sorted(glob.glob('data/resources/plugins/*/*.plugin')):
-    text = open(plugin_file, encoding='utf-8').read()
-    new, count = re.subn(r'^Version=.*$', f'Version={version}', text, flags=re.MULTILINE)
-    if count != 1:
-        sys.exit(f'{plugin_file}: expected one Version line, found {count}')
-    if new != text:
-        open(plugin_file, 'w', encoding='utf-8').write(new)
-        changed += 1
-
-    for module in sorted(glob.glob(os.path.join(os.path.dirname(plugin_file), '*.py'))):
-        src = open(module, encoding='utf-8').read()
-        if re.search(r"'Version'\s*:\s*'[^']*'", src) is None:
-            continue
-        out, n = re.subn(r"('Version'\s*:\s*')[^']*(')", rf"\g<1>{version}\g<2>", src)
-        if n != 1:
-            sys.exit(f'{module}: expected one Version key, found {n}')
-        if out != src:
-            open(module, 'w', encoding='utf-8').write(out)
-            changed += 1
-        break
-
-print(f'  {changed} plugin files updated')
-PYEOF
-[[ $? -eq 0 ]] || die "the plugin sync failed"
 
 # --- the packaging metadata ------------------------------------------------
 
