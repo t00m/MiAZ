@@ -31,8 +31,29 @@ ignore = [
     # gi.require_version() must run before the matching gi.repository import,
     # so module imports are intentionally not all at the top.
     "E402",
-    # 43 pre-existing unused locals, mostly in configview.py. Remove them
-    # incrementally, then drop this ignore to enforce the rule.
-    "F841",
 ]
+
+# The unused locals that were already here when F841 started being enforced.
+# Listing them freezes the backlog instead of exempting the whole project: a
+# new one in any other file is now an error. The wholesale ignore this
+# replaces let four more in on top of the 43 it was written for.
+[tool.ruff.lint.per-file-ignores]
+"MiAZ/backend/util.py" = ["F841"]  # 1
+"MiAZ/frontend/desktop/services/actions.py" = ["F841"]  # 2
+"MiAZ/frontend/desktop/widgets/browserpage.py" = ["F841"]  # 3
+"MiAZ/frontend/desktop/widgets/configview.py" = ["F841"]  # 12
+"MiAZ/frontend/desktop/widgets/mainwindow.py" = ["F841"]  # 3
+"MiAZ/frontend/desktop/widgets/rename.py" = ["F841"]  # 1
+"MiAZ/frontend/desktop/widgets/selector.py" = ["F841"]  # 5
+"MiAZ/frontend/desktop/widgets/sidebar.py" = ["F841"]  # 2
+"MiAZ/frontend/desktop/widgets/views.py" = ["F841"]  # 1
+"MiAZ/frontend/desktop/widgets/workspace.py" = ["F841"]  # 2
+"data/resources/plugins/HelloWorld/helloworld.py" = ["F841"]  # 1
+"data/resources/plugins/MiAZExport2Zip/export2zip.py" = ["F841"]  # 2
+"data/resources/plugins/MiAZPeriodicity/periodicity.py" = ["F841"]  # 5
+"data/resources/plugins/MiAZProjectMgt/projmgt.py" = ["F841"]  # 1
+"tests/test_gate.py" = ["F841"]  # 2
+"tests/ui/test_ui_plugin_signals.py" = ["F841"]  # 1
+"tests/ui/test_ui_reposettings.py" = ["F841"]  # 1
+"tests/ui/test_ui_widgets.py" = ["F841"]  # 2
 
