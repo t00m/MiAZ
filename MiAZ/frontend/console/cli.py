@@ -31,8 +31,10 @@ class UsageError(Exception):
 
 
 def _parse_date(text):
+    # A date, not a datetime. The bounds are compared against parse_date(),
+    # which returns date objects, and the two types do not compare.
     try:
-        return datetime.strptime(text, '%Y%m%d')
+        return datetime.strptime(text, '%Y%m%d').date()
     except ValueError:
         raise UsageError(
             _("dates are written as YYYYMMDD, not '{value}'").format(value=text))
@@ -69,6 +71,9 @@ def build_query(args, util):
         query.date_mode = DATE_RANGE
         query.date_since = _parse_date(args.date_from) if args.date_from else None
         query.date_until = _parse_date(args.date_to) if args.date_to else None
+        if (query.date_since is not None and query.date_until is not None
+                and query.date_since > query.date_until):
+            raise UsageError(_('--from is later than --to'))
     return query
 
 

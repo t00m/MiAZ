@@ -191,7 +191,13 @@ class DocumentQuery:
             return item_date is None
         if item_date is None:
             return False
-        return self.date_since <= item_date <= self.date_until
+        # Either bound may be unset. The console can ask for everything since
+        # a date, or up to one, with nothing on the other side.
+        if self.date_since is not None and item_date < self.date_since:
+            return False
+        if self.date_until is not None and item_date > self.date_until:
+            return False
+        return True
 
     def to_dict(self) -> dict:
         """Plain types only, so a saved search is JSON."""

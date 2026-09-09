@@ -9,6 +9,7 @@ flag either sets a DocumentQuery field or it is a mistake.
 
 import io
 import json as jsonlib
+from datetime import date as dtdate
 
 import gi
 gi.require_version('GLib', '2.0')
@@ -378,3 +379,61 @@ def test_since_filters_by_date(miaz_env, make_repo, register_repo):
     assert code == 0
     assert '20260612' in out
     assert '20180101' not in out
+
+
+def test_explicit_range_filters_by_date(miaz_env, make_repo, register_repo):
+    """--from and --to must run the filter, not just build a query.
+
+    test_explicit_range above only asserted the bounds were set. That said
+    nothing about comparing them against a document date, which is where the
+    whole flag pair was broken.
+    """
+    docs = ['20260612-ES-FIN-BANKX-INV-inside-JOHNDOE.pdf',
+            '20180101-ES-FIN-BANKX-INV-before-JOHNDOE.pdf',
+            '20270101-ES-FIN-BANKX-INV-after-JOHNDOE.pdf']
+    code, out, _err = search(miaz_env, make_repo, register_repo,
+                             ['search', '--all', '--from', '20260101',
+                              '--to', '20261231'], docs=docs)
+    assert code == 0
+    assert 'inside' in out
+    assert 'before' not in out
+    assert 'after' not in out
+
+
+def test_from_alone_reaches_forward_without_end(miaz_env, make_repo, register_repo):
+    docs = ['20260612-ES-FIN-BANKX-INV-inside-JOHNDOE.pdf',
+            '20180101-ES-FIN-BANKX-INV-before-JOHNDOE.pdf',
+            '20270101-ES-FIN-BANKX-INV-after-JOHNDOE.pdf']
+    code, out, _err = search(miaz_env, make_repo, register_repo,
+                             ['search', '--all', '--from', '20260101'], docs=docs)
+    assert code == 0
+    assert 'inside' in out
+    assert 'after' in out
+    assert 'before' not in out
+
+
+def test_to_alone_reaches_back_without_start(miaz_env, make_repo, register_repo):
+    docs = ['20260612-ES-FIN-BANKX-INV-inside-JOHNDOE.pdf',
+            '20180101-ES-FIN-BANKX-INV-before-JOHNDOE.pdf',
+            '20270101-ES-FIN-BANKX-INV-after-JOHNDOE.pdf']
+    code, out, _err = search(miaz_env, make_repo, register_repo,
+                             ['search', '--all', '--to', '20261231'], docs=docs)
+    assert code == 0
+    assert 'inside' in out
+    assert 'before' in out
+    assert 'after' not in out
+
+
+def test_a_bound_is_a_date_not_a_datetime():
+    """The query model compares against date objects, so the CLI must hand it
+    dates. A datetime here does not compare against a date, it raises."""
+    query = build_query(parse(['search', '--from', '20240101',
+                               '--to', '20241231']), util())
+    assert type(query.date_since) is dtdate
+    assert type(query.date_until) is dtdate
+
+
+def test_reversed_range_is_a_usage_error():
+    with pytest.raises(UsageError):
+        build_query(parse(['search', '--from', '20241231',
+                           '--to', '20240101']), util())

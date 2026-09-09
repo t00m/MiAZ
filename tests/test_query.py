@@ -542,3 +542,41 @@ def test_only_ids_still_obeys_the_other_filters():
     query = DocumentQuery(only_ids=frozenset({'a.pdf'}), country='DE',
                           ignore_date=True, ignore_active=True)
     assert query.matches(document) is False
+
+
+def test_a_range_with_no_end_reaches_forward():
+    """An open bound means 'no limit on that side', not a crash.
+
+    The console can set one bound and leave the other unset, which used to
+    compare a date against None.
+    """
+    query = DocumentQuery(date_mode=DATE_RANGE,
+                          date_since=date(2024, 6, 1), date_until=None)
+    assert query._matches_date(item(date='20240615')) is True
+    assert query._matches_date(item(date='20991231')) is True
+    assert query._matches_date(item(date='20240101')) is False
+
+
+def test_a_range_with_no_start_reaches_back():
+    query = DocumentQuery(date_mode=DATE_RANGE,
+                          date_since=None, date_until=date(2024, 6, 1))
+    assert query._matches_date(item(date='20240101')) is True
+    assert query._matches_date(item(date='19700101')) is True
+    assert query._matches_date(item(date='20240615')) is False
+
+
+def test_a_range_open_at_both_ends_takes_every_dated_document():
+    query = DocumentQuery(date_mode=DATE_RANGE,
+                          date_since=None, date_until=None)
+    assert query._matches_date(item(date='20240615')) is True
+    assert query._matches_date(item(date='notadate')) is False
+
+
+def test_both_bounds_are_inclusive():
+    query = DocumentQuery(date_mode=DATE_RANGE,
+                          date_since=date(2024, 6, 1),
+                          date_until=date(2024, 6, 30))
+    assert query._matches_date(item(date='20240601')) is True
+    assert query._matches_date(item(date='20240630')) is True
+    assert query._matches_date(item(date='20240531')) is False
+    assert query._matches_date(item(date='20240701')) is False
