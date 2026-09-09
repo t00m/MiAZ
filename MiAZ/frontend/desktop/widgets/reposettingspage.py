@@ -15,6 +15,12 @@ from MiAZ.frontend.desktop.widgets.sidebarstack import MiAZSidebarStack
 # the plugin pages because it is never thrown away and rebuilt.
 REPOSITORY_PAGE = 'Repository-self'
 
+# The plugin category whose groups belong on that same page. MiAZDoctor and
+# MiAZHistory file themselves under it, and giving it a page of its own put a
+# second entry titled 'Repository' in the list, directly under the first, with
+# nothing to tell the user which was which.
+REPOSITORY_CATEGORY = 'Repository'
+
 # Where a plugin whose settings are reached the older way is listed.
 LEGACY_PAGE = 'Other'
 
@@ -25,7 +31,6 @@ CATEGORY_ICONS = {
     REPOSITORY_PAGE: 'io.github.t00m.MiAZ-emblem-system-symbolic',
     LEGACY_PAGE:     'io.github.t00m.MiAZ-res-plugins',
     'Documents':     'io.github.t00m.MiAZ-res-concept',
-    'Repository':    'io.github.t00m.MiAZ-res-groups',
     'Interface':     'io.github.t00m.MiAZ-config-symbolic',
     'Help':          'io.github.t00m.MiAZ-res-plugins',
 }
@@ -52,6 +57,10 @@ class MiAZRepoSettingsPage(MiAZSidebarStack):
         self.log = MiAZLog('MiAZ.RepoSettingsPage')
         self._built = False
         self._plugin_pages = []
+        self._repository_page = None
+        # The groups plugins put on the repository page. That page is never
+        # thrown away, so nothing else takes them off before a rebuild.
+        self._repository_plugin_groups = []
         self._sid_plugins_updated = None
         self._build_repository_page()
         self.app.add_widget('repository-settings-page-settings', self)
@@ -102,6 +111,8 @@ class MiAZRepoSettingsPage(MiAZSidebarStack):
             if not group.get_title():
                 group.set_title(owner)
             self._page_for(category).add(group)
+            if category == REPOSITORY_CATEGORY:
+                self._repository_plugin_groups.append(group)
         self.build_legacy_rows()
 
     def build_legacy_rows(self):
@@ -143,6 +154,10 @@ class MiAZRepoSettingsPage(MiAZSidebarStack):
         categories that actually have settings, rather than showing four
         headings of which two are empty.
         """
+        if category == REPOSITORY_CATEGORY:
+            # A setting about the repository belongs on the page about the
+            # repository, not on a second page carrying the same name.
+            return self._repository_page
         page = self.stack.get_child_by_name(category)
         if page is not None:
             return page
@@ -159,10 +174,14 @@ class MiAZRepoSettingsPage(MiAZSidebarStack):
         repo_id = repository.get_active_id()
 
         page = Adw.PreferencesPage()
+        self._repository_page = page
         self.add_page(REPOSITORY_PAGE, _('Repository'),
                       CATEGORY_ICONS[REPOSITORY_PAGE], page)
 
-        group = Adw.PreferencesGroup(title=_('Repository'))
+        # No heading: the page is already called Repository, and repeating it
+        # over the first two rows reads as a narrower thing than it is. The
+        # plugin groups below carry their own names.
+        group = Adw.PreferencesGroup()
         page.add(group)
 
         row_name = Adw.EntryRow(title=_('Name'))
@@ -194,6 +213,12 @@ class MiAZRepoSettingsPage(MiAZSidebarStack):
         for category in self._plugin_pages:
             self.remove_page(category)
         self._plugin_pages = []
+        # The repository page survives, so the groups plugins added to it have
+        # to come off by hand. Without this the rebuild adds a second copy of
+        # every Repository-category group.
+        for group in self._repository_plugin_groups:
+            self._repository_page.remove(group)
+        self._repository_plugin_groups = []
         self._built = False
         if self.get_mapped():
             self.build_plugin_groups()

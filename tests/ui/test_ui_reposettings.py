@@ -47,6 +47,94 @@ def row_titles(widget):
     return found
 
 
+def sidebar_labels(page):
+    """The entries down the left of the Settings tab, as the user reads them.
+
+    The page names are unique by construction. What the user picks from are
+    the labels, and those are what collided.
+    """
+    labels = []
+    for row in page.listbox:
+        child = row.get_child().get_first_child()
+        while child is not None:
+            if isinstance(child, Gtk.Label):
+                labels.append(child.get_text())
+            child = child.get_next_sibling()
+    return labels
+
+
+def open_settings_tab(clean_view):
+    page = clean_view.widget('repository-settings-page-settings')
+    notebook = clean_view.widget('repository-settings-notebook')
+    notebook.set_current_page(_page_number(notebook, page))
+    clean_view.pump(0.4)
+    return page
+
+
+@pytest.fixture
+def with_doctor(clean_view):
+    """MiAZDoctor loaded, which none of the sandbox repositories enable.
+
+    It is the plugin that made the bug visible: it files itself under the
+    Repository category and installs a settings group, so the tab built a
+    second page for that category, titled the same as the repository's own.
+    """
+    system = clean_view.service('plugin-system')
+    info = system.get_plugin_info('doctor')
+    if info is None:
+        pytest.skip('MiAZDoctor is not in the plugin index')
+    started_loaded = system.is_plugin_loaded(info)
+    if not started_loaded:
+        if not system.load_plugin(info):
+            pytest.skip('MiAZDoctor cannot load here: '
+                        + str(system.get_load_error(info.get_module_name())))
+        clean_view.pump(0.5)
+    yield clean_view
+    if system.is_plugin_loaded(info) != started_loaded:
+        system.unload_plugin(info)
+        clean_view.pump(0.4)
+
+
+def test_no_two_settings_entries_share_a_label(with_doctor, repo_settings):
+    """'Repository' named two different things: the page holding the
+    repository's own name and location, and the plugin category MiAZDoctor and
+    MiAZHistory file themselves under. The list showed both, one under the
+    other, with nothing to tell them apart."""
+    labels = sidebar_labels(open_settings_tab(with_doctor))
+    duplicates = {label for label in labels if labels.count(label) > 1}
+    assert not duplicates, f'the same entry twice: {duplicates} in {labels}'
+
+
+def test_the_repository_entry_comes_first(with_doctor, repo_settings):
+    labels = sidebar_labels(open_settings_tab(with_doctor))
+    assert labels[0] == _('Repository'), f'first entry is {labels[0]!r}'
+
+
+def test_repository_plugins_settle_on_the_repository_page(with_doctor,
+                                                          repo_settings):
+    """A setting about the repository belongs on the page about the
+    repository, not on a second page carrying the same name."""
+    page = open_settings_tab(with_doctor)
+    titles = group_titles(page.stack.get_child_by_name('Repository-self'))
+    assert 'Repository health' in titles, (
+        f'MiAZDoctor is not on the repository page: {titles}')
+
+
+def test_a_plugin_change_does_not_double_the_repository_groups(with_doctor,
+                                                               repo_settings):
+    """The repository page is never thrown away, so a rebuild that re-adds the
+    plugin groups without taking the old ones off would show each of them
+    twice."""
+    page = open_settings_tab(with_doctor)
+    before = group_titles(page.stack.get_child_by_name('Repository-self'))
+    page._on_plugins_updated()
+    with_doctor.pump(0.4)
+    page.build_plugin_groups()
+    with_doctor.pump(0.4)
+    after = group_titles(page.stack.get_child_by_name('Repository-self'))
+    assert after == before, f'groups changed across a rebuild: {before} -> {after}'
+
+
 def test_the_tabs_show_their_names(repo_settings, clean_view):
     """The three tab labels used to render as an icon and three dots.
 
@@ -88,6 +176,9 @@ def test_the_settings_tab_groups_by_category(repo_settings, clean_view):
 
     registry = clean_view.service('plugin-system').settings
     expected = {category for category, _owner, _builder in registry.builders()}
+    # The Repository category has no page of its own: its groups go on the
+    # repository page, so the list shows one Repository entry rather than two.
+    expected.discard('Repository')
     plugin_pages = set(names[1:]) - {'Other'}
     assert plugin_pages == expected, (
         f'category pages {plugin_pages} do not match the registry {expected}')
