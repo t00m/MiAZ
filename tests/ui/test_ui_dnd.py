@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 
-"""UI: dropping files on the workspace imports them into the repository."""
+"""UI: files dropped on the workspace, and documents dragged out of it."""
 
 import os
 
@@ -146,3 +146,108 @@ def test_the_answer_decides_how_deep_the_import_goes(miaz, tmp_path):
         assert len(_imported(miaz, 'droppedeight')) == 1
     finally:
         _cleanup(miaz, 'dropped')
+
+
+# ---------------------------------------------------------------------------
+# Dragging documents out, into another application
+# ---------------------------------------------------------------------------
+
+def _drag_source(driver, key):
+    source = driver.widget(key)
+    assert source is not None, f'no drag source registered as {key}'
+    return source
+
+
+def _prepared(source, driver):
+    """What the drag would carry, asked of the real prepare handler."""
+    return source.emit('prepare', 0.0, 0.0)
+
+
+def _select(driver, ids):
+    """Select these documents in the shared selection model."""
+    view = driver.widget('workspace-view')
+    selection = view.get_selection()
+    selection.unselect_all()
+    model = selection.get_model()
+    for position in range(model.get_n_items()):
+        if model.get_item(position).id in ids:
+            selection.select_item(position, False)
+    driver.pump(0.3)
+
+
+DRAG_SOURCES = ('workspace-view-drag-source', 'workspace-grid-drag-source')
+
+
+def test_both_views_offer_a_drag_source(miaz):
+    """The document list and the grid. The timeline is a reading view and is
+    left out on purpose."""
+    for key in DRAG_SOURCES:
+        assert _drag_source(miaz, key) is not None
+
+
+def test_a_drag_copies_and_never_moves(miaz):
+    """A drop target offered MOVE may delete what it took, and here the file
+    in the repository is the document itself."""
+    for key in DRAG_SOURCES:
+        actions = _drag_source(miaz, key).get_actions()
+        assert actions == Gdk.DragAction.COPY, f'{key} offers {actions}'
+        assert not (actions & Gdk.DragAction.MOVE), f'{key} would allow a move'
+
+
+def test_dragging_carries_the_selected_documents(miaz, clean_view):
+    """One selected document, dragged from either view."""
+    wanted = '20260612-ES-FIN-BANKX-INV-mortgage-JOHNDOE.pdf'
+    _select(clean_view, {wanted})
+    for key in DRAG_SOURCES:
+        provider = _prepared(_drag_source(clean_view, key), clean_view)
+        assert provider is not None, f'{key} refused a drag with a selection'
+        assert provider.ref_formats().contain_gtype(Gdk.FileList.__gtype__)
+
+
+def test_dragging_carries_every_selected_document(miaz, clean_view):
+    """Pulling on one of several selected documents takes all of them, which
+    is the whole point of selecting them first."""
+    wanted = {'20260612-ES-FIN-BANKX-INV-mortgage-JOHNDOE.pdf',
+              '20260505-ES-HOU-ACME-INV-electricity-JOHNDOE.pdf'}
+    _select(clean_view, wanted)
+    workspace = clean_view.widget('workspace')
+    assert {item.id for item in workspace.get_selected_items()} == wanted
+
+    from MiAZ.frontend.desktop.widgets.dragout import document_files
+    repository = clean_view.service('repo')
+    files = document_files(workspace.get_selected_items(), repository.docs)
+    assert {f.get_basename() for f in files} == wanted
+    assert all(f.get_path().startswith(repository.docs) for f in files)
+
+
+def test_nothing_selected_refuses_the_drag(miaz, clean_view):
+    """A drag that would hand over nothing should not start."""
+    view = clean_view.widget('workspace-view')
+    view.get_selection().unselect_all()
+    clean_view.pump(0.3)
+    for key in DRAG_SOURCES:
+        assert _prepared(_drag_source(clean_view, key), clean_view) is None
+
+
+def test_the_document_keeps_its_repository_name(miaz, clean_view):
+    """The file arrives under the name MiAZ filed it as."""
+    from MiAZ.frontend.desktop.widgets.dragout import document_files
+    wanted = '20240101-DE-ADM-CITY-NTF-permit-JOHNDOE.pdf'
+    _select(clean_view, {wanted})
+    repository = clean_view.service('repo')
+    workspace = clean_view.widget('workspace')
+    files = document_files(workspace.get_selected_items(), repository.docs)
+    assert [f.get_basename() for f in files] == [wanted]
+
+
+def test_selecting_still_works_with_the_drag_source_attached(miaz, clean_view):
+    """A controller added to a view can swallow the clicks it was watching
+    for. Selection is what everything else in the workspace reads."""
+    view = clean_view.widget('workspace-view')
+    selection = view.get_selection()
+    selection.unselect_all()
+    clean_view.pump(0.2)
+    selection.select_item(0, True)
+    clean_view.pump(0.3)
+    workspace = clean_view.widget('workspace')
+    assert len(workspace.get_selected_items()) == 1

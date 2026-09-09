@@ -37,6 +37,7 @@ from MiAZ.frontend.desktop.widgets.filenamesview import MiAZFilenamesView
 from MiAZ.frontend.desktop.widgets.gridview import MiAZGridView
 from MiAZ.frontend.desktop.widgets.pills import FIELD_COLORS
 from MiAZ.frontend.desktop.widgets.timelineview import MiAZTimelineView
+from MiAZ.frontend.desktop.widgets.dragout import install_for_workspace_selection
 from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewWorkspace
 from MiAZ.frontend.desktop.widgets.configview import MiAZCountries, MiAZGroups, MiAZPurposes, MiAZPeopleSentBy, MiAZPeopleSentTo
 from MiAZ.backend.status import MiAZStatus
@@ -565,6 +566,11 @@ class MiAZWorkspace(Gtk.Box):
         frame = Gtk.Frame()
         self.view = MiAZColumnViewWorkspace(self.app)
         self.app.add_widget('workspace-view', self.view)
+        # Documents can be dragged out of the list into another application.
+        # On the column view itself, so a drag started anywhere in a row works
+        # rather than only over one column.
+        install_for_workspace_selection(self.view.cv, self.app,
+                                        'workspace-view-drag-source')
         self.view.add_css_class('monospace')
         self._workspace_filters['main'] = self._do_filter_view_main
         self.view.set_filter(self._do_filter_view)

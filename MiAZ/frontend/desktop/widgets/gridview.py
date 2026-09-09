@@ -11,6 +11,7 @@ from gi.repository import GLib
 from gi.repository import Gtk
 from gi.repository import Pango
 
+from MiAZ.frontend.desktop.widgets.dragout import install_for_workspace_selection
 from MiAZ.env import ENV
 from MiAZ.backend.log import MiAZLog
 from MiAZ.backend.thumbnails import request_thumbnail
@@ -237,6 +238,10 @@ class MiAZGridView(Gtk.Box):
         gesture.set_button(3)
         gesture.connect('pressed', self._on_right_click)
         self.gridview.add_controller(gesture)
+        # The same drag the document list offers. The selection is shared, so
+        # a drag started here carries whatever is selected in either view.
+        install_for_workspace_selection(self.gridview, self.app,
+                                        'workspace-grid-drag-source')
         scrwin = Gtk.ScrolledWindow()
         scrwin.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
         scrwin.set_hexpand(True)
