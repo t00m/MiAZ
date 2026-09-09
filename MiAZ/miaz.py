@@ -135,9 +135,17 @@ ENV['APP']['RUNTIME']['EXEC'] = os.path.abspath(__file__)
 class MiAZ:
     """MiAZ Entry point class."""
 
-    def __init__(self, ENV: dict) -> None:
-        """Set up environment and run the application."""
+    def __init__(self, ENV: dict, console: bool = False) -> None:
+        """Set up environment and run the application.
+
+        `console` says this invocation is a command and not the window. Two
+        parts of the startup belong to the window alone and are skipped for a
+        command: taking the single-instance lock, and emptying var/tmp. Both
+        used to run for every invocation, because run() only chooses between
+        the two frontends afterwards.
+        """
         self.env = ENV
+        self.console = console
         log.debug("MiAZ Environment variables:")
         for section in self.env:
             log.debug(f"\t[{section}]")
@@ -149,13 +157,19 @@ class MiAZ:
         # Enable persistent file logging now that the directories exist, then
         # install the console/log crash handler so any later failure is logged.
         log_file = enable_file_logging(ENV['FILE']['LOG'])
-        self._acquire_lock()
+        # The lock stops a second window opening on the same repository. It has
+        # nothing to say about a command: `miaz search` reads a repository the
+        # way any other program reads files, and refusing to run it because a
+        # window is open refused it exactly when it was most wanted.
+        if not console:
+            self._acquire_lock()
         self.log = MiAZLog('MiAZ')
         install_backend_excepthook(self.log, ENV)
         # A segfault never reaches the excepthook above, so the Python side of
         # the stack is written by faulthandler instead.
         install_fatal_handler(log_file)
-        self.clean_temp_directory()
+        if not console:
+            self.clean_temp_directory()
 
         self.log.info(f"{ENV['APP']['shortname']} v{ENV['APP']['VERSION']} - Start")
         self.log.info(f"Logging to {log_file}")
@@ -201,6 +215,10 @@ class MiAZ:
         is running. It runs after the lock is taken, so a second instance never
         deletes files the running one is still using, and it recreates the
         subdirectories the environment expects afterwards.
+
+        Which is also why a command never calls it: a command takes no lock, so
+        it cannot know whether a window is halfway through a scan, and running
+        `miaz search` is not a fresh start for anybody.
         """
         from MiAZ.backend.util import clean_temp_dir
         tmp_dir = self.env['LPATH']['TMP']
@@ -240,7 +258,7 @@ class MiAZ:
         # else, including no arguments and --version, starts the desktop app
         # exactly as before, so the .desktop launcher is unaffected.
         from MiAZ.frontend.console.cli import main
-        if len(params) > 1 and params[1] in cli_commands():
+        if is_console_run(params):
             sys.exit(main(params[1:], sys.stdout, sys.stderr, env=ENV))
 
         if not ENV['DESKTOP']['ENABLED']:
@@ -283,6 +301,16 @@ class MiAZ:
             sys.exit(0)
         self.log.info(f"{ENV['APP']['shortname']} v{ENV['APP']['VERSION']} - End")
 
+def is_console_run(argv):
+    """True when this invocation is a command rather than the window.
+
+    The one place that answers this. Three callers need it and they must agree:
+    the startup, which skips the window-only parts; the argument parser, which
+    would reject 'search' as unrecognised; and run(), which dispatches.
+    """
+    return len(argv) > 1 and argv[1] in cli_commands()
+
+
 def cli_commands():
     """Every command name the command line answers to, plugins included.
 
@@ -305,7 +333,7 @@ def parse_arguments():
     # Subcommands belong to the console parser (frontend/console/cli.py). This
     # one only knows the options the window takes and would reject 'search' as
     # an unrecognised argument before run() ever sees it.
-    if len(sys.argv) > 1 and sys.argv[1] in cli_commands():
+    if is_console_run(sys.argv):
         # Silence here rather than in main(): the environment dump and the
         # startup banner are logged while this module is imported, long before
         # a command runs. MIAZ_DEBUG=1 brings them back.
@@ -324,5 +352,5 @@ if __name__ == "__main__":
     This is the entry point when the program is installed via Meson
     """
     args = parse_arguments()
-    app = MiAZ(ENV)
+    app = MiAZ(ENV, console=is_console_run(sys.argv))
     app.run(sys.argv)
