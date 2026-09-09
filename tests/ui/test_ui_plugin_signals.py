@@ -29,6 +29,12 @@ PLUGINS = [
 ]
 
 # Signal by signal, the objects a plugin can reach that outlive it.
+#
+# The window and its key controller are here because a plugin that only
+# connects to the workspace's own signals is not the only kind. MiAZFullscreen
+# connects to neither: it follows the window's fullscreen state and takes F11
+# from the window controller, and until both were watched the census could not
+# see it run at all.
 WATCHED = {
     'workspace': ('workspace-loaded', 'workspace-view-updated',
                   'workspace-view-filtered', 'workspace-view-selection-changed'),
@@ -37,8 +43,31 @@ WATCHED = {
     'repo': ('repository-switched',),
     'workflow': ('repository-switch-started', 'repository-switch-finished'),
     'plugin-system': ('plugins-updated',),
+    'window': ('notify::fullscreened',),
+    'window-event-controller': ('key-pressed',),
 }
+
+# The widgets a plugin can attach an event controller to and that outlive it.
+# A leaked controller is the same bug as a leaked handler and is invisible in
+# the same way: the plugin is gone, and a right click still reaches it.
+# MiAZColumnVisibility connects no watched signal at all. It puts a
+# GestureClick on the column view, which is the only trace it leaves.
+CONTROLLED = ('window', 'column-view')
+
 CONFIGS = ('Country', 'Group', 'Purpose', 'SentBy', 'SentTo', 'Plugin')
+
+
+def watched_object(driver, name):
+    """The object a watched name means: some are widgets, some are services.
+
+    The column view has no key of its own. It is reached through the workspace
+    view, which is the same path the plugin attaching to it takes.
+    """
+    if name == 'column-view':
+        view = driver.widget('workspace-view')
+        return getattr(view, 'cv', None) if view is not None else None
+    widget = driver.widget(name)
+    return widget if widget is not None else driver.service(name)
 
 
 def count_handlers(obj, signal_name):
@@ -53,6 +82,11 @@ def count_handlers(obj, signal_name):
     except (TypeError, ValueError):
         return 0
     match = GObject.SignalMatchType.ID | GObject.SignalMatchType.UNBLOCKED
+    if detail:
+        # Without this, 'notify::fullscreened' counts every notify handler on
+        # the window, 24 of them, and one plugin connecting is lost in the
+        # noise the moment anything else connects or disconnects a notify.
+        match |= GObject.SignalMatchType.DETAIL
     blocked = []
     while True:
         handler_id = GObject.signal_handler_find(
@@ -66,15 +100,28 @@ def count_handlers(obj, signal_name):
     return len(blocked)
 
 
+def count_controllers(widget):
+    """How many event controllers are attached to this widget right now."""
+    try:
+        return len(widget.observe_controllers())
+    except AttributeError:
+        return 0
+
+
 def handler_census(driver):
     """The handler count of every watched signal, as one comparable dict."""
     census = {}
     for name, signals in WATCHED.items():
-        obj = driver.widget(name) if name == 'workspace' else driver.service(name)
+        obj = watched_object(driver, name)
         if obj is None:
             continue
         for signal in signals:
             census[f'{name}.{signal}'] = count_handlers(obj, signal)
+    for name in CONTROLLED:
+        widget = watched_object(driver, name)
+        if widget is None:
+            continue
+        census[f'{name}.controllers'] = count_controllers(widget)
     for name in CONFIGS:
         config = driver.app.get_config(name)
         if config is None:
