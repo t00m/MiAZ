@@ -15,7 +15,11 @@ desktop_file = i18n.merge_file(
 
 desktop_utils = find_program('desktop-file-validate', required: false)
 if desktop_utils.found()
-  test('Validate MiAZ desktop file', desktop_utils, args: [desktop_file.full_path()])
+  # The target, not full_path(): a plain string carries no dependency, so
+  # `meson test` on a fresh build directory validated a file that had not been
+  # generated yet and failed with "file does not exist". The appstream test
+  # below passes its target for the same reason.
+  test('Validate MiAZ desktop file', desktop_utils, args: [desktop_file])
 endif
 
 appstream_file = i18n.merge_file(

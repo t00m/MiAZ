@@ -38,6 +38,24 @@ subdir('data')
 subdir('MiAZ')
 subdir('po')
 
+# `meson test` runs the unit suite, alongside the three file validations in
+# data/meson.build. It stays fast: a few seconds, no display, nothing to set up.
+#
+# The UI tests are deliberately not registered here. They need a display and a
+# throwaway HOME, take twenty minutes, and skip themselves unless MIAZ_UI_SANDBOX
+# is set, so a `meson test` that ran them would either hang a plain build or
+# report twenty minutes of skips. Run them with scripts/checks/run_ui_tests.sh.
+pytest = find_program('pytest', 'pytest-3', required: false)
+if pytest.found()
+  test('unit', pytest,
+       args: ['-q', meson.project_source_root() / 'tests'],
+       workdir: meson.project_source_root(),
+       timeout: 300,
+       suite: 'unit')
+else
+  message('pytest not found: `meson test` will run the file validations only')
+endif
+
 
 gnome.post_install(
   gtk_update_icon_cache: true,
