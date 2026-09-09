@@ -851,8 +851,15 @@ class MiAZUtil(GObject.GObject):
         except ValueError:
             return None
 
-    def zip(self, filename: str, directory: str):
-        """ Zip directory into a file """
+    def zip(self, filename: str, directory: str, exclude: tuple = ()):
+        """Zip directory into a file, skipping any entry named in `exclude`.
+
+        `exclude` matches on the entry name at any depth, so ('.git',) drops
+        that directory wherever it sits. Written out here rather than through
+        shutil.make_archive, which archives everything and takes no exclusion.
+
+        Returns the path of the archive, which always ends in .zip.
+        """
         # ~ self.log.debug(f"Target: {filename}")
         sourcename = os.path.basename(filename)
         dot = sourcename.find('.')
@@ -861,10 +868,21 @@ class MiAZUtil(GObject.GObject):
         else:
             basename = sourcename[:dot]
         sourcedir = os.path.dirname(filename)
-        source = os.path.join(sourcedir, basename)
-        zip_file = shutil.make_archive(source, 'zip', directory)
-        target = source + '.zip'
-        shutil.move(zip_file, target)
+        target = os.path.join(sourcedir, basename) + '.zip'
+        skip = set(exclude)
+        with zipfile.ZipFile(target, 'w', zipfile.ZIP_DEFLATED) as archive:
+            for root, dirs, files in os.walk(directory):
+                dirs[:] = sorted(name for name in dirs if name not in skip)
+                for name in dirs:
+                    # Written explicitly so an empty directory survives the
+                    # round trip, which make_archive also did.
+                    path = os.path.join(root, name)
+                    archive.write(path, os.path.relpath(path, directory))
+                for name in sorted(files):
+                    if name in skip:
+                        continue
+                    path = os.path.join(root, name)
+                    archive.write(path, os.path.relpath(path, directory))
         return target
 
     def timestamp(self):

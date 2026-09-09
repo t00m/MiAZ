@@ -84,13 +84,20 @@ class MiAZDR(GObject.GObject):
                           progress=None) -> str:
         """Zip the entire repository (files + .conf) to dest_dir.
 
+        The history under .git is left out. MiAZHistory keeps a copy of every
+        document there, so including it roughly doubles the size of the archive
+        and the time it takes, to store a second copy of what the archive
+        already holds. A restore therefore brings back the documents and the
+        configuration but not the undo history, and the plugin offers to start
+        a new one.
+
         Returns the path to the created zip archive.
         """
         ts = self.util.timestamp()
         key = f"-{repo_key}" if repo_key else ''
         zip_name = os.path.join(dest_dir, f"miaz-repo{key}-{ts}")
         _report(progress, _('Compressing the repository…'))
-        result = self.util.zip(zip_name, repo_dir)
+        result = self.util.zip(zip_name, repo_dir, exclude=('.git',))
         self.log.info(f"Backup repository: saved to {result}")
         return result
 

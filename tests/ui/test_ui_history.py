@@ -236,3 +236,177 @@ def test_the_settings_say_what_the_history_costs(history):
         rows.append(child)
         child = child.get_next_sibling()
     assert rows, 'the settings group has no rows'
+
+
+# --- The two paths that exist to refuse a repository gracefully -------------
+#
+# Both were reached by every user without git, and every user who already
+# versions their documents themselves. show_error presents the dialog itself
+# and returns nothing, so assigning its result and calling present() on that
+# raised AttributeError before disable_self() could run: the plugin failed to
+# load, MiAZ put up a plugin-load-failure banner, and because the plugin was
+# never removed from plugins-used.json it happened again on every launch.
+
+def _muted_dialogs(history, monkeypatch):
+    """Record what would be shown, and return None the way show_error does."""
+    shown = []
+
+    def show_error(title='', body='', **kwargs):
+        shown.append((title, body))
+        return None
+
+    monkeypatch.setattr(history.srvdlg, 'show_error', show_error)
+    return shown
+
+
+def test_a_repository_without_git_is_refused_and_switches_the_plugin_off(
+        history, monkeypatch):
+    shown = _muted_dialogs(history, monkeypatch)
+    switched_off = []
+    monkeypatch.setattr(history, 'disable_self',
+                        lambda: switched_off.append(True))
+
+    history._offer_to_install('sudo dnf install git')
+
+    assert len(shown) == 1, 'the user was told nothing'
+    assert switched_off == [True], 'the plugin stayed half on'
+
+
+def test_a_repository_without_git_and_an_unknown_distribution_still_refuses(
+        history, monkeypatch):
+    shown = _muted_dialogs(history, monkeypatch)
+    switched_off = []
+    monkeypatch.setattr(history, 'disable_self',
+                        lambda: switched_off.append(True))
+
+    history._offer_to_install(None)
+
+    assert len(shown) == 1
+    assert switched_off == [True]
+
+
+def test_a_repository_somebody_else_tracks_is_refused_and_switches_off(
+        history, monkeypatch):
+    shown = _muted_dialogs(history, monkeypatch)
+    switched_off = []
+    monkeypatch.setattr(history, 'disable_self',
+                        lambda: switched_off.append(True))
+
+    history._refuse_foreign()
+
+    assert len(shown) == 1
+    assert switched_off == [True]
+
+
+# --- A step must not start while a recording is in flight ------------------
+
+def test_a_recording_in_flight_blocks_a_step(miaz, history):
+    """settle() commits on a worker thread. A step started while that runs
+    puts two git processes on one working tree: they fight over
+    .git/index.lock, and if read-tree lands between 'add -A' and 'commit' the
+    recording commits the stepped-back tree as a state the user never made."""
+    before_index = history.store.index()
+    before_count = history.store.count()
+    history._recording = True
+    try:
+        history.apply_step('back')
+        miaz.pump(0.3)
+        assert history.store.index() == before_index
+        assert history.store.count() == before_count
+    finally:
+        history._recording = False
+
+
+def test_the_buttons_go_dead_while_a_change_is_being_recorded(miaz, history):
+    """So the click cannot be made in the first place, rather than being
+    swallowed by the guard above with nothing to show for it."""
+    repository = miaz.service('repo').docs
+    with open(os.path.join(repository, '20261217-ES-FIN-BANKX-INV-u-JOHNDOE.pdf'),
+              'wb') as document:
+        document.write(b'new')
+    history._counts = {'added': 1}
+    history.settle()
+    assert miaz.widget('headerbar-button-history-undo').get_sensitive() is False
+    miaz.pump(0.5)
+    assert miaz.widget('headerbar-button-history-undo').get_sensitive() is True
+
+
+# --- A filename is not markup ----------------------------------------------
+
+def test_the_dialog_escapes_a_name_that_looks_like_markup(miaz, history):
+    """show_confirmation renders the body as Pango markup. An unescaped & or <
+    in a filename makes it unparseable, and the user then confirms a step that
+    rewrites their documents against an empty or broken body."""
+    repository = miaz.service('repo').docs
+    name = 'Smith & Sons <invoice>.pdf'
+    path = os.path.join(repository, name)
+    with open(path, 'wb') as document:
+        document.write(b'dropped in by the file manager')
+    history._counts = {}
+    history.settle()
+    miaz.pump(0.5)
+
+    dialog = history.ask_undo()
+    miaz.pump(0.2)
+    try:
+        body = dialog.get_body()
+        assert 'Smith &amp; Sons &lt;invoice&gt;.pdf' in body
+        assert 'Smith & Sons' not in body
+    finally:
+        dialog.close()
+        miaz.pump(0.2)
+        # Best effort: MiAZ renames a file that does not match its naming
+        # format, so the path this test wrote may not be the one on disk any
+        # more. The sandbox repository is thrown away after the run either way.
+        try:
+            os.unlink(path)
+        except OSError:
+            pass
+        history._counts = {}
+        history.settle()
+        miaz.pump(0.5)
+
+
+# --- The button keys go when the plugin does -------------------------------
+
+def test_the_button_keys_are_registered_for_removal(miaz, history):
+    """add_widget on its own leaves the key pointing at a detached button after
+    a deactivate or a repository switch, and the next activation finds the
+    stale key and re-attaches nothing."""
+    system = miaz.service('plugin-system')
+    assert miaz.widget('headerbar-button-history-undo') is history.button_undo
+    assert miaz.widget('headerbar-button-history-redo') is history.button_redo
+    # The box, plus one for each button.
+    assert system.widgets.count('MiAZHistory') >= 3
+
+
+# --- The wiring, end to end ------------------------------------------------
+
+def test_deleting_documents_is_recorded_as_one_step_named_for_all_of_them(
+        miaz, history):
+    """Every other test here sets _counts by hand and calls settle() directly,
+    so the signal handlers and the settle timer are never exercised. This one
+    deletes through MiAZ and lets the timer fire on its own.
+
+    filename-deleted carries every path removed in one signal, so the count has
+    to come from the collection rather than from the number of signals.
+    """
+    repository = miaz.service('repo').docs
+    util = miaz.service('util')
+    names = ['20261218-ES-FIN-BANKX-INV-p-JOHNDOE.pdf',
+             '20261218-ES-FIN-BANKX-INV-q-JOHNDOE.pdf']
+    paths = [os.path.join(repository, name) for name in names]
+    for path in paths:
+        with open(path, 'wb') as document:
+            document.write(b'to be deleted')
+    history._counts = {}
+    history.settle()
+    miaz.pump(0.6)
+    before = history.store.count()
+
+    util.filename_delete(set(paths))
+    miaz.wait_until(lambda: history.store.count() > before,
+                    message='the deletion was recorded')
+
+    newest = history.store.states()[-1]
+    assert history.store.subject_of(newest) == 'Deleted 2 documents'

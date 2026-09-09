@@ -120,10 +120,13 @@ class MiAZHistoryPlugin(MiAZExtension):
         self.button_redo.connect('clicked', lambda button: self.ask_redo())
         box.append(self.button_undo)
         box.append(self.button_redo)
-        self.app.add_widget(UNDO_WIDGET_ID, self.button_undo)
-        self.app.add_widget(REDO_WIDGET_ID, self.button_redo)
         self.plugin.add_headerbar_widget(box, position='left',
                                          widget_key=BOX_WIDGET_ID)
+        # Through the plugin rather than app.add_widget, so the keys are
+        # dropped when the plugin unloads. A key left behind resolves to a
+        # detached button after a deactivate or a repository switch.
+        self.plugin.register_widget(UNDO_WIDGET_ID, self.button_undo)
+        self.plugin.register_widget(REDO_WIDGET_ID, self.button_redo)
 
     def is_ready(self) -> bool:
         """Whether there is a history to step through."""
@@ -163,19 +166,22 @@ class MiAZHistoryPlugin(MiAZExtension):
             body = _('MiAZ needs one more program to keep a history of this '
                      'repository. Install this package with your '
                      'distribution package manager:\n\n<tt>git</tt>')
-        dialog = self.srvdlg.show_error(
-            title=_('One program is missing'), body=body)
-        dialog.present(window)
+        # show_error presents the dialog itself and returns nothing. Taking a
+        # return value and calling present() on it raised AttributeError right
+        # here, before disable_self() could run, so the plugin failed to load
+        # and did it again on every launch.
+        self.srvdlg.show_error(title=_('One program is missing'), body=body,
+                               parent=window)
         self.disable_self()
 
     def _refuse_foreign(self):
         """Somebody already tracks these documents themselves. Leave them be."""
         window = self.app.get_widget('window')
-        dialog = self.srvdlg.show_error(
+        self.srvdlg.show_error(
             title=_('This repository is already being tracked'),
             body=_('Something else is already keeping a history of this '
-                   'repository, so MiAZ will not keep another one.'))
-        dialog.present(window)
+                   'repository, so MiAZ will not keep another one.'),
+            parent=window)
         self.disable_self()
 
     def _offer_first_snapshot(self):
@@ -319,6 +325,10 @@ class MiAZHistoryPlugin(MiAZExtension):
         counts = self._counts
         self._counts = {}
         self._recording = True
+        # Dead while the commit runs, so the click that apply_step would refuse
+        # cannot be made at all.
+        self.button_undo.set_sensitive(False)
+        self.button_redo.set_sensitive(False)
         run_in_background(
             lambda: self.store.record(subject(counts)),
             on_done=self._on_recorded,
@@ -387,9 +397,13 @@ class MiAZHistoryPlugin(MiAZExtension):
         # show_confirmation rather than show_question: it puts the action on
         # the button ("Undo") instead of answering "Yes", and it makes Cancel
         # the default, which is right for something that rewrites files.
+        # show_confirmation renders the body as Pango markup, and a filename
+        # may hold an & or a <. Unescaped, the markup will not parse and the
+        # user confirms a step that rewrites documents against a broken body.
         dialog = self.srvdlg.show_confirmation(
             title=_('Undo this change?') if back else _('Redo this change?'),
-            body=body(changes, self.store.timestamp(newer)),
+            body=GLib.markup_escape_text(
+                body(changes, self.store.timestamp(newer))),
             confirm_label=_('Undo') if back else _('Redo'),
             callback=self._on_answer, data=direction,
             width=520, height=420)
@@ -408,8 +422,14 @@ class MiAZHistoryPlugin(MiAZExtension):
         made. The same flag also guards against a second step starting
         before this one finishes: two of them against the same working tree
         at once would race.
+
+        A recording in flight blocks it for the same reason. settle() commits
+        on a worker thread, and a step started while that runs puts two git
+        processes on one working tree: they fight over .git/index.lock, and if
+        read-tree lands between 'add -A' and 'commit' the recording commits the
+        stepped-back tree as a state the user never made.
         """
-        if not self._ready or self._suppressed:
+        if not self._ready or self._suppressed or self._recording:
             return
         pending = (self.store.pending_undo() if direction == 'back'
                    else self.store.pending_redo())
@@ -427,7 +447,11 @@ class MiAZHistoryPlugin(MiAZExtension):
                    else _('Stepped forward'))
         step = (self.store.step_back if direction == 'back'
                 else self.store.step_forward)
-        run_in_background(lambda: step(subject),
+        # Work that reached the disk but never a state is committed before the
+        # step overwrites it. It is the same thing catch_up() records, so it is
+        # named the same way.
+        rescue = _('Changed outside MiAZ')
+        run_in_background(lambda: step(subject, rescue),
                           on_done=lambda state: self._on_step_done(state, touched_config),
                           on_error=self._on_step_failed,
                           name=f'miazhistory-step-{direction}')

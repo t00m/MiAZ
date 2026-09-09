@@ -771,6 +771,19 @@ class MiAZPlugin(GObject.GObject):
         if registry is not None:
             registry.add(self.get_name(), lambda: self.app.remove_widget(widget_key))
 
+    def register_widget(self, widget_key: str, widget):
+        """Register a widget under a key, and drop the key when this plugin
+        unloads.
+
+        add_headerbar_widget and its siblings already do this for the widget
+        they attach. Use this for a widget the plugin keeps its own reference
+        to but does not attach itself, such as the individual buttons inside a
+        box that was attached as one. Registering them with app.add_widget
+        directly leaves the keys behind on unload, pointing at detached
+        widgets.
+        """
+        self._register_widget_key(widget_key, widget)
+
     def add_sidebar_widget(self, widget, widget_key: str = None):
         """Put a widget in the sidebar's plugin section, owned by this plugin.
 

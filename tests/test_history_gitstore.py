@@ -395,3 +395,293 @@ def test_a_state_knows_when_it_was_made(repository):
     store = GitStore(str(repository))
     first = store.init('Everything as it was')
     assert abs(store.timestamp(first) - time.time()) < 60
+
+
+# --- What a step must never destroy -----------------------------------------
+#
+# read-tree --reset -u writes the whole working tree. Anything that never
+# reached a commit is gone with nothing to go back to, and a dirty tree is not
+# a rare accident: a recording that failed leaves one, and the configuration a
+# plugin writes reaches disk with no signal to settle on.
+
+def test_a_step_back_keeps_work_that_was_never_recorded(repository):
+    from history.gitstore import GitStore
+    store = GitStore(str(repository))
+    store.init('Everything as it was')
+    document = repository / '20260202-ES-FIN-BANKX-INV-water-JOHNDOE.pdf'
+    document.write_bytes(b'second')
+    store.record('Added 1 document')
+
+    # Never recorded: no settle timer ever ran for this one.
+    document.write_bytes(b'edited but never recorded')
+    store.step_back('Stepped back')
+
+    # It is off the disk, because the step put an earlier state there, but it
+    # is still in the timeline and stepping forward brings it back.
+    assert store.can_redo() is True
+    while store.can_redo():
+        store.step_forward('Stepped forward')
+    assert document.read_bytes() == b'edited but never recorded'
+
+
+def test_a_step_forward_keeps_work_that_was_never_recorded(repository):
+    from history.gitstore import GitStore
+    store = GitStore(str(repository))
+    store.init('Everything as it was')
+    document = repository / '20260202-ES-FIN-BANKX-INV-water-JOHNDOE.pdf'
+    document.write_bytes(b'second')
+    store.record('Added 1 document')
+    store.step_back('Stepped back')
+
+    # A tracked document, edited and never recorded. read-tree leaves an
+    # untracked file alone, so only a tracked one is actually at risk.
+    baseline = repository / '20260101-ES-FIN-BANKX-INV-rent-JOHNDOE.pdf'
+    baseline.write_bytes(b'never recorded either')
+    store.step_forward('Stepped forward')
+
+    while store.can_redo():
+        store.step_forward('Stepped forward')
+    assert baseline.read_bytes() == b'never recorded either'
+
+
+def test_rescued_work_does_not_drop_the_states_ahead_of_it(repository):
+    """record() truncates what is ahead because a change made after stepping
+    back is a new branch of the user's work. Work that was merely never
+    written down is not that, so nothing is dropped for it."""
+    from history.gitstore import GitStore
+    store = GitStore(str(repository))
+    store.init('Everything as it was')
+    (repository / '20260202-ES-FIN-BANKX-INV-water-JOHNDOE.pdf').write_bytes(b'second')
+    store.record('Added 1 document')
+    (repository / '20260303-ES-FIN-BANKX-INV-gas-JOHNDOE.pdf').write_bytes(b'third')
+    store.record('Added 1 document')
+    store.step_back('Stepped back')
+    ahead = store.count()
+
+    (repository / '20260101-ES-FIN-BANKX-INV-rent-JOHNDOE.pdf').write_bytes(b'unrecorded')
+    store.step_back('Stepped back')
+    assert store.count() == ahead + 1
+
+
+def test_a_step_on_a_clean_tree_records_nothing_extra(repository):
+    from history.gitstore import GitStore
+    store = GitStore(str(repository))
+    store.init('Everything as it was')
+    (repository / '20260202-ES-FIN-BANKX-INV-water-JOHNDOE.pdf').write_bytes(b'second')
+    store.record('Added 1 document')
+    before = store.count()
+    store.step_back('Stepped back')
+    assert store.count() == before
+
+
+# --- An interrupted first snapshot ------------------------------------------
+
+def test_an_interrupted_first_snapshot_is_still_ours(repository, monkeypatch):
+    """The baseline commit takes minutes on a large repository. Quitting during
+    it must not leave a .git that the plugin reads as somebody else's and
+    refuses for ever after."""
+    from history.gitstore import GitStore
+    store = GitStore(str(repository))
+
+    def die(*args, **kwargs):
+        raise KeyboardInterrupt('the user quit during the first snapshot')
+
+    monkeypatch.setattr(store, '_commit', die)
+    with pytest.raises(KeyboardInterrupt):
+        store.init('Everything as it was')
+
+    assert store.exists() is True
+    assert store.is_ours() is True
+    assert store.is_foreign() is False
+
+
+def test_an_interrupted_first_snapshot_records_the_documents_next_time(repository):
+    """And the next run picks the documents up rather than starting empty."""
+    from history.gitstore import GitStore
+    store = GitStore(str(repository))
+    store._run('-c', 'init.defaultBranch=main', 'init', '-q')
+    store._run('config', 'user.name', 'MiAZ')
+    store._run('config', 'user.email', 'miaz@localhost')
+    store._write_state([], -1)
+
+    assert store.is_ours() is True
+    store.record('Changed outside MiAZ')
+    assert store.count() == 1
+    assert store.index() == 0
+
+
+# --- A state file that will not parse ---------------------------------------
+
+def test_a_corrupt_state_file_is_not_read_as_an_empty_history(repository):
+    """Reading it as empty is how the whole timeline disappears: the next
+    record() writes states[:0] + [commit] over it and every earlier state is
+    orphaned with nothing pointing at it."""
+    from history.gitstore import GitError, GitStore
+    store = GitStore(str(repository))
+    store.init('Everything as it was')
+    (repository / '20260202-ES-FIN-BANKX-INV-water-JOHNDOE.pdf').write_bytes(b'second')
+    store.record('Added 1 document')
+
+    with open(store.statefile, 'w', encoding='utf-8') as broken:
+        broken.write('{"states": [truncated mid-w')
+
+    with pytest.raises(GitError):
+        store.states()
+    (repository / '20260303-ES-FIN-BANKX-INV-gas-JOHNDOE.pdf').write_bytes(b'third')
+    with pytest.raises(GitError):
+        store.record('Added 1 document')
+
+
+def test_a_missing_state_file_is_still_an_empty_history(repository):
+    from history.gitstore import GitStore
+    store = GitStore(str(repository))
+    assert store.states() == []
+    assert store.index() == -1
+
+
+# --- Writes that a crash must not truncate ----------------------------------
+
+def test_a_failed_state_write_leaves_the_previous_one_intact(repository):
+    """Opening the file for writing truncates it, so a write that dies partway
+    leaves half a file. _read_state then refuses it and the timeline is gone."""
+    from history.gitstore import GitStore
+    store = GitStore(str(repository))
+    store.init('Everything as it was')
+    (repository / '20260202-ES-FIN-BANKX-INV-water-JOHNDOE.pdf').write_bytes(b'second')
+    store.record('Added 1 document')
+    before = open(store.statefile, 'rb').read()
+
+    class Unserialisable:
+        pass
+
+    with pytest.raises(TypeError):
+        store._write_state([Unserialisable()], 0)
+
+    assert open(store.statefile, 'rb').read() == before
+    assert store.index() == 1
+    leftovers = [name for name in os.listdir(store.gitdir)
+                 if name.startswith('.tmp-')]
+    assert leftovers == []
+
+
+def test_a_failed_plugins_used_write_leaves_the_previous_one_intact(repository):
+    """It is written from a worker thread while the main thread may be reading
+    it, and MiAZConfig.load swallows a parse error and returns {}, which reads
+    as a repository with every plugin switched off."""
+    from history.gitstore import GitStore
+    used = repository / '.conf' / 'plugins-used.json'
+    used.write_text(json.dumps({'MiAZDoctor': 'Health check'}), encoding='utf-8')
+    store = GitStore(str(repository))
+    store.init('Everything as it was')
+    before = used.read_bytes()
+
+    def explode(*args, **kwargs):
+        raise RuntimeError('the disk filled up mid-write')
+
+    original = json.dump
+    json.dump = explode
+    try:
+        with pytest.raises(RuntimeError):
+            store._keep_plugin_enabled()
+    finally:
+        json.dump = original
+
+    assert used.read_bytes() == before
+    leftovers = [name for name in os.listdir(repository / '.conf')
+                 if name.startswith('.tmp-')]
+    assert leftovers == []
+
+
+def test_plugins_used_survives_a_step_that_removed_the_plugin(repository):
+    from history.gitstore import GitStore
+    used = repository / '.conf' / 'plugins-used.json'
+    used.write_text(json.dumps({'MiAZDoctor': 'Health check'}), encoding='utf-8')
+    store = GitStore(str(repository))
+    store.init('Everything as it was')
+    store._keep_plugin_enabled()
+
+    plugins = json.loads(used.read_text(encoding='utf-8'))
+    assert 'MiAZHistory' in plugins
+    assert 'MiAZDoctor' in plugins
+
+
+# --- git that never comes back ----------------------------------------------
+
+def test_a_git_command_that_never_answers_is_given_up_on(repository):
+    """A repository on a network share that stops answering would otherwise
+    leave the plugin waiting for ever, with both buttons dead and no word
+    about why."""
+    from history.gitstore import GitError, GitStore
+    store = GitStore(str(repository))
+
+    def hang(*args, **kwargs):
+        raise subprocess.TimeoutExpired(cmd='git', timeout=kwargs.get('timeout', 1))
+
+    original = subprocess.run
+    subprocess.run = hang
+    try:
+        with pytest.raises(GitError):
+            store.is_dirty()
+    finally:
+        subprocess.run = original
+
+
+def test_every_git_call_carries_a_timeout(repository):
+    from history.gitstore import GitStore
+    store = GitStore(str(repository))
+    seen = []
+
+    original = subprocess.run
+
+    def watch(*args, **kwargs):
+        seen.append(kwargs.get('timeout'))
+        return original(*args, **kwargs)
+
+    subprocess.run = watch
+    try:
+        store.init('Everything as it was')
+    finally:
+        subprocess.run = original
+
+    assert seen, 'no git command ran'
+    assert all(timeout is not None for timeout in seen)
+
+
+# --- One git process at a time ----------------------------------------------
+
+def test_two_steps_cannot_run_against_the_tree_at_once(repository):
+    """Two read-tree and commit sequences over one working tree race for
+    .git/index.lock, and can leave the state file describing a tree that is
+    not the one on disk."""
+    import threading
+
+    from history.gitstore import GitStore
+    store = GitStore(str(repository))
+    store.init('Everything as it was')
+    (repository / '20260202-ES-FIN-BANKX-INV-water-JOHNDOE.pdf').write_bytes(b'second')
+    store.record('Added 1 document')
+    (repository / '20260303-ES-FIN-BANKX-INV-gas-JOHNDOE.pdf').write_bytes(b'third')
+    store.record('Added 1 document')
+
+    overlaps = []
+    inside = threading.Event()
+    original = store._apply
+
+    def slow_apply(target, subject):
+        overlaps.append(inside.is_set())
+        inside.set()
+        try:
+            return original(target, subject)
+        finally:
+            inside.clear()
+
+    store._apply = slow_apply
+    threads = [threading.Thread(target=store.step_back, args=('Stepped back',))
+               for _ in range(4)]
+    for thread in threads:
+        thread.start()
+    for thread in threads:
+        thread.join(timeout=30)
+
+    assert True not in overlaps, 'two steps ran at the same time'
+    assert store.index() == len(store.states()) - 3

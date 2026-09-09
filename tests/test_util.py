@@ -832,3 +832,64 @@ def test_the_export_passes_the_copy_result_back(util, tmp_path):
     assert util.filename_export(str(source), str(tmp_path / 'out.pdf')) is True
     assert util.filename_export(str(tmp_path / 'gone.pdf'),
                                 str(tmp_path / 'out2.pdf')) is False
+
+
+# ---------------------------------------------------------------------------
+# zip: what a backup archives, and what it leaves out
+# ---------------------------------------------------------------------------
+
+def make_repository(tmp_path):
+    """A repository shaped like a MiAZ one that MiAZHistory has tracked."""
+    repo = tmp_path / 'repo'
+    (repo / '.conf').mkdir(parents=True)
+    (repo / '.conf' / 'repo.json').write_text('{}', encoding='utf-8')
+    (repo / 'subdir').mkdir()
+    (repo / 'subdir' / 'nested.pdf').write_bytes(b'nested')
+    (repo / '20240315-ES-HOU-BANK-INV-rent-PERSON.pdf').write_bytes(b'document')
+    git = repo / '.git'
+    (git / 'objects').mkdir(parents=True)
+    (git / 'objects' / 'pack.idx').write_bytes(b'a copy of every document')
+    (git / 'HEAD').write_text('ref: refs/heads/main', encoding='utf-8')
+    return repo
+
+
+def test_zip_archives_everything_by_default(util, tmp_path):
+    repo = make_repository(tmp_path)
+    target = util.zip(str(tmp_path / 'backup'), str(repo))
+    names = set(util.zip_list(target))
+    assert '20240315-ES-HOU-BANK-INV-rent-PERSON.pdf' in names
+    assert 'subdir/nested.pdf' in names
+    assert '.conf/repo.json' in names
+    assert '.git/HEAD' in names
+
+
+def test_zip_leaves_out_what_it_is_told_to(util, tmp_path):
+    """MiAZHistory keeps a full copy of every document under .git, so a
+    repository backup that includes it is twice the size and twice the wait,
+    for a second copy of what the archive already holds."""
+    repo = make_repository(tmp_path)
+    target = util.zip(str(tmp_path / 'backup'), str(repo), exclude=('.git',))
+    names = set(util.zip_list(target))
+    assert '20240315-ES-HOU-BANK-INV-rent-PERSON.pdf' in names
+    assert 'subdir/nested.pdf' in names
+    assert '.conf/repo.json' in names
+    assert not [name for name in names if name.startswith('.git/')]
+
+
+def test_zip_returns_a_path_ending_in_zip(util, tmp_path):
+    repo = make_repository(tmp_path)
+    target = util.zip(str(tmp_path / 'backup'), str(repo))
+    assert target.endswith('.zip')
+    assert os.path.exists(target)
+
+
+def test_zip_and_unzip_make_a_round_trip(util, tmp_path):
+    repo = make_repository(tmp_path)
+    target = util.zip(str(tmp_path / 'backup'), str(repo), exclude=('.git',))
+    restored = tmp_path / 'restored'
+    restored.mkdir()
+    util.unzip(target, str(restored))
+    assert (restored / '20240315-ES-HOU-BANK-INV-rent-PERSON.pdf').read_bytes() == b'document'
+    assert (restored / 'subdir' / 'nested.pdf').read_bytes() == b'nested'
+    assert (restored / '.conf' / 'repo.json').read_text(encoding='utf-8') == '{}'
+    assert not (restored / '.git').exists()
