@@ -63,22 +63,6 @@ class MiAZExtension(GObject.GObject):
     def do_deactivate(self):
         pass
 
-plugin_info_template = {
-        _('Module'):        '',
-        _('Name'):          '',
-        _('Loader'):        '',
-        _('Description'):   '',
-        _('Authors'):       '',
-        _('Copyright'):     '',
-        _('Website'):       '',
-        _('Help'):          '',
-        _('Version'):       '',
-        _('Category'):      '',
-        _('Subcategory'):   '',
-        _('MenuEntries'):   []
-    }
-
-
 def normalise_menu_entries(entries) -> list:
     """The declared menu entries as (id, label, shortcuts) triples.
 

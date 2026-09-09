@@ -463,6 +463,11 @@ class MiAZUtil(GObject.GObject):
         today. filename_guess_date used to end its chain here, which is how
         every document without a date in its name came to be filed under the
         day it was imported. Use dates_from_metadata for a document date.
+
+        Nothing in MiAZ calls it, and that is not a reason to remove it: it is
+        a public method on a service plugins are given in full, and a plugin
+        out of tree is free to ask when a file was written. Two analyses have
+        now listed it as dead code, so this paragraph is here to stop a third.
         """
         lastmod = os.stat(filepath).st_mtime
         return datetime.fromtimestamp(lastmod)

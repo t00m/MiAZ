@@ -8,7 +8,6 @@ MiAZ/backend/log.py
 MiAZ/backend/models.py
 MiAZ/backend/repository.py
 MiAZ/backend/secrets.py
-MiAZ/backend/stats.py
 MiAZ/backend/util.py
 MiAZ/backend/vocabulary.py
 MiAZ/backend/watcher.py
