@@ -22,6 +22,46 @@ pytestmark = pytest.mark.skipif(shutil.which('git') is None,
                                 reason='git is not installed')
 
 
+@pytest.fixture(scope='module', autouse=True)
+def leaves_no_documents_behind(miaz):
+    """Take the shared repository back to what it was before this module ran.
+
+    Every repository in the UI suite is built once per session, so a document
+    written here is still there when the next file counts what the workspace
+    displays. These tests add documents on purpose, which is the point of a
+    history, and they used to leave them: three files dated December 2026 that
+    broke the document counts in test_ui_repository, test_ui_workspace and
+    test_ui_widgets, and the future preset in test_ui_sidebar.
+
+    The sweep runs once at the end rather than after each test. The tests build
+    on the git history they record between them, and removing a file mid module
+    would leave the working tree dirty for the step_back in the test below.
+
+    Names are compared rather than paths: MiAZHistory renames a document that
+    does not match the naming format, so what a test wrote is not always what
+    ends up on disk.
+    """
+    docs = miaz.service('repo').docs
+    before = set(os.listdir(docs))
+    yield
+    leaked = set(os.listdir(docs)) - before
+    for name in leaked:
+        try:
+            os.unlink(os.path.join(docs, name))
+        except OSError:
+            pass
+    if leaked:
+        # Record the removal, so the next test to open this git store does not
+        # find a working tree with uncommitted deletions in it.
+        if PLUGIN_DIR not in sys.path:
+            sys.path.insert(0, PLUGIN_DIR)
+        from history.gitstore import GitStore
+        store = GitStore(docs)
+        if store.exists() and store.is_dirty():
+            store.record('Cleaned up after the history tests')
+    miaz.pump(0.3)
+
+
 @pytest.fixture
 def history(miaz):
     """The MiAZHistory plugin, loaded against a prepared sandbox repository."""
