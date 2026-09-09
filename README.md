@@ -295,6 +295,9 @@ Tested on current Ubuntu LTS 26.04, and the current Fedora (v44).
 
 Bug reports and feature requests: [GitHub Issues](https://github.com/t00m/MiAZ/issues)
 
+Setting up, testing and submitting changes: [CONTRIBUTING.md](CONTRIBUTING.md).
+Cutting a release: [RELEASING.md](RELEASING.md).
+
 
 ## About the author
 
