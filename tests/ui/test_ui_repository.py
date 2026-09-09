@@ -31,12 +31,20 @@ def back_to_alpha(miaz):
     switch_to(miaz, 'Alpha')
 
 
-def test_switching_reloads_the_documents(miaz, back_to_alpha):
-    """8.1."""
-    assert len(miaz.displayed()) == 3
-    switch_to(miaz, 'Beta')
-    assert len(miaz.displayed()) == 1
-    assert miaz.displayed()[0].startswith('20250301')
+def test_switching_reloads_the_documents(clean_view, back_to_alpha):
+    """8.1.
+
+    clean_view, not miaz, because these counts are about what the repository
+    holds. The workspace opens on the nearest date preset that is not empty
+    (pick_date_preset), and the sandbox documents carry fixed dates, so which
+    preset that is depends on the day the suite runs: on 9 September 2026 the
+    walk stopped at "since last 3 months", which holds one of Alpha's three.
+    Selecting "all documents" first is what the other files already do.
+    """
+    assert len(clean_view.displayed()) == 3
+    switch_to(clean_view, 'Beta')
+    assert len(clean_view.displayed()) == 1
+    assert clean_view.displayed()[0].startswith('20250301')
 
 
 def test_switching_reloads_the_vocabulary(miaz, sandbox, back_to_alpha):
@@ -52,14 +60,14 @@ def test_switching_reloads_the_vocabulary(miaz, sandbox, back_to_alpha):
     assert set(countries) == {'PT'}
 
 
-def test_switching_back_does_not_show_the_other_repository(miaz, sandbox,
+def test_switching_back_does_not_show_the_other_repository(clean_view, sandbox,
                                                            back_to_alpha):
     """8.3: the stale cache bug, which two config tests also cover headless."""
-    alpha_countries = set(miaz.app.get_config('Country').load_used())
-    switch_to(miaz, 'Beta')
-    switch_to(miaz, 'Alpha')
-    assert set(miaz.app.get_config('Country').load_used()) == alpha_countries
-    assert len(miaz.displayed()) == 3
+    alpha_countries = set(clean_view.app.get_config('Country').load_used())
+    switch_to(clean_view, 'Beta')
+    switch_to(clean_view, 'Alpha')
+    assert set(clean_view.app.get_config('Country').load_used()) == alpha_countries
+    assert len(clean_view.displayed()) == 3
 
 
 def test_the_index_follows_the_switch(miaz, back_to_alpha):
@@ -110,13 +118,13 @@ def test_switching_back_restores_the_plugins(miaz, back_to_alpha):
     assert 'MiAZNotes' in loaded_plugins(miaz)
 
 
-def test_switching_without_setting_the_default(miaz, back_to_alpha):
+def test_switching_without_setting_the_default(clean_view, back_to_alpha):
     """The checkbox unticked: look at Beta, still open Alpha next time."""
-    switch_via_workflow(miaz, 'Beta', set_default=False)
+    switch_via_workflow(clean_view, 'Beta', set_default=False)
 
-    assert miaz.service('repo').docs.endswith('Beta')
-    assert len(miaz.displayed()) == 1
-    assert miaz.app.get_config('App').get('current') == 'Alpha'
+    assert clean_view.service('repo').docs.endswith('Beta')
+    assert len(clean_view.displayed()) == 1
+    assert clean_view.app.get_config('App').get('current') == 'Alpha'
 
 
 def test_the_active_repository_is_the_one_on_screen(miaz, back_to_alpha):
