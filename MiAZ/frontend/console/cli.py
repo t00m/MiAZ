@@ -12,6 +12,8 @@ from datetime import datetime
 from gettext import gettext as _
 
 from MiAZ.backend.log import debug_requested, set_console_level
+from MiAZ.backend.plugins import (MiAZPluginCore, discover_commands,
+                                  parse_operations)
 from MiAZ.backend.query import (ANY, DATE_PRESET_ALL, DATE_PRESETS, DATE_RANGE,
                                 NONE, DocumentQuery, resolve_preset)
 from MiAZ.frontend.console.app import MiAZConsoleApp
@@ -229,7 +231,57 @@ def cmd_repos(app, args, stdout, stderr):
     return 0
 
 
-def build_parser():
+def plugin_search_paths(env=None):
+    """Where to look for plugins, or nothing when the environment is unknown.
+
+    Taken from ENV rather than hardcoded so a test can point the command line
+    at a temporary directory instead of the installed plugins.
+    """
+    if env is None:
+        return []
+    return [env.get('GPATH', {}).get('PLUGINS'),
+            env.get('LPATH', {}).get('PLUGINS')]
+
+
+def known_commands(search_paths=None) -> frozenset:
+    """Every command name this build answers to, built-in and contributed.
+
+    miaz.py tests the first argument against this before it decides between
+    the window and the command line, so a plugin command missing from here
+    would open the window instead of running.
+    """
+    return frozenset(HANDLERS) | frozenset(discover_commands(search_paths))
+
+
+def _add_plugin_command(commands, name, declared, search_paths):
+    """Give one plugin command its subparser, with the flags it declares.
+
+    The module is imported here because this is the point where the schema is
+    needed, and only this one module is: `miaz search` never reaches it.
+    """
+    core = MiAZPluginCore(search_paths=search_paths, log_name='MiAZ.CLI.Plugins')
+    module = core.import_module(declared['module'])
+    if module is None:
+        return None
+
+    operation = None
+    for candidate in parse_operations(getattr(module, 'plugin_info', {}) or {},
+                                      owner=declared['module']):
+        if candidate.name == name:
+            operation = candidate
+            break
+    if operation is None:
+        return None
+
+    parser = commands.add_parser(name, help=declared['help'] or operation.help)
+    operation.add_arguments(parser)
+    parser.add_argument('--repo', metavar='NAME_OR_PATH',
+                        help=_('Which repository to work on'))
+    parser.set_defaults(_operation=operation, _module=module)
+    return operation
+
+
+def build_parser(search_paths=None):
     parser = argparse.ArgumentParser(
         prog='miaz', description=_('Personal Document Organizer'))
     commands = parser.add_subparsers(dest='command')
@@ -261,6 +313,14 @@ def build_parser():
 
     repos = commands.add_parser('repos', help=_('List repositories'))
     repos.add_argument('--json', action='store_true', help=_('JSON records'))
+
+    for name, declared in sorted(discover_commands(search_paths).items()):
+        if name in HANDLERS:
+            # A plugin does not get to shadow `search` or `repos`. Refusing it
+            # here beats letting the last plugin scanned decide what `search`
+            # means.
+            continue
+        _add_plugin_command(commands, name, declared, search_paths)
     return parser
 
 
@@ -276,7 +336,15 @@ def main(argv, stdout, stderr, env=None):
     0 results, 1 nothing found, 2 the arguments are wrong, 3 the repository
     cannot be used.
     """
-    args = build_parser().parse_args(argv)
+    if env is None:
+        from MiAZ.env import ENV
+        env = ENV
+
+    # Built before parsing, because a plugin command's flags are part of the
+    # parser. Discovery reads the .plugin files and imports nothing until a
+    # plugin command is actually named.
+    search_paths = plugin_search_paths(env)
+    args = build_parser(search_paths).parse_args(argv)
     if not args.command:
         stderr.write(_('usage: miaz [search|repos] ...\n'))
         return 2
@@ -285,10 +353,6 @@ def main(argv, stdout, stderr, env=None):
     # the usual logging back when something needs looking at.
     if not debug_requested():
         set_console_level(logging.WARNING)
-
-    if env is None:
-        from MiAZ.env import ENV
-        env = ENV
 
     app = MiAZConsoleApp(env)
     # 'repos' reads the application configuration only, so it works even when
@@ -300,4 +364,31 @@ def main(argv, stdout, stderr, env=None):
     if code:
         stderr.write(f'{message}\n')
         return code
-    return HANDLERS[args.command](app, args, stdout, stderr)
+
+    if args.command in HANDLERS:
+        return HANDLERS[args.command](app, args, stdout, stderr)
+    return run_plugin_command(app, args, stdout, stderr)
+
+
+def run_plugin_command(app, args, stdout, stderr):
+    """Call the module-level function the operation names.
+
+    A plugin naming a handler it does not define is the plugin's bug, so say
+    which plugin and which name rather than dying with an AttributeError from
+    inside here.
+    """
+    operation = getattr(args, '_operation', None)
+    module = getattr(args, '_module', None)
+    if operation is None or module is None:
+        stderr.write(_("'{command}' is not a command\n").format(
+            command=args.command))
+        return 2
+
+    handler = operation.resolve(module)
+    if handler is None:
+        stderr.write(_("plugin '{plugin}' declares command '{command}' but "
+                       "defines no '{handler}'\n").format(
+                           plugin=operation.owner, command=operation.name,
+                           handler=operation.run))
+        return 2
+    return handler(app, args, stdout, stderr)

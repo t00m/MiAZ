@@ -9,13 +9,10 @@
 """
 
 import os
-import sys
 import glob
 import json
 import shutil
 import zipfile
-import inspect
-import importlib.util
 from gettext import gettext as _, ngettext
 
 import gi
@@ -24,6 +21,24 @@ gi.require_version('Gtk', '4.0')
 from gi.repository import GObject, Gtk, Peas
 
 from MiAZ.backend.log import MiAZLog
+# The frontend-neutral half lives in the backend so the console frontend can
+# use it too. Re-exported here because 21 plugins and the desktop app import
+# these names from this module, and because _activate_plugin_instance matches
+# a plugin's class with issubclass against the very same MiAZExtension: two
+# definitions of it would mean no plugin ever activates.
+from MiAZ.backend.plugins import (  # noqa: F401
+    MiAZAPI,
+    MiAZExtension,
+    MiAZPluginCore,
+    N_,
+    PLUGIN_DEFAULT_ICON,
+    get_plugin_attributes,
+    normalise_menu_entries,
+    parse_operations,
+    plugin_categories,
+    plugin_version,
+    validate_category,
+)
 
 
 def format_load_failure_toast(count: int) -> str:
@@ -45,129 +60,6 @@ def format_load_failure_banner(failures: dict) -> str:
         parts.append(_('{name} failed to load: {reason}').format(
             name=entry['name'], reason=entry['reason']))
     return '; '.join(parts)
-
-
-class MiAZExtension(GObject.GObject):
-    """Base class for all MiAZ plugins.
-
-    Inherits from GObject.GObject only: no Peas.ExtensionBase, no ExtensionSet.
-    Plugin instances are managed manually after engine.load_plugin() by
-    scanning sys.modules for a MiAZExtension subclass.
-    """
-    __gtype_name__ = 'MiAZExtension'
-    object = GObject.Property(type=GObject.GObject)
-
-    def do_activate(self):
-        pass
-
-    def do_deactivate(self):
-        pass
-
-def plugin_version(info, app_version: str) -> str:
-    """The version to show for a plugin.
-
-    A bundled plugin ships with MiAZ and declares no version of its own, so it
-    takes the application's. Writing it into the plugin instead meant the same
-    number in forty-two files, kept in step by hand: nine of the twenty-one
-    had drifted from themselves by the time anything checked.
-
-    An out-of-tree plugin is released on its own schedule and says so. Its
-    Version is used as it stands.
-
-    `info` is a Peas.PluginInfo or the dict get_plugin_attributes parses out of
-    a .plugin file, which is the same question asked of a different shape.
-    """
-    if isinstance(info, dict):
-        declared = info.get('Version')
-    else:
-        declared = info.get_version()
-    return declared or app_version
-
-
-def normalise_menu_entries(entries) -> list:
-    """The declared menu entries as (id, label, shortcuts) triples.
-
-    An entry is written as ('doc', _('Create a new note'), ['<Ctrl>N']), and
-    the shortcuts may be left out when there are none, which is the common
-    case. Anything shorter than a pair is not an entry and is dropped.
-    """
-    normalised = []
-    for entry in entries or []:
-        if len(entry) < 2:
-            continue
-        entry_id, label = entry[0], entry[1]
-        shortcuts = list(entry[2]) if len(entry) > 2 and entry[2] else []
-        normalised.append((entry_id, label, shortcuts))
-    return normalised
-
-def N_(text: str) -> str:
-    """Mark a string for extraction without translating it here.
-
-    The category names below have to stay English: they are compared against
-    what a .plugin file declares, and a .plugin file is never translated. But
-    they still have to reach po/, because both display sites translate the
-    value they read at runtime, `_(category)` in configview and `_(subcategory)`
-    in app.install_plugin_menu, and gettext only finds a msgid that was
-    extracted from source. This dict is where they are extracted from.
-    """
-    return text
-
-
-# The vocabulary every plugin picks its Category and Subcategory from.
-# Names are one word on purpose: both are menu labels. The workspace plugins
-# section shows one submenu per category, and each of those shows one submenu
-# per subcategory, so a plugin's actions sit two levels down at Category >
-# Subcategory > action.
-plugin_categories = {
-    N_('Documents'): {
-        N_('Import'): 'Bring documents into the repository',
-        N_('Export'): 'Take documents out of the repository',
-        N_('Annotation'): 'Write and read text alongside a document',
-        N_('Contacts'): 'Keep details about senders and recipients',
-        N_('Periodicity'): 'Say how often a document comes back',
-        N_('Projects'): 'Group documents into projects',
-        N_('Search'): 'Find documents',
-        N_('Assistants'): 'Ask a model about a document'
-    },
-    N_('Repository'): {
-        N_('Health'): 'Check the repository and repair it',
-        N_('History'): 'Step back and forward through changes',
-        N_('Stats'): 'Measure the whole repository'
-    },
-    N_('Interface'): {
-        N_('Behavior'): 'Change how the window reacts',
-        N_('Display'): 'Change what the window shows',
-        N_('Accessibility'): 'Change how text is drawn'
-    },
-    N_('Help'): {
-        N_('Examples'): 'Show how a plugin is written'
-    }
-}
-
-
-def validate_category(category: str, subcategory: str):
-    """Why this pair is not in the vocabulary, or None when it is.
-
-    Nothing used to check this, and three plugins drifted onto a subcategory
-    ('User Interface') that the vocabulary never defined. They kept their
-    translated menu label only because an unrelated file happened to contain
-    the same literal. A warning at registration is what catches the next one.
-    """
-    if category not in plugin_categories:
-        return f"unknown category '{category}'"
-    if subcategory not in plugin_categories[category]:
-        return f"unknown subcategory '{subcategory}' for category '{category}'"
-    return None
-
-
-# Shown for a plugin that ships no icon of its own, so every plugin has one.
-PLUGIN_DEFAULT_ICON = 'io.github.t00m.MiAZ-res-plugins'
-
-
-class MiAZAPI(GObject.GObject):
-    def __init__(self, app):
-        GObject.Object.__init__(self)
-        self.app = app
 
 
 class PluginMenuRegistry:
@@ -938,26 +830,27 @@ class MiAZPlugin(GObject.GObject):
             actions.unregister_suggest_items(owner=self.get_name())
 
 
-class MiAZPluginSystem(GObject.GObject):
+class MiAZPluginSystem(MiAZPluginCore):
+    """The desktop plugin system: the core, plus everything about placement.
+
+    Discovery, loading and activation come from MiAZPluginCore and need no
+    toolkit. What is added here is the part that only means something when
+    there is a window: the menu, settings, page, view and widget registries,
+    and the teardown that takes those contributions away again.
+    """
+
     def __init__(self, app):
-        super().__init__()
+        super().__init__(log_name='MiAZ.PluginSystem')
         sid_u = GObject.signal_lookup('plugins-updated', MiAZPluginSystem)
         if sid_u == 0:
             GObject.signal_new('plugins-updated',
                                 MiAZPluginSystem,
                                 GObject.SignalFlags.RUN_LAST, None, ())
-        self.log = MiAZLog('MiAZ.PluginSystem')
         self.app = app
         self.util = self.app.get_service('util')
         self.log.debug("Initializing Plugin Manager")
         self.plugin_info_list = []
 
-        self.engine = Peas.Engine.get_default()
-        for loader in ("python", ):
-            self.engine.enable_loader(loader)
-
-        self._extension_instances = {}
-        self._load_failures = {}
         # What plugins contributed to shared UI, so unload_plugin can take it
         # away the same way it already does web content and dialog tabs.
         self.pages = PluginPageRegistry()
@@ -1047,87 +940,28 @@ class MiAZPluginSystem(GObject.GObject):
             # Plugin system not initialized yet
             pass
 
-    def _direct_import_plugin(self, plugin: Peas.PluginInfo) -> bool:
-        """Import a Python plugin directly when libpeas Python loader is unavailable.
-
-        Fedora (and possibly other distros) ships libpeas 2.x without the Python loader
-        RPM, so engine.load_plugin() silently fails. This method uses importlib to load
-        the .py file by searching the plugin directories (plugin.get_data_dir() in
-        libpeas 2.x returns a synthetic path based on module name, not the real path).
-        """
-        module_name = plugin.get_module_name()
-        if module_name in sys.modules:
-            return True
-        ENV = self.app.get_env()
-        module_file = None
-        for search_dir in (ENV['GPATH']['PLUGINS'], ENV['LPATH']['PLUGINS']):
-            matches = glob.glob(os.path.join(search_dir, '**', f'{module_name}.py'), recursive=True)
-            if matches:
-                module_file = matches[0]
-                break
-        if module_file is None:
-            self.log.error(f"Python module '{module_name}.py' not found in plugin directories")
-            return False
-        try:
-            spec = importlib.util.spec_from_file_location(module_name, module_file)
-            module = importlib.util.module_from_spec(spec)
-            sys.modules[module_name] = module
-            spec.loader.exec_module(module)
-            self.log.debug(f"Direct-imported plugin module '{module_name}' from {module_file}")
-            return True
-        except Exception as error:
-            self.log.error(f"Direct import of '{module_name}' failed: {error}")
-            sys.modules.pop(module_name, None)
-            self._load_failures[module_name] = {
-                'name': plugin.get_name(), 'reason': str(error)}
-            return False
-
-    def is_plugin_loaded(self, plugin: Peas.PluginInfo) -> bool:
-        """True if the plugin is active: via libpeas or our direct-import fallback."""
-        return plugin.get_module_name() in self._extension_instances or plugin.is_loaded()
-
-    def get_load_failures(self) -> dict:
-        """Copy of the current load failures: {module_name: {'name', 'reason'}}."""
-        return dict(self._load_failures)
-
-    def get_load_error(self, module_name: str):
-        entry = self._load_failures.get(module_name)
-        return entry['reason'] if entry else None
+    def make_api(self):
+        """The desktop has an application to hand a plugin. The core has not."""
+        return MiAZAPI(self.app)
 
     def load_plugin(self, plugin: Peas.PluginInfo) -> bool:
-        if self.is_plugin_loaded(plugin):
-            return True
+        """Load through the core, then do the two things only a window needs.
+
+        The requirements install writes into the external-libraries venv, and
+        the signal is what rebuilds the menus. Neither means anything to a
+        frontend with no menus, so both stay here.
+        """
+        already_loaded = self.is_plugin_loaded(plugin)
+        loaded = super().load_plugin(plugin)
+        if not loaded or already_loaded:
+            return loaded
+
         pname = plugin.get_name()
         pvers = plugin_version(plugin, self.app.get_env()['APP']['VERSION'])
-        try:
-            self.engine.load_plugin(plugin)
-
-            if not plugin.is_loaded():
-                # libpeas Python loader may not be installed on the host; try direct import
-                if not self._direct_import_plugin(plugin):
-                    self.log.error(f"Plugin {pname} v{pvers} couldn't be loaded")
-                    return False
-
-            self._activate_plugin_instance(plugin)
-            self._load_failures.pop(plugin.get_module_name(), None)
-            self.log.info(f"Plugin {pname} v{pvers} loaded")
-            self._install_plugin_requirements(plugin)
-            self.emit('plugins-updated')
-            return True
-        except Exception as error:
-            # do_activate() may raise to veto its own activation (e.g. a plugin
-            # whose required external tools are not installed). Clean up the
-            # half-loaded engine state so the plugin does not read back as
-            # loaded, and report failure to the caller.
-            self.log.error(f"Plugin {pname} v{pvers} couldn't be loaded: {error}")
-            self._load_failures[plugin.get_module_name()] = {
-                'name': pname, 'reason': str(error)}
-            try:
-                if plugin.is_loaded():
-                    self.engine.unload_plugin(plugin)
-            except Exception as cleanup_error:
-                self.log.debug(f"Cleanup after failed load of {pname}: {cleanup_error}")
-            return False
+        self.log.info(f"Plugin {pname} v{pvers} loaded")
+        self._install_plugin_requirements(plugin)
+        self.emit('plugins-updated')
+        return True
 
     def _install_plugin_requirements(self, plugin: Peas.PluginInfo):
         """Install a plugin's external libraries when the feature is enabled.
@@ -1262,79 +1096,12 @@ class MiAZPluginSystem(GObject.GObject):
     def get_engine(self):
         return self.engine
 
-    @property
-    def plugins(self):
-        """Gets the engine's plugin list (libpeas 2.x: Engine is a Gio.ListModel)"""
-        return list(self.engine)
-
-    def get_extension(self, module_name: str):
-        """Gets the active extension instance for the given module name."""
-        return self._extension_instances.get(module_name)
-
-    def get_plugin_info(self, module_name: str):
-        """Gets the plugin info for the specified plugin name.
-        Args:
-            module_name (str): The name from the .plugin file of the module.
-        Returns:
-            Peas.PluginInfo: The plugin info if it exists. Otherwise, `None`.
-        """
-        for plugin in self.plugins:
-            if plugin.get_module_name() == module_name:
-                return plugin
-        return None
-
-    def _activate_plugin_instance(self, plugin: Peas.PluginInfo):
-        """Instantiate and activate the plugin class found in sys.modules."""
-        module_name = plugin.get_module_name()
-        module = sys.modules.get(module_name)
-        if module is None:
-            self.log.error(f"Module '{module_name}' not in sys.modules after load")
-            return None
-        for _name, cls in inspect.getmembers(module, inspect.isclass):
-            if issubclass(cls, MiAZExtension) and cls is not MiAZExtension:
-                instance = cls()
-                instance.props.object = MiAZAPI(self.app)
-                try:
-                    instance.do_activate()
-                except Exception as error:
-                    # A plugin may raise from do_activate() to refuse activation
-                    # (e.g. missing external tools). Propagate so load_plugin
-                    # cleans up and reports the failure; do not register it.
-                    self.log.warning(f"Plugin '{module_name}' vetoed its activation: {error}")
-                    raise
-                self._extension_instances[module_name] = instance
-                self.log.debug(f"Activated plugin class '{_name}' for module '{module_name}'")
-                return instance
-        self.log.error(f"No MiAZExtension subclass found in module '{module_name}'")
-        return None
-
-    def _deactivate_plugin_instance(self, plugin: Peas.PluginInfo):
-        """Deactivate and remove the plugin instance."""
-        module_name = plugin.get_module_name()
-        instance = self._extension_instances.pop(module_name, None)
-        if instance is not None:
-            # Refuse contributions from here on, before the teardown rather
-            # than after it: a worker finishing mid-unload is exactly the case
-            # this guards against.
-            helper = getattr(instance, 'plugin', None)
-            if helper is not None and hasattr(helper, 'set_active'):
-                helper.set_active(False)
-            try:
-                instance.do_deactivate()
-            except Exception as error:
-                self.log.error(f"Error deactivating '{module_name}': {error}")
-
     def _setup_plugins_dir(self):
         """Set System and User plugins directories"""
         # System plugins
         # Mandatory set of plugins for every repository
         ENV = self.app.get_env()
-        if os.path.exists(ENV['GPATH']['PLUGINS']):
-            self.engine.add_search_path(ENV['GPATH']['PLUGINS'])
-            self.log.debug(f"Added System plugin dir: {ENV['GPATH']['PLUGINS']}")
-        else:
-            self.log.warning("System plugins directory does not exist:")
-            self.log.warning(f"{ENV['GPATH']['PLUGINS']}")
+        if not self.add_search_path(ENV['GPATH']['PLUGINS']):
             self.log.warning("Continuing without system plugins")
 
         # User plugins
@@ -1342,26 +1109,11 @@ class MiAZPluginSystem(GObject.GObject):
         # However, each repository can use none, any or all of them
         if not os.path.exists(ENV['LPATH']['PLUGINS']):
             os.makedirs(ENV['LPATH']['PLUGINS'], exist_ok=True)
-        self.engine.add_search_path(ENV['LPATH']['PLUGINS'])
-        self.log.debug(f"Added user plugins dir: {ENV['LPATH']['PLUGINS']}")
+        self.add_search_path(ENV['LPATH']['PLUGINS'])
 
     def get_plugin_attributes(self, plugin_file: str):
         """Get plugin attributes from `plugin_module`.plugin file"""
-        plugin_info = {}
-        with open(plugin_file, 'r', encoding='utf-8') as file:
-            # Skip the first line (assuming it's [Plugin])
-            next(file)
-
-            for line in file:
-                line = line.strip()
-                if not line:  # Skip empty lines
-                    continue
-
-                # Split each line at the first '=' character
-                if '=' in line:
-                    key, value = line.split('=', 1)
-                    plugin_info[key.strip()] = _(value.strip())
-        return plugin_info
+        return get_plugin_attributes(plugin_file)
 
     def _on_repository_switched(self, *_args):
         # Not update_available_plugins directly: the signal hands the emitter

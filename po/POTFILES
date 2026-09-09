@@ -6,6 +6,7 @@ MiAZ/backend/crash.py
 MiAZ/backend/dr.py
 MiAZ/backend/log.py
 MiAZ/backend/models.py
+MiAZ/backend/plugins.py
 MiAZ/backend/repository.py
 MiAZ/backend/secrets.py
 MiAZ/backend/util.py
