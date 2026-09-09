@@ -27,7 +27,6 @@ plugin_info = {
     'Description': _('Suggest filename fields from document content using an AI provider'),
     'Authors':     'Tomás Vírseda <tomasvirseda@gmail.com>',
     'Copyright':   'Copyright © 2026 Tomás Vírseda',
-    'Version':     '0.3.0',
     'Category':    'Documents',
     'Subcategory': 'Assistants',
     'MenuEntries': [

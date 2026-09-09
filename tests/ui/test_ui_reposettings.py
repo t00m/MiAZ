@@ -856,3 +856,28 @@ def test_the_refusal_names_the_documents_holding_the_value(repo_settings,
     assert used is True
     assert sorted(os.path.basename(doc) for doc in docs) == expected
     assert all(os.path.isfile(doc) for doc in docs), docs
+
+
+def test_the_plugin_index_carries_a_version_for_every_plugin(repo_settings,
+                                                             clean_view):
+    """The plugin info dialog shows every key of the index entry, so a plugin
+    with no Version key loses that row.
+
+    No bundled plugin declares a version any more, which is what stops the
+    number drifting between the .plugin file and plugin_info. scan_plugin_index
+    fills it in from the application version instead, and this is the check
+    that it does.
+    """
+    import json
+    env = clean_view.app.get_env()
+    with open(env['APP']['PLUGINS']['INDEX'], encoding='utf-8') as handle:
+        index = json.load(handle)
+    assert index, 'the plugin index is empty'
+
+    missing = sorted(name for name, info in index.items() if not info.get('Version'))
+    assert not missing, f'no Version in the index for: {missing}'
+
+    app_version = env['APP']['VERSION']
+    wrong = sorted(f'{name}={info["Version"]}' for name, info in index.items()
+                   if info['Version'] != app_version)
+    assert not wrong, f'not at the application version {app_version}: {wrong}'

@@ -63,6 +63,27 @@ class MiAZExtension(GObject.GObject):
     def do_deactivate(self):
         pass
 
+def plugin_version(info, app_version: str) -> str:
+    """The version to show for a plugin.
+
+    A bundled plugin ships with MiAZ and declares no version of its own, so it
+    takes the application's. Writing it into the plugin instead meant the same
+    number in forty-two files, kept in step by hand: nine of the twenty-one
+    had drifted from themselves by the time anything checked.
+
+    An out-of-tree plugin is released on its own schedule and says so. Its
+    Version is used as it stands.
+
+    `info` is a Peas.PluginInfo or the dict get_plugin_attributes parses out of
+    a .plugin file, which is the same question asked of a different shape.
+    """
+    if isinstance(info, dict):
+        declared = info.get('Version')
+    else:
+        declared = info.get_version()
+    return declared or app_version
+
+
 def normalise_menu_entries(entries) -> list:
     """The declared menu entries as (id, label, shortcuts) triples.
 
@@ -1077,7 +1098,7 @@ class MiAZPluginSystem(GObject.GObject):
         if self.is_plugin_loaded(plugin):
             return True
         pname = plugin.get_name()
-        pvers = plugin.get_version()
+        pvers = plugin_version(plugin, self.app.get_env()['APP']['VERSION'])
         try:
             self.engine.load_plugin(plugin)
 
@@ -1130,7 +1151,7 @@ class MiAZPluginSystem(GObject.GObject):
 
     def unload_plugin(self, plugin: Peas.PluginInfo):
         pname = plugin.get_name()
-        pvers = plugin.get_version()
+        pvers = plugin_version(plugin, self.app.get_env()['APP']['VERSION'])
         try:
             self._deactivate_plugin_instance(plugin)
             self.engine.unload_plugin(plugin)
@@ -1378,6 +1399,12 @@ class MiAZPluginSystem(GObject.GObject):
                 if plugin_info is not None:
                     plugin_name = plugin_info['Name']
                     plugin_desc = plugin_info['Description']
+                    # The info dialog shows every key of this dict, so the
+                    # version is filled in here rather than declared in the
+                    # plugin. setdefault: an out-of-tree plugin that declares
+                    # its own keeps it.
+                    plugin_info.setdefault(
+                        'Version', ENV['APP']['VERSION'])
                     plugin_index[plugin_name] = plugin_info
                     plugin_list.append((plugin_name, plugin_desc))
                     self.log.info(f" - Adding plugin {plugin_name} to plugin index")

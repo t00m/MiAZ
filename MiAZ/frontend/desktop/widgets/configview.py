@@ -23,7 +23,8 @@ from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewPerson
 from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewRepo
 from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewPlugin
 from MiAZ.frontend.desktop.services.dialogs import MiAZDialogAddRepo
-from MiAZ.frontend.desktop.services.pluginsystem import format_load_failure_banner
+from MiAZ.frontend.desktop.services.pluginsystem import (
+    format_load_failure_banner, plugin_version as pluginsystem_version)
 
 
 class MiAZConfigView(MiAZSelector):
@@ -743,7 +744,8 @@ class MiAZPlugins(MiAZConfigView):
             plugin_path = glob.glob(os.path.join(ENV['LPATH']['PLUGINS'], plugin_dirname, '*.plugin'))[0]
             plugin_info = pluginsystem.get_plugin_attributes(plugin_path)
             plugin_name = plugin_info['Name']
-            plugin_version = plugin_info['Version']
+            plugin_version = pluginsystem_version(plugin_info,
+                                                  ENV['APP']['VERSION'])
             body2 = _('Plugin {plugin_name} v{plugin_version} imported successfully').format(plugin_name=plugin_name, plugin_version=plugin_version)
             self.srvdlg.show_toast(body2)
         except Exception as error:

@@ -135,21 +135,11 @@ def test_the_module_named_in_the_plugin_file_is_the_file_that_exists():
 # Version, the one duplicated field nothing guarded
 # ---------------------------------------------------------------------------
 
-MESON = 'meson.build'
-
-
-def project_version():
-    """The version in meson.build, which is what a release bump changes."""
-    source = open(MESON, encoding='utf-8').read()
-    found = re.search(r"^\s*version\s*:\s*'([^']+)'", source, re.MULTILINE)
-    assert found is not None, f'{MESON} declares no project version'
-    return found.group(1)
-
-
 def declared_version(plugin_file):
+    """The Version the .plugin file declares, or None when it declares none."""
     parser = configparser.ConfigParser()
     parser.read(plugin_file)
-    return parser['Plugin']['Version']
+    return parser['Plugin'].get('Version')
 
 
 def module_version(plugin_file):
@@ -162,33 +152,26 @@ def module_version(plugin_file):
     return None, None
 
 
-def test_plugin_file_and_module_declare_the_same_version():
-    """The version is written twice, like the category pair above it.
+def test_no_bundled_plugin_declares_a_version():
+    """A bundled plugin ships with MiAZ, so it has no version of its own.
 
-    Nine of the twenty-one bundled plugins disagreed with themselves, and both
-    halves are shown to the user: libpeas reads the .plugin file for the load
-    and unload log lines, while the plugin info dialog reads the dict through
-    index-plugins.json. Which number you saw depended on where you looked.
+    The number used to be written twice per plugin, in the .plugin file and in
+    plugin_info, and nine of the twenty-one disagreed with themselves. Both
+    halves reach the user, so which number you saw depended on where you
+    looked. Rather than keep two copies in step through every release, neither
+    is written: MiAZPluginSystem falls back to the application version for a
+    plugin that declares none.
+
+    An out-of-tree plugin is released on its own schedule and keeps its
+    Version. Only the bundled ones are covered here.
     """
-    mismatched = []
+    declared = []
     for plugin_file in bundled_plugin_files():
-        declared = declared_version(plugin_file)
+        if declared_version(plugin_file) is not None:
+            declared.append(plugin_file)
         found, module = module_version(plugin_file)
-        if found is not None and found != declared:
-            mismatched.append(f'{module}: {found} vs {declared} in {plugin_file}')
-    assert not mismatched, 'plugin versions disagree:\n' + '\n'.join(mismatched)
-
-
-def test_every_bundled_plugin_carries_the_project_version():
-    """A bundled plugin is not released on its own, so it has the version of
-    the MiAZ it ships in. Three numbering schemes had grown up instead: a
-    legacy 0.1.26 stamp, a per-plugin counter, and the app version.
-
-    This fails after a release bump until the plugins are bumped with it, which
-    is the point: one number to change, and a test that says when it is due.
-    """
-    expected = project_version()
-    wrong = [f'{plugin_file}: {declared_version(plugin_file)}'
-             for plugin_file in bundled_plugin_files()
-             if declared_version(plugin_file) != expected]
-    assert not wrong, f'not at the project version {expected}:\n' + '\n'.join(wrong)
+        if found is not None:
+            declared.append(module)
+    assert not declared, (
+        'these carry a version of their own, so they will drift from '
+        'meson.build again:\n' + '\n'.join(declared))

@@ -31,7 +31,6 @@ plugin_info = {
         'Copyright':     'Copyright © 2025 Tomás Vírseda',
         'Website':       'http://github.com/t00m/MiAZ',
         'Help':          'https://github.com/t00m/MiAZ/blob/main/README.md',
-        'Version':       '0.3.0',
         'Category':      'Documents',
         'Subcategory':   'Projects',
         'MenuEntries':   [

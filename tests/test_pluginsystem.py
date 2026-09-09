@@ -475,3 +475,43 @@ def test_an_unloaded_plugin_installs_no_metadata_view():
     assert plugin.install_metadata_view(
         'Periodicity', 'Periodicity', 'icon', factory) is False
     assert registry.views() == []
+
+
+# ---------------------------------------------------------------------------
+# plugin_version: a bundled plugin has no version of its own
+# ---------------------------------------------------------------------------
+
+class FakeInfo:
+    """Stands in for Peas.PluginInfo. get_version() returns None when the
+    .plugin file declares no Version, which libpeas is happy to load."""
+
+    def __init__(self, version=None):
+        self._version = version
+
+    def get_version(self):
+        return self._version
+
+
+def test_a_plugin_that_declares_no_version_takes_the_application_one():
+    """The bundled case. Nothing is written in either half of the plugin, so
+    there is nothing to bump at release time and nothing to drift."""
+    assert ps.plugin_version(FakeInfo(None), '0.3.0') == '0.3.0'
+
+
+def test_a_plugin_that_declares_a_version_keeps_it():
+    """The out-of-tree case. A plugin released on its own schedule says so,
+    and is not relabelled with the version of the MiAZ that loaded it."""
+    assert ps.plugin_version(FakeInfo('2.1.0'), '0.3.0') == '2.1.0'
+
+
+def test_an_empty_version_counts_as_none():
+    """Version= with nothing after it is a field somebody left blank, not a
+    release called ''."""
+    assert ps.plugin_version(FakeInfo(''), '0.3.0') == '0.3.0'
+
+
+def test_a_dict_is_read_the_same_way():
+    """get_plugin_attributes returns a plain dict parsed from the .plugin
+    file, so the import toast asks the same question of a different shape."""
+    assert ps.plugin_version({'Name': 'X'}, '0.3.0') == '0.3.0'
+    assert ps.plugin_version({'Version': '2.1.0'}, '0.3.0') == '2.1.0'
