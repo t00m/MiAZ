@@ -59,6 +59,20 @@ def content_for(files):
     return Gdk.ContentProvider.new_for_value(value)
 
 
+def started_here(drop) -> bool:
+    """Whether this drop is the far end of a drag that began in MiAZ.
+
+    Gdk fills in the originating drag only for a drag inside one application,
+    so this is the question "did these files come from us". Asked before the
+    workspace agrees to be a drop target: documents dragged out of the
+    workspace and dropped back onto it would ask MiAZ to import its own
+    repository into itself, every copy a file onto itself.
+    """
+    if drop is None:
+        return False
+    return drop.get_drag() is not None
+
+
 def install_document_drag_source(widget, get_documents, get_repo_dir):
     """Let the documents shown in `widget` be dragged into another application.
 

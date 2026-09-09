@@ -18,7 +18,8 @@ gi.require_version('Gdk', '4.0')
 from gi.repository import Gdk
 
 from MiAZ.backend.models import MiAZItem
-from MiAZ.frontend.desktop.widgets.dragout import content_for, document_files
+from MiAZ.frontend.desktop.widgets.dragout import (content_for, document_files,
+                                                    started_here)
 
 
 def item(name):
@@ -88,3 +89,34 @@ def test_there_is_no_offer_when_there_are_no_files():
     """A drag source that prepares nothing refuses the drag, which is what
     should happen when the selection is empty."""
     assert content_for([]) is None
+
+
+# ---------------------------------------------------------------------------
+# A drag that starts here and ends here
+# ---------------------------------------------------------------------------
+
+class FakeDrop:
+    """Gdk.Drop fills in the originating drag only when the drag began in this
+    application, which is the whole question here."""
+
+    def __init__(self, drag=None):
+        self._drag = drag
+
+    def get_drag(self):
+        return self._drag
+
+
+def test_a_drop_from_another_application_did_not_start_here():
+    assert started_here(FakeDrop(drag=None)) is False
+
+
+def test_a_drop_from_our_own_drag_started_here():
+    """Dragging documents out of the workspace and back onto it asks MiAZ to
+    import its own repository into itself."""
+    assert started_here(FakeDrop(drag=object())) is True
+
+
+def test_no_drop_at_all_did_not_start_here():
+    """get_current_drop() is None outside a drag, and the question still has
+    to have an answer."""
+    assert started_here(None) is False

@@ -37,7 +37,8 @@ from MiAZ.frontend.desktop.widgets.filenamesview import MiAZFilenamesView
 from MiAZ.frontend.desktop.widgets.gridview import MiAZGridView
 from MiAZ.frontend.desktop.widgets.pills import FIELD_COLORS
 from MiAZ.frontend.desktop.widgets.timelineview import MiAZTimelineView
-from MiAZ.frontend.desktop.widgets.dragout import install_for_workspace_selection
+from MiAZ.frontend.desktop.widgets.dragout import (install_for_workspace_selection,
+                                                   started_here)
 from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewWorkspace
 from MiAZ.frontend.desktop.widgets.configview import MiAZCountries, MiAZGroups, MiAZPurposes, MiAZPeopleSentBy, MiAZPeopleSentTo
 from MiAZ.backend.status import MiAZStatus
@@ -944,6 +945,7 @@ class MiAZWorkspace(Gtk.Box):
         """
         self._install_drop_target_css()
         drop = Gtk.DropTarget.new(Gdk.FileList, Gdk.DragAction.COPY)
+        drop.connect('accept', self._on_drop_accept)
         drop.connect('enter', self._on_drop_enter, widget)
         drop.connect('leave', self._on_drop_leave, widget)
         drop.connect('drop', self._on_drop, widget)
@@ -968,6 +970,18 @@ class MiAZWorkspace(Gtk.Box):
         Gtk.StyleContext.add_provider_for_display(
             display, provider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
         MiAZWorkspace._drop_target_css_installed = True
+
+    def _on_drop_accept(self, target, drop):
+        """Refuse the documents MiAZ is already holding.
+
+        A selection dragged out of the workspace and dropped back onto it asks
+        the import to copy every file onto itself. Nothing was lost, because
+        filename_copy refuses that, but the workspace lit up as a drop target
+        and the gesture went nowhere. Refused here rather than at the drop, so
+        there is no highlight and no copy cursor: the drag says what it will
+        not do before it is let go.
+        """
+        return not started_here(drop)
 
     def _on_drop_enter(self, drop, x, y, widget):
         widget.add_css_class('miaz-drop-active')

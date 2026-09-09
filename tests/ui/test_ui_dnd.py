@@ -8,6 +8,7 @@ import gi
 gi.require_version('Gtk', '4.0')
 gi.require_version('Gdk', '4.0')
 from gi.repository import Gdk
+from gi.repository import GObject
 from gi.repository import Gtk
 
 
@@ -251,3 +252,44 @@ def test_selecting_still_works_with_the_drag_source_attached(miaz, clean_view):
     clean_view.pump(0.3)
     workspace = clean_view.widget('workspace')
     assert len(workspace.get_selected_items()) == 1
+
+
+# ---------------------------------------------------------------------------
+# Dragging out of the workspace and back onto it
+# ---------------------------------------------------------------------------
+
+class _FakeDrop:
+    """A Gdk.Drop carries the drag that started it only when that drag began
+    in this application. A real one cannot be built without a real drag."""
+
+    def __init__(self, drag=None):
+        self._drag = drag
+
+    def get_drag(self):
+        return self._drag
+
+
+def test_the_workspace_refuses_a_drag_that_started_in_it(miaz):
+    """Dropping our own documents back on the workspace would copy every file
+    onto itself. It is refused at accept, so the page never lights up."""
+    workspace = miaz.widget('workspace')
+    target = miaz.widget('workspace-drop-target')
+    assert target is not None, 'no drop target on the workspace'
+    assert workspace._on_drop_accept(target, _FakeDrop(drag=object())) is False
+
+
+def test_the_workspace_still_accepts_files_from_elsewhere(miaz):
+    """The refusal has to be narrow: dropping files in from a file manager is
+    what the drop target is for."""
+    workspace = miaz.widget('workspace')
+    target = miaz.widget('workspace-drop-target')
+    assert workspace._on_drop_accept(target, _FakeDrop(drag=None)) is True
+
+
+def test_the_drop_target_asks_before_accepting(miaz):
+    """The handler is only consulted if it is connected."""
+    target = miaz.widget('workspace-drop-target')
+    signal_id = GObject.signal_lookup('accept', target.__gtype__)
+    handler = GObject.signal_handler_find(
+        target, GObject.SignalMatchType.ID, signal_id, 0, None, None, None)
+    assert handler != 0, 'nothing is connected to the drop target accept signal'
