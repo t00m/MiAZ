@@ -38,19 +38,26 @@ MiAZ/
 │   ├── env.in                    ← Environment template → env.py (meson-generated)
 │   ├── backend/                  ← Business logic (no GTK/Adw widgets; GObject signals OK)
 │   │   ├── config.py             ← MiAZConfig + subclasses, MiAZConfigStore (per repo)
+│   │   ├── conversation.py       ← Conversation, Message (documents as an exchange)
 │   │   ├── gate.py               ← UpdateGate (reference-counted refresh suspension)
 │   │   ├── crash.py              ← console/log-only excepthook (install_backend_excepthook)
-│   │   ├── data.py               ← Placeholder (package marker)
+│   │   ├── doctor.py             ← Finding + the repository health checks, in one pass
 │   │   ├── dr.py                 ← MiAZDR (disaster recovery / backup)
+│   │   ├── duplicates.py         ← find_duplicates (documents with identical content)
+│   │   ├── extract.py            ← ExtractResult, extract (local, non-AI text extraction)
 │   │   ├── index.py              ← MiAZDocumentIndex (the parse: filename → MiAZItem)
-│   │   ├── log.py                ← MiAZLog (colored logging)
+│   │   ├── log.py                ← MiAZLog (colored logging), debug_requested
 │   │   ├── query.py              ← DocumentQuery (the workspace filter, as a value)
 │   │   ├── tasks.py              ← run_in_background (thread + GLib.idle_add)
 │   │   ├── models.py             ← MiAZItem, Country, Group, etc. (GObject models)
-│   │   ├── repository.py         ← MiAZRepository (CRUD on file-based repo)
-│   │   ├── stats.py              ← MiAZStats (document statistics)
+│   │   ├── repository.py         ← MiAZRepository (CRUD on file-based repo), REPO_FORMAT
+│   │   ├── secrets.py            ← plugin secret storage (libsecret, keyring fallback)
 │   │   ├── status.py             ← MiAZStatus (IntEnum: RUNNING=0, BUSY=1)
+│   │   ├── thumbnails.py         ← thumbnail_for, cached_thumbnail (preview images)
 │   │   ├── util.py               ← MiAZUtil (file ops, JSON, normalization)
+│   │   ├── venv.py               ← MiAZVenv (per-user venv for plugin dependencies)
+│   │   ├── vocabhealth.py        ← what is wrong with a repository's vocabulary
+│   │   ├── vocabulary.py         ← translatable labels for the built-in vocabularies
 │   │   ├── watcher.py            ← MiAZWatcher (filesystem monitor)
 │   │   └── webserver.py          ← MiAZWebServer (minimal static localhost HTTP server)
 │   └── frontend/
@@ -60,26 +67,32 @@ MiAZ/
 │       └── desktop/
 │           ├── app.py            ← MiAZApp(Adw.Application)
 │           └── services/
-│           │   ├── actions.py    ← MiAZActions
+│           │   ├── actions.py    ← MiAZActions (shortcuts dialog behind ADW_SHORTCUTS_DIALOG)
 │           │   ├── crash.py      ← MiAZCrashHandler (GUI crash dialog + excepthook)
 │           │   ├── dialogs.py    ← MiAZDialog, MiAZWindowDialog, MiAZDialogAdd, MiAZDialogAddRepo
+│           │   ├── doctabs.py    ← MiAZDocumentTabs
+│           │   ├── extlibs.py    ← MiAZExtLibs
 │           │   ├── massrename.py ← MiAZMassRename (core mass-rename service + menu)
 │           │   ├── factory.py    ← MiAZFactory (widget factory)
-│           │   ├── help.py       ← MiAZHelp, MiAZShortcutsWindow
 │           │   ├── icm.py        ← MiAZIconManager
 │           │   ├── importdoc.py  ← MiAZImportDoc (core add-document service + menu items)
 │           │   ├── pluginsystem.py ← MiAZExtension, MiAZPlugin, MiAZPluginSystem
+│           │   ├── progress.py   ← MiAZProgress
 │           │   └── workflow.py   ← MiAZWorkflow (repo switching lifecycle)
 │           └── widgets/
-│               ├── about.py, assistant.py, browserpage.py, button.py
-│               ├── columnview.py, configview.py, dr.py, mainwindow.py
-│               ├── markdownview.py, pages.py, rename.py
-│               ├── searchbar.py, selector.py, settings.py, sidebar.py
-│               ├── views.py, webbrowser.py, window.py
+│               ├── assistant.py, browserpage.py, button.py, chip.py
+│               ├── columnview.py, configview.py, conversationview.py
+│               ├── dateentry.py, docpreview.py, dr.py, filenamesview.py
+│               ├── filetypebadge.py, gridview.py, mainwindow.py
+│               ├── markdownview.py, metadatapage.py, pages.py, pills.py
+│               ├── rename.py, reposettingspage.py, selector.py
+│               ├── settings.py, sidebar.py, sidebarstack.py
+│               ├── timelineview.py, views.py, webbrowser.py, window.py
 │               └── workspace.py
+│                 (no searchbar.py: search is a registered 'searchentry' widget)
 ├── data/
 │   └── resources/
-│       ├── plugins/              ← Built-in Peas plugins (20 with .plugin metadata)
+│       ├── plugins/              ← Built-in Peas plugins (21 with .plugin metadata)
 │       ├── icons/                ← App icons (scalable + flag SVGs)
 │       ├── conf/                 ← 6 default config JSON files (countries, extensions,
 │       │                            groups, languages, people, purposes)
@@ -219,7 +232,6 @@ loop must marshal the result back itself.
 | `MiAZUtil` (util.py) | `filename-added`, `filename-deleted`, `filename-renamed` |
 | `MiAZWatcher` (watcher.py) | `repository-updated` |
 | `MiAZRepository` (repository.py) | `repository-switched` |
-| `MiAZStats` (stats.py) | `stats-updated` |
 | `MiAZWindowDialog` (dialogs.py) | `response` (str), `closed` |
 | `MiAZDialogAdd` / `MiAZDialogAddRepo` (dialogs.py) | `response` (str) |
 
