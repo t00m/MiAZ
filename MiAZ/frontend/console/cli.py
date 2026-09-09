@@ -8,11 +8,10 @@
 import argparse
 import json
 import logging
-import os
 from datetime import datetime
 from gettext import gettext as _
 
-from MiAZ.backend.log import set_console_level
+from MiAZ.backend.log import debug_requested, set_console_level
 from MiAZ.backend.query import (ANY, DATE_PRESET_ALL, DATE_PRESETS, DATE_RANGE,
                                 NONE, DocumentQuery, resolve_preset)
 from MiAZ.frontend.console.app import MiAZConsoleApp
@@ -284,7 +283,7 @@ def main(argv, stdout, stderr, env=None):
 
     # A command prints results, not a startup narration. MIAZ_DEBUG=1 brings
     # the usual logging back when something needs looking at.
-    if not os.environ.get('MIAZ_DEBUG'):
+    if not debug_requested():
         set_console_level(logging.WARNING)
 
     if env is None:

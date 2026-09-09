@@ -15,13 +15,14 @@ import atexit
 
 sys.path.insert(1, '@pkgdatadir@')
 
-from MiAZ.backend.log import MiAZLog, enable_file_logging, set_console_level
+from MiAZ.backend.log import (MiAZLog, debug_requested, enable_file_logging,
+                              set_console_level)
 
 # A bare first argument means a subcommand, so this is the command line and not
 # the window. Silence the startup logging before it happens: the environment
 # dump and the banner are written while importing MiAZ.env, below. MIAZ_DEBUG=1
 # brings them back.
-if len(sys.argv) > 1 and not sys.argv[1].startswith('-') and not os.environ.get('MIAZ_DEBUG'):
+if len(sys.argv) > 1 and not sys.argv[1].startswith('-') and not debug_requested():
     set_console_level(logging.WARNING)
 
 from MiAZ.env import ENV  # noqa: E402  (must follow the silencing above)
@@ -291,7 +292,7 @@ def parse_arguments():
         # Silence here rather than in main(): the environment dump and the
         # startup banner are logged while this module is imported, long before
         # a command runs. MIAZ_DEBUG=1 brings them back.
-        if not os.environ.get('MIAZ_DEBUG'):
+        if not debug_requested():
             from MiAZ.backend.log import set_console_level
             set_console_level(logging.WARNING)
         return None

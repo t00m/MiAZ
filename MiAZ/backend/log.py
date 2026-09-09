@@ -22,10 +22,20 @@ import logging.handlers
 # into it.
 ROOT = 'MiAZ'
 
+def debug_requested() -> bool:
+    """Whether MIAZ_DEBUG asks for the startup narration on screen.
+
+    One definition of the rule. It was read in four places, three of them
+    silencing the console before a command runs, and a fifth written slightly
+    differently would have been an easy mistake to make.
+    """
+    return bool(os.environ.get('MIAZ_DEBUG'))
+
+
 # What the console shows unless something says otherwise. DEBUG is written to
 # the log file and kept out of the terminal, where it buries the lines a user
 # can act on. MIAZ_DEBUG=1 puts it back on screen.
-DEFAULT_CONSOLE_LEVEL = logging.DEBUG if os.environ.get('MIAZ_DEBUG') else logging.INFO
+DEFAULT_CONSOLE_LEVEL = logging.DEBUG if debug_requested() else logging.INFO
 
 _SHARED_FILE_HANDLER = None
 
