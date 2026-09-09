@@ -14,7 +14,7 @@ from gettext import gettext as _
 
 from MiAZ.backend.log import set_console_level
 from MiAZ.backend.query import (ANY, DATE_PRESET_ALL, DATE_PRESETS, DATE_RANGE,
-                                DocumentQuery, resolve_preset)
+                                NONE, DocumentQuery, resolve_preset)
 from MiAZ.frontend.console.app import MiAZConsoleApp
 
 # Everything query.py knows about, minus the token that means "no filter":
@@ -40,6 +40,40 @@ def _parse_date(text):
             _("dates are written as YYYYMMDD, not '{value}'").format(value=text))
 
 
+def _field_value(raw):
+    """One --field argument, as the query model spells it.
+
+    'Any' and 'None' are the two sentinels _matches_value understands, and
+    upper-casing turned both into ordinary codes that match no document:
+    'ANY' is not 'Any'. Omitting the flag has always meant Any. Spelling it
+    out now means the same, and 'none' asks for the documents whose field was
+    never filled in, which is the shape filename_normalize leaves behind for
+    anything dropped into the repository under a name MiAZ did not write.
+
+    The cost is that a real code spelled ANY or NONE cannot be searched for.
+    No controlled vocabulary in this project uses either.
+    """
+    text = (raw or '').strip()
+    if not text or text.lower() == ANY.lower():
+        return ANY
+    if text.lower() == NONE.lower():
+        return NONE
+    return text.upper()
+
+
+def validate_search_args(args):
+    """The flags build_query never sees, because they are not query fields.
+
+    --limit is the only one. Left unchecked, --limit -1 sliced items[:-1] and
+    quietly dropped the newest document, which reads as a search that lies
+    rather than as a typo.
+    """
+    if args.limit is not None and args.limit < 1:
+        raise UsageError(
+            _('--limit counts documents, so it starts at 1, not {value}')
+            .format(value=args.limit))
+
+
 def build_query(args, util):
     """Turn parsed arguments into a DocumentQuery.
 
@@ -54,7 +88,7 @@ def build_query(args, util):
             _("unknown period '{value}'. Try one of: {valid}").format(
                 value=args.since, valid=', '.join(PRESETS)))
 
-    values = {field: (getattr(args, field) or '').upper() or ANY for field in FIELDS}
+    values = {field: _field_value(getattr(args, field)) for field in FIELDS}
     query = DocumentQuery(
         search=args.text or '',
         concept=args.concept or '',
@@ -138,6 +172,7 @@ def cmd_search(app, args, stdout, stderr):
     """Find documents. 0 with results, 1 without, 2 when the flags are wrong."""
     util = app.get_service('util')
     try:
+        validate_search_args(args)
         query = build_query(args, util)
     except UsageError as error:
         stderr.write(f'{error}\n')
@@ -205,7 +240,8 @@ def build_parser():
     search.add_argument('--concept', help=_('Substring of the concept field'))
     for field in FIELDS:
         search.add_argument(f'--{field}', metavar='CODE',
-                            help=_('Filter by {field}').format(field=field))
+                            help=_('Filter by {field}. CODE, or none for the '
+                                   'documents with no {field}').format(field=field))
     search.add_argument('--since', metavar='PERIOD',
                         help=_('One of: {valid}').format(valid=', '.join(PRESETS)))
     search.add_argument('--from', dest='date_from', metavar='YYYYMMDD',
@@ -217,7 +253,7 @@ def build_parser():
     search.add_argument('--all', action='store_true',
                         help=_('Include documents whose values are not in the configuration'))
     search.add_argument('--limit', type=int, metavar='N',
-                        help=_('Show at most N documents'))
+                        help=_('Show at most N documents, N being 1 or more'))
     search.add_argument('--repo', metavar='NAME_OR_PATH',
                         help=_('Which repository to search'))
     search.add_argument('--long', action='store_true',

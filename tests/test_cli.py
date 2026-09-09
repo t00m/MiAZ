@@ -18,7 +18,7 @@ gi.require_version('Gio', '2.0')
 import pytest
 
 from MiAZ.backend.models import MiAZItem
-from MiAZ.backend.query import ANY, DATE_RANGE, DocumentQuery
+from MiAZ.backend.query import ANY, DATE_RANGE, NONE, DocumentQuery
 from MiAZ.backend.util import MiAZUtil
 from MiAZ.frontend.console.app import MiAZConsoleApp
 from MiAZ.frontend.console.cli import (COMMANDS, UsageError, as_record,
@@ -437,3 +437,70 @@ def test_reversed_range_is_a_usage_error():
     with pytest.raises(UsageError):
         build_query(parse(['search', '--from', '20241231',
                            '--to', '20240101']), util())
+
+
+# --- --limit takes a count, and a count starts at one ----------------------
+
+def test_limit_zero_is_a_usage_error(miaz_env, make_repo, register_repo):
+    code, _out, err = search(miaz_env, make_repo, register_repo,
+                             ['search', '--limit', '0'])
+    assert code == 2
+    assert 'limit' in err.lower()
+
+
+def test_negative_limit_is_a_usage_error(miaz_env, make_repo, register_repo):
+    """--limit -1 used to slice items[:-1], quietly dropping the newest
+    document instead of saying the flag made no sense."""
+    code, _out, err = search(miaz_env, make_repo, register_repo,
+                             ['search', '--limit', '-1'])
+    assert code == 2
+    assert 'limit' in err.lower()
+
+
+def test_a_limit_still_cuts_the_list(miaz_env, make_repo, register_repo):
+    code, out, _err = search(miaz_env, make_repo, register_repo,
+                             ['search', '--all', '--limit', '1'])
+    assert code == 0
+    assert len(out.splitlines()) == 1
+
+
+# --- the sentinels the query model already understands ---------------------
+
+# Seven fields, of which the country is blank. filename_normalize builds
+# exactly this shape for a document dropped in under a name MiAZ did not
+# write, so it is what waits in a repository to be filled in.
+BLANK_COUNTRY = '20260101--FIN-BANKX-INV-blank-JOHNDOE.pdf'
+
+
+def test_none_finds_the_documents_with_that_field_empty(miaz_env, make_repo,
+                                                        register_repo):
+    code, out, _err = search(miaz_env, make_repo, register_repo,
+                             ['search', '--all', '--country', 'none'],
+                             docs=DOCS + [BLANK_COUNTRY])
+    assert code == 0
+    assert 'blank' in out
+    assert 'mortgage' not in out
+
+
+def test_any_means_every_value_not_a_code_spelled_any(miaz_env, make_repo,
+                                                      register_repo):
+    """Omitting the flag has always meant Any. Spelling it out went looking
+    for a country coded 'ANY' and found nothing."""
+    code, out, _err = search(miaz_env, make_repo, register_repo,
+                             ['search', '--all', '--country', 'any'])
+    assert code == 0
+    assert len(out.splitlines()) == len(DOCS)
+
+
+def test_the_sentinels_are_read_whatever_their_case():
+    for text in ('none', 'NONE', 'None'):
+        query = build_query(parse(['search', '--country', text]), util())
+        assert query.country == NONE, f'{text!r} did not reach the sentinel'
+    for text in ('any', 'ANY', 'Any'):
+        query = build_query(parse(['search', '--country', text]), util())
+        assert query.country == ANY, f'{text!r} did not reach the sentinel'
+
+
+def test_an_ordinary_code_is_still_upper_cased():
+    query = build_query(parse(['search', '--country', 'es']), util())
+    assert query.country == 'ES'
