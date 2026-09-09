@@ -1,14 +1,21 @@
 name: CI
 
+# Release branches are named after the version they build, and every one of
+# them has to be listed here twice. 0.3 was not, so the whole series ran
+# without CI: eighty commits, caught by nothing but whatever was run by hand.
+# Add the new branch to both lists when a series opens. RELEASING.md says so
+# as well, because this is easy to forget and silent when forgotten.
 on:
   push:
     branches:
       - main
       - '0.2'
+      - '0.3'
   pull_request:
     branches:
       - main
       - '0.2'
+      - '0.3'
   workflow_dispatch:
 
 concurrency:

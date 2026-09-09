@@ -179,9 +179,12 @@ leaves it alone rather than dating the fresh `Unreleased` as well.
 
 ## Things worth knowing
 
-**CI does not run on every branch.** `.github/workflows/ci.yml` triggers on
-`main` and `0.2` only. Work on a `0.3` branch is not covered, so the local
-checks are all there is until that list is updated.
+**CI runs on a listed branch and no other.** `.github/workflows/ci.yml`
+triggers on `main`, `0.2` and `0.3`, in two lists, one for pushes and one for
+pull requests. A branch that is not in both runs no CI at all and says nothing
+about it: the whole 0.3 series ran that way, eighty commits with only the
+checks somebody remembered to run by hand. **When a new series opens, add its
+branch to both lists.**
 
 **`meson test` runs the unit suite and the three file validations**, in about
 fifteen seconds. The UI tests are deliberately not in it: they need a display
@@ -203,6 +206,6 @@ same commit. The parts most likely to go out of date:
   carries no version, and a test enforces that
 - the steps, whenever `release.sh`, `sync_versions.sh`,
   `render_release_notes.py` or `build_all.sh` grow or lose a stage
-- the CI note above, once the workflow covers the current branch
+- the CI note above, whenever the workflow's branch lists change
 
 A release document that is wrong is worse than none: it gets followed.
