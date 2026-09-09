@@ -112,3 +112,58 @@ def test_crash_dialog_is_built_when_there_is_a_display(monkeypatch):
                         lambda *args: built.append(args))
     handler._present_dialog('boom', 'the report')
     assert built == [('boom', 'the report')]
+
+
+# ---------------------------------------------------------------------------
+# The desktop packages missing altogether, which is not the same as no display
+# ---------------------------------------------------------------------------
+
+# gi.require_version raises ValueError when the typelib is not installed, which
+# is what a machine without gtk4 or libadwaita looks like from Python. Faking it
+# is the only way to test this here: the machine running the tests has both.
+NO_TOOLKIT = '''
+import gi
+
+_real = gi.require_version
+
+
+def require_version(namespace, version):
+    if namespace in ('Gtk', 'Adw'):
+        raise ValueError('Namespace %s not available' % namespace)
+    return _real(namespace, version)
+
+
+gi.require_version = require_version
+import MiAZ.miaz  # noqa: F401
+'''
+
+
+def run_without_toolkit(tmp_path):
+    script = tmp_path / 'no_toolkit.py'
+    script.write_text(NO_TOOLKIT)
+    env = dict(os.environ)
+    env.update({'HOME': str(tmp_path / 'home'), 'PYTHONPATH': ROOT, 'LC_ALL': 'C'})
+    return subprocess.run([sys.executable, str(script)], cwd=ROOT, env=env,
+                          capture_output=True, text=True, timeout=120)
+
+
+def test_a_missing_toolkit_does_not_raise_nameerror(tmp_path):
+    """The version numbers were logged before anything checked the imports had
+    worked, so the branch that exists to report missing packages raised
+    NameError on the name it was reporting about.
+    """
+    result = run_without_toolkit(tmp_path)
+    assert 'NameError' not in result.stderr, result.stderr[-2000:]
+
+
+def test_a_missing_toolkit_says_what_is_needed(tmp_path):
+    result = run_without_toolkit(tmp_path)
+    assert result.returncode == 255, (
+        f'exit code {result.returncode}, stderr: {result.stderr[-2000:]}')
+    assert 'Desktop dependencies not met' in result.stderr, result.stderr[-2000:]
+    # The sentence has to read correctly with nothing installed, which the
+    # obvious "%s found" template does not: "GTK not installed found".
+    assert 'GTK not installed, 4.10 or later needed' in result.stderr, \
+        result.stderr[-2000:]
+    assert 'Adw not installed, 1.7 or later needed' in result.stderr, \
+        result.stderr[-2000:]

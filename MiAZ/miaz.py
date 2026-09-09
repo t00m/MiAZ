@@ -54,7 +54,7 @@ try:
         GLibUnix = None
     ENV['DESKTOP']['GTK_VERSION'] = (Gtk.MAJOR_VERSION, Gtk.MINOR_VERSION, Gtk.MICRO_VERSION)
     ENV['DESKTOP']['GTK_SUPPORT'] = (Gtk.MAJOR_VERSION, Gtk.MINOR_VERSION) >= GTK_MINIMUM
-except (ValueError, ModuleNotFoundError):
+except (ValueError, ImportError):
     ENV['DESKTOP']['GTK_SUPPORT'] = False
 
 try:
@@ -62,20 +62,45 @@ try:
     from gi.repository import Adw
     ENV['DESKTOP']['ADW_VERSION'] = (Adw.MAJOR_VERSION, Adw.MINOR_VERSION, Adw.MICRO_VERSION)
     ENV['DESKTOP']['ADW_SUPPORT'] = (Adw.MAJOR_VERSION, Adw.MINOR_VERSION) >= ADW_MINIMUM
-except (ValueError, ModuleNotFoundError):
+except (ValueError, ImportError):
     ENV['DESKTOP']['ADW_SUPPORT'] = False
 
 
 ENV['DESKTOP']['ENABLED'] = ENV['DESKTOP']['GTK_SUPPORT'] and ENV['DESKTOP']['ADW_SUPPORT']
-log.debug(f"GTK available ({Gtk.MAJOR_VERSION}.{Gtk.MINOR_VERSION}.{Gtk.MICRO_VERSION})")
-log.debug(f"ADW available ({Adw.MAJOR_VERSION}.{Adw.MINOR_VERSION}.{Adw.MICRO_VERSION})")
+
+
+def toolkit_version(key):
+    """A toolkit version as text, or a plain word when it is not installed.
+
+    Read out of ENV, not off the module. The two imports above are conditional,
+    so on a machine without the typelibs the names Gtk and Adw were never bound,
+    and the lines below used to dereference them anyway: the branch that exists
+    to tell a user their desktop packages are missing raised NameError on the
+    very name it was reporting about, before reaching its own sys.exit.
+    """
+    version = ENV['DESKTOP'].get(key)
+    return '.'.join(str(part) for part in version) if version else None
+
+
+def toolkit_report(name, key, minimum):
+    """One line saying what is there and what is wanted.
+
+    Built rather than formatted in place because it has to read correctly when
+    nothing is installed at all: "GTK not installed, 4.10 or later needed",
+    not "GTK not installed found".
+    """
+    version = toolkit_version(key)
+    found = f'{version} found' if version else 'not installed'
+    return f'{name} {found}, {minimum[0]}.{minimum[1]} or later needed'
+
+
+log.debug(f"GTK available ({toolkit_version('GTK_VERSION') or 'not installed'})")
+log.debug(f"ADW available ({toolkit_version('ADW_VERSION') or 'not installed'})")
 log.debug(f"Desktop enabled? {ENV['DESKTOP']['ENABLED']}")
 if not ENV['DESKTOP']['ENABLED']:
     log.error("Desktop dependencies not met to run this app")
-    log.error("GTK %d.%d found, %d.%d needed" % (
-        Gtk.MAJOR_VERSION, Gtk.MINOR_VERSION, *GTK_MINIMUM))
-    log.error("Adw %d.%d found, %d.%d needed" % (
-        Adw.MAJOR_VERSION, Adw.MINOR_VERSION, *ADW_MINIMUM))
+    log.error(toolkit_report('GTK', 'GTK_VERSION', GTK_MINIMUM))
+    log.error(toolkit_report('Adw', 'ADW_VERSION', ADW_MINIMUM))
     sys.exit(-1)
 
 
