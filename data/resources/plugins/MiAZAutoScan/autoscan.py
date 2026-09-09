@@ -34,7 +34,7 @@ plugin_info = {
     'Copyright':   'Copyright \u00a9 2026 Tomas Virseda',
     'Website':     'http://github.com/t00m/MiAZ',
     'Help':        'https://github.com/t00m/MiAZ/blob/main/README.md',
-    'Version':     '0.1',
+    'Version':     '0.3.0',
     'Category':    'Documents',
     'Subcategory': 'Import',
     'MenuEntries': [
