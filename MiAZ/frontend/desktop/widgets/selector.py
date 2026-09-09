@@ -162,8 +162,7 @@ class MiAZSelector(Gtk.Box):
     def _on_item_used_remove(self, *args):
         # This works only for the standard fields.
         # Others like Projects need their own implementation
-        repository = self.app.get_service('repo')
-        util = self.app.get_service('util')
+        index = self.app.get_service('index')
         selected_items = self.viewSl.get_selected_items()
         if len(selected_items) == 0:
             return
@@ -175,7 +174,7 @@ class MiAZSelector(Gtk.Box):
         blocked = []  # (item, docs) still referenced by documents
         for item in selected_items:
             try:
-                is_used, docs = util.field_used(repository.docs, self.config.model, item.id)
+                is_used, docs = index.field_used(self.config.model, item.id)
             except KeyError:
                 # FIXME
                 # Above call works out only for MiAZ standard fields.
@@ -328,6 +327,7 @@ class MiAZSelector(Gtk.Box):
         i_title = item_type.__title__
         item_dsc = selected_item.title
 
+        index = self.app.get_service('index')
         items_used = self.config.load_used()
         is_used = selected_item.id in items_used
         self.log.debug(f"Is '{selected_item.id}' used? {is_used}")
@@ -339,7 +339,7 @@ class MiAZSelector(Gtk.Box):
             dialog.connect('response', self._on_item_available_remove_response, selected_item)
             dialog.present(self)
         else:
-            value_used, docs = util.field_used(repository.docs, self.config.model, selected_item.id)
+            value_used, docs = index.field_used(self.config.model, selected_item.id)
             window = self.viewAv.get_root()
             item_desc = selected_item.title.replace('_', ' ')
 

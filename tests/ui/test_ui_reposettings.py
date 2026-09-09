@@ -7,6 +7,7 @@ in the Application Settings dialog, a per-plugin dialog behind a button in the
 Plugins tab, and nothing at all for the rest. These check they arrive in one.
 """
 
+import os
 from gettext import gettext as _
 
 import gi
@@ -787,3 +788,71 @@ def test_editing_a_sender_description_reaches_the_other_people_files(
     finally:
         config.set_description(key, original)
         clean_view.pump(0.3)
+
+
+# ---------------------------------------------------------------------------
+# The guard between a click and a value documents still reference
+# ---------------------------------------------------------------------------
+
+def select_in(view, item_id):
+    """Select one row of a selector view by its id, as a click would."""
+    model = view.cv.get_model()
+    for pos in range(model.get_n_items()):
+        if model.get_item(pos).id == item_id:
+            model.select_item(pos, True)
+            return True
+    return False
+
+
+def test_a_country_documents_use_cannot_be_disabled(repo_settings, clean_view):
+    """Disabling a value documents still carry would leave those documents
+    referencing something the configuration no longer knows, which is what
+    puts a document in the review list.
+
+    The check behind this had no test of any kind, and it moved: it used to be
+    answered from a second field index kept on MiAZUtil, which the workspace
+    filled by writing two of its private attributes from outside. The index
+    owns it now, and this is the path that has to keep working.
+    """
+    selector = clean_view.widget('configview-Country')
+    assert selector is not None, 'the Countries view is not built'
+    config = clean_view.app.get_config('Country')
+    assert 'ES' in config.load_used(), 'ES is not enabled to begin with'
+
+    refused = []
+    srvdlg = clean_view.service('dialogs')
+    original = srvdlg.show_error
+    srvdlg.show_error = lambda **kwargs: refused.append(kwargs)
+    try:
+        assert select_in(selector.viewSl, 'ES'), 'ES is not in the enabled list'
+        clean_view.pump(0.3)
+        selector._on_item_used_remove()
+        clean_view.pump(0.4)
+    finally:
+        srvdlg.show_error = original
+
+    assert 'ES' in config.load_used(), 'ES was disabled while documents use it'
+    assert refused, 'nothing told the user why it did not happen'
+    assert 'still being used' in refused[0].get('body', '')
+
+
+def test_the_refusal_names_the_documents_holding_the_value(repo_settings,
+                                                           clean_view):
+    """The dialog carries the documents themselves, so the answer has to be
+    the list of paths and not merely a yes."""
+    from MiAZ.backend.models import Country
+    index = clean_view.service('index')
+    repository = clean_view.service('repo')
+
+    # Counted off the repository rather than written in: the answer is every
+    # document whose country field is ES, including the one the review list
+    # holds. Its sender is not in the configuration, which does not stop its
+    # country from being used.
+    expected = sorted(name for name in os.listdir(repository.docs)
+                      if name.split('-')[1:2] == ['ES'])
+    assert expected, 'no ES documents in the sandbox to check against'
+
+    used, docs = index.field_used(Country, 'ES')
+    assert used is True
+    assert sorted(os.path.basename(doc) for doc in docs) == expected
+    assert all(os.path.isfile(doc) for doc in docs), docs

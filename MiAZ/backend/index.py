@@ -57,6 +57,9 @@ class MiAZDocumentIndex(GObject.GObject):
         self._paths = {}
         self._invalid = []
         self._field_index = {ft: {} for ft in Field}
+        # Which repository the structures above describe, so a question about
+        # another one is not answered from them. None means nothing indexed yet.
+        self._indexed_dir = None
         # Documents with identical content, filled by scan_duplicates. Not
         # computed until something asks: the scan reads files, the rest does not.
         self._duplicates = {}
@@ -95,6 +98,12 @@ class MiAZDocumentIndex(GObject.GObject):
         except (KeyError, TypeError, OSError) as error:
             self.log.warning(f"Cannot list the repository: {error}")
             docs = []
+            # A repository that cannot be listed is not indexed. Recording it
+            # would let field_used answer "nothing uses this value" from an
+            # empty index, and that answer deletes things.
+            self._indexed_dir = None
+        else:
+            self._indexed_dir = repository.docs
 
         self._items = {}
         self._paths = {}
@@ -293,6 +302,27 @@ class MiAZDocumentIndex(GObject.GObject):
     def field_index(self):
         """{field model: {value: [document paths]}}."""
         return self._field_index
+
+    def field_used(self, item_type, value):
+        """Whether any document carries this value, and which ones.
+
+        Asked before a configured value is deleted, so a wrong "nothing uses
+        it" throws away a value documents still reference. That is why it
+        indexes first when it holds nothing, or holds another repository,
+        rather than reporting an empty index as an answer.
+
+        This used to live on MiAZUtil, which kept a second copy of the field
+        index to answer it and rebuilt that copy by rescanning the directory.
+        The workspace then wrote the index's version straight onto two of
+        MiAZUtil's private attributes to save the rescan, which left two
+        structures holding the same thing and one of them maintained from
+        outside. The question belongs where the documents are.
+        """
+        repository = self.app.get_service('repo')
+        if self._indexed_dir is None or self._indexed_dir != repository.docs:
+            self.reload()
+        docs = self._field_index.get(item_type, {}).get(value, [])
+        return len(docs) > 0, docs
 
     def concepts(self):
         """(active, inactive) sorted concept lists, for the rename dialog."""

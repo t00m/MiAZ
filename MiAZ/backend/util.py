@@ -27,7 +27,6 @@ from gi.repository import Gio
 from gi.repository import GObject
 
 from MiAZ.backend.log import MiAZLog
-from MiAZ.backend.models import Field
 
 mimetypes.init()
 
@@ -332,11 +331,6 @@ class MiAZUtil(GObject.GObject):
         super().__init__()
         self.log = MiAZLog('MiAZ.Backend.Util')
         self.app = app
-        self._field_index = {}
-        self._field_index_dir = None
-        self.connect('filename-added', self._invalidate_field_index)
-        self.connect('filename-deleted', self._invalidate_field_index)
-        self.connect('filename-renamed', self._invalidate_field_index)
 
     def extract_variable_from_python_module(self, filepath, variable_name):
         with open(filepath, "r", encoding='utf-8') as f:
@@ -377,29 +371,6 @@ class MiAZUtil(GObject.GObject):
     def json_save(self, filepath: str, adict: {}) -> {}:
         """Save dictionary into a file in json format, atomically."""
         atomic_json_save(filepath, adict)
-
-    def _invalidate_field_index(self, *args):
-        self._field_index_dir = None
-
-    def _build_field_index(self, repo_dir):
-        self._field_index_dir = repo_dir
-        self._field_index = {ft: {} for ft in Field}
-        for doc in self.get_files(repo_dir):
-            fields = self.get_fields(doc)
-            if len(fields) < 7:
-                continue
-            for field_type, idx in Field.items():
-                val = fields[idx]
-                bucket = self._field_index[field_type]
-                if val not in bucket:
-                    bucket[val] = []
-                bucket[val].append(doc)
-
-    def field_used(self, repo_dir, item_type, value):
-        if self._field_index_dir != repo_dir:
-            self._build_field_index(repo_dir)
-        docs = self._field_index.get(item_type, {}).get(value, [])
-        return len(docs) > 0, docs
 
     def get_mimetype(self, filename: str) -> str:
         if sys.platform == 'win32':

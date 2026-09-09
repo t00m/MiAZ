@@ -651,3 +651,60 @@ def test_a_worker_scan_emits_on_the_main_thread(index, tmp_path):
     worker.join(timeout=5)
 
     assert emitted_on == [threading.main_thread()], 'the signal crossed no thread boundary'
+
+
+# ---------------------------------------------------------------------------
+# field_used: the question asked before a configured value is deleted
+# ---------------------------------------------------------------------------
+
+def test_field_used_names_the_documents_holding_a_value(tmp_path, index):
+    from MiAZ.backend.models import Country
+    touch(tmp_path, VALID)
+    touch(tmp_path, '20240316-ES-HOU-BANK-INV-second-JOHNDOE.pdf')
+    index.reload()
+    used, docs = index.field_used(Country, 'ES')
+    assert used is True
+    assert sorted(os.path.basename(doc) for doc in docs) == [
+        VALID, '20240316-ES-HOU-BANK-INV-second-JOHNDOE.pdf']
+
+
+def test_field_used_says_no_for_a_value_no_document_carries(tmp_path, index):
+    from MiAZ.backend.models import Country
+    touch(tmp_path, VALID)
+    index.reload()
+    assert index.field_used(Country, 'PT') == (False, [])
+
+
+def test_field_used_indexes_first_when_it_has_not_yet(tmp_path, index):
+    """A wrong 'nothing uses it' loses a value documents still reference, so
+    an index that has never been loaded must answer by loading, not by
+    reporting its empty state as an answer."""
+    from MiAZ.backend.models import Country
+    touch(tmp_path, VALID)
+    used, docs = index.field_used(Country, 'ES')
+    assert used is True
+    assert len(docs) == 1
+
+
+def test_field_used_reindexes_when_the_repository_changed(tmp_path, index):
+    """The check MiAZUtil used to make with its own copy of this index: answer
+    about the repository that is open, never about the last one."""
+    from MiAZ.backend.models import Country
+    touch(tmp_path, VALID)
+    index.reload()
+
+    other = tmp_path / 'other'
+    other.mkdir()
+    (other / '20240401-PT-HOU-BANK-INV-moved-JOHNDOE.pdf').write_text('x')
+    index.app._repo.docs = str(other)
+
+    assert index.field_used(Country, 'ES') == (False, [])
+    used, _docs = index.field_used(Country, 'PT')
+    assert used is True
+
+
+def test_field_used_does_not_raise_on_a_model_it_does_not_index(tmp_path, index):
+    """A plugin's own config is not one of the seven filename fields."""
+    touch(tmp_path, VALID)
+    index.reload()
+    assert index.field_used(object(), 'anything') == (False, [])

@@ -1256,13 +1256,6 @@ class MiAZWorkspace(Gtk.Box):
         invalid = result_dict['invalid']
         show_pending = result_dict['show_pending']
 
-        util = self.app.get_service('util')
-        index = self.app.get_service('index')
-
-        # Reuse the index's field index instead of letting util rebuild its own
-        # by rescanning the directory.
-        util._field_index = index.field_index()
-        util._field_index_dir = result_dict['_repo_docs']
         ds = result_dict.get('_ds', datetime.now())
 
         # Update workspace view. When armed (load / repo switch / rollover),
@@ -1276,6 +1269,7 @@ class MiAZWorkspace(Gtk.Box):
         GLib.idle_add(self._idle_view_update, items, ds)
 
         # Rename invalid files (rare, stays on main thread)
+        util = self.app.get_service('util')
         renamed = 0
         for filename in invalid:
             source = os.path.join(repository.docs, filename)
