@@ -88,6 +88,11 @@ class MiAZNotes(GObject.GObject):
 
         self._win_per_doc = None
         self._postit_board = None
+        # The all-notes workspace page, built by startup() once the workspace
+        # is there. It is named here because the service is registered before
+        # the window: the first repository switch happens in between and reads
+        # this attribute.
+        self._all_notes = None
         self._indicator_count = None
         self._current_doc_id = None
         self._css_provider = None
@@ -532,7 +537,7 @@ class MiAZNotes(GObject.GObject):
         note was created, edited or removed."""
         self._update_indicator()
         self._refresh_notes_filter()
-        if getattr(self, '_all_notes', None) is not None:
+        if self._all_notes is not None:
             self._all_notes.refresh()
 
     def _refresh_notes_filter(self):
@@ -545,7 +550,7 @@ class MiAZNotes(GObject.GObject):
 
     def _on_workspace_view_changed(self, *_args):
         self._update_indicator()
-        if getattr(self, '_all_notes', None) is not None:
+        if self._all_notes is not None:
             self._all_notes.update_visible_documents()
 
     def _on_new_doc_note(self, *_args):
