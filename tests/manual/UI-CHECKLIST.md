@@ -445,6 +445,10 @@ Not the GUI, but it ships in the same package and is new in this release.
       first; piped, it refuses without `--yes`; a name the repository does not
       hold deletes nothing; a document named `-----NAME-.pdf` is accepted
       without any `--` in front of it.
+- [ ] **15.13 [N]** `miaz --help` lists a plugin command only where its plugin
+      is enabled: compare two repositories with `miaz --repo <name> --help`.
+      Running one that is not enabled exits 3 and names the plugin and the
+      repository.
 
 ## 16. Packaging
 

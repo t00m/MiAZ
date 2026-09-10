@@ -89,6 +89,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **A plugin command belongs to the repositories that enable the plugin.** Plugins are enabled per repository, and the window honours that: it loads what `plugins-used.json` names and skips the rest. The command line ignored it. Discovery reads the `.plugin` files on disk, so every installed plugin contributed its commands to every repository, and running one worked whether or not the repository had it enabled: `miaz ocr` ran happily against a repository with MiAZOCR switched off.
+
+  Now `miaz --help` lists a plugin command only where it can be run, and running one that is not enabled exits 3 saying which plugin it comes from and which repository it is about, rather than doing the work anyway. The command stays in the parser on purpose: "MiAZOCR is not enabled for repository 'FVM-test'" is an answer, and argparse's "invalid choice: 'ocr'" is not.
+
+  Which repository that is comes from `--repo`, which now works before the command as well as after it: `miaz --repo Work --help` lists what Work can run, and `miaz --repo Work search` is the search it looks like. A repository the window has never opened has no list at all, and nothing is hidden there: a command missing from the help reads as a command that does not exist.
+
+  The built-in commands are not affected. `search`, `repos`, `add`, `delete` and `notes` are core, not plugins, and are listed everywhere.
+
 - **`miaz search --sentby vatt` finds Vattenfall.** The field flags took a whole code and nothing else, so a search had to be typed the way the filename spells it, and `--sentby vatt` returned nothing while `--sentby vattenfall` worked. They now take any part of the code or of its description, ignoring case: `--sentby vatt` and `--sentto "tomás vír"` both find their documents, and the flags combine the way they always did, each one narrowing what the others left. `none` and `any` still mean what they meant.
 
   This is the command line only. `DocumentQuery.partial_fields` is off by default, because the window passes the id of the dropdown entry somebody picked and means exactly that one: a code that is part of a longer code must not drag that document in. A saved search written before this release reads back unchanged.

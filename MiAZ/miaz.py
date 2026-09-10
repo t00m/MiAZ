@@ -309,8 +309,23 @@ def is_console_run(argv):
     The one place that answers this. Three callers need it and they must agree:
     the startup, which skips the window-only parts; the argument parser, which
     would reject 'search' as unrecognised; and run(), which dispatches.
+
+    The options the command line takes before the command are stepped over, so
+    `miaz --repo Work search` is a search and not a window.
     """
-    return len(argv) > 1 and argv[1] in cli_commands()
+    rest = argv[1:]
+    index = 0
+    while index < len(rest):
+        token = rest[index]
+        if token == '--repo':
+            # Takes a value, and a repository can be called anything.
+            index += 2
+            continue
+        if token.startswith('-'):
+            index += 1
+            continue
+        return token in cli_commands()
+    return False
 
 
 def cli_commands():
@@ -345,10 +360,17 @@ def build_parser():
     plugin that contributes one is in this help without doing anything else,
     with its own options: MiAZParser prints each command's help under the list
     of them, so `miaz --help` is the whole of what MiAZ takes.
+
+    What it takes depends on the repository, since a plugin is enabled per
+    repository and its commands are listed only where they can be run.
     """
     from MiAZ.frontend.console.cli import build_parser as build_console_parser
-    from MiAZ.frontend.console.cli import plugin_search_paths
-    parser = build_console_parser(plugin_search_paths(ENV))
+    from MiAZ.frontend.console.cli import plugin_search_paths, repo_from
+    # The commands listed are the ones this repository can run, so the
+    # repository has to be resolved before the parser is built: the one named
+    # with --repo, or the one MiAZ opens by default.
+    parser = build_console_parser(plugin_search_paths(ENV), env=ENV,
+                                  repo=repo_from(sys.argv))
     parser.description = ENV['APP']['description']
     parser.add_argument('--version', action='version',
                         version=ENV['APP']['VERSION'],

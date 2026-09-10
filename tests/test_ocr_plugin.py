@@ -13,6 +13,7 @@ that the shipped MiAZOCR works, not that a fixture shaped like it does.
 """
 
 import io
+import json
 import os
 
 import gi
@@ -30,10 +31,25 @@ PLUGINS = os.path.join(ROOT, 'data', 'resources', 'plugins')
 DOCUMENT = '20260101-ES-FIN-BANKX-INV-ocrtest-JOHNDOE.pdf'
 
 
+def enable_ocr(repo):
+    """Enable MiAZOCR for this repository.
+
+    A command runs only for a repository that enables its plugin, the same
+    rule the window follows when it decides what to load. A repository built
+    by the fixtures enables MiAZProjectMgt and nothing else.
+    """
+    conf = os.path.join(repo, '.conf')
+    os.makedirs(conf, exist_ok=True)
+    with open(os.path.join(conf, 'plugins-used.json'), 'w',
+              encoding='utf-8') as handler:
+        json.dump({'MiAZOCR': 'MiAZOCR'}, handler)
+    return repo
+
+
 @pytest.fixture
 def repository(tmp_path, miaz_env, make_repo, register_repo):
     """A repository holding one PDF, and an ENV pointed at the real plugins."""
-    repo = make_repo('Home')
+    repo = enable_ocr(make_repo('Home'))
     write_pdf(tmp_path / 'source.pdf', 'Hello OCR from MiAZ')
     with open(os.path.join(repo, DOCUMENT), 'wb') as handler:
         handler.write((tmp_path / 'source.pdf').read_bytes())
@@ -209,7 +225,7 @@ def test_ocr_files_a_note_without_the_notes_plugin_installed(tmp_path, miaz_env,
         with open(os.path.join(PLUGINS, 'MiAZOCR', name), 'rb') as source:
             (plugins / 'MiAZOCR' / name).write_bytes(source.read())
 
-    repo = make_repo('Home')
+    repo = enable_ocr(make_repo('Home'))
     write_pdf(tmp_path / 'source.pdf', 'Hello OCR from MiAZ')
     with open(os.path.join(repo, DOCUMENT), 'wb') as handler:
         handler.write((tmp_path / 'source.pdf').read_bytes())

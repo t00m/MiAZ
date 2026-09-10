@@ -17,6 +17,7 @@ user actually asks for that command, which needs the module imported anyway.
 """
 
 import io
+import json
 import os
 
 import gi
@@ -24,7 +25,8 @@ gi.require_version('GLib', '2.0')
 gi.require_version('Gio', '2.0')
 
 from MiAZ.backend.plugins import discover_commands
-from MiAZ.frontend.console.cli import build_parser, known_commands, main
+from MiAZ.frontend.console.cli import (build_parser, known_commands, main,
+                                       repo_from)
 
 
 def make_plugin(root, module='fakeplug',
@@ -67,6 +69,21 @@ def make_plugin(root, module='fakeplug',
             "    return 0\n")
     (plugin_dir / f'{module}.py').write_text(body, encoding='utf-8')
     return plugin_dir
+
+
+# make_plugin() names its plugin after the module, uppercased, which is the
+# name the .plugin file carries and the key the enabled list uses.
+FAKE_PLUGIN = 'MiAZFAKEPLUG'
+
+
+def enable(repo, *names):
+    """Write a repository's enabled-plugin list, the way the window does."""
+    conf = os.path.join(repo, '.conf')
+    os.makedirs(conf, exist_ok=True)
+    with open(os.path.join(conf, 'plugins-used.json'), 'w',
+              encoding='utf-8') as handler:
+        json.dump({name: name for name in names}, handler)
+    return repo
 
 
 def test_a_command_declared_in_a_plugin_file_is_discovered(tmp_path):
@@ -154,7 +171,8 @@ def test_running_a_plugin_command_calls_its_handler(tmp_path, miaz_env,
     resolves the named callable and hands it the console app."""
     plugins = tmp_path / 'plugins'
     make_plugin(plugins)
-    register_repo(miaz_env, 'Home', make_repo('Home'), current=True)
+    register_repo(miaz_env, 'Home', enable(make_repo('Home'), FAKE_PLUGIN),
+                  current=True)
     stdout, stderr = io.StringIO(), io.StringIO()
 
     code = main(['fakeplug', 'DOC-1', '--language', 'spa'], stdout, stderr,
@@ -181,7 +199,8 @@ def test_a_plugin_command_runs_against_the_open_repository(tmp_path, miaz_env,
                       "    index = app.get_service('index')\n"
                       "    stdout.write(f'{index is not None}\\n')\n"
                       "    return 0\n"))
-    register_repo(miaz_env, 'Home', make_repo('Home'), current=True)
+    register_repo(miaz_env, 'Home',
+                  enable(make_repo('Home'), 'MiAZOCRREPO'), current=True)
     stdout, stderr = io.StringIO(), io.StringIO()
 
     code = main(['ocrrepo'], stdout, stderr, env=with_plugins(miaz_env, plugins))
@@ -204,7 +223,8 @@ def test_a_plugin_command_whose_handler_is_missing_reports_which_plugin(
                       "    'Operations': [{'name': 'ocrbroken', "
                       "'run': 'run_ocr', 'params': []}],\n"
                       "}\n"))
-    register_repo(miaz_env, 'Home', make_repo('Home'), current=True)
+    register_repo(miaz_env, 'Home',
+                  enable(make_repo('Home'), 'MiAZOCRBROKEN'), current=True)
     stdout, stderr = io.StringIO(), io.StringIO()
 
     code = main(['ocrbroken'], stdout, stderr, env=with_plugins(miaz_env, plugins))
@@ -259,6 +279,7 @@ def test_miaz_dispatches_a_plugin_command_instead_of_opening_the_window(tmp_path
     repo = tmp_path / 'repo'
     (repo / '.conf').mkdir(parents=True)
     (repo / '.conf' / 'repo.json').write_text('{"FORMAT": 1}', encoding='utf-8')
+    enable(str(repo), 'MiAZCLIDISPATCH')
 
     env = {'PATH': os.environ.get('PATH', '/usr/bin:/bin'),
            'HOME': str(home), 'PYTHONPATH': root, 'LC_ALL': 'C'}
@@ -271,3 +292,170 @@ def test_miaz_dispatches_a_plugin_command_instead_of_opening_the_window(tmp_path
         'miaz treated a plugin command as a reason to open the window')
     assert 'DISPATCHED' in result.stdout, (
         f"stdout={result.stdout!r} stderr={result.stderr[-2000:]!r}")
+
+
+# ---------------------------------------------------------------------------
+# A plugin that is not enabled for the repository
+# ---------------------------------------------------------------------------
+
+def test_the_help_lists_a_command_of_an_enabled_plugin(tmp_path, miaz_env,
+                                                       make_repo, register_repo):
+    plugins = tmp_path / 'plugins'
+    make_plugin(plugins)
+    register_repo(miaz_env, 'Home', enable(make_repo('Home'), FAKE_PLUGIN),
+                  current=True)
+
+    parser = build_parser([str(plugins)], env=miaz_env)
+
+    assert 'fakeplug' in parser.format_help()
+
+
+def test_the_help_hides_a_command_of_a_plugin_that_is_not_enabled(
+        tmp_path, miaz_env, make_repo, register_repo):
+    """The window shows the entries of the plugins a repository enables. A
+    command that cannot be run against this repository has no business being
+    listed as one that can."""
+    plugins = tmp_path / 'plugins'
+    make_plugin(plugins)
+    register_repo(miaz_env, 'Home', enable(make_repo('Home'), 'MiAZSomethingElse'),
+                  current=True)
+
+    parser = build_parser([str(plugins)], env=miaz_env)
+
+    assert 'fakeplug' not in parser.format_help()
+
+
+def test_a_hidden_command_is_still_parsed(tmp_path, miaz_env, make_repo,
+                                          register_repo):
+    """Left in the parser on purpose: 'MiAZFAKEPLUG is not enabled for this
+    repository' is an answer, and argparse's 'invalid choice' is not."""
+    plugins = tmp_path / 'plugins'
+    make_plugin(plugins)
+    register_repo(miaz_env, 'Home', enable(make_repo('Home'), 'MiAZSomethingElse'),
+                  current=True)
+
+    parser = build_parser([str(plugins)], env=miaz_env)
+    args = parser.parse_args(['fakeplug', 'DOC-1'])
+
+    assert args.command == 'fakeplug'
+
+
+def test_running_a_command_of_a_plugin_that_is_not_enabled_is_refused(
+        tmp_path, miaz_env, make_repo, register_repo):
+    plugins = tmp_path / 'plugins'
+    make_plugin(plugins)
+    register_repo(miaz_env, 'Home', enable(make_repo('Home'), 'MiAZSomethingElse'),
+                  current=True)
+    stdout, stderr = io.StringIO(), io.StringIO()
+
+    code = main(['fakeplug', 'DOC-1'], stdout, stderr,
+                env=with_plugins(miaz_env, plugins))
+
+    assert code == 3
+    assert FAKE_PLUGIN in stderr.getvalue()
+    assert 'Home' in stderr.getvalue(), 'say which repository it is about'
+    assert stdout.getvalue() == ''
+
+
+def test_running_a_command_of_an_enabled_plugin_still_works(
+        tmp_path, miaz_env, make_repo, register_repo):
+    plugins = tmp_path / 'plugins'
+    make_plugin(plugins)
+    register_repo(miaz_env, 'Home', enable(make_repo('Home'), FAKE_PLUGIN),
+                  current=True)
+    stdout, stderr = io.StringIO(), io.StringIO()
+
+    code = main(['fakeplug', 'DOC-1', '--language', 'spa'], stdout, stderr,
+                env=with_plugins(miaz_env, plugins))
+
+    assert code == 0, stderr.getvalue()
+    assert stdout.getvalue() == 'DOC-1:spa\n'
+
+
+def test_the_check_follows_the_repository_asked_for(tmp_path, miaz_env,
+                                                    make_repo, register_repo):
+    """--repo picks the repository, so it picks whose plugin list decides."""
+    plugins = tmp_path / 'plugins'
+    make_plugin(plugins)
+    register_repo(miaz_env, 'Home', enable(make_repo('Home'), FAKE_PLUGIN),
+                  current=True)
+    register_repo(miaz_env, 'Other', enable(make_repo('Other'), 'MiAZSomethingElse'))
+    stdout, stderr = io.StringIO(), io.StringIO()
+
+    code = main(['fakeplug', 'DOC-1', '--repo', 'Other'], stdout, stderr,
+                env=with_plugins(miaz_env, plugins))
+
+    assert code == 3
+    assert 'Other' in stderr.getvalue()
+
+
+def test_the_help_follows_the_repository_asked_for(tmp_path, miaz_env,
+                                                   make_repo, register_repo):
+    plugins = tmp_path / 'plugins'
+    make_plugin(plugins)
+    register_repo(miaz_env, 'Home', enable(make_repo('Home'), 'MiAZSomethingElse'),
+                  current=True)
+    register_repo(miaz_env, 'Other', enable(make_repo('Other'), FAKE_PLUGIN))
+
+    listed = build_parser([str(plugins)], env=miaz_env, repo='Other').format_help()
+
+    assert 'fakeplug' in listed
+
+
+def test_a_repository_with_no_plugin_list_hides_nothing(tmp_path, miaz_env,
+                                                        make_repo, register_repo):
+    """A repository the window has never opened has no list at all. Hiding
+    every plugin command there would read as commands that do not exist."""
+    plugins = tmp_path / 'plugins'
+    make_plugin(plugins)
+    register_repo(miaz_env, 'Home', make_repo('Home'), current=True)
+
+    parser = build_parser([str(plugins)], env=miaz_env)
+
+    assert 'fakeplug' in parser.format_help()
+
+
+def test_a_parser_built_with_no_environment_hides_nothing(tmp_path):
+    """There is no repository to ask about, so there is nothing to filter by."""
+    plugins = tmp_path / 'plugins'
+    make_plugin(plugins)
+
+    assert 'fakeplug' in build_parser([str(plugins)]).format_help()
+
+
+def test_the_repository_can_be_named_before_the_command(tmp_path, miaz_env,
+                                                        make_repo, register_repo):
+    """`miaz --repo Other search` and `miaz search --repo Other` are the same
+    request, and the first is the one that also picks what --help lists."""
+    register_repo(miaz_env, 'Home', make_repo('Home'), current=True)
+    register_repo(miaz_env, 'Other',
+                  make_repo('Other', ['20260101-ES-HOU-BANKX-INV-other-JOHNDOE.pdf']))
+    stdout, stderr = io.StringIO(), io.StringIO()
+
+    code = main(['--repo', 'Other', 'search', '--all'], stdout, stderr,
+                env=miaz_env)
+
+    assert code == 0, stderr.getvalue()
+    assert 'other-JOHNDOE.pdf' in stdout.getvalue()
+
+
+def test_the_repository_named_on_the_command_still_wins(tmp_path, miaz_env,
+                                                        make_repo, register_repo):
+    register_repo(miaz_env, 'Home', make_repo('Home'), current=True)
+    register_repo(miaz_env, 'Other',
+                  make_repo('Other', ['20260101-ES-HOU-BANKX-INV-other-JOHNDOE.pdf']))
+    stdout, stderr = io.StringIO(), io.StringIO()
+
+    code = main(['search', '--all', '--repo', 'Other'], stdout, stderr,
+                env=miaz_env)
+
+    assert code == 0, stderr.getvalue()
+    assert 'other-JOHNDOE.pdf' in stdout.getvalue()
+
+
+def test_repo_from_reads_the_repository_out_of_the_arguments():
+    """The listing needs it before the parser exists, so it is read by hand."""
+    assert repo_from(['--repo', 'Other', '--help']) == 'Other'
+    assert repo_from(['--repo=Other', '--help']) == 'Other'
+    assert repo_from(['search', '--repo', 'Other']) == 'Other'
+    assert repo_from(['--help']) is None

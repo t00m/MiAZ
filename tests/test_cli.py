@@ -549,7 +549,7 @@ def test_an_ordinary_code_is_still_upper_cased():
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
-def run_miaz(args, home):
+def run_miaz(args, home, display=True):
     """The entry point as a user runs it.
 
     A subprocess because MiAZ.miaz is the entry point: it reads the toolkit
@@ -557,12 +557,16 @@ def run_miaz(args, home):
     before any of that matters. HOME is a throwaway, so the per-user plugin
     directory is missing, which is the state of a machine that never installed
     a plugin.
+
+    With display=False there is nowhere to draw, so a run that opens the
+    window and one that runs a command cannot be confused for each other.
     """
     env = {'PATH': os.environ.get('PATH', '/usr/bin:/bin'),
            'HOME': str(home), 'PYTHONPATH': ROOT, 'LC_ALL': 'C'}
-    for name in ('DISPLAY', 'WAYLAND_DISPLAY', 'XDG_RUNTIME_DIR'):
-        if name in os.environ:
-            env[name] = os.environ[name]
+    if display:
+        for name in ('DISPLAY', 'WAYLAND_DISPLAY', 'XDG_RUNTIME_DIR'):
+            if name in os.environ:
+                env[name] = os.environ[name]
     return subprocess.run([sys.executable, '-m', 'MiAZ.miaz'] + args,
                           cwd=ROOT, env=env, capture_output=True,
                           text=True, timeout=120)
@@ -624,6 +628,19 @@ def test_the_version_is_still_its_own_option(tmp_path):
     result = run_miaz(['--version'], tmp_path)
     assert result.returncode == 0, result.stderr
     assert result.stdout.strip(), 'no version printed'
+
+
+def test_the_repository_can_be_named_before_the_command(tmp_path):
+    """`miaz --repo X repos` is a command, not a reason to open the window.
+
+    The entry point decides between the two by the first argument, and a
+    --repo in front of the command used to be that argument.
+    """
+    result = run_miaz(['--repo', str(tmp_path / 'nowhere'), 'repos'],
+                      tmp_path, display=False)
+    assert 'no display' not in result.stderr, (
+        'miaz treated --repo before the command as a reason to open a window')
+    assert result.returncode == 1, result.stderr
 
 
 def test_an_unknown_option_is_refused_with_the_commands(tmp_path):

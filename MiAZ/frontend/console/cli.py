@@ -475,6 +475,67 @@ def cmd_notes(app, args, stdout, stderr):
     return 0
 
 
+def repo_from(argv):
+    """The repository named in these arguments, without parsing them.
+
+    Which commands the help lists depends on which repository is meant, and
+    the parser cannot say which one that is before it has been built. Read by
+    hand rather than in two passes: it is one flag, in either of its spellings.
+    """
+    for index, token in enumerate(argv):
+        if token == '--repo' and index + 1 < len(argv):
+            return argv[index + 1]
+        if token.startswith('--repo='):
+            return token.split('=', 1)[1]
+    return None
+
+
+def enabled_plugins(docs_dir):
+    """The plugins a repository enables, or None when it does not say.
+
+    Read straight from the repository configuration, the same file the window
+    reads when it decides which plugins to load. None means there is nothing
+    to go by: no repository, or one the window has never opened, which has no
+    list at all. Hiding every plugin command there would read as commands that
+    do not exist, so nothing is hidden.
+    """
+    if not docs_dir:
+        return None
+    path = os.path.join(docs_dir, '.conf', 'plugins-used.json')
+    try:
+        with open(path, encoding='utf-8') as handler:
+            return frozenset(json.load(handler))
+    except (OSError, ValueError):
+        return None
+
+
+def repository_docs(env, selector=None):
+    """Where the repository lives, without opening it.
+
+    The parser is built before anything is loaded, so this resolves a name or
+    a path to a directory and stops there: no index, no documents read, no
+    plugin imported.
+    """
+    if env is None:
+        return None
+    try:
+        app = MiAZConsoleApp(env)
+        repository = app.get_service('repo')
+        repository.reset()
+        if selector:
+            if os.sep in selector or os.path.isdir(selector):
+                resolved = repository.use(path=selector)
+            else:
+                resolved = repository.use(selector)
+            if not resolved:
+                return None
+        return repository.docs
+    except Exception:
+        # Building the parser must not be the thing that fails. A repository
+        # that cannot be resolved simply filters nothing.
+        return None
+
+
 def plugin_search_paths(env=None):
     """Where to look for plugins, or nothing when the environment is unknown.
 
@@ -497,7 +558,7 @@ def known_commands(search_paths=None) -> frozenset:
     return frozenset(HANDLERS) | frozenset(discover_commands(search_paths))
 
 
-def _add_plugin_command(commands, name, declared, search_paths):
+def _add_plugin_command(commands, name, declared, search_paths, listed=True):
     """Give one plugin command its subparser, with the flags it declares.
 
     The module is imported here because this is the point where the schema is
@@ -517,11 +578,19 @@ def _add_plugin_command(commands, name, declared, search_paths):
     if operation is None:
         return None
 
-    parser = commands.add_parser(name, help=declared['help'] or operation.help)
+    # A command whose plugin the repository does not enable is added without
+    # a help string. argparse builds the line in the command list out of that
+    # string, so leaving it out is what keeps the command runnable and unlisted.
+    if listed:
+        parser = commands.add_parser(name, help=declared['help'] or operation.help)
+    else:
+        parser = commands.add_parser(name)
     operation.add_arguments(parser)
     parser.add_argument('--repo', metavar='NAME_OR_PATH',
+                        default=argparse.SUPPRESS,
                         help=_('Which repository to work on'))
-    parser.set_defaults(_operation=operation, _module=module)
+    parser.set_defaults(_operation=operation, _module=module,
+                        _plugin=declared['plugin_name'])
     return operation
 
 
@@ -537,6 +606,13 @@ class MiAZParser(argparse.ArgumentParser):
     to the type of the parser it is called on. That costs nothing: a command
     has no commands of its own, so its help is the one argparse writes.
     """
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Commands that are in the parser but not in the help: a plugin
+        # command the repository does not enable. Runnable, so the refusal can
+        # say why, and unlisted, because it cannot be run against this one.
+        self.hidden_commands = set()
 
     def format_help(self):
         text = super().format_help()
@@ -555,18 +631,29 @@ class MiAZParser(argparse.ArgumentParser):
         Read off the actions rather than kept in a second list, so a command
         added anywhere is described here without being registered twice.
         """
+        hidden = self.hidden_commands or frozenset()
         for action in self._actions:
             choices = getattr(action, 'choices', None)
             if not isinstance(choices, dict):
                 continue
             for name, subparser in choices.items():
+                if name in hidden:
+                    continue
                 if isinstance(subparser, argparse.ArgumentParser):
                     yield name, subparser
 
 
-def build_parser(search_paths=None):
+def build_parser(search_paths=None, env=None, repo=None):
+    """The parser, listing the commands this repository can run.
+
+    `env` and `repo` say which repository that is: the one named, or the
+    current one. Without an env there is no repository to ask about and every
+    command is listed, which is what a test and a bare import get.
+    """
     parser = MiAZParser(
         prog='miaz', description=_('Personal Document Organizer'))
+    parser.add_argument('--repo', metavar='NAME_OR_PATH',
+                        help=_('Which repository to work on'))
     commands = parser.add_subparsers(dest='command')
 
     search = commands.add_parser('search', help=_('Find documents'))
@@ -590,6 +677,7 @@ def build_parser(search_paths=None):
     search.add_argument('--limit', type=int, metavar='N',
                         help=_('Show at most N documents, N being 1 or more'))
     search.add_argument('--repo', metavar='NAME_OR_PATH',
+                        default=argparse.SUPPRESS,
                         help=_('Which repository to search'))
     search.add_argument('--long', action='store_true',
                         help=_('Table with expanded labels'))
@@ -605,6 +693,7 @@ def build_parser(search_paths=None):
                      help=_('Take the whole tree of a directory, not only the '
                             'files directly in it'))
     add.add_argument('--repo', metavar='NAME_OR_PATH',
+                     default=argparse.SUPPRESS,
                      help=_('Which repository to add to'))
 
     delete = commands.add_parser('delete',
@@ -615,6 +704,7 @@ def build_parser(search_paths=None):
                         help=_('Do not ask first. Needed when there is no '
                                'terminal to ask on'))
     delete.add_argument('--repo', metavar='NAME_OR_PATH',
+                        default=argparse.SUPPRESS,
                         help=_('Which repository to delete from'))
 
     notes = commands.add_parser('notes', help=_('Read the notes on documents'))
@@ -634,18 +724,32 @@ def build_parser(search_paths=None):
     notes.add_argument('--limit', type=int, metavar='N',
                        help=_('Show at most N notes, N being 1 or more'))
     notes.add_argument('--repo', metavar='NAME_OR_PATH',
+                       default=argparse.SUPPRESS,
                        help=_('Which repository to read'))
     notes.add_argument('--long', action='store_true',
                        help=_('Table with the header fields'))
     notes.add_argument('--json', action='store_true', help=_('JSON records'))
 
+    listed = list(commands.choices)
+    enabled = enabled_plugins(repository_docs(env, repo))
     for name, declared in sorted(discover_commands(search_paths).items()):
         if name in HANDLERS:
             # A plugin does not get to shadow `search` or `repos`. Refusing it
             # here beats letting the last plugin scanned decide what `search`
             # means.
             continue
-        _add_plugin_command(commands, name, declared, search_paths)
+        visible = enabled is None or declared['plugin_name'] in enabled
+        if _add_plugin_command(commands, name, declared, search_paths,
+                               listed=visible) is None:
+            continue
+        if visible:
+            listed.append(name)
+        else:
+            parser.hidden_commands.add(name)
+    if parser.hidden_commands:
+        # The usage line lists the choices out of the parser, hidden ones and
+        # all, unless it is told what to say instead.
+        commands.metavar = '{%s}' % ','.join(listed)
     return parser
 
 
@@ -670,7 +774,10 @@ def main(argv, stdout, stderr, env=None):
     # parser. Discovery reads the .plugin files and imports nothing until a
     # plugin command is actually named.
     search_paths = plugin_search_paths(env)
-    args = parse_arguments(build_parser(search_paths), argv)
+    # The repository is read out of the arguments before they are parsed: it
+    # decides which plugin commands this parser lists.
+    parser = build_parser(search_paths, env=env, repo=repo_from(argv))
+    args = parse_arguments(parser, argv)
     if not args.command:
         stderr.write(_('usage: miaz [search|repos] ...\n'))
         return 2
@@ -709,6 +816,20 @@ def run_plugin_command(app, args, stdout, stderr):
         stderr.write(_("'{command}' is not a command\n").format(
             command=args.command))
         return 2
+
+    # A plugin is enabled per repository, and the window honours that. A
+    # command from a plugin this repository does not enable is refused here
+    # rather than run: the two frontends answer the same question the same way.
+    repository = app.get_service('repo')
+    plugin = getattr(args, '_plugin', None)
+    enabled = enabled_plugins(repository.docs)
+    if plugin is not None and enabled is not None and plugin not in enabled:
+        stderr.write(_("'{command}' comes from {plugin}, which is not enabled "
+                       "for repository '{repository}'\n").format(
+                           command=args.command, plugin=plugin,
+                           repository=repository.get_active_id() or repository.docs))
+        stderr.write(_('Enable it in the repository settings, Plugins tab\n'))
+        return 3
 
     handler = operation.resolve(module)
     if handler is None:

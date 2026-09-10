@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 0.1\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-09-10 22:30+0200\n"
+"POT-Creation-Date: 2026-09-10 22:59+0200\n"
 "PO-Revision-Date: 2026-08-19 23:30+0200\n"
 "Last-Translator: Tomás Vírseda <tomasvirseda@gmail.com>\n"
 "Language-Team: Spanish\n"
@@ -711,175 +711,186 @@ msgstr ""
 msgid "this repository has no notes\n"
 msgstr "El repositorio está en buen estado"
 
-#: MiAZ/frontend/console/cli.py:523
+#: MiAZ/frontend/console/cli.py:591 MiAZ/frontend/console/cli.py:656
 #, fuzzy
 msgid "Which repository to work on"
 msgstr "En qué repositorio buscar"
 
-#: MiAZ/frontend/console/cli.py:549
+#: MiAZ/frontend/console/cli.py:625
 #, fuzzy
 msgid "each command in detail:"
 msgstr "Búsqueda e indexado"
 
-#: MiAZ/frontend/console/cli.py:569 data/io.github.t00m.MiAZ.desktop.in:3
+#: MiAZ/frontend/console/cli.py:654 data/io.github.t00m.MiAZ.desktop.in:3
 #: data/io.github.t00m.MiAZ.metainfo.xml.in:7
 msgid "Personal Document Organizer"
 msgstr "Organizador Personal de Documentos"
 
-#: MiAZ/frontend/console/cli.py:572
+#: MiAZ/frontend/console/cli.py:659
 msgid "Find documents"
 msgstr "Buscar documentos"
 
-#: MiAZ/frontend/console/cli.py:573
+#: MiAZ/frontend/console/cli.py:660
 msgid "Free text to look for"
 msgstr "Texto libre que buscar"
 
-#: MiAZ/frontend/console/cli.py:574
+#: MiAZ/frontend/console/cli.py:661
 msgid "Substring of the concept field"
 msgstr "Parte del campo concepto"
 
-#: MiAZ/frontend/console/cli.py:577
+#: MiAZ/frontend/console/cli.py:664
 #, python-brace-format
 msgid ""
 "Filter by {field}. Any part of the code or its description, or none for the "
 "documents with no {field}"
 msgstr ""
 
-#: MiAZ/frontend/console/cli.py:581
+#: MiAZ/frontend/console/cli.py:668
 #, python-brace-format
 msgid "One of: {valid}"
 msgstr "Uno de: {valid}"
 
-#: MiAZ/frontend/console/cli.py:583
+#: MiAZ/frontend/console/cli.py:670
 msgid "Documents dated on or after this day"
 msgstr "Documentos con fecha igual o posterior a este día"
 
-#: MiAZ/frontend/console/cli.py:585
+#: MiAZ/frontend/console/cli.py:672
 msgid "Documents dated on or before this day"
 msgstr "Documentos con fecha igual o anterior a este día"
 
-#: MiAZ/frontend/console/cli.py:587
+#: MiAZ/frontend/console/cli.py:674
 msgid "Only documents that need review"
 msgstr "Solo los documentos que necesitan revisión"
 
-#: MiAZ/frontend/console/cli.py:589
+#: MiAZ/frontend/console/cli.py:676
 msgid "Include documents whose values are not in the configuration"
 msgstr "Incluir los documentos cuyos valores no están en la configuración"
 
-#: MiAZ/frontend/console/cli.py:591
+#: MiAZ/frontend/console/cli.py:678
 #, fuzzy
 msgid "Show at most N documents, N being 1 or more"
 msgstr "Mostrar como mucho N documentos"
 
-#: MiAZ/frontend/console/cli.py:593
+#: MiAZ/frontend/console/cli.py:681
 msgid "Which repository to search"
 msgstr "En qué repositorio buscar"
 
-#: MiAZ/frontend/console/cli.py:595
+#: MiAZ/frontend/console/cli.py:683
 msgid "Table with expanded labels"
 msgstr "Tabla con las etiquetas completas"
 
-#: MiAZ/frontend/console/cli.py:596 MiAZ/frontend/console/cli.py:599
-#: MiAZ/frontend/console/cli.py:640
+#: MiAZ/frontend/console/cli.py:684 MiAZ/frontend/console/cli.py:687
+#: MiAZ/frontend/console/cli.py:731
 msgid "JSON records"
 msgstr "Registros JSON"
 
-#: MiAZ/frontend/console/cli.py:598
+#: MiAZ/frontend/console/cli.py:686
 msgid "List repositories"
 msgstr "Listar los repositorios"
 
-#: MiAZ/frontend/console/cli.py:601
+#: MiAZ/frontend/console/cli.py:689
 #, fuzzy
 msgid "Add documents to the repository"
 msgstr "{nr} documentos en este repositorio"
 
-#: MiAZ/frontend/console/cli.py:603
+#: MiAZ/frontend/console/cli.py:691
 msgid "Files or directories to add"
 msgstr ""
 
-#: MiAZ/frontend/console/cli.py:605
+#: MiAZ/frontend/console/cli.py:693
 msgid "Take the whole tree of a directory, not only the files directly in it"
 msgstr ""
 
-#: MiAZ/frontend/console/cli.py:608
+#: MiAZ/frontend/console/cli.py:697
 #, fuzzy
 msgid "Which repository to add to"
 msgstr "En qué repositorio buscar"
 
-#: MiAZ/frontend/console/cli.py:611
+#: MiAZ/frontend/console/cli.py:700
 #, fuzzy
 msgid "Delete documents from the repository"
 msgstr "{nr} documentos en este repositorio"
 
-#: MiAZ/frontend/console/cli.py:613
+#: MiAZ/frontend/console/cli.py:702
 #, fuzzy
 msgid "Document names, as `miaz search` prints them"
 msgstr "El documento no está en el repositorio"
 
-#: MiAZ/frontend/console/cli.py:615
+#: MiAZ/frontend/console/cli.py:704
 msgid "Do not ask first. Needed when there is no terminal to ask on"
 msgstr ""
 
-#: MiAZ/frontend/console/cli.py:618
+#: MiAZ/frontend/console/cli.py:708
 #, fuzzy
 msgid "Which repository to delete from"
 msgstr "En qué repositorio buscar"
 
-#: MiAZ/frontend/console/cli.py:620
+#: MiAZ/frontend/console/cli.py:710
 #, fuzzy
 msgid "Read the notes on documents"
 msgstr "Renombrar este documento"
 
-#: MiAZ/frontend/console/cli.py:622
+#: MiAZ/frontend/console/cli.py:712
 msgid ""
 "Free text to look for in the note, its header or the document it is filed "
 "against"
 msgstr ""
 
-#: MiAZ/frontend/console/cli.py:625
+#: MiAZ/frontend/console/cli.py:715
 msgid "Only notes on documents whose name holds this"
 msgstr ""
 
-#: MiAZ/frontend/console/cli.py:627
+#: MiAZ/frontend/console/cli.py:717
 msgid "Only notes whose category holds this"
 msgstr ""
 
-#: MiAZ/frontend/console/cli.py:629
+#: MiAZ/frontend/console/cli.py:719
 msgid "Only notes whose status holds this"
 msgstr ""
 
-#: MiAZ/frontend/console/cli.py:631
+#: MiAZ/frontend/console/cli.py:721
 msgid "Only notes whose priority holds this"
 msgstr ""
 
-#: MiAZ/frontend/console/cli.py:633
+#: MiAZ/frontend/console/cli.py:723
 msgid "Print each note in full, header and body"
 msgstr ""
 
-#: MiAZ/frontend/console/cli.py:635
+#: MiAZ/frontend/console/cli.py:725
 msgid "Show at most N notes, N being 1 or more"
 msgstr ""
 
-#: MiAZ/frontend/console/cli.py:637
+#: MiAZ/frontend/console/cli.py:728
 #, fuzzy
 msgid "Which repository to read"
 msgstr "En qué repositorio buscar"
 
-#: MiAZ/frontend/console/cli.py:639
+#: MiAZ/frontend/console/cli.py:730
 #, fuzzy
 msgid "Table with the header fields"
 msgstr "Tabla con las etiquetas completas"
 
-#: MiAZ/frontend/console/cli.py:675
+#: MiAZ/frontend/console/cli.py:782
 msgid "usage: miaz [search|repos] ...\n"
 msgstr "uso: miaz [search|repos] ...\n"
 
-#: MiAZ/frontend/console/cli.py:709
+#: MiAZ/frontend/console/cli.py:816
 #, python-brace-format
 msgid "'{command}' is not a command\n"
 msgstr ""
 
-#: MiAZ/frontend/console/cli.py:715
+#: MiAZ/frontend/console/cli.py:827
+#, python-brace-format
+msgid ""
+"'{command}' comes from {plugin}, which is not enabled for repository "
+"'{repository}'\n"
+msgstr ""
+
+#: MiAZ/frontend/console/cli.py:831
+msgid "Enable it in the repository settings, Plugins tab\n"
+msgstr ""
+
+#: MiAZ/frontend/console/cli.py:836
 #, python-brace-format
 msgid ""
 "plugin '{plugin}' declares command '{command}' but defines no '{handler}'\n"

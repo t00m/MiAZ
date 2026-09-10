@@ -40,7 +40,10 @@ class MiAZRepository(GObject.GObject):
         # _active_id being None, which is also what a bare path leaves behind.
         self._active_pinned = False
         self._store = None
-        self.log.info("Repository class initialized")
+        # Startup narration, not news: it is a debug line so that `miaz
+        # --help`, which resolves the repository to list its commands, prints
+        # its help and nothing else.
+        self.log.debug("Repository class initialized")
 
     @property
     def docs(self):
