@@ -972,7 +972,8 @@ class MiAZWorkspace(Gtk.Box):
         MiAZWorkspace._drop_target_css_installed = True
 
     def _on_drop_accept(self, target, drop):
-        """Refuse the documents MiAZ is already holding.
+        """Refuse the documents MiAZ is already holding, and anything that is
+        not files at all.
 
         A selection dragged out of the workspace and dropped back onto it asks
         the import to copy every file onto itself. Nothing was lost, because
@@ -980,8 +981,23 @@ class MiAZWorkspace(Gtk.Box):
         and the gesture went nowhere. Refused here rather than at the drop, so
         there is no highlight and no copy cursor: the drag says what it will
         not do before it is let go.
+
+        The format check is ours to make. The accept signal accumulates
+        first-wins, so a handler that answers at all runs instead of GTK's own
+        check, and answering yes to everything let a text or an image drag
+        light the workspace up for an import that could never happen.
         """
-        return not started_here(drop)
+        if started_here(drop):
+            return False
+        formats = drop.get_formats()
+        if formats is None:
+            return False
+        # What GTK's own handler does: the mime types a drag offers become the
+        # types they can be read as, and one of those has to be the file list
+        # the drop target asked for.
+        readable = formats.union_deserialize_gtypes()
+        return Gdk.ContentFormats.match_gtype(
+            target.get_formats(), readable) == Gdk.FileList.__gtype__
 
     def _on_drop_enter(self, drop, x, y, widget):
         widget.add_css_class('miaz-drop-active')
@@ -995,6 +1011,13 @@ class MiAZWorkspace(Gtk.Box):
         importdoc = self.app.get_service('importdoc')
         if importdoc is None:
             self.log.error("No import service: the dropped files were ignored")
+            return False
+        if value is None:
+            # An empty text/uri-list deserializes to a NULL GdkFileList, which
+            # arrives here as None: a drag whose source offered files and then
+            # had none to give, which is what a chat application does for a
+            # message with no file behind it.
+            self.log.warning("Nothing was dropped: the drag carried no files")
             return False
         # A file dropped from a remote location has no local path, and Gio
         # gives None for it. The import service reports those as failed.

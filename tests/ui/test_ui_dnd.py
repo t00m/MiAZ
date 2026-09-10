@@ -258,15 +258,26 @@ def test_selecting_still_works_with_the_drag_source_attached(miaz, clean_view):
 # Dragging out of the workspace and back onto it
 # ---------------------------------------------------------------------------
 
+def _formats(*mime_types):
+    builder = Gdk.ContentFormatsBuilder()
+    for mime_type in mime_types:
+        builder.add_mime_type(mime_type)
+    return builder.to_formats()
+
+
 class _FakeDrop:
     """A Gdk.Drop carries the drag that started it only when that drag began
     in this application. A real one cannot be built without a real drag."""
 
-    def __init__(self, drag=None):
+    def __init__(self, drag=None, mime_types=('text/uri-list',)):
         self._drag = drag
+        self._formats = _formats(*mime_types)
 
     def get_drag(self):
         return self._drag
+
+    def get_formats(self):
+        return self._formats
 
 
 def test_the_workspace_refuses_a_drag_that_started_in_it(miaz):
@@ -284,6 +295,26 @@ def test_the_workspace_still_accepts_files_from_elsewhere(miaz):
     workspace = miaz.widget('workspace')
     target = miaz.widget('workspace-drop-target')
     assert workspace._on_drop_accept(target, _FakeDrop(drag=None)) is True
+
+
+def test_a_drag_carrying_no_files_is_refused(miaz):
+    """The accept signal accumulates first-wins, so a handler that answers at
+    all replaces GTK's own format check. Answering yes to everything lit the
+    workspace up for a text or an image drag it cannot import."""
+    workspace = miaz.widget('workspace')
+    target = miaz.widget('workspace-drop-target')
+    text_drag = _FakeDrop(mime_types=('text/plain;charset=utf-8',))
+    assert workspace._on_drop_accept(target, text_drag) is False
+
+
+def test_a_drop_with_an_empty_file_list_is_not_a_crash(miaz):
+    """An empty text/uri-list deserializes to a NULL GdkFileList, which
+    reaches the handler as None. Telegram offers one for a message with no
+    file behind it."""
+    workspace = miaz.widget('workspace')
+    target = miaz.widget('workspace-drop-target')
+    page = workspace.get_stack().get_child_by_name('workspace-default')
+    assert workspace._on_drop(target, None, 0, 0, page) is False
 
 
 def test_the_drop_target_asks_before_accepting(miaz):
