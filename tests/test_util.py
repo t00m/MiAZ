@@ -250,6 +250,47 @@ def test_since_date_last_six_months_delegates(util):
 
 
 # ---------------------------------------------------------------------------
+# filename_rename
+# ---------------------------------------------------------------------------
+
+class RecordingLog:
+    """Collects what the util logs, so a message can be asserted on."""
+
+    def __init__(self):
+        self.messages = []
+
+    def debug(self, message):
+        self.messages.append(message)
+
+    def info(self, message):
+        self.messages.append(message)
+
+    def warning(self, message):
+        self.messages.append(message)
+
+    def error(self, message):
+        self.messages.append(message)
+
+
+def test_rename_onto_an_existing_file_names_the_document_left_behind(tmp_path):
+    """Two documents in one repository can normalize to the same name, and one
+    of them then keeps its own for good. The message is the only sign of it, so
+    it has to name that document: the target names the file that was already
+    there, which is the one with nothing wrong with it."""
+    util = MiAZUtil(MockApp())
+    util.log = RecordingLog()
+    source = tmp_path / 'FBN-V00602502 - Wir brauchen Ihre Mithilfe.pdf'
+    source.write_text('one')
+    target = tmp_path / '-----FBN_V00602502___WIR_BRAUCHEN_IHRE_MITHILFE-.pdf'
+    target.write_text('two')
+
+    assert util.filename_rename(str(source), str(target)) is False
+    assert source.read_text() == 'one'
+    assert target.read_text() == 'two'
+    assert any(str(source) in message for message in util.log.messages)
+
+
+# ---------------------------------------------------------------------------
 # filename_rename_needed
 # ---------------------------------------------------------------------------
 

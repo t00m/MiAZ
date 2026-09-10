@@ -723,8 +723,14 @@ class MiAZUtil(GObject.GObject):
                 # Target already exists. Do not overwrite it silently; the
                 # caller sees rename=False and surfaces the skip (mass rename
                 # counts skipped files in a toast).
+                #
+                # Both names are logged. The target is the file that is already
+                # right; the source is the one left with the name it came with,
+                # and naming only the target left no way to tell which document
+                # that was, on a message the full scan repeats every time.
                 self.log.warning(
-                    f"Rename skipped: target already exists: '{target}'")
+                    f"Rename skipped: '{source}' stays as it is, "
+                    f"because '{target}' already exists")
         return rename
 
     def filename_delete(self, filepaths: set):
