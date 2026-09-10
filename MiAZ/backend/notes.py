@@ -32,14 +32,22 @@ from MiAZ.backend.util import check_zip_members
 _module_log = MiAZLog('MiAZ.Notes')
 
 
+# Where notes are kept inside a repository's .conf directory, and everywhere
+# they have been kept before, oldest first. `MiAZNotes` was the plugin's name
+# and then, briefly, the directory's; neither says what is in it.
+NOTES_DIRNAME = 'notes'
+LEGACY_DIRNAMES = (('plugins', 'MiAZNotes'), ('MiAZNotes',))
+
+
 def notes_dir(repo_docs: str) -> str:
     """Where a repository keeps its notes."""
-    return os.path.join(repo_docs, '.conf', 'MiAZNotes', 'data')
+    return os.path.join(repo_docs, '.conf', NOTES_DIRNAME, 'data')
 
 
-def legacy_notes_dir(repo_docs: str) -> str:
-    """Where notes were kept while they were a plugin."""
-    return os.path.join(repo_docs, '.conf', 'plugins', 'MiAZNotes', 'data')
+def legacy_notes_dirs(repo_docs: str) -> list:
+    """Every place a repository's notes may still be, oldest first."""
+    return [os.path.join(repo_docs, '.conf', *names, 'data')
+            for names in LEGACY_DIRNAMES]
 
 
 def _unique_name(path: str) -> str:
@@ -58,29 +66,16 @@ def _unique_name(path: str) -> str:
     return f'{stem}-{counter}{extension}'
 
 
-def migrate_notes(repo_docs: str, log=None) -> int:
-    """Move a repository's notes out of the plugins directory.
+def _move_tree(source: str, target: str, log) -> int:
+    """Move everything under `source` into `target`, overwriting nothing.
 
-    Notes were written to .conf/plugins/MiAZNotes while they were a plugin.
-    They are core now, and this runs whenever a repository is opened, by the
-    window or by a command, so a repository migrates the first time either one
-    touches it. Returns how many files were moved, which is 0 for a repository
-    that has nothing to move: the common case after the first open.
-
-    Nothing is ever overwritten. Both directories can hold a note of the same
-    name, because a 0.2 MiAZ and a 0.3 one can be pointed at one repository in
-    turn, and losing either note is not acceptable. A file whose name is taken
-    arrives beside the one already there.
+    Returns the number of files moved. The source tree is removed only where
+    it ends up empty, so anything that could not be moved stays where it is
+    rather than being deleted.
     """
-    log = log or _module_log
-    legacy = os.path.join(repo_docs, '.conf', 'plugins', 'MiAZNotes')
-    target = os.path.join(repo_docs, '.conf', 'MiAZNotes')
-    if not os.path.isdir(legacy):
-        return 0
-
     moved = 0
-    for root, _dirs, files in os.walk(legacy):
-        relative = os.path.relpath(root, legacy)
+    for root, _dirs, files in os.walk(source):
+        relative = os.path.relpath(root, source)
         destination = target if relative == '.' else os.path.join(target, relative)
         os.makedirs(destination, exist_ok=True)
         for filename in files:
@@ -96,21 +91,46 @@ def migrate_notes(repo_docs: str, log=None) -> int:
             except OSError as error:
                 log.error(f"Could not move '{source_file}': {error}")
 
-    # Only an empty tree is removed. Anything left behind is something that
-    # could not be moved, and it stays where it is rather than being deleted.
     # os.listdir rather than walk's `dirs` and `files`: those are read before
     # the children are removed, so the parent still looks occupied and the
     # directory this exists to clear away is the one that survives.
     try:
-        for root, _dirs, _files in os.walk(legacy, topdown=False):
+        for root, _dirs, _files in os.walk(source, topdown=False):
             if not os.listdir(root):
                 os.rmdir(root)
     except OSError as error:
         log.debug(f"Old notes directory not removed: {error}")
+    return moved
+
+
+def migrate_notes(repo_docs: str, log=None) -> int:
+    """Gather a repository's notes into .conf/notes.
+
+    They have been in two other places. `.conf/plugins/MiAZNotes` is where the
+    plugin wrote them, and `.conf/MiAZNotes` is where they briefly went when
+    the plugin became core, before the directory got a name that describes
+    what is in it rather than what used to manage it. Both are read, oldest
+    first, because a repository can hold both: one MiAZ knew the first
+    location and a later one knew the second.
+
+    Runs whenever a repository is opened, by the window or by a command, so a
+    repository migrates the first time either one touches it. Returns how many
+    files were moved, which is 0 for a repository with nothing to move: the
+    common case after the first open.
+
+    Nothing is ever overwritten. A file whose name is taken at the target
+    arrives beside the one already there.
+    """
+    log = log or _module_log
+    target = os.path.join(repo_docs, '.conf', NOTES_DIRNAME)
+    moved = 0
+    for names in LEGACY_DIRNAMES:
+        source = os.path.join(repo_docs, '.conf', *names)
+        if os.path.isdir(source):
+            moved += _move_tree(source, target, log)
 
     if moved:
-        log.info(f"Notes migrated out of the plugins directory: {moved} "
-                 f"file(s) now in {target}")
+        log.info(f"Notes migrated: {moved} file(s) now in {target}")
     return moved
 
 

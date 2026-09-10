@@ -270,9 +270,15 @@ def test_a_note_with_a_collision_suffix_still_knows_its_document(store):
 # Notes lived at <repo>/.conf/plugins/MiAZNotes while they were a plugin. They
 # are core now and the path was the last thing still saying otherwise.
 
-def legacy_tree(repo, notes=('DOC-1.pdf_20260101000000.md',), categories=True):
-    """A repository whose notes are still where the plugin left them."""
-    legacy = os.path.join(repo, '.conf', 'plugins', 'MiAZNotes')
+def legacy_tree(repo, notes=('DOC-1.pdf_20260101000000.md',), categories=True,
+                where=('plugins', 'MiAZNotes')):
+    """A repository whose notes are still in one of their old homes.
+
+    Notes have lived in two places before `.conf/notes`: `.conf/plugins/
+    MiAZNotes` while they were a plugin, and `.conf/MiAZNotes` for the short
+    stretch between becoming core and getting a name that is not a plugin's.
+    """
+    legacy = os.path.join(repo, '.conf', *where)
     os.makedirs(os.path.join(legacy, 'data'), exist_ok=True)
     os.makedirs(os.path.join(legacy, 'conf'), exist_ok=True)
     for name in notes:
@@ -288,12 +294,13 @@ def legacy_tree(repo, notes=('DOC-1.pdf_20260101000000.md',), categories=True):
     return legacy
 
 
-def test_notes_live_outside_the_plugins_directory(tmp_path):
-    """The path was the last thing still calling notes a plugin."""
-    from MiAZ.backend.notes import legacy_notes_dir
+def test_notes_live_in_a_directory_named_after_what_they_are(tmp_path):
+    """`.conf/notes`, not a plugin's name."""
+    from MiAZ.backend.notes import legacy_notes_dirs
 
-    assert notes_dir('/repo') == '/repo/.conf/MiAZNotes/data'
-    assert legacy_notes_dir('/repo') == '/repo/.conf/plugins/MiAZNotes/data'
+    assert notes_dir('/repo') == '/repo/.conf/notes/data'
+    assert legacy_notes_dirs('/repo') == ['/repo/.conf/plugins/MiAZNotes/data',
+                                          '/repo/.conf/MiAZNotes/data']
 
 
 def test_migration_moves_the_notes_out_of_the_plugins_directory(tmp_path):
@@ -321,7 +328,7 @@ def test_migration_keeps_everything_the_directory_held(tmp_path):
     migrate_notes(repo, QuietLog())
 
     assert os.path.isfile(os.path.join(notes_dir(repo), 'categories.json'))
-    assert os.path.isfile(os.path.join(repo, '.conf', 'MiAZNotes', 'conf',
+    assert os.path.isfile(os.path.join(repo, '.conf', 'notes', 'conf',
                                        'Plugin-MiAZNotes.json'))
 
 
@@ -463,7 +470,8 @@ def test_the_repository_config_backup_still_carries_the_notes(tmp_path, miaz_env
 
     assert archive and zipfile.is_zipfile(archive), archive
     names = zipfile.ZipFile(archive).namelist()
-    assert any('MiAZNotes' in name and name.endswith('.md') for name in names), \
+    assert any(name.startswith('notes/') and name.endswith('.md')
+               for name in names), \
         f'no note in the configuration backup: {names}'
 
 
@@ -494,3 +502,56 @@ def test_restoring_a_config_backup_brings_the_notes_back(tmp_path, miaz_env,
     assert store.count_for_document('DOC-1.pdf') == 1
     _header, body = store.read(store.list_for_document('DOC-1.pdf')[0])
     assert body.strip() == 'the body'
+
+
+def test_migration_also_moves_the_short_lived_middle_location(tmp_path):
+    """`.conf/MiAZNotes` existed between notes becoming core and the directory
+    getting a name that is not a plugin's. Nobody should be stranded there for
+    having opened MiAZ on the wrong afternoon."""
+    from MiAZ.backend.notes import migrate_notes
+
+    repo = str(tmp_path / 'repo')
+    legacy_tree(repo, where=('MiAZNotes',))
+
+    moved = migrate_notes(repo, QuietLog())
+
+    assert moved >= 1
+    assert os.path.isfile(os.path.join(notes_dir(repo),
+                                       'DOC-1.pdf_20260101000000.md'))
+    assert not os.path.exists(os.path.join(repo, '.conf', 'MiAZNotes'))
+
+
+def test_migration_gathers_notes_from_both_old_homes(tmp_path):
+    """A repository can hold both: opened by a MiAZ that knew the plugin
+    location and then by one that knew the middle one. Everything ends up in
+    the same place and nothing is overwritten on the way."""
+    from MiAZ.backend.notes import migrate_notes
+
+    repo = str(tmp_path / 'repo')
+    legacy_tree(repo, notes=('DOC-1.pdf_20260101000000.md',),
+                where=('plugins', 'MiAZNotes'))
+    legacy_tree(repo, notes=('DOC-2.pdf_20260202000000.md',),
+                where=('MiAZNotes',))
+
+    migrate_notes(repo, QuietLog())
+
+    store = NotesStore(notes_dir(repo), QuietLog())
+    assert store.count_for_document('DOC-1.pdf') == 1
+    assert store.count_for_document('DOC-2.pdf') == 1
+    assert not os.path.exists(os.path.join(repo, '.conf', 'plugins', 'MiAZNotes'))
+    assert not os.path.exists(os.path.join(repo, '.conf', 'MiAZNotes'))
+
+
+def test_the_same_note_in_both_old_homes_survives_twice(tmp_path):
+    """Same name in both, different content. Neither is the one to lose."""
+    from MiAZ.backend.notes import migrate_notes
+
+    repo = str(tmp_path / 'repo')
+    legacy_tree(repo, where=('plugins', 'MiAZNotes'))
+    legacy_tree(repo, where=('MiAZNotes',))
+
+    migrate_notes(repo, QuietLog())
+
+    survivors = [name for name in os.listdir(notes_dir(repo))
+                 if name.startswith('DOC-1.pdf_')]
+    assert len(survivors) == 2, f'a note was lost: {survivors}'
