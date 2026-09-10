@@ -5,7 +5,6 @@
 
 import os
 import sys
-import argparse
 import logging
 import signal
 import locale
@@ -332,10 +331,35 @@ def cli_commands():
 _CLI_COMMANDS = None
 
 
+def build_parser():
+    """The parser that answers `miaz --help`.
+
+    Every command the command line takes is in it, plugin commands included,
+    because somebody asking what MiAZ accepts is asking about all of them. It
+    used to know only --version, so `miaz --help` listed two options and no
+    commands, and `miaz search --help` was the only place they were written
+    down: readable once you knew the command existed, which is the thing the
+    help was supposed to tell you.
+
+    The commands come from the console parser rather than a second list, so a
+    plugin that contributes one is in this help without doing anything else.
+    """
+    from MiAZ.frontend.console.cli import build_parser as build_console_parser
+    from MiAZ.frontend.console.cli import plugin_search_paths
+    parser = build_console_parser(plugin_search_paths(ENV))
+    parser.description = ENV['APP']['description']
+    parser.add_argument('--version', action='version',
+                        version=ENV['APP']['VERSION'],
+                        help='Show version number and exit.')
+    parser.epilog = ("Run 'miaz COMMAND --help' for what a command takes. "
+                     "With no command, MiAZ opens its window.")
+    return parser
+
+
 def parse_arguments():
-    # Subcommands belong to the console parser (frontend/console/cli.py). This
-    # one only knows the options the window takes and would reject 'search' as
-    # an unrecognised argument before run() ever sees it.
+    # A command is parsed by the console parser, in frontend/console/cli.py,
+    # once run() has dispatched to it. This is the other invocation: the
+    # window, --version, --help, or a mistake.
     if is_console_run(sys.argv):
         # Silence here rather than in main(): the environment dump and the
         # startup banner are logged while this module is imported, long before
@@ -345,9 +369,13 @@ def parse_arguments():
             set_console_level(logging.WARNING)
         return None
 
-    parser = argparse.ArgumentParser(description=ENV['APP']['description'])
-    parser.add_argument('--version', action='version', version=ENV['APP']['VERSION'], help='Show version number and exit.')
-    return parser.parse_args()
+    if len(sys.argv) == 1:
+        # The desktop launcher, and `miaz` typed on its own. There is no
+        # argument to parse, and building the parser reads every plugin file
+        # to list the commands, which is work the window does not need.
+        return None
+
+    return build_parser().parse_args()
 
 
 if __name__ == "__main__":

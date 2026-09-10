@@ -9,6 +9,9 @@ flag either sets a DocumentQuery field or it is a mistake.
 
 import io
 import json as jsonlib
+import os
+import subprocess
+import sys
 from datetime import date as dtdate
 
 import gi
@@ -504,3 +507,76 @@ def test_the_sentinels_are_read_whatever_their_case():
 def test_an_ordinary_code_is_still_upper_cased():
     query = build_query(parse(['search', '--country', 'es']), util())
     assert query.country == 'ES'
+
+
+# ---------------------------------------------------------------------------
+# miaz --help
+# ---------------------------------------------------------------------------
+
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+
+def run_miaz(args, home):
+    """The entry point as a user runs it.
+
+    A subprocess because MiAZ.miaz is the entry point: it reads the toolkit
+    versions and the environment while it is imported, and --help has to work
+    before any of that matters. HOME is a throwaway, so the per-user plugin
+    directory is missing, which is the state of a machine that never installed
+    a plugin.
+    """
+    env = {'PATH': os.environ.get('PATH', '/usr/bin:/bin'),
+           'HOME': str(home), 'PYTHONPATH': ROOT, 'LC_ALL': 'C'}
+    for name in ('DISPLAY', 'WAYLAND_DISPLAY', 'XDG_RUNTIME_DIR'):
+        if name in os.environ:
+            env[name] = os.environ[name]
+    return subprocess.run([sys.executable, '-m', 'MiAZ.miaz'] + args,
+                          cwd=ROOT, env=env, capture_output=True,
+                          text=True, timeout=120)
+
+
+def test_the_help_lists_every_command(tmp_path):
+    """It listed --version and nothing else, so the commands were readable
+    only by somebody who already knew their names."""
+    result = run_miaz(['--help'], tmp_path)
+    assert result.returncode == 0, result.stderr
+    for command in COMMANDS:
+        assert command in result.stdout, result.stdout
+
+
+def test_the_help_lists_a_command_a_plugin_contributes(tmp_path):
+    """MiAZOCR declares `ocr`. A plugin command is in the help without the
+    entry point holding a list of its own."""
+    result = run_miaz(['--help'], tmp_path)
+    assert 'ocr' in result.stdout, result.stdout
+
+
+def test_the_help_says_where_a_command_documents_itself(tmp_path):
+    """The flags of a command are under that command, and the top level has to
+    say so, or the list of names is a dead end."""
+    result = run_miaz(['--help'], tmp_path)
+    assert 'miaz COMMAND --help' in result.stdout, result.stdout
+
+
+def test_the_help_still_offers_the_window_options(tmp_path):
+    result = run_miaz(['--help'], tmp_path)
+    assert '--version' in result.stdout, result.stdout
+
+
+def test_the_help_says_nothing_about_a_missing_plugin_directory(tmp_path):
+    """A machine with no plugin installed for this user has no per-user plugin
+    directory, and that is not something to report over the help."""
+    result = run_miaz(['--help'], tmp_path)
+    assert 'Plugin directory does not exist' not in result.stderr, result.stderr
+
+
+def test_the_version_is_still_its_own_option(tmp_path):
+    result = run_miaz(['--version'], tmp_path)
+    assert result.returncode == 0, result.stderr
+    assert result.stdout.strip(), 'no version printed'
+
+
+def test_an_unknown_option_is_refused_with_the_commands(tmp_path):
+    result = run_miaz(['--nonsense'], tmp_path)
+    assert result.returncode == 2
+    assert 'usage: miaz' in result.stderr, result.stderr

@@ -422,7 +422,11 @@ class MiAZPluginCore(GObject.GObject):
     def add_search_path(self, path):
         """Register a directory of plugin directories with the engine."""
         if not os.path.exists(path):
-            self.log.warning(f"Plugin directory does not exist: {path}")
+            # Normal, not a fault: the per-user plugin directory is only there
+            # once a plugin has been installed into it. It was a warning, and
+            # `miaz --help` prints the commands plugins contribute, so anybody
+            # who never installed one got that line above their help.
+            self.log.debug(f"Plugin directory does not exist: {path}")
             return False
         if path in self._search_paths:
             return True
