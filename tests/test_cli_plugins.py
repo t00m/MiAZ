@@ -27,7 +27,8 @@ from MiAZ.backend.plugins import discover_commands
 from MiAZ.frontend.console.cli import build_parser, known_commands, main
 
 
-def make_plugin(root, module='ocr', command_lines=('Command-ocr=Read a document',),
+def make_plugin(root, module='fakeplug',
+                command_lines=('Command-fakeplug=Read a document',),
                 body=None):
     """Write a plugin directory that looks like the ones MiAZ ships."""
     plugin_dir = root / module
@@ -50,7 +51,7 @@ def make_plugin(root, module='ocr', command_lines=('Command-ocr=Read a document'
             f"    'Name': 'MiAZ{module.upper()}',\n"
             "    'Description': 'A plugin',\n"
             "    'Operations': [{\n"
-            "        'name': 'ocr',\n"
+            f"        'name': '{module}',\n"
             "        'help': 'Read a document',\n"
             "        'run': 'run_ocr',\n"
             "        'params': [\n"
@@ -73,9 +74,9 @@ def test_a_command_declared_in_a_plugin_file_is_discovered(tmp_path):
 
     commands = discover_commands([str(tmp_path)])
 
-    assert 'ocr' in commands
-    assert commands['ocr']['help'] == 'Read a document'
-    assert commands['ocr']['module'] == 'ocr'
+    assert 'fakeplug' in commands
+    assert commands['fakeplug']['help'] == 'Read a document'
+    assert commands['fakeplug']['module'] == 'fakeplug'
 
 
 def test_discovery_does_not_import_the_plugin(tmp_path):
@@ -86,7 +87,7 @@ def test_discovery_does_not_import_the_plugin(tmp_path):
     """
     make_plugin(tmp_path, body='this is not python(((\n')
 
-    assert 'ocr' in discover_commands([str(tmp_path)])
+    assert 'fakeplug' in discover_commands([str(tmp_path)])
 
 
 def test_a_plugin_that_declares_no_command_contributes_none(tmp_path):
@@ -110,7 +111,7 @@ def test_plugin_commands_join_the_known_commands(tmp_path):
 
     commands = known_commands([str(tmp_path)])
 
-    assert 'ocr' in commands
+    assert 'fakeplug' in commands
     assert 'search' in commands, 'the built-in commands must survive'
     assert 'repos' in commands
 
@@ -127,9 +128,9 @@ def test_a_plugin_command_gets_its_declared_flags(tmp_path):
     make_plugin(tmp_path)
 
     parser = build_parser([str(tmp_path)])
-    args = parser.parse_args(['ocr', 'DOC-1', '--language', 'spa'])
+    args = parser.parse_args(['fakeplug', 'DOC-1', '--language', 'spa'])
 
-    assert args.command == 'ocr'
+    assert args.command == 'fakeplug'
     assert args.document == 'DOC-1'
     assert args.language == 'spa'
 
@@ -156,7 +157,7 @@ def test_running_a_plugin_command_calls_its_handler(tmp_path, miaz_env,
     register_repo(miaz_env, 'Home', make_repo('Home'), current=True)
     stdout, stderr = io.StringIO(), io.StringIO()
 
-    code = main(['ocr', 'DOC-1', '--language', 'spa'], stdout, stderr,
+    code = main(['fakeplug', 'DOC-1', '--language', 'spa'], stdout, stderr,
                 env=with_plugins(miaz_env, plugins))
 
     assert code == 0, stderr.getvalue()

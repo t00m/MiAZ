@@ -35,6 +35,8 @@ from MiAZ.backend.plugins import (  # noqa: F401
     get_plugin_attributes,
     normalise_menu_entries,
     parse_operations,
+    plugin_config_dir,
+    plugin_data_dir,
     plugin_categories,
     plugin_version,
     validate_category,
@@ -417,11 +419,11 @@ class MiAZPlugin(GObject.GObject):
 
     def get_config_dir(self):
         repository = self.app.get_service('repo')
-        return os.path.join(repository.docs, '.conf', 'plugins', self.name, 'conf')
+        return plugin_config_dir(repository.docs, self.name)
 
     def get_data_dir(self):
         repository = self.app.get_service('repo')
-        return os.path.join(repository.docs, '.conf', 'plugins', self.name, 'data')
+        return plugin_data_dir(repository.docs, self.name)
 
     def get_data_file(self):
         data_dir = self.get_data_dir()

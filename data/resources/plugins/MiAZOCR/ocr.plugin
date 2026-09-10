@@ -11,3 +11,4 @@ Category=Documents
 Subcategory=Annotation
 Dependencies=MiAZNotes
 MenuEntry-extract=Extract text (OCR)…
+Command-ocr=Extract text from documents with OCR and save it as a note

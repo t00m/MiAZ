@@ -254,3 +254,77 @@ def test_the_desktop_plugin_system_still_exports_what_the_app_imports():
                  'plugin_version', 'normalise_menu_entries', 'plugin_categories',
                  'validate_category', 'PLUGIN_DEFAULT_ICON'):
         assert hasattr(pluginsystem, name), f"pluginsystem lost {name}"
+
+
+def test_a_plugin_path_is_defined_in_one_place():
+    """The desktop helper and the command line have to agree on where a
+    plugin's notes and settings live, or `miaz ocr` writes a note the window
+    never shows."""
+    from MiAZ.backend.plugins import plugin_config_dir, plugin_data_dir
+
+    assert plugin_data_dir('/repo', 'MiAZOCR') == \
+        '/repo/.conf/plugins/MiAZOCR/data'
+    assert plugin_config_dir('/repo', 'MiAZOCR') == \
+        '/repo/.conf/plugins/MiAZOCR/conf'
+
+
+def test_the_desktop_plugin_helper_uses_those_same_paths():
+    """Read off MiAZPlugin rather than duplicated here, so the two cannot
+    drift apart without this failing."""
+    from MiAZ.backend.plugins import plugin_data_dir
+    from MiAZ.frontend.desktop.services.pluginsystem import MiAZPlugin
+
+    class OneRepository:
+        docs = '/repo'
+
+        def get_service(self, name):
+            return self if name == 'repo' else None
+
+    helper = MiAZPlugin.__new__(MiAZPlugin)
+    helper.app = OneRepository()
+    helper.name = 'MiAZOCR'
+
+    assert helper.get_data_dir() == plugin_data_dir('/repo', 'MiAZOCR')
+    assert helper.get_config_dir().endswith('/MiAZOCR/conf')
+
+
+def test_a_parameter_can_take_more_than_one_value():
+    """The menu entry runs on the selection, which is usually several
+    documents. The command has to be able to say the same thing."""
+    from MiAZ.backend.plugins import parse_operations
+
+    operation = parse_operations({
+        'Operations': [{
+            'name': 'ocr',
+            'run': 'run_ocr',
+            'params': [{'name': 'documents', 'positional': True,
+                        'multiple': True}],
+        }],
+    }, owner='ocr')[0]
+
+    parser = argparse.ArgumentParser(prog='miaz ocr')
+    operation.add_arguments(parser)
+
+    assert parser.parse_args(['A.pdf', 'B.pdf']).documents == ['A.pdf', 'B.pdf']
+    assert parser.parse_args(['A.pdf']).documents == ['A.pdf']
+
+
+def test_a_multiple_parameter_still_wants_at_least_one_value():
+    """`miaz ocr` with no document is a mistake, not a request to OCR the
+    whole repository."""
+    from MiAZ.backend.plugins import parse_operations
+
+    operation = parse_operations({
+        'Operations': [{
+            'name': 'ocr',
+            'run': 'run_ocr',
+            'params': [{'name': 'documents', 'positional': True,
+                        'multiple': True}],
+        }],
+    }, owner='ocr')[0]
+
+    parser = argparse.ArgumentParser(prog='miaz ocr')
+    operation.add_arguments(parser)
+
+    with pytest.raises(SystemExit):
+        parser.parse_args([])

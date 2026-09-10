@@ -120,6 +120,21 @@ def validate_category(category: str, subcategory: str):
 PLUGIN_DEFAULT_ICON = 'io.github.t00m.MiAZ-res-plugins'
 
 
+def plugin_config_dir(repo_docs: str, name: str) -> str:
+    """Where a plugin keeps its settings for one repository.
+
+    Defined here rather than only on the desktop helper because the command
+    line needs the same answer: a note written by `miaz ocr` that lands
+    somewhere the window does not look is worse than no note.
+    """
+    return os.path.join(repo_docs, '.conf', 'plugins', name, 'conf')
+
+
+def plugin_data_dir(repo_docs: str, name: str) -> str:
+    """Where a plugin keeps its data for one repository."""
+    return os.path.join(repo_docs, '.conf', 'plugins', name, 'data')
+
+
 def plugin_version(info, app_version: str) -> str:
     """The version to show for a plugin.
 
@@ -206,7 +221,7 @@ class MiAZParam:
     """
 
     def __init__(self, name, help='', default=None, flag=False,
-                 positional=False, choices=None, type='str'):
+                 positional=False, choices=None, type='str', multiple=False):
         self.name = name
         self.help = help
         self.default = default
@@ -214,6 +229,7 @@ class MiAZParam:
         self.positional = positional
         self.choices = list(choices) if choices else None
         self.type = type
+        self.multiple = multiple
 
     @classmethod
     def from_dict(cls, data):
@@ -223,13 +239,19 @@ class MiAZParam:
                    flag=bool(data.get('flag', False)),
                    positional=bool(data.get('positional', False)),
                    choices=data.get('choices'),
-                   type=data.get('type', 'str'))
+                   type=data.get('type', 'str'),
+                   multiple=bool(data.get('multiple', False)))
 
     def add_to(self, parser):
         """Add this parameter to an argparse parser."""
         if self.positional:
+            # A menu entry acts on the selection, which is usually more than
+            # one document, so a command has to be able to name more than one.
+            # '+' rather than '*': no document named is a mistake, not a
+            # request to process the whole repository.
             parser.add_argument(self.name, help=self.help or None,
                                 choices=self.choices,
+                                nargs='+' if self.multiple else None,
                                 type=PARAM_TYPES.get(self.type, str))
             return
 
