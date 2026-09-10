@@ -23,6 +23,7 @@ import json
 import os
 import shutil
 import zipfile
+from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import Dict, List, Tuple
 
@@ -142,6 +143,58 @@ NOTE_EXTENSION = '.md'
 FRONTMATTER_DELIMITER = '---'
 
 
+def holds(value: str, wanted: str) -> bool:
+    """True when `wanted` is empty, or is part of `value` whatever the case.
+
+    The one rule every note filter follows. A note is found by part of a word
+    for the same reason a document is: what somebody types is the word they
+    remember, not the value as it is written down.
+    """
+    if not wanted:
+        return True
+    return wanted.upper() in (value or '').upper()
+
+
+@dataclass(frozen=True)
+class Note:
+    """One note, as everything that reads notes sees it.
+
+    The header is a dictionary because that is what the file holds and what
+    the editor writes back. The five keys that mean something are properties,
+    so a caller showing a note does not spell the key names again.
+    """
+
+    path: str
+    document_id: str
+    header: Dict[str, str]
+    body: str
+
+    @property
+    def author(self) -> str:
+        return self.header.get('Author', '')
+
+    @property
+    def category(self) -> str:
+        return self.header.get('Category', '')
+
+    @property
+    def date(self) -> str:
+        return self.header.get('Date', '')
+
+    @property
+    def priority(self) -> str:
+        return self.header.get('Priority', '')
+
+    @property
+    def status(self) -> str:
+        return self.header.get('Status', '')
+
+    @property
+    def summary(self) -> str:
+        """The first line worth reading, which is what a listing shows."""
+        return NotesStore.summary_of(self.body)
+
+
 class NotesStore:
     """File-based store for plain Markdown notes with a YAML-style header."""
 
@@ -225,6 +278,42 @@ class NotesStore:
     def list_all(self) -> List[str]:
         pattern = os.path.join(self.data_dir, f"*{NOTE_EXTENSION}")
         return sorted(glob.glob(pattern))
+
+    def search(self, text: str = '', document: str = '', category: str = '',
+               status: str = '', priority: str = '') -> List[Note]:
+        """Every note that matches all of the filters given, newest first.
+
+        Each filter is part of a value, compared without case. `text` is
+        looked for in the body, in the header values and in the name of the
+        document the note is filed against, so one word finds a note whether
+        it was written in the note or is what the note is about.
+
+        Reads every note, which is what filtering on their contents means. A
+        repository holds tens of them, not thousands, and the all-notes view
+        already reads them all to show them.
+        """
+        found = []
+        for path in self.list_all():
+            header, body = self.read(path)
+            note = Note(path=path, document_id=self.document_id_of(path),
+                        header=header, body=body)
+            if not holds(note.document_id, document):
+                continue
+            if not (holds(note.category, category)
+                    and holds(note.status, status)
+                    and holds(note.priority, priority)):
+                continue
+            if text:
+                haystack = '\n'.join([note.document_id, body,
+                                      *header.values()])
+                if not holds(haystack, text):
+                    continue
+            found.append(note)
+        # By the date the header carries, which is the date a listing shows.
+        # The filename timestamp is the note's creation and stops moving when
+        # a note is edited, which would leave a listing looking unsorted.
+        return sorted(found, key=lambda note: (note.date, note.path),
+                      reverse=True)
 
     def document_id_of(self, note_path: str) -> str:
         name = os.path.basename(note_path)

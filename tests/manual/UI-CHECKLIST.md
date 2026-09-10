@@ -434,6 +434,10 @@ Not the GUI, but it ships in the same package and is new in this release.
 - [ ] **15.9 [N]** `miaz search --sentby <part of a sender's name>` finds that
       sender's documents, by part of the code or part of its description, and a
       second field flag narrows the result further.
+- [ ] **15.10 [N]** `miaz notes` lists the notes newest first, `miaz notes
+      <word>` narrows to the ones holding it, `--document <part of a name>`
+      to the ones on that document, and `--full` prints a note exactly as the
+      window shows it.
 
 ## 16. Packaging
 

@@ -267,6 +267,110 @@ def test_a_note_with_a_collision_suffix_still_knows_its_document(store):
 
 # Migration out of the plugins directory
 #
+# ---------------------------------------------------------------------------
+# search: what the command line and the all-notes view both ask for
+# ---------------------------------------------------------------------------
+
+def raw_note(store, filename, body='', date='2026-01-01 10:00:00',
+             category='General', status='Draft', priority='Medium',
+             author='t00m'):
+    """A note file written by hand, so its date and header are the test's.
+
+    create() stamps the current time into both the filename and the header,
+    which makes an ordering or a date test impossible to write through it.
+    """
+    path = os.path.join(store.data_dir, filename)
+    with open(path, 'w', encoding='utf-8') as handler:
+        handler.write(f"---\nAuthor: {author}\nCategory: {category}\n"
+                      f"Date: {date}\nPriority: {priority}\n"
+                      f"Status: {status}\n---\n\n{body}")
+    return path
+
+
+def test_search_with_no_filter_returns_every_note(store):
+    raw_note(store, 'DOC-1.pdf_20260101100000.md', 'one')
+    raw_note(store, 'DOC-2.pdf_20260101100001.md', 'two')
+    assert len(store.search()) == 2
+
+
+def test_a_found_note_carries_its_document_and_its_header(store):
+    raw_note(store, 'DOC-1.pdf_20260101100000.md', '# Meter reading\n\nrest',
+             category='OCR')
+    note, = store.search()
+    assert note.document_id == 'DOC-1.pdf'
+    assert note.category == 'OCR'
+    assert note.date == '2026-01-01 10:00:00'
+    assert note.summary == 'Meter reading'
+    assert note.body.startswith('# Meter reading')
+
+
+def test_search_finds_text_in_the_body(store):
+    raw_note(store, 'DOC-1.pdf_20260101100000.md', 'the meter was read')
+    raw_note(store, 'DOC-2.pdf_20260101100001.md', 'nothing to do with it')
+    found = store.search('meter')
+    assert [note.document_id for note in found] == ['DOC-1.pdf']
+
+
+def test_search_finds_text_in_a_header_value(store):
+    raw_note(store, 'DOC-1.pdf_20260101100000.md', 'body', author='someone')
+    assert len(store.search('someone')) == 1
+
+
+def test_search_finds_text_in_the_document_it_is_filed_against(store):
+    """A note about a Vattenfall letter need not have the word in it."""
+    raw_note(store, '20260910-DE-HOU_E-VATTENFALL-REQ-X-TVG.pdf_20260101100000.md',
+             'body')
+    assert len(store.search('vattenfall')) == 1
+
+
+def test_search_ignores_case(store):
+    raw_note(store, 'DOC-1.pdf_20260101100000.md', 'The Meter Was Read')
+    assert len(store.search('mEtEr')) == 1
+
+
+def test_search_narrows_by_document(store):
+    raw_note(store, 'DOC-1.pdf_20260101100000.md', 'same words')
+    raw_note(store, 'DOC-2.pdf_20260101100001.md', 'same words')
+    found = store.search(document='DOC-2')
+    assert [note.document_id for note in found] == ['DOC-2.pdf']
+
+
+def test_search_by_document_takes_part_of_the_name(store):
+    raw_note(store, '20260910-DE-HOU_E-VATTENFALL-REQ-X-TVG.pdf_20260101100000.md',
+             'body')
+    assert len(store.search(document='vattenfall')) == 1
+
+
+def test_search_filters_by_the_header_fields(store):
+    raw_note(store, 'DOC-1.pdf_20260101100000.md', 'one',
+             category='OCR', status='Draft', priority='High')
+    raw_note(store, 'DOC-2.pdf_20260101100001.md', 'two',
+             category='General', status='Finished', priority='Medium')
+    assert len(store.search(category='ocr')) == 1
+    assert len(store.search(status='finish')) == 1
+    assert len(store.search(priority='high')) == 1
+
+
+def test_search_combines_its_filters(store):
+    raw_note(store, 'DOC-1.pdf_20260101100000.md', 'meter', category='OCR')
+    raw_note(store, 'DOC-2.pdf_20260101100001.md', 'meter', category='General')
+    found = store.search('meter', category='OCR')
+    assert [note.document_id for note in found] == ['DOC-1.pdf']
+
+
+def test_search_returns_the_newest_note_first(store):
+    raw_note(store, 'DOC-1.pdf_20260101100000.md', 'older',
+             date='2026-01-01 10:00:00')
+    raw_note(store, 'DOC-2.pdf_20260301100000.md', 'newer',
+             date='2026-03-01 09:00:00')
+    assert [note.body.strip() for note in store.search()] == ['newer', 'older']
+
+
+def test_search_finding_nothing_is_an_empty_list(store):
+    raw_note(store, 'DOC-1.pdf_20260101100000.md', 'body')
+    assert store.search('nothing like it') == []
+
+
 # Notes lived at <repo>/.conf/plugins/MiAZNotes while they were a plugin. They
 # are core now and the path was the last thing still saying otherwise.
 

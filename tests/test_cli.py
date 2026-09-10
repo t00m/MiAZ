@@ -24,9 +24,10 @@ from MiAZ.backend.models import MiAZItem
 from MiAZ.backend.query import ANY, DATE_RANGE, NONE, DocumentQuery
 from MiAZ.backend.util import MiAZUtil
 from MiAZ.frontend.console.app import MiAZConsoleApp
+from MiAZ.backend.notes import notes_dir
 from MiAZ.frontend.console.cli import (COMMANDS, UsageError, as_record,
-                                       build_parser, build_query, cmd_repos,
-                                       cmd_search, main, render)
+                                       build_parser, build_query, cmd_notes,
+                                       cmd_repos, cmd_search, main, render)
 
 
 class NoServices:
@@ -313,7 +314,7 @@ def test_repos_with_none_configured(miaz_env):
 # ---------------------------------------------------------------------------
 
 def test_commands_are_the_ones_the_parser_knows():
-    assert COMMANDS == {'search', 'repos'}
+    assert COMMANDS == {'search', 'repos', 'notes'}
 
 
 def test_main_runs_a_search(miaz_env, make_repo, register_repo):
@@ -628,3 +629,153 @@ def test_an_unknown_option_is_refused_with_the_commands(tmp_path):
     result = run_miaz(['--nonsense'], tmp_path)
     assert result.returncode == 2
     assert 'usage: miaz' in result.stderr, result.stderr
+
+
+# ---------------------------------------------------------------------------
+# miaz notes
+# ---------------------------------------------------------------------------
+
+NOTED = '20260505-ES-HOU-ACME-INV-electricity-JOHNDOE.pdf'
+OTHER = '20260612-ES-FIN-BANKX-INV-mortgage-JOHNDOE.pdf'
+
+
+def write_note(repo, document_id, stamp, body, category='General',
+               status='Draft', priority='Medium', date='2026-01-01 10:00:00'):
+    data = notes_dir(repo)
+    os.makedirs(data, exist_ok=True)
+    path = os.path.join(data, f'{document_id}_{stamp}.md')
+    with open(path, 'w', encoding='utf-8') as handler:
+        handler.write(f'---\nAuthor: t00m\nCategory: {category}\n'
+                      f'Date: {date}\nPriority: {priority}\n'
+                      f'Status: {status}\n---\n\n{body}')
+    return path
+
+
+def run_notes(miaz_env, make_repo, register_repo, argv, notes=()):
+    """A one-repository app holding these notes, with `miaz notes` run on it."""
+    repo = make_repo('Work', DOCS)
+    for note in notes:
+        write_note(repo, *note[:3], **(note[3] if len(note) > 3 else {}))
+    register_repo(miaz_env, 'Work', repo, current=True)
+    app = MiAZConsoleApp(miaz_env)
+    app.open_repository(None)
+    out, err = io.StringIO(), io.StringIO()
+    code = cmd_notes(app, build_parser().parse_args(argv), out, err)
+    return code, out.getvalue(), err.getvalue()
+
+
+BOTH_NOTES = (
+    (NOTED, '20260101100000', 'the meter was read', {'category': 'OCR',
+                                                     'date': '2026-01-01 10:00:00'}),
+    (OTHER, '20260301100000', 'call the bank', {'status': 'Finished',
+                                                'date': '2026-03-01 09:00:00'}),
+)
+
+
+def test_notes_lists_every_note_newest_first(miaz_env, make_repo, register_repo):
+    code, out, _err = run_notes(miaz_env, make_repo, register_repo,
+                                ['notes'], notes=BOTH_NOTES)
+    assert code == 0
+    lines = out.splitlines()
+    assert len(lines) == 2
+    assert 'call the bank' in lines[0]
+    assert 'the meter was read' in lines[1]
+
+
+def test_a_listed_note_says_which_document_it_belongs_to(miaz_env, make_repo,
+                                                         register_repo):
+    code, out, _err = run_notes(miaz_env, make_repo, register_repo,
+                                ['notes'], notes=BOTH_NOTES)
+    assert code == 0
+    assert NOTED in out
+
+
+def test_notes_narrows_by_text(miaz_env, make_repo, register_repo):
+    code, out, _err = run_notes(miaz_env, make_repo, register_repo,
+                                ['notes', 'meter'], notes=BOTH_NOTES)
+    assert code == 0
+    assert 'the meter was read' in out
+    assert 'call the bank' not in out
+
+
+def test_notes_narrows_by_document(miaz_env, make_repo, register_repo):
+    """Part of the document name, the way the search field flags take one."""
+    code, out, _err = run_notes(miaz_env, make_repo, register_repo,
+                                ['notes', '--document', 'bankx'],
+                                notes=BOTH_NOTES)
+    assert code == 0
+    assert 'call the bank' in out
+    assert 'the meter was read' not in out
+
+
+def test_notes_narrows_by_the_header_fields(miaz_env, make_repo, register_repo):
+    for flag, value, wanted in (('--category', 'ocr', 'the meter was read'),
+                                ('--status', 'finish', 'call the bank'),
+                                ('--priority', 'medium', None)):
+        code, out, _err = run_notes(miaz_env, make_repo, register_repo,
+                                    ['notes', flag, value], notes=BOTH_NOTES)
+        assert code == 0
+        if wanted:
+            assert wanted in out
+            assert len(out.splitlines()) == 1
+
+
+def test_notes_full_prints_the_note_as_the_file_holds_it(miaz_env, make_repo,
+                                                         register_repo):
+    code, out, _err = run_notes(miaz_env, make_repo, register_repo,
+                                ['notes', 'meter', '--full'], notes=BOTH_NOTES)
+    assert code == 0
+    path = out.splitlines()[0]
+    with open(path, encoding='utf-8') as handler:
+        assert handler.read().strip() in out
+    assert 'Category: OCR' in out
+
+
+def test_notes_json_carries_the_body(miaz_env, make_repo, register_repo):
+    code, out, _err = run_notes(miaz_env, make_repo, register_repo,
+                                ['notes', '--json'], notes=BOTH_NOTES)
+    assert code == 0
+    records = jsonlib.loads(out)
+    assert len(records) == 2
+    assert records[0]['document'] == OTHER
+    assert 'call the bank' in records[0]['body']
+    assert records[0]['category'] == 'General'
+    assert records[0]['path'].endswith('.md')
+
+
+def test_notes_long_prints_a_table(miaz_env, make_repo, register_repo):
+    code, out, _err = run_notes(miaz_env, make_repo, register_repo,
+                                ['notes', '--long'], notes=BOTH_NOTES)
+    assert code == 0
+    assert out.splitlines()[0].split() == ['DATE', 'DOCUMENT', 'CATEGORY',
+                                           'PRIORITY', 'STATUS', 'SUMMARY']
+
+
+def test_notes_limit_cuts_the_list(miaz_env, make_repo, register_repo):
+    code, out, _err = run_notes(miaz_env, make_repo, register_repo,
+                                ['notes', '--limit', '1'], notes=BOTH_NOTES)
+    assert code == 0
+    assert len(out.splitlines()) == 1
+
+
+def test_notes_with_nothing_matching_exits_1(miaz_env, make_repo, register_repo):
+    code, out, _err = run_notes(miaz_env, make_repo, register_repo,
+                                ['notes', 'nothinglikeit'], notes=BOTH_NOTES)
+    assert code == 1
+    assert out == ''
+
+
+def test_notes_says_when_the_repository_has_none(miaz_env, make_repo,
+                                                 register_repo):
+    """Silence reads as a broken command. An empty repository is not that."""
+    code, out, err = run_notes(miaz_env, make_repo, register_repo, ['notes'])
+    assert code == 1
+    assert out == ''
+    assert 'no notes' in err.lower()
+
+
+def test_notes_refuses_a_limit_below_one(miaz_env, make_repo, register_repo):
+    code, _out, err = run_notes(miaz_env, make_repo, register_repo,
+                                ['notes', '--limit', '0'], notes=BOTH_NOTES)
+    assert code == 2
+    assert '--limit' in err

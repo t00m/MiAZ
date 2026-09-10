@@ -11,7 +11,8 @@ import logging
 from datetime import datetime
 from gettext import gettext as _
 
-from MiAZ.backend.log import debug_requested, set_console_level
+from MiAZ.backend.log import MiAZLog, debug_requested, set_console_level
+from MiAZ.backend.notes import NotesStore, notes_dir
 from MiAZ.backend.plugins import (MiAZPluginCore, discover_commands,
                                   parse_operations)
 from MiAZ.backend.query import (ANY, DATE_PRESET_ALL, DATE_PRESETS, DATE_RANGE,
@@ -65,9 +66,10 @@ def _field_value(raw):
 def validate_search_args(args):
     """The flags build_query never sees, because they are not query fields.
 
-    --limit is the only one. Left unchecked, --limit -1 sliced items[:-1] and
-    quietly dropped the newest document, which reads as a search that lies
-    rather than as a typo.
+    --limit is the only one, and `miaz notes` takes it too, so both commands
+    check it here. Left unchecked, --limit -1 sliced items[:-1] and quietly
+    dropped the newest document, which reads as a search that lies rather
+    than as a typo.
     """
     if args.limit is not None and args.limit < 1:
         raise UsageError(
@@ -151,6 +153,21 @@ def as_record(item):
     }
 
 
+def write_table(columns, rows, stream):
+    """An aligned table: the column titles, then the rows, padded to fit.
+
+    Shared by the two commands that print one, so a column is added by naming
+    it rather than by writing the padding again.
+    """
+    lines = [[title for title, _attr in columns]] + rows
+    widths = [max(len(line[column]) for line in lines)
+              for column in range(len(columns))]
+    for line in lines:
+        text = '  '.join(value.ljust(widths[column])
+                         for column, value in enumerate(line))
+        stream.write(f'{text.rstrip()}\n')
+
+
 def render(items, args, stream):
     """Write the results. Filenames by default, a table or JSON on request."""
     if getattr(args, 'json', False):
@@ -163,14 +180,9 @@ def render(items, args, stream):
             stream.write(f'{item.id}\n')
         return
 
-    rows = [[title for title, _attr in COLUMNS]]
-    rows += [[str(getattr(item, attr) or '') for _title, attr in COLUMNS]
-             for item in items]
-    widths = [max(len(row[column]) for row in rows) for column in range(len(COLUMNS))]
-    for row in rows:
-        line = '  '.join(value.ljust(widths[column])
-                         for column, value in enumerate(row))
-        stream.write(f'{line.rstrip()}\n')
+    rows = [[str(getattr(item, attr) or '') for _title, attr in COLUMNS]
+            for item in items]
+    write_table(COLUMNS, rows, stream)
 
 
 def cmd_search(app, args, stdout, stderr):
@@ -232,6 +244,92 @@ def cmd_repos(app, args, stdout, stderr):
     for name, entry in sorted(repos.items()):
         marker = '*' if name == current else ' '
         stdout.write(f'{name.ljust(width)} {marker} {path_of(entry)}\n')
+    return 0
+
+
+NOTE_COLUMNS = (
+    ('DATE', 'date'),
+    ('DOCUMENT', 'document_id'),
+    ('CATEGORY', 'category'),
+    ('PRIORITY', 'priority'),
+    ('STATUS', 'status'),
+    ('SUMMARY', 'summary'),
+)
+
+
+def as_note_record(note):
+    """The JSON shape of a note. The body is in it: a note is its text."""
+    return {
+        'path': note.path,
+        'document': note.document_id,
+        'date': note.date,
+        'author': note.author,
+        'category': note.category,
+        'priority': note.priority,
+        'status': note.status,
+        'summary': note.summary,
+        'body': note.body,
+    }
+
+
+def render_notes(notes, store, args, stream):
+    """Write the notes found. One line each, or the whole of them on request."""
+    if getattr(args, 'json', False):
+        json.dump([as_note_record(note) for note in notes], stream, indent=2)
+        stream.write('\n')
+        return
+
+    if getattr(args, 'full', False):
+        for note in notes:
+            # The note as the file holds it: the header, a blank line, the
+            # body. serialize_header and this blank line are what _write puts
+            # in the file, so what is printed is what is stored.
+            stream.write(f'{note.path}\n\n')
+            stream.write(store.serialize_header(note.header))
+            stream.write(f'\n{note.body.rstrip()}\n\n')
+        return
+
+    if getattr(args, 'long', False):
+        rows = [[str(getattr(note, attr) or '') for _title, attr in NOTE_COLUMNS]
+                for note in notes]
+        write_table(NOTE_COLUMNS, rows, stream)
+        return
+
+    for note in notes:
+        stream.write(f'{note.date}  {note.document_id}  {note.summary}\n')
+
+
+def cmd_notes(app, args, stdout, stderr):
+    """Read the notes filed against the documents.
+
+    0 with results, 1 without, 2 when the flags are wrong. It reads and does
+    not write: creating and deleting notes is the window's, and MiAZOCR files
+    its own through the same store.
+    """
+    try:
+        validate_search_args(args)
+    except UsageError as error:
+        stderr.write(f'{error}\n')
+        return 2
+
+    repository = app.get_service('repo')
+    store = NotesStore(notes_dir(repository.docs), MiAZLog('MiAZ.CLI.Notes'))
+    notes = store.search(text=args.text or '',
+                         document=args.document or '',
+                         category=args.category or '',
+                         status=args.status or '',
+                         priority=args.priority or '')
+    if args.limit:
+        notes = notes[:args.limit]
+
+    if not notes:
+        # A repository with no notes at all and a filter that matched none are
+        # different answers, and silence reads as a broken command.
+        if not store.list_all():
+            stderr.write(_('this repository has no notes\n'))
+        return 1
+
+    render_notes(notes, store, args, stdout)
     return 0
 
 
@@ -358,6 +456,28 @@ def build_parser(search_paths=None):
     repos = commands.add_parser('repos', help=_('List repositories'))
     repos.add_argument('--json', action='store_true', help=_('JSON records'))
 
+    notes = commands.add_parser('notes', help=_('Read the notes on documents'))
+    notes.add_argument('text', nargs='?',
+                       help=_('Free text to look for in the note, its header '
+                              'or the document it is filed against'))
+    notes.add_argument('--document', metavar='TEXT',
+                       help=_('Only notes on documents whose name holds this'))
+    notes.add_argument('--category', metavar='TEXT',
+                       help=_('Only notes whose category holds this'))
+    notes.add_argument('--status', metavar='TEXT',
+                       help=_('Only notes whose status holds this'))
+    notes.add_argument('--priority', metavar='TEXT',
+                       help=_('Only notes whose priority holds this'))
+    notes.add_argument('--full', action='store_true',
+                       help=_('Print each note in full, header and body'))
+    notes.add_argument('--limit', type=int, metavar='N',
+                       help=_('Show at most N notes, N being 1 or more'))
+    notes.add_argument('--repo', metavar='NAME_OR_PATH',
+                       help=_('Which repository to read'))
+    notes.add_argument('--long', action='store_true',
+                       help=_('Table with the header fields'))
+    notes.add_argument('--json', action='store_true', help=_('JSON records'))
+
     for name, declared in sorted(discover_commands(search_paths).items()):
         if name in HANDLERS:
             # A plugin does not get to shadow `search` or `repos`. Refusing it
@@ -370,7 +490,7 @@ def build_parser(search_paths=None):
 
 # What miaz.py checks the first argument against before choosing the command
 # line over the window.
-HANDLERS = {'search': cmd_search, 'repos': cmd_repos}
+HANDLERS = {'search': cmd_search, 'repos': cmd_repos, 'notes': cmd_notes}
 COMMANDS = frozenset(HANDLERS)
 
 

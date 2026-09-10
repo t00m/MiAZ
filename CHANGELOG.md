@@ -10,6 +10,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **`miaz notes` reads the notes from the terminal.** Notes became core in 0.3 and stayed reachable only through the window, so a note written against a document could not be read over SSH, grepped, or piped anywhere. The command lists them newest first, one line each: the date, the document the note is filed against, and the first line of the note.
+
+  `miaz notes zähler` looks for the text in the body, in the header values and in the name of the document the note belongs to, so one word finds a note whether it was written in it or is what the note is about. `--document`, `--category`, `--status` and `--priority` narrow further, each taking part of a value and ignoring case, the way the search field flags do, and they combine: `miaz notes rechnung --category OCR --status draft` is an and. `--full` prints a note exactly as the file holds it, header and body; `--long` is a table with the header fields; `--json` carries the body, so `jq` can read it. `--limit` and `--repo` work as they do for `miaz search`.
+
+  It reads and does not write. Creating and deleting notes stays with the window, and MiAZOCR files its own through the same store.
+
+  The matching is `NotesStore.search()`, in the backend, next to the store it reads: the command renders what it returns and decides nothing, so the all-notes view can drop its own filtering onto it rather than keeping a second copy.
+
 - **Notes moved to `<repo>/.conf/notes`, and existing repositories migrate themselves.** The old path, `<repo>/.conf/plugins/MiAZNotes`, was the last thing still calling notes a plugin, and the directory is named after what is in it rather than after what used to manage it. `migrate_notes()` runs from `MiAZRepository.load()` rather than at application start, because a command opens a repository too: migrating only when the window starts would leave a repository used from `miaz ocr` on a server writing new notes to the new directory while the old ones sat in the old one, with nothing to say so. It is a no-op once there is nothing to move, which is every open after the first.
 
   Two old locations are read, oldest first: `.conf/plugins/MiAZNotes` from the plugin, and `.conf/MiAZNotes` from the short stretch inside this same release when notes had become core but the directory still carried the plugin's name. A repository can hold both, and everything ends up in one place.
