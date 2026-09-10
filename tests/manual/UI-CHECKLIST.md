@@ -438,6 +438,13 @@ Not the GUI, but it ships in the same package and is new in this release.
       <word>` narrows to the ones holding it, `--document <part of a name>`
       to the ones on that document, and `--full` prints a note exactly as the
       window shows it.
+- [ ] **15.11 [N]** `miaz add <file> <directory>` copies both in, `--recursive`
+      takes the whole tree, the sources stay where they are, and a second file
+      of the same name arrives beside the first rather than replacing it.
+- [ ] **15.12 [N]** `miaz delete <name>` lists what it will delete and asks
+      first; piped, it refuses without `--yes`; a name the repository does not
+      hold deletes nothing; a document named `-----NAME-.pdf` is accepted
+      without any `--` in front of it.
 
 ## 16. Packaging
 

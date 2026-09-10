@@ -25,9 +25,10 @@ from MiAZ.backend.query import ANY, DATE_RANGE, NONE, DocumentQuery
 from MiAZ.backend.util import MiAZUtil
 from MiAZ.frontend.console.app import MiAZConsoleApp
 from MiAZ.backend.notes import notes_dir
-from MiAZ.frontend.console.cli import (COMMANDS, UsageError, as_record,
-                                       build_parser, build_query, cmd_notes,
-                                       cmd_repos, cmd_search, main, render)
+from MiAZ.frontend.console.cli import (COMMANDS, HANDLERS, UsageError,
+                                       as_record, build_parser, build_query,
+                                       cmd_notes, cmd_repos, cmd_search, main,
+                                       render)
 
 
 class NoServices:
@@ -314,7 +315,7 @@ def test_repos_with_none_configured(miaz_env):
 # ---------------------------------------------------------------------------
 
 def test_commands_are_the_ones_the_parser_knows():
-    assert COMMANDS == {'search', 'repos', 'notes'}
+    assert COMMANDS == {'search', 'repos', 'notes', 'add', 'delete'}
 
 
 def test_main_runs_a_search(miaz_env, make_repo, register_repo):
@@ -779,3 +780,255 @@ def test_notes_refuses_a_limit_below_one(miaz_env, make_repo, register_repo):
                                 ['notes', '--limit', '0'], notes=BOTH_NOTES)
     assert code == 2
     assert '--limit' in err
+
+
+# ---------------------------------------------------------------------------
+# miaz add and miaz delete
+# ---------------------------------------------------------------------------
+
+def run_cli(miaz_env, make_repo, register_repo, argv, docs=DOCS):
+    """Open a one-repository app and run whichever command argv names.
+
+    Returns the exit code, what was written to each stream, and the repository
+    path, since these two commands are judged by what is on disk afterwards.
+    """
+    repo = make_repo('Work', docs)
+    register_repo(miaz_env, 'Work', repo, current=True)
+    app = MiAZConsoleApp(miaz_env)
+    app.open_repository(None)
+    # argv can be a callable, for the tests that need the repository path
+    # inside the arguments they pass.
+    args = build_parser().parse_args(argv(repo) if callable(argv) else argv)
+    out, err = io.StringIO(), io.StringIO()
+    code = HANDLERS[args.command](app, args, out, err)
+    return code, out.getvalue(), err.getvalue(), repo
+
+
+class FakeTerminal:
+    """A stdin that says it is a terminal and answers what it was given."""
+
+    def __init__(self, answer):
+        self.answer = answer
+
+    def isatty(self):
+        return True
+
+    def readline(self):
+        return f'{self.answer}\n'
+
+
+def a_file(tmp_path, name, text='document'):
+    path = tmp_path / name
+    path.write_text(text)
+    return str(path)
+
+
+def test_add_copies_a_file_in_under_a_normalized_name(miaz_env, make_repo,
+                                                      register_repo, tmp_path):
+    source = a_file(tmp_path, 'bank statement.pdf')
+    code, out, _err, repo = run_cli(miaz_env, make_repo, register_repo,
+                                    ['add', source])
+    assert code == 0
+    assert out.strip() == '-----BANK_STATEMENT-.pdf'
+    assert os.path.exists(os.path.join(repo, '-----BANK_STATEMENT-.pdf'))
+
+
+def test_add_leaves_the_source_where_it_is(miaz_env, make_repo, register_repo,
+                                           tmp_path):
+    source = a_file(tmp_path, 'invoice.pdf')
+    run_cli(miaz_env, make_repo, register_repo, ['add', source])
+    assert os.path.exists(source)
+
+
+def test_add_takes_a_directory(miaz_env, make_repo, register_repo, tmp_path):
+    os.makedirs(tmp_path / 'inbox' / 'sub')
+    a_file(tmp_path, 'inbox/one.pdf')
+    a_file(tmp_path, 'inbox/two.pdf')
+    a_file(tmp_path, 'inbox/sub/three.pdf')
+
+    code, out, _err, _repo = run_cli(miaz_env, make_repo, register_repo,
+                                     ['add', str(tmp_path / 'inbox')])
+    assert code == 0
+    assert len(out.splitlines()) == 2
+
+
+def test_add_recursive_takes_the_whole_tree(miaz_env, make_repo, register_repo,
+                                            tmp_path):
+    os.makedirs(tmp_path / 'inbox' / 'sub')
+    a_file(tmp_path, 'inbox/one.pdf')
+    a_file(tmp_path, 'inbox/sub/two.pdf')
+
+    code, out, _err, _repo = run_cli(miaz_env, make_repo, register_repo,
+                                     ['add', str(tmp_path / 'inbox'), '--recursive'])
+    assert code == 0
+    assert len(out.splitlines()) == 2
+
+
+def test_add_names_what_it_could_not_take(miaz_env, make_repo, register_repo,
+                                          tmp_path):
+    """A path that is not there is reported, and the rest still arrive."""
+    good = a_file(tmp_path, 'invoice.pdf')
+    missing = str(tmp_path / 'gone.pdf')
+    code, out, err, _repo = run_cli(miaz_env, make_repo, register_repo,
+                                    ['add', missing, good])
+    assert code == 1
+    assert '-----INVOICE-.pdf' in out
+    assert 'gone.pdf' in err
+
+
+def test_add_with_nothing_to_take_says_so(miaz_env, make_repo, register_repo,
+                                          tmp_path):
+    os.makedirs(tmp_path / 'empty')
+    code, out, err, _repo = run_cli(miaz_env, make_repo, register_repo,
+                                    ['add', str(tmp_path / 'empty')])
+    assert code == 1
+    assert out == ''
+    assert err.strip() != ''
+
+
+def test_delete_removes_the_document(miaz_env, make_repo, register_repo):
+    code, out, _err, repo = run_cli(miaz_env, make_repo, register_repo,
+                                    ['delete', DOCS[0], '--yes'])
+    assert code == 0
+    assert DOCS[0] in out
+    assert not os.path.exists(os.path.join(repo, DOCS[0]))
+    assert os.path.exists(os.path.join(repo, DOCS[1]))
+
+
+def test_delete_takes_several_documents(miaz_env, make_repo, register_repo):
+    code, out, _err, repo = run_cli(miaz_env, make_repo, register_repo,
+                                    ['delete', DOCS[0], DOCS[1], '--yes'])
+    assert code == 0
+    assert len(out.splitlines()) == 2
+    assert os.listdir(repo) == ['.conf']
+
+
+def test_delete_refuses_a_document_the_repository_does_not_hold(
+        miaz_env, make_repo, register_repo):
+    """And deletes nothing at all: a typo in a list must not take the
+    documents that were spelled right."""
+    code, _out, err, repo = run_cli(miaz_env, make_repo, register_repo,
+                                    ['delete', DOCS[0], 'nosuch.pdf', '--yes'])
+    assert code == 2
+    assert 'nosuch.pdf' in err
+    assert os.path.exists(os.path.join(repo, DOCS[0]))
+
+
+def test_delete_without_a_terminal_needs_yes(miaz_env, make_repo, register_repo):
+    """In a pipe there is nobody to ask, so it refuses rather than assuming."""
+    code, _out, err, repo = run_cli(miaz_env, make_repo, register_repo,
+                                    ['delete', DOCS[0]])
+    assert code == 2
+    assert '--yes' in err
+    assert os.path.exists(os.path.join(repo, DOCS[0]))
+
+
+def test_delete_asks_on_a_terminal_and_takes_yes(miaz_env, make_repo,
+                                                 register_repo, monkeypatch):
+    monkeypatch.setattr(sys, 'stdin', FakeTerminal('y'))
+    code, _out, err, repo = run_cli(miaz_env, make_repo, register_repo,
+                                    ['delete', DOCS[0]])
+    assert code == 0
+    assert DOCS[0] in err, 'the question has to say what it will delete'
+    assert not os.path.exists(os.path.join(repo, DOCS[0]))
+
+
+def test_delete_asks_on_a_terminal_and_takes_no(miaz_env, make_repo,
+                                                register_repo, monkeypatch):
+    monkeypatch.setattr(sys, 'stdin', FakeTerminal('n'))
+    code, out, _err, repo = run_cli(miaz_env, make_repo, register_repo,
+                                    ['delete', DOCS[0]])
+    assert code == 1
+    assert out == ''
+    assert os.path.exists(os.path.join(repo, DOCS[0]))
+
+
+def test_delete_takes_a_path_inside_the_repository(miaz_env, make_repo,
+                                                   register_repo):
+    """A pipeline gives a name and tab completion gives a path. Both name the
+    same document."""
+    code, _out, _err, repo = run_cli(
+        miaz_env, make_repo, register_repo,
+        lambda repo: ['delete', os.path.join(repo, DOCS[0]), '--yes'])
+    assert code == 0
+    assert not os.path.exists(os.path.join(repo, DOCS[0]))
+
+
+def test_delete_refuses_a_path_outside_the_repository(miaz_env, make_repo,
+                                                      register_repo, tmp_path):
+    """A path somewhere else names a different file that happens to share a
+    name. Deleting the repository's copy of it would be a guess."""
+    outside = a_file(tmp_path, DOCS[0])
+    code, _out, err, repo = run_cli(miaz_env, make_repo, register_repo,
+                                    ['delete', outside, '--yes'])
+    assert code == 2
+    assert os.path.exists(os.path.join(repo, DOCS[0]))
+    assert os.path.exists(outside)
+    assert DOCS[0] in err
+
+
+# A document with no fields yet is named -----CONCEPT-.pdf, and argparse reads
+# a leading dash as an option. These go through main(), which is where the
+# names are folded back in.
+
+PENDING = '-----SCAN-.pdf'
+
+
+def run_main(miaz_env, make_repo, register_repo, argv, docs=DOCS):
+    repo = make_repo('Work', docs)
+    register_repo(miaz_env, 'Work', repo, current=True)
+    out, err = io.StringIO(), io.StringIO()
+    code = main(argv, out, err, env=miaz_env)
+    return code, out.getvalue(), err.getvalue(), repo
+
+
+def test_delete_takes_a_document_whose_name_starts_with_a_dash(
+        miaz_env, make_repo, register_repo):
+    """`miaz search --pending` prints nothing else, and piping that into
+    delete used to fail on every one of them."""
+    code, out, _err, repo = run_main(miaz_env, make_repo, register_repo,
+                                     ['delete', PENDING, '--yes'],
+                                     docs=DOCS + [PENDING])
+    assert code == 0
+    assert PENDING in out
+    assert not os.path.exists(os.path.join(repo, PENDING))
+
+
+def test_a_flag_after_a_dashed_name_is_still_a_flag(miaz_env, make_repo,
+                                                    register_repo):
+    """The `--` argparse understands would have swallowed it."""
+    code, _out, _err, repo = run_main(miaz_env, make_repo, register_repo,
+                                      ['delete', PENDING, '--yes'],
+                                      docs=DOCS + [PENDING])
+    assert code == 0, 'the --yes after the name was read as a document'
+
+
+def test_a_mistyped_flag_is_still_an_error(miaz_env, make_repo, register_repo):
+    with pytest.raises(SystemExit) as exit_info:
+        run_main(miaz_env, make_repo, register_repo,
+                 ['delete', PENDING, '--yess'], docs=DOCS + [PENDING])
+    assert exit_info.value.code == 2
+
+
+def test_a_dashed_name_given_to_a_command_that_takes_none_is_an_error(
+        miaz_env, make_repo, register_repo):
+    with pytest.raises(SystemExit) as exit_info:
+        run_main(miaz_env, make_repo, register_repo, ['search', PENDING])
+    assert exit_info.value.code == 2
+
+
+def test_delete_with_no_document_named_says_so(miaz_env, make_repo,
+                                               register_repo):
+    code, out, err, _repo = run_main(miaz_env, make_repo, register_repo,
+                                     ['delete'])
+    assert code == 2
+    assert out == ''
+    assert err.strip() != ''
+
+
+def test_add_with_no_path_named_says_so(miaz_env, make_repo, register_repo):
+    code, out, err, _repo = run_main(miaz_env, make_repo, register_repo,
+                                     ['add'])
+    assert code == 2
+    assert out == ''
+    assert err.strip() != ''

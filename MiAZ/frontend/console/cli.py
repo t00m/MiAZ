@@ -8,9 +8,12 @@
 import argparse
 import json
 import logging
+import os
+import sys
 from datetime import datetime
 from gettext import gettext as _
 
+from MiAZ.backend import importer
 from MiAZ.backend.log import MiAZLog, debug_requested, set_console_level
 from MiAZ.backend.notes import NotesStore, notes_dir
 from MiAZ.backend.plugins import (MiAZPluginCore, discover_commands,
@@ -247,6 +250,145 @@ def cmd_repos(app, args, stdout, stderr):
     return 0
 
 
+# A document whose fields are still empty is named `-----CONCEPT-.pdf`: five
+# separators and nothing in front of them. No option starts like that.
+EMPTY_FIELDS_PREFIX = '-----'
+
+# Which positional each command means when it is handed one of those names.
+DOCUMENT_ARGUMENTS = {'add': 'paths', 'delete': 'documents'}
+
+
+def parse_arguments(parser, argv):
+    """Parse, letting a document name that starts with a dash be one.
+
+    argparse reads a leading dash as an option, and the documents somebody
+    deletes from a terminal are exactly the ones named `-----SCAN-.pdf`:
+    `miaz search --pending` prints nothing else, and piping that into `miaz
+    delete` handed argparse a list of what looked like unknown flags.
+
+    Such a name goes back into the positional it was meant for. Anything else
+    unrecognised is still an error, so a mistyped flag is still a mistyped
+    flag. A name given this way is read after the ones argparse accepted
+    normally, which changes the order of a mixed list and nothing else.
+    """
+    args, extras = parser.parse_known_args(argv)
+    names = [extra for extra in extras
+             if extra.startswith(EMPTY_FIELDS_PREFIX)]
+    rest = [extra for extra in extras
+            if not extra.startswith(EMPTY_FIELDS_PREFIX)]
+    target = DOCUMENT_ARGUMENTS.get(getattr(args, 'command', None))
+    if rest or (names and target is None):
+        parser.error(_('unrecognized arguments: {arguments}').format(
+            arguments=' '.join(rest + (names if target is None else []))))
+    if names:
+        setattr(args, target, list(getattr(args, target) or []) + names)
+    return args
+
+
+def cmd_add(app, args, stdout, stderr):
+    """Copy files and directories into the repository.
+
+    Prints the repository name each file arrived under, one per line, so the
+    output feeds a script. 0 when everything asked for arrived, 1 when
+    anything did not, and what did not is named on stderr.
+    """
+    repository = app.get_service('repo')
+    util = app.get_service('util')
+
+    if not args.paths:
+        stderr.write(_('name a file or a directory to add\n'))
+        return 2
+
+    paths = importer.expand_paths(args.paths, recursive=args.recursive)
+    if not paths:
+        # An empty directory, or one whose files are all in subdirectories
+        # while --recursive was not given.
+        stderr.write(_('nothing to add\n'))
+        return 1
+
+    imported, failed = importer.import_paths(util, repository.docs, paths)
+    for name in imported:
+        stdout.write(f'{name}\n')
+    for name in failed:
+        stderr.write(_("could not add '{name}'\n").format(name=name))
+    return 1 if failed else 0
+
+
+def repository_document(docs_dir, given):
+    """The path of a named document inside the repository, or None.
+
+    A pipeline gives a name and tab completion gives a path, so both are taken.
+    A path somewhere else is not: it names a different file that happens to
+    share a name, and deleting the repository's copy of it would be a guess.
+    """
+    if os.sep in given:
+        directory = os.path.dirname(os.path.abspath(given))
+        if directory != os.path.normpath(docs_dir):
+            return None
+    path = os.path.join(docs_dir, os.path.basename(given))
+    return path if os.path.isfile(path) else None
+
+
+def ask_to_confirm(question, stream):
+    """Ask on the terminal. None when there is no terminal to ask on."""
+    if not sys.stdin.isatty():
+        return None
+    stream.write(question)
+    answer = sys.stdin.readline().strip().lower()
+    return answer in ('y', 'yes')
+
+
+def cmd_delete(app, args, stdout, stderr):
+    """Delete documents from the repository.
+
+    0 when they were deleted, 1 when the user said no, 2 when a name is not
+    one the repository holds or there is nobody to ask and no --yes. Nothing
+    is deleted unless every name given is a document: a typo in a list must
+    not take the documents that were spelled right.
+    """
+    repository = app.get_service('repo')
+    util = app.get_service('util')
+
+    if not args.documents:
+        stderr.write(_('name a document to delete\n'))
+        return 2
+
+    paths = []
+    unknown = []
+    for given in args.documents:
+        path = repository_document(repository.docs, given)
+        if path is None:
+            unknown.append(given)
+        else:
+            paths.append(path)
+
+    if unknown:
+        for name in unknown:
+            stderr.write(_("'{name}' is not a document in this repository\n")
+                         .format(name=name))
+        stderr.write(_('nothing was deleted\n'))
+        return 2
+
+    if not args.yes:
+        for path in paths:
+            stderr.write(f'{os.path.basename(path)}\n')
+        answer = ask_to_confirm(
+            _('Delete {count} documents? [y/N] ').format(count=len(paths)),
+            stderr)
+        if answer is None:
+            stderr.write(_('nothing was deleted: pass --yes to delete without '
+                           'being asked\n'))
+            return 2
+        if not answer:
+            stderr.write(_('nothing was deleted\n'))
+            return 1
+
+    util.filename_delete(set(paths))
+    for path in paths:
+        stdout.write(f'{os.path.basename(path)}\n')
+    return 0
+
+
 NOTE_COLUMNS = (
     ('DATE', 'date'),
     ('DOCUMENT', 'document_id'),
@@ -456,6 +598,25 @@ def build_parser(search_paths=None):
     repos = commands.add_parser('repos', help=_('List repositories'))
     repos.add_argument('--json', action='store_true', help=_('JSON records'))
 
+    add = commands.add_parser('add', help=_('Add documents to the repository'))
+    add.add_argument('paths', nargs='*', metavar='PATH',
+                     help=_('Files or directories to add'))
+    add.add_argument('--recursive', '-r', action='store_true',
+                     help=_('Take the whole tree of a directory, not only the '
+                            'files directly in it'))
+    add.add_argument('--repo', metavar='NAME_OR_PATH',
+                     help=_('Which repository to add to'))
+
+    delete = commands.add_parser('delete',
+                                 help=_('Delete documents from the repository'))
+    delete.add_argument('documents', nargs='*', metavar='DOCUMENT',
+                        help=_('Document names, as `miaz search` prints them'))
+    delete.add_argument('--yes', '-y', action='store_true',
+                        help=_('Do not ask first. Needed when there is no '
+                               'terminal to ask on'))
+    delete.add_argument('--repo', metavar='NAME_OR_PATH',
+                        help=_('Which repository to delete from'))
+
     notes = commands.add_parser('notes', help=_('Read the notes on documents'))
     notes.add_argument('text', nargs='?',
                        help=_('Free text to look for in the note, its header '
@@ -490,7 +651,8 @@ def build_parser(search_paths=None):
 
 # What miaz.py checks the first argument against before choosing the command
 # line over the window.
-HANDLERS = {'search': cmd_search, 'repos': cmd_repos, 'notes': cmd_notes}
+HANDLERS = {'search': cmd_search, 'repos': cmd_repos, 'notes': cmd_notes,
+            'add': cmd_add, 'delete': cmd_delete}
 COMMANDS = frozenset(HANDLERS)
 
 
@@ -508,7 +670,7 @@ def main(argv, stdout, stderr, env=None):
     # parser. Discovery reads the .plugin files and imports nothing until a
     # plugin command is actually named.
     search_paths = plugin_search_paths(env)
-    args = build_parser(search_paths).parse_args(argv)
+    args = parse_arguments(build_parser(search_paths), argv)
     if not args.command:
         stderr.write(_('usage: miaz [search|repos] ...\n'))
         return 2

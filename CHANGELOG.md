@@ -10,6 +10,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **`miaz add` and `miaz delete` put documents in and take them out.** `miaz add FILE DIR` copies both in under their normalized names, `--recursive` takes a directory's whole tree instead of the files directly in it, and the sources stay where they are, as they do when a file is dropped on the workspace. It prints the repository name each file arrived under, one per line, so the output feeds a script; what could not be taken is named on stderr and the exit code is 1.
+
+  `miaz delete DOCUMENT...` takes the names `miaz search` prints, or paths inside the repository. It lists what it is about to delete and asks, and when there is no terminal to ask on, a pipe or a script, it refuses unless `--yes` is given. A name the repository does not hold stops the whole command: a typo in a list must not take the documents that were spelled right.
+
+  **A document whose name starts with a dash is accepted as a name.** A document with no fields yet is called `-----SCAN-.pdf`, argparse reads the leading dash as an option, and those are exactly the documents somebody deletes from a terminal: `miaz search --pending` prints nothing else. Such a name is folded back into the positional it was meant for, so no `--` is needed and a flag after it is still a flag. Anything else unrecognised is still an error.
+
+  The expansion and the copying moved from the desktop import service to `MiAZ/backend/importer.py`, which has no toolkit in it: the window's Add and `miaz add` are now one operation, tested without a display.
+
+- **Two documents that normalize to the same name no longer overwrite each other.** The import copied over whatever was already there, so two directories each holding a `scan.pdf` left one document in the repository, and `miaz add <tree> --recursive` is where that would have happened by the dozen. The second one arrives as `-----SCAN_2-.pdf`, numbered on the concept field, since the last field is who the document was sent to and a suffix there would invent a recipient. `filename_import` also reports whether the copy happened, instead of announcing an arrival either way: a failed copy used to be counted as imported and reported to the user as one.
+
+  An imported document is uppercased on the way in, too. `filename_normalize` never did that half, so the file landed as `-----bank_statement-.pdf` and the next workspace scan renamed it. There is no workspace scan behind `miaz add`.
+
 - **`miaz notes` reads the notes from the terminal.** Notes became core in 0.3 and stayed reachable only through the window, so a note written against a document could not be read over SSH, grepped, or piped anywhere. The command lists them newest first, one line each: the date, the document the note is filed against, and the first line of the note.
 
   `miaz notes zähler` looks for the text in the body, in the header values and in the name of the document the note belongs to, so one word finds a note whether it was written in it or is what the note is about. `--document`, `--category`, `--status` and `--priority` narrow further, each taking part of a value and ignoring case, the way the search field flags do, and they combine: `miaz notes rechnung --category OCR --status draft` is an and. `--full` prints a note exactly as the file holds it, header and body; `--long` is a table with the header fields; `--json` carries the body, so `jq` can read it. `--limit` and `--repo` work as they do for `miaz search`.

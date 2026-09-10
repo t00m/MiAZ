@@ -743,11 +743,19 @@ class MiAZUtil(GObject.GObject):
                 self.log.error(f"Could not delete {filepath}: {error}")
         self.emit('filename-deleted', filepaths)
 
-    def filename_import(self, source: str, target: str):
+    def filename_import(self, source: str, target: str) -> bool:
         """Import a file into the repository: copy it under the normalized
-        target name, then announce it with filename-added."""
-        self.filename_copy(source, target)
+        target name, then announce it with filename-added.
+
+        True when the file was written. It used to return nothing and announce
+        the arrival either way, so a copy that failed (a source that is gone, a
+        directory with no permission) was counted as imported and reported to
+        the user as one.
+        """
+        if not self.filename_copy(source, target):
+            return False
         self.emit('filename-added', target)
+        return True
 
     def filename_export(self, source: str, target: str) -> bool:
         return self.filename_copy(source, target)
