@@ -10,6 +10,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **`miaz rename` changes the fields of a document name, and `miaz fields` manages the values they may take.** The seven fields of a name could only be edited in the rename dialog, so a document filed from a terminal had to be renamed by hand in the window afterwards.
+
+  ```
+  miaz rename 20260612-ES-FIN-BANKX-INV-MORTGAGE-JOHNDOE.pdf --purpose RCP
+  miaz rename -----SCAN-.pdf --date 20260214 --country DE --group HOU_E \
+              --sentby EON --purpose INV --concept "meter reading" --sentto TVG
+  ```
+
+  Only the fields named change; the rest keep what they have. Values are uppercased, since that is how a repository stores them, and the concept goes through `valid_key`, so `--concept "meter reading"` becomes `METER_READING` rather than three fields. The command prints `old -> new`.
+
+  **A key the repository does not have stops the whole rename.** `exists_used` is the same question the dialog's Rename button asks, and a document is not renamed onto a value nobody chose. Every problem is reported in one go, not one per attempt, and each says how to fix itself: `purpose: 'CTR' is not a purpose this repository has. Add it with: miaz fields purpose --add CTR <description>`. A field nobody has filled in yet reads as "not set" instead, which is what every field of a newly added document is. A date that is not a date, an empty concept and a name the repository already holds are refused the same way, with nothing renamed.
+
+  ```
+  miaz fields                          country, group, sentby, purpose, sentto
+  miaz fields purpose                  the keys, with their descriptions
+  miaz fields purpose --add CTR Contract
+  miaz fields purpose --remove CTR
+  ```
+
+  `--add` writes the key into the available pool and the used one, which is what the dialog's inline "+ Add" does, so a value added from a terminal is the value the window offers; naming a key that is already there corrects its description. `--remove` disables the value for that repository and leaves it in the available pool, the way the window's own remove does, and is refused while documents still carry it, saying how many. `--list` is the explicit form of naming a field on its own, and `--json` gives records.
+
+  The splitting, composing and checking are `MiAZ/backend/rename.py`, which has no toolkit in it and returns what is wrong as data rather than as sentences, so the wording and its translation stay in the frontend.
+
 - **`miaz add` and `miaz delete` put documents in and take them out.** `miaz add FILE DIR` copies both in under their normalized names, `--recursive` takes a directory's whole tree instead of the files directly in it, and the sources stay where they are, as they do when a file is dropped on the workspace. It prints the repository name each file arrived under, one per line, so the output feeds a script; what could not be taken is named on stderr and the exit code is 1.
 
   `miaz delete DOCUMENT...` takes the names `miaz search` prints, or paths inside the repository. It lists what it is about to delete and asks, and when there is no terminal to ask on, a pipe or a script, it refuses unless `--yes` is given. A name the repository does not hold stops the whole command: a typo in a list must not take the documents that were spelled right.

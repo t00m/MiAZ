@@ -315,7 +315,8 @@ def test_repos_with_none_configured(miaz_env):
 # ---------------------------------------------------------------------------
 
 def test_commands_are_the_ones_the_parser_knows():
-    assert COMMANDS == {'search', 'repos', 'notes', 'add', 'delete'}
+    assert COMMANDS == {'search', 'repos', 'notes', 'add', 'delete', 'rename',
+                        'fields'}
 
 
 def test_main_runs_a_search(miaz_env, make_repo, register_repo):
@@ -803,13 +804,15 @@ def test_notes_refuses_a_limit_below_one(miaz_env, make_repo, register_repo):
 # miaz add and miaz delete
 # ---------------------------------------------------------------------------
 
-def run_cli(miaz_env, make_repo, register_repo, argv, docs=DOCS):
+def run_cli(miaz_env, make_repo, register_repo, argv, docs=DOCS, setup=None):
     """Open a one-repository app and run whichever command argv names.
 
     Returns the exit code, what was written to each stream, and the repository
     path, since these two commands are judged by what is on disk afterwards.
     """
     repo = make_repo('Work', docs)
+    if setup is not None:
+        setup(repo)
     register_repo(miaz_env, 'Work', repo, current=True)
     app = MiAZConsoleApp(miaz_env)
     app.open_repository(None)
@@ -1049,3 +1052,330 @@ def test_add_with_no_path_named_says_so(miaz_env, make_repo, register_repo):
     assert code == 2
     assert out == ''
     assert err.strip() != ''
+
+
+# ---------------------------------------------------------------------------
+# miaz rename and miaz fields
+# ---------------------------------------------------------------------------
+
+# What the repository knows, written the way the settings dialog writes it.
+VOCABULARIES = {
+    'countries': {'ES': 'Spain'},
+    'groups': {'HOU': 'Housing', 'FIN': 'Finance'},
+    'purposes': {'INV': 'Invoice', 'RCP': 'Receipt'},
+    'senders': {'ACME': 'ACME S.A.', 'BANKX': 'Bank X'},
+    'recipients': {'JOHNDOE': 'John Doe'},
+}
+
+
+def configure(repo):
+    """Enable the values the sample documents use."""
+    conf = os.path.join(repo, '.conf')
+    os.makedirs(conf, exist_ok=True)
+    for name, values in VOCABULARIES.items():
+        with open(os.path.join(conf, f'{name}-used.json'), 'w',
+                  encoding='utf-8') as handler:
+            jsonlib.dump(values, handler)
+    people = dict(VOCABULARIES['senders'])
+    people.update(VOCABULARIES['recipients'])
+    for name in ('people-available.json', 'people-used.json'):
+        with open(os.path.join(conf, name), 'w', encoding='utf-8') as handler:
+            jsonlib.dump(people, handler)
+    return repo
+
+
+# The documents of the rename tests carry their names the way a repository
+# stores them, uppercase. DOCS above are spelled the way somebody types them
+# into a test, and a rename would uppercase them on the way past, which is a
+# change of its own and would hide the one under test.
+MORTGAGE = '20260612-ES-FIN-BANKX-INV-MORTGAGE-JOHNDOE.pdf'
+ELECTRICITY = '20260505-ES-HOU-ACME-INV-ELECTRICITY-JOHNDOE.pdf'
+RENAME_DOCS = [MORTGAGE, ELECTRICITY]
+
+
+def rename(miaz_env, make_repo, register_repo, argv, docs=RENAME_DOCS):
+    return run_cli(miaz_env, make_repo, register_repo, argv, docs=docs,
+                   setup=configure)
+
+
+def test_rename_changes_the_field_it_is_given(miaz_env, make_repo, register_repo):
+    code, out, _err, repo = rename(miaz_env, make_repo, register_repo,
+                                   ['rename', MORTGAGE, '--purpose', 'RCP'])
+    assert code == 0
+    expected = '20260612-ES-FIN-BANKX-RCP-MORTGAGE-JOHNDOE.pdf'
+    assert expected in out
+    assert os.path.exists(os.path.join(repo, expected))
+    assert not os.path.exists(os.path.join(repo, MORTGAGE))
+
+
+def test_rename_leaves_the_fields_it_is_not_given(miaz_env, make_repo,
+                                                  register_repo):
+    code, out, _err, _repo = rename(miaz_env, make_repo, register_repo,
+                                    ['rename', MORTGAGE, '--purpose', 'RCP'])
+    assert code == 0
+    assert 'BANKX' in out and 'JOHNDOE' in out and '20260612' in out
+
+
+def test_rename_takes_several_fields_at_once(miaz_env, make_repo, register_repo):
+    code, _out, _err, repo = rename(
+        miaz_env, make_repo, register_repo,
+        ['rename', MORTGAGE, '--group', 'HOU', '--purpose', 'RCP',
+         '--concept', 'rent march', '--date', '20260101'])
+    assert code == 0
+    assert os.path.exists(os.path.join(
+        repo, '20260101-ES-HOU-BANKX-RCP-RENT_MARCH-JOHNDOE.pdf'))
+
+
+def test_rename_takes_a_value_in_lower_case(miaz_env, make_repo, register_repo):
+    code, _out, _err, repo = rename(miaz_env, make_repo, register_repo,
+                                    ['rename', MORTGAGE, '--purpose', 'rcp'])
+    assert code == 0
+    assert os.path.exists(os.path.join(
+        repo, '20260612-ES-FIN-BANKX-RCP-MORTGAGE-JOHNDOE.pdf'))
+
+
+def test_rename_refuses_a_key_the_repository_does_not_have(miaz_env, make_repo,
+                                                           register_repo):
+    """The rule: no field is renamed on a key that is not configured."""
+    code, out, err, repo = rename(miaz_env, make_repo, register_repo,
+                                  ['rename', MORTGAGE, '--purpose', 'NOPE'])
+    assert code == 2
+    assert out == ''
+    assert 'NOPE' in err and 'purpose' in err
+    assert 'miaz fields' in err, 'say how to add it'
+    assert os.path.exists(os.path.join(repo, MORTGAGE))
+
+
+def test_rename_refuses_the_whole_change_not_only_the_bad_field(
+        miaz_env, make_repo, register_repo):
+    code, _out, err, repo = rename(
+        miaz_env, make_repo, register_repo,
+        ['rename', MORTGAGE, '--group', 'HOU', '--purpose', 'NOPE'])
+    assert code == 2
+    assert os.path.exists(os.path.join(repo, MORTGAGE))
+    assert 'NOPE' in err
+
+
+def test_rename_reports_every_bad_field_at_once(miaz_env, make_repo,
+                                                register_repo):
+    code, _out, err, _repo = rename(
+        miaz_env, make_repo, register_repo,
+        ['rename', MORTGAGE, '--country', 'NOPE', '--purpose', 'ALSONOPE'])
+    assert code == 2
+    assert 'NOPE' in err and 'ALSONOPE' in err
+
+
+def test_rename_refuses_a_date_that_is_not_a_date(miaz_env, make_repo,
+                                                  register_repo):
+    code, _out, err, repo = rename(miaz_env, make_repo, register_repo,
+                                   ['rename', MORTGAGE, '--date', '20260230'])
+    assert code == 2
+    assert '20260230' in err
+    assert os.path.exists(os.path.join(repo, MORTGAGE))
+
+
+def test_rename_refuses_an_empty_concept(miaz_env, make_repo, register_repo):
+    code, _out, err, repo = rename(miaz_env, make_repo, register_repo,
+                                   ['rename', MORTGAGE, '--concept', '  '])
+    assert code == 2
+    assert 'concept' in err
+    assert os.path.exists(os.path.join(repo, MORTGAGE))
+
+
+def test_rename_refuses_a_document_the_repository_does_not_hold(
+        miaz_env, make_repo, register_repo):
+    code, _out, err, _repo = rename(miaz_env, make_repo, register_repo,
+                                    ['rename', 'nosuch.pdf', '--purpose', 'RCP'])
+    assert code == 2
+    assert 'nosuch.pdf' in err
+
+
+def test_rename_with_nothing_to_change_says_so(miaz_env, make_repo,
+                                               register_repo):
+    code, out, err, repo = rename(miaz_env, make_repo, register_repo,
+                                  ['rename', MORTGAGE, '--purpose', 'INV'])
+    assert code == 0
+    assert out == ''
+    assert err.strip() != ''
+    assert os.path.exists(os.path.join(repo, MORTGAGE))
+
+
+def test_rename_refuses_a_name_the_repository_already_holds(miaz_env, make_repo,
+                                                            register_repo):
+    """Renaming onto another document would overwrite it."""
+    other = '20260612-ES-FIN-BANKX-RCP-MORTGAGE-JOHNDOE.pdf'
+    code, _out, err, repo = rename(miaz_env, make_repo, register_repo,
+                                   ['rename', MORTGAGE, '--purpose', 'RCP'],
+                                   docs=RENAME_DOCS + [other])
+    assert code == 2
+    assert other in err
+    assert os.path.exists(os.path.join(repo, MORTGAGE))
+    assert os.path.exists(os.path.join(repo, other))
+
+
+def test_fields_lists_the_fields_that_have_a_vocabulary(miaz_env, make_repo,
+                                                        register_repo):
+    code, out, _err, _repo = rename(miaz_env, make_repo, register_repo,
+                                    ['fields'])
+    assert code == 0
+    assert out.split() == ['country', 'group', 'sentby', 'purpose', 'sentto']
+
+
+def test_fields_lists_the_keys_of_one_field(miaz_env, make_repo, register_repo):
+    code, out, _err, _repo = rename(miaz_env, make_repo, register_repo,
+                                    ['fields', 'purpose'])
+    assert code == 0
+    assert 'INV' in out and 'Invoice' in out
+    assert len(out.splitlines()) == 2
+
+
+def test_listing_can_be_asked_for_explicitly(miaz_env, make_repo, register_repo):
+    plain = rename(miaz_env, make_repo, register_repo, ['fields', 'purpose'])
+    listed = rename(miaz_env, make_repo, register_repo,
+                    ['fields', 'purpose', '--list'])
+    assert plain[1] == listed[1]
+
+
+def test_fields_gives_json_when_asked(miaz_env, make_repo, register_repo):
+    code, out, _err, _repo = rename(miaz_env, make_repo, register_repo,
+                                    ['fields', 'purpose', '--json'])
+    assert code == 0
+    records = jsonlib.loads(out)
+    assert {'key': 'INV', 'description': 'Invoice'} in records
+
+
+def test_fields_refuses_a_field_with_no_vocabulary(miaz_env, make_repo,
+                                                   register_repo):
+    """The date is a date and the concept is free text. Neither has keys."""
+    for field in ('date', 'concept', 'nonsense'):
+        code, _out, err, _repo = rename(miaz_env, make_repo, register_repo,
+                                        ['fields', field])
+        assert code == 2, field
+        assert 'country' in err, 'name the fields that do have one'
+
+
+def test_fields_adds_a_key(miaz_env, make_repo, register_repo):
+    code, out, _err, repo = rename(miaz_env, make_repo, register_repo,
+                                   ['fields', 'purpose', '--add', 'CTR',
+                                    'Contract'])
+    assert code == 0
+    assert 'CTR' in out
+    with open(os.path.join(repo, '.conf', 'purposes-used.json'),
+              encoding='utf-8') as handler:
+        assert jsonlib.load(handler)['CTR'] == 'Contract'
+
+
+def test_an_added_key_is_available_as_well_as_used(miaz_env, make_repo,
+                                                   register_repo):
+    """What the dialog's inline Add does, so a value added from a terminal is
+    the value the window offers."""
+    _code, _out, _err, repo = rename(miaz_env, make_repo, register_repo,
+                                     ['fields', 'purpose', '--add', 'CTR',
+                                      'Contract'])
+    with open(os.path.join(repo, '.conf', 'purposes-available.json'),
+              encoding='utf-8') as handler:
+        assert 'CTR' in jsonlib.load(handler)
+
+
+def test_adding_a_key_that_is_there_updates_its_description(miaz_env, make_repo,
+                                                            register_repo):
+    _code, _out, _err, repo = rename(miaz_env, make_repo, register_repo,
+                                     ['fields', 'purpose', '--add', 'INV',
+                                      'Bill'])
+    with open(os.path.join(repo, '.conf', 'purposes-used.json'),
+              encoding='utf-8') as handler:
+        assert jsonlib.load(handler)['INV'] == 'Bill'
+
+
+def test_a_key_added_from_the_terminal_can_be_renamed_onto(miaz_env, make_repo,
+                                                           register_repo):
+    """The two commands are one workflow: add the key, then use it."""
+    repo = configure(make_repo('Work', RENAME_DOCS))
+    register_repo(miaz_env, 'Work', repo, current=True)
+    app = MiAZConsoleApp(miaz_env)
+    app.open_repository(None)
+
+    def run(argv):
+        out, err = io.StringIO(), io.StringIO()
+        args = build_parser().parse_args(argv)
+        return HANDLERS[args.command](app, args, out, err), out.getvalue(), err.getvalue()
+
+    assert run(['fields', 'purpose', '--add', 'CTR', 'Contract'])[0] == 0
+    code, out, err = run(['rename', MORTGAGE, '--purpose', 'CTR'])
+    assert code == 0, err
+    assert 'CTR' in out
+
+
+def test_fields_removes_a_key_nothing_uses(miaz_env, make_repo, register_repo):
+    code, _out, _err, repo = rename(miaz_env, make_repo, register_repo,
+                                    ['fields', 'purpose', '--remove', 'RCP'])
+    assert code == 0
+    with open(os.path.join(repo, '.conf', 'purposes-used.json'),
+              encoding='utf-8') as handler:
+        assert 'RCP' not in jsonlib.load(handler)
+
+
+def test_a_removed_key_stays_in_the_available_pool(miaz_env, make_repo,
+                                                   register_repo):
+    """Disabled for this repository, not thrown away, which is what the
+    window's own remove does."""
+    _code, _out, _err, repo = rename(miaz_env, make_repo, register_repo,
+                                     ['fields', 'purpose', '--remove', 'RCP'])
+    with open(os.path.join(repo, '.conf', 'purposes-available.json'),
+              encoding='utf-8') as handler:
+        assert 'RCP' in jsonlib.load(handler)
+
+
+def test_fields_refuses_to_remove_a_key_documents_still_use(miaz_env, make_repo,
+                                                            register_repo):
+    code, _out, err, repo = rename(miaz_env, make_repo, register_repo,
+                                   ['fields', 'purpose', '--remove', 'INV'])
+    assert code == 2
+    assert '2' in err, 'say how many documents still carry it'
+    with open(os.path.join(repo, '.conf', 'purposes-used.json'),
+              encoding='utf-8') as handler:
+        assert 'INV' in jsonlib.load(handler)
+
+
+def test_fields_refuses_to_remove_a_key_that_is_not_there(miaz_env, make_repo,
+                                                          register_repo):
+    code, _out, err, _repo = rename(miaz_env, make_repo, register_repo,
+                                    ['fields', 'purpose', '--remove', 'NOPE'])
+    assert code == 2
+    assert 'NOPE' in err
+
+
+def test_rename_takes_a_document_whose_name_starts_with_a_dash(
+        miaz_env, make_repo, register_repo):
+    """The documents somebody renames are the ones with no fields yet, and
+    those are exactly the names argparse reads as options."""
+    repo = configure(make_repo('Work', [PENDING]))
+    register_repo(miaz_env, 'Work', repo, current=True)
+    out, err = io.StringIO(), io.StringIO()
+
+    code = main(['rename', PENDING, '--date', '20260101', '--country', 'ES',
+                 '--group', 'HOU', '--sentby', 'BANKX', '--purpose', 'INV',
+                 '--sentto', 'JOHNDOE'], out, err, env=miaz_env)
+
+    assert code == 0, err.getvalue()
+    assert os.path.exists(os.path.join(
+        repo, '20260101-ES-HOU-BANKX-INV-SCAN-JOHNDOE.pdf'))
+
+
+def test_rename_with_no_document_named_says_so(miaz_env, make_repo,
+                                               register_repo):
+    code, out, err, _repo = run_main(miaz_env, make_repo, register_repo,
+                                     ['rename', '--purpose', 'INV'])
+    assert code == 2
+    assert out == ''
+    assert err.strip() != ''
+
+
+def test_rename_takes_one_document_at_a_time(miaz_env, make_repo,
+                                             register_repo):
+    """Two dashed names are not a mass rename, they are a mistake."""
+    with pytest.raises(SystemExit) as exit_info:
+        run_main(miaz_env, make_repo, register_repo,
+                 ['rename', PENDING, '-----OTHER-.pdf', '--purpose', 'INV'],
+                 docs=[PENDING])
+    assert exit_info.value.code == 2

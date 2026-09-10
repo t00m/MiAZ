@@ -11,13 +11,14 @@ import logging
 import os
 import sys
 from datetime import datetime
-from gettext import gettext as _
+from gettext import gettext as _, ngettext
 
-from MiAZ.backend import importer
+from MiAZ.backend import importer, rename
 from MiAZ.backend.log import MiAZLog, debug_requested, set_console_level
 from MiAZ.backend.notes import NotesStore, notes_dir
 from MiAZ.backend.plugins import (MiAZPluginCore, discover_commands,
                                   parse_operations)
+from MiAZ.backend.models import Country, Group, Purpose, SentBy, SentTo
 from MiAZ.backend.query import (ANY, DATE_PRESET_ALL, DATE_PRESETS, DATE_RANGE,
                                 NONE, DocumentQuery, resolve_preset)
 from MiAZ.frontend.console.app import MiAZConsoleApp
@@ -254,8 +255,10 @@ def cmd_repos(app, args, stdout, stderr):
 # separators and nothing in front of them. No option starts like that.
 EMPTY_FIELDS_PREFIX = '-----'
 
-# Which positional each command means when it is handed one of those names.
-DOCUMENT_ARGUMENTS = {'add': 'paths', 'delete': 'documents'}
+# Which positional each command means when it is handed one of those names,
+# and whether that positional takes a list or a single document.
+DOCUMENT_ARGUMENTS = {'add': ('paths', True), 'delete': ('documents', True),
+                      'rename': ('document', False)}
 
 
 def parse_arguments(parser, argv):
@@ -276,12 +279,22 @@ def parse_arguments(parser, argv):
              if extra.startswith(EMPTY_FIELDS_PREFIX)]
     rest = [extra for extra in extras
             if not extra.startswith(EMPTY_FIELDS_PREFIX)]
-    target = DOCUMENT_ARGUMENTS.get(getattr(args, 'command', None))
-    if rest or (names and target is None):
-        parser.error(_('unrecognized arguments: {arguments}').format(
-            arguments=' '.join(rest + (names if target is None else []))))
-    if names:
+    target, many = DOCUMENT_ARGUMENTS.get(getattr(args, 'command', None),
+                                          (None, False))
+    unrecognised = list(rest)
+    if names and target is None:
+        unrecognised += names
+    elif names and not many:
+        # One document, so a second name is not a document, it is a mistake.
+        if getattr(args, target, None) or len(names) > 1:
+            unrecognised += names
+        else:
+            setattr(args, target, names[0])
+    elif names:
         setattr(args, target, list(getattr(args, target) or []) + names)
+    if unrecognised:
+        parser.error(_('unrecognized arguments: {arguments}').format(
+            arguments=' '.join(unrecognised)))
     return args
 
 
@@ -386,6 +399,148 @@ def cmd_delete(app, args, stdout, stderr):
     util.filename_delete(set(paths))
     for path in paths:
         stdout.write(f'{os.path.basename(path)}\n')
+    return 0
+
+
+# The models the index counts documents by, one per field with a vocabulary.
+MODEL_OF = {'country': Country, 'group': Group, 'sentby': SentBy,
+            'purpose': Purpose, 'sentto': SentTo}
+
+# How each problem with a field reads. The backend returns the reason; the
+# wording, and its translation, belong here.
+PROBLEM_TEXT = {
+    rename.UNKNOWN: _("{field}: '{value}' is not a {field} this repository "
+                      "has. Add it with: miaz fields {field} --add {value} "
+                      "<description>"),
+    rename.NOT_A_DATE: _("date: '{value}' is not a date (YYYYMMDD)"),
+    rename.EMPTY: _('{field}: not set'),
+}
+
+
+def cmd_rename(app, args, stdout, stderr):
+    """Change the fields of a document name.
+
+    0 when the document was renamed, 1 never (a rename that changes nothing is
+    not a failure), 2 when a field cannot be what it was asked to be. Nothing
+    is renamed unless every field is good: a name half applied is a document
+    filed under something nobody chose.
+    """
+    repository = app.get_service('repo')
+    util = app.get_service('util')
+
+    if not args.document:
+        stderr.write(_('name a document to rename\n'))
+        return 2
+
+    path = repository_document(repository.docs, args.document)
+    if path is None:
+        stderr.write(_("'{name}' is not a document in this repository\n")
+                     .format(name=args.document))
+        return 2
+
+    basename = os.path.basename(path)
+    fields, extension = rename.split(util, basename)
+    changes = {field: getattr(args, field, None) for field in rename.FIELDS}
+    fields.update(rename.normalize(util, changes))
+
+    found = rename.problems(app, fields)
+    if found:
+        for field, value, reason in found:
+            stderr.write(PROBLEM_TEXT[reason].format(field=field, value=value)
+                         + '\n')
+        stderr.write(_('nothing was renamed\n'))
+        return 2
+
+    # Uppercased here rather than left to filename_rename: the checks below
+    # are about the name the file will really get, and comparing against the
+    # composed one made a document collide with itself.
+    target = os.path.join(repository.docs,
+                          util.filename_upper(rename.compose(fields, extension)))
+    if not util.filename_rename_needed(path, target):
+        stderr.write(_('nothing to change\n'))
+        return 0
+    if os.path.exists(target):
+        stderr.write(_("this repository already holds '{name}'\n").format(
+            name=os.path.basename(target)))
+        stderr.write(_('nothing was renamed\n'))
+        return 2
+
+    if not util.filename_rename(path, target):
+        stderr.write(_("could not rename '{name}'\n").format(name=basename))
+        return 3
+
+    stdout.write(f'{basename} -> {os.path.basename(target)}\n')
+    return 0
+
+
+def cmd_fields(app, args, stdout, stderr):
+    """Read and change the values a field may take.
+
+    With no field, the fields that have a vocabulary. With one, its keys and
+    their descriptions, or the addition or removal asked for.
+    """
+    util = app.get_service('util')
+
+    if not args.field:
+        for field in rename.CONFIG_OF:
+            stdout.write(f'{field}\n')
+        return 0
+
+    field = args.field.lower()
+    if field not in rename.CONFIG_OF:
+        stderr.write(_("'{field}' has no values to manage. Fields with a "
+                       "vocabulary: {fields}\n").format(
+                           field=args.field,
+                           fields=', '.join(rename.CONFIG_OF)))
+        return 2
+    config = app.get_config(rename.CONFIG_OF[field])
+
+    if args.add:
+        key, description = args.add
+        key = util.valid_key(key).upper()
+        if not key:
+            stderr.write(_('a key cannot be empty\n'))
+            return 2
+        # Available as well as used, which is what the rename dialog's inline
+        # Add does: a value added from a terminal is the value the window
+        # offers, in the same two places.
+        config.add_available(key, description)
+        config.add_used(key, description)
+        # add() leaves a key that is already there alone, so this is what
+        # corrects a description: `--add INV Bill` on a key that exists.
+        config.set_description(key, description)
+        stdout.write(f'{key}  {description}\n')
+        return 0
+
+    if args.remove:
+        key = args.remove.upper()
+        if not config.exists_used(key):
+            stderr.write(_("'{key}' is not a {field} this repository has\n")
+                         .format(key=key, field=field))
+            return 2
+        index = app.get_service('index')
+        used, documents = index.field_used(MODEL_OF[field], key)
+        if used:
+            stderr.write(ngettext(
+                "'{key}' is still on {count} document. Rename it first\n",
+                "'{key}' is still on {count} documents. Rename them first\n",
+                len(documents)).format(key=key, count=len(documents)))
+            return 2
+        # Disabled for this repository, not thrown away: it stays in the
+        # available pool, which is what the window's own remove does.
+        config.add_available(key, config.get(key) or '')
+        config.remove_used(key)
+        return 0
+
+    values = config.load_used()
+    if args.json:
+        json.dump([{'key': key, 'description': description}
+                   for key, description in sorted(values.items())],
+                  stdout, indent=2)
+        stdout.write('\n')
+        return 0
+    for key, description in sorted(values.items()):
+        stdout.write(f'{key}  {description}\n')
     return 0
 
 
@@ -707,6 +862,38 @@ def build_parser(search_paths=None, env=None, repo=None):
                         default=argparse.SUPPRESS,
                         help=_('Which repository to delete from'))
 
+    renamer = commands.add_parser(
+        'rename', help=_('Change the fields of a document name'))
+    renamer.add_argument('document', nargs='?', metavar='DOCUMENT',
+                         help=_('The document to rename, as `miaz search` '
+                                'prints it'))
+    renamer.add_argument('--date', metavar='YYYYMMDD', help=_('Document date'))
+    for field in ('country', 'group', 'sentby', 'purpose', 'sentto'):
+        renamer.add_argument(f'--{field}', metavar='CODE',
+                             help=_('A {field} this repository has. See: miaz '
+                                    'fields {field}').format(field=field))
+    renamer.add_argument('--concept', metavar='TEXT',
+                         help=_('What the document is about'))
+    renamer.add_argument('--repo', metavar='NAME_OR_PATH',
+                         default=argparse.SUPPRESS,
+                         help=_('Which repository the document is in'))
+
+    fields = commands.add_parser(
+        'fields', help=_('The values a document field may take'))
+    fields.add_argument('field', nargs='?', metavar='FIELD',
+                        help=_('country, group, sentby, purpose or sentto'))
+    fields.add_argument('--list', action='store_true',
+                        help=_('List the keys and their descriptions, which is '
+                               'also what naming a field on its own does'))
+    fields.add_argument('--add', nargs=2, metavar=('KEY', 'DESCRIPTION'),
+                        help=_('Add a key, or describe one that is there'))
+    fields.add_argument('--remove', metavar='KEY',
+                        help=_('Remove a key, unless documents still carry it'))
+    fields.add_argument('--json', action='store_true', help=_('JSON records'))
+    fields.add_argument('--repo', metavar='NAME_OR_PATH',
+                        default=argparse.SUPPRESS,
+                        help=_('Which repository to work on'))
+
     notes = commands.add_parser('notes', help=_('Read the notes on documents'))
     notes.add_argument('text', nargs='?',
                        help=_('Free text to look for in the note, its header '
@@ -756,7 +943,8 @@ def build_parser(search_paths=None, env=None, repo=None):
 # What miaz.py checks the first argument against before choosing the command
 # line over the window.
 HANDLERS = {'search': cmd_search, 'repos': cmd_repos, 'notes': cmd_notes,
-            'add': cmd_add, 'delete': cmd_delete}
+            'add': cmd_add, 'delete': cmd_delete, 'rename': cmd_rename,
+            'fields': cmd_fields}
 COMMANDS = frozenset(HANDLERS)
 
 

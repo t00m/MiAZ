@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 0.1\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-09-10 22:59+0200\n"
+"POT-Creation-Date: 2026-09-10 23:31+0200\n"
 "PO-Revision-Date: 2026-08-19 23:30+0200\n"
 "Last-Translator: Tomás Vírseda <tomasvirseda@gmail.com>\n"
 "Language-Team: Spanish\n"
@@ -628,30 +628,30 @@ msgstr "no hay ningún repositorio configurado; abre MiAZ una vez o pasa --repo"
 msgid "not a MiAZ repository: {path}"
 msgstr "no es un repositorio de MiAZ: {path}"
 
-#: MiAZ/frontend/console/cli.py:45
+#: MiAZ/frontend/console/cli.py:46
 #, python-brace-format
 msgid "dates are written as YYYYMMDD, not '{value}'"
 msgstr "las fechas se escriben como AAAAMMDD, no '{value}'"
 
-#: MiAZ/frontend/console/cli.py:79
+#: MiAZ/frontend/console/cli.py:80
 #, python-brace-format
 msgid "--limit counts documents, so it starts at 1, not {value}"
 msgstr ""
 
-#: MiAZ/frontend/console/cli.py:91
+#: MiAZ/frontend/console/cli.py:92
 msgid "use --since or --from and --to, not both"
 msgstr "usa --since, o --from y --to, pero no las dos cosas"
 
-#: MiAZ/frontend/console/cli.py:94
+#: MiAZ/frontend/console/cli.py:95
 #, python-brace-format
 msgid "unknown period '{value}'. Try one of: {valid}"
 msgstr "periodo desconocido '{value}'. Prueba con uno de: {valid}"
 
-#: MiAZ/frontend/console/cli.py:120
+#: MiAZ/frontend/console/cli.py:121
 msgid "--from is later than --to"
 msgstr ""
 
-#: MiAZ/frontend/console/cli.py:217
+#: MiAZ/frontend/console/cli.py:218
 #, python-brace-format
 msgid ""
 "no matches; {count} documents in this repository need review (try --all)\n"
@@ -659,238 +659,353 @@ msgstr ""
 "sin coincidencias; {count} documentos de este repositorio necesitan revisión "
 "(prueba con --all)\n"
 
-#: MiAZ/frontend/console/cli.py:229
+#: MiAZ/frontend/console/cli.py:230
 msgid "no repositories configured\n"
 msgstr "no hay repositorios configurados\n"
 
-#: MiAZ/frontend/console/cli.py:281
+#: MiAZ/frontend/console/cli.py:296
 #, python-brace-format
 msgid "unrecognized arguments: {arguments}"
 msgstr ""
 
-#: MiAZ/frontend/console/cli.py:299
+#: MiAZ/frontend/console/cli.py:312
 msgid "name a file or a directory to add\n"
 msgstr ""
 
 #. An empty directory, or one whose files are all in subdirectories
 #. while --recursive was not given.
-#: MiAZ/frontend/console/cli.py:306
+#: MiAZ/frontend/console/cli.py:319
 msgid "nothing to add\n"
 msgstr ""
 
-#: MiAZ/frontend/console/cli.py:313
+#: MiAZ/frontend/console/cli.py:326
 #, python-brace-format
 msgid "could not add '{name}'\n"
 msgstr ""
 
-#: MiAZ/frontend/console/cli.py:353
+#: MiAZ/frontend/console/cli.py:366
 #, fuzzy
 msgid "name a document to delete\n"
 msgstr "{ns} documentos seleccionados\n"
 
-#: MiAZ/frontend/console/cli.py:367
+#: MiAZ/frontend/console/cli.py:380 MiAZ/frontend/console/cli.py:437
 #, fuzzy, python-brace-format
 msgid "'{name}' is not a document in this repository\n"
 msgstr "{nr} documentos en este repositorio"
 
-#: MiAZ/frontend/console/cli.py:369 MiAZ/frontend/console/cli.py:383
+#: MiAZ/frontend/console/cli.py:382 MiAZ/frontend/console/cli.py:396
 msgid "nothing was deleted\n"
 msgstr ""
 
-#: MiAZ/frontend/console/cli.py:376
+#: MiAZ/frontend/console/cli.py:389
 #, fuzzy, python-brace-format
 msgid "Delete {count} documents? [y/N] "
 msgstr "¿Borrar {count} documentos?"
 
-#: MiAZ/frontend/console/cli.py:379
+#: MiAZ/frontend/console/cli.py:392
 msgid "nothing was deleted: pass --yes to delete without being asked\n"
 msgstr ""
 
-#: MiAZ/frontend/console/cli.py:471
+#: MiAZ/frontend/console/cli.py:412
+#, python-brace-format
+msgid ""
+"{field}: '{value}' is not a {field} this repository has. Add it with: miaz "
+"fields {field} --add {value} <description>"
+msgstr ""
+
+#: MiAZ/frontend/console/cli.py:415
+#, python-brace-format
+msgid "date: '{value}' is not a date (YYYYMMDD)"
+msgstr ""
+
+#: MiAZ/frontend/console/cli.py:416
+#, fuzzy, python-brace-format
+msgid "{field}: not set"
+msgstr "Directorio no establecido"
+
+#: MiAZ/frontend/console/cli.py:432
+#, fuzzy
+msgid "name a document to rename\n"
+msgstr "{ns} documentos seleccionados\n"
+
+#: MiAZ/frontend/console/cli.py:451 MiAZ/frontend/console/cli.py:465
+msgid "nothing was renamed\n"
+msgstr ""
+
+#: MiAZ/frontend/console/cli.py:460
+#, fuzzy
+msgid "nothing to change\n"
+msgstr "¿Deshacer este cambio?"
+
+#: MiAZ/frontend/console/cli.py:463
+#, fuzzy, python-brace-format
+msgid "this repository already holds '{name}'\n"
+msgstr "El repositorio está en buen estado"
+
+#: MiAZ/frontend/console/cli.py:469
+#, python-brace-format
+msgid "could not rename '{name}'\n"
+msgstr ""
+
+#: MiAZ/frontend/console/cli.py:491
+#, python-brace-format
+msgid "'{field}' has no values to manage. Fields with a vocabulary: {fields}\n"
+msgstr ""
+
+#: MiAZ/frontend/console/cli.py:502
+msgid "a key cannot be empty\n"
+msgstr ""
+
+#: MiAZ/frontend/console/cli.py:518
+#, fuzzy, python-brace-format
+msgid "'{key}' is not a {field} this repository has\n"
+msgstr "{nr} documentos en este repositorio"
+
+#: MiAZ/frontend/console/cli.py:525
+#, fuzzy, python-brace-format
+msgid "'{key}' is still on {count} document. Rename it first\n"
+msgid_plural "'{key}' is still on {count} documents. Rename them first\n"
+msgstr[0] "{nr} documentos en este repositorio"
+msgstr[1] "{nr} documentos en este repositorio"
+
+#: MiAZ/frontend/console/cli.py:626
 #, fuzzy
 msgid "this repository has no notes\n"
 msgstr "El repositorio está en buen estado"
 
-#: MiAZ/frontend/console/cli.py:591 MiAZ/frontend/console/cli.py:656
+#: MiAZ/frontend/console/cli.py:746 MiAZ/frontend/console/cli.py:811
+#: MiAZ/frontend/console/cli.py:895
 #, fuzzy
 msgid "Which repository to work on"
 msgstr "En qué repositorio buscar"
 
-#: MiAZ/frontend/console/cli.py:625
+#: MiAZ/frontend/console/cli.py:780
 #, fuzzy
 msgid "each command in detail:"
 msgstr "Búsqueda e indexado"
 
-#: MiAZ/frontend/console/cli.py:654 data/io.github.t00m.MiAZ.desktop.in:3
+#: MiAZ/frontend/console/cli.py:809 data/io.github.t00m.MiAZ.desktop.in:3
 #: data/io.github.t00m.MiAZ.metainfo.xml.in:7
 msgid "Personal Document Organizer"
 msgstr "Organizador Personal de Documentos"
 
-#: MiAZ/frontend/console/cli.py:659
+#: MiAZ/frontend/console/cli.py:814
 msgid "Find documents"
 msgstr "Buscar documentos"
 
-#: MiAZ/frontend/console/cli.py:660
+#: MiAZ/frontend/console/cli.py:815
 msgid "Free text to look for"
 msgstr "Texto libre que buscar"
 
-#: MiAZ/frontend/console/cli.py:661
+#: MiAZ/frontend/console/cli.py:816
 msgid "Substring of the concept field"
 msgstr "Parte del campo concepto"
 
-#: MiAZ/frontend/console/cli.py:664
+#: MiAZ/frontend/console/cli.py:819
 #, python-brace-format
 msgid ""
 "Filter by {field}. Any part of the code or its description, or none for the "
 "documents with no {field}"
 msgstr ""
 
-#: MiAZ/frontend/console/cli.py:668
+#: MiAZ/frontend/console/cli.py:823
 #, python-brace-format
 msgid "One of: {valid}"
 msgstr "Uno de: {valid}"
 
-#: MiAZ/frontend/console/cli.py:670
+#: MiAZ/frontend/console/cli.py:825
 msgid "Documents dated on or after this day"
 msgstr "Documentos con fecha igual o posterior a este día"
 
-#: MiAZ/frontend/console/cli.py:672
+#: MiAZ/frontend/console/cli.py:827
 msgid "Documents dated on or before this day"
 msgstr "Documentos con fecha igual o anterior a este día"
 
-#: MiAZ/frontend/console/cli.py:674
+#: MiAZ/frontend/console/cli.py:829
 msgid "Only documents that need review"
 msgstr "Solo los documentos que necesitan revisión"
 
-#: MiAZ/frontend/console/cli.py:676
+#: MiAZ/frontend/console/cli.py:831
 msgid "Include documents whose values are not in the configuration"
 msgstr "Incluir los documentos cuyos valores no están en la configuración"
 
-#: MiAZ/frontend/console/cli.py:678
+#: MiAZ/frontend/console/cli.py:833
 #, fuzzy
 msgid "Show at most N documents, N being 1 or more"
 msgstr "Mostrar como mucho N documentos"
 
-#: MiAZ/frontend/console/cli.py:681
+#: MiAZ/frontend/console/cli.py:836
 msgid "Which repository to search"
 msgstr "En qué repositorio buscar"
 
-#: MiAZ/frontend/console/cli.py:683
+#: MiAZ/frontend/console/cli.py:838
 msgid "Table with expanded labels"
 msgstr "Tabla con las etiquetas completas"
 
-#: MiAZ/frontend/console/cli.py:684 MiAZ/frontend/console/cli.py:687
-#: MiAZ/frontend/console/cli.py:731
+#: MiAZ/frontend/console/cli.py:839 MiAZ/frontend/console/cli.py:842
+#: MiAZ/frontend/console/cli.py:892 MiAZ/frontend/console/cli.py:918
 msgid "JSON records"
 msgstr "Registros JSON"
 
-#: MiAZ/frontend/console/cli.py:686
+#: MiAZ/frontend/console/cli.py:841
 msgid "List repositories"
 msgstr "Listar los repositorios"
 
-#: MiAZ/frontend/console/cli.py:689
+#: MiAZ/frontend/console/cli.py:844
 #, fuzzy
 msgid "Add documents to the repository"
 msgstr "{nr} documentos en este repositorio"
 
-#: MiAZ/frontend/console/cli.py:691
+#: MiAZ/frontend/console/cli.py:846
 msgid "Files or directories to add"
 msgstr ""
 
-#: MiAZ/frontend/console/cli.py:693
+#: MiAZ/frontend/console/cli.py:848
 msgid "Take the whole tree of a directory, not only the files directly in it"
 msgstr ""
 
-#: MiAZ/frontend/console/cli.py:697
+#: MiAZ/frontend/console/cli.py:852
 #, fuzzy
 msgid "Which repository to add to"
 msgstr "En qué repositorio buscar"
 
-#: MiAZ/frontend/console/cli.py:700
+#: MiAZ/frontend/console/cli.py:855
 #, fuzzy
 msgid "Delete documents from the repository"
 msgstr "{nr} documentos en este repositorio"
 
-#: MiAZ/frontend/console/cli.py:702
+#: MiAZ/frontend/console/cli.py:857
 #, fuzzy
 msgid "Document names, as `miaz search` prints them"
 msgstr "El documento no está en el repositorio"
 
-#: MiAZ/frontend/console/cli.py:704
+#: MiAZ/frontend/console/cli.py:859
 msgid "Do not ask first. Needed when there is no terminal to ask on"
 msgstr ""
 
-#: MiAZ/frontend/console/cli.py:708
+#: MiAZ/frontend/console/cli.py:863
 #, fuzzy
 msgid "Which repository to delete from"
 msgstr "En qué repositorio buscar"
 
-#: MiAZ/frontend/console/cli.py:710
+#: MiAZ/frontend/console/cli.py:866
+#, fuzzy
+msgid "Change the fields of a document name"
+msgstr "Crea la primera nota para este documento."
+
+#: MiAZ/frontend/console/cli.py:868
+#, fuzzy
+msgid "The document to rename, as `miaz search` prints it"
+msgstr "El documento no está en el repositorio"
+
+#: MiAZ/frontend/console/cli.py:870
+#, fuzzy
+msgid "Document date"
+msgstr "Documento"
+
+#: MiAZ/frontend/console/cli.py:873
+#, python-brace-format
+msgid "A {field} this repository has. See: miaz fields {field}"
+msgstr ""
+
+#: MiAZ/frontend/console/cli.py:876
+#, fuzzy
+msgid "What the document is about"
+msgstr "Conversar con el documento"
+
+#: MiAZ/frontend/console/cli.py:879
+#, fuzzy
+msgid "Which repository the document is in"
+msgstr "En qué repositorio buscar"
+
+#: MiAZ/frontend/console/cli.py:882
+msgid "The values a document field may take"
+msgstr ""
+
+#: MiAZ/frontend/console/cli.py:884
+msgid "country, group, sentby, purpose or sentto"
+msgstr ""
+
+#: MiAZ/frontend/console/cli.py:886
+msgid ""
+"List the keys and their descriptions, which is also what naming a field on "
+"its own does"
+msgstr ""
+
+#: MiAZ/frontend/console/cli.py:889
+msgid "Add a key, or describe one that is there"
+msgstr ""
+
+#: MiAZ/frontend/console/cli.py:891
+msgid "Remove a key, unless documents still carry it"
+msgstr ""
+
+#: MiAZ/frontend/console/cli.py:897
 #, fuzzy
 msgid "Read the notes on documents"
 msgstr "Renombrar este documento"
 
-#: MiAZ/frontend/console/cli.py:712
+#: MiAZ/frontend/console/cli.py:899
 msgid ""
 "Free text to look for in the note, its header or the document it is filed "
 "against"
 msgstr ""
 
-#: MiAZ/frontend/console/cli.py:715
+#: MiAZ/frontend/console/cli.py:902
 msgid "Only notes on documents whose name holds this"
 msgstr ""
 
-#: MiAZ/frontend/console/cli.py:717
+#: MiAZ/frontend/console/cli.py:904
 msgid "Only notes whose category holds this"
 msgstr ""
 
-#: MiAZ/frontend/console/cli.py:719
+#: MiAZ/frontend/console/cli.py:906
 msgid "Only notes whose status holds this"
 msgstr ""
 
-#: MiAZ/frontend/console/cli.py:721
+#: MiAZ/frontend/console/cli.py:908
 msgid "Only notes whose priority holds this"
 msgstr ""
 
-#: MiAZ/frontend/console/cli.py:723
+#: MiAZ/frontend/console/cli.py:910
 msgid "Print each note in full, header and body"
 msgstr ""
 
-#: MiAZ/frontend/console/cli.py:725
+#: MiAZ/frontend/console/cli.py:912
 msgid "Show at most N notes, N being 1 or more"
 msgstr ""
 
-#: MiAZ/frontend/console/cli.py:728
+#: MiAZ/frontend/console/cli.py:915
 #, fuzzy
 msgid "Which repository to read"
 msgstr "En qué repositorio buscar"
 
-#: MiAZ/frontend/console/cli.py:730
+#: MiAZ/frontend/console/cli.py:917
 #, fuzzy
 msgid "Table with the header fields"
 msgstr "Tabla con las etiquetas completas"
 
-#: MiAZ/frontend/console/cli.py:782
+#: MiAZ/frontend/console/cli.py:970
 msgid "usage: miaz [search|repos] ...\n"
 msgstr "uso: miaz [search|repos] ...\n"
 
-#: MiAZ/frontend/console/cli.py:816
+#: MiAZ/frontend/console/cli.py:1004
 #, python-brace-format
 msgid "'{command}' is not a command\n"
 msgstr ""
 
-#: MiAZ/frontend/console/cli.py:827
+#: MiAZ/frontend/console/cli.py:1015
 #, python-brace-format
 msgid ""
 "'{command}' comes from {plugin}, which is not enabled for repository "
 "'{repository}'\n"
 msgstr ""
 
-#: MiAZ/frontend/console/cli.py:831
+#: MiAZ/frontend/console/cli.py:1019
 msgid "Enable it in the repository settings, Plugins tab\n"
 msgstr ""
 
-#: MiAZ/frontend/console/cli.py:836
+#: MiAZ/frontend/console/cli.py:1024
 #, python-brace-format
 msgid ""
 "plugin '{plugin}' declares command '{command}' but defines no '{handler}'\n"
@@ -6769,9 +6884,6 @@ msgstr "Tamaño de letra del área de trabajo"
 
 #~ msgid "Choose target directory"
 #~ msgstr "Elige el directorio destino"
-
-#~ msgid "Directory not set"
-#~ msgstr "Directorio no establecido"
 
 #~ msgid "Repository settings assistant"
 #~ msgstr "Asistente para ajustes del repositorio"

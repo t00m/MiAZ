@@ -449,6 +449,13 @@ Not the GUI, but it ships in the same package and is new in this release.
       is enabled: compare two repositories with `miaz --repo <name> --help`.
       Running one that is not enabled exits 3 and names the plugin and the
       repository.
+- [ ] **15.14 [N]** `miaz rename <document> --purpose <code>` changes that
+      field and leaves the others, and a code the repository does not have
+      refuses the whole rename, naming the field and the `miaz fields` line
+      that would add it.
+- [ ] **15.15 [N]** `miaz fields purpose` lists the keys with their
+      descriptions, `--add` puts one in the window's dropdown too, and
+      `--remove` is refused while documents carry the value.
 
 ## 16. Packaging
 
