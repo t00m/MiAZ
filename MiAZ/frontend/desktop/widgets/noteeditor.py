@@ -14,7 +14,7 @@ from gi.repository import Adw
 from gi.repository import GObject
 from gi.repository import Gtk
 
-from lib.model import CATEGORIES, PRIORITIES, STATUSES
+from MiAZ.frontend.desktop.widgets.notesmodel import CATEGORIES, PRIORITIES, STATUSES
 from MiAZ.frontend.desktop.widgets.markdownview import MiAZMarkdownView
 
 

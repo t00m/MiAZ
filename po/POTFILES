@@ -1,6 +1,4 @@
-data/io.github.t00m.MiAZ.desktop.in
-data/io.github.t00m.MiAZ.metainfo.xml.in
-data/io.github.t00m.MiAZ.gschema.xml
+
 MiAZ/backend/config.py
 MiAZ/backend/crash.py
 MiAZ/backend/dr.py
@@ -25,6 +23,7 @@ MiAZ/frontend/desktop/services/factory.py
 MiAZ/frontend/desktop/services/icm.py
 MiAZ/frontend/desktop/services/importdoc.py
 MiAZ/frontend/desktop/services/massrename.py
+MiAZ/frontend/desktop/services/notes.py
 MiAZ/frontend/desktop/services/pluginsystem.py
 MiAZ/frontend/desktop/services/progress.py
 MiAZ/frontend/desktop/services/workflow.py
@@ -43,6 +42,11 @@ MiAZ/frontend/desktop/widgets/gridview.py
 MiAZ/frontend/desktop/widgets/mainwindow.py
 MiAZ/frontend/desktop/widgets/markdownview.py
 MiAZ/frontend/desktop/widgets/metadatapage.py
+MiAZ/frontend/desktop/widgets/noteeditor.py
+MiAZ/frontend/desktop/widgets/notesallview.py
+MiAZ/frontend/desktop/widgets/noteslistview.py
+MiAZ/frontend/desktop/widgets/notesmodel.py
+MiAZ/frontend/desktop/widgets/notespostit.py
 MiAZ/frontend/desktop/widgets/pages.py
 MiAZ/frontend/desktop/widgets/pills.py
 MiAZ/frontend/desktop/widgets/rename.py
@@ -56,9 +60,11 @@ MiAZ/frontend/desktop/widgets/webbrowser.py
 MiAZ/frontend/desktop/widgets/window.py
 MiAZ/frontend/desktop/widgets/workspace.py
 MiAZ/miaz.py
+data/io.github.t00m.MiAZ.desktop.in
+data/io.github.t00m.MiAZ.gschema.xml
+data/io.github.t00m.MiAZ.metainfo.xml.in
 data/resources/plugins/HelloWorld/example/test.py
 data/resources/plugins/HelloWorld/helloworld.py
-data/resources/plugins/MiAZAIAssistant/miazaiassistant.py
 data/resources/plugins/MiAZAIAssistant/miazai/providers/base.py
 data/resources/plugins/MiAZAIAssistant/miazai/providers/claude.py
 data/resources/plugins/MiAZAIAssistant/miazai/providers/gemini.py
@@ -66,6 +72,7 @@ data/resources/plugins/MiAZAIAssistant/miazai/providers/openai.py
 data/resources/plugins/MiAZAIAssistant/miazai/ui/chat.py
 data/resources/plugins/MiAZAIAssistant/miazai/ui/dialog.py
 data/resources/plugins/MiAZAIAssistant/miazai/ui/settings.py
+data/resources/plugins/MiAZAIAssistant/miazaiassistant.py
 data/resources/plugins/MiAZAutoScan/autoscan.py
 data/resources/plugins/MiAZColumnVisibility/colvis.py
 data/resources/plugins/MiAZContacts/contactbook.py
@@ -85,16 +92,10 @@ data/resources/plugins/MiAZHistory/history/summary.py
 data/resources/plugins/MiAZHistory/miazhistory.py
 data/resources/plugins/MiAZImportFromScan/scan.py
 data/resources/plugins/MiAZImportFromZip/importfromzip.py
-data/resources/plugins/MiAZNotes/lib/allview.py
-data/resources/plugins/MiAZNotes/lib/editor.py
-data/resources/plugins/MiAZNotes/lib/listview.py
-data/resources/plugins/MiAZNotes/lib/model.py
-data/resources/plugins/MiAZNotes/lib/postit.py
-data/resources/plugins/MiAZNotes/notes.py
+data/resources/plugins/MiAZInsights/MiAZInsights.py
+data/resources/plugins/MiAZInsights/insights/render.py
 data/resources/plugins/MiAZOCR/ocr.py
 data/resources/plugins/MiAZPeriodicity/periodicity.py
 data/resources/plugins/MiAZProjectMgt/projmgt.py
 data/resources/plugins/MiAZRelated/relateddocs.py
 data/resources/plugins/MiAZWSFont/wsfont.py
-data/resources/plugins/MiAZInsights/MiAZInsights.py
-data/resources/plugins/MiAZInsights/insights/render.py

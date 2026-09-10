@@ -15,8 +15,8 @@ from gi.repository import Adw
 from gi.repository import Gio
 from gi.repository import Gtk
 
-from lib.editor import NoteEditor
-from lib.model import Note
+from MiAZ.frontend.desktop.widgets.noteeditor import NoteEditor
+from MiAZ.frontend.desktop.widgets.notesmodel import Note
 
 
 class NotesListView(Adw.Window):

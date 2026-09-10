@@ -13,6 +13,7 @@ from gi.repository import Gtk
 
 
 from MiAZ.backend.log import MiAZLog
+from MiAZ.frontend.desktop.services.notes import MiAZNotes
 from MiAZ.frontend.desktop.services.pluginsystem import MiAZPluginSystem
 from MiAZ.frontend.desktop.services.pluginsystem import format_load_failure_toast
 from MiAZ.frontend.desktop.services.icm import MiAZIconManager
@@ -135,6 +136,11 @@ class MiAZApp(Adw.Application):
         # load, so a plugin can import its libraries (for example the AI SDKs).
         self.get_service('venv').ensure_on_syspath()
         self.set_service('plugin-system', MiAZPluginSystem(self))
+        # Notes are core as of 0.3. Registered before _setup_ui because the
+        # workspace menu is assembled there and asks the service for its
+        # submenu; the service attaches to the workspace later, when there is
+        # one.
+        self.set_service('notes', MiAZNotes(self))
         self.get_service('webserver').start()
         self._setup_ui()
         # Offer the optional external-libraries download once, after the active

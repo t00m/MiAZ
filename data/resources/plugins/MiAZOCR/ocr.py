@@ -344,23 +344,19 @@ class MiAZOCRPlugin(MiAZExtension):
                                     logger=self.log)
 
     def _create_note(self, doc_id, text, lang):
-        from gi.repository import GLib
-        plugin_system = self.app.get_service('plugin-system')
-        notes_ext = plugin_system.get_extension('notes')
-        if notes_ext is None:
-            self.log.error("MiAZNotes is not enabled; cannot create note")
+        """File the text through the core notes service.
+
+        The service exists whenever there is a window, so there is no longer a
+        plugin to be missing. It also refreshes the notes views, which writing
+        straight to the store would not.
+        """
+        notes = self.app.get_service('notes')
+        if notes is None:
+            self.log.error('No notes service; cannot create note')
             return False
-        body = ocrcore.note_body(text, lang)
         try:
-            if hasattr(notes_ext, 'add_note'):
-                notes_ext.add_note(doc_id, body, category=NOTE_CATEGORY)
-            else:
-                # Fallback for an older MiAZNotes without the public API: write
-                # the note and marshal the UI refresh to the main loop.
-                notes_ext.store.create(doc_id, {'Category': 'Documents'}, body)
-                if hasattr(notes_ext, '_notes_changed'):
-                    GLib.idle_add(notes_ext._notes_changed)
-            return True
+            return notes.add_note(doc_id, ocrcore.note_body(text, lang),
+                                  category=NOTE_CATEGORY) is not None
         except Exception as error:
             self.log.error(f"Could not create note for '{doc_id}': {error}")
             return False

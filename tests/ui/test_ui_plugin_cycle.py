@@ -146,7 +146,7 @@ def test_the_sandbox_can_see_every_bundled_plugin(miaz, plugin_names):
     'MiAZAIAssistant', 'MiAZAutoScan', 'MiAZColumnVisibility',
     'MiAZExport2CSV', 'MiAZExport2Dir', 'MiAZExport2Text',
     'MiAZExport2Zip', 'MiAZFullscreen', 'MiAZImportFromScan',
-    'MiAZImportFromZip', 'MiAZInsights', 'MiAZNotes', 'MiAZOCR',
+    'MiAZImportFromZip', 'MiAZInsights', 'MiAZOCR',
     'MiAZPeriodicity', 'MiAZProjectMgt', 'MiAZWSFont',
 ])
 def test_a_plugin_survives_two_cycles(miaz, plugin_name):

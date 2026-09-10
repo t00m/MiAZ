@@ -83,7 +83,8 @@ def plugins_with_entries():
 
 def test_most_bundled_plugins_declare_entries():
     # A helper that quietly returned nothing would make every test below pass.
-    assert len(plugins_with_entries()) >= 17
+    # 16 since 0.3: MiAZNotes stopped being a plugin and became core.
+    assert len(plugins_with_entries()) >= 16
 
 
 def test_the_file_and_the_module_declare_the_same_entries():

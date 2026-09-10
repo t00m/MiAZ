@@ -103,9 +103,16 @@ def entry(plugin_menus, label, plugin_name):
     return plugin_menus[label]
 
 
-def test_notes_holds_all_four_of_its_actions(plugin_menus):
-    notes = entry(plugin_menus, 'Annotation', 'MiAZNotes')
-    found = labels(notes)
+def test_notes_holds_all_four_of_its_actions(miaz):
+    """Notes became core in 0.3, so its four actions are no longer in the
+    plugins section: the notes service builds the submenu and the main window
+    appends it beside mass rename and the clipboard item."""
+    notes = miaz.service('notes')
+    assert notes is not None, 'the notes service is core and should always exist'
+
+    menu = notes.menu()
+    found = [menu.get_item_attribute_value(i, 'label').get_string()
+             for i in range(menu.get_n_items())]
     assert 'Create a new note' in found
     assert 'See all notes…' in found
     assert 'Backup notes' in found
@@ -146,9 +153,10 @@ def test_no_plugin_entry_nests_a_submenu_of_its_own_name(plugin_menus):
 
 def test_one_note_is_filed_against_every_selected_document(miaz):
     """The Ctrl+N entry used to do nothing unless exactly one row was picked."""
-    plugin_obj = miaz.widget('plugin-MiAZNotes')
-    if plugin_obj is None:
-        pytest.skip('MiAZNotes is not enabled in this repository')
+    plugin_obj = miaz.service('notes')
+    assert plugin_obj is not None, 'the notes service is core'
+    if not plugin_obj.started():
+        pytest.skip('the notes service has not finished starting up')
 
     document_ids = miaz.displayed()[:3]
     assert len(document_ids) >= 2, 'need two documents to file one note against'

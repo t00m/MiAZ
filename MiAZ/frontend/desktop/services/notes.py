@@ -1,32 +1,39 @@
-# pylint: disable=E1101
-
 """
 # File: notes.py
 # Author: Tomás Vírseda
 # License: GPL v3
-# Description: MiAZNotes - Markdown notes linked to documents
+# Description: notes attached to documents, wired into the window
+
+Notes were MiAZNotes, a plugin, until 0.3. The store moved to
+MiAZ/backend/notes.py and this is what used to be the plugin's activation:
+the menu entries, the All Notes page, the header bar indicator, the sidebar
+filter and the workspace column.
+
+Being a service rather than a plugin removes the whole teardown half. A plugin
+has to give back everything it added, because it can be switched off in the
+middle of a session; core cannot, so the column, the page and the filter are
+installed once and stay.
 """
 
 import os
-import sys
 from gettext import gettext as _
 
 import gi
 gi.require_version('Gtk', '4.0')
 gi.require_version('Gdk', '4.0')
 
+from gi.repository import Gdk
+from gi.repository import Gio
 from gi.repository import GLib
 from gi.repository import GObject  # noqa: F401
-from gi.repository import Gdk
 from gi.repository import Gtk
 
-from MiAZ.frontend.desktop.services.pluginsystem import MiAZExtension, MiAZPlugin
-
-sys.path.insert(1, os.path.dirname(os.path.abspath(__file__)))
-from MiAZ.backend.notes import CategoryStore, NotesBackup, NotesStore
-from lib.listview import NotesListView
-from lib.allview import NotesAllView
-from lib.postit import NotesPostItBoard
+from MiAZ.backend.log import MiAZLog
+from MiAZ.backend.notes import (CategoryStore, NotesBackup, NotesStore,
+                                notes_dir)
+from MiAZ.frontend.desktop.widgets.notesallview import NotesAllView
+from MiAZ.frontend.desktop.widgets.noteslistview import NotesListView
+from MiAZ.frontend.desktop.widgets.notespostit import NotesPostItBoard
 
 
 NOTES_CSS = b"""
@@ -54,39 +61,19 @@ NOTES_CSS = b"""
 
 # Name of the workspace filter that restricts the view to documents with notes.
 ONLY_NOTES_FILTER = 'MiAZNotes-only-with-notes'
-ONLY_NOTES_ROW_ID = 'plugin-MiAZNotes-onlynotes-row'
+ONLY_NOTES_ROW_ID = 'notes-onlynotes-row'
 
 
-plugin_info = {
-    'Module':      'notes',
-    'Name':        'MiAZNotes',
-    'Loader':      'Python3',
-    'Description': _('Take Markdown notes linked to documents'),
-    'Authors':     'Tomás Vírseda <tomasvirseda@gmail.com>',
-    'Copyright':   'Copyright © 2026 Tomás Vírseda',
-    'Website':     'http://github.com/t00m/MiAZ',
-    'Help':        'https://github.com/t00m/MiAZ/blob/main/README.md',
-    'Category':    'Documents',
-    'Subcategory': 'Annotation',
-    'MenuEntries': [
-        ('doc', _('Create a new note'), ['<Ctrl>N']),
-        ('all', _('See all notes…')),
-        ('backup', _('Backup notes')),
-        ('restore', _('Restore notes')),
-    ],
-}
+class MiAZNotes(GObject.GObject):
+    """Notes, as the window sees them."""
 
+    __gtype_name__ = 'MiAZNotes'
 
-class MiAZNotesPlugin(MiAZExtension):
-    __gtype_name__ = 'MiAZNotesPlugin'
-    plugin = None
-
-    # Activation lifecycle
-    def do_activate(self):
-        self.app = self.object.app
-        self.plugin = MiAZPlugin(self.app)
-        self.plugin.register(self, plugin_info)
-        self.log = self.plugin.get_logger()
+    def __init__(self, app):
+        super().__init__()
+        self.app = app
+        self.log = MiAZLog('MiAZ.Notes')
+        self._started = False
 
         self.util = self.app.get_service('util')
         self.repository = self.app.get_service('repo')
@@ -94,9 +81,10 @@ class MiAZNotesPlugin(MiAZExtension):
         self.factory = self.app.get_service('factory')
         self.actions = self.app.get_service('actions')
 
-        self.store = NotesStore(self.plugin.get_data_dir(), self.log)
-        self.backup = NotesBackup(self.plugin.get_data_dir(), self.log)
-        self.categories = CategoryStore(self.plugin.get_data_dir(), self.log)
+        data_dir = notes_dir(self.repository.docs) if self.repository.docs else ''
+        self.store = NotesStore(data_dir, self.log)
+        self.backup = NotesBackup(data_dir, self.log)
+        self.categories = CategoryStore(data_dir, self.log)
 
         self._win_per_doc = None
         self._postit_board = None
@@ -107,153 +95,100 @@ class MiAZNotesPlugin(MiAZExtension):
         self._only_notes_switch = None
         self._only_notes_active = False
         self._docs_with_notes = set()
-        # {document id: note count} for the notes column cell, and the runtime
-        # column added to the workspace view on activation.
+        # {document id: note count} for the notes column cell, and the column
+        # added to the workspace view.
         self._note_counts = {}
         self._notes_column = None
         self._notes_factory = None
         self._install_css()
 
-        self.workspace = self.app.get_widget('workspace')
-        if self.workspace is not None and self.workspace.is_loaded():
-            self.startup()
-        elif self.workspace is not None:
-            self._startup_handler = self.workspace.connect(
-                'workspace-loaded', self.startup)
+        self.workspace = None
+        self._bind_workspace()
 
-        self._h_renamed = self.util.connect('filename-renamed', self._on_renamed)
-        self._h_deleted = self.util.connect('filename-deleted', self._on_deleted)
-        self._h_added = self.util.connect('filename-added', self._on_added)
-        self._h_switched = self.repository.connect(
-            'repository-switched', self._on_repo_switched)
+        self.util.connect('filename-renamed', self._on_renamed)
+        self.util.connect('filename-deleted', self._on_deleted)
+        self.util.connect('filename-added', self._on_added)
+        self.repository.connect('repository-switched', self._on_repo_switched)
 
-        self._watcher = self.app.get_service('watcher')
-        self._h_repo_updated = None
-        if self._watcher is not None:
-            self._h_repo_updated = self._watcher.connect(
-                'repository-updated', self._on_repo_updated)
+        watcher = self.app.get_service('watcher')
+        if watcher is not None:
+            watcher.connect('repository-updated', self._on_repo_updated)
 
-    def do_deactivate(self):
-        if hasattr(self, '_startup_handler'):
-            try:
-                self.workspace.disconnect(self._startup_handler)
-            except Exception as error:
-                self.log.debug(f"Disconnect startup: {error}")
-            del self._startup_handler
+    def _bind_workspace(self, *_args):
+        """Attach to the workspace, whenever it turns up.
 
-        for attr in ('_h_renamed', '_h_deleted', '_h_added'):
-            handler = getattr(self, attr, None)
-            if handler is not None:
-                try:
-                    self.util.disconnect(handler)
-                except Exception as error:
-                    self.log.debug(f"Disconnect {attr}: {error}")
-                setattr(self, attr, None)
-
-        if getattr(self, '_h_switched', None) is not None:
-            try:
-                self.repository.disconnect(self._h_switched)
-            except Exception as error:
-                self.log.debug(f"Disconnect _h_switched: {error}")
-            self._h_switched = None
-
-        if getattr(self, '_h_repo_updated', None) is not None and getattr(self, '_watcher', None) is not None:
-            try:
-                self._watcher.disconnect(self._h_repo_updated)
-            except Exception as error:
-                self.log.debug(f"Disconnect _h_repo_updated: {error}")
-            self._h_repo_updated = None
-
-        if getattr(self, '_h_view_updated', None) is not None:
-            try:
-                self.workspace.disconnect(self._h_view_updated)
-            except Exception as error:
-                self.log.debug(f"Disconnect _h_view_updated: {error}")
-            self._h_view_updated = None
-
-        if getattr(self, '_h_view_filtered', None) is not None:
-            try:
-                self.workspace.disconnect(self._h_view_filtered)
-            except Exception as error:
-                self.log.debug(f"Disconnect _h_view_filtered: {error}")
-            self._h_view_filtered = None
-
-        if getattr(self, '_h_selection_changed', None) is not None and getattr(self, '_view_selection', None) is not None:
-            try:
-                self._view_selection.disconnect(self._h_selection_changed)
-            except Exception as error:
-                self.log.debug(f"Disconnect _h_selection_changed: {error}")
-            self._h_selection_changed = None
-            self._view_selection = None
-
-        self._close_windows()
-
-        # The all-notes workspace page is removed by the plugin system, which
-        # owns what add_workspace_page handed it.
-        self._all_notes = None
-
-        if self._postit_board is not None:
-            try:
-                self._postit_board.unparent()
-            except Exception as error:
-                self.log.debug(f"Unparent post-it board: {error}")
-            self._postit_board = None
-
-        # The header bar indicator is detached by the plugin system.
-        self._indicator_count = None
-
-        # Remove the "only with notes" filter and its sidebar switch, then
-        # refilter so any hidden documents reappear.
-        self._only_notes_active = False
-        self._only_notes_switch = None
+        A plugin never had to think about this: plugins load after the window
+        is built, so the workspace was always there. A service registered
+        during startup runs earlier than that, and reading the widget once in
+        __init__ found None and left Notes with no column, no page, no filter
+        and no indicator, silently.
+        """
         if self.workspace is not None:
-            try:
-                self.workspace.unregister_filter_view(ONLY_NOTES_FILTER)
-            except Exception as error:
-                self.log.debug(f"Unregister notes filter: {error}")
-        # The sidebar switch is detached by the plugin system too.
-
-        # Remove the notes column added on activation, so it disappears when the
-        # plugin is disabled.
-        wsview = self.app.get_widget('workspace-view')
-        if wsview is not None and self._notes_column is not None:
-            try:
-                wsview.cv.remove_column(self._notes_column)
-            except Exception as error:
-                self.log.debug(f"Remove notes column: {error}")
-        self._notes_column = None
-        self._notes_factory = None
-
-        if self.workspace is not None:
-            try:
-                self.workspace.update()
-            except Exception as error:
-                self.log.debug(f"Workspace update on disable: {error}")
-
-        self._uninstall_css()
-
-        if self.plugin is not None:
-            self.plugin.set_started(False)
-
-    # Startup (workspace ready)
-    def startup(self, *_args):
-        if self.plugin.started():
             return
+        workspace = self.app.get_widget('workspace')
+        if workspace is None:
+            # Fires once the window and its repository are up.
+            self.app.connect('application-started', self._bind_workspace)
+            return
+        self.workspace = workspace
+        if workspace.is_loaded():
+            self.startup()
+        else:
+            workspace.connect('workspace-loaded', self.startup)
 
-        # The four entries the definition declares. Backup and Restore sit
-        # under the plugin's own entry: they act on the notes, so that is
-        # where someone looks for them. They used to hang off Backup and
-        # Restore entries of their own, which put two extra top-level
-        # submenus in the workspace menu holding one item each.
-        self.plugin.install_menu_entries({
+    def started(self):
+        return self._started
+
+    # The four actions Notes offers, in menu order. Backup and Restore sit
+    # with the others because they act on the notes, and hanging them off
+    # entries of their own put two submenus in the workspace menu holding one
+    # item each.
+    MENU_ENTRIES = (
+        ('doc', _('Create a new note'), ['<Ctrl>N']),
+        ('all', _('See all notes…'), None),
+        ('backup', _('Backup notes'), None),
+        ('restore', _('Restore notes'), None),
+    )
+
+    def menu(self):
+        """The Notes submenu, for the main window to append.
+
+        Built rather than installed, because the workspace selection menu is
+        thrown away and rebuilt whenever plugins load or unload. The mass
+        rename and clipboard items are re-appended the same way; Notes stopped
+        being a plugin and has no plugins section to sit in.
+
+        The actions themselves are registered once. Registering the same name
+        twice is harmless (the second replaces the first) but the accelerator
+        would be set again on every rebuild for no reason.
+        """
+        callbacks = {
             'doc': self._on_new_doc_note,
             'all': self._on_open_all_notes,
             'backup': self._on_menu_backup,
             'restore': self._on_menu_restore,
-        })
+        }
+        menu = Gio.Menu.new()
+        for entry_id, label, shortcuts in self.MENU_ENTRIES:
+            key = f'notes-{entry_id}'
+            menuitem = self.app.get_widget(f'menuitem-{key}')
+            if menuitem is None:
+                menuitem = self.factory.create_menuitem(
+                    key, label, callbacks[entry_id], None, shortcuts)
+                self.app.add_widget(f'menuitem-{key}', menuitem)
+            menu.append_item(menuitem)
+        return menu
 
-        # All notes workspace page. The plugin system removes it on unload, so
-        # this always builds a fresh one rather than adopting a leftover.
+    # Startup (workspace ready)
+    def startup(self, *_args):
+        if self._started:
+            return
+
+        # The menu is built by menu() and appended by the main window. It is
+        # not installed here: the workspace selection menu is rebuilt whenever
+        # plugins load or unload, and the core items are re-appended each time.
+
+        # All notes workspace page.
         self._all_notes = NotesAllView(
             self.app, self.store, self.backup, self.log,
             on_open_document=self._open_doc_window,
@@ -262,25 +197,32 @@ class MiAZNotesPlugin(MiAZExtension):
             compute_visible_document_ids=self._visible_document_ids,
         )
         self._all_notes.refresh()
-        self.plugin.add_workspace_page(
+        self.workspace.add_stack_page(
             self._all_notes, 'notes-all', _('Notes'),
-            'accessories-text-editor-symbolic',
-        )
+            'accessories-text-editor-symbolic')
 
         # Headerbar pushpin indicator: visible only when the single selected
         # document actually has notes. Clicking it shows the post-it board.
         if self.app.get_widget('headerbar-button-notes-indicator') is None:
             button = self._build_indicator_button()
             button.set_visible(False)
-            self.plugin.add_headerbar_widget(
-                button, position='right',
-                widget_key='headerbar-button-notes-indicator')
+            box = self.app.get_widget('headerbar-right-box')
+            if box is not None:
+                box.append(button)
+                self.app.add_widget('headerbar-button-notes-indicator', button)
 
         # Sidebar toggle: "Only documents with notes". Registers a workspace
         # filter that is a no-op until the switch is turned on.
         if self.app.get_widget(ONLY_NOTES_ROW_ID) is None:
             row = self._build_only_notes_row()
-            if self.plugin.add_sidebar_widget(row, widget_key=ONLY_NOTES_ROW_ID):
+            # The core filter section, above the separator that divides the
+            # built-in filters from the ones plugins add. Notes is no longer
+            # one of those.
+            section = (self.app.get_widget('sidebar-core-section')
+                       or self.app.get_widget('sidebar-plugin-section'))
+            if section is not None:
+                section.append(row)
+                self.app.add_widget(ONLY_NOTES_ROW_ID, row)
                 self.workspace.register_filter_view(
                     ONLY_NOTES_FILTER, self._do_filter_notes)
 
@@ -304,11 +246,10 @@ class MiAZNotesPlugin(MiAZExtension):
         # _refresh_notes_filter(); the column cell reads self._note_counts.
         self._docs_with_notes = self._compute_docs_with_notes()
         self._install_notes_column()
-        # Force a re-bind so the column populates immediately when the plugin is
-        # enabled while the workspace is already populated.
+        # Force a re-bind so the column populates immediately.
         self.workspace.update()
 
-        self.plugin.set_started(True)
+        self._started = True
         self._on_workspace_view_changed()
 
     # Concept-cell highlight (documents with notes)
@@ -716,7 +657,7 @@ class MiAZNotesPlugin(MiAZExtension):
     def _on_repo_switched(self, *_args):
         self._close_windows()
         try:
-            data_dir = self.plugin.get_data_dir()
+            data_dir = notes_dir(self.repository.docs)
         except Exception as error:
             self.log.error(f"Could not resolve data dir on repo switch: {error}")
             return

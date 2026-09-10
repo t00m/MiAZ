@@ -554,6 +554,7 @@ class MiAZMainWindow(Gtk.Box):
         new_main_menu.append_section(None, new_plugins_section)
         self._append_massrename_submenu(new_main_menu)
         self._append_clipboard_item(new_main_menu)
+        self._append_notes_submenu(new_main_menu)
         btn_workspace_menu = self.app.get_widget('workspace-menu')
         if btn_workspace_menu is not None:
             popover = btn_workspace_menu.get_popover()
@@ -642,7 +643,19 @@ class MiAZMainWindow(Gtk.Box):
         menu.append_section(None, plugins_section)
         self._append_massrename_submenu(menu)
         self._append_clipboard_item(menu)
+        self._append_notes_submenu(menu)
         return menu
+
+    def _append_notes_submenu(self, menu):
+        """Add the core Notes submenu (built by the notes service).
+
+        Notes were a plugin until 0.3 and sat in the plugins section. Now they
+        are core, so they are appended alongside mass rename and the clipboard
+        item, and a menu rebuild puts them back.
+        """
+        notes = self.app.get_service('notes')
+        if notes is not None:
+            menu.append_submenu(_('Notes'), notes.menu())
 
     def _append_massrename_submenu(self, menu):
         """Add the core 'Mass renaming' submenu (built by the massrename

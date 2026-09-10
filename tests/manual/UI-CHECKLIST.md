@@ -297,7 +297,7 @@ automated UI suite, **[K]** needs a paid API key (skip unless you have one).
 
 - [ ] **10.1 [S] [A]** Settings, Plugins. All 17 are listed, each with an icon and a
       description, and the enabled ones are ticked.
-- [ ] **10.2 [N] [A]** Disable a plugin that adds a page (MiAZNotes, MiAZInsights).
+- [ ] **10.2 [N] [A]** Disable a plugin that adds a page (MiAZInsights). Notes is core since 0.3 and has no toggle.
       Its page disappears from the view switcher.
 - [ ] **10.3 [N] [A]** Enable it again. The page comes back and works. Repeat the
       cycle a second time: still fine.
@@ -336,7 +336,7 @@ automated UI suite, **[K]** needs a paid API key (skip unless you have one).
       needed, type any nonsense as the API key and Suggest.
 - [ ] **10.15 [K]** MiAZAIAssistant: the chat answers about a document, and a
       failed request does not hang the dialog.
-- [ ] **10.16** MiAZNotes: write a note, save it, reopen it. Markdown renders in
+- [ ] **10.16** Notes (core): write a note, save it, reopen it. Markdown renders in
       view mode, and the All notes page lists it.
 - [ ] **10.16b [A]** The workspace menu entry Documents > Annotation holds four
       items: Create a new note, See all notes, Backup notes, Restore notes.

@@ -243,10 +243,13 @@ Seventeen ship with the app.
 
 **More than a filename**
 
+Notes are built in: Markdown notes attached to a document, edited and previewed
+in the app, with a column in the workspace showing which documents have them
+and a sidebar switch to show only those. They were a plugin until 0.3.
+
 | Plugin | What it does |
 |---|---|
 | MiAZProjectMgt | Group related documents under a project, and filter the workspace by it. The assignment lives in `projects.json`, never in the filename |
-| MiAZNotes | Markdown notes attached to a document, edited and previewed in the app |
 | MiAZPeriodicity | Record how often a document is expected: monthly, yearly, on demand |
 
 **Reading the document for you**

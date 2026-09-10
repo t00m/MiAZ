@@ -103,19 +103,19 @@ def switch_via_workflow(driver, name, set_default):
 
 def test_the_plugins_follow_the_switch(miaz, back_to_alpha):
     """8.4: the gap the restart covered, the enabled set is per repository."""
-    assert 'MiAZNotes' in loaded_plugins(miaz)
+    assert 'MiAZPeriodicity' in loaded_plugins(miaz)
 
     switch_via_workflow(miaz, 'Beta', set_default=True)
 
     active = loaded_plugins(miaz)
-    assert 'MiAZNotes' not in active, 'a plugin Beta does not enable stayed loaded'
+    assert 'MiAZPeriodicity' not in active, 'a plugin Beta does not enable stayed loaded'
     assert 'MiAZFullscreen' in active, 'a plugin Beta enables did not load'
 
 
 def test_switching_back_restores_the_plugins(miaz, back_to_alpha):
     switch_via_workflow(miaz, 'Beta', set_default=True)
     switch_via_workflow(miaz, 'Alpha', set_default=True)
-    assert 'MiAZNotes' in loaded_plugins(miaz)
+    assert 'MiAZPeriodicity' in loaded_plugins(miaz)
 
 
 def test_switching_without_setting_the_default(clean_view, back_to_alpha):
@@ -138,7 +138,7 @@ def test_an_unknown_repository_changes_nothing(miaz):
     before = miaz.service('repo').docs
     assert miaz.service('workflow').switch_start(repo_id='Nope') is False
     assert miaz.service('repo').docs == before
-    assert 'MiAZNotes' in loaded_plugins(miaz)
+    assert 'MiAZPeriodicity' in loaded_plugins(miaz)
 
 
 def test_a_repository_whose_directory_is_gone(miaz, sandbox, back_to_alpha):
