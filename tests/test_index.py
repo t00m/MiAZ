@@ -335,6 +335,34 @@ def test_apply_change_content_edit_is_a_noop(tmp_path, index):
     assert len(index.documents()) == 1
 
 
+def test_apply_change_attribute_change_adds_a_document_never_seen(tmp_path, index):
+    """A copy sets the timestamps after writing the bytes, and the watcher
+    collapses a burst to its last event, so this can be the only event a new
+    document ever produces."""
+    index.reload()
+    path = touch(tmp_path, NEW)
+    assert index.apply_change(path, 'attribute-changed') is True
+    assert index.document(NEW) is not None
+
+
+def test_apply_change_content_edit_adds_a_document_never_seen(tmp_path, index):
+    """Same for a burst that ends in a write."""
+    index.reload()
+    path = touch(tmp_path, NEW)
+    assert index.apply_change(path, 'changed') is True
+    assert index.document(NEW) is not None
+
+
+def test_apply_change_attribute_change_on_a_foreign_name_is_not_applied(
+        tmp_path, index):
+    """A document whose name is not normalized yet belongs to the full scan,
+    which is what renames it."""
+    index.reload()
+    path = touch(tmp_path, 'bank statement.pdf')
+    assert index.apply_change(path, 'attribute-changed') is False
+    assert index.document('bank statement.pdf') is None
+
+
 def test_apply_change_created_twice_does_not_duplicate(tmp_path, index):
     path = touch(tmp_path, VALID)
     index.reload()

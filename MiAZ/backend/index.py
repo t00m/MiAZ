@@ -163,6 +163,12 @@ class MiAZDocumentIndex(GObject.GObject):
             return False
 
         if event in ('changed', 'attribute-changed'):
+            # A document the index has never seen is arriving, whatever the
+            # event says. The watcher collapses a burst to its last event per
+            # path, and a copy ends with the timestamps being set, so
+            # 'attribute-changed' is all a copied document ever reports.
+            if os.path.basename(path) not in self._items:
+                return self._arrived(path)
             # The row is derived from the filename, so neither alters it. The
             # duplicate map is derived from the bytes, so 'changed' does.
             if event == 'changed':
@@ -190,16 +196,27 @@ class MiAZDocumentIndex(GObject.GObject):
             return True
 
         if event in ('created', 'moved-in', 'changes-done-hint'):
-            if not self._is_normalizable(path):
-                return False
-            basename = os.path.basename(path)
-            action = 'update' if self._remove(basename) else 'add'
-            item = self._add(path)
-            self._invalidate_duplicates()
-            self.emit('index-changed', [(action, item)])
-            return True
+            return self._arrived(path)
 
         return False
+
+    def _arrived(self, path):
+        """Index a document that has just turned up.
+
+        False when the caller has to fall back to the full scan: a name that
+        is not normalized yet is renamed there, and a path that is already
+        gone is not this function's to guess about.
+        """
+        if not self._is_normalizable(path):
+            return False
+        if not os.path.exists(path):
+            return False
+        basename = os.path.basename(path)
+        action = 'update' if self._remove(basename) else 'add'
+        item = self._add(path)
+        self._invalidate_duplicates()
+        self.emit('index-changed', [(action, item)])
+        return True
 
     def _is_normalizable(self, path):
         """False when the name still has to be normalized on disk.
