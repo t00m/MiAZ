@@ -108,6 +108,47 @@ def test_a_field_code_rejects_a_different_value():
     assert DocumentQuery(country='FR').matches(item()) is False
 
 
+def test_a_field_code_is_exact_by_default():
+    """The sidebar passes the id of the dropdown entry it holds, so a code that
+    is part of a longer one must not drag that one in."""
+    assert DocumentQuery(sentby='BAN').matches(item()) is False
+
+
+def test_a_partial_field_matches_part_of_the_code():
+    """What somebody types at a terminal is the start of a name, not the code
+    as the filename spells it."""
+    assert DocumentQuery(sentby='BAN', partial_fields=True).matches(item()) is True
+
+
+def test_a_partial_field_matches_part_of_the_description():
+    """A code is short and often cryptic. The description is the text the
+    person has actually read, in the sidebar and in the search output."""
+    assert DocumentQuery(sentby='savings', partial_fields=True).matches(
+        item(sentby_dsc='The Savings Bank')) is True
+
+
+def test_a_partial_field_ignores_case():
+    assert DocumentQuery(sentby='bAn', partial_fields=True).matches(item()) is True
+
+
+def test_a_partial_field_still_rejects_what_is_not_there():
+    assert DocumentQuery(sentby='ZZZ', partial_fields=True).matches(item()) is False
+
+
+def test_partial_fields_narrow_each_other():
+    """Two fields are an and, whole codes or parts of them."""
+    query = DocumentQuery(sentby='BAN', purpose='IN', partial_fields=True)
+    assert query.matches(item()) is True
+    assert query.matches(item(purpose='RPT')) is False
+
+
+def test_partial_fields_leave_the_sentinels_alone():
+    assert DocumentQuery(sentby=ANY, partial_fields=True).matches(item()) is True
+    assert DocumentQuery(sentby=NONE, partial_fields=True).matches(item()) is False
+    assert DocumentQuery(sentby=NONE, partial_fields=True).matches(
+        item(sentby_id='')) is True
+
+
 def test_none_matches_an_empty_value():
     assert DocumentQuery(country=NONE).matches(item(country='')) is True
 

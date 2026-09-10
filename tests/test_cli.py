@@ -44,7 +44,11 @@ def parse(argv):
 
 
 def test_defaults_match_an_empty_query():
-    assert build_query(parse(['search']), util()) == DocumentQuery()
+    """`miaz search` with no flag filters nothing. partial_fields is the one
+    field the command line sets by itself: it says how a typed field value is
+    read, not which documents are wanted."""
+    assert build_query(parse(['search']), util()) == DocumentQuery(
+        partial_fields=True)
 
 
 def test_text_and_fields():
@@ -100,7 +104,8 @@ def test_flags_carry_no_logic_of_their_own():
     """The CLI must not filter differently from a query built by hand."""
     from_flags = build_query(parse(['search', 'x', '--country', 'ES',
                                     '--pending']), util())
-    by_hand = DocumentQuery(search='x', country='ES', only_pending=True)
+    by_hand = DocumentQuery(search='x', country='ES', only_pending=True,
+                            partial_fields=True)
     assert from_flags == by_hand
 
 
@@ -502,6 +507,32 @@ def test_the_sentinels_are_read_whatever_their_case():
     for text in ('any', 'ANY', 'Any'):
         query = build_query(parse(['search', '--country', text]), util())
         assert query.country == ANY, f'{text!r} did not reach the sentinel'
+
+
+def test_a_field_flag_matches_part_of_a_code(miaz_env, make_repo, register_repo):
+    """`--sentby ban` finds BANKX. A person at a terminal types the start of a
+    name, not the code as the filename spells it."""
+    code, out, _err = search(miaz_env, make_repo, register_repo,
+                             ['search', '--all', '--sentby', 'ban'])
+    assert code == 0
+    assert 'BANKX' in out
+    assert 'ACME' not in out
+
+
+def test_two_field_flags_narrow_each_other(miaz_env, make_repo, register_repo):
+    """Parts of two fields, and both have to hold."""
+    code, out, _err = search(miaz_env, make_repo, register_repo,
+                             ['search', '--all', '--sentby', 'ban',
+                              '--purpose', 'in'])
+    assert code == 0
+    assert len(out.splitlines()) == 1
+    assert 'mortgage' in out
+
+
+def test_the_command_line_matches_fields_by_part():
+    """The window passes the id of a dropdown entry and means exactly it. The
+    command line takes what somebody typed."""
+    assert build_query(parse(['search']), util()).partial_fields is True
 
 
 def test_an_ordinary_code_is_still_upper_cased():

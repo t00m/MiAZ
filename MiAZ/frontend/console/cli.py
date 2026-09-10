@@ -95,6 +95,10 @@ def build_query(args, util):
         concept=args.concept or '',
         only_pending=args.pending,
         ignore_active=args.all,
+        # A code typed at a terminal is remembered as a word, not as the code
+        # the filename carries: `--sentby vatt` is how somebody looks for
+        # VATTENFALL. The window means the dropdown entry it was given.
+        partial_fields=True,
         **values)
 
     if args.since:
@@ -329,9 +333,10 @@ def build_parser(search_paths=None):
     search.add_argument('text', nargs='?', help=_('Free text to look for'))
     search.add_argument('--concept', help=_('Substring of the concept field'))
     for field in FIELDS:
-        search.add_argument(f'--{field}', metavar='CODE',
-                            help=_('Filter by {field}. CODE, or none for the '
-                                   'documents with no {field}').format(field=field))
+        search.add_argument(f'--{field}', metavar='TEXT',
+                            help=_('Filter by {field}. Any part of the code or '
+                                   'its description, or none for the documents '
+                                   'with no {field}').format(field=field))
     search.add_argument('--since', metavar='PERIOD',
                         help=_('One of: {valid}').format(valid=', '.join(PRESETS)))
     search.add_argument('--from', dest='date_from', metavar='YYYYMMDD',

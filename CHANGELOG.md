@@ -69,6 +69,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **`miaz search --sentby vatt` finds Vattenfall.** The field flags took a whole code and nothing else, so a search had to be typed the way the filename spells it, and `--sentby vatt` returned nothing while `--sentby vattenfall` worked. They now take any part of the code or of its description, ignoring case: `--sentby vatt` and `--sentto "tomás vír"` both find their documents, and the flags combine the way they always did, each one narrowing what the others left. `none` and `any` still mean what they meant.
+
+  This is the command line only. `DocumentQuery.partial_fields` is off by default, because the window passes the id of the dropdown entry somebody picked and means exactly that one: a code that is part of a longer code must not drag that document in. A saved search written before this release reads back unchanged.
+
 - **`miaz --help` lists the commands.** It printed `--version` and nothing else, because the entry point parses the window's own options and the commands belong to the console parser in `frontend/console/cli.py`. So the only way to read what `miaz search` takes was to already know that `miaz search` exists. The two parsers are now one: the entry point builds the console parser, adds `--version` to it and prints that, so `search`, `repos` and every command a plugin contributes are in the help, with a line saying that `miaz COMMAND --help` has the flags and that no command means the window. The list is not a second copy of anything; a plugin declaring a command is in this help by declaring it.
 
   The help holds each command's own options, not a list of names. `MiAZParser`, the parser class the command line is built on, prints the help of every command it holds under the list of them, so `miaz --help` is the whole of what MiAZ takes: the search filters, the repository flags and whatever a plugin command declares. A command still documents itself under `miaz search --help`, which is the same text.

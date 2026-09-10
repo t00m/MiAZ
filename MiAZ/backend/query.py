@@ -147,6 +147,13 @@ class DocumentQuery:
     # recognise, so it can switch off the two checks that would hide them.
     ignore_date: bool = False
     ignore_active: bool = False
+    # Whether a field value is a whole code or part of one. The window passes
+    # the id of the dropdown entry somebody picked and means exactly it, so a
+    # code that is part of a longer one must not drag that one in. The command
+    # line takes what somebody typed, where 'vatt' means Vattenfall and the
+    # code, VATTENFALL, is not what anyone remembers. Part of the description
+    # counts too: that is the text shown in the sidebar and in the results.
+    partial_fields: bool = False
 
     def matches(self, item) -> bool:
         """True when the document belongs in the current view."""
@@ -159,11 +166,11 @@ class DocumentQuery:
         conditions = (
             self._matches_search(item),
             self._matches_concept(item),
-            _matches_value(self.country, item.country),
-            _matches_value(self.group, item.group),
-            _matches_value(self.sentby, item.sentby_id),
-            _matches_value(self.purpose, item.purpose),
-            _matches_value(self.sentto, item.sentto_id),
+            self._matches_field(self.country, item.country, item.country_dsc),
+            self._matches_field(self.group, item.group, item.group_dsc),
+            self._matches_field(self.sentby, item.sentby_id, item.sentby_dsc),
+            self._matches_field(self.purpose, item.purpose, item.purpose_dsc),
+            self._matches_field(self.sentto, item.sentto_id, item.sentto_dsc),
         )
         if not all(conditions):
             return False
@@ -172,6 +179,10 @@ class DocumentQuery:
             # Review lists what needs attention, whatever its date.
             return not active
         return active and in_range
+
+    def _matches_field(self, selected, value, description) -> bool:
+        """One field of the query against one field of the document."""
+        return _matches_value(selected, value, description, self.partial_fields)
 
     def _matches_search(self, item) -> bool:
         if not self.search:
@@ -218,10 +229,18 @@ class DocumentQuery:
         return cls(**values)
 
 
-def _matches_value(selected: str, value: str) -> bool:
-    """One dropdown against one field value."""
+def _matches_value(selected: str, value: str, description: str = '',
+                   partial: bool = False) -> bool:
+    """One dropdown, or one typed word, against one field value.
+
+    The sentinels come first and mean the same either way: Any takes every
+    document, None only the ones whose field is empty.
+    """
     if selected == ANY:
         return True
     if selected == NONE:
         return len(value) == 0
+    if partial:
+        wanted = selected.upper()
+        return wanted in value.upper() or wanted in (description or '').upper()
     return selected.upper() == value.upper()

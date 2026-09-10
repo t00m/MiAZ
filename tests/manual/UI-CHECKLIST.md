@@ -429,6 +429,11 @@ Not the GUI, but it ships in the same package and is new in this release.
       and afterwards the GUI still opens the repository it opened before.
 - [ ] **15.6 [N]** `miaz search --repo Nope` names the repositories that exist.
 - [ ] **15.7 [N]** `miaz` with no arguments still opens the window.
+- [ ] **15.8 [N]** `miaz --help` lists every command, the ones plugins add
+      included, and prints the options of each one under the list.
+- [ ] **15.9 [N]** `miaz search --sentby <part of a sender's name>` finds that
+      sender's documents, by part of the code or part of its description, and a
+      second field flag narrows the result further.
 
 ## 16. Packaging
 
