@@ -23,9 +23,7 @@ from gi.repository import Gtk
 from MiAZ.frontend.desktop.services.pluginsystem import MiAZExtension, MiAZPlugin
 
 sys.path.insert(1, os.path.dirname(os.path.abspath(__file__)))
-from lib.store import NotesStore
-from lib.dr import NotesBackup
-from lib.categories import CategoryStore
+from MiAZ.backend.notes import CategoryStore, NotesBackup, NotesStore
 from lib.listview import NotesListView
 from lib.allview import NotesAllView
 from lib.postit import NotesPostItBoard

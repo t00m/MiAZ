@@ -5,7 +5,7 @@
 # Author: Tomás Vírseda
 # License: GPL v3
 # Description: OCR plugin. Extract text from PDF documents and store it as a
-#              note via the MiAZNotes plugin.
+#              note.
 
 Two entry points over one implementation. The menu entry asks for a language
 in a dialog and reports with toasts; `miaz ocr` takes the language as a flag
@@ -19,12 +19,12 @@ below is never instantiated there, but the module still has to load.
 """
 
 import os
-import sys
 from gettext import gettext as _
 
 from MiAZ.backend import ocr as ocrcore
 from MiAZ.backend.log import MiAZLog
-from MiAZ.backend.plugins import MiAZExtension, plugin_data_dir
+from MiAZ.backend.notes import NotesStore, notes_dir
+from MiAZ.backend.plugins import MiAZExtension
 
 plugin_info = {
         'Module':        'ocr',
@@ -55,8 +55,7 @@ plugin_info = {
                 ],
             },
         ],
-        'Dependencies':  'MiAZNotes',
-    }
+        }
 
 # Written out as a literal on purpose. Packaging reads this list without
 # importing the module (tests/test_packaging_tools.py AST-parses it, so that
@@ -70,39 +69,15 @@ NOTE_CATEGORY = 'OCR'
 
 
 def notes_store(app, log):
-    """The MiAZNotes store, without loading its GTK plugin.
+    """Where the extracted text goes.
 
-    MiAZNotes owns what a note is: the filename, the header keys, the
-    frontmatter. Writing notes here instead would be a second definition of
-    that format, and the two would drift. Its lib/store.py is plain file I/O
-    with no toolkit in it, so the command line can use it directly.
-
-    Returns None when MiAZNotes is not installed, which is a reason to stop
-    rather than to invent a note format.
+    Notes are core as of 0.3, so this is one import. It used to mean finding
+    the MiAZNotes plugin on disk, putting its directory on sys.path and
+    importing a top level package called `lib`, and it worked only when that
+    plugin happened to be installed.
     """
-    from MiAZ.backend.plugins import MiAZPluginCore
-    env = app.get_env()
-    core = MiAZPluginCore(
-        search_paths=[env.get('GPATH', {}).get('PLUGINS'),
-                      env.get('LPATH', {}).get('PLUGINS')],
-        log_name='MiAZ.OCR.Notes')
-    module_file = core.find_module_file('notes')
-    if module_file is None:
-        log.error('MiAZNotes is not installed; there is nowhere to put the text')
-        return None
-
-    # The same insert notes.py does for itself, so 'lib' resolves to its own.
-    notes_dir = os.path.dirname(module_file)
-    if notes_dir not in sys.path:
-        sys.path.insert(1, notes_dir)
-    try:
-        from lib.store import NotesStore
-    except ImportError as error:
-        log.error(f'Cannot load the MiAZNotes store: {error}')
-        return None
-
     repository = app.get_service('repo')
-    return NotesStore(plugin_data_dir(repository.docs, 'MiAZNotes'), log)
+    return NotesStore(notes_dir(repository.docs), log)
 
 
 def run_ocr(app, args, stdout, stderr):
@@ -123,11 +98,6 @@ def run_ocr(app, args, stdout, stderr):
         return 3
 
     store = notes_store(app, log)
-    if store is None:
-        stderr.write(_('MiAZNotes is not installed, so there is nowhere to '
-                       'put the extracted text\n'))
-        return 3
-
     repository = app.get_service('repo')
     created = 0
     failed = 0

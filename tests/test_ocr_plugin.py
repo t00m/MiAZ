@@ -186,3 +186,48 @@ def test_the_document_is_never_modified(repository):
     main(['ocr', DOCUMENT], io.StringIO(), io.StringIO(), env=env)
 
     assert open(source, 'rb').read() == before
+
+
+@needs_pdftotext
+def test_ocr_files_a_note_without_the_notes_plugin_installed(tmp_path, miaz_env,
+                                                             make_repo,
+                                                             register_repo):
+    """Notes are core as of 0.3, so MiAZOCR needs no plugin to file one.
+
+    The plugin directory here holds MiAZOCR and nothing else: no MiAZNotes to
+    find, no `lib` package to put on sys.path. Before the move this returned 3
+    saying there was nowhere to put the text.
+    """
+    plugins = tmp_path / 'onlyocr'
+    (plugins / 'MiAZOCR').mkdir(parents=True)
+    for name in ('ocr.py', 'ocr.plugin'):
+        with open(os.path.join(PLUGINS, 'MiAZOCR', name), 'rb') as source:
+            (plugins / 'MiAZOCR' / name).write_bytes(source.read())
+
+    repo = make_repo('Home')
+    write_pdf(tmp_path / 'source.pdf', 'Hello OCR from MiAZ')
+    with open(os.path.join(repo, DOCUMENT), 'wb') as handler:
+        handler.write((tmp_path / 'source.pdf').read_bytes())
+    register_repo(miaz_env, 'Home', repo, current=True)
+
+    env = dict(miaz_env)
+    env['GPATH'] = dict(env['GPATH'], PLUGINS=str(plugins))
+    env['LPATH'] = dict(env['LPATH'], PLUGINS=str(tmp_path / 'user'))
+    stdout, stderr = io.StringIO(), io.StringIO()
+
+    code = main(['ocr', DOCUMENT], stdout, stderr, env=env)
+
+    assert code == 0, stderr.getvalue()
+    assert len(notes_in(repo)) == 1, stderr.getvalue()
+
+
+def test_the_plugin_no_longer_depends_on_another_plugin():
+    """Notes moved to core, so the declaration has to go with it: a stale
+    Dependencies line is a plugin that refuses to load for a missing thing
+    that is no longer a thing."""
+    from MiAZ.backend.plugins import get_plugin_attributes
+
+    attributes = get_plugin_attributes(
+        os.path.join(PLUGINS, 'MiAZOCR', 'ocr.plugin'))
+
+    assert 'MiAZNotes' not in attributes.get('Dependencies', '')

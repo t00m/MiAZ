@@ -9,6 +9,5 @@ Website=http://github.com/t00m/MiAZ
 Help=https://github.com/t00m/MiAZ/blob/main/README.md
 Category=Documents
 Subcategory=Annotation
-Dependencies=MiAZNotes
 MenuEntry-extract=Extract text (OCR)…
 Command-ocr=Extract text from documents with OCR and save it as a note
