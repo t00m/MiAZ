@@ -551,11 +551,28 @@ def test_the_help_lists_a_command_a_plugin_contributes(tmp_path):
     assert 'ocr' in result.stdout, result.stdout
 
 
-def test_the_help_says_where_a_command_documents_itself(tmp_path):
-    """The flags of a command are under that command, and the top level has to
-    say so, or the list of names is a dead end."""
+def test_the_help_expands_the_options_of_every_command(tmp_path):
+    """A name and one line is an index, not the options. `miaz --help` prints
+    each command's own help under the list, so what MiAZ takes is readable in
+    one place."""
     result = run_miaz(['--help'], tmp_path)
-    assert 'miaz COMMAND --help' in result.stdout, result.stdout
+    for flag in ('--concept', '--pending', '--since',  # search
+                 '--json',                             # repos
+                 '--language', '--force'):             # ocr, from a plugin
+        assert flag in result.stdout, f'{flag} is not in the help'
+
+
+def test_the_expanded_help_keeps_each_command_usage_line(tmp_path):
+    """Every block says which command it belongs to, which is what the usage
+    line of a subparser is."""
+    result = run_miaz(['--help'], tmp_path)
+    for line in ('usage: miaz search', 'usage: miaz repos', 'usage: miaz ocr'):
+        assert line in result.stdout, f'{line!r} is not in the help'
+
+
+def test_the_help_says_what_no_command_does(tmp_path):
+    result = run_miaz(['--help'], tmp_path)
+    assert 'opens its window' in result.stdout, result.stdout
 
 
 def test_the_help_still_offers_the_window_options(tmp_path):

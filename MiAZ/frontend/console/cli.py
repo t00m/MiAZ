@@ -281,8 +281,47 @@ def _add_plugin_command(commands, name, declared, search_paths):
     return operation
 
 
+class MiAZParser(argparse.ArgumentParser):
+    """A parser whose help holds each command's options, not only its name.
+
+    argparse prints a subcommand as a name and one line of help, and keeps its
+    flags behind `miaz search --help`. Somebody reading `miaz --help` is asking
+    what MiAZ takes, so all of it is printed: the list of commands first, then
+    the help of each command under it.
+
+    Subparsers inherit this class, since add_subparsers defaults parser_class
+    to the type of the parser it is called on. That costs nothing: a command
+    has no commands of its own, so its help is the one argparse writes.
+    """
+
+    def format_help(self):
+        text = super().format_help()
+        blocks = [subparser.format_help().rstrip()
+                  for _name, subparser in self.command_parsers()]
+        if not blocks:
+            return text
+        return '{text}\n{header}\n\n{blocks}\n'.format(
+            text=text.rstrip('\n') + '\n',
+            header=_('each command in detail:'),
+            blocks='\n\n'.join(blocks))
+
+    def command_parsers(self):
+        """(name, parser) for every subcommand, in the order they were added.
+
+        Read off the actions rather than kept in a second list, so a command
+        added anywhere is described here without being registered twice.
+        """
+        for action in self._actions:
+            choices = getattr(action, 'choices', None)
+            if not isinstance(choices, dict):
+                continue
+            for name, subparser in choices.items():
+                if isinstance(subparser, argparse.ArgumentParser):
+                    yield name, subparser
+
+
 def build_parser(search_paths=None):
-    parser = argparse.ArgumentParser(
+    parser = MiAZParser(
         prog='miaz', description=_('Personal Document Organizer'))
     commands = parser.add_subparsers(dest='command')
 

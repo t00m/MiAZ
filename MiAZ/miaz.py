@@ -342,7 +342,9 @@ def build_parser():
     help was supposed to tell you.
 
     The commands come from the console parser rather than a second list, so a
-    plugin that contributes one is in this help without doing anything else.
+    plugin that contributes one is in this help without doing anything else,
+    with its own options: MiAZParser prints each command's help under the list
+    of them, so `miaz --help` is the whole of what MiAZ takes.
     """
     from MiAZ.frontend.console.cli import build_parser as build_console_parser
     from MiAZ.frontend.console.cli import plugin_search_paths
@@ -351,8 +353,7 @@ def build_parser():
     parser.add_argument('--version', action='version',
                         version=ENV['APP']['VERSION'],
                         help='Show version number and exit.')
-    parser.epilog = ("Run 'miaz COMMAND --help' for what a command takes. "
-                     "With no command, MiAZ opens its window.")
+    parser.epilog = 'With no command, MiAZ opens its window.'
     return parser
 
 

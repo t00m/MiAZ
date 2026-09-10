@@ -71,6 +71,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **`miaz --help` lists the commands.** It printed `--version` and nothing else, because the entry point parses the window's own options and the commands belong to the console parser in `frontend/console/cli.py`. So the only way to read what `miaz search` takes was to already know that `miaz search` exists. The two parsers are now one: the entry point builds the console parser, adds `--version` to it and prints that, so `search`, `repos` and every command a plugin contributes are in the help, with a line saying that `miaz COMMAND --help` has the flags and that no command means the window. The list is not a second copy of anything; a plugin declaring a command is in this help by declaring it.
 
+  The help holds each command's own options, not a list of names. `MiAZParser`, the parser class the command line is built on, prints the help of every command it holds under the list of them, so `miaz --help` is the whole of what MiAZ takes: the search filters, the repository flags and whatever a plugin command declares. A command still documents itself under `miaz search --help`, which is the same text.
+
   A plain `miaz` skips the parser altogether. There is no argument to reject, and building it reads every plugin file to list the commands, which is work the window has no use for.
 
   The per-user plugin directory not existing is a debug line now, not a warning. It is missing on any machine where nobody installed a plugin, and since the help reads the plugin files to list their commands, that warning printed above the help for a first-time user.
