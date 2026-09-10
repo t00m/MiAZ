@@ -137,10 +137,18 @@ gi.require_version = require_version
 import MiAZ.miaz  # noqa: F401
 '''
 
+# The same, then actually asking for the window. Importing a module must not
+# end the process, so what the missing toolkit is worth saying is said here.
+NO_TOOLKIT_RUN = NO_TOOLKIT + '''
+import sys
+sys.argv = ['miaz']
+MiAZ.miaz.MiAZ(MiAZ.miaz.ENV).run(sys.argv)
+'''
 
-def run_without_toolkit(tmp_path):
-    script = tmp_path / 'no_toolkit.py'
-    script.write_text(NO_TOOLKIT)
+
+def run_without_toolkit(tmp_path, script_body=NO_TOOLKIT, name='no_toolkit.py'):
+    script = tmp_path / name
+    script.write_text(script_body)
     env = dict(os.environ)
     env.update({'HOME': str(tmp_path / 'home'), 'PYTHONPATH': ROOT, 'LC_ALL': 'C'})
     return subprocess.run([sys.executable, str(script)], cwd=ROOT, env=env,
@@ -156,9 +164,27 @@ def test_a_missing_toolkit_does_not_raise_nameerror(tmp_path):
     assert 'NameError' not in result.stderr, result.stderr[-2000:]
 
 
-def test_a_missing_toolkit_says_what_is_needed(tmp_path):
+def test_importing_without_a_toolkit_does_not_end_the_process(tmp_path):
+    """Importing a module must not exit.
+
+    The toolkit check used to run at module scope and call sys.exit(-1), which
+    happens on the way in, for every invocation. That took the command line
+    down with the window: `miaz search` on a server with no Gtk typelib exited
+    255 before it parsed its own arguments. See tests/test_no_toolkit.py.
+    """
     result = run_without_toolkit(tmp_path)
-    assert result.returncode == 255, (
+    assert result.returncode == 0, (
+        f'importing exited {result.returncode}: {result.stderr[-2000:]}')
+
+
+def test_a_missing_toolkit_says_what_is_needed(tmp_path):
+    """Asked for the window with no toolkit, MiAZ names the versions it wanted.
+
+    Driven through run() rather than through the import, which is where the
+    question is now answered.
+    """
+    result = run_without_toolkit(tmp_path, NO_TOOLKIT_RUN, 'no_toolkit_run.py')
+    assert result.returncode == 2, (
         f'exit code {result.returncode}, stderr: {result.stderr[-2000:]}')
     assert 'Desktop dependencies not met' in result.stderr, result.stderr[-2000:]
     # The sentence has to read correctly with nothing installed, which the

@@ -98,11 +98,12 @@ def toolkit_report(name, key, minimum):
 log.debug(f"GTK available ({toolkit_version('GTK_VERSION') or 'not installed'})")
 log.debug(f"ADW available ({toolkit_version('ADW_VERSION') or 'not installed'})")
 log.debug(f"Desktop enabled? {ENV['DESKTOP']['ENABLED']}")
-if not ENV['DESKTOP']['ENABLED']:
-    log.error("Desktop dependencies not met to run this app")
-    log.error(toolkit_report('GTK', 'GTK_VERSION', GTK_MINIMUM))
-    log.error(toolkit_report('Adw', 'ADW_VERSION', ADW_MINIMUM))
-    sys.exit(-1)
+# A missing toolkit is not reported here. This runs on the way in, for every
+# invocation, and exiting from it took the command line down with the window:
+# `miaz search` on a server with no Gtk typelib exited 255 before it could
+# parse its own arguments, and the branch in run() that names the commands
+# that do work there could never be reached. run() reports it, once it knows
+# a window was actually asked for.
 
 
 signal.signal(signal.SIGINT, signal.SIG_DFL)
@@ -145,7 +146,6 @@ class MiAZ:
         the two frontends afterwards.
         """
         self.env = ENV
-        self.console = console
         log.debug("MiAZ Environment variables:")
         for section in self.env:
             log.debug(f"\t[{section}]")
@@ -263,8 +263,11 @@ class MiAZ:
 
         if not ENV['DESKTOP']['ENABLED']:
             # No usable GTK and no subcommand either. There is no window to
-            # open, so point at what does work here rather than failing on an
-            # import.
+            # open, so say which versions were wanted and point at what does
+            # work here, rather than failing on an import.
+            log.error("Desktop dependencies not met to run this app")
+            log.error(toolkit_report('GTK', 'GTK_VERSION', GTK_MINIMUM))
+            log.error(toolkit_report('Adw', 'ADW_VERSION', ADW_MINIMUM))
             sys.stderr.write("GTK is not available. Try 'miaz search' or "
                              "'miaz repos'.\n")
             sys.exit(2)
