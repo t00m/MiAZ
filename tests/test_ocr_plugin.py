@@ -46,8 +46,13 @@ def repository(tmp_path, miaz_env, make_repo, register_repo):
 
 
 def notes_in(repo):
-    """Every note MiAZNotes would show for this repository."""
-    data_dir = os.path.join(repo, '.conf', 'plugins', 'MiAZNotes', 'data')
+    """Every note this repository holds.
+
+    Asks notes_dir rather than spelling the path out, so a move of the notes
+    directory does not need this test changed with it.
+    """
+    from MiAZ.backend.notes import notes_dir
+    data_dir = notes_dir(repo)
     if not os.path.isdir(data_dir):
         return []
     return sorted(name for name in os.listdir(data_dir) if name.endswith('.md'))
@@ -115,8 +120,8 @@ def test_the_note_holds_the_extracted_text_and_the_language(repository):
     main(['ocr', DOCUMENT, '--language', 'eng'], io.StringIO(), io.StringIO(),
          env=env)
 
-    note = os.path.join(repo, '.conf', 'plugins', 'MiAZNotes', 'data',
-                        notes_in(repo)[0])
+    from MiAZ.backend.notes import notes_dir
+    note = os.path.join(notes_dir(repo), notes_in(repo)[0])
     with open(note, encoding='utf-8') as handler:
         content = handler.read()
 

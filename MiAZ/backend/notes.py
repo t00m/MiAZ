@@ -26,18 +26,92 @@ import zipfile
 from datetime import datetime, timezone
 from typing import Dict, List, Tuple
 
+from MiAZ.backend.log import MiAZLog
 from MiAZ.backend.util import check_zip_members
+
+_module_log = MiAZLog('MiAZ.Notes')
 
 
 def notes_dir(repo_docs: str) -> str:
-    """Where a repository keeps its notes.
+    """Where a repository keeps its notes."""
+    return os.path.join(repo_docs, '.conf', 'MiAZNotes', 'data')
 
-    Still under .conf/plugins/MiAZNotes, which is where every note written so
-    far already is. Moving the code was worth doing; moving the data was not,
-    and a path that reads oddly costs less than a migration that can lose a
-    note.
-    """
+
+def legacy_notes_dir(repo_docs: str) -> str:
+    """Where notes were kept while they were a plugin."""
     return os.path.join(repo_docs, '.conf', 'plugins', 'MiAZNotes', 'data')
+
+
+def _unique_name(path: str) -> str:
+    """`path`, or the next free name beside it.
+
+    Same shape the store uses for two notes filed in one second: a counter
+    before the extension, which document_id_of, list_for_document and
+    rename_for_document all ignore.
+    """
+    if not os.path.exists(path):
+        return path
+    stem, extension = os.path.splitext(path)
+    counter = 2
+    while os.path.exists(f'{stem}-{counter}{extension}'):
+        counter += 1
+    return f'{stem}-{counter}{extension}'
+
+
+def migrate_notes(repo_docs: str, log=None) -> int:
+    """Move a repository's notes out of the plugins directory.
+
+    Notes were written to .conf/plugins/MiAZNotes while they were a plugin.
+    They are core now, and this runs whenever a repository is opened, by the
+    window or by a command, so a repository migrates the first time either one
+    touches it. Returns how many files were moved, which is 0 for a repository
+    that has nothing to move: the common case after the first open.
+
+    Nothing is ever overwritten. Both directories can hold a note of the same
+    name, because a 0.2 MiAZ and a 0.3 one can be pointed at one repository in
+    turn, and losing either note is not acceptable. A file whose name is taken
+    arrives beside the one already there.
+    """
+    log = log or _module_log
+    legacy = os.path.join(repo_docs, '.conf', 'plugins', 'MiAZNotes')
+    target = os.path.join(repo_docs, '.conf', 'MiAZNotes')
+    if not os.path.isdir(legacy):
+        return 0
+
+    moved = 0
+    for root, _dirs, files in os.walk(legacy):
+        relative = os.path.relpath(root, legacy)
+        destination = target if relative == '.' else os.path.join(target, relative)
+        os.makedirs(destination, exist_ok=True)
+        for filename in files:
+            source_file = os.path.join(root, filename)
+            target_file = _unique_name(os.path.join(destination, filename))
+            try:
+                shutil.move(source_file, target_file)
+                moved += 1
+                if os.path.basename(target_file) != filename:
+                    log.warning(f"Note '{filename}' already existed at the new "
+                                f"location; kept both, the moved one as "
+                                f"'{os.path.basename(target_file)}'")
+            except OSError as error:
+                log.error(f"Could not move '{source_file}': {error}")
+
+    # Only an empty tree is removed. Anything left behind is something that
+    # could not be moved, and it stays where it is rather than being deleted.
+    # os.listdir rather than walk's `dirs` and `files`: those are read before
+    # the children are removed, so the parent still looks occupied and the
+    # directory this exists to clear away is the one that survives.
+    try:
+        for root, _dirs, _files in os.walk(legacy, topdown=False):
+            if not os.listdir(root):
+                os.rmdir(root)
+    except OSError as error:
+        log.debug(f"Old notes directory not removed: {error}")
+
+    if moved:
+        log.info(f"Notes migrated out of the plugins directory: {moved} "
+                 f"file(s) now in {target}")
+    return moved
 
 
 HEADER_KEYS = ('Author', 'Category', 'Date', 'Priority', 'Status')

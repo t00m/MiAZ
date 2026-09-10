@@ -12,6 +12,7 @@ import json
 from gi.repository import GObject
 
 from MiAZ.backend.log import MiAZLog
+from MiAZ.backend.notes import migrate_notes
 from MiAZ.backend.models import MiAZItem
 from MiAZ.backend.util import atomic_json_save
 from MiAZ.backend.config import MiAZConfigStore
@@ -246,6 +247,12 @@ class MiAZRepository(GObject.GObject):
         self._store = MiAZConfigStore(self.app, repo_dir_conf)
         self.config.update(self._store.as_dict())
         self._reconcile_people_available()
+        # Notes stopped being a plugin in 0.3 and left their directory behind
+        # under .conf/plugins. Done here rather than at application start
+        # because a command opens a repository too, and a repository migrated
+        # by only one of the two frontends would have notes in both places
+        # with nothing to say so. It is a no-op once there is nothing to move.
+        migrate_notes(self.docs, self.log)
         self.log.debug(f"Repository configuration loaded correctly from: {repo_dir_conf}")
         self.emit('repository-switched')
 

@@ -18,6 +18,7 @@ ones.
 """
 
 import os
+import shutil
 import zipfile
 
 import pytest
@@ -50,15 +51,6 @@ def store(tmp_path):
     return NotesStore(str(tmp_path / 'notes'), QuietLog())
 
 
-def test_the_notes_directory_did_not_move_with_the_code(tmp_path):
-    """Moving code must not move data.
-
-    Notes written while MiAZNotes was a plugin live under
-    .conf/plugins/MiAZNotes/data, and every existing repository has them
-    there. Keeping the path means no migration and nothing to lose; the
-    location is only odd to read, which is worth less than the risk.
-    """
-    assert notes_dir('/repo') == '/repo/.conf/plugins/MiAZNotes/data'
 
 
 def test_creating_a_note_writes_a_file_named_after_the_document(store):
@@ -271,3 +263,234 @@ def test_a_note_with_a_collision_suffix_still_knows_its_document(store):
     store.rename_for_document('DOC-1.pdf', 'DOC-2.pdf')
     assert store.count_for_document('DOC-2.pdf') == 2
     assert store.count_for_document('DOC-1.pdf') == 0
+
+
+# Migration out of the plugins directory
+#
+# Notes lived at <repo>/.conf/plugins/MiAZNotes while they were a plugin. They
+# are core now and the path was the last thing still saying otherwise.
+
+def legacy_tree(repo, notes=('DOC-1.pdf_20260101000000.md',), categories=True):
+    """A repository whose notes are still where the plugin left them."""
+    legacy = os.path.join(repo, '.conf', 'plugins', 'MiAZNotes')
+    os.makedirs(os.path.join(legacy, 'data'), exist_ok=True)
+    os.makedirs(os.path.join(legacy, 'conf'), exist_ok=True)
+    for name in notes:
+        with open(os.path.join(legacy, 'data', name), 'w', encoding='utf-8') as fp:
+            fp.write(f'---\nCategory: General\n---\n\n{name}\n')
+    if categories:
+        with open(os.path.join(legacy, 'data', 'categories.json'), 'w',
+                  encoding='utf-8') as fp:
+            fp.write('["Invoices"]')
+    with open(os.path.join(legacy, 'conf', 'Plugin-MiAZNotes.json'), 'w',
+              encoding='utf-8') as fp:
+        fp.write('{}')
+    return legacy
+
+
+def test_notes_live_outside_the_plugins_directory(tmp_path):
+    """The path was the last thing still calling notes a plugin."""
+    from MiAZ.backend.notes import legacy_notes_dir
+
+    assert notes_dir('/repo') == '/repo/.conf/MiAZNotes/data'
+    assert legacy_notes_dir('/repo') == '/repo/.conf/plugins/MiAZNotes/data'
+
+
+def test_migration_moves_the_notes_out_of_the_plugins_directory(tmp_path):
+    from MiAZ.backend.notes import migrate_notes
+
+    repo = str(tmp_path / 'repo')
+    legacy_tree(repo)
+
+    moved = migrate_notes(repo, QuietLog())
+
+    assert moved >= 1
+    assert os.path.isfile(os.path.join(notes_dir(repo), 'DOC-1.pdf_20260101000000.md'))
+    assert not os.path.exists(os.path.join(repo, '.conf', 'plugins', 'MiAZNotes'))
+
+
+def test_migration_keeps_everything_the_directory_held(tmp_path):
+    """Not just the notes: the category list a person typed, and the settings
+    file the plugin left behind. Moving is reversible, deciding what is junk
+    is not."""
+    from MiAZ.backend.notes import migrate_notes
+
+    repo = str(tmp_path / 'repo')
+    legacy_tree(repo)
+
+    migrate_notes(repo, QuietLog())
+
+    assert os.path.isfile(os.path.join(notes_dir(repo), 'categories.json'))
+    assert os.path.isfile(os.path.join(repo, '.conf', 'MiAZNotes', 'conf',
+                                       'Plugin-MiAZNotes.json'))
+
+
+def test_migrated_notes_are_readable_through_the_store(tmp_path):
+    """The point of the whole thing."""
+    from MiAZ.backend.notes import migrate_notes
+
+    repo = str(tmp_path / 'repo')
+    legacy_tree(repo)
+    migrate_notes(repo, QuietLog())
+
+    store = NotesStore(notes_dir(repo), QuietLog())
+    assert store.count_for_document('DOC-1.pdf') == 1
+
+
+def test_migration_does_nothing_when_there_is_nothing_to_move(tmp_path):
+    """It runs on every repository open, so the common case is no case."""
+    from MiAZ.backend.notes import migrate_notes
+
+    repo = str(tmp_path / 'repo')
+    os.makedirs(os.path.join(repo, '.conf'), exist_ok=True)
+
+    assert migrate_notes(repo, QuietLog()) == 0
+
+
+def test_migration_is_safe_to_run_again(tmp_path):
+    """Every repository open runs it. The second one must be a no-op and must
+    not disturb what the first one moved."""
+    from MiAZ.backend.notes import migrate_notes
+
+    repo = str(tmp_path / 'repo')
+    legacy_tree(repo)
+    migrate_notes(repo, QuietLog())
+    before = sorted(os.listdir(notes_dir(repo)))
+
+    assert migrate_notes(repo, QuietLog()) == 0
+    assert sorted(os.listdir(notes_dir(repo))) == before
+
+
+def test_migration_never_overwrites_a_note_already_at_the_target(tmp_path):
+    """Both directories can hold a note of the same name: a 0.2 MiAZ and a 0.3
+    one opened the same repository in turn. Losing either is not acceptable, so
+    the incoming one is kept under a new name.
+    """
+    from MiAZ.backend.notes import migrate_notes
+
+    repo = str(tmp_path / 'repo')
+    legacy_tree(repo)
+    os.makedirs(notes_dir(repo), exist_ok=True)
+    target = os.path.join(notes_dir(repo), 'DOC-1.pdf_20260101000000.md')
+    with open(target, 'w', encoding='utf-8') as fp:
+        fp.write('---\nCategory: General\n---\n\nthe newer note\n')
+
+    migrate_notes(repo, QuietLog())
+
+    with open(target, encoding='utf-8') as fp:
+        assert 'the newer note' in fp.read(), 'the target note was overwritten'
+    # And the one that came from the old directory is still somewhere.
+    survivors = [name for name in os.listdir(notes_dir(repo))
+                 if name.startswith('DOC-1.pdf_')]
+    assert len(survivors) == 2, f'a note was lost: {survivors}'
+
+
+def test_a_repository_with_no_conf_directory_is_not_an_error(tmp_path):
+    """migrate_notes is called on every open, including for a path that turns
+    out not to be a repository at all."""
+    from MiAZ.backend.notes import migrate_notes
+
+    assert migrate_notes(str(tmp_path / 'nothing-here'), QuietLog()) == 0
+
+
+def test_a_backup_taken_before_the_move_restores_after_it(tmp_path):
+    """NotesBackup stores relative names, so a zip made when notes lived in
+    the plugins directory restores into the new one. Worth pinning: a person
+    reaches for a backup exactly when something has gone wrong."""
+    repo = str(tmp_path / 'repo')
+    legacy = legacy_tree(repo)
+    log = QuietLog()
+    archive = str(tmp_path / 'old-notes.zip')
+    assert NotesBackup(os.path.join(legacy, 'data'), log).backup(archive) >= 1
+
+    from MiAZ.backend.notes import migrate_notes
+    migrate_notes(repo, log)
+
+    # Wipe what was migrated, then restore the pre-move archive on top.
+    store = NotesStore(notes_dir(repo), log)
+    NotesBackup(notes_dir(repo), log).reset_data_dir()
+    assert store.count_for_document('DOC-1.pdf') == 0
+
+    NotesBackup(notes_dir(repo), log).restore(archive)
+    assert store.count_for_document('DOC-1.pdf') == 1
+
+
+def test_opening_a_repository_migrates_it(tmp_path, miaz_env, make_repo,
+                                          register_repo):
+    """The hook is repository.load(), not application start.
+
+    Both frontends load a repository; only one of them is an application.
+    Migrating at app start would leave a repository used from `miaz ocr` on a
+    server writing new notes to the new directory while the old ones sat in the
+    old one, and nothing would say so.
+    """
+    from MiAZ.frontend.console.app import MiAZConsoleApp
+
+    repo = make_repo('Home')
+    legacy_tree(repo)
+    register_repo(miaz_env, 'Home', repo, current=True)
+
+    code, message = MiAZConsoleApp(miaz_env).open_repository('Home')
+
+    assert code == 0, message
+    assert os.path.isfile(os.path.join(notes_dir(repo),
+                                       'DOC-1.pdf_20260101000000.md'))
+    assert not os.path.exists(os.path.join(repo, '.conf', 'plugins', 'MiAZNotes'))
+
+
+def test_the_repository_config_backup_still_carries_the_notes(tmp_path, miaz_env,
+                                                              make_repo,
+                                                              register_repo):
+    """Backup & Restore zips the whole .conf directory, so notes travel with
+    it wherever inside .conf they live. Asserted rather than assumed: the move
+    out of .conf/plugins would be a quiet way to drop them from every backup a
+    person takes.
+    """
+    from MiAZ.backend.dr import MiAZDR
+    from MiAZ.frontend.console.app import MiAZConsoleApp
+
+    repo = make_repo('Home')
+    register_repo(miaz_env, 'Home', repo, current=True)
+    app = MiAZConsoleApp(miaz_env)
+    assert app.open_repository('Home')[0] == 0
+
+    store = NotesStore(notes_dir(repo), QuietLog())
+    store.create('DOC-1.pdf', {'Category': 'OCR'}, 'the body')
+
+    dest = tmp_path / 'backups'
+    dest.mkdir()
+    archive = MiAZDR(app).backup_config(os.path.join(repo, '.conf'), str(dest))
+
+    assert archive and zipfile.is_zipfile(archive), archive
+    names = zipfile.ZipFile(archive).namelist()
+    assert any('MiAZNotes' in name and name.endswith('.md') for name in names), \
+        f'no note in the configuration backup: {names}'
+
+
+def test_restoring_a_config_backup_brings_the_notes_back(tmp_path, miaz_env,
+                                                         make_repo,
+                                                         register_repo):
+    """The other half. A backup nobody can restore is not a backup."""
+    from MiAZ.backend.dr import MiAZDR
+    from MiAZ.frontend.console.app import MiAZConsoleApp
+
+    repo = make_repo('Home')
+    register_repo(miaz_env, 'Home', repo, current=True)
+    app = MiAZConsoleApp(miaz_env)
+    assert app.open_repository('Home')[0] == 0
+    dr = MiAZDR(app)
+
+    store = NotesStore(notes_dir(repo), QuietLog())
+    store.create('DOC-1.pdf', {'Category': 'OCR'}, 'the body')
+    dest = tmp_path / 'backups'
+    dest.mkdir()
+    archive = dr.backup_config(os.path.join(repo, '.conf'), str(dest))
+
+    shutil.rmtree(notes_dir(repo))
+    assert store.count_for_document('DOC-1.pdf') == 0
+
+    dr.restore_config(os.path.join(repo, '.conf'), archive)
+
+    assert store.count_for_document('DOC-1.pdf') == 1
+    _header, body = store.read(store.list_for_document('DOC-1.pdf')[0])
+    assert body.strip() == 'the body'
