@@ -138,9 +138,16 @@ git push && git push --tags
 scripts/packaging/build_all.sh
 ```
 
-RPM, DEB, Flatpak and AppImage, all from one export of one commit so they
-cannot disagree about their own version. They land in `dist/`. A format whose
-toolchain is not installed is skipped rather than failed.
+RPM, DEB and AppImage, all from one export of one commit so they cannot
+disagree about their own version. They land in `dist/`, with a build log per
+format in `dist/logs/`. A format whose toolchain is not installed is skipped
+rather than failed, and so is the Flatpak: its sandbox cannot reach `ocrmypdf`
+or `scanimage`, so no release ships one. `MIAZ_ALLOW_FLATPAK=1` builds it
+anyway.
+
+The build runs the verifier below at the end, with `--no-container`. Run step 6
+as well: the checks that need a container are the ones a local build cannot
+make.
 
 Build the tag, not the working tree, if anything has moved since:
 

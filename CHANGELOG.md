@@ -8,6 +8,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **The package verifier failed every release that does not carry a build counter.** Its last check compares the version of the rpm with the version of the deb, and it put them in the same shape by appending `+build.<rpm release>` to the rpm one. That only matches a deb whose own version holds `+build.N`, which was true while `meson.build` said `0.2.0+build.8` and stopped being true in 0.3.0, where the version names the release and the counter is the Debian revision. So 0.3.0 verified as "same release version, different build: rpm 0.3.0+build.1, deb 0.3.0", with the packages themselves in perfect agreement. Both versions are now taken apart into a version and a build number and compared piece by piece, which reads either spelling. Checked against the 0.3.0 packages: 31 passed, 0 failed.
+- `RELEASING.md` said `build_all.sh` produces a Flatpak. It stopped: the sandbox cannot reach `ocrmypdf` or `scanimage`, so the step is skipped unless `MIAZ_ALLOW_FLATPAK=1` says otherwise. The document now says that, points at the per-format logs in `dist/logs/`, and says that the build runs the verifier with `--no-container`, so the container checks are only made by running step 6 on its own.
+
 ## [0.3.0] - 2026-09-12
 
 ### Added
