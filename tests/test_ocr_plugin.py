@@ -160,9 +160,17 @@ def test_ocr_reads_more_than_one_document(repository):
     assert len(notes_in(repo)) == 2, stderr.getvalue()
 
 
-def test_a_document_that_is_not_in_the_repository_is_reported(repository):
+def test_a_document_that_is_not_in_the_repository_is_reported(repository,
+                                                              monkeypatch):
     """Naming the wrong file is the commonest mistake at a prompt. Say which
-    one, and do not write a note for it."""
+    one, and do not write a note for it.
+
+    The tool check is stubbed because a missing ocrmypdf returns 3 before any
+    name is looked at, and this path never runs a tool. Without the stub the
+    test fails on a machine with no ocrmypdf, CI included.
+    """
+    from MiAZ.backend import ocr as ocrcore
+    monkeypatch.setattr(ocrcore, 'missing_tools', lambda *args, **kwargs: [])
     env, repo = repository
     stdout, stderr = io.StringIO(), io.StringIO()
 
