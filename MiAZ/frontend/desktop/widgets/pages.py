@@ -51,46 +51,61 @@ class MiAZWelcome(Gtk.Box):
 class MiAZPageNotFound(Gtk.Box):
     """What the workspace shows in place of the documents when there are none.
 
-    It sits inside the workspace, under its toolbar, so the Add button and the
-    drop target stay where they are. Two cases: the repository has no
-    documents at all ('no-documents'), or the filters hide all of them
-    ('no-matches'). Only the first one has an Add button of its own.
+    The workspace hides its toolbar while this page is up, so the page carries
+    the two actions that lead somewhere from an empty view: Add, and Review
+    when documents are waiting for it.
     """
     def __init__(self, app):
         super().__init__(spacing=12, orientation=Gtk.Orientation.VERTICAL)
         self.app = app
-        self.mode = None
 
-        self.status_page = Adw.StatusPage(vexpand=True)
+        self.status_page = Adw.StatusPage(
+            title=_("No documents found"),
+            description=_("Try a different search, reset filters or add new documents"),
+            icon_name="io.github.t00m.MiAZ-edit-find-symbolic",
+            vexpand=True,
+        )
 
-        # The same menu as the toolbar Add button, so an Import plugin that
-        # adds an entry there adds it here too.
+        box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=12)
+        box.set_halign(Gtk.Align.CENTER)
+
+        # The same menu as the toolbar Add button, so every enabled Import
+        # plugin (scanner, ZIP file) has its entry here too.
         self.button_add = Gtk.MenuButton()
         self.button_add.set_child(Adw.ButtonContent(
             icon_name='list-add-symbolic', label=_('Add documents')))
-        self.button_add.set_halign(Gtk.Align.CENTER)
         self.button_add.add_css_class('suggested-action')
         self.button_add.add_css_class('pill')
         self.button_add.set_menu_model(self.app.get_widget('headerbar-add-menu'))
-        self.status_page.set_child(self.button_add)
+        box.append(self.button_add)
 
+        # A new document usually lands in Review, which leaves the view empty,
+        # and the Review toggle is on the hidden toolbar. This button stands in
+        # for it: shown when the toggle is, pressing it turns the toggle on.
+        self.button_review = Gtk.Button()
+        self.button_review.add_css_class('pill')
+        self.button_review.connect('clicked', self._on_review_clicked)
+        box.append(self.button_review)
+        self._review_toggle = self.app.get_widget('workspace-togglebutton-pending-docs')
+        if self._review_toggle is not None:
+            self._review_toggle.connect('notify::visible', self._sync_review_button)
+            self._review_toggle.connect('notify::active', self._sync_review_button)
+        self.set_review_count(0)
+        self._sync_review_button()
+
+        self.status_page.set_child(box)
         self.append(self.status_page)
-        self.set_mode('no-matches')
 
-    def set_mode(self, mode):
-        """Show the 'no-documents' or the 'no-matches' case."""
-        if mode == self.mode:
-            return
-        self.mode = mode
-        if mode == 'no-documents':
-            self.status_page.set_icon_name('io.github.t00m.MiAZ')
-            self.status_page.set_title(_("This repository has no documents yet"))
-            self.status_page.set_description(_("Add documents, or drop files here"))
-            self.button_add.set_visible(True)
-        else:
-            self.status_page.set_icon_name('io.github.t00m.MiAZ-edit-find-symbolic')
-            self.status_page.set_title(_("No documents found"))
-            self.status_page.set_description(
-                _("Try a different search, reset filters or add new documents"))
-            self.button_add.set_visible(False)
+    def set_review_count(self, count):
+        """Say how many documents are waiting for review."""
+        self.button_review.set_label(_("Review ({review})").format(review=count))
+
+    def _sync_review_button(self, *args):
+        toggle = self._review_toggle
+        visible = toggle is not None and toggle.get_visible() and not toggle.get_active()
+        self.button_review.set_visible(visible)
+
+    def _on_review_clicked(self, *args):
+        if self._review_toggle is not None:
+            self._review_toggle.set_active(True)
 

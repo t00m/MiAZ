@@ -592,7 +592,7 @@ class MiAZMainWindow(Gtk.Box):
         self._update_selection_widgets()
 
         # An empty list is still the workspace. The workspace shows its own
-        # empty page under the toolbar, so the Add button stays reachable.
+        # empty page, which carries an Add button of its own.
         stack.set_visible_child_name('workspace')
 
     def _update_selection_widgets(self):

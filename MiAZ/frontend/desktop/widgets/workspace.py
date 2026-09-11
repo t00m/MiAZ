@@ -647,9 +647,9 @@ class MiAZWorkspace(Gtk.Box):
         self._view_stack.connect('notify::visible-child-name', self._on_view_changed)
 
         # With no documents to show, a status page takes the place of the
-        # views and nothing else: the toolbar keeps its Add button and the
-        # page stays a drop target. It used to replace the whole workspace,
-        # which left an empty repository with no way to add a document.
+        # views and the toolbar is hidden. The page has its own Add button and
+        # stays a drop target. It used to replace the whole workspace with a
+        # page that had no buttons, so an empty repository could not add one.
         self._empty_page = self.app.add_widget('workspace-empty', MiAZPageNotFound(self.app))
         self._content_stack = Gtk.Stack()
         self._content_stack.set_hexpand(True)
@@ -663,7 +663,8 @@ class MiAZWorkspace(Gtk.Box):
         self.connect('workspace-view-filtered', self._update_empty_page)
 
         page_content = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, hexpand=True, vexpand=True)
-        page_content.append(self._setup_view_toolbar())
+        self._view_toolbar = self.app.add_widget('workspace-toolbar', self._setup_view_toolbar())
+        page_content.append(self._view_toolbar)
         page_content.append(self._content_stack)
         documents_page = self._stack.add_titled(page_content, 'workspace-default', _('Documents'))
         documents_page.set_icon_name('io.github.t00m.MiAZ')
@@ -906,7 +907,8 @@ class MiAZWorkspace(Gtk.Box):
             self._grid_controls.set_visible(name == 'grid')
 
     def _update_empty_page(self, *args):
-        """Show the views when there are documents to show, the empty page when not.
+        """Show the toolbar and the views when there are documents to show,
+        the empty page alone when not.
 
         Nothing changes while a scan is out: the list can be empty then
         because it is still loading, not because the repository is. The scan
@@ -914,12 +916,11 @@ class MiAZWorkspace(Gtk.Box):
         """
         if not self.workspace_loaded or self._scan_in_flight:
             return
-        if len(self.view.cv.get_model()) > 0:
-            self._content_stack.set_visible_child_name('views')
-            return
-        mode = 'no-documents' if self._num_total_items == 0 else 'no-matches'
-        self._empty_page.set_mode(mode)
-        self._content_stack.set_visible_child_name('empty')
+        empty = len(self.view.cv.get_model()) == 0
+        if empty:
+            self._empty_page.set_review_count(getattr(self, '_review_count', 0))
+        self._view_toolbar.set_visible(not empty)
+        self._content_stack.set_visible_child_name('empty' if empty else 'views')
 
     def _on_preview_open_changed(self, sheet, _pspec):
         # The sheet can be closed by dragging it down, so the headerbar toggle

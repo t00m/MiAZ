@@ -133,27 +133,102 @@ def test_the_active_repository_is_the_one_on_screen(miaz, back_to_alpha):
     assert miaz.service('repo').get_active_id() == 'Beta'
 
 
-def test_an_empty_repository_offers_to_add_documents(miaz, sandbox, back_to_alpha):
-    """A new repository opens on the workspace, with a way to add documents.
+def _menu_labels(menu):
+    """Every label in a Gio.Menu, its sections and submenus included."""
+    found = []
+    for position in range(menu.get_n_items()):
+        label = menu.get_item_attribute_value(position, 'label', None)
+        if label is not None:
+            found.append(label.get_string())
+        for link in ('section', 'submenu'):
+            child = menu.get_item_link(position, link)
+            if child is not None:
+                found.extend(_menu_labels(child))
+    return found
 
-    It opened on a "No documents found" page instead, which hid the toolbar
-    and its Add button, so the first document could not be added at all.
-    """
+
+@pytest.fixture
+def empty_repository(miaz, sandbox, back_to_alpha):
+    """A new repository with nothing in it, open on screen."""
     path = os.path.join(sandbox['home'], 'Empty')
     os.makedirs(path, exist_ok=True)
     miaz.app.get_config('Repository').set_repo_used('Empty', path, 'Empty')
     miaz.pump(0.3)
-
     switch_via_workflow(miaz, 'Empty', set_default=False)
+    yield path
 
+
+def test_an_empty_repository_offers_to_add_documents(miaz, empty_repository):
+    """A new repository opens on the empty page, with an Add button.
+
+    It opened on a "No documents found" page with no buttons, and the toolbar
+    that holds Add was hidden behind it, so the first document could not be
+    added at all.
+    """
     assert miaz.displayed() == []
     assert miaz.widget('stack').get_visible_child_name() == 'workspace'
-    assert miaz.widget('headerbar-button-add').get_mapped()
+    assert not miaz.widget('workspace-toolbar').get_mapped()
     empty = miaz.widget('workspace-empty')
     assert empty.get_mapped()
-    assert empty.mode == 'no-documents'
     assert empty.button_add.get_mapped()
     assert empty.button_add.get_menu_model() is miaz.widget('headerbar-add-menu')
+    labels = _menu_labels(empty.button_add.get_menu_model())
+    assert 'Add new document(s)' in labels
+    assert 'Add documents from a directory' in labels
+    # Nothing is waiting for review in a repository with no documents.
+    assert not empty.button_review.get_mapped()
+
+
+def test_the_empty_page_lists_enabled_import_plugins(miaz, empty_repository):
+    """An Import plugin enabled for the repository adds its entry to the menu."""
+    system = miaz.service('plugin-system')
+    info = next(i for i in system.plugins if i.get_name() == 'MiAZImportFromZip')
+    empty = miaz.widget('workspace-empty')
+    assert 'Import documents from ZIP' not in _menu_labels(empty.button_add.get_menu_model())
+
+    system.load_plugin(info)
+    try:
+        miaz.wait_until(
+            lambda: 'Import documents from ZIP' in _menu_labels(
+                empty.button_add.get_menu_model()),
+            message='the ZIP entry in the Add menu')
+    finally:
+        system.unload_plugin(info)
+        miaz.pump(0.5)
+    assert 'Import documents from ZIP' not in _menu_labels(empty.button_add.get_menu_model())
+
+
+def test_the_empty_page_leads_to_documents_waiting_for_review(miaz, empty_repository):
+    """The first document usually lands in Review, so the view stays empty.
+
+    Review lives on the toolbar, which the empty page hides, so the page
+    offers it too. Pressing it shows the document and brings the toolbar back.
+    """
+    empty = miaz.widget('workspace-empty')
+    toggle = miaz.widget('workspace-togglebutton-pending-docs')
+    normalized = '-----BANK_STATEMENT-.pdf'
+    with open(os.path.join(empty_repository, 'bank statement.pdf'), 'w',
+              encoding='utf-8') as handler:
+        handler.write('scanned')
+    try:
+        miaz.wait_until(lambda: empty.button_review.get_mapped(),
+                        message='the Review button on the empty page')
+        assert miaz.displayed() == []
+
+        empty.button_review.emit('clicked')
+        miaz.wait_until(lambda: normalized in miaz.displayed(),
+                        message='the document to show in Review')
+        miaz.pump(0.3)
+        assert toggle.get_active()
+        assert miaz.widget('workspace-toolbar').get_mapped()
+        assert not empty.get_mapped()
+    finally:
+        toggle.set_active(False)
+        for name in ('bank statement.pdf', normalized):
+            path = os.path.join(empty_repository, name)
+            if os.path.exists(path):
+                os.unlink(path)
+        miaz.pump(0.5)
 
 
 def test_an_unknown_repository_changes_nothing(miaz):
