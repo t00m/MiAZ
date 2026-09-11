@@ -167,8 +167,31 @@ target release.
 
 ### 7. Publish
 
-Upload `dist/` to the GitHub release for the tag, with the text of
-`releases/X.Y.Z.md`.
+The tag has to be on GitHub before the release can point at it:
+
+```bash
+git push origin 0.3
+git push origin v0.3.0
+```
+
+Then the release itself, with the notes as its body and the packages attached:
+
+```bash
+gh release create v0.3.0 \
+    --title "MiAZ 0.3.0" \
+    --notes-file releases/0.3.0.md \
+    dist/miaz-0.3.0-1.fc44.noarch.rpm \
+    dist/miaz_0.3.0-1_all.deb \
+    dist/MiAZ-0.3.0-x86_64.AppImage \
+    dist/INSTALL.txt
+```
+
+`INSTALL.txt` is attached because it names the install command per format and
+is written by the build, so it always matches the files beside it. The src.rpm
+stays out unless somebody asks for it: it rebuilds the same noarch package.
+
+The rpm is not signed. Say so on the release page rather than letting `dnf`
+say it first.
 
 ## What the guards catch
 
