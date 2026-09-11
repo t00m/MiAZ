@@ -133,6 +133,29 @@ def test_the_active_repository_is_the_one_on_screen(miaz, back_to_alpha):
     assert miaz.service('repo').get_active_id() == 'Beta'
 
 
+def test_an_empty_repository_offers_to_add_documents(miaz, sandbox, back_to_alpha):
+    """A new repository opens on the workspace, with a way to add documents.
+
+    It opened on a "No documents found" page instead, which hid the toolbar
+    and its Add button, so the first document could not be added at all.
+    """
+    path = os.path.join(sandbox['home'], 'Empty')
+    os.makedirs(path, exist_ok=True)
+    miaz.app.get_config('Repository').set_repo_used('Empty', path, 'Empty')
+    miaz.pump(0.3)
+
+    switch_via_workflow(miaz, 'Empty', set_default=False)
+
+    assert miaz.displayed() == []
+    assert miaz.widget('stack').get_visible_child_name() == 'workspace'
+    assert miaz.widget('headerbar-button-add').get_mapped()
+    empty = miaz.widget('workspace-empty')
+    assert empty.get_mapped()
+    assert empty.mode == 'no-documents'
+    assert empty.button_add.get_mapped()
+    assert empty.button_add.get_menu_model() is miaz.widget('headerbar-add-menu')
+
+
 def test_an_unknown_repository_changes_nothing(miaz):
     """An id that is not in use must leave the repository on screen alone."""
     before = miaz.service('repo').docs

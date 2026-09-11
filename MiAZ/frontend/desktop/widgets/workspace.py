@@ -35,6 +35,7 @@ from MiAZ.frontend.desktop.widgets.docpreview import MiAZDocPreview
 from MiAZ.frontend.desktop.widgets.conversationview import MiAZConversationView
 from MiAZ.frontend.desktop.widgets.filenamesview import MiAZFilenamesView
 from MiAZ.frontend.desktop.widgets.gridview import MiAZGridView
+from MiAZ.frontend.desktop.widgets.pages import MiAZPageNotFound
 from MiAZ.frontend.desktop.widgets.pills import FIELD_COLORS
 from MiAZ.frontend.desktop.widgets.timelineview import MiAZTimelineView
 from MiAZ.frontend.desktop.widgets.dragout import (install_for_workspace_selection,
@@ -645,9 +646,25 @@ class MiAZWorkspace(Gtk.Box):
         self._view_stack.set_visible_child_name('details')
         self._view_stack.connect('notify::visible-child-name', self._on_view_changed)
 
+        # With no documents to show, a status page takes the place of the
+        # views and nothing else: the toolbar keeps its Add button and the
+        # page stays a drop target. It used to replace the whole workspace,
+        # which left an empty repository with no way to add a document.
+        self._empty_page = self.app.add_widget('workspace-empty', MiAZPageNotFound(self.app))
+        self._content_stack = Gtk.Stack()
+        self._content_stack.set_hexpand(True)
+        self._content_stack.set_vexpand(True)
+        self._content_stack.set_hhomogeneous(False)
+        self._content_stack.set_vhomogeneous(False)
+        self._content_stack.add_named(self._view_stack, 'views')
+        self._content_stack.add_named(self._empty_page, 'empty')
+        self._content_stack.set_visible_child_name('views')
+        self.connect('workspace-view-updated', self._update_empty_page)
+        self.connect('workspace-view-filtered', self._update_empty_page)
+
         page_content = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, hexpand=True, vexpand=True)
         page_content.append(self._setup_view_toolbar())
-        page_content.append(self._view_stack)
+        page_content.append(self._content_stack)
         documents_page = self._stack.add_titled(page_content, 'workspace-default', _('Documents'))
         documents_page.set_icon_name('io.github.t00m.MiAZ')
         self._setup_drop_target(page_content)
@@ -887,6 +904,22 @@ class MiAZWorkspace(Gtk.Box):
             self._button_columns.set_visible(name == 'details')
         if getattr(self, '_grid_controls', None) is not None:
             self._grid_controls.set_visible(name == 'grid')
+
+    def _update_empty_page(self, *args):
+        """Show the views when there are documents to show, the empty page when not.
+
+        Nothing changes while a scan is out: the list can be empty then
+        because it is still loading, not because the repository is. The scan
+        emits 'workspace-view-updated' when it lands, which decides again.
+        """
+        if not self.workspace_loaded or self._scan_in_flight:
+            return
+        if len(self.view.cv.get_model()) > 0:
+            self._content_stack.set_visible_child_name('views')
+            return
+        mode = 'no-documents' if self._num_total_items == 0 else 'no-matches'
+        self._empty_page.set_mode(mode)
+        self._content_stack.set_visible_child_name('empty')
 
     def _on_preview_open_changed(self, sheet, _pspec):
         # The sheet can be closed by dragging it down, so the headerbar toggle

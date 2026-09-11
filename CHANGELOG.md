@@ -148,6 +148,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **An empty repository can have documents added to it again.** A new repository opened on a "No documents found" page with no way out of it. When the list had nothing to show, the main window swapped the whole workspace for that page, and the workspace is where the Add button lives since it moved onto the toolbar above the documents. The drop target went with it. So the first document could only arrive from a file manager or `miaz add`.
+
+  The empty page is now part of the workspace. It takes the place of the document views and nothing else, so the toolbar with its Add button stays on screen and the page still accepts dropped files. It also tells the two cases apart. A repository with no documents says so and has an "Add documents" button of its own, which opens the same menu as the toolbar one, Import plugins included. A search or filter that hides everything keeps the old "No documents found" message. While a scan is running the page does not change, so a repository that is still loading does not flash as empty.
+
 - **The test for `miaz ocr` with a wrong document name no longer needs ocrmypdf installed.** CI failed with `assert 3 == 1`: the command returns 3 when ocrmypdf is missing, before it looks at any name, and the CI image has no ocrmypdf. The test now stubs the tool check, since the path it covers never runs a tool, so it still runs in CI instead of being skipped. The command itself is unchanged.
 
   CI now installs the OCR tools too: `poppler-utils`, `tesseract`, `tesseract-langpack-eng` and `ocrmypdf`, the same list `miaz.spec` requires. The English data is named because `tesseract` does not require it and CI installs without weak dependencies. Before, the eleven tests that read or OCR a real PDF skipped themselves in CI, so a broken `miaz ocr` would have passed there. In a `fedora:43` container they all run and pass.

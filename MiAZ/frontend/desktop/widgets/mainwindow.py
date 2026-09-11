@@ -14,7 +14,6 @@ from gi.repository import Gtk
 
 from MiAZ.backend.log import MiAZLog
 from MiAZ.frontend.desktop.widgets.pages import MiAZWelcome
-from MiAZ.frontend.desktop.widgets.pages import MiAZPageNotFound
 from MiAZ.frontend.desktop.widgets.webbrowser import MiAZWebBrowser
 from MiAZ.frontend.desktop.widgets.sidebar import MiAZSidebar
 from MiAZ.frontend.desktop.widgets.workspace import MiAZWorkspace
@@ -79,11 +78,6 @@ class MiAZMainWindow(Gtk.Box):
         page_welcome = self.app.get_widget('welcome')
         if page_welcome is None:
             self._setup_page_welcome()
-
-        # Page Not found
-        page = self.app.get_widget('page-notfound')
-        if page is None:
-            self._setup_page_404()
 
         # Page WebBrowser
         page = self.app.get_widget('page-webbrowser')
@@ -421,15 +415,6 @@ class MiAZMainWindow(Gtk.Box):
             if switcher is not None:
                 switcher.set_visible(False)
 
-    def _setup_page_404(self):
-        stack = self.app.get_widget('stack')
-        widget_notfound = self.app.get_widget('page-404')
-        if widget_notfound is None:
-            widget_notfound = self.app.add_widget('page-404', MiAZPageNotFound(self.app))
-            page_not_found = stack.add_titled(widget_notfound, 'page-404', 'MiAZ')
-            page_not_found.set_icon_name('io.github.t00m.MiAZ-dialog-warning-symbolic')
-            page_not_found.set_visible(True)
-
     def _setup_webbrowser(self):
         stack = self.app.get_widget('stack')
         widget_webbrowser = self.app.get_widget('page-webbrowser')
@@ -606,11 +591,9 @@ class MiAZMainWindow(Gtk.Box):
         self._selected_count = s
         self._update_selection_widgets()
 
-        searchentry = self.app.get_widget('searchentry')
-        if v > 0:
-            stack.set_visible_child_name('workspace')
-        else:
-            stack.set_visible_child_name('page-404')
+        # An empty list is still the workspace. The workspace shows its own
+        # empty page under the toolbar, so the Add button stays reachable.
+        stack.set_visible_child_name('workspace')
 
     def _update_selection_widgets(self):
         """Show the per-selection actions as buttons, or as one menu if narrow.

@@ -149,6 +149,31 @@ def test_a_file_deleted_outside_the_app_disappears(clean_view, sandbox):
     assert len(clean_view.displayed()) == before - 1
 
 
+def test_a_search_that_finds_nothing_keeps_the_add_button(clean_view):
+    """An empty list is still the workspace: the toolbar and Add stay on screen.
+
+    It used to swap the whole workspace for a "No documents found" page, and
+    the Add button on the toolbar went with it. A repository with nothing in it
+    had no way to add anything.
+    """
+    clean_view.widget('searchentry').set_text('no-document-is-called-this')
+    clean_view.wait_until(lambda: not clean_view.displayed(),
+                          message='the list to empty')
+    clean_view.pump(0.3)
+
+    assert clean_view.widget('stack').get_visible_child_name() == 'workspace'
+    assert clean_view.widget('headerbar-button-add').get_mapped()
+    empty = clean_view.widget('workspace-empty')
+    assert empty.get_mapped()
+    assert empty.mode == 'no-matches'
+
+    clean_view.widget('searchentry').set_text('')
+    clean_view.wait_until(lambda: len(clean_view.displayed()) == 3,
+                          message='the list to come back')
+    clean_view.pump(0.3)
+    assert not empty.get_mapped()
+
+
 def test_the_first_paint_is_quick(miaz):
     """14.4: a filter pass must not take long enough to be felt."""
     started = time.monotonic()
