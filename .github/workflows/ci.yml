@@ -42,6 +42,9 @@ jobs:
 
       # gi is bound to the system Python, so no actions/setup-python here.
       # The -devel packages are for the GIR files test_toolkit_version.py reads.
+      # The OCR tools are the ones miaz.spec requires. Without them the OCR
+      # tests skip themselves, so a broken `miaz ocr` would pass here.
+      # tesseract does not require its English data, and weak deps are off.
       - name: Install system dependencies
         run: |
           dnf install -y --setopt=install_weak_deps=False \
@@ -49,6 +52,7 @@ jobs:
             gtk4 gtk4-devel libadwaita libadwaita-devel \
             libpeas libpeas-loader-python webkitgtk6.0 libsecret \
             libappstream-glib desktop-file-utils \
+            poppler-utils tesseract tesseract-langpack-eng ocrmypdf \
             xorg-x11-server-Xvfb git
 
       - name: Install Python tooling
