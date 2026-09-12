@@ -288,3 +288,92 @@ def test_show_duplicates_does_not_rescan_what_is_already_known(clean_view):
         assert scans == [], 'a fresh map was scanned again'
     finally:
         index.scan_duplicates = original
+
+
+def shown_in_order(driver):
+    """The ids the view is currently showing."""
+    model = driver.widget('workspace-view').cv.get_model()
+    return [model.get_item(position).id for position in range(len(model))]
+
+
+def scan_now(driver):
+    """Ask for a duplicate scan and leave the map usable.
+
+    Writing a file to give one document content of its own makes the watcher
+    report a change, and the index invalidates the map when it hears one. That
+    event can land after the scan it was meant to precede, so the scan is
+    repeated until the map is still fresh once everything has settled.
+    """
+    index = driver.service('index')
+    for _ in range(5):
+        driver.workspace.show_duplicates()
+        driver.wait_until(lambda: not index.duplicates_stale(),
+                          message='the duplicate scan')
+        driver.pump(0.5)
+        if not index.duplicates_stale():
+            return
+    raise AssertionError('the duplicate map kept going stale')
+
+
+def test_a_new_list_hides_the_column_until_something_is_scanned_again(clean_view):
+    """The reported bug: an always empty Copy column.
+
+    Every workspace update calls index.reload(), which invalidates the
+    duplicate map, so after one the column can only bind empty cells. Nothing
+    hid it again, so MiAZDoctor's Show left it standing over a list whose twin
+    status was no longer known.
+    """
+    view = clean_view.widget('workspace-view')
+    workspace = clean_view.workspace
+    scan_now(clean_view)
+    assert view.column_duplicate.get_visible() is True, 'nothing to lose here'
+
+    workspace.show_documents([UNIQUE])
+    clean_view.pump(0.5)
+    try:
+        assert clean_view.service('index').duplicates_stale() is True, \
+            'the update did not invalidate the map, so this proves nothing'
+        assert view.column_duplicate.get_visible() is False
+    finally:
+        workspace.clear_documents()
+        clean_view.pump(0.3)
+
+
+def test_a_scanned_list_whose_rows_have_twins_shows_the_column(clean_view):
+    """The other half of the rule: hiding it on every update would take the
+    column away exactly where it is wanted."""
+    twinned = '20260612-ES-FIN-BANKX-INV-mortgage-JOHNDOE.pdf'
+    view = clean_view.widget('workspace-view')
+    workspace = clean_view.workspace
+    try:
+        workspace.show_documents([twinned])
+        clean_view.pump(0.4)
+        scan_now(clean_view)
+        assert clean_view.service('index').duplicates_of(twinned), \
+            'the document under test has no twin'
+        assert view.column_duplicate.get_visible() is True
+    finally:
+        workspace.clear_documents()
+        clean_view.pump(0.3)
+
+
+def test_a_scanned_list_whose_rows_have_no_twin_keeps_the_column_hidden(clean_view):
+    """A fresh map is not enough. The column marks rows, and a list of one
+    document with no twin has nothing to mark, so the column would sit empty.
+    """
+    path, original = with_one_unique_document(clean_view)
+    view = clean_view.widget('workspace-view')
+    workspace = clean_view.workspace
+    try:
+        workspace.show_documents([UNIQUE])
+        clean_view.pump(0.4)
+        scan_now(clean_view)
+        index = clean_view.service('index')
+        assert index.duplicates_of_any(), 'the sandbox has no duplicates at all'
+        assert not index.duplicates_of(UNIQUE), 'the unique document has a twin'
+        assert shown_in_order(clean_view) == [UNIQUE], 'the list is not the one asked for'
+        assert view.column_duplicate.get_visible() is False
+    finally:
+        workspace.clear_documents()
+        open(path, 'wb').write(original)
+        clean_view.pump(0.3)

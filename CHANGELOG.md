@@ -14,6 +14,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **The workspace showed an empty `Copy` column, most visibly behind MiAZDoctor's Show button.** The column marks a document whose bytes match another one, and it is created hidden so it does not sit empty for everyone who never looks for duplicates. Two things put it back on screen with nothing in it.
+
+  Every workspace update calls `index.reload()`, which invalidates the duplicate map, and the column binds each cell from that map. Nothing hid the column when the map went stale, so any update left it standing over rows whose twin status was no longer known. `MiAZDoctor` reaches this on every finding: `Show` calls `show_documents()`, and only the duplicates finding asks for a scan afterwards.
+
+  Separately, `duplicates_of_any()` answers for the whole repository while the column can only mark the rows on screen, so a filtered list of documents that have no twins kept a column that a duplicate somewhere else had switched on. `_sort_by_duplicates` then forced it visible unconditionally, which overrode the one check that was already trying to get this right, two lines after it ran.
+
+  Visibility is now decided in one place, `_update_duplicate_column`, from the rule the column actually means: the map is fresh and a document on screen has a twin. It runs whenever the view changes and whenever a scan finishes. Three UI tests cover it: a new list hides the column until something is scanned again, a scanned list whose rows have twins shows it, and a scanned list whose rows have none keeps it hidden.
+
 - **Scanning a document left the "document scanned and imported" toast repeating forever.** The toast was shown with `GLib.idle_add(self.srvdlg.show_toast, msg)`, and GLib repeats an idle source until its callback returns something falsy. `show_toast` returns the `Adw.Toast` it created, so the source was never removed and a fresh toast was built on every iteration of the main loop. Measured: a callback returning an object ran 500 times in 500 iterations, one returning `None` ran once. The same mistake showed the three OCR toasts (`OCR finished`, `OCR found no text`, `OCR failed`) the same way.
 
   `MiAZ.backend.tasks` now exposes `run_on_main(callback, *args, **kwargs)`, which runs a callback once on the main loop whatever it returns, and logs an exception instead of leaving the source armed. The four call sites use it. Use it instead of `GLib.idle_add` for anything whose return value is not yours to control; `tasks.py` already had this correct internally in `_call_once`, but only `run_in_background` could reach it.
