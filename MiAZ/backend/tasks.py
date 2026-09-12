@@ -45,6 +45,28 @@ def run_in_background(fn, on_done=None, on_error=None, name=None):
     return thread
 
 
+def run_on_main(callback, *args, **kwargs):
+    """Run the callback once on the main loop, whatever it returns.
+
+    Use this instead of GLib.idle_add for anything whose return value is not
+    yours to control. GLib repeats an idle source until the callback returns
+    something falsy, so idle_add(srvdlg.show_toast, msg) never lets go:
+    show_toast returns the Adw.Toast it created, and the toast is built again
+    on every iteration of the main loop.
+
+    An exception in the callback is logged and does not leave the source armed
+    either. Returns nothing: there is no source left to remove.
+    """
+    def once():
+        try:
+            callback(*args, **kwargs)
+        except Exception as error:
+            log.exception(f"Main loop callback failed: {error}")
+        return False
+
+    GLib.idle_add(once)
+
+
 def _call_once(callback, value):
     """Run the callback on the main loop and never repeat it.
 

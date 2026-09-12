@@ -23,6 +23,7 @@ from gi.repository import GLib
 from gi.repository import Gtk
 
 from MiAZ.backend.tasks import run_in_background
+from MiAZ.backend.tasks import run_on_main
 from MiAZ.frontend.desktop.services.pluginsystem import MiAZExtension, MiAZPlugin
 
 plugin_info = {
@@ -496,7 +497,7 @@ class MiAZAutoScanPlugin(MiAZExtension):
             else:
                 msg = _('{count} documents scanned and imported').format(
                     count=len(imported))
-            GLib.idle_add(self.srvdlg.show_toast, msg)
+            run_on_main(self.srvdlg.show_toast, msg)
             # Open the rename dialog so the user can review and accept each
             # imported document, whether it is already valid or pending review.
             GLib.idle_add(self._open_rename_dialogs, imported)

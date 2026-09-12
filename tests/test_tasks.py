@@ -21,6 +21,7 @@ import pytest
 
 from MiAZ.backend.tasks import log as tasks_log
 from MiAZ.backend.tasks import run_in_background
+from MiAZ.backend.tasks import run_on_main
 
 
 def pump_until(event, timeout=5.0):
@@ -201,3 +202,73 @@ def test_work_without_callbacks_still_runs():
     thread = run_in_background(ran.set)
     thread.join(timeout=5)
     assert ran.is_set()
+
+
+def pump(iterations=200):
+    """Iterate the main context a fixed number of times.
+
+    A repeating idle source keeps the context busy forever, so this counts
+    iterations instead of draining until nothing is pending.
+    """
+    context = GLib.MainContext.default()
+    for _ in range(iterations):
+        context.iteration(False)
+
+
+def test_run_on_main_runs_a_callback_that_returns_a_value_only_once():
+    """The bug this exists to stop.
+
+    GLib repeats an idle source until the callback returns something falsy.
+    MiAZDialog.show_toast returns the Adw.Toast it created, so
+    GLib.idle_add(srvdlg.show_toast, msg) never lets go: the toast is
+    recreated on every iteration of the main loop, forever.
+    """
+    calls = []
+
+    def returns_a_toast(message):
+        calls.append(message)
+        return object()
+
+    run_on_main(returns_a_toast, 'scanned and imported')
+    pump()
+    assert calls == ['scanned and imported']
+
+
+def test_run_on_main_passes_every_argument_through():
+    seen = {}
+
+    def capture(*args, **kwargs):
+        seen['args'] = args
+        seen['kwargs'] = kwargs
+        return True
+
+    run_on_main(capture, 'a', 'b', timeout=5)
+    pump()
+    assert seen['args'] == ('a', 'b')
+    assert seen['kwargs'] == {'timeout': 5}
+
+
+def test_run_on_main_runs_on_the_main_thread():
+    seen = {}
+
+    def capture():
+        seen['thread'] = threading.current_thread().name
+
+    run_on_main(capture)
+    pump()
+    assert seen['thread'] == threading.current_thread().name
+
+
+def test_a_raising_callback_is_logged_and_still_not_repeated(task_log):
+    """An exception must not leave the source armed either."""
+    calls = []
+
+    def boom():
+        calls.append(1)
+        raise RuntimeError('toast exploded')
+
+    run_on_main(boom)
+    pump()
+    assert calls == [1]
+    messages = [record.getMessage() for record in task_log.records]
+    assert any('toast exploded' in message for message in messages), messages
