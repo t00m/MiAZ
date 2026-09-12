@@ -17,6 +17,7 @@ import os
 BACKEND = os.path.join('MiAZ', 'backend')
 FRONTEND = os.path.join('MiAZ', 'frontend')
 CONSOLE = os.path.join('MiAZ', 'frontend', 'console')
+PLUGINS = os.path.join('data', 'resources', 'plugins')
 
 # gi namespaces that mean "this module draws or talks to a display".
 # GObject, GLib and Gio are deliberately allowed: the backend exposes its events
@@ -43,6 +44,34 @@ FS_ALLOWED = {
         'exports plugin icons into ~/.MiAZ/opt/icons so the icon theme can '
         'resolve them by name.',
 }
+
+
+# Methods that return something truthy, so GLib.idle_add keeps re-running them.
+# GLib repeats an idle source until its callback returns a falsy value, so
+# idle_add(srvdlg.show_toast, msg) rebuilds the toast on every iteration of the
+# main loop, for ever. Use tasks.run_on_main for anything whose return value is
+# not yours to control.
+RETURNS_A_VALUE = {
+    'show_toast': 'returns the Adw.Toast it created',
+    'release': 'SuspendHandle.release returns True the first time',
+}
+
+
+def idle_add_with_a_returning_callback(tree):
+    """(callback, lineno) for every idle_add handed a callback that returns."""
+    found = []
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.Call):
+            continue
+        func = node.func
+        if not isinstance(func, ast.Attribute) or func.attr != 'idle_add':
+            continue
+        if not node.args:
+            continue
+        callback = node.args[0]
+        if isinstance(callback, ast.Attribute) and callback.attr in RETURNS_A_VALUE:
+            found.append((callback.attr, node.lineno))
+    return found
 
 
 def python_files(root):
@@ -133,6 +162,22 @@ def test_fs_detector_ignores_the_util_service():
     assert direct_fs_calls(tree) == []
 
 
+def test_idle_add_detector_finds_a_returning_callback():
+    tree = ast.parse('GLib.idle_add(self.srvdlg.show_toast, msg)')
+    assert idle_add_with_a_returning_callback(tree) == [('show_toast', 1)]
+
+
+def test_idle_add_detector_allows_a_callback_that_removes_its_own_source():
+    """_release_suspend returns False itself, which is the other correct way."""
+    tree = ast.parse('GLib.idle_add(self._release_suspend)')
+    assert idle_add_with_a_returning_callback(tree) == []
+
+
+def test_idle_add_detector_ignores_run_on_main():
+    tree = ast.parse('run_on_main(handle.release)')
+    assert idle_add_with_a_returning_callback(tree) == []
+
+
 # ---------------------------------------------------------------------------
 # The rules
 # ---------------------------------------------------------------------------
@@ -212,3 +257,27 @@ def test_every_allowlist_entry_still_needs_to_be_there():
         elif not reason.strip():
             stale.append(f"{key} (no reason given)")
     assert stale == [], f"Remove these from FS_ALLOWED: {stale}"
+
+
+def test_idle_add_is_not_handed_a_callback_that_returns_a_value():
+    """GLib repeats an idle source until the callback returns something falsy.
+
+    Handing it a function that returns a value arms the source for ever: the
+    scan toast was rebuilt on every iteration of the main loop until the app
+    closed. MiAZ.backend.tasks.run_on_main runs a callback once whatever it
+    returns, and is what these call sites want.
+    """
+    offenders = {}
+    checked = 0
+    for root in (BACKEND, FRONTEND, PLUGINS):
+        for path in python_files(root):
+            checked += 1
+            found = idle_add_with_a_returning_callback(parse(path))
+            if found:
+                offenders[path.replace(os.sep, '/')] = found
+    # A rule that walks the wrong directories finds nothing and passes for ever.
+    assert checked >= 50, f'expected to scan the package and the plugins, saw {checked} files'
+    assert offenders == {}, (
+        f"idle_add handed a callback that returns a value: {offenders}. "
+        f"Use MiAZ.backend.tasks.run_on_main instead. "
+        f"Why each one repeats: {RETURNS_A_VALUE}.")

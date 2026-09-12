@@ -1402,7 +1402,11 @@ class MiAZWorkspace(Gtk.Box):
         from the main loop instead:
 
             handle = workspace.suspend_updates()
-            GLib.idle_add(handle.release)
+            run_on_main(handle.release)
+
+        run_on_main rather than GLib.idle_add: release() returns True the first
+        time, and an idle source repeats until its callback returns something
+        falsy.
         """
         return self._gate.suspend()
 

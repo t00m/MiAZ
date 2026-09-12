@@ -14,6 +14,7 @@ from gi.repository import Gtk
 from MiAZ.backend import importer
 from MiAZ.backend.log import MiAZLog
 from MiAZ.backend.tasks import run_in_background
+from MiAZ.backend.tasks import run_on_main
 
 # Above this many files an import holds the workspace back, turns the watcher
 # off and runs off the main loop. Below it the copy is quick enough that the
@@ -184,7 +185,7 @@ class MiAZImportDoc(GObject.GObject):
                 # runs one refresh when the last holder releases.
                 GLib.idle_add(workspace.update)
             if suspend is not None:
-                GLib.idle_add(suspend.release)
+                run_on_main(suspend.release)
 
     def _on_batch_failed(self, error):
         """Report an import that died before _copy_all could count anything.

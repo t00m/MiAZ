@@ -24,7 +24,11 @@ class UpdateGate:
 
         handle = workspace.suspend_updates()
         ...
-        GLib.idle_add(handle.release)
+        run_on_main(handle.release)
+
+    run_on_main rather than GLib.idle_add: release() returns True the first
+    time, and GLib repeats an idle source until its callback returns something
+    falsy, so idle_add would call it twice.
     """
 
     def __init__(self, on_release):
