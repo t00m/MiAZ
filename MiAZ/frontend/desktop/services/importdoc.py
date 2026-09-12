@@ -11,6 +11,7 @@ from gi.repository import GLib
 from gi.repository import GObject
 from gi.repository import Gtk
 
+from MiAZ.backend import importer
 from MiAZ.backend.log import MiAZLog
 from MiAZ.backend.tasks import run_in_background
 
@@ -23,45 +24,6 @@ BATCH_THRESHOLD = 20
 def needs_batch(count: int) -> bool:
     """Whether an import of `count` files is worth the batch treatment."""
     return count > BATCH_THRESHOLD
-
-
-def expand_dropped(paths, recursive: bool = False):
-    """The files a set of dropped paths would import.
-
-    Folders are replaced by the files they hold: the ones directly inside, or
-    the whole tree when recursive. Everything else is kept as it is, including
-    a path that does not exist, so the import reports it as failed instead of
-    silently dropping it. Symlinked folders are not followed, since a link
-    pointing back up the tree would otherwise walk forever.
-
-    The order dropped is preserved and each file appears once, so the count the
-    drop dialog shows is the number of files the import then copies.
-    """
-    files = []
-    seen = set()
-
-    def add(path):
-        if path not in seen:
-            seen.add(path)
-            files.append(path)
-
-    for path in paths:
-        if not path:
-            # A remote URI dropped from a browser has no local path.
-            continue
-        if not os.path.isdir(path):
-            add(path)
-            continue
-        if recursive:
-            for folder, _dirs, names in os.walk(path, followlinks=False):
-                for name in sorted(names):
-                    add(os.path.join(folder, name))
-        else:
-            for name in sorted(os.listdir(path)):
-                child = os.path.join(path, name)
-                if os.path.isfile(child):
-                    add(child)
-    return files
 
 
 class MiAZImportDoc(GObject.GObject):
@@ -171,20 +133,13 @@ class MiAZImportDoc(GObject.GObject):
     def _copy_all(self, paths):
         """Copy every path, counting what worked and naming what did not.
 
-        No GTK here: this is the half the worker thread runs.
+        The copying itself is MiAZ.backend.importer, which `miaz add` calls
+        too, so a document added from the window and one added from a terminal
+        arrive the same way. No GTK here: this is the half the worker runs.
         """
-        imported = 0
-        failed = []
-        for source in paths:
-            try:
-                btarget = self.util.filename_normalize(source)
-                target = os.path.join(self.repository.docs, btarget)
-                self.util.filename_import(source, target)
-                imported += 1
-            except Exception as error:
-                failed.append(os.path.basename(source) if source else str(source))
-                self.log.error(f"Could not import '{source}': {error}")
-        return imported, failed
+        imported, failed = importer.import_paths(
+            self.util, self.repository.docs, paths)
+        return len(imported), failed
 
     def _report(self, imported, failed):
         if imported > 0:
@@ -269,7 +224,7 @@ class MiAZImportDoc(GObject.GObject):
         box.append(label)
 
         def update_count(*args):
-            count = len(expand_dropped(paths, recursive=check.get_active()))
+            count = len(importer.expand_paths(paths, recursive=check.get_active()))
             label.set_text(
                 _('{count} files would be imported').format(count=count))
         check.connect('toggled', update_count)
@@ -293,7 +248,7 @@ class MiAZImportDoc(GObject.GObject):
             self.log.debug("Document import cancelled by the user")
             self.srvdlg.show_toast(_('Document import cancelled'))
             return
-        files = expand_dropped(paths, recursive=check.get_active())
+        files = importer.expand_paths(paths, recursive=check.get_active())
         if not files:
             self.srvdlg.show_toast(_('There was nothing to import'))
             return

@@ -385,22 +385,37 @@ check_both_agree() {
     section "rpm and deb agree"
 
     # The two formats spell the version differently: the rpm splits it into
-    # Version and Release, the deb keeps it whole and adds a Debian revision.
-    # Put both back together and compare, because "same version in both
-    # packages" is the guarantee the shared source export exists to provide.
-    local rpm_ver rpm_rel rpm_full deb_full
+    # Version and Release, the deb keeps the version whole and adds a Debian
+    # revision. Both are taken apart into a version and a build number and
+    # compared piece by piece, because "same version in both packages" is the
+    # guarantee the shared source export exists to provide.
+    #
+    # There are two spellings to read, and comparing the strings as they stand
+    # fails one of them. Up to 0.2.0 meson.build carried the build counter in
+    # the version itself (0.2.0+build.8), so the deb was 0.2.0+build.8-1 and
+    # the counter was in the rpm Release. From 0.3.0 the version names the
+    # release and nothing else, so the deb is 0.3.0-1 and the counter is the
+    # Debian revision. Either way the rpm Release holds it.
+    local rpm_ver rpm_rel rpm_build deb_full deb_ver deb_rev deb_base deb_build
     rpm_ver=$(rpm -qp --qf '%{VERSION}' "$RPM_FILE" 2>/dev/null)
     rpm_rel=$(rpm -qp --qf '%{RELEASE}' "$RPM_FILE" 2>/dev/null)
-    rpm_full="${rpm_ver}+build.${rpm_rel%%.*}"
+    rpm_build="${rpm_rel%%.*}"
     deb_full=$(dpkg-deb -f "$DEB_FILE" Version 2>/dev/null)
-    deb_full="${deb_full%-*}"
-
-    if [[ "$rpm_full" == "$deb_full" ]]; then
-        pass "both declare version $deb_full"
-    elif [[ "$rpm_ver" == "${deb_full%%+*}" ]]; then
-        fail "same release version, different build: rpm $rpm_full, deb $deb_full"
+    deb_ver="${deb_full%-*}"
+    deb_rev="${deb_full##*-}"
+    deb_base="${deb_ver%%+*}"
+    if [[ "$deb_ver" == *"+build."* ]]; then
+        deb_build="${deb_ver##*+build.}"
     else
-        fail "different versions: rpm $rpm_full, deb $deb_full"
+        deb_build="$deb_rev"
+    fi
+
+    if [[ "$rpm_ver" == "$deb_base" && "$rpm_build" == "$deb_build" ]]; then
+        pass "both declare version $rpm_ver, build $rpm_build"
+    elif [[ "$rpm_ver" == "$deb_base" ]]; then
+        fail "same release version, different build: rpm $rpm_build, deb $deb_build"
+    else
+        fail "different versions: rpm $rpm_ver, deb $deb_base"
     fi
 
     # Documentation and licence paths differ by design between the two

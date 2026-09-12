@@ -15,8 +15,8 @@ from miazai.prompt import chat_system_prompt
 class MiAZAIChatDialog(Adw.Window):
     """Per-document chat window. Conversation is ephemeral: it lives only
     while the window is open. The transcript is rendered as Markdown. When the
-    MiAZNotes plugin is active, each answer can be saved as a note (the title
-    is the question, the body is the answer)."""
+    notes service is available, each answer can be saved as a note (the
+    title is the question, the body is the answer)."""
 
     def __init__(self, app, document_id, registry, plugin, log):
         super().__init__()
@@ -117,7 +117,14 @@ class MiAZAIChatDialog(Adw.Window):
 
     # Notes integration (optional)
     def _get_notes_plugin(self):
-        notes = self.app.get_widget('plugin-MiAZNotes')
+        """The notes service, core since 0.3.
+
+        It used to be the MiAZNotes plugin, looked up as a widget and absent
+        whenever that plugin was disabled. Saving an answer as a note is no
+        longer optional on that count, but the guard stays: this runs in a
+        window, and a service can still be missing while one is being built.
+        """
+        notes = self.app.get_service('notes')
         if notes is not None and callable(getattr(notes, 'add_note', None)):
             return notes
         return None

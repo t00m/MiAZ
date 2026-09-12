@@ -140,6 +140,13 @@ class MiAZSidebar(Adw.Bin):
         dd_size_group.add_widget(searchentry_concept)
         filters_box.append(searchentry_concept)
 
+        # Core filters that are not one of the seven fields: Notes puts its
+        # "only documents with notes" switch here. Above the separator,
+        # because these are built in and not something a plugin added.
+        core_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
+        self.app.add_widget('sidebar-core-section', core_box)
+        filters_box.append(core_box)
+
         # Visual divider between the built-in filters and the
         # plugin-provided custom filters.
         filters_box.append(Gtk.Separator(orientation=Gtk.Orientation.HORIZONTAL))

@@ -27,9 +27,12 @@ plugin_info = {
     'Description': _('Suggest filename fields from document content using an AI provider'),
     'Authors':     'Tomás Vírseda <tomasvirseda@gmail.com>',
     'Copyright':   'Copyright © 2026 Tomás Vírseda',
-    'Version':     '0.1.0',
-    'Category':    'AI',
+    'Category':    'Documents',
     'Subcategory': 'Assistants',
+    'MenuEntries': [
+        ('suggest', _('Suggest filename…')),
+        ('chat', _('Chat with document…')),
+    ],
 }
 
 
@@ -65,19 +68,11 @@ class MiAZAIAssistantPlugin(MiAZExtension):
         if self.plugin.started():
             return
 
-        mnu_suggest = self.factory.create_menuitem(
-            name=self.plugin.get_menu_item_name() + '-suggest',
-            label=_('Suggest filename…'),
-            callback=self._on_suggest_clicked,
-        )
-        self.plugin.install_menu_entry(mnu_suggest)
-
-        mnu_chat = self.factory.create_menuitem(
-            name=self.plugin.get_menu_item_name() + '-chat',
-            label=_('Chat with document…'),
-            callback=self._on_chat,
-        )
-        self.plugin.install_menu_entry(mnu_chat)
+        self.plugin.install_menu_entries({
+            'suggest': self._on_suggest_clicked,
+            'chat': self._on_chat,
+        })
+        self.plugin.install_settings_group(self.build_settings)
 
         register_suggest_items(
             self.plugin, self.app, self.registry, self.repository,
@@ -104,6 +99,9 @@ class MiAZAIAssistantPlugin(MiAZExtension):
     def show_settings(self, widget=None):
         parent = widget if widget is not None else self.app.get_widget('window')
         self._settings_dialog.present(parent)
+
+    def build_settings(self):
+        return self._settings_dialog.build_group()
 
     def do_deactivate(self):
         if hasattr(self, '_startup_handler'):

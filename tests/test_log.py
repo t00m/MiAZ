@@ -11,6 +11,7 @@ and escape codes in a redirected file.
 import io
 import logging
 
+from MiAZ.backend import log
 from MiAZ.backend.log import (DEFAULT_CONSOLE_LEVEL, ColorFormatter, MiAZLog,
                               set_console_level, supports_color)
 
@@ -295,3 +296,23 @@ def test_only_one_previous_run_is_kept(tmp_path, monkeypatch):
     assert 'middle' in previous
     assert 'oldest' not in previous
     assert 'newest' in (tmp_path / 'MiAZ.log').read_text()
+
+
+# ---------------------------------------------------------------------------
+# debug_requested: one definition of what MIAZ_DEBUG means
+# ---------------------------------------------------------------------------
+
+def test_debug_requested_is_false_when_the_variable_is_absent(monkeypatch):
+    monkeypatch.delenv('MIAZ_DEBUG', raising=False)
+    assert log.debug_requested() is False
+
+
+def test_debug_requested_is_true_when_the_variable_is_set(monkeypatch):
+    monkeypatch.setenv('MIAZ_DEBUG', '1')
+    assert log.debug_requested() is True
+
+
+def test_an_empty_variable_does_not_ask_for_debug(monkeypatch):
+    """MIAZ_DEBUG= is a variable that was unset by the shell, not a request."""
+    monkeypatch.setenv('MIAZ_DEBUG', '')
+    assert log.debug_requested() is False

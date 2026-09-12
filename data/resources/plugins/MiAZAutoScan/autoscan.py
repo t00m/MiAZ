@@ -34,9 +34,11 @@ plugin_info = {
     'Copyright':   'Copyright \u00a9 2026 Tomas Virseda',
     'Website':     'http://github.com/t00m/MiAZ',
     'Help':        'https://github.com/t00m/MiAZ/blob/main/README.md',
-    'Version':     '0.1',
     'Category':    'Documents',
     'Subcategory': 'Import',
+    'MenuEntries': [
+        ('scan', _('Scan and import (auto)')),
+    ],
 }
 
 _RESOLUTIONS = ['100', '200', '300', '600']
@@ -83,6 +85,8 @@ class MiAZAutoScanPlugin(MiAZExtension):
         self.app = self.object.app
         self.plugin = MiAZPlugin(self.app)
         self.plugin.register(self, plugin_info)
+        # What the background probe found, None until it answers.
+        self._devices = None
         self.log = self.plugin.get_logger()
         self.factory = self.app.get_service('factory')
         self.repository = self.app.get_service('repo')
@@ -113,16 +117,19 @@ class MiAZAutoScanPlugin(MiAZExtension):
             return
         self.plugin.set_started(True)
 
+        # Registered before the background detection below (and before the
+        # missing-tools check) so the Settings tab always has a builder to
+        # call, whether or not the scanner tools are present or the device
+        # ever answers. Building the group is what wakes the scanner, and
+        # that only happens when the Settings tab is shown, never here.
+        self.plugin.install_settings_group(self.build_settings)
+        self.plugin.install_settings_group(self.build_settings_fields)
+
         missing = self._missing_tools()
         if missing:
             self.log.warning(
                 f"Scanner tools not found on PATH: {', '.join(missing)}")
-            menuitem = self.factory.create_menuitem(
-                name=self.plugin.get_menu_item_name(),
-                label=_('Scan and import (auto)'),
-                callback=self._on_missing_tools,
-            )
-            self.plugin.install_menu_entry(menuitem)
+            self.plugin.install_menu_entries({'scan': self._on_missing_tools})
             self._refresh_add_menu()
             return
 
@@ -137,6 +144,11 @@ class MiAZAutoScanPlugin(MiAZExtension):
 
     def _detect_sources(self):
         devices = self._list_devices()
+        # Kept so the settings group does not run scanimage a second time.
+        # This is the only place the scanner is woken, and it happens on a
+        # worker thread; probing again from build_settings would do it on the
+        # main loop, where it froze the dialog for about four seconds.
+        self._devices = devices
         sources = []
         if devices:
             device = self.plugin.get_config_key('device')
@@ -156,21 +168,17 @@ class MiAZAutoScanPlugin(MiAZExtension):
         which reports whatever the real problem turns out to be.
         """
         self.log.error(f"Could not detect the scanner sources: {error}")
+        self._devices = []
         self._build_source_menu([])
 
     def _build_source_menu(self, sources):
-        base = self.plugin.get_menu_item_name()
+        base = self.plugin.get_menu_item_name('scan')
 
         if not sources:
-            # Tools are present but no scanner was detected. Install a single
-            # entry that triggers the normal scan flow, which then reports the
-            # missing scanner.
-            menuitem = self.factory.create_menuitem(
-                name=base,
-                label=_('Scan and import (auto)'),
-                callback=self._on_scan,
-            )
-            self.plugin.install_menu_entry(menuitem)
+            # Tools are present but no scanner was detected. Install the
+            # declared entry, which triggers the normal scan flow and lets it
+            # report the missing scanner.
+            self.plugin.install_menu_entries({'scan': self._on_scan})
             self._refresh_add_menu()
             return
 
@@ -186,11 +194,11 @@ class MiAZAutoScanPlugin(MiAZExtension):
             sources_menu.append_item(menuitem)
 
         # A submenu menu item carries the per-source items into both the
-        # workspace selection menu and the headerbar Add menu. install_menu_entry
-        # registers it under the canonical 'plugin-menuitem-<name>' key, which is
-        # the key the Add menu mirrors.
+        # workspace selection menu and the headerbar Add menu. The sources come
+        # from the device, so this item cannot be declared, but its label is
+        # the declared one: the entry says the same thing either way.
         submenu_item = Gio.MenuItem.new_submenu(
-            _('Scan and import (auto)'), sources_menu)
+            self.plugin.get_menu_entry_label('scan'), sources_menu)
         self.plugin.install_menu_entry(submenu_item)
         self._refresh_add_menu()
 
@@ -534,23 +542,24 @@ class MiAZAutoScanPlugin(MiAZExtension):
         self._release_suspend()
         self.srvdlg.show_error(_('Scan failed'), error_msg)
 
-    def show_settings(self, widget):
-        dialog = Adw.PreferencesDialog()
-        desc = self.plugin.get_plugin_info_key('Description')
-        page = Adw.PreferencesPage(
-            title=_(desc),
-            icon_name='io.github.t00m.MiAZ-config-symbolic',
-        )
-        dialog.add(page)
-
-        group_scan = Adw.PreferencesGroup(
+    def build_settings(self):
+        group = Adw.PreferencesGroup(
             title=_('Scanner settings'),
             description=_('Configure the scanner device and scan parameters'),
         )
-        page.add(group_scan)
 
-        devices = self._list_devices()
+        # None means the background probe has not answered yet, an empty list
+        # means it answered and found nothing. They read the same on screen if
+        # they are not told apart, and the first one is not the user's problem
+        # to solve.
+        devices = self._devices
         saved_device = self.plugin.get_config_key('device')
+
+        if devices is None:
+            group.add(Adw.ActionRow(
+                title=_('Looking for a scanner'),
+                subtitle=_('Close and reopen this tab in a moment')))
+            return group
 
         if devices:
             string_list = Gtk.StringList()
@@ -573,7 +582,7 @@ class MiAZAutoScanPlugin(MiAZExtension):
                     self.plugin.set_config_key(
                         'device', devs[row.get_selected()]),
             )
-            group_scan.add(combo_device)
+            group.add(combo_device)
         else:
             entry_device = Adw.EntryRow(
                 title=_('Scanner device'),
@@ -585,7 +594,7 @@ class MiAZAutoScanPlugin(MiAZExtension):
                 lambda row: self.plugin.set_config_key(
                     'device', row.get_text().strip()),
             )
-            group_scan.add(entry_device)
+            group.add(entry_device)
 
         combo_res = self._make_combo_row(
             title=_('Resolution'),
@@ -594,7 +603,7 @@ class MiAZAutoScanPlugin(MiAZExtension):
             saved_key='resolution',
             default='300',
         )
-        group_scan.add(combo_res)
+        group.add(combo_res)
 
         combo_mode = self._make_combo_row(
             title=_('Color mode'),
@@ -603,7 +612,7 @@ class MiAZAutoScanPlugin(MiAZExtension):
             saved_key='mode',
             default='Color',
         )
-        group_scan.add(combo_mode)
+        group.add(combo_mode)
 
         combo_source = self._make_combo_row(
             title=_('Source'),
@@ -612,7 +621,7 @@ class MiAZAutoScanPlugin(MiAZExtension):
             saved_key='source',
             default='Flatbed',
         )
-        group_scan.add(combo_source)
+        group.add(combo_source)
 
         combo_format = self._make_combo_row(
             title=_('Format'),
@@ -621,14 +630,16 @@ class MiAZAutoScanPlugin(MiAZExtension):
             saved_key='format',
             default='pdf',
         )
-        group_scan.add(combo_format)
+        group.add(combo_format)
 
-        group_fields = Adw.PreferencesGroup(
+        return group
+
+    def build_settings_fields(self):
+        group = Adw.PreferencesGroup(
             title=_('Default filename fields'),
             description=_('Default values for the 7-field document name. '
                           'Leave empty to omit a field.'),
         )
-        page.add(group_fields)
 
         field_configs = [
             ('default_country', _('Country'), 'Country'),
@@ -664,7 +675,7 @@ class MiAZAutoScanPlugin(MiAZExtension):
                 lambda row, _gparam, itms=items, k=key:
                     self.plugin.set_config_key(k, itms[row.get_selected()][0]),
             )
-            group_fields.add(combo)
+            group.add(combo)
 
         entry_concept = Adw.EntryRow(title=_('Concept'))
         saved_concept = self.plugin.get_config_key('default_concept') or 'Autoscan'
@@ -675,9 +686,9 @@ class MiAZAutoScanPlugin(MiAZExtension):
             lambda row: self.plugin.set_config_key(
                 'default_concept', row.get_text().strip()),
         )
-        group_fields.add(entry_concept)
+        group.add(entry_concept)
 
-        dialog.present(widget.get_root())
+        return group
 
     def _make_combo_row(self, title, subtitle, options, saved_key, default):
         string_list = Gtk.StringList()

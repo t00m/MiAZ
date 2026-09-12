@@ -47,16 +47,7 @@ class AISettings:
         top_page.set_title(_('General'))
         top_page.set_icon_name('preferences-system-symbolic')
         top_group = Adw.PreferencesGroup(title=_('Active provider'))
-
-        ids = list(PROVIDER_LABELS.keys())
-        labels = [PROVIDER_LABELS[i] for i in ids]
-        active = effective_active_pid(self.plugin, self.registry)
-        combo = Adw.ComboRow(title=_('Provider'))
-        combo.set_model(Gtk.StringList.new(labels))
-        combo.set_selected(ids.index(active) if active in ids else ids.index('ollama'))
-        combo.connect('notify::selected', self._on_active_changed, ids)
-
-        top_group.add(combo)
+        top_group.add(self._build_active_provider_combo())
         top_page.add(top_group)
         dialog.add(top_page)
 
@@ -65,12 +56,52 @@ class AISettings:
 
         return dialog
 
+    def build_group(self):
+        """One consolidated group for the Repository Settings dialog.
+
+        Same content as _build()'s dialog (the active-provider combo plus
+        every provider's rows), just folded into a single
+        Adw.PreferencesGroup: the combo directly, and each provider under an
+        Adw.ExpanderRow instead of its own PreferencesPage.
+        """
+        group = Adw.PreferencesGroup(title=_('AI Assistant'))
+        group.add(self._build_active_provider_combo())
+
+        for pid, label in PROVIDER_LABELS.items():
+            expander = Adw.ExpanderRow(title=label)
+            for row in self._build_provider_rows(pid, label):
+                expander.add_row(row)
+            group.add(expander)
+
+        return group
+
+    def _build_active_provider_combo(self):
+        ids = list(PROVIDER_LABELS.keys())
+        labels = [PROVIDER_LABELS[i] for i in ids]
+        active = effective_active_pid(self.plugin, self.registry)
+        combo = Adw.ComboRow(title=_('Provider'))
+        combo.set_model(Gtk.StringList.new(labels))
+        combo.set_selected(ids.index(active) if active in ids else ids.index('ollama'))
+        combo.connect('notify::selected', self._on_active_changed, ids)
+        return combo
+
     def _build_provider_page(self, pid, label):
         page = Adw.PreferencesPage(title=label, icon_name='applications-engineering-symbolic')
+        group = Adw.PreferencesGroup(title=label)
+        for row in self._build_provider_rows(pid, label):
+            group.add(row)
+        page.add(group)
+        return page
+
+    def _build_provider_rows(self, pid, label):
+        """The rows for one provider: API key (if required), model choice,
+        custom model, and (Ollama only) base URL. Shared by the provider page
+        in the standalone dialog and the expander row in the consolidated
+        settings group, so there is one copy of this logic."""
         cfg = self.plugin.get_config_key(f'provider_{pid}') or {}
         provider = self.registry[pid]
 
-        group = Adw.PreferencesGroup(title=label)
+        rows = []
 
         if provider.requires_api_key:
             account = f'{self.plugin.name}/{pid}'
@@ -83,7 +114,7 @@ class AISettings:
             # once when the user confirms the value.
             row_key.set_show_apply_button(True)
             row_key.connect('apply', self._on_key_apply, pid)
-            group.add(row_key)
+            rows.append(row_key)
 
         predefined = list(PROVIDER_MODELS.get(pid, []))
         current = (cfg.get('model') or '').strip()
@@ -117,18 +148,17 @@ class AISettings:
         row_model.connect('notify::selected', self._on_model_selected,
                           pid, choices, custom_index, row_custom)
         row_custom.connect('apply', self._on_custom_model_apply, pid)
-        group.add(row_model)
-        group.add(row_custom)
+        rows.append(row_model)
+        rows.append(row_custom)
 
         if pid == 'ollama':
             row_host = Adw.EntryRow(title=_('Base URL'))
             row_host.set_text(cfg.get('base_url', 'http://localhost:11434'))
             row_host.set_show_apply_button(True)
             row_host.connect('apply', self._on_field_apply, pid, 'base_url')
-            group.add(row_host)
+            rows.append(row_host)
 
-        page.add(group)
-        return page
+        return rows
 
     def _on_active_changed(self, combo, _pspec, ids):
         idx = combo.get_selected()

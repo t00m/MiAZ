@@ -250,6 +250,47 @@ def test_since_date_last_six_months_delegates(util):
 
 
 # ---------------------------------------------------------------------------
+# filename_rename
+# ---------------------------------------------------------------------------
+
+class RecordingLog:
+    """Collects what the util logs, so a message can be asserted on."""
+
+    def __init__(self):
+        self.messages = []
+
+    def debug(self, message):
+        self.messages.append(message)
+
+    def info(self, message):
+        self.messages.append(message)
+
+    def warning(self, message):
+        self.messages.append(message)
+
+    def error(self, message):
+        self.messages.append(message)
+
+
+def test_rename_onto_an_existing_file_names_the_document_left_behind(tmp_path):
+    """Two documents in one repository can normalize to the same name, and one
+    of them then keeps its own for good. The message is the only sign of it, so
+    it has to name that document: the target names the file that was already
+    there, which is the one with nothing wrong with it."""
+    util = MiAZUtil(MockApp())
+    util.log = RecordingLog()
+    source = tmp_path / 'FBN-V00602502 - Wir brauchen Ihre Mithilfe.pdf'
+    source.write_text('one')
+    target = tmp_path / '-----FBN_V00602502___WIR_BRAUCHEN_IHRE_MITHILFE-.pdf'
+    target.write_text('two')
+
+    assert util.filename_rename(str(source), str(target)) is False
+    assert source.read_text() == 'one'
+    assert target.read_text() == 'two'
+    assert any(str(source) in message for message in util.log.messages)
+
+
+# ---------------------------------------------------------------------------
 # filename_rename_needed
 # ---------------------------------------------------------------------------
 
@@ -780,3 +821,116 @@ def test_the_simple_human_date_refuses_what_is_not_a_date(util):
     assert util.filename_date_human_simple('20260301') == '01/03/2026'
     assert util.filename_date_human_simple('202613') is None
     assert util.filename_date_human_simple('20261301') is None
+
+
+# filename_copy: the caller has to be able to tell a copy from a failure
+
+def test_a_copy_that_worked_says_so(util, tmp_path):
+    source = tmp_path / 'source.pdf'
+    source.write_text('x')
+    target = tmp_path / 'target.pdf'
+    assert util.filename_copy(str(source), str(target)) is True
+    assert target.read_text() == 'x'
+
+
+def test_a_copy_that_failed_says_so(util, tmp_path):
+    """The export plugin counts failures to report them. It cannot, if a
+    missing source is only written to the log."""
+    source = tmp_path / 'missing.pdf'
+    target = tmp_path / 'target.pdf'
+    assert util.filename_copy(str(source), str(target)) is False
+    assert not target.exists()
+
+
+def test_copying_a_file_onto_itself_is_not_a_copy(util, tmp_path):
+    source = tmp_path / 'source.pdf'
+    source.write_text('x')
+    assert util.filename_copy(str(source), str(source)) is False
+
+
+def test_without_overwrite_a_missing_target_is_still_copied(util, tmp_path):
+    """overwrite=False used to mean 'never copy': the branch logged a skip
+    without ever looking at whether the target was there."""
+    source = tmp_path / 'source.pdf'
+    source.write_text('x')
+    target = tmp_path / 'target.pdf'
+    assert util.filename_copy(str(source), str(target), overwrite=False) is True
+    assert target.read_text() == 'x'
+
+
+def test_without_overwrite_an_existing_target_is_kept(util, tmp_path):
+    source = tmp_path / 'source.pdf'
+    source.write_text('new')
+    target = tmp_path / 'target.pdf'
+    target.write_text('old')
+    assert util.filename_copy(str(source), str(target), overwrite=False) is False
+    assert target.read_text() == 'old'
+
+
+def test_the_export_passes_the_copy_result_back(util, tmp_path):
+    source = tmp_path / 'source.pdf'
+    source.write_text('x')
+    assert util.filename_export(str(source), str(tmp_path / 'out.pdf')) is True
+    assert util.filename_export(str(tmp_path / 'gone.pdf'),
+                                str(tmp_path / 'out2.pdf')) is False
+
+
+# ---------------------------------------------------------------------------
+# zip: what a backup archives, and what it leaves out
+# ---------------------------------------------------------------------------
+
+def make_repository(tmp_path):
+    """A repository shaped like a MiAZ one that MiAZHistory has tracked."""
+    repo = tmp_path / 'repo'
+    (repo / '.conf').mkdir(parents=True)
+    (repo / '.conf' / 'repo.json').write_text('{}', encoding='utf-8')
+    (repo / 'subdir').mkdir()
+    (repo / 'subdir' / 'nested.pdf').write_bytes(b'nested')
+    (repo / '20240315-ES-HOU-BANK-INV-rent-PERSON.pdf').write_bytes(b'document')
+    git = repo / '.git'
+    (git / 'objects').mkdir(parents=True)
+    (git / 'objects' / 'pack.idx').write_bytes(b'a copy of every document')
+    (git / 'HEAD').write_text('ref: refs/heads/main', encoding='utf-8')
+    return repo
+
+
+def test_zip_archives_everything_by_default(util, tmp_path):
+    repo = make_repository(tmp_path)
+    target = util.zip(str(tmp_path / 'backup'), str(repo))
+    names = set(util.zip_list(target))
+    assert '20240315-ES-HOU-BANK-INV-rent-PERSON.pdf' in names
+    assert 'subdir/nested.pdf' in names
+    assert '.conf/repo.json' in names
+    assert '.git/HEAD' in names
+
+
+def test_zip_leaves_out_what_it_is_told_to(util, tmp_path):
+    """MiAZHistory keeps a full copy of every document under .git, so a
+    repository backup that includes it is twice the size and twice the wait,
+    for a second copy of what the archive already holds."""
+    repo = make_repository(tmp_path)
+    target = util.zip(str(tmp_path / 'backup'), str(repo), exclude=('.git',))
+    names = set(util.zip_list(target))
+    assert '20240315-ES-HOU-BANK-INV-rent-PERSON.pdf' in names
+    assert 'subdir/nested.pdf' in names
+    assert '.conf/repo.json' in names
+    assert not [name for name in names if name.startswith('.git/')]
+
+
+def test_zip_returns_a_path_ending_in_zip(util, tmp_path):
+    repo = make_repository(tmp_path)
+    target = util.zip(str(tmp_path / 'backup'), str(repo))
+    assert target.endswith('.zip')
+    assert os.path.exists(target)
+
+
+def test_zip_and_unzip_make_a_round_trip(util, tmp_path):
+    repo = make_repository(tmp_path)
+    target = util.zip(str(tmp_path / 'backup'), str(repo), exclude=('.git',))
+    restored = tmp_path / 'restored'
+    restored.mkdir()
+    util.unzip(target, str(restored))
+    assert (restored / '20240315-ES-HOU-BANK-INV-rent-PERSON.pdf').read_bytes() == b'document'
+    assert (restored / 'subdir' / 'nested.pdf').read_bytes() == b'nested'
+    assert (restored / '.conf' / 'repo.json').read_text(encoding='utf-8') == '{}'
+    assert not (restored / '.git').exists()

@@ -14,13 +14,13 @@ from gi.repository import Gtk
 
 from MiAZ.backend.log import MiAZLog
 from MiAZ.backend.models import File, Group, Country, Purpose, SentBy, SentTo, Date, Concept
-from MiAZ.backend.util import UNKNOWN_DATE
+from MiAZ.backend.util import date_is_valid, UNKNOWN_DATE
 from MiAZ.frontend.desktop.widgets.configview import MiAZCountries
 from MiAZ.frontend.desktop.widgets.configview import MiAZGroups
 from MiAZ.frontend.desktop.widgets.configview import MiAZPurposes
 from MiAZ.frontend.desktop.widgets.configview import MiAZPeopleSentBy
 from MiAZ.frontend.desktop.widgets.configview import MiAZPeopleSentTo
-from MiAZ.frontend.desktop.services.factory import calendar_select_date
+from MiAZ.frontend.desktop.widgets.dateentry import MiAZDateEntry
 from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewMassRename
 
 # Field index in the 7-field filename convention
@@ -290,8 +290,9 @@ class MiAZMassRename(GObject.GObject):
             return guess
 
         def current_sdate():
-            adate = calendar.get_date()
-            return f"{adate.get_year():04d}{adate.get_month():02d}{adate.get_day_of_month():02d}"
+            # Falls back to today while the user is halfway through typing.
+            sdate = date_widget.get_text()
+            return sdate if date_is_valid(sdate) else datetime.now().strftime('%Y%m%d')
 
         def date_for(item, sdate):
             # Per-file detection (like single rename) when the box is checked;
@@ -343,11 +344,10 @@ class MiAZMassRename(GObject.GObject):
         chk_detect.set_active(True)
         hbox = self.factory.create_box_horizontal()
         label = Gtk.Label()
-        calendar = Gtk.Calendar()
-        calendar.set_sensitive(False)
-        btnDate = self.factory.create_button_popover(
-            icon_name='io.github.t00m.MiAZ-res-date', widgets=[calendar])
-        hbox.append(btnDate)
+        date_widget = MiAZDateEntry(self.app, show_label=False)
+        date_widget.set_text(datetime.now().strftime('%Y%m%d'), validate=True)
+        date_widget.set_sensitive(False)
+        hbox.append(date_widget)
         hbox.append(label)
         frame = Gtk.Frame()
         cv = MiAZColumnViewMassRename(self.app)
@@ -357,12 +357,10 @@ class MiAZMassRename(GObject.GObject):
         box.append(chk_detect)
         box.append(hbox)
         box.append(frame)
-        today = datetime.now()
-        calendar_select_date(calendar, today.year, today.month, today.day)
-        calendar.connect('day-selected', refresh_preview)
+        date_widget.connect('date-changed', refresh_preview)
 
         def on_toggle(*_a):
-            calendar.set_sensitive(not chk_detect.get_active())
+            date_widget.set_sensitive(not chk_detect.get_active())
             refresh_preview()
 
         chk_detect.connect('toggled', on_toggle)

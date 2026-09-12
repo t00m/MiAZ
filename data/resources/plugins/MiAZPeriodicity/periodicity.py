@@ -28,9 +28,13 @@ plugin_info = {
         'Copyright':     'Copyright © 2025 Tomás Vírseda',
         'Website':       'http://github.com/t00m/MiAZ',
         'Help':          'https://github.com/t00m/MiAZ/blob/main/README.md',
-        'Version':       '0.6',
-        'Category':      'Organise',
-        'Subcategory':   'Tags'
+        'Category':      'Documents',
+        'Subcategory':   'Periodicity',
+        'MenuEntries':   [
+            ('set', _('Set periodicity')),
+            ('unset', _('Unset periodicity')),
+            ('manage', _('Manage periodicity')),
+        ]
     }
 
 
@@ -264,18 +268,18 @@ class MiAZPeriodicityPlugin(MiAZExtension):
             # _on_plugins_updated). Straight into the plugin's own entry: a
             # submenu named after the plugin, inside the entry already named
             # after the plugin, is one level of menu that says nothing.
-            self.plugin.install_menu_entry(self.factory.create_menuitem(
-                f'{i_confname}-add',
-                _('Set {i_confname}').format(i_confname=i_confname),
-                self._set_property, None, []))
-            self.plugin.install_menu_entry(self.factory.create_menuitem(
-                f'{i_confname}-del',
-                _('Unset {i_confname}').format(i_confname=i_confname),
-                self._unset_property, None, []))
-            self.plugin.install_menu_entry(self.factory.create_menuitem(
-                f'{i_confname}-mgt',
-                _('Manage {i_confname}').format(i_confname=i_confname),
-                self.show_settings, None, []))
+            self.plugin.install_menu_entries({
+                'set': self._set_property,
+                'unset': self._unset_property,
+                'manage': self.show_manager,
+            })
+
+            # The periodicity vocabulary in the Metadata tab, beside the
+            # built-in ones, rather than behind its own dialog.
+            self.plugin.install_metadata_view(
+                'Periodicity', _('Periodicity'),
+                'io.github.t00m.MiAZ-res-date',
+                self._build_metadata_view)
 
             # One-time setup guarded by the dropdown widget sentinel
             plugin_name = self.plugin.get_name()
@@ -488,27 +492,24 @@ class MiAZPeriodicityPlugin(MiAZExtension):
             self.log.debug(f"No changes detected for {i_confname} for {len(selected_documents)}")
         return change
 
-    def show_settings(self, *args):
-        try:
-            if isinstance(args[0], Gtk.Widget):
-                widget = args[0]
-            else:
-                widget = None
-        except (TypeError, IndexError):
-            widget = None
-
-        if widget is None:
-            parent = self.workspace.get_root()
-        else:
-            parent = widget.get_root()
-
-        config_dir = self.plugin.get_config_dir()
-        configview = MiAZPeriodicityView(self.app, plugin=self.plugin, config=self.config)
+    def _build_metadata_view(self):
+        configview = MiAZPeriodicityView(self.app, plugin=self.plugin,
+                                         config=self.config)
         configview.update_views()
-        dialog = self.srvdlg.show_noop(
-            title=_('{i_confname} management').format(i_confname=i_confname),
-            widget=configview, width=800, height=600)
-        dialog.present(parent)
+        return configview
+
+    def show_manager(self, *args):
+        """Open Repository Settings on this plugin's metadata page.
+
+        This method opens a vocabulary manager rather than a settings
+        dialog, which is what its name says. It used to present a second
+        copy of the same view in a dialog of its own, so two widgets edited
+        one config file.
+        """
+        self.app.get_service('actions').show_repository_settings()
+        page = self.app.get_widget('repository-settings-page-metadata')
+        if page is not None:
+            page.show_view('Periodicity')
 
     def _get_pid(self, doc_id):
         """Return the property key associated to a document"""

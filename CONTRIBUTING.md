@@ -60,6 +60,12 @@ installed. No meson build step is required for basic development.
 4. Open a pull request against the `main` branch. Describe what the change does
    and why.
 
+## Releasing
+
+Cutting a release is documented in [RELEASING.md](RELEASING.md). The short
+version is `scripts/release.sh --dry-run` to look, then `scripts/release.sh`,
+then write `releases/X.Y.Z.md` by hand.
+
 ## Translations
 
 Translatable strings use `gettext`. The template is at `po/miaz.pot`.

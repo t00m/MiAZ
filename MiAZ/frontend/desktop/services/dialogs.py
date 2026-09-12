@@ -165,12 +165,28 @@ class MiAZDialog:
         dialog.add_css_class('success')
         return dialog
 
-    def show_toast(self, message: str, timeout: int = 3):
+    def show_toast(self, message: str, timeout: int = 3,
+                   button_label: str = '', on_button=None):
+        """Say something briefly, with an optional way to act on it.
+
+        `button_label` puts a button on the toast and `on_button` is what it
+        does, called with no arguments. A message that names something the
+        user may want to look at needs the button: the toast is gone in three
+        seconds and the way back is not always obvious.
+
+        Returns the Adw.Toast, or None when there is no overlay to show it on.
+        """
         overlay = self.app.get_widget('toast-overlay')
-        if overlay is not None:
-            toast = Adw.Toast(title=message)
-            toast.set_timeout(timeout)
-            overlay.add_toast(toast)
+        if overlay is None:
+            return None
+        toast = Adw.Toast(title=message)
+        toast.set_timeout(timeout)
+        if button_label:
+            toast.set_button_label(button_label)
+            if on_button is not None:
+                toast.connect('button-clicked', lambda *args: on_button())
+        overlay.add_toast(toast)
+        return toast
 
     def show_info(  self,
                     title: str = '',

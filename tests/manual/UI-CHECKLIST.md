@@ -297,7 +297,7 @@ automated UI suite, **[K]** needs a paid API key (skip unless you have one).
 
 - [ ] **10.1 [S] [A]** Settings, Plugins. All 17 are listed, each with an icon and a
       description, and the enabled ones are ticked.
-- [ ] **10.2 [N] [A]** Disable a plugin that adds a page (MiAZNotes, MiAZInsights).
+- [ ] **10.2 [N] [A]** Disable a plugin that adds a page (MiAZInsights). Notes is core since 0.3 and has no toggle.
       Its page disappears from the view switcher.
 - [ ] **10.3 [N] [A]** Enable it again. The page comes back and works. Repeat the
       cycle a second time: still fine.
@@ -336,11 +336,11 @@ automated UI suite, **[K]** needs a paid API key (skip unless you have one).
       needed, type any nonsense as the API key and Suggest.
 - [ ] **10.15 [K]** MiAZAIAssistant: the chat answers about a document, and a
       failed request does not hang the dialog.
-- [ ] **10.16** MiAZNotes: write a note, save it, reopen it. Markdown renders in
+- [ ] **10.16** Notes (core): write a note, save it, reopen it. Markdown renders in
       view mode, and the All notes page lists it.
-- [ ] **10.16b [A]** The workspace menu Notes entry holds four items: Create a
-      new note, See all notes, Backup notes, Restore notes. There is no Backup
-      or Restore entry of its own.
+- [ ] **10.16b [A]** The workspace menu entry Documents > Annotation holds four
+      items: Create a new note, See all notes, Backup notes, Restore notes.
+      There is no Backup or Restore entry of its own.
 - [ ] **10.16c [A]** Select two or more documents and press `Ctrl+N`. The
       window opens on a blank note, and saving files the same text against
       every selected document.
@@ -349,9 +349,9 @@ automated UI suite, **[K]** needs a paid API key (skip unless you have one).
       sidebar ones.
 - [ ] **10.18** MiAZProjectMgt: assign (`Ctrl+P`), unassign (`Ctrl+Shift+P`) and
       manage (`Ctrl+Alt+P`). The sidebar project filter follows. The three sit
-      directly under the Projects entry, with no submenu in between.
+      directly under Documents > Projects, with no submenu in between.
 - [ ] **10.19** MiAZPeriodicity: set a periodicity and filter by it. Set, Unset
-      and Manage sit directly under the Tags entry.
+      and Manage sit directly under Documents > Periodicity.
 - [ ] **10.20** MiAZColumnVisibility: hide and show columns. The choice survives
       a restart.
 - [ ] **10.21** MiAZWSFont: change the workspace font. It applies immediately.
@@ -429,6 +429,33 @@ Not the GUI, but it ships in the same package and is new in this release.
       and afterwards the GUI still opens the repository it opened before.
 - [ ] **15.6 [N]** `miaz search --repo Nope` names the repositories that exist.
 - [ ] **15.7 [N]** `miaz` with no arguments still opens the window.
+- [ ] **15.8 [N]** `miaz --help` lists every command, the ones plugins add
+      included, and prints the options of each one under the list.
+- [ ] **15.9 [N]** `miaz search --sentby <part of a sender's name>` finds that
+      sender's documents, by part of the code or part of its description, and a
+      second field flag narrows the result further.
+- [ ] **15.10 [N]** `miaz notes` lists the notes newest first, `miaz notes
+      <word>` narrows to the ones holding it, `--document <part of a name>`
+      to the ones on that document, and `--full` prints a note exactly as the
+      window shows it.
+- [ ] **15.11 [N]** `miaz add <file> <directory>` copies both in, `--recursive`
+      takes the whole tree, the sources stay where they are, and a second file
+      of the same name arrives beside the first rather than replacing it.
+- [ ] **15.12 [N]** `miaz delete <name>` lists what it will delete and asks
+      first; piped, it refuses without `--yes`; a name the repository does not
+      hold deletes nothing; a document named `-----NAME-.pdf` is accepted
+      without any `--` in front of it.
+- [ ] **15.13 [N]** `miaz --help` lists a plugin command only where its plugin
+      is enabled: compare two repositories with `miaz --repo <name> --help`.
+      Running one that is not enabled exits 3 and names the plugin and the
+      repository.
+- [ ] **15.14 [N]** `miaz rename <document> --purpose <code>` changes that
+      field and leaves the others, and a code the repository does not have
+      refuses the whole rename, naming the field and the `miaz fields` line
+      that would add it.
+- [ ] **15.15 [N]** `miaz fields purpose` lists the keys with their
+      descriptions, `--add` puts one in the window's dropdown too, and
+      `--remove` is refused while documents carry the value.
 
 ## 16. Packaging
 

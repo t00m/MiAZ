@@ -170,7 +170,7 @@ def test_an_impossible_date_is_refused_and_kept(rename_dialog):
 
     leave_date_field(driver, widget)
     # Nothing next to the field may still read as a real date.
-    assert 'not a date' in widget.label_date.get_text()
+    assert 'not a date' in widget.date_entry.label.get_text()
 
 
 def test_a_valid_date_typed_by_hand_is_accepted(rename_dialog):
@@ -186,7 +186,7 @@ def test_a_valid_date_typed_by_hand_is_accepted(rename_dialog):
     leave_date_field(driver, widget)
     # The document opens on 20260612, so a label that merely contains '2026'
     # would pass without the field ever having been read.
-    assert widget.label_date.get_text() == 'Sunday, March 01 2026'
+    assert widget.date_entry.label.get_text() == 'Sunday, March 01 2026'
 
 
 def test_the_date_is_not_judged_while_it_is_being_typed(rename_dialog):
@@ -198,14 +198,14 @@ def test_the_date_is_not_judged_while_it_is_being_typed(rename_dialog):
     widget.entry_date.set_text('20260301')
     driver.pump(0.3)
     leave_date_field(driver, widget)
-    settled = widget.label_date.get_text()
+    settled = widget.date_entry.label.get_text()
     assert '2026' in settled
 
     widget.entry_date.grab_focus()
     for text in ('2026030', '202603', '20260', '2026'):
         widget.entry_date.set_text(text)
         driver.pump(0.15)
-        assert widget.label_date.get_text() == settled, (
+        assert widget.date_entry.label.get_text() == settled, (
             f"the label moved while '{text}' was on its way in")
 
 
@@ -219,7 +219,7 @@ def test_leaving_the_date_field_shows_the_verdict(rename_dialog):
     driver.pump(0.3)
 
     leave_date_field(driver, widget)
-    assert 'not a date' in widget.label_date.get_text()
+    assert 'not a date' in widget.date_entry.label.get_text()
 
 
 def test_applying_with_a_half_typed_date_is_refused(rename_dialog):
@@ -235,7 +235,7 @@ def test_applying_with_a_half_typed_date_is_refused(rename_dialog):
     driver.pump(0.4)
 
     assert widget.entry_date.get_text() == '202613', 'the date was completed'
-    assert 'not a date' in widget.label_date.get_text()
+    assert 'not a date' in widget.date_entry.label.get_text()
 
 
 def test_a_half_typed_date_does_not_become_a_real_one(rename_dialog):

@@ -13,6 +13,7 @@ gi.require_version('Peas', '2')
 gi.require_version('Gtk', '4.0')
 
 from MiAZ.frontend.desktop.services import pluginsystem as ps
+from MiAZ.backend.log import MiAZLog
 
 
 def test_toast_singular():
@@ -305,3 +306,212 @@ def test_a_toggled_plugin_does_not_accumulate_undo_steps():
         registry.add('MiAZFullscreen', lambda: None)
         registry.undo_all('MiAZFullscreen')
     assert registry.count('MiAZFullscreen') == 0
+
+# ---------------------------------------------------------------------------
+# Settings groups contributed by plugins
+# ---------------------------------------------------------------------------
+
+def test_a_new_settings_registry_knows_about_nothing():
+    registry = ps.PluginSettingsRegistry()
+    assert registry.builders() == []
+
+
+def test_a_builder_is_recorded_with_its_category():
+    registry = ps.PluginSettingsRegistry()
+    def build():
+        pass
+    registry.add('MiAZOCR', 'Documents', build)
+    assert registry.builders() == [('Documents', 'MiAZOCR', build)]
+
+
+def test_builders_are_ordered_by_category_then_plugin():
+    """The Settings tab reads them in this order, so it is the registry that
+    decides where each group lands rather than the order plugins loaded in."""
+    registry = ps.PluginSettingsRegistry()
+    registry.add('MiAZWSFont', 'Interface', lambda: None)
+    registry.add('MiAZOCR', 'Documents', lambda: None)
+    registry.add('MiAZAutoScan', 'Documents', lambda: None)
+    assert [(category, owner) for category, owner, _b in registry.builders()] == [
+        ('Documents', 'MiAZAutoScan'),
+        ('Documents', 'MiAZOCR'),
+        ('Interface', 'MiAZWSFont'),
+    ]
+
+
+def test_a_plugin_can_contribute_several_groups():
+    registry = ps.PluginSettingsRegistry()
+    def first():
+        pass
+    def second():
+        pass
+    registry.add('MiAZNotes', 'Documents', first)
+    registry.add('MiAZNotes', 'Documents', second)
+    assert len(registry.builders()) == 2
+
+
+def test_the_same_builder_twice_is_recorded_once():
+    """A plugin re-activated without a clean unload must not show its group
+    twice."""
+    registry = ps.PluginSettingsRegistry()
+    def build():
+        pass
+    registry.add('MiAZNotes', 'Documents', build)
+    registry.add('MiAZNotes', 'Documents', build)
+    assert registry.builders() == [('Documents', 'MiAZNotes', build)]
+
+
+def test_forget_takes_one_plugin_away():
+    registry = ps.PluginSettingsRegistry()
+    def keep():
+        pass
+    registry.add('MiAZNotes', 'Documents', lambda: None)
+    registry.add('MiAZWSFont', 'Interface', keep)
+    registry.forget('MiAZNotes')
+    assert registry.builders() == [('Interface', 'MiAZWSFont', keep)]
+
+
+def test_forget_an_unknown_plugin_is_harmless():
+    registry = ps.PluginSettingsRegistry()
+    registry.forget('NeverSeen')
+    assert registry.builders() == []
+
+# ---------------------------------------------------------------------------
+# MiAZPlugin contribution helpers
+# ---------------------------------------------------------------------------
+
+class FakeAppWithSettingsRegistry:
+    """Enough app for MiAZPlugin's contribution helpers, with no display."""
+
+    def __init__(self, registry):
+        self._registry = registry
+        self._services = {'plugin-system': type('S', (), {'settings': registry})()}
+
+    def get_service(self, name):
+        return self._services.get(name)
+
+
+def a_plugin(registry, category='Documents', name='MiAZOCR'):
+    plugin = ps.MiAZPlugin.__new__(ps.MiAZPlugin)
+    plugin.app = FakeAppWithSettingsRegistry(registry)
+    plugin.name = name
+    plugin.info = {'Name': name, 'Category': category, 'Subcategory': 'Import'}
+    plugin.log = MiAZLog('test')
+    plugin._active = True
+    return plugin
+
+
+def test_install_settings_group_records_it_under_the_plugin_category():
+    registry = ps.PluginSettingsRegistry()
+    plugin = a_plugin(registry)
+    def build():
+        return None
+    assert plugin.install_settings_group(build) is True
+    assert registry.builders() == [('Documents', 'MiAZOCR', build)]
+
+
+def test_an_unloaded_plugin_installs_nothing():
+    """is_active goes false before do_deactivate runs, so a background job
+    finishing late cannot add settings for a plugin that is gone."""
+    registry = ps.PluginSettingsRegistry()
+    plugin = a_plugin(registry)
+    plugin.set_active(False)
+    def build():
+        return None
+    assert plugin.install_settings_group(build) is False
+    assert registry.builders() == []
+
+# ---------------------------------------------------------------------------
+# Metadata views contributed by plugins
+# ---------------------------------------------------------------------------
+
+def test_a_metadata_view_is_recorded_against_its_plugin():
+    registry = ps.PluginSettingsRegistry()
+    def factory():
+        return None
+    registry.add_view('MiAZPeriodicity', 'Periodicity', 'Periodicity',
+                      'icon-periodicity', factory)
+    assert registry.views() == [
+        ('MiAZPeriodicity', 'Periodicity', 'Periodicity',
+         'icon-periodicity', factory)]
+
+
+def test_metadata_views_are_ordered_by_title():
+    registry = ps.PluginSettingsRegistry()
+    def factory():
+        return None
+    registry.add_view('MiAZProjectMgt', 'Projects', 'Projects', 'i', factory)
+    registry.add_view('MiAZPeriodicity', 'Periodicity', 'Periodicity', 'i', factory)
+    assert [view[2] for view in registry.views()] == ['Periodicity', 'Projects']
+
+
+def test_forget_takes_the_metadata_views_too():
+    registry = ps.PluginSettingsRegistry()
+    def factory():
+        return None
+    registry.add_view('MiAZPeriodicity', 'Periodicity', 'Periodicity', 'i', factory)
+    registry.forget('MiAZPeriodicity')
+    assert registry.views() == []
+
+
+def test_install_metadata_view_records_it():
+    registry = ps.PluginSettingsRegistry()
+    plugin = a_plugin(registry, name='MiAZPeriodicity')
+    def factory():
+        return None
+    assert plugin.install_metadata_view(
+        'Periodicity', 'Periodicity', 'icon', factory) is True
+    assert registry.views()[0][0] == 'MiAZPeriodicity'
+
+
+def test_an_unloaded_plugin_installs_no_metadata_view():
+    """Same guard as install_settings_group: is_active goes false before
+    do_deactivate runs, so a background job finishing late cannot add a
+    vocabulary view for a plugin that is gone."""
+    registry = ps.PluginSettingsRegistry()
+    plugin = a_plugin(registry, name='MiAZPeriodicity')
+    plugin.set_active(False)
+    def factory():
+        return None
+    assert plugin.install_metadata_view(
+        'Periodicity', 'Periodicity', 'icon', factory) is False
+    assert registry.views() == []
+
+
+# ---------------------------------------------------------------------------
+# plugin_version: a bundled plugin has no version of its own
+# ---------------------------------------------------------------------------
+
+class FakeInfo:
+    """Stands in for Peas.PluginInfo. get_version() returns None when the
+    .plugin file declares no Version, which libpeas is happy to load."""
+
+    def __init__(self, version=None):
+        self._version = version
+
+    def get_version(self):
+        return self._version
+
+
+def test_a_plugin_that_declares_no_version_takes_the_application_one():
+    """The bundled case. Nothing is written in either half of the plugin, so
+    there is nothing to bump at release time and nothing to drift."""
+    assert ps.plugin_version(FakeInfo(None), '0.3.0') == '0.3.0'
+
+
+def test_a_plugin_that_declares_a_version_keeps_it():
+    """The out-of-tree case. A plugin released on its own schedule says so,
+    and is not relabelled with the version of the MiAZ that loaded it."""
+    assert ps.plugin_version(FakeInfo('2.1.0'), '0.3.0') == '2.1.0'
+
+
+def test_an_empty_version_counts_as_none():
+    """Version= with nothing after it is a field somebody left blank, not a
+    release called ''."""
+    assert ps.plugin_version(FakeInfo(''), '0.3.0') == '0.3.0'
+
+
+def test_a_dict_is_read_the_same_way():
+    """get_plugin_attributes returns a plain dict parsed from the .plugin
+    file, so the import toast asks the same question of a different shape."""
+    assert ps.plugin_version({'Name': 'X'}, '0.3.0') == '0.3.0'
+    assert ps.plugin_version({'Version': '2.1.0'}, '0.3.0') == '2.1.0'

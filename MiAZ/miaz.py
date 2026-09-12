@@ -5,7 +5,6 @@
 
 import os
 import sys
-import argparse
 import logging
 import signal
 import locale
@@ -15,13 +14,14 @@ import atexit
 
 sys.path.insert(1, '@pkgdatadir@')
 
-from MiAZ.backend.log import MiAZLog, enable_file_logging, set_console_level
+from MiAZ.backend.log import (MiAZLog, debug_requested, enable_file_logging,
+                              set_console_level)
 
 # A bare first argument means a subcommand, so this is the command line and not
 # the window. Silence the startup logging before it happens: the environment
 # dump and the banner are written while importing MiAZ.env, below. MIAZ_DEBUG=1
 # brings them back.
-if len(sys.argv) > 1 and not sys.argv[1].startswith('-') and not os.environ.get('MIAZ_DEBUG'):
+if len(sys.argv) > 1 and not sys.argv[1].startswith('-') and not debug_requested():
     set_console_level(logging.WARNING)
 
 from MiAZ.env import ENV  # noqa: E402  (must follow the silencing above)
@@ -54,7 +54,7 @@ try:
         GLibUnix = None
     ENV['DESKTOP']['GTK_VERSION'] = (Gtk.MAJOR_VERSION, Gtk.MINOR_VERSION, Gtk.MICRO_VERSION)
     ENV['DESKTOP']['GTK_SUPPORT'] = (Gtk.MAJOR_VERSION, Gtk.MINOR_VERSION) >= GTK_MINIMUM
-except (ValueError, ModuleNotFoundError):
+except (ValueError, ImportError):
     ENV['DESKTOP']['GTK_SUPPORT'] = False
 
 try:
@@ -62,21 +62,47 @@ try:
     from gi.repository import Adw
     ENV['DESKTOP']['ADW_VERSION'] = (Adw.MAJOR_VERSION, Adw.MINOR_VERSION, Adw.MICRO_VERSION)
     ENV['DESKTOP']['ADW_SUPPORT'] = (Adw.MAJOR_VERSION, Adw.MINOR_VERSION) >= ADW_MINIMUM
-except (ValueError, ModuleNotFoundError):
+except (ValueError, ImportError):
     ENV['DESKTOP']['ADW_SUPPORT'] = False
 
 
 ENV['DESKTOP']['ENABLED'] = ENV['DESKTOP']['GTK_SUPPORT'] and ENV['DESKTOP']['ADW_SUPPORT']
-log.debug(f"GTK available ({Gtk.MAJOR_VERSION}.{Gtk.MINOR_VERSION}.{Gtk.MICRO_VERSION})")
-log.debug(f"ADW available ({Adw.MAJOR_VERSION}.{Adw.MINOR_VERSION}.{Adw.MICRO_VERSION})")
+
+
+def toolkit_version(key):
+    """A toolkit version as text, or a plain word when it is not installed.
+
+    Read out of ENV, not off the module. The two imports above are conditional,
+    so on a machine without the typelibs the names Gtk and Adw were never bound,
+    and the lines below used to dereference them anyway: the branch that exists
+    to tell a user their desktop packages are missing raised NameError on the
+    very name it was reporting about, before reaching its own sys.exit.
+    """
+    version = ENV['DESKTOP'].get(key)
+    return '.'.join(str(part) for part in version) if version else None
+
+
+def toolkit_report(name, key, minimum):
+    """One line saying what is there and what is wanted.
+
+    Built rather than formatted in place because it has to read correctly when
+    nothing is installed at all: "GTK not installed, 4.10 or later needed",
+    not "GTK not installed found".
+    """
+    version = toolkit_version(key)
+    found = f'{version} found' if version else 'not installed'
+    return f'{name} {found}, {minimum[0]}.{minimum[1]} or later needed'
+
+
+log.debug(f"GTK available ({toolkit_version('GTK_VERSION') or 'not installed'})")
+log.debug(f"ADW available ({toolkit_version('ADW_VERSION') or 'not installed'})")
 log.debug(f"Desktop enabled? {ENV['DESKTOP']['ENABLED']}")
-if not ENV['DESKTOP']['ENABLED']:
-    log.error("Desktop dependencies not met to run this app")
-    log.error("GTK %d.%d found, %d.%d needed" % (
-        Gtk.MAJOR_VERSION, Gtk.MINOR_VERSION, *GTK_MINIMUM))
-    log.error("Adw %d.%d found, %d.%d needed" % (
-        Adw.MAJOR_VERSION, Adw.MINOR_VERSION, *ADW_MINIMUM))
-    sys.exit(-1)
+# A missing toolkit is not reported here. This runs on the way in, for every
+# invocation, and exiting from it took the command line down with the window:
+# `miaz search` on a server with no Gtk typelib exited 255 before it could
+# parse its own arguments, and the branch in run() that names the commands
+# that do work there could never be reached. run() reports it, once it knows
+# a window was actually asked for.
 
 
 signal.signal(signal.SIGINT, signal.SIG_DFL)
@@ -109,8 +135,15 @@ ENV['APP']['RUNTIME']['EXEC'] = os.path.abspath(__file__)
 class MiAZ:
     """MiAZ Entry point class."""
 
-    def __init__(self, ENV: dict) -> None:
-        """Set up environment and run the application."""
+    def __init__(self, ENV: dict, console: bool = False) -> None:
+        """Set up environment and run the application.
+
+        `console` says this invocation is a command and not the window. Two
+        parts of the startup belong to the window alone and are skipped for a
+        command: taking the single-instance lock, and emptying var/tmp. Both
+        used to run for every invocation, because run() only chooses between
+        the two frontends afterwards.
+        """
         self.env = ENV
         log.debug("MiAZ Environment variables:")
         for section in self.env:
@@ -123,13 +156,19 @@ class MiAZ:
         # Enable persistent file logging now that the directories exist, then
         # install the console/log crash handler so any later failure is logged.
         log_file = enable_file_logging(ENV['FILE']['LOG'])
-        self._acquire_lock()
+        # The lock stops a second window opening on the same repository. It has
+        # nothing to say about a command: `miaz search` reads a repository the
+        # way any other program reads files, and refusing to run it because a
+        # window is open refused it exactly when it was most wanted.
+        if not console:
+            self._acquire_lock()
         self.log = MiAZLog('MiAZ')
         install_backend_excepthook(self.log, ENV)
         # A segfault never reaches the excepthook above, so the Python side of
         # the stack is written by faulthandler instead.
         install_fatal_handler(log_file)
-        self.clean_temp_directory()
+        if not console:
+            self.clean_temp_directory()
 
         self.log.info(f"{ENV['APP']['shortname']} v{ENV['APP']['VERSION']} - Start")
         self.log.info(f"Logging to {log_file}")
@@ -175,6 +214,10 @@ class MiAZ:
         is running. It runs after the lock is taken, so a second instance never
         deletes files the running one is still using, and it recreates the
         subdirectories the environment expects afterwards.
+
+        Which is also why a command never calls it: a command takes no lock, so
+        it cannot know whether a window is halfway through a scan, and running
+        `miaz search` is not a fresh start for anybody.
         """
         from MiAZ.backend.util import clean_temp_dir
         tmp_dir = self.env['LPATH']['TMP']
@@ -213,14 +256,17 @@ class MiAZ:
         # A known subcommand means the command line, not the window. Anything
         # else, including no arguments and --version, starts the desktop app
         # exactly as before, so the .desktop launcher is unaffected.
-        from MiAZ.frontend.console.cli import COMMANDS, main
-        if len(params) > 1 and params[1] in COMMANDS:
+        from MiAZ.frontend.console.cli import main
+        if is_console_run(params):
             sys.exit(main(params[1:], sys.stdout, sys.stderr, env=ENV))
 
         if not ENV['DESKTOP']['ENABLED']:
             # No usable GTK and no subcommand either. There is no window to
-            # open, so point at what does work here rather than failing on an
-            # import.
+            # open, so say which versions were wanted and point at what does
+            # work here, rather than failing on an import.
+            log.error("Desktop dependencies not met to run this app")
+            log.error(toolkit_report('GTK', 'GTK_VERSION', GTK_MINIMUM))
+            log.error(toolkit_report('Adw', 'ADW_VERSION', ADW_MINIMUM))
             sys.stderr.write("GTK is not available. Try 'miaz search' or "
                              "'miaz repos'.\n")
             sys.exit(2)
@@ -257,23 +303,102 @@ class MiAZ:
             sys.exit(0)
         self.log.info(f"{ENV['APP']['shortname']} v{ENV['APP']['VERSION']} - End")
 
+def is_console_run(argv):
+    """True when this invocation is a command rather than the window.
+
+    The one place that answers this. Three callers need it and they must agree:
+    the startup, which skips the window-only parts; the argument parser, which
+    would reject 'search' as unrecognised; and run(), which dispatches.
+
+    The options the command line takes before the command are stepped over, so
+    `miaz --repo Work search` is a search and not a window.
+    """
+    rest = argv[1:]
+    index = 0
+    while index < len(rest):
+        token = rest[index]
+        if token == '--repo':
+            # Takes a value, and a repository can be called anything.
+            index += 2
+            continue
+        if token.startswith('-'):
+            index += 1
+            continue
+        return token in cli_commands()
+    return False
+
+
+def cli_commands():
+    """Every command name the command line answers to, plugins included.
+
+    Cached because it is asked twice per run, once to decide whether to parse
+    window options and once to dispatch, and because the answer cannot change
+    within a run. Reading the .plugin files costs about 1.3 ms; nothing is
+    imported here.
+    """
+    global _CLI_COMMANDS
+    if _CLI_COMMANDS is None:
+        from MiAZ.frontend.console.cli import known_commands, plugin_search_paths
+        _CLI_COMMANDS = known_commands(plugin_search_paths(ENV))
+    return _CLI_COMMANDS
+
+
+_CLI_COMMANDS = None
+
+
+def build_parser():
+    """The parser that answers `miaz --help`.
+
+    Every command the command line takes is in it, plugin commands included,
+    because somebody asking what MiAZ accepts is asking about all of them. It
+    used to know only --version, so `miaz --help` listed two options and no
+    commands, and `miaz search --help` was the only place they were written
+    down: readable once you knew the command existed, which is the thing the
+    help was supposed to tell you.
+
+    The commands come from the console parser rather than a second list, so a
+    plugin that contributes one is in this help without doing anything else,
+    with its own options: MiAZParser prints each command's help under the list
+    of them, so `miaz --help` is the whole of what MiAZ takes.
+
+    What it takes depends on the repository, since a plugin is enabled per
+    repository and its commands are listed only where they can be run.
+    """
+    from MiAZ.frontend.console.cli import build_parser as build_console_parser
+    from MiAZ.frontend.console.cli import plugin_search_paths, repo_from
+    # The commands listed are the ones this repository can run, so the
+    # repository has to be resolved before the parser is built: the one named
+    # with --repo, or the one MiAZ opens by default.
+    parser = build_console_parser(plugin_search_paths(ENV), env=ENV,
+                                  repo=repo_from(sys.argv))
+    parser.description = ENV['APP']['description']
+    parser.add_argument('--version', action='version',
+                        version=ENV['APP']['VERSION'],
+                        help='Show version number and exit.')
+    parser.epilog = 'With no command, MiAZ opens its window.'
+    return parser
+
+
 def parse_arguments():
-    # Subcommands belong to the console parser (frontend/console/cli.py). This
-    # one only knows the options the window takes and would reject 'search' as
-    # an unrecognised argument before run() ever sees it.
-    from MiAZ.frontend.console.cli import COMMANDS
-    if len(sys.argv) > 1 and sys.argv[1] in COMMANDS:
+    # A command is parsed by the console parser, in frontend/console/cli.py,
+    # once run() has dispatched to it. This is the other invocation: the
+    # window, --version, --help, or a mistake.
+    if is_console_run(sys.argv):
         # Silence here rather than in main(): the environment dump and the
         # startup banner are logged while this module is imported, long before
         # a command runs. MIAZ_DEBUG=1 brings them back.
-        if not os.environ.get('MIAZ_DEBUG'):
+        if not debug_requested():
             from MiAZ.backend.log import set_console_level
             set_console_level(logging.WARNING)
         return None
 
-    parser = argparse.ArgumentParser(description=ENV['APP']['description'])
-    parser.add_argument('--version', action='version', version=ENV['APP']['VERSION'], help='Show version number and exit.')
-    return parser.parse_args()
+    if len(sys.argv) == 1:
+        # The desktop launcher, and `miaz` typed on its own. There is no
+        # argument to parse, and building the parser reads every plugin file
+        # to list the commands, which is work the window does not need.
+        return None
+
+    return build_parser().parse_args()
 
 
 if __name__ == "__main__":
@@ -281,5 +406,5 @@ if __name__ == "__main__":
     This is the entry point when the program is installed via Meson
     """
     args = parse_arguments()
-    app = MiAZ(ENV)
+    app = MiAZ(ENV, console=is_console_run(sys.argv))
     app.run(sys.argv)

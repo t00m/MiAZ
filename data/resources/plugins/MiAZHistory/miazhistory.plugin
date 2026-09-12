@@ -1,0 +1,11 @@
+[Plugin]
+Module=miazhistory
+Name=MiAZHistory
+Loader=python
+Description=Undo and redo changes in this repository
+Authors=Tomás Vírseda <tomasvirseda@gmail.com>
+Copyright=Copyright © 2026 Tomás Vírseda
+Website=http://github.com/t00m/MiAZ
+Help=https://github.com/t00m/MiAZ/blob/main/README.md
+Category=Repository
+Subcategory=History

@@ -1,0 +1,44 @@
+# Python bytecode and caches
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+
+# Test and lint caches
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+.coverage.*
+htmlcov/
+
+# Virtual environments
+.venv/
+venv/
+
+# Meson build directories
+builddir/
+builddir_user/
+build/
+
+# Packaging output
+dist/
+sdist/
+*.AppImage
+linuxdeploy-*.AppDir/
+.flatpak-builder/
+
+# Compiled translations (generated from po/)
+*.mo
+po/*.pot
+
+# Logs
+logs/
+*.log
+
+# Local scratch
+tmp/
+
+# Personal Claude Code config (the project hooks in settings.json are tracked)
+.claude/settings.local.json
+.claude/worktrees/

@@ -54,7 +54,15 @@ def calendar_select_date(calendar, year: int, month: int, day: int) -> None:
     4.10, so it warns on every keystroke in the rename date field. The setters
     that replace it count months from 0, while every other date API in this
     project counts from 1, so the conversion lives here and nowhere else.
+
+    The day goes to 1 before anything else, because each setter builds a date
+    from the two fields it is not changing and refuses one that does not exist.
+    Moving a calendar sitting on August 31 to February asked for February 31:
+    GTK logged 'gtk_calendar_set_month: assertion date != NULL failed' and kept
+    August, so asking for 2026-02-15 left the calendar on 2026-08-15. Day 1
+    exists in every month of every year, so no intermediate can be invalid.
     """
+    calendar.set_day(1)
     calendar.set_year(year)
     calendar.set_month(month - 1)
     calendar.set_day(day)

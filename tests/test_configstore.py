@@ -169,3 +169,86 @@ def test_the_store_seeds_the_available_pools_from_the_defaults(app, tmp_path):
 def test_the_store_creates_the_used_files_empty(app, tmp_path):
     store = MiAZConfigStore(app, conf_dir(tmp_path))
     assert store.get('Country').load_used() == {}
+
+
+# ---------------------------------------------------------------------------
+# One person, four files
+# ---------------------------------------------------------------------------
+
+def read_json(dir_conf, filename):
+    with open(os.path.join(dir_conf, filename), encoding='utf-8') as handler:
+        return json.load(handler)
+
+
+def seed_person(dir_conf, key='ADAC', description='ADAC'):
+    """One person in every file that can hold them, described by their own key,
+    which is the state the health check calls undescribed."""
+    for filename in ('people-available.json', 'people-used.json',
+                     'senders-used.json', 'recipients-used.json'):
+        write_used(dir_conf, filename, {key: description})
+
+
+def test_a_description_set_on_a_sender_reaches_every_people_file(app, tmp_path):
+    """A person is the same person whether a document was sent by them or to
+    them. The description lives in four files and has to agree in all of them.
+    """
+    dir_conf = conf_dir(tmp_path)
+    seed_person(dir_conf)
+    store = MiAZConfigStore(app, dir_conf)
+
+    store.get('SentBy').set_description('ADAC', 'ADAC e.V.')
+
+    for filename in ('people-available.json', 'people-used.json',
+                     'senders-used.json', 'recipients-used.json'):
+        assert read_json(dir_conf, filename) == {'ADAC': 'ADAC e.V.'}, filename
+
+
+def test_a_description_set_on_a_person_reaches_the_senders(app, tmp_path):
+    """The repository manager edits Person, and the workspace reads senders."""
+    dir_conf = conf_dir(tmp_path)
+    seed_person(dir_conf)
+    store = MiAZConfigStore(app, dir_conf)
+
+    store.get('Person').set_description('ADAC', 'ADAC e.V.')
+
+    assert read_json(dir_conf, 'senders-used.json') == {'ADAC': 'ADAC e.V.'}
+    assert read_json(dir_conf, 'recipients-used.json') == {'ADAC': 'ADAC e.V.'}
+
+
+def test_a_description_is_not_written_where_the_key_is_absent(app, tmp_path):
+    """Writing a description says what a key means, never that it is in use:
+    a person nothing was sent to does not become a recipient by being named.
+    """
+    dir_conf = conf_dir(tmp_path)
+    write_used(dir_conf, 'people-available.json', {'ADAC': 'ADAC'})
+    write_used(dir_conf, 'senders-used.json', {'ADAC': 'ADAC'})
+    write_used(dir_conf, 'recipients-used.json', {})
+    store = MiAZConfigStore(app, dir_conf)
+
+    store.get('SentBy').set_description('ADAC', 'ADAC e.V.')
+
+    assert read_json(dir_conf, 'recipients-used.json') == {}
+    assert read_json(dir_conf, 'senders-used.json') == {'ADAC': 'ADAC e.V.'}
+
+
+def test_a_country_description_stays_among_the_countries(app, tmp_path):
+    """Only the people configurations share a vocabulary."""
+    dir_conf = conf_dir(tmp_path)
+    write_used(dir_conf, 'countries-used.json', {'ES': 'ES'})
+    write_used(dir_conf, 'people-available.json', {'ES': 'ES'})
+    store = MiAZConfigStore(app, dir_conf)
+
+    store.get('Country').set_description('ES', 'Spain')
+
+    assert read_json(dir_conf, 'countries-used.json') == {'ES': 'Spain'}
+    assert read_json(dir_conf, 'people-available.json') == {'ES': 'ES'}
+
+
+def test_setting_a_description_says_whether_anything_changed(app, tmp_path):
+    dir_conf = conf_dir(tmp_path)
+    seed_person(dir_conf)
+    store = MiAZConfigStore(app, dir_conf)
+
+    assert store.get('SentBy').set_description('ADAC', 'ADAC e.V.') is True
+    assert store.get('SentBy').set_description('ADAC', 'ADAC e.V.') is False
+    assert store.get('SentBy').set_description('NOBODY', 'Nobody') is False

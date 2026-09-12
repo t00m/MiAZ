@@ -38,19 +38,26 @@ MiAZ/
 │   ├── env.in                    ← Environment template → env.py (meson-generated)
 │   ├── backend/                  ← Business logic (no GTK/Adw widgets; GObject signals OK)
 │   │   ├── config.py             ← MiAZConfig + subclasses, MiAZConfigStore (per repo)
+│   │   ├── conversation.py       ← Conversation, Message (documents as an exchange)
 │   │   ├── gate.py               ← UpdateGate (reference-counted refresh suspension)
 │   │   ├── crash.py              ← console/log-only excepthook (install_backend_excepthook)
-│   │   ├── data.py               ← Placeholder (package marker)
+│   │   ├── doctor.py             ← Finding + the repository health checks, in one pass
 │   │   ├── dr.py                 ← MiAZDR (disaster recovery / backup)
+│   │   ├── duplicates.py         ← find_duplicates (documents with identical content)
+│   │   ├── extract.py            ← ExtractResult, extract (local, non-AI text extraction)
 │   │   ├── index.py              ← MiAZDocumentIndex (the parse: filename → MiAZItem)
-│   │   ├── log.py                ← MiAZLog (colored logging)
+│   │   ├── log.py                ← MiAZLog (colored logging), debug_requested
 │   │   ├── query.py              ← DocumentQuery (the workspace filter, as a value)
 │   │   ├── tasks.py              ← run_in_background (thread + GLib.idle_add)
 │   │   ├── models.py             ← MiAZItem, Country, Group, etc. (GObject models)
-│   │   ├── repository.py         ← MiAZRepository (CRUD on file-based repo)
-│   │   ├── stats.py              ← MiAZStats (document statistics)
+│   │   ├── repository.py         ← MiAZRepository (CRUD on file-based repo), REPO_FORMAT
+│   │   ├── secrets.py            ← plugin secret storage (libsecret, keyring fallback)
 │   │   ├── status.py             ← MiAZStatus (IntEnum: RUNNING=0, BUSY=1)
+│   │   ├── thumbnails.py         ← thumbnail_for, cached_thumbnail (preview images)
 │   │   ├── util.py               ← MiAZUtil (file ops, JSON, normalization)
+│   │   ├── venv.py               ← MiAZVenv (per-user venv for plugin dependencies)
+│   │   ├── vocabhealth.py        ← what is wrong with a repository's vocabulary
+│   │   ├── vocabulary.py         ← translatable labels for the built-in vocabularies
 │   │   ├── watcher.py            ← MiAZWatcher (filesystem monitor)
 │   │   └── webserver.py          ← MiAZWebServer (minimal static localhost HTTP server)
 │   └── frontend/
@@ -60,26 +67,32 @@ MiAZ/
 │       └── desktop/
 │           ├── app.py            ← MiAZApp(Adw.Application)
 │           └── services/
-│           │   ├── actions.py    ← MiAZActions
+│           │   ├── actions.py    ← MiAZActions (shortcuts dialog behind ADW_SHORTCUTS_DIALOG)
 │           │   ├── crash.py      ← MiAZCrashHandler (GUI crash dialog + excepthook)
 │           │   ├── dialogs.py    ← MiAZDialog, MiAZWindowDialog, MiAZDialogAdd, MiAZDialogAddRepo
+│           │   ├── doctabs.py    ← MiAZDocumentTabs
+│           │   ├── extlibs.py    ← MiAZExtLibs
 │           │   ├── massrename.py ← MiAZMassRename (core mass-rename service + menu)
 │           │   ├── factory.py    ← MiAZFactory (widget factory)
-│           │   ├── help.py       ← MiAZHelp, MiAZShortcutsWindow
 │           │   ├── icm.py        ← MiAZIconManager
 │           │   ├── importdoc.py  ← MiAZImportDoc (core add-document service + menu items)
 │           │   ├── pluginsystem.py ← MiAZExtension, MiAZPlugin, MiAZPluginSystem
+│           │   ├── progress.py   ← MiAZProgress
 │           │   └── workflow.py   ← MiAZWorkflow (repo switching lifecycle)
 │           └── widgets/
-│               ├── about.py, assistant.py, browserpage.py, button.py
-│               ├── columnview.py, configview.py, dr.py, mainwindow.py
-│               ├── markdownview.py, pages.py, pluginuimanager.py, rename.py
-│               ├── searchbar.py, selector.py, settings.py, sidebar.py
-│               ├── views.py, webbrowser.py, window.py
+│               ├── assistant.py, browserpage.py, button.py, chip.py
+│               ├── columnview.py, configview.py, conversationview.py
+│               ├── dateentry.py, docpreview.py, dr.py, filenamesview.py
+│               ├── filetypebadge.py, gridview.py, mainwindow.py
+│               ├── markdownview.py, metadatapage.py, pages.py, pills.py
+│               ├── rename.py, reposettingspage.py, selector.py
+│               ├── settings.py, sidebar.py, sidebarstack.py
+│               ├── timelineview.py, views.py, webbrowser.py, window.py
 │               └── workspace.py
+│                 (no searchbar.py: search is a registered 'searchentry' widget)
 ├── data/
 │   └── resources/
-│       ├── plugins/              ← Built-in Peas plugins (20 with .plugin metadata)
+│       ├── plugins/              ← Built-in Peas plugins (21 with .plugin metadata)
 │       ├── icons/                ← App icons (scalable + flag SVGs)
 │       ├── conf/                 ← 6 default config JSON files (countries, extensions,
 │       │                            groups, languages, people, purposes)
@@ -97,7 +110,7 @@ MiAZ/
 Two distinct WebKit widgets exist, do not confuse them:
 - `widgets/browserpage.py` (`MiAZBrowserPage`): the **Browser page inside the Workspace** (`'workspace-browser'`). Lists plugin-published WWW sites and opens repo documents from `miazdoc:` links. This is the one plugins target.
 - `widgets/webbrowser.py` (`MiAZWebBrowser`): a separate generic `WebKit.WebView` placed in the main window's outer `Gtk.Stack` as `'page-webbrowser'` (back/forward/URL bar). General-purpose, not the plugin surface.
-- `widgets/markdownview.py` (`MiAZMarkdownView`): a reusable, read-only Markdown viewer. It converts Markdown to themed HTML (via `python-markdown`, with a `<pre>` fallback when that is missing) and renders it in a `WebKit.WebView` with a transparent background, a Copy/Select-All-only context menu, and external link handling. `set_markdown(text)` updates the content. Links open in the system browser, except `miazcmd:` links, which call the optional `on_command` callback so a host can map a Markdown link to an in-app action. Used by `MiAZNotes` to render the note body in view mode (edit mode keeps the raw Markdown `TextView`) and by the `MiAZAIChat` plugin to render the chat transcript with per-answer `miazcmd:save:<n>` links.
+- `widgets/markdownview.py` (`MiAZMarkdownView`): a reusable, read-only Markdown viewer. It converts Markdown to themed HTML (via `python-markdown`, with a `<pre>` fallback when that is missing) and renders it in a `WebKit.WebView` with a transparent background, a Copy/Select-All-only context menu, and external link handling. `set_markdown(text)` updates the content. Links open in the system browser, except `miazcmd:` links, which call the optional `on_command` callback so a host can map a Markdown link to an in-app action. Used by the notes views to render the note body in view mode (edit mode keeps the raw Markdown `TextView`) and by the `MiAZAIChat` plugin to render the chat transcript with per-answer `miazcmd:save:<n>` links.
 
 ## Filename convention (core domain)
 
@@ -198,7 +211,8 @@ loop must marshal the result back itself.
 - Access via `app.get_service('name')`
 - Registration order: `crash`, `util`, `icons`, `factory`, `dialogs`, `actions`, `workflow`, `dr`, `progress`, `secrets`, `venv`, `extlibs`, `webserver`, `repo`, `index`, `massrename`, `importdoc` (early); then `plugin-system` and `theme` (`Gtk.IconTheme`) once the window exists. `massrename` and `importdoc` are registered before the window is built because each builds its menu item(s) in `__init__` (`massrename-menu` widget; `importdoc.menuitem`) that the headerbar consumes when it is constructed.
 
-- `progress` (`services/progress.py`): runs one long operation at a time behind a modal progress dialog. `run(work, title, message='', parent=None, on_close=None)` sends `work(report)` to a worker thread through `run_in_background`, makes `window-mainbox` insensitive, and presents an `Adw.AlertDialog` whose Close response is disabled (and `can_close` off) until the work ends. `report(text, fraction=None)` may be called from the worker: it marshals with `GLib.idle_add`, and a fraction of `None` pulses the bar. Whatever `work` returns is shown as the outcome; the UI comes back and `on_close(ok, result)` runs when the user closes the dialog, not when the work ends. Returns the dialog, or `None` when one is already running. Only the window *content* is disabled, never the window: libadwaita hosts dialogs beside that content, so disabling the window would disable the dialog too. Used by Backup & Restore (`widgets/dr.py`, six operations) and by MiAZNotes (three entry points). Covered by `tests/ui/test_ui_progress.py`.
+- `notes` (`services/notes.py`): notes attached to documents, core since 0.3 (it was the MiAZNotes plugin). Owns the four menu actions (`menu()` builds the submenu the main window appends beside mass rename and the clipboard item), the All Notes workspace page, the header bar indicator, the "only documents with notes" sidebar switch and the leftmost workspace column showing a note count. `add_note(document_id, body, category=...)` is the way in for anything filing a note, MiAZOCR and MiAZAIAssistant included; it writes through the store and refreshes the views. The storage itself is `backend/notes.py` (`NotesStore`, `CategoryStore`, `NotesBackup`, `notes_dir`), which has no toolkit in it, so `miaz ocr` files a note with no display. Notes live at `<repo>/.conf/notes/data`. `migrate_notes(repo_docs, log)` gathers them from the two places they have been before, `<repo>/.conf/plugins/MiAZNotes` (the plugin) and `<repo>/.conf/MiAZNotes` (briefly, after becoming core), and is called from `MiAZRepository.load()`, so it runs whenever a repository is opened by either frontend, not only at application start: a command opens one too. It never overwrites, so a name taken at the target arrives beside it with a `-2` suffix, and it removes an old tree only once it is empty. `notes_dir()` and `legacy_notes_dirs()` are the only places these paths are spelled out. The service is registered before `_setup_ui()` so the menu build finds it, and attaches to the workspace later through `_bind_workspace()`, since the workspace does not exist that early.
+- `progress` (`services/progress.py`): runs one long operation at a time behind a modal progress dialog. `run(work, title, message='', parent=None, on_close=None)` sends `work(report)` to a worker thread through `run_in_background`, makes `window-mainbox` insensitive, and presents an `Adw.AlertDialog` whose Close response is disabled (and `can_close` off) until the work ends. `report(text, fraction=None)` may be called from the worker: it marshals with `GLib.idle_add`, and a fraction of `None` pulses the bar. Whatever `work` returns is shown as the outcome; the UI comes back and `on_close(ok, result)` runs when the user closes the dialog, not when the work ends. Returns the dialog, or `None` when one is already running. Only the window *content* is disabled, never the window: libadwaita hosts dialogs beside that content, so disabling the window would disable the dialog too. Used by Backup & Restore (`widgets/dr.py`, six operations) and by the notes service (three entry points). Covered by `tests/ui/test_ui_progress.py`.
 
 **Widgets** (`MiAZ/frontend/desktop/widgets/`): All GTK4+Adw widgets.
 
@@ -219,7 +233,6 @@ loop must marshal the result back itself.
 | `MiAZUtil` (util.py) | `filename-added`, `filename-deleted`, `filename-renamed` |
 | `MiAZWatcher` (watcher.py) | `repository-updated` |
 | `MiAZRepository` (repository.py) | `repository-switched` |
-| `MiAZStats` (stats.py) | `stats-updated` |
 | `MiAZWindowDialog` (dialogs.py) | `response` (str), `closed` |
 | `MiAZDialogAdd` / `MiAZDialogAddRepo` (dialogs.py) | `response` (str) |
 
@@ -389,7 +402,7 @@ Pass `widget_key` whenever the plugin looks the widget up later. The key is unre
 
 Reaching `sidebar-plugin-section`, `headerbar-left-box` and friends directly still works. These only save writing the teardown.
 
-**Menu entries are recorded, not rebuilt by rerunning startup.** `install_menu_entry(menuitem, category=None, subcategory=None)` appends the item and remembers it against the plugin. `install_menu_submenu(title, menu)` does the same for a plugin that hangs several actions under its entry (assign, unassign, manage). The workspace menu is thrown away and rebuilt whenever plugins change, and the rebuild replays those records.
+**Menu entries are recorded, not rebuilt by rerunning startup.** `install_menu_entries(callbacks)` builds the declared entries and appends each one, remembering it against the plugin; `install_menu_entry(menuitem, category=None, subcategory=None, name=None)` is the single item underneath it. `install_menu_submenu(title, menu)` does the same for a plugin that hangs several actions under its entry (assign, unassign, manage). The workspace menu is thrown away and rebuilt whenever plugins change, and the rebuild replays those records.
 
 It did not always. The rebuild used to clear every loaded plugin's `started` flag and call its `startup()` again, so each plugin ran its whole setup once per load or unload of **any** plugin: another gesture on the column view, another background probe of the scanner, another handler. One of those extra gestures is what made a right click crash after the plugin was disabled. Two rules follow:
 
@@ -508,9 +521,9 @@ Both rename paths use it. The single rename (`widgets/rename.py`) prefills the d
 
 ### Archive extraction
 
-`util.check_zip_members(names, install_dir)` is the one place that decides whether an archive may be unpacked. It raises `RuntimeError` for any member that would land outside `install_dir`. It is a **module-level** function, not a method, so callers without the app object can reach it: `MiAZNotes/lib/dr.py` builds its own `ZipFile` and has no service registry.
+`util.check_zip_members(names, install_dir)` is the one place that decides whether an archive may be unpacked. It raises `RuntimeError` for any member that would land outside `install_dir`. It is a **module-level** function, not a method, so callers without the app object can reach it: `backend/notes.py` builds its own `ZipFile` and has no service registry.
 
-Three callers, and there must not be a fourth that skips it: `util.unzip` (which every `util.unzip` caller inherits), `pluginsystem.install_plugin` (goes through `util.unzip`, **not** `extractall`), and the `MiAZNotes` restore.
+Three callers, and there must not be a fourth that skips it: `util.unzip` (which every `util.unzip` caller inherits), `pluginsystem.install_plugin` (goes through `util.unzip`, **not** `extractall`), and the notes restore.
 
 Note what this check is and is not. CPython's `zipfile` already strips `..` and leading separators, so a member named `../evil` is quietly rewritten to sit inside the target rather than escaping: nothing gets out today. The check exists so that case is refused out loud instead of silently relocating a file, and so the guard is already in place if extraction ever moves to `tarfile`, which sanitises nothing. Do not describe it as fixing a live traversal escape.
 
@@ -580,24 +593,21 @@ Website=http://github.com/t00m/MiAZ
 Version=0.1
 Category=Documents
 Subcategory=Import
+MenuEntry-import=Import documents from ZIP
+MenuEntry-doc=Create a new note|<Ctrl>N
 ```
 
 Valid categories (with subcategories), defined once in `plugin_categories`
 (`frontend/desktop/services/pluginsystem.py`):
 
-- `Documents`: Import, Export, Text, Notes, Convert
-- `Organise`: Tags, Projects, Search
-- `Repository`: Backup, Restore, Statistics, Sync
-- `Interface`: View, Fonts, Themes
-- `AI`: Assistants, Models
-- `Help`: Examples, Diagnostics
+- `Documents`: Import, Export, Annotation, Contacts, Periodicity, Projects, Search, Assistants
+- `Repository`: Health, Stats
+- `Interface`: Behavior, Display, Accessibility
+- `Help`: Examples
 
-Names are one word on purpose: the subcategory is the label of a workspace submenu,
-sitting next to actions like "Toggle fullscreen".
-
-`AI` is its own category so that it means something: it marks a plugin that sends
-document content to an external provider. `MiAZOCR` shells out to `ocrmypdf` and
-`tesseract` with no model involved, so it belongs under `Documents / Text`, not here.
+Names are one word on purpose: both are menu labels. The workspace plugins section
+shows one submenu per category and each of those one per subcategory, so a plugin's
+actions read as `Documents > Annotation > Create a new note`.
 
 Write the pair in English in both the `.plugin` file and `plugin_info`. It is a
 vocabulary key, translated once at display time by `_(category)` in `configview.py`
@@ -614,6 +624,10 @@ plugin_info = {
     'Description': '...', 'Authors': '...', 'Copyright': '...',
     'Website': '...', 'Help': '...', 'Version': '...',
     'Category': '...', 'Subcategory': '...',
+    'MenuEntries': [
+        ('doc', _('Create a new note'), ['<Ctrl>N']),
+        ('all', _('See all notes…')),
+    ],
     'Dependencies': 'MiAZOtherPlugin, MiAZAnotherPlugin'   # optional
 }
 
@@ -643,18 +657,41 @@ class MyPlugin(MiAZExtension):
 
     def startup(self, *args):
         if not self.plugin.started():
-            menuitem = self.plugin.get_menu_item(callback=self._on_activate)
-            self.plugin.install_menu_entry(menuitem)
+            self.plugin.install_menu_entries({
+                'doc': self._on_new_doc_note,
+                'all': self._on_open_all_notes,
+            })
             self.plugin.set_started(True)
 ```
+
+**Menu entries are declared, not built.** `MenuEntries` says which entries the
+plugin has, in what order, under what label and on what shortcut;
+`install_menu_entries` says what each one does, keyed by the id the definition
+gave it. The plugin never names an action, writes a label or passes a shortcut in
+code. Labels go through `_()` in `plugin_info` so they reach `po/`; the `.plugin`
+file carries the same entries untranslated, one `MenuEntry-<id>=` key each, because
+repeated keys are not an INI file. `tests/test_plugin_menu_entries.py` checks the
+two halves agree and that every declared id is wired to a callback.
+
+An entry the definition cannot describe still goes through `install_menu_entry`:
+`MiAZAutoScan` builds a submenu of whatever sources the scanner reports, and asks
+`get_menu_entry_label('scan')` for its label so even that one is written in the
+definition.
 
 **`MiAZPlugin` helper key methods:**
 - `register(plugin_obj, info_dict)`,  stores widget reference, creates `conf/` and `data/` dirs
 - `get_config_dir()` → `<repo>/.conf/plugins/<Name>/conf/`
 - `get_data_dir()` → `<repo>/.conf/plugins/<Name>/data/`
 - `get_config_key(key)` / `set_config_key(key, value)`,  JSON config persistence
-- `get_menu_item(callback)` → `Gio.MenuItem` (registered as app action)
-- `install_menu_entry(menuitem)`,  appends to workspace menu under category/subcategory
+- `install_menu_entries({id: callback})` → `{id: Gio.MenuItem}`, builds and installs every entry the definition declares
+- `get_menu_entries()` → `[(id, label, shortcuts)]` as declared
+- `get_menu_entry_label(id)` → the declared label, for an item the plugin has to build itself
+- `get_menu_item_name(id=None)` → the action name of one entry, which is also its widget key
+- `install_menu_entry(menuitem, category=None, subcategory=None, name=None)`,  appends one item to the workspace menu under category/subcategory
+- `get_menu_item(callback)` → `Gio.MenuItem`, the older single-entry path, kept for out of tree plugins
+- `install_settings_group(builder)` → `bool`, offers a settings group to the Repository Settings dialog's Settings tab; `builder` is called with no arguments, returns an `Adw.PreferencesGroup`, and is held rather than called immediately, so a slow builder (AutoScan asking SANE what devices exist) is not paid for until the tab is shown
+- `install_metadata_view(name, title, icon_name, factory)` → `bool`, adds one repository vocabulary to the Metadata tab, for a plugin that owns a vocabulary rather than a preference (MiAZPeriodicity's periodicities, MiAZProjectMgt's projects); `factory` is called with no arguments and returns the widget. Unlike a settings builder, it is not held: the Metadata tab calls every registered factory while the dialog is being built, since the dialog is constructed fresh each time it opens and a vocabulary view is cheap to create
+- `show_settings(widget=None)`, the older path: a plugin's own settings dialog, opened directly. MiAZAIAssistant still defines it, for its own standalone dialog reached from outside the Repository Settings dialog. The Plugins tab no longer has a button for it; `MiAZRepoSettingsPage.build_legacy_rows` is the shim that keeps it working for out-of-tree plugins written against it, with a Configure row under "Other plugins" for any loaded plugin that has `show_settings` but no `install_settings_group` builder
 - `add_workspace_page(widget, name, title, icon_name=None)`,  registers a page on the workspace's `Adw.ViewStack`
 - `register_document_tab(name, title, factory, icon_name=None, weight=100)` / `unregister_document_tabs()`,  contributes a tab to the single-document rename dialog (see below)
 - `get_source_dir()` → the plugin folder, looked up by `Name` then by `Module`
@@ -799,6 +836,7 @@ activation (with install instructions) when `ocrmypdf` is not on `PATH`.
 - **No GTK3**: no `GtkListStore`, `GtkTreeView`, `GtkDialog` subclassing
 - **Filechooser**: `Gtk.FileDialog` (async GTK4 API), not `Gtk.FileChooserDialog`
 
+
 ## Build & install
 
 ```bash
@@ -832,8 +870,7 @@ PYTHONPATH=. python -m MiAZ.miaz
 | MiAZImportFromScan | Documents / Import | Import document from scanner |
 | MiAZImportFromZip | Documents / Import | Import documents from a ZIP file |
 | MiAZInsights | Repository / Statistics | Insights into the repository (totals, activity heatmap, rank movers, country map) published to the Browser page |
-| MiAZNotes | Documents / Notes | Take Markdown notes linked to documents (adds a workspace page) |
-| MiAZOCR | Documents / Text | Extract text from PDFs with OCR and save as a note (depends on MiAZNotes; vetoes activation if `ocrmypdf` is missing) |
+| MiAZOCR | Documents / Annotation | Extract text from PDFs with OCR and save it as a note, from the menu or as `miaz ocr`; vetoes activation if `ocrmypdf` is missing |
 | MiAZPeriodicity | Organise / Tags | Set document periodicity |
 | MiAZProjectMgt | Organise / Projects | Project management |
 | MiAZWSFont | Interface / Fonts | Modify workspace font name and size |

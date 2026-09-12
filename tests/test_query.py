@@ -108,6 +108,47 @@ def test_a_field_code_rejects_a_different_value():
     assert DocumentQuery(country='FR').matches(item()) is False
 
 
+def test_a_field_code_is_exact_by_default():
+    """The sidebar passes the id of the dropdown entry it holds, so a code that
+    is part of a longer one must not drag that one in."""
+    assert DocumentQuery(sentby='BAN').matches(item()) is False
+
+
+def test_a_partial_field_matches_part_of_the_code():
+    """What somebody types at a terminal is the start of a name, not the code
+    as the filename spells it."""
+    assert DocumentQuery(sentby='BAN', partial_fields=True).matches(item()) is True
+
+
+def test_a_partial_field_matches_part_of_the_description():
+    """A code is short and often cryptic. The description is the text the
+    person has actually read, in the sidebar and in the search output."""
+    assert DocumentQuery(sentby='savings', partial_fields=True).matches(
+        item(sentby_dsc='The Savings Bank')) is True
+
+
+def test_a_partial_field_ignores_case():
+    assert DocumentQuery(sentby='bAn', partial_fields=True).matches(item()) is True
+
+
+def test_a_partial_field_still_rejects_what_is_not_there():
+    assert DocumentQuery(sentby='ZZZ', partial_fields=True).matches(item()) is False
+
+
+def test_partial_fields_narrow_each_other():
+    """Two fields are an and, whole codes or parts of them."""
+    query = DocumentQuery(sentby='BAN', purpose='IN', partial_fields=True)
+    assert query.matches(item()) is True
+    assert query.matches(item(purpose='RPT')) is False
+
+
+def test_partial_fields_leave_the_sentinels_alone():
+    assert DocumentQuery(sentby=ANY, partial_fields=True).matches(item()) is True
+    assert DocumentQuery(sentby=NONE, partial_fields=True).matches(item()) is False
+    assert DocumentQuery(sentby=NONE, partial_fields=True).matches(
+        item(sentby_id='')) is True
+
+
 def test_none_matches_an_empty_value():
     assert DocumentQuery(country=NONE).matches(item(country='')) is True
 
@@ -511,3 +552,72 @@ def test_a_preset_query_actually_filters():
     old = item(date='20200101')
     assert query.matches(recent) is True
     assert query.matches(old) is False
+
+
+def test_only_ids_restricts_the_view_to_an_explicit_list():
+    """Putting a list somebody already worked out in front of the user.
+
+    A health check names the documents it found; the view has to be able to
+    show exactly those, whatever the dropdowns say.
+    """
+    wanted = item(id='a.pdf')
+    unwanted = item(id='b.pdf')
+    query = DocumentQuery(only_ids=frozenset({'a.pdf'}),
+                          ignore_date=True, ignore_active=True)
+    assert query.matches(wanted) is True
+    assert query.matches(unwanted) is False
+
+
+def test_no_restriction_is_not_the_same_as_an_empty_one():
+    """None means every document; an empty set means none, and both are real."""
+    document = item(id='a.pdf')
+    assert DocumentQuery(ignore_date=True,
+                         ignore_active=True).matches(document) is True
+    assert DocumentQuery(only_ids=frozenset(), ignore_date=True,
+                         ignore_active=True).matches(document) is False
+
+
+def test_only_ids_still_obeys_the_other_filters():
+    """It narrows the view, it does not override what else is being asked."""
+    document = item(id='a.pdf', country='ES')
+    query = DocumentQuery(only_ids=frozenset({'a.pdf'}), country='DE',
+                          ignore_date=True, ignore_active=True)
+    assert query.matches(document) is False
+
+
+def test_a_range_with_no_end_reaches_forward():
+    """An open bound means 'no limit on that side', not a crash.
+
+    The console can set one bound and leave the other unset, which used to
+    compare a date against None.
+    """
+    query = DocumentQuery(date_mode=DATE_RANGE,
+                          date_since=date(2024, 6, 1), date_until=None)
+    assert query._matches_date(item(date='20240615')) is True
+    assert query._matches_date(item(date='20991231')) is True
+    assert query._matches_date(item(date='20240101')) is False
+
+
+def test_a_range_with_no_start_reaches_back():
+    query = DocumentQuery(date_mode=DATE_RANGE,
+                          date_since=None, date_until=date(2024, 6, 1))
+    assert query._matches_date(item(date='20240101')) is True
+    assert query._matches_date(item(date='19700101')) is True
+    assert query._matches_date(item(date='20240615')) is False
+
+
+def test_a_range_open_at_both_ends_takes_every_dated_document():
+    query = DocumentQuery(date_mode=DATE_RANGE,
+                          date_since=None, date_until=None)
+    assert query._matches_date(item(date='20240615')) is True
+    assert query._matches_date(item(date='notadate')) is False
+
+
+def test_both_bounds_are_inclusive():
+    query = DocumentQuery(date_mode=DATE_RANGE,
+                          date_since=date(2024, 6, 1),
+                          date_until=date(2024, 6, 30))
+    assert query._matches_date(item(date='20240601')) is True
+    assert query._matches_date(item(date='20240630')) is True
+    assert query._matches_date(item(date='20240531')) is False
+    assert query._matches_date(item(date='20240701')) is False

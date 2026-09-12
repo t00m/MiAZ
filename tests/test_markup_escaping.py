@@ -47,8 +47,14 @@ ALLOWED = {
         'a translated literal plus the model title, no repository value',
     ('widgets/mainwindow.py', '_on_workspace_menu_update'):
         'document counts',
-    ('widgets/rename.py', 'validate_date'):
+    ('widgets/chip.py', '__init__'):
+        'markup is markup by contract: the caller passes its own tags, so '
+        'escaping what it interpolates is its job (workspace.py does)',
+    ('widgets/dateentry.py', 'validate'):
         'translated literals and strftime output, which has no & in any locale',
+    ('widgets/filenamesview.py', 'update'):
+        'every field is passed through markup_escape_text in the loop that '
+        'builds the parts; the scan cannot see through the join',
 }
 
 

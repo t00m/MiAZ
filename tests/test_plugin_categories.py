@@ -105,3 +105,73 @@ def test_every_name_reaches_the_translation_catalogue():
     missing = [n for n in sorted(names)
                if f'msgid "{n}"\n' not in catalogue]
     assert not missing, f"not in {CATALOGUE}: {', '.join(missing)}"
+
+
+def test_the_repository_category_offers_a_history():
+    """MiAZHistory files its settings under Repository > History, and a pair
+    that is not in the vocabulary is only warned about at runtime."""
+    assert ps.validate_category('Repository', 'History') is None
+
+
+def test_the_module_named_in_the_plugin_file_is_the_file_that_exists():
+    """A .plugin naming a module that is not there loads nothing, silently.
+
+    MiAZRelated shipped for a moment with Module=related while the code was in
+    relateddocs.py, and the only symptom was a plugin that never appeared.
+    """
+    missing = []
+    for plugin_file in sorted(glob.glob(os.path.join(PLUGIN_DIR, "*", "*.plugin"))):
+        directory = os.path.dirname(plugin_file)
+        parser = configparser.ConfigParser()
+        parser.read(plugin_file)
+        module = parser.get('Plugin', 'Module', fallback='')
+        if not os.path.exists(os.path.join(directory, f'{module}.py')):
+            missing.append(f"{os.path.basename(plugin_file)} names "
+                           f"Module={module}, but {module}.py is not there")
+    assert missing == [], '\n'.join(missing)
+
+
+# ---------------------------------------------------------------------------
+# Version, the one duplicated field nothing guarded
+# ---------------------------------------------------------------------------
+
+def declared_version(plugin_file):
+    """The Version the .plugin file declares, or None when it declares none."""
+    parser = configparser.ConfigParser()
+    parser.read(plugin_file)
+    return parser['Plugin'].get('Version')
+
+
+def module_version(plugin_file):
+    """(version, module path) from the plugin_info dict, or (None, None)."""
+    for module in sorted(glob.glob(os.path.join(os.path.dirname(plugin_file), '*.py'))):
+        source = open(module, encoding='utf-8').read()
+        found = re.search(r"'Version'\s*:\s*'([^']*)'", source)
+        if found is not None:
+            return found.group(1), module
+    return None, None
+
+
+def test_no_bundled_plugin_declares_a_version():
+    """A bundled plugin ships with MiAZ, so it has no version of its own.
+
+    The number used to be written twice per plugin, in the .plugin file and in
+    plugin_info, and nine of the twenty-one disagreed with themselves. Both
+    halves reach the user, so which number you saw depended on where you
+    looked. Rather than keep two copies in step through every release, neither
+    is written: MiAZPluginSystem falls back to the application version for a
+    plugin that declares none.
+
+    An out-of-tree plugin is released on its own schedule and keeps its
+    Version. Only the bundled ones are covered here.
+    """
+    declared = []
+    for plugin_file in bundled_plugin_files():
+        if declared_version(plugin_file) is not None:
+            declared.append(plugin_file)
+        found, module = module_version(plugin_file)
+        if found is not None:
+            declared.append(module)
+    assert not declared, (
+        'these carry a version of their own, so they will drift from '
+        'meson.build again:\n' + '\n'.join(declared))

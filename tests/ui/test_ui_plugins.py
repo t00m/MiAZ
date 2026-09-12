@@ -11,7 +11,6 @@ import pytest
 
 # Plugins that contribute to shared UI, and the workspace page each adds.
 CONTRIBUTORS = {
-    'MiAZNotes': 'notes-all',
     'MiAZProjectMgt': None,
     'MiAZPeriodicity': None,
     'MiAZFullscreen': None,
@@ -88,21 +87,31 @@ def test_a_plugin_gives_back_what_it_added(miaz, plugin_name):
 
 
 def test_a_page_plugin_removes_its_page(miaz):
-    """10.2: the page goes, rather than lingering hidden in the stack."""
-    system = miaz.service('plugin-system')
-    info = find_plugin(system, 'MiAZNotes')
-    if info is None or not info.is_loaded():
-        pytest.skip('MiAZNotes is not enabled in this repository')
+    """10.2: the page goes, rather than lingering hidden in the stack.
 
-    assert 'notes-all' in snapshot(miaz)['pages']
+    Written against whichever loaded plugin registered a page rather than
+    naming one. MiAZNotes was the only plugin that added a page and it became
+    core in 0.3, so today nothing shipped exercises this and the test skips.
+    The capability is still there and PluginPageRegistry is unit tested; a
+    plugin that adds a page again gets this check for free.
+    """
+    system = miaz.service('plugin-system')
+    owner = next((name for name, pages in system.pages._pages.items() if pages),
+                 None)
+    if owner is None:
+        pytest.skip('no loaded plugin registers a workspace page')
+
+    page = system.pages.names(owner)[0]
+    info = find_plugin(system, owner)
+    assert page in snapshot(miaz)['pages']
+
     system.unload_plugin(info)
     miaz.pump(0.5)
     try:
-        assert 'notes-all' not in snapshot(miaz)['pages']
+        assert page not in snapshot(miaz)['pages']
     finally:
         system.load_plugin(info)
         miaz.pump(0.5)
-    assert 'notes-all' in snapshot(miaz)['pages']
 
 
 def test_every_enabled_plugin_reports_itself(miaz):

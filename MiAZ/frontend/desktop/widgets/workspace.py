@@ -13,10 +13,10 @@ _ItemRef = namedtuple('_ItemRef', ['id'])
 
 from gi.repository import Adw
 from gi.repository import Gdk
+from gi.repository import Gio
 from gi.repository import Gtk
 from gi.repository import GLib
 from gi.repository import GObject
-from gi.repository import Pango
 
 from MiAZ.env import ENV
 from MiAZ.backend.log import MiAZLog
@@ -30,6 +30,16 @@ from MiAZ.backend.query import (
     DATE_PRESET_FUTURE, DATE_PRESET_ALL, resolve_preset)
 from MiAZ.backend.tasks import run_in_background
 from MiAZ.frontend.desktop.widgets.browserpage import MiAZBrowserPage
+from MiAZ.frontend.desktop.widgets.chip import MiAZChip
+from MiAZ.frontend.desktop.widgets.docpreview import MiAZDocPreview
+from MiAZ.frontend.desktop.widgets.conversationview import MiAZConversationView
+from MiAZ.frontend.desktop.widgets.filenamesview import MiAZFilenamesView
+from MiAZ.frontend.desktop.widgets.gridview import MiAZGridView
+from MiAZ.frontend.desktop.widgets.pages import MiAZPageNotFound
+from MiAZ.frontend.desktop.widgets.pills import FIELD_COLORS
+from MiAZ.frontend.desktop.widgets.timelineview import MiAZTimelineView
+from MiAZ.frontend.desktop.widgets.dragout import (install_for_workspace_selection,
+                                                   started_here)
 from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewWorkspace
 from MiAZ.frontend.desktop.widgets.configview import MiAZCountries, MiAZGroups, MiAZPurposes, MiAZPeopleSentBy, MiAZPeopleSentTo
 from MiAZ.backend.status import MiAZStatus
@@ -102,15 +112,8 @@ class MiAZWorkspace(Gtk.Box):
     workspace_loaded = False
     _filter_tag_css_installed = False
     _drop_target_css_installed = False
-    # Tags colors
-    _FILTER_TAG_COLORS = {
-        'Date':    '#cfe3ff',  # light blue
-        'Country': '#d6f5d6',  # light green
-        'Group':   '#fff2c2',  # light yellow
-        'SentBy':  '#ffd9e3',  # light pink
-        'Purpose': '#e7dbff',  # light lavender
-        'SentTo':  '#ffe2c7',  # light peach
-    }
+    # Tags share the pill palette so a filter tag and a field pill match.
+    _FILTER_TAG_COLORS = FIELD_COLORS
     selected_items = []
     dates = {}
     cache = {}
@@ -146,6 +149,13 @@ class MiAZWorkspace(Gtk.Box):
         self._review = False
         self._query = DocumentQuery()
         self._query_hooks = {}
+        # An explicit list of documents to show, put there by something that
+        # already worked out which ones matter: a health check, a plugin.
+        self._only_ids = None
+        self._only_label = ''
+        # Set while a duplicate scan is in flight for a caller that asked for
+        # the view in copy order: the sorter reads the map, so it waits.
+        self._sort_by_duplicates_pending = False
         # Holds back refreshes while something does bulk work, and coalesces
         # them into one when the last holder releases. See suspend_updates().
         self._gate = UpdateGate(self.update)
@@ -379,6 +389,9 @@ class MiAZWorkspace(Gtk.Box):
         if column is not None:
             column.set_visible(bool(index.duplicates_of_any()))
         self.view.refilter()
+        if self._sort_by_duplicates_pending:
+            self._sort_by_duplicates_pending = False
+            self._sort_by_duplicates()
 
     def is_loaded(self):
         return self.workspace_loaded
@@ -399,6 +412,12 @@ class MiAZWorkspace(Gtk.Box):
                                     none_value=False)
 
     def show_pending_documents(self, *args):
+        if self._clearing_filters:
+            # Somebody is writing the whole filter state (a saved search, an
+            # explicit list) and set the toggle as part of it. Clearing the
+            # filters here would undo what they just wrote; they refresh once
+            # when they are done.
+            return
         togglebutton = self.app.get_widget('workspace-togglebutton-pending-docs')
         self._review = togglebutton.get_active()
 
@@ -431,15 +450,46 @@ class MiAZWorkspace(Gtk.Box):
         """Mark documents whose bytes match another one, for review triage.
 
         Reads files, about 0.9s for 1336 documents, so it runs in a worker and
-        only on entering review mode: a user who never opens it pays nothing.
+        only when something asks: review mode, or a caller wanting the copies
+        told apart. A user who does neither pays nothing.
         """
         index = self.app.get_service('index')
         if index is None or not index.duplicates_stale():
-            return
+            return False
         run_in_background(index.scan_duplicates,
                           on_error=lambda error: self.log.error(
                               f"Duplicate scan failed: {error}"),
                           name='workspace-duplicates')
+        return True
+
+    def show_duplicates(self):
+        """Say which of the documents on screen are copies of which.
+
+        A list of copies is not usable until the copies are told apart, and
+        the answer is a column that is hidden until something has been
+        scanned. This scans if the map is stale and puts the view in copy
+        order, so a group's members sit next to each other; the column marks
+        them and its tooltip names the twins.
+
+        The sort waits for the scan when there is one, because the sorter
+        reads the map and would otherwise order the rows against an empty one.
+        """
+        index = self.app.get_service('index')
+        if index is None:
+            return
+        self.show_view('details')
+        if self._scan_duplicates():
+            self._sort_by_duplicates_pending = True
+            return
+        self._sort_by_duplicates()
+
+    def _sort_by_duplicates(self):
+        """Order the view by the copy column, groups first."""
+        column = getattr(self.view, 'column_duplicate', None)
+        if column is None or column.get_sorter() is None:
+            return
+        column.set_visible(True)
+        self.view.cv.sort_by_column(column, Gtk.SortType.ASCENDING)
 
     def _update_dropdown_date(self):
         util = self.app.get_service('util')
@@ -518,6 +568,11 @@ class MiAZWorkspace(Gtk.Box):
         frame = Gtk.Frame()
         self.view = MiAZColumnViewWorkspace(self.app)
         self.app.add_widget('workspace-view', self.view)
+        # Documents can be dragged out of the list into another application.
+        # On the column view itself, so a drag started anywhere in a row works
+        # rather than only over one column.
+        install_for_workspace_selection(self.view.cv, self.app,
+                                        'workspace-view-drag-source')
         self.view.add_css_class('monospace')
         self._workspace_filters['main'] = self._do_filter_view_main
         self.view.set_filter(self._do_filter_view)
@@ -549,11 +604,68 @@ class MiAZWorkspace(Gtk.Box):
         self._stack = Adw.ViewStack()
         self._stack.set_hexpand(True)
         self._stack.set_vexpand(True)
+        # Size to the page being shown, not to the widest page there is. A
+        # homogeneous stack asked every page how wide it wanted to be, so one
+        # plugin page wanting 519px set the floor for the whole window and
+        # made a narrow window impossible.
+        self._stack.set_hhomogeneous(False)
+        self._stack.set_vhomogeneous(False)
 
-        # Documents columnview as first page
+        # Documents page. Details, Grid and Timeline are three shapes of the
+        # same documents under the same filters, so they are buttons on a
+        # toolbar inside this one page rather than tabs of their own: a tab
+        # says "somewhere else", and none of them is somewhere else.
         frmView = self._setup_columnview()
+        self._view_stack = Gtk.Stack()
+        self._view_stack.set_hexpand(True)
+        self._view_stack.set_vexpand(True)
+        self._view_stack.set_hhomogeneous(False)
+        self._view_stack.set_vhomogeneous(False)
+        self._view_stack.add_named(frmView, 'details')
+
+        grid = MiAZGridView(self.app)
+        self._view_stack.add_named(grid, 'grid')
+        self.app.add_widget('workspace-grid', grid)
+
+        timeline = MiAZTimelineView(self.app)
+        self._view_stack.add_named(timeline, 'timeline')
+        self.app.add_widget('workspace-timeline', timeline)
+
+        conversation = MiAZConversationView(self.app)
+        self._view_stack.add_named(conversation, 'conversation')
+        self.app.add_widget('workspace-conversation', conversation)
+        filenames = MiAZFilenamesView(self.app)
+        self._view_stack.add_named(filenames, 'filenames')
+        self.app.add_widget('workspace-filenames', filenames)
+
+        # What each view name shows. Details is a plain column view with no
+        # set_active, so nothing is driven for it.
+        self._views = {'details': None, 'grid': grid, 'timeline': timeline,
+                       'conversation': conversation, 'filenames': filenames}
+
+        self._view_stack.set_visible_child_name('details')
+        self._view_stack.connect('notify::visible-child-name', self._on_view_changed)
+
+        # With no documents to show, a status page takes the place of the
+        # views and the toolbar is hidden. The page has its own Add button and
+        # stays a drop target. It used to replace the whole workspace with a
+        # page that had no buttons, so an empty repository could not add one.
+        self._empty_page = self.app.add_widget('workspace-empty', MiAZPageNotFound(self.app))
+        self._content_stack = Gtk.Stack()
+        self._content_stack.set_hexpand(True)
+        self._content_stack.set_vexpand(True)
+        self._content_stack.set_hhomogeneous(False)
+        self._content_stack.set_vhomogeneous(False)
+        self._content_stack.add_named(self._view_stack, 'views')
+        self._content_stack.add_named(self._empty_page, 'empty')
+        self._content_stack.set_visible_child_name('views')
+        self.connect('workspace-view-updated', self._update_empty_page)
+        self.connect('workspace-view-filtered', self._update_empty_page)
+
         page_content = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, hexpand=True, vexpand=True)
-        page_content.append(frmView)
+        self._view_toolbar = self.app.add_widget('workspace-toolbar', self._setup_view_toolbar())
+        page_content.append(self._view_toolbar)
+        page_content.append(self._content_stack)
         documents_page = self._stack.add_titled(page_content, 'workspace-default', _('Documents'))
         documents_page.set_icon_name('io.github.t00m.MiAZ')
         self._setup_drop_target(page_content)
@@ -573,12 +685,263 @@ class MiAZWorkspace(Gtk.Box):
         if self._switcher is not None:
             self._switcher.set_stack(self._stack)
 
+        # Preview comes up from the bottom, not in from the side: a phone has
+        # height to spare and no width, and a document list needs its columns.
+        # Not modal, so the list stays usable and the preview follows the row
+        # being clicked instead of blocking it.
+        preview = MiAZDocPreview(self.app)
+        self.app.add_widget('workspace-preview', preview)
+        sheet = Adw.BottomSheet()
+        sheet.set_hexpand(True)
+        sheet.set_vexpand(True)
+        sheet.set_modal(False)
+        sheet.set_can_close(True)
+        sheet.set_show_drag_handle(True)
+        sheet.set_open(False)
+        sheet.set_content(self._stack)
+        sheet.set_sheet(preview)
+        self.app.add_widget('workspace-preview-sheet', sheet)
+        sheet.connect('notify::open', self._on_preview_open_changed)
+        preview.connect('close-requested', lambda *_a: sheet.set_open(False))
+        self.connect('workspace-view-selection-changed', self._update_preview)
+
         self.append(self._setup_filter_tags_bar())
-        self.append(self._stack)
+        self.append(sheet)
         self.set_default_columnview_attrs()
         self.add_css_class('toolbar')
         self._stack.connect('notify::visible-child-name', self._on_stack_page_changed)
         self._on_stack_page_changed(self._stack, None)
+
+    # The columns the View menu offers, in the order the table shows them.
+    _COLUMNS = (
+        ('column_date', _('Date')),
+        ('column_country', _('Country')),
+        ('column_flag', _('Flag')),
+        ('column_icon_type', _('Type')),
+        ('column_group', _('Group')),
+        ('column_purpose', _('Purpose')),
+        ('column_subtitle', _('Concept')),
+        ('column_sentby', _('Sent by')),
+        ('column_sentto', _('Sent to')),
+        ('column_extension', _('Extension')),
+    )
+
+    # The shapes the documents can be shown in: stack name, icon, label.
+    # Standard view icons, not the application icon and a magnifier: the
+    # buttons have to say list, grid and chronology at a glance.
+    # The views MiAZ ships. A plugin adds its own through add_view, and the
+    # registry below is what every other part of this file walks.
+    _BUILTIN_VIEWS = (
+        ('details', 'view-list-symbolic', _('Details')),
+        ('grid', 'view-grid-symbolic', _('Grid')),
+        ('timeline', 'view-continuous-symbolic', _('Timeline')),
+        ('conversation', 'mail-send-receive-symbolic', _('Conversations')),
+        ('filenames', 'text-x-generic-symbolic', _('Filenames')),
+    )
+
+    def _setup_view_toolbar(self):
+        """The toolbar above the documents.
+
+        Views on the left, what acts on the documents in the middle, and what
+        belongs to the current view on the right. The middle is filled by the
+        main window, which owns those actions, and by plugins.
+        """
+        bar = Gtk.CenterBox()
+        bar.set_margin_top(6)
+        bar.set_margin_start(6)
+        bar.set_margin_end(6)
+        # The gap that keeps the toolbar off the documents underneath it.
+        bar.set_margin_bottom(6)
+        linked = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
+        linked.add_css_class('linked')
+        self._view_buttons = {}
+        first = None
+        for name, icon_name, label in self._BUILTIN_VIEWS:
+            button = Gtk.ToggleButton()
+            button.set_icon_name(icon_name)
+            button.set_tooltip_text(label)
+            if first is None:
+                first = button
+            else:
+                button.set_group(first)
+            button.connect('toggled', self._on_view_button_toggled, name)
+            self._view_buttons[name] = button
+            linked.append(button)
+        # Kept so a view added later joins the same radio group and the same box.
+        self._view_button_group = first
+        self._view_button_box = linked
+        self._view_buttons['details'].set_active(True)
+        # The Review toggle sits next to the views: it is another way of
+        # choosing which documents are on screen. The main window makes it
+        # and moves it here, the way it does with the document actions.
+        start = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
+        start.append(linked)
+        bar.set_start_widget(start)
+        self.app.add_widget('workspace-view-buttons', linked)
+        self.app.add_widget('workspace-toolbar-start', start)
+
+        # What acts on the selected documents. The main window packs its
+        # buttons here and plugins reach it through 'headerbar-right-box'.
+        center = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
+        center.set_halign(Gtk.Align.CENTER)
+        bar.set_center_widget(center)
+        self.app.add_widget('workspace-toolbar-center', center)
+
+        # What belongs to the view being shown: columns for Details, page size
+        # for Grid. Only one of them is ever visible.
+        end = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
+        end.set_halign(Gtk.Align.END)
+        self._button_columns = self._setup_columns_menu()
+        end.append(self._button_columns)
+        grid = self.app.get_widget('workspace-grid')
+        self._grid_controls = grid.get_size_controls()
+        end.append(self._grid_controls)
+        bar.set_end_widget(end)
+        self.app.add_widget('workspace-toolbar-end', end)
+        return bar
+
+    def _setup_columns_menu(self):
+        """The View menu: which columns the document table shows.
+
+        One check item per column, kept in step with the column itself, so the
+        menu always says what the table is actually doing.
+        """
+        menu = Gio.Menu.new()
+        self._column_actions = {}
+        for name, title in self._COLUMNS:
+            column = getattr(self.view, name, None)
+            if column is None:
+                continue
+            action = Gio.SimpleAction.new_stateful(
+                f'column-{name}', None, GLib.Variant.new_boolean(column.get_visible()))
+            action.connect('change-state', self._on_column_toggled, column)
+            self.app.add_action(action)
+            self._column_actions[name] = action
+            menu.append(title, f'app.column-{name}')
+        button = Gtk.MenuButton()
+        button.set_icon_name('view-more-symbolic')
+        button.set_tooltip_text(_('Choose the columns to show'))
+        button.add_css_class('flat')
+        button.set_menu_model(menu)
+        self.app.add_widget('workspace-button-columns', button)
+        return button
+
+    def _on_column_toggled(self, action, value, column):
+        action.set_state(value)
+        column.set_visible(value.get_boolean())
+
+    def _on_view_button_toggled(self, button, name):
+        if button.get_active():
+            self._view_stack.set_visible_child_name(name)
+
+    def get_view_stack(self):
+        return self._view_stack
+
+    def get_current_view(self):
+        return self._view_stack.get_visible_child_name()
+
+    def show_view(self, name):
+        """Show one of details, grid, timeline, conversation or filenames."""
+        button = self._view_buttons.get(name)
+        if button is not None:
+            button.set_active(True)
+        self._view_stack.set_visible_child_name(name)
+
+    def get_views(self):
+        """The registered view names, in the order their buttons appear."""
+        return list(self._views)
+
+    def add_view(self, name, icon_name, label, widget):
+        """Register one more view beside the built-in ones.
+
+        The widget joins the view stack and gets a toggle in the same linked
+        box, in the same radio group, so it behaves like a view MiAZ ships.
+        A widget with set_active is driven like the others: no model unless it
+        is the view on screen.
+        """
+        if name in self._views:
+            self.remove_view(name)
+        button = Gtk.ToggleButton()
+        button.set_icon_name(icon_name)
+        button.set_tooltip_text(label)
+        button.set_group(self._view_button_group)
+        button.connect('toggled', self._on_view_button_toggled, name)
+        self._view_buttons[name] = button
+        self._view_button_box.append(button)
+        self._view_stack.add_named(widget, name)
+        self._views[name] = widget
+        self.log.debug(f"Workspace view added: {name}")
+
+    def remove_view(self, name):
+        """Take a view away, falling back to Details when it was on screen."""
+        built_in = {view[0] for view in self._BUILTIN_VIEWS}
+        if name not in self._views or name in built_in:
+            return
+        if self._view_stack.get_visible_child_name() == name:
+            self.show_view('details')
+        widget = self._views.pop(name)
+        if widget is not None and hasattr(widget, 'set_active'):
+            widget.set_active(False)
+        child = self._view_stack.get_child_by_name(name)
+        if child is not None:
+            self._view_stack.remove(child)
+        button = self._view_buttons.pop(name, None)
+        if button is not None:
+            self._view_button_box.remove(button)
+        self.log.debug(f"Workspace view removed: {name}")
+
+    def _on_view_changed(self, *args):
+        """Only the view on screen carries a model, so the others cost nothing."""
+        name = self._view_stack.get_visible_child_name()
+        button = self._view_buttons.get(name)
+        if button is not None and not button.get_active():
+            button.set_active(True)
+        showing_documents = self._stack.get_visible_child_name() == 'workspace-default'
+        for view_name, widget in self._views.items():
+            if widget is not None:
+                widget.set_active(showing_documents and name == view_name)
+        # Columns belong to the table, page size to the grid.
+        if getattr(self, '_button_columns', None) is not None:
+            self._button_columns.set_visible(name == 'details')
+        if getattr(self, '_grid_controls', None) is not None:
+            self._grid_controls.set_visible(name == 'grid')
+
+    def _update_empty_page(self, *args):
+        """Show the toolbar and the views when there are documents to show,
+        the empty page alone when not.
+
+        Nothing changes while a scan is out: the list can be empty then
+        because it is still loading, not because the repository is. The scan
+        emits 'workspace-view-updated' when it lands, which decides again.
+        """
+        if not self.workspace_loaded or self._scan_in_flight:
+            return
+        empty = len(self.view.cv.get_model()) == 0
+        if empty:
+            self._empty_page.set_review_count(getattr(self, '_review_count', 0))
+        self._view_toolbar.set_visible(not empty)
+        self._content_stack.set_visible_child_name('empty' if empty else 'views')
+
+    def _on_preview_open_changed(self, sheet, _pspec):
+        # The sheet can be closed by dragging it down, so the headerbar toggle
+        # follows the sheet rather than being the only thing that knows.
+        button = self.app.get_widget('headerbar-button-preview')
+        if button is not None:
+            button.set_active(sheet.get_open())
+        self._update_preview()
+
+    def _update_preview(self, *args):
+        """Feed the preview panel while it is open; do nothing when closed."""
+        preview = self.app.get_widget('workspace-preview')
+        sheet = self.app.get_widget('workspace-preview-sheet')
+        if preview is None or sheet is None or not sheet.get_open():
+            return
+        repo = self.app.get_service('repo')
+        items = self.get_selected_items()
+        if items:
+            preview.set_document(os.path.join(repo.docs, os.path.basename(items[0].id)))
+        else:
+            preview.set_document(None)
 
     def _setup_filter_tags_bar(self):
         """Banner shown above the document list with the currently active
@@ -616,6 +979,7 @@ class MiAZWorkspace(Gtk.Box):
         """
         self._install_drop_target_css()
         drop = Gtk.DropTarget.new(Gdk.FileList, Gdk.DragAction.COPY)
+        drop.connect('accept', self._on_drop_accept)
         drop.connect('enter', self._on_drop_enter, widget)
         drop.connect('leave', self._on_drop_leave, widget)
         drop.connect('drop', self._on_drop, widget)
@@ -641,6 +1005,34 @@ class MiAZWorkspace(Gtk.Box):
             display, provider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
         MiAZWorkspace._drop_target_css_installed = True
 
+    def _on_drop_accept(self, target, drop):
+        """Refuse the documents MiAZ is already holding, and anything that is
+        not files at all.
+
+        A selection dragged out of the workspace and dropped back onto it asks
+        the import to copy every file onto itself. Nothing was lost, because
+        filename_copy refuses that, but the workspace lit up as a drop target
+        and the gesture went nowhere. Refused here rather than at the drop, so
+        there is no highlight and no copy cursor: the drag says what it will
+        not do before it is let go.
+
+        The format check is ours to make. The accept signal accumulates
+        first-wins, so a handler that answers at all runs instead of GTK's own
+        check, and answering yes to everything let a text or an image drag
+        light the workspace up for an import that could never happen.
+        """
+        if started_here(drop):
+            return False
+        formats = drop.get_formats()
+        if formats is None:
+            return False
+        # What GTK's own handler does: the mime types a drag offers become the
+        # types they can be read as, and one of those has to be the file list
+        # the drop target asked for.
+        readable = formats.union_deserialize_gtypes()
+        return Gdk.ContentFormats.match_gtype(
+            target.get_formats(), readable) == Gdk.FileList.__gtype__
+
     def _on_drop_enter(self, drop, x, y, widget):
         widget.add_css_class('miaz-drop-active')
         return Gdk.DragAction.COPY
@@ -654,6 +1046,13 @@ class MiAZWorkspace(Gtk.Box):
         if importdoc is None:
             self.log.error("No import service: the dropped files were ignored")
             return False
+        if value is None:
+            # An empty text/uri-list deserializes to a NULL GdkFileList, which
+            # arrives here as None: a drag whose source offered files and then
+            # had none to give, which is what a chat application does for a
+            # message with no file behind it.
+            self.log.warning("Nothing was dropped: the drag carried no files")
+            return False
         # A file dropped from a remote location has no local path, and Gio
         # gives None for it. The import service reports those as failed.
         paths = [gfile.get_path() for gfile in value.get_files()]
@@ -662,22 +1061,15 @@ class MiAZWorkspace(Gtk.Box):
         return True
 
     def _install_filter_tag_css(self):
+        # Colors only; the base pill look comes from MiAZChip.
         if MiAZWorkspace._filter_tag_css_installed:
             return
         display = Gdk.Display.get_default()
         if display is None:
             return
-        parts = [
-            ".miaz-filter-tag {"
-            " min-height: 0;"
-            " padding: 2px 4px 2px 12px;"
-            " border-radius: 999px;"
-            " color: #2b2b2b; }",
-            ".miaz-filter-tag:hover {"
-            " background-image: image(alpha(currentColor, 0.10)); }",
-        ]
+        parts = []
         for key, color in self._FILTER_TAG_COLORS.items():
-            parts.append(f".miaz-filter-tag-{key} {{ background-color: {color}; }}")
+            parts.append(f".miaz-chip-{key} {{ background-color: {color}; }}")
         css = "".join(parts)
         provider = Gtk.CssProvider()
         provider.load_from_data(css.encode('utf-8'))
@@ -686,25 +1078,13 @@ class MiAZWorkspace(Gtk.Box):
         MiAZWorkspace._filter_tag_css_installed = True
 
     def _create_filter_tag(self, dropdown_key, field_title, value_title):
-        button = Gtk.Button()
-        button.add_css_class('miaz-filter-tag')
-        button.add_css_class(f'miaz-filter-tag-{dropdown_key}')
-        button.add_css_class('flat')
-        button.set_tooltip_text(_('Remove filter: {field}').format(field=field_title))
-        box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
         field = GLib.markup_escape_text(field_title)
         value = GLib.markup_escape_text(value_title)
-        label = Gtk.Label()
-        label.set_markup(f"<span alpha='65%'>{field}:</span> {value}")
-        label.set_ellipsize(Pango.EllipsizeMode.END)
-        label.set_max_width_chars(36)
-        icon = Gtk.Image.new_from_icon_name('window-close-symbolic')
-        icon.set_pixel_size(12)
-        box.append(label)
-        box.append(icon)
-        button.set_child(box)
-        button.connect('clicked', self._on_filter_tag_clicked, dropdown_key)
-        return button
+        chip = MiAZChip(markup=f"<span alpha='65%'>{field}:</span> {value}",
+                        style=dropdown_key)
+        chip.set_tooltip_text(_('Remove filter: {field}').format(field=field_title))
+        chip.connect('closed', self._on_filter_tag_clicked, dropdown_key)
+        return chip
 
     def _on_filter_tag_clicked(self, button, dropdown_key):
         dropdowns = self.app.get_widget('ws-dropdowns') or {}
@@ -726,6 +1106,19 @@ class MiAZWorkspace(Gtk.Box):
 
         dropdowns = self.app.get_widget('ws-dropdowns') or {}
         count = 0
+        # An explicit list of documents is a filter like any other, so it is
+        # shown like one and taken off the same way.
+        if self._only_ids is not None:
+            label = self._only_label or _('{count} documents').format(
+                count=len(self._only_ids))
+            chip = MiAZChip(
+                markup=f"<span alpha='65%'>{GLib.markup_escape_text(_('Showing'))}:</span> "
+                       f"{GLib.markup_escape_text(label)}",
+                style='Concept')
+            chip.set_tooltip_text(_('Show every document again'))
+            chip.connect('closed', lambda *_a: self.clear_documents())
+            flowbox.append(chip)
+            count += 1
         for item_type in [Date, Country, Group, SentBy, Purpose, SentTo]:
             i_type = item_type.__gtype_name__
             dropdown = dropdowns.get(i_type)
@@ -801,11 +1194,14 @@ class MiAZWorkspace(Gtk.Box):
         self._stack.set_visible_child_name(name)
 
     def _on_stack_page_changed(self, stack, _pspec):
+        visible = stack.get_visible_child_name()
         # The filter-tags revealer applies only to the Documents view.
         revealer = getattr(self, '_filter_tags_revealer', None)
-        if revealer is None:
-            return
-        revealer.set_visible(stack.get_visible_child_name() == 'workspace-default')
+        if revealer is not None:
+            revealer.set_visible(visible == 'workspace-default')
+        # Leaving the Documents page puts the grid and the timeline to sleep
+        # too, whichever of them was showing.
+        self._on_view_changed()
 
     def _on_browser_pages_updated(self, _browser, count):
         # Show the Browser tab only when at least one page is available. If it
@@ -817,30 +1213,76 @@ class MiAZWorkspace(Gtk.Box):
         if count == 0 and self._stack.get_visible_child_name() == 'workspace-browser':
             self._stack.set_visible_child_name('workspace-default')
 
+    def update_review_button(self):
+        """Label the Review toggle, short enough for the window it is in.
+
+        Gtk.Button.set_label replaces the whole child, so the icon the factory
+        put there is long gone by now: the word is all there is to shorten, and
+        narrow it goes down to the count. The tooltip always says it in full.
+        """
+        togglebutton = self.app.get_widget('workspace-togglebutton-pending-docs')
+        if togglebutton is None:
+            return
+        review = getattr(self, '_review_count', 0)
+        full = _("Review ({review})").format(review=review)
+        mainwindow = self.app.get_widget('mainwindow')
+        narrow = mainwindow is not None and mainwindow.get_property('narrow')
+        togglebutton.set_label(str(review) if narrow else full)
+        togglebutton.set_tooltip_text(full)
+
     def get_workspace_view(self):
         return self.view
 
     def get_selected_items(self):
         return self.selected_items
 
-    def clear_filters(self):
-        """Reset every filter"""
+    def _reset_filter_controls(self, date=True, review=True):
+        """Put the filter controls back to "everything", signals muted.
+
+        `date` and `review` say whether those two go back with the rest.
+        Clearing the filters resets the date range and then picks a preset that
+        holds something, and leaves Review to the handler that is running it.
+        Showing an explicit list is the other way round: the date is ignored
+        while a list is in effect, so it is left as the user had it and comes
+        back when the list is dropped, while Review has to go, because it asks
+        for pending documents only and would hide the whole list.
+        """
         search_entry = self.app.get_widget('searchentry')
+        concept_entry = self.app.get_widget('searchentry-concept')
         dropdowns = self.app.get_widget('ws-dropdowns') or {}
         plugin_dropdowns = self.app.get_widget('plugin-dropdowns') or []
+        togglebutton = self.app.get_widget('workspace-togglebutton-pending-docs')
 
         self._clearing_filters = True
         try:
-            search_entry.set_text('')
-            concept_entry = self.app.get_widget('searchentry-concept')
+            if search_entry is not None:
+                search_entry.set_text('')
             if concept_entry is not None:
                 concept_entry.set_text('')
-            for dd in dropdowns.values():
+            for name, dd in dropdowns.items():
+                if name == Date.__gtype_name__ and not date:
+                    continue
                 dd.set_selected(0)
             for dd in plugin_dropdowns:
                 dd.set_selected(0)
+            if review and togglebutton is not None:
+                togglebutton.set_active(False)
+                self._review = False
         finally:
             self._clearing_filters = False
+
+    def clear_filters(self):
+        """Reset every filter"""
+        self._reset_filter_controls(date=True, review=False)
+
+        # The explicit list (Doctor's Show, the "Showing" tag) is a filter
+        # like any other, so clearing filters drops it too.
+        self._only_ids = None
+        self._only_label = ''
+
+        # The first date preset is usually empty (the last two days), the same
+        # as on load: move to the nearest preset that has documents.
+        self._auto_select_date_preset(list(self.view.store))
 
         self._refresh_filter_cache()
         self.view.refilter()
@@ -891,13 +1333,6 @@ class MiAZWorkspace(Gtk.Box):
         invalid = result_dict['invalid']
         show_pending = result_dict['show_pending']
 
-        util = self.app.get_service('util')
-        index = self.app.get_service('index')
-
-        # Reuse the index's field index instead of letting util rebuild its own
-        # by rescanning the directory.
-        util._field_index = index.field_index()
-        util._field_index_dir = result_dict['_repo_docs']
         ds = result_dict.get('_ds', datetime.now())
 
         # Update workspace view. When armed (load / repo switch / rollover),
@@ -911,6 +1346,7 @@ class MiAZWorkspace(Gtk.Box):
         GLib.idle_add(self._idle_view_update, items, ds)
 
         # Rename invalid files (rare, stays on main thread)
+        util = self.app.get_service('util')
         renamed = 0
         for filename in invalid:
             source = os.path.join(repository.docs, filename)
@@ -928,7 +1364,8 @@ class MiAZWorkspace(Gtk.Box):
                 review += 1
 
         togglebutton = self.app.get_widget('workspace-togglebutton-pending-docs')
-        togglebutton.set_label(_("Review ({review})").format(review=review))
+        self._review_count = review
+        self.update_review_button()
         if show_pending:
             togglebutton.add_css_class('destructive-action')
             togglebutton.remove_css_class('flat')
@@ -1100,6 +1537,10 @@ class MiAZWorkspace(Gtk.Box):
             sentto=self._selected_id(dropdowns, SentTo.__gtype_name__),
             only_pending=self._review)
         self._read_date_range(dropdowns, query)
+        if self._only_ids is not None:
+            query.only_ids = self._only_ids
+            query.ignore_date = True
+            query.ignore_active = True
 
         # A plugin filtering on something the repository config knows nothing
         # about (project membership, for one) lifts the checks that would hide
@@ -1254,6 +1695,39 @@ class MiAZWorkspace(Gtk.Box):
                 dropdown.set_selected(pos)
                 return True
         return False
+
+    def show_documents(self, ids, label=''):
+        """Show these documents and nothing else, whatever the filters say.
+
+        The date range and the pending check are lifted: a list worth putting
+        in front of somebody usually holds the documents that are wrong, and
+        those are exactly the ones the ordinary view hides. The restriction
+        appears as a tag in the filter bar, so it is visible and removable
+        like any other filter.
+
+        The rest of the filters are cleared first. The list is the whole
+        request, and whatever the sidebar happened to hold would otherwise
+        veto it: a search box with anything in it, or a field narrowed to a
+        value these documents do not use, hides them. Review hides all of
+        them, every time, because it asks for pending documents while the
+        list lifts the pending check.
+        """
+        self._reset_filter_controls(date=False, review=True)
+        self._only_ids = frozenset(ids)
+        self._only_label = label
+        self.show_view('details')
+        self.update()
+
+    def clear_documents(self):
+        """Drop the explicit list and go back to what the filters say."""
+        if self._only_ids is None:
+            return
+        self._only_ids = None
+        self._only_label = ''
+        self.update()
+
+    def get_shown_documents(self):
+        return self._only_ids
 
     def register_query_hook(self, name: str, callback):
         """Let a component adjust the query after it is read from the widgets.

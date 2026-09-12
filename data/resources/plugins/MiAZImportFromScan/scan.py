@@ -42,9 +42,11 @@ plugin_info = {
         'Copyright':     'Copyright © 2025 Tomás Vírseda',
         'Website':       'http://github.com/t00m/MiAZ',
         'Help':          'https://github.com/t00m/MiAZ/blob/main/README.md',
-        'Version':       '0.6',
         'Category':      'Documents',
-        'Subcategory':   'Import'
+        'Subcategory':   'Import',
+        'MenuEntries':   [
+            ('scan', _('Scan a document')),
+        ]
     }
 
 
@@ -61,6 +63,8 @@ class MiAZImportFromScanPlugin(MiAZExtension):
 
         ## Initialize plugin
         self.plugin.register(self, plugin_info)
+        # Filled by the first _search_scan_apps call, see why there.
+        self._scan_apps = None
 
         ## Get logger
         self.log = self.plugin.get_logger()
@@ -87,14 +91,8 @@ class MiAZImportFromScanPlugin(MiAZExtension):
 
     def startup(self, *args):
         if not self.plugin.started():
-            # Create menu item for plugin
-            mnuItemName = self.plugin.get_menu_item_name()
-            menuitem = self.factory.create_menuitem(name=mnuItemName, label=_('Scan a document'), callback=self.exec_scanner)
-
-            # Add plugin to its default (sub)category
-            self.plugin.install_menu_entry(menuitem)
-
-            # Plugin configured
+            self.plugin.install_menu_entries({'scan': self.exec_scanner})
+            self.plugin.install_settings_group(self.build_settings)
             self.plugin.set_started(started=True)
 
     def _get_origin(self, desktop_path):
@@ -129,27 +127,32 @@ class MiAZImportFromScanPlugin(MiAZExtension):
                     yield desktop_path, self._get_origin(desktop_path)
 
     def _search_scan_app(self):
-        """Return the first scanner application found, or None."""
-        try:
-            for desktop_path, _origin in self._iter_desktop_files():
-                desktop_name = os.path.basename(desktop_path)
-                try:
-                    appinfo = Gio.DesktopAppInfo.new_from_filename(desktop_path)
-                    if appinfo is None:
-                        continue
-                    categories = appinfo.get_categories()
-                    if categories is not None:
-                        if re.search('scan', categories, re.IGNORECASE):
-                            return appinfo
-                except TypeError as error:
-                    self.log.debug(f"Skipping desktop entry '{desktop_name}': {error}")
-        except AttributeError as error:
-            # Not available in Windows/MSYS2
-            self.log.error(f"Plugin 'scan' couldn't be activated: {error}")
-        return None
+        """Return the first scanner application found, or None.
+
+        Collects them all rather than stopping at the first. Activation walks
+        the desktop files anyway to decide whether this plugin has anything to
+        offer, and the settings group needs the full list; doing it once here
+        means the Settings tab does not repeat a fifth of a second of
+        filesystem work the moment it is opened.
+        """
+        scanapps = self._search_scan_apps()
+        if not scanapps:
+            return None
+        appinfo, _origin = scanapps[0]
+        return appinfo
 
     def _search_scan_apps(self):
-        """Return (appinfo, origin) pairs for all scanner applications found on the system."""
+        """Return (appinfo, origin) pairs for all scanner applications found on the system.
+
+        Answered from memory after the first call. Walking every .desktop file
+        on the system and building a Gio.DesktopAppInfo for each takes about a
+        fifth of a second, which is most of what the Settings tab costs to
+        open, and the set of installed applications does not change while a
+        dialog is on screen. A plugin reload builds a fresh instance and so
+        starts over.
+        """
+        if self._scan_apps is not None:
+            return self._scan_apps
         scanapps = []
         try:
             for desktop_path, origin in self._iter_desktop_files():
@@ -166,6 +169,10 @@ class MiAZImportFromScanPlugin(MiAZExtension):
                     self.log.debug(f"Skipping desktop entry '{desktop_name}': {error}")
         except AttributeError as error:
             self.log.error(f"Could not search scanner apps: {error}")
+            # Not remembered: the walk failed rather than found nothing, and
+            # the next caller deserves a fresh attempt.
+            return scanapps
+        self._scan_apps = scanapps
         return scanapps
 
     def exec_scanner(self, *args):
@@ -190,28 +197,16 @@ class MiAZImportFromScanPlugin(MiAZExtension):
             if scanapp is not None:
                 scanapp.launch([], None)
 
-    def show_settings(self, widget):
-        """Display a preferences dialog for choosing the scanner application."""
-        dialog = Adw.PreferencesDialog()
-        desc = self.plugin.get_plugin_info_key('Description')
-        page = Adw.PreferencesPage(
-            title=_(desc),
-            icon_name='io.github.t00m.MiAZ-config-symbolic'
-        )
-        dialog.add(page)
-
+    def build_settings(self):
+        """Return the scanner settings as a group, for the Repository Settings tab."""
         group = Adw.PreferencesGroup(title=_('Scanner application'))
-        page.add(group)
-
         scan_apps = self._search_scan_apps()
         saved_app = self.plugin.get_config_key('scanner_app')
 
         if scan_apps:
             app_ids = [app.get_id() for app, _origin in scan_apps]
-            app_names = [
-                f"{app.get_display_name()} ({origin})"
-                for app, origin in scan_apps
-            ]
+            app_names = [f"{app.get_display_name()} ({origin})"
+                         for app, origin in scan_apps]
 
             string_list = Gtk.StringList()
             for name in app_names:
@@ -220,7 +215,6 @@ class MiAZImportFromScanPlugin(MiAZExtension):
             combo = Adw.ComboRow(title=_('Application'))
             combo.set_subtitle(_('Scanner application to launch'))
             combo.set_model(string_list)
-
             if saved_app and saved_app in app_ids:
                 combo.set_selected(app_ids.index(saved_app))
             else:
@@ -257,4 +251,4 @@ class MiAZImportFromScanPlugin(MiAZExtension):
             hint.set_sensitive(False)
             group.add(hint)
 
-        dialog.present(widget.get_root())
+        return group

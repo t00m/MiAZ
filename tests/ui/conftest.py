@@ -55,10 +55,11 @@ DESCRIPTIONS = {
     'SCHOOL': 'The School', 'JOHNDOE': 'John Doe',
 }
 
-# What repository.init() writes into a fresh repository.
+# What the Alpha fixture enables. Not the same as repository.init(), which
+# writes only MiAZProjectMgt: these tests want a plugin that adds a column,
+# one that adds a page and one that only toggles, to switch between.
 DEFAULT_PLUGINS = {
     'MiAZProjectMgt': 'Project management',
-    'MiAZNotes': 'Notes',
     'MiAZPeriodicity': 'Periodicity',
     'MiAZFullscreen': 'Fullscreen',
 }

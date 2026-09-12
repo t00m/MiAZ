@@ -9,13 +9,10 @@
 """
 
 import os
-import sys
 import glob
 import json
 import shutil
 import zipfile
-import inspect
-import importlib.util
 from gettext import gettext as _, ngettext
 
 import gi
@@ -24,6 +21,26 @@ gi.require_version('Gtk', '4.0')
 from gi.repository import GObject, Gtk, Peas
 
 from MiAZ.backend.log import MiAZLog
+# The frontend-neutral half lives in the backend so the console frontend can
+# use it too. Re-exported here because 21 plugins and the desktop app import
+# these names from this module, and because _activate_plugin_instance matches
+# a plugin's class with issubclass against the very same MiAZExtension: two
+# definitions of it would mean no plugin ever activates.
+from MiAZ.backend.plugins import (  # noqa: F401
+    MiAZAPI,
+    MiAZExtension,
+    MiAZPluginCore,
+    N_,
+    PLUGIN_DEFAULT_ICON,
+    get_plugin_attributes,
+    normalise_menu_entries,
+    parse_operations,
+    plugin_config_dir,
+    plugin_data_dir,
+    plugin_categories,
+    plugin_version,
+    validate_category,
+)
 
 
 def format_load_failure_toast(count: int) -> str:
@@ -45,112 +62,6 @@ def format_load_failure_banner(failures: dict) -> str:
         parts.append(_('{name} failed to load: {reason}').format(
             name=entry['name'], reason=entry['reason']))
     return '; '.join(parts)
-
-
-class MiAZExtension(GObject.GObject):
-    """Base class for all MiAZ plugins.
-
-    Inherits from GObject.GObject only: no Peas.ExtensionBase, no ExtensionSet.
-    Plugin instances are managed manually after engine.load_plugin() by
-    scanning sys.modules for a MiAZExtension subclass.
-    """
-    __gtype_name__ = 'MiAZExtension'
-    object = GObject.Property(type=GObject.GObject)
-
-    def do_activate(self):
-        pass
-
-    def do_deactivate(self):
-        pass
-
-plugin_info_template = {
-        _('Module'):        '',
-        _('Name'):          '',
-        _('Loader'):        '',
-        _('Description'):   '',
-        _('Authors'):       '',
-        _('Copyright'):     '',
-        _('Website'):       '',
-        _('Help'):          '',
-        _('Version'):       '',
-        _('Category'):      '',
-        _('Subcategory'):   ''
-    }
-
-def N_(text: str) -> str:
-    """Mark a string for extraction without translating it here.
-
-    The category names below have to stay English: they are compared against
-    what a .plugin file declares, and a .plugin file is never translated. But
-    they still have to reach po/, because both display sites translate the
-    value they read at runtime, `_(category)` in configview and `_(subcategory)`
-    in app.install_plugin_menu, and gettext only finds a msgid that was
-    extracted from source. This dict is where they are extracted from.
-    """
-    return text
-
-
-# The vocabulary every plugin picks its Category and Subcategory from.
-# Names are one word on purpose: the subcategory is the label of a workspace
-# submenu, sitting next to actions like "Toggle fullscreen".
-plugin_categories = {
-    N_('Documents'): {
-        N_('Import'): 'Bring documents into the repository',
-        N_('Export'): 'Take documents out of the repository',
-        N_('Text'): 'Read the text inside a document',
-        N_('Notes'): 'Write alongside a document',
-        N_('Convert'): 'Turn a document into another format'
-    },
-    N_('Organise'): {
-        N_('Tags'): 'Classify documents',
-        N_('Projects'): 'Group documents into projects',
-        N_('Search'): 'Find documents'
-    },
-    N_('Repository'): {
-        N_('Backup'): 'Copy the repository somewhere safe',
-        N_('Restore'): 'Bring a backup back',
-        N_('Statistics'): 'Measure the whole repository',
-        N_('Sync'): 'Keep repositories in step'
-    },
-    N_('Interface'): {
-        N_('View'): 'Change what the window shows',
-        N_('Fonts'): 'Change how text is drawn',
-        N_('Themes'): 'Change the application appearance'
-    },
-    N_('AI'): {
-        N_('Assistants'): 'Ask a model about a document',
-        N_('Models'): 'Connect to an AI provider'
-    },
-    N_('Help'): {
-        N_('Examples'): 'Show how a plugin is written',
-        N_('Diagnostics'): 'Report on what the application is doing'
-    }
-}
-
-
-def validate_category(category: str, subcategory: str):
-    """Why this pair is not in the vocabulary, or None when it is.
-
-    Nothing used to check this, and three plugins drifted onto a subcategory
-    ('User Interface') that the vocabulary never defined. They kept their
-    translated menu label only because an unrelated file happened to contain
-    the same literal. A warning at registration is what catches the next one.
-    """
-    if category not in plugin_categories:
-        return f"unknown category '{category}'"
-    if subcategory not in plugin_categories[category]:
-        return f"unknown subcategory '{subcategory}' for category '{category}'"
-    return None
-
-
-# Shown for a plugin that ships no icon of its own, so every plugin has one.
-PLUGIN_DEFAULT_ICON = 'io.github.t00m.MiAZ-res-plugins'
-
-
-class MiAZAPI(GObject.GObject):
-    def __init__(self, app):
-        GObject.Object.__init__(self)
-        self.app = app
 
 
 class PluginMenuRegistry:
@@ -202,6 +113,50 @@ class PluginMenuRegistry:
                 submenu.append_submenu(title, menu)
 
 
+class PluginSettingsRegistry:
+    """Which settings group each plugin offers, and how to build it.
+
+    A builder, not a group. Building AutoScan's group runs SANE and building
+    the OCR one shells out to tesseract, so nothing is built until the
+    Settings tab is actually looked at. Recording the callable also means a
+    plugin enabled while the dialog is closed still shows its settings the
+    next time it opens, which a signal emitted on dialog open cannot do.
+    """
+
+    def __init__(self):
+        self._entries = []
+        self._views = []
+
+    def add(self, owner: str, category: str, builder):
+        """Remember one builder. The same one twice is still one."""
+        entry = (category, owner, builder)
+        if entry not in self._entries:
+            self._entries.append(entry)
+
+    def builders(self) -> list:
+        """Every builder as (category, owner, builder), in display order.
+
+        Sorted here rather than at the point of display, so the groups sit in
+        the same order whatever order the plugins happened to load in.
+        """
+        return sorted(self._entries, key=lambda entry: (entry[0], entry[1]))
+
+    def add_view(self, owner: str, name: str, title: str, icon_name: str,
+                 factory):
+        """Remember one metadata view. The same one twice is still one."""
+        entry = (owner, name, title, icon_name, factory)
+        if entry not in self._views:
+            self._views.append(entry)
+
+    def views(self) -> list:
+        """Every plugin metadata view, alphabetically by title."""
+        return sorted(self._views, key=lambda entry: entry[2])
+
+    def forget(self, owner: str):
+        self._entries = [entry for entry in self._entries if entry[1] != owner]
+        self._views = [entry for entry in self._views if entry[0] != owner]
+
+
 class PluginPageRegistry:
     """Which workspace pages each plugin contributed.
 
@@ -227,6 +182,30 @@ class PluginPageRegistry:
     def pop_all(self, owner: str) -> list:
         """The pages of this plugin, forgetting them as they are handed over."""
         return self._pages.pop(owner, [])
+
+
+class PluginViewRegistry:
+    """Which workspace views belong to which plugin.
+
+    A view is removed when its plugin is unloaded, the same deal pages get:
+    the name has to be free again, or the plugin cannot register on the way
+    back in.
+    """
+
+    def __init__(self):
+        self._views = {}
+
+    def add(self, owner: str, name: str):
+        """Record a view. Recording it twice still means one view."""
+        names = self._views.setdefault(owner, [])
+        if name not in names:
+            names.append(name)
+
+    def names(self, owner: str) -> list:
+        return list(self._views.get(owner, []))
+
+    def pop_all(self, owner: str) -> list:
+        return self._views.pop(owner, [])
 
 
 class PluginWidgetRegistry:
@@ -345,13 +324,92 @@ class MiAZPlugin(GObject.GObject):
         return f'plugin-{module}'
 
     def get_menu_item(self, callback=None):
+        """One menu item for a plugin declaring no entries.
+
+        Bundled plugins declare their entries and go through
+        install_menu_entries. This is what an out of tree plugin written
+        against the older API still calls, so it keeps working; it uses the
+        first declared label when there is one, and the plugin description
+        when there is not, which is a sentence about the plugin rather than
+        a label saying what a click will do.
+        """
         factory = self.app.get_service('factory')
         name = self.get_menu_item_name()
-        menuitem = factory.create_menuitem(name, self.desc, callback, None, [])
-        return self.app.add_widget(f'plugin-menuitem-{self.name}', menuitem)
+        entries = self.get_menu_entries()
+        if entries:
+            label = entries[0][1]
+        else:
+            label = self.desc
+            self.log.warning(f"Plugin {self.name} declares no MenuEntries, so "
+                             "its description is used as the menu label")
+        menuitem = factory.create_menuitem(name, label, callback, None, [])
+        return self.app.add_widget(name, menuitem)
 
-    def get_menu_item_name(self):
-        return f'plugin-menuitem-{self.name}'
+    def get_menu_entries(self) -> list:
+        """What the definition says this plugin's menu entries are."""
+        return normalise_menu_entries(self.info.get('MenuEntries', []))
+
+    def get_menu_entry_label(self, entry_id: str):
+        """The declared label of one entry, or None when it is not declared.
+
+        For the plugin that has to build its own Gio.MenuItem, the scanner
+        with its submenu of sources, and still wants the label written where
+        every other label is.
+        """
+        for declared_id, label, _shortcuts in self.get_menu_entries():
+            if declared_id == entry_id:
+                return label
+        return None
+
+    def get_menu_item_name(self, entry_id: str = None):
+        """The action name of one entry, which is also its widget key.
+
+        Without an id this is the plugin's canonical key, the one the
+        headerbar Add menu mirrors for an Import plugin.
+        """
+        if entry_id is None:
+            return f'plugin-menuitem-{self.name}'
+        return f'plugin-menuitem-{self.name}-{entry_id}'
+
+    def install_menu_entries(self, callbacks: dict) -> dict:
+        """Build the entries the definition declares, and install them.
+
+        The definition owns what the entries are: which ones, in what order,
+        under what label and on what shortcut. This says what each one does,
+        keyed by the id the definition gave it. Returns {id: Gio.MenuItem}
+        for a plugin that has to reach one of its own items later.
+
+        A declared id with no callback, or a callback for an id nothing
+        declares, is an author mistake. Both are logged and skipped: a plugin
+        short of one entry is easier to diagnose than one that fails to load.
+        """
+        if not self.is_active():
+            return {}
+        factory = self.app.get_service('factory')
+        entries = self.get_menu_entries()
+        declared = [entry_id for entry_id, _label, _shortcuts in entries]
+        for entry_id in callbacks:
+            if entry_id not in declared:
+                self.log.warning(f"Plugin {self.name}: '{entry_id}' has a "
+                                 "callback but no entry in the definition")
+        items = {}
+        for entry_id, label, shortcuts in entries:
+            callback = callbacks.get(entry_id)
+            if callback is None:
+                self.log.warning(f"Plugin {self.name}: menu entry "
+                                 f"'{entry_id}' does nothing, so it is left out")
+                continue
+            name = self.get_menu_item_name(entry_id)
+            menuitem = factory.create_menuitem(name, label, callback, None,
+                                               shortcuts)
+            self.install_menu_entry(menuitem, name=name)
+            items[entry_id] = menuitem
+        # The Add menu mirrors one item per Import plugin, and reads it under
+        # the canonical key, so the first entry answers to both names.
+        if items:
+            self.app.add_widget(self.get_menu_item_name(),
+                                next(iter(items.values())))
+        return items
 
     def menu_item_loaded(self):
         name = self.get_menu_item_name()
@@ -361,11 +419,11 @@ class MiAZPlugin(GObject.GObject):
 
     def get_config_dir(self):
         repository = self.app.get_service('repo')
-        return os.path.join(repository.docs, '.conf', 'plugins', self.name, 'conf')
+        return plugin_config_dir(repository.docs, self.name)
 
     def get_data_dir(self):
         repository = self.app.get_service('repo')
-        return os.path.join(repository.docs, '.conf', 'plugins', self.name, 'data')
+        return plugin_data_dir(repository.docs, self.name)
 
     def get_data_file(self):
         data_dir = self.get_data_dir()
@@ -462,15 +520,22 @@ class MiAZPlugin(GObject.GObject):
         self._active = active
 
     def install_menu_entry(self, menuitem = None, category = None,
-                           subcategory = None):
+                           subcategory = None, name = None):
         """Add one item to a menu, and remember it for the next rebuild.
 
+        Most plugins reach this through install_menu_entries, which builds the
+        items the definition declares. It is still the way in for an item the
+        definition cannot describe, the scanner's submenu of sources.
+
         With no category the plugin's own one is used, which is what almost
-        every caller wants. A plugin whose action belongs somewhere else (the
-        notes backup and restore entries live under Repository) passes
-        the pair explicitly, rather than reaching for app.install_plugin_menu
-        and leaving the entry unrecorded: those were the entries a menu
-        rebuild used to drop.
+        every caller wants. A plugin whose action belongs somewhere else
+        passes the pair explicitly, rather than reaching for
+        app.install_plugin_menu and leaving the entry unrecorded: those were
+        the entries a menu rebuild used to drop.
+
+        `name` is the widget key the item answers to, and defaults to the
+        plugin's canonical one. A plugin with several entries gives each its
+        own, so its items do not overwrite each other.
         """
         if not self.is_active():
             return None
@@ -487,9 +552,9 @@ class MiAZPlugin(GObject.GObject):
         subcategory_submenu = self.app.install_plugin_menu(category, subcategory)
         if menuitem is not None:
             subcategory_submenu.append_item(menuitem)
-            # Register the item under its canonical key so other layers (the UI)
-            # can reuse it without the plugin system knowing about any widget.
-            self.app.add_widget(self.get_menu_item_name(), menuitem)
+            # Register the item under its key so other layers (the UI) can
+            # reuse it without the plugin system knowing about any widget.
+            self.app.add_widget(name or self.get_menu_item_name(), menuitem)
             # And record it, so a menu rebuild can put it back without running
             # this plugin's startup() again.
             self._menu_registry().record(self.name, category, subcategory,
@@ -514,6 +579,42 @@ class MiAZPlugin(GObject.GObject):
                                      'submenu', (title, menu))
         return subcategory_submenu
 
+    def install_settings_group(self, builder) -> bool:
+        """Offer this plugin's settings to the Repository Settings dialog.
+
+        `builder` is called with no arguments and returns an
+        Adw.PreferencesGroup. It is held rather than called: building a group
+        can be slow (AutoScan asks SANE what devices exist) and the dialog
+        must open without paying for it. The group is filed under the
+        heading this plugin's Category names.
+
+        Returns whether it was recorded, which is False for a plugin already
+        on its way out.
+        """
+        if not self.is_active():
+            return False
+        self._settings_registry().add(self.name, self.info['Category'], builder)
+        return True
+
+    def install_metadata_view(self, name, title, icon_name, factory) -> bool:
+        """Add one repository vocabulary to the Metadata tab.
+
+        For a plugin that owns a vocabulary rather than a preference: the
+        periodicities, the projects. `factory` is called with no arguments
+        and returns the widget. Unlike a settings builder, it is not held for
+        later: the Metadata tab calls every registered factory while the
+        dialog is being built, since the dialog is constructed fresh each
+        time it opens and a vocabulary view is cheap to create.
+        """
+        if not self.is_active():
+            return False
+        self._settings_registry().add_view(self.name, name, title, icon_name,
+                                           factory)
+        return True
+
+    def _settings_registry(self):
+        return self.app.get_service('plugin-system').settings
+
     def _menu_registry(self):
         return self.app.get_service('plugin-system').menus
 
@@ -535,6 +636,22 @@ class MiAZPlugin(GObject.GObject):
         if system is not None:
             system.pages.add(self.get_name(), name)
 
+    def add_workspace_view(self, widget, name, icon_name, label):
+        """Add a view to the documents toolbar, owned by this plugin.
+
+        The plugin system removes it when the plugin is unloaded, so there is
+        nothing to undo in do_deactivate and the name is free again next time.
+        """
+        if not self.is_active():
+            return
+        workspace = self.app.get_widget('workspace')
+        if workspace is None:
+            return
+        workspace.add_view(name, icon_name, label, widget)
+        system = self.app.get_service('plugin-system')
+        if system is not None:
+            system.views.add(self.get_name(), name)
+
     def _widget_registry(self):
         system = self.app.get_service('plugin-system')
         return None if system is None else system.widgets
@@ -552,6 +669,19 @@ class MiAZPlugin(GObject.GObject):
         registry = self._widget_registry()
         if registry is not None:
             registry.add(self.get_name(), lambda: self.app.remove_widget(widget_key))
+
+    def register_widget(self, widget_key: str, widget):
+        """Register a widget under a key, and drop the key when this plugin
+        unloads.
+
+        add_headerbar_widget and its siblings already do this for the widget
+        they attach. Use this for a widget the plugin keeps its own reference
+        to but does not attach itself, such as the individual buttons inside a
+        box that was attached as one. Registering them with app.add_widget
+        directly leaves the keys behind on unload, pointing at detached
+        widgets.
+        """
+        self._register_widget_key(widget_key, widget)
 
     def add_sidebar_widget(self, widget, widget_key: str = None):
         """Put a widget in the sidebar's plugin section, owned by this plugin.
@@ -702,31 +832,34 @@ class MiAZPlugin(GObject.GObject):
             actions.unregister_suggest_items(owner=self.get_name())
 
 
-class MiAZPluginSystem(GObject.GObject):
+class MiAZPluginSystem(MiAZPluginCore):
+    """The desktop plugin system: the core, plus everything about placement.
+
+    Discovery, loading and activation come from MiAZPluginCore and need no
+    toolkit. What is added here is the part that only means something when
+    there is a window: the menu, settings, page, view and widget registries,
+    and the teardown that takes those contributions away again.
+    """
+
     def __init__(self, app):
-        super().__init__()
+        super().__init__(log_name='MiAZ.PluginSystem')
         sid_u = GObject.signal_lookup('plugins-updated', MiAZPluginSystem)
         if sid_u == 0:
             GObject.signal_new('plugins-updated',
                                 MiAZPluginSystem,
                                 GObject.SignalFlags.RUN_LAST, None, ())
-        self.log = MiAZLog('MiAZ.PluginSystem')
         self.app = app
         self.util = self.app.get_service('util')
         self.log.debug("Initializing Plugin Manager")
         self.plugin_info_list = []
 
-        self.engine = Peas.Engine.get_default()
-        for loader in ("python", ):
-            self.engine.enable_loader(loader)
-
-        self._extension_instances = {}
-        self._load_failures = {}
         # What plugins contributed to shared UI, so unload_plugin can take it
         # away the same way it already does web content and dialog tabs.
         self.pages = PluginPageRegistry()
+        self.views = PluginViewRegistry()
         self.widgets = PluginWidgetRegistry()
         self.menus = PluginMenuRegistry()
+        self.settings = PluginSettingsRegistry()
         self._setup_plugins_dir()
         self._plugin_list = []
         self.scan_plugin_index()
@@ -809,87 +942,28 @@ class MiAZPluginSystem(GObject.GObject):
             # Plugin system not initialized yet
             pass
 
-    def _direct_import_plugin(self, plugin: Peas.PluginInfo) -> bool:
-        """Import a Python plugin directly when libpeas Python loader is unavailable.
-
-        Fedora (and possibly other distros) ships libpeas 2.x without the Python loader
-        RPM, so engine.load_plugin() silently fails. This method uses importlib to load
-        the .py file by searching the plugin directories (plugin.get_data_dir() in
-        libpeas 2.x returns a synthetic path based on module name, not the real path).
-        """
-        module_name = plugin.get_module_name()
-        if module_name in sys.modules:
-            return True
-        ENV = self.app.get_env()
-        module_file = None
-        for search_dir in (ENV['GPATH']['PLUGINS'], ENV['LPATH']['PLUGINS']):
-            matches = glob.glob(os.path.join(search_dir, '**', f'{module_name}.py'), recursive=True)
-            if matches:
-                module_file = matches[0]
-                break
-        if module_file is None:
-            self.log.error(f"Python module '{module_name}.py' not found in plugin directories")
-            return False
-        try:
-            spec = importlib.util.spec_from_file_location(module_name, module_file)
-            module = importlib.util.module_from_spec(spec)
-            sys.modules[module_name] = module
-            spec.loader.exec_module(module)
-            self.log.debug(f"Direct-imported plugin module '{module_name}' from {module_file}")
-            return True
-        except Exception as error:
-            self.log.error(f"Direct import of '{module_name}' failed: {error}")
-            sys.modules.pop(module_name, None)
-            self._load_failures[module_name] = {
-                'name': plugin.get_name(), 'reason': str(error)}
-            return False
-
-    def is_plugin_loaded(self, plugin: Peas.PluginInfo) -> bool:
-        """True if the plugin is active: via libpeas or our direct-import fallback."""
-        return plugin.get_module_name() in self._extension_instances or plugin.is_loaded()
-
-    def get_load_failures(self) -> dict:
-        """Copy of the current load failures: {module_name: {'name', 'reason'}}."""
-        return dict(self._load_failures)
-
-    def get_load_error(self, module_name: str):
-        entry = self._load_failures.get(module_name)
-        return entry['reason'] if entry else None
+    def make_api(self):
+        """The desktop has an application to hand a plugin. The core has not."""
+        return MiAZAPI(self.app)
 
     def load_plugin(self, plugin: Peas.PluginInfo) -> bool:
-        if self.is_plugin_loaded(plugin):
-            return True
+        """Load through the core, then do the two things only a window needs.
+
+        The requirements install writes into the external-libraries venv, and
+        the signal is what rebuilds the menus. Neither means anything to a
+        frontend with no menus, so both stay here.
+        """
+        already_loaded = self.is_plugin_loaded(plugin)
+        loaded = super().load_plugin(plugin)
+        if not loaded or already_loaded:
+            return loaded
+
         pname = plugin.get_name()
-        pvers = plugin.get_version()
-        try:
-            self.engine.load_plugin(plugin)
-
-            if not plugin.is_loaded():
-                # libpeas Python loader may not be installed on the host; try direct import
-                if not self._direct_import_plugin(plugin):
-                    self.log.error(f"Plugin {pname} v{pvers} couldn't be loaded")
-                    return False
-
-            self._activate_plugin_instance(plugin)
-            self._load_failures.pop(plugin.get_module_name(), None)
-            self.log.info(f"Plugin {pname} v{pvers} loaded")
-            self._install_plugin_requirements(plugin)
-            self.emit('plugins-updated')
-            return True
-        except Exception as error:
-            # do_activate() may raise to veto its own activation (e.g. a plugin
-            # whose required external tools are not installed). Clean up the
-            # half-loaded engine state so the plugin does not read back as
-            # loaded, and report failure to the caller.
-            self.log.error(f"Plugin {pname} v{pvers} couldn't be loaded: {error}")
-            self._load_failures[plugin.get_module_name()] = {
-                'name': pname, 'reason': str(error)}
-            try:
-                if plugin.is_loaded():
-                    self.engine.unload_plugin(plugin)
-            except Exception as cleanup_error:
-                self.log.debug(f"Cleanup after failed load of {pname}: {cleanup_error}")
-            return False
+        pvers = plugin_version(plugin, self.app.get_env()['APP']['VERSION'])
+        self.log.info(f"Plugin {pname} v{pvers} loaded")
+        self._install_plugin_requirements(plugin)
+        self.emit('plugins-updated')
+        return True
 
     def _install_plugin_requirements(self, plugin: Peas.PluginInfo):
         """Install a plugin's external libraries when the feature is enabled.
@@ -913,14 +987,16 @@ class MiAZPluginSystem(GObject.GObject):
 
     def unload_plugin(self, plugin: Peas.PluginInfo):
         pname = plugin.get_name()
-        pvers = plugin.get_version()
+        pvers = plugin_version(plugin, self.app.get_env()['APP']['VERSION'])
         try:
             self._deactivate_plugin_instance(plugin)
             self.engine.unload_plugin(plugin)
             self._remove_plugin_www(plugin)
             self._remove_plugin_document_tabs(plugin)
             self._remove_plugin_pages(plugin)
+            self._remove_plugin_views(plugin)
             self.menus.forget(plugin.get_name())
+            self.settings.forget(plugin.get_name())
             self.widgets.undo_all(plugin.get_name())
             self.log.info(f"Plugin {pname} v{pvers} unloaded")
             self.emit('plugins-updated')
@@ -1007,82 +1083,27 @@ class MiAZPluginSystem(GObject.GObject):
             except Exception as error:
                 self.log.warning(f"Could not remove workspace page '{name}': {error}")
 
+    def _remove_plugin_views(self, plugin: Peas.PluginInfo):
+        """Take back the workspace views of a plugin when it is unloaded."""
+        workspace = self.app.get_widget('workspace')
+        if workspace is None:
+            return
+        for name in self.views.pop_all(plugin.get_name()):
+            try:
+                workspace.remove_view(name)
+                self.log.debug(f"Removed workspace view '{name}'")
+            except Exception as error:
+                self.log.warning(f"Could not remove workspace view '{name}': {error}")
+
     def get_engine(self):
         return self.engine
-
-    @property
-    def plugins(self):
-        """Gets the engine's plugin list (libpeas 2.x: Engine is a Gio.ListModel)"""
-        return list(self.engine)
-
-    def get_extension(self, module_name: str):
-        """Gets the active extension instance for the given module name."""
-        return self._extension_instances.get(module_name)
-
-    def get_plugin_info(self, module_name: str):
-        """Gets the plugin info for the specified plugin name.
-        Args:
-            module_name (str): The name from the .plugin file of the module.
-        Returns:
-            Peas.PluginInfo: The plugin info if it exists. Otherwise, `None`.
-        """
-        for plugin in self.plugins:
-            if plugin.get_module_name() == module_name:
-                return plugin
-        return None
-
-    def _activate_plugin_instance(self, plugin: Peas.PluginInfo):
-        """Instantiate and activate the plugin class found in sys.modules."""
-        module_name = plugin.get_module_name()
-        module = sys.modules.get(module_name)
-        if module is None:
-            self.log.error(f"Module '{module_name}' not in sys.modules after load")
-            return None
-        for _name, cls in inspect.getmembers(module, inspect.isclass):
-            if issubclass(cls, MiAZExtension) and cls is not MiAZExtension:
-                instance = cls()
-                instance.props.object = MiAZAPI(self.app)
-                try:
-                    instance.do_activate()
-                except Exception as error:
-                    # A plugin may raise from do_activate() to refuse activation
-                    # (e.g. missing external tools). Propagate so load_plugin
-                    # cleans up and reports the failure; do not register it.
-                    self.log.warning(f"Plugin '{module_name}' vetoed its activation: {error}")
-                    raise
-                self._extension_instances[module_name] = instance
-                self.log.debug(f"Activated plugin class '{_name}' for module '{module_name}'")
-                return instance
-        self.log.error(f"No MiAZExtension subclass found in module '{module_name}'")
-        return None
-
-    def _deactivate_plugin_instance(self, plugin: Peas.PluginInfo):
-        """Deactivate and remove the plugin instance."""
-        module_name = plugin.get_module_name()
-        instance = self._extension_instances.pop(module_name, None)
-        if instance is not None:
-            # Refuse contributions from here on, before the teardown rather
-            # than after it: a worker finishing mid-unload is exactly the case
-            # this guards against.
-            helper = getattr(instance, 'plugin', None)
-            if helper is not None and hasattr(helper, 'set_active'):
-                helper.set_active(False)
-            try:
-                instance.do_deactivate()
-            except Exception as error:
-                self.log.error(f"Error deactivating '{module_name}': {error}")
 
     def _setup_plugins_dir(self):
         """Set System and User plugins directories"""
         # System plugins
         # Mandatory set of plugins for every repository
         ENV = self.app.get_env()
-        if os.path.exists(ENV['GPATH']['PLUGINS']):
-            self.engine.add_search_path(ENV['GPATH']['PLUGINS'])
-            self.log.debug(f"Added System plugin dir: {ENV['GPATH']['PLUGINS']}")
-        else:
-            self.log.warning("System plugins directory does not exist:")
-            self.log.warning(f"{ENV['GPATH']['PLUGINS']}")
+        if not self.add_search_path(ENV['GPATH']['PLUGINS']):
             self.log.warning("Continuing without system plugins")
 
         # User plugins
@@ -1090,26 +1111,11 @@ class MiAZPluginSystem(GObject.GObject):
         # However, each repository can use none, any or all of them
         if not os.path.exists(ENV['LPATH']['PLUGINS']):
             os.makedirs(ENV['LPATH']['PLUGINS'], exist_ok=True)
-        self.engine.add_search_path(ENV['LPATH']['PLUGINS'])
-        self.log.debug(f"Added user plugins dir: {ENV['LPATH']['PLUGINS']}")
+        self.add_search_path(ENV['LPATH']['PLUGINS'])
 
     def get_plugin_attributes(self, plugin_file: str):
         """Get plugin attributes from `plugin_module`.plugin file"""
-        plugin_info = {}
-        with open(plugin_file, 'r', encoding='utf-8') as file:
-            # Skip the first line (assuming it's [Plugin])
-            next(file)
-
-            for line in file:
-                line = line.strip()
-                if not line:  # Skip empty lines
-                    continue
-
-                # Split each line at the first '=' character
-                if '=' in line:
-                    key, value = line.split('=', 1)
-                    plugin_info[key.strip()] = _(value.strip())
-        return plugin_info
+        return get_plugin_attributes(plugin_file)
 
     def _on_repository_switched(self, *_args):
         # Not update_available_plugins directly: the signal hands the emitter
@@ -1147,6 +1153,12 @@ class MiAZPluginSystem(GObject.GObject):
                 if plugin_info is not None:
                     plugin_name = plugin_info['Name']
                     plugin_desc = plugin_info['Description']
+                    # The info dialog shows every key of this dict, so the
+                    # version is filled in here rather than declared in the
+                    # plugin. setdefault: an out-of-tree plugin that declares
+                    # its own keeps it.
+                    plugin_info.setdefault(
+                        'Version', ENV['APP']['VERSION'])
                     plugin_index[plugin_name] = plugin_info
                     plugin_list.append((plugin_name, plugin_desc))
                     self.log.info(f" - Adding plugin {plugin_name} to plugin index")

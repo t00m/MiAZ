@@ -13,6 +13,7 @@ them run headless like the rest of the suite.
 
 import os
 import shutil
+import zipfile
 from unittest import mock
 
 import pytest
@@ -24,10 +25,20 @@ class FakeUtil:
     def timestamp(self):
         return "20260101_000000"
 
-    def zip(self, filename, directory):
-        # Mirrors MiAZUtil.zip: archive `directory` into `filename`.zip and
-        # return the resulting path.
-        return shutil.make_archive(filename, 'zip', directory)
+    def zip(self, filename, directory, exclude=()):
+        # Mirrors MiAZUtil.zip: archive `directory` into `filename`.zip,
+        # skipping any entry named in `exclude`, and return the resulting path.
+        target = filename + '.zip'
+        skip = set(exclude)
+        with zipfile.ZipFile(target, 'w', zipfile.ZIP_DEFLATED) as archive:
+            for root, dirs, files in os.walk(directory):
+                dirs[:] = [name for name in dirs if name not in skip]
+                for name in files:
+                    if name in skip:
+                        continue
+                    path = os.path.join(root, name)
+                    archive.write(path, os.path.relpath(path, directory))
+        return target
 
     def unzip(self, target, install_dir):
         shutil.unpack_archive(target, install_dir)
@@ -286,3 +297,24 @@ def test_restore_repository_reports_its_stages(dr, tmp_path):
     # Extract, replace, clean up: three stages, none of them measurable.
     assert len(report.updates) == 3
     assert report.fractions == []
+
+
+def test_backup_repository_leaves_the_history_out(dr, tmp_path):
+    """MiAZHistory keeps a copy of every document under .git. Archiving it
+    would roughly double the size and the time of a repository backup."""
+    repo = tmp_path / 'repo'
+    (repo / '.conf').mkdir(parents=True)
+    (repo / '.conf' / 'repo.json').write_text('{}', encoding='utf-8')
+    (repo / 'invoice.pdf').write_bytes(b'document')
+    (repo / '.git' / 'objects').mkdir(parents=True)
+    (repo / '.git' / 'objects' / 'pack.idx').write_bytes(b'a copy of everything')
+    dest = tmp_path / 'backups'
+    dest.mkdir()
+
+    zip_path = dr.backup_repository(str(repo), str(dest))
+
+    with zipfile.ZipFile(zip_path) as archive:
+        names = set(archive.namelist())
+    assert 'invoice.pdf' in names
+    assert '.conf/repo.json' in names
+    assert not [name for name in names if name.startswith('.git/')]

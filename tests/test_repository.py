@@ -13,7 +13,7 @@ import shutil
 import gi
 gi.require_version('GLib', '2.0')
 
-from MiAZ.backend.repository import MiAZRepository
+from MiAZ.backend.repository import REPO_FORMAT, MiAZRepository
 from MiAZ.backend.util import MiAZUtil
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -87,6 +87,44 @@ def test_validate_invalid_json(tmp_path):
     repo_json.write_text('NOT VALID JSON }{')
     repo = MiAZRepository(MockApp())
     assert repo.validate(str(tmp_path)) is False
+
+
+def test_validate_refuses_a_format_from_a_later_version(tmp_path):
+    """A repository written by a newer MiAZ must be refused, not opened as if
+    it were current. FORMAT is written on init and was never read back, so a
+    layout change would have been met by whatever this version assumes."""
+    conf_dir = tmp_path / '.conf'
+    conf_dir.mkdir()
+    (conf_dir / 'repo.json').write_text(json.dumps({'FORMAT': REPO_FORMAT + 1}))
+    repo = MiAZRepository(MockApp())
+    assert repo.validate(str(tmp_path)) is False
+
+
+def test_validate_accepts_a_repository_written_before_the_check(tmp_path):
+    """No FORMAT key means a repository from before this guard existed. Those
+    are the current layout, so refusing them would break every repository that
+    works today."""
+    conf_dir = tmp_path / '.conf'
+    conf_dir.mkdir()
+    (conf_dir / 'repo.json').write_text(json.dumps({}))
+    repo = MiAZRepository(MockApp())
+    assert repo.validate(str(tmp_path)) is True
+
+
+def test_validate_refuses_a_format_that_is_not_a_number(tmp_path):
+    conf_dir = tmp_path / '.conf'
+    conf_dir.mkdir()
+    (conf_dir / 'repo.json').write_text(json.dumps({'FORMAT': 'one'}))
+    repo = MiAZRepository(MockApp())
+    assert repo.validate(str(tmp_path)) is False
+
+
+def test_validate_accepts_the_format_this_version_writes(tmp_path):
+    conf_dir = tmp_path / '.conf'
+    conf_dir.mkdir()
+    (conf_dir / 'repo.json').write_text(json.dumps({'FORMAT': REPO_FORMAT}))
+    repo = MiAZRepository(MockApp())
+    assert repo.validate(str(tmp_path)) is True
 
 
 # ---------------------------------------------------------------------------

@@ -27,7 +27,6 @@ from gi.repository import Gio
 from gi.repository import GObject
 
 from MiAZ.backend.log import MiAZLog
-from MiAZ.backend.models import Field
 
 mimetypes.init()
 
@@ -306,6 +305,9 @@ class SafeDictExtractor(ast.NodeVisitor):
             }
         elif isinstance(node, ast.List):
             return [self._safe_eval(elt) for elt in node.elts]
+        elif isinstance(node, ast.Tuple):
+            # A menu entry is a tuple: ('doc', _('Create a note'), ['<Ctrl>N'])
+            return tuple(self._safe_eval(elt) for elt in node.elts)
         elif isinstance(node, ast.Constant):  # str, int, float, etc.
             return node.value
         elif isinstance(node, ast.Call):
@@ -329,11 +331,6 @@ class MiAZUtil(GObject.GObject):
         super().__init__()
         self.log = MiAZLog('MiAZ.Backend.Util')
         self.app = app
-        self._field_index = {}
-        self._field_index_dir = None
-        self.connect('filename-added', self._invalidate_field_index)
-        self.connect('filename-deleted', self._invalidate_field_index)
-        self.connect('filename-renamed', self._invalidate_field_index)
 
     def extract_variable_from_python_module(self, filepath, variable_name):
         with open(filepath, "r", encoding='utf-8') as f:
@@ -374,29 +371,6 @@ class MiAZUtil(GObject.GObject):
     def json_save(self, filepath: str, adict: {}) -> {}:
         """Save dictionary into a file in json format, atomically."""
         atomic_json_save(filepath, adict)
-
-    def _invalidate_field_index(self, *args):
-        self._field_index_dir = None
-
-    def _build_field_index(self, repo_dir):
-        self._field_index_dir = repo_dir
-        self._field_index = {ft: {} for ft in Field}
-        for doc in self.get_files(repo_dir):
-            fields = self.get_fields(doc)
-            if len(fields) < 7:
-                continue
-            for field_type, idx in Field.items():
-                val = fields[idx]
-                bucket = self._field_index[field_type]
-                if val not in bucket:
-                    bucket[val] = []
-                bucket[val].append(doc)
-
-    def field_used(self, repo_dir, item_type, value):
-        if self._field_index_dir != repo_dir:
-            self._build_field_index(repo_dir)
-        docs = self._field_index.get(item_type, {}).get(value, [])
-        return len(docs) > 0, docs
 
     def get_mimetype(self, filename: str) -> str:
         if sys.platform == 'win32':
@@ -460,6 +434,11 @@ class MiAZUtil(GObject.GObject):
         today. filename_guess_date used to end its chain here, which is how
         every document without a date in its name came to be filed under the
         day it was imported. Use dates_from_metadata for a document date.
+
+        Nothing in MiAZ calls it, and that is not a reason to remove it: it is
+        a public method on a service plugins are given in full, and a plugin
+        out of tree is free to ask when a file was written. Two analyses have
+        now listed it as dead code, so this paragraph is here to stop a third.
         """
         lastmod = os.stat(filepath).st_mtime
         return datetime.fromtimestamp(lastmod)
@@ -744,8 +723,14 @@ class MiAZUtil(GObject.GObject):
                 # Target already exists. Do not overwrite it silently; the
                 # caller sees rename=False and surfaces the skip (mass rename
                 # counts skipped files in a toast).
+                #
+                # Both names are logged. The target is the file that is already
+                # right; the source is the one left with the name it came with,
+                # and naming only the target left no way to tell which document
+                # that was, on a message the full scan repeats every time.
                 self.log.warning(
-                    f"Rename skipped: target already exists: '{target}'")
+                    f"Rename skipped: '{source}' stays as it is, "
+                    f"because '{target}' already exists")
         return rename
 
     def filename_delete(self, filepaths: set):
@@ -758,28 +743,44 @@ class MiAZUtil(GObject.GObject):
                 self.log.error(f"Could not delete {filepath}: {error}")
         self.emit('filename-deleted', filepaths)
 
-    def filename_import(self, source: str, target: str):
+    def filename_import(self, source: str, target: str) -> bool:
         """Import a file into the repository: copy it under the normalized
-        target name, then announce it with filename-added."""
-        self.filename_copy(source, target)
+        target name, then announce it with filename-added.
+
+        True when the file was written. It used to return nothing and announce
+        the arrival either way, so a copy that failed (a source that is gone, a
+        directory with no permission) was counted as imported and reported to
+        the user as one.
+        """
+        if not self.filename_copy(source, target):
+            return False
         self.emit('filename-added', target)
+        return True
 
-    def filename_export(self, source: str, target: str):
-        self.filename_copy(source, target)
+    def filename_export(self, source: str, target: str) -> bool:
+        return self.filename_copy(source, target)
 
-    def filename_copy(self, source, target, overwrite=True):
-        if source != target:
-            if overwrite:
-                try:
-                    # preserve metadata
-                    shutil.copy2(source, target)
-                    self.log.info(f"{source} copied to {target}")
-                except Exception as error:
-                    self.log.error(error)
-            else:
-                self.log.debug(f"Target file {target} exists. Copy operation skipped")
-        else:
-            self.log.error("Source and Target are the same. Skip rename")
+    def filename_copy(self, source, target, overwrite=True) -> bool:
+        """Copy source to target. True when the file was written.
+
+        The return value is what lets a caller count what it exported: a
+        failure used to reach the log and nowhere else, so the export plugin
+        reported success for documents it had never copied.
+        """
+        if source == target:
+            self.log.error("Source and Target are the same. Skip copy")
+            return False
+        if not overwrite and os.path.exists(target):
+            self.log.debug(f"Target file {target} exists. Copy operation skipped")
+            return False
+        try:
+            # preserve metadata
+            shutil.copy2(source, target)
+            self.log.info(f"{source} copied to {target}")
+            return True
+        except Exception as error:
+            self.log.error(error)
+            return False
 
     def filename_date_human(self, value: str = '') -> str:
         if not date_is_valid(value):
@@ -840,8 +841,15 @@ class MiAZUtil(GObject.GObject):
         except ValueError:
             return None
 
-    def zip(self, filename: str, directory: str):
-        """ Zip directory into a file """
+    def zip(self, filename: str, directory: str, exclude: tuple = ()):
+        """Zip directory into a file, skipping any entry named in `exclude`.
+
+        `exclude` matches on the entry name at any depth, so ('.git',) drops
+        that directory wherever it sits. Written out here rather than through
+        shutil.make_archive, which archives everything and takes no exclusion.
+
+        Returns the path of the archive, which always ends in .zip.
+        """
         # ~ self.log.debug(f"Target: {filename}")
         sourcename = os.path.basename(filename)
         dot = sourcename.find('.')
@@ -850,10 +858,21 @@ class MiAZUtil(GObject.GObject):
         else:
             basename = sourcename[:dot]
         sourcedir = os.path.dirname(filename)
-        source = os.path.join(sourcedir, basename)
-        zip_file = shutil.make_archive(source, 'zip', directory)
-        target = source + '.zip'
-        shutil.move(zip_file, target)
+        target = os.path.join(sourcedir, basename) + '.zip'
+        skip = set(exclude)
+        with zipfile.ZipFile(target, 'w', zipfile.ZIP_DEFLATED) as archive:
+            for root, dirs, files in os.walk(directory):
+                dirs[:] = sorted(name for name in dirs if name not in skip)
+                for name in dirs:
+                    # Written explicitly so an empty directory survives the
+                    # round trip, which make_archive also did.
+                    path = os.path.join(root, name)
+                    archive.write(path, os.path.relpath(path, directory))
+                for name in sorted(files):
+                    if name in skip:
+                        continue
+                    path = os.path.join(root, name)
+                    archive.write(path, os.path.relpath(path, directory))
         return target
 
     def timestamp(self):
