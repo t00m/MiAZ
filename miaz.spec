@@ -1,5 +1,5 @@
 Name:           miaz
-Version:        0.3.0
+Version:        0.3.1
 Release:        1%{?dist}
 Summary:        Personal Document Organizer
 
@@ -81,6 +81,9 @@ gtk-update-icon-cache %{_datadir}/icons/hicolor &> /dev/null || :
 %{_datadir}/metainfo/io.github.t00m.MiAZ.metainfo.xml
 
 %changelog
+* Sat Sep 12 2026 Tomás Vírseda <tomasvirseda@gmail.com> - 0.3.1-1
+- New release. See CHANGELOG.md for details.
+
 * Mon Aug 31 2026 Tomás Vírseda <tomasvirseda@gmail.com> - 0.3.0-1
 - miaz is a real command line: add, delete, rename, search, read notes and run OCR, on a machine with no desktop toolkit installed; a plugin can add commands of its own
 - Four new ways to look at the same documents: a Grid of pages, a Timeline, Conversations between the two parties of a document, and the Filenames as they are on disk

@@ -6,7 +6,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-## [Unreleased]
+## [0.3.1] - Unreleased
+
+### Changed
+
+- Development opens on 0.3.1, a patch release for fixes found after 0.3.0 shipped. `meson.build` carries the number and `sync_versions.sh` propagated it to `pyproject.toml`, the spec `Version`, and a new entry at the top of `debian/changelog`, the spec `%changelog` and the AppStream `<releases>` list. Those three entries hold the placeholder that points at this file; `releases/0.3.1.md` is written at release time and `render_release_notes.py` fills them from it, so `build_all.sh` refuses to build a shippable package until it exists.
 
 ### Fixed
 

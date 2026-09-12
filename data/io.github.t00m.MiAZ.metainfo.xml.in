@@ -67,6 +67,11 @@
     </screenshot>
   </screenshots>
   <releases>
+    <release version="0.3.1" date="2026-09-12" urgency="medium">
+      <description>
+        <p>See CHANGELOG.md for details.</p>
+      </description>
+    </release>
     <release version="0.3.0" date="2026-09-12" urgency="medium">
       <description>
         <p>A command line that does what the window does, four new ways to read the same documents, notes and a repository doctor built in, and undo for the whole repository.</p>
