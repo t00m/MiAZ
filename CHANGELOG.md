@@ -10,6 +10,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **The Notes menu moved under `Documents` > `Annotation`.** Notes were a plugin until 0.3, and becoming core left them as a top level entry of the right-click menu while the OCR action, which saves what it extracts as a note, sat two levels down under `Documents` > `Annotation`. The two things that write notes were in different places. The plugin vocabulary already describes where they belong: `Annotation` is "write and read text alongside a document". `_append_notes_submenu` now appends the submenu there through `install_plugin_menu`, the same helper the plugins use, so `Create a new note`, `See all notes…`, `Backup notes` and `Restore notes` keep their shortcuts and their grouping, one level deeper and beside `Extract text (OCR)…`.
+
+  The call moved after `remove_widgets_with_prefix` in the rebuild path: that line clears the register of category and subcategory submenus, and appending before it left the entries in a submenu the plugin replay no longer knew about, which showed up as a second `Documents` entry. Two UI tests cover the placement, one for where Notes is and one for where it no longer is.
+
 - Development opens on 0.3.1, a patch release for fixes found after 0.3.0 shipped. `meson.build` carries the number and `sync_versions.sh` propagated it to `pyproject.toml`, the spec `Version`, and a new entry at the top of `debian/changelog`, the spec `%changelog` and the AppStream `<releases>` list. Those three entries hold the placeholder that points at this file; `releases/0.3.1.md` is written at release time and `render_release_notes.py` fills them from it, so `build_all.sh` refuses to build a shippable package until it exists.
 
 ### Fixed

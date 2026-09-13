@@ -539,7 +539,6 @@ class MiAZMainWindow(Gtk.Box):
         new_main_menu.append_section(None, new_plugins_section)
         self._append_massrename_submenu(new_main_menu)
         self._append_clipboard_item(new_main_menu)
-        self._append_notes_submenu(new_main_menu)
         btn_workspace_menu = self.app.get_widget('workspace-menu')
         if btn_workspace_menu is not None:
             popover = btn_workspace_menu.get_popover()
@@ -547,6 +546,13 @@ class MiAZMainWindow(Gtk.Box):
                 popover.set_menu_model(new_main_menu)
 
         self.app.remove_widgets_with_prefix('workspace-menu-plugins-')
+
+        # Notes sit in the plugins section now, so they are appended after the
+        # line above: it clears the register of category and subcategory
+        # submenus, and anything added before it ends up in a submenu the
+        # replay no longer knows about. Before the replay rather than after,
+        # so Notes reads above the OCR action in Annotation.
+        self._append_notes_submenu()
 
         # Put back what each loaded plugin contributed. This used to clear the
         # plugin's started flag and call startup() again, so every plugin ran
@@ -626,19 +632,27 @@ class MiAZMainWindow(Gtk.Box):
         menu.append_section(None, plugins_section)
         self._append_massrename_submenu(menu)
         self._append_clipboard_item(menu)
-        self._append_notes_submenu(menu)
+        self._append_notes_submenu()
         return menu
 
-    def _append_notes_submenu(self, menu):
-        """Add the core Notes submenu (built by the notes service).
+    def _append_notes_submenu(self):
+        """Add the core Notes submenu under Documents > Annotation.
 
-        Notes were a plugin until 0.3 and sat in the plugins section. Now they
-        are core, so they are appended alongside mass rename and the clipboard
-        item, and a menu rebuild puts them back.
+        Notes were a plugin until 0.3 and sat in the plugins section. They are
+        core now, and they go back into that section by way of the same helper
+        the plugins use, because the vocabulary already describes where they
+        belong: Annotation is "write and read text alongside a document". It
+        also puts them next to the OCR action, which saves what it extracts as
+        a note, so the two things that write notes are in one place.
+
+        The submenu is built rather than installed, because the workspace
+        selection menu is thrown away and rebuilt whenever plugins load or
+        unload; a menu rebuild calls this again.
         """
         notes = self.app.get_service('notes')
         if notes is not None:
-            menu.append_submenu(_('Notes'), notes.menu())
+            annotation = self.app.install_plugin_menu('Documents', 'Annotation')
+            annotation.append_submenu(_('Notes'), notes.menu())
 
     def _append_massrename_submenu(self, menu):
         """Add the core 'Mass renaming' submenu (built by the massrename
