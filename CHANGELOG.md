@@ -14,6 +14,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **Plugin submenus in the right-click menu were squeezed behind a scrollbar.** Selecting several documents, right-clicking and opening `Documents` gave a menu too short for its entries, with a scrollbar to reach the rest. A `Gtk.PopoverMenu` is sized when it pops up and does not grow afterwards, and its submenus slide into that same popover, so any submenu taller than the menu it came from is squeezed into the height already on screen. Measured in the running application against a repository with the same 18 plugins: the menu opened at 252 pixels for its 6 top level entries, and the `Documents` page asking for 300 pixels was shown in those 252.
+
+  The four context menus (document list, grid, filenames and conversation views) now carry `Gtk.PopoverMenuFlags.NESTED`, so every submenu is a popup of its own, positioned beside its parent entry and sized for what it holds. The same `Documents` submenu now asks for 316 pixels and gets 316. A UI test holds the flag for the three workspace views.
+
 - **The workspace showed an empty `Copy` column, most visibly behind MiAZDoctor's Show button.** The column marks a document whose bytes match another one, and it is created hidden so it does not sit empty for everyone who never looks for duplicates. Two things put it back on screen with nothing in it.
 
   Every workspace update calls `index.reload()`, which invalidates the duplicate map, and the column binds each cell from that map. Nothing hid the column when the map went stale, so any update left it standing over rows whose twin status was no longer known. `MiAZDoctor` reaches this on every finding: `Show` calls `show_documents()`, and only the duplicates finding asks for a scan afterwards.

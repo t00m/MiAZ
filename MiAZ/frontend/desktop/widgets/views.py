@@ -132,6 +132,13 @@ class MiAZColumnViewWorkspace(MiAZColumnView):
         self._context_popover = Gtk.PopoverMenu()
         self._context_popover.set_parent(self.cv)
         self._context_popover.set_has_arrow(False)
+        # Submenus open as popovers of their own, instead of sliding into
+        # this one. A Gtk.PopoverMenu is sized when it pops up and does not
+        # grow afterwards, so a submenu taller than the menu it came from was
+        # squeezed into the height already on screen and scrolled: measured,
+        # a 652 pixel submenu got the 220 pixels the parent menu had. Nested,
+        # each submenu is its own popup, sized for what it holds.
+        self._context_popover.set_flags(Gtk.PopoverMenuFlags.NESTED)
         gesture_click = Gtk.GestureClick.new()
         gesture_click.set_button(3)
         gesture_click.connect('pressed', self._on_right_click)
