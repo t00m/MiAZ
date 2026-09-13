@@ -412,7 +412,22 @@ class MiAZPluginCore(GObject.GObject):
         self.log = MiAZLog(log_name)
         self.engine = Peas.Engine.get_default()
         for loader in ('python', ):
-            self.engine.enable_loader(loader)
+            try:
+                self.engine.enable_loader(loader)
+            except Exception as error:
+                # A libpeas Python loader built against a newer pygobject ABI
+                # than what is installed (e.g. a system where python3-gobject
+                # lagged behind a libpeas update) fails right here with an
+                # ImportError from inside the loader's own embedded
+                # interpreter, before any plugin is ever touched. Same remedy
+                # as the missing-loader-RPM case _direct_import_plugin already
+                # handles: log it and fall back to direct import, rather than
+                # taking the whole app down over the plugin system.
+                self.log.warning(
+                    f"Could not enable the '{loader}' plugin loader ({error}); "
+                    "plugins will be loaded directly instead. This usually "
+                    "means python3-gobject and libpeas are out of sync — "
+                    "update both to matching versions.")
         self._extension_instances = {}
         self._load_failures = {}
         self._search_paths = []
