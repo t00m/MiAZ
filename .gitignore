@@ -42,3 +42,6 @@ tmp/
 # Personal Claude Code config (the project hooks in settings.json are tracked)
 .claude/settings.local.json
 .claude/worktrees/
+.claude/
+docs/
+responses/
