@@ -140,7 +140,7 @@ def plugin_version(info, app_version: str) -> str:
 
     A bundled plugin ships with MiAZ and declares no version of its own, so it
     takes the application's. Writing it into the plugin instead meant the same
-    number in forty-two files, kept in step by hand: nine of the twenty-one
+    number in forty-two files, kept in step by hand: nine of the twenty
     had drifted from themselves by the time anything checked.
 
     An out-of-tree plugin is released on its own schedule and says so. Its

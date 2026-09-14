@@ -173,6 +173,12 @@ class MiAZAutoScanPlugin(MiAZExtension):
         self._build_source_menu([])
 
     def _build_source_menu(self, sources):
+        # Detection is asynchronous, so this can answer after the user disabled
+        # the plugin. Every contribution helper refuses at that point; the items
+        # built here go through the factory wrapper, so without this the actions
+        # would be registered under an owner the plugin system has forgotten.
+        if not self.plugin.is_active():
+            return
         base = self.plugin.get_menu_item_name('scan')
 
         if not sources:

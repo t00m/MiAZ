@@ -577,7 +577,7 @@ def test_undo_all_removes_the_action_and_its_accelerator():
     assert registry.names('Alpha') == []
 
 
-def test_undo_all_leaves_other_plugins_alone():
+def test_undo_all_leaves_other_plugins_actions_alone():
     app = FakeActionApp()
     app.add_action_name('plugin-menuitem-Alpha-go', ['<Control>p'])
     app.add_action_name('plugin-menuitem-Beta-go', ['<Control>b'])
@@ -610,7 +610,7 @@ def test_one_failing_removal_does_not_strand_the_others():
     assert app.actions == {'plugin-menuitem-Alpha-first'}
 
 
-def test_undo_all_for_an_unknown_plugin_does_nothing():
+def test_undo_all_for_an_unknown_plugin_removes_no_actions():
     app = FakeActionApp()
     ps.PluginActionRegistry().undo_all('Nobody', app)
     assert app.actions == set()
@@ -723,10 +723,11 @@ HELLO_PLUGIN_ENTRIES = {
     'hello/hello.plugin': 'Module=hello\nName=Hello\n',
 }
 
-# MiAZContacts is a real bundled plugin: its directory, its module
-# (contactbook) and its .plugin file (miazcontacts.plugin) all have
-# different names. A stem match between the .py and the .plugin file is not
-# the rule discovery uses; only the Module= key inside the .plugin file is.
+# A plugin directory is named after the plugin, and its module after the
+# .plugin file's Module= key, but nothing guarantees a third-party archive
+# keeps the two in step. A stem match between the .py and the .plugin file
+# is not the rule discovery uses; only the Module= key inside the .plugin
+# file is.
 CONTACTS_PLUGIN_ENTRIES = {
     'MiAZContacts/contactbook.py': '# contacts\n',
     'MiAZContacts/miazcontacts.plugin': 'Module=contactbook\nName=Contacts\n',

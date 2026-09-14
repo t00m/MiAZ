@@ -224,7 +224,6 @@ loop must marshal the result back itself.
 | `MiAZActions` (actions.py) | `settings-loaded`, `rename-dialog-built` |
 | `MiAZAppSettings` / `MiAZRepoSettings` (settings.py) | `settings-loaded` |
 | `MiAZPluginSystem` (pluginsystem.py) | `plugins-updated` |
-| `MiAZPlugins` config view (configview.py) | `plugins-downloaded` |
 | `MiAZWorkflow` (workflow.py) | `repository-switch-started`, `repository-switch-finished` |
 | `MiAZWorkspace` (workspace.py) | `workspace-loaded`, `workspace-view-updated`, `workspace-view-selection-changed`, `workspace-view-filtered` |
 | `MiAZRenameDialog` (rename.py) | `fields-changed` |
@@ -402,7 +401,7 @@ Pass `widget_key` whenever the plugin looks the widget up later. The key is unre
 
 Reaching `sidebar-plugin-section`, `headerbar-left-box` and friends directly still works. These only save writing the teardown.
 
-**Menu entries are recorded, not rebuilt by rerunning startup.** `install_menu_entries(callbacks)` builds the declared entries and appends each one, remembering it against the plugin; `install_menu_entry(menuitem, category=None, subcategory=None, name=None)` is the single item underneath it. `install_menu_submenu(title, menu)` does the same for a plugin that hangs several actions under its entry (assign, unassign, manage). The workspace menu is thrown away and rebuilt whenever plugins change, and the rebuild replays those records.
+**Menu entries are recorded, not rebuilt by rerunning startup.** `install_menu_entries(callbacks)` builds the declared entries and appends each one, remembering it against the plugin; `install_menu_entry(menuitem, category=None, subcategory=None, name=None)` is the single item underneath it. `install_menu_submenu(title, menu)` does the same for a plugin whose actions belong one level deeper than its own entry. No bundled plugin uses it any more: MiAZProjectMgt and MiAZPeriodicity did, and both declare three MenuEntries each instead now. The workspace menu is thrown away and rebuilt whenever plugins change, and the rebuild replays those records.
 
 It did not always. The rebuild used to clear every loaded plugin's `started` flag and call its `startup()` again, so each plugin ran its whole setup once per load or unload of **any** plugin: another gesture on the column view, another background probe of the scanner, another handler. One of those extra gestures is what made a right click crash after the plugin was disabled. Two rules follow:
 
@@ -705,6 +704,7 @@ definition.
 - `get_menu_item_name(id=None)` → the action name of one entry, which is also its widget key
 - `install_menu_entry(menuitem, category=None, subcategory=None, name=None)`,  appends one item to the workspace menu under category/subcategory
 - `get_menu_item(callback)` → `Gio.MenuItem`, the older single-entry path, kept for out of tree plugins
+- `create_menuitem(name, label, callback, data=None, shortcuts=None)` → `Gio.MenuItem`, the same arguments as `factory.create_menuitem` plus the bookkeeping; a plugin building its own `Gio.MenuItem` must go through this, not `factory.create_menuitem`, because this is what records the action and its accelerator for teardown
 - `install_settings_group(builder)` → `bool`, offers a settings group to the Repository Settings dialog's Settings tab; `builder` is called with no arguments, returns an `Adw.PreferencesGroup`, and is held rather than called immediately, so a slow builder (AutoScan asking SANE what devices exist) is not paid for until the tab is shown
 - `install_metadata_view(name, title, icon_name, factory)` → `bool`, adds one repository vocabulary to the Metadata tab, for a plugin that owns a vocabulary rather than a preference (MiAZPeriodicity's periodicities, MiAZProjectMgt's projects); `factory` is called with no arguments and returns the widget. Unlike a settings builder, it is not held: the Metadata tab calls every registered factory while the dialog is being built, since the dialog is constructed fresh each time it opens and a vocabulary view is cheap to create
 - `show_settings(widget=None)`, the older path: a plugin's own settings dialog, opened directly. MiAZAIAssistant still defines it, for its own standalone dialog reached from outside the Repository Settings dialog. The Plugins tab no longer has a button for it; `MiAZRepoSettingsPage.build_legacy_rows` is the shim that keeps it working for out-of-tree plugins written against it, with a Configure row under "Other plugins" for any loaded plugin that has `show_settings` but no `install_settings_group` builder

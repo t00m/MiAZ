@@ -132,12 +132,12 @@ def _plugin_declared_module(text):
 def validate_plugin_archive(archive):
     """Why this archive is not a plugin, or None when it is.
 
-    A plugin's directory is named after the plugin, not after its module, so
+    A plugin's directory is named after the plugin, and its module is named
+    after the .plugin file's Module= key, but nothing guarantees a
+    third-party archive keeps directory, module and .plugin stem in step, so
     a name match between the .py and the .plugin file is not the rule
-    discovery uses: MiAZContacts, MiAZDoctor, MiAZInsights and MiAZRelated
-    are four bundled plugins whose directory, module and .plugin stem are all
-    different. Discovery instead trusts the .plugin file's Module= key, so
-    this reads that key out of the archive before anything is extracted:
+    discovery uses. Discovery instead trusts the .plugin file's Module= key,
+    so this reads that key out of the archive before anything is extracted:
     the archive is a plugin when its root directory holds a .plugin file
     whose Module= value names a <value>.py file in that same directory.
 
@@ -559,7 +559,6 @@ class MiAZPlugin(GObject.GObject):
         when there is not, which is a sentence about the plugin rather than
         a label saying what a click will do.
         """
-        factory = self.app.get_service('factory')
         name = self.get_menu_item_name()
         entries = self.get_menu_entries()
         if entries:
@@ -568,7 +567,7 @@ class MiAZPlugin(GObject.GObject):
             label = self.desc
             self.log.warning(f"Plugin {self.name} declares no MenuEntries, so "
                              "its description is used as the menu label")
-        menuitem = factory.create_menuitem(name, label, callback, None, [])
+        menuitem = self.create_menuitem(name, label, callback, None, [])
         return self.app.add_widget(name, menuitem)
 
     def get_menu_entries(self) -> list:
@@ -1328,7 +1327,7 @@ class MiAZPluginSystem(MiAZPluginCore):
         What is on disk does not depend on which repository is open, so this
         runs once at startup and again only when a plugin is added or removed.
         It used to be bolted onto the per-repository update below, which meant
-        a full rescan, 19 Python modules parsed with ast, on every repository
+        a full rescan, 20 Python modules parsed with ast, on every repository
         switch, and one wasted scan at startup whose result was thrown away.
         """
         self.log.info("Creating plugin index during runtime")
