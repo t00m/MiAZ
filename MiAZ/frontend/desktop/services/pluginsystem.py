@@ -243,6 +243,46 @@ class PluginWidgetRegistry:
                 self.log.warning(f"Could not undo a contribution of '{owner}': {error}")
 
 
+class PluginActionRegistry:
+    """The application actions and accelerators each plugin registered.
+
+    Everything else a plugin contributes is recorded and given back on unload.
+    Actions were not, because they are created one level down, inside
+    factory.create_menuitem. The result was that <Control>p still fired
+    MiAZProjectMgt's handler after the plugin was disabled, against a service
+    its own do_deactivate had already removed, and the action kept the dead
+    instance reachable.
+    """
+
+    def __init__(self):
+        self._actions = {}
+        self.log = MiAZLog('MiAZ.PluginActions')
+
+    def add(self, owner: str, action_name: str):
+        """Record one action. The same one twice is still one."""
+        names = self._actions.setdefault(owner, [])
+        if action_name not in names:
+            names.append(action_name)
+
+    def names(self, owner: str) -> list:
+        return list(self._actions.get(owner, []))
+
+    def undo_all(self, owner: str, app):
+        """Drop this plugin's actions and clear their accelerators.
+
+        The accelerator goes first: an accelerator pointing at an action that
+        no longer exists is what makes a key press do nothing at all instead of
+        falling through to whatever else wanted it.
+        """
+        for action_name in self._actions.pop(owner, []):
+            try:
+                app.set_accels_for_action(f'app.{action_name}', [])
+                app.remove_action(action_name)
+            except Exception as error:
+                self.log.warning(f"Could not remove action '{action_name}' "
+                                 f"of '{owner}': {error}")
+
+
 class MiAZPlugin(GObject.GObject):
     _started = False
 
@@ -371,6 +411,26 @@ class MiAZPlugin(GObject.GObject):
             return f'plugin-menuitem-{self.name}'
         return f'plugin-menuitem-{self.name}-{entry_id}'
 
+    def _action_registry(self):
+        system = self.app.get_service('plugin-system')
+        return None if system is None else system.actions
+
+    def create_menuitem(self, name, label, callback, data=None, shortcuts=None):
+        """A menu item whose action and accelerator go away with the plugin.
+
+        The same arguments as factory.create_menuitem, plus the bookkeeping.
+        Use this for anything a plugin builds: reaching the factory directly
+        leaves the action registered on the application after the plugin is
+        gone, and the shortcut still fires its handler.
+        """
+        factory = self.app.get_service('factory')
+        menuitem = factory.create_menuitem(name, label, callback, data, shortcuts)
+        if callback is not None:
+            registry = self._action_registry()
+            if registry is not None:
+                registry.add(self.get_name(), name)
+        return menuitem
+
     def install_menu_entries(self, callbacks: dict) -> dict:
         """Build the entries the definition declares, and install them.
 
@@ -385,7 +445,6 @@ class MiAZPlugin(GObject.GObject):
         """
         if not self.is_active():
             return {}
-        factory = self.app.get_service('factory')
         entries = self.get_menu_entries()
         declared = [entry_id for entry_id, _label, _shortcuts in entries]
         for entry_id in callbacks:
@@ -400,8 +459,7 @@ class MiAZPlugin(GObject.GObject):
                                  f"'{entry_id}' does nothing, so it is left out")
                 continue
             name = self.get_menu_item_name(entry_id)
-            menuitem = factory.create_menuitem(name, label, callback, None,
-                                               shortcuts)
+            menuitem = self.create_menuitem(name, label, callback, None, shortcuts)
             self.install_menu_entry(menuitem, name=name)
             items[entry_id] = menuitem
         # The Add menu mirrors one item per Import plugin, and reads it under
@@ -860,6 +918,7 @@ class MiAZPluginSystem(MiAZPluginCore):
         self.widgets = PluginWidgetRegistry()
         self.menus = PluginMenuRegistry()
         self.settings = PluginSettingsRegistry()
+        self.actions = PluginActionRegistry()
         self._setup_plugins_dir()
         self._plugin_list = []
         self.scan_plugin_index()
@@ -998,6 +1057,7 @@ class MiAZPluginSystem(MiAZPluginCore):
             self.menus.forget(plugin.get_name())
             self.settings.forget(plugin.get_name())
             self.widgets.undo_all(plugin.get_name())
+            self.actions.undo_all(plugin.get_name(), self.app)
             self.log.info(f"Plugin {pname} v{pvers} unloaded")
             self.emit('plugins-updated')
         except Exception as error:

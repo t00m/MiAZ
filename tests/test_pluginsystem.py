@@ -515,3 +515,102 @@ def test_a_dict_is_read_the_same_way():
     file, so the import toast asks the same question of a different shape."""
     assert ps.plugin_version({'Name': 'X'}, '0.3.0') == '0.3.0'
     assert ps.plugin_version({'Version': '2.1.0'}, '0.3.0') == '2.1.0'
+
+
+# PluginActionRegistry
+#
+# factory.create_menuitem registers a Gio.SimpleAction on the application and,
+# when the entry declares shortcuts, an accelerator for it. Nothing took either
+# back, so <Control>p still fired MiAZProjectMgt's handler after the user
+# disabled it.
+
+class FakeActionApp:
+    """Enough of Gtk.Application to see what was removed."""
+
+    def __init__(self):
+        self.actions = set()
+        self.accels = {}
+
+    def add_action_name(self, name, shortcuts=None):
+        self.actions.add(name)
+        if shortcuts:
+            self.accels[f'app.{name}'] = list(shortcuts)
+
+    def remove_action(self, name):
+        self.actions.discard(name)
+
+    def set_accels_for_action(self, detailed, shortcuts):
+        if shortcuts:
+            self.accels[detailed] = list(shortcuts)
+        else:
+            self.accels.pop(detailed, None)
+
+
+def test_a_new_action_registry_knows_about_nothing():
+    registry = ps.PluginActionRegistry()
+    assert registry.names('Nobody') == []
+
+
+def test_an_action_is_recorded_against_its_plugin():
+    registry = ps.PluginActionRegistry()
+    registry.add('Alpha', 'plugin-menuitem-Alpha-go')
+    assert registry.names('Alpha') == ['plugin-menuitem-Alpha-go']
+
+
+def test_the_same_action_twice_is_recorded_once():
+    registry = ps.PluginActionRegistry()
+    registry.add('Alpha', 'plugin-menuitem-Alpha-go')
+    registry.add('Alpha', 'plugin-menuitem-Alpha-go')
+    assert registry.names('Alpha') == ['plugin-menuitem-Alpha-go']
+
+
+def test_undo_all_removes_the_action_and_its_accelerator():
+    app = FakeActionApp()
+    app.add_action_name('plugin-menuitem-Alpha-go', ['<Control>p'])
+    registry = ps.PluginActionRegistry()
+    registry.add('Alpha', 'plugin-menuitem-Alpha-go')
+
+    registry.undo_all('Alpha', app)
+
+    assert app.actions == set()
+    assert app.accels == {}
+    assert registry.names('Alpha') == []
+
+
+def test_undo_all_leaves_other_plugins_alone():
+    app = FakeActionApp()
+    app.add_action_name('plugin-menuitem-Alpha-go', ['<Control>p'])
+    app.add_action_name('plugin-menuitem-Beta-go', ['<Control>b'])
+    registry = ps.PluginActionRegistry()
+    registry.add('Alpha', 'plugin-menuitem-Alpha-go')
+    registry.add('Beta', 'plugin-menuitem-Beta-go')
+
+    registry.undo_all('Alpha', app)
+
+    assert app.actions == {'plugin-menuitem-Beta-go'}
+    assert app.accels == {'app.plugin-menuitem-Beta-go': ['<Control>b']}
+
+
+def test_one_failing_removal_does_not_strand_the_others():
+    class Stubborn(FakeActionApp):
+        def remove_action(self, name):
+            if name == 'plugin-menuitem-Alpha-first':
+                raise RuntimeError('no')
+            super().remove_action(name)
+
+    app = Stubborn()
+    app.add_action_name('plugin-menuitem-Alpha-first')
+    app.add_action_name('plugin-menuitem-Alpha-second')
+    registry = ps.PluginActionRegistry()
+    registry.add('Alpha', 'plugin-menuitem-Alpha-first')
+    registry.add('Alpha', 'plugin-menuitem-Alpha-second')
+
+    registry.undo_all('Alpha', app)
+
+    assert app.actions == {'plugin-menuitem-Alpha-first'}
+
+
+def test_undo_all_for_an_unknown_plugin_does_nothing():
+    app = FakeActionApp()
+    ps.PluginActionRegistry().undo_all('Nobody', app)
+    assert app.actions == set()

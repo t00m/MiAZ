@@ -168,3 +168,41 @@ def test_a_plugin_survives_two_cycles(miaz, plugin_name):
             else:
                 system.unload_plugin(info)
             miaz.pump(0.4)
+
+
+# The action and the accelerator are the two things unload_plugin used to
+# leave behind. MiAZProjectMgt is the plugin that shows it: it declares three
+# shortcuts, and <Control>p went on firing a handler whose service was gone.
+PROJECT_ACTIONS = ('plugin-menuitem-MiAZProjectMgt-assign',
+                   'plugin-menuitem-MiAZProjectMgt-unassign',
+                   'plugin-menuitem-MiAZProjectMgt-manage')
+
+
+def test_a_plugin_takes_its_actions_and_shortcuts_with_it(miaz):
+    system = miaz.service('plugin-system')
+    info = find(system, 'MiAZProjectMgt')
+    assert info is not None
+
+    if not system.is_plugin_loaded(info):
+        assert system.load_plugin(info)
+        miaz.pump(0.4)
+
+    app = miaz.app
+    for name in PROJECT_ACTIONS:
+        assert app.lookup_action(name) is not None, f'{name} was never registered'
+    assert app.get_accels_for_action('app.plugin-menuitem-MiAZProjectMgt-assign') \
+        == ['<Control>p']
+
+    system.unload_plugin(info)
+    miaz.pump(0.4)
+    try:
+        for name in PROJECT_ACTIONS:
+            assert app.lookup_action(name) is None, f'{name} outlived the plugin'
+            assert app.get_accels_for_action(f'app.{name}') == [], \
+                f'{name} kept its shortcut'
+    finally:
+        assert system.load_plugin(info)
+        miaz.pump(0.4)
+
+    for name in PROJECT_ACTIONS:
+        assert app.lookup_action(name) is not None, f'{name} did not come back'

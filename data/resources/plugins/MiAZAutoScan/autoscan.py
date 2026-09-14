@@ -186,7 +186,7 @@ class MiAZAutoScanPlugin(MiAZExtension):
         sources_menu = Gio.Menu()
         for source in sources:
             slug = source.lower().replace(' ', '-')
-            menuitem = self.factory.create_menuitem(
+            menuitem = self.plugin.create_menuitem(
                 name=f"{base}-{slug}",
                 label=source,
                 callback=self._on_scan_source,
