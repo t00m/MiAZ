@@ -173,8 +173,12 @@ def test_no_plugin_entry_nests_a_submenu_of_its_own_name(plugin_menus):
                 f'{label} nests a submenu named {inner}'
 
 
-def test_one_note_is_filed_against_every_selected_document(miaz):
-    """The Ctrl+N entry used to do nothing unless exactly one row was picked."""
+def test_one_note_is_filed_against_every_selected_document(miaz, clean_view):
+    """The Ctrl+N entry used to do nothing unless exactly one row was picked.
+
+    clean_view because the count matters here: the workspace opens on a date
+    filter that leaves one of Alpha's three documents on screen.
+    """
     plugin_obj = miaz.service('notes')
     assert plugin_obj is not None, 'the notes service is core'
     if not plugin_obj.started():
