@@ -29,7 +29,7 @@ from MiAZ.backend.plugins import MiAZExtension
 plugin_info = {
         'Module':        'ocr',
         'Name':          'MiAZOCR',
-        'Loader':        'Python3',
+        'Loader':        'python',
         'Description':   _('Extract text from PDF documents with OCR and save it as a note'),
         'Authors':       'Tomás Vírseda <tomasvirseda@gmail.com>',
         'Copyright':     'Copyright © 2026 Tomás Vírseda',
@@ -314,8 +314,13 @@ class MiAZOCRPlugin(MiAZExtension):
 
     # Background processing
     def _process(self, items, lang, force, skipped):
-        """OCR every document. Returns (created, failed, skipped) for _finish."""
-        from gi.repository import GLib
+        """OCR every document. Returns (created, failed, skipped) for _finish.
+
+        No toast per document: a selection of forty produced forty of them,
+        each one covering the last. _finish shows the counts once, and the log
+        keeps the per-document detail, which is where anyone chasing one bad
+        document is looking anyway.
+        """
         created = 0
         failed = 0
         for item in items:
@@ -323,18 +328,13 @@ class MiAZOCRPlugin(MiAZExtension):
                 text = self._extract_text(item, lang, force)
                 if text and text.strip() and self._create_note(item.id, text, lang):
                     created += 1
-                    GLib.idle_add(self.srvdlg.show_toast,
-                                  _('OCR finished: {doc}').format(doc=item.id))
+                    self.log.info(f"OCR wrote a note for '{item.id}'")
                 else:
                     failed += 1
                     self.log.warning(f"No text stored for '{item.id}'")
-                    GLib.idle_add(self.srvdlg.show_toast,
-                                  _('OCR found no text: {doc}').format(doc=item.id))
             except Exception as error:
                 failed += 1
                 self.log.error(f"OCR failed for '{item.id}': {error}")
-                GLib.idle_add(self.srvdlg.show_toast,
-                              _('OCR failed: {doc}').format(doc=item.id))
         return created, failed, skipped
 
     def _extract_text(self, item, lang, force):

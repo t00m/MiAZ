@@ -45,7 +45,7 @@ from insights import render  # noqa: E402
 plugin_info = {
     'Module':       'MiAZInsights',
     'Name':         'MiAZInsights',
-    'Loader':       'Python3',
+    'Loader':       'python',
     'Description':  _('Insights into your documents'),
     'Authors':      'Tomás Vírseda <tomasvirseda@gmail.com>',
     'Copyright':    'Copyright © 2026 Tomás Vírseda',

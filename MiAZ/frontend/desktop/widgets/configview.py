@@ -5,11 +5,12 @@
 
 import os
 import glob
+import zipfile
 from gettext import gettext as _
 from gi.repository import Adw
 from gi.repository import GLib
-from gi.repository import GObject
 from gi.repository import Gtk
+from gi.repository import Pango
 
 from MiAZ.backend.log import MiAZLog
 from MiAZ.backend.util import humanize_value
@@ -24,7 +25,9 @@ from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewRepo
 from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewPlugin
 from MiAZ.frontend.desktop.services.dialogs import MiAZDialogAddRepo
 from MiAZ.frontend.desktop.services.pluginsystem import (
-    format_load_failure_banner, plugin_version as pluginsystem_version)
+    find_dependents, format_load_failure_banner, format_plugin_info_value,
+    plugin_archive_root, resolve_required_chain, validate_plugin_archive,
+    plugin_version as pluginsystem_version)
 
 
 class MiAZConfigView(MiAZSelector):
@@ -524,9 +527,6 @@ class MiAZPurposes(MiAZConfigView):
 class MiAZPlugins(MiAZConfigView):
     """Manage plugins from Repo Settings."""
     __gtype_name__ = 'MiAZPlugins'
-    __gsignals__ = {
-        'plugins-downloaded': (GObject.SignalFlags.RUN_LAST, None, ()),
-    }
     current = None
 
     def __init__(self, app):
@@ -736,12 +736,32 @@ class MiAZPlugins(MiAZConfigView):
             pluginsystem = self.app.get_service('plugin-system')
             filepath = dialog.open_finish(result)
             plugin_file = filepath.get_path()
-            zip_archive = util.unzip(plugin_file, ENV['LPATH']['PLUGINS'])
+
+            # Read the listing and check it before anything lands on disk.
+            with zipfile.ZipFile(plugin_file) as archive:
+                names = archive.namelist()
+                problem = validate_plugin_archive(archive)
+            if problem is not None:
+                raise ValueError(
+                    _('not a plugin archive: {problem}').format(problem=problem))
+
+            # Through util.unzip, not extractall: that is where the "stay
+            # inside the target directory" check lives.
+            util.unzip(plugin_file, ENV['LPATH']['PLUGINS'])
+
+            # create_plugin_index reads the filesystem directly and emits
+            # nothing, so it runs first. rescan_plugins emits
+            # plugins-updated to synchronous handlers, which must see the
+            # index and the available list already written, not the engine
+            # telling them about a plugin the index does not know about yet.
             pluginsystem.create_plugin_index()
+            pluginsystem.rescan_plugins()
+
             self.searchentry.set_text('')
             self.searchentry.activate()
-            plugin_dirname = zip_archive.namelist()[0]
-            plugin_path = glob.glob(os.path.join(ENV['LPATH']['PLUGINS'], plugin_dirname, '*.plugin'))[0]
+            plugin_dirname = plugin_archive_root(names)
+            plugin_path = glob.glob(os.path.join(ENV['LPATH']['PLUGINS'],
+                                                 plugin_dirname, '*.plugin'))[0]
             plugin_info = pluginsystem.get_plugin_attributes(plugin_path)
             plugin_name = plugin_info['Name']
             plugin_version = pluginsystem_version(plugin_info,
@@ -811,14 +831,6 @@ class MiAZPlugins(MiAZConfigView):
             body = _('{title} {desc}  not removed from de list of available {item_types}').format(title=i_title, desc=item_dsc, item_types=item_type.__title_plural__.lower())
             self.srvdlg.show_toast(body)
 
-    def update_user_plugins(self):
-        plugin_system = self.app.get_service('plugin-system')
-        plugin_system.rescan_plugins()
-        self.update_views()
-
-    def plugins_updated(self, *args):
-        self._update_view_available()
-
     def _setup_view_finish(self):
         # Setup Available and Used Column Views
         self.viewAv = MiAZColumnViewPlugin(self.app)
@@ -835,76 +847,6 @@ class MiAZPlugins(MiAZConfigView):
         except Exception:
             return {}
 
-    def _parse_dependencies(self, plugin_info):
-        """Return the list of plugin Names declared as dependencies.
-
-        Dependencies are stored as a comma-separated string in the
-        `Dependencies` key of the plugin_info dict. Missing or empty means
-        no dependencies.
-        """
-        if plugin_info is None:
-            return []
-        raw = plugin_info.get('Dependencies', '')
-        return [dep.strip() for dep in raw.split(',') if dep.strip()]
-
-    def _resolve_required_chain(self, plugin_id, all_plugins):
-        """Resolve the full dependency chain for `plugin_id`.
-
-        Post-order depth-first walk so a dependency always lands before the
-        plugin that needs it. Returns a tuple (to_enable, missing) where:
-        - to_enable: topologically ordered list of installed-but-disabled
-          dependency Names (dependencies first).
-        - missing: list of dependency Names not present in the index.
-        """
-        to_enable = []
-        missing = []
-        done = set()
-        visiting = set()
-
-        def visit(pid):
-            for dep in self._parse_dependencies(all_plugins.get(pid)):
-                if dep in done or dep in visiting:
-                    continue
-                if dep not in all_plugins:
-                    if dep not in missing:
-                        missing.append(dep)
-                    done.add(dep)
-                    continue
-                visiting.add(dep)
-                visit(dep)
-                visiting.discard(dep)
-                done.add(dep)
-                if not self.config.exists_used(dep) and dep not in to_enable:
-                    to_enable.append(dep)
-
-        visiting.add(plugin_id)
-        visit(plugin_id)
-        return to_enable, missing
-
-    def _find_dependents(self, plugin_id, all_plugins):
-        """Return enabled plugin Names whose dependency chain needs `plugin_id`."""
-        dependents = []
-        for enabled_id in self.config.load_used():
-            if enabled_id == plugin_id:
-                continue
-            if self._chain_contains(enabled_id, plugin_id, all_plugins):
-                dependents.append(enabled_id)
-        return dependents
-
-    def _chain_contains(self, plugin_id, target_id, all_plugins):
-        """Return True if `target_id` is anywhere in `plugin_id`'s dependency chain."""
-        visited = set()
-        pending = list(self._parse_dependencies(all_plugins.get(plugin_id)))
-        while pending:
-            dep = pending.pop(0)
-            if dep in visited:
-                continue
-            visited.add(dep)
-            if dep == target_id:
-                return True
-            pending.extend(self._parse_dependencies(all_plugins.get(dep)))
-        return False
-
     def _enable_single(self, plugin_id, all_plugins):
         """Load and record a single plugin as enabled. Returns True on success."""
         plugin_manager = self.app.get_service('plugin-system')
@@ -917,7 +859,16 @@ class MiAZPlugins(MiAZConfigView):
         plugin_module = plugin_info['Module']
         plugin = plugin_manager.get_plugin_info(plugin_module)
         if plugin is None:
+            # On disk and in the index, but the engine has not seen it. The
+            # import path rescans now, so this is a plugin dropped into the
+            # directory by hand while MiAZ was running.
             self.log.error(f"Plugin '{plugin_id}' could not be resolved by the engine")
+            self.srvdlg.show_error(
+                title=_('Cannot enable plugin'),
+                body=_('<b>{plugin}</b> is on disk but the plugin engine has '
+                       'not seen it. Restart MiAZ and try again.').format(
+                           plugin=plugin_id),
+                parent=self)
             return False
         if not plugin_manager.is_plugin_loaded(plugin):
             if not plugin_manager.load_plugin(plugin):
@@ -945,7 +896,8 @@ class MiAZPlugins(MiAZConfigView):
             return
 
         # Warn and block: refuse to disable a plugin other enabled plugins need
-        dependents = self._find_dependents(selected_plugin.id, all_plugins)
+        dependents = find_dependents(selected_plugin.id, all_plugins,
+                                     self.config.load_used())
         if dependents:
             title = _('Cannot disable plugin')
             body = _("Plugin <b>{plugin}</b> is required by the following enabled "
@@ -978,7 +930,8 @@ class MiAZPlugins(MiAZConfigView):
             self.log.error(f"Plugin '{selected_plugin.id}' not found in plugin index")
             return
 
-        to_enable, missing = self._resolve_required_chain(selected_plugin.id, all_plugins)
+        to_enable, missing = resolve_required_chain(
+            selected_plugin.id, all_plugins, self.config.exists_used)
 
         if missing:
             title = _('Missing plugin dependencies')
@@ -1038,10 +991,16 @@ class MiAZPlugins(MiAZConfigView):
         group.set_title(_('Data Sheet'))
         page.add(group)
 
-        # Add plugin info as key/value rows
+        # Add plugin info as key/value rows. Every value goes through the
+        # formatter: MenuEntries and Operations are lists, and a label takes
+        # a string. Ellipsised rather than wrapped, because a long Operations
+        # line would otherwise decide how wide the dialog is.
         for key in plugin_info:
             row = Adw.ActionRow(title=f'<b>{_(key)}</b>')
-            label = Gtk.Label.new(plugin_info[key])
+            label = Gtk.Label.new(format_plugin_info_value(plugin_info[key]))
+            label.set_ellipsize(Pango.EllipsizeMode.MIDDLE)
+            label.set_max_width_chars(48)
+            label.set_tooltip_text(format_plugin_info_value(plugin_info[key]))
             row.add_suffix(label)
             group.add(row)
         dialog.set_presentation_mode(Adw.DialogPresentationMode.BOTTOM_SHEET)

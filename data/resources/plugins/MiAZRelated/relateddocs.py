@@ -19,7 +19,7 @@ from MiAZ.frontend.desktop.services.pluginsystem import MiAZExtension, MiAZPlugi
 plugin_info = {
     'Module':        'relateddocs',
     'Name':          'MiAZRelated',
-    'Loader':        'Python3',
+    'Loader':        'python',
     'Description':   _('Show the documents belonging to the same case'),
     'Authors':       'Tomás Vírseda <tomasvirseda@gmail.com>',
     'Copyright':     'Copyright © 2026 Tomás Vírseda',

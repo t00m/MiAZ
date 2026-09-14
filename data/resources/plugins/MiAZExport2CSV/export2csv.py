@@ -17,7 +17,7 @@ from MiAZ.frontend.desktop.services.pluginsystem import MiAZExtension, MiAZPlugi
 plugin_info = {
         'Module':        'export2csv',
         'Name':          'MiAZExport2CSV',
-        'Loader':        'Python3',
+        'Loader':        'python',
         'Description':   _('Export to CSV'),
         'Authors':       'Tomás Vírseda <tomasvirseda@gmail.com>',
         'Copyright':     'Copyright © 2025 Tomás Vírseda',

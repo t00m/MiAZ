@@ -15,6 +15,10 @@ Project, then Assign.
 The section now has two levels: one submenu per category, and inside each of
 those one per subcategory. A plugin's actions sit at Category > Subcategory >
 action, and nothing else may sit in between.
+
+Notes are the one thing in the section that is not a plugin. They were one
+until 0.3, and they keep a submenu of their own inside Documents > Annotation,
+next to the OCR action that saves what it extracts as a note.
 """
 
 import gi
@@ -104,9 +108,7 @@ def entry(plugin_menus, label, plugin_name):
 
 
 def test_notes_holds_all_four_of_its_actions(miaz):
-    """Notes became core in 0.3, so its four actions are no longer in the
-    plugins section: the notes service builds the submenu and the main window
-    appends it beside mass rename and the clipboard item."""
+    """The notes service builds the submenu, and the main window appends it."""
     notes = miaz.service('notes')
     assert notes is not None, 'the notes service is core and should always exist'
 
@@ -117,6 +119,26 @@ def test_notes_holds_all_four_of_its_actions(miaz):
     assert 'See all notes…' in found
     assert 'Backup notes' in found
     assert 'Restore notes' in found
+
+
+def test_notes_sit_under_documents_annotation(category_menus):
+    """Annotation is "write and read text alongside a document", which is
+    what a note is, and it is where the OCR action already writes one. Notes
+    stopped being a plugin in 0.3 but kept the place the vocabulary gives
+    them, instead of a top level entry of their own."""
+    documents = category_menus.get('Documents')
+    assert documents is not None, 'the plugins section has no Documents category'
+    annotation = submenus(documents).get('Annotation')
+    assert annotation is not None, 'Documents has no Annotation subcategory'
+    assert 'Notes' in submenus(annotation), labels(annotation)
+
+
+def test_notes_are_not_a_top_level_entry(miaz):
+    """One place for them, not two: the rebuild on a plugin load or unload
+    used to append the submenu again, and appending it in two places is the
+    same mistake with a different shape."""
+    menu = miaz.widget('workspace-menu-selection')
+    assert 'Notes' not in submenus(menu)
 
 
 def test_backup_and_restore_are_not_entries_of_their_own(plugin_menus):
@@ -151,8 +173,12 @@ def test_no_plugin_entry_nests_a_submenu_of_its_own_name(plugin_menus):
                 f'{label} nests a submenu named {inner}'
 
 
-def test_one_note_is_filed_against_every_selected_document(miaz):
-    """The Ctrl+N entry used to do nothing unless exactly one row was picked."""
+def test_one_note_is_filed_against_every_selected_document(miaz, clean_view):
+    """The Ctrl+N entry used to do nothing unless exactly one row was picked.
+
+    clean_view because the count matters here: the workspace opens on a date
+    filter that leaves one of Alpha's three documents on screen.
+    """
     plugin_obj = miaz.service('notes')
     assert plugin_obj is not None, 'the notes service is core'
     if not plugin_obj.started():

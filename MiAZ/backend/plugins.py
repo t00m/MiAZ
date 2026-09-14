@@ -140,7 +140,7 @@ def plugin_version(info, app_version: str) -> str:
 
     A bundled plugin ships with MiAZ and declares no version of its own, so it
     takes the application's. Writing it into the plugin instead meant the same
-    number in forty-two files, kept in step by hand: nine of the twenty-one
+    number in forty-two files, kept in step by hand: nine of the twenty
     had drifted from themselves by the time anything checked.
 
     An out-of-tree plugin is released on its own schedule and says so. Its
@@ -173,6 +173,42 @@ def normalise_menu_entries(entries) -> list:
     return normalised
 
 
+def plugin_definition_text(plugin_info: dict) -> str:
+    """The .plugin file contents for one declaration.
+
+    Keys keep the order the module writes them in, so the generated file reads
+    like the dictionary it came from. MenuEntries and Operations have no INI
+    shape of their own, so each entry becomes one key named after its id:
+    MenuEntry-<id> and Command-<name>. A menu entry's shortcuts follow its
+    label after a '|', comma separated, which is how
+    tests/test_plugin_menu_entries.py reads them back.
+    """
+    lines = ['[Plugin]']
+    for key, value in plugin_info.items():
+        if key == 'MenuEntries':
+            for entry_id, label, shortcuts in normalise_menu_entries(value):
+                keys = '|' + ','.join(shortcuts) if shortcuts else ''
+                lines.append(f'MenuEntry-{entry_id}={label}{keys}')
+        elif key == 'Operations':
+            for operation in value or []:
+                name = operation.get('name')
+                if not name:
+                    continue
+                lines.append(f"{COMMAND_PREFIX}{name}={operation.get('help', '')}")
+        else:
+            lines.append(f'{key}={value}')
+    return '\n'.join(lines) + '\n'
+
+
+# The keys whose value is shown as a sentence and therefore translated. Every
+# other key is an identifier, a name, a URL or a category compared against the
+# vocabulary, and _(value) on those is at best wasted work. MenuEntry-<id> is
+# left out on purpose: its value carries the shortcut after a '|', so the whole
+# string is not a msgid, and the label is translated where it is used, from
+# plugin_info.
+PLUGIN_TRANSLATED_KEYS = ('Description', )
+
+
 def get_plugin_attributes(plugin_file: str) -> dict:
     """Read a .plugin file into a dict. No engine, no import, no toolkit."""
     from gettext import gettext as _
@@ -189,7 +225,10 @@ def get_plugin_attributes(plugin_file: str) -> dict:
             # Split each line at the first '=' character
             if '=' in line:
                 key, value = line.split('=', 1)
-                attributes[key.strip()] = _(value.strip())
+                key, value = key.strip(), value.strip()
+                translated = (key in PLUGIN_TRANSLATED_KEYS
+                              or key.startswith(COMMAND_PREFIX))
+                attributes[key] = _(value) if translated else value
     return attributes
 
 
@@ -316,7 +355,7 @@ def discover_commands(search_paths) -> dict:
     Reads only the .plugin files. That is the whole reason the command names
     live there rather than in plugin_info: `miaz search` pays for this on every
     run and gets nothing back from it, and the two costs are not close.
-    Reading 21 .plugin files takes about 1.3 ms; AST-parsing the 21 modules for
+    Reading 20 .plugin files takes about 1.3 ms; AST-parsing the 20 modules for
     their plugin_info takes about 89 ms.
 
     The parameter schema stays in plugin_info, where it can be structured, and
@@ -354,10 +393,13 @@ def discover_commands(search_paths) -> dict:
 def _read_command_keys(plugin_file: str) -> dict:
     """The three things discovery needs out of a .plugin file, and no more.
 
-    get_plugin_attributes translates every value it reads, which is right for
-    the settings dialog and wasteful here: it turns 21 files into some 200
-    gettext lookups to keep two of them, and `miaz search` pays that on every
-    run. Only the command help is translated, because only it is displayed.
+    get_plugin_attributes now translates only Description and the Command-
+    keys too, so the gap between the two functions is narrower than it used
+    to be. What is still different is size: get_plugin_attributes builds the
+    whole attribute dict for every key in the file, while this function keeps
+    only Module, Name and the Command- keys and throws the rest away. That is
+    a smaller dict and no Description lookups, over every .plugin file on
+    disk, on a path `miaz search` runs every time and gets nothing else from.
     """
     from gettext import gettext as _
     found = {'commands': {}}
@@ -412,7 +454,22 @@ class MiAZPluginCore(GObject.GObject):
         self.log = MiAZLog(log_name)
         self.engine = Peas.Engine.get_default()
         for loader in ('python', ):
-            self.engine.enable_loader(loader)
+            try:
+                self.engine.enable_loader(loader)
+            except Exception as error:
+                # A libpeas Python loader built against a newer pygobject ABI
+                # than what is installed (e.g. a system where python3-gobject
+                # lagged behind a libpeas update) fails right here with an
+                # ImportError from inside the loader's own embedded
+                # interpreter, before any plugin is ever touched. Same remedy
+                # as the missing-loader-RPM case _direct_import_plugin already
+                # handles: log it and fall back to direct import, rather than
+                # taking the whole app down over the plugin system.
+                self.log.warning(
+                    f"Could not enable the '{loader}' plugin loader ({error}); "
+                    "plugins will be loaded directly instead. This usually "
+                    "means python3-gobject and libpeas are out of sync — "
+                    "update both to matching versions.")
         self._extension_instances = {}
         self._load_failures = {}
         self._search_paths = []
@@ -520,8 +577,8 @@ class MiAZPluginCore(GObject.GObject):
         module = self.import_module(module_name)
         if module is None:
             return False
-        self._load_failures[module_name] = {
-            'name': plugin.get_name(), 'reason': ''}
+        # import_module records the failure when there is one. A direct import
+        # that worked is not a failure, so there is nothing to clear.
         self._load_failures.pop(module_name, None)
         self.log.debug(f"Direct-imported plugin module '{module_name}'")
         return True

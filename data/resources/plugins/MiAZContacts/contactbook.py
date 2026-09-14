@@ -16,7 +16,7 @@ from MiAZ.frontend.desktop.services.pluginsystem import MiAZExtension, MiAZPlugi
 plugin_info = {
     'Module':        'contactbook',
     'Name':          'MiAZContacts',
-    'Loader':        'Python3',
+    'Loader':        'python',
     'Description':   _('Keep the details of senders and recipients'),
     'Authors':       'Tomás Vírseda <tomasvirseda@gmail.com>',
     'Copyright':     'Copyright © 2026 Tomás Vírseda',

@@ -25,7 +25,7 @@ from MiAZ.frontend.desktop.widgets.views import MiAZColumnViewDocuments
 plugin_info = {
         'Module':        'projmgt',
         'Name':          'MiAZProjectMgt',
-        'Loader':        'Python3',
+        'Loader':        'python',
         'Description':   _('Project management'),
         'Authors':       'Tomás Vírseda <tomasvirseda@gmail.com>',
         'Copyright':     'Copyright © 2025 Tomás Vírseda',

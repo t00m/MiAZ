@@ -18,10 +18,10 @@ from MiAZ.frontend.desktop.services.pluginsystem import MiAZExtension, MiAZPlugi
 plugin_info = {
     'Module':        'colvis',
     'Name':          'MiAZColumnVisibility',
-    'Loader':        'Python3',
+    'Loader':        'python',
     'Description':   _('Toggle workspace column visibility'),
-    'Authors':       'Tomas Virseda <tomasvirseda@gmail.com>',
-    'Copyright':     'Copyright © 2025 Tomas Virseda',
+    'Authors':       'Tomás Vírseda <tomasvirseda@gmail.com>',
+    'Copyright':     'Copyright © 2025 Tomás Vírseda',
     'Website':       'http://github.com/t00m/MiAZ',
     'Help':          'https://github.com/t00m/MiAZ/blob/main/README.md',
     'Category':      'Interface',

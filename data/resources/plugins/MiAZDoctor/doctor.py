@@ -23,7 +23,7 @@ from MiAZ.frontend.desktop.services.pluginsystem import MiAZExtension, MiAZPlugi
 plugin_info = {
     'Module':        'doctor',
     'Name':          'MiAZDoctor',
-    'Loader':        'Python3',
+    'Loader':        'python',
     'Description':   _('Run every repository health check in one pass and repair the vocabulary'),
     'Authors':       'Tomás Vírseda <tomasvirseda@gmail.com>',
     'Copyright':     'Copyright © 2026 Tomás Vírseda',

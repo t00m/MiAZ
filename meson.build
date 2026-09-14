@@ -1,5 +1,5 @@
 project('MiAZ',
-         version : '0.3.0',
+         version : '0.3.1',
     meson_version: '>= 1.5.1',
   default_options: [ 'warning_level=2',
                    ],
@@ -57,8 +57,13 @@ else
 endif
 
 
+# gtk_update_icon_cache is deliberately left out here: meson's version treats a
+# nonzero exit as fatal and aborts the whole install, but a stale/corrupt
+# ~/.local/share/icons/hicolor cache (common on a long-unused profile) makes
+# gtk4-update-icon-cache fail even though every other install step succeeded.
+# postinstall.py below refreshes the icon cache too, using subprocess.call, so
+# a bad cache there is just a warning instead of a failed install.
 gnome.post_install(
-  gtk_update_icon_cache: true,
   update_desktop_database: true,
   glib_compile_schemas: true,
 )

@@ -624,6 +624,17 @@ def test_grid_has_the_same_context_menu_as_the_document_list(clean_view):
     clean_view.pump(0.2)
 
 
+def test_context_menu_submenus_open_as_popovers_of_their_own(clean_view):
+    """A Gtk.PopoverMenu is sized when it pops up and does not grow
+    afterwards. Sliding a submenu into it therefore squeezed anything taller
+    than the menu it came from into the height already on screen, which is
+    how the plugin categories ended up behind a scrollbar. Nested, each
+    submenu is a popup of its own, sized for what it holds."""
+    for key in ('workspace-view', 'workspace-grid', 'workspace-filenames'):
+        popover = clean_view.widget(key)._context_popover
+        assert popover.get_flags() & Gtk.PopoverMenuFlags.NESTED, key
+
+
 def test_timeline_fields_say_descriptions_and_keep_the_key_in_the_tooltip(clean_view):
     """A card is for reading, so it says Spain, not ES, one field per row
     with its name in front. The key is one hover away, and the Filenames

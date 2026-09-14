@@ -1,70 +1,88 @@
 #!/usr/bin/python3
 
-import os
+"""Write each plugin's .plugin file from the plugin_info in its module.
+
+A plugin declares itself twice: in plugin_info, which the running plugin reads,
+and in the .plugin file, which libpeas and the command line read before any
+module is imported. This generates the second from the first, so the two
+cannot drift.
+
+Usage:
+
+    PYTHONPATH=. python scripts/devel/create_plugin_definitions.py data/resources/plugins
+    PYTHONPATH=. python scripts/devel/create_plugin_definitions.py --check data/resources/plugins
+
+--check writes nothing and exits 1 when a file on disk differs from what would
+be written. tests/test_plugin_definitions.py makes the same comparison, so the
+check is there for a pre-commit hook or a quick look by hand.
+"""
+
+import argparse
 import ast
-import sys
 import glob
+import os
+import sys
 
-class SafeDictExtractor(ast.NodeVisitor):
-    def __init__(self, variable_name):
-        self.variable_name = variable_name
-        self.result = None
+import gi
+gi.require_version('Peas', '2')
 
-    def visit_Assign(self, node):
-        for target in node.targets:
-            if isinstance(target, ast.Name) and target.id == self.variable_name:
-                self.result = self._safe_eval(node.value)
+from MiAZ.backend.plugins import plugin_definition_text
+from MiAZ.backend.util import SafeDictExtractor
 
-    def _safe_eval(self, node):
-        if isinstance(node, ast.Dict):
-            return {
-                self._safe_eval(k): self._safe_eval(v)
-                for k, v in zip(node.keys, node.values)
-            }
-        elif isinstance(node, ast.List):
-            return [self._safe_eval(elt) for elt in node.elts]
-        elif isinstance(node, ast.Constant):  # str, int, float, etc.
-            return node.value
-        elif isinstance(node, ast.Call):
-            # Handle gettext-style calls like _('Some text')
-            if isinstance(node.func, ast.Name) and node.func.id == "_":
-                if node.args and isinstance(node.args[0], ast.Constant):
-                    return node.args[0].value
-        raise ValueError(f"Unsupported expression: {ast.dump(node)}")
 
-def extract_variable_from_python_module(filepath, variable_name):
-    with open(filepath, "r") as f:
-        tree = ast.parse(f.read(), filename=filepath)
-    extractor = SafeDictExtractor(variable_name)
+def read_plugin_info(module_path):
+    """The plugin_info dict of one module, or None when it has none."""
+    with open(module_path, encoding='utf-8') as handler:
+        tree = ast.parse(handler.read(), filename=module_path)
+    extractor = SafeDictExtractor('plugin_info')
     extractor.visit(tree)
-    if extractor.result is None:
-        # ~ raise ValueError(f"Variable '{variable_name}' not found.")
-        return None
     return extractor.result
 
-if __name__ == '__main__':
-    if len(sys.argv) < 2:
-        exit("Error. You must provide the root directory where all your plugins reside")
 
-    try:
-        plugins_path = os.path.abspath(sys.argv[1])
-        if os.path.exists(plugins_path):
-            python_modules = glob.glob(os.path.join(plugins_path, '*', '*.py'))
-            for python_module in python_modules:
-                plugin_path = os.path.dirname(python_module)
-                plugin_file = os.path.basename(python_module)
-                plugin_info = extract_variable_from_python_module(python_module, 'plugin_info')
-                if plugin_info is not None:
-                    plugin_def = os.path.join(plugin_path, plugin_file.replace('.py', '.plugin'))
-                    with open(plugin_def, 'w') as fdef:
-                        definition = "[Plugin]\n"
-                        for key in plugin_info:
-                            definition += f'{key}={plugin_info[key]}\n'
-                        fdef.write(definition)
-                        print(f"Plugin definition for {os.path.basename(plugin_path)} > {plugin_file} created successfully ({plugin_def})")
-                else:
-                    print(f"Error: Module {os.path.basename(python_module)} doesn't contain the plugin info dictionary")
-        else:
-            print(f"Error: '{plugins_path}' do not exist")
-    except Exception as error:
-        raise
+def definition_path(module_path):
+    """The .plugin file that belongs beside this module."""
+    return module_path[:-len('.py')] + '.plugin'
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('plugins_dir',
+                        help='the directory holding one directory per plugin')
+    parser.add_argument('--check', action='store_true',
+                        help='compare instead of writing, exit 1 on any difference')
+    args = parser.parse_args()
+
+    root = os.path.abspath(args.plugins_dir)
+    if not os.path.isdir(root):
+        parser.error(f"'{args.plugins_dir}' is not a directory")
+
+    stale = 0
+    for module_path in sorted(glob.glob(os.path.join(root, '*', '*.py'))):
+        plugin_info = read_plugin_info(module_path)
+        if plugin_info is None:
+            continue
+        text = plugin_definition_text(plugin_info)
+        target = definition_path(module_path)
+        current = None
+        if os.path.exists(target):
+            with open(target, encoding='utf-8') as handler:
+                current = handler.read()
+        if current == text:
+            continue
+        stale += 1
+        if args.check:
+            print(f'stale: {target}')
+            continue
+        with open(target, 'w', encoding='utf-8') as handler:
+            handler.write(text)
+        print(f'written: {target}')
+
+    if args.check:
+        print(f'{stale} definition(s) do not match their module')
+        return 1 if stale else 0
+    print(f'{stale} definition(s) updated')
+    return 0
+
+
+if __name__ == '__main__':
+    sys.exit(main())

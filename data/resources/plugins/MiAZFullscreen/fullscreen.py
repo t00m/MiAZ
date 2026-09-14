@@ -18,7 +18,7 @@ from MiAZ.frontend.desktop.services.pluginsystem import MiAZExtension, MiAZPlugi
 plugin_info = {
         'Module':        'fullscreen',
         'Name':          'MiAZFullscreen',
-        'Loader':        'Python3',
+        'Loader':        'python',
         'Description':   _('Toggle fullscreen'),
         'Authors':       'Tomás Vírseda <tomasvirseda@gmail.com>',
         'Copyright':     'Copyright © 2025 Tomás Vírseda',

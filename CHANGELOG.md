@@ -8,10 +8,61 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.1] - 2026-09-14
+
+### Added
+
+- `Dependencies` is a documented and tested plugin declaration key: a comma separated list of plugin names, resolved when a plugin is enabled and checked when one is disabled.
+
+### Changed
+
+- **The Notes menu moved under `Documents` > `Annotation`.** Notes were a plugin until 0.3, and becoming core left them as a top level entry of the right-click menu while the OCR action, which saves what it extracts as a note, sat two levels down under `Documents` > `Annotation`. The two things that write notes were in different places. The plugin vocabulary already describes where they belong: `Annotation` is "write and read text alongside a document". `_append_notes_submenu` now appends the submenu there through `install_plugin_menu`, the same helper the plugins use, so `Create a new note`, `See all notes…`, `Backup notes` and `Restore notes` keep their shortcuts and their grouping, one level deeper and beside `Extract text (OCR)…`.
+
+  The call moved after `remove_widgets_with_prefix` in the rebuild path: that line clears the register of category and subcategory submenus, and appending before it left the entries in a submenu the plugin replay no longer knew about, which showed up as a second `Documents` entry. Two UI tests cover the placement, one for where Notes is and one for where it no longer is.
+
+- Development opens on 0.3.1, a patch release for fixes found after 0.3.0 shipped. `meson.build` carries the number and `sync_versions.sh` propagated it to `pyproject.toml`, the spec `Version`, and a new entry at the top of `debian/changelog`, the spec `%changelog` and the AppStream `<releases>` list. Those three entries hold the placeholder that points at this file; `releases/0.3.1.md` is written at release time and `render_release_notes.py` fills them from it, so `build_all.sh` refuses to build a shippable package until it exists.
+
+### Removed
+
+- The unused flat-layout plugin install paths (`import_plugin`, `remove_plugin`) and the dead rescan wrappers, including the `plugins-downloaded` signal that was never emitted.
+
 ### Fixed
 
+- **Plugin submenus in the right-click menu were squeezed behind a scrollbar.** Selecting several documents, right-clicking and opening `Documents` gave a menu too short for its entries, with a scrollbar to reach the rest. A `Gtk.PopoverMenu` is sized when it pops up and does not grow afterwards, and its submenus slide into that same popover, so any submenu taller than the menu it came from is squeezed into the height already on screen. Measured in the running application against a repository with the same 18 plugins: the menu opened at 252 pixels for its 6 top level entries, and the `Documents` page asking for 300 pixels was shown in those 252.
+
+  The four context menus (document list, grid, filenames and conversation views) now carry `Gtk.PopoverMenuFlags.NESTED`, so every submenu is a popup of its own, positioned beside its parent entry and sized for what it holds. The same `Documents` submenu now asks for 316 pixels and gets 316. A UI test holds the flag for the three workspace views.
+
+- **The workspace showed an empty `Copy` column, most visibly behind MiAZDoctor's Show button.** The column marks a document whose bytes match another one, and it is created hidden so it does not sit empty for everyone who never looks for duplicates. Two things put it back on screen with nothing in it.
+
+  Every workspace update calls `index.reload()`, which invalidates the duplicate map, and the column binds each cell from that map. Nothing hid the column when the map went stale, so any update left it standing over rows whose twin status was no longer known. `MiAZDoctor` reaches this on every finding: `Show` calls `show_documents()`, and only the duplicates finding asks for a scan afterwards.
+
+  Separately, `duplicates_of_any()` answers for the whole repository while the column can only mark the rows on screen, so a filtered list of documents that have no twins kept a column that a duplicate somewhere else had switched on. `_sort_by_duplicates` then forced it visible unconditionally, which overrode the one check that was already trying to get this right, two lines after it ran.
+
+  Visibility is now decided in one place, `_update_duplicate_column`, from the rule the column actually means: the map is fresh and a document on screen has a twin. It runs whenever the view changes and whenever a scan finishes. Three UI tests cover it: a new list hides the column until something is scanned again, a scanned list whose rows have twins shows it, and a scanned list whose rows have none keeps it hidden.
+
+- **Scanning a document left the "document scanned and imported" toast repeating forever.** The toast was shown with `GLib.idle_add(self.srvdlg.show_toast, msg)`, and GLib repeats an idle source until its callback returns something falsy. `show_toast` returns the `Adw.Toast` it created, so the source was never removed and a fresh toast was built on every iteration of the main loop. Measured: a callback returning an object ran 500 times in 500 iterations, one returning `None` ran once. The same mistake showed the three OCR toasts (`OCR finished`, `OCR found no text`, `OCR failed`) the same way.
+
+  `MiAZ.backend.tasks` now exposes `run_on_main(callback, *args, **kwargs)`, which runs a callback once on the main loop whatever it returns, and logs an exception instead of leaving the source armed. The four call sites use it. Use it instead of `GLib.idle_add` for anything whose return value is not yours to control; `tasks.py` already had this correct internally in `_call_once`, but only `run_in_background` could reach it.
+
+- **A batch import released the update gate twice.** `SuspendHandle.release` returns `True` the first time, so `GLib.idle_add(suspend.release)` in the batch import ran it again before the source went away. Harmless, because releasing twice does nothing the second time, but it was the same mistake as the scan toast and it was copied from the documentation: the `UpdateGate` and `suspend_updates` docstrings both gave `GLib.idle_add(handle.release)` as the way to release from a thread. All three now use `run_on_main`, and the docstrings say why.
+
+- **`tests/test_boundaries.py` gained a third rule, so neither mistake can come back.** It walks the backend, the frontend and the bundled plugins and fails when `idle_add` is handed a callback known to return a value, naming the file, the line and the reason that callback repeats. Writing it found that one of the three sites reported for the previous fix was inside a docstring rather than real code, which a text search could not tell apart.
+
 - **The package verifier failed every release that does not carry a build counter.** Its last check compares the version of the rpm with the version of the deb, and it put them in the same shape by appending `+build.<rpm release>` to the rpm one. That only matches a deb whose own version holds `+build.N`, which was true while `meson.build` said `0.2.0+build.8` and stopped being true in 0.3.0, where the version names the release and the counter is the Debian revision. So 0.3.0 verified as "same release version, different build: rpm 0.3.0+build.1, deb 0.3.0", with the packages themselves in perfect agreement. Both versions are now taken apart into a version and a build number and compared piece by piece, which reads either spelling. Checked against the 0.3.0 packages: 31 passed, 0 failed.
+- **`RELEASING.md` step 7 says how to publish, rather than that you should.** It said "upload `dist/` to the GitHub release for the tag" and left the reader to work out the rest. It now carries the two pushes that put the tag on GitHub and the `gh release create` line that makes the release from `releases/X.Y.Z.md` with the rpm, the deb, the AppImage and `INSTALL.txt` attached, which is what 0.3.0 was published with. It also says why the src.rpm stays out, and that the rpm is unsigned and the page should say so.
 - `RELEASING.md` said `build_all.sh` produces a Flatpak. It stopped: the sandbox cannot reach `ocrmypdf` or `scanimage`, so the step is skipped unless `MIAZ_ALLOW_FLATPAK=1` says otherwise. The document now says that, points at the per-format logs in `dist/logs/`, and says that the build runs the verifier with `--no-container`, so the container checks are only made by running step 6 on its own.
+- Plugins now take their application actions and keyboard shortcuts with them when they unload. `<Control>p` went on firing MiAZProjectMgt's handler after the plugin was disabled, against a service its own teardown had already removed.
+- Plugins now drop their widget registry keys when they unload, so the next activation cannot find a detached widget and decide it has nothing to do.
+- The plugin info dialog opens for every plugin. It passed list-valued declaration keys (`MenuEntries`, `Operations`) to a label and raised, so it never opened for the seventeen bundled plugins that declare menu entries.
+- A plugin imported from a ZIP can be enabled without restarting. The engine is told about it now, the archive is checked before anything is written, and the plugin directory is read from the whole listing instead of its first entry.
+- Enabling a plugin the engine cannot resolve says so instead of failing silently.
+- `.plugin` files are generated from the module declaration again, so the two halves of a plugin's declaration cannot drift. `scripts/devel/create_plugin_definitions.py` had not been able to write a single current file. Four `.plugin` files were also renamed to match their module: `miazcontacts.plugin` became `contactbook.plugin`, and likewise for MiAZDoctor, MiAZInsights and MiAZRelated.
+- Every plugin declares the loader the engine actually enables (`python`, not `Python3`).
+- `MiAZPlugin` initialises the GObject it inherits from.
+- Reading a `.plugin` file no longer runs author names and URLs through gettext.
+- The author name lost its accents in two plugin modules, MiAZAutoScan and MiAZColumnVisibility, and was corrected at source.
+- The OCR run reports its counts once instead of one toast per document.
+- The plugin cycle UI test walks menu trees without losing siblings to recycled object ids, which had been failing eleven of fifteen cases and could have hidden a real leak.
 
 ## [0.3.0] - 2026-09-12
 

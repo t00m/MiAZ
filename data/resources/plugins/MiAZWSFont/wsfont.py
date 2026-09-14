@@ -18,7 +18,7 @@ from MiAZ.frontend.desktop.services.pluginsystem import MiAZExtension, MiAZPlugi
 plugin_info = {
         'Module':        'wsfont',
         'Name':          'MiAZWSFont',
-        'Loader':        'Python3',
+        'Loader':        'python',
         'Description':   _('Modify Workspace font name and size'),
         'Authors':       'Tomás Vírseda <tomasvirseda@gmail.com>',
         'Copyright':     'Copyright © 2025 Tomás Vírseda',

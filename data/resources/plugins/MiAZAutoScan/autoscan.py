@@ -23,15 +23,16 @@ from gi.repository import GLib
 from gi.repository import Gtk
 
 from MiAZ.backend.tasks import run_in_background
+from MiAZ.backend.tasks import run_on_main
 from MiAZ.frontend.desktop.services.pluginsystem import MiAZExtension, MiAZPlugin
 
 plugin_info = {
     'Module':      'autoscan',
     'Name':        'MiAZAutoScan',
-    'Loader':      'Python3',
+    'Loader':      'python',
     'Description': _('Scan documents in background and import them directly into the repository'),
-    'Authors':     'Tomas Virseda <tomasvirseda@gmail.com>',
-    'Copyright':   'Copyright \u00a9 2026 Tomas Virseda',
+    'Authors':     'Tomás Vírseda <tomasvirseda@gmail.com>',
+    'Copyright':   'Copyright © 2026 Tomás Vírseda',
     'Website':     'http://github.com/t00m/MiAZ',
     'Help':        'https://github.com/t00m/MiAZ/blob/main/README.md',
     'Category':    'Documents',
@@ -172,6 +173,12 @@ class MiAZAutoScanPlugin(MiAZExtension):
         self._build_source_menu([])
 
     def _build_source_menu(self, sources):
+        # Detection is asynchronous, so this can answer after the user disabled
+        # the plugin. Every contribution helper refuses at that point; the items
+        # built here go through the factory wrapper, so without this the actions
+        # would be registered under an owner the plugin system has forgotten.
+        if not self.plugin.is_active():
+            return
         base = self.plugin.get_menu_item_name('scan')
 
         if not sources:
@@ -185,7 +192,7 @@ class MiAZAutoScanPlugin(MiAZExtension):
         sources_menu = Gio.Menu()
         for source in sources:
             slug = source.lower().replace(' ', '-')
-            menuitem = self.factory.create_menuitem(
+            menuitem = self.plugin.create_menuitem(
                 name=f"{base}-{slug}",
                 label=source,
                 callback=self._on_scan_source,
@@ -496,7 +503,7 @@ class MiAZAutoScanPlugin(MiAZExtension):
             else:
                 msg = _('{count} documents scanned and imported').format(
                     count=len(imported))
-            GLib.idle_add(self.srvdlg.show_toast, msg)
+            run_on_main(self.srvdlg.show_toast, msg)
             # Open the rename dialog so the user can review and accept each
             # imported document, whether it is already valid or pending review.
             GLib.idle_add(self._open_rename_dialogs, imported)

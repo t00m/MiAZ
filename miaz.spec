@@ -1,5 +1,5 @@
 Name:           miaz
-Version:        0.3.0
+Version:        0.3.1
 Release:        1%{?dist}
 Summary:        Personal Document Organizer
 
@@ -81,6 +81,17 @@ gtk-update-icon-cache %{_datadir}/icons/hicolor &> /dev/null || :
 %{_datadir}/metainfo/io.github.t00m.MiAZ.metainfo.xml
 
 %changelog
+* Mon Sep 14 2026 Tomás Vírseda <tomasvirseda@gmail.com> - 0.3.1-1
+- Switching a plugin off takes its keyboard shortcuts with it. Ctrl+P went on running MiAZProjectMgt's assign action after the plugin was disabled, against a service that was already gone
+- The plugin info button works again. It showed nothing at all for seventeen of the twenty bundled plugins
+- A plugin installed from a ZIP file can be enabled straight away instead of after a restart, the file is checked before anything is unpacked, and a plugin that cannot be enabled says why
+- Submenus in the right-click menu open at their own size, instead of being squeezed into the height of the menu they came from
+- The "document scanned and imported" toast no longer repeats forever, and neither do the three OCR ones
+- The workspace shows the Copy column only when a document on screen really does have a twin
+- Notes sit under Documents, then Annotation, beside the OCR action that saves what it extracts as a note
+- MiAZ starts even when libpeas and python3-gobject are built against different versions, and says which two to update
+- Installing no longer fails because of a stale icon cache
+
 * Mon Aug 31 2026 Tomás Vírseda <tomasvirseda@gmail.com> - 0.3.0-1
 - miaz is a real command line: add, delete, rename, search, read notes and run OCR, on a machine with no desktop toolkit installed; a plugin can add commands of its own
 - Four new ways to look at the same documents: a Grid of pages, a Timeline, Conversations between the two parties of a document, and the Filenames as they are on disk

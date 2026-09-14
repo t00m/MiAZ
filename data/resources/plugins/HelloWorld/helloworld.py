@@ -20,7 +20,7 @@ from example.test import PluginTest
 plugin_info = {
         'Module':        'helloworld',
         'Name':          'HelloWorld',
-        'Loader':        'Python3',
+        'Loader':        'python',
         'Description':   _('Hello World Example Plugin'),
         'Authors':       'Tomás Vírseda <tomasvirseda@gmail.com>',
         'Copyright':     'Copyright © 2025 Tomás Vírseda',

@@ -14,9 +14,10 @@ visibility crash reached a release.
 
 import gi
 gi.require_version('Gtk', '4.0')
-from gi.repository import Gio
 
 import pytest
+
+from tests.menutree import menu_actions
 
 
 def children(widget):
@@ -30,30 +31,6 @@ def children(widget):
     return count
 
 
-def menu_actions(menu, seen=None):
-    """Every action reachable from a Gio.Menu, submenus and sections included.
-
-    `seen` guards against walking the same submenu twice: the plugin submenus
-    are linked from more than one root, so without it the same entry is
-    reported several times and a real duplicate cannot be told apart.
-    """
-    if seen is None:
-        seen = set()
-    if menu is None or id(menu) in seen:
-        return []
-    seen.add(id(menu))
-    found = []
-    for position in range(menu.get_n_items()):
-        value = menu.get_item_attribute_value(position, 'action', None)
-        if value is not None:
-            found.append(value.get_string())
-        for link in (Gio.MENU_LINK_SUBMENU, Gio.MENU_LINK_SECTION):
-            child = menu.get_item_link(position, link)
-            if child is not None:
-                found.extend(menu_actions(child, seen))
-    return found
-
-
 def snapshot(driver):
     """Everything shared that a plugin can touch."""
     stack = driver.workspace.get_stack()
@@ -65,12 +42,12 @@ def snapshot(driver):
             pages.append(page.get_name())
         child = child.get_next_sibling()
 
-    seen = set()
+    seen, keep = set(), []
     actions = []
     for key in ('workspace-menu-selection', 'workspace-menu-single',
                 'workspace-plugins-section', 'window-menu-app',
                 'headerbar-add-menu'):
-        actions.extend(menu_actions(driver.widget(key), seen))
+        actions.extend(menu_actions(driver.widget(key), seen, keep))
 
     tabs = driver.service('document-tabs')
     return {
@@ -191,3 +168,71 @@ def test_a_plugin_survives_two_cycles(miaz, plugin_name):
             else:
                 system.unload_plugin(info)
             miaz.pump(0.4)
+
+
+# The action and the accelerator are the two things unload_plugin used to
+# leave behind. MiAZProjectMgt is the plugin that shows it: it declares three
+# shortcuts, and <Control>p went on firing a handler whose service was gone.
+PROJECT_ACTIONS = ('plugin-menuitem-MiAZProjectMgt-assign',
+                   'plugin-menuitem-MiAZProjectMgt-unassign',
+                   'plugin-menuitem-MiAZProjectMgt-manage')
+
+
+def test_a_plugin_takes_its_actions_and_shortcuts_with_it(miaz):
+    system = miaz.service('plugin-system')
+    info = find(system, 'MiAZProjectMgt')
+    assert info is not None
+
+    if not system.is_plugin_loaded(info):
+        assert system.load_plugin(info)
+        miaz.pump(0.4)
+
+    app = miaz.app
+    for name in PROJECT_ACTIONS:
+        assert app.lookup_action(name) is not None, f'{name} was never registered'
+    assert app.get_accels_for_action('app.plugin-menuitem-MiAZProjectMgt-assign') \
+        == ['<Control>p']
+
+    system.unload_plugin(info)
+    miaz.pump(0.4)
+    try:
+        for name in PROJECT_ACTIONS:
+            assert app.lookup_action(name) is None, f'{name} outlived the plugin'
+            assert app.get_accels_for_action(f'app.{name}') == [], \
+                f'{name} kept its shortcut'
+    finally:
+        assert system.load_plugin(info)
+        miaz.pump(0.4)
+
+    for name in PROJECT_ACTIONS:
+        assert app.lookup_action(name) is not None, f'{name} did not come back'
+
+
+def test_a_plugin_takes_its_widget_keys_with_it(miaz):
+    """A key left pointing at a detached widget is the trap register_widget
+    was written for: the next activation finds the old one and does nothing."""
+    system = miaz.service('plugin-system')
+    info = find(system, 'MiAZProjectMgt')
+    assert info is not None
+
+    if not system.is_plugin_loaded(info):
+        assert system.load_plugin(info)
+        miaz.pump(0.4)
+
+    keys = ('plugin-MiAZProjectMgt',
+            'plugin-menuitem-MiAZProjectMgt',
+            'plugin-menuitem-MiAZProjectMgt-assign')
+    for key in keys:
+        assert miaz.widget(key) is not None, f'{key} was never registered'
+
+    system.unload_plugin(info)
+    miaz.pump(0.4)
+    try:
+        for key in keys:
+            assert miaz.widget(key) is None, f'{key} outlived the plugin'
+    finally:
+        assert system.load_plugin(info)
+        miaz.pump(0.4)
+
+    for key in keys:
+        assert miaz.widget(key) is not None, f'{key} did not come back'

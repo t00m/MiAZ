@@ -515,3 +515,383 @@ def test_a_dict_is_read_the_same_way():
     file, so the import toast asks the same question of a different shape."""
     assert ps.plugin_version({'Name': 'X'}, '0.3.0') == '0.3.0'
     assert ps.plugin_version({'Version': '2.1.0'}, '0.3.0') == '2.1.0'
+
+
+# PluginActionRegistry
+#
+# factory.create_menuitem registers a Gio.SimpleAction on the application and,
+# when the entry declares shortcuts, an accelerator for it. Nothing took either
+# back, so <Control>p still fired MiAZProjectMgt's handler after the user
+# disabled it.
+
+class FakeActionApp:
+    """Enough of Gtk.Application to see what was removed."""
+
+    def __init__(self):
+        self.actions = set()
+        self.accels = {}
+
+    def add_action_name(self, name, shortcuts=None):
+        self.actions.add(name)
+        if shortcuts:
+            self.accels[f'app.{name}'] = list(shortcuts)
+
+    def remove_action(self, name):
+        self.actions.discard(name)
+
+    def set_accels_for_action(self, detailed, shortcuts):
+        if shortcuts:
+            self.accels[detailed] = list(shortcuts)
+        else:
+            self.accels.pop(detailed, None)
+
+
+def test_a_new_action_registry_knows_about_nothing():
+    registry = ps.PluginActionRegistry()
+    assert registry.names('Nobody') == []
+
+
+def test_an_action_is_recorded_against_its_plugin():
+    registry = ps.PluginActionRegistry()
+    registry.add('Alpha', 'plugin-menuitem-Alpha-go')
+    assert registry.names('Alpha') == ['plugin-menuitem-Alpha-go']
+
+
+def test_the_same_action_twice_is_recorded_once():
+    registry = ps.PluginActionRegistry()
+    registry.add('Alpha', 'plugin-menuitem-Alpha-go')
+    registry.add('Alpha', 'plugin-menuitem-Alpha-go')
+    assert registry.names('Alpha') == ['plugin-menuitem-Alpha-go']
+
+
+def test_undo_all_removes_the_action_and_its_accelerator():
+    app = FakeActionApp()
+    app.add_action_name('plugin-menuitem-Alpha-go', ['<Control>p'])
+    registry = ps.PluginActionRegistry()
+    registry.add('Alpha', 'plugin-menuitem-Alpha-go')
+
+    registry.undo_all('Alpha', app)
+
+    assert app.actions == set()
+    assert app.accels == {}
+    assert registry.names('Alpha') == []
+
+
+def test_undo_all_leaves_other_plugins_actions_alone():
+    app = FakeActionApp()
+    app.add_action_name('plugin-menuitem-Alpha-go', ['<Control>p'])
+    app.add_action_name('plugin-menuitem-Beta-go', ['<Control>b'])
+    registry = ps.PluginActionRegistry()
+    registry.add('Alpha', 'plugin-menuitem-Alpha-go')
+    registry.add('Beta', 'plugin-menuitem-Beta-go')
+
+    registry.undo_all('Alpha', app)
+
+    assert app.actions == {'plugin-menuitem-Beta-go'}
+    assert app.accels == {'app.plugin-menuitem-Beta-go': ['<Control>b']}
+
+
+def test_one_failing_removal_does_not_strand_the_others():
+    class Stubborn(FakeActionApp):
+        def remove_action(self, name):
+            if name == 'plugin-menuitem-Alpha-first':
+                raise RuntimeError('no')
+            super().remove_action(name)
+
+    app = Stubborn()
+    app.add_action_name('plugin-menuitem-Alpha-first')
+    app.add_action_name('plugin-menuitem-Alpha-second')
+    registry = ps.PluginActionRegistry()
+    registry.add('Alpha', 'plugin-menuitem-Alpha-first')
+    registry.add('Alpha', 'plugin-menuitem-Alpha-second')
+
+    registry.undo_all('Alpha', app)
+
+    assert app.actions == {'plugin-menuitem-Alpha-first'}
+
+
+def test_undo_all_for_an_unknown_plugin_removes_no_actions():
+    app = FakeActionApp()
+    ps.PluginActionRegistry().undo_all('Nobody', app)
+    assert app.actions == set()
+
+
+# format_plugin_info_value
+#
+# The info dialog shows every key a plugin declares. Two of them are not
+# strings, and Gtk.Label.new raises on anything else, so the dialog failed to
+# open for the seventeen bundled plugins that declare menu entries.
+
+def test_a_string_value_is_returned_as_it_stands():
+    assert ps.format_plugin_info_value('MiAZOCR') == 'MiAZOCR'
+
+
+def test_menu_entries_read_as_their_labels_and_shortcuts():
+    entries = [('set', 'Set periodicity', []),
+               ('manage', 'Manage periodicity', ['<Control>p'])]
+    assert ps.format_plugin_info_value(entries) == (
+        'set, Set periodicity, manage, Manage periodicity, <Control>p')
+
+
+def test_an_operation_reads_as_its_keys_and_values():
+    operations = [{'name': 'ocr', 'run': 'run_ocr'}]
+    assert ps.format_plugin_info_value(operations) == 'name=ocr, run=run_ocr'
+
+
+def test_a_number_is_not_a_crash():
+    assert ps.format_plugin_info_value(3) == '3'
+
+
+def test_nothing_reads_as_nothing():
+    assert ps.format_plugin_info_value(None) == ''
+    assert ps.format_plugin_info_value([]) == ''
+
+
+def test_every_bundled_plugin_declaration_formats_to_a_string():
+    """The dialog walks the index, so every value it can hold has to work."""
+    import ast
+    import glob
+    import os
+    from MiAZ.backend.util import SafeDictExtractor
+
+    checked = 0
+    for module in sorted(glob.glob(os.path.join('data', 'resources', 'plugins',
+                                                '*', '*.py'))):
+        extractor = SafeDictExtractor('plugin_info')
+        with open(module, encoding='utf-8') as handler:
+            extractor.visit(ast.parse(handler.read(), filename=module))
+        if not extractor.result:
+            continue
+        checked += 1
+        for key, value in extractor.result.items():
+            assert isinstance(ps.format_plugin_info_value(value), str), \
+                f'{module}: {key}'
+    assert checked >= 20
+
+
+# Importing a plugin from a ZIP
+#
+# The handler used to extract anything it was given and then guess the plugin
+# directory from namelist()[0], which is a file whenever the archive lists a
+# file before its parent directory.
+
+HELLO_ARCHIVE = ['hello/', 'hello/hello.py', 'hello/hello.plugin']
+HELLO_NO_DIR_ENTRY = ['hello/hello.py', 'hello/hello.plugin']
+HELLO_FILE_FIRST = ['hello/hello.py', 'hello/', 'hello/hello.plugin']
+
+
+def test_the_archive_root_is_the_single_top_level_directory():
+    assert ps.plugin_archive_root(HELLO_ARCHIVE) == 'hello'
+
+
+def test_the_root_is_found_without_an_explicit_directory_entry():
+    assert ps.plugin_archive_root(HELLO_NO_DIR_ENTRY) == 'hello'
+
+
+def test_the_root_does_not_depend_on_the_order_of_the_listing():
+    assert ps.plugin_archive_root(HELLO_FILE_FIRST) == 'hello'
+
+
+def test_two_top_level_directories_are_no_root():
+    assert ps.plugin_archive_root(['a/x.py', 'b/y.py']) == ''
+
+
+def test_a_flat_archive_is_no_root():
+    assert ps.plugin_archive_root(['hello.py', 'hello.plugin']) == ''
+
+
+def _build_zip_archive(entries):
+    """An open zipfile.ZipFile whose members are `entries` (name -> text).
+
+    validate_plugin_archive reads a .plugin member's bytes to find its
+    Module= key, so a plain name list is not enough to exercise it: this
+    builds a real in-memory archive, the same object the handler gets from
+    zipfile.ZipFile(plugin_file).
+    """
+    import io
+    import zipfile as zipfile_module
+    buffer = io.BytesIO()
+    with zipfile_module.ZipFile(buffer, 'w') as writer:
+        for name, content in entries.items():
+            writer.writestr(name, content)
+    buffer.seek(0)
+    return zipfile_module.ZipFile(buffer)
+
+
+HELLO_PLUGIN_ENTRIES = {
+    'hello/hello.py': '# hello\n',
+    'hello/hello.plugin': 'Module=hello\nName=Hello\n',
+}
+
+# A plugin directory is named after the plugin, and its module after the
+# .plugin file's Module= key, but nothing guarantees a third-party archive
+# keeps the two in step. A stem match between the .py and the .plugin file
+# is not the rule discovery uses; only the Module= key inside the .plugin
+# file is.
+CONTACTS_PLUGIN_ENTRIES = {
+    'MiAZContacts/contactbook.py': '# contacts\n',
+    'MiAZContacts/miazcontacts.plugin': 'Module=contactbook\nName=Contacts\n',
+}
+
+
+def test_a_plugin_archive_passes_validation():
+    assert ps.validate_plugin_archive(
+        _build_zip_archive(HELLO_PLUGIN_ENTRIES)) is None
+
+
+def test_a_mismatched_stem_archive_still_passes_validation():
+    """The directory, the module and the .plugin stem may all differ."""
+    assert ps.validate_plugin_archive(
+        _build_zip_archive(CONTACTS_PLUGIN_ENTRIES)) is None
+
+
+def test_an_archive_with_resources_still_passes():
+    entries = dict(HELLO_PLUGIN_ENTRIES)
+    entries['hello/resources/css/x.css'] = 'body {}'
+    assert ps.validate_plugin_archive(_build_zip_archive(entries)) is None
+
+
+def test_a_flat_archive_is_refused():
+    """Discovery globs <plugins>/*/*.py, so a flat plugin is never found."""
+    entries = {'hello.py': '# hello\n', 'hello.plugin': 'Module=hello\n'}
+    problem = ps.validate_plugin_archive(_build_zip_archive(entries))
+    assert problem is not None
+    assert 'directory' in problem
+
+
+def test_an_archive_without_a_definition_is_refused():
+    entries = {'hello/hello.py': '# hello\n'}
+    problem = ps.validate_plugin_archive(_build_zip_archive(entries))
+    assert problem is not None
+    assert 'hello' in problem
+
+
+def test_a_plugin_file_naming_a_missing_module_is_refused():
+    entries = {
+        'hello/hello.py': '# hello\n',
+        'hello/hello.plugin': 'Module=missing\nName=Hello\n',
+    }
+    problem = ps.validate_plugin_archive(_build_zip_archive(entries))
+    assert problem is not None
+    assert 'missing' in problem
+
+
+def test_an_empty_archive_is_refused():
+    assert ps.validate_plugin_archive(_build_zip_archive({})) is not None
+
+
+def test_the_dead_plugin_install_paths_are_gone():
+    """Both assumed a flat LPATH/PLUGINS/<module>.plugin layout.
+
+    Everything else globs <plugins>/*/*.py and <plugins>/*/*.plugin, so a
+    plugin installed the way these installed one was never indexed. The live
+    path is MiAZPlugins._on_item_available_add_response.
+    """
+    assert not hasattr(ps.MiAZPluginSystem, 'import_plugin')
+    assert not hasattr(ps.MiAZPluginSystem, 'remove_plugin')
+
+
+def test_the_engine_rescan_is_still_there():
+    """Task 5 gave it a caller: the ZIP import has to tell the engine."""
+    assert hasattr(ps.MiAZPluginSystem, 'rescan_plugins')
+
+
+def test_a_plugin_helper_is_a_usable_gobject(dirs):
+    """It inherits GObject.GObject, so it has to be initialised as one.
+
+    Without the chained constructor the Python attributes work and every
+    GObject API raises, which makes the base class decorative and the first
+    signal added to it a puzzle.
+    """
+    helper = ps.MiAZPlugin(FakeApp(make_env(*dirs)))
+    assert helper.connect('notify', lambda *a: None) is not None
+
+
+# Plugin dependencies
+#
+# A plugin names the plugins it needs in a Dependencies key, comma separated
+# because a .plugin file has no way to write a list and both declarations have
+# to say the same thing. Enabling one offers to enable its chain; disabling one
+# other enabled plugins need is refused.
+
+INDEX = {
+    'Leaf': {'Name': 'Leaf'},
+    'Middle': {'Name': 'Middle', 'Dependencies': 'Leaf'},
+    'Top': {'Name': 'Top', 'Dependencies': 'Middle'},
+    'Wide': {'Name': 'Wide', 'Dependencies': 'Leaf, Middle'},
+    'Lonely': {'Name': 'Lonely', 'Dependencies': ''},
+    'Broken': {'Name': 'Broken', 'Dependencies': 'Ghost'},
+    'LoopA': {'Name': 'LoopA', 'Dependencies': 'LoopB'},
+    'LoopB': {'Name': 'LoopB', 'Dependencies': 'LoopA'},
+}
+
+
+def nothing_enabled(_name):
+    return False
+
+
+def test_a_plugin_declaring_nothing_needs_nothing():
+    assert ps.parse_dependencies(INDEX['Leaf']) == []
+    assert ps.parse_dependencies(INDEX['Lonely']) == []
+    assert ps.parse_dependencies(None) == []
+
+
+def test_dependencies_are_read_off_a_comma_separated_string():
+    assert ps.parse_dependencies(INDEX['Wide']) == ['Leaf', 'Middle']
+
+
+def test_surrounding_space_is_not_part_of_a_name():
+    assert ps.parse_dependencies({'Dependencies': ' Leaf ,  Middle '}) \
+        == ['Leaf', 'Middle']
+
+
+def test_a_chain_puts_the_dependency_before_the_plugin_that_needs_it():
+    to_enable, missing = ps.resolve_required_chain('Top', INDEX, nothing_enabled)
+    assert to_enable == ['Leaf', 'Middle']
+    assert missing == []
+
+
+def test_the_plugin_itself_is_not_in_its_own_chain():
+    to_enable, _missing = ps.resolve_required_chain('Top', INDEX, nothing_enabled)
+    assert 'Top' not in to_enable
+
+
+def test_an_already_enabled_dependency_is_left_out():
+    to_enable, _missing = ps.resolve_required_chain(
+        'Top', INDEX, lambda name: name == 'Leaf')
+    assert to_enable == ['Middle']
+
+
+def test_a_dependency_that_is_not_installed_is_reported_as_missing():
+    to_enable, missing = ps.resolve_required_chain('Broken', INDEX, nothing_enabled)
+    assert to_enable == []
+    assert missing == ['Ghost']
+
+
+def test_a_cycle_does_not_hang_the_resolver():
+    to_enable, missing = ps.resolve_required_chain('LoopA', INDEX, nothing_enabled)
+    assert to_enable == ['LoopB']
+    assert missing == []
+
+
+def test_a_dependency_named_twice_is_enabled_once():
+    to_enable, _missing = ps.resolve_required_chain('Wide', INDEX, nothing_enabled)
+    assert to_enable == ['Leaf', 'Middle']
+
+
+def test_a_chain_contains_what_it_reaches():
+    assert ps.chain_contains('Top', 'Leaf', INDEX) is True
+    assert ps.chain_contains('Top', 'Middle', INDEX) is True
+    assert ps.chain_contains('Leaf', 'Top', INDEX) is False
+
+
+def test_the_plugins_that_would_break_are_named():
+    assert ps.find_dependents('Leaf', INDEX, ['Top', 'Lonely']) == ['Top']
+
+
+def test_a_plugin_nothing_needs_has_no_dependents():
+    assert ps.find_dependents('Lonely', INDEX, ['Top', 'Wide']) == []
+
+
+def test_a_plugin_is_not_its_own_dependent():
+    assert 'LoopA' not in ps.find_dependents('LoopA', INDEX, ['LoopA', 'LoopB'])

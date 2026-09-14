@@ -377,21 +377,52 @@ class MiAZWorkspace(Gtk.Box):
                     self._num_total_items += 1
         self.view.update_incremental(splices)
         self._publish_concepts(index)
+        self._update_duplicate_column()
         self.emit('workspace-view-updated')
 
     def _on_duplicates_scanned(self, index, *args):
         """Show the column when there is something in it, and redraw.
 
         refilter re-binds every visible row, which is what re-runs the
-        duplicate column's bind.
+        duplicate column's bind, so the visibility is decided after it: the
+        filter is what says which rows the column would have to mark.
         """
-        column = getattr(self.view, 'column_duplicate', None)
-        if column is not None:
-            column.set_visible(bool(index.duplicates_of_any()))
         self.view.refilter()
+        self._update_duplicate_column()
         if self._sort_by_duplicates_pending:
             self._sort_by_duplicates_pending = False
             self._sort_by_duplicates()
+
+    def _update_duplicate_column(self):
+        """Show the copy column only when a document on screen has a twin.
+
+        Two things have to hold, and each one was a way to leave the column
+        standing empty.
+
+        The map has to be fresh. Every workspace update reloads the index,
+        which invalidates it, and the column binds each cell from the map, so
+        over a stale one it draws nothing at all.
+
+        A document on screen has to have a twin. The map covers the whole
+        repository, so asking it whether anything anywhere has one keeps the
+        column over a filtered list where none of the rows do. That is what
+        MiAZDoctor's Show left behind: a finding that is not about duplicates
+        lists documents with no twins.
+        """
+        column = getattr(self.view, 'column_duplicate', None)
+        if column is None:
+            return
+        index = self.app.get_service('index')
+        if index is None or index.duplicates_stale() or not index.duplicates_of_any():
+            column.set_visible(False)
+            return
+        model = self.view.cv.get_model()
+        for position in range(len(model)):
+            item = model.get_item(position)
+            if item is not None and index.duplicates_of(item.id):
+                column.set_visible(True)
+                return
+        column.set_visible(False)
 
     def is_loaded(self):
         return self.workspace_loaded
@@ -484,11 +515,16 @@ class MiAZWorkspace(Gtk.Box):
         self._sort_by_duplicates()
 
     def _sort_by_duplicates(self):
-        """Order the view by the copy column, groups first."""
+        """Order the view by the copy column, groups first.
+
+        The column is not forced visible here. It used to be, which overrode
+        the check in _on_duplicates_scanned two lines after it had run and
+        showed an empty column whenever the shown documents had no twins.
+        """
         column = getattr(self.view, 'column_duplicate', None)
         if column is None or column.get_sorter() is None:
             return
-        column.set_visible(True)
+        self._update_duplicate_column()
         self.view.cv.sort_by_column(column, Gtk.SortType.ASCENDING)
 
     def _update_dropdown_date(self):
@@ -1402,7 +1438,11 @@ class MiAZWorkspace(Gtk.Box):
         from the main loop instead:
 
             handle = workspace.suspend_updates()
-            GLib.idle_add(handle.release)
+            run_on_main(handle.release)
+
+        run_on_main rather than GLib.idle_add: release() returns True the first
+        time, and an idle source repeats until its callback returns something
+        falsy.
         """
         return self._gate.suspend()
 
@@ -1464,6 +1504,7 @@ class MiAZWorkspace(Gtk.Box):
         model = self.view.cv.get_model()
         self._num_selected_items = len(self.selected_items)
         self._num_displayed_items = len(model)
+        self._update_duplicate_column()
         dt = datetime.now() - ds
         self.log.debug(f"Workspace updated in {dt}s ({self._num_displayed_items} documents displayed)")
         self.emit('workspace-view-updated')
