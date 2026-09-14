@@ -355,7 +355,7 @@ def discover_commands(search_paths) -> dict:
     Reads only the .plugin files. That is the whole reason the command names
     live there rather than in plugin_info: `miaz search` pays for this on every
     run and gets nothing back from it, and the two costs are not close.
-    Reading 21 .plugin files takes about 1.3 ms; AST-parsing the 21 modules for
+    Reading 20 .plugin files takes about 1.3 ms; AST-parsing the 20 modules for
     their plugin_info takes about 89 ms.
 
     The parameter schema stays in plugin_info, where it can be structured, and
@@ -393,10 +393,13 @@ def discover_commands(search_paths) -> dict:
 def _read_command_keys(plugin_file: str) -> dict:
     """The three things discovery needs out of a .plugin file, and no more.
 
-    get_plugin_attributes translates every value it reads, which is right for
-    the settings dialog and wasteful here: it turns 21 files into some 200
-    gettext lookups to keep two of them, and `miaz search` pays that on every
-    run. Only the command help is translated, because only it is displayed.
+    get_plugin_attributes now translates only Description and the Command-
+    keys too, so the gap between the two functions is narrower than it used
+    to be. What is still different is size: get_plugin_attributes builds the
+    whole attribute dict for every key in the file, while this function keeps
+    only Module, Name and the Command- keys and throws the rest away. That is
+    a smaller dict and no Description lookups, over every .plugin file on
+    disk, on a path `miaz search` runs every time and gets nothing else from.
     """
     from gettext import gettext as _
     found = {'commands': {}}
