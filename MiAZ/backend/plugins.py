@@ -200,6 +200,15 @@ def plugin_definition_text(plugin_info: dict) -> str:
     return '\n'.join(lines) + '\n'
 
 
+# The keys whose value is shown as a sentence and therefore translated. Every
+# other key is an identifier, a name, a URL or a category compared against the
+# vocabulary, and _(value) on those is at best wasted work. MenuEntry-<id> is
+# left out on purpose: its value carries the shortcut after a '|', so the whole
+# string is not a msgid, and the label is translated where it is used, from
+# plugin_info.
+PLUGIN_TRANSLATED_KEYS = ('Description', )
+
+
 def get_plugin_attributes(plugin_file: str) -> dict:
     """Read a .plugin file into a dict. No engine, no import, no toolkit."""
     from gettext import gettext as _
@@ -216,7 +225,10 @@ def get_plugin_attributes(plugin_file: str) -> dict:
             # Split each line at the first '=' character
             if '=' in line:
                 key, value = line.split('=', 1)
-                attributes[key.strip()] = _(value.strip())
+                key, value = key.strip(), value.strip()
+                translated = (key in PLUGIN_TRANSLATED_KEYS
+                              or key.startswith(COMMAND_PREFIX))
+                attributes[key] = _(value) if translated else value
     return attributes
 
 
@@ -562,8 +574,8 @@ class MiAZPluginCore(GObject.GObject):
         module = self.import_module(module_name)
         if module is None:
             return False
-        self._load_failures[module_name] = {
-            'name': plugin.get_name(), 'reason': ''}
+        # import_module records the failure when there is one. A direct import
+        # that worked is not a failure, so there is nothing to clear.
         self._load_failures.pop(module_name, None)
         self.log.debug(f"Direct-imported plugin module '{module_name}'")
         return True

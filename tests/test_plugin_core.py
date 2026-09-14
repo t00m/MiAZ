@@ -328,3 +328,69 @@ def test_a_multiple_parameter_still_wants_at_least_one_value():
 
     with pytest.raises(SystemExit):
         parser.parse_args([])
+
+
+def test_only_the_displayed_values_go_through_gettext(tmp_path, monkeypatch):
+    """An author's name and a URL are not messages.
+
+    get_plugin_attributes used to translate every value it read, which is some
+    two hundred lookups over the bundled plugins to keep two of them, and would
+    rewrite a URL that happened to be a msgid.
+    """
+    import gettext as gettext_module
+    from MiAZ.backend import plugins as core
+
+    plugin_file = tmp_path / 'demo.plugin'
+    plugin_file.write_text(
+        '[Plugin]\n'
+        'Module=demo\n'
+        'Name=Demo\n'
+        'Description=A demo plugin\n'
+        'Authors=Somebody <somebody@example.com>\n'
+        'Website=http://example.com\n'
+        'Command-demo=Do the demo thing\n',
+        encoding='utf-8')
+
+    seen = []
+
+    def spy(text):
+        seen.append(text)
+        return f'<{text}>'
+
+    monkeypatch.setattr(gettext_module, 'gettext', spy)
+
+    attributes = core.get_plugin_attributes(str(plugin_file))
+
+    assert attributes['Module'] == 'demo'
+    assert attributes['Name'] == 'Demo'
+    assert attributes['Authors'] == 'Somebody <somebody@example.com>'
+    assert attributes['Website'] == 'http://example.com'
+    assert attributes['Description'] == '<A demo plugin>'
+    assert attributes['Command-demo'] == '<Do the demo thing>'
+    assert sorted(seen) == ['A demo plugin', 'Do the demo thing']
+
+
+def test_a_direct_import_records_no_failure(tmp_path):
+    """The fallback used to write a failure entry and pop it on the next line.
+
+    It reads as though a direct import is a failure, and one of the two lines
+    is always wrong.
+    """
+    from MiAZ.backend.plugins import MiAZPluginCore
+
+    plugin_dir = tmp_path / 'demo'
+    plugin_dir.mkdir()
+    (plugin_dir / 'demo.py').write_text(
+        'from MiAZ.backend.plugins import MiAZExtension\n'
+        '\n'
+        '\n'
+        'class Demo(MiAZExtension):\n'
+        "    __gtype_name__ = 'DemoDirectImport'\n",
+        encoding='utf-8')
+
+    core = MiAZPluginCore(search_paths=[str(tmp_path)])
+    module = core.import_module('demo')
+
+    assert module is not None
+    assert core.get_load_failures() == {}
+    assert core.get_load_error('demo') is None
